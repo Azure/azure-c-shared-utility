@@ -1,0 +1,1 @@
+This folder contains the azure shared utility library used in all the clients.

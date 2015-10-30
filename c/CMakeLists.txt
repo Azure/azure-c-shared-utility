@@ -1,0 +1,167 @@
+#Copyright (c) Microsoft. All rights reserved.
+#Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
+cmake_minimum_required(VERSION 3.0)
+project(azure_c_shared_utility)
+
+#the following variables are project-wide and can be used with cmake-gui
+option(skip_unittests "set skip_unittests to ON to skip unittests (default is OFF)[if possible, they are always build]" OFF)
+option(compileOption_C "passes a string to the command line of the C compiler" OFF)
+option(compileOption_CXX "passes a string to the command line of the C++ compiler" OFF)
+
+#Use solution folders. 
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
+enable_testing()
+
+#if any compiler has a command line switch called "OFF" then it will need special care
+if(NOT "${compileOption_C}" STREQUAL "OFF")
+	set(CMAKE_C_FLAGS "${compileOption_C} ${CMAKE_C_FLAGS}")
+endif()
+
+if(NOT "${compileOption_CXX}" STREQUAL "OFF")
+	set(CMAKE_CXX_FLAGS "${compileOption_CXX} ${CMAKE_CXX_FLAGS}")
+endif()
+
+#this project uses several other projects that are build not by these CMakeFiles
+#this project also targets several OSes
+
+#this function takes care of three things:
+#1. copying some shared libraries(.dll or .so) to the location of the output executable
+
+macro(compileAsC99)
+  if (CMAKE_VERSION VERSION_LESS "3.1")
+	if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
+	  set (CMAKE_C_FLAGS "--std=c99 ${CMAKE_C_FLAGS}")
+	  set (CMAKE_CXX_FLAGS "--std=c++11 ${CMAKE_CXX_FLAGS}")
+	endif()
+  else()
+	set (CMAKE_C_STANDARD 99)
+	set (CMAKE_CXX_STANDARD 11)
+  endif()
+endmacro(compileAsC99)
+
+
+function(windows_unittests_add_dll whatIsBuilding)	
+	link_directories(${whatIsBuilding}_dll $ENV{VCInstallDir}UnitTest/lib)
+	
+	add_library(${whatIsBuilding}_dll SHARED 
+		${${whatIsBuilding}_cpp_files} 
+		${${whatIsBuilding}_h_files} 
+		${${whatIsBuilding}_c_files}
+	)
+
+	set_target_properties(${whatIsBuilding}_dll
+			   PROPERTIES
+			   FOLDER "UnitTests") 
+	
+	target_include_directories(${whatIsBuilding}_dll PUBLIC ${sharedutil_include_directories} $ENV{VCInstallDir}UnitTest/include)
+	target_compile_definitions(${whatIsBuilding}_dll PUBLIC -DCPP_UNITTEST)
+	target_link_libraries(${whatIsBuilding}_dll micromock_cpp_unittest ctest ${ARGN})
+endfunction()
+
+function(windows_unittests_add_lib whatIsBuilding)	
+	link_directories(${whatIsBuilding}_lib $ENV{VCInstallDir}UnitTest/lib)
+	
+	add_library(${whatIsBuilding}_lib STATIC 
+		${${whatIsBuilding}_cpp_files} 
+		${${whatIsBuilding}_h_files} 
+		${${whatIsBuilding}_c_files}
+	)
+	
+	target_include_directories(${whatIsBuilding}_lib PUBLIC ${sharedutil_include_directories})
+	target_compile_definitions(${whatIsBuilding}_lib PUBLIC -DUSE_CTEST)
+	target_link_libraries(${whatIsBuilding}_lib micromock_ctest ctest ${ARGN})
+endfunction()
+
+function(windows_unittests_add_exe whatIsBuilding)
+	add_executable(${whatIsBuilding}_exe
+		${${whatIsBuilding}_cpp_files} 
+		${${whatIsBuilding}_h_files} 
+		${${whatIsBuilding}_c_files}
+		${CMAKE_CURRENT_LIST_DIR}/main.c
+	)
+	set_target_properties(${whatIsBuilding}_exe
+			   PROPERTIES
+			   FOLDER "UnitTests")
+			    
+	target_compile_definitions(${whatIsBuilding}_exe PUBLIC -DUSE_CTEST)
+	target_include_directories(${whatIsBuilding}_exe PUBLIC ${sharedutil_include_directories})
+	target_link_libraries(${whatIsBuilding}_exe micromock_ctest ctest ${ARGN})
+	add_test(NAME ${whatIsBuilding} COMMAND ${whatIsBuilding}_exe)
+endfunction()
+
+function(build_test_artifacts whatIsBuilding use_gballoc)
+	
+	#the first argument is what is building
+	#the second argument is whether the tests should be build with gballoc #defines or not
+	#the following arguments are a list of libraries to link with
+	
+	if(${use_gballoc})
+		add_definitions(-DGB_MEASURE_MEMORY_FOR_THIS -DGB_DEBUG_ALLOC)
+	else()	
+	endif()
+	
+	#setting #defines
+	if(WIN32)
+		add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+	else()
+	endif()
+	
+	#setting includes
+	set(sharedutil_include_directories ${MICROMOCK_INC_FOLDER} ${TESTRUNNERSWITCHER_INC_FOLDER} ${CTEST_INC_FOLDER} ${SAL_INC_FOLDER} ${SHARED_UTIL_INC_FOLDER} ${SHARED_UTIL_SRC_FOLDER})
+	if(WIN32)
+	else()
+		include_directories(${sharedutil_include_directories})
+	endif()
+
+	
+	#setting output type
+	if(WIN32)
+		#to disable running e2e or longhaul or unittests tests for windows, we build the the same thing as "static library" so it is not picked up by visual studio
+		if(
+			(("${whatIsBuilding}" MATCHES ".*longhaul.*") AND NOT ${run_longhaul_tests}) OR
+			(("${whatIsBuilding}" MATCHES ".*unittests.*") AND ${skip_unittests})
+		)
+			windows_unittests_add_lib(${whatIsBuilding} ${ARGN})
+		else()
+			windows_unittests_add_exe(${whatIsBuilding} ${ARGN})
+			windows_unittests_add_dll(${whatIsBuilding} ${ARGN})			
+		endif()
+	else()
+		if(
+			(("${whatIsBuilding}" MATCHES ".*longhaul.*") AND NOT ${run_longhaul_tests}) OR
+			(("${whatIsBuilding}" MATCHES ".*unittests.*") AND ${skip_unittests})
+		)
+			windows_unittests_add_lib(${whatIsBuilding} ${ARGN})
+		else()
+			windows_unittests_add_exe(${whatIsBuilding} ${ARGN})
+		endif()
+	endif()
+endfunction(build_test_artifacts)
+
+function(set_platform_files)
+if(WIN32)
+	set(PLATFORM_C_FILE ${CMAKE_CURRENT_LIST_DIR}/sharedutil/adapters/platform_win32.c PARENT_SCOPE)
+	set(TLSIO_C_FILE ${CMAKE_CURRENT_LIST_DIR}/sharedutil/adapters/tlsio_win32.c PARENT_SCOPE)
+	set(SOCKETIO_C_FILE ${CMAKE_CURRENT_LIST_DIR}/sharedutil/adapters/socketio_win32.c PARENT_SCOPE)
+	set(LOCK_C_FILE ${CMAKE_CURRENT_LIST_DIR}/sharedutil/adapters/lock_c11.c PARENT_SCOPE)
+	set(THREAD_C_FILE ${CMAKE_CURRENT_LIST_DIR}/sharedutil/adapters/threadapi_c11.c PARENT_SCOPE)
+	set(HTTP_C_FILE ${CMAKE_CURRENT_LIST_DIR}/sharedutil/adapters/httpapi_winhttp.c PARENT_SCOPE)
+	#set(CONDITION_C_FILE ${CMAKE_CURRENT_LIST_DIR}/sharedutil/adapters/condition_c11.c PARENT_SCOPE)
+else()
+	set(LOCK_C_FILE ${CMAKE_CURRENT_LIST_DIR}/sharedutil/adapters/lock_pthreads.c PARENT_SCOPE)
+	#set(CONDITION_C_FILE ${CMAKE_CURRENT_LIST_DIR}/sharedutil/adapters/condition_pthreads.c PARENT_SCOPE)
+	set(THREAD_C_FILE ${CMAKE_CURRENT_LIST_DIR}/sharedutil/adapters/threadapi_pthreads.c PARENT_SCOPE)
+	set(HTTP_C_FILE ${CMAKE_CURRENT_LIST_DIR}/sharedutil/adapters/httpapi_curl.c PARENT_SCOPE)
+	set(PLATFORM_C_FILE ${CMAKE_CURRENT_LIST_DIR}/sharedutil/adapters/platform_linux.c PARENT_SCOPE)
+	set(TLSIO_C_FILE ${CMAKE_CURRENT_LIST_DIR}/sharedutil/adapters/tlsio_linux.c PARENT_SCOPE)
+	set(SOCKETIO_C_FILE ${CMAKE_CURRENT_LIST_DIR}/sharedutil/adapters/socketio_linux.c PARENT_SCOPE)
+endif()
+endfunction(set_platform_files)
+
+set_platform_files()
+
+add_subdirectory(testtools)
+
+add_subdirectory(sharedutil)
