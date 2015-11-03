@@ -1,6 +1,6 @@
 #include "testrunnerswitcher.h"
 #include "micromock.h"
-#include "io.h"
+#include "transport_io.h"
 
 #define TEST_CONCRETE_IO_HANDLE (CONCRETE_IO_HANDLE)0x4242
 

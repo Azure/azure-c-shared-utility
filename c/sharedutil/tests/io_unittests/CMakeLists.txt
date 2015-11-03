@@ -12,7 +12,7 @@ ${theseTestsName}.cpp
 )
 
 set(${theseTestsName}_c_files
-../../src/io.c
+../../src/transport_io.c
 )
 
 set(${theseTestsName}_h_files
