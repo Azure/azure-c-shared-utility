@@ -4,7 +4,7 @@
 
 set -e
 
-build_clean=
+build_folder=~/sharedutil
 script_dir=$(cd "$(dirname "$0")" && pwd)
 build_root=$(cd "${script_dir}/../.." && pwd)
 log_dir=$build_root
@@ -14,8 +14,6 @@ usage ()
 {
     echo "build.sh [options]"
     echo "options"
-    echo " -x,  --xtrace                 print a trace of each command"
-    echo " -c,  --clean                  remove artifacts from previous build before building"
     echo " -cl, --compileoption <value>  specify a compile option to be passed to gcc"
     echo "   Example: -cl -O1 -cl ..."
     exit 1
@@ -23,7 +21,6 @@ usage ()
 
 process_args ()
 {
-    build_clean=0
     save_next_arg=0
     extracloptions=" "
 
@@ -32,12 +29,10 @@ process_args ()
       if [ $save_next_arg == 1 ]
       then
         # save arg to pass to gcc
-        extracloptions="$extracloptions $arg"
+        extracloptions="$arg $extracloptions"
         save_next_arg=0
       else
           case "$arg" in
-              "-x" | "--xtrace" ) set -x;;
-              "-c" | "--clean" ) build_clean=1;;
               "-cl" | "--compileoption" ) save_next_arg=1;;
               * ) usage;;
           esac
@@ -47,10 +42,10 @@ process_args ()
 
 process_args $*
 
-rm -r -f ~/cmake
-mkdir ~/cmake
-pushd ~/cmake
-cmake $build_root
+rm -r -f $build_folder
+mkdir $build_folder
+pushd $build_folder
+cmake -DcompileOption_C:STRING="$extracloptions" $build_root
 make --jobs=$(nproc)
 ctest -C "Debug" -V
 popd

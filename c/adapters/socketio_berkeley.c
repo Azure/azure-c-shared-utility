@@ -6,17 +6,18 @@
 #include <crtdbg.h>
 #endif
 
-//#define _POSIX_C_SOURCE 2
-//#define _XOPEN_SOURCE   1
-//#define _POSIX_SOURCE   1
-
+#include "socketio.h"
 #include <stddef.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-#include "socketio.h"
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <netdb.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+
+#define _OE_SOCKETS
 #include <unistd.h>
 
 #define SOCKET_SUCCESS      0
@@ -118,8 +119,8 @@ int socketio_open(IO_HANDLE socket_io, ON_BYTES_RECEIVED on_bytes_received, ON_I
     }
     else
     {
-        struct addrinfo* addrInfo;
-        char portString[16];
+        //struct addrinfo* addrInfo;
+        //char portString[16];
 
         socket_io_instance->socket = socket(AF_INET, SOCK_STREAM, 0);
         if (socket_io_instance->socket < SOCKET_SUCCESS)
@@ -129,8 +130,10 @@ int socketio_open(IO_HANDLE socket_io, ON_BYTES_RECEIVED on_bytes_received, ON_I
         }
         else
         {
-            sprintf(portString, "%u", socket_io_instance->port);
-            /*if (getaddrinfo(socket_io_instance->hostname, portString, NULL, &addrInfo) != 0)
+            struct sockaddr_in addrIn;
+            addrIn.sin_family = AF_INET;
+            addrIn.sin_port = htons(socket_io_instance->port);
+            if (inet_pton(AF_INET, socket_io_instance->hostname, &addrIn) < 1)
             {
                 close(socket_io_instance->socket);
                 set_io_state(socket_io_instance, IO_STATE_ERROR);
@@ -139,16 +142,7 @@ int socketio_open(IO_HANDLE socket_io, ON_BYTES_RECEIVED on_bytes_received, ON_I
             }
             else
             {
-                unsigned long iMode = 1;
-
-                if (connect(socket_io_instance->socket, addrInfo->ai_addr, addrInfo->ai_addrlen) != 0)
-                {
-                    close(socket_io_instance->socket);
-                    set_io_state(socket_io_instance, IO_STATE_ERROR);
-                    socket_io_instance->socket = INVALID_SOCKET;
-                    result = __LINE__;
-                }
-                /*else if (ioctlsocket(socket_io_instance->socket, FIONBIO, &iMode))
+                if (connect(socket_io_instance->socket, (struct sockaddr*)&addrIn, sizeof(addrIn) ) != 0)
                 {
                     close(socket_io_instance->socket);
                     set_io_state(socket_io_instance, IO_STATE_ERROR);
@@ -162,10 +156,9 @@ int socketio_open(IO_HANDLE socket_io, ON_BYTES_RECEIVED on_bytes_received, ON_I
                     socket_io_instance->callback_context = callback_context;
 
                     set_io_state(socket_io_instance, IO_STATE_OPEN);
-                    freeaddrinfo(addrInfo);
                     result = 0;
                 }
-            }*/
+            }
         }
     }
 
@@ -183,7 +176,7 @@ int socketio_close(IO_HANDLE socket_io)
     else
     {
         SOCKET_IO_INSTANCE* socket_io_instance = (SOCKET_IO_INSTANCE*)socket_io;
-
+        (void)shutdown(socket_io_instance->socket, SHUT_RDWR);
         close(socket_io_instance->socket);
         socket_io_instance->socket = INVALID_SOCKET;
         set_io_state(socket_io_instance, IO_STATE_NOT_OPEN);

@@ -5,6 +5,7 @@
 #ifdef _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
 #endif
+#include "gballoc.h"
 #include <stddef.h>
 #include "transport_io.h"
 
