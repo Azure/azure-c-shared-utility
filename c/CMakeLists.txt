@@ -259,6 +259,6 @@ set(source_h_files ${source_h_files}
 )
 
 #this is the product (a library)
-add_library(aziotsharedlib ${source_c_files} ${source_h_files})
+add_library(aziotsharedutil ${source_c_files} ${source_h_files})
 
 add_subdirectory(tests)

@@ -4,9 +4,9 @@
 		<id>Microsoft.Azure.C.SharedUtility</id>
 		<version>1.0.0-preview-000</version>
 		<title>Microsoft Azure C Shared Utility</title>
-		<authors>Apache Software Foundation, Microsoft Corp</authors>
+		<authors>Microsoft Corp</authors>
 		<owners>Azure-IoT</owners>
-		<licenseUrl>https://github.com/Azure/azure-iot-sdks/blob/develop/LICENSE</licenseUrl>
+		<licenseUrl>https://github.com/Azure/azure-c-shared-utility/blob/master/LICENSE</licenseUrl>
 		<projectUrl>https://github.com/Azure/azure-c-shared-utility</projectUrl>
 		<requireLicenseAcceptance>true</requireLicenseAcceptance>
 		<description>Microsoft Azure C Share Utility</description>
@@ -22,17 +22,17 @@
 		<file src="Microsoft.Azure.C.SharedUtility_thirdpartynotice.txt" target="thirdpartynotice.txt"/>
 
 		<!-- these are files for x86 plaform -->
-		<file src="..\..\..\..\build_output\c\win32\debug\aziotsharedlib.lib.lib" target="build\native\Win32\Debug"/>
-		<file src="..\..\..\..\build_output\c\win32\debug\aziotsharedlib.lib.pdb" target="build\native\Win32\Debug"/>
-		<file src="..\..\..\..\build_output\c\win32\release\aziotsharedlib.lib.lib" target="build\native\Win32\Release"/>
+		<file src="..\..\..\..\shared-util\c\win32\debug\aziotsharedutil.lib" target="build\native\Win32\Debug"/>
+		<file src="..\..\..\..\shared-util\c\win32\debug\aziotsharedutil.pdb" target="build\native\Win32\Debug"/>
+		<file src="..\..\..\..\shared-util\c\win32\release\aziotsharedutil.lib" target="build\native\Win32\Release"/>
 
 		<!-- these are files for x64 plaform -->
-		<file src="..\..\..\..\build_output\c\x64\debug\aziotsharedlib.lib.lib" target="build\native\x64\Debug"/>
-		<file src="..\..\..\..\build_output\c\x64\debug\aziotsharedlib.lib.pdb" target="build\native\x64\Debug"/>
-		<file src="..\..\..\..\build_output\c\x64\release\aziotsharedlib.lib.lib" target="build\native\x64\Release"/>
+		<file src="..\..\..\..\shared-util\c\x64\debug\aziotsharedutil.lib" target="build\native\x64\Debug"/>
+		<file src="..\..\..\..\shared-util\c\x64\debug\aziotsharedutil.pdb" target="build\native\x64\Debug"/>
+		<file src="..\..\..\..\shared-util\c\x64\release\aziotsharedutil.lib" target="build\native\x64\Release"/>
 
 		<file src="Microsoft.Azure.C.SharedUtility.targets" target="build\native"/>
-		<file src="..\..\..\sharedutil\inc\*.h" target="build\native\include"/>
+		<file src="..\..\..\shared-util\inc\*.h" target="build\native\include"/>
 	</files>
 
 </package>

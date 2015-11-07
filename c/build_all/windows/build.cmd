@@ -4,7 +4,7 @@
 @setlocal EnableExtensions EnableDelayedExpansion
 @echo off
 
-set CMAKE_DIR=cmake-azure-c-shared-util
+set CMAKE_DIR=shared-util
 
 set current-path=%~dp0
 rem // remove trailing slash
@@ -73,23 +73,25 @@ rem ----------------------------------------------------------------------------
 
 echo CMAKE Output Path: %USERPROFILE%\%CMAKE_DIR%
 
-rem rmdir /s/q %USERPROFILE%\cmake
+if NOT EXIST %USERPROFILE%\%CMAKE_DIR% GOTO NO_CMAKE_DIR
+rmdir /s/q %USERPROFILE%\%CMAKE_DIR%
+rem no error checking
+:NO_CMAKE_DIR
+
+mkdir %USERPROFILE%\%CMAKE_DIR%
 rem no error checking
 
-rem mkdir %USERPROFILE%\cmake
-rem no error checking
+pushd %USERPROFILE%\%CMAKE_DIR%
+cmake %build-root%
+if not %errorlevel%==0 exit /b %errorlevel%
 
-rem pushd %USERPROFILE%\cmake-azure-c-shared-util
-rem cmake %build-root%
-rem if not %errorlevel%==0 exit /b %errorlevel%
+msbuild /m azure_c_shared_utility.sln
+if not %errorlevel%==0 exit /b %errorlevel%
 
-rem msbuild /m azuazure_c_shared_utility.sln
-rem if not %errorlevel%==0 exit /b %errorlevel%
+ctest -C "debug" -V
+if not %errorlevel%==0 exit /b %errorlevel%
 
-rem ctest -C "debug" -V
-rem if not %errorlevel%==0 exit /b %errorlevel%
-
-rem popd
+popd
 goto :eof
 
 :usage
