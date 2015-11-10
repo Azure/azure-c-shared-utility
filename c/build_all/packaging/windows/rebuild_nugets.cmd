@@ -30,18 +30,24 @@ Powershell.exe wget -outf nuget.exe https://nuget.org/nuget.exe
 del *.nupkg
 
 rem -- Copy all Win32 files from cmake build directory to the repo directory
-xcopy /q /y /R %USERPROFILE%\shared-util\Debug\*.* %client-root%\shared-util\c\win32\debug\*.*
+xcopy /q /y /R %USERPROFILE%\shared-util_Win32\Debug\*.* %client-root%\shared-util\c\win32\debug\*.*
 if %errorlevel% neq 0 exit /b %errorlevel%
 
-echo copy 64
+rem -- Copy all Win32 Release files from cmake build directory to the repo directory
+xcopy /q /y /R %USERPROFILE%\shared-util_Win32\Release\*.* %client-root%\shared-util\c\win32\Release\*.*
+if %errorlevel% neq 0 exit /b %errorlevel%
 
 rem -- Copy all x64 files from cmake build directory to the repo directory
 xcopy /q /y /R %USERPROFILE%\shared-util_x64\Debug\*.* %client-root%\shared-util\c\x64\debug\*.*
 if %errorlevel% neq 0 exit /b %errorlevel%
 
+rem -- Copy all x64 Release files from cmake build directory to the repo directory
+xcopy /q /y /R %USERPROFILE%\shared-util_x64\Release\*.* %client-root%\shared-util\c\x64\Release\*.*
+if %errorlevel% neq 0 exit /b %errorlevel%
+
 rem -- Package Nuget
 nuget pack Microsoft.Azure.C.SharedUtility.nuspec
 
-rmdir %client-root%\shared-util /S /Q
+rem -- rmdir %client-root%\shared-util /S /Q
 
 popd

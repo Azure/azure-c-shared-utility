@@ -4,7 +4,7 @@
 @setlocal EnableExtensions EnableDelayedExpansion
 @echo off
 
-set CMAKE_DIR=shared-util
+set CMAKE_DIR=shared-util_Win32
 
 set current-path=%~dp0
 rem // remove trailing slash
@@ -34,7 +34,7 @@ rem ----------------------------------------------------------------------------
 
 rem // default build options
 set build-clean=0
-set build-config=Debug
+set build-config=
 set build-platform=Win32
 
 :args-loop
@@ -59,6 +59,9 @@ goto args-continue
 shift
 if "%1" equ "" call :usage && exit /b 1
 set build-platform=%1
+if %build-platform% == x64 (
+	set CMAKE_DIR=shared-util_x64
+)
 goto args-continue
 
 :args-continue
@@ -82,11 +85,27 @@ mkdir %USERPROFILE%\%CMAKE_DIR%
 rem no error checking
 
 pushd %USERPROFILE%\%CMAKE_DIR%
-cmake %build-root%
-if not %errorlevel%==0 exit /b %errorlevel%
 
-msbuild /m azure_c_shared_utility.sln
-if not %errorlevel%==0 exit /b %errorlevel%
+if %build-platform% == Win32 (
+	echo ***Running CMAKE for Win32***
+	cmake %build-root%
+	if not %errorlevel%==0 exit /b %errorlevel%
+) else (
+	echo ***Running CMAKE for Win64***
+	cmake %build-root% -G "Visual Studio 14 Win64"
+	if not %errorlevel%==0 exit /b %errorlevel%	
+)
+
+if not defined build-config (
+	echo ***Building both configurations***
+	msbuild /m azure_c_shared_utility.sln /p:Configuration=Release
+	msbuild /m azure_c_shared_utility.sln /p:Configuration=Debug
+	if not %errorlevel%==0 exit /b %errorlevel%
+) else (
+	echo ***Building %build-config% only***
+	msbuild /m azure_c_shared_utility.sln /p:Configuration=%build-config%
+	if not %errorlevel%==0 exit /b %errorlevel%
+)
 
 ctest -C "debug" -V
 if not %errorlevel%==0 exit /b %errorlevel%

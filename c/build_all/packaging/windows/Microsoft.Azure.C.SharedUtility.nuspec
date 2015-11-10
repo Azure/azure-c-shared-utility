@@ -32,7 +32,8 @@
 		<file src="..\..\..\..\shared-util\c\x64\release\aziotsharedutil.lib" target="build\native\x64\Release"/>
 
 		<file src="Microsoft.Azure.C.SharedUtility.targets" target="build\native"/>
-		<file src="..\..\..\shared-util\inc\*.h" target="build\native\include"/>
+		
+		<file src="..\..\..\inc\*.h" target="build\native\include"/>
 	</files>
 
 </package>
