@@ -6,6 +6,7 @@
 #include <crtdbg.h>
 #endif
 #include <stddef.h>
+#include "gballoc.h"
 #include "transport_io.h"
 
 typedef struct IO_INSTANCE_TAG

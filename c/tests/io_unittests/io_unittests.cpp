@@ -4,18 +4,48 @@
 #include "testrunnerswitcher.h"
 #include "micromock.h"
 #include "transport_io.h"
+#include "lock.h"
 
 #define TEST_CONCRETE_IO_HANDLE (CONCRETE_IO_HANDLE)0x4242
+
+#define GBALLOC_H
+extern "C" int gballoc_init(void);
+extern "C" void gballoc_deinit(void);
+extern "C" void* gballoc_malloc(size_t size);
+extern "C" void* gballoc_calloc(size_t nmemb, size_t size);
+extern "C" void* gballoc_realloc(void* ptr, size_t size);
+extern "C" void gballoc_free(void* ptr);
+
+static bool g_fail_alloc_calls;
+
+namespace BASEIMPLEMENTATION
+{
+    /*if malloc is defined as gballoc_malloc at this moment, there'd be serious trouble*/
+#define Lock(x) (LOCK_OK + gballocState - gballocState) /*compiler warning about constant in if condition*/
+#define Unlock(x) (LOCK_OK + gballocState - gballocState)
+#define Lock_Init() (LOCK_HANDLE)0x42
+#define Lock_Deinit(x) (LOCK_OK + gballocState - gballocState)
+#include "gballoc.c"
+#undef Lock
+#undef Unlock
+#undef Lock_Init
+#undef Lock_Deinit
+};
 
 TYPED_MOCK_CLASS(io_mocks, CGlobalMock)
 {
 public:
-    /* amqpalloc mocks */
-    MOCK_STATIC_METHOD_1(, void*, amqpalloc_malloc, size_t, size)
-        MOCK_METHOD_END(void*, malloc(size));
-    MOCK_STATIC_METHOD_1(, void, amqpalloc_free, void*, ptr)
-        free(ptr);
-    MOCK_VOID_METHOD_END();
+    MOCK_STATIC_METHOD_1(, void*, gballoc_malloc, size_t, size)
+        void* ptr = NULL;
+        if (!g_fail_alloc_calls)
+        {
+            ptr = BASEIMPLEMENTATION::gballoc_malloc(size);
+        }
+    MOCK_METHOD_END(void*, ptr);
+
+    MOCK_STATIC_METHOD_1(, void, gballoc_free, void*, ptr)
+        BASEIMPLEMENTATION::gballoc_free(ptr);
+    MOCK_VOID_METHOD_END()
 
     /* io interface mocks */
     MOCK_STATIC_METHOD_2(, CONCRETE_IO_HANDLE, test_io_create, void*, io_create_parameters, LOGGER_LOG, logger_log)
@@ -32,11 +62,11 @@ public:
         MOCK_VOID_METHOD_END();
 };
 
+DECLARE_GLOBAL_MOCK_METHOD_1(io_mocks, , void*, gballoc_malloc, size_t, size);
+DECLARE_GLOBAL_MOCK_METHOD_1(io_mocks, , void, gballoc_free, void*, ptr);
+
 extern "C"
 {
-    DECLARE_GLOBAL_MOCK_METHOD_1(io_mocks, , void*, amqpalloc_malloc, size_t, size);
-    DECLARE_GLOBAL_MOCK_METHOD_1(io_mocks, , void, amqpalloc_free, void*, ptr);
-
     DECLARE_GLOBAL_MOCK_METHOD_2(io_mocks, , CONCRETE_IO_HANDLE, test_io_create, void*, io_create_parameters, LOGGER_LOG, logger_log);
     DECLARE_GLOBAL_MOCK_METHOD_1(io_mocks, , void, test_io_destroy, CONCRETE_IO_HANDLE, handle);
     DECLARE_GLOBAL_MOCK_METHOD_4(io_mocks, , int, test_io_open, CONCRETE_IO_HANDLE, handle, ON_BYTES_RECEIVED, on_bytes_received, ON_IO_STATE_CHANGED, on_io_state_changed, void*, callback_context);
@@ -102,6 +132,7 @@ TEST_FUNCTION_INITIALIZE(method_init)
     {
         ASSERT_FAIL("Could not acquire test serialization mutex.");
     }
+    g_fail_alloc_calls = false;
 }
 
 TEST_FUNCTION_CLEANUP(method_cleanup)
@@ -121,7 +152,7 @@ TEST_FUNCTION(io_create_with_all_args_except_interface_description_NULL_succeeds
     // arrange
     io_mocks mocks;
 
-    EXPECTED_CALL(mocks, amqpalloc_malloc(IGNORED_NUM_ARG));
+    EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
     STRICT_EXPECTED_CALL(mocks, test_io_create(NULL, NULL));
 
     // act
@@ -141,7 +172,7 @@ TEST_FUNCTION(io_create_passes_the_args_to_the_concrete_io_implementation)
     // arrange
     io_mocks mocks;
 
-    EXPECTED_CALL(mocks, amqpalloc_malloc(IGNORED_NUM_ARG));
+    EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
     STRICT_EXPECTED_CALL(mocks, test_io_create((void*)0x4243, test_logger_log));
 
     // act
@@ -161,11 +192,10 @@ TEST_FUNCTION(when_concrete_io_create_fails_then_io_create_fails)
     // arrange
     io_mocks mocks;
 
-    EXPECTED_CALL(mocks, amqpalloc_malloc(IGNORED_NUM_ARG));
     STRICT_EXPECTED_CALL(mocks, test_io_create(NULL, NULL))
         .SetReturn((CONCRETE_IO_HANDLE)NULL);
-
-    EXPECTED_CALL(mocks, amqpalloc_free(IGNORED_PTR_ARG));
+    EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
+    EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
 
     // act
     IO_HANDLE result = io_create(&test_io_description, NULL, NULL);
@@ -324,8 +354,9 @@ TEST_FUNCTION(when_allocating_memory_Fails_then_io_create_fails)
 {
     // arrange
     io_mocks mocks;
+    g_fail_alloc_calls = true;
 
-    EXPECTED_CALL(mocks, amqpalloc_malloc(IGNORED_NUM_ARG))
+    EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG))
         .SetReturn((void*)NULL);
 
     // act
@@ -347,7 +378,7 @@ TEST_FUNCTION(io_destroy_calls_concrete_io_destroy_and_frees_memory)
     mocks.ResetAllCalls();
 
     STRICT_EXPECTED_CALL(mocks, test_io_destroy(TEST_CONCRETE_IO_HANDLE));
-    EXPECTED_CALL(mocks, amqpalloc_free(IGNORED_PTR_ARG));
+    EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
 
     // act
     io_destroy(handle);

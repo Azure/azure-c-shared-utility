@@ -5,28 +5,56 @@
 #include "testrunnerswitcher.h"
 #include "micromock.h"
 #include "list.h"
+#include "lock.h"
 
-bool fail_alloc_calls;
+#define GBALLOC_H
+extern "C" int gballoc_init(void);
+extern "C" void gballoc_deinit(void);
+extern "C" void* gballoc_malloc(size_t size);
+extern "C" void* gballoc_calloc(size_t nmemb, size_t size);
+extern "C" void* gballoc_realloc(void* ptr, size_t size);
+extern "C" void gballoc_free(void* ptr);
+
+namespace BASEIMPLEMENTATION
+{
+    /*if malloc is defined as gballoc_malloc at this moment, there'd be serious trouble*/
+#define Lock(x) (LOCK_OK + gballocState - gballocState) /*compiler warning about constant in if condition*/
+#define Unlock(x) (LOCK_OK + gballocState - gballocState)
+#define Lock_Init() (LOCK_HANDLE)0x42
+#define Lock_Deinit(x) (LOCK_OK + gballocState - gballocState)
+#include "gballoc.c"
+#undef Lock
+#undef Unlock
+#undef Lock_Init
+#undef Lock_Deinit
+};
+
+static bool g_fail_alloc_calls;
 
 TYPED_MOCK_CLASS(list_mocks, CGlobalMock)
 {
 public:
-    /* amqpalloc mocks */
-    MOCK_STATIC_METHOD_1(, void*, amqpalloc_malloc, size_t, size)
-        MOCK_METHOD_END(void*, malloc(size));
-    MOCK_STATIC_METHOD_1(, void, amqpalloc_free, void*, ptr)
-        free(ptr);
-    MOCK_VOID_METHOD_END();
+    MOCK_STATIC_METHOD_1(, void*, gballoc_malloc, size_t, size)
+        void* ptr = NULL;
+        if (!g_fail_alloc_calls)
+        {
+            ptr = BASEIMPLEMENTATION::gballoc_malloc(size);
+        }
+    MOCK_METHOD_END(void*, ptr);
 
+    MOCK_STATIC_METHOD_1(, void, gballoc_free, void*, ptr)
+        BASEIMPLEMENTATION::gballoc_free(ptr);
+    MOCK_VOID_METHOD_END()
+        
     /* test match function mock */
     MOCK_STATIC_METHOD_2(, bool, test_match_function, LIST_ITEM_HANDLE, list_item, const void*, match_context)
-        MOCK_METHOD_END(bool, true);
+    MOCK_METHOD_END(bool, true);
 };
 
 extern "C"
 {
-    DECLARE_GLOBAL_MOCK_METHOD_1(list_mocks, , void*, amqpalloc_malloc, size_t, size);
-    DECLARE_GLOBAL_MOCK_METHOD_1(list_mocks, , void, amqpalloc_free, void*, ptr);
+    DECLARE_GLOBAL_MOCK_METHOD_1(list_mocks, , void*, gballoc_malloc, size_t, size);
+    DECLARE_GLOBAL_MOCK_METHOD_1(list_mocks, , void, gballoc_free, void*, ptr);
 
     DECLARE_GLOBAL_MOCK_METHOD_2(list_mocks, , bool, test_match_function, LIST_ITEM_HANDLE, list_item, const void*, match_context);
 }
@@ -54,7 +82,7 @@ TEST_FUNCTION_INITIALIZE(method_init)
     {
         ASSERT_FAIL("Could not acquire test serialization mutex.");
     }
-    fail_alloc_calls = false;
+    g_fail_alloc_calls = false;
 }
 
 TEST_FUNCTION_CLEANUP(method_cleanup)
@@ -68,12 +96,12 @@ TEST_FUNCTION_CLEANUP(method_cleanup)
 /* list_create */
 
 /* Tests_SRS_LIST_01_001: [list_create shall create a new list and return a non-NULL handle on success.] */
-TEST_FUNCTION(when_underlying_calls_suceed_list_create_succeeds)
+TEST_FUNCTION(when_underlying_calls_succeed_list_create_succeeds)
 {
     // arrange
     list_mocks mocks;
 
-    EXPECTED_CALL(mocks, amqpalloc_malloc(IGNORED_NUM_ARG));
+    EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
 
     // act
     LIST_HANDLE result = list_create();
@@ -87,8 +115,9 @@ TEST_FUNCTION(when_underlying_malloc_fails_list_create_fails)
 {
     // arrange
     list_mocks mocks;
+    g_fail_alloc_calls = true;
 
-    EXPECTED_CALL(mocks, amqpalloc_malloc(IGNORED_NUM_ARG))
+    EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG))
         .SetReturn((void*)NULL);
 
     // act
@@ -108,7 +137,7 @@ TEST_FUNCTION(list_destroy_on_a_non_null_handle_frees_resources)
     LIST_HANDLE handle = list_create();
     mocks.ResetAllCalls();
 
-    EXPECTED_CALL(mocks, amqpalloc_free(IGNORED_PTR_ARG));
+    EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
 
     // act
     list_destroy(handle);
@@ -171,7 +200,7 @@ TEST_FUNCTION(list_add_adds_the_item_and_returns_a_non_NULL_handle)
     mocks.ResetAllCalls();
     int x = 42;
 
-    EXPECTED_CALL(mocks, amqpalloc_malloc(IGNORED_NUM_ARG));
+    EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
 
     // act
     LIST_ITEM_HANDLE result = list_add(handle, &x);
@@ -197,7 +226,7 @@ TEST_FUNCTION(list_add_when_an_item_is_in_the_list_adds_at_the_end)
     (void)list_add(handle, &x1);
     mocks.ResetAllCalls();
 
-    EXPECTED_CALL(mocks, amqpalloc_malloc(IGNORED_NUM_ARG));
+    EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
 
     // act
     LIST_ITEM_HANDLE result = list_add(handle, &x2);
@@ -222,7 +251,9 @@ TEST_FUNCTION(when_the_underlying_malloc_fails_list_add_fails)
     int x = 42;
     mocks.ResetAllCalls();
 
-    EXPECTED_CALL(mocks, amqpalloc_malloc(IGNORED_NUM_ARG))
+    g_fail_alloc_calls = true;
+
+    EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG))
         .SetReturn((void*)NULL);
 
     // act

@@ -8,7 +8,7 @@ if(NOT ${use_http})
 	message(FATAL_ERROR "httpheaders_unittests being generated without HTTP support")
 endif()
 
-compileAsC99()
+compileAsC11()
 set(theseTestsName httpheaders_unittests)
 
 set(${theseTestsName}_cpp_files

@@ -8,7 +8,7 @@ if(NOT ${use_http})
 	message(FATAL_ERROR "httpapiexsas_unittests being generated without HTTP support")
 endif()
 
-compileAsC99()
+compileAsC11()
 set(theseTestsName httpapiexsas_unittests)
 
 set(${theseTestsName}_cpp_files
