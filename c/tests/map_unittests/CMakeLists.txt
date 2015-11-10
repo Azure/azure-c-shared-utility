@@ -4,7 +4,7 @@
 #this is CMakeLists.txt for map_unittests
 cmake_minimum_required(VERSION 3.0)
 
-compileAsC99()
+compileAsC11()
 set(theseTestsName map_unittests)
 
 set(${theseTestsName}_cpp_files

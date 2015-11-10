@@ -30,11 +30,11 @@ static void my_invalid_parameter_handler(
     uintptr_t pReserved
     )
 {
-	(void)expression;
-	(void)function;
-	(void)file;
-	(void)line;
-	(void)pReserved;
+    (void)expression;
+    (void)function;
+    (void)file;
+    (void)line;
+    (void)pReserved;
     /*do nothing*/
 }
 /* The below defines are because on Windows platform, the secure version of the CRT functions will invoke WATSON if no invalid parameter handler provided by the user */
@@ -196,15 +196,15 @@ TEST_SUITE_CLEANUP(b)
         }
 
         // Tests_SRS_CRT_ABSTRACTIONS_99_004: [If dst is NULL or unterminated, the error code returned shall be EINVAL & dst shall not be modified.]
-		TEST_FUNCTION(strcat_s_With_NULL_Destination_Fails)
-		{
-			// arrange
+        TEST_FUNCTION(strcat_s_With_NULL_Destination_Fails)
+        {
+            // arrange
             char* dstString = NULL;
-			size_t sizeInBytes = sizeof(dstString);
-			char srcString[] = "Source";
-			int result;
+            size_t sizeInBytes = sizeof(dstString);
+            char srcString[] = "Source";
+            int result;
 
-			// act
+            // act
             HOOK_INVALID_PARAMETER_HANDLER();
 #ifdef _MSC_VER
 #pragma warning(suppress: 6387) /* This is test code, explictly calling with NULL argument */
@@ -212,7 +212,7 @@ TEST_SUITE_CLEANUP(b)
             result = strcat_s(dstString, sizeInBytes, srcString);
             UNHOOK_INVALID_PARAMETER_HANDLER();
 
-			// assert
+            // assert
             ASSERT_IS_NULL(dstString);
             ASSERT_ARE_EQUAL(int, EINVAL, result);
         }
@@ -245,15 +245,15 @@ TEST_SUITE_CLEANUP(b)
         }
         
         // Tests_SRS_CRT_ABSTRACTIONS_99_005: [If src is NULL, the error code returned shall be EINVAL and dst[0] shall be set to 0.]
-		TEST_FUNCTION(strcat_s_With_NULL_Source_Fails)
-		{
-			// arrange
+        TEST_FUNCTION(strcat_s_With_NULL_Source_Fails)
+        {
+            // arrange
             char dstString[128] = "Source";
             size_t dstSizeInBytes = sizeof(dstString);
-			char* srcString = NULL;
-			int result;
+            char* srcString = NULL;
+            int result;
 
-			// act
+            // act
             HOOK_INVALID_PARAMETER_HANDLER();
 #ifdef _MSC_VER
 #pragma warning(suppress: 6387) /* This is test code, explictly calling with NULL argument */
@@ -261,27 +261,27 @@ TEST_SUITE_CLEANUP(b)
             result = strcat_s(dstString, dstSizeInBytes, srcString);
             UNHOOK_INVALID_PARAMETER_HANDLER();
 
-			// assert
-			ASSERT_ARE_EQUAL(char,'\0', dstString[0]);
+            // assert
+            ASSERT_ARE_EQUAL(char,'\0', dstString[0]);
             ASSERT_ARE_EQUAL(int, EINVAL, result);
         }
 
         // Tests_SRS_CRT_ABSTRACTIONS_99_006: [If the dstSizeInBytes is 0 or smaller than the required size for dst & src, the error code returned shall be ERANGE & dst[0] set to 0.]
-		TEST_FUNCTION(strcat_s_With_dstSizeInBytes_Equals_Zero_Fails)
-		{
-			// arrange
+        TEST_FUNCTION(strcat_s_With_dstSizeInBytes_Equals_Zero_Fails)
+        {
+            // arrange
             char dstString[128] = "Destination";
             size_t dstSizeInBytes = sizeof(dstString);
-			char srcString[] = "Source";
-			int result;
+            char srcString[] = "Source";
+            int result;
 
-			// act
+            // act
             dstSizeInBytes = 0;
             HOOK_INVALID_PARAMETER_HANDLER();
             result = strcat_s(dstString, dstSizeInBytes, srcString);
             UNHOOK_INVALID_PARAMETER_HANDLER();
 
-			// assert
+            // assert
 #ifdef _MSC_VER /*MSDN Claims that destination buffer would be set to empty & ERANGE is the error, but not the case.  Filing bug.*/
             ASSERT_ARE_EQUAL(char_ptr, "Destination", dstString);
             ASSERT_ARE_EQUAL(int, EINVAL, result);
@@ -812,13 +812,13 @@ TEST_SUITE_CLEANUP(b)
 
             // act
 #ifdef _CRTDBG_MAP_ALLOC
-			HOOK_FUNCTION(_malloc_dbg, malloc_null);
-			result = mallocAndStrcpy_s(&destString, srcString);
-			UNHOOK_FUNCTION(_malloc_dbg, malloc_null);
+            HOOK_FUNCTION(_malloc_dbg, malloc_null);
+            result = mallocAndStrcpy_s(&destString, srcString);
+            UNHOOK_FUNCTION(_malloc_dbg, malloc_null);
 #else
-			HOOK_FUNCTION(malloc, malloc_null);
-			result = mallocAndStrcpy_s(&destString, srcString);
-			UNHOOK_FUNCTION(malloc, malloc_null);
+            HOOK_FUNCTION(malloc, malloc_null);
+            result = mallocAndStrcpy_s(&destString, srcString);
+            UNHOOK_FUNCTION(malloc, malloc_null);
 #endif
 
             // assert

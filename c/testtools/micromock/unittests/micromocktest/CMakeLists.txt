@@ -4,7 +4,7 @@
 #this is CMakeLists for micromock unittests
 cmake_minimum_required(VERSION 3.0)
 
-compileAsC99()
+compileAsC11()
 
 set(theseTestsName micromock_unittests)
 

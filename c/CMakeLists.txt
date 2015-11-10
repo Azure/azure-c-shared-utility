@@ -9,6 +9,8 @@ option(skip_unittests "set skip_unittests to ON to skip unittests (default is OF
 option(compileOption_C "passes a string to the command line of the C compiler" OFF)
 option(compileOption_CXX "passes a string to the command line of the C++ compiler" OFF)
 
+#Message(FATAL_ERROR "${LIB_INSTALL_DIR} and ${INCLUDE_INSTALL_DIR}")
+
 #Use solution folders. 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
@@ -40,6 +42,18 @@ macro(compileAsC99)
 	set (CMAKE_CXX_STANDARD 11)
   endif()
 endmacro(compileAsC99)
+
+macro(compileAsC11)
+  if (CMAKE_VERSION VERSION_LESS "3.1")
+	if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
+	  set (CMAKE_C_FLAGS "--std=c11 ${CMAKE_C_FLAGS}")
+	  set (CMAKE_CXX_FLAGS "--std=c++11 ${CMAKE_CXX_FLAGS}")
+	endif()
+  else()
+	set (CMAKE_C_STANDARD 11)
+	set (CMAKE_CXX_STANDARD 11)
+  endif()
+endmacro(compileAsC11)
 
 
 function(windows_unittests_add_dll whatIsBuilding)	
@@ -120,51 +134,56 @@ function(build_test_artifacts whatIsBuilding use_gballoc)
 	if(WIN32)
 		#to disable running e2e or longhaul or unittests tests for windows, we build the the same thing as "static library" so it is not picked up by visual studio
 		if(
-			(("${whatIsBuilding}" MATCHES ".*longhaul.*") AND NOT ${run_longhaul_tests}) OR
 			(("${whatIsBuilding}" MATCHES ".*unittests.*") AND ${skip_unittests})
 		)
 			windows_unittests_add_lib(${whatIsBuilding} ${ARGN})
 		else()
-			windows_unittests_add_exe(${whatIsBuilding} ${ARGN})
-			windows_unittests_add_dll(${whatIsBuilding} ${ARGN})			
+			if(
+				(NOT ("${whatIsBuilding}" MATCHES "condition_unittests"))
+			)
+				windows_unittests_add_exe(${whatIsBuilding} ${ARGN})
+			endif()
+
+			windows_unittests_add_dll(${whatIsBuilding} ${ARGN})
 		endif()
 	else()
 		if(
-			(("${whatIsBuilding}" MATCHES ".*longhaul.*") AND NOT ${run_longhaul_tests}) OR
 			(("${whatIsBuilding}" MATCHES ".*unittests.*") AND ${skip_unittests})
 		)
 			windows_unittests_add_lib(${whatIsBuilding} ${ARGN})
 		else()
-			windows_unittests_add_exe(${whatIsBuilding} ${ARGN})
+			if(
+				(NOT ("${whatIsBuilding}" MATCHES "condition_unittests"))
+			)
+				windows_unittests_add_exe(${whatIsBuilding} ${ARGN})
+			endif()
 		endif()
 	endif()
 endfunction(build_test_artifacts)
 
 function(set_platform_files)
-if(WIN32)
-	set(PLATFORM_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/platform_win32.c PARENT_SCOPE)
-	set(TLSIO_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/tlsio_win32.c PARENT_SCOPE)
-	set(SOCKETIO_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/socketio_win32.c PARENT_SCOPE)
-	set(LOCK_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/lock_c11.c PARENT_SCOPE)
-	set(THREAD_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/threadapi_c11.c PARENT_SCOPE)
-	set(HTTP_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/httpapi_winhttp.c PARENT_SCOPE)
-	#set(CONDITION_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/condition_c11.c PARENT_SCOPE)
-else()
-	set(LOCK_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/lock_pthreads.c PARENT_SCOPE)
-	#set(CONDITION_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/condition_pthreads.c PARENT_SCOPE)
-	set(THREAD_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/threadapi_pthreads.c PARENT_SCOPE)
-	set(HTTP_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/httpapi_curl.c PARENT_SCOPE)
-	set(PLATFORM_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/platform_linux.c PARENT_SCOPE)
-	set(TLSIO_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/tlsio_openssl.c PARENT_SCOPE)
-	set(SOCKETIO_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/socketio_berkeley.c PARENT_SCOPE)
-endif()
+	if(WIN32)
+		set(CONDITION_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/condition_c11.c PARENT_SCOPE)
+		set(HTTP_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/httpapi_winhttp.c PARENT_SCOPE)
+		set(LOCK_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/lock_c11.c PARENT_SCOPE)
+		set(PLATFORM_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/platform_win32.c PARENT_SCOPE)
+		set(SOCKETIO_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/socketio_win32.c PARENT_SCOPE)
+		set(THREAD_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/threadapi_c11.c PARENT_SCOPE)
+	else()
+		set(CONDITION_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/condition_pthreads.c PARENT_SCOPE)
+		set(HTTP_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/httpapi_curl.c PARENT_SCOPE)
+		set(LOCK_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/lock_pthreads.c PARENT_SCOPE)
+		set(PLATFORM_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/platform_linux.c PARENT_SCOPE)
+		set(SOCKETIO_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/socketio_berkeley.c PARENT_SCOPE)
+		set(THREAD_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/threadapi_pthreads.c PARENT_SCOPE)
+	endif()
 endfunction(set_platform_files)
 
 set_platform_files()
 
 add_subdirectory(testtools)
 
-compileAsC99()
+compileAsC11()
 #these are the C source files
 set(source_c_files
 ./src/base64.c
@@ -187,6 +206,12 @@ set(source_c_files
 ./src/usha.c
 ./src/vector.c
 ./adapters/agenttime.c
+${CONDITION_C_FILE}
+${PLATFORM_C_FILE}
+${SOCKETIO_C_FILE}
+${LOCK_C_FILE}
+${THREAD_C_FILE}
+${HTTP_C_FILE}
 )
 
 if(${use_http})
@@ -203,12 +228,11 @@ set(source_h_files
 ./inc/base64.h
 ./inc/buffer_.h
 ./inc/crt_abstractions.h
-#./inc/condition.h
+./inc/condition.h
 ./inc/doublylinkedlist.h
 ./inc/gballoc.h
 ./inc/hmac.h
 ./inc/hmacsha256.h
-./inc/transport_io.h
 ./inc/iot_logging.h
 ./inc/list.h
 ./inc/lock.h
@@ -223,7 +247,7 @@ set(source_h_files
 ./inc/strings.h
 ./inc/string_tokenizer.h
 ./inc/threadapi.h
-./inc/tlsio.h
+./inc/transport_io.h
 ./inc/urlencode.h
 ./inc/vector.h
 )
@@ -249,16 +273,9 @@ IF(WIN32)
 ENDIF(WIN32)
 
 #Setup the platform files
-set(source_h_files ${source_h_files}
-	${PLATFORM_C_FILE}
-	${TLSIO_C_FILE}
-	${SOCKETIO_C_FILE}
-	${LOCK_C_FILE}
-	${THREAD_C_FILE}
-	${HTTP_C_FILE}
-)
 
 #this is the product (a library)
 add_library(aziotsharedutil ${source_c_files} ${source_h_files})
 
 add_subdirectory(tests)
+

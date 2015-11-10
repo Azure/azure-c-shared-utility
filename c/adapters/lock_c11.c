@@ -58,6 +58,7 @@ LOCK_RESULT Lock(LOCK_HANDLE handle)
     }
     return result;
 }
+
 LOCK_RESULT Unlock(LOCK_HANDLE handle)
 {
     LOCK_RESULT result;

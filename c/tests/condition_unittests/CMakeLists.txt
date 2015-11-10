@@ -4,15 +4,16 @@
 #this is CMakeLists.txt for condition_unittests
 cmake_minimum_required(VERSION 3.0)
 
-compileAsC99()
+compileAsC11()
 set(theseTestsName condition_unittests)
 
 set(${theseTestsName}_cpp_files
-${theseTestsName}.cpp
+	${theseTestsName}.cpp
 )
 
 set(${theseTestsName}_c_files
 	${CONDITION_C_FILE}
+	${LOCK_C_FILE}	
 )
 
 set(${theseTestsName}_h_files

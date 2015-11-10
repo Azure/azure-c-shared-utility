@@ -15,10 +15,12 @@ typedef void* COND_HANDLE;
 
 #define COND_RESULT_VALUES \
     COND_OK, \
+    COND_INVALID_ARG, \
     COND_ERROR, \
     COND_TIMEOUT \
 
-/** @brief Enumeration specifying the lock status.
+/**
+* @brief Enumeration specifying the lock status.
 */
 DEFINE_ENUM(COND_RESULT, COND_RESULT_VALUES);
 
@@ -60,7 +62,7 @@ extern COND_RESULT Condition_Wait(COND_HANDLE  handle, LOCK_HANDLE lock, int tim
 * @return	Returns @c COND_OK when the condition object has been
 * 			destroyed and @c COND_ERROR when an error occurs.
 */
-extern COND_RESULT Condition_Deinit(COND_HANDLE  handle);
+extern void Condition_Deinit(COND_HANDLE  handle);
 
 #ifdef __cplusplus
 }

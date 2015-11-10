@@ -10,54 +10,92 @@
 #include "macro_utils.h"
 #include "condition.h"
 #include "iot_logging.h"
-#include <threads.h>
+#include <thr/threads.h>
 
 DEFINE_ENUM_STRINGS(COND_RESULT, COND_RESULT_VALUES);
 
 COND_HANDLE Condition_Init(void)
 {
     cnd_t* cond = (cnd_t*)malloc(sizeof(cnd_t));
-    cnd_init(cond);
+    if (cond != NULL)
+    {
+        cnd_init(cond);
+    }
     return cond;
 }
 
 COND_RESULT Condition_Post(COND_HANDLE handle)
 {
-    cnd_broadcast((cnd_t*)handle);
-    return COND_OK;
-}
-
-COND_RESULT Condition_Wait(COND_HANDLE  handle, LOCK_HANDLE lock, int timeout_milliseconds)
-{
-    if (timeout_milliseconds > 0)
+    COND_RESULT result;
+    if (handle == NULL)
     {
-        struct xtime tm;
-        tm.sec = timeout_milliseconds / 1000;
-        tm.nsec = (timeout_milliseconds % 1000) * 1000000L;
-        int wait_result = cnd_timedwait((cnd_t *)handle, (mtx_t *)lock, &tm);
-        if (wait_result == ETIMEDOUT)
-        {
-            return COND_TIMEOUT;
-        }
-        else
-        {
-            LogError("Failed to Condition_Wait\r\n");
-            return COND_ERROR;
-        }
+        result = COND_INVALID_ARG;
     }
     else
     {
-        if (cnd_wait((cnd_t*)handle, (mtx_t *)lock) != 0)
+        if (cnd_broadcast((cnd_t*)handle) == thrd_success)
         {
-            LogError("Failed to cnd_wait\r\n");
-            return COND_ERROR;
+            result = COND_OK;
+        }
+        else
+        {
+            result = COND_ERROR;
         }
     }
-    return COND_OK;
+    return result;
 }
 
-COND_RESULT Condition_Deinit(COND_HANDLE  handle)
+COND_RESULT Condition_Wait(COND_HANDLE handle, LOCK_HANDLE lock, int timeout_milliseconds)
 {
-    cnd_destroy((cnd_t*)handle);
-    return COND_OK;
+    COND_RESULT result;
+    if (handle == NULL || lock == NULL)
+    {
+        result = COND_INVALID_ARG;
+    }
+    else
+    {
+        if (timeout_milliseconds > 0)
+        {
+            struct xtime tm;
+            tm.sec = timeout_milliseconds / 1000;
+            tm.nsec = (timeout_milliseconds % 1000) * 1000000L;
+            int wait_result = cnd_timedwait((cnd_t *)handle, (mtx_t*)lock, &tm);
+            if (wait_result == ETIMEDOUT)
+            {
+                result = COND_TIMEOUT;
+            }
+            else if (wait_result == thrd_success)
+            {
+                result = COND_OK;
+            }
+            else
+            {
+                LogError("Failed to Condition_Wait\r\n");
+                result = COND_ERROR;
+            }
+        }
+        else
+        {
+            if (cnd_wait((cnd_t*)handle, (mtx_t *)lock) != thrd_success)
+            {
+                LogError("Failed to cnd_wait\r\n");
+                result = COND_ERROR;
+            }
+            else
+            {
+                result = COND_OK;
+            }
+        }
+    }
+    return result;
+}
+
+void Condition_Deinit(COND_HANDLE handle)
+{
+    if (handle != NULL)
+    {
+        cnd_t* cond = (cnd_t*)handle;
+        cnd_destroy(cond);
+        free(cond);
+    }
 }

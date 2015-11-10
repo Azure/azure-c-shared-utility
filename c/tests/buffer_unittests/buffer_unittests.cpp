@@ -415,9 +415,9 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         BUFFER_delete(g_hBuffer);
     }
 
-	/* Tests_SRS_BUFFER_01_002: [The size argument can be zero, in which case the underlying buffer held by the buffer instance shall be freed.] */
-	TEST_FUNCTION(BUFFER_build_Size_Zero_NULL_buffer_Succeeds)
-	{
+    /* Tests_SRS_BUFFER_01_002: [The size argument can be zero, in which case the underlying buffer held by the buffer instance shall be freed.] */
+    TEST_FUNCTION(BUFFER_build_Size_Zero_NULL_buffer_Succeeds)
+    {
         ///arrange
         CMocks mocks;
         BUFFER_HANDLE g_hBuffer;
@@ -427,16 +427,16 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
 
-		///act
+        ///act
         int nResult = BUFFER_build(g_hBuffer, NULL, 0);
 
-		///assert
-		ASSERT_ARE_EQUAL(int, nResult, 0);
+        ///assert
+        ASSERT_ARE_EQUAL(int, nResult, 0);
         mocks.AssertActualAndExpectedCalls();
 
         ///cleanup
         BUFFER_delete(g_hBuffer);
-	}
+    }
 
     /* Tests_SRS_BUFFER_07_011: [BUFFER_build shall overwrite previous contents if the buffer has been previously allocated.] */
     TEST_FUNCTION(BUFFER_build_when_the_buffer_is_already_allocated_and_the_same_amount_of_bytes_is_needed_succeeds)
@@ -462,9 +462,9 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         BUFFER_delete(g_hBuffer);
     }
 
-	/* Tests_SRS_BUFFER_07_011: [BUFFER_build shall overwrite previous contents if the buffer has been previously allocated.] */
-	TEST_FUNCTION(BUFFER_build_when_the_buffer_is_already_allocated_and_more_bytes_are_needed_succeeds)
-	{
+    /* Tests_SRS_BUFFER_07_011: [BUFFER_build shall overwrite previous contents if the buffer has been previously allocated.] */
+    TEST_FUNCTION(BUFFER_build_when_the_buffer_is_already_allocated_and_more_bytes_are_needed_succeeds)
+    {
         ///arrange
         CMocks mocks;
         BUFFER_HANDLE g_hBuffer;
@@ -475,20 +475,20 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         STRICT_EXPECTED_CALL(mocks, gballoc_realloc(IGNORED_PTR_ARG, ALLOCATION_SIZE))
             .IgnoreArgument(1);
 
-		///act
-		nResult = BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
+        ///act
+        nResult = BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
 
-		///assert
-		ASSERT_ARE_EQUAL(int, nResult, 0);
+        ///assert
+        ASSERT_ARE_EQUAL(int, nResult, 0);
         mocks.AssertActualAndExpectedCalls();
 
         ///cleanup
         BUFFER_delete(g_hBuffer);
-	}
+    }
 
-	/* Tests_SRS_BUFFER_07_011: [BUFFER_build shall overwrite previous contents if the buffer has been previously allocated.] */
-	TEST_FUNCTION(BUFFER_build_when_the_buffer_is_already_allocated_and_less_bytes_are_needed_succeeds)
-	{
+    /* Tests_SRS_BUFFER_07_011: [BUFFER_build shall overwrite previous contents if the buffer has been previously allocated.] */
+    TEST_FUNCTION(BUFFER_build_when_the_buffer_is_already_allocated_and_less_bytes_are_needed_succeeds)
+    {
         ///arrange
         CMocks mocks;
         BUFFER_HANDLE g_hBuffer;
@@ -499,16 +499,16 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         STRICT_EXPECTED_CALL(mocks, gballoc_realloc(IGNORED_PTR_ARG, ALLOCATION_SIZE - 1))
             .IgnoreArgument(1);
 
-		///act
-		nResult = BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE - 1);
+        ///act
+        nResult = BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE - 1);
 
-		///assert
-		ASSERT_ARE_EQUAL(int, nResult, 0);
+        ///assert
+        ASSERT_ARE_EQUAL(int, nResult, 0);
         mocks.AssertActualAndExpectedCalls();
 
         ///cleanup
         BUFFER_delete(g_hBuffer);
-	}
+    }
 
     /* BUFFER_unbuild Tests BEGIN */
     /* Tests_SRS_BUFFER_07_012: [BUFFER_unbuild shall clear the underlying unsigned char* data associated with the BUFFER_HANDLE this will return zero on success.] */

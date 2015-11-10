@@ -3,7 +3,7 @@
 
 #this is CMakeLists for ctest.
 
-compileAsC99()
+compileAsC11()
 
 set(ctest_c_files
 ./src/ctest.c

@@ -4,7 +4,7 @@
 #this is CMakeLists for micromock
 cmake_minimum_required(VERSION 3.0)
 
-compileAsC99()
+compileAsC11()
 
 set(micromock_cpp_files
 ./src/micromockcharstararenullterminatedstrings.cpp

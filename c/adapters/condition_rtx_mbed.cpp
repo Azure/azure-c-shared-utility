@@ -17,15 +17,35 @@ COND_HANDLE Condition_Init(void)
 
 COND_RESULT Condition_Post(COND_HANDLE handle)
 {
+    COND_RESULT result;
+    if (handle == NULL)
+    {
+        result = ;
+    }
+    else
+    {
+
+    }
     return COND_ERROR;
 }
 
 COND_RESULT Condition_Wait(COND_HANDLE  handle, LOCK_HANDLE lock, int timeout_milliseconds)
 {
-    return COND_ERROR;
+    COND_RESULT result;
+    if (handle == NULL)
+    {
+        result = COND_INVALID_ARG;
+    }
+    else
+    {
+        result = COND_ERROR;
+    }
+    return result;
 }
 
-COND_RESULT Condition_Deinit(COND_HANDLE  handle)
+void Condition_Deinit(COND_HANDLE handle)
 {
-    return COND_ERROR;
+    if (handle != NULL)
+    {
+    }
 }

@@ -16,13 +16,14 @@ extern "C" {
 	typedef bool (*LIST_MATCH_FUNCTION)(LIST_ITEM_HANDLE list_item, const void* match_context);
 
 	extern LIST_HANDLE list_create(void);
-	extern void list_destroy(LIST_HANDLE handle);
-	extern int list_add(LIST_HANDLE handle, const void* item);
-	extern LIST_ITEM_HANDLE list_get_head_item(LIST_HANDLE handle);
+	extern void list_destroy(LIST_HANDLE list);
+	extern LIST_ITEM_HANDLE list_add(LIST_HANDLE list, const void* item);
+	extern int list_remove(LIST_HANDLE list, LIST_ITEM_HANDLE item_handle);
+	extern LIST_ITEM_HANDLE list_get_head_item(LIST_HANDLE list);
 	extern LIST_ITEM_HANDLE list_get_next_item(LIST_ITEM_HANDLE item_handle);
 	extern const void* list_item_get_value(LIST_ITEM_HANDLE item_handle);
-	extern LIST_ITEM_HANDLE list_find(LIST_HANDLE handle, LIST_MATCH_FUNCTION match_function, const void* match_context);
-	extern int list_remove_matching_item(LIST_HANDLE handle, LIST_MATCH_FUNCTION match_function, const void* match_context);
+	extern LIST_ITEM_HANDLE list_find(LIST_HANDLE list, LIST_MATCH_FUNCTION match_function, const void* match_context);
+	extern int list_remove_matching_item(LIST_HANDLE list, LIST_MATCH_FUNCTION match_function, const void* match_context);
 
 #ifdef __cplusplus
 }

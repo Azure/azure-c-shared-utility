@@ -1,7 +1,7 @@
 Source: azure-c-shared-util
 Priority: optional
 Maintainer: Azure User <aziotsdklinux@outlook.com>
-Build-Depends: debhelper (>= 9), cmake (>= 3)
+Build-Depends: debhelper (>= 9), cmake (>= 3), libcurl4-openssl-dev, curl
 Standards-Version: 3.9.6
 Section: libs
 Homepage: https://github.com/Azure/azure-c-shared-utility.git

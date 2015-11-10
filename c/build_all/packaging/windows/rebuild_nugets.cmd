@@ -39,8 +39,6 @@ rem -- Copy all x64 files from cmake build directory to the repo directory
 xcopy /q /y /R %USERPROFILE%\shared-util_x64\Debug\*.* %client-root%\shared-util\c\x64\debug\*.*
 if %errorlevel% neq 0 exit /b %errorlevel%
 
-echo Package Nuget
-
 rem -- Package Nuget
 nuget pack Microsoft.Azure.C.SharedUtility.nuspec
 

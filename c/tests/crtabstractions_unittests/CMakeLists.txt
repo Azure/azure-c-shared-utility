@@ -4,7 +4,7 @@
 #this is CMakeLists.txt for crt_abstractions_unittests
 cmake_minimum_required(VERSION 3.0)
 
-compileAsC99()
+compileAsC11()
 
 set(theseTestsName crt_abstractions_unittests)
 
