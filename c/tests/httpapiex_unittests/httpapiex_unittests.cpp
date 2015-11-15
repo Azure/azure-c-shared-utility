@@ -110,6 +110,8 @@ static size_t currentHTTPAPI_Init_call;
 static size_t whenShallHTTPAPI_Init_fail[N_MAX_FAILS];
 static size_t HTTPAPI_Init_calls;
 
+HTTPAPI_RESULT g_httpResult = HTTPAPI_OK;
+
 #define TEST_HOSTNAME "aaa"
 #define TEST_RELATIVE_PATH "nothing/to/see/here/devices"
 #define TEST_REQUEST_HTTP_HEADERS (HTTP_HEADERS_HANDLE) 0x42
@@ -313,7 +315,7 @@ public:
     /* HTTPAPI mocks */
     
     MOCK_STATIC_METHOD_0(, HTTPAPI_RESULT, HTTPAPI_Init)
-    HTTPAPI_RESULT result2;
+        HTTPAPI_RESULT result2;
         currentHTTPAPI_Init_call++;
         size_t i;
         for (i = 0; i < N_MAX_FAILS; i++)
@@ -362,19 +364,19 @@ public:
         {
             result2 = malloc(1);
         }
-        MOCK_METHOD_END(HTTP_HANDLE, result2)
+    MOCK_METHOD_END(HTTP_HANDLE, result2)
 
     MOCK_STATIC_METHOD_1(, void, HTTPAPI_CloseConnection, HTTP_HANDLE, handle)
         free(handle);
     MOCK_VOID_METHOD_END()
 
     MOCK_STATIC_METHOD_9(, HTTPAPI_RESULT, HTTPAPI_ExecuteRequest, HTTP_HANDLE, handle, HTTPAPI_REQUEST_TYPE, requestType, const char*, relativePath,
-    HTTP_HEADERS_HANDLE, httpHeadersHandle, const unsigned char*, content, size_t, contentLength, unsigned int*, statusCode,
-    HTTP_HEADERS_HANDLE, responseHeadersHandle, BUFFER_HANDLE, responseContent)
+            HTTP_HEADERS_HANDLE, httpHeadersHandle, const unsigned char*, content, size_t, contentLength, unsigned int*, statusCode,
+            HTTP_HEADERS_HANDLE, responseHeadersHandle, BUFFER_HANDLE, responseContent)
     MOCK_METHOD_END(HTTPAPI_RESULT, HTTPAPI_OK)
 
     MOCK_STATIC_METHOD_3(, HTTPAPI_RESULT, HTTPAPI_SetOption, HTTP_HANDLE, handle, const char*, optionName, const void*, value)
-    MOCK_METHOD_END(HTTPAPI_RESULT, HTTPAPI_OK)
+    MOCK_METHOD_END(HTTPAPI_RESULT, g_httpResult)
 
     MOCK_STATIC_METHOD_3(, HTTPAPI_RESULT, HTTPAPI_CloneOption, const char*, optionName, const void*, value, const void**, savedValue)
         HTTPAPI_RESULT result2;
@@ -699,6 +701,8 @@ TEST_FUNCTION_INITIALIZE(TestMethodInitialize)
 
     currentHTTPAPI_Init_call = 0;
     for (size_t i = 0; i<N_MAX_FAILS; i++) whenShallHTTPAPI_Init_fail[i] = 0;
+
+    g_httpResult = HTTPAPI_OK;
 }
 
 TEST_FUNCTION_CLEANUP(TestMethodCleanup)
@@ -1027,8 +1031,8 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_relativePath_uses_empty)
 }
 
 /*Tests_SRS_HTTPAPIEX_02_009: [If parameter requestHttpHeadersHandle is NULL then HTTPAPIEX_ExecuteRequest shall allocate a temporary internal instance of HTTPHEADERS, shall add to that instance the following headers
-	Host:{hostname} - as it was indicated by the call to HTTPAPIEX_Create API call
-	Content-Length:the size of the requestContent parameter, and use this instance to all the subsequent calls to HTTPAPI_ExecuteRequest as parameter httpHeadersHandle.] 
+    Host:{hostname} - as it was indicated by the call to HTTPAPIEX_Create API call
+    Content-Length:the size of the requestContent parameter, and use this instance to all the subsequent calls to HTTPAPI_ExecuteRequest as parameter httpHeadersHandle.] 
 */
 /*Tests_SRS_HTTPAPIEX_02_013: [If requestContent is NULL then HTTPAPIEX_ExecuteRequest shall behave as if a buffer of zero size would have been used, that is, it shall call HTTPAPI_ExecuteRequest with parameter content = NULL and contentLength = 0.]*/
 TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_request_headers_and_NULL_requestBody_succeeds)
@@ -1226,8 +1230,8 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_request_headers_and_NULL_reques
 }
 
 /*Tests_SRS_HTTPAPIEX_02_011: [If parameter requestHttpHeadersHandle is not NULL then HTTPAPIEX_ExecuteRequest shall create or update the following headers of the request:
-	Host:{hostname}
-	Content-Length:the size of the requestContent parameter, and shall use the so constructed HTTPHEADERS object to all calls to HTTPAPI_ExecuteRequest as parameter httpHeadersHandle.]
+    Host:{hostname}
+    Content-Length:the size of the requestContent parameter, and shall use the so constructed HTTPHEADERS object to all calls to HTTPAPI_ExecuteRequest as parameter httpHeadersHandle.]
 */
 TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_request_headers_and_NULL_requestBody_succeeds)
 {
@@ -2984,12 +2988,9 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_happy_path_without_httpapi_handle_succeeds)
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
     mocks.ResetAllCalls();
 
-    STRICT_EXPECTED_CALL(mocks, HTTPAPI_CloneOption("someOption", "333", IGNORED_PTR_ARG))  /*this asks lower HTTPAPI to create a clone of the option*/
-        .IgnoreArgument(3);
+    EXPECTED_CALL(mocks, HTTPAPI_CloneOption("someOption", "333", IGNORED_PTR_ARG));  /*this asks lower HTTPAPI to create a clone of the option*/
 
-    STRICT_EXPECTED_CALL(mocks, VECTOR_find_if(IGNORED_PTR_ARG, IGNORED_PTR_ARG, "someOption")) /*this is looking for optionName*/
-        .IgnoreArgument(1)
-        .IgnoreArgument(2);
+    EXPECTED_CALL(mocks, VECTOR_find_if(IGNORED_PTR_ARG, IGNORED_PTR_ARG, "someOption")); /*this is looking for optionName*/
 
     STRICT_EXPECTED_CALL(mocks, gballoc_malloc(sizeof("someOption"))); /*this is creating a clone of the optionName*/
 
@@ -3017,12 +3018,9 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_happy_path_without_httpapi_handle_can_save_2_o
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
     mocks.ResetAllCalls();
 
-    STRICT_EXPECTED_CALL(mocks, HTTPAPI_CloneOption("someOption1", (void*)"3", IGNORED_PTR_ARG))  /*this asks lower HTTPAPI to create a clone of the option*/
-        .IgnoreArgument(3);
+    EXPECTED_CALL(mocks, HTTPAPI_CloneOption("someOption1", (void*)"3", IGNORED_PTR_ARG));  /*this asks lower HTTPAPI to create a clone of the option*/
 
-    STRICT_EXPECTED_CALL(mocks, VECTOR_find_if(IGNORED_PTR_ARG, IGNORED_PTR_ARG, "someOption1")) /*this is looking for hte option to device between update / create*/
-        .IgnoreArgument(1)
-        .IgnoreArgument(2);
+    EXPECTED_CALL(mocks, VECTOR_find_if(IGNORED_PTR_ARG, IGNORED_PTR_ARG, "someOption1")); /*this is looking for hte option to device between update / create*/
 
     STRICT_EXPECTED_CALL(mocks, gballoc_malloc(sizeof("someOption1"))); /*this is creating a clone of the optionName*/
 
@@ -3030,12 +3028,9 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_happy_path_without_httpapi_handle_can_save_2_o
         .IgnoreArgument(1)
         .IgnoreArgument(2);
 
-    STRICT_EXPECTED_CALL(mocks, HTTPAPI_CloneOption("someOption2", (void*)"33", IGNORED_PTR_ARG))  /*this asks lower HTTPAPI to create a clone of the option*/
-        .IgnoreArgument(3);
+    EXPECTED_CALL(mocks, HTTPAPI_CloneOption("someOption2", (void*)"33", IGNORED_PTR_ARG));  /*this asks lower HTTPAPI to create a clone of the option*/
 
-    STRICT_EXPECTED_CALL(mocks, VECTOR_find_if(IGNORED_PTR_ARG, IGNORED_PTR_ARG, "someOption2")) /*this is looking for hte option to device between update / create*/
-        .IgnoreArgument(1)
-        .IgnoreArgument(2);
+    EXPECTED_CALL(mocks, VECTOR_find_if(IGNORED_PTR_ARG, IGNORED_PTR_ARG, "someOption2")); /*this is looking for hte option to device between update / create*/
 
     STRICT_EXPECTED_CALL(mocks, gballoc_malloc(sizeof("someOption2"))); /*this is creating a clone of the optionName*/
 
@@ -3154,8 +3149,7 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_fails_when_VECTOR_push_back_fails)
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
     mocks.ResetAllCalls();
 
-    STRICT_EXPECTED_CALL(mocks, HTTPAPI_CloneOption("someOption2", (void*)"33", IGNORED_PTR_ARG))  /*this asks lower HTTPAPI to create a clone of the option*/
-        .IgnoreArgument(3);
+    EXPECTED_CALL(mocks, HTTPAPI_CloneOption("someOption2", (void*)"33", IGNORED_PTR_ARG));  /*this asks lower HTTPAPI to create a clone of the option*/
     STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG)) /*this is freeing the clone created by HTTPAPI_CloneOption*/
         .IgnoreArgument(1);
 
@@ -3163,9 +3157,7 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_fails_when_VECTOR_push_back_fails)
     STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
 
-    STRICT_EXPECTED_CALL(mocks, VECTOR_find_if(IGNORED_PTR_ARG, IGNORED_PTR_ARG, "someOption2")) /*this is looking for hte option to device between update / create*/
-        .IgnoreArgument(1)
-        .IgnoreArgument(2);
+    EXPECTED_CALL(mocks, VECTOR_find_if(IGNORED_PTR_ARG, IGNORED_PTR_ARG, "someOption2")); /*this is looking for hte option to device between update / create*/
 
     whenShallVECTOR_push_back_fail = currentVECTOR_push_back_call + 1;
     STRICT_EXPECTED_CALL(mocks, VECTOR_push_back(IGNORED_PTR_ARG, IGNORED_PTR_ARG, 1))
@@ -3191,14 +3183,11 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_fails_when_gballoc_fails_1)
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
     mocks.ResetAllCalls();
 
-    STRICT_EXPECTED_CALL(mocks, HTTPAPI_CloneOption("someOption2", (void*)"33", IGNORED_PTR_ARG))  /*this asks lower HTTPAPI to create a clone of the option*/
-        .IgnoreArgument(3);
+    EXPECTED_CALL(mocks, HTTPAPI_CloneOption("someOption2", (void*)"33", IGNORED_PTR_ARG));  /*this asks lower HTTPAPI to create a clone of the option*/
     STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG)) /*this is freeing the clone created by HTTPAPI_CloneOption*/
         .IgnoreArgument(1);
 
-    STRICT_EXPECTED_CALL(mocks, VECTOR_find_if(IGNORED_PTR_ARG, IGNORED_PTR_ARG, "someOption2")) /*this is looking for hte option to device between update / create*/
-        .IgnoreArgument(1)
-        .IgnoreArgument(2);
+    EXPECTED_CALL(mocks, VECTOR_find_if(IGNORED_PTR_ARG, IGNORED_PTR_ARG, "someOption2")); /*this is looking for hte option to device between update / create*/
 
     whenShallmalloc_fail = currentmalloc_call + 1;
     STRICT_EXPECTED_CALL(mocks, gballoc_malloc(sizeof("someOption2"))); /*this is creating a clone of the optionName*/
@@ -3224,8 +3213,7 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_fails_when_HTTPAPI_SaveOption_fails_3)
     mocks.ResetAllCalls();
     
     whenShallHTTPAPI_SaveOption_fail = currentHTTPAPI_SaveOption_call + 1;
-    STRICT_EXPECTED_CALL(mocks, HTTPAPI_CloneOption("someOption2", (void*)"33", IGNORED_PTR_ARG))  /*this asks lower HTTPAPI to create a clone of the option*/
-        .IgnoreArgument(3)
+    EXPECTED_CALL(mocks, HTTPAPI_CloneOption("someOption2", (void*)"33", IGNORED_PTR_ARG))  /*this asks lower HTTPAPI to create a clone of the option*/
         .SetReturn(HTTPAPI_ALREADY_INIT); /*some random error code*/
 
     /// act
@@ -3248,8 +3236,8 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_fails_when_HTTPAPI_SaveOption_fails_4)
     mocks.ResetAllCalls();
 
     whenShallHTTPAPI_SaveOption_fail = currentHTTPAPI_SaveOption_call + 1;
-    STRICT_EXPECTED_CALL(mocks, HTTPAPI_CloneOption("someOption2", (void*)"33", IGNORED_PTR_ARG))  /*this asks lower HTTPAPI to create a clone of the option*/
-        .IgnoreArgument(3)
+    g_httpResult = HTTPAPI_INVALID_ARG;
+    EXPECTED_CALL(mocks, HTTPAPI_CloneOption("someOption2", (void*)"33", IGNORED_PTR_ARG))  /*this asks lower HTTPAPI to create a clone of the option*/
         .SetReturn(HTTPAPI_INVALID_ARG);
 
     /// act
@@ -3282,12 +3270,9 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_passes_saved_options_to_existing_httpapi_handl
     setupAllCallForHTTPsequence(&mocks, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, responseHttpHeaders, responseHttpBody);
     (void)HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, responseHttpHeaders, responseHttpBody);
 
-    STRICT_EXPECTED_CALL(mocks, HTTPAPI_CloneOption("someOption", "3", IGNORED_PTR_ARG))  /*this asks lower HTTPAPI to create a clone of the option*/
-        .IgnoreArgument(3);
+    EXPECTED_CALL(mocks, HTTPAPI_CloneOption("someOption", "3", IGNORED_PTR_ARG));  /*this asks lower HTTPAPI to create a clone of the option*/
 
-    STRICT_EXPECTED_CALL(mocks, VECTOR_find_if(IGNORED_PTR_ARG, IGNORED_PTR_ARG, "someOption")) /*this is looking for hte option to device between update / create*/
-        .IgnoreArgument(1)
-        .IgnoreArgument(2);
+    EXPECTED_CALL(mocks, VECTOR_find_if(IGNORED_PTR_ARG, IGNORED_PTR_ARG, "someOption")); /*this is looking for hte option to device between update / create*/
 
     STRICT_EXPECTED_CALL(mocks, gballoc_malloc(sizeof("someOption"))); /*this is creating a clone of the optionName*/
 
@@ -3295,8 +3280,7 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_passes_saved_options_to_existing_httpapi_handl
         .IgnoreArgument(1)
         .IgnoreArgument(2);
 
-    STRICT_EXPECTED_CALL(mocks, HTTPAPI_SetOption(IGNORED_PTR_ARG, "someOption", "3"))
-        .IgnoreArgument(1);
+    EXPECTED_CALL(mocks, HTTPAPI_SetOption(IGNORED_PTR_ARG, "someOption", "3"));
 
     /// act
     auto result = HTTPAPIEX_SetOption(httpapiexhandle, "someOption", "3");
@@ -3329,12 +3313,9 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_passes_saved_options_to_existing_httpapi_handl
     setupAllCallForHTTPsequence(&mocks, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, responseHttpHeaders, responseHttpBody);
     (void)HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, responseHttpHeaders, responseHttpBody);
 
-    STRICT_EXPECTED_CALL(mocks, HTTPAPI_CloneOption("someOption", "3", IGNORED_PTR_ARG))  /*this asks lower HTTPAPI to create a clone of the option*/
-        .IgnoreArgument(3);
+    EXPECTED_CALL(mocks, HTTPAPI_CloneOption("someOption", "3", IGNORED_PTR_ARG));  /*this asks lower HTTPAPI to create a clone of the option*/
 
-    STRICT_EXPECTED_CALL(mocks, VECTOR_find_if(IGNORED_PTR_ARG, IGNORED_PTR_ARG, "someOption")) /*this is looking for hte option to device between update / create*/
-        .IgnoreArgument(1)
-        .IgnoreArgument(2);
+    EXPECTED_CALL(mocks, VECTOR_find_if(IGNORED_PTR_ARG, IGNORED_PTR_ARG, "someOption")); /*this is looking for hte option to device between update / create*/
 
     STRICT_EXPECTED_CALL(mocks, gballoc_malloc(sizeof("someOption"))); /*this is creating a clone of the optionName*/
 
@@ -3342,8 +3323,8 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_passes_saved_options_to_existing_httpapi_handl
         .IgnoreArgument(1)
         .IgnoreArgument(2);
 
-    STRICT_EXPECTED_CALL(mocks, HTTPAPI_SetOption(IGNORED_PTR_ARG, "someOption", "3"))
-        .IgnoreArgument(1)
+    g_httpResult = HTTPAPI_INVALID_ARG;
+    EXPECTED_CALL(mocks, HTTPAPI_SetOption(IGNORED_PTR_ARG, "someOption", "3"))
         .SetReturn(HTTPAPI_INVALID_ARG);
 
     /// act
@@ -3377,12 +3358,9 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_passes_saved_options_to_existing_httpapi_handl
     setupAllCallForHTTPsequence(&mocks, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, responseHttpHeaders, responseHttpBody);
     (void)HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, responseHttpHeaders, responseHttpBody);
 
-    STRICT_EXPECTED_CALL(mocks, HTTPAPI_CloneOption("someOption", "3", IGNORED_PTR_ARG))  /*this asks lower HTTPAPI to create a clone of the option*/
-        .IgnoreArgument(3);
+    EXPECTED_CALL(mocks, HTTPAPI_CloneOption("someOption", "3", IGNORED_PTR_ARG));  /*this asks lower HTTPAPI to create a clone of the option*/
 
-    STRICT_EXPECTED_CALL(mocks, VECTOR_find_if(IGNORED_PTR_ARG, IGNORED_PTR_ARG, "someOption")) /*this is looking for hte option to device between update / create*/
-        .IgnoreArgument(1)
-        .IgnoreArgument(2);
+    EXPECTED_CALL(mocks, VECTOR_find_if(IGNORED_PTR_ARG, IGNORED_PTR_ARG, "someOption")); /*this is looking for hte option to device between update / create*/
 
     STRICT_EXPECTED_CALL(mocks, gballoc_malloc(sizeof("someOption"))); /*this is creating a clone of the optionName*/
 
@@ -3390,9 +3368,8 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_passes_saved_options_to_existing_httpapi_handl
         .IgnoreArgument(1)
         .IgnoreArgument(2);
 
-    STRICT_EXPECTED_CALL(mocks, HTTPAPI_SetOption(IGNORED_PTR_ARG, "someOption", "3"))
-        .IgnoreArgument(1)
-        .SetReturn(HTTPAPI_ALLOC_FAILED);
+    g_httpResult = HTTPAPI_ALLOC_FAILED;
+    EXPECTED_CALL(mocks, HTTPAPI_SetOption(IGNORED_PTR_ARG, "someOption", "3"));
 
     /// act
     auto result = HTTPAPIEX_SetOption(httpapiexhandle, "someOption", "3");
@@ -3409,24 +3386,22 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_passes_saved_options_to_existing_httpapi_handl
 /*Tests_SRS_HTTPAPIEX_02_039: [If HTTPAPI_CloneOption returns HTTPAPI_OK then HTTPAPIEX_SetOption shall create or update the pair optionName/value.]*/
 TEST_FUNCTION(HTTPAPIEX_SetOption_happy_path_on_update_option_value_succeeds)
 {
+    const char* OPTION_NAME = "someOption";
+
     /// arrange
     CHTTPAPIEXMocks mocks;
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
-    HTTPAPIEX_SetOption(httpapiexhandle, "someOption", "333");
+    HTTPAPIEX_SetOption(httpapiexhandle, OPTION_NAME, "333");
     mocks.ResetAllCalls();
 
-    STRICT_EXPECTED_CALL(mocks, HTTPAPI_CloneOption("someOption", "4", IGNORED_PTR_ARG))  /*this asks lower HTTPAPI to create a clone of the option*/
-        .IgnoreArgument(3);
+    EXPECTED_CALL(mocks, HTTPAPI_CloneOption(OPTION_NAME, "4", IGNORED_PTR_ARG));  /*this asks lower HTTPAPI to create a clone of the option*/
 
-    STRICT_EXPECTED_CALL(mocks, VECTOR_find_if(IGNORED_PTR_ARG, IGNORED_PTR_ARG, "someOption")) /*this is looking for hte option to device between update / create*/
-        .IgnoreArgument(1)
-        .IgnoreArgument(2);
+    EXPECTED_CALL(mocks, VECTOR_find_if(IGNORED_PTR_ARG, IGNORED_PTR_ARG, OPTION_NAME)); /*this is looking for hte option to device between update / create*/
 
-    STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG)) /*this is free-ing the previos value*/
-        .IgnoreArgument(1);
+    EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG)); /*this is free-ing the previos value*/
 
     /// act
-    auto result = HTTPAPIEX_SetOption(httpapiexhandle, "someOption", "4");
+    auto result = HTTPAPIEX_SetOption(httpapiexhandle, OPTION_NAME, "4");
 
     ///assert
     ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_OK, result);

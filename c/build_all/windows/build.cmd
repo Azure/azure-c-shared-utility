@@ -5,6 +5,7 @@
 @echo off
 
 set CMAKE_DIR=shared-util_Win32
+set MAKE_NUGET_PKG=no
 
 set current-path=%~dp0
 rem // remove trailing slash
@@ -43,6 +44,7 @@ if "%1" equ "-c" goto arg-build-clean
 if "%1" equ "--clean" goto arg-build-clean
 if "%1" equ "--config" goto arg-build-config
 if "%1" equ "--platform" goto arg-build-platform
+if "%1" equ "--make_nuget" goto arg-build-nuget
 call :usage && exit /b 1
 
 :arg-build-clean
@@ -62,6 +64,12 @@ set build-platform=%1
 if %build-platform% == x64 (
 	set CMAKE_DIR=shared-util_x64
 )
+goto args-continue
+
+:arg-build-nuget
+shift
+if "%1" equ "" call :usage && exit /b 1
+set MAKE_NUGET_PKG=%1
 goto args-continue
 
 :args-continue
@@ -86,7 +94,14 @@ rem no error checking
 
 pushd %USERPROFILE%\%CMAKE_DIR%
 
-if %build-platform% == Win32 (
+
+if %MAKE_NUGET_PKG% == yes (
+	echo ***Running CMAKE for Win32 and x64***
+	cmake %build-root%
+	if not %errorlevel%==0 exit /b %errorlevel%
+	cmake %build-root% -G "Visual Studio 14 Win64"
+	if not %errorlevel%==0 exit /b %errorlevel%	
+) else if %build-platform% == Win32 (
 	echo ***Running CMAKE for Win32***
 	cmake %build-root%
 	if not %errorlevel%==0 exit /b %errorlevel%
@@ -111,6 +126,12 @@ ctest -C "debug" -V
 if not %errorlevel%==0 exit /b %errorlevel%
 
 popd
+
+if %MAKE_NUGET_PKG% == yes (
+	echo ***Building Nuget Package***
+	call  %build-root%\packaging\windows\rebuild_nugets.cmd
+)
+
 goto :eof
 
 :usage
@@ -118,4 +139,5 @@ echo build.cmd [options]
 echo options:
 echo  --config ^<value^>      [Debug] build configuration (e.g. Debug, Release)
 echo  --platform ^<value^>    [Win32] build platform (e.g. Win32, x64, ...)
+echo  --make_nuget ^<value^>  [no] generates the nuget package (e.g. yes, no)
 goto :eof

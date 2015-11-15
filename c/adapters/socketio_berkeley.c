@@ -6,9 +6,7 @@
 #include <crtdbg.h>
 #endif
 
-//#define _POSIX_C_SOURCE 2
-//#define _XOPEN_SOURCE   1
-//#define _POSIX_SOURCE   1
+#define POSIX_C_SOURCE      200112L
 
 #include <stddef.h>
 #include <stdio.h>
@@ -17,8 +15,7 @@
 #include "socketio.h"
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
+#include <netdb.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include "list.h"
@@ -198,9 +195,8 @@ int socketio_open(IO_HANDLE socket_io, ON_BYTES_RECEIVED on_bytes_received, ON_I
     }
     else
     {
-        //struct addrinfo* addrInfo;
-        struct sockaddr_in addrIn;
-        //char portString[16];
+        struct addrinfo* addrInfo;
+        char portString[16];
 
         socket_io_instance->socket = socket(AF_INET, SOCK_STREAM, 0);
         if (socket_io_instance->socket < SOCKET_SUCCESS)
@@ -210,11 +206,8 @@ int socketio_open(IO_HANDLE socket_io, ON_BYTES_RECEIVED on_bytes_received, ON_I
         }
         else
         {
-            addrIn.sin_family = AF_INET;
-            addrIn.sin_port = htons(socket_io_instance->port);
-            if (inet_pton(AF_INET, socket_io_instance->hostname, &addrIn) < 1)
-            /*sprintf(portString, "%u", socket_io_instance->port);
-            if (getaddrinfo(socket_io_instance->hostname, portString, NULL, &addrInfo) != 0)*/
+            sprintf(portString, "%u", socket_io_instance->port);
+            if (getaddrinfo(socket_io_instance->hostname, portString, NULL, &addrInfo) != 0)
             {
                 close(socket_io_instance->socket);
                 set_io_state(socket_io_instance, IO_STATE_ERROR);
@@ -223,7 +216,7 @@ int socketio_open(IO_HANDLE socket_io, ON_BYTES_RECEIVED on_bytes_received, ON_I
             }
             else
             {
-                if (connect(socket_io_instance->socket, (struct sockaddr*)&addrIn, sizeof(addrIn)) != 0)
+                if (connect(socket_io_instance->socket, addrInfo->ai_addr, sizeof(*addrInfo->ai_addr)) != 0)
                 {
                     close(socket_io_instance->socket);
                     set_io_state(socket_io_instance, IO_STATE_ERROR);
@@ -234,11 +227,8 @@ int socketio_open(IO_HANDLE socket_io, ON_BYTES_RECEIVED on_bytes_received, ON_I
                 {
                     int flags;
 
-                    if (-1 == (flags = fcntl(socket_io_instance->socket, F_GETFL, 0)))
-                    {
-                        flags = 0;
-                    }
-                    else if (fcntl(socket_io_instance->socket, F_SETFL, flags | O_NONBLOCK))
+                    if ((-1 == (flags = fcntl(socket_io_instance->socket, F_GETFL, 0))) ||
+                        (fcntl(socket_io_instance->socket, F_SETFL, flags | O_NONBLOCK) == -1))
                     {
                         close(socket_io_instance->socket);
                         set_io_state(socket_io_instance, IO_STATE_ERROR);
@@ -255,6 +245,7 @@ int socketio_open(IO_HANDLE socket_io, ON_BYTES_RECEIVED on_bytes_received, ON_I
                         result = 0;
                     }
                 }
+                freeaddrinfo(addrInfo);
             }
         }
     }
@@ -328,7 +319,7 @@ int socketio_send(IO_HANDLE socket_io, const void* buffer, size_t size, ON_SEND_
                     else
                     {
                         /* queue data */
-                        if (add_pending_io(socket_io_instance, buffer, size, on_send_complete, callback_context) != 0)
+                        if (add_pending_io(socket_io_instance, buffer + send_result, size - send_result, on_send_complete, callback_context) != 0)
                         {
                             result = __LINE__;
                         }
@@ -386,13 +377,14 @@ void socketio_dowork(IO_HANDLE socket_io)
                     {
                         free(pending_socket_io->bytes);
                         free(pending_socket_io);
-                        list_remove(pending_socket_io->pending_io_list, first_pending_io);
+                        list_remove(socket_io_instance->pending_io_list, first_pending_io);
 
                         set_io_state(socket_io_instance, IO_STATE_ERROR);
                     }
                     else
                     {
                         /* simply wait */
+                        (void)memmove(pending_socket_io->bytes, pending_socket_io->bytes + send_result, pending_socket_io->size - send_result);
                     }
                 }
                 else

@@ -48,6 +48,6 @@ if %errorlevel% neq 0 exit /b %errorlevel%
 rem -- Package Nuget
 nuget pack Microsoft.Azure.C.SharedUtility.nuspec
 
-rem -- rmdir %client-root%\shared-util /S /Q
+rmdir %client-root%\shared-util /S /Q
 
 popd

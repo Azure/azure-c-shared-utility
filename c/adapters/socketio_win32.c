@@ -362,7 +362,7 @@ void socketio_dowork(IO_HANDLE socket_io)
 					{
 						free(pending_socket_io->bytes);
 						free(pending_socket_io);
-						list_remove(pending_socket_io->pending_io_list, first_pending_io);
+						list_remove(socket_io_instance->pending_io_list, first_pending_io);
 
 						set_io_state(socket_io_instance, IO_STATE_ERROR);
 					}

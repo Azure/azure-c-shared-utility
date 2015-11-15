@@ -74,7 +74,7 @@ static void ssl_client_info_callback(const SSL* ssl, int where, int ret)
 	SSL_WHERE_INFO(ssl, where, SSL_CB_HANDSHAKE_DONE, "HANDSHAKE DONE");
 }*/
 
-static int write_outgoing_bytes(TLS_IO_INSTANCE* tls_io_instance)
+static int write_outgoing_bytes(TLS_IO_INSTANCE* tls_io_instance, ON_SEND_COMPLETE on_send_complete, void* callback_context)
 {
 	int result;
 
@@ -98,7 +98,7 @@ static int write_outgoing_bytes(TLS_IO_INSTANCE* tls_io_instance)
 			}
 			else
 			{
-				if (io_send(tls_io_instance->socket_io, bytes_to_send, pending, NULL, NULL) != 0)
+				if (io_send(tls_io_instance->socket_io, bytes_to_send, pending, on_send_complete, callback_context) != 0)
 				{
 					result = __LINE__;
 				}
@@ -141,7 +141,7 @@ static int send_handshake_bytes(TLS_IO_INSTANCE* tls_io_instance)
 		}
 		else
 		{
-			if (write_outgoing_bytes(tls_io_instance) != 0)
+			if (write_outgoing_bytes(tls_io_instance, NULL, NULL) != 0)
 			{
 				result = __LINE__;
 			}
@@ -345,14 +345,7 @@ void tlsio_openssl_destroy(IO_HANDLE tls_io)
 	if (tls_io != NULL)
 	{
 		TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tls_io;
-		if (tls_io_instance->in_bio != NULL)
-		{
-			BIO_free(tls_io_instance->in_bio);
-		}
-		if (tls_io_instance->out_bio != NULL)
-		{
-			BIO_free(tls_io_instance->out_bio);
-		}
+		SSL_free(tls_io_instance->ssl);
 		SSL_CTX_free(tls_io_instance->ssl_context);
 
 		io_destroy(tls_io_instance->socket_io);
@@ -451,7 +444,7 @@ int tlsio_openssl_send(IO_HANDLE tls_io, const void* buffer, size_t size, ON_SEN
 		}
 		else
 		{
-			if (write_outgoing_bytes(tls_io_instance) != 0)
+			if (write_outgoing_bytes(tls_io_instance, on_send_complete, callback_context) != 0)
 			{
 				result = __LINE__;
 			}

@@ -6,10 +6,19 @@ project(azure_c_shared_utility)
 
 #the following variables are project-wide and can be used with cmake-gui
 option(skip_unittests "set skip_unittests to ON to skip unittests (default is OFF)[if possible, they are always build]" OFF)
+option(use_http "set use_http to ON if http is to be used, set to OFF to not use http" ON)
+option(use_schannel "set use_schannel to ON if schannel is to be used, set to OFF to not use http" ON)
+option(use_openssl "set use_openssl to ON if use_openssl is to be used, set to OFF to not use http" ON)
 option(compileOption_C "passes a string to the command line of the C compiler" OFF)
 option(compileOption_CXX "passes a string to the command line of the C++ compiler" OFF)
 
-#Message(FATAL_ERROR "${LIB_INSTALL_DIR} and ${INCLUDE_INSTALL_DIR}")
+#message(FATAL_ERROR "include directory: ${inc}")
+
+include_directories(inc)
+
+# Start of variables used during install
+set (INCLUDE_INSTALL_DIR include CACHE PATH "Include file directory")
+set (LIB_INSTALL_DIR lib CACHE PATH "Library object file directory")
 
 #Use solution folders. 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -47,6 +56,7 @@ macro(compileAsC11)
   if (CMAKE_VERSION VERSION_LESS "3.1")
 	if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
 	  set (CMAKE_C_FLAGS "--std=c11 ${CMAKE_C_FLAGS}")
+	  set (CMAKE_C_FLAGS "-D_POSIX_C_SOURCE=200112L ${CMAKE_C_FLAGS}")
 	  set (CMAKE_CXX_FLAGS "--std=c++11 ${CMAKE_CXX_FLAGS}")
 	endif()
   else()
@@ -55,8 +65,7 @@ macro(compileAsC11)
   endif()
 endmacro(compileAsC11)
 
-
-function(windows_unittests_add_dll whatIsBuilding)	
+function(windows_unittests_add_dll whatIsBuilding)
 	link_directories(${whatIsBuilding}_dll $ENV{VCInstallDir}UnitTest/lib)
 	
 	add_library(${whatIsBuilding}_dll SHARED 
@@ -74,7 +83,7 @@ function(windows_unittests_add_dll whatIsBuilding)
 	target_link_libraries(${whatIsBuilding}_dll micromock_cpp_unittest ctest ${ARGN})
 endfunction()
 
-function(windows_unittests_add_lib whatIsBuilding)	
+function(windows_unittests_add_lib whatIsBuilding)
 	link_directories(${whatIsBuilding}_lib $ENV{VCInstallDir}UnitTest/lib)
 	
 	add_library(${whatIsBuilding}_lib STATIC 
@@ -184,6 +193,7 @@ set_platform_files()
 add_subdirectory(testtools)
 
 compileAsC11()
+
 #these are the C source files
 set(source_c_files
 ./src/base64.c
@@ -219,6 +229,12 @@ if(${use_http})
 		./src/httpapiex.c
 		./src/httpapiexsas.c
 		./src/httpheaders.c
+	)
+endif()
+
+if(${use_schannel})
+	set(soure_c_files ${source_c_files}
+		./adapters/tlsio_schannel.c
 	)
 endif()
 
@@ -261,6 +277,12 @@ if(${use_http})
 	)
 endif()
 
+if(${use_schannel})
+	set(source_h_files ${source_h_files}
+		./inc/tlsio_schannel.h
+	)
+endif()
+
 #these are the include folders
 #the following "set" statetement exports across the project a global variable called COMMON_INC_FOLDER that expands to whatever needs to included when using COMMON library
 set(SHARED_UTIL_INC_FOLDER ${CMAKE_CURRENT_LIST_DIR}/inc CACHE INTERNAL "this is what needs to be included if using sharedLib lib" FORCE)
@@ -279,3 +301,8 @@ add_library(aziotsharedutil ${source_c_files} ${source_h_files})
 
 add_subdirectory(tests)
 
+if(WIN32)
+else()
+	install (TARGETS aziotsharedutil DESTINATION lib)
+	install (FILES ${source_h_files} DESTINATION ${INCLUDE_INSTALL_DIR}/azuresharedutil)
+endif (WIN32)
