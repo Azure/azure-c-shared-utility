@@ -4,7 +4,7 @@
 
 set -e
 
-build_folder=~/sharedutil
+build_folder=~/shared-util
 script_dir=$(cd "$(dirname "$0")" && pwd)
 build_root=$(cd "${script_dir}/../.." && pwd)
 log_dir=$build_root
@@ -35,7 +35,7 @@ process_args ()
       else
           case "$arg" in
               "-cl" | "--compileoption" ) save_next_arg=1;;
-              "-i" | "--install" ) make_install=install;;
+              "-i" | "--install" ) make_install=1;;
               * ) usage;;
           esac
       fi
@@ -48,6 +48,12 @@ rm -r -f $build_folder
 mkdir $build_folder
 pushd $build_folder
 cmake -DcompileOption_C:STRING="$extracloptions" $build_root
-make --jobs=$(nproc) $make_install
+make --jobs=$(nproc)
+if [ $make_install == 1 ]
+then
+    echo "Installing packaging" 
+    # install the package
+    make install
+fi
 ctest -C "Debug" -V
 popd
