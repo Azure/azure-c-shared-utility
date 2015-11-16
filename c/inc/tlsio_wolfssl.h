@@ -11,8 +11,8 @@ extern "C" {
 #include <stddef.h>
 #endif /* __cplusplus */
 
-#include "io.h"
-#include "logger.h"
+#include "transport_io.h"
+#include "iot_logging.h"
 
 typedef struct TLSIO_WOLFSSL_CONFIG_TAG
 {
@@ -24,7 +24,7 @@ extern IO_HANDLE tlsio_wolfssl_create(void* io_create_parameters, LOGGER_LOG log
 extern void tlsio_wolfssl_destroy(IO_HANDLE tls_io);
 extern int tlsio_wolfssl_open(IO_HANDLE tls_io, ON_BYTES_RECEIVED on_bytes_received, ON_IO_STATE_CHANGED on_io_state_changed, void* callback_context);
 extern int tlsio_wolfssl_close(IO_HANDLE tls_io);
-extern int tlsio_wolfssl_send(IO_HANDLE tls_io, const void* buffer, size_t size);
+extern int tlsio_wolfssl_send(IO_HANDLE tls_io, const void* buffer, size_t size, ON_SEND_COMPLETE on_send_complete, void* callback_context);
 extern void tlsio_wolfssl_dowork(IO_HANDLE tls_io);
 extern const IO_INTERFACE_DESCRIPTION* tlsio_wolfssl_get_interface_description(void);
 

@@ -14,10 +14,8 @@
 #include "tlsio_schannel.h"
 #include "socketio.h"
 #include "windows.h"
-#include "amqpalloc.h"
 #include "sspi.h"
 #include "schannel.h"
-#include "logger.h"
 
 typedef enum TLS_STATE_TAG
 {
@@ -74,7 +72,7 @@ static int resize_receive_buffer(TLS_IO_INSTANCE* tls_io_instance, size_t needed
 
 	if (needed_buffer_size > tls_io_instance->buffer_size)
 	{
-		unsigned char* new_buffer = amqpalloc_realloc(tls_io_instance->received_bytes, needed_buffer_size);
+		unsigned char* new_buffer = realloc(tls_io_instance->received_bytes, needed_buffer_size);
 		if (new_buffer == NULL)
 		{
 			result = __LINE__;
@@ -98,7 +96,7 @@ static int set_receive_buffer(TLS_IO_INSTANCE* tls_io_instance, size_t buffer_si
 {
 	int result;
 
-	unsigned char* new_buffer = amqpalloc_realloc(tls_io_instance->received_bytes, buffer_size);
+	unsigned char* new_buffer = realloc(tls_io_instance->received_bytes, buffer_size);
 	if (new_buffer == NULL)
 	{
 		result = __LINE__;
@@ -424,7 +422,7 @@ IO_HANDLE tlsio_schannel_create(void* io_create_parameters, LOGGER_LOG logger_lo
 	}
 	else
 	{
-		result = amqpalloc_malloc(sizeof(TLS_IO_INSTANCE));
+		result = malloc(sizeof(TLS_IO_INSTANCE));
 		if (result != NULL)
 		{
 			SOCKETIO_CONFIG socketio_config;
@@ -437,10 +435,10 @@ IO_HANDLE tlsio_schannel_create(void* io_create_parameters, LOGGER_LOG logger_lo
 			result->logger_log = logger_log;
 			result->callback_context = NULL;
 
-			result->host_name = (SEC_CHAR*)amqpalloc_malloc(sizeof(SEC_CHAR) * (1 + strlen(tls_io_config->hostname)));
+			result->host_name = (SEC_CHAR*)malloc(sizeof(SEC_CHAR) * (1 + strlen(tls_io_config->hostname)));
 			if (result->host_name == NULL)
 			{
-				amqpalloc_free(result);
+				free(result);
 				result = NULL;
 			}
 			else
@@ -450,8 +448,8 @@ IO_HANDLE tlsio_schannel_create(void* io_create_parameters, LOGGER_LOG logger_lo
 				const IO_INTERFACE_DESCRIPTION* socket_io_interface = socketio_get_interface_description();
 				if (socket_io_interface == NULL)
 				{
-					amqpalloc_free(result->host_name);
-					amqpalloc_free(result);
+					free(result->host_name);
+					free(result);
 					result = NULL;
 				}
 				else
@@ -459,8 +457,8 @@ IO_HANDLE tlsio_schannel_create(void* io_create_parameters, LOGGER_LOG logger_lo
 					result->socket_io = io_create(socket_io_interface, &socketio_config, logger_log);
 					if (result->socket_io == NULL)
 					{
-						amqpalloc_free(result->host_name);
-						amqpalloc_free(result);
+						free(result->host_name);
+						free(result);
 						result = NULL;
 					}
 					else
@@ -492,12 +490,12 @@ void tlsio_schannel_destroy(IO_HANDLE tls_io)
 
 		if (tls_io_instance->received_bytes != NULL)
 		{
-			amqpalloc_free(tls_io_instance->received_bytes);
+			free(tls_io_instance->received_bytes);
 		}
 
 		io_destroy(tls_io_instance->socket_io);
-		amqpalloc_free(tls_io_instance->host_name);
-		amqpalloc_free(tls_io);
+		free(tls_io_instance->host_name);
+		free(tls_io);
 	}
 }
 
@@ -589,7 +587,7 @@ static int send_chunk(IO_HANDLE tls_io, const void* buffer, size_t size, ON_SEND
 				SecBuffer security_buffers[4];
 				SecBufferDesc security_buffers_desc;
 				size_t needed_buffer = sizes.cbHeader + size + sizes.cbTrailer;
-				unsigned char* out_buffer = (unsigned char*)amqpalloc_malloc(needed_buffer);
+				unsigned char* out_buffer = (unsigned char*)malloc(needed_buffer);
 				if (out_buffer == NULL)
 				{
 					result = __LINE__;
@@ -638,7 +636,7 @@ static int send_chunk(IO_HANDLE tls_io, const void* buffer, size_t size, ON_SEND
 						}
 					}
 
-					amqpalloc_free(out_buffer);
+					free(out_buffer);
 				}
 			}
 		}

@@ -7,12 +7,19 @@ project(azure_c_shared_utility)
 #the following variables are project-wide and can be used with cmake-gui
 option(skip_unittests "set skip_unittests to ON to skip unittests (default is OFF)[if possible, they are always build]" OFF)
 option(use_http "set use_http to ON if http is to be used, set to OFF to not use http" ON)
-option(use_schannel "set use_schannel to ON if schannel is to be used, set to OFF to not use http" ON)
-option(use_openssl "set use_openssl to ON if use_openssl is to be used, set to OFF to not use http" ON)
+
+if(WIN32)
+	option(use_schannel "set use_schannel to ON if schannel is to be used, set to OFF to not use http" ON)
+	option(tls_openssl "set tls_openssl to ON if openssl is to be used, set to OFF to not use openssl" OFF)
+	option(use_wolfssl "set use_wolfssl to ON if use_wolfssl is to be used, set to OFF to not use wolfssl" OFF)
+else()
+	option(use_schannel "set use_schannel to ON if schannel is to be used, set to OFF to not use http" OFF)
+	option(tls_openssl "set tls_openssl to ON if openssl is to be used, set to OFF to not use openssl" OFF)
+	option(use_wolfssl "set use_wolfssl to ON if use_wolfssl is to be used, set to OFF to not use wolfssl" OFF)
+endif()
+
 option(compileOption_C "passes a string to the command line of the C compiler" OFF)
 option(compileOption_CXX "passes a string to the command line of the C++ compiler" OFF)
-
-#message(FATAL_ERROR "include directory: ${inc}")
 
 include_directories(inc)
 
@@ -147,12 +154,7 @@ function(build_test_artifacts whatIsBuilding use_gballoc)
 		)
 			windows_unittests_add_lib(${whatIsBuilding} ${ARGN})
 		else()
-			if(
-				(NOT ("${whatIsBuilding}" MATCHES "condition_unittests"))
-			)
-				windows_unittests_add_exe(${whatIsBuilding} ${ARGN})
-			endif()
-
+			windows_unittests_add_exe(${whatIsBuilding} ${ARGN})
 			windows_unittests_add_dll(${whatIsBuilding} ${ARGN})
 		endif()
 	else()
@@ -161,11 +163,7 @@ function(build_test_artifacts whatIsBuilding use_gballoc)
 		)
 			windows_unittests_add_lib(${whatIsBuilding} ${ARGN})
 		else()
-			if(
-				(NOT ("${whatIsBuilding}" MATCHES "condition_unittests"))
-			)
-				windows_unittests_add_exe(${whatIsBuilding} ${ARGN})
-			endif()
+			windows_unittests_add_exe(${whatIsBuilding} ${ARGN})
 		endif()
 	endif()
 endfunction(build_test_artifacts)
@@ -186,6 +184,7 @@ function(set_platform_files)
 		set(SOCKETIO_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/socketio_berkeley.c PARENT_SCOPE)
 		set(THREAD_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/threadapi_pthreads.c PARENT_SCOPE)
 	endif()
+
 endfunction(set_platform_files)
 
 set_platform_files()
@@ -221,7 +220,6 @@ ${PLATFORM_C_FILE}
 ${SOCKETIO_C_FILE}
 ${LOCK_C_FILE}
 ${THREAD_C_FILE}
-${HTTP_C_FILE}
 )
 
 if(${use_http})
@@ -233,8 +231,16 @@ if(${use_http})
 endif()
 
 if(${use_schannel})
-	set(soure_c_files ${source_c_files}
+	set(source_c_files ${source_c_files}
 		./adapters/tlsio_schannel.c
+	)
+elseif(${use_wolfssl})
+	set(source_c_files ${source_c_files}
+		./adapters/tlsio_wolfssl.c
+	)
+elseif(${tls_openssl})
+	set(source_c_files ${source_c_files}
+		./adapters/tlsio_openssl.c
 	)
 endif()
 
@@ -281,6 +287,14 @@ if(${use_schannel})
 	set(source_h_files ${source_h_files}
 		./inc/tlsio_schannel.h
 	)
+elseif(${use_wolfssl})
+	set(source_h_files ${source_h_files}
+		./adapters/tlsio_wolfssl.h
+	)
+elseif(${tls_openssl})
+	set(source_h_files ${source_h_files}
+		./adapters/tlsio_openssl.h
+	)	
 endif()
 
 #these are the include folders
