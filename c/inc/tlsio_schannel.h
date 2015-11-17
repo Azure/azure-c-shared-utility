@@ -20,12 +20,12 @@ typedef struct TLSIO_SCHANNEL_CONFIG_TAG
 	int port;
 } TLSIO_SCHANNEL_CONFIG;
 
-extern IO_HANDLE tlsio_schannel_create(void* io_create_parameters, LOGGER_LOG logger_log);
-extern void tlsio_schannel_destroy(IO_HANDLE tls_io);
-extern int tlsio_schannel_open(IO_HANDLE tls_io, ON_BYTES_RECEIVED on_bytes_received, ON_IO_STATE_CHANGED on_io_state_changed, void* callback_context);
-extern int tlsio_schannel_close(IO_HANDLE tls_io);
-extern int tlsio_schannel_send(IO_HANDLE tls_io, const void* buffer, size_t size, ON_SEND_COMPLETE on_send_complete, void* callback_context);
-extern void tlsio_schannel_dowork(IO_HANDLE tls_io);
+extern CONCRETE_IO_HANDLE tlsio_schannel_create(void* io_create_parameters, LOGGER_LOG logger_log);
+extern void tlsio_schannel_destroy(CONCRETE_IO_HANDLE tls_io);
+extern int tlsio_schannel_open(CONCRETE_IO_HANDLE tls_io, ON_BYTES_RECEIVED on_bytes_received, ON_IO_STATE_CHANGED on_io_state_changed, void* callback_context);
+extern int tlsio_schannel_close(CONCRETE_IO_HANDLE tls_io);
+extern int tlsio_schannel_send(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t size, ON_SEND_COMPLETE on_send_complete, void* callback_context);
+extern void tlsio_schannel_dowork(CONCRETE_IO_HANDLE tls_io);
 extern const IO_INTERFACE_DESCRIPTION* tlsio_schannel_get_interface_description(void);
 
 #ifdef __cplusplus

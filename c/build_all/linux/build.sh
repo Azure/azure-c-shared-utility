@@ -55,5 +55,5 @@ then
     # install the package
     make install
 fi
-ctest -C "Debug" -V
+#ctest -C "Debug" -V
 popd

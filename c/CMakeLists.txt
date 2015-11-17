@@ -14,7 +14,7 @@ if(WIN32)
 	option(use_wolfssl "set use_wolfssl to ON if use_wolfssl is to be used, set to OFF to not use wolfssl" OFF)
 else()
 	option(use_schannel "set use_schannel to ON if schannel is to be used, set to OFF to not use http" OFF)
-	option(tls_openssl "set tls_openssl to ON if openssl is to be used, set to OFF to not use openssl" OFF)
+	option(tls_openssl "set tls_openssl to ON if openssl is to be used, set to OFF to not use openssl" ON)
 	option(use_wolfssl "set use_wolfssl to ON if use_wolfssl is to be used, set to OFF to not use wolfssl" OFF)
 endif()
 
@@ -24,7 +24,7 @@ option(compileOption_CXX "passes a string to the command line of the C++ compile
 include_directories(inc)
 
 # Start of variables used during install
-set (INCLUDE_INSTALL_DIR include CACHE PATH "Include file directory")
+set (INCLUDE_INSTALL_DIR "/usr/include" CACHE PATH "Include file directory")
 set (LIB_INSTALL_DIR lib CACHE PATH "Library object file directory")
 
 #Use solution folders. 
@@ -189,6 +189,7 @@ function(set_platform_files)
 	endif()
 endfunction(set_platform_files)
 
+#Setup the platform files
 set_platform_files()
 
 add_subdirectory(testtools)
@@ -234,15 +235,15 @@ endif()
 
 if(${use_schannel})
 	set(source_c_files ${source_c_files}
-		./adapters/tlsio_schannel.c
+		./src/tlsio_schannel.c
 	)
 elseif(${use_wolfssl})
 	set(source_c_files ${source_c_files}
-		./adapters/tlsio_wolfssl.c
+		./src/tlsio_wolfssl.c
 	)
 elseif(${tls_openssl})
 	set(source_c_files ${source_c_files}
-		./adapters/tlsio_openssl.c
+		./src/tlsio_openssl.c
 	)
 endif()
 
@@ -291,11 +292,11 @@ if(${use_schannel})
 	)
 elseif(${use_wolfssl})
 	set(source_h_files ${source_h_files}
-		./adapters/tlsio_wolfssl.h
+		./inc/tlsio_wolfssl.h
 	)
 elseif(${tls_openssl})
 	set(source_h_files ${source_h_files}
-		./adapters/tlsio_openssl.h
+		./inc/tlsio_openssl.h
 	)	
 endif()
 
@@ -311,8 +312,6 @@ IF(WIN32)
 	#windows needs this define
 	add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 ENDIF(WIN32)
-
-#Setup the platform files
 
 #this is the product (a library)
 add_library(aziotsharedutil ${source_c_files} ${source_h_files})

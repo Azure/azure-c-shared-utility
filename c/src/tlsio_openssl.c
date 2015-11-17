@@ -13,7 +13,6 @@
 #include <stdbool.h>
 #include "tlsio_openssl.h"
 #include "socketio.h"
-#include "logger.h"
 
 typedef enum HANDSHAKE_STATE_ENUM_TAG
 {
@@ -84,7 +83,7 @@ static int write_outgoing_bytes(TLS_IO_INSTANCE* tls_io_instance, ON_SEND_COMPLE
     }
     else
     {
-        unsigned char* bytes_to_send = amqpalloc_malloc(pending);
+        unsigned char* bytes_to_send = malloc(pending);
         if (bytes_to_send == NULL)
         {
             result = __LINE__;
@@ -108,7 +107,7 @@ static int write_outgoing_bytes(TLS_IO_INSTANCE* tls_io_instance, ON_SEND_COMPLE
                 }
             }
 
-            amqpalloc_free(bytes_to_send);
+            free(bytes_to_send);
         }
     }
 
@@ -234,7 +233,7 @@ void tlsio_openssl_deinit(void)
 {
 }
 
-IO_HANDLE tlsio_openssl_create(void* io_create_parameters, LOGGER_LOG logger_log)
+CONCRETE_IO_HANDLE tlsio_openssl_create(void* io_create_parameters, LOGGER_LOG logger_log)
 {
     TLSIO_OPENSSL_CONFIG* tls_io_config = io_create_parameters;
     TLS_IO_INSTANCE* result;
@@ -245,7 +244,7 @@ IO_HANDLE tlsio_openssl_create(void* io_create_parameters, LOGGER_LOG logger_log
     }
     else
     {
-        result = amqpalloc_malloc(sizeof(TLS_IO_INSTANCE));
+        result = malloc(sizeof(TLS_IO_INSTANCE));
         if (result != NULL)
         {
             SOCKETIO_CONFIG socketio_config;
@@ -262,7 +261,7 @@ IO_HANDLE tlsio_openssl_create(void* io_create_parameters, LOGGER_LOG logger_log
             result->ssl_context = SSL_CTX_new(TLSv1_method());
             if (result->ssl_context == NULL)
             {
-                amqpalloc_free(result);
+                free(result);
                 result = NULL;
             }
             else
@@ -271,7 +270,7 @@ IO_HANDLE tlsio_openssl_create(void* io_create_parameters, LOGGER_LOG logger_log
                 if (result->in_bio == NULL)
                 {
                     SSL_CTX_free(result->ssl_context);
-                    amqpalloc_free(result);
+                    free(result);
                     result = NULL;
                 }
                 else
@@ -281,7 +280,7 @@ IO_HANDLE tlsio_openssl_create(void* io_create_parameters, LOGGER_LOG logger_log
                     {
                         (void)BIO_free(result->out_bio);
                         SSL_CTX_free(result->ssl_context);
-                        amqpalloc_free(result);
+                        free(result);
                         result = NULL;
                     }
                     else
@@ -292,7 +291,7 @@ IO_HANDLE tlsio_openssl_create(void* io_create_parameters, LOGGER_LOG logger_log
                             (void)BIO_free(result->in_bio);
                             (void)BIO_free(result->out_bio);
                             SSL_CTX_free(result->ssl_context);
-                            amqpalloc_free(result);
+                            free(result);
                             result = NULL;
                         }
                         else
@@ -305,7 +304,7 @@ IO_HANDLE tlsio_openssl_create(void* io_create_parameters, LOGGER_LOG logger_log
                                 (void)BIO_free(result->in_bio);
                                 (void)BIO_free(result->out_bio);
                                 SSL_CTX_free(result->ssl_context);
-                                amqpalloc_free(result);
+                                free(result);
                                 result = NULL;
                             }
                             else
@@ -316,7 +315,7 @@ IO_HANDLE tlsio_openssl_create(void* io_create_parameters, LOGGER_LOG logger_log
                                     (void)BIO_free(result->in_bio);
                                     (void)BIO_free(result->out_bio);
                                     SSL_CTX_free(result->ssl_context);
-                                    amqpalloc_free(result);
+                                    free(result);
                                     result = NULL;
                                 }
                                 else
@@ -339,7 +338,7 @@ IO_HANDLE tlsio_openssl_create(void* io_create_parameters, LOGGER_LOG logger_log
     return result;
 }
 
-void tlsio_openssl_destroy(IO_HANDLE tls_io)
+void tlsio_openssl_destroy(CONCRETE_IO_HANDLE tls_io)
 {
     if (tls_io != NULL)
     {
@@ -348,11 +347,11 @@ void tlsio_openssl_destroy(IO_HANDLE tls_io)
         SSL_CTX_free(tls_io_instance->ssl_context);
 
         io_destroy(tls_io_instance->socket_io);
-        amqpalloc_free(tls_io);
+        free(tls_io);
     }
 }
 
-int tlsio_openssl_open(IO_HANDLE tls_io, ON_BYTES_RECEIVED on_bytes_received, ON_IO_STATE_CHANGED on_io_state_changed, void* callback_context)
+int tlsio_openssl_open(CONCRETE_IO_HANDLE tls_io, ON_BYTES_RECEIVED on_bytes_received, ON_IO_STATE_CHANGED on_io_state_changed, void* callback_context)
 {
     int result;
 
@@ -407,7 +406,7 @@ int tlsio_openssl_open(IO_HANDLE tls_io, ON_BYTES_RECEIVED on_bytes_received, ON
     return result;
 }
 
-int tlsio_openssl_close(IO_HANDLE tls_io)
+int tlsio_openssl_close(CONCRETE_IO_HANDLE tls_io)
 {
     int result = 0;
 
@@ -425,7 +424,7 @@ int tlsio_openssl_close(IO_HANDLE tls_io)
     return result;
 }
 
-int tlsio_openssl_send(IO_HANDLE tls_io, const void* buffer, size_t size, ON_SEND_COMPLETE on_send_complete, void* callback_context)
+int tlsio_openssl_send(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t size, ON_SEND_COMPLETE on_send_complete, void* callback_context)
 {
     int result;
 
@@ -457,7 +456,7 @@ int tlsio_openssl_send(IO_HANDLE tls_io, const void* buffer, size_t size, ON_SEN
     return result;
 }
 
-void tlsio_openssl_dowork(IO_HANDLE tls_io)
+void tlsio_openssl_dowork(CONCRETE_IO_HANDLE tls_io)
 {
     if (tls_io != NULL)
     {
