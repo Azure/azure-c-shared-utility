@@ -301,6 +301,7 @@ elseif(${tls_openssl})
 endif()
 
 add_files_to_install("${source_h_files}")
+add_files_to_install("./src/gballoc.c")
 
 #these are the include folders
 #the following "set" statetement exports across the project a global variable called COMMON_INC_FOLDER that expands to whatever needs to included when using COMMON library

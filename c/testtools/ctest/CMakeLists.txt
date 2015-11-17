@@ -32,3 +32,8 @@ ctest ${ctest_c_files} ${ctest_h_files}
 )
 
 add_subdirectory(unittests)
+
+if(WIN32)
+else()
+	install (TARGETS ctest DESTINATION lib)
+endif (WIN32)

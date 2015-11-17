@@ -74,3 +74,8 @@ set(MICROMOCK_INC_FOLDER ${CMAKE_CURRENT_LIST_DIR}/inc CACHE INTERNAL "this is w
 include_directories(${TESTRUNNERSWITCHER_INC_FOLDER} ${CTEST_INC_FOLDER} ${SAL_INC_FOLDER} ${MICROMOCK_INC_FOLDER} )
 
 add_subdirectory(unittests)
+
+if(WIN32)
+else()
+	install (TARGETS micromock_ctest DESTINATION lib)
+endif (WIN32)
