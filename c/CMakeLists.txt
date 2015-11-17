@@ -72,6 +72,10 @@ macro(compileAsC11)
   endif()
 endmacro(compileAsC11)
 
+function(add_files_to_install filesToBeInstalled)
+	set(INSTALL_H_FILES ${INSTALL_H_FILES} ${filesToBeInstalled} CACHE INTERNAL "Files that will be installed on the system")
+endfunction()
+
 function(windows_unittests_add_dll whatIsBuilding)
 	link_directories(${whatIsBuilding}_dll $ENV{VCInstallDir}UnitTest/lib)
 	
@@ -145,7 +149,6 @@ function(build_test_artifacts whatIsBuilding use_gballoc)
 		include_directories(${sharedutil_include_directories})
 	endif()
 
-	
 	#setting output type
 	if(WIN32)
 		#to disable running e2e or longhaul or unittests tests for windows, we build the the same thing as "static library" so it is not picked up by visual studio
@@ -184,7 +187,6 @@ function(set_platform_files)
 		set(SOCKETIO_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/socketio_berkeley.c PARENT_SCOPE)
 		set(THREAD_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/threadapi_pthreads.c PARENT_SCOPE)
 	endif()
-
 endfunction(set_platform_files)
 
 set_platform_files()
@@ -297,6 +299,8 @@ elseif(${tls_openssl})
 	)	
 endif()
 
+add_files_to_install("${source_h_files}")
+
 #these are the include folders
 #the following "set" statetement exports across the project a global variable called COMMON_INC_FOLDER that expands to whatever needs to included when using COMMON library
 set(SHARED_UTIL_INC_FOLDER ${CMAKE_CURRENT_LIST_DIR}/inc CACHE INTERNAL "this is what needs to be included if using sharedLib lib" FORCE)
@@ -318,5 +322,5 @@ add_subdirectory(tests)
 if(WIN32)
 else()
 	install (TARGETS aziotsharedutil DESTINATION lib)
-	install (FILES ${source_h_files} DESTINATION ${INCLUDE_INSTALL_DIR}/azuresharedutil)
+	install (FILES ${INSTALL_H_FILES} DESTINATION ${INCLUDE_INSTALL_DIR}/azuresharedutil)
 endif (WIN32)

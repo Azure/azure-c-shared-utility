@@ -11,8 +11,10 @@ set(ctest_c_files
 
 set(ctest_h_files
 ./inc/ctest.h
-./inc/ctest_macros.h
-)
+./inc/ctest_macros.h)
+
+string(REPLACE "./inc/" ";./testtools/ctest/inc/" FILES_TO_INSTALL ${ctest_h_files})
+add_files_to_install("${FILES_TO_INSTALL}")
 
 #these are the include folders
 #the following "set" statetement exports across the project a global variable called CTEST_INC_FOLDER that expands to whatever needs to included when using ctest library

@@ -13,7 +13,7 @@ extern "C" {
 #include <stddef.h>
 #endif /* __cplusplus */
 
-	typedef void* IO_HANDLE;
+	typedef struct IO_INSTANCE_TAG* IO_HANDLE;
 	typedef void* CONCRETE_IO_HANDLE;
 
 	typedef enum IO_STATE_TAG
@@ -35,11 +35,11 @@ extern "C" {
 	typedef void(*ON_IO_STATE_CHANGED)(void* context, IO_STATE new_io_state, IO_STATE previous_io_state);
 
 	typedef CONCRETE_IO_HANDLE(*IO_CREATE)(void* io_create_parameters, LOGGER_LOG logger_log);
-	typedef void(*IO_DESTROY)(CONCRETE_IO_HANDLE handle);
-	typedef int(*IO_OPEN)(CONCRETE_IO_HANDLE handle, ON_BYTES_RECEIVED on_bytes_received, ON_IO_STATE_CHANGED on_io_state_changed, void* callback_context);
-	typedef int(*IO_CLOSE)(CONCRETE_IO_HANDLE handle);
-	typedef int(*IO_SEND)(CONCRETE_IO_HANDLE handle, const void* buffer, size_t size, ON_SEND_COMPLETE on_send_complete, void* callback_context);
-	typedef void(*IO_DOWORK)(CONCRETE_IO_HANDLE handle);
+	typedef void(*IO_DESTROY)(CONCRETE_IO_HANDLE concrete_io);
+	typedef int(*IO_OPEN)(CONCRETE_IO_HANDLE concrete_io, ON_BYTES_RECEIVED on_bytes_received, ON_IO_STATE_CHANGED on_io_state_changed, void* callback_context);
+	typedef int(*IO_CLOSE)(CONCRETE_IO_HANDLE concrete_io);
+	typedef int(*IO_SEND)(CONCRETE_IO_HANDLE concrete_io, const void* buffer, size_t size, ON_SEND_COMPLETE on_send_complete, void* callback_context);
+	typedef void(*IO_DOWORK)(CONCRETE_IO_HANDLE concrete_io);
 
 	typedef struct IO_INTERFACE_DESCRIPTION_TAG
 	{
@@ -52,11 +52,11 @@ extern "C" {
 	} IO_INTERFACE_DESCRIPTION;
 
 	extern IO_HANDLE io_create(const IO_INTERFACE_DESCRIPTION* io_interface_description, const void* io_create_parameters, LOGGER_LOG logger_log);
-	extern void io_destroy(IO_HANDLE handle);
-	extern int io_open(IO_HANDLE handle, ON_BYTES_RECEIVED on_bytes_received, ON_IO_STATE_CHANGED on_io_state_changed, void* callback_context);
-	extern int io_close(IO_HANDLE handle);
-	extern int io_send(IO_HANDLE handle, const void* buffer, size_t size, ON_SEND_COMPLETE on_send_complete, void* callback_context);
-	extern void io_dowork(IO_HANDLE handle);
+	extern void io_destroy(IO_HANDLE io);
+	extern int io_open(IO_HANDLE io, ON_BYTES_RECEIVED on_bytes_received, ON_IO_STATE_CHANGED on_io_state_changed, void* callback_context);
+	extern int io_close(IO_HANDLE io);
+	extern int io_send(IO_HANDLE io, const void* buffer, size_t size, ON_SEND_COMPLETE on_send_complete, void* callback_context);
+	extern void io_dowork(IO_HANDLE io);
 
 #ifdef __cplusplus
 }

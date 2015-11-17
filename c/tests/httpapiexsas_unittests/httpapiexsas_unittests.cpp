@@ -90,7 +90,7 @@ public:
     MOCK_METHOD_END(size_t, 0)
 
     MOCK_STATIC_METHOD_1(, STRING_HANDLE, STRING_clone, STRING_HANDLE, s)
-    MOCK_METHOD_END(STRING_HANDLE, malloc(1))
+    MOCK_METHOD_END(STRING_HANDLE, (STRING_HANDLE)malloc(1))
 
     MOCK_STATIC_METHOD_1(, void*, gballoc_malloc, size_t, size)
     void* result2;
@@ -126,7 +126,7 @@ public:
     MOCK_METHOD_END(HTTP_HEADERS_RESULT, HTTP_HEADERS_ERROR)
 
     MOCK_STATIC_METHOD_4(, STRING_HANDLE, SASToken_Create, STRING_HANDLE, key, STRING_HANDLE, scope, STRING_HANDLE, keyName, size_t, expiry)
-    MOCK_METHOD_END(STRING_HANDLE, malloc(1))
+    MOCK_METHOD_END(STRING_HANDLE, (STRING_HANDLE)malloc(1))
 
     MOCK_STATIC_METHOD_1(, time_t, get_time, time_t*, currentTime)
     MOCK_METHOD_END(time_t, TEST_TIME_T)

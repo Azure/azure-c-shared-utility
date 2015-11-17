@@ -56,6 +56,7 @@ IO_HANDLE io_create(const IO_INTERFACE_DESCRIPTION* io_interface_description, co
 
 void io_destroy(IO_HANDLE io)
 {
+	/* Codes_SRS_IO_01_007: [If the argument io is NULL, io_destroy shall do nothing.] */
 	if (io != NULL)
 	{
 		IO_INSTANCE* io_instance = (IO_INSTANCE*)io;
@@ -143,6 +144,7 @@ int io_send(IO_HANDLE io, const void* buffer, size_t size, ON_SEND_COMPLETE on_s
 		/* Codes_SRS_IO_01_008: [io_send shall pass the sequence of bytes pointed to by buffer to the concrete IO implementation specified in io_create, by calling the concrete_io_send function while passing down the buffer and size arguments to it.] */
 		/* Codes_SRS_IO_01_009: [On success, io_send shall return 0.] */
 		/* Codes_SRS_IO_01_015: [If the underlying concrete_io_send fails, io_send shall return a non-zero value.] */
+		/* Codes_SRS_IO_01_027: [io_send shall pass to the concrete_io_send function the on_send_complete and callback_context arguments.] */
 		result = io_instance->io_interface_description->concrete_io_send(io_instance->concrete_io_handle, buffer, size, on_send_complete, callback_context);
 	}
 

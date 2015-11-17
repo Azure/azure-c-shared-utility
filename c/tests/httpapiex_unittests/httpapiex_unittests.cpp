@@ -260,7 +260,7 @@ public:
         }
         else
         {
-            result2 = malloc(1);
+            result2 = (HTTP_HEADERS_HANDLE)malloc(1);
         }
     MOCK_METHOD_END(HTTP_HEADERS_HANDLE, result2)
 
@@ -362,7 +362,7 @@ public:
 
         if (i==N_MAX_FAILS)
         {
-            result2 = malloc(1);
+            result2 = (HTTP_HANDLE)malloc(1);
         }
     MOCK_METHOD_END(HTTP_HANDLE, result2)
 

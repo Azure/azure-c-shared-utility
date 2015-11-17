@@ -35,7 +35,7 @@ extern "C"
  */
 DEFINE_ENUM(MAP_RESULT, MAP_RESULT_VALUES);
 
-typedef void* MAP_HANDLE;
+typedef struct MAP_HANDLE_DATA_TAG* MAP_HANDLE;
 
 typedef int (*MAP_FILTER_CALLBACK)(const char* mapProperty, const char* mapValue);
 

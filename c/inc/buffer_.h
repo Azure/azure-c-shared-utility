@@ -12,7 +12,7 @@ extern "C"
 #include <stddef.h>
 #endif
 
-typedef void* BUFFER_HANDLE;
+typedef struct BUFFER_TAG* BUFFER_HANDLE;
 
 extern BUFFER_HANDLE BUFFER_new(void);
 extern BUFFER_HANDLE BUFFER_create(const unsigned char* source, size_t size);

@@ -20,12 +20,12 @@ typedef struct SOCKETIO_CONFIG_TAG
 	int port;
 } SOCKETIO_CONFIG;
 
-extern IO_HANDLE socketio_create(void* io_create_parameters, LOGGER_LOG logger_log);
-extern void socketio_destroy(IO_HANDLE socket_io);
-extern int socketio_open(IO_HANDLE socket_io, ON_BYTES_RECEIVED on_bytes_received, ON_IO_STATE_CHANGED on_io_state_changed, void* callback_context);
-extern int socketio_close(IO_HANDLE socket_io);
-extern int socketio_send(IO_HANDLE socket_io, const void* buffer, size_t size, ON_SEND_COMPLETE on_send_complete, void* callback_context);
-extern void socketio_dowork(IO_HANDLE socket_io);
+extern CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters, LOGGER_LOG logger_log);
+extern void socketio_destroy(CONCRETE_IO_HANDLE socket_io);
+extern int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_BYTES_RECEIVED on_bytes_received, ON_IO_STATE_CHANGED on_io_state_changed, void* callback_context);
+extern int socketio_close(CONCRETE_IO_HANDLE socket_io);
+extern int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size, ON_SEND_COMPLETE on_send_complete, void* callback_context);
+extern void socketio_dowork(CONCRETE_IO_HANDLE socket_io);
 extern const IO_INTERFACE_DESCRIPTION* socketio_get_interface_description(void);
 
 #ifdef __cplusplus

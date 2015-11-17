@@ -9,15 +9,15 @@
 #include "gballoc.h"
 #include "list.h"
 
-typedef struct LIST_ITEM_TAG
+typedef struct LIST_ITEM_INSTANCE_TAG
 {
     const void* item;
     void* next;
-} LIST_ITEM;
+} LIST_ITEM_INSTANCE;
 
-typedef struct LIST_DATA_TAG
+typedef struct LIST_INSTANCE_TAG
 {
-    LIST_ITEM* head;
+    LIST_ITEM_INSTANCE* head;
 } LIST_INSTANCE;
 
 LIST_HANDLE list_create(void)
@@ -44,7 +44,7 @@ void list_destroy(LIST_HANDLE list)
 
         while (list_instance->head != NULL)
         {
-            LIST_ITEM* current_item = list_instance->head;
+            LIST_ITEM_INSTANCE* current_item = list_instance->head;
             list_instance->head = current_item->next;
             free(current_item);
         }
@@ -56,7 +56,7 @@ void list_destroy(LIST_HANDLE list)
 
 LIST_ITEM_HANDLE list_add(LIST_HANDLE list, const void* item)
 {
-    LIST_ITEM* result;
+    LIST_ITEM_INSTANCE* result;
 
     /* Codes_SRS_LIST_01_006: [If any of the arguments is NULL, list_add shall not add the item to the list and return NULL.] */
     if ((list == NULL) ||
@@ -67,7 +67,7 @@ LIST_ITEM_HANDLE list_add(LIST_HANDLE list, const void* item)
     else
     {
         LIST_INSTANCE* list_instance = (LIST_INSTANCE*)list;
-        result = (LIST_ITEM*)malloc(sizeof(LIST_ITEM));
+        result = (LIST_ITEM_INSTANCE*)malloc(sizeof(LIST_ITEM_INSTANCE));
 
         if (result == NULL)
         {
@@ -86,7 +86,7 @@ LIST_ITEM_HANDLE list_add(LIST_HANDLE list, const void* item)
             }
             else
             {
-                LIST_ITEM* current = list_instance->head;
+                LIST_ITEM_INSTANCE* current = list_instance->head;
                 while (current->next != NULL)
                 {
                     current = current->next;
@@ -112,8 +112,8 @@ int list_remove(LIST_HANDLE list, LIST_ITEM_HANDLE item)
     else
     {
         LIST_INSTANCE* list_instance = (LIST_INSTANCE*)list;
-        LIST_ITEM* current_item = list_instance->head;
-        LIST_ITEM* previous_item = NULL;
+        LIST_ITEM_INSTANCE* current_item = list_instance->head;
+        LIST_ITEM_INSTANCE* previous_item = NULL;
 
         while (current_item != NULL)
         {
@@ -173,7 +173,7 @@ LIST_ITEM_HANDLE list_get_next_item(LIST_ITEM_HANDLE item_handle)
     else
     {
         /* Codes_SRS_LIST_01_018: [list_get_next_item shall return the next item in the list following the item item_handle.] */
-        result = ((LIST_ITEM*)item_handle)->next;
+        result = ((LIST_ITEM_INSTANCE*)item_handle)->next;
     }
 
     return result;
@@ -191,7 +191,7 @@ const void* list_item_get_value(LIST_ITEM_HANDLE item_handle)
     else
     {
         /* Codes_SRS_LIST_01_020: [list_item_get_value shall return the value associated with the list item identified by the item_handle argument.] */
-        result = ((LIST_ITEM*)item_handle)->item;
+        result = ((LIST_ITEM_INSTANCE*)item_handle)->item;
     }
 
     return result;
@@ -210,7 +210,7 @@ LIST_ITEM_HANDLE list_find(LIST_HANDLE list, LIST_MATCH_FUNCTION match_function,
     else
     {
         LIST_INSTANCE* list_instance = (LIST_INSTANCE*)list;
-        LIST_ITEM* current = list_instance->head;
+        LIST_ITEM_INSTANCE* current = list_instance->head;
 
         /* Codes_SRS_LIST_01_011: [list_find shall iterate through all items in a list and return the one that satisfies a certain match function.] */
         while (current != NULL)
@@ -253,8 +253,8 @@ int list_remove_matching_item(LIST_HANDLE list, LIST_MATCH_FUNCTION match_functi
     else
     {
         LIST_INSTANCE* list_instance = (LIST_INSTANCE*)list;
-        LIST_ITEM* current = list_instance->head;
-        LIST_ITEM* previous = NULL;
+        LIST_ITEM_INSTANCE* current = list_instance->head;
+        LIST_ITEM_INSTANCE* previous = NULL;
 
         while (current != NULL)
         {

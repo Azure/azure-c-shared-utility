@@ -6,7 +6,7 @@
 #include <crtdbg.h>
 #endif
 
-#define POSIX_C_SOURCE      200112L
+//#define _POSIX_C_SOURCE 2
 
 #include <stddef.h>
 #include <stdio.h>
@@ -19,9 +19,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include "list.h"
-
-#define _OE_SOCKETS
-#include <unistd.h>
 
 #define SOCKET_SUCCESS      0
 #define INVALID_SOCKET      -1
@@ -108,7 +105,7 @@ static int add_pending_io(SOCKET_IO_INSTANCE* socket_io_instance, const unsigned
     return result;
 }
 
-IO_HANDLE socketio_create(void* io_create_parameters, LOGGER_LOG logger_log)
+CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters, LOGGER_LOG logger_log)
 {
     SOCKETIO_CONFIG* socket_io_config = io_create_parameters;
     SOCKET_IO_INSTANCE* result;
@@ -155,7 +152,7 @@ IO_HANDLE socketio_create(void* io_create_parameters, LOGGER_LOG logger_log)
     return result;
 }
 
-void socketio_destroy(IO_HANDLE socket_io)
+void socketio_destroy(CONCRETE_IO_HANDLE socket_io)
 {
     if (socket_io != NULL)
     {
@@ -174,7 +171,7 @@ void socketio_destroy(IO_HANDLE socket_io)
                 free(pending_socket_io);
             }
 
-            list_remove(socket_io_instance->pending_io_list, first_pending_io);
+            (void)list_remove(socket_io_instance->pending_io_list, first_pending_io);
             first_pending_io = list_get_head_item(socket_io_instance->pending_io_list);
         }
 
@@ -184,7 +181,7 @@ void socketio_destroy(IO_HANDLE socket_io)
     }
 }
 
-int socketio_open(IO_HANDLE socket_io, ON_BYTES_RECEIVED on_bytes_received, ON_IO_STATE_CHANGED on_io_state_changed, void* callback_context)
+int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_BYTES_RECEIVED on_bytes_received, ON_IO_STATE_CHANGED on_io_state_changed, void* callback_context)
 {
     int result;
 
@@ -253,7 +250,7 @@ int socketio_open(IO_HANDLE socket_io, ON_BYTES_RECEIVED on_bytes_received, ON_I
     return result;
 }
 
-int socketio_close(IO_HANDLE socket_io)
+int socketio_close(CONCRETE_IO_HANDLE socket_io)
 {
     int result = 0;
 
@@ -274,7 +271,7 @@ int socketio_close(IO_HANDLE socket_io)
     return result;
 }
 
-int socketio_send(IO_HANDLE socket_io, const void* buffer, size_t size, ON_SEND_COMPLETE on_send_complete, void* callback_context)
+int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size, ON_SEND_COMPLETE on_send_complete, void* callback_context)
 {
     int result;
 
@@ -351,7 +348,7 @@ int socketio_send(IO_HANDLE socket_io, const void* buffer, size_t size, ON_SEND_
     return result;
 }
 
-void socketio_dowork(IO_HANDLE socket_io)
+void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
 {
     if (socket_io != NULL)
     {
@@ -377,7 +374,7 @@ void socketio_dowork(IO_HANDLE socket_io)
                     {
                         free(pending_socket_io->bytes);
                         free(pending_socket_io);
-                        list_remove(socket_io_instance->pending_io_list, first_pending_io);
+                        (void)list_remove(socket_io_instance->pending_io_list, first_pending_io);
 
                         set_io_state(socket_io_instance, IO_STATE_ERROR);
                     }
@@ -396,7 +393,10 @@ void socketio_dowork(IO_HANDLE socket_io)
 
                     free(pending_socket_io->bytes);
                     free(pending_socket_io);
-                    list_remove(socket_io_instance->pending_io_list, first_pending_io);
+                    if (list_remove(socket_io_instance->pending_io_list, first_pending_io) != 0)
+                    {
+                        set_io_state(socket_io_instance, IO_STATE_ERROR);
+                    }
                 }
 
                 first_pending_io = list_get_head_item(socket_io_instance->pending_io_list);
