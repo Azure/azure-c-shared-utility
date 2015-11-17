@@ -38,7 +38,8 @@ set(micromock_h_files
 ./inc/mockvalue.h
 ./inc/mockvaluebase.h
 ./inc/nicecallcomparer.h
-./inc/runtimemock.h 	
+./inc/runtimemock.h 
+./inc/stdafx.h	
 ./inc/strictorderedcallcomparer.h
 ./inc/strictunorderedcallcomparer.h
 ./inc/threadsafeglobalmock.h
