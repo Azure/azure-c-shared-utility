@@ -42,6 +42,7 @@ set(micromock_h_files
 ./inc/stdafx.h	
 ./inc/strictorderedcallcomparer.h
 ./inc/strictunorderedcallcomparer.h
+./inc/targetver.h
 ./inc/threadsafeglobalmock.h
 ./inc/timediscretemicromock.h
 ./inc/timediscretemicromockcallmacros.h
