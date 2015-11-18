@@ -283,6 +283,7 @@ if(${use_http})
 		./inc/httpapiex.h
 		./inc/httpapiexsas.h
 		./inc/httpheaders.h
+		${HTTP_C_FILE}
 	)
 endif()
 

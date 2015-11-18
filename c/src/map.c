@@ -35,7 +35,7 @@ MAP_HANDLE Map_Create(MAP_FILTER_CALLBACK mapFilterFunc)
         result->count = 0;
         result->mapFilterCallback = mapFilterFunc;
     }
-    return result;
+    return (MAP_HANDLE)result;
 }
 
 void Map_Destroy(MAP_HANDLE handle)
@@ -157,7 +157,7 @@ MAP_HANDLE Map_Clone(MAP_HANDLE handle)
             }
         }
     }
-    return result;
+    return (MAP_HANDLE)result;
 }
 
 static int Map_IncreaseStorageKeysValues(MAP_HANDLE_DATA* handleData)
