@@ -230,7 +230,8 @@ if(${use_http})
 		./src/httpapiex.c
 		./src/httpapiexsas.c
 		./src/httpheaders.c
-	)
+		${HTTP_C_FILE}		
+	)	
 endif()
 
 if(${use_schannel})
@@ -263,6 +264,7 @@ set(source_h_files
 ./inc/lock.h
 ./inc/macro_utils.h
 ./inc/map.h
+./inc/mqttapi.h
 ./inc/platform.h
 ./inc/sastoken.h
 ./inc/sha-private.h
@@ -283,7 +285,6 @@ if(${use_http})
 		./inc/httpapiex.h
 		./inc/httpapiexsas.h
 		./inc/httpheaders.h
-		${HTTP_C_FILE}
 	)
 endif()
 
@@ -301,8 +302,16 @@ elseif(${tls_openssl})
 	)	
 endif()
 
-add_files_to_install("${source_h_files}")
-add_files_to_install("./src/gballoc.c")
+if(WIN32)
+else()
+	add_files_to_install("${source_h_files}")
+	add_files_to_install("./src/buffer.c")
+	add_files_to_install("./src/crt_abstractions.c")
+	add_files_to_install("./src/doublylinkedlist.c")
+	add_files_to_install("./src/gballoc.c")
+	add_files_to_install("./src/strings.c")
+	add_files_to_install("./src/vector.c")
+endif()
 
 #these are the include folders
 #the following "set" statetement exports across the project a global variable called COMMON_INC_FOLDER that expands to whatever needs to included when using COMMON library
@@ -323,5 +332,5 @@ add_subdirectory(tests)
 if(WIN32)
 else()
 	install (TARGETS aziotsharedutil DESTINATION lib)
-	install (FILES ${INSTALL_H_FILES} DESTINATION ${INCLUDE_INSTALL_DIR}/azuresharedutil)
+	install (FILES ${INSTALL_H_FILES} ${LOCK_C_FILE} DESTINATION ${INCLUDE_INSTALL_DIR}/azuresharedutil)
 endif (WIN32)
