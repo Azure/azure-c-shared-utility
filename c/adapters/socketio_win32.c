@@ -193,8 +193,12 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_BYTES_RECEIVED on_bytes_recei
 		}
 		else
 		{
+            ADDRINFO addrHint = { 0 };
+            addrHint.ai_family = AF_INET;
+            addrHint.ai_socktype = SOCK_STREAM;
+            addrHint.ai_protocol = IPPROTO_TCP;
 			sprintf(portString, "%u", socket_io_instance->port);
-			if (getaddrinfo(socket_io_instance->hostname, portString, NULL, &addrInfo) != 0)
+			if (getaddrinfo(socket_io_instance->hostname, portString, &addrHint, &addrInfo) != 0)
 			{
 				closesocket(socket_io_instance->socket);
 				set_io_state(socket_io_instance, IO_STATE_ERROR);
@@ -207,6 +211,7 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_BYTES_RECEIVED on_bytes_recei
 
 				if (connect(socket_io_instance->socket, addrInfo->ai_addr, sizeof(*addrInfo->ai_addr)) != 0)
 				{
+                    int socketErr = WSAGetLastError();
 					closesocket(socket_io_instance->socket);
 					set_io_state(socket_io_instance, IO_STATE_ERROR);
 					socket_io_instance->socket = INVALID_SOCKET;
