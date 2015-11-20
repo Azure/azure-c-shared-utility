@@ -36,6 +36,7 @@ public:
     {
         return ((!expectedCall->HasMatch()) &&
                 (expectedCall->m_ExpectedTimes > 0) &&
+                (!expectedCall->m_IgnoreAllCalls) &&
                 (!expectedCall->m_OnlySpecifiesActions));
     }
 
