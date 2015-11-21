@@ -214,6 +214,7 @@ set(source_c_files
 ./src/sha384-512.c
 ./src/strings.c
 ./src/string_tokenizer.c
+./src/tickcounter.c
 ./src/urlencode.c
 ./src/usha.c
 ./src/vector.c
@@ -273,6 +274,7 @@ set(source_h_files
 ./inc/stdint_ce6.h
 ./inc/strings.h
 ./inc/string_tokenizer.h
+./inc/tickcounter.h
 ./inc/threadapi.h
 ./inc/transport_io.h
 ./inc/urlencode.h
