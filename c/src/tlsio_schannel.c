@@ -329,7 +329,16 @@ static void tlsio_schannel_on_io_state_changed(void* context, IO_STATE new_io_st
 {
 	TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)context;
 
-	if (tls_io_instance->io_state == IO_STATE_OPENING)
+	if (new_io_state == IO_STATE_NOT_OPEN)
+	{
+		if ((tls_io_instance->io_state == IO_STATE_OPEN) ||
+			(tls_io_instance->io_state == IO_STATE_OPENING))
+		{
+			set_io_state(tls_io_instance, IO_STATE_NOT_OPEN);
+			tlsio_schannel_close(tls_io_instance);
+		}
+	}
+	else if (tls_io_instance->io_state == IO_STATE_OPENING)
 	{
 		switch (tls_io_instance->tls_state)
 		{
