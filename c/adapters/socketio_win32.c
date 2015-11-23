@@ -303,15 +303,15 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
                     {
                         printf("Error sending on socket\r\n");
                         result = __LINE__;
-
+                    }
+					else
+                    {
 						if (last_error == WSAECONNRESET)
 						{
 							set_io_state(socket_io_instance, IO_STATE_NOT_OPEN);
 						}
-                    }
-					else
-                    {
-                        /* queue data */
+						
+						/* queue data */
                         if (add_pending_io(socket_io_instance, buffer, size, on_send_complete, callback_context) != 0)
                         {
                             result = __LINE__;
