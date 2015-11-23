@@ -182,7 +182,7 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_BYTES_RECEIVED on_bytes_recei
     }
     else
     {
-        ADDRINFO* addrInfo;
+        ADDRINFO* addrInfo = NULL;
         char portString[16];
 
         socket_io_instance->socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -209,15 +209,14 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_BYTES_RECEIVED on_bytes_recei
             {
                 u_long iMode = 1;
 
-                if (connect(socket_io_instance->socket, addrInfo->ai_addr, sizeof(*addrInfo->ai_addr)) != 0)
+                if (connect(socket_io_instance->socket, addrInfo->ai_addr, addrInfo->ai_addrlen) != 0)
                 {
-                    int socketErr = WSAGetLastError();
                     closesocket(socket_io_instance->socket);
                     set_io_state(socket_io_instance, IO_STATE_ERROR);
                     socket_io_instance->socket = INVALID_SOCKET;
                     result = __LINE__;
                 }
-                else if (ioctlsocket(socket_io_instance->socket, FIONBIO, &iMode))
+                else if (ioctlsocket(socket_io_instance->socket, FIONBIO, &iMode) != 0)
                 {
                     closesocket(socket_io_instance->socket);
                     set_io_state(socket_io_instance, IO_STATE_ERROR);
@@ -233,6 +232,7 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_BYTES_RECEIVED on_bytes_recei
                     set_io_state(socket_io_instance, IO_STATE_OPEN);
                     result = 0;
                 }
+                freeaddrinfo(addrInfo);
             }
         }
     }
@@ -299,7 +299,7 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
                 if (send_result != size)
                 {
                     int last_error = WSAGetLastError();
-                    if (last_error == WSAEWOULDBLOCK)
+                    if (last_error != WSAEWOULDBLOCK)
                     {
                         printf("Error sending on socket\r\n");
                         result = __LINE__;
@@ -311,7 +311,7 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
 							set_io_state(socket_io_instance, IO_STATE_NOT_OPEN);
 						}
 						
-						/* queue data */
+                        /* queue data */
                         if (add_pending_io(socket_io_instance, buffer, size, on_send_complete, callback_context) != 0)
                         {
                             result = __LINE__;
@@ -434,6 +434,11 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
             }
         }
     }
+}
+
+int socketio_getError(CONCRETE_IO_HANDLE socket_io)
+{
+    return WSAGetLastError();
 }
 
 const IO_INTERFACE_DESCRIPTION* socketio_get_interface_description(void)
