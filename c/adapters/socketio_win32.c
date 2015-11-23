@@ -299,17 +299,17 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
                 if (send_result != size)
                 {
                     int last_error = WSAGetLastError();
-                    if (last_error == WSAEWOULDBLOCK)
+                    if (last_error != WSAEWOULDBLOCK)
                     {
                         printf("Error sending on socket\r\n");
                         result = __LINE__;
 
-						if (last_error == WSAECONNRESET)
-						{
-							set_io_state(socket_io_instance, IO_STATE_NOT_OPEN);
-						}
+                        if (last_error == WSAECONNRESET)
+                        {
+                            set_io_state(socket_io_instance, IO_STATE_NOT_OPEN);
+                        }
                     }
-					else
+                    else
                     {
                         /* queue data */
                         if (add_pending_io(socket_io_instance, buffer, size, on_send_complete, callback_context) != 0)
@@ -373,15 +373,15 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                         free(pending_socket_io);
                         (void)list_remove(socket_io_instance->pending_io_list, first_pending_io);
 
-						if (last_error == WSAECONNRESET)
-						{
-							set_io_state(socket_io_instance, IO_STATE_NOT_OPEN);
-						}
+                        if (last_error == WSAECONNRESET)
+                        {
+                            set_io_state(socket_io_instance, IO_STATE_NOT_OPEN);
+                        }
                     }
-					else 
-					{
-						/* try again */
-					}
+                    else 
+                    {
+                        /* try again */
+                    }
                 }
                 else
                 {
@@ -419,18 +419,18 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                         (void)socket_io_instance->on_bytes_received(socket_io_instance->callback_context, recv_bytes, received);
                     }
                 }
-				else
-				{
-					int last_error = WSAGetLastError();
-					if (last_error == WSAECONNRESET)
-					{
-						set_io_state(socket_io_instance, IO_STATE_NOT_OPEN);
-					}
-					else
-					{
-						/* try again */
-					}
-				}
+                else
+                {
+                    int last_error = WSAGetLastError();
+                    if (last_error == WSAECONNRESET)
+                    {
+                        set_io_state(socket_io_instance, IO_STATE_NOT_OPEN);
+                    }
+                    else
+                    {
+                        /* try again */
+                    }
+                }
             }
         }
     }
