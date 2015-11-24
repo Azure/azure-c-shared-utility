@@ -423,11 +423,6 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
     }
 }
 
-int socketio_getError(CONCRETE_IO_HANDLE socket_io)
-{
-    return WSAGetLastError();
-}
-
 const IO_INTERFACE_DESCRIPTION* socketio_get_interface_description(void)
 {
     return &socket_io_interface_description;
