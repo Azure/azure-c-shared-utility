@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#ifndef AZUREIO_H
-#define AZUREIO_H
+#ifndef XIO_H
+#define XIO_H
 
 #include "iot_logging.h"
 
@@ -51,15 +51,15 @@ extern "C" {
 		IO_DOWORK concrete_io_dowork;
 	} IO_INTERFACE_DESCRIPTION;
 
-	extern IO_HANDLE io_create(const IO_INTERFACE_DESCRIPTION* io_interface_description, const void* io_create_parameters, LOGGER_LOG logger_log);
-	extern void io_destroy(IO_HANDLE io);
-	extern int io_open(IO_HANDLE io, ON_BYTES_RECEIVED on_bytes_received, ON_IO_STATE_CHANGED on_io_state_changed, void* callback_context);
-	extern int io_close(IO_HANDLE io);
-	extern int io_send(IO_HANDLE io, const void* buffer, size_t size, ON_SEND_COMPLETE on_send_complete, void* callback_context);
-	extern void io_dowork(IO_HANDLE io);
+	extern IO_HANDLE xio_create(const IO_INTERFACE_DESCRIPTION* io_interface_description, const void* io_create_parameters, LOGGER_LOG logger_log);
+	extern void xio_destroy(IO_HANDLE io);
+	extern int xio_open(IO_HANDLE io, ON_BYTES_RECEIVED on_bytes_received, ON_IO_STATE_CHANGED on_io_state_changed, void* callback_context);
+	extern int xio_close(IO_HANDLE io);
+	extern int xio_send(IO_HANDLE io, const void* buffer, size_t size, ON_SEND_COMPLETE on_send_complete, void* callback_context);
+	extern void xio_dowork(IO_HANDLE io);
 
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
 
-#endif /* AZUREIO_H */
+#endif /* XIO_H */

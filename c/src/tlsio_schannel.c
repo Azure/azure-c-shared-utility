@@ -214,7 +214,7 @@ static void tlsio_schannel_on_bytes_received(void* context, const void* buffer, 
 				case SEC_I_COMPLETE_NEEDED:
 				case SEC_I_CONTINUE_NEEDED:
 				case SEC_I_COMPLETE_AND_CONTINUE:
-					if ((output_buffers[0].cbBuffer > 0) && io_send(tls_io_instance->socket_io, output_buffers[0].pvBuffer, output_buffers[0].cbBuffer, NULL, NULL) != 0)
+					if ((output_buffers[0].cbBuffer > 0) && xio_send(tls_io_instance->socket_io, output_buffers[0].pvBuffer, output_buffers[0].cbBuffer, NULL, NULL) != 0)
 					{
 						tls_io_instance->tls_state = TLS_STATE_ERROR;
 					}
@@ -339,7 +339,7 @@ static void tlsio_schannel_on_io_state_changed(void* context, IO_STATE new_io_st
 		if (tls_io_instance->io_state != IO_STATE_ERROR)
 		{
 			set_io_state(tls_io_instance, IO_STATE_ERROR);
-			(void)io_close(tls_io_instance->socket_io);
+			(void)xio_close(tls_io_instance->socket_io);
 		}
 
 		break;
@@ -395,7 +395,7 @@ static void tlsio_schannel_on_io_state_changed(void* context, IO_STATE new_io_st
 
 				if ((status == SEC_I_COMPLETE_NEEDED) || (status == SEC_I_CONTINUE_NEEDED) || (status == SEC_I_COMPLETE_AND_CONTINUE))
 				{
-					if (io_send(tls_io_instance->socket_io, init_security_buffers[0].pvBuffer, init_security_buffers[0].cbBuffer, NULL, NULL) != 0)
+					if (xio_send(tls_io_instance->socket_io, init_security_buffers[0].pvBuffer, init_security_buffers[0].cbBuffer, NULL, NULL) != 0)
 					{
 						FreeCredentialHandle(&tls_io_instance->credential_handle);
 						tls_io_instance->tls_state = TLS_STATE_ERROR;
@@ -467,7 +467,7 @@ CONCRETE_IO_HANDLE tlsio_schannel_create(void* io_create_parameters, LOGGER_LOG 
 				}
 				else
 				{
-					result->socket_io = io_create(socket_io_interface, &socketio_config, logger_log);
+					result->socket_io = xio_create(socket_io_interface, &socketio_config, logger_log);
 					if (result->socket_io == NULL)
 					{
 						free(result->host_name);
@@ -506,7 +506,7 @@ void tlsio_schannel_destroy(CONCRETE_IO_HANDLE tls_io)
 			free(tls_io_instance->received_bytes);
 		}
 
-		io_destroy(tls_io_instance->socket_io);
+		xio_destroy(tls_io_instance->socket_io);
 		free(tls_io_instance->host_name);
 		free(tls_io);
 	}
@@ -536,7 +536,7 @@ int tlsio_schannel_open(CONCRETE_IO_HANDLE tls_io, ON_BYTES_RECEIVED on_bytes_re
 
 			set_io_state(tls_io_instance, IO_STATE_OPENING);
 
-			if (io_open(tls_io_instance->socket_io, tlsio_schannel_on_bytes_received, tlsio_schannel_on_io_state_changed, tls_io_instance) != 0)
+			if (xio_open(tls_io_instance->socket_io, tlsio_schannel_on_bytes_received, tlsio_schannel_on_io_state_changed, tls_io_instance) != 0)
 			{
 				set_io_state(tls_io_instance, IO_STATE_ERROR);
 				result = __LINE__;
@@ -567,7 +567,7 @@ int tlsio_schannel_close(CONCRETE_IO_HANDLE tls_io)
 			(tls_io_instance->io_state == IO_STATE_OPEN))
 		{
 			set_io_state(tls_io_instance, IO_STATE_NOT_OPEN);
-			(void)io_close(tls_io_instance->socket_io);
+			(void)xio_close(tls_io_instance->socket_io);
 		}
 	}
 
@@ -638,7 +638,7 @@ static int send_chunk(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t size
 					}
 					else
 					{
-						if (io_send(tls_io_instance->socket_io, out_buffer, security_buffers[0].cbBuffer + security_buffers[1].cbBuffer + security_buffers[2].cbBuffer, on_send_complete, callback_context) != 0)
+						if (xio_send(tls_io_instance->socket_io, out_buffer, security_buffers[0].cbBuffer + security_buffers[1].cbBuffer + security_buffers[2].cbBuffer, on_send_complete, callback_context) != 0)
 						{
 							result = __LINE__;
 						}
@@ -701,7 +701,7 @@ void tlsio_schannel_dowork(CONCRETE_IO_HANDLE tls_io)
 	if (tls_io != NULL)
 	{
 		TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tls_io;
-		io_dowork(tls_io_instance->socket_io);
+		xio_dowork(tls_io_instance->socket_io);
 	}
 }
 

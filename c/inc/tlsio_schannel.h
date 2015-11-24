@@ -11,7 +11,7 @@ extern "C" {
 #include <stddef.h>
 #endif /* __cplusplus */
 
-#include "transport_io.h"
+#include "xio.h"
 #include "iot_logging.h"
 
 typedef struct TLSIO_SCHANNEL_CONFIG_TAG
