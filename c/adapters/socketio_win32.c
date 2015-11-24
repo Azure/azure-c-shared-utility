@@ -36,7 +36,7 @@ typedef struct SOCKET_IO_INSTANCE_TAG
     LIST_HANDLE pending_io_list;
 } SOCKET_IO_INSTANCE;
 
-static const XIO_INTERFACE_DESCRIPTION socket_io_interface_description = 
+static const IO_INTERFACE_DESCRIPTION socket_io_interface_description = 
 {
     socketio_create,
     socketio_destroy,
@@ -96,7 +96,7 @@ static int add_pending_io(SOCKET_IO_INSTANCE* socket_io_instance, const unsigned
     return result;
 }
 
-CONCRETE_XIO_HANDLE socketio_create(void* io_create_parameters, LOGGER_LOG logger_log)
+CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters, LOGGER_LOG logger_log)
 {
     SOCKETIO_CONFIG* socket_io_config = io_create_parameters;
     SOCKET_IO_INSTANCE* result;
@@ -143,7 +143,7 @@ CONCRETE_XIO_HANDLE socketio_create(void* io_create_parameters, LOGGER_LOG logge
     return (XIO_HANDLE)result;
 }
 
-void socketio_destroy(CONCRETE_XIO_HANDLE socket_io)
+void socketio_destroy(CONCRETE_IO_HANDLE socket_io)
 {
     if (socket_io != NULL)
     {
@@ -171,7 +171,7 @@ void socketio_destroy(CONCRETE_XIO_HANDLE socket_io)
     }
 }
 
-int socketio_open(CONCRETE_XIO_HANDLE socket_io, ON_BYTES_RECEIVED on_bytes_received, ON_IO_STATE_CHANGED on_io_state_changed, void* callback_context)
+int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_BYTES_RECEIVED on_bytes_received, ON_IO_STATE_CHANGED on_io_state_changed, void* callback_context)
 {
     int result;
 
@@ -240,7 +240,7 @@ int socketio_open(CONCRETE_XIO_HANDLE socket_io, ON_BYTES_RECEIVED on_bytes_rece
     return result;
 }
 
-int socketio_close(CONCRETE_XIO_HANDLE socket_io)
+int socketio_close(CONCRETE_IO_HANDLE socket_io)
 {
     int result = 0;
 
@@ -261,7 +261,7 @@ int socketio_close(CONCRETE_XIO_HANDLE socket_io)
     return result;
 }
 
-int socketio_send(CONCRETE_XIO_HANDLE socket_io, const void* buffer, size_t size, ON_SEND_COMPLETE on_send_complete, void* callback_context)
+int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size, ON_SEND_COMPLETE on_send_complete, void* callback_context)
 {
     int result;
 
@@ -340,7 +340,7 @@ int socketio_send(CONCRETE_XIO_HANDLE socket_io, const void* buffer, size_t size
     return result;
 }
 
-void socketio_dowork(CONCRETE_XIO_HANDLE socket_io)
+void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
 {
     if (socket_io != NULL)
     {
@@ -423,7 +423,7 @@ void socketio_dowork(CONCRETE_XIO_HANDLE socket_io)
     }
 }
 
-const XIO_INTERFACE_DESCRIPTION* socketio_get_interface_description(void)
+const IO_INTERFACE_DESCRIPTION* socketio_get_interface_description(void)
 {
     return &socket_io_interface_description;
 }

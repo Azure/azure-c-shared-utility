@@ -46,7 +46,7 @@ typedef struct TLS_IO_INSTANCE_TAG
 	XIO_STATE io_state;
 } TLS_IO_INSTANCE;
 
-static const XIO_INTERFACE_DESCRIPTION tls_io_interface_description =
+static const IO_INTERFACE_DESCRIPTION tls_io_interface_description =
 {
 	tlsio_schannel_create,
 	tlsio_schannel_destroy,
@@ -424,7 +424,7 @@ static void tlsio_schannel_on_io_state_changed(void* context, XIO_STATE new_io_s
 	}
 }
 
-CONCRETE_XIO_HANDLE tlsio_schannel_create(void* io_create_parameters, LOGGER_LOG logger_log)
+CONCRETE_IO_HANDLE tlsio_schannel_create(void* io_create_parameters, LOGGER_LOG logger_log)
 {
 	TLSIO_SCHANNEL_CONFIG* tls_io_config = io_create_parameters;
 	TLS_IO_INSTANCE* result;
@@ -458,7 +458,7 @@ CONCRETE_XIO_HANDLE tlsio_schannel_create(void* io_create_parameters, LOGGER_LOG
 			{
 				(void)strcpy(result->host_name, tls_io_config->hostname);
 
-				const XIO_INTERFACE_DESCRIPTION* socket_io_interface = socketio_get_interface_description();
+				const IO_INTERFACE_DESCRIPTION* socket_io_interface = socketio_get_interface_description();
 				if (socket_io_interface == NULL)
 				{
 					free(result->host_name);
@@ -491,7 +491,7 @@ CONCRETE_XIO_HANDLE tlsio_schannel_create(void* io_create_parameters, LOGGER_LOG
 	return result;
 }
 
-void tlsio_schannel_destroy(CONCRETE_XIO_HANDLE tls_io)
+void tlsio_schannel_destroy(CONCRETE_IO_HANDLE tls_io)
 {
 	if (tls_io != NULL)
 	{
@@ -512,7 +512,7 @@ void tlsio_schannel_destroy(CONCRETE_XIO_HANDLE tls_io)
 	}
 }
 
-int tlsio_schannel_open(CONCRETE_XIO_HANDLE tls_io, ON_BYTES_RECEIVED on_bytes_received, ON_IO_STATE_CHANGED on_io_state_changed, void* callback_context)
+int tlsio_schannel_open(CONCRETE_IO_HANDLE tls_io, ON_BYTES_RECEIVED on_bytes_received, ON_IO_STATE_CHANGED on_io_state_changed, void* callback_context)
 {
 	int result;
 
@@ -551,7 +551,7 @@ int tlsio_schannel_open(CONCRETE_XIO_HANDLE tls_io, ON_BYTES_RECEIVED on_bytes_r
 	return result;
 }
 
-int tlsio_schannel_close(CONCRETE_XIO_HANDLE tls_io)
+int tlsio_schannel_close(CONCRETE_IO_HANDLE tls_io)
 {
 	int result = 0;
 
@@ -574,7 +574,7 @@ int tlsio_schannel_close(CONCRETE_XIO_HANDLE tls_io)
 	return result;
 }
 
-static int send_chunk(CONCRETE_XIO_HANDLE tls_io, const void* buffer, size_t size, ON_SEND_COMPLETE on_send_complete, void* callback_context)
+static int send_chunk(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t size, ON_SEND_COMPLETE on_send_complete, void* callback_context)
 {
 	int result;
 
@@ -663,7 +663,7 @@ static int send_chunk(CONCRETE_XIO_HANDLE tls_io, const void* buffer, size_t siz
 	return result;
 }
 
-int tlsio_schannel_send(CONCRETE_XIO_HANDLE tls_io, const void* buffer, size_t size, ON_SEND_COMPLETE on_send_complete, void* callback_context)
+int tlsio_schannel_send(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t size, ON_SEND_COMPLETE on_send_complete, void* callback_context)
 {
 	int result;
 
@@ -696,7 +696,7 @@ int tlsio_schannel_send(CONCRETE_XIO_HANDLE tls_io, const void* buffer, size_t s
 	return result;
 }
 
-void tlsio_schannel_dowork(CONCRETE_XIO_HANDLE tls_io)
+void tlsio_schannel_dowork(CONCRETE_IO_HANDLE tls_io)
 {
 	if (tls_io != NULL)
 	{
@@ -705,7 +705,7 @@ void tlsio_schannel_dowork(CONCRETE_XIO_HANDLE tls_io)
 	}
 }
 
-const XIO_INTERFACE_DESCRIPTION* tlsio_schannel_get_interface_description(void)
+const IO_INTERFACE_DESCRIPTION* tlsio_schannel_get_interface_description(void)
 {
 	return &tls_io_interface_description;
 }
