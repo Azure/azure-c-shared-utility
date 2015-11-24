@@ -176,6 +176,23 @@ static int on_handshake_done(WOLFSSL* ssl, void* context)
 
 static void tlsio_on_io_state_changed(void* context, IO_STATE new_io_state, IO_STATE previous_io_state)
 {
+	TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)context;
+
+	switch (new_io_state)
+	{
+	default:
+		break;
+
+	case IO_STATE_ERROR:
+	case IO_STATE_NOT_OPEN:
+		if (tls_io_instance->io_state != IO_STATE_ERROR)
+		{
+			set_io_state(tls_io_instance, IO_STATE_ERROR);
+			(void)io_close(tls_io_instance->socket_io);
+		}
+
+		break;
+	}
 }
 
 int tlsio_wolfssl_init(void)
@@ -353,8 +370,13 @@ int tlsio_wolfssl_close(IO_HANDLE tls_io)
 	else
 	{
 		TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tls_io;
-		(void)io_close(tls_io_instance->socket_io);
-		set_io_state(tls_io_instance, IO_STATE_NOT_OPEN);
+
+		if ((tls_io_instance->io_state == IO_STATE_OPENING) ||
+			(tls_io_instance->io_state == IO_STATE_OPEN))
+		{
+			(void)io_close(tls_io_instance->socket_io);
+			set_io_state(tls_io_instance, IO_STATE_NOT_OPEN);
+		}
 	}
 
 	return result;

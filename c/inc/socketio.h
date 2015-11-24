@@ -11,7 +11,7 @@ extern "C" {
 #include <stddef.h>
 #endif /* __cplusplus */
 
-#include "transport_io.h"
+#include "xio.h"
 #include "iot_logging.h"
 
 typedef struct SOCKETIO_CONFIG_TAG
@@ -27,7 +27,6 @@ extern int socketio_close(CONCRETE_IO_HANDLE socket_io);
 extern int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size, ON_SEND_COMPLETE on_send_complete, void* callback_context);
 extern void socketio_dowork(CONCRETE_IO_HANDLE socket_io);
 extern const IO_INTERFACE_DESCRIPTION* socketio_get_interface_description(void);
-extern int socketio_getError(CONCRETE_IO_HANDLE socket_io);
 
 #ifdef __cplusplus
 }

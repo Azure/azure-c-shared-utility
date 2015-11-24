@@ -205,7 +205,7 @@ set(source_c_files
 ./src/gballoc.c
 ./src/hmac.c
 ./src/hmacsha256.c
-./src/transport_io.c
+./src/xio.c
 ./src/list.c
 ./src/map.c
 ./src/sastoken.c
@@ -276,7 +276,7 @@ set(source_h_files
 ./inc/string_tokenizer.h
 ./inc/tickcounter.h
 ./inc/threadapi.h
-./inc/transport_io.h
+./inc/xio.h
 ./inc/urlencode.h
 ./inc/vector.h
 )

@@ -247,7 +247,7 @@ static void OnBytesRecieved(void* context, const void* buffer, size_t size)
     (void)size;
 }
 
-static void OnIoStateChanged(void* context, IO_STATE new_io_state, IO_STATE previous_io_state)
+static void OnIoStateChanged(void* context, XIO_STATE new_io_state, XIO_STATE previous_io_state)
 {
     (void)context;
     (void)new_io_state;
@@ -260,7 +260,7 @@ static void PrintLogFunction(unsigned int options, char* format, ...)
     (void)format;
 }
 
-static void OnSendComplete(void* context, IO_SEND_RESULT send_result)
+static void OnSendComplete(void* context, XIO_SEND_RESULT send_result)
 {
     (void)context;
     (void)send_result;
