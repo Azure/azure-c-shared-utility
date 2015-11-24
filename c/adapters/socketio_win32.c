@@ -196,7 +196,7 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_BYTES_RECEIVED on_bytes_recei
             ADDRINFO addrHint = { 0 };
             addrHint.ai_family = AF_INET;
             addrHint.ai_socktype = SOCK_STREAM;
-            addrHint.ai_protocol = IPPROTO_TCP;
+            addrHint.ai_protocol = 0;
             sprintf(portString, "%u", socket_io_instance->port);
             if (getaddrinfo(socket_io_instance->hostname, portString, &addrHint, &addrInfo) != 0)
             {

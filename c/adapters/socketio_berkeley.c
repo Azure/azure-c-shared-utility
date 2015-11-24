@@ -19,6 +19,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include "list.h"
+#include "gballoc.h"
 
 #define SOCKET_SUCCESS      0
 #define INVALID_SOCKET      -1
@@ -203,8 +204,13 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_BYTES_RECEIVED on_bytes_recei
         }
         else
         {
+            struct addrinfo addrHint = { 0 };
+            addrHint.ai_family = AF_INET;
+            addrHint.ai_socktype = SOCK_STREAM;
+            addrHint.ai_protocol = 0;
+
             sprintf(portString, "%u", socket_io_instance->port);
-            if (getaddrinfo(socket_io_instance->hostname, portString, NULL, &addrInfo) != 0)
+            if (getaddrinfo(socket_io_instance->hostname, portString, &addrHint, &addrInfo) != 0)
             {
                 close(socket_io_instance->socket);
                 set_io_state(socket_io_instance, IO_STATE_ERROR);
@@ -425,7 +431,13 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
     }
 }
 
+int socketio_getError(CONCRETE_IO_HANDLE socket_io)
+{
+    return 0;
+}
+
 const IO_INTERFACE_DESCRIPTION* socketio_get_interface_description(void)
 {
     return &socket_io_interface_description;
 }
+

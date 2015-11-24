@@ -9,13 +9,13 @@ set(CMAKE_SHARED_LINKER_FLAGS "$(CMAKE_SHARED_LINKER_FLAGS) /IGNORE:4217")
 endif()
 
 compileAsC99()
-set(theseTestsName socketio_win32_unittests)
+set(theseTestsName socketio_berkeley_unittests)
 set(${theseTestsName}_cpp_files
 ${theseTestsName}.cpp
 )
 
 set(${theseTestsName}_c_files
-../../adapter/socketio_berkeley.c
+../../adapters/socketio_berkeley.c
 )
 
 set(${theseTestsName}_h_files
