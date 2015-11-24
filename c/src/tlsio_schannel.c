@@ -338,12 +338,12 @@ static void tlsio_schannel_on_io_state_changed(void* context, IO_STATE new_io_st
 	case IO_STATE_NOT_OPEN:
 		if (tls_io_instance->io_state != IO_STATE_ERROR)
 		{
-			(void)io_close(tls_io_instance->socket_io);
 			set_io_state(tls_io_instance, IO_STATE_ERROR);
+			(void)io_close(tls_io_instance->socket_io);
 		}
 
 		break;
-	case IO_STATE_OPENING:
+	case IO_STATE_OPEN:
 		switch (tls_io_instance->tls_state)
 		{
 		default:
@@ -562,8 +562,13 @@ int tlsio_schannel_close(CONCRETE_IO_HANDLE tls_io)
 	else
 	{
 		TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tls_io;
-		(void)io_close(tls_io_instance->socket_io);
-		set_io_state(tls_io_instance, IO_STATE_NOT_OPEN);
+
+		if ((tls_io_instance->io_state == IO_STATE_OPENING) ||
+			(tls_io_instance->io_state == IO_STATE_OPEN))
+		{
+			set_io_state(tls_io_instance, IO_STATE_NOT_OPEN);
+			(void)io_close(tls_io_instance->socket_io);
+		}
 	}
 
 	return result;
