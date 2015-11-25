@@ -18,7 +18,7 @@ if(${use_http})
 	add_subdirectory(httpheaders_unittests)
 endif()
 
-add_subdirectory(io_unittests)
+add_subdirectory(xio_unittests)
 add_subdirectory(list_unittests)
 add_subdirectory(lock_unittests)
 add_subdirectory(map_unittests)
