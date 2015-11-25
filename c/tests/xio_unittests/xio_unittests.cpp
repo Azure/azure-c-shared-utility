@@ -81,7 +81,7 @@ extern "C"
         (void)size;
     }
 
-    void test_on_io_state_changed(void* context, XIO_STATE new_io_state, XIO_STATE previous_io_state)
+    void test_on_io_state_changed(void* context, IO_STATE new_io_state, IO_STATE previous_io_state)
     {
         (void)context;
         (void)new_io_state;
