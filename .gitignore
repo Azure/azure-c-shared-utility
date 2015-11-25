@@ -3,3 +3,5 @@
 ################################################################################
 
 /c/build_all/windows/nuget.exe
+/c/cmake
+/c/devdoc/~$o_requirements.docm
