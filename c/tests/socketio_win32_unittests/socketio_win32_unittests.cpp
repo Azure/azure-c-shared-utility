@@ -260,7 +260,7 @@ static void PrintLogFunction(unsigned int options, char* format, ...)
     (void)format;
 }
 
-static void OnSendComplete(void* context, XIO_SEND_RESULT send_result)
+static void OnSendComplete(void* context, IO_SEND_RESULT send_result)
 {
     (void)context;
     (void)send_result;

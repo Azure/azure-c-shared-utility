@@ -88,7 +88,7 @@ extern "C"
         (void)previous_io_state;
     }
 
-    void test_on_send_complete(void* context, XIO_SEND_RESULT send_result)
+    void test_on_send_complete(void* context, IO_SEND_RESULT send_result)
     {
         (void)context;
         (void)send_result;

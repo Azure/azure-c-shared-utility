@@ -206,7 +206,7 @@ static void tlsio_schannel_on_bytes_received(void* context, const void* buffer, 
 					else
 					{
 						tls_io_instance->tls_state = TLS_STATE_HANDSHAKE_DONE;
-						set_io_state(tls_io_instance, XIO_STATE_OPEN);
+						set_io_state(tls_io_instance, IO_STATE_OPEN);
 					}
 
 					break;
@@ -311,7 +311,7 @@ static void tlsio_schannel_on_bytes_received(void* context, const void* buffer, 
 						else
 						{
 							tls_io_instance->tls_state = TLS_STATE_HANDSHAKE_DONE;
-							set_io_state(tls_io_instance, XIO_STATE_OPEN);
+							set_io_state(tls_io_instance, IO_STATE_OPEN);
 						}
 					}
 					break;
@@ -334,16 +334,16 @@ static void tlsio_schannel_on_io_state_changed(void* context, XIO_STATE new_io_s
 	default:
 		break;
 
-	case XIO_STATE_ERROR:
-	case XIO_STATE_NOT_OPEN:
-		if (tls_io_instance->io_state != XIO_STATE_ERROR)
+	case IO_STATE_ERROR:
+	case IO_STATE_NOT_OPEN:
+		if (tls_io_instance->io_state != IO_STATE_ERROR)
 		{
-			set_io_state(tls_io_instance, XIO_STATE_ERROR);
+			set_io_state(tls_io_instance, IO_STATE_ERROR);
 			(void)xio_close(tls_io_instance->socket_io);
 		}
 
 		break;
-	case XIO_STATE_OPEN:
+	case IO_STATE_OPEN:
 		switch (tls_io_instance->tls_state)
 		{
 		default:
@@ -481,7 +481,7 @@ CONCRETE_IO_HANDLE tlsio_schannel_create(void* io_create_parameters, LOGGER_LOG 
 						result->buffer_size = 0;
 						result->consumed_bytes = 0;
 						result->tls_state = TLS_STATE_HANDSHAKE_NOT_STARTED;
-						set_io_state(result, XIO_STATE_NOT_OPEN);
+						set_io_state(result, IO_STATE_NOT_OPEN);
 					}
 				}
 			}
@@ -524,7 +524,7 @@ int tlsio_schannel_open(CONCRETE_IO_HANDLE tls_io, ON_BYTES_RECEIVED on_bytes_re
 	{
 		TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tls_io;
 
-		if (tls_io_instance->io_state != XIO_STATE_NOT_OPEN)
+		if (tls_io_instance->io_state != IO_STATE_NOT_OPEN)
 		{
 			result = __LINE__;
 		}
@@ -534,11 +534,11 @@ int tlsio_schannel_open(CONCRETE_IO_HANDLE tls_io, ON_BYTES_RECEIVED on_bytes_re
 			tls_io_instance->on_io_state_changed = on_io_state_changed;
 			tls_io_instance->callback_context = callback_context;
 
-			set_io_state(tls_io_instance, XIO_STATE_OPENING);
+			set_io_state(tls_io_instance, IO_STATE_OPENING);
 
 			if (xio_open(tls_io_instance->socket_io, tlsio_schannel_on_bytes_received, tlsio_schannel_on_io_state_changed, tls_io_instance) != 0)
 			{
-				set_io_state(tls_io_instance, XIO_STATE_ERROR);
+				set_io_state(tls_io_instance, IO_STATE_ERROR);
 				result = __LINE__;
 			}
 			else
@@ -563,10 +563,10 @@ int tlsio_schannel_close(CONCRETE_IO_HANDLE tls_io)
 	{
 		TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tls_io;
 
-		if ((tls_io_instance->io_state == XIO_STATE_OPENING) ||
-			(tls_io_instance->io_state == XIO_STATE_OPEN))
+		if ((tls_io_instance->io_state == IO_STATE_OPENING) ||
+			(tls_io_instance->io_state == IO_STATE_OPEN))
 		{
-			set_io_state(tls_io_instance, XIO_STATE_NOT_OPEN);
+			set_io_state(tls_io_instance, IO_STATE_NOT_OPEN);
 			(void)xio_close(tls_io_instance->socket_io);
 		}
 	}
@@ -588,7 +588,7 @@ static int send_chunk(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t size
 	else
 	{
 		TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tls_io;
-		if (tls_io_instance->io_state != XIO_STATE_OPEN)
+		if (tls_io_instance->io_state != IO_STATE_OPEN)
 		{
 			result = __LINE__;
 		}
