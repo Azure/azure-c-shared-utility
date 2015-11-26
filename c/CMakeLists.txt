@@ -294,11 +294,13 @@ if(${use_schannel})
 	set(source_h_files ${source_h_files}
 		./inc/tlsio_schannel.h
 	)
-elseif(${use_wolfssl})
+endif()
+if(${use_wolfssl})
 	set(source_h_files ${source_h_files}
 		./inc/tlsio_wolfssl.h
 	)
-elseif(${use_openssl})
+endif()
+if(${use_openssl})
 	set(source_h_files ${source_h_files}
 		./inc/tlsio_openssl.h
 	)	
