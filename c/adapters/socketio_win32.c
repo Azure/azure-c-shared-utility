@@ -371,7 +371,7 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                     }
 					else 
 					{
-						set_io_state(socket_io_instance, IO_STATE_ERROR);
+						/* try again */
 					}
                 }
                 else

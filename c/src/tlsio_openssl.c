@@ -475,7 +475,7 @@ void tlsio_openssl_dowork(CONCRETE_IO_HANDLE tls_io)
     {
         TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tls_io;
 
-		if ((tls_io_instance->io_state == IO_STATE_OPEN) &&
+		if ((tls_io_instance->io_state == IO_STATE_OPEN) ||
 			(tls_io_instance->io_state == IO_STATE_OPENING))
 		{
 			xio_dowork(tls_io_instance->socket_io);
