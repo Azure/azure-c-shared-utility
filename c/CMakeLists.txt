@@ -239,11 +239,13 @@ if(${use_schannel})
 	set(source_c_files ${source_c_files}
 		./src/tlsio_schannel.c
 	)
-elseif(${use_wolfssl})
+endif()
+if(${use_wolfssl})
 	set(source_c_files ${source_c_files}
 		./src/tlsio_wolfssl.c
 	)
-elseif(${use_openssl})
+endif()
+if(${use_openssl})
 	set(source_c_files ${source_c_files}
 		./src/tlsio_openssl.c
 	)
@@ -303,7 +305,10 @@ endif()
 if(${use_openssl})
 	set(source_h_files ${source_h_files}
 		./inc/tlsio_openssl.h
-	)	
+	)
+if(WIN32)
+include_directories($ENV{OpenSSLDir}/include)
+endif()
 endif()
 
 if(WIN32)
