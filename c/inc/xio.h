@@ -22,7 +22,7 @@ extern "C" {
 		IO_STATE_OPENING,
 		IO_STATE_OPEN,
 		IO_STATE_ERROR
-	} XIO_STATE;
+	} IO_STATE;
 
 	typedef enum IO_SEND_RESULT_TAG
 	{
@@ -32,7 +32,7 @@ extern "C" {
 
 	typedef void(*ON_BYTES_RECEIVED)(void* context, const void* buffer, size_t size);
 	typedef void(*ON_SEND_COMPLETE)(void* context, IO_SEND_RESULT send_result);
-	typedef void(*ON_IO_STATE_CHANGED)(void* context, XIO_STATE new_io_state, XIO_STATE previous_io_state);
+	typedef void(*ON_IO_STATE_CHANGED)(void* context, IO_STATE new_io_state, IO_STATE previous_io_state);
 
 	typedef CONCRETE_IO_HANDLE(*IO_CREATE)(void* io_create_parameters, LOGGER_LOG logger_log);
 	typedef void(*IO_DESTROY)(CONCRETE_IO_HANDLE concrete_io);

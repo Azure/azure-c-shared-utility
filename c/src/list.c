@@ -104,7 +104,8 @@ int list_remove(LIST_HANDLE list, LIST_ITEM_HANDLE item)
 {
     int result;
 
-    if ((list == NULL) ||
+	/* Codes_SRS_LIST_01_024: [If any of the arguments list or item_handle is NULL, list_remove shall fail and return a non-zero value.] */
+	if ((list == NULL) ||
         (item == NULL))
     {
         result = __LINE__;
@@ -132,9 +133,20 @@ int list_remove(LIST_HANDLE list, LIST_ITEM_HANDLE item)
 
                 break;
             }
+
+			current_item = current_item->next;
         }
 
-        result = 0;
+		if (current_item == NULL)
+		{
+			/* Codes_SRS_LIST_01_025: [If the item item_handle is not found in the list, then list_remove shall fail and return a non-zero value.] */
+			result = __LINE__;
+		}
+		else
+		{
+			/* Codes_SRS_LIST_01_023: [list_remove shall remove a list item from the list and on success it shall return 0.] */
+			result = 0;
+		}
     }
 
     return result;
@@ -212,7 +224,7 @@ LIST_ITEM_HANDLE list_find(LIST_HANDLE list, LIST_MATCH_FUNCTION match_function,
         LIST_INSTANCE* list_instance = (LIST_INSTANCE*)list;
         LIST_ITEM_INSTANCE* current = list_instance->head;
 
-        /* Codes_SRS_LIST_01_011: [list_find shall iterate through all items in a list and return the one that satisfies a certain match function.] */
+        /* Codes_SRS_LIST_01_011: [list_find shall iterate through all items in a list and return the first one that satisfies a certain match function.] */
         while (current != NULL)
         {
             /* Codes_SRS_LIST_01_014: [list find shall determine whether an item satisfies the match criteria by invoking the match function for each item in the list until a matching item is found.] */
@@ -235,56 +247,6 @@ LIST_ITEM_HANDLE list_find(LIST_HANDLE list, LIST_MATCH_FUNCTION match_function,
         else
         {
             result = current;
-        }
-    }
-
-    return result;
-}
-
-int list_remove_matching_item(LIST_HANDLE list, LIST_MATCH_FUNCTION match_function, const void* match_context)
-{
-    int result;
-
-    if ((list == NULL) ||
-        (match_function == NULL))
-    {
-        result = __LINE__;
-    }
-    else
-    {
-        LIST_INSTANCE* list_instance = (LIST_INSTANCE*)list;
-        LIST_ITEM_INSTANCE* current = list_instance->head;
-        LIST_ITEM_INSTANCE* previous = NULL;
-
-        while (current != NULL)
-        {
-            if (match_function((LIST_ITEM_HANDLE)current, match_context) == true)
-            {
-                break;
-            }
-
-            current = current->next;
-        }
-
-        if (current == NULL)
-        {
-            result = __LINE__;
-        }
-        else
-        {
-            if (previous == NULL)
-            {
-                list_instance->head = previous;
-            }
-            else
-            {
-                previous->next = current->next;
-            }
-
-            free((void*)current->item);
-            free(current);
-
-            result = 0;
         }
     }
 

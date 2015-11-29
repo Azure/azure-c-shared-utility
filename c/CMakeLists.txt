@@ -6,16 +6,16 @@ project(azure_c_shared_utility)
 
 #the following variables are project-wide and can be used with cmake-gui
 option(skip_unittests "set skip_unittests to ON to skip unittests (default is OFF)[if possible, they are always build]" OFF)
-option(use_http "set use_http to ON if http is to be used, set to OFF to not use http" ON)
+option(use_http "set use_http to ON if http is to be used, set to OFF to not use http" OFF)
 
 if(WIN32)
-	option(use_schannel "set use_schannel to ON if schannel is to be used, set to OFF to not use http" ON)
-	option(tls_openssl "set tls_openssl to ON if openssl is to be used, set to OFF to not use openssl" OFF)
-	option(use_wolfssl "set use_wolfssl to ON if use_wolfssl is to be used, set to OFF to not use wolfssl" OFF)
+	option(use_schannel "set use_schannel to ON if schannel is to be used, set to OFF to not use schannel" ON)
+	option(use_openssl "set use_openssl to ON if openssl is to be used, set to OFF to not use openssl" OFF)
+	option(use_wolfssl "set use_wolfssl to ON if wolfssl is to be used, set to OFF to not use wolfssl" OFF)
 else()
-	option(use_schannel "set use_schannel to ON if schannel is to be used, set to OFF to not use http" OFF)
-	option(tls_openssl "set tls_openssl to ON if openssl is to be used, set to OFF to not use openssl" ON)
-	option(use_wolfssl "set use_wolfssl to ON if use_wolfssl is to be used, set to OFF to not use wolfssl" OFF)
+	option(use_schannel "set use_schannel to ON if schannel is to be used, set to OFF to not use schannel" OFF)
+	option(use_openssl "set use_openssl to ON if openssl is to be used, set to OFF to not use openssl" ON)
+	option(use_wolfssl "set use_wolfssl to ON if wolfssl is to be used, set to OFF to not use wolfssl" OFF)
 endif()
 
 option(compileOption_C "passes a string to the command line of the C compiler" OFF)
@@ -239,11 +239,13 @@ if(${use_schannel})
 	set(source_c_files ${source_c_files}
 		./src/tlsio_schannel.c
 	)
-elseif(${use_wolfssl})
+endif()
+if(${use_wolfssl})
 	set(source_c_files ${source_c_files}
 		./src/tlsio_wolfssl.c
 	)
-elseif(${tls_openssl})
+endif()
+if(${use_openssl})
 	set(source_c_files ${source_c_files}
 		./src/tlsio_openssl.c
 	)
@@ -294,14 +296,19 @@ if(${use_schannel})
 	set(source_h_files ${source_h_files}
 		./inc/tlsio_schannel.h
 	)
-elseif(${use_wolfssl})
+endif()
+if(${use_wolfssl})
 	set(source_h_files ${source_h_files}
 		./inc/tlsio_wolfssl.h
 	)
-elseif(${tls_openssl})
+endif()
+if(${use_openssl})
 	set(source_h_files ${source_h_files}
 		./inc/tlsio_openssl.h
-	)	
+	)
+if(WIN32)
+include_directories($ENV{OpenSSLDir}/include)
+endif()
 endif()
 
 if(WIN32)

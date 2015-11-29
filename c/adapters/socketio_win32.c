@@ -32,7 +32,7 @@ typedef struct SOCKET_IO_INSTANCE_TAG
     void* callback_context;
     char* hostname;
     int port;
-    XIO_STATE io_state;
+    IO_STATE io_state;
     LIST_HANDLE pending_io_list;
 } SOCKET_IO_INSTANCE;
 
@@ -46,9 +46,9 @@ static const IO_INTERFACE_DESCRIPTION socket_io_interface_description =
     socketio_dowork
 };
 
-static void set_io_state(SOCKET_IO_INSTANCE* socket_io_instance, XIO_STATE io_state)
+static void set_io_state(SOCKET_IO_INSTANCE* socket_io_instance, IO_STATE io_state)
 {
-    XIO_STATE previous_state = socket_io_instance->io_state;
+    IO_STATE previous_state = socket_io_instance->io_state;
     socket_io_instance->io_state = io_state;
     if (socket_io_instance->on_io_state_changed != NULL)
     {
@@ -371,7 +371,7 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                     }
 					else 
 					{
-						set_io_state(socket_io_instance, IO_STATE_ERROR);
+						/* try again */
 					}
                 }
                 else

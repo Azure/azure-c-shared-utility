@@ -23,7 +23,7 @@ typedef enum HANDSHAKE_STATE_ENUM_TAG
 
 typedef struct TLS_IO_INSTANCE_TAG
 {
-	IO_HANDLE socket_io;
+	XIO_HANDLE socket_io;
 	ON_BYTES_RECEIVED on_bytes_received;
 	ON_IO_STATE_CHANGED on_io_state_changed;
 	void* callback_context;
@@ -86,6 +86,7 @@ static void tlsio_on_bytes_received(void* context, const void* buffer, size_t si
 	unsigned char* new_socket_io_read_bytes = (unsigned char*)realloc(tls_io_instance->socket_io_read_bytes, tls_io_instance->socket_io_read_byte_count + size);
 	if (new_socket_io_read_bytes == NULL)
 	{
+		set_io_state(tls_io_instance, IO_STATE_ERROR);
 	}
 	else
 	{
@@ -103,7 +104,7 @@ static int on_io_recv(WOLFSSL *ssl, char *buf, int sz, void *context)
 
 	while (tls_io_instance->socket_io_read_byte_count == 0)
 	{
-		io_dowork(tls_io_instance->socket_io);
+		xio_dowork(tls_io_instance->socket_io);
 		if (tls_io_instance->handshake_state == HANDSHAKE_STATE_DONE)
 		{
 			break;
@@ -149,8 +150,9 @@ static int on_io_send(WOLFSSL *ssl, char *buf, int sz, void *context)
 	int result;
 	TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)context;
 
-	if (io_send(tls_io_instance->socket_io, buf, sz, tls_io_instance->on_send_complete, tls_io_instance->on_send_complete_callback_context) != 0)
+	if (xio_send(tls_io_instance->socket_io, buf, sz, tls_io_instance->on_send_complete, tls_io_instance->on_send_complete_callback_context) != 0)
 	{
+		set_io_state(tls_io_instance, IO_STATE_ERROR);
 		result = 0;
 	}
 	else
@@ -188,7 +190,7 @@ static void tlsio_on_io_state_changed(void* context, IO_STATE new_io_state, IO_S
 		if (tls_io_instance->io_state != IO_STATE_ERROR)
 		{
 			set_io_state(tls_io_instance, IO_STATE_ERROR);
-			(void)io_close(tls_io_instance->socket_io);
+			(void)xio_close(tls_io_instance->socket_io);
 		}
 
 		break;
@@ -207,7 +209,7 @@ void tlsio_wolfssl_deinit(void)
 {
 }
 
-IO_HANDLE tlsio_wolfssl_create(void* io_create_parameters, LOGGER_LOG logger_log)
+CONCRETE_IO_HANDLE tlsio_wolfssl_create(void* io_create_parameters, LOGGER_LOG logger_log)
 {
 	TLSIO_WOLFSSL_CONFIG* tls_io_config = io_create_parameters;
 	TLS_IO_INSTANCE* result;
@@ -249,7 +251,7 @@ IO_HANDLE tlsio_wolfssl_create(void* io_create_parameters, LOGGER_LOG logger_log
 				}
 				else
 				{
-					result->socket_io = io_create(socket_io_interface, &socketio_config, logger_log);
+					result->socket_io = xio_create(socket_io_interface, &socketio_config, logger_log);
 					if (result->socket_io == NULL)
 					{
 						wolfSSL_CTX_free(result->ssl_context);
@@ -291,7 +293,7 @@ IO_HANDLE tlsio_wolfssl_create(void* io_create_parameters, LOGGER_LOG logger_log
 	return result;
 }
 
-void tlsio_wolfssl_destroy(IO_HANDLE tls_io)
+void tlsio_wolfssl_destroy(CONCRETE_IO_HANDLE tls_io)
 {
 	if (tls_io != NULL)
 	{
@@ -304,12 +306,12 @@ void tlsio_wolfssl_destroy(IO_HANDLE tls_io)
 			free(tls_io_instance->socket_io_read_bytes);
 		}
 
-		io_destroy(tls_io_instance->socket_io);
+		xio_destroy(tls_io_instance->socket_io);
 		free(tls_io);
 	}
 }
 
-int tlsio_wolfssl_open(IO_HANDLE tls_io, ON_BYTES_RECEIVED on_bytes_received, ON_IO_STATE_CHANGED on_io_state_changed, void* callback_context)
+int tlsio_wolfssl_open(CONCRETE_IO_HANDLE tls_io, ON_BYTES_RECEIVED on_bytes_received, ON_IO_STATE_CHANGED on_io_state_changed, void* callback_context)
 {
 	int result;
 
@@ -333,7 +335,7 @@ int tlsio_wolfssl_open(IO_HANDLE tls_io, ON_BYTES_RECEIVED on_bytes_received, ON
 
 			set_io_state(tls_io_instance, IO_STATE_OPENING);
 
-			if (io_open(tls_io_instance->socket_io, tlsio_on_bytes_received, tlsio_on_io_state_changed, tls_io_instance) != 0)
+			if (xio_open(tls_io_instance->socket_io, tlsio_on_bytes_received, tlsio_on_io_state_changed, tls_io_instance) != 0)
 			{
 				set_io_state(tls_io_instance, IO_STATE_ERROR);
 				result = __LINE__;
@@ -359,7 +361,7 @@ int tlsio_wolfssl_open(IO_HANDLE tls_io, ON_BYTES_RECEIVED on_bytes_received, ON
 	return result;
 }
 
-int tlsio_wolfssl_close(IO_HANDLE tls_io)
+int tlsio_wolfssl_close(CONCRETE_IO_HANDLE tls_io)
 {
 	int result = 0;
 
@@ -374,7 +376,7 @@ int tlsio_wolfssl_close(IO_HANDLE tls_io)
 		if ((tls_io_instance->io_state == IO_STATE_OPENING) ||
 			(tls_io_instance->io_state == IO_STATE_OPEN))
 		{
-			(void)io_close(tls_io_instance->socket_io);
+			(void)xio_close(tls_io_instance->socket_io);
 			set_io_state(tls_io_instance, IO_STATE_NOT_OPEN);
 		}
 	}
@@ -382,7 +384,7 @@ int tlsio_wolfssl_close(IO_HANDLE tls_io)
 	return result;
 }
 
-int tlsio_wolfssl_send(IO_HANDLE tls_io, const void* buffer, size_t size, ON_SEND_COMPLETE on_send_complete, void* callback_context)
+int tlsio_wolfssl_send(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t size, ON_SEND_COMPLETE on_send_complete, void* callback_context)
 {
 	int result;
 
@@ -393,30 +395,42 @@ int tlsio_wolfssl_send(IO_HANDLE tls_io, const void* buffer, size_t size, ON_SEN
 	else
 	{
 		TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tls_io;
-		tls_io_instance->on_send_complete = on_send_complete;
-		tls_io_instance->on_send_complete_callback_context = callback_context;
-		int res = wolfSSL_write(tls_io_instance->ssl, buffer, size);
-		if (res != size)
+
+		if (tls_io_instance->io_state != IO_STATE_OPEN)
 		{
 			result = __LINE__;
 		}
 		else
 		{
-			result = 0;
+			tls_io_instance->on_send_complete = on_send_complete;
+			tls_io_instance->on_send_complete_callback_context = callback_context;
+			int res = wolfSSL_write(tls_io_instance->ssl, buffer, size);
+			if (res != size)
+			{
+				result = __LINE__;
+			}
+			else
+			{
+				result = 0;
+			}
 		}
 	}
 
 	return result;
 }
 
-void tlsio_wolfssl_dowork(IO_HANDLE tls_io)
+void tlsio_wolfssl_dowork(CONCRETE_IO_HANDLE tls_io)
 {
 	if (tls_io != NULL)
 	{
 		TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tls_io;
 
-		decode_ssl_received_bytes(tls_io_instance);
-		io_dowork(tls_io_instance->socket_io);
+		if ((tls_io_instance->io_state == IO_STATE_OPEN) ||
+			(tls_io_instance->io_state == IO_STATE_OPENING))
+		{
+			decode_ssl_received_bytes(tls_io_instance);
+			xio_dowork(tls_io_instance->socket_io);
+		}
 	}
 }
 

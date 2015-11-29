@@ -23,7 +23,7 @@ typedef enum HANDSHAKE_STATE_ENUM_TAG
 
 typedef struct TLS_IO_INSTANCE_TAG
 {
-    IO_HANDLE socket_io;
+    XIO_HANDLE socket_io;
     ON_BYTES_RECEIVED on_bytes_received;
     ON_IO_STATE_CHANGED on_io_state_changed;
     void* callback_context;
@@ -56,22 +56,6 @@ static void set_io_state(TLS_IO_INSTANCE* tls_io_instance, IO_STATE io_state)
     }
 }
 
-/*#define SSL_WHERE_INFO(ssl, w, flag, msg) {                \
-    if(w & flag) {                                         \
-      printf("%20.20s", msg);                              \
-      printf(" - %30.30s ", SSL_state_string_long(ssl));   \
-      printf(" - %5.10s ", SSL_state_string(ssl));         \
-      printf("\n");                                        \
-            }                                                      \
-  } 
-
-static void ssl_client_info_callback(const SSL* ssl, int where, int ret)
-{
-    SSL_WHERE_INFO(ssl, where, SSL_CB_LOOP, "LOOP");
-    SSL_WHERE_INFO(ssl, where, SSL_CB_HANDSHAKE_START, "HANDSHAKE START");
-    SSL_WHERE_INFO(ssl, where, SSL_CB_HANDSHAKE_DONE, "HANDSHAKE DONE");
-}*/
-
 static int write_outgoing_bytes(TLS_IO_INSTANCE* tls_io_instance, ON_SEND_COMPLETE on_send_complete, void* callback_context)
 {
     int result;
@@ -96,7 +80,7 @@ static int write_outgoing_bytes(TLS_IO_INSTANCE* tls_io_instance, ON_SEND_COMPLE
             }
             else
             {
-                if (io_send(tls_io_instance->socket_io, bytes_to_send, pending, on_send_complete, callback_context) != 0)
+                if (xio_send(tls_io_instance->socket_io, bytes_to_send, pending, on_send_complete, callback_context) != 0)
                 {
                     result = __LINE__;
                 }
@@ -142,6 +126,7 @@ static int send_handshake_bytes(TLS_IO_INSTANCE* tls_io_instance)
             if (write_outgoing_bytes(tls_io_instance, NULL, NULL) != 0)
             {
                 result = __LINE__;
+				set_io_state(tls_io_instance, IO_STATE_ERROR);
             }
             else
             {
@@ -187,7 +172,7 @@ static void tlsio_on_bytes_received(void* context, const void* buffer, size_t si
     int written = BIO_write(tls_io_instance->in_bio, buffer, size);
     if (written != size)
     {
-        /* error */
+		set_io_state(tls_io_instance, IO_STATE_ERROR);
     }
     else
     {
@@ -200,14 +185,14 @@ static void tlsio_on_bytes_received(void* context, const void* buffer, size_t si
         case HANDSHAKE_STATE_IN_HANDSHAKE:
             if (send_handshake_bytes(tls_io_instance) != 0)
             {
-                /* error */
+				set_io_state(tls_io_instance, IO_STATE_ERROR);
             }
             break;
 
         case HANDSHAKE_STATE_DONE:
             if (decode_ssl_received_bytes(tls_io_instance) != 0)
             {
-                /* error */
+				set_io_state(tls_io_instance, IO_STATE_ERROR);
             }
             break;
         }
@@ -228,7 +213,7 @@ static void tlsio_on_io_state_changed(void* context, IO_STATE new_io_state, IO_S
 		if (tls_io_instance->io_state != IO_STATE_ERROR)
 		{
 			set_io_state(tls_io_instance, IO_STATE_ERROR);
-			(void)io_close(tls_io_instance->socket_io);
+			(void)xio_close(tls_io_instance->socket_io);
 		}
 
 		break;
@@ -312,7 +297,7 @@ CONCRETE_IO_HANDLE tlsio_openssl_create(void* io_create_parameters, LOGGER_LOG l
                         }
                         else
                         {
-                            result->socket_io = io_create(socket_io_interface, &socketio_config, logger_log);
+                            result->socket_io = xio_create(socket_io_interface, &socketio_config, logger_log);
                             if ((result->socket_io == NULL) ||
                                 (BIO_set_mem_eof_return(result->in_bio, -1) <= 0) ||
                                 (BIO_set_mem_eof_return(result->out_bio, -1) <= 0))
@@ -336,7 +321,6 @@ CONCRETE_IO_HANDLE tlsio_openssl_create(void* io_create_parameters, LOGGER_LOG l
                                 }
                                 else
                                 {
-                                    //SSL_set_info_callback(result->ssl, ssl_client_info_callback);
                                     SSL_set_verify(result->ssl, SSL_VERIFY_NONE, NULL);
                                     SSL_set_bio(result->ssl, result->in_bio, result->out_bio);
                                     SSL_set_connect_state(result->ssl);
@@ -362,7 +346,7 @@ void tlsio_openssl_destroy(CONCRETE_IO_HANDLE tls_io)
         SSL_free(tls_io_instance->ssl);
         SSL_CTX_free(tls_io_instance->ssl_context);
 
-        io_destroy(tls_io_instance->socket_io);
+        xio_destroy(tls_io_instance->socket_io);
         free(tls_io);
     }
 }
@@ -391,7 +375,7 @@ int tlsio_openssl_open(CONCRETE_IO_HANDLE tls_io, ON_BYTES_RECEIVED on_bytes_rec
 
             set_io_state(tls_io_instance, IO_STATE_OPENING);
 
-            if (io_open(tls_io_instance->socket_io, tlsio_on_bytes_received, tlsio_on_io_state_changed, tls_io_instance) != 0)
+            if (xio_open(tls_io_instance->socket_io, tlsio_on_bytes_received, tlsio_on_io_state_changed, tls_io_instance) != 0)
             {
                 set_io_state(tls_io_instance, IO_STATE_ERROR);
                 result = __LINE__;
@@ -437,7 +421,7 @@ int tlsio_openssl_close(CONCRETE_IO_HANDLE tls_io)
 		if ((tls_io_instance->io_state == IO_STATE_OPENING) ||
 			(tls_io_instance->io_state == IO_STATE_OPEN))
 		{
-			(void)io_close(tls_io_instance->socket_io);
+			(void)xio_close(tls_io_instance->socket_io);
 			set_io_state(tls_io_instance, IO_STATE_NOT_OPEN);
 		}
     }
@@ -455,23 +439,31 @@ int tlsio_openssl_send(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t siz
     }
     else
     {
-        TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tls_io;
-        int res = SSL_write(tls_io_instance->ssl, buffer, size);
-        if (res != size)
-        {
-            result = __LINE__;
-        }
-        else
-        {
-            if (write_outgoing_bytes(tls_io_instance, on_send_complete, callback_context) != 0)
-            {
-                result = __LINE__;
-            }
-            else
-            {
-                result = 0;
-            }
-        }
+		TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tls_io;
+
+		if (tls_io_instance->io_state != IO_STATE_OPEN)
+		{
+			result = __LINE__;
+		}
+		else
+		{
+			int res = SSL_write(tls_io_instance->ssl, buffer, size);
+			if (res != size)
+			{
+				result = __LINE__;
+			}
+			else
+			{
+				if (write_outgoing_bytes(tls_io_instance, on_send_complete, callback_context) != 0)
+				{
+					result = __LINE__;
+				}
+				else
+				{
+					result = 0;
+				}
+			}
+		}
     }
 
     return result;
@@ -482,7 +474,12 @@ void tlsio_openssl_dowork(CONCRETE_IO_HANDLE tls_io)
     if (tls_io != NULL)
     {
         TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tls_io;
-        io_dowork(tls_io_instance->socket_io);
+
+		if ((tls_io_instance->io_state == IO_STATE_OPEN) ||
+			(tls_io_instance->io_state == IO_STATE_OPENING))
+		{
+			xio_dowork(tls_io_instance->socket_io);
+		}
     }
 }
 

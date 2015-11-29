@@ -43,7 +43,7 @@ typedef struct TLS_IO_INSTANCE_TAG
 	size_t buffer_size;
 	size_t needed_bytes;
 	size_t consumed_bytes;
-	XIO_STATE io_state;
+	IO_STATE io_state;
 } TLS_IO_INSTANCE;
 
 static const IO_INTERFACE_DESCRIPTION tls_io_interface_description =
@@ -56,9 +56,9 @@ static const IO_INTERFACE_DESCRIPTION tls_io_interface_description =
 	tlsio_schannel_dowork
 };
 
-static void set_io_state(TLS_IO_INSTANCE* tls_io_instance, XIO_STATE io_state)
+static void set_io_state(TLS_IO_INSTANCE* tls_io_instance, IO_STATE io_state)
 {
-	XIO_STATE previous_state = tls_io_instance->io_state;
+	IO_STATE previous_state = tls_io_instance->io_state;
 	tls_io_instance->io_state = io_state;
 	if (tls_io_instance->on_io_state_changed != NULL)
 	{
@@ -325,7 +325,7 @@ static void tlsio_schannel_on_bytes_received(void* context, const void* buffer, 
 	}
 }
 
-static void tlsio_schannel_on_io_state_changed(void* context, XIO_STATE new_io_state, XIO_STATE previous_io_state)
+static void tlsio_schannel_on_io_state_changed(void* context, IO_STATE new_io_state, IO_STATE previous_io_state)
 {
 	TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)context;
 
