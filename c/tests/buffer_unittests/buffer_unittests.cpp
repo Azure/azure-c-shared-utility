@@ -826,6 +826,75 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         BUFFER_delete(g_hBuffer);
     }
 
+    TEST_FUNCTION(BUFFER_prepend_APPEND_HANDLE1_NULL_Fail)
+    {
+        ///arrange
+        CMocks mocks;
+        BUFFER_HANDLE g_hBuffer;
+        g_hBuffer = BUFFER_new();
+        int nResult = BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
+        mocks.ResetAllCalls();
+
+        ///act
+        nResult = BUFFER_prepend(g_hBuffer, NULL);
+
+        ///assert
+        ASSERT_ARE_NOT_EQUAL(int, nResult, 0);
+        mocks.AssertActualAndExpectedCalls();
+
+        ///cleanup
+        BUFFER_delete(g_hBuffer);
+    }
+
+    TEST_FUNCTION(BUFFER_prepend_APPEND_HANDLE2_NULL_Fail)
+    {
+        ///arrange
+        CMocks mocks;
+        BUFFER_HANDLE hAppend = BUFFER_new();
+        int nResult = BUFFER_build(hAppend, ADDITIONAL_BUFFER, ALLOCATION_SIZE);
+        mocks.ResetAllCalls();
+
+        ///act
+        nResult = BUFFER_prepend(NULL, hAppend);
+
+        ///assert
+        ASSERT_ARE_NOT_EQUAL(int, nResult, 0);
+        mocks.AssertActualAndExpectedCalls();
+
+        ///cleanup
+        BUFFER_delete(hAppend);
+    }
+
+    TEST_FUNCTION(BUFFER_prepend_Succeed)
+    {
+        ///arrange
+        CMocks mocks;
+        BUFFER_HANDLE g_hBuffer;
+        g_hBuffer = BUFFER_new();
+        int nResult = BUFFER_build(g_hBuffer, ADDITIONAL_BUFFER, ALLOCATION_SIZE);
+        BUFFER_HANDLE hAppend = BUFFER_new();
+        nResult = BUFFER_build(hAppend, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
+        mocks.ResetAllCalls();
+
+        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(ALLOCATION_SIZE + ALLOCATION_SIZE));
+        EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
+
+        ///act
+        nResult = BUFFER_prepend(g_hBuffer, hAppend);
+
+        ///assert
+        ASSERT_ARE_EQUAL(int, nResult, 0);
+        ASSERT_ARE_EQUAL(int, 0, memcmp(BUFFER_u_char(g_hBuffer), TOTAL_BUFFER, TOTAL_ALLOCATION_SIZE));
+        ASSERT_ARE_EQUAL(int, 0, memcmp(BUFFER_u_char(hAppend), BUFFER_TEST_VALUE, ALLOCATION_SIZE));
+
+        //TOTAL_BUFFER
+        mocks.AssertActualAndExpectedCalls();
+
+        ///cleanup
+        BUFFER_delete(hAppend);
+        BUFFER_delete(g_hBuffer);
+    }
+
     /* BUFFER_u_char Tests BEGIN */
     /* Tests_SRS_BUFFER_07_025: [BUFFER_u_char shall return a pointer to the underlying unsigned char*.] */
     TEST_FUNCTION(BUFFER_U_CHAR_Succeed)
