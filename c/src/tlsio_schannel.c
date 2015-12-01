@@ -308,11 +308,6 @@ static void tlsio_schannel_on_bytes_received(void* context, const void* buffer, 
 						{
 							tls_io_instance->tls_state = TLS_STATE_ERROR;
 						}
-						else
-						{
-							tls_io_instance->tls_state = TLS_STATE_HANDSHAKE_DONE;
-							set_io_state(tls_io_instance, IO_STATE_OPEN);
-						}
 					}
 					break;
 				}
