@@ -24,6 +24,7 @@ extern int BUFFER_enlarge(BUFFER_HANDLE handle, size_t enlargeSize);
 extern int BUFFER_content(BUFFER_HANDLE handle, const unsigned char** content);
 extern int BUFFER_size(BUFFER_HANDLE handle, size_t* size);
 extern int BUFFER_append(BUFFER_HANDLE handle1, BUFFER_HANDLE handle2);
+extern int BUFFER_prepend(BUFFER_HANDLE handle1, BUFFER_HANDLE handle2);
 extern unsigned char* BUFFER_u_char(BUFFER_HANDLE handle);
 extern size_t BUFFER_length(BUFFER_HANDLE handle);
 extern BUFFER_HANDLE BUFFER_clone(BUFFER_HANDLE handle);

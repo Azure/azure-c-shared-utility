@@ -39,7 +39,7 @@ int tickcounter_get_current_ms(TICK_COUNTER_HANDLE tick_counter, uint64_t* curre
 {
 	int result;
 
-	if (tick_counter == NULL)
+	if (tick_counter == NULL || current_ms == NULL)
 	{
 		result = __LINE__;
 	}
