@@ -200,7 +200,7 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_BYTES_RECEIVED on_bytes_recei
             sprintf(portString, "%u", socket_io_instance->port);
             if (getaddrinfo(socket_io_instance->hostname, portString, &addrHint, &addrInfo) != 0)
             {
-                closesocket(socket_io_instance->socket);
+				(void)closesocket(socket_io_instance->socket);
                 set_io_state(socket_io_instance, IO_STATE_ERROR);
                 socket_io_instance->socket = INVALID_SOCKET;
                 result = __LINE__;
@@ -211,14 +211,14 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_BYTES_RECEIVED on_bytes_recei
 
                 if (connect(socket_io_instance->socket, addrInfo->ai_addr, addrInfo->ai_addrlen) != 0)
                 {
-                    closesocket(socket_io_instance->socket);
+					(void)closesocket(socket_io_instance->socket);
                     set_io_state(socket_io_instance, IO_STATE_ERROR);
                     socket_io_instance->socket = INVALID_SOCKET;
                     result = __LINE__;
                 }
                 else if (ioctlsocket(socket_io_instance->socket, FIONBIO, &iMode) != 0)
                 {
-                    closesocket(socket_io_instance->socket);
+					(void)closesocket(socket_io_instance->socket);
                     set_io_state(socket_io_instance, IO_STATE_ERROR);
                     socket_io_instance->socket = INVALID_SOCKET;
                     result = __LINE__;
@@ -252,7 +252,7 @@ int socketio_close(CONCRETE_IO_HANDLE socket_io)
     {
         SOCKET_IO_INSTANCE* socket_io_instance = (SOCKET_IO_INSTANCE*)socket_io;
 
-        closesocket(socket_io_instance->socket);
+		(void)closesocket(socket_io_instance->socket);
         socket_io_instance->socket = INVALID_SOCKET;
         set_io_state(socket_io_instance, IO_STATE_NOT_OPEN);
         result = 0;

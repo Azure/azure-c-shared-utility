@@ -18,6 +18,7 @@ typedef struct SOCKETIO_CONFIG_TAG
 {
 	const char* hostname;
 	int port;
+	void* accepted_socket;
 } SOCKETIO_CONFIG;
 
 extern CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters, LOGGER_LOG logger_log);
