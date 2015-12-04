@@ -21,15 +21,4 @@ include /usr/share/dpkg/default.mk
 %:
 	dh $@ --buildsystem=cmake --DSYSINSTALL_BINDINGS=ON 
 
-override_dh_auto_install:
-	rm -f -r $$(pwd)/debian/tmp
-	mkdir $$(pwd)/debian/tmp
-	mkdir $$(pwd)/debian/tmp/usr
-	mkdir $$(pwd)/debian/tmp/usr/lib
-	mkdir $$(pwd)/debian/tmp/usr/include
-	mkdir $$(pwd)/debian/tmp/usr/include/azuresharedutil
-	cp $$(pwd)/obj-*/sharedutil/*.a $$(pwd)/debian/tmp/usr/lib/
-	cp $$(pwd)/sharedutil/inc/* $$(pwd)/debian/tmp/usr/include/azuresharedutil
-
-
 

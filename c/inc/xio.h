@@ -4,7 +4,7 @@
 #ifndef XIO_H
 #define XIO_H
 
-#include "iot_logging.h"
+#include "xlogging.h"
 
 #ifdef __cplusplus
 #include <cstddef>

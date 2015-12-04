@@ -281,6 +281,7 @@ set(source_h_files
 ./inc/xio.h
 ./inc/urlencode.h
 ./inc/vector.h
+./inc/xlogging.h
 )
 
 if(${use_http})
@@ -349,5 +350,14 @@ add_subdirectory(tests)
 if(WIN32)
 else()
 	install (TARGETS aziotsharedutil DESTINATION lib)
-	install (FILES ${INSTALL_H_FILES} ${LOCK_C_FILE} DESTINATION ${INCLUDE_INSTALL_DIR}/azuresharedutil)
+	install (FILES ${INSTALL_H_FILES} 
+		${LOCK_C_FILE} 
+		./src/buffer.c
+		./src/crt_abstractions.c
+		./src/doublylinkedlist.c
+		./src/gballoc.c
+		${HTTP_C_FILE}
+		./src/strings.c
+		./src/vector.c		
+		DESTINATION ${INCLUDE_INSTALL_DIR}/azuresharedutil)
 endif (WIN32)

@@ -12,7 +12,7 @@ extern "C" {
 #endif /* __cplusplus */
 
 #include "xio.h"
-#include "iot_logging.h"
+#include "xlogging.h"
 
 typedef struct SOCKETIO_CONFIG_TAG
 {
