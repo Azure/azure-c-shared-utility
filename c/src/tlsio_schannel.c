@@ -437,6 +437,7 @@ CONCRETE_IO_HANDLE tlsio_schannel_create(void* io_create_parameters, LOGGER_LOG 
 
 			socketio_config.hostname = tls_io_config->hostname;
 			socketio_config.port = tls_io_config->port;
+			socketio_config.accepted_socket = NULL;
 
 			result->on_bytes_received = NULL;
 			result->on_io_state_changed = NULL;
