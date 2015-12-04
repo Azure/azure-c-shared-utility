@@ -204,6 +204,11 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_BYTES_RECEIVED on_bytes_recei
 
 		if (socket_io_instance->socket != INVALID_SOCKET)
 		{
+			socket_io_instance->on_bytes_received = on_bytes_received;
+			socket_io_instance->on_io_state_changed = on_io_state_changed;
+			socket_io_instance->callback_context = callback_context;
+
+			set_io_state(socket_io_instance, IO_STATE_OPEN);
 			result = 0;
 		}
 		else
