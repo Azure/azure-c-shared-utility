@@ -74,7 +74,7 @@ extern "C"
     DECLARE_GLOBAL_MOCK_METHOD_5(io_mocks, , int, test_xio_send, CONCRETE_IO_HANDLE, handle, const void*, buffer, size_t, size, ON_SEND_COMPLETE, on_send_complete, void*, callback_context);
     DECLARE_GLOBAL_MOCK_METHOD_1(io_mocks, , void, test_xio_dowork, CONCRETE_IO_HANDLE, handle);
 
-    void test_on_bytes_received(void* context, const void* buffer, size_t size)
+    void test_on_bytes_received(void* context, const unsigned char* buffer, size_t size)
     {
         (void)context;
         (void)buffer;
