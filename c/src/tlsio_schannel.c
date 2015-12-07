@@ -111,7 +111,7 @@ static int set_receive_buffer(TLS_IO_INSTANCE* tls_io_instance, size_t buffer_si
 	return result;
 }
 
-static void tlsio_schannel_on_bytes_received(void* context, const void* buffer, size_t size)
+static void tlsio_schannel_on_bytes_received(void* context, const unsigned char* buffer, size_t size)
 {
 	TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)context;
 

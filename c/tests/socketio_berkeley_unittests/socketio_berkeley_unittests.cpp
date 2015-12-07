@@ -228,7 +228,7 @@ TEST_FUNCTION_CLEANUP(method_cleanup)
     }
 }
 
-static void OnBytesRecieved(void* context, const void* buffer, size_t size)
+static void OnBytesRecieved(void* context, const unsigned char* buffer, size_t size)
 {
     (void)context;
     (void)buffer;
