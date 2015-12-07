@@ -345,6 +345,11 @@ if(${use_http})
 	endif()
 endif()
 
+if(WIN32)
+else()
+	target_link_libraries(aziotsharedutil pthread)
+endif()
+
 add_subdirectory(tests)
 
 if(WIN32)
