@@ -10,7 +10,6 @@
 #include "micromock.h"
 #include "micromockcharstararenullterminatedstrings.h"
 
-#include "refcount.h"
 #include "lock.h"
 
 #include "some_refcount_impl.h"
@@ -115,65 +114,81 @@ BEGIN_TEST_SUITE(refcount_unittests)
     TEST_FUNCTION(refcount_create_returns_non_NULL)
     {
         ///arrange
-        pos* p;
+        POS_HANDLE p;
         CRefCountMocks mocks;
         STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
 
         ///act
-        p = REFCOUNT_TYPE_CREATE(pos);
+        p = Pos_Create(4);
 
         ///assert
         ASSERT_IS_NOT_NULL(p);
         mocks.AssertActualAndExpectedCalls();
 
         //cleanup
-        free(p);
+        Pos_Destroy(p);
     }
 
     TEST_FUNCTION(refcount_DEC_REF_after_create_says_we_should_free)
     {
         ///arrange
-        pos* p;
-        bool shouldFree;
+        POS_HANDLE p;
         CRefCountMocks mocks;
         STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
-        p = REFCOUNT_TYPE_CREATE(pos);
+        p = Pos_Create(4);
         mocks.ResetAllCalls();
 
         ///act
-        shouldFree = (DEC_REF(pos,p) == DEC_RETURN_ZERO);
+        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
+        Pos_Destroy(p);
 
         ///assert
-        ASSERT_IS_TRUE(shouldFree);
         mocks.AssertActualAndExpectedCalls();
 
         //cleanup
-        free(p);
     }
 
     TEST_FUNCTION(refcount_INC_REF_and_DEC_REF_after_create_says_we_should_not_free)
     {
         ///arrange
-        pos* p;
-        bool shouldFree ;
+        pos* p, *clone_of_p;
         CRefCountMocks mocks;
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG))
-            .IgnoreArgument(1);
-        p = REFCOUNT_TYPE_CREATE(pos);
+        p = Pos_Create(2);
+        clone_of_p = Pos_Clone(p);
         mocks.ResetAllCalls();
 
         ///act
-        INC_REF(pos,p);
-        shouldFree= (DEC_REF(pos, p) == DEC_RETURN_ZERO);
+        Pos_Destroy(p);
 
         ///assert
-        ASSERT_IS_FALSE(shouldFree);
         mocks.AssertActualAndExpectedCalls();
 
         //cleanup
-        free(p);
+        Pos_Destroy(p);
+    }
+
+    TEST_FUNCTION(refcount_after_clone_it_takes_2_destroys_to_free)
+    {
+        ///arrange
+        pos* p, *clone_of_p;
+        CRefCountMocks mocks;
+        p = Pos_Create(2);
+        clone_of_p = Pos_Clone(p);
+        Pos_Destroy(p);
+        mocks.ResetAllCalls();
+
+        ///act
+        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
+        Pos_Destroy(clone_of_p);
+
+        ///assert
+        mocks.AssertActualAndExpectedCalls();
+
+        //cleanup
     }
 
 END_TEST_SUITE(refcount_unittests)

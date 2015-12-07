@@ -269,6 +269,7 @@ set(source_h_files
 ./inc/map.h
 ./inc/mqttapi.h
 ./inc/platform.h
+./inc/refcount.h
 ./inc/sastoken.h
 ./inc/sha-private.h
 ./inc/sha.h

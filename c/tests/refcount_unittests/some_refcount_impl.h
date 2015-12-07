@@ -4,19 +4,16 @@
 #ifndef SOME_REFCOUNT_IMPL_H
 #define SOME_REFCOUNT_IMPL_H
 
-#include "refcount.h"
-
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-typedef struct pos
-{
-    int x;
-}pos ;
+typedef struct pos* POS_HANDLE;
 
-DECLARE_REFCOUNT_TYPE(pos);
+extern POS_HANDLE Pos_Create(int x);
+extern POS_HANDLE Pos_Clone(POS_HANDLE posHandle);
+extern void Pos_Destroy(POS_HANDLE posHandle);
 
 #ifdef __cplusplus
 }

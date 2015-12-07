@@ -40,19 +40,15 @@ C2(REFCOUNT_, type)
 /*this introduces a new refcount'd type based on another type
 and an initializer for that new type that also sets the ref count to 1. The type must not have a flexible array*/
 /*the newly allocated memory shall be free'd by free()*/
-
-/*foprward declaration to be used in header, if at all*/
-#define DECLARE_REFCOUNT_TYPE(type)                                           \
-REFCOUNT_TYPE(type)                                                           \
-{                                                                              \
-    type counted;                                                              \
-    uint32_t count;                                                            \
-};                                                                                 \
-extern type* REFCOUNT_TYPE_CREATE_TYPE(type) (void)                           \
+/*and the ref counting is handled internally by the type in teh _Create/ _Clone /_Destroy functions */
 
 #define DEFINE_REFCOUNT_TYPE(type)                                             \
-                                                          \
-type* REFCOUNT_TYPE_CREATE_TYPE(type) (void)                                   \
+REFCOUNT_TYPE(type)                                                            \
+{                                                                              \
+    type counted;                                                              \
+    uint32_t count;                                                          \
+};                                                                             \
+static type* REFCOUNT_TYPE_CREATE_TYPE(type) (void)                            \
 {                                                                              \
     REFCOUNT_TYPE(type)* result = (REFCOUNT_TYPE(type)*)malloc(sizeof(REFCOUNT_TYPE(type)));         \
     if (result != NULL)                                                        \
@@ -71,7 +67,7 @@ C11
 windows 
     - will result in #include "windows.h"
     - will use InterlockedIncrement/InterlockedDecrement; 
-    - about the return value: https://msdn.microsoft.com/en-us/library/windows/desktop/ms683614%28v=vs.85%29.aspx "The function returns the resulting incremented value."
+    - about the return value: https://msdn.microsoft.com/en-us/library/windows/desktop/ms683580(v=vs.85).aspx "The function returns the resulting decremented value"
 gcc
     - will result in no include (for gcc these are intrinsics build in)
     - will use __sync_fetch_and_add/sub
@@ -94,12 +90,12 @@ The macro DEC_RETURN_ZERO will be "0" on windows, and "1" on the other cases.
 #define DEC_REF(type, var) InterlockedDecrement(&(((REFCOUNT_TYPE(type)*)var)->count))
 
 #elif defined(__GNUC__)
-#define DEC_RETURN_ZERO (0)
+#define DEC_RETURN_ZERO (1)
 #define INC_REF(type, var) __sync_fetch_and_add((&((REFCOUNT_TYPE(type)*)var)->count), 1)
 #define DEC_REF(type, var) __sync_fetch_and_sub((&((REFCOUNT_TYPE(type)*)var)->count), 1)
 
 #else
-#error don't know how to atomically increment and decrement a uint32_t :(. Platform support needs to be extended to your platform.
+#error do not know how to atomically increment and decrement a uint32_t :(. Platform support needs to be extended to your platform.
 #endif
 
 
