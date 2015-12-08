@@ -79,7 +79,7 @@ static int decode_ssl_received_bytes(TLS_IO_INSTANCE* tls_io_instance)
 	return result;
 }
 
-static void tlsio_on_bytes_received(void* context, const void* buffer, size_t size)
+static void tlsio_on_bytes_received(void* context, const unsigned char* buffer, size_t size)
 {
 	TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)context;
 
@@ -227,6 +227,7 @@ CONCRETE_IO_HANDLE tlsio_wolfssl_create(void* io_create_parameters, LOGGER_LOG l
 
 			socketio_config.hostname = tls_io_config->hostname;
 			socketio_config.port = tls_io_config->port;
+			socketio_config.accepted_socket = NULL;
 
 			result->on_bytes_received = NULL;
 			result->on_io_state_changed = NULL;

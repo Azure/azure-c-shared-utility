@@ -4,7 +4,7 @@
 #ifndef XIO_H
 #define XIO_H
 
-#include "iot_logging.h"
+#include "xlogging.h"
 
 #ifdef __cplusplus
 #include <cstddef>
@@ -30,7 +30,7 @@ extern "C" {
 		IO_SEND_ERROR
 	} IO_SEND_RESULT;
 
-	typedef void(*ON_BYTES_RECEIVED)(void* context, const void* buffer, size_t size);
+	typedef void(*ON_BYTES_RECEIVED)(void* context, const unsigned char* buffer, size_t size);
 	typedef void(*ON_SEND_COMPLETE)(void* context, IO_SEND_RESULT send_result);
 	typedef void(*ON_IO_STATE_CHANGED)(void* context, IO_STATE new_io_state, IO_STATE previous_io_state);
 

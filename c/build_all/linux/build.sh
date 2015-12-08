@@ -17,6 +17,7 @@ usage ()
     echo "options"
     echo " -cl, --compileoption <value>  specify a compile option to be passed to gcc"
     echo "   Example: -cl -O1 -cl ..."
+
     exit 1
 }
 

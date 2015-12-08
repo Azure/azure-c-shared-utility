@@ -34,6 +34,14 @@
 		<file src="Microsoft.Azure.C.SharedUtility.targets" target="build\native"/>
 		
 		<file src="..\..\..\inc\*.h" target="build\native\include"/>
+		<file src="..\..\..\adapters\lock_c11.c" target="build\native\include"/>
+		<file src="..\..\..\src\buffer.c" target="build\native\include"/>
+		<file src="..\..\..\src\crt_abstractions.c" target="build\native\include"/>
+		<file src="..\..\..\src\doublylinkedlist.c" target="build\native\include"/>
+		<file src="..\..\..\src\gballoc.c" target="build\native\include"/>
+		<file src="..\..\..\adapters\httpapi_winhttp.c" target="build\native\include"/>
+		<file src="..\..\..\src\strings.c" target="build\native\include"/>
+		<file src="..\..\..\src\vector.c" target="build\native\include"/>
 	</files>
 
 </package>
