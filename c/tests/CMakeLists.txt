@@ -34,3 +34,5 @@ if(WIN32)
 else()
 	add_subdirectory(socketio_berkeley_unittests)
 endif()
+
+add_subdirectory(refcount_unittests)
