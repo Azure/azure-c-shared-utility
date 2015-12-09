@@ -6,7 +6,7 @@ project(azure_c_shared_utility)
 
 #the following variables are project-wide and can be used with cmake-gui
 option(skip_unittests "set skip_unittests to ON to skip unittests (default is OFF)[if possible, they are always build]" OFF)
-option(use_http "set use_http to ON if http is to be used, set to OFF to not use http" OFF)
+option(use_http "set use_http to ON if http is to be used, set to OFF to not use http" ON)
 
 if(WIN32)
 	option(use_schannel "set use_schannel to ON if schannel is to be used, set to OFF to not use schannel" ON)

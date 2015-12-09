@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" InitialTargets="Microsoft_Azure_C_SharedUtility">
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" InitialTargets="Microsoft_Azure_C_SharedUtil_Init">
   <PropertyGroup Label="Default initializers for properties">
-    <Linkage-Microsoft_Azure_C_SharedUtility Condition="'$(Microsoft_Azure_C_SharedUtility)' == ''">static</Linkage-Microsoft_Azure_C_SharedUtility>
-    <CallingConvention-Microsoft_Azure_C_SharedUtility Condition="'$(CallingConvention-Microsoft_Azure_C_SharedUtility)' == ''">cdecl</CallingConvention-Microsoft_Azure_C_SharedUtility>
+    <Linkage-Microsoft_Azure_C_SharedUtil_Init Condition="'$(Linkage-Microsoft_Azure_C_SharedUtil_Init)' == ''">static</Linkage-Microsoft_Azure_C_SharedUtil_Init>
+    <CallingConvention-Microsoft_Azure_C_SharedUtil Condition="'$(CallingConvention-Microsoft_Azure_C_SharedUtil)' == ''">cdecl</CallingConvention-Microsoft_Azure_C_SharedUtil>
   </PropertyGroup>
    <ItemDefinitionGroup>
     <ClCompile>
@@ -14,22 +14,22 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Label="Win32Debug" Condition="(( $(Configuration.ToLower().IndexOf('debug')) &gt; -1 ) And ('$(Platform)' == 'Win32' ) )">
     <Link>
-      <AdditionalDependencies>$(MSBuildThisFileDirectory)../../build/native/Win32/Debug/aziotsharedlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(MSBuildThisFileDirectory)../../build/native/Win32/Debug/aziotsharedutil.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Label="Win32Release" Condition="(( $(Configuration.ToLower().IndexOf('debug')) == -1 ) And ('$(Platform)' == 'Win32' ) )">
     <Link>
-      <AdditionalDependencies>$(MSBuildThisFileDirectory)../../build/native/Win32/Release/aziotsharedlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(MSBuildThisFileDirectory)../../build/native/Win32/Release/aziotsharedutil.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Label="Win64Debug" Condition="(( $(Configuration.ToLower().IndexOf('debug')) &gt; -1 ) And ('$(Platform)' == 'x64' ) )">
     <Link>
-      <AdditionalDependencies>$(MSBuildThisFileDirectory)../../build/native/x64/Debug/aziotsharedlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(MSBuildThisFileDirectory)../../build/native/x64/Debug/aziotsharedutil.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Label="Win64Release" Condition="(( $(Configuration.ToLower().IndexOf('debug')) == -1 ) And ('$(Platform)' == 'x64' ) )">
     <Link>
-      <AdditionalDependencies>$(MSBuildThisFileDirectory)../../build/native/x64/Release/aziotsharedlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(MSBuildThisFileDirectory)../../build/native/x64/Release/aziotsharedutil.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <UsingTask TaskName="Microsoft_Azure_Shared_Util_Contains" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll" TaskFactory="CodeTaskFactory">
@@ -43,18 +43,18 @@
       <Code>Result = ((Text ?? "").Split(';').Contains(Library) ) ? Value : String.Empty;</Code>
     </Task>
   </UsingTask>
-  <Target Name="Microsoft_Azure_Shared_Util_Init">
-    <Microsoft_Azure_Shared_Util_Contains Text="Linkage-dynamic" Library="Microsoft_Azure_Shared_Util" Value="dynamic" Condition="'$(Linkage-Microsoft_Azure_Shared_Util_Init)'==''">
-      <Output TaskParameter="Result" PropertyName="Linkage-Microsoft_Azure_Shared_Util_Init" />
+  <Target Name="Microsoft_Azure_C_SharedUtil_Init">
+    <Microsoft_Azure_Shared_Util_Contains Text="Linkage-dynamic" Library="Microsoft_Azure_Shared_Util" Value="dynamic" Condition="'$(Linkage-Microsoft_Azure_C_SharedUtil_Init)'==''">
+      <Output TaskParameter="Result" PropertyName="Linkage-Microsoft_Azure_C_SharedUtil_Init" />
     </Microsoft_Azure_Shared_Util_Contains>
-    <Microsoft_Azure_Shared_Util_Contains Text="Linkage-static" Library="Microsoft_Azure_Shared_Util" Value="static" Condition="'$(Linkage-Microsoft_Azure_Shared_Util_Init)'==''">
-      <Output TaskParameter="Result" PropertyName="Linkage-Microsoft_Azure_Shared_Util_Init" />
+    <Microsoft_Azure_Shared_Util_Contains Text="Linkage-static" Library="Microsoft_Azure_Shared_Util" Value="static" Condition="'$(Linkage-Microsoft_Azure_C_SharedUtil_Init)'==''">
+      <Output TaskParameter="Result" PropertyName="Linkage-Microsoft_Azure_C_SharedUtil_Init" />
     </Microsoft_Azure_Shared_Util_Contains>
-    <Microsoft_Azure_Shared_Util_Contains Text="Linkage-ltcg" Library="Microsoft_Azure_Shared_Util" Value="ltcg" Condition="'$(Linkage-Microsoft_Azure_Shared_Util_Init)'==''">
-      <Output TaskParameter="Result" PropertyName="Linkage-Microsoft_Azure_Shared_Util_Init" />
+    <Microsoft_Azure_Shared_Util_Contains Text="Linkage-ltcg" Library="Microsoft_Azure_Shared_Util" Value="ltcg" Condition="'$(Linkage-Microsoft_Azure_C_SharedUtil_Init)'==''">
+      <Output TaskParameter="Result" PropertyName="Linkage-Microsoft_Azure_C_SharedUtil_Init" />
     </Microsoft_Azure_Shared_Util_Contains>
-    <Microsoft_Azure_Shared_Util_Contains Text="Linkage-sxs" Library="Microsoft_Azure_Shared_Util" Value="sxs" Condition="'$(Linkage-Microsoft_Azure_Shared_Util_Init)'==''">
-      <Output TaskParameter="Result" PropertyName="Linkage-Microsoft_Azure_Shared_Util_Init" />
+    <Microsoft_Azure_Shared_Util_Contains Text="Linkage-sxs" Library="Microsoft_Azure_Shared_Util" Value="sxs" Condition="'$(Linkage-Microsoft_Azure_C_SharedUtil_Init)'==''">
+      <Output TaskParameter="Result" PropertyName="Linkage-Microsoft_Azure_C_SharedUtil_Init" />
     </Microsoft_Azure_Shared_Util_Contains>
     <Microsoft_Azure_Shared_Util_Contains Text="CallingConvention-cdecl" Library="Microsoft_Azure_Shared_Util" Value="cdecl" Condition="'$(CallingConvention-Microsoft_Azure_Shared_Util)'==''">
       <Output TaskParameter="Result" PropertyName="CallingConvention-Microsoft_Azure_Shared_Util" />
