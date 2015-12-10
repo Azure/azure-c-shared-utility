@@ -94,9 +94,9 @@ The macro DEC_RETURN_ZERO will be "0" on windows, and "1" on the other cases.
 #define DEC_REF(type, var) InterlockedDecrement(&(((REFCOUNT_TYPE(type)*)var)->count))
 
 #elif defined(__GNUC__)
-#define DEC_RETURN_ZERO (1)
-#define INC_REF(type, var) __sync_fetch_and_add((&((REFCOUNT_TYPE(type)*)var)->count), 1)
-#define DEC_REF(type, var) __sync_fetch_and_sub((&((REFCOUNT_TYPE(type)*)var)->count), 1)
+#define DEC_RETURN_ZERO (0)
+#define INC_REF(type, var) __sync_add_and_fetch((&((REFCOUNT_TYPE(type)*)var)->count), 1)
+#define DEC_REF(type, var) __sync_sub_and_fetch((&((REFCOUNT_TYPE(type)*)var)->count), 1)
 
 #else
 #if defined(REFCOUNT_ATOMIC_DONTCARE)
