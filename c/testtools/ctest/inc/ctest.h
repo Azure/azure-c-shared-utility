@@ -31,7 +31,7 @@ extern "C" {
 #elif defined __cplusplus
 #define CTEST_USE_STDINT
 #elif defined __STDC_VERSION__
-#if ((__STDC_VERSION__  == 199901L) || ( __STDC_VERSION__ == 201112L))
+#if ((__STDC_VERSION__  == 199901L) || (__STDC_VERSION__ == 201000L) || (__STDC_VERSION__ == 201112L))
 #define CTEST_USE_STDINT
 #else
 C_LINKAGE_PREFIX int snprintf(char * s, size_t n, const char * format, ...);
