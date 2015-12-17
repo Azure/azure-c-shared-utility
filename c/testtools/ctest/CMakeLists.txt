@@ -31,6 +31,10 @@ add_library(
 ctest ${ctest_c_files} ${ctest_h_files}
 )
 
+set_target_properties(ctest
+			   PROPERTIES
+			   FOLDER "SharedTestTools")
+
 add_subdirectory(unittests)
 
 if(WIN32)

@@ -222,6 +222,7 @@ static void Map_DecreaseStorageKeysValues(MAP_HANDLE_DATA* handleData)
     else
     {
         /*certainly > 1...*/
+        char** undoneValues;
         char** undoneKeys = (char**)realloc(handleData->keys, sizeof(char*)* (handleData->count - 1)); 
         if (undoneKeys == NULL)
         {
@@ -232,7 +233,7 @@ static void Map_DecreaseStorageKeysValues(MAP_HANDLE_DATA* handleData)
             handleData->keys = undoneKeys;
         }
 
-        char** undoneValues = (char**)realloc(handleData->values, sizeof(char*)* (handleData->count - 1));
+        undoneValues = (char**)realloc(handleData->values, sizeof(char*)* (handleData->count - 1));
         if (undoneValues == NULL)
         {
             LogError("CATASTROPHIC error, unable to undo through realloc to a smaller size\r\n");
