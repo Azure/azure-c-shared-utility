@@ -35,6 +35,10 @@ add_executable(
 ctest_unittests ${ctest_unittests_c_files} ${ctest_unittests_cpp_files} ${ctest_unittests_h_files}
 )
 
+set_target_properties(ctest
+			   PROPERTIES
+			   FOLDER "SharedTestTools")
+
 target_link_libraries(ctest_unittests ctest)
 
 if(NOT ${skip_unittests})
