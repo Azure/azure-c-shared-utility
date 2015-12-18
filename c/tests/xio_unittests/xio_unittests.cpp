@@ -52,9 +52,9 @@ public:
     MOCK_METHOD_END(CONCRETE_IO_HANDLE, TEST_CONCRETE_IO_HANDLE);
     MOCK_STATIC_METHOD_1(, void, test_xio_destroy, CONCRETE_IO_HANDLE, handle)
     MOCK_VOID_METHOD_END();
-    MOCK_STATIC_METHOD_4(, int, test_xio_open, CONCRETE_IO_HANDLE, handle, ON_BYTES_RECEIVED, on_bytes_received, ON_IO_STATE_CHANGED, on_io_state_changed, void*, callback_context)
+	MOCK_STATIC_METHOD_5(, int, test_xio_open, CONCRETE_IO_HANDLE, handle, ON_IO_OPEN_COMPLETE, on_io_open_complete, ON_BYTES_RECEIVED, on_bytes_received, ON_IO_ERROR, on_io_error, void*, callback_context)
     MOCK_METHOD_END(int, 0);
-    MOCK_STATIC_METHOD_1(, int, test_xio_close, CONCRETE_IO_HANDLE, handle)
+	MOCK_STATIC_METHOD_3(, int, test_xio_close, CONCRETE_IO_HANDLE, handle, ON_IO_CLOSE_COMPLETE, on_io_close_complete, void*, callback_context)
     MOCK_METHOD_END(int, 0);
     MOCK_STATIC_METHOD_5(, int, test_xio_send, CONCRETE_IO_HANDLE, handle, const void*, buffer, size_t, size, ON_SEND_COMPLETE, on_send_complete, void*, callback_context)
     MOCK_METHOD_END(int, 0);
@@ -69,8 +69,8 @@ extern "C"
 {
     DECLARE_GLOBAL_MOCK_METHOD_2(io_mocks, , CONCRETE_IO_HANDLE, test_xio_create, void*, xio_create_parameters, LOGGER_LOG, logger_log);
     DECLARE_GLOBAL_MOCK_METHOD_1(io_mocks, , void, test_xio_destroy, CONCRETE_IO_HANDLE, handle);
-    DECLARE_GLOBAL_MOCK_METHOD_4(io_mocks, , int, test_xio_open, CONCRETE_IO_HANDLE, handle, ON_BYTES_RECEIVED, on_bytes_received, ON_IO_STATE_CHANGED, on_io_state_changed, void*, callback_context);
-    DECLARE_GLOBAL_MOCK_METHOD_1(io_mocks, , int, test_xio_close, CONCRETE_IO_HANDLE, handle);
+	DECLARE_GLOBAL_MOCK_METHOD_5(io_mocks, , int, test_xio_open, CONCRETE_IO_HANDLE, handle, ON_IO_OPEN_COMPLETE, on_io_open_complete, ON_BYTES_RECEIVED, on_bytes_received, ON_IO_ERROR, on_io_error, void*, callback_context);
+	DECLARE_GLOBAL_MOCK_METHOD_3(io_mocks, , int, test_xio_close, CONCRETE_IO_HANDLE, handle, ON_IO_CLOSE_COMPLETE, on_io_close_complete, void*, callback_context);
     DECLARE_GLOBAL_MOCK_METHOD_5(io_mocks, , int, test_xio_send, CONCRETE_IO_HANDLE, handle, const void*, buffer, size_t, size, ON_SEND_COMPLETE, on_send_complete, void*, callback_context);
     DECLARE_GLOBAL_MOCK_METHOD_1(io_mocks, , void, test_xio_dowork, CONCRETE_IO_HANDLE, handle);
 
@@ -81,12 +81,21 @@ extern "C"
         (void)size;
     }
 
-    void test_on_io_state_changed(void* context, IO_STATE new_io_state, IO_STATE previous_io_state)
+    void test_on_io_open_complete(void* context, IO_OPEN_RESULT open_result)
     {
         (void)context;
-        (void)new_io_state;
-        (void)previous_io_state;
+		(void)open_result;
     }
+
+	void test_on_io_close_complete(void* context)
+	{
+		(void)context;
+	}
+
+	void test_on_io_error(void* context)
+	{
+		(void)context;
+	}
 
     void test_on_send_complete(void* context, IO_SEND_RESULT send_result)
     {
@@ -409,10 +418,10 @@ TEST_FUNCTION(xio_open_calls_the_underlying_concrete_xio_open_and_succeeds)
     XIO_HANDLE handle = xio_create(&test_io_description, NULL, NULL);
     mocks.ResetAllCalls();
 
-    STRICT_EXPECTED_CALL(mocks, test_xio_open(TEST_CONCRETE_IO_HANDLE, test_on_bytes_received, test_on_io_state_changed, (void*)0x4242));
+    STRICT_EXPECTED_CALL(mocks, test_xio_open(TEST_CONCRETE_IO_HANDLE, test_on_io_open_complete, test_on_bytes_received, test_on_io_error, (void*)0x4242));
 
     // act
-    int result = xio_open(handle, test_on_bytes_received, test_on_io_state_changed, (void*)0x4242);
+	int result = xio_open(handle, test_on_io_open_complete, test_on_bytes_received, test_on_io_error, (void*)0x4242);
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
@@ -429,7 +438,7 @@ TEST_FUNCTION(xio_open_with_NULL_handle_fails)
     io_mocks mocks;
 
     // act
-    int result = xio_open(NULL, test_on_bytes_received, test_on_io_state_changed, (void*)0x4242);
+	int result = xio_open(NULL, test_on_io_open_complete, test_on_bytes_received, test_on_io_error, (void*)0x4242);
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
@@ -443,11 +452,11 @@ TEST_FUNCTION(when_the_concrete_xio_open_fails_then_xio_open_fails)
     XIO_HANDLE handle = xio_create(&test_io_description, NULL, NULL);
     mocks.ResetAllCalls();
 
-    STRICT_EXPECTED_CALL(mocks, test_xio_open(TEST_CONCRETE_IO_HANDLE, test_on_bytes_received, test_on_io_state_changed, (void*)0x4242))
+	STRICT_EXPECTED_CALL(mocks, test_xio_open(TEST_CONCRETE_IO_HANDLE, test_on_io_open_complete, test_on_bytes_received, test_on_io_error, (void*)0x4242))
         .SetReturn(1);
 
     // act
-    int result = xio_open(handle, test_on_bytes_received, test_on_io_state_changed, (void*)0x4242);
+	int result = xio_open(handle, test_on_io_open_complete, test_on_bytes_received, test_on_io_error, (void*)0x4242);
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
@@ -468,10 +477,10 @@ TEST_FUNCTION(xio_close_calls_the_underlying_concrete_xio_close_and_succeeds)
     XIO_HANDLE handle = xio_create(&test_io_description, NULL, NULL);
     mocks.ResetAllCalls();
 
-    STRICT_EXPECTED_CALL(mocks, test_xio_close(TEST_CONCRETE_IO_HANDLE));
+    STRICT_EXPECTED_CALL(mocks, test_xio_close(TEST_CONCRETE_IO_HANDLE, test_on_io_close_complete, (void*)0x4242));
 
     // act
-    int result = xio_close(handle);
+    int result = xio_close(handle, test_on_io_close_complete, (void*)0x4242);
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
@@ -488,7 +497,7 @@ TEST_FUNCTION(xio_close_with_NULL_handle_fails)
     io_mocks mocks;
 
     // act
-    int result = xio_close(NULL);
+    int result = xio_close(NULL, test_on_io_close_complete, (void*)0x4242);
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
@@ -502,11 +511,11 @@ TEST_FUNCTION(when_the_concrete_xio_close_fails_then_xio_close_fails)
     XIO_HANDLE handle = xio_create(&test_io_description, NULL, NULL);
     mocks.ResetAllCalls();
 
-    STRICT_EXPECTED_CALL(mocks, test_xio_close(TEST_CONCRETE_IO_HANDLE))
+	STRICT_EXPECTED_CALL(mocks, test_xio_close(TEST_CONCRETE_IO_HANDLE, test_on_io_close_complete, (void*)0x4242))
         .SetReturn(1);
 
     // act
-    int result = xio_close(handle);
+    int result = xio_close(handle, test_on_io_close_complete, (void*)0x4242);
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
