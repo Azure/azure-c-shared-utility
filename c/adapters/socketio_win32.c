@@ -285,7 +285,7 @@ int socketio_close(CONCRETE_IO_HANDLE socket_io, ON_IO_CLOSE_COMPLETE on_io_clos
     {
         SOCKET_IO_INSTANCE* socket_io_instance = (SOCKET_IO_INSTANCE*)socket_io;
 
-		if ((socket_io_instance->io_state != IO_STATE_OPEN) ||
+		if ((socket_io_instance->io_state != IO_STATE_OPEN) &&
 			(socket_io_instance->io_state != IO_STATE_OPENING))
 		{
 			result = __LINE__;
