@@ -16,13 +16,13 @@ extern "C" {
 	typedef struct XIO_INSTANCE_TAG* XIO_HANDLE;
 	typedef void* CONCRETE_IO_HANDLE;
 
-	typedef enum IO_STATE_TAG
+	typedef enum IO_EVENT_TAG
 	{
-		IO_STATE_NOT_OPEN,
-		IO_STATE_OPENING,
-		IO_STATE_OPEN,
-		IO_STATE_ERROR
-	} IO_STATE;
+		IO_EVENT_OPENED,
+		IO_EVENT_CLOSED,
+		IO_EVENT_DATA_RECEIVED,
+		IO_EVENT_ERROR
+	} IO_EVENT;
 
 	typedef enum IO_SEND_RESULT_TAG
 	{
@@ -30,14 +30,22 @@ extern "C" {
 		IO_SEND_ERROR
 	} IO_SEND_RESULT;
 
+	typedef enum IO_OPEN_RESULT_TAG
+	{
+		IO_OPEN_OK,
+		IO_OPEN_ERROR
+	} IO_OPEN_RESULT;
+
 	typedef void(*ON_BYTES_RECEIVED)(void* context, const unsigned char* buffer, size_t size);
 	typedef void(*ON_SEND_COMPLETE)(void* context, IO_SEND_RESULT send_result);
-	typedef void(*ON_IO_STATE_CHANGED)(void* context, IO_STATE new_io_state, IO_STATE previous_io_state);
+	typedef void(*ON_IO_OPEN_COMPLETE)(void* context, IO_OPEN_RESULT open_result);
+	typedef void(*ON_IO_CLOSE_COMPLETE)(void* context);
+	typedef void(*ON_IO_ERROR)(void* context);
 
 	typedef CONCRETE_IO_HANDLE(*IO_CREATE)(void* io_create_parameters, LOGGER_LOG logger_log);
 	typedef void(*IO_DESTROY)(CONCRETE_IO_HANDLE concrete_io);
-	typedef int(*IO_OPEN)(CONCRETE_IO_HANDLE concrete_io, ON_BYTES_RECEIVED on_bytes_received, ON_IO_STATE_CHANGED on_io_state_changed, void* callback_context);
-	typedef int(*IO_CLOSE)(CONCRETE_IO_HANDLE concrete_io);
+	typedef int(*IO_OPEN)(CONCRETE_IO_HANDLE concrete_io, ON_IO_OPEN_COMPLETE on_io_open_complete, ON_BYTES_RECEIVED on_bytes_received, ON_IO_ERROR on_io_error, void* callback_context);
+	typedef int(*IO_CLOSE)(CONCRETE_IO_HANDLE concrete_io, ON_IO_CLOSE_COMPLETE on_io_close_complete, void* callback_context);
 	typedef int(*IO_SEND)(CONCRETE_IO_HANDLE concrete_io, const void* buffer, size_t size, ON_SEND_COMPLETE on_send_complete, void* callback_context);
 	typedef void(*IO_DOWORK)(CONCRETE_IO_HANDLE concrete_io);
 
@@ -53,8 +61,8 @@ extern "C" {
 
 	extern XIO_HANDLE xio_create(const IO_INTERFACE_DESCRIPTION* io_interface_description, const void* io_create_parameters, LOGGER_LOG logger_log);
 	extern void xio_destroy(XIO_HANDLE xio);
-	extern int xio_open(XIO_HANDLE xio, ON_BYTES_RECEIVED on_bytes_received, ON_IO_STATE_CHANGED on_io_state_changed, void* callback_context);
-	extern int xio_close(XIO_HANDLE xio);
+	extern int xio_open(XIO_HANDLE xio, ON_IO_OPEN_COMPLETE on_io_open_complete, ON_BYTES_RECEIVED on_bytes_received, ON_IO_ERROR on_io_error, void* callback_context);
+	extern int xio_close(XIO_HANDLE xio, ON_IO_CLOSE_COMPLETE on_io_close_complete, void* callback_context);
 	extern int xio_send(XIO_HANDLE xio, const void* buffer, size_t size, ON_SEND_COMPLETE on_send_complete, void* callback_context);
 	extern void xio_dowork(XIO_HANDLE xio);
 
