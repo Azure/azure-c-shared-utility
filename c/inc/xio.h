@@ -16,14 +16,6 @@ extern "C" {
 	typedef struct XIO_INSTANCE_TAG* XIO_HANDLE;
 	typedef void* CONCRETE_IO_HANDLE;
 
-	typedef enum IO_EVENT_TAG
-	{
-		IO_EVENT_OPENED,
-		IO_EVENT_CLOSED,
-		IO_EVENT_DATA_RECEIVED,
-		IO_EVENT_ERROR
-	} IO_EVENT;
-
 	typedef enum IO_SEND_RESULT_TAG
 	{
 		IO_SEND_OK,

@@ -69,7 +69,7 @@ void xio_destroy(XIO_HANDLE xio)
 	}
 }
 
-int xio_open(XIO_HANDLE xio, ON_BYTES_RECEIVED on_bytes_received, ON_IO_STATE_CHANGED on_xio_state_changed, void* callback_context)
+int xio_open(XIO_HANDLE xio, ON_IO_OPEN_COMPLETE on_io_open_complete, ON_BYTES_RECEIVED on_bytes_received, ON_IO_ERROR on_io_error, void* callback_context)
 {
 	int result;
 
@@ -83,7 +83,7 @@ int xio_open(XIO_HANDLE xio, ON_BYTES_RECEIVED on_bytes_received, ON_IO_STATE_CH
 		XIO_INSTANCE* xio_instance = (XIO_INSTANCE*)xio;
 
 		/* Codes_SRS_XIO_01_019: [xio_open shall call the specific concrete_io_open function specified in xio_create, passing the receive_callback and receive_callback_context arguments.] */
-		if (xio_instance->io_interface_description->concrete_io_open(xio_instance->concrete_xio_handle, on_bytes_received, on_xio_state_changed, callback_context) != 0)
+		if (xio_instance->io_interface_description->concrete_io_open(xio_instance->concrete_xio_handle, on_io_open_complete, on_bytes_received, on_io_error, callback_context) != 0)
 		{
 			/* Codes_SRS_XIO_01_022: [If the underlying concrete_io_open fails, xio_open shall return a non-zero value.] */
 			result = __LINE__;
@@ -98,7 +98,7 @@ int xio_open(XIO_HANDLE xio, ON_BYTES_RECEIVED on_bytes_received, ON_IO_STATE_CH
 	return result;
 }
 
-int xio_close(XIO_HANDLE xio)
+int xio_close(XIO_HANDLE xio, ON_IO_CLOSE_COMPLETE on_io_close_complete, void* callback_context)
 {
 	int result;
 
@@ -112,7 +112,7 @@ int xio_close(XIO_HANDLE xio)
 		XIO_INSTANCE* xio_instance = (XIO_INSTANCE*)xio;
 
 		/* Codes_SRS_XIO_01_023: [xio_close shall call the specific concrete_io_close function specified in xio_create.] */
-		if (xio_instance->io_interface_description->concrete_io_close(xio_instance->concrete_xio_handle) != 0)
+		if (xio_instance->io_interface_description->concrete_io_close(xio_instance->concrete_xio_handle, on_io_close_complete, callback_context) != 0)
 		{
 			/* Codes_SRS_XIO_01_026: [If the underlying concrete_io_close fails, xio_close shall return a non-zero value.] */
 			result = __LINE__;
