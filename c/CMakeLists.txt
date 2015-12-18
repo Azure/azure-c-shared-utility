@@ -308,6 +308,9 @@ if(${use_wolfssl})
 	set(source_h_files ${source_h_files}
 		./inc/tlsio_wolfssl.h
 	)
+if(WIN32)
+include_directories($ENV{WolfSSLDir})
+endif()
 endif()
 if(${use_openssl})
 	set(source_h_files ${source_h_files}
