@@ -392,7 +392,7 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
     if (socket_io != NULL)
     {
         SOCKET_IO_INSTANCE* socket_io_instance = (SOCKET_IO_INSTANCE*)socket_io;
-        if (socket_io_instance->io_state == IO_STATE_OPEN)
+		if (socket_io_instance->io_state == IO_STATE_OPEN)
         {
             int received = 1;
 
