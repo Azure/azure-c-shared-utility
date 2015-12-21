@@ -214,7 +214,19 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
 	{
 		if (open_result == IO_OPEN_OK)
 		{
-			tls_io_instance->tlsio_state = TLSIO_STATE_IN_HANDSHAKE;
+			if (SSL_is_init_finished(tls_io_instance->ssl))
+			{
+				indicate_open_complete(tls_io_instance, IO_OPEN_ERROR);
+			}
+			else
+			{
+				tls_io_instance->tlsio_state = TLSIO_STATE_IN_HANDSHAKE;
+
+				if (send_handshake_bytes(tls_io_instance) != 0)
+				{
+					indicate_open_complete(tls_io_instance, IO_OPEN_ERROR);
+				}
+			}
 		}
 		else
 		{
@@ -248,14 +260,27 @@ static void on_underlying_io_close_complete(void* context)
 {
 	TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)context;
 
-	if (tls_io_instance->tlsio_state == TLSIO_STATE_CLOSING)
+	switch (tls_io_instance->tlsio_state)
 	{
+	default:
+	case TLSIO_STATE_NOT_OPEN:
+	case TLSIO_STATE_OPEN:
+		break;
+
+	case TLSIO_STATE_OPENING_UNDERLYING_IO:
+	case TLSIO_STATE_IN_HANDSHAKE:
+		tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
+		indicate_open_complete(tls_io_instance, IO_OPEN_ERROR);
+		break;
+
+	case TLSIO_STATE_CLOSING:
 		tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
 
 		if (tls_io_instance->on_io_close_complete != NULL)
 		{
 			tls_io_instance->on_io_close_complete(tls_io_instance->close_callback_context);
 		}
+		break;
 	}
 }
 
@@ -404,7 +429,7 @@ int tlsio_openssl_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_open
     {
         TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tls_io;
 
-        if (tls_io_instance->io_state != IO_STATE_NOT_OPEN)
+        if (tls_io_instance->tlsio_state != TLSIO_STATE_NOT_OPEN)
         {
             result = __LINE__;
         }
@@ -419,28 +444,11 @@ int tlsio_openssl_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_open
 
 			if (xio_open(tls_io_instance->socket_io, on_underlying_io_open_complete, on_underlying_io_bytes_received, on_underlying_io_error, tls_io_instance) != 0)
             {
-                set_io_state(tls_io_instance, IO_STATE_ERROR);
                 result = __LINE__;
             }
             else
             {
-                if (SSL_is_init_finished(tls_io_instance->ssl))
-                {
-                    result = __LINE__;
-                }
-                else
-                {
-                    tls_io_instance->tlsio_state = TLSIO_STATE_IN_HANDSHAKE;
-
-                    if (send_handshake_bytes(tls_io_instance) != 0)
-                    {
-                        result = __LINE__;
-                    }
-                    else
-                    {
-                        result = 0;
-                    }
-                }
+				result = 0;
             }
         }
     }
@@ -460,11 +468,23 @@ int tlsio_openssl_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_cl
     {
         TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tls_io;
 
-		if ((tls_io_instance->io_state == IO_STATE_OPENING) ||
-			(tls_io_instance->io_state == IO_STATE_OPEN))
+		if ((tls_io_instance->tlsio_state == TLSIO_STATE_NOT_OPEN) ||
+			(tls_io_instance->tlsio_state == TLSIO_STATE_CLOSING))
 		{
-			(void)xio_close(tls_io_instance->socket_io);
-			set_io_state(tls_io_instance, IO_STATE_NOT_OPEN);
+			result = __LINE__;
+		}
+		else
+		{
+			tls_io_instance->tlsio_state = TLSIO_STATE_CLOSING;
+
+			if (xio_close(tls_io_instance->socket_io, on_underlying_io_close_complete, tls_io_instance) != 0)
+			{
+				result = __LINE__;
+			}
+			else
+			{
+				result = 0;
+			}
 		}
     }
 
@@ -483,7 +503,7 @@ int tlsio_openssl_send(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t siz
     {
 		TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tls_io;
 
-		if (tls_io_instance->io_state != IO_STATE_OPEN)
+		if (tls_io_instance->tlsio_state != TLSIO_STATE_OPEN)
 		{
 			result = __LINE__;
 		}
@@ -517,8 +537,8 @@ void tlsio_openssl_dowork(CONCRETE_IO_HANDLE tls_io)
     {
         TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tls_io;
 
-		if ((tls_io_instance->io_state == IO_STATE_OPEN) ||
-			(tls_io_instance->io_state == IO_STATE_OPENING))
+		if ((tls_io_instance->tlsio_state != TLSIO_STATE_NOT_OPEN) &&
+			(tls_io_instance->tlsio_state != TLSIO_STATE_ERROR))
 		{
 			xio_dowork(tls_io_instance->socket_io);
 		}
