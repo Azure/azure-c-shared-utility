@@ -68,6 +68,32 @@ static void indicate_error(TLS_IO_INSTANCE* tls_io_instance)
 	}
 }
 
+static int resize_receive_buffer(TLS_IO_INSTANCE* tls_io_instance, size_t needed_buffer_size)
+{
+	int result;
+
+	if (needed_buffer_size > tls_io_instance->buffer_size)
+	{
+		unsigned char* new_buffer = realloc(tls_io_instance->received_bytes, needed_buffer_size);
+		if (new_buffer == NULL)
+		{
+			result = __LINE__;
+		}
+		else
+		{
+			tls_io_instance->received_bytes = new_buffer;
+			tls_io_instance->buffer_size = needed_buffer_size;
+			result = 0;
+		}
+	}
+	else
+	{
+		result = 0;
+	}
+
+	return result;
+}
+
 static void on_underlying_io_close_complete(void* context)
 {
 	TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)context;
@@ -162,32 +188,6 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT io_open
 			}
 		}
 	}
-}
-
-static int resize_receive_buffer(TLS_IO_INSTANCE* tls_io_instance, size_t needed_buffer_size)
-{
-	int result;
-
-	if (needed_buffer_size > tls_io_instance->buffer_size)
-	{
-		unsigned char* new_buffer = realloc(tls_io_instance->received_bytes, needed_buffer_size);
-		if (new_buffer == NULL)
-		{
-			result = __LINE__;
-		}
-		else
-		{
-			tls_io_instance->received_bytes = new_buffer;
-			tls_io_instance->buffer_size = needed_buffer_size;
-			result = 0;
-		}
-	}
-	else
-	{
-		result = 0;
-	}
-
-	return result;
 }
 
 static int set_receive_buffer(TLS_IO_INSTANCE* tls_io_instance, size_t buffer_size)

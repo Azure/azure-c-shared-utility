@@ -67,6 +67,88 @@ static void indicate_open_complete(TLS_IO_INSTANCE* tls_io_instance, IO_OPEN_RES
 	}
 }
 
+static int write_outgoing_bytes(TLS_IO_INSTANCE* tls_io_instance, ON_SEND_COMPLETE on_send_complete, void* callback_context)
+{
+	int result;
+
+	int pending = BIO_ctrl_pending(tls_io_instance->out_bio);
+	if (pending <= 0)
+	{
+		result = 0;
+	}
+	else
+	{
+		unsigned char* bytes_to_send = malloc(pending);
+		if (bytes_to_send == NULL)
+		{
+			result = __LINE__;
+		}
+		else
+		{
+			if (BIO_read(tls_io_instance->out_bio, bytes_to_send, pending) != pending)
+			{
+				result = __LINE__;
+			}
+			else
+			{
+				if (xio_send(tls_io_instance->underlying_io, bytes_to_send, pending, on_send_complete, callback_context) != 0)
+				{
+					result = __LINE__;
+				}
+				else
+				{
+
+					result = 0;
+				}
+			}
+
+			free(bytes_to_send);
+		}
+	}
+
+	return result;
+}
+
+static int send_handshake_bytes(TLS_IO_INSTANCE* tls_io_instance)
+{
+	int result;
+	int r = 0;
+	int pending = 0;
+
+	if (SSL_is_init_finished(tls_io_instance->ssl))
+	{
+		tls_io_instance->tlsio_state = TLSIO_STATE_OPEN;
+		result = 0;
+	}
+	else
+	{
+		SSL_do_handshake(tls_io_instance->ssl);
+		if (SSL_is_init_finished(tls_io_instance->ssl))
+		{
+			tls_io_instance->tlsio_state = TLSIO_STATE_OPEN;
+			result = 0;
+		}
+		else
+		{
+			if (write_outgoing_bytes(tls_io_instance, NULL, NULL) != 0)
+			{
+				result = __LINE__;
+			}
+			else
+			{
+				if (SSL_is_init_finished(tls_io_instance->ssl))
+				{
+					tls_io_instance->tlsio_state = TLSIO_STATE_OPEN;
+				}
+
+				result = 0;
+			}
+		}
+	}
+
+	return result;
+}
+
 static void on_underlying_io_close_complete(void* context)
 {
 	TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)context;
@@ -149,88 +231,6 @@ static void on_underlying_io_error(void* context)
 		indicate_error(tls_io_instance);
 		break;
 	}
-}
-
-static int write_outgoing_bytes(TLS_IO_INSTANCE* tls_io_instance, ON_SEND_COMPLETE on_send_complete, void* callback_context)
-{
-    int result;
-
-    int pending = BIO_ctrl_pending(tls_io_instance->out_bio);
-    if (pending <= 0)
-    {
-        result = 0;
-    }
-    else
-    {
-        unsigned char* bytes_to_send = malloc(pending);
-        if (bytes_to_send == NULL)
-        {
-            result = __LINE__;
-        }
-        else
-        {
-            if (BIO_read(tls_io_instance->out_bio, bytes_to_send, pending) != pending)
-            {
-                result = __LINE__;
-            }
-            else
-            {
-                if (xio_send(tls_io_instance->underlying_io, bytes_to_send, pending, on_send_complete, callback_context) != 0)
-                {
-                    result = __LINE__;
-                }
-                else
-                {
-
-                    result = 0;
-                }
-            }
-
-            free(bytes_to_send);
-        }
-    }
-
-    return result;
-}
-
-static int send_handshake_bytes(TLS_IO_INSTANCE* tls_io_instance)
-{
-    int result;
-    int r = 0;
-    int pending = 0;
-
-    if (SSL_is_init_finished(tls_io_instance->ssl))
-    {
-        tls_io_instance->tlsio_state = TLSIO_STATE_OPEN;
-        result = 0;
-    }
-    else
-    {
-        SSL_do_handshake(tls_io_instance->ssl);
-        if (SSL_is_init_finished(tls_io_instance->ssl))
-        {
-            tls_io_instance->tlsio_state = TLSIO_STATE_OPEN;
-            result = 0;
-        }
-        else
-        {
-            if (write_outgoing_bytes(tls_io_instance, NULL, NULL) != 0)
-            {
-                result = __LINE__;
-            }
-            else
-            {
-                if (SSL_is_init_finished(tls_io_instance->ssl))
-                {
-                    tls_io_instance->tlsio_state = TLSIO_STATE_OPEN;
-                }
-
-                result = 0;
-            }
-        }
-    }
-
-    return result;
 }
 
 static int decode_ssl_received_bytes(TLS_IO_INSTANCE* tls_io_instance)
