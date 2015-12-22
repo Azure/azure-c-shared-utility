@@ -16,10 +16,10 @@
 
 typedef enum IO_STATE_TAG
 {
-	IO_STATE_NOT_OPEN,
-	IO_STATE_OPENING,
-	IO_STATE_OPEN,
-	IO_STATE_CLOSING
+    IO_STATE_CLOSED,
+    IO_STATE_OPENING,
+    IO_STATE_OPEN,
+    IO_STATE_CLOSING
 } IO_STATE;
 
 typedef struct PENDING_SOCKET_IO_TAG
@@ -35,7 +35,7 @@ typedef struct SOCKET_IO_INSTANCE_TAG
 {
     SOCKET socket;
     ON_BYTES_RECEIVED on_bytes_received;
-	ON_IO_ERROR on_io_error;
+    ON_IO_ERROR on_io_error;
     LOGGER_LOG logger_log;
     void* callback_context;
     char* hostname;
@@ -56,10 +56,10 @@ static const IO_INTERFACE_DESCRIPTION socket_io_interface_description =
 
 static void indicate_error(SOCKET_IO_INSTANCE* socket_io_instance)
 {
-	if (socket_io_instance->on_io_error != NULL)
-	{
-		socket_io_instance->on_io_error(socket_io_instance->callback_context);
-	}
+    if (socket_io_instance->on_io_error != NULL)
+    {
+        socket_io_instance->on_io_error(socket_io_instance->callback_context);
+    }
 }
 
 static int add_pending_io(SOCKET_IO_INSTANCE* socket_io_instance, const unsigned char* buffer, size_t size, ON_SEND_COMPLETE on_send_complete, void* callback_context)
@@ -150,10 +150,10 @@ CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters, LOGGER_LOG logger
                 {
                     result->port = socket_io_config->port;
                     result->on_bytes_received = NULL;
-					result->on_io_error = NULL;
+                    result->on_io_error = NULL;
                     result->logger_log = logger_log;
                     result->callback_context = NULL;
-                    result->io_state = IO_STATE_NOT_OPEN;
+                    result->io_state = IO_STATE_CLOSED;
                 }
             }
         }
@@ -205,7 +205,7 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
     }
     else
     {
-		if (socket_io_instance->io_state != IO_STATE_NOT_OPEN)
+        if (socket_io_instance->io_state != IO_STATE_CLOSED)
         {
             result = __LINE__;
         }
@@ -218,9 +218,9 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
             }
             else
             {
-				char portString[16];
-				ADDRINFO addrHint = { 0 };
-				ADDRINFO* addrInfo = NULL;
+                char portString[16];
+                ADDRINFO addrHint = { 0 };
+                ADDRINFO* addrInfo = NULL;
 
                 addrHint.ai_family = AF_INET;
                 addrHint.ai_socktype = SOCK_STREAM;
@@ -251,15 +251,15 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
                     else
                     {
                         socket_io_instance->on_bytes_received = on_bytes_received;
-						socket_io_instance->on_io_error = on_io_error;
+                        socket_io_instance->on_io_error = on_io_error;
                         socket_io_instance->callback_context = callback_context;
 
-						socket_io_instance->io_state = IO_STATE_OPEN;
+                        socket_io_instance->io_state = IO_STATE_OPEN;
 
-						if (on_io_open_complete != NULL)
-						{
-							on_io_open_complete(callback_context, IO_OPEN_OK);
-						}
+                        if (on_io_open_complete != NULL)
+                        {
+                            on_io_open_complete(callback_context, IO_OPEN_OK);
+                        }
 
                         result = 0;
                     }
@@ -285,24 +285,24 @@ int socketio_close(CONCRETE_IO_HANDLE socket_io, ON_IO_CLOSE_COMPLETE on_io_clos
     {
         SOCKET_IO_INSTANCE* socket_io_instance = (SOCKET_IO_INSTANCE*)socket_io;
 
-		if ((socket_io_instance->io_state != IO_STATE_OPEN) &&
-			(socket_io_instance->io_state != IO_STATE_OPENING))
-		{
-			result = __LINE__;
-		}
-		else
-		{
-			(void)closesocket(socket_io_instance->socket);
-			socket_io_instance->socket = INVALID_SOCKET;
-			socket_io_instance->io_state = IO_STATE_NOT_OPEN;
+        if ((socket_io_instance->io_state != IO_STATE_OPEN) &&
+            (socket_io_instance->io_state != IO_STATE_OPENING))
+        {
+            result = __LINE__;
+        }
+        else
+        {
+            (void)closesocket(socket_io_instance->socket);
+            socket_io_instance->socket = INVALID_SOCKET;
+            socket_io_instance->io_state = IO_STATE_CLOSED;
 
-			if (on_io_close_complete != NULL)
-			{
-				on_io_close_complete(callback_context);
-			}
+            if (on_io_close_complete != NULL)
+            {
+                on_io_close_complete(callback_context);
+            }
 
-			result = 0;
-		}
+            result = 0;
+        }
     }
 
     return result;
@@ -348,7 +348,7 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
                     int last_error = WSAGetLastError();
                     if (last_error != WSAEWOULDBLOCK)
                     {
-						indicate_error(socket_io_instance);
+                        indicate_error(socket_io_instance);
                         printf("Error sending on socket\r\n");
                         result = __LINE__;
                     }
@@ -392,7 +392,7 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
     if (socket_io != NULL)
     {
         SOCKET_IO_INSTANCE* socket_io_instance = (SOCKET_IO_INSTANCE*)socket_io;
-		if (socket_io_instance->io_state == IO_STATE_OPEN)
+        if (socket_io_instance->io_state == IO_STATE_OPEN)
         {
             int received = 1;
 
@@ -402,8 +402,8 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                 PENDING_SOCKET_IO* pending_socket_io = (PENDING_SOCKET_IO*)list_item_get_value(first_pending_io);
                 if (pending_socket_io == NULL)
                 {
-					indicate_error(socket_io_instance);
-					break;
+                    indicate_error(socket_io_instance);
+                    break;
                 }
 
                 int send_result = send(socket_io_instance->socket, pending_socket_io->bytes, pending_socket_io->size, 0);
@@ -432,8 +432,8 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                     free(pending_socket_io);
                     if (list_remove(socket_io_instance->pending_io_list, first_pending_io) != 0)
                     {
-						indicate_error(socket_io_instance);
-					}
+                        indicate_error(socket_io_instance);
+                    }
                 }
 
                 first_pending_io = list_get_head_item(socket_io_instance->pending_io_list);
@@ -462,7 +462,7 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                     int last_error = WSAGetLastError();
                     if (last_error != WSAEWOULDBLOCK)
                     {
-						indicate_error(socket_io_instance);
+                        indicate_error(socket_io_instance);
                     }
                 }
             }

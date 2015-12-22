@@ -16,7 +16,7 @@
 
 typedef enum IO_STATE_TAG
 {
-    IO_STATE_NOT_OPEN,
+    IO_STATE_CLOSED,
     IO_STATE_OPENING,
     IO_STATE_OPEN,
     IO_STATE_CLOSING,
@@ -140,7 +140,7 @@ CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters, LOGGER_LOG logger
                     result->on_io_error = NULL;
                     result->logger_log = logger_log;
                     result->open_callback_context = NULL;
-                    result->io_state = IO_STATE_NOT_OPEN;
+                    result->io_state = IO_STATE_CLOSED;
                     result->tcp_socket_connection = NULL;
                 }
             }
@@ -236,7 +236,7 @@ int socketio_close(CONCRETE_IO_HANDLE socket_io, ON_IO_CLOSE_COMPLETE on_io_clos
     {
         SOCKET_IO_INSTANCE* socket_io_instance = (SOCKET_IO_INSTANCE*)socket_io;
 
-        if ((socket_io_instance->io_state == IO_STATE_NOT_OPEN) ||
+        if ((socket_io_instance->io_state == IO_STATE_CLOSED) ||
             (socket_io_instance->io_state == IO_STATE_CLOSING))
         {
             result = __LINE__;
@@ -245,7 +245,7 @@ int socketio_close(CONCRETE_IO_HANDLE socket_io, ON_IO_CLOSE_COMPLETE on_io_clos
         {
             tcpsocketconnection_close(socket_io_instance->tcp_socket_connection);
             socket_io_instance->tcp_socket_connection = NULL;
-            socket_io_instance->io_state = IO_STATE_NOT_OPEN;
+            socket_io_instance->io_state = IO_STATE_CLOSED;
 
             result = 0;
         }
