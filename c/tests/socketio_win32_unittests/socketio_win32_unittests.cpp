@@ -205,25 +205,25 @@ extern "C"
 
 static void test_on_bytes_received(void* context, const unsigned char* buffer, size_t size)
 {
-	(void)context;
-	(void)buffer;
-	(void)size;
+    (void)context;
+    (void)buffer;
+    (void)size;
 }
 
 static void test_on_io_open_complete(void* context, IO_OPEN_RESULT open_result)
 {
-	(void)context;
-	(void)open_result;
+    (void)context;
+    (void)open_result;
 }
 
 static void test_on_io_close_complete(void* context)
 {
-	(void)context;
+    (void)context;
 }
 
 static void test_on_io_error(void* context)
 {
-	(void)context;
+    (void)context;
 }
 
 MICROMOCK_MUTEX_HANDLE test_serialize_mutex;
@@ -397,7 +397,7 @@ TEST_FUNCTION(socketio_open_socket_fails)
         .SetReturn(INVALID_SOCKET);
 
     // act
-	int result = socketio_open(ioHandle, test_on_io_open_complete, test_on_bytes_received, test_on_io_error, &callbackContext);
+    int result = socketio_open(ioHandle, test_on_io_open_complete, test_on_bytes_received, test_on_io_error, &callbackContext);
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
@@ -423,7 +423,7 @@ TEST_FUNCTION(socketio_open_getaddrinfo_fails)
     EXPECTED_CALL(mocks, closesocket(IGNORED_NUM_ARG));
 
     // act
-	int result = socketio_open(ioHandle, test_on_io_open_complete, test_on_bytes_received, test_on_io_error, &callbackContext);
+    int result = socketio_open(ioHandle, test_on_io_open_complete, test_on_bytes_received, test_on_io_error, &callbackContext);
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
@@ -451,7 +451,7 @@ TEST_FUNCTION(socketio_open_connect_fails)
     EXPECTED_CALL(mocks, freeaddrinfo(IGNORED_PTR_ARG));
 
     // act
-	int result = socketio_open(ioHandle, test_on_io_open_complete, test_on_bytes_received, test_on_io_error, &callbackContext);
+    int result = socketio_open(ioHandle, test_on_io_open_complete, test_on_bytes_received, test_on_io_error, &callbackContext);
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
@@ -480,7 +480,7 @@ TEST_FUNCTION(socketio_open_ioctlsocket_fails)
     EXPECTED_CALL(mocks, closesocket(IGNORED_NUM_ARG));
 
     // act
-	int result = socketio_open(ioHandle, test_on_io_open_complete, test_on_bytes_received, test_on_io_error, &callbackContext);
+    int result = socketio_open(ioHandle, test_on_io_open_complete, test_on_bytes_received, test_on_io_error, &callbackContext);
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
@@ -507,7 +507,7 @@ TEST_FUNCTION(socketio_open_succeeds)
     EXPECTED_CALL(mocks, freeaddrinfo(IGNORED_PTR_ARG));
 
     // act
-	int result = socketio_open(ioHandle, test_on_io_open_complete, test_on_bytes_received, test_on_io_error, &callbackContext);
+    int result = socketio_open(ioHandle, test_on_io_open_complete, test_on_bytes_received, test_on_io_error, &callbackContext);
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
@@ -536,14 +536,14 @@ TEST_FUNCTION(socketio_close_Succeeds)
     CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
     static ADDRINFO addrInfo = { AI_PASSIVE, AF_INET, SOCK_STREAM, IPPROTO_TCP, 128, NULL, (sockaddr*)0x11, NULL };
 
-	int result = socketio_open(ioHandle, test_on_io_open_complete, test_on_bytes_received, test_on_io_error, &callbackContext);
+    int result = socketio_open(ioHandle, test_on_io_open_complete, test_on_bytes_received, test_on_io_error, &callbackContext);
 
     mocks.ResetAllCalls();
 
     EXPECTED_CALL(mocks, closesocket(IGNORED_NUM_ARG));
 
     // act
-	result = socketio_close(ioHandle, test_on_io_close_complete, (void*)0x4242);
+    result = socketio_close(ioHandle, test_on_io_close_complete, (void*)0x4242);
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
@@ -569,7 +569,7 @@ TEST_FUNCTION(socketio_send_buffer_NULL_fails)
     CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
     static ADDRINFO addrInfo = { AI_PASSIVE, AF_INET, SOCK_STREAM, IPPROTO_TCP, 128, NULL, (sockaddr*)0x11, NULL };
 
-	int result = socketio_open(ioHandle, test_on_io_open_complete, test_on_bytes_received, test_on_io_error, &callbackContext);
+    int result = socketio_open(ioHandle, test_on_io_open_complete, test_on_bytes_received, test_on_io_error, &callbackContext);
 
     mocks.ResetAllCalls();
 
@@ -588,7 +588,7 @@ TEST_FUNCTION(socketio_send_size_zero_fails)
     CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
     static ADDRINFO addrInfo = { AI_PASSIVE, AF_INET, SOCK_STREAM, IPPROTO_TCP, 128, NULL, (sockaddr*)0x11, NULL };
 
-	int result = socketio_open(ioHandle, test_on_io_open_complete, test_on_bytes_received, test_on_io_error, &callbackContext);
+    int result = socketio_open(ioHandle, test_on_io_open_complete, test_on_bytes_received, test_on_io_error, &callbackContext);
 
     mocks.ResetAllCalls();
 
@@ -607,7 +607,7 @@ TEST_FUNCTION(socketio_send_succeeds)
     CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
     static ADDRINFO addrInfo = { AI_PASSIVE, AF_INET, SOCK_STREAM, IPPROTO_TCP, 128, NULL, (sockaddr*)0x11, NULL };
 
-	int result = socketio_open(ioHandle, test_on_io_open_complete, test_on_bytes_received, test_on_io_error, &callbackContext);
+    int result = socketio_open(ioHandle, test_on_io_open_complete, test_on_bytes_received, test_on_io_error, &callbackContext);
 
     mocks.ResetAllCalls();
 
@@ -632,7 +632,7 @@ TEST_FUNCTION(socketio_send_returns_1_succeeds)
     CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
     static ADDRINFO addrInfo = { AI_PASSIVE, AF_INET, SOCK_STREAM, IPPROTO_TCP, 128, NULL, (sockaddr*)0x11, NULL };
 
-	int result = socketio_open(ioHandle, test_on_io_open_complete, test_on_bytes_received, test_on_io_error, &callbackContext);
+    int result = socketio_open(ioHandle, test_on_io_open_complete, test_on_bytes_received, test_on_io_error, &callbackContext);
 
     mocks.ResetAllCalls();
 
@@ -672,7 +672,7 @@ TEST_FUNCTION(socketio_dowork_succeeds)
     CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
     static ADDRINFO addrInfo = { AI_PASSIVE, AF_INET, SOCK_STREAM, IPPROTO_TCP, 128, NULL, (sockaddr*)0x11, NULL };
 
-	int result = socketio_open(ioHandle, test_on_io_open_complete, test_on_bytes_received, test_on_io_error, &callbackContext);
+    int result = socketio_open(ioHandle, test_on_io_open_complete, test_on_bytes_received, test_on_io_error, &callbackContext);
 
     mocks.ResetAllCalls();
 
@@ -697,7 +697,7 @@ TEST_FUNCTION(socketio_dowork_recv_bytes_succeeds)
     CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
     static ADDRINFO addrInfo = { AI_PASSIVE, AF_INET, SOCK_STREAM, IPPROTO_TCP, 128, NULL, (sockaddr*)0x11, NULL };
 
-	int result = socketio_open(ioHandle, test_on_io_open_complete, test_on_bytes_received, test_on_io_error, &callbackContext);
+    int result = socketio_open(ioHandle, test_on_io_open_complete, test_on_bytes_received, test_on_io_error, &callbackContext);
 
     mocks.ResetAllCalls();
 
