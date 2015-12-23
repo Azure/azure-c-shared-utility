@@ -29,7 +29,8 @@ typedef enum IO_STATE_TAG
     IO_STATE_CLOSED,
     IO_STATE_OPENING,
     IO_STATE_OPEN,
-    IO_STATE_CLOSING
+    IO_STATE_CLOSING,
+    IO_STATE_ERROR
 } IO_STATE;
 
 typedef struct PENDING_SOCKET_IO_TAG
@@ -146,10 +147,9 @@ CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters, LOGGER_LOG logger
                     strcpy(result->hostname, socket_io_config->hostname);
                     result->port = socket_io_config->port;
                     result->on_bytes_received = NULL;
-                    result->on_io_state_changed = NULL;
                     result->logger_log = logger_log;
                     result->socket = INVALID_SOCKET;
-                    result->callback_context = NULL;
+                    result->open_callback_context = NULL;
                     result->io_state = IO_STATE_CLOSED;
                 }
             }
@@ -250,7 +250,7 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
                         {
                             socket_io_instance->on_bytes_received = on_bytes_received;
                             socket_io_instance->on_io_error = on_io_error;
-                            socket_io_instance->callback_context = callback_context;
+                            socket_io_instance->open_callback_context = callback_context;
                             socket_io_instance->io_state = IO_STATE_OPEN;
 
                             if (on_io_open_complete != NULL)
@@ -454,7 +454,7 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                     if (socket_io_instance->on_bytes_received != NULL)
                     {
                         /* explictly ignoring here the result of the callback */
-                        (void)socket_io_instance->on_bytes_received(socket_io_instance->callback_context, recv_bytes, received);
+                        (void)socket_io_instance->on_bytes_received(socket_io_instance->open_callback_context, recv_bytes, received);
                     }
                 }
             }
