@@ -206,6 +206,7 @@ set(source_c_files
 ./src/base64.c
 ./src/buffer.c
 ./src/crt_abstractions.c
+./src/constmap.c
 ./src/doublylinkedlist.c
 ./src/gballoc.c
 ./src/hmac.c
@@ -262,6 +263,7 @@ set(source_h_files
 ./inc/base64.h
 ./inc/buffer_.h
 ./inc/crt_abstractions.h
+./inc/constmap.h
 ./inc/condition.h
 ./inc/doublylinkedlist.h
 ./inc/gballoc.h
