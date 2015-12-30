@@ -46,10 +46,13 @@ static size_t whenShallmalloc_fail;
 DEFINE_MICROMOCK_ENUM_TO_STRING(CONSTMAP_RESULT, CONSTMAP_RESULT_VALUES);
 
 #define VALID_MAP_HANDLE    (MAP_HANDLE)0xDEAF
+#define VALID_CONST_CHAR_POINTER (const char*const*)0xDADA
 #define VALID_MAP_CLONE1     (MAP_HANDLE)0xDEDE
 #define VALID_MAP_CLONE2     (MAP_HANDLE)0xDEDD
 #define INVALID_MAP_HANDLE  (MAP_HANDLE)0xDEAD
 #define INVALID_CLONE_HANDLE  (MAP_HANDLE)0xDEAE
+#define VALID_KV_COUNT		(size_t)100
+#define VALID_VALUE			"value"
 
 static MAP_RESULT currentMapResult;
 
@@ -88,7 +91,7 @@ public:
 
 	// Map_Clone
 	MOCK_STATIC_METHOD_1(, MAP_HANDLE, Map_Clone, MAP_HANDLE, sourceMap)
-		MAP_HANDLE result2 = VALID_MAP_HANDLE;
+		MAP_HANDLE result2;
 		if (sourceMap == VALID_MAP_HANDLE)
 		{
 			result2 = VALID_MAP_CLONE1;
@@ -114,23 +117,41 @@ public:
 	// Map_ContainsKey
 	MOCK_STATIC_METHOD_3(, MAP_RESULT, Map_ContainsKey, MAP_HANDLE, handle, const char*, key, bool*, keyExists)
 		MAP_RESULT result3 = currentMapResult;
-		*keyExists = true;
+		if (result3 == MAP_OK)
+		{
+			*keyExists = true;
+		}
 	MOCK_METHOD_END(MAP_RESULT, result3);
 
 	// Map_ContainsValue 
 	// MAP_RESULT Map_ContainsValue(MAP_HANDLE handle, const char* value, bool* valueExists);
 	MOCK_STATIC_METHOD_3(, MAP_RESULT, Map_ContainsValue, MAP_HANDLE, handle, const char*, value, bool*, valueExists)
 		MAP_RESULT result4 = currentMapResult;
-		*valueExists = true;
+		if (result4 == MAP_OK)
+		{
+			*valueExists = true;
+		}
 	MOCK_METHOD_END(MAP_RESULT, result4);
 
 	// Map_GetValueFromKey
 	MOCK_STATIC_METHOD_2(, const char*, Map_GetValueFromKey, MAP_HANDLE, sourceMap, const char*, key)
-		const char* result5 = "value";
+		const char* result5;
+		if (currentMapResult == MAP_OK)
+		{
+			result5 = VALID_VALUE;
+		}
+		else
+		{
+			result5 = NULL;
+		}
 	MOCK_METHOD_END(const char*, result5);
+
 	// Map_GetInternals
 	MOCK_STATIC_METHOD_4(, MAP_RESULT, Map_GetInternals, MAP_HANDLE, handle, const char*const**, keys, const char*const**, values, size_t*, count)
 		MAP_RESULT result6 = currentMapResult;
+		*keys = VALID_CONST_CHAR_POINTER;
+		*values = VALID_CONST_CHAR_POINTER;
+		*count = VALID_KV_COUNT;
 	MOCK_METHOD_END(MAP_RESULT, result6);
 };
 
@@ -144,22 +165,6 @@ DECLARE_GLOBAL_MOCK_METHOD_3(CConstMapMocks, , MAP_RESULT, Map_ContainsValue, MA
 DECLARE_GLOBAL_MOCK_METHOD_2(CConstMapMocks, , const char*, Map_GetValueFromKey, MAP_HANDLE, ptr, const char*, key);
 DECLARE_GLOBAL_MOCK_METHOD_4(CConstMapMocks, , MAP_RESULT, Map_GetInternals, MAP_HANDLE, handle, const char*const**, keys, const char*const**, values, size_t*, count);
 /* capacity */
-
-static const char* TEST_REDKEY = "testRedKey";
-static const char* TEST_REDVALUE = "testRedValue";
-
-static const char* TEST_YELLOWKEY = "testYellowKey";
-static const char* TEST_YELLOWVALUE = "testYellowValue";
-
-static const char* TEST_BLUEKEY = "testBlueKey";
-static const char* TEST_BLUEVALUE = "cyan";
-
-static const char* TEST_GREENKEY = "testgreenkey";
-static const char* TEST_GREENVALUE = "green";
-
-static const size_t numPairs = 4;
-const char* keys[numPairs] = { TEST_REDKEY, TEST_YELLOWKEY, TEST_BLUEKEY, TEST_GREENKEY };
-const char* values[numPairs] = { TEST_REDVALUE, TEST_YELLOWVALUE, TEST_BLUEVALUE, TEST_GREENVALUE };
 
 BEGIN_TEST_SUITE(constmap_unittests)
 
@@ -198,6 +203,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
 	/*Tests_SRS_CONSTMAP_17_001: [ConstMap_Create shall create an immutable map, populated by the key, value pairs in the source map.]*/
 	/*Tests_SRS_CONSTMAP_17_048: [ConstMap_Create shall accept any non-NULL MAP_HANDLE as input.]*/
 	/*Tests_SRS_CONSTMAP_17_003: [Otherwise, it shall return a non-NULL handle that can be used in subsequent calls.]*/
+	/*Tests_SRS_CONSTMAP_17_004: [If the reference count is zero, ConstMap_Destroy shall release all resources associated with the immutable map.]*/
     TEST_FUNCTION(ConstMap_Create_Destroy_Success)
     {
 		// Arrange
@@ -242,13 +248,12 @@ BEGIN_TEST_SUITE(constmap_unittests)
 		///Act
 		CONSTMAP_HANDLE aHandle = ConstMap_Create(sourceMap);
 
+		///Assert
 		ASSERT_IS_NULL(aHandle);
 
-		///Assert
 		mocks.AssertActualAndExpectedCalls();
 
 		//Ablution                
-		whenShallmalloc_fail = 0;
 
     }
 
@@ -269,16 +274,37 @@ BEGIN_TEST_SUITE(constmap_unittests)
 		///Act
 		CONSTMAP_HANDLE aHandle = ConstMap_Create(sourceMap);
 
+		///Assert
 		ASSERT_IS_NULL(aHandle);
+
+		mocks.AssertActualAndExpectedCalls();
+
+		//Ablution                
+
+    }
+
+	/*Tests_SRS_CONSTMAP_17_039: [ConstMap_Clone shall increase the internal reference count of the immutable map indicated by parameter handle] */
+	TEST_FUNCTION(ConstMap_Clone_Destroy_Success)
+	{
+		// Arrange
+		CConstMapMocks mocks;
+
+		MAP_HANDLE sourceMap = VALID_MAP_HANDLE;
+		CONSTMAP_HANDLE aHandle = ConstMap_Create(sourceMap);
+		CONSTMAP_HANDLE aClone = ConstMap_Clone(aHandle);
+
+		mocks.ResetAllCalls();
+
+		///Act
+		ConstMap_Destroy(aClone);
 
 		///Assert
 		mocks.AssertActualAndExpectedCalls();
 
-		//Ablution                
-		whenShallmalloc_fail = 0;
+		//Ablution    
+		ConstMap_Destroy(aHandle);
 
-    }
-
+	}
 	/*Tests_SRS_CONSTMAP_17_005: [If parameter handle is NULL then ConstMap_Destroy shall take no action.]*/
 	TEST_FUNCTION(ConstMap_Destroy_Null)
 	{
@@ -302,33 +328,23 @@ BEGIN_TEST_SUITE(constmap_unittests)
 		// Arrange
 		CConstMapMocks mocks;
 
-		// create a const map.
-		STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG))
-			.IgnoreArgument(1);
-		STRICT_EXPECTED_CALL(mocks, Map_Clone(VALID_MAP_HANDLE));
-
-		// clone const map expects no extra calls
-
-		STRICT_EXPECTED_CALL(mocks, Map_Destroy(VALID_MAP_CLONE1));
-		STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
-			.IgnoreArgument(1);
-
 		MAP_HANDLE sourceMap = VALID_MAP_HANDLE;
 		CONSTMAP_HANDLE aHandle = ConstMap_Create(sourceMap);
 
-		ASSERT_IS_NOT_NULL(aHandle);
+		mocks.ResetAllCalls();
 
 		///Act
 		CONSTMAP_HANDLE aClone = ConstMap_Clone(aHandle);
-		ASSERT_IS_NOT_NULL(aClone);
 
+		///Assert
+		ASSERT_ARE_EQUAL(void_ptr, aHandle, aClone);
+
+		mocks.AssertActualAndExpectedCalls();
+
+		//Ablution    
 		ConstMap_Destroy(aClone);
 		ConstMap_Destroy(aHandle);
 
-		///Assert
-		mocks.AssertActualAndExpectedCalls();
-
-		//Ablution       
 	}
 
 	/*Tests_SRS_CONSTMAP_17_038: [ConstMap_Clone returns NULL if parameter handle is NULL.] */
@@ -341,10 +357,9 @@ BEGIN_TEST_SUITE(constmap_unittests)
 
 		///Act
 		CONSTMAP_HANDLE aClone = ConstMap_Clone(aHandle);
-		ASSERT_IS_NULL(aClone);
-
 
 		///Assert
+		ASSERT_IS_NULL(aClone);
 		mocks.AssertActualAndExpectedCalls();
 
 		//Ablution       
@@ -358,18 +373,14 @@ BEGIN_TEST_SUITE(constmap_unittests)
 		const char * key = "aKey";
 		bool keyExists;
 
-		// Create ConstMap
-		STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG))
-			.IgnoreArgument(1);
-		STRICT_EXPECTED_CALL(mocks, Map_Clone(VALID_MAP_HANDLE));
-		// Call to Map
-		STRICT_EXPECTED_CALL(mocks, Map_ContainsKey(IGNORED_PTR_ARG, key, IGNORED_PTR_ARG))
-			.IgnoreArgument(1).IgnoreArgument(3);
-
 		MAP_HANDLE sourceMap = VALID_MAP_HANDLE;
 		CONSTMAP_HANDLE aHandle = ConstMap_Create(sourceMap);
 
-		ASSERT_IS_NOT_NULL(aHandle);
+		mocks.ResetAllCalls();
+
+		// Call to Map
+		STRICT_EXPECTED_CALL(mocks, Map_ContainsKey(IGNORED_PTR_ARG, key, IGNORED_PTR_ARG))
+			.IgnoreArgument(1).IgnoreArgument(3);
 
 		///Act
 		keyExists = ConstMap_ContainsKey(aHandle, key);
@@ -389,22 +400,32 @@ BEGIN_TEST_SUITE(constmap_unittests)
 	{
 		// Arrange
 		CConstMapMocks mocks;
-		const char * key = "aKey";
-		bool keyExists;
+		const char * key1 = "aKey";
+		const char * key2 = NULL;
+		bool keyExists1;
+		bool keyExists2;
+		CONSTMAP_HANDLE aHandle1 = NULL;
+		CONSTMAP_HANDLE aHandle2;
+		MAP_HANDLE sourceMap = VALID_MAP_HANDLE;
 
-
-		CONSTMAP_HANDLE aHandle = NULL;
+		aHandle2 = ConstMap_Create(sourceMap);
+		mocks.ResetAllCalls();
 
 		///Act
-		keyExists = ConstMap_ContainsKey(aHandle, key);
+		// NULL Handle
+		keyExists1 = ConstMap_ContainsKey(aHandle1, key1);
 
+		// NULL key
+		keyExists2 = ConstMap_ContainsKey(aHandle2, key2);
 
 		///Assert
-		ASSERT_IS_FALSE(keyExists);
-
+		ASSERT_IS_FALSE(keyExists1);
+		ASSERT_IS_FALSE(keyExists2);
 		mocks.AssertActualAndExpectedCalls();
 
 		//Ablution    
+		ConstMap_Destroy(aHandle2);
+
 	}
 
 	/*Tests_SRS_CONSTMAP_17_026: [If a key doesn't exist, then ConstMap_ContainsKey shall return false.]*/
@@ -415,10 +436,10 @@ BEGIN_TEST_SUITE(constmap_unittests)
 		const char * key = "aKey";
 		bool keyExists;
 
-		// Create ConstMap
-		STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG))
-			.IgnoreArgument(1);
-		STRICT_EXPECTED_CALL(mocks, Map_Clone(VALID_MAP_HANDLE));
+		MAP_HANDLE sourceMap = VALID_MAP_HANDLE;
+		CONSTMAP_HANDLE aHandle = ConstMap_Create(sourceMap);
+		mocks.ResetAllCalls();
+
 		// Call to Map_ContainsKey (match with mapErrorList size)
 		STRICT_EXPECTED_CALL(mocks, Map_ContainsKey(IGNORED_PTR_ARG, key, IGNORED_PTR_ARG))
 			.IgnoreArgument(1).IgnoreArgument(3);
@@ -431,10 +452,6 @@ BEGIN_TEST_SUITE(constmap_unittests)
 		STRICT_EXPECTED_CALL(mocks, Map_ContainsKey(IGNORED_PTR_ARG, key, IGNORED_PTR_ARG))
 			.IgnoreArgument(1).IgnoreArgument(3);
 
-		MAP_HANDLE sourceMap = VALID_MAP_HANDLE;
-		CONSTMAP_HANDLE aHandle = ConstMap_Create(sourceMap);
-
-		ASSERT_IS_NOT_NULL(aHandle);
 
 		///Act
 		MAP_RESULT mapErrorList[] = {
@@ -476,22 +493,17 @@ BEGIN_TEST_SUITE(constmap_unittests)
 		const char * value = "aValue";
 		bool valueExists;
 
-		// Create ConstMap
-		STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG))
-			.IgnoreArgument(1);
-		STRICT_EXPECTED_CALL(mocks, Map_Clone(VALID_MAP_HANDLE));
+		MAP_HANDLE sourceMap = VALID_MAP_HANDLE;
+		CONSTMAP_HANDLE aHandle = ConstMap_Create(sourceMap);
+
+		mocks.ResetAllCalls();
+
 		// Call to Map
 		STRICT_EXPECTED_CALL(mocks, Map_ContainsValue(IGNORED_PTR_ARG, value, IGNORED_PTR_ARG))
 			.IgnoreArgument(1).IgnoreArgument(3);
 
-		MAP_HANDLE sourceMap = VALID_MAP_HANDLE;
-		CONSTMAP_HANDLE aHandle = ConstMap_Create(sourceMap);
-
-		ASSERT_IS_NOT_NULL(aHandle);
-
 		///Act
 		valueExists = ConstMap_ContainsValue(aHandle, value);
-
 
 		///Assert
 		ASSERT_IS_TRUE(valueExists);
@@ -507,22 +519,31 @@ BEGIN_TEST_SUITE(constmap_unittests)
 	{
 		// Arrange
 		CConstMapMocks mocks;
-		const char * value = "aValue";
-		bool valueExists;
+		const char * value1 = "aValue";
+		bool valueExists1;
+		const char * value2 = NULL;
+		bool valueExists2;
+		MAP_HANDLE sourceMap = VALID_MAP_HANDLE;
+		CONSTMAP_HANDLE aHandle1 = NULL;
+		CONSTMAP_HANDLE aHandle2 = NULL;
 
+		aHandle2 = ConstMap_Create(sourceMap);
 
-		CONSTMAP_HANDLE aHandle = NULL;
+		mocks.ResetAllCalls();
 
 		///Act
-		valueExists = ConstMap_ContainsValue(aHandle, value);
+		valueExists1 = ConstMap_ContainsValue(aHandle1, value1);
+		valueExists2 = ConstMap_ContainsValue(aHandle2, value2);
 
 
 		///Assert
-		ASSERT_IS_FALSE(valueExists);
+		ASSERT_IS_FALSE(valueExists1);
+		ASSERT_IS_FALSE(valueExists2);
 
 		mocks.AssertActualAndExpectedCalls();
 
-		//Ablution    
+		//Ablution   
+		ConstMap_Destroy(aHandle2);
 	}
 
 	/* Tests_SRS_CONSTMAP_17_029: [Otherwise, if such a does not exist, then ConstMap_ContainsValue shall return false.]*/
@@ -533,10 +554,10 @@ BEGIN_TEST_SUITE(constmap_unittests)
 		const char * value = "aValue";
 		bool valueExists;
 
-		// Create ConstMap
-		STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG))
-			.IgnoreArgument(1);
-		STRICT_EXPECTED_CALL(mocks, Map_Clone(VALID_MAP_HANDLE));
+		MAP_HANDLE sourceMap = VALID_MAP_HANDLE;
+		CONSTMAP_HANDLE aHandle = ConstMap_Create(sourceMap);
+		mocks.ResetAllCalls();
+
 		// Call to Map_ContainsValue (match with mapErrorList size)
 		STRICT_EXPECTED_CALL(mocks, Map_ContainsValue(IGNORED_PTR_ARG, value, IGNORED_PTR_ARG))
 			.IgnoreArgument(1).IgnoreArgument(3);
@@ -548,11 +569,6 @@ BEGIN_TEST_SUITE(constmap_unittests)
 			.IgnoreArgument(1).IgnoreArgument(3);
 		STRICT_EXPECTED_CALL(mocks, Map_ContainsValue(IGNORED_PTR_ARG, value, IGNORED_PTR_ARG))
 			.IgnoreArgument(1).IgnoreArgument(3);
-
-		MAP_HANDLE sourceMap = VALID_MAP_HANDLE;
-		CONSTMAP_HANDLE aHandle = ConstMap_Create(sourceMap);
-
-		ASSERT_IS_NOT_NULL(aHandle);
 
 		///Act
 		MAP_RESULT mapErrorList[] = {
@@ -586,6 +602,124 @@ BEGIN_TEST_SUITE(constmap_unittests)
 		ConstMap_Destroy(aHandle);
 	}
 
+	/* Tests_SRS_CONSTMAP_17_042: [Otherwise, ConstMap_GetValue returns the key's value.]*/
+	TEST_FUNCTION(ConstMap_GetValue_Success)
+	{
+		// Arrange
+		CConstMapMocks mocks;
+		const char * key = "aKey";
+		const char * value;
+
+		MAP_HANDLE sourceMap = VALID_MAP_HANDLE;
+		CONSTMAP_HANDLE aHandle = ConstMap_Create(sourceMap);
+		mocks.ResetAllCalls();
+
+		// Call to Map
+		STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(IGNORED_PTR_ARG, key))
+			.IgnoreArgument(1);
+
+		///Act
+		value = ConstMap_GetValue(aHandle, key);
+
+
+		///Assert
+		ASSERT_ARE_EQUAL(char_ptr, VALID_VALUE, value);
+
+		mocks.AssertActualAndExpectedCalls();
+
+		//Ablution    
+		ConstMap_Destroy(aHandle);
+
+	}
+
+	TEST_FUNCTION(ConstMap_GetValue_Null)
+	{
+		// Arrange
+		CConstMapMocks mocks;
+		const char * key1 = "aKey";
+		const char * value1;
+		CONSTMAP_HANDLE aHandle1 = NULL;
+		const char * key2 = NULL;
+		const char * value2;
+		MAP_HANDLE sourceMap = VALID_MAP_HANDLE;
+		CONSTMAP_HANDLE aHandle2 = ConstMap_Create(sourceMap);
+
+		mocks.ResetAllCalls();
+
+		///Act
+		value1 = ConstMap_GetValue(aHandle1, key1);
+		value2 = ConstMap_GetValue(aHandle2, key2);
+
+		///Assert
+		ASSERT_IS_NULL(value1);
+		ASSERT_IS_NULL(value2);
+
+		mocks.AssertActualAndExpectedCalls();
+
+		//Ablution   
+		ConstMap_Destroy(aHandle2);
+
+	}
+
+	/*Tests_SRS_CONSTMAP_17_040: [If parameter handle or key is NULL then ConstMap_GetValue returns NULL.] */
+	/*Tests_SRS_CONSTMAP_17_041: [If the key is not found, then ConstMap_GetValue returns NULL.]*/
+	TEST_FUNCTION(ConstMap_GetValue_Failures)
+	{
+		// Arrange
+		CConstMapMocks mocks;
+		const char * key = "aKey";
+		const char * value;
+
+		MAP_HANDLE sourceMap = VALID_MAP_HANDLE;
+		CONSTMAP_HANDLE aHandle = ConstMap_Create(sourceMap);
+		mocks.ResetAllCalls();
+
+		// Call to Map_ContainsKey (match with mapErrorList size)
+		STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(IGNORED_PTR_ARG, key))
+			.IgnoreArgument(1);
+		STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(IGNORED_PTR_ARG, key))
+			.IgnoreArgument(1);
+		STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(IGNORED_PTR_ARG, key))
+			.IgnoreArgument(1);
+		STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(IGNORED_PTR_ARG, key))
+			.IgnoreArgument(1);
+		STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(IGNORED_PTR_ARG, key))
+			.IgnoreArgument(1);
+
+
+		///Act
+		MAP_RESULT mapErrorList[] = {
+			MAP_ERROR,
+			MAP_INVALIDARG,
+			MAP_KEYEXISTS,
+			MAP_KEYNOTFOUND,
+			MAP_FILTER_REJECT
+		};
+		size_t errors = sizeof(mapErrorList) / sizeof(MAP_RESULT);
+		CONSTMAP_RESULT constErrorList[] = {
+			CONSTMAP_ERROR,
+			CONSTMAP_INVALIDARG,
+			CONSTMAP_ERROR,
+			CONSTMAP_KEYNOTFOUND,
+			CONSTMAP_ERROR
+		};
+
+		// Errors from Map_GetValueFromKey
+		for (size_t e = 0; e < errors; e++)
+		{
+			currentMapResult = mapErrorList[e];
+			value = ConstMap_GetValue(aHandle, key);
+			ASSERT_IS_NULL(value);
+		}
+
+		///Assert
+
+		mocks.AssertActualAndExpectedCalls();
+
+		//Ablution    
+		ConstMap_Destroy(aHandle);
+	}
+
 	/*Tests_SRS_CONSTMAP_17_043: [ConstMap_GetInternals shall produce in *keys a pointer to an array of const char* having all the keys stored so far by the map.] */
 	/*Tests_SRS_CONSTMAP_17_044: [ConstMap_GetInternals shall produce in *values a pointer to an array of const char* having all the values stored so far by the map.] */
 	/*Tests_SRS_CONSTMAP_17_045: [ ConstMap_GetInternals shall produce in *count the number of stored keys and values.]*/
@@ -597,25 +731,22 @@ BEGIN_TEST_SUITE(constmap_unittests)
 		const char*const* values;
 		size_t count;
 
-		// Create ConstMap
-		STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG))
-			.IgnoreArgument(1);
-		STRICT_EXPECTED_CALL(mocks, Map_Clone(VALID_MAP_HANDLE));
+		MAP_HANDLE sourceMap = VALID_MAP_HANDLE;
+		CONSTMAP_HANDLE aHandle = ConstMap_Create(sourceMap);
+		mocks.ResetAllCalls();
+
 		// Call to Map
 		STRICT_EXPECTED_CALL(mocks, Map_GetInternals(IGNORED_PTR_ARG, &keys, &values, &count))
 			.IgnoreArgument(1);
 
-		MAP_HANDLE sourceMap = VALID_MAP_HANDLE;
-		CONSTMAP_HANDLE aHandle = ConstMap_Create(sourceMap);
-
-		ASSERT_IS_NOT_NULL(aHandle);
-
 		///Act
 		auto result = ConstMap_GetInternals(aHandle, &keys, &values, &count);
 
-
 		///Assert
 		ASSERT_ARE_EQUAL(CONSTMAP_RESULT, CONSTMAP_OK, result);
+		ASSERT_ARE_EQUAL(void_ptr, VALID_CONST_CHAR_POINTER, keys);
+		ASSERT_ARE_EQUAL(void_ptr, VALID_CONST_CHAR_POINTER, values);
+		ASSERT_ARE_EQUAL(int, VALID_KV_COUNT, count);
 
 		mocks.AssertActualAndExpectedCalls();
 
@@ -632,12 +763,10 @@ BEGIN_TEST_SUITE(constmap_unittests)
 		const char*const* values;
 		size_t count;
 
-
 		CONSTMAP_HANDLE aHandle = NULL;
 
 		///Act
 		auto result = ConstMap_GetInternals(aHandle, &keys, &values, &count);
-
 
 		///Assert
 		ASSERT_ARE_EQUAL(CONSTMAP_RESULT, CONSTMAP_INVALIDARG, result);
@@ -655,10 +784,11 @@ BEGIN_TEST_SUITE(constmap_unittests)
 		const char*const* values;
 		size_t count;
 
-		// Create ConstMap
-		STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG))
-			.IgnoreArgument(1);
-		STRICT_EXPECTED_CALL(mocks, Map_Clone(VALID_MAP_HANDLE));
+		MAP_HANDLE sourceMap = VALID_MAP_HANDLE;
+		CONSTMAP_HANDLE aHandle = ConstMap_Create(sourceMap);
+
+		mocks.ResetAllCalls();
+
 		// Call to Map_GetInternals (match with mapErrorList size)
 		STRICT_EXPECTED_CALL(mocks, Map_GetInternals(IGNORED_PTR_ARG, &keys, &values, &count))
 			.IgnoreArgument(1);
@@ -670,11 +800,6 @@ BEGIN_TEST_SUITE(constmap_unittests)
 			.IgnoreArgument(1);
 		STRICT_EXPECTED_CALL(mocks, Map_GetInternals(IGNORED_PTR_ARG, &keys, &values, &count))
 			.IgnoreArgument(1);
-
-		MAP_HANDLE sourceMap = VALID_MAP_HANDLE;
-		CONSTMAP_HANDLE aHandle = ConstMap_Create(sourceMap);
-
-		ASSERT_IS_NOT_NULL(aHandle);
 
 		///Act
 		MAP_RESULT mapErrorList[] = {

@@ -21,13 +21,17 @@ typedef struct CONSTMAP_HANDLE_DATA_TAG
 
 DEFINE_REFCOUNT_TYPE(CONSTMAP_HANDLE_DATA);
 
-#define LOG_CONSTMAP_ERROR LogError("result = %s\r\n", ENUM_TO_STRING(CONSTMAP_RESULT, result));
+#define LOG_CONSTMAP_ERROR(result) LogError("result = %s\r\n", ENUM_TO_STRING(CONSTMAP_RESULT, (result)));
 
 CONSTMAP_HANDLE ConstMap_Create(MAP_HANDLE sourceMap)
 {
     CONSTMAP_HANDLE_DATA* result = REFCOUNT_TYPE_CREATE(CONSTMAP_HANDLE_DATA);
 
-    if (result != NULL)
+	if (result == NULL)
+	{
+		LOG_CONSTMAP_ERROR(CONSTMAP_INVALIDARG);
+	}
+	else
     {
 		/*Codes_SRS_CONSTMAP_17_048: [ConstMap_Create shall accept any non-NULL MAP_HANDLE as input.]*/
 		/*Codes_SRS_CONSTMAP_17_001: [ConstMap_Create shall create an immutable map, populated by the key, value pairs in the source map.]*/
@@ -37,6 +41,7 @@ CONSTMAP_HANDLE ConstMap_Create(MAP_HANDLE sourceMap)
             free(result);
 			/*Codes_SRS_CONSTMAP_17_002: [If during creation there are any errors, then ConstMap_Create shall return NULL.]*/
             result = NULL;
+			LOG_CONSTMAP_ERROR(CONSTMAP_ERROR);
         }
 
     }
@@ -47,7 +52,11 @@ CONSTMAP_HANDLE ConstMap_Create(MAP_HANDLE sourceMap)
 void ConstMap_Destroy(CONSTMAP_HANDLE handle)
 {
 	/*Codes_SRS_CONSTMAP_17_005: [If parameter handle is NULL then ConstMap_Destroy shall take no action.]*/
-    if (handle != NULL)
+	if (handle == NULL)
+	{
+		LOG_CONSTMAP_ERROR(CONSTMAP_INVALIDARG);
+	}
+	else
     {
 		/*Codes_SRS_CONSTMAP_17_049: [ConstMap_Destroy shall decrement the internal reference count of the immutable map.]*/
 		if (DEC_REF(CONSTMAP_HANDLE_DATA, handle) == DEC_RETURN_ZERO)
@@ -63,7 +72,11 @@ void ConstMap_Destroy(CONSTMAP_HANDLE handle)
 CONSTMAP_HANDLE ConstMap_Clone(CONSTMAP_HANDLE handle)
 {
 	/*Codes_SRS_CONSTMAP_17_038: [ConstMap_Clone returns NULL if parameter handle is NULL.] */
-    if (handle != NULL)
+	if (handle == NULL)
+	{
+		LOG_CONSTMAP_ERROR(CONSTMAP_INVALIDARG);
+	}
+	else
     {
 		/*Codes_SRS_CONSTMAP_17_039: [ConstMap_Clone shall increase the internal reference count of the immutable map indicated by parameter handle]*/
 		/*Codes_SRS_CONSTMAP_17_050: [ConstMap_Clone shall return the non-NULL handle. ]*/
@@ -72,7 +85,7 @@ CONSTMAP_HANDLE ConstMap_Clone(CONSTMAP_HANDLE handle)
     return (handle);
 }
 
-CONSTMAP_RESULT ConstMap_ErrorConvert(MAP_RESULT mapResult)
+static CONSTMAP_RESULT ConstMap_ErrorConvert(MAP_RESULT mapResult)
 {
     CONSTMAP_RESULT result;
     switch (mapResult)
@@ -95,68 +108,83 @@ CONSTMAP_RESULT ConstMap_ErrorConvert(MAP_RESULT mapResult)
 
 bool ConstMap_ContainsKey(CONSTMAP_HANDLE handle, const char* key )
 {
-	CONSTMAP_RESULT result = CONSTMAP_OK;
 	bool keyExists = false;
     if (handle == NULL)
     {
 		/*Codes_SRS_CONSTMAP_17_024: [If parameter handle or key are NULL then ConstMap_ContainsKey shall return false.]*/
-        result = CONSTMAP_INVALIDARG;
-        LOG_CONSTMAP_ERROR;
+        LOG_CONSTMAP_ERROR(CONSTMAP_INVALIDARG);
     }
     else
     {
-		/*Codes_SRS_CONSTMAP_17_025: [Otherwise if a key exists then ConstMap_ContainsKey shall return true.]*/
-        MAP_RESULT mapResult = Map_ContainsKey(handle->map, key, &keyExists);
-        if (mapResult != MAP_OK)
-        {
-			/*Codes_SRS_CONSTMAP_17_026: [If a key doesn't exist, then ConstMap_ContainsKey shall return false.]*/
-			keyExists = false;
-            result = ConstMap_ErrorConvert(mapResult);
-            LOG_CONSTMAP_ERROR;
-        }
+		if (key == NULL)
+		{
+			LOG_CONSTMAP_ERROR(CONSTMAP_INVALIDARG);
+		}
+		else
+		{
+			/*Codes_SRS_CONSTMAP_17_025: [Otherwise if a key exists then ConstMap_ContainsKey shall return true.]*/
+			MAP_RESULT mapResult = Map_ContainsKey(handle->map, key, &keyExists);
+			if (mapResult != MAP_OK)
+			{
+				/*Codes_SRS_CONSTMAP_17_026: [If a key doesn't exist, then ConstMap_ContainsKey shall return false.]*/
+				keyExists = false;
+				LOG_CONSTMAP_ERROR(ConstMap_ErrorConvert(mapResult));
+			}
+		}
     }
     return keyExists;
 }
 
 bool ConstMap_ContainsValue(CONSTMAP_HANDLE handle, const char* value)
 {
-	CONSTMAP_RESULT result = CONSTMAP_OK;
 	bool valueExists = false;
     if (handle == NULL)
     {
 		/*Codes_SRS_CONSTMAP_17_027: [If parameter handle or value is NULL then ConstMap_ContainsValue shall return false.]*/
-        result = CONSTMAP_INVALIDARG;
-        LOG_CONSTMAP_ERROR;
+        LOG_CONSTMAP_ERROR(CONSTMAP_INVALIDARG);
     }
     else
     {
-		/*Codes_SRS_CONSTMAP_17_028: [Otherwise, if a pair has its value equal to the parameter value, the ConstMap_ContainsValue shall return true.]*/
-        MAP_RESULT mapResult = Map_ContainsValue(handle->map, value, &valueExists);
-        if (mapResult != MAP_OK)
-        {
-			/*Codes_SRS_CONSTMAP_17_029: [Otherwise, if such a does not exist, then ConstMap_ContainsValue shall return false.]*/
-			valueExists = false;
-            result = ConstMap_ErrorConvert(mapResult);
-            LOG_CONSTMAP_ERROR;
-        }
+		if (value == NULL)
+		{
+			LOG_CONSTMAP_ERROR(CONSTMAP_INVALIDARG);
+		}
+		else
+		{
+			/*Codes_SRS_CONSTMAP_17_028: [Otherwise, if a pair has its value equal to the parameter value, the ConstMap_ContainsValue shall return true.]*/
+			MAP_RESULT mapResult = Map_ContainsValue(handle->map, value, &valueExists);
+			if (mapResult != MAP_OK)
+			{
+				/*Codes_SRS_CONSTMAP_17_029: [Otherwise, if such a does not exist, then ConstMap_ContainsValue shall return false.]*/
+				LOG_CONSTMAP_ERROR(ConstMap_ErrorConvert(mapResult));
+			}
+		}
     }
     return valueExists;
 }
 
 const char* ConstMap_GetValue(CONSTMAP_HANDLE handle, const char* key)
 {
-	const char* value;
+	const char* value = NULL;
     
     if (handle == NULL)
     {
 		/*Codes_SRS_CONSTMAP_17_040: [If parameter handle or key is NULL then ConstMap_GetValue returns NULL.]*/
-        value = NULL;
+		LOG_CONSTMAP_ERROR(CONSTMAP_INVALIDARG);
     }
     else
     {
-		/*Codes_SRS_CONSTMAP_17_041: [If the key is not found, then ConstMap_GetValue returns NULL.]*/
-		/*Codes_SRS_CONSTMAP_17_042: [Otherwise, ConstMap_GetValue returns the key's value.]*/
-        value = Map_GetValueFromKey(handle->map, key);
+		if (key == NULL)
+		{
+			/*Codes_SRS_CONSTMAP_17_040: [If parameter handle or key is NULL then ConstMap_GetValue returns NULL.]*/
+			LOG_CONSTMAP_ERROR(CONSTMAP_INVALIDARG);
+		}
+		else
+		{
+			/*Codes_SRS_CONSTMAP_17_041: [If the key is not found, then ConstMap_GetValue returns NULL.]*/
+			/*Codes_SRS_CONSTMAP_17_042: [Otherwise, ConstMap_GetValue returns the key's value.]*/
+			value = Map_GetValueFromKey(handle->map, key);
+		}
     }
     return value;
 }
@@ -168,7 +196,7 @@ CONSTMAP_RESULT ConstMap_GetInternals(CONSTMAP_HANDLE handle, const char*const**
     {
 		/*Codes_SRS_CONSTMAP_17_046: [If parameter handle, keys, values or count is NULL then ConstMap_GetInternals shall return CONSTMAP_INVALIDARG.]*/
         result = CONSTMAP_INVALIDARG;
-        LOG_CONSTMAP_ERROR;
+        LOG_CONSTMAP_ERROR(result);
     }
     else
     {
