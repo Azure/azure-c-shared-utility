@@ -288,6 +288,7 @@ set(source_h_files
 ./inc/urlencode.h
 ./inc/vector.h
 ./inc/xlogging.h
+./inc/constbuffer.h
 )
 
 if(${use_http})
