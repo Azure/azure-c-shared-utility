@@ -25,7 +25,8 @@ extern "C" {
 	typedef enum IO_OPEN_RESULT_TAG
 	{
 		IO_OPEN_OK,
-		IO_OPEN_ERROR
+		IO_OPEN_ERROR,
+        IO_OPEN_CANCELLED
 	} IO_OPEN_RESULT;
 
 	typedef void(*ON_BYTES_RECEIVED)(void* context, const unsigned char* buffer, size_t size);
