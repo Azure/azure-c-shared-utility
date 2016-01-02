@@ -5,7 +5,7 @@ ConstBuffer Requirements
 ## Overview
 
 ConstBuffer is a module that implements a read-only buffer of bytes (unsigned char). 
-Once created, the buffer can not longer be changed. The buffer is ref counted so further _Clone calls result in
+Once created, the buffer can no longer be changed. The buffer is ref counted so further _Clone calls result in
 zero copy.
 
 
