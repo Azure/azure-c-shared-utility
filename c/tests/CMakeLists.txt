@@ -5,6 +5,7 @@
 add_subdirectory(agenttime_unittests)
 add_subdirectory(base64_unittests)
 add_subdirectory(buffer_unittests)
+add_subdirectory(constbuffer_unittests)
 add_subdirectory(crtabstractions_unittests)
 add_subdirectory(condition_unittests)
 add_subdirectory(constmap_unittests)

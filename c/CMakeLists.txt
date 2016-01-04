@@ -205,6 +205,7 @@ compileAsC11()
 set(source_c_files
 ./src/base64.c
 ./src/buffer.c
+./src/constbuffer.c
 ./src/crt_abstractions.c
 ./src/constmap.c
 ./src/doublylinkedlist.c
@@ -328,6 +329,7 @@ if(WIN32)
 else()
     add_files_to_install("${source_h_files}")
     add_files_to_install("./src/buffer.c")
+	add_files_to_install("./src/constbuffer.c")
     add_files_to_install("./src/crt_abstractions.c")
     add_files_to_install("./src/doublylinkedlist.c")
     add_files_to_install("./src/gballoc.c")
@@ -374,6 +376,7 @@ else()
     install (FILES ${INSTALL_H_FILES} 
         ${LOCK_C_FILE} 
         ./src/buffer.c
+		./src/constbuffer.c
         ./src/crt_abstractions.c
         ./src/doublylinkedlist.c
         ./src/gballoc.c

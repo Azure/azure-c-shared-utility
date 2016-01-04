@@ -70,7 +70,7 @@ extern const CONSTBUFFER* CONSTBUFFER_GetContent(CONSTBUFFER_HANDLE constbufferH
 ```C
 extern CONSTBUFFER_HANDLE CONSTBUFFER_Clone(CONSTBUFFER_HANDLE constbufferHandle);
 ```
-**SRS_CONSTBUFFER_02_013: [**If `constbufferHandle is NULL then CONSTBUFFER_Clone shall fail and return NULL.**]**
+**SRS_CONSTBUFFER_02_013: [**If `constbufferHandle` is NULL then CONSTBUFFER_Clone shall fail and return NULL.**]**
 **SRS_CONSTBUFFER_02_014: [**Otherwise, `CONSTBUFFER_Clone` shall increment the reference count and return `constbufferHandle`.**]**
 
 ###CONSTBUFFER_Destroy
