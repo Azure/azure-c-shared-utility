@@ -21,6 +21,52 @@ typedef struct CONSTBUFFER_HANDLE_DATA_TAG
 
 DEFINE_REFCOUNT_TYPE(CONSTBUFFER_HANDLE_DATA);
 
+static CONSTBUFFER_HANDLE CONSTBUFFER_Create_Internal(const unsigned char* source, size_t size)
+{
+    CONSTBUFFER_HANDLE result;
+    /*Codes_SRS_CONSTBUFFER_02_005: [The non-NULL handle returned by CONSTBUFFER_Create shall have its ref count set to "1".]*/
+    /*Codes_SRS_CONSTBUFFER_02_010: [The non-NULL handle returned by CONSTBUFFER_CreateFromBuffer shall have its ref count set to "1".]*/
+    result = REFCOUNT_TYPE_CREATE(CONSTBUFFER_HANDLE_DATA);
+    if (result == NULL)
+    {
+        /*Codes_SRS_CONSTBUFFER_02_003: [If creating the copy fails then CONSTBUFFER_Create shall return NULL.]*/
+        /*Codes_SRS_CONSTBUFFER_02_008: [If copying the content fails, then CONSTBUFFER_CreateFromBuffer shall fail and return NULL.] */
+        LogError("unable to malloc");
+        /*return as is*/
+    }
+    else
+    {
+        /*Codes_SRS_CONSTBUFFER_02_002: [Otherwise, CONSTBUFFER_Create shall create a copy of the memory area pointed to by source having size bytes.]*/
+        result->alias.size = size;
+        if (size == 0)
+        {
+            result->alias.buffer = NULL;
+        }
+        else
+        {
+            unsigned char* temp = malloc(size);
+            if (temp == NULL)
+            {
+                /*Codes_SRS_CONSTBUFFER_02_003: [If creating the copy fails then CONSTBUFFER_Create shall return NULL.]*/
+                /*Codes_SRS_CONSTBUFFER_02_008: [If copying the content fails, then CONSTBUFFER_CreateFromBuffer shall fail and return NULL.] */
+                LogError("unable to malloc");
+                free(result);
+                result = NULL;
+            }
+            else
+            {
+                
+                /*Codes_SRS_CONSTBUFFER_02_004: [Otherwise CONSTBUFFER_Create shall return a non-NULL handle.]*/
+                /*Codes_SRS_CONSTBUFFER_02_007: [Otherwise, CONSTBUFFER_CreateFromBuffer shall copy the content of buffer.]*/
+                /*Codes_SRS_CONSTBUFFER_02_009: [Otherwise, CONSTBUFFER_CreateFromBuffer shall return a non-NULL handle.]*/
+                memcpy(temp, source, size);
+                result->alias.buffer = temp;
+            }
+        }
+    }
+    return result;
+}
+
 CONSTBUFFER_HANDLE CONSTBUFFER_Create(const unsigned char* source, size_t size)
 {
     CONSTBUFFER_HANDLE_DATA* result;
@@ -35,40 +81,7 @@ CONSTBUFFER_HANDLE CONSTBUFFER_Create(const unsigned char* source, size_t size)
     }
     else
     {
-        /*Codes_SRS_CONSTBUFFER_02_005: [The non-NULL handle returned by CONSTBUFFER_Create shall have its ref count set to "1".]*/
-        result = REFCOUNT_TYPE_CREATE(CONSTBUFFER_HANDLE_DATA);
-        if (result == NULL)
-        {
-            /*Codes_SRS_CONSTBUFFER_02_003: [If creating the copy fails then CONSTBUFFER_Create shall return NULL.]*/
-            LogError("unable to malloc");
-            /*return as is*/
-        }
-        else
-        {
-            /*Codes_SRS_CONSTBUFFER_02_002: [Otherwise, CONSTBUFFER_Create shall create a copy of the memory area pointed to by source having size bytes.]*/
-            result->alias.size= size;
-            if (size == 0)
-            {
-                result->alias.buffer = NULL;
-            }
-            else
-            {
-                unsigned char* temp = malloc(size);
-                if (temp == NULL)
-                {
-                    /*Codes_SRS_CONSTBUFFER_02_003: [If creating the copy fails then CONSTBUFFER_Create shall return NULL.]*/
-                    LogError("unable to malloc");
-                    free(result);
-                    result = NULL;
-                }
-                else
-                {
-                    /*Codes_SRS_CONSTBUFFER_02_004: [Otherwise CONSTBUFFER_Create shall return a non-NULL handle.]*/
-                    memcpy(temp, source, size);
-                    result->alias.buffer = temp;
-                }
-            }
-        }
+        result = CONSTBUFFER_Create_Internal(source, size);
     }
     return result;
 }
@@ -85,40 +98,7 @@ CONSTBUFFER_HANDLE CONSTBUFFER_CreateFromBuffer(BUFFER_HANDLE buffer)
     }
     else
     {
-        /*Codes_SRS_CONSTBUFFER_02_010: [The non-NULL handle returned by CONSTBUFFER_CreateFromBuffer shall have its ref count set to "1".]*/
-        result = REFCOUNT_TYPE_CREATE(CONSTBUFFER_HANDLE_DATA);
-        if (result == NULL)
-        {
-            /*Codes_SRS_CONSTBUFFER_02_008: [If copying the content fails, then CONSTBUFFER_CreateFromBuffer shall fail and return NULL.] */
-            LogError("unable to malloc");
-            /*return as is*/
-        }
-        else
-        {
-            /*Codes_SRS_CONSTBUFFER_02_007: [Otherwise, CONSTBUFFER_Create shall copy the content of buffer.]*/
-            size_t size = BUFFER_length(buffer);
-            result->alias.size = size;
-            if (size == 0)
-            {
-                result->alias.buffer = NULL;
-            }
-            else
-            {
-                unsigned char* temp = malloc(size);
-                if (temp == NULL)
-                {
-                    /*Codes_SRS_CONSTBUFFER_02_008: [If copying the content fails, then CONSTBUFFER_CreateFromBuffer shall fail and return NULL.] */
-                    LogError("unable to malloc");
-                    free(result);
-                }
-                else
-                {
-                    /*Codes_SRS_CONSTBUFFER_02_009: [Otherwise, CONSTBUFFER_CreateFromBuffer shall return a non-NULL handle.]*/
-                    memcpy(temp, BUFFER_u_char(buffer), size);
-                    result->alias.buffer = temp;
-                }
-            }
-        }
+        result = CONSTBUFFER_Create_Internal(BUFFER_u_char(buffer), BUFFER_length(buffer));
     }
     return result;
 }

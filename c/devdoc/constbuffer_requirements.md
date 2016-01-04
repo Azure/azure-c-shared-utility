@@ -54,7 +54,7 @@ extern CONSTBUFFER_HANDLE CONSTBUFFER_Create(const unsigned char* source, size_t
 extern CONSTBUFFER_HANDLE CONSTBUFFER_CreateFromBuffer(BUFFER_HANDLE buffer);
 ```
 **SRS_CONSTBUFFER_02_006: [**If `buffer` is NULL then `CONSTBUFFER_CreateFromBuffer` shall fail and return NULL.**]**
-**SRS_CONSTBUFFER_02_007: [**Otherwise, `CONSTBUFFER_Create` shall copy the content of `buffer`.**]**
+**SRS_CONSTBUFFER_02_007: [**Otherwise, `CONSTBUFFER_CreateFromBuffer` shall copy the content of `buffer`.**]**
 **SRS_CONSTBUFFER_02_008: [**If copying the content fails, then `CONSTBUFFER_CreateFromBuffer` shall fail and return NULL.**]**
 **SRS_CONSTBUFFER_02_009: [**Otherwise, `CONSTBUFFER_CreateFromBuffer` shall return a non-NULL handle.**]**
 **SRS_CONSTBUFFER_02_010: [**The non-NULL handle returned by `CONSTBUFFER_CreateFromBuffer` shall have its ref count set to "1".**]** 

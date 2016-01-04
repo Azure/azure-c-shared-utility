@@ -56,15 +56,15 @@ static const char* buffer1 = "le buffer no 1";
 static const char* buffer2 = NULL;
 static const char* buffer3 = "three";
 
-#define BUFFER1_HANDLE (void*)1
+#define BUFFER1_HANDLE (BUFFER_HANDLE)1
 #define BUFFER1_u_char ((unsigned char*)buffer1)
 #define BUFFER1_length strlen(buffer1)
 
-#define BUFFER2_HANDLE (void*)2
+#define BUFFER2_HANDLE (BUFFER_HANDLE)2
 #define BUFFER2_u_char ((unsigned char*)buffer2)
 #define BUFFER2_length ((size_t)0)
 
-#define BUFFER3_HANDLE (void*)3
+#define BUFFER3_HANDLE (BUFFER_HANDLE)3
 #define BUFFER3_u_char ((unsigned char*)buffer3)
 #define BUFFER3_length ((size_t)0)
 
@@ -180,7 +180,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
     }
 
     /*Tests_SRS_CONSTBUFFER_02_002: [Otherwise, CONSTBUFFER_Create shall create a copy of the memory area pointed to by source having size bytes.]*/
-    /*Tests_SRS_CONSTBUFFER_02_009: [Otherwise, CONSTBUFFER_CreateFromBuffer shall return a non-NULL handle.]*/
+    /*Tests_SRS_CONSTBUFFER_02_004: [Otherwise CONSTBUFFER_Create shall return a non-NULL handle.]*/
     TEST_FUNCTION(CONSTBUFFER_Create_succeeds)
     {
         ///arrange
@@ -207,6 +207,138 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
 
         ///cleanup
         CONSTBUFFER_Destroy(handle);
+    }
+
+    /*Tests_SRS_CONSTBUFFER_02_009: [Otherwise, CONSTBUFFER_CreateFromBuffer shall return a non-NULL handle.]*/
+    /*Tests_SRS_CONSTBUFFER_02_007: [Otherwise, CONSTBUFFER_CreateFromBuffer shall copy the content of buffer.]*/
+    TEST_FUNCTION(CONSTBUFFER_CreateFromBuffer_succeeds)
+    {
+        ///arrange
+        CMocks mocks;
+
+        ///act
+        /*this is the handle*/
+        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG))
+            .IgnoreArgument(1);
+        /*this is the content*/
+        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(BUFFER1_length));
+
+        STRICT_EXPECTED_CALL(mocks, BUFFER_u_char(BUFFER1_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, BUFFER_length(BUFFER1_HANDLE));
+
+        auto handle = CONSTBUFFER_CreateFromBuffer(BUFFER1_HANDLE);
+
+        ///assert
+        ASSERT_IS_NOT_NULL(handle);
+        /*testing the "copy"*/
+        auto content = CONSTBUFFER_GetContent(handle);
+        ASSERT_ARE_EQUAL(size_t, BUFFER1_length, content->size);
+        ASSERT_ARE_EQUAL(int, 0, memcmp(BUFFER1_u_char, content->buffer, BUFFER1_length));
+        /*testing that it is a copy and not a pointer assignment*/
+        ASSERT_ARE_NOT_EQUAL(void_ptr, BUFFER1_u_char, content->buffer);
+        mocks.AssertActualAndExpectedCalls();
+
+        ///cleanup
+        CONSTBUFFER_Destroy(handle);
+    }
+
+    /*Tests_SRS_CONSTBUFFER_02_008: [If copying the content fails, then CONSTBUFFER_CreateFromBuffer shall fail and return NULL.]*/
+    TEST_FUNCTION(CONSTBUFFER_CreateFromBuffer_fails_when_malloc_fails_1)
+    {
+        ///arrange
+        CMocks mocks;
+
+        ///act
+        STRICT_EXPECTED_CALL(mocks, BUFFER_length(BUFFER1_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, BUFFER_u_char(BUFFER1_HANDLE));
+
+        /*this is the handle*/
+        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG))
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
+
+        /*this is the content*/
+        whenShallmalloc_fail = 2;
+        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(BUFFER1_length));
+
+
+        auto handle = CONSTBUFFER_CreateFromBuffer(BUFFER1_HANDLE);
+
+        ///assert
+        ASSERT_IS_NULL(handle);
+        mocks.AssertActualAndExpectedCalls();
+
+        ///cleanup
+        CONSTBUFFER_Destroy(handle);
+    }
+
+    /*Tests_SRS_CONSTBUFFER_02_008: [If copying the content fails, then CONSTBUFFER_CreateFromBuffer shall fail and return NULL.]*/
+    TEST_FUNCTION(CONSTBUFFER_CreateFromBuffer_fails_when_malloc_fails_2)
+    {
+        ///arrange
+        CMocks mocks;
+
+        ///act
+        STRICT_EXPECTED_CALL(mocks, BUFFER_length(BUFFER1_HANDLE));
+        STRICT_EXPECTED_CALL(mocks, BUFFER_u_char(BUFFER1_HANDLE));
+
+        /*this is the handle*/
+        whenShallmalloc_fail = 1;
+        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG))
+            .IgnoreArgument(1);
+
+        auto handle = CONSTBUFFER_CreateFromBuffer(BUFFER1_HANDLE);
+
+        ///assert
+        ASSERT_IS_NULL(handle);
+        mocks.AssertActualAndExpectedCalls();
+
+        ///cleanup
+        CONSTBUFFER_Destroy(handle);
+    }
+
+    /*Tests_SRS_CONSTBUFFER_02_006: [If buffer is NULL then CONSTBUFFER_CreateFromBuffer shall fail and return NULL.]*/
+    TEST_FUNCTION(CONSTBUFFER_CreateFromBuffer_with_NULL_fails)
+    {
+        ///arrange
+        CMocks mocks;
+
+        ///act
+        auto handle = CONSTBUFFER_CreateFromBuffer(NULL);
+
+        ///assert
+        ASSERT_IS_NULL(handle);
+        mocks.AssertActualAndExpectedCalls();
+
+        ///cleanup
+        CONSTBUFFER_Destroy(handle);
+    }
+
+    /*Tests_SRS_CONSTBUFFER_02_010: [The non-NULL handle returned by CONSTBUFFER_CreateFromBuffer shall have its ref count set to "1".]*/
+    /*Tests_SRS_CONSTBUFFER_02_005: [The non-NULL handle returned by CONSTBUFFER_Create shall have its ref count set to "1".]*/
+    /*Tests_SRS_CONSTBUFFER_02_017: [If the refcount reaches zero, then CONSTBUFFER_Destroy shall deallocate all resources used by the CONSTBUFFER_HANDLE.]*/
+    TEST_FUNCTION(CONSTBUFFER_CreateFromBuffer_is_ref_counted_1)
+    {
+        ///arrange
+        CMocks mocks;
+        auto handle = CONSTBUFFER_CreateFromBuffer(BUFFER1_HANDLE);
+        mocks.ResetAllCalls();
+        ///act
+
+        /*this is the content*/
+        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
+        /*this is the handle*/
+        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
+
+        CONSTBUFFER_Destroy(handle);
+
+        ///assert
+        mocks.AssertActualAndExpectedCalls();
+
+        ///cleanup
     }
 
     /*Tests_SRS_CONSTBUFFER_02_003: [If creating the copy fails then CONSTBUFFER_Create shall return NULL.]*/
@@ -255,7 +387,8 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         ///cleanup
     }
 
-    /*Tests_SRS_CONSTBUFFER_02_010: [The non-NULL handle returned by CONSTBUFFER_CreateFromBuffer shall have its ref count set to "1".]*/
+    /*Tests_SRS_CONSTBUFFER_02_005: [The non-NULL handle returned by CONSTBUFFER_Create shall have its ref count set to "1".]*/
+    /*Tests_SRS_CONSTBUFFER_02_017: [If the refcount reaches zero, then CONSTBUFFER_Destroy shall deallocate all resources used by the CONSTBUFFER_HANDLE.]*/
     TEST_FUNCTION(CONSTBUFFER_Create_is_ref_counted_1)
     {
         ///arrange
@@ -280,7 +413,6 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
     }
 
     /*Tests_SRS_CONSTBUFFER_02_002: [Otherwise, CONSTBUFFER_Create shall create a copy of the memory area pointed to by source having size bytes.]*/
-    /*Tests_SRS_CONSTBUFFER_02_009: [Otherwise, CONSTBUFFER_CreateFromBuffer shall return a non-NULL handle.]*/
     TEST_FUNCTION(CONSTBUFFER_Create_from_0_size_succeeds_1)
     {
         ///arrange
@@ -429,6 +561,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
 
     /*Tests_SRS_CONSTBUFFER_02_014: [Otherwise, CONSTBUFFER_Clone shall increment the reference count and return constbufferHandle.]*/
     /*Tests_SRS_CONSTBUFFER_02_016: [Otherwise, CONSTBUFFER_Destroy shall decrement the refcount on the constbufferHandle handle.]*/
+    /*Tests_SRS_CONSTBUFFER_02_017: [If the refcount reaches zero, then CONSTBUFFER_Destroy shall deallocate all resources used by the CONSTBUFFER_HANDLE.]*/
     TEST_FUNCTION(CONSTBUFFER_Clone_increments_ref_count_2)
     {
         ///arrange
@@ -449,6 +582,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
 
     /*Tests_SRS_CONSTBUFFER_02_014: [Otherwise, CONSTBUFFER_Clone shall increment the reference count and return constbufferHandle.]*/
     /*Tests_SRS_CONSTBUFFER_02_016: [Otherwise, CONSTBUFFER_Destroy shall decrement the refcount on the constbufferHandle handle.]*/
+    /*Tests_SRS_CONSTBUFFER_02_017: [If the refcount reaches zero, then CONSTBUFFER_Destroy shall deallocate all resources used by the CONSTBUFFER_HANDLE.]*/
     TEST_FUNCTION(CONSTBUFFER_Clone_increments_ref_count_3)
     {
         ///arrange
