@@ -7,6 +7,7 @@ project(azure_c_shared_utility)
 #the following variables are project-wide and can be used with cmake-gui
 option(skip_unittests "set skip_unittests to ON to skip unittests (default is OFF)[if possible, they are always build]" OFF)
 option(use_http "set use_http to ON if http is to be used, set to OFF to not use http" ON)
+option(use_condition "set use_condition to ON if the condition module and its adapters should be enabled" OFF)
 
 if(WIN32)
     option(use_schannel "set use_schannel to ON if schannel is to be used, set to OFF to not use schannel" ON)
@@ -171,7 +172,9 @@ endfunction(build_test_artifacts)
 
 function(set_platform_files)
     if(WIN32)
-        set(CONDITION_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/condition_c11.c PARENT_SCOPE)
+        if(use_condition)
+            set(CONDITION_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/condition_c11.c PARENT_SCOPE)
+        endif()
         if (WINCE)
             set(HTTP_C_FILE ${CMAKE_CURRENT_LIST_DIR}/common/adapters/httpapi_wince.cpp PARENT_SCOPE)
             set(THREAD_C_FILE ${CMAKE_CURRENT_LIST_DIR}/common/adapters/threadapi_win32.c PARENT_SCOPE)
@@ -183,7 +186,9 @@ function(set_platform_files)
         set(PLATFORM_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/platform_win32.c PARENT_SCOPE)
         set(SOCKETIO_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/socketio_win32.c PARENT_SCOPE)
     else()
-        set(CONDITION_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/condition_pthreads.c PARENT_SCOPE)
+        if(use_condition)
+            set(CONDITION_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/condition_pthreads.c PARENT_SCOPE)
+        endif()
         set(HTTP_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/httpapi_curl.c PARENT_SCOPE)
         set(LOCK_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/lock_pthreads.c PARENT_SCOPE)
         set(PLATFORM_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/platform_linux.c PARENT_SCOPE)
@@ -198,7 +203,11 @@ set_platform_files()
 
 add_subdirectory(testtools)
 
+if(use_condition)
+compileAsC11()
+else()
 compileAsC99()
+endif()
 
 #these are the C source files
 set(source_c_files
