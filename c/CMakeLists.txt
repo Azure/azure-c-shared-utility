@@ -155,7 +155,6 @@ function(build_test_artifacts whatIsBuilding use_gballoc)
         if(
             (("${whatIsBuilding}" MATCHES ".*unittests.*") AND ${skip_unittests})
         )
-            windows_unittests_add_lib(${whatIsBuilding} ${ARGN})
         else()
             windows_unittests_add_exe(${whatIsBuilding} ${ARGN})
             windows_unittests_add_dll(${whatIsBuilding} ${ARGN})
@@ -164,7 +163,6 @@ function(build_test_artifacts whatIsBuilding use_gballoc)
         if(
             (("${whatIsBuilding}" MATCHES ".*unittests.*") AND ${skip_unittests})
         )
-            windows_unittests_add_lib(${whatIsBuilding} ${ARGN})
         else()
             windows_unittests_add_exe(${whatIsBuilding} ${ARGN})
         endif()
@@ -191,6 +189,7 @@ function(set_platform_files)
         set(PLATFORM_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/platform_linux.c PARENT_SCOPE)
         set(SOCKETIO_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/socketio_berkeley.c PARENT_SCOPE)
         set(THREAD_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/threadapi_pthreads.c PARENT_SCOPE)
+        add_definitions(-D_POSIX_C_SOURCE)
     endif()
 endfunction(set_platform_files)
 
@@ -199,7 +198,7 @@ set_platform_files()
 
 add_subdirectory(testtools)
 
-compileAsC11()
+compileAsC99()
 
 #these are the C source files
 set(source_c_files

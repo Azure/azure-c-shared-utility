@@ -6,11 +6,10 @@
 #include <crtdbg.h>
 #endif
 
-//#define _POSIX_C_SOURCE 2
+#define _POSIX_C_SOURCE
 
 #include <stddef.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include "socketio.h"
 #include <sys/types.h>
