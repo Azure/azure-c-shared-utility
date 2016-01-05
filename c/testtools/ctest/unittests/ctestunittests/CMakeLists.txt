@@ -4,13 +4,7 @@
 #this is unittests for ctest
 cmake_minimum_required(VERSION 2.8.11)
 
-set(theseTestsName ctest_unittests)
-
-set(${theseTestsName}_cpp_files
-simpletestsuiteonetestcpp.cpp
-)
-
-set(${theseTestsName}_c_files
+set(ctest_unittests_c_files
 assertfailurestests.c
 assertsuccesstests.c
 ctestunittests.c
@@ -21,9 +15,30 @@ testfunctioninitializetests.c
 testsuiteinitializecleanuptests.c
 )
 
-set(${theseTestsName}_h_files
+set(ctest_unittests_cpp_files
+simpletestsuiteonetestcpp.cpp
 )
 
-build_test_artifacts(${theseTestsName} OFF)
+set(ctest_unittests_h_files
+)
 
+include_directories(${CTEST_INC_FOLDER})
 
+IF(WIN32)
+	#windows needs this define
+	add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+ENDIF(WIN32)
+
+add_executable(
+ctest_unittests ${ctest_unittests_c_files} ${ctest_unittests_cpp_files} ${ctest_unittests_h_files}
+)
+
+set_target_properties(ctest
+			   PROPERTIES
+			   FOLDER "SharedTestTools")
+
+target_link_libraries(ctest_unittests ctest)
+
+if(NOT ${skip_unittests})
+	add_test(NAME ctest_unittests COMMAND ctest_unittests)
+endif()
