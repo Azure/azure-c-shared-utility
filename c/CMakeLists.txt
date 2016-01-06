@@ -7,7 +7,7 @@ project(azure_c_shared_utility)
 #the following variables are project-wide and can be used with cmake-gui
 option(skip_unittests "set skip_unittests to ON to skip unittests (default is OFF)[if possible, they are always build]" OFF)
 option(use_http "set use_http to ON if http is to be used, set to OFF to not use http" ON)
-option(use_condition "set use_condition to ON if the condition module and its adapters should be enabled" OFF)
+option(use_condition "set use_condition to ON if the condition module and its adapters should be enabled" ON)
 
 if(WIN32)
     option(use_schannel "set use_schannel to ON if schannel is to be used, set to OFF to not use schannel" ON)
@@ -152,7 +152,6 @@ function(build_test_artifacts whatIsBuilding use_gballoc)
 
     #setting output type
     if(WIN32)
-        #to disable running e2e or longhaul or unittests tests for windows, we build the the same thing as "static library" so it is not picked up by visual studio
         if(
             (("${whatIsBuilding}" MATCHES ".*unittests.*") AND ${skip_unittests})
         )
@@ -204,9 +203,9 @@ set_platform_files()
 add_subdirectory(testtools)
 
 if(${use_condition})
-compileAsC11()
+    compileAsC11()
 else()
-compileAsC99()
+    compileAsC99()
 endif()
 
 #these are the C source files
