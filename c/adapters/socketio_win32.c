@@ -236,7 +236,7 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
                 {
                     u_long iMode = 1;
 
-                    if (connect(socket_io_instance->socket, addrInfo->ai_addr, addrInfo->ai_addrlen) != 0)
+                    if (connect(socket_io_instance->socket, addrInfo->ai_addr, (int)addrInfo->ai_addrlen) != 0)
                     {
                         (void)closesocket(socket_io_instance->socket);
                         socket_io_instance->socket = INVALID_SOCKET;
@@ -342,7 +342,7 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
             }
             else
             {
-                int send_result = send(socket_io_instance->socket, buffer, size, 0);
+                int send_result = send(socket_io_instance->socket, buffer, (int)size, 0);
                 if (send_result != size)
                 {
                     int last_error = WSAGetLastError();
@@ -406,7 +406,7 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                     break;
                 }
 
-                int send_result = send(socket_io_instance->socket, pending_socket_io->bytes, pending_socket_io->size, 0);
+                int send_result = send(socket_io_instance->socket, pending_socket_io->bytes, (int)pending_socket_io->size, 0);
                 if (send_result != pending_socket_io->size)
                 {
                     int last_error = WSAGetLastError();

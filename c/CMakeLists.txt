@@ -2,6 +2,12 @@
 #Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 cmake_minimum_required(VERSION 2.8.11)
+
+if (DEFINED AZURE_C_SHARED_UTILITY_BUILT)
+	message(STATUS "AZURE_C_SHARED_UTILITY_CMAKE variable is defined mqtt")
+	RETURN()
+endif()
+
 project(azure_c_shared_utility)
 
 #the following variables are project-wide and can be used with cmake-gui
@@ -349,6 +355,7 @@ endif()
 set(SHARED_UTIL_INC_FOLDER ${CMAKE_CURRENT_LIST_DIR}/inc CACHE INTERNAL "this is what needs to be included if using sharedLib lib" FORCE)
 set(SHARED_UTIL_SRC_FOLDER ${CMAKE_CURRENT_LIST_DIR}/src CACHE INTERNAL "this is what needs to be included when doing include sources" FORCE)
 include_directories(${SHARED_UTIL_INC_FOLDER})
+set(AZURE_C_SHARED_UTILITY_BUILT "77772C70-53C7-4CB0" CACHE INTERNAL "This is a define meaning that azure-c-shared-utility has been run" FORCE)
 
 IF(WIN32)
     #windows needs this define

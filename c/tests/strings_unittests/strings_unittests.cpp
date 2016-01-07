@@ -741,10 +741,10 @@ BEGIN_TEST_SUITE(strings_unittests)
         mocks.ResetAllCalls();
 
         ///act
-        int nResult = STRING_length(g_hString);
+        size_t nResult = STRING_length(g_hString);
 
         ///assert
-        ASSERT_ARE_EQUAL(int, nResult, strlen(TEST_STRING_VALUE) );
+        ASSERT_ARE_EQUAL(size_t, nResult, strlen(TEST_STRING_VALUE) );
         mocks.AssertActualAndExpectedCalls();
 
         ///cleanup
@@ -756,10 +756,10 @@ BEGIN_TEST_SUITE(strings_unittests)
         ///arrange
 
         ///act
-        int nResult = STRING_length(NULL);
+        size_t nResult = STRING_length(NULL);
 
         ///assert
-        ASSERT_ARE_EQUAL(int, nResult, 0);
+        ASSERT_ARE_EQUAL(size_t, nResult, 0);
     }
 
     /*Tests_SRS_STRING_02_002: [If parameter handle is NULL then STRING_clone shall return NULL.]*/
