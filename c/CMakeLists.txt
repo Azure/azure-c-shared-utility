@@ -4,7 +4,6 @@
 cmake_minimum_required(VERSION 2.8.11)
 
 if (DEFINED AZURE_C_SHARED_UTILITY_BUILT)
-	message(STATUS "AZURE_C_SHARED_UTILITY_CMAKE variable is defined mqtt")
 	RETURN()
 endif()
 
@@ -355,7 +354,11 @@ endif()
 set(SHARED_UTIL_INC_FOLDER ${CMAKE_CURRENT_LIST_DIR}/inc CACHE INTERNAL "this is what needs to be included if using sharedLib lib" FORCE)
 set(SHARED_UTIL_SRC_FOLDER ${CMAKE_CURRENT_LIST_DIR}/src CACHE INTERNAL "this is what needs to be included when doing include sources" FORCE)
 include_directories(${SHARED_UTIL_INC_FOLDER})
-set(AZURE_C_SHARED_UTILITY_BUILT "77772C70-53C7-4CB0" CACHE INTERNAL "This is a define meaning that azure-c-shared-utility has been run" FORCE)
+
+get_directory_property(hasParent PARENT_DIRECTORY)
+if(hasParent)
+	set(AZURE_C_SHARED_UTILITY_BUILT "77772C70-53C7-4CB0" PARENT_SCOPE)
+endif()
 
 IF(WIN32)
     #windows needs this define
