@@ -69,8 +69,8 @@ extern CONSTMAP_HANDLE ConstMap_Clone(CONSTMAP_HANDLE handle);
 extern MAP_HANDLE ConstMap_CloneWriteable(CONSTMAP_HANDLE handle);
 
 /**
- * @brief   This function returns a boolean value in @p keyExists if the map
- *          contains a key with the same value the parameter @p key.
+ * @brief   This function returns a true if the map contains a key 
+ *			with the same value the parameter @p key.
  *
  * @param   handle      The handle to an existing map.
  * @param   key         The key that the caller wants checked.
@@ -82,9 +82,9 @@ extern MAP_HANDLE ConstMap_CloneWriteable(CONSTMAP_HANDLE handle);
 extern bool ConstMap_ContainsKey(CONSTMAP_HANDLE handle, const char* key);
 
 /**
- * @brief   This function returns @c true in @p valueExists if at
- *          least one <key,value> pair exists in the map where the entry's
- *          value is equal to the parameter @c value.
+ * @brief   This function returns @c true if at least one <key,value> pair 
+ *			exists in the map where the entry's value is equal to the 
+ *			parameter @c value.
  *
  * @param   handle          The handle to an existing map.
  * @param   value           The value that the caller wants checked.
