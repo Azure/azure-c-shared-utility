@@ -27,6 +27,7 @@ typedef struct CONSTMAP_HANDLE_DATA_TAG* CONSTMAP_HANDLE;
 extern CONSTMAP_HANDLE CONSTMAP_Create(MAP_HANDLE sourceMap);
 extern void ConstMap_Destroy(CONSTMAP_HANDLE handle);
 extern CONSTMAP_HANDLE ConstMap_Clone(CONSTMAP_HANDLE handle);
+extern MAP_HANDLE Const_Map_CloneWriteable(CONSTMAP_HANDLE handle);
 
   
 extern bool ConstMap_ContainsKey(CONSTMAP_HANDLE handle, const char* key);
@@ -62,6 +63,18 @@ extern CONSTMAP_HANDLE ConstMap_Clone(CONSTMAP_HANDLE handle);
 **SRS_CONSTMAP_17_038: [**`ConstMap_Clone` returns `NULL` if parameter `handle` is `NULL`.**]** 
 **SRS_CONSTMAP_17_039: [**`ConstMap_Clone` shall increase the internal reference count of the immutable map indicated by parameter `handle`**]**
 **SRS_CONSTMAP_17_050: [**`ConstMap_Clone` shall  return the non-`NULL` handle. **]**
+
+### ConstMap_CloneWriteable
+```C
+extern MAP_HANDLE ConstMap_CloneWriteable(CONSTMAP_HANDLE handle);
+```
+
+This function will return a new MAP_HANDLE populated by the key, value pairs contained in the CONSTMAP_HANDLE.  This MAP_HANDLE needs to be destroyed when it is no longer needed. 
+
+**SRS_CONSTMAP_17_051: [**`ConstMap_CloneWriteable` returns `NULL` if parameter handle is `NULL`. **]**
+**SRS_CONSTMAP_17_052: [**`ConstMap_CloneWriteable` shall create a new, writeable map, populated by the key, value pairs in the parameter defined by `handle`.**]**
+**SRS_CONSTMAP_17_053: [**If during cloning, any operation fails, then `ConstMap_CloneWriteableap_Clone` shall return `NULL`.**]**
+**SRS_CONSTMAP_17_054: [**Otherwise, `ConstMap_CloneWriteable` shall return a non-`NULL` handle that can be used in subsequent calls.**]**
 
 
 ### ConstMap_ContainsKey

@@ -59,6 +59,14 @@ extern void ConstMap_Destroy(CONSTMAP_HANDLE handle);
   */
 extern CONSTMAP_HANDLE ConstMap_Clone(CONSTMAP_HANDLE handle);
 
+ /** 
+  * @brief  Create a map handle populated from the read-only map.
+  * @param  handle      Handle to a read-only map.
+  * @return A valid @c MAP_HANDLE or @c NULL in case an error occurs.
+  *  
+  * The new MAP_HANDLE needs to be destroyed when it is no longer needed.
+  */
+extern MAP_HANDLE ConstMap_CloneWriteable(CONSTMAP_HANDLE handle);
 
 /**
  * @brief   This function returns a boolean value in @p keyExists if the map

@@ -106,6 +106,24 @@ static CONSTMAP_RESULT ConstMap_ErrorConvert(MAP_RESULT mapResult)
     return result;
 }
 
+MAP_HANDLE ConstMap_CloneWriteable(CONSTMAP_HANDLE handle)
+{
+	MAP_HANDLE result = NULL;
+	if (handle == NULL)
+	{
+		/*Codes_SRS_CONSTMAP_17_051: [ConstMap_CloneWriteable returns NULL if parameter handle is NULL. ]*/
+		LOG_CONSTMAP_ERROR(CONSTMAP_INVALIDARG);
+	}
+	else
+	{
+		/*Codes_SRS_CONSTMAP_17_052: [ConstMap_CloneWriteable shall create a new, writeable map, populated by the key, value pairs in the parameter defined by handle.]*/
+		/*Codes_SRS_CONSTMAP_17_053: [If during cloning, any operation fails, then ConstMap_CloneWriteableap_Clone shall return NULL.]*/
+		/*Codes_SRS_CONSTMAP_17_054: [Otherwise, ConstMap_CloneWriteable shall return a non-NULL handle that can be used in subsequent calls.]*/
+		result = Map_Clone(handle->map);
+	}
+	return result;
+}
+
 bool ConstMap_ContainsKey(CONSTMAP_HANDLE handle, const char* key )
 {
 	bool keyExists = false;
