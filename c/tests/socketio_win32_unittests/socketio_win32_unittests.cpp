@@ -395,6 +395,7 @@ TEST_FUNCTION(socketio_open_socket_fails)
 
     EXPECTED_CALL(mocks, socket(IGNORED_NUM_ARG, IGNORED_NUM_ARG, IGNORED_NUM_ARG))
         .SetReturn(INVALID_SOCKET);
+    EXPECTED_CALL(mocks, WSAGetLastError());
 
     // act
     int result = socketio_open(ioHandle, test_on_io_open_complete, test_on_bytes_received, test_on_io_error, &callbackContext);
@@ -421,6 +422,7 @@ TEST_FUNCTION(socketio_open_getaddrinfo_fails)
     EXPECTED_CALL(mocks, socket(IGNORED_NUM_ARG, IGNORED_NUM_ARG, IGNORED_NUM_ARG));
     EXPECTED_CALL(mocks, getaddrinfo(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
     EXPECTED_CALL(mocks, closesocket(IGNORED_NUM_ARG));
+    EXPECTED_CALL(mocks, WSAGetLastError());
 
     // act
     int result = socketio_open(ioHandle, test_on_io_open_complete, test_on_bytes_received, test_on_io_error, &callbackContext);
@@ -449,6 +451,7 @@ TEST_FUNCTION(socketio_open_connect_fails)
         .SetReturn(WSAECONNREFUSED);
     EXPECTED_CALL(mocks, closesocket(IGNORED_NUM_ARG));
     EXPECTED_CALL(mocks, freeaddrinfo(IGNORED_PTR_ARG));
+    EXPECTED_CALL(mocks, WSAGetLastError());
 
     // act
     int result = socketio_open(ioHandle, test_on_io_open_complete, test_on_bytes_received, test_on_io_error, &callbackContext);
@@ -478,6 +481,7 @@ TEST_FUNCTION(socketio_open_ioctlsocket_fails)
         .SetReturn(WSAENETDOWN);
     EXPECTED_CALL(mocks, freeaddrinfo(IGNORED_PTR_ARG));
     EXPECTED_CALL(mocks, closesocket(IGNORED_NUM_ARG));
+    EXPECTED_CALL(mocks, WSAGetLastError());
 
     // act
     int result = socketio_open(ioHandle, test_on_io_open_complete, test_on_bytes_received, test_on_io_error, &callbackContext);
