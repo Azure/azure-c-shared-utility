@@ -4,7 +4,7 @@
 cmake_minimum_required(VERSION 2.8.11)
 
 if (DEFINED AZURE_C_SHARED_UTILITY_BUILT)
-	RETURN()
+    RETURN()
 endif()
 
 project(azure_c_shared_utility)
@@ -198,7 +198,6 @@ function(set_platform_files)
         set(PLATFORM_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/platform_linux.c PARENT_SCOPE)
         set(SOCKETIO_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/socketio_berkeley.c PARENT_SCOPE)
         set(THREAD_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/threadapi_pthreads.c PARENT_SCOPE)
-        add_definitions(-D_POSIX_C_SOURCE)
     endif()
 endfunction(set_platform_files)
 
@@ -341,7 +340,7 @@ if(WIN32)
 else()
     add_files_to_install("${source_h_files}")
     add_files_to_install("./src/buffer.c")
-	add_files_to_install("./src/constbuffer.c")
+    add_files_to_install("./src/constbuffer.c")
     add_files_to_install("./src/crt_abstractions.c")
     add_files_to_install("./src/doublylinkedlist.c")
     add_files_to_install("./src/gballoc.c")
@@ -357,7 +356,7 @@ include_directories(${SHARED_UTIL_INC_FOLDER})
 
 get_directory_property(hasParent PARENT_DIRECTORY)
 if(hasParent)
-	set(AZURE_C_SHARED_UTILITY_BUILT "77772C70-53C7-4CB0" PARENT_SCOPE)
+    set(AZURE_C_SHARED_UTILITY_BUILT "77772C70-53C7-4CB0" PARENT_SCOPE)
 endif()
 
 IF(WIN32)
@@ -380,6 +379,23 @@ if(${use_http})
     endif()
 endif()
 
+if(${use_schannel})
+	if(WIN32)
+        target_link_libraries(aziotsharedutil ws2_32 secur32)	
+	endif()
+endif()
+
+if(${use_openssl})
+    if (WIN32)
+    else()
+        target_link_libraries(aziotsharedutil ssl crypto)
+    endif()
+endif()
+
+if(${use_wolfssl})
+	target_link_libraries(aziotsharedutil wolfssl)
+endif()
+
 if(WIN32)
 else()
     target_link_libraries(aziotsharedutil pthread)
@@ -393,7 +409,7 @@ else()
     install (FILES ${INSTALL_H_FILES} 
         ${LOCK_C_FILE} 
         ./src/buffer.c
-		./src/constbuffer.c
+        ./src/constbuffer.c
         ./src/crt_abstractions.c
         ./src/doublylinkedlist.c
         ./src/gballoc.c

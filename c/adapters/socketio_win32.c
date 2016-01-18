@@ -13,6 +13,7 @@
 #include "windows.h"
 #include "list.h"
 #include "gballoc.h"
+#include "iot_logging.h"
 
 typedef enum IO_STATE_TAG
 {
@@ -75,6 +76,7 @@ static int add_pending_io(SOCKET_IO_INSTANCE* socket_io_instance, const unsigned
         pending_socket_io->bytes = (unsigned char*)malloc(size);
         if (pending_socket_io->bytes == NULL)
         {
+            LogError("Allocation Failure: Unable to allocate pending list.\r\n");
             free(pending_socket_io);
             result = __LINE__;
         }
@@ -88,6 +90,7 @@ static int add_pending_io(SOCKET_IO_INSTANCE* socket_io_instance, const unsigned
 
             if (list_add(socket_io_instance->pending_io_list, pending_socket_io) == NULL)
             {
+                LogError("Failure: Unable to add socket to pending list.\r\n");
                 free(pending_socket_io->bytes);
                 free(pending_socket_io);
                 result = __LINE__;
@@ -109,6 +112,7 @@ CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters, LOGGER_LOG logger
 
     if (socket_io_config == NULL)
     {
+        LogError("Invalid argument: socket_io_config is NULL\r\n");
         result = NULL;
     }
     else
@@ -119,6 +123,7 @@ CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters, LOGGER_LOG logger
             result->pending_io_list = list_create();
             if (result->pending_io_list == NULL)
             {
+                LogError("Failure: list_create unable to create pending list.\r\n");
                 free(result);
                 result = NULL;
             }
@@ -142,6 +147,7 @@ CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters, LOGGER_LOG logger
 
                 if ((result->hostname == NULL) && (result->socket == INVALID_SOCKET))
                 {
+                    LogError("Failure: hostname == NULL and socket is invalid.\r\n");
                     list_destroy(result->pending_io_list);
                     free(result);
                     result = NULL;
@@ -156,6 +162,10 @@ CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters, LOGGER_LOG logger
                     result->io_state = IO_STATE_CLOSED;
                 }
             }
+        }
+        else
+        {
+            LogError("Allocation Failure: SOCKET_IO_INSTANCE\r\n");
         }
     }
 
@@ -201,12 +211,14 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
     SOCKET_IO_INSTANCE* socket_io_instance = (SOCKET_IO_INSTANCE*)socket_io;
     if (socket_io == NULL)
     {
+        LogError("Invalid argument: SOCKET_IO_INSTANCE is NULL\r\n");
         result = __LINE__;
     }
     else
     {
         if (socket_io_instance->io_state != IO_STATE_CLOSED)
         {
+            LogError("Failure: socket state is not closed.\r\n");
             result = __LINE__;
         }
         else
@@ -214,6 +226,7 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
             socket_io_instance->socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
             if (socket_io_instance->socket == INVALID_SOCKET)
             {
+                LogError("Failure: socket create failure %d.\r\n", WSAGetLastError() );
                 result = __LINE__;
             }
             else
@@ -228,6 +241,7 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
                 sprintf(portString, "%u", socket_io_instance->port);
                 if (getaddrinfo(socket_io_instance->hostname, portString, &addrHint, &addrInfo) != 0)
                 {
+                    LogError("Failure: getaddrinfo failure %d.\r\n", WSAGetLastError());
                     (void)closesocket(socket_io_instance->socket);
                     socket_io_instance->socket = INVALID_SOCKET;
                     result = __LINE__;
@@ -238,12 +252,14 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
 
                     if (connect(socket_io_instance->socket, addrInfo->ai_addr, (int)addrInfo->ai_addrlen) != 0)
                     {
+                        LogError("Failure: connect failure %d.\r\n", WSAGetLastError());
                         (void)closesocket(socket_io_instance->socket);
                         socket_io_instance->socket = INVALID_SOCKET;
                         result = __LINE__;
                     }
                     else if (ioctlsocket(socket_io_instance->socket, FIONBIO, &iMode) != 0)
                     {
+                        LogError("Failure: ioctlsocket failure %d.\r\n", WSAGetLastError());
                         (void)closesocket(socket_io_instance->socket);
                         socket_io_instance->socket = INVALID_SOCKET;
                         result = __LINE__;
@@ -279,6 +295,7 @@ int socketio_close(CONCRETE_IO_HANDLE socket_io, ON_IO_CLOSE_COMPLETE on_io_clos
 
     if (socket_io == NULL)
     {
+        LogError("Invalid argument: socket_io is NULL\r\n");
         result = __LINE__;
     }
     else
@@ -317,6 +334,7 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
         (size == 0))
     {
         /* Invalid arguments */
+        LogError("Invalid argument: send given invalid parameter\r\n");
         result = __LINE__;
     }
     else
@@ -324,6 +342,7 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
         SOCKET_IO_INSTANCE* socket_io_instance = (SOCKET_IO_INSTANCE*)socket_io;
         if (socket_io_instance->io_state != IO_STATE_OPEN)
         {
+            LogError("Failure: socket state is not opened.\r\n");
             result = __LINE__;
         }
         else
@@ -333,6 +352,7 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
             {
                 if (add_pending_io(socket_io_instance, buffer, size, on_send_complete, callback_context) != 0)
                 {
+                    LogError("Failure: add_pending_io failed.\r\n");
                     result = __LINE__;
                 }
                 else
@@ -349,7 +369,7 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
                     if (last_error != WSAEWOULDBLOCK)
                     {
                         indicate_error(socket_io_instance);
-                        printf("Error sending on socket\r\n");
+                        LogError("Failure: sending socket failed %d.\r\n", last_error);
                         result = __LINE__;
                     }
                     else
@@ -357,6 +377,7 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
                         /* queue data */
                         if (add_pending_io(socket_io_instance, buffer, size, on_send_complete, callback_context) != 0)
                         {
+                            LogError("Failure: add_pending_io failed.\r\n");
                             result = __LINE__;
                         }
                         else
