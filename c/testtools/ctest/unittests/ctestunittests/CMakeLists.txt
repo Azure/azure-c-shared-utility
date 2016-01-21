@@ -4,8 +4,6 @@
 #this is unittests for ctest
 cmake_minimum_required(VERSION 2.8.11)
 
-compileAsC11()
-
 set(ctest_unittests_c_files
 assertfailurestests.c
 assertsuccesstests.c

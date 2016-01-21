@@ -59,10 +59,18 @@ extern void ConstMap_Destroy(CONSTMAP_HANDLE handle);
   */
 extern CONSTMAP_HANDLE ConstMap_Clone(CONSTMAP_HANDLE handle);
 
+ /** 
+  * @brief  Create a map handle populated from the read-only map.
+  * @param  handle      Handle to a read-only map.
+  * @return A valid @c MAP_HANDLE or @c NULL in case an error occurs.
+  *  
+  * The new MAP_HANDLE needs to be destroyed when it is no longer needed.
+  */
+extern MAP_HANDLE ConstMap_CloneWriteable(CONSTMAP_HANDLE handle);
 
 /**
- * @brief   This function returns a boolean value in @p keyExists if the map
- *          contains a key with the same value the parameter @p key.
+ * @brief   This function returns a true if the map contains a key 
+ *			with the same value the parameter @p key.
  *
  * @param   handle      The handle to an existing map.
  * @param   key         The key that the caller wants checked.
@@ -74,9 +82,9 @@ extern CONSTMAP_HANDLE ConstMap_Clone(CONSTMAP_HANDLE handle);
 extern bool ConstMap_ContainsKey(CONSTMAP_HANDLE handle, const char* key);
 
 /**
- * @brief   This function returns @c true in @p valueExists if at
- *          least one <key,value> pair exists in the map where the entry's
- *          value is equal to the parameter @c value.
+ * @brief   This function returns @c true if at least one <key,value> pair 
+ *			exists in the map where the entry's value is equal to the 
+ *			parameter @c value.
  *
  * @param   handle          The handle to an existing map.
  * @param   value           The value that the caller wants checked.

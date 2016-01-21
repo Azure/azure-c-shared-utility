@@ -365,6 +365,82 @@ BEGIN_TEST_SUITE(constmap_unittests)
 		//Ablution       
 	}
 
+	/*Tests_SRS_CONSTMAP_17_052: [ConstMap_CloneWriteable shall create a new, writeable map, populated by the key, value pairs in the parameter defined by handle.]*/
+	/*Tests_SRS_CONSTMAP_17_054: [Otherwise, ConstMap_CloneWriteable shall return a non-NULL handle that can be used in subsequent calls.]*/
+	TEST_FUNCTION(ConstMap_CloneWritable_Success)
+	{
+		// Arrange
+		CConstMapMocks mocks;
+
+		MAP_HANDLE sourceMap = VALID_MAP_HANDLE;
+		CONSTMAP_HANDLE aHandle = ConstMap_Create(sourceMap);
+		MAP_HANDLE newMap = NULL;
+
+		mocks.ResetAllCalls();
+
+		STRICT_EXPECTED_CALL(mocks, Map_Clone(VALID_MAP_CLONE1)).IgnoreArgument(1);
+
+		//Act 
+		newMap = ConstMap_CloneWriteable(aHandle);
+
+		//Assert
+		ASSERT_ARE_EQUAL(void_ptr, VALID_MAP_CLONE2, newMap);
+
+		mocks.AssertActualAndExpectedCalls();
+
+		//Ablution
+		ConstMap_Destroy(aHandle);
+		Map_Destroy(sourceMap);
+		Map_Destroy(newMap);
+	}
+
+	/*Tests_SRS_CONSTMAP_17_053: [If during cloning, any operation fails, then ConstMap_CloneWriteableap_Clone shall return NULL.]*/
+	TEST_FUNCTION(ConstMap_CloneWritable_Fail)
+	{
+		// Arrange
+		CConstMapMocks mocks;
+
+		MAP_HANDLE sourceMap = INVALID_CLONE_HANDLE;
+		CONSTMAP_HANDLE aHandle = ConstMap_Create(sourceMap);
+		MAP_HANDLE newMap = NULL;
+
+		mocks.ResetAllCalls();
+
+		STRICT_EXPECTED_CALL(mocks, Map_Clone(INVALID_MAP_HANDLE)).IgnoreArgument(1);
+
+		//Act 
+		newMap = ConstMap_CloneWriteable(aHandle);
+
+		//Assert
+		ASSERT_IS_NULL(newMap);
+
+		mocks.AssertActualAndExpectedCalls();
+
+		//Ablution
+		ConstMap_Destroy(aHandle);
+		Map_Destroy(sourceMap);
+	}
+
+	/*Tests_SRS_CONSTMAP_17_051: [ConstMap_CloneWriteable returns NULL if parameter handle is NULL. ]*/
+	TEST_FUNCTION(ConstMap_CloneWritable_NULL)
+	{
+		// Arrange
+		CConstMapMocks mocks;
+
+		MAP_HANDLE newMap = NULL;
+
+		//Act 
+		newMap = ConstMap_CloneWriteable(NULL);
+
+		//Assert
+		ASSERT_IS_NULL(newMap);
+
+		mocks.AssertActualAndExpectedCalls();
+
+		//Ablution
+	}
+
+
 	/*Tests_SRS_CONSTMAP_17_025: [Otherwise if a key exists then ConstMap_ContainsKey shall return true.]*/
 	TEST_FUNCTION(ConstMap_ContainsKey_Success)
 	{

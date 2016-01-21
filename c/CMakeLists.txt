@@ -2,11 +2,17 @@
 #Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 cmake_minimum_required(VERSION 2.8.11)
+
+if (DEFINED AZURE_C_SHARED_UTILITY_BUILT)
+    RETURN()
+endif()
+
 project(azure_c_shared_utility)
 
 #the following variables are project-wide and can be used with cmake-gui
 option(skip_unittests "set skip_unittests to ON to skip unittests (default is OFF)[if possible, they are always build]" OFF)
 option(use_http "set use_http to ON if http is to be used, set to OFF to not use http" ON)
+option(use_condition "set use_condition to ON if the condition module and its adapters should be enabled" ON)
 
 if(WIN32)
     option(use_schannel "set use_schannel to ON if schannel is to be used, set to OFF to not use schannel" ON)
@@ -151,11 +157,9 @@ function(build_test_artifacts whatIsBuilding use_gballoc)
 
     #setting output type
     if(WIN32)
-        #to disable running e2e or longhaul or unittests tests for windows, we build the the same thing as "static library" so it is not picked up by visual studio
         if(
             (("${whatIsBuilding}" MATCHES ".*unittests.*") AND ${skip_unittests})
         )
-            windows_unittests_add_lib(${whatIsBuilding} ${ARGN})
         else()
             windows_unittests_add_exe(${whatIsBuilding} ${ARGN})
             windows_unittests_add_dll(${whatIsBuilding} ${ARGN})
@@ -164,7 +168,6 @@ function(build_test_artifacts whatIsBuilding use_gballoc)
         if(
             (("${whatIsBuilding}" MATCHES ".*unittests.*") AND ${skip_unittests})
         )
-            windows_unittests_add_lib(${whatIsBuilding} ${ARGN})
         else()
             windows_unittests_add_exe(${whatIsBuilding} ${ARGN})
         endif()
@@ -173,7 +176,9 @@ endfunction(build_test_artifacts)
 
 function(set_platform_files)
     if(WIN32)
-        set(CONDITION_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/condition_c11.c PARENT_SCOPE)
+        if(${use_condition})
+            set(CONDITION_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/condition_c11.c PARENT_SCOPE)
+        endif()
         if (WINCE)
             set(HTTP_C_FILE ${CMAKE_CURRENT_LIST_DIR}/common/adapters/httpapi_wince.cpp PARENT_SCOPE)
             set(THREAD_C_FILE ${CMAKE_CURRENT_LIST_DIR}/common/adapters/threadapi_win32.c PARENT_SCOPE)
@@ -185,7 +190,9 @@ function(set_platform_files)
         set(PLATFORM_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/platform_win32.c PARENT_SCOPE)
         set(SOCKETIO_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/socketio_win32.c PARENT_SCOPE)
     else()
-        set(CONDITION_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/condition_pthreads.c PARENT_SCOPE)
+        if(${use_condition})
+            set(CONDITION_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/condition_pthreads.c PARENT_SCOPE)
+        endif()
         set(HTTP_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/httpapi_curl.c PARENT_SCOPE)
         set(LOCK_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/lock_pthreads.c PARENT_SCOPE)
         set(PLATFORM_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/platform_linux.c PARENT_SCOPE)
@@ -199,7 +206,11 @@ set_platform_files()
 
 add_subdirectory(testtools)
 
-compileAsC11()
+if(${use_condition})
+    compileAsC11()
+else()
+    compileAsC99()
+endif()
 
 #these are the C source files
 set(source_c_files
@@ -329,7 +340,7 @@ if(WIN32)
 else()
     add_files_to_install("${source_h_files}")
     add_files_to_install("./src/buffer.c")
-	add_files_to_install("./src/constbuffer.c")
+    add_files_to_install("./src/constbuffer.c")
     add_files_to_install("./src/crt_abstractions.c")
     add_files_to_install("./src/doublylinkedlist.c")
     add_files_to_install("./src/gballoc.c")
@@ -342,6 +353,11 @@ endif()
 set(SHARED_UTIL_INC_FOLDER ${CMAKE_CURRENT_LIST_DIR}/inc CACHE INTERNAL "this is what needs to be included if using sharedLib lib" FORCE)
 set(SHARED_UTIL_SRC_FOLDER ${CMAKE_CURRENT_LIST_DIR}/src CACHE INTERNAL "this is what needs to be included when doing include sources" FORCE)
 include_directories(${SHARED_UTIL_INC_FOLDER})
+
+get_directory_property(hasParent PARENT_DIRECTORY)
+if(hasParent)
+    set(AZURE_C_SHARED_UTILITY_BUILT "77772C70-53C7-4CB0" PARENT_SCOPE)
+endif()
 
 IF(WIN32)
     #windows needs this define
@@ -363,6 +379,23 @@ if(${use_http})
     endif()
 endif()
 
+if(${use_schannel})
+	if(WIN32)
+        target_link_libraries(aziotsharedutil ws2_32 secur32)	
+	endif()
+endif()
+
+if(${use_openssl})
+    if (WIN32)
+    else()
+        target_link_libraries(aziotsharedutil ssl crypto)
+    endif()
+endif()
+
+if(${use_wolfssl})
+	target_link_libraries(aziotsharedutil wolfssl)
+endif()
+
 if(WIN32)
 else()
     target_link_libraries(aziotsharedutil pthread)
@@ -376,7 +409,7 @@ else()
     install (FILES ${INSTALL_H_FILES} 
         ${LOCK_C_FILE} 
         ./src/buffer.c
-		./src/constbuffer.c
+        ./src/constbuffer.c
         ./src/crt_abstractions.c
         ./src/doublylinkedlist.c
         ./src/gballoc.c

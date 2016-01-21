@@ -4,8 +4,6 @@
 #this is CMakeLists for micromock unittests
 cmake_minimum_required(VERSION 2.8.11)
 
-compileAsC11()
-
 set(theseTestsName micromock_unittests)
 
 set(${theseTestsName}_cpp_files
