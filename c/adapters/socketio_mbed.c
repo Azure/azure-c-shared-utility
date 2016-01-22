@@ -10,7 +10,6 @@
 #include <stdio.h>
 #include <string.h>
 #include "socketio.h"
-#include "amqpalloc.h"
 #include "list.h"
 #include "tcpsocketconnection_c.h"
 
@@ -66,17 +65,17 @@ static void indicate_error(SOCKET_IO_INSTANCE* socket_io_instance)
 static int add_pending_io(SOCKET_IO_INSTANCE* socket_io_instance, const unsigned char* buffer, size_t size, ON_SEND_COMPLETE on_send_complete, void* callback_context)
 {
     int result;
-    PENDING_SOCKET_IO* pending_socket_io = (PENDING_SOCKET_IO*)amqpalloc_malloc(sizeof(PENDING_SOCKET_IO));
+    PENDING_SOCKET_IO* pending_socket_io = (PENDING_SOCKET_IO*)malloc(sizeof(PENDING_SOCKET_IO));
     if (pending_socket_io == NULL)
     {
         result = __LINE__;
     }
     else
     {
-        pending_socket_io->bytes = (unsigned char*)amqpalloc_malloc(size);
+        pending_socket_io->bytes = (unsigned char*)malloc(size);
         if (pending_socket_io->bytes == NULL)
         {
-            amqpalloc_free(pending_socket_io);
+            free(pending_socket_io);
             result = __LINE__;
         }
         else
@@ -89,8 +88,8 @@ static int add_pending_io(SOCKET_IO_INSTANCE* socket_io_instance, const unsigned
 
             if (list_add(socket_io_instance->pending_io_list, pending_socket_io) == NULL)
             {
-                amqpalloc_free(pending_socket_io->bytes);
-                amqpalloc_free(pending_socket_io);
+                free(pending_socket_io->bytes);
+                free(pending_socket_io);
                 result = __LINE__;
             }
             else
@@ -114,22 +113,22 @@ CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters, LOGGER_LOG logger
     }
     else
     {
-        result = amqpalloc_malloc(sizeof(SOCKET_IO_INSTANCE));
+        result = malloc(sizeof(SOCKET_IO_INSTANCE));
         if (result != NULL)
         {
             result->pending_io_list = list_create();
             if (result->pending_io_list == NULL)
             {
-                amqpalloc_free(result);
+                free(result);
                 result = NULL;
             }
             else
             {
-                result->hostname = (char*)amqpalloc_malloc(strlen(socket_io_config->hostname) + 1);
+                result->hostname = (char*)malloc(strlen(socket_io_config->hostname) + 1);
                 if (result->hostname == NULL)
                 {
                     list_destroy(result->pending_io_list);
-                    amqpalloc_free(result);
+                    free(result);
                     result = NULL;
                 }
                 else
@@ -165,8 +164,8 @@ void socketio_destroy(CONCRETE_IO_HANDLE socket_io)
             PENDING_SOCKET_IO* pending_socket_io = (PENDING_SOCKET_IO*)list_item_get_value(first_pending_io);
             if (pending_socket_io != NULL)
             {
-                amqpalloc_free(pending_socket_io->bytes);
-                amqpalloc_free(pending_socket_io);
+                free(pending_socket_io->bytes);
+                free(pending_socket_io);
             }
 
             (void)list_remove(socket_io_instance->pending_io_list, first_pending_io);
@@ -174,8 +173,8 @@ void socketio_destroy(CONCRETE_IO_HANDLE socket_io)
         }
 
         list_destroy(socket_io_instance->pending_io_list);
-        amqpalloc_free(socket_io_instance->hostname);
-        amqpalloc_free(socket_io);
+        free(socket_io_instance->hostname);
+        free(socket_io);
     }
 }
 
@@ -368,8 +367,8 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                         pending_socket_io->on_send_complete(pending_socket_io->callback_context, IO_SEND_ERROR);
                     }
 
-                    amqpalloc_free(pending_socket_io->bytes);
-                    amqpalloc_free(pending_socket_io);
+                    free(pending_socket_io->bytes);
+                    free(pending_socket_io);
                     if (list_remove(socket_io_instance->pending_io_list, first_pending_io) != 0)
                     {
                         socket_io_instance->io_state = IO_STATE_ERROR;
