@@ -635,7 +635,7 @@ STRING_HANDLE Map_ToJSON(MAP_HANDLE handle)
                     else
                     {
                         if (!(
-                            ((i>0) ? (STRING_concat(result, ",")==0) : 1) &&
+                            ((i>0) ? (STRING_concat(result, ",") == 0) : 1) &&
                             (STRING_concat_with_STRING(result, key) == 0) &&
                             (STRING_concat(result, ":") == 0) &&
                             (STRING_concat_with_STRING(result, value) == 0)

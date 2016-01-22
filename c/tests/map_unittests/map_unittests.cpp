@@ -2823,7 +2823,7 @@ BEGIN_TEST_SUITE(map_unittests)
         auto handle = Map_Create(NULL);
         mocks.ResetAllCalls();
 
-        whenShallSTRING_construct_fail = currentSTRING_construct_call + 1;
+        MAKE_FAIL(STRING_construct, 1);
         STRICT_EXPECTED_CALL(mocks, STRING_construct("{"))
             .IgnoreArgument(1);
 
@@ -2874,6 +2874,7 @@ BEGIN_TEST_SUITE(map_unittests)
         ///assert
         ASSERT_IS_NOT_NULL(toJSON);
         mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, "{\"redkey\":\"reddoor\"}", BASEIMPLEMENTATION::STRING_c_str(toJSON));
 
         ///cleanup
         Map_Destroy(handle);
@@ -3181,6 +3182,7 @@ BEGIN_TEST_SUITE(map_unittests)
         ///assert
         ASSERT_IS_NOT_NULL(toJSON);
         mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, "{\"redkey\":\"reddoor\",\"yellowkey\":\"yellowdoor\"}", BASEIMPLEMENTATION::STRING_c_str(toJSON));
 
         ///cleanup
         Map_Destroy(handle);
