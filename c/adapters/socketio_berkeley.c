@@ -392,6 +392,7 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
                     {
                         LOG(socket_io_instance->logger_log, 0, "%02x-> ", ((unsigned char*)buffer)[i]);
                     }
+                    LOG(socket_io_instance->logger_log, LOG_LINE, "");
 
                     result = 0;
                 }
