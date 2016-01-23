@@ -31,8 +31,6 @@ inc\strings.h
 inc\threadapi.h
 inc\tickcounter.h
 inc\tlsio.h
-inc\tlsio_openssl.h
-inc\tlsio_schannel.h
 inc\tlsio_wolfssl.h
 inc\urlencode.h
 inc\vector.h
@@ -59,8 +57,6 @@ src\sha384-512.c
 src\string_tokenizer.c
 src\strings.c
 src\tickcounter.c
-src\tlsio_openssl.c
-src\tlsio_schannel.c
 src\tlsio_wolfssl.c
 src\urlencode.c
 src\usha.c
