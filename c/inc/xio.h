@@ -19,7 +19,8 @@ extern "C" {
 	typedef enum IO_SEND_RESULT_TAG
 	{
 		IO_SEND_OK,
-		IO_SEND_ERROR
+		IO_SEND_ERROR,
+        IO_SEND_CANCELLED
 	} IO_SEND_RESULT;
 
 	typedef enum IO_OPEN_RESULT_TAG
