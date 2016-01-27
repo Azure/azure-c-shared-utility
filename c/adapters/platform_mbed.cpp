@@ -46,10 +46,6 @@ int platform_init(void)
 	{
 		result = __LINE__;
 	}
-	else if (EthernetInterface::connect())
-	{
-		result = __LINE__;
-	}
 
 	return result;
 }
