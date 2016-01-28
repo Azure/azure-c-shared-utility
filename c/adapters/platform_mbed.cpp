@@ -45,6 +45,10 @@ int platform_init(void)
 	else if (setupRealTime() != 0)
 	{
 		result = __LINE__;
+	} 
+	else if (EthernetInterface::connect())
+	{
+		result = __LINE__;
 	}
 
 	return result;

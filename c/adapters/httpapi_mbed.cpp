@@ -42,18 +42,10 @@ HTTPAPI_RESULT HTTPAPI_Init(void)
     HTTPAPI_RESULT result;
     LogInfo("HTTAPI_Init::Time is now (UTC) %s\r\n", ctime(&ctTime));
 
-    if (EthernetInterface::connect(30000))
-    {
-        LogError("HTTPAPI_Init::Error with connecting.\r\n");
-        result = HTTPAPI_INIT_FAILED;
-    }
-    else
-    {
-        LogInfo("HTTAPI_Init::Ethernet interface was connected (brought up)!\r\n");
-        LogInfo("HTTAPI_Init::MAC address %s\r\n", EthernetInterface::getMACAddress());
-        LogInfo("HTTAPI_Init::IP address %s\r\n", EthernetInterface::getIPAddress());
-        result = HTTPAPI_OK;
-    }
+    LogInfo("HTTAPI_Init::Ethernet interface was connected (brought up)!\r\n");
+    LogInfo("HTTAPI_Init::MAC address %s\r\n", EthernetInterface::getMACAddress());
+    LogInfo("HTTAPI_Init::IP address %s\r\n", EthernetInterface::getIPAddress());
+    result = HTTPAPI_OK;
 
     LogInfo("HTTPAPI_Init::End\r\n");
 
@@ -62,7 +54,7 @@ HTTPAPI_RESULT HTTPAPI_Init(void)
 
 void HTTPAPI_Deinit(void)
 {
-    (void)EthernetInterface::disconnect();
+    ;
 }
 
 HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
