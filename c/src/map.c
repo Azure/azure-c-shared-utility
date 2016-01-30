@@ -607,14 +607,14 @@ STRING_HANDLE Map_ToJSON(MAP_HANDLE handle)
         else
         {
             size_t i;
-
+            MAP_HANDLE_DATA* handleData = (MAP_HANDLE_DATA *)handle;
             /*Codes_SRS_MAP_02_049: [If the MAP is empty, then Map_ToJSON shall produce the string "{}".*/
             bool breakFor = false; /*used to break out of for*/
-            for (i = 0; (i < handle->count) && (!breakFor); i++)
+            for (i = 0; (i < handleData->count) && (!breakFor); i++)
             {
                 /*add one entry to the JSON*/
                 /*Codes_SRS_MAP_02_050: [If the map has properties then Map_ToJSON shall produce the following string:{"name1":"value1", "name2":"value2" ...}]*/
-                STRING_HANDLE key = STRING_new_JSON(handle->keys[i]);
+                STRING_HANDLE key = STRING_new_JSON(handleData->keys[i]);
                 if (key == NULL)
                 {
                     LogError("STRING_new_JSON failed");
@@ -624,7 +624,7 @@ STRING_HANDLE Map_ToJSON(MAP_HANDLE handle)
                 }
                 else
                 {
-                    STRING_HANDLE value = STRING_new_JSON(handle->values[i]);
+                    STRING_HANDLE value = STRING_new_JSON(handleData->values[i]);
                     if (value == NULL)
                     {
                         LogError("STRING_new_JSON failed");
@@ -676,4 +676,5 @@ STRING_HANDLE Map_ToJSON(MAP_HANDLE handle)
         }
     }
     return result;
+
 }

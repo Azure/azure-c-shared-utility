@@ -221,6 +221,8 @@ set(source_c_files
 ./src/constmap.c
 ./src/doublylinkedlist.c
 ./src/gballoc.c
+./src/gb_stdio.c
+./src/gb_time.c
 ./src/hmac.c
 ./src/hmacsha256.c
 ./src/xio.c
@@ -279,6 +281,8 @@ set(source_h_files
 ./inc/condition.h
 ./inc/doublylinkedlist.h
 ./inc/gballoc.h
+./inc/gb_stdio.h
+./inc/gb_time.h
 ./inc/hmac.h
 ./inc/hmacsha256.h
 ./inc/iot_logging.h
