@@ -6,6 +6,8 @@
 #include <crtdbg.h>
 #endif
 #include "platform.h"
+#include "xio.h"
+#include "tlsio_schannel.h"
 #include "winsock2.h"
 
 int platform_init(void)
@@ -23,6 +25,11 @@ int platform_init(void)
     }
 
     return result;
+}
+
+const IO_INTERFACE_DESCRIPTION* platform_get_detault_tlsio(void)
+{
+    return tlsio_schannel_get_interface_description();
 }
 
 void platform_deinit(void)

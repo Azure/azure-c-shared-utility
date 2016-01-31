@@ -8,6 +8,8 @@
 #include "platform.h"
 #include "EthernetInterface.h"
 #include "NTPClient.h"
+#include "xio.h"
+#include "tlsio_wolfssl.h"
 
 int setupRealTime(void)
 {
@@ -52,6 +54,11 @@ int platform_init(void)
 	}
 
 	return result;
+}
+
+const IO_INTERFACE_DESCRIPTION* platform_get_detault_tlsio(void)
+{
+    return tlsio_wolfssl_get_interface_description();
 }
 
 void platform_deinit(void)
