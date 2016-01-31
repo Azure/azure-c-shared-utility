@@ -16,7 +16,7 @@ int platform_init(void)
 	return 0;
 }
 
-const IO_INTERFACE_DESCRIPTION* platform_get_detault_tlsio(void)
+const IO_INTERFACE_DESCRIPTION* platform_get_default_tlsio(void)
 {
     return tlsio_openssl_get_interface_description();
 }

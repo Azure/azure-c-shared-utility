@@ -12,7 +12,7 @@ extern "C" {
 
 	extern int platform_init(void);
 	extern void platform_deinit(void);
-    extern const IO_INTERFACE_DESCRIPTION* platform_get_detault_tlsio(void);
+    extern const IO_INTERFACE_DESCRIPTION* platform_get_default_tlsio(void);
 
 #ifdef __cplusplus
 }

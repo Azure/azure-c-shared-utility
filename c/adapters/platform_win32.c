@@ -27,7 +27,7 @@ int platform_init(void)
     return result;
 }
 
-const IO_INTERFACE_DESCRIPTION* platform_get_detault_tlsio(void)
+const IO_INTERFACE_DESCRIPTION* platform_get_default_tlsio(void)
 {
     return tlsio_schannel_get_interface_description();
 }
