@@ -36,18 +36,12 @@ public:
 
 HTTPAPI_RESULT HTTPAPI_Init(void)
 {
-    LogInfo("HTTPAPI_Init::Start\r\n");
     time_t ctTime;
     ctTime = time(NULL);
     HTTPAPI_RESULT result;
     LogInfo("HTTAPI_Init::Time is now (UTC) %s\r\n", ctime(&ctTime));
 
-    LogInfo("HTTAPI_Init::Ethernet interface was connected (brought up)!\r\n");
-    LogInfo("HTTAPI_Init::MAC address %s\r\n", EthernetInterface::getMACAddress());
-    LogInfo("HTTAPI_Init::IP address %s\r\n", EthernetInterface::getIPAddress());
     result = HTTPAPI_OK;
-
-    LogInfo("HTTPAPI_Init::End\r\n");
 
     return result;
 }
@@ -59,12 +53,10 @@ void HTTPAPI_Deinit(void)
 
 HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
 {
-    LogInfo("HTTPAPI_CreateConnection::Start\r\n");
     HTTP_HANDLE_DATA* handle = NULL;
 
     if (hostName)
     {
-        LogInfo("HTTPAPI_CreateConnection::Connecting to %s\r\n", hostName);
         handle = new HTTP_HANDLE_DATA();
         if (strcpy_s(handle->host, MAX_HOSTNAME, hostName) != 0)
         {
@@ -81,7 +73,6 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
     {
         LogInfo("HTTPAPI_CreateConnection:: null hostName parameter\r\n");
     }
-    LogInfo("HTTPAPI_CreateConnection::End\r\n");
 
     return (HTTP_HANDLE)handle;
 }
@@ -92,7 +83,6 @@ void HTTPAPI_CloseConnection(HTTP_HANDLE handle)
 
     if (h)
     {
-        LogInfo("HTTPAPI_CloseConnection to %s\r\n", h->host);
         if (h->con.is_connected())
         {
             LogInfo("HTTPAPI_CloseConnection  h->con.close(); to %s\r\n", h->host);
@@ -102,7 +92,6 @@ void HTTPAPI_CloseConnection(HTTP_HANDLE handle)
         {
             delete[] h->certificate;
         }
-        LogInfo("HTTPAPI_CloseConnection (delete h) to %s\r\n", h->host);
         delete h;
     }
 }
@@ -178,7 +167,6 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
     size_t contentLength, unsigned int* statusCode,
     HTTP_HEADERS_HANDLE responseHeadersHandle, BUFFER_HANDLE responseContent)
 {
-    LogInfo("HTTPAPI_ExecuteRequest::Start\r\n");
 
     HTTPAPI_RESULT result;
     size_t  headersCount;
@@ -228,10 +216,6 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
             LogError("Could not connect (result = %s)\r\n", ENUM_TO_STRING(HTTPAPI_RESULT, result));
             goto exit;
         }
-        else
-        {
-            LogInfo("HTTPAPI_CreateConnection::Connection to %s successful!\r\n", httpHandle->host);
-        }
     }
 
     //Send request
@@ -242,7 +226,6 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
         LogError("(result = %s)\r\n", ENUM_TO_STRING(HTTPAPI_RESULT, result));
         goto exit;
     }
-    LogInfo("HTTPAPI_ExecuteRequest::Sending=%*.*s\r\n", strlen(buf), strlen(buf), buf);
     if (con->send_all(buf, strlen(buf)) < 0)
     {
         result = HTTPAPI_SEND_REQUEST_FAILED;
@@ -260,7 +243,6 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
             LogError("(result = %s)\r\n", ENUM_TO_STRING(HTTPAPI_RESULT, result));
             goto exit;
         }
-        LogInfo("HTTPAPI_ExecuteRequest::Sending=%*.*s\r\n", strlen(header), strlen(header), header);
         if (con->send_all(header, strlen(header)) < 0)
         {
             result = HTTPAPI_SEND_REQUEST_FAILED;
@@ -289,7 +271,6 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
     //Send data (if available)
     if (content && contentLength > 0)
     {
-        LogInfo("HTTPAPI_ExecuteRequest::Sending data=%*.*s\r\n", contentLength, contentLength, content);
         if (con->send_all((char*)content, contentLength) < 0)
         {
             result = HTTPAPI_SEND_REQUEST_FAILED;
@@ -317,7 +298,6 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
     }
     if (statusCode)
         *statusCode = ret;
-    LogInfo("HTTPAPI_ExecuteRequest::Received response=%*.*s\r\n", strlen(buf), strlen(buf), buf);
 
     //Read HTTP response headers
     if (readLine(con, buf, sizeof(buf)) < 0)
@@ -331,8 +311,6 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
     {
         const char ContentLength[] = "content-length:";
         const char TransferEncoding[] = "transfer-encoding:";
-
-        LogInfo("Receiving header=%*.*s\r\n", strlen(buf), strlen(buf), buf);
 
         if (strncasecmp(buf, ContentLength, CHAR_COUNT(ContentLength)) == 0)
         {
@@ -367,7 +345,6 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
     }
 
     //Read HTTP response body
-    LogInfo("HTTPAPI_ExecuteRequest::Receiving body=%d,%x\r\n", bodyLength, responseContent);
     if (!chunked)
     {
         if (bodyLength)
@@ -395,7 +372,6 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
                 }
                 else
                 {
-                    LogInfo("HTTPAPI_ExecuteRequest::Received response body=%*.*s\r\n", bodyLength, bodyLength, receivedContent);
                     result = HTTPAPI_OK;
                 }
             }
@@ -492,14 +468,9 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
             }
         }
 
-        if (size > 0)
-        {
-            LogInfo("HTTPAPI_ExecuteRequest::Received chunk body=%*.*s\r\n", (int)size, (int)size, (const char*)responseContent);
-        }
     }
 
 exit:
-    LogInfo("HTTPAPI_ExecuteRequest::End=%d\r\n", result);
     return result;
 }
 
