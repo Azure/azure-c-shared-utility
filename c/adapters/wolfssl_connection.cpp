@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include <memory.h>
+#include <time.h>
 #include "wolfssl/ssl.h"
 #include "wolfssl_connection.h"
 #include "iot_logging.h"
@@ -38,6 +39,7 @@ static int receiveCallback(WOLFSSL* ssl, char *buf, int sz, void *ctx)
 {
     int fd = *(int*)ctx;
 	int result;
+	time_t timeOut = {0,1};
 
 	(void)ssl;
 
@@ -45,7 +47,7 @@ static int receiveCallback(WOLFSSL* ssl, char *buf, int sz, void *ctx)
     FD_ZERO(&rfds);
     FD_SET(fd, &rfds);
     
-	if (lwip_select(FD_SETSIZE, &rfds, NULL, NULL, NULL) < 0)
+	if (lwip_select(FD_SETSIZE, &rfds, NULL, NULL, &timeOut) < 0)
 	{
 		result = -1;
 	}
@@ -61,6 +63,7 @@ static int sendCallback(WOLFSSL* ssl, char *buf, int sz, void *ctx)
 {
     int fd = *(int*)ctx;
 	int result;
+	time_t timeOut = {0,1};
 
 	(void)ssl;
 
@@ -68,7 +71,7 @@ static int sendCallback(WOLFSSL* ssl, char *buf, int sz, void *ctx)
     FD_ZERO(&wfds);
     FD_SET(fd, &wfds);
     
-	if (lwip_select(FD_SETSIZE, NULL, &wfds, NULL, NULL) < 0)
+	if (lwip_select(FD_SETSIZE, NULL, &wfds, NULL, &timeOut) < 0)
 	{
 		return -1;
 	}
