@@ -311,7 +311,7 @@ void tlsio_openssl_deinit(void)
 
 CONCRETE_IO_HANDLE tlsio_openssl_create(void* io_create_parameters, LOGGER_LOG logger_log)
 {
-    TLSIO_OPENSSL_CONFIG* tls_io_config = io_create_parameters;
+    TLSIO_CONFIG* tls_io_config = io_create_parameters;
     TLS_IO_INSTANCE* result;
 
     if (tls_io_config == NULL)

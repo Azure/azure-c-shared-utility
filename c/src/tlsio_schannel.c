@@ -11,6 +11,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include "tlsio.h"
 #include "tlsio_schannel.h"
 #include "socketio.h"
 #include "windows.h"
@@ -488,7 +489,7 @@ static void on_underlying_io_error(void* context)
 
 CONCRETE_IO_HANDLE tlsio_schannel_create(void* io_create_parameters, LOGGER_LOG logger_log)
 {
-    TLSIO_SCHANNEL_CONFIG* tls_io_config = io_create_parameters;
+    TLSIO_CONFIG* tls_io_config = io_create_parameters;
     TLS_IO_INSTANCE* result;
 
     if (tls_io_config == NULL)
