@@ -21,7 +21,6 @@ static const int avoid_a_warning_C4206 = 0; /* warning C4206: nonstandard extens
 /*this is fopen*/
 FILE *gb_fopen(const char * filename, const char * mode)
 {
-    printf("went through gb_fopen");
     return fopen(filename, mode);
 }
 
