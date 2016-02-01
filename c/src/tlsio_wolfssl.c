@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
+#include "tlsio.h"
 #include "tlsio_wolfssl.h"
 #include "socketio.h"
 

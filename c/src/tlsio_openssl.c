@@ -11,6 +11,7 @@
 #include "openssl/crypto.h"
 #include <stdio.h>
 #include <stdbool.h>
+#include "tlsio.h"
 #include "tlsio_openssl.h"
 #include "socketio.h"
 
