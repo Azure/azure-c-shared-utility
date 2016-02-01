@@ -307,6 +307,7 @@ set(source_h_files
 ./inc/vector.h
 ./inc/xlogging.h
 ./inc/constbuffer.h
+./inc/tlsio.h
 )
 
 if(${use_http})

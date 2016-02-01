@@ -13,12 +13,6 @@ extern "C" {
 
 #include "xio.h"
 
-typedef struct TLSIO_SCHANNEL_CONFIG_TAG
-{
-	const char* hostname;
-	int port;
-} TLSIO_SCHANNEL_CONFIG;
-
 extern CONCRETE_IO_HANDLE tlsio_schannel_create(void* io_create_parameters, LOGGER_LOG logger_log);
 extern void tlsio_schannel_destroy(CONCRETE_IO_HANDLE tls_io);
 extern int tlsio_schannel_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_open_complete, ON_BYTES_RECEIVED on_bytes_received, ON_IO_ERROR on_io_error, void* callback_context);

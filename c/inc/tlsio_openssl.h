@@ -14,12 +14,6 @@ extern "C" {
 #include "xio.h"
 #include "iot_logging.h"
 
-typedef struct TLSIO_OPENSSL_CONFIG_TAG
-{
-	const char* hostname;
-	int port;
-} TLSIO_OPENSSL_CONFIG;
-
 extern int tlsio_openssl_init(void);
 extern void tlsio_openssl_deinit(void);
 
