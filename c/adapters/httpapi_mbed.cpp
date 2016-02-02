@@ -17,7 +17,6 @@
 #include "wolfssl_connection.h"
 #include "iot_logging.h"
 #include "string.h"
-#include "certs.h"
 
 #define MAX_HOSTNAME     64
 #define TEMP_BUFFER_SIZE 4096
