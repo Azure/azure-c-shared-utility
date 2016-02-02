@@ -43,7 +43,6 @@ static int receiveCallback(WOLFSSL* ssl, char *buf, int sz, void *ctx)
 {
     int fd = *(int*)ctx;
 	int result;
-	time_t timeOut = {0,1};
 
 	(void)ssl;
 
@@ -67,7 +66,6 @@ static int sendCallback(WOLFSSL* ssl, char *buf, int sz, void *ctx)
 {
     int fd = *(int*)ctx;
 	int result;
-	time_t timeOut = {0,1};
 
 	(void)ssl;
 
