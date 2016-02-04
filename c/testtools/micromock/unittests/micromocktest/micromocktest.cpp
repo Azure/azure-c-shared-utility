@@ -155,8 +155,7 @@ public:
 
 static int gInt = 0;
 
-#ifdef _MSC_VER
-TYPED_MOCK_CLASS(CTestStaticAllArgsMock, CThreadSafeGlobalMock)
+TYPED_MOCK_CLASS(CTestStaticAllArgsMock, CGlobalMock)
 {
 public:
     MOCK_STATIC_METHOD_0(, UINT8, StaticTestFunctionWithNoArgs);
@@ -184,7 +183,6 @@ public:
     MOCK_STATIC_METHOD_6(, UINT8, StaticTestFunctionWith6Args, UINT8, arg1, UINT8, arg2, UINT8, arg3, UINT8, arg4, UINT8, arg5, UINT8, arg6);
     MOCK_METHOD_END(UINT8, 0)
 };
-#endif
 
 #ifdef _MSC_VER
 TYPED_MOCK_CLASS(CTestStaticVariousArgsMock, CThreadSafeGlobalMock)
@@ -3519,7 +3517,7 @@ DECLARE_GLOBAL_MOCK_METHOD_0(CStaticTestMock, , void, StaticTestFunction);
                 .SetFailReturn(3);
 
             ///act
-            auto result = CTestStaticAllArgsMock::StaticTestFunctionWith1Arg(1);
+            int result = CTestStaticAllArgsMock::StaticTestFunctionWith1Arg(1);
 
             /// assert
             ASSERT_ARE_EQUAL(int, 3, result);
@@ -3540,8 +3538,8 @@ DECLARE_GLOBAL_MOCK_METHOD_0(CStaticTestMock, , void, StaticTestFunction);
                 .SetFailReturn(3);
 
             ///act
-            auto result1 = CTestStaticAllArgsMock::StaticTestFunctionWith1Arg(1);
-            auto result2 = CTestStaticAllArgsMock::StaticTestFunctionWith1Arg(1);
+            int result1 = CTestStaticAllArgsMock::StaticTestFunctionWith1Arg(1);
+            int result2 = CTestStaticAllArgsMock::StaticTestFunctionWith1Arg(1);
 
             /// assert
             ASSERT_ARE_EQUAL(int, 0, result1);
@@ -3564,8 +3562,8 @@ DECLARE_GLOBAL_MOCK_METHOD_0(CStaticTestMock, , void, StaticTestFunction);
                
 
             ///act
-            auto result1 = CTestStaticAllArgsMock::StaticTestFunctionWith1Arg(1);
-            auto result2 = CTestStaticAllArgsMock::StaticTestFunctionWith1Arg(1);
+            int result1 = CTestStaticAllArgsMock::StaticTestFunctionWith1Arg(1);
+            int result2 = CTestStaticAllArgsMock::StaticTestFunctionWith1Arg(1);
 
             /// assert
             ASSERT_ARE_EQUAL(int, 3, result1);
@@ -3583,7 +3581,7 @@ DECLARE_GLOBAL_MOCK_METHOD_0(CStaticTestMock, , void, StaticTestFunction);
                 .SetFailReturn(3);
 
             ///act
-            auto result1 = CTestStaticAllArgsMock::StaticTestFunctionWith1Arg_Clone(1);
+            int result1 = CTestStaticAllArgsMock::StaticTestFunctionWith1Arg_Clone(1);
 
             /// assert
             ASSERT_ARE_EQUAL(int, 3, result1);
@@ -3601,7 +3599,7 @@ DECLARE_GLOBAL_MOCK_METHOD_0(CStaticTestMock, , void, StaticTestFunction);
                 .SetReturn(3);
 
             ///act
-            auto result1 = CTestStaticAllArgsMock::StaticTestFunctionWith1Arg_Clone(1);
+            int result1 = CTestStaticAllArgsMock::StaticTestFunctionWith1Arg_Clone(1);
 
             /// assert
             ASSERT_ARE_EQUAL(int, 3, result1);
@@ -3623,8 +3621,8 @@ DECLARE_GLOBAL_MOCK_METHOD_0(CStaticTestMock, , void, StaticTestFunction);
 
 
             ///act
-            auto result1 = CTestStaticAllArgsMock::StaticTestFunctionWith1Arg_Clone(1);
-            auto result2 = CTestStaticAllArgsMock::StaticTestFunctionWith1Arg_Clone(1);
+            int result1 = CTestStaticAllArgsMock::StaticTestFunctionWith1Arg_Clone(1);
+            int result2 = CTestStaticAllArgsMock::StaticTestFunctionWith1Arg_Clone(1);
 
             /// assert
             ASSERT_ARE_EQUAL(int, 3, result1);
