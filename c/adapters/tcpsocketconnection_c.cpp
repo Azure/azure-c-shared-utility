@@ -25,16 +25,10 @@
 #include "TCPSocketConnection.h"
 #include "tcpsocketconnection_c.h"
 
-extern "C"
-{
-	TCPSOCKETCONNECTION_HANDLE connHandle;
-}
 
 TCPSOCKETCONNECTION_HANDLE tcpsocketconnection_create(void)
 {
-    TCPSocketConnection* sock = new TCPSocketConnection();
-    connHandle = (TCPSOCKETCONNECTION_HANDLE)sock;
-    return connHandle;
+    return new TCPSocketConnection();
 }
 
 void tcpsocketconnection_set_blocking(TCPSOCKETCONNECTION_HANDLE tcpSocketConnectionHandle, bool blocking, unsigned int timeout)
