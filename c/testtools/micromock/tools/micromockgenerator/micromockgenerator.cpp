@@ -32,7 +32,7 @@ void GenerateMockCallMacros(_In_ size_t supportedArgCount)
 {
     FILE* outFile = NULL;
 
-    _tfopen_s(&outFile, _T("..\\..\\inc\\MicroMockCallMacros.h"), _T("wt"));
+    _tfopen_s(&outFile, _T("micromockcallmacros.h"), _T("wt"));
     if (NULL != outFile)
     {
         _ftprintf(outFile, fileHeader);
@@ -86,7 +86,9 @@ void GenerateMockCallMacros(_In_ size_t supportedArgCount)
             }
             _ftprintf(outFile, _T("    CMockMethodCallBase* mockMethodCall = \\\n"));
             _ftprintf(outFile, _T("        new CMockMethodCall<resultType>(_T(#name), %u, %s); \\\n"), currentArgCount, (currentArgCount > 0) ? _T("args") : _T("NULL"));
-            _ftprintf(outFile, _T("        CMockValueBase* result = RECORD_ACTUAL_##STATIC_##MOCK_CALL(mockMethodCall); \n"));
+            _ftprintf(outFile, _T("        bool failed=false; \\\n"));
+            _ftprintf(outFile, _T("        CMockValueBase* result = RECORD_ACTUAL_##STATIC_##MOCK_CALL(mockMethodCall, &failed); \\\n"));
+            _ftprintf(outFile, _T("        if((result!=NULL)&&(failed)) return dynamic_cast<CMockValue<resultType>*>(result)->GetValue();\n"));
             _ftprintf(outFile, _T("\n"));
 
             // regular member function mock
@@ -144,7 +146,7 @@ void GenerateTimeDiscreteMockCallMacros(_In_ size_t supportedArgCount)
 {
     unsigned int i,j;
     /*intended as ANSI, non TCHAR, since it produces C++ source code*/
-    ofstream fout("..\\..\\inc\\TimeDiscreteMicroMockCallMacros.h");
+    ofstream fout("timediscretemicromockcallmacros.h");
     fout<<CfileHeader<<endl;
     for(i=0;i<supportedArgCount;i++)
     {
@@ -410,6 +412,7 @@ int __cdecl _tmain(_In_ const int argc, _In_reads_(argc) const _TCHAR* argv[])
     size_t supportedArgCount = 16;
 
     _tprintf(_T("MicroMock code generator.\n"));
+    _tprintf(_T("GENERATED OUTPUT HAS TO BE HAND COPIED TO THE DESTINATION!!! (because building out of source tree).\n"));
 
     _tprintf(_T("Generating MicroMock call macros...\n"));
     GenerateMockCallMacros(supportedArgCount);

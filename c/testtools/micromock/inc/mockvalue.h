@@ -104,6 +104,48 @@ protected:
 };
 
 template<>
+class CMockValue <void> :
+    public CMockValueBase
+{
+public:
+    CMockValue(void)
+    {
+    }
+
+    virtual ~CMockValue()
+    {
+    }
+
+    virtual _Check_return_
+        std::tstring ToString() const
+    {
+        std::tostringstream strStream;
+        strStream << "void";
+        return strStream.str();
+    }
+
+    virtual _Must_inspect_result_
+        bool EqualTo(_In_ const CMockValueBase* right)
+    {
+        return true;
+    }
+
+    void SetValue(void)
+    {
+
+    }
+
+    _Must_inspect_result_ void GetValue() const
+    {
+        return;
+    }
+
+protected:
+    unsigned char m_Value;
+    unsigned char m_OriginalValue;
+};
+
+template<>
 class CMockValue <wchar_t *> :
     public CMockValueBase
 {

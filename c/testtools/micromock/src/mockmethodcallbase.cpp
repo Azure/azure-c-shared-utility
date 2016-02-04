@@ -43,6 +43,8 @@ void CMockMethodCallBase::Init(std::tstring methodName)
     m_MatchedTimes = 0;
     m_AlwaysReport = false;
     m_ExactExpectedTimes = false;
+    m_FailReturnValue = NULL;
+
 }
 
 std::tstring CMockMethodCallBase::GetArgumentsString()
