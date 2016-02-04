@@ -290,7 +290,6 @@ set(source_h_files
 ./inc/lock.h
 ./inc/macro_utils.h
 ./inc/map.h
-./inc/mqttapi.h
 ./inc/platform.h
 ./inc/refcount.h
 ./inc/sastoken.h
@@ -385,9 +384,9 @@ if(${use_http})
 endif()
 
 if(${use_schannel})
-	if(WIN32)
+    if(WIN32)
         target_link_libraries(aziotsharedutil ws2_32 secur32)	
-	endif()
+    endif()
 endif()
 
 if(${use_openssl})
@@ -398,7 +397,7 @@ if(${use_openssl})
 endif()
 
 if(${use_wolfssl})
-	target_link_libraries(aziotsharedutil wolfssl)
+    target_link_libraries(aziotsharedutil wolfssl)
 endif()
 
 if(WIN32)
