@@ -95,7 +95,7 @@ CMockValueBase* CMockCallRecorder::MatchActualCall(CMockMethodCallBase* mockMeth
     if (NULL != matchedCall)
     {
         mockMethodCall->CopyOutArgumentBuffers(matchedCall);
-        auto failValue = matchedCall->GetFailReturnValue();
+        CMockValueBase* failValue = matchedCall->GetFailReturnValue();
         if (failValue != NULL)
         {
             result = failValue;
