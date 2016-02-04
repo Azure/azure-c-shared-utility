@@ -86,4 +86,6 @@ else()
 	install (TARGETS micromock_ctest DESTINATION lib)
 endif (WIN32)
 
-add_executable(micromock_generator ./tools/micromockgenerator/micromockgenerator.cpp)
+if(WIN32)
+	add_executable(micromock_generator ./tools/micromockgenerator/micromockgenerator.cpp)
+endif()
