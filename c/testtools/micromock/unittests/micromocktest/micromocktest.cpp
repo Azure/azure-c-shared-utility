@@ -153,14 +153,19 @@ public:
     MOCK_METHOD_END(UINT8, 0)
 };
 
-#ifdef _MSC_VER
-TYPED_MOCK_CLASS(CTestStaticAllArgsMock, CThreadSafeGlobalMock)
+static int gInt = 0;
+
+TYPED_MOCK_CLASS(CTestStaticAllArgsMock, CGlobalMock)
 {
 public:
     MOCK_STATIC_METHOD_0(, UINT8, StaticTestFunctionWithNoArgs);
     MOCK_METHOD_END(UINT8, 0)
     
     MOCK_STATIC_METHOD_1(, UINT8, StaticTestFunctionWith1Arg, UINT8, arg1);
+    MOCK_METHOD_END(UINT8, 0)
+
+    MOCK_STATIC_METHOD_1(, UINT8, StaticTestFunctionWith1Arg_Clone, UINT8, arg1);
+        gInt++;
     MOCK_METHOD_END(UINT8, 0)
     
     MOCK_STATIC_METHOD_2(, UINT8, StaticTestFunctionWith2Args, UINT8, arg1, UINT8, arg2);
@@ -178,7 +183,6 @@ public:
     MOCK_STATIC_METHOD_6(, UINT8, StaticTestFunctionWith6Args, UINT8, arg1, UINT8, arg2, UINT8, arg3, UINT8, arg4, UINT8, arg5, UINT8, arg6);
     MOCK_METHOD_END(UINT8, 0)
 };
-#endif
 
 #ifdef _MSC_VER
 TYPED_MOCK_CLASS(CTestStaticVariousArgsMock, CThreadSafeGlobalMock)
@@ -249,6 +253,11 @@ DECLARE_GLOBAL_MOCK_METHOD_0(CStaticTestMock, , void, StaticTestFunction);
             strStream << "]";
 
             return strStream.str();
+        }
+
+        TEST_FUNCTION_INITIALIZE(testSuiteInit)
+        {
+            gInt = 0;
         }
 
         TEST_FUNCTION(MicroMock_Instantiating_A_Mock_With_No_Methods_Succeeds)
@@ -3495,6 +3504,131 @@ DECLARE_GLOBAL_MOCK_METHOD_0(CStaticTestMock, , void, StaticTestFunction);
 
             ASSERT_ARE_EQUAL_WITH_MSG(tstring, tstring(_T("")), testMock.CompareActualAndExpectedCalls(),
                 _T("Incorrect calls"));
+        }
+
+        TEST_FUNCTION(MicroMock_SetFailReturn_called_1_times_returns_fail_value)
+        {
+
+            ///arrange
+            CTestStaticAllArgsMock testMock;
+
+            STRICT_EXPECTED_CALL(testMock, StaticTestFunctionWith1Arg(1))
+                .ValidateArgument(1)
+                .SetFailReturn(3);
+
+            ///act
+            int result = CTestStaticAllArgsMock::StaticTestFunctionWith1Arg(1);
+
+            /// assert
+            ASSERT_ARE_EQUAL(int, 3, result);
+            testMock.AssertActualAndExpectedCalls();
+        }
+
+        TEST_FUNCTION(MicroMock_SetFailReturn_called_2_times_with_fail_at_two_succeeds)
+        {
+
+            ///arrange
+            CTestStaticAllArgsMock testMock;
+
+            STRICT_EXPECTED_CALL(testMock, StaticTestFunctionWith1Arg(1))
+                .ValidateArgument(1);
+
+            STRICT_EXPECTED_CALL(testMock, StaticTestFunctionWith1Arg(1))
+                .ValidateArgument(1)
+                .SetFailReturn(3);
+
+            ///act
+            int result1 = CTestStaticAllArgsMock::StaticTestFunctionWith1Arg(1);
+            int result2 = CTestStaticAllArgsMock::StaticTestFunctionWith1Arg(1);
+
+            /// assert
+            ASSERT_ARE_EQUAL(int, 0, result1);
+            ASSERT_ARE_EQUAL(int, 3, result2);
+            testMock.AssertActualAndExpectedCalls();
+        }
+
+        TEST_FUNCTION(MicroMock_SetFailReturn_called_2_times_with_fail_at_one_succeeds)
+        {
+
+            ///arrange
+            CTestStaticAllArgsMock testMock;
+
+            STRICT_EXPECTED_CALL(testMock, StaticTestFunctionWith1Arg(1))
+                .ValidateArgument(1)
+                .SetFailReturn(3);
+
+            STRICT_EXPECTED_CALL(testMock, StaticTestFunctionWith1Arg(1))
+                .ValidateArgument(1);
+               
+
+            ///act
+            int result1 = CTestStaticAllArgsMock::StaticTestFunctionWith1Arg(1);
+            int result2 = CTestStaticAllArgsMock::StaticTestFunctionWith1Arg(1);
+
+            /// assert
+            ASSERT_ARE_EQUAL(int, 3, result1);
+            ASSERT_ARE_EQUAL(int, 0, result2);
+            testMock.AssertActualAndExpectedCalls();
+        }
+
+        TEST_FUNCTION(MicroMock_SetFailReturn_does_not_execute_the_mock_code)
+        {
+
+            ///arrange
+            CTestStaticAllArgsMock testMock;
+
+            STRICT_EXPECTED_CALL(testMock, StaticTestFunctionWith1Arg_Clone(1))
+                .SetFailReturn(3);
+
+            ///act
+            int result1 = CTestStaticAllArgsMock::StaticTestFunctionWith1Arg_Clone(1);
+
+            /// assert
+            ASSERT_ARE_EQUAL(int, 3, result1);
+            ASSERT_ARE_EQUAL(int, 0, gInt);
+            testMock.AssertActualAndExpectedCalls();
+        }
+
+        TEST_FUNCTION(MicroMock_SetReturn_does_execute_the_mock_code)
+        {
+
+            ///arrange
+            CTestStaticAllArgsMock testMock;
+
+            STRICT_EXPECTED_CALL(testMock, StaticTestFunctionWith1Arg_Clone(1))
+                .SetReturn(3);
+
+            ///act
+            int result1 = CTestStaticAllArgsMock::StaticTestFunctionWith1Arg_Clone(1);
+
+            /// assert
+            ASSERT_ARE_EQUAL(int, 3, result1);
+            ASSERT_ARE_EQUAL(int, 1, gInt);
+            testMock.AssertActualAndExpectedCalls();
+        }
+
+        TEST_FUNCTION(MicroMock_SetReturn_does_execute_the_mock_code_and_SetFailDoesNotExecuteMockCode)
+        {
+
+            ///arrange
+            CTestStaticAllArgsMock testMock;
+
+            STRICT_EXPECTED_CALL(testMock, StaticTestFunctionWith1Arg_Clone(1))
+                .SetReturn(3);
+
+            STRICT_EXPECTED_CALL(testMock, StaticTestFunctionWith1Arg_Clone(1))
+                .SetFailReturn(5);
+
+
+            ///act
+            int result1 = CTestStaticAllArgsMock::StaticTestFunctionWith1Arg_Clone(1);
+            int result2 = CTestStaticAllArgsMock::StaticTestFunctionWith1Arg_Clone(1);
+
+            /// assert
+            ASSERT_ARE_EQUAL(int, 3, result1);
+            ASSERT_ARE_EQUAL(int, 5, result2);
+            ASSERT_ARE_EQUAL(int, 1, gInt);
+            testMock.AssertActualAndExpectedCalls();
         }
 
         END_TEST_SUITE(MicroMockTest)

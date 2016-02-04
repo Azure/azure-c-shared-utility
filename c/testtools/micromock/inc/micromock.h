@@ -80,8 +80,8 @@ EXPECTED_CALL(ClassName, __VA_ARGS__)        \
 STRICT_EXPECTED_CALL(ClassName, __VA_ARGS__) \
     .OnlySpecifiesActions()
 
-#define RECORD_ACTUAL_MOCK_CALL(mockMethodCall)         \
-    RecordActualCall(mockMethodCall)
+#define RECORD_ACTUAL_MOCK_CALL(mockMethodCall, fail)         \
+    RecordActualCall(mockMethodCall, fail)
 
 #define RECORD_EXPECTED_MOCK_CALL(mockMethodCall)       \
     RecordExpectedCall(mockMethodCall)
@@ -89,8 +89,8 @@ STRICT_EXPECTED_CALL(ClassName, __VA_ARGS__) \
 #define REMATCH_ACTUAL_MOCK_CALL(mockMethodCall)        \
     MatchActualCall(mockMethodCall)
 
-#define RECORD_ACTUAL_STATIC_MOCK_CALL(mockMethodCall)  \
-    GetSingleton()->RecordActualCall(mockMethodCall)
+#define RECORD_ACTUAL_STATIC_MOCK_CALL(mockMethodCall, fail)  \
+    GetSingleton()->RecordActualCall(mockMethodCall, fail)
 
 #define RECORD_EXPECTED_STATIC_MOCK_CALL(mockMethodCall)\
     GetSingleton()->RecordExpectedCall(mockMethodCall)

@@ -90,6 +90,19 @@ public:
         return *this;
     }
 
+    template<typename injectedReturnType>
+    CMockMethodCall<returnType>& SetFailReturn(_In_opt_ injectedReturnType failReturnValue)
+    {
+        if (NULL != m_FailReturnValue)
+        {
+            delete m_FailReturnValue;
+        }
+
+        m_FailReturnValue = new CMockResultValue<returnType>(failReturnValue);
+
+        return *this;
+    }
+
     CMockMethodCall<returnType>& OnlySpecifiesActions()
     {
         m_OnlySpecifiesActions = true;
@@ -157,6 +170,7 @@ public:
         m_ExpectedTimes = expectedTimes;
         return *this;
     }
+
 };
 
 #endif // MOCKMETHODCALL_H

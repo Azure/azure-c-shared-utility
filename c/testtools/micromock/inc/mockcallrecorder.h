@@ -31,8 +31,8 @@ public:
 
 public:
     void RecordExpectedCall(CMockMethodCallBase* mockMethodCall);
-    CMockValueBase* RecordActualCall(CMockMethodCallBase* mockMethodCall);
-    CMockValueBase* MatchActualCall(CMockMethodCallBase* mockMethodCall);
+    CMockValueBase * RecordActualCall(CMockMethodCallBase * mockMethodCall, bool* failed);
+    CMockValueBase* MatchActualCall(CMockMethodCallBase* mockMethodCall, bool* failed);
     void AssertActualAndExpectedCalls(void);
     std::tstring CompareActualAndExpectedCalls(void);
     std::tstring GetUnexpectedCalls(std::tstring unexpectedCallPrefix = _T(""));

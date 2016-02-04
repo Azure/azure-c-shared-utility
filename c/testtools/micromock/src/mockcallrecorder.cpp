@@ -56,20 +56,20 @@ void CMockCallRecorder::RecordExpectedCall(CMockMethodCallBase* mockMethodCall)
     Unlock();
 }
 
-CMockValueBase* CMockCallRecorder::RecordActualCall(CMockMethodCallBase* mockMethodCall)
+CMockValueBase* CMockCallRecorder::RecordActualCall(CMockMethodCallBase* mockMethodCall, bool* failed)
 {
     CMockValueBase* result = NULL;
 
     MicroMockEnterCriticalSection(&m_MockCallRecorderCS);
 
     m_ActualCalls.push_back(mockMethodCall);
-    result = MatchActualCall(mockMethodCall);
+    result = MatchActualCall(mockMethodCall, failed);
     MicroMockLeaveCriticalSection(&m_MockCallRecorderCS);
 
     return result;
 }
 
-CMockValueBase* CMockCallRecorder::MatchActualCall(CMockMethodCallBase* mockMethodCall)
+CMockValueBase* CMockCallRecorder::MatchActualCall(CMockMethodCallBase* mockMethodCall, bool* failed)
 {
     CMockValueBase* result = NULL;
 
@@ -95,7 +95,21 @@ CMockValueBase* CMockCallRecorder::MatchActualCall(CMockMethodCallBase* mockMeth
     if (NULL != matchedCall)
     {
         mockMethodCall->CopyOutArgumentBuffers(matchedCall);
-        result = matchedCall->GetReturnValue();
+        CMockValueBase* failValue = matchedCall->GetFailReturnValue();
+        if (failValue != NULL)
+        {
+            result = failValue;
+            *failed = true;
+        }
+        else
+        {
+            result = matchedCall->GetReturnValue();
+            *failed = false;
+        }
+    }
+    else
+    {
+        *failed = false;
     }
 
     MicroMockLeaveCriticalSection(&m_MockCallRecorderCS);

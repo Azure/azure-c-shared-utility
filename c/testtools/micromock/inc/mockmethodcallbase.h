@@ -37,6 +37,10 @@ public:
     size_t m_MatchedTimes;
     bool m_ExactExpectedTimes;
     virtual CMockValueBase* GetReturnValue() { return m_ReturnValue; }
+    virtual CMockValueBase* GetFailReturnValue() 
+    { 
+        return m_FailReturnValue; 
+    }
     _Must_inspect_result_ bool HasMatch() const { return (NULL != m_MatchedCall); }
     void RollbackMatch();
 
@@ -46,6 +50,7 @@ protected:
     std::vector<CMockCallArgumentBase*> m_MockCallArguments;
     std::tstring m_MethodName;
     CMockValueBase* m_ReturnValue;
+    CMockValueBase* m_FailReturnValue;
 };
 
 #endif // MOCKMETHODCALLBASE_H

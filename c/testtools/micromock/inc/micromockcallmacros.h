@@ -22,7 +22,9 @@ static_ resultType prefix name() \
 { \
     CMockMethodCallBase* mockMethodCall = \
         new CMockMethodCall<resultType>(_T(#name), 0, NULL); \
-        CMockValueBase* result = RECORD_ACTUAL_##STATIC_##MOCK_CALL(mockMethodCall); 
+        bool failed=false; \
+        CMockValueBase* result = RECORD_ACTUAL_##STATIC_##MOCK_CALL(mockMethodCall, &failed); \
+        if((result!=NULL)&&(failed)) return dynamic_cast<CMockValue<resultType>*>(result)->GetValue();
 
 #define MOCK_METHOD_0(prefix, resultType, name) \
 MOCK_ANY_METHOD_0(,,prefix, resultType, name) 
@@ -52,7 +54,9 @@ static_ resultType prefix name(arg1Type arg1Value) \
     args[0] = new CMockCallArgument<arg1Type>(arg1Value); \
     CMockMethodCallBase* mockMethodCall = \
         new CMockMethodCall<resultType>(_T(#name), 1, args); \
-        CMockValueBase* result = RECORD_ACTUAL_##STATIC_##MOCK_CALL(mockMethodCall); 
+        bool failed=false; \
+        CMockValueBase* result = RECORD_ACTUAL_##STATIC_##MOCK_CALL(mockMethodCall, &failed); \
+        if((result!=NULL)&&(failed)) return dynamic_cast<CMockValue<resultType>*>(result)->GetValue();
 
 #define MOCK_METHOD_1(prefix, resultType, name, arg1Type, arg1Value) \
 MOCK_ANY_METHOD_1(,,prefix, resultType, name, arg1Type, arg1Value) 
@@ -84,7 +88,9 @@ static_ resultType prefix name(arg1Type arg1Value, arg2Type arg2Value) \
     args[1] = new CMockCallArgument<arg2Type>(arg2Value); \
     CMockMethodCallBase* mockMethodCall = \
         new CMockMethodCall<resultType>(_T(#name), 2, args); \
-        CMockValueBase* result = RECORD_ACTUAL_##STATIC_##MOCK_CALL(mockMethodCall); 
+        bool failed=false; \
+        CMockValueBase* result = RECORD_ACTUAL_##STATIC_##MOCK_CALL(mockMethodCall, &failed); \
+        if((result!=NULL)&&(failed)) return dynamic_cast<CMockValue<resultType>*>(result)->GetValue();
 
 #define MOCK_METHOD_2(prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value) \
 MOCK_ANY_METHOD_2(,,prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value) 
@@ -118,7 +124,9 @@ static_ resultType prefix name(arg1Type arg1Value, arg2Type arg2Value, arg3Type 
     args[2] = new CMockCallArgument<arg3Type>(arg3Value); \
     CMockMethodCallBase* mockMethodCall = \
         new CMockMethodCall<resultType>(_T(#name), 3, args); \
-        CMockValueBase* result = RECORD_ACTUAL_##STATIC_##MOCK_CALL(mockMethodCall); 
+        bool failed=false; \
+        CMockValueBase* result = RECORD_ACTUAL_##STATIC_##MOCK_CALL(mockMethodCall, &failed); \
+        if((result!=NULL)&&(failed)) return dynamic_cast<CMockValue<resultType>*>(result)->GetValue();
 
 #define MOCK_METHOD_3(prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value) \
 MOCK_ANY_METHOD_3(,,prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value) 
@@ -154,7 +162,9 @@ static_ resultType prefix name(arg1Type arg1Value, arg2Type arg2Value, arg3Type 
     args[3] = new CMockCallArgument<arg4Type>(arg4Value); \
     CMockMethodCallBase* mockMethodCall = \
         new CMockMethodCall<resultType>(_T(#name), 4, args); \
-        CMockValueBase* result = RECORD_ACTUAL_##STATIC_##MOCK_CALL(mockMethodCall); 
+        bool failed=false; \
+        CMockValueBase* result = RECORD_ACTUAL_##STATIC_##MOCK_CALL(mockMethodCall, &failed); \
+        if((result!=NULL)&&(failed)) return dynamic_cast<CMockValue<resultType>*>(result)->GetValue();
 
 #define MOCK_METHOD_4(prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value) \
 MOCK_ANY_METHOD_4(,,prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value) 
@@ -192,7 +202,9 @@ static_ resultType prefix name(arg1Type arg1Value, arg2Type arg2Value, arg3Type 
     args[4] = new CMockCallArgument<arg5Type>(arg5Value); \
     CMockMethodCallBase* mockMethodCall = \
         new CMockMethodCall<resultType>(_T(#name), 5, args); \
-        CMockValueBase* result = RECORD_ACTUAL_##STATIC_##MOCK_CALL(mockMethodCall); 
+        bool failed=false; \
+        CMockValueBase* result = RECORD_ACTUAL_##STATIC_##MOCK_CALL(mockMethodCall, &failed); \
+        if((result!=NULL)&&(failed)) return dynamic_cast<CMockValue<resultType>*>(result)->GetValue();
 
 #define MOCK_METHOD_5(prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value) \
 MOCK_ANY_METHOD_5(,,prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value) 
@@ -232,7 +244,9 @@ static_ resultType prefix name(arg1Type arg1Value, arg2Type arg2Value, arg3Type 
     args[5] = new CMockCallArgument<arg6Type>(arg6Value); \
     CMockMethodCallBase* mockMethodCall = \
         new CMockMethodCall<resultType>(_T(#name), 6, args); \
-        CMockValueBase* result = RECORD_ACTUAL_##STATIC_##MOCK_CALL(mockMethodCall); 
+        bool failed=false; \
+        CMockValueBase* result = RECORD_ACTUAL_##STATIC_##MOCK_CALL(mockMethodCall, &failed); \
+        if((result!=NULL)&&(failed)) return dynamic_cast<CMockValue<resultType>*>(result)->GetValue();
 
 #define MOCK_METHOD_6(prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value) \
 MOCK_ANY_METHOD_6(,,prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value) 
@@ -274,7 +288,9 @@ static_ resultType prefix name(arg1Type arg1Value, arg2Type arg2Value, arg3Type 
     args[6] = new CMockCallArgument<arg7Type>(arg7Value); \
     CMockMethodCallBase* mockMethodCall = \
         new CMockMethodCall<resultType>(_T(#name), 7, args); \
-        CMockValueBase* result = RECORD_ACTUAL_##STATIC_##MOCK_CALL(mockMethodCall); 
+        bool failed=false; \
+        CMockValueBase* result = RECORD_ACTUAL_##STATIC_##MOCK_CALL(mockMethodCall, &failed); \
+        if((result!=NULL)&&(failed)) return dynamic_cast<CMockValue<resultType>*>(result)->GetValue();
 
 #define MOCK_METHOD_7(prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value) \
 MOCK_ANY_METHOD_7(,,prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value) 
@@ -318,7 +334,9 @@ static_ resultType prefix name(arg1Type arg1Value, arg2Type arg2Value, arg3Type 
     args[7] = new CMockCallArgument<arg8Type>(arg8Value); \
     CMockMethodCallBase* mockMethodCall = \
         new CMockMethodCall<resultType>(_T(#name), 8, args); \
-        CMockValueBase* result = RECORD_ACTUAL_##STATIC_##MOCK_CALL(mockMethodCall); 
+        bool failed=false; \
+        CMockValueBase* result = RECORD_ACTUAL_##STATIC_##MOCK_CALL(mockMethodCall, &failed); \
+        if((result!=NULL)&&(failed)) return dynamic_cast<CMockValue<resultType>*>(result)->GetValue();
 
 #define MOCK_METHOD_8(prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value) \
 MOCK_ANY_METHOD_8(,,prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value) 
@@ -364,7 +382,9 @@ static_ resultType prefix name(arg1Type arg1Value, arg2Type arg2Value, arg3Type 
     args[8] = new CMockCallArgument<arg9Type>(arg9Value); \
     CMockMethodCallBase* mockMethodCall = \
         new CMockMethodCall<resultType>(_T(#name), 9, args); \
-        CMockValueBase* result = RECORD_ACTUAL_##STATIC_##MOCK_CALL(mockMethodCall); 
+        bool failed=false; \
+        CMockValueBase* result = RECORD_ACTUAL_##STATIC_##MOCK_CALL(mockMethodCall, &failed); \
+        if((result!=NULL)&&(failed)) return dynamic_cast<CMockValue<resultType>*>(result)->GetValue();
 
 #define MOCK_METHOD_9(prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value) \
 MOCK_ANY_METHOD_9(,,prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value) 
@@ -412,7 +432,9 @@ static_ resultType prefix name(arg1Type arg1Value, arg2Type arg2Value, arg3Type 
     args[9] = new CMockCallArgument<arg10Type>(arg10Value); \
     CMockMethodCallBase* mockMethodCall = \
         new CMockMethodCall<resultType>(_T(#name), 10, args); \
-        CMockValueBase* result = RECORD_ACTUAL_##STATIC_##MOCK_CALL(mockMethodCall); 
+        bool failed=false; \
+        CMockValueBase* result = RECORD_ACTUAL_##STATIC_##MOCK_CALL(mockMethodCall, &failed); \
+        if((result!=NULL)&&(failed)) return dynamic_cast<CMockValue<resultType>*>(result)->GetValue();
 
 #define MOCK_METHOD_10(prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value) \
 MOCK_ANY_METHOD_10(,,prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value) 
@@ -462,7 +484,9 @@ static_ resultType prefix name(arg1Type arg1Value, arg2Type arg2Value, arg3Type 
     args[10] = new CMockCallArgument<arg11Type>(arg11Value); \
     CMockMethodCallBase* mockMethodCall = \
         new CMockMethodCall<resultType>(_T(#name), 11, args); \
-        CMockValueBase* result = RECORD_ACTUAL_##STATIC_##MOCK_CALL(mockMethodCall); 
+        bool failed=false; \
+        CMockValueBase* result = RECORD_ACTUAL_##STATIC_##MOCK_CALL(mockMethodCall, &failed); \
+        if((result!=NULL)&&(failed)) return dynamic_cast<CMockValue<resultType>*>(result)->GetValue();
 
 #define MOCK_METHOD_11(prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value, arg11Type, arg11Value) \
 MOCK_ANY_METHOD_11(,,prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value, arg11Type, arg11Value) 
@@ -514,7 +538,9 @@ static_ resultType prefix name(arg1Type arg1Value, arg2Type arg2Value, arg3Type 
     args[11] = new CMockCallArgument<arg12Type>(arg12Value); \
     CMockMethodCallBase* mockMethodCall = \
         new CMockMethodCall<resultType>(_T(#name), 12, args); \
-        CMockValueBase* result = RECORD_ACTUAL_##STATIC_##MOCK_CALL(mockMethodCall); 
+        bool failed=false; \
+        CMockValueBase* result = RECORD_ACTUAL_##STATIC_##MOCK_CALL(mockMethodCall, &failed); \
+        if((result!=NULL)&&(failed)) return dynamic_cast<CMockValue<resultType>*>(result)->GetValue();
 
 #define MOCK_METHOD_12(prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value, arg11Type, arg11Value, arg12Type, arg12Value) \
 MOCK_ANY_METHOD_12(,,prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value, arg11Type, arg11Value, arg12Type, arg12Value) 
@@ -568,7 +594,9 @@ static_ resultType prefix name(arg1Type arg1Value, arg2Type arg2Value, arg3Type 
     args[12] = new CMockCallArgument<arg13Type>(arg13Value); \
     CMockMethodCallBase* mockMethodCall = \
         new CMockMethodCall<resultType>(_T(#name), 13, args); \
-        CMockValueBase* result = RECORD_ACTUAL_##STATIC_##MOCK_CALL(mockMethodCall); 
+        bool failed=false; \
+        CMockValueBase* result = RECORD_ACTUAL_##STATIC_##MOCK_CALL(mockMethodCall, &failed); \
+        if((result!=NULL)&&(failed)) return dynamic_cast<CMockValue<resultType>*>(result)->GetValue();
 
 #define MOCK_METHOD_13(prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value, arg11Type, arg11Value, arg12Type, arg12Value, arg13Type, arg13Value) \
 MOCK_ANY_METHOD_13(,,prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value, arg11Type, arg11Value, arg12Type, arg12Value, arg13Type, arg13Value) 
@@ -624,7 +652,9 @@ static_ resultType prefix name(arg1Type arg1Value, arg2Type arg2Value, arg3Type 
     args[13] = new CMockCallArgument<arg14Type>(arg14Value); \
     CMockMethodCallBase* mockMethodCall = \
         new CMockMethodCall<resultType>(_T(#name), 14, args); \
-        CMockValueBase* result = RECORD_ACTUAL_##STATIC_##MOCK_CALL(mockMethodCall); 
+        bool failed=false; \
+        CMockValueBase* result = RECORD_ACTUAL_##STATIC_##MOCK_CALL(mockMethodCall, &failed); \
+        if((result!=NULL)&&(failed)) return dynamic_cast<CMockValue<resultType>*>(result)->GetValue();
 
 #define MOCK_METHOD_14(prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value, arg11Type, arg11Value, arg12Type, arg12Value, arg13Type, arg13Value, arg14Type, arg14Value) \
 MOCK_ANY_METHOD_14(,,prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value, arg11Type, arg11Value, arg12Type, arg12Value, arg13Type, arg13Value, arg14Type, arg14Value) 
@@ -682,7 +712,9 @@ static_ resultType prefix name(arg1Type arg1Value, arg2Type arg2Value, arg3Type 
     args[14] = new CMockCallArgument<arg15Type>(arg15Value); \
     CMockMethodCallBase* mockMethodCall = \
         new CMockMethodCall<resultType>(_T(#name), 15, args); \
-        CMockValueBase* result = RECORD_ACTUAL_##STATIC_##MOCK_CALL(mockMethodCall); 
+        bool failed=false; \
+        CMockValueBase* result = RECORD_ACTUAL_##STATIC_##MOCK_CALL(mockMethodCall, &failed); \
+        if((result!=NULL)&&(failed)) return dynamic_cast<CMockValue<resultType>*>(result)->GetValue();
 
 #define MOCK_METHOD_15(prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value, arg11Type, arg11Value, arg12Type, arg12Value, arg13Type, arg13Value, arg14Type, arg14Value, arg15Type, arg15Value) \
 MOCK_ANY_METHOD_15(,,prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value, arg11Type, arg11Value, arg12Type, arg12Value, arg13Type, arg13Value, arg14Type, arg14Value, arg15Type, arg15Value) 
@@ -742,7 +774,9 @@ static_ resultType prefix name(arg1Type arg1Value, arg2Type arg2Value, arg3Type 
     args[15] = new CMockCallArgument<arg16Type>(arg16Value); \
     CMockMethodCallBase* mockMethodCall = \
         new CMockMethodCall<resultType>(_T(#name), 16, args); \
-        CMockValueBase* result = RECORD_ACTUAL_##STATIC_##MOCK_CALL(mockMethodCall); 
+        bool failed=false; \
+        CMockValueBase* result = RECORD_ACTUAL_##STATIC_##MOCK_CALL(mockMethodCall, &failed); \
+        if((result!=NULL)&&(failed)) return dynamic_cast<CMockValue<resultType>*>(result)->GetValue();
 
 #define MOCK_METHOD_16(prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value, arg11Type, arg11Value, arg12Type, arg12Value, arg13Type, arg13Value, arg14Type, arg14Value, arg15Type, arg15Value, arg16Type, arg16Value) \
 MOCK_ANY_METHOD_16(,,prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value, arg11Type, arg11Value, arg12Type, arg12Value, arg13Type, arg13Value, arg14Type, arg14Value, arg15Type, arg15Value, arg16Type, arg16Value) 
