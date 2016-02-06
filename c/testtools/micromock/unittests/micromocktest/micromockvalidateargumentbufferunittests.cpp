@@ -1,6 +1,11 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+#include <stdlib.h>
+#ifdef _CRTDBG_MAP_ALLOC
+#include <crtdbg.h>
+#endif
+
 #include "stdafx.h"
 
 using namespace std;
@@ -25,7 +30,23 @@ public:
     MOCK_VOID_METHOD_END()
 };
 
+static MICROMOCK_MUTEX_HANDLE g_testByTest;
+static MICROMOCK_GLOBAL_SEMAPHORE_HANDLE g_dllByDll;
+
     BEGIN_TEST_SUITE(MicroMockValidateArgumentBufferTests)
+
+    TEST_SUITE_INITIALIZE(TestClassInitialize)
+    {
+        INITIALIZE_MEMORY_DEBUG(g_dllByDll);
+        g_testByTest = MicroMockCreateMutex();
+        ASSERT_IS_NOT_NULL(g_testByTest);
+    }
+
+    TEST_SUITE_CLEANUP(TestClassCleanup)
+    {
+        MicroMockDestroyMutex(g_testByTest);
+        DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
+    }
 
         TEST_FUNCTION(MicroMock_ValidateArgumentBuffer_With_Zero_Argument_Index_Throws)
         {
