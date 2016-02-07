@@ -20,6 +20,11 @@ CMockMethodCallBase::~CMockMethodCallBase()
     {
         delete m_MockCallArguments[i];
     }
+
+    if (NULL != m_FailReturnValue)
+    {
+        delete m_FailReturnValue;
+    }
 }
 
 CMockMethodCallBase::CMockMethodCallBase(std::tstring methodName, size_t argCount, CMockCallArgumentBase** arguments)

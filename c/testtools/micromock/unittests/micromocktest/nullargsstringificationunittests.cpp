@@ -1,6 +1,11 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+#include <stdlib.h>
+#ifdef _CRTDBG_MAP_ALLOC
+#include <crtdbg.h>
+#endif
+
 #include "stdafx.h"
 
 using namespace std;
@@ -69,7 +74,41 @@ static void tstring_ToString(char* string, size_t bufferSize, std::tstring val)
     strncpy(string, val.c_str(), (val_size >= bufferSize) ? (bufferSize - 1) : val_size);
 }
 
+static MICROMOCK_MUTEX_HANDLE g_testByTest;
+static MICROMOCK_GLOBAL_SEMAPHORE_HANDLE g_dllByDll;
+
     BEGIN_TEST_SUITE(NULLArgsStringificationTests)
+
+    TEST_SUITE_INITIALIZE(TestClassInitialize)
+    {
+        INITIALIZE_MEMORY_DEBUG(g_dllByDll);
+        g_testByTest = MicroMockCreateMutex();
+        ASSERT_IS_NOT_NULL(g_testByTest);
+    }
+
+    TEST_SUITE_CLEANUP(TestClassCleanup)
+    {
+        MicroMockDestroyMutex(g_testByTest);
+        DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
+    }
+
+    TEST_FUNCTION_INITIALIZE(TestMethodInitialize)
+    {
+        INITIALIZE_MEMORY_DEBUG(g_dllByDll);
+        if (!MicroMockAcquireMutex(g_testByTest))
+        {
+            ASSERT_FAIL("our mutex is ABANDONED. Failure in test framework");
+        }
+    }
+
+    TEST_FUNCTION_CLEANUP(TestMethodCleanup)
+    {
+        DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
+        if (!MicroMockReleaseMutex(g_testByTest))
+        {
+            ASSERT_FAIL("failure in test framework at ReleaseMutex");
+        }
+    }
 
         /*http://webvstf:8080/tfs/web/wi.aspx?pcguid=8947f9e3-3622-497e-ab87-a27e01082a6c&id=102616*/
         TEST_FUNCTION(MicroMock_TFS102616_NULL_Const_wchar_Pointer_Does_Not_Trigger_Exceptions)

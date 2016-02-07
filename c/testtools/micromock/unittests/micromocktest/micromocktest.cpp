@@ -1,8 +1,13 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
+#include <stdlib.h>
+#ifdef _CRTDBG_MAP_ALLOC
+#include <crtdbg.h>
+#endif
 
 #include "stdafx.h"
 #include "macro_utils.h"
+
 
 using namespace std;
 
@@ -230,7 +235,42 @@ public:
 
 DECLARE_GLOBAL_MOCK_METHOD_0(CStaticTestMock, , void, StaticTestFunction);
 
+static MICROMOCK_MUTEX_HANDLE g_testByTest;
+static MICROMOCK_GLOBAL_SEMAPHORE_HANDLE g_dllByDll;
+
     BEGIN_TEST_SUITE(MicroMockTest)
+
+    TEST_SUITE_INITIALIZE(TestClassInitialize)
+    {
+        INITIALIZE_MEMORY_DEBUG(g_dllByDll);
+        g_testByTest = MicroMockCreateMutex();
+        ASSERT_IS_NOT_NULL(g_testByTest);
+    }
+
+    TEST_SUITE_CLEANUP(TestClassCleanup)
+    {
+        MicroMockDestroyMutex(g_testByTest);
+        DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
+    }
+
+    TEST_FUNCTION_INITIALIZE(TestMethodInitialize)
+    {
+        INITIALIZE_MEMORY_DEBUG(g_dllByDll);
+        if (!MicroMockAcquireMutex(g_testByTest))
+        {
+            ASSERT_FAIL("our mutex is ABANDONED. Failure in test framework");
+        }
+        gInt = 0;
+    }
+
+    TEST_FUNCTION_CLEANUP(TestMethodCleanup)
+    {
+        DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
+        if (!MicroMockReleaseMutex(g_testByTest))
+        {
+            ASSERT_FAIL("failure in test framework at ReleaseMutex");
+        }
+    }
 
         tstring BytesToString(UINT8* buffer, size_t bufferLength)
         {
@@ -253,11 +293,6 @@ DECLARE_GLOBAL_MOCK_METHOD_0(CStaticTestMock, , void, StaticTestFunction);
             strStream << "]";
 
             return strStream.str();
-        }
-
-        TEST_FUNCTION_INITIALIZE(testSuiteInit)
-        {
-            gInt = 0;
         }
 
         TEST_FUNCTION(MicroMock_Instantiating_A_Mock_With_No_Methods_Succeeds)
@@ -3629,6 +3664,7 @@ DECLARE_GLOBAL_MOCK_METHOD_0(CStaticTestMock, , void, StaticTestFunction);
             ASSERT_ARE_EQUAL(int, 5, result2);
             ASSERT_ARE_EQUAL(int, 1, gInt);
             testMock.AssertActualAndExpectedCalls();
+
         }
 
         END_TEST_SUITE(MicroMockTest)
