@@ -29,6 +29,24 @@ TEST_SUITE_CLEANUP(TestClassCleanup)
     DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
 }
 
+TEST_FUNCTION_INITIALIZE(TestMethodInitialize)
+{
+    INITIALIZE_MEMORY_DEBUG(g_dllByDll);
+    if (!MicroMockAcquireMutex(g_testByTest))
+    {
+        ASSERT_FAIL("our mutex is ABANDONED. Failure in test framework");
+    }
+}
+
+TEST_FUNCTION_CLEANUP(TestMethodCleanup)
+{
+    DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
+    if (!MicroMockReleaseMutex(g_testByTest))
+    {
+        ASSERT_FAIL("failure in test framework at ReleaseMutex");
+    }
+}
+
 /*test a normal array*/
 TEST_FUNCTION(CMockValue_TN_toString_1)
 {

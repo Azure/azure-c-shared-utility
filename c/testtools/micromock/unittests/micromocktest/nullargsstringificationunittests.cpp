@@ -92,6 +92,24 @@ static MICROMOCK_GLOBAL_SEMAPHORE_HANDLE g_dllByDll;
         DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
     }
 
+    TEST_FUNCTION_INITIALIZE(TestMethodInitialize)
+    {
+        INITIALIZE_MEMORY_DEBUG(g_dllByDll);
+        if (!MicroMockAcquireMutex(g_testByTest))
+        {
+            ASSERT_FAIL("our mutex is ABANDONED. Failure in test framework");
+        }
+    }
+
+    TEST_FUNCTION_CLEANUP(TestMethodCleanup)
+    {
+        DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
+        if (!MicroMockReleaseMutex(g_testByTest))
+        {
+            ASSERT_FAIL("failure in test framework at ReleaseMutex");
+        }
+    }
+
         /*http://webvstf:8080/tfs/web/wi.aspx?pcguid=8947f9e3-3622-497e-ab87-a27e01082a6c&id=102616*/
         TEST_FUNCTION(MicroMock_TFS102616_NULL_Const_wchar_Pointer_Does_Not_Trigger_Exceptions)
         {
