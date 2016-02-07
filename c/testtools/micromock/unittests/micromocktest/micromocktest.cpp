@@ -253,6 +253,25 @@ static MICROMOCK_GLOBAL_SEMAPHORE_HANDLE g_dllByDll;
         DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
     }
 
+    TEST_FUNCTION_INITIALIZE(TestMethodInitialize)
+    {
+        INITIALIZE_MEMORY_DEBUG(g_dllByDll);
+        if (!MicroMockAcquireMutex(g_testByTest))
+        {
+            ASSERT_FAIL("our mutex is ABANDONED. Failure in test framework");
+        }
+        gInt = 0;
+    }
+
+    TEST_FUNCTION_CLEANUP(TestMethodCleanup)
+    {
+        DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
+        if (!MicroMockReleaseMutex(g_testByTest))
+        {
+            ASSERT_FAIL("failure in test framework at ReleaseMutex");
+        }
+    }
+
         tstring BytesToString(UINT8* buffer, size_t bufferLength)
         {
             tostringstream strStream;
@@ -274,11 +293,6 @@ static MICROMOCK_GLOBAL_SEMAPHORE_HANDLE g_dllByDll;
             strStream << "]";
 
             return strStream.str();
-        }
-
-        TEST_FUNCTION_INITIALIZE(testSuiteInit)
-        {
-            gInt = 0;
         }
 
         TEST_FUNCTION(MicroMock_Instantiating_A_Mock_With_No_Methods_Succeeds)
