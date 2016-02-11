@@ -45,7 +45,9 @@ if exist %client-root%\shared-util_output (
 	rem no error checking
 )
 
-del *.nupkg
+if exist *.nupkg (
+	del *.nupkg
+)
 
 rem -----------------------------------------------------------------------------
 rem -- build with CMAKE
@@ -109,7 +111,7 @@ if exist *.nupkg (
 popd
 
 rem -- Package Nuget
-nuget pack Microsoft.Azure.C.SharedUtility.nuspec
+nuget pack %build-root%\build_all\packaging\windows\Microsoft.Azure.C.SharedUtility.nuspec -OutputDirectory %build-root%\build_all\packaging\windows
 
 rmdir %client-root%\shared-util_output /S /Q
 rmdir %USERPROFILE%\shared-util_nuget /S /Q
