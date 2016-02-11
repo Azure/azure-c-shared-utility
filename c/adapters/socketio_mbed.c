@@ -352,9 +352,9 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                 int send_result = tcpsocketconnection_send(socket_io_instance->tcp_socket_connection, (const char*)pending_socket_io->bytes, pending_socket_io->size);
                 if (send_result != pending_socket_io->size)
                 {
-                    if (send_result < UNABLE_TO_COMPLETE)
+                    if (send_result < 0)
                     {
-                        if (send_result < SERIOUS_MBED_SOCKETIO_ERROR)
+                        if (send_result < UNABLE_TO_COMPLETE)
                         {
                             // Bad error.  Indicate as much.
                             socket_io_instance->io_state = IO_STATE_ERROR;
