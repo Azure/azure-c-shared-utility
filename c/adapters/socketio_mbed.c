@@ -13,6 +13,8 @@
 #include "list.h"
 #include "tcpsocketconnection_c.h"
 
+#define UNABLE_TO_COMPLETE -2
+
 typedef enum IO_STATE_TAG
 {
     IO_STATE_CLOSED,
@@ -350,9 +352,20 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                 int send_result = tcpsocketconnection_send(socket_io_instance->tcp_socket_connection, (const char*)pending_socket_io->bytes, pending_socket_io->size);
                 if (send_result != pending_socket_io->size)
                 {
-                    if (send_result < 0)
+                    if (send_result < UNABLE_TO_COMPLETE)
                     {
-                        send_result = 0;
+                        if (send_result < SERIOUS_MBED_SOCKETIO_ERROR)
+                        {
+                            // Bad error.  Indicate as much.
+                            socket_io_instance->io_state = IO_STATE_ERROR;
+                            indicate_error(socket_io_instance);
+                        }
+                        else
+                        {
+                            // It wasn't ready.  Give the sending a rest and see if we can receive.
+                            send_result = 0;
+                        }
+                        break;
                     }
                     else
                     {
@@ -364,7 +377,7 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                 {
                     if (pending_socket_io->on_send_complete != NULL)
                     {
-                        pending_socket_io->on_send_complete(pending_socket_io->callback_context, IO_SEND_ERROR);
+                        pending_socket_io->on_send_complete(pending_socket_io->callback_context, IO_SEND_OK);
                     }
 
                     free(pending_socket_io->bytes);
@@ -381,17 +394,10 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
 
             while (received > 0)
             {
-                unsigned char recv_bytes[1];
+                unsigned char recv_bytes[128];
                 received = tcpsocketconnection_receive(socket_io_instance->tcp_socket_connection, (char*)recv_bytes, sizeof(recv_bytes));
                 if (received > 0)
                 {
-                    int i;
-
-                    for (i = 0; i < received; i++)
-                    {
-                        LOG(socket_io_instance->logger_log, 0, "<-%02x ", (unsigned char)recv_bytes[i]);
-                    }
-
                     if (socket_io_instance->on_bytes_received != NULL)
                     {
                         /* explictly ignoring here the result of the callback */
