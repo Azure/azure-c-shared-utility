@@ -360,11 +360,6 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                             socket_io_instance->io_state = IO_STATE_ERROR;
                             indicate_error(socket_io_instance);
                         }
-                        else
-                        {
-                            // It wasn't ready.  Give the sending a rest and see if we can receive.
-                            send_result = 0;
-                        }
                         break;
                     }
                     else
