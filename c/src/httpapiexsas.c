@@ -8,7 +8,9 @@
 #include "gballoc.h"
 
 #include <stddef.h>
+#include <time.h>
 
+#include "agenttime.h"
 #include "strings.h"
 #include "buffer_.h"
 #include "sastoken.h"
@@ -116,7 +118,7 @@ HTTPAPIEX_RESULT HTTPAPIEX_SAS_ExecuteRequest(HTTPAPIEX_SAS_HANDLE sasHandle, HT
                 {
                     /*Codes_SRS_HTTPAPIEXSAS_06_011: [SASToken_Create shall be invoked.]*/
                     /*Codes_SRS_HTTPAPIEXSAS_06_012: [If the return result of SASToken_Create is NULL then fallthrough.]*/
-                    size_t expiry = (size_t)(currentTime + 3600);
+                    size_t expiry = (size_t)(difftime(currentTime, 0) + 3600);
                     STRING_HANDLE newSASToken = SASToken_Create(state->key, state->uriResource, state->keyName, expiry);
                     if (newSASToken != NULL)
                     {

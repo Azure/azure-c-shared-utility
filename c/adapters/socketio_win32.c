@@ -447,7 +447,7 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                 {
                     if (pending_socket_io->on_send_complete != NULL)
                     {
-                        pending_socket_io->on_send_complete(pending_socket_io->callback_context, send_result);
+                        pending_socket_io->on_send_complete(pending_socket_io->callback_context, IO_SEND_OK);
                     }
 
                     free(pending_socket_io->bytes);
