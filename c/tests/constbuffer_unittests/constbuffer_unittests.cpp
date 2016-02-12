@@ -605,7 +605,6 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         mocks.AssertActualAndExpectedCalls();
 
         ///cleanup
-        CONSTBUFFER_Destroy(handle);
     }
 
     /*Tests_SRS_CONSTBUFFER_02_015: [If constbufferHandle is NULL then CONSTBUFFER_Destroy shall do nothing.]*/

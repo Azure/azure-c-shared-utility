@@ -1671,11 +1671,11 @@ BEGIN_TEST_SUITE(map_unittests)
         (void)Map_AddOrUpdate(handle, TEST_YELLOWKEY, TEST_YELLOWVALUE);
         mocks.ResetAllCalls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG)) /*freeing yellow value*/
-            .ValidateArgumentBuffer(1, TEST_YELLOWVALUE, strlen(TEST_YELLOWVALUE) + 1);
-
         STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG)) /*freeing yellow key*/
             .ValidateArgumentBuffer(1, TEST_YELLOWKEY, strlen(TEST_YELLOWKEY) + 1);
+
+        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG)) /*freeing yellow value*/
+            .ValidateArgumentBuffer(1, TEST_YELLOWVALUE, strlen(TEST_YELLOWVALUE) + 1);
 
         STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG)) /*ungrowing values*/
             .IgnoreArgument(1);
@@ -1711,11 +1711,11 @@ BEGIN_TEST_SUITE(map_unittests)
         
         mocks.ResetAllCalls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG)) /*freeing yellow value*/
-            .ValidateArgumentBuffer(1, TEST_YELLOWVALUE, strlen(TEST_YELLOWVALUE) + 1);
-
         STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG)) /*freeing yellow key*/
             .ValidateArgumentBuffer(1, TEST_YELLOWKEY, strlen(TEST_YELLOWKEY) + 1);
+
+        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG)) /*freeing yellow value*/
+            .ValidateArgumentBuffer(1, TEST_YELLOWVALUE, strlen(TEST_YELLOWVALUE) + 1);
 
         STRICT_EXPECTED_CALL(mocks, gballoc_realloc(IGNORED_PTR_ARG, 1* sizeof(const char*))) /*ungrowing values*/
             .IgnoreArgument(1);
@@ -1753,11 +1753,11 @@ BEGIN_TEST_SUITE(map_unittests)
 
         mocks.ResetAllCalls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG)) /*freeing yellow value*/
-            .ValidateArgumentBuffer(1, TEST_REDVALUE, strlen(TEST_REDVALUE) + 1);
-
         STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG)) /*freeing yellow key*/
             .ValidateArgumentBuffer(1, TEST_REDKEY, strlen(TEST_REDKEY) + 1);
+
+        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG)) /*freeing yellow value*/
+            .ValidateArgumentBuffer(1, TEST_REDVALUE, strlen(TEST_REDVALUE) + 1);
 
         STRICT_EXPECTED_CALL(mocks, gballoc_realloc(IGNORED_PTR_ARG, 1 * sizeof(const char*))) /*ungrowing values*/
             .IgnoreArgument(1);

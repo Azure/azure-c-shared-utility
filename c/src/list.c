@@ -133,7 +133,7 @@ int list_remove(LIST_HANDLE list, LIST_ITEM_HANDLE item)
 
                 break;
             }
-
+            previous_item = current_item;
 			current_item = current_item->next;
         }
 
