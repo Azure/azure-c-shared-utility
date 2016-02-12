@@ -420,5 +420,5 @@ else()
         ${HTTP_C_FILE}
         ./src/strings.c
         ./src/vector.c		
-        DESTINATION ${INCLUDE_INSTALL_DIR}/azuresharedutil)
+        DESTINATION ${INCLUDE_INSTALL_DIR}/azureiot)
 endif (WIN32)
