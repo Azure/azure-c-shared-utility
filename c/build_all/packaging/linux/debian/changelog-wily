@@ -1,9 +1,11 @@
-azure-c-shared-util (0.1.0.0-3) wily; urgency=low
+azure-c-shared-util (0.1.0.0-4) wily; urgency=low
 
   * Initial release (Closes: #5069014)
 
   * Updated project to build WinCE (#5210823)
 
   * Update the control file to use libssl-dev (#5210833)
+
+  * Added xio socket information to handle communications (#5248333)
   
- -- AzureIoT User <aziotsdklinux@outlook.com>  Wed, 16 Dec 2015 12:18:53 -0800
+ -- AzureIoT User <aziotsdklinux@outlook.com>  Wed, 3 Feb 2016 12:18:53 -0800
