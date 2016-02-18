@@ -56,5 +56,20 @@ then
     # install the package
     make install
 fi
+
+#run tests quickly - if they fail set -e will take care of not running the tests under valgrind
 ctest -C "Debug" -V
+
+#run the tests under valgrind: SLOW (like 20 times slower)
+set +e
+echo "running VALGRIND... patience... (no output is expected)"
+ctest -j $(nproc) -D ExperimentalMemCheck | grep -E '^Memory Leak|^Mismatched deallocation|^Uninitialized Memory Conditional|^Uninitialized Memory Read'
+grepReturnCode=$?
+#grep return "1" if it does not find any text...
+if [[ $grepReturnCode -ne 1 ]];  then
+	echo "VALGRIND DETECTED MEMORY LEAKS. See $(pwd)/Testing folder"; popd; exit 1;
+else
+	echo "VALGRIND did not detect anything interesting";
+fi
+set -e
 popd
