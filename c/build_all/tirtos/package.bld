@@ -12,6 +12,7 @@ Pkg.makePrologue = "vpath %.c ../../src ../../adapters";
 Pkg.generatedFiles.$add("lib/");
 
 var SRCS = [
+    "platform_stub.c",
     "httpapi_tirtos.c",
     "threadapi_pthreads.c",
     "lock_pthreads.c",
