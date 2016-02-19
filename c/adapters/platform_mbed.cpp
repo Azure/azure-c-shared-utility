@@ -13,47 +13,51 @@
 
 int setupRealTime(void)
 {
-	int result;
+    int result;
 
-	if (EthernetInterface::connect())
-	{
-		result = __LINE__;
-	}
-	else
-	{
-		NTPClient ntp;
-		if (ntp.setTime("0.pool.ntp.org") != 0)
-		{
-			result = __LINE__;
-		}
-		else
-		{
-			result = 0;
-		}
-		EthernetInterface::disconnect();
-	}
+    if (EthernetInterface::connect())
+    {
+        result = __LINE__;
+    }
+    else
+    {
+        NTPClient ntp;
+        if (ntp.setTime("0.pool.ntp.org") != 0)
+        {
+            result = __LINE__;
+        }
+        else
+        {
+            result = 0;
+        }
+        EthernetInterface::disconnect();
+    }
 
-	return result;
+    return result;
 }
 
 int platform_init(void)
 {
-	int result;
+    int result;
 
-	if (EthernetInterface::init())
-	{
-		result = __LINE__;
-	}
-	else if (setupRealTime() != 0)
-	{
-		result = __LINE__;
-	} 
-	else if (EthernetInterface::connect())
-	{
-		result = __LINE__;
-	}
+    if (EthernetInterface::init())
+    {
+        result = __LINE__;
+    }
+    else if (setupRealTime() != 0)
+    {
+        result = __LINE__;
+    } 
+    else if (EthernetInterface::connect())
+    {
+        result = __LINE__;
+    }
+    else
+    {
+        result = 0;
+    }
 
-	return result;
+    return result;
 }
 
 const IO_INTERFACE_DESCRIPTION* platform_get_default_tlsio(void)
@@ -63,5 +67,5 @@ const IO_INTERFACE_DESCRIPTION* platform_get_default_tlsio(void)
 
 void platform_deinit(void)
 {
-	EthernetInterface::disconnect();
+    EthernetInterface::disconnect();
 }
