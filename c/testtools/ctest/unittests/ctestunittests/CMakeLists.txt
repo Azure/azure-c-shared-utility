@@ -13,6 +13,7 @@ simpletestsuitetwotests.c
 testfunctioncleanuptests.c
 testfunctioninitializetests.c
 testsuiteinitializecleanuptests.c
+whentestsuiteinitializefailstests.c
 )
 
 set(ctest_unittests_cpp_files
