@@ -1,6 +1,6 @@
 {
   "name": "azure-c-shared-utility",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Azure C shared utility library",
   "repository": {
     "url": "git@github.com:Azure/azure-c-shared-utility.git",
