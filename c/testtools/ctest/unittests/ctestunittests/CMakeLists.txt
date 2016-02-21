@@ -14,6 +14,7 @@ testfunctioncleanuptests.c
 testfunctioninitializetests.c
 testsuiteinitializecleanuptests.c
 whentestsuiteinitializefailstests.c
+whentestfunctioninitializefailstests.c
 )
 
 set(ctest_unittests_cpp_files

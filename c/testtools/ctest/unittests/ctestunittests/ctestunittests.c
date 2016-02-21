@@ -21,5 +21,8 @@ int main()
 
     CTEST_RUN_TEST_SUITE(whentestsuiteinitializefailstests, failedTests);
     failedTests -= 1; /*the expected return */
+
+    CTEST_RUN_TEST_SUITE(whentestfunctioninitializefailstests, failedTests);
+    failedTests -= 2; /*the expected return is 2 failed test cases*/
     return failedTests;
 }

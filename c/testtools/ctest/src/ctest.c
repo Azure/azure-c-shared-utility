@@ -18,7 +18,7 @@ size_t RunTests(const TEST_FUNCTION_DATA* testListHead, const char* testSuiteNam
 
     int testSuiteInitializeFailed = 0;
 
-    printf(" === Executing test suite %s ===\n", testSuiteName);
+    (void)printf(" === Executing test suite %s ===\n", testSuiteName);
 
     while (currentTestFunction->TestFunction != NULL)
     {
@@ -61,7 +61,7 @@ size_t RunTests(const TEST_FUNCTION_DATA* testListHead, const char* testSuiteNam
     if (testSuiteInitializeFailed == 1)
     {
         /* print results */
-        printf("0 tests ran, ALL failed, NONE succeeded.\n");
+        (void)printf("0 tests ran, ALL failed, NONE succeeded.\n");
         failedTestCount = 1;
     }
     else
@@ -71,44 +71,63 @@ size_t RunTests(const TEST_FUNCTION_DATA* testListHead, const char* testSuiteNam
         {
             if (currentTestFunction->FunctionType == CTEST_TEST_FUNCTION)
             {
+                int testFunctionInitializeFailed = 0;
+
                 g_CurrentTestFunction = currentTestFunction;
 
                 if (testFunctionInitialize != NULL)
                 {
-                    testFunctionInitialize->TestFunction();
-                }
-
-                printf("Executing test %s ...\n", currentTestFunction->TestFunctionName);
-                if (setjmp(g_ExceptionJump) == 0)
-                {
-                    currentTestFunction->TestFunction();
-                }
-                else
-                {
-                    /*can only get here if there was a longjmp called while executing currentTestFunction->TestFunction();*/
-                    /*we don't do anything*/
-                }
-
-                /*in the case when the cleanup can assert... have to prepare the long jump*/
-                if (setjmp(g_ExceptionJump) == 0)
-                {
-                    if (testFunctionCleanup != NULL)
+                    if (setjmp(g_ExceptionJump) == 0)
                     {
-                        testFunctionCleanup->TestFunction();
+                        testFunctionInitialize->TestFunction();
+                    }
+                    else
+                    {
+                        testFunctionInitializeFailed = 1;
+                        (void)printf("TEST_FUNCTION_INITIALIZE failed - next TEST_FUNCTION will fail\n");
                     }
                 }
+
+                
+                if (testFunctionInitializeFailed)
+                {
+                    *currentTestFunction->TestResult = TEST_FAILED;
+                    (void)printf("Not executing test %s ...\n", currentTestFunction->TestFunctionName);
+                }
                 else
                 {
+                    (void)printf("Executing test %s ...\n", currentTestFunction->TestFunctionName);
+                    if (setjmp(g_ExceptionJump) == 0)
+                    {
+                        currentTestFunction->TestFunction();
+                    }
+                    else
+                    {
+                        /*can only get here if there was a longjmp called while executing currentTestFunction->TestFunction();*/
+                        /*we don't do anything*/
+                    }
+
+                    /*in the case when the cleanup can assert... have to prepare the long jump*/
+                    if (setjmp(g_ExceptionJump) == 0)
+                    {
+                        if (testFunctionCleanup != NULL)
+                        {
+                            testFunctionCleanup->TestFunction();
+                        }
+                    }
+                    else
+                    {
+                    }
                 }
 
                 if (*currentTestFunction->TestResult == TEST_FAILED)
                 {
                     failedTestCount++;
-                    printf("!!! FAILED !!!\n");
+                    (void)printf("!!! FAILED !!!\n");
                 }
                 else
                 {
-                    printf("Suceeded.\n");
+                    (void)printf("Suceeded.\n");
                 }
                 totalTestCount++;
             }
@@ -122,7 +141,7 @@ size_t RunTests(const TEST_FUNCTION_DATA* testListHead, const char* testSuiteNam
         }
 
         /* print results */
-        printf("%d tests ran, %d failed, %d succeeded.\n", (int)totalTestCount, (int)failedTestCount, (int)(totalTestCount - failedTestCount));
+        (void)printf("%d tests ran, %d failed, %d succeeded.\n", (int)totalTestCount, (int)failedTestCount, (int)(totalTestCount - failedTestCount));
     }
 
     return failedTestCount;
