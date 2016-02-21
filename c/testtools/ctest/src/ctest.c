@@ -54,7 +54,7 @@ size_t RunTests(const TEST_FUNCTION_DATA* testListHead, const char* testSuiteNam
         else
         {
             testSuiteInitializeFailed = 1;
-            printf("TEST_SUITE_INITIALIZE failed - suite ending\n");
+            (void)printf("TEST_SUITE_INITIALIZE failed - suite ending\n");
         }
     }
 
