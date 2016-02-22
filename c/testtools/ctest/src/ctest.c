@@ -16,6 +16,7 @@ size_t RunTests(const TEST_FUNCTION_DATA* testListHead, const char* testSuiteNam
     const TEST_FUNCTION_DATA* testFunctionInitialize = NULL;
     const TEST_FUNCTION_DATA* testFunctionCleanup = NULL;
 
+    g_CurrentTestFunction = NULL;
     int testSuiteInitializeFailed = 0;
 
     (void)printf(" === Executing test suite %s ===\n", testSuiteName);
@@ -73,8 +74,6 @@ size_t RunTests(const TEST_FUNCTION_DATA* testListHead, const char* testSuiteNam
             {
                 int testFunctionInitializeFailed = 0;
 
-                g_CurrentTestFunction = currentTestFunction;
-
                 if (testFunctionInitialize != NULL)
                 {
                     if (setjmp(g_ExceptionJump) == 0)
@@ -97,6 +96,9 @@ size_t RunTests(const TEST_FUNCTION_DATA* testListHead, const char* testSuiteNam
                 else
                 {
                     (void)printf("Executing test %s ...\n", currentTestFunction->TestFunctionName);
+                    
+                    g_CurrentTestFunction = currentTestFunction;
+
                     if (setjmp(g_ExceptionJump) == 0)
                     {
                         currentTestFunction->TestFunction();
@@ -106,6 +108,7 @@ size_t RunTests(const TEST_FUNCTION_DATA* testListHead, const char* testSuiteNam
                         /*can only get here if there was a longjmp called while executing currentTestFunction->TestFunction();*/
                         /*we don't do anything*/
                     }
+                    g_CurrentTestFunction = NULL;/*g_CurrentTestFunction is limited to actually executing a TEST_FUNCTION, otherwise it should be NULL*/
 
                     /*in the case when the cleanup can assert... have to prepare the long jump*/
                     if (setjmp(g_ExceptionJump) == 0)

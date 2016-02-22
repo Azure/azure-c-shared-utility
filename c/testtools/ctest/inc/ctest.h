@@ -206,7 +206,7 @@ if (type##_Compare((A), (B))) \
     type##_ToString(expectedString, sizeof(expectedString), (A)); \
     type##_ToString(actualString, sizeof(actualString), (B)); \
     printf("  Assert failed: %s Expected: %s, Actual: %s\n", message, expectedString, actualString); \
-    *g_CurrentTestFunction->TestResult = TEST_FAILED; \
+    if(g_CurrentTestFunction!=NULL) *g_CurrentTestFunction->TestResult = TEST_FAILED; \
     longjmp(g_ExceptionJump, 0xca1e4); \
     ; \
 }
@@ -227,7 +227,7 @@ if (!type##_Compare((A), (B))) \
     char actualString[1024]; \
     type##_ToString(actualString, sizeof(actualString), (A)); \
     printf("  Assert failed: Inequality expected. Got equality, value:%s. %s\n", actualString, (message)); \
-    *g_CurrentTestFunction->TestResult = TEST_FAILED; \
+    if(g_CurrentTestFunction!=NULL) *g_CurrentTestFunction->TestResult = TEST_FAILED; \
     longjmp(g_ExceptionJump, 0xca1e4); \
 ; \
 }
@@ -245,7 +245,7 @@ if (!type##_Compare((A), (B))) \
 if ((value) != NULL) \
 { \
     printf("  Assert failed: NULL expected, actual: 0x%p. %s\n", (void*)(value), (message)); \
-    *g_CurrentTestFunction->TestResult = TEST_FAILED; \
+    if(g_CurrentTestFunction!=NULL) *g_CurrentTestFunction->TestResult = TEST_FAILED; \
     longjmp(g_ExceptionJump, 0xca1e4); \
  \
 }
@@ -263,7 +263,7 @@ if ((value) != NULL) \
 if ((value) == NULL) \
 { \
     printf("  Assert failed: non-NULL expected. %s\n", (message)); \
-    *g_CurrentTestFunction->TestResult = TEST_FAILED; \
+    if(g_CurrentTestFunction!=NULL) *g_CurrentTestFunction->TestResult = TEST_FAILED; \
     longjmp(g_ExceptionJump, 0xca1e4); \
 }
 
@@ -280,7 +280,7 @@ if ((value) == NULL) \
 if (!(expression)) \
 { \
     printf("  Assert failed: Expression should be true: %s. %s\n", #expression, (message)); \
-    *g_CurrentTestFunction->TestResult = TEST_FAILED; \
+    if(g_CurrentTestFunction!=NULL) *g_CurrentTestFunction->TestResult = TEST_FAILED; \
     longjmp(g_ExceptionJump, 0xca1e4); \
 }
 
@@ -297,7 +297,7 @@ if (!(expression)) \
 if (expression) \
 { \
     printf("  Assert failed: Expression should be false: %s. %s\n", #expression, (message)); \
-    *g_CurrentTestFunction->TestResult = TEST_FAILED; \
+    if(g_CurrentTestFunction!=NULL) *g_CurrentTestFunction->TestResult = TEST_FAILED; \
     longjmp(g_ExceptionJump, 0xca1e4); \
 }
 
@@ -305,7 +305,7 @@ if (expression) \
 
 #define CTEST_ASSERT_FAIL(message) \
     printf("  Assert failed: %s\n", (message)); \
-    *g_CurrentTestFunction->TestResult = TEST_FAILED; \
+    if(g_CurrentTestFunction!=NULL) *g_CurrentTestFunction->TestResult = TEST_FAILED; \
     longjmp(g_ExceptionJump, 0xca1e4); \
 
 extern C_LINKAGE size_t RunTests(const TEST_FUNCTION_DATA* testListHead, const char* testSuiteName);

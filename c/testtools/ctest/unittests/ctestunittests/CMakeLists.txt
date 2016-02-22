@@ -13,8 +13,16 @@ simpletestsuitetwotests.c
 testfunctioncleanuptests.c
 testfunctioninitializetests.c
 testsuiteinitializecleanuptests.c
-whentestsuiteinitializefailstests.c
-whentestfunctioninitializefailstests.c
+)
+
+set(whentestsuiteinitializefailstests_c_files
+	whentestsuiteinitializefailstests.c
+	whentestsuiteinitializefailstests_main.c
+)
+
+set(whentestfunctioninitializefailstests_c_files
+	whentestfunctioninitializefailstests.c
+	whentestfunctioninitializefailstests_main.c
 )
 
 set(ctest_unittests_cpp_files
@@ -35,12 +43,24 @@ add_executable(
 ctest_unittests ${ctest_unittests_c_files} ${ctest_unittests_cpp_files} ${ctest_unittests_h_files}
 )
 
+add_executable(
+	whentestsuiteinitializefailstests ${whentestsuiteinitializefailstests_c_files} ${ctest_unittests_h_files}
+)
+
+add_executable(
+	whentestfunctioninitializefailstests ${whentestfunctioninitializefailstests_c_files} ${ctest_unittests_h_files}
+)
+
 set_target_properties(ctest
 			   PROPERTIES
 			   FOLDER "SharedTestTools")
-
+			   
 target_link_libraries(ctest_unittests ctest)
+target_link_libraries(whentestsuiteinitializefailstests ctest)
+target_link_libraries(whentestfunctioninitializefailstests ctest)
 
 if(NOT ${skip_unittests})
 	add_test(NAME ctest_unittests COMMAND ctest_unittests)
+	add_test(NAME whentestsuiteinitializefailstests COMMAND whentestsuiteinitializefailstests)
+	add_test(NAME whentestfunctioninitializefailstests COMMAND whentestfunctioninitializefailstests)
 endif()
