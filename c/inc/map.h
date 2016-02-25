@@ -192,6 +192,9 @@ extern const char* Map_GetValueFromKey(MAP_HANDLE handle, const char* key);
  */
 extern MAP_RESULT Map_GetInternals(MAP_HANDLE handle, const char*const** keys, const char*const** values, size_t* count);
 
+/*this API creates a JSON object from the content of the map*/
+extern STRING_HANDLE Map_ToJSON(MAP_HANDLE handle);
+
 #ifdef __cplusplus
 }
 #endif

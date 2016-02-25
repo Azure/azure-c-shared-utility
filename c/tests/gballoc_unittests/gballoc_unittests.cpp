@@ -22,6 +22,7 @@ static MICROMOCK_MUTEX_HANDLE g_testByTest;
 
 static void* TEST_ALLOC_PTR1 = (void*)0x4242;
 static void* TEST_ALLOC_PTR2 = (void*)0x4243;
+static void* TEST_REALLOC_PTR = (void*)0x4245;
 
 #define OVERHEAD_SIZE	4096
 static const LOCK_HANDLE TEST_LOCK_HANDLE = (LOCK_HANDLE)0x4244;
@@ -822,7 +823,7 @@ TEST_FUNCTION(When_The_Pointer_Is_Not_Tracked_gballoc_realloc_Returns_NULL)
     void* result1 = gballoc_realloc(NULL, 1);
 
     // act
-    void* result2 = gballoc_realloc((void*)0xDEADBEEF, 2);
+    void* result2 = gballoc_realloc(TEST_REALLOC_PTR, 2);
 
     // assert
     ASSERT_IS_NULL(result2);
@@ -1010,7 +1011,7 @@ TEST_FUNCTION(gballoc_free_with_an_untracked_pointer_does_not_alter_total_memory
     STRICT_EXPECTED_CALL(mocks, Unlock(TEST_LOCK_HANDLE));
 
     // act
-    gballoc_free((void*)0xDEADBEEF);
+    gballoc_free(TEST_REALLOC_PTR);
 
     // assert
     mocks.AssertActualAndExpectedCalls();

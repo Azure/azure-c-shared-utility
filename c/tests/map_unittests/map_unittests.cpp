@@ -37,13 +37,28 @@ namespace BASEIMPLEMENTATION
 #undef Lock_Init
 #undef Lock_Deinit
 
+#include "strings.c"
 };
 
+
+#define MAKE_FAIL(API, WHEN) do{C2(C2(whenShall,API), _fail) = C2(C2(current,API),_call) + WHEN;} while(0)
 static size_t currentmalloc_call;
 static size_t whenShallmalloc_fail;
 
 static size_t currentrealloc_call;
 static size_t whenShallrealloc_fail;
+
+static size_t currentSTRING_construct_call;
+static size_t whenShallSTRING_construct_fail;
+
+static size_t currentSTRING_concat_with_STRING_call;
+static size_t whenShallSTRING_concat_with_STRING_fail;
+
+static size_t currentSTRING_concat_call;
+static size_t whenShallSTRING_concat_fail;
+
+static size_t currentSTRING_new_JSON_call;
+static size_t whenShallSTRING_new_JSON_fail;
 
 DEFINE_MICROMOCK_ENUM_TO_STRING(MAP_RESULT, MAP_RESULT_VALUES);
 
@@ -125,12 +140,72 @@ public:
     MOCK_STATIC_METHOD_1(, void, gballoc_free, void*, ptr)
         BASEIMPLEMENTATION::gballoc_free(ptr);
     MOCK_VOID_METHOD_END()
+
+        
+        MOCK_STATIC_METHOD_1(, STRING_HANDLE, STRING_new_JSON, const char*, source)
+        STRING_HANDLE result2;
+    currentSTRING_new_JSON_call++;
+    if (whenShallSTRING_new_JSON_fail > 0)
+    {
+        if (currentSTRING_new_JSON_call == whenShallSTRING_new_JSON_fail)
+        {
+            result2 = (STRING_HANDLE)NULL;
+        }
+        else
+        {
+            result2 = BASEIMPLEMENTATION::STRING_new_JSON(source);
+        }
+    }
+    else
+    {
+        result2 = BASEIMPLEMENTATION::STRING_new_JSON(source);
+    }
+    MOCK_METHOD_END(STRING_HANDLE, result2)
+
+
+        MOCK_STATIC_METHOD_1(, STRING_HANDLE, STRING_construct, const char*, source)
+        STRING_HANDLE result2;
+    currentSTRING_construct_call++;
+    if (whenShallSTRING_construct_fail > 0)
+    {
+        if (currentSTRING_construct_call == whenShallSTRING_construct_fail)
+        {
+            result2 = (STRING_HANDLE)NULL;
+        }
+        else
+        {
+            result2 = BASEIMPLEMENTATION::STRING_construct(source);
+        }
+    }
+    else
+    {
+        result2 = BASEIMPLEMENTATION::STRING_construct(source);
+    }
+    MOCK_METHOD_END(STRING_HANDLE, result2)
+
+        MOCK_STATIC_METHOD_1(, void, STRING_delete, STRING_HANDLE, s)
+        BASEIMPLEMENTATION::STRING_delete(s);
+    MOCK_VOID_METHOD_END()
+
+        MOCK_STATIC_METHOD_2(, int, STRING_concat, STRING_HANDLE, s1, const char*, s2)
+        currentSTRING_concat_call++;
+    MOCK_METHOD_END(int, (((whenShallSTRING_concat_fail > 0) && (currentSTRING_concat_call == whenShallSTRING_concat_fail)) ? __LINE__ : BASEIMPLEMENTATION::STRING_concat(s1, s2)));
+
+    MOCK_STATIC_METHOD_2(, int, STRING_concat_with_STRING, STRING_HANDLE, s1, STRING_HANDLE, s2)
+        currentSTRING_concat_with_STRING_call++;
+    MOCK_METHOD_END(int, (((currentSTRING_concat_with_STRING_call > 0) && (currentSTRING_concat_with_STRING_call == whenShallSTRING_concat_with_STRING_fail)) ? __LINE__ : BASEIMPLEMENTATION::STRING_concat_with_STRING(s1, s2)));
+
 };
 
 DECLARE_GLOBAL_MOCK_METHOD_1(CMapMocks, , void*, gballoc_malloc, size_t, size);
-
 DECLARE_GLOBAL_MOCK_METHOD_2(CMapMocks, , void*, gballoc_realloc, void*, ptr, size_t, size);
 DECLARE_GLOBAL_MOCK_METHOD_1(CMapMocks, , void, gballoc_free, void*, ptr);
+
+DECLARE_GLOBAL_MOCK_METHOD_1(CMapMocks, , STRING_HANDLE, STRING_construct, const char*, s);
+DECLARE_GLOBAL_MOCK_METHOD_1(CMapMocks, , STRING_HANDLE, STRING_new_JSON, const char*, s);
+DECLARE_GLOBAL_MOCK_METHOD_1(CMapMocks, , void, STRING_delete, STRING_HANDLE, s);
+DECLARE_GLOBAL_MOCK_METHOD_2(CMapMocks, , int, STRING_concat, STRING_HANDLE, s1, const char*, s2);
+DECLARE_GLOBAL_MOCK_METHOD_2(CMapMocks, , int, STRING_concat_with_STRING, STRING_HANDLE, s1, STRING_HANDLE, s2);
 
 /* capacity */
 
@@ -172,6 +247,18 @@ BEGIN_TEST_SUITE(map_unittests)
 
         currentrealloc_call = 0;
         whenShallrealloc_fail = 0;
+
+        currentSTRING_construct_call = 0;
+        whenShallSTRING_construct_fail = 0;
+
+        currentSTRING_concat_with_STRING_call = 0;
+        whenShallSTRING_concat_with_STRING_fail = 0;
+
+        currentSTRING_concat_call = 0;
+        whenShallSTRING_concat_fail = 0;
+
+        currentSTRING_new_JSON_call = 0;
+        whenShallSTRING_new_JSON_fail = 0;
 
     }
 
@@ -2658,4 +2745,1109 @@ BEGIN_TEST_SUITE(map_unittests)
         Map_Destroy(handle);
     }
 
+    /*Tests_SRS_MAP_02_052: [If parameter handle is NULL then Map_ToJSON shall return NULL.] */
+    TEST_FUNCTION(Map_ToJSON_fails_with_NULL_argument)
+    {
+        ///arrange
+        CMapMocks mocks;
+        
+        ///act
+        auto toJSON = Map_ToJSON(NULL);
+
+        ///assert
+        ASSERT_IS_NULL(toJSON);
+
+        ///cleanup
+    }
+
+    /*Tests_SRS_MAP_02_048: [Map_ToJSON shall produce a STRING_HANDLE representing the content of the MAP.]*/
+    /*Tests_SRS_MAP_02_049: [If the MAP is empty, then Map_ToJSON shall produce the string "{}".] */
+    TEST_FUNCTION(Map_ToJSON_with_empty_MAP_produces_empty_JSON)
+    {
+        ///arrange
+        CMapMocks mocks;
+        auto handle = Map_Create(NULL);
+        mocks.ResetAllCalls();
+
+        STRICT_EXPECTED_CALL(mocks, STRING_construct("{"))
+            .IgnoreArgument(1);
+
+        STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, "}"))
+            .IgnoreArgument(1);
+
+        ///act
+        auto toJSON = Map_ToJSON(handle);
+
+        ///assert
+        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, "{}", BASEIMPLEMENTATION::STRING_c_str(toJSON));
+
+        ///cleanup
+        Map_Destroy(handle);
+        STRING_delete(toJSON);
+    }
+
+    /*Tests_SRS_MAP_02_051: [If any error occurs while producing the output, then Map_ToJSON shall fail and return NULL.] */
+    TEST_FUNCTION(Map_ToJSON_with_empty_MAP_produces_empty_JSON_fails_when_STRING_concat_fails)
+    {
+        ///arrange
+        CMapMocks mocks;
+        auto handle = Map_Create(NULL);
+        mocks.ResetAllCalls();
+
+        STRICT_EXPECTED_CALL(mocks, STRING_construct("{"))
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
+
+        MAKE_FAIL(STRING_concat, 1);
+        STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, "}"))
+            .IgnoreArgument(1);
+
+        ///act
+        auto toJSON = Map_ToJSON(handle);
+
+        ///assert
+        ASSERT_IS_NULL(toJSON);
+        mocks.AssertActualAndExpectedCalls();
+
+        ///cleanup
+        Map_Destroy(handle);
+    }
+
+    /*Tests_SRS_MAP_02_051: [If any error occurs while producing the output, then Map_ToJSON shall fail and return NULL.] */
+    TEST_FUNCTION(Map_ToJSON_with_empty_MAP_produces_empty_JSON_fails_when_STRING_construct_fails)
+    {
+        ///arrange
+        CMapMocks mocks;
+        auto handle = Map_Create(NULL);
+        mocks.ResetAllCalls();
+
+        MAKE_FAIL(STRING_construct, 1);
+        STRICT_EXPECTED_CALL(mocks, STRING_construct("{"))
+            .IgnoreArgument(1);
+
+        ///act
+        auto toJSON = Map_ToJSON(handle);
+
+        ///assert
+        ASSERT_IS_NULL(toJSON);
+        mocks.AssertActualAndExpectedCalls();
+
+        ///cleanup
+        Map_Destroy(handle);
+    }
+
+    /*Tests_SRS_MAP_02_050: [If the map has properties then Map_ToJSON shall produce the following string:{"name1":"value1", "name2":"value2" ...}] */
+    TEST_FUNCTION(Map_ToJSON_with_1_MAP_element_succeeds)
+    {
+        ///arrange
+        CMapMocks mocks;
+        auto handle = Map_Create(NULL);
+        (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
+        mocks.ResetAllCalls();
+
+        STRICT_EXPECTED_CALL(mocks, STRING_construct("{"))
+            .IgnoreArgument(1);
+
+        STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("redkey")); /*prepare the key*/
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("reddoor")); /*prepare the value*/
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
+            .IgnoreArgument(1)
+            .IgnoreArgument(2);
+        STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey":"reddoor"*/
+            .IgnoreArgument(1)
+            .IgnoreArgument(2);
+
+        STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, "}"))/*now JSON is {"redkey":"redoor"}*/
+            .IgnoreArgument(1);
+
+        ///act
+        auto toJSON = Map_ToJSON(handle);
+
+        ///assert
+        ASSERT_IS_NOT_NULL(toJSON);
+        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, "{\"redkey\":\"reddoor\"}", BASEIMPLEMENTATION::STRING_c_str(toJSON));
+
+        ///cleanup
+        Map_Destroy(handle);
+        STRING_delete(toJSON);
+    }
+
+    /*Tests_SRS_MAP_02_051: [If any error occurs while producing the output, then Map_ToJSON shall fail and return NULL.] */
+    TEST_FUNCTION(Map_ToJSON_with_1_MAP_element_fail_when_STRING_fails_1)
+    {
+        ///arrange
+        CMapMocks mocks;
+        auto handle = Map_Create(NULL);
+        (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
+        mocks.ResetAllCalls();
+
+        STRICT_EXPECTED_CALL(mocks, STRING_construct("{"))
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
+
+        STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("redkey")); /*prepare the key*/
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("reddoor")); /*prepare the value*/
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
+            .IgnoreArgument(1)
+            .IgnoreArgument(2);
+        STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey":"reddoor"*/
+            .IgnoreArgument(1)
+            .IgnoreArgument(2);
+
+        MAKE_FAIL(STRING_concat, 2);
+        STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, "}"))/*now JSON is {"redkey":"redoor"}*/
+            .IgnoreArgument(1);
+
+        ///act
+        auto toJSON = Map_ToJSON(handle);
+
+        ///assert
+        ASSERT_IS_NULL(toJSON);
+        mocks.AssertActualAndExpectedCalls();
+
+        ///cleanup
+        Map_Destroy(handle);
+    }
+
+    /*Tests_SRS_MAP_02_051: [If any error occurs while producing the output, then Map_ToJSON shall fail and return NULL.] */
+    TEST_FUNCTION(Map_ToJSON_with_1_MAP_element_fail_when_STRING_fails_2)
+    {
+        ///arrange
+        CMapMocks mocks;
+        auto handle = Map_Create(NULL);
+        (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
+        mocks.ResetAllCalls();
+
+        STRICT_EXPECTED_CALL(mocks, STRING_construct("{"))
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
+
+        STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("redkey")); /*prepare the key*/
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("reddoor")); /*prepare the value*/
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
+            .IgnoreArgument(1)
+            .IgnoreArgument(2);
+        STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
+            .IgnoreArgument(1);
+
+        MAKE_FAIL(STRING_concat_with_STRING, 2);
+        STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey":"reddoor"*/
+            .IgnoreArgument(1)
+            .IgnoreArgument(2);
+
+        ///act
+        auto toJSON = Map_ToJSON(handle);
+
+        ///assert
+        ASSERT_IS_NULL(toJSON);
+        mocks.AssertActualAndExpectedCalls();
+
+        ///cleanup
+        Map_Destroy(handle);
+    }
+
+    /*Tests_SRS_MAP_02_051: [If any error occurs while producing the output, then Map_ToJSON shall fail and return NULL.] */
+    TEST_FUNCTION(Map_ToJSON_with_1_MAP_element_fail_when_STRING_fails_3)
+    {
+        ///arrange
+        CMapMocks mocks;
+        auto handle = Map_Create(NULL);
+        (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
+        mocks.ResetAllCalls();
+
+        STRICT_EXPECTED_CALL(mocks, STRING_construct("{"))
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
+
+        STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("redkey")); /*prepare the key*/
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("reddoor")); /*prepare the value*/
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
+            .IgnoreArgument(1)
+            .IgnoreArgument(2);
+        MAKE_FAIL(STRING_concat, 1);
+        STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
+            .IgnoreArgument(1);
+
+        ///act
+        auto toJSON = Map_ToJSON(handle);
+
+        ///assert
+        ASSERT_IS_NULL(toJSON);
+        mocks.AssertActualAndExpectedCalls();
+
+        ///cleanup
+        Map_Destroy(handle);
+    }
+
+    /*Tests_SRS_MAP_02_051: [If any error occurs while producing the output, then Map_ToJSON shall fail and return NULL.] */
+    TEST_FUNCTION(Map_ToJSON_with_1_MAP_element_fail_when_STRING_fails_4)
+    {
+        ///arrange
+        CMapMocks mocks;
+        auto handle = Map_Create(NULL);
+        (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
+        mocks.ResetAllCalls();
+
+        STRICT_EXPECTED_CALL(mocks, STRING_construct("{"))
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
+
+        STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("redkey")); /*prepare the key*/
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("reddoor")); /*prepare the value*/
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
+            .IgnoreArgument(1);
+        MAKE_FAIL(STRING_concat_with_STRING, 1);
+        STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
+            .IgnoreArgument(1)
+            .IgnoreArgument(2);
+
+        ///act
+        auto toJSON = Map_ToJSON(handle);
+
+        ///assert
+        ASSERT_IS_NULL(toJSON);
+        mocks.AssertActualAndExpectedCalls();
+
+        ///cleanup
+        Map_Destroy(handle);
+    }
+
+    /*Tests_SRS_MAP_02_051: [If any error occurs while producing the output, then Map_ToJSON shall fail and return NULL.] */
+    TEST_FUNCTION(Map_ToJSON_with_1_MAP_element_fail_when_STRING_fails_5)
+    {
+        ///arrange
+        CMapMocks mocks;
+        auto handle = Map_Create(NULL);
+        (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
+        mocks.ResetAllCalls();
+
+        STRICT_EXPECTED_CALL(mocks, STRING_construct("{"))
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
+
+        STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("redkey")); /*prepare the key*/
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
+            .IgnoreArgument(1);
+        MAKE_FAIL(STRING_new_JSON, 2);
+        STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("reddoor")); /*prepare the value*/
+
+        ///act
+        auto toJSON = Map_ToJSON(handle);
+
+        ///assert
+        ASSERT_IS_NULL(toJSON);
+        mocks.AssertActualAndExpectedCalls();
+
+        ///cleanup
+        Map_Destroy(handle);
+    }
+
+    /*Tests_SRS_MAP_02_051: [If any error occurs while producing the output, then Map_ToJSON shall fail and return NULL.] */
+    TEST_FUNCTION(Map_ToJSON_with_1_MAP_element_fail_when_STRING_fails_6)
+    {
+        ///arrange
+        CMapMocks mocks;
+        auto handle = Map_Create(NULL);
+        (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
+        mocks.ResetAllCalls();
+
+        STRICT_EXPECTED_CALL(mocks, STRING_construct("{"))
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
+
+        MAKE_FAIL(STRING_new_JSON, 1);
+        STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("redkey")); /*prepare the key*/
+
+        ///act
+        auto toJSON = Map_ToJSON(handle);
+
+        ///assert
+        ASSERT_IS_NULL(toJSON);
+        mocks.AssertActualAndExpectedCalls();
+
+        ///cleanup
+        Map_Destroy(handle);
+    }
+
+    /*Tests_SRS_MAP_02_051: [If any error occurs while producing the output, then Map_ToJSON shall fail and return NULL.] */
+    TEST_FUNCTION(Map_ToJSON_with_1_MAP_element_fail_when_STRING_fails_7)
+    {
+        ///arrange
+        CMapMocks mocks;
+        auto handle = Map_Create(NULL);
+        (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
+        mocks.ResetAllCalls();
+
+        MAKE_FAIL(STRING_construct, 1);
+        STRICT_EXPECTED_CALL(mocks, STRING_construct("{"))
+            .IgnoreArgument(1);
+
+        ///act
+        auto toJSON = Map_ToJSON(handle);
+
+        ///assert
+        ASSERT_IS_NULL(toJSON);
+        mocks.AssertActualAndExpectedCalls();
+
+        ///cleanup
+        Map_Destroy(handle);
+    }
+
+    /*Tests_SRS_MAP_02_050: [If the map has properties then Map_ToJSON shall produce the following string:{"name1":"value1", "name2":"value2" ...}] */
+    TEST_FUNCTION(Map_ToJSON_with_2_MAP_elements_succeeds)
+    {
+        ///arrange
+        CMapMocks mocks;
+        auto handle = Map_Create(NULL);
+        (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
+        (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
+        mocks.ResetAllCalls();
+
+        STRICT_EXPECTED_CALL(mocks, STRING_construct("{"))
+            .IgnoreArgument(1);
+
+        { /*artificial scope for first key:value*/
+            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("redkey")); /*prepare the key*/
+            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("reddoor")); /*prepare the value*/
+            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
+                .IgnoreArgument(1)
+                .IgnoreArgument(2);
+            STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey":"reddoor"*/
+                .IgnoreArgument(1)
+                .IgnoreArgument(2);
+        }
+
+        { /*artificial scope for second key:value*/
+            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("yellowkey")); /*prepare the key*/
+            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("yellowdoor")); /*prepare the value*/
+            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, ","))
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
+                .IgnoreArgument(1)
+                .IgnoreArgument(2);
+            STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey":"reddoor"*/
+                .IgnoreArgument(1)
+                .IgnoreArgument(2);
+        }
+
+        STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, "}"))/*now JSON is {"redkey":"redoor"}*/
+            .IgnoreArgument(1);
+
+        ///act
+        auto toJSON = Map_ToJSON(handle);
+
+        ///assert
+        ASSERT_IS_NOT_NULL(toJSON);
+        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, "{\"redkey\":\"reddoor\",\"yellowkey\":\"yellowdoor\"}", BASEIMPLEMENTATION::STRING_c_str(toJSON));
+
+        ///cleanup
+        Map_Destroy(handle);
+        STRING_delete(toJSON);
+    }
+
+    /*Tests_SRS_MAP_02_051: [If any error occurs while producing the output, then Map_ToJSON shall fail and return NULL.] */
+    TEST_FUNCTION(Map_ToJSON_with_2_MAP_elements_fails_when_STRING_fails_1)
+    {
+        ///arrange
+        CMapMocks mocks;
+        auto handle = Map_Create(NULL);
+        (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
+        (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
+        mocks.ResetAllCalls();
+
+        STRICT_EXPECTED_CALL(mocks, STRING_construct("{"))
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
+
+        { /*artificial scope for first key:value*/
+            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("redkey")); /*prepare the key*/
+            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("reddoor")); /*prepare the value*/
+            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
+                .IgnoreArgument(1)
+                .IgnoreArgument(2);
+            STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey":"reddoor"*/
+                .IgnoreArgument(1)
+                .IgnoreArgument(2);
+        }
+
+        { /*artificial scope for second key:value*/
+            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("yellowkey")); /*prepare the key*/
+            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("yellowdoor")); /*prepare the value*/
+            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, ","))
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
+                .IgnoreArgument(1)
+                .IgnoreArgument(2);
+            STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey":"reddoor"*/
+                .IgnoreArgument(1)
+                .IgnoreArgument(2);
+        }
+
+        MAKE_FAIL(STRING_concat, 4);
+        STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, "}"))/*now JSON is {"redkey":"redoor"}*/
+            .IgnoreArgument(1);
+
+        ///act
+        auto toJSON = Map_ToJSON(handle);
+
+        ///assert
+        ASSERT_IS_NULL(toJSON);
+        mocks.AssertActualAndExpectedCalls();
+
+        ///cleanup
+        Map_Destroy(handle);
+    }
+
+    /*Tests_SRS_MAP_02_051: [If any error occurs while producing the output, then Map_ToJSON shall fail and return NULL.] */
+    TEST_FUNCTION(Map_ToJSON_with_2_MAP_elements_fails_when_STRING_fails_2)
+    {
+        ///arrange
+        CMapMocks mocks;
+        auto handle = Map_Create(NULL);
+        (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
+        (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
+        mocks.ResetAllCalls();
+
+        STRICT_EXPECTED_CALL(mocks, STRING_construct("{"))
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
+
+        { /*artificial scope for first key:value*/
+            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("redkey")); /*prepare the key*/
+            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("reddoor")); /*prepare the value*/
+            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
+                .IgnoreArgument(1)
+                .IgnoreArgument(2);
+            STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey":"reddoor"*/
+                .IgnoreArgument(1)
+                .IgnoreArgument(2);
+        }
+
+        { /*artificial scope for second key:value*/
+            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("yellowkey")); /*prepare the key*/
+            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("yellowdoor")); /*prepare the value*/
+            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, ","))
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
+                .IgnoreArgument(1)
+                .IgnoreArgument(2);
+            STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
+                .IgnoreArgument(1);
+            MAKE_FAIL(STRING_concat_with_STRING, 4);
+            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey":"reddoor"*/
+                .IgnoreArgument(1)
+                .IgnoreArgument(2);
+        }
+
+        ///act
+        auto toJSON = Map_ToJSON(handle);
+
+        ///assert
+        ASSERT_IS_NULL(toJSON);
+        mocks.AssertActualAndExpectedCalls();
+
+        ///cleanup
+        Map_Destroy(handle);
+    }
+
+    /*Tests_SRS_MAP_02_051: [If any error occurs while producing the output, then Map_ToJSON shall fail and return NULL.] */
+    TEST_FUNCTION(Map_ToJSON_with_2_MAP_elements_fails_when_STRING_fails_3)
+    {
+        ///arrange
+        CMapMocks mocks;
+        auto handle = Map_Create(NULL);
+        (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
+        (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
+        mocks.ResetAllCalls();
+
+        STRICT_EXPECTED_CALL(mocks, STRING_construct("{"))
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
+
+        { /*artificial scope for first key:value*/
+            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("redkey")); /*prepare the key*/
+            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("reddoor")); /*prepare the value*/
+            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
+                .IgnoreArgument(1)
+                .IgnoreArgument(2);
+            STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey":"reddoor"*/
+                .IgnoreArgument(1)
+                .IgnoreArgument(2);
+        }
+
+        { /*artificial scope for second key:value*/
+            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("yellowkey")); /*prepare the key*/
+            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("yellowdoor")); /*prepare the value*/
+            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, ","))
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
+                .IgnoreArgument(1)
+                .IgnoreArgument(2);
+            MAKE_FAIL(STRING_concat, 3);
+            STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
+                .IgnoreArgument(1);
+        }
+
+        ///act
+        auto toJSON = Map_ToJSON(handle);
+
+        ///assert
+        ASSERT_IS_NULL(toJSON);
+        mocks.AssertActualAndExpectedCalls();
+
+        ///cleanup
+        Map_Destroy(handle);
+    }
+
+    /*Tests_SRS_MAP_02_051: [If any error occurs while producing the output, then Map_ToJSON shall fail and return NULL.] */
+    TEST_FUNCTION(Map_ToJSON_with_2_MAP_elements_fails_when_STRING_fails_4)
+    {
+        ///arrange
+        CMapMocks mocks;
+        auto handle = Map_Create(NULL);
+        (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
+        (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
+        mocks.ResetAllCalls();
+
+        STRICT_EXPECTED_CALL(mocks, STRING_construct("{"))
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
+
+        { /*artificial scope for first key:value*/
+            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("redkey")); /*prepare the key*/
+            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("reddoor")); /*prepare the value*/
+            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
+                .IgnoreArgument(1)
+                .IgnoreArgument(2);
+            STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey":"reddoor"*/
+                .IgnoreArgument(1)
+                .IgnoreArgument(2);
+        }
+
+        { /*artificial scope for second key:value*/
+            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("yellowkey")); /*prepare the key*/
+            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("yellowdoor")); /*prepare the value*/
+            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, ","))
+                .IgnoreArgument(1);
+
+            MAKE_FAIL(STRING_concat_with_STRING, 3);
+            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
+                .IgnoreArgument(1)
+                .IgnoreArgument(2);
+        }
+
+        ///act
+        auto toJSON = Map_ToJSON(handle);
+
+        ///assert
+        ASSERT_IS_NULL(toJSON);
+        mocks.AssertActualAndExpectedCalls();
+
+        ///cleanup
+        Map_Destroy(handle);
+    }
+
+    /*Tests_SRS_MAP_02_051: [If any error occurs while producing the output, then Map_ToJSON shall fail and return NULL.] */
+    TEST_FUNCTION(Map_ToJSON_with_2_MAP_elements_fails_when_STRING_fails_5)
+    {
+        ///arrange
+        CMapMocks mocks;
+        auto handle = Map_Create(NULL);
+        (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
+        (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
+        mocks.ResetAllCalls();
+
+        STRICT_EXPECTED_CALL(mocks, STRING_construct("{"))
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
+
+        { /*artificial scope for first key:value*/
+            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("redkey")); /*prepare the key*/
+            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("reddoor")); /*prepare the value*/
+            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
+                .IgnoreArgument(1)
+                .IgnoreArgument(2);
+            STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey":"reddoor"*/
+                .IgnoreArgument(1)
+                .IgnoreArgument(2);
+        }
+
+        { /*artificial scope for second key:value*/
+            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("yellowkey")); /*prepare the key*/
+            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("yellowdoor")); /*prepare the value*/
+            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
+                .IgnoreArgument(1);
+            MAKE_FAIL(STRING_concat, 2);
+            STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, ","))
+                .IgnoreArgument(1);
+        }
+
+        ///act
+        auto toJSON = Map_ToJSON(handle);
+
+        ///assert
+        ASSERT_IS_NULL(toJSON);
+        mocks.AssertActualAndExpectedCalls();
+
+        ///cleanup
+        Map_Destroy(handle);
+    }
+
+    /*Tests_SRS_MAP_02_051: [If any error occurs while producing the output, then Map_ToJSON shall fail and return NULL.] */
+    TEST_FUNCTION(Map_ToJSON_with_2_MAP_elements_fails_when_STRING_fails_6)
+    {
+        ///arrange
+        CMapMocks mocks;
+        auto handle = Map_Create(NULL);
+        (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
+        (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
+        mocks.ResetAllCalls();
+
+        STRICT_EXPECTED_CALL(mocks, STRING_construct("{"))
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
+
+        { /*artificial scope for first key:value*/
+            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("redkey")); /*prepare the key*/
+            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("reddoor")); /*prepare the value*/
+            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
+                .IgnoreArgument(1)
+                .IgnoreArgument(2);
+            STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey":"reddoor"*/
+                .IgnoreArgument(1)
+                .IgnoreArgument(2);
+        }
+
+        { /*artificial scope for second key:value*/
+            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("yellowkey")); /*prepare the key*/
+            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
+                .IgnoreArgument(1);
+            MAKE_FAIL(STRING_new_JSON,4);
+            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("yellowdoor")); /*prepare the value*/
+        }
+
+        ///act
+        auto toJSON = Map_ToJSON(handle);
+
+        ///assert
+        ASSERT_IS_NULL(toJSON);
+        mocks.AssertActualAndExpectedCalls();
+
+        ///cleanup
+        Map_Destroy(handle);
+    }
+
+    /*Tests_SRS_MAP_02_051: [If any error occurs while producing the output, then Map_ToJSON shall fail and return NULL.] */
+    TEST_FUNCTION(Map_ToJSON_with_2_MAP_elements_fails_when_STRING_fails_7)
+    {
+        ///arrange
+        CMapMocks mocks;
+        auto handle = Map_Create(NULL);
+        (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
+        (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
+        mocks.ResetAllCalls();
+
+        STRICT_EXPECTED_CALL(mocks, STRING_construct("{"))
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
+
+        { /*artificial scope for first key:value*/
+            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("redkey")); /*prepare the key*/
+            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("reddoor")); /*prepare the value*/
+            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
+                .IgnoreArgument(1)
+                .IgnoreArgument(2);
+            STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey":"reddoor"*/
+                .IgnoreArgument(1)
+                .IgnoreArgument(2);
+        }
+
+        { /*artificial scope for second key:value*/
+            MAKE_FAIL(STRING_new_JSON, 3);
+            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("yellowkey")); /*prepare the key*/
+        }
+
+        ///act
+        auto toJSON = Map_ToJSON(handle);
+
+        ///assert
+        ASSERT_IS_NULL(toJSON);
+        mocks.AssertActualAndExpectedCalls();
+
+        ///cleanup
+        Map_Destroy(handle);
+    }
+
+    /*Tests_SRS_MAP_02_051: [If any error occurs while producing the output, then Map_ToJSON shall fail and return NULL.] */
+    TEST_FUNCTION(Map_ToJSON_with_2_MAP_elements_fails_when_STRING_fails_8)
+    {
+        ///arrange
+        CMapMocks mocks;
+        auto handle = Map_Create(NULL);
+        (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
+        (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
+        mocks.ResetAllCalls();
+
+        STRICT_EXPECTED_CALL(mocks, STRING_construct("{"))
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
+
+        { /*artificial scope for first key:value*/
+            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("redkey")); /*prepare the key*/
+            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("reddoor")); /*prepare the value*/
+            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
+                .IgnoreArgument(1)
+                .IgnoreArgument(2);
+            STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
+                .IgnoreArgument(1);
+            MAKE_FAIL(STRING_concat_with_STRING, 2);
+            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey":"reddoor"*/
+                .IgnoreArgument(1)
+                .IgnoreArgument(2);
+        }
+
+        ///act
+        auto toJSON = Map_ToJSON(handle);
+
+        ///assert
+        ASSERT_IS_NULL(toJSON);
+        mocks.AssertActualAndExpectedCalls();
+
+        ///cleanup
+        Map_Destroy(handle);
+    }
+
+    /*Tests_SRS_MAP_02_051: [If any error occurs while producing the output, then Map_ToJSON shall fail and return NULL.] */
+    TEST_FUNCTION(Map_ToJSON_with_2_MAP_elements_fails_when_STRING_fails_9)
+    {
+        ///arrange
+        CMapMocks mocks;
+        auto handle = Map_Create(NULL);
+        (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
+        (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
+        mocks.ResetAllCalls();
+
+        STRICT_EXPECTED_CALL(mocks, STRING_construct("{"))
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
+
+        { /*artificial scope for first key:value*/
+            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("redkey")); /*prepare the key*/
+            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("reddoor")); /*prepare the value*/
+            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
+                .IgnoreArgument(1)
+                .IgnoreArgument(2);
+            STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
+                .IgnoreArgument(1);
+            MAKE_FAIL(STRING_concat_with_STRING, 2);
+            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey":"reddoor"*/
+                .IgnoreArgument(1)
+                .IgnoreArgument(2);
+        }
+
+        ///act
+        auto toJSON = Map_ToJSON(handle);
+
+        ///assert
+        ASSERT_IS_NULL(toJSON);
+        mocks.AssertActualAndExpectedCalls();
+
+        ///cleanup
+        Map_Destroy(handle);
+    }
+
+    /*Tests_SRS_MAP_02_051: [If any error occurs while producing the output, then Map_ToJSON shall fail and return NULL.] */
+    TEST_FUNCTION(Map_ToJSON_with_2_MAP_elements_fails_when_STRING_fails_10)
+    {
+        ///arrange
+        CMapMocks mocks;
+        auto handle = Map_Create(NULL);
+        (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
+        (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
+        mocks.ResetAllCalls();
+
+        STRICT_EXPECTED_CALL(mocks, STRING_construct("{"))
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
+
+        { /*artificial scope for first key:value*/
+            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("redkey")); /*prepare the key*/
+            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("reddoor")); /*prepare the value*/
+            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
+                .IgnoreArgument(1)
+                .IgnoreArgument(2);
+            MAKE_FAIL(STRING_concat, 1);
+            STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
+                .IgnoreArgument(1);
+        }
+
+        ///act
+        auto toJSON = Map_ToJSON(handle);
+
+        ///assert
+        ASSERT_IS_NULL(toJSON);
+        mocks.AssertActualAndExpectedCalls();
+
+        ///cleanup
+        Map_Destroy(handle);
+    }
+
+    /*Tests_SRS_MAP_02_051: [If any error occurs while producing the output, then Map_ToJSON shall fail and return NULL.] */
+    TEST_FUNCTION(Map_ToJSON_with_2_MAP_elements_fails_when_STRING_fails_11)
+    {
+        ///arrange
+        CMapMocks mocks;
+        auto handle = Map_Create(NULL);
+        (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
+        (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
+        mocks.ResetAllCalls();
+
+        STRICT_EXPECTED_CALL(mocks, STRING_construct("{"))
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
+
+        { /*artificial scope for first key:value*/
+            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("redkey")); /*prepare the key*/
+            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("reddoor")); /*prepare the value*/
+            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
+                .IgnoreArgument(1);
+            MAKE_FAIL(STRING_concat_with_STRING, 1);
+            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
+                .IgnoreArgument(1)
+                .IgnoreArgument(2);
+        }
+
+        ///act
+        auto toJSON = Map_ToJSON(handle);
+
+        ///assert
+        ASSERT_IS_NULL(toJSON);
+        mocks.AssertActualAndExpectedCalls();
+
+        ///cleanup
+        Map_Destroy(handle);
+    }
+
+    /*Tests_SRS_MAP_02_051: [If any error occurs while producing the output, then Map_ToJSON shall fail and return NULL.] */
+    TEST_FUNCTION(Map_ToJSON_with_2_MAP_elements_fails_when_STRING_fails_12)
+    {
+        ///arrange
+        CMapMocks mocks;
+        auto handle = Map_Create(NULL);
+        (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
+        (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
+        mocks.ResetAllCalls();
+
+        STRICT_EXPECTED_CALL(mocks, STRING_construct("{"))
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
+
+        { /*artificial scope for first key:value*/
+            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("redkey")); /*prepare the key*/
+            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
+                .IgnoreArgument(1);
+            MAKE_FAIL(STRING_new_JSON, 2);
+            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("reddoor")); /*prepare the value*/
+        }
+
+        ///act
+        auto toJSON = Map_ToJSON(handle);
+
+        ///assert
+        ASSERT_IS_NULL(toJSON);
+        mocks.AssertActualAndExpectedCalls();
+
+        ///cleanup
+        Map_Destroy(handle);
+    }
+
+    /*Tests_SRS_MAP_02_051: [If any error occurs while producing the output, then Map_ToJSON shall fail and return NULL.] */
+    TEST_FUNCTION(Map_ToJSON_with_2_MAP_elements_fails_when_STRING_fails_13)
+    {
+        ///arrange
+        CMapMocks mocks;
+        auto handle = Map_Create(NULL);
+        (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
+        (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
+        mocks.ResetAllCalls();
+
+        STRICT_EXPECTED_CALL(mocks, STRING_construct("{"))
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
+
+        { /*artificial scope for first key:value*/
+            MAKE_FAIL(STRING_new_JSON, 1);
+            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("redkey")); /*prepare the key*/
+        }
+
+        ///act
+        auto toJSON = Map_ToJSON(handle);
+
+        ///assert
+        ASSERT_IS_NULL(toJSON);
+        mocks.AssertActualAndExpectedCalls();
+
+        ///cleanup
+        Map_Destroy(handle);
+    }
+
+    /*Tests_SRS_MAP_02_051: [If any error occurs while producing the output, then Map_ToJSON shall fail and return NULL.] */
+    TEST_FUNCTION(Map_ToJSON_with_2_MAP_elements_fails_when_STRING_fails_14)
+    {
+        ///arrange
+        CMapMocks mocks;
+        auto handle = Map_Create(NULL);
+        (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
+        (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
+        mocks.ResetAllCalls();
+
+        MAKE_FAIL(STRING_construct, 1);
+        STRICT_EXPECTED_CALL(mocks, STRING_construct("{"))
+            .IgnoreArgument(1);
+
+        ///act
+        auto toJSON = Map_ToJSON(handle);
+
+        ///assert
+        ASSERT_IS_NULL(toJSON);
+        mocks.AssertActualAndExpectedCalls();
+
+        ///cleanup
+        Map_Destroy(handle);
+    }
+
+    
 END_TEST_SUITE(map_unittests)

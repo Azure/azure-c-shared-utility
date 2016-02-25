@@ -6,11 +6,8 @@
 #include <crtdbg.h>
 #endif
 
-//#define _POSIX_C_SOURCE 2
-
 #include <stddef.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include "socketio.h"
 #include <sys/types.h>
@@ -20,9 +17,19 @@
 #include <fcntl.h>
 #include "list.h"
 #include "gballoc.h"
+#include "iot_logging.h"
 
 #define SOCKET_SUCCESS      0
 #define INVALID_SOCKET      -1
+
+typedef enum IO_STATE_TAG
+{
+    IO_STATE_CLOSED,
+    IO_STATE_OPENING,
+    IO_STATE_OPEN,
+    IO_STATE_CLOSING,
+    IO_STATE_ERROR
+} IO_STATE;
 
 typedef struct PENDING_SOCKET_IO_TAG
 {
@@ -37,9 +44,9 @@ typedef struct SOCKET_IO_INSTANCE_TAG
 {
     int socket;
     ON_BYTES_RECEIVED on_bytes_received;
-    ON_IO_STATE_CHANGED on_io_state_changed;
+    ON_IO_ERROR on_io_error;
     LOGGER_LOG logger_log;
-    void* callback_context;
+    void* open_callback_context;
     char* hostname;
     int port;
     IO_STATE io_state;
@@ -56,13 +63,11 @@ static const IO_INTERFACE_DESCRIPTION socket_io_interface_description =
     socketio_dowork
 };
 
-static void set_io_state(SOCKET_IO_INSTANCE* socket_io_instance, IO_STATE io_state)
+static void indicate_error(SOCKET_IO_INSTANCE* socket_io_instance)
 {
-    IO_STATE previous_state = socket_io_instance->io_state;
-    socket_io_instance->io_state = io_state;
-    if (socket_io_instance->on_io_state_changed != NULL)
+    if (socket_io_instance->on_io_error != NULL)
     {
-        socket_io_instance->on_io_state_changed(socket_io_instance->callback_context, io_state, previous_state);
+        socket_io_instance->on_io_error(socket_io_instance->open_callback_context);
     }
 }
 
@@ -79,6 +84,7 @@ static int add_pending_io(SOCKET_IO_INSTANCE* socket_io_instance, const unsigned
         pending_socket_io->bytes = (unsigned char*)malloc(size);
         if (pending_socket_io->bytes == NULL)
         {
+            LogError("Allocation Failure: Unable to allocate pending list.\r\n");
             free(pending_socket_io);
             result = __LINE__;
         }
@@ -92,6 +98,7 @@ static int add_pending_io(SOCKET_IO_INSTANCE* socket_io_instance, const unsigned
 
             if (list_add(socket_io_instance->pending_io_list, pending_socket_io) == NULL)
             {
+                LogError("Failure: Unable to add socket to pending list.\r\n");
                 free(pending_socket_io->bytes);
                 free(pending_socket_io);
                 result = __LINE__;
@@ -113,6 +120,7 @@ CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters, LOGGER_LOG logger
 
     if (socket_io_config == NULL)
     {
+        LogError("Invalid argument: socket_io_config is NULL\r\n");
         result = NULL;
     }
     else
@@ -123,6 +131,7 @@ CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters, LOGGER_LOG logger
             result->pending_io_list = list_create();
             if (result->pending_io_list == NULL)
             {
+                LogError("Failure: list_create unable to create pending list.\r\n");
                 free(result);
                 result = NULL;
             }
@@ -131,6 +140,7 @@ CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters, LOGGER_LOG logger
                 result->hostname = (char*)malloc(strlen(socket_io_config->hostname) + 1);
                 if (result->hostname == NULL)
                 {
+                    LogError("Failure: hostname == NULL.\r\n");
                     list_destroy(result->pending_io_list);
                     free(result);
                     result = NULL;
@@ -140,13 +150,16 @@ CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters, LOGGER_LOG logger
                     strcpy(result->hostname, socket_io_config->hostname);
                     result->port = socket_io_config->port;
                     result->on_bytes_received = NULL;
-                    result->on_io_state_changed = NULL;
                     result->logger_log = logger_log;
                     result->socket = INVALID_SOCKET;
-                    result->callback_context = NULL;
-                    result->io_state = IO_STATE_NOT_OPEN;
+                    result->open_callback_context = NULL;
+                    result->io_state = IO_STATE_CLOSED;
                 }
             }
+        }
+        else
+        {
+            LogError("Allocation Failure: SOCKET_IO_INSTANCE\r\n");
         }
     }
 
@@ -182,73 +195,89 @@ void socketio_destroy(CONCRETE_IO_HANDLE socket_io)
     }
 }
 
-int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_BYTES_RECEIVED on_bytes_received, ON_IO_STATE_CHANGED on_io_state_changed, void* callback_context)
+int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_complete, ON_BYTES_RECEIVED on_bytes_received, ON_IO_ERROR on_io_error, void* callback_context)
 {
     int result;
 
     SOCKET_IO_INSTANCE* socket_io_instance = (SOCKET_IO_INSTANCE*)socket_io;
     if (socket_io == NULL)
     {
+        LogError("Invalid argument: SOCKET_IO_INSTANCE is NULL\r\n");
         result = __LINE__;
     }
     else
     {
-        struct addrinfo* addrInfo;
-        char portString[16];
-
-        socket_io_instance->socket = socket(AF_INET, SOCK_STREAM, 0);
-        if (socket_io_instance->socket < SOCKET_SUCCESS)
+        if (socket_io_instance->io_state != IO_STATE_CLOSED)
         {
-            set_io_state(socket_io_instance, IO_STATE_ERROR);
+            LogError("Failure: socket state is not closed.\r\n");
             result = __LINE__;
         }
         else
         {
-            struct addrinfo addrHint = { 0 };
-            addrHint.ai_family = AF_INET;
-            addrHint.ai_socktype = SOCK_STREAM;
-            addrHint.ai_protocol = 0;
+            struct addrinfo* addrInfo;
+            char portString[16];
 
-            sprintf(portString, "%u", socket_io_instance->port);
-            if (getaddrinfo(socket_io_instance->hostname, portString, &addrHint, &addrInfo) != 0)
+            socket_io_instance->socket = socket(AF_INET, SOCK_STREAM, 0);
+            if (socket_io_instance->socket < SOCKET_SUCCESS)
             {
-                close(socket_io_instance->socket);
-                set_io_state(socket_io_instance, IO_STATE_ERROR);
-                socket_io_instance->socket = INVALID_SOCKET;
+                LogError("Failure: socket create failure %d.\r\n", socket_io_instance->socket);
                 result = __LINE__;
             }
             else
             {
-                if (connect(socket_io_instance->socket, addrInfo->ai_addr, sizeof(*addrInfo->ai_addr)) != 0)
+                struct addrinfo addrHint = { 0 };
+                addrHint.ai_family = AF_INET;
+                addrHint.ai_socktype = SOCK_STREAM;
+                addrHint.ai_protocol = 0;
+
+                sprintf(portString, "%u", socket_io_instance->port);
+                int err = getaddrinfo(socket_io_instance->hostname, portString, &addrHint, &addrInfo);
+                if (err != 0)
                 {
+                    LogError("Failure: getaddrinfo failure %d.\r\n", err);
                     close(socket_io_instance->socket);
-                    set_io_state(socket_io_instance, IO_STATE_ERROR);
                     socket_io_instance->socket = INVALID_SOCKET;
                     result = __LINE__;
                 }
                 else
                 {
-                    int flags;
-
-                    if ((-1 == (flags = fcntl(socket_io_instance->socket, F_GETFL, 0))) ||
-                        (fcntl(socket_io_instance->socket, F_SETFL, flags | O_NONBLOCK) == -1))
+                    err = connect(socket_io_instance->socket, addrInfo->ai_addr, sizeof(*addrInfo->ai_addr));
+                    if (err != 0)
                     {
+                        LogError("Failure: connect failure %d.\r\n", err);
                         close(socket_io_instance->socket);
-                        set_io_state(socket_io_instance, IO_STATE_ERROR);
                         socket_io_instance->socket = INVALID_SOCKET;
                         result = __LINE__;
                     }
                     else
                     {
-                        socket_io_instance->on_bytes_received = on_bytes_received;
-                        socket_io_instance->on_io_state_changed = on_io_state_changed;
-                        socket_io_instance->callback_context = callback_context;
+                        int flags;
 
-                        set_io_state(socket_io_instance, IO_STATE_OPEN);
-                        result = 0;
+                        if ((-1 == (flags = fcntl(socket_io_instance->socket, F_GETFL, 0))) ||
+                            (fcntl(socket_io_instance->socket, F_SETFL, flags | O_NONBLOCK) == -1))
+                        {
+                            LogError("Failure: fcntl failure.\r\n");
+                            close(socket_io_instance->socket);
+                            socket_io_instance->socket = INVALID_SOCKET;
+                            result = __LINE__;
+                        }
+                        else
+                        {
+                            socket_io_instance->on_bytes_received = on_bytes_received;
+                            socket_io_instance->on_io_error = on_io_error;
+                            socket_io_instance->open_callback_context = callback_context;
+                            socket_io_instance->io_state = IO_STATE_OPEN;
+
+                            if (on_io_open_complete != NULL)
+                            {
+                                on_io_open_complete(callback_context, IO_OPEN_OK);
+                            }
+
+                            result = 0;
+                        }
                     }
+                    freeaddrinfo(addrInfo);
                 }
-                freeaddrinfo(addrInfo);
             }
         }
     }
@@ -256,7 +285,7 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_BYTES_RECEIVED on_bytes_recei
     return result;
 }
 
-int socketio_close(CONCRETE_IO_HANDLE socket_io)
+int socketio_close(CONCRETE_IO_HANDLE socket_io, ON_IO_CLOSE_COMPLETE on_io_close_complete, void* callback_context)
 {
     int result = 0;
 
@@ -267,10 +296,24 @@ int socketio_close(CONCRETE_IO_HANDLE socket_io)
     else
     {
         SOCKET_IO_INSTANCE* socket_io_instance = (SOCKET_IO_INSTANCE*)socket_io;
-        (void)shutdown(socket_io_instance->socket, SHUT_RDWR);
-        close(socket_io_instance->socket);
-        socket_io_instance->socket = INVALID_SOCKET;
-        set_io_state(socket_io_instance, IO_STATE_NOT_OPEN);
+        if ((socket_io_instance->io_state == IO_STATE_CLOSED) ||
+            (socket_io_instance->io_state == IO_STATE_CLOSING))
+        {
+            result = __LINE__;
+        }
+        else
+        {
+            (void)shutdown(socket_io_instance->socket, SHUT_RDWR);
+            close(socket_io_instance->socket);
+            socket_io_instance->socket = INVALID_SOCKET;
+            socket_io_instance->io_state = IO_STATE_CLOSED;
+
+            if (on_io_close_complete != NULL)
+            {
+                on_io_close_complete(callback_context);
+            }
+        }
+
         result = 0;
     }
 
@@ -286,6 +329,7 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
         (size == 0))
     {
         /* Invalid arguments */
+        LogError("Invalid argument: send given invalid parameter\r\n");
         result = __LINE__;
     }
     else
@@ -293,6 +337,7 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
         SOCKET_IO_INSTANCE* socket_io_instance = (SOCKET_IO_INSTANCE*)socket_io;
         if (socket_io_instance->io_state != IO_STATE_OPEN)
         {
+            LogError("Failure: socket state is not opened.\r\n");
             result = __LINE__;
         }
         else
@@ -302,6 +347,7 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
             {
                 if (add_pending_io(socket_io_instance, buffer, size, on_send_complete, callback_context) != 0)
                 {
+                    LogError("Failure: add_pending_io failed.\r\n");
                     result = __LINE__;
                 }
                 else
@@ -316,7 +362,8 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
                 {
                     if (send_result == INVALID_SOCKET)
                     {
-                        printf("Error sending on socket\r\n");
+                        indicate_error(socket_io_instance);
+                        LogError("Failure: sending socket failed.\r\n");
                         result = __LINE__;
                     }
                     else
@@ -324,6 +371,7 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
                         /* queue data */
                         if (add_pending_io(socket_io_instance, buffer + send_result, size - send_result, on_send_complete, callback_context) != 0)
                         {
+                            LogError("Failure: add_pending_io failed.\r\n");
                             result = __LINE__;
                         }
                         else
@@ -344,6 +392,7 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
                     {
                         LOG(socket_io_instance->logger_log, 0, "%02x-> ", ((unsigned char*)buffer)[i]);
                     }
+                    LOG(socket_io_instance->logger_log, LOG_LINE, "");
 
                     result = 0;
                 }
@@ -369,7 +418,8 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                 PENDING_SOCKET_IO* pending_socket_io = (PENDING_SOCKET_IO*)list_item_get_value(first_pending_io);
                 if (pending_socket_io == NULL)
                 {
-                    set_io_state(socket_io_instance, IO_STATE_ERROR);
+                    socket_io_instance->io_state = IO_STATE_ERROR;
+                    indicate_error(socket_io_instance);
                     break;
                 }
 
@@ -382,7 +432,8 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                         free(pending_socket_io);
                         (void)list_remove(socket_io_instance->pending_io_list, first_pending_io);
 
-                        set_io_state(socket_io_instance, IO_STATE_ERROR);
+                        socket_io_instance->io_state = IO_STATE_ERROR;
+                        indicate_error(socket_io_instance);
                     }
                     else
                     {
@@ -401,7 +452,8 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                     free(pending_socket_io);
                     if (list_remove(socket_io_instance->pending_io_list, first_pending_io) != 0)
                     {
-                        set_io_state(socket_io_instance, IO_STATE_ERROR);
+                        socket_io_instance->io_state = IO_STATE_ERROR;
+                        indicate_error(socket_io_instance);
                     }
                 }
 
@@ -423,17 +475,12 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                     if (socket_io_instance->on_bytes_received != NULL)
                     {
                         /* explictly ignoring here the result of the callback */
-                        (void)socket_io_instance->on_bytes_received(socket_io_instance->callback_context, recv_bytes, received);
+                        (void)socket_io_instance->on_bytes_received(socket_io_instance->open_callback_context, recv_bytes, received);
                     }
                 }
             }
         }
     }
-}
-
-int socketio_getError(CONCRETE_IO_HANDLE socket_io)
-{
-    return 0;
 }
 
 const IO_INTERFACE_DESCRIPTION* socketio_get_interface_description(void)

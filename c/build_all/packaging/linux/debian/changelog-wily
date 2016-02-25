@@ -1,0 +1,9 @@
+azure-c-shared-util (0.1.0.0-3) wily; urgency=low
+
+  * Initial release (Closes: #5069014)
+
+  * Updated project to build WinCE (#5210823)
+
+  * Update the control file to use libssl-dev (#5210833)
+  
+ -- AzureIoT User <aziotsdklinux@outlook.com>  Wed, 16 Dec 2015 12:18:53 -0800

@@ -251,7 +251,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
 
         ///assert
         ASSERT_ARE_EQUAL(int, nResult, 0);
-        ASSERT_ARE_EQUAL(int, BUFFER_length(g_hBuffer), ALLOCATION_SIZE);
+        ASSERT_ARE_EQUAL(size_t, BUFFER_length(g_hBuffer), ALLOCATION_SIZE);
         mocks.AssertActualAndExpectedCalls();
 
         ///cleanup
@@ -350,7 +350,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         int nResult = BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
 
         ///assert
-        ASSERT_ARE_EQUAL(int, BUFFER_length(g_hBuffer), ALLOCATION_SIZE);
+        ASSERT_ARE_EQUAL(size_t, BUFFER_length(g_hBuffer), ALLOCATION_SIZE);
         ASSERT_ARE_EQUAL(int, 0, memcmp(BUFFER_u_char(g_hBuffer), BUFFER_TEST_VALUE, ALLOCATION_SIZE));
         ASSERT_ARE_EQUAL(int, nResult, 0);
         mocks.AssertActualAndExpectedCalls();
@@ -589,7 +589,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
 
         ///assert
         ASSERT_ARE_EQUAL(int, nResult, 0);
-        ASSERT_ARE_EQUAL(int, TOTAL_ALLOCATION_SIZE, BUFFER_length(g_hBuffer) );
+        ASSERT_ARE_EQUAL(size_t, BUFFER_length(g_hBuffer), TOTAL_ALLOCATION_SIZE);
         mocks.AssertActualAndExpectedCalls();
 
         ///cleanup
@@ -712,7 +712,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
 
         ///assert
         ASSERT_ARE_EQUAL(int, nResult, 0);
-        ASSERT_ARE_EQUAL(int, size, ALLOCATION_SIZE);
+        ASSERT_ARE_EQUAL(size_t, size, ALLOCATION_SIZE);
         mocks.AssertActualAndExpectedCalls();
 
 
@@ -958,7 +958,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         ///act
 
         ///assert
-        ASSERT_ARE_EQUAL(int, BUFFER_length(NULL), 0);
+        ASSERT_ARE_EQUAL(size_t, BUFFER_length(NULL), 0);
     }
 
     TEST_FUNCTION(BUFFER_Clone_Succeed)

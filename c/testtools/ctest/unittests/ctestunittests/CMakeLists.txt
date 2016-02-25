@@ -1,10 +1,8 @@
 #Copyright (c) Microsoft. All rights reserved.
 #Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-cmake_minimum_required(VERSION 3.0)
 #this is unittests for ctest
-
-compileAsC11()
+cmake_minimum_required(VERSION 2.8.11)
 
 set(ctest_unittests_c_files
 assertfailurestests.c
@@ -34,6 +32,10 @@ ENDIF(WIN32)
 add_executable(
 ctest_unittests ${ctest_unittests_c_files} ${ctest_unittests_cpp_files} ${ctest_unittests_h_files}
 )
+
+set_target_properties(ctest
+			   PROPERTIES
+			   FOLDER "SharedTestTools")
 
 target_link_libraries(ctest_unittests ctest)
 

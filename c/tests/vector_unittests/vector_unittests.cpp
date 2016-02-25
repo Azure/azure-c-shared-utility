@@ -113,7 +113,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         size_t num = VECTOR_size(NULL);
 
         ///assert
-        ASSERT_ARE_EQUAL(int, 0, num);
+        ASSERT_ARE_EQUAL(size_t, 0, num);
     }
 
     TEST_FUNCTION(Vector_size_Empty_Success)
@@ -124,7 +124,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         size_t num = VECTOR_size(g_handle);
 
         ///assert
-        ASSERT_ARE_EQUAL(int, 0, num);
+        ASSERT_ARE_EQUAL(size_t, 0, num);
     }
 
     TEST_FUNCTION(Vector_size_Success)
@@ -138,7 +138,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
 
         ///assert
         ASSERT_ARE_EQUAL(int, 0, result);
-        ASSERT_ARE_EQUAL(int, 1, num);
+        ASSERT_ARE_EQUAL(size_t, 1, num);
     }
 
     TEST_FUNCTION(Vector_Vector_Find_If_NULL_Vector_Fail)
@@ -191,8 +191,8 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
 
         ///assert
         ASSERT_ARE_EQUAL(int, 0, result);
-        ASSERT_ARE_EQUAL(int, sItem.nValue1, pfindItem->nValue1);
-        ASSERT_ARE_EQUAL(int, sItem.lValue2, pfindItem->lValue2);
+        ASSERT_ARE_EQUAL(size_t, sItem.nValue1, pfindItem->nValue1);
+        ASSERT_ARE_EQUAL(long, sItem.lValue2, pfindItem->lValue2);
     }
 
     TEST_FUNCTION(Vector_Clear_NULL_Vector_Fail)
@@ -221,7 +221,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
 
         ///assert
         ASSERT_ARE_EQUAL(int, 0, result);
-        ASSERT_ARE_EQUAL(int, 0, num);
+        ASSERT_ARE_EQUAL(size_t, 0, num);
     }
 
     TEST_FUNCTION(Vector_Element_Success)
@@ -238,8 +238,8 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
 
         ///assert
         ASSERT_IS_NOT_NULL(pResult);
-        ASSERT_ARE_EQUAL(int, sItem2.nValue1, pResult->nValue1);
-        ASSERT_ARE_EQUAL(int, sItem2.lValue2, pResult->lValue2);
+        ASSERT_ARE_EQUAL(size_t, sItem2.nValue1, pResult->nValue1);
+        ASSERT_ARE_EQUAL(long, sItem2.lValue2, pResult->lValue2);
     }
 
     TEST_FUNCTION(Vector_Element_NULL_Vector_Fail)
@@ -295,8 +295,8 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
 
         ///assert
         ASSERT_IS_NOT_NULL(pResult);
-        ASSERT_ARE_EQUAL(int, sItem1.nValue1, pResult->nValue1);
-        ASSERT_ARE_EQUAL(int, sItem1.lValue2, pResult->lValue2);
+        ASSERT_ARE_EQUAL(size_t, sItem1.nValue1, pResult->nValue1);
+        ASSERT_ARE_EQUAL(long, sItem1.lValue2, pResult->lValue2);
     }
 
     TEST_FUNCTION(Vector_Back_Success)
@@ -315,8 +315,8 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
 
         ///assert
         ASSERT_IS_NOT_NULL(pResult);
-        ASSERT_ARE_EQUAL(int, sItem3.nValue1, pResult->nValue1);
-        ASSERT_ARE_EQUAL(int, sItem3.lValue2, pResult->lValue2);
+        ASSERT_ARE_EQUAL(size_t, sItem3.nValue1, pResult->nValue1);
+        ASSERT_ARE_EQUAL(long, sItem3.lValue2, pResult->lValue2);
     }
 
     TEST_FUNCTION(Vector_Back_NULL_Vector_Fail)
@@ -389,7 +389,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         size_t num = VECTOR_size(g_handle);
 
         ///assert
-        ASSERT_ARE_EQUAL(int, 0, num);
+        ASSERT_ARE_EQUAL(size_t, 0, num);
     }
 
     TEST_FUNCTION(Vector_Multiple_push_back_Success)
@@ -410,8 +410,8 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
 
         ///assert
         ASSERT_IS_NOT_NULL(pResult);
-        ASSERT_ARE_EQUAL(int, sItem1.nValue1, pResult->nValue1);
-        ASSERT_ARE_EQUAL(int, sItem1.lValue2, pResult->lValue2);
+        ASSERT_ARE_EQUAL(size_t, sItem1.nValue1, pResult->nValue1);
+        ASSERT_ARE_EQUAL(long, sItem1.lValue2, pResult->lValue2);
     }
 
     /* Vector_Tests END */

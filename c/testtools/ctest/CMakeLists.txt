@@ -3,7 +3,7 @@
 
 #this is CMakeLists for ctest.
 
-compileAsC11()
+compileAsC99()
 
 set(ctest_c_files
 ./src/ctest.c
@@ -30,6 +30,10 @@ ENDIF(WIN32)
 add_library(
 ctest ${ctest_c_files} ${ctest_h_files}
 )
+
+set_target_properties(ctest
+			   PROPERTIES
+			   FOLDER "SharedTestTools")
 
 add_subdirectory(unittests)
 

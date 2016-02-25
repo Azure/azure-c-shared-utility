@@ -9,6 +9,7 @@
 #include "lock.h"
 #include "iot_logging.h"
 #include "rtos.h"
+#include "condition.h"
 
 COND_HANDLE Condition_Init(void)
 {
@@ -20,7 +21,7 @@ COND_RESULT Condition_Post(COND_HANDLE handle)
     COND_RESULT result;
     if (handle == NULL)
     {
-        result = ;
+        result = COND_INVALID_ARG;
     }
     else
     {

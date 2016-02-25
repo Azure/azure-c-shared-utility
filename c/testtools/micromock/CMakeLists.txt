@@ -2,9 +2,7 @@
 #Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #this is CMakeLists for micromock
-cmake_minimum_required(VERSION 3.0)
-
-compileAsC11()
+cmake_minimum_required(VERSION 2.8.11)
 
 set(micromock_cpp_files
 ./src/micromockcharstararenullterminatedstrings.cpp
@@ -59,6 +57,10 @@ IF(WIN32)
 	add_library(micromock_cpp_unittest ${micromock_cpp_files} ${micromock_h_files})
 	target_compile_definitions(micromock_cpp_unittest PUBLIC CPP_UNITTEST)
 	target_include_directories(micromock_cpp_unittest PUBLIC $ENV{VCInstallDir}UnitTest/include)
+
+	set_target_properties(micromock_cpp_unittest
+	   PROPERTIES
+	   FOLDER "SharedTestTools")
 	
 	add_library(micromock_ctest ${micromock_cpp_files} ${micromock_h_files})
 	target_compile_definitions(micromock_ctest PUBLIC USE_CTEST)
@@ -66,6 +68,10 @@ else()
 	add_library(micromock_ctest ${micromock_cpp_files} ${micromock_h_files})
 	target_compile_definitions(micromock_ctest PUBLIC USE_CTEST)
 ENDIF()
+
+set_target_properties(micromock_ctest
+			   PROPERTIES
+			   FOLDER "SharedTestTools")
 
 #these are the include folders
 #the following "set" statetement exports across the project a global variable called MICROMOCK_INC_FOLDER that expands to whatever needs to included when using micromock library

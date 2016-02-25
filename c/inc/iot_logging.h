@@ -3,6 +3,13 @@
 
 #ifndef LOGGING_H
 #define LOGGING_H
+
+/*no logging is useful when time and fprintf are mocked*/
+#ifdef NO_LOGGING
+#define LogInfo(...)
+#define LogError(FORMAT, ...)
+#else
+
 #include <stdio.h>
 #include "agenttime.h"
 
@@ -25,5 +32,7 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
+
+#endif
 
 #endif /* LOGGING_H */

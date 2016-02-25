@@ -2,9 +2,9 @@
 #Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #this is CMakeLists for sal. It only defines a global include 
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 2.8.11)
 
-compileAsC11()
+compileAsC99()
 
 #these are the include folders
 #the following "set" statetement exports across the project a global variable called SAL_INC_FOLDER that expands to whatever needs to included when using sal header

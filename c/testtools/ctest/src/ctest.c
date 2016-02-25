@@ -311,7 +311,7 @@ int int64_t_Compare(int64_t left, int64_t right)
 #if defined _MSC_VER
 #elif defined __cpluplus
 #elif defined __STDC_VERSION__
-#if __STDC_VERSION__  == 199901L || __STDC_VERSION__ == 201112L
+#if ((__STDC_VERSION__  == 199901L) || (__STDC_VERSION__ == 201000L) || (__STDC_VERSION__ == 201112L))
 #else
 
 int snprintf(char * s, size_t n, const char * format, ...)
