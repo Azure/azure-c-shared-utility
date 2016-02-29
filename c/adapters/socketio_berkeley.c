@@ -43,10 +43,11 @@ typedef struct PENDING_SOCKET_IO_TAG
 typedef struct SOCKET_IO_INSTANCE_TAG
 {
     int socket;
+    LOGGER_LOG logger_log;
     ON_BYTES_RECEIVED on_bytes_received;
     ON_IO_ERROR on_io_error;
-    LOGGER_LOG logger_log;
-    void* open_callback_context;
+    void* on_bytes_received_context;
+    void* on_io_error_context;
     char* hostname;
     int port;
     IO_STATE io_state;
@@ -67,7 +68,7 @@ static void indicate_error(SOCKET_IO_INSTANCE* socket_io_instance)
 {
     if (socket_io_instance->on_io_error != NULL)
     {
-        socket_io_instance->on_io_error(socket_io_instance->open_callback_context);
+        socket_io_instance->on_io_error(socket_io_instance->on_io_error_context);
     }
 }
 
@@ -150,9 +151,11 @@ CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters, LOGGER_LOG logger
                     strcpy(result->hostname, socket_io_config->hostname);
                     result->port = socket_io_config->port;
                     result->on_bytes_received = NULL;
+                    result->on_io_error = NULL;
+                    result->on_bytes_received_context = NULL;
+                    result->on_io_error_context = NULL;
                     result->logger_log = logger_log;
                     result->socket = INVALID_SOCKET;
-                    result->open_callback_context = NULL;
                     result->io_state = IO_STATE_CLOSED;
                 }
             }
@@ -195,7 +198,7 @@ void socketio_destroy(CONCRETE_IO_HANDLE socket_io)
     }
 }
 
-int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_complete, ON_BYTES_RECEIVED on_bytes_received, ON_IO_ERROR on_io_error, void* callback_context)
+int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_complete, void* on_io_open_complete_context, ON_BYTES_RECEIVED on_bytes_received, void* on_bytes_received_context, ON_IO_ERROR on_io_error, void* on_io_error_context)
 {
     int result;
 
@@ -264,13 +267,16 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
                         else
                         {
                             socket_io_instance->on_bytes_received = on_bytes_received;
+                            socket_io_instance->on_bytes_received_context = on_bytes_received_context;
+
                             socket_io_instance->on_io_error = on_io_error;
-                            socket_io_instance->open_callback_context = callback_context;
+                            socket_io_instance->on_io_error_context = on_io_error_context;
+
                             socket_io_instance->io_state = IO_STATE_OPEN;
 
                             if (on_io_open_complete != NULL)
                             {
-                                on_io_open_complete(callback_context, IO_OPEN_OK);
+                                on_io_open_complete(on_io_open_complete_context, IO_OPEN_OK);
                             }
 
                             result = 0;
@@ -475,7 +481,7 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                     if (socket_io_instance->on_bytes_received != NULL)
                     {
                         /* explictly ignoring here the result of the callback */
-                        (void)socket_io_instance->on_bytes_received(socket_io_instance->open_callback_context, recv_bytes, received);
+                        (void)socket_io_instance->on_bytes_received(socket_io_instance->on_bytes_received_context, recv_bytes, received);
                     }
                 }
             }

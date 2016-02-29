@@ -194,7 +194,7 @@ extern "C"
 
 MICROMOCK_MUTEX_HANDLE test_serialize_mutex;
 
-BEGIN_TEST_SUITE(socketio_win32_unittests)
+BEGIN_TEST_SUITE(socketio_berkeley_unittests)
 
 #if 0
 
@@ -683,5 +683,5 @@ TEST_FUNCTION(socketio_dowork_socket_io_NULL_fails)
 
 #endif
 
-END_TEST_SUITE(socketio_win32_unittests)
+END_TEST_SUITE(socketio_berkeley_unittests)
 

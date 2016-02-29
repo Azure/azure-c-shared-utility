@@ -32,8 +32,10 @@ typedef struct TLS_IO_INSTANCE_TAG
     ON_IO_OPEN_COMPLETE on_io_open_complete;
     ON_IO_CLOSE_COMPLETE on_io_close_complete;
     ON_IO_ERROR on_io_error;
-    void* open_callback_context;
-    void* close_callback_context;
+    void* on_bytes_received_context;
+    void* on_io_open_complete_context;
+    void* on_io_close_complete_context;
+    void* on_io_error_context;
     LOGGER_LOG logger_log;
     SSL* ssl;
     SSL_CTX* ssl_context;
@@ -56,7 +58,7 @@ static void indicate_error(TLS_IO_INSTANCE* tls_io_instance)
 {
     if (tls_io_instance->on_io_error != NULL)
     {
-        tls_io_instance->on_io_error(tls_io_instance->open_callback_context);
+        tls_io_instance->on_io_error(tls_io_instance->on_io_error_context);
     }
 }
 
@@ -64,7 +66,7 @@ static void indicate_open_complete(TLS_IO_INSTANCE* tls_io_instance, IO_OPEN_RES
 {
     if (tls_io_instance->on_io_open_complete != NULL)
     {
-        tls_io_instance->on_io_open_complete(tls_io_instance->open_callback_context, open_result);
+        tls_io_instance->on_io_open_complete(tls_io_instance->on_io_open_complete_context, open_result);
     }
 }
 
@@ -175,7 +177,7 @@ static void on_underlying_io_close_complete(void* context)
 
         if (tls_io_instance->on_io_close_complete != NULL)
         {
-            tls_io_instance->on_io_close_complete(tls_io_instance->close_callback_context);
+            tls_io_instance->on_io_close_complete(tls_io_instance->on_io_close_complete_context);
         }
         break;
     }
@@ -250,7 +252,7 @@ static int decode_ssl_received_bytes(TLS_IO_INSTANCE* tls_io_instance)
         {
             if (tls_io_instance->on_bytes_received != NULL)
             {
-                tls_io_instance->on_bytes_received(tls_io_instance->open_callback_context, buffer, rcv_bytes);
+                tls_io_instance->on_bytes_received(tls_io_instance->on_bytes_received_context, buffer, rcv_bytes);
             }
         }
     }
@@ -331,12 +333,18 @@ CONCRETE_IO_HANDLE tlsio_openssl_create(void* io_create_parameters, LOGGER_LOG l
             socketio_config.accepted_socket = NULL;
 
             result->on_bytes_received = NULL;
+            result->on_bytes_received_context = NULL;
+
             result->on_io_open_complete = NULL;
+            result->on_io_open_complete_context = NULL;
+
             result->on_io_close_complete = NULL;
+            result->on_io_close_complete_context = NULL;
+
             result->on_io_error = NULL;
+            result->on_io_error_context = NULL;
+
             result->logger_log = logger_log;
-            result->open_callback_context = NULL;
-            result->close_callback_context = NULL;
             result->tlsio_state = TLSIO_STATE_NOT_OPEN;
 
             result->ssl_context = SSL_CTX_new(TLSv1_method());
@@ -429,7 +437,7 @@ void tlsio_openssl_destroy(CONCRETE_IO_HANDLE tls_io)
     }
 }
 
-int tlsio_openssl_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_open_complete, ON_BYTES_RECEIVED on_bytes_received, ON_IO_ERROR on_io_error, void* callback_context)
+int tlsio_openssl_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_open_complete, void* on_io_open_complete_context, ON_BYTES_RECEIVED on_bytes_received, void* on_bytes_received_context, ON_IO_ERROR on_io_error, void* on_io_error_context)
 {
     int result;
 
@@ -447,14 +455,18 @@ int tlsio_openssl_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_open
         }
         else
         {
-            tls_io_instance->on_bytes_received = on_bytes_received;
             tls_io_instance->on_io_open_complete = on_io_open_complete;
+            tls_io_instance->on_io_open_complete_context = on_io_open_complete_context;
+
+            tls_io_instance->on_bytes_received = on_bytes_received;
+            tls_io_instance->on_bytes_received_context = on_bytes_received_context;
+
             tls_io_instance->on_io_error = on_io_error;
-            tls_io_instance->open_callback_context = callback_context;
+            tls_io_instance->on_io_error_context = on_io_error_context;
 
             tls_io_instance->tlsio_state = TLSIO_STATE_OPENING_UNDERLYING_IO;
 
-            if (xio_open(tls_io_instance->underlying_io, on_underlying_io_open_complete, on_underlying_io_bytes_received, on_underlying_io_error, tls_io_instance) != 0)
+            if (xio_open(tls_io_instance->underlying_io, on_underlying_io_open_complete, tls_io_instance, on_underlying_io_bytes_received, tls_io_instance, on_underlying_io_error, tls_io_instance) != 0)
             {
                 result = __LINE__;
             }
@@ -488,6 +500,8 @@ int tlsio_openssl_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_cl
         else
         {
             tls_io_instance->tlsio_state = TLSIO_STATE_CLOSING;
+            tls_io_instance->on_io_close_complete = on_io_close_complete;
+            tls_io_instance->on_io_close_complete_context = callback_context;
 
             if (xio_close(tls_io_instance->underlying_io, on_underlying_io_close_complete, tls_io_instance) != 0)
             {

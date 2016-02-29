@@ -69,7 +69,7 @@ void xio_destroy(XIO_HANDLE xio)
     }
 }
 
-int xio_open(XIO_HANDLE xio, ON_IO_OPEN_COMPLETE on_io_open_complete, ON_BYTES_RECEIVED on_bytes_received, ON_IO_ERROR on_io_error, void* callback_context)
+int xio_open(XIO_HANDLE xio, ON_IO_OPEN_COMPLETE on_io_open_complete, void* on_io_open_complete_context, ON_BYTES_RECEIVED on_bytes_received, void* on_bytes_received_context, ON_IO_ERROR on_io_error, void* on_io_error_context)
 {
     int result;
 
@@ -82,8 +82,8 @@ int xio_open(XIO_HANDLE xio, ON_IO_OPEN_COMPLETE on_io_open_complete, ON_BYTES_R
     {
         XIO_INSTANCE* xio_instance = (XIO_INSTANCE*)xio;
 
-        /* Codes_SRS_XIO_01_019: [xio_open shall call the specific concrete_io_open function specified in xio_create, passing the receive_callback and receive_callback_context arguments.] */
-        if (xio_instance->io_interface_description->concrete_io_open(xio_instance->concrete_xio_handle, on_io_open_complete, on_bytes_received, on_io_error, callback_context) != 0)
+        /* Codes_SRS_XIO_01_019: [xio_open shall call the specific concrete_xio_open function specified in xio_create, passing callback function and context arguments for three events: open completed, bytes received, and IO error.] */
+        if (xio_instance->io_interface_description->concrete_io_open(xio_instance->concrete_xio_handle, on_io_open_complete, on_io_open_complete_context, on_bytes_received, on_bytes_received_context, on_io_error, on_io_error_context) != 0)
         {
             /* Codes_SRS_XIO_01_022: [If the underlying concrete_io_open fails, xio_open shall return a non-zero value.] */
             result = __LINE__;
