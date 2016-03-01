@@ -138,24 +138,37 @@ CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters, LOGGER_LOG logger
             }
             else
             {
-                result->hostname = (char*)malloc(strlen(socket_io_config->hostname) + 1);
-                if (result->hostname == NULL)
+                if (socket_io_config->hostname != NULL)
                 {
-                    LogError("Failure: hostname == NULL.\r\n");
+                    result->hostname = (char*)malloc(strlen(socket_io_config->hostname) + 1);
+                    if (result->hostname != NULL)
+                    {
+                        (void)strcpy(result->hostname, socket_io_config->hostname);
+                    }
+
+                    result->socket = INVALID_SOCKET;
+                }
+                else
+                {
+                    result->hostname = NULL;
+                    result->socket = *((int*)socket_io_config->accepted_socket);
+                }
+
+                if ((result->hostname == NULL) && (result->socket == INVALID_SOCKET))
+                {
+                    LogError("Failure: hostname == NULL and socket is invalid.\r\n");
                     list_destroy(result->pending_io_list);
                     free(result);
                     result = NULL;
                 }
                 else
                 {
-                    strcpy(result->hostname, socket_io_config->hostname);
                     result->port = socket_io_config->port;
                     result->on_bytes_received = NULL;
                     result->on_io_error = NULL;
                     result->on_bytes_received_context = NULL;
                     result->on_io_error_context = NULL;
                     result->logger_log = logger_log;
-                    result->socket = INVALID_SOCKET;
                     result->io_state = IO_STATE_CLOSED;
                 }
             }
@@ -214,6 +227,23 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
         {
             LogError("Failure: socket state is not closed.\r\n");
             result = __LINE__;
+        }
+        else if (socket_io_instance->socket != INVALID_SOCKET)
+        {
+            // Opening an accepted socket
+            socket_io_instance->on_bytes_received_context = on_bytes_received_context;
+			socket_io_instance->on_bytes_received = on_bytes_received;
+            socket_io_instance->on_io_error = on_io_error;
+            socket_io_instance->on_io_error_context = on_io_error_context;
+
+            socket_io_instance->io_state = IO_STATE_OPEN;
+
+            if (on_io_open_complete != NULL)
+            {
+                on_io_open_complete(on_io_open_complete_context, IO_OPEN_OK);
+            }
+
+            result = 0;
         }
         else
         {

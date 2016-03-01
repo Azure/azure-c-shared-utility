@@ -223,6 +223,22 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
             LogError("Failure: socket state is not closed.\r\n");
             result = __LINE__;
         }
+        else if (socket_io_instance->socket != INVALID_SOCKET)
+        {
+            // Opening an accepted socket
+            socket_io_instance->on_bytes_received_context = on_bytes_received_context;
+            socket_io_instance->on_bytes_received = on_bytes_received;
+            socket_io_instance->on_io_error = on_io_error;
+            socket_io_instance->on_io_error_context = on_io_error_context;
+
+            socket_io_instance->io_state = IO_STATE_OPEN;
+            
+            if (on_io_open_complete != NULL)
+            {
+                on_io_open_complete(on_io_open_complete_context, IO_OPEN_OK);
+            }
+            result = 0;
+        }
         else
         {
             socket_io_instance->socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);

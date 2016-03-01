@@ -297,7 +297,7 @@ TEST_FUNCTION(socketio_create_list_create_fails)
     EXPECTED_CALL(mocks, list_create()).SetReturn((LIST_HANDLE)NULL);
     EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
 
-    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM };
+    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
 
     // act
     CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
@@ -315,7 +315,7 @@ TEST_FUNCTION(socketio_create_succeeds)
     EXPECTED_CALL(mocks, list_create());
     EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
 
-    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM };
+    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
 
     // act
     CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
@@ -344,7 +344,7 @@ TEST_FUNCTION(socketio_destroy_socket_succeeds)
     // arrange
     socketio_mocks mocks;
 
-    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM };
+    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
     CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
 
     mocks.ResetAllCalls();
@@ -371,7 +371,7 @@ TEST_FUNCTION(socketio_open_socket_io_NULL_fails)
     // arrange
     socketio_mocks mocks;
 
-    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM };
+    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
 
     mocks.ResetAllCalls();
 
@@ -387,7 +387,7 @@ TEST_FUNCTION(socketio_open_socket_fails)
     // arrange
     socketio_mocks mocks;
 
-    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM };
+    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
     CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
     static ADDRINFO addrInfo = { AI_PASSIVE, AF_INET, SOCK_STREAM, IPPROTO_TCP, 128, NULL, (sockaddr*)0x11, NULL };
 
@@ -412,7 +412,7 @@ TEST_FUNCTION(socketio_open_getaddrinfo_fails)
     // arrange
     socketio_mocks mocks;
 
-    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM };
+    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
     CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
     static ADDRINFO addrInfo = { AI_PASSIVE, AF_INET, SOCK_STREAM, IPPROTO_TCP, 128, NULL, (sockaddr*)0x11, NULL };
 
@@ -439,7 +439,7 @@ TEST_FUNCTION(socketio_open_connect_fails)
     // arrange
     socketio_mocks mocks;
 
-    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM };
+    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
     CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
     static ADDRINFO addrInfo = { AI_PASSIVE, AF_INET, SOCK_STREAM, IPPROTO_TCP, 128, NULL, (sockaddr*)0x11, NULL };
 
@@ -468,7 +468,7 @@ TEST_FUNCTION(socketio_open_ioctlsocket_fails)
     // arrange
     socketio_mocks mocks;
 
-    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM };
+    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
     CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
     static ADDRINFO addrInfo = { AI_PASSIVE, AF_INET, SOCK_STREAM, IPPROTO_TCP, 128, NULL, (sockaddr*)0x11, NULL };
 
@@ -498,7 +498,7 @@ TEST_FUNCTION(socketio_open_succeeds)
     // arrange
     socketio_mocks mocks;
 
-    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM };
+    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
     CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
     static ADDRINFO addrInfo = { AI_PASSIVE, AF_INET, SOCK_STREAM, IPPROTO_TCP, 128, NULL, (sockaddr*)0x11, NULL };
 
@@ -536,7 +536,7 @@ TEST_FUNCTION(socketio_close_Succeeds)
 {
     // arrange
     socketio_mocks mocks;
-    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM };
+    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
     CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
     static ADDRINFO addrInfo = { AI_PASSIVE, AF_INET, SOCK_STREAM, IPPROTO_TCP, 128, NULL, (sockaddr*)0x11, NULL };
 
@@ -569,7 +569,7 @@ TEST_FUNCTION(socketio_send_buffer_NULL_fails)
 {
     // arrange
     socketio_mocks mocks;
-    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM };
+    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
     CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
     static ADDRINFO addrInfo = { AI_PASSIVE, AF_INET, SOCK_STREAM, IPPROTO_TCP, 128, NULL, (sockaddr*)0x11, NULL };
 
@@ -588,7 +588,7 @@ TEST_FUNCTION(socketio_send_size_zero_fails)
 {
     // arrange
     socketio_mocks mocks;
-    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM };
+    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
     CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
     static ADDRINFO addrInfo = { AI_PASSIVE, AF_INET, SOCK_STREAM, IPPROTO_TCP, 128, NULL, (sockaddr*)0x11, NULL };
 
@@ -607,7 +607,7 @@ TEST_FUNCTION(socketio_send_succeeds)
 {
     // arrange
     socketio_mocks mocks;
-    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM };
+    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
     CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
     static ADDRINFO addrInfo = { AI_PASSIVE, AF_INET, SOCK_STREAM, IPPROTO_TCP, 128, NULL, (sockaddr*)0x11, NULL };
 
@@ -632,7 +632,7 @@ TEST_FUNCTION(socketio_send_returns_1_succeeds)
 {
     // arrange
     socketio_mocks mocks;
-    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM };
+    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
     CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
     static ADDRINFO addrInfo = { AI_PASSIVE, AF_INET, SOCK_STREAM, IPPROTO_TCP, 128, NULL, (sockaddr*)0x11, NULL };
 
@@ -672,7 +672,7 @@ TEST_FUNCTION(socketio_dowork_succeeds)
 {
     // arrange
     socketio_mocks mocks;
-    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM };
+    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
     CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
     static ADDRINFO addrInfo = { AI_PASSIVE, AF_INET, SOCK_STREAM, IPPROTO_TCP, 128, NULL, (sockaddr*)0x11, NULL };
 
@@ -697,7 +697,7 @@ TEST_FUNCTION(socketio_dowork_recv_bytes_succeeds)
 {
     // arrange
     socketio_mocks mocks;
-    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM };
+    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
     CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
     static ADDRINFO addrInfo = { AI_PASSIVE, AF_INET, SOCK_STREAM, IPPROTO_TCP, 128, NULL, (sockaddr*)0x11, NULL };
 
