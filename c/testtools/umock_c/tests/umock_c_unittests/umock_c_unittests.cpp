@@ -252,19 +252,4 @@ TEST_FUNCTION(STRICT_EXPECTED_CALL_with_char_star_as_argument)
     ASSERT_ARE_EQUAL(char_ptr, "[test_dependency_char_star_arg(\"b\")]", umock_c_get_actual_calls());
 }
 
-TEST_FUNCTION(Ignore_Argument_by_name_ignores_the_argument)
-{
-    // arrange
-    mock_call_modifier_test_dependency_char_star_arg foo = STRICT_EXPECTED_CALL(test_dependency_char_star_arg("a"));
-    STRICT_EXPECTED_CALL(test_dependency_char_star_arg("a"))
-        .IgnoreArgument_s();
-
-    // act
-    (void)test_dependency_char_star_arg("b");
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, "[test_dependency_char_star_arg(\"a\")]", umock_c_get_expected_calls());
-    ASSERT_ARE_EQUAL(char_ptr, "[test_dependency_char_star_arg(\"b\")]", umock_c_get_actual_calls());
-}
-
 END_TEST_SUITE(umock_c_unittests)
