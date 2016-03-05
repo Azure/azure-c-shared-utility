@@ -33,6 +33,7 @@ extern "C" {
     C2(set_global_mock_return_,mock_function)(return_value); \
     C2(set_global_mock_fail_return_,mock_function)(fail_return_value);
 
+/* Codes_SRS_UMOCK_C_01_013: [STRICT_EXPECTED_CALL shall record that a certain call is expected.] */
 #define STRICT_EXPECTED_CALL(call) \
 	C2(umock_c_expected_,call)
 

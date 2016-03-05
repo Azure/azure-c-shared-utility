@@ -82,6 +82,7 @@ MOCK_CALL_HANDLE umock_c_add_actual_call(MOCK_CALL_HANDLE mock_call)
     MOCK_CALL_HANDLE result = NULL;
     size_t i;
 
+    /* Codes_SRS_UMOCK_C_01_115: [ umock_c shall compare calls in order. ]*/
     for (i = 0; i < expected_call_count; i++)
     {
         if (umockcall_are_equal(expected_calls[i], mock_call))

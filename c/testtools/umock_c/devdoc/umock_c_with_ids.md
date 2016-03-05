@@ -248,6 +248,10 @@ umock_c_get_actual_calls would return:
 "[test_dependency_2_args(42,2)]"
 ```
 
+### Call comparison rules
+
+XX**SRS_UMOCK_C_01_115: [** umock_c shall compare calls in order. **]** That means that "[A()][B()]" is different than "[B()][A()]". 
+
 ##Supported types
 
 ###Out of the box
