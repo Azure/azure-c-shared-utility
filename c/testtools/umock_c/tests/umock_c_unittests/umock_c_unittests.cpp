@@ -12,22 +12,34 @@
 
 BEGIN_TEST_SUITE(umock_c_unittests)
 
+static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
+{
+    /* TODO: how shall we fail here? */
+}
+
 TEST_SUITE_INITIALIZE(suite_init)
 {
+    ASSERT_ARE_EQUAL(int, 0, umock_c_init(on_umock_c_error));
 }
 
 TEST_SUITE_CLEANUP(suite_cleanup)
 {
+    umock_c_deinit();
 }
 
 TEST_FUNCTION_INITIALIZE(test_function_init)
 {
+    ASSERT_ARE_EQUAL(int, 0, umock_c_reset_all_calls());
 }
 
 TEST_FUNCTION_CLEANUP(test_function_cleanup)
 {
 }
 
+/* STRICT_EXPECTED_CALL */
+
+/* Tests_SRS_UMOCK_C_01_013: [STRICT_EXPECTED_CALL shall record that a certain call is expected.] */
+/* Tests_SRS_UMOCK_C_01_015: [The call argument shall be the complete function invocation.]*/
 TEST_FUNCTION(STRICT_EXPECTED_CALL_without_an_actual_call_yields_a_missing_call)
 {
     // arrange

@@ -145,10 +145,10 @@ void umock_c_deinit(void);
 STRICT_EXPECTED_CALL(call)
 ```
 
-**SRS_UMOCK_C_01_013: [**STRICT_EXPECTED_CALL shall record that a certain call is expected.**]**
+XX**SRS_UMOCK_C_01_013: [**STRICT_EXPECTED_CALL shall record that a certain call is expected.**]**
 **SRS_UMOCK_C_01_014: [**For each argument the argument value shall be stored for later comparison with actual calls.**]**
 
-**SRS_UMOCK_C_01_015: [**The call argument shall be the complete function invocation.**]**
+XX**SRS_UMOCK_C_01_015: [**The call argument shall be the complete function invocation.**]**
 
 Example:
 
