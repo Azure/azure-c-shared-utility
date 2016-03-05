@@ -15,6 +15,7 @@ extern "C" {
         int x;
     } TEST_STRUCT;
 
+    /* Tests_SRS_UMOCK_C_01_001: [MOCKABLE_FUNCTION shall be used to wrap function definition allowing the user to declare a function that can be mocked.]*/
     MOCKABLE_FUNCTION(int, test_dependency_no_args);
     MOCKABLE_FUNCTION(int, test_dependency_1_arg, int, a);
     MOCKABLE_FUNCTION(int, test_dependency_2_args, int, a, int, b);

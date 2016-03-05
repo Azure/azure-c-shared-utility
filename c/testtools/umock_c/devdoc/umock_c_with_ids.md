@@ -85,9 +85,9 @@ typedef void(*ON_UMOCK_C_ERROR)(UMOCK_C_ERROR_CODE error_code);
 MOCKABLE_FUNCTION(result, function, ...)
 ```
 
-**SRS_UMOCK_C_01_001: [**MOCKABLE_FUNCTION shall be used to wrap function definition allowing the user to declare a function that can be mocked.**]**
+XX**SRS_UMOCK_C_01_001: [**MOCKABLE_FUNCTION shall be used to wrap function definition allowing the user to declare a function that can be mocked.**]**
 
-**SRS_UMOCK_C_01_002: [**The macro shall generate a function signature in case ENABLE_MOCKS is not defined.**]**
+XX**SRS_UMOCK_C_01_002: [**The macro shall generate a function signature in case ENABLE_MOCKS is not defined.**]**
 
 **SRS_UMOCK_C_01_003: [**If ENABLE_MOCKS is defined, MOCKABLE_FUNCTION shall generate all the boilerplate code needed by the macros in umock API to function to record the calls. Note: a lot of code (including function definitions and bodies, global variables (both static and extern).**]**
 

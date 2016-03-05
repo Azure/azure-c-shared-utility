@@ -27,6 +27,7 @@ extern MOCK_CALL_HANDLE umock_c_get_last_expected_call(void);
 
 #define EXPAND(A) A
 
+/* Codes_SRS_UMOCK_C_01_002: [The macro shall generate a function signature in case ENABLE_MOCKS is not defined.] */
 #define MOCKABLE_FUNCTION_INTERNAL(result, function, ...) \
 	result function(void);
 

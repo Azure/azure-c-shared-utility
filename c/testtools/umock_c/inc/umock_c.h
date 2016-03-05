@@ -16,6 +16,7 @@ extern "C" {
 
     typedef void(*ON_UMOCK_C_ERROR)(UMOCK_C_ERROR_CODE error_code);
 
+/* Codes_SRS_UMOCK_C_01_001: [MOCKABLE_FUNCTION shall be used to wrap function definition allowing the user to declare a function that can be mocked.]*/
 #define MOCKABLE_FUNCTION(result, function, ...) \
 	IF(WITH_MOCK, MOCKABLE_FUNCTION_INTERNAL_WITH_MOCK(result, function, __VA_ARGS__), MOCKABLE_FUNCTION_INTERNAL(result, function, __VA_ARGS__))
 

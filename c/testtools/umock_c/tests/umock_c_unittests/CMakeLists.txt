@@ -8,6 +8,7 @@ set(theseTestsName umock_c_unittests)
 
 set(${theseTestsName}_c_files
 umock_c_unittests.cpp
+umock_c_generate_function_declaration.cpp
 )
 
 set(${theseTestsName}_h_files
