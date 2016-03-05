@@ -146,7 +146,7 @@ STRICT_EXPECTED_CALL(call)
 ```
 
 XX**SRS_UMOCK_C_01_013: [**STRICT_EXPECTED_CALL shall record that a certain call is expected.**]**
-**SRS_UMOCK_C_01_014: [**For each argument the argument value shall be stored for later comparison with actual calls.**]**
+XX**SRS_UMOCK_C_01_014: [**For each argument the argument value shall be stored for later comparison with actual calls.**]**
 
 XX**SRS_UMOCK_C_01_015: [**The call argument shall be the complete function invocation.**]**
 
@@ -162,10 +162,10 @@ STRICT_EXPECTED_CALL(test_dependency_1_arg(42));
 EXPECTED_CALL(call)
 ```
 
-**SRS_UMOCK_C_01_016: [**EXPECTED_CALL shall record that a certain call is expected.**]**
+XX**SRS_UMOCK_C_01_016: [**EXPECTED_CALL shall record that a certain call is expected.**]**
 **SRS_UMOCK_C_01_017: [**No arguments shall be saved by default, unless other modifiers state it.**]**
 
-**SRS_UMOCK_C_01_018: [**The call argument shall be the complete function invocation.**]**
+XX**SRS_UMOCK_C_01_018: [**The call argument shall be the complete function invocation.**]**
 
 Example:
 

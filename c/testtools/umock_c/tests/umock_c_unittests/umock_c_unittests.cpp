@@ -120,4 +120,88 @@ TEST_FUNCTION(two_different_STRICT_EXPECTED_CALL_instances_without_an_actual_cal
     ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
 }
 
+/* EXPECTED_CALL */
+
+/* Tests_SRS_UMOCK_C_01_016: [EXPECTED_CALL shall record that a certain call is expected.] */
+/* Tests_SRS_UMOCK_C_01_018: [The call argument shall be the complete function invocation.] */
+TEST_FUNCTION(EXPECTED_CALL_without_an_actual_call_yields_a_missing_call)
+{
+    // arrange
+
+    // act
+    EXPECTED_CALL(test_dependency_no_args());
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "[test_dependency_no_args()]", umock_c_get_expected_calls());
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_UMOCK_C_01_016: [EXPECTED_CALL shall record that a certain call is expected.] */
+TEST_FUNCTION(two_EXPECTED_CALL_without_an_actual_call_yields_2_missing_calls)
+{
+    // arrange
+
+    // act
+    EXPECTED_CALL(test_dependency_no_args());
+    EXPECTED_CALL(test_dependency_no_args());
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "[test_dependency_no_args()][test_dependency_no_args()]", umock_c_get_expected_calls());
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_UMOCK_C_01_017: [No arguments shall be saved by default, unless other modifiers state it.] */
+TEST_FUNCTION(an_EXPECTED_CALL_with_one_argument_without_an_actual_call_yields_1_missing_call)
+{
+    // arrange
+
+    // act
+    EXPECTED_CALL(test_dependency_1_arg(42));
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "[test_dependency_1_arg(42)]", umock_c_get_expected_calls());
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_UMOCK_C_01_017: [No arguments shall be saved by default, unless other modifiers state it.] */
+TEST_FUNCTION(an_EXPECTED_CALL_with_2_arguments_without_an_actual_call_yields_1_missing_call)
+{
+    // arrange
+
+    // act
+    EXPECTED_CALL(test_dependency_2_args(42, 43));
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "[test_dependency_2_args(42,43)]", umock_c_get_expected_calls());
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_UMOCK_C_01_016: [EXPECTED_CALL shall record that a certain call is expected.] */
+TEST_FUNCTION(two_different_EXPECTED_CALL_instances_without_an_actual_call_yields_2_missing_calls)
+{
+    // arrange
+
+    // act
+    EXPECTED_CALL(test_dependency_no_args());
+    EXPECTED_CALL(test_dependency_1_arg(42));
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "[test_dependency_no_args()][test_dependency_1_arg(42)]", umock_c_get_expected_calls());
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_UMOCK_C_01_115: [ umock_c shall compare calls in order. ]*/
+TEST_FUNCTION(two_different_EXPECTED_CALL_instances_without_an_actual_call_yields_2_missing_calls_with_order_preserved)
+{
+    // arrange
+
+    // act
+    EXPECTED_CALL(test_dependency_1_arg(42));
+    EXPECTED_CALL(test_dependency_no_args());
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "[test_dependency_1_arg(42)][test_dependency_no_args()]", umock_c_get_expected_calls());
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
+}
+
 END_TEST_SUITE(umock_c_unittests)
