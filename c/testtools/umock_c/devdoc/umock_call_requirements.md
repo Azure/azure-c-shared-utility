@@ -1,46 +1,10 @@
-#umock_c
+#umockcall requirements
  
 #Overview
 
-umock_c is a C mocking library that exposes APIs to allow:
--	defining mock functions, 
--	recording expected calls 
--	comparing expected calls with actual calls. 
-On top of the basic functionality, additional convenience features like modifiers on expected calls are provided.
+umockcall is a module that encapsulates a umock call.
 
-#Simple example
-
-A test written with umock_c looks like below:
-
-Let’s assume unit A depends on unit B. unit B has a function called test_dependency_1_arg.
-
-In unit B’s header one would write:
-
-```c
-MOCKABLE_FUNCTION(int, test_dependency_1_arg, int, a);
-```
-
-Let’s assume unit A has a function called function_under_test.
-
-A test that checks that function_under_test calls its dependency and injects a return value, while ignoring all arguments on the call looks like this:
-
-```c
-TEST_FUNCTION(my_first_test)
-{
-    // arrange
-    STRICT_EXPECTED_CALL(test_dependency_1_arg(42))
-        .SetReturn(44)
-        .IgnoreAllArguments();
-
-    // act
-    function_under_test();
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-}
-```
-
-#Exposed API (umock_c.h)
+#Exposed API
 
 ```c
 DEFINE_ENUM(UMOCK_C_ERROR_CODE,

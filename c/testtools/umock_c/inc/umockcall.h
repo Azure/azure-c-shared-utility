@@ -11,7 +11,7 @@ extern "C" {
 #include <stddef.h>
 #endif
 
-    typedef struct MOCK_CALL_TAG* MOCK_CALL_HANDLE;
+    typedef struct UMOCK_CALL_TAG* MOCK_CALL_HANDLE;
     typedef int(*MOCK_CALL_DATA_CLONE_FUNC)(void* destination, const void* source);
     typedef void(*MOCK_CALL_DATA_FREE_FUNC)(void* mock_call_data);
     typedef char*(*MOCK_CALL_DATA_STRINGIFY_FUNC)(void* mock_call_data);

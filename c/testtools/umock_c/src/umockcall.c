@@ -9,7 +9,7 @@
 #include <string.h>
 #include "umockcall.h"
 
-typedef struct MOCK_CALL_TAG
+typedef struct UMOCK_CALL_TAG
 {
     char* function_name;
     void* mock_call_data;
