@@ -204,4 +204,34 @@ TEST_FUNCTION(two_different_EXPECTED_CALL_instances_without_an_actual_call_yield
     ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
 }
 
+/* Tests_SRS_UMOCK_C_01_017: [No arguments shall be saved by default, unless other modifiers state it.]*/
+TEST_FUNCTION(EXPECTED_CALL_does_not_compare_arguments)
+{
+    // arrange
+
+    // act
+    EXPECTED_CALL(test_dependency_1_arg(42));
+
+    test_dependency_1_arg(43);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_expected_calls());
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_UMOCK_C_01_017: [No arguments shall be saved by default, unless other modifiers state it.]*/
+TEST_FUNCTION(EXPECTED_CALL_with_2_args_does_not_compare_arguments)
+{
+    // arrange
+
+    // act
+    EXPECTED_CALL(test_dependency_2_args(42,43));
+
+    test_dependency_2_args(43, 44);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_expected_calls());
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
+}
+
 END_TEST_SUITE(umock_c_unittests)
