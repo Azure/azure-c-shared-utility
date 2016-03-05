@@ -9,19 +9,19 @@
 #include <string.h>
 #include "umockcall.h"
 
-typedef struct UMOCK_CALL_TAG
+typedef struct UMOCKCALL_TAG
 {
     char* function_name;
     void* mock_call_data;
     void* set_return_func;
     void* ignore_all_arguments_func;
-    MOCK_CALL_DATA_CLONE_FUNC mock_call_data_clone;
-    MOCK_CALL_DATA_FREE_FUNC mock_call_data_free;
-    MOCK_CALL_DATA_STRINGIFY_FUNC mock_call_data_stringify;
-    MOCK_CALL_DATA_ARE_EQUAL_FUNC mock_call_data_are_equal;
+    UMOCKCALL_DATA_CLONE_FUNC mock_call_data_clone;
+    UMOCKCALL_DATA_FREE_FUNC mock_call_data_free;
+    UMOCKCALL_DATA_STRINGIFY_FUNC mock_call_data_stringify;
+    UMOCKCALL_DATA_ARE_EQUAL_FUNC mock_call_data_are_equal;
 } MOCK_CALL;
 
-MOCK_CALL_HANDLE umockcall_create(const char* function_name, void* mock_call_data, void* set_return_func, void* ignore_all_arguments_func, MOCK_CALL_DATA_CLONE_FUNC mock_call_data_clone, MOCK_CALL_DATA_FREE_FUNC mock_call_data_free, MOCK_CALL_DATA_STRINGIFY_FUNC mock_call_data_stringify, MOCK_CALL_DATA_ARE_EQUAL_FUNC mock_call_data_are_equal)
+UMOCKCALL_HANDLE umockcall_create(const char* function_name, void* mock_call_data, void* set_return_func, void* ignore_all_arguments_func, UMOCKCALL_DATA_CLONE_FUNC mock_call_data_clone, UMOCKCALL_DATA_FREE_FUNC mock_call_data_free, UMOCKCALL_DATA_STRINGIFY_FUNC mock_call_data_stringify, UMOCKCALL_DATA_ARE_EQUAL_FUNC mock_call_data_are_equal)
 {
     MOCK_CALL* result = (MOCK_CALL*)malloc(sizeof(MOCK_CALL));
     if (result != NULL)
@@ -49,13 +49,13 @@ MOCK_CALL_HANDLE umockcall_create(const char* function_name, void* mock_call_dat
     return result;
 }
 
-void umockcall_destroy(MOCK_CALL_HANDLE mock_call)
+void umockcall_destroy(UMOCKCALL_HANDLE mock_call)
 {
     free(mock_call->mock_call_data);
     free(mock_call);
 }
 
-int umockcall_are_equal(MOCK_CALL_HANDLE left, MOCK_CALL_HANDLE right)
+int umockcall_are_equal(UMOCKCALL_HANDLE left, UMOCKCALL_HANDLE right)
 {
     int result;
 
@@ -82,7 +82,7 @@ int umockcall_are_equal(MOCK_CALL_HANDLE left, MOCK_CALL_HANDLE right)
     return result;
 }
 
-char* umockcall_to_string(MOCK_CALL_HANDLE mock_call)
+char* umockcall_to_string(UMOCKCALL_HANDLE mock_call)
 {
     char* result;
 
@@ -122,7 +122,7 @@ char* umockcall_to_string(MOCK_CALL_HANDLE mock_call)
     return result;
 }
 
-void* umockcall_get_call_data(MOCK_CALL_HANDLE mock_call)
+void* umockcall_get_call_data(UMOCKCALL_HANDLE mock_call)
 {
     void* mock_call_data;
 

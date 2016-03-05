@@ -11,9 +11,9 @@
 #include <stdio.h>
 
 static size_t expected_call_count;
-static MOCK_CALL_HANDLE* expected_calls;
+static UMOCKCALL_HANDLE* expected_calls;
 static size_t actual_call_count;
-static MOCK_CALL_HANDLE* actual_calls;
+static UMOCKCALL_HANDLE* actual_calls;
 static char* expected_calls_string;
 static char* actual_calls_string;
 
@@ -59,10 +59,10 @@ int umock_c_reset_all_calls(void)
 	return 0;
 }
 
-int umock_c_add_expected_call(MOCK_CALL_HANDLE mock_call)
+int umock_c_add_expected_call(UMOCKCALL_HANDLE mock_call)
 {
     int result;
-    MOCK_CALL_HANDLE* new_expected_calls = (MOCK_CALL_HANDLE*)realloc(expected_calls, sizeof(MOCK_CALL_HANDLE) * (expected_call_count + 1));
+    UMOCKCALL_HANDLE* new_expected_calls = (UMOCKCALL_HANDLE*)realloc(expected_calls, sizeof(UMOCKCALL_HANDLE) * (expected_call_count + 1));
 	if (new_expected_calls == NULL)
 	{
 		result = __LINE__;
@@ -77,9 +77,9 @@ int umock_c_add_expected_call(MOCK_CALL_HANDLE mock_call)
     return result;
 }
 
-MOCK_CALL_HANDLE umock_c_add_actual_call(MOCK_CALL_HANDLE mock_call)
+UMOCKCALL_HANDLE umock_c_add_actual_call(UMOCKCALL_HANDLE mock_call)
 {
-    MOCK_CALL_HANDLE result = NULL;
+    UMOCKCALL_HANDLE result = NULL;
     size_t i;
 
     /* Codes_SRS_UMOCK_C_01_115: [ umock_c shall compare calls in order. ]*/
@@ -88,7 +88,7 @@ MOCK_CALL_HANDLE umock_c_add_actual_call(MOCK_CALL_HANDLE mock_call)
         if (umockcall_are_equal(expected_calls[i], mock_call))
         {
             result = expected_calls[i];
-            (void)memmove(&expected_calls[i], &expected_calls[i + 1], (expected_call_count - i - 1) * sizeof(MOCK_CALL_HANDLE));
+            (void)memmove(&expected_calls[i], &expected_calls[i + 1], (expected_call_count - i - 1) * sizeof(UMOCKCALL_HANDLE));
             expected_call_count--;
             i--;
             break;
@@ -98,7 +98,7 @@ MOCK_CALL_HANDLE umock_c_add_actual_call(MOCK_CALL_HANDLE mock_call)
     if (i == expected_call_count)
     {
         /* an unexpected call */
-        MOCK_CALL_HANDLE* new_actual_calls = (MOCK_CALL_HANDLE*)realloc(actual_calls, sizeof(MOCK_CALL_HANDLE) * (actual_call_count + 1));
+        UMOCKCALL_HANDLE* new_actual_calls = (UMOCKCALL_HANDLE*)realloc(actual_calls, sizeof(UMOCKCALL_HANDLE) * (actual_call_count + 1));
         if (new_actual_calls == NULL)
         {
             result = NULL;
@@ -222,9 +222,9 @@ const char* umock_c_get_actual_calls(void)
     return result;
 }
 
-MOCK_CALL_HANDLE umock_c_get_last_expected_call(void)
+UMOCKCALL_HANDLE umock_c_get_last_expected_call(void)
 {
-    MOCK_CALL_HANDLE result;
+    UMOCKCALL_HANDLE result;
 
     if (expected_call_count == 0)
     {

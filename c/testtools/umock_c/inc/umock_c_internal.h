@@ -21,9 +21,9 @@ extern "C" {
 #define WITH_MOCK 0
 #endif
 
-extern int umock_c_add_expected_call(MOCK_CALL_HANDLE mock_call);
-extern MOCK_CALL_HANDLE umock_c_add_actual_call(MOCK_CALL_HANDLE mock_call);
-extern MOCK_CALL_HANDLE umock_c_get_last_expected_call(void);
+extern int umock_c_add_expected_call(UMOCKCALL_HANDLE mock_call);
+extern UMOCKCALL_HANDLE umock_c_add_actual_call(UMOCKCALL_HANDLE mock_call);
+extern UMOCKCALL_HANDLE umock_c_get_last_expected_call(void);
 
 #define EXPAND(A) A
 
@@ -229,8 +229,8 @@ extern MOCK_CALL_HANDLE umock_c_get_last_expected_call(void);
     } \
 	return_type name(IF(COUNT_ARG(__VA_ARGS__),FOR_EACH_2_COUNTED(ARG_IN_SIGNATURE, __VA_ARGS__),void)) \
 	{ \
-        MOCK_CALL_HANDLE mock_call; \
-        MOCK_CALL_HANDLE matched_call; \
+        UMOCKCALL_HANDLE mock_call; \
+        UMOCKCALL_HANDLE matched_call; \
         static return_type result; \
         C2(mock_call_,name)* matched_call_data; \
         C2(mock_call_,name)* mock_call_data = (C2(mock_call_,name)*)malloc(sizeof(C2(mock_call_,name))); \
@@ -322,7 +322,7 @@ extern MOCK_CALL_HANDLE umock_c_get_last_expected_call(void);
     IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_KEEP_1(IMPLEMENT_VALIDATE_ARGUMENT_FUNCTION, name, __VA_ARGS__),) \
 	C2(mock_call_modifier_,name) C2(umock_c_expected_,name)(IF(COUNT_ARG(__VA_ARGS__),FOR_EACH_2_COUNTED(ARG_IN_SIGNATURE, __VA_ARGS__),void)) \
 	{ \
-        MOCK_CALL_HANDLE mock_call; \
+        UMOCKCALL_HANDLE mock_call; \
         DECLARE_MOCK_CALL_MODIFIER(name) \
         C2(mock_call_,name)* mock_call_data = (C2(mock_call_,name)*)malloc(sizeof(C2(mock_call_,name))); \
         IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2(COPY_ARG_TO_MOCK_STRUCT, __VA_ARGS__),) \
