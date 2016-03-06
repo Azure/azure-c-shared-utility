@@ -16,7 +16,7 @@ extern "C" {
     typedef char*(*UMOCKCALL_DATA_STRINGIFY_FUNC)(void* umockcall_data);
     typedef int(*UMOCKCALL_DATA_ARE_EQUAL_FUNC)(void* left, void* right);
 
-    extern UMOCKCALL_HANDLE umockcall_create(const char* function_name, void* umockcall_data, void* set_return_func, void* ignore_all_arguments_func, UMOCKCALL_DATA_FREE_FUNC umockcall_data_free, UMOCKCALL_DATA_STRINGIFY_FUNC umockcall_data_stringify, UMOCKCALL_DATA_ARE_EQUAL_FUNC umockcall_data_are_equal);
+    extern UMOCKCALL_HANDLE umockcall_create(const char* function_name, void* umockcall_data, UMOCKCALL_DATA_FREE_FUNC umockcall_data_free, UMOCKCALL_DATA_STRINGIFY_FUNC umockcall_data_stringify, UMOCKCALL_DATA_ARE_EQUAL_FUNC umockcall_data_are_equal);
     extern void umockcall_destroy(UMOCKCALL_HANDLE umockcall);
     extern int umockcall_are_equal(UMOCKCALL_HANDLE left, UMOCKCALL_HANDLE right);
     extern char* umockcall_to_string(UMOCKCALL_HANDLE umockcall);

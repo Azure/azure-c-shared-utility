@@ -13,14 +13,12 @@ typedef struct UMOCKCALL_TAG
 {
     char* function_name;
     void* umockcall_data;
-    void* set_return_func;
-    void* ignore_all_arguments_func;
     UMOCKCALL_DATA_FREE_FUNC umockcall_data_free;
     UMOCKCALL_DATA_STRINGIFY_FUNC umockcall_data_stringify;
     UMOCKCALL_DATA_ARE_EQUAL_FUNC umockcall_data_are_equal;
 } MOCK_CALL;
 
-UMOCKCALL_HANDLE umockcall_create(const char* function_name, void* umockcall_data, void* set_return_func, void* ignore_all_arguments_func, UMOCKCALL_DATA_FREE_FUNC umockcall_data_free, UMOCKCALL_DATA_STRINGIFY_FUNC umockcall_data_stringify, UMOCKCALL_DATA_ARE_EQUAL_FUNC umockcall_data_are_equal)
+UMOCKCALL_HANDLE umockcall_create(const char* function_name, void* umockcall_data, UMOCKCALL_DATA_FREE_FUNC umockcall_data_free, UMOCKCALL_DATA_STRINGIFY_FUNC umockcall_data_stringify, UMOCKCALL_DATA_ARE_EQUAL_FUNC umockcall_data_are_equal)
 {
     MOCK_CALL* result = (MOCK_CALL*)malloc(sizeof(MOCK_CALL));
     if (result != NULL)
@@ -36,8 +34,6 @@ UMOCKCALL_HANDLE umockcall_create(const char* function_name, void* umockcall_dat
         {
             (void)memcpy(result->function_name, function_name, function_name_length + 1);
             result->umockcall_data = umockcall_data;
-            result->set_return_func = set_return_func;
-            result->ignore_all_arguments_func = ignore_all_arguments_func;
             result->umockcall_data_free = umockcall_data_free;
             result->umockcall_data_stringify = umockcall_data_stringify;
             result->umockcall_data_are_equal = umockcall_data_are_equal;
