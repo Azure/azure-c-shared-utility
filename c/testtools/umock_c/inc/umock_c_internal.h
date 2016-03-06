@@ -222,6 +222,7 @@ extern UMOCKCALL_HANDLE umock_c_get_last_expected_call(void);
     } \
     void C2(mock_call_data_free_func_,name)(void* mock_call_data) \
     { \
+        free(mock_call_data); \
     } \
 	return_type name(IF(COUNT_ARG(__VA_ARGS__),FOR_EACH_2_COUNTED(ARG_IN_SIGNATURE, __VA_ARGS__),void)) \
 	{ \

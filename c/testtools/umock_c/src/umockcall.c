@@ -16,27 +16,43 @@ typedef struct UMOCKCALL_TAG
     UMOCKCALL_DATA_FREE_FUNC umockcall_data_free;
     UMOCKCALL_DATA_STRINGIFY_FUNC umockcall_data_stringify;
     UMOCKCALL_DATA_ARE_EQUAL_FUNC umockcall_data_are_equal;
-} MOCK_CALL;
+} UMOCKCALL;
 
 UMOCKCALL_HANDLE umockcall_create(const char* function_name, void* umockcall_data, UMOCKCALL_DATA_FREE_FUNC umockcall_data_free, UMOCKCALL_DATA_STRINGIFY_FUNC umockcall_data_stringify, UMOCKCALL_DATA_ARE_EQUAL_FUNC umockcall_data_are_equal)
 {
-    MOCK_CALL* result = (MOCK_CALL*)malloc(sizeof(MOCK_CALL));
-    if (result != NULL)
+    UMOCKCALL* result;
+
+    if ((function_name == NULL) ||
+        (umockcall_data == NULL) ||
+        (umockcall_data_free == NULL) ||
+        (umockcall_data_stringify == NULL) ||
+        (umockcall_data_are_equal == NULL))
     {
-        size_t function_name_length = strlen(function_name);
-        result->function_name = (char*)malloc(function_name_length + 1);
-        if (result->function_name == NULL)
+        /* Codes_SRS_UMOCKCALL_01_003: [ If any of the arguments are NULL, umockcall_create shall fail and return NULL. ] */
+        result = NULL;
+    }
+    else
+    {
+        /* Codes_SRS_UMOCKCALL_01_001: [ umockcall_create shall create a new instance of a umock call and on success it shall return a non-NULL handle to it. ] */
+        result = (UMOCKCALL*)malloc(sizeof(UMOCKCALL));
+        /* Codes_SRS_UMOCKCALL_01_002: [ If allocating memory for the umock call instance fails, umockcall_create shall return NULL. ] */
+        if (result != NULL)
         {
-            free(result);
-            result = NULL;
-        }
-        else
-        {
-            (void)memcpy(result->function_name, function_name, function_name_length + 1);
-            result->umockcall_data = umockcall_data;
-            result->umockcall_data_free = umockcall_data_free;
-            result->umockcall_data_stringify = umockcall_data_stringify;
-            result->umockcall_data_are_equal = umockcall_data_are_equal;
+            size_t function_name_length = strlen(function_name);
+            result->function_name = (char*)malloc(function_name_length + 1);
+            if (result->function_name == NULL)
+            {
+                free(result);
+                result = NULL;
+            }
+            else
+            {
+                (void)memcpy(result->function_name, function_name, function_name_length + 1);
+                result->umockcall_data = umockcall_data;
+                result->umockcall_data_free = umockcall_data_free;
+                result->umockcall_data_stringify = umockcall_data_stringify;
+                result->umockcall_data_are_equal = umockcall_data_are_equal;
+            }
         }
     }
 
@@ -45,7 +61,7 @@ UMOCKCALL_HANDLE umockcall_create(const char* function_name, void* umockcall_dat
 
 void umockcall_destroy(UMOCKCALL_HANDLE umockcall)
 {
-    free(umockcall->umockcall_data);
+    umockcall->umockcall_data_free(umockcall->umockcall_data);
     free(umockcall);
 }
 
