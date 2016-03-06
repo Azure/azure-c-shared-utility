@@ -46,6 +46,7 @@ extern int umockcall_are_equal(UMOCKCALL_HANDLE left, UMOCKCALL_HANDLE right);
 ```
 
 **SRS_UMOCKCALL_01_006: [** umockcall_are_equal shall compare the two mock calls and return whether they are equal or not. **]**
+**SRS_UMOCKCALL_01_015: [** If left or right are NULL, umockcall_are_equal shall fail and return -1. **]** 
 **SRS_UMOCKCALL_01_007: [** If the 2 mock calls are equal umockcall_are_equal shall return 1. **]**
 **SRS_UMOCKCALL_01_008: [** If the 2 mock calls are not equal umockcall_are_equal shall return 0. **]**
 **SRS_UMOCKCALL_01_009: [** If any error occurred during the comparison umockcall_are_equal shall return -1. **]**
@@ -60,3 +61,19 @@ extern int umockcall_are_equal(UMOCKCALL_HANDLE left, UMOCKCALL_HANDLE right);
 ```c
 extern char* umockcall_to_string(UMOCKCALL_HANDLE umockcall);
 ```
+
+**SRS_UMOCKCALL_01_016: [** umockcall_to_string shall return a string representation of the mock call. **]**
+**SRS_UMOCKCALL_01_018: [** The returned string shall be a newly allocated string and it is to be freed by the caller. **]**
+**SRS_UMOCKCALL_01_017: [** If the umockcall argument is NULL, umockcall_to_string shall return NULL. **]**
+**SRS_UMOCKCALL_01_019: [** umockcall_to_string shall call the umockcall_data_stringify function passed to umockcall_create and pass to it the umock call data pointer (also given in umockcall_create). **]** 
+**SRS_UMOCKCALL_01_020: [** If the underlying umockcall_data_stringify call fails, umockcall_to_string shall fail and return NULL. **]**
+**SRS_UMOCKCALL_01_021: [** If not enough memory can be allocated for the string to be returned, umockcall_to_string shall fail and return NULL. **]** 
+
+##umockcall_get_call_data
+
+```c
+extern void* umockcall_get_call_data(UMOCKCALL_HANDLE umockcall);
+```
+
+**SRS_UMOCKCALL_01_022: [** umockcall_get_call_data shall return the associated umock call data that was passed to umockcall_create. **]**
+**SRS_UMOCKCALL_01_023: [** If umockcall is NULL, umockcall_get_call_data shall return NULL. **]**
