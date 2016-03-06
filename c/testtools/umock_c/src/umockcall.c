@@ -42,6 +42,7 @@ UMOCKCALL_HANDLE umockcall_create(const char* function_name, void* umockcall_dat
             result->function_name = (char*)malloc(function_name_length + 1);
             if (result->function_name == NULL)
             {
+                /* Codes_SRS_UMOCKCALL_01_002: [ If allocating memory for the umock call instance fails, umockcall_create shall return NULL. ] */
                 free(result);
                 result = NULL;
             }
