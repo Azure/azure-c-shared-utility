@@ -164,10 +164,6 @@ extern UMOCKCALL_HANDLE umock_c_get_last_expected_call(void);
         unsigned int return_value_set : 1; \
         IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2(DECLARE_IGNORE_FLAG_FOR_ARG, __VA_ARGS__),) \
     } C2(mock_call_,name); \
-    int C2(mock_call_data_clone_func_,name)(void* destination, const void* source) \
-    { \
-        return 0; \
-    } \
     char* C2(mock_call_data_stringify_,name)(void* mock_call_data) \
     { \
         char* result; \
@@ -236,7 +232,7 @@ extern UMOCKCALL_HANDLE umock_c_get_last_expected_call(void);
         C2(mock_call_,name)* mock_call_data = (C2(mock_call_,name)*)malloc(sizeof(C2(mock_call_,name))); \
         IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2(COPY_ARG_TO_MOCK_STRUCT, __VA_ARGS__),) \
         IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2(MARK_ARG_AS_NOT_IGNORED, __VA_ARGS__),) \
-        mock_call = umockcall_create(#name, mock_call_data, NULL, NULL, C2(mock_call_data_clone_func_,name), C2(mock_call_data_free_func_,name), C2(mock_call_data_stringify_,name), C2(mock_call_data_are_equal_,name)); \
+        mock_call = umockcall_create(#name, mock_call_data, NULL, NULL, C2(mock_call_data_free_func_,name), C2(mock_call_data_stringify_,name), C2(mock_call_data_are_equal_,name)); \
         matched_call = umock_c_add_actual_call(mock_call); \
         if (matched_call != NULL) \
         { \
@@ -329,7 +325,7 @@ extern UMOCKCALL_HANDLE umock_c_get_last_expected_call(void);
         IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2(MARK_ARG_AS_NOT_IGNORED, __VA_ARGS__),) \
         mock_call_data->return_value_set = 0; \
         mock_call_data->fail_return_value_set = 0; \
-        mock_call = umockcall_create(#name, mock_call_data, C2(set_return_func_,name), C2(ignore_all_arguments_func_,name), C2(mock_call_data_clone_func_,name), C2(mock_call_data_free_func_,name), C2(mock_call_data_stringify_,name), C2(mock_call_data_are_equal_,name)); \
+        mock_call = umockcall_create(#name, mock_call_data, C2(set_return_func_,name), C2(ignore_all_arguments_func_,name), C2(mock_call_data_free_func_,name), C2(mock_call_data_stringify_,name), C2(mock_call_data_are_equal_,name)); \
         (void)umock_c_add_expected_call(mock_call); \
 		return mock_call_modifier; \
 	} \
