@@ -154,4 +154,16 @@ TEST_FUNCTION(umockcall_destroy_frees_call_data)
     ASSERT_ARE_EQUAL(void_ptr, (void*)0x4242, test_mock_call_data_free_calls[0].umockcall_data);
 }
 
+/* Tests_SRS_UMOCKCALL_01_005: [ If the umockcall argument is NULL then umockcall_destroy shall do nothing. ]*/
+TEST_FUNCTION(umockcall_destroy_with_NULL_argument_does_nothing)
+{
+    // arrange
+
+    // act
+    umockcall_destroy(NULL);
+
+    // assert
+    ASSERT_ARE_EQUAL(size_t, 0, test_mock_call_data_free_call_count);
+}
+
 END_TEST_SUITE(umockcall_unittests)

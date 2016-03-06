@@ -62,8 +62,14 @@ UMOCKCALL_HANDLE umockcall_create(const char* function_name, void* umockcall_dat
 
 void umockcall_destroy(UMOCKCALL_HANDLE umockcall)
 {
-    umockcall->umockcall_data_free(umockcall->umockcall_data);
-    free(umockcall);
+    /* Codes_SRS_UMOCKCALL_01_005: [ If the umockcall argument is NULL then umockcall_destroy shall do nothing. ]*/
+    if (umockcall != NULL)
+    {
+        /* Codes_SRS_UMOCKCALL_01_004: [ umockcall_destroy shall free a previously allocated umock call instance. ] */
+        umockcall->umockcall_data_free(umockcall->umockcall_data);
+        free(umockcall->function_name);
+        free(umockcall);
+    }
 }
 
 int umockcall_are_equal(UMOCKCALL_HANDLE left, UMOCKCALL_HANDLE right)
