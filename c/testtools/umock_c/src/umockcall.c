@@ -72,12 +72,14 @@ void umockcall_destroy(UMOCKCALL_HANDLE umockcall)
     }
 }
 
+/* Codes_SRS_UMOCKCALL_01_006: [ umockcall_are_equal shall compare the two mock calls and return whether they are equal or not. ] */
 int umockcall_are_equal(UMOCKCALL_HANDLE left, UMOCKCALL_HANDLE right)
 {
     int result;
 
     if (left == right)
     {
+        /* Codes_SRS_UMOCKCALL_01_007: [ If the 2 mock calls are equal umockcall_are_equal shall return 1. ]*/
         result = 1;
     }
     else if ((left == NULL) || (right == NULL))
@@ -92,6 +94,7 @@ int umockcall_are_equal(UMOCKCALL_HANDLE left, UMOCKCALL_HANDLE right)
         }
         else
         {
+            /* Codes_SRS_UMOCKCALL_01_007: [ If the 2 mock calls are equal umockcall_are_equal shall return 1. ]*/
             result = left->umockcall_data_are_equal(left->umockcall_data, right->umockcall_data);
         }
     }
