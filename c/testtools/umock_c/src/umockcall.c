@@ -12,16 +12,16 @@
 typedef struct UMOCKCALL_TAG
 {
     char* function_name;
-    void* mock_call_data;
+    void* umockcall_data;
     void* set_return_func;
     void* ignore_all_arguments_func;
-    UMOCKCALL_DATA_CLONE_FUNC mock_call_data_clone;
-    UMOCKCALL_DATA_FREE_FUNC mock_call_data_free;
-    UMOCKCALL_DATA_STRINGIFY_FUNC mock_call_data_stringify;
-    UMOCKCALL_DATA_ARE_EQUAL_FUNC mock_call_data_are_equal;
+    UMOCKCALL_DATA_CLONE_FUNC umockcall_data_clone;
+    UMOCKCALL_DATA_FREE_FUNC umockcall_data_free;
+    UMOCKCALL_DATA_STRINGIFY_FUNC umockcall_data_stringify;
+    UMOCKCALL_DATA_ARE_EQUAL_FUNC umockcall_data_are_equal;
 } MOCK_CALL;
 
-UMOCKCALL_HANDLE umockcall_create(const char* function_name, void* mock_call_data, void* set_return_func, void* ignore_all_arguments_func, UMOCKCALL_DATA_CLONE_FUNC mock_call_data_clone, UMOCKCALL_DATA_FREE_FUNC mock_call_data_free, UMOCKCALL_DATA_STRINGIFY_FUNC mock_call_data_stringify, UMOCKCALL_DATA_ARE_EQUAL_FUNC mock_call_data_are_equal)
+UMOCKCALL_HANDLE umockcall_create(const char* function_name, void* umockcall_data, void* set_return_func, void* ignore_all_arguments_func, UMOCKCALL_DATA_CLONE_FUNC umockcall_data_clone, UMOCKCALL_DATA_FREE_FUNC umockcall_data_free, UMOCKCALL_DATA_STRINGIFY_FUNC umockcall_data_stringify, UMOCKCALL_DATA_ARE_EQUAL_FUNC umockcall_data_are_equal)
 {
     MOCK_CALL* result = (MOCK_CALL*)malloc(sizeof(MOCK_CALL));
     if (result != NULL)
@@ -36,23 +36,23 @@ UMOCKCALL_HANDLE umockcall_create(const char* function_name, void* mock_call_dat
         else
         {
             (void)memcpy(result->function_name, function_name, function_name_length + 1);
-            result->mock_call_data = mock_call_data;
+            result->umockcall_data = umockcall_data;
             result->set_return_func = set_return_func;
             result->ignore_all_arguments_func = ignore_all_arguments_func;
-            result->mock_call_data_clone = mock_call_data_clone;
-            result->mock_call_data_free = mock_call_data_free;
-            result->mock_call_data_stringify = mock_call_data_stringify;
-            result->mock_call_data_are_equal = mock_call_data_are_equal;
+            result->umockcall_data_clone = umockcall_data_clone;
+            result->umockcall_data_free = umockcall_data_free;
+            result->umockcall_data_stringify = umockcall_data_stringify;
+            result->umockcall_data_are_equal = umockcall_data_are_equal;
         }
     }
 
     return result;
 }
 
-void umockcall_destroy(UMOCKCALL_HANDLE mock_call)
+void umockcall_destroy(UMOCKCALL_HANDLE umockcall)
 {
-    free(mock_call->mock_call_data);
-    free(mock_call);
+    free(umockcall->umockcall_data);
+    free(umockcall);
 }
 
 int umockcall_are_equal(UMOCKCALL_HANDLE left, UMOCKCALL_HANDLE right)
@@ -75,31 +75,31 @@ int umockcall_are_equal(UMOCKCALL_HANDLE left, UMOCKCALL_HANDLE right)
         }
         else
         {
-            result = left->mock_call_data_are_equal(left->mock_call_data, right->mock_call_data);
+            result = left->umockcall_data_are_equal(left->umockcall_data, right->umockcall_data);
         }
     }
 
     return result;
 }
 
-char* umockcall_to_string(UMOCKCALL_HANDLE mock_call)
+char* umockcall_to_string(UMOCKCALL_HANDLE umockcall)
 {
     char* result;
 
-    if (mock_call == NULL)
+    if (umockcall == NULL)
     {
         result = NULL;
     }
     else
     {
-        char* stringified_args = mock_call->mock_call_data_stringify(mock_call->mock_call_data);
+        char* stringified_args = umockcall->umockcall_data_stringify(umockcall->umockcall_data);
         if (stringified_args == NULL)
         {
             result = NULL;
         }
         else
         {
-            size_t function_name_length = strlen(mock_call->function_name);
+            size_t function_name_length = strlen(umockcall->function_name);
             size_t stringified_args_length = strlen(stringified_args);
         
             /* 4 because () and [] */
@@ -109,7 +109,7 @@ char* umockcall_to_string(UMOCKCALL_HANDLE mock_call)
             if (result != NULL)
             {
                 result[0] = '[';
-                (void)memcpy(&result[1], mock_call->function_name, function_name_length);
+                (void)memcpy(&result[1], umockcall->function_name, function_name_length);
                 result[function_name_length + 1] = '(';
                 (void)memcpy(&result[function_name_length + 2], stringified_args, stringified_args_length);
                 result[function_name_length + stringified_args_length + 2] = ')';
@@ -122,18 +122,18 @@ char* umockcall_to_string(UMOCKCALL_HANDLE mock_call)
     return result;
 }
 
-void* umockcall_get_call_data(UMOCKCALL_HANDLE mock_call)
+void* umockcall_get_call_data(UMOCKCALL_HANDLE umockcall)
 {
-    void* mock_call_data;
+    void* umockcall_data;
 
-    if (mock_call == NULL)
+    if (umockcall == NULL)
     {
-        mock_call_data = NULL;
+        umockcall_data = NULL;
     }
     else
     {
-        mock_call_data = mock_call->mock_call_data;
+        umockcall_data = umockcall->umockcall_data;
     }
 
-    return mock_call_data;
+    return umockcall_data;
 }
