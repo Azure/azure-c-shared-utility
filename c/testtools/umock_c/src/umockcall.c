@@ -79,22 +79,24 @@ int umockcall_are_equal(UMOCKCALL_HANDLE left, UMOCKCALL_HANDLE right)
 
     if (left == right)
     {
-        /* Codes_SRS_UMOCKCALL_01_007: [ If the 2 mock calls are equal umockcall_are_equal shall return 1. ]*/
+        /* Codes_SRS_UMOCKCALL_01_024: [ If both left and right pointers are equal, umockcall_are_equal shall return 1. ] */
         result = 1;
     }
     else if ((left == NULL) || (right == NULL))
     {
+        /* Codes_SRS_UMOCKCALL_01_015: [ If only one of the left or right arguments are NULL, umockcall_are_equal shall return 0. ] */
         result = 0;
     }
     else
     {
         if (strcmp(left->function_name, right->function_name) != 0)
         {
+            /* Codes_SRS_UMOCKCALL_01_025: [ If the function name does not match for the 2 calls, umockcall_are_equal shall return 0. ]*/
             result = 0;
         }
         else
         {
-            /* Codes_SRS_UMOCKCALL_01_007: [ If the 2 mock calls are equal umockcall_are_equal shall return 1. ]*/
+            /* Codes_SRS_UMOCKCALL_01_027: [ If the underlying umockcall_data_are_equal returns 1, then umockcall_are_equal shall return 1. ]*/
             result = left->umockcall_data_are_equal(left->umockcall_data, right->umockcall_data);
         }
     }

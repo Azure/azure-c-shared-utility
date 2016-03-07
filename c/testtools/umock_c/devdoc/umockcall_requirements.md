@@ -45,15 +45,14 @@ extern int umockcall_are_equal(UMOCKCALL_HANDLE left, UMOCKCALL_HANDLE right);
 ```
 
 **SRS_UMOCKCALL_01_006: [** umockcall_are_equal shall compare the two mock calls and return whether they are equal or not. **]**
-**SRS_UMOCKCALL_01_015: [** If left or right are NULL, umockcall_are_equal shall fail and return -1. **]** 
-**SRS_UMOCKCALL_01_007: [** If the 2 mock calls are equal umockcall_are_equal shall return 1. **]**
-**SRS_UMOCKCALL_01_008: [** If the 2 mock calls are not equal umockcall_are_equal shall return 0. **]**
-**SRS_UMOCKCALL_01_009: [** If any error occurred during the comparison umockcall_are_equal shall return -1. **]**
-**SRS_UMOCKCALL_01_012: [** For two calls to be equal the following shall be equal: **]**
-**SRS_UMOCKCALL_01_010: [** - The function name **]**
-**SRS_UMOCKCALL_01_011: [** - The call data **]**
-**SRS_UMOCKCALL_01_013: [** The call data shall be compared by calling the function passed to umockcall_create. **]**
-**SRS_UMOCKCALL_01_014: [** If the two calls have different are_equal functions that have been passed to umockcall_create then teh calls shall be considered different. **]**
+**SRS_UMOCKCALL_01_024: [** If both left and right pointers are equal, umockcall_are_equal shall return 1. **]**
+**SRS_UMOCKCALL_01_015: [** If only one of the left or right arguments are NULL, umockcall_are_equal shall return 0. **]** 
+**SRS_UMOCKCALL_01_025: [** If the function name does not match for the 2 calls, umockcall_are_equal shall return 0. **]**
+**SRS_UMOCKCALL_01_026: [** The call data shall be evaluated by calling the umockcall_data_are_equal function passed in umockcall_create. **]**
+**SRS_UMOCKCALL_01_027: [** If the underlying umockcall_data_are_equal returns 1, then umockcall_are_equal shall return 1. **]**
+**SRS_UMOCKCALL_01_028: [** If the underlying umockcall_data_are_equal returns 0, then umockcall_are_equal shall return 0. **]**
+**SRS_UMOCKCALL_01_029: [** If the underlying umockcall_data_are_equal fails (returns anything else than 0 or 1), then umockcall_are_equal shall fail and return -1. **]**
+**SRS_UMOCKCALL_01_014: [** If the two calls have different are_equal functions that have been passed to umockcall_create then the calls shall be considered different and 0 shall be returned. **]**
 
 ##umockcall_to_string
 
