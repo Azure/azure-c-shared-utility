@@ -14,6 +14,7 @@
 #include "tlsio.h"
 #include "tlsio_openssl.h"
 #include "socketio.h"
+#include "xlogging.h"
 
 typedef enum TLSIO_STATE_TAG
 {
@@ -56,7 +57,12 @@ static const IO_INTERFACE_DESCRIPTION tlsio_openssl_interface_description =
 
 static void indicate_error(TLS_IO_INSTANCE* tls_io_instance)
 {
-    if (tls_io_instance->on_io_error != NULL)
+    if (tls_io_instance->on_io_error == NULL)
+    {
+        LogError("NULL on_io_error.\r\n");
+
+    }
+    else
     {
         tls_io_instance->on_io_error(tls_io_instance->on_io_error_context);
     }
@@ -64,7 +70,11 @@ static void indicate_error(TLS_IO_INSTANCE* tls_io_instance)
 
 static void indicate_open_complete(TLS_IO_INSTANCE* tls_io_instance, IO_OPEN_RESULT open_result)
 {
-    if (tls_io_instance->on_io_open_complete != NULL)
+    if (tls_io_instance->on_io_open_complete == NULL)
+    {
+        LogError("NULL on_io_open_complete.\r\n");
+    }
+    else
     {
         tls_io_instance->on_io_open_complete(tls_io_instance->on_io_open_complete_context, open_result);
     }
@@ -85,22 +95,24 @@ static int write_outgoing_bytes(TLS_IO_INSTANCE* tls_io_instance, ON_SEND_COMPLE
         if (bytes_to_send == NULL)
         {
             result = __LINE__;
+            LogError("NULL bytes_to_send.\r\n");
         }
         else
         {
             if (BIO_read(tls_io_instance->out_bio, bytes_to_send, pending) != pending)
             {
                 result = __LINE__;
+                LogError("BIO_read not in pending state.\r\n");
             }
             else
             {
                 if (xio_send(tls_io_instance->underlying_io, bytes_to_send, pending, on_send_complete, callback_context) != 0)
                 {
                     result = __LINE__;
+                    LogError("Error in xio_send.\r\n");
                 }
                 else
                 {
-
                     result = 0;
                 }
             }
@@ -138,6 +150,7 @@ static int send_handshake_bytes(TLS_IO_INSTANCE* tls_io_instance)
             if (write_outgoing_bytes(tls_io_instance, NULL, NULL) != 0)
             {
                 result = __LINE__;
+                LogError("Error in write_outgoing_bytes.\r\n");
             }
             else
             {
@@ -175,7 +188,11 @@ static void on_underlying_io_close_complete(void* context)
     case TLSIO_STATE_CLOSING:
         tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
 
-        if (tls_io_instance->on_io_close_complete != NULL)
+        if (tls_io_instance->on_io_close_complete == NULL)
+        {
+            LogError("NULL on_io_close_complete.\r\n");
+        }
+        else
         {
             tls_io_instance->on_io_close_complete(tls_io_instance->on_io_close_complete_context);
         }
@@ -196,6 +213,7 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
                 if (xio_close(tls_io_instance->underlying_io, on_underlying_io_close_complete, tls_io_instance) != 0)
                 {
                     indicate_open_complete(tls_io_instance, IO_OPEN_ERROR);
+                    LogError("Error in xio_close.\r\n");
                 }
             }
             else
@@ -207,6 +225,7 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
                     if (xio_close(tls_io_instance->underlying_io, on_underlying_io_close_complete, tls_io_instance) != 0)
                     {
                         indicate_open_complete(tls_io_instance, IO_OPEN_ERROR);
+                        LogError("Error in xio_close.\r\n");
                     }
                 }
             }
@@ -214,6 +233,7 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
         else
         {
             indicate_open_complete(tls_io_instance, IO_OPEN_ERROR);
+            LogError("Invalid tlsio_state. Expected state is TLSIO_STATE_OPENING_UNDERLYING_IO.\r\n");
         }
     }
 }
@@ -250,7 +270,11 @@ static int decode_ssl_received_bytes(TLS_IO_INSTANCE* tls_io_instance)
         rcv_bytes = SSL_read(tls_io_instance->ssl, buffer, sizeof(buffer));
         if (rcv_bytes > 0)
         {
-            if (tls_io_instance->on_bytes_received != NULL)
+            if (tls_io_instance->on_bytes_received == NULL)
+            {
+                LogError("NULL on_bytes_received.\r\n");
+            }
+            else
             {
                 tls_io_instance->on_bytes_received(tls_io_instance->on_bytes_received_context, buffer, rcv_bytes);
             }
@@ -269,6 +293,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
     {
         tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
         indicate_error(tls_io_instance);
+        LogError("Error in BIO_write.\r\n");
     }
     else
     {
@@ -283,6 +308,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                 if (xio_close(tls_io_instance->underlying_io, on_underlying_io_close_complete, tls_io_instance) != 0)
                 {
                     indicate_open_complete(tls_io_instance, IO_OPEN_ERROR);
+                    LogError("Error in xio_close.\r\n");
                 }
             }
             break;
@@ -292,6 +318,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
             {
                 tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
                 indicate_error(tls_io_instance);
+                LogError("Error in decode_ssl_received_bytes.\r\n");
             }
             break;
         }
@@ -320,11 +347,16 @@ CONCRETE_IO_HANDLE tlsio_openssl_create(void* io_create_parameters, LOGGER_LOG l
     if (tls_io_config == NULL)
     {
         result = NULL;
+        LogError("NULL tls_io_config.\r\n");
     }
     else
     {
         result = malloc(sizeof(TLS_IO_INSTANCE));
-        if (result != NULL)
+        if (result == NULL)
+        {
+            LogError("Failed allocating TLSIO instance.\r\n");
+        }
+        else
         {
             SOCKETIO_CONFIG socketio_config;
 
@@ -352,6 +384,7 @@ CONCRETE_IO_HANDLE tlsio_openssl_create(void* io_create_parameters, LOGGER_LOG l
             {
                 free(result);
                 result = NULL;
+                LogError("Failed allocating OpenSSL context.\r\n");
             }
             else
             {
@@ -361,6 +394,7 @@ CONCRETE_IO_HANDLE tlsio_openssl_create(void* io_create_parameters, LOGGER_LOG l
                     SSL_CTX_free(result->ssl_context);
                     free(result);
                     result = NULL;
+                    LogError("Failed BIO_new for in BIO.\r\n");
                 }
                 else
                 {
@@ -371,6 +405,7 @@ CONCRETE_IO_HANDLE tlsio_openssl_create(void* io_create_parameters, LOGGER_LOG l
                         SSL_CTX_free(result->ssl_context);
                         free(result);
                         result = NULL;
+                        LogError("Failed BIO_new for out BIO.\r\n");
                     }
                     else
                     {
@@ -382,6 +417,7 @@ CONCRETE_IO_HANDLE tlsio_openssl_create(void* io_create_parameters, LOGGER_LOG l
                             SSL_CTX_free(result->ssl_context);
                             free(result);
                             result = NULL;
+                            LogError("Failed getting socket IO interface description.\r\n");
                         }
                         else
                         {
@@ -395,6 +431,7 @@ CONCRETE_IO_HANDLE tlsio_openssl_create(void* io_create_parameters, LOGGER_LOG l
                                 SSL_CTX_free(result->ssl_context);
                                 free(result);
                                 result = NULL;
+                                LogError("Failed xio_create.\r\n");
                             }
                             else
                             {
@@ -406,10 +443,10 @@ CONCRETE_IO_HANDLE tlsio_openssl_create(void* io_create_parameters, LOGGER_LOG l
                                     SSL_CTX_free(result->ssl_context);
                                     free(result);
                                     result = NULL;
+                                    LogError("Failed creating OpenSSL instance.\r\n");
                                 }
                                 else
                                 {
-                                    SSL_set_verify(result->ssl, SSL_VERIFY_NONE, NULL);
                                     SSL_set_bio(result->ssl, result->in_bio, result->out_bio);
                                     SSL_set_connect_state(result->ssl);
                                 }
@@ -426,7 +463,11 @@ CONCRETE_IO_HANDLE tlsio_openssl_create(void* io_create_parameters, LOGGER_LOG l
 
 void tlsio_openssl_destroy(CONCRETE_IO_HANDLE tls_io)
 {
-    if (tls_io != NULL)
+    if (tls_io == NULL)
+    {
+        LogError("NULL tls_io.\r\n");
+    }
+    else
     {
         TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tls_io;
         SSL_free(tls_io_instance->ssl);
@@ -444,6 +485,7 @@ int tlsio_openssl_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_open
     if (tls_io == NULL)
     {
         result = __LINE__;
+        LogError("NULL tls_io.\r\n");
     }
     else
     {
@@ -452,6 +494,7 @@ int tlsio_openssl_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_open
         if (tls_io_instance->tlsio_state != TLSIO_STATE_NOT_OPEN)
         {
             result = __LINE__;
+            LogError("Invalid tlsio_state. Expected state is TLSIO_STATE_NOT_OPEN.\r\n");
         }
         else
         {
@@ -469,6 +512,7 @@ int tlsio_openssl_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_open
             if (xio_open(tls_io_instance->underlying_io, on_underlying_io_open_complete, tls_io_instance, on_underlying_io_bytes_received, tls_io_instance, on_underlying_io_error, tls_io_instance) != 0)
             {
                 result = __LINE__;
+                LogError("Error in xio_open.\r\n");
             }
             else
             {
@@ -487,6 +531,7 @@ int tlsio_openssl_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_cl
     if (tls_io == NULL)
     {
         result = __LINE__;
+        LogError("NULL tls_io.\r\n");
     }
     else
     {
@@ -496,6 +541,7 @@ int tlsio_openssl_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_cl
             (tls_io_instance->tlsio_state == TLSIO_STATE_CLOSING))
         {
             result = __LINE__;
+            LogError("Invalid tlsio_state. Expected state is TLSIO_STATE_NOT_OPEN or TLSIO_STATE_CLOSING.\r\n");
         }
         else
         {
@@ -506,6 +552,7 @@ int tlsio_openssl_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_cl
             if (xio_close(tls_io_instance->underlying_io, on_underlying_io_close_complete, tls_io_instance) != 0)
             {
                 result = __LINE__;
+                LogError("Error in xio_close.\r\n");
             }
             else
             {
@@ -524,6 +571,7 @@ int tlsio_openssl_send(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t siz
     if (tls_io == NULL)
     {
         result = __LINE__;
+        LogError("NULL tls_io.\r\n");
     }
     else
     {
@@ -532,6 +580,7 @@ int tlsio_openssl_send(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t siz
         if (tls_io_instance->tlsio_state != TLSIO_STATE_OPEN)
         {
             result = __LINE__;
+            LogError("Invalid tlsio_state. Expected state is TLSIO_STATE_OPEN.\r\n");
         }
         else
         {
@@ -539,12 +588,14 @@ int tlsio_openssl_send(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t siz
             if (res != size)
             {
                 result = __LINE__;
+                LogError("SSL_write error.\r\n");
             }
             else
             {
                 if (write_outgoing_bytes(tls_io_instance, on_send_complete, callback_context) != 0)
                 {
                     result = __LINE__;
+                    LogError("Error in write_outgoing_bytes.\r\n");
                 }
                 else
                 {
@@ -559,7 +610,11 @@ int tlsio_openssl_send(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t siz
 
 void tlsio_openssl_dowork(CONCRETE_IO_HANDLE tls_io)
 {
-    if (tls_io != NULL)
+    if (tls_io == NULL)
+    {
+        LogError("NULL tls_io.\r\n");
+    }
+    else
     {
         TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tls_io;
 
