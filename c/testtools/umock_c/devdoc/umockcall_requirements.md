@@ -15,7 +15,7 @@ umockcall is a module that encapsulates a umock call.
     extern UMOCKCALL_HANDLE umockcall_create(const char* function_name, void* umockcall_data, UMOCKCALL_DATA_FREE_FUNC umockcall_data_free, UMOCKCALL_DATA_STRINGIFY_FUNC umockcall_data_stringify, UMOCKCALL_DATA_ARE_EQUAL_FUNC umockcall_data_are_equal);
     extern void umockcall_destroy(UMOCKCALL_HANDLE umockcall);
     extern int umockcall_are_equal(UMOCKCALL_HANDLE left, UMOCKCALL_HANDLE right);
-    extern char* umockcall_to_string(UMOCKCALL_HANDLE umockcall);
+    extern char* umockcall_stringify(UMOCKCALL_HANDLE umockcall);
     extern void* umockcall_get_call_data(UMOCKCALL_HANDLE umockcall);
 ```
 
@@ -57,15 +57,16 @@ extern int umockcall_are_equal(UMOCKCALL_HANDLE left, UMOCKCALL_HANDLE right);
 ##umockcall_to_string
 
 ```c
-extern char* umockcall_to_string(UMOCKCALL_HANDLE umockcall);
+extern char* umockcall_stringify(UMOCKCALL_HANDLE umockcall);
 ```
 
-**SRS_UMOCKCALL_01_016: [** umockcall_to_string shall return a string representation of the mock call. **]**
+**SRS_UMOCKCALL_01_016: [** umockcall_stringify shall return a string representation of the mock call in the form \[function_name(arguments)\]. **]**
 **SRS_UMOCKCALL_01_018: [** The returned string shall be a newly allocated string and it is to be freed by the caller. **]**
-**SRS_UMOCKCALL_01_017: [** If the umockcall argument is NULL, umockcall_to_string shall return NULL. **]**
-**SRS_UMOCKCALL_01_019: [** umockcall_to_string shall call the umockcall_data_stringify function passed to umockcall_create and pass to it the umock call data pointer (also given in umockcall_create). **]** 
-**SRS_UMOCKCALL_01_020: [** If the underlying umockcall_data_stringify call fails, umockcall_to_string shall fail and return NULL. **]**
-**SRS_UMOCKCALL_01_021: [** If not enough memory can be allocated for the string to be returned, umockcall_to_string shall fail and return NULL. **]** 
+**SRS_UMOCKCALL_01_017: [** If the umockcall argument is NULL, umockcall_stringify shall return NULL. **]**
+**SRS_UMOCKCALL_01_019: [** To obtain the arguments string, umockcall_stringify shall call the umockcall_data_stringify function passed to umockcall_create and pass to it the umock call data pointer (also given in umockcall_create). **]** 
+**SRS_UMOCKCALL_01_019: [** umockcall_stringify shall free the string obtained from umockcall_stringify. **]**
+**SRS_UMOCKCALL_01_020: [** If the underlying umockcall_data_stringify call fails, umockcall_stringify shall fail and return NULL. **]**
+**SRS_UMOCKCALL_01_021: [** If not enough memory can be allocated for the string to be returned, umockcall_stringify shall fail and return NULL. **]** 
 
 ##umockcall_get_call_data
 

@@ -17,18 +17,27 @@ typedef struct test_mock_call_data_free_CALL_TAG
     void* umockcall_data;
 } test_mock_call_data_free_CALL;
 
+static test_mock_call_data_free_CALL* test_mock_call_data_free_calls;
+static size_t test_mock_call_data_free_call_count;
+
 typedef struct test_mock_call_data_are_equal_CALL_TAG
 {
     void* left;
     void* right;
 } test_mock_call_data_are_equal_CALL;
 
-static test_mock_call_data_free_CALL* test_mock_call_data_free_calls;
-static size_t test_mock_call_data_free_call_count;
-
 static test_mock_call_data_are_equal_CALL* test_mock_call_data_are_equal_calls;
 static size_t test_mock_call_data_are_equal_call_count;
 static int test_mock_call_data_are_equal_expected_result;
+
+typedef struct test_mock_call_data_stringify_CALL_TAG
+{
+    void* umockcall_data;
+} test_mock_call_data_stringify_CALL;
+
+static test_mock_call_data_stringify_CALL* test_mock_call_data_stringify_calls;
+static size_t test_mock_call_data_stringify_call_count;
+static char* test_mock_call_data_stringify_expected_result = NULL;
 
 void test_mock_call_data_free(void* umockcall_data)
 {
@@ -43,8 +52,14 @@ void test_mock_call_data_free(void* umockcall_data)
 
 char* test_mock_call_data_stringify(void* umockcall_data)
 {
-    (void)umockcall_data;
-    return NULL;
+    test_mock_call_data_stringify_CALL* new_calls = (test_mock_call_data_stringify_CALL*)realloc(test_mock_call_data_stringify_calls, sizeof(test_mock_call_data_stringify_CALL) * (test_mock_call_data_stringify_call_count + 1));
+    if (new_calls != NULL)
+    {
+        test_mock_call_data_stringify_calls = new_calls;
+        test_mock_call_data_stringify_calls[test_mock_call_data_stringify_call_count].umockcall_data = umockcall_data;
+        test_mock_call_data_stringify_call_count++;
+    }
+    return test_mock_call_data_stringify_expected_result;
 }
 
 int test_mock_call_data_are_equal(void* left, void* right)
@@ -84,6 +99,10 @@ TEST_FUNCTION_INITIALIZE(test_function_init)
     test_mock_call_data_are_equal_calls = NULL;
     test_mock_call_data_are_equal_call_count = 0;
     test_mock_call_data_are_equal_expected_result = 1;
+
+    test_mock_call_data_stringify_calls = NULL;
+    test_mock_call_data_stringify_call_count = 0;
+    test_mock_call_data_stringify_expected_result = NULL;
 }
 
 TEST_FUNCTION_CLEANUP(test_function_cleanup)
@@ -95,6 +114,10 @@ TEST_FUNCTION_CLEANUP(test_function_cleanup)
     free(test_mock_call_data_are_equal_calls);
     test_mock_call_data_are_equal_calls = NULL;
     test_mock_call_data_are_equal_call_count = 0;
+
+    free(test_mock_call_data_stringify_calls);
+    test_mock_call_data_stringify_calls = NULL;
+    test_mock_call_data_stringify_call_count = 0;
 }
 
 /* umockcall_create */
@@ -400,6 +423,85 @@ TEST_FUNCTION(when_the_are_equal_function_pointers_are_different_umockcall_are_e
     // cleanup
     umockcall_destroy(call1);
     umockcall_destroy(call2);
+}
+
+/* umockcall_stringify */
+
+/* Tests_SRS_UMOCKCALL_01_016: [ umockcall_stringify shall return a string representation of the mock call in the form \[function_name(arguments)\]. ] */
+/* Tests_SRS_UMOCKCALL_01_018: [ The returned string shall be a newly allocated string and it is to be freed by the caller. ]*/
+/* Tests_SRS_UMOCKCALL_01_019: [ To obtain the arguments string, umockcall_stringify shall call the umockcall_data_stringify function passed to umockcall_create and pass to it the umock call data pointer (also given in umockcall_create). ]*/
+TEST_FUNCTION(umockcall_stringify_calls_the_underlying_stringify_function_and_returns_the_strinfigied_call)
+{
+    // arrange
+    UMOCKCALL_HANDLE call = umockcall_create("test_function", (void*)0x4242, test_mock_call_data_free, test_mock_call_data_stringify, test_mock_call_data_are_equal);
+
+    test_mock_call_data_stringify_expected_result = (char*)malloc(1);
+    test_mock_call_data_stringify_expected_result[0] = '\0';
+
+    // act
+    char* result = umockcall_stringify(call);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "[test_function()]", result);
+    ASSERT_ARE_EQUAL(int, 1, test_mock_call_data_stringify_call_count);
+
+    // cleanup
+    free(result);
+    umockcall_destroy(call);
+}
+
+/* Tests_SRS_UMOCKCALL_01_016: [ umockcall_stringify shall return a string representation of the mock call in the form \[function_name(arguments)\]. ] */
+/* Tests_SRS_UMOCKCALL_01_018: [ The returned string shall be a newly allocated string and it is to be freed by the caller. ]*/
+/* Tests_SRS_UMOCKCALL_01_019: [ To obtain the arguments string, umockcall_stringify shall call the umockcall_data_stringify function passed to umockcall_create and pass to it the umock call data pointer (also given in umockcall_create). ]*/
+TEST_FUNCTION(umockcall_stringify_uses_the_stringified_args_as_obtained_from_the_underlying_stringify_function)
+{
+    // arrange
+    UMOCKCALL_HANDLE call = umockcall_create("test_function", (void*)0x4242, test_mock_call_data_free, test_mock_call_data_stringify, test_mock_call_data_are_equal);
+
+    test_mock_call_data_stringify_expected_result = (char*)malloc(strlen("45") + 1);
+    (void)strcpy(test_mock_call_data_stringify_expected_result, "45");
+
+    // act
+    char* result = umockcall_stringify(call);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "[test_function(45)]", result);
+    ASSERT_ARE_EQUAL(int, 1, test_mock_call_data_stringify_call_count);
+
+    // cleanup
+    free(result);
+    umockcall_destroy(call);
+}
+
+/* Tests_SRS_UMOCKCALL_01_017: [ If the umockcall argument is NULL, umockcall_stringify shall return NULL. ] */
+TEST_FUNCTION(umockcall_stringify_with_NULL_fails_and_returns_NULL)
+{
+    // arrange
+
+    // act
+    char* result = umockcall_stringify(NULL);
+
+    // assert
+    ASSERT_IS_NULL(result);
+}
+
+/* Tests_SRS_UMOCKCALL_01_020: [ If the underlying umockcall_data_stringify call fails, umockcall_stringify shall fail and return NULL. ]*/
+TEST_FUNCTION(when_the_underlying_stringify_fails_then_umockcall_stringify_calls_fails)
+{
+    // arrange
+    UMOCKCALL_HANDLE call = umockcall_create("test_function", (void*)0x4242, test_mock_call_data_free, test_mock_call_data_stringify, test_mock_call_data_are_equal);
+
+    test_mock_call_data_stringify_expected_result = NULL;
+
+    // act
+    char* result = umockcall_stringify(call);
+
+    // assert
+    ASSERT_IS_NULL(result);
+    ASSERT_ARE_EQUAL(int, 1, test_mock_call_data_stringify_call_count);
+
+    // cleanup
+    umockcall_destroy(call);
 }
 
 END_TEST_SUITE(umockcall_unittests)

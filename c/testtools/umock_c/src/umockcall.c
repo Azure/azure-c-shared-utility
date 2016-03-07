@@ -122,16 +122,18 @@ int umockcall_are_equal(UMOCKCALL_HANDLE left, UMOCKCALL_HANDLE right)
     return result;
 }
 
-char* umockcall_to_string(UMOCKCALL_HANDLE umockcall)
+char* umockcall_stringify(UMOCKCALL_HANDLE umockcall)
 {
     char* result;
 
     if (umockcall == NULL)
     {
+        /* Codes_SRS_UMOCKCALL_01_020: [ If the underlying umockcall_data_stringify call fails, umockcall_stringify shall fail and return NULL. ]*/
         result = NULL;
     }
     else
     {
+        /* Codes_SRS_UMOCKCALL_01_019: [ To obtain the arguments string, umockcall_stringify shall call the umockcall_data_stringify function passed to umockcall_create and pass to it the umock call data pointer (also given in umockcall_create). ]*/
         char* stringified_args = umockcall->umockcall_data_stringify(umockcall->umockcall_data);
         if (stringified_args == NULL)
         {
@@ -139,13 +141,16 @@ char* umockcall_to_string(UMOCKCALL_HANDLE umockcall)
         }
         else
         {
+            /* Codes_SRS_UMOCKCALL_01_016: [ umockcall_stringify shall return a string representation of the mock call in the form \[function_name(arguments)\]. ] */
             size_t function_name_length = strlen(umockcall->function_name);
             size_t stringified_args_length = strlen(stringified_args);
         
             /* 4 because () and [] */
             size_t call_length = function_name_length + stringified_args_length + 4;
 
+            /* Codes_SRS_UMOCKCALL_01_018: [ The returned string shall be a newly allocated string and it is to be freed by the caller. ]*/
             result = (char*)malloc(call_length + 1);
+            /* Codes_SRS_UMOCKCALL_01_021: [ If not enough memory can be allocated for the string to be returned, umockcall_stringify shall fail and return NULL. ]*/
             if (result != NULL)
             {
                 result[0] = '[';
@@ -156,6 +161,9 @@ char* umockcall_to_string(UMOCKCALL_HANDLE umockcall)
                 result[function_name_length + stringified_args_length + 3] = ']';
                 result[function_name_length + stringified_args_length + 4] = '\0';
             }
+
+            /* Codes_SRS_UMOCKCALL_01_019: [ umockcall_stringify shall free the string obtained from umockcall_stringify. ]*/
+            free(stringified_args);
         }
     }
 

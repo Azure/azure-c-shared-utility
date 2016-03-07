@@ -133,7 +133,7 @@ const char* umock_c_get_expected_calls(void)
 
         for (i = 0; i < expected_call_count; i++)
         {
-            char* stringified_call = umockcall_to_string(expected_calls[i]);
+            char* stringified_call = umockcall_stringify(expected_calls[i]);
             if (stringified_call == NULL)
             {
                 break;
@@ -187,7 +187,7 @@ const char* umock_c_get_actual_calls(void)
 
         for (i = 0; i < actual_call_count; i++)
         {
-            char* stringified_call = umockcall_to_string(actual_calls[i]);
+            char* stringified_call = umockcall_stringify(actual_calls[i]);
             if (stringified_call == NULL)
             {
                 break;
