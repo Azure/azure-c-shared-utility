@@ -504,4 +504,34 @@ TEST_FUNCTION(when_the_underlying_stringify_fails_then_umockcall_stringify_calls
     umockcall_destroy(call);
 }
 
+/* umockcall_get_call_data */
+
+/* Tests_SRS_UMOCKCALL_01_022: [ umockcall_get_call_data shall return the associated umock call data that was passed to umockcall_create. ]*/
+TEST_FUNCTION(umockcall_get_call_data_returns_the_call_data_pointer)
+{
+    // arrange
+    UMOCKCALL_HANDLE call = umockcall_create("test_function", (void*)0x4242, test_mock_call_data_free, test_mock_call_data_stringify, test_mock_call_data_are_equal);
+
+    // act
+    void* result = umockcall_get_call_data(call);
+
+    // assert
+    ASSERT_ARE_EQUAL(void_ptr, (void*)0x4242, result);
+
+    // cleanup
+    umockcall_destroy(call);
+}
+
+/* Tests_SRS_UMOCKCALL_01_022: [ umockcall_get_call_data shall return the associated umock call data that was passed to umockcall_create. ]*/
+TEST_FUNCTION(umockcall_get_call_data_with_NULL_returns_NULL)
+{
+    // arrange
+
+    // act
+    void* result = umockcall_get_call_data(NULL);
+
+    // assert
+    ASSERT_IS_NULL(result);
+}
+
 END_TEST_SUITE(umockcall_unittests)
