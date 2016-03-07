@@ -60,6 +60,12 @@ int test_mock_call_data_are_equal(void* left, void* right)
     return test_mock_call_data_are_equal_expected_result;
 }
 
+int another_test_mock_call_data_are_equal(void* left, void* right)
+{
+    (void)left, right;
+    return 1;
+}
+
 BEGIN_TEST_SUITE(umockcall_unittests)
 
 TEST_SUITE_INITIALIZE(suite_init)
@@ -222,7 +228,7 @@ TEST_FUNCTION(umockcall_are_equal_with_2_equal_calls_returns_1)
 {
     // arrange
     UMOCKCALL_HANDLE call1 = umockcall_create("test_function", (void*)0x4242, test_mock_call_data_free, test_mock_call_data_stringify, test_mock_call_data_are_equal);
-    UMOCKCALL_HANDLE call2 = umockcall_create("test_function", (void*)0x4242, test_mock_call_data_free, test_mock_call_data_stringify, test_mock_call_data_are_equal);
+    UMOCKCALL_HANDLE call2 = umockcall_create("test_function", (void*)0x4243, test_mock_call_data_free, test_mock_call_data_stringify, test_mock_call_data_are_equal);
 
     // act
     int result = umockcall_are_equal(call1, call2);
@@ -231,7 +237,7 @@ TEST_FUNCTION(umockcall_are_equal_with_2_equal_calls_returns_1)
     ASSERT_ARE_EQUAL(int, 1, result);
     ASSERT_ARE_EQUAL(int, 1, test_mock_call_data_are_equal_call_count);
     ASSERT_ARE_EQUAL(void_ptr, (void*)0x4242, test_mock_call_data_are_equal_calls[0].left);
-    ASSERT_ARE_EQUAL(void_ptr, (void*)0x4242, test_mock_call_data_are_equal_calls[0].right);
+    ASSERT_ARE_EQUAL(void_ptr, (void*)0x4243, test_mock_call_data_are_equal_calls[0].right);
 
     // cleanup
     umockcall_destroy(call1);
@@ -286,13 +292,103 @@ TEST_FUNCTION(when_only_right_is_NULL_umockcall_are_equal_returns_0)
 }
 
 /* Tests_SRS_UMOCKCALL_01_025: [ If the function name does not match for the 2 calls, umockcall_are_equal shall return 0. ]*/
-TEST_FUNCTION(when_the_function_name_does_not_match_then_umockcall_are_equal_returns_minus_0)
+TEST_FUNCTION(when_the_function_name_does_not_match_then_umockcall_are_equal_returns_0)
 {
     // arrange
     UMOCKCALL_HANDLE call1 = umockcall_create("test_function_1", (void*)0x4242, test_mock_call_data_free, test_mock_call_data_stringify, test_mock_call_data_are_equal);
     UMOCKCALL_HANDLE call2 = umockcall_create("test_function_2", (void*)0x4242, test_mock_call_data_free, test_mock_call_data_stringify, test_mock_call_data_are_equal);
 
     test_mock_call_data_are_equal_expected_result = -1;
+
+    // act
+    int result = umockcall_are_equal(call1, call2);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(int, 0, test_mock_call_data_are_equal_call_count);
+
+    // cleanup
+    umockcall_destroy(call1);
+    umockcall_destroy(call2);
+}
+
+/* Tests_SRS_UMOCKCALL_01_028: [ If the underlying umockcall_data_are_equal returns 0, then umockcall_are_equal shall return 0. ]*/
+TEST_FUNCTION(when_the_underlying_are_equal_returns_0_umockcall_are_equal_returns_0)
+{
+    // arrange
+    UMOCKCALL_HANDLE call1 = umockcall_create("test_function", (void*)0x4242, test_mock_call_data_free, test_mock_call_data_stringify, test_mock_call_data_are_equal);
+    UMOCKCALL_HANDLE call2 = umockcall_create("test_function", (void*)0x4243, test_mock_call_data_free, test_mock_call_data_stringify, test_mock_call_data_are_equal);
+
+    test_mock_call_data_are_equal_expected_result = 0;
+
+    // act
+    int result = umockcall_are_equal(call1, call2);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(int, 1, test_mock_call_data_are_equal_call_count);
+    ASSERT_ARE_EQUAL(void_ptr, (void*)0x4242, test_mock_call_data_are_equal_calls[0].left);
+    ASSERT_ARE_EQUAL(void_ptr, (void*)0x4243, test_mock_call_data_are_equal_calls[0].right);
+
+    // cleanup
+    umockcall_destroy(call1);
+    umockcall_destroy(call2);
+}
+
+/* Tests_SRS_UMOCKCALL_01_029: [ If the underlying umockcall_data_are_equal fails (returns anything else than 0 or 1), then umockcall_are_equal shall fail and return -1. ] */
+TEST_FUNCTION(when_the_underlying_are_equal_returns_minus_1_umockcall_are_equal_returns_minus_1)
+{
+    // arrange
+    UMOCKCALL_HANDLE call1 = umockcall_create("test_function", (void*)0x4242, test_mock_call_data_free, test_mock_call_data_stringify, test_mock_call_data_are_equal);
+    UMOCKCALL_HANDLE call2 = umockcall_create("test_function", (void*)0x4243, test_mock_call_data_free, test_mock_call_data_stringify, test_mock_call_data_are_equal);
+
+    test_mock_call_data_are_equal_expected_result = -1;
+
+    // act
+    int result = umockcall_are_equal(call1, call2);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, -1, result);
+    ASSERT_ARE_EQUAL(int, 1, test_mock_call_data_are_equal_call_count);
+    ASSERT_ARE_EQUAL(void_ptr, (void*)0x4242, test_mock_call_data_are_equal_calls[0].left);
+    ASSERT_ARE_EQUAL(void_ptr, (void*)0x4243, test_mock_call_data_are_equal_calls[0].right);
+
+    // cleanup
+    umockcall_destroy(call1);
+    umockcall_destroy(call2);
+}
+
+/* Tests_SRS_UMOCKCALL_01_029: [ If the underlying umockcall_data_are_equal fails (returns anything else than 0 or 1), then umockcall_are_equal shall fail and return -1. ] */
+TEST_FUNCTION(when_the_underlying_are_equal_returns_2_umockcall_are_equal_returns_minus_1)
+{
+    // arrange
+    UMOCKCALL_HANDLE call1 = umockcall_create("test_function", (void*)0x4242, test_mock_call_data_free, test_mock_call_data_stringify, test_mock_call_data_are_equal);
+    UMOCKCALL_HANDLE call2 = umockcall_create("test_function", (void*)0x4243, test_mock_call_data_free, test_mock_call_data_stringify, test_mock_call_data_are_equal);
+
+    test_mock_call_data_are_equal_expected_result = 2;
+
+    // act
+    int result = umockcall_are_equal(call1, call2);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, -1, result);
+    ASSERT_ARE_EQUAL(int, 1, test_mock_call_data_are_equal_call_count);
+    ASSERT_ARE_EQUAL(void_ptr, (void*)0x4242, test_mock_call_data_are_equal_calls[0].left);
+    ASSERT_ARE_EQUAL(void_ptr, (void*)0x4243, test_mock_call_data_are_equal_calls[0].right);
+
+    // cleanup
+    umockcall_destroy(call1);
+    umockcall_destroy(call2);
+}
+
+/* Tests_SRS_UMOCKCALL_01_014: [ If the two calls have different are_equal functions that have been passed to umockcall_create then the calls shall be considered different and 0 shall be returned. ] */
+TEST_FUNCTION(when_the_are_equal_function_pointers_are_different_umockcall_are_equal_returns_0)
+{
+    // arrange
+    UMOCKCALL_HANDLE call1 = umockcall_create("test_function", (void*)0x4242, test_mock_call_data_free, test_mock_call_data_stringify, test_mock_call_data_are_equal);
+    UMOCKCALL_HANDLE call2 = umockcall_create("test_function", (void*)0x4243, test_mock_call_data_free, test_mock_call_data_stringify, another_test_mock_call_data_are_equal);
+
+    test_mock_call_data_are_equal_expected_result = 2;
 
     // act
     int result = umockcall_are_equal(call1, call2);

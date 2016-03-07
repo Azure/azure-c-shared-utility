@@ -89,15 +89,33 @@ int umockcall_are_equal(UMOCKCALL_HANDLE left, UMOCKCALL_HANDLE right)
     }
     else
     {
-        if (strcmp(left->function_name, right->function_name) != 0)
+        if (left->umockcall_data_are_equal != right->umockcall_data_are_equal)
+        {
+            /* Codes_SRS_UMOCKCALL_01_014: [ If the two calls have different are_equal functions that have been passed to umockcall_create then the calls shall be considered different and 0 shall be returned. ] */
+            result = 0;
+        }
+        else if (strcmp(left->function_name, right->function_name) != 0)
         {
             /* Codes_SRS_UMOCKCALL_01_025: [ If the function name does not match for the 2 calls, umockcall_are_equal shall return 0. ]*/
             result = 0;
         }
         else
         {
-            /* Codes_SRS_UMOCKCALL_01_027: [ If the underlying umockcall_data_are_equal returns 1, then umockcall_are_equal shall return 1. ]*/
-            result = left->umockcall_data_are_equal(left->umockcall_data, right->umockcall_data);
+            switch (left->umockcall_data_are_equal(left->umockcall_data, right->umockcall_data))
+            {
+            default:
+                /* Codes_SRS_UMOCKCALL_01_029: [ If the underlying umockcall_data_are_equal fails (returns anything else than 0 or 1), then umockcall_are_equal shall fail and return -1. ] */
+                result = -1;
+                break;
+            case 1:
+                /* Codes_SRS_UMOCKCALL_01_027: [ If the underlying umockcall_data_are_equal returns 1, then umockcall_are_equal shall return 1. ]*/
+                result = 1;
+                break;
+            case 0:
+                /* Codes_SRS_UMOCKCALL_01_028: [ If the underlying umockcall_data_are_equal returns 0, then umockcall_are_equal shall return 0. ]*/
+                result = 0;
+                break;
+            }
         }
     }
 
