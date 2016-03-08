@@ -213,6 +213,28 @@ TEST_FUNCTION(umockvalue_copy_charptr_copies_an_empty_string)
     free(destination);
 }
 
+/* Tests_SRS_UMOCKVALUE_CHARPTR_01_011: [ umockvalue_copy_charptr shall allocate a new sequence of chars by using malloc. ]*/
+/* Tests_SRS_UMOCKVALUE_CHARPTR_01_012: [ The number of bytes allocated shall accomodate the string pointed to by source. ]*/
+/* Tests_SRS_UMOCKVALUE_CHARPTR_01_016: [ On success umockvalue_copy_charptr shall return 0. ]*/
+/* Tests_SRS_UMOCKVALUE_CHARPTR_01_014: [ umockvalue_copy_charptr shall copy the string pointed to by source to the newly allocated memory. ]*/
+/* Tests_SRS_UMOCKVALUE_CHARPTR_01_015: [ The newly allocated string shall be returned in the destination argument. ]*/
+TEST_FUNCTION(umockvalue_copy_charptr_copies_a_string)
+{
+    // arrange
+    const char* source = "test42";
+    char* destination = "a";
+
+    // act
+    int result = umockvalue_copy_charptr(&destination, &source);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, "test42", destination);
+
+    // cleanup
+    free(destination);
+}
+
 /* Tests_SRS_UMOCKVALUE_CHARPTR_01_013: [ If source or destination are NULL, umockvalue_copy_charptr shall return a non-zero value. ]*/
 TEST_FUNCTION(umockvalue_copy_charptr_with_NULL_destination_fails)
 {
@@ -237,6 +259,36 @@ TEST_FUNCTION(umockvalue_copy_charptr_with_NULL_source_fails)
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
+}
+
+/* umockvalue_free_charptr */
+
+/* Tests_SRS_UMOCKVALUE_CHARPTR_01_017: [ umockvalue_free_charptr shall free the string pointed to by value. ]*/
+TEST_FUNCTION(umockvalue_free_charptr_frees_the_string)
+{
+    // arrange
+    const char* source = "test42";
+    char* destination = "a";
+
+    (void)umockvalue_copy_charptr(&destination, &source);
+
+    // act
+    umockvalue_free_charptr(&destination);
+
+    // assert
+    // no explicit assert
+}
+
+/* Tests_SRS_UMOCKVALUE_CHARPTR_01_018: [ If value is NULL, umockvalue_free_charptr shall do nothing. ] */
+TEST_FUNCTION(umockvalue_free_charptr_with_NULL_does_nothing)
+{
+    // arrange
+
+    // act
+    umockvalue_free_charptr(NULL);
+
+    // assert
+    // no explicit assert
 }
 
 END_TEST_SUITE(umockvalue_charptr_unittests)

@@ -98,8 +98,10 @@ int umockvalue_copy_charptr(char** destination, const char** source)
 
 void umockvalue_free_charptr(char** value)
 {
+    /* Codes_SRS_UMOCKVALUE_CHARPTR_01_018: [ If value is NULL, umockvalue_free_charptr shall do nothing. ] */
     if (value != NULL)
     {
+        /* Codes_SRS_UMOCKVALUE_CHARPTR_01_017: [ umockvalue_free_charptr shall free the string pointed to by value. ]*/
         free(*value);
     }
 }
