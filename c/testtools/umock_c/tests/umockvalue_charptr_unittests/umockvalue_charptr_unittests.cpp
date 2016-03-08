@@ -77,7 +77,7 @@ TEST_FUNCTION(umockvalue_stringify_charptr_with_NULL_argument_returns_NULL)
 /* umockvalue_are_equal_charptr */
 
 /* Tests_SRS_UMOCKVALUE_CHARPTR_01_005: [ umockvalue_are_equal_charptr shall compare the 2 strings pointed to by left and right. ] */
-/* Tests_SRS_UMOCKVALUE_CHARPTR_01_007: [ If left or right are equal, umockvalue_are_equal_charptr shall return 1. ]*/
+/* Tests_SRS_UMOCKVALUE_CHARPTR_01_007: [ If left and right are equal, umockvalue_are_equal_charptr shall return 1. ]*/
 TEST_FUNCTION(umockvalue_are_equal_charptr_with_same_pointer_returns_1)
 {
     // arrange
@@ -91,7 +91,7 @@ TEST_FUNCTION(umockvalue_are_equal_charptr_with_same_pointer_returns_1)
 }
 
 /* Tests_SRS_UMOCKVALUE_CHARPTR_01_005: [ umockvalue_are_equal_charptr shall compare the 2 strings pointed to by left and right. ] */
-/* Tests_SRS_UMOCKVALUE_CHARPTR_01_007: [ If left or right are equal, umockvalue_are_equal_charptr shall return 1. ]*/
+/* Tests_SRS_UMOCKVALUE_CHARPTR_01_007: [ If left and right are equal, umockvalue_are_equal_charptr shall return 1. ]*/
 TEST_FUNCTION(umockvalue_are_equal_charptr_with_same_NULL_pointer_returns_1)
 {
     // arrange
@@ -340,7 +340,7 @@ TEST_FUNCTION(umockvalue_stringify_const_charptr_with_NULL_argument_returns_NULL
 /* umockvalue_are_equal_const_charptr */
 
 /* Tests_SRS_UMOCKVALUE_CHARPTR_01_022: [ umockvalue_are_equal_const_charptr shall compare the 2 strings pointed to by left and right. ] */
-/* Tests_SRS_UMOCKVALUE_CHARPTR_01_024: [ If left or right are equal, umockvalue_are_equal_const_charptr shall return 1. ]*/
+/* Tests_SRS_UMOCKVALUE_CHARPTR_01_024: [ If left and right are equal, umockvalue_are_equal_const_charptr shall return 1. ]*/
 TEST_FUNCTION(umockvalue_are_equal_const_charptr_with_same_pointer_returns_1)
 {
     // arrange
@@ -354,7 +354,7 @@ TEST_FUNCTION(umockvalue_are_equal_const_charptr_with_same_pointer_returns_1)
 }
 
 /* Tests_SRS_UMOCKVALUE_CHARPTR_01_022: [ umockvalue_are_equal_const_charptr shall compare the 2 strings pointed to by left and right. ] */
-/* Tests_SRS_UMOCKVALUE_CHARPTR_01_024: [ If left or right are equal, umockvalue_are_equal_const_charptr shall return 1. ]*/
+/* Tests_SRS_UMOCKVALUE_CHARPTR_01_024: [ If left and right are equal, umockvalue_are_equal_const_charptr shall return 1. ]*/
 TEST_FUNCTION(umockvalue_are_equal_const_charptr_with_same_NULL_pointer_returns_1)
 {
     // arrange

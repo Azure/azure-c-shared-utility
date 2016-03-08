@@ -46,7 +46,7 @@ extern int umockvalue_are_equal_charptr(const char** left, const char** right);
 
 **SRS_UMOCKVALUE_CHARPTR_01_005: [** umockvalue_are_equal_charptr shall compare the 2 strings pointed to by left and right. **]**
 **SRS_UMOCKVALUE_CHARPTR_01_006: [** The comparison shall be case sensitive. **]**
-**SRS_UMOCKVALUE_CHARPTR_01_007: [** If left or right are equal, umockvalue_are_equal_charptr shall return 1. **]**
+**SRS_UMOCKVALUE_CHARPTR_01_007: [** If left and right are equal, umockvalue_are_equal_charptr shall return 1. **]**
 **SRS_UMOCKVALUE_CHARPTR_01_008: [** If only one of the left and right argument is NULL, umockvalue_are_equal_charptr shall return 0. **]**
 **SRS_UMOCKVALUE_CHARPTR_01_009: [** If the string pointed to by left is equal to the string pointed to by right, umockvalue_are_equal_charptr shall return 1. **]**
 **SRS_UMOCKVALUE_CHARPTR_01_010: [** If the string pointed to by left is different than the string pointed to by right, umockvalue_are_equal_charptr shall return 0. **]**
@@ -92,7 +92,7 @@ extern int umockvalue_are_equal_const_charptr(const char** left, const char** ri
 
 **SRS_UMOCKVALUE_CHARPTR_01_022: [** umockvalue_are_equal_const_charptr shall compare the 2 strings pointed to by left and right. **]**
 **SRS_UMOCKVALUE_CHARPTR_01_023: [** The comparison shall be case sensitive. **]**
-**SRS_UMOCKVALUE_CHARPTR_01_024: [** If left or right are equal, umockvalue_are_equal_const_charptr shall return 1. **]**
+**SRS_UMOCKVALUE_CHARPTR_01_024: [** If left and right are equal, umockvalue_are_equal_const_charptr shall return 1. **]**
 **SRS_UMOCKVALUE_CHARPTR_01_025: [** If only one of the left and right argument is NULL, umockvalue_are_equal_const_charptr shall return 0. **]**
 **SRS_UMOCKVALUE_CHARPTR_01_026: [** If the string pointed to by left is equal to the string pointed to by right, umockvalue_are_equal_const_charptr shall return 1. **]**
 **SRS_UMOCKVALUE_CHARPTR_01_027: [** If the string pointed to by left is different than the string pointed to by right, umockvalue_are_equal_const_charptr shall return 0. **]**

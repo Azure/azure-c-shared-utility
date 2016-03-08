@@ -42,7 +42,7 @@ int umockvalue_are_equal_charptr(const char** left, const char** right)
 {
     int result;
 
-    /* Codes_SRS_UMOCKVALUE_CHARPTR_01_007: [ If left or right are equal, umockvalue_are_equal_charptr shall return 1. ]*/
+    /* Codes_SRS_UMOCKVALUE_CHARPTR_01_007: [ If left and right are equal, umockvalue_are_equal_charptr shall return 1. ]*/
     if (left == right)
     {
         result = 1;
@@ -138,7 +138,7 @@ int umockvalue_are_equal_const_charptr(const char** left, const char** right)
 {
     int result;
 
-    /* Codes_SRS_UMOCKVALUE_CHARPTR_01_024: [ If left or right are equal, umockvalue_are_equal_const_charptr shall return 1. ]*/
+    /* Codes_SRS_UMOCKVALUE_CHARPTR_01_024: [ If left and right are equal, umockvalue_are_equal_const_charptr shall return 1. ]*/
     if (left == right)
     {
         result = 1;
