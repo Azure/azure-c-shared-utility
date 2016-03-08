@@ -16,12 +16,15 @@ char* umockvalue_stringify_charptr(const char** value)
 
     if (value == NULL)
     {
+        /* Codes_SRS_UMOCKVALUE_CHARPTR_01_004: [ If value is NULL, umockvalue_stringify_charptr shall return NULL. ]*/
         result = NULL;
     }
     else
     {
+        /* Codes_SRS_UMOCKVALUE_CHARPTR_01_002: [ umockvalue_stringify_charptr shall return a string containing the string representation of value, enclosed by quotes (\"value\"). ] */
         size_t length = strlen(*value);
         result = (char*)malloc(length + 3);
+        /* Codes_SRS_UMOCKVALUE_CHARPTR_01_003: [ If allocating a new string to hold the string representation fails, umockvalue_stringify_charptr shall return NULL. ]*/
         if (result != NULL)
         {
             result[0] = '\"';
