@@ -17,6 +17,7 @@
 #include "windows.h"
 #include "sspi.h"
 #include "schannel.h"
+#include "iot_logging.h"
 
 typedef enum TLSIO_STATE_TAG
 {
@@ -169,7 +170,6 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT io_open
             {
                 if (xio_send(tls_io_instance->socket_io, init_security_buffers[0].pvBuffer, init_security_buffers[0].cbBuffer, NULL, NULL) != 0)
                 {
-                    FreeCredentialHandle(&tls_io_instance->credential_handle);
                     tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
                     indicate_error(tls_io_instance);
                 }
@@ -179,7 +179,6 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT io_open
                     tls_io_instance->needed_bytes = 1;
                     if (resize_receive_buffer(tls_io_instance, tls_io_instance->needed_bytes + tls_io_instance->received_byte_count) != 0)
                     {
-                        FreeCredentialHandle(&tls_io_instance->credential_handle);
                         tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
                         indicate_error(tls_io_instance);
                     }
@@ -358,7 +357,6 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
 
                             if (set_receive_buffer(tls_io_instance, tls_io_instance->needed_bytes + tls_io_instance->received_byte_count) != 0)
                             {
-                                FreeCredentialHandle(&tls_io_instance->credential_handle);
                                 tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
                                 if (tls_io_instance->on_io_open_complete != NULL)
                                 {
@@ -372,7 +370,6 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                         }
                         break;
                     case SEC_E_UNTRUSTED_ROOT:
-                        FreeCredentialHandle(&tls_io_instance->credential_handle);
                         tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
                         if (tls_io_instance->on_io_open_complete != NULL)
                         {
@@ -385,12 +382,12 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                         if (FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
                             status, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)srcText, 0, NULL) > 0)
                         {
-                            LOG(tls_io_instance->logger_log, LOG_LINE, "%d: %s", status, srcText);
+                            LogError("[%#x] %s", status, (LPTSTR)srcText);
                             LocalFree(srcText);
                         }
                         else
                         {
-                            LOG(tls_io_instance->logger_log, LOG_LINE, "Error: %#x", status);
+                            LogError("[%#x]", status);
                         }
                         break;
                     }
