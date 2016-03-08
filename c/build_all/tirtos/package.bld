@@ -34,6 +34,7 @@ var SRCS = [
     "sha384-512.c",
     "strings.c",
     "string_tokenizer.c",
+	"tickcounter.c",
     "urlencode.c",
     "usha.c",
     "vector.c"
