@@ -37,19 +37,26 @@ char* umockvalue_stringify_charptr(const char** value)
     return result;
 }
 
+/* Codes_SRS_UMOCKVALUE_CHARPTR_01_005: [ umockvalue_are_equal_charptr shall compare the 2 strings pointed to by left and right. ] */
 int umockvalue_are_equal_charptr(const char** left, const char** right)
 {
     int result;
+
+    /* Codes_SRS_UMOCKVALUE_CHARPTR_01_007: [ If left or right are equal, umockvalue_are_equal_charptr shall return 1. ]*/
     if (left == right)
     {
         result = 1;
     }
     else if ((left == NULL) || (right == NULL))
     {
+        /* Codes_SRS_UMOCKVALUE_CHARPTR_01_008: [ If only one of the left and right argument is NULL, umockvalue_are_equal_charptr shall return 0. ] */
         result = 0;
     }
     else
     {
+        /* Codes_SRS_UMOCKVALUE_CHARPTR_01_009: [ If the string pointed to by left is equal to the string pointed to by right, umockvalue_are_equal_charptr shall return 1. ]*/
+        /* Codes_SRS_UMOCKVALUE_CHARPTR_01_010: [ If the string pointed to by left is different than the string pointed to by right, umockvalue_are_equal_charptr shall return 0. ]*/
+        /* Codes_SRS_UMOCKVALUE_CHARPTR_01_006: [ The comparison shall be case sensitive. ]*/
         result = (strcmp(*left, *right) == 0) ? 1 : 0;
     }
 

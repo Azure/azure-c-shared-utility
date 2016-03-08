@@ -50,10 +50,10 @@ TEST_FUNCTION(umockvalue_stringify_charptr_with_an_empty_string_returns_2_quotes
 TEST_FUNCTION(umockvalue_stringify_charptr_with_a_non_empty_string_returns_the_string_surrounded_by_quotes)
 {
     // arrange
-    char* input = "test42";
+    const char* input = "test42";
 
     // act
-    char* result = umockvalue_stringify_charptr((const char**)&input);
+    char* result = umockvalue_stringify_charptr(&input);
 
     // assert
     ASSERT_ARE_EQUAL(char_ptr, "\"test42\"", result);
@@ -72,6 +72,121 @@ TEST_FUNCTION(umockvalue_stringify_charptr_with_NULL_argument_returns_NULL)
 
     // assert
     ASSERT_IS_NULL(result);
+}
+
+/* umockvalue_are_equal_charptr */
+
+/* Tests_SRS_UMOCKVALUE_CHARPTR_01_005: [ umockvalue_are_equal_charptr shall compare the 2 strings pointed to by left and right. ] */
+/* Tests_SRS_UMOCKVALUE_CHARPTR_01_007: [ If left or right are equal, umockvalue_are_equal_charptr shall return 1. ]*/
+TEST_FUNCTION(umockvalue_are_equal_charptr_with_same_pointer_returns_1)
+{
+    // arrange
+    const char* input = "test42";
+
+    // act
+    int result = umockvalue_are_equal_charptr(&input, &input);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 1, result);
+}
+
+/* Tests_SRS_UMOCKVALUE_CHARPTR_01_005: [ umockvalue_are_equal_charptr shall compare the 2 strings pointed to by left and right. ] */
+/* Tests_SRS_UMOCKVALUE_CHARPTR_01_007: [ If left or right are equal, umockvalue_are_equal_charptr shall return 1. ]*/
+TEST_FUNCTION(umockvalue_are_equal_charptr_with_same_NULL_pointer_returns_1)
+{
+    // arrange
+
+    // act
+    int result = umockvalue_are_equal_charptr(NULL, NULL);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 1, result);
+}
+
+/* Tests_SRS_UMOCKVALUE_CHARPTR_01_008: [ If only one of the left and right argument is NULL, umockvalue_are_equal_charptr shall return 0. ] */
+TEST_FUNCTION(umockvalue_are_equal_charptr_with_left_NULL_returns_0)
+{
+    // arrange
+    const char* input = "test42";
+
+    // act
+    int result = umockvalue_are_equal_charptr(NULL, &input);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+}
+
+/* Tests_SRS_UMOCKVALUE_CHARPTR_01_008: [ If only one of the left and right argument is NULL, umockvalue_are_equal_charptr shall return 0. ] */
+TEST_FUNCTION(umockvalue_are_equal_charptr_with_right_NULL_returns_0)
+{
+    // arrange
+    const char* input = "test42";
+
+    // act
+    int result = umockvalue_are_equal_charptr(&input, NULL);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+}
+
+/* Tests_SRS_UMOCKVALUE_CHARPTR_01_009: [ If the string pointed to by left is equal to the string pointed to by right, umockvalue_are_equal_charptr shall return 1. ]*/
+TEST_FUNCTION(umockvalue_are_equal_with_string_being_the_same_returns_1)
+{
+    // arrange
+    char* input1 = (char*)malloc(7);
+    char* input2 = (char*)malloc(7);
+    (void)strcpy(input1, "test42");
+    (void)strcpy(input2, "test42");
+
+    // act
+    int result = umockvalue_are_equal_charptr((const char**)&input1, (const char**)&input2);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 1, result);
+
+    // cleanup
+    free(input1);
+    free(input2);
+}
+
+/* Tests_SRS_UMOCKVALUE_CHARPTR_01_010: [ If the string pointed to by left is different than the string pointed to by right, umockvalue_are_equal_charptr shall return 0. ]*/
+TEST_FUNCTION(umockvalue_are_equal_with_string_being_different_returns_0)
+{
+    // arrange
+    char* input1 = (char*)malloc(7);
+    char* input2 = (char*)malloc(7);
+    (void)strcpy(input1, "test42");
+    (void)strcpy(input2, "test43");
+
+    // act
+    int result = umockvalue_are_equal_charptr((const char**)&input1, (const char**)&input2);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+
+    // cleanup
+    free(input1);
+    free(input2);
+}
+
+/* Tests_SRS_UMOCKVALUE_CHARPTR_01_006: [ The comparison shall be case sensitive. ]*/
+TEST_FUNCTION(umockvalue_are_equal_with_string_being_different_in_case_returns_0)
+{
+    // arrange
+    char* input1 = (char*)malloc(5);
+    char* input2 = (char*)malloc(5);
+    (void)strcpy(input1, "Test");
+    (void)strcpy(input2, "test");
+
+    // act
+    int result = umockvalue_are_equal_charptr((const char**)&input1, (const char**)&input2);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+
+    // cleanup
+    free(input1);
+    free(input2);
 }
 
 END_TEST_SUITE(umockvalue_charptr_unittests)
