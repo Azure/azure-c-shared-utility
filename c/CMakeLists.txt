@@ -200,6 +200,7 @@ function(set_platform_files)
         set(LOCK_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/lock_c11.c PARENT_SCOPE)
         set(PLATFORM_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/platform_win32.c PARENT_SCOPE)
         set(SOCKETIO_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/socketio_win32.c PARENT_SCOPE)
+		set(TICKCOUTER_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/tickcounter_win32.c PARENT_SCOPE)
     else()
         if(${use_condition})
             set(CONDITION_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/condition_pthreads.c PARENT_SCOPE)
@@ -209,6 +210,7 @@ function(set_platform_files)
         set(PLATFORM_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/platform_linux.c PARENT_SCOPE)
         set(SOCKETIO_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/socketio_berkeley.c PARENT_SCOPE)
         set(THREAD_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/threadapi_pthreads.c PARENT_SCOPE)
+		set(TICKCOUTER_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/tickcounter_linux.c PARENT_SCOPE)
     endif()
 endfunction(set_platform_files)
 
@@ -245,11 +247,11 @@ set(source_c_files
 ./src/sha384-512.c
 ./src/strings.c
 ./src/string_tokenizer.c
-./src/tickcounter.c
 ./src/urlencode.c
 ./src/usha.c
 ./src/vector.c
 ./adapters/agenttime.c
+${TICKCOUTER_C_FILE}
 ${CONDITION_C_FILE}
 ${PLATFORM_C_FILE}
 ${SOCKETIO_C_FILE}

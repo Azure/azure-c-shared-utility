@@ -12,7 +12,7 @@ ${theseTestsName}.cpp
 )
 
 set(${theseTestsName}_c_files
-../../src/tickcounter.c
+	${TICKCOUTER_C_FILE}
 )
 
 set(${theseTestsName}_h_files
