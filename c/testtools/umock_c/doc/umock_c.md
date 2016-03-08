@@ -503,7 +503,7 @@ The IgnoreArgument_{arg_name} call modifier shall record that the argument ident
 
 ###ValidateArgument_{arg_name}(void)
 
-The ValidateArgument_{arg_name} call modifier shall record that the argument identified by arg_name will be ignored for that specific call.
+The ValidateArgument_{arg_name} call modifier shall record that the argument identified by arg_name will be validated for that specific call.
 
 ###IgnoreArgument(size_t index)
 
