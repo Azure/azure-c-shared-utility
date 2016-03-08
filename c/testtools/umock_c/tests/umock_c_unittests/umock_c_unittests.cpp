@@ -477,6 +477,8 @@ TEST_FUNCTION(ValidateArgument_by_name_2nd_arg_validates_only_that_argument_on_a
 }
 
 /* IgnoreArgument */
+
+/* Tests_SRS_UMOCK_C_01_080: [The IgnoreArgument call modifier shall record that the indexth argument will be ignored for that specific call.]*/
 TEST_FUNCTION(IgnoreArgument_by_index_for_first_arg_ignores_the_first_argument)
 {
     // arrange
@@ -490,6 +492,54 @@ TEST_FUNCTION(IgnoreArgument_by_index_for_first_arg_ignores_the_first_argument)
     // assert
     ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_expected_calls());
     ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_UMOCK_C_01_080: [The IgnoreArgument call modifier shall record that the indexth argument will be ignored for that specific call.]*/
+TEST_FUNCTION(IgnoreArgument_by_index_for_second_arg_ignores_the_second_argument)
+{
+    // arrange
+
+    // act
+    STRICT_EXPECTED_CALL(test_dependency_2_args(41, 42))
+        .IgnoreArgument(2);
+
+    test_dependency_2_args(41, 43);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_expected_calls());
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_UMOCK_C_01_080: [The IgnoreArgument call modifier shall record that the indexth argument will be ignored for that specific call.]*/
+TEST_FUNCTION(IgnoreArgument_by_index_for_first_arg_ignores_only_the_first_argument)
+{
+    // arrange
+
+    // act
+    STRICT_EXPECTED_CALL(test_dependency_2_args(42, 43))
+        .IgnoreArgument(1);
+
+    test_dependency_2_args(42, 42);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "[test_dependency_2_args(42,43)]", umock_c_get_expected_calls());
+    ASSERT_ARE_EQUAL(char_ptr, "[test_dependency_2_args(42,42)]", umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_UMOCK_C_01_080: [The IgnoreArgument call modifier shall record that the indexth argument will be ignored for that specific call.]*/
+TEST_FUNCTION(IgnoreArgument_by_index_for_second_arg_ignores_only_the_second_argument)
+{
+    // arrange
+
+    // act
+    STRICT_EXPECTED_CALL(test_dependency_2_args(41, 42))
+        .IgnoreArgument(2);
+
+    test_dependency_2_args(42, 42);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "[test_dependency_2_args(41,42)]", umock_c_get_expected_calls());
+    ASSERT_ARE_EQUAL(char_ptr, "[test_dependency_2_args(42,42)]", umock_c_get_actual_calls());
 }
 
 END_TEST_SUITE(umock_c_unittests)
