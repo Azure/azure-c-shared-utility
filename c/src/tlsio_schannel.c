@@ -371,6 +371,14 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                             }
                         }
                         break;
+                    case SEC_E_UNTRUSTED_ROOT:
+                        FreeCredentialHandle(&tls_io_instance->credential_handle);
+                        tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
+                        if (tls_io_instance->on_io_open_complete != NULL)
+                        {
+                            tls_io_instance->on_io_open_complete(tls_io_instance->on_io_open_complete_context, IO_OPEN_ERROR);
+                        }
+                        break;
                     default:
                     {
                         LPVOID srcText = NULL;
@@ -379,6 +387,10 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                         {
                             LOG(tls_io_instance->logger_log, LOG_LINE, "%d: %s", status, srcText);
                             LocalFree(srcText);
+                        }
+                        else
+                        {
+                            LOG(tls_io_instance->logger_log, LOG_LINE, "Error: %#x", status);
                         }
                         break;
                     }
