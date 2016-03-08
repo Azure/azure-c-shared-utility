@@ -234,4 +234,22 @@ TEST_FUNCTION(EXPECTED_CALL_with_2_args_does_not_compare_arguments)
     ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
 }
 
+/* Call modifiers */
+
+/* Tests_SRS_UMOCK_C_01_074: [When an expected call is recorded a call modifier interface in the form of a structure containing function pointers shall be returned to the caller.] */
+TEST_FUNCTION(STRICT_EXPECTED_CALL_allows_call_modifiers)
+{
+    // arrange
+
+    // act
+    STRICT_EXPECTED_CALL(test_dependency_2_args(42, 43))
+        .ValidateAllArguments();
+
+    test_dependency_2_args(42, 43);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_expected_calls());
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
+}
+
 END_TEST_SUITE(umock_c_unittests)

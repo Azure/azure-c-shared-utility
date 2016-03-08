@@ -163,7 +163,7 @@ EXPECTED_CALL(call)
 ```
 
 XX**SRS_UMOCK_C_01_016: [**EXPECTED_CALL shall record that a certain call is expected.**]**
-**SRS_UMOCK_C_01_017: [**No arguments shall be saved by default, unless other modifiers state it.**]**
+XX**SRS_UMOCK_C_01_017: [**No arguments shall be saved by default, unless other modifiers state it.**]**
 
 XX**SRS_UMOCK_C_01_018: [**The call argument shall be the complete function invocation.**]**
 
@@ -482,7 +482,7 @@ int umockvalue_stdint_register_types(void);
 
 ##Call modifiers
 
-**SRS_UMOCK_C_01_074: [**When an expected call is recorded a call modifier interface in the form of a structure containing function pointers shall be returned to the caller.**]**
+XX**SRS_UMOCK_C_01_074: [**When an expected call is recorded a call modifier interface in the form of a structure containing function pointers shall be returned to the caller.**]**
 
 That allows constructs like:
 
