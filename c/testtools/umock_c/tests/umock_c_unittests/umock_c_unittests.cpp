@@ -542,4 +542,70 @@ TEST_FUNCTION(IgnoreArgument_by_index_for_second_arg_ignores_only_the_second_arg
     ASSERT_ARE_EQUAL(char_ptr, "[test_dependency_2_args(42,42)]", umock_c_get_actual_calls());
 }
 
+/* ValidateArgument */
+
+/* Tests_SRS_UMOCK_C_01_082: [The ValidateArgument call modifier shall record that the indexth argument will be validated for that specific call.]*/
+TEST_FUNCTION(ValidateArgument_by_index_for_first_arg_ignores_the_first_argument)
+{
+    // arrange
+
+    // act
+    EXPECTED_CALL(test_dependency_2_args(42, 43))
+        .ValidateArgument(1);
+
+    test_dependency_2_args(41, 43);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "[test_dependency_2_args(42,43)]", umock_c_get_expected_calls());
+    ASSERT_ARE_EQUAL(char_ptr, "[test_dependency_2_args(41,43)]", umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_UMOCK_C_01_082: [The ValidateArgument call modifier shall record that the indexth argument will be validated for that specific call.]*/
+TEST_FUNCTION(ValidateArgument_by_index_for_second_arg_validates_the_second_argument)
+{
+    // arrange
+
+    // act
+    EXPECTED_CALL(test_dependency_2_args(42, 42))
+        .ValidateArgument(2);
+
+    test_dependency_2_args(42, 43);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "[test_dependency_2_args(42,42)]", umock_c_get_expected_calls());
+    ASSERT_ARE_EQUAL(char_ptr, "[test_dependency_2_args(42,43)]", umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_UMOCK_C_01_082: [The ValidateArgument call modifier shall record that the indexth argument will be validated for that specific call.]*/
+TEST_FUNCTION(ValidateArgument_by_index_for_first_arg_validates_only_the_first_argument)
+{
+    // arrange
+
+    // act
+    EXPECTED_CALL(test_dependency_2_args(42, 43))
+        .ValidateArgument(1);
+
+    test_dependency_2_args(42, 42);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_expected_calls());
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_UMOCK_C_01_082: [The ValidateArgument call modifier shall record that the indexth argument will be validated for that specific call.]*/
+TEST_FUNCTION(ValidateArgument_by_index_for_second_arg_validates_only_the_second_argument)
+{
+    // arrange
+
+    // act
+    EXPECTED_CALL(test_dependency_2_args(42, 42))
+        .ValidateArgument(2);
+
+    test_dependency_2_args(43, 42);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_expected_calls());
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
+}
+
 END_TEST_SUITE(umock_c_unittests)

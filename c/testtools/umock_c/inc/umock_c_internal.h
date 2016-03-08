@@ -112,10 +112,19 @@ extern UMOCKCALL_HANDLE umock_c_get_last_expected_call(void);
 #define IGNORE_ARGUMENT_FUNCTION_IN_ARRAY(name, arg_type, arg_name) \
     &C4(ignore_argument_func_,name,_,arg_name),
 
+#define VALIDATE_ARGUMENT_FUNCTION_IN_ARRAY(name, arg_type, arg_name) \
+    &C4(validate_argument_func_,name,_,arg_name),
+
 #define DECLARE_IGNORE_ARGUMENT_FUNCTION_ARRAY(name, ...) \
     static const C2(ignore_one_argument_func_type_,name) C2(ignore_one_argument_array_,name)[] = \
     { \
         FOR_EACH_2_KEEP_1(IGNORE_ARGUMENT_FUNCTION_IN_ARRAY, name, __VA_ARGS__) \
+    };
+
+#define DECLARE_VALIDATE_ARGUMENT_FUNCTION_ARRAY(name, ...) \
+    static const C2(validate_one_argument_func_type_,name) C2(validate_one_argument_array_,name)[] = \
+    { \
+        FOR_EACH_2_KEEP_1(VALIDATE_ARGUMENT_FUNCTION_IN_ARRAY, name, __VA_ARGS__) \
     };
 
 /* Codes_SRS_UMOCK_C_01_003: [If ENABLE_MOCKS is defined, MOCKABLE_FUNCTION shall generate all the boilerplate code needed by the macros in umock API to function to record the calls. Note: a lot of code (including function definitions and bodies, global variables (both static and extern).] */
@@ -171,6 +180,8 @@ extern UMOCKCALL_HANDLE umock_c_get_last_expected_call(void);
     IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_KEEP_1(DECLARE_VALIDATE_ARGUMENT_FUNCTION_PROTOTYPE, name, __VA_ARGS__),) \
     typedef struct C2(_mock_call_modifier_,name) (*C2(ignore_one_argument_func_type_,name))(void); \
     IF(COUNT_ARG(__VA_ARGS__), DECLARE_IGNORE_ARGUMENT_FUNCTION_ARRAY(name, __VA_ARGS__),) \
+    typedef struct C2(_mock_call_modifier_,name) (*C2(validate_one_argument_func_type_,name))(void); \
+    IF(COUNT_ARG(__VA_ARGS__), DECLARE_VALIDATE_ARGUMENT_FUNCTION_ARRAY(name, __VA_ARGS__),) \
     static void C2(fill_mock_call_modifier_,name)(C2(mock_call_modifier_,name)* mock_call_modifier) \
     { \
         mock_call_modifier->SetReturn = C2(set_return_func_,name); \
@@ -328,6 +339,19 @@ extern UMOCKCALL_HANDLE umock_c_get_last_expected_call(void);
     static C2(mock_call_modifier_,name) C2(validate_argument_func_,name)(size_t arg_index) \
     { \
         DECLARE_MOCK_CALL_MODIFIER(name) \
+        C2(mock_call_, name)* mock_call_data = (C2(mock_call_, name)*)umockcall_get_call_data(umock_c_get_last_expected_call()); \
+        if (mock_call_data != NULL) \
+        { \
+            IF(COUNT_ARG(__VA_ARGS__), \
+                if ((arg_index < 1) || (arg_index > (sizeof(C2(validate_one_argument_array_,name)) / sizeof(C2(validate_one_argument_array_,name)[0])))) \
+                { \
+                } \
+                else \
+                { \
+                    C2(validate_one_argument_array_,name)[arg_index - 1](); \
+                }, \
+            ) \
+        } \
         return mock_call_modifier; \
     } \
     static C2(mock_call_modifier_,name) C2(ignore_all_calls_func_,name)(void) \

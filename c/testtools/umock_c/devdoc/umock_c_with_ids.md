@@ -515,13 +515,13 @@ XX**SRS_UMOCK_C_01_079: [**The ValidateArgument_{arg_name} call modifier shall r
 
 ###IgnoreArgument(size_t index)
 
-**SRS_UMOCK_C_01_080: [**The IgnoreArgument call modifier shall record that the indexth argument will be ignored for that specific call.**]**
+XX**SRS_UMOCK_C_01_080: [**The IgnoreArgument call modifier shall record that the indexth argument will be ignored for that specific call.**]**
 
 **SRS_UMOCK_C_01_081: [**If the index is out of range umock_c shall raise an error with the code UMOCK_C_ARG_INDEX_OUT_OF_RANGE.**]**
 
 ###ValidateArgument(size_t index)
 
-**SRS_UMOCK_C_01_082: [**The ValidateArgument call modifier shall record that the indexth argument will be validated for that specific call.**]**
+XX**SRS_UMOCK_C_01_082: [**The ValidateArgument call modifier shall record that the indexth argument will be validated for that specific call.**]**
 
 **SRS_UMOCK_C_01_083: [**If the index is out of range umock_c shall raise an error with the code UMOCK_C_ARG_INDEX_OUT_OF_RANGE.**]**
 
