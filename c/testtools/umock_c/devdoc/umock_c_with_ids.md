@@ -494,16 +494,16 @@ That allows constructs like:
 
 Note that each modifier function shall return a full modifier structure that allows chaining further call modifiers.
 
-**SRS_UMOCK_C_01_075: [**The last modifier in a chain overrides previous modifiers if any collision occurs.**]**
+XX**SRS_UMOCK_C_01_075: [**The last modifier in a chain overrides previous modifiers if any collision occurs.**]**
 Example: A ValidateAllArguments after a previous IgnoreAllArgument will still validate all arguments.
 
 ###IgnoreAllArguments(void)
 
-**SRS_UMOCK_C_01_076: [**The IgnoreAllArguments call modifier shall record that for that specific call all arguments will be ignored for that specific call.**]**
+XX**SRS_UMOCK_C_01_076: [**The IgnoreAllArguments call modifier shall record that for that specific call all arguments will be ignored for that specific call.**]**
 
 ###ValidateAllArguments(void)
 
-**SRS_UMOCK_C_01_077: [**The ValidateAllArguments call modifier shall record that for that specific call all arguments will be validated.**]**
+XX**SRS_UMOCK_C_01_077: [**The ValidateAllArguments call modifier shall record that for that specific call all arguments will be validated.**]**
 
 ###IgnoreArgument_{arg_name}(void)
 

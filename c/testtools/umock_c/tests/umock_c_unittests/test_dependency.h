@@ -23,6 +23,7 @@ extern "C" {
     MOCKABLE_FUNCTION(int, test_dependency_2_args, int, a, int, b);
     MOCKABLE_FUNCTION(int, test_dependency_struct_arg, TEST_STRUCT, s);
     MOCKABLE_FUNCTION(int, test_dependency_char_star_arg, char*, s);
+    MOCKABLE_FUNCTION(int, test_dependency_1_out_arg, int*, a);
 
 #ifdef __cplusplus
 }
