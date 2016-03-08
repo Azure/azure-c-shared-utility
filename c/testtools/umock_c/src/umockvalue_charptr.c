@@ -105,3 +105,99 @@ void umockvalue_free_charptr(char** value)
         free(*value);
     }
 }
+
+char* umockvalue_stringify_const_charptr(const char** value)
+{
+    char* result;
+
+    if (value == NULL)
+    {
+        /* Codes_SRS_UMOCKVALUE_CHARPTR_01_020: [ If value is NULL, umockvalue_stringify_const_charptr shall return NULL. ]*/
+        result = NULL;
+    }
+    else
+    {
+        /* Codes_SRS_UMOCKVALUE_CHARPTR_01_019: [ umockvalue_stringify_const_charptr shall return a string containing the string representation of value, enclosed by quotes (\"value\"). ] */
+        size_t length = strlen(*value);
+        result = (char*)malloc(length + 3);
+        /* Codes_SRS_UMOCKVALUE_CHARPTR_01_021: [ If allocating a new string to hold the string representation fails, umockvalue_stringify_const_charptr shall return NULL. ]*/
+        if (result != NULL)
+        {
+            result[0] = '\"';
+            (void)memcpy(result + 1, *value, length);
+            result[length + 1] = '\"';
+            result[length + 2] = '\0';
+        }
+    }
+
+    return result;
+}
+
+/* Codes_SRS_UMOCKVALUE_CHARPTR_01_022: [ umockvalue_are_equal_const_charptr shall compare the 2 strings pointed to by left and right. ] */
+int umockvalue_are_equal_const_charptr(const char** left, const char** right)
+{
+    int result;
+
+    /* Codes_SRS_UMOCKVALUE_CHARPTR_01_024: [ If left or right are equal, umockvalue_are_equal_const_charptr shall return 1. ]*/
+    if (left == right)
+    {
+        result = 1;
+    }
+    else if ((left == NULL) || (right == NULL))
+    {
+        /* Codes_SRS_UMOCKVALUE_CHARPTR_01_025: [ If only one of the left and right argument is NULL, umockvalue_are_equal_const_charptr shall return 0. ] */
+        result = 0;
+    }
+    else
+    {
+        /* Codes_SRS_UMOCKVALUE_CHARPTR_01_026: [ If the string pointed to by left is equal to the string pointed to by right, umockvalue_are_equal_const_charptr shall return 1. ]*/
+        /* Codes_SRS_UMOCKVALUE_CHARPTR_01_027: [ If the string pointed to by left is different than the string pointed to by right, umockvalue_are_equal_const_charptr shall return 0. ]*/
+        /* Codes_SRS_UMOCKVALUE_CHARPTR_01_023: [ The comparison shall be case sensitive. ]*/
+        result = (strcmp(*left, *right) == 0) ? 1 : 0;
+    }
+
+    return result;
+}
+
+int umockvalue_copy_const_charptr(char** destination, const char** source)
+{
+    int result;
+
+    /* Codes_SRS_UMOCKVALUE_CHARPTR_01_033: [ If source or destination are NULL, umockvalue_copy_const_charptr shall return a non-zero value. ]*/
+    if ((destination == NULL) || (source == NULL))
+    {
+        result = __LINE__;
+    }
+    else
+    {
+        size_t source_length = strlen(*source);
+        /* Codes_SRS_UMOCKVALUE_CHARPTR_01_029: [ The number of bytes allocated shall accomodate the string pointed to by source. ]*/
+        /* Codes_SRS_UMOCKVALUE_CHARPTR_01_028: [ umockvalue_copy_const_charptr shall allocate a new sequence of chars by using malloc. ]*/
+        /* Codes_SRS_UMOCKVALUE_CHARPTR_01_031: [ The newly allocated string shall be returned in the destination argument. ]*/
+        *destination = (char*)malloc(source_length + 1);
+        if (*destination == NULL)
+        {
+            /* Codes_SRS_UMOCKVALUE_CHARPTR_01_037: [ If allocating the memory for the new string fails, umockvalue_copy_const_charptr shall fail and return a non-zero value. ]*/
+            result = __LINE__;
+        }
+        else
+        {
+            /* Codes_SRS_UMOCKVALUE_CHARPTR_01_030: [ umockvalue_copy_const_charptr shall copy the string pointed to by source to the newly allocated memory. ]*/
+            (void)memcpy(*destination, *source, source_length + 1);
+            /* Codes_SRS_UMOCKVALUE_CHARPTR_01_032: [ On success umockvalue_copy_const_charptr shall return 0. ]*/
+            result = 0;
+        }
+    }
+
+    return result;
+}
+
+void umockvalue_free_const_charptr(char** value)
+{
+    /* Codes_SRS_UMOCKVALUE_CHARPTR_01_035: [ If value is NULL, umockvalue_free_const_charptr shall do nothing. ] */
+    if (value != NULL)
+    {
+        /* Codes_SRS_UMOCKVALUE_CHARPTR_01_034: [ umockvalue_free_const_charptr shall free the string pointed to by value. ]*/
+        free(*value);
+    }
+}
