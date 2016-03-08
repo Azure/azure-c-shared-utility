@@ -8,10 +8,17 @@
 extern "C" {
 #endif
 
-extern char* umockvalue_stringify_charptr(const char** value);
-extern int umockvalue_are_equal_charptr(const char** left, const char** right);
-extern int umockvalue_copy_charptr(char** destination, const char** source);
-extern void umockvalue_free_charptr(char** value);
+    extern int umockvalue_charptr_register_types(void);
+
+    extern char* umockvalue_stringify_charptr(const char** value);
+    extern int umockvalue_are_equal_charptr(const char** left, const char** right);
+    extern int umockvalue_copy_charptr(char** destination, const char** source);
+    extern void umockvalue_free_charptr(char** value);
+
+    extern char* umockvalue_stringify_const_charptr(const char** value);
+    extern int umockvalue_are_equal_const_charptr(const char** left, const char** right);
+    extern int umockvalue_copy_const_charptr(char** destination, const char** source);
+    extern void umockvalue_free_const_charptr(char** value);
 
 #ifdef __cplusplus
 }
