@@ -507,7 +507,7 @@ XX**SRS_UMOCK_C_01_077: [**The ValidateAllArguments call modifier shall record t
 
 ###IgnoreArgument_{arg_name}(void)
 
-**SRS_UMOCK_C_01_078: [**The IgnoreArgument_{arg_name} call modifier shall record that the argument identified by arg_name will be ignored for that specific call.**]**
+XX**SRS_UMOCK_C_01_078: [**The IgnoreArgument_{arg_name} call modifier shall record that the argument identified by arg_name will be ignored for that specific call.**]**
 
 ###ValidateArgument_{arg_name}(void)
 

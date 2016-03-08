@@ -394,4 +394,86 @@ TEST_FUNCTION(IgnoreArgument_by_name_ignores_only_that_argument_on_a_STRICT_EXPE
     ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
 }
 
+/* Tests_SRS_UMOCK_C_01_078: [The IgnoreArgument_{arg_name} call modifier shall record that the argument identified by arg_name will be ignored for that specific call.] */
+TEST_FUNCTION(IgnoreArgument_by_name_with_second_argument_ignores_only_that_argument_on_a_STRICT_EXPECTED_CALL)
+{
+    // arrange
+
+    // act
+    STRICT_EXPECTED_CALL(test_dependency_2_args(42, 43))
+        .IgnoreArgument_b();
+
+    test_dependency_2_args(42, 42);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_expected_calls());
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
+}
+
+/* ValidateArgument_{arg_name} */
+
+/* Tests_SRS_UMOCK_C_01_079: [The ValidateArgument_{arg_name} call modifier shall record that the argument identified by arg_name will be ignored for that specific call.]*/
+TEST_FUNCTION(ValidateArgument_by_name_validates_only_that_argument_on_an_EXPECTED_CALL)
+{
+    // arrange
+
+    // act
+    EXPECTED_CALL(test_dependency_2_args(42, 43))
+        .ValidateArgument_a();
+
+    test_dependency_2_args(42, 44);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_expected_calls());
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_UMOCK_C_01_079: [The ValidateArgument_{arg_name} call modifier shall record that the argument identified by arg_name will be ignored for that specific call.]*/
+TEST_FUNCTION(ValidateArgument_by_name_validates_only_that_argument_on_an_EXPECTED_CALL_and_args_are_different)
+{
+    // arrange
+
+    // act
+    EXPECTED_CALL(test_dependency_2_args(42, 43))
+        .ValidateArgument_a();
+
+    test_dependency_2_args(41, 44);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "[test_dependency_2_args(42,43)]", umock_c_get_expected_calls());
+    ASSERT_ARE_EQUAL(char_ptr, "[test_dependency_2_args(41,44)]", umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_UMOCK_C_01_079: [The ValidateArgument_{arg_name} call modifier shall record that the argument identified by arg_name will be ignored for that specific call.]*/
+TEST_FUNCTION(ValidateArgument_by_name_2nd_arg_validates_only_that_argument_on_an_EXPECTED_CALL)
+{
+    // arrange
+
+    // act
+    EXPECTED_CALL(test_dependency_2_args(42, 43))
+        .ValidateArgument_b();
+
+    test_dependency_2_args(41, 43);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_expected_calls());
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_UMOCK_C_01_079: [The ValidateArgument_{arg_name} call modifier shall record that the argument identified by arg_name will be ignored for that specific call.]*/
+TEST_FUNCTION(ValidateArgument_by_name_2nd_arg_validates_only_that_argument_on_an_EXPECTED_CALL_and_args_are_different)
+{
+    // arrange
+
+    // act
+    EXPECTED_CALL(test_dependency_2_args(42, 43))
+        .ValidateArgument_b();
+
+    test_dependency_2_args(42, 44);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "[test_dependency_2_args(42,43)]", umock_c_get_expected_calls());
+    ASSERT_ARE_EQUAL(char_ptr, "[test_dependency_2_args(42,44)]", umock_c_get_actual_calls());
+}
+
 END_TEST_SUITE(umock_c_unittests)
