@@ -283,26 +283,24 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                     case SEC_E_INCOMPLETE_MESSAGE:
                         if (input_buffers[1].BufferType != SECBUFFER_MISSING)
                         {
-                            tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
-                            if (tls_io_instance->on_io_open_complete != NULL)
-                            {
-                                tls_io_instance->on_io_open_complete(tls_io_instance->on_io_open_complete_context, IO_OPEN_ERROR);
-                            }
-                        }
+							//If SECBUFFER_MISSING not sent, try to read byte by byte. 
+							tls_io_instance->needed_bytes = 1;
+						}
                         else
                         {
                             tls_io_instance->needed_bytes = input_buffers[1].cbBuffer;
-                            
-                            if (resize_receive_buffer(tls_io_instance, tls_io_instance->received_byte_count + tls_io_instance->needed_bytes) != 0)
-                            {
-                                tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
-                                if (tls_io_instance->on_io_open_complete != NULL)
-                                {
-                                    tls_io_instance->on_io_open_complete(tls_io_instance->on_io_open_complete_context, IO_OPEN_ERROR);
-                                }
-                            }
                         }
-                        break;
+
+						if (resize_receive_buffer(tls_io_instance, tls_io_instance->received_byte_count + tls_io_instance->needed_bytes) != 0)
+						{
+							tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
+							if (tls_io_instance->on_io_open_complete != NULL)
+							{
+								tls_io_instance->on_io_open_complete(tls_io_instance->on_io_open_complete_context, IO_OPEN_ERROR);
+							}
+						}
+
+						break;
                     case SEC_E_OK:
                         consumed_bytes = tls_io_instance->received_byte_count;
                         /* Any extra bytes left over or did we fully consume the receive buffer? */
@@ -412,19 +410,19 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                 case SEC_E_INCOMPLETE_MESSAGE:
                     if (security_buffers[1].BufferType != SECBUFFER_MISSING)
                     {
-                        tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
-                        indicate_error(tls_io_instance);
+						//If SECBUFFER_MISSING not sent, try to read byte by byte.
+						tls_io_instance->needed_bytes = 1;
                     }
                     else
                     {
                         tls_io_instance->needed_bytes = security_buffers[1].cbBuffer;
-
-                        if (resize_receive_buffer(tls_io_instance, tls_io_instance->received_byte_count + tls_io_instance->needed_bytes) != 0)
-                        {
-                            tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
-                            indicate_error(tls_io_instance);
-                        }
                     }
+
+					if (resize_receive_buffer(tls_io_instance, tls_io_instance->received_byte_count + tls_io_instance->needed_bytes) != 0)
+					{
+						tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
+						indicate_error(tls_io_instance);
+					}
                     break;
                 case SEC_E_OK:
                     if (security_buffers[1].BufferType != SECBUFFER_DATA)
