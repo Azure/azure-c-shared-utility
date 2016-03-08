@@ -66,19 +66,34 @@ int umockvalue_are_equal_charptr(const char** left, const char** right)
 int umockvalue_copy_charptr(char** destination, const char** source)
 {
     int result;
-    size_t source_length = strlen(*source);
-    *destination = (char*)malloc(source_length + 1);
-    if (*destination == NULL)
+
+    /* Codes_SRS_UMOCKVALUE_CHARPTR_01_013: [ If source or destination are NULL, umockvalue_copy_charptr shall return a non-zero value. ]*/
+    if ((destination == NULL) || (source == NULL))
     {
         result = __LINE__;
     }
     else
     {
-        (void)memcpy(*destination, *source, source_length + 1);
-        result = 0;
+        size_t source_length = strlen(*source);
+        /* Codes_SRS_UMOCKVALUE_CHARPTR_01_012: [ The number of bytes allocated shall accomodate the string pointed to by source. ]*/
+        /* Codes_SRS_UMOCKVALUE_CHARPTR_01_011: [ umockvalue_copy_charptr shall allocate a new sequence of chars by using malloc. ]*/
+        /* Codes_SRS_UMOCKVALUE_CHARPTR_01_015: [ The newly allocated string shall be returned in the destination argument. ]*/
+        *destination = (char*)malloc(source_length + 1);
+        if (*destination == NULL)
+        {
+            /* Codes_SRS_UMOCKVALUE_CHARPTR_01_036: [ If allocating the memory for the new string fails, umockvalue_copy_charptr shall fail and return a non-zero value. ]*/
+            result = __LINE__;
+        }
+        else
+        {
+            /* Codes_SRS_UMOCKVALUE_CHARPTR_01_014: [ umockvalue_copy_charptr shall copy the string pointed to by source to the newly allocated memory. ]*/
+            (void)memcpy(*destination, *source, source_length + 1);
+            /* Codes_SRS_UMOCKVALUE_CHARPTR_01_016: [ On success umockvalue_copy_charptr shall return 0. ]*/
+            result = 0;
+        }
     }
 
-    return 0;
+    return result;
 }
 
 void umockvalue_free_charptr(char** value)

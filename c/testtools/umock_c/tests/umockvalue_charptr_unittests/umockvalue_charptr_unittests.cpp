@@ -189,4 +189,54 @@ TEST_FUNCTION(umockvalue_are_equal_with_string_being_different_in_case_returns_0
     free(input2);
 }
 
+/* umockvalue_copy_charptr */
+
+/* Tests_SRS_UMOCKVALUE_CHARPTR_01_011: [ umockvalue_copy_charptr shall allocate a new sequence of chars by using malloc. ]*/
+/* Tests_SRS_UMOCKVALUE_CHARPTR_01_012: [ The number of bytes allocated shall accomodate the string pointed to by source. ]*/
+/* Tests_SRS_UMOCKVALUE_CHARPTR_01_016: [ On success umockvalue_copy_charptr shall return 0. ]*/
+/* Tests_SRS_UMOCKVALUE_CHARPTR_01_014: [ umockvalue_copy_charptr shall copy the string pointed to by source to the newly allocated memory. ]*/
+/* Tests_SRS_UMOCKVALUE_CHARPTR_01_015: [ The newly allocated string shall be returned in the destination argument. ]*/
+TEST_FUNCTION(umockvalue_copy_charptr_copies_an_empty_string)
+{
+    // arrange
+    const char* source = "";
+    char* destination = "a";
+
+    // act
+    int result = umockvalue_copy_charptr(&destination, &source);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, "", destination);
+
+    // cleanup
+    free(destination);
+}
+
+/* Tests_SRS_UMOCKVALUE_CHARPTR_01_013: [ If source or destination are NULL, umockvalue_copy_charptr shall return a non-zero value. ]*/
+TEST_FUNCTION(umockvalue_copy_charptr_with_NULL_destination_fails)
+{
+    // arrange
+    const char* source = "42";
+
+    // act
+    int result = umockvalue_copy_charptr(NULL, &source);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+}
+
+/* Tests_SRS_UMOCKVALUE_CHARPTR_01_013: [ If source or destination are NULL, umockvalue_copy_charptr shall return a non-zero value. ]*/
+TEST_FUNCTION(umockvalue_copy_charptr_with_NULL_source_fails)
+{
+    // arrange
+    char* destination = "a";
+
+    // act
+    int result = umockvalue_copy_charptr(&destination, NULL);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+}
+
 END_TEST_SUITE(umockvalue_charptr_unittests)

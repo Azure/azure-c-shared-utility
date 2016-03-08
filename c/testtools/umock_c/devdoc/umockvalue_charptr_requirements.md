@@ -58,11 +58,12 @@ extern int umockvalue_copy_charptr(char** destination, const char** source);
 ```
 
 **SRS_UMOCKVALUE_CHARPTR_01_011: [** umockvalue_copy_charptr shall allocate a new sequence of chars by using malloc. **]**
-**SRS_UMOCKVALUE_CHARPTR_01_012: [** The number of bytesallocated shall accomodate the string pointed to by source. **]**
+**SRS_UMOCKVALUE_CHARPTR_01_012: [** The number of bytes allocated shall accomodate the string pointed to by source. **]**
 **SRS_UMOCKVALUE_CHARPTR_01_014: [** umockvalue_copy_charptr shall copy the string pointed to by source to the newly allocated memory. **]**
 **SRS_UMOCKVALUE_CHARPTR_01_015: [** The newly allocated string shall be returned in the destination argument. **]**
 **SRS_UMOCKVALUE_CHARPTR_01_016: [** On success umockvalue_copy_charptr shall return 0. **]**
-**SRS_UMOCKVALUE_CHARPTR_01_013: [** If source or destination are NULL, umockvalue_copy_charptr shall return -1. **]**
+**SRS_UMOCKVALUE_CHARPTR_01_013: [** If source or destination are NULL, umockvalue_copy_charptr shall return a non-zero value. **]**
+**SRS_UMOCKVALUE_CHARPTR_01_036: [** If allocating the memory for the new string fails, umockvalue_copy_charptr shall fail and return a non-zero value. **]**
 
 ##umockvalue_free_charptr
 
@@ -103,11 +104,12 @@ extern int umockvalue_copy_const_charptr(char** destination, const char** source
 ```
 
 **SRS_UMOCKVALUE_CHARPTR_01_028: [** umockvalue_copy_const_charptr shall allocate a new sequence of chars by using malloc. **]**
-**SRS_UMOCKVALUE_CHARPTR_01_029: [** The number of bytesallocated shall accomodate the string pointed to by source. **]**
+**SRS_UMOCKVALUE_CHARPTR_01_029: [** The number of bytes allocated shall accomodate the string pointed to by source. **]**
 **SRS_UMOCKVALUE_CHARPTR_01_030: [** umockvalue_copy_const_charptr shall copy the string pointed to by source to the newly allocated memory. **]**
 **SRS_UMOCKVALUE_CHARPTR_01_031: [** The newly allocated string shall be returned in the destination argument. **]**
 **SRS_UMOCKVALUE_CHARPTR_01_032: [** On success umockvalue_copy_const_charptr shall return 0. **]**
-**SRS_UMOCKVALUE_CHARPTR_01_033: [** If source or destination are NULL, umockvalue_copy_const_charptr shall return -1. **]**
+**SRS_UMOCKVALUE_CHARPTR_01_033: [** If source or destination are NULL, umockvalue_copy_const_charptr shall return a non-zero value. **]**
+**SRS_UMOCKVALUE_CHARPTR_01_037: [** If allocating the memory for the new string fails, umockvalue_copy_const_charptr shall fail and return a non-zero value. **]**
 
 ##umockvalue_free_const_charptr
 
