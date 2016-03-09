@@ -48,6 +48,9 @@ DEFINE_ENUM(UMOCK_C_ERROR_CODE,
 
 typedef void(*ON_UMOCK_C_ERROR)(UMOCK_C_ERROR_CODE error_code);
 
+#define IGNORED_PTR_ARG (NULL)
+#define IGNORED_NUM_ARG (0)
+
 #define MOCKABLE_FUNCTION(result, function, ...) \
 	...
 
@@ -527,12 +530,12 @@ XX**SRS_UMOCK_C_01_082: [**The ValidateArgument call modifier shall record that 
 
 ###SetReturn(return_type result)
 
-**SRS_UMOCK_C_01_084: [**The SetReturn call modifier shall record that when an actual call is matched with the specific expected call, it shall return the result value to the code under test.**]**
+XX**SRS_UMOCK_C_01_084: [**The SetReturn call modifier shall record that when an actual call is matched with the specific expected call, it shall return the result value to the code under test.**]**
 
 ###SetFailReturn(return_type result)
 
 **SRS_UMOCK_C_01_085: [**The SetFailReturn call modifier shall record a fail return value.**]**
-**SRS_UMOCK_C_01_086: [**The fail return value can be recorded for more advanced features that would require failing or succeeding certain calls based on decisions made at runtime.**]**
+The fail return value can be recorded for more advanced features that would require failing or succeeding certain calls based on decisions made at runtime.
 
 ###CopyOutArgumentBuffer(size_t index, const unsigned char* bytes, size_t length)
 

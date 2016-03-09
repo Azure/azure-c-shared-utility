@@ -137,6 +137,8 @@ extern UMOCKCALL_HANDLE umock_c_get_last_expected_call(void);
 /* Codes_SRS_UMOCK_C_01_078: [The IgnoreArgument_{arg_name} call modifier shall record that the argument identified by arg_name will be ignored for that specific call.] */
 /* Codes_SRS_UMOCK_C_01_079: [The ValidateArgument_{arg_name} call modifier shall record that the argument identified by arg_name will be validated for that specific call.]*/
 /* Codes_SRS_UMOCK_C_01_080: [The IgnoreArgument call modifier shall record that the indexth argument will be ignored for that specific call.]*/
+/* Codes_SRS_UMOCK_C_01_084: [The SetReturn call modifier shall record that when an actual call is matched with the specific expected call, it shall return the result value to the code under test.] */
+/* Codes_SRS_UMOCK_C_01_085: [The SetFailReturn call modifier shall record a fail return value.]*/
 #define MOCKABLE_FUNCTION_INTERNAL_WITH_MOCK(return_type, name, ...) \
     struct C2(_mock_call_modifier_,name); \
     typedef struct C2(_mock_call_modifier_,name) (*C2(ignore_all_arguments_func_type_,name))(void); \
@@ -266,16 +268,18 @@ extern UMOCKCALL_HANDLE umock_c_get_last_expected_call(void);
     { \
         free(mock_call_data); \
     } \
+    static const return_type C4(mock_call_,name,_,result); \
 	return_type name(IF(COUNT_ARG(__VA_ARGS__),FOR_EACH_2_COUNTED(ARG_IN_SIGNATURE, __VA_ARGS__),void)) \
 	{ \
         UMOCKCALL_HANDLE mock_call; \
         UMOCKCALL_HANDLE matched_call; \
-        static return_type result; \
+        return_type result; \
         C2(mock_call_,name)* matched_call_data; \
         C2(mock_call_,name)* mock_call_data = (C2(mock_call_,name)*)malloc(sizeof(C2(mock_call_,name))); \
         IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2(COPY_ARG_TO_MOCK_STRUCT, __VA_ARGS__),) \
         IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2(MARK_ARG_AS_NOT_IGNORED, __VA_ARGS__),) \
         mock_call = umockcall_create(#name, mock_call_data, C2(mock_call_data_free_func_,name), C2(mock_call_data_stringify_,name), C2(mock_call_data_are_equal_,name)); \
+        (void)memcpy(&result, &C4(mock_call_,name,_,result), sizeof(return_type)); \
         matched_call = umock_c_add_actual_call(mock_call); \
         if (matched_call != NULL) \
         { \

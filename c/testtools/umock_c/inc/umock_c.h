@@ -4,17 +4,22 @@
 #ifndef UMOCK_C_H
 #define UMOCK_C_H
 
-#include "macro_utils.h"
-#include "umock_c_internal.h"
-
 #ifdef __cplusplus
 extern "C" {
+#include <cstdlib>
+#else
+#include <stdlib.h>
 #endif
+#include "macro_utils.h"
+#include "umock_c_internal.h"
 
     DEFINE_ENUM(UMOCK_C_ERROR_CODE,
         UMOCK_C_ARG_INDEX_OUT_OF_RANGE);
 
     typedef void(*ON_UMOCK_C_ERROR)(UMOCK_C_ERROR_CODE error_code);
+
+#define IGNORED_PTR_ARG (NULL)
+#define IGNORED_NUM_ARG (0)
 
 /* Codes_SRS_UMOCK_C_01_001: [MOCKABLE_FUNCTION shall be used to wrap function definition allowing the user to declare a function that can be mocked.]*/
 #define MOCKABLE_FUNCTION(result, function, ...) \

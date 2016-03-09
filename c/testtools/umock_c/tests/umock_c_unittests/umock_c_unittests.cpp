@@ -608,4 +608,95 @@ TEST_FUNCTION(ValidateArgument_by_index_for_second_arg_validates_only_the_second
     ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
 }
 
+/* SetReturn */
+
+/* Tests_SRS_UMOCK_C_01_084: [The SetReturn call modifier shall record that when an actual call is matched with the specific expected call, it shall return the result value to the code under test.] */
+TEST_FUNCTION(SetReturn_sets_the_return_value_for_a_strict_expected_call)
+{
+    // arrange
+
+    // act
+    STRICT_EXPECTED_CALL(test_dependency_no_args())
+        .SetReturn(42);
+
+    int result = test_dependency_no_args();
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 42, result);
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_expected_calls());
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_UMOCK_C_01_084: [The SetReturn call modifier shall record that when an actual call is matched with the specific expected call, it shall return the result value to the code under test.] */
+TEST_FUNCTION(SetReturn_sets_the_return_value_for_an_expected_call)
+{
+    // arrange
+
+    // act
+    EXPECTED_CALL(test_dependency_no_args())
+        .SetReturn(42);
+
+    int result = test_dependency_no_args();
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 42, result);
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_expected_calls());
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_UMOCK_C_01_084: [The SetReturn call modifier shall record that when an actual call is matched with the specific expected call, it shall return the result value to the code under test.] */
+TEST_FUNCTION(SetReturn_sets_the_return_value_only_for_a_matched_call)
+{
+    // arrange
+
+    // act
+    STRICT_EXPECTED_CALL(test_dependency_1_arg(42))
+        .SetReturn(42);
+
+    int result = test_dependency_1_arg(41);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+}
+
+/* Tests_SRS_UMOCK_C_01_084: [The SetReturn call modifier shall record that when an actual call is matched with the specific expected call, it shall return the result value to the code under test.] */
+TEST_FUNCTION(SetReturn_sets_independent_return_values_for_each_call)
+{
+    // arrange
+
+    // act
+    STRICT_EXPECTED_CALL(test_dependency_1_arg(42))
+        .SetReturn(142);
+    STRICT_EXPECTED_CALL(test_dependency_1_arg(43))
+        .SetReturn(143);
+
+    int result1 = test_dependency_1_arg(42);
+    int result2 = test_dependency_1_arg(43);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 142, result1);
+    ASSERT_ARE_EQUAL(int, 143, result2);
+}
+
+/* CopyOutArgumentBuffer */
+
+/* Tests_SRS_UMOCK_C_01_087: [The CopyOutArgumentBuffer call modifier shall copy the memory pointed to by bytes and being length bytes so that it is later injected as an out argument when the code under test calls the mock function.] */
+TEST_FUNCTION(CopyOutArgumentBuffer_copies_bytes_to_the_out_argument)
+{
+    // arrange
+
+    // act
+    STRICT_EXPECTED_CALL(test_dependency_1_out_arg(IGNORED_PTR_ARG))
+        .CopyOutArgumentBuffer(142);
+    STRICT_EXPECTED_CALL(test_dependency_1_arg(43))
+        .SetReturn(143);
+
+    int result1 = test_dependency_1_arg(42);
+    int result2 = test_dependency_1_arg(43);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 142, result1);
+    ASSERT_ARE_EQUAL(int, 143, result2);
+}
+
 END_TEST_SUITE(umock_c_unittests)
