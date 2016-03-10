@@ -25,6 +25,27 @@ int umock_c_init(ON_UMOCK_C_ERROR on_umock_c_error)
 
 void umock_c_deinit(void)
 {
+    size_t i;
+
+    for (i = 0; i < actual_call_count; i++)
+    {
+        umockcall_destroy(actual_calls[i]);
+    }
+
+    for (i = 0; i < expected_call_count; i++)
+    {
+        umockcall_destroy(expected_calls[i]);
+    }
+
+    free(expected_calls);
+    expected_calls = NULL;
+    free(actual_calls);
+    actual_calls = NULL;
+
+    free(actual_calls_string);
+    actual_calls_string = NULL;
+    free(expected_calls_string);
+    expected_calls_string = NULL;
     umockvalue_deinit();
 }
 
@@ -152,6 +173,8 @@ const char* umock_c_get_expected_calls(void)
                     (void)memcpy(expected_calls_string + current_length, stringified_call, stringified_call_length + 1);
                     current_length += stringified_call_length;
                 }
+
+                free(stringified_call);
             }
         }
 
@@ -206,6 +229,8 @@ const char* umock_c_get_actual_calls(void)
                     (void)memcpy(actual_calls_string + current_length, stringified_call, stringified_call_length + 1);
                     current_length += stringified_call_length;
                 }
+
+                free(stringified_call);
             }
         }
 

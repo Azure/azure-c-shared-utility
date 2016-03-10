@@ -127,7 +127,15 @@ int umockvalue_init(void)
 
 void umockvalue_deinit(void)
 {
+    size_t i;
 
+    for (i = 0; i < type_handler_count; i++)
+    {
+        free(type_handlers[i].type);
+    }
+
+    free(type_handlers);
+    type_handlers = NULL;
 }
 
 int umockvalue_register_type(const char* type, UMOCKVALUE_STRINGIFY_FUNC stringify, UMOCKVALUE_ARE_EQUAL_FUNC are_equal, UMOCKVALUE_COPY_FUNC value_copy, UMOCKVALUE_FREE_FUNC value_free)
