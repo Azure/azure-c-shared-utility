@@ -716,4 +716,23 @@ TEST_FUNCTION(CopyOutArgumentBuffer_only_copies_bytes_to_the_out_argument_that_w
     ASSERT_ARE_EQUAL(int, 0, actual_int_2);
 }
 
+/* Tests_SRS_UMOCK_C_01_087: [The CopyOutArgumentBuffer call modifier shall copy the memory pointed to by bytes and being length bytes so that it is later injected as an out argument when the code under test calls the mock function.] */
+/* Tests_SRS_UMOCK_C_01_116: [ The argument targetted by CopyOutArgument shall also be marked as ignored. ] */
+TEST_FUNCTION(CopyOutArgumentBuffer_only_copies_bytes_to_the_second_out_argument)
+{
+    // arrange
+    int injected_int = 0x42;
+    EXPECTED_CALL(test_dependency_2_out_args(IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+        .CopyOutArgumentBuffer(2, &injected_int, sizeof(injected_int));
+    int actual_int_1 = 0;
+    int actual_int_2 = 0;
+
+    // act
+    (void)test_dependency_2_out_args(&actual_int_1, &actual_int_2);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, actual_int_1);
+    ASSERT_ARE_EQUAL(int, injected_int, actual_int_2);
+}
+
 END_TEST_SUITE(umock_c_unittests)

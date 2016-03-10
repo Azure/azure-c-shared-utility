@@ -33,6 +33,8 @@ typedef struct ARG_BUFFER_TAG
     size_t length;
 } ARG_BUFFER;
 
+#define COUNT_OF(A) (sizeof(A) / sizeof((A)[0]))
+
 /* Codes_SRS_UMOCK_C_01_002: [The macro shall generate a function signature in case ENABLE_MOCKS is not defined.] */
 /* Codes_SRS_UMOCK_C_01_005: [**If ENABLE_MOCKS is not defined, MOCKABLE_FUNCTION shall only generate a declaration for the function.] */
 #define MOCKABLE_FUNCTION_INTERNAL(result, function, ...) \
@@ -43,17 +45,17 @@ typedef struct ARG_BUFFER_TAG
 #define DECLARE_IGNORE_FLAG_FOR_ARG(arg_type, arg_name) unsigned int C2(is_ignored_, arg_name);
 #define DECLARE_OUT_ARG_BUFFER_FOR_ARG(arg_type, arg_name) ARG_BUFFER C2(out_arg_buffer_, arg_name);
 #define MARK_ARG_AS_NOT_IGNORED(arg_type, arg_name) mock_call_data->C2(is_ignored_, arg_name) = 0;
-#define CLEAR_OUT_ARG_BUFFERS(count, arg_type, arg_name) mock_call_data->out_arg_buffers[count - 1].bytes = NULL;
+#define CLEAR_OUT_ARG_BUFFERS(count, arg_type, arg_name) mock_call_data->out_arg_buffers[COUNT_OF(mock_call_data->out_arg_buffers) - DIV2(count)].bytes = NULL;
 #define MARK_ARG_AS_IGNORED(arg_type, arg_name) mock_call_data->C2(is_ignored_, arg_name) = 1;
 #define ARG_IN_SIGNATURE(count, arg_type, arg_name) arg_type arg_name IFCOMMA(count)
 #define ARG_ASSIGN_IN_ARRAY(arg_type, arg_name) arg_name_local
 #define COPY_IGNORE_ARG_BY_NAME_TO_MODIFIER(name, arg_type, arg_name) C2(mock_call_modifier->IgnoreArgument_,arg_name) = C4(ignore_argument_func_,name,_,arg_name);
 #define COPY_VALIDATE_ARG_BY_NAME_TO_MODIFIER(name, arg_type, arg_name) C2(mock_call_modifier->ValidateArgument_,arg_name) = C4(validate_argument_func_,name,_,arg_name);
-#define COPY_OUT_ARG_VALUE_FROM_EXPECTED_CALL(count, arg_type, arg_name) \
-    if (matched_call_data->out_arg_buffers[count - 1].bytes != NULL) \
+#define COPY_OUT_ARG_VALUE_FROM_MATCHED_CALL(count, arg_type, arg_name) \
+    if (matched_call_data->out_arg_buffers[COUNT_OF(matched_call_data->out_arg_buffers) - DIV2(count)].bytes != NULL) \
     { \
-        printf("copy %p, %p, %d", *((void**)(&arg_name)), matched_call_data->out_arg_buffers[count - 1].bytes, matched_call_data->out_arg_buffers[count - 1].length); \
-        (void)memcpy(*((void**)(&arg_name)), matched_call_data->out_arg_buffers[count - 1].bytes, matched_call_data->out_arg_buffers[count - 1].length); \
+        printf("copy %d, %p", (int)DIV2(count), matched_call_data->out_arg_buffers[COUNT_OF(matched_call_data->out_arg_buffers) - DIV2(count)].bytes); \
+        (void)memcpy(*((void**)(&arg_name)), matched_call_data->out_arg_buffers[COUNT_OF(matched_call_data->out_arg_buffers) - DIV2(count)].bytes, matched_call_data->out_arg_buffers[COUNT_OF(matched_call_data->out_arg_buffers) - DIV2(count)].length); \
     } \
 
 #define STRINGIFY_ARGS_DECLARE_RESULT_VAR(arg_type, arg_name) char* C2(arg_name,_stringified) = umockvalue_stringify(#arg_type, &typed_mock_call_data->arg_name);
@@ -308,7 +310,7 @@ typedef struct ARG_BUFFER_TAG
                     (void)umockvalue_copy(#return_type, &result, &matched_call_data->return_value); \
                 } \
             } \
-            IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_COUNTED(COPY_OUT_ARG_VALUE_FROM_EXPECTED_CALL, __VA_ARGS__),) \
+            IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_COUNTED(COPY_OUT_ARG_VALUE_FROM_MATCHED_CALL, __VA_ARGS__),) \
             umockcall_destroy(matched_call); \
         } \
 		return result; \

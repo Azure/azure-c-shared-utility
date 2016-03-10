@@ -543,10 +543,11 @@ If the index is out of range umock_c shall raise an error with the code UMOCK_C_
 
 If bytes is NULL or length is 0, umock_c shall raise an error with the code UMOCK_C_INVALID_ARGUMENT_BUFFER.
 
+The argument targetted by CopyOutArgumentBuffer shall also be marked as ignored.
+
 ###CopyOutArgument(arg_type value)
 
 The CopyOutArgument call modifier shall copy an argument value to be injected as an out argument value when the code under test calls the mock function.
-The argument targetted by CopyOutArgument shall also be marked as ignored.
 
 CopyOutArgument shall only be applicable to pointer types.
 

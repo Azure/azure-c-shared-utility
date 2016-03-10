@@ -539,7 +539,7 @@ The fail return value can be recorded for more advanced features that would requ
 
 ###CopyOutArgumentBuffer(size_t index, const void* bytes, size_t length)
 
-**SRS_UMOCK_C_01_087: [**The CopyOutArgumentBuffer call modifier shall copy the memory pointed to by bytes and being length bytes so that it is later injected as an out argument when the code under test calls the mock function.**]**
+XX**SRS_UMOCK_C_01_087: [**The CopyOutArgumentBuffer call modifier shall copy the memory pointed to by bytes and being length bytes so that it is later injected as an out argument when the code under test calls the mock function.**]**
 
 **SRS_UMOCK_C_01_088: [**The memory shall be copied. If several calls to CopyOutArgumentBuffer are made, only the last buffer shall be kept.**]**
 
@@ -551,10 +551,11 @@ The fail return value can be recorded for more advanced features that would requ
 
 **SRS_UMOCK_C_01_092: [**If bytes is NULL or length is 0, umock_c shall raise an error with the code UMOCK_C_INVALID_ARGUMENT_BUFFER.**]**
 
+XX**SRS_UMOCK_C_01_116: [** The argument targetted by CopyOutArgumentBuffer shall also be marked as ignored. **]**
+
 ###CopyOutArgument(arg_type value)
 
 **SRS_UMOCK_C_01_093: [**The CopyOutArgument call modifier shall copy an argument value to be injected as an out argument value when the code under test calls the mock function.**]**
-**SRS_UMOCK_C_01_116: [** The argument targetted by CopyOutArgument shall also be marked as ignored. **]**
 
 **SRS_UMOCK_C_01_094: [**CopyOutArgument shall only be applicable to pointer types.**]**
 
