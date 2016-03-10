@@ -46,6 +46,7 @@ typedef struct ARG_BUFFER_TAG
 #define DECLARE_OUT_ARG_BUFFER_FOR_ARG(arg_type, arg_name) ARG_BUFFER C2(out_arg_buffer_, arg_name);
 #define MARK_ARG_AS_NOT_IGNORED(arg_type, arg_name) mock_call_data->C2(is_ignored_, arg_name) = 0;
 #define CLEAR_OUT_ARG_BUFFERS(count, arg_type, arg_name) mock_call_data->out_arg_buffers[COUNT_OF(mock_call_data->out_arg_buffers) - DIV2(count)].bytes = NULL;
+#define FREE_OUT_ARG_BUFFERS(count, arg_type, arg_name) free(typed_mock_call_data->out_arg_buffers[COUNT_OF(typed_mock_call_data->out_arg_buffers) - DIV2(count)].bytes);
 #define MARK_ARG_AS_IGNORED(arg_type, arg_name) mock_call_data->C2(is_ignored_, arg_name) = 1;
 #define ARG_IN_SIGNATURE(count, arg_type, arg_name) arg_type arg_name IFCOMMA(count)
 #define ARG_ASSIGN_IN_ARRAY(arg_type, arg_name) arg_name_local
@@ -284,6 +285,16 @@ typedef struct ARG_BUFFER_TAG
     } \
     void C2(mock_call_data_free_func_,name)(void* mock_call_data) \
     { \
+        C2(mock_call_,name)* typed_mock_call_data = (C2(mock_call_,name)*)mock_call_data; \
+        IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_COUNTED(FREE_OUT_ARG_BUFFERS, __VA_ARGS__),) \
+        if (typed_mock_call_data->return_value_set) \
+        { \
+            umockvalue_free(TOSTRING(return_type), &typed_mock_call_data->return_value); \
+        } \
+        if (typed_mock_call_data->fail_return_value_set) \
+        { \
+            umockvalue_free(TOSTRING(return_type), &typed_mock_call_data->fail_return_value); \
+        } \
         free(mock_call_data); \
     } \
     static const return_type C4(mock_call_,name,_,result); \

@@ -25,22 +25,7 @@ int umock_c_init(ON_UMOCK_C_ERROR on_umock_c_error)
 
 void umock_c_deinit(void)
 {
-    size_t i;
-
-    for (i = 0; i < actual_call_count; i++)
-    {
-        umockcall_destroy(actual_calls[i]);
-    }
-
-    for (i = 0; i < expected_call_count; i++)
-    {
-        umockcall_destroy(expected_calls[i]);
-    }
-
-    free(expected_calls);
-    expected_calls = NULL;
-    free(actual_calls);
-    actual_calls = NULL;
+    umock_c_reset_all_calls();
 
     free(actual_calls_string);
     actual_calls_string = NULL;
@@ -130,6 +115,10 @@ UMOCKCALL_HANDLE umock_c_add_actual_call(UMOCKCALL_HANDLE mock_call)
             actual_calls[actual_call_count++] = mock_call;
             result = NULL;
         }
+    }
+    else
+    {
+        umockcall_destroy(mock_call);
     }
 
     return result;
