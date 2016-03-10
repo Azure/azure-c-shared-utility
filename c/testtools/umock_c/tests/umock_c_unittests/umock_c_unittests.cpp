@@ -398,11 +398,10 @@ TEST_FUNCTION(IgnoreArgument_by_name_ignores_only_that_argument_on_a_STRICT_EXPE
 TEST_FUNCTION(IgnoreArgument_by_name_with_second_argument_ignores_only_that_argument_on_a_STRICT_EXPECTED_CALL)
 {
     // arrange
-
-    // act
     STRICT_EXPECTED_CALL(test_dependency_2_args(42, 43))
         .IgnoreArgument_b();
 
+    // act
     test_dependency_2_args(42, 42);
 
     // assert
@@ -416,11 +415,10 @@ TEST_FUNCTION(IgnoreArgument_by_name_with_second_argument_ignores_only_that_argu
 TEST_FUNCTION(ValidateArgument_by_name_validates_only_that_argument_on_an_EXPECTED_CALL)
 {
     // arrange
-
-    // act
     EXPECTED_CALL(test_dependency_2_args(42, 43))
         .ValidateArgument_a();
 
+    // act
     test_dependency_2_args(42, 44);
 
     // assert
@@ -432,11 +430,10 @@ TEST_FUNCTION(ValidateArgument_by_name_validates_only_that_argument_on_an_EXPECT
 TEST_FUNCTION(ValidateArgument_by_name_validates_only_that_argument_on_an_EXPECTED_CALL_and_args_are_different)
 {
     // arrange
-
-    // act
     EXPECTED_CALL(test_dependency_2_args(42, 43))
         .ValidateArgument_a();
 
+    // act
     test_dependency_2_args(41, 44);
 
     // assert
@@ -448,11 +445,10 @@ TEST_FUNCTION(ValidateArgument_by_name_validates_only_that_argument_on_an_EXPECT
 TEST_FUNCTION(ValidateArgument_by_name_2nd_arg_validates_only_that_argument_on_an_EXPECTED_CALL)
 {
     // arrange
-
-    // act
     EXPECTED_CALL(test_dependency_2_args(42, 43))
         .ValidateArgument_b();
 
+    // act
     test_dependency_2_args(41, 43);
 
     // assert
@@ -464,11 +460,10 @@ TEST_FUNCTION(ValidateArgument_by_name_2nd_arg_validates_only_that_argument_on_a
 TEST_FUNCTION(ValidateArgument_by_name_2nd_arg_validates_only_that_argument_on_an_EXPECTED_CALL_and_args_are_different)
 {
     // arrange
-
-    // act
     EXPECTED_CALL(test_dependency_2_args(42, 43))
         .ValidateArgument_b();
 
+    // act
     test_dependency_2_args(42, 44);
 
     // assert
@@ -482,11 +477,10 @@ TEST_FUNCTION(ValidateArgument_by_name_2nd_arg_validates_only_that_argument_on_a
 TEST_FUNCTION(IgnoreArgument_by_index_for_first_arg_ignores_the_first_argument)
 {
     // arrange
-
-    // act
     STRICT_EXPECTED_CALL(test_dependency_2_args(42, 43))
         .IgnoreArgument(1);
 
+    // act
     test_dependency_2_args(41, 43);
 
     // assert
@@ -498,11 +492,10 @@ TEST_FUNCTION(IgnoreArgument_by_index_for_first_arg_ignores_the_first_argument)
 TEST_FUNCTION(IgnoreArgument_by_index_for_second_arg_ignores_the_second_argument)
 {
     // arrange
-
-    // act
     STRICT_EXPECTED_CALL(test_dependency_2_args(41, 42))
         .IgnoreArgument(2);
 
+    // act
     test_dependency_2_args(41, 43);
 
     // assert
@@ -514,11 +507,10 @@ TEST_FUNCTION(IgnoreArgument_by_index_for_second_arg_ignores_the_second_argument
 TEST_FUNCTION(IgnoreArgument_by_index_for_first_arg_ignores_only_the_first_argument)
 {
     // arrange
-
-    // act
     STRICT_EXPECTED_CALL(test_dependency_2_args(42, 43))
         .IgnoreArgument(1);
 
+    // act
     test_dependency_2_args(42, 42);
 
     // assert
@@ -530,11 +522,10 @@ TEST_FUNCTION(IgnoreArgument_by_index_for_first_arg_ignores_only_the_first_argum
 TEST_FUNCTION(IgnoreArgument_by_index_for_second_arg_ignores_only_the_second_argument)
 {
     // arrange
-
-    // act
     STRICT_EXPECTED_CALL(test_dependency_2_args(41, 42))
         .IgnoreArgument(2);
 
+    // act
     test_dependency_2_args(42, 42);
 
     // assert
@@ -548,11 +539,10 @@ TEST_FUNCTION(IgnoreArgument_by_index_for_second_arg_ignores_only_the_second_arg
 TEST_FUNCTION(ValidateArgument_by_index_for_first_arg_ignores_the_first_argument)
 {
     // arrange
-
-    // act
     EXPECTED_CALL(test_dependency_2_args(42, 43))
         .ValidateArgument(1);
 
+    // act
     test_dependency_2_args(41, 43);
 
     // assert
@@ -564,11 +554,10 @@ TEST_FUNCTION(ValidateArgument_by_index_for_first_arg_ignores_the_first_argument
 TEST_FUNCTION(ValidateArgument_by_index_for_second_arg_validates_the_second_argument)
 {
     // arrange
-
-    // act
     EXPECTED_CALL(test_dependency_2_args(42, 42))
         .ValidateArgument(2);
 
+    // act
     test_dependency_2_args(42, 43);
 
     // assert
@@ -580,11 +569,10 @@ TEST_FUNCTION(ValidateArgument_by_index_for_second_arg_validates_the_second_argu
 TEST_FUNCTION(ValidateArgument_by_index_for_first_arg_validates_only_the_first_argument)
 {
     // arrange
-
-    // act
     EXPECTED_CALL(test_dependency_2_args(42, 43))
         .ValidateArgument(1);
 
+    // act
     test_dependency_2_args(42, 42);
 
     // assert
@@ -596,11 +584,10 @@ TEST_FUNCTION(ValidateArgument_by_index_for_first_arg_validates_only_the_first_a
 TEST_FUNCTION(ValidateArgument_by_index_for_second_arg_validates_only_the_second_argument)
 {
     // arrange
-
-    // act
     EXPECTED_CALL(test_dependency_2_args(42, 42))
         .ValidateArgument(2);
 
+    // act
     test_dependency_2_args(43, 42);
 
     // assert
@@ -614,11 +601,10 @@ TEST_FUNCTION(ValidateArgument_by_index_for_second_arg_validates_only_the_second
 TEST_FUNCTION(SetReturn_sets_the_return_value_for_a_strict_expected_call)
 {
     // arrange
-
-    // act
     STRICT_EXPECTED_CALL(test_dependency_no_args())
         .SetReturn(42);
 
+    // act
     int result = test_dependency_no_args();
 
     // assert
@@ -631,11 +617,10 @@ TEST_FUNCTION(SetReturn_sets_the_return_value_for_a_strict_expected_call)
 TEST_FUNCTION(SetReturn_sets_the_return_value_for_an_expected_call)
 {
     // arrange
-
-    // act
     EXPECTED_CALL(test_dependency_no_args())
         .SetReturn(42);
 
+    // act
     int result = test_dependency_no_args();
 
     // assert
@@ -648,11 +633,10 @@ TEST_FUNCTION(SetReturn_sets_the_return_value_for_an_expected_call)
 TEST_FUNCTION(SetReturn_sets_the_return_value_only_for_a_matched_call)
 {
     // arrange
-
-    // act
     STRICT_EXPECTED_CALL(test_dependency_1_arg(42))
         .SetReturn(42);
 
+    // act
     int result = test_dependency_1_arg(41);
 
     // assert
@@ -663,13 +647,12 @@ TEST_FUNCTION(SetReturn_sets_the_return_value_only_for_a_matched_call)
 TEST_FUNCTION(SetReturn_sets_independent_return_values_for_each_call)
 {
     // arrange
-
-    // act
     STRICT_EXPECTED_CALL(test_dependency_1_arg(42))
         .SetReturn(142);
     STRICT_EXPECTED_CALL(test_dependency_1_arg(43))
         .SetReturn(143);
 
+    // act
     int result1 = test_dependency_1_arg(42);
     int result2 = test_dependency_1_arg(43);
 
@@ -681,22 +664,56 @@ TEST_FUNCTION(SetReturn_sets_independent_return_values_for_each_call)
 /* CopyOutArgumentBuffer */
 
 /* Tests_SRS_UMOCK_C_01_087: [The CopyOutArgumentBuffer call modifier shall copy the memory pointed to by bytes and being length bytes so that it is later injected as an out argument when the code under test calls the mock function.] */
-TEST_FUNCTION(CopyOutArgumentBuffer_copies_bytes_to_the_out_argument)
+/* Tests_SRS_UMOCK_C_01_116: [ The argument targetted by CopyOutArgument shall also be marked as ignored. ] */
+TEST_FUNCTION(CopyOutArgumentBuffer_copies_bytes_to_the_out_argument_for_a_strict_expected_call)
 {
     // arrange
+    int injected_int = 0x42;
+    STRICT_EXPECTED_CALL(test_dependency_1_out_arg(IGNORED_PTR_ARG))
+        .CopyOutArgumentBuffer(1, &injected_int, sizeof(injected_int));
+    int actual_int = 0;
 
     // act
-    STRICT_EXPECTED_CALL(test_dependency_1_out_arg(IGNORED_PTR_ARG))
-        .CopyOutArgumentBuffer(142);
-    STRICT_EXPECTED_CALL(test_dependency_1_arg(43))
-        .SetReturn(143);
-
-    int result1 = test_dependency_1_arg(42);
-    int result2 = test_dependency_1_arg(43);
+    (void)test_dependency_1_out_arg(&actual_int);
 
     // assert
-    ASSERT_ARE_EQUAL(int, 142, result1);
-    ASSERT_ARE_EQUAL(int, 143, result2);
+    ASSERT_ARE_EQUAL(int, injected_int, actual_int);
+}
+
+/* Tests_SRS_UMOCK_C_01_087: [The CopyOutArgumentBuffer call modifier shall copy the memory pointed to by bytes and being length bytes so that it is later injected as an out argument when the code under test calls the mock function.] */
+/* Tests_SRS_UMOCK_C_01_116: [ The argument targetted by CopyOutArgument shall also be marked as ignored. ] */
+TEST_FUNCTION(CopyOutArgumentBuffer_copies_bytes_to_the_out_argument_for_an_expected_call)
+{
+    // arrange
+    int injected_int = 0x42;
+    EXPECTED_CALL(test_dependency_1_out_arg(IGNORED_PTR_ARG))
+        .CopyOutArgumentBuffer(1, &injected_int, sizeof(injected_int));
+    int actual_int = 0;
+
+    // act
+    (void)test_dependency_1_out_arg(&actual_int);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, injected_int, actual_int);
+}
+
+/* Tests_SRS_UMOCK_C_01_087: [The CopyOutArgumentBuffer call modifier shall copy the memory pointed to by bytes and being length bytes so that it is later injected as an out argument when the code under test calls the mock function.] */
+/* Tests_SRS_UMOCK_C_01_116: [ The argument targetted by CopyOutArgument shall also be marked as ignored. ] */
+TEST_FUNCTION(CopyOutArgumentBuffer_only_copies_bytes_to_the_out_argument_that_was_specified)
+{
+    // arrange
+    int injected_int = 0x42;
+    EXPECTED_CALL(test_dependency_2_out_args(IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+        .CopyOutArgumentBuffer(1, &injected_int, sizeof(injected_int));
+    int actual_int_1 = 0;
+    int actual_int_2 = 0;
+
+    // act
+    (void)test_dependency_2_out_args(&actual_int_1, &actual_int_2);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, injected_int, actual_int_1);
+    ASSERT_ARE_EQUAL(int, 0, actual_int_2);
 }
 
 END_TEST_SUITE(umock_c_unittests)

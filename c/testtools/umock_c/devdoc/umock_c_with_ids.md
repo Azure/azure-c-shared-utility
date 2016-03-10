@@ -537,7 +537,7 @@ XX**SRS_UMOCK_C_01_084: [**The SetReturn call modifier shall record that when an
 **SRS_UMOCK_C_01_085: [**The SetFailReturn call modifier shall record a fail return value.**]**
 The fail return value can be recorded for more advanced features that would require failing or succeeding certain calls based on decisions made at runtime.
 
-###CopyOutArgumentBuffer(size_t index, const unsigned char* bytes, size_t length)
+###CopyOutArgumentBuffer(size_t index, const void* bytes, size_t length)
 
 **SRS_UMOCK_C_01_087: [**The CopyOutArgumentBuffer call modifier shall copy the memory pointed to by bytes and being length bytes so that it is later injected as an out argument when the code under test calls the mock function.**]**
 
@@ -554,10 +554,11 @@ The fail return value can be recorded for more advanced features that would requ
 ###CopyOutArgument(arg_type value)
 
 **SRS_UMOCK_C_01_093: [**The CopyOutArgument call modifier shall copy an argument value to be injected as an out argument value when the code under test calls the mock function.**]**
+**SRS_UMOCK_C_01_116: [** The argument targetted by CopyOutArgument shall also be marked as ignored. **]**
 
 **SRS_UMOCK_C_01_094: [**CopyOutArgument shall only be applicable to pointer types.**]**
 
-###ValidateArgumentBuffer(size_t index, const unsigned char* bytes, size_t length)
+###ValidateArgumentBuffer(size_t index, const void* bytes, size_t length)
 
 **SRS_UMOCK_C_01_095: [**The ValidateArgumentBuffer call modifier shall copy the memory pointed to by bytes and being length bytes so that it is later compared against a pointer type argument when the code under test calls the mock function.**]**
 

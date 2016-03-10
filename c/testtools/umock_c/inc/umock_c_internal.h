@@ -27,6 +27,12 @@ extern UMOCKCALL_HANDLE umock_c_get_last_expected_call(void);
 
 #define EXPAND(A) A
 
+typedef struct ARG_BUFFER_TAG
+{
+    void* bytes;
+    size_t length;
+} ARG_BUFFER;
+
 /* Codes_SRS_UMOCK_C_01_002: [The macro shall generate a function signature in case ENABLE_MOCKS is not defined.] */
 /* Codes_SRS_UMOCK_C_01_005: [**If ENABLE_MOCKS is not defined, MOCKABLE_FUNCTION shall only generate a declaration for the function.] */
 #define MOCKABLE_FUNCTION_INTERNAL(result, function, ...) \
@@ -35,12 +41,20 @@ extern UMOCKCALL_HANDLE umock_c_get_last_expected_call(void);
 #define COPY_ARG_TO_MOCK_STRUCT(arg_type, arg_name) umockvalue_copy(#arg_type, &mock_call_data->arg_name, &arg_name);
 #define DECLARE_MOCK_CALL_STRUCT_STACK(arg_type, arg_name) arg_type arg_name;
 #define DECLARE_IGNORE_FLAG_FOR_ARG(arg_type, arg_name) unsigned int C2(is_ignored_, arg_name);
+#define DECLARE_OUT_ARG_BUFFER_FOR_ARG(arg_type, arg_name) ARG_BUFFER C2(out_arg_buffer_, arg_name);
 #define MARK_ARG_AS_NOT_IGNORED(arg_type, arg_name) mock_call_data->C2(is_ignored_, arg_name) = 0;
+#define CLEAR_OUT_ARG_BUFFERS(count, arg_type, arg_name) mock_call_data->out_arg_buffers[count - 1].bytes = NULL;
 #define MARK_ARG_AS_IGNORED(arg_type, arg_name) mock_call_data->C2(is_ignored_, arg_name) = 1;
 #define ARG_IN_SIGNATURE(count, arg_type, arg_name) arg_type arg_name IFCOMMA(count)
 #define ARG_ASSIGN_IN_ARRAY(arg_type, arg_name) arg_name_local
 #define COPY_IGNORE_ARG_BY_NAME_TO_MODIFIER(name, arg_type, arg_name) C2(mock_call_modifier->IgnoreArgument_,arg_name) = C4(ignore_argument_func_,name,_,arg_name);
 #define COPY_VALIDATE_ARG_BY_NAME_TO_MODIFIER(name, arg_type, arg_name) C2(mock_call_modifier->ValidateArgument_,arg_name) = C4(validate_argument_func_,name,_,arg_name);
+#define COPY_OUT_ARG_VALUE_FROM_EXPECTED_CALL(count, arg_type, arg_name) \
+    if (matched_call_data->out_arg_buffers[count - 1].bytes != NULL) \
+    { \
+        printf("copy %p, %p, %d", *((void**)(&arg_name)), matched_call_data->out_arg_buffers[count - 1].bytes, matched_call_data->out_arg_buffers[count - 1].length); \
+        (void)memcpy(*((void**)(&arg_name)), matched_call_data->out_arg_buffers[count - 1].bytes, matched_call_data->out_arg_buffers[count - 1].length); \
+    } \
 
 #define STRINGIFY_ARGS_DECLARE_RESULT_VAR(arg_type, arg_name) char* C2(arg_name,_stringified) = umockvalue_stringify(#arg_type, &typed_mock_call_data->arg_name);
 #define STRINGIFY_ARGS_CHECK_ARG_STRINGIFY_SUCCESS(arg_type, arg_name) if (C2(arg_name,_stringified) == NULL) is_error = 1;
@@ -139,6 +153,7 @@ extern UMOCKCALL_HANDLE umock_c_get_last_expected_call(void);
 /* Codes_SRS_UMOCK_C_01_080: [The IgnoreArgument call modifier shall record that the indexth argument will be ignored for that specific call.]*/
 /* Codes_SRS_UMOCK_C_01_084: [The SetReturn call modifier shall record that when an actual call is matched with the specific expected call, it shall return the result value to the code under test.] */
 /* Codes_SRS_UMOCK_C_01_085: [The SetFailReturn call modifier shall record a fail return value.]*/
+/* Codes_SRS_UMOCK_C_01_116: [ The argument targetted by CopyOutArgument shall also be marked as ignored. ] */
 #define MOCKABLE_FUNCTION_INTERNAL_WITH_MOCK(return_type, name, ...) \
     struct C2(_mock_call_modifier_,name); \
     typedef struct C2(_mock_call_modifier_,name) (*C2(ignore_all_arguments_func_type_,name))(void); \
@@ -149,8 +164,8 @@ extern UMOCKCALL_HANDLE umock_c_get_last_expected_call(void);
     typedef struct C2(_mock_call_modifier_,name) (*C2(ignore_argument_func_type_,name))(size_t arg_index); \
     typedef struct C2(_mock_call_modifier_,name) (*C2(validate_argument_func_type_,name))(size_t arg_index); \
     typedef struct C2(_mock_call_modifier_,name) (*C2(ignore_all_calls_func_type_,name))(void); \
-    typedef struct C2(_mock_call_modifier_,name) (*C2(validate_argument_buffer_func_type_,name))(size_t index, const unsigned char* bytes, size_t length); \
-    typedef struct C2(_mock_call_modifier_,name) (*C2(copy_out_argument_buffer_func_type_,name))(size_t index, const unsigned char* bytes, size_t length); \
+    typedef struct C2(_mock_call_modifier_,name) (*C2(validate_argument_buffer_func_type_,name))(size_t index, const void* bytes, size_t length); \
+    typedef struct C2(_mock_call_modifier_,name) (*C2(copy_out_argument_buffer_func_type_,name))(size_t index, const void* bytes, size_t length); \
     IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_KEEP_1(DECLARE_IGNORE_ARGUMENT_FUNCTION_TYPE, name, __VA_ARGS__),) \
     IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_KEEP_1(DECLARE_VALIDATE_ARGUMENT_FUNCTION_TYPE, name, __VA_ARGS__),) \
     typedef struct C2(_mock_call_modifier_,name) \
@@ -176,8 +191,8 @@ extern UMOCKCALL_HANDLE umock_c_get_last_expected_call(void);
     static C2(mock_call_modifier_,name) C2(ignore_argument_func_,name)(size_t arg_index); \
     static C2(mock_call_modifier_,name) C2(validate_argument_func_,name)(size_t arg_index); \
     static C2(mock_call_modifier_,name) C2(ignore_all_calls_func_,name)(void); \
-    static C2(mock_call_modifier_,name) C2(validate_argument_buffer_func_,name)(size_t index, const unsigned char* bytes, size_t length); \
-    static C2(mock_call_modifier_,name) C2(copy_out_argument_buffer_func_,name)(size_t index, const unsigned char* bytes, size_t length); \
+    static C2(mock_call_modifier_,name) C2(validate_argument_buffer_func_,name)(size_t index, const void* bytes, size_t length); \
+    static C2(mock_call_modifier_,name) C2(copy_out_argument_buffer_func_,name)(size_t index, const void* bytes, size_t length); \
     IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_KEEP_1(DECLARE_IGNORE_ARGUMENT_FUNCTION_PROTOTYPE, name, __VA_ARGS__),) \
     IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_KEEP_1(DECLARE_VALIDATE_ARGUMENT_FUNCTION_PROTOTYPE, name, __VA_ARGS__),) \
     typedef struct C2(_mock_call_modifier_,name) (*C2(ignore_one_argument_func_type_,name))(void); \
@@ -204,6 +219,7 @@ extern UMOCKCALL_HANDLE umock_c_get_last_expected_call(void);
         IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2(DECLARE_MOCK_CALL_STRUCT_STACK, __VA_ARGS__),) \
         return_type return_value; \
         return_type fail_return_value; \
+        ARG_BUFFER out_arg_buffers[IF(COUNT_ARG(__VA_ARGS__), DIV2(COUNT_ARG(__VA_ARGS__)),1)]; \
         unsigned int fail_return_value_set : 1; \
         unsigned int return_value_set : 1; \
         IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2(DECLARE_IGNORE_FLAG_FOR_ARG, __VA_ARGS__),) \
@@ -278,6 +294,7 @@ extern UMOCKCALL_HANDLE umock_c_get_last_expected_call(void);
         C2(mock_call_,name)* mock_call_data = (C2(mock_call_,name)*)malloc(sizeof(C2(mock_call_,name))); \
         IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2(COPY_ARG_TO_MOCK_STRUCT, __VA_ARGS__),) \
         IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2(MARK_ARG_AS_NOT_IGNORED, __VA_ARGS__),) \
+        IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_COUNTED(CLEAR_OUT_ARG_BUFFERS, __VA_ARGS__),) \
         mock_call = umockcall_create(#name, mock_call_data, C2(mock_call_data_free_func_,name), C2(mock_call_data_stringify_,name), C2(mock_call_data_are_equal_,name)); \
         (void)memcpy(&result, &C4(mock_call_,name,_,result), sizeof(return_type)); \
         matched_call = umock_c_add_actual_call(mock_call); \
@@ -291,6 +308,7 @@ extern UMOCKCALL_HANDLE umock_c_get_last_expected_call(void);
                     (void)umockvalue_copy(#return_type, &result, &matched_call_data->return_value); \
                 } \
             } \
+            IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_COUNTED(COPY_OUT_ARG_VALUE_FROM_EXPECTED_CALL, __VA_ARGS__),) \
             umockcall_destroy(matched_call); \
         } \
 		return result; \
@@ -363,14 +381,31 @@ extern UMOCKCALL_HANDLE umock_c_get_last_expected_call(void);
         DECLARE_MOCK_CALL_MODIFIER(name) \
         return mock_call_modifier; \
     } \
-    static C2(mock_call_modifier_,name) C2(validate_argument_buffer_func_,name)(size_t index, const unsigned char* bytes, size_t length) \
+    static C2(mock_call_modifier_,name) C2(validate_argument_buffer_func_,name)(size_t index, const void* bytes, size_t length) \
     { \
         DECLARE_MOCK_CALL_MODIFIER(name) \
         return mock_call_modifier; \
     } \
-    static C2(mock_call_modifier_,name) C2(copy_out_argument_buffer_func_,name)(size_t index, const unsigned char* bytes, size_t length) \
+    static C2(mock_call_modifier_,name) C2(copy_out_argument_buffer_func_,name)(size_t index, const void* bytes, size_t length) \
     { \
         DECLARE_MOCK_CALL_MODIFIER(name) \
+        C2(mock_call_, name)* mock_call_data = (C2(mock_call_, name)*)umockcall_get_call_data(umock_c_get_last_expected_call()); \
+        if (mock_call_data == NULL) \
+        { \
+        } \
+        else \
+        { \
+            mock_call_data->out_arg_buffers[index - 1].bytes = malloc(length); \
+            if (mock_call_data->out_arg_buffers[index - 1].bytes == NULL) \
+            { \
+            } \
+            else \
+            { \
+                (void)memcpy(mock_call_data->out_arg_buffers[index - 1].bytes, bytes, length); \
+                mock_call_data->out_arg_buffers[index - 1].length = length; \
+                mock_call_modifier.IgnoreArgument(index); \
+            } \
+        } \
         return mock_call_modifier; \
     } \
     static C2(mock_call_modifier_,name) C2(ignore_all_arguments_func_,name)(void) \
@@ -396,6 +431,7 @@ extern UMOCKCALL_HANDLE umock_c_get_last_expected_call(void);
         C2(mock_call_,name)* mock_call_data = (C2(mock_call_,name)*)malloc(sizeof(C2(mock_call_,name))); \
         IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2(COPY_ARG_TO_MOCK_STRUCT, __VA_ARGS__),) \
         IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2(MARK_ARG_AS_NOT_IGNORED, __VA_ARGS__),) \
+        IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_COUNTED(CLEAR_OUT_ARG_BUFFERS, __VA_ARGS__),) \
         mock_call_data->return_value_set = 0; \
         mock_call_data->fail_return_value_set = 0; \
         mock_call = umockcall_create(#name, mock_call_data, C2(mock_call_data_free_func_,name), C2(mock_call_data_stringify_,name), C2(mock_call_data_are_equal_,name)); \
