@@ -530,7 +530,7 @@ XX**SRS_UMOCK_C_01_080: [**The IgnoreArgument call modifier shall record that th
 
 XX**SRS_UMOCK_C_01_082: [**The ValidateArgument call modifier shall record that the indexth argument will be validated for that specific call.**]**
 
-**SRS_UMOCK_C_01_083: [**If the index is out of range umock_c shall raise an error with the code UMOCK_C_ARG_INDEX_OUT_OF_RANGE.**]**
+XX**SRS_UMOCK_C_01_083: [**If the index is out of range umock_c shall raise an error with the code UMOCK_C_ARG_INDEX_OUT_OF_RANGE.**]**
 
 ###SetReturn(return_type result)
 

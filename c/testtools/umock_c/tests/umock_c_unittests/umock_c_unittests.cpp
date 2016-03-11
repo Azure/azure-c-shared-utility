@@ -7,8 +7,8 @@
 
 /* TODO:
 - Switch to .c
-- Add tests for failure cases for argument indexes
 - Make it clear that ENABLE_MOCKS has tobe defined after including the unit under test header
+- Add tests for CopyOutArgBuffer bad args
 */
 
 #define ENABLE_MOCKS
@@ -560,6 +560,34 @@ TEST_FUNCTION(IgnoreArgument_by_index_for_second_arg_ignores_only_the_second_arg
     ASSERT_ARE_EQUAL(char_ptr, "[test_dependency_2_args(42,42)]", umock_c_get_actual_calls());
 }
 
+/* Tests_SRS_UMOCK_C_01_081: [If the index is out of range umock_c shall raise an error with the code UMOCK_C_ARG_INDEX_OUT_OF_RANGE.] */
+TEST_FUNCTION(IgnoreArgument_by_index_with_index_0_triggers_the_on_error_callback)
+{
+    // arrange
+
+    // act
+    STRICT_EXPECTED_CALL(test_dependency_2_args(41, 42))
+        .IgnoreArgument(0);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 1, test_on_umock_c_error_call_count);
+    ASSERT_ARE_EQUAL(int, (int)UMOCK_C_ARG_INDEX_OUT_OF_RANGE, test_on_umock_c_error_calls[0].error_code);
+}
+
+/* Tests_SRS_UMOCK_C_01_081: [If the index is out of range umock_c shall raise an error with the code UMOCK_C_ARG_INDEX_OUT_OF_RANGE.] */
+TEST_FUNCTION(IgnoreArgument_by_index_with_index_greater_than_arg_count_triggers_the_on_error_callback)
+{
+    // arrange
+
+    // act
+    STRICT_EXPECTED_CALL(test_dependency_2_args(41, 42))
+        .IgnoreArgument(3);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 1, test_on_umock_c_error_call_count);
+    ASSERT_ARE_EQUAL(int, (int)UMOCK_C_ARG_INDEX_OUT_OF_RANGE, test_on_umock_c_error_calls[0].error_code);
+}
+
 /* ValidateArgument */
 
 /* Tests_SRS_UMOCK_C_01_082: [The ValidateArgument call modifier shall record that the indexth argument will be validated for that specific call.]*/
@@ -620,6 +648,34 @@ TEST_FUNCTION(ValidateArgument_by_index_for_second_arg_validates_only_the_second
     // assert
     ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_expected_calls());
     ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_UMOCK_C_01_083: [If the index is out of range umock_c shall raise an error with the code UMOCK_C_ARG_INDEX_OUT_OF_RANGE.]*/
+TEST_FUNCTION(ValidateArgument_by_index_with_0_index_triggers_the_on_error_callback)
+{
+    // arrange
+
+    // act
+    EXPECTED_CALL(test_dependency_2_args(42, 42))
+        .ValidateArgument(0);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 1, test_on_umock_c_error_call_count);
+    ASSERT_ARE_EQUAL(int, (int)UMOCK_C_ARG_INDEX_OUT_OF_RANGE, test_on_umock_c_error_calls[0].error_code);
+}
+
+/* Tests_SRS_UMOCK_C_01_083: [If the index is out of range umock_c shall raise an error with the code UMOCK_C_ARG_INDEX_OUT_OF_RANGE.]*/
+TEST_FUNCTION(ValidateArgument_by_index_with_index_greater_than_arg_count_triggers_the_on_error_callback)
+{
+    // arrange
+
+    // act
+    EXPECTED_CALL(test_dependency_2_args(42, 42))
+        .ValidateArgument(3);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 1, test_on_umock_c_error_call_count);
+    ASSERT_ARE_EQUAL(int, (int)UMOCK_C_ARG_INDEX_OUT_OF_RANGE, test_on_umock_c_error_calls[0].error_code);
 }
 
 /* SetReturn */

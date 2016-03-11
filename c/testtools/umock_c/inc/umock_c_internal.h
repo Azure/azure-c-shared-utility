@@ -177,6 +177,7 @@ typedef struct ARG_BUFFER_TAG
     } \
 
 /* Codes_SRS_UMOCK_C_01_080: [The IgnoreArgument call modifier shall record that the indexth argument will be ignored for that specific call.]*/
+/* Codes_SRS_UMOCK_C_01_081: [If the index is out of range umock_c shall raise an error with the code UMOCK_C_ARG_INDEX_OUT_OF_RANGE.] */
 #define IMPLEMENT_IGNORE_ARGUMENT_FUNCTION(return_type, name, ...) \
     static C2(mock_call_modifier_,name) C2(ignore_argument_func_,name)(size_t arg_index) \
     { \
@@ -187,6 +188,7 @@ typedef struct ARG_BUFFER_TAG
             IF(COUNT_ARG(__VA_ARGS__), \
                 if ((arg_index < 1) || (arg_index > (sizeof(C2(ignore_one_argument_array_,name)) / sizeof(C2(ignore_one_argument_array_,name)[0])))) \
                 { \
+                    umock_c_indicate_error(UMOCK_C_ARG_INDEX_OUT_OF_RANGE); \
                 } \
                 else \
                 { \
@@ -198,6 +200,7 @@ typedef struct ARG_BUFFER_TAG
     } \
 
 /* Codes_SRS_UMOCK_C_01_082: [The ValidateArgument call modifier shall record that the indexth argument will be validated for that specific call.]*/
+/* Codes_SRS_UMOCK_C_01_083: [If the index is out of range umock_c shall raise an error with the code UMOCK_C_ARG_INDEX_OUT_OF_RANGE.]*/
 #define IMPLEMENT_VALIDATE_ARGUMENT_FUNCTION(return_type, name, ...) \
     static C2(mock_call_modifier_,name) C2(validate_argument_func_,name)(size_t arg_index) \
     { \
@@ -208,6 +211,7 @@ typedef struct ARG_BUFFER_TAG
             IF(COUNT_ARG(__VA_ARGS__), \
                 if ((arg_index < 1) || (arg_index > (sizeof(C2(validate_one_argument_array_,name)) / sizeof(C2(validate_one_argument_array_,name)[0])))) \
                 { \
+                    umock_c_indicate_error(UMOCK_C_ARG_INDEX_OUT_OF_RANGE); \
                 } \
                 else \
                 { \
