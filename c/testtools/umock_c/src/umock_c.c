@@ -1,14 +1,16 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#include "umock_c.h"
+#include <stdlib.h>
 #ifdef _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
 #endif
+#include <stdio.h>
+
+#include "umock_c.h"
 #include "umockcall.h"
 #include "umockvalue.h"
-#include <stdlib.h>
-#include <stdio.h>
+#include "umockvalue_stdint.h"
 
 static size_t expected_call_count;
 static UMOCKCALL_HANDLE* expected_calls;
@@ -19,8 +21,19 @@ static char* actual_calls_string;
 
 int umock_c_init(ON_UMOCK_C_ERROR on_umock_c_error)
 {
+    int result;
     (void)on_umock_c_error;
-    return umockvalue_init();
+    if ((umockvalue_init() != 0) ||
+        (umockvalue_stdint_register_types() != 0))
+    {
+        result = __LINE__;
+    }
+    else 
+    {
+        result = 0;
+    }
+
+    return result;
 }
 
 void umock_c_deinit(void)

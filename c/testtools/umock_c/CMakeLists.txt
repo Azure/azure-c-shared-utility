@@ -9,6 +9,7 @@ set(umock_c_c_files
 ./src/umockvalue.c
 ./src/umockcall.c
 ./src/umockvalue_charptr.c
+./src/umockvalue_stdint.c
 )
 
 set(umock_c_h_files
@@ -16,6 +17,7 @@ set(umock_c_h_files
 ./inc/umock_c_internal.h
 ./inc/umockvalue.h
 ./inc/umockvalue_charptr.h
+./inc/umockvalue_stdint.h
 ./inc/umockcall.h
 )
 
