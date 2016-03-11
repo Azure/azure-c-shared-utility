@@ -741,4 +741,21 @@ TEST_FUNCTION(CopyOutArgumentBuffer_only_copies_bytes_to_the_second_out_argument
     ASSERT_ARE_EQUAL(int, injected_int, actual_int_2);
 }
 
+/* Tests_SRS_UMOCK_C_01_088: [The memory shall be copied. If several calls to CopyOutArgumentBuffer are made, only the last buffer shall be kept.]*/
+TEST_FUNCTION(CopyOutArgumentBuffer_copies_the_memory_for_later_use)
+{
+    // arrange
+    int injected_int = 0x42;
+    EXPECTED_CALL(test_dependency_1_out_arg(IGNORED_PTR_ARG))
+        .CopyOutArgumentBuffer(1, &injected_int, sizeof(injected_int));
+    int actual_int = 0;
+    injected_int = 0;
+
+    // act
+    (void)test_dependency_1_out_arg(&actual_int);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0x42, actual_int);
+}
+
 END_TEST_SUITE(umock_c_unittests)
