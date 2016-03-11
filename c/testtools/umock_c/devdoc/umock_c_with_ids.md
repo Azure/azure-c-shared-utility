@@ -543,7 +543,7 @@ XX**SRS_UMOCK_C_01_087: [**The CopyOutArgumentBuffer call modifier shall copy th
 
 XX**SRS_UMOCK_C_01_088: [**The memory shall be copied. If several calls to CopyOutArgumentBuffer are made, only the last buffer shall be kept.**]**
 
-**SRS_UMOCK_C_01_089: [**The buffers for the previous calls shall be freed.**]**
+XX**SRS_UMOCK_C_01_089: [**The buffers for the previous calls shall be freed.**]**
 
 **SRS_UMOCK_C_01_090: [**CopyOutArgumentBuffer shall only be applicable to pointer types.**]**
 

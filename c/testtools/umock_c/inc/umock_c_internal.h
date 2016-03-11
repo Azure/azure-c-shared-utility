@@ -19,6 +19,7 @@ extern "C" {
 #include "macro_utils.h"
 #include "umocktypes.h"
 #include "umockcall.h"
+#include "umock_c.h"
 
 #ifdef ENABLE_MOCKS
 #define WITH_MOCK 1
@@ -29,6 +30,7 @@ extern "C" {
 extern int umock_c_add_expected_call(UMOCKCALL_HANDLE mock_call);
 extern UMOCKCALL_HANDLE umock_c_add_actual_call(UMOCKCALL_HANDLE mock_call);
 extern UMOCKCALL_HANDLE umock_c_get_last_expected_call(void);
+extern void umock_c_indicate_error(UMOCK_C_ERROR_CODE error_code);
 
 #define EXPAND(A) A
 
@@ -245,26 +247,34 @@ typedef struct ARG_BUFFER_TAG
 
 /* Codes_SRS_UMOCK_C_01_116: [ The argument targetted by CopyOutArgument shall also be marked as ignored. ] */
 /* Codes_SRS_UMOCK_C_01_088: [The memory shall be copied. If several calls to CopyOutArgumentBuffer are made, only the last buffer shall be kept.]*/
+/* Codes_SRS_UMOCK_C_01_091: [If the index is out of range umock_c shall raise an error with the code UMOCK_C_ARG_INDEX_OUT_OF_RANGE.]*/
 #define IMPLEMENT_COPY_OUT_ARGUMENT_BUFFER_FUNCTION(return_type, name, ...) \
     static C2(mock_call_modifier_, name) C2(copy_out_argument_buffer_func_, name)(size_t index, const void* bytes, size_t length) \
     { \
         DECLARE_MOCK_CALL_MODIFIER(name) \
-        C2(mock_call_, name)* mock_call_data = (C2(mock_call_, name)*)umockcall_get_call_data(umock_c_get_last_expected_call()); \
-        if (mock_call_data == NULL) \
+        if (index < 1) \
         { \
+            umock_c_indicate_error(UMOCK_C_ARG_INDEX_OUT_OF_RANGE); \
         } \
         else \
         { \
-            free(mock_call_data->out_arg_buffers[index - 1].bytes); \
-            mock_call_data->out_arg_buffers[index - 1].bytes = malloc(length); \
-            if (mock_call_data->out_arg_buffers[index - 1].bytes == NULL) \
+            C2(mock_call_, name)* mock_call_data = (C2(mock_call_, name)*)umockcall_get_call_data(umock_c_get_last_expected_call()); \
+            if (mock_call_data == NULL) \
             { \
             } \
             else \
             { \
-                (void)memcpy(mock_call_data->out_arg_buffers[index - 1].bytes, bytes, length); \
-                mock_call_data->out_arg_buffers[index - 1].length = length; \
-                mock_call_modifier.IgnoreArgument(index); \
+                free(mock_call_data->out_arg_buffers[index - 1].bytes); \
+                mock_call_data->out_arg_buffers[index - 1].bytes = malloc(length); \
+                if (mock_call_data->out_arg_buffers[index - 1].bytes == NULL) \
+                { \
+                } \
+                else \
+                { \
+                    (void)memcpy(mock_call_data->out_arg_buffers[index - 1].bytes, bytes, length); \
+                    mock_call_data->out_arg_buffers[index - 1].length = length; \
+                    mock_call_modifier.IgnoreArgument(index); \
+                } \
             } \
         } \
         return mock_call_modifier; \

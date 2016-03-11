@@ -11,10 +11,11 @@ extern "C" {
 #include <stdlib.h>
 #endif
 #include "macro_utils.h"
-#include "umock_c_internal.h"
 
-    DEFINE_ENUM(UMOCK_C_ERROR_CODE,
-        UMOCK_C_ARG_INDEX_OUT_OF_RANGE);
+    typedef enum UMOCK_C_ERROR_CODE_TAG
+    {
+        UMOCK_C_ARG_INDEX_OUT_OF_RANGE
+    } UMOCK_C_ERROR_CODE;
 
     typedef void(*ON_UMOCK_C_ERROR)(UMOCK_C_ERROR_CODE error_code);
 
@@ -58,6 +59,8 @@ extern "C" {
     extern int umock_c_reset_all_calls(void);
     extern const char* umock_c_get_actual_calls(void);
     extern const char* umock_c_get_expected_calls(void);
+
+#include "umock_c_internal.h"
 
 #ifdef __cplusplus
 }

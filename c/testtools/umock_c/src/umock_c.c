@@ -18,11 +18,12 @@ static size_t actual_call_count;
 static UMOCKCALL_HANDLE* actual_calls;
 static char* expected_calls_string;
 static char* actual_calls_string;
+static ON_UMOCK_C_ERROR on_umock_c_error_function;
 
 int umock_c_init(ON_UMOCK_C_ERROR on_umock_c_error)
 {
     int result;
-    (void)on_umock_c_error;
+
     if ((umocktypes_init() != 0) ||
         (umocktypes_stdint_register_types() != 0))
     {
@@ -30,6 +31,7 @@ int umock_c_init(ON_UMOCK_C_ERROR on_umock_c_error)
     }
     else 
     {
+        on_umock_c_error_function = on_umock_c_error;
         result = 0;
     }
 
@@ -45,6 +47,14 @@ void umock_c_deinit(void)
     free(expected_calls_string);
     expected_calls_string = NULL;
     umocktypes_deinit();
+}
+
+void umock_c_indicate_error(UMOCK_C_ERROR_CODE error_code)
+{
+    if (on_umock_c_error_function != NULL)
+    {
+        on_umock_c_error_function(error_code);
+    }
 }
 
 int umock_c_reset_all_calls(void)

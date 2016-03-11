@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include <stdint.h>
+#include <stdlib.h>
 #include "testrunnerswitcher.h"
 
 /* TODO:
@@ -16,16 +17,30 @@
 #include "test_dependency.h"
 #include "umocktypes_charptr.h"
 
+typedef struct test_on_umock_c_error_CALL_TAG
+{
+    UMOCK_C_ERROR_CODE error_code;
+} test_on_umock_c_error_CALL;
+
+static test_on_umock_c_error_CALL* test_on_umock_c_error_calls;
+static size_t test_on_umock_c_error_call_count;
+
 BEGIN_TEST_SUITE(umock_c_unittests)
 
-static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
+static void test_on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    /* TODO: how shall we fail here? */
+    test_on_umock_c_error_CALL* new_calls = (test_on_umock_c_error_CALL*)realloc(test_on_umock_c_error_calls, sizeof(test_on_umock_c_error_CALL) * (test_on_umock_c_error_call_count + 1));
+    if (new_calls != NULL)
+    {
+        test_on_umock_c_error_calls = new_calls;
+        test_on_umock_c_error_calls[test_on_umock_c_error_call_count].error_code = error_code;
+        test_on_umock_c_error_call_count++;
+    }
 }
 
 TEST_SUITE_INITIALIZE(suite_init)
 {
-    ASSERT_ARE_EQUAL(int, 0, umock_c_init(on_umock_c_error));
+    ASSERT_ARE_EQUAL(int, 0, umock_c_init(test_on_umock_c_error));
 }
 
 TEST_SUITE_CLEANUP(suite_cleanup)
@@ -35,11 +50,17 @@ TEST_SUITE_CLEANUP(suite_cleanup)
 
 TEST_FUNCTION_INITIALIZE(test_function_init)
 {
+    test_on_umock_c_error_calls = NULL;
+    test_on_umock_c_error_call_count = 0;
+
     ASSERT_ARE_EQUAL(int, 0, umock_c_reset_all_calls());
 }
 
 TEST_FUNCTION_CLEANUP(test_function_cleanup)
 {
+    free(test_on_umock_c_error_calls);
+    test_on_umock_c_error_calls = NULL;
+    test_on_umock_c_error_call_count = 0;
 }
 
 /* STRICT_EXPECTED_CALL */
@@ -773,6 +794,21 @@ TEST_FUNCTION(CopyOutArgumentBuffer_frees_allocated_buffers_for_previous_CopyOut
 
     // assert
     ASSERT_ARE_EQUAL(int, 0x42, actual_int);
+}
+
+/* Tests_SRS_UMOCK_C_01_091: [If the index is out of range umock_c shall raise an error with the code UMOCK_C_ARG_INDEX_OUT_OF_RANGE.]*/
+TEST_FUNCTION(CopyOutArgumentBuffer_with_0_index_triggers_the_error_callback)
+{
+    // arrange
+    int injected_int = 0x42;
+
+    // act
+    EXPECTED_CALL(test_dependency_1_out_arg(IGNORED_PTR_ARG))
+        .CopyOutArgumentBuffer(0, &injected_int, sizeof(injected_int));
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 1, test_on_umock_c_error_call_count);
+    ASSERT_ARE_EQUAL(int, (int)UMOCK_C_ARG_INDEX_OUT_OF_RANGE, test_on_umock_c_error_calls[0].error_code);
 }
 
 END_TEST_SUITE(umock_c_unittests)
