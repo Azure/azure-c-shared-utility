@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "umocktypes_stdint.h"
-#include "umockvalue.h"
+#include "umocktypes.h"
 
 typedef struct UMOCK_VALUE_TYPE_HANDLERS_TAG
 {

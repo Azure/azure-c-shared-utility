@@ -7,7 +7,7 @@
 #endif
 #include <stdio.h>
 #include <string.h>
-#include "umockvalue.h"
+#include "umocktypes.h"
 #include "umocktypes_stdint.h"
 
 int umocktypes_stdint_register_types(void)

@@ -7,7 +7,7 @@
 #endif
 #include <stdio.h>
 #include <string.h>
-#include "umockvalue.h"
+#include "umocktypes.h"
 #include "umocktypes_charptr.h"
 
 char* umocktypes_stringify_charptr(const char** value)
