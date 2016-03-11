@@ -7,7 +7,8 @@
 
 /* TODO:
 - Switch to .c
-- Make it clear that ENABLE_MOCKS has tobe defined after including the unit under test header
+- Make it clear that ENABLE_MOCKS has to be defined after including the unit under test header
+- Generate the arg functions only if args are there
 */
 
 #define ENABLE_MOCKS
@@ -384,22 +385,6 @@ TEST_FUNCTION(ValidateAllArguments_validates_all_args_on_an_EXPECTED_CALL)
     // assert
     ASSERT_ARE_EQUAL(char_ptr, "[test_dependency_2_args(42,43)]", umock_c_get_expected_calls());
     ASSERT_ARE_EQUAL(char_ptr, "[test_dependency_2_args(43,44)]", umock_c_get_actual_calls());
-}
-
-/* Tests_SRS_UMOCK_C_01_077: [The ValidateAllArguments call modifier shall record that for that specific call all arguments will be validated.] */
-TEST_FUNCTION(ValidateAllArguments_for_a_function_without_arguments_means_nothing)
-{
-    // arrange
-
-    // act
-    EXPECTED_CALL(test_dependency_no_args())
-        .ValidateAllArguments();
-
-    test_dependency_no_args();
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_expected_calls());
-    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
 }
 
 /* IgnoreArgument_{arg_name} */

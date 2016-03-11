@@ -52,9 +52,9 @@ typedef struct ARG_BUFFER_TAG
 #define DECLARE_IGNORE_FLAG_FOR_ARG(arg_type, arg_name) unsigned int C2(is_ignored_, arg_name);
 #define DECLARE_OUT_ARG_BUFFER_FOR_ARG(arg_type, arg_name) ARG_BUFFER C2(out_arg_buffer_, arg_name);
 #define MARK_ARG_AS_NOT_IGNORED(arg_type, arg_name) mock_call_data->C2(is_ignored_, arg_name) = 0;
+#define MARK_ARG_AS_IGNORED(arg_type, arg_name) mock_call_data->C2(is_ignored_, arg_name) = 1;
 #define CLEAR_OUT_ARG_BUFFERS(count, arg_type, arg_name) mock_call_data->out_arg_buffers[COUNT_OF(mock_call_data->out_arg_buffers) - DIV2(count)].bytes = NULL;
 #define FREE_OUT_ARG_BUFFERS(count, arg_type, arg_name) free(typed_mock_call_data->out_arg_buffers[COUNT_OF(typed_mock_call_data->out_arg_buffers) - DIV2(count)].bytes);
-#define MARK_ARG_AS_IGNORED(arg_type, arg_name) mock_call_data->C2(is_ignored_, arg_name) = 1;
 #define ARG_IN_SIGNATURE(count, arg_type, arg_name) arg_type arg_name IFCOMMA(count)
 #define ARG_ASSIGN_IN_ARRAY(arg_type, arg_name) arg_name_local
 #define COPY_IGNORE_ARG_BY_NAME_TO_MODIFIER(name, arg_type, arg_name) C2(mock_call_modifier->IgnoreArgument_,arg_name) = C4(ignore_argument_func_,name,_,arg_name);
@@ -313,6 +313,28 @@ typedef struct ARG_BUFFER_TAG
         return mock_call_modifier; \
     } \
 
+#define IMPLEMENT_MOCK_FUNCTION(function_prefix, args_ignored, return_type, name, ...) \
+	C2(mock_call_modifier_,name) C2(function_prefix,name)(IF(COUNT_ARG(__VA_ARGS__),FOR_EACH_2_COUNTED(ARG_IN_SIGNATURE, __VA_ARGS__),void)) \
+	{ \
+        UMOCKCALL_HANDLE mock_call; \
+        DECLARE_MOCK_CALL_MODIFIER(name) \
+        C2(mock_call_,name)* mock_call_data = (C2(mock_call_,name)*)malloc(sizeof(C2(mock_call_,name))); \
+        IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2(COPY_ARG_TO_MOCK_STRUCT, __VA_ARGS__),) \
+        IF(COUNT_ARG(__VA_ARGS__), IF(args_ignored, FOR_EACH_2(MARK_ARG_AS_IGNORED, __VA_ARGS__), FOR_EACH_2(MARK_ARG_AS_NOT_IGNORED, __VA_ARGS__)),) \
+        IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_COUNTED(CLEAR_OUT_ARG_BUFFERS, __VA_ARGS__),) \
+        IF(IS_NOT_VOID(return_type),mock_call_data->return_value_set = 0;,) \
+        IF(IS_NOT_VOID(return_type),mock_call_data->fail_return_value_set = 0;,) \
+        mock_call = umockcall_create(#name, mock_call_data, C2(mock_call_data_free_func_,name), C2(mock_call_data_stringify_,name), C2(mock_call_data_are_equal_,name)); \
+        (void)umock_c_add_expected_call(mock_call); \
+		return mock_call_modifier; \
+	} \
+
+#define IMPLEMENT_STRICT_EXPECTED_MOCK(return_type, name, ...) \
+    IMPLEMENT_MOCK_FUNCTION(umock_c_strict_expected_, 0, return_type, name, __VA_ARGS__)
+
+#define IMPLEMENT_EXPECTED_MOCK(return_type, name, ...) \
+    IMPLEMENT_MOCK_FUNCTION(umock_c_expected_, 1, return_type, name, __VA_ARGS__)
+
 /* Codes_SRS_UMOCK_C_01_003: [If ENABLE_MOCKS is defined, MOCKABLE_FUNCTION shall generate all the boilerplate code needed by the macros in umock API to function to record the calls. Note: a lot of code (including function definitions and bodies, global variables (both static and extern).] */
 /* Codes_SRS_UMOCK_C_01_004: [If ENABLE_MOCKS is defined, MOCKABLE_FUNCTION shall generate the declaration of the function and code for the mocked function, thus allowing setting up of expectations in test functions.] */
 /* Codes_SRS_UMOCK_C_01_014: [For each argument the argument value shall be stored for later comparison with actual calls.] */
@@ -320,64 +342,75 @@ typedef struct ARG_BUFFER_TAG
 /* Codes_SRS_UMOCK_C_01_074: [When an expected call is recorded a call modifier interface in the form of a structure containing function pointers shall be returned to the caller.] */
 /* Codes_SRS_UMOCK_C_01_075: [The last modifier in a chain overrides previous modifiers if any collision occurs.]*/
 /* Codes_SRS_UMOCK_C_01_078: [The IgnoreArgument_{arg_name} call modifier shall record that the argument identified by arg_name will be ignored for that specific call.] */
+/* Codes_SRS_UMOCK_C_01_127: [ IgnoreAllArguments shall only be available for mock functions that have arguments. ]*/
+/* Codes_SRS_UMOCK_C_01_126: [ ValidateAllArguments shall only be available for mock functions that have arguments. ]*/
+/* Codes_SRS_UMOCK_C_01_125: [ IgnoreArgument_{arg_name} shall only be available for mock functions that have arguments. ]*/
 /* Codes_SRS_UMOCK_C_01_079: [The ValidateArgument_{arg_name} call modifier shall record that the argument identified by arg_name will be validated for that specific call.]*/
+/* Codes_SRS_UMOCK_C_01_124: [ ValidateArgument_{arg_name} shall only be available for mock functions that have arguments. **]*/
+/* Codes_SRS_UMOCK_C_01_123: [ IgnoreArgument shall only be available for mock functions that have arguments. ]*/
+/* Codes_SRS_UMOCK_C_01_122: [ ValidateArgument shall only be available for mock functions that have arguments. ]*/
+/* Codes_SRS_UMOCK_C_01_121: [ SetReturn shall only be available if the return type is not void. ]*/
+/* Codes_SRS_UMOCK_C_01_120: [ SetFailReturn shall only be available if the return type is not void. ]*/
+/* Codes_SRS_UMOCK_C_01_119: [ CopyOutArgumentBuffer shall only be available for mock functions that have arguments. ]*/
+/* Codes_SRS_UMOCK_C_01_128: [ CopyOutArgument shall only be available for mock functions that have arguments. ]*/
+/* Codes_SRS_UMOCK_C_01_129: [ ValidateArgumentBuffer shall only be available for mock functions that have arguments. ]*/
 #define MOCKABLE_FUNCTION_INTERNAL_WITH_MOCK(return_type, name, ...) \
     struct C2(_mock_call_modifier_,name); \
-    typedef struct C2(_mock_call_modifier_,name) (*C2(ignore_all_arguments_func_type_,name))(void); \
-    typedef struct C2(_mock_call_modifier_,name) (*C2(validate_all_arguments_func_type_,name))(void); \
+    IF(COUNT_ARG(__VA_ARGS__),typedef struct C2(_mock_call_modifier_,name) (*C2(ignore_all_arguments_func_type_,name))(void);,) \
+    IF(COUNT_ARG(__VA_ARGS__),typedef struct C2(_mock_call_modifier_,name) (*C2(validate_all_arguments_func_type_,name))(void);,) \
     IF(IS_NOT_VOID(return_type),typedef struct C2(_mock_call_modifier_,name) (*C2(set_return_func_type_,name))(return_type return_value);,) \
     IF(IS_NOT_VOID(return_type),typedef struct C2(_mock_call_modifier_,name) (*C2(set_fail_return_func_type_,name))(return_type return_value);,) \
-    typedef struct C2(_mock_call_modifier_,name) (*C2(copy_out_argument_func_type_,name))(size_t arg_index, void* value); \
-    typedef struct C2(_mock_call_modifier_,name) (*C2(ignore_argument_func_type_,name))(size_t arg_index); \
-    typedef struct C2(_mock_call_modifier_,name) (*C2(validate_argument_func_type_,name))(size_t arg_index); \
+    IF(COUNT_ARG(__VA_ARGS__),typedef struct C2(_mock_call_modifier_,name) (*C2(copy_out_argument_func_type_,name))(size_t arg_index, void* value);,) \
+    IF(COUNT_ARG(__VA_ARGS__),typedef struct C2(_mock_call_modifier_,name) (*C2(ignore_argument_func_type_,name))(size_t arg_index);,) \
+    IF(COUNT_ARG(__VA_ARGS__),typedef struct C2(_mock_call_modifier_,name) (*C2(validate_argument_func_type_,name))(size_t arg_index);,) \
     typedef struct C2(_mock_call_modifier_,name) (*C2(ignore_all_calls_func_type_,name))(void); \
-    typedef struct C2(_mock_call_modifier_,name) (*C2(validate_argument_buffer_func_type_,name))(size_t index, const void* bytes, size_t length); \
-    typedef struct C2(_mock_call_modifier_,name) (*C2(copy_out_argument_buffer_func_type_,name))(size_t index, const void* bytes, size_t length); \
+    IF(COUNT_ARG(__VA_ARGS__),typedef struct C2(_mock_call_modifier_,name) (*C2(validate_argument_buffer_func_type_,name))(size_t index, const void* bytes, size_t length);,) \
+    IF(COUNT_ARG(__VA_ARGS__),typedef struct C2(_mock_call_modifier_,name) (*C2(copy_out_argument_buffer_func_type_,name))(size_t index, const void* bytes, size_t length);,) \
     IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_KEEP_1(DECLARE_IGNORE_ARGUMENT_FUNCTION_TYPE, name, __VA_ARGS__),) \
     IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_KEEP_1(DECLARE_VALIDATE_ARGUMENT_FUNCTION_TYPE, name, __VA_ARGS__),) \
     typedef struct C2(_mock_call_modifier_,name) \
     { \
-        C2(ignore_all_arguments_func_type_,name) IgnoreAllArguments; \
-        C2(validate_all_arguments_func_type_,name) ValidateAllArguments; \
+        IF(COUNT_ARG(__VA_ARGS__),C2(ignore_all_arguments_func_type_,name) IgnoreAllArguments;,) \
+        IF(COUNT_ARG(__VA_ARGS__),C2(validate_all_arguments_func_type_,name) ValidateAllArguments;,) \
         IF(IS_NOT_VOID(return_type),C2(set_return_func_type_,name) SetReturn;,) \
         IF(IS_NOT_VOID(return_type),C2(set_fail_return_func_type_,name) SetFailReturn;,) \
-        C2(copy_out_argument_func_type_,name) CopyOutArgument; \
-        C2(ignore_argument_func_type_,name) IgnoreArgument; \
-        C2(validate_argument_func_type_,name) ValidateArgument; \
+        IF(COUNT_ARG(__VA_ARGS__),C2(copy_out_argument_func_type_,name) CopyOutArgument;,) \
+        IF(COUNT_ARG(__VA_ARGS__),C2(ignore_argument_func_type_,name) IgnoreArgument;,) \
+        IF(COUNT_ARG(__VA_ARGS__),C2(validate_argument_func_type_,name) ValidateArgument;,) \
         C2(ignore_all_calls_func_type_,name) IgnoreAllCalls; \
-        C2(validate_argument_buffer_func_type_,name) ValidateArgumentBuffer; \
-        C2(copy_out_argument_buffer_func_type_,name) CopyOutArgumentBuffer; \
+        IF(COUNT_ARG(__VA_ARGS__),C2(validate_argument_buffer_func_type_,name) ValidateArgumentBuffer;,) \
+        IF(COUNT_ARG(__VA_ARGS__),C2(copy_out_argument_buffer_func_type_,name) CopyOutArgumentBuffer;,) \
         IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_KEEP_1(IGNORE_ARGUMENT_FUNCTION_IN_MODIFIERS, name, __VA_ARGS__),) \
         IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_KEEP_1(VALIDATE_ARGUMENT_FUNCTION_IN_MODIFIERS, name, __VA_ARGS__),) \
     } C2(mock_call_modifier_,name); \
     IF(IS_NOT_VOID(return_type),static C2(mock_call_modifier_,name) C2(set_return_func_,name)(return_type return_value);,) \
     IF(IS_NOT_VOID(return_type),static C2(mock_call_modifier_,name) C2(set_fail_return_func_,name)(return_type return_value);,) \
-    static C2(mock_call_modifier_,name) C2(ignore_all_arguments_func_,name)(void); \
-    static C2(mock_call_modifier_,name) C2(validate_all_arguments_func_,name)(void); \
-    static C2(mock_call_modifier_,name) C2(copy_out_argument_func_,name)(size_t arg_index, void* value); \
-    static C2(mock_call_modifier_,name) C2(ignore_argument_func_,name)(size_t arg_index); \
-    static C2(mock_call_modifier_,name) C2(validate_argument_func_,name)(size_t arg_index); \
+    IF(COUNT_ARG(__VA_ARGS__),static C2(mock_call_modifier_,name) C2(ignore_all_arguments_func_,name)(void);,) \
+    IF(COUNT_ARG(__VA_ARGS__),static C2(mock_call_modifier_,name) C2(validate_all_arguments_func_,name)(void);,) \
+    IF(COUNT_ARG(__VA_ARGS__),static C2(mock_call_modifier_,name) C2(copy_out_argument_func_,name)(size_t arg_index, void* value);,) \
+    IF(COUNT_ARG(__VA_ARGS__),static C2(mock_call_modifier_,name) C2(ignore_argument_func_,name)(size_t arg_index);,) \
+    IF(COUNT_ARG(__VA_ARGS__),static C2(mock_call_modifier_,name) C2(validate_argument_func_,name)(size_t arg_index);,) \
     static C2(mock_call_modifier_,name) C2(ignore_all_calls_func_,name)(void); \
-    static C2(mock_call_modifier_,name) C2(validate_argument_buffer_func_,name)(size_t index, const void* bytes, size_t length); \
-    static C2(mock_call_modifier_,name) C2(copy_out_argument_buffer_func_,name)(size_t index, const void* bytes, size_t length); \
+    IF(COUNT_ARG(__VA_ARGS__),static C2(mock_call_modifier_,name) C2(validate_argument_buffer_func_,name)(size_t index, const void* bytes, size_t length);,) \
+    IF(COUNT_ARG(__VA_ARGS__),static C2(mock_call_modifier_,name) C2(copy_out_argument_buffer_func_,name)(size_t index, const void* bytes, size_t length);,) \
     IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_KEEP_1(DECLARE_IGNORE_ARGUMENT_FUNCTION_PROTOTYPE, name, __VA_ARGS__),) \
     IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_KEEP_1(DECLARE_VALIDATE_ARGUMENT_FUNCTION_PROTOTYPE, name, __VA_ARGS__),) \
-    typedef struct C2(_mock_call_modifier_,name) (*C2(ignore_one_argument_func_type_,name))(void); \
+    IF(COUNT_ARG(__VA_ARGS__),typedef struct C2(_mock_call_modifier_,name) (*C2(ignore_one_argument_func_type_,name))(void);,) \
     IF(COUNT_ARG(__VA_ARGS__), DECLARE_IGNORE_ARGUMENT_FUNCTION_ARRAY(name, __VA_ARGS__),) \
-    typedef struct C2(_mock_call_modifier_,name) (*C2(validate_one_argument_func_type_,name))(void); \
+    IF(COUNT_ARG(__VA_ARGS__),typedef struct C2(_mock_call_modifier_,name) (*C2(validate_one_argument_func_type_,name))(void);,) \
     IF(COUNT_ARG(__VA_ARGS__), DECLARE_VALIDATE_ARGUMENT_FUNCTION_ARRAY(name, __VA_ARGS__),) \
     static void C2(fill_mock_call_modifier_,name)(C2(mock_call_modifier_,name)* mock_call_modifier) \
     { \
         IF(IS_NOT_VOID(return_type),mock_call_modifier->SetReturn = C2(set_return_func_,name);,) \
         IF(IS_NOT_VOID(return_type),mock_call_modifier->SetFailReturn = C2(set_fail_return_func_,name);,) \
-        mock_call_modifier->IgnoreAllArguments = C2(ignore_all_arguments_func_,name); \
-        mock_call_modifier->ValidateAllArguments = C2(validate_all_arguments_func_,name); \
-        mock_call_modifier->CopyOutArgument = C2(copy_out_argument_func_,name); \
-        mock_call_modifier->IgnoreArgument = C2(ignore_argument_func_,name); \
-        mock_call_modifier->ValidateArgument = C2(validate_argument_func_,name); \
+        IF(COUNT_ARG(__VA_ARGS__),mock_call_modifier->IgnoreAllArguments = C2(ignore_all_arguments_func_,name);,) \
+        IF(COUNT_ARG(__VA_ARGS__),mock_call_modifier->ValidateAllArguments = C2(validate_all_arguments_func_,name);,) \
+        IF(COUNT_ARG(__VA_ARGS__),mock_call_modifier->CopyOutArgument = C2(copy_out_argument_func_,name);,) \
+        IF(COUNT_ARG(__VA_ARGS__),mock_call_modifier->IgnoreArgument = C2(ignore_argument_func_,name);,) \
+        IF(COUNT_ARG(__VA_ARGS__),mock_call_modifier->ValidateArgument = C2(validate_argument_func_,name);,) \
         mock_call_modifier->IgnoreAllCalls = C2(ignore_all_calls_func_,name); \
-        mock_call_modifier->ValidateArgumentBuffer = C2(validate_argument_buffer_func_,name); \
-        mock_call_modifier->CopyOutArgumentBuffer = C2(copy_out_argument_buffer_func_,name); \
+        IF(COUNT_ARG(__VA_ARGS__),mock_call_modifier->ValidateArgumentBuffer = C2(validate_argument_buffer_func_,name);,) \
+        IF(COUNT_ARG(__VA_ARGS__),mock_call_modifier->CopyOutArgumentBuffer = C2(copy_out_argument_buffer_func_,name);,) \
         IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_KEEP_1(COPY_IGNORE_ARG_BY_NAME_TO_MODIFIER, name, __VA_ARGS__),) \
         IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_KEEP_1(COPY_VALIDATE_ARG_BY_NAME_TO_MODIFIER, name, __VA_ARGS__),) \
     } \
@@ -386,9 +419,9 @@ typedef struct ARG_BUFFER_TAG
         IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2(DECLARE_MOCK_CALL_STRUCT_STACK, __VA_ARGS__),) \
         IF(IS_NOT_VOID(return_type),return_type return_value;,) \
         IF(IS_NOT_VOID(return_type),return_type fail_return_value;,) \
-        ARG_BUFFER out_arg_buffers[IF(COUNT_ARG(__VA_ARGS__), DIV2(COUNT_ARG(__VA_ARGS__)),1)]; \
-        unsigned int fail_return_value_set : 1; \
-        unsigned int return_value_set : 1; \
+        IF(COUNT_ARG(__VA_ARGS__),ARG_BUFFER out_arg_buffers[IF(COUNT_ARG(__VA_ARGS__), DIV2(COUNT_ARG(__VA_ARGS__)),1)];,) \
+        IF(IS_NOT_VOID(return_type),unsigned int fail_return_value_set : 1;,) \
+        IF(IS_NOT_VOID(return_type),unsigned int return_value_set : 1;,) \
         IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2(DECLARE_IGNORE_FLAG_FOR_ARG, __VA_ARGS__),) \
     } C2(mock_call_,name); \
     char* C2(mock_call_data_stringify_,name)(void* mock_call_data) \
@@ -462,17 +495,17 @@ typedef struct ARG_BUFFER_TAG
         free(mock_call_data); \
     } \
     IF(IS_NOT_VOID(return_type),static const return_type C4(mock_call_,name,_,result);,) \
-    IMPLEMENT_IGNORE_ALL_ARGUMENTS_FUNCTION(return_type, name, __VA_ARGS__) \
-    IMPLEMENT_VALIDATE_ALL_ARGUMENTS_FUNCTION(return_type, name, __VA_ARGS__) \
+    IF(COUNT_ARG(__VA_ARGS__),IMPLEMENT_IGNORE_ALL_ARGUMENTS_FUNCTION(return_type, name, __VA_ARGS__),) \
+    IF(COUNT_ARG(__VA_ARGS__),IMPLEMENT_VALIDATE_ALL_ARGUMENTS_FUNCTION(return_type, name, __VA_ARGS__),) \
     IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_KEEP_1(IMPLEMENT_IGNORE_ARGUMENT_BY_NAME_FUNCTION, name, __VA_ARGS__),) \
     IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_KEEP_1(IMPLEMENT_VALIDATE_ARGUMENT_BY_NAME_FUNCTION, name, __VA_ARGS__),) \
-    IMPLEMENT_IGNORE_ARGUMENT_FUNCTION(return_type, name, __VA_ARGS__) \
-    IMPLEMENT_VALIDATE_ARGUMENT_FUNCTION(return_type, name, __VA_ARGS__) \
+    IF(COUNT_ARG(__VA_ARGS__),IMPLEMENT_IGNORE_ARGUMENT_FUNCTION(return_type, name, __VA_ARGS__),) \
+    IF(COUNT_ARG(__VA_ARGS__),IMPLEMENT_VALIDATE_ARGUMENT_FUNCTION(return_type, name, __VA_ARGS__),) \
     IF(IS_NOT_VOID(return_type),IMPLEMENT_SET_RETURN_FUNCTION(return_type, name, __VA_ARGS__),) \
     IF(IS_NOT_VOID(return_type),IMPLEMENT_SET_FAIL_RETURN_FUNCTION(return_type, name, __VA_ARGS__),) \
-    IMPLEMENT_COPY_OUT_ARGUMENT_BUFFER_FUNCTION(return_type, name, __VA_ARGS__) \
-    IMPLEMENT_COPY_OUT_ARGUMENT_FUNCTION(return_type, name, __VA_ARGS__) \
-    IMPLEMENT_VALIDATE_ARGUMENT_BUFFER_FUNCTION(return_type, name, __VA_ARGS__) \
+    IF(COUNT_ARG(__VA_ARGS__),IMPLEMENT_COPY_OUT_ARGUMENT_BUFFER_FUNCTION(return_type, name, __VA_ARGS__),) \
+    IF(COUNT_ARG(__VA_ARGS__),IMPLEMENT_COPY_OUT_ARGUMENT_FUNCTION(return_type, name, __VA_ARGS__),) \
+    IF(COUNT_ARG(__VA_ARGS__),IMPLEMENT_VALIDATE_ARGUMENT_BUFFER_FUNCTION(return_type, name, __VA_ARGS__),) \
     IMPLEMENT_IGNORE_ALL_CALLS_FUNCTION(return_type, name, __VA_ARGS__) \
 	return_type name(IF(COUNT_ARG(__VA_ARGS__),FOR_EACH_2_COUNTED(ARG_IN_SIGNATURE, __VA_ARGS__),void)) \
 	{ \
@@ -509,22 +542,10 @@ typedef struct ARG_BUFFER_TAG
         } \
 		IF(IS_NOT_VOID(return_type),return result;,) \
 	} \
-	C2(mock_call_modifier_,name) C2(umock_c_expected_,name)(IF(COUNT_ARG(__VA_ARGS__),FOR_EACH_2_COUNTED(ARG_IN_SIGNATURE, __VA_ARGS__),void)) \
-	{ \
-        UMOCKCALL_HANDLE mock_call; \
-        DECLARE_MOCK_CALL_MODIFIER(name) \
-        C2(mock_call_,name)* mock_call_data = (C2(mock_call_,name)*)malloc(sizeof(C2(mock_call_,name))); \
-        IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2(COPY_ARG_TO_MOCK_STRUCT, __VA_ARGS__),) \
-        IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2(MARK_ARG_AS_NOT_IGNORED, __VA_ARGS__),) \
-        IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_COUNTED(CLEAR_OUT_ARG_BUFFERS, __VA_ARGS__),) \
-        IF(IS_NOT_VOID(return_type),mock_call_data->return_value_set = 0;,) \
-        IF(IS_NOT_VOID(return_type),mock_call_data->fail_return_value_set = 0;,) \
-        mock_call = umockcall_create(#name, mock_call_data, C2(mock_call_data_free_func_,name), C2(mock_call_data_stringify_,name), C2(mock_call_data_are_equal_,name)); \
-        (void)umock_c_add_expected_call(mock_call); \
-		return mock_call_modifier; \
-	} \
-    typedef return_type (*C2(mock_hook_func_type_, name))(IF(COUNT_ARG(__VA_ARGS__),FOR_EACH_2_COUNTED(ARG_IN_SIGNATURE, __VA_ARGS__),void)); \
-    static C2(mock_hook_func_type_,name) C2(mock_hook_,name); \
+    IMPLEMENT_STRICT_EXPECTED_MOCK(return_type, name, __VA_ARGS__) \
+    IMPLEMENT_EXPECTED_MOCK(return_type, name, __VA_ARGS__) \
+    IF(IS_NOT_VOID(return_type),typedef return_type (*C2(mock_hook_func_type_, name))(IF(COUNT_ARG(__VA_ARGS__),FOR_EACH_2_COUNTED(ARG_IN_SIGNATURE, __VA_ARGS__),void));,) \
+    IF(IS_NOT_VOID(return_type),static C2(mock_hook_func_type_,name) C2(mock_hook_,name);,) \
     IF(IS_NOT_VOID(return_type),void C2(set_global_mock_return_,name)(return_type return_value) \
     { \
     },) \

@@ -44,10 +44,10 @@ extern "C" {
 
 /* Codes_SRS_UMOCK_C_01_013: [STRICT_EXPECTED_CALL shall record that a certain call is expected.] */
 #define STRICT_EXPECTED_CALL(call) \
-	C2(umock_c_expected_,call)
+	C2(umock_c_strict_expected_,call)
 
 #define EXPECTED_CALL(call) \
-	STRICT_EXPECTED_CALL(call).IgnoreAllArguments()
+	C2(umock_c_expected_,call)
 
 #define REGISTER_UMOCK_VALUE_TYPE(value_type, stringify_func, are_equal_func, copy_func, free_func) \
 { \

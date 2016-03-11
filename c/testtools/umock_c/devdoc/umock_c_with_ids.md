@@ -509,17 +509,25 @@ Example: A ValidateAllArguments after a previous IgnoreAllArgument will still va
 
 XX**SRS_UMOCK_C_01_076: [**The IgnoreAllArguments call modifier shall record that for that specific call all arguments will be ignored for that specific call.**]**
 
+X**SRS_UMOCK_C_01_127: [** IgnoreAllArguments shall only be available for mock functions that have arguments. **]**
+
 ###ValidateAllArguments(void)
 
 XX**SRS_UMOCK_C_01_077: [**The ValidateAllArguments call modifier shall record that for that specific call all arguments will be validated.**]**
+
+X**SRS_UMOCK_C_01_126: [** ValidateAllArguments shall only be available for mock functions that have arguments. **]**
 
 ###IgnoreArgument_{arg_name}(void)
 
 XX**SRS_UMOCK_C_01_078: [**The IgnoreArgument_{arg_name} call modifier shall record that the argument identified by arg_name will be ignored for that specific call.**]**
 
+X**SRS_UMOCK_C_01_125: [** IgnoreArgument_{arg_name} shall only be available for mock functions that have arguments. **]**
+
 ###ValidateArgument_{arg_name}(void)
 
 XX**SRS_UMOCK_C_01_079: [**The ValidateArgument_{arg_name} call modifier shall record that the argument identified by arg_name will be validated for that specific call.**]**
+
+X**SRS_UMOCK_C_01_124: [** ValidateArgument_{arg_name} shall only be available for mock functions that have arguments. **]**
 
 ###IgnoreArgument(size_t index)
 
@@ -527,20 +535,28 @@ XX**SRS_UMOCK_C_01_080: [**The IgnoreArgument call modifier shall record that th
 
 XX**SRS_UMOCK_C_01_081: [**If the index is out of range umock_c shall raise an error with the code UMOCK_C_ARG_INDEX_OUT_OF_RANGE.**]**
 
+X**SRS_UMOCK_C_01_123: [** IgnoreArgument shall only be available for mock functions that have arguments. **]**
+
 ###ValidateArgument(size_t index)
 
 XX**SRS_UMOCK_C_01_082: [**The ValidateArgument call modifier shall record that the indexth argument will be validated for that specific call.**]**
 
 XX**SRS_UMOCK_C_01_083: [**If the index is out of range umock_c shall raise an error with the code UMOCK_C_ARG_INDEX_OUT_OF_RANGE.**]**
 
+X**SRS_UMOCK_C_01_122: [** ValidateArgument shall only be available for mock functions that have arguments. **]**
+
 ###SetReturn(return_type result)
 
 XX**SRS_UMOCK_C_01_084: [**The SetReturn call modifier shall record that when an actual call is matched with the specific expected call, it shall return the result value to the code under test.**]**
+
+X**SRS_UMOCK_C_01_121: [** SetReturn shall only be available if the return type is not void. **]**
 
 ###SetFailReturn(return_type result)
 
 **SRS_UMOCK_C_01_085: [**The SetFailReturn call modifier shall record a fail return value.**]**
 The fail return value can be recorded for more advanced features that would require failing or succeeding certain calls based on decisions made at runtime.
+
+X**SRS_UMOCK_C_01_120: [** SetFailReturn shall only be available if the return type is not void. **]**
 
 ###CopyOutArgumentBuffer(size_t index, const void* bytes, size_t length)
 
@@ -562,11 +578,15 @@ XX**SRS_UMOCK_C_01_116: [** The argument targetted by CopyOutArgumentBuffer shal
 
 **SRS_UMOCK_C_01_118: [** If any other error occurs, umock_c shall raise an error with the code UMOCK_C_ERROR. **]**
 
+X**SRS_UMOCK_C_01_119: [** CopyOutArgumentBuffer shall only be available for mock functions that have arguments. **]**
+
 ###CopyOutArgument(arg_type value)
 
 **SRS_UMOCK_C_01_093: [**The CopyOutArgument call modifier shall copy an argument value to be injected as an out argument value when the code under test calls the mock function.**]**
 
 **SRS_UMOCK_C_01_094: [**CopyOutArgument shall only be applicable to pointer types.**]**
+
+X**SRS_UMOCK_C_01_128: [** CopyOutArgument shall only be available for mock functions that have arguments. **]**
 
 ###ValidateArgumentBuffer(size_t index, const void* bytes, size_t length)
 
@@ -580,6 +600,8 @@ XX**SRS_UMOCK_C_01_116: [** The argument targetted by CopyOutArgumentBuffer shal
 **SRS_UMOCK_C_01_099: [**If the index is out of range umock_c shall raise an error with the code UMOCK_C_ARG_INDEX_OUT_OF_RANGE.**]**
 
 **SRS_UMOCK_C_01_100: [**If bytes is NULL or length is 0, umock_c shall raise an error with the code UMOCK_C_INVALID_ARGUMENT_BUFFER.**]**
+
+X**SRS_UMOCK_C_01_129: [** ValidateArgumentBuffer shall only be available for mock functions that have arguments. **]**
 
 ###IgnoreAllCalls(void)
 

@@ -501,17 +501,25 @@ The last modifier in a chain overrides previous modifiers if any collision occur
 
 The IgnoreAllArguments call modifier shall record that for that specific call all arguments will be ignored for that specific call.
 
+IgnoreAllArguments shall only be available for mock functions that have arguments.
+
 ###ValidateAllArguments(void)
 
 The ValidateAllArguments call modifier shall record that for that specific call all arguments will be validated.
+
+ValidateAllArguments shall only be available for mock functions that have arguments.
 
 ###IgnoreArgument_{arg_name}(void)
 
 The IgnoreArgument_{arg_name} call modifier shall record that the argument identified by arg_name will be ignored for that specific call.
 
+IgnoreArgument_{arg_name} shall only be available for mock functions that have arguments.
+
 ###ValidateArgument_{arg_name}(void)
 
 The ValidateArgument_{arg_name} call modifier shall record that the argument identified by arg_name will be validated for that specific call.
+
+ValidateArgument_{arg_name} shall only be available for mock functions that have arguments.
 
 ###IgnoreArgument(size_t index)
 
@@ -519,20 +527,28 @@ The IgnoreArgument call modifier shall record that the indexth argument will be 
 
 If the index is out of range umock_c shall raise an error with the code UMOCK_C_ARG_INDEX_OUT_OF_RANGE.
 
+IgnoreArgument shall only be available for mock functions that have arguments.
+
 ###ValidateArgument(size_t index)
 
 The ValidateArgument call modifier shall record that the indexth argument will be validated for that specific call.
 
 If the index is out of range umock_c shall raise an error with the code UMOCK_C_ARG_INDEX_OUT_OF_RANGE.
 
+ValidateArgument shall only be available for mock functions that have arguments.
+
 ###SetReturn(return_type result)
 
 The SetReturn call modifier shall record that when an actual call is matched with the specific expected call, it shall return the result value to the code under test.
+
+SetReturn shall only be available if the return type is not void.
 
 ###SetFailReturn(return_type result)
 
 The SetFailReturn call modifier shall record a fail return value.
 The fail return value can be recorded for more advanced features that would require failing or succeeding certain calls based on decisions made at runtime.
+
+SetFailReturn shall only be available if the return type is not void.
 
 ###CopyOutArgumentBuffer(size_t index, const void* bytes, size_t length)
 
@@ -554,11 +570,15 @@ If any memory allocation error occurs, umock_c shall raise an error with the cod
 
 If any other error occurs, umock_c shall raise an error with the code UMOCK_C_ERROR.
 
+CopyOutArgumentBuffer shall only be available for mock functions that have arguments.
+
 ###CopyOutArgument(arg_type value)
 
 The CopyOutArgument call modifier shall copy an argument value to be injected as an out argument value when the code under test calls the mock function.
 
 CopyOutArgument shall only be applicable to pointer types.
+
+CopyOutArgument shall only be available for mock functions that have arguments.
 
 ###ValidateArgumentBuffer(size_t index, const void* bytes, size_t length)
 
@@ -571,6 +591,8 @@ ValidateArgumentBuffer shall only be applicable to pointer types.
 If the index is out of range umock_c shall raise an error with the code UMOCK_C_ARG_INDEX_OUT_OF_RANGE.
 
 If bytes is NULL or length is 0, umock_c shall raise an error with the code UMOCK_C_INVALID_ARGUMENT_BUFFER.
+
+ValidateArgumentBuffer shall only be available for mock functions that have arguments.
 
 ###IgnoreAllCalls(void)
 
