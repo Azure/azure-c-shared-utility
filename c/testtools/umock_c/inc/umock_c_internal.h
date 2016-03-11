@@ -252,7 +252,7 @@ typedef struct ARG_BUFFER_TAG
     static C2(mock_call_modifier_, name) C2(copy_out_argument_buffer_func_, name)(size_t index, const void* bytes, size_t length) \
     { \
         DECLARE_MOCK_CALL_MODIFIER(name) \
-        if (index < 1) \
+        if ((index < 1) || (index > DIV2(COUNT_ARG(__VA_ARGS__)))) \
         { \
             umock_c_indicate_error(UMOCK_C_ARG_INDEX_OUT_OF_RANGE); \
         } \
