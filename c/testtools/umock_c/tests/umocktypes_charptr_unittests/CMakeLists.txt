@@ -4,10 +4,10 @@
 #this is CMakeLists for micromock unittests
 cmake_minimum_required(VERSION 2.8.11)
 
-set(theseTestsName umockvalue_charptr_unittests)
+set(theseTestsName umocktypes_charptr_unittests)
 
 set(${theseTestsName}_c_files
-umockvalue_charptr_unittests.cpp
+umocktypes_charptr_unittests.cpp
 )
 
 set(${theseTestsName}_h_files
