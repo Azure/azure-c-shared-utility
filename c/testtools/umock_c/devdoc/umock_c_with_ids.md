@@ -551,11 +551,15 @@ XX**SRS_UMOCK_C_01_089: [**The buffers for the previous calls shall be freed.**]
 
 **SRS_UMOCK_C_01_090: [**CopyOutArgumentBuffer shall only be applicable to pointer types.**]**
 
-**SRS_UMOCK_C_01_091: [**If the index is out of range umock_c shall raise an error with the code UMOCK_C_ARG_INDEX_OUT_OF_RANGE.**]**
+XX**SRS_UMOCK_C_01_091: [**If the index is out of range umock_c shall raise an error with the code UMOCK_C_ARG_INDEX_OUT_OF_RANGE.**]**
 
 **SRS_UMOCK_C_01_092: [**If bytes is NULL or length is 0, umock_c shall raise an error with the code UMOCK_C_INVALID_ARGUMENT_BUFFER.**]**
 
 XX**SRS_UMOCK_C_01_116: [** The argument targetted by CopyOutArgumentBuffer shall also be marked as ignored. **]**
+
+**SRS_UMOCK_C_01_117: [** If any memory allocation error occurs, umock_c shall raise an error with the code UMOCK_C_MALLOC_ERROR. **]**
+
+**SRS_UMOCK_C_01_118: [** If any other error occurs, umock_c shall raise an error with the code UMOCK_C_ERROR. **]**
 
 ###CopyOutArgument(arg_type value)
 

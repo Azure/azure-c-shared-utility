@@ -549,6 +549,10 @@ If bytes is NULL or length is 0, umock_c shall raise an error with the code UMOC
 
 The argument targetted by CopyOutArgumentBuffer shall also be marked as ignored.
 
+If any memory allocation error occurs, umock_c shall raise an error with the code UMOCK_C_MALLOC_ERROR.
+
+If any other error occurs, umock_c shall raise an error with the code UMOCK_C_ERROR.
+
 ###CopyOutArgument(arg_type value)
 
 The CopyOutArgument call modifier shall copy an argument value to be injected as an out argument value when the code under test calls the mock function.
