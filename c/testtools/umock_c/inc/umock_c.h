@@ -16,6 +16,7 @@ extern "C" {
     {
         UMOCK_C_ARG_INDEX_OUT_OF_RANGE,
         UMOCK_C_MALLOC_ERROR,
+        UMOCK_C_INVALID_ARGUMENT_BUFFER,
         UMOCK_C_ERROR
     } UMOCK_C_ERROR_CODE;
 

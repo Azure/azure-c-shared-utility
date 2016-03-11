@@ -47,6 +47,7 @@ typedef enum UMOCK_C_ERROR_CODE_TAG
 {
     UMOCK_C_ARG_INDEX_OUT_OF_RANGE,
     UMOCK_C_MALLOC_ERROR,
+    UMOCK_C_INVALID_ARGUMENT_BUFFER,
     UMOCK_C_ERROR
 } UMOCK_C_ERROR_CODE;
 
@@ -524,7 +525,7 @@ XX**SRS_UMOCK_C_01_079: [**The ValidateArgument_{arg_name} call modifier shall r
 
 XX**SRS_UMOCK_C_01_080: [**The IgnoreArgument call modifier shall record that the indexth argument will be ignored for that specific call.**]**
 
-**SRS_UMOCK_C_01_081: [**If the index is out of range umock_c shall raise an error with the code UMOCK_C_ARG_INDEX_OUT_OF_RANGE.**]**
+XX**SRS_UMOCK_C_01_081: [**If the index is out of range umock_c shall raise an error with the code UMOCK_C_ARG_INDEX_OUT_OF_RANGE.**]**
 
 ###ValidateArgument(size_t index)
 
@@ -553,7 +554,7 @@ XX**SRS_UMOCK_C_01_089: [**The buffers for the previous calls shall be freed.**]
 
 XX**SRS_UMOCK_C_01_091: [**If the index is out of range umock_c shall raise an error with the code UMOCK_C_ARG_INDEX_OUT_OF_RANGE.**]**
 
-**SRS_UMOCK_C_01_092: [**If bytes is NULL or length is 0, umock_c shall raise an error with the code UMOCK_C_INVALID_ARGUMENT_BUFFER.**]**
+XX**SRS_UMOCK_C_01_092: [**If bytes is NULL or length is 0, umock_c shall raise an error with the code UMOCK_C_INVALID_ARGUMENT_BUFFER.**]**
 
 XX**SRS_UMOCK_C_01_116: [** The argument targetted by CopyOutArgumentBuffer shall also be marked as ignored. **]**
 

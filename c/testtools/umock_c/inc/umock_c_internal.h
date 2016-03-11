@@ -62,7 +62,6 @@ typedef struct ARG_BUFFER_TAG
 #define COPY_OUT_ARG_VALUE_FROM_MATCHED_CALL(count, arg_type, arg_name) \
     if (matched_call_data->out_arg_buffers[COUNT_OF(matched_call_data->out_arg_buffers) - DIV2(count)].bytes != NULL) \
     { \
-        printf("copy %d, %p", (int)DIV2(count), matched_call_data->out_arg_buffers[COUNT_OF(matched_call_data->out_arg_buffers) - DIV2(count)].bytes); \
         (void)memcpy(*((void**)(&arg_name)), matched_call_data->out_arg_buffers[COUNT_OF(matched_call_data->out_arg_buffers) - DIV2(count)].bytes, matched_call_data->out_arg_buffers[COUNT_OF(matched_call_data->out_arg_buffers) - DIV2(count)].length); \
     } \
 
@@ -254,6 +253,7 @@ typedef struct ARG_BUFFER_TAG
 /* Codes_SRS_UMOCK_C_01_091: [If the index is out of range umock_c shall raise an error with the code UMOCK_C_ARG_INDEX_OUT_OF_RANGE.]*/
 /* Codes_SRS_UMOCK_C_01_117: [ If any memory allocation error occurs, umock_c shall raise an error with the code UMOCK_C_MALLOC_ERROR. ]*/
 /* Codes_SRS_UMOCK_C_01_118: [ If any other error occurs, umock_c shall raise an error with the code UMOCK_C_ERROR. ]*/
+/* Codes_SRS_UMOCK_C_01_092: [If bytes is NULL or length is 0, umock_c shall raise an error with the code UMOCK_C_INVALID_ARGUMENT_BUFFER.] */
 #define IMPLEMENT_COPY_OUT_ARGUMENT_BUFFER_FUNCTION(return_type, name, ...) \
     static C2(mock_call_modifier_, name) C2(copy_out_argument_buffer_func_, name)(size_t index, const void* bytes, size_t length) \
     { \
@@ -261,6 +261,10 @@ typedef struct ARG_BUFFER_TAG
         if ((index < 1) || (index > DIV2(COUNT_ARG(__VA_ARGS__)))) \
         { \
             umock_c_indicate_error(UMOCK_C_ARG_INDEX_OUT_OF_RANGE); \
+        } \
+        else if ((bytes == NULL) || (length == 0)) \
+        { \
+            umock_c_indicate_error(UMOCK_C_INVALID_ARGUMENT_BUFFER); \
         } \
         else \
         { \

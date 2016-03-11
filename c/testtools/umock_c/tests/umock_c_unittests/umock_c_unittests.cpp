@@ -8,7 +8,6 @@
 /* TODO:
 - Switch to .c
 - Make it clear that ENABLE_MOCKS has tobe defined after including the unit under test header
-- Add tests for CopyOutArgBuffer bad args
 */
 
 #define ENABLE_MOCKS
@@ -880,6 +879,35 @@ TEST_FUNCTION(CopyOutArgumentBuffer_with_index_higher_than_count_of_args_trigger
     // assert
     ASSERT_ARE_EQUAL(int, 1, test_on_umock_c_error_call_count);
     ASSERT_ARE_EQUAL(int, (int)UMOCK_C_ARG_INDEX_OUT_OF_RANGE, test_on_umock_c_error_calls[0].error_code);
+}
+
+/* Tests_SRS_UMOCK_C_01_092: [If bytes is NULL or length is 0, umock_c shall raise an error with the code UMOCK_C_INVALID_ARGUMENT_BUFFER.] */
+TEST_FUNCTION(CopyOutArgumentBuffer_with_NULL_bytes_triggers_the_error_callback)
+{
+    // arrange
+
+    // act
+    EXPECTED_CALL(test_dependency_1_out_arg(IGNORED_PTR_ARG))
+        .CopyOutArgumentBuffer(1, NULL, sizeof(int));
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 1, test_on_umock_c_error_call_count);
+    ASSERT_ARE_EQUAL(int, (int)UMOCK_C_INVALID_ARGUMENT_BUFFER, test_on_umock_c_error_calls[0].error_code);
+}
+
+/* Tests_SRS_UMOCK_C_01_092: [If bytes is NULL or length is 0, umock_c shall raise an error with the code UMOCK_C_INVALID_ARGUMENT_BUFFER.] */
+TEST_FUNCTION(CopyOutArgumentBuffer_with_0_length_triggers_the_error_callback)
+{
+    // arrange
+    int injected_int = 0x42;
+
+    // act
+    EXPECTED_CALL(test_dependency_1_out_arg(IGNORED_PTR_ARG))
+        .CopyOutArgumentBuffer(1, &injected_int, 0);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 1, test_on_umock_c_error_call_count);
+    ASSERT_ARE_EQUAL(int, (int)UMOCK_C_INVALID_ARGUMENT_BUFFER, test_on_umock_c_error_calls[0].error_code);
 }
 
 END_TEST_SUITE(umock_c_unittests)
