@@ -8,12 +8,12 @@
 extern "C" {
 #endif
 
-    extern int umockvalue_stdint_register_types(void);
+    extern int umocktypes_stdint_register_types(void);
 
-    extern char* umockvalue_stringify_int(const int* value);
-    extern int umockvalue_are_equal_int(const int* left, const int* right);
-    extern int umockvalue_copy_int(int* destination, const int* source);
-    extern void umockvalue_free_int(int* value);
+    extern char* umocktypes_stringify_int(const int* value);
+    extern int umocktypes_are_equal_int(const int* left, const int* right);
+    extern int umocktypes_copy_int(int* destination, const int* source);
+    extern void umocktypes_free_int(int* value);
 
 #ifdef __cplusplus
 }

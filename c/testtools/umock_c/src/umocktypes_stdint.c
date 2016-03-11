@@ -8,13 +8,13 @@
 #include <stdio.h>
 #include <string.h>
 #include "umockvalue.h"
-#include "umockvalue_stdint.h"
+#include "umocktypes_stdint.h"
 
-int umockvalue_stdint_register_types(void)
+int umocktypes_stdint_register_types(void)
 {
     int result;
 
-    if (umockvalue_register_type("int", (UMOCKVALUE_STRINGIFY_FUNC)umockvalue_stringify_int, (UMOCKVALUE_ARE_EQUAL_FUNC)umockvalue_are_equal_int, (UMOCKVALUE_COPY_FUNC)umockvalue_copy_int, (UMOCKVALUE_FREE_FUNC)umockvalue_free_int) != 0)
+    if (umocktypes_register_type("int", (UMOCKVALUE_STRINGIFY_FUNC)umocktypes_stringify_int, (UMOCKVALUE_ARE_EQUAL_FUNC)umocktypes_are_equal_int, (UMOCKVALUE_COPY_FUNC)umocktypes_copy_int, (UMOCKVALUE_FREE_FUNC)umocktypes_free_int) != 0)
     {
         result = __LINE__;
     }
@@ -26,7 +26,7 @@ int umockvalue_stdint_register_types(void)
     return result;
 }
 
-char* umockvalue_stringify_int(const int* value)
+char* umocktypes_stringify_int(const int* value)
 {
     char* result;
 
@@ -56,7 +56,7 @@ char* umockvalue_stringify_int(const int* value)
     return result;
 }
 
-int umockvalue_copy_int(int* destination, const int* source)
+int umocktypes_copy_int(int* destination, const int* source)
 {
     int result;
 
@@ -74,12 +74,12 @@ int umockvalue_copy_int(int* destination, const int* source)
     return result;
 }
 
-void umockvalue_free_int(int* value)
+void umocktypes_free_int(int* value)
 {
     /* no free required for int */
 }
 
-int umockvalue_are_equal_int(const int* left, const int* right)
+int umocktypes_are_equal_int(const int* left, const int* right)
 {
     int result;
 

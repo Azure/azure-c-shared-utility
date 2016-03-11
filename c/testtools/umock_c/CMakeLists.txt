@@ -6,7 +6,7 @@ cmake_minimum_required(VERSION 2.8.11)
 
 set(umock_c_c_files
 ./src/umock_c.c
-./src/umockvalue.c
+./src/umocktypes.c
 ./src/umockcall.c
 ./src/umocktypes_charptr.c
 ./src/umocktypes_stdint.c

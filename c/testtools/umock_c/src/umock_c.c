@@ -23,8 +23,8 @@ int umock_c_init(ON_UMOCK_C_ERROR on_umock_c_error)
 {
     int result;
     (void)on_umock_c_error;
-    if ((umockvalue_init() != 0) ||
-        (umockvalue_stdint_register_types() != 0))
+    if ((umocktypes_init() != 0) ||
+        (umocktypes_stdint_register_types() != 0))
     {
         result = __LINE__;
     }
@@ -44,7 +44,7 @@ void umock_c_deinit(void)
     actual_calls_string = NULL;
     free(expected_calls_string);
     expected_calls_string = NULL;
-    umockvalue_deinit();
+    umocktypes_deinit();
 }
 
 int umock_c_reset_all_calls(void)

@@ -45,7 +45,7 @@ typedef struct ARG_BUFFER_TAG
 #define MOCKABLE_FUNCTION_INTERNAL(result, function, ...) \
 	result function(void);
 
-#define COPY_ARG_TO_MOCK_STRUCT(arg_type, arg_name) umockvalue_copy(#arg_type, &mock_call_data->arg_name, &arg_name);
+#define COPY_ARG_TO_MOCK_STRUCT(arg_type, arg_name) umocktypes_copy(#arg_type, &mock_call_data->arg_name, &arg_name);
 #define DECLARE_MOCK_CALL_STRUCT_STACK(arg_type, arg_name) arg_type arg_name;
 #define DECLARE_IGNORE_FLAG_FOR_ARG(arg_type, arg_name) unsigned int C2(is_ignored_, arg_name);
 #define DECLARE_OUT_ARG_BUFFER_FOR_ARG(arg_type, arg_name) ARG_BUFFER C2(out_arg_buffer_, arg_name);
@@ -64,7 +64,7 @@ typedef struct ARG_BUFFER_TAG
         (void)memcpy(*((void**)(&arg_name)), matched_call_data->out_arg_buffers[COUNT_OF(matched_call_data->out_arg_buffers) - DIV2(count)].bytes, matched_call_data->out_arg_buffers[COUNT_OF(matched_call_data->out_arg_buffers) - DIV2(count)].length); \
     } \
 
-#define STRINGIFY_ARGS_DECLARE_RESULT_VAR(arg_type, arg_name) char* C2(arg_name,_stringified) = umockvalue_stringify(#arg_type, &typed_mock_call_data->arg_name);
+#define STRINGIFY_ARGS_DECLARE_RESULT_VAR(arg_type, arg_name) char* C2(arg_name,_stringified) = umocktypes_stringify(#arg_type, &typed_mock_call_data->arg_name);
 #define STRINGIFY_ARGS_CHECK_ARG_STRINGIFY_SUCCESS(arg_type, arg_name) if (C2(arg_name,_stringified) == NULL) is_error = 1;
 #define STRINGIFY_ARGS_DECLARE_ARG_STRING_LENGTH(arg_type, arg_name) size_t C2(arg_name,_stringified_length) = strlen(C2(arg_name,_stringified));
 #define STRINGIFY_ARGS_COUNT_LENGTH(arg_type, arg_name) args_string_length += C2(arg_name,_stringified_length);
@@ -80,7 +80,7 @@ typedef struct ARG_BUFFER_TAG
     arg_index++;
 
 #define ARE_EQUAL_FOR_ARG(arg_type, arg_name) \
-    if (result && !(C2(typed_left->is_ignored_, arg_name) || C2(typed_right->is_ignored_, arg_name) || (umockvalue_are_equal(#arg_type, &typed_left->arg_name, &typed_right->arg_name)))) \
+    if (result && !(C2(typed_left->is_ignored_, arg_name) || C2(typed_right->is_ignored_, arg_name) || (umocktypes_are_equal(#arg_type, &typed_left->arg_name, &typed_right->arg_name)))) \
     { \
         result = 0; \
     }
@@ -300,11 +300,11 @@ typedef struct ARG_BUFFER_TAG
         IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_COUNTED(FREE_OUT_ARG_BUFFERS, __VA_ARGS__),) \
         IF(IS_NOT_VOID(return_type),if (typed_mock_call_data->return_value_set) \
         { \
-            umockvalue_free(TOSTRING(return_type), &typed_mock_call_data->return_value); \
+            umocktypes_free(TOSTRING(return_type), &typed_mock_call_data->return_value); \
         } \
         if (typed_mock_call_data->fail_return_value_set) \
         { \
-            umockvalue_free(TOSTRING(return_type), &typed_mock_call_data->fail_return_value); \
+            umocktypes_free(TOSTRING(return_type), &typed_mock_call_data->fail_return_value); \
         },) \
         free(mock_call_data); \
     } \
@@ -328,11 +328,11 @@ typedef struct ARG_BUFFER_TAG
             { \
                 if (matched_call_data->return_value_set) \
                 { \
-                    (void)umockvalue_copy(#return_type, &result, &matched_call_data->return_value); \
+                    (void)umocktypes_copy(#return_type, &result, &matched_call_data->return_value); \
                 } \
                 else \
                 { \
-                    IF(IS_NOT_VOID(return_type),(void)umockvalue_copy(#return_type, &result, &C4(mock_call_,name,_,result));,) \
+                    IF(IS_NOT_VOID(return_type),(void)umocktypes_copy(#return_type, &result, &C4(mock_call_,name,_,result));,) \
                 } \
             },) \
             IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_COUNTED(COPY_OUT_ARG_VALUE_FROM_MATCHED_CALL, __VA_ARGS__),) \
@@ -340,7 +340,7 @@ typedef struct ARG_BUFFER_TAG
         } \
         else \
         { \
-            IF(IS_NOT_VOID(return_type),(void)umockvalue_copy(#return_type, &result, &C4(mock_call_,name,_,result));,) \
+            IF(IS_NOT_VOID(return_type),(void)umocktypes_copy(#return_type, &result, &C4(mock_call_,name,_,result));,) \
         } \
 		IF(IS_NOT_VOID(return_type),return result;,) \
 	} \
@@ -351,7 +351,7 @@ typedef struct ARG_BUFFER_TAG
         if (mock_call_data != NULL) \
         { \
             mock_call_data->return_value_set = 1; \
-            (void)umockvalue_copy(#return_type, &mock_call_data->return_value, &return_value); \
+            (void)umocktypes_copy(#return_type, &mock_call_data->return_value, &return_value); \
         } \
         return mock_call_modifier; \
     },) \
@@ -362,7 +362,7 @@ typedef struct ARG_BUFFER_TAG
         if (mock_call_data != NULL) \
         { \
             mock_call_data->fail_return_value_set = 1; \
-            (void)umockvalue_copy(#return_type, &mock_call_data->fail_return_value, &return_value); \
+            (void)umocktypes_copy(#return_type, &mock_call_data->fail_return_value, &return_value); \
         } \
         return mock_call_modifier; \
     },) \

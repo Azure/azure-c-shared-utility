@@ -7,7 +7,7 @@
 #endif
 #include <stdio.h>
 #include <string.h>
-#include "umockvalue_stdint.h"
+#include "umocktypes_stdint.h"
 #include "umockvalue.h"
 
 typedef struct UMOCK_VALUE_TYPE_HANDLERS_TAG
@@ -47,12 +47,12 @@ static UMOCK_VALUE_TYPE_HANDLERS* get_value_type_handlers(const char* type)
     return result;
 }
 
-int umockvalue_init(void)
+int umocktypes_init(void)
 {
     return 0;
 }
 
-void umockvalue_deinit(void)
+void umocktypes_deinit(void)
 {
     size_t i;
 
@@ -65,7 +65,7 @@ void umockvalue_deinit(void)
     type_handlers = NULL;
 }
 
-int umockvalue_register_type(const char* type, UMOCKVALUE_STRINGIFY_FUNC stringify, UMOCKVALUE_ARE_EQUAL_FUNC are_equal, UMOCKVALUE_COPY_FUNC value_copy, UMOCKVALUE_FREE_FUNC value_free)
+int umocktypes_register_type(const char* type, UMOCKVALUE_STRINGIFY_FUNC stringify, UMOCKVALUE_ARE_EQUAL_FUNC are_equal, UMOCKVALUE_COPY_FUNC value_copy, UMOCKVALUE_FREE_FUNC value_free)
 {
     int result;
 
@@ -99,7 +99,7 @@ int umockvalue_register_type(const char* type, UMOCKVALUE_STRINGIFY_FUNC stringi
     return result;
 }
 
-char* umockvalue_stringify(const char* type, const void* value)
+char* umocktypes_stringify(const char* type, const void* value)
 {
     char* result;
     UMOCK_VALUE_TYPE_HANDLERS* value_type_handlers = get_value_type_handlers(type);
@@ -116,7 +116,7 @@ char* umockvalue_stringify(const char* type, const void* value)
     return result;
 }
 
-int umockvalue_are_equal(const char* type, const void* left, const void* right)
+int umocktypes_are_equal(const char* type, const void* left, const void* right)
 {
     int result;
     UMOCK_VALUE_TYPE_HANDLERS* value_type_handlers = get_value_type_handlers(type);
@@ -133,7 +133,7 @@ int umockvalue_are_equal(const char* type, const void* left, const void* right)
     return result;
 }
 
-int umockvalue_copy(const char* type, void* destination, const void* source)
+int umocktypes_copy(const char* type, void* destination, const void* source)
 {
     int result;
     UMOCK_VALUE_TYPE_HANDLERS* value_type_handlers = get_value_type_handlers(type);
@@ -148,7 +148,7 @@ int umockvalue_copy(const char* type, void* destination, const void* source)
     return result;
 }
 
-void umockvalue_free(const char* type, void* value)
+void umocktypes_free(const char* type, void* value)
 {
     UMOCK_VALUE_TYPE_HANDLERS* value_type_handlers = get_value_type_handlers(type);
     if (value_type_handlers != NULL)
