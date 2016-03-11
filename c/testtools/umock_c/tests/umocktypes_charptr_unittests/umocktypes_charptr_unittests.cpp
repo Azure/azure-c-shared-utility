@@ -30,7 +30,7 @@ TEST_FUNCTION_CLEANUP(test_function_cleanup)
 
 /* umocktypes_stringify_charptr */
 
-/* Tests_SRS_UMOCKVALUE_CHARPTR_01_002: [ umocktypes_stringify_charptr shall return a string containing the string representation of value, enclosed by quotes (\"value\"). ] */
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_002: [ umocktypes_stringify_charptr shall return a string containing the string representation of value, enclosed by quotes (\"value\"). ] */
 TEST_FUNCTION(umocktypes_stringify_charptr_with_an_empty_string_returns_2_quotes)
 {
     // arrange
@@ -46,7 +46,7 @@ TEST_FUNCTION(umocktypes_stringify_charptr_with_an_empty_string_returns_2_quotes
     free(result);
 }
 
-/* Tests_SRS_UMOCKVALUE_CHARPTR_01_002: [ umocktypes_stringify_charptr shall return a string containing the string representation of value, enclosed by quotes (\"value\"). ] */
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_002: [ umocktypes_stringify_charptr shall return a string containing the string representation of value, enclosed by quotes (\"value\"). ] */
 TEST_FUNCTION(umocktypes_stringify_charptr_with_a_non_empty_string_returns_the_string_surrounded_by_quotes)
 {
     // arrange
@@ -62,7 +62,7 @@ TEST_FUNCTION(umocktypes_stringify_charptr_with_a_non_empty_string_returns_the_s
     free(result);
 }
 
-/* Tests_SRS_UMOCKVALUE_CHARPTR_01_004: [ If value is NULL, umocktypes_stringify_charptr shall return NULL. ]*/
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_004: [ If value is NULL, umocktypes_stringify_charptr shall return NULL. ]*/
 TEST_FUNCTION(umocktypes_stringify_charptr_with_NULL_argument_returns_NULL)
 {
     // arrange
@@ -76,8 +76,8 @@ TEST_FUNCTION(umocktypes_stringify_charptr_with_NULL_argument_returns_NULL)
 
 /* umocktypes_are_equal_charptr */
 
-/* Tests_SRS_UMOCKVALUE_CHARPTR_01_005: [ umocktypes_are_equal_charptr shall compare the 2 strings pointed to by left and right. ] */
-/* Tests_SRS_UMOCKVALUE_CHARPTR_01_007: [ If left and right are equal, umocktypes_are_equal_charptr shall return 1. ]*/
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_005: [ umocktypes_are_equal_charptr shall compare the 2 strings pointed to by left and right. ] */
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_007: [ If left and right are equal, umocktypes_are_equal_charptr shall return 1. ]*/
 TEST_FUNCTION(umocktypes_are_equal_charptr_with_same_pointer_returns_1)
 {
     // arrange
@@ -90,8 +90,8 @@ TEST_FUNCTION(umocktypes_are_equal_charptr_with_same_pointer_returns_1)
     ASSERT_ARE_EQUAL(int, 1, result);
 }
 
-/* Tests_SRS_UMOCKVALUE_CHARPTR_01_005: [ umocktypes_are_equal_charptr shall compare the 2 strings pointed to by left and right. ] */
-/* Tests_SRS_UMOCKVALUE_CHARPTR_01_007: [ If left and right are equal, umocktypes_are_equal_charptr shall return 1. ]*/
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_005: [ umocktypes_are_equal_charptr shall compare the 2 strings pointed to by left and right. ] */
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_007: [ If left and right are equal, umocktypes_are_equal_charptr shall return 1. ]*/
 TEST_FUNCTION(umocktypes_are_equal_charptr_with_same_NULL_pointer_returns_1)
 {
     // arrange
@@ -103,7 +103,7 @@ TEST_FUNCTION(umocktypes_are_equal_charptr_with_same_NULL_pointer_returns_1)
     ASSERT_ARE_EQUAL(int, 1, result);
 }
 
-/* Tests_SRS_UMOCKVALUE_CHARPTR_01_008: [ If only one of the left and right argument is NULL, umocktypes_are_equal_charptr shall return 0. ] */
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_008: [ If only one of the left and right argument is NULL, umocktypes_are_equal_charptr shall return 0. ] */
 TEST_FUNCTION(umocktypes_are_equal_charptr_with_left_NULL_returns_0)
 {
     // arrange
@@ -116,7 +116,7 @@ TEST_FUNCTION(umocktypes_are_equal_charptr_with_left_NULL_returns_0)
     ASSERT_ARE_EQUAL(int, 0, result);
 }
 
-/* Tests_SRS_UMOCKVALUE_CHARPTR_01_008: [ If only one of the left and right argument is NULL, umocktypes_are_equal_charptr shall return 0. ] */
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_008: [ If only one of the left and right argument is NULL, umocktypes_are_equal_charptr shall return 0. ] */
 TEST_FUNCTION(umocktypes_are_equal_charptr_with_right_NULL_returns_0)
 {
     // arrange
@@ -129,7 +129,7 @@ TEST_FUNCTION(umocktypes_are_equal_charptr_with_right_NULL_returns_0)
     ASSERT_ARE_EQUAL(int, 0, result);
 }
 
-/* Tests_SRS_UMOCKVALUE_CHARPTR_01_009: [ If the string pointed to by left is equal to the string pointed to by right, umocktypes_are_equal_charptr shall return 1. ]*/
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_009: [ If the string pointed to by left is equal to the string pointed to by right, umocktypes_are_equal_charptr shall return 1. ]*/
 TEST_FUNCTION(umocktypes_are_equal_charptr_with_string_being_the_same_returns_1)
 {
     // arrange
@@ -149,7 +149,7 @@ TEST_FUNCTION(umocktypes_are_equal_charptr_with_string_being_the_same_returns_1)
     free(input2);
 }
 
-/* Tests_SRS_UMOCKVALUE_CHARPTR_01_010: [ If the string pointed to by left is different than the string pointed to by right, umocktypes_are_equal_charptr shall return 0. ]*/
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_010: [ If the string pointed to by left is different than the string pointed to by right, umocktypes_are_equal_charptr shall return 0. ]*/
 TEST_FUNCTION(umocktypes_are_equal_charptr_with_string_being_different_returns_0)
 {
     // arrange
@@ -169,7 +169,7 @@ TEST_FUNCTION(umocktypes_are_equal_charptr_with_string_being_different_returns_0
     free(input2);
 }
 
-/* Tests_SRS_UMOCKVALUE_CHARPTR_01_006: [ The comparison shall be case sensitive. ]*/
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_006: [ The comparison shall be case sensitive. ]*/
 TEST_FUNCTION(umocktypes_are_equal_charptr_with_string_being_different_in_case_returns_0)
 {
     // arrange
@@ -191,11 +191,11 @@ TEST_FUNCTION(umocktypes_are_equal_charptr_with_string_being_different_in_case_r
 
 /* umocktypes_copy_charptr */
 
-/* Tests_SRS_UMOCKVALUE_CHARPTR_01_011: [ umocktypes_copy_charptr shall allocate a new sequence of chars by using malloc. ]*/
-/* Tests_SRS_UMOCKVALUE_CHARPTR_01_012: [ The number of bytes allocated shall accomodate the string pointed to by source. ]*/
-/* Tests_SRS_UMOCKVALUE_CHARPTR_01_016: [ On success umocktypes_copy_charptr shall return 0. ]*/
-/* Tests_SRS_UMOCKVALUE_CHARPTR_01_014: [ umocktypes_copy_charptr shall copy the string pointed to by source to the newly allocated memory. ]*/
-/* Tests_SRS_UMOCKVALUE_CHARPTR_01_015: [ The newly allocated string shall be returned in the destination argument. ]*/
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_011: [ umocktypes_copy_charptr shall allocate a new sequence of chars by using malloc. ]*/
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_012: [ The number of bytes allocated shall accomodate the string pointed to by source. ]*/
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_016: [ On success umocktypes_copy_charptr shall return 0. ]*/
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_014: [ umocktypes_copy_charptr shall copy the string pointed to by source to the newly allocated memory. ]*/
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_015: [ The newly allocated string shall be returned in the destination argument. ]*/
 TEST_FUNCTION(umocktypes_copy_charptr_copies_an_empty_string)
 {
     // arrange
@@ -213,11 +213,11 @@ TEST_FUNCTION(umocktypes_copy_charptr_copies_an_empty_string)
     free(destination);
 }
 
-/* Tests_SRS_UMOCKVALUE_CHARPTR_01_011: [ umocktypes_copy_charptr shall allocate a new sequence of chars by using malloc. ]*/
-/* Tests_SRS_UMOCKVALUE_CHARPTR_01_012: [ The number of bytes allocated shall accomodate the string pointed to by source. ]*/
-/* Tests_SRS_UMOCKVALUE_CHARPTR_01_016: [ On success umocktypes_copy_charptr shall return 0. ]*/
-/* Tests_SRS_UMOCKVALUE_CHARPTR_01_014: [ umocktypes_copy_charptr shall copy the string pointed to by source to the newly allocated memory. ]*/
-/* Tests_SRS_UMOCKVALUE_CHARPTR_01_015: [ The newly allocated string shall be returned in the destination argument. ]*/
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_011: [ umocktypes_copy_charptr shall allocate a new sequence of chars by using malloc. ]*/
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_012: [ The number of bytes allocated shall accomodate the string pointed to by source. ]*/
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_016: [ On success umocktypes_copy_charptr shall return 0. ]*/
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_014: [ umocktypes_copy_charptr shall copy the string pointed to by source to the newly allocated memory. ]*/
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_015: [ The newly allocated string shall be returned in the destination argument. ]*/
 TEST_FUNCTION(umocktypes_copy_charptr_copies_a_string)
 {
     // arrange
@@ -235,7 +235,7 @@ TEST_FUNCTION(umocktypes_copy_charptr_copies_a_string)
     free(destination);
 }
 
-/* Tests_SRS_UMOCKVALUE_CHARPTR_01_013: [ If source or destination are NULL, umocktypes_copy_charptr shall return a non-zero value. ]*/
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_013: [ If source or destination are NULL, umocktypes_copy_charptr shall return a non-zero value. ]*/
 TEST_FUNCTION(umocktypes_copy_charptr_with_NULL_destination_fails)
 {
     // arrange
@@ -248,7 +248,7 @@ TEST_FUNCTION(umocktypes_copy_charptr_with_NULL_destination_fails)
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
 }
 
-/* Tests_SRS_UMOCKVALUE_CHARPTR_01_013: [ If source or destination are NULL, umocktypes_copy_charptr shall return a non-zero value. ]*/
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_013: [ If source or destination are NULL, umocktypes_copy_charptr shall return a non-zero value. ]*/
 TEST_FUNCTION(umocktypes_copy_charptr_with_NULL_source_fails)
 {
     // arrange
@@ -263,7 +263,7 @@ TEST_FUNCTION(umocktypes_copy_charptr_with_NULL_source_fails)
 
 /* umocktypes_free_charptr */
 
-/* Tests_SRS_UMOCKVALUE_CHARPTR_01_017: [ umocktypes_free_charptr shall free the string pointed to by value. ]*/
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_017: [ umocktypes_free_charptr shall free the string pointed to by value. ]*/
 TEST_FUNCTION(umocktypes_free_charptr_frees_the_string)
 {
     // arrange
@@ -279,7 +279,7 @@ TEST_FUNCTION(umocktypes_free_charptr_frees_the_string)
     // no explicit assert
 }
 
-/* Tests_SRS_UMOCKVALUE_CHARPTR_01_018: [ If value is NULL, umocktypes_free_charptr shall do nothing. ] */
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_018: [ If value is NULL, umocktypes_free_charptr shall do nothing. ] */
 TEST_FUNCTION(umocktypes_free_charptr_with_NULL_does_nothing)
 {
     // arrange
@@ -293,7 +293,7 @@ TEST_FUNCTION(umocktypes_free_charptr_with_NULL_does_nothing)
 
 /* umocktypes_stringify_const_charptr */
 
-/* Tests_SRS_UMOCKVALUE_CHARPTR_01_019: [ umocktypes_stringify_const_charptr shall return a string containing the string representation of value, enclosed by quotes (\"value\"). ] */
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_019: [ umocktypes_stringify_const_charptr shall return a string containing the string representation of value, enclosed by quotes (\"value\"). ] */
 TEST_FUNCTION(umocktypes_stringify_const_charptr_with_an_empty_string_returns_2_quotes)
 {
     // arrange
@@ -309,7 +309,7 @@ TEST_FUNCTION(umocktypes_stringify_const_charptr_with_an_empty_string_returns_2_
     free(result);
 }
 
-/* Tests_SRS_UMOCKVALUE_CHARPTR_01_019: [ umocktypes_stringify_const_charptr shall return a string containing the string representation of value, enclosed by quotes (\"value\"). ] */
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_019: [ umocktypes_stringify_const_charptr shall return a string containing the string representation of value, enclosed by quotes (\"value\"). ] */
 TEST_FUNCTION(umocktypes_stringify_const_charptr_with_a_non_empty_string_returns_the_string_surrounded_by_quotes)
 {
     // arrange
@@ -325,7 +325,7 @@ TEST_FUNCTION(umocktypes_stringify_const_charptr_with_a_non_empty_string_returns
     free(result);
 }
 
-/* Tests_SRS_UMOCKVALUE_CHARPTR_01_020: [ If value is NULL, umocktypes_stringify_const_charptr shall return NULL. ]*/
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_020: [ If value is NULL, umocktypes_stringify_const_charptr shall return NULL. ]*/
 TEST_FUNCTION(umocktypes_stringify_const_charptr_with_NULL_argument_returns_NULL)
 {
     // arrange
@@ -339,8 +339,8 @@ TEST_FUNCTION(umocktypes_stringify_const_charptr_with_NULL_argument_returns_NULL
 
 /* umocktypes_are_equal_const_charptr */
 
-/* Tests_SRS_UMOCKVALUE_CHARPTR_01_022: [ umocktypes_are_equal_const_charptr shall compare the 2 strings pointed to by left and right. ] */
-/* Tests_SRS_UMOCKVALUE_CHARPTR_01_024: [ If left and right are equal, umocktypes_are_equal_const_charptr shall return 1. ]*/
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_022: [ umocktypes_are_equal_const_charptr shall compare the 2 strings pointed to by left and right. ] */
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_024: [ If left and right are equal, umocktypes_are_equal_const_charptr shall return 1. ]*/
 TEST_FUNCTION(umocktypes_are_equal_const_charptr_with_same_pointer_returns_1)
 {
     // arrange
@@ -353,8 +353,8 @@ TEST_FUNCTION(umocktypes_are_equal_const_charptr_with_same_pointer_returns_1)
     ASSERT_ARE_EQUAL(int, 1, result);
 }
 
-/* Tests_SRS_UMOCKVALUE_CHARPTR_01_022: [ umocktypes_are_equal_const_charptr shall compare the 2 strings pointed to by left and right. ] */
-/* Tests_SRS_UMOCKVALUE_CHARPTR_01_024: [ If left and right are equal, umocktypes_are_equal_const_charptr shall return 1. ]*/
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_022: [ umocktypes_are_equal_const_charptr shall compare the 2 strings pointed to by left and right. ] */
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_024: [ If left and right are equal, umocktypes_are_equal_const_charptr shall return 1. ]*/
 TEST_FUNCTION(umocktypes_are_equal_const_charptr_with_same_NULL_pointer_returns_1)
 {
     // arrange
@@ -366,7 +366,7 @@ TEST_FUNCTION(umocktypes_are_equal_const_charptr_with_same_NULL_pointer_returns_
     ASSERT_ARE_EQUAL(int, 1, result);
 }
 
-/* Tests_SRS_UMOCKVALUE_CHARPTR_01_025: [ If only one of the left and right argument is NULL, umocktypes_are_equal_const_charptr shall return 0. ] */
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_025: [ If only one of the left and right argument is NULL, umocktypes_are_equal_const_charptr shall return 0. ] */
 TEST_FUNCTION(umocktypes_are_equal_const_charptr_with_left_NULL_returns_0)
 {
     // arrange
@@ -379,7 +379,7 @@ TEST_FUNCTION(umocktypes_are_equal_const_charptr_with_left_NULL_returns_0)
     ASSERT_ARE_EQUAL(int, 0, result);
 }
 
-/* Tests_SRS_UMOCKVALUE_CHARPTR_01_025: [ If only one of the left and right argument is NULL, umocktypes_are_equal_const_charptr shall return 0. ] */
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_025: [ If only one of the left and right argument is NULL, umocktypes_are_equal_const_charptr shall return 0. ] */
 TEST_FUNCTION(umocktypes_are_equal_const_charptr_with_right_NULL_returns_0)
 {
     // arrange
@@ -392,7 +392,7 @@ TEST_FUNCTION(umocktypes_are_equal_const_charptr_with_right_NULL_returns_0)
     ASSERT_ARE_EQUAL(int, 0, result);
 }
 
-/* Tests_SRS_UMOCKVALUE_CHARPTR_01_026: [ If the string pointed to by left is equal to the string pointed to by right, umocktypes_are_equal_const_charptr shall return 1. ]*/
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_026: [ If the string pointed to by left is equal to the string pointed to by right, umocktypes_are_equal_const_charptr shall return 1. ]*/
 TEST_FUNCTION(umocktypes_are_equal_const_charptr_with_string_being_the_same_returns_1)
 {
     // arrange
@@ -412,7 +412,7 @@ TEST_FUNCTION(umocktypes_are_equal_const_charptr_with_string_being_the_same_retu
     free(input2);
 }
 
-/* Tests_SRS_UMOCKVALUE_CHARPTR_01_027: [ If the string pointed to by left is different than the string pointed to by right, umocktypes_are_equal_const_charptr shall return 0. ]*/
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_027: [ If the string pointed to by left is different than the string pointed to by right, umocktypes_are_equal_const_charptr shall return 0. ]*/
 TEST_FUNCTION(umocktypes_are_equal_const_charptr_with_string_being_different_returns_0)
 {
     // arrange
@@ -432,7 +432,7 @@ TEST_FUNCTION(umocktypes_are_equal_const_charptr_with_string_being_different_ret
     free(input2);
 }
 
-/* Tests_SRS_UMOCKVALUE_CHARPTR_01_023: [ The comparison shall be case sensitive. ]*/
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_023: [ The comparison shall be case sensitive. ]*/
 TEST_FUNCTION(umocktypes_are_equal_const_charptr_with_string_being_different_in_case_returns_0)
 {
     // arrange
@@ -454,11 +454,11 @@ TEST_FUNCTION(umocktypes_are_equal_const_charptr_with_string_being_different_in_
 
 /* umocktypes_copy_const_charptr */
 
-/* Tests_SRS_UMOCKVALUE_CHARPTR_01_028: [ umocktypes_copy_const_charptr shall allocate a new sequence of chars by using malloc. ]*/
-/* Tests_SRS_UMOCKVALUE_CHARPTR_01_029: [ The number of bytes allocated shall accomodate the string pointed to by source. ]*/
-/* Tests_SRS_UMOCKVALUE_CHARPTR_01_032: [ On success umocktypes_copy_const_charptr shall return 0. ]*/
-/* Tests_SRS_UMOCKVALUE_CHARPTR_01_030: [ umocktypes_copy_const_charptr shall copy the string pointed to by source to the newly allocated memory. ]*/
-/* Tests_SRS_UMOCKVALUE_CHARPTR_01_031: [ The newly allocated string shall be returned in the destination argument. ]*/
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_028: [ umocktypes_copy_const_charptr shall allocate a new sequence of chars by using malloc. ]*/
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_029: [ The number of bytes allocated shall accomodate the string pointed to by source. ]*/
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_032: [ On success umocktypes_copy_const_charptr shall return 0. ]*/
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_030: [ umocktypes_copy_const_charptr shall copy the string pointed to by source to the newly allocated memory. ]*/
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_031: [ The newly allocated string shall be returned in the destination argument. ]*/
 TEST_FUNCTION(umocktypes_copy_const_charptr_copies_an_empty_string)
 {
     // arrange
@@ -476,11 +476,11 @@ TEST_FUNCTION(umocktypes_copy_const_charptr_copies_an_empty_string)
     free(destination);
 }
 
-/* Tests_SRS_UMOCKVALUE_CHARPTR_01_028: [ umocktypes_copy_const_charptr shall allocate a new sequence of chars by using malloc. ]*/
-/* Tests_SRS_UMOCKVALUE_CHARPTR_01_029: [ The number of bytes allocated shall accomodate the string pointed to by source. ]*/
-/* Tests_SRS_UMOCKVALUE_CHARPTR_01_032: [ On success umocktypes_copy_const_charptr shall return 0. ]*/
-/* Tests_SRS_UMOCKVALUE_CHARPTR_01_030: [ umocktypes_copy_const_charptr shall copy the string pointed to by source to the newly allocated memory. ]*/
-/* Tests_SRS_UMOCKVALUE_CHARPTR_01_031: [ The newly allocated string shall be returned in the destination argument. ]*/
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_028: [ umocktypes_copy_const_charptr shall allocate a new sequence of chars by using malloc. ]*/
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_029: [ The number of bytes allocated shall accomodate the string pointed to by source. ]*/
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_032: [ On success umocktypes_copy_const_charptr shall return 0. ]*/
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_030: [ umocktypes_copy_const_charptr shall copy the string pointed to by source to the newly allocated memory. ]*/
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_031: [ The newly allocated string shall be returned in the destination argument. ]*/
 TEST_FUNCTION(umocktypes_copy_const_charptr_copies_a_string)
 {
     // arrange
@@ -498,7 +498,7 @@ TEST_FUNCTION(umocktypes_copy_const_charptr_copies_a_string)
     free(destination);
 }
 
-/* Tests_SRS_UMOCKVALUE_CHARPTR_01_033: [ If source or destination are NULL, umocktypes_copy_const_charptr shall return a non-zero value. ]*/
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_033: [ If source or destination are NULL, umocktypes_copy_const_charptr shall return a non-zero value. ]*/
 TEST_FUNCTION(umocktypes_copy_const_charptr_with_NULL_destination_fails)
 {
     // arrange
@@ -511,7 +511,7 @@ TEST_FUNCTION(umocktypes_copy_const_charptr_with_NULL_destination_fails)
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
 }
 
-/* Tests_SRS_UMOCKVALUE_CHARPTR_01_033: [ If source or destination are NULL, umocktypes_copy_const_charptr shall return a non-zero value. ]*/
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_033: [ If source or destination are NULL, umocktypes_copy_const_charptr shall return a non-zero value. ]*/
 TEST_FUNCTION(umocktypes_copy_const_charptr_with_NULL_source_fails)
 {
     // arrange
@@ -526,7 +526,7 @@ TEST_FUNCTION(umocktypes_copy_const_charptr_with_NULL_source_fails)
 
 /* umocktypes_free_const_charptr */
 
-/* Tests_SRS_UMOCKVALUE_CHARPTR_01_034: [ umocktypes_free_const_charptr shall free the string pointed to by value. ]*/
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_034: [ umocktypes_free_const_charptr shall free the string pointed to by value. ]*/
 TEST_FUNCTION(umocktypes_free_const_charptr_frees_the_string)
 {
     // arrange
@@ -542,7 +542,7 @@ TEST_FUNCTION(umocktypes_free_const_charptr_frees_the_string)
     // no explicit assert
 }
 
-/* Tests_SRS_UMOCKVALUE_CHARPTR_01_035: [ If value is NULL, umocktypes_free_const_charptr shall do nothing. ] */
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_035: [ If value is NULL, umocktypes_free_const_charptr shall do nothing. ] */
 TEST_FUNCTION(umocktypes_free_const_charptr_with_NULL_does_nothing)
 {
     // arrange

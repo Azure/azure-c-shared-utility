@@ -16,15 +16,15 @@ char* umocktypes_stringify_charptr(const char** value)
 
     if (value == NULL)
     {
-        /* Codes_SRS_UMOCKVALUE_CHARPTR_01_004: [ If value is NULL, umocktypes_stringify_charptr shall return NULL. ]*/
+        /* Codes_SRS_UMOCKTYPES_CHARPTR_01_004: [ If value is NULL, umocktypes_stringify_charptr shall return NULL. ]*/
         result = NULL;
     }
     else
     {
-        /* Codes_SRS_UMOCKVALUE_CHARPTR_01_002: [ umocktypes_stringify_charptr shall return a string containing the string representation of value, enclosed by quotes (\"value\"). ] */
+        /* Codes_SRS_UMOCKTYPES_CHARPTR_01_002: [ umocktypes_stringify_charptr shall return a string containing the string representation of value, enclosed by quotes (\"value\"). ] */
         size_t length = strlen(*value);
         result = (char*)malloc(length + 3);
-        /* Codes_SRS_UMOCKVALUE_CHARPTR_01_003: [ If allocating a new string to hold the string representation fails, umocktypes_stringify_charptr shall return NULL. ]*/
+        /* Codes_SRS_UMOCKTYPES_CHARPTR_01_003: [ If allocating a new string to hold the string representation fails, umocktypes_stringify_charptr shall return NULL. ]*/
         if (result != NULL)
         {
             result[0] = '\"';
@@ -37,26 +37,26 @@ char* umocktypes_stringify_charptr(const char** value)
     return result;
 }
 
-/* Codes_SRS_UMOCKVALUE_CHARPTR_01_005: [ umocktypes_are_equal_charptr shall compare the 2 strings pointed to by left and right. ] */
+/* Codes_SRS_UMOCKTYPES_CHARPTR_01_005: [ umocktypes_are_equal_charptr shall compare the 2 strings pointed to by left and right. ] */
 int umocktypes_are_equal_charptr(const char** left, const char** right)
 {
     int result;
 
-    /* Codes_SRS_UMOCKVALUE_CHARPTR_01_007: [ If left and right are equal, umocktypes_are_equal_charptr shall return 1. ]*/
+    /* Codes_SRS_UMOCKTYPES_CHARPTR_01_007: [ If left and right are equal, umocktypes_are_equal_charptr shall return 1. ]*/
     if (left == right)
     {
         result = 1;
     }
     else if ((left == NULL) || (right == NULL))
     {
-        /* Codes_SRS_UMOCKVALUE_CHARPTR_01_008: [ If only one of the left and right argument is NULL, umocktypes_are_equal_charptr shall return 0. ] */
+        /* Codes_SRS_UMOCKTYPES_CHARPTR_01_008: [ If only one of the left and right argument is NULL, umocktypes_are_equal_charptr shall return 0. ] */
         result = 0;
     }
     else
     {
-        /* Codes_SRS_UMOCKVALUE_CHARPTR_01_009: [ If the string pointed to by left is equal to the string pointed to by right, umocktypes_are_equal_charptr shall return 1. ]*/
-        /* Codes_SRS_UMOCKVALUE_CHARPTR_01_010: [ If the string pointed to by left is different than the string pointed to by right, umocktypes_are_equal_charptr shall return 0. ]*/
-        /* Codes_SRS_UMOCKVALUE_CHARPTR_01_006: [ The comparison shall be case sensitive. ]*/
+        /* Codes_SRS_UMOCKTYPES_CHARPTR_01_009: [ If the string pointed to by left is equal to the string pointed to by right, umocktypes_are_equal_charptr shall return 1. ]*/
+        /* Codes_SRS_UMOCKTYPES_CHARPTR_01_010: [ If the string pointed to by left is different than the string pointed to by right, umocktypes_are_equal_charptr shall return 0. ]*/
+        /* Codes_SRS_UMOCKTYPES_CHARPTR_01_006: [ The comparison shall be case sensitive. ]*/
         result = (strcmp(*left, *right) == 0) ? 1 : 0;
     }
 
@@ -67,7 +67,7 @@ int umocktypes_copy_charptr(char** destination, const char** source)
 {
     int result;
 
-    /* Codes_SRS_UMOCKVALUE_CHARPTR_01_013: [ If source or destination are NULL, umocktypes_copy_charptr shall return a non-zero value. ]*/
+    /* Codes_SRS_UMOCKTYPES_CHARPTR_01_013: [ If source or destination are NULL, umocktypes_copy_charptr shall return a non-zero value. ]*/
     if ((destination == NULL) || (source == NULL))
     {
         result = __LINE__;
@@ -75,20 +75,20 @@ int umocktypes_copy_charptr(char** destination, const char** source)
     else
     {
         size_t source_length = strlen(*source);
-        /* Codes_SRS_UMOCKVALUE_CHARPTR_01_012: [ The number of bytes allocated shall accomodate the string pointed to by source. ]*/
-        /* Codes_SRS_UMOCKVALUE_CHARPTR_01_011: [ umocktypes_copy_charptr shall allocate a new sequence of chars by using malloc. ]*/
-        /* Codes_SRS_UMOCKVALUE_CHARPTR_01_015: [ The newly allocated string shall be returned in the destination argument. ]*/
+        /* Codes_SRS_UMOCKTYPES_CHARPTR_01_012: [ The number of bytes allocated shall accomodate the string pointed to by source. ]*/
+        /* Codes_SRS_UMOCKTYPES_CHARPTR_01_011: [ umocktypes_copy_charptr shall allocate a new sequence of chars by using malloc. ]*/
+        /* Codes_SRS_UMOCKTYPES_CHARPTR_01_015: [ The newly allocated string shall be returned in the destination argument. ]*/
         *destination = (char*)malloc(source_length + 1);
         if (*destination == NULL)
         {
-            /* Codes_SRS_UMOCKVALUE_CHARPTR_01_036: [ If allocating the memory for the new string fails, umocktypes_copy_charptr shall fail and return a non-zero value. ]*/
+            /* Codes_SRS_UMOCKTYPES_CHARPTR_01_036: [ If allocating the memory for the new string fails, umocktypes_copy_charptr shall fail and return a non-zero value. ]*/
             result = __LINE__;
         }
         else
         {
-            /* Codes_SRS_UMOCKVALUE_CHARPTR_01_014: [ umocktypes_copy_charptr shall copy the string pointed to by source to the newly allocated memory. ]*/
+            /* Codes_SRS_UMOCKTYPES_CHARPTR_01_014: [ umocktypes_copy_charptr shall copy the string pointed to by source to the newly allocated memory. ]*/
             (void)memcpy(*destination, *source, source_length + 1);
-            /* Codes_SRS_UMOCKVALUE_CHARPTR_01_016: [ On success umocktypes_copy_charptr shall return 0. ]*/
+            /* Codes_SRS_UMOCKTYPES_CHARPTR_01_016: [ On success umocktypes_copy_charptr shall return 0. ]*/
             result = 0;
         }
     }
@@ -98,10 +98,10 @@ int umocktypes_copy_charptr(char** destination, const char** source)
 
 void umocktypes_free_charptr(char** value)
 {
-    /* Codes_SRS_UMOCKVALUE_CHARPTR_01_018: [ If value is NULL, umocktypes_free_charptr shall do nothing. ] */
+    /* Codes_SRS_UMOCKTYPES_CHARPTR_01_018: [ If value is NULL, umocktypes_free_charptr shall do nothing. ] */
     if (value != NULL)
     {
-        /* Codes_SRS_UMOCKVALUE_CHARPTR_01_017: [ umocktypes_free_charptr shall free the string pointed to by value. ]*/
+        /* Codes_SRS_UMOCKTYPES_CHARPTR_01_017: [ umocktypes_free_charptr shall free the string pointed to by value. ]*/
         free(*value);
     }
 }
@@ -112,15 +112,15 @@ char* umocktypes_stringify_const_charptr(const char** value)
 
     if (value == NULL)
     {
-        /* Codes_SRS_UMOCKVALUE_CHARPTR_01_020: [ If value is NULL, umocktypes_stringify_const_charptr shall return NULL. ]*/
+        /* Codes_SRS_UMOCKTYPES_CHARPTR_01_020: [ If value is NULL, umocktypes_stringify_const_charptr shall return NULL. ]*/
         result = NULL;
     }
     else
     {
-        /* Codes_SRS_UMOCKVALUE_CHARPTR_01_019: [ umocktypes_stringify_const_charptr shall return a string containing the string representation of value, enclosed by quotes (\"value\"). ] */
+        /* Codes_SRS_UMOCKTYPES_CHARPTR_01_019: [ umocktypes_stringify_const_charptr shall return a string containing the string representation of value, enclosed by quotes (\"value\"). ] */
         size_t length = strlen(*value);
         result = (char*)malloc(length + 3);
-        /* Codes_SRS_UMOCKVALUE_CHARPTR_01_021: [ If allocating a new string to hold the string representation fails, umocktypes_stringify_const_charptr shall return NULL. ]*/
+        /* Codes_SRS_UMOCKTYPES_CHARPTR_01_021: [ If allocating a new string to hold the string representation fails, umocktypes_stringify_const_charptr shall return NULL. ]*/
         if (result != NULL)
         {
             result[0] = '\"';
@@ -133,26 +133,26 @@ char* umocktypes_stringify_const_charptr(const char** value)
     return result;
 }
 
-/* Codes_SRS_UMOCKVALUE_CHARPTR_01_022: [ umocktypes_are_equal_const_charptr shall compare the 2 strings pointed to by left and right. ] */
+/* Codes_SRS_UMOCKTYPES_CHARPTR_01_022: [ umocktypes_are_equal_const_charptr shall compare the 2 strings pointed to by left and right. ] */
 int umocktypes_are_equal_const_charptr(const char** left, const char** right)
 {
     int result;
 
-    /* Codes_SRS_UMOCKVALUE_CHARPTR_01_024: [ If left and right are equal, umocktypes_are_equal_const_charptr shall return 1. ]*/
+    /* Codes_SRS_UMOCKTYPES_CHARPTR_01_024: [ If left and right are equal, umocktypes_are_equal_const_charptr shall return 1. ]*/
     if (left == right)
     {
         result = 1;
     }
     else if ((left == NULL) || (right == NULL))
     {
-        /* Codes_SRS_UMOCKVALUE_CHARPTR_01_025: [ If only one of the left and right argument is NULL, umocktypes_are_equal_const_charptr shall return 0. ] */
+        /* Codes_SRS_UMOCKTYPES_CHARPTR_01_025: [ If only one of the left and right argument is NULL, umocktypes_are_equal_const_charptr shall return 0. ] */
         result = 0;
     }
     else
     {
-        /* Codes_SRS_UMOCKVALUE_CHARPTR_01_026: [ If the string pointed to by left is equal to the string pointed to by right, umocktypes_are_equal_const_charptr shall return 1. ]*/
-        /* Codes_SRS_UMOCKVALUE_CHARPTR_01_027: [ If the string pointed to by left is different than the string pointed to by right, umocktypes_are_equal_const_charptr shall return 0. ]*/
-        /* Codes_SRS_UMOCKVALUE_CHARPTR_01_023: [ The comparison shall be case sensitive. ]*/
+        /* Codes_SRS_UMOCKTYPES_CHARPTR_01_026: [ If the string pointed to by left is equal to the string pointed to by right, umocktypes_are_equal_const_charptr shall return 1. ]*/
+        /* Codes_SRS_UMOCKTYPES_CHARPTR_01_027: [ If the string pointed to by left is different than the string pointed to by right, umocktypes_are_equal_const_charptr shall return 0. ]*/
+        /* Codes_SRS_UMOCKTYPES_CHARPTR_01_023: [ The comparison shall be case sensitive. ]*/
         result = (strcmp(*left, *right) == 0) ? 1 : 0;
     }
 
@@ -163,7 +163,7 @@ int umocktypes_copy_const_charptr(char** destination, const char** source)
 {
     int result;
 
-    /* Codes_SRS_UMOCKVALUE_CHARPTR_01_033: [ If source or destination are NULL, umocktypes_copy_const_charptr shall return a non-zero value. ]*/
+    /* Codes_SRS_UMOCKTYPES_CHARPTR_01_033: [ If source or destination are NULL, umocktypes_copy_const_charptr shall return a non-zero value. ]*/
     if ((destination == NULL) || (source == NULL))
     {
         result = __LINE__;
@@ -171,20 +171,20 @@ int umocktypes_copy_const_charptr(char** destination, const char** source)
     else
     {
         size_t source_length = strlen(*source);
-        /* Codes_SRS_UMOCKVALUE_CHARPTR_01_029: [ The number of bytes allocated shall accomodate the string pointed to by source. ]*/
-        /* Codes_SRS_UMOCKVALUE_CHARPTR_01_028: [ umocktypes_copy_const_charptr shall allocate a new sequence of chars by using malloc. ]*/
-        /* Codes_SRS_UMOCKVALUE_CHARPTR_01_031: [ The newly allocated string shall be returned in the destination argument. ]*/
+        /* Codes_SRS_UMOCKTYPES_CHARPTR_01_029: [ The number of bytes allocated shall accomodate the string pointed to by source. ]*/
+        /* Codes_SRS_UMOCKTYPES_CHARPTR_01_028: [ umocktypes_copy_const_charptr shall allocate a new sequence of chars by using malloc. ]*/
+        /* Codes_SRS_UMOCKTYPES_CHARPTR_01_031: [ The newly allocated string shall be returned in the destination argument. ]*/
         *destination = (char*)malloc(source_length + 1);
         if (*destination == NULL)
         {
-            /* Codes_SRS_UMOCKVALUE_CHARPTR_01_037: [ If allocating the memory for the new string fails, umocktypes_copy_const_charptr shall fail and return a non-zero value. ]*/
+            /* Codes_SRS_UMOCKTYPES_CHARPTR_01_037: [ If allocating the memory for the new string fails, umocktypes_copy_const_charptr shall fail and return a non-zero value. ]*/
             result = __LINE__;
         }
         else
         {
-            /* Codes_SRS_UMOCKVALUE_CHARPTR_01_030: [ umocktypes_copy_const_charptr shall copy the string pointed to by source to the newly allocated memory. ]*/
+            /* Codes_SRS_UMOCKTYPES_CHARPTR_01_030: [ umocktypes_copy_const_charptr shall copy the string pointed to by source to the newly allocated memory. ]*/
             (void)memcpy(*destination, *source, source_length + 1);
-            /* Codes_SRS_UMOCKVALUE_CHARPTR_01_032: [ On success umocktypes_copy_const_charptr shall return 0. ]*/
+            /* Codes_SRS_UMOCKTYPES_CHARPTR_01_032: [ On success umocktypes_copy_const_charptr shall return 0. ]*/
             result = 0;
         }
     }
@@ -194,10 +194,10 @@ int umocktypes_copy_const_charptr(char** destination, const char** source)
 
 void umocktypes_free_const_charptr(char** value)
 {
-    /* Codes_SRS_UMOCKVALUE_CHARPTR_01_035: [ If value is NULL, umocktypes_free_const_charptr shall do nothing. ] */
+    /* Codes_SRS_UMOCKTYPES_CHARPTR_01_035: [ If value is NULL, umocktypes_free_const_charptr shall do nothing. ] */
     if (value != NULL)
     {
-        /* Codes_SRS_UMOCKVALUE_CHARPTR_01_034: [ umocktypes_free_const_charptr shall free the string pointed to by value. ]*/
+        /* Codes_SRS_UMOCKTYPES_CHARPTR_01_034: [ umocktypes_free_const_charptr shall free the string pointed to by value. ]*/
         free(*value);
     }
 }
