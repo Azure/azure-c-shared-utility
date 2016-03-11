@@ -14,7 +14,7 @@
 
 #include "umock_c.h"
 #include "test_dependency.h"
-#include "umockvalue_charptr.h"
+#include "umocktypes_charptr.h"
 
 BEGIN_TEST_SUITE(umock_c_unittests)
 

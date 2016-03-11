@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include "testrunnerswitcher.h"
-#include "umockvalue_charptr.h"
+#include "umocktypes_charptr.h"
 
 /* TODO: test malloc failures */
 /* TODO: serialize tests */

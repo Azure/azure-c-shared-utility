@@ -17,7 +17,7 @@ extern "C" {
 #endif
 
 #include "macro_utils.h"
-#include "umockvalue.h"
+#include "umocktypes.h"
 #include "umockcall.h"
 
 #ifdef ENABLE_MOCKS

@@ -9,8 +9,8 @@
 
 #include "umock_c.h"
 #include "umockcall.h"
-#include "umockvalue.h"
-#include "umockvalue_stdint.h"
+#include "umocktypes.h"
+#include "umocktypes_stdint.h"
 
 static size_t expected_call_count;
 static UMOCKCALL_HANDLE* expected_calls;

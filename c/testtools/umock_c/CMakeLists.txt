@@ -8,16 +8,16 @@ set(umock_c_c_files
 ./src/umock_c.c
 ./src/umockvalue.c
 ./src/umockcall.c
-./src/umockvalue_charptr.c
-./src/umockvalue_stdint.c
+./src/umocktypes_charptr.c
+./src/umocktypes_stdint.c
 )
 
 set(umock_c_h_files
 ./inc/umock_c.h
 ./inc/umock_c_internal.h
-./inc/umockvalue.h
-./inc/umockvalue_charptr.h
-./inc/umockvalue_stdint.h
+./inc/umocktypes.h
+./inc/umocktypes_charptr.h
+./inc/umocktypes_stdint.h
 ./inc/umockcall.h
 )
 
