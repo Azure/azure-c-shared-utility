@@ -15,10 +15,10 @@ set(umock_c_c_files
 set(umock_c_h_files
 ./inc/umock_c.h
 ./inc/umock_c_internal.h
+./inc/umockcall.h
 ./inc/umocktypes.h
 ./inc/umocktypes_charptr.h
 ./inc/umocktypes_stdint.h
-./inc/umockcall.h
 )
 
 IF(WIN32)

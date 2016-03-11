@@ -13,10 +13,10 @@
 typedef struct UMOCK_VALUE_TYPE_HANDLERS_TAG
 {
     char* type;
-    UMOCKVALUE_STRINGIFY_FUNC stringify;
-    UMOCKVALUE_COPY_FUNC value_copy;
-    UMOCKVALUE_FREE_FUNC value_free;
-    UMOCKVALUE_ARE_EQUAL_FUNC are_equal;
+    UMOCKTYPE_STRINGIFY_FUNC stringify;
+    UMOCKTYPE_COPY_FUNC value_copy;
+    UMOCKTYPE_FREE_FUNC value_free;
+    UMOCKTYPE_ARE_EQUAL_FUNC are_equal;
 } UMOCK_VALUE_TYPE_HANDLERS;
 
 static UMOCK_VALUE_TYPE_HANDLERS* type_handlers = NULL;
@@ -65,7 +65,7 @@ void umocktypes_deinit(void)
     type_handlers = NULL;
 }
 
-int umocktypes_register_type(const char* type, UMOCKVALUE_STRINGIFY_FUNC stringify, UMOCKVALUE_ARE_EQUAL_FUNC are_equal, UMOCKVALUE_COPY_FUNC value_copy, UMOCKVALUE_FREE_FUNC value_free)
+int umocktypes_register_type(const char* type, UMOCKTYPE_STRINGIFY_FUNC stringify, UMOCKTYPE_ARE_EQUAL_FUNC are_equal, UMOCKTYPE_COPY_FUNC value_copy, UMOCKTYPE_FREE_FUNC value_free)
 {
     int result;
 

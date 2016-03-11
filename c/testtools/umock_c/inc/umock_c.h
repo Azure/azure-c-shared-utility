@@ -50,7 +50,7 @@ extern "C" {
     extern char* stringify_func(const value_type* value); \
     extern int are_equal_func(const value_type* left, const value_type* right); \
     extern int copy_func(value_type* destination, const value_type* source); \
-    umocktypes_register_type(TOSTRING(value_type), (UMOCKVALUE_STRINGIFY_FUNC)stringify_func, (UMOCKVALUE_ARE_EQUAL_FUNC)are_equal_func, (UMOCKVALUE_COPY_FUNC)copy_func, (UMOCKVALUE_FREE_FUNC)free_func); \
+    umocktypes_register_type(TOSTRING(value_type), (UMOCKTYPE_STRINGIFY_FUNC)stringify_func, (UMOCKTYPE_ARE_EQUAL_FUNC)are_equal_func, (UMOCKTYPE_COPY_FUNC)copy_func, (UMOCKTYPE_FREE_FUNC)free_func); \
 }
 
     extern int umock_c_init(ON_UMOCK_C_ERROR on_umock_c_error);

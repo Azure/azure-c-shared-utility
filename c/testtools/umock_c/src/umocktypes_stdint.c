@@ -14,7 +14,7 @@ int umocktypes_stdint_register_types(void)
 {
     int result;
 
-    if (umocktypes_register_type("int", (UMOCKVALUE_STRINGIFY_FUNC)umocktypes_stringify_int, (UMOCKVALUE_ARE_EQUAL_FUNC)umocktypes_are_equal_int, (UMOCKVALUE_COPY_FUNC)umocktypes_copy_int, (UMOCKVALUE_FREE_FUNC)umocktypes_free_int) != 0)
+    if (umocktypes_register_type("int", (UMOCKTYPE_STRINGIFY_FUNC)umocktypes_stringify_int, (UMOCKTYPE_ARE_EQUAL_FUNC)umocktypes_are_equal_int, (UMOCKTYPE_COPY_FUNC)umocktypes_copy_int, (UMOCKTYPE_FREE_FUNC)umocktypes_free_int) != 0)
     {
         result = __LINE__;
     }

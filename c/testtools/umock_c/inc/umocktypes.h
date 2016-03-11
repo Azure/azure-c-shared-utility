@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#ifndef UMOCKVALUE_H
-#define UMOCKVALUE_H
+#ifndef UMOCKTYPES_H
+#define UMOCKTYPES_H
 
 #ifdef __cplusplus
 #include <cstddef>
@@ -11,14 +11,14 @@ extern "C" {
 #include <stddef.h>
 #endif
 
-    typedef char*(*UMOCKVALUE_STRINGIFY_FUNC)(const void* value);
-    typedef int(*UMOCKVALUE_COPY_FUNC)(void* destination, const void* source);
-    typedef void(*UMOCKVALUE_FREE_FUNC)(void* value);
-    typedef int(*UMOCKVALUE_ARE_EQUAL_FUNC)(const void* left, const void* right);
+    typedef char*(*UMOCKTYPE_STRINGIFY_FUNC)(const void* value);
+    typedef int(*UMOCKTYPE_COPY_FUNC)(void* destination, const void* source);
+    typedef void(*UMOCKTYPE_FREE_FUNC)(void* value);
+    typedef int(*UMOCKTYPE_ARE_EQUAL_FUNC)(const void* left, const void* right);
 
     extern int umocktypes_init(void);
     extern void umocktypes_deinit(void);
-    extern int umocktypes_register_type(const char* type, UMOCKVALUE_STRINGIFY_FUNC stringify, UMOCKVALUE_ARE_EQUAL_FUNC are_equal, UMOCKVALUE_COPY_FUNC value_copy, UMOCKVALUE_FREE_FUNC value_free);
+    extern int umocktypes_register_type(const char* type, UMOCKTYPE_STRINGIFY_FUNC stringify, UMOCKTYPE_ARE_EQUAL_FUNC are_equal, UMOCKTYPE_COPY_FUNC value_copy, UMOCKTYPE_FREE_FUNC value_free);
 
     extern char* umocktypes_stringify(const char* type, const void* value);
     extern int umocktypes_are_equal(const char* type, const void* left, const void* right);
@@ -29,4 +29,4 @@ extern "C" {
 }
 #endif
 
-#endif /* UMOCKVALUE_H */
+#endif /* UMOCKTYPES_H */
