@@ -541,7 +541,7 @@ The fail return value can be recorded for more advanced features that would requ
 
 XX**SRS_UMOCK_C_01_087: [**The CopyOutArgumentBuffer call modifier shall copy the memory pointed to by bytes and being length bytes so that it is later injected as an out argument when the code under test calls the mock function.**]**
 
-**SRS_UMOCK_C_01_088: [**The memory shall be copied. If several calls to CopyOutArgumentBuffer are made, only the last buffer shall be kept.**]**
+XX**SRS_UMOCK_C_01_088: [**The memory shall be copied. If several calls to CopyOutArgumentBuffer are made, only the last buffer shall be kept.**]**
 
 **SRS_UMOCK_C_01_089: [**The buffers for the previous calls shall be freed.**]**
 

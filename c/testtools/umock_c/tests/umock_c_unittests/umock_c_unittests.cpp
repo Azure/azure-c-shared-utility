@@ -758,4 +758,21 @@ TEST_FUNCTION(CopyOutArgumentBuffer_copies_the_memory_for_later_use)
     ASSERT_ARE_EQUAL(int, 0x42, actual_int);
 }
 
+/* Tests_SRS_UMOCK_C_01_089: [The buffers for the previous calls shall be freed.]*/
+TEST_FUNCTION(CopyOutArgumentBuffer_frees_allocated_buffers_for_previous_CopyOutArgumentBuffer)
+{
+    // arrange
+    int injected_int = 0x42;
+    EXPECTED_CALL(test_dependency_1_out_arg(IGNORED_PTR_ARG))
+        .CopyOutArgumentBuffer(1, &injected_int, sizeof(injected_int))
+        .CopyOutArgumentBuffer(1, &injected_int, sizeof(injected_int));
+    int actual_int = 0;
+
+    // act
+    (void)test_dependency_1_out_arg(&actual_int);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0x42, actual_int);
+}
+
 END_TEST_SUITE(umock_c_unittests)

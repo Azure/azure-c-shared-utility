@@ -255,6 +255,7 @@ typedef struct ARG_BUFFER_TAG
         } \
         else \
         { \
+            free(mock_call_data->out_arg_buffers[index - 1].bytes); \
             mock_call_data->out_arg_buffers[index - 1].bytes = malloc(length); \
             if (mock_call_data->out_arg_buffers[index - 1].bytes == NULL) \
             { \
