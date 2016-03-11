@@ -14,7 +14,9 @@ extern "C" {
 
     typedef enum UMOCK_C_ERROR_CODE_TAG
     {
-        UMOCK_C_ARG_INDEX_OUT_OF_RANGE
+        UMOCK_C_ARG_INDEX_OUT_OF_RANGE,
+        UMOCK_C_MALLOC_ERROR,
+        UMOCK_C_ERROR
     } UMOCK_C_ERROR_CODE;
 
     typedef void(*ON_UMOCK_C_ERROR)(UMOCK_C_ERROR_CODE error_code);

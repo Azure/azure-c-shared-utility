@@ -261,6 +261,7 @@ typedef struct ARG_BUFFER_TAG
             C2(mock_call_, name)* mock_call_data = (C2(mock_call_, name)*)umockcall_get_call_data(umock_c_get_last_expected_call()); \
             if (mock_call_data == NULL) \
             { \
+                umock_c_indicate_error(UMOCK_C_ERROR); \
             } \
             else \
             { \
@@ -268,6 +269,7 @@ typedef struct ARG_BUFFER_TAG
                 mock_call_data->out_arg_buffers[index - 1].bytes = malloc(length); \
                 if (mock_call_data->out_arg_buffers[index - 1].bytes == NULL) \
                 { \
+                    umock_c_indicate_error(UMOCK_C_MALLOC_ERROR); \
                 } \
                 else \
                 { \
