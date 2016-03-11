@@ -8,6 +8,7 @@
 
 MOCKABLE_FUNCTION(int, test_generate_signature, int, a, double, b, char*, s);
 MOCKABLE_FUNCTION(void, test_generate_signature_void_return, int, a);
+MOCKABLE_FUNCTION(void, test_generate_signature_no_args);
 
 int test_generate_signature(int a, double b, char* s)
 {
@@ -15,6 +16,10 @@ int test_generate_signature(int a, double b, char* s)
 }
 
 void test_generate_signature_void_return(int a)
+{
+}
+
+void test_generate_signature_no_args(void)
 {
 }
 
@@ -57,6 +62,19 @@ TEST_FUNCTION(when_ENABLE_MOCKS_is_not_on_MOCKABLE_FUNCTION_generates_a_standard
 
     // act
     test_generate_signature_void_return(1);
+
+    // assert
+    // no explicit assert
+}
+
+/* Tests_SRS_UMOCK_C_01_002: [The macro shall generate a function signature in case ENABLE_MOCKS is not defined.] */
+/* Tests_SRS_UMOCK_C_01_005: [**If ENABLE_MOCKS is not defined, MOCKABLE_FUNCTION shall only generate a declaration for the function.] */
+TEST_FUNCTION(when_ENABLE_MOCKS_is_not_on_MOCKABLE_FUNCTION_generates_a_standard_function_declaration_with_no_args_and_void_return)
+{
+    // arrange
+
+    // act
+    test_generate_signature_no_args();
 
     // assert
     // no explicit assert

@@ -4,6 +4,12 @@
 #include <stdint.h>
 #include "testrunnerswitcher.h"
 
+/* TODO:
+- Switch to .c
+- Add tests for failure cases for argument indexes
+- Make it clear that ENABLE_MOCKS has tobe defined after including the unit under test header
+*/
+
 #define ENABLE_MOCKS
 
 #include "umock_c.h"
