@@ -8,7 +8,6 @@
 /* TODO:
 - Switch to .c
 - Make it clear that ENABLE_MOCKS has to be defined after including the unit under test header
-- Generate the arg functions only if args are there
 */
 
 #define ENABLE_MOCKS
@@ -24,6 +23,8 @@ typedef struct test_on_umock_c_error_CALL_TAG
 
 static test_on_umock_c_error_CALL* test_on_umock_c_error_calls;
 static size_t test_on_umock_c_error_call_count;
+
+DECLARE_UMOCK_POINTER_TYPE_FOR_TYPE(int);
 
 BEGIN_TEST_SUITE(umock_c_unittests)
 
@@ -41,6 +42,7 @@ static void test_on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 TEST_SUITE_INITIALIZE(suite_init)
 {
     ASSERT_ARE_EQUAL(int, 0, umock_c_init(test_on_umock_c_error));
+    REGISTER_UMOCK_VALUE_TYPE(int*, stringify_func_intptr, are_equal_func_intptr, copy_func_intptr, free_func_intptr);
 }
 
 TEST_SUITE_CLEANUP(suite_cleanup)
@@ -893,6 +895,25 @@ TEST_FUNCTION(CopyOutArgumentBuffer_with_0_length_triggers_the_error_callback)
     // assert
     ASSERT_ARE_EQUAL(int, 1, test_on_umock_c_error_call_count);
     ASSERT_ARE_EQUAL(int, (int)UMOCK_C_INVALID_ARGUMENT_BUFFER, test_on_umock_c_error_calls[0].error_code);
+}
+
+/* ValidateArgumentBuffer */
+
+/* Tests_SRS_UMOCK_C_01_095: [The ValidateArgumentBuffer call modifier shall copy the memory pointed to by bytes and being length bytes so that it is later compared against a pointer type argument when the code under test calls the mock function.] */
+TEST_FUNCTION(ValidateArgumentBuffer_checks_the_argument_buffer)
+{
+    // arrange
+    int expected_int = 0x42;
+    int actual_int = 0x42;
+    STRICT_EXPECTED_CALL(test_dependency_1_out_arg(IGNORED_PTR_ARG))
+        .ValidateArgumentBuffer(1, &expected_int, sizeof(expected_int));
+
+    // act
+    (int)test_dependency_1_out_arg(&actual_int);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_expected_calls());
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
 }
 
 END_TEST_SUITE(umock_c_unittests)
