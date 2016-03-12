@@ -49,21 +49,36 @@ extern "C" {
 #define EXPECTED_CALL(call) \
 	C2(umock_c_expected_,call)
 
-#define DECLARE_UMOCK_POINTER_TYPE_FOR_TYPE(value_type) \
-    char* C3(stringify_func_,value_type,ptr)(const value_type** value) \
+#define DECLARE_UMOCK_POINTER_TYPE_FOR_TYPE(value_type, alias) \
+    char* C3(stringify_func_,alias,ptr)(const value_type** value) \
     { \
-        return NULL; \
+        char temp_buffer[32]; \
+        char* result; \
+        size_t length = sprintf(temp_buffer, "%p", (void*)*value); \
+        if (length < 0) \
+        { \
+            result = NULL; \
+        } \
+        else \
+        { \
+            result = (char*)malloc(length + 1); \
+            if (result != NULL) \
+            { \
+                (void)memcpy(result, temp_buffer, length + 1); \
+            } \
+        } \
+        return result; \
     } \
-    int C3(are_equal_func_,value_type,ptr)(const value_type** left, const value_type** right) \
+    int C3(are_equal_func_,alias,ptr)(const value_type** left, const value_type** right) \
     { \
         return *left == *right; \
     } \
-    int C3(copy_func_,value_type,ptr)(value_type** destination, const value_type** source) \
+    int C3(copy_func_,alias,ptr)(value_type** destination, const value_type** source) \
     { \
-        *destination = (int*)*source; \
+        *destination = (value_type*)*source; \
         return 0; \
     } \
-    void C3(free_func_,value_type,ptr)(value_type** value) \
+    void C3(free_func_,alias,ptr)(value_type** value) \
     { \
     } \
 

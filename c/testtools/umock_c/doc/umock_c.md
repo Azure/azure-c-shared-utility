@@ -584,7 +584,7 @@ CopyOutArgument shall only be available for mock functions that have arguments.
 
 The ValidateArgumentBuffer call modifier shall copy the memory pointed to by bytes and being length bytes so that it is later compared against a pointer type argument when the code under test calls the mock function.
 
-If the content of the code under test buffer and the buffer supplied to ValidateArgumentBuffer do not match then this should be treated as any other mismatch in argument comparison for that argument. ValidateArgumentBuffer shall implicitly perform an IgnoreArgument on the indexth argument.
+If the content of the code under test buffer and the buffer supplied to ValidateArgumentBuffer does not match then this should be treated as a mismatch in argument comparison for that argument. ValidateArgumentBuffer shall implicitly perform an IgnoreArgument on the indexth argument.
 
 ValidateArgumentBuffer shall only be applicable to pointer types.
 

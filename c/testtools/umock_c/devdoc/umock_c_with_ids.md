@@ -590,9 +590,9 @@ X**SRS_UMOCK_C_01_128: [** CopyOutArgument shall only be available for mock func
 
 ###ValidateArgumentBuffer(size_t index, const void* bytes, size_t length)
 
-**SRS_UMOCK_C_01_095: [**The ValidateArgumentBuffer call modifier shall copy the memory pointed to by bytes and being length bytes so that it is later compared against a pointer type argument when the code under test calls the mock function.**]**
+XX**SRS_UMOCK_C_01_095: [**The ValidateArgumentBuffer call modifier shall copy the memory pointed to by bytes and being length bytes so that it is later compared against a pointer type argument when the code under test calls the mock function.**]**
 
-**SRS_UMOCK_C_01_096: [**If the content of the code under test buffer and the buffer supplied to ValidateArgumentBuffer do not match then this should be treated as any other mismatch in argument comparison for that argument.**]**
+XX**SRS_UMOCK_C_01_096: [**If the content of the code under test buffer and the buffer supplied to ValidateArgumentBuffer does not match then this should be treated as a mismatch in argument comparison for that argument.**]**
 **SRS_UMOCK_C_01_097: [**ValidateArgumentBuffer shall implicitly perform an IgnoreArgument on the indexth argument.**]**
 
 **SRS_UMOCK_C_01_098: [**ValidateArgumentBuffer shall only be applicable to pointer types.**]**

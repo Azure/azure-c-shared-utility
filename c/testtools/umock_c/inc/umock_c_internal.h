@@ -5,8 +5,8 @@
 #define UMOCK_C_INTERNAL_H
 
 /* TODO: 
-- Make all argument functions appear only if the count of args is at least 1
 - Switch to a model where the args are held as an array of generic types in umockcall
+- Double check all macros that they return the errors by on_umockc_error
 */
 
 #ifdef __cplusplus
@@ -34,6 +34,44 @@ extern void umock_c_indicate_error(UMOCK_C_ERROR_CODE error_code);
 
 #define EXPAND(A) A
 
+static char* stringify_buffer(const void* bytes, size_t length)
+{
+    size_t string_length = 2 + (4 * length);
+    char* result;
+    if (length > 1)
+    {
+        string_length += length - 1;
+    }
+
+    result = (char*)malloc(string_length + 1);
+    if (result != NULL)
+    {
+        size_t i;
+
+        result[0] = '[';
+        for (i = 0; i < length; i++)
+        {
+            if (sprintf(result + 1 + (i * 5), "0x%02X ", ((const unsigned char*)bytes)[i]) < 0)
+            {
+                break;
+            }
+        }
+
+        if (i < length)
+        {
+            free(result);
+            result = NULL;
+        }
+        else
+        {
+            result[string_length - 1] = ']';
+            result[string_length] = '\0';
+        }
+    }
+
+    return result;
+}
+
 typedef struct ARG_BUFFER_TAG
 {
     void* bytes;
@@ -49,9 +87,6 @@ typedef struct ARG_BUFFER_TAG
 
 #define COPY_ARG_TO_MOCK_STRUCT(arg_type, arg_name) umocktypes_copy(#arg_type, &mock_call_data->arg_name, &arg_name);
 #define DECLARE_MOCK_CALL_STRUCT_STACK(arg_type, arg_name) arg_type arg_name;
-#define DECLARE_IGNORE_FLAG_FOR_ARG(arg_type, arg_name) unsigned int C2(is_ignored_, arg_name);
-#define DECLARE_OUT_ARG_BUFFER_FOR_ARG(arg_type, arg_name) ARG_BUFFER C2(out_arg_buffer_, arg_name);
-#define DECLARE_VALIDATE_ARG_BUFFER_FOR_ARG(arg_type, arg_name) ARG_BUFFER C2(validate_arg_buffer_, arg_name);
 #define MARK_ARG_AS_NOT_IGNORED(arg_type, arg_name) mock_call_data->C2(is_ignored_, arg_name) = 0;
 #define MARK_ARG_AS_IGNORED(arg_type, arg_name) mock_call_data->C2(is_ignored_, arg_name) = 1;
 #define CLEAR_OUT_ARG_BUFFERS(count, arg_type, arg_name) mock_call_data->out_arg_buffers[COUNT_OF(mock_call_data->out_arg_buffers) - DIV2(count)].bytes = NULL;
@@ -60,6 +95,7 @@ typedef struct ARG_BUFFER_TAG
 #define FREE_VALIDATE_ARG_BUFFERS(count, arg_type, arg_name) free(typed_mock_call_data->validate_arg_buffers[COUNT_OF(typed_mock_call_data->validate_arg_buffers) - DIV2(count)].bytes);
 #define ARG_IN_SIGNATURE(count, arg_type, arg_name) arg_type arg_name IFCOMMA(count)
 #define ARG_ASSIGN_IN_ARRAY(arg_type, arg_name) arg_name_local
+#define DECLARE_IGNORE_FLAG_FOR_ARG(arg_type, arg_name) unsigned int C2(is_ignored_,arg_name) : 1;
 #define COPY_IGNORE_ARG_BY_NAME_TO_MODIFIER(name, arg_type, arg_name) C2(mock_call_modifier->IgnoreArgument_,arg_name) = C4(ignore_argument_func_,name,_,arg_name);
 #define COPY_VALIDATE_ARG_BY_NAME_TO_MODIFIER(name, arg_type, arg_name) C2(mock_call_modifier->ValidateArgument_,arg_name) = C4(validate_argument_func_,name,_,arg_name);
 #define COPY_OUT_ARG_VALUE_FROM_MATCHED_CALL(count, arg_type, arg_name) \
@@ -68,7 +104,12 @@ typedef struct ARG_BUFFER_TAG
         (void)memcpy(*((void**)(&arg_name)), matched_call_data->out_arg_buffers[COUNT_OF(matched_call_data->out_arg_buffers) - DIV2(count)].bytes, matched_call_data->out_arg_buffers[COUNT_OF(matched_call_data->out_arg_buffers) - DIV2(count)].length); \
     } \
 
-#define STRINGIFY_ARGS_DECLARE_RESULT_VAR(arg_type, arg_name) char* C2(arg_name,_stringified) = umocktypes_stringify(#arg_type, &typed_mock_call_data->arg_name);
+#define STRINGIFY_ARGS_DECLARE_RESULT_VAR(count, arg_type, arg_name) \
+    char* C2(arg_name,_stringified) \
+    = (typed_mock_call_data->validate_arg_buffers[COUNT_OF(typed_mock_call_data->out_arg_buffers) - DIV2(count)].bytes != NULL) ? \
+        stringify_buffer(typed_mock_call_data->validate_arg_buffers[COUNT_OF(typed_mock_call_data->validate_arg_buffers) - DIV2(count)].bytes, typed_mock_call_data->validate_arg_buffers[COUNT_OF(typed_mock_call_data->validate_arg_buffers) - DIV2(count)].length) : \
+        umocktypes_stringify(TOSTRING(arg_type), &typed_mock_call_data->arg_name);
+
 #define STRINGIFY_ARGS_CHECK_ARG_STRINGIFY_SUCCESS(arg_type, arg_name) if (C2(arg_name,_stringified) == NULL) is_error = 1;
 #define STRINGIFY_ARGS_DECLARE_ARG_STRING_LENGTH(arg_type, arg_name) size_t C2(arg_name,_stringified_length) = strlen(C2(arg_name,_stringified));
 #define STRINGIFY_ARGS_COUNT_LENGTH(arg_type, arg_name) args_string_length += C2(arg_name,_stringified_length);
@@ -83,6 +124,7 @@ typedef struct ARG_BUFFER_TAG
     current_pos += C2(arg_name, _stringified_length); \
     arg_index++;
 
+/* Codes_SRS_UMOCK_C_01_096: [If the content of the code under test buffer and the buffer supplied to ValidateArgumentBuffer does not match then this should be treated as a mismatch in argument comparison for that argument.]*/
 #define ARE_EQUAL_FOR_ARG(count, arg_type, arg_name) \
     if (result && \
         ((typed_left->validate_arg_buffers[COUNT_OF(typed_left->validate_arg_buffers) - DIV2(count)].bytes != NULL) && (memcmp(*((void**)&typed_right->arg_name), typed_left->validate_arg_buffers[COUNT_OF(typed_left->validate_arg_buffers) - DIV2(count)].bytes, typed_left->validate_arg_buffers[COUNT_OF(typed_left->validate_arg_buffers) - DIV2(count)].length) != 0)) \
@@ -315,6 +357,7 @@ typedef struct ARG_BUFFER_TAG
     } \
 
 /* Codes_SRS_UMOCK_C_01_095: [The ValidateArgumentBuffer call modifier shall copy the memory pointed to by bytes and being length bytes so that it is later compared against a pointer type argument when the code under test calls the mock function.] */
+/* Codes_SRS_UMOCK_C_01_097: [ValidateArgumentBuffer shall implicitly perform an IgnoreArgument on the indexth argument.]*/
 #define IMPLEMENT_VALIDATE_ARGUMENT_BUFFER_FUNCTION(return_type, name, ...) \
     static C2(mock_call_modifier_,name) C2(validate_argument_buffer_func_,name)(size_t index, const void* bytes, size_t length) \
     { \
@@ -478,7 +521,7 @@ typedef struct ARG_BUFFER_TAG
         C2(mock_call_,name)* typed_mock_call_data = (C2(mock_call_,name)*)mock_call_data; \
         int is_error = 0; \
         size_t args_string_length = 0; \
-        IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2(STRINGIFY_ARGS_DECLARE_RESULT_VAR, __VA_ARGS__), ) \
+        IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_COUNTED(STRINGIFY_ARGS_DECLARE_RESULT_VAR, __VA_ARGS__), ) \
         IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2(STRINGIFY_ARGS_CHECK_ARG_STRINGIFY_SUCCESS, __VA_ARGS__), ) \
         if (is_error != 0) \
         { \
