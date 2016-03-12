@@ -897,6 +897,27 @@ TEST_FUNCTION(CopyOutArgumentBuffer_with_0_length_triggers_the_error_callback)
     ASSERT_ARE_EQUAL(int, (int)UMOCK_C_INVALID_ARGUMENT_BUFFER, test_on_umock_c_error_calls[0].error_code);
 }
 
+/* Tests_SRS_UMOCK_C_01_087: [The CopyOutArgumentBuffer call modifier shall copy the memory pointed to by bytes and being length bytes so that it is later injected as an out argument when the code under test calls the mock function.] */
+/* Tests_SRS_UMOCK_C_01_116: [ The argument targetted by CopyOutArgument shall also be marked as ignored. ] */
+TEST_FUNCTION(CopyOutArgumentBuffer_when_an_error_occurs_preserves_the_previous_state)
+{
+    // arrange
+    int injected_int = 0x42;
+    int injected_int_2 = 0x43;
+    EXPECTED_CALL(test_dependency_2_out_args(IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+        .CopyOutArgumentBuffer(2, &injected_int, sizeof(injected_int))
+        .CopyOutArgumentBuffer(0, &injected_int_2, sizeof(injected_int_2));
+    int actual_int_1 = 0;
+    int actual_int_2 = 0;
+
+    // act
+    (void)test_dependency_2_out_args(&actual_int_1, &actual_int_2);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, actual_int_1);
+    ASSERT_ARE_EQUAL(int, injected_int, actual_int_2);
+}
+
 /* ValidateArgumentBuffer */
 
 /* Tests_SRS_UMOCK_C_01_095: [The ValidateArgumentBuffer call modifier shall copy the memory pointed to by bytes and being length bytes so that it is later compared against a pointer type argument when the code under test calls the mock function.] */
