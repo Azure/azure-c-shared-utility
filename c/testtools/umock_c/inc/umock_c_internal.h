@@ -164,6 +164,7 @@ typedef struct ARG_BUFFER_TAG
         return mock_call_modifier; \
     } \
 
+/* Codes_SRS_UMOCK_C_01_078: [The IgnoreArgument_{arg_name} call modifier shall record that the argument identified by arg_name will be ignored for that specific call.] */
 #define IMPLEMENT_IGNORE_ARGUMENT_BY_NAME_FUNCTION(name, arg_type, arg_name) \
     static C2(mock_call_modifier_,name) C4(ignore_argument_func_,name,_,arg_name)(void) \
     { \
@@ -176,6 +177,7 @@ typedef struct ARG_BUFFER_TAG
         return mock_call_modifier; \
     } \
 
+/* Codes_SRS_UMOCK_C_01_079: [The ValidateArgument_{arg_name} call modifier shall record that the argument identified by arg_name will be validated for that specific call.]*/
 #define IMPLEMENT_VALIDATE_ARGUMENT_BY_NAME_FUNCTION(name, arg_type, arg_name) \
     static C2(mock_call_modifier_,name) C4(validate_argument_func_,name,_,arg_name)(void) \
     { \
@@ -387,11 +389,9 @@ typedef struct ARG_BUFFER_TAG
 /* Codes_SRS_UMOCK_C_01_017: [No arguments shall be saved by default, unless other modifiers state it.]*/
 /* Codes_SRS_UMOCK_C_01_074: [When an expected call is recorded a call modifier interface in the form of a structure containing function pointers shall be returned to the caller.] */
 /* Codes_SRS_UMOCK_C_01_075: [The last modifier in a chain overrides previous modifiers if any collision occurs.]*/
-/* Codes_SRS_UMOCK_C_01_078: [The IgnoreArgument_{arg_name} call modifier shall record that the argument identified by arg_name will be ignored for that specific call.] */
 /* Codes_SRS_UMOCK_C_01_127: [ IgnoreAllArguments shall only be available for mock functions that have arguments. ]*/
 /* Codes_SRS_UMOCK_C_01_126: [ ValidateAllArguments shall only be available for mock functions that have arguments. ]*/
 /* Codes_SRS_UMOCK_C_01_125: [ IgnoreArgument_{arg_name} shall only be available for mock functions that have arguments. ]*/
-/* Codes_SRS_UMOCK_C_01_079: [The ValidateArgument_{arg_name} call modifier shall record that the argument identified by arg_name will be validated for that specific call.]*/
 /* Codes_SRS_UMOCK_C_01_124: [ ValidateArgument_{arg_name} shall only be available for mock functions that have arguments. **]*/
 /* Codes_SRS_UMOCK_C_01_123: [ IgnoreArgument shall only be available for mock functions that have arguments. ]*/
 /* Codes_SRS_UMOCK_C_01_122: [ ValidateArgument shall only be available for mock functions that have arguments. ]*/
