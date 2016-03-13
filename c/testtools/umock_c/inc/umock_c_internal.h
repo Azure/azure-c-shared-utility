@@ -445,10 +445,23 @@ typedef struct ARG_BUFFER_TAG
 
 /* Codes_SRS_UMOCK_C_01_108: [The REGISTER_GLOBAL_MOCK_RETURN shall register a return value to always be returned by a mock function.]*/
 /* Codes_SRS_UMOCK_C_01_109: [If there are multiple invocations of REGISTER_GLOBAL_MOCK_RETURN, the last one shall take effect over the previous ones.]*/
+/* Codes_SRS_UMOCK_C_01_141: [ If any error occurs during REGISTER_GLOBAL_MOCK_RETURN, umock_c shall raise an error with the code UMOCK_C_ERROR. ]*/
 #define IMPLEMENT_REGISTER_GLOBAL_MOCK_RETURN(return_type, name, ...) \
     IF(IS_NOT_VOID(return_type), void C2(set_global_mock_return_, name)(return_type return_value) \
     { \
         if (umocktypes_copy(TOSTRING(return_type), &C2(mock_call_default_result_,name), &return_value) != 0) \
+        { \
+            umock_c_indicate_error(UMOCK_C_ERROR); \
+        } \
+    }, ) \
+
+/* Codes_SRS_UMOCK_C_01_111: [The REGISTER_GLOBAL_MOCK_FAIL_RETURN shall register a fail return value to be returned by a mock function when marked as failed in the expected calls.]*/
+/* Codes_SRS_UMOCK_C_01_112: [If there are multiple invocations of REGISTER_GLOBAL_FAIL_MOCK_RETURN, the last one shall take effect over the previous ones.]*/
+/* Codes_SRS_UMOCK_C_01_142: [ If any error occurs during REGISTER_GLOBAL_MOCK_FAIL_RETURN, umock_c shall raise an error with the code UMOCK_C_ERROR. ]*/
+#define IMPLEMENT_REGISTER_GLOBAL_MOCK_FAIL_RETURN(return_type, name, ...) \
+    IF(IS_NOT_VOID(return_type), void C2(set_global_mock_fail_return_, name)(return_type return_value) \
+    { \
+        if (umocktypes_copy(TOSTRING(return_type), &C2(mock_call_fail_result_,name), &return_value) != 0) \
         { \
             umock_c_indicate_error(UMOCK_C_ERROR); \
         } \
@@ -619,6 +632,7 @@ typedef struct ARG_BUFFER_TAG
         free(mock_call_data); \
     } \
     IF(IS_NOT_VOID(return_type),static return_type C2(mock_call_default_result_,name);,) \
+    IF(IS_NOT_VOID(return_type),static return_type C2(mock_call_fail_result_,name);,) \
     IF(COUNT_ARG(__VA_ARGS__),IMPLEMENT_IGNORE_ALL_ARGUMENTS_FUNCTION(return_type, name, __VA_ARGS__),) \
     IF(COUNT_ARG(__VA_ARGS__),IMPLEMENT_VALIDATE_ALL_ARGUMENTS_FUNCTION(return_type, name, __VA_ARGS__),) \
     IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_KEEP_1(IMPLEMENT_IGNORE_ARGUMENT_BY_NAME_FUNCTION, name, __VA_ARGS__),) \
@@ -685,9 +699,7 @@ typedef struct ARG_BUFFER_TAG
     IMPLEMENT_EXPECTED_MOCK(return_type, name, __VA_ARGS__) \
     IMPLEMENT_REGISTER_GLOBAL_MOCK_HOOK(return_type, name, __VA_ARGS__) \
     IMPLEMENT_REGISTER_GLOBAL_MOCK_RETURN(return_type, name, __VA_ARGS__) \
-    IF(IS_NOT_VOID(return_type),void C2(set_global_mock_fail_return_,name)(return_type return_value) \
-    { \
-    },)
+    IMPLEMENT_REGISTER_GLOBAL_MOCK_FAIL_RETURN(return_type, name, __VA_ARGS__) \
 
 #ifdef __cplusplus
 	}

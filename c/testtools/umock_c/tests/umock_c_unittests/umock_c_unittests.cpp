@@ -1313,4 +1313,49 @@ TEST_FUNCTION(when_copy_fails_in_REGISTER_GLOBAL_MOCK_RETURN_then_on_error_is_tr
     ASSERT_ARE_EQUAL(int, (int)UMOCK_C_ERROR, test_on_umock_c_error_calls[0].error_code);
 }
 
+/* REGISTER_GLOBAL_MOCK_FAIL_RETURN */
+
+/* Tests_SRS_UMOCK_C_01_111: [The REGISTER_GLOBAL_MOCK_FAIL_RETURN shall register a fail return value to be returned by a mock function when marked as failed in the expected calls.]*/
+TEST_FUNCTION(REGISTER_GLOBAL_MOCK_FAIL_RETURN_is_possible_and_does_not_affect_the_return_value)
+{
+    // arrange
+    REGISTER_GLOBAL_MOCK_RETURN(test_dependency_global_mock_return_test, 0x42);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(test_dependency_global_mock_return_test, 0x45);
+
+    // act
+    int result = test_dependency_global_mock_return_test();
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0x42, result);
+}
+
+/* Tests_SRS_UMOCK_C_01_112: [If there are multiple invocations of REGISTER_GLOBAL_FAIL_MOCK_RETURN, the last one shall take effect over the previous ones.]*/
+TEST_FUNCTION(Multiple_REGISTER_GLOBAL_MOCK_FAIL_RETURN_calls_are_possible)
+{
+    // arrange
+    REGISTER_GLOBAL_MOCK_RETURN(test_dependency_global_mock_return_test, 0x42);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(test_dependency_global_mock_return_test, 0x45);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(test_dependency_global_mock_return_test, 0x46);
+
+    // act
+    int result = test_dependency_global_mock_return_test();
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0x42, result);
+}
+
+/* Tests_SRS_UMOCK_C_01_142: [ If any error occurs during REGISTER_GLOBAL_MOCK_FAIL_RETURN, umock_c shall raise an error with the code UMOCK_C_ERROR. ]*/
+TEST_FUNCTION(When_copy_fails_in_REGISTER_GLOBAL_MOCK_FAIL_RETURN_then_on_error_is_triggered)
+{
+    // arrange
+    REGISTER_GLOBAL_MOCK_RETURN(test_dependency_global_mock_return_test, 0x42);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(test_dependency_global_mock_return_test, 0x45);
+
+    // act
+    int result = test_dependency_global_mock_return_test();
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0x42, result);
+}
+
 END_TEST_SUITE(umock_c_unittests)
