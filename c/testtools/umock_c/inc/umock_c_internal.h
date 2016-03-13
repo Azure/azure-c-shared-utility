@@ -462,6 +462,7 @@ typedef struct ARG_BUFFER_TAG
 /* Codes_SRS_UMOCK_C_01_129: [ ValidateArgumentBuffer shall only be available for mock functions that have arguments. ]*/
 /* Codes_SRS_UMOCK_C_01_105: [The hook’s result shall be returned by the mock to the production code.]*/
 /* Codes_SRS_UMOCK_C_01_106: [The signature for the hook shall be assumed to have exactly the same arguments and return as the mocked function.]*/
+/* Codes_SRS_UMOCK_C_01_135: [ All parameters passed to the mock shall be passed down to the mock hook. ]*/
 #define MOCKABLE_FUNCTION_INTERNAL_WITH_MOCK(return_type, name, ...) \
     IF(IS_NOT_VOID(return_type),typedef return_type (*C2(mock_hook_func_type_, name))(IF(COUNT_ARG(__VA_ARGS__),FOR_EACH_2_COUNTED(ARG_IN_SIGNATURE, __VA_ARGS__),void));,) \
     IF(IS_NOT_VOID(return_type),static C2(mock_hook_func_type_,name) C2(mock_hook_,name) = NULL;,) \

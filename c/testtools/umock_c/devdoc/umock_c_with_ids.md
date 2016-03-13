@@ -630,7 +630,9 @@ XX**SRS_UMOCK_C_01_106: [**The signature for the hook shall be assumed to have e
 
 XX**SRS_UMOCK_C_01_107: [**If there are multiple invocations of REGISTER_GLOBAL_MOCK_RETURN_HOOK, the last one shall take effect over the previous ones.**]**
 
-**SRS_UMOCK_C_01_134: [** REGISTER_GLOBAL_MOCK_RETURN_HOOK called with a NULL hook unregisters a previously registered hook. **]** 
+XX**SRS_UMOCK_C_01_134: [** REGISTER_GLOBAL_MOCK_RETURN_HOOK called with a NULL hook unregisters a previously registered hook. **]**
+
+XX**SRS_UMOCK_C_01_135: [** All parameters passed to the mock shall be passed down to the mock hook. **]** 
 
 ###REGISTER_GLOBAL_MOCK_RETURN
 

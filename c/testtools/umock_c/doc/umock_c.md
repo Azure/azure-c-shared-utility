@@ -621,6 +621,8 @@ If there are multiple invocations of REGISTER_GLOBAL_MOCK_RETURN_HOOK, the last 
 
 REGISTER_GLOBAL_MOCK_RETURN_HOOK called with a NULL hook unregisters a previously registered hook.
 
+All parameters passed to the mock shall be passed down to the mock hook.
+
 ###REGISTER_GLOBAL_MOCK_RETURN
 
 ```c

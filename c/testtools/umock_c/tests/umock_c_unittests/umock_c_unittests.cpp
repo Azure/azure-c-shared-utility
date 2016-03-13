@@ -49,6 +49,15 @@ static int my_hook_test_dependency_no_args_2(void)
     return 0x21;
 }
 
+static int arg_a;
+static int arg_b;
+static int my_hook_test_dependency_2_args(int a, int b)
+{
+    arg_a = a;
+    arg_b = b;
+    return 0;
+}
+
 BEGIN_TEST_SUITE(umock_c_unittests)
 
 TEST_SUITE_INITIALIZE(suite_init)
@@ -1203,6 +1212,20 @@ TEST_FUNCTION(REGISTER_GLOBAL_MOCK_RETURN_HOOK_with_NULL_unregisters_a_previousl
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
+}
+
+/* Tests_SRS_UMOCK_C_01_135: [ All parameters passed to the mock shall be passed down to the mock hook. ]*/
+TEST_FUNCTION(REGISTER_GLOBAL_MOCK_RETURN_HOOK_the_args_of_the_mock_get_passed_to_the_hook)
+{
+    // arrange
+    REGISTER_GLOBAL_MOCK_RETURN_HOOK(test_dependency_2_args, my_hook_test_dependency_2_args);
+
+    // act
+    (void)test_dependency_2_args(0x42, 0x43);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0x42, arg_a);
+    ASSERT_ARE_EQUAL(int, 0x43, arg_b);
 }
 
 END_TEST_SUITE(umock_c_unittests)
