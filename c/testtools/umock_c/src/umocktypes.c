@@ -5,6 +5,7 @@
 #ifdef _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
 #endif
+#include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 #include "umocktypes_stdint.h"
@@ -22,26 +23,76 @@ typedef struct UMOCK_VALUE_TYPE_HANDLERS_TAG
 static UMOCK_VALUE_TYPE_HANDLERS* type_handlers = NULL;
 static size_t type_handler_count = 0;
 
+static char* normalize_type(const char* type)
+{
+    size_t length = 0;
+    size_t pos = 0;
+    char* result;
+
+    while (type[pos] != '\0')
+    {
+        if (!((pos > 0) && isspace(type[pos]) && isspace(type[pos - 1])))
+        {
+            length++;
+        }
+
+        pos++;
+    }
+
+    result = (char*)malloc(length + 1);
+    if (result != NULL)
+    {
+        pos = 0;
+        length = 0;
+
+        while (type[pos] != '\0')
+        {
+            if (!((pos > 0) && isspace(type[pos]) && isspace(type[pos - 1])))
+            {
+                result[length] = type[pos];
+                length++;
+            }
+
+            pos++;
+        }
+
+        result[length] = '\0';
+    }
+
+    return result;
+}
+
 static UMOCK_VALUE_TYPE_HANDLERS* get_value_type_handlers(const char* type)
 {
     UMOCK_VALUE_TYPE_HANDLERS* result;
-    size_t i;
 
-    for (i = 0; i < type_handler_count; i++)
+    char* normalized_type = normalize_type(type);
+    if (normalized_type == NULL)
     {
-        if (strcmp(type_handlers[i].type, type) == 0)
-        {
-            break;
-        }
-    }
-
-    if (i < type_handler_count)
-    {
-        result = &type_handlers[i];
+        result = NULL;
     }
     else
     {
-        result = NULL;
+        size_t i;
+
+        for (i = 0; i < type_handler_count; i++)
+        {
+            if (strcmp(type_handlers[i].type, normalized_type) == 0)
+            {
+                break;
+            }
+        }
+
+        if (i < type_handler_count)
+        {
+            result = &type_handlers[i];
+        }
+        else
+        {
+            result = NULL;
+        }
+
+        free(normalized_type);
     }
 
     return result;
@@ -76,16 +127,14 @@ int umocktypes_register_type(const char* type, UMOCKTYPE_STRINGIFY_FUNC stringif
     }
     else
     {
-        size_t type_string_length = strlen(type);
         type_handlers = new_type_handlers;
-        type_handlers[type_handler_count].type = (char*)malloc(type_string_length + 1);
+        type_handlers[type_handler_count].type = normalize_type(type);
         if (type_handlers[type_handler_count].type == NULL)
         {
             result = __LINE__;
         }
         else
         {
-            (void)memcpy(type_handlers[type_handler_count].type, type, type_string_length + 1);
             type_handlers[type_handler_count].stringify = stringify;
             type_handlers[type_handler_count].value_copy = value_copy;
             type_handlers[type_handler_count].value_free = value_free;

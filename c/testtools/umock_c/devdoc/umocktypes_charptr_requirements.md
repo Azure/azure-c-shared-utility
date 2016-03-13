@@ -1,8 +1,8 @@
-#umocktypes_charptrl requirements
+#umocktypes_charptr requirements
  
 #Overview
 
-umocktypes_charptr is a module exposes out of the box functionality for char\* and const char\* types for umockc.
+umocktypes_charptr is a module that exposes out of the box functionality for char\* and const char\* types for umockc.
 
 #Exposed API
 

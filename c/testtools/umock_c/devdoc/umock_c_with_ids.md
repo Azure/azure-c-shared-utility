@@ -271,7 +271,7 @@ XX**SRS_UMOCK_C_01_115: [** umock_c shall compare calls in order. **]** That mea
 
 ###Out of the box
 
-Out of the box umock_c shall support the following types:
+**SRS_UMOCK_C_01_144: [** Out of the box umock_c shall support the following types through the header umocktypes_c.h: **]**
 -	**SRS_UMOCK_C_01_028: [**char**]**
 -	**SRS_UMOCK_C_01_029: [**unsigned char**]**
 -	**SRS_UMOCK_C_01_030: [**short**]**
@@ -443,6 +443,14 @@ void umockvalue_free_int(int* value)
     /* no free required for int */
 }
 ```
+
+### Type names
+
+**SRS_UMOCK_C_01_145: [** Since umock_c needs to maintain a list of registered types, the following rules shall be applied: **]**
+
+**SRS_UMOCK_C_01_146: [** Each type shall be normalized to a form where all extra spaces are removed. **]**
+
+**SRS_UMOCK_C_01_147: [** Type names are case sensitive. **]** 
 
 ####REGISTER_UMOCK_VALUE_TYPE
 

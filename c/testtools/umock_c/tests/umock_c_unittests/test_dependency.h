@@ -35,6 +35,7 @@ extern "C" {
     MOCKABLE_FUNCTION(void, test_dependency_buffer_arg, unsigned char*, a);
     MOCKABLE_FUNCTION(int, test_dependency_global_mock_return_test);
     MOCKABLE_FUNCTION(TEST_STRUCT_COPY_FAILS, test_dependency_global_mock_return_copy_fails);
+    MOCKABLE_FUNCTION(void, test_dependency_type_with_space, char *,s);
 
 #ifdef __cplusplus
 }

@@ -270,7 +270,7 @@ When multiple return values are set for a mock function by using different means
 
 ###Out of the box
 
-Out of the box umock_c shall support the following types:
+Out of the box umock_c shall support the following types through the header umocktypes_c.h:
 -	char
 -	unsigned char
 -	short
@@ -441,6 +441,12 @@ void umockvalue_free_int(int* value)
     /* no free required for int */
 }
 ```
+
+### Type names
+
+Since umock_c needs to maintain a list of registered types, the following rules shall be applied:
+Each type shall be normalized to a form where all extra spaces are removed.
+Type names are case sensitive. 
 
 ####REGISTER_UMOCK_VALUE_TYPE
 

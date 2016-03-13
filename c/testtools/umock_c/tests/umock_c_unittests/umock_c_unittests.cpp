@@ -1440,4 +1440,21 @@ TEST_FUNCTION(when_copy_fails_for_the_second_call_in_REGISTER_GLOBAL_MOCK_RETURN
     ASSERT_ARE_EQUAL(int, (int)UMOCK_C_ERROR, test_on_umock_c_error_calls[0].error_code);
 }
 
+/* Type names */
+
+/* Tests_SRS_UMOCK_C_01_145: [ Since umock_c needs to maintain a list of registered types, the following rules shall be applied: ]*/
+/* Tests_SRS_UMOCK_C_01_146: [ Each type shall be normalized to a form where all extra spaces are removed. ]*/
+TEST_FUNCTION(spaces_are_stripped_from_typenames)
+{
+    // arrange
+    STRICT_EXPECTED_CALL(test_dependency_type_with_space("b"));
+
+    // act
+    test_dependency_type_with_space("a");
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_expected_calls());
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
+}
+
 END_TEST_SUITE(umock_c_unittests)
