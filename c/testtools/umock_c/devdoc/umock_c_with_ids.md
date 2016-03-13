@@ -599,7 +599,7 @@ XX**SRS_UMOCK_C_01_097: [**ValidateArgumentBuffer shall implicitly perform an Ig
 
 XX**SRS_UMOCK_C_01_099: [**If the index is out of range umock_c shall raise an error with the code UMOCK_C_ARG_INDEX_OUT_OF_RANGE.**]**
 
-**SRS_UMOCK_C_01_100: [**If bytes is NULL or length is 0, umock_c shall raise an error with the code UMOCK_C_INVALID_ARGUMENT_BUFFER.**]**
+XX**SRS_UMOCK_C_01_100: [**If bytes is NULL or length is 0, umock_c shall raise an error with the code UMOCK_C_INVALID_ARGUMENT_BUFFER.**]**
 
 X**SRS_UMOCK_C_01_129: [** ValidateArgumentBuffer shall only be available for mock functions that have arguments. **]**
 

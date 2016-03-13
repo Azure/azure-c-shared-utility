@@ -1046,4 +1046,46 @@ TEST_FUNCTION(ValidateArgumentBuffer_with_0_length_triggers_the_error_callback)
     ASSERT_ARE_EQUAL(int, (int)UMOCK_C_INVALID_ARGUMENT_BUFFER, test_on_umock_c_error_calls[0].error_code);
 }
 
+/* Tests_SRS_UMOCK_C_01_095: [The ValidateArgumentBuffer call modifier shall copy the memory pointed to by bytes and being length bytes so that it is later compared against a pointer type argument when the code under test calls the mock function.] */
+/* Tests_SRS_UMOCK_C_01_096: [If the content of the code under test buffer and the buffer supplied to ValidateArgumentBuffer does not match then this should be treated as a mismatch in argument comparison for that argument.]*/
+/* Tests_SRS_UMOCK_C_01_097: [ValidateArgumentBuffer shall implicitly perform an IgnoreArgument on the indexth argument.]*/
+TEST_FUNCTION(ValidateArgumentBuffer_with_2_bytes_and_first_byte_different_checks_the_content)
+{
+    // arrange
+    unsigned char expected_buffer[] = { 0x42, 0x41 };
+    unsigned char actual_buffer[] = { 0x43, 0x41 };
+    char actual_string[64];
+    EXPECTED_CALL(test_dependency_buffer_arg(IGNORED_PTR_ARG))
+        .ValidateArgumentBuffer(1, expected_buffer, sizeof(expected_buffer));
+
+    // act
+    test_dependency_buffer_arg(actual_buffer);
+
+    // assert
+    (void)sprintf(actual_string, "[test_dependency_buffer_arg(%p)]", actual_buffer);
+    ASSERT_ARE_EQUAL(char_ptr, "[test_dependency_buffer_arg([0x42 0x41])]", umock_c_get_expected_calls());
+    ASSERT_ARE_EQUAL(char_ptr, actual_string, umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_UMOCK_C_01_095: [The ValidateArgumentBuffer call modifier shall copy the memory pointed to by bytes and being length bytes so that it is later compared against a pointer type argument when the code under test calls the mock function.] */
+/* Tests_SRS_UMOCK_C_01_096: [If the content of the code under test buffer and the buffer supplied to ValidateArgumentBuffer does not match then this should be treated as a mismatch in argument comparison for that argument.]*/
+/* Tests_SRS_UMOCK_C_01_097: [ValidateArgumentBuffer shall implicitly perform an IgnoreArgument on the indexth argument.]*/
+TEST_FUNCTION(ValidateArgumentBuffer_with_2_bytes_and_second_byte_different_checks_the_content)
+{
+    // arrange
+    unsigned char expected_buffer[] = { 0x42, 0x41 };
+    unsigned char actual_buffer[] = { 0x42, 0x42 };
+    char actual_string[64];
+    EXPECTED_CALL(test_dependency_buffer_arg(IGNORED_PTR_ARG))
+        .ValidateArgumentBuffer(1, expected_buffer, sizeof(expected_buffer));
+
+    // act
+    test_dependency_buffer_arg(actual_buffer);
+
+    // assert
+    (void)sprintf(actual_string, "[test_dependency_buffer_arg(%p)]", actual_buffer);
+    ASSERT_ARE_EQUAL(char_ptr, "[test_dependency_buffer_arg([0x42 0x41])]", umock_c_get_expected_calls());
+    ASSERT_ARE_EQUAL(char_ptr, actual_string, umock_c_get_actual_calls());
+}
+
 END_TEST_SUITE(umock_c_unittests)
