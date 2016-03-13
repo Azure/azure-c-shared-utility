@@ -1191,4 +1191,18 @@ TEST_FUNCTION(REGISTER_GLOBAL_MOCK_RETURN_HOOK_twice_makes_the_last_hook_stick)
     ASSERT_ARE_EQUAL(int, 0x21, result);
 }
 
+/* Tests_SRS_UMOCK_C_01_134: [ REGISTER_GLOBAL_MOCK_RETURN_HOOK called with a NULL hook unregisters a previously registered hook. ]*/
+TEST_FUNCTION(REGISTER_GLOBAL_MOCK_RETURN_HOOK_with_NULL_unregisters_a_previously_registered_hook)
+{
+    // arrange
+    REGISTER_GLOBAL_MOCK_RETURN_HOOK(test_dependency_no_args, my_hook_test_dependency_no_args);
+    REGISTER_GLOBAL_MOCK_RETURN_HOOK(test_dependency_no_args, NULL);
+
+    // act
+    int result = test_dependency_no_args();
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+}
+
 END_TEST_SUITE(umock_c_unittests)
