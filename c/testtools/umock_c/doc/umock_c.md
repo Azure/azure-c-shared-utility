@@ -554,7 +554,8 @@ SetFailReturn shall only be available if the return type is not void.
 
 The CopyOutArgumentBuffer call modifier shall copy the memory pointed to by bytes and being length bytes so that it is later injected as an out argument when the code under test calls the mock function.
 
-The memory shall be copied. If several calls to CopyOutArgumentBuffer are made, only the last buffer shall be kept.
+The memory shall be copied.
+If several calls to CopyOutArgumentBuffer are made, only the last buffer shall be kept.
 
 The buffers for previous CopyOutArgumentBuffer calls shall be freed.
 
@@ -588,6 +589,8 @@ If the content of the code under test buffer and the buffer supplied to Validate
 ValidateArgumentBuffer shall implicitly perform an IgnoreArgument on the indexth argument.
 
 The memory pointed by bytes shall be copied. If several calls to ValidateArgumentBuffer are made, only the last buffer shall be kept.
+
+The buffers for previous ValidateArgumentBuffer calls shall be freed.
 
 ValidateArgumentBuffer shall only be applicable to pointer types.
 

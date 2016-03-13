@@ -806,7 +806,7 @@ TEST_FUNCTION(CopyOutArgumentBuffer_only_copies_bytes_to_the_second_out_argument
     ASSERT_ARE_EQUAL(int, injected_int, actual_int_2);
 }
 
-/* Tests_SRS_UMOCK_C_01_088: [The memory shall be copied. If several calls to CopyOutArgumentBuffer are made, only the last buffer shall be kept.]*/
+/* Tests_SRS_UMOCK_C_01_088: [The memory shall be copied.]*/
 TEST_FUNCTION(CopyOutArgumentBuffer_copies_the_memory_for_later_use)
 {
     // arrange
@@ -824,6 +824,7 @@ TEST_FUNCTION(CopyOutArgumentBuffer_copies_the_memory_for_later_use)
 }
 
 /* Tests_SRS_UMOCK_C_01_089: [The buffers for previous CopyOutArgumentBuffer calls shall be freed.]*/
+/* Tests_SRS_UMOCK_C_01_133: [ If several calls to CopyOutArgumentBuffer are made, only the last buffer shall be kept. ]*/
 TEST_FUNCTION(CopyOutArgumentBuffer_frees_allocated_buffers_for_previous_CopyOutArgumentBuffer)
 {
     // arrange
@@ -1086,6 +1087,26 @@ TEST_FUNCTION(ValidateArgumentBuffer_with_2_bytes_and_second_byte_different_chec
     (void)sprintf(actual_string, "[test_dependency_buffer_arg(%p)]", actual_buffer);
     ASSERT_ARE_EQUAL(char_ptr, "[test_dependency_buffer_arg([0x42 0x41])]", umock_c_get_expected_calls());
     ASSERT_ARE_EQUAL(char_ptr, actual_string, umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_UMOCK_C_01_131: [ The memory pointed by bytes shall be copied. ]*/
+TEST_FUNCTION(ValidateArgumentBuffer_copies_the_bytes_to_compare)
+{
+    // arrange
+    unsigned char expected_buffer[] = { 0x42 };
+    unsigned char actual_buffer[] = { 0x42 };
+    char actual_string[64];
+    EXPECTED_CALL(test_dependency_buffer_arg(IGNORED_PTR_ARG))
+        .ValidateArgumentBuffer(1, expected_buffer, sizeof(expected_buffer));
+
+    expected_buffer[0] = 0x43;
+
+    // act
+    test_dependency_buffer_arg(actual_buffer);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_expected_calls());
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
 }
 
 END_TEST_SUITE(umock_c_unittests)
