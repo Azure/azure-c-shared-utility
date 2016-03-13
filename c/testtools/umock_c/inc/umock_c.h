@@ -30,7 +30,7 @@ extern "C" {
 	IF(WITH_MOCK, MOCKABLE_FUNCTION_INTERNAL_WITH_MOCK(result, function, __VA_ARGS__), MOCKABLE_FUNCTION_INTERNAL(result, function, __VA_ARGS__))
 
 #define REGISTER_GLOBAL_MOCK_RETURN_HOOK(mock_function, mock_hook_function) \
-    C2(mock_hook_,mock_function) = mock_hook_function;
+    C2(set_global_mock_hook_,mock_function)(mock_hook_function);
 
 #define REGISTER_GLOBAL_MOCK_RETURN(mock_function, return_value) \
     C2(set_global_mock_return_,mock_function)(return_value);
