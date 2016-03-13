@@ -255,6 +255,17 @@ umock_c_get_actual_calls would return:
 "[test_dependency_2_args(42,2)]"
 ```
 
+### Call comparison rules
+
+umock_c shall compare calls in order. That means that "[A()][B()]" is different than "[B()][A()]". 
+
+When multiple return values are set for a mock function by using different means, the following order shall be in effect:
+
+- If a return value has been specified for an expected call then that value shall be returned.
+- If a global mock hook has been specified then it shall be called and its result returned.
+- If a global return value has been specified then it shall be returned.
+- Otherwise the value of a static variable of the same type as the return type shall be returned.
+
 ##Supported types
 
 ###Out of the box

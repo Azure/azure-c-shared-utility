@@ -260,6 +260,13 @@ umock_c_get_actual_calls would return:
 
 XX**SRS_UMOCK_C_01_115: [** umock_c shall compare calls in order. **]** That means that "[A()][B()]" is different than "[B()][A()]". 
 
+**SRS_UMOCK_C_01_136: [** When multiple return values are set for a mock function by using different means, the following order shall be in effect: **]**
+
+**SRS_UMOCK_C_01_137: [** - If a return value has been specified for an expected call then that value shall be returned. **]**
+**SRS_UMOCK_C_01_138: [** - If a global mock hook has been specified then it shall be called and its result returned. **]**
+**SRS_UMOCK_C_01_139: [** - If a global return value has been specified then it shall be returned. **]**
+**SRS_UMOCK_C_01_140: [** - Otherwise the value of a static variable of the same type as the return type shall be returned. **]**
+
 ##Supported types
 
 ###Out of the box
