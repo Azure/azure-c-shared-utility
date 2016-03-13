@@ -1095,11 +1095,30 @@ TEST_FUNCTION(ValidateArgumentBuffer_copies_the_bytes_to_compare)
     // arrange
     unsigned char expected_buffer[] = { 0x42 };
     unsigned char actual_buffer[] = { 0x42 };
-    char actual_string[64];
     EXPECTED_CALL(test_dependency_buffer_arg(IGNORED_PTR_ARG))
         .ValidateArgumentBuffer(1, expected_buffer, sizeof(expected_buffer));
 
     expected_buffer[0] = 0x43;
+
+    // act
+    test_dependency_buffer_arg(actual_buffer);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_expected_calls());
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_UMOCK_C_01_132: [ If several calls to ValidateArgumentBuffer are made, only the last buffer shall be kept. ]*/
+/* Tests_SRS_UMOCK_C_01_130: [ The buffers for previous ValidateArgumentBuffer calls shall be freed. ]*/
+TEST_FUNCTION(When_ValidateArgumentBuffer_is_called_twice_the_last_buffer_is_used)
+{
+    // arrange
+    unsigned char expected_buffer1[] = { 0x43 };
+    unsigned char expected_buffer2[] = { 0x42 };
+    unsigned char actual_buffer[] = { 0x42 };
+    EXPECTED_CALL(test_dependency_buffer_arg(IGNORED_PTR_ARG))
+        .ValidateArgumentBuffer(1, expected_buffer1, sizeof(expected_buffer1))
+        .ValidateArgumentBuffer(1, expected_buffer2, sizeof(expected_buffer2));
 
     // act
     test_dependency_buffer_arg(actual_buffer);

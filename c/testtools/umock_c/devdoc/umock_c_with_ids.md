@@ -563,7 +563,7 @@ X**SRS_UMOCK_C_01_120: [** SetFailReturn shall only be available if the return t
 XX**SRS_UMOCK_C_01_087: [**The CopyOutArgumentBuffer call modifier shall copy the memory pointed to by bytes and being length bytes so that it is later injected as an out argument when the code under test calls the mock function.**]**
 
 XX**SRS_UMOCK_C_01_088: [**The memory shall be copied.**]** 
-**SRS_UMOCK_C_01_133: [** If several calls to CopyOutArgumentBuffer are made, only the last buffer shall be kept. **]**
+XX**SRS_UMOCK_C_01_133: [** If several calls to CopyOutArgumentBuffer are made, only the last buffer shall be kept. **]**
 
 XX**SRS_UMOCK_C_01_089: [**The buffers for previous CopyOutArgumentBuffer calls shall be freed.**]**
 
@@ -596,12 +596,12 @@ XX**SRS_UMOCK_C_01_095: [**The ValidateArgumentBuffer call modifier shall copy t
 XX**SRS_UMOCK_C_01_096: [**If the content of the code under test buffer and the buffer supplied to ValidateArgumentBuffer does not match then this should be treated as a mismatch in argument comparison for that argument.**]**
 XX**SRS_UMOCK_C_01_097: [**ValidateArgumentBuffer shall implicitly perform an IgnoreArgument on the indexth argument.**]**
 
-**SRS_UMOCK_C_01_131: [** The memory pointed by bytes shall be copied. **]**
-**SRS_UMOCK_C_01_132: [** If several calls to ValidateArgumentBuffer are made, only the last buffer shall be kept. **]**
+XX**SRS_UMOCK_C_01_131: [** The memory pointed by bytes shall be copied. **]**
+XX**SRS_UMOCK_C_01_132: [** If several calls to ValidateArgumentBuffer are made, only the last buffer shall be kept. **]**
+
+XX**SRS_UMOCK_C_01_130: [** The buffers for previous ValidateArgumentBuffer calls shall be freed. **]**
 
 **SRS_UMOCK_C_01_098: [**ValidateArgumentBuffer shall only be applicable to pointer types.**]**
-
-**SRS_UMOCK_C_01_130: [** The buffers for previous ValidateArgumentBuffer calls shall be freed. **]**
 
 XX**SRS_UMOCK_C_01_099: [**If the index is out of range umock_c shall raise an error with the code UMOCK_C_ARG_INDEX_OUT_OF_RANGE.**]**
 
