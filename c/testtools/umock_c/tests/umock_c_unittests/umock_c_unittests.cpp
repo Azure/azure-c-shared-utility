@@ -82,7 +82,7 @@ TEST_FUNCTION_INITIALIZE(test_function_init)
 
 TEST_FUNCTION_CLEANUP(test_function_cleanup)
 {
-    REGISTER_GLOBAL_MOCK_RETURN_HOOK(test_dependency_no_args, NULL);
+    REGISTER_GLOBAL_MOCK_HOOK(test_dependency_no_args, NULL);
 
     free(test_on_umock_c_error_calls);
     test_on_umock_c_error_calls = NULL;
@@ -1150,15 +1150,15 @@ TEST_FUNCTION(When_ValidateArgumentBuffer_is_called_twice_the_last_buffer_is_use
     ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
 }
 
-/* REGISTER_GLOBAL_MOCK_RETURN_HOOK */
+/* REGISTER_GLOBAL_MOCK_HOOK */
 
-/* Tests_SRS_UMOCK_C_01_104: [The REGISTER_GLOBAL_MOCK_RETURN_HOOK shall register a mock hook to be called every time the mocked function is called by production code.]*/
+/* Tests_SRS_UMOCK_C_01_104: [The REGISTER_GLOBAL_MOCK_HOOK shall register a mock hook to be called every time the mocked function is called by production code.]*/
 /* Tests_SRS_UMOCK_C_01_105: [The hook’s result shall be returned by the mock to the production code.]*/
 /* Tests_SRS_UMOCK_C_01_106: [The signature for the hook shall be assumed to have exactly the same arguments and return as the mocked function.]*/
-TEST_FUNCTION(REGISTER_GLOBAL_MOCK_RETURN_HOOK_registers_a_hook_for_the_mock)
+TEST_FUNCTION(REGISTER_GLOBAL_MOCK_HOOK_registers_a_hook_for_the_mock)
 {
     // arrange
-    REGISTER_GLOBAL_MOCK_RETURN_HOOK(test_dependency_no_args, my_hook_test_dependency_no_args);
+    REGISTER_GLOBAL_MOCK_HOOK(test_dependency_no_args, my_hook_test_dependency_no_args);
     my_hook_result = 0x42;
 
     // act
@@ -1168,12 +1168,12 @@ TEST_FUNCTION(REGISTER_GLOBAL_MOCK_RETURN_HOOK_registers_a_hook_for_the_mock)
     ASSERT_ARE_EQUAL(int, 0x42, result);
 }
 
-/* Tests_SRS_UMOCK_C_01_104: [The REGISTER_GLOBAL_MOCK_RETURN_HOOK shall register a mock hook to be called every time the mocked function is called by production code.]*/
+/* Tests_SRS_UMOCK_C_01_104: [The REGISTER_GLOBAL_MOCK_HOOK shall register a mock hook to be called every time the mocked function is called by production code.]*/
 /* Tests_SRS_UMOCK_C_01_105: [The hook’s result shall be returned by the mock to the production code.]*/
-TEST_FUNCTION(REGISTER_GLOBAL_MOCK_RETURN_HOOK_registers_a_hook_for_the_mock_that_returns_2_different_values)
+TEST_FUNCTION(REGISTER_GLOBAL_MOCK_HOOK_registers_a_hook_for_the_mock_that_returns_2_different_values)
 {
     // arrange
-    REGISTER_GLOBAL_MOCK_RETURN_HOOK(test_dependency_no_args, my_hook_test_dependency_no_args);
+    REGISTER_GLOBAL_MOCK_HOOK(test_dependency_no_args, my_hook_test_dependency_no_args);
     my_hook_result = 0x42;
 
     // act
@@ -1185,12 +1185,12 @@ TEST_FUNCTION(REGISTER_GLOBAL_MOCK_RETURN_HOOK_registers_a_hook_for_the_mock_tha
     ASSERT_ARE_EQUAL(int, 0x43, call2_result);
 }
 
-/* Tests_SRS_UMOCK_C_01_107: [If there are multiple invocations of REGISTER_GLOBAL_MOCK_RETURN_HOOK, the last one shall take effect over the previous ones.] */
-TEST_FUNCTION(REGISTER_GLOBAL_MOCK_RETURN_HOOK_twice_makes_the_last_hook_stick)
+/* Tests_SRS_UMOCK_C_01_107: [If there are multiple invocations of REGISTER_GLOBAL_MOCK_HOOK, the last one shall take effect over the previous ones.] */
+TEST_FUNCTION(REGISTER_GLOBAL_MOCK_HOOK_twice_makes_the_last_hook_stick)
 {
     // arrange
-    REGISTER_GLOBAL_MOCK_RETURN_HOOK(test_dependency_no_args, my_hook_test_dependency_no_args);
-    REGISTER_GLOBAL_MOCK_RETURN_HOOK(test_dependency_no_args, my_hook_test_dependency_no_args_2);
+    REGISTER_GLOBAL_MOCK_HOOK(test_dependency_no_args, my_hook_test_dependency_no_args);
+    REGISTER_GLOBAL_MOCK_HOOK(test_dependency_no_args, my_hook_test_dependency_no_args_2);
     my_hook_result = 0x42;
 
     // act
@@ -1200,12 +1200,12 @@ TEST_FUNCTION(REGISTER_GLOBAL_MOCK_RETURN_HOOK_twice_makes_the_last_hook_stick)
     ASSERT_ARE_EQUAL(int, 0x21, result);
 }
 
-/* Tests_SRS_UMOCK_C_01_134: [ REGISTER_GLOBAL_MOCK_RETURN_HOOK called with a NULL hook unregisters a previously registered hook. ]*/
-TEST_FUNCTION(REGISTER_GLOBAL_MOCK_RETURN_HOOK_with_NULL_unregisters_a_previously_registered_hook)
+/* Tests_SRS_UMOCK_C_01_134: [ REGISTER_GLOBAL_MOCK_HOOK called with a NULL hook unregisters a previously registered hook. ]*/
+TEST_FUNCTION(REGISTER_GLOBAL_MOCK_HOOK_with_NULL_unregisters_a_previously_registered_hook)
 {
     // arrange
-    REGISTER_GLOBAL_MOCK_RETURN_HOOK(test_dependency_no_args, my_hook_test_dependency_no_args);
-    REGISTER_GLOBAL_MOCK_RETURN_HOOK(test_dependency_no_args, NULL);
+    REGISTER_GLOBAL_MOCK_HOOK(test_dependency_no_args, my_hook_test_dependency_no_args);
+    REGISTER_GLOBAL_MOCK_HOOK(test_dependency_no_args, NULL);
 
     // act
     int result = test_dependency_no_args();
@@ -1215,10 +1215,10 @@ TEST_FUNCTION(REGISTER_GLOBAL_MOCK_RETURN_HOOK_with_NULL_unregisters_a_previousl
 }
 
 /* Tests_SRS_UMOCK_C_01_135: [ All parameters passed to the mock shall be passed down to the mock hook. ]*/
-TEST_FUNCTION(REGISTER_GLOBAL_MOCK_RETURN_HOOK_the_args_of_the_mock_get_passed_to_the_hook)
+TEST_FUNCTION(REGISTER_GLOBAL_MOCK_HOOK_the_args_of_the_mock_get_passed_to_the_hook)
 {
     // arrange
-    REGISTER_GLOBAL_MOCK_RETURN_HOOK(test_dependency_2_args, my_hook_test_dependency_2_args);
+    REGISTER_GLOBAL_MOCK_HOOK(test_dependency_2_args, my_hook_test_dependency_2_args);
 
     // act
     (void)test_dependency_2_args(0x42, 0x43);

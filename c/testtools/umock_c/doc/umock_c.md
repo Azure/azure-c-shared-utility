@@ -607,19 +607,19 @@ The call matching shall be done taking into account arguments and call modifiers
 
 ##Global mock modifiers
 
-###REGISTER_GLOBAL_MOCK_RETURN_HOOK
+###REGISTER_GLOBAL_MOCK_HOOK
 
 ```c
-REGISTER_GLOBAL_MOCK_RETURN_HOOK(mock_function, mock_hook_function)
+REGISTER_GLOBAL_MOCK_HOOK(mock_function, mock_hook_function)
 ```
 
-The REGISTER_GLOBAL_MOCK_RETURN_HOOK shall register a mock hook to be called every time the mocked function is called by production code. The hook’s result shall be returned by the mock to the production code.
+The REGISTER_GLOBAL_MOCK_HOOK shall register a mock hook to be called every time the mocked function is called by production code. The hook’s result shall be returned by the mock to the production code.
 
 The signature for the hook shall be assumed to have exactly the same arguments and return as the mocked function.
 
-If there are multiple invocations of REGISTER_GLOBAL_MOCK_RETURN_HOOK, the last one shall take effect over the previous ones.
+If there are multiple invocations of REGISTER_GLOBAL_MOCK_HOOK, the last one shall take effect over the previous ones.
 
-REGISTER_GLOBAL_MOCK_RETURN_HOOK called with a NULL hook unregisters a previously registered hook.
+REGISTER_GLOBAL_MOCK_HOOK called with a NULL hook unregisters a previously registered hook.
 
 All parameters passed to the mock shall be passed down to the mock hook.
 

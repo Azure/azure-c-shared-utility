@@ -434,9 +434,9 @@ typedef struct ARG_BUFFER_TAG
 #define IMPLEMENT_EXPECTED_MOCK(return_type, name, ...) \
     IMPLEMENT_MOCK_FUNCTION(umock_c_expected_, 1, return_type, name, __VA_ARGS__)
 
-/* Codes_SRS_UMOCK_C_01_104: [The REGISTER_GLOBAL_MOCK_RETURN_HOOK shall register a mock hook to be called every time the mocked function is called by production code.]*/
-/* Codes_SRS_UMOCK_C_01_107: [If there are multiple invocations of REGISTER_GLOBAL_MOCK_RETURN_HOOK, the last one shall take effect over the previous ones.] */
-/* Codes_SRS_UMOCK_C_01_134: [ REGISTER_GLOBAL_MOCK_RETURN_HOOK called with a NULL hook unregisters a previously registered hook. ]*/
+/* Codes_SRS_UMOCK_C_01_104: [The REGISTER_GLOBAL_MOCK_HOOK shall register a mock hook to be called every time the mocked function is called by production code.]*/
+/* Codes_SRS_UMOCK_C_01_107: [If there are multiple invocations of REGISTER_GLOBAL_MOCK_HOOK, the last one shall take effect over the previous ones.] */
+/* Codes_SRS_UMOCK_C_01_134: [ REGISTER_GLOBAL_MOCK_HOOK called with a NULL hook unregisters a previously registered hook. ]*/
 #define IMPLEMENT_REGISTER_GLOBAL_MOCK_HOOK(return_type, name, ...) \
     IF(IS_NOT_VOID(return_type),void C2(set_global_mock_hook_,name)(C2(mock_hook_func_type_, name) mock_return_hook) \
     { \
