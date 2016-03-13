@@ -310,7 +310,7 @@ Five functions shall be provided to umock_c:
 char* umockvalue_stringify_{type}(const {type}* value)
 ```
 
-**SRS_UMOCK_C_01_054: [**A stringify function shall allocate using malloc a char* and fill it with a string representation of value.**]**
+**SRS_UMOCK_C_01_054: [**A stringify function shall allocate using malloc a char\* and fill it with a string representation of value.**]**
 
 **SRS_UMOCK_C_01_055: [**If any error is encountered during building the string representation, umockvalue_stringify_type shall return NULL.**]**
 
@@ -463,9 +463,9 @@ REGISTER_UMOCK_VALUE_TYPE(TEST_STRUCT);
 
 ####umockvalue_charptr
 
-**SRS_UMOCK_C_01_067: [**char* and const char* shall be supported out of the box through a separate header, umockvalue_charptr.h.**]**
+**SRS_UMOCK_C_01_067: [**char\* and const char\* shall be supported out of the box through a separate header, umockvalue_charptr.h.**]**
 
-**SRS_UMOCK_C_01_068: [**In order to enable the usage of char*, the function umockvalue_charptr_register_types can be used in the test suite init.**]**
+**SRS_UMOCK_C_01_068: [**In order to enable the usage of char\*, the function umockvalue_charptr_register_types can be used in the test suite init.**]**
 
 **SRS_UMOCK_C_01_069: [**The signature shall be:
 
