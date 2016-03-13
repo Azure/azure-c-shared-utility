@@ -962,4 +962,88 @@ TEST_FUNCTION(ValidateArgumentBuffer_checks_the_argument_buffer_and_mismatch_is_
     ASSERT_ARE_EQUAL(char_ptr, actual_string, umock_c_get_actual_calls());
 }
 
+/* Tests_SRS_UMOCK_C_01_095: [The ValidateArgumentBuffer call modifier shall copy the memory pointed to by bytes and being length bytes so that it is later compared against a pointer type argument when the code under test calls the mock function.] */
+/* Tests_SRS_UMOCK_C_01_096: [If the content of the code under test buffer and the buffer supplied to ValidateArgumentBuffer does not match then this should be treated as a mismatch in argument comparison for that argument.]*/
+/* Tests_SRS_UMOCK_C_01_097: [ValidateArgumentBuffer shall implicitly perform an IgnoreArgument on the indexth argument.]*/
+TEST_FUNCTION(ValidateArgumentBuffer_checks_the_argument_buffer_and_mismatch_is_detected_when_content_does_not_match_for_expected_call)
+{
+    // arrange
+    unsigned char expected_buffer[] = { 0x42 };
+    unsigned char actual_buffer[] = { 0x43 };
+    char actual_string[64];
+    EXPECTED_CALL(test_dependency_buffer_arg(IGNORED_PTR_ARG))
+        .ValidateArgumentBuffer(1, expected_buffer, sizeof(expected_buffer));
+
+    // act
+    test_dependency_buffer_arg(actual_buffer);
+
+    // assert
+    (void)sprintf(actual_string, "[test_dependency_buffer_arg(%p)]", actual_buffer);
+    ASSERT_ARE_EQUAL(char_ptr, "[test_dependency_buffer_arg([0x42])]", umock_c_get_expected_calls());
+    ASSERT_ARE_EQUAL(char_ptr, actual_string, umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_UMOCK_C_01_099: [If the index is out of range umock_c shall raise an error with the code UMOCK_C_ARG_INDEX_OUT_OF_RANGE.]*/
+TEST_FUNCTION(ValidateArgumentBuffer_with_0_index_triggers_an_error)
+{
+    // arrange
+    unsigned char expected_buffer[] = { 0x42 };
+    unsigned char actual_buffer[] = { 0x43 };
+    EXPECTED_CALL(test_dependency_buffer_arg(IGNORED_PTR_ARG))
+        .ValidateArgumentBuffer(0, expected_buffer, sizeof(expected_buffer));
+
+    // act
+    test_dependency_buffer_arg(actual_buffer);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 1, test_on_umock_c_error_call_count);
+    ASSERT_ARE_EQUAL(int, (int)UMOCK_C_ARG_INDEX_OUT_OF_RANGE, test_on_umock_c_error_calls[0].error_code);
+}
+
+/* Tests_SRS_UMOCK_C_01_099: [If the index is out of range umock_c shall raise an error with the code UMOCK_C_ARG_INDEX_OUT_OF_RANGE.]*/
+TEST_FUNCTION(ValidateArgumentBuffer_with_index_higher_than_the_Arg_count_triggers_an_error)
+{
+    // arrange
+    unsigned char expected_buffer[] = { 0x42 };
+    unsigned char actual_buffer[] = { 0x43 };
+    EXPECTED_CALL(test_dependency_buffer_arg(IGNORED_PTR_ARG))
+        .ValidateArgumentBuffer(2, expected_buffer, sizeof(expected_buffer));
+
+    // act
+    test_dependency_buffer_arg(actual_buffer);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 1, test_on_umock_c_error_call_count);
+    ASSERT_ARE_EQUAL(int, (int)UMOCK_C_ARG_INDEX_OUT_OF_RANGE, test_on_umock_c_error_calls[0].error_code);
+}
+
+/* Tests_SRS_UMOCK_C_01_100: [If bytes is NULL or length is 0, umock_c shall raise an error with the code UMOCK_C_INVALID_ARGUMENT_BUFFER.] */
+TEST_FUNCTION(ValidateArgumentBuffer_with_NULL_buffer_triggers_the_error_callback)
+{
+    // arrange
+
+    // act
+    EXPECTED_CALL(test_dependency_buffer_arg(IGNORED_PTR_ARG))
+        .ValidateArgumentBuffer(1, NULL, 1);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 1, test_on_umock_c_error_call_count);
+    ASSERT_ARE_EQUAL(int, (int)UMOCK_C_INVALID_ARGUMENT_BUFFER, test_on_umock_c_error_calls[0].error_code);
+}
+
+/* Tests_SRS_UMOCK_C_01_100: [If bytes is NULL or length is 0, umock_c shall raise an error with the code UMOCK_C_INVALID_ARGUMENT_BUFFER.] */
+TEST_FUNCTION(ValidateArgumentBuffer_with_0_length_triggers_the_error_callback)
+{
+    // arrange
+    unsigned char expected_buffer[] = { 0x42 };
+
+    // act
+    EXPECTED_CALL(test_dependency_buffer_arg(IGNORED_PTR_ARG))
+        .ValidateArgumentBuffer(1, expected_buffer, 0);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 1, test_on_umock_c_error_call_count);
+    ASSERT_ARE_EQUAL(int, (int)UMOCK_C_INVALID_ARGUMENT_BUFFER, test_on_umock_c_error_calls[0].error_code);
+}
+
 END_TEST_SUITE(umock_c_unittests)
