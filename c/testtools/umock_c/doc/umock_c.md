@@ -644,7 +644,7 @@ The REGISTER_GLOBAL_MOCK_RETURN shall register a return value to always be retur
 
 If there are multiple invocations of REGISTER_GLOBAL_MOCK_RETURN, the last one shall take effect over the previous ones.
 
-If no REGISTER_GLOBAL_MOCK_RETURN is performed for a mocked function, the mock will return a value declared as static of the same type as the functions return type.
+If any error occurs during REGISTER_GLOBAL_MOCK_RETURN, umock_c shall raise an error with the code UMOCK_C_ERROR.
 
 ###REGISTER_GLOBAL_MOCK_FAIL_RETURN
 

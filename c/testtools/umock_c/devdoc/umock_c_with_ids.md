@@ -647,11 +647,11 @@ XX**SRS_UMOCK_C_01_135: [** All parameters passed to the mock shall be passed do
 REGISTER_GLOBAL_MOCK_RETURN(mock_function, return_value)
 ```
 
-**SRS_UMOCK_C_01_108: [**The REGISTER_GLOBAL_MOCK_RETURN shall register a return value to always be returned by a mock function.**]**
+XX**SRS_UMOCK_C_01_108: [**The REGISTER_GLOBAL_MOCK_RETURN shall register a return value to always be returned by a mock function.**]**
 
-**SRS_UMOCK_C_01_109: [**If there are multiple invocations of REGISTER_GLOBAL_MOCK_RETURN, the last one shall take effect over the previous ones.**]**
+XX**SRS_UMOCK_C_01_109: [**If there are multiple invocations of REGISTER_GLOBAL_MOCK_RETURN, the last one shall take effect over the previous ones.**]**
 
-**SRS_UMOCK_C_01_110: [**If no REGISTER_GLOBAL_MOCK_RETURN is performed for a mocked function, the mock will return a value declared as static of the same type as the functions return type.**]**
+If any error occurs during REGISTER_GLOBAL_MOCK_RETURN, umock_c shall raise an error with the code UMOCK_C_ERROR.
 
 ###REGISTER_GLOBAL_MOCK_FAIL_RETURN
 

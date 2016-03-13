@@ -84,10 +84,10 @@ extern "C" {
 
 #define REGISTER_UMOCK_VALUE_TYPE(value_type, stringify_func, are_equal_func, copy_func, free_func) \
 { \
-    extern char* stringify_func(const value_type* value); \
-    extern int are_equal_func(const value_type* left, const value_type* right); \
-    extern int copy_func(value_type* destination, const value_type* source); \
-    extern void free_func(value_type* value); \
+    char* stringify_func(const value_type* value); \
+    int are_equal_func(const value_type* left, const value_type* right); \
+    int copy_func(value_type* destination, const value_type* source); \
+    void free_func(value_type* value); \
     umocktypes_register_type(TOSTRING(value_type), (UMOCKTYPE_STRINGIFY_FUNC)stringify_func, (UMOCKTYPE_ARE_EQUAL_FUNC)are_equal_func, (UMOCKTYPE_COPY_FUNC)copy_func, (UMOCKTYPE_FREE_FUNC)free_func); \
 }
 

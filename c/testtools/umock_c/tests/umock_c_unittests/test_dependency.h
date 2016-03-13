@@ -15,6 +15,11 @@ extern "C" {
         int x;
     } TEST_STRUCT;
 
+    typedef struct TEST_STRUCT_COPY_FAILS_TAG
+    {
+        int x;
+    } TEST_STRUCT_COPY_FAILS;
+
     /* Tests_SRS_UMOCK_C_01_001: [MOCKABLE_FUNCTION shall be used to wrap function definition allowing the user to declare a function that can be mocked.]*/
     /* Tests_SRS_UMOCK_C_01_003: [If ENABLE_MOCKS is defined, MOCKABLE_FUNCTION shall generate all the boilerplate code needed by the macros in umock API to function to record the calls. Note: a lot of code (including function definitions and bodies, global variables (both static and extern).] */
     /* Tests_SRS_UMOCK_C_01_004: [If ENABLE_MOCKS is defined, MOCKABLE_FUNCTION shall generate the declaration of the function and code for the mocked function, thus allowing setting up of expectations in test functions.] */
@@ -29,6 +34,7 @@ extern "C" {
     MOCKABLE_FUNCTION(int*, test_dependency_int_ptr_return);
     MOCKABLE_FUNCTION(void, test_dependency_buffer_arg, unsigned char*, a);
     MOCKABLE_FUNCTION(int, test_dependency_global_mock_return_test);
+    MOCKABLE_FUNCTION(TEST_STRUCT_COPY_FAILS, test_dependency_global_mock_return_copy_fails);
 
 #ifdef __cplusplus
 }

@@ -444,10 +444,14 @@ typedef struct ARG_BUFFER_TAG
     } \
 
 /* Codes_SRS_UMOCK_C_01_108: [The REGISTER_GLOBAL_MOCK_RETURN shall register a return value to always be returned by a mock function.]*/
+/* Codes_SRS_UMOCK_C_01_109: [If there are multiple invocations of REGISTER_GLOBAL_MOCK_RETURN, the last one shall take effect over the previous ones.]*/
 #define IMPLEMENT_REGISTER_GLOBAL_MOCK_RETURN(return_type, name, ...) \
     IF(IS_NOT_VOID(return_type), void C2(set_global_mock_return_, name)(return_type return_value) \
     { \
-        (void)umocktypes_copy(TOSTRING(return_type), &C2(mock_call_default_result_,name), &return_value); \
+        if (umocktypes_copy(TOSTRING(return_type), &C2(mock_call_default_result_,name), &return_value) != 0) \
+        { \
+            umock_c_indicate_error(UMOCK_C_ERROR); \
+        } \
     }, ) \
 
 /* Codes_SRS_UMOCK_C_01_003: [If ENABLE_MOCKS is defined, MOCKABLE_FUNCTION shall generate all the boilerplate code needed by the macros in umock API to function to record the calls. Note: a lot of code (including function definitions and bodies, global variables (both static and extern).] */

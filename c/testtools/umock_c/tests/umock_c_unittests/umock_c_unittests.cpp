@@ -64,6 +64,27 @@ static void my_hook_test_dependency_void_return(void)
     test_dependency_void_return_called = 1;
 }
 
+char* stringify_func_TEST_STRUCT_COPY_FAILS(const TEST_STRUCT_COPY_FAILS* value)
+{
+    char* result = (char*)malloc(1);
+    result[0] = '\0';
+    return result;
+}
+
+int are_equal_func_TEST_STRUCT_COPY_FAILS(const TEST_STRUCT_COPY_FAILS* left, const TEST_STRUCT_COPY_FAILS* right)
+{
+    return 1;
+}
+
+int copy_func_TEST_STRUCT_COPY_FAILS(TEST_STRUCT_COPY_FAILS* destination, const TEST_STRUCT_COPY_FAILS* source)
+{
+    return 1;
+}
+
+void free_func_TEST_STRUCT_COPY_FAILS(TEST_STRUCT_COPY_FAILS* value)
+{
+}
+
 BEGIN_TEST_SUITE(umock_c_unittests)
 
 TEST_SUITE_INITIALIZE(suite_init)
@@ -71,6 +92,7 @@ TEST_SUITE_INITIALIZE(suite_init)
     ASSERT_ARE_EQUAL(int, 0, umock_c_init(test_on_umock_c_error));
     REGISTER_UMOCK_VALUE_TYPE(int*, stringify_func_intptr, are_equal_func_intptr, copy_func_intptr, free_func_intptr);
     REGISTER_UMOCK_VALUE_TYPE(unsigned char*, stringify_func_unsignedcharptr, are_equal_func_unsignedcharptr, copy_func_unsignedcharptr, free_func_unsignedcharptr);
+    REGISTER_UMOCK_VALUE_TYPE(TEST_STRUCT_COPY_FAILS, stringify_func_TEST_STRUCT_COPY_FAILS, are_equal_func_TEST_STRUCT_COPY_FAILS, copy_func_TEST_STRUCT_COPY_FAILS, free_func_TEST_STRUCT_COPY_FAILS);
 }
 
 TEST_SUITE_CLEANUP(suite_cleanup)
@@ -1260,6 +1282,35 @@ TEST_FUNCTION(REGISTER_GLOBAL_MOCK_RETURN_makes_a_subsequent_call_to_the_mock_re
 
     // assert
     ASSERT_ARE_EQUAL(int, 0x45, result);
+}
+
+/* Tests_SRS_UMOCK_C_01_109: [If there are multiple invocations of REGISTER_GLOBAL_MOCK_RETURN, the last one shall take effect over the previous ones.]*/
+TEST_FUNCTION(REGISTER_GLOBAL_MOCK_RETURN_twice_only_makes_the_second_call_stick)
+{
+    // arrange
+    REGISTER_GLOBAL_MOCK_RETURN(test_dependency_global_mock_return_test, 0x45);
+    REGISTER_GLOBAL_MOCK_RETURN(test_dependency_global_mock_return_test, 0x46);
+
+    // act
+    int result = test_dependency_global_mock_return_test();
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0x46, result);
+}
+
+/* Tests_SRS_UMOCK_C_01_141: [ If any error occurs during REGISTER_GLOBAL_MOCK_RETURN, umock_c shall raise an error with the code UMOCK_C_ERROR. ]*/
+TEST_FUNCTION(when_copy_fails_in_REGISTER_GLOBAL_MOCK_RETURN_then_on_error_is_triggered)
+{
+    // arrange
+    TEST_STRUCT_COPY_FAILS test_struct = { 0x42 };
+    REGISTER_GLOBAL_MOCK_RETURN(test_dependency_global_mock_return_copy_fails, test_struct);
+
+    // act
+    (void)test_dependency_global_mock_return_copy_fails();
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 1, test_on_umock_c_error_call_count);
+    ASSERT_ARE_EQUAL(int, (int)UMOCK_C_ERROR, test_on_umock_c_error_calls[0].error_code);
 }
 
 END_TEST_SUITE(umock_c_unittests)
