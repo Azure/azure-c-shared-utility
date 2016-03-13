@@ -564,7 +564,7 @@ XX**SRS_UMOCK_C_01_087: [**The CopyOutArgumentBuffer call modifier shall copy th
 
 XX**SRS_UMOCK_C_01_088: [**The memory shall be copied. If several calls to CopyOutArgumentBuffer are made, only the last buffer shall be kept.**]**
 
-XX**SRS_UMOCK_C_01_089: [**The buffers for the previous calls shall be freed.**]**
+XX**SRS_UMOCK_C_01_089: [**The buffers for previous CopyOutArgumentBuffer calls shall be freed.**]**
 
 **SRS_UMOCK_C_01_090: [**CopyOutArgumentBuffer shall only be applicable to pointer types.**]**
 
@@ -594,6 +594,8 @@ XX**SRS_UMOCK_C_01_095: [**The ValidateArgumentBuffer call modifier shall copy t
 
 XX**SRS_UMOCK_C_01_096: [**If the content of the code under test buffer and the buffer supplied to ValidateArgumentBuffer does not match then this should be treated as a mismatch in argument comparison for that argument.**]**
 XX**SRS_UMOCK_C_01_097: [**ValidateArgumentBuffer shall implicitly perform an IgnoreArgument on the indexth argument.**]**
+
+The memory pointed by bytes shall be copied. If several calls to ValidateArgumentBuffer are made, only the last buffer shall be kept.
 
 **SRS_UMOCK_C_01_098: [**ValidateArgumentBuffer shall only be applicable to pointer types.**]**
 

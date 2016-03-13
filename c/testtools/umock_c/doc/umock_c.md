@@ -556,7 +556,7 @@ The CopyOutArgumentBuffer call modifier shall copy the memory pointed to by byte
 
 The memory shall be copied. If several calls to CopyOutArgumentBuffer are made, only the last buffer shall be kept.
 
-The buffers for the previous calls shall be freed.
+The buffers for previous CopyOutArgumentBuffer calls shall be freed.
 
 CopyOutArgumentBuffer shall only be applicable to pointer types.
 
@@ -584,7 +584,10 @@ CopyOutArgument shall only be available for mock functions that have arguments.
 
 The ValidateArgumentBuffer call modifier shall copy the memory pointed to by bytes and being length bytes so that it is later compared against a pointer type argument when the code under test calls the mock function.
 
-If the content of the code under test buffer and the buffer supplied to ValidateArgumentBuffer does not match then this should be treated as a mismatch in argument comparison for that argument. ValidateArgumentBuffer shall implicitly perform an IgnoreArgument on the indexth argument.
+If the content of the code under test buffer and the buffer supplied to ValidateArgumentBuffer does not match then this should be treated as a mismatch in argument comparison for that argument.
+ValidateArgumentBuffer shall implicitly perform an IgnoreArgument on the indexth argument.
+
+The memory pointed by bytes shall be copied. If several calls to ValidateArgumentBuffer are made, only the last buffer shall be kept.
 
 ValidateArgumentBuffer shall only be applicable to pointer types.
 

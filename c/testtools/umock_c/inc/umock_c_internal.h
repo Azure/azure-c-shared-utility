@@ -311,6 +311,7 @@ typedef struct ARG_BUFFER_TAG
 /* Codes_SRS_UMOCK_C_01_117: [ If any memory allocation error occurs, umock_c shall raise an error with the code UMOCK_C_MALLOC_ERROR. ]*/
 /* Codes_SRS_UMOCK_C_01_118: [ If any other error occurs, umock_c shall raise an error with the code UMOCK_C_ERROR. ]*/
 /* Codes_SRS_UMOCK_C_01_092: [If bytes is NULL or length is 0, umock_c shall raise an error with the code UMOCK_C_INVALID_ARGUMENT_BUFFER.] */
+/* Codes_SRS_UMOCK_C_01_089: [The buffers for previous CopyOutArgumentBuffer calls shall be freed.]*/
 #define IMPLEMENT_COPY_OUT_ARGUMENT_BUFFER_FUNCTION(return_type, name, ...) \
     static C2(mock_call_modifier_, name) C2(copy_out_argument_buffer_func_, name)(size_t index, const void* bytes, size_t length) \
     { \

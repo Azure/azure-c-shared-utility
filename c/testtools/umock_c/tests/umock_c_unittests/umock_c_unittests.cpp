@@ -823,7 +823,7 @@ TEST_FUNCTION(CopyOutArgumentBuffer_copies_the_memory_for_later_use)
     ASSERT_ARE_EQUAL(int, 0x42, actual_int);
 }
 
-/* Tests_SRS_UMOCK_C_01_089: [The buffers for the previous calls shall be freed.]*/
+/* Tests_SRS_UMOCK_C_01_089: [The buffers for previous CopyOutArgumentBuffer calls shall be freed.]*/
 TEST_FUNCTION(CopyOutArgumentBuffer_frees_allocated_buffers_for_previous_CopyOutArgumentBuffer)
 {
     // arrange
