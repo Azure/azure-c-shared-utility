@@ -435,6 +435,7 @@ typedef struct ARG_BUFFER_TAG
     IMPLEMENT_MOCK_FUNCTION(umock_c_expected_, 1, return_type, name, __VA_ARGS__)
 
 /* Codes_SRS_UMOCK_C_01_104: [The REGISTER_GLOBAL_MOCK_RETURN_HOOK shall register a mock hook to be called every time the mocked function is called by production code.]*/
+/* Codes_SRS_UMOCK_C_01_107: [If there are multiple invocations of REGISTER_GLOBAL_MOCK_RETURN_HOOK, the last one shall take effect over the previous ones.] */
 #define IMPLEMENT_REGISTER_GLOBAL_MOCK_HOOK(return_type, name, ...) \
     IF(IS_NOT_VOID(return_type),void C2(set_global_mock_hook_,name)(C2(mock_hook_func_type_, name) mock_return_hook) \
     { \
@@ -458,6 +459,8 @@ typedef struct ARG_BUFFER_TAG
 /* Codes_SRS_UMOCK_C_01_119: [ CopyOutArgumentBuffer shall only be available for mock functions that have arguments. ]*/
 /* Codes_SRS_UMOCK_C_01_128: [ CopyOutArgument shall only be available for mock functions that have arguments. ]*/
 /* Codes_SRS_UMOCK_C_01_129: [ ValidateArgumentBuffer shall only be available for mock functions that have arguments. ]*/
+/* Codes_SRS_UMOCK_C_01_105: [The hook’s result shall be returned by the mock to the production code.]*/
+/* Codes_SRS_UMOCK_C_01_106: [The signature for the hook shall be assumed to have exactly the same arguments and return as the mocked function.]*/
 #define MOCKABLE_FUNCTION_INTERNAL_WITH_MOCK(return_type, name, ...) \
     IF(IS_NOT_VOID(return_type),typedef return_type (*C2(mock_hook_func_type_, name))(IF(COUNT_ARG(__VA_ARGS__),FOR_EACH_2_COUNTED(ARG_IN_SIGNATURE, __VA_ARGS__),void));,) \
     IF(IS_NOT_VOID(return_type),static C2(mock_hook_func_type_,name) C2(mock_hook_,name) = NULL;,) \

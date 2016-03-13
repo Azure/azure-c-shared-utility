@@ -27,8 +27,6 @@ static size_t test_on_umock_c_error_call_count;
 DECLARE_UMOCK_POINTER_TYPE_FOR_TYPE(int, int);
 DECLARE_UMOCK_POINTER_TYPE_FOR_TYPE(unsigned char, unsignedchar);
 
-BEGIN_TEST_SUITE(umock_c_unittests)
-
 static void test_on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
     test_on_umock_c_error_CALL* new_calls = (test_on_umock_c_error_CALL*)realloc(test_on_umock_c_error_calls, sizeof(test_on_umock_c_error_CALL) * (test_on_umock_c_error_call_count + 1));
@@ -39,6 +37,19 @@ static void test_on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
         test_on_umock_c_error_call_count++;
     }
 }
+
+static int my_hook_result;
+static int my_hook_test_dependency_no_args(void)
+{
+    return my_hook_result++;
+}
+
+static int my_hook_test_dependency_no_args_2(void)
+{
+    return 0x21;
+}
+
+BEGIN_TEST_SUITE(umock_c_unittests)
 
 TEST_SUITE_INITIALIZE(suite_init)
 {
@@ -62,6 +73,8 @@ TEST_FUNCTION_INITIALIZE(test_function_init)
 
 TEST_FUNCTION_CLEANUP(test_function_cleanup)
 {
+    REGISTER_GLOBAL_MOCK_RETURN_HOOK(test_dependency_no_args, NULL);
+
     free(test_on_umock_c_error_calls);
     test_on_umock_c_error_calls = NULL;
     test_on_umock_c_error_call_count = 0;
@@ -1130,13 +1143,9 @@ TEST_FUNCTION(When_ValidateArgumentBuffer_is_called_twice_the_last_buffer_is_use
 
 /* REGISTER_GLOBAL_MOCK_RETURN_HOOK */
 
-static int my_hook_result;
-static int my_hook_test_dependency_no_args(void)
-{
-    return my_hook_result++;
-}
-
 /* Tests_SRS_UMOCK_C_01_104: [The REGISTER_GLOBAL_MOCK_RETURN_HOOK shall register a mock hook to be called every time the mocked function is called by production code.]*/
+/* Tests_SRS_UMOCK_C_01_105: [The hook’s result shall be returned by the mock to the production code.]*/
+/* Tests_SRS_UMOCK_C_01_106: [The signature for the hook shall be assumed to have exactly the same arguments and return as the mocked function.]*/
 TEST_FUNCTION(REGISTER_GLOBAL_MOCK_RETURN_HOOK_registers_a_hook_for_the_mock)
 {
     // arrange
@@ -1151,6 +1160,7 @@ TEST_FUNCTION(REGISTER_GLOBAL_MOCK_RETURN_HOOK_registers_a_hook_for_the_mock)
 }
 
 /* Tests_SRS_UMOCK_C_01_104: [The REGISTER_GLOBAL_MOCK_RETURN_HOOK shall register a mock hook to be called every time the mocked function is called by production code.]*/
+/* Tests_SRS_UMOCK_C_01_105: [The hook’s result shall be returned by the mock to the production code.]*/
 TEST_FUNCTION(REGISTER_GLOBAL_MOCK_RETURN_HOOK_registers_a_hook_for_the_mock_that_returns_2_different_values)
 {
     // arrange
@@ -1164,6 +1174,21 @@ TEST_FUNCTION(REGISTER_GLOBAL_MOCK_RETURN_HOOK_registers_a_hook_for_the_mock_tha
     // assert
     ASSERT_ARE_EQUAL(int, 0x42, call1_result);
     ASSERT_ARE_EQUAL(int, 0x43, call2_result);
+}
+
+/* Tests_SRS_UMOCK_C_01_107: [If there are multiple invocations of REGISTER_GLOBAL_MOCK_RETURN_HOOK, the last one shall take effect over the previous ones.] */
+TEST_FUNCTION(REGISTER_GLOBAL_MOCK_RETURN_HOOK_twice_makes_the_last_hook_stick)
+{
+    // arrange
+    REGISTER_GLOBAL_MOCK_RETURN_HOOK(test_dependency_no_args, my_hook_test_dependency_no_args);
+    REGISTER_GLOBAL_MOCK_RETURN_HOOK(test_dependency_no_args, my_hook_test_dependency_no_args_2);
+    my_hook_result = 0x42;
+
+    // act
+    int result = test_dependency_no_args();
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0x21, result);
 }
 
 END_TEST_SUITE(umock_c_unittests)
