@@ -1130,9 +1130,10 @@ TEST_FUNCTION(When_ValidateArgumentBuffer_is_called_twice_the_last_buffer_is_use
 
 /* REGISTER_GLOBAL_MOCK_RETURN_HOOK */
 
+static int my_hook_result;
 static int my_hook_test_dependency_no_args(void)
 {
-    return 0x42;
+    return my_hook_result++;
 }
 
 /* Tests_SRS_UMOCK_C_01_104: [The REGISTER_GLOBAL_MOCK_RETURN_HOOK shall register a mock hook to be called every time the mocked function is called by production code.]*/
@@ -1140,12 +1141,29 @@ TEST_FUNCTION(REGISTER_GLOBAL_MOCK_RETURN_HOOK_registers_a_hook_for_the_mock)
 {
     // arrange
     REGISTER_GLOBAL_MOCK_RETURN_HOOK(test_dependency_no_args, my_hook_test_dependency_no_args);
+    my_hook_result = 0x42;
 
     // act
     int result = test_dependency_no_args();
 
     // assert
     ASSERT_ARE_EQUAL(int, 0x42, result);
+}
+
+/* Tests_SRS_UMOCK_C_01_104: [The REGISTER_GLOBAL_MOCK_RETURN_HOOK shall register a mock hook to be called every time the mocked function is called by production code.]*/
+TEST_FUNCTION(REGISTER_GLOBAL_MOCK_RETURN_HOOK_registers_a_hook_for_the_mock_that_returns_2_different_values)
+{
+    // arrange
+    REGISTER_GLOBAL_MOCK_RETURN_HOOK(test_dependency_no_args, my_hook_test_dependency_no_args);
+    my_hook_result = 0x42;
+
+    // act
+    int call1_result = test_dependency_no_args();
+    int call2_result = test_dependency_no_args();
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0x42, call1_result);
+    ASSERT_ARE_EQUAL(int, 0x43, call2_result);
 }
 
 END_TEST_SUITE(umock_c_unittests)
