@@ -459,9 +459,22 @@ typedef struct ARG_BUFFER_TAG
 /* Codes_SRS_UMOCK_C_01_112: [If there are multiple invocations of REGISTER_GLOBAL_FAIL_MOCK_RETURN, the last one shall take effect over the previous ones.]*/
 /* Codes_SRS_UMOCK_C_01_142: [ If any error occurs during REGISTER_GLOBAL_MOCK_FAIL_RETURN, umock_c shall raise an error with the code UMOCK_C_ERROR. ]*/
 #define IMPLEMENT_REGISTER_GLOBAL_MOCK_FAIL_RETURN(return_type, name, ...) \
-    IF(IS_NOT_VOID(return_type), void C2(set_global_mock_fail_return_, name)(return_type return_value) \
+    IF(IS_NOT_VOID(return_type), void C2(set_global_mock_fail_return_, name)(return_type fail_return_value) \
     { \
-        if (umocktypes_copy(TOSTRING(return_type), &C2(mock_call_fail_result_,name), &return_value) != 0) \
+        if (umocktypes_copy(TOSTRING(return_type), &C2(mock_call_fail_result_,name), &fail_return_value) != 0) \
+        { \
+            umock_c_indicate_error(UMOCK_C_ERROR); \
+        } \
+    }, ) \
+
+/* Codes_SRS_UMOCK_C_01_113: [The REGISTER_GLOBAL_MOCK_RETURNS shall register both a success and a fail return value associated with a mock function.]*/
+/* Codes_SRS_UMOCK_C_01_114: [If there are multiple invocations of REGISTER_GLOBAL_MOCK_RETURNS, the last one shall take effect over the previous ones.]*/
+/* Codes_SRS_UMOCK_C_01_143: [ If any error occurs during REGISTER_GLOBAL_MOCK_RETURNS, umock_c shall raise an error with the code UMOCK_C_ERROR. ]*/
+#define IMPLEMENT_REGISTER_GLOBAL_MOCK_RETURNS(return_type, name, ...) \
+    IF(IS_NOT_VOID(return_type), void C2(set_global_mock_returns_, name)(return_type return_value, return_type fail_return_value) \
+    { \
+        if ((umocktypes_copy(TOSTRING(return_type), &C2(mock_call_default_result_,name), &return_value) != 0) || \
+            (umocktypes_copy(TOSTRING(return_type), &C2(mock_call_fail_result_, name), &fail_return_value) != 0)) \
         { \
             umock_c_indicate_error(UMOCK_C_ERROR); \
         } \
@@ -700,6 +713,7 @@ typedef struct ARG_BUFFER_TAG
     IMPLEMENT_REGISTER_GLOBAL_MOCK_HOOK(return_type, name, __VA_ARGS__) \
     IMPLEMENT_REGISTER_GLOBAL_MOCK_RETURN(return_type, name, __VA_ARGS__) \
     IMPLEMENT_REGISTER_GLOBAL_MOCK_FAIL_RETURN(return_type, name, __VA_ARGS__) \
+    IMPLEMENT_REGISTER_GLOBAL_MOCK_RETURNS(return_type, name, __VA_ARGS__) \
 
 #ifdef __cplusplus
 	}

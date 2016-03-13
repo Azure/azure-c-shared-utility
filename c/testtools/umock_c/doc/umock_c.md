@@ -667,3 +667,5 @@ REGISTER_GLOBAL_MOCK_RETURNS(mock_function, return_value, fail_return_value)
 The REGISTER_GLOBAL_MOCK_RETURNS shall register both a success and a fail return value associated with a mock function.
 
 If there are multiple invocations of REGISTER_GLOBAL_MOCK_RETURNS, the last one shall take effect over the previous ones.
+
+If any error occurs during REGISTER_GLOBAL_MOCK_RETURNS, umock_c shall raise an error with the code UMOCK_C_ERROR.
