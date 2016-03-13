@@ -443,6 +443,13 @@ typedef struct ARG_BUFFER_TAG
         C2(mock_hook_,name) = mock_return_hook; \
     } \
 
+/* Codes_SRS_UMOCK_C_01_108: [The REGISTER_GLOBAL_MOCK_RETURN shall register a return value to always be returned by a mock function.]*/
+#define IMPLEMENT_REGISTER_GLOBAL_MOCK_RETURN(return_type, name, ...) \
+    IF(IS_NOT_VOID(return_type), void C2(set_global_mock_return_, name)(return_type return_value) \
+    { \
+        (void)umocktypes_copy(TOSTRING(return_type), &C2(mock_call_default_result_,name), &return_value); \
+    }, ) \
+
 /* Codes_SRS_UMOCK_C_01_003: [If ENABLE_MOCKS is defined, MOCKABLE_FUNCTION shall generate all the boilerplate code needed by the macros in umock API to function to record the calls. Note: a lot of code (including function definitions and bodies, global variables (both static and extern).] */
 /* Codes_SRS_UMOCK_C_01_004: [If ENABLE_MOCKS is defined, MOCKABLE_FUNCTION shall generate the declaration of the function and code for the mocked function, thus allowing setting up of expectations in test functions.] */
 /* Codes_SRS_UMOCK_C_01_014: [For each argument the argument value shall be stored for later comparison with actual calls.] */
@@ -607,7 +614,7 @@ typedef struct ARG_BUFFER_TAG
         },) \
         free(mock_call_data); \
     } \
-    IF(IS_NOT_VOID(return_type),static const return_type C4(mock_call_,name,_,result);,) \
+    IF(IS_NOT_VOID(return_type),static return_type C2(mock_call_default_result_,name);,) \
     IF(COUNT_ARG(__VA_ARGS__),IMPLEMENT_IGNORE_ALL_ARGUMENTS_FUNCTION(return_type, name, __VA_ARGS__),) \
     IF(COUNT_ARG(__VA_ARGS__),IMPLEMENT_VALIDATE_ALL_ARGUMENTS_FUNCTION(return_type, name, __VA_ARGS__),) \
     IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_KEEP_1(IMPLEMENT_IGNORE_ARGUMENT_BY_NAME_FUNCTION, name, __VA_ARGS__),) \
@@ -650,7 +657,7 @@ typedef struct ARG_BUFFER_TAG
                     } \
                     IF(IS_NOT_VOID(return_type),else \
                     { \
-                        (void)umocktypes_copy(TOSTRING(return_type), &result, &C4(mock_call_, name, _, result)); \
+                        (void)umocktypes_copy(TOSTRING(return_type), &result, &C2(mock_call_default_result_,name)); \
                     },) \
                 } \
             },) \
@@ -665,7 +672,7 @@ typedef struct ARG_BUFFER_TAG
             } \
             IF(IS_NOT_VOID(return_type),else \
             { \
-                (void)umocktypes_copy(TOSTRING(return_type), &result, &C4(mock_call_, name, _, result)); \
+                (void)umocktypes_copy(TOSTRING(return_type), &result, &C2(mock_call_default_result_,name)); \
             },) \
         } \
 		IF(IS_NOT_VOID(return_type),return result;,) \
@@ -673,9 +680,7 @@ typedef struct ARG_BUFFER_TAG
     IMPLEMENT_STRICT_EXPECTED_MOCK(return_type, name, __VA_ARGS__) \
     IMPLEMENT_EXPECTED_MOCK(return_type, name, __VA_ARGS__) \
     IMPLEMENT_REGISTER_GLOBAL_MOCK_HOOK(return_type, name, __VA_ARGS__) \
-    IF(IS_NOT_VOID(return_type),void C2(set_global_mock_return_,name)(return_type return_value) \
-    { \
-    },) \
+    IMPLEMENT_REGISTER_GLOBAL_MOCK_RETURN(return_type, name, __VA_ARGS__) \
     IF(IS_NOT_VOID(return_type),void C2(set_global_mock_fail_return_,name)(return_type return_value) \
     { \
     },)

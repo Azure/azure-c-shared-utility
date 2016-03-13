@@ -28,6 +28,7 @@ extern "C" {
     MOCKABLE_FUNCTION(void, test_dependency_void_return);
     MOCKABLE_FUNCTION(int*, test_dependency_int_ptr_return);
     MOCKABLE_FUNCTION(void, test_dependency_buffer_arg, unsigned char*, a);
+    MOCKABLE_FUNCTION(int, test_dependency_global_mock_return_test);
 
 #ifdef __cplusplus
 }

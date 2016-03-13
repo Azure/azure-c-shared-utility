@@ -1247,4 +1247,19 @@ TEST_FUNCTION(REGISTER_GLOBAL_MOCK_HOOK_with_a_function_that_returns_void_works)
     ASSERT_ARE_EQUAL(int, 1, test_dependency_void_return_called);
 }
 
+/* REGISTER_GLOBAL_MOCK_RETURN */
+
+/* Tests_SRS_UMOCK_C_01_108: [The REGISTER_GLOBAL_MOCK_RETURN shall register a return value to always be returned by a mock function.]*/
+TEST_FUNCTION(REGISTER_GLOBAL_MOCK_RETURN_makes_a_subsequent_call_to_the_mock_return_the_value)
+{
+    // arrange
+    REGISTER_GLOBAL_MOCK_RETURN(test_dependency_global_mock_return_test, 0x45);
+
+    // act
+    int result = test_dependency_global_mock_return_test();
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0x45, result);
+}
+
 END_TEST_SUITE(umock_c_unittests)
