@@ -438,10 +438,10 @@ typedef struct ARG_BUFFER_TAG
 /* Codes_SRS_UMOCK_C_01_107: [If there are multiple invocations of REGISTER_GLOBAL_MOCK_HOOK, the last one shall take effect over the previous ones.] */
 /* Codes_SRS_UMOCK_C_01_134: [ REGISTER_GLOBAL_MOCK_HOOK called with a NULL hook unregisters a previously registered hook. ]*/
 #define IMPLEMENT_REGISTER_GLOBAL_MOCK_HOOK(return_type, name, ...) \
-    IF(IS_NOT_VOID(return_type),void C2(set_global_mock_hook_,name)(C2(mock_hook_func_type_, name) mock_return_hook) \
+    void C2(set_global_mock_hook_,name)(C2(mock_hook_func_type_, name) mock_return_hook) \
     { \
         C2(mock_hook_,name) = mock_return_hook; \
-    },) \
+    } \
 
 /* Codes_SRS_UMOCK_C_01_003: [If ENABLE_MOCKS is defined, MOCKABLE_FUNCTION shall generate all the boilerplate code needed by the macros in umock API to function to record the calls. Note: a lot of code (including function definitions and bodies, global variables (both static and extern).] */
 /* Codes_SRS_UMOCK_C_01_004: [If ENABLE_MOCKS is defined, MOCKABLE_FUNCTION shall generate the declaration of the function and code for the mocked function, thus allowing setting up of expectations in test functions.] */
@@ -464,8 +464,8 @@ typedef struct ARG_BUFFER_TAG
 /* Codes_SRS_UMOCK_C_01_106: [The signature for the hook shall be assumed to have exactly the same arguments and return as the mocked function.]*/
 /* Codes_SRS_UMOCK_C_01_135: [ All parameters passed to the mock shall be passed down to the mock hook. ]*/
 #define MOCKABLE_FUNCTION_INTERNAL_WITH_MOCK(return_type, name, ...) \
-    IF(IS_NOT_VOID(return_type),typedef return_type (*C2(mock_hook_func_type_, name))(IF(COUNT_ARG(__VA_ARGS__),FOR_EACH_2_COUNTED(ARG_IN_SIGNATURE, __VA_ARGS__),void));,) \
-    IF(IS_NOT_VOID(return_type),static C2(mock_hook_func_type_,name) C2(mock_hook_,name) = NULL;,) \
+    typedef return_type (*C2(mock_hook_func_type_, name))(IF(COUNT_ARG(__VA_ARGS__),FOR_EACH_2_COUNTED(ARG_IN_SIGNATURE, __VA_ARGS__),void)); \
+    static C2(mock_hook_func_type_,name) C2(mock_hook_,name) = NULL; \
     struct C2(_mock_call_modifier_,name); \
     IF(COUNT_ARG(__VA_ARGS__),typedef struct C2(_mock_call_modifier_,name) (*C2(ignore_all_arguments_func_type_,name))(void);,) \
     IF(COUNT_ARG(__VA_ARGS__),typedef struct C2(_mock_call_modifier_,name) (*C2(validate_all_arguments_func_type_,name))(void);,) \
@@ -644,15 +644,14 @@ typedef struct ARG_BUFFER_TAG
                 } \
                 else \
                 { \
-                    IF(IS_NOT_VOID(return_type), \
-                        if (C2(mock_hook_, name) != NULL) \
-                        { \
-                            result = C2(mock_hook_, name)(IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_COUNTED(ARG_NAME_ONLY_IN_CALL, __VA_ARGS__),)); \
-                        } \
-                        else \
-                        { \
-                            (void)umocktypes_copy(TOSTRING(return_type), &result, &C4(mock_call_, name, _, result)); \
-                        },) \
+                    if (C2(mock_hook_, name) != NULL) \
+                    { \
+                        IF(IS_NOT_VOID(return_type),result =,) C2(mock_hook_, name)(IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_COUNTED(ARG_NAME_ONLY_IN_CALL, __VA_ARGS__),)); \
+                    } \
+                    IF(IS_NOT_VOID(return_type),else \
+                    { \
+                        (void)umocktypes_copy(TOSTRING(return_type), &result, &C4(mock_call_, name, _, result)); \
+                    },) \
                 } \
             },) \
             IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_COUNTED(COPY_OUT_ARG_VALUE_FROM_MATCHED_CALL, __VA_ARGS__),) \
@@ -660,15 +659,14 @@ typedef struct ARG_BUFFER_TAG
         } \
         else \
         { \
-            IF(IS_NOT_VOID(return_type), \
-                if (C2(mock_hook_, name) != NULL) \
-                { \
-                    result = C2(mock_hook_, name)(IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_COUNTED(ARG_NAME_ONLY_IN_CALL, __VA_ARGS__),)); \
-                } \
-                else \
-                { \
-                    (void)umocktypes_copy(TOSTRING(return_type), &result, &C4(mock_call_, name, _, result)); \
-                },) \
+            if (C2(mock_hook_, name) != NULL) \
+            { \
+                IF(IS_NOT_VOID(return_type),result =,) C2(mock_hook_, name)(IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_COUNTED(ARG_NAME_ONLY_IN_CALL, __VA_ARGS__),)); \
+            } \
+            IF(IS_NOT_VOID(return_type),else \
+            { \
+                (void)umocktypes_copy(TOSTRING(return_type), &result, &C4(mock_call_, name, _, result)); \
+            },) \
         } \
 		IF(IS_NOT_VOID(return_type),return result;,) \
 	} \

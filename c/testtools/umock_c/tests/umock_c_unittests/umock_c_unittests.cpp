@@ -58,6 +58,12 @@ static int my_hook_test_dependency_2_args(int a, int b)
     return 0;
 }
 
+static unsigned int test_dependency_void_return_called = 0;
+static void my_hook_test_dependency_void_return(void)
+{
+    test_dependency_void_return_called = 1;
+}
+
 BEGIN_TEST_SUITE(umock_c_unittests)
 
 TEST_SUITE_INITIALIZE(suite_init)
@@ -1226,6 +1232,19 @@ TEST_FUNCTION(REGISTER_GLOBAL_MOCK_HOOK_the_args_of_the_mock_get_passed_to_the_h
     // assert
     ASSERT_ARE_EQUAL(int, 0x42, arg_a);
     ASSERT_ARE_EQUAL(int, 0x43, arg_b);
+}
+
+/* Tests_SRS_UMOCK_C_01_104: [The REGISTER_GLOBAL_MOCK_HOOK shall register a mock hook to be called every time the mocked function is called by production code.]*/
+TEST_FUNCTION(REGISTER_GLOBAL_MOCK_HOOK_with_a_function_that_returns_void_works)
+{
+    // arrange
+    REGISTER_GLOBAL_MOCK_HOOK(test_dependency_void_return, my_hook_test_dependency_void_return);
+
+    // act
+    test_dependency_void_return();
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 1, test_dependency_void_return_called);
 }
 
 END_TEST_SUITE(umock_c_unittests)
