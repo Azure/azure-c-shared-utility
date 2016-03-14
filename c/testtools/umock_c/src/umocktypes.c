@@ -14,10 +14,10 @@
 typedef struct UMOCK_VALUE_TYPE_HANDLERS_TAG
 {
     char* type;
-    UMOCKTYPE_STRINGIFY_FUNC stringify;
-    UMOCKTYPE_COPY_FUNC value_copy;
-    UMOCKTYPE_FREE_FUNC value_free;
-    UMOCKTYPE_ARE_EQUAL_FUNC are_equal;
+    UMOCKTYPE_STRINGIFY_FUNC stringify_func;
+    UMOCKTYPE_COPY_FUNC copy_func;
+    UMOCKTYPE_FREE_FUNC free_func;
+    UMOCKTYPE_ARE_EQUAL_FUNC are_equal_func;
 } UMOCK_VALUE_TYPE_HANDLERS;
 
 typedef enum UMOCKTYPES_STATE_TAG
@@ -152,32 +152,72 @@ void umocktypes_deinit(void)
     }
 }
 
-int umocktypes_register_type(const char* type, UMOCKTYPE_STRINGIFY_FUNC stringify, UMOCKTYPE_ARE_EQUAL_FUNC are_equal, UMOCKTYPE_COPY_FUNC value_copy, UMOCKTYPE_FREE_FUNC value_free)
+int umocktypes_register_type(const char* type, UMOCKTYPE_STRINGIFY_FUNC stringify_func, UMOCKTYPE_ARE_EQUAL_FUNC are_equal_func, UMOCKTYPE_COPY_FUNC copy_func, UMOCKTYPE_FREE_FUNC free_func)
 {
     int result;
 
-    UMOCK_VALUE_TYPE_HANDLERS* new_type_handlers = (UMOCK_VALUE_TYPE_HANDLERS*)realloc(type_handlers, sizeof(UMOCK_VALUE_TYPE_HANDLERS) * (type_handler_count + 1));
-    if (new_type_handlers == NULL)
+    if ((type == NULL) ||
+        (stringify_func == NULL) ||
+        (are_equal_func == NULL) ||
+        (copy_func == NULL) ||
+        (free_func == NULL))
     {
+        /* Codes_SRS_UMOCKTYPES_01_009: [ If any of the arguments is NULL, umocktypes_register_type shall fail and return a non-zero value. ]*/
         result = __LINE__;
     }
     else
     {
-        type_handlers = new_type_handlers;
-        type_handlers[type_handler_count].type = normalize_type(type);
-        if (type_handlers[type_handler_count].type == NULL)
+        char* normalized_type = normalize_type(type);
+        if (normalized_type == NULL)
         {
+            /* Codes_SRS_UMOCKTYPES_01_012: [ If an error occurs allocating memory for the newly registered type, umocktypes_register_type shall fail and return a non-zero value. ]*/
             result = __LINE__;
         }
         else
         {
-            type_handlers[type_handler_count].stringify = stringify;
-            type_handlers[type_handler_count].value_copy = value_copy;
-            type_handlers[type_handler_count].value_free = value_free;
-            type_handlers[type_handler_count].are_equal = are_equal;
-            type_handler_count++;
+            UMOCK_VALUE_TYPE_HANDLERS* type_handler = get_value_type_handlers(normalized_type);
+            if (type_handler != NULL)
+            {
+                free(normalized_type);
 
-            result = 0;
+                if ((stringify_func != type_handler->stringify_func) ||
+                    (are_equal_func != type_handler->are_equal_func) ||
+                    (copy_func != type_handler->copy_func) ||
+                    (free_func != type_handler->free_func))
+                {
+                    /* Codes_SRS_UMOCKTYPES_01_011: [ If the type has already been registered but at least one of the function pointers is different, umocktypes_register_type shall fail and return a non-zero value. ]*/
+                    result = __LINE__;
+                }
+                else
+                {
+                    /* Codes_SRS_UMOCKTYPES_01_010: [ If the type has already been registered with the same function pointers then umocktypes_register_type shall succeed and return 0. ]*/
+                    result = 0;
+                }
+            }
+            else
+            {
+                UMOCK_VALUE_TYPE_HANDLERS* new_type_handlers = (UMOCK_VALUE_TYPE_HANDLERS*)realloc(type_handlers, sizeof(UMOCK_VALUE_TYPE_HANDLERS) * (type_handler_count + 1));
+                if (new_type_handlers == NULL)
+                {
+                    /* Codes_SRS_UMOCKTYPES_01_012: [ If an error occurs allocating memory for the newly registered type, umocktypes_register_type shall fail and return a non-zero value. ]*/
+                    free(normalized_type);
+                    result = __LINE__;
+                }
+                else
+                {
+                    /* Codes_SRS_UMOCKTYPES_01_007: [ umocktypes_register_type shall register an interface made out of the stringify, are equal, copy and free functions for the type identified by the argument type. ] */
+                    type_handlers = new_type_handlers;
+                    type_handlers[type_handler_count].type = normalized_type;
+                    type_handlers[type_handler_count].stringify_func = stringify_func;
+                    type_handlers[type_handler_count].copy_func = copy_func;
+                    type_handlers[type_handler_count].free_func = free_func;
+                    type_handlers[type_handler_count].are_equal_func = are_equal_func;
+                    type_handler_count++;
+
+                    /* Codes_SRS_UMOCKTYPES_01_008: [ On success umocktypes_register_type shall return 0. ]*/
+                    result = 0;
+                }
+            }
         }
     }
 
@@ -195,7 +235,7 @@ char* umocktypes_stringify(const char* type, const void* value)
     }
     else
     {
-        result = value_type_handlers->stringify(value);
+        result = value_type_handlers->stringify_func(value);
     }
 
     return result;
@@ -212,7 +252,7 @@ int umocktypes_are_equal(const char* type, const void* left, const void* right)
     }
     else
     {
-        result = value_type_handlers->are_equal(left, right);
+        result = value_type_handlers->are_equal_func(left, right);
     }
 
     return result;
@@ -228,7 +268,7 @@ int umocktypes_copy(const char* type, void* destination, const void* source)
     }
     else
     {
-        result = value_type_handlers->value_copy(destination, source);
+        result = value_type_handlers->copy_func(destination, source);
     }
     return result;
 }
@@ -238,6 +278,6 @@ void umocktypes_free(const char* type, void* value)
     UMOCK_VALUE_TYPE_HANDLERS* value_type_handlers = get_value_type_handlers(type);
     if (value_type_handlers != NULL)
     {
-        value_type_handlers->value_free(value);
+        value_type_handlers->free_func(value);
     }
 }

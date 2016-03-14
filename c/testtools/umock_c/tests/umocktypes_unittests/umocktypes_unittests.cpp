@@ -35,6 +35,29 @@ int test_are_equal_func_testtype(const void* left, const void* right)
     return 0;
 }
 
+static char* test_stringify_func_testtype_2(const void* value)
+{
+    (void)value;
+    return NULL;
+}
+
+static int test_copy_func_testtype_2(void* destination, const void* source)
+{
+    (void)destination, source;
+    return 0;
+}
+
+void test_free_func_testtype_2(void* value)
+{
+    (void)value;
+}
+
+int test_are_equal_func_testtype_2(const void* left, const void* right)
+{
+    (void)left, right;
+    return 0;
+}
+
 static const void* test_value_1 = (void*)0x4242;
 static const void* test_value_2 = (void*)0x4243;
 
@@ -157,6 +180,172 @@ TEST_FUNCTION(umocktypes_deinit_if_the_module_was_not_initialized_shall_do_nothi
 
     // assert
     // no explicit assert
+}
+
+/* umocktypes_register_type */
+
+/* Tests_SRS_UMOCKTYPES_01_007: [ umocktypes_register_type shall register an interface made out of the stringify, are equal, copy and free functions for the type identified by the argument type. ] */
+/* Tests_SRS_UMOCKTYPES_01_008: [ On success umocktypes_register_type shall return 0. ]*/
+TEST_FUNCTION(umocktypes_register_type_when_module_is_initialized_succeeds)
+{
+    // arrange
+    (void)umocktypes_init();
+
+    // act
+    int result = umocktypes_register_type("testtype", test_stringify_func_testtype, test_are_equal_func_testtype, test_copy_func_testtype, test_free_func_testtype);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+}
+
+/* Tests_SRS_UMOCKTYPES_01_009: [ If any of the arguments is NULL, umocktypes_register_type shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(umocktypes_register_type_with_NULL_type_fails)
+{
+    // arrange
+    (void)umocktypes_init();
+
+    // act
+    int result = umocktypes_register_type(NULL, test_stringify_func_testtype, test_are_equal_func_testtype, test_copy_func_testtype, test_free_func_testtype);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+}
+
+/* Tests_SRS_UMOCKTYPES_01_009: [ If any of the arguments is NULL, umocktypes_register_type shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(umocktypes_register_type_with_NULL_stringify_function_fails)
+{
+    // arrange
+    (void)umocktypes_init();
+
+    // act
+    int result = umocktypes_register_type("testtype", NULL, test_are_equal_func_testtype, test_copy_func_testtype, test_free_func_testtype);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+}
+
+/* Tests_SRS_UMOCKTYPES_01_009: [ If any of the arguments is NULL, umocktypes_register_type shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(umocktypes_register_type_with_NULL_are_equal_function_fails)
+{
+    // arrange
+    (void)umocktypes_init();
+
+    // act
+    int result = umocktypes_register_type("testtype", test_stringify_func_testtype, NULL, test_copy_func_testtype, test_free_func_testtype);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+}
+
+/* Tests_SRS_UMOCKTYPES_01_009: [ If any of the arguments is NULL, umocktypes_register_type shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(umocktypes_register_type_with_NULL_copy_function_fails)
+{
+    // arrange
+    (void)umocktypes_init();
+
+    // act
+    int result = umocktypes_register_type("testtype", test_stringify_func_testtype, test_are_equal_func_testtype, NULL, test_free_func_testtype);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+}
+
+/* Tests_SRS_UMOCKTYPES_01_009: [ If any of the arguments is NULL, umocktypes_register_type shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(umocktypes_register_type_with_NULL_free_function_fails)
+{
+    // arrange
+    (void)umocktypes_init();
+
+    // act
+    int result = umocktypes_register_type("testtype", test_stringify_func_testtype, test_are_equal_func_testtype, test_copy_func_testtype, NULL);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+}
+
+/* Tests_SRS_UMOCKTYPES_01_010: [ If the type has already been registered with the same function pointers then umocktypes_register_type shall succeed and return 0. ]*/
+TEST_FUNCTION(umocktypes_register_type_2_times_on_the_same_type_with_the_same_functions_succeeds)
+{
+    // arrange
+    (void)umocktypes_init();
+    umocktypes_register_type("testtype", test_stringify_func_testtype, test_are_equal_func_testtype, test_copy_func_testtype, test_free_func_testtype);
+
+    // act
+    int result = umocktypes_register_type("testtype", test_stringify_func_testtype, test_are_equal_func_testtype, test_copy_func_testtype, test_free_func_testtype);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+}
+
+/* Tests_SRS_UMOCKTYPES_01_011: [ If the type has already been registered but at least one of the function pointers is different, umocktypes_register_type shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(umocktypes_register_type_2_times_on_the_same_type_with_different_stringify_function_fails)
+{
+    // arrange
+    (void)umocktypes_init();
+    umocktypes_register_type("testtype", test_stringify_func_testtype, test_are_equal_func_testtype, test_copy_func_testtype, test_free_func_testtype);
+
+    // act
+    int result = umocktypes_register_type("testtype", test_stringify_func_testtype_2, test_are_equal_func_testtype, test_copy_func_testtype, test_free_func_testtype);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+}
+
+/* Tests_SRS_UMOCKTYPES_01_011: [ If the type has already been registered but at least one of the function pointers is different, umocktypes_register_type shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(umocktypes_register_type_2_times_on_the_same_type_with_different_are_equal_function_fails)
+{
+    // arrange
+    (void)umocktypes_init();
+    umocktypes_register_type("testtype", test_stringify_func_testtype, test_are_equal_func_testtype, test_copy_func_testtype, test_free_func_testtype);
+
+    // act
+    int result = umocktypes_register_type("testtype", test_stringify_func_testtype, test_are_equal_func_testtype_2, test_copy_func_testtype, test_free_func_testtype);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+}
+
+/* Tests_SRS_UMOCKTYPES_01_011: [ If the type has already been registered but at least one of the function pointers is different, umocktypes_register_type shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(umocktypes_register_type_2_times_on_the_same_type_with_different_copy_function_fails)
+{
+    // arrange
+    (void)umocktypes_init();
+    umocktypes_register_type("testtype", test_stringify_func_testtype, test_are_equal_func_testtype, test_copy_func_testtype, test_free_func_testtype);
+
+    // act
+    int result = umocktypes_register_type("testtype", test_stringify_func_testtype, test_are_equal_func_testtype, test_copy_func_testtype_2, test_free_func_testtype);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+}
+
+/* Tests_SRS_UMOCKTYPES_01_011: [ If the type has already been registered but at least one of the function pointers is different, umocktypes_register_type shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(umocktypes_register_type_2_times_on_the_same_type_with_different_free_function_fails)
+{
+    // arrange
+    (void)umocktypes_init();
+    umocktypes_register_type("testtype", test_stringify_func_testtype, test_are_equal_func_testtype, test_copy_func_testtype, test_free_func_testtype);
+
+    // act
+    int result = umocktypes_register_type("testtype", test_stringify_func_testtype, test_are_equal_func_testtype, test_copy_func_testtype, test_free_func_testtype_2);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+}
+
+/* Tests_SRS_UMOCKTYPES_01_034: [ Before registering, the type string shall be normalized. ] */
+/* Tests_SRS_UMOCKTYPES_01_039: [ All extra spaces shall be removed. ] */
+TEST_FUNCTION(umocktypes_register_type_with_2_types_that_have_the_same_normalized_form_but_an_extra_space_before_star_detects_that_this_is_the_same_type)
+{
+    // arrange
+    (void)umocktypes_init();
+    umocktypes_register_type("char*", test_stringify_func_testtype, test_are_equal_func_testtype, test_copy_func_testtype, test_free_func_testtype);
+
+    // act
+    int result = umocktypes_register_type("char *", test_stringify_func_testtype, test_are_equal_func_testtype, test_copy_func_testtype, test_free_func_testtype_2);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
 }
 
 END_TEST_SUITE(umocktypes_unittests)

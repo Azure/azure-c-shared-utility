@@ -14,7 +14,7 @@ typedef int(*UMOCKTYPE_ARE_EQUAL_FUNC)(const void* left, const void* right);
 
 extern int umocktypes_init(void);
 extern void umocktypes_deinit(void);
-extern int umocktypes_register_type(const char* type, UMOCKTYPE_STRINGIFY_FUNC stringify, UMOCKTYPE_ARE_EQUAL_FUNC are_equal, UMOCKTYPE_COPY_FUNC value_copy, UMOCKTYPE_FREE_FUNC value_free);
+extern int umocktypes_register_type(const char* type, UMOCKTYPE_STRINGIFY_FUNC stringify_func, UMOCKTYPE_ARE_EQUAL_FUNC are_equal_func, UMOCKTYPE_COPY_FUNC copy_func, UMOCKTYPE_FREE_FUNC free_func);
 
 extern char* umocktypes_stringify(const char* type, const void* value);
 extern int umocktypes_are_equal(const char* type, const void* left, const void* right);
@@ -46,15 +46,15 @@ XX**SRS_UMOCKTYPES_01_040: [** An umocktypes_init call after deinit shall succee
 ##umocktypes_register_type
 
 ```c
-extern int umocktypes_register_type(const char* type, UMOCKTYPE_STRINGIFY_FUNC stringify, UMOCKTYPE_ARE_EQUAL_FUNC are_equal, UMOCKTYPE_COPY_FUNC value_copy, UMOCKTYPE_FREE_FUNC value_free);
+extern int umocktypes_register_type(const char* type, UMOCKTYPE_STRINGIFY_FUNC stringify_func, UMOCKTYPE_ARE_EQUAL_FUNC are_equal_func, UMOCKTYPE_COPY_FUNC copy_func, UMOCKTYPE_FREE_FUNC free_func);
 ```
 
-**SRS_UMOCKTYPES_01_007: [** umocktypes_register_type shall register an interface made out of the stringify, are equal, copy and free functions for the type identified by the argument type. **]**
-**SRS_UMOCKTYPES_01_008: [** On success umocktypes_register_type shall return 0. **]**
-**SRS_UMOCKTYPES_01_009: [** If any of the arguments is NULL, umocktypes_register_type shall fail and return a non-zero value. **]**
-**SRS_UMOCKTYPES_01_010: [** If the type has already been registered with the same function pointers then umocktypes_register_type shall succeed and return 0. **]**
-**SRS_UMOCKTYPES_01_011: [** If the type has already been registered but at least one of the function pointers is different, umocktypes_register_type shall fail and return a non-zero value. **]**
-**SRS_UMOCKTYPES_01_012: [** If an error occurs allocating memory for the newly registered type, umocktypes_register_type shall fail and return a non-zero value. **]**
+XX**SRS_UMOCKTYPES_01_007: [** umocktypes_register_type shall register an interface made out of the stringify, are equal, copy and free functions for the type identified by the argument type. **]**
+XX**SRS_UMOCKTYPES_01_008: [** On success umocktypes_register_type shall return 0. **]**
+XX**SRS_UMOCKTYPES_01_009: [** If any of the arguments is NULL, umocktypes_register_type shall fail and return a non-zero value. **]**
+XX**SRS_UMOCKTYPES_01_010: [** If the type has already been registered with the same function pointers then umocktypes_register_type shall succeed and return 0. **]**
+XX**SRS_UMOCKTYPES_01_011: [** If the type has already been registered but at least one of the function pointers is different, umocktypes_register_type shall fail and return a non-zero value. **]**
+X**SRS_UMOCKTYPES_01_012: [** If an error occurs allocating memory for the newly registered type, umocktypes_register_type shall fail and return a non-zero value. **]**
 **SRS_UMOCKTYPES_01_034: [** Before registering, the type string shall be normalized. **]** See normalizing type names below. 
 
 ##umocktypes_stringify
