@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include "testrunnerswitcher.h"
-#include "umocktypes.h"
+#include "umocktypename.h"
 
 /* TODO:
 - serialize tests
@@ -27,22 +27,23 @@ TEST_FUNCTION_INITIALIZE(test_function_init)
 
 TEST_FUNCTION_CLEANUP(test_function_cleanup)
 {
-    umocktypes_deinit();
 }
 
 /* umocktypename_normalize */
 
-#if 0
-TEST_FUNCTION(umocktypes_init_initializes_the_module)
+/* Tests_SRS_UMOCKTYPENAME_01_001: [ umocktypename_normalize shall return a char\* with a newly allocated string that contains the normalized typename. ]*/
+TEST_FUNCTION(umocktypename_normalize_returns_the_same_string_when_already_normalized)
 {
     // arrange
 
     // act
-    int result = umocktypes_init();
+    char* result = umocktypename_normalize("char");
 
     // assert
-    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, "char", result);
+
+    // cleanup
+    free(result);
 }
-#endif
 
 END_TEST_SUITE(umocktypename_unittests)
