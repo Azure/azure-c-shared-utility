@@ -36,6 +36,7 @@ static char* normalize_type(const char* type)
     size_t pos = 0;
     char* result;
 
+    /* Codes_SRS_UMOCKTYPES_01_039: [ All extra spaces (more than 1 space between non-space characters) shall be removed. ]*/
     while (type[pos] != '\0')
     {
         if (!((pos > 0) && isspace(type[pos]) && isspace(type[pos - 1])))

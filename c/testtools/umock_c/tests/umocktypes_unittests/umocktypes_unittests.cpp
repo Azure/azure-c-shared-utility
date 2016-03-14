@@ -334,15 +334,60 @@ TEST_FUNCTION(umocktypes_register_type_2_times_on_the_same_type_with_different_f
 }
 
 /* Tests_SRS_UMOCKTYPES_01_034: [ Before registering, the type string shall be normalized. ] */
-/* Tests_SRS_UMOCKTYPES_01_039: [ All extra spaces shall be removed. ] */
+/* Tests_SRS_UMOCKTYPES_01_039: [ All extra spaces (more than 1 space between non-space characters) shall be removed. ] */
 TEST_FUNCTION(umocktypes_register_type_with_2_types_that_have_the_same_normalized_form_but_an_extra_space_before_star_detects_that_this_is_the_same_type)
+{
+    // arrange
+    (void)umocktypes_init();
+    umocktypes_register_type("char *", test_stringify_func_testtype, test_are_equal_func_testtype, test_copy_func_testtype, test_free_func_testtype);
+
+    // act
+    int result = umocktypes_register_type("char  *", test_stringify_func_testtype, test_are_equal_func_testtype, test_copy_func_testtype, test_free_func_testtype_2);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+}
+
+/* Tests_SRS_UMOCKTYPES_01_034: [ Before registering, the type string shall be normalized. ] */
+/* Tests_SRS_UMOCKTYPES_01_039: [ All extra spaces (more than 1 space between non-space characters) shall be removed. ] */
+TEST_FUNCTION(umocktypes_register_type_with_2_types_that_have_the_same_normalized_form_but_2_extra_spaces_before_star_detects_that_this_is_the_same_type)
+{
+    // arrange
+    (void)umocktypes_init();
+    umocktypes_register_type("char  *", test_stringify_func_testtype, test_are_equal_func_testtype, test_copy_func_testtype, test_free_func_testtype);
+
+    // act
+    int result = umocktypes_register_type("char   *", test_stringify_func_testtype, test_are_equal_func_testtype, test_copy_func_testtype, test_free_func_testtype_2);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+}
+
+/* Tests_SRS_UMOCKTYPES_01_034: [ Before registering, the type string shall be normalized. ] */
+/* Tests_SRS_UMOCKTYPES_01_039: [ All extra spaces (more than 1 space between non-space characters) shall be removed. ] */
+TEST_FUNCTION(umocktypes_register_type_with_2_types_that_have_the_same_normalized_form_and_no_extra_spaces_detects_that_this_is_the_same_type)
 {
     // arrange
     (void)umocktypes_init();
     umocktypes_register_type("char*", test_stringify_func_testtype, test_are_equal_func_testtype, test_copy_func_testtype, test_free_func_testtype);
 
     // act
-    int result = umocktypes_register_type("char *", test_stringify_func_testtype, test_are_equal_func_testtype, test_copy_func_testtype, test_free_func_testtype_2);
+    int result = umocktypes_register_type("char*", test_stringify_func_testtype, test_are_equal_func_testtype, test_copy_func_testtype, test_free_func_testtype_2);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+}
+
+/* Tests_SRS_UMOCKTYPES_01_034: [ Before registering, the type string shall be normalized. ] */
+/* Tests_SRS_UMOCKTYPES_01_039: [ All extra spaces (more than 1 space between non-space characters) shall be removed. ] */
+TEST_FUNCTION(umocktypes_register_type_with_2_types_that_have_the_same_normalized_form_and_an_extra_space_at_the_beginning_detects_that_this_is_the_same_type)
+{
+    // arrange
+    (void)umocktypes_init();
+    umocktypes_register_type("char*", test_stringify_func_testtype, test_are_equal_func_testtype, test_copy_func_testtype, test_free_func_testtype);
+
+    // act
+    int result = umocktypes_register_type(" char*", test_stringify_func_testtype, test_are_equal_func_testtype, test_copy_func_testtype, test_free_func_testtype_2);
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);

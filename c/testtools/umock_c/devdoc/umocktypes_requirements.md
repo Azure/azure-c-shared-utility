@@ -114,6 +114,7 @@ extern void umocktypes_free(const char* type, void* value);
 
 The type names shall be normalized before being used (before any comparison) according to these rules:
 **SRS_UMOCKTYPES_01_039: [** All extra spaces shall be removed. **]**
+**SRS_UMOCKTYPES_01_041: [** When there is a space between star and the adjacent word (not star), the space shall be removed. **]**
 
 Example:
 These are 2 strings for typenames, referring to the same type:
