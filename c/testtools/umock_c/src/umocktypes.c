@@ -20,8 +20,15 @@ typedef struct UMOCK_VALUE_TYPE_HANDLERS_TAG
     UMOCKTYPE_ARE_EQUAL_FUNC are_equal;
 } UMOCK_VALUE_TYPE_HANDLERS;
 
+typedef enum UMOCKTYPES_STATE_TAG
+{
+    UMOCKTYPES_STATE_NOT_INITIALIZED,
+    UMOCKTYPES_STATE_INITIALIZED
+} UMOCKTYPES_STATE;
+
 static UMOCK_VALUE_TYPE_HANDLERS* type_handlers = NULL;
 static size_t type_handler_count = 0;
+static UMOCKTYPES_STATE umocktypes_state = UMOCKTYPES_STATE_NOT_INITIALIZED;
 
 static char* normalize_type(const char* type)
 {
@@ -98,22 +105,51 @@ static UMOCK_VALUE_TYPE_HANDLERS* get_value_type_handlers(const char* type)
     return result;
 }
 
+/* Codes_SRS_UMOCKTYPES_01_001: [ umocktypes_init shall initialize the umocktypes module. ] */
 int umocktypes_init(void)
 {
-    return 0;
+    int result;
+
+    if (umocktypes_state == UMOCKTYPES_STATE_INITIALIZED)
+    {
+        /* Codes_SRS_UMOCKTYPES_01_004: [ umocktypes_init after another umocktypes_init without deinitializing the module shall fail and return a non-zero value. ]*/
+        result = __LINE__;
+    }
+    else
+    {
+        /* Codes_SRS_UMOCKTYPES_01_002: [ After initialization the list of registered type shall be empty. ] */
+        type_handlers = NULL;
+        type_handler_count = 0;
+
+        umocktypes_state = UMOCKTYPES_STATE_INITIALIZED;
+
+        /* Codes_SRS_UMOCKTYPES_01_003: [ On success umocktypes_init shall return 0. ]*/
+        result = 0;
+    }
+
+    return result;
 }
 
 void umocktypes_deinit(void)
 {
-    size_t i;
-
-    for (i = 0; i < type_handler_count; i++)
+    /* Codes_SRS_UMOCKTYPES_01_006: [ If the module was not initialized, umocktypes_deinit shall do nothing. ]*/
+    if (umocktypes_state == UMOCKTYPES_STATE_INITIALIZED)
     {
-        free(type_handlers[i].type);
-    }
+        size_t i;
 
-    free(type_handlers);
-    type_handlers = NULL;
+        /* Codes_SRS_UMOCKTYPES_01_005: [ umocktypes_deinit shall free all resources associated with the registered types and shall leave the module in a state where another init is possible. ]*/
+        for (i = 0; i < type_handler_count; i++)
+        {
+            free(type_handlers[i].type);
+        }
+
+        free(type_handlers);
+        type_handlers = NULL;
+        type_handler_count = 0;
+
+        /* Codes_SRS_UMOCKTYPES_01_040: [ An umocktypes_init call after deinit shall succeed provided all underlying calls succeed. ]*/
+        umocktypes_state = UMOCKTYPES_STATE_NOT_INITIALIZED;
+    }
 }
 
 int umocktypes_register_type(const char* type, UMOCKTYPE_STRINGIFY_FUNC stringify, UMOCKTYPE_ARE_EQUAL_FUNC are_equal, UMOCKTYPE_COPY_FUNC value_copy, UMOCKTYPE_FREE_FUNC value_free)
@@ -172,7 +208,7 @@ int umocktypes_are_equal(const char* type, const void* left, const void* right)
 
     if (value_type_handlers == NULL)
     {
-        result = 0;
+        result = -1;
     }
     else
     {

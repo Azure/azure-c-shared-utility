@@ -28,10 +28,10 @@ extern void umocktypes_free(const char* type, void* value);
 extern int umocktypes_init(void);
 ```
 
-**SRS_UMOCKTYPES_01_001: [** umocktypes_init shall initialize the umocktypes module. **]**
-**SRS_UMOCKTYPES_01_002: [** After initialization the list of registered type shall be empty. **]**
-**SRS_UMOCKTYPES_01_003: [** On success umocktypes_init shall return 0. **]**
-**SRS_UMOCKTYPES_01_004: [** umocktypes_init after another umocktypes_init without deinitializing the module shall fail and return a non-zero value. **]**
+XX**SRS_UMOCKTYPES_01_001: [** umocktypes_init shall initialize the umocktypes module. **]**
+XX**SRS_UMOCKTYPES_01_002: [** After initialization the list of registered type shall be empty. **]**
+XX**SRS_UMOCKTYPES_01_003: [** On success umocktypes_init shall return 0. **]**
+XX**SRS_UMOCKTYPES_01_004: [** umocktypes_init after another umocktypes_init without deinitializing the module shall fail and return a non-zero value. **]**
 
 ##umocktypes_deinit
 
@@ -39,8 +39,9 @@ extern int umocktypes_init(void);
 extern void umocktypes_deinit(void);
 ```
 
-**SRS_UMOCKTYPES_01_005: [** umocktypes_deinit shall free all resources associated with the registered types and shall leave the module in a state where another init is possible. **]**
-**SRS_UMOCKTYPES_01_006: [** If the module was not initialized, umocktypes_deinit shall do nothing. **]**
+XX**SRS_UMOCKTYPES_01_005: [** umocktypes_deinit shall free all resources associated with the registered types and shall leave the module in a state where another init is possible. **]**
+XX**SRS_UMOCKTYPES_01_006: [** If the module was not initialized, umocktypes_deinit shall do nothing. **]**
+XX**SRS_UMOCKTYPES_01_040: [** An umocktypes_init call after deinit shall succeed provided all underlying calls succeed. **]**
 
 ##umocktypes_register_type
 
