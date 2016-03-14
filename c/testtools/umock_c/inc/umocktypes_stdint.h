@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#ifndef UMOCKTYPES_CHARPTR_H
-#define UMOCKTYPES_CHARPTR_H
+#ifndef UMOCKTYPES_STDINT_H
+#define UMOCKTYPES_STDINT_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,4 +19,4 @@ extern "C" {
 }
 #endif
 
-#endif /* UMOCKTYPES_CHARPTR_H */
+#endif /* UMOCKTYPES_STDINT_H */
