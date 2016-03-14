@@ -55,7 +55,8 @@ XX**SRS_UMOCKTYPES_01_009: [** If any of the arguments is NULL, umocktypes_regis
 XX**SRS_UMOCKTYPES_01_010: [** If the type has already been registered with the same function pointers then umocktypes_register_type shall succeed and return 0. **]**
 XX**SRS_UMOCKTYPES_01_011: [** If the type has already been registered but at least one of the function pointers is different, umocktypes_register_type shall fail and return a non-zero value. **]**
 X**SRS_UMOCKTYPES_01_012: [** If an error occurs allocating memory for the newly registered type, umocktypes_register_type shall fail and return a non-zero value. **]**
-**SRS_UMOCKTYPES_01_034: [** Before registering, the type string shall be normalized. **]** See normalizing type names below. 
+**SRS_UMOCKTYPES_01_034: [** Before registering, the type string shall be normalized by calling umocktypename_normalize. **]**
+**SRS_UMOCKTYPES_01_045: [** If normalizing the typename fails, umocktypes_register_type shall fail and return a non-zero value. **]**
 
 ##umocktypes_stringify
  
@@ -68,7 +69,8 @@ extern char* umocktypes_stringify(const char* type, const void* value);
 **SRS_UMOCKTYPES_01_015: [** On success umocktypes_stringify shall return the char\* produced by the underlying stringify function for type (passed in umocktypes_register_type). **]**
 **SRS_UMOCKTYPES_01_016: [** If any of the arguments is NULL, umocktypes_stringify shall fail and return NULL. **]**
 **SRS_UMOCKTYPES_01_017: [** If type can not be found in the registered types list maintained by the module, umocktypes_are_equal shall fail and return -1. **]**
-**SRS_UMOCKTYPES_01_035: [** Before looking it up, the type string shall be normalized. **]** See normalizing type names below.
+**SRS_UMOCKTYPES_01_035: [** Before looking it up, the type string shall be normalized by calling umocktypename_normalize. **]**
+**SRS_UMOCKTYPES_01_044: [** If normalizing the typename fails, umocktypes_stringify shall fail and return NULL. **]**
 
 ##umocktypes_are_equal
 
@@ -83,7 +85,8 @@ extern int umocktypes_are_equal(const char* type, const void* left, const void* 
 **SRS_UMOCKTYPES_01_022: [** If the underlying are_equal function indicates the types are not equal, umocktypes_are_equal shall return 0. **]** 
 **SRS_UMOCKTYPES_01_023: [** If any of the arguments is NULL, umocktypes_are_equal shall fail and return -1. **]**
 **SRS_UMOCKTYPES_01_024: [** If type can not be found in the registered types list maintained by the module, umocktypes_are_equal shall fail and return -1. **]**
-**SRS_UMOCKTYPES_01_036: [** Before looking it up, the type string shall be normalized. **]** See normalizing type names below.
+**SRS_UMOCKTYPES_01_036: [** Before looking it up, the type string shall be normalized by calling umocktypename_normalize. **]**
+**SRS_UMOCKTYPES_01_043: [** If normalizing the typename fails, umocktypes_are_equal shall fail and return -1. **]**
 
 ##umocktypes_copy
 
@@ -96,7 +99,8 @@ extern int umocktypes_copy(const char* type, void* destination, const void* sour
 **SRS_UMOCKTYPES_01_027: [** If any of the arguments is NULL, umocktypes_copy shall return -1. **]**
 **SRS_UMOCKTYPES_01_028: [** If the underlying copy fails, umocktypes_copy shall return -1. **]**
 **SRS_UMOCKTYPES_01_029: [** If type can not be found in the registered types list maintained by the module, umocktypes_copy shall fail and return -1. **]**
-**SRS_UMOCKTYPES_01_037: [** Before looking it up, the type string shall be normalized. **]** See normalizing type names below.
+**SRS_UMOCKTYPES_01_037: [** Before looking it up, the type string shall be normalized by calling umocktypename_normalize. **]**
+**SRS_UMOCKTYPES_01_042: [** If normalizing the typename fails, umocktypes_copy shall fail and return a non-zero value. **]**
 
 ##umocktypes_free
 
@@ -108,26 +112,5 @@ extern void umocktypes_free(const char* type, void* value);
 **SRS_UMOCKTYPES_01_031: [** If any of the arguments is NULL, umocktypes_free shall do nothing. **]**
 **SRS_UMOCKTYPES_01_033: [** The free shall be done by calling the underlying free function (passed in umocktypes_register_type) for the type identified by the type argument. **]** 
 **SRS_UMOCKTYPES_01_032: [** If type can not be found in the registered types list maintained by the module, umocktypes_free shall do nothing. **]**
-**SRS_UMOCKTYPES_01_038: [** Before looking it up, the type string shall be normalized. **]** See normalizing type names below.
-
-#Normalizing type names
-
-The type names shall be normalized before being used (before any comparison) according to these rules:
-**SRS_UMOCKTYPES_01_039: [** All extra spaces shall be removed. **]**
-**SRS_UMOCKTYPES_01_041: [** When there is a space between star and the adjacent word (not star), the space shall be removed. **]**
-
-Example:
-These are 2 strings for typenames, referring to the same type:
-
-```c
-const char *
-```
-
-```c
-const  char*
-```
-
-They should both be normalized to:
-```c
-const char*
-```
+**SRS_UMOCKTYPES_01_038: [** Before looking it up, the type string shall be normalized by calling umocktypename_normalize. **]**
+**SRS_UMOCKTYPES_01_041: [** If normalizing the typename fails, umocktypes_free shall do nothing. **]**
