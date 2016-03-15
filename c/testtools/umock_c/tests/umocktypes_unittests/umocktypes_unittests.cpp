@@ -495,10 +495,25 @@ TEST_FUNCTION(when_normalizing_the_type_fails_umocktypes_register_type_fails)
     ASSERT_ARE_EQUAL(char_ptr, "char  *", umocktypename_normalize_calls[0].type_name);
 }
 
+/* Tests_SRS_UMOCKTYPES_01_050: [ If umocktypes_register_type is called when the module is not initialized, umocktypes_register_type shall fail and return a non zero value. ]*/
+TEST_FUNCTION(umocktypes_register_type_when_the_module_is_not_initialized_fails)
+{
+    // arrange
+    umocktypename_normalize_call_result = "char*";
+
+    // act
+    int result = umocktypes_register_type("char  *", test_stringify_func_testtype, test_are_equal_func_testtype, test_copy_func_testtype, test_free_func_testtype);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+}
+
 /* umocktypes_stringify */
 
 /* Tests_SRS_UMOCKTYPES_01_013: [ umocktypes_stringify shall return a char\* with the string representation of the value argument. ]*/
 /* Tests_SRS_UMOCKTYPES_01_014: [ The string representation shall be obtained by calling the stringify function registered for the type identified by the argument type. ]*/
+/* Tests_SRS_UMOCKTYPES_01_015: [ On success umocktypes_stringify shall return the char\* produced by the underlying stringify function for type (passed in umocktypes_register_type). ]*/
+/* Tests_SRS_UMOCKTYPES_01_035: [ Before looking it up, the type string shall be normalized by calling umocktypename_normalize. ]*/
 TEST_FUNCTION(umocktypes_stringify_calls_the_underlying_stringify)
 {
     // arrange
@@ -520,6 +535,86 @@ TEST_FUNCTION(umocktypes_stringify_calls_the_underlying_stringify)
 
     // cleanup
     free(result);
+}
+
+/* Tests_SRS_UMOCKTYPES_01_016: [ If any of the arguments is NULL, umocktypes_stringify shall fail and return NULL. ]*/
+TEST_FUNCTION(umocktypes_stringify_with_NULL_value_fails)
+{
+    // arrange
+    (void)umocktypes_init();
+    umocktypename_normalize_call_result = "char*";
+    (void)umocktypes_register_type("char *", test_stringify_func_testtype, test_are_equal_func_testtype, test_copy_func_testtype, test_free_func_testtype);
+    reset_umocktypename_normalize_calls();
+
+    // act
+    char* result = umocktypes_stringify("char *", NULL);
+
+    // assert
+    ASSERT_IS_NULL(result);
+}
+
+/* Tests_SRS_UMOCKTYPES_01_016: [ If any of the arguments is NULL, umocktypes_stringify shall fail and return NULL. ]*/
+TEST_FUNCTION(umocktypes_stringify_with_NULL_type_fails)
+{
+    // arrange
+    (void)umocktypes_init();
+
+    // act
+    char* result = umocktypes_stringify(NULL, test_value_1);
+
+    // assert
+    ASSERT_IS_NULL(result);
+
+}
+
+/* Tests_SRS_UMOCKTYPES_01_017: [ If type can not be found in the registered types list maintained by the module, umocktypes_stringify shall fail and return -1. ]*/
+TEST_FUNCTION(umocktypes_stringify_with_a_type_that_is_not_registered_fails)
+{
+    // arrange
+    (void)umocktypes_init();
+    umocktypename_normalize_call_result = "char*";
+    (void)umocktypes_register_type("char *", test_stringify_func_testtype, test_are_equal_func_testtype, test_copy_func_testtype, test_free_func_testtype);
+    reset_umocktypename_normalize_calls();
+
+    umocktypename_normalize_call_result = "const char*";
+
+    // act
+    char* result = umocktypes_stringify("const char  *", test_value_1);
+
+    // assert
+    ASSERT_IS_NULL(result);
+}
+
+/* Tests_SRS_UMOCKTYPES_01_044: [ If normalizing the typename fails, umocktypes_stringify shall fail and return NULL. ]*/
+TEST_FUNCTION(when_normalizing_the_type_fails_umocktypes_stringify_fails)
+{
+    // arrange
+    (void)umocktypes_init();
+    umocktypename_normalize_call_result = "char*";
+    (void)umocktypes_register_type("char *", test_stringify_func_testtype, test_are_equal_func_testtype, test_copy_func_testtype, test_free_func_testtype);
+    reset_umocktypename_normalize_calls();
+
+    umocktypename_normalize_call_result = NULL;
+
+    // act
+    char* result = umocktypes_stringify("char  *", test_value_1);
+
+    // assert
+    ASSERT_IS_NULL(result);
+}
+
+/* Tests_SRS_UMOCKTYPES_01_049: [ If umocktypes_stringify is called when the module is not initialized, umocktypes_stringify shall return NULL. ]*/
+TEST_FUNCTION(umocktypes_stringify_when_the_module_is_not_initialized_fails)
+{
+    // arrange
+    umocktypename_normalize_call_result = "char*";
+    test_stringify_func_testtype_call_result = "blahblah";
+
+    // act
+    char* result = umocktypes_stringify("char  *", test_value_1);
+
+    // assert
+    ASSERT_IS_NULL(result);
 }
 
 END_TEST_SUITE(umocktypes_unittests)

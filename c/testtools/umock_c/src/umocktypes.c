@@ -117,6 +117,11 @@ int umocktypes_register_type(const char* type, UMOCKTYPE_STRINGIFY_FUNC stringif
         /* Codes_SRS_UMOCKTYPES_01_009: [ If any of the arguments is NULL, umocktypes_register_type shall fail and return a non-zero value. ]*/
         result = __LINE__;
     }
+    /* Codes_SRS_UMOCKTYPES_01_050: [ If umocktypes_register_type is called when the module is not initialized, umocktypes_register_type shall fail and return a non zero value. ]*/
+    else if (umocktypes_state != UMOCKTYPES_STATE_INITIALIZED)
+    {
+        result = __LINE__;
+    }
     else
     {
         char* normalized_type = umocktypename_normalize(type);
@@ -180,26 +185,44 @@ int umocktypes_register_type(const char* type, UMOCKTYPE_STRINGIFY_FUNC stringif
 char* umocktypes_stringify(const char* type, const void* value)
 {
     char* result;
-    char* normalized_type = umocktypename_normalize(type);
-    if (normalized_type == NULL)
+
+    if ((type == NULL) ||
+        (value == NULL))
+    {
+        /* Codes_SRS_UMOCKTYPES_01_016: [ If any of the arguments is NULL, umocktypes_stringify shall fail and return NULL. ]*/
+        result = NULL;
+    }
+    /* Codes_SRS_UMOCKTYPES_01_049: [ If umocktypes_stringify is called when the module is not initialized, umocktypes_stringify shall return NULL. ]*/
+    else if (umocktypes_state != UMOCKTYPES_STATE_INITIALIZED)
     {
         result = NULL;
     }
     else
     {
-        UMOCK_VALUE_TYPE_HANDLERS* value_type_handlers = get_value_type_handlers(normalized_type);
-
-        if (value_type_handlers == NULL)
+        /* Codes_SRS_UMOCKTYPES_01_035: [ Before looking it up, the type string shall be normalized by calling umocktypename_normalize. ]*/
+        char* normalized_type = umocktypename_normalize(type);
+        if (normalized_type == NULL)
         {
+            /* Codes_SRS_UMOCKTYPES_01_044: [ If normalizing the typename fails, umocktypes_stringify shall fail and return NULL. ]*/
             result = NULL;
         }
         else
         {
-            /* Codes_SRS_UMOCKTYPES_01_014: [ The string representation shall be obtained by calling the stringify function registered for the type identified by the argument type. ]*/
-            result = value_type_handlers->stringify_func(value);
-        }
+            UMOCK_VALUE_TYPE_HANDLERS* value_type_handlers = get_value_type_handlers(normalized_type);
+            if (value_type_handlers == NULL)
+            {
+                /* Codes_SRS_UMOCKTYPES_01_017: [ If type can not be found in the registered types list maintained by the module, umocktypes_stringify shall fail and return -1. ]*/
+                result = NULL;
+            }
+            else
+            {
+                /* Codes_SRS_UMOCKTYPES_01_014: [ The string representation shall be obtained by calling the stringify function registered for the type identified by the argument type. ]*/
+                /* Codes_SRS_UMOCKTYPES_01_015: [ On success umocktypes_stringify shall return the char\* produced by the underlying stringify function for type (passed in umocktypes_register_type). ]*/
+                result = value_type_handlers->stringify_func(value);
+            }
 
-        free(normalized_type);
+            free(normalized_type);
+        }
     }
 
     return result;
