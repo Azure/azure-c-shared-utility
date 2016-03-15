@@ -179,15 +179,25 @@ int umocktypes_register_type(const char* type, UMOCKTYPE_STRINGIFY_FUNC stringif
 char* umocktypes_stringify(const char* type, const void* value)
 {
     char* result;
-    UMOCK_VALUE_TYPE_HANDLERS* value_type_handlers = get_value_type_handlers(type);
-
-    if (value_type_handlers == NULL)
+    char* normalized_type = umocktypename_normalize(type);
+    if (normalized_type == NULL)
     {
         result = NULL;
     }
     else
     {
-        result = value_type_handlers->stringify_func(value);
+        UMOCK_VALUE_TYPE_HANDLERS* value_type_handlers = get_value_type_handlers(normalized_type);
+
+        if (value_type_handlers == NULL)
+        {
+            result = NULL;
+        }
+        else
+        {
+            result = value_type_handlers->stringify_func(value);
+        }
+
+        free(normalized_type);
     }
 
     return result;
