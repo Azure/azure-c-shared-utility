@@ -11,23 +11,20 @@
 #include <cctype>
 #include "mbed.h"
 #include "tickcounter.h"
-#include <limits.h>
 
 class TICK_COUNTER_INSTANCE_TAG
 {
 public:
-    mbed::Timer timer_object;
+    clock_t last_clock_value;
     uint64_t current_ms;
-    uint64_t overflow_ms;
 };
 
 TICK_COUNTER_HANDLE tickcounter_create(void)
 {
     TICK_COUNTER_INSTANCE_TAG* result;
     result = new TICK_COUNTER_INSTANCE_TAG();
-    result->timer_object.start();
-    result->current_ms = result->timer_object.read_ms();
-    result->overflow_ms = 0;
+    result->last_clock_value = clock();
+    result->current_ms = result->last_clock_value * 1000 / CLOCKS_PER_SEC;
     return result;
 }
 
@@ -35,8 +32,6 @@ void tickcounter_destroy(TICK_COUNTER_HANDLE tick_counter)
 {
     if (tick_counter != NULL)
     {
-        TICK_COUNTER_INSTANCE_TAG* tick_counter_instance = (TICK_COUNTER_INSTANCE_TAG*)tick_counter;
-        tick_counter_instance->timer_object.stop();
         delete tick_counter;
     }
 }
@@ -51,14 +46,13 @@ int tickcounter_get_current_ms(TICK_COUNTER_HANDLE tick_counter, uint64_t* curre
     else
     {
         TICK_COUNTER_INSTANCE_TAG* tick_counter_instance = (TICK_COUNTER_INSTANCE_TAG*)tick_counter;
-        int ms_value = tick_counter_instance->timer_object.read_ms();
-        if (ms_value < tick_counter_instance->current_ms)
-        {
-            tick_counter_instance->overflow_ms += INT_MAX;
-        }
 
-        tick_counter_instance->current_ms = tick_counter_instance->overflow_ms + ms_value;
+        clock_t clock_value = clock();
+
+        tick_counter_instance->current_ms += (clock_value - tick_counter_instance->last_clock_value) * 1000 / CLOCKS_PER_SEC;
+        tick_counter_instance->last_clock_value = clock_value;
         *current_ms = tick_counter_instance->current_ms;
+
         result = 0;
     }
     return result;
