@@ -12,30 +12,37 @@
 #include "crt_abstractions.h"
 #include "condition.h"
 #include "lock.h"
-//#include <thr/threads.h>
+#include "agenttime.h"
 
 #define TEST_LOCK_HANDLE    (LOCK_HANDLE)0x4443
+#define TEST_TIME ((double)3600)
+#define TEST_TIME_T ((time_t)TEST_TIME)
 #define CONDITION_WAIT_MS   2000
 DEFINE_MICROMOCK_ENUM_TO_STRING(COND_RESULT, COND_RESULT_VALUES);
 
 static MICROMOCK_MUTEX_HANDLE g_testByTest;
 static MICROMOCK_GLOBAL_SEMAPHORE_HANDLE g_dllByDll;
 
-/*TYPED_MOCK_CLASS(conditionMocks, CGlobalMock)
+TYPED_MOCK_CLASS(conditionMocks, CGlobalMock)
 {
 public:
     MOCK_STATIC_METHOD_0(, LOCK_HANDLE, Lock_Init)
     MOCK_METHOD_END(LOCK_HANDLE, TEST_LOCK_HANDLE);
-
+  
     MOCK_STATIC_METHOD_1(, LOCK_RESULT, Lock_Deinit, LOCK_HANDLE, handle)
     MOCK_METHOD_END(LOCK_RESULT, LOCK_OK);
 
-//MOCK_STATIC_METHOD_1(, int, cnd_broadcast, cnd_t*, cond)
-//MOCK_METHOD_END(int, thrd_success);
+    MOCK_STATIC_METHOD_1(, time_t, get_time, time_t*, currentTime)
+    MOCK_METHOD_END(time_t, TEST_TIME_T);
+
+    MOCK_STATIC_METHOD_2(, double, get_difftime, time_t, stoptime, time_t, starttime)
+    MOCK_METHOD_END(time_t, TEST_TIME);
 };
 
-DECLARE_GLOBAL_MOCK_METHOD_0(conditionMocks, , LOCK_HANDLE, Lock_Init);
-DECLARE_GLOBAL_MOCK_METHOD_1(conditionMocks, , LOCK_RESULT, Lock_Deinit, LOCK_HANDLE, handle);*/
+// DECLARE_GLOBAL_MOCK_METHOD_0(conditionMocks, , LOCK_HANDLE, Lock_Init);
+// DECLARE_GLOBAL_MOCK_METHOD_1(conditionMocks, , LOCK_RESULT, Lock_Deinit, LOCK_HANDLE, handle);
+DECLARE_GLOBAL_MOCK_METHOD_1(conditionMocks, , time_t, get_time, time_t*, currentTime);
+DECLARE_GLOBAL_MOCK_METHOD_2(conditionMocks, , double, get_difftime, time_t, stoptime, time_t, starttime);
 
 COND_RESULT Condition_Handle_ToString(COND_HANDLE handle)
 {

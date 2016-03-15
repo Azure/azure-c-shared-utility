@@ -1,4 +1,4 @@
-azure-c-shared-util (0.1.0-4) vivid; urgency=low
+azure-c-shared-util (0.1.0-7) vivid; urgency=low
 
   * Initial release (Closes: #5069014)
 
@@ -6,4 +6,10 @@ azure-c-shared-util (0.1.0-4) vivid; urgency=low
 
   * Update the control file to use libssl-dev (#5210833)
 
- -- AzureIoT User <aziotsdklinux@outlook.com>  Wed, 16 Dec 2015 12:18:53 -0800
+  * Added xio socket information to handle communications (#5248333)
+
+  * valgrind c shared utility (#c3e1096)
+
+  * Update TLS layer to handle windows and Linux changes (#51d2e3f)
+
+ -- AzureIoT User <aziotsdklinux@outlook.com>  Fri, 11 Mar 2016 12:18:53 -0800
