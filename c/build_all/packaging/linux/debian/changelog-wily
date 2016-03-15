@@ -1,4 +1,4 @@
-azure-c-shared-util (0.1.0.0-4) wily; urgency=low
+azure-c-shared-util (0.1.0.0-5) wily; urgency=low
 
   * Initial release (Closes: #5069014)
 
@@ -7,5 +7,7 @@ azure-c-shared-util (0.1.0.0-4) wily; urgency=low
   * Update the control file to use libssl-dev (#5210833)
 
   * Added xio socket information to handle communications (#5248333)
+
+  * Update TLS layer to handle windows and Linux changes (#51d2e3f)
   
- -- AzureIoT User <aziotsdklinux@outlook.com>  Wed, 3 Feb 2016 12:18:53 -0800
+ -- AzureIoT User <aziotsdklinux@outlook.com>  Fri, 11 Mar 2016 12:18:53 -0800
