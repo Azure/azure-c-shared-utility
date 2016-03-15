@@ -8,7 +8,7 @@
 extern "C" {
 #endif
 
-extern char* umocktypename_normalize(const char* type);
+extern char* umocktypename_normalize(const char* type_name);
 
 #ifdef __cplusplus
 }
