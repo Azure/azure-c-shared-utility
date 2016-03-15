@@ -9,10 +9,16 @@ set(theseTestsName umock_c_unittests)
 set(${theseTestsName}_c_files
 umock_c_unittests.cpp
 umock_c_generate_function_declaration.cpp
+../../src/umock_c.c
+../../src/umockcall.c
+../../src/umocktypes.c
+../../src/umocktypes_charptr.c
+../../src/umocktypes_stdint.c
+../../src/umocktypename.c
 )
 
 set(${theseTestsName}_h_files
 test_dependency.h
 )
 
-build_test_artifacts(${theseTestsName} ON)
+umockc_build_test_artifacts(${theseTestsName} ON)

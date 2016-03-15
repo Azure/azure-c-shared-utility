@@ -31,37 +31,27 @@ static UMOCK_VALUE_TYPE_HANDLERS* type_handlers = NULL;
 static size_t type_handler_count = 0;
 static UMOCKTYPES_STATE umocktypes_state = UMOCKTYPES_STATE_NOT_INITIALIZED;
 
-static UMOCK_VALUE_TYPE_HANDLERS* get_value_type_handlers(const char* type)
+static UMOCK_VALUE_TYPE_HANDLERS* get_value_type_handlers(const char* type_name)
 {
     UMOCK_VALUE_TYPE_HANDLERS* result;
 
-    char* normalized_type = umocktypename_normalize(type);
-    if (normalized_type == NULL)
+    size_t i;
+
+    for (i = 0; i < type_handler_count; i++)
     {
-        result = NULL;
+        if (strcmp(type_handlers[i].type, type_name) == 0)
+        {
+            break;
+        }
+    }
+
+    if (i < type_handler_count)
+    {
+        result = &type_handlers[i];
     }
     else
     {
-        size_t i;
-
-        for (i = 0; i < type_handler_count; i++)
-        {
-            if (strcmp(type_handlers[i].type, normalized_type) == 0)
-            {
-                break;
-            }
-        }
-
-        if (i < type_handler_count)
-        {
-            result = &type_handlers[i];
-        }
-        else
-        {
-            result = NULL;
-        }
-
-        free(normalized_type);
+        result = NULL;
     }
 
     return result;
@@ -132,7 +122,7 @@ int umocktypes_register_type(const char* type, UMOCKTYPE_STRINGIFY_FUNC stringif
         char* normalized_type = umocktypename_normalize(type);
         if (normalized_type == NULL)
         {
-            /* Codes_SRS_UMOCKTYPES_01_012: [ If an error occurs allocating memory for the newly registered type, umocktypes_register_type shall fail and return a non-zero value. ]*/
+            /* Codes_SRS_UMOCKTYPES_01_045: [ If normalizing the typename fails, umocktypes_register_type shall fail and return a non-zero value. ]*/
             result = __LINE__;
         }
         else

@@ -8,9 +8,10 @@ set(theseTestsName umocktypes_charptr_unittests)
 
 set(${theseTestsName}_c_files
 umocktypes_charptr_unittests.cpp
+../../src/umocktypes_charptr.c
 )
 
 set(${theseTestsName}_h_files
 )
 
-build_test_artifacts(${theseTestsName} ON)
+umockc_build_test_artifacts(${theseTestsName} ON)
