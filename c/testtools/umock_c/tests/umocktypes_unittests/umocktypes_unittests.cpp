@@ -13,6 +13,14 @@
 - umockc unit test project should not include the full umockc
 */
 
+typedef struct umocktypename_normalize_CALL_TAG
+{
+    char* type_name;
+} umocktypename_normalize_CALL;
+
+static umocktypename_normalize_CALL* umocktypename_normalize_calls;
+static size_t umocktypename_normalize_call_count;
+
 static char* test_stringify_func_testtype(const void* value)
 {
     (void)value;
@@ -74,10 +82,25 @@ TEST_SUITE_CLEANUP(suite_cleanup)
 
 TEST_FUNCTION_INITIALIZE(test_function_init)
 {
+    umocktypename_normalize_calls = NULL;
+    umocktypename_normalize_call_count = 0;
 }
 
 TEST_FUNCTION_CLEANUP(test_function_cleanup)
 {
+    if (umocktypename_normalize_calls != NULL)
+    {
+        size_t i;
+        for (i = 0; i < umocktypename_normalize_call_count; i++)
+        {
+            free(umocktypename_normalize_calls[i].type_name);
+        }
+
+        free(umocktypename_normalize_calls);
+        umocktypename_normalize_calls = NULL;
+    }
+    umocktypename_normalize_call_count = NULL;
+
     umocktypes_deinit();
 }
 
@@ -187,6 +210,7 @@ TEST_FUNCTION(umocktypes_deinit_if_the_module_was_not_initialized_shall_do_nothi
 
 /* Tests_SRS_UMOCKTYPES_01_007: [ umocktypes_register_type shall register an interface made out of the stringify, are equal, copy and free functions for the type identified by the argument type. ] */
 /* Tests_SRS_UMOCKTYPES_01_008: [ On success umocktypes_register_type shall return 0. ]*/
+/* Tests_SRS_UMOCKTYPES_01_034: [ Before registering, the type string shall be normalized. ] */
 TEST_FUNCTION(umocktypes_register_type_when_module_is_initialized_succeeds)
 {
     // arrange
@@ -197,6 +221,7 @@ TEST_FUNCTION(umocktypes_register_type_when_module_is_initialized_succeeds)
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(int, 1, umocktypename_normalize_call_count);
 }
 
 /* Tests_SRS_UMOCKTYPES_01_009: [ If any of the arguments is NULL, umocktypes_register_type shall fail and return a non-zero value. ]*/
@@ -349,7 +374,6 @@ TEST_FUNCTION(umocktypes_register_type_with_2_types_that_have_the_same_normalize
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
 }
 
-/* Tests_SRS_UMOCKTYPES_01_034: [ Before registering, the type string shall be normalized. ] */
 /* Tests_SRS_UMOCKTYPES_01_039: [ All extra spaces (more than 1 space between non-space characters) shall be removed. ] */
 TEST_FUNCTION(umocktypes_register_type_with_2_types_that_have_the_same_normalized_form_but_2_extra_spaces_before_star_detects_that_this_is_the_same_type)
 {
