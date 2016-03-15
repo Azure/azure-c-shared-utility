@@ -348,11 +348,28 @@ int umocktypes_copy(const char* type, void* destination, const void* source)
     return result;
 }
 
+/* Codes_SRS_UMOCKTYPES_01_030: [ umocktypes_free shall free a value previously allocated with umocktypes_copy. ]*/
 void umocktypes_free(const char* type, void* value)
 {
-    UMOCK_VALUE_TYPE_HANDLERS* value_type_handlers = get_value_type_handlers(type);
-    if (value_type_handlers != NULL)
+    /* Codes_SRS_UMOCKTYPES_01_031: [ If any of the arguments is NULL, umocktypes_free shall do nothing. ]*/
+    if ((type != NULL) &&
+        (value != NULL) &&
+        /* Codes_SRS_UMOCKTYPES_01_048: [ If umocktypes_free is called when the module is not initialized, umocktypes_free shall do nothing. ]*/
+        (umocktypes_state == UMOCKTYPES_STATE_INITIALIZED))
     {
-        value_type_handlers->free_func(value);
+        /* Codes_SRS_UMOCKTYPES_01_038: [ Before looking it up, the type string shall be normalized by calling umocktypename_normalize. ]*/
+        char* normalized_type = umocktypename_normalize(type);
+        /* Codes_SRS_UMOCKTYPES_01_032: [ If type can not be found in the registered types list maintained by the module, umocktypes_free shall do nothing. ]*/
+        if (normalized_type != NULL)
+        {
+            UMOCK_VALUE_TYPE_HANDLERS* value_type_handlers = get_value_type_handlers(normalized_type);
+            if (value_type_handlers != NULL)
+            {
+                /* Codes_SRS_UMOCKTYPES_01_033: [ The free shall be done by calling the underlying free function (passed in umocktypes_register_type) for the type identified by the type argument. ]*/
+                value_type_handlers->free_func(value);
+            }
+
+            free(normalized_type);
+        }
     }
 }

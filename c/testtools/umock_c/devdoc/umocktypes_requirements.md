@@ -28,10 +28,10 @@ extern void umocktypes_free(const char* type, void* value);
 extern int umocktypes_init(void);
 ```
 
-XX**SRS_UMOCKTYPES_01_001: [** umocktypes_init shall initialize the umocktypes module. **]**
-XX**SRS_UMOCKTYPES_01_002: [** After initialization the list of registered type shall be empty. **]**
-XX**SRS_UMOCKTYPES_01_003: [** On success umocktypes_init shall return 0. **]**
-XX**SRS_UMOCKTYPES_01_004: [** umocktypes_init after another umocktypes_init without deinitializing the module shall fail and return a non-zero value. **]**
+**SRS_UMOCKTYPES_01_001: [** umocktypes_init shall initialize the umocktypes module. **]**
+**SRS_UMOCKTYPES_01_002: [** After initialization the list of registered type shall be empty. **]**
+**SRS_UMOCKTYPES_01_003: [** On success umocktypes_init shall return 0. **]**
+**SRS_UMOCKTYPES_01_004: [** umocktypes_init after another umocktypes_init without deinitializing the module shall fail and return a non-zero value. **]**
 
 ##umocktypes_deinit
 
@@ -39,9 +39,9 @@ XX**SRS_UMOCKTYPES_01_004: [** umocktypes_init after another umocktypes_init wit
 extern void umocktypes_deinit(void);
 ```
 
-XX**SRS_UMOCKTYPES_01_005: [** umocktypes_deinit shall free all resources associated with the registered types and shall leave the module in a state where another init is possible. **]**
-XX**SRS_UMOCKTYPES_01_006: [** If the module was not initialized, umocktypes_deinit shall do nothing. **]**
-XX**SRS_UMOCKTYPES_01_040: [** An umocktypes_init call after deinit shall succeed provided all underlying calls succeed. **]**
+**SRS_UMOCKTYPES_01_005: [** umocktypes_deinit shall free all resources associated with the registered types and shall leave the module in a state where another init is possible. **]**
+**SRS_UMOCKTYPES_01_006: [** If the module was not initialized, umocktypes_deinit shall do nothing. **]**
+**SRS_UMOCKTYPES_01_040: [** An umocktypes_init call after deinit shall succeed provided all underlying calls succeed. **]**
 
 ##umocktypes_register_type
 
@@ -49,15 +49,15 @@ XX**SRS_UMOCKTYPES_01_040: [** An umocktypes_init call after deinit shall succee
 extern int umocktypes_register_type(const char* type, UMOCKTYPE_STRINGIFY_FUNC stringify_func, UMOCKTYPE_ARE_EQUAL_FUNC are_equal_func, UMOCKTYPE_COPY_FUNC copy_func, UMOCKTYPE_FREE_FUNC free_func);
 ```
 
-XX**SRS_UMOCKTYPES_01_007: [** umocktypes_register_type shall register an interface made out of the stringify, are equal, copy and free functions for the type identified by the argument type. **]**
-XX**SRS_UMOCKTYPES_01_008: [** On success umocktypes_register_type shall return 0. **]**
-XX**SRS_UMOCKTYPES_01_009: [** If any of the arguments is NULL, umocktypes_register_type shall fail and return a non-zero value. **]**
-XX**SRS_UMOCKTYPES_01_010: [** If the type has already been registered with the same function pointers then umocktypes_register_type shall succeed and return 0. **]**
-XX**SRS_UMOCKTYPES_01_011: [** If the type has already been registered but at least one of the function pointers is different, umocktypes_register_type shall fail and return a non-zero value. **]**
+**SRS_UMOCKTYPES_01_007: [** umocktypes_register_type shall register an interface made out of the stringify, are equal, copy and free functions for the type identified by the argument type. **]**
+**SRS_UMOCKTYPES_01_008: [** On success umocktypes_register_type shall return 0. **]**
+**SRS_UMOCKTYPES_01_009: [** If any of the arguments is NULL, umocktypes_register_type shall fail and return a non-zero value. **]**
+**SRS_UMOCKTYPES_01_010: [** If the type has already been registered with the same function pointers then umocktypes_register_type shall succeed and return 0. **]**
+**SRS_UMOCKTYPES_01_011: [** If the type has already been registered but at least one of the function pointers is different, umocktypes_register_type shall fail and return a non-zero value. **]**
 X**SRS_UMOCKTYPES_01_012: [** If an error occurs allocating memory for the newly registered type, umocktypes_register_type shall fail and return a non-zero value. **]**
-XX**SRS_UMOCKTYPES_01_034: [** Before registering, the type string shall be normalized by calling umocktypename_normalize. **]**
-XX**SRS_UMOCKTYPES_01_045: [** If normalizing the typename fails, umocktypes_register_type shall fail and return a non-zero value. **]**
-XX**SRS_UMOCKTYPES_01_050: [** If umocktypes_register_type is called when the module is not initialized, umocktypes_register_type shall fail and return a non zero value. **]**
+**SRS_UMOCKTYPES_01_034: [** Before registering, the type string shall be normalized by calling umocktypename_normalize. **]**
+**SRS_UMOCKTYPES_01_045: [** If normalizing the typename fails, umocktypes_register_type shall fail and return a non-zero value. **]**
+**SRS_UMOCKTYPES_01_050: [** If umocktypes_register_type is called when the module is not initialized, umocktypes_register_type shall fail and return a non zero value. **]**
 
 ##umocktypes_stringify
  
@@ -65,14 +65,14 @@ XX**SRS_UMOCKTYPES_01_050: [** If umocktypes_register_type is called when the mo
 extern char* umocktypes_stringify(const char* type, const void* value);
 ```
 
-XX**SRS_UMOCKTYPES_01_013: [** umocktypes_stringify shall return a char\* with the string representation of the value argument. **]**
-XX**SRS_UMOCKTYPES_01_014: [** The string representation shall be obtained by calling the stringify function registered for the type identified by the argument type. **]**
-XX**SRS_UMOCKTYPES_01_015: [** On success umocktypes_stringify shall return the char\* produced by the underlying stringify function for type (passed in umocktypes_register_type). **]**
-XX**SRS_UMOCKTYPES_01_016: [** If any of the arguments is NULL, umocktypes_stringify shall fail and return NULL. **]**
-XX**SRS_UMOCKTYPES_01_017: [** If type can not be found in the registered types list maintained by the module, umocktypes_stringify shall fail and return -1. **]**
-XX**SRS_UMOCKTYPES_01_035: [** Before looking it up, the type string shall be normalized by calling umocktypename_normalize. **]**
-XX**SRS_UMOCKTYPES_01_044: [** If normalizing the typename fails, umocktypes_stringify shall fail and return NULL. **]**
-XX**SRS_UMOCKTYPES_01_049: [** If umocktypes_stringify is called when the module is not initialized, umocktypes_stringify shall return NULL. **]**
+**SRS_UMOCKTYPES_01_013: [** umocktypes_stringify shall return a char\* with the string representation of the value argument. **]**
+**SRS_UMOCKTYPES_01_014: [** The string representation shall be obtained by calling the stringify function registered for the type identified by the argument type. **]**
+**SRS_UMOCKTYPES_01_015: [** On success umocktypes_stringify shall return the char\* produced by the underlying stringify function for type (passed in umocktypes_register_type). **]**
+**SRS_UMOCKTYPES_01_016: [** If any of the arguments is NULL, umocktypes_stringify shall fail and return NULL. **]**
+**SRS_UMOCKTYPES_01_017: [** If type can not be found in the registered types list maintained by the module, umocktypes_stringify shall fail and return -1. **]**
+**SRS_UMOCKTYPES_01_035: [** Before looking it up, the type string shall be normalized by calling umocktypename_normalize. **]**
+**SRS_UMOCKTYPES_01_044: [** If normalizing the typename fails, umocktypes_stringify shall fail and return NULL. **]**
+**SRS_UMOCKTYPES_01_049: [** If umocktypes_stringify is called when the module is not initialized, umocktypes_stringify shall return NULL. **]**
 
 ##umocktypes_are_equal
 
@@ -80,17 +80,17 @@ XX**SRS_UMOCKTYPES_01_049: [** If umocktypes_stringify is called when the module
 extern int umocktypes_are_equal(const char* type, const void* left, const void* right);
 ```
 
-XX**SRS_UMOCKTYPES_01_018: [** umocktypes_are_equal shall evaluate whether 2 values are equal. **]**
-XX**SRS_UMOCKTYPES_01_019: [** umocktypes_are_equal shall call the underlying are_equal function for the type identified by the argument type (passed in umocktypes_register_type). **]**
-XX**SRS_UMOCKTYPES_01_020: [** If the underlying are_equal function fails,, umocktypes_are_equal shall fail and return -1. **]** 
-XX**SRS_UMOCKTYPES_01_021: [** If the underlying are_equal function indicates the types are equal, umocktypes_are_equal shall return 1. **]**
-XX**SRS_UMOCKTYPES_01_022: [** If the underlying are_equal function indicates the types are not equal, umocktypes_are_equal shall return 0. **]** 
-XX**SRS_UMOCKTYPES_01_023: [** If any of the arguments is NULL, umocktypes_are_equal shall fail and return -1. **]**
-XX**SRS_UMOCKTYPES_01_024: [** If type can not be found in the registered types list maintained by the module, umocktypes_are_equal shall fail and return -1. **]**
-XX**SRS_UMOCKTYPES_01_036: [** Before looking it up, the type string shall be normalized by calling umocktypename_normalize. **]**
-XX**SRS_UMOCKTYPES_01_043: [** If normalizing the typename fails, umocktypes_are_equal shall fail and return -1. **]**
-XX**SRS_UMOCKTYPES_01_046: [** If umocktypes_are_equal is called when the module is not initialized, umocktypes_are_equal shall return -1. **]**
-XX**SRS_UMOCKTYPES_01_051: [** If the pointer values for left and right are equal, umocktypes_are_equal shall return 1 without calling the underlying are_equal function. **]** 
+**SRS_UMOCKTYPES_01_018: [** umocktypes_are_equal shall evaluate whether 2 values are equal. **]**
+**SRS_UMOCKTYPES_01_019: [** umocktypes_are_equal shall call the underlying are_equal function for the type identified by the argument type (passed in umocktypes_register_type). **]**
+**SRS_UMOCKTYPES_01_020: [** If the underlying are_equal function fails,, umocktypes_are_equal shall fail and return -1. **]** 
+**SRS_UMOCKTYPES_01_021: [** If the underlying are_equal function indicates the types are equal, umocktypes_are_equal shall return 1. **]**
+**SRS_UMOCKTYPES_01_022: [** If the underlying are_equal function indicates the types are not equal, umocktypes_are_equal shall return 0. **]** 
+**SRS_UMOCKTYPES_01_023: [** If any of the arguments is NULL, umocktypes_are_equal shall fail and return -1. **]**
+**SRS_UMOCKTYPES_01_024: [** If type can not be found in the registered types list maintained by the module, umocktypes_are_equal shall fail and return -1. **]**
+**SRS_UMOCKTYPES_01_036: [** Before looking it up, the type string shall be normalized by calling umocktypename_normalize. **]**
+**SRS_UMOCKTYPES_01_043: [** If normalizing the typename fails, umocktypes_are_equal shall fail and return -1. **]**
+**SRS_UMOCKTYPES_01_046: [** If umocktypes_are_equal is called when the module is not initialized, umocktypes_are_equal shall return -1. **]**
+**SRS_UMOCKTYPES_01_051: [** If the pointer values for left and right are equal, umocktypes_are_equal shall return 1 without calling the underlying are_equal function. **]** 
 
 ##umocktypes_copy
 
@@ -98,15 +98,15 @@ XX**SRS_UMOCKTYPES_01_051: [** If the pointer values for left and right are equa
 extern int umocktypes_copy(const char* type, void* destination, const void* source);
 ```
 
-XX**SRS_UMOCKTYPES_01_025: [** umocktypes_copy shall copy the value of the source into the destination argument. **]**
-XX**SRS_UMOCKTYPES_01_026: [** The copy shall be done by calling the underlying copy function (passed in umocktypes_register_type) for the type identified by the type argument. **]**
-XX**SRS_UMOCKTYPES_01_052: [** On success, umocktypes_copy shall return 0. **]**
-XX**SRS_UMOCKTYPES_01_027: [** If any of the arguments is NULL, umocktypes_copy shall return -1. **]**
-XX**SRS_UMOCKTYPES_01_028: [** If the underlying copy fails, umocktypes_copy shall return -1. **]**
-XX**SRS_UMOCKTYPES_01_029: [** If type can not be found in the registered types list maintained by the module, umocktypes_copy shall fail and return -1. **]**
-XX**SRS_UMOCKTYPES_01_037: [** Before looking it up, the type string shall be normalized by calling umocktypename_normalize. **]**
-XX**SRS_UMOCKTYPES_01_042: [** If normalizing the typename fails, umocktypes_copy shall fail and return a non-zero value. **]**
-XX**SRS_UMOCKTYPES_01_047: [** If umocktypes_copy is called when the module is not initialized, umocktypes_copy shall fail and return a non zero value. **]**
+**SRS_UMOCKTYPES_01_025: [** umocktypes_copy shall copy the value of the source into the destination argument. **]**
+**SRS_UMOCKTYPES_01_026: [** The copy shall be done by calling the underlying copy function (passed in umocktypes_register_type) for the type identified by the type argument. **]**
+**SRS_UMOCKTYPES_01_052: [** On success, umocktypes_copy shall return 0. **]**
+**SRS_UMOCKTYPES_01_027: [** If any of the arguments is NULL, umocktypes_copy shall return -1. **]**
+**SRS_UMOCKTYPES_01_028: [** If the underlying copy fails, umocktypes_copy shall return -1. **]**
+**SRS_UMOCKTYPES_01_029: [** If type can not be found in the registered types list maintained by the module, umocktypes_copy shall fail and return -1. **]**
+**SRS_UMOCKTYPES_01_037: [** Before looking it up, the type string shall be normalized by calling umocktypename_normalize. **]**
+**SRS_UMOCKTYPES_01_042: [** If normalizing the typename fails, umocktypes_copy shall fail and return a non-zero value. **]**
+**SRS_UMOCKTYPES_01_047: [** If umocktypes_copy is called when the module is not initialized, umocktypes_copy shall fail and return a non zero value. **]**
 
 ##umocktypes_free
 
