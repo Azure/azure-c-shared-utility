@@ -336,7 +336,6 @@ CONCRETE_IO_HANDLE tlsio_wolfssl_create(void* io_create_parameters, LOGGER_LOG l
                             result->on_send_complete = NULL;
                             result->on_send_complete_callback_context = NULL;
 
-                            wolfSSL_set_verify(result->ssl, SSL_VERIFY_NONE, NULL);
                             wolfSSL_set_using_nonblock(result->ssl, 1);
                             wolfSSL_SetIOSend(result->ssl_context, on_io_send);
                             wolfSSL_SetIORecv(result->ssl_context, on_io_recv);
@@ -519,4 +518,37 @@ void tlsio_wolfssl_dowork(CONCRETE_IO_HANDLE tls_io)
 const IO_INTERFACE_DESCRIPTION* tlsio_wolfssl_get_interface_description(void)
 {
     return &tlsio_wolfssl_interface_description;
+}
+
+int tlsio_wolfssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, const void* value)
+{
+    int result;
+
+    if (tls_io == NULL)
+    {
+        result = __LINE__;
+    }
+    else
+    {
+        TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tls_io;
+
+        if (strcmp("TrustedCerts", optionName) == 0)
+        {
+            int res = wolfSSL_CTX_load_verify_buffer(tls_io_instance->ssl_context, (const unsigned char*)value, strlen(value) + 1, SSL_FILETYPE_PEM);
+            if (res != SSL_SUCCESS)
+            {
+                result = __LINE__;
+            }
+            else
+            {
+                result = 0;
+            }
+        }
+        else
+        {
+            result = __LINE__;
+        }
+    }
+
+    return result;
 }
