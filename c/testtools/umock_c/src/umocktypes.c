@@ -299,18 +299,52 @@ int umocktypes_are_equal(const char* type, const void* left, const void* right)
     return result;
 }
 
+/* Codes_SRS_UMOCKTYPES_01_025: [ umocktypes_copy shall copy the value of the source into the destination argument. ]*/
 int umocktypes_copy(const char* type, void* destination, const void* source)
 {
     int result;
-    UMOCK_VALUE_TYPE_HANDLERS* value_type_handlers = get_value_type_handlers(type);
-    if (value_type_handlers == NULL)
+
+    if ((type == NULL) ||
+        (destination == NULL) ||
+        (source == NULL))
     {
-        result = __LINE__;
+        /* Codes_SRS_UMOCKTYPES_01_027: [ If any of the arguments is NULL, umocktypes_copy shall return -1. ]*/
+        result = -1;
+    }
+    else if (umocktypes_state != UMOCKTYPES_STATE_INITIALIZED)
+    {
+        /* Codes_SRS_UMOCKTYPES_01_047: [ If umocktypes_copy is called when the module is not initialized, umocktypes_copy shall fail and return a non zero value. ]*/
+        result = -1;
     }
     else
     {
-        result = value_type_handlers->copy_func(destination, source);
+        /* Codes_SRS_UMOCKTYPES_01_037: [ Before looking it up, the type string shall be normalized by calling umocktypename_normalize. ]*/
+        char* normalized_type = umocktypename_normalize(type);
+        if (normalized_type == NULL)
+        {
+            /* Codes_SRS_UMOCKTYPES_01_042: [ If normalizing the typename fails, umocktypes_copy shall fail and return a non-zero value. ]*/
+            result = -1;
+        }
+        else
+        {
+            UMOCK_VALUE_TYPE_HANDLERS* value_type_handlers = get_value_type_handlers(normalized_type);
+            if (value_type_handlers == NULL)
+            {
+                /* Codes_SRS_UMOCKTYPES_01_029: [ If type can not be found in the registered types list maintained by the module, umocktypes_copy shall fail and return -1. ]*/
+                result = __LINE__;
+            }
+            else
+            {
+                /* Codes_SRS_UMOCKTYPES_01_026: [ The copy shall be done by calling the underlying copy function (passed in umocktypes_register_type) for the type identified by the type argument. ]*/
+                /* Codes_SRS_UMOCKTYPES_01_052: [ On success, umocktypes_copy shall return 0. ]*/
+                /* Codes_SRS_UMOCKTYPES_01_028: [ If the underlying copy fails, umocktypes_copy shall return -1. ]*/
+                result = value_type_handlers->copy_func(destination, source);
+            }
+
+            free(normalized_type);
+        }
     }
+
     return result;
 }
 

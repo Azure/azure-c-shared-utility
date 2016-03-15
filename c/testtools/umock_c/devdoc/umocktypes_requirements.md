@@ -98,14 +98,15 @@ XX**SRS_UMOCKTYPES_01_051: [** If the pointer values for left and right are equa
 extern int umocktypes_copy(const char* type, void* destination, const void* source);
 ```
 
-**SRS_UMOCKTYPES_01_025: [** umocktypes_copy shall copy the value of the source into the destination argument. **]**
-**SRS_UMOCKTYPES_01_026: [** The copy shall be done by calling the underlying copy function (passed in umocktypes_register_type) for the type identified by the type argument. **]**
-**SRS_UMOCKTYPES_01_027: [** If any of the arguments is NULL, umocktypes_copy shall return -1. **]**
-**SRS_UMOCKTYPES_01_028: [** If the underlying copy fails, umocktypes_copy shall return -1. **]**
-**SRS_UMOCKTYPES_01_029: [** If type can not be found in the registered types list maintained by the module, umocktypes_copy shall fail and return -1. **]**
-**SRS_UMOCKTYPES_01_037: [** Before looking it up, the type string shall be normalized by calling umocktypename_normalize. **]**
-**SRS_UMOCKTYPES_01_042: [** If normalizing the typename fails, umocktypes_copy shall fail and return a non-zero value. **]**
-**SRS_UMOCKTYPES_01_047: [** If umocktypes_copy is called when the module is not initialized, umocktypes_copy shall fail and return a non zero value. **]**
+XX**SRS_UMOCKTYPES_01_025: [** umocktypes_copy shall copy the value of the source into the destination argument. **]**
+XX**SRS_UMOCKTYPES_01_026: [** The copy shall be done by calling the underlying copy function (passed in umocktypes_register_type) for the type identified by the type argument. **]**
+XX**SRS_UMOCKTYPES_01_052: [** On success, umocktypes_copy shall return 0. **]**
+XX**SRS_UMOCKTYPES_01_027: [** If any of the arguments is NULL, umocktypes_copy shall return -1. **]**
+XX**SRS_UMOCKTYPES_01_028: [** If the underlying copy fails, umocktypes_copy shall return -1. **]**
+XX**SRS_UMOCKTYPES_01_029: [** If type can not be found in the registered types list maintained by the module, umocktypes_copy shall fail and return -1. **]**
+XX**SRS_UMOCKTYPES_01_037: [** Before looking it up, the type string shall be normalized by calling umocktypename_normalize. **]**
+XX**SRS_UMOCKTYPES_01_042: [** If normalizing the typename fails, umocktypes_copy shall fail and return a non-zero value. **]**
+XX**SRS_UMOCKTYPES_01_047: [** If umocktypes_copy is called when the module is not initialized, umocktypes_copy shall fail and return a non zero value. **]**
 
 ##umocktypes_free
 

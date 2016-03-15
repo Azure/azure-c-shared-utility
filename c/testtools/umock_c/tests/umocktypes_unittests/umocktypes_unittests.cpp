@@ -41,6 +41,16 @@ static test_are_equal_func_testtype_CALL* test_are_equal_func_testtype_calls;
 static size_t test_are_equal_func_testtype_call_count;
 static int test_are_equal_func_testtype_call_result;
 
+typedef struct test_copy_func_testtype_CALL_TAG
+{
+    const void* destination;
+    const void* source;
+} test_copy_func_testtype_CALL;
+
+static test_copy_func_testtype_CALL* test_copy_func_testtype_calls;
+static size_t test_copy_func_testtype_call_count;
+static int test_copy_func_testtype_call_result;
+
 extern "C"
 {
     char* umocktypename_normalize(const char* type_name)
@@ -99,8 +109,16 @@ static char* test_stringify_func_testtype(const void* value)
 
 static int test_copy_func_testtype(void* destination, const void* source)
 {
-    (void)destination, source;
-    return 0;
+    test_copy_func_testtype_CALL* new_calls = (test_copy_func_testtype_CALL*)realloc(test_copy_func_testtype_calls, sizeof(test_copy_func_testtype_CALL) * (test_copy_func_testtype_call_count + 1));
+    if (new_calls != NULL)
+    {
+        test_copy_func_testtype_calls = new_calls;
+        test_copy_func_testtype_calls[test_copy_func_testtype_call_count].destination = destination;
+        test_copy_func_testtype_calls[test_copy_func_testtype_call_count].source = source;
+        test_copy_func_testtype_call_count++;
+    }
+
+    return test_copy_func_testtype_call_result;
 }
 
 void test_free_func_testtype(void* value)
@@ -184,6 +202,16 @@ void reset_test_are_equal_testtype_calls(void)
     test_are_equal_func_testtype_call_count = NULL;
 }
 
+void reset_test_copy_testtype_calls(void)
+{
+    if (test_copy_func_testtype_calls != NULL)
+    {
+        free(test_copy_func_testtype_calls);
+        test_copy_func_testtype_calls = NULL;
+    }
+    test_copy_func_testtype_call_count = NULL;
+}
+
 BEGIN_TEST_SUITE(umocktypes_unittests)
 
 TEST_SUITE_INITIALIZE(suite_init)
@@ -207,6 +235,10 @@ TEST_FUNCTION_INITIALIZE(test_function_init)
     test_are_equal_func_testtype_calls = NULL;
     test_are_equal_func_testtype_call_count = 0;
     test_are_equal_func_testtype_call_result = 1;
+
+    test_copy_func_testtype_calls = NULL;
+    test_copy_func_testtype_call_count = 0;
+    test_copy_func_testtype_call_result = 1;
 }
 
 TEST_FUNCTION_CLEANUP(test_function_cleanup)
@@ -214,6 +246,7 @@ TEST_FUNCTION_CLEANUP(test_function_cleanup)
     reset_umocktypename_normalize_calls();
     reset_test_stringify_testtype_calls();
     reset_test_are_equal_testtype_calls();
+    reset_test_copy_testtype_calls();
 
     umocktypes_deinit();
 }
@@ -888,6 +921,185 @@ TEST_FUNCTION(umocktypes_are_equal_with_2_equal_pointers_returns_1)
     ASSERT_ARE_EQUAL(int, 1, umocktypename_normalize_call_count);
     ASSERT_ARE_EQUAL(char_ptr, "char *", umocktypename_normalize_calls[0].type_name);
     ASSERT_ARE_EQUAL(int, 0, test_are_equal_func_testtype_call_count);
+}
+
+/* umocktypes_copy */
+
+/* Tests_SRS_UMOCKTYPES_01_025: [ umocktypes_copy shall copy the value of the source into the destination argument. ]*/
+/* Tests_SRS_UMOCKTYPES_01_026: [ The copy shall be done by calling the underlying copy function (passed in umocktypes_register_type) for the type identified by the type argument. ]*/
+/* Tests_SRS_UMOCKTYPES_01_052: [ On success, umocktypes_copy shall return 0. ]*/
+/* Tests_SRS_UMOCKTYPES_01_037: [ Before looking it up, the type string shall be normalized by calling umocktypename_normalize. ]*/
+TEST_FUNCTION(umocktypes_copy_calls_the_underlying_copy_function)
+{
+    // arrange
+    void* destination = (void*)0x4245;
+    (void)umocktypes_init();
+    umocktypename_normalize_call_result = "char*";
+    (void)umocktypes_register_type("char *", test_stringify_func_testtype, test_are_equal_func_testtype, test_copy_func_testtype, test_free_func_testtype);
+    reset_umocktypename_normalize_calls();
+
+    test_copy_func_testtype_call_result = 0;
+
+    // act
+    int result = umocktypes_copy("char *", destination, test_value_1);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(int, 1, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(char_ptr, "char *", umocktypename_normalize_calls[0].type_name);
+    ASSERT_ARE_EQUAL(int, 1, test_copy_func_testtype_call_count);
+    ASSERT_ARE_EQUAL(void_ptr, destination, test_copy_func_testtype_calls[0].destination);
+    ASSERT_ARE_EQUAL(void_ptr, test_value_1, test_copy_func_testtype_calls[0].source);
+}
+
+/* Tests_SRS_UMOCKTYPES_01_027: [ If any of the arguments is NULL, umocktypes_copy shall return -1. ]*/
+TEST_FUNCTION(umocktypes_copy_with_NULL_type_fails)
+{
+    // arrange
+    void* destination = (void*)0x4245;
+    (void)umocktypes_init();
+    umocktypename_normalize_call_result = "char*";
+    (void)umocktypes_register_type("char *", test_stringify_func_testtype, test_are_equal_func_testtype, test_copy_func_testtype, test_free_func_testtype);
+    reset_umocktypename_normalize_calls();
+
+    test_copy_func_testtype_call_result = 0;
+
+    // act
+    int result = umocktypes_copy(NULL, destination, test_value_1);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(int, 0, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(int, 0, test_copy_func_testtype_call_count);
+}
+
+/* Tests_SRS_UMOCKTYPES_01_027: [ If any of the arguments is NULL, umocktypes_copy shall return -1. ]*/
+TEST_FUNCTION(umocktypes_copy_with_NULL_destination_fails)
+{
+    // arrange
+    (void)umocktypes_init();
+    umocktypename_normalize_call_result = "char*";
+    (void)umocktypes_register_type("char *", test_stringify_func_testtype, test_are_equal_func_testtype, test_copy_func_testtype, test_free_func_testtype);
+    reset_umocktypename_normalize_calls();
+
+    test_copy_func_testtype_call_result = 0;
+
+    // act
+    int result = umocktypes_copy("char *", NULL, test_value_1);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(int, 0, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(int, 0, test_copy_func_testtype_call_count);
+}
+
+/* Tests_SRS_UMOCKTYPES_01_027: [ If any of the arguments is NULL, umocktypes_copy shall return -1. ]*/
+TEST_FUNCTION(umocktypes_copy_with_NULL_source_fails)
+{
+    // arrange
+    void* destination = (void*)0x4245;
+    (void)umocktypes_init();
+    umocktypename_normalize_call_result = "char*";
+    (void)umocktypes_register_type("char *", test_stringify_func_testtype, test_are_equal_func_testtype, test_copy_func_testtype, test_free_func_testtype);
+    reset_umocktypename_normalize_calls();
+
+    test_copy_func_testtype_call_result = 0;
+
+    // act
+    int result = umocktypes_copy("char *", destination, NULL);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(int, 0, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(int, 0, test_copy_func_testtype_call_count);
+}
+
+/* Tests_SRS_UMOCKTYPES_01_028: [ If the underlying copy fails, umocktypes_copy shall return -1. ]*/
+TEST_FUNCTION(when_the_underlying_copy_fails_then_umocktypes_copy_fails)
+{
+    // arrange
+    void* destination = (void*)0x4245;
+    (void)umocktypes_init();
+    umocktypename_normalize_call_result = "char*";
+    (void)umocktypes_register_type("char *", test_stringify_func_testtype, test_are_equal_func_testtype, test_copy_func_testtype, test_free_func_testtype);
+    reset_umocktypename_normalize_calls();
+
+    test_copy_func_testtype_call_result = -1;
+
+    // act
+    int result = umocktypes_copy("char *", destination, test_value_1);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(int, 1, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(char_ptr, "char *", umocktypename_normalize_calls[0].type_name);
+    ASSERT_ARE_EQUAL(int, 1, test_copy_func_testtype_call_count);
+    ASSERT_ARE_EQUAL(void_ptr, destination, test_copy_func_testtype_calls[0].destination);
+    ASSERT_ARE_EQUAL(void_ptr, test_value_1, test_copy_func_testtype_calls[0].source);
+}
+
+/* Tests_SRS_UMOCKTYPES_01_029: [ If type can not be found in the registered types list maintained by the module, umocktypes_copy shall fail and return -1. ]*/
+TEST_FUNCTION(when_the_type_is_not_found_in_the_registered_types_list_umocktypes_copy_fails)
+{
+    // arrange
+    void* destination = (void*)0x4245;
+    (void)umocktypes_init();
+    umocktypename_normalize_call_result = "char*";
+    (void)umocktypes_register_type("char *", test_stringify_func_testtype, test_are_equal_func_testtype, test_copy_func_testtype, test_free_func_testtype);
+    reset_umocktypename_normalize_calls();
+
+    umocktypename_normalize_call_result = "const char*";
+    test_copy_func_testtype_call_result = 0;
+
+    // act
+    int result = umocktypes_copy("const char *", destination, test_value_1);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(int, 1, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(char_ptr, "const char *", umocktypename_normalize_calls[0].type_name);
+    ASSERT_ARE_EQUAL(int, 0, test_copy_func_testtype_call_count);
+}
+
+/* Tests_SRS_UMOCKTYPES_01_042: [ If normalizing the typename fails, umocktypes_copy shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(when_normalizing_the_type_fails_then_umocktypes_copy_fails)
+{
+    // arrange
+    void* destination = (void*)0x4245;
+    (void)umocktypes_init();
+    umocktypename_normalize_call_result = "char*";
+    (void)umocktypes_register_type("char *", test_stringify_func_testtype, test_are_equal_func_testtype, test_copy_func_testtype, test_free_func_testtype);
+    reset_umocktypename_normalize_calls();
+
+    umocktypename_normalize_call_result = NULL;
+    test_copy_func_testtype_call_result = 0;
+
+    // act
+    int result = umocktypes_copy("const char *", destination, test_value_1);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(int, 1, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(char_ptr, "const char *", umocktypename_normalize_calls[0].type_name);
+    ASSERT_ARE_EQUAL(int, 0, test_copy_func_testtype_call_count);
+}
+
+/* Tests_SRS_UMOCKTYPES_01_047: [ If umocktypes_copy is called when the module is not initialized, umocktypes_copy shall fail and return a non zero value. ]*/
+TEST_FUNCTION(when_the_module_is_not_initialized_then_umocktypes_copy_fails)
+{
+    // arrange
+    void* destination = (void*)0x4245;
+
+    umocktypename_normalize_call_result = NULL;
+    test_copy_func_testtype_call_result = 0;
+
+    // act
+    int result = umocktypes_copy("const char *", destination, test_value_1);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(int, 0, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(int, 0, test_copy_func_testtype_call_count);
 }
 
 END_TEST_SUITE(umocktypes_unittests)
