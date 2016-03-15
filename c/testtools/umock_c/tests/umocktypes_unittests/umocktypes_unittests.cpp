@@ -498,6 +498,7 @@ TEST_FUNCTION(when_normalizing_the_type_fails_umocktypes_register_type_fails)
 /* umocktypes_stringify */
 
 /* Tests_SRS_UMOCKTYPES_01_013: [ umocktypes_stringify shall return a char\* with the string representation of the value argument. ]*/
+/* Tests_SRS_UMOCKTYPES_01_014: [ The string representation shall be obtained by calling the stringify function registered for the type identified by the argument type. ]*/
 TEST_FUNCTION(umocktypes_stringify_calls_the_underlying_stringify)
 {
     // arrange

@@ -176,6 +176,7 @@ int umocktypes_register_type(const char* type, UMOCKTYPE_STRINGIFY_FUNC stringif
     return result;
 }
 
+/* Codes_SRS_UMOCKTYPES_01_013: [ umocktypes_stringify shall return a char\* with the string representation of the value argument. ]*/
 char* umocktypes_stringify(const char* type, const void* value)
 {
     char* result;
@@ -194,6 +195,7 @@ char* umocktypes_stringify(const char* type, const void* value)
         }
         else
         {
+            /* Codes_SRS_UMOCKTYPES_01_014: [ The string representation shall be obtained by calling the stringify function registered for the type identified by the argument type. ]*/
             result = value_type_handlers->stringify_func(value);
         }
 
