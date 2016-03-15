@@ -10,6 +10,7 @@
 #include <string.h>
 #include "umocktypes_stdint.h"
 #include "umocktypes.h"
+#include "umocktypename.h"
 
 typedef struct UMOCK_VALUE_TYPE_HANDLERS_TAG
 {
@@ -30,51 +31,11 @@ static UMOCK_VALUE_TYPE_HANDLERS* type_handlers = NULL;
 static size_t type_handler_count = 0;
 static UMOCKTYPES_STATE umocktypes_state = UMOCKTYPES_STATE_NOT_INITIALIZED;
 
-static char* normalize_type(const char* type)
-{
-    size_t length = 0;
-    size_t pos = 0;
-    char* result;
-
-    /* Codes_SRS_UMOCKTYPES_01_039: [ All extra spaces (more than 1 space between non-space characters) shall be removed. ]*/
-    while (type[pos] != '\0')
-    {
-        if (!((pos > 0) && isspace(type[pos]) && isspace(type[pos - 1])))
-        {
-            length++;
-        }
-
-        pos++;
-    }
-
-    result = (char*)malloc(length + 1);
-    if (result != NULL)
-    {
-        pos = 0;
-        length = 0;
-
-        while (type[pos] != '\0')
-        {
-            if (!((pos > 0) && isspace(type[pos]) && isspace(type[pos - 1])))
-            {
-                result[length] = type[pos];
-                length++;
-            }
-
-            pos++;
-        }
-
-        result[length] = '\0';
-    }
-
-    return result;
-}
-
 static UMOCK_VALUE_TYPE_HANDLERS* get_value_type_handlers(const char* type)
 {
     UMOCK_VALUE_TYPE_HANDLERS* result;
 
-    char* normalized_type = normalize_type(type);
+    char* normalized_type = umocktypename_normalize(type);
     if (normalized_type == NULL)
     {
         result = NULL;
@@ -168,7 +129,7 @@ int umocktypes_register_type(const char* type, UMOCKTYPE_STRINGIFY_FUNC stringif
     }
     else
     {
-        char* normalized_type = normalize_type(type);
+        char* normalized_type = umocktypename_normalize(type);
         if (normalized_type == NULL)
         {
             /* Codes_SRS_UMOCKTYPES_01_012: [ If an error occurs allocating memory for the newly registered type, umocktypes_register_type shall fail and return a non-zero value. ]*/

@@ -6,9 +6,13 @@
 #include "testrunnerswitcher.h"
 #include "umocktypes_charptr.h"
 
-/* TODO: test malloc failures */
-/* TODO: serialize tests */
-/* TODO: test for registering types */
+/* TODO: 
+- test malloc failures
+- serialize tests
+- test for registering types
+- umockc unit test project should not include the full umockc
+*/
+
 
 BEGIN_TEST_SUITE(umocktypes_charptr_unittests)
 

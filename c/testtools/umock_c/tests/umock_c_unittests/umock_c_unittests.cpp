@@ -7,8 +7,10 @@
 
 /* TODO:
 - Switch to .c
+- serialize tests
 - Make it clear that ENABLE_MOCKS has to be defined after including the unit under test header
 - Test freeing of return values allocated by the user in the copy functions
+- umockc unit test project should not include the full umockc
 */
 
 #define ENABLE_MOCKS
@@ -1442,7 +1444,6 @@ TEST_FUNCTION(when_copy_fails_for_the_second_call_in_REGISTER_GLOBAL_MOCK_RETURN
 
 /* Type names */
 
-#if 0
 /* Tests_SRS_UMOCK_C_01_145: [ Since umock_c needs to maintain a list of registered types, the following rules shall be applied: ]*/
 /* Tests_SRS_UMOCK_C_01_146: [ Each type shall be normalized to a form where all extra spaces are removed. ]*/
 TEST_FUNCTION(spaces_are_stripped_from_typenames)
@@ -1457,6 +1458,5 @@ TEST_FUNCTION(spaces_are_stripped_from_typenames)
     ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_expected_calls());
     ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
 }
-#endif
 
 END_TEST_SUITE(umock_c_unittests)

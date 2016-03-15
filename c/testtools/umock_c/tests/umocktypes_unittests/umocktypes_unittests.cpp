@@ -10,6 +10,7 @@
 - serialize tests
 - test failures of malloc
 - add deinit tests as separate project
+- umockc unit test project should not include the full umockc
 */
 
 static char* test_stringify_func_testtype(const void* value)

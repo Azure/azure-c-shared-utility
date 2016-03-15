@@ -6,6 +6,11 @@
 
 #include "umock_c.h"
 
+/* TODO:
+- Switch to .c
+- serialize tests
+*/
+
 MOCKABLE_FUNCTION(int, test_generate_signature, int, a, double, b, char*, s);
 MOCKABLE_FUNCTION(void, test_generate_signature_void_return, int, a);
 MOCKABLE_FUNCTION(void, test_generate_signature_no_args);

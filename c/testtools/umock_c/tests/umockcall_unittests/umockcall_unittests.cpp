@@ -6,8 +6,11 @@
 #include "testrunnerswitcher.h"
 #include "umockcall.h"
 
-/* TODO: test malloc failures */
-/* TODO: serialize tests */
+/* TODO: 
+- test malloc failures
+- serialize tests
+- umockc unit test project should not include the full umockc
+*/
 
 /* Not tested requirements */
 /* SRS_UMOCKCALL_01_002: [ If allocating memory for the umock call instance fails, umockcall_create shall return NULL. ] */
