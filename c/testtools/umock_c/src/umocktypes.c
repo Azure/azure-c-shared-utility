@@ -8,7 +8,6 @@
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
-#include "umocktypes_stdint.h"
 #include "umocktypes.h"
 #include "umocktypename.h"
 

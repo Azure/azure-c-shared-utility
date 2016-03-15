@@ -10,7 +10,7 @@
 #include "umock_c.h"
 #include "umockcall.h"
 #include "umocktypes.h"
-#include "umocktypes_stdint.h"
+#include "umocktypes_c.h"
 
 static size_t expected_call_count;
 static UMOCKCALL_HANDLE* expected_calls;
@@ -25,7 +25,7 @@ int umock_c_init(ON_UMOCK_C_ERROR on_umock_c_error)
     int result;
 
     if ((umocktypes_init() != 0) ||
-        (umocktypes_stdint_register_types() != 0))
+        (umocktypes_c_register_types() != 0))
     {
         result = __LINE__;
     }

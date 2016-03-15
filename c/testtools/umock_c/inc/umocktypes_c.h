@@ -1,14 +1,14 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#ifndef UMOCKTYPES_STDINT_H
-#define UMOCKTYPES_STDINT_H
+#ifndef UMOCKTYPES_C_H
+#define UMOCKTYPES_C_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-    extern int umocktypes_stdint_register_types(void);
+    extern int umocktypes_c_register_types(void);
 
     extern char* umocktypes_stringify_int(const int* value);
     extern int umocktypes_are_equal_int(const int* left, const int* right);
@@ -19,4 +19,4 @@ extern "C" {
 }
 #endif
 
-#endif /* UMOCKTYPES_STDINT_H */
+#endif /* UMOCKTYPES_C_H */

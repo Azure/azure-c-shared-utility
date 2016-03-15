@@ -13,7 +13,7 @@ umock_c_generate_function_declaration.cpp
 ../../src/umockcall.c
 ../../src/umocktypes.c
 ../../src/umocktypes_charptr.c
-../../src/umocktypes_stdint.c
+../../src/umocktypes_c.c
 ../../src/umocktypename.c
 )
 

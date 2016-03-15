@@ -8,9 +8,9 @@
 #include <stdio.h>
 #include <string.h>
 #include "umocktypes.h"
-#include "umocktypes_stdint.h"
+#include "umocktypes_c.h"
 
-int umocktypes_stdint_register_types(void)
+int umocktypes_c_register_types(void)
 {
     int result;
 
