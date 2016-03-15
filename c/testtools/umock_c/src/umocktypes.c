@@ -228,18 +228,72 @@ char* umocktypes_stringify(const char* type, const void* value)
     return result;
 }
 
+/* Codes_SRS_UMOCKTYPES_01_018: [ umocktypes_are_equal shall evaluate whether 2 values are equal. ]*/
 int umocktypes_are_equal(const char* type, const void* left, const void* right)
 {
     int result;
-    UMOCK_VALUE_TYPE_HANDLERS* value_type_handlers = get_value_type_handlers(type);
 
-    if (value_type_handlers == NULL)
+    if ((type == NULL) ||
+        (left == NULL) ||
+        (right == NULL))
     {
+        /* Codes_SRS_UMOCKTYPES_01_023: [ If any of the arguments is NULL, umocktypes_are_equal shall fail and return -1. ]*/
+        result = -1;
+    }
+    else if(umocktypes_state != UMOCKTYPES_STATE_INITIALIZED)
+    {
+        /* Codes_SRS_UMOCKTYPES_01_046: [ If umocktypes_are_equal is called when the module is not initialized, umocktypes_are_equal shall return -1. ] */
         result = -1;
     }
     else
     {
-        result = value_type_handlers->are_equal_func(left, right);
+        /* Codes_SRS_UMOCKTYPES_01_036: [ Before looking it up, the type string shall be normalized by calling umocktypename_normalize. ]*/
+        char* normalized_type = umocktypename_normalize(type);
+        if (normalized_type == NULL)
+        {
+            /* Codes_SRS_UMOCKTYPES_01_043: [ If normalizing the typename fails, umocktypes_are_equal shall fail and return -1. ]*/
+            result = -1;
+        }
+        else
+        {
+            UMOCK_VALUE_TYPE_HANDLERS* value_type_handlers = get_value_type_handlers(normalized_type);
+            if (value_type_handlers == NULL)
+            {
+                /* Codes_SRS_UMOCKTYPES_01_024: [ If type can not be found in the registered types list maintained by the module, umocktypes_are_equal shall fail and return -1. ]*/
+                result = -1;
+            }
+            else
+            {
+                /* Codes_SRS_UMOCKTYPES_01_051: [ If the pointer values for left and right are equal, umocktypes_are_equal shall return 1 without calling the underlying are_equal function. ]*/
+                if (left == right)
+                {
+                    result = 1;
+                }
+                else
+                {
+                    /* Codes_SRS_UMOCKTYPES_01_019: [ umocktypes_are_equal shall call the underlying are_equal function for the type identified by the argument type (passed in umocktypes_register_type). ] */
+                    switch (value_type_handlers->are_equal_func(left, right))
+                    {
+                    default:
+                        /* Codes_SRS_UMOCKTYPES_01_020: [ If the underlying are_equal function fails,, umocktypes_are_equal shall fail and return -1. ] */
+                        result = -1;
+                        break;
+
+                    case 1:
+                        /* Codes_SRS_UMOCKTYPES_01_021: [ If the underlying are_equal function indicates the types are equal, umocktypes_are_equal shall return 1. ]*/
+                        result = 1;
+                        break;
+
+                    case 0:
+                        /* Codes_SRS_UMOCKTYPES_01_022: [ If the underlying are_equal function indicates the types are not equal, umocktypes_are_equal shall return 0. ]*/
+                        result = 0;
+                        break;
+                    }
+                }
+            }
+
+            free(normalized_type);
+        }
     }
 
     return result;
