@@ -116,6 +116,46 @@ extern void umocktypes_free_unsignedchar(unsigned char* value);
 
 **SRS_UMOCKTYPES_C_01_025: [** umocktypes_free_unsignedchar shall do nothing. **]**
 
+##umocktypes_stringify_short
+
+```c
+extern short* umocktypes_stringify_short(const short* value);
+```
+
+**SRS_UMOCKTYPES_C_01_026: [** umocktypes_stringify_short shall return the string representation of value. **]**
+**SRS_UMOCKTYPES_C_01_027: [** If value is NULL, umocktypes_stringify_short shall return NULL. **]**
+**SRS_UMOCKTYPES_C_01_028: [** If allocating a new string to hold the string representation fails, umocktypes_stringify_short shall return NULL. **]**
+**SRS_UMOCKTYPES_C_01_029: [** If any other error occurs when creating the string representation, umocktypes_stringify_short shall return NULL. **]**
+
+##umocktypes_are_equal_short
+
+```c
+extern int umocktypes_are_equal_short(const short* left, const short* right);
+```
+
+**SRS_UMOCKTYPES_C_01_030: [** umocktypes_are_equal_short shall compare the 2 shorts pointed to by left and right. **]**
+**SRS_UMOCKTYPES_C_01_031: [** If any of the arguments is NULL, umocktypes_are_equal_short shall return -1. **]**
+**SRS_UMOCKTYPES_C_01_032: [** If the values pointed to by left and right are equal, umocktypes_are_equal_short shall return 1. **]**
+**SRS_UMOCKTYPES_C_01_033: [** If the values pointed to by left and right are different, umocktypes_are_equal_short shall return 0. **]**
+
+##umocktypes_copy_short
+
+```c
+extern int umocktypes_copy_short(short* destination, const short* source);
+```
+
+**SRS_UMOCKTYPES_C_01_034: [** umocktypes_copy_short shall copy the short value from source to destination. **]**
+**SRS_UMOCKTYPES_C_01_035: [** On success umocktypes_copy_short shall return 0. **]**
+**SRS_UMOCKTYPES_C_01_036: [** If source or destination are NULL, umocktypes_copy_short shall return a non-zero value. **]**
+
+##umocktypes_free_short
+
+```c
+extern void umocktypes_free_short(short* value);
+```
+
+**SRS_UMOCKTYPES_C_01_037: [** umocktypes_free_short shall do nothing. **]**
+
 ##umocktypes_stringify_int
 
 ```c
