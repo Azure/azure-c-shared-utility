@@ -27,7 +27,7 @@ int umocktypes_c_register_types(void)
     return result;
 }
 
-#define IMPLEMENT_STRINGIFY(type, function_postfix, printf_percent) \
+#define IMPLEMENT_STRINGIFY(type, function_postfix, printf_specifier) \
     char* C2(umocktypes_stringify_,function_postfix)(const type* value) \
     { \
         char* result; \
@@ -38,7 +38,7 @@ int umocktypes_c_register_types(void)
         else \
         { \
             char temp_buffer[32]; \
-            int length = sprintf(temp_buffer, "%d", *value); \
+            int length = sprintf(temp_buffer, printf_specifier, *value); \
             if (length < 0) \
             { \
                 result = NULL; \
@@ -92,8 +92,8 @@ int umocktypes_c_register_types(void)
     { \
     }
 
-#define IMPLEMENT_TYPE_HANDLERS(type, function_postfix, printf_percent) \
-    IMPLEMENT_STRINGIFY(type, function_postfix, printf_percent) \
+#define IMPLEMENT_TYPE_HANDLERS(type, function_postfix, printf_specifier) \
+    IMPLEMENT_STRINGIFY(type, function_postfix, printf_specifier) \
     IMPLEMENT_ARE_EQUAL(type, function_postfix) \
     IMPLEMENT_COPY(type, function_postfix) \
     IMPLEMENT_FREE(type, function_postfix)
@@ -110,7 +110,7 @@ int umocktypes_c_register_types(void)
 /* Codes_SRS_UMOCKTYPES_C_01_012: [ If source or destination are NULL, umocktypes_copy_char shall return a non-zero value. ]*/
 /* Codes_SRS_UMOCKTYPES_C_01_011: [ On success umocktypes_copy_char shall return 0. ]*/
 /* Codes_SRS_UMOCKTYPES_C_01_013: [ umocktypes_free_char shall do nothing. ]*/
-IMPLEMENT_TYPE_HANDLERS(char, char, "%c")
+IMPLEMENT_TYPE_HANDLERS(char, char, "%d")
 
 /* Codes_SRS_UMOCKTYPES_C_01_014: [ umocktypes_stringify_unsignedchar shall return the string representation of value. ]*/
 /* Codes_SRS_UMOCKTYPES_C_01_015: [ If value is NULL, umocktypes_stringify_unsignedchar shall return NULL. ]*/
@@ -124,7 +124,7 @@ IMPLEMENT_TYPE_HANDLERS(char, char, "%c")
 /* Codes_SRS_UMOCKTYPES_C_01_024: [ If source or destination are NULL, umocktypes_copy_unsignedchar shall return a non-zero value. ]*/
 /* Codes_SRS_UMOCKTYPES_C_01_023: [ On success umocktypes_copy_unsignedchar shall return 0. ]*/
 /* Codes_SRS_UMOCKTYPES_C_01_025: [ umocktypes_free_unsignedchar shall do nothing. ]*/
-IMPLEMENT_TYPE_HANDLERS(unsigned char, unsignedchar, "%c")
+IMPLEMENT_TYPE_HANDLERS(unsigned char, unsignedchar, "%u")
 
 /* Codes_SRS_UMOCKTYPES_C_01_026: [ umocktypes_stringify_short shall return the string representation of value. ]*/
 /* Codes_SRS_UMOCKTYPES_C_01_027: [ If value is NULL, umocktypes_stringify_short shall return NULL. ]*/
@@ -222,7 +222,7 @@ IMPLEMENT_TYPE_HANDLERS(unsigned long, unsignedlong, "%lu")
 /* Codes_SRS_UMOCKTYPES_C_01_108: [ If source or destination are NULL, umocktypes_copy_longlong shall return a non-zero value. ]*/
 /* Codes_SRS_UMOCKTYPES_C_01_107: [ On success umocktypes_copy_longlong shall return 0. ]*/
 /* Codes_SRS_UMOCKTYPES_C_01_109: [ umocktypes_free_longlong shall do nothing. ]*/
-IMPLEMENT_TYPE_HANDLERS(long long, longlong, "%lu")
+IMPLEMENT_TYPE_HANDLERS(long long, longlong, "%lld")
 
 /* Codes_SRS_UMOCKTYPES_C_01_110: [ umocktypes_stringify_unsignedlonglong shall return the string representation of value. ]*/
 /* Codes_SRS_UMOCKTYPES_C_01_111: [ If value is NULL, umocktypes_stringify_unsignedlonglong shall return NULL. ]*/
@@ -236,4 +236,18 @@ IMPLEMENT_TYPE_HANDLERS(long long, longlong, "%lu")
 /* Codes_SRS_UMOCKTYPES_C_01_120: [ If source or destination are NULL, umocktypes_copy_unsignedlonglong shall return a non-zero value. ]*/
 /* Codes_SRS_UMOCKTYPES_C_01_119: [ On success umocktypes_copy_unsignedlonglong shall return 0. ]*/
 /* Codes_SRS_UMOCKTYPES_C_01_121: [ umocktypes_free_unsignedlonglong shall do nothing. ]*/
-IMPLEMENT_TYPE_HANDLERS(unsigned long long, unsignedlonglong, "%lu")
+IMPLEMENT_TYPE_HANDLERS(unsigned long long, unsignedlonglong, "%llu")
+
+/* Codes_SRS_UMOCKTYPES_C_01_122: [ umocktypes_stringify_unsignedlonglong shall return the string representation of value. ]*/
+/* Codes_SRS_UMOCKTYPES_C_01_123: [ If value is NULL, umocktypes_stringify_unsignedlonglong shall return NULL. ]*/
+/* Codes_SRS_UMOCKTYPES_C_01_125: [ If any other error occurs when creating the string representation, umocktypes_stringify_unsignedlonglong shall return NULL. ]*/
+/* Codes_SRS_UMOCKTYPES_C_01_124: [ If allocating a new string to hold the string representation fails, umocktypes_stringify_unsignedlonglong shall return NULL. ]*/
+/* Codes_SRS_UMOCKTYPES_C_01_126: [ umocktypes_are_equal_unsignedlonglong shall compare the 2 unsigned long longs pointed to by left and right. ]*/
+/* Codes_SRS_UMOCKTYPES_C_01_127: [ If any of the arguments is NULL, umocktypes_are_equal_unsignedlonglong shall return -1. ]*/
+/* Codes_SRS_UMOCKTYPES_C_01_128: [ If the values pointed to by left and right are equal, umocktypes_are_equal_unsignedlonglong shall return 1. ]*/
+/* Codes_SRS_UMOCKTYPES_C_01_129: [ If the values pointed to by left and right are different, umocktypes_are_equal_unsignedlonglong shall return 0. ]*/
+/* Codes_SRS_UMOCKTYPES_C_01_130: [ umocktypes_copy_unsignedlonglong shall copy the unsigned long long value from source to destination. ]*/
+/* Codes_SRS_UMOCKTYPES_C_01_132: [ If source or destination are NULL, umocktypes_copy_unsignedlonglong shall return a non-zero value. ]*/
+/* Codes_SRS_UMOCKTYPES_C_01_131: [ On success umocktypes_copy_unsignedlonglong shall return 0. ]*/
+/* Codes_SRS_UMOCKTYPES_C_01_133: [ umocktypes_free_unsignedlonglong shall do nothing. ]*/
+IMPLEMENT_TYPE_HANDLERS(float, float, "%f")

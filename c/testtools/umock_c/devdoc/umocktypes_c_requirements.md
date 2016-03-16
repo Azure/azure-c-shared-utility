@@ -435,3 +435,43 @@ extern void umocktypes_free_unsignedlonglong(unsigned long long* value);
 ```
 
 **SRS_UMOCKTYPES_C_01_121: [** umocktypes_free_unsignedlonglong shall do nothing. **]**
+
+##umocktypes_stringify_float
+
+```c
+extern char* umocktypes_stringify_float(const float* value);
+```
+
+**SRS_UMOCKTYPES_C_01_122: [** umocktypes_stringify_float shall return the string representation of value. **]**
+**SRS_UMOCKTYPES_C_01_123: [** If value is NULL, umocktypes_stringify_float shall return NULL. **]**
+**SRS_UMOCKTYPES_C_01_124: [** If allocating a new string to hold the string representation fails, umocktypes_stringify_float shall return NULL. **]**
+**SRS_UMOCKTYPES_C_01_125: [** If any other error occurs when creating the string representation, umocktypes_stringify_float shall return NULL. **]**
+
+##umocktypes_are_equal_float
+
+```c
+extern int umocktypes_are_equal_float(const float* left, const float* right);
+```
+
+**SRS_UMOCKTYPES_C_01_126: [** umocktypes_are_equal_float shall compare the 2 floats pointed to by left and right. **]**
+**SRS_UMOCKTYPES_C_01_127: [** If any of the arguments is NULL, umocktypes_are_equal_float shall return -1. **]**
+**SRS_UMOCKTYPES_C_01_128: [** If the values pointed to by left and right are equal, umocktypes_are_equal_float shall return 1. **]**
+**SRS_UMOCKTYPES_C_01_129: [** If the values pointed to by left and right are different, umocktypes_are_equal_float shall return 0. **]**
+
+##umocktypes_copy_float
+
+```c
+extern int umocktypes_copy_float(float* destination, const float* source);
+```
+
+**SRS_UMOCKTYPES_C_01_130: [** umocktypes_copy_float shall copy the float value from source to destination. **]**
+**SRS_UMOCKTYPES_C_01_131: [** On success umocktypes_copy_float shall return 0. **]**
+**SRS_UMOCKTYPES_C_01_132: [** If source or destination are NULL, umocktypes_copy_float shall return a non-zero value. **]**
+
+##umocktypes_free_float
+
+```c
+extern void umocktypes_free_float(float* value);
+```
+
+**SRS_UMOCKTYPES_C_01_133: [** umocktypes_free_float shall do nothing. **]**

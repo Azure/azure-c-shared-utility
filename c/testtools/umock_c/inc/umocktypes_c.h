@@ -28,6 +28,7 @@ UMOCKTYPES_HANDLERS(long, long)
 UMOCKTYPES_HANDLERS(unsigned long, unsignedlong)
 UMOCKTYPES_HANDLERS(long long, longlong)
 UMOCKTYPES_HANDLERS(unsigned long long, unsignedlonglong)
+UMOCKTYPES_HANDLERS(float, float)
 
 #ifdef __cplusplus
 }

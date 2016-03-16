@@ -912,22 +912,6 @@ TEST_FUNCTION(umocktypes_stringify_unsignedint_with_0_value)
 }
 
 /* Tests_SRS_UMOCKTYPES_C_01_062: [ umocktypes_stringify_unsignedint shall return the string representation of value. ]*/
-TEST_FUNCTION(umocktypes_stringify_unsignedint_with_negative_value)
-{
-    // arrange
-    unsigned int input = -127-1;
-
-    // act
-    char* result = umocktypes_stringify_unsignedint(&input);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, "-128", result);
-
-    // cleanup
-    free(result);
-}
-
-/* Tests_SRS_UMOCKTYPES_C_01_062: [ umocktypes_stringify_unsignedint shall return the string representation of value. ]*/
 TEST_FUNCTION(umocktypes_stringify_unsignedint_with_positive_value)
 {
     // arrange
@@ -1262,22 +1246,6 @@ TEST_FUNCTION(umocktypes_stringify_unsignedlong_with_0_value)
 
     // assert
     ASSERT_ARE_EQUAL(char_ptr, "0", result);
-
-    // cleanup
-    free(result);
-}
-
-/* Tests_SRS_UMOCKTYPES_C_01_086: [ umocktypes_stringify_unsignedlong shall return the string representation of value. ]*/
-TEST_FUNCTION(umocktypes_stringify_unsignedlong_with_negative_value)
-{
-    // arrange
-    unsigned long input = -127 - 1;
-
-    // act
-    char* result = umocktypes_stringify_unsignedlong(&input);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, "-128", result);
 
     // cleanup
     free(result);
@@ -1624,22 +1592,6 @@ TEST_FUNCTION(umocktypes_stringify_unsignedlonglong_with_0_value)
 }
 
 /* Tests_SRS_UMOCKTYPES_C_01_110: [ umocktypes_stringify_unsignedlonglong shall return the string representation of value. ]*/
-TEST_FUNCTION(umocktypes_stringify_unsignedlonglong_with_negative_value)
-{
-    // arrange
-    unsigned long long input = -127 - 1;
-
-    // act
-    char* result = umocktypes_stringify_unsignedlonglong(&input);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, "-128", result);
-
-    // cleanup
-    free(result);
-}
-
-/* Tests_SRS_UMOCKTYPES_C_01_110: [ umocktypes_stringify_unsignedlonglong shall return the string representation of value. ]*/
 TEST_FUNCTION(umocktypes_stringify_unsignedlonglong_with_positive_value)
 {
     // arrange
@@ -1778,6 +1730,190 @@ TEST_FUNCTION(umocktypes_free_unsignedlonglong_does_nothing)
 
     // act
     umocktypes_free_unsignedlonglong(&value);
+
+    // assert
+    // no explicit assert
+}
+
+/* umocktypes_stringify_float */
+
+/* Tests_SRS_UMOCKTYPES_C_01_110: [ umocktypes_stringify_float shall return the string representation of value. ]*/
+TEST_FUNCTION(umocktypes_stringify_float_with_0_0_value)
+{
+    // arrange
+    float input = 0.0f;
+    char expected_string[32];
+
+    // act
+    char* result = umocktypes_stringify_float(&input);
+
+    // assert
+    (void)sprintf(expected_string, "%f", input);
+    ASSERT_ARE_EQUAL(char_ptr, expected_string, result);
+
+    // cleanup
+    free(result);
+}
+
+/* Tests_SRS_UMOCKTYPES_C_01_110: [ umocktypes_stringify_float shall return the string representation of value. ]*/
+TEST_FUNCTION(umocktypes_stringify_float_with_negative_value)
+{
+    // arrange
+    float input = -1.42f;
+    char expected_string[32];
+
+    // act
+    char* result = umocktypes_stringify_float(&input);
+
+    // assert
+    (void)sprintf(expected_string, "%f", input);
+    ASSERT_ARE_EQUAL(char_ptr, expected_string, result);
+
+    // cleanup
+    free(result);
+}
+
+/* Tests_SRS_UMOCKTYPES_C_01_110: [ umocktypes_stringify_float shall return the string representation of value. ]*/
+TEST_FUNCTION(umocktypes_stringify_float_with_positive_value)
+{
+    // arrange
+    float input = 2.42f;
+    char expected_string[32];
+
+    // act
+    char* result = umocktypes_stringify_float(&input);
+
+    // assert
+    (void)sprintf(expected_string, "%f", input);
+    ASSERT_ARE_EQUAL(char_ptr, expected_string, result);
+
+    // cleanup
+    free(result);
+}
+
+/* Tests_SRS_UMOCKTYPES_C_01_111: [ If value is NULL, umocktypes_stringify_float shall return NULL. ]*/
+TEST_FUNCTION(umocktypes_stringify_float_with_NULL_fails)
+{
+    // arrange
+
+    // act
+    char* result = umocktypes_stringify_float(NULL);
+
+    // assert
+    ASSERT_IS_NULL(result);
+}
+
+/* umocktypes_are_equal_float */
+
+/* Tests_SRS_UMOCKTYPES_C_01_114: [ umocktypes_are_equal_float shall compare the 2 floats pointed to by left and right. ]*/
+/* Tests_SRS_UMOCKTYPES_C_01_116: [ If the values pointed to by left and right are equal, umocktypes_are_equal_float shall return 1. ]*/
+TEST_FUNCTION(umocktypes_are_equal_float_with_2_equal_values_returns_1)
+{
+    // arrange
+    float left = 0x42;
+    float right = 0x42;
+
+    // act
+    int result = umocktypes_are_equal_float(&left, &right);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 1, result);
+}
+
+/* Tests_SRS_UMOCKTYPES_C_01_117: [ If the values pointed to by left and right are different, umocktypes_are_equal_float shall return 0. ]*/
+TEST_FUNCTION(umocktypes_are_equal_float_with_2_different_values_returns_0)
+{
+    // arrange
+    float left = 0x42;
+    float right = 0x43;
+
+    // act
+    int result = umocktypes_are_equal_float(&left, &right);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+}
+
+/* Tests_SRS_UMOCKTYPES_C_01_115: [ If any of the arguments is NULL, umocktypes_are_equal_float shall return -1. ]*/
+TEST_FUNCTION(umocktypes_are_equal_float_with_NULL_left_fails)
+{
+    // arrange
+    float right = 0x43;
+
+    // act
+    int result = umocktypes_are_equal_float(NULL, &right);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, -1, result);
+}
+
+/* Tests_SRS_UMOCKTYPES_C_01_115: [ If any of the arguments is NULL, umocktypes_are_equal_float shall return -1. ]*/
+TEST_FUNCTION(umocktypes_are_equal_float_with_NULL_right_fails)
+{
+    // arrange
+    float left = 0x42;
+
+    // act
+    int result = umocktypes_are_equal_float(&left, NULL);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, -1, result);
+}
+
+/* umocktypes_copy_float */
+
+/* Tests_SRS_UMOCKTYPES_C_01_118: [ umocktypes_copy_float shall copy the float value from source to destination. ]*/
+/* Tests_SRS_UMOCKTYPES_C_01_119: [ On success umocktypes_copy_float shall return 0. ]*/
+TEST_FUNCTION(umocktypes_copy_float_succeeds)
+{
+    // arrange
+    float destination = 0;
+    float source = 0x42;
+
+    // act
+    int result = umocktypes_copy_float(&destination, &source);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(long, 0x42, (long)destination);
+}
+
+/* Tests_SRS_UMOCKTYPES_C_01_120: [ If source or destination are NULL, umocktypes_copy_float shall return a non-zero value. ]*/
+TEST_FUNCTION(umocktypes_copy_float_with_NULL_destination_fails)
+{
+    // arrange
+    float source = 0x42;
+
+    // act
+    int result = umocktypes_copy_float(NULL, &source);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+}
+
+/* Tests_SRS_UMOCKTYPES_C_01_120: [ If source or destination are NULL, umocktypes_copy_float shall return a non-zero value. ]*/
+TEST_FUNCTION(umocktypes_copy_float_with_NULL_source_fails)
+{
+    // arrange
+    float destination = 0;
+
+    // act
+    int result = umocktypes_copy_float(&destination, NULL);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+}
+
+/* umocktypes_free_float */
+
+/* Tests_SRS_UMOCKTYPES_C_01_121: [ umocktypes_free_float shall do nothing. ]*/
+TEST_FUNCTION(umocktypes_free_float_does_nothing)
+{
+    // arrange
+    float value = 0;
+
+    // act
+    umocktypes_free_float(&value);
 
     // assert
     // no explicit assert
