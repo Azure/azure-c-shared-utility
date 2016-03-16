@@ -37,7 +37,7 @@ TEST_FUNCTION_CLEANUP(test_function_cleanup)
 
 /* umocktypes_stringify_int */
 
-/* Tests_SRS_UMOCKTYPES_C_01_002: [ umocktypes_stringify_int shall return the string representation of value. ]*/
+/* Tests_SRS_UMOCKTYPES_C_01_002: [ umocktypes\_stringify\_{type} shall return the string representation of value. ]*/
 TEST_FUNCTION(umocktypes_stringify_int_with_0_value)
 {
     // arrange

@@ -43,13 +43,13 @@ char* umocktypes_stringify_int(const int* value)
         int length = sprintf(temp_buffer, "%d", *value);
         if (length < 0)
         {
-            /* Codes_SRS_UMOCKTYPES_C_01_005: [ If any other error occurs when creating the string representation, umocktypes_stringify_charptr shall return NULL. ]*/
+            /* Codes_SRS_UMOCKTYPES_C_01_005: [ If any other error occurs when creating the string representation, umocktypes_stringify_int shall return NULL. ]*/
             result = NULL;
         }
         else
         {
             result = (char*)malloc(length + 1);
-            /* Codes_SRS_UMOCKTYPES_C_01_004: [ If allocating a new string to hold the string representation fails, umocktypes_stringify_charptr shall return NULL. ]*/
+            /* Codes_SRS_UMOCKTYPES_C_01_004: [ If allocating a new string to hold the string representation fails, umocktypes_stringify_int shall return NULL. ]*/
             if (result != NULL)
             {
                 (void)memcpy(result, temp_buffer, length + 1);
