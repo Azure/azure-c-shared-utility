@@ -475,3 +475,83 @@ extern void umocktypes_free_float(float* value);
 ```
 
 **SRS_UMOCKTYPES_C_01_133: [** umocktypes_free_float shall do nothing. **]**
+
+##umocktypes_stringify_double
+
+```c
+extern char* umocktypes_stringify_double(const double* value);
+```
+
+**SRS_UMOCKTYPES_C_01_134: [** umocktypes_stringify_double shall return the string representation of value. **]**
+**SRS_UMOCKTYPES_C_01_135: [** If value is NULL, umocktypes_stringify_double shall return NULL. **]**
+**SRS_UMOCKTYPES_C_01_136: [** If allocating a new string to hold the string representation fails, umocktypes_stringify_double shall return NULL. **]**
+**SRS_UMOCKTYPES_C_01_137: [** If any other error occurs when creating the string representation, umocktypes_stringify_double shall return NULL. **]**
+
+##umocktypes_are_equal_double
+
+```c
+extern int umocktypes_are_equal_double(const double* left, const double* right);
+```
+
+**SRS_UMOCKTYPES_C_01_138: [** umocktypes_are_equal_double shall compare the 2 doubles pointed to by left and right. **]**
+**SRS_UMOCKTYPES_C_01_139: [** If any of the arguments is NULL, umocktypes_are_equal_double shall return -1. **]**
+**SRS_UMOCKTYPES_C_01_140: [** If the values pointed to by left and right are equal, umocktypes_are_equal_double shall return 1. **]**
+**SRS_UMOCKTYPES_C_01_141: [** If the values pointed to by left and right are different, umocktypes_are_equal_double shall return 0. **]**
+
+##umocktypes_copy_double
+
+```c
+extern int umocktypes_copy_double(double* destination, const double* source);
+```
+
+**SRS_UMOCKTYPES_C_01_142: [** umocktypes_copy_double shall copy the double value from source to destination. **]**
+**SRS_UMOCKTYPES_C_01_143: [** On success umocktypes_copy_double shall return 0. **]**
+**SRS_UMOCKTYPES_C_01_144: [** If source or destination are NULL, umocktypes_copy_double shall return a non-zero value. **]**
+
+##umocktypes_free_double
+
+```c
+extern void umocktypes_free_double(double* value);
+```
+
+**SRS_UMOCKTYPES_C_01_145: [** umocktypes_free_double shall do nothing. **]**
+
+##umocktypes_stringify_longdouble
+
+```c
+extern char* umocktypes_stringify_longdouble(const long double* value);
+```
+
+**SRS_UMOCKTYPES_C_01_146: [** umocktypes_stringify_longdouble shall return the string representation of value. **]**
+**SRS_UMOCKTYPES_C_01_147: [** If value is NULL, umocktypes_stringify_longdouble shall return NULL. **]**
+**SRS_UMOCKTYPES_C_01_148: [** If allocating a new string to hold the string representation fails, umocktypes_stringify_longdouble shall return NULL. **]**
+**SRS_UMOCKTYPES_C_01_149: [** If any other error occurs when creating the string representation, umocktypes_stringify_longdouble shall return NULL. **]**
+
+##umocktypes_are_equal_longdouble
+
+```c
+extern int umocktypes_are_equal_longdouble(const long double* left, const long double* right);
+```
+
+**SRS_UMOCKTYPES_C_01_150: [** umocktypes_are_equal_longdouble shall compare the 2 long doubles pointed to by left and right. **]**
+**SRS_UMOCKTYPES_C_01_151: [** If any of the arguments is NULL, umocktypes_are_equal_longdouble shall return -1. **]**
+**SRS_UMOCKTYPES_C_01_152: [** If the values pointed to by left and right are equal, umocktypes_are_equal_longdouble shall return 1. **]**
+**SRS_UMOCKTYPES_C_01_153: [** If the values pointed to by left and right are different, umocktypes_are_equal_longdouble shall return 0. **]**
+
+##umocktypes_copy_longdouble
+
+```c
+extern int umocktypes_copy_longdouble(long double* destination, const long double* source);
+```
+
+**SRS_UMOCKTYPES_C_01_154: [** umocktypes_copy_longdouble shall copy the long double value from source to destination. **]**
+**SRS_UMOCKTYPES_C_01_155: [** On success umocktypes_copy_longdouble shall return 0. **]**
+**SRS_UMOCKTYPES_C_01_156: [** If source or destination are NULL, umocktypes_copy_longdouble shall return a non-zero value. **]**
+
+##umocktypes_free_longdouble
+
+```c
+extern void umocktypes_free_longdouble(long double* value);
+```
+
+**SRS_UMOCKTYPES_C_01_157: [** umocktypes_free_longdouble shall do nothing. **]**
