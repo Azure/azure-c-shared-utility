@@ -286,9 +286,6 @@ XX**SRS_UMOCK_C_01_115: [** umock_c shall compare calls in order. **]** That mea
 -	**SRS_UMOCK_C_01_039: [**double**]**
 -	**SRS_UMOCK_C_01_040: [**long double**]**
 -	**SRS_UMOCK_C_01_041: [**size_t**]**
--	**SRS_UMOCK_C_01_042: [**clock_t**]**
--	**SRS_UMOCK_C_01_043: [**time_t**]**
--	**SRS_UMOCK_C_01_044: [**struct tm**]**
 
 ###Custom types
 

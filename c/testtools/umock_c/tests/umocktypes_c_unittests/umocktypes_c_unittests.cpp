@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stdlib.h>
+#include <time.h>
 #include "testrunnerswitcher.h"
 #include "umocktypes.h"
 #include "umocktypes_c.h"
@@ -2282,6 +2283,172 @@ TEST_FUNCTION(umocktypes_free_longdouble_does_nothing)
 
     // act
     umocktypes_free_longdouble(&value);
+
+    // assert
+    // no explicit assert
+}
+
+/* umocktypes_stringify_size_t */
+
+/* Tests_SRS_UMOCKTYPES_C_01_158: [ umocktypes_stringify_size_t shall return the string representation of value. ]*/
+TEST_FUNCTION(umocktypes_stringify_size_t_with_0_0_value)
+{
+    // arrange
+    size_t input = 0;
+    char expected_string[32];
+
+    // act
+    char* result = umocktypes_stringify_size_t(&input);
+
+    // assert
+    (void)sprintf(expected_string, "%u", input);
+    ASSERT_ARE_EQUAL(char_ptr, expected_string, result);
+
+    // cleanup
+    free(result);
+}
+
+/* Tests_SRS_UMOCKTYPES_C_01_158: [ umocktypes_stringify_size_t shall return the string representation of value. ]*/
+TEST_FUNCTION(umocktypes_stringify_size_t_with_max_value)
+{
+    // arrange
+    size_t input = (size_t)-1;
+    char expected_string[32];
+
+    // act
+    char* result = umocktypes_stringify_size_t(&input);
+
+    // assert
+    (void)sprintf(expected_string, "%u", input);
+    ASSERT_ARE_EQUAL(char_ptr, expected_string, result);
+
+    // cleanup
+    free(result);
+}
+
+/* Tests_SRS_UMOCKTYPES_C_01_159: [ If value is NULL, umocktypes_stringify_size_t shall return NULL. ]*/
+TEST_FUNCTION(umocktypes_stringify_size_t_with_NULL_fails)
+{
+    // arrange
+
+    // act
+    char* result = umocktypes_stringify_size_t(NULL);
+
+    // assert
+    ASSERT_IS_NULL(result);
+}
+
+/* umocktypes_are_equal_size_t */
+
+/* Tests_SRS_UMOCKTYPES_C_01_162: [ umocktypes_are_equal_size_t shall compare the 2 size_ts pointed to by left and right. ]*/
+/* Tests_SRS_UMOCKTYPES_C_01_164: [ If the values pointed to by left and right are equal, umocktypes_are_equal_size_t shall return 1. ]*/
+TEST_FUNCTION(umocktypes_are_equal_size_t_with_2_equal_values_returns_1)
+{
+    // arrange
+    size_t left = 0x42;
+    size_t right = 0x42;
+
+    // act
+    int result = umocktypes_are_equal_size_t(&left, &right);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 1, result);
+}
+
+/* Tests_SRS_UMOCKTYPES_C_01_165: [ If the values pointed to by left and right are different, umocktypes_are_equal_size_t shall return 0. ]*/
+TEST_FUNCTION(umocktypes_are_equal_size_t_with_2_different_values_returns_0)
+{
+    // arrange
+    size_t left = 0x42;
+    size_t right = 0x43;
+
+    // act
+    int result = umocktypes_are_equal_size_t(&left, &right);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+}
+
+/* Tests_SRS_UMOCKTYPES_C_01_163: [ If any of the arguments is NULL, umocktypes_are_equal_size_t shall return -1. ]*/
+TEST_FUNCTION(umocktypes_are_equal_size_t_with_NULL_left_fails)
+{
+    // arrange
+    size_t right = 0x43;
+
+    // act
+    int result = umocktypes_are_equal_size_t(NULL, &right);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, -1, result);
+}
+
+/* Tests_SRS_UMOCKTYPES_C_01_163: [ If any of the arguments is NULL, umocktypes_are_equal_size_t shall return -1. ]*/
+TEST_FUNCTION(umocktypes_are_equal_size_t_with_NULL_right_fails)
+{
+    // arrange
+    size_t left = 0x42;
+
+    // act
+    int result = umocktypes_are_equal_size_t(&left, NULL);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, -1, result);
+}
+
+/* umocktypes_copy_size_t */
+
+/* Tests_SRS_UMOCKTYPES_C_01_166: [ umocktypes_copy_size_t shall copy the size_t value from source to destination. ]*/
+/* Tests_SRS_UMOCKTYPES_C_01_167: [ On success umocktypes_copy_size_t shall return 0. ]*/
+TEST_FUNCTION(umocktypes_copy_size_t_succeeds)
+{
+    // arrange
+    size_t destination = 0;
+    size_t source = 0x42;
+
+    // act
+    int result = umocktypes_copy_size_t(&destination, &source);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(long, 0x42, (long)destination);
+}
+
+/* Tests_SRS_UMOCKTYPES_C_01_168: [ If source or destination are NULL, umocktypes_copy_size_t shall return a non-zero value. ]*/
+TEST_FUNCTION(umocktypes_copy_size_t_with_NULL_destination_fails)
+{
+    // arrange
+    size_t source = 0x42;
+
+    // act
+    int result = umocktypes_copy_size_t(NULL, &source);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+}
+
+/* Tests_SRS_UMOCKTYPES_C_01_168: [ If source or destination are NULL, umocktypes_copy_size_t shall return a non-zero value. ]*/
+TEST_FUNCTION(umocktypes_copy_size_t_with_NULL_source_fails)
+{
+    // arrange
+    size_t destination = 0;
+
+    // act
+    int result = umocktypes_copy_size_t(&destination, NULL);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+}
+
+/* umocktypes_free_size_t */
+
+/* Tests_SRS_UMOCKTYPES_C_01_169: [ umocktypes_free_size_t shall do nothing. ]*/
+TEST_FUNCTION(umocktypes_free_size_t_does_nothing)
+{
+    // arrange
+    size_t value = 0;
+
+    // act
+    umocktypes_free_size_t(&value);
 
     // assert
     // no explicit assert

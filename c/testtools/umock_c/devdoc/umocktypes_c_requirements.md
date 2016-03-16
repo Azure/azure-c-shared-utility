@@ -555,3 +555,43 @@ extern void umocktypes_free_longdouble(long double* value);
 ```
 
 **SRS_UMOCKTYPES_C_01_157: [** umocktypes_free_longdouble shall do nothing. **]**
+
+##umocktypes_stringify_size_t
+
+```c
+extern char* umocktypes_stringify_size_t(const size_t* value);
+```
+
+**SRS_UMOCKTYPES_C_01_158: [** umocktypes_stringify_size_t shall return the string representation of value. **]**
+**SRS_UMOCKTYPES_C_01_159: [** If value is NULL, umocktypes_stringify_size_t shall return NULL. **]**
+**SRS_UMOCKTYPES_C_01_160: [** If allocating a new string to hold the string representation fails, umocktypes_stringify_size_t shall return NULL. **]**
+**SRS_UMOCKTYPES_C_01_161: [** If any other error occurs when creating the string representation, umocktypes_stringify_size_t shall return NULL. **]**
+
+##umocktypes_are_equal_size_t
+
+```c
+extern int umocktypes_are_equal_size_t(const size_t* left, const size_t* right);
+```
+
+**SRS_UMOCKTYPES_C_01_162: [** umocktypes_are_equal_size_t shall compare the 2 size_ts pointed to by left and right. **]**
+**SRS_UMOCKTYPES_C_01_163: [** If any of the arguments is NULL, umocktypes_are_equal_size_t shall return -1. **]**
+**SRS_UMOCKTYPES_C_01_164: [** If the values pointed to by left and right are equal, umocktypes_are_equal_size_t shall return 1. **]**
+**SRS_UMOCKTYPES_C_01_165: [** If the values pointed to by left and right are different, umocktypes_are_equal_size_t shall return 0. **]**
+
+##umocktypes_copy_size_t
+
+```c
+extern int umocktypes_copy_size_t(size_t* destination, const size_t* source);
+```
+
+**SRS_UMOCKTYPES_C_01_166: [** umocktypes_copy_size_t shall copy the size_t value from source to destination. **]**
+**SRS_UMOCKTYPES_C_01_167: [** On success umocktypes_copy_size_t shall return 0. **]**
+**SRS_UMOCKTYPES_C_01_168: [** If source or destination are NULL, umocktypes_copy_size_t shall return a non-zero value. **]**
+
+##umocktypes_free_size_t
+
+```c
+extern void umocktypes_free_size_t(size_t* value);
+```
+
+**SRS_UMOCKTYPES_C_01_169: [** umocktypes_free_size_t shall do nothing. **]**
