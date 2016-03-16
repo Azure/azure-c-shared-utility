@@ -24,6 +24,21 @@ int umock_c_init(ON_UMOCK_C_ERROR on_umock_c_error)
 {
     int result;
 
+    /* Codes_SRS_UMOCK_C_01_144: [ Out of the box umock_c shall support the following types through the header umocktypes_c.h: ]*/
+    /* Codes_SRS_UMOCK_C_01_028: [**char**] */
+    /* Codes_SRS_UMOCK_C_01_029 : [**unsigned char**] */
+    /* Codes_SRS_UMOCK_C_01_030 : [**short**] */
+    /* Codes_SRS_UMOCK_C_01_031 : [**unsigned short**] */
+    /* Codes_SRS_UMOCK_C_01_032 : [**int**] */
+    /* Codes_SRS_UMOCK_C_01_033 : [**unsigned int**] */
+    /* Codes_SRS_UMOCK_C_01_034 : [**long**] */
+    /* Codes_SRS_UMOCK_C_01_035 : [**unsigned long**] */
+    /* Codes_SRS_UMOCK_C_01_036 : [**long long**] */
+    /* Codes_SRS_UMOCK_C_01_037 : [**unsigned long long**] */
+    /* Codes_SRS_UMOCK_C_01_038 : [**float**] */
+    /* Codes_SRS_UMOCK_C_01_039 : [**double**] */
+    /* Codes_SRS_UMOCK_C_01_040 : [**long double**] */
+    /* Codes_SRS_UMOCK_C_01_041 : [**size_t**] */
     if ((umocktypes_init() != 0) ||
         (umocktypes_c_register_types() != 0))
     {

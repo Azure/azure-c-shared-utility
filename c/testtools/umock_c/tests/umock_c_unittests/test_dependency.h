@@ -7,7 +7,10 @@
 #include "umock_c.h"
 
 #ifdef __cplusplus
+#include <cstddef>
 extern "C" {
+#else
+#include <stddef.h>
 #endif
 
     typedef struct TEST_STRUCT_TAG
@@ -36,6 +39,7 @@ extern "C" {
     MOCKABLE_FUNCTION(int, test_dependency_global_mock_return_test);
     MOCKABLE_FUNCTION(TEST_STRUCT_COPY_FAILS, test_dependency_global_mock_return_copy_fails);
     MOCKABLE_FUNCTION(void, test_dependency_type_with_space, char *,s);
+    MOCKABLE_FUNCTION(void, test_dependency_all_types, char, char_arg, unsigned char, unsignedchar_arg, short, short_arg, unsigned short, unsignedshort_arg, int, int_arg, unsigned int, unsignedint_arg, long, long_arg, unsigned long, unsignedlong_arg, long long, longlong_arg, unsigned long long, unsignedlonglong_arg, float, float_arg, double, double_arg, long double, longdouble_arg, size_t, size_t_arg);
 
 #ifdef __cplusplus
 }

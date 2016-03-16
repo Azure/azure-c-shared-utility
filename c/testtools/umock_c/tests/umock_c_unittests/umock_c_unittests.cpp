@@ -1459,4 +1459,53 @@ TEST_FUNCTION(spaces_are_stripped_from_typenames)
     ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
 }
 
+/* Supported types */
+
+/* Tests_SRS_UMOCK_C_01_144: [ Out of the box umock_c shall support the following types through the header umocktypes_c.h: ]*/
+/* Tests_SRS_UMOCK_C_01_028: [**char**] */
+/* Tests_SRS_UMOCK_C_01_029 : [**unsigned char**] */
+/* Tests_SRS_UMOCK_C_01_030 : [**short**] */
+/* Tests_SRS_UMOCK_C_01_031 : [**unsigned short**] */
+/* Tests_SRS_UMOCK_C_01_032 : [**int**] */
+/* Tests_SRS_UMOCK_C_01_033 : [**unsigned int**] */
+/* Tests_SRS_UMOCK_C_01_034 : [**long**] */
+/* Tests_SRS_UMOCK_C_01_035 : [**unsigned long**] */
+/* Tests_SRS_UMOCK_C_01_036 : [**long long**] */
+/* Tests_SRS_UMOCK_C_01_037 : [**unsigned long long**] */
+/* Tests_SRS_UMOCK_C_01_038 : [**float**] */
+/* Tests_SRS_UMOCK_C_01_039 : [**double**] */
+/* Tests_SRS_UMOCK_C_01_040 : [**long double**] */
+/* Tests_SRS_UMOCK_C_01_041 : [**size_t**] */
+TEST_FUNCTION(native_c_types_are_supported)
+{
+    // arrange
+    STRICT_EXPECTED_CALL(test_dependency_all_types(-42, 42, /* char */
+        -43, 43, /* short */
+        -44, 44, /* int */
+        -45, 45, /* long */
+        -46, 46, /* long long */
+        -42.42f,  /* float */
+        4242.42, /* double */
+        4242.42, /* long double */
+        0x42 /* size_t*/
+        ));
+
+    // act
+    test_dependency_all_types(-42, 42, /* char */
+        -43, 43, /* short */
+        -44, 44, /* int */
+        -45, 45, /* long */
+        -46, 46, /* long long */
+        -42.42f,  /* float */
+        4242.42, /* double */
+        4242.42, /* long double */
+        0x42 /* size_t*/
+        );
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_expected_calls());
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
+    ASSERT_ARE_EQUAL(int, 0, test_on_umock_c_error_call_count);
+}
+
 END_TEST_SUITE(umock_c_unittests)
