@@ -35,6 +35,182 @@ TEST_FUNCTION_CLEANUP(test_function_cleanup)
 {
 }
 
+/* umocktypes_stringify_char */
+
+/* Tests_SRS_UMOCKTYPES_C_01_002: [ umocktypes_stringify_char shall return the string representation of value. ]*/
+TEST_FUNCTION(umocktypes_stringify_char_with_0_value)
+{
+    // arrange
+    char input = 0;
+
+    // act
+    char* result = umocktypes_stringify_char(&input);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "0", result);
+
+    // cleanup
+    free(result);
+}
+
+/* Tests_SRS_UMOCKTYPES_C_01_002: [ umocktypes_stringify_char shall return the string representation of value. ]*/
+TEST_FUNCTION(umocktypes_stringify_char_with_min_value)
+{
+    // arrange
+    char input = -127 - 1;
+
+    // act
+    char* result = umocktypes_stringify_char(&input);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "-128", result);
+
+    // cleanup
+    free(result);
+}
+
+/* Tests_SRS_UMOCKTYPES_C_01_002: [ umocktypes_stringify_char shall return the string representation of value. ]*/
+TEST_FUNCTION(umocktypes_stringify_char_with_max_value)
+{
+    // arrange
+    char input = 127;
+
+    // act
+    char* result = umocktypes_stringify_char(&input);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "127", result);
+
+    // cleanup
+    free(result);
+}
+
+/* Tests_SRS_UMOCKTYPES_C_01_003: [ If value is NULL, umocktypes_stringify_char shall return NULL. ]*/
+TEST_FUNCTION(umocktypes_stringify_char_with_NULL_fails)
+{
+    // arrange
+
+    // act
+    char* result = umocktypes_stringify_char(NULL);
+
+    // assert
+    ASSERT_IS_NULL(result);
+}
+
+/* umocktypes_are_equal_char */
+
+/* Tests_SRS_UMOCKTYPES_C_01_006: [ umocktypes_are_equal_char shall compare the 2 chars pochared to by left and right. ]*/
+/* Tests_SRS_UMOCKTYPES_C_01_008: [ If the values pochared to by left and right are equal, umocktypes_are_equal_char shall return 1. ]*/
+TEST_FUNCTION(umocktypes_are_equal_char_with_2_equal_values_returns_1)
+{
+    // arrange
+    char left = 0x42;
+    char right = 0x42;
+
+    // act
+    char result = umocktypes_are_equal_char(&left, &right);
+
+    // assert
+    ASSERT_ARE_EQUAL(char, 1, result);
+}
+
+/* Tests_SRS_UMOCKTYPES_C_01_009: [ If the values pochared to by left and right are different, umocktypes_are_equal_char shall return 0. ]*/
+TEST_FUNCTION(umocktypes_are_equal_char_with_2_different_values_returns_0)
+{
+    // arrange
+    char left = 0x42;
+    char right = 0x43;
+
+    // act
+    char result = umocktypes_are_equal_char(&left, &right);
+
+    // assert
+    ASSERT_ARE_EQUAL(char, 0, result);
+}
+
+/* Tests_SRS_UMOCKTYPES_C_01_007: [ If any of the arguments is NULL, umocktypes_are_equal_char shall return -1. ]*/
+TEST_FUNCTION(umocktypes_are_equal_char_with_NULL_left_fails)
+{
+    // arrange
+    char right = 0x43;
+
+    // act
+    char result = umocktypes_are_equal_char(NULL, &right);
+
+    // assert
+    ASSERT_ARE_EQUAL(char, -1, result);
+}
+
+/* Tests_SRS_UMOCKTYPES_C_01_007: [ If any of the arguments is NULL, umocktypes_are_equal_char shall return -1. ]*/
+TEST_FUNCTION(umocktypes_are_equal_char_with_NULL_right_fails)
+{
+    // arrange
+    char left = 0x42;
+
+    // act
+    char result = umocktypes_are_equal_char(&left, NULL);
+
+    // assert
+    ASSERT_ARE_EQUAL(char, -1, result);
+}
+
+/* umocktypes_copy_char */
+
+/* Tests_SRS_UMOCKTYPES_C_01_010: [ umocktypes_copy_char shall copy the char value from source to destination. ]*/
+/* Tests_SRS_UMOCKTYPES_C_01_011: [ On success umocktypes_copy_char shall return 0. ]*/
+TEST_FUNCTION(umocktypes_copy_char_succeeds)
+{
+    // arrange
+    char destination = 0;
+    char source = 0x42;
+
+    // act
+    char result = umocktypes_copy_char(&destination, &source);
+
+    // assert
+    ASSERT_ARE_EQUAL(char, 0, result);
+    ASSERT_ARE_EQUAL(char, 0x42, destination);
+}
+
+/* Tests_SRS_UMOCKTYPES_C_01_012: [ If source or destination are NULL, umocktypes_copy_char shall return a non-zero value. ]*/
+TEST_FUNCTION(umocktypes_copy_char_with_NULL_destination_fails)
+{
+    // arrange
+    char source = 0x42;
+
+    // act
+    char result = umocktypes_copy_char(NULL, &source);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(char, 0, result);
+}
+
+/* Tests_SRS_UMOCKTYPES_C_01_012: [ If source or destination are NULL, umocktypes_copy_char shall return a non-zero value. ]*/
+TEST_FUNCTION(umocktypes_copy_with_NULL_source_fails)
+{
+    // arrange
+    char destination = 0;
+
+    // act
+    char result = umocktypes_copy_char(&destination, NULL);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(char, 0, result);
+}
+
+/* Tests_SRS_UMOCKTYPES_C_01_013: [ umocktypes_free_char shall do nothing. ]*/
+TEST_FUNCTION(umocktypes_free_char_does_nothing)
+{
+    // arrange
+    char value = 0;
+
+    // act
+    umocktypes_free_char(&value);
+
+    // assert
+    // no explicit assert
+}
+
 /* umocktypes_stringify_int */
 
 /* Tests_SRS_UMOCKTYPES_C_01_002: [ umocktypes\_stringify\_{type} shall return the string representation of value. ]*/
@@ -100,7 +276,7 @@ TEST_FUNCTION(umocktypes_stringify_int_with_NULL_fails)
 /* umocktypes_are_equal_int */
 
 /* Tests_SRS_UMOCKTYPES_C_01_006: [ umocktypes_are_equal_int shall compare the 2 ints pointed to by left and right. ]*/
-/* Tests_SRS_UMOCKTYPES_C_01_008: [ If the int value pointed to by left is equal to the int value pointed to by right, umocktypes_are_equal_int shall return 1. ]*/
+/* Tests_SRS_UMOCKTYPES_C_01_008: [ If the values pointed to by left and right are equal, umocktypes_are_equal_int shall return 1. ]*/
 TEST_FUNCTION(umocktypes_are_equal_int_with_2_equal_values_returns_1)
 {
     // arrange
@@ -114,7 +290,7 @@ TEST_FUNCTION(umocktypes_are_equal_int_with_2_equal_values_returns_1)
     ASSERT_ARE_EQUAL(int, 1, result);
 }
 
-/* Tests_SRS_UMOCKTYPES_C_01_009: [ If the int values are different, umocktypes_are_equal_int shall return 0. ]*/
+/* Tests_SRS_UMOCKTYPES_C_01_009: [ If the values pointed to by left and right are different, umocktypes_are_equal_int shall return 0. ]*/
 TEST_FUNCTION(umocktypes_are_equal_int_with_2_different_values_returns_0)
 {
     // arrange
@@ -186,7 +362,7 @@ TEST_FUNCTION(umocktypes_copy_with_NULL_destination_fails)
 }
 
 /* Tests_SRS_UMOCKTYPES_C_01_012: [ If source or destination are NULL, umocktypes_copy_int shall return a non-zero value. ]*/
-TEST_FUNCTION(umocktypes_copy_with_NULL_source_fails)
+TEST_FUNCTION(umocktypes_copy_int_with_NULL_source_fails)
 {
     // arrange
     int destination = 0;
@@ -199,7 +375,7 @@ TEST_FUNCTION(umocktypes_copy_with_NULL_source_fails)
 }
 
 /* Tests_SRS_UMOCKTYPES_C_01_013: [ umocktypes_free_int shall do nothing. ]*/
-TEST_FUNCTION(umocktypes_free_does_nothing)
+TEST_FUNCTION(umocktypes_free_int_does_nothing)
 {
     // arrange
     int value = 0;

@@ -72,8 +72,8 @@ int umocktypes_are_equal_int(const int* left, const int* right)
     }
     else
     {
-        /* Codes_SRS_UMOCKTYPES_C_01_008: [ If the int value pointed to by left is equal to the int value pointed to by right, umocktypes_are_equal_int shall return 1. ]*/
-        /* Codes_SRS_UMOCKTYPES_C_01_009: [ If the int values are different, umocktypes_are_equal_int shall return 0. ]*/
+        /* Codes_SRS_UMOCKTYPES_C_01_008: [ If the values pointed to by left and right are equal, umocktypes_are_equal_int shall return 1. ]*/
+        /* Codes_SRS_UMOCKTYPES_C_01_009: [ If the values pointed to by left and right are different, umocktypes_are_equal_int shall return 0. ]*/
         result = ((*left) == (*right)) ? 1 : 0;
     }
 
