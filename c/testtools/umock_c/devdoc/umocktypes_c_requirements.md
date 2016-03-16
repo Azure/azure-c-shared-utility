@@ -79,7 +79,7 @@ extern void umocktypes_free_char(char* value);
 ##umocktypes_stringify_unsignedchar
 
 ```c
-extern unsigned char* umocktypes_stringify_unsignedchar(const unsigned char* value);
+extern char* umocktypes_stringify_unsignedchar(const unsigned char* value);
 ```
 
 **SRS_UMOCKTYPES_C_01_014: [** umocktypes_stringify_unsignedchar shall return the string representation of value. **]**
@@ -119,7 +119,7 @@ extern void umocktypes_free_unsignedchar(unsigned char* value);
 ##umocktypes_stringify_short
 
 ```c
-extern short* umocktypes_stringify_short(const short* value);
+extern char* umocktypes_stringify_short(const short* value);
 ```
 
 **SRS_UMOCKTYPES_C_01_026: [** umocktypes_stringify_short shall return the string representation of value. **]**
@@ -156,16 +156,56 @@ extern void umocktypes_free_short(short* value);
 
 **SRS_UMOCKTYPES_C_01_037: [** umocktypes_free_short shall do nothing. **]**
 
+##umocktypes_stringify_unsignedshort
+
+```c
+extern char* umocktypes_stringify_unsignedshort(const unsigned short* value);
+```
+
+**SRS_UMOCKTYPES_C_01_038: [** umocktypes_stringify_unsignedshort shall return the string representation of value. **]**
+**SRS_UMOCKTYPES_C_01_039: [** If value is NULL, umocktypes_stringify_unsignedshort shall return NULL. **]**
+**SRS_UMOCKTYPES_C_01_040: [** If allocating a new string to hold the string representation fails, umocktypes_stringify_unsignedshort shall return NULL. **]**
+**SRS_UMOCKTYPES_C_01_041: [** If any other error occurs when creating the string representation, umocktypes_stringify_unsignedshort shall return NULL. **]**
+
+##umocktypes_are_equal_unsignedshort
+
+```c
+extern int umocktypes_are_equal_unsignedshort(const unsigned short* left, const unsigned short* right);
+```
+
+**SRS_UMOCKTYPES_C_01_042: [** umocktypes_are_equal_unsignedshort shall compare the 2 unsigned shorts pointed to by left and right. **]**
+**SRS_UMOCKTYPES_C_01_043: [** If any of the arguments is NULL, umocktypes_are_equal_unsignedshort shall return -1. **]**
+**SRS_UMOCKTYPES_C_01_044: [** If the values pointed to by left and right are equal, umocktypes_are_equal_unsignedshort shall return 1. **]**
+**SRS_UMOCKTYPES_C_01_045: [** If the values pointed to by left and right are different, umocktypes_are_equal_unsignedshort shall return 0. **]**
+
+##umocktypes_copy_unsignedshort
+
+```c
+extern int umocktypes_copy_unsignedshort(unsigned short* destination, const unsigned short* source);
+```
+
+**SRS_UMOCKTYPES_C_01_046: [** umocktypes_copy_unsignedshort shall copy the unsigned short value from source to destination. **]**
+**SRS_UMOCKTYPES_C_01_047: [** On success umocktypes_copy_unsignedshort shall return 0. **]**
+**SRS_UMOCKTYPES_C_01_048: [** If source or destination are NULL, umocktypes_copy_unsignedshort shall return a non-zero value. **]**
+
+##umocktypes_free_unsignedshort
+
+```c
+extern void umocktypes_free_unsignedshort(unsigned short* value);
+```
+
+**SRS_UMOCKTYPES_C_01_049: [** umocktypes_free_unsignedshort shall do nothing. **]**
+
 ##umocktypes_stringify_int
 
 ```c
 extern char* umocktypes_stringify_int(const int* value);
 ```
 
-**SRS_UMOCKTYPES_C_01_002: [** umocktypes_stringify_int shall return the string representation of value. **]**
-**SRS_UMOCKTYPES_C_01_003: [** If value is NULL, umocktypes_stringify_int shall return NULL. **]**
-**SRS_UMOCKTYPES_C_01_004: [** If allocating a new string to hold the string representation fails, umocktypes_stringify_int shall return NULL. **]**
-**SRS_UMOCKTYPES_C_01_005: [** If any other error occurs when creating the string representation, umocktypes_stringify_int shall return NULL. **]**
+**SRS_UMOCKTYPES_C_01_050: [** umocktypes_stringify_int shall return the string representation of value. **]**
+**SRS_UMOCKTYPES_C_01_051: [** If value is NULL, umocktypes_stringify_int shall return NULL. **]**
+**SRS_UMOCKTYPES_C_01_052: [** If allocating a new string to hold the string representation fails, umocktypes_stringify_int shall return NULL. **]**
+**SRS_UMOCKTYPES_C_01_053: [** If any other error occurs when creating the string representation, umocktypes_stringify_int shall return NULL. **]**
 
 ##umocktypes_are_equal_int
 
@@ -173,10 +213,10 @@ extern char* umocktypes_stringify_int(const int* value);
 extern int umocktypes_are_equal_int(const int* left, const int* right);
 ```
 
-**SRS_UMOCKTYPES_C_01_006: [** umocktypes_are_equal_int shall compare the 2 ints pointed to by left and right. **]**
-**SRS_UMOCKTYPES_C_01_007: [** If any of the arguments is NULL, umocktypes_are_equal_int shall return -1. **]**
-**SRS_UMOCKTYPES_C_01_008: [** If the values pointed to by left and right are equal, umocktypes_are_equal_int shall return 1. **]**
-**SRS_UMOCKTYPES_C_01_009: [** If the values pointed to by left and right are different, umocktypes_are_equal_int shall return 0. **]**
+**SRS_UMOCKTYPES_C_01_054: [** umocktypes_are_equal_int shall compare the 2 ints pointed to by left and right. **]**
+**SRS_UMOCKTYPES_C_01_055: [** If any of the arguments is NULL, umocktypes_are_equal_int shall return -1. **]**
+**SRS_UMOCKTYPES_C_01_056: [** If the values pointed to by left and right are equal, umocktypes_are_equal_int shall return 1. **]**
+**SRS_UMOCKTYPES_C_01_057: [** If the values pointed to by left and right are different, umocktypes_are_equal_int shall return 0. **]**
 
 ##umocktypes_copy_int
 
@@ -184,9 +224,9 @@ extern int umocktypes_are_equal_int(const int* left, const int* right);
 extern int umocktypes_copy_int(int* destination, const int* source);
 ```
 
-**SRS_UMOCKTYPES_C_01_010: [** umocktypes_copy_int shall copy the int value from source to destination. **]**
-**SRS_UMOCKTYPES_C_01_011: [** On success umocktypes_copy_int shall return 0. **]**
-**SRS_UMOCKTYPES_C_01_012: [** If source or destination are NULL, umocktypes_copy_int shall return a non-zero value. **]**
+**SRS_UMOCKTYPES_C_01_058: [** umocktypes_copy_int shall copy the int value from source to destination. **]**
+**SRS_UMOCKTYPES_C_01_059: [** On success umocktypes_copy_int shall return 0. **]**
+**SRS_UMOCKTYPES_C_01_060: [** If source or destination are NULL, umocktypes_copy_int shall return a non-zero value. **]**
 
 ##umocktypes_free_int
 
@@ -194,5 +234,204 @@ extern int umocktypes_copy_int(int* destination, const int* source);
 extern void umocktypes_free_int(int* value);
 ```
 
-**SRS_UMOCKTYPES_C_01_013: [** umocktypes_free_int shall do nothing. **]**
+**SRS_UMOCKTYPES_C_01_061: [** umocktypes_free_int shall do nothing. **]**
 
+##umocktypes_stringify_unsignedint
+
+```c
+extern char* umocktypes_stringify_unsignedint(const unsigned int* value);
+```
+
+**SRS_UMOCKTYPES_C_01_062: [** umocktypes_stringify_unsignedint shall return the string representation of value. **]**
+**SRS_UMOCKTYPES_C_01_063: [** If value is NULL, umocktypes_stringify_unsignedint shall return NULL. **]**
+**SRS_UMOCKTYPES_C_01_064: [** If allocating a new string to hold the string representation fails, umocktypes_stringify_unsignedint shall return NULL. **]**
+**SRS_UMOCKTYPES_C_01_065: [** If any other error occurs when creating the string representation, umocktypes_stringify_unsignedint shall return NULL. **]**
+
+##umocktypes_are_equal_unsignedint
+
+```c
+extern int umocktypes_are_equal_unsignedint(const unsigned int* left, const unsigned int* right);
+```
+
+**SRS_UMOCKTYPES_C_01_066: [** umocktypes_are_equal_unsignedint shall compare the 2 unsigned ints pointed to by left and right. **]**
+**SRS_UMOCKTYPES_C_01_067: [** If any of the arguments is NULL, umocktypes_are_equal_unsignedint shall return -1. **]**
+**SRS_UMOCKTYPES_C_01_068: [** If the values pointed to by left and right are equal, umocktypes_are_equal_unsignedint shall return 1. **]**
+**SRS_UMOCKTYPES_C_01_069: [** If the values pointed to by left and right are different, umocktypes_are_equal_unsignedint shall return 0. **]**
+
+##umocktypes_copy_unsignedint
+
+```c
+extern int umocktypes_copy_unsignedint(unsigned int* destination, const unsigned int* source);
+```
+
+**SRS_UMOCKTYPES_C_01_070: [** umocktypes_copy_unsignedint shall copy the unsigned int value from source to destination. **]**
+**SRS_UMOCKTYPES_C_01_071: [** On success umocktypes_copy_unsignedint shall return 0. **]**
+**SRS_UMOCKTYPES_C_01_072: [** If source or destination are NULL, umocktypes_copy_unsignedint shall return a non-zero value. **]**
+
+##umocktypes_free_unsignedint
+
+```c
+extern void umocktypes_free_unsignedint(unsigned int* value);
+```
+
+**SRS_UMOCKTYPES_C_01_073: [** umocktypes_free_unsignedint shall do nothing. **]**
+
+##umocktypes_stringify_long
+
+```c
+extern char* umocktypes_stringify_long(const long* value);
+```
+
+**SRS_UMOCKTYPES_C_01_074: [** umocktypes_stringify_long shall return the string representation of value. **]**
+**SRS_UMOCKTYPES_C_01_075: [** If value is NULL, umocktypes_stringify_long shall return NULL. **]**
+**SRS_UMOCKTYPES_C_01_076: [** If allocating a new string to hold the string representation fails, umocktypes_stringify_long shall return NULL. **]**
+**SRS_UMOCKTYPES_C_01_077: [** If any other error occurs when creating the string representation, umocktypes_stringify_long shall return NULL. **]**
+
+##umocktypes_are_equal_long
+
+```c
+extern int umocktypes_are_equal_long(const long* left, const long* right);
+```
+
+**SRS_UMOCKTYPES_C_01_078: [** umocktypes_are_equal_long shall compare the 2 longs pointed to by left and right. **]**
+**SRS_UMOCKTYPES_C_01_079: [** If any of the arguments is NULL, umocktypes_are_equal_long shall return -1. **]**
+**SRS_UMOCKTYPES_C_01_080: [** If the values pointed to by left and right are equal, umocktypes_are_equal_long shall return 1. **]**
+**SRS_UMOCKTYPES_C_01_081: [** If the values pointed to by left and right are different, umocktypes_are_equal_long shall return 0. **]**
+
+##umocktypes_copy_long
+
+```c
+extern int umocktypes_copy_long(long* destination, const long* source);
+```
+
+**SRS_UMOCKTYPES_C_01_082: [** umocktypes_copy_long shall copy the long value from source to destination. **]**
+**SRS_UMOCKTYPES_C_01_083: [** On success umocktypes_copy_long shall return 0. **]**
+**SRS_UMOCKTYPES_C_01_084: [** If source or destination are NULL, umocktypes_copy_long shall return a non-zero value. **]**
+
+##umocktypes_free_long
+
+```c
+extern void umocktypes_free_long(long* value);
+```
+
+**SRS_UMOCKTYPES_C_01_085: [** umocktypes_free_long shall do nothing. **]**
+
+##umocktypes_stringify_unsignedlong
+
+```c
+extern char* umocktypes_stringify_unsignedlong(const unsigned long* value);
+```
+
+**SRS_UMOCKTYPES_C_01_086: [** umocktypes_stringify_unsignedlong shall return the string representation of value. **]**
+**SRS_UMOCKTYPES_C_01_087: [** If value is NULL, umocktypes_stringify_unsignedlong shall return NULL. **]**
+**SRS_UMOCKTYPES_C_01_088: [** If allocating a new string to hold the string representation fails, umocktypes_stringify_unsignedlong shall return NULL. **]**
+**SRS_UMOCKTYPES_C_01_089: [** If any other error occurs when creating the string representation, umocktypes_stringify_unsignedlong shall return NULL. **]**
+
+##umocktypes_are_equal_unsignedlong
+
+```c
+extern int umocktypes_are_equal_unsignedlong(const unsigned long* left, const unsigned long* right);
+```
+
+**SRS_UMOCKTYPES_C_01_090: [** umocktypes_are_equal_unsignedlong shall compare the 2 unsigned longs pointed to by left and right. **]**
+**SRS_UMOCKTYPES_C_01_091: [** If any of the arguments is NULL, umocktypes_are_equal_unsignedlong shall return -1. **]**
+**SRS_UMOCKTYPES_C_01_092: [** If the values pointed to by left and right are equal, umocktypes_are_equal_unsignedlong shall return 1. **]**
+**SRS_UMOCKTYPES_C_01_093: [** If the values pointed to by left and right are different, umocktypes_are_equal_unsignedlong shall return 0. **]**
+
+##umocktypes_copy_unsignedlong
+
+```c
+extern int umocktypes_copy_unsignedlong(unsigned long* destination, const unsigned long* source);
+```
+
+**SRS_UMOCKTYPES_C_01_094: [** umocktypes_copy_unsignedlong shall copy the unsigned long value from source to destination. **]**
+**SRS_UMOCKTYPES_C_01_095: [** On success umocktypes_copy_unsignedlong shall return 0. **]**
+**SRS_UMOCKTYPES_C_01_096: [** If source or destination are NULL, umocktypes_copy_unsignedlong shall return a non-zero value. **]**
+
+##umocktypes_free_unsignedlong
+
+```c
+extern void umocktypes_free_unsignedlong(unsigned long* value);
+```
+
+**SRS_UMOCKTYPES_C_01_097: [** umocktypes_free_unsignedlong shall do nothing. **]**
+
+##umocktypes_stringify_longlong
+
+```c
+extern char* umocktypes_stringify_longlong(const long long* value);
+```
+
+**SRS_UMOCKTYPES_C_01_098: [** umocktypes_stringify_longlong shall return the string representation of value. **]**
+**SRS_UMOCKTYPES_C_01_099: [** If value is NULL, umocktypes_stringify_longlong shall return NULL. **]**
+**SRS_UMOCKTYPES_C_01_100: [** If allocating a new string to hold the string representation fails, umocktypes_stringify_longlong shall return NULL. **]**
+**SRS_UMOCKTYPES_C_01_101: [** If any other error occurs when creating the string representation, umocktypes_stringify_longlong shall return NULL. **]**
+
+##umocktypes_are_equal_longlong
+
+```c
+extern int umocktypes_are_equal_longlong(const long long* left, const long long* right);
+```
+
+**SRS_UMOCKTYPES_C_01_102: [** umocktypes_are_equal_longlong shall compare the 2 long longs pointed to by left and right. **]**
+**SRS_UMOCKTYPES_C_01_103: [** If any of the arguments is NULL, umocktypes_are_equal_longlong shall return -1. **]**
+**SRS_UMOCKTYPES_C_01_104: [** If the values pointed to by left and right are equal, umocktypes_are_equal_longlong shall return 1. **]**
+**SRS_UMOCKTYPES_C_01_105: [** If the values pointed to by left and right are different, umocktypes_are_equal_longlong shall return 0. **]**
+
+##umocktypes_copy_longlong
+
+```c
+extern int umocktypes_copy_longlong(long long* destination, const long long* source);
+```
+
+**SRS_UMOCKTYPES_C_01_106: [** umocktypes_copy_longlong shall copy the long long value from source to destination. **]**
+**SRS_UMOCKTYPES_C_01_107: [** On success umocktypes_copy_longlong shall return 0. **]**
+**SRS_UMOCKTYPES_C_01_108: [** If source or destination are NULL, umocktypes_copy_longlong shall return a non-zero value. **]**
+
+##umocktypes_free_longlong
+
+```c
+extern void umocktypes_free_longlong(long long* value);
+```
+
+**SRS_UMOCKTYPES_C_01_109: [** umocktypes_free_longlong shall do nothing. **]**
+
+##umocktypes_stringify_unsignedlonglong
+
+```c
+extern char* umocktypes_stringify_unsignedlonglong(const unsigned long long* value);
+```
+
+**SRS_UMOCKTYPES_C_01_110: [** umocktypes_stringify_unsignedlonglong shall return the string representation of value. **]**
+**SRS_UMOCKTYPES_C_01_111: [** If value is NULL, umocktypes_stringify_unsignedlonglong shall return NULL. **]**
+**SRS_UMOCKTYPES_C_01_112: [** If allocating a new string to hold the string representation fails, umocktypes_stringify_unsignedlonglong shall return NULL. **]**
+**SRS_UMOCKTYPES_C_01_113: [** If any other error occurs when creating the string representation, umocktypes_stringify_unsignedlonglong shall return NULL. **]**
+
+##umocktypes_are_equal_unsignedlonglong
+
+```c
+extern int umocktypes_are_equal_unsignedlonglong(const unsigned long long* left, const unsigned long long* right);
+```
+
+**SRS_UMOCKTYPES_C_01_114: [** umocktypes_are_equal_unsignedlonglong shall compare the 2 unsigned long longs pointed to by left and right. **]**
+**SRS_UMOCKTYPES_C_01_115: [** If any of the arguments is NULL, umocktypes_are_equal_unsignedlonglong shall return -1. **]**
+**SRS_UMOCKTYPES_C_01_116: [** If the values pointed to by left and right are equal, umocktypes_are_equal_unsignedlonglong shall return 1. **]**
+**SRS_UMOCKTYPES_C_01_117: [** If the values pointed to by left and right are different, umocktypes_are_equal_unsignedlonglong shall return 0. **]**
+
+##umocktypes_copy_unsignedlonglong
+
+```c
+extern int umocktypes_copy_unsignedlonglong(unsigned long long* destination, const unsigned long long* source);
+```
+
+**SRS_UMOCKTYPES_C_01_118: [** umocktypes_copy_unsignedlonglong shall copy the unsigned long long value from source to destination. **]**
+**SRS_UMOCKTYPES_C_01_119: [** On success umocktypes_copy_unsignedlonglong shall return 0. **]**
+**SRS_UMOCKTYPES_C_01_120: [** If source or destination are NULL, umocktypes_copy_unsignedlonglong shall return a non-zero value. **]**
+
+##umocktypes_free_unsignedlonglong
+
+```c
+extern void umocktypes_free_unsignedlonglong(unsigned long long* value);
+```
+
+**SRS_UMOCKTYPES_C_01_121: [** umocktypes_free_unsignedlonglong shall do nothing. **]**
