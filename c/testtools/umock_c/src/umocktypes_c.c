@@ -6,26 +6,11 @@
 #include <crtdbg.h>
 #endif
 #include <stdio.h>
+#include <stddef.h>
 #include <string.h>
 #include "macro_utils.h"
 #include "umocktypes.h"
 #include "umocktypes_c.h"
-
-int umocktypes_c_register_types(void)
-{
-    int result;
-
-    if (umocktypes_register_type("int", (UMOCKTYPE_STRINGIFY_FUNC)umocktypes_stringify_int, (UMOCKTYPE_ARE_EQUAL_FUNC)umocktypes_are_equal_int, (UMOCKTYPE_COPY_FUNC)umocktypes_copy_int, (UMOCKTYPE_FREE_FUNC)umocktypes_free_int) != 0)
-    {
-        result = __LINE__;
-    }
-    else
-    {
-        result = 0;
-    }
-
-    return result;
-}
 
 #define IMPLEMENT_STRINGIFY(type, function_postfix, printf_specifier) \
     char* C2(umocktypes_stringify_,function_postfix)(const type* value) \
@@ -293,3 +278,38 @@ IMPLEMENT_TYPE_HANDLERS(long double, longdouble, "%lf")
 /* Codes_SRS_UMOCKTYPES_C_01_167: [ On success umocktypes_copy_size_t shall return 0. ]*/
 /* Codes_SRS_UMOCKTYPES_C_01_169: [ umocktypes_free_size_t shall do nothing. ]*/
 IMPLEMENT_TYPE_HANDLERS(size_t, size_t, "%u")
+
+#define REGISTER_TYPE(type, function_postfix) \
+    umocktypes_register_type(TOSTRING(type), (UMOCKTYPE_STRINGIFY_FUNC)C2(umocktypes_stringify_, function_postfix), \
+        (UMOCKTYPE_ARE_EQUAL_FUNC)C2(umocktypes_are_equal_,function_postfix), \
+        (UMOCKTYPE_COPY_FUNC)C2(umocktypes_copy_,function_postfix), \
+        (UMOCKTYPE_FREE_FUNC)C2(umocktypes_free_,function_postfix))
+
+int umocktypes_c_register_types(void)
+{
+    int result;
+
+    if ((REGISTER_TYPE(char, char) != 0) ||
+        (REGISTER_TYPE(unsigned char, unsignedchar) != 0) ||
+        (REGISTER_TYPE(short, short) != 0) ||
+        (REGISTER_TYPE(unsigned short, unsignedshort) != 0) ||
+        (REGISTER_TYPE(int, int) != 0) ||
+        (REGISTER_TYPE(unsigned int, unsignedint) != 0) ||
+        (REGISTER_TYPE(long, long) != 0) ||
+        (REGISTER_TYPE(unsigned long, unsignedlong) != 0) ||
+        (REGISTER_TYPE(long long, longlong) != 0) ||
+        (REGISTER_TYPE(unsigned long long, unsignedlonglong) != 0) ||
+        (REGISTER_TYPE(float, float) != 0) ||
+        (REGISTER_TYPE(double, double) != 0) ||
+        (REGISTER_TYPE(long double, longdouble) != 0) ||
+        (REGISTER_TYPE(size_t, size_t) != 0))
+    {
+        result = __LINE__;
+    }
+    else
+    {
+        result = 0;
+    }
+
+    return result;
+}

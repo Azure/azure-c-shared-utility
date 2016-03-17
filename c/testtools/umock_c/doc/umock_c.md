@@ -48,6 +48,7 @@ typedef enum UMOCK_C_ERROR_CODE_TAG
     UMOCK_C_ARG_INDEX_OUT_OF_RANGE,
     UMOCK_C_MALLOC_ERROR,
     UMOCK_C_INVALID_ARGUMENT_BUFFER,
+    UMOCK_C_COMPARE_CALL_ERROR,
     UMOCK_C_ERROR
 } UMOCK_C_ERROR_CODE;
 
@@ -266,6 +267,8 @@ When multiple return values are set for a mock function by using different means
 - If a global return value has been specified then it shall be returned.
 - Otherwise the value of a static variable of the same type as the return type shall be returned.
 
+If call comparison fails an error shall be indicated by calling the error callback with UMOCK_C_COMPARE_CALL_ERROR.
+
 ##Supported types
 
 ###Out of the box
@@ -285,9 +288,6 @@ Out of the box umock_c shall support the following types through the header umoc
 -	double
 -	long double
 -	size_t
--	clock_t
--	time_t
--	struct tm
 
 ###Custom types
 

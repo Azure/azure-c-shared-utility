@@ -108,6 +108,7 @@ BEGIN_TEST_SUITE(umock_c_unittests)
 TEST_SUITE_INITIALIZE(suite_init)
 {
     ASSERT_ARE_EQUAL(int, 0, umock_c_init(test_on_umock_c_error));
+    ASSERT_ARE_EQUAL(int, 0, umocktypes_charptr_register_types());
     REGISTER_UMOCK_VALUE_TYPE(int*, stringify_func_intptr, are_equal_func_intptr, copy_func_intptr, free_func_intptr);
     REGISTER_UMOCK_VALUE_TYPE(unsigned char*, stringify_func_unsignedcharptr, are_equal_func_unsignedcharptr, copy_func_unsignedcharptr, free_func_unsignedcharptr);
     REGISTER_UMOCK_VALUE_TYPE(TEST_STRUCT_COPY_FAILS, stringify_func_TEST_STRUCT_COPY_FAILS, are_equal_func_TEST_STRUCT_COPY_FAILS, copy_func_TEST_STRUCT_COPY_FAILS, free_func_TEST_STRUCT_COPY_FAILS);
@@ -1506,6 +1507,22 @@ TEST_FUNCTION(native_c_types_are_supported)
     ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_expected_calls());
     ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(int, 0, test_on_umock_c_error_call_count);
+}
+
+/* Tests_SRS_UMOCK_C_01_148: [ If call comparison fails an error shall be indicated by calling the error callback with UMOCK_C_COMPARE_CALL_ERROR. ]*/
+TEST_FUNCTION(when_a_type_is_not_supported_an_error_is_triggered)
+{
+    TEST_STRUCT_NOT_REGISTERED a = { 0 };
+
+    // arrange
+    STRICT_EXPECTED_CALL(test_dependency_type_not_registered(a));
+
+    // act
+    test_dependency_type_not_registered(a);
+
+    // assert
+    ASSERT_IS_NULL(umock_c_get_expected_calls());
+    ASSERT_ARE_EQUAL(int, 1, test_on_umock_c_error_call_count);
 }
 
 END_TEST_SUITE(umock_c_unittests)

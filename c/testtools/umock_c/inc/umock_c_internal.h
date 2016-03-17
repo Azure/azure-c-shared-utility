@@ -134,12 +134,10 @@ typedef struct ARG_BUFFER_TAG
     { \
         result = 0; \
     } \
-    if (result && !(C2(typed_left->is_ignored_, arg_name) \
-        || C2(typed_right->is_ignored_, arg_name)  \
-        || (umocktypes_are_equal(#arg_type, &typed_left->arg_name, &typed_right->arg_name)) \
-        )) \
+    if ((result == 1) && (C2(typed_left->is_ignored_, arg_name) == 0) \
+        && (C2(typed_right->is_ignored_, arg_name) == 0)) \
     { \
-        result = 0; \
+        result = umocktypes_are_equal(#arg_type, &typed_left->arg_name, &typed_right->arg_name); \
     }
 
 #define DECLARE_MOCK_CALL_MODIFIER(name, ...) \

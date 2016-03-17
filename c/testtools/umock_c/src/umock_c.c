@@ -125,11 +125,14 @@ UMOCKCALL_HANDLE umock_c_add_actual_call(UMOCKCALL_HANDLE mock_call)
 {
     UMOCKCALL_HANDLE result = NULL;
     size_t i;
+    unsigned int is_error = 0;
 
     /* Codes_SRS_UMOCK_C_01_115: [ umock_c shall compare calls in order. ]*/
     for (i = 0; i < expected_call_count; i++)
     {
-        if (umockcall_are_equal(expected_calls[i], mock_call))
+        int are_equal_result = umockcall_are_equal(expected_calls[i], mock_call);
+
+        if (are_equal_result == 1)
         {
             result = expected_calls[i];
             (void)memmove(&expected_calls[i], &expected_calls[i + 1], (expected_call_count - i - 1) * sizeof(UMOCKCALL_HANDLE));
@@ -137,26 +140,40 @@ UMOCKCALL_HANDLE umock_c_add_actual_call(UMOCKCALL_HANDLE mock_call)
             i--;
             break;
         }
+        else if (are_equal_result != 0)
+        {
+            is_error = 1;
+            break;
+        }
     }
 
-    if (i == expected_call_count)
+    if (is_error)
     {
-        /* an unexpected call */
-        UMOCKCALL_HANDLE* new_actual_calls = (UMOCKCALL_HANDLE*)realloc(actual_calls, sizeof(UMOCKCALL_HANDLE) * (actual_call_count + 1));
-        if (new_actual_calls == NULL)
-        {
-            result = NULL;
-        }
-        else
-        {
-            actual_calls = new_actual_calls;
-            actual_calls[actual_call_count++] = mock_call;
-            result = NULL;
-        }
+        /* Codes_SRS_UMOCK_C_01_148: [ If call comparison fails an error shall be indicated by calling the error callback with UMOCK_C_COMPARE_CALL_ERROR. ]*/
+        umock_c_indicate_error(UMOCK_C_COMPARE_CALL_ERROR);
+        result = NULL;
     }
     else
     {
-        umockcall_destroy(mock_call);
+        if (i == expected_call_count)
+        {
+            /* an unexpected call */
+            UMOCKCALL_HANDLE* new_actual_calls = (UMOCKCALL_HANDLE*)realloc(actual_calls, sizeof(UMOCKCALL_HANDLE) * (actual_call_count + 1));
+            if (new_actual_calls == NULL)
+            {
+                result = NULL;
+            }
+            else
+            {
+                actual_calls = new_actual_calls;
+                actual_calls[actual_call_count++] = mock_call;
+                result = NULL;
+            }
+        }
+        else
+        {
+            umockcall_destroy(mock_call);
+        }
     }
 
     return result;
