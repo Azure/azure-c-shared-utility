@@ -74,23 +74,30 @@ void reset_umocktypes_register_type_calls(void)
     umocktypes_register_type_call_count = NULL;
 }
 
+TEST_MUTEX_HANDLE test_mutex;
+
 BEGIN_TEST_SUITE(umocktypes_c_unittests)
 
 TEST_SUITE_INITIALIZE(suite_init)
 {
+    test_mutex = TEST_MUTEX_CREATE();
+    ASSERT_IS_NOT_NULL(test_mutex);
 }
 
 TEST_SUITE_CLEANUP(suite_cleanup)
 {
+    TEST_MUTEX_DESTROY(test_mutex);
 }
 
 TEST_FUNCTION_INITIALIZE(test_function_init)
 {
+    TEST_MUTEX_ACQUIRE(test_mutex);
 }
 
 TEST_FUNCTION_CLEANUP(test_function_cleanup)
 {
     reset_umocktypes_register_type_calls();
+    TEST_MUTEX_RELEASE(test_mutex);
 }
 
 /* umocktypes_stringify_char */
