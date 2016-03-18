@@ -27,6 +27,8 @@ extern int umocktypes_charptr_register_types(void);
 ```
 
 **SRS_UMOCKTYPES_CHARPTR_01_001: [** umocktypes_charptr_register_types shall register support for the types char\* and const char\* by using the REGISTER_UMOCK_VALUE_TYPE macro provided by umockc. **]**
+**SRS_UMOCKTYPES_CHARPTR_01_038: [** On success, umocktypes_charptr_register_types shall return 0. **]**
+**SRS_UMOCKTYPES_CHARPTR_01_039: [** If registering any of the types fails, umocktypes_charptr_register_types shall fail and return a non-zero value. **]**
 
 ##umocktypes_stringify_charptr
 

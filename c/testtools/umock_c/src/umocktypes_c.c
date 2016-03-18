@@ -305,10 +305,12 @@ int umocktypes_c_register_types(void)
         (REGISTER_TYPE(long double, longdouble) != 0) ||
         (REGISTER_TYPE(size_t, size_t) != 0))
     {
+        /* Codes_SRS_UMOCKTYPES_C_01_171: [ If registering any of the types fails, umocktypes_c_register_types shall fail and return a non-zero value. ]*/
         result = __LINE__;
     }
     else
     {
+        /* Codes_SRS_UMOCKTYPES_C_01_170: [ On success, umocktypes_c_register_types shall return 0. ]*/
         result = 0;
     }
 

@@ -221,10 +221,12 @@ int umocktypes_charptr_register_types(void)
     if ((REGISTER_TYPE(char*, charptr) != 0) ||
         (REGISTER_TYPE(const char*, const_charptr) != 0))
     {
+        /* Codes_SRS_UMOCKTYPES_CHARPTR_01_039: [ If registering any of the types fails, umocktypes_charptr_register_types shall fail and return a non-zero value. ]*/
         result = __LINE__;
     }
     else
     {
+        /* Codes_SRS_UMOCKTYPES_CHARPTR_01_038: [ On success, umocktypes_charptr_register_types shall return 0. ]*/
         result = 0;
     }
 

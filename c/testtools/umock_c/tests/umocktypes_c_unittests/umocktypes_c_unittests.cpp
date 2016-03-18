@@ -24,10 +24,14 @@ typedef struct umocktypes_register_type_CALL_TAG
 
 static umocktypes_register_type_CALL* umocktypes_register_type_calls;
 static size_t umocktypes_register_type_call_count;
+static size_t when_shall_umocktypes_register_typecall_fail;
 static int umocktypes_register_type_call_result;
+static int umocktypes_register_type_fail_call_result;
 
 int umocktypes_register_type(const char* type, UMOCKTYPE_STRINGIFY_FUNC stringify_func, UMOCKTYPE_ARE_EQUAL_FUNC are_equal_func, UMOCKTYPE_COPY_FUNC copy_func, UMOCKTYPE_FREE_FUNC free_func)
 {
+    int result;
+
     umocktypes_register_type_CALL* new_calls = (umocktypes_register_type_CALL*)realloc(umocktypes_register_type_calls, sizeof(umocktypes_register_type_CALL) * (umocktypes_register_type_call_count + 1));
     if (new_calls != NULL)
     {
@@ -42,7 +46,16 @@ int umocktypes_register_type(const char* type, UMOCKTYPE_STRINGIFY_FUNC stringif
         umocktypes_register_type_call_count++;
     }
 
-    return umocktypes_register_type_call_result;
+    if (when_shall_umocktypes_register_typecall_fail == umocktypes_register_type_call_count)
+    {
+        result = umocktypes_register_type_fail_call_result;
+    }
+    else
+    {
+        result = umocktypes_register_type_call_result;
+    }
+
+    return result;
 }
 
 void reset_umocktypes_register_type_calls(void)
@@ -2501,10 +2514,13 @@ TEST_FUNCTION(umocktypes_free_size_t_does_nothing)
 /* umocktypes_c_register_types */
 
 /* Tests_SRS_UMOCKTYPES_C_01_001: [ umocktypes_c_register_types shall register support for all the types in the module. ]*/
+/* Tests_SRS_UMOCKTYPES_C_01_170: [ On success, umocktypes_c_register_types shall return 0. ]*/
 TEST_FUNCTION(umocktypes_c_register_types_registers_all_types)
 {
     // arrange
     size_t i;
+
+    umocktypes_register_type_fail_call_result = 0;
 
     // act
     int result = umocktypes_c_register_types();
@@ -2533,6 +2549,27 @@ TEST_FUNCTION(umocktypes_c_register_types_registers_all_types)
         ASSERT_IS_NOT_NULL(umocktypes_register_type_calls[i].are_equal_func);
         ASSERT_IS_NOT_NULL(umocktypes_register_type_calls[i].copy_func);
         ASSERT_IS_NOT_NULL(umocktypes_register_type_calls[i].free_func);
+    }
+}
+
+/* Tests_SRS_UMOCKTYPES_C_01_171: [ If registering any of the types fails, umocktypes_c_register_types shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(when_the_underlying_register_fails_umocktypes_c_register_types_fails)
+{
+    size_t i;
+
+    for (i = 0; i < 14; i++)
+    {
+        // arrange
+
+        umocktypes_register_type_fail_call_result = 1;
+        when_shall_umocktypes_register_typecall_fail = i + 1;
+
+        // act
+        int result = umocktypes_c_register_types();
+
+        // assert
+        ASSERT_ARE_NOT_EQUAL(int, 0, result);
+        ASSERT_ARE_EQUAL(int, i + 1, umocktypes_register_type_call_count);
     }
 }
 
