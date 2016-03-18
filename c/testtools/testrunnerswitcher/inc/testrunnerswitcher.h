@@ -8,6 +8,12 @@
 #define USE_CTEST
 #endif
 
+typedef void* TEST_MUTEX_HANDLE;
+
+/* TODO:
+- direct CppUnitTest MUTEX macros to real mutex APIs
+*/
+
 #ifdef USE_CTEST
 
 #include "ctest.h"
@@ -37,6 +43,11 @@
 #define ASSERT_IS_FALSE_WITH_MSG        CTEST_ASSERT_IS_FALSE_WITH_MSG
 
 #define RUN_TEST_SUITE(...)             CTEST_RUN_TEST_SUITE(__VA_ARGS__)
+
+#define TEST_MUTEX_CREATE() (TEST_MUTEX_HANDLE)1
+#define TEST_MUTEX_ACQUIRE(mutex)
+#define TEST_MUTEX_RELEASE(mutex)
+#define TEST_MUTEX_DESTROY(mutex)
 
 #elif defined CPP_UNITTEST
 
@@ -72,6 +83,11 @@ typedef void* void_ptr;
 #define ASSERT_IS_NULL_WITH_MSG(value, message)             Assert::IsNull(value, ToString(message).c_str())
 
 #define RUN_TEST_SUITE(...)
+
+#define TEST_MUTEX_CREATE() (TEST_MUTEX_HANDLE)1
+#define TEST_MUTEX_ACQUIRE(mutex)
+#define TEST_MUTEX_RELEASE(mutex)
+#define TEST_MUTEX_DESTROY()
 
 #else
 #error No test runner defined
