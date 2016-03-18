@@ -123,12 +123,12 @@ TEST_FUNCTION_INITIALIZE(test_function_init)
 {
     test_on_umock_c_error_calls = NULL;
     test_on_umock_c_error_call_count = 0;
-
-    ASSERT_ARE_EQUAL(int, 0, umock_c_reset_all_calls());
 }
 
 TEST_FUNCTION_CLEANUP(test_function_cleanup)
 {
+    ASSERT_ARE_EQUAL(int, 0, umock_c_reset_all_calls());
+
     REGISTER_GLOBAL_MOCK_HOOK(test_dependency_no_args, NULL);
 
     free(test_on_umock_c_error_calls);
@@ -1453,7 +1453,7 @@ TEST_FUNCTION(spaces_are_stripped_from_typenames)
     STRICT_EXPECTED_CALL(test_dependency_type_with_space("b"));
 
     // act
-    test_dependency_type_with_space("a");
+    test_dependency_type_with_space("b");
 
     // assert
     ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_expected_calls());

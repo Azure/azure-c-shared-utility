@@ -121,11 +121,13 @@ int umock_c_add_expected_call(UMOCKCALL_HANDLE mock_call)
     return result;
 }
 
-UMOCKCALL_HANDLE umock_c_add_actual_call(UMOCKCALL_HANDLE mock_call)
+int umock_c_add_actual_call(UMOCKCALL_HANDLE mock_call, UMOCKCALL_HANDLE* matched_call)
 {
-    UMOCKCALL_HANDLE result = NULL;
+    int result;
     size_t i;
     unsigned int is_error = 0;
+
+    *matched_call = NULL;
 
     /* Codes_SRS_UMOCK_C_01_115: [ umock_c shall compare calls in order. ]*/
     for (i = 0; i < expected_call_count; i++)
@@ -134,7 +136,7 @@ UMOCKCALL_HANDLE umock_c_add_actual_call(UMOCKCALL_HANDLE mock_call)
 
         if (are_equal_result == 1)
         {
-            result = expected_calls[i];
+            *matched_call = expected_calls[i];
             (void)memmove(&expected_calls[i], &expected_calls[i + 1], (expected_call_count - i - 1) * sizeof(UMOCKCALL_HANDLE));
             expected_call_count--;
             i--;
@@ -149,9 +151,7 @@ UMOCKCALL_HANDLE umock_c_add_actual_call(UMOCKCALL_HANDLE mock_call)
 
     if (is_error)
     {
-        /* Codes_SRS_UMOCK_C_01_148: [ If call comparison fails an error shall be indicated by calling the error callback with UMOCK_C_COMPARE_CALL_ERROR. ]*/
-        umock_c_indicate_error(UMOCK_C_COMPARE_CALL_ERROR);
-        result = NULL;
+        result = __LINE__;
     }
     else
     {
@@ -161,18 +161,19 @@ UMOCKCALL_HANDLE umock_c_add_actual_call(UMOCKCALL_HANDLE mock_call)
             UMOCKCALL_HANDLE* new_actual_calls = (UMOCKCALL_HANDLE*)realloc(actual_calls, sizeof(UMOCKCALL_HANDLE) * (actual_call_count + 1));
             if (new_actual_calls == NULL)
             {
-                result = NULL;
+                result = __LINE__;
             }
             else
             {
                 actual_calls = new_actual_calls;
                 actual_calls[actual_call_count++] = mock_call;
-                result = NULL;
+                result = 0;
             }
         }
         else
         {
             umockcall_destroy(mock_call);
+            result = 0;
         }
     }
 

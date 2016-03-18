@@ -11,6 +11,10 @@
 #include "macro_utils.h"
 #include "umocktypes_charptr.h"
 
+/* TODO:
+- move the register macro to common header
+*/
+
 char* umocktypes_stringify_charptr(const char** value)
 {
     char* result;
