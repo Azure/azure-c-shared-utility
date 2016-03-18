@@ -9,7 +9,6 @@
 /* TODO:
 - serialize tests
 - test failures of malloc
-- umockc unit test project should not include the full umockc
 */
 
 BEGIN_TEST_SUITE(umocktypename_unittests)

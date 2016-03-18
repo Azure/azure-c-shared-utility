@@ -11,7 +11,6 @@
 - test malloc failures
 - serialize tests
 - test for registering types
-- umockc unit test project should not include the full umockc
 */
 
 int umocktypes_register_type(const char* type, UMOCKTYPE_STRINGIFY_FUNC stringify_func, UMOCKTYPE_ARE_EQUAL_FUNC are_equal_func, UMOCKTYPE_COPY_FUNC copy_func, UMOCKTYPE_FREE_FUNC free_func)

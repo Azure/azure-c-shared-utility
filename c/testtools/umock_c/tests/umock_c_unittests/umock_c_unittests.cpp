@@ -10,7 +10,6 @@
 - serialize tests
 - Make it clear that ENABLE_MOCKS has to be defined after including the unit under test header
 - Test freeing of return values allocated by the user in the copy functions
-- umockc unit test project should not include the full umockc
 */
 
 #define ENABLE_MOCKS

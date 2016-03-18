@@ -9,7 +9,6 @@
 /* TODO: 
 - test malloc failures
 - serialize tests
-- umockc unit test project should not include the full umockc
 */
 
 /* Not tested requirements */
