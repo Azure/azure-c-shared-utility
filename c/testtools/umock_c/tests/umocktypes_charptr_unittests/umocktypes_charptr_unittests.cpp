@@ -10,12 +10,54 @@
 /* TODO: 
 - test malloc failures
 - serialize tests
-- test for registering types
 */
+
+typedef struct umocktypes_register_type_CALL_TAG
+{
+    char* type;
+    UMOCKTYPE_STRINGIFY_FUNC stringify_func;
+    UMOCKTYPE_ARE_EQUAL_FUNC are_equal_func;
+    UMOCKTYPE_COPY_FUNC copy_func;
+    UMOCKTYPE_FREE_FUNC free_func;
+} umocktypes_register_type_CALL;
+
+static umocktypes_register_type_CALL* umocktypes_register_type_calls;
+static size_t umocktypes_register_type_call_count;
+static int umocktypes_register_type_call_result;
 
 int umocktypes_register_type(const char* type, UMOCKTYPE_STRINGIFY_FUNC stringify_func, UMOCKTYPE_ARE_EQUAL_FUNC are_equal_func, UMOCKTYPE_COPY_FUNC copy_func, UMOCKTYPE_FREE_FUNC free_func)
 {
-    return 0;
+    umocktypes_register_type_CALL* new_calls = (umocktypes_register_type_CALL*)realloc(umocktypes_register_type_calls, sizeof(umocktypes_register_type_CALL) * (umocktypes_register_type_call_count + 1));
+    if (new_calls != NULL)
+    {
+        size_t typename_length = strlen(type);
+        umocktypes_register_type_calls = new_calls;
+        umocktypes_register_type_calls[umocktypes_register_type_call_count].type = (char*)malloc(typename_length + 1);
+        (void)memcpy(umocktypes_register_type_calls[umocktypes_register_type_call_count].type, type, typename_length + 1);
+        umocktypes_register_type_calls[umocktypes_register_type_call_count].stringify_func = stringify_func;
+        umocktypes_register_type_calls[umocktypes_register_type_call_count].are_equal_func = are_equal_func;
+        umocktypes_register_type_calls[umocktypes_register_type_call_count].copy_func = copy_func;
+        umocktypes_register_type_calls[umocktypes_register_type_call_count].free_func = free_func;
+        umocktypes_register_type_call_count++;
+    }
+
+    return umocktypes_register_type_call_result;
+}
+
+void reset_umocktypes_register_type_calls(void)
+{
+    if (umocktypes_register_type_calls != NULL)
+    {
+        size_t i;
+        for (i = 0; i < umocktypes_register_type_call_count; i++)
+        {
+            free(umocktypes_register_type_calls[i].type);
+        }
+
+        free(umocktypes_register_type_calls);
+        umocktypes_register_type_calls = NULL;
+    }
+    umocktypes_register_type_call_count = NULL;
 }
 
 BEGIN_TEST_SUITE(umocktypes_charptr_unittests)
@@ -34,6 +76,7 @@ TEST_FUNCTION_INITIALIZE(test_function_init)
 
 TEST_FUNCTION_CLEANUP(test_function_cleanup)
 {
+    reset_umocktypes_register_type_calls();
 }
 
 /* umocktypes_stringify_charptr */
@@ -560,6 +603,32 @@ TEST_FUNCTION(umocktypes_free_const_charptr_with_NULL_does_nothing)
 
     // assert
     // no explicit assert
+}
+
+/* umocktypes_charptr_register_types */
+
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_001: [ umocktypes_charptr_register_types shall register support for the types char\* and const char\* by using the REGISTER_UMOCK_VALUE_TYPE macro provided by umockc. ]*/
+TEST_FUNCTION(umocktypes_charptr_register_types_registers_all_types)
+{
+    // arrange
+    size_t i;
+
+    // act
+    int result = umocktypes_charptr_register_types();
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(int, 2, umocktypes_register_type_call_count);
+    ASSERT_ARE_EQUAL(char_ptr, "char*", umocktypes_register_type_calls[0].type);
+    ASSERT_ARE_EQUAL(char_ptr, "const char*", umocktypes_register_type_calls[1].type);
+
+    for (i = 0; i < 2; i++)
+    {
+        ASSERT_IS_NOT_NULL(umocktypes_register_type_calls[i].stringify_func);
+        ASSERT_IS_NOT_NULL(umocktypes_register_type_calls[i].are_equal_func);
+        ASSERT_IS_NOT_NULL(umocktypes_register_type_calls[i].copy_func);
+        ASSERT_IS_NOT_NULL(umocktypes_register_type_calls[i].free_func);
+    }
 }
 
 END_TEST_SUITE(umocktypes_charptr_unittests)

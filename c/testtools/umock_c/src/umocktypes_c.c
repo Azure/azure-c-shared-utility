@@ -289,6 +289,7 @@ int umocktypes_c_register_types(void)
 {
     int result;
 
+    /* Codes_SRS_UMOCKTYPES_C_01_001: [ umocktypes_c_register_types shall register support for all the types in the module. ]*/
     if ((REGISTER_TYPE(char, char) != 0) ||
         (REGISTER_TYPE(unsigned char, unsignedchar) != 0) ||
         (REGISTER_TYPE(short, short) != 0) ||
