@@ -91,12 +91,13 @@ TEST_SUITE_CLEANUP(suite_cleanup)
 
 TEST_FUNCTION_INITIALIZE(test_function_init)
 {
-    TEST_MUTEX_ACQUIRE(test_mutex);
+    ASSERT_ARE_EQUAL(int, 0, TEST_MUTEX_ACQUIRE(test_mutex));
 }
 
 TEST_FUNCTION_CLEANUP(test_function_cleanup)
 {
     reset_umocktypes_register_type_calls();
+
     TEST_MUTEX_RELEASE(test_mutex);
 }
 

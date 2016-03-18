@@ -7,7 +7,6 @@
 #include "umocktypes.h"
 
 /* TODO:
-- serialize tests
 - test failures of malloc
 - add deinit tests as separate project
 */
@@ -235,18 +234,25 @@ void reset_test_free_testtype_calls(void)
     test_free_func_testtype_call_count = NULL;
 }
 
+TEST_MUTEX_HANDLE test_mutex;
+
 BEGIN_TEST_SUITE(umocktypes_unittests)
 
 TEST_SUITE_INITIALIZE(suite_init)
 {
+    test_mutex = TEST_MUTEX_CREATE();
+    ASSERT_IS_NOT_NULL(test_mutex);
 }
 
 TEST_SUITE_CLEANUP(suite_cleanup)
 {
+    TEST_MUTEX_DESTROY(test_mutex);
 }
 
 TEST_FUNCTION_INITIALIZE(test_function_init)
 {
+    ASSERT_ARE_EQUAL(int, 0, TEST_MUTEX_ACQUIRE(test_mutex));
+
     umocktypename_normalize_calls = NULL;
     umocktypename_normalize_call_count = 0;
     umocktypename_normalize_call_result = NULL;
@@ -276,6 +282,8 @@ TEST_FUNCTION_CLEANUP(test_function_cleanup)
     reset_test_free_testtype_calls();
 
     umocktypes_deinit();
+
+    TEST_MUTEX_RELEASE(test_mutex);
 }
 
 /* umocktypes_init */

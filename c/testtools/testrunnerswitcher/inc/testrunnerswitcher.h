@@ -44,8 +44,8 @@ typedef void* TEST_MUTEX_HANDLE;
 
 #define RUN_TEST_SUITE(...)             CTEST_RUN_TEST_SUITE(__VA_ARGS__)
 
-#define TEST_MUTEX_CREATE() (TEST_MUTEX_HANDLE)1
-#define TEST_MUTEX_ACQUIRE(mutex)
+#define TEST_MUTEX_CREATE()             (TEST_MUTEX_HANDLE)1
+#define TEST_MUTEX_ACQUIRE(mutex)       0
 #define TEST_MUTEX_RELEASE(mutex)
 #define TEST_MUTEX_DESTROY(mutex)
 
@@ -84,10 +84,10 @@ typedef void* void_ptr;
 
 #define RUN_TEST_SUITE(...)
 
-#define TEST_MUTEX_CREATE() (TEST_MUTEX_HANDLE)1
-#define TEST_MUTEX_ACQUIRE(mutex)
+#define TEST_MUTEX_CREATE()                                 (TEST_MUTEX_HANDLE)1
+#define TEST_MUTEX_ACQUIRE(mutex)                           0
 #define TEST_MUTEX_RELEASE(mutex)
-#define TEST_MUTEX_DESTROY()
+#define TEST_MUTEX_DESTROY(mutex)
 
 #else
 #error No test runner defined
