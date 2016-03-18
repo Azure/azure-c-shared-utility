@@ -20,8 +20,9 @@ extern int tlsio_wolfssl_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_
 extern int tlsio_wolfssl_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_close_complete, void* callback_context);
 extern int tlsio_wolfssl_send(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t size, ON_SEND_COMPLETE on_send_complete, void* callback_context);
 extern void tlsio_wolfssl_dowork(CONCRETE_IO_HANDLE tls_io);
-extern const IO_INTERFACE_DESCRIPTION* tlsio_wolfssl_get_interface_description(void);
 extern int tlsio_wolfssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, const void* value);
+
+extern const IO_INTERFACE_DESCRIPTION* tlsio_wolfssl_get_interface_description(void);
 
 #ifdef __cplusplus
 }

@@ -46,14 +46,15 @@ typedef struct SOCKET_IO_INSTANCE_TAG
     LIST_HANDLE pending_io_list;
 } SOCKET_IO_INSTANCE;
 
-static const IO_INTERFACE_DESCRIPTION socket_io_interface_description = 
+static const IO_INTERFACE_DESCRIPTION socket_io_interface_description =
 {
     socketio_create,
     socketio_destroy,
     socketio_open,
     socketio_close,
     socketio_send,
-    socketio_dowork
+    socketio_dowork,
+    socketio_setoption
 };
 
 static void indicate_error(SOCKET_IO_INSTANCE* socket_io_instance)
@@ -232,7 +233,7 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
             socket_io_instance->on_io_error_context = on_io_error_context;
 
             socket_io_instance->io_state = IO_STATE_OPEN;
-            
+
             if (on_io_open_complete != NULL)
             {
                 on_io_open_complete(on_io_open_complete_context, IO_OPEN_OK);
@@ -244,7 +245,7 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
             socket_io_instance->socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
             if (socket_io_instance->socket == INVALID_SOCKET)
             {
-                LogError("Failure: socket create failure %d.\r\n", WSAGetLastError() );
+                LogError("Failure: socket create failure %d.\r\n", WSAGetLastError());
                 result = __LINE__;
             }
             else
@@ -458,7 +459,7 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                         free(pending_socket_io);
                         (void)list_remove(socket_io_instance->pending_io_list, first_pending_io);
                     }
-                    else 
+                    else
                     {
                         /* try again */
                     }
@@ -510,6 +511,12 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
             }
         }
     }
+}
+
+int socketio_setoption(CONCRETE_IO_HANDLE socket_io, const char* optionName, const void* value)
+{
+    /* Not implementing any options */
+    return __LINE__;
 }
 
 const IO_INTERFACE_DESCRIPTION* socketio_get_interface_description(void)

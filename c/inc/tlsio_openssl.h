@@ -23,6 +23,8 @@ extern int tlsio_openssl_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_
 extern int tlsio_openssl_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_close_complete, void* callback_context);
 extern int tlsio_openssl_send(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t size, ON_SEND_COMPLETE on_send_complete, void* callback_context);
 extern void tlsio_openssl_dowork(CONCRETE_IO_HANDLE tls_io);
+extern int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, const void* value);
+
 extern const IO_INTERFACE_DESCRIPTION* tlsio_openssl_get_interface_description(void);
 
 #ifdef __cplusplus

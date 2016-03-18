@@ -52,7 +52,8 @@ static const IO_INTERFACE_DESCRIPTION tlsio_openssl_interface_description =
     tlsio_openssl_open,
     tlsio_openssl_close,
     tlsio_openssl_send,
-    tlsio_openssl_dowork
+    tlsio_openssl_dowork,
+    tlsio_openssl_setoption
 };
 
 static void indicate_error(TLS_IO_INSTANCE* tls_io_instance)
@@ -624,6 +625,23 @@ void tlsio_openssl_dowork(CONCRETE_IO_HANDLE tls_io)
             xio_dowork(tls_io_instance->underlying_io);
         }
     }
+}
+
+int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, const void* value)
+{
+    int result;
+
+    if (tls_io == NULL || optionName == NULL)
+    {
+        result = __LINE__;
+    }
+    else
+    {
+        TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tls_io;
+        result = xio_setoption(tls_io_instance->socket_io, optionName, value);
+    }
+
+    return result;
 }
 
 const IO_INTERFACE_DESCRIPTION* tlsio_openssl_get_interface_description(void)
