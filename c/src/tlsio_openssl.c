@@ -638,7 +638,7 @@ int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
     else
     {
         TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tls_io;
-        result = xio_setoption(tls_io_instance->socket_io, optionName, value);
+        result = xio_setoption(tls_io_instance->underlying_io, optionName, value);
     }
 
     return result;
