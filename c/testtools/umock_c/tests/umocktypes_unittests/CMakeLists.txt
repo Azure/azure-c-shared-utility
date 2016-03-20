@@ -8,6 +8,7 @@ set(theseTestsName umocktypes_unittests)
 
 set(${theseTestsName}_c_files
 umocktypes_unittests.cpp
+umocktypes_mocked.c
 )
 
 set(${theseTestsName}_h_files

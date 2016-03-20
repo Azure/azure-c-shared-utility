@@ -9,11 +9,6 @@
 #include "testrunnerswitcher.h"
 #include "umocktypes.h"
 
-void* mock_malloc(size_t size);
-void* mock_calloc(size_t nmemb, size_t size);
-void* mock_realloc(void* ptr, size_t size);
-void mock_free(void* ptr);
-
 typedef struct umocktypename_normalize_CALL_TAG
 {
     char* type_name;
@@ -68,58 +63,58 @@ static size_t realloc_call_count;
 static size_t when_shall_calloc_fail;
 static size_t when_shall_realloc_fail;
 
-void* mock_malloc(size_t size)
-{
-    void* result;
-    malloc_call_count++;
-    if (malloc_call_count == when_shall_malloc_fail)
-    {
-        result = NULL;
-    }
-    else
-    {
-        result = malloc(size);
-    }
-    return result;
-}
-
-void* mock_calloc(size_t nmemb, size_t size)
-{
-    void* result;
-    calloc_call_count++;
-    if (calloc_call_count == when_shall_calloc_fail)
-    {
-        result = NULL;
-    }
-    else
-    {
-        result = calloc(nmemb, size);
-    }
-    return result;
-}
-
-void* mock_realloc(void* ptr, size_t size)
-{
-    void* result;
-    realloc_call_count++;
-    if (realloc_call_count == when_shall_realloc_fail)
-    {
-        result = NULL;
-    }
-    else
-    {
-        result = realloc(ptr, size);
-    }
-    return result;
-}
-
-void mock_free(void* ptr)
-{
-    free(ptr);
-}
-
 extern "C"
 {
+    void* mock_malloc(size_t size)
+    {
+        void* result;
+        malloc_call_count++;
+        if (malloc_call_count == when_shall_malloc_fail)
+        {
+            result = NULL;
+        }
+        else
+        {
+            result = malloc(size);
+        }
+        return result;
+    }
+
+    void* mock_calloc(size_t nmemb, size_t size)
+    {
+        void* result;
+        calloc_call_count++;
+        if (calloc_call_count == when_shall_calloc_fail)
+        {
+            result = NULL;
+        }
+        else
+        {
+            result = calloc(nmemb, size);
+        }
+        return result;
+    }
+
+    void* mock_realloc(void* ptr, size_t size)
+    {
+        void* result;
+        realloc_call_count++;
+        if (realloc_call_count == when_shall_realloc_fail)
+        {
+            result = NULL;
+        }
+        else
+        {
+            result = realloc(ptr, size);
+        }
+        return result;
+    }
+
+    void mock_free(void* ptr)
+    {
+        free(ptr);
+    }
+
     char* umocktypename_normalize(const char* type_name)
     {
         char* result;
@@ -1317,10 +1312,3 @@ TEST_FUNCTION(umocktypes_free_when_the_module_is_not_initialized_does_not_free_a
 }
 
 END_TEST_SUITE(umocktypes_unittests)
-
-#define malloc(size) mock_malloc(size)
-#define calloc(nmemb, size) mock_calloc(nmemb, size)
-#define realloc(ptr, size) mock_realloc(ptr, size)
-
-/* include code under test */
-#include "../../src/umocktypes.c"
