@@ -8,7 +8,6 @@
 
 /* TODO:
 - test failures of malloc
-- add deinit tests as separate project
 */
 
 typedef struct umocktypename_normalize_CALL_TAG
