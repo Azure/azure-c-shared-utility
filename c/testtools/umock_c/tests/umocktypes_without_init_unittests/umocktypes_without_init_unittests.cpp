@@ -147,29 +147,6 @@ int test_are_equal_func_testtype(const void* left, const void* right)
     return test_are_equal_func_testtype_call_result;
 }
 
-static char* test_stringify_func_testtype_2(const void* value)
-{
-    (void)value;
-    return NULL;
-}
-
-static int test_copy_func_testtype_2(void* destination, const void* source)
-{
-    (void)destination, source;
-    return 0;
-}
-
-void test_free_func_testtype_2(void* value)
-{
-    (void)value;
-}
-
-int test_are_equal_func_testtype_2(const void* left, const void* right)
-{
-    (void)left, right;
-    return 0;
-}
-
 static void* test_value_1 = (void*)0x4242;
 static void* test_value_2 = (void*)0x4243;
 
