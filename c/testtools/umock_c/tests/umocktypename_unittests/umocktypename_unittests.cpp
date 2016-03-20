@@ -10,6 +10,67 @@
 - test failures of malloc
 */
 
+extern "C"
+{
+    static size_t malloc_call_count;
+    static size_t calloc_call_count;
+    static size_t realloc_call_count;
+
+    static size_t when_shall_malloc_fail;
+    static size_t when_shall_calloc_fail;
+    static size_t when_shall_realloc_fail;
+
+    void* mock_malloc(size_t size)
+    {
+        void* result;
+        malloc_call_count++;
+        if (malloc_call_count == when_shall_malloc_fail)
+        {
+            result = NULL;
+        }
+        else
+        {
+            result = malloc(size);
+        }
+        return result;
+    }
+
+    void* mock_calloc(size_t nmemb, size_t size)
+    {
+        void* result;
+        calloc_call_count++;
+        if (calloc_call_count == when_shall_calloc_fail)
+        {
+            result = NULL;
+        }
+        else
+        {
+            result = calloc(nmemb, size);
+        }
+        return result;
+    }
+
+    void* mock_realloc(void* ptr, size_t size)
+    {
+        void* result;
+        realloc_call_count++;
+        if (realloc_call_count == when_shall_realloc_fail)
+        {
+            result = NULL;
+        }
+        else
+        {
+            result = realloc(ptr, size);
+        }
+        return result;
+    }
+
+    void mock_free(void* ptr)
+    {
+        free(ptr);
+    }
+}
+
 TEST_MUTEX_HANDLE test_mutex;
 
 BEGIN_TEST_SUITE(umocktypename_unittests)
@@ -28,6 +89,13 @@ TEST_SUITE_CLEANUP(suite_cleanup)
 TEST_FUNCTION_INITIALIZE(test_function_init)
 {
     ASSERT_ARE_EQUAL(int, 0, TEST_MUTEX_ACQUIRE(test_mutex));
+
+    malloc_call_count = 0;
+    when_shall_malloc_fail = 0;
+    calloc_call_count = 0;
+    when_shall_calloc_fail = 0;
+    realloc_call_count = 0;
+    when_shall_realloc_fail = 0;
 }
 
 TEST_FUNCTION_CLEANUP(test_function_cleanup)
@@ -154,7 +222,7 @@ TEST_FUNCTION(umocktypename_normalize_removes_2_spaces_at_the_beginning)
     free(result);
 }
 
-/* Tests_SRS_UMOCKTYPENAME_01_007: [ If the length of the normalized typename is 0, umocktypename_normalize return NULL. ]*/
+/* Tests_SRS_UMOCKTYPENAME_01_007: [ If the length of the normalized typename is 0, umocktypename_normalize shall return NULL. ]*/
 TEST_FUNCTION(umocktypename_normalize_for_a_zero_length_normalized_typename_returns_NULL)
 {
     // arrange
@@ -209,6 +277,19 @@ TEST_FUNCTION(umocktypename_normalize_succeeds_with_a_type_that_ends_in_star)
 
     // cleanup
     free(result);
+}
+
+/* Tests_SRS_UMOCKTYPENAME_01_008: [ If allocating memory fails, umocktypename_normalize shall fail and return NULL. ]*/
+TEST_FUNCTION(when_allocating_memory_Fails_umocktypename_normalize_fails)
+{
+    // arrange
+    when_shall_malloc_fail = 1;
+
+    // act
+    char* result = umocktypename_normalize("char*");
+
+    // assert
+    ASSERT_IS_NULL(result);
 }
 
 END_TEST_SUITE(umocktypename_unittests)

@@ -8,7 +8,7 @@ set(theseTestsName umocktypename_unittests)
 
 set(${theseTestsName}_c_files
 umocktypename_unittests.cpp
-../../src/umocktypename.c
+umocktypename_mocked.c
 )
 
 set(${theseTestsName}_h_files

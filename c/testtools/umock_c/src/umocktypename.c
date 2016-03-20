@@ -63,7 +63,7 @@ char* umocktypename_normalize(const char* type_name)
 
         if (length == 0)
         {
-            /* Codes_SRS_UMOCKTYPENAME_01_007: [ If the length of the normalized typename is 0, umocktypename_normalize return NULL. ]*/
+            /* Codes_SRS_UMOCKTYPENAME_01_007: [ If the length of the normalized typename is 0, umocktypename_normalize shall return NULL. ]*/
             result = NULL;
         }
         else
@@ -71,6 +71,7 @@ char* umocktypename_normalize(const char* type_name)
             /* ... then we allocate*/
             /* Codes_SRS_UMOCKTYPENAME_01_001: [ umocktypename_normalize shall return a char\* with a newly allocated string that contains the normalized typename. ]*/
             result = (char*)malloc(length + 1);
+            /* Codes_SRS_UMOCKTYPENAME_01_008: [ If allocating memory fails, umocktypename_normalize shall fail and return NULL. ]*/
             if (result != NULL)
             {
                 pos = 0;
