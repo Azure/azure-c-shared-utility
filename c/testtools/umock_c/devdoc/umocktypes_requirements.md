@@ -54,7 +54,7 @@ extern int umocktypes_register_type(const char* type, UMOCKTYPE_STRINGIFY_FUNC s
 **SRS_UMOCKTYPES_01_009: [** If any of the arguments is NULL, umocktypes_register_type shall fail and return a non-zero value. **]**
 **SRS_UMOCKTYPES_01_010: [** If the type has already been registered with the same function pointers then umocktypes_register_type shall succeed and return 0. **]**
 **SRS_UMOCKTYPES_01_011: [** If the type has already been registered but at least one of the function pointers is different, umocktypes_register_type shall fail and return a non-zero value. **]**
-X**SRS_UMOCKTYPES_01_012: [** If an error occurs allocating memory for the newly registered type, umocktypes_register_type shall fail and return a non-zero value. **]**
+**SRS_UMOCKTYPES_01_012: [** If an error occurs allocating memory for the newly registered type, umocktypes_register_type shall fail and return a non-zero value. **]**
 **SRS_UMOCKTYPES_01_034: [** Before registering, the type string shall be normalized by calling umocktypename_normalize. **]**
 **SRS_UMOCKTYPES_01_045: [** If normalizing the typename fails, umocktypes_register_type shall fail and return a non-zero value. **]**
 **SRS_UMOCKTYPES_01_050: [** If umocktypes_register_type is called when the module is not initialized, umocktypes_register_type shall fail and return a non zero value. **]**

@@ -672,6 +672,22 @@ TEST_FUNCTION(umocktypes_register_type_when_the_module_is_not_initialized_fails)
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
 }
 
+/* Tests_SRS_UMOCKTYPES_01_012: [ If an error occurs allocating memory for the newly registered type, umocktypes_register_type shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(when_allocating_memory_fails_umocktypes_register_type_fails)
+{
+    // arrange
+    (void)umocktypes_init();
+    umocktypename_normalize_call_result = "char*";
+
+    when_shall_realloc_fail = 1;
+
+    // act
+    int result = umocktypes_register_type("char *", test_stringify_func_testtype, test_are_equal_func_testtype, test_copy_func_testtype, test_free_func_testtype);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+}
+
 /* umocktypes_stringify */
 
 /* Tests_SRS_UMOCKTYPES_01_013: [ umocktypes_stringify shall return a char\* with the string representation of the value argument. ]*/
