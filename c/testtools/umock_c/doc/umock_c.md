@@ -484,7 +484,7 @@ The signature shall be:
 int umockvalue_charptr_register_types(void);
 ```
 
-umockvalue_charptr_register_types shall return 0 on success and non-zero on failure.
+umockvalue_charptr_register_types returns 0 on success and non-zero on failure.
 
 ####umockvalue_stdint
 
@@ -496,7 +496,7 @@ In order to enable the usage of stdint types, the function umockvalue_stdint_reg
 int umockvalue_stdint_register_types(void);
 ```
 
-umockvalue_stdint_register_types shall return 0 on success and non-zero on failure.
+umockvalue_stdint_register_types returns 0 on success and non-zero on failure.
 
 ##Call modifiers
 

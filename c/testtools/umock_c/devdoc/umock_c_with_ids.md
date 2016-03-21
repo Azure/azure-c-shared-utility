@@ -478,18 +478,18 @@ REGISTER_UMOCK_VALUE_TYPE(TEST_STRUCT);
 
 ####umockvalue_charptr
 
-**SRS_UMOCK_C_01_067: [**char\* and const char\* shall be supported out of the box through a separate header, umockvalue_charptr.h.**]**
+XX**SRS_UMOCK_C_01_067: [**char\* and const char\* shall be supported out of the box through a separate header, umockvalue_charptr.h.**]**
 
-**SRS_UMOCK_C_01_068: [**In order to enable the usage of char\*, the function umockvalue_charptr_register_types can be used in the test suite init.**]**
+In order to enable the usage of char\*, the function umockvalue_charptr_register_types can be used in the test suite init.
 
-**SRS_UMOCK_C_01_069: [**The signature shall be:
+XX**SRS_UMOCK_C_01_069: [**The signature shall be:
 
 ```c
 int umockvalue_charptr_register_types(void);
 ```
 **]**
 
-**SRS_UMOCK_C_01_070: [**umockvalue_charptr_register_types shall return 0 on success and non-zero on failure.
+umockvalue_charptr_register_types returns 0 on success and non-zero on failure.
 
 ####umockvalue_stdint
 
@@ -501,7 +501,7 @@ int umockvalue_charptr_register_types(void);
 int umockvalue_stdint_register_types(void);
 ```
 
-**SRS_UMOCK_C_01_073: [**umockvalue_stdint_register_types shall return 0 on success and non-zero on failure.**]**
+umockvalue_stdint_register_types returns 0 on success and non-zero on failure.
 
 ##Call modifiers
 

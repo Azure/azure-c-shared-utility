@@ -7,7 +7,6 @@
 
 /* TODO:
 - Switch to .c
-- serialize tests
 - Make it clear that ENABLE_MOCKS has to be defined after including the unit under test header
 - Test freeing of return values allocated by the user in the copy functions
 */
@@ -16,6 +15,8 @@
 
 #include "umock_c.h"
 #include "test_dependency.h"
+
+/* Tests_SRS_UMOCK_C_01_067: [char\* and const char\* shall be supported out of the box through a separate header, umockvalue_charptr.h.]*/
 #include "umocktypes_charptr.h"
 
 typedef struct test_on_umock_c_error_CALL_TAG
@@ -102,11 +103,18 @@ void free_func_TEST_STRUCT_COPY_FAILS(TEST_STRUCT_COPY_FAILS* value)
 {
 }
 
+TEST_MUTEX_HANDLE test_mutex;
+
 BEGIN_TEST_SUITE(umock_c_unittests)
 
 TEST_SUITE_INITIALIZE(suite_init)
 {
+    test_mutex = TEST_MUTEX_CREATE();
+    ASSERT_IS_NOT_NULL(test_mutex);
+
     ASSERT_ARE_EQUAL(int, 0, umock_c_init(test_on_umock_c_error));
+    /* Tests_SRS_UMOCK_C_01_069: [The signature shall be: ...*/
+    /* Tests_SRS_UMOCK_C_01_070: [umockvalue_charptr_register_types shall return 0 on success and non-zero on failure.]*/
     ASSERT_ARE_EQUAL(int, 0, umocktypes_charptr_register_types());
     REGISTER_UMOCK_VALUE_TYPE(int*, stringify_func_intptr, are_equal_func_intptr, copy_func_intptr, free_func_intptr);
     REGISTER_UMOCK_VALUE_TYPE(unsigned char*, stringify_func_unsignedcharptr, are_equal_func_unsignedcharptr, copy_func_unsignedcharptr, free_func_unsignedcharptr);
@@ -116,10 +124,14 @@ TEST_SUITE_INITIALIZE(suite_init)
 TEST_SUITE_CLEANUP(suite_cleanup)
 {
     umock_c_deinit();
+
+    TEST_MUTEX_DESTROY(test_mutex);
 }
 
 TEST_FUNCTION_INITIALIZE(test_function_init)
 {
+    ASSERT_ARE_EQUAL(int, 0, TEST_MUTEX_ACQUIRE(test_mutex));
+
     test_on_umock_c_error_calls = NULL;
     test_on_umock_c_error_call_count = 0;
 }
@@ -133,6 +145,8 @@ TEST_FUNCTION_CLEANUP(test_function_cleanup)
     free(test_on_umock_c_error_calls);
     test_on_umock_c_error_calls = NULL;
     test_on_umock_c_error_call_count = 0;
+
+    TEST_MUTEX_RELEASE(test_mutex);
 }
 
 /* STRICT_EXPECTED_CALL */
