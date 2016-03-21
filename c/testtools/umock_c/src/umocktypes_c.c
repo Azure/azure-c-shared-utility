@@ -279,12 +279,6 @@ IMPLEMENT_TYPE_HANDLERS(long double, longdouble, "%lf")
 /* Codes_SRS_UMOCKTYPES_C_01_169: [ umocktypes_free_size_t shall do nothing. ]*/
 IMPLEMENT_TYPE_HANDLERS(size_t, size_t, "%u")
 
-#define REGISTER_TYPE(type, function_postfix) \
-    umocktypes_register_type(TOSTRING(type), (UMOCKTYPE_STRINGIFY_FUNC)C2(umocktypes_stringify_, function_postfix), \
-        (UMOCKTYPE_ARE_EQUAL_FUNC)C2(umocktypes_are_equal_,function_postfix), \
-        (UMOCKTYPE_COPY_FUNC)C2(umocktypes_copy_,function_postfix), \
-        (UMOCKTYPE_FREE_FUNC)C2(umocktypes_free_,function_postfix))
-
 int umocktypes_c_register_types(void)
 {
     int result;

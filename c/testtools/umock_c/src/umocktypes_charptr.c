@@ -11,10 +11,6 @@
 #include "macro_utils.h"
 #include "umocktypes_charptr.h"
 
-/* TODO:
-- move the register macro to common header
-*/
-
 char* umocktypes_stringify_charptr(const char** value)
 {
     char* result;
@@ -206,12 +202,6 @@ void umocktypes_free_const_charptr(const char** value)
         free((void*)*value);
     }
 }
-
-#define REGISTER_TYPE(type, function_postfix) \
-    umocktypes_register_type(TOSTRING(type), (UMOCKTYPE_STRINGIFY_FUNC)C2(umocktypes_stringify_, function_postfix), \
-        (UMOCKTYPE_ARE_EQUAL_FUNC)C2(umocktypes_are_equal_,function_postfix), \
-        (UMOCKTYPE_COPY_FUNC)C2(umocktypes_copy_,function_postfix), \
-        (UMOCKTYPE_FREE_FUNC)C2(umocktypes_free_,function_postfix))
 
 int umocktypes_charptr_register_types(void)
 {
