@@ -9,6 +9,7 @@
 - Switch to .c
 - Make it clear that ENABLE_MOCKS has to be defined after including the unit under test header
 - Test freeing of return values allocated by the user in the copy functions
+- Test set return value order
 */
 
 #define ENABLE_MOCKS

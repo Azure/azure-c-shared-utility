@@ -144,7 +144,7 @@ void umock_c_deinit(void);
 ```
 
 **SRS_UMOCK_C_01_011: [**umock_c_deinit shall free all umock_c used resources.**]**
-**SRS_UMOCK_C_01_012: [**If umock_c was not initialized, umock_c_deinit shall do nothing.**]**
+XX**SRS_UMOCK_C_01_012: [**If umock_c was not initialized, umock_c_deinit shall do nothing.**]**
 
 ##Expected calls recording API
 

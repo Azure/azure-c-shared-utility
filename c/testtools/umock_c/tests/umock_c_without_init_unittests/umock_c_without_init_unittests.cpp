@@ -7,7 +7,6 @@
 
 /* TODO:
 - Switch to .c
-- serialize tests
 */
 
 #define ENABLE_MOCKS
