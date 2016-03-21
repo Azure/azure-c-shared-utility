@@ -272,6 +272,7 @@ TEST_FUNCTION(umockcallrecorder_destroy_with_one_expected_call_frees_the_call_re
 /* umockcallrecorder_reset_all_calls */
 
 /* Tests_SRS_UMOCKCALLRECORDER_01_005: [ umockcallrecorder_reset_all_calls shall free all the expected and actual calls for the call recorder identified by umock_call_recorder. ]*/
+/* Tests_SRS_UMOCKCALLRECORDER_01_006: [ On success umockcallrecorder_reset_all_calls shall return 0. ]*/
 TEST_FUNCTION(umockcallrecorder_reset_all_calls_frees_all_existing_expected_and_actual_calls)
 {
     // arrange
@@ -283,9 +284,10 @@ TEST_FUNCTION(umockcallrecorder_reset_all_calls_frees_all_existing_expected_and_
     umockcallrecorder_add_actual_call(call_recorder, test_actual_umockcall_1, &matched_call);
 
     // act
-    umockcallrecorder_reset_all_calls(call_recorder);
+    int result = umockcallrecorder_reset_all_calls(call_recorder);
 
     // assert
+    ASSERT_ARE_EQUAL(int, 0, result);
     ASSERT_ARE_EQUAL(size_t, 2, free_call_count);
     ASSERT_ARE_EQUAL(size_t, 3, umockcall_destroy_call_count);
     ASSERT_ARE_EQUAL(void_ptr, (void*)test_expected_umockcall_1, umockcall_destroy_calls[0].umockcall);
@@ -294,6 +296,20 @@ TEST_FUNCTION(umockcallrecorder_reset_all_calls_frees_all_existing_expected_and_
 
     // cleanup
     umockcallrecorder_destroy(call_recorder);
+}
+
+/* Tests_SRS_UMOCKCALLRECORDER_01_007: [ If umock_call_recorder is NULL, umockcallrecorder_reset_all_calls shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(umockcallrecorder_reset_all_calls_with_NULL_call_recorder_fails)
+{
+    // arrange
+
+    // act
+    int result = umockcallrecorder_reset_all_calls(NULL);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(size_t, 0, free_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, umockcall_destroy_call_count);
 }
 
 END_TEST_SUITE(umockcallrecorder_unittests)
