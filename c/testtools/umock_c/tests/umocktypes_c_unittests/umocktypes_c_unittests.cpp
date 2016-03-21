@@ -8,10 +8,6 @@
 #include "umocktypes.h"
 #include "umocktypes_c.h"
 
-/* TODO: 
-- test malloc failures
-*/
-
 typedef struct umocktypes_register_type_CALL_TAG
 {
     char* type;
