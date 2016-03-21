@@ -795,7 +795,7 @@ TEST_FUNCTION(when_the_underlying_register_fails_umocktypes_charptr_register_typ
     for (i = 0; i < 2; i++)
     {
         // arrange
-
+        reset_umocktypes_register_type_calls();
         umocktypes_register_type_fail_call_result = 1;
         when_shall_umocktypes_register_typecall_fail = i + 1;
 

@@ -25,6 +25,10 @@ UMOCKTYPES_HANDLERS(long, long)
 UMOCKTYPES_HANDLERS(unsigned long, unsignedlong)
 UMOCKTYPES_HANDLERS(long long, longlong)
 UMOCKTYPES_HANDLERS(unsigned long long, unsignedlonglong)
+UMOCKTYPES_HANDLERS(float, float)
+UMOCKTYPES_HANDLERS(double, double)
+UMOCKTYPES_HANDLERS(long double, longdouble)
+UMOCKTYPES_HANDLERS(size_t, size_t)
 
 ```
 
