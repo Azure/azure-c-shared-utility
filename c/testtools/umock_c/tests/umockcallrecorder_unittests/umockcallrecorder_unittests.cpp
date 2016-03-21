@@ -172,4 +172,17 @@ TEST_FUNCTION(umockcallrecorder_create_succeeds)
     ASSERT_IS_NOT_NULL(call_recorder);
 }
 
+/* Tests_SRS_UMOCKCALLRECORDER_01_002: [ If allocating memory for the call recorder fails, umockcallrecorder_create shall return NULL. ]*/
+TEST_FUNCTION(when_allocating_memory_fails_then_umockcallrecorder_create_fails)
+{
+    // arrange
+    when_shall_malloc_fail = 1;
+
+    // act
+    UMOCKCALLRECORDER_HANDLE call_recorder = umockcallrecorder_create();
+
+    // assert
+    ASSERT_IS_NULL(call_recorder);
+}
+
 END_TEST_SUITE(umockcallrecorder_unittests)
