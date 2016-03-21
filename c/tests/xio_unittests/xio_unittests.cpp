@@ -60,6 +60,8 @@ public:
     MOCK_METHOD_END(int, 0);
     MOCK_STATIC_METHOD_1(, void, test_xio_dowork, CONCRETE_IO_HANDLE, handle)
     MOCK_VOID_METHOD_END();
+    MOCK_STATIC_METHOD_3(, int, test_xio_setoption, CONCRETE_IO_HANDLE, handle, const char*, optionName, const void*, value)
+    MOCK_METHOD_END(int, 0);
 };
 
 DECLARE_GLOBAL_MOCK_METHOD_1(io_mocks, , void*, gballoc_malloc, size_t, size);
@@ -73,6 +75,7 @@ extern "C"
     DECLARE_GLOBAL_MOCK_METHOD_3(io_mocks, , int, test_xio_close, CONCRETE_IO_HANDLE, handle, ON_IO_CLOSE_COMPLETE, on_io_close_complete, void*, callback_context);
     DECLARE_GLOBAL_MOCK_METHOD_5(io_mocks, , int, test_xio_send, CONCRETE_IO_HANDLE, handle, const void*, buffer, size_t, size, ON_SEND_COMPLETE, on_send_complete, void*, callback_context);
     DECLARE_GLOBAL_MOCK_METHOD_1(io_mocks, , void, test_xio_dowork, CONCRETE_IO_HANDLE, handle);
+    DECLARE_GLOBAL_MOCK_METHOD_3(io_mocks, , int, test_xio_setoption, CONCRETE_IO_HANDLE, handle, const char*, optionName, const void*, value);
 
     void test_on_bytes_received(void* context, const unsigned char* buffer, size_t size)
     {
@@ -117,7 +120,8 @@ const IO_INTERFACE_DESCRIPTION test_io_description =
     test_xio_open,
     test_xio_close,
     test_xio_send,
-    test_xio_dowork
+    test_xio_dowork,
+    test_xio_setoption
 };
 
 MICROMOCK_MUTEX_HANDLE test_serialize_mutex;
@@ -238,7 +242,8 @@ TEST_FUNCTION(when_concrete_xio_create_is_NULL_then_xio_create_fails)
         test_xio_open,
         test_xio_close,
         test_xio_send,
-        test_xio_dowork
+        test_xio_dowork,
+        test_xio_setoption
     };
 
     // act
@@ -260,7 +265,8 @@ TEST_FUNCTION(when_concrete_xio_destroy_is_NULL_then_xio_create_fails)
         test_xio_open,
         test_xio_close,
         test_xio_send,
-        test_xio_dowork
+        test_xio_dowork,
+        test_xio_setoption
     };
 
     // act
@@ -282,7 +288,8 @@ TEST_FUNCTION(when_concrete_xio_open_is_NULL_then_xio_create_fails)
         NULL,
         test_xio_close,
         test_xio_send,
-        test_xio_dowork
+        test_xio_dowork,
+        test_xio_setoption
     };
 
     // act
@@ -304,7 +311,8 @@ TEST_FUNCTION(when_concrete_xio_close_is_NULL_then_xio_create_fails)
         test_xio_open,
         NULL,
         test_xio_send,
-        test_xio_dowork
+        test_xio_dowork,
+        test_xio_setoption
     };
 
     // act
@@ -326,7 +334,8 @@ TEST_FUNCTION(when_concrete_xio_send_is_NULL_then_xio_create_fails)
         test_xio_open,
         test_xio_close,
         NULL,
-        test_xio_dowork
+        test_xio_dowork,
+        test_xio_setoption
     };
 
     // act
@@ -348,6 +357,30 @@ TEST_FUNCTION(when_concrete_xio_dowork_is_NULL_then_xio_create_fails)
         test_xio_open,
         test_xio_close,
         test_xio_send,
+        NULL,
+        test_xio_setoption
+    };
+
+    // act
+    XIO_HANDLE result = xio_create(&io_description_null, NULL, NULL);
+
+    // assert
+    ASSERT_IS_NULL(result);
+}
+
+/* Tests_SRS_XIO_01_004: [If any io_interface_description member is NULL, xio_create shall return NULL.] */
+TEST_FUNCTION(when_concrete_xio_setoption_is_NULL_then_xio_create_fails)
+{
+    // arrange
+    io_mocks mocks;
+    const IO_INTERFACE_DESCRIPTION io_description_null =
+    {
+        test_xio_create,
+        test_xio_destroy,
+        test_xio_open,
+        test_xio_close,
+        test_xio_send,
+        test_xio_dowork,
         NULL
     };
 
@@ -686,6 +719,95 @@ TEST_FUNCTION(xio_dowork_with_NULL_handle_does_nothing)
 
     // assert
     // uMock checks the calls
+}
+
+/* Tests_SRS_XIO_03_030: [If the xio argumnent or the optionName argument is NULL, xio_setoption shall return a non-zero value.] */
+TEST_FUNCTION(xio_setoption_with_NULL_handle_fails)
+{
+    // arrange
+    io_mocks mocks;
+    const char* optionName = "TheOptionName";
+    const void* optionValue = (void*)1;
+
+    mocks.ResetAllCalls();
+
+    // act
+    int result = xio_setoption(NULL, optionName, optionValue);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+}
+
+/* Tests_SRS_XIO_03_030: [If the xio argumnent or the optionName argument is NULL, xio_setoption shall return a non-zero value.] */
+TEST_FUNCTION(xio_setoption_with_NULL_optionName_fails)
+{
+    // arrange
+    io_mocks mocks;
+    const char* optionName = "TheOptionName";
+    const void* optionValue = (void*)1;
+    XIO_HANDLE handle = xio_create(&test_io_description, NULL, NULL);
+
+    mocks.ResetAllCalls();
+
+    // act
+    int result = xio_setoption(handle, NULL, optionValue);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    mocks.AssertActualAndExpectedCalls();
+
+    // cleanup
+    xio_destroy(handle);
+}
+
+/* Tests_SRS_XIO_003_028: [xio_setoption shall pass the optionName and value to the concrete IO implementation specified in xio_create by invoking the concrete_xio_setoption function.] */
+/* Tests_SRS_XIO_03_029: [xio_setoption shall return 0 upon success.] */
+TEST_FUNCTION(xio_setoption_with_valid_args_passes_the_args_down_and_succeeds)
+{
+    // arrange
+    io_mocks mocks;
+    const char* optionName = "TheOptionName";
+    const void* optionValue = (void*)1;
+    XIO_HANDLE handle = xio_create(&test_io_description, NULL, NULL);
+
+    mocks.ResetAllCalls();
+
+    STRICT_EXPECTED_CALL(mocks, test_xio_setoption(TEST_CONCRETE_IO_HANDLE, optionName, optionValue));
+
+    // act
+    int result = xio_setoption(handle, optionName, optionValue);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+    mocks.AssertActualAndExpectedCalls();
+
+    // cleanup
+    xio_destroy(handle);
+}
+
+/* Tests_SRS_XIO_03_031: [If the underlying concrete_xio_setoption fails, xio_setOption shall return a non-zero value.] */
+TEST_FUNCTION(xio_setoption_fails_when_concrete_xio_setoption_fails)
+{
+    // arrange
+    io_mocks mocks;
+    const char* optionName = "TheOptionName";
+    const void* optionValue = (void*)1;
+    XIO_HANDLE handle = xio_create(&test_io_description, NULL, NULL);
+
+    mocks.ResetAllCalls();
+
+    STRICT_EXPECTED_CALL(mocks, test_xio_setoption(TEST_CONCRETE_IO_HANDLE, optionName, optionValue))
+        .SetReturn(42);
+
+    // act
+    int result = xio_setoption(handle, optionName, optionValue);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    mocks.AssertActualAndExpectedCalls();
+
+    // cleanup
+    xio_destroy(handle);
 }
 
 END_TEST_SUITE(xio_unittests)

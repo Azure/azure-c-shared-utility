@@ -26,7 +26,8 @@ XIO_HANDLE xio_create(const IO_INTERFACE_DESCRIPTION* io_interface_description, 
         (io_interface_description->concrete_io_open == NULL) ||
         (io_interface_description->concrete_io_close == NULL) ||
         (io_interface_description->concrete_io_send == NULL) ||
-        (io_interface_description->concrete_io_dowork == NULL))
+        (io_interface_description->concrete_io_dowork == NULL) ||
+        (io_interface_description->concrete_io_setoption == NULL))
     {
         xio_instance = NULL;
     }
@@ -161,4 +162,26 @@ void xio_dowork(XIO_HANDLE xio)
         /* Codes_SRS_XIO_01_012: [xio_dowork shall call the concrete XIO implementation specified in xio_create, by calling the concrete_io_dowork function.] */
         xio_instance->io_interface_description->concrete_io_dowork(xio_instance->concrete_xio_handle);
     }
+}
+
+int xio_setoption(XIO_HANDLE xio, const char* optionName, const void* value)
+{
+    int result;
+
+    /* Codes_SRS_XIO_03_030: [If the xio argumnent or the optionName argument is NULL, xio_setoption shall return a non-zero value.] */
+    if (xio == NULL || optionName == NULL)
+    {
+        result = __LINE__;
+    }
+    else
+    {
+        XIO_INSTANCE* xio_instance = (XIO_INSTANCE*)xio;
+
+        /* Codes_SRS_XIO_003_028: [xio_setoption shall pass the optionName and value to the concrete IO implementation specified in xio_create by invoking the concrete_xio_setoption function.] */
+        /* Codes_SRS_XIO_03_029: [xio_setoption shall return 0 upon success.] */
+        /* Codes_SRS_XIO_03_031: [If the underlying concrete_xio_setoption fails, xio_setOption shall return a non-zero value.] */
+        result = xio_instance->io_interface_description->concrete_io_setoption(xio_instance->concrete_xio_handle, optionName, value);
+    }
+
+    return result;
 }

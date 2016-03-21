@@ -53,7 +53,8 @@ static const IO_INTERFACE_DESCRIPTION tlsio_wolfssl_interface_description =
     tlsio_wolfssl_open,
     tlsio_wolfssl_close,
     tlsio_wolfssl_send,
-    tlsio_wolfssl_dowork
+    tlsio_wolfssl_dowork,
+    tlsio_wolfssl_setoption
 };
 
 static void indicate_error(TLS_IO_INSTANCE* tls_io_instance)
@@ -524,7 +525,7 @@ int tlsio_wolfssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
 {
     int result;
 
-    if (tls_io == NULL)
+    if (tls_io == NULL || optionName == NULL)
     {
         result = __LINE__;
     }
@@ -546,7 +547,7 @@ int tlsio_wolfssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
         }
         else
         {
-            result = __LINE__;
+            result = xio_setoption(tls_io_instance->socket_io, optionName, value);
         }
     }
 
