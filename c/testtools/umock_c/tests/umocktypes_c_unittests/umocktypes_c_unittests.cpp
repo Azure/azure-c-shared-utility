@@ -238,6 +238,20 @@ TEST_FUNCTION(umocktypes_stringify_char_with_NULL_fails)
     ASSERT_IS_NULL(result);
 }
 
+/* Tests_SRS_UMOCKTYPES_C_01_004: [ If allocating a new string to hold the string representation fails, umocktypes_stringify_char shall return NULL. ]*/
+TEST_FUNCTION(when_allocating_memory_fails_umocktypes_stringify_char_fails)
+{
+    // arrange
+    char input = 127;
+    when_shall_malloc_fail = 1;
+
+    // act
+    char* result = umocktypes_stringify_char(&input);
+
+    // assert
+    ASSERT_IS_NULL(result);
+}
+
 /* umocktypes_are_equal_char */
 
 /* Tests_SRS_UMOCKTYPES_C_01_006: [ umocktypes_are_equal_char shall compare the 2 chars pochared to by left and right. ]*/
@@ -395,6 +409,20 @@ TEST_FUNCTION(umocktypes_stringify_unsignedchar_with_NULL_fails)
 
     // act
     char* result = umocktypes_stringify_unsignedchar(NULL);
+
+    // assert
+    ASSERT_IS_NULL(result);
+}
+
+/* Tests_SRS_UMOCKTYPES_C_01_016: [ If allocating a new string to hold the string representation fails, umocktypes_stringify_unsignedchar shall return NULL. ]*/
+TEST_FUNCTION(when_allocating_memory_fails_umocktypes_stringify_unsignedchar_fails)
+{
+    // arrange
+    unsigned char input = 127;
+    when_shall_malloc_fail = 1;
+
+    // act
+    char* result = umocktypes_stringify_unsignedchar(&input);
 
     // assert
     ASSERT_IS_NULL(result);
@@ -578,6 +606,20 @@ TEST_FUNCTION(umocktypes_stringify_short_with_NULL_fails)
     ASSERT_IS_NULL(result);
 }
 
+/* Tests_SRS_UMOCKTYPES_C_01_028: [ If allocating a new string to hold the string representation fails, umocktypes_stringify_short shall return NULL. ]*/
+TEST_FUNCTION(when_allocating_memory_fails_umocktypes_stringify_short_fails)
+{
+    // arrange
+    short input = 127;
+    when_shall_malloc_fail = 1;
+
+    // act
+    char* result = umocktypes_stringify_short(&input);
+
+    // assert
+    ASSERT_IS_NULL(result);
+}
+
 /* umocktypes_are_equal_short */
 
 /* Tests_SRS_UMOCKTYPES_C_01_030: [ umocktypes_are_equal_short shall compare the 2 shorts poshorted to by left and right. ]*/
@@ -735,6 +777,20 @@ TEST_FUNCTION(umocktypes_stringify_unsignedshort_with_NULL_fails)
 
     // act
     char* result = umocktypes_stringify_unsignedshort(NULL);
+
+    // assert
+    ASSERT_IS_NULL(result);
+}
+
+/* Tests_SRS_UMOCKTYPES_C_01_040: [ If allocating a new string to hold the string representation fails, umocktypes_stringify_unsignedshort shall return NULL. ]*/
+TEST_FUNCTION(when_allocating_memory_fails_umocktypes_stringify_unsignedshort_fails)
+{
+    // arrange
+    unsigned short input = 127;
+    when_shall_malloc_fail = 1;
+
+    // act
+    char* result = umocktypes_stringify_unsignedshort(&input);
 
     // assert
     ASSERT_IS_NULL(result);
@@ -918,6 +974,20 @@ TEST_FUNCTION(umocktypes_stringify_int_with_NULL_fails)
     ASSERT_IS_NULL(result);
 }
 
+/* Tests_SRS_UMOCKTYPES_C_01_052: [ If allocating a new string to hold the string representation fails, umocktypes_stringify_int shall return NULL. ]*/
+TEST_FUNCTION(when_allocating_memory_fails_umocktypes_stringify_int_fails)
+{
+    // arrange
+    int input = 127;
+    when_shall_malloc_fail = 1;
+
+    // act
+    char* result = umocktypes_stringify_int(&input);
+
+    // assert
+    ASSERT_IS_NULL(result);
+}
+
 /* umocktypes_are_equal_int */
 
 /* Tests_SRS_UMOCKTYPES_C_01_054: [ umocktypes_are_equal_int shall compare the 2 ints pointed to by left and right. ]*/
@@ -1075,6 +1145,20 @@ TEST_FUNCTION(umocktypes_stringify_unsignedint_with_NULL_fails)
 
     // act
     char* result = umocktypes_stringify_unsignedint(NULL);
+
+    // assert
+    ASSERT_IS_NULL(result);
+}
+
+/* Tests_SRS_UMOCKTYPES_C_01_064: [ If allocating a new string to hold the string representation fails, umocktypes_stringify_unsignedint shall return NULL. ]*/
+TEST_FUNCTION(when_allocating_memory_fails_umocktypes_stringify_unsignedint_fails)
+{
+    // arrange
+    unsigned int input = 127;
+    when_shall_malloc_fail = 1;
+
+    // act
+    char* result = umocktypes_stringify_unsignedint(&input);
 
     // assert
     ASSERT_IS_NULL(result);
@@ -1258,6 +1342,20 @@ TEST_FUNCTION(umocktypes_stringify_long_with_NULL_fails)
     ASSERT_IS_NULL(result);
 }
 
+/* Tests_SRS_UMOCKTYPES_C_01_076: [ If allocating a new string to hold the string representation fails, umocktypes_stringify_long shall return NULL. ]*/
+TEST_FUNCTION(when_allocating_memory_fails_umocktypes_stringify_long_fails)
+{
+    // arrange
+    long input = 127;
+    when_shall_malloc_fail = 1;
+
+    // act
+    char* result = umocktypes_stringify_long(&input);
+
+    // assert
+    ASSERT_IS_NULL(result);
+}
+
 /* umocktypes_are_equal_long */
 
 /* Tests_SRS_UMOCKTYPES_C_01_078: [ umocktypes_are_equal_long shall compare the 2 longs pointed to by left and right. ]*/
@@ -1415,6 +1513,20 @@ TEST_FUNCTION(umocktypes_stringify_unsignedlong_with_NULL_fails)
 
     // act
     char* result = umocktypes_stringify_unsignedlong(NULL);
+
+    // assert
+    ASSERT_IS_NULL(result);
+}
+
+/* Tests_SRS_UMOCKTYPES_C_01_088: [ If allocating a new string to hold the string representation fails, umocktypes_stringify_unsignedlong shall return NULL. ]*/
+TEST_FUNCTION(when_allocating_memory_fails_umocktypes_stringify_unsignedlong_fails)
+{
+    // arrange
+    unsigned long input = 127;
+    when_shall_malloc_fail = 1;
+
+    // act
+    char* result = umocktypes_stringify_unsignedlong(&input);
 
     // assert
     ASSERT_IS_NULL(result);
@@ -1598,6 +1710,20 @@ TEST_FUNCTION(umocktypes_stringify_longlong_with_NULL_fails)
     ASSERT_IS_NULL(result);
 }
 
+/* Tests_SRS_UMOCKTYPES_C_01_100: [ If allocating a new string to hold the string representation fails, umocktypes_stringify_longlong shall return NULL. ]*/
+TEST_FUNCTION(when_allocating_memory_fails_umocktypes_stringify_longlong_fails)
+{
+    // arrange
+    long long input = 127;
+    when_shall_malloc_fail = 1;
+
+    // act
+    char* result = umocktypes_stringify_longlong(&input);
+
+    // assert
+    ASSERT_IS_NULL(result);
+}
+
 /* umocktypes_are_equal_longlong */
 
 /* Tests_SRS_UMOCKTYPES_C_01_102: [ umocktypes_are_equal_longlong shall compare the 2 long longs pointed to by left and right. ]*/
@@ -1755,6 +1881,20 @@ TEST_FUNCTION(umocktypes_stringify_unsignedlonglong_with_NULL_fails)
 
     // act
     char* result = umocktypes_stringify_unsignedlonglong(NULL);
+
+    // assert
+    ASSERT_IS_NULL(result);
+}
+
+/* Tests_SRS_UMOCKTYPES_C_01_112: [ If allocating a new string to hold the string representation fails, umocktypes_stringify_unsignedlonglong shall return NULL. ]*/
+TEST_FUNCTION(when_allocating_memory_fails_umocktypes_stringify_unsignedlonglong_fails)
+{
+    // arrange
+    unsigned long long input = 127;
+    when_shall_malloc_fail = 1;
+
+    // act
+    char* result = umocktypes_stringify_unsignedlonglong(&input);
 
     // assert
     ASSERT_IS_NULL(result);
@@ -1944,6 +2084,20 @@ TEST_FUNCTION(umocktypes_stringify_float_with_NULL_fails)
     ASSERT_IS_NULL(result);
 }
 
+/* Tests_SRS_UMOCKTYPES_C_01_124: [ If allocating a new string to hold the string representation fails, umocktypes_stringify_float shall return NULL. ]*/
+TEST_FUNCTION(when_allocating_memory_fails_umocktypes_stringify_float_fails)
+{
+    // arrange
+    float input = 0.42f;
+    when_shall_malloc_fail = 1;
+
+    // act
+    char* result = umocktypes_stringify_float(&input);
+
+    // assert
+    ASSERT_IS_NULL(result);
+}
+
 /* umocktypes_are_equal_float */
 
 /* Tests_SRS_UMOCKTYPES_C_01_126: [ umocktypes_are_equal_float shall compare the 2 floats pointed to by left and right. ]*/
@@ -2123,6 +2277,20 @@ TEST_FUNCTION(umocktypes_stringify_double_with_NULL_fails)
 
     // act
     char* result = umocktypes_stringify_double(NULL);
+
+    // assert
+    ASSERT_IS_NULL(result);
+}
+
+/* Tests_SRS_UMOCKTYPES_C_01_136: [ If allocating a new string to hold the string representation fails, umocktypes_stringify_double shall return NULL. ]*/
+TEST_FUNCTION(when_allocating_memory_fails_umocktypes_stringify_double_fails)
+{
+    // arrange
+    double input = 0.42;
+    when_shall_malloc_fail = 1;
+
+    // act
+    char* result = umocktypes_stringify_double(&input);
 
     // assert
     ASSERT_IS_NULL(result);
@@ -2312,6 +2480,20 @@ TEST_FUNCTION(umocktypes_stringify_longdouble_with_NULL_fails)
     ASSERT_IS_NULL(result);
 }
 
+/* Tests_SRS_UMOCKTYPES_C_01_148: [ If allocating a new string to hold the string representation fails, umocktypes_stringify_longdouble shall return NULL. ]*/
+TEST_FUNCTION(when_allocating_memory_fails_umocktypes_stringify_longdouble_fails)
+{
+    // arrange
+    long double input = 0.42;
+    when_shall_malloc_fail = 1;
+
+    // act
+    char* result = umocktypes_stringify_longdouble(&input);
+
+    // assert
+    ASSERT_IS_NULL(result);
+}
+
 /* umocktypes_are_equal_longdouble */
 
 /* Tests_SRS_UMOCKTYPES_C_01_150: [ umocktypes_are_equal_longdouble shall compare the 2 long doubles pointed to by left and right. ]*/
@@ -2473,6 +2655,20 @@ TEST_FUNCTION(umocktypes_stringify_size_t_with_NULL_fails)
 
     // act
     char* result = umocktypes_stringify_size_t(NULL);
+
+    // assert
+    ASSERT_IS_NULL(result);
+}
+
+/* Tests_SRS_UMOCKTYPES_C_01_160: [ If allocating a new string to hold the string representation fails, umocktypes_stringify_size_t shall return NULL. ]*/
+TEST_FUNCTION(when_allocating_memory_fails_umocktypes_stringify_size_t_fails)
+{
+    // arrange
+    size_t input = 42;
+    when_shall_malloc_fail = 1;
+
+    // act
+    char* result = umocktypes_stringify_size_t(&input);
 
     // assert
     ASSERT_IS_NULL(result);
