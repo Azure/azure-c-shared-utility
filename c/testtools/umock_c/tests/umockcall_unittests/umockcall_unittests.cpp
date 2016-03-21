@@ -316,6 +316,7 @@ TEST_FUNCTION(umockcall_destroy_frees_call_data)
 {
     // arrange
     UMOCKCALL_HANDLE call = umockcall_create("test_function", (void*)0x4242, test_mock_call_data_free, test_mock_call_data_stringify, test_mock_call_data_are_equal);
+    reset_malloc_calls();
 
     // act
     umockcall_destroy(call);
@@ -323,6 +324,7 @@ TEST_FUNCTION(umockcall_destroy_frees_call_data)
     // assert
     ASSERT_ARE_EQUAL(size_t, 1, test_mock_call_data_free_call_count);
     ASSERT_ARE_EQUAL(void_ptr, (void*)0x4242, test_mock_call_data_free_calls[0].umockcall_data);
+    ASSERT_ARE_EQUAL(size_t, 2, free_call_count);
 }
 
 /* Tests_SRS_UMOCKCALL_01_005: [ If the umockcall argument is NULL then umockcall_destroy shall do nothing. ]*/
@@ -335,6 +337,7 @@ TEST_FUNCTION(umockcall_destroy_with_NULL_argument_does_nothing)
 
     // assert
     ASSERT_ARE_EQUAL(size_t, 0, test_mock_call_data_free_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, free_call_count);
 }
 
 /* umockcall_are_equal */
