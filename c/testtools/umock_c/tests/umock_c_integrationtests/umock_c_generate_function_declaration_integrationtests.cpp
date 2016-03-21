@@ -30,7 +30,7 @@ void test_generate_signature_no_args(void)
 
 TEST_MUTEX_HANDLE test_mutex_generate_funcs;
 
-BEGIN_TEST_SUITE(umock_c_generate_function_declaration_unittests)
+BEGIN_TEST_SUITE(umock_c_generate_function_declaration_integrationtests)
 
 TEST_SUITE_INITIALIZE(suite_init)
 {
@@ -92,4 +92,4 @@ TEST_FUNCTION(when_ENABLE_MOCKS_is_not_on_MOCKABLE_FUNCTION_generates_a_standard
     // no explicit assert
 }
 
-END_TEST_SUITE(umock_c_generate_function_declaration_unittests)
+END_TEST_SUITE(umock_c_generate_function_declaration_integrationtests)

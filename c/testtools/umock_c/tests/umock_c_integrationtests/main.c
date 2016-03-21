@@ -7,9 +7,9 @@ int main(void)
 {
     size_t failedTestCount = 0;
     size_t totalFailedTestCount = 0;
-    RUN_TEST_SUITE(umock_c_unittests, failedTestCount);
+    RUN_TEST_SUITE(umock_c_integrationtests, failedTestCount);
     totalFailedTestCount += failedTestCount;
-    RUN_TEST_SUITE(umock_c_generate_function_declaration_unittests, failedTestCount);
+    RUN_TEST_SUITE(umock_c_generate_function_declaration_integrationtests, failedTestCount);
     totalFailedTestCount += failedTestCount;
     return totalFailedTestCount;
 }

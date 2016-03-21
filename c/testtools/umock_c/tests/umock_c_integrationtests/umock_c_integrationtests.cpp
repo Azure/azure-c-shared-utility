@@ -106,7 +106,7 @@ void free_func_TEST_STRUCT_COPY_FAILS(TEST_STRUCT_COPY_FAILS* value)
 
 TEST_MUTEX_HANDLE test_mutex;
 
-BEGIN_TEST_SUITE(umock_c_unittests)
+BEGIN_TEST_SUITE(umock_c_integrationtests)
 
 TEST_SUITE_INITIALIZE(suite_init)
 {
@@ -1539,4 +1539,4 @@ TEST_FUNCTION(when_a_type_is_not_supported_an_error_is_triggered)
     ASSERT_ARE_EQUAL(int, 1, test_on_umock_c_error_call_count);
 }
 
-END_TEST_SUITE(umock_c_unittests)
+END_TEST_SUITE(umock_c_integrationtests)
