@@ -7,10 +7,6 @@
 #include "umocktypes.h"
 #include "umocktypes_charptr.h"
 
-/* TODO: 
-- test malloc failures
-*/
-
 typedef struct umocktypes_register_type_CALL_TAG
 {
     char* type;
@@ -72,6 +68,80 @@ void reset_umocktypes_register_type_calls(void)
     umocktypes_register_type_call_count = NULL;
 }
 
+extern "C"
+{
+    static size_t malloc_call_count;
+    static size_t calloc_call_count;
+    static size_t realloc_call_count;
+    static size_t free_call_count;
+
+    static size_t when_shall_malloc_fail;
+    static size_t when_shall_calloc_fail;
+    static size_t when_shall_realloc_fail;
+
+    void* mock_malloc(size_t size)
+    {
+        void* result;
+        malloc_call_count++;
+        if (malloc_call_count == when_shall_malloc_fail)
+        {
+            result = NULL;
+        }
+        else
+        {
+            result = malloc(size);
+        }
+        return result;
+    }
+
+    void* mock_calloc(size_t nmemb, size_t size)
+    {
+        void* result;
+        calloc_call_count++;
+        if (calloc_call_count == when_shall_calloc_fail)
+        {
+            result = NULL;
+        }
+        else
+        {
+            result = calloc(nmemb, size);
+        }
+        return result;
+    }
+
+    void* mock_realloc(void* ptr, size_t size)
+    {
+        void* result;
+        realloc_call_count++;
+        if (realloc_call_count == when_shall_realloc_fail)
+        {
+            result = NULL;
+        }
+        else
+        {
+            result = realloc(ptr, size);
+        }
+        return result;
+    }
+
+    void mock_free(void* ptr)
+    {
+        free_call_count++;
+        free(ptr);
+    }
+
+    void reset_malloc_calls(void)
+    {
+        malloc_call_count = 0;
+        when_shall_malloc_fail = 0;
+        calloc_call_count = 0;
+        when_shall_calloc_fail = 0;
+        realloc_call_count = 0;
+        when_shall_realloc_fail = 0;
+        free_call_count = 0;
+    }
+}
+
 TEST_MUTEX_HANDLE test_mutex;
 
 BEGIN_TEST_SUITE(umocktypes_charptr_unittests)
@@ -90,6 +160,8 @@ TEST_SUITE_CLEANUP(suite_cleanup)
 TEST_FUNCTION_INITIALIZE(test_function_init)
 {
     ASSERT_ARE_EQUAL(int, 0, TEST_MUTEX_ACQUIRE(test_mutex));
+
+    reset_malloc_calls();
 }
 
 TEST_FUNCTION_CLEANUP(test_function_cleanup)
@@ -140,6 +212,20 @@ TEST_FUNCTION(umocktypes_stringify_charptr_with_NULL_argument_returns_NULL)
 
     // act
     char* result = umocktypes_stringify_charptr(NULL);
+
+    // assert
+    ASSERT_IS_NULL(result);
+}
+
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_003: [ If allocating a new string to hold the string representation fails, umocktypes_stringify_charptr shall return NULL. ]*/
+TEST_FUNCTION(when_allocating_memory_fails_then_umocktypes_stringify_charptr_fails)
+{
+    // arrange
+    char* input = "test";
+    when_shall_malloc_fail = 1;
+
+    // act
+    char* result = umocktypes_stringify_charptr((const char**)&input);
 
     // assert
     ASSERT_IS_NULL(result);
@@ -271,7 +357,7 @@ TEST_FUNCTION(umocktypes_copy_charptr_copies_an_empty_string)
 {
     // arrange
     const char* source = "";
-    char* destination = "a";
+    char* destination;
 
     // act
     int result = umocktypes_copy_charptr(&destination, &source);
@@ -293,7 +379,7 @@ TEST_FUNCTION(umocktypes_copy_charptr_copies_a_string)
 {
     // arrange
     const char* source = "test42";
-    char* destination = "a";
+    char* destination;
 
     // act
     int result = umocktypes_copy_charptr(&destination, &source);
@@ -323,10 +409,26 @@ TEST_FUNCTION(umocktypes_copy_charptr_with_NULL_destination_fails)
 TEST_FUNCTION(umocktypes_copy_charptr_with_NULL_source_fails)
 {
     // arrange
-    char* destination = "a";
+    char* destination;
 
     // act
     int result = umocktypes_copy_charptr(&destination, NULL);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+}
+
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_036: [ If allocating the memory for the new string fails, umocktypes_copy_charptr shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(when_allocating_memory_fails_umocktypes_copy_charptr_fails)
+{
+    // arrange
+    char* destination;
+    const char* source = "b";
+
+    when_shall_malloc_fail = 1;
+
+    // act
+    int result = umocktypes_copy_charptr(&destination, &source);
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
@@ -339,7 +441,7 @@ TEST_FUNCTION(umocktypes_free_charptr_frees_the_string)
 {
     // arrange
     const char* source = "test42";
-    char* destination = "a";
+    char* destination;
 
     (void)umocktypes_copy_charptr(&destination, &source);
 
@@ -347,7 +449,7 @@ TEST_FUNCTION(umocktypes_free_charptr_frees_the_string)
     umocktypes_free_charptr(&destination);
 
     // assert
-    // no explicit assert
+    ASSERT_ARE_EQUAL(size_t, 1, free_call_count);
 }
 
 /* Tests_SRS_UMOCKTYPES_CHARPTR_01_018: [ If value is NULL, umocktypes_free_charptr shall do nothing. ] */
@@ -359,7 +461,7 @@ TEST_FUNCTION(umocktypes_free_charptr_with_NULL_does_nothing)
     umocktypes_free_charptr(NULL);
 
     // assert
-    // no explicit assert
+    ASSERT_ARE_EQUAL(size_t, 0, free_call_count);
 }
 
 /* umocktypes_stringify_const_charptr */
@@ -403,6 +505,20 @@ TEST_FUNCTION(umocktypes_stringify_const_charptr_with_NULL_argument_returns_NULL
 
     // act
     char* result = umocktypes_stringify_const_charptr(NULL);
+
+    // assert
+    ASSERT_IS_NULL(result);
+}
+
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_021: [ If allocating a new string to hold the string representation fails, umocktypes_stringify_const_charptr shall return NULL. ]*/
+TEST_FUNCTION(when_allocating_memory_fails_then_umocktypes_stringify_const_charptr_fails)
+{
+    // arrange
+    const char* input = "test";
+    when_shall_malloc_fail = 1;
+
+    // act
+    char* result = umocktypes_stringify_const_charptr(&input);
 
     // assert
     ASSERT_IS_NULL(result);
@@ -534,7 +650,7 @@ TEST_FUNCTION(umocktypes_copy_const_charptr_copies_an_empty_string)
 {
     // arrange
     const char* source = "";
-    char* destination = "a";
+    const char* destination;
 
     // act
     int result = umocktypes_copy_const_charptr(&destination, &source);
@@ -544,7 +660,7 @@ TEST_FUNCTION(umocktypes_copy_const_charptr_copies_an_empty_string)
     ASSERT_ARE_EQUAL(char_ptr, "", destination);
 
     // cleanup
-    free(destination);
+    free((void*)destination);
 }
 
 /* Tests_SRS_UMOCKTYPES_CHARPTR_01_028: [ umocktypes_copy_const_charptr shall allocate a new sequence of chars by using malloc. ]*/
@@ -556,7 +672,7 @@ TEST_FUNCTION(umocktypes_copy_const_charptr_copies_a_string)
 {
     // arrange
     const char* source = "test42";
-    char* destination = "a";
+    const char* destination;
 
     // act
     int result = umocktypes_copy_const_charptr(&destination, &source);
@@ -566,7 +682,7 @@ TEST_FUNCTION(umocktypes_copy_const_charptr_copies_a_string)
     ASSERT_ARE_EQUAL(char_ptr, "test42", destination);
 
     // cleanup
-    free(destination);
+    free((void*)destination);
 }
 
 /* Tests_SRS_UMOCKTYPES_CHARPTR_01_033: [ If source or destination are NULL, umocktypes_copy_const_charptr shall return a non-zero value. ]*/
@@ -586,10 +702,26 @@ TEST_FUNCTION(umocktypes_copy_const_charptr_with_NULL_destination_fails)
 TEST_FUNCTION(umocktypes_copy_const_charptr_with_NULL_source_fails)
 {
     // arrange
-    char* destination = "a";
+    const char* destination;
 
     // act
     int result = umocktypes_copy_const_charptr(&destination, NULL);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+}
+
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_037: [ If allocating the memory for the new string fails, umocktypes_copy_const_charptr shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(when_allocating_memory_fails_umocktypes_copy_const_charptr_fails)
+{
+    // arrange
+    const char* destination;
+    const char* source = "b";
+
+    when_shall_malloc_fail = 1;
+
+    // act
+    int result = umocktypes_copy_const_charptr(&destination, &source);
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
@@ -602,7 +734,7 @@ TEST_FUNCTION(umocktypes_free_const_charptr_frees_the_string)
 {
     // arrange
     const char* source = "test42";
-    char* destination = "a";
+    const char* destination;
 
     (void)umocktypes_copy_const_charptr(&destination, &source);
 
@@ -610,7 +742,7 @@ TEST_FUNCTION(umocktypes_free_const_charptr_frees_the_string)
     umocktypes_free_const_charptr(&destination);
 
     // assert
-    // no explicit assert
+    ASSERT_ARE_EQUAL(size_t, 1, free_call_count);
 }
 
 /* Tests_SRS_UMOCKTYPES_CHARPTR_01_035: [ If value is NULL, umocktypes_free_const_charptr shall do nothing. ] */
@@ -622,7 +754,7 @@ TEST_FUNCTION(umocktypes_free_const_charptr_with_NULL_does_nothing)
     umocktypes_free_const_charptr(NULL);
 
     // assert
-    // no explicit assert
+    ASSERT_ARE_EQUAL(size_t, 0, free_call_count);
 }
 
 /* umocktypes_charptr_register_types */

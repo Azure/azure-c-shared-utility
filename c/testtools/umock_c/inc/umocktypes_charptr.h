@@ -17,8 +17,8 @@ extern "C" {
 
     extern char* umocktypes_stringify_const_charptr(const char** value);
     extern int umocktypes_are_equal_const_charptr(const char** left, const char** right);
-    extern int umocktypes_copy_const_charptr(char** destination, const char** source);
-    extern void umocktypes_free_const_charptr(char** value);
+    extern int umocktypes_copy_const_charptr(const char** destination, const char** source);
+    extern void umocktypes_free_const_charptr(const char** value);
 
 #ifdef __cplusplus
 }

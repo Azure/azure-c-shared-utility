@@ -6,13 +6,6 @@
 #include "testrunnerswitcher.h"
 #include "umockcall.h"
 
-/* TODO: 
-- test malloc failures
-*/
-
-/* Not tested requirements */
-/* SRS_UMOCKCALL_01_002: [ If allocating memory for the umock call instance fails, umockcall_create shall return NULL. ] */
-
 typedef struct test_mock_call_data_free_CALL_TAG
 {
     void* umockcall_data;
@@ -143,17 +136,17 @@ extern "C"
         free_call_count++;
         free(ptr);
     }
-}
 
-void reset_malloc_calls(void)
-{
-    malloc_call_count = 0;
-    when_shall_malloc_fail = 0;
-    calloc_call_count = 0;
-    when_shall_calloc_fail = 0;
-    realloc_call_count = 0;
-    when_shall_realloc_fail = 0;
-    free_call_count = 0;
+    void reset_malloc_calls(void)
+    {
+        malloc_call_count = 0;
+        when_shall_malloc_fail = 0;
+        calloc_call_count = 0;
+        when_shall_calloc_fail = 0;
+        realloc_call_count = 0;
+        when_shall_realloc_fail = 0;
+        free_call_count = 0;
+    }
 }
 
 TEST_MUTEX_HANDLE test_mutex;

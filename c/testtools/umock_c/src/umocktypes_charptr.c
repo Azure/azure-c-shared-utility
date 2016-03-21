@@ -164,7 +164,7 @@ int umocktypes_are_equal_const_charptr(const char** left, const char** right)
     return result;
 }
 
-int umocktypes_copy_const_charptr(char** destination, const char** source)
+int umocktypes_copy_const_charptr(const char** destination, const char** source)
 {
     int result;
 
@@ -188,7 +188,7 @@ int umocktypes_copy_const_charptr(char** destination, const char** source)
         else
         {
             /* Codes_SRS_UMOCKTYPES_CHARPTR_01_030: [ umocktypes_copy_const_charptr shall copy the string pointed to by source to the newly allocated memory. ]*/
-            (void)memcpy(*destination, *source, source_length + 1);
+            (void)memcpy((void*)*destination, *source, source_length + 1);
             /* Codes_SRS_UMOCKTYPES_CHARPTR_01_032: [ On success umocktypes_copy_const_charptr shall return 0. ]*/
             result = 0;
         }
@@ -197,13 +197,13 @@ int umocktypes_copy_const_charptr(char** destination, const char** source)
     return result;
 }
 
-void umocktypes_free_const_charptr(char** value)
+void umocktypes_free_const_charptr(const char** value)
 {
     /* Codes_SRS_UMOCKTYPES_CHARPTR_01_035: [ If value is NULL, umocktypes_free_const_charptr shall do nothing. ] */
     if (value != NULL)
     {
         /* Codes_SRS_UMOCKTYPES_CHARPTR_01_034: [ umocktypes_free_const_charptr shall free the string pointed to by value. ]*/
-        free(*value);
+        free((void*)*value);
     }
 }
 
