@@ -5,11 +5,56 @@
 #include <stdlib.h>
 #include "testrunnerswitcher.h"
 #include "umockcallrecorder.h"
+#include "umockcall.h"
 
 /*
 TODO:
 - add tests
 */
+
+typedef struct umockcall_are_equal_CALL_TAG
+{
+    UMOCKCALL_HANDLE left;
+    UMOCKCALL_HANDLE right;
+} umockcall_are_equal_CALL;
+
+static umockcall_are_equal_CALL* umockcall_are_equal_calls;
+static size_t umockcall_are_equal_call_count;
+static int umockcall_are_equal_call_result;
+
+int umockcall_are_equal(UMOCKCALL_HANDLE left, UMOCKCALL_HANDLE right)
+{
+    umockcall_are_equal_CALL* new_calls = (umockcall_are_equal_CALL*)realloc(umockcall_are_equal_calls, sizeof(umockcall_are_equal_CALL) * (umockcall_are_equal_call_count + 1));
+    if (new_calls != NULL)
+    {
+        umockcall_are_equal_calls = new_calls;
+        umockcall_are_equal_calls[umockcall_are_equal_call_count].left = left;
+        umockcall_are_equal_calls[umockcall_are_equal_call_count].right = right;
+        umockcall_are_equal_call_count++;
+    }
+
+    return umockcall_are_equal_call_result;
+}
+
+void umockcall_destroy(UMOCKCALL_HANDLE umockcall)
+{
+}
+
+char* umockcall_stringify(UMOCKCALL_HANDLE umockcall)
+{
+    return NULL;
+}
+
+void reset_umockcall_are_equal_calls(void)
+{
+    if (umockcall_are_equal_calls != NULL)
+    {
+        free(umockcall_are_equal_calls);
+        umockcall_are_equal_calls = NULL;
+    }
+
+    umockcall_are_equal_call_count = 0;
+}
 
 extern "C"
 {
@@ -104,6 +149,7 @@ TEST_FUNCTION_INITIALIZE(test_function_init)
 {
     ASSERT_ARE_EQUAL(int, 0, TEST_MUTEX_ACQUIRE(test_mutex));
 
+    reset_umockcall_are_equal_calls();
     reset_malloc_calls();
 }
 
@@ -113,5 +159,17 @@ TEST_FUNCTION_CLEANUP(test_function_cleanup)
 }
 
 /* umockcallrecorder_create */
+
+/* Tests_SRS_UMOCKCALLRECORDER_01_001: [ umockcallrecorder_create shall create a new instance of a call recorder and return a non-NULL handle to it on success. ]*/
+TEST_FUNCTION(umockcallrecorder_create_succeeds)
+{
+    // arrange
+
+    // act
+    UMOCKCALLRECORDER_HANDLE call_recorder = umockcallrecorder_create();
+
+    // assert
+    ASSERT_IS_NOT_NULL(call_recorder);
+}
 
 END_TEST_SUITE(umockcallrecorder_unittests)
