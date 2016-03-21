@@ -11,6 +11,7 @@ umock_c_integrationtests.cpp
 umock_c_generate_function_declaration_integrationtests.cpp
 ../../src/umock_c.c
 ../../src/umockcall.c
+../../src/umockcallrecorder.c
 ../../src/umocktypes.c
 ../../src/umocktypes_charptr.c
 ../../src/umocktypes_c.c

@@ -91,11 +91,11 @@ extern "C" {
     umocktypes_register_type(TOSTRING(value_type), (UMOCKTYPE_STRINGIFY_FUNC)stringify_func, (UMOCKTYPE_ARE_EQUAL_FUNC)are_equal_func, (UMOCKTYPE_COPY_FUNC)copy_func, (UMOCKTYPE_FREE_FUNC)free_func); \
 }
 
-    extern int umock_c_init(ON_UMOCK_C_ERROR on_umock_c_error);
-    extern void umock_c_deinit(void);
-    extern int umock_c_reset_all_calls(void);
-    extern const char* umock_c_get_actual_calls(void);
-    extern const char* umock_c_get_expected_calls(void);
+extern int umock_c_init(ON_UMOCK_C_ERROR on_umock_c_error);
+extern void umock_c_deinit(void);
+extern void umock_c_reset_all_calls(void);
+extern const char* umock_c_get_actual_calls(void);
+extern const char* umock_c_get_expected_calls(void);
 
 #include "umock_c_internal.h"
 

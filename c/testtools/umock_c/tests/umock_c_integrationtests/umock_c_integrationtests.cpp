@@ -139,7 +139,7 @@ TEST_FUNCTION_INITIALIZE(test_function_init)
 
 TEST_FUNCTION_CLEANUP(test_function_cleanup)
 {
-    ASSERT_ARE_EQUAL(int, 0, umock_c_reset_all_calls());
+    umock_c_reset_all_calls();
 
     REGISTER_GLOBAL_MOCK_HOOK(test_dependency_no_args, NULL);
 
