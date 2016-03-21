@@ -5,6 +5,8 @@ cmake_minimum_required(VERSION 2.8.11)
 
 if (DEFINED AZURE_C_SHARED_UTILITY_BUILT)
     RETURN()
+else()
+    SET(AZURE_C_SHARED_UTILITY_BUILT ON)
 endif()
 
 project(azure_c_shared_utility)
@@ -142,6 +144,23 @@ function(windows_unittests_add_exe whatIsBuilding)
     add_test(NAME ${whatIsBuilding} COMMAND ${whatIsBuilding}_exe)
 endfunction()
 
+function(linux_unittests_add_exe whatIsBuilding)
+    add_executable(${whatIsBuilding}_exe
+        ${${whatIsBuilding}_cpp_files} 
+        ${${whatIsBuilding}_h_files} 
+        ${${whatIsBuilding}_c_files}
+        ${CMAKE_CURRENT_LIST_DIR}/main.c
+    )
+    set_target_properties(${whatIsBuilding}_exe
+               PROPERTIES
+               FOLDER "UnitTests")
+                
+    target_compile_definitions(${whatIsBuilding}_exe PUBLIC -DUSE_CTEST)
+    target_include_directories(${whatIsBuilding}_exe PUBLIC ${sharedutil_include_directories})
+    target_link_libraries(${whatIsBuilding}_exe micromock_ctest umock_c ctest ${ARGN})
+    add_test(NAME ${whatIsBuilding} COMMAND ${whatIsBuilding}_exe)
+endfunction()
+
 function(build_test_artifacts whatIsBuilding use_gballoc)
     
     #the first argument is what is building
@@ -180,7 +199,7 @@ function(build_test_artifacts whatIsBuilding use_gballoc)
             (("${whatIsBuilding}" MATCHES ".*unittests.*") AND ${skip_unittests})
         )
         else()
-            windows_unittests_add_exe(${whatIsBuilding} ${ARGN})
+            linux_unittests_add_exe(${whatIsBuilding} ${ARGN})
         endif()
     endif()
 endfunction(build_test_artifacts)
