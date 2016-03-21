@@ -5,6 +5,7 @@
 cmake_minimum_required(VERSION 2.8.11)
 
 add_subdirectory(umockcall_unittests)
+add_subdirectory(umockcallrecorder_unittests)
 add_subdirectory(umock_c_integrationtests)
 add_subdirectory(umock_c_without_init_unittests)
 add_subdirectory(umocktypename_unittests)
