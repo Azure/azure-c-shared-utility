@@ -12,6 +12,10 @@ TODO:
 - add tests
 */
 
+static UMOCKCALL_HANDLE test_expected_umockcall_1 = (UMOCKCALL_HANDLE)0x4242;
+static UMOCKCALL_HANDLE test_expected_umockcall_2 = (UMOCKCALL_HANDLE)0x4243;
+static UMOCKCALL_HANDLE test_actual_umockcall_1 = (UMOCKCALL_HANDLE)0x4244;
+
 typedef struct umockcall_are_equal_CALL_TAG
 {
     UMOCKCALL_HANDLE left;
@@ -21,6 +25,15 @@ typedef struct umockcall_are_equal_CALL_TAG
 static umockcall_are_equal_CALL* umockcall_are_equal_calls;
 static size_t umockcall_are_equal_call_count;
 static int umockcall_are_equal_call_result;
+
+typedef struct umockcall_destroy_CALL_TAG
+{
+    UMOCKCALL_HANDLE umockcall;
+} umockcall_destroy_CALL;
+
+static umockcall_destroy_CALL* umockcall_destroy_calls;
+static size_t umockcall_destroy_call_count;
+static int umockcall_destroy_call_result;
 
 int umockcall_are_equal(UMOCKCALL_HANDLE left, UMOCKCALL_HANDLE right)
 {
@@ -38,6 +51,13 @@ int umockcall_are_equal(UMOCKCALL_HANDLE left, UMOCKCALL_HANDLE right)
 
 void umockcall_destroy(UMOCKCALL_HANDLE umockcall)
 {
+    umockcall_destroy_CALL* new_calls = (umockcall_destroy_CALL*)realloc(umockcall_destroy_calls, sizeof(umockcall_destroy_CALL) * (umockcall_destroy_call_count + 1));
+    if (new_calls != NULL)
+    {
+        umockcall_destroy_calls = new_calls;
+        umockcall_destroy_calls[umockcall_destroy_call_count].umockcall = umockcall;
+        umockcall_destroy_call_count++;
+    }
 }
 
 char* umockcall_stringify(UMOCKCALL_HANDLE umockcall)
@@ -54,6 +74,17 @@ void reset_umockcall_are_equal_calls(void)
     }
 
     umockcall_are_equal_call_count = 0;
+}
+
+void reset_umockcall_destroy_calls(void)
+{
+    if (umockcall_destroy_calls != NULL)
+    {
+        free(umockcall_destroy_calls);
+        umockcall_destroy_calls = NULL;
+    }
+
+    umockcall_destroy_call_count = 0;
 }
 
 extern "C"
@@ -150,6 +181,7 @@ TEST_FUNCTION_INITIALIZE(test_function_init)
     ASSERT_ARE_EQUAL(int, 0, TEST_MUTEX_ACQUIRE(test_mutex));
 
     reset_umockcall_are_equal_calls();
+    reset_umockcall_destroy_calls();
     reset_malloc_calls();
 }
 
@@ -183,6 +215,85 @@ TEST_FUNCTION(when_allocating_memory_fails_then_umockcallrecorder_create_fails)
 
     // assert
     ASSERT_IS_NULL(call_recorder);
+}
+
+/* umockcallrecorder_destroy */
+
+/* Tests_SRS_UMOCKCALLRECORDER_01_003: [ umockcallrecorder_destroy shall free the resources associated with a the call recorder identified by the umock_call_recorder argument. ]*/
+TEST_FUNCTION(umockcallrecorder_destroy_frees_the_call_recorder_resources)
+{
+    // arrange
+    UMOCKCALLRECORDER_HANDLE call_recorder = umockcallrecorder_create();
+
+    // act
+    umockcallrecorder_destroy(call_recorder);
+
+    // assert
+    ASSERT_IS_NOT_NULL(call_recorder);
+    ASSERT_ARE_EQUAL(size_t, 3, free_call_count);
+}
+
+/* Tests_SRS_UMOCKCALLRECORDER_01_004: [ If umock_call_recorder is NULL, umockcallrecorder_destroy shall do nothing. ]*/
+TEST_FUNCTION(umockcallrecorder_destroy_with_NULL_does_nothing)
+{
+    // arrange
+
+    // act
+    umockcallrecorder_destroy(NULL);
+
+    // assert
+    ASSERT_ARE_EQUAL(size_t, 0, free_call_count);
+}
+
+/* Tests_SRS_UMOCKCALLRECORDER_01_003: [ umockcallrecorder_destroy shall free the resources associated with a the call recorder identified by the umock_call_recorder argument. ]*/
+TEST_FUNCTION(umockcallrecorder_destroy_with_one_expected_call_frees_the_call_recorder_resources)
+{
+    // arrange
+    UMOCKCALLRECORDER_HANDLE call_recorder = umockcallrecorder_create();
+    UMOCKCALL_HANDLE matched_call;
+
+    umockcallrecorder_add_expected_call(call_recorder, test_expected_umockcall_1);
+    umockcallrecorder_add_expected_call(call_recorder, test_expected_umockcall_2);
+    umockcallrecorder_add_actual_call(call_recorder, test_actual_umockcall_1, &matched_call);
+
+    // act
+    umockcallrecorder_destroy(call_recorder);
+
+    // assert
+    ASSERT_IS_NOT_NULL(call_recorder);
+    /* 5 = 1 for actual calls, 1 for expected calls, 2 for the strings and one for the call recorder structure */
+    ASSERT_ARE_EQUAL(size_t, 5, free_call_count);
+    ASSERT_ARE_EQUAL(size_t, 3, umockcall_destroy_call_count);
+    ASSERT_ARE_EQUAL(void_ptr, (void*)test_expected_umockcall_1, umockcall_destroy_calls[0].umockcall);
+    ASSERT_ARE_EQUAL(void_ptr, (void*)test_expected_umockcall_2, umockcall_destroy_calls[1].umockcall);
+    ASSERT_ARE_EQUAL(void_ptr, (void*)test_actual_umockcall_1, umockcall_destroy_calls[2].umockcall);
+}
+
+/* umockcallrecorder_reset_all_calls */
+
+/* Tests_SRS_UMOCKCALLRECORDER_01_005: [ umockcallrecorder_reset_all_calls shall free all the expected and actual calls for the call recorder identified by umock_call_recorder. ]*/
+TEST_FUNCTION(umockcallrecorder_reset_all_calls_frees_all_existing_expected_and_actual_calls)
+{
+    // arrange
+    UMOCKCALLRECORDER_HANDLE call_recorder = umockcallrecorder_create();
+    UMOCKCALL_HANDLE matched_call;
+
+    umockcallrecorder_add_expected_call(call_recorder, test_expected_umockcall_1);
+    umockcallrecorder_add_expected_call(call_recorder, test_expected_umockcall_2);
+    umockcallrecorder_add_actual_call(call_recorder, test_actual_umockcall_1, &matched_call);
+
+    // act
+    umockcallrecorder_reset_all_calls(call_recorder);
+
+    // assert
+    ASSERT_ARE_EQUAL(size_t, 2, free_call_count);
+    ASSERT_ARE_EQUAL(size_t, 3, umockcall_destroy_call_count);
+    ASSERT_ARE_EQUAL(void_ptr, (void*)test_expected_umockcall_1, umockcall_destroy_calls[0].umockcall);
+    ASSERT_ARE_EQUAL(void_ptr, (void*)test_expected_umockcall_2, umockcall_destroy_calls[1].umockcall);
+    ASSERT_ARE_EQUAL(void_ptr, (void*)test_actual_umockcall_1, umockcall_destroy_calls[2].umockcall);
+
+    // cleanup
+    umockcallrecorder_destroy(call_recorder);
 }
 
 END_TEST_SUITE(umockcallrecorder_unittests)
