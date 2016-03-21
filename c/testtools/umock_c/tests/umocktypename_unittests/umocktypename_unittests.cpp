@@ -6,10 +6,6 @@
 #include "testrunnerswitcher.h"
 #include "umocktypename.h"
 
-/* TODO:
-- test failures of malloc
-*/
-
 extern "C"
 {
     static size_t malloc_call_count;

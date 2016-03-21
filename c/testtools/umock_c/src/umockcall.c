@@ -137,6 +137,7 @@ char* umockcall_stringify(UMOCKCALL_HANDLE umockcall)
         char* stringified_args = umockcall->umockcall_data_stringify(umockcall->umockcall_data);
         if (stringified_args == NULL)
         {
+            /* Codes_SRS_UMOCKCALL_01_020: [ If the underlying umockcall_data_stringify call fails, umockcall_stringify shall fail and return NULL. ]*/
             result = NULL;
         }
         else
