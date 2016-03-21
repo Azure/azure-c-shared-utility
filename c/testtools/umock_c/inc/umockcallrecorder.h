@@ -4,10 +4,25 @@
 #ifndef UMOCKCALLRECORDER_H
 #define UMOCKCALLRECORDER_H
 
-    extern int umockcallrecorder_init(void);
-    extern void umockcallrecorder_deinit(void);
-    extern int umockcallrecorder_reset_all_calls(void);
-    extern const char* umockcallrecorder_get_actual_calls(void);
-    extern const char* umockcallrecorder_get_expected_calls(void);
+#include "umockcall.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+    typedef struct UMOCKCALLRECORDER_TAG* UMOCKCALLRECORDER_HANDLE;
+
+    extern UMOCKCALLRECORDER_HANDLE umockcallrecorder_create(void);
+    extern void umockcallrecorder_destroy(UMOCKCALLRECORDER_HANDLE umock_call_recorder);
+    extern int umockcallrecorder_reset_all_calls(UMOCKCALLRECORDER_HANDLE umock_call_recorder);
+    extern int umockcallrecorder_add_expected_call(UMOCKCALLRECORDER_HANDLE umock_call_recorder, UMOCKCALL_HANDLE mock_call);
+    extern int umockcallrecorder_add_actual_call(UMOCKCALLRECORDER_HANDLE umock_call_recorder, UMOCKCALL_HANDLE mock_call, UMOCKCALL_HANDLE* matched_call);
+    extern const char* umockcallrecorder_get_actual_calls(UMOCKCALLRECORDER_HANDLE umock_call_recorder);
+    extern const char* umockcallrecorder_get_expected_calls(UMOCKCALLRECORDER_HANDLE umock_call_recorder);
+    extern UMOCKCALL_HANDLE umockcallrecorder_get_last_expected_call(UMOCKCALLRECORDER_HANDLE umock_call_recorder);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* UMOCKCALLRECORDER_H */

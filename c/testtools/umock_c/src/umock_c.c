@@ -19,14 +19,9 @@ typedef enum UMOCK_C_STATE_TAG
     UMOCK_C_STATE_INITIALIZED
 } UMOCK_C_STATE;
 
-static size_t expected_call_count;
-static UMOCKCALL_HANDLE* expected_calls;
-static size_t actual_call_count;
-static UMOCKCALL_HANDLE* actual_calls;
-static char* expected_calls_string;
-static char* actual_calls_string;
 static ON_UMOCK_C_ERROR on_umock_c_error_function;
 static UMOCK_C_STATE umock_c_state = UMOCK_C_STATE_NOT_INITIALIZED;
+static UMOCKCALLRECORDER_HANDLE call_recorder = NULL;
 
 int umock_c_init(ON_UMOCK_C_ERROR on_umock_c_error)
 {
@@ -54,13 +49,13 @@ int umock_c_init(ON_UMOCK_C_ERROR on_umock_c_error)
         /* Codes_SRS_UMOCK_C_01_040 : [**long double**] */
         /* Codes_SRS_UMOCK_C_01_041 : [**size_t**] */
         if ((umocktypes_init() != 0) ||
-            (umocktypes_c_register_types() != 0) ||
-            (umockcallrecorder_init() !=0))
+            (umocktypes_c_register_types() != 0))
         {
             result = __LINE__;
         }
         else
         {
+            call_recorder = umockcallrecorder_create();
             on_umock_c_error_function = on_umock_c_error;
             umock_c_state = UMOCK_C_STATE_INITIALIZED;
             result = 0;
@@ -75,12 +70,7 @@ void umock_c_deinit(void)
     /* Codes_SRS_UMOCK_C_01_012: [If umock_c was not initialized, umock_c_deinit shall do nothing.] */
     if (umock_c_state == UMOCK_C_STATE_INITIALIZED)
     {
-        (void)umock_c_reset_all_calls();
-
-        free(actual_calls_string);
-        actual_calls_string = NULL;
-        free(expected_calls_string);
-        expected_calls_string = NULL;
+        umockcallrecorder_destroy(call_recorder);
         umocktypes_deinit();
 
         umock_c_state = UMOCK_C_STATE_NOT_INITIALIZED;
@@ -99,11 +89,43 @@ void umock_c_reset_all_calls(void)
 {
     if (umock_c_state == UMOCK_C_STATE_INITIALIZED)
     {
-        if (umockcallrecorder_reset_all_calls() != 0)
+        if (umockcallrecorder_reset_all_calls(call_recorder) != 0)
         {
             umock_c_indicate_error(UMOCK_C_ERROR);
         }
     }
+}
+
+int umock_c_add_expected_call(UMOCKCALL_HANDLE mock_call)
+{
+    int result;
+
+    if (umock_c_state != UMOCK_C_STATE_INITIALIZED)
+    {
+        result = __LINE__;
+    }
+    else
+    {
+        result = umockcallrecorder_add_expected_call(call_recorder, mock_call);
+    }
+
+    return result;
+}
+
+int umock_c_add_actual_call(UMOCKCALL_HANDLE mock_call, UMOCKCALL_HANDLE* matched_call)
+{
+    int result;
+
+    if (umock_c_state != UMOCK_C_STATE_INITIALIZED)
+    {
+        result = __LINE__;
+    }
+    else
+    {
+        result = umockcallrecorder_add_actual_call(call_recorder, mock_call, matched_call);
+    }
+
+    return result;
 }
 
 const char* umock_c_get_expected_calls(void)
@@ -116,7 +138,7 @@ const char* umock_c_get_expected_calls(void)
     }
     else
     {
-        result = umockcallrecorder_get_expected_calls();
+        result = umockcallrecorder_get_expected_calls(call_recorder);
     }
 
     return result;
@@ -132,7 +154,23 @@ const char* umock_c_get_actual_calls(void)
     }
     else
     {
-        result = umockcallrecorder_get_actual_calls();
+        result = umockcallrecorder_get_actual_calls(call_recorder);
+    }
+
+    return result;
+}
+
+UMOCKCALL_HANDLE umock_c_get_last_expected_call(void)
+{
+    UMOCKCALL_HANDLE result;
+
+    if (umock_c_state != UMOCK_C_STATE_INITIALIZED)
+    {
+        result = NULL;
+    }
+    else
+    {
+        result = umockcallrecorder_get_last_expected_call(call_recorder);
     }
 
     return result;

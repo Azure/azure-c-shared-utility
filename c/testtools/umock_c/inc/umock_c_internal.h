@@ -28,10 +28,10 @@ extern "C" {
 #define WITH_MOCK 0
 #endif
 
-extern int umockcallrecorder_add_expected_call(UMOCKCALL_HANDLE mock_call);
-extern int umockcallrecorder_add_actual_call(UMOCKCALL_HANDLE mock_call, UMOCKCALL_HANDLE* matched_call);
-extern UMOCKCALL_HANDLE umockcallrecorder_get_last_expected_call(void);
 extern void umock_c_indicate_error(UMOCK_C_ERROR_CODE error_code);
+extern UMOCKCALL_HANDLE umock_c_get_last_expected_call(void);
+extern int umock_c_add_expected_call(UMOCKCALL_HANDLE mock_call);
+extern int umock_c_add_actual_call(UMOCKCALL_HANDLE mock_call, UMOCKCALL_HANDLE* matched_call);
 
 #define EXPAND(A) A
 
@@ -191,7 +191,7 @@ typedef struct ARG_BUFFER_TAG
 #define IMPLEMENT_IGNORE_ALL_ARGUMENTS_FUNCTION(return_type, name, ...) \
     static C2(mock_call_modifier_,name) C2(ignore_all_arguments_func_,name)(void) \
     { \
-        C2(mock_call_, name)* mock_call_data = (C2(mock_call_, name)*)umockcall_get_call_data(umockcallrecorder_get_last_expected_call()); \
+        C2(mock_call_, name)* mock_call_data = (C2(mock_call_, name)*)umockcall_get_call_data(umock_c_get_last_expected_call()); \
         DECLARE_MOCK_CALL_MODIFIER(name) \
         IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2(MARK_ARG_AS_IGNORED, __VA_ARGS__),) \
         return mock_call_modifier; \
@@ -201,7 +201,7 @@ typedef struct ARG_BUFFER_TAG
 #define IMPLEMENT_VALIDATE_ALL_ARGUMENTS_FUNCTION(return_type, name, ...) \
     static C2(mock_call_modifier_,name) C2(validate_all_arguments_func_,name)(void) \
     { \
-        C2(mock_call_, name)* mock_call_data = (C2(mock_call_, name)*)umockcall_get_call_data(umockcallrecorder_get_last_expected_call()); \
+        C2(mock_call_, name)* mock_call_data = (C2(mock_call_, name)*)umockcall_get_call_data(umock_c_get_last_expected_call()); \
         DECLARE_MOCK_CALL_MODIFIER(name) \
         IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2(MARK_ARG_AS_NOT_IGNORED, __VA_ARGS__),) \
         return mock_call_modifier; \
@@ -212,7 +212,7 @@ typedef struct ARG_BUFFER_TAG
     static C2(mock_call_modifier_,name) C4(ignore_argument_func_,name,_,arg_name)(void) \
     { \
         DECLARE_MOCK_CALL_MODIFIER(name) \
-        C2(mock_call_, name)* mock_call_data = (C2(mock_call_, name)*)umockcall_get_call_data(umockcallrecorder_get_last_expected_call()); \
+        C2(mock_call_, name)* mock_call_data = (C2(mock_call_, name)*)umockcall_get_call_data(umock_c_get_last_expected_call()); \
         if (mock_call_data != NULL) \
         { \
             C2(mock_call_data->is_ignored_,arg_name) = 1; \
@@ -225,7 +225,7 @@ typedef struct ARG_BUFFER_TAG
     static C2(mock_call_modifier_,name) C4(validate_argument_func_,name,_,arg_name)(void) \
     { \
         DECLARE_MOCK_CALL_MODIFIER(name) \
-        C2(mock_call_, name)* mock_call_data = (C2(mock_call_, name)*)umockcall_get_call_data(umockcallrecorder_get_last_expected_call()); \
+        C2(mock_call_, name)* mock_call_data = (C2(mock_call_, name)*)umockcall_get_call_data(umock_c_get_last_expected_call()); \
         if (mock_call_data != NULL) \
         { \
             C2(mock_call_data->is_ignored_,arg_name) = 0; \
@@ -239,7 +239,7 @@ typedef struct ARG_BUFFER_TAG
     static C2(mock_call_modifier_,name) C2(ignore_argument_func_,name)(size_t arg_index) \
     { \
         DECLARE_MOCK_CALL_MODIFIER(name) \
-        C2(mock_call_, name)* mock_call_data = (C2(mock_call_, name)*)umockcall_get_call_data(umockcallrecorder_get_last_expected_call()); \
+        C2(mock_call_, name)* mock_call_data = (C2(mock_call_, name)*)umockcall_get_call_data(umock_c_get_last_expected_call()); \
         if (mock_call_data != NULL) \
         { \
             IF(COUNT_ARG(__VA_ARGS__), \
@@ -262,7 +262,7 @@ typedef struct ARG_BUFFER_TAG
     static C2(mock_call_modifier_,name) C2(validate_argument_func_,name)(size_t arg_index) \
     { \
         DECLARE_MOCK_CALL_MODIFIER(name) \
-        C2(mock_call_, name)* mock_call_data = (C2(mock_call_, name)*)umockcall_get_call_data(umockcallrecorder_get_last_expected_call()); \
+        C2(mock_call_, name)* mock_call_data = (C2(mock_call_, name)*)umockcall_get_call_data(umock_c_get_last_expected_call()); \
         if (mock_call_data != NULL) \
         { \
             IF(COUNT_ARG(__VA_ARGS__), \
@@ -284,7 +284,7 @@ typedef struct ARG_BUFFER_TAG
     static C2(mock_call_modifier_,name) C2(set_return_func_,name)(return_type return_value) \
     { \
         DECLARE_MOCK_CALL_MODIFIER(name) \
-        C2(mock_call_, name)* mock_call_data = (C2(mock_call_, name)*)umockcall_get_call_data(umockcallrecorder_get_last_expected_call()); \
+        C2(mock_call_, name)* mock_call_data = (C2(mock_call_, name)*)umockcall_get_call_data(umock_c_get_last_expected_call()); \
         if (mock_call_data != NULL) \
         { \
             mock_call_data->return_value_set = 1; \
@@ -297,7 +297,7 @@ typedef struct ARG_BUFFER_TAG
     static C2(mock_call_modifier_,name) C2(set_fail_return_func_,name)(return_type return_value) \
     { \
         DECLARE_MOCK_CALL_MODIFIER(name) \
-        C2(mock_call_, name)* mock_call_data = (C2(mock_call_, name)*)umockcall_get_call_data(umockcallrecorder_get_last_expected_call()); \
+        C2(mock_call_, name)* mock_call_data = (C2(mock_call_, name)*)umockcall_get_call_data(umock_c_get_last_expected_call()); \
         if (mock_call_data != NULL) \
         { \
             mock_call_data->fail_return_value_set = 1; \
@@ -328,7 +328,7 @@ typedef struct ARG_BUFFER_TAG
         } \
         else \
         { \
-            C2(mock_call_, name)* mock_call_data = (C2(mock_call_, name)*)umockcall_get_call_data(umockcallrecorder_get_last_expected_call()); \
+            C2(mock_call_, name)* mock_call_data = (C2(mock_call_, name)*)umockcall_get_call_data(umock_c_get_last_expected_call()); \
             if (mock_call_data == NULL) \
             { \
                 umock_c_indicate_error(UMOCK_C_ERROR); \
@@ -380,7 +380,7 @@ typedef struct ARG_BUFFER_TAG
         } \
         else \
         { \
-            C2(mock_call_, name)* mock_call_data = (C2(mock_call_, name)*)umockcall_get_call_data(umockcallrecorder_get_last_expected_call()); \
+            C2(mock_call_, name)* mock_call_data = (C2(mock_call_, name)*)umockcall_get_call_data(umock_c_get_last_expected_call()); \
             if (mock_call_data == NULL) \
             { \
                 umock_c_indicate_error(UMOCK_C_ERROR); \
@@ -424,7 +424,7 @@ typedef struct ARG_BUFFER_TAG
         IF(IS_NOT_VOID(return_type),mock_call_data->return_value_set = 0;,) \
         IF(IS_NOT_VOID(return_type),mock_call_data->fail_return_value_set = 0;,) \
         mock_call = umockcall_create(#name, mock_call_data, C2(mock_call_data_free_func_,name), C2(mock_call_data_stringify_,name), C2(mock_call_data_are_equal_,name)); \
-        (void)umockcallrecorder_add_expected_call(mock_call); \
+        (void)umock_c_add_expected_call(mock_call); \
 		return mock_call_modifier; \
 	} \
 
@@ -672,7 +672,7 @@ typedef struct ARG_BUFFER_TAG
         IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_COUNTED(CLEAR_OUT_ARG_BUFFERS, __VA_ARGS__),) \
         IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_COUNTED(CLEAR_VALIDATE_ARG_BUFFERS, __VA_ARGS__),) \
         mock_call = umockcall_create(#name, mock_call_data, C2(mock_call_data_free_func_,name), C2(mock_call_data_stringify_,name), C2(mock_call_data_are_equal_,name)); \
-        if (umockcallrecorder_add_actual_call(mock_call, &matched_call) != 0) \
+        if (umock_c_add_actual_call(mock_call, &matched_call) != 0) \
         { \
             umockcall_destroy(mock_call); \
             umock_c_indicate_error(UMOCK_C_COMPARE_CALL_ERROR); \
