@@ -11,13 +11,11 @@ endif()
 
 project(azure_c_shared_utility)
 
+option(run_valgrind "set run_valgrind to ON if tests are to be run under valgrind/helgrind/drd. Default is OFF" OFF)
+
 #making a nice global variable to know if we are on linux or not.
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     set(LINUX TRUE)
-	#on Linux, enable valgrind
-	#these commands (MEMORYCHECK...) need to apear BEFORE include(CTest) or they will not have any effect
-	find_program(MEMORYCHECK_COMMAND valgrind)	
-	set(MEMORYCHECK_COMMAND_OPTIONS "--trace-children=yes --leak-check=full --error-exitcode=1 --track-origins=yes")
 endif()
 
 include (CTest)
@@ -26,6 +24,7 @@ include (CTest)
 option(skip_unittests "set skip_unittests to ON to skip unittests (default is OFF)[if possible, they are always build]" OFF)
 option(use_http "set use_http to ON if http is to be used, set to OFF to not use http" ON)
 option(use_condition "set use_condition to ON if the condition module and its adapters should be enabled" ON)
+
 
 if(WIN32)
     option(use_schannel "set use_schannel to ON if schannel is to be used, set to OFF to not use schannel" ON)
@@ -158,7 +157,18 @@ function(linux_unittests_add_exe whatIsBuilding)
     target_compile_definitions(${whatIsBuilding}_exe PUBLIC -DUSE_CTEST)
     target_include_directories(${whatIsBuilding}_exe PUBLIC ${sharedutil_include_directories})
     target_link_libraries(${whatIsBuilding}_exe micromock_ctest umock_c ctest ${ARGN})
-    add_test(NAME ${whatIsBuilding} COMMAND ${whatIsBuilding}_exe)
+    add_test(NAME ${whatIsBuilding} COMMAND $<TARGET_FILE:${whatIsBuilding}_exe>)
+    
+    if(${run_valgrind})
+        find_program(VALGRIND_FOUND NAMES valgrind)
+        if(${VALGRIND_FOUND} STREQUAL VALGRIND_FOUND-NOTFOUND)
+            message(WARNING "run_valgrind was TRUE, but valgrind was not found - there will be no tests run under valgrind")
+        else()
+            add_test(NAME ${whatIsBuilding}_valgrind COMMAND valgrind                 --num-callers=100 --error-exitcode=1 --trace-children=yes --leak-check=full  --track-origins=yes $<TARGET_FILE:${whatIsBuilding}_exe>)
+            add_test(NAME ${whatIsBuilding}_helgrind COMMAND valgrind --tool=helgrind --num-callers=100 --error-exitcode=1 $<TARGET_FILE:${whatIsBuilding}_exe>)
+            add_test(NAME ${whatIsBuilding}_drd      COMMAND valgrind --tool=drd      --num-callers=100 --error-exitcode=1 $<TARGET_FILE:${whatIsBuilding}_exe>)
+        endif()
+    endif()
 endfunction()
 
 function(build_test_artifacts whatIsBuilding use_gballoc)
@@ -169,7 +179,7 @@ function(build_test_artifacts whatIsBuilding use_gballoc)
     
     if(${use_gballoc})
         add_definitions(-DGB_MEASURE_MEMORY_FOR_THIS -DGB_DEBUG_ALLOC)
-    else()	
+    else()    
     endif()
     
     #setting #defines
@@ -212,14 +222,14 @@ function(set_platform_files)
         if (WINCE)
             set(HTTP_C_FILE ${CMAKE_CURRENT_LIST_DIR}/common/adapters/httpapi_wince.cpp PARENT_SCOPE)
             set(THREAD_C_FILE ${CMAKE_CURRENT_LIST_DIR}/common/adapters/threadapi_win32.c PARENT_SCOPE)
-        else()		
+        else()
             set(HTTP_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/httpapi_winhttp.c PARENT_SCOPE)
             set(THREAD_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/threadapi_c11.c PARENT_SCOPE)
         endif()
         set(LOCK_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/lock_c11.c PARENT_SCOPE)
         set(PLATFORM_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/platform_win32.c PARENT_SCOPE)
         set(SOCKETIO_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/socketio_win32.c PARENT_SCOPE)
-		set(TICKCOUTER_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/tickcounter_win32.c PARENT_SCOPE)
+        set(TICKCOUTER_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/tickcounter_win32.c PARENT_SCOPE)
     else()
         if(${use_condition})
             set(CONDITION_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/condition_pthreads.c PARENT_SCOPE)
@@ -229,7 +239,7 @@ function(set_platform_files)
         set(PLATFORM_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/platform_linux.c PARENT_SCOPE)
         set(SOCKETIO_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/socketio_berkeley.c PARENT_SCOPE)
         set(THREAD_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/threadapi_pthreads.c PARENT_SCOPE)
-		set(TICKCOUTER_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/tickcounter_linux.c PARENT_SCOPE)
+        set(TICKCOUTER_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/tickcounter_linux.c PARENT_SCOPE)
     endif()
 endfunction(set_platform_files)
 
@@ -283,8 +293,8 @@ if(${use_http})
         ./src/httpapiex.c
         ./src/httpapiexsas.c
         ./src/httpheaders.c
-        ${HTTP_C_FILE}		
-    )	
+        ${HTTP_C_FILE}
+    )
 endif()
 
 if(${use_schannel})
@@ -417,7 +427,7 @@ endif()
 
 if(${use_schannel})
     if(WIN32)
-        target_link_libraries(aziotsharedutil ws2_32 secur32)	
+        target_link_libraries(aziotsharedutil ws2_32 secur32)
     endif()
 endif()
 
@@ -451,6 +461,6 @@ else()
         ./src/gballoc.c
         ${HTTP_C_FILE}
         ./src/strings.c
-        ./src/vector.c		
+        ./src/vector.c
         DESTINATION ${INCLUDE_INSTALL_DIR}/azureiot)
 endif (WIN32)

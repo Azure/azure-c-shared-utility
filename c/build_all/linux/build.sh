@@ -10,7 +10,7 @@ build_root=$(cd "${script_dir}/../.." && pwd)
 log_dir=$build_root
 run_unit_tests=ON
 make_install=
-run_valgrind=
+run_valgrind=0
 
 usage ()
 {
@@ -51,7 +51,7 @@ process_args $*
 rm -r -f $build_folder
 mkdir $build_folder
 pushd $build_folder
-cmake -DcompileOption_C:STRING="$extracloptions" $build_root
+cmake -DcompileOption_C:STRING="$extracloptions" -Drun_valgrind:BOOL=$run_valgrind $build_root
 make --jobs=$(nproc)
 if [[ $make_install == 1 ]] ;
 then
@@ -60,11 +60,14 @@ then
     make install
 fi
 
-ctest -C "Debug" -V
-
 if [[ $run_valgrind == 1 ]] ;
 then
-	ctest -j $(nproc) -D ExperimentalMemCheck -VV
-
+	#use doctored openssl
+	export LD_LIBRARY_PATH=/usr/local/ssl/lib
+	ctest --output-on-failure
+	export LD_LIBRARY_PATH=
+else
+	ctest -C "Debug" --output-on-failure
 fi
+
 popd
