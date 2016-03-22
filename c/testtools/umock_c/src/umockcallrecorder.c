@@ -160,20 +160,28 @@ int umockcallrecorder_add_actual_call(UMOCKCALLRECORDER_HANDLE umock_call_record
         /* Codes_SRS_UMOCK_C_LIB_01_115: [ umock_c shall compare calls in order. ]*/
         for (i = 0; i < umock_call_recorder->expected_call_count; i++)
         {
-            /* Codes_SRS_UMOCKCALLRECORDER_01_017: [ Comparing the calls shall be done by calling umockcall_are_equal. ]*/
-            int are_equal_result = umockcall_are_equal(umock_call_recorder->expected_calls[i].umockcall, mock_call);
-            if (are_equal_result == 1)
+            if (umock_call_recorder->expected_calls[i].is_matched == 0)
             {
-                /* Codes_SRS_UMOCKCALLRECORDER_01_016: [ If the call matches one of the expected calls, a handle to the matched call shall be filled into the matched_call argument. ]*/
-                *matched_call = umock_call_recorder->expected_calls[i].umockcall;
-                umock_call_recorder->expected_calls[i].is_matched = 1;
-                break;
-            }
-            /* Codes_SRS_UMOCKCALLRECORDER_01_021: [ If umockcall_are_equal fails, umockcallrecorder_add_actual_call shall fail and return a non-zero value. ]*/
-            else if (are_equal_result != 0)
-            {
-                is_error = 1;
-                break;
+                /* Codes_SRS_UMOCKCALLRECORDER_01_017: [ Comparing the calls shall be done by calling umockcall_are_equal. ]*/
+                int are_equal_result = umockcall_are_equal(umock_call_recorder->expected_calls[i].umockcall, mock_call);
+                if (are_equal_result == 1)
+                {
+                    /* Codes_SRS_UMOCKCALLRECORDER_01_016: [ If the call matches one of the expected calls, a handle to the matched call shall be filled into the matched_call argument. ]*/
+                    *matched_call = umock_call_recorder->expected_calls[i].umockcall;
+                    umock_call_recorder->expected_calls[i].is_matched = 1;
+                    break;
+                }
+                /* Codes_SRS_UMOCKCALLRECORDER_01_021: [ If umockcall_are_equal fails, umockcallrecorder_add_actual_call shall fail and return a non-zero value. ]*/
+                else if (are_equal_result != 0)
+                {
+                    is_error = 1;
+                    break;
+                }
+                else
+                {
+                    i = umock_call_recorder->expected_call_count;
+                    break;
+                }
             }
         }
 

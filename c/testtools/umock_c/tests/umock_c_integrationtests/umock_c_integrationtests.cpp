@@ -9,7 +9,7 @@
 - Switch to .c
 - Make it clear that ENABLE_MOCKS has to be defined after including the unit under test header
 - Test freeing of return values allocated by the user in the copy functions
-- Test set return value order
+- Test that order is meaningful
 */
 
 /* Tested by unit tests for umock_c:
@@ -253,6 +253,22 @@ TEST_FUNCTION(two_different_STRICT_EXPECTED_CALL_instances_without_an_actual_cal
     // assert
     ASSERT_ARE_EQUAL(char_ptr, "[test_dependency_1_arg(42)][test_dependency_no_args()]", umock_c_get_expected_calls());
     ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_UMOCK_C_LIB_01_115: [ umock_c shall compare calls in order. ]*/
+TEST_FUNCTION(inverted_order_for_calls_is_detected_as_mismatch)
+{
+    // arrange
+    STRICT_EXPECTED_CALL(test_dependency_1_arg(42));
+    STRICT_EXPECTED_CALL(test_dependency_no_args());
+
+    // act
+    test_dependency_no_args();
+    test_dependency_1_arg(42);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "[test_dependency_1_arg(42)][test_dependency_no_args()]", umock_c_get_expected_calls());
+    ASSERT_ARE_EQUAL(char_ptr, "[test_dependency_no_args()][test_dependency_1_arg(42)]", umock_c_get_actual_calls());
 }
 
 /* EXPECTED_CALL */
