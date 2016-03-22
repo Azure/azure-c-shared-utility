@@ -15,6 +15,7 @@ TODO:
 static UMOCKCALL_HANDLE test_expected_umockcall_1 = (UMOCKCALL_HANDLE)0x4242;
 static UMOCKCALL_HANDLE test_expected_umockcall_2 = (UMOCKCALL_HANDLE)0x4243;
 static UMOCKCALL_HANDLE test_actual_umockcall_1 = (UMOCKCALL_HANDLE)0x4244;
+static UMOCKCALL_HANDLE test_actual_umockcall_2 = (UMOCKCALL_HANDLE)0x4245;
 
 typedef struct umockcall_are_equal_CALL_TAG
 {
@@ -25,6 +26,8 @@ typedef struct umockcall_are_equal_CALL_TAG
 static umockcall_are_equal_CALL* umockcall_are_equal_calls;
 static size_t umockcall_are_equal_call_count;
 static int umockcall_are_equal_call_result;
+static int umockcall_are_equal_special_call_result;
+static size_t when_shall_umockcall_are_equal_special_call_be_returned;
 
 typedef struct umockcall_destroy_CALL_TAG
 {
@@ -37,6 +40,8 @@ static int umockcall_destroy_call_result;
 
 int umockcall_are_equal(UMOCKCALL_HANDLE left, UMOCKCALL_HANDLE right)
 {
+    int result;
+
     umockcall_are_equal_CALL* new_calls = (umockcall_are_equal_CALL*)realloc(umockcall_are_equal_calls, sizeof(umockcall_are_equal_CALL) * (umockcall_are_equal_call_count + 1));
     if (new_calls != NULL)
     {
@@ -46,7 +51,16 @@ int umockcall_are_equal(UMOCKCALL_HANDLE left, UMOCKCALL_HANDLE right)
         umockcall_are_equal_call_count++;
     }
 
-    return umockcall_are_equal_call_result;
+    if (when_shall_umockcall_are_equal_special_call_be_returned == umockcall_are_equal_call_count)
+    {
+        result = umockcall_are_equal_special_call_result;
+    }
+    else
+    {
+        result = umockcall_are_equal_call_result;
+    }
+
+    return result;
 }
 
 void umockcall_destroy(UMOCKCALL_HANDLE umockcall)
@@ -180,6 +194,9 @@ TEST_FUNCTION_INITIALIZE(test_function_init)
 {
     ASSERT_ARE_EQUAL(int, 0, TEST_MUTEX_ACQUIRE(test_mutex));
 
+    umockcall_are_equal_call_result = 1;
+    when_shall_umockcall_are_equal_special_call_be_returned = 0;
+    umockcall_are_equal_special_call_result = 1;
     reset_umockcall_are_equal_calls();
     reset_umockcall_destroy_calls();
     reset_malloc_calls();
@@ -251,10 +268,11 @@ TEST_FUNCTION(umockcallrecorder_destroy_with_one_expected_call_frees_the_call_re
     // arrange
     UMOCKCALLRECORDER_HANDLE call_recorder = umockcallrecorder_create();
     UMOCKCALL_HANDLE matched_call;
+    umockcall_are_equal_call_result = 0;
 
-    umockcallrecorder_add_expected_call(call_recorder, test_expected_umockcall_1);
-    umockcallrecorder_add_expected_call(call_recorder, test_expected_umockcall_2);
-    umockcallrecorder_add_actual_call(call_recorder, test_actual_umockcall_1, &matched_call);
+    (void)umockcallrecorder_add_expected_call(call_recorder, test_expected_umockcall_1);
+    (void)umockcallrecorder_add_expected_call(call_recorder, test_expected_umockcall_2);
+    (void)umockcallrecorder_add_actual_call(call_recorder, test_actual_umockcall_1, &matched_call);
 
     // act
     umockcallrecorder_destroy(call_recorder);
@@ -278,10 +296,11 @@ TEST_FUNCTION(umockcallrecorder_reset_all_calls_frees_all_existing_expected_and_
     // arrange
     UMOCKCALLRECORDER_HANDLE call_recorder = umockcallrecorder_create();
     UMOCKCALL_HANDLE matched_call;
+    umockcall_are_equal_call_result = 0;
 
-    umockcallrecorder_add_expected_call(call_recorder, test_expected_umockcall_1);
-    umockcallrecorder_add_expected_call(call_recorder, test_expected_umockcall_2);
-    umockcallrecorder_add_actual_call(call_recorder, test_actual_umockcall_1, &matched_call);
+    (void)umockcallrecorder_add_expected_call(call_recorder, test_expected_umockcall_1);
+    (void)umockcallrecorder_add_expected_call(call_recorder, test_expected_umockcall_2);
+    (void)umockcallrecorder_add_actual_call(call_recorder, test_actual_umockcall_1, &matched_call);
 
     // act
     int result = umockcallrecorder_reset_all_calls(call_recorder);
@@ -310,6 +329,320 @@ TEST_FUNCTION(umockcallrecorder_reset_all_calls_with_NULL_call_recorder_fails)
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
     ASSERT_ARE_EQUAL(size_t, 0, free_call_count);
     ASSERT_ARE_EQUAL(size_t, 0, umockcall_destroy_call_count);
+}
+
+/* umockcallrecorder_add_expected_call */
+
+/* Tests_SRS_UMOCKCALLRECORDER_01_008: [ umockcallrecorder_add_expected_call shall add the mock_call call to the expected call list maintained by the call recorder identified by umock_call_recorder. ]*/
+/* Tests_SRS_UMOCKCALLRECORDER_01_009: [ On success umockcallrecorder_add_expected_call shall return 0. ]*/
+TEST_FUNCTION(umockcallrecorder_add_expected_call_adds_an_expected_call)
+{
+    // arrange
+    UMOCKCALLRECORDER_HANDLE call_recorder = umockcallrecorder_create();
+
+    // act
+    int result = umockcallrecorder_add_expected_call(call_recorder, test_expected_umockcall_1);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+
+    // cleanup
+    umockcallrecorder_destroy(call_recorder);
+}
+
+/* Tests_SRS_UMOCKCALLRECORDER_01_012: [ If any of the arguments is NULL, umockcallrecorder_add_expected_call shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(umockcallrecorder_add_expected_call_with_NULL_call_recorder_fails)
+{
+    // arrange
+
+    // act
+    int result = umockcallrecorder_add_expected_call(NULL, test_expected_umockcall_1);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+}
+
+/* Tests_SRS_UMOCKCALLRECORDER_01_012: [ If any of the arguments is NULL, umockcallrecorder_add_expected_call shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(umockcallrecorder_add_expected_call_with_NULL_mock_call_fails)
+{
+    // arrange
+    UMOCKCALLRECORDER_HANDLE call_recorder = umockcallrecorder_create();
+
+    // act
+    int result = umockcallrecorder_add_expected_call(call_recorder, NULL);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+
+    // cleanup
+    umockcallrecorder_destroy(call_recorder);
+}
+
+/* Tests_SRS_UMOCKCALLRECORDER_01_013: [ If allocating memory for the expected calls fails, umockcallrecorder_add_expected_call shall fail and return a non-zero value. ] */
+TEST_FUNCTION(when_allocating_memory_fails_umockcallrecorder_add_expected_call_fails)
+{
+    // arrange
+    UMOCKCALLRECORDER_HANDLE call_recorder = umockcallrecorder_create();
+    reset_malloc_calls();
+    when_shall_realloc_fail = 1;
+
+    // act
+    int result = umockcallrecorder_add_expected_call(call_recorder, test_expected_umockcall_1);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+
+    // cleanup
+    umockcallrecorder_destroy(call_recorder);
+}
+
+/* umockcallrecorder_add_actual_call */
+
+/* Tests_SRS_UMOCKCALLRECORDER_01_014: [ umockcallrecorder_add_actual_call shall check whether the call mock_call matches any of the expected calls maintained by umock_call_recorder. ]*/
+/* Tests_SRS_UMOCKCALLRECORDER_01_018: [ When no error is encountered, umockcallrecorder_add_actual_call shall return 0. ]*/
+TEST_FUNCTION(umockcallrecorder_add_actual_call_without_any_expected_calls_succeeds)
+{
+    // arrange
+    UMOCKCALLRECORDER_HANDLE call_recorder = umockcallrecorder_create();
+    UMOCKCALL_HANDLE matched_call;
+
+    // act
+    int result = umockcallrecorder_add_actual_call(call_recorder, test_actual_umockcall_1, &matched_call);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_IS_NULL(matched_call);
+
+    // cleanup
+    umockcallrecorder_destroy(call_recorder);
+}
+
+/* Tests_SRS_UMOCKCALLRECORDER_01_014: [ umockcallrecorder_add_actual_call shall check whether the call mock_call matches any of the expected calls maintained by umock_call_recorder. ]*/
+/* Tests_SRS_UMOCKCALLRECORDER_01_018: [ When no error is encountered, umockcallrecorder_add_actual_call shall return 0. ]*/
+/* Tests_SRS_UMOCKCALLRECORDER_01_017: [ Comparing the calls shall be done by calling umockcall_are_equal. ]*/
+TEST_FUNCTION(umockcallrecorder_add_actual_call_with_a_call_that_does_not_match_succeeds)
+{
+    // arrange
+    UMOCKCALLRECORDER_HANDLE call_recorder = umockcallrecorder_create();
+    UMOCKCALL_HANDLE matched_call;
+    (void)umockcallrecorder_add_expected_call(call_recorder, test_expected_umockcall_1);
+    umockcall_are_equal_call_result = 0;
+
+    // act
+    int result = umockcallrecorder_add_actual_call(call_recorder, test_actual_umockcall_1, &matched_call);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(size_t, 1, umockcall_are_equal_call_count);
+    ASSERT_ARE_EQUAL(void_ptr, test_expected_umockcall_1, umockcall_are_equal_calls[0].left);
+    ASSERT_ARE_EQUAL(void_ptr, test_actual_umockcall_1, umockcall_are_equal_calls[0].right);
+    ASSERT_ARE_EQUAL(size_t, 0, free_call_count);
+    ASSERT_IS_NULL(matched_call);
+
+    // cleanup
+    umockcallrecorder_destroy(call_recorder);
+}
+
+/* Tests_SRS_UMOCKCALLRECORDER_01_019: [ If any of the arguments is NULL, umockcallrecorder_add_actual_call shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(umockcallrecorder_add_actual_call_with_NULL_call_recorder_fails)
+{
+    // arrange
+    UMOCKCALL_HANDLE matched_call;
+
+    // act
+    int result = umockcallrecorder_add_actual_call(NULL, test_actual_umockcall_1, &matched_call);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+}
+
+/* Tests_SRS_UMOCKCALLRECORDER_01_019: [ If any of the arguments is NULL, umockcallrecorder_add_actual_call shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(umockcallrecorder_add_actual_call_with_NULL_actual_call_fails)
+{
+    // arrange
+    UMOCKCALLRECORDER_HANDLE call_recorder = umockcallrecorder_create();
+    UMOCKCALL_HANDLE matched_call;
+
+    // act
+    int result = umockcallrecorder_add_actual_call(call_recorder, NULL, &matched_call);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+
+    // cleanup
+    umockcallrecorder_destroy(call_recorder);
+}
+
+/* Tests_SRS_UMOCKCALLRECORDER_01_019: [ If any of the arguments is NULL, umockcallrecorder_add_actual_call shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(umockcallrecorder_add_actual_call_with_NULL_matched_call_fails)
+{
+    // arrange
+    UMOCKCALLRECORDER_HANDLE call_recorder = umockcallrecorder_create();
+
+    // act
+    int result = umockcallrecorder_add_actual_call(call_recorder, test_actual_umockcall_1, NULL);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+
+    // cleanup
+    umockcallrecorder_destroy(call_recorder);
+}
+
+/* Tests_SRS_UMOCKCALLRECORDER_01_020: [ If allocating memory for the actual calls fails, umockcallrecorder_add_actual_call shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(when_allocating_memory_for_the_actual_calls_fails_umockcallrecorder_add_actual_call_fails)
+{
+    // arrange
+    UMOCKCALLRECORDER_HANDLE call_recorder = umockcallrecorder_create();
+    UMOCKCALL_HANDLE matched_call;
+    reset_malloc_calls();
+    when_shall_realloc_fail = 1;
+
+    // act
+    int result = umockcallrecorder_add_actual_call(call_recorder, test_actual_umockcall_1, &matched_call);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+
+    // cleanup
+    umockcallrecorder_destroy(call_recorder);
+}
+
+/* Tests_SRS_UMOCKCALLRECORDER_01_021: [ If umockcall_are_equal fails, umockcallrecorder_add_actual_call shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(when_umockcall_are_equal_fails_then_umockcallrecorder_add_actual_call_fails)
+{
+    // arrange
+    UMOCKCALLRECORDER_HANDLE call_recorder = umockcallrecorder_create();
+    UMOCKCALL_HANDLE matched_call;
+    (void)umockcallrecorder_add_expected_call(call_recorder, test_expected_umockcall_1);
+    umockcall_are_equal_call_result = -1;
+
+    // act
+    int result = umockcallrecorder_add_actual_call(call_recorder, test_actual_umockcall_1, &matched_call);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(size_t, 1, umockcall_are_equal_call_count);
+    ASSERT_ARE_EQUAL(void_ptr, test_expected_umockcall_1, umockcall_are_equal_calls[0].left);
+    ASSERT_ARE_EQUAL(void_ptr, test_actual_umockcall_1, umockcall_are_equal_calls[0].right);
+
+    // cleanup
+    umockcallrecorder_destroy(call_recorder);
+}
+
+/* Tests_SRS_UMOCKCALLRECORDER_01_016: [ If the call matches one of the expected calls, a handle to the matched call shall be filled into the matched_call argument. ]*/
+TEST_FUNCTION(when_the_actual_call_matches_the_expected_call_then_the_matched_call_is_returned)
+{
+    // arrange
+    UMOCKCALLRECORDER_HANDLE call_recorder = umockcallrecorder_create();
+    UMOCKCALL_HANDLE matched_call;
+    (void)umockcallrecorder_add_expected_call(call_recorder, test_expected_umockcall_1);
+    umockcall_are_equal_call_result = 1;
+
+    // act
+    int result = umockcallrecorder_add_actual_call(call_recorder, test_actual_umockcall_1, &matched_call);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(size_t, 1, umockcall_are_equal_call_count);
+    ASSERT_ARE_EQUAL(void_ptr, test_expected_umockcall_1, umockcall_are_equal_calls[0].left);
+    ASSERT_ARE_EQUAL(void_ptr, test_actual_umockcall_1, umockcall_are_equal_calls[0].right);
+    ASSERT_ARE_EQUAL(void_ptr, test_expected_umockcall_1, matched_call);
+    ASSERT_ARE_EQUAL(size_t, 1, umockcall_destroy_call_count);
+
+    // cleanup
+    umockcallrecorder_destroy(call_recorder);
+}
+
+/* Tests_SRS_UMOCKCALLRECORDER_01_016: [ If the call matches one of the expected calls, a handle to the matched call shall be filled into the matched_call argument. ]*/
+TEST_FUNCTION(when_the_actual_call_matches_the_1st_of_2_expected_call_then_the_matched_call_is_returned)
+{
+    // arrange
+    UMOCKCALLRECORDER_HANDLE call_recorder = umockcallrecorder_create();
+    UMOCKCALL_HANDLE matched_call;
+    (void)umockcallrecorder_add_expected_call(call_recorder, test_expected_umockcall_1);
+    (void)umockcallrecorder_add_expected_call(call_recorder, test_expected_umockcall_2);
+    umockcall_are_equal_call_result = 1;
+
+    // act
+    int result = umockcallrecorder_add_actual_call(call_recorder, test_actual_umockcall_1, &matched_call);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(size_t, 1, umockcall_are_equal_call_count);
+    ASSERT_ARE_EQUAL(void_ptr, test_expected_umockcall_1, umockcall_are_equal_calls[0].left);
+    ASSERT_ARE_EQUAL(void_ptr, test_actual_umockcall_1, umockcall_are_equal_calls[0].right);
+    ASSERT_ARE_EQUAL(void_ptr, test_expected_umockcall_1, matched_call);
+    ASSERT_ARE_EQUAL(size_t, 1, umockcall_destroy_call_count);
+
+    // cleanup
+    umockcallrecorder_destroy(call_recorder);
+}
+
+/* Tests_SRS_UMOCKCALLRECORDER_01_016: [ If the call matches one of the expected calls, a handle to the matched call shall be filled into the matched_call argument. ]*/
+TEST_FUNCTION(when_the_actual_call_matches_the_2nd_of_2_expected_call_then_the_matched_call_is_returned)
+{
+    // arrange
+    UMOCKCALLRECORDER_HANDLE call_recorder = umockcallrecorder_create();
+    UMOCKCALL_HANDLE matched_call;
+    (void)umockcallrecorder_add_expected_call(call_recorder, test_expected_umockcall_1);
+    (void)umockcallrecorder_add_expected_call(call_recorder, test_expected_umockcall_2);
+    umockcall_are_equal_call_result = 0;
+    umockcall_are_equal_special_call_result = 1;
+    when_shall_umockcall_are_equal_special_call_be_returned = 2;
+
+    // act
+    int result = umockcallrecorder_add_actual_call(call_recorder, test_actual_umockcall_1, &matched_call);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL_WITH_MSG(size_t, 2, umockcall_are_equal_call_count, "Incorrect umock_are_equal call count");
+    ASSERT_ARE_EQUAL(void_ptr, test_expected_umockcall_1, umockcall_are_equal_calls[0].left);
+    ASSERT_ARE_EQUAL(void_ptr, test_actual_umockcall_1, umockcall_are_equal_calls[0].right);
+    ASSERT_ARE_EQUAL(void_ptr, test_expected_umockcall_2, umockcall_are_equal_calls[1].left);
+    ASSERT_ARE_EQUAL(void_ptr, test_actual_umockcall_1, umockcall_are_equal_calls[1].right);
+    ASSERT_ARE_EQUAL(void_ptr, test_expected_umockcall_2, matched_call);
+    ASSERT_ARE_EQUAL(size_t, 1, umockcall_destroy_call_count);
+
+    // cleanup
+    umockcallrecorder_destroy(call_recorder);
+}
+
+/* Tests_SRS_UMOCKCALLRECORDER_01_014: [ umockcallrecorder_add_actual_call shall check whether the call mock_call matches any of the expected calls maintained by umock_call_recorder. ]*/
+/* Tests_SRS_UMOCKCALLRECORDER_01_018: [ When no error is encountered, umockcallrecorder_add_actual_call shall return 0. ]*/
+TEST_FUNCTION(two_actual_calls_can_be_added)
+{
+    // arrange
+    UMOCKCALLRECORDER_HANDLE call_recorder = umockcallrecorder_create();
+    UMOCKCALL_HANDLE matched_call;
+    (void)umockcallrecorder_add_actual_call(call_recorder, test_actual_umockcall_1, &matched_call);
+
+    // act
+    int result = umockcallrecorder_add_actual_call(call_recorder, test_actual_umockcall_2, &matched_call);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+
+    // cleanup
+    umockcallrecorder_destroy(call_recorder);
+}
+
+/* umockcallrecorder_get_actual_calls */
+
+/* Tests_SRS_UMOCKCALLRECORDER_01_022: [ umockcallrecorder_get_actual_calls shall return a pointer to the string representation of all the actual calls. ]*/
+TEST_FUNCTION(umockcallrecorder_get_actual_calls_with_no_calls_returns_an_empty_string)
+{
+    // arrange
+    UMOCKCALLRECORDER_HANDLE call_recorder = umockcallrecorder_create();
+
+    // act
+    const char* result = umockcallrecorder_get_actual_calls(call_recorder);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "", result);
+
+    // cleanup
+    umockcallrecorder_destroy(call_recorder);
 }
 
 END_TEST_SUITE(umockcallrecorder_unittests)
