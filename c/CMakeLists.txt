@@ -143,10 +143,6 @@ function(windows_unittests_add_exe whatIsBuilding)
     add_test(NAME ${whatIsBuilding} COMMAND ${whatIsBuilding}_exe)
 endfunction()
 
-
-set(linux_unittests_add_exe_separators 
-	ADDITIONAL_LIBS #whatever follows are needed libraries to link
-)
 #this function takes more than the 1 mandatory argument (whatIsBuilding)
 #the parameters are separated by "known" separators
 #for example, ADDITIONAL_LIBS starts a list of needed libraries
