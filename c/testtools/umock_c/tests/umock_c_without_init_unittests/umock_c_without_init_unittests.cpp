@@ -4,32 +4,72 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include "testrunnerswitcher.h"
-
-/* TODO:
-- Switch to .c
-*/
+#include "umockcallrecorder.h"
+#include "umocktypes.h"
+#include "umocktypes_c.h"
 
 #define ENABLE_MOCKS
 
 #include "umock_c.h"
 
-typedef struct test_on_umock_c_error_CALL_TAG
+UMOCKCALLRECORDER_HANDLE umockcallrecorder_create(void)
 {
-    UMOCK_C_ERROR_CODE error_code;
-} test_on_umock_c_error_CALL;
+    return NULL;
+}
 
-static test_on_umock_c_error_CALL* test_on_umock_c_error_calls;
-static size_t test_on_umock_c_error_call_count;
-
-static void test_on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
+void umockcallrecorder_destroy(UMOCKCALLRECORDER_HANDLE umock_call_recorder)
 {
-    test_on_umock_c_error_CALL* new_calls = (test_on_umock_c_error_CALL*)realloc(test_on_umock_c_error_calls, sizeof(test_on_umock_c_error_CALL) * (test_on_umock_c_error_call_count + 1));
-    if (new_calls != NULL)
-    {
-        test_on_umock_c_error_calls = new_calls;
-        test_on_umock_c_error_calls[test_on_umock_c_error_call_count].error_code = error_code;
-        test_on_umock_c_error_call_count++;
-    }
+    (void)umock_call_recorder;
+}
+
+int umockcallrecorder_reset_all_calls(UMOCKCALLRECORDER_HANDLE umock_call_recorder)
+{
+    (void)umock_call_recorder;
+    return 0;
+}
+
+int umockcallrecorder_add_expected_call(UMOCKCALLRECORDER_HANDLE umock_call_recorder, UMOCKCALL_HANDLE mock_call)
+{
+    (void)umock_call_recorder, mock_call;
+    return 0;
+}
+
+int umockcallrecorder_add_actual_call(UMOCKCALLRECORDER_HANDLE umock_call_recorder, UMOCKCALL_HANDLE mock_call, UMOCKCALL_HANDLE* matched_call)
+{
+    (void)umock_call_recorder, mock_call;
+    return 0;
+}
+
+const char* umockcallrecorder_get_actual_calls(UMOCKCALLRECORDER_HANDLE umock_call_recorder)
+{
+    (void)umock_call_recorder;
+    return NULL;
+}
+
+const char* umockcallrecorder_get_expected_calls(UMOCKCALLRECORDER_HANDLE umock_call_recorder)
+{
+    (void)umock_call_recorder;
+    return NULL;
+}
+
+UMOCKCALL_HANDLE umockcallrecorder_get_last_expected_call(UMOCKCALLRECORDER_HANDLE umock_call_recorder)
+{
+    (void)umock_call_recorder;
+    return NULL;
+}
+
+int umocktypes_init(void)
+{
+    return 0;
+}
+
+void umocktypes_deinit(void)
+{
+}
+
+int umocktypes_c_register_types(void)
+{
+    return 0;
 }
 
 TEST_MUTEX_HANDLE test_mutex;
