@@ -26,7 +26,7 @@ extern "C" {
 #define IGNORED_PTR_ARG (NULL)
 #define IGNORED_NUM_ARG (0)
 
-    /* Codes_SRS_UMOCK_C_01_001: [MOCKABLE_FUNCTION shall be used to wrap function definition allowing the user to declare a function that can be mocked.]*/
+    /* Codes_SRS_UMOCK_C_LIB_01_001: [MOCKABLE_FUNCTION shall be used to wrap function definition allowing the user to declare a function that can be mocked.]*/
 #define MOCKABLE_FUNCTION(result, function, ...) \
 	IF(WITH_MOCK, MOCKABLE_FUNCTION_INTERNAL_WITH_MOCK(result, function, __VA_ARGS__), MOCKABLE_FUNCTION_INTERNAL(result, function, __VA_ARGS__))
 
@@ -42,7 +42,7 @@ extern "C" {
 #define REGISTER_GLOBAL_MOCK_RETURNS(mock_function, return_value, fail_return_value) \
     C2(set_global_mock_returns_,mock_function)(return_value, fail_return_value);
 
-/* Codes_SRS_UMOCK_C_01_013: [STRICT_EXPECTED_CALL shall record that a certain call is expected.] */
+/* Codes_SRS_UMOCK_C_LIB_01_013: [STRICT_EXPECTED_CALL shall record that a certain call is expected.] */
 #define STRICT_EXPECTED_CALL(call) \
 	C2(umock_c_strict_expected_,call)
 

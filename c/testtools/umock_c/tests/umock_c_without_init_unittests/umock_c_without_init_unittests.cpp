@@ -59,7 +59,7 @@ TEST_FUNCTION_CLEANUP(test_function_cleanup)
 
 /* umock_c_deinit */
 
-/* Tests_SRS_UMOCK_C_01_012: [If umock_c was not initialized, umock_c_deinit shall do nothing.] */
+/* Tests_SRS_UMOCK_C_LIB_01_012: [If umock_c was not initialized, umock_c_deinit shall do nothing.] */
 TEST_FUNCTION(umock_c_deinit_when_not_initialized_does_nothing)
 {
     // arrange

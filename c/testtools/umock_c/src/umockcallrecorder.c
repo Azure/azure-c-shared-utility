@@ -157,7 +157,7 @@ int umockcallrecorder_add_actual_call(UMOCKCALLRECORDER_HANDLE umock_call_record
 
         *matched_call = NULL;
 
-        /* Codes_SRS_UMOCK_C_01_115: [ umock_c shall compare calls in order. ]*/
+        /* Codes_SRS_UMOCK_C_LIB_01_115: [ umock_c shall compare calls in order. ]*/
         for (i = 0; i < umock_call_recorder->expected_call_count; i++)
         {
             /* Codes_SRS_UMOCKCALLRECORDER_01_017: [ Comparing the calls shall be done by calling umockcall_are_equal. ]*/

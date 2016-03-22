@@ -17,7 +17,7 @@
 #include "umock_c.h"
 #include "test_dependency.h"
 
-/* Tests_SRS_UMOCK_C_01_067: [char\* and const char\* shall be supported out of the box through a separate header, umockvalue_charptr.h.]*/
+/* Tests_SRS_UMOCK_C_LIB_01_067: [char\* and const char\* shall be supported out of the box through a separate header, umockvalue_charptr.h.]*/
 #include "umocktypes_charptr.h"
 
 typedef struct test_on_umock_c_error_CALL_TAG
@@ -114,8 +114,8 @@ TEST_SUITE_INITIALIZE(suite_init)
     ASSERT_IS_NOT_NULL(test_mutex);
 
     ASSERT_ARE_EQUAL(int, 0, umock_c_init(test_on_umock_c_error));
-    /* Tests_SRS_UMOCK_C_01_069: [The signature shall be: ...*/
-    /* Tests_SRS_UMOCK_C_01_070: [umockvalue_charptr_register_types shall return 0 on success and non-zero on failure.]*/
+    /* Tests_SRS_UMOCK_C_LIB_01_069: [The signature shall be: ...*/
+    /* Tests_SRS_UMOCK_C_LIB_01_070: [umockvalue_charptr_register_types shall return 0 on success and non-zero on failure.]*/
     ASSERT_ARE_EQUAL(int, 0, umocktypes_charptr_register_types());
     REGISTER_UMOCK_VALUE_TYPE(int*, stringify_func_intptr, are_equal_func_intptr, copy_func_intptr, free_func_intptr);
     REGISTER_UMOCK_VALUE_TYPE(unsigned char*, stringify_func_unsignedcharptr, are_equal_func_unsignedcharptr, copy_func_unsignedcharptr, free_func_unsignedcharptr);
@@ -152,8 +152,8 @@ TEST_FUNCTION_CLEANUP(test_function_cleanup)
 
 /* STRICT_EXPECTED_CALL */
 
-/* Tests_SRS_UMOCK_C_01_013: [STRICT_EXPECTED_CALL shall record that a certain call is expected.] */
-/* Tests_SRS_UMOCK_C_01_015: [The call argument shall be the complete function invocation.]*/
+/* Tests_SRS_UMOCK_C_LIB_01_013: [STRICT_EXPECTED_CALL shall record that a certain call is expected.] */
+/* Tests_SRS_UMOCK_C_LIB_01_015: [The call argument shall be the complete function invocation.]*/
 TEST_FUNCTION(STRICT_EXPECTED_CALL_without_an_actual_call_yields_a_missing_call)
 {
     // arrange
@@ -166,7 +166,7 @@ TEST_FUNCTION(STRICT_EXPECTED_CALL_without_an_actual_call_yields_a_missing_call)
     ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_UMOCK_C_01_013: [STRICT_EXPECTED_CALL shall record that a certain call is expected.] */
+/* Tests_SRS_UMOCK_C_LIB_01_013: [STRICT_EXPECTED_CALL shall record that a certain call is expected.] */
 TEST_FUNCTION(two_STRICT_EXPECTED_CALL_without_an_actual_call_yields_2_missing_calls)
 {
     // arrange
@@ -180,7 +180,7 @@ TEST_FUNCTION(two_STRICT_EXPECTED_CALL_without_an_actual_call_yields_2_missing_c
     ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_UMOCK_C_01_014: [For each argument the argument value shall be stored for later comparison with actual calls.] */
+/* Tests_SRS_UMOCK_C_LIB_01_014: [For each argument the argument value shall be stored for later comparison with actual calls.] */
 TEST_FUNCTION(a_STRICT_EXPECTED_CALL_with_one_argument_without_an_actual_call_yields_1_missing_call)
 {
     // arrange
@@ -193,7 +193,7 @@ TEST_FUNCTION(a_STRICT_EXPECTED_CALL_with_one_argument_without_an_actual_call_yi
     ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_UMOCK_C_01_014: [For each argument the argument value shall be stored for later comparison with actual calls.] */
+/* Tests_SRS_UMOCK_C_LIB_01_014: [For each argument the argument value shall be stored for later comparison with actual calls.] */
 TEST_FUNCTION(a_STRICT_EXPECTED_CALL_with_2_arguments_without_an_actual_call_yields_1_missing_call)
 {
     // arrange
@@ -206,7 +206,7 @@ TEST_FUNCTION(a_STRICT_EXPECTED_CALL_with_2_arguments_without_an_actual_call_yie
     ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_UMOCK_C_01_013: [STRICT_EXPECTED_CALL shall record that a certain call is expected.] */
+/* Tests_SRS_UMOCK_C_LIB_01_013: [STRICT_EXPECTED_CALL shall record that a certain call is expected.] */
 TEST_FUNCTION(two_different_STRICT_EXPECTED_CALL_instances_without_an_actual_call_yields_2_missing_calls)
 {
     // arrange
@@ -220,7 +220,7 @@ TEST_FUNCTION(two_different_STRICT_EXPECTED_CALL_instances_without_an_actual_cal
     ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_UMOCK_C_01_115: [ umock_c shall compare calls in order. ]*/
+/* Tests_SRS_UMOCK_C_LIB_01_115: [ umock_c shall compare calls in order. ]*/
 TEST_FUNCTION(two_different_STRICT_EXPECTED_CALL_instances_without_an_actual_call_yields_2_missing_calls_with_order_preserved)
 {
     // arrange
@@ -236,8 +236,8 @@ TEST_FUNCTION(two_different_STRICT_EXPECTED_CALL_instances_without_an_actual_cal
 
 /* EXPECTED_CALL */
 
-/* Tests_SRS_UMOCK_C_01_016: [EXPECTED_CALL shall record that a certain call is expected.] */
-/* Tests_SRS_UMOCK_C_01_018: [The call argument shall be the complete function invocation.] */
+/* Tests_SRS_UMOCK_C_LIB_01_016: [EXPECTED_CALL shall record that a certain call is expected.] */
+/* Tests_SRS_UMOCK_C_LIB_01_018: [The call argument shall be the complete function invocation.] */
 TEST_FUNCTION(EXPECTED_CALL_without_an_actual_call_yields_a_missing_call)
 {
     // arrange
@@ -250,7 +250,7 @@ TEST_FUNCTION(EXPECTED_CALL_without_an_actual_call_yields_a_missing_call)
     ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_UMOCK_C_01_016: [EXPECTED_CALL shall record that a certain call is expected.] */
+/* Tests_SRS_UMOCK_C_LIB_01_016: [EXPECTED_CALL shall record that a certain call is expected.] */
 TEST_FUNCTION(two_EXPECTED_CALL_without_an_actual_call_yields_2_missing_calls)
 {
     // arrange
@@ -264,7 +264,7 @@ TEST_FUNCTION(two_EXPECTED_CALL_without_an_actual_call_yields_2_missing_calls)
     ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_UMOCK_C_01_017: [No arguments shall be saved by default, unless other modifiers state it.] */
+/* Tests_SRS_UMOCK_C_LIB_01_017: [No arguments shall be saved by default, unless other modifiers state it.] */
 TEST_FUNCTION(an_EXPECTED_CALL_with_one_argument_without_an_actual_call_yields_1_missing_call)
 {
     // arrange
@@ -277,7 +277,7 @@ TEST_FUNCTION(an_EXPECTED_CALL_with_one_argument_without_an_actual_call_yields_1
     ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_UMOCK_C_01_017: [No arguments shall be saved by default, unless other modifiers state it.] */
+/* Tests_SRS_UMOCK_C_LIB_01_017: [No arguments shall be saved by default, unless other modifiers state it.] */
 TEST_FUNCTION(an_EXPECTED_CALL_with_2_arguments_without_an_actual_call_yields_1_missing_call)
 {
     // arrange
@@ -290,7 +290,7 @@ TEST_FUNCTION(an_EXPECTED_CALL_with_2_arguments_without_an_actual_call_yields_1_
     ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_UMOCK_C_01_016: [EXPECTED_CALL shall record that a certain call is expected.] */
+/* Tests_SRS_UMOCK_C_LIB_01_016: [EXPECTED_CALL shall record that a certain call is expected.] */
 TEST_FUNCTION(two_different_EXPECTED_CALL_instances_without_an_actual_call_yields_2_missing_calls)
 {
     // arrange
@@ -304,7 +304,7 @@ TEST_FUNCTION(two_different_EXPECTED_CALL_instances_without_an_actual_call_yield
     ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_UMOCK_C_01_115: [ umock_c shall compare calls in order. ]*/
+/* Tests_SRS_UMOCK_C_LIB_01_115: [ umock_c shall compare calls in order. ]*/
 TEST_FUNCTION(two_different_EXPECTED_CALL_instances_without_an_actual_call_yields_2_missing_calls_with_order_preserved)
 {
     // arrange
@@ -318,7 +318,7 @@ TEST_FUNCTION(two_different_EXPECTED_CALL_instances_without_an_actual_call_yield
     ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_UMOCK_C_01_017: [No arguments shall be saved by default, unless other modifiers state it.]*/
+/* Tests_SRS_UMOCK_C_LIB_01_017: [No arguments shall be saved by default, unless other modifiers state it.]*/
 TEST_FUNCTION(EXPECTED_CALL_does_not_compare_arguments)
 {
     // arrange
@@ -333,7 +333,7 @@ TEST_FUNCTION(EXPECTED_CALL_does_not_compare_arguments)
     ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_UMOCK_C_01_017: [No arguments shall be saved by default, unless other modifiers state it.]*/
+/* Tests_SRS_UMOCK_C_LIB_01_017: [No arguments shall be saved by default, unless other modifiers state it.]*/
 TEST_FUNCTION(EXPECTED_CALL_with_2_args_does_not_compare_arguments)
 {
     // arrange
@@ -350,7 +350,7 @@ TEST_FUNCTION(EXPECTED_CALL_with_2_args_does_not_compare_arguments)
 
 /* Call modifiers */
 
-/* Tests_SRS_UMOCK_C_01_074: [When an expected call is recorded a call modifier interface in the form of a structure containing function pointers shall be returned to the caller.] */
+/* Tests_SRS_UMOCK_C_LIB_01_074: [When an expected call is recorded a call modifier interface in the form of a structure containing function pointers shall be returned to the caller.] */
 TEST_FUNCTION(STRICT_EXPECTED_CALL_allows_call_modifiers)
 {
     // arrange
@@ -368,7 +368,7 @@ TEST_FUNCTION(STRICT_EXPECTED_CALL_allows_call_modifiers)
 
 /* Chaining modifiers */
 
-/* Tests_SRS_UMOCK_C_01_075: [The last modifier in a chain overrides previous modifiers if any collision occurs.]*/
+/* Tests_SRS_UMOCK_C_LIB_01_075: [The last modifier in a chain overrides previous modifiers if any collision occurs.]*/
 TEST_FUNCTION(STRICT_EXPECTED_CALL_with_ignore_all_arguments_and_then_validate_all_args_still_validates_args)
 {
     // arrange
@@ -385,7 +385,7 @@ TEST_FUNCTION(STRICT_EXPECTED_CALL_with_ignore_all_arguments_and_then_validate_a
     ASSERT_ARE_EQUAL(char_ptr, "[test_dependency_2_args(43,44)]", umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_UMOCK_C_01_075: [The last modifier in a chain overrides previous modifiers if any collision occurs.]*/
+/* Tests_SRS_UMOCK_C_LIB_01_075: [The last modifier in a chain overrides previous modifiers if any collision occurs.]*/
 TEST_FUNCTION(EXPECTED_CALL_with_validate_all_arguments_and_then_ignore_all_args_still_ignores_args)
 {
     // arrange
@@ -402,7 +402,7 @@ TEST_FUNCTION(EXPECTED_CALL_with_validate_all_arguments_and_then_ignore_all_args
     ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_UMOCK_C_01_075: [The last modifier in a chain overrides previous modifiers if any collision occurs.]*/
+/* Tests_SRS_UMOCK_C_LIB_01_075: [The last modifier in a chain overrides previous modifiers if any collision occurs.]*/
 TEST_FUNCTION(STRICT_EXPECTED_CALL_with_ignore_validate_ignore_all_arguments_ignores_args)
 {
     // arrange
@@ -420,7 +420,7 @@ TEST_FUNCTION(STRICT_EXPECTED_CALL_with_ignore_validate_ignore_all_arguments_ign
     ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_UMOCK_C_01_075: [The last modifier in a chain overrides previous modifiers if any collision occurs.]*/
+/* Tests_SRS_UMOCK_C_LIB_01_075: [The last modifier in a chain overrides previous modifiers if any collision occurs.]*/
 TEST_FUNCTION(STRICT_EXPECTED_CALL_with_validate_ignore_validate_all_arguments_validates_args)
 {
     // arrange
@@ -440,7 +440,7 @@ TEST_FUNCTION(STRICT_EXPECTED_CALL_with_validate_ignore_validate_all_arguments_v
 
 /* IgnoreAllArguments */
 
-/* Tests_SRS_UMOCK_C_01_076: [The IgnoreAllArguments call modifier shall record that for that specific call all arguments will be ignored for that specific call.] */
+/* Tests_SRS_UMOCK_C_LIB_01_076: [The IgnoreAllArguments call modifier shall record that for that specific call all arguments will be ignored for that specific call.] */
 TEST_FUNCTION(IgnoreAllArguments_ignores_args_on_a_STRICT_EXPECTED_CALL)
 {
     // arrange
@@ -458,7 +458,7 @@ TEST_FUNCTION(IgnoreAllArguments_ignores_args_on_a_STRICT_EXPECTED_CALL)
 
 /* ValidateAllArguments */
 
-/* Tests_SRS_UMOCK_C_01_077: [The ValidateAllArguments call modifier shall record that for that specific call all arguments will be validated.] */
+/* Tests_SRS_UMOCK_C_LIB_01_077: [The ValidateAllArguments call modifier shall record that for that specific call all arguments will be validated.] */
 TEST_FUNCTION(ValidateAllArguments_validates_all_args_on_an_EXPECTED_CALL)
 {
     // arrange
@@ -476,7 +476,7 @@ TEST_FUNCTION(ValidateAllArguments_validates_all_args_on_an_EXPECTED_CALL)
 
 /* IgnoreArgument_{arg_name} */
 
-/* Tests_SRS_UMOCK_C_01_078: [The IgnoreArgument_{arg_name} call modifier shall record that the argument identified by arg_name will be ignored for that specific call.] */
+/* Tests_SRS_UMOCK_C_LIB_01_078: [The IgnoreArgument_{arg_name} call modifier shall record that the argument identified by arg_name will be ignored for that specific call.] */
 TEST_FUNCTION(IgnoreArgument_by_name_ignores_only_that_argument_on_a_STRICT_EXPECTED_CALL)
 {
     // arrange
@@ -492,7 +492,7 @@ TEST_FUNCTION(IgnoreArgument_by_name_ignores_only_that_argument_on_a_STRICT_EXPE
     ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_UMOCK_C_01_078: [The IgnoreArgument_{arg_name} call modifier shall record that the argument identified by arg_name will be ignored for that specific call.] */
+/* Tests_SRS_UMOCK_C_LIB_01_078: [The IgnoreArgument_{arg_name} call modifier shall record that the argument identified by arg_name will be ignored for that specific call.] */
 TEST_FUNCTION(IgnoreArgument_by_name_with_second_argument_ignores_only_that_argument_on_a_STRICT_EXPECTED_CALL)
 {
     // arrange
@@ -509,7 +509,7 @@ TEST_FUNCTION(IgnoreArgument_by_name_with_second_argument_ignores_only_that_argu
 
 /* ValidateArgument_{arg_name} */
 
-/* Tests_SRS_UMOCK_C_01_079: [The ValidateArgument_{arg_name} call modifier shall record that the argument identified by arg_name will be validated for that specific call.]*/
+/* Tests_SRS_UMOCK_C_LIB_01_079: [The ValidateArgument_{arg_name} call modifier shall record that the argument identified by arg_name will be validated for that specific call.]*/
 TEST_FUNCTION(ValidateArgument_by_name_validates_only_that_argument_on_an_EXPECTED_CALL)
 {
     // arrange
@@ -524,7 +524,7 @@ TEST_FUNCTION(ValidateArgument_by_name_validates_only_that_argument_on_an_EXPECT
     ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_UMOCK_C_01_079: [The ValidateArgument_{arg_name} call modifier shall record that the argument identified by arg_name will be validated for that specific call.]*/
+/* Tests_SRS_UMOCK_C_LIB_01_079: [The ValidateArgument_{arg_name} call modifier shall record that the argument identified by arg_name will be validated for that specific call.]*/
 TEST_FUNCTION(ValidateArgument_by_name_validates_only_that_argument_on_an_EXPECTED_CALL_and_args_are_different)
 {
     // arrange
@@ -539,7 +539,7 @@ TEST_FUNCTION(ValidateArgument_by_name_validates_only_that_argument_on_an_EXPECT
     ASSERT_ARE_EQUAL(char_ptr, "[test_dependency_2_args(41,44)]", umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_UMOCK_C_01_079: [The ValidateArgument_{arg_name} call modifier shall record that the argument identified by arg_name will be validated for that specific call.]*/
+/* Tests_SRS_UMOCK_C_LIB_01_079: [The ValidateArgument_{arg_name} call modifier shall record that the argument identified by arg_name will be validated for that specific call.]*/
 TEST_FUNCTION(ValidateArgument_by_name_2nd_arg_validates_only_that_argument_on_an_EXPECTED_CALL)
 {
     // arrange
@@ -554,7 +554,7 @@ TEST_FUNCTION(ValidateArgument_by_name_2nd_arg_validates_only_that_argument_on_a
     ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_UMOCK_C_01_079: [The ValidateArgument_{arg_name} call modifier shall record that the argument identified by arg_name will be validated for that specific call.]*/
+/* Tests_SRS_UMOCK_C_LIB_01_079: [The ValidateArgument_{arg_name} call modifier shall record that the argument identified by arg_name will be validated for that specific call.]*/
 TEST_FUNCTION(ValidateArgument_by_name_2nd_arg_validates_only_that_argument_on_an_EXPECTED_CALL_and_args_are_different)
 {
     // arrange
@@ -571,7 +571,7 @@ TEST_FUNCTION(ValidateArgument_by_name_2nd_arg_validates_only_that_argument_on_a
 
 /* IgnoreArgument */
 
-/* Tests_SRS_UMOCK_C_01_080: [The IgnoreArgument call modifier shall record that the indexth argument will be ignored for that specific call.]*/
+/* Tests_SRS_UMOCK_C_LIB_01_080: [The IgnoreArgument call modifier shall record that the indexth argument will be ignored for that specific call.]*/
 TEST_FUNCTION(IgnoreArgument_by_index_for_first_arg_ignores_the_first_argument)
 {
     // arrange
@@ -586,7 +586,7 @@ TEST_FUNCTION(IgnoreArgument_by_index_for_first_arg_ignores_the_first_argument)
     ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_UMOCK_C_01_080: [The IgnoreArgument call modifier shall record that the indexth argument will be ignored for that specific call.]*/
+/* Tests_SRS_UMOCK_C_LIB_01_080: [The IgnoreArgument call modifier shall record that the indexth argument will be ignored for that specific call.]*/
 TEST_FUNCTION(IgnoreArgument_by_index_for_second_arg_ignores_the_second_argument)
 {
     // arrange
@@ -601,7 +601,7 @@ TEST_FUNCTION(IgnoreArgument_by_index_for_second_arg_ignores_the_second_argument
     ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_UMOCK_C_01_080: [The IgnoreArgument call modifier shall record that the indexth argument will be ignored for that specific call.]*/
+/* Tests_SRS_UMOCK_C_LIB_01_080: [The IgnoreArgument call modifier shall record that the indexth argument will be ignored for that specific call.]*/
 TEST_FUNCTION(IgnoreArgument_by_index_for_first_arg_ignores_only_the_first_argument)
 {
     // arrange
@@ -616,7 +616,7 @@ TEST_FUNCTION(IgnoreArgument_by_index_for_first_arg_ignores_only_the_first_argum
     ASSERT_ARE_EQUAL(char_ptr, "[test_dependency_2_args(42,42)]", umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_UMOCK_C_01_080: [The IgnoreArgument call modifier shall record that the indexth argument will be ignored for that specific call.]*/
+/* Tests_SRS_UMOCK_C_LIB_01_080: [The IgnoreArgument call modifier shall record that the indexth argument will be ignored for that specific call.]*/
 TEST_FUNCTION(IgnoreArgument_by_index_for_second_arg_ignores_only_the_second_argument)
 {
     // arrange
@@ -631,7 +631,7 @@ TEST_FUNCTION(IgnoreArgument_by_index_for_second_arg_ignores_only_the_second_arg
     ASSERT_ARE_EQUAL(char_ptr, "[test_dependency_2_args(42,42)]", umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_UMOCK_C_01_081: [If the index is out of range umock_c shall raise an error with the code UMOCK_C_ARG_INDEX_OUT_OF_RANGE.] */
+/* Tests_SRS_UMOCK_C_LIB_01_081: [If the index is out of range umock_c shall raise an error with the code UMOCK_C_ARG_INDEX_OUT_OF_RANGE.] */
 TEST_FUNCTION(IgnoreArgument_by_index_with_index_0_triggers_the_on_error_callback)
 {
     // arrange
@@ -645,7 +645,7 @@ TEST_FUNCTION(IgnoreArgument_by_index_with_index_0_triggers_the_on_error_callbac
     ASSERT_ARE_EQUAL(int, (int)UMOCK_C_ARG_INDEX_OUT_OF_RANGE, test_on_umock_c_error_calls[0].error_code);
 }
 
-/* Tests_SRS_UMOCK_C_01_081: [If the index is out of range umock_c shall raise an error with the code UMOCK_C_ARG_INDEX_OUT_OF_RANGE.] */
+/* Tests_SRS_UMOCK_C_LIB_01_081: [If the index is out of range umock_c shall raise an error with the code UMOCK_C_ARG_INDEX_OUT_OF_RANGE.] */
 TEST_FUNCTION(IgnoreArgument_by_index_with_index_greater_than_arg_count_triggers_the_on_error_callback)
 {
     // arrange
@@ -661,7 +661,7 @@ TEST_FUNCTION(IgnoreArgument_by_index_with_index_greater_than_arg_count_triggers
 
 /* ValidateArgument */
 
-/* Tests_SRS_UMOCK_C_01_082: [The ValidateArgument call modifier shall record that the indexth argument will be validated for that specific call.]*/
+/* Tests_SRS_UMOCK_C_LIB_01_082: [The ValidateArgument call modifier shall record that the indexth argument will be validated for that specific call.]*/
 TEST_FUNCTION(ValidateArgument_by_index_for_first_arg_ignores_the_first_argument)
 {
     // arrange
@@ -676,7 +676,7 @@ TEST_FUNCTION(ValidateArgument_by_index_for_first_arg_ignores_the_first_argument
     ASSERT_ARE_EQUAL(char_ptr, "[test_dependency_2_args(41,43)]", umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_UMOCK_C_01_082: [The ValidateArgument call modifier shall record that the indexth argument will be validated for that specific call.]*/
+/* Tests_SRS_UMOCK_C_LIB_01_082: [The ValidateArgument call modifier shall record that the indexth argument will be validated for that specific call.]*/
 TEST_FUNCTION(ValidateArgument_by_index_for_second_arg_validates_the_second_argument)
 {
     // arrange
@@ -691,7 +691,7 @@ TEST_FUNCTION(ValidateArgument_by_index_for_second_arg_validates_the_second_argu
     ASSERT_ARE_EQUAL(char_ptr, "[test_dependency_2_args(42,43)]", umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_UMOCK_C_01_082: [The ValidateArgument call modifier shall record that the indexth argument will be validated for that specific call.]*/
+/* Tests_SRS_UMOCK_C_LIB_01_082: [The ValidateArgument call modifier shall record that the indexth argument will be validated for that specific call.]*/
 TEST_FUNCTION(ValidateArgument_by_index_for_first_arg_validates_only_the_first_argument)
 {
     // arrange
@@ -706,7 +706,7 @@ TEST_FUNCTION(ValidateArgument_by_index_for_first_arg_validates_only_the_first_a
     ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_UMOCK_C_01_082: [The ValidateArgument call modifier shall record that the indexth argument will be validated for that specific call.]*/
+/* Tests_SRS_UMOCK_C_LIB_01_082: [The ValidateArgument call modifier shall record that the indexth argument will be validated for that specific call.]*/
 TEST_FUNCTION(ValidateArgument_by_index_for_second_arg_validates_only_the_second_argument)
 {
     // arrange
@@ -721,7 +721,7 @@ TEST_FUNCTION(ValidateArgument_by_index_for_second_arg_validates_only_the_second
     ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_UMOCK_C_01_083: [If the index is out of range umock_c shall raise an error with the code UMOCK_C_ARG_INDEX_OUT_OF_RANGE.]*/
+/* Tests_SRS_UMOCK_C_LIB_01_083: [If the index is out of range umock_c shall raise an error with the code UMOCK_C_ARG_INDEX_OUT_OF_RANGE.]*/
 TEST_FUNCTION(ValidateArgument_by_index_with_0_index_triggers_the_on_error_callback)
 {
     // arrange
@@ -735,7 +735,7 @@ TEST_FUNCTION(ValidateArgument_by_index_with_0_index_triggers_the_on_error_callb
     ASSERT_ARE_EQUAL(int, (int)UMOCK_C_ARG_INDEX_OUT_OF_RANGE, test_on_umock_c_error_calls[0].error_code);
 }
 
-/* Tests_SRS_UMOCK_C_01_083: [If the index is out of range umock_c shall raise an error with the code UMOCK_C_ARG_INDEX_OUT_OF_RANGE.]*/
+/* Tests_SRS_UMOCK_C_LIB_01_083: [If the index is out of range umock_c shall raise an error with the code UMOCK_C_ARG_INDEX_OUT_OF_RANGE.]*/
 TEST_FUNCTION(ValidateArgument_by_index_with_index_greater_than_arg_count_triggers_the_on_error_callback)
 {
     // arrange
@@ -751,7 +751,7 @@ TEST_FUNCTION(ValidateArgument_by_index_with_index_greater_than_arg_count_trigge
 
 /* SetReturn */
 
-/* Tests_SRS_UMOCK_C_01_084: [The SetReturn call modifier shall record that when an actual call is matched with the specific expected call, it shall return the result value to the code under test.] */
+/* Tests_SRS_UMOCK_C_LIB_01_084: [The SetReturn call modifier shall record that when an actual call is matched with the specific expected call, it shall return the result value to the code under test.] */
 TEST_FUNCTION(SetReturn_sets_the_return_value_for_a_strict_expected_call)
 {
     // arrange
@@ -767,7 +767,7 @@ TEST_FUNCTION(SetReturn_sets_the_return_value_for_a_strict_expected_call)
     ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_UMOCK_C_01_084: [The SetReturn call modifier shall record that when an actual call is matched with the specific expected call, it shall return the result value to the code under test.] */
+/* Tests_SRS_UMOCK_C_LIB_01_084: [The SetReturn call modifier shall record that when an actual call is matched with the specific expected call, it shall return the result value to the code under test.] */
 TEST_FUNCTION(SetReturn_sets_the_return_value_for_an_expected_call)
 {
     // arrange
@@ -783,7 +783,7 @@ TEST_FUNCTION(SetReturn_sets_the_return_value_for_an_expected_call)
     ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_UMOCK_C_01_084: [The SetReturn call modifier shall record that when an actual call is matched with the specific expected call, it shall return the result value to the code under test.] */
+/* Tests_SRS_UMOCK_C_LIB_01_084: [The SetReturn call modifier shall record that when an actual call is matched with the specific expected call, it shall return the result value to the code under test.] */
 TEST_FUNCTION(SetReturn_sets_the_return_value_only_for_a_matched_call)
 {
     // arrange
@@ -797,7 +797,7 @@ TEST_FUNCTION(SetReturn_sets_the_return_value_only_for_a_matched_call)
     ASSERT_ARE_EQUAL(int, 0, result);
 }
 
-/* Tests_SRS_UMOCK_C_01_084: [The SetReturn call modifier shall record that when an actual call is matched with the specific expected call, it shall return the result value to the code under test.] */
+/* Tests_SRS_UMOCK_C_LIB_01_084: [The SetReturn call modifier shall record that when an actual call is matched with the specific expected call, it shall return the result value to the code under test.] */
 TEST_FUNCTION(SetReturn_sets_independent_return_values_for_each_call)
 {
     // arrange
@@ -817,8 +817,8 @@ TEST_FUNCTION(SetReturn_sets_independent_return_values_for_each_call)
 
 /* CopyOutArgumentBuffer */
 
-/* Tests_SRS_UMOCK_C_01_087: [The CopyOutArgumentBuffer call modifier shall copy the memory pointed to by bytes and being length bytes so that it is later injected as an out argument when the code under test calls the mock function.] */
-/* Tests_SRS_UMOCK_C_01_116: [ The argument targetted by CopyOutArgument shall also be marked as ignored. ] */
+/* Tests_SRS_UMOCK_C_LIB_01_087: [The CopyOutArgumentBuffer call modifier shall copy the memory pointed to by bytes and being length bytes so that it is later injected as an out argument when the code under test calls the mock function.] */
+/* Tests_SRS_UMOCK_C_LIB_01_116: [ The argument targetted by CopyOutArgument shall also be marked as ignored. ] */
 TEST_FUNCTION(CopyOutArgumentBuffer_copies_bytes_to_the_out_argument_for_a_strict_expected_call)
 {
     // arrange
@@ -834,8 +834,8 @@ TEST_FUNCTION(CopyOutArgumentBuffer_copies_bytes_to_the_out_argument_for_a_stric
     ASSERT_ARE_EQUAL(int, injected_int, actual_int);
 }
 
-/* Tests_SRS_UMOCK_C_01_087: [The CopyOutArgumentBuffer call modifier shall copy the memory pointed to by bytes and being length bytes so that it is later injected as an out argument when the code under test calls the mock function.] */
-/* Tests_SRS_UMOCK_C_01_116: [ The argument targetted by CopyOutArgument shall also be marked as ignored. ] */
+/* Tests_SRS_UMOCK_C_LIB_01_087: [The CopyOutArgumentBuffer call modifier shall copy the memory pointed to by bytes and being length bytes so that it is later injected as an out argument when the code under test calls the mock function.] */
+/* Tests_SRS_UMOCK_C_LIB_01_116: [ The argument targetted by CopyOutArgument shall also be marked as ignored. ] */
 TEST_FUNCTION(CopyOutArgumentBuffer_copies_bytes_to_the_out_argument_for_an_expected_call)
 {
     // arrange
@@ -851,8 +851,8 @@ TEST_FUNCTION(CopyOutArgumentBuffer_copies_bytes_to_the_out_argument_for_an_expe
     ASSERT_ARE_EQUAL(int, injected_int, actual_int);
 }
 
-/* Tests_SRS_UMOCK_C_01_087: [The CopyOutArgumentBuffer call modifier shall copy the memory pointed to by bytes and being length bytes so that it is later injected as an out argument when the code under test calls the mock function.] */
-/* Tests_SRS_UMOCK_C_01_116: [ The argument targetted by CopyOutArgument shall also be marked as ignored. ] */
+/* Tests_SRS_UMOCK_C_LIB_01_087: [The CopyOutArgumentBuffer call modifier shall copy the memory pointed to by bytes and being length bytes so that it is later injected as an out argument when the code under test calls the mock function.] */
+/* Tests_SRS_UMOCK_C_LIB_01_116: [ The argument targetted by CopyOutArgument shall also be marked as ignored. ] */
 TEST_FUNCTION(CopyOutArgumentBuffer_only_copies_bytes_to_the_out_argument_that_was_specified)
 {
     // arrange
@@ -870,8 +870,8 @@ TEST_FUNCTION(CopyOutArgumentBuffer_only_copies_bytes_to_the_out_argument_that_w
     ASSERT_ARE_EQUAL(int, 0, actual_int_2);
 }
 
-/* Tests_SRS_UMOCK_C_01_087: [The CopyOutArgumentBuffer call modifier shall copy the memory pointed to by bytes and being length bytes so that it is later injected as an out argument when the code under test calls the mock function.] */
-/* Tests_SRS_UMOCK_C_01_116: [ The argument targetted by CopyOutArgument shall also be marked as ignored. ] */
+/* Tests_SRS_UMOCK_C_LIB_01_087: [The CopyOutArgumentBuffer call modifier shall copy the memory pointed to by bytes and being length bytes so that it is later injected as an out argument when the code under test calls the mock function.] */
+/* Tests_SRS_UMOCK_C_LIB_01_116: [ The argument targetted by CopyOutArgument shall also be marked as ignored. ] */
 TEST_FUNCTION(CopyOutArgumentBuffer_only_copies_bytes_to_the_second_out_argument)
 {
     // arrange
@@ -889,7 +889,7 @@ TEST_FUNCTION(CopyOutArgumentBuffer_only_copies_bytes_to_the_second_out_argument
     ASSERT_ARE_EQUAL(int, injected_int, actual_int_2);
 }
 
-/* Tests_SRS_UMOCK_C_01_088: [The memory shall be copied.]*/
+/* Tests_SRS_UMOCK_C_LIB_01_088: [The memory shall be copied.]*/
 TEST_FUNCTION(CopyOutArgumentBuffer_copies_the_memory_for_later_use)
 {
     // arrange
@@ -906,8 +906,8 @@ TEST_FUNCTION(CopyOutArgumentBuffer_copies_the_memory_for_later_use)
     ASSERT_ARE_EQUAL(int, 0x42, actual_int);
 }
 
-/* Tests_SRS_UMOCK_C_01_089: [The buffers for previous CopyOutArgumentBuffer calls shall be freed.]*/
-/* Tests_SRS_UMOCK_C_01_133: [ If several calls to CopyOutArgumentBuffer are made, only the last buffer shall be kept. ]*/
+/* Tests_SRS_UMOCK_C_LIB_01_089: [The buffers for previous CopyOutArgumentBuffer calls shall be freed.]*/
+/* Tests_SRS_UMOCK_C_LIB_01_133: [ If several calls to CopyOutArgumentBuffer are made, only the last buffer shall be kept. ]*/
 TEST_FUNCTION(CopyOutArgumentBuffer_frees_allocated_buffers_for_previous_CopyOutArgumentBuffer)
 {
     // arrange
@@ -924,7 +924,7 @@ TEST_FUNCTION(CopyOutArgumentBuffer_frees_allocated_buffers_for_previous_CopyOut
     ASSERT_ARE_EQUAL(int, 0x42, actual_int);
 }
 
-/* Tests_SRS_UMOCK_C_01_091: [If the index is out of range umock_c shall raise an error with the code UMOCK_C_ARG_INDEX_OUT_OF_RANGE.]*/
+/* Tests_SRS_UMOCK_C_LIB_01_091: [If the index is out of range umock_c shall raise an error with the code UMOCK_C_ARG_INDEX_OUT_OF_RANGE.]*/
 TEST_FUNCTION(CopyOutArgumentBuffer_with_0_index_triggers_the_error_callback)
 {
     // arrange
@@ -939,7 +939,7 @@ TEST_FUNCTION(CopyOutArgumentBuffer_with_0_index_triggers_the_error_callback)
     ASSERT_ARE_EQUAL(int, (int)UMOCK_C_ARG_INDEX_OUT_OF_RANGE, test_on_umock_c_error_calls[0].error_code);
 }
 
-/* Tests_SRS_UMOCK_C_01_091: [If the index is out of range umock_c shall raise an error with the code UMOCK_C_ARG_INDEX_OUT_OF_RANGE.]*/
+/* Tests_SRS_UMOCK_C_LIB_01_091: [If the index is out of range umock_c shall raise an error with the code UMOCK_C_ARG_INDEX_OUT_OF_RANGE.]*/
 TEST_FUNCTION(CopyOutArgumentBuffer_with_index_higher_than_count_of_args_triggers_the_error_callback)
 {
     // arrange
@@ -954,7 +954,7 @@ TEST_FUNCTION(CopyOutArgumentBuffer_with_index_higher_than_count_of_args_trigger
     ASSERT_ARE_EQUAL(int, (int)UMOCK_C_ARG_INDEX_OUT_OF_RANGE, test_on_umock_c_error_calls[0].error_code);
 }
 
-/* Tests_SRS_UMOCK_C_01_092: [If bytes is NULL or length is 0, umock_c shall raise an error with the code UMOCK_C_INVALID_ARGUMENT_BUFFER.] */
+/* Tests_SRS_UMOCK_C_LIB_01_092: [If bytes is NULL or length is 0, umock_c shall raise an error with the code UMOCK_C_INVALID_ARGUMENT_BUFFER.] */
 TEST_FUNCTION(CopyOutArgumentBuffer_with_NULL_bytes_triggers_the_error_callback)
 {
     // arrange
@@ -968,7 +968,7 @@ TEST_FUNCTION(CopyOutArgumentBuffer_with_NULL_bytes_triggers_the_error_callback)
     ASSERT_ARE_EQUAL(int, (int)UMOCK_C_INVALID_ARGUMENT_BUFFER, test_on_umock_c_error_calls[0].error_code);
 }
 
-/* Tests_SRS_UMOCK_C_01_092: [If bytes is NULL or length is 0, umock_c shall raise an error with the code UMOCK_C_INVALID_ARGUMENT_BUFFER.] */
+/* Tests_SRS_UMOCK_C_LIB_01_092: [If bytes is NULL or length is 0, umock_c shall raise an error with the code UMOCK_C_INVALID_ARGUMENT_BUFFER.] */
 TEST_FUNCTION(CopyOutArgumentBuffer_with_0_length_triggers_the_error_callback)
 {
     // arrange
@@ -983,8 +983,8 @@ TEST_FUNCTION(CopyOutArgumentBuffer_with_0_length_triggers_the_error_callback)
     ASSERT_ARE_EQUAL(int, (int)UMOCK_C_INVALID_ARGUMENT_BUFFER, test_on_umock_c_error_calls[0].error_code);
 }
 
-/* Tests_SRS_UMOCK_C_01_087: [The CopyOutArgumentBuffer call modifier shall copy the memory pointed to by bytes and being length bytes so that it is later injected as an out argument when the code under test calls the mock function.] */
-/* Tests_SRS_UMOCK_C_01_116: [ The argument targetted by CopyOutArgument shall also be marked as ignored. ] */
+/* Tests_SRS_UMOCK_C_LIB_01_087: [The CopyOutArgumentBuffer call modifier shall copy the memory pointed to by bytes and being length bytes so that it is later injected as an out argument when the code under test calls the mock function.] */
+/* Tests_SRS_UMOCK_C_LIB_01_116: [ The argument targetted by CopyOutArgument shall also be marked as ignored. ] */
 TEST_FUNCTION(CopyOutArgumentBuffer_when_an_error_occurs_preserves_the_previous_state)
 {
     // arrange
@@ -1006,9 +1006,9 @@ TEST_FUNCTION(CopyOutArgumentBuffer_when_an_error_occurs_preserves_the_previous_
 
 /* ValidateArgumentBuffer */
 
-/* Tests_SRS_UMOCK_C_01_095: [The ValidateArgumentBuffer call modifier shall copy the memory pointed to by bytes and being length bytes so that it is later compared against a pointer type argument when the code under test calls the mock function.] */
-/* Tests_SRS_UMOCK_C_01_096: [If the content of the code under test buffer and the buffer supplied to ValidateArgumentBuffer does not match then this should be treated as a mismatch in argument comparison for that argument.]*/
-/* Tests_SRS_UMOCK_C_01_097: [ValidateArgumentBuffer shall implicitly perform an IgnoreArgument on the indexth argument.]*/
+/* Tests_SRS_UMOCK_C_LIB_01_095: [The ValidateArgumentBuffer call modifier shall copy the memory pointed to by bytes and being length bytes so that it is later compared against a pointer type argument when the code under test calls the mock function.] */
+/* Tests_SRS_UMOCK_C_LIB_01_096: [If the content of the code under test buffer and the buffer supplied to ValidateArgumentBuffer does not match then this should be treated as a mismatch in argument comparison for that argument.]*/
+/* Tests_SRS_UMOCK_C_LIB_01_097: [ValidateArgumentBuffer shall implicitly perform an IgnoreArgument on the indexth argument.]*/
 TEST_FUNCTION(ValidateArgumentBuffer_checks_the_argument_buffer)
 {
     // arrange
@@ -1025,9 +1025,9 @@ TEST_FUNCTION(ValidateArgumentBuffer_checks_the_argument_buffer)
     ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_UMOCK_C_01_095: [The ValidateArgumentBuffer call modifier shall copy the memory pointed to by bytes and being length bytes so that it is later compared against a pointer type argument when the code under test calls the mock function.] */
-/* Tests_SRS_UMOCK_C_01_096: [If the content of the code under test buffer and the buffer supplied to ValidateArgumentBuffer does not match then this should be treated as a mismatch in argument comparison for that argument.]*/
-/* Tests_SRS_UMOCK_C_01_097: [ValidateArgumentBuffer shall implicitly perform an IgnoreArgument on the indexth argument.]*/
+/* Tests_SRS_UMOCK_C_LIB_01_095: [The ValidateArgumentBuffer call modifier shall copy the memory pointed to by bytes and being length bytes so that it is later compared against a pointer type argument when the code under test calls the mock function.] */
+/* Tests_SRS_UMOCK_C_LIB_01_096: [If the content of the code under test buffer and the buffer supplied to ValidateArgumentBuffer does not match then this should be treated as a mismatch in argument comparison for that argument.]*/
+/* Tests_SRS_UMOCK_C_LIB_01_097: [ValidateArgumentBuffer shall implicitly perform an IgnoreArgument on the indexth argument.]*/
 TEST_FUNCTION(ValidateArgumentBuffer_checks_the_argument_buffer_and_mismatch_is_detected_when_content_does_not_match)
 {
     // arrange
@@ -1046,9 +1046,9 @@ TEST_FUNCTION(ValidateArgumentBuffer_checks_the_argument_buffer_and_mismatch_is_
     ASSERT_ARE_EQUAL(char_ptr, actual_string, umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_UMOCK_C_01_095: [The ValidateArgumentBuffer call modifier shall copy the memory pointed to by bytes and being length bytes so that it is later compared against a pointer type argument when the code under test calls the mock function.] */
-/* Tests_SRS_UMOCK_C_01_096: [If the content of the code under test buffer and the buffer supplied to ValidateArgumentBuffer does not match then this should be treated as a mismatch in argument comparison for that argument.]*/
-/* Tests_SRS_UMOCK_C_01_097: [ValidateArgumentBuffer shall implicitly perform an IgnoreArgument on the indexth argument.]*/
+/* Tests_SRS_UMOCK_C_LIB_01_095: [The ValidateArgumentBuffer call modifier shall copy the memory pointed to by bytes and being length bytes so that it is later compared against a pointer type argument when the code under test calls the mock function.] */
+/* Tests_SRS_UMOCK_C_LIB_01_096: [If the content of the code under test buffer and the buffer supplied to ValidateArgumentBuffer does not match then this should be treated as a mismatch in argument comparison for that argument.]*/
+/* Tests_SRS_UMOCK_C_LIB_01_097: [ValidateArgumentBuffer shall implicitly perform an IgnoreArgument on the indexth argument.]*/
 TEST_FUNCTION(ValidateArgumentBuffer_checks_the_argument_buffer_and_mismatch_is_detected_when_content_does_not_match_for_expected_call)
 {
     // arrange
@@ -1067,7 +1067,7 @@ TEST_FUNCTION(ValidateArgumentBuffer_checks_the_argument_buffer_and_mismatch_is_
     ASSERT_ARE_EQUAL(char_ptr, actual_string, umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_UMOCK_C_01_099: [If the index is out of range umock_c shall raise an error with the code UMOCK_C_ARG_INDEX_OUT_OF_RANGE.]*/
+/* Tests_SRS_UMOCK_C_LIB_01_099: [If the index is out of range umock_c shall raise an error with the code UMOCK_C_ARG_INDEX_OUT_OF_RANGE.]*/
 TEST_FUNCTION(ValidateArgumentBuffer_with_0_index_triggers_an_error)
 {
     // arrange
@@ -1084,7 +1084,7 @@ TEST_FUNCTION(ValidateArgumentBuffer_with_0_index_triggers_an_error)
     ASSERT_ARE_EQUAL(int, (int)UMOCK_C_ARG_INDEX_OUT_OF_RANGE, test_on_umock_c_error_calls[0].error_code);
 }
 
-/* Tests_SRS_UMOCK_C_01_099: [If the index is out of range umock_c shall raise an error with the code UMOCK_C_ARG_INDEX_OUT_OF_RANGE.]*/
+/* Tests_SRS_UMOCK_C_LIB_01_099: [If the index is out of range umock_c shall raise an error with the code UMOCK_C_ARG_INDEX_OUT_OF_RANGE.]*/
 TEST_FUNCTION(ValidateArgumentBuffer_with_index_higher_than_the_Arg_count_triggers_an_error)
 {
     // arrange
@@ -1101,7 +1101,7 @@ TEST_FUNCTION(ValidateArgumentBuffer_with_index_higher_than_the_Arg_count_trigge
     ASSERT_ARE_EQUAL(int, (int)UMOCK_C_ARG_INDEX_OUT_OF_RANGE, test_on_umock_c_error_calls[0].error_code);
 }
 
-/* Tests_SRS_UMOCK_C_01_100: [If bytes is NULL or length is 0, umock_c shall raise an error with the code UMOCK_C_INVALID_ARGUMENT_BUFFER.] */
+/* Tests_SRS_UMOCK_C_LIB_01_100: [If bytes is NULL or length is 0, umock_c shall raise an error with the code UMOCK_C_INVALID_ARGUMENT_BUFFER.] */
 TEST_FUNCTION(ValidateArgumentBuffer_with_NULL_buffer_triggers_the_error_callback)
 {
     // arrange
@@ -1115,7 +1115,7 @@ TEST_FUNCTION(ValidateArgumentBuffer_with_NULL_buffer_triggers_the_error_callbac
     ASSERT_ARE_EQUAL(int, (int)UMOCK_C_INVALID_ARGUMENT_BUFFER, test_on_umock_c_error_calls[0].error_code);
 }
 
-/* Tests_SRS_UMOCK_C_01_100: [If bytes is NULL or length is 0, umock_c shall raise an error with the code UMOCK_C_INVALID_ARGUMENT_BUFFER.] */
+/* Tests_SRS_UMOCK_C_LIB_01_100: [If bytes is NULL or length is 0, umock_c shall raise an error with the code UMOCK_C_INVALID_ARGUMENT_BUFFER.] */
 TEST_FUNCTION(ValidateArgumentBuffer_with_0_length_triggers_the_error_callback)
 {
     // arrange
@@ -1130,9 +1130,9 @@ TEST_FUNCTION(ValidateArgumentBuffer_with_0_length_triggers_the_error_callback)
     ASSERT_ARE_EQUAL(int, (int)UMOCK_C_INVALID_ARGUMENT_BUFFER, test_on_umock_c_error_calls[0].error_code);
 }
 
-/* Tests_SRS_UMOCK_C_01_095: [The ValidateArgumentBuffer call modifier shall copy the memory pointed to by bytes and being length bytes so that it is later compared against a pointer type argument when the code under test calls the mock function.] */
-/* Tests_SRS_UMOCK_C_01_096: [If the content of the code under test buffer and the buffer supplied to ValidateArgumentBuffer does not match then this should be treated as a mismatch in argument comparison for that argument.]*/
-/* Tests_SRS_UMOCK_C_01_097: [ValidateArgumentBuffer shall implicitly perform an IgnoreArgument on the indexth argument.]*/
+/* Tests_SRS_UMOCK_C_LIB_01_095: [The ValidateArgumentBuffer call modifier shall copy the memory pointed to by bytes and being length bytes so that it is later compared against a pointer type argument when the code under test calls the mock function.] */
+/* Tests_SRS_UMOCK_C_LIB_01_096: [If the content of the code under test buffer and the buffer supplied to ValidateArgumentBuffer does not match then this should be treated as a mismatch in argument comparison for that argument.]*/
+/* Tests_SRS_UMOCK_C_LIB_01_097: [ValidateArgumentBuffer shall implicitly perform an IgnoreArgument on the indexth argument.]*/
 TEST_FUNCTION(ValidateArgumentBuffer_with_2_bytes_and_first_byte_different_checks_the_content)
 {
     // arrange
@@ -1151,9 +1151,9 @@ TEST_FUNCTION(ValidateArgumentBuffer_with_2_bytes_and_first_byte_different_check
     ASSERT_ARE_EQUAL(char_ptr, actual_string, umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_UMOCK_C_01_095: [The ValidateArgumentBuffer call modifier shall copy the memory pointed to by bytes and being length bytes so that it is later compared against a pointer type argument when the code under test calls the mock function.] */
-/* Tests_SRS_UMOCK_C_01_096: [If the content of the code under test buffer and the buffer supplied to ValidateArgumentBuffer does not match then this should be treated as a mismatch in argument comparison for that argument.]*/
-/* Tests_SRS_UMOCK_C_01_097: [ValidateArgumentBuffer shall implicitly perform an IgnoreArgument on the indexth argument.]*/
+/* Tests_SRS_UMOCK_C_LIB_01_095: [The ValidateArgumentBuffer call modifier shall copy the memory pointed to by bytes and being length bytes so that it is later compared against a pointer type argument when the code under test calls the mock function.] */
+/* Tests_SRS_UMOCK_C_LIB_01_096: [If the content of the code under test buffer and the buffer supplied to ValidateArgumentBuffer does not match then this should be treated as a mismatch in argument comparison for that argument.]*/
+/* Tests_SRS_UMOCK_C_LIB_01_097: [ValidateArgumentBuffer shall implicitly perform an IgnoreArgument on the indexth argument.]*/
 TEST_FUNCTION(ValidateArgumentBuffer_with_2_bytes_and_second_byte_different_checks_the_content)
 {
     // arrange
@@ -1172,7 +1172,7 @@ TEST_FUNCTION(ValidateArgumentBuffer_with_2_bytes_and_second_byte_different_chec
     ASSERT_ARE_EQUAL(char_ptr, actual_string, umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_UMOCK_C_01_131: [ The memory pointed by bytes shall be copied. ]*/
+/* Tests_SRS_UMOCK_C_LIB_01_131: [ The memory pointed by bytes shall be copied. ]*/
 TEST_FUNCTION(ValidateArgumentBuffer_copies_the_bytes_to_compare)
 {
     // arrange
@@ -1191,8 +1191,8 @@ TEST_FUNCTION(ValidateArgumentBuffer_copies_the_bytes_to_compare)
     ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_UMOCK_C_01_132: [ If several calls to ValidateArgumentBuffer are made, only the last buffer shall be kept. ]*/
-/* Tests_SRS_UMOCK_C_01_130: [ The buffers for previous ValidateArgumentBuffer calls shall be freed. ]*/
+/* Tests_SRS_UMOCK_C_LIB_01_132: [ If several calls to ValidateArgumentBuffer are made, only the last buffer shall be kept. ]*/
+/* Tests_SRS_UMOCK_C_LIB_01_130: [ The buffers for previous ValidateArgumentBuffer calls shall be freed. ]*/
 TEST_FUNCTION(When_ValidateArgumentBuffer_is_called_twice_the_last_buffer_is_used)
 {
     // arrange
@@ -1213,9 +1213,9 @@ TEST_FUNCTION(When_ValidateArgumentBuffer_is_called_twice_the_last_buffer_is_use
 
 /* REGISTER_GLOBAL_MOCK_HOOK */
 
-/* Tests_SRS_UMOCK_C_01_104: [The REGISTER_GLOBAL_MOCK_HOOK shall register a mock hook to be called every time the mocked function is called by production code.]*/
-/* Tests_SRS_UMOCK_C_01_105: [The hook’s result shall be returned by the mock to the production code.]*/
-/* Tests_SRS_UMOCK_C_01_106: [The signature for the hook shall be assumed to have exactly the same arguments and return as the mocked function.]*/
+/* Tests_SRS_UMOCK_C_LIB_01_104: [The REGISTER_GLOBAL_MOCK_HOOK shall register a mock hook to be called every time the mocked function is called by production code.]*/
+/* Tests_SRS_UMOCK_C_LIB_01_105: [The hook’s result shall be returned by the mock to the production code.]*/
+/* Tests_SRS_UMOCK_C_LIB_01_106: [The signature for the hook shall be assumed to have exactly the same arguments and return as the mocked function.]*/
 TEST_FUNCTION(REGISTER_GLOBAL_MOCK_HOOK_registers_a_hook_for_the_mock)
 {
     // arrange
@@ -1229,8 +1229,8 @@ TEST_FUNCTION(REGISTER_GLOBAL_MOCK_HOOK_registers_a_hook_for_the_mock)
     ASSERT_ARE_EQUAL(int, 0x42, result);
 }
 
-/* Tests_SRS_UMOCK_C_01_104: [The REGISTER_GLOBAL_MOCK_HOOK shall register a mock hook to be called every time the mocked function is called by production code.]*/
-/* Tests_SRS_UMOCK_C_01_105: [The hook’s result shall be returned by the mock to the production code.]*/
+/* Tests_SRS_UMOCK_C_LIB_01_104: [The REGISTER_GLOBAL_MOCK_HOOK shall register a mock hook to be called every time the mocked function is called by production code.]*/
+/* Tests_SRS_UMOCK_C_LIB_01_105: [The hook’s result shall be returned by the mock to the production code.]*/
 TEST_FUNCTION(REGISTER_GLOBAL_MOCK_HOOK_registers_a_hook_for_the_mock_that_returns_2_different_values)
 {
     // arrange
@@ -1246,7 +1246,7 @@ TEST_FUNCTION(REGISTER_GLOBAL_MOCK_HOOK_registers_a_hook_for_the_mock_that_retur
     ASSERT_ARE_EQUAL(int, 0x43, call2_result);
 }
 
-/* Tests_SRS_UMOCK_C_01_107: [If there are multiple invocations of REGISTER_GLOBAL_MOCK_HOOK, the last one shall take effect over the previous ones.] */
+/* Tests_SRS_UMOCK_C_LIB_01_107: [If there are multiple invocations of REGISTER_GLOBAL_MOCK_HOOK, the last one shall take effect over the previous ones.] */
 TEST_FUNCTION(REGISTER_GLOBAL_MOCK_HOOK_twice_makes_the_last_hook_stick)
 {
     // arrange
@@ -1261,7 +1261,7 @@ TEST_FUNCTION(REGISTER_GLOBAL_MOCK_HOOK_twice_makes_the_last_hook_stick)
     ASSERT_ARE_EQUAL(int, 0x21, result);
 }
 
-/* Tests_SRS_UMOCK_C_01_134: [ REGISTER_GLOBAL_MOCK_HOOK called with a NULL hook unregisters a previously registered hook. ]*/
+/* Tests_SRS_UMOCK_C_LIB_01_134: [ REGISTER_GLOBAL_MOCK_HOOK called with a NULL hook unregisters a previously registered hook. ]*/
 TEST_FUNCTION(REGISTER_GLOBAL_MOCK_HOOK_with_NULL_unregisters_a_previously_registered_hook)
 {
     // arrange
@@ -1275,7 +1275,7 @@ TEST_FUNCTION(REGISTER_GLOBAL_MOCK_HOOK_with_NULL_unregisters_a_previously_regis
     ASSERT_ARE_EQUAL(int, 0, result);
 }
 
-/* Tests_SRS_UMOCK_C_01_135: [ All parameters passed to the mock shall be passed down to the mock hook. ]*/
+/* Tests_SRS_UMOCK_C_LIB_01_135: [ All parameters passed to the mock shall be passed down to the mock hook. ]*/
 TEST_FUNCTION(REGISTER_GLOBAL_MOCK_HOOK_the_args_of_the_mock_get_passed_to_the_hook)
 {
     // arrange
@@ -1289,7 +1289,7 @@ TEST_FUNCTION(REGISTER_GLOBAL_MOCK_HOOK_the_args_of_the_mock_get_passed_to_the_h
     ASSERT_ARE_EQUAL(int, 0x43, arg_b);
 }
 
-/* Tests_SRS_UMOCK_C_01_104: [The REGISTER_GLOBAL_MOCK_HOOK shall register a mock hook to be called every time the mocked function is called by production code.]*/
+/* Tests_SRS_UMOCK_C_LIB_01_104: [The REGISTER_GLOBAL_MOCK_HOOK shall register a mock hook to be called every time the mocked function is called by production code.]*/
 TEST_FUNCTION(REGISTER_GLOBAL_MOCK_HOOK_with_a_function_that_returns_void_works)
 {
     // arrange
@@ -1304,7 +1304,7 @@ TEST_FUNCTION(REGISTER_GLOBAL_MOCK_HOOK_with_a_function_that_returns_void_works)
 
 /* REGISTER_GLOBAL_MOCK_RETURN */
 
-/* Tests_SRS_UMOCK_C_01_108: [The REGISTER_GLOBAL_MOCK_RETURN shall register a return value to always be returned by a mock function.]*/
+/* Tests_SRS_UMOCK_C_LIB_01_108: [The REGISTER_GLOBAL_MOCK_RETURN shall register a return value to always be returned by a mock function.]*/
 TEST_FUNCTION(REGISTER_GLOBAL_MOCK_RETURN_makes_a_subsequent_call_to_the_mock_return_the_value)
 {
     // arrange
@@ -1317,7 +1317,7 @@ TEST_FUNCTION(REGISTER_GLOBAL_MOCK_RETURN_makes_a_subsequent_call_to_the_mock_re
     ASSERT_ARE_EQUAL(int, 0x45, result);
 }
 
-/* Tests_SRS_UMOCK_C_01_109: [If there are multiple invocations of REGISTER_GLOBAL_MOCK_RETURN, the last one shall take effect over the previous ones.]*/
+/* Tests_SRS_UMOCK_C_LIB_01_109: [If there are multiple invocations of REGISTER_GLOBAL_MOCK_RETURN, the last one shall take effect over the previous ones.]*/
 TEST_FUNCTION(REGISTER_GLOBAL_MOCK_RETURN_twice_only_makes_the_second_call_stick)
 {
     // arrange
@@ -1331,7 +1331,7 @@ TEST_FUNCTION(REGISTER_GLOBAL_MOCK_RETURN_twice_only_makes_the_second_call_stick
     ASSERT_ARE_EQUAL(int, 0x46, result);
 }
 
-/* Tests_SRS_UMOCK_C_01_141: [ If any error occurs during REGISTER_GLOBAL_MOCK_RETURN, umock_c shall raise an error with the code UMOCK_C_ERROR. ]*/
+/* Tests_SRS_UMOCK_C_LIB_01_141: [ If any error occurs during REGISTER_GLOBAL_MOCK_RETURN, umock_c shall raise an error with the code UMOCK_C_ERROR. ]*/
 TEST_FUNCTION(when_copy_fails_in_REGISTER_GLOBAL_MOCK_RETURN_then_on_error_is_triggered)
 {
     // arrange
@@ -1350,7 +1350,7 @@ TEST_FUNCTION(when_copy_fails_in_REGISTER_GLOBAL_MOCK_RETURN_then_on_error_is_tr
 
 /* REGISTER_GLOBAL_MOCK_FAIL_RETURN */
 
-/* Tests_SRS_UMOCK_C_01_111: [The REGISTER_GLOBAL_MOCK_FAIL_RETURN shall register a fail return value to be returned by a mock function when marked as failed in the expected calls.]*/
+/* Tests_SRS_UMOCK_C_LIB_01_111: [The REGISTER_GLOBAL_MOCK_FAIL_RETURN shall register a fail return value to be returned by a mock function when marked as failed in the expected calls.]*/
 TEST_FUNCTION(REGISTER_GLOBAL_MOCK_FAIL_RETURN_is_possible_and_does_not_affect_the_return_value)
 {
     // arrange
@@ -1364,7 +1364,7 @@ TEST_FUNCTION(REGISTER_GLOBAL_MOCK_FAIL_RETURN_is_possible_and_does_not_affect_t
     ASSERT_ARE_EQUAL(int, 0x42, result);
 }
 
-/* Tests_SRS_UMOCK_C_01_112: [If there are multiple invocations of REGISTER_GLOBAL_FAIL_MOCK_RETURN, the last one shall take effect over the previous ones.]*/
+/* Tests_SRS_UMOCK_C_LIB_01_112: [If there are multiple invocations of REGISTER_GLOBAL_FAIL_MOCK_RETURN, the last one shall take effect over the previous ones.]*/
 TEST_FUNCTION(Multiple_REGISTER_GLOBAL_MOCK_FAIL_RETURN_calls_are_possible)
 {
     // arrange
@@ -1379,7 +1379,7 @@ TEST_FUNCTION(Multiple_REGISTER_GLOBAL_MOCK_FAIL_RETURN_calls_are_possible)
     ASSERT_ARE_EQUAL(int, 0x42, result);
 }
 
-/* Tests_SRS_UMOCK_C_01_142: [ If any error occurs during REGISTER_GLOBAL_MOCK_FAIL_RETURN, umock_c shall raise an error with the code UMOCK_C_ERROR. ]*/
+/* Tests_SRS_UMOCK_C_LIB_01_142: [ If any error occurs during REGISTER_GLOBAL_MOCK_FAIL_RETURN, umock_c shall raise an error with the code UMOCK_C_ERROR. ]*/
 TEST_FUNCTION(When_copy_fails_in_REGISTER_GLOBAL_MOCK_FAIL_RETURN_then_on_error_is_triggered)
 {
     // arrange
@@ -1395,7 +1395,7 @@ TEST_FUNCTION(When_copy_fails_in_REGISTER_GLOBAL_MOCK_FAIL_RETURN_then_on_error_
 
 /* REGISTER_GLOBAL_MOCK_RETURNS */
 
-/* Tests_SRS_UMOCK_C_01_113: [The REGISTER_GLOBAL_MOCK_RETURNS shall register both a success and a fail return value associated with a mock function.]*/
+/* Tests_SRS_UMOCK_C_LIB_01_113: [The REGISTER_GLOBAL_MOCK_RETURNS shall register both a success and a fail return value associated with a mock function.]*/
 TEST_FUNCTION(REGISTER_GLOBAL_MOCK_RETURNS_registers_the_return_value)
 {
     // arrange
@@ -1408,7 +1408,7 @@ TEST_FUNCTION(REGISTER_GLOBAL_MOCK_RETURNS_registers_the_return_value)
     ASSERT_ARE_EQUAL(int, 0xAA, result);
 }
 
-/* Tests_SRS_UMOCK_C_01_114: [If there are multiple invocations of REGISTER_GLOBAL_MOCK_RETURNS, the last one shall take effect over the previous ones.]*/
+/* Tests_SRS_UMOCK_C_LIB_01_114: [If there are multiple invocations of REGISTER_GLOBAL_MOCK_RETURNS, the last one shall take effect over the previous ones.]*/
 TEST_FUNCTION(REGISTER_GLOBAL_MOCK_RETURNS_twice_makes_only_the_last_call_stick)
 {
     // arrange
@@ -1422,7 +1422,7 @@ TEST_FUNCTION(REGISTER_GLOBAL_MOCK_RETURNS_twice_makes_only_the_last_call_stick)
     ASSERT_ARE_EQUAL(int, 0xAB, result);
 }
 
-/* Tests_SRS_UMOCK_C_01_143: [ If any error occurs during REGISTER_GLOBAL_MOCK_RETURNS, umock_c shall raise an error with the code UMOCK_C_ERROR. ]*/
+/* Tests_SRS_UMOCK_C_LIB_01_143: [ If any error occurs during REGISTER_GLOBAL_MOCK_RETURNS, umock_c shall raise an error with the code UMOCK_C_ERROR. ]*/
 TEST_FUNCTION(when_copy_fails_in_REGISTER_GLOBAL_MOCK_RETURNS_then_on_error_is_triggered)
 {
     TEST_STRUCT_COPY_FAILS test_struct = { 0x42 };
@@ -1439,7 +1439,7 @@ TEST_FUNCTION(when_copy_fails_in_REGISTER_GLOBAL_MOCK_RETURNS_then_on_error_is_t
     ASSERT_ARE_EQUAL(int, (int)UMOCK_C_ERROR, test_on_umock_c_error_calls[0].error_code);
 }
 
-/* Tests_SRS_UMOCK_C_01_143: [ If any error occurs during REGISTER_GLOBAL_MOCK_RETURNS, umock_c shall raise an error with the code UMOCK_C_ERROR. ]*/
+/* Tests_SRS_UMOCK_C_LIB_01_143: [ If any error occurs during REGISTER_GLOBAL_MOCK_RETURNS, umock_c shall raise an error with the code UMOCK_C_ERROR. ]*/
 TEST_FUNCTION(when_copy_fails_for_the_second_call_in_REGISTER_GLOBAL_MOCK_RETURNS_then_on_error_is_triggered)
 {
     TEST_STRUCT_COPY_FAILS test_struct = { 0x42 };
@@ -1459,8 +1459,8 @@ TEST_FUNCTION(when_copy_fails_for_the_second_call_in_REGISTER_GLOBAL_MOCK_RETURN
 
 /* Type names */
 
-/* Tests_SRS_UMOCK_C_01_145: [ Since umock_c needs to maintain a list of registered types, the following rules shall be applied: ]*/
-/* Tests_SRS_UMOCK_C_01_146: [ Each type shall be normalized to a form where all extra spaces are removed. ]*/
+/* Tests_SRS_UMOCK_C_LIB_01_145: [ Since umock_c needs to maintain a list of registered types, the following rules shall be applied: ]*/
+/* Tests_SRS_UMOCK_C_LIB_01_146: [ Each type shall be normalized to a form where all extra spaces are removed. ]*/
 TEST_FUNCTION(spaces_are_stripped_from_typenames)
 {
     // arrange
@@ -1476,21 +1476,21 @@ TEST_FUNCTION(spaces_are_stripped_from_typenames)
 
 /* Supported types */
 
-/* Tests_SRS_UMOCK_C_01_144: [ Out of the box umock_c shall support the following types through the header umocktypes_c.h: ]*/
-/* Tests_SRS_UMOCK_C_01_028: [**char**] */
-/* Tests_SRS_UMOCK_C_01_029 : [**unsigned char**] */
-/* Tests_SRS_UMOCK_C_01_030 : [**short**] */
-/* Tests_SRS_UMOCK_C_01_031 : [**unsigned short**] */
-/* Tests_SRS_UMOCK_C_01_032 : [**int**] */
-/* Tests_SRS_UMOCK_C_01_033 : [**unsigned int**] */
-/* Tests_SRS_UMOCK_C_01_034 : [**long**] */
-/* Tests_SRS_UMOCK_C_01_035 : [**unsigned long**] */
-/* Tests_SRS_UMOCK_C_01_036 : [**long long**] */
-/* Tests_SRS_UMOCK_C_01_037 : [**unsigned long long**] */
-/* Tests_SRS_UMOCK_C_01_038 : [**float**] */
-/* Tests_SRS_UMOCK_C_01_039 : [**double**] */
-/* Tests_SRS_UMOCK_C_01_040 : [**long double**] */
-/* Tests_SRS_UMOCK_C_01_041 : [**size_t**] */
+/* Tests_SRS_UMOCK_C_LIB_01_144: [ Out of the box umock_c shall support the following types through the header umocktypes_c.h: ]*/
+/* Tests_SRS_UMOCK_C_LIB_01_028: [**char**] */
+/* Tests_SRS_UMOCK_C_LIB_01_029 : [**unsigned char**] */
+/* Tests_SRS_UMOCK_C_LIB_01_030 : [**short**] */
+/* Tests_SRS_UMOCK_C_LIB_01_031 : [**unsigned short**] */
+/* Tests_SRS_UMOCK_C_LIB_01_032 : [**int**] */
+/* Tests_SRS_UMOCK_C_LIB_01_033 : [**unsigned int**] */
+/* Tests_SRS_UMOCK_C_LIB_01_034 : [**long**] */
+/* Tests_SRS_UMOCK_C_LIB_01_035 : [**unsigned long**] */
+/* Tests_SRS_UMOCK_C_LIB_01_036 : [**long long**] */
+/* Tests_SRS_UMOCK_C_LIB_01_037 : [**unsigned long long**] */
+/* Tests_SRS_UMOCK_C_LIB_01_038 : [**float**] */
+/* Tests_SRS_UMOCK_C_LIB_01_039 : [**double**] */
+/* Tests_SRS_UMOCK_C_LIB_01_040 : [**long double**] */
+/* Tests_SRS_UMOCK_C_LIB_01_041 : [**size_t**] */
 TEST_FUNCTION(native_c_types_are_supported)
 {
     // arrange
@@ -1523,7 +1523,7 @@ TEST_FUNCTION(native_c_types_are_supported)
     ASSERT_ARE_EQUAL(int, 0, test_on_umock_c_error_call_count);
 }
 
-/* Tests_SRS_UMOCK_C_01_148: [ If call comparison fails an error shall be indicated by calling the error callback with UMOCK_C_COMPARE_CALL_ERROR. ]*/
+/* Tests_SRS_UMOCK_C_LIB_01_148: [ If call comparison fails an error shall be indicated by calling the error callback with UMOCK_C_COMPARE_CALL_ERROR. ]*/
 TEST_FUNCTION(when_a_type_is_not_supported_an_error_is_triggered)
 {
     TEST_STRUCT_NOT_REGISTERED a = { 0 };

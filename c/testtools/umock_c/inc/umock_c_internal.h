@@ -81,8 +81,8 @@ typedef struct ARG_BUFFER_TAG
 
 #define COUNT_OF(A) (sizeof(A) / sizeof((A)[0]))
 
-/* Codes_SRS_UMOCK_C_01_002: [The macro shall generate a function signature in case ENABLE_MOCKS is not defined.] */
-/* Codes_SRS_UMOCK_C_01_005: [**If ENABLE_MOCKS is not defined, MOCKABLE_FUNCTION shall only generate a declaration for the function.] */
+/* Codes_SRS_UMOCK_C_LIB_01_002: [The macro shall generate a function signature in case ENABLE_MOCKS is not defined.] */
+/* Codes_SRS_UMOCK_C_LIB_01_005: [**If ENABLE_MOCKS is not defined, MOCKABLE_FUNCTION shall only generate a declaration for the function.] */
 #define MOCKABLE_FUNCTION_INTERNAL(result, function, ...) \
 	result function(void);
 
@@ -127,7 +127,7 @@ typedef struct ARG_BUFFER_TAG
     current_pos += C2(arg_name, _stringified_length); \
     arg_index++;
 
-/* Codes_SRS_UMOCK_C_01_096: [If the content of the code under test buffer and the buffer supplied to ValidateArgumentBuffer does not match then this should be treated as a mismatch in argument comparison for that argument.]*/
+/* Codes_SRS_UMOCK_C_LIB_01_096: [If the content of the code under test buffer and the buffer supplied to ValidateArgumentBuffer does not match then this should be treated as a mismatch in argument comparison for that argument.]*/
 #define ARE_EQUAL_FOR_ARG(count, arg_type, arg_name) \
     if (result && \
         ((typed_left->validate_arg_buffers[COUNT_OF(typed_left->validate_arg_buffers) - DIV2(count)].bytes != NULL) && (memcmp(*((void**)&typed_right->arg_name), typed_left->validate_arg_buffers[COUNT_OF(typed_left->validate_arg_buffers) - DIV2(count)].bytes, typed_left->validate_arg_buffers[COUNT_OF(typed_left->validate_arg_buffers) - DIV2(count)].length) != 0)) \
@@ -187,7 +187,7 @@ typedef struct ARG_BUFFER_TAG
 #define IS_NOT_VOID(x) \
     IF(C2(TEST_,x), 1, 0)
 
-/* Codes_SRS_UMOCK_C_01_076: [The IgnoreAllArguments call modifier shall record that for that specific call all arguments will be ignored for that specific call.] */
+/* Codes_SRS_UMOCK_C_LIB_01_076: [The IgnoreAllArguments call modifier shall record that for that specific call all arguments will be ignored for that specific call.] */
 #define IMPLEMENT_IGNORE_ALL_ARGUMENTS_FUNCTION(return_type, name, ...) \
     static C2(mock_call_modifier_,name) C2(ignore_all_arguments_func_,name)(void) \
     { \
@@ -197,7 +197,7 @@ typedef struct ARG_BUFFER_TAG
         return mock_call_modifier; \
     } \
 
-/* Codes_SRS_UMOCK_C_01_077: [The ValidateAllArguments call modifier shall record that for that specific call all arguments will be validated.] */
+/* Codes_SRS_UMOCK_C_LIB_01_077: [The ValidateAllArguments call modifier shall record that for that specific call all arguments will be validated.] */
 #define IMPLEMENT_VALIDATE_ALL_ARGUMENTS_FUNCTION(return_type, name, ...) \
     static C2(mock_call_modifier_,name) C2(validate_all_arguments_func_,name)(void) \
     { \
@@ -207,7 +207,7 @@ typedef struct ARG_BUFFER_TAG
         return mock_call_modifier; \
     } \
 
-/* Codes_SRS_UMOCK_C_01_078: [The IgnoreArgument_{arg_name} call modifier shall record that the argument identified by arg_name will be ignored for that specific call.] */
+/* Codes_SRS_UMOCK_C_LIB_01_078: [The IgnoreArgument_{arg_name} call modifier shall record that the argument identified by arg_name will be ignored for that specific call.] */
 #define IMPLEMENT_IGNORE_ARGUMENT_BY_NAME_FUNCTION(name, arg_type, arg_name) \
     static C2(mock_call_modifier_,name) C4(ignore_argument_func_,name,_,arg_name)(void) \
     { \
@@ -220,7 +220,7 @@ typedef struct ARG_BUFFER_TAG
         return mock_call_modifier; \
     } \
 
-/* Codes_SRS_UMOCK_C_01_079: [The ValidateArgument_{arg_name} call modifier shall record that the argument identified by arg_name will be validated for that specific call.]*/
+/* Codes_SRS_UMOCK_C_LIB_01_079: [The ValidateArgument_{arg_name} call modifier shall record that the argument identified by arg_name will be validated for that specific call.]*/
 #define IMPLEMENT_VALIDATE_ARGUMENT_BY_NAME_FUNCTION(name, arg_type, arg_name) \
     static C2(mock_call_modifier_,name) C4(validate_argument_func_,name,_,arg_name)(void) \
     { \
@@ -233,8 +233,8 @@ typedef struct ARG_BUFFER_TAG
         return mock_call_modifier; \
     } \
 
-/* Codes_SRS_UMOCK_C_01_080: [The IgnoreArgument call modifier shall record that the indexth argument will be ignored for that specific call.]*/
-/* Codes_SRS_UMOCK_C_01_081: [If the index is out of range umock_c shall raise an error with the code UMOCK_C_ARG_INDEX_OUT_OF_RANGE.] */
+/* Codes_SRS_UMOCK_C_LIB_01_080: [The IgnoreArgument call modifier shall record that the indexth argument will be ignored for that specific call.]*/
+/* Codes_SRS_UMOCK_C_LIB_01_081: [If the index is out of range umock_c shall raise an error with the code UMOCK_C_ARG_INDEX_OUT_OF_RANGE.] */
 #define IMPLEMENT_IGNORE_ARGUMENT_FUNCTION(return_type, name, ...) \
     static C2(mock_call_modifier_,name) C2(ignore_argument_func_,name)(size_t arg_index) \
     { \
@@ -256,8 +256,8 @@ typedef struct ARG_BUFFER_TAG
         return mock_call_modifier; \
     } \
 
-/* Codes_SRS_UMOCK_C_01_082: [The ValidateArgument call modifier shall record that the indexth argument will be validated for that specific call.]*/
-/* Codes_SRS_UMOCK_C_01_083: [If the index is out of range umock_c shall raise an error with the code UMOCK_C_ARG_INDEX_OUT_OF_RANGE.]*/
+/* Codes_SRS_UMOCK_C_LIB_01_082: [The ValidateArgument call modifier shall record that the indexth argument will be validated for that specific call.]*/
+/* Codes_SRS_UMOCK_C_LIB_01_083: [If the index is out of range umock_c shall raise an error with the code UMOCK_C_ARG_INDEX_OUT_OF_RANGE.]*/
 #define IMPLEMENT_VALIDATE_ARGUMENT_FUNCTION(return_type, name, ...) \
     static C2(mock_call_modifier_,name) C2(validate_argument_func_,name)(size_t arg_index) \
     { \
@@ -279,7 +279,7 @@ typedef struct ARG_BUFFER_TAG
         return mock_call_modifier; \
     } \
 
-/* Codes_SRS_UMOCK_C_01_084: [The SetReturn call modifier shall record that when an actual call is matched with the specific expected call, it shall return the result value to the code under test.] */
+/* Codes_SRS_UMOCK_C_LIB_01_084: [The SetReturn call modifier shall record that when an actual call is matched with the specific expected call, it shall return the result value to the code under test.] */
 #define IMPLEMENT_SET_RETURN_FUNCTION(return_type, name, ...) \
     static C2(mock_call_modifier_,name) C2(set_return_func_,name)(return_type return_value) \
     { \
@@ -292,7 +292,7 @@ typedef struct ARG_BUFFER_TAG
         } \
         return mock_call_modifier; \
     }
-/* Codes_SRS_UMOCK_C_01_085: [The SetFailReturn call modifier shall record a fail return value.]*/
+/* Codes_SRS_UMOCK_C_LIB_01_085: [The SetFailReturn call modifier shall record a fail return value.]*/
 #define IMPLEMENT_SET_FAIL_RETURN_FUNCTION(return_type, name, ...) \
     static C2(mock_call_modifier_,name) C2(set_fail_return_func_,name)(return_type return_value) \
     { \
@@ -306,14 +306,14 @@ typedef struct ARG_BUFFER_TAG
         return mock_call_modifier; \
     }
 
-/* Codes_SRS_UMOCK_C_01_116: [ The argument targetted by CopyOutArgument shall also be marked as ignored. ] */
-/* Codes_SRS_UMOCK_C_01_088: [The memory shall be copied.]*/
-/* Codes_SRS_UMOCK_C_01_091: [If the index is out of range umock_c shall raise an error with the code UMOCK_C_ARG_INDEX_OUT_OF_RANGE.]*/
-/* Codes_SRS_UMOCK_C_01_117: [ If any memory allocation error occurs, umock_c shall raise an error with the code UMOCK_C_MALLOC_ERROR. ]*/
-/* Codes_SRS_UMOCK_C_01_118: [ If any other error occurs, umock_c shall raise an error with the code UMOCK_C_ERROR. ]*/
-/* Codes_SRS_UMOCK_C_01_092: [If bytes is NULL or length is 0, umock_c shall raise an error with the code UMOCK_C_INVALID_ARGUMENT_BUFFER.] */
-/* Codes_SRS_UMOCK_C_01_089: [The buffers for previous CopyOutArgumentBuffer calls shall be freed.]*/
-/* Codes_SRS_UMOCK_C_01_133: [ If several calls to CopyOutArgumentBuffer are made, only the last buffer shall be kept. ]*/
+/* Codes_SRS_UMOCK_C_LIB_01_116: [ The argument targetted by CopyOutArgument shall also be marked as ignored. ] */
+/* Codes_SRS_UMOCK_C_LIB_01_088: [The memory shall be copied.]*/
+/* Codes_SRS_UMOCK_C_LIB_01_091: [If the index is out of range umock_c shall raise an error with the code UMOCK_C_ARG_INDEX_OUT_OF_RANGE.]*/
+/* Codes_SRS_UMOCK_C_LIB_01_117: [ If any memory allocation error occurs, umock_c shall raise an error with the code UMOCK_C_MALLOC_ERROR. ]*/
+/* Codes_SRS_UMOCK_C_LIB_01_118: [ If any other error occurs, umock_c shall raise an error with the code UMOCK_C_ERROR. ]*/
+/* Codes_SRS_UMOCK_C_LIB_01_092: [If bytes is NULL or length is 0, umock_c shall raise an error with the code UMOCK_C_INVALID_ARGUMENT_BUFFER.] */
+/* Codes_SRS_UMOCK_C_LIB_01_089: [The buffers for previous CopyOutArgumentBuffer calls shall be freed.]*/
+/* Codes_SRS_UMOCK_C_LIB_01_133: [ If several calls to CopyOutArgumentBuffer are made, only the last buffer shall be kept. ]*/
 #define IMPLEMENT_COPY_OUT_ARGUMENT_BUFFER_FUNCTION(return_type, name, ...) \
     static C2(mock_call_modifier_, name) C2(copy_out_argument_buffer_func_, name)(size_t index, const void* bytes, size_t length) \
     { \
@@ -359,13 +359,13 @@ typedef struct ARG_BUFFER_TAG
         return mock_call_modifier; \
     } \
 
-/* Codes_SRS_UMOCK_C_01_095: [The ValidateArgumentBuffer call modifier shall copy the memory pointed to by bytes and being length bytes so that it is later compared against a pointer type argument when the code under test calls the mock function.] */
-/* Codes_SRS_UMOCK_C_01_097: [ValidateArgumentBuffer shall implicitly perform an IgnoreArgument on the indexth argument.]*/
-/* Codes_SRS_UMOCK_C_01_099: [If the index is out of range umock_c shall raise an error with the code UMOCK_C_ARG_INDEX_OUT_OF_RANGE.]*/
-/* Codes_SRS_UMOCK_C_01_100: [If bytes is NULL or length is 0, umock_c shall raise an error with the code UMOCK_C_INVALID_ARGUMENT_BUFFER.] */
-/* Codes_SRS_UMOCK_C_01_131: [ The memory pointed by bytes shall be copied. ]*/
-/* Codes_SRS_UMOCK_C_01_132: [ If several calls to ValidateArgumentBuffer are made, only the last buffer shall be kept. ]*/
-/* Codes_SRS_UMOCK_C_01_130: [ The buffers for previous ValidateArgumentBuffer calls shall be freed. ]*/
+/* Codes_SRS_UMOCK_C_LIB_01_095: [The ValidateArgumentBuffer call modifier shall copy the memory pointed to by bytes and being length bytes so that it is later compared against a pointer type argument when the code under test calls the mock function.] */
+/* Codes_SRS_UMOCK_C_LIB_01_097: [ValidateArgumentBuffer shall implicitly perform an IgnoreArgument on the indexth argument.]*/
+/* Codes_SRS_UMOCK_C_LIB_01_099: [If the index is out of range umock_c shall raise an error with the code UMOCK_C_ARG_INDEX_OUT_OF_RANGE.]*/
+/* Codes_SRS_UMOCK_C_LIB_01_100: [If bytes is NULL or length is 0, umock_c shall raise an error with the code UMOCK_C_INVALID_ARGUMENT_BUFFER.] */
+/* Codes_SRS_UMOCK_C_LIB_01_131: [ The memory pointed by bytes shall be copied. ]*/
+/* Codes_SRS_UMOCK_C_LIB_01_132: [ If several calls to ValidateArgumentBuffer are made, only the last buffer shall be kept. ]*/
+/* Codes_SRS_UMOCK_C_LIB_01_130: [ The buffers for previous ValidateArgumentBuffer calls shall be freed. ]*/
 #define IMPLEMENT_VALIDATE_ARGUMENT_BUFFER_FUNCTION(return_type, name, ...) \
     static C2(mock_call_modifier_,name) C2(validate_argument_buffer_func_,name)(size_t index, const void* bytes, size_t length) \
     { \
@@ -434,18 +434,18 @@ typedef struct ARG_BUFFER_TAG
 #define IMPLEMENT_EXPECTED_MOCK(return_type, name, ...) \
     IMPLEMENT_MOCK_FUNCTION(umock_c_expected_, 1, return_type, name, __VA_ARGS__)
 
-/* Codes_SRS_UMOCK_C_01_104: [The REGISTER_GLOBAL_MOCK_HOOK shall register a mock hook to be called every time the mocked function is called by production code.]*/
-/* Codes_SRS_UMOCK_C_01_107: [If there are multiple invocations of REGISTER_GLOBAL_MOCK_HOOK, the last one shall take effect over the previous ones.] */
-/* Codes_SRS_UMOCK_C_01_134: [ REGISTER_GLOBAL_MOCK_HOOK called with a NULL hook unregisters a previously registered hook. ]*/
+/* Codes_SRS_UMOCK_C_LIB_01_104: [The REGISTER_GLOBAL_MOCK_HOOK shall register a mock hook to be called every time the mocked function is called by production code.]*/
+/* Codes_SRS_UMOCK_C_LIB_01_107: [If there are multiple invocations of REGISTER_GLOBAL_MOCK_HOOK, the last one shall take effect over the previous ones.] */
+/* Codes_SRS_UMOCK_C_LIB_01_134: [ REGISTER_GLOBAL_MOCK_HOOK called with a NULL hook unregisters a previously registered hook. ]*/
 #define IMPLEMENT_REGISTER_GLOBAL_MOCK_HOOK(return_type, name, ...) \
     void C2(set_global_mock_hook_,name)(C2(mock_hook_func_type_, name) mock_return_hook) \
     { \
         C2(mock_hook_,name) = mock_return_hook; \
     } \
 
-/* Codes_SRS_UMOCK_C_01_108: [The REGISTER_GLOBAL_MOCK_RETURN shall register a return value to always be returned by a mock function.]*/
-/* Codes_SRS_UMOCK_C_01_109: [If there are multiple invocations of REGISTER_GLOBAL_MOCK_RETURN, the last one shall take effect over the previous ones.]*/
-/* Codes_SRS_UMOCK_C_01_141: [ If any error occurs during REGISTER_GLOBAL_MOCK_RETURN, umock_c shall raise an error with the code UMOCK_C_ERROR. ]*/
+/* Codes_SRS_UMOCK_C_LIB_01_108: [The REGISTER_GLOBAL_MOCK_RETURN shall register a return value to always be returned by a mock function.]*/
+/* Codes_SRS_UMOCK_C_LIB_01_109: [If there are multiple invocations of REGISTER_GLOBAL_MOCK_RETURN, the last one shall take effect over the previous ones.]*/
+/* Codes_SRS_UMOCK_C_LIB_01_141: [ If any error occurs during REGISTER_GLOBAL_MOCK_RETURN, umock_c shall raise an error with the code UMOCK_C_ERROR. ]*/
 #define IMPLEMENT_REGISTER_GLOBAL_MOCK_RETURN(return_type, name, ...) \
     IF(IS_NOT_VOID(return_type), void C2(set_global_mock_return_, name)(return_type return_value) \
     { \
@@ -455,9 +455,9 @@ typedef struct ARG_BUFFER_TAG
         } \
     }, ) \
 
-/* Codes_SRS_UMOCK_C_01_111: [The REGISTER_GLOBAL_MOCK_FAIL_RETURN shall register a fail return value to be returned by a mock function when marked as failed in the expected calls.]*/
-/* Codes_SRS_UMOCK_C_01_112: [If there are multiple invocations of REGISTER_GLOBAL_FAIL_MOCK_RETURN, the last one shall take effect over the previous ones.]*/
-/* Codes_SRS_UMOCK_C_01_142: [ If any error occurs during REGISTER_GLOBAL_MOCK_FAIL_RETURN, umock_c shall raise an error with the code UMOCK_C_ERROR. ]*/
+/* Codes_SRS_UMOCK_C_LIB_01_111: [The REGISTER_GLOBAL_MOCK_FAIL_RETURN shall register a fail return value to be returned by a mock function when marked as failed in the expected calls.]*/
+/* Codes_SRS_UMOCK_C_LIB_01_112: [If there are multiple invocations of REGISTER_GLOBAL_FAIL_MOCK_RETURN, the last one shall take effect over the previous ones.]*/
+/* Codes_SRS_UMOCK_C_LIB_01_142: [ If any error occurs during REGISTER_GLOBAL_MOCK_FAIL_RETURN, umock_c shall raise an error with the code UMOCK_C_ERROR. ]*/
 #define IMPLEMENT_REGISTER_GLOBAL_MOCK_FAIL_RETURN(return_type, name, ...) \
     IF(IS_NOT_VOID(return_type), void C2(set_global_mock_fail_return_, name)(return_type fail_return_value) \
     { \
@@ -467,9 +467,9 @@ typedef struct ARG_BUFFER_TAG
         } \
     }, ) \
 
-/* Codes_SRS_UMOCK_C_01_113: [The REGISTER_GLOBAL_MOCK_RETURNS shall register both a success and a fail return value associated with a mock function.]*/
-/* Codes_SRS_UMOCK_C_01_114: [If there are multiple invocations of REGISTER_GLOBAL_MOCK_RETURNS, the last one shall take effect over the previous ones.]*/
-/* Codes_SRS_UMOCK_C_01_143: [ If any error occurs during REGISTER_GLOBAL_MOCK_RETURNS, umock_c shall raise an error with the code UMOCK_C_ERROR. ]*/
+/* Codes_SRS_UMOCK_C_LIB_01_113: [The REGISTER_GLOBAL_MOCK_RETURNS shall register both a success and a fail return value associated with a mock function.]*/
+/* Codes_SRS_UMOCK_C_LIB_01_114: [If there are multiple invocations of REGISTER_GLOBAL_MOCK_RETURNS, the last one shall take effect over the previous ones.]*/
+/* Codes_SRS_UMOCK_C_LIB_01_143: [ If any error occurs during REGISTER_GLOBAL_MOCK_RETURNS, umock_c shall raise an error with the code UMOCK_C_ERROR. ]*/
 #define IMPLEMENT_REGISTER_GLOBAL_MOCK_RETURNS(return_type, name, ...) \
     IF(IS_NOT_VOID(return_type), void C2(set_global_mock_returns_, name)(return_type return_value, return_type fail_return_value) \
     { \
@@ -480,27 +480,27 @@ typedef struct ARG_BUFFER_TAG
         } \
     }, ) \
 
-/* Codes_SRS_UMOCK_C_01_003: [If ENABLE_MOCKS is defined, MOCKABLE_FUNCTION shall generate all the boilerplate code needed by the macros in umock API to function to record the calls. Note: a lot of code (including function definitions and bodies, global variables (both static and extern).] */
-/* Codes_SRS_UMOCK_C_01_004: [If ENABLE_MOCKS is defined, MOCKABLE_FUNCTION shall generate the declaration of the function and code for the mocked function, thus allowing setting up of expectations in test functions.] */
-/* Codes_SRS_UMOCK_C_01_014: [For each argument the argument value shall be stored for later comparison with actual calls.] */
-/* Codes_SRS_UMOCK_C_01_017: [No arguments shall be saved by default, unless other modifiers state it.]*/
-/* Codes_SRS_UMOCK_C_01_074: [When an expected call is recorded a call modifier interface in the form of a structure containing function pointers shall be returned to the caller.] */
-/* Codes_SRS_UMOCK_C_01_075: [The last modifier in a chain overrides previous modifiers if any collision occurs.]*/
-/* Codes_SRS_UMOCK_C_01_127: [ IgnoreAllArguments shall only be available for mock functions that have arguments. ]*/
-/* Codes_SRS_UMOCK_C_01_126: [ ValidateAllArguments shall only be available for mock functions that have arguments. ]*/
-/* Codes_SRS_UMOCK_C_01_125: [ IgnoreArgument_{arg_name} shall only be available for mock functions that have arguments. ]*/
-/* Codes_SRS_UMOCK_C_01_124: [ ValidateArgument_{arg_name} shall only be available for mock functions that have arguments. **]*/
-/* Codes_SRS_UMOCK_C_01_123: [ IgnoreArgument shall only be available for mock functions that have arguments. ]*/
-/* Codes_SRS_UMOCK_C_01_122: [ ValidateArgument shall only be available for mock functions that have arguments. ]*/
-/* Codes_SRS_UMOCK_C_01_121: [ SetReturn shall only be available if the return type is not void. ]*/
-/* Codes_SRS_UMOCK_C_01_120: [ SetFailReturn shall only be available if the return type is not void. ]*/
-/* Codes_SRS_UMOCK_C_01_119: [ CopyOutArgumentBuffer shall only be available for mock functions that have arguments. ]*/
-/* Codes_SRS_UMOCK_C_01_128: [ CopyOutArgument shall only be available for mock functions that have arguments. ]*/
-/* Codes_SRS_UMOCK_C_01_129: [ ValidateArgumentBuffer shall only be available for mock functions that have arguments. ]*/
-/* Codes_SRS_UMOCK_C_01_105: [The hook’s result shall be returned by the mock to the production code.]*/
-/* Codes_SRS_UMOCK_C_01_106: [The signature for the hook shall be assumed to have exactly the same arguments and return as the mocked function.]*/
-/* Codes_SRS_UMOCK_C_01_135: [ All parameters passed to the mock shall be passed down to the mock hook. ]*/
-/* Codes_SRS_UMOCK_C_01_148: [ If call comparison fails an error shall be indicated by calling the error callback with UMOCK_C_COMPARE_CALL_ERROR. ]*/
+/* Codes_SRS_UMOCK_C_LIB_01_003: [If ENABLE_MOCKS is defined, MOCKABLE_FUNCTION shall generate all the boilerplate code needed by the macros in umock API to function to record the calls. Note: a lot of code (including function definitions and bodies, global variables (both static and extern).] */
+/* Codes_SRS_UMOCK_C_LIB_01_004: [If ENABLE_MOCKS is defined, MOCKABLE_FUNCTION shall generate the declaration of the function and code for the mocked function, thus allowing setting up of expectations in test functions.] */
+/* Codes_SRS_UMOCK_C_LIB_01_014: [For each argument the argument value shall be stored for later comparison with actual calls.] */
+/* Codes_SRS_UMOCK_C_LIB_01_017: [No arguments shall be saved by default, unless other modifiers state it.]*/
+/* Codes_SRS_UMOCK_C_LIB_01_074: [When an expected call is recorded a call modifier interface in the form of a structure containing function pointers shall be returned to the caller.] */
+/* Codes_SRS_UMOCK_C_LIB_01_075: [The last modifier in a chain overrides previous modifiers if any collision occurs.]*/
+/* Codes_SRS_UMOCK_C_LIB_01_127: [ IgnoreAllArguments shall only be available for mock functions that have arguments. ]*/
+/* Codes_SRS_UMOCK_C_LIB_01_126: [ ValidateAllArguments shall only be available for mock functions that have arguments. ]*/
+/* Codes_SRS_UMOCK_C_LIB_01_125: [ IgnoreArgument_{arg_name} shall only be available for mock functions that have arguments. ]*/
+/* Codes_SRS_UMOCK_C_LIB_01_124: [ ValidateArgument_{arg_name} shall only be available for mock functions that have arguments. **]*/
+/* Codes_SRS_UMOCK_C_LIB_01_123: [ IgnoreArgument shall only be available for mock functions that have arguments. ]*/
+/* Codes_SRS_UMOCK_C_LIB_01_122: [ ValidateArgument shall only be available for mock functions that have arguments. ]*/
+/* Codes_SRS_UMOCK_C_LIB_01_121: [ SetReturn shall only be available if the return type is not void. ]*/
+/* Codes_SRS_UMOCK_C_LIB_01_120: [ SetFailReturn shall only be available if the return type is not void. ]*/
+/* Codes_SRS_UMOCK_C_LIB_01_119: [ CopyOutArgumentBuffer shall only be available for mock functions that have arguments. ]*/
+/* Codes_SRS_UMOCK_C_LIB_01_128: [ CopyOutArgument shall only be available for mock functions that have arguments. ]*/
+/* Codes_SRS_UMOCK_C_LIB_01_129: [ ValidateArgumentBuffer shall only be available for mock functions that have arguments. ]*/
+/* Codes_SRS_UMOCK_C_LIB_01_105: [The hook’s result shall be returned by the mock to the production code.]*/
+/* Codes_SRS_UMOCK_C_LIB_01_106: [The signature for the hook shall be assumed to have exactly the same arguments and return as the mocked function.]*/
+/* Codes_SRS_UMOCK_C_LIB_01_135: [ All parameters passed to the mock shall be passed down to the mock hook. ]*/
+/* Codes_SRS_UMOCK_C_LIB_01_148: [ If call comparison fails an error shall be indicated by calling the error callback with UMOCK_C_COMPARE_CALL_ERROR. ]*/
 #define MOCKABLE_FUNCTION_INTERNAL_WITH_MOCK(return_type, name, ...) \
     typedef return_type (*C2(mock_hook_func_type_, name))(IF(COUNT_ARG(__VA_ARGS__),FOR_EACH_2_COUNTED(ARG_IN_SIGNATURE, __VA_ARGS__),void)); \
     static C2(mock_hook_func_type_,name) C2(mock_hook_,name) = NULL; \
