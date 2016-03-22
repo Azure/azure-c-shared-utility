@@ -645,4 +645,20 @@ TEST_FUNCTION(umockcallrecorder_get_actual_calls_with_no_calls_returns_an_empty_
     umockcallrecorder_destroy(call_recorder);
 }
 
+/* Tests_SRS_UMOCKCALLRECORDER_01_022: [ umockcallrecorder_get_actual_calls shall return a pointer to the string representation of all the actual calls. ]*/
+TEST_FUNCTION(umockcallrecorder_get_actual_calls_with_1_call_returns_one_stringified_call)
+{
+    // arrange
+    UMOCKCALLRECORDER_HANDLE call_recorder = umockcallrecorder_create();
+
+    // act
+    const char* result = umockcallrecorder_get_actual_calls(call_recorder);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "[a()]", result);
+
+    // cleanup
+    umockcallrecorder_destroy(call_recorder);
+}
+
 END_TEST_SUITE(umockcallrecorder_unittests)

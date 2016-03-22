@@ -12,10 +12,16 @@
 #include "umockcall.h"
 #include "umocktypes.h"
 
+typedef struct UMOCK_EXPECTED_CALL_TAG
+{
+    UMOCKCALL_HANDLE umockcall;
+    unsigned int is_matched : 1;
+} UMOCK_EXPECTED_CALL;
+
 typedef struct UMOCKCALLRECORDER_TAG
 {
     size_t expected_call_count;
-    UMOCKCALL_HANDLE* expected_calls;
+    UMOCK_EXPECTED_CALL* expected_calls;
     size_t actual_call_count;
     UMOCKCALL_HANDLE* actual_calls;
     char* expected_calls_string;
@@ -26,7 +32,9 @@ UMOCKCALLRECORDER_HANDLE umockcallrecorder_create(void)
 {
     UMOCKCALLRECORDER_HANDLE result;
 
+    /* Codes_SRS_UMOCKCALLRECORDER_01_001: [ umockcallrecorder_create shall create a new instance of a call recorder and return a non-NULL handle to it on success. ]*/
     result = (UMOCKCALLRECORDER_HANDLE)malloc(sizeof(UMOCKCALLRECORDER));
+    /* Codes_SRS_UMOCKCALLRECORDER_01_002: [ If allocating memory for the call recorder fails, umockcallrecorder_create shall return NULL. ]*/
     if (result != NULL)
     {
         result->expected_call_count = 0;
@@ -42,10 +50,11 @@ UMOCKCALLRECORDER_HANDLE umockcallrecorder_create(void)
 
 void umockcallrecorder_destroy(UMOCKCALLRECORDER_HANDLE umock_call_recorder)
 {
+    /* Codes_SRS_UMOCKCALLRECORDER_01_004: [ If umock_call_recorder is NULL, umockcallrecorder_destroy shall do nothing. ]*/
     if (umock_call_recorder != NULL)
     {
+        /* Codes_SRS_UMOCKCALLRECORDER_01_003: [ umockcallrecorder_destroy shall free the resources associated with a the call recorder identified by the umock_call_recorder argument. ]*/
         (void)umockcallrecorder_reset_all_calls(umock_call_recorder);
-
         free(umock_call_recorder->actual_calls_string);
         free(umock_call_recorder->expected_calls_string);
         free(umock_call_recorder);
@@ -54,49 +63,78 @@ void umockcallrecorder_destroy(UMOCKCALLRECORDER_HANDLE umock_call_recorder)
 
 int umockcallrecorder_reset_all_calls(UMOCKCALLRECORDER_HANDLE umock_call_recorder)
 {
-	if (umock_call_recorder->expected_calls != NULL)
-	{
-        size_t i;
-        for (i = 0; i < umock_call_recorder->expected_call_count; i++)
-        {
-            umockcall_destroy(umock_call_recorder->expected_calls[i]);
-        }
+    int result;
 
-        free(umock_call_recorder->expected_calls);
-        umock_call_recorder->expected_calls = NULL;
-	}
-    umock_call_recorder->expected_call_count = 0;
-
-    if (umock_call_recorder->actual_calls != NULL)
+    if (umock_call_recorder == NULL)
     {
-        size_t i;
-        for (i = 0; i < umock_call_recorder->actual_call_count; i++)
-        {
-            umockcall_destroy(umock_call_recorder->actual_calls[i]);
-        }
-
-        free(umock_call_recorder->actual_calls);
-        umock_call_recorder->actual_calls = NULL;
+        /* Codes_SRS_UMOCKCALLRECORDER_01_007: [ If umock_call_recorder is NULL, umockcallrecorder_reset_all_calls shall fail and return a non-zero value. ]*/
+        result = __LINE__;
     }
-    umock_call_recorder->actual_call_count = 0;
+    else
+    {
+        /* Codes_SRS_UMOCKCALLRECORDER_01_005: [ umockcallrecorder_reset_all_calls shall free all the expected and actual calls for the call recorder identified by umock_call_recorder. ]*/
+        if (umock_call_recorder->expected_calls != NULL)
+        {
+            size_t i;
+            for (i = 0; i < umock_call_recorder->expected_call_count; i++)
+            {
+                umockcall_destroy(umock_call_recorder->expected_calls[i].umockcall);
+            }
 
-	return 0;
+            free(umock_call_recorder->expected_calls);
+            umock_call_recorder->expected_calls = NULL;
+        }
+        umock_call_recorder->expected_call_count = 0;
+
+        if (umock_call_recorder->actual_calls != NULL)
+        {
+            size_t i;
+            for (i = 0; i < umock_call_recorder->actual_call_count; i++)
+            {
+                umockcall_destroy(umock_call_recorder->actual_calls[i]);
+            }
+
+            free(umock_call_recorder->actual_calls);
+            umock_call_recorder->actual_calls = NULL;
+        }
+        umock_call_recorder->actual_call_count = 0;
+
+        /* Codes_SRS_UMOCKCALLRECORDER_01_006: [ On success umockcallrecorder_reset_all_calls shall return 0. ]*/
+        result = 0;
+    }
+
+    return result;
 }
 
 int umockcallrecorder_add_expected_call(UMOCKCALLRECORDER_HANDLE umock_call_recorder, UMOCKCALL_HANDLE mock_call)
 {
     int result;
-    UMOCKCALL_HANDLE* new_expected_calls = (UMOCKCALL_HANDLE*)realloc(umock_call_recorder->expected_calls, sizeof(UMOCKCALL_HANDLE) * (umock_call_recorder->expected_call_count + 1));
-	if (new_expected_calls == NULL)
-	{
-		result = __LINE__;
-	}
-	else
-	{
-        umock_call_recorder->expected_calls = new_expected_calls;
-        umock_call_recorder->expected_calls[umock_call_recorder->expected_call_count++] = mock_call;
-        result = 0;
-	}
+
+    if ((umock_call_recorder == NULL) ||
+        (mock_call == NULL))
+    {
+        /* Codes_SRS_UMOCKCALLRECORDER_01_012: [ If any of the arguments is NULL, umockcallrecorder_add_expected_call shall fail and return a non-zero value. ]*/
+        result = __LINE__;
+    }
+    else
+    {
+        UMOCK_EXPECTED_CALL* new_expected_calls = (UMOCK_EXPECTED_CALL*)realloc(umock_call_recorder->expected_calls, sizeof(UMOCK_EXPECTED_CALL) * (umock_call_recorder->expected_call_count + 1));
+        if (new_expected_calls == NULL)
+        {
+            /* Codes_SRS_UMOCKCALLRECORDER_01_013: [ If allocating memory for the expected calls fails, umockcallrecorder_add_expected_call shall fail and return a non-zero value. ] */
+            result = __LINE__;
+        }
+        else
+        {
+            /* Codes_SRS_UMOCKCALLRECORDER_01_008: [ umockcallrecorder_add_expected_call shall add the mock_call call to the expected call list maintained by the call recorder identified by umock_call_recorder. ]*/
+            umock_call_recorder->expected_calls = new_expected_calls;
+            umock_call_recorder->expected_calls[umock_call_recorder->expected_call_count].umockcall = mock_call;
+            umock_call_recorder->expected_calls[umock_call_recorder->expected_call_count++].is_matched = 0;
+
+            /* Codes_SRS_UMOCKCALLRECORDER_01_009: [ On success umockcallrecorder_add_expected_call shall return 0. ]*/
+            result = 0;
+        }
+    }
 
     return result;
 }
@@ -104,55 +142,72 @@ int umockcallrecorder_add_expected_call(UMOCKCALLRECORDER_HANDLE umock_call_reco
 int umockcallrecorder_add_actual_call(UMOCKCALLRECORDER_HANDLE umock_call_recorder, UMOCKCALL_HANDLE mock_call, UMOCKCALL_HANDLE* matched_call)
 {
     int result;
-    size_t i;
-    unsigned int is_error = 0;
 
-    *matched_call = NULL;
-
-    /* Codes_SRS_UMOCK_C_01_115: [ umock_c shall compare calls in order. ]*/
-    for (i = 0; i < umock_call_recorder->expected_call_count; i++)
+    if ((umock_call_recorder == NULL) ||
+        (mock_call == NULL) ||
+        (matched_call == NULL))
     {
-        int are_equal_result = umockcall_are_equal(umock_call_recorder->expected_calls[i], mock_call);
-        if (are_equal_result == 1)
-        {
-            *matched_call = umock_call_recorder->expected_calls[i];
-            (void)memmove(&umock_call_recorder->expected_calls[i], &umock_call_recorder->expected_calls[i + 1], (umock_call_recorder->expected_call_count - i - 1) * sizeof(UMOCKCALL_HANDLE));
-            umock_call_recorder->expected_call_count--;
-            i--;
-            break;
-        }
-        else if (are_equal_result != 0)
-        {
-            is_error = 1;
-            break;
-        }
-    }
-
-    if (is_error)
-    {
+        /* Codes_SRS_UMOCKCALLRECORDER_01_019: [ If any of the arguments is NULL, umockcallrecorder_add_actual_call shall fail and return a non-zero value. ]*/
         result = __LINE__;
     }
     else
     {
-        if (i == umock_call_recorder->expected_call_count)
+        size_t i;
+        unsigned int is_error = 0;
+
+        *matched_call = NULL;
+
+        /* Codes_SRS_UMOCK_C_01_115: [ umock_c shall compare calls in order. ]*/
+        for (i = 0; i < umock_call_recorder->expected_call_count; i++)
         {
-            /* an unexpected call */
-            UMOCKCALL_HANDLE* new_actual_calls = (UMOCKCALL_HANDLE*)realloc(umock_call_recorder->actual_calls, sizeof(UMOCKCALL_HANDLE) * (umock_call_recorder->actual_call_count + 1));
-            if (new_actual_calls == NULL)
+            /* Codes_SRS_UMOCKCALLRECORDER_01_017: [ Comparing the calls shall be done by calling umockcall_are_equal. ]*/
+            int are_equal_result = umockcall_are_equal(umock_call_recorder->expected_calls[i].umockcall, mock_call);
+            if (are_equal_result == 1)
             {
-                result = __LINE__;
+                /* Codes_SRS_UMOCKCALLRECORDER_01_016: [ If the call matches one of the expected calls, a handle to the matched call shall be filled into the matched_call argument. ]*/
+                *matched_call = umock_call_recorder->expected_calls[i].umockcall;
+                umock_call_recorder->expected_calls[i].is_matched = 1;
+                break;
             }
-            else
+            /* Codes_SRS_UMOCKCALLRECORDER_01_021: [ If umockcall_are_equal fails, umockcallrecorder_add_actual_call shall fail and return a non-zero value. ]*/
+            else if (are_equal_result != 0)
             {
-                umock_call_recorder->actual_calls = new_actual_calls;
-                umock_call_recorder->actual_calls[umock_call_recorder->actual_call_count++] = mock_call;
-                result = 0;
+                is_error = 1;
+                break;
             }
+        }
+
+        if (is_error)
+        {
+            result = __LINE__;
         }
         else
         {
-            umockcall_destroy(mock_call);
-            result = 0;
+            if (i == umock_call_recorder->expected_call_count)
+            {
+                /* an unexpected call */
+                /* Codes_SRS_UMOCKCALLRECORDER_01_014: [ umockcallrecorder_add_actual_call shall check whether the call mock_call matches any of the expected calls maintained by umock_call_recorder. ]*/
+                UMOCKCALL_HANDLE* new_actual_calls = (UMOCKCALL_HANDLE*)realloc(umock_call_recorder->actual_calls, sizeof(UMOCKCALL_HANDLE) * (umock_call_recorder->actual_call_count + 1));
+                if (new_actual_calls == NULL)
+                {
+                    result = __LINE__;
+                }
+                else
+                {
+                    umock_call_recorder->actual_calls = new_actual_calls;
+                    umock_call_recorder->actual_calls[umock_call_recorder->actual_call_count++] = mock_call;
+
+                    /* Codes_SRS_UMOCKCALLRECORDER_01_018: [ When no error is encountered, umockcallrecorder_add_actual_call shall return 0. ]*/
+                    result = 0;
+                }
+            }
+            else
+            {
+                umockcall_destroy(mock_call);
+
+                /* Codes_SRS_UMOCKCALLRECORDER_01_018: [ When no error is encountered, umockcallrecorder_add_actual_call shall return 0. ]*/
+                result = 0;
+            }
         }
     }
 
@@ -178,7 +233,7 @@ const char* umockcallrecorder_get_expected_calls(UMOCKCALLRECORDER_HANDLE umock_
 
         for (i = 0; i < umock_call_recorder->expected_call_count; i++)
         {
-            char* stringified_call = umockcall_stringify(umock_call_recorder->expected_calls[i]);
+            char* stringified_call = umockcall_stringify(umock_call_recorder->expected_calls[i].umockcall);
             if (stringified_call == NULL)
             {
                 break;
@@ -281,7 +336,7 @@ UMOCKCALL_HANDLE umockcallrecorder_get_last_expected_call(UMOCKCALLRECORDER_HAND
     }
     else
     {
-        result = umock_call_recorder->expected_calls[umock_call_recorder->expected_call_count - 1];
+        result = umock_call_recorder->expected_calls[umock_call_recorder->expected_call_count - 1].umockcall;
     }
 
     return result;
