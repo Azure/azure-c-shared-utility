@@ -1,78 +1,112 @@
-#umockcall requirements
+#umock_c requirements
  
 #Overview
 
-umockcall is a module that encapsulates a umock call.
+umock_c is a module that exposes the user facing API for umock_c.
+It exposes a set of macros and APIs that allow:
+- initializing/deinitializing the library
+- resetting teh calls
+- getting the expected calls string
+- getting the actual calls string
 
 #Exposed API
 
 ```c
-    typedef struct UMOCKCALL_TAG* UMOCKCALL_HANDLE;
-    typedef void(*UMOCKCALL_DATA_FREE_FUNC)(void* umockcall_data);
-    typedef char*(*UMOCKCALL_DATA_STRINGIFY_FUNC)(void* umockcall_data);
-    typedef int(*UMOCKCALL_DATA_ARE_EQUAL_FUNC)(void* left, void* right);
+    typedef enum UMOCK_C_ERROR_CODE_TAG
+    {
+        UMOCK_C_ARG_INDEX_OUT_OF_RANGE,
+        UMOCK_C_MALLOC_ERROR,
+        UMOCK_C_INVALID_ARGUMENT_BUFFER,
+        UMOCK_C_COMPARE_CALL_ERROR,
+        UMOCK_C_ERROR
+    } UMOCK_C_ERROR_CODE;
 
-    extern UMOCKCALL_HANDLE umockcall_create(const char* function_name, void* umockcall_data, UMOCKCALL_DATA_FREE_FUNC umockcall_data_free, UMOCKCALL_DATA_STRINGIFY_FUNC umockcall_data_stringify, UMOCKCALL_DATA_ARE_EQUAL_FUNC umockcall_data_are_equal);
-    extern void umockcall_destroy(UMOCKCALL_HANDLE umockcall);
-    extern int umockcall_are_equal(UMOCKCALL_HANDLE left, UMOCKCALL_HANDLE right);
-    extern char* umockcall_stringify(UMOCKCALL_HANDLE umockcall);
-    extern void* umockcall_get_call_data(UMOCKCALL_HANDLE umockcall);
+    typedef void(*ON_UMOCK_C_ERROR)(UMOCK_C_ERROR_CODE error_code);
+
+#define IGNORED_PTR_ARG (NULL)
+#define IGNORED_NUM_ARG (0)
+
+#define MOCKABLE_FUNCTION(result, function, ...) \
+    ...
+
+#define REGISTER_GLOBAL_MOCK_HOOK(mock_function, mock_hook_function) \
+    ...
+
+#define REGISTER_GLOBAL_MOCK_RETURN(mock_function, return_value) \
+    ...
+
+#define REGISTER_GLOBAL_MOCK_FAIL_RETURN(mock_function, fail_return_value) \
+    ...
+
+#define REGISTER_GLOBAL_MOCK_RETURNS(mock_function, return_value, fail_return_value) \
+    ...
+
+#define STRICT_EXPECTED_CALL(call) \
+	...
+
+#define EXPECTED_CALL(call) \
+	...
+
+#define DECLARE_UMOCK_POINTER_TYPE_FOR_TYPE(value_type, alias) \
+    ...
+
+#define REGISTER_UMOCK_VALUE_TYPE(value_type, stringify_func, are_equal_func, copy_func, free_func) \
+    ...
+
+extern int umock_c_init(ON_UMOCK_C_ERROR on_umock_c_error);
+extern void umock_c_deinit(void);
+extern void umock_c_reset_all_calls(void);
+extern const char* umock_c_get_actual_calls(void);
+extern const char* umock_c_get_expected_calls(void);
 ```
 
-##umockcall_create
+##umock_c_init
 
 ```c
-extern UMOCKCALL_HANDLE umockcall_create(const char* function_name, void* umockcall_data, UMOCKCALL_DATA_FREE_FUNC umockcall_data_free, UMOCKCALL_DATA_STRINGIFY_FUNC umockcall_data_stringify, UMOCKCALL_DATA_ARE_EQUAL_FUNC umockcall_data_are_equal);
+extern int umock_c_init(ON_UMOCK_C_ERROR on_umock_c_error);
 ```
 
-**SRS_UMOCKCALL_01_001: [** umockcall_create shall create a new instance of a umock call and on success it shall return a non-NULL handle to it. **]**
-**SRS_UMOCKCALL_01_002: [** If allocating memory for the umock call instance fails, umockcall_create shall return NULL. **]**
-**SRS_UMOCKCALL_01_003: [** If any of the arguments are NULL, umockcall_create shall fail and return NULL. **]**   
+**SRS_UMOCK_C_01_001: [**umock_c_init shall initialize the umock library. umock_c_init shall initialize the umock types by calling umocktypes_init.**]**
+**SRS_UMOCK_C_01_002: [** umock_c_init shall register the C naive types by calling umocktypes_c_register_types. **]**
+**SRS_UMOCK_C_01_003: [** umock_c_init shall create a call recorder by calling umockcallrecorder_create. **]**
+**SRS_UMOCK_C_01_004: [** On success, umock_c_init shall return 0. **]**
+**SRS_UMOCK_C_01_005: [** If any of the calls fails, umock_c_init shall fail and return a non-zero value. **]**
+**SRS_UMOCK_C_01_006: [** The on_umock_c_error callback shall be stored to be used for later error callbacks. **]**
+**SRS_UMOCK_C_01_007: [** umock_c_init when umock is already initialized shall fail and return a non-zero value. **]**
 
-##umockcall_destroy
+##umock_c_deinit
 
 ```c
-extern void umockcall_destroy(UMOCKCALL_HANDLE umockcall);
+extern void umock_c_deinit(void);
 ```
 
-**SRS_UMOCKCALL_01_004: [** umockcall_destroy shall free a previously allocated umock call instance. **]**
-**SRS_UMOCKCALL_01_005: [** If the umockcall argument is NULL then umockcall_destroy shall do nothing. **]**   
+**SRS_UMOCK_C_01_008: [** umock_c_deinit shall deinitialize the umock types by calling umocktypes_deinit. **]**
+**SRS_UMOCK_C_01_009: [** umock_c_deinit shall free the call recorder created in umock_c_init. **]**
+**SRS_UMOCK_C_01_010: [** If the module is not initialized, umock_c_deinit shall do nothing. **]**
 
-##umockcall_are_equal
+##umock_c_reset_all_calls
 
 ```c
-extern int umockcall_are_equal(UMOCKCALL_HANDLE left, UMOCKCALL_HANDLE right);
+extern void umock_c_reset_all_calls(void);
 ```
 
-**SRS_UMOCKCALL_01_006: [** umockcall_are_equal shall compare the two mock calls and return whether they are equal or not. **]**
-**SRS_UMOCKCALL_01_024: [** If both left and right pointers are equal, umockcall_are_equal shall return 1. **]**
-**SRS_UMOCKCALL_01_015: [** If only one of the left or right arguments are NULL, umockcall_are_equal shall return 0. **]** 
-**SRS_UMOCKCALL_01_025: [** If the function name does not match for the 2 calls, umockcall_are_equal shall return 0. **]**
-**SRS_UMOCKCALL_01_026: [** The call data shall be evaluated by calling the umockcall_data_are_equal function passed in umockcall_create. **]**
-**SRS_UMOCKCALL_01_027: [** If the underlying umockcall_data_are_equal returns 1, then umockcall_are_equal shall return 1. **]**
-**SRS_UMOCKCALL_01_028: [** If the underlying umockcall_data_are_equal returns 0, then umockcall_are_equal shall return 0. **]**
-**SRS_UMOCKCALL_01_029: [** If the underlying umockcall_data_are_equal fails (returns anything else than 0 or 1), then umockcall_are_equal shall fail and return -1. **]**
-**SRS_UMOCKCALL_01_014: [** If the two calls have different are_equal functions that have been passed to umockcall_create then the calls shall be considered different and 0 shall be returned. **]**
+**SRS_UMOCK_C_01_011: [** umock_c_reset_all_calls shall reset all calls by calling umockcallrecorder_reset_all_calls on the call recorder created in umock_c_init. **]**
+**SRS_UMOCK_C_01_012: [** If the module is not initialized, umock_c_reset_all_calls shall do nothing. **]**
 
-##umockcall_to_string
+##umock_c_get_actual_calls
 
 ```c
-extern char* umockcall_stringify(UMOCKCALL_HANDLE umockcall);
+extern const char* umock_c_get_actual_calls(void);
 ```
 
-**SRS_UMOCKCALL_01_016: [** umockcall_stringify shall return a string representation of the mock call in the form \[function_name(arguments)\]. **]**
-**SRS_UMOCKCALL_01_018: [** The returned string shall be a newly allocated string and it is to be freed by the caller. **]**
-**SRS_UMOCKCALL_01_017: [** If the umockcall argument is NULL, umockcall_stringify shall return NULL. **]**
-**SRS_UMOCKCALL_01_019: [** To obtain the arguments string, umockcall_stringify shall call the umockcall_data_stringify function passed to umockcall_create and pass to it the umock call data pointer (also given in umockcall_create). **]** 
-**SRS_UMOCKCALL_01_019: [** umockcall_stringify shall free the string obtained from umockcall_stringify. **]**
-**SRS_UMOCKCALL_01_020: [** If the underlying umockcall_data_stringify call fails, umockcall_stringify shall fail and return NULL. **]**
-**SRS_UMOCKCALL_01_021: [** If not enough memory can be allocated for the string to be returned, umockcall_stringify shall fail and return NULL. **]** 
+**SRS_UMOCK_C_01_013: [** umock_c_get_actual_calls shall return the string for the recorded actual calls by calling umockcallrecorder_get_actual_calls on the call recorder created in umock_c_init. **]**
+**SRS_UMOCK_C_01_014: [** If the module is not initialized, umock_c_get_actual_calls shall return NULL. **]**
 
-##umockcall_get_call_data
+##umock_c_get_expected_calls
 
 ```c
-extern void* umockcall_get_call_data(UMOCKCALL_HANDLE umockcall);
+extern const char* umock_c_get_expected_calls(void);
 ```
 
-XX**SRS_UMOCKCALL_01_022: [** umockcall_get_call_data shall return the associated umock call data that was passed to umockcall_create. **]**
-XX**SRS_UMOCKCALL_01_023: [** If umockcall is NULL, umockcall_get_call_data shall return NULL. **]**
+**SRS_UMOCK_C_01_015: [** umock_c_get_expected_calls shall return the string for the recorded expected calls by calling umockcallrecorder_get_expected_calls on the call recorder created in umock_c_init. **]**
+**SRS_UMOCK_C_01_016: [** If the module is not initialized, umock_c_get_expected_calls shall return NULL. **]**
