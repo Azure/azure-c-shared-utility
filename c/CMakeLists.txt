@@ -143,6 +143,13 @@ function(windows_unittests_add_exe whatIsBuilding)
     add_test(NAME ${whatIsBuilding} COMMAND ${whatIsBuilding}_exe)
 endfunction()
 
+
+set(linux_unittests_add_exe_separators 
+	ADDITIONAL_LIBS #whatever follows are needed libraries to link
+)
+#this function takes more than the 1 mandatory argument (whatIsBuilding)
+#the parameters are separated by "known" separators
+#for example, ADDITIONAL_LIBS starts a list of needed libraries
 function(linux_unittests_add_exe whatIsBuilding)
     add_executable(${whatIsBuilding}_exe
         ${${whatIsBuilding}_cpp_files} 
@@ -156,7 +163,38 @@ function(linux_unittests_add_exe whatIsBuilding)
                 
     target_compile_definitions(${whatIsBuilding}_exe PUBLIC -DUSE_CTEST)
     target_include_directories(${whatIsBuilding}_exe PUBLIC ${sharedutil_include_directories})
-    target_link_libraries(${whatIsBuilding}_exe micromock_ctest umock_c ctest ${ARGN})
+	
+	#this part detects 
+	#	- the additional libraries that might be needed.
+	#     additional libraries are started by ADDITIONAL_LIBS parameter and ended by any other known parameter (or end of variable arguments)
+	#   - a valgring suppression file (VALGRIND_SUPRESSIONS_FILE) for memcheck
+	#     the file name follows immediately after 
+	
+	set(PARSING_ADDITIONAL_LIBS OFF)
+	set(PARSING_VALGRIND_SUPRESSIONS_FILE OFF)
+	set(VALGRIND_SUPRESSIONS_FILE_EXTRA_PARAMETER)
+	foreach(f ${ARGN})
+		if(${f} STREQUAL "ADDITIONAL_LIBS")
+			SET(PARSING_ADDITIONAL_LIBS ON)
+			SET(PARSING_VALGRIND_SUPRESSION_FILE OFF)
+			#also unset all the other states
+			continue()
+		elseif(${f} STREQUAL "VALGRIND_SUPRESSIONS_FILE")
+			SET(PARSING_ADDITIONAL_LIBS OFF)
+			SET(PARSING_VALGRIND_SUPRESSION_FILE ON)
+			continue()
+		endif()
+		
+		if(PARSING_ADDITIONAL_LIBS)
+			target_link_libraries(${whatIsBuilding}_exe ${f})
+		elseif(PARSING_VALGRIND_SUPRESSION_FILE)
+			set(VALGRIND_SUPRESSIONS_FILE_EXTRA_PARAMETER "--supressions=${f}")
+		endif()	
+		
+	endforeach()
+	
+	target_link_libraries(${whatIsBuilding}_exe micromock_ctest umock_c ctest)
+	
     add_test(NAME ${whatIsBuilding} COMMAND $<TARGET_FILE:${whatIsBuilding}_exe>)
     
     if(${run_valgrind})
@@ -164,7 +202,7 @@ function(linux_unittests_add_exe whatIsBuilding)
         if(${VALGRIND_FOUND} STREQUAL VALGRIND_FOUND-NOTFOUND)
             message(WARNING "run_valgrind was TRUE, but valgrind was not found - there will be no tests run under valgrind")
         else()
-            add_test(NAME ${whatIsBuilding}_valgrind COMMAND valgrind                 --num-callers=100 --error-exitcode=1 --trace-children=yes --leak-check=full  --track-origins=yes $<TARGET_FILE:${whatIsBuilding}_exe>)
+            add_test(NAME ${whatIsBuilding}_valgrind COMMAND valgrind                 --num-callers=100 --error-exitcode=1 --trace-children=yes --leak-check=full --track-origins=yes ${VALGRIND_SUPRESSIONS_FILE_EXTRA_PARAMETER} $<TARGET_FILE:${whatIsBuilding}_exe>)
             add_test(NAME ${whatIsBuilding}_helgrind COMMAND valgrind --tool=helgrind --num-callers=100 --error-exitcode=1 $<TARGET_FILE:${whatIsBuilding}_exe>)
             add_test(NAME ${whatIsBuilding}_drd      COMMAND valgrind --tool=drd      --num-callers=100 --error-exitcode=1 $<TARGET_FILE:${whatIsBuilding}_exe>)
         endif()
