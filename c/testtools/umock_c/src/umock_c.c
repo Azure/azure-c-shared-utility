@@ -78,14 +78,6 @@ void umock_c_deinit(void)
     }
 }
 
-void umock_c_indicate_error(UMOCK_C_ERROR_CODE error_code)
-{
-    if (on_umock_c_error_function != NULL)
-    {
-        on_umock_c_error_function(error_code);
-    }
-}
-
 void umock_c_reset_all_calls(void)
 {
     /* Codes_SRS_UMOCK_C_01_012: [ If the module is not initialized, umock_c_reset_all_calls shall do nothing. ]*/
@@ -104,6 +96,7 @@ int umock_c_add_expected_call(UMOCKCALL_HANDLE mock_call)
 
     if (umock_c_state != UMOCK_C_STATE_INITIALIZED)
     {
+        /* Codes_SRS_UMOCK_C_01_020: [ If the module is not initialized, umock_c_add_expected_call shall return a non-zero value. ]*/
         result = __LINE__;
     }
     else
@@ -120,6 +113,7 @@ int umock_c_add_actual_call(UMOCKCALL_HANDLE mock_call, UMOCKCALL_HANDLE* matche
 
     if (umock_c_state != UMOCK_C_STATE_INITIALIZED)
     {
+        /* Codes_SRS_UMOCK_C_01_022: [ If the module is not initialized, umock_c_add_actual_call shall return a non-zero value. ]*/
         result = __LINE__;
     }
     else
@@ -136,6 +130,7 @@ const char* umock_c_get_expected_calls(void)
 
     if (umock_c_state != UMOCK_C_STATE_INITIALIZED)
     {
+        /* Codes_SRS_UMOCK_C_01_016: [ If the module is not initialized, umock_c_get_expected_calls shall return NULL. ]*/
         result = NULL;
     }
     else
@@ -152,6 +147,7 @@ const char* umock_c_get_actual_calls(void)
 
     if (umock_c_state != UMOCK_C_STATE_INITIALIZED)
     {
+        /* Codes_SRS_UMOCK_C_01_014: [ If the module is not initialized, umock_c_get_actual_calls shall return NULL. ]*/
         result = NULL;
     }
     else
@@ -168,6 +164,7 @@ UMOCKCALL_HANDLE umock_c_get_last_expected_call(void)
 
     if (umock_c_state != UMOCK_C_STATE_INITIALIZED)
     {
+        /* Codes_SRS_UMOCK_C_01_018: [ If the module is not initialized, umock_c_get_last_expected_call shall return NULL. ]*/
         result = NULL;
     }
     else
@@ -176,4 +173,12 @@ UMOCKCALL_HANDLE umock_c_get_last_expected_call(void)
     }
 
     return result;
+}
+
+void umock_c_indicate_error(UMOCK_C_ERROR_CODE error_code)
+{
+    if (on_umock_c_error_function != NULL)
+    {
+        on_umock_c_error_function(error_code);
+    }
 }

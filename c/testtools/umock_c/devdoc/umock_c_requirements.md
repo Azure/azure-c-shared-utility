@@ -5,7 +5,7 @@
 umock_c is a module that exposes the user facing API for umock_c.
 It exposes a set of macros and APIs that allow:
 - initializing/deinitializing the library
-- resetting teh calls
+- resetting the calls
 - getting the expected calls string
 - getting the actual calls string
 
@@ -58,6 +58,9 @@ extern void umock_c_deinit(void);
 extern void umock_c_reset_all_calls(void);
 extern const char* umock_c_get_actual_calls(void);
 extern const char* umock_c_get_expected_calls(void);
+extern UMOCKCALL_HANDLE umock_c_get_last_expected_call(void);
+extern int umock_c_add_expected_call(UMOCKCALL_HANDLE mock_call);
+extern int umock_c_add_actual_call(UMOCKCALL_HANDLE mock_call, UMOCKCALL_HANDLE* matched_call);
 ```
 
 ##umock_c_init
@@ -110,3 +113,30 @@ extern const char* umock_c_get_expected_calls(void);
 
 **SRS_UMOCK_C_01_015: [** umock_c_get_expected_calls shall return the string for the recorded expected calls by calling umockcallrecorder_get_expected_calls on the call recorder created in umock_c_init. **]**
 **SRS_UMOCK_C_01_016: [** If the module is not initialized, umock_c_get_expected_calls shall return NULL. **]**
+
+##umock_c_get_last_expected_call
+
+```c
+extern UMOCKCALL_HANDLE umock_c_get_last_expected_call(void);
+```
+
+**SRS_UMOCK_C_01_017: [** umock_c_get_last_expected_call shall return the last expected call by calling umockcallrecorder_get_last_expected_call on the call recorder created in umock_c_init. **]**
+**SRS_UMOCK_C_01_018: [** If the module is not initialized, umock_c_get_last_expected_call shall return NULL. **]**
+
+##umock_c_add_expected_call
+
+```c
+extern int umock_c_add_expected_call(UMOCKCALL_HANDLE mock_call);
+```
+
+**SRS_UMOCK_C_01_019: [** umock_c_add_expected_call shall add an expected call by calling umockcallrecorder_add_expected_call on the call recorder created in umock_c_init. **]**
+**SRS_UMOCK_C_01_020: [** If the module is not initialized, umock_c_add_expected_call shall return a non-zero value. **]**
+
+##umock_c_add_actual_call
+
+```c
+extern int umock_c_add_actual_call(UMOCKCALL_HANDLE mock_call, UMOCKCALL_HANDLE* matched_call);
+```
+
+**SRS_UMOCK_C_01_021: [** umock_c_add_actual_call shall add an actual call by calling umockcallrecorder_add_actual_call on the call recorder created in umock_c_init. **]**
+**SRS_UMOCK_C_01_022: [** If the module is not initialized, umock_c_add_actual_call shall return a non-zero value. **]**
