@@ -29,6 +29,7 @@ int umock_c_init(ON_UMOCK_C_ERROR on_umock_c_error)
 
     if (umock_c_state != UMOCK_C_STATE_NOT_INITIALIZED)
     {
+        /* Codes_SRS_UMOCK_C_01_007: [ umock_c_init when umock is already initialized shall fail and return a non-zero value. ]*/
         result = __LINE__;
     }
     else
@@ -48,17 +49,35 @@ int umock_c_init(ON_UMOCK_C_ERROR on_umock_c_error)
         /* Codes_SRS_UMOCK_C_LIB_01_039 : [**double**] */
         /* Codes_SRS_UMOCK_C_LIB_01_040 : [**long double**] */
         /* Codes_SRS_UMOCK_C_LIB_01_041 : [**size_t**] */
+        /* Codes_SRS_UMOCK_C_01_023: [ umock_c_init shall initialize the umock types by calling umocktypes_init. ]*/
         if ((umocktypes_init() != 0) ||
+            /* Codes_SRS_UMOCK_C_01_002: [ umock_c_init shall register the C naive types by calling umocktypes_c_register_types. ]*/
             (umocktypes_c_register_types() != 0))
         {
+            /* Codes_SRS_UMOCK_C_01_005: [ If any of the calls fails, umock_c_init shall fail and return a non-zero value. ]*/
             result = __LINE__;
         }
         else
         {
+            /* Codes_SRS_UMOCK_C_01_003: [ umock_c_init shall create a call recorder by calling umockcallrecorder_create. ]*/
             call_recorder = umockcallrecorder_create();
-            on_umock_c_error_function = on_umock_c_error;
-            umock_c_state = UMOCK_C_STATE_INITIALIZED;
-            result = 0;
+            if (call_recorder == NULL)
+            {
+                /* Codes_SRS_UMOCK_C_01_005: [ If any of the calls fails, umock_c_init shall fail and return a non-zero value. ]*/
+                result = __LINE__;
+            }
+            else
+            {
+                /* Codes_SRS_UMOCK_C_01_024: [ on_umock_c_error shall be optional. ]*/
+                /* Codes_SRS_UMOCK_C_01_006: [ The on_umock_c_error callback shall be stored to be used for later error callbacks. ]*/
+                on_umock_c_error_function = on_umock_c_error;
+
+                /* Codes_SRS_UMOCK_C_01_001: [umock_c_init shall initialize the umock library.] */
+                umock_c_state = UMOCK_C_STATE_INITIALIZED;
+
+                /* Codes_SRS_UMOCK_C_01_004: [ On success, umock_c_init shall return 0. ]*/
+                result = 0;
+            }
         }
     }
 
@@ -71,9 +90,10 @@ void umock_c_deinit(void)
     /* Codes_SRS_UMOCK_C_01_010: [ If the module is not initialized, umock_c_deinit shall do nothing. ] */
     if (umock_c_state == UMOCK_C_STATE_INITIALIZED)
     {
-        umockcallrecorder_destroy(call_recorder);
+        /* Codes_SRS_UMOCK_C_01_008: [ umock_c_deinit shall deinitialize the umock types by calling umocktypes_deinit. ]*/
         umocktypes_deinit();
-
+        /* Codes_SRS_UMOCK_C_01_009: [ umock_c_deinit shall free the call recorder created in umock_c_init. ]*/
+        umockcallrecorder_destroy(call_recorder);
         umock_c_state = UMOCK_C_STATE_NOT_INITIALIZED;
     }
 }

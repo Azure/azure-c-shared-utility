@@ -18,6 +18,7 @@ It exposes a set of macros and APIs that allow:
         UMOCK_C_MALLOC_ERROR,
         UMOCK_C_INVALID_ARGUMENT_BUFFER,
         UMOCK_C_COMPARE_CALL_ERROR,
+        UMOCK_C_RESET_CALLS_ERROR,
         UMOCK_C_ERROR
     } UMOCK_C_ERROR_CODE;
 
@@ -69,13 +70,15 @@ extern int umock_c_add_actual_call(UMOCKCALL_HANDLE mock_call, UMOCKCALL_HANDLE*
 extern int umock_c_init(ON_UMOCK_C_ERROR on_umock_c_error);
 ```
 
-**SRS_UMOCK_C_01_001: [**umock_c_init shall initialize the umock library. umock_c_init shall initialize the umock types by calling umocktypes_init.**]**
+**SRS_UMOCK_C_01_001: [**umock_c_init shall initialize the umock library.**]**
+**SRS_UMOCK_C_01_023: [** umock_c_init shall initialize the umock types by calling umocktypes_init. **]**
 **SRS_UMOCK_C_01_002: [** umock_c_init shall register the C naive types by calling umocktypes_c_register_types. **]**
 **SRS_UMOCK_C_01_003: [** umock_c_init shall create a call recorder by calling umockcallrecorder_create. **]**
 **SRS_UMOCK_C_01_004: [** On success, umock_c_init shall return 0. **]**
 **SRS_UMOCK_C_01_005: [** If any of the calls fails, umock_c_init shall fail and return a non-zero value. **]**
 **SRS_UMOCK_C_01_006: [** The on_umock_c_error callback shall be stored to be used for later error callbacks. **]**
 **SRS_UMOCK_C_01_007: [** umock_c_init when umock is already initialized shall fail and return a non-zero value. **]**
+**SRS_UMOCK_C_01_024: [** on_umock_c_error shall be optional. **]**
 
 ##umock_c_deinit
 
@@ -94,6 +97,7 @@ extern void umock_c_reset_all_calls(void);
 ```
 
 **SRS_UMOCK_C_01_011: [** umock_c_reset_all_calls shall reset all calls by calling umockcallrecorder_reset_all_calls on the call recorder created in umock_c_init. **]**
+If the underlying umockcallrecorder_reset_all_calls fails, the on_umock_c_error callback shall be triggered with UMOCK_C_RESET_CALLS_ERROR.
 **SRS_UMOCK_C_01_012: [** If the module is not initialized, umock_c_reset_all_calls shall do nothing. **]**
 
 ##umock_c_get_actual_calls
