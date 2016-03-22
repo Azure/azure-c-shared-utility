@@ -376,13 +376,23 @@ UMOCKCALL_HANDLE umockcallrecorder_get_last_expected_call(UMOCKCALLRECORDER_HAND
 {
     UMOCKCALL_HANDLE result;
 
-    if (umock_call_recorder->expected_call_count == 0)
+    if (umock_call_recorder == NULL)
     {
+        /* Codes_SRS_UMOCKCALLRECORDER_01_033: [ If umock_call_recorder is NULL, umockcallrecorder_get_last_expected_call shall fail and return NULL. ]*/
         result = NULL;
     }
     else
     {
-        result = umock_call_recorder->expected_calls[umock_call_recorder->expected_call_count - 1].umockcall;
+        if (umock_call_recorder->expected_call_count == 0)
+        {
+            /* Codes_SRS_UMOCKCALLRECORDER_01_034: [ If no expected call has been recorded for umock_call_recorder then umockcallrecorder_get_last_expected_call shall fail and return NULL. ]*/
+            result = NULL;
+        }
+        else
+        {
+            /* Codes_SRS_UMOCKCALLRECORDER_01_032: [ umockcallrecorder_get_last_expected_call shall return the last expected call for the umock_call_recorder call recorder. ]*/
+            result = umock_call_recorder->expected_calls[umock_call_recorder->expected_call_count - 1].umockcall;
+        }
     }
 
     return result;

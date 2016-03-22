@@ -938,6 +938,67 @@ TEST_FUNCTION(when_allocating_memory_for_the_resulting_string_fails_then_umockca
 
 /* umockcallrecorder_get_last_expected_call */
 
+/* Tests_SRS_UMOCKCALLRECORDER_01_034: [ If no expected call has been recorded for umock_call_recorder then umockcallrecorder_get_last_expected_call shall fail and return NULL. ]*/
+TEST_FUNCTION(umockcallrecorder_get_last_expected_call_without_any_expected_calls_returns_NULL)
+{
+    // arrange
+    UMOCKCALLRECORDER_HANDLE call_recorder = umockcallrecorder_create();
+
+    // act
+    UMOCKCALL_HANDLE result = umockcallrecorder_get_last_expected_call(call_recorder);
+
+    // assert
+    ASSERT_IS_NULL(result);
+
+    // cleanup
+    umockcallrecorder_destroy(call_recorder);
+}
+
+/* Tests_SRS_UMOCKCALLRECORDER_01_033: [ If umock_call_recorder is NULL, umockcallrecorder_get_last_expected_call shall fail and return NULL. ]*/
+TEST_FUNCTION(umockcallrecorder_get_last_expected_call_with_NULL_call_recorder_fails)
+{
+    // arrange
+
+    // act
+    UMOCKCALL_HANDLE result = umockcallrecorder_get_last_expected_call(NULL);
+
+    // assert
+    ASSERT_IS_NULL(result);
+}
+
 /* Tests_SRS_UMOCKCALLRECORDER_01_032: [ umockcallrecorder_get_last_expected_call shall return the last expected call for the umock_call_recorder call recorder. ]*/
+TEST_FUNCTION(umockcallrecorder_get_last_expected_call_with_1_expected_call_returns_the_last_expected_call)
+{
+    // arrange
+    UMOCKCALLRECORDER_HANDLE call_recorder = umockcallrecorder_create();
+    (void)umockcallrecorder_add_expected_call(call_recorder, test_expected_umockcall_1);
+
+    // act
+    UMOCKCALL_HANDLE result = umockcallrecorder_get_last_expected_call(call_recorder);
+
+    // assert
+    ASSERT_ARE_EQUAL(void_ptr, test_expected_umockcall_1, result);
+
+    // cleanup
+    umockcallrecorder_destroy(call_recorder);
+}
+
+/* Tests_SRS_UMOCKCALLRECORDER_01_032: [ umockcallrecorder_get_last_expected_call shall return the last expected call for the umock_call_recorder call recorder. ]*/
+TEST_FUNCTION(umockcallrecorder_get_last_expected_call_with_2_expected_calls_returns_the_last_expected_call)
+{
+    // arrange
+    UMOCKCALLRECORDER_HANDLE call_recorder = umockcallrecorder_create();
+    (void)umockcallrecorder_add_expected_call(call_recorder, test_expected_umockcall_1);
+    (void)umockcallrecorder_add_expected_call(call_recorder, test_expected_umockcall_2);
+
+    // act
+    UMOCKCALL_HANDLE result = umockcallrecorder_get_last_expected_call(call_recorder);
+
+    // assert
+    ASSERT_ARE_EQUAL(void_ptr, test_expected_umockcall_2, result);
+
+    // cleanup
+    umockcallrecorder_destroy(call_recorder);
+}
 
 END_TEST_SUITE(umockcallrecorder_unittests)
