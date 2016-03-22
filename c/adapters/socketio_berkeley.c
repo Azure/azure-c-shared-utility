@@ -189,7 +189,10 @@ void socketio_destroy(CONCRETE_IO_HANDLE socket_io)
     {
         SOCKET_IO_INSTANCE* socket_io_instance = (SOCKET_IO_INSTANCE*)socket_io;
         /* we cannot do much if the close fails, so just ignore the result */
-        close(socket_io_instance->socket);
+        if (socket_io_instance->socket != INVALID_SOCKET)
+        {
+            close(socket_io_instance->socket);
+        }
 
         /* clear allpending IOs */
         LIST_ITEM_HANDLE first_pending_io = list_get_head_item(socket_io_instance->pending_io_list);
