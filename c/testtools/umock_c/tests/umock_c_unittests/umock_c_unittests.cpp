@@ -42,12 +42,52 @@ typedef struct umockcallrecorder_reset_all_calls_CALL_TAG
 
 static umockcallrecorder_reset_all_calls_CALL* umockcallrecorder_reset_all_calls_calls;
 static size_t umockcallrecorder_reset_all_calls_call_count;
+static int umockcallrecorder_reset_all_calls_call_result;
 
+typedef struct umockcallrecorder_get_actual_calls_CALL_TAG
+{
+    UMOCKCALLRECORDER_HANDLE umock_call_recorder;
+} umockcallrecorder_get_actual_calls_CALL;
+
+static umockcallrecorder_get_actual_calls_CALL* umockcallrecorder_get_actual_calls_calls;
 static size_t umockcallrecorder_get_actual_calls_call_count;
+static const char* umockcallrecorder_get_actual_calls_call_result;
+
+typedef struct umockcallrecorder_get_expected_calls_CALL_TAG
+{
+    UMOCKCALLRECORDER_HANDLE umock_call_recorder;
+} umockcallrecorder_get_expected_calls_CALL;
+
+static umockcallrecorder_get_expected_calls_CALL* umockcallrecorder_get_expected_calls_calls;
 static size_t umockcallrecorder_get_expected_calls_call_count;
-static size_t umock_c_get_last_expected_call_call_count;
-static size_t umock_c_add_expected_call_call_count;
-static size_t umock_c_add_actual_call_call_count;
+static const char* umockcallrecorder_get_expected_calls_call_result;
+
+typedef struct umockcallrecorder_get_last_expected_call_CALL_TAG
+{
+    UMOCKCALLRECORDER_HANDLE umock_call_recorder;
+} umockcallrecorder_get_last_expected_call_CALL;
+
+static umockcallrecorder_get_last_expected_call_CALL* umockcallrecorder_get_last_expected_call_calls;
+static size_t umockcallrecorder_get_last_expected_call_call_count;
+static UMOCKCALL_HANDLE umockcallrecorder_get_last_expected_call_call_result;
+
+typedef struct umockcallrecorder_add_expected_call_CALL_TAG
+{
+    UMOCKCALLRECORDER_HANDLE umock_call_recorder;
+} umockcallrecorder_add_expected_call_CALL;
+
+static umockcallrecorder_add_expected_call_CALL* umockcallrecorder_add_expected_call_calls;
+static size_t umockcallrecorder_add_expected_call_call_count;
+static int umockcallrecorder_add_expected_call_call_result;
+
+typedef struct umockcallrecorder_add_actual_call_CALL_TAG
+{
+    UMOCKCALLRECORDER_HANDLE umock_call_recorder;
+} umockcallrecorder_add_actual_call_CALL;
+
+static umockcallrecorder_add_actual_call_CALL* umockcallrecorder_add_actual_call_calls;
+static size_t umockcallrecorder_add_actual_call_call_count;
+static int umockcallrecorder_add_actual_call_call_result;
 
 UMOCKCALLRECORDER_HANDLE umockcallrecorder_create(void)
 {
@@ -75,42 +115,73 @@ int umockcallrecorder_reset_all_calls(UMOCKCALLRECORDER_HANDLE umock_call_record
         umockcallrecorder_reset_all_calls_calls[umockcallrecorder_reset_all_calls_call_count].umock_call_recorder = umock_call_recorder;
         umockcallrecorder_reset_all_calls_call_count++;
     }
-    return 0;
+
+    return umockcallrecorder_reset_all_calls_call_result;
 }
 
 int umockcallrecorder_add_expected_call(UMOCKCALLRECORDER_HANDLE umock_call_recorder, UMOCKCALL_HANDLE mock_call)
 {
-    (void)umock_call_recorder, mock_call;
-    umock_c_add_expected_call_call_count++;
-    return 0;
+    umockcallrecorder_add_expected_call_CALL* new_calls = (umockcallrecorder_add_expected_call_CALL*)realloc(umockcallrecorder_add_expected_call_calls, sizeof(umockcallrecorder_add_expected_call_CALL) * (umockcallrecorder_add_expected_call_call_count + 1));
+    if (new_calls != NULL)
+    {
+        umockcallrecorder_add_expected_call_calls = new_calls;
+        umockcallrecorder_add_expected_call_calls[umockcallrecorder_add_expected_call_call_count].umock_call_recorder = umock_call_recorder;
+        umockcallrecorder_add_expected_call_call_count++;
+    }
+
+    return umockcallrecorder_add_expected_call_call_result;
 }
 
 int umockcallrecorder_add_actual_call(UMOCKCALLRECORDER_HANDLE umock_call_recorder, UMOCKCALL_HANDLE mock_call, UMOCKCALL_HANDLE* matched_call)
 {
-    (void)umock_call_recorder, mock_call;
-    umock_c_add_actual_call_call_count++;
-    return 0;
+    umockcallrecorder_add_actual_call_CALL* new_calls = (umockcallrecorder_add_actual_call_CALL*)realloc(umockcallrecorder_add_actual_call_calls, sizeof(umockcallrecorder_add_actual_call_CALL) * (umockcallrecorder_add_actual_call_call_count + 1));
+    if (new_calls != NULL)
+    {
+        umockcallrecorder_add_actual_call_calls = new_calls;
+        umockcallrecorder_add_actual_call_calls[umockcallrecorder_add_actual_call_call_count].umock_call_recorder = umock_call_recorder;
+        umockcallrecorder_add_actual_call_call_count++;
+    }
+
+    return umockcallrecorder_add_actual_call_call_result;
 }
 
 const char* umockcallrecorder_get_actual_calls(UMOCKCALLRECORDER_HANDLE umock_call_recorder)
 {
-    (void)umock_call_recorder;
-    umockcallrecorder_get_actual_calls_call_count++;
-    return NULL;
+    umockcallrecorder_get_actual_calls_CALL* new_calls = (umockcallrecorder_get_actual_calls_CALL*)realloc(umockcallrecorder_get_actual_calls_calls, sizeof(umockcallrecorder_get_actual_calls_CALL) * (umockcallrecorder_get_actual_calls_call_count + 1));
+    if (new_calls != NULL)
+    {
+        umockcallrecorder_get_actual_calls_calls = new_calls;
+        umockcallrecorder_get_actual_calls_calls[umockcallrecorder_get_actual_calls_call_count].umock_call_recorder = umock_call_recorder;
+        umockcallrecorder_get_actual_calls_call_count++;
+    }
+
+    return umockcallrecorder_get_actual_calls_call_result;
 }
 
 const char* umockcallrecorder_get_expected_calls(UMOCKCALLRECORDER_HANDLE umock_call_recorder)
 {
-    (void)umock_call_recorder;
-    umockcallrecorder_get_expected_calls_call_count++;
-    return NULL;
+    umockcallrecorder_get_expected_calls_CALL* new_calls = (umockcallrecorder_get_expected_calls_CALL*)realloc(umockcallrecorder_get_expected_calls_calls, sizeof(umockcallrecorder_get_expected_calls_CALL) * (umockcallrecorder_get_expected_calls_call_count + 1));
+    if (new_calls != NULL)
+    {
+        umockcallrecorder_get_expected_calls_calls = new_calls;
+        umockcallrecorder_get_expected_calls_calls[umockcallrecorder_get_expected_calls_call_count].umock_call_recorder = umock_call_recorder;
+        umockcallrecorder_get_expected_calls_call_count++;
+    }
+
+    return umockcallrecorder_get_expected_calls_call_result;
 }
 
 UMOCKCALL_HANDLE umockcallrecorder_get_last_expected_call(UMOCKCALLRECORDER_HANDLE umock_call_recorder)
 {
-    (void)umock_call_recorder;
-    umock_c_get_last_expected_call_call_count++;
-    return NULL;
+    umockcallrecorder_get_last_expected_call_CALL* new_calls = (umockcallrecorder_get_last_expected_call_CALL*)realloc(umockcallrecorder_get_last_expected_call_calls, sizeof(umockcallrecorder_get_last_expected_call_CALL) * (umockcallrecorder_get_last_expected_call_call_count + 1));
+    if (new_calls != NULL)
+    {
+        umockcallrecorder_get_last_expected_call_calls = new_calls;
+        umockcallrecorder_get_last_expected_call_calls[umockcallrecorder_get_last_expected_call_call_count].umock_call_recorder = umock_call_recorder;
+        umockcallrecorder_get_last_expected_call_call_count++;
+    }
+
+    return umockcallrecorder_get_last_expected_call_call_result;
 }
 
 int umocktypes_init(void)
@@ -175,12 +246,47 @@ void reset_all_calls(void)
     }
     umockcallrecorder_reset_all_calls_calls = NULL;
     umockcallrecorder_reset_all_calls_call_count = 0;
+    umockcallrecorder_reset_all_calls_call_result = 0;
 
+    if (umockcallrecorder_get_actual_calls_calls != NULL)
+    {
+        free(umockcallrecorder_get_actual_calls_calls);
+    }
+    umockcallrecorder_get_actual_calls_calls = NULL;
     umockcallrecorder_get_actual_calls_call_count = 0;
+    umockcallrecorder_get_actual_calls_call_result = NULL;
+
+    if (umockcallrecorder_get_expected_calls_calls != NULL)
+    {
+        free(umockcallrecorder_get_expected_calls_calls);
+    }
+    umockcallrecorder_get_expected_calls_calls = NULL;
     umockcallrecorder_get_expected_calls_call_count = 0;
-    umock_c_get_last_expected_call_call_count = 0;
-    umock_c_add_expected_call_call_count = 0;
-    umock_c_add_actual_call_call_count = 0;
+    umockcallrecorder_get_expected_calls_call_result = NULL;
+
+    if (umockcallrecorder_get_last_expected_call_calls != NULL)
+    {
+        free(umockcallrecorder_get_last_expected_call_calls);
+    }
+    umockcallrecorder_get_last_expected_call_calls = NULL;
+    umockcallrecorder_get_last_expected_call_call_count = 0;
+    umockcallrecorder_get_last_expected_call_call_result = NULL;
+
+    if (umockcallrecorder_add_expected_call_calls != NULL)
+    {
+        free(umockcallrecorder_add_expected_call_calls);
+    }
+    umockcallrecorder_add_expected_call_calls = NULL;
+    umockcallrecorder_add_expected_call_call_count = 0;
+    umockcallrecorder_add_expected_call_call_result = NULL;
+
+    if (umockcallrecorder_add_actual_call_calls != NULL)
+    {
+        free(umockcallrecorder_add_actual_call_calls);
+    }
+    umockcallrecorder_add_actual_call_calls = NULL;
+    umockcallrecorder_add_actual_call_call_count = 0;
+    umockcallrecorder_add_actual_call_call_result = NULL;
 
     if (test_on_umock_c_error_calls != NULL)
     {
@@ -367,6 +473,274 @@ TEST_FUNCTION(umock_c_reset_all_calls_calls_the_call_recorder_reset_all_calls)
     // assert
     ASSERT_ARE_EQUAL(size_t, 1, umockcallrecorder_reset_all_calls_call_count);
     ASSERT_ARE_EQUAL(void_ptr, test_call_recorder, umockcallrecorder_reset_all_calls_calls[0].umock_call_recorder);
+}
+
+/* Tests_SRS_UMOCK_C_01_025: [ If the underlying umockcallrecorder_reset_all_calls fails, the on_umock_c_error callback shall be triggered with UMOCK_C_RESET_CALLS_ERROR. ]*/
+TEST_FUNCTION(when_the_underlying_call_recorder_reset_all_calls_fails_then_umock_c_reset_all_calls_triggers_the_on_error_callback)
+{
+    // arrange
+    (void)umock_c_init(test_on_umock_c_error);
+    umockcallrecorder_reset_all_calls_call_result = 1;
+
+    // act
+    umock_c_reset_all_calls();
+
+    // assert
+    ASSERT_ARE_EQUAL(size_t, 1, umockcallrecorder_reset_all_calls_call_count);
+    ASSERT_ARE_EQUAL(void_ptr, test_call_recorder, umockcallrecorder_reset_all_calls_calls[0].umock_call_recorder);
+    ASSERT_ARE_EQUAL(size_t, 1, test_on_umock_c_error_call_count);
+    ASSERT_ARE_EQUAL(int, (int)UMOCK_C_RESET_CALLS_ERROR, test_on_umock_c_error_calls[0].error_code);
+}
+
+/* Tests_SRS_UMOCK_C_01_012: [ If the module is not initialized, umock_c_reset_all_calls shall do nothing. ]*/
+TEST_FUNCTION(umock_c_reset_all_calls_when_the_module_is_not_initialized_does_nothing)
+{
+    // arrange
+
+    // act
+    umock_c_reset_all_calls();
+
+    // assert
+    ASSERT_ARE_EQUAL(size_t, 0, umockcallrecorder_reset_all_calls_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, test_on_umock_c_error_call_count);
+}
+
+/* umock_c_get_actual_calls */
+
+/* Tests_SRS_UMOCK_C_01_013: [ umock_c_get_actual_calls shall return the string for the recorded actual calls by calling umockcallrecorder_get_actual_calls on the call recorder created in umock_c_init. ]*/
+TEST_FUNCTION(umock_c_get_actual_calls_calls_the_underlying_call_recorder_get_actual_calls)
+{
+    // arrange
+    (void)umock_c_init(test_on_umock_c_error);
+    umockcallrecorder_get_actual_calls_call_result = "[a()]";
+
+    // act
+    const char* result = umock_c_get_actual_calls();
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "[a()]", result);
+    ASSERT_ARE_EQUAL(size_t, 1, umockcallrecorder_get_actual_calls_call_count);
+    ASSERT_ARE_EQUAL(void_ptr, test_call_recorder, umockcallrecorder_get_actual_calls_calls[0].umock_call_recorder);
+}
+
+/* Tests_SRS_UMOCK_C_01_013: [ umock_c_get_actual_calls shall return the string for the recorded actual calls by calling umockcallrecorder_get_actual_calls on the call recorder created in umock_c_init. ]*/
+TEST_FUNCTION(when_the_underlying_call_recorder_get_actual_calls_fails_then_umock_c_get_actual_calls_returns_NULL)
+{
+    // arrange
+    (void)umock_c_init(test_on_umock_c_error);
+    umockcallrecorder_get_actual_calls_call_result = NULL;
+
+    // act
+    const char* result = umock_c_get_actual_calls();
+
+    // assert
+    ASSERT_IS_NULL(result);
+    ASSERT_ARE_EQUAL(size_t, 1, umockcallrecorder_get_actual_calls_call_count);
+    ASSERT_ARE_EQUAL(void_ptr, test_call_recorder, umockcallrecorder_get_actual_calls_calls[0].umock_call_recorder);
+}
+
+/* Tests_SRS_UMOCK_C_01_014: [ If the module is not initialized, umock_c_get_actual_calls shall return NULL. ]*/
+TEST_FUNCTION(umock_c_get_actual_calls_when_the_module_is_not_initialized_fails)
+{
+    // arrange
+
+    // act
+    const char* result = umock_c_get_actual_calls();
+
+    // assert
+    ASSERT_IS_NULL(result);
+    ASSERT_ARE_EQUAL(size_t, 0, umockcallrecorder_get_actual_calls_call_count);
+}
+
+/* umock_c_get_expected_calls */
+
+/* Tests_SRS_UMOCK_C_01_015: [ umock_c_get_expected_calls shall return the string for the recorded expected calls by calling umockcallrecorder_get_expected_calls on the call recorder created in umock_c_init. ]*/
+TEST_FUNCTION(umock_c_get_expected_calls_calls_the_underlying_call_recorder_get_expected_calls)
+{
+    // arrange
+    (void)umock_c_init(test_on_umock_c_error);
+    umockcallrecorder_get_expected_calls_call_result = "[a()]";
+
+    // act
+    const char* result = umock_c_get_expected_calls();
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "[a()]", result);
+    ASSERT_ARE_EQUAL(size_t, 1, umockcallrecorder_get_expected_calls_call_count);
+    ASSERT_ARE_EQUAL(void_ptr, test_call_recorder, umockcallrecorder_get_expected_calls_calls[0].umock_call_recorder);
+}
+
+/* Tests_SRS_UMOCK_C_01_015: [ umock_c_get_expected_calls shall return the string for the recorded expected calls by calling umockcallrecorder_get_expected_calls on the call recorder created in umock_c_init. ]*/
+TEST_FUNCTION(when_the_underlying_call_recorder_get_expected_calls_fails_then_umock_c_get_expected_calls_returns_NULL)
+{
+    // arrange
+    (void)umock_c_init(test_on_umock_c_error);
+    umockcallrecorder_get_expected_calls_call_result = NULL;
+
+    // act
+    const char* result = umock_c_get_expected_calls();
+
+    // assert
+    ASSERT_IS_NULL(result);
+    ASSERT_ARE_EQUAL(size_t, 1, umockcallrecorder_get_expected_calls_call_count);
+    ASSERT_ARE_EQUAL(void_ptr, test_call_recorder, umockcallrecorder_get_expected_calls_calls[0].umock_call_recorder);
+}
+
+/* Tests_SRS_UMOCK_C_01_016: [ If the module is not initialized, umock_c_get_expected_calls shall return NULL. ]*/
+TEST_FUNCTION(umock_c_get_expected_calls_when_the_module_is_not_initialized_fails)
+{
+    // arrange
+
+    // act
+    const char* result = umock_c_get_expected_calls();
+
+    // assert
+    ASSERT_IS_NULL(result);
+    ASSERT_ARE_EQUAL(size_t, 0, umockcallrecorder_get_expected_calls_call_count);
+}
+
+/* umock_c_get_last_expected_call */
+
+/* Tests_SRS_UMOCK_C_01_017: [ umock_c_get_last_expected_call shall return the last expected call by calling umockcallrecorder_get_last_expected_call on the call recorder created in umock_c_init. ]*/
+TEST_FUNCTION(umock_c_get_last_expected_call_calls_the_underlying_call_recorder_get_last_expected_call)
+{
+    // arrange
+    (void)umock_c_init(test_on_umock_c_error);
+    umockcallrecorder_get_last_expected_call_call_result = test_expected_call;
+
+    // act
+    UMOCKCALL_HANDLE result = umock_c_get_last_expected_call();
+
+    // assert
+    ASSERT_ARE_EQUAL(void_ptr, test_expected_call, result);
+    ASSERT_ARE_EQUAL(size_t, 1, umockcallrecorder_get_last_expected_call_call_count);
+    ASSERT_ARE_EQUAL(void_ptr, test_call_recorder, umockcallrecorder_get_last_expected_call_calls[0].umock_call_recorder);
+}
+
+/* Tests_SRS_UMOCK_C_01_017: [ umock_c_get_last_expected_call shall return the last expected call by calling umockcallrecorder_get_last_expected_call on the call recorder created in umock_c_init. ]*/
+TEST_FUNCTION(when_the_underlying_call_recorder_get_last_expected_call_fails_then_umock_c_get_last_expected_call_returns_NULL)
+{
+    // arrange
+    (void)umock_c_init(test_on_umock_c_error);
+    umockcallrecorder_get_last_expected_call_call_result = NULL;
+
+    // act
+    UMOCKCALL_HANDLE result = umock_c_get_last_expected_call();
+
+    // assert
+    ASSERT_IS_NULL(result);
+    ASSERT_ARE_EQUAL(size_t, 1, umockcallrecorder_get_last_expected_call_call_count);
+    ASSERT_ARE_EQUAL(void_ptr, test_call_recorder, umockcallrecorder_get_last_expected_call_calls[0].umock_call_recorder);
+}
+
+/* Tests_SRS_UMOCK_C_01_018: [ If the module is not initialized, umock_c_get_last_expected_call shall return NULL. ]*/
+TEST_FUNCTION(umock_c_get_last_expected_call_when_the_module_is_not_initialized_fails)
+{
+    // arrange
+
+    // act
+    UMOCKCALL_HANDLE result = umock_c_get_last_expected_call();
+
+    // assert
+    ASSERT_IS_NULL(result);
+    ASSERT_ARE_EQUAL(size_t, 0, umockcallrecorder_get_last_expected_call_call_count);
+}
+
+/* umock_c_add_expected_call */
+
+/* Tests_SRS_UMOCK_C_01_019: [ umock_c_add_expected_call shall add an expected call by calling umockcallrecorder_add_expected_call on the call recorder created in umock_c_init. ]*/
+TEST_FUNCTION(umock_c_add_expected_call_calls_the_underlying_call_recorder_add_expected_call)
+{
+    // arrange
+    (void)umock_c_init(test_on_umock_c_error);
+    umockcallrecorder_add_expected_call_call_result = 0;
+
+    // act
+    int result = umock_c_add_expected_call(test_expected_call);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(size_t, 1, umockcallrecorder_add_expected_call_call_count);
+    ASSERT_ARE_EQUAL(void_ptr, test_call_recorder, umockcallrecorder_add_expected_call_calls[0].umock_call_recorder);
+}
+
+/* Tests_SRS_UMOCK_C_01_019: [ umock_c_add_expected_call shall add an expected call by calling umockcallrecorder_add_expected_call on the call recorder created in umock_c_init. ]*/
+TEST_FUNCTION(when_the_underlying_call_recorder_add_expected_call_fails_then_umock_c_add_expected_call_returns_NULL)
+{
+    // arrange
+    (void)umock_c_init(test_on_umock_c_error);
+    umockcallrecorder_add_expected_call_call_result = 1;
+
+    // act
+    int result = umock_c_add_expected_call(test_expected_call);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(size_t, 1, umockcallrecorder_add_expected_call_call_count);
+    ASSERT_ARE_EQUAL(void_ptr, test_call_recorder, umockcallrecorder_add_expected_call_calls[0].umock_call_recorder);
+}
+
+/* Tests_SRS_UMOCK_C_01_020: [ If the module is not initialized, umock_c_add_expected_call shall return a non-zero value. ]*/
+TEST_FUNCTION(umock_c_add_expected_call_when_the_module_is_not_initialized_fails)
+{
+    // arrange
+
+    // act
+    int result = umock_c_add_expected_call(test_expected_call);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(size_t, 0, umockcallrecorder_add_expected_call_call_count);
+}
+
+/* umock_c_add_actual_call */
+
+/* Tests_SRS_UMOCK_C_01_021: [ umock_c_add_actual_call shall add an actual call by calling umockcallrecorder_add_actual_call on the call recorder created in umock_c_init. ]*/
+TEST_FUNCTION(umock_c_add_actual_call_calls_the_underlying_call_recorder_add_actual_call)
+{
+    // arrange
+    UMOCKCALL_HANDLE matched_call;
+    (void)umock_c_init(test_on_umock_c_error);
+    umockcallrecorder_add_actual_call_call_result = 0;
+
+    // act
+    int result = umock_c_add_actual_call(test_actual_call, &matched_call);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(size_t, 1, umockcallrecorder_add_actual_call_call_count);
+    ASSERT_ARE_EQUAL(void_ptr, test_call_recorder, umockcallrecorder_add_actual_call_calls[0].umock_call_recorder);
+}
+
+/* Tests_SRS_UMOCK_C_01_021: [ umock_c_add_actual_call shall add an actual call by calling umockcallrecorder_add_actual_call on the call recorder created in umock_c_init. ]*/
+TEST_FUNCTION(when_the_underlying_call_recorder_add_actual_call_fails_then_umock_c_add_actual_call_returns_NULL)
+{
+    // arrange
+    UMOCKCALL_HANDLE matched_call;
+    (void)umock_c_init(test_on_umock_c_error);
+    umockcallrecorder_add_actual_call_call_result = 1;
+
+    // act
+    int result = umock_c_add_actual_call(test_actual_call, &matched_call);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(size_t, 1, umockcallrecorder_add_actual_call_call_count);
+    ASSERT_ARE_EQUAL(void_ptr, test_call_recorder, umockcallrecorder_add_actual_call_calls[0].umock_call_recorder);
+}
+
+/* Tests_SRS_UMOCK_C_01_022: [** If the module is not initialized, umock_c_add_actual_call shall return a non-zero value. ]*/
+TEST_FUNCTION(umock_c_add_actual_call_when_the_module_is_not_initialized_fails)
+{
+    // arrange
+    UMOCKCALL_HANDLE matched_call;
+
+    // act
+    int result = umock_c_add_actual_call(test_actual_call, &matched_call);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(size_t, 0, umockcallrecorder_add_actual_call_call_count);
 }
 
 END_TEST_SUITE(umock_c_unittests)

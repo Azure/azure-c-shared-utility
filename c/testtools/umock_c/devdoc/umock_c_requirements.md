@@ -97,7 +97,7 @@ extern void umock_c_reset_all_calls(void);
 ```
 
 **SRS_UMOCK_C_01_011: [** umock_c_reset_all_calls shall reset all calls by calling umockcallrecorder_reset_all_calls on the call recorder created in umock_c_init. **]**
-If the underlying umockcallrecorder_reset_all_calls fails, the on_umock_c_error callback shall be triggered with UMOCK_C_RESET_CALLS_ERROR.
+**SRS_UMOCK_C_01_025: [** If the underlying umockcallrecorder_reset_all_calls fails, the on_umock_c_error callback shall be triggered with UMOCK_C_RESET_CALLS_ERROR. **]**
 **SRS_UMOCK_C_01_012: [** If the module is not initialized, umock_c_reset_all_calls shall do nothing. **]**
 
 ##umock_c_get_actual_calls

@@ -103,9 +103,11 @@ void umock_c_reset_all_calls(void)
     /* Codes_SRS_UMOCK_C_01_012: [ If the module is not initialized, umock_c_reset_all_calls shall do nothing. ]*/
     if (umock_c_state == UMOCK_C_STATE_INITIALIZED)
     {
+        /* Codes_SRS_UMOCK_C_01_011: [ umock_c_reset_all_calls shall reset all calls by calling umockcallrecorder_reset_all_calls on the call recorder created in umock_c_init. ]*/
         if (umockcallrecorder_reset_all_calls(call_recorder) != 0)
         {
-            umock_c_indicate_error(UMOCK_C_ERROR);
+            /* Codes_SRS_UMOCK_C_01_025: [ If the underlying umockcallrecorder_reset_all_calls fails, the on_umock_c_error callback shall be triggered with UMOCK_C_RESET_CALLS_ERROR. ]*/
+            umock_c_indicate_error(UMOCK_C_RESET_CALLS_ERROR);
         }
     }
 }
@@ -121,6 +123,7 @@ int umock_c_add_expected_call(UMOCKCALL_HANDLE mock_call)
     }
     else
     {
+        /* Codes_SRS_UMOCK_C_01_019: [ umock_c_add_expected_call shall add an expected call by calling umockcallrecorder_add_expected_call on the call recorder created in umock_c_init. ]*/
         result = umockcallrecorder_add_expected_call(call_recorder, mock_call);
     }
 
@@ -138,6 +141,7 @@ int umock_c_add_actual_call(UMOCKCALL_HANDLE mock_call, UMOCKCALL_HANDLE* matche
     }
     else
     {
+        /* Codes_SRS_UMOCK_C_01_021: [ umock_c_add_actual_call shall add an actual call by calling umockcallrecorder_add_actual_call on the call recorder created in umock_c_init. ]*/
         result = umockcallrecorder_add_actual_call(call_recorder, mock_call, matched_call);
     }
 
@@ -155,6 +159,7 @@ const char* umock_c_get_expected_calls(void)
     }
     else
     {
+        /* Codes_SRS_UMOCK_C_01_015: [ umock_c_get_expected_calls shall return the string for the recorded expected calls by calling umockcallrecorder_get_expected_calls on the call recorder created in umock_c_init. ]*/
         result = umockcallrecorder_get_expected_calls(call_recorder);
     }
 
@@ -172,6 +177,7 @@ const char* umock_c_get_actual_calls(void)
     }
     else
     {
+        /* Codes_SRS_UMOCK_C_01_013: [ umock_c_get_actual_calls shall return the string for the recorded actual calls by calling umockcallrecorder_get_actual_calls on the call recorder created in umock_c_init. ]*/
         result = umockcallrecorder_get_actual_calls(call_recorder);
     }
 
@@ -189,6 +195,7 @@ UMOCKCALL_HANDLE umock_c_get_last_expected_call(void)
     }
     else
     {
+        /* Codes_SRS_UMOCK_C_01_017: [ umock_c_get_last_expected_call shall return the last expected call by calling umockcallrecorder_get_last_expected_call on the call recorder created in umock_c_init. ]*/
         result = umockcallrecorder_get_last_expected_call(call_recorder);
     }
 
