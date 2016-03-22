@@ -117,6 +117,20 @@ int test_function(int arg1);
 
 If ENABLE_MOCKS is defined, MOCKABLE_FUNCTION shall generate the declaration of the function and code for the mocked function, thus allowing setting up of expectations in test functions. If ENABLE_MOCKS is not defined, MOCKABLE_FUNCTION shall only generate a declaration for the function.
 
+ENABLE_MOCKS should be used in the translation unit that contains the tests just before including the headers for all the units that the code under test depends on. Example:
+
+```c
+
+#include <stdlib.h>
+// ... other various includes
+
+#define ENABLE_MOCKS
+#include "test_dependency.h"
+
+// ... tests
+
+```
+
 ##umock init/deinit
 
 ###umock_c_init

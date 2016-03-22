@@ -7,7 +7,6 @@
 
 /* TODO:
 - Switch to .c
-- Make it clear that ENABLE_MOCKS has to be defined after including the unit under test header
 - Test freeing of return values allocated by the user in the copy functions
 */
 
@@ -27,9 +26,9 @@ Tests_SRS_UMOCK_C_LIB_01_146: [** Each type shall be normalized to a form where 
 Tests_SRS_UMOCK_C_LIB_01_147: [ Type names are case sensitive. ]
 */
 
-#define ENABLE_MOCKS
-
 #include "umock_c.h"
+
+#define ENABLE_MOCKS
 #include "test_dependency.h"
 
 /* Tests_SRS_UMOCK_C_LIB_01_067: [char\* and const char\* shall be supported out of the box through a separate header, umockvalue_charptr.h.]*/
