@@ -14,6 +14,7 @@
 
 static size_t umocktypes_deinit_call_count;
 static size_t umockcallrecorder_destroy_call_count;
+static size_t umockcallrecorder_reset_all_calls_call_count;
 
 UMOCKCALLRECORDER_HANDLE umockcallrecorder_create(void)
 {
@@ -29,6 +30,7 @@ void umockcallrecorder_destroy(UMOCKCALLRECORDER_HANDLE umock_call_recorder)
 int umockcallrecorder_reset_all_calls(UMOCKCALLRECORDER_HANDLE umock_call_recorder)
 {
     (void)umock_call_recorder;
+    umockcallrecorder_reset_all_calls_call_count++;
     return 0;
 }
 
@@ -97,6 +99,8 @@ TEST_FUNCTION_INITIALIZE(test_function_init)
     ASSERT_ARE_EQUAL(int, 0, TEST_MUTEX_ACQUIRE(test_mutex));
 
     umocktypes_deinit_call_count = 0;
+    umockcallrecorder_destroy_call_count = 0;
+    umockcallrecorder_reset_all_calls_call_count = 0;
 }
 
 TEST_FUNCTION_CLEANUP(test_function_cleanup)
@@ -117,6 +121,20 @@ TEST_FUNCTION(umock_c_deinit_when_not_initialized_does_nothing)
     // assert
     ASSERT_ARE_EQUAL(size_t, 0, umocktypes_deinit_call_count);
     ASSERT_ARE_EQUAL(size_t, 0, umockcallrecorder_destroy_call_count);
+}
+
+/* umock_c_reset_all_calls */
+
+/* Tests_SRS_UMOCK_C_01_012: [ If the module is not initialized, umock_c_reset_all_calls shall do nothing. ]*/
+TEST_FUNCTION(umock_c_reset_all_calls_when_not_initialized_does_nothing)
+{
+    // arrange
+
+    // act
+    umock_c_reset_all_calls();
+
+    // assert
+    ASSERT_ARE_EQUAL(size_t, 0, umockcallrecorder_reset_all_calls_call_count);
 }
 
 END_TEST_SUITE(umock_c_without_init_unittests)

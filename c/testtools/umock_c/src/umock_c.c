@@ -68,6 +68,7 @@ int umock_c_init(ON_UMOCK_C_ERROR on_umock_c_error)
 void umock_c_deinit(void)
 {
     /* Codes_SRS_UMOCK_C_LIB_01_012: [If umock_c was not initialized, umock_c_deinit shall do nothing.] */
+    /* Codes_SRS_UMOCK_C_01_010: [ If the module is not initialized, umock_c_deinit shall do nothing. ] */
     if (umock_c_state == UMOCK_C_STATE_INITIALIZED)
     {
         umockcallrecorder_destroy(call_recorder);
@@ -87,6 +88,7 @@ void umock_c_indicate_error(UMOCK_C_ERROR_CODE error_code)
 
 void umock_c_reset_all_calls(void)
 {
+    /* Codes_SRS_UMOCK_C_01_012: [ If the module is not initialized, umock_c_reset_all_calls shall do nothing. ]*/
     if (umock_c_state == UMOCK_C_STATE_INITIALIZED)
     {
         if (umockcallrecorder_reset_all_calls(call_recorder) != 0)
