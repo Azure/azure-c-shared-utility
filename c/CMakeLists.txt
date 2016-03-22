@@ -220,6 +220,7 @@ function(set_platform_files)
         set(PLATFORM_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/platform_win32.c PARENT_SCOPE)
         set(SOCKETIO_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/socketio_win32.c PARENT_SCOPE)
 		set(TICKCOUTER_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/tickcounter_win32.c PARENT_SCOPE)
+		set(UNIQUEID_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/uniqueid_win32.c PARENT_SCOPE)		
     else()
         if(${use_condition})
             set(CONDITION_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/condition_pthreads.c PARENT_SCOPE)
@@ -230,6 +231,7 @@ function(set_platform_files)
         set(SOCKETIO_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/socketio_berkeley.c PARENT_SCOPE)
         set(THREAD_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/threadapi_pthreads.c PARENT_SCOPE)
 		set(TICKCOUTER_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/tickcounter_linux.c PARENT_SCOPE)
+		set(UNIQUEID_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/uniqueid_linux.c PARENT_SCOPE)		
     endif()
 endfunction(set_platform_files)
 
@@ -270,12 +272,13 @@ set(source_c_files
 ./src/usha.c
 ./src/vector.c
 ./adapters/agenttime.c
-${TICKCOUTER_C_FILE}
 ${CONDITION_C_FILE}
+${LOCK_C_FILE}
 ${PLATFORM_C_FILE}
 ${SOCKETIO_C_FILE}
-${LOCK_C_FILE}
+${TICKCOUTER_C_FILE}
 ${THREAD_C_FILE}
+${UNIQUEID_C_FILE}
 )
 
 if(${use_http})
@@ -334,6 +337,7 @@ set(source_h_files
 ./inc/tickcounter.h
 ./inc/threadapi.h
 ./inc/xio.h
+./inc/uniqueid.h
 ./inc/urlencode.h
 ./inc/vector.h
 ./inc/xlogging.h
