@@ -264,11 +264,10 @@ TEST_FUNCTION(inverted_order_for_calls_is_detected_as_mismatch)
 
     // act
     test_dependency_no_args();
-    test_dependency_1_arg(42);
 
     // assert
     ASSERT_ARE_EQUAL(char_ptr, "[test_dependency_1_arg(42)][test_dependency_no_args()]", umock_c_get_expected_calls());
-    ASSERT_ARE_EQUAL(char_ptr, "[test_dependency_no_args()][test_dependency_1_arg(42)]", umock_c_get_actual_calls());
+    ASSERT_ARE_EQUAL(char_ptr, "[test_dependency_no_args()]", umock_c_get_actual_calls());
 }
 
 /* EXPECTED_CALL */
