@@ -12,6 +12,16 @@
 - Test set return value order
 */
 
+/* Tested by unit tests for umock_c:
+Tests_SRS_UMOCK_C_LIB_01_006: [umock_c_init shall initialize umock_c.]
+Tests_SRS_UMOCK_C_LIB_01_007: [umock_c_init called if already initialized shall fail and return a non-zero value.]
+Tests_SRS_UMOCK_C_LIB_01_008: [umock_c_init shall initialize the umock supported types.]
+Tests_SRS_UMOCK_C_LIB_01_009: [on_umock_c_error can be NULL.]
+Tests_SRS_UMOCK_C_LIB_01_010: [If on_umock_c_error is non-NULL it shall be saved for later use (to be invoked whenever an umock_c error needs to be signaled to the user).]
+Tests_SRS_UMOCK_C_LIB_01_011: [umock_c_deinit shall free all umock_c used resources.]
+Tests_SRS_UMOCK_C_LIB_01_012: [If umock_c was not initialized, umock_c_deinit shall do nothing.]
+*/
+
 #define ENABLE_MOCKS
 
 #include "umock_c.h"
@@ -1537,6 +1547,23 @@ TEST_FUNCTION(when_a_type_is_not_supported_an_error_is_triggered)
     // assert
     ASSERT_IS_NULL(umock_c_get_expected_calls());
     ASSERT_ARE_EQUAL(int, 1, test_on_umock_c_error_call_count);
+}
+
+/* Call comparison rules */
+
+/* Tests_SRS_UMOCK_C_LIB_01_136: [ When multiple return values are set for a mock function by using different means, the following order shall be in effect: ]*/
+/* Tests_SRS_UMOCK_C_LIB_01_137: [ - If a return value has been specified for an expected call then that value shall be returned. ]*/
+TEST_FUNCTION(when_the_return_value_is_given_by_SetReturn_then_it_is_returned)
+{
+    // arrange
+    STRICT_EXPECTED_CALL(test_dependency_1_arg(42))
+        .SetReturn(42);
+
+    // act
+    int result = test_dependency_1_arg(42);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 42, result);
 }
 
 END_TEST_SUITE(umock_c_integrationtests)

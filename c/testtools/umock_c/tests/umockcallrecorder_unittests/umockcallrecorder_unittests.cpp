@@ -936,6 +936,26 @@ TEST_FUNCTION(when_allocating_memory_for_the_resulting_string_fails_then_umockca
     umockcallrecorder_destroy(call_recorder);
 }
 
+/* Tests_SRS_UMOCKCALLRECORDER_01_031: [ If allocating memory for the resulting string fails, umockcallrecorder_get_expected_calls shall fail and return NULL. ]*/
+TEST_FUNCTION(umockcallrecorder_get_expected_calls_with_a_matched_expected_call_yields_no_calls_in_the_string)
+{
+    // arrange
+    UMOCKCALLRECORDER_HANDLE call_recorder = umockcallrecorder_create();
+    UMOCKCALL_HANDLE matched_call;
+    umockcall_are_equal_call_result = 1;
+    (void)umockcallrecorder_add_expected_call(call_recorder, test_expected_umockcall_1);
+    (void)umockcallrecorder_add_actual_call(call_recorder, test_actual_umockcall_1, &matched_call);
+
+    // act
+    const char* result = umockcallrecorder_get_expected_calls(call_recorder);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "", result);
+
+    // cleanup
+    umockcallrecorder_destroy(call_recorder);
+}
+
 /* umockcallrecorder_get_last_expected_call */
 
 /* Tests_SRS_UMOCKCALLRECORDER_01_034: [ If no expected call has been recorded for umock_call_recorder then umockcallrecorder_get_last_expected_call shall fail and return NULL. ]*/

@@ -699,7 +699,6 @@ typedef struct ARG_BUFFER_TAG
                 } \
             },) \
             IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_COUNTED(COPY_OUT_ARG_VALUE_FROM_MATCHED_CALL, __VA_ARGS__),) \
-            umockcall_destroy(matched_call); \
         } \
         else \
         { \

@@ -227,29 +227,11 @@ const char* umockcallrecorder_get_expected_calls(UMOCKCALLRECORDER_HANDLE umock_
     {
         size_t i;
         char* new_expected_calls_string;
+        size_t current_length = 0;
 
-        if (umock_call_recorder->expected_call_count == 0)
+        for (i = 0; i < umock_call_recorder->expected_call_count; i++)
         {
-            new_expected_calls_string = (char*)realloc(umock_call_recorder->expected_calls_string, 1);
-            if (new_expected_calls_string == NULL)
-            {
-                /* Codes_SRS_UMOCKCALLRECORDER_01_031: [ If allocating memory for the resulting string fails, umockcallrecorder_get_expected_calls shall fail and return NULL. ]*/
-                result = NULL;
-            }
-            else
-            {
-                umock_call_recorder->expected_calls_string = new_expected_calls_string;
-                umock_call_recorder->expected_calls_string[0] = '\0';
-
-                /* Codes_SRS_UMOCKCALLRECORDER_01_027: [ umockcallrecorder_get_expected_calls shall return a pointer to the string representation of all the expected calls. ]*/
-                result = umock_call_recorder->expected_calls_string;
-            }
-        }
-        else
-        {
-            size_t current_length = 0;
-
-            for (i = 0; i < umock_call_recorder->expected_call_count; i++)
+            if (umock_call_recorder->expected_calls[i].is_matched == 0)
             {
                 /* Codes_SRS_UMOCKCALLRECORDER_01_028: [ The string for each call shall be obtained by calling umockcall_stringify. ]*/
                 char* stringified_call = umockcall_stringify(umock_call_recorder->expected_calls[i].umockcall);
@@ -277,10 +259,30 @@ const char* umockcallrecorder_get_expected_calls(UMOCKCALLRECORDER_HANDLE umock_
                     free(stringified_call);
                 }
             }
+        }
 
-            if (i < umock_call_recorder->expected_call_count)
+        if (i < umock_call_recorder->expected_call_count)
+        {
+            result = NULL;
+        }
+        else
+        {
+            if (current_length == 0)
             {
-                result = NULL;
+                new_expected_calls_string = (char*)realloc(umock_call_recorder->expected_calls_string, 1);
+                if (new_expected_calls_string == NULL)
+                {
+                    /* Codes_SRS_UMOCKCALLRECORDER_01_031: [ If allocating memory for the resulting string fails, umockcallrecorder_get_expected_calls shall fail and return NULL. ]*/
+                    result = NULL;
+                }
+                else
+                {
+                    umock_call_recorder->expected_calls_string = new_expected_calls_string;
+                    umock_call_recorder->expected_calls_string[0] = '\0';
+
+                    /* Codes_SRS_UMOCKCALLRECORDER_01_027: [ umockcallrecorder_get_expected_calls shall return a pointer to the string representation of all the expected calls. ]*/
+                    result = umock_call_recorder->expected_calls_string;
+                }
             }
             else
             {

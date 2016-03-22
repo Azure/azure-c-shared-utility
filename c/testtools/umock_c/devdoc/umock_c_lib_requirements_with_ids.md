@@ -128,15 +128,15 @@ int umock_c_init(ON_UMOCK_C_ERROR on_umock_c_error);
 
 umock_c_init is needed before performing any action related to umock_c calls (or registering any types).
 
-**SRS_UMOCK_C_LIB_01_006: [**umock_c_init shall initialize umock_c.**]**
+XX**SRS_UMOCK_C_LIB_01_006: [**umock_c_init shall initialize umock_c.**]**
 
-**SRS_UMOCK_C_LIB_01_007: [**umock_c_init called if already initialized shall fail and return a non-zero value.**]**
+XX**SRS_UMOCK_C_LIB_01_007: [**umock_c_init called if already initialized shall fail and return a non-zero value.**]**
  
-**SRS_UMOCK_C_LIB_01_008: [**umock_c_init shall initialize the umock supported types.**]**
+XX**SRS_UMOCK_C_LIB_01_008: [**umock_c_init shall initialize the umock supported types.**]**
 
-**SRS_UMOCK_C_LIB_01_009: [**on_umock_c_error can be NULL.**]**
+XX**SRS_UMOCK_C_LIB_01_009: [**on_umock_c_error can be NULL.**]**
 
-**SRS_UMOCK_C_LIB_01_010: [**If on_umock_c_error is non-NULL it shall be saved for later use (to be invoked whenever an umock_c error needs to be signaled to the user).**]**
+XX**SRS_UMOCK_C_LIB_01_010: [**If on_umock_c_error is non-NULL it shall be saved for later use (to be invoked whenever an umock_c error needs to be signaled to the user).**]**
 
 ###umock_c_deinit
 
@@ -144,7 +144,7 @@ umock_c_init is needed before performing any action related to umock_c calls (or
 void umock_c_deinit(void);
 ```
 
-**SRS_UMOCK_C_LIB_01_011: [**umock_c_deinit shall free all umock_c used resources.**]**
+XX**SRS_UMOCK_C_LIB_01_011: [**umock_c_deinit shall free all umock_c used resources.**]**
 XX**SRS_UMOCK_C_LIB_01_012: [**If umock_c was not initialized, umock_c_deinit shall do nothing.**]**
 
 ##Expected calls recording API
