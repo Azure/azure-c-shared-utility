@@ -262,14 +262,14 @@ umock_c_get_actual_calls would return:
 
 XX**SRS_UMOCK_C_LIB_01_115: [** umock_c shall compare calls in order. **]** That means that "[A()][B()]" is different than "[B()][A()]". 
 
-**SRS_UMOCK_C_LIB_01_136: [** When multiple return values are set for a mock function by using different means, the following order shall be in effect: **]**
+XX**SRS_UMOCK_C_LIB_01_136: [** When multiple return values are set for a mock function by using different means, the following order shall be in effect: **]**
 
-**SRS_UMOCK_C_LIB_01_137: [** - If a return value has been specified for an expected call then that value shall be returned. **]**
-**SRS_UMOCK_C_LIB_01_138: [** - If a global mock hook has been specified then it shall be called and its result returned. **]**
-**SRS_UMOCK_C_LIB_01_139: [** - If a global return value has been specified then it shall be returned. **]**
-**SRS_UMOCK_C_LIB_01_140: [** - Otherwise the value of a static variable of the same type as the return type shall be returned. **]**
+XX**SRS_UMOCK_C_LIB_01_137: [** - If a return value has been specified for an expected call then that value shall be returned. **]**
+XX**SRS_UMOCK_C_LIB_01_138: [** - If a global mock hook has been specified then it shall be called and its result returned. **]**
+XX**SRS_UMOCK_C_LIB_01_139: [** - If a global return value has been specified then it shall be returned. **]**
+XX**SRS_UMOCK_C_LIB_01_140: [** - Otherwise the value of a static variable of the same type as the return type shall be returned. **]**
 
-**SRS_UMOCK_C_LIB_01_148: [** If call comparison fails an error shall be indicated by calling the error callback with UMOCK_C_COMPARE_CALL_ERROR. **]**
+XX**SRS_UMOCK_C_LIB_01_148: [** If call comparison fails an error shall be indicated by calling the error callback with UMOCK_C_COMPARE_CALL_ERROR. **]**
 
 ##Supported types
 
@@ -318,9 +318,9 @@ Five functions shall be provided to umock_c:
 char* umockvalue_stringify_{type}(const {type}* value)
 ```
 
-**SRS_UMOCK_C_LIB_01_054: [**A stringify function shall allocate using malloc a char\* and fill it with a string representation of value.**]**
+A stringify function shall allocate using malloc a char\* and fill it with a string representation of value.
 
-**SRS_UMOCK_C_LIB_01_055: [**If any error is encountered during building the string representation, umockvalue_stringify_type shall return NULL.**]**
+If any error is encountered during building the string representation, umockvalue_stringify_type shall return NULL.
 
 Example:
 
@@ -361,11 +361,11 @@ char* umockvalue_stringify_int(const int* value)
 int umockvalue_are_equal_{type}(const {type}* left, const {type}* right)
 ```
 
-**SRS_UMOCK_C_LIB_01_056: [**The umockvalue_are_equal_type function shall return 1 if the 2 values are equal and 0 if they are not.**]**
+The umockvalue_are_equal_type function shall return 1 if the 2 values are equal and 0 if they are not.
 
-**SRS_UMOCK_C_LIB_01_057: [**If both left and right are NULL, umockvalue_are_equal_type shall return 1.**]**
+If both left and right are NULL, umockvalue_are_equal_type shall return 1.
 
-**SRS_UMOCK_C_LIB_01_058: [**If only one of left and right is NULL, umockvalue_are_equal_type shall return 0.**]**
+If only one of left and right is NULL, umockvalue_are_equal_type shall return 0.
 
 Example:
 
@@ -397,13 +397,13 @@ int umockvalue_are_equal_int(const int* left, const int* right)
 int umockvalue_copy_{type}({type}* destination, const {type}* source)
 ```
 
-**SRS_UMOCK_C_LIB_01_059: [**The umockvalue_copy_type function shall copy the value from source to destination.**]**
+The umockvalue_copy_type function shall copy the value from source to destination.
 
-**SRS_UMOCK_C_LIB_01_060: [**On success umockvalue_copy_type shall return 0.**]**
+On success umockvalue_copy_type shall return 0.
 
-**SRS_UMOCK_C_LIB_01_061: [**If any of the arguments is NULL, umockvalue_copy_type shall return a non-zero value.**]**
+If any of the arguments is NULL, umockvalue_copy_type shall return a non-zero value.
 
-**SRS_UMOCK_C_LIB_01_062: [**If any error occurs during copying the value, umockvalue_copy_type shall return a non-zero value.**]**
+If any error occurs during copying the value, umockvalue_copy_type shall return a non-zero value.
 
 Example:
 
@@ -433,8 +433,8 @@ int umockvalue_copy_int(int* destination, const int* source)
 void umockvalue_free_{type}({type}* value)
 ```
 
-**SRS_UMOCK_C_LIB_01_063: [**The umockvalue_free_type function shall free a value previously copied using umockvalue_copy_type.**]**
-**SRS_UMOCK_C_LIB_01_064: [**If value is NULL, no free shall be performed.**]**
+The umockvalue_free_type function shall free a value previously copied using umockvalue_copy_type.
+If value is NULL, no free shall be performed.
 
 Example:
 
@@ -447,11 +447,11 @@ void umockvalue_free_int(int* value)
 
 ### Type names
 
-**SRS_UMOCK_C_LIB_01_145: [** Since umock_c needs to maintain a list of registered types, the following rules shall be applied: **]**
+XX**SRS_UMOCK_C_LIB_01_145: [** Since umock_c needs to maintain a list of registered types, the following rules shall be applied: **]**
 
-**SRS_UMOCK_C_LIB_01_146: [** Each type shall be normalized to a form where all extra spaces are removed. **]**
+XX**SRS_UMOCK_C_LIB_01_146: [** Each type shall be normalized to a form where all extra spaces are removed. **]**
 
-**SRS_UMOCK_C_LIB_01_147: [** Type names are case sensitive. **]** 
+XX**SRS_UMOCK_C_LIB_01_147: [** Type names are case sensitive. **]** 
 
 ####REGISTER_UMOCK_VALUE_TYPE
 

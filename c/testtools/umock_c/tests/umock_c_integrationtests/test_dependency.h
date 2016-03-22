@@ -46,6 +46,9 @@ extern "C" {
     MOCKABLE_FUNCTION(void, test_dependency_type_with_space, char *,s);
     MOCKABLE_FUNCTION(void, test_dependency_all_types, char, char_arg, unsigned char, unsignedchar_arg, short, short_arg, unsigned short, unsignedshort_arg, int, int_arg, unsigned int, unsignedint_arg, long, long_arg, unsigned long, unsignedlong_arg, long long, longlong_arg, unsigned long long, unsignedlonglong_arg, float, float_arg, double, double_arg, long double, longdouble_arg, size_t, size_t_arg);
     MOCKABLE_FUNCTION(void, test_dependency_type_not_registered, TEST_STRUCT_NOT_REGISTERED, a);
+    MOCKABLE_FUNCTION(int, test_dependency_with_global_mock_hook);
+    MOCKABLE_FUNCTION(int, test_dependency_with_global_return);
+    MOCKABLE_FUNCTION(int, test_dependency_returning_int);
 
 #ifdef __cplusplus
 }

@@ -501,6 +501,11 @@ typedef struct ARG_BUFFER_TAG
 /* Codes_SRS_UMOCK_C_LIB_01_106: [The signature for the hook shall be assumed to have exactly the same arguments and return as the mocked function.]*/
 /* Codes_SRS_UMOCK_C_LIB_01_135: [ All parameters passed to the mock shall be passed down to the mock hook. ]*/
 /* Codes_SRS_UMOCK_C_LIB_01_148: [ If call comparison fails an error shall be indicated by calling the error callback with UMOCK_C_COMPARE_CALL_ERROR. ]*/
+/* Codes_SRS_UMOCK_C_LIB_01_136: [ When multiple return values are set for a mock function by using different means, the following order shall be in effect: ]*/
+/* Codes_SRS_UMOCK_C_LIB_01_137: [ - If a return value has been specified for an expected call then that value shall be returned. ]*/
+/* Codes_SRS_UMOCK_C_LIB_01_138: [ - If a global mock hook has been specified then it shall be called and its result returned. ]*/
+/* Codes_SRS_UMOCK_C_LIB_01_139: [ - If a global return value has been specified then it shall be returned. ]*/
+/* Codes_SRS_UMOCK_C_LIB_01_140: [ - Otherwise the value of a static variable of the same type as the return type shall be returned. ]*/
 #define MOCKABLE_FUNCTION_INTERNAL_WITH_MOCK(return_type, name, ...) \
     typedef return_type (*C2(mock_hook_func_type_, name))(IF(COUNT_ARG(__VA_ARGS__),FOR_EACH_2_COUNTED(ARG_IN_SIGNATURE, __VA_ARGS__),void)); \
     static C2(mock_hook_func_type_,name) C2(mock_hook_,name) = NULL; \

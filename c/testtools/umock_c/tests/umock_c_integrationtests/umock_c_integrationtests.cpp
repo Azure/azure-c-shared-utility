@@ -22,6 +22,12 @@ Tests_SRS_UMOCK_C_LIB_01_011: [umock_c_deinit shall free all umock_c used resour
 Tests_SRS_UMOCK_C_LIB_01_012: [If umock_c was not initialized, umock_c_deinit shall do nothing.]
 */
 
+/* Tested by unittests of umocktypes and umocktypename:
+Tests_SRS_UMOCK_C_LIB_01_145: [ Since umock_c needs to maintain a list of registered types, the following rules shall be applied: ]
+Tests_SRS_UMOCK_C_LIB_01_146: [** Each type shall be normalized to a form where all extra spaces are removed. ]
+Tests_SRS_UMOCK_C_LIB_01_147: [ Type names are case sensitive. ]
+*/
+
 #define ENABLE_MOCKS
 
 #include "umock_c.h"
@@ -50,6 +56,11 @@ static void test_on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
         test_on_umock_c_error_calls[test_on_umock_c_error_call_count].error_code = error_code;
         test_on_umock_c_error_call_count++;
     }
+}
+
+static int my_hook_test_dependency_with_global_mock_hook(void)
+{
+    return 43;
 }
 
 static int my_hook_result;
@@ -1564,6 +1575,102 @@ TEST_FUNCTION(when_the_return_value_is_given_by_SetReturn_then_it_is_returned)
 
     // assert
     ASSERT_ARE_EQUAL(int, 42, result);
+}
+
+/* Tests_SRS_UMOCK_C_LIB_01_136: [ When multiple return values are set for a mock function by using different means, the following order shall be in effect: ]*/
+/* Tests_SRS_UMOCK_C_LIB_01_137: [ - If a return value has been specified for an expected call then that value shall be returned. ]*/
+/* Tests_SRS_UMOCK_C_LIB_01_138: [ - If a global mock hook has been specified then it shall be called and its result returned. ]*/
+TEST_FUNCTION(when_the_return_value_is_given_by_SetReturn_for_a_function_with_a_global_return_hook_the_SetReturn_value_is_returned)
+{
+    REGISTER_GLOBAL_MOCK_HOOK(test_dependency_with_global_mock_hook, my_hook_test_dependency_with_global_mock_hook);
+
+    // arrange
+    STRICT_EXPECTED_CALL(test_dependency_with_global_mock_hook())
+        .SetReturn(42);
+
+    // act
+    int result = test_dependency_with_global_mock_hook();
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 42, result);
+}
+
+/* Tests_SRS_UMOCK_C_LIB_01_136: [ When multiple return values are set for a mock function by using different means, the following order shall be in effect: ]*/
+/* Tests_SRS_UMOCK_C_LIB_01_137: [ - If a return value has been specified for an expected call then that value shall be returned. ]*/
+/* Tests_SRS_UMOCK_C_LIB_01_138: [ - If a global mock hook has been specified then it shall be called and its result returned. ]*/
+TEST_FUNCTION(when_the_return_value_is_not_given_by_SetReturn_for_a_function_with_a_global_return_hook_the_mock_hook_return_value_is_returned)
+{
+    REGISTER_GLOBAL_MOCK_HOOK(test_dependency_with_global_mock_hook, my_hook_test_dependency_with_global_mock_hook);
+
+    // arrange
+    STRICT_EXPECTED_CALL(test_dependency_with_global_mock_hook());
+
+    // act
+    int result = test_dependency_with_global_mock_hook();
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 43, result);
+}
+
+/* Tests_SRS_UMOCK_C_LIB_01_139: [ - If a global return value has been specified then it shall be returned. ]*/
+TEST_FUNCTION(when_the_return_value_is_given_by_SetReturn_for_a_function_with_a_global_return_hook_and_global_return_the_SetReturn_value_is_returned)
+{
+    REGISTER_GLOBAL_MOCK_HOOK(test_dependency_with_global_mock_hook, my_hook_test_dependency_with_global_mock_hook);
+    REGISTER_GLOBAL_MOCK_RETURN(test_dependency_with_global_mock_hook, 44);
+
+    // arrange
+    STRICT_EXPECTED_CALL(test_dependency_with_global_mock_hook())
+        .SetReturn(42);
+
+    // act
+    int result = test_dependency_with_global_mock_hook();
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 42, result);
+}
+
+/* Tests_SRS_UMOCK_C_LIB_01_139: [ - If a global return value has been specified then it shall be returned. ]*/
+TEST_FUNCTION(when_the_return_value_is_not_given_by_SetReturn_for_a_function_with_a_global_return_hook_and_global_return_the_global_mock_hook_value_is_returned)
+{
+    REGISTER_GLOBAL_MOCK_HOOK(test_dependency_with_global_mock_hook, my_hook_test_dependency_with_global_mock_hook);
+    REGISTER_GLOBAL_MOCK_RETURN(test_dependency_with_global_mock_hook, 44);
+
+    // arrange
+    STRICT_EXPECTED_CALL(test_dependency_with_global_mock_hook());
+
+    // act
+    int result = test_dependency_with_global_mock_hook();
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 43, result);
+}
+
+/* Tests_SRS_UMOCK_C_LIB_01_139: [ - If a global return value has been specified then it shall be returned. ]*/
+TEST_FUNCTION(when_the_return_value_is_specified_only_by_global_return_that_global_return_value_is_returned)
+{
+    REGISTER_GLOBAL_MOCK_RETURN(test_dependency_with_global_return, 44);
+
+    // arrange
+    STRICT_EXPECTED_CALL(test_dependency_with_global_return());
+
+    // act
+    int result = test_dependency_with_global_return();
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 44, result);
+}
+
+/* Tests_SRS_UMOCK_C_LIB_01_140: [ - Otherwise the value of a static variable of the same type as the return type shall be returned. ]*/
+TEST_FUNCTION(when_no_return_value_is_specified_for_a_function_returning_int_0_is_returned)
+{
+    // arrange
+    STRICT_EXPECTED_CALL(test_dependency_returning_int());
+
+    // act
+    int result = test_dependency_returning_int();
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, result);
 }
 
 END_TEST_SUITE(umock_c_integrationtests)
