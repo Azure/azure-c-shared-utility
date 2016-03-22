@@ -9,7 +9,6 @@
 - Switch to .c
 - Make it clear that ENABLE_MOCKS has to be defined after including the unit under test header
 - Test freeing of return values allocated by the user in the copy functions
-- Test that order is meaningful
 */
 
 /* Tested by unit tests for umock_c:
