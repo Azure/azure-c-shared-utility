@@ -7,9 +7,6 @@
 #include "umockcallrecorder.h"
 #include "umocktypes.h"
 #include "umocktypes_c.h"
-
-#define ENABLE_MOCKS
-
 #include "umock_c.h"
 
 static UMOCKCALL_HANDLE test_expected_call = (UMOCKCALL_HANDLE)0x4242;
