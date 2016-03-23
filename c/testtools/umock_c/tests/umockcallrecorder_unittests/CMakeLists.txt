@@ -6,8 +6,11 @@ cmake_minimum_required(VERSION 2.8.11)
 
 set(theseTestsName umockcallrecorder_unittests)
 
+set(${theseTestsName}_test_files
+umockcallrecorder_unittests.c
+)
+
 set(${theseTestsName}_c_files
-umockcallrecorder_unittests.cpp
 umockcallrecorder_mocked.c
 )
 

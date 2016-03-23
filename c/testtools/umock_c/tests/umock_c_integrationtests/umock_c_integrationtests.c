@@ -6,7 +6,6 @@
 #include "testrunnerswitcher.h"
 
 /* TODO:
-- Switch to .c
 - Test freeing of return values allocated by the user in the copy functions
 */
 

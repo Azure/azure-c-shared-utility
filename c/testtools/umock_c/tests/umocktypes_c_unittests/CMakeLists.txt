@@ -6,8 +6,11 @@ cmake_minimum_required(VERSION 2.8.11)
 
 set(theseTestsName umocktypes_c_unittests)
 
+set(${theseTestsName}_test_files
+umocktypes_c_unittests.c
+)
+
 set(${theseTestsName}_c_files
-umocktypes_c_unittests.cpp
 umocktypes_c_mocked.c
 )
 

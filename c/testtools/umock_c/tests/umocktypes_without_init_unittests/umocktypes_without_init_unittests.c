@@ -52,8 +52,10 @@ typedef struct test_free_func_testtype_CALL_TAG
 static test_free_func_testtype_CALL* test_free_func_testtype_calls;
 static size_t test_free_func_testtype_call_count;
 
-extern "C"
-{
+#ifdef __cplusplus
+extern "C" {
+#endif
+
     char* umocktypename_normalize(const char* type_name)
     {
         char* result;
@@ -81,7 +83,10 @@ extern "C"
 
         return result;
     }
+
+#ifdef __cplusplus
 }
+#endif
 
 static char* test_stringify_func_testtype(const void* value)
 {

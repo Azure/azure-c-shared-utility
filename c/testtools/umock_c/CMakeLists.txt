@@ -42,7 +42,7 @@ function(umockc_windows_unittests_add_dll whatIsBuilding)
     link_directories(${whatIsBuilding}_dll $ENV{VCInstallDir}UnitTest/lib)
     
     add_library(${whatIsBuilding}_dll SHARED 
-        ${${whatIsBuilding}_cpp_files} 
+        ${${whatIsBuilding}_test_files} 
         ${${whatIsBuilding}_h_files} 
         ${${whatIsBuilding}_c_files}
     )
@@ -53,6 +53,7 @@ function(umockc_windows_unittests_add_dll whatIsBuilding)
     
     target_include_directories(${whatIsBuilding}_dll PUBLIC ${sharedutil_include_directories} $ENV{VCInstallDir}UnitTest/include)
     target_compile_definitions(${whatIsBuilding}_dll PUBLIC -DCPP_UNITTEST)
+    SET_SOURCE_FILES_PROPERTIES( ${${whatIsBuilding}_test_files} PROPERTIES LANGUAGE CXX )
     target_link_libraries(${whatIsBuilding}_dll ctest ${ARGN})
 endfunction()
 
@@ -60,7 +61,7 @@ function(umockc_windows_unittests_add_lib whatIsBuilding)
     link_directories(${whatIsBuilding}_lib $ENV{VCInstallDir}UnitTest/lib)
     
     add_library(${whatIsBuilding}_lib STATIC 
-        ${${whatIsBuilding}_cpp_files} 
+        ${${whatIsBuilding}_test_files} 
         ${${whatIsBuilding}_h_files} 
         ${${whatIsBuilding}_c_files}
     )
@@ -72,7 +73,7 @@ endfunction()
 
 function(umockc_windows_unittests_add_exe whatIsBuilding)
     add_executable(${whatIsBuilding}_exe
-        ${${whatIsBuilding}_cpp_files} 
+        ${${whatIsBuilding}_test_files} 
         ${${whatIsBuilding}_h_files} 
         ${${whatIsBuilding}_c_files}
         ${CMAKE_CURRENT_LIST_DIR}/main.c

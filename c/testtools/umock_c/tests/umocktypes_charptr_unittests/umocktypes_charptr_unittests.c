@@ -68,16 +68,18 @@ void reset_umocktypes_register_type_calls(void)
     umocktypes_register_type_call_count = NULL;
 }
 
-extern "C"
-{
-    static size_t malloc_call_count;
-    static size_t calloc_call_count;
-    static size_t realloc_call_count;
-    static size_t free_call_count;
+static size_t malloc_call_count;
+static size_t calloc_call_count;
+static size_t realloc_call_count;
+static size_t free_call_count;
 
-    static size_t when_shall_malloc_fail;
-    static size_t when_shall_calloc_fail;
-    static size_t when_shall_realloc_fail;
+static size_t when_shall_malloc_fail;
+static size_t when_shall_calloc_fail;
+static size_t when_shall_realloc_fail;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
     void* mock_malloc(size_t size)
     {
@@ -130,16 +132,19 @@ extern "C"
         free(ptr);
     }
 
-    void reset_malloc_calls(void)
-    {
-        malloc_call_count = 0;
-        when_shall_malloc_fail = 0;
-        calloc_call_count = 0;
-        when_shall_calloc_fail = 0;
-        realloc_call_count = 0;
-        when_shall_realloc_fail = 0;
-        free_call_count = 0;
-    }
+#ifdef __cplusplus
+}
+#endif
+
+void reset_malloc_calls(void)
+{
+    malloc_call_count = 0;
+    when_shall_malloc_fail = 0;
+    calloc_call_count = 0;
+    when_shall_calloc_fail = 0;
+    realloc_call_count = 0;
+    when_shall_realloc_fail = 0;
+    free_call_count = 0;
 }
 
 TEST_MUTEX_HANDLE test_mutex;

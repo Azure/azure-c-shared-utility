@@ -55,15 +55,17 @@ typedef struct test_free_func_testtype_CALL_TAG
 static test_free_func_testtype_CALL* test_free_func_testtype_calls;
 static size_t test_free_func_testtype_call_count;
 
-extern "C"
-{
-    static size_t malloc_call_count;
-    static size_t calloc_call_count;
-    static size_t realloc_call_count;
+static size_t malloc_call_count;
+static size_t calloc_call_count;
+static size_t realloc_call_count;
 
-    static size_t when_shall_malloc_fail;
-    static size_t when_shall_calloc_fail;
-    static size_t when_shall_realloc_fail;
+static size_t when_shall_malloc_fail;
+static size_t when_shall_calloc_fail;
+static size_t when_shall_realloc_fail;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
     void* mock_malloc(size_t size)
     {
@@ -142,7 +144,9 @@ extern "C"
 
         return result;
     }
+#ifdef __cplusplus
 }
+#endif
 
 static char* test_stringify_func_testtype(const void* value)
 {
