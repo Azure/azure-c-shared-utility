@@ -485,7 +485,10 @@ else()
     target_link_libraries(aziotsharedutil pthread)
 endif()
 
-add_subdirectory(tests)
+if (skip_unittests)
+else()
+    add_subdirectory(tests)
+endif()
 
 if(WIN32)
 else()
