@@ -213,7 +213,7 @@ function(build_test_artifacts whatIsBuilding use_gballoc)
     
     if(${use_gballoc})
         add_definitions(-DGB_MEASURE_MEMORY_FOR_THIS -DGB_DEBUG_ALLOC)
-    else()	
+    else()    
     endif()
     
     #setting #defines
@@ -256,14 +256,14 @@ function(set_platform_files)
         if (WINCE)
             set(HTTP_C_FILE ${CMAKE_CURRENT_LIST_DIR}/common/adapters/httpapi_wince.cpp PARENT_SCOPE)
             set(THREAD_C_FILE ${CMAKE_CURRENT_LIST_DIR}/common/adapters/threadapi_win32.c PARENT_SCOPE)
-        else()		
+        else()
             set(HTTP_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/httpapi_winhttp.c PARENT_SCOPE)
             set(THREAD_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/threadapi_c11.c PARENT_SCOPE)
         endif()
         set(LOCK_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/lock_c11.c PARENT_SCOPE)
         set(PLATFORM_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/platform_win32.c PARENT_SCOPE)
         set(SOCKETIO_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/socketio_win32.c PARENT_SCOPE)
-		set(TICKCOUTER_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/tickcounter_win32.c PARENT_SCOPE)
+        set(TICKCOUTER_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/tickcounter_win32.c PARENT_SCOPE)
 		set(UNIQUEID_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/uniqueid_win32.c PARENT_SCOPE)		
     else()
         if(${use_condition})
@@ -274,7 +274,7 @@ function(set_platform_files)
         set(PLATFORM_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/platform_linux.c PARENT_SCOPE)
         set(SOCKETIO_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/socketio_berkeley.c PARENT_SCOPE)
         set(THREAD_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/threadapi_pthreads.c PARENT_SCOPE)
-		set(TICKCOUTER_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/tickcounter_linux.c PARENT_SCOPE)
+        set(TICKCOUTER_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/tickcounter_linux.c PARENT_SCOPE)
 		set(UNIQUEID_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/uniqueid_linux.c PARENT_SCOPE)		
     endif()
 endfunction(set_platform_files)
@@ -330,8 +330,8 @@ if(${use_http})
         ./src/httpapiex.c
         ./src/httpapiexsas.c
         ./src/httpheaders.c
-        ${HTTP_C_FILE}		
-    )	
+        ${HTTP_C_FILE}
+    )
 endif()
 
 if(${use_schannel})
@@ -465,7 +465,7 @@ endif()
 
 if(${use_schannel})
     if(WIN32)
-        target_link_libraries(aziotsharedutil ws2_32 secur32)	
+        target_link_libraries(aziotsharedutil ws2_32 secur32)
     endif()
 endif()
 
@@ -499,6 +499,6 @@ else()
         ./src/gballoc.c
         ${HTTP_C_FILE}
         ./src/strings.c
-        ./src/vector.c		
+        ./src/vector.c
         DESTINATION ${INCLUDE_INSTALL_DIR}/azureiot)
 endif (WIN32)
