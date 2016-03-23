@@ -29,6 +29,7 @@ UNIQUEID_RESULT UniqueId_Generate(char* uid, size_t len)
         /* Codes_SRS_UNIQUEID_07_001: [UniqueId_Generate shall create a unique Id 36 character long string.] */
         memset(uid, 0, len);
         uuid_unparse(uuidVal, uid);
+        result = UNIQUEID_OK;
     }
     return result;
 }
