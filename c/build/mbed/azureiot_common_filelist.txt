@@ -21,7 +21,6 @@ set(mbed_project_files
 		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/lock.h
 		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/macro_utils.h
 		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/map.h
-		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/mqttapi.h
 		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/platform.h
 		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/refcount.h
 		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/sastoken.h
