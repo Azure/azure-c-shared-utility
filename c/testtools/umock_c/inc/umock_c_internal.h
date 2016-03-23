@@ -508,6 +508,9 @@ typedef struct ARG_BUFFER_TAG
 #define DECLARE_VALIDATE_ONE_ARGUMENT_FUNC_TYPE(name) \
     typedef struct C2(_mock_call_modifier_, name) (*C2(validate_one_argument_func_type_, name))(void);
 
+#define COPY_RETURN_VALUE(return_type, name) \
+    (void)umocktypes_copy(TOSTRING(return_type), &result, &C2(mock_call_default_result_, name));
+
 /* Codes_SRS_UMOCK_C_LIB_01_003: [If ENABLE_MOCKS is defined, MOCKABLE_FUNCTION shall generate all the boilerplate code needed by the macros in umock API to function to record the calls. Note: a lot of code (including function definitions and bodies, global variables (both static and extern).] */
 /* Codes_SRS_UMOCK_C_LIB_01_004: [If ENABLE_MOCKS is defined, MOCKABLE_FUNCTION shall generate the declaration of the function and code for the mocked function, thus allowing setting up of expectations in test functions.] */
 /* Codes_SRS_UMOCK_C_LIB_01_014: [For each argument the argument value shall be stored for later comparison with actual calls.] */
@@ -707,7 +710,7 @@ typedef struct ARG_BUFFER_TAG
         mock_call = umockcall_create(#name, mock_call_data, C2(mock_call_data_free_func_,name), C2(mock_call_data_stringify_,name), C2(mock_call_data_are_equal_,name)); \
         if (mock_call == NULL) \
         { \
-            IF(IS_NOT_VOID(return_type),(void)umocktypes_copy(#return_type, &result, &C2(mock_call_default_result_,name));,) \
+            IF(IS_NOT_VOID(return_type),COPY_RETURN_VALUE(return_type, name),) \
             umock_c_indicate_error(UMOCK_C_ERROR); \
         } \
         else \
@@ -748,7 +751,7 @@ typedef struct ARG_BUFFER_TAG
                 } \
                 IF(IS_NOT_VOID(return_type),else \
                 { \
-                    (void)umocktypes_copy(TOSTRING(return_type), &result, &C2(mock_call_default_result_,name)); \
+                    COPY_RETURN_VALUE(return_type, name) \
                 },) \
             } \
         } \
