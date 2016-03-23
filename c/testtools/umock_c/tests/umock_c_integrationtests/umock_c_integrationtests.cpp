@@ -27,7 +27,6 @@ Tests_SRS_UMOCK_C_LIB_01_147: [ Type names are case sensitive. ]
 */
 
 #include "umock_c.h"
-
 #define ENABLE_MOCKS
 #include "test_dependency.h"
 

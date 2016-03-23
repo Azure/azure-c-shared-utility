@@ -22,12 +22,6 @@ extern "C" {
 #include "umockcallrecorder.h"
 #include "umock_c.h"
 
-#ifdef ENABLE_MOCKS
-#define WITH_MOCK 1
-#else
-#define WITH_MOCK 0
-#endif
-
 extern void umock_c_indicate_error(UMOCK_C_ERROR_CODE error_code);
 extern UMOCKCALL_HANDLE umock_c_get_last_expected_call(void);
 extern int umock_c_add_expected_call(UMOCKCALL_HANDLE mock_call);
@@ -83,7 +77,7 @@ typedef struct ARG_BUFFER_TAG
 
 /* Codes_SRS_UMOCK_C_LIB_01_002: [The macro shall generate a function signature in case ENABLE_MOCKS is not defined.] */
 /* Codes_SRS_UMOCK_C_LIB_01_005: [**If ENABLE_MOCKS is not defined, MOCKABLE_FUNCTION shall only generate a declaration for the function.] */
-#define MOCKABLE_FUNCTION_INTERNAL(result, function, ...) \
+#define MOCKABLE_FUNCTION_UMOCK_INTERNAL(result, function, ...) \
 	result function(void);
 
 #define COPY_ARG_TO_MOCK_STRUCT(arg_type, arg_name) umocktypes_copy(#arg_type, &mock_call_data->arg_name, &arg_name);
@@ -506,7 +500,7 @@ typedef struct ARG_BUFFER_TAG
 /* Codes_SRS_UMOCK_C_LIB_01_138: [ - If a global mock hook has been specified then it shall be called and its result returned. ]*/
 /* Codes_SRS_UMOCK_C_LIB_01_139: [ - If a global return value has been specified then it shall be returned. ]*/
 /* Codes_SRS_UMOCK_C_LIB_01_140: [ - Otherwise the value of a static variable of the same type as the return type shall be returned. ]*/
-#define MOCKABLE_FUNCTION_INTERNAL_WITH_MOCK(return_type, name, ...) \
+#define MOCKABLE_FUNCTION_UMOCK_INTERNAL_WITH_MOCK(return_type, name, ...) \
     typedef return_type (*C2(mock_hook_func_type_, name))(IF(COUNT_ARG(__VA_ARGS__),FOR_EACH_2_COUNTED(ARG_IN_SIGNATURE, __VA_ARGS__),void)); \
     static C2(mock_hook_func_type_,name) C2(mock_hook_,name) = NULL; \
     struct C2(_mock_call_modifier_,name); \

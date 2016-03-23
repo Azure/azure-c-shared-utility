@@ -1,6 +1,12 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+#ifdef ENABLE_MOCKS
+#ifndef UMOCK_INTERNAL
+#define UMOCK_INTERNAL UMOCK_INTERNAL_WITH_MOCK
+#endif
+#endif
+
 #ifndef UMOCK_C_H
 #define UMOCK_C_H
 
@@ -27,9 +33,9 @@ extern "C" {
 #define IGNORED_PTR_ARG (NULL)
 #define IGNORED_NUM_ARG (0)
 
-    /* Codes_SRS_UMOCK_C_LIB_01_001: [MOCKABLE_FUNCTION shall be used to wrap function definition allowing the user to declare a function that can be mocked.]*/
+/* Codes_SRS_UMOCK_C_LIB_01_001: [MOCKABLE_FUNCTION shall be used to wrap function definition allowing the user to declare a function that can be mocked.]*/
 #define MOCKABLE_FUNCTION(result, function, ...) \
-	IF(WITH_MOCK, MOCKABLE_FUNCTION_INTERNAL_WITH_MOCK(result, function, __VA_ARGS__), MOCKABLE_FUNCTION_INTERNAL(result, function, __VA_ARGS__))
+    C1(C2(MOCKABLE_FUNCTION_,UMOCK_INTERNAL))(result, function, __VA_ARGS__)
 
 #define REGISTER_GLOBAL_MOCK_HOOK(mock_function, mock_hook_function) \
     C2(set_global_mock_hook_,mock_function)(mock_hook_function);

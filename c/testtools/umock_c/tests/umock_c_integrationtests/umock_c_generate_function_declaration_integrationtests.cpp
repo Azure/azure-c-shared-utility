@@ -8,7 +8,6 @@
 
 /* TODO:
 - Switch to .c
-- serialize tests
 */
 
 MOCKABLE_FUNCTION(int, test_generate_signature, int, a, double, b, char*, s);
