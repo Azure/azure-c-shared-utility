@@ -243,6 +243,9 @@ TEST_FUNCTION(umockcallrecorder_create_succeeds)
 
     // assert
     ASSERT_IS_NOT_NULL(call_recorder);
+
+    // cleanup
+    umockcallrecorder_destroy(call_recorder);
 }
 
 /* Tests_SRS_UMOCKCALLRECORDER_01_002: [ If allocating memory for the call recorder fails, umockcallrecorder_create shall return NULL. ]*/

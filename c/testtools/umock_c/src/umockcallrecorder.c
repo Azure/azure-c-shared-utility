@@ -254,6 +254,8 @@ const char* umockcallrecorder_get_expected_calls(UMOCKCALLRECORDER_HANDLE umock_
                     new_expected_calls_string = (char*)realloc(umock_call_recorder->expected_calls_string, current_length + stringified_call_length + 1);
                     if (new_expected_calls_string == NULL)
                     {
+                        free(stringified_call);
+
                         /* Codes_SRS_UMOCKCALLRECORDER_01_031: [ If allocating memory for the resulting string fails, umockcallrecorder_get_expected_calls shall fail and return NULL. ]*/
                         break;
                     }
@@ -353,6 +355,8 @@ const char* umockcallrecorder_get_actual_calls(UMOCKCALLRECORDER_HANDLE umock_ca
                     new_actual_calls_string = (char*)realloc(umock_call_recorder->actual_calls_string, current_length + stringified_call_length + 1);
                     if (new_actual_calls_string == NULL)
                     {
+                        free(stringified_call);
+
                         /* Codes_SRS_UMOCKCALLRECORDER_01_026: [ If allocating memory for the resulting string fails, umockcallrecorder_get_actual_calls shall fail and return NULL. ]*/
                         break;
                     }
