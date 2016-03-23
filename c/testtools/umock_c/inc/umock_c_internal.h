@@ -22,8 +22,6 @@ extern UMOCKCALL_HANDLE umock_c_get_last_expected_call(void);
 extern int umock_c_add_expected_call(UMOCKCALL_HANDLE mock_call);
 extern int umock_c_add_actual_call(UMOCKCALL_HANDLE mock_call, UMOCKCALL_HANDLE* matched_call);
 
-#define EXPAND(A) A
-
 static char* stringify_buffer(const void* bytes, size_t length)
 {
     size_t string_length = 2 + (4 * length);
