@@ -1,9 +1,9 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#include "TestRunnerSwitcher.h"
-#include "MicroMock.h"
-#include "MicroMockCharStarArenullTerminatedStrings.h"
+#include "testrunnerswitcher.h"
+#include "micromock.h"
+#include "micromockcharstararenullterminatedstrings.h"
 #include "uniqueid.h"
 
 static MICROMOCK_MUTEX_HANDLE g_testByTest;
