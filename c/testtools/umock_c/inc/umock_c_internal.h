@@ -505,6 +505,9 @@ typedef struct ARG_BUFFER_TAG
         } \
     }, ) \
 
+#define DECLARE_VALIDATE_ONE_ARGUMENT_FUNC_TYPE(name) \
+    typedef struct C2(_mock_call_modifier_, name) (*C2(validate_one_argument_func_type_, name))(void);
+
 /* Codes_SRS_UMOCK_C_LIB_01_003: [If ENABLE_MOCKS is defined, MOCKABLE_FUNCTION shall generate all the boilerplate code needed by the macros in umock API to function to record the calls. Note: a lot of code (including function definitions and bodies, global variables (both static and extern).] */
 /* Codes_SRS_UMOCK_C_LIB_01_004: [If ENABLE_MOCKS is defined, MOCKABLE_FUNCTION shall generate the declaration of the function and code for the mocked function, thus allowing setting up of expectations in test functions.] */
 /* Codes_SRS_UMOCK_C_LIB_01_014: [For each argument the argument value shall be stored for later comparison with actual calls.] */
@@ -576,7 +579,7 @@ typedef struct ARG_BUFFER_TAG
     IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_KEEP_1(DECLARE_VALIDATE_ARGUMENT_FUNCTION_PROTOTYPE, name, __VA_ARGS__),) \
     IF(COUNT_ARG(__VA_ARGS__),typedef struct C2(_mock_call_modifier_,name) (*C2(ignore_one_argument_func_type_,name))(void);,) \
     IF(COUNT_ARG(__VA_ARGS__), DECLARE_IGNORE_ARGUMENT_FUNCTION_ARRAY(name, __VA_ARGS__),) \
-    IF(COUNT_ARG(__VA_ARGS__),typedef struct C2(_mock_call_modifier_,name) (*C2(validate_one_argument_func_type_,name))(void);,) \
+    IF(COUNT_ARG(__VA_ARGS__), DECLARE_VALIDATE_ONE_ARGUMENT_FUNC_TYPE(name),) \
     IF(COUNT_ARG(__VA_ARGS__), DECLARE_VALIDATE_ARGUMENT_FUNCTION_ARRAY(name, __VA_ARGS__),) \
     static void C2(fill_mock_call_modifier_,name)(C2(mock_call_modifier_,name)* mock_call_modifier) \
     { \
