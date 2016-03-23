@@ -10,10 +10,6 @@
 
 typedef void* TEST_MUTEX_HANDLE;
 
-/* TODO:
-- direct CppUnitTest MUTEX macros to real mutex APIs
-*/
-
 #ifdef USE_CTEST
 
 #include "ctest.h"
