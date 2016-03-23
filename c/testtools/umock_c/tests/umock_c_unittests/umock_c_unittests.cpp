@@ -315,8 +315,8 @@ TEST_FUNCTION_INITIALIZE(test_function_init)
 {
     ASSERT_ARE_EQUAL(int, 0, TEST_MUTEX_ACQUIRE(test_mutex));
 
-    reset_all_calls();
     umock_c_deinit();
+    reset_all_calls();
 }
 
 TEST_FUNCTION_CLEANUP(test_function_cleanup)
