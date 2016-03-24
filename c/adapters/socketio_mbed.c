@@ -54,7 +54,8 @@ static const IO_INTERFACE_DESCRIPTION socket_io_interface_description =
     socketio_open,
     socketio_close,
     socketio_send,
-    socketio_dowork
+    socketio_dowork,
+    socketio_setoption
 };
 
 static void indicate_error(SOCKET_IO_INSTANCE* socket_io_instance)
