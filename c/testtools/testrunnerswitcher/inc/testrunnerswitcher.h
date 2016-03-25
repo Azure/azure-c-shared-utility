@@ -8,8 +8,6 @@
 #define USE_CTEST
 #endif
 
-typedef void* TEST_MUTEX_HANDLE;
-
 #ifdef USE_CTEST
 
 #include "ctest.h"
@@ -48,6 +46,8 @@ typedef void* TEST_MUTEX_HANDLE;
 #elif defined CPP_UNITTEST
 
 #include "CppUnitTest.h"
+#include "testmutex.h"
+
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
 typedef const char* char_ptr;
@@ -80,10 +80,10 @@ typedef void* void_ptr;
 
 #define RUN_TEST_SUITE(...)
 
-#define TEST_MUTEX_CREATE()                                 (TEST_MUTEX_HANDLE)1
-#define TEST_MUTEX_ACQUIRE(mutex)                           0
-#define TEST_MUTEX_RELEASE(mutex)
-#define TEST_MUTEX_DESTROY(mutex)
+#define TEST_MUTEX_CREATE()                                 (TEST_MUTEX_HANDLE)MicroMockCreateMutex()
+#define TEST_MUTEX_ACQUIRE(mutex)                           (MicroMockAcquireMutex(mutex) ? 0 : 1)
+#define TEST_MUTEX_RELEASE(mutex)                           MicroMockReleaseMutex(mutex)
+#define TEST_MUTEX_DESTROY(mutex)                           MicroMockDestroyMutex(mutex)
 
 #else
 #error No test runner defined
