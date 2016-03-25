@@ -36,7 +36,7 @@ extern "C" {
 
 /* Codes_SRS_UMOCK_C_LIB_01_001: [MOCKABLE_FUNCTION shall be used to wrap function definition allowing the user to declare a function that can be mocked.]*/
 #define MOCKABLE_FUNCTION(result, function, ...) \
-    C1(C2(MOCKABLE_FUNCTION_,UMOCK_INTERNAL))(result, function, __VA_ARGS__)
+    C2(MOCKABLE_FUNCTION_,UMOCK_INTERNAL)(result, function, __VA_ARGS__)
 
 #define REGISTER_GLOBAL_MOCK_HOOK(mock_function, mock_hook_function) \
     C2(set_global_mock_hook_,mock_function)(mock_hook_function);
