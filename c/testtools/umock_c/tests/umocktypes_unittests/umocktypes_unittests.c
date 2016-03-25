@@ -294,7 +294,7 @@ void reset_test_free_testtype_calls(void)
     test_free_func_testtype_call_count = NULL;
 }
 
-TEST_MUTEX_HANDLE test_mutex;
+static TEST_MUTEX_HANDLE test_mutex;
 
 BEGIN_TEST_SUITE(umocktypes_unittests)
 

@@ -148,7 +148,7 @@ void reset_malloc_calls(void)
     free_call_count = 0;
 }
 
-TEST_MUTEX_HANDLE test_mutex;
+static TEST_MUTEX_HANDLE test_mutex;
 
 BEGIN_TEST_SUITE(umocktypes_c_unittests)
 

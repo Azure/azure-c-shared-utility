@@ -72,7 +72,7 @@ extern "C" {
 }
 #endif
 
-TEST_MUTEX_HANDLE test_mutex;
+static TEST_MUTEX_HANDLE test_mutex;
 
 BEGIN_TEST_SUITE(umocktypename_unittests)
 

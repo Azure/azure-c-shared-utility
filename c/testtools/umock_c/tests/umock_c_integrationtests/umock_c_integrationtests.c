@@ -121,7 +121,7 @@ void free_func_TEST_STRUCT_COPY_FAILS(TEST_STRUCT_COPY_FAILS* value)
 {
 }
 
-TEST_MUTEX_HANDLE test_mutex;
+static TEST_MUTEX_HANDLE test_mutex;
 
 BEGIN_TEST_SUITE(umock_c_integrationtests)
 

@@ -89,7 +89,7 @@ int umocktypes_c_register_types(void)
     return 0;
 }
 
-TEST_MUTEX_HANDLE test_mutex;
+static TEST_MUTEX_HANDLE test_mutex;
 
 BEGIN_TEST_SUITE(umock_c_without_init_unittests)
 
