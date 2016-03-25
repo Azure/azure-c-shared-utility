@@ -222,7 +222,8 @@ TEST_SUITE_CLEANUP(suite_cleanup)
 
 TEST_FUNCTION_INITIALIZE(test_function_init)
 {
-    ASSERT_ARE_EQUAL(int, 0, TEST_MUTEX_ACQUIRE(test_mutex));
+    int mutex_acquire_result = TEST_MUTEX_ACQUIRE(test_mutex);
+    ASSERT_ARE_EQUAL(int, 0, mutex_acquire_result);
 
     umockcall_are_equal_call_result = 1;
     reset_umockcall_are_equal_calls();
