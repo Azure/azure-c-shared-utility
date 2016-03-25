@@ -752,7 +752,7 @@ TEST_FUNCTION(umocktypes_stringify_with_NULL_type_fails)
 
 }
 
-/* Tests_SRS_UMOCKTYPES_01_017: [ If type can not be found in the registered types list maintained by the module, umocktypes_stringify shall fail and return -1. ]*/
+/* Tests_SRS_UMOCKTYPES_01_017: [ If type can not be found in the registered types list maintained by the module, umocktypes_stringify shall fail and return NULL. ]*/
 TEST_FUNCTION(umocktypes_stringify_with_a_type_that_is_not_registered_fails)
 {
     // arrange

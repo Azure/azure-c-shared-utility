@@ -28,6 +28,7 @@ extern "C" {
         UMOCK_C_ERROR
     } UMOCK_C_ERROR_CODE;
 
+    /* This is the type for the error callback by which umock_c shall indicate errors to the user */
     typedef void(*ON_UMOCK_C_ERROR)(UMOCK_C_ERROR_CODE error_code);
 
 #define IGNORED_PTR_ARG (NULL)

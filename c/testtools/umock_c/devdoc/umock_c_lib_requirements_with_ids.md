@@ -22,6 +22,14 @@ MOCKABLE_FUNCTION(int, test_dependency_1_arg, int, a);
 
 Let’s assume unit A has a function called function_under_test.
 
+```c
+int function_under_test();
+{
+    int result = test_dependency_1_arg(x);
+    return result;
+}
+```
+
 A test that checks that function_under_test calls its dependency and injects a return value, while ignoring all arguments on the call looks like this:
 
 ```c
@@ -33,9 +41,10 @@ TEST_FUNCTION(my_first_test)
         .IgnoreAllArguments();
 
     // act
-    function_under_test();
+    int result = function_under_test();
 
     // assert
+    ASSERT_ARE_EQUAL(int, 44, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 ```
@@ -61,7 +70,7 @@ typedef void(*ON_UMOCK_C_ERROR)(UMOCK_C_ERROR_CODE error_code);
 #define MOCKABLE_FUNCTION(result, function, ...) \
 	...
 
-#define REGISTER_GLOBAL_MOCK_RETURN_HOOK(mock_function, mock_hook_function) \
+#define REGISTER_GLOBAL_MOCK_HOOK(mock_function, mock_hook_function) \
     ...
 
 #define REGISTER_GLOBAL_MOCK_RETURN(mock_function, return_value) \
@@ -98,8 +107,6 @@ MOCKABLE_FUNCTION(result, function, ...)
 XX**SRS_UMOCK_C_LIB_01_001: [**MOCKABLE_FUNCTION shall be used to wrap function definition allowing the user to declare a function that can be mocked.**]**
 
 XX**SRS_UMOCK_C_LIB_01_002: [**The macro shall generate a function signature in case ENABLE_MOCKS is not defined.**]**
-
-XX**SRS_UMOCK_C_LIB_01_003: [**If ENABLE_MOCKS is defined, MOCKABLE_FUNCTION shall generate all the boilerplate code needed by the macros in umock API to function to record the calls. Note: a lot of code (including function definitions and bodies, global variables (both static and extern).**]**
 
 Example:
 
@@ -146,7 +153,7 @@ XX**SRS_UMOCK_C_LIB_01_006: [**umock_c_init shall initialize umock_c.**]**
 
 XX**SRS_UMOCK_C_LIB_01_007: [**umock_c_init called if already initialized shall fail and return a non-zero value.**]**
  
-XX**SRS_UMOCK_C_LIB_01_008: [**umock_c_init shall initialize the umock supported types.**]**
+XX**SRS_UMOCK_C_LIB_01_008: [**umock_c_init shall initialize the umock supported types (C native types).**]**
 
 XX**SRS_UMOCK_C_LIB_01_009: [**on_umock_c_error can be NULL.**]**
 
@@ -174,10 +181,11 @@ XX**SRS_UMOCK_C_LIB_01_014: [**For each argument the argument value shall be sto
 
 XX**SRS_UMOCK_C_LIB_01_015: [**The call argument shall be the complete function invocation.**]**
 
-Example:
+Examples:
 
 ```c
 STRICT_EXPECTED_CALL(test_dependency_1_arg(42));
+STRICT_EXPECTED_CALL(test_dependency_string("test"));
 ```
 
 ###EXPECTED_CALL
@@ -202,13 +210,11 @@ EXPECTED_CALL(test_dependency_1_arg(42));
 ###umock_c_reset_all_calls
 
 ```c
-int umock_c_reset_all_calls(void);
+void umock_c_reset_all_calls(void);
 ```
 
 **SRS_UMOCK_C_LIB_01_019: [**umock_c_reset_all_calls shall reset all calls (actual and expected).**]**
-
-**SRS_UMOCK_C_LIB_01_020: [**On success, umock_c_reset_all_calls shall return 0.**]**
-**SRS_UMOCK_C_LIB_01_021: [**In case of any error, umock_c_reset_all_calls shall return a non-zero value.**]**
+**SRS_UMOCK_C_LIB_01_021: [**In case of any error, umock_c_reset_all_calls shall indicate the error through a call to the on_error callback.**]**
 
 ###umock_c_get_expected_calls
 
@@ -250,7 +256,7 @@ const char* umock_c_get_actual_calls(void);
 **SRS_UMOCK_C_LIB_01_025: [**umock_c_get_actual_calls shall return all the actual calls that were not matched to expected calls.**]**
 
 **SRS_UMOCK_C_LIB_01_026: [**For each call, the format shall be "functionName(argument 1 value, ...)".**]**
-**SRS_UMOCK_C_LIB_01_027: [**Each call shall be enclosed in "[]". A call to umock_c_get_actual_calls shall not modify the actual calls that were recorded.**]** 
+**SRS_UMOCK_C_LIB_01_027: [**Each call shall be enclosed in "[]".**]** 
 
 Example:
 
@@ -276,7 +282,7 @@ umock_c_get_actual_calls would return:
 
 XX**SRS_UMOCK_C_LIB_01_115: [** umock_c shall compare calls in order. **]** That means that "[A()][B()]" is different than "[B()][A()]". 
 
-XX**SRS_UMOCK_C_LIB_01_136: [** When multiple return values are set for a mock function by using different means, the following order shall be in effect: **]**
+XX**SRS_UMOCK_C_LIB_01_136: [** When multiple return values are set for a mock function by using different means (such as SetReturn), the following order shall be in effect: **]**
 
 XX**SRS_UMOCK_C_LIB_01_137: [** - If a return value has been specified for an expected call then that value shall be returned. **]**
 XX**SRS_UMOCK_C_LIB_01_138: [** - If a global mock hook has been specified then it shall be called and its result returned. **]**

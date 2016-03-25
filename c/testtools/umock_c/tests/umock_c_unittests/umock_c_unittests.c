@@ -283,7 +283,7 @@ void reset_all_calls(void)
     }
     umockcallrecorder_add_actual_call_calls = NULL;
     umockcallrecorder_add_actual_call_call_count = 0;
-    umockcallrecorder_add_actual_call_call_result = NULL;
+    umockcallrecorder_add_actual_call_call_result = 0;
 
     if (test_on_umock_c_error_calls != NULL)
     {

@@ -210,7 +210,7 @@ char* umocktypes_stringify(const char* type, const void* value)
             UMOCK_VALUE_TYPE_HANDLERS* value_type_handlers = get_value_type_handlers(normalized_type);
             if (value_type_handlers == NULL)
             {
-                /* Codes_SRS_UMOCKTYPES_01_017: [ If type can not be found in the registered types list maintained by the module, umocktypes_stringify shall fail and return -1. ]*/
+                /* Codes_SRS_UMOCKTYPES_01_017: [ If type can not be found in the registered types list maintained by the module, umocktypes_stringify shall fail and return NULL. ]*/
                 result = NULL;
             }
             else

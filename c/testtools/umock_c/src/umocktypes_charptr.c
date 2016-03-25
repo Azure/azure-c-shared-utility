@@ -22,7 +22,7 @@ char* umocktypes_stringify_charptr(const char** value)
     }
     else
     {
-        /* Codes_SRS_UMOCKTYPES_CHARPTR_01_002: [ umocktypes_stringify_charptr shall return a string containing the string representation of value, enclosed by quotes (\"value\"). ] */
+        /* Codes_SRS_UMOCKTYPES_CHARPTR_01_002: [ umocktypes_stringify_charptr shall return a string containing the string representation of value, enclosed by quotes ("value"). ] */
         size_t length = strlen(*value);
         result = (char*)malloc(length + 3);
         /* Codes_SRS_UMOCKTYPES_CHARPTR_01_003: [ If allocating a new string to hold the string representation fails, umocktypes_stringify_charptr shall return NULL. ]*/
@@ -118,7 +118,7 @@ char* umocktypes_stringify_const_charptr(const char** value)
     }
     else
     {
-        /* Codes_SRS_UMOCKTYPES_CHARPTR_01_019: [ umocktypes_stringify_const_charptr shall return a string containing the string representation of value, enclosed by quotes (\"value\"). ] */
+        /* Codes_SRS_UMOCKTYPES_CHARPTR_01_019: [ umocktypes_stringify_const_charptr shall return a string containing the string representation of value, enclosed by quotes ("value"). ] */
         size_t length = strlen(*value);
         result = (char*)malloc(length + 3);
         /* Codes_SRS_UMOCKTYPES_CHARPTR_01_021: [ If allocating a new string to hold the string representation fails, umocktypes_stringify_const_charptr shall return NULL. ]*/

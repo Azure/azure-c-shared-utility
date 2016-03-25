@@ -12,7 +12,7 @@
 /* Tested by unit tests for umock_c:
 Tests_SRS_UMOCK_C_LIB_01_006: [umock_c_init shall initialize umock_c.]
 Tests_SRS_UMOCK_C_LIB_01_007: [umock_c_init called if already initialized shall fail and return a non-zero value.]
-Tests_SRS_UMOCK_C_LIB_01_008: [umock_c_init shall initialize the umock supported types.]
+Tests_SRS_UMOCK_C_LIB_01_008: [umock_c_init shall initialize the umock supported types (C native types).]
 Tests_SRS_UMOCK_C_LIB_01_009: [on_umock_c_error can be NULL.]
 Tests_SRS_UMOCK_C_LIB_01_010: [If on_umock_c_error is non-NULL it shall be saved for later use (to be invoked whenever an umock_c error needs to be signaled to the user).]
 Tests_SRS_UMOCK_C_LIB_01_011: [umock_c_deinit shall free all umock_c used resources.]
@@ -1574,7 +1574,7 @@ TEST_FUNCTION(when_a_type_is_not_supported_an_error_is_triggered)
 
 /* Call comparison rules */
 
-/* Tests_SRS_UMOCK_C_LIB_01_136: [ When multiple return values are set for a mock function by using different means, the following order shall be in effect: ]*/
+/* Tests_SRS_UMOCK_C_LIB_01_136: [ When multiple return values are set for a mock function by using different means (such as SetReturn), the following order shall be in effect: ]*/
 /* Tests_SRS_UMOCK_C_LIB_01_137: [ - If a return value has been specified for an expected call then that value shall be returned. ]*/
 TEST_FUNCTION(when_the_return_value_is_given_by_SetReturn_then_it_is_returned)
 {
@@ -1589,7 +1589,7 @@ TEST_FUNCTION(when_the_return_value_is_given_by_SetReturn_then_it_is_returned)
     ASSERT_ARE_EQUAL(int, 42, result);
 }
 
-/* Tests_SRS_UMOCK_C_LIB_01_136: [ When multiple return values are set for a mock function by using different means, the following order shall be in effect: ]*/
+/* Tests_SRS_UMOCK_C_LIB_01_136: [ When multiple return values are set for a mock function by using different means (such as SetReturn), the following order shall be in effect: ]*/
 /* Tests_SRS_UMOCK_C_LIB_01_137: [ - If a return value has been specified for an expected call then that value shall be returned. ]*/
 /* Tests_SRS_UMOCK_C_LIB_01_138: [ - If a global mock hook has been specified then it shall be called and its result returned. ]*/
 TEST_FUNCTION(when_the_return_value_is_given_by_SetReturn_for_a_function_with_a_global_return_hook_the_SetReturn_value_is_returned)
@@ -1607,7 +1607,7 @@ TEST_FUNCTION(when_the_return_value_is_given_by_SetReturn_for_a_function_with_a_
     ASSERT_ARE_EQUAL(int, 42, result);
 }
 
-/* Tests_SRS_UMOCK_C_LIB_01_136: [ When multiple return values are set for a mock function by using different means, the following order shall be in effect: ]*/
+/* Tests_SRS_UMOCK_C_LIB_01_136: [ When multiple return values are set for a mock function by using different means (such as SetReturn), the following order shall be in effect: ]*/
 /* Tests_SRS_UMOCK_C_LIB_01_137: [ - If a return value has been specified for an expected call then that value shall be returned. ]*/
 /* Tests_SRS_UMOCK_C_LIB_01_138: [ - If a global mock hook has been specified then it shall be called and its result returned. ]*/
 TEST_FUNCTION(when_the_return_value_is_not_given_by_SetReturn_for_a_function_with_a_global_return_hook_the_mock_hook_return_value_is_returned)

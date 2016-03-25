@@ -101,6 +101,7 @@ int umockcall_are_equal(UMOCKCALL_HANDLE left, UMOCKCALL_HANDLE right)
         }
         else
         {
+            /* Codes_SRS_UMOCKCALL_01_026: [ The call data shall be evaluated by calling the umockcall_data_are_equal function passed in umockcall_create while passing as arguments the umockcall_data associated with each call handle. ]*/
             switch (left->umockcall_data_are_equal(left->umockcall_data, right->umockcall_data))
             {
             default:
@@ -133,7 +134,7 @@ char* umockcall_stringify(UMOCKCALL_HANDLE umockcall)
     }
     else
     {
-        /* Codes_SRS_UMOCKCALL_01_019: [ To obtain the arguments string, umockcall_stringify shall call the umockcall_data_stringify function passed to umockcall_create and pass to it the umock call data pointer (also given in umockcall_create). ]*/
+        /* Codes_SRS_UMOCKCALL_01_019: [ To obtain the arguments string, umockcall_stringify shall call the umockcall_data_stringify function passed to umockcall_create and pass to it the umockcall_data pointer (also given in umockcall_create). ]*/
         char* stringified_args = umockcall->umockcall_data_stringify(umockcall->umockcall_data);
         if (stringified_args == NULL)
         {
@@ -163,7 +164,7 @@ char* umockcall_stringify(UMOCKCALL_HANDLE umockcall)
                 result[function_name_length + stringified_args_length + 4] = '\0';
             }
 
-            /* Codes_SRS_UMOCKCALL_01_019: [ umockcall_stringify shall free the string obtained from umockcall_stringify. ]*/
+            /* Codes_SRS_UMOCKCALL_01_030: [ umockcall_stringify shall free the string obtained from umockcall_data_stringify. ]*/
             free(stringified_args);
         }
     }

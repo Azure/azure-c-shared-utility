@@ -2,7 +2,7 @@
  
 #Overview
 
-umocktypes_c is a module that exposes out of the box functionality for most C supported types. This includes integers, floats, size_t, etc.
+umocktypes_c is a module that exposes out of the box functionality for most C supported types. This includes integers, floats, size_t etc.
 
 #Exposed API
 

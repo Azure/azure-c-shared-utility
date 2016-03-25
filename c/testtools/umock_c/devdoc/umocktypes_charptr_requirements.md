@@ -36,7 +36,7 @@ extern int umocktypes_charptr_register_types(void);
 extern char* umocktypes_stringify_charptr(const char** value);
 ```
 
-**SRS_UMOCKTYPES_CHARPTR_01_002: [** umocktypes_stringify_charptr shall return a string containing the string representation of value, enclosed by quotes (\"value\"). **]**
+**SRS_UMOCKTYPES_CHARPTR_01_002: [** umocktypes_stringify_charptr shall return a string containing the string representation of value, enclosed by quotes ("value"). **]**
 **SRS_UMOCKTYPES_CHARPTR_01_004: [** If value is NULL, umocktypes_stringify_charptr shall return NULL. **]**
 **SRS_UMOCKTYPES_CHARPTR_01_003: [** If allocating a new string to hold the string representation fails, umocktypes_stringify_charptr shall return NULL. **]**
 
@@ -82,7 +82,7 @@ extern void umocktypes_free_charptr(char** value);
 extern char* umocktypes_stringify_const_charptr(const char** value);
 ```
 
-**SRS_UMOCKTYPES_CHARPTR_01_019: [** umocktypes_stringify_const_charptr shall return a string containing the string representation of value, enclosed by quotes (\"value\"). **]**
+**SRS_UMOCKTYPES_CHARPTR_01_019: [** umocktypes_stringify_const_charptr shall return a string containing the string representation of value, enclosed by quotes ("value"). **]**
 **SRS_UMOCKTYPES_CHARPTR_01_020: [** If value is NULL, umocktypes_stringify_const_charptr shall return NULL. **]**
 **SRS_UMOCKTYPES_CHARPTR_01_021: [** If allocating a new string to hold the string representation fails, umocktypes_stringify_const_charptr shall return NULL. **]**
 

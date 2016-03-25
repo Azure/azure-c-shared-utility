@@ -511,7 +511,6 @@ typedef struct ARG_BUFFER_TAG
 #define COPY_RETURN_VALUE(return_type, name) \
     (void)umocktypes_copy(TOSTRING(return_type), &result, &C2(mock_call_default_result_, name));
 
-/* Codes_SRS_UMOCK_C_LIB_01_003: [If ENABLE_MOCKS is defined, MOCKABLE_FUNCTION shall generate all the boilerplate code needed by the macros in umock API to function to record the calls. Note: a lot of code (including function definitions and bodies, global variables (both static and extern).] */
 /* Codes_SRS_UMOCK_C_LIB_01_004: [If ENABLE_MOCKS is defined, MOCKABLE_FUNCTION shall generate the declaration of the function and code for the mocked function, thus allowing setting up of expectations in test functions.] */
 /* Codes_SRS_UMOCK_C_LIB_01_014: [For each argument the argument value shall be stored for later comparison with actual calls.] */
 /* Codes_SRS_UMOCK_C_LIB_01_017: [No arguments shall be saved by default, unless other modifiers state it.]*/
@@ -532,7 +531,7 @@ typedef struct ARG_BUFFER_TAG
 /* Codes_SRS_UMOCK_C_LIB_01_106: [The signature for the hook shall be assumed to have exactly the same arguments and return as the mocked function.]*/
 /* Codes_SRS_UMOCK_C_LIB_01_135: [ All parameters passed to the mock shall be passed down to the mock hook. ]*/
 /* Codes_SRS_UMOCK_C_LIB_01_148: [ If call comparison fails an error shall be indicated by calling the error callback with UMOCK_C_COMPARE_CALL_ERROR. ]*/
-/* Codes_SRS_UMOCK_C_LIB_01_136: [ When multiple return values are set for a mock function by using different means, the following order shall be in effect: ]*/
+/* Codes_SRS_UMOCK_C_LIB_01_136: [ When multiple return values are set for a mock function by using different means (such as SetReturn), the following order shall be in effect: ]*/
 /* Codes_SRS_UMOCK_C_LIB_01_137: [ - If a return value has been specified for an expected call then that value shall be returned. ]*/
 /* Codes_SRS_UMOCK_C_LIB_01_138: [ - If a global mock hook has been specified then it shall be called and its result returned. ]*/
 /* Codes_SRS_UMOCK_C_LIB_01_139: [ - If a global return value has been specified then it shall be returned. ]*/

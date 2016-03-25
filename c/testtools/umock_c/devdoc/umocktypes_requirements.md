@@ -69,7 +69,7 @@ extern char* umocktypes_stringify(const char* type, const void* value);
 **SRS_UMOCKTYPES_01_014: [** The string representation shall be obtained by calling the stringify function registered for the type identified by the argument type. **]**
 **SRS_UMOCKTYPES_01_015: [** On success umocktypes_stringify shall return the char\* produced by the underlying stringify function for type (passed in umocktypes_register_type). **]**
 **SRS_UMOCKTYPES_01_016: [** If any of the arguments is NULL, umocktypes_stringify shall fail and return NULL. **]**
-**SRS_UMOCKTYPES_01_017: [** If type can not be found in the registered types list maintained by the module, umocktypes_stringify shall fail and return -1. **]**
+**SRS_UMOCKTYPES_01_017: [** If type can not be found in the registered types list maintained by the module, umocktypes_stringify shall fail and return NULL. **]**
 **SRS_UMOCKTYPES_01_035: [** Before looking it up, the type string shall be normalized by calling umocktypename_normalize. **]**
 **SRS_UMOCKTYPES_01_044: [** If normalizing the typename fails, umocktypes_stringify shall fail and return NULL. **]**
 **SRS_UMOCKTYPES_01_049: [** If umocktypes_stringify is called when the module is not initialized, umocktypes_stringify shall return NULL. **]**

@@ -449,6 +449,7 @@ TEST_FUNCTION(when_the_function_name_does_not_match_then_umockcall_are_equal_ret
     umockcall_destroy(call2);
 }
 
+/* Tests_SRS_UMOCKCALL_01_026: [ The call data shall be evaluated by calling the umockcall_data_are_equal function passed in umockcall_create while passing as arguments the umockcall_data associated with each call handle. ]*/
 /* Tests_SRS_UMOCKCALL_01_028: [ If the underlying umockcall_data_are_equal returns 0, then umockcall_are_equal shall return 0. ]*/
 TEST_FUNCTION(when_the_underlying_are_equal_returns_0_umockcall_are_equal_returns_0)
 {
@@ -543,7 +544,7 @@ TEST_FUNCTION(when_the_are_equal_function_pointers_are_different_umockcall_are_e
 
 /* Tests_SRS_UMOCKCALL_01_016: [ umockcall_stringify shall return a string representation of the mock call in the form \[function_name(arguments)\]. ] */
 /* Tests_SRS_UMOCKCALL_01_018: [ The returned string shall be a newly allocated string and it is to be freed by the caller. ]*/
-/* Tests_SRS_UMOCKCALL_01_019: [ To obtain the arguments string, umockcall_stringify shall call the umockcall_data_stringify function passed to umockcall_create and pass to it the umock call data pointer (also given in umockcall_create). ]*/
+/* Tests_SRS_UMOCKCALL_01_019: [ To obtain the arguments string, umockcall_stringify shall call the umockcall_data_stringify function passed to umockcall_create and pass to it the umockcall_data pointer (also given in umockcall_create). ]*/
 TEST_FUNCTION(umockcall_stringify_calls_the_underlying_stringify_function_and_returns_the_strinfigied_call)
 {
     // arrange
@@ -566,7 +567,7 @@ TEST_FUNCTION(umockcall_stringify_calls_the_underlying_stringify_function_and_re
 
 /* Tests_SRS_UMOCKCALL_01_016: [ umockcall_stringify shall return a string representation of the mock call in the form \[function_name(arguments)\]. ] */
 /* Tests_SRS_UMOCKCALL_01_018: [ The returned string shall be a newly allocated string and it is to be freed by the caller. ]*/
-/* Tests_SRS_UMOCKCALL_01_019: [ To obtain the arguments string, umockcall_stringify shall call the umockcall_data_stringify function passed to umockcall_create and pass to it the umock call data pointer (also given in umockcall_create). ]*/
+/* Tests_SRS_UMOCKCALL_01_019: [ To obtain the arguments string, umockcall_stringify shall call the umockcall_data_stringify function passed to umockcall_create and pass to it the umockcall_data pointer (also given in umockcall_create). ]*/
 TEST_FUNCTION(umockcall_stringify_uses_the_stringified_args_as_obtained_from_the_underlying_stringify_function)
 {
     // arrange

@@ -179,7 +179,7 @@ TEST_FUNCTION_CLEANUP(test_function_cleanup)
 
 /* umocktypes_stringify_charptr */
 
-/* Tests_SRS_UMOCKTYPES_CHARPTR_01_002: [ umocktypes_stringify_charptr shall return a string containing the string representation of value, enclosed by quotes (\"value\"). ] */
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_002: [ umocktypes_stringify_charptr shall return a string containing the string representation of value, enclosed by quotes ("value"). ] */
 TEST_FUNCTION(umocktypes_stringify_charptr_with_an_empty_string_returns_2_quotes)
 {
     // arrange
@@ -195,7 +195,7 @@ TEST_FUNCTION(umocktypes_stringify_charptr_with_an_empty_string_returns_2_quotes
     free(result);
 }
 
-/* Tests_SRS_UMOCKTYPES_CHARPTR_01_002: [ umocktypes_stringify_charptr shall return a string containing the string representation of value, enclosed by quotes (\"value\"). ] */
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_002: [ umocktypes_stringify_charptr shall return a string containing the string representation of value, enclosed by quotes ("value"). ] */
 TEST_FUNCTION(umocktypes_stringify_charptr_with_a_non_empty_string_returns_the_string_surrounded_by_quotes)
 {
     // arrange
@@ -472,7 +472,7 @@ TEST_FUNCTION(umocktypes_free_charptr_with_NULL_does_nothing)
 
 /* umocktypes_stringify_const_charptr */
 
-/* Tests_SRS_UMOCKTYPES_CHARPTR_01_019: [ umocktypes_stringify_const_charptr shall return a string containing the string representation of value, enclosed by quotes (\"value\"). ] */
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_019: [ umocktypes_stringify_const_charptr shall return a string containing the string representation of value, enclosed by quotes ("value"). ] */
 TEST_FUNCTION(umocktypes_stringify_const_charptr_with_an_empty_string_returns_2_quotes)
 {
     // arrange
@@ -488,7 +488,7 @@ TEST_FUNCTION(umocktypes_stringify_const_charptr_with_an_empty_string_returns_2_
     free(result);
 }
 
-/* Tests_SRS_UMOCKTYPES_CHARPTR_01_019: [ umocktypes_stringify_const_charptr shall return a string containing the string representation of value, enclosed by quotes (\"value\"). ] */
+/* Tests_SRS_UMOCKTYPES_CHARPTR_01_019: [ umocktypes_stringify_const_charptr shall return a string containing the string representation of value, enclosed by quotes ("value"). ] */
 TEST_FUNCTION(umocktypes_stringify_const_charptr_with_a_non_empty_string_returns_the_string_surrounded_by_quotes)
 {
     // arrange

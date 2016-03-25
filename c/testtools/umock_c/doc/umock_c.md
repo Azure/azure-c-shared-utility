@@ -22,6 +22,14 @@ MOCKABLE_FUNCTION(int, test_dependency_1_arg, int, a);
 
 Let’s assume unit A has a function called function_under_test.
 
+```c
+int function_under_test();
+{
+    int result = test_dependency_1_arg(x);
+    return result;
+}
+```
+
 A test that checks that function_under_test calls its dependency and injects a return value, while ignoring all arguments on the call looks like this:
 
 ```c
@@ -33,9 +41,10 @@ TEST_FUNCTION(my_first_test)
         .IgnoreAllArguments();
 
     // act
-    function_under_test();
+    int result = function_under_test();
 
     // assert
+    ASSERT_ARE_EQUAL(int, 44, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 ```
@@ -61,7 +70,7 @@ typedef void(*ON_UMOCK_C_ERROR)(UMOCK_C_ERROR_CODE error_code);
 #define MOCKABLE_FUNCTION(result, function, ...) \
 	...
 
-#define REGISTER_GLOBAL_MOCK_RETURN_HOOK(mock_function, mock_hook_function) \
+#define REGISTER_GLOBAL_MOCK_HOOK(mock_function, mock_hook_function) \
     ...
 
 #define REGISTER_GLOBAL_MOCK_RETURN(mock_function, return_value) \
@@ -82,7 +91,7 @@ typedef void(*ON_UMOCK_C_ERROR)(UMOCK_C_ERROR_CODE error_code);
 
     extern int umock_c_init(ON_UMOCK_C_ERROR on_umock_c_error);
     extern void umock_c_deinit(void);
-    extern int umock_c_reset_all_calls(void);
+    extern void umock_c_reset_all_calls(void);
     extern const char* umock_c_get_actual_calls(void);
     extern const char* umock_c_get_expected_calls(void);
 ```
@@ -98,8 +107,6 @@ MOCKABLE_FUNCTION(result, function, ...)
 MOCKABLE_FUNCTION shall be used to wrap function definition allow the user to declare a function that can be mocked.
 
 The macro shall generate a function signature in case ENABLE_MOCKS is not defined.
-
-If ENABLE_MOCKS is defined, MOCKABLE_FUNCTION shall generate all the boilerplate code needed by the macros in umock API to function to record the calls. Note: a lot of code (including function definitions and bodies, global variables (both static and extern).
 
 Example:
 
@@ -145,7 +152,7 @@ umock_c_init shall initialize umock_c.
 
 umock_c_init called if already initialized shall fail and return a non-zero value.
  
-umock_c_init shall initialize the umock supported types.
+umock_c_init shall initialize the umock supported types (C native types).
 
 on_umock_c_error can be NULL.
 
@@ -173,10 +180,11 @@ For each argument the argument value shall be stored for later comparison with a
 
 The call argument shall be the complete function invocation.
 
-Example:
+Examples:
 
 ```c
 STRICT_EXPECTED_CALL(test_dependency_1_arg(42));
+STRICT_EXPECTED_CALL(test_dependency_string("test"));
 ```
 
 ###EXPECTED_CALL
@@ -201,13 +209,11 @@ EXPECTED_CALL(test_dependency_1_arg(42));
 ###umock_c_reset_all_calls
 
 ```c
-int umock_c_reset_all_calls(void);
+void umock_c_reset_all_calls(void);
 ```
 
 umock_c_reset_all_calls shall reset all calls (actual and expected).
-
-On success, umock_c_reset_all_calls shall return 0.
-In case of any error, umock_c_reset_all_calls shall return a non-zero value.
+In case of any error, umock_c_reset_all_calls shall indicate the error through a call to the on_error callback.
 
 ###umock_c_get_expected_calls
 
