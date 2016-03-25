@@ -8,6 +8,8 @@
 #define USE_CTEST
 #endif
 
+typedef void* TEST_MUTEX_HANDLE;
+
 #ifdef USE_CTEST
 
 #include "ctest.h"
@@ -80,10 +82,10 @@ typedef void* void_ptr;
 
 #define RUN_TEST_SUITE(...)
 
-#define TEST_MUTEX_CREATE()                                 (TEST_MUTEX_HANDLE)MicroMockCreateMutex()
-#define TEST_MUTEX_ACQUIRE(mutex)                           (MicroMockAcquireMutex(mutex) ? 0 : 1)
-#define TEST_MUTEX_RELEASE(mutex)                           MicroMockReleaseMutex(mutex)
-#define TEST_MUTEX_DESTROY(mutex)                           MicroMockDestroyMutex(mutex)
+#define TEST_MUTEX_CREATE()                                 testmutex_create()
+#define TEST_MUTEX_ACQUIRE(mutex)                           testmutex_acquire(mutex)
+#define TEST_MUTEX_RELEASE(mutex)                           testmutex_release(mutex)
+#define TEST_MUTEX_DESTROY(mutex)                           testmutex_destroy(mutex)
 
 #else
 #error No test runner defined

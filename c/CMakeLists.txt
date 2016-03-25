@@ -109,7 +109,7 @@ function(windows_unittests_add_dll whatIsBuilding)
     
     target_include_directories(${whatIsBuilding}_dll PUBLIC ${sharedutil_include_directories} $ENV{VCInstallDir}UnitTest/include)
     target_compile_definitions(${whatIsBuilding}_dll PUBLIC -DCPP_UNITTEST)
-    target_link_libraries(${whatIsBuilding}_dll micromock_cpp_unittest umock_c ctest ${ARGN})
+    target_link_libraries(${whatIsBuilding}_dll micromock_cpp_unittest umock_c ctest testrunnerswitcher ${ARGN})
 endfunction()
 
 function(windows_unittests_add_lib whatIsBuilding)
@@ -123,7 +123,7 @@ function(windows_unittests_add_lib whatIsBuilding)
     
     target_include_directories(${whatIsBuilding}_lib PUBLIC ${sharedutil_include_directories})
     target_compile_definitions(${whatIsBuilding}_lib PUBLIC -DUSE_CTEST)
-    target_link_libraries(${whatIsBuilding}_lib micromock_ctest umock ctest ${ARGN})
+    target_link_libraries(${whatIsBuilding}_lib micromock_ctest umock ctest testrunnerswitcher ${ARGN})
 endfunction()
 
 function(windows_unittests_add_exe whatIsBuilding)
@@ -139,7 +139,7 @@ function(windows_unittests_add_exe whatIsBuilding)
                 
     target_compile_definitions(${whatIsBuilding}_exe PUBLIC -DUSE_CTEST)
     target_include_directories(${whatIsBuilding}_exe PUBLIC ${sharedutil_include_directories})
-    target_link_libraries(${whatIsBuilding}_exe micromock_ctest umock_c ctest ${ARGN})
+    target_link_libraries(${whatIsBuilding}_exe micromock_ctest umock_c ctest testrunnerswitcher ${ARGN})
     add_test(NAME ${whatIsBuilding} COMMAND ${whatIsBuilding}_exe)
 endfunction()
 

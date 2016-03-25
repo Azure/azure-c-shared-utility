@@ -7,7 +7,7 @@
 
 #include "windows.h"
 
-TEST_MUTEX_HANDLE testmutes_create(void)
+TEST_MUTEX_HANDLE testmutex_create(void)
 {
     return (TEST_MUTEX_HANDLE)CreateMutexW(NULL, FALSE, NULL);
 }

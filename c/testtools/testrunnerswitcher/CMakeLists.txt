@@ -15,16 +15,18 @@ set(testrunnerswitcher_h_files
 ./inc/testmutex.h
 )
 
-add_library(umock_c ${umock_c_c_files} ${umock_c_h_files})
+add_library(testrunnerswitcher ${testrunnerswitcher_c_files} ${testrunnerswitcher_h_files})
 
 #these are the include folders
 #the following "set" statetement exports across the project a global variable called TESTRUNNERSWITCHER_INC_FOLDER that expands to whatever needs to included when using tesrtrunnerswitcher library
 set(TESTRUNNERSWITCHER_INC_FOLDER ${CMAKE_CURRENT_LIST_DIR}/inc CACHE INTERNAL "this is what needs to be included if using testrunnerswitcher header" FORCE)
+
+include_directories(${TESTRUNNERSWITCHER_INC_FOLDER})
 
 add_files_to_install("./testtools/testrunnerswitcher/inc/testrunnerswitcher.h")
 add_files_to_install("./testtools/testrunnerswitcher/inc/testmutex.h")
 
 if(WIN32)
 else()
-	install (TARGETS ctest DESTINATION lib)
+	install (TARGETS testrunnerswitcher DESTINATION lib)
 endif (WIN32)

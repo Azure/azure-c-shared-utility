@@ -54,7 +54,7 @@ function(umockc_windows_unittests_add_dll whatIsBuilding)
     target_include_directories(${whatIsBuilding}_dll PUBLIC ${sharedutil_include_directories} $ENV{VCInstallDir}UnitTest/include)
     target_compile_definitions(${whatIsBuilding}_dll PUBLIC -DCPP_UNITTEST)
     SET_SOURCE_FILES_PROPERTIES( ${${whatIsBuilding}_test_files} PROPERTIES LANGUAGE CXX )
-    target_link_libraries(${whatIsBuilding}_dll ctest ${ARGN})
+    target_link_libraries(${whatIsBuilding}_dll ctest testrunnerswitcher ${ARGN})
 endfunction()
 
 function(umockc_windows_unittests_add_lib whatIsBuilding)
@@ -68,7 +68,7 @@ function(umockc_windows_unittests_add_lib whatIsBuilding)
     
     target_include_directories(${whatIsBuilding}_lib PUBLIC ${sharedutil_include_directories})
     target_compile_definitions(${whatIsBuilding}_lib PUBLIC -DUSE_CTEST)
-    target_link_libraries(${whatIsBuilding}_lib ctest ${ARGN})
+    target_link_libraries(${whatIsBuilding}_lib ctest testrunnerswitcher ${ARGN})
 endfunction()
 
 function(umockc_windows_unittests_add_exe whatIsBuilding)
@@ -84,7 +84,7 @@ function(umockc_windows_unittests_add_exe whatIsBuilding)
                 
     target_compile_definitions(${whatIsBuilding}_exe PUBLIC -DUSE_CTEST)
     target_include_directories(${whatIsBuilding}_exe PUBLIC ${sharedutil_include_directories})
-    target_link_libraries(${whatIsBuilding}_exe ctest ${ARGN})
+    target_link_libraries(${whatIsBuilding}_exe ctest testrunnerswitcher ${ARGN})
     add_test(NAME ${whatIsBuilding} COMMAND ${whatIsBuilding}_exe)
 endfunction()
 

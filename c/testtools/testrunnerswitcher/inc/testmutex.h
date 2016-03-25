@@ -5,21 +5,19 @@
 #define TESTMUTEX_H
 
 #ifdef WIN32
-#include "windows.h"
-
-#ifdef __cpluslplus
+#ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef void* TEST_MUTEX_HANDLE;
+    typedef void* TEST_MUTEX_HANDLE;
 
-TEST_MUTEX_HANDLE testmutex_create(void);
-extern "C" int testmutex_acquire(TEST_MUTEX_HANDLE mutex);
-extern "C" int testmutex_release(TEST_MUTEX_HANDLE mutex);
-extern "C" void testmutex_destroy(TEST_MUTEX_HANDLE mutex);
+    extern TEST_MUTEX_HANDLE testmutex_create(void);
+    extern int testmutex_acquire(TEST_MUTEX_HANDLE mutex);
+    extern int testmutex_release(TEST_MUTEX_HANDLE mutex);
+    extern void testmutex_destroy(TEST_MUTEX_HANDLE mutex);
 
-#ifdef __cpluslplus
-extern "C" {
+#ifdef __cplusplus
+}
 #endif
 
 #endif /* WIN32 */
