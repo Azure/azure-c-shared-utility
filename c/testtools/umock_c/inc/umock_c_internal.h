@@ -70,8 +70,8 @@ typedef struct ARG_BUFFER_TAG
 
 /* Codes_SRS_UMOCK_C_LIB_01_002: [The macro shall generate a function signature in case ENABLE_MOCKS is not defined.] */
 /* Codes_SRS_UMOCK_C_LIB_01_005: [**If ENABLE_MOCKS is not defined, MOCKABLE_FUNCTION shall only generate a declaration for the function.] */
-#define MOCKABLE_FUNCTION_UMOCK_INTERNAL(result, function, ...) \
-	result function(void);
+#define MOCKABLE_FUNCTION_UMOCK_INTERNAL(return_type, name, ...) \
+	return_type name(IF(COUNT_ARG(__VA_ARGS__),,void) FOR_EACH_2_COUNTED(ARG_IN_SIGNATURE, __VA_ARGS__));
 
 #define COPY_ARG_TO_MOCK_STRUCT(arg_type, arg_name) umocktypes_copy(#arg_type, &mock_call_data->arg_name, &arg_name);
 #define DECLARE_MOCK_CALL_STRUCT_STACK(arg_type, arg_name) arg_type arg_name;
