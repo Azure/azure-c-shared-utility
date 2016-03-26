@@ -4768,6 +4768,9 @@ FOR_EACH_2_KEEP_1_2(X, keep, P3, P4)
 #define FOR_EACH_2_KEEP_1_2(X, keep, P1, P2) \
     X(keep, P1, P2) \
 
+
+#define FOR_EACH_2_KEEP_1_0(X, keep)
+
 #ifdef _MSC_VER
 #define FOR_EACH_2_KEEP_1(MACRO_TO_INVOKE, ...) C2(FOR_EACH_2_KEEP_1_, C2(DEC,C1(COUNT_ARG(__VA_ARGS__)))) LPAREN MACRO_TO_INVOKE, __VA_ARGS__)
 #else
