@@ -23,7 +23,7 @@ DEFINE_REFCOUNT_TYPE(CONSTBUFFER_HANDLE_DATA);
 
 static CONSTBUFFER_HANDLE CONSTBUFFER_Create_Internal(const unsigned char* source, size_t size)
 {
-    CONSTBUFFER_HANDLE result;
+    CONSTBUFFER_HANDLE_DATA* result;
     /*Codes_SRS_CONSTBUFFER_02_005: [The non-NULL handle returned by CONSTBUFFER_Create shall have its ref count set to "1".]*/
     /*Codes_SRS_CONSTBUFFER_02_010: [The non-NULL handle returned by CONSTBUFFER_CreateFromBuffer shall have its ref count set to "1".]*/
     result = REFCOUNT_TYPE_CREATE(CONSTBUFFER_HANDLE_DATA);
@@ -44,7 +44,7 @@ static CONSTBUFFER_HANDLE CONSTBUFFER_Create_Internal(const unsigned char* sourc
         }
         else
         {
-            unsigned char* temp = malloc(size);
+            unsigned char* temp = (unsigned char*)malloc(size);
             if (temp == NULL)
             {
                 /*Codes_SRS_CONSTBUFFER_02_003: [If creating the copy fails then CONSTBUFFER_Create shall return NULL.]*/
@@ -64,7 +64,7 @@ static CONSTBUFFER_HANDLE CONSTBUFFER_Create_Internal(const unsigned char* sourc
             }
         }
     }
-    return result;
+    return (CONSTBUFFER_HANDLE)result;
 }
 
 CONSTBUFFER_HANDLE CONSTBUFFER_Create(const unsigned char* source, size_t size)
@@ -81,9 +81,9 @@ CONSTBUFFER_HANDLE CONSTBUFFER_Create(const unsigned char* source, size_t size)
     }
     else
     {
-        result = CONSTBUFFER_Create_Internal(source, size);
+        result = (CONSTBUFFER_HANDLE_DATA*)CONSTBUFFER_Create_Internal(source, size);
     }
-    return result;
+    return (CONSTBUFFER_HANDLE)result;
 }
 
 /*this creates a new constbuffer from an existing BUFFER_HANDLE*/
@@ -98,9 +98,9 @@ CONSTBUFFER_HANDLE CONSTBUFFER_CreateFromBuffer(BUFFER_HANDLE buffer)
     }
     else
     {
-        result = CONSTBUFFER_Create_Internal(BUFFER_u_char(buffer), BUFFER_length(buffer));
+        result = (CONSTBUFFER_HANDLE_DATA*)CONSTBUFFER_Create_Internal(BUFFER_u_char(buffer), BUFFER_length(buffer));
     }
-    return result;
+    return (CONSTBUFFER_HANDLE)result;
 }
 
 CONSTBUFFER_HANDLE CONSTBUFFER_Clone(CONSTBUFFER_HANDLE constbufferHandle)
@@ -144,7 +144,7 @@ void CONSTBUFFER_Destroy(CONSTBUFFER_HANDLE constbufferHandle)
         if (DEC_REF(CONSTBUFFER_HANDLE_DATA, constbufferHandle) == DEC_RETURN_ZERO)
         {
             /*Codes_SRS_CONSTBUFFER_02_017: [If the refcount reaches zero, then CONSTBUFFER_Destroy shall deallocate all resources used by the CONSTBUFFER_HANDLE.]*/
-            CONSTBUFFER_HANDLE_DATA* constbufferHandleData = constbufferHandle;
+            CONSTBUFFER_HANDLE_DATA* constbufferHandleData = (CONSTBUFFER_HANDLE_DATA*)constbufferHandle;
             free((void*)constbufferHandleData->alias.buffer);
             free(constbufferHandleData);
         }

@@ -62,7 +62,7 @@ void ConstMap_Destroy(CONSTMAP_HANDLE handle)
 		if (DEC_REF(CONSTMAP_HANDLE_DATA, handle) == DEC_RETURN_ZERO)
 		{
 			/*Codes_SRS_CONSTMAP_17_004: [If the reference count is zero, ConstMap_Destroy shall release all resources associated with the immutable map.]*/
-			Map_Destroy(handle->map);
+			Map_Destroy(((CONSTMAP_HANDLE_DATA *)handle)->map);
 			free(handle);
 		}
 
@@ -119,7 +119,7 @@ MAP_HANDLE ConstMap_CloneWriteable(CONSTMAP_HANDLE handle)
 		/*Codes_SRS_CONSTMAP_17_052: [ConstMap_CloneWriteable shall create a new, writeable map, populated by the key, value pairs in the parameter defined by handle.]*/
 		/*Codes_SRS_CONSTMAP_17_053: [If during cloning, any operation fails, then ConstMap_CloneWriteableap_Clone shall return NULL.]*/
 		/*Codes_SRS_CONSTMAP_17_054: [Otherwise, ConstMap_CloneWriteable shall return a non-NULL handle that can be used in subsequent calls.]*/
-		result = Map_Clone(handle->map);
+		result = Map_Clone(((CONSTMAP_HANDLE_DATA *)handle)->map);
 	}
 	return result;
 }
@@ -141,7 +141,7 @@ bool ConstMap_ContainsKey(CONSTMAP_HANDLE handle, const char* key )
 		else
 		{
 			/*Codes_SRS_CONSTMAP_17_025: [Otherwise if a key exists then ConstMap_ContainsKey shall return true.]*/
-			MAP_RESULT mapResult = Map_ContainsKey(handle->map, key, &keyExists);
+			MAP_RESULT mapResult = Map_ContainsKey(((CONSTMAP_HANDLE_DATA *)handle)->map, key, &keyExists);
 			if (mapResult != MAP_OK)
 			{
 				/*Codes_SRS_CONSTMAP_17_026: [If a key doesn't exist, then ConstMap_ContainsKey shall return false.]*/
@@ -170,7 +170,7 @@ bool ConstMap_ContainsValue(CONSTMAP_HANDLE handle, const char* value)
 		else
 		{
 			/*Codes_SRS_CONSTMAP_17_028: [Otherwise, if a pair has its value equal to the parameter value, the ConstMap_ContainsValue shall return true.]*/
-			MAP_RESULT mapResult = Map_ContainsValue(handle->map, value, &valueExists);
+			MAP_RESULT mapResult = Map_ContainsValue(((CONSTMAP_HANDLE_DATA *)handle)->map, value, &valueExists);
 			if (mapResult != MAP_OK)
 			{
 				/*Codes_SRS_CONSTMAP_17_029: [Otherwise, if such a does not exist, then ConstMap_ContainsValue shall return false.]*/
@@ -201,7 +201,7 @@ const char* ConstMap_GetValue(CONSTMAP_HANDLE handle, const char* key)
 		{
 			/*Codes_SRS_CONSTMAP_17_041: [If the key is not found, then ConstMap_GetValue returns NULL.]*/
 			/*Codes_SRS_CONSTMAP_17_042: [Otherwise, ConstMap_GetValue returns the key's value.]*/
-			value = Map_GetValueFromKey(handle->map, key);
+			value = Map_GetValueFromKey(((CONSTMAP_HANDLE_DATA *)handle)->map, key);
 		}
     }
     return value;
@@ -222,7 +222,7 @@ CONSTMAP_RESULT ConstMap_GetInternals(CONSTMAP_HANDLE handle, const char*const**
 		 *Codes_SRS_CONSTMAP_17_044: [ConstMap_GetInternals shall produce in *values a pointer to an array of const char* having all the values stored so far by the map.] 
 		 *Codes_SRS_CONSTMAP_17_045: [ ConstMap_GetInternals shall produce in *count the number of stored keys and values.]
 		 */
-        MAP_RESULT mapResult = Map_GetInternals(handle->map, keys, values, count);
+        MAP_RESULT mapResult = Map_GetInternals(((CONSTMAP_HANDLE_DATA *)handle)->map, keys, values, count);
         result = ConstMap_ErrorConvert(mapResult);
     }
     return result;
