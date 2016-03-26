@@ -157,18 +157,6 @@ typedef struct ARG_BUFFER_TAG
 #define VALIDATE_ARGUMENT_FUNCTION_IN_ARRAY(name, arg_type, arg_name) \
     &C4(validate_argument_func_,name,_,arg_name),
 
-#define DECLARE_IGNORE_ARGUMENT_FUNCTION_ARRAY(name, ...) \
-    static const C2(ignore_one_argument_func_type_,name) C2(ignore_one_argument_array_,name)[] = \
-    { \
-        FOR_EACH_2_KEEP_1(IGNORE_ARGUMENT_FUNCTION_IN_ARRAY, name, __VA_ARGS__) \
-    };
-
-#define DECLARE_VALIDATE_ARGUMENT_FUNCTION_ARRAY(name, ...) \
-    static const C2(validate_one_argument_func_type_,name) C2(validate_one_argument_array_,name)[] = \
-    { \
-        FOR_EACH_2_KEEP_1(VALIDATE_ARGUMENT_FUNCTION_IN_ARRAY, name, __VA_ARGS__) \
-    };
-
 /* These 2 macros are used to check if a type is "void" or not */
 #define TEST_void 0
 #define IS_NOT_VOID(x) \
@@ -580,9 +568,15 @@ typedef struct ARG_BUFFER_TAG
     IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_KEEP_1(DECLARE_IGNORE_ARGUMENT_FUNCTION_PROTOTYPE, name, __VA_ARGS__),) \
     IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_KEEP_1(DECLARE_VALIDATE_ARGUMENT_FUNCTION_PROTOTYPE, name, __VA_ARGS__),) \
     IF(COUNT_ARG(__VA_ARGS__),typedef struct C2(_mock_call_modifier_,name) (*C2(ignore_one_argument_func_type_,name))(void);,) \
-    IF(COUNT_ARG(__VA_ARGS__), DECLARE_IGNORE_ARGUMENT_FUNCTION_ARRAY(name, __VA_ARGS__),) \
+    IF(COUNT_ARG(__VA_ARGS__), static const C2(ignore_one_argument_func_type_,name) C2(ignore_one_argument_array_,name)[] = \
+    {,) \
+        FOR_EACH_2_KEEP_1(IGNORE_ARGUMENT_FUNCTION_IN_ARRAY, name, __VA_ARGS__) \
+    IF(COUNT_ARG(__VA_ARGS__), };,) \
     IF(COUNT_ARG(__VA_ARGS__), DECLARE_VALIDATE_ONE_ARGUMENT_FUNC_TYPE(name),) \
-    IF(COUNT_ARG(__VA_ARGS__), DECLARE_VALIDATE_ARGUMENT_FUNCTION_ARRAY(name, __VA_ARGS__),) \
+    IF(COUNT_ARG(__VA_ARGS__),static const C2(validate_one_argument_func_type_,name) C2(validate_one_argument_array_,name)[] = \
+    {,) \
+        FOR_EACH_2_KEEP_1(VALIDATE_ARGUMENT_FUNCTION_IN_ARRAY, name, __VA_ARGS__) \
+    IF(COUNT_ARG(__VA_ARGS__),};,) \
     static void C2(fill_mock_call_modifier_,name)(C2(mock_call_modifier_,name)* mock_call_modifier) \
     { \
         IF(IS_NOT_VOID(return_type),mock_call_modifier->SetReturn = C2(set_return_func_,name);,) \
