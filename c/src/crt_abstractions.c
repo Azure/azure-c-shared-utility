@@ -212,8 +212,11 @@ int sprintf_s(char* dst, size_t dstSizeInBytes, const char* format, ...)
 #error crt_abstractions is not provided for Microsoft Compilers
 #else
         /*not Microsoft compiler... */
-#if defined __STDC_VERSION__
-#if ((__STDC_VERSION__  == 199901L) || (__STDC_VERSION__ == 201000L) || (__STDC_VERSION__ == 201112L))
+#if defined (__STDC_VERSION__) || (__cplusplus)
+#if ( \
+        ((__STDC_VERSION__  == 199901L) || (__STDC_VERSION__ == 201000L) || (__STDC_VERSION__ == 201112L)) || \
+        (defined __cplusplus) \
+    )
         /*C99 compiler*/
         va_list args;
         va_start(args, format);
