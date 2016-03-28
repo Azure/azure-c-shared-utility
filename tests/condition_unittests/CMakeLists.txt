@@ -22,3 +22,9 @@ set(${theseTestsName}_h_files
 )
 
 build_test_artifacts(${theseTestsName} ON)
+
+if(WIN32)
+else()
+    target_link_libraries(${theseTestsName} pthread)
+endif()
+
