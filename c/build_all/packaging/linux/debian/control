@@ -1,7 +1,7 @@
 Source: azure-c-shared-util
 Priority: optional
 Maintainer: Azure User <aziotsdklinux@outlook.com>
-Build-Depends: debhelper (>= 9), cmake (>= 2.8), libssl-dev, libcurl4-openssl-dev, curl
+Build-Depends: debhelper (>= 9), cmake (>= 2.8), uuid-dev, libssl-dev, libcurl4-openssl-dev, curl
 Standards-Version: 3.9.6
 Section: libs
 Homepage: https://github.com/Azure/azure-c-shared-utility.git
@@ -11,14 +11,14 @@ Homepage: https://github.com/Azure/azure-c-shared-utility.git
 Package: azure-c-shared-util-dev
 Section: libdevel
 Architecture: any
-Depends: azure-c-shared-util-lib (= ${binary:Version}), ${misc:Depends}
+Depends: azure-c-shared-util-lib (= ${binary:Version}), ${misc:Depends}, uuid-dev, libssl-dev, libcurl4-openssl-dev, curl
 Description: AzureIoT Shared Utility Development Library Package
  The Microsoft Azure shared utility development library used to develop applications
  for developers and IT Staff
 
 Package: azure-c-shared-util-lib
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}, uuid-dev, libssl-dev, libcurl4-openssl-dev, curl
 Description: AzureIoT Shared Utility Library Package
  The Microsoft Azure shared utility library used to develop applications
  for developers and IT Staff
