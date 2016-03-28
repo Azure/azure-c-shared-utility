@@ -1,4 +1,4 @@
-azure-c-shared-util (0.1.0.0-5) wily; urgency=low
+azure-c-shared-util (0.1.0.0-7) wily; urgency=low
 
   * Initial release (Closes: #5069014)
 
@@ -10,4 +10,6 @@ azure-c-shared-util (0.1.0.0-5) wily; urgency=low
 
   * Update TLS layer to handle windows and Linux changes (#51d2e3f)
   
+  * Add the set options to the provided functions (#7a14fba)
+
  -- AzureIoT User <aziotsdklinux@outlook.com>  Fri, 11 Mar 2016 12:18:53 -0800
