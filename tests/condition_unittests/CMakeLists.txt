@@ -14,6 +14,8 @@ set(${theseTestsName}_cpp_files
 set(${theseTestsName}_c_files
 	${CONDITION_C_FILE}
 	${LOCK_C_FILE}	
+    ${THREAD_C_FILE}
+    ../../adapters/agenttime.c
 )
 
 set(${theseTestsName}_h_files
