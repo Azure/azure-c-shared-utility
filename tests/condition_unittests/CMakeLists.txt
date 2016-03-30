@@ -25,6 +25,6 @@ build_test_artifacts(${theseTestsName} ON)
 
 if(WIN32)
 else()
-    target_link_libraries(${theseTestsName} pthread)
+    target_link_libraries(${theseTestsName}_exe pthread)
 endif()
 

@@ -46,6 +46,10 @@ COND_RESULT Condition_Post(COND_HANDLE handle)
     return result;
 }
 
+
+#define NANOSECONDS_IN_1_SECOND 1000000000L
+#define MILLISECONDS_IN_1_SECOND 1000
+#define NANOSECONDS_IN_1_MILLISECOND 1000000L
 COND_RESULT Condition_Wait(COND_HANDLE handle, LOCK_HANDLE lock, int timeout_milliseconds)
 {
     COND_RESULT result;
@@ -61,8 +65,12 @@ COND_RESULT Condition_Wait(COND_HANDLE handle, LOCK_HANDLE lock, int timeout_mil
         if (timeout_milliseconds > 0)
         {
             struct timespec tm;
-            tm.tv_sec = timeout_milliseconds / 1000;
-            tm.tv_nsec = (timeout_milliseconds % 1000) * 1000000L;
+            clock_gettime(CLOCK_REALTIME,&tm);
+            tm.tv_nsec += (timeout_milliseconds % MILLISECONDS_IN_1_SECOND) * NANOSECONDS_IN_1_MILLISECOND;
+            tm.tv_sec += timeout_milliseconds / MILLISECONDS_IN_1_SECOND;
+            // handle overflow in tv_nsec
+            tm.tv_sec+= tm.tv_nsec / NANOSECONDS_IN_1_SECOND;
+            tm.tv_nsec %= NANOSECONDS_IN_1_SECOND;
             int wait_result = pthread_cond_timedwait((pthread_cond_t *)handle, (pthread_mutex_t *)lock, &tm);
             if (wait_result == ETIMEDOUT)
             {

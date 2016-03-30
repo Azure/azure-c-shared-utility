@@ -302,11 +302,6 @@ TEST_FUNCTION(Condition_Wait_ok_on_trigger_and_zero_timeout)
     conditionMocks mocks;
 
     // arrange
-    EXPECTED_CALL(mocks, gballoc_malloc(8));
-    EXPECTED_CALL(mocks, gballoc_malloc(4));
-    EXPECTED_CALL(mocks, gballoc_free(NULL)).IgnoreAllArguments();
-    EXPECTED_CALL(mocks, gballoc_free(NULL)).IgnoreAllArguments();
-
     COND_HANDLE handle = Condition_Init();
     LOCK_HANDLE lock = Lock_Init();
     Lock(lock);
@@ -321,6 +316,7 @@ TEST_FUNCTION(Condition_Wait_ok_on_trigger_and_zero_timeout)
     Condition_Deinit(handle);
     Unlock(lock);
     Lock_Deinit(lock);
+    mocks.ResetAllCalls();
 }
 
 // Tests_SRS_CONDITION_18_011: [Condition_wait shall return COND_TIMEOUT if the condition is triggered and timeout_milliseconds is not 0]
@@ -352,11 +348,6 @@ TEST_FUNCTION(Condition_Wait_ok_on_trigger_with_timeout)
     conditionMocks mocks;
 
     // arrange
-    EXPECTED_CALL(mocks, gballoc_malloc(8));
-    EXPECTED_CALL(mocks, gballoc_malloc(4));
-    EXPECTED_CALL(mocks, gballoc_free(NULL)).IgnoreAllArguments();
-    EXPECTED_CALL(mocks, gballoc_free(NULL)).IgnoreAllArguments();
-
     COND_HANDLE handle = Condition_Init();
     LOCK_HANDLE lock = Lock_Init();
     Lock(lock);
@@ -371,6 +362,7 @@ TEST_FUNCTION(Condition_Wait_ok_on_trigger_with_timeout)
     Condition_Deinit(handle);
     Unlock(lock);
     Lock_Deinit(lock);
+    mocks.ResetAllCalls();
 }
 
 END_TEST_SUITE(Condition_UnitTests);
