@@ -7,16 +7,16 @@
 #ifdef _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
 #endif
-#include "gballoc.h"
+#include "azure_c_shared_utility/gballoc.h"
 
 //
 // PUT NO CLIENT LIBRARY INCLUDES BEFORE HERE
 //
 
-#include "string_tokenizer.h"
-#include "iot_logging.h"
-#include "crt_abstractions.h"
 #include <stdbool.h>
+#include "azure_c_shared_utility/string_tokenizer.h"
+#include "azure_c_shared_utility/iot_logging.h"
+#include "azure_c_shared_utility/crt_abstractions.h"
 
 typedef struct STRING_TOKEN_TAG
 {

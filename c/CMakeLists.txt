@@ -352,60 +352,60 @@ endif()
 
 #these are the C headers
 set(source_h_files
-./inc/agenttime.h
-./inc/base64.h
-./inc/buffer_.h
-./inc/crt_abstractions.h
-./inc/constmap.h
-./inc/condition.h
-./inc/doublylinkedlist.h
-./inc/gballoc.h
-./inc/gb_stdio.h
-./inc/gb_time.h
-./inc/hmac.h
-./inc/hmacsha256.h
-./inc/iot_logging.h
-./inc/list.h
-./inc/lock.h
-./inc/macro_utils.h
-./inc/map.h
-./inc/platform.h
-./inc/refcount.h
-./inc/sastoken.h
-./inc/sha-private.h
-./inc/sha.h
-./inc/socketio.h
-./inc/stdint_ce6.h
-./inc/strings.h
-./inc/string_tokenizer.h
-./inc/tickcounter.h
-./inc/threadapi.h
-./inc/xio.h
-./inc/uniqueid.h
-./inc/urlencode.h
-./inc/vector.h
-./inc/xlogging.h
-./inc/constbuffer.h
-./inc/tlsio.h
+./inc/azure_c_shared_utility/agenttime.h
+./inc/azure_c_shared_utility/base64.h
+./inc/azure_c_shared_utility/buffer_.h
+./inc/azure_c_shared_utility/crt_abstractions.h
+./inc/azure_c_shared_utility/constmap.h
+./inc/azure_c_shared_utility/condition.h
+./inc/azure_c_shared_utility/doublylinkedlist.h
+./inc/azure_c_shared_utility/gballoc.h
+./inc/azure_c_shared_utility/gb_stdio.h
+./inc/azure_c_shared_utility/gb_time.h
+./inc/azure_c_shared_utility/hmac.h
+./inc/azure_c_shared_utility/hmacsha256.h
+./inc/azure_c_shared_utility/iot_logging.h
+./inc/azure_c_shared_utility/list.h
+./inc/azure_c_shared_utility/lock.h
+./inc/azure_c_shared_utility/macro_utils.h
+./inc/azure_c_shared_utility/map.h
+./inc/azure_c_shared_utility/platform.h
+./inc/azure_c_shared_utility/refcount.h
+./inc/azure_c_shared_utility/sastoken.h
+./inc/azure_c_shared_utility/sha-private.h
+./inc/azure_c_shared_utility/sha.h
+./inc/azure_c_shared_utility/socketio.h
+./inc/azure_c_shared_utility/stdint_ce6.h
+./inc/azure_c_shared_utility/strings.h
+./inc/azure_c_shared_utility/string_tokenizer.h
+./inc/azure_c_shared_utility/tickcounter.h
+./inc/azure_c_shared_utility/threadapi.h
+./inc/azure_c_shared_utility/xio.h
+./inc/azure_c_shared_utility/uniqueid.h
+./inc/azure_c_shared_utility/urlencode.h
+./inc/azure_c_shared_utility/vector.h
+./inc/azure_c_shared_utility/xlogging.h
+./inc/azure_c_shared_utility/constbuffer.h
+./inc/azure_c_shared_utility/tlsio.h
 )
 
 if(${use_http})
     set(source_h_files ${source_h_files}
-        ./inc/httpapi.h
-        ./inc/httpapiex.h
-        ./inc/httpapiexsas.h
-        ./inc/httpheaders.h
+        ./inc/azure_c_shared_utility/httpapi.h
+        ./inc/azure_c_shared_utility/httpapiex.h
+        ./inc/azure_c_shared_utility/httpapiexsas.h
+        ./inc/azure_c_shared_utility/httpheaders.h
     )
 endif()
 
 if(${use_schannel})
     set(source_h_files ${source_h_files}
-        ./inc/tlsio_schannel.h
+        ./inc/azure_c_shared_utility/tlsio_schannel.h
     )
 endif()
 if(${use_wolfssl})
     set(source_h_files ${source_h_files}
-        ./inc/tlsio_wolfssl.h
+        ./inc/azure_c_shared_utility/tlsio_wolfssl.h
     )
 if(WIN32)
 include_directories($ENV{WolfSSLDir})
@@ -413,7 +413,7 @@ endif()
 endif()
 if(${use_openssl})
     set(source_h_files ${source_h_files}
-        ./inc/tlsio_openssl.h
+        ./inc/azure_c_shared_utility/tlsio_openssl.h
     )
     if(WIN32)
         include_directories($ENV{OpenSSLDir}/include)

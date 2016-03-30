@@ -7,8 +7,8 @@
 #endif
 
 #include "testrunnerswitcher.h"
-#include "hmacsha256.h"
-#include "strings.h"
+#include "azure_c_shared_utility/hmacsha256.h"
+#include "azure_c_shared_utility/strings.h"
 #include "micromock.h"
 #include "micromockcharstararenullterminatedstrings.h"
 

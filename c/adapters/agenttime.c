@@ -5,10 +5,10 @@
 #ifdef _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
 #endif
-#include "gballoc.h"
+#include "azure_c_shared_utility/gballoc.h"
 
-#include "time.h"
-#include "agenttime.h"
+#include <time.h>
+#include "azure_c_shared_utility/agenttime.h"
 
 time_t get_time(time_t* p)
 {

@@ -14,14 +14,12 @@
 #undef DEFINE_ENUM
 #define DEFINE_ENUM(enumName, ...) typedef enum C2(enumName, _TAG) { FOR_EACH_1(DEFINE_ENUMERATION_CONSTANT, __VA_ARGS__)} enumName; 
 
-#include "map.h"
-#include "httpapiex.h"
-#include "lock.h"
-#include "strings.h"
-#include "crt_abstractions.h"
-#include "vector.h"
-
-
+#include "azure_c_shared_utility/map.h"
+#include "azure_c_shared_utility/httpapiex.h"
+#include "azure_c_shared_utility/lock.h"
+#include "azure_c_shared_utility/strings.h"
+#include "azure_c_shared_utility/crt_abstractions.h"
+#include "azure_c_shared_utility/vector.h"
 
 DEFINE_MICROMOCK_ENUM_TO_STRING(HTTPAPIEX_RESULT, HTTPAPIEX_RESULT_VALUES);
 

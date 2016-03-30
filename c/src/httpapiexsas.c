@@ -5,19 +5,19 @@
 #ifdef _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
 #endif
-#include "gballoc.h"
+#include "azure_c_shared_utility/gballoc.h"
 
 #include <stddef.h>
 #include <time.h>
 
-#include "agenttime.h"
-#include "strings.h"
-#include "buffer_.h"
-#include "sastoken.h"
-#include "httpheaders.h"
-#include "httpapiex.h"
-#include "httpapiexsas.h"
-#include "iot_logging.h"
+#include "azure_c_shared_utility/agenttime.h"
+#include "azure_c_shared_utility/strings.h"
+#include "azure_c_shared_utility/buffer_.h"
+#include "azure_c_shared_utility/sastoken.h"
+#include "azure_c_shared_utility/httpheaders.h"
+#include "azure_c_shared_utility/httpapiex.h"
+#include "azure_c_shared_utility/httpapiexsas.h"
+#include "azure_c_shared_utility/iot_logging.h"
 
 typedef struct HTTPAPIEX_SAS_STATE_TAG
 {

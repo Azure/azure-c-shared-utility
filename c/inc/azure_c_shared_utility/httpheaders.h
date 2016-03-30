@@ -20,7 +20,7 @@
 #ifndef HTTPHEADERS_H
 #define HTTPHEADERS_H
 
-#include "macro_utils.h"
+#include "azure_c_shared_utility/macro_utils.h"
 
 #ifdef __cplusplus
 #include <cstddef>

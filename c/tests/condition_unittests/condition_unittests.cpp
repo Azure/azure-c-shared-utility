@@ -9,10 +9,10 @@
 
 #include "testrunnerswitcher.h"
 #include "micromock.h"
-#include "crt_abstractions.h"
-#include "condition.h"
-#include "lock.h"
-#include "agenttime.h"
+#include "azure_c_shared_utility/crt_abstractions.h"
+#include "azure_c_shared_utility/condition.h"
+#include "azure_c_shared_utility/lock.h"
+#include "azure_c_shared_utility/agenttime.h"
 
 #define TEST_LOCK_HANDLE    (LOCK_HANDLE)0x4443
 #define TEST_TIME ((double)3600)

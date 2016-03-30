@@ -9,10 +9,10 @@
 #ifdef _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
 #endif
-#include "gballoc.h"
+#include "azure_c_shared_utility/gballoc.h"
 #include "testrunnerswitcher.h"
 #include "micromock.h"
-#include "lock.h"
+#include "azure_c_shared_utility/lock.h"
 
 #ifndef SIZE_MAX
 #define SIZE_MAX ((size_t)~(size_t)0)
