@@ -5,7 +5,7 @@
 #ifdef _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
 #endif
-#include "azure_c_shared_utility/doublylinkedlist.h"
+#include "doublylinkedlist.h"
 
 void
 DList_InitializeListHead(

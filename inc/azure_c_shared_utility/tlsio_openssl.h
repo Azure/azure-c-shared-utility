@@ -11,8 +11,8 @@ extern "C" {
 #include <stddef.h>
 #endif /* __cplusplus */
 
-#include "azure_c_shared_utility/xio.h"
-#include "azure_c_shared_utility/iot_logging.h"
+#include "xio.h"
+#include "iot_logging.h"
 
 extern int tlsio_openssl_init(void);
 extern void tlsio_openssl_deinit(void);

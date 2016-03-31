@@ -18,13 +18,13 @@
 
 #include "micromock.h"
 #include "micromockcharstararenullterminatedstrings.h"
-#include "azure_c_shared_utility/lock.h"
+#include "lock.h"
 
 #ifdef _MSC_VER
 #pragma warning(disable:4505)
 #endif
 
-#include "azure_c_shared_utility/strings.h"
+#include "strings.h"
 
 
 static const char TEST_STRING_VALUE []= "DataValueTest";

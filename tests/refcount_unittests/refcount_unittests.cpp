@@ -10,7 +10,7 @@
 #include "micromock.h"
 #include "micromockcharstararenullterminatedstrings.h"
 
-#include "azure_c_shared_utility/lock.h"
+#include "lock.h"
 
 #include "some_refcount_impl.h"
 

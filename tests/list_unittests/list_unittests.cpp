@@ -4,8 +4,8 @@
 #include <stdbool.h>
 #include "testrunnerswitcher.h"
 #include "micromock.h"
-#include "azure_c_shared_utility/list.h"
-#include "azure_c_shared_utility/lock.h"
+#include "list.h"
+#include "lock.h"
 
 #define GBALLOC_H
 extern "C" int gballoc_init(void);

@@ -7,12 +7,12 @@
 #include <stddef.h>
 #include <ctype.h>
 
-#include "azure_c_shared_utility/strings.h"
-#include "azure_c_shared_utility/httpapi.h"
-#include "azure_c_shared_utility/httpheaders.h"
-#include "azure_c_shared_utility/crt_abstractions.h"
+#include "strings.h"
+#include "httpapi.h"
+#include "httpheaders.h"
+#include "crt_abstractions.h"
 #include "curl/curl.h"
-#include "azure_c_shared_utility/iot_logging.h"
+#include "iot_logging.h"
 
 #define TEMP_BUFFER_SIZE 1024
 

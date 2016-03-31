@@ -15,10 +15,10 @@
 // PUT NO CLIENT LIBRARY INCLUDES BEFORE HERE !!!!
 //
 #include "testrunnerswitcher.h"
-#include "azure_c_shared_utility/constbuffer.h"
-#include "azure_c_shared_utility/buffer_.h"
+#include "constbuffer.h"
+#include "buffer_.h"
 #include "micromock.h"
-#include "azure_c_shared_utility/lock.h"
+#include "lock.h"
 
 #ifdef _MSC_VER
 #pragma warning(disable:4505)

@@ -4,7 +4,7 @@
 #ifndef XIO_H
 #define XIO_H
 
-#include "azure_c_shared_utility/xlogging.h"
+#include "xlogging.h"
 
 #ifdef __cplusplus
 #include <cstddef>

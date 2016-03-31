@@ -11,8 +11,8 @@ extern "C" {
 #include <stddef.h>
 #endif /* __cplusplus */
 
-#include "azure_c_shared_utility/xio.h"
-#include "azure_c_shared_utility/xlogging.h"
+#include "xio.h"
+#include "xlogging.h"
 
 typedef struct SOCKETIO_CONFIG_TAG
 {

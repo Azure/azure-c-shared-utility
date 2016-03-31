@@ -18,9 +18,9 @@ extern "C"
 #endif
 
 
-#include "azure_c_shared_utility/macro_utils.h"
-#include "azure_c_shared_utility/crt_abstractions.h"
-#include "azure_c_shared_utility/map.h"
+#include "macro_utils.h"
+#include "crt_abstractions.h"
+#include "map.h"
 
 #define CONSTMAP_RESULT_VALUES \
     CONSTMAP_OK, \

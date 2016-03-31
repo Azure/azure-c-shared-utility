@@ -39,7 +39,7 @@ endif()
 option(compileOption_C "passes a string to the command line of the C compiler" OFF)
 option(compileOption_CXX "passes a string to the command line of the C++ compiler" OFF)
 
-include_directories(inc)
+include_directories(inc/azure_c_shared_utility)
 
 # Start of variables used during install
 set (INCLUDE_INSTALL_DIR "/usr/include" CACHE PATH "Include file directory")

@@ -8,7 +8,7 @@
 extern "C" {
 #endif
 
-#include "azure_c_shared_utility/sha.h"
+#include "sha.h"
 
 extern int hmac(SHAversion whichSha, const unsigned char *text, int text_len,
     const unsigned char *key, int key_len,

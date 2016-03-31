@@ -13,7 +13,7 @@
 #include "testrunnerswitcher.h"
 #include "micromock.h"
 #include "micromockcharstararenullterminatedstrings.h"
-#include "azure_c_shared_utility/uniqueid.h"
+#include "uniqueid.h"
 #include <rpc.h>
 
 static MICROMOCK_MUTEX_HANDLE g_testByTest;

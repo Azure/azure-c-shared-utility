@@ -4,7 +4,7 @@
 #ifndef VECTOR_H
 #define VECTOR_H
 
-#include "azure_c_shared_utility/crt_abstractions.h"
+#include "crt_abstractions.h"
 
 #ifdef __cplusplus
 #include <cstddef>

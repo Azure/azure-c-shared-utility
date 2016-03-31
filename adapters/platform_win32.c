@@ -5,9 +5,9 @@
 #ifdef _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
 #endif
-#include "azure_c_shared_utility/platform.h"
-#include "azure_c_shared_utility/xio.h"
-#include "azure_c_shared_utility/tlsio_schannel.h"
+#include "platform.h"
+#include "xio.h"
+#include "tlsio_schannel.h"
 #include "winsock2.h"
 
 int platform_init(void)

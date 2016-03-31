@@ -8,8 +8,8 @@
 
 #include "micromock.h"
 #include "testrunnerswitcher.h"
-#include "azure_c_shared_utility/crt_abstractions.h"
-#include "azure_c_shared_utility/lock.h"
+#include "crt_abstractions.h"
+#include "lock.h"
 
 
 DEFINE_MICROMOCK_ENUM_TO_STRING(LOCK_RESULT, LOCK_RESULT_VALUES);

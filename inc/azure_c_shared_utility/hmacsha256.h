@@ -4,8 +4,8 @@
 #ifndef HMACSHA256_H
 #define HMACSHA256_H
 
-#include "azure_c_shared_utility/macro_utils.h"
-#include "azure_c_shared_utility/buffer_.h"
+#include "macro_utils.h"
+#include "buffer_.h"
 
 #ifdef __cplusplus
 extern "C" {

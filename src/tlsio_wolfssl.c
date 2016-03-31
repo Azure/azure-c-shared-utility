@@ -11,9 +11,9 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
-#include "azure_c_shared_utility/tlsio.h"
-#include "azure_c_shared_utility/tlsio_wolfssl.h"
-#include "azure_c_shared_utility/socketio.h"
+#include "tlsio.h"
+#include "tlsio_wolfssl.h"
+#include "socketio.h"
 
 typedef enum TLSIO_STATE_ENUM_TAG
 {

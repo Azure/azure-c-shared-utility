@@ -4,7 +4,7 @@
 #ifndef CONSTBUFFER_H
 #define CONSTBUFFER_H
 
-#include "azure_c_shared_utility/buffer_.h"
+#include "buffer_.h"
 
 #ifdef __cplusplus
 #include <cstddef>

@@ -3,8 +3,8 @@
 
 #include "testrunnerswitcher.h"
 #include "micromock.h"
-#include "azure_c_shared_utility/xio.h"
-#include "azure_c_shared_utility/lock.h"
+#include "xio.h"
+#include "lock.h"
 
 #define TEST_CONCRETE_IO_HANDLE (CONCRETE_IO_HANDLE)0x4242
 

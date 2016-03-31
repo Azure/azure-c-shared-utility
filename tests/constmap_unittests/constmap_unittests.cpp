@@ -10,8 +10,8 @@
 #include "testrunnerswitcher.h"
 #include "micromock.h"
 #include "micromockcharstararenullterminatedstrings.h"
-#include "azure_c_shared_utility/constmap.h"
-#include "azure_c_shared_utility/lock.h"
+#include "constmap.h"
+#include "lock.h"
 
 static MICROMOCK_MUTEX_HANDLE g_testByTest;
 static MICROMOCK_GLOBAL_SEMAPHORE_HANDLE g_dllByDll;

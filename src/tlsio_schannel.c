@@ -11,13 +11,13 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdbool.h>
-#include "azure_c_shared_utility/tlsio.h"
-#include "azure_c_shared_utility/tlsio_schannel.h"
-#include "azure_c_shared_utility/socketio.h"
+#include "tlsio.h"
+#include "tlsio_schannel.h"
+#include "socketio.h"
 #include "windows.h"
 #include "sspi.h"
 #include "schannel.h"
-#include "azure_c_shared_utility/iot_logging.h"
+#include "iot_logging.h"
 
 typedef enum TLSIO_STATE_TAG
 {

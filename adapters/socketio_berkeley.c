@@ -9,15 +9,15 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
-#include "azure_c_shared_utility/socketio.h"
+#include "socketio.h"
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include "azure_c_shared_utility/list.h"
-#include "azure_c_shared_utility/gballoc.h"
-#include "azure_c_shared_utility/iot_logging.h"
+#include "list.h"
+#include "gballoc.h"
+#include "iot_logging.h"
 
 #define SOCKET_SUCCESS      0
 #define INVALID_SOCKET      -1

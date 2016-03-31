@@ -11,7 +11,7 @@ extern "C" {
 #include <stdlib.h>
 #endif
 
-#include "azure_c_shared_utility/macro_utils.h"
+#include "macro_utils.h"
 #include "umocktypes.h"
 #include "umockcall.h"
 #include "umockcallrecorder.h"

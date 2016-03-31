@@ -43,10 +43,10 @@
 #ifdef _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
 #endif
-#include "azure_c_shared_utility/gballoc.h"
+#include "gballoc.h"
 
-#include "azure_c_shared_utility/sha.h"
-#include "azure_c_shared_utility/sha-private.h"
+#include "sha.h"
+#include "sha-private.h"
 /* Define the SHA shift, rotate left and rotate right macro */
 #define SHA256_SHR(bits,word)      ((word) >> (bits))
 #define SHA256_ROTL(bits,word)                         \

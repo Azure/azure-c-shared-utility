@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "umocktypes.h"
-#include "azure_c_shared_utility/macro_utils.h"
+#include "macro_utils.h"
 #include "umocktypes_charptr.h"
 
 char* umocktypes_stringify_charptr(const char** value)

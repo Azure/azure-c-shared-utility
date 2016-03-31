@@ -5,7 +5,7 @@
 #ifdef _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
 #endif
-#include "azure_c_shared_utility/gballoc.h"
+#include "gballoc.h"
 
 #if defined(__cplusplus)
 #include <cstdint>
@@ -14,9 +14,9 @@
 #endif
 
 #include <thr/threads.h>
-#include "azure_c_shared_utility/threadapi.h"
+#include "threadapi.h"
 #include "windows.h"
-#include "azure_c_shared_utility/iot_logging.h"
+#include "iot_logging.h"
 
 DEFINE_ENUM_STRINGS(THREADAPI_RESULT, THREADAPI_RESULT_VALUES);
 

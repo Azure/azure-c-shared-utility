@@ -5,9 +5,9 @@
 #ifdef _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
 #endif
-#include "azure_c_shared_utility/gballoc.h"
+#include "gballoc.h"
 
-#include "azure_c_shared_utility/vector.h"
+#include "vector.h"
 #include <string.h>
 
 

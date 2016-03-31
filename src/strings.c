@@ -8,7 +8,7 @@
 #ifdef _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
 #endif
-#include "azure_c_shared_utility/gballoc.h"
+#include "gballoc.h"
 
 #include <stddef.h>
 #include <string.h>
@@ -16,8 +16,8 @@
 // PUT NO CLIENT LIBRARY INCLUDES BEFORE HERE
 //
 
-#include "azure_c_shared_utility/strings.h"
-#include "azure_c_shared_utility/iot_logging.h"
+#include "strings.h"
+#include "iot_logging.h"
 
 static const char hexToASCII[16] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
 

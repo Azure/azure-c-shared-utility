@@ -4,8 +4,8 @@
 #ifndef CONDITION_H
 #define CONDITION_H
 
-#include "azure_c_shared_utility/macro_utils.h"
-#include "azure_c_shared_utility/lock.h"
+#include "macro_utils.h"
+#include "lock.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -11,7 +11,7 @@
 #else
 
 #include <stdio.h>
-#include "azure_c_shared_utility/agenttime.h"
+#include "agenttime.h"
 
 #ifdef __cplusplus
 extern "C" {

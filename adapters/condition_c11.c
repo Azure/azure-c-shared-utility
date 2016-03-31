@@ -7,9 +7,9 @@
 #endif
 #include "stdlib.h"
 
-#include "azure_c_shared_utility/macro_utils.h"
-#include "azure_c_shared_utility/condition.h"
-#include "azure_c_shared_utility/iot_logging.h"
+#include "macro_utils.h"
+#include "condition.h"
+#include "iot_logging.h"
 #include <thr/threads.h>
 
 DEFINE_ENUM_STRINGS(COND_RESULT, COND_RESULT_VALUES);

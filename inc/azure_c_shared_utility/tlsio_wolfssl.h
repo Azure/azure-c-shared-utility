@@ -11,8 +11,8 @@ extern "C" {
 #include <stddef.h>
 #endif /* __cplusplus */
 
-#include "azure_c_shared_utility/xio.h"
-#include "azure_c_shared_utility/iot_logging.h"
+#include "xio.h"
+#include "iot_logging.h"
 
 extern CONCRETE_IO_HANDLE tlsio_wolfssl_create(void* io_create_parameters, LOGGER_LOG logger_log);
 extern void tlsio_wolfssl_destroy(CONCRETE_IO_HANDLE tls_io);

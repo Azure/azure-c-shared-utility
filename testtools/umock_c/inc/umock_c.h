@@ -16,7 +16,7 @@ extern "C" {
 #else
 #include <stdlib.h>
 #endif
-#include "azure_c_shared_utility/macro_utils.h"
+#include "macro_utils.h"
 
     typedef enum UMOCK_C_ERROR_CODE_TAG
     {

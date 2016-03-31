@@ -8,7 +8,7 @@
 extern "C" {
 #endif /* __cplusplus */
 
-#include "azure_c_shared_utility/xio.h"
+#include "xio.h"
 
 	extern int platform_init(void);
 	extern void platform_deinit(void);

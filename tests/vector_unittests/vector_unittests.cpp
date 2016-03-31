@@ -9,7 +9,7 @@
 #include "testrunnerswitcher.h"
 #include "micromock.h"
 
-#include "azure_c_shared_utility/vector.h"
+#include "vector.h"
 
 
 #ifdef _MSC_VER

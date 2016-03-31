@@ -11,9 +11,9 @@
 #include "testrunnerswitcher.h"
 #include "micromock.h"
 #include "micromockcharstararenullterminatedstrings.h"
-#include "azure_c_shared_utility/httpheaders.h"
-#include "azure_c_shared_utility/map.h"
-#include "azure_c_shared_utility/lock.h"
+#include "httpheaders.h"
+#include "map.h"
+#include "lock.h"
 
 #define GBALLOC_H
 

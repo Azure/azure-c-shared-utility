@@ -7,9 +7,9 @@
 #ifdef _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
 #endif
-#include "azure_c_shared_utility/gballoc.h"
+#include "gballoc.h"
 
-#include "azure_c_shared_utility/crt_abstractions.h"
+#include "crt_abstractions.h"
 #include "errno.h"
 #include <stddef.h>
 #include <limits.h>

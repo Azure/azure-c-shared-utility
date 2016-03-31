@@ -4,7 +4,7 @@
 #ifndef URLENCODE_H
 #define URLENCODE_H
 
-#include "azure_c_shared_utility/strings.h"
+#include "strings.h"
 
 #ifdef __cplusplus
 extern "C" {

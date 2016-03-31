@@ -6,8 +6,8 @@
 #include <crtdbg.h>
 #endif
 #include <stddef.h>
-#include "azure_c_shared_utility/gballoc.h"
-#include "azure_c_shared_utility/xio.h"
+#include "gballoc.h"
+#include "xio.h"
 
 typedef struct XIO_INSTANCE_TAG
 {

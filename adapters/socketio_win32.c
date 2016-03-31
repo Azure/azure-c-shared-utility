@@ -7,13 +7,13 @@
 #endif
 #include <stddef.h>
 #include <stdio.h>
-#include "azure_c_shared_utility/socketio.h"
+#include "socketio.h"
 #include "winsock2.h"
 #include "ws2tcpip.h"
 #include "windows.h"
-#include "azure_c_shared_utility/list.h"
-#include "azure_c_shared_utility/gballoc.h"
-#include "azure_c_shared_utility/iot_logging.h"
+#include "list.h"
+#include "gballoc.h"
+#include "iot_logging.h"
 
 typedef enum IO_STATE_TAG
 {
