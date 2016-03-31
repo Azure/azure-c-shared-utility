@@ -39,7 +39,7 @@ endif()
 option(compileOption_C "passes a string to the command line of the C compiler" OFF)
 option(compileOption_CXX "passes a string to the command line of the C++ compiler" OFF)
 
-include_directories(inc/azure_c_shared_utility)
+include_directories(${CMAKE_CURRENT_LIST_DIR}/inc/azure_c_shared_utility)
 
 # Start of variables used during install
 set (INCLUDE_INSTALL_DIR "/usr/include" CACHE PATH "Include file directory")
@@ -434,7 +434,7 @@ endif()
 
 #these are the include folders
 #the following "set" statetement exports across the project a global variable called COMMON_INC_FOLDER that expands to whatever needs to included when using COMMON library
-set(SHARED_UTIL_INC_FOLDER ${CMAKE_CURRENT_LIST_DIR}/inc CACHE INTERNAL "this is what needs to be included if using sharedLib lib" FORCE)
+set(SHARED_UTIL_INC_FOLDER ${CMAKE_CURRENT_LIST_DIR}/inc ${CMAKE_CURRENT_LIST_DIR}/inc/azure_c_shared_utility CACHE INTERNAL "this is what needs to be included if using sharedLib lib" FORCE)
 set(SHARED_UTIL_SRC_FOLDER ${CMAKE_CURRENT_LIST_DIR}/src CACHE INTERNAL "this is what needs to be included when doing include sources" FORCE)
 include_directories(${SHARED_UTIL_INC_FOLDER})
 
