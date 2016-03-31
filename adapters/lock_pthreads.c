@@ -1,10 +1,10 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#include "lock.h"
-#include<pthread.h>
-#include<stdlib.h>
-#include "iot_logging.h"
+#include <stdlib.h>
+#include <pthread.h>
+#include "azure_c_shared_utility/lock.h"
+#include "azure_c_shared_utility/iot_logging.h"
 
 DEFINE_ENUM_STRINGS(LOCK_RESULT, LOCK_RESULT_VALUES);
 

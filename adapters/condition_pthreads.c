@@ -1,10 +1,10 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#include "lock.h"
 #include <stdlib.h>
-#include "condition.h"
-#include <iot_logging.h>
+#include "azure_c_shared_utility/lock.h"
+#include "azure_c_shared_utility/condition.h"
+#include "azure_c_shared_utility/iot_logging.h"
 #include <errno.h>
 #include <pthread.h>
 

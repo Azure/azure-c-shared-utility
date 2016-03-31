@@ -5,9 +5,9 @@
 #include "testrunnerswitcher.h"
 #include "micromock.h"
 #include "micromockcharstararenullterminatedstrings.h"
-#include "socketio.h"
-#include "list.h"
-#include "lock.h"
+#include "azure_c_shared_utility/socketio.h"
+#include "azure_c_shared_utility/list.h"
+#include "azure_c_shared_utility/lock.h"
 
 #undef DECLSPEC_IMPORT
 
