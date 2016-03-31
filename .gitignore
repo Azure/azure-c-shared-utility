@@ -2,6 +2,6 @@
 # This .gitignore file was automatically created by Microsoft(R) Visual Studio.
 ################################################################################
 
-/c/build_all/windows/nuget.exe
-/c/cmake
-/c/devdoc/~$o_requirements.docm
+/build_all/windows/nuget.exe
+/cmake
+/devdoc/~$o_requirements.docm
