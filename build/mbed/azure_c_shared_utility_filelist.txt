@@ -1,4 +1,4 @@
-set(mbed_project_files
+set(mbed_exported_project_files
 		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/agenttime.h
 		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/base64.h
 		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/buffer_.h
@@ -37,6 +37,9 @@ set(mbed_project_files
 		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/vector.h
 		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/xio.h
 		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/xlogging.h
+   )
+
+set(mbed_project_files
 		${CMAKE_CURRENT_SOURCE_DIR}/../../src/base64.c
 		${CMAKE_CURRENT_SOURCE_DIR}/../../src/buffer.c
 		${CMAKE_CURRENT_SOURCE_DIR}/../../src/constbuffer.c
