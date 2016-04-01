@@ -46,7 +46,7 @@ xdcargs = java.lang.System.getenv("XDCARGS").split(" ");
 var slIncs = "";
 var ndkIncs = "";
 var wolfsslIncs = "";
-var commonIncs = "-I../../inc ";
+var commonIncs = "-I../../inc -I../../inc/azure_c_shared_utility ";
 var pthreadIncs = "";
 
 /* Parse out the XDCARGS options for the library source paths */
