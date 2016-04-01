@@ -196,7 +196,7 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
         stMocks.ResetAllCalls();
         ///act
 
-        STRING_TOKENIZER_HANDLE t = STRING_TOKENIZER_create(NULL);
+        STRING_TOKENIZER_HANDLE t = STRING_TOKENIZER_create_from_char(NULL);
 
         ///assert
         ASSERT_IS_NULL(t);
@@ -222,7 +222,7 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
             .IgnoreArgument(1);
 
 
-        STRING_TOKENIZER_HANDLE t = STRING_TOKENIZER_create(inputString);
+        STRING_TOKENIZER_HANDLE t = STRING_TOKENIZER_create_from_char(inputString);
 
         stMocks.AssertActualAndExpectedCalls();
         ///assert
@@ -276,6 +276,27 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
         ///assert
         ASSERT_ARE_NOT_EQUAL(int, r, 0);
         stMocks.AssertActualAndExpectedCalls();
+        //Cleanup
+        STRING_delete(output_string_handle);
+    }
+
+    /* Tests_SRS_STRING_04_004: [STRING_TOKENIZER_get_next_token shall return a nonzero value if any of the 3 parameters is NULL] */
+    TEST_FUNCTION(STRING_TOKENIZER_get_next_token_Delimiter_empty_Fail)
+    {
+        ///arrange
+        CStringTokenizerMocks stMocks;
+
+        STRING_HANDLE output_string_handle = STRING_new();
+
+        stMocks.ResetAllCalls();
+
+        ///act
+        int r = STRING_TOKENIZER_get_next_token(NULL, output_string_handle, "");
+
+        ///assert
+        ASSERT_ARE_NOT_EQUAL(int, r, 0);
+        stMocks.AssertActualAndExpectedCalls();
+
         //Cleanup
         STRING_delete(output_string_handle);
     }
