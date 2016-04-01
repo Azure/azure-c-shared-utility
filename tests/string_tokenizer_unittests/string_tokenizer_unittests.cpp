@@ -188,6 +188,50 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
         STRING_delete(input_string_handle);
     }
 
+    TEST_FUNCTION(STRING_TOKENIZER_create_from_char_input_NULL_fail)
+    {
+        ///arrange
+        CStringTokenizerMocks stMocks;
+
+        stMocks.ResetAllCalls();
+        ///act
+
+        STRING_TOKENIZER_HANDLE t = STRING_TOKENIZER_create(NULL);
+
+        ///assert
+        ASSERT_IS_NULL(t);
+        stMocks.AssertActualAndExpectedCalls();
+
+        //Cleanup
+        STRING_TOKENIZER_destroy(t);
+    }
+
+    TEST_FUNCTION(STRING_TOKENIZER_create_from_char_succeed)
+    {
+        ///arrange
+        CStringTokenizerMocks stMocks;
+        const char* inputString = "Pirlimpimpim";
+
+        stMocks.ResetAllCalls();
+        ///act
+
+        STRICT_EXPECTED_CALL(stMocks, gballoc_malloc(0))  //Token Allocation.
+            .IgnoreArgument(1);
+
+        STRICT_EXPECTED_CALL(stMocks, gballoc_malloc(0))  //Token Content Allocation.
+            .IgnoreArgument(1);
+
+
+        STRING_TOKENIZER_HANDLE t = STRING_TOKENIZER_create(inputString);
+
+        stMocks.AssertActualAndExpectedCalls();
+        ///assert
+        ASSERT_IS_NOT_NULL(t);
+
+        //Cleanup
+        STRING_TOKENIZER_destroy(t);
+    }
+
     /* Test_SRS_STRING_04_003: [STRING_TOKENIZER_create shall return an NULL STRING_TOKENIZER _HANDLE on any error that is encountered] */
     TEST_FUNCTION(STRING_TOKENIZER_create_when_malloc_fails_then_string_tokenizer_create_fails)
     {
@@ -214,6 +258,7 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
         //Cleanup
         STRING_delete(input_string_handle);
     }
+
     /* STRING_TOKENIZER_get_next_token */
     /* Tests_SRS_STRING_04_004: [STRING_TOKENIZER_get_next_token shall return a nonzero value if any of the 3 parameters is NULL] */
     TEST_FUNCTION(STRING_TOKENIZER_get_next_token_handle_NULL_Fail)
