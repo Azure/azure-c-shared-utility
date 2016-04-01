@@ -7,7 +7,6 @@
 #endif
 #include "stdlib.h"
 
-#include "macro_utils.h"
 #include "condition.h"
 #include "iot_logging.h"
 #include <thr/threads.h>
@@ -68,12 +67,13 @@ COND_RESULT Condition_Wait(COND_HANDLE handle, LOCK_HANDLE lock, int timeout_mil
             int wait_result;
             time_t now = get_time(NULL);
 
+            // Codes_SRS_CONDITION_18_013: [ Condition_Wait shall accept relative timeouts ]
             tm.sec = (unsigned long)get_difftime(now, (time_t)0) + (timeout_milliseconds / 1000);
             tm.nsec = (timeout_milliseconds % 1000) * 1000000L;
             wait_result = cnd_timedwait((cnd_t *)handle, (mtx_t*)lock, &tm);
             if (wait_result == thrd_timedout)
             {
-                // Codes_SRS_CONDITION_18_011: [ Condition_Wait shall return COND_TIMEOUT if the condition is triggered and timeout_milliseconds is not 0 ]
+                // Codes_SRS_CONDITION_18_011: [ Condition_Wait shall return COND_TIMEOUT if the condition is NOT triggered and timeout_milliseconds is not 0 ]
                 result = COND_TIMEOUT;
             }
             else if (wait_result == thrd_success)

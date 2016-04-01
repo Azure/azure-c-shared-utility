@@ -319,7 +319,7 @@ TEST_FUNCTION(Condition_Wait_ok_on_trigger_and_zero_timeout)
     mocks.ResetAllCalls();
 }
 
-// Tests_SRS_CONDITION_18_011: [Condition_wait shall return COND_TIMEOUT if the condition is triggered and timeout_milliseconds is not 0]
+// Tests_SRS_CONDITION_18_011: [Condition_wait shall return COND_TIMEOUT if the condition is NOT triggered and timeout_milliseconds is not 0]
 TEST_FUNCTION(Condition_Wait_timeout_when_not_triggered)
 {
     conditionMocks mocks;
@@ -342,7 +342,8 @@ TEST_FUNCTION(Condition_Wait_timeout_when_not_triggered)
     Lock_Deinit(lock);
 }
 
-// Tests_SRS_CONDITION_18_012: [Condition_Wait shall return COND_OK if the condition is triggered and timeout_milliseconds is not 0]
+// Tests_SRS_CONDITION_18_012: [ Condition_Wait shall return COND_OK if the condition is triggered and timeout_milliseconds is not 0 ]
+// Tests_SRS_CONDITION_18_013: [ Condition_Wait shall accept relative timeouts ]
 TEST_FUNCTION(Condition_Wait_ok_on_trigger_with_timeout)
 {
     conditionMocks mocks;

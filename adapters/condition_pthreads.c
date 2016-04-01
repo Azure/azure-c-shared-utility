@@ -64,6 +64,7 @@ COND_RESULT Condition_Wait(COND_HANDLE handle, LOCK_HANDLE lock, int timeout_mil
     {
         if (timeout_milliseconds > 0)
         {
+            // Codes_SRS_CONDITION_18_013: [ Condition_Wait shall accept relative timeouts ]
             struct timespec tm;
             clock_gettime(CLOCK_REALTIME,&tm);
             tm.tv_nsec += (timeout_milliseconds % MILLISECONDS_IN_1_SECOND) * NANOSECONDS_IN_1_MILLISECOND;
@@ -74,7 +75,7 @@ COND_RESULT Condition_Wait(COND_HANDLE handle, LOCK_HANDLE lock, int timeout_mil
             int wait_result = pthread_cond_timedwait((pthread_cond_t *)handle, (pthread_mutex_t *)lock, &tm);
             if (wait_result == ETIMEDOUT)
             {
-                // Codes_SRS_CONDITION_18_011: [ Condition_Wait shall return COND_TIMEOUT if the condition is triggered and timeout_milliseconds is not 0 ]
+                // Codes_SRS_CONDITION_18_011: [ Condition_Wait shall return COND_TIMEOUT if the condition is NOT triggered and timeout_milliseconds is not 0 ]
                 return COND_TIMEOUT;
             }
             else if (wait_result == 0)

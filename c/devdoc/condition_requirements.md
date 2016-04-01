@@ -87,9 +87,11 @@ extern COND_RESULT Condition_Wait(COND_HANDLE  handle, LOCK_HANDLE lock, int tim
 
 **SRS_CONDITION_18_010: [** `Condition_Wait` shall return `COND_OK` if the condition is triggered and `timeout_milliseconds` is `0` **]**
 
-**SRS_CONDITION_18_011: [** `Condition_Wait` shall return `COND_TIMEOUT` if the condition is triggered and `timeout_milliseconds` is not `0` **]**
+**SRS_CONDITION_18_011: [** `Condition_Wait` shall return `COND_TIMEOUT` if the condition is NOT triggered and `timeout_milliseconds` is not `0` **]**
 
 **SRS_CONDITION_18_012: [** `Condition_Wait` shall return `COND_OK` if the condition is triggered and `timeout_milliseconds` is not `0` **]**
+
+**SRS_CONDITION_18_013: [** `Condition_Wait` shall accept relative timeouts **]**
 
 
 ### Condition_Deinit
