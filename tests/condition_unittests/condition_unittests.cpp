@@ -277,13 +277,19 @@ TEST_FUNCTION(Condition_Deinit_deallocates_handle)
 
 }
 
+typedef struct _tagLockAndConfition {
+    LOCK_HANDLE lock;
+    COND_HANDLE condition;
+} LockAndCondition;
 
 static int trigger_thread_proc(void *h)
 {
-    COND_HANDLE handle = (COND_HANDLE)h;
+    LockAndCondition *m = (LockAndCondition*)h;
 
     ThreadAPI_Sleep(50);
-    Condition_Post(handle);
+    Lock(m->lock);
+    Condition_Post(m->condition);
+    Unlock(m->lock);
     return 0;
 }
 
@@ -302,20 +308,21 @@ TEST_FUNCTION(Condition_Wait_ok_on_trigger_and_zero_timeout)
     conditionMocks mocks;
 
     // arrange
-    COND_HANDLE handle = Condition_Init();
-    LOCK_HANDLE lock = Lock_Init();
-    Lock(lock);
+    LockAndCondition m;
+    m.condition = Condition_Init();
+    m.lock = Lock_Init();
     
     // act
-    THREAD_HANDLE th = trigger_after_50_ms(handle);
-    COND_RESULT result = Condition_Wait(handle, lock, 0);
+    THREAD_HANDLE th = trigger_after_50_ms(&m);
+    Lock(m.lock);
+    COND_RESULT result = Condition_Wait(m.condition, m.lock, 0);
     ThreadAPI_Join(th, NULL);
+    Unlock(m.lock);
 
     // assert
     ASSERT_ARE_EQUAL(COND_RESULT, COND_OK, result);
-    Condition_Deinit(handle);
-    Unlock(lock);
-    Lock_Deinit(lock);
+    Lock_Deinit(m.lock);
+    Condition_Deinit(m.condition);
     mocks.ResetAllCalls();
 }
 
@@ -328,18 +335,19 @@ TEST_FUNCTION(Condition_Wait_timeout_when_not_triggered)
     EXPECTED_CALL(mocks, gballoc_malloc(8));
     EXPECTED_CALL(mocks, gballoc_free(NULL)).IgnoreAllArguments();
 
-    COND_HANDLE handle = Condition_Init();
-    LOCK_HANDLE lock = Lock_Init();
-    Lock(lock);
+    LockAndCondition m;
+    m.condition = Condition_Init();
+    m.lock = Lock_Init();
 
     // act
-    COND_RESULT result = Condition_Wait(handle, lock, 150);
+    Lock(m.lock);
+    COND_RESULT result = Condition_Wait(m.condition, m.lock, 150);
+    Unlock(m.lock);
 
     // assert
     ASSERT_ARE_EQUAL(COND_RESULT, COND_TIMEOUT, result);
-    Condition_Deinit(handle);
-    Unlock(lock);
-    Lock_Deinit(lock);
+    Lock_Deinit(m.lock);
+    Condition_Deinit(m.condition);
 }
 
 // Tests_SRS_CONDITION_18_012: [ Condition_Wait shall return COND_OK if the condition is triggered and timeout_milliseconds is not 0 ]
@@ -349,20 +357,21 @@ TEST_FUNCTION(Condition_Wait_ok_on_trigger_with_timeout)
     conditionMocks mocks;
 
     // arrange
-    COND_HANDLE handle = Condition_Init();
-    LOCK_HANDLE lock = Lock_Init();
-    Lock(lock);
+    LockAndCondition m;
+    m.condition = Condition_Init();
+    m.lock = Lock_Init();
 
     // act
-    THREAD_HANDLE th = trigger_after_50_ms(handle);
-    COND_RESULT result = Condition_Wait(handle, lock, 1000);
+    THREAD_HANDLE th = trigger_after_50_ms(&m);
+    Lock(m.lock);
+    COND_RESULT result = Condition_Wait(m.condition, m.lock, 1000);
+    Unlock(m.lock);
     ThreadAPI_Join(th, NULL);
 
     // assert
     ASSERT_ARE_EQUAL(COND_RESULT, COND_OK, result);
-    Condition_Deinit(handle);
-    Unlock(lock);
-    Lock_Deinit(lock);
+    Lock_Deinit(m.lock);
+    Condition_Deinit(m.condition);
     mocks.ResetAllCalls();
 }
 
