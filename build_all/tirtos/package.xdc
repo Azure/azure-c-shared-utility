@@ -1,5 +1,5 @@
 /*
  *  ======== package.xdc ========
  */
-package c.build_all.tirtos {
+package build_all.tirtos {
 }
