@@ -15,6 +15,8 @@ extern "C" {
     extern int testmutex_acquire(TEST_MUTEX_HANDLE mutex);
     extern int testmutex_release(TEST_MUTEX_HANDLE mutex);
     extern void testmutex_destroy(TEST_MUTEX_HANDLE mutex);
+    extern TEST_MUTEX_HANDLE testmutex_acquire_global_semaphore(void);
+    extern int testmutex_release_global_semaphore(TEST_MUTEX_HANDLE semaphore);
 
 #ifdef __cplusplus
 }

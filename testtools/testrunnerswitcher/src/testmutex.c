@@ -7,6 +7,8 @@
 
 #include "windows.h"
 
+#define SEMAPHORE_HIGH_WATER 1000000
+
 TEST_MUTEX_HANDLE testmutex_create(void)
 {
     return (TEST_MUTEX_HANDLE)CreateMutexW(NULL, FALSE, NULL);
@@ -25,5 +27,38 @@ void testmutex_destroy(TEST_MUTEX_HANDLE mutex)
 int testmutex_release(TEST_MUTEX_HANDLE mutex)
 {   
     return ReleaseMutex(mutex);
+}
+
+TEST_MUTEX_HANDLE testmutex_acquire_global_semaphore(void)
+{
+    TEST_MUTEX_HANDLE semaphore = CreateSemaphoreW(NULL, SEMAPHORE_HIGH_WATER, SEMAPHORE_HIGH_WATER, L"MICROMOCK_DLL_BY_DLL");
+    if (semaphore != NULL)
+    {
+        if (WaitForSingleObject(semaphore, INFINITE) != WAIT_OBJECT_0)
+        {
+            CloseHandle(semaphore);
+            semaphore = NULL;
+        }
+    }
+
+    return semaphore;
+}
+
+int testmutex_release_global_semaphore(TEST_MUTEX_HANDLE semaphore)
+{
+    LONG prev;
+    (void)ReleaseSemaphore(semaphore, 1, &prev);
+    int result;
+    
+    if (prev == SEMAPHORE_HIGH_WATER - 1)
+    {
+        result = 1;
+    }
+    else
+    {
+        result = 0;
+    }
+    (void)CloseHandle(semaphore);
+    return result;
 }
 #endif

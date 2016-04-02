@@ -45,6 +45,9 @@ typedef void* TEST_MUTEX_HANDLE;
 #define TEST_MUTEX_RELEASE(mutex)
 #define TEST_MUTEX_DESTROY(mutex)
 
+#define TEST_INITIALIZE_MEMORY_DEBUG()  (TEST_MUTEX_HANDLE)1
+#define TEST_DEINITIALIZE_MEMORY_DEBUG(semaphore)
+
 #elif defined CPP_UNITTEST
 
 #include "CppUnitTest.h"
@@ -87,11 +90,16 @@ typedef void* void_ptr;
 #define TEST_MUTEX_RELEASE(mutex)                           testmutex_release(mutex)
 #define TEST_MUTEX_DESTROY(mutex)                           testmutex_destroy(mutex)
 
+#define TEST_INITIALIZE_MEMORY_DEBUG()                      testmutex_acquire_global_semaphore()
+#define TEST_DEINITIALIZE_MEMORY_DEBUG(semaphore) \
+if (testmutex_release_global_semaphore(semaphore))\
+{                                                        \
+    REPORT_MEMORY_LEAKS;                                 \
+}                                                        \
+
 #else
 #error No test runner defined
 #endif
-
-#define SEMAPHORE_HIGH_WATER 1000000
 
 #ifdef _CRTDBG_MAP_ALLOC
 
@@ -105,17 +113,5 @@ typedef void* void_ptr;
 #else
 #define REPORT_MEMORY_LEAKS ((void)0);
 #endif
-
-#define INITIALIZE_MEMORY_DEBUG(semaphore) \
-semaphore = MicroMockCreateGlobalSemaphore("MICROMOCK_DLL_BY_DLL", SEMAPHORE_HIGH_WATER); \
-ASSERT_IS_NOT_NULL(semaphore); \
-MicroMockAcquireGlobalSemaphore(semaphore) ; \
-
-#define DEINITIALIZE_MEMORY_DEBUG(semaphore)\
-if (MicroMockReleaseGlobalSemaphore(g_dllByDll) == SEMAPHORE_HIGH_WATER-1)\
-{                                                        \
-    REPORT_MEMORY_LEAKS;                                 \
-}                                                        \
-MicroMockDestroyGlobalSemaphore(g_dllByDll);             \
 
 #endif

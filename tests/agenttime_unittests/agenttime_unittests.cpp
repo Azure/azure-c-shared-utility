@@ -7,12 +7,10 @@
 #endif
 
 #include "testrunnerswitcher.h"
-#include "micromock.h"
-#include "micromockcharstararenullterminatedstrings.h"
-
 #include "agenttime.h"
 
-static MICROMOCK_MUTEX_HANDLE g_testByTest;
+static TEST_MUTEX_HANDLE g_testByTest;
+static TEST_MUTEX_HANDLE g_dllByDll;
 
 time_t my_time64(time_t * _Time)
 {
@@ -38,28 +36,27 @@ time_t my_mktime64(struct tm* _Time)
     return (int64_t)-1;
 }
 
-static MICROMOCK_GLOBAL_SEMAPHORE_HANDLE g_dllByDll;
-
 BEGIN_TEST_SUITE(agenttime_unittests)
 
         TEST_SUITE_INITIALIZE(TestClassInitialize)
         {
-            INITIALIZE_MEMORY_DEBUG(g_dllByDll);
+            g_dllByDll = TEST_INITIALIZE_MEMORY_DEBUG();
+            ASSERT_IS_NOT_NULL(g_dllByDll);
 
-            g_testByTest = MicroMockCreateMutex();
+            g_testByTest = TEST_MUTEX_CREATE();
             ASSERT_IS_NOT_NULL(g_testByTest);
         }
 
         TEST_SUITE_CLEANUP(TestClassCleanup)
         {
-            MicroMockDestroyMutex(g_testByTest);
-            DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
+            TEST_MUTEX_DESTROY(g_testByTest);
+            TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
 
         }
 
         TEST_FUNCTION_INITIALIZE(TestMethodInitialize)
         {
-            if (!MicroMockAcquireMutex(g_testByTest))
+            if (TEST_MUTEX_ACQUIRE(g_testByTest))
             {
                 ASSERT_FAIL("our mutex is ABANDONED. Failure in test framework");
             }
@@ -67,10 +64,7 @@ BEGIN_TEST_SUITE(agenttime_unittests)
 
         TEST_FUNCTION_CLEANUP(TestMethodCleanup)
         {
-            if (!MicroMockReleaseMutex(g_testByTest))
-            {
-                ASSERT_FAIL("failure in test framework at ReleaseMutex");
-            }
+            TEST_MUTEX_RELEASE(g_testByTest);
         }
 
         TEST_FUNCTION(get_time_succeed)
@@ -109,6 +103,4 @@ BEGIN_TEST_SUITE(agenttime_unittests)
             ASSERT_ARE_EQUAL(double, difftime(sometimeAfterNow, now), diff);
         }
 
-
 END_TEST_SUITE(agenttime_unittests)
-
