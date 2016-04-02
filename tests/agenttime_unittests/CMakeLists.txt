@@ -8,8 +8,8 @@ compileAsC11()
 
 set(theseTestsName agenttime_unittests)
 
-set(${theseTestsName}_cpp_files
-${theseTestsName}.cpp
+set(${theseTestsName}_test_files
+${theseTestsName}.c
 )
 
 set(${theseTestsName}_c_files
