@@ -118,12 +118,12 @@ BEGIN_TEST_SUITE(CRTAbstractions_UnitTests)
 
 TEST_SUITE_INITIALIZE(a)
 {
-    INITIALIZE_MEMORY_DEBUG(g_dllByDll);
+    TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
 }
 
 TEST_SUITE_CLEANUP(b)
 {
-    DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
+    TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
 }
 
         /* strcat_s */

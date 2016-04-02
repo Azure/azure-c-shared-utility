@@ -19,7 +19,6 @@
 #include "buffer_.h"
 
 #include "testrunnerswitcher.h"
-#include "micromock.h"
 
 #ifdef _MSC_VER
 #pragma warning(disable:4505)
@@ -1457,19 +1456,18 @@ static const struct
 
     };
 
+static TEST_MUTEX_HANDLE g_dllByDll;
 
-static MICROMOCK_GLOBAL_SEMAPHORE_HANDLE g_dllByDll;
-BEGIN_TEST_SUITE(base64_UnitTests)
+BEGIN_TEST_SUITE(base64_unittests)
 
 TEST_SUITE_INITIALIZE(TestSuiteInitialize)
 {
-    INITIALIZE_MEMORY_DEBUG(g_dllByDll);
+    TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
 }
 
 TEST_SUITE_CLEANUP(TestClassCleanup)
 {
-    DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
-
+    TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
 }
 
 /*Tests_SRS_BASE64_06_001: [If input is NULL then Base64_Encode shall return NULL.]*/
@@ -1679,5 +1677,5 @@ TEST_FUNCTION(Base64_Decoder_invalid_length_fails)
     ASSERT_IS_NULL(result);
 
 }
-END_TEST_SUITE(base64_UnitTests);
 
+END_TEST_SUITE(base64_unittests);

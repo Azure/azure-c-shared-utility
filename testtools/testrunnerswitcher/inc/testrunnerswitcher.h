@@ -45,7 +45,7 @@ typedef void* TEST_MUTEX_HANDLE;
 #define TEST_MUTEX_RELEASE(mutex)
 #define TEST_MUTEX_DESTROY(mutex)
 
-#define TEST_INITIALIZE_MEMORY_DEBUG()  (TEST_MUTEX_HANDLE)1
+#define TEST_INITIALIZE_MEMORY_DEBUG(semaphore)
 #define TEST_DEINITIALIZE_MEMORY_DEBUG(semaphore)
 
 #elif defined CPP_UNITTEST
@@ -90,7 +90,10 @@ typedef void* void_ptr;
 #define TEST_MUTEX_RELEASE(mutex)                           testmutex_release(mutex)
 #define TEST_MUTEX_DESTROY(mutex)                           testmutex_destroy(mutex)
 
-#define TEST_INITIALIZE_MEMORY_DEBUG()                      testmutex_acquire_global_semaphore()
+#define TEST_INITIALIZE_MEMORY_DEBUG(semaphore) \
+    semaphore = testmutex_acquire_global_semaphore(); \
+    ASSERT_IS_NOT_NULL_WITH_MSG(semaphore, "Unable to acquire global semaphore");
+
 #define TEST_DEINITIALIZE_MEMORY_DEBUG(semaphore) \
 if (testmutex_release_global_semaphore(semaphore))\
 {                                                        \
