@@ -94,7 +94,7 @@ function(add_files_to_install filesToBeInstalled)
     set(INSTALL_H_FILES ${INSTALL_H_FILES} ${filesToBeInstalled} CACHE INTERNAL "Files that will be installed on the system")
 endfunction()
 
-function(windows_unittests_add_dll whatIsBuilding folder)
+function(c_windows_unittests_add_dll whatIsBuilding folder)
     link_directories(${whatIsBuilding}_dll $ENV{VCInstallDir}UnitTest/lib)
 
     add_library(${whatIsBuilding}_testsonly_lib STATIC 
@@ -124,7 +124,7 @@ function(windows_unittests_add_dll whatIsBuilding folder)
     target_link_libraries(${whatIsBuilding}_dll micromock_cpp_unittest umock_c ctest testrunnerswitcher ${whatIsBuilding}_testsonly_lib ${ARGN})
 endfunction()
 
-function(windows_unittests_add_lib whatIsBuilding folder)
+function(c_windows_unittests_add_lib whatIsBuilding folder)
     add_library(${whatIsBuilding}_lib STATIC 
         ${${whatIsBuilding}_test_files} 
         ${${whatIsBuilding}_cpp_files} 
@@ -137,7 +137,7 @@ function(windows_unittests_add_lib whatIsBuilding folder)
     target_link_libraries(${whatIsBuilding}_lib micromock_ctest umock ctest testrunnerswitcher ${ARGN})
 endfunction()
 
-function(windows_unittests_add_exe whatIsBuilding folder)
+function(c_windows_unittests_add_exe whatIsBuilding folder)
     add_executable(${whatIsBuilding}_exe
         ${${whatIsBuilding}_test_files} 
         ${${whatIsBuilding}_cpp_files} 
@@ -158,7 +158,7 @@ endfunction()
 #this function takes more than the 1 mandatory argument (whatIsBuilding)
 #the parameters are separated by "known" separators
 #for example, ADDITIONAL_LIBS starts a list of needed libraries
-function(linux_unittests_add_exe whatIsBuilding folder)
+function(c_linux_unittests_add_exe whatIsBuilding folder)
 
     add_executable(${whatIsBuilding}_exe
         ${${whatIsBuilding}_test_files} 
@@ -219,7 +219,7 @@ function(linux_unittests_add_exe whatIsBuilding folder)
     endif()
 endfunction()
 
-function(build_test_artifacts whatIsBuilding use_gballoc folder)
+function(build_c_test_artifacts whatIsBuilding use_gballoc folder)
     
     #the first argument is what is building
     #the second argument is whether the tests should be build with gballoc #defines or not
@@ -260,7 +260,7 @@ function(build_test_artifacts whatIsBuilding use_gballoc folder)
             linux_unittests_add_exe(${whatIsBuilding} ${folder} ${ARGN})
         endif()
     endif()
-endfunction(build_test_artifacts)
+endfunction()
 
 function(set_platform_files)
     if(WIN32)
