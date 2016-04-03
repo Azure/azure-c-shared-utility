@@ -4,7 +4,7 @@
 //
 // PUT NO INCLUDES BEFORE HERE !!!!
 //
-#include <cstdlib>
+#include <stdlib.h>
 #ifdef _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
 #endif
@@ -37,28 +37,12 @@ static TEST_MUTEX_HANDLE g_dllByDll;
 
 #define GBALLOC_H
 
-extern "C" int gballoc_init(void);
-extern "C" void gballoc_deinit(void);
-extern "C" void* gballoc_malloc(size_t size);
-extern "C" void* gballoc_calloc(size_t nmemb, size_t size);
-extern "C" void* gballoc_realloc(void* ptr, size_t size);
-extern "C" void gballoc_free(void* ptr);
-
-
-namespace BASEIMPLEMENTATION
-{
-    /*if malloc is defined as gballoc_malloc at this moment, there'd be serious trouble*/
-#define Lock(x) (LOCK_OK + gballocState - gballocState) /*compiler warning about constant in if condition*/
-#define Unlock(x) (LOCK_OK + gballocState - gballocState)
-#define Lock_Init() (LOCK_HANDLE)0x42
-#define Lock_Deinit(x) (LOCK_OK + gballocState - gballocState)
-#include "gballoc.c"
-#undef Lock
-#undef Unlock
-#undef Lock_Init
-#undef Lock_Deinit
-
-};
+int real_gballoc_init(void);
+void real_gballoc_deinit(void);
+void* real_gballoc_malloc(size_t size);
+void* real_gballoc_calloc(size_t nmemb, size_t size);
+void* real_gballoc_realloc(void* ptr, size_t size);
+void real_gballoc_free(void* ptr);
 
 static size_t currentmalloc_call = 0;
 static size_t whenShallmalloc_fail = 0;
@@ -82,12 +66,12 @@ void* my_gballoc_malloc(size_t size)
         }
         else
         {
-            result = BASEIMPLEMENTATION::gballoc_malloc(size);
+            result = real_gballoc_malloc(size);
         }
     }
     else
     {
-        result = BASEIMPLEMENTATION::gballoc_malloc(size);
+        result = real_gballoc_malloc(size);
     }
     return result;
 }
@@ -104,12 +88,12 @@ void* my_gballoc_realloc(void* ptr, size_t size)
         }
         else
         {
-            result = BASEIMPLEMENTATION::gballoc_realloc(ptr, size);
+            result = real_gballoc_realloc(ptr, size);
         }
     }
     else
     {
-        result = BASEIMPLEMENTATION::gballoc_realloc(ptr, size);
+        result = real_gballoc_realloc(ptr, size);
     }
 
     return result;
@@ -117,7 +101,7 @@ void* my_gballoc_realloc(void* ptr, size_t size)
 
 void my_gballoc_free(void* ptr)
 {
-    BASEIMPLEMENTATION::gballoc_free(ptr);
+    real_gballoc_free(ptr);
 }
 
 void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
@@ -992,7 +976,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         ///arrange
 
         ///act
-        auto res = BUFFER_create(NULL, 0);
+        BUFFER_HANDLE res = BUFFER_create(NULL, 0);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -1014,7 +998,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         STRICT_EXPECTED_CALL(gballoc_malloc(1));
 
         ///act
-        auto res = BUFFER_create((const unsigned char*)&c, 1);
+        BUFFER_HANDLE res = BUFFER_create((const unsigned char*)&c, 1);
 
         ///assert
         ASSERT_IS_NOT_NULL(res);
@@ -1044,7 +1028,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         STRICT_EXPECTED_CALL(gballoc_malloc(1));
 
         ///act
-        auto res = BUFFER_create((const unsigned char*)&c, 1);
+        BUFFER_HANDLE res = BUFFER_create((const unsigned char*)&c, 1);
 
         ///assert
         ASSERT_IS_NULL(res);
@@ -1065,7 +1049,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
             .IgnoreArgument(1);
 
         ///act
-        auto res = BUFFER_create((const unsigned char*)&c, 1);
+        BUFFER_HANDLE res = BUFFER_create((const unsigned char*)&c, 1);
 
         ///assert
         ASSERT_IS_NULL(res);
@@ -1076,3 +1060,18 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     }
 
 END_TEST_SUITE(Buffer_UnitTests)
+
+/*if malloc is defined as gballoc_malloc at this moment, there'd be serious trouble*/
+#define Lock(x) (LOCK_OK + gballocState - gballocState) /*compiler warning about constant in if condition*/
+#define Unlock(x) (LOCK_OK + gballocState - gballocState)
+#define Lock_Init() (LOCK_HANDLE)0x42
+#define Lock_Deinit(x) (LOCK_OK + gballocState - gballocState)
+#define gballoc_malloc real_gballoc_malloc
+#define gballoc_realloc real_gballoc_realloc
+#define gballoc_calloc real_gballoc_calloc
+#define gballoc_free real_gballoc_free
+#include "gballoc.c"
+#undef Lock
+#undef Unlock
+#undef Lock_Init
+#undef Lock_Deinit

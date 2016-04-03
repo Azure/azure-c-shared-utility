@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#include <cstdlib>
+#include <stdlib.h>
 #ifdef _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
 #endif
@@ -69,7 +69,7 @@ BEGIN_TEST_SUITE(agenttime_unittests)
         {
             ///act
             time_t t;
-            auto result = get_time(&t);
+            time_t result = get_time(&t);
 
             ///assert
             ASSERT_ARE_EQUAL(int, (int)result, (int)t);

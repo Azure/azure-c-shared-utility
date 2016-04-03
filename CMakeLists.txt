@@ -96,29 +96,35 @@ endfunction()
 
 function(windows_unittests_add_dll whatIsBuilding folder)
     link_directories(${whatIsBuilding}_dll $ENV{VCInstallDir}UnitTest/lib)
-    
-    add_library(${whatIsBuilding}_dll SHARED 
+
+    add_library(${whatIsBuilding}_testsonly_lib STATIC 
         ${${whatIsBuilding}_test_files} 
+    )
+
+    set_target_properties(${whatIsBuilding}_testsonly_lib
+               PROPERTIES
+               FOLDER ${folder} ) 
+
+    target_include_directories(${whatIsBuilding}_testsonly_lib PUBLIC ${sharedutil_include_directories} $ENV{VCInstallDir}UnitTest/include)
+    target_compile_definitions(${whatIsBuilding}_testsonly_lib PUBLIC -DCPP_UNITTEST)
+    target_compile_options(${whatIsBuilding}_testsonly_lib PUBLIC /TP)
+  
+    add_library(${whatIsBuilding}_dll SHARED 
         ${${whatIsBuilding}_cpp_files} 
         ${${whatIsBuilding}_h_files} 
         ${${whatIsBuilding}_c_files}
     )
 
-    SET_SOURCE_FILES_PROPERTIES( ${${whatIsBuilding}_c_files} PROPERTIES LANGUAGE C )
-
     set_target_properties(${whatIsBuilding}_dll
                PROPERTIES
-               FOLDER ${folder}
-               LANGUAGE CXX) 
+               FOLDER ${folder} ) 
 
     target_include_directories(${whatIsBuilding}_dll PUBLIC ${sharedutil_include_directories} $ENV{VCInstallDir}UnitTest/include)
     target_compile_definitions(${whatIsBuilding}_dll PUBLIC -DCPP_UNITTEST)
-    target_link_libraries(${whatIsBuilding}_dll micromock_cpp_unittest umock_c ctest testrunnerswitcher ${ARGN})
+    target_link_libraries(${whatIsBuilding}_dll micromock_cpp_unittest umock_c ctest testrunnerswitcher ${whatIsBuilding}_testsonly_lib ${ARGN})
 endfunction()
 
 function(windows_unittests_add_lib whatIsBuilding folder)
-    link_directories(${whatIsBuilding}_lib $ENV{VCInstallDir}UnitTest/lib)
-    
     add_library(${whatIsBuilding}_lib STATIC 
         ${${whatIsBuilding}_test_files} 
         ${${whatIsBuilding}_cpp_files} 
