@@ -24,7 +24,7 @@ ${UNIQUEID_C_FILE}
 set(${theseTestsName}_h_files
 )
 
-build_test_artifacts(${theseTestsName} ON "azure_c_shared_utility_tests")
+build_test_artifacts(${theseTestsName} ON)
 
 if(WIN32)
     target_link_libraries(${theseTestsName}_exe rpcrt4.lib)

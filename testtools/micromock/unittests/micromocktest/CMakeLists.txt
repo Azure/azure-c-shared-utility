@@ -30,4 +30,4 @@ stdafx.h
 )
 
 
-build_test_artifacts(${theseTestsName} ON "micromock_cpp_tests")
+build_test_artifacts(${theseTestsName} ON)

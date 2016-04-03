@@ -20,4 +20,4 @@ set(${theseTestsName}_c_files
 set(${theseTestsName}_h_files
 )
 
-build_test_artifacts(${theseTestsName} OFF "azure_c_shared_utility_tests")
+build_c_test_artifacts(${theseTestsName} OFF "azure_c_shared_utility_tests")

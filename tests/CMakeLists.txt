@@ -5,7 +5,6 @@
 add_subdirectory(agenttime_unittests)
 add_subdirectory(base64_unittests)
 add_subdirectory(buffer_unittests)
-if(0)
 add_subdirectory(constbuffer_unittests)
 add_subdirectory(crtabstractions_unittests)
 if(${use_condition})
@@ -42,4 +41,3 @@ else()
 endif()
 
 add_subdirectory(refcount_unittests)
-endif()
