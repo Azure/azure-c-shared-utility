@@ -7,8 +7,8 @@ cmake_minimum_required(VERSION 2.8.11)
 compileAsC11()
 set(theseTestsName buffer_unittests)
 
-set(${theseTestsName}_cpp_files
-${theseTestsName}.cpp
+set(${theseTestsName}_test_files
+${theseTestsName}.c
 )
 
 set(${theseTestsName}_c_files
