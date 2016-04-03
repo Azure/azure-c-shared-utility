@@ -11,6 +11,8 @@ extern "C" {
 #include <stdlib.h>
 #endif
 
+#include <stdio.h>
+
 #include "macro_utils.h"
 #include "umocktypes.h"
 #include "umockcall.h"

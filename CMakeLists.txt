@@ -426,6 +426,8 @@ set_platform_files()
 
 add_subdirectory(testtools)
 
+include_directories(${UMOCK_C_INC_FOLDER})
+
 if(${use_condition})
     compileAsC11()
 else()

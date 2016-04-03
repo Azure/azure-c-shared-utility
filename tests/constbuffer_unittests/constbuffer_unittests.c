@@ -4,7 +4,7 @@
 //
 // PUT NO INCLUDES BEFORE HERE !!!!
 //
-#include <cstdlib>
+#include <stdlib.h>
 #ifdef _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
 #endif
@@ -15,42 +15,36 @@
 // PUT NO CLIENT LIBRARY INCLUDES BEFORE HERE !!!!
 //
 #include "testrunnerswitcher.h"
-#include "constbuffer.h"
+
+#define ENABLE_MOCKS
+#include "umock_c.h"
 #include "buffer_.h"
-#include "micromock.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+    MOCKABLE_FUNCTION(void*, gballoc_malloc, size_t, size);
+    MOCKABLE_FUNCTION(void, gballoc_free, void*, ptr);
+#ifdef __cplusplus
+}
+#endif
+
+#include "constbuffer.h"
 #include "lock.h"
 
 #ifdef _MSC_VER
 #pragma warning(disable:4505)
 #endif
 
-static MICROMOCK_MUTEX_HANDLE g_testByTest;
-static MICROMOCK_GLOBAL_SEMAPHORE_HANDLE g_dllByDll;
+static TEST_MUTEX_HANDLE g_testByTest;
+static TEST_MUTEX_HANDLE g_dllByDll;
 
 #define GBALLOC_H
 
-extern "C" int gballoc_init(void);
-extern "C" void gballoc_deinit(void);
-extern "C" void* gballoc_malloc(size_t size);
-extern "C" void* gballoc_calloc(size_t nmemb, size_t size);
-extern "C" void* gballoc_realloc(void* ptr, size_t size);
-extern "C" void gballoc_free(void* ptr);
-
-
-namespace BASEIMPLEMENTATION
-{
-    /*if malloc is defined as gballoc_malloc at this moment, there'd be serious trouble*/
-#define Lock(x) (LOCK_OK + gballocState - gballocState) /*compiler warning about constant in if condition*/
-#define Unlock(x) (LOCK_OK + gballocState - gballocState)
-#define Lock_Init() (LOCK_HANDLE)0x42
-#define Lock_Deinit(x) (LOCK_OK + gballocState - gballocState)
-#include "gballoc.c"
-#undef Lock
-#undef Unlock
-#undef Lock_Init
-#undef Lock_Deinit
-
-};
+void* real_gballoc_malloc(size_t size);
+void* real_gballoc_calloc(size_t nmemb, size_t size);
+void* real_gballoc_realloc(void* ptr, size_t size);
+void real_gballoc_free(void* ptr);
 
 static const char* buffer1 = "le buffer no 1";
 static const char* buffer2 = NULL;
@@ -71,83 +65,84 @@ static const char* buffer3 = "three";
 static size_t currentmalloc_call = 0;
 static size_t whenShallmalloc_fail = 0;
 
-TYPED_MOCK_CLASS(CMocks, CGlobalMock)
+void* my_gballoc_malloc(size_t size)
 {
-public:
-
-    MOCK_STATIC_METHOD_1(, void*, gballoc_malloc, size_t, size)
-        void* result2;
+    void* result;
     currentmalloc_call++;
     if (whenShallmalloc_fail > 0)
     {
         if (currentmalloc_call == whenShallmalloc_fail)
         {
-            result2 = NULL;
+            result = NULL;
         }
         else
         {
-            result2 = BASEIMPLEMENTATION::gballoc_malloc(size);
+            result = real_gballoc_malloc(size);
         }
     }
     else
     {
-        result2 = BASEIMPLEMENTATION::gballoc_malloc(size);
+        result = real_gballoc_malloc(size);
     }
-    MOCK_METHOD_END(void*, result2);
+    return result;
+}
 
-    MOCK_STATIC_METHOD_1(, void, gballoc_free, void*, ptr)
-        BASEIMPLEMENTATION::gballoc_free(ptr);
-    MOCK_VOID_METHOD_END()
+void my_gballoc_free(void* ptr)
+{
+    real_gballoc_free(ptr);
+}
 
-    MOCK_STATIC_METHOD_1(, unsigned char*, BUFFER_u_char, BUFFER_HANDLE, handle);
-    unsigned char* result2;
+unsigned char* my_BUFFER_u_char(BUFFER_HANDLE handle)
+{
+    unsigned char* result;
     if (handle == BUFFER1_HANDLE)
     {
-        result2 = BUFFER1_u_char;
+        result = BUFFER1_u_char;
     }
     else
     {
         ASSERT_FAIL("who am I?");
     }
-    MOCK_METHOD_END(unsigned char*, result2)
+    return result;
+}
 
-    MOCK_STATIC_METHOD_1(, size_t, BUFFER_length, BUFFER_HANDLE, handle);
-    size_t result2;
+size_t my_BUFFER_length(BUFFER_HANDLE handle)
+{
+    size_t result;
     if (handle == BUFFER1_HANDLE)
     {
-        result2 = BUFFER1_length;
+        result = BUFFER1_length;
     }
     else
     {
         ASSERT_FAIL("who am I?");
     }
-    MOCK_METHOD_END(size_t, result2)
-};
-
-DECLARE_GLOBAL_MOCK_METHOD_1(CMocks, , void*, gballoc_malloc, size_t, size);
-DECLARE_GLOBAL_MOCK_METHOD_1(CMocks, , void, gballoc_free, void*, ptr);
-
-DECLARE_GLOBAL_MOCK_METHOD_1(CMocks, , unsigned char*, BUFFER_u_char, BUFFER_HANDLE, handle);
-DECLARE_GLOBAL_MOCK_METHOD_1(CMocks, , size_t, BUFFER_length, BUFFER_HANDLE, handle);
+    return result;
+}
 
 BEGIN_TEST_SUITE(constbuffer_unittests)
 
     TEST_SUITE_INITIALIZE(setsBufferTempSize)
     {
         TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
-        g_testByTest = MicroMockCreateMutex();
+        g_testByTest = TEST_MUTEX_CREATE();
         ASSERT_IS_NOT_NULL(g_testByTest);
+
+        REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, my_gballoc_malloc);
+        REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, my_gballoc_free);
+        REGISTER_GLOBAL_MOCK_HOOK(BUFFER_u_char, my_BUFFER_u_char);
+        REGISTER_GLOBAL_MOCK_HOOK(BUFFER_length, my_BUFFER_length);
     }
 
     TEST_SUITE_CLEANUP(TestClassCleanup)
     {
-        MicroMockDestroyMutex(g_testByTest);
+        TEST_MUTEX_DESTROY(g_testByTest);
         TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
     }
 
     TEST_FUNCTION_INITIALIZE(f)
     {
-        if (!MicroMockAcquireMutex(g_testByTest))
+        if (TEST_MUTEX_ACQUIRE(g_testByTest) != 0)
         {
             ASSERT_FAIL("our mutex is ABANDONED. Failure in test framework");
         }
@@ -159,10 +154,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
 
     TEST_FUNCTION_CLEANUP(cleans)
     {
-        if (!MicroMockReleaseMutex(g_testByTest))
-        {
-            ASSERT_FAIL("failure in test framework at ReleaseMutex");
-        }
+        TEST_MUTEX_RELEASE(g_testByTest);
     }
 
     /*Tests_SRS_CONSTBUFFER_02_001: [If source is NULL and size is different than 0 then CONSTBUFFER_Create shall fail and return NULL.]*/
@@ -171,7 +163,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         ///arrange
         
         ///act
-        auto handle = CONSTBUFFER_Create(NULL, 1);
+        CONSTBUFFER_HANDLE handle = CONSTBUFFER_Create(NULL, 1);
 
         ///assert
         ASSERT_IS_NULL(handle);
@@ -184,26 +176,25 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
     TEST_FUNCTION(CONSTBUFFER_Create_succeeds)
     {
         ///arrange
-        CMocks mocks;
 
         ///act
         /*this is the handle*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG))
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
         /*this is the content*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(BUFFER1_length));
+        STRICT_EXPECTED_CALL(gballoc_malloc(BUFFER1_length));
 
-        auto handle = CONSTBUFFER_Create(BUFFER1_u_char, BUFFER1_length);
+        CONSTBUFFER_HANDLE handle = CONSTBUFFER_Create(BUFFER1_u_char, BUFFER1_length);
 
         ///assert
         ASSERT_IS_NOT_NULL(handle);
         /*testing the "copy"*/
-        auto content = CONSTBUFFER_GetContent(handle);
+        const CONSTBUFFER* content = CONSTBUFFER_GetContent(handle);
         ASSERT_ARE_EQUAL(size_t, BUFFER1_length, content->size);
         ASSERT_ARE_EQUAL(int, 0, memcmp(BUFFER1_u_char, content->buffer, BUFFER1_length));
         /*testing that it is a copy and not a pointer assignment*/
         ASSERT_ARE_NOT_EQUAL(void_ptr, BUFFER1_u_char, content->buffer);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         CONSTBUFFER_Destroy(handle);
@@ -214,29 +205,28 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
     TEST_FUNCTION(CONSTBUFFER_CreateFromBuffer_succeeds)
     {
         ///arrange
-        CMocks mocks;
 
         ///act
         /*this is the handle*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG))
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
         /*this is the content*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(BUFFER1_length));
+        STRICT_EXPECTED_CALL(gballoc_malloc(BUFFER1_length));
 
-        STRICT_EXPECTED_CALL(mocks, BUFFER_u_char(BUFFER1_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, BUFFER_length(BUFFER1_HANDLE));
+        STRICT_EXPECTED_CALL(BUFFER_u_char(BUFFER1_HANDLE));
+        STRICT_EXPECTED_CALL(BUFFER_length(BUFFER1_HANDLE));
 
-        auto handle = CONSTBUFFER_CreateFromBuffer(BUFFER1_HANDLE);
+        CONSTBUFFER_HANDLE handle = CONSTBUFFER_CreateFromBuffer(BUFFER1_HANDLE);
 
         ///assert
         ASSERT_IS_NOT_NULL(handle);
         /*testing the "copy"*/
-        auto content = CONSTBUFFER_GetContent(handle);
+        const CONSTBUFFER* content = CONSTBUFFER_GetContent(handle);
         ASSERT_ARE_EQUAL(size_t, BUFFER1_length, content->size);
         ASSERT_ARE_EQUAL(int, 0, memcmp(BUFFER1_u_char, content->buffer, BUFFER1_length));
         /*testing that it is a copy and not a pointer assignment*/
         ASSERT_ARE_NOT_EQUAL(void_ptr, BUFFER1_u_char, content->buffer);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         CONSTBUFFER_Destroy(handle);
@@ -246,28 +236,27 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
     TEST_FUNCTION(CONSTBUFFER_CreateFromBuffer_fails_when_malloc_fails_1)
     {
         ///arrange
-        CMocks mocks;
 
         ///act
-        STRICT_EXPECTED_CALL(mocks, BUFFER_length(BUFFER1_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, BUFFER_u_char(BUFFER1_HANDLE));
+        STRICT_EXPECTED_CALL(BUFFER_length(BUFFER1_HANDLE));
+        STRICT_EXPECTED_CALL(BUFFER_u_char(BUFFER1_HANDLE));
 
         /*this is the handle*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG))
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
 
         /*this is the content*/
         whenShallmalloc_fail = 2;
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(BUFFER1_length));
+        STRICT_EXPECTED_CALL(gballoc_malloc(BUFFER1_length));
 
 
-        auto handle = CONSTBUFFER_CreateFromBuffer(BUFFER1_HANDLE);
+        CONSTBUFFER_HANDLE handle = CONSTBUFFER_CreateFromBuffer(BUFFER1_HANDLE);
 
         ///assert
         ASSERT_IS_NULL(handle);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         CONSTBUFFER_Destroy(handle);
@@ -277,22 +266,21 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
     TEST_FUNCTION(CONSTBUFFER_CreateFromBuffer_fails_when_malloc_fails_2)
     {
         ///arrange
-        CMocks mocks;
 
         ///act
-        STRICT_EXPECTED_CALL(mocks, BUFFER_length(BUFFER1_HANDLE));
-        STRICT_EXPECTED_CALL(mocks, BUFFER_u_char(BUFFER1_HANDLE));
+        STRICT_EXPECTED_CALL(BUFFER_length(BUFFER1_HANDLE));
+        STRICT_EXPECTED_CALL(BUFFER_u_char(BUFFER1_HANDLE));
 
         /*this is the handle*/
         whenShallmalloc_fail = 1;
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG))
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
 
-        auto handle = CONSTBUFFER_CreateFromBuffer(BUFFER1_HANDLE);
+        CONSTBUFFER_HANDLE handle = CONSTBUFFER_CreateFromBuffer(BUFFER1_HANDLE);
 
         ///assert
         ASSERT_IS_NULL(handle);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         CONSTBUFFER_Destroy(handle);
@@ -302,14 +290,13 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
     TEST_FUNCTION(CONSTBUFFER_CreateFromBuffer_with_NULL_fails)
     {
         ///arrange
-        CMocks mocks;
 
         ///act
-        auto handle = CONSTBUFFER_CreateFromBuffer(NULL);
+        CONSTBUFFER_HANDLE handle = CONSTBUFFER_CreateFromBuffer(NULL);
 
         ///assert
         ASSERT_IS_NULL(handle);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         CONSTBUFFER_Destroy(handle);
@@ -321,22 +308,21 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
     TEST_FUNCTION(CONSTBUFFER_CreateFromBuffer_is_ref_counted_1)
     {
         ///arrange
-        CMocks mocks;
-        auto handle = CONSTBUFFER_CreateFromBuffer(BUFFER1_HANDLE);
-        mocks.ResetAllCalls();
+        CONSTBUFFER_HANDLE handle = CONSTBUFFER_CreateFromBuffer(BUFFER1_HANDLE);
+        umock_c_reset_all_calls();
         ///act
 
         /*this is the content*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
         /*this is the handle*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
 
         CONSTBUFFER_Destroy(handle);
 
         ///assert
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
     }
@@ -345,23 +331,22 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
     TEST_FUNCTION(CONSTBUFFER_Create_fails_when_malloc_fails_1)
     {
         ///arrange
-        CMocks mocks;
 
         ///act
         /*this is the handle*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG))
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
         /*this is the content*/
         whenShallmalloc_fail = 2;
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(BUFFER1_length));
+        STRICT_EXPECTED_CALL(gballoc_malloc(BUFFER1_length));
 
-        auto handle = CONSTBUFFER_Create(BUFFER1_u_char, BUFFER1_length);
+        CONSTBUFFER_HANDLE handle = CONSTBUFFER_Create(BUFFER1_u_char, BUFFER1_length);
 
         ///assert
         ASSERT_IS_NULL(handle);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
     }
@@ -370,19 +355,18 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
     TEST_FUNCTION(CONSTBUFFER_Create_fails_when_malloc_fails_2)
     {
         ///arrange
-        CMocks mocks;
 
         ///act
         /*this is the handle*/
         whenShallmalloc_fail = 1;
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG))
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
 
-        auto handle = CONSTBUFFER_Create(BUFFER1_u_char, BUFFER1_length);
+        CONSTBUFFER_HANDLE handle = CONSTBUFFER_Create(BUFFER1_u_char, BUFFER1_length);
 
         ///assert
         ASSERT_IS_NULL(handle);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
     }
@@ -392,22 +376,21 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
     TEST_FUNCTION(CONSTBUFFER_Create_is_ref_counted_1)
     {
         ///arrange
-        CMocks mocks;
-        auto handle = CONSTBUFFER_Create(BUFFER1_u_char, BUFFER1_length);
-        mocks.ResetAllCalls();
+        CONSTBUFFER_HANDLE handle = CONSTBUFFER_Create(BUFFER1_u_char, BUFFER1_length);
+        umock_c_reset_all_calls();
         ///act
 
         /*this is the content*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
         /*this is the handle*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
 
         CONSTBUFFER_Destroy(handle);
 
         ///assert
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
     }
@@ -416,22 +399,21 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
     TEST_FUNCTION(CONSTBUFFER_Create_from_0_size_succeeds_1)
     {
         ///arrange
-        CMocks mocks;
 
         ///act
         /*this is the handle*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG))
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
 
-        auto handle = CONSTBUFFER_Create(BUFFER2_u_char, BUFFER2_length);
+        CONSTBUFFER_HANDLE handle = CONSTBUFFER_Create(BUFFER2_u_char, BUFFER2_length);
 
         ///assert
         ASSERT_IS_NOT_NULL(handle);
         /*testing the "copy"*/
-        auto content = CONSTBUFFER_GetContent(handle);
+        const CONSTBUFFER* content = CONSTBUFFER_GetContent(handle);
         ASSERT_ARE_EQUAL(size_t, BUFFER2_length, content->size);
         /*testing that it is a copy and not a pointer assignment*/
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         CONSTBUFFER_Destroy(handle);
@@ -442,22 +424,21 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
     TEST_FUNCTION(CONSTBUFFER_Create_from_0_size_succeeds_2)
     {
         ///arrange
-        CMocks mocks;
 
         ///act
         /*this is the handle*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG))
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
 
-        auto handle = CONSTBUFFER_Create(BUFFER3_u_char, BUFFER3_length);
+        CONSTBUFFER_HANDLE handle = CONSTBUFFER_Create(BUFFER3_u_char, BUFFER3_length);
 
         ///assert
         ASSERT_IS_NOT_NULL(handle);
         /*testing the "copy"*/
-        auto content = CONSTBUFFER_GetContent(handle);
+        const CONSTBUFFER* content = CONSTBUFFER_GetContent(handle);
         ASSERT_ARE_EQUAL(size_t, BUFFER3_length, content->size);
         /*testing that it is a copy and not a pointer assignment*/
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         CONSTBUFFER_Destroy(handle);
@@ -467,14 +448,13 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
     TEST_FUNCTION(CONSTBUFFER_GetContent_with_NULL_returns_NULL)
     {
         ///arrange
-        CMocks mocks;
 
         ///act
-        auto content = CONSTBUFFER_GetContent(NULL);
+        const CONSTBUFFER* content = CONSTBUFFER_GetContent(NULL);
 
         ///assert
         ASSERT_IS_NULL(content);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
     }
@@ -483,12 +463,11 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
     TEST_FUNCTION(CONSTBUFFER_GetContent_succeeds_1)
     {
         ///arrange
-        CMocks mocks;
-        auto handle = CONSTBUFFER_Create(BUFFER1_u_char, BUFFER1_length);
-        mocks.ResetAllCalls();
+        CONSTBUFFER_HANDLE handle = CONSTBUFFER_Create(BUFFER1_u_char, BUFFER1_length);
+        umock_c_reset_all_calls();
 
         ///act
-        auto content = CONSTBUFFER_GetContent(handle);
+        const CONSTBUFFER* content = CONSTBUFFER_GetContent(handle);
 
         ///assert
         ASSERT_IS_NOT_NULL(content);
@@ -497,7 +476,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         ASSERT_ARE_EQUAL(int, 0, memcmp(BUFFER1_u_char, content->buffer, BUFFER1_length));
         /*testing that it is a copy and not a pointer assignment*/
         ASSERT_ARE_NOT_EQUAL(void_ptr, BUFFER1_u_char, content->buffer);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         CONSTBUFFER_Destroy(handle);
@@ -507,18 +486,17 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
     TEST_FUNCTION(CONSTBUFFER_GetContent_succeeds_2)
     {
         ///arrange
-        CMocks mocks;
-        auto handle = CONSTBUFFER_Create(NULL, 0);
-        mocks.ResetAllCalls();
+        CONSTBUFFER_HANDLE handle = CONSTBUFFER_Create(NULL, 0);
+        umock_c_reset_all_calls();
 
         ///act
-        auto content = CONSTBUFFER_GetContent(handle);
+        const CONSTBUFFER* content = CONSTBUFFER_GetContent(handle);
 
         ///assert
         ASSERT_IS_NOT_NULL(content);
         /*testing the "copy"*/
         ASSERT_ARE_EQUAL(size_t, 0, content->size);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         CONSTBUFFER_Destroy(handle);
@@ -528,10 +506,9 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
     TEST_FUNCTION(CONSTBUFFER_Clone_with_NULL_returns_NULL)
     {
         ///arrange
-        CMocks mocks;
 
         ///act
-        auto handle = CONSTBUFFER_Clone(NULL);
+        CONSTBUFFER_HANDLE handle = CONSTBUFFER_Clone(NULL);
 
         ///assert
         ASSERT_IS_NULL(handle);
@@ -543,16 +520,15 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
     TEST_FUNCTION(CONSTBUFFER_Clone_increments_ref_count_1)
     {
         ///arrange
-        CMocks mocks;
-        auto handle = CONSTBUFFER_Create(BUFFER1_u_char, BUFFER1_length);
-        mocks.ResetAllCalls();
+        CONSTBUFFER_HANDLE handle = CONSTBUFFER_Create(BUFFER1_u_char, BUFFER1_length);
+        umock_c_reset_all_calls();
 
         ///act
-        auto clone = CONSTBUFFER_Clone(handle);
+        CONSTBUFFER_HANDLE clone = CONSTBUFFER_Clone(handle);
 
         ///assert
         ASSERT_ARE_EQUAL(void_ptr, handle, clone);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         CONSTBUFFER_Destroy(handle);
@@ -565,16 +541,15 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
     TEST_FUNCTION(CONSTBUFFER_Clone_increments_ref_count_2)
     {
         ///arrange
-        CMocks mocks;
-        auto handle = CONSTBUFFER_Create(BUFFER1_u_char, BUFFER1_length);
-        auto clone = CONSTBUFFER_Clone(handle);
-        mocks.ResetAllCalls();
+        CONSTBUFFER_HANDLE handle = CONSTBUFFER_Create(BUFFER1_u_char, BUFFER1_length);
+        CONSTBUFFER_HANDLE clone = CONSTBUFFER_Clone(handle);
+        umock_c_reset_all_calls();
 
         ///act
         CONSTBUFFER_Destroy(clone); /*only a dec_Ref is expected here, so no effects*/
 
         ///assert
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         CONSTBUFFER_Destroy(handle);
@@ -586,23 +561,22 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
     TEST_FUNCTION(CONSTBUFFER_Clone_increments_ref_count_3)
     {
         ///arrange
-        CMocks mocks;
-        auto handle = CONSTBUFFER_Create(BUFFER1_u_char, BUFFER1_length);
-        auto clone = CONSTBUFFER_Clone(handle);
+        CONSTBUFFER_HANDLE handle = CONSTBUFFER_Create(BUFFER1_u_char, BUFFER1_length);
+        CONSTBUFFER_HANDLE clone = CONSTBUFFER_Clone(handle);
         CONSTBUFFER_Destroy(handle); /*only a dec_Ref is expected here, so no effects*/
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         ///act
         /*this is the content*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
         /*this is the handle*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
         CONSTBUFFER_Destroy(clone);
 
         ///assert
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
     }
@@ -611,15 +585,29 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
     TEST_FUNCTION(CONSTBUFFER_Destroy_with_NULL_argument_does_nothing)
     {
         ///arrange
-        CMocks mocks;
         
         ///act
         CONSTBUFFER_Destroy(NULL);
 
         ///assert
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
     }
 
 END_TEST_SUITE(constbuffer_unittests)
+
+/*if malloc is defined as gballoc_malloc at this moment, there'd be serious trouble*/
+#define Lock(x) (LOCK_OK + gballocState - gballocState) /*compiler warning about constant in if condition*/
+#define Unlock(x) (LOCK_OK + gballocState - gballocState)
+#define Lock_Init() (LOCK_HANDLE)0x42
+#define Lock_Deinit(x) (LOCK_OK + gballocState - gballocState)
+#define gballoc_malloc real_gballoc_malloc
+#define gballoc_realloc real_gballoc_realloc
+#define gballoc_calloc real_gballoc_calloc
+#define gballoc_free real_gballoc_free
+#include "gballoc.c"
+#undef Lock
+#undef Unlock
+#undef Lock_Init
+#undef Lock_Deinit
