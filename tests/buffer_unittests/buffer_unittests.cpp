@@ -16,7 +16,7 @@
 //
 #include "testrunnerswitcher.h"
 #include "buffer_.h"
-#include "micromock.h"
+#include "umock_c.h"
 #include "lock.h"
 
 #ifdef _MSC_VER
@@ -30,8 +30,8 @@ unsigned char BUFFER_TEST_VALUE[] = {0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x0
 unsigned char ADDITIONAL_BUFFER[] = {0x17,0x18,0x19,0x1a,0x1b,0x1c,0x1d,0x1e,0x1f,0x20,0x21,0x22,0x23,0x24,0x25,0x26};
 unsigned char TOTAL_BUFFER[] = {0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,0x18,0x19,0x1a,0x1b,0x1c,0x1d,0x1e,0x1f,0x20,0x21,0x22,0x23,0x24,0x25,0x26};
 
-static MICROMOCK_MUTEX_HANDLE g_testByTest;
-static MICROMOCK_GLOBAL_SEMAPHORE_HANDLE g_dllByDll;
+static TEST_MUTEX_HANDLE g_testByTest;
+static TEST_MUTEX_HANDLE g_dllByDll;
 
 #define GBALLOC_H
 
@@ -122,19 +122,19 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_SUITE_INITIALIZE(setsBufferTempSize)
     {
         TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
-        g_testByTest = MicroMockCreateMutex();
+        g_testByTest = TEST_MUTEX_CREATE();
         ASSERT_IS_NOT_NULL(g_testByTest);
     }
 
     TEST_SUITE_CLEANUP(TestClassCleanup)
     {
-        MicroMockDestroyMutex(g_testByTest);
+        TEST_MUTEX_DESTROY(g_testByTest);
         TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
     }
 
     TEST_FUNCTION_INITIALIZE(f)
     {
-        if (!MicroMockAcquireMutex(g_testByTest))
+        if (TEST_MUTEX_ACQUIRE(g_testByTest) != 0)
         {
             ASSERT_FAIL("our mutex is ABANDONED. Failure in test framework");
         }
@@ -148,10 +148,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
 
     TEST_FUNCTION_CLEANUP(cleans)
     {
-        if (!MicroMockReleaseMutex(g_testByTest))
-        {
-            ASSERT_FAIL("failure in test framework at ReleaseMutex");
-        }
+        TEST_MUTEX_RELEASE(g_testByTest);
     }
 
     /* Tests_SRS_BUFFER_07_001: [BUFFER_new shall allocate a BUFFER_HANDLE that will contain a NULL unsigned char*.] */
