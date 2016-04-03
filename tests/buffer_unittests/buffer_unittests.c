@@ -10,6 +10,7 @@
 #endif
 
 #include <stddef.h>
+#include "buffer_.h"
 
 #define ENABLE_MOCKS
 
@@ -17,7 +18,6 @@
 // PUT NO CLIENT LIBRARY INCLUDES BEFORE HERE !!!!
 //
 #include "testrunnerswitcher.h"
-#include "buffer_.h"
 #include "umock_c.h"
 #include "lock.h"
 
