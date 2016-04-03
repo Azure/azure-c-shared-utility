@@ -4,7 +4,7 @@
 //
 // PUT NO INCLUDES BEFORE HERE !!!!
 //
-#include <cstdlib>
+#include <stdlib.h>
 #ifdef _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
 #endif
@@ -1576,7 +1576,7 @@ TEST_FUNCTION(Base64_Encode_Bytes_with_NULL_source_returns_NULL)
     ///arrange
 
     ///act
-    auto result = Base64_Encode_Bytes(NULL, 3);
+    STRING_HANDLE result = Base64_Encode_Bytes(NULL, 3);
 
     ///assert
     ASSERT_IS_NULL(result);
@@ -1590,7 +1590,7 @@ TEST_FUNCTION(Base64_Encode_Bytes_with_zero_size_returns_empty_string)
     ///arrange
 
     ///act
-    auto result = Base64_Encode_Bytes((const unsigned char*)"a", 0);
+    STRING_HANDLE result = Base64_Encode_Bytes((const unsigned char*)"a", 0);
 
     ///assert
     ASSERT_IS_NOT_NULL(result);

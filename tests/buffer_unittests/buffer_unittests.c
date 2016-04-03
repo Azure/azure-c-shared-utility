@@ -21,6 +21,16 @@
 #include "umock_c.h"
 #include "lock.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+MOCKABLE_FUNCTION(void*, gballoc_malloc, size_t, size);
+MOCKABLE_FUNCTION(void*, gballoc_realloc, void*, ptr, size_t, size);
+MOCKABLE_FUNCTION(void, gballoc_free, void*, ptr);
+#ifdef __cplusplus
+}
+#endif
+
 #ifdef _MSC_VER
 #pragma warning(disable:4505)
 #endif
@@ -49,10 +59,6 @@ static size_t whenShallmalloc_fail = 0;
 
 static size_t currentrealloc_call = 0;
 static size_t whenShallrealloc_fail = 0;
-
-MOCKABLE_FUNCTION(void*, gballoc_malloc, size_t, size);
-MOCKABLE_FUNCTION(void*, gballoc_realloc, void*, ptr, size_t, size);
-MOCKABLE_FUNCTION(void, gballoc_free, void*, ptr);
 
 void* my_gballoc_malloc(size_t size)
 {
