@@ -4,11 +4,15 @@
 #ifndef TESTRUNNERSWITCHER_H
 #define TESTRUNNERSWITCHER_H
 
+#include "macro_utils.h"
+
 #ifdef MBED_BUILD_TIMESTAMP
 #define USE_CTEST
 #endif
 
 typedef void* TEST_MUTEX_HANDLE;
+
+#define TEST_DEFINE_ENUM_TYPE(type, ...) TEST_ENUM_TYPE_HANDLER(type, FOR_EACH_1(DEFINE_ENUMERATION_CONSTANT_AS_WIDESTRING, __VA_ARGS__));
 
 #ifdef USE_CTEST
 
@@ -47,6 +51,20 @@ typedef void* TEST_MUTEX_HANDLE;
 
 #define TEST_INITIALIZE_MEMORY_DEBUG(semaphore)
 #define TEST_DEINITIALIZE_MEMORY_DEBUG(semaphore)
+
+#define TEST_ENUM_TYPE_HANDLER(EnumName, ...) \
+const wchar_t *EnumName##_Strings[]= \
+{ \
+__VA_ARGS__ \
+}; \
+static void EnumName##_ToString(char* dest, size_t bufferSize, EnumName enumValue) \
+{ \
+    (void)snprintf(dest, bufferSize, "%S", EnumName##_Strings[enumValue]); \
+} \
+static bool EnumName##_Compare(EnumName left, EnumName right) \
+{ \
+    return left != right; \
+}
 
 #elif defined CPP_UNITTEST
 
@@ -99,6 +117,33 @@ if (testmutex_release_global_semaphore(semaphore))\
 {                                                        \
     REPORT_MEMORY_LEAKS;                                 \
 }                                                        \
+
+#define TEST_ENUM_TYPE_HANDLER(EnumName, ...) \
+namespace Microsoft \
+{ \
+    namespace VisualStudio \
+    { \
+        namespace CppUnitTestFramework \
+        { \
+            static const wchar_t *EnumName##_Strings[]= \
+            { \
+                __VA_ARGS__ \
+            }; \
+            template <> std::wstring ToString < EnumName > (const EnumName & q)  \
+            {  \
+                if((size_t)q>=sizeof(EnumName##_Strings)/sizeof(EnumName##_Strings[0])) \
+                { \
+                    Assert::Fail(L"out of range value for " L#EnumName); \
+                    return L""; \
+                } \
+                else \
+                { \
+                    return EnumName##_Strings[q]; \
+                } \
+            } \
+        } \
+    } \
+};
 
 #else
 #error No test runner defined

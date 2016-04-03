@@ -11,7 +11,6 @@
 #include "crt_abstractions.h"
 #include "condition.h"
 #include "lock.h"
-#include "agenttime.h"
 #include "threadapi.h"
 
 #define ENABLE_MOCKS
@@ -43,6 +42,8 @@ static TEST_MUTEX_HANDLE g_testByTest;
 static TEST_MUTEX_HANDLE g_dllByDll;
 
 static bool malloc_will_fail = false;
+
+TEST_DEFINE_ENUM_TYPE(COND_RESULT, COND_RESULT_VALUES)
 
 void* my_gballoc_malloc(size_t size)
 {
