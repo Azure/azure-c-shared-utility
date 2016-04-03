@@ -1,75 +1,69 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#include <cstdlib>
+#include <stdlib.h>
 #ifdef _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
 #endif
 #include <stddef.h>
 
 #include "testrunnerswitcher.h"
-#include "micromock.h"
 #include "crt_abstractions.h"
 #include "condition.h"
 #include "lock.h"
 #include "agenttime.h"
 #include "threadapi.h"
 
+#define ENABLE_MOCKS
+
+#include "umock_c.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+    MOCKABLE_FUNCTION(void*, gballoc_malloc, size_t, size);
+    MOCKABLE_FUNCTION(void, gballoc_free, void*, ptr);
+#ifdef __cplusplus
+}
+#endif
+
 #define GBALLOC_H
 
-extern "C" int gballoc_init(void);
-extern "C" void gballoc_deinit(void);
-extern "C" void* gballoc_malloc(size_t size);
-extern "C" void* gballoc_calloc(size_t nmemb, size_t size);
-extern "C" void* gballoc_realloc(void* ptr, size_t size);
-extern "C" void gballoc_free(void* ptr);
-
-
-namespace BASEIMPLEMENTATION
-{
-    /*if malloc is defined as gballoc_malloc at this moment, there'd be serious trouble*/
-#define Lock(x) (LOCK_OK + gballocState - gballocState) /*compiler warning about constant in if condition*/
-#define Unlock(x) (LOCK_OK + gballocState - gballocState)
-#define Lock_Init() (LOCK_HANDLE)0x42
-#define Lock_Deinit(x) (LOCK_OK + gballocState - gballocState)
-#include "gballoc.c"
-#undef Lock
-#undef Unlock
-#undef Lock_Init
-#undef Lock_Deinit
-};
-
-
+void* real_gballoc_malloc(size_t size);
+void* real_gballoc_calloc(size_t nmemb, size_t size);
+void* real_gballoc_realloc(void* ptr, size_t size);
+void real_gballoc_free(void* ptr);
 
 #define TEST_LOCK_HANDLE    (LOCK_HANDLE)0x4443
 #define TEST_TIME ((double)3600)
 #define TEST_TIME_T ((time_t)TEST_TIME)
 #define CONDITION_WAIT_MS   2000
-DEFINE_MICROMOCK_ENUM_TO_STRING(COND_RESULT, COND_RESULT_VALUES);
 
-static MICROMOCK_MUTEX_HANDLE g_testByTest;
-static MICROMOCK_GLOBAL_SEMAPHORE_HANDLE g_dllByDll;
+static TEST_MUTEX_HANDLE g_testByTest;
+static TEST_MUTEX_HANDLE g_dllByDll;
 
 static bool malloc_will_fail = false;
 
-TYPED_MOCK_CLASS(conditionMocks, CGlobalMock)
+void* my_gballoc_malloc(size_t size)
 {
-public:
-    MOCK_STATIC_METHOD_1(, void*, gballoc_malloc, size_t, size)
-        void* result2 = NULL;
-        if (malloc_will_fail == false)
-        {
-            result2 = BASEIMPLEMENTATION::gballoc_malloc(size);
-        }
-    MOCK_METHOD_END(void*, result2);
+    void* result = NULL;
+    if (malloc_will_fail == false)
+    {
+        result = real_gballoc_malloc(size);
+    }
 
-    MOCK_STATIC_METHOD_1(, void, gballoc_free, void*, ptr)
-        BASEIMPLEMENTATION::gballoc_free(ptr);
-    MOCK_VOID_METHOD_END()
-};
+    return result;
+}
 
-DECLARE_GLOBAL_MOCK_METHOD_1(conditionMocks, , void*, gballoc_malloc, size_t, size);
-DECLARE_GLOBAL_MOCK_METHOD_1(conditionMocks, , void, gballoc_free, void*, ptr);
+void my_gballoc_free(void* ptr)
+{
+    real_gballoc_free(ptr);
+}
+
+void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
+{
+    ASSERT_FAIL("umock_c reported error");
+}
 
 COND_RESULT Condition_Handle_ToString(COND_HANDLE handle)
 {
@@ -86,31 +80,46 @@ BEGIN_TEST_SUITE(Condition_UnitTests)
 TEST_SUITE_INITIALIZE(a)
 {
     TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
-    g_testByTest = MicroMockCreateMutex();
+    g_testByTest = TEST_MUTEX_CREATE();
     ASSERT_IS_NOT_NULL(g_testByTest);
+
+    umock_c_init(on_umock_c_error);
+
+    REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, my_gballoc_malloc);
+    REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, my_gballoc_free);
 }
 
 TEST_SUITE_CLEANUP(b)
 {
-    MicroMockDestroyMutex(g_testByTest);
+    umock_c_deinit();
+
+    TEST_MUTEX_DESTROY(g_testByTest);
     TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
 }
 
 TEST_FUNCTION_INITIALIZE(f)
 {
-    conditionMocks mocks;
-    mocks.SetPerformAutomaticCallComparison(AUTOMATIC_CALL_COMPARISON_OFF);
+    if (TEST_MUTEX_ACQUIRE(g_testByTest) != 0)
+    {
+        ASSERT_FAIL("our mutex is ABANDONED. Failure in test framework");
+    }
+
+    umock_c_reset_all_calls();
     malloc_will_fail = false;
+}
+
+TEST_FUNCTION_CLEANUP(cleans)
+{
+    TEST_MUTEX_RELEASE(g_testByTest);
 }
 
 // Tests_SRS_CONDITION_18_002: [ Condition_Init shall create and return a CONDITION_HANDLE ]
 TEST_FUNCTION(Condition_Init_Success)
 {
     //arrange
-    conditionMocks mocks;
     COND_HANDLE handle = NULL;
-    EXPECTED_CALL(mocks, gballoc_malloc(4));
-    EXPECTED_CALL(mocks, gballoc_free(0)).IgnoreAllArguments();
+    EXPECTED_CALL(gballoc_malloc(4));
+    EXPECTED_CALL(gballoc_free(0)).IgnoreAllArguments();
 
     //act
     handle = Condition_Init();
@@ -142,12 +151,11 @@ TEST_FUNCTION(Condition_Post_Handle_NULL_Failure)
 TEST_FUNCTION(Condition_Post_Handle_Succeed)
 {
     //arrange
-    conditionMocks mocks;
     COND_HANDLE handle = NULL;
     COND_RESULT result;
 
-    EXPECTED_CALL(mocks, gballoc_malloc(4));
-    EXPECTED_CALL(mocks, gballoc_free(0)).IgnoreAllArguments();
+    EXPECTED_CALL(gballoc_malloc(4));
+    EXPECTED_CALL(gballoc_free(0)).IgnoreAllArguments();
 
     handle = Condition_Init();
 
@@ -184,11 +192,10 @@ TEST_FUNCTION(Condition_Wait_Handle_NULL_Fail)
 TEST_FUNCTION(Condition_Wait_LOCK_NULL_Fail)
 {
     //arrange
-    conditionMocks mocks;
     COND_HANDLE handle = NULL;
     COND_RESULT result;
-    EXPECTED_CALL(mocks, gballoc_malloc(4));
-    EXPECTED_CALL(mocks, gballoc_free(0)).IgnoreAllArguments();
+    EXPECTED_CALL(gballoc_malloc(4));
+    EXPECTED_CALL(gballoc_free(0)).IgnoreAllArguments();
 
     handle = Condition_Init();
 
@@ -206,11 +213,10 @@ TEST_FUNCTION(Condition_Wait_LOCK_NULL_Fail)
 TEST_FUNCTION(Condition_Wait_LOCK_NULL_Ms_Fail)
 {
     //arrange
-    conditionMocks mocks;
     COND_HANDLE handle = NULL;
     COND_RESULT result;
-    EXPECTED_CALL(mocks, gballoc_malloc(4));
-    EXPECTED_CALL(mocks, gballoc_free(0)).IgnoreAllArguments();
+    EXPECTED_CALL(gballoc_malloc(4));
+    EXPECTED_CALL(gballoc_free(0)).IgnoreAllArguments();
 
     handle = Condition_Init();
 
@@ -242,13 +248,11 @@ TEST_FUNCTION(Condition_Deinit_Fail)
 // Tests_SRS_CONDITION_18_008: [ Condition_Init shall return NULL if it fails to allocate the CONDITION_HANDLE ]
 TEST_FUNCTION(Condition_Init_allocation_fail)
 {
-    conditionMocks mocks;
-
     // arrange
     COND_HANDLE handle = NULL;
     malloc_will_fail = true;
 
-    EXPECTED_CALL(mocks, gballoc_malloc(4));
+    EXPECTED_CALL(gballoc_malloc(4));
 
     // act
     handle = Condition_Init();
@@ -262,13 +266,11 @@ TEST_FUNCTION(Condition_Init_allocation_fail)
 // Tests_SRS_CONDITION_18_009: [ Condition_Deinit will deallocate handle if it is not NULL ]
 TEST_FUNCTION(Condition_Deinit_deallocates_handle)
 {
-    conditionMocks mocks;
-
     // arrange
     COND_HANDLE handle = NULL;
     handle = Condition_Init();
-    mocks.ResetAllCalls();
-    EXPECTED_CALL (mocks, gballoc_free(NULL)).IgnoreAllArguments();
+    umock_c_reset_all_calls();
+    EXPECTED_CALL(gballoc_free(NULL)).IgnoreAllArguments();
 
     // act
     Condition_Deinit(handle);
@@ -305,8 +307,6 @@ THREAD_HANDLE trigger_after_50_ms(COND_HANDLE handle)
 // Tests_SRS_CONDITION_18_010: [ Condition_Wait shall return COND_OK if the condition is triggered and timeout_milliseconds is 0 ]
 TEST_FUNCTION(Condition_Wait_ok_on_trigger_and_zero_timeout)
 {
-    conditionMocks mocks;
-
     // arrange
     LockAndCondition m;
     m.condition = Condition_Init();
@@ -323,17 +323,15 @@ TEST_FUNCTION(Condition_Wait_ok_on_trigger_and_zero_timeout)
     ASSERT_ARE_EQUAL(COND_RESULT, COND_OK, result);
     Lock_Deinit(m.lock);
     Condition_Deinit(m.condition);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 }
 
 // Tests_SRS_CONDITION_18_011: [Condition_wait shall return COND_TIMEOUT if the condition is NOT triggered and timeout_milliseconds is not 0]
 TEST_FUNCTION(Condition_Wait_timeout_when_not_triggered)
 {
-    conditionMocks mocks;
-
     // arrange
-    EXPECTED_CALL(mocks, gballoc_malloc(8));
-    EXPECTED_CALL(mocks, gballoc_free(NULL)).IgnoreAllArguments();
+    EXPECTED_CALL(gballoc_malloc(8));
+    EXPECTED_CALL(gballoc_free(NULL)).IgnoreAllArguments();
 
     LockAndCondition m;
     m.condition = Condition_Init();
@@ -354,8 +352,6 @@ TEST_FUNCTION(Condition_Wait_timeout_when_not_triggered)
 // Tests_SRS_CONDITION_18_013: [ Condition_Wait shall accept relative timeouts ]
 TEST_FUNCTION(Condition_Wait_ok_on_trigger_with_timeout)
 {
-    conditionMocks mocks;
-
     // arrange
     LockAndCondition m;
     m.condition = Condition_Init();
@@ -372,7 +368,22 @@ TEST_FUNCTION(Condition_Wait_ok_on_trigger_with_timeout)
     ASSERT_ARE_EQUAL(COND_RESULT, COND_OK, result);
     Lock_Deinit(m.lock);
     Condition_Deinit(m.condition);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 }
 
 END_TEST_SUITE(Condition_UnitTests);
+
+/*if malloc is defined as gballoc_malloc at this moment, there'd be serious trouble*/
+#define Lock(x) (LOCK_OK + gballocState - gballocState) /*compiler warning about constant in if condition*/
+#define Unlock(x) (LOCK_OK + gballocState - gballocState)
+#define Lock_Init() (LOCK_HANDLE)0x42
+#define Lock_Deinit(x) (LOCK_OK + gballocState - gballocState)
+#define gballoc_malloc real_gballoc_malloc
+#define gballoc_realloc real_gballoc_realloc
+#define gballoc_calloc real_gballoc_calloc
+#define gballoc_free real_gballoc_free
+#include "gballoc.c"
+#undef Lock
+#undef Unlock
+#undef Lock_Init
+#undef Lock_Deinit
