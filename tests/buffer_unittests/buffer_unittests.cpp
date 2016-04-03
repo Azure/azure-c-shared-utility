@@ -11,6 +11,8 @@
 
 #include <stddef.h>
 
+#define ENABLE_MOCKS
+
 //
 // PUT NO CLIENT LIBRARY INCLUDES BEFORE HERE !!!!
 //
@@ -64,58 +66,64 @@ static size_t whenShallmalloc_fail = 0;
 static size_t currentrealloc_call = 0;
 static size_t whenShallrealloc_fail = 0;
 
-TYPED_MOCK_CLASS(CMocks, CGlobalMock)
-{
-public:
+MOCKABLE_FUNCTION(void*, gballoc_malloc, size_t, size);
+MOCKABLE_FUNCTION(void*, gballoc_realloc, void*, ptr, size_t, size);
+MOCKABLE_FUNCTION(void, gballoc_free, void*, ptr);
 
-    MOCK_STATIC_METHOD_1(, void*, gballoc_malloc, size_t, size)
-        void* result2;
+void* my_gballoc_malloc(size_t size)
+{
+    void* result;
     currentmalloc_call++;
     if (whenShallmalloc_fail > 0)
     {
         if (currentmalloc_call == whenShallmalloc_fail)
         {
-            result2 = NULL;
+            result = NULL;
         }
         else
         {
-            result2 = BASEIMPLEMENTATION::gballoc_malloc(size);
+            result = BASEIMPLEMENTATION::gballoc_malloc(size);
         }
     }
     else
     {
-        result2 = BASEIMPLEMENTATION::gballoc_malloc(size);
+        result = BASEIMPLEMENTATION::gballoc_malloc(size);
     }
-    MOCK_METHOD_END(void*, result2);
+    return result;
+}
 
-    MOCK_STATIC_METHOD_2(, void*, gballoc_realloc, void*, ptr, size_t, size)
-        void* result2;
+void* my_gballoc_realloc(void* ptr, size_t size)
+{
+    void* result;
     currentrealloc_call++;
     if (whenShallrealloc_fail > 0)
     {
         if (currentrealloc_call == whenShallrealloc_fail)
         {
-            result2 = NULL;
+            result = NULL;
         }
         else
         {
-            result2 = BASEIMPLEMENTATION::gballoc_realloc(ptr, size);
+            result = BASEIMPLEMENTATION::gballoc_realloc(ptr, size);
         }
     }
     else
     {
-        result2 = BASEIMPLEMENTATION::gballoc_realloc(ptr, size);
+        result = BASEIMPLEMENTATION::gballoc_realloc(ptr, size);
     }
-    MOCK_METHOD_END(void*, result2);
 
-    MOCK_STATIC_METHOD_1(, void, gballoc_free, void*, ptr)
-        BASEIMPLEMENTATION::gballoc_free(ptr);
-    MOCK_VOID_METHOD_END()
-};
+    return result;
+}
 
-DECLARE_GLOBAL_MOCK_METHOD_1(CMocks, , void*, gballoc_malloc, size_t, size);
-DECLARE_GLOBAL_MOCK_METHOD_2(CMocks, , void*, gballoc_realloc, void*, ptr, size_t, size);
-DECLARE_GLOBAL_MOCK_METHOD_1(CMocks, , void, gballoc_free, void*, ptr);
+void my_gballoc_free(void* ptr)
+{
+    BASEIMPLEMENTATION::gballoc_free(ptr);
+}
+
+void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
+{
+    ASSERT_FAIL("umock_c reported error");
+}
 
 BEGIN_TEST_SUITE(Buffer_UnitTests)
 
@@ -124,10 +132,18 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
         g_testByTest = TEST_MUTEX_CREATE();
         ASSERT_IS_NOT_NULL(g_testByTest);
+
+        umock_c_init(on_umock_c_error);
+
+        //REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, my_gballoc_malloc);
+        //REGISTER_GLOBAL_MOCK_HOOK(gballoc_realloc, my_gballoc_realloc);
+        //REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, my_gballoc_free);
     }
 
     TEST_SUITE_CLEANUP(TestClassCleanup)
     {
+        umock_c_deinit();
+
         TEST_MUTEX_DESTROY(g_testByTest);
         TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
     }
@@ -138,6 +154,8 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         {
             ASSERT_FAIL("our mutex is ABANDONED. Failure in test framework");
         }
+
+        umock_c_reset_all_calls();
 
         currentmalloc_call = 0;
         whenShallmalloc_fail = 0;
@@ -155,18 +173,15 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_new_Succeed)
     {
         ///arrange
-        CMocks mocks;
-
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG))
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
-        
 
         ///act
         BUFFER_HANDLE g_hBuffer = BUFFER_new();
 
         ///assert
         ASSERT_IS_NOT_NULL(g_hBuffer);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         BUFFER_delete(g_hBuffer);
@@ -177,19 +192,18 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_delete_Succeed)
     {
         ///arrange
-        CMocks mocks;
         BUFFER_HANDLE g_hBuffer;
         g_hBuffer = BUFFER_new();
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
 
         ///act
         BUFFER_delete(g_hBuffer);
 
         ///assert
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         //none
@@ -199,22 +213,21 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_delete_Alloc_Succeed)
     {
         ///arrange
-        CMocks mocks;
         BUFFER_HANDLE g_hBuffer;
         g_hBuffer = BUFFER_new();
         BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
 
         ///act
         BUFFER_delete(g_hBuffer);
 
         ///assert
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         //none
@@ -229,6 +242,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         BUFFER_delete(NULL);
 
         ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     }
 
     /* BUFFER_pre_Build Tests BEGIN */
@@ -236,12 +250,11 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_pre_build_Succeed)
     {
         ///arrange
-        CMocks mocks;
         BUFFER_HANDLE g_hBuffer;
         g_hBuffer = BUFFER_new();
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(ALLOCATION_SIZE));
+        STRICT_EXPECTED_CALL(gballoc_malloc(ALLOCATION_SIZE));
 
         ///act
         int nResult = BUFFER_pre_build(g_hBuffer, ALLOCATION_SIZE);
@@ -249,7 +262,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         ///assert
         ASSERT_ARE_EQUAL(int, nResult, 0);
         ASSERT_ARE_EQUAL(size_t, BUFFER_length(g_hBuffer), ALLOCATION_SIZE);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         BUFFER_delete(g_hBuffer);
@@ -260,14 +273,13 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_pre_build_HANDLE_NULL_Fail)
     {
         ///arrange
-        CMocks mocks;
 
         ///act
         int nResult = BUFFER_pre_build(NULL, ALLOCATION_SIZE);
 
         ///assert
         ASSERT_ARE_NOT_EQUAL(int, nResult, 0);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         //none
@@ -277,17 +289,16 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_pre_Size_Zero_Fail)
     {
         ///arrange
-        CMocks mocks;
         BUFFER_HANDLE g_hBuffer;
         g_hBuffer = BUFFER_new();
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         ///act
         int nResult = BUFFER_pre_build(g_hBuffer, 0);
 
         ///assert
         ASSERT_ARE_NOT_EQUAL(int, nResult, 0);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         BUFFER_delete(g_hBuffer);
@@ -297,12 +308,12 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_pre_build_HANDLE_NULL_Size_Zero_Fail)
     {
         ///arrange
-        CMocks mocks;
 
         ///act
         int nResult = BUFFER_pre_build(NULL, 0);
 
         ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_NOT_EQUAL(int, nResult, 0);
     }
 
@@ -311,18 +322,17 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_pre_build_Multiple_Alloc_Fail)
     {
         ///arrange
-        CMocks mocks;
         BUFFER_HANDLE g_hBuffer;
         g_hBuffer = BUFFER_new();
         int nResult = BUFFER_pre_build(g_hBuffer, ALLOCATION_SIZE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         ///act
         nResult = BUFFER_pre_build(g_hBuffer, ALLOCATION_SIZE);
 
         ///assert
         ASSERT_ARE_NOT_EQUAL(int, nResult, 0);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         BUFFER_delete(g_hBuffer);
@@ -332,13 +342,12 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_build_Succeed)
     {
         ///arrange
-        CMocks mocks;
         BUFFER_HANDLE g_hBuffer;
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG))
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(IGNORED_PTR_ARG, ALLOCATION_SIZE))
+        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, ALLOCATION_SIZE))
             .IgnoreArgument(1);
 
         ///act
@@ -350,7 +359,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         ASSERT_ARE_EQUAL(size_t, BUFFER_length(g_hBuffer), ALLOCATION_SIZE);
         ASSERT_ARE_EQUAL(int, 0, memcmp(BUFFER_u_char(g_hBuffer), BUFFER_TEST_VALUE, ALLOCATION_SIZE));
         ASSERT_ARE_EQUAL(int, nResult, 0);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         BUFFER_delete(g_hBuffer);
@@ -360,12 +369,12 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_build_NULL_HANDLE_Fail)
     {
         ///arrange
-        CMocks mocks;
 
         ///act
         int nResult = BUFFER_build(NULL, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
 
         ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_NOT_EQUAL(int, nResult, 0);
     }
 
@@ -373,17 +382,16 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_build_Content_NULL_Fail)
     {
         ///arrange
-        CMocks mocks;
         BUFFER_HANDLE g_hBuffer;
         g_hBuffer = BUFFER_new();
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         ///act
         int nResult = BUFFER_build(g_hBuffer, NULL, ALLOCATION_SIZE);
 
         ///assert
         ASSERT_ARE_NOT_EQUAL(int, nResult, 0);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         BUFFER_delete(g_hBuffer);
@@ -393,12 +401,11 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_build_Size_Zero_non_NULL_buffer_Succeeds)
     {
         ///arrange
-        CMocks mocks;
         BUFFER_HANDLE g_hBuffer;
         g_hBuffer = BUFFER_new();
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
 
         ///act
@@ -406,7 +413,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
 
         ///assert
         ASSERT_ARE_EQUAL(int, nResult, 0);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         BUFFER_delete(g_hBuffer);
@@ -416,12 +423,11 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_build_Size_Zero_NULL_buffer_Succeeds)
     {
         ///arrange
-        CMocks mocks;
         BUFFER_HANDLE g_hBuffer;
         g_hBuffer = BUFFER_new();
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
 
         ///act
@@ -429,7 +435,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
 
         ///assert
         ASSERT_ARE_EQUAL(int, nResult, 0);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         BUFFER_delete(g_hBuffer);
@@ -439,13 +445,12 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_build_when_the_buffer_is_already_allocated_and_the_same_amount_of_bytes_is_needed_succeeds)
     {
         ///arrange
-        CMocks mocks;
         BUFFER_HANDLE g_hBuffer;
         g_hBuffer = BUFFER_new();
         int nResult = BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(IGNORED_PTR_ARG, ALLOCATION_SIZE))
+        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, ALLOCATION_SIZE))
             .IgnoreArgument(1);
 
         ///act
@@ -453,7 +458,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
 
         ///assert
         ASSERT_ARE_EQUAL(int, nResult, 0);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         BUFFER_delete(g_hBuffer);
@@ -463,13 +468,12 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_build_when_the_buffer_is_already_allocated_and_more_bytes_are_needed_succeeds)
     {
         ///arrange
-        CMocks mocks;
         BUFFER_HANDLE g_hBuffer;
         g_hBuffer = BUFFER_new();
         int nResult = BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE - 1);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(IGNORED_PTR_ARG, ALLOCATION_SIZE))
+        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, ALLOCATION_SIZE))
             .IgnoreArgument(1);
 
         ///act
@@ -477,7 +481,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
 
         ///assert
         ASSERT_ARE_EQUAL(int, nResult, 0);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         BUFFER_delete(g_hBuffer);
@@ -487,13 +491,12 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_build_when_the_buffer_is_already_allocated_and_less_bytes_are_needed_succeeds)
     {
         ///arrange
-        CMocks mocks;
         BUFFER_HANDLE g_hBuffer;
         g_hBuffer = BUFFER_new();
         int nResult = BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(IGNORED_PTR_ARG, ALLOCATION_SIZE - 1))
+        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, ALLOCATION_SIZE - 1))
             .IgnoreArgument(1);
 
         ///act
@@ -501,7 +504,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
 
         ///assert
         ASSERT_ARE_EQUAL(int, nResult, 0);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         BUFFER_delete(g_hBuffer);
@@ -512,13 +515,12 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_unbuild_Succeed)
     {
         ///arrange
-        CMocks mocks;
         BUFFER_HANDLE g_hBuffer;
         g_hBuffer = BUFFER_new();
         int nResult = BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
 
         ///act
@@ -526,7 +528,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
 
         ///assert
         ASSERT_ARE_EQUAL(int, nResult, 0);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         BUFFER_delete(g_hBuffer);
@@ -536,12 +538,12 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_unbuild_HANDLE_NULL_Fail)
     {
         ///arrange
-        CMocks mocks;
 
         ///act
         int nResult = BUFFER_unbuild(NULL);
 
         ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_NOT_EQUAL(int, nResult, 0);
     }
 
@@ -549,19 +551,18 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_unbuild_Multiple_Alloc_Fail)
     {
         ///arrange
-        CMocks mocks;
         BUFFER_HANDLE g_hBuffer;
         g_hBuffer = BUFFER_new();
         int nResult = BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
         nResult = BUFFER_unbuild(g_hBuffer);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         ///act
         nResult = BUFFER_unbuild(g_hBuffer);
 
         ///assert
         ASSERT_ARE_NOT_EQUAL(int, nResult, 0);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         BUFFER_delete(g_hBuffer);
@@ -572,13 +573,12 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_enlarge_Succeed)
     {
         ///arrange
-        CMocks mocks;
         BUFFER_HANDLE g_hBuffer;
         g_hBuffer = BUFFER_new();
         int nResult = BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(IGNORED_PTR_ARG, 2 * ALLOCATION_SIZE))
+        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, 2 * ALLOCATION_SIZE))
             .IgnoreArgument(1);
 
         ///act
@@ -587,7 +587,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         ///assert
         ASSERT_ARE_EQUAL(int, nResult, 0);
         ASSERT_ARE_EQUAL(size_t, BUFFER_length(g_hBuffer), TOTAL_ALLOCATION_SIZE);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         BUFFER_delete(g_hBuffer);
@@ -598,12 +598,12 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_enlarge_NULL_HANDLE_Fail)
     {
         ///arrange
-        CMocks mocks;
 
         ///act
         int nResult = BUFFER_enlarge(NULL, ALLOCATION_SIZE);
 
         ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_NOT_EQUAL(int, nResult, 0);
     }
 
@@ -612,18 +612,17 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_enlarge_Size_Zero_Fail)
     {
         ///arrange
-        CMocks mocks;
         BUFFER_HANDLE g_hBuffer;
         g_hBuffer = BUFFER_new();
         int nResult = BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         ///act
         nResult = BUFFER_enlarge(g_hBuffer, 0);
 
         ///assert
         ASSERT_ARE_NOT_EQUAL(int, nResult, 0);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         BUFFER_delete(g_hBuffer);
@@ -634,11 +633,10 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_content_Succeed)
     {
         ///arrange
-        CMocks mocks;
         BUFFER_HANDLE g_hBuffer;
         g_hBuffer = BUFFER_new();
         int nResult = BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         ///act
         const unsigned char* content = NULL;
@@ -647,7 +645,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         ///assert
         ASSERT_ARE_EQUAL(int, nResult, 0);
         ASSERT_ARE_EQUAL(int, 0, memcmp(content, BUFFER_TEST_VALUE, ALLOCATION_SIZE));
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         BUFFER_delete(g_hBuffer);
@@ -657,13 +655,13 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_content_HANDLE_NULL_Fail)
     {
         ///arrange
-        CMocks mocks;
 
         ///act
         const unsigned char* content = NULL;
         int nResult = BUFFER_content(NULL, &content);
 
         ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_NOT_EQUAL(int, nResult, 0);
         ASSERT_IS_NULL(content);
 
@@ -675,18 +673,17 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_content_Char_NULL_Fail)
     {
         ///arrange
-        CMocks mocks;
         BUFFER_HANDLE g_hBuffer;
         g_hBuffer = BUFFER_new();
         int nResult = BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         ///act
         nResult = BUFFER_content(g_hBuffer, NULL);
 
         ///assert
         ASSERT_ARE_NOT_EQUAL(int, nResult, 0);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         BUFFER_delete(g_hBuffer);
@@ -697,11 +694,10 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_size_Succeed)
     {
         ///arrange
-        CMocks mocks;
         BUFFER_HANDLE g_hBuffer;
         g_hBuffer = BUFFER_new();
         int nResult = BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         ///act
         size_t size = 0;
@@ -710,7 +706,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         ///assert
         ASSERT_ARE_EQUAL(int, nResult, 0);
         ASSERT_ARE_EQUAL(size_t, size, ALLOCATION_SIZE);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
 
         ///cleanup
@@ -721,13 +717,13 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_size_HANDLE_NULL_Fail)
     {
         ///arrange
-        CMocks mocks;
 
         ///act
         size_t size = 0;
         int nResult = BUFFER_size(NULL, &size);
 
         ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_NOT_EQUAL(int, nResult, 0);
     }
 
@@ -735,18 +731,17 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_size_Size_t_NULL_Fail)
     {
         ///arrange
-        CMocks mocks;
         BUFFER_HANDLE g_hBuffer;
         g_hBuffer = BUFFER_new();
         int nResult = BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         ///act
         nResult = BUFFER_size(g_hBuffer, NULL);
 
         ///assert
         ASSERT_ARE_NOT_EQUAL(int, nResult, 0);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         BUFFER_delete(g_hBuffer);
@@ -757,15 +752,14 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_append_Succeed)
     {
         ///arrange
-        CMocks mocks;
         BUFFER_HANDLE g_hBuffer;
         g_hBuffer = BUFFER_new();
         int nResult = BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
         BUFFER_HANDLE hAppend = BUFFER_new();
         nResult = BUFFER_build(hAppend, ADDITIONAL_BUFFER, ALLOCATION_SIZE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(IGNORED_PTR_ARG, ALLOCATION_SIZE + ALLOCATION_SIZE))
+        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, ALLOCATION_SIZE + ALLOCATION_SIZE))
             .IgnoreArgument(1);
 
         ///act
@@ -775,7 +769,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         ASSERT_ARE_EQUAL(int, nResult, 0);
         ASSERT_ARE_EQUAL(int, 0, memcmp(BUFFER_u_char(g_hBuffer), TOTAL_BUFFER, TOTAL_ALLOCATION_SIZE));
         ASSERT_ARE_EQUAL(int, 0, memcmp(BUFFER_u_char(hAppend), ADDITIONAL_BUFFER, ALLOCATION_SIZE));
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         BUFFER_delete(hAppend);
@@ -786,17 +780,16 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_append_HANDLE_NULL_Fail)
     {
         ///arrange
-        CMocks mocks;
         BUFFER_HANDLE hAppend = BUFFER_new();
         int nResult = BUFFER_build(hAppend, ADDITIONAL_BUFFER, ALLOCATION_SIZE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         ///act
         nResult = BUFFER_append(NULL, hAppend);
 
         ///assert
         ASSERT_ARE_NOT_EQUAL(int, nResult, 0);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         BUFFER_delete(hAppend);
@@ -806,18 +799,17 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_append_APPEND_HANDLE_NULL_Fail)
     {
         ///arrange
-        CMocks mocks;
         BUFFER_HANDLE g_hBuffer;
         g_hBuffer = BUFFER_new();
         int nResult = BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         ///act
         nResult = BUFFER_append(g_hBuffer, NULL);
 
         ///assert
         ASSERT_ARE_NOT_EQUAL(int, nResult, 0);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         BUFFER_delete(g_hBuffer);
@@ -826,18 +818,17 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_prepend_APPEND_HANDLE1_NULL_Fail)
     {
         ///arrange
-        CMocks mocks;
         BUFFER_HANDLE g_hBuffer;
         g_hBuffer = BUFFER_new();
         int nResult = BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         ///act
         nResult = BUFFER_prepend(g_hBuffer, NULL);
 
         ///assert
         ASSERT_ARE_NOT_EQUAL(int, nResult, 0);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         BUFFER_delete(g_hBuffer);
@@ -846,17 +837,16 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_prepend_APPEND_HANDLE2_NULL_Fail)
     {
         ///arrange
-        CMocks mocks;
         BUFFER_HANDLE hAppend = BUFFER_new();
         int nResult = BUFFER_build(hAppend, ADDITIONAL_BUFFER, ALLOCATION_SIZE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         ///act
         nResult = BUFFER_prepend(NULL, hAppend);
 
         ///assert
         ASSERT_ARE_NOT_EQUAL(int, nResult, 0);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         BUFFER_delete(hAppend);
@@ -865,16 +855,15 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_prepend_Succeed)
     {
         ///arrange
-        CMocks mocks;
         BUFFER_HANDLE g_hBuffer;
         g_hBuffer = BUFFER_new();
         int nResult = BUFFER_build(g_hBuffer, ADDITIONAL_BUFFER, ALLOCATION_SIZE);
         BUFFER_HANDLE hAppend = BUFFER_new();
         nResult = BUFFER_build(hAppend, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(ALLOCATION_SIZE + ALLOCATION_SIZE));
-        EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(gballoc_malloc(ALLOCATION_SIZE + ALLOCATION_SIZE));
+        EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
         ///act
         nResult = BUFFER_prepend(g_hBuffer, hAppend);
@@ -885,7 +874,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         ASSERT_ARE_EQUAL(int, 0, memcmp(BUFFER_u_char(hAppend), BUFFER_TEST_VALUE, ALLOCATION_SIZE));
 
         //TOTAL_BUFFER
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         BUFFER_delete(hAppend);
@@ -897,18 +886,17 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_U_CHAR_Succeed)
     {
         ///arrange
-        CMocks mocks;
         BUFFER_HANDLE g_hBuffer;
         g_hBuffer = BUFFER_new();
         (void)BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
         
         ///act
         unsigned char* u = BUFFER_u_char(g_hBuffer);
 
         ///assert
         ASSERT_ARE_EQUAL(int, 0, memcmp(u, BUFFER_TEST_VALUE, ALLOCATION_SIZE) );
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         BUFFER_delete(g_hBuffer);
@@ -918,10 +906,12 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_U_CHAR_HANDLE_NULL_Fail)
     {
         ///arrange
-        CMocks mocks;
 
         ///act
-        ASSERT_IS_NULL(BUFFER_u_char(NULL) );
+        ASSERT_IS_NULL(BUFFER_u_char(NULL));
+
+        /// assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     }
 
     /* BUFFER_length Tests BEGIN */
@@ -929,18 +919,17 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_length_Succeed)
     {
         ///arrange
-        CMocks mocks;
         BUFFER_HANDLE g_hBuffer;
         g_hBuffer = BUFFER_new();
         (void)BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         ///act
         size_t l = BUFFER_length(g_hBuffer);
 
         ///assert
         ASSERT_ARE_EQUAL(size_t, l, ALLOCATION_SIZE);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         BUFFER_delete(g_hBuffer);
@@ -950,27 +939,27 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_length_HANDLE_NULL_Succeed)
     {
         ///arrange
-        CMocks mocks;
 
         ///act
+        size_t size = BUFFER_length(NULL);
 
         ///assert
-        ASSERT_ARE_EQUAL(size_t, BUFFER_length(NULL), 0);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+        ASSERT_ARE_EQUAL(size_t, size, 0);
     }
 
     TEST_FUNCTION(BUFFER_Clone_Succeed)
     {
         ///arrange
-        CMocks mocks;
         BUFFER_HANDLE g_hBuffer;
         g_hBuffer = BUFFER_new();
         (void)BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG))
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(ALLOCATION_SIZE))
+        STRICT_EXPECTED_CALL(gballoc_malloc(ALLOCATION_SIZE))
             .IgnoreArgument(1);
 
         ///act
@@ -978,7 +967,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
 
         ///assert
         ASSERT_ARE_EQUAL(int, 0, memcmp(BUFFER_u_char(hclone), BUFFER_TEST_VALUE, ALLOCATION_SIZE) );
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         BUFFER_delete(g_hBuffer);
@@ -988,24 +977,25 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_Clone_HANDLE_NULL_Fail)
     {
         ///arrange
-        CMocks mocks;
 
         ///act
+        BUFFER_HANDLE result = BUFFER_clone(NULL);
 
         ///assert
-        ASSERT_IS_NULL(BUFFER_clone(NULL) );
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+        ASSERT_IS_NULL(result);
     }
 
     /*Tests_SRS_BUFFER_02_001: [If source is NULL then BUFFER_create shall return NULL.] */
     TEST_FUNCTION(BUFFER_create_with_NULL_source_fails)
     {
         ///arrange
-        CMocks mocks;
 
         ///act
         auto res = BUFFER_create(NULL, 0);
 
         ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_IS_NULL(res);
 
         ///cleanup
@@ -1016,13 +1006,12 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_create_happy_path)
     {
         ///arrange
-        CMocks mocks;
         char c = '3';
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG))
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(1));
+        STRICT_EXPECTED_CALL(gballoc_malloc(1));
 
         ///act
         auto res = BUFFER_create((const unsigned char*)&c, 1);
@@ -1034,7 +1023,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         const unsigned char* data = BUFFER_u_char(res);
         ASSERT_ARE_EQUAL(uint8_t, '3', data[0]);
 
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         BUFFER_delete(res);
@@ -1044,23 +1033,22 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_create_fails_when_gballoc_fails_1)
     {
         ///arrange
-        CMocks mocks;
         char c = '3';
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG))
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
 
         whenShallmalloc_fail = 2;
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(1));
+        STRICT_EXPECTED_CALL(gballoc_malloc(1));
 
         ///act
         auto res = BUFFER_create((const unsigned char*)&c, 1);
 
         ///assert
         ASSERT_IS_NULL(res);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         BUFFER_delete(res);
@@ -1070,11 +1058,10 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_create_fails_when_gballoc_fails_2)
     {
         ///arrange
-        CMocks mocks;
         char c = '3';
 
         whenShallmalloc_fail = 1;
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG))
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
 
         ///act
@@ -1082,7 +1069,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
 
         ///assert
         ASSERT_IS_NULL(res);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         BUFFER_delete(res);
