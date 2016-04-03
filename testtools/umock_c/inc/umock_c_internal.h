@@ -290,7 +290,10 @@ typedef struct ARG_BUFFER_TAG
         else \
         { \
             mock_call_data->return_value_set = 1; \
-            (void)umocktypes_copy(#return_type, &mock_call_data->return_value, &return_value); \
+            if (umocktypes_copy(#return_type, &mock_call_data->return_value, &return_value) != 0) \
+            { \
+                umock_c_indicate_error(UMOCK_C_ERROR); \
+            } \
         } \
         return mock_call_modifier; \
     }
@@ -307,7 +310,10 @@ typedef struct ARG_BUFFER_TAG
         else \
         { \
             mock_call_data->fail_return_value_set = 1; \
-            (void)umocktypes_copy(#return_type, &mock_call_data->fail_return_value, &return_value); \
+            if (umocktypes_copy(#return_type, &mock_call_data->fail_return_value, &return_value) != 0) \
+            { \
+                umock_c_indicate_error(UMOCK_C_ERROR); \
+            } \
         } \
         return mock_call_modifier; \
     }
@@ -497,7 +503,10 @@ typedef struct ARG_BUFFER_TAG
     typedef struct C2(_mock_call_modifier_, name) (*C2(validate_one_argument_func_type_, name))(void);
 
 #define COPY_RETURN_VALUE(return_type, name) \
-    (void)umocktypes_copy(TOSTRING(return_type), &result, &C2(mock_call_default_result_, name));
+    if (umocktypes_copy(TOSTRING(return_type), &result, &C2(mock_call_default_result_, name)) != 0) \
+    { \
+        umock_c_indicate_error(UMOCK_C_ERROR); \
+    }
 
 /* Codes_SRS_UMOCK_C_LIB_01_004: [If ENABLE_MOCKS is defined, MOCKABLE_FUNCTION shall generate the declaration of the function and code for the mocked function, thus allowing setting up of expectations in test functions.] */
 /* Codes_SRS_UMOCK_C_LIB_01_014: [For each argument the argument value shall be stored for later comparison with actual calls.] */
@@ -720,7 +729,10 @@ typedef struct ARG_BUFFER_TAG
                 { \
                     if (matched_call_data->return_value_set) \
                     { \
-                        (void)umocktypes_copy(#return_type, &result, &matched_call_data->return_value); \
+                        if (umocktypes_copy(#return_type, &result, &matched_call_data->return_value) != 0) \
+                        { \
+                            umock_c_indicate_error(UMOCK_C_ERROR); \
+                        } \
                     } \
                     else \
                     { \
@@ -730,7 +742,10 @@ typedef struct ARG_BUFFER_TAG
                         } \
                         IF(IS_NOT_VOID(return_type),else \
                         { \
-                            (void)umocktypes_copy(TOSTRING(return_type), &result, &C2(mock_call_default_result_,name)); \
+                            if (umocktypes_copy(TOSTRING(return_type), &result, &C2(mock_call_default_result_,name)) != 0) \
+                            { \
+                                umock_c_indicate_error(UMOCK_C_ERROR); \
+                            } \
                         },) \
                     } \
                 },) \
