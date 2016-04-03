@@ -94,7 +94,7 @@ function(add_files_to_install filesToBeInstalled)
     set(INSTALL_H_FILES ${INSTALL_H_FILES} ${filesToBeInstalled} CACHE INTERNAL "Files that will be installed on the system")
 endfunction()
 
-function(windows_unittests_add_dll whatIsBuilding)
+function(windows_unittests_add_dll whatIsBuilding folder)
     link_directories(${whatIsBuilding}_dll $ENV{VCInstallDir}UnitTest/lib)
     
     add_library(${whatIsBuilding}_dll SHARED 
@@ -104,18 +104,19 @@ function(windows_unittests_add_dll whatIsBuilding)
         ${${whatIsBuilding}_c_files}
     )
 
+    SET_SOURCE_FILES_PROPERTIES( ${${whatIsBuilding}_c_files} PROPERTIES LANGUAGE C )
+
     set_target_properties(${whatIsBuilding}_dll
                PROPERTIES
-               FOLDER "UnitTests") 
+               FOLDER ${folder}
+               LANGUAGE CXX) 
 
-    SET_SOURCE_FILES_PROPERTIES( ${${whatIsBuilding}_test_files} PROPERTIES LANGUAGE CXX )
-    
     target_include_directories(${whatIsBuilding}_dll PUBLIC ${sharedutil_include_directories} $ENV{VCInstallDir}UnitTest/include)
     target_compile_definitions(${whatIsBuilding}_dll PUBLIC -DCPP_UNITTEST)
     target_link_libraries(${whatIsBuilding}_dll micromock_cpp_unittest umock_c ctest testrunnerswitcher ${ARGN})
 endfunction()
 
-function(windows_unittests_add_lib whatIsBuilding)
+function(windows_unittests_add_lib whatIsBuilding folder)
     link_directories(${whatIsBuilding}_lib $ENV{VCInstallDir}UnitTest/lib)
     
     add_library(${whatIsBuilding}_lib STATIC 
@@ -130,7 +131,7 @@ function(windows_unittests_add_lib whatIsBuilding)
     target_link_libraries(${whatIsBuilding}_lib micromock_ctest umock ctest testrunnerswitcher ${ARGN})
 endfunction()
 
-function(windows_unittests_add_exe whatIsBuilding)
+function(windows_unittests_add_exe whatIsBuilding folder)
     add_executable(${whatIsBuilding}_exe
         ${${whatIsBuilding}_test_files} 
         ${${whatIsBuilding}_cpp_files} 
@@ -140,7 +141,7 @@ function(windows_unittests_add_exe whatIsBuilding)
     )
     set_target_properties(${whatIsBuilding}_exe
                PROPERTIES
-               FOLDER "UnitTests")
+               FOLDER ${folder})
                 
     target_compile_definitions(${whatIsBuilding}_exe PUBLIC -DUSE_CTEST)
     target_include_directories(${whatIsBuilding}_exe PUBLIC ${sharedutil_include_directories})
@@ -151,7 +152,8 @@ endfunction()
 #this function takes more than the 1 mandatory argument (whatIsBuilding)
 #the parameters are separated by "known" separators
 #for example, ADDITIONAL_LIBS starts a list of needed libraries
-function(linux_unittests_add_exe whatIsBuilding)
+function(linux_unittests_add_exe whatIsBuilding folder)
+
     add_executable(${whatIsBuilding}_exe
         ${${whatIsBuilding}_test_files} 
         ${${whatIsBuilding}_cpp_files} 
@@ -161,8 +163,8 @@ function(linux_unittests_add_exe whatIsBuilding)
     )
     set_target_properties(${whatIsBuilding}_exe
                PROPERTIES
-               FOLDER "UnitTests")
-                
+               FOLDER ${folder})
+
     target_compile_definitions(${whatIsBuilding}_exe PUBLIC -DUSE_CTEST)
     target_include_directories(${whatIsBuilding}_exe PUBLIC ${sharedutil_include_directories})
 	
@@ -211,7 +213,7 @@ function(linux_unittests_add_exe whatIsBuilding)
     endif()
 endfunction()
 
-function(build_test_artifacts whatIsBuilding use_gballoc)
+function(build_test_artifacts whatIsBuilding use_gballoc folder)
     
     #the first argument is what is building
     #the second argument is whether the tests should be build with gballoc #defines or not
@@ -241,15 +243,15 @@ function(build_test_artifacts whatIsBuilding use_gballoc)
             (("${whatIsBuilding}" MATCHES ".*unittests.*") AND ${skip_unittests})
         )
         else()
-            windows_unittests_add_exe(${whatIsBuilding} ${ARGN})
-            windows_unittests_add_dll(${whatIsBuilding} ${ARGN})
+            windows_unittests_add_dll(${whatIsBuilding} ${folder} ${ARGN})
+            windows_unittests_add_exe(${whatIsBuilding} ${folder} ${ARGN})
         endif()
     else()
         if(
             (("${whatIsBuilding}" MATCHES ".*unittests.*") AND ${skip_unittests})
         )
         else()
-            linux_unittests_add_exe(${whatIsBuilding} ${ARGN})
+            linux_unittests_add_exe(${whatIsBuilding} ${folder} ${ARGN})
         endif()
     endif()
 endfunction(build_test_artifacts)

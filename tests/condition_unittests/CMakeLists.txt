@@ -21,7 +21,7 @@ set(${theseTestsName}_c_files
 set(${theseTestsName}_h_files
 )
 
-build_test_artifacts(${theseTestsName} ON)
+build_test_artifacts(${theseTestsName} ON "azure_c_shared_utility_tests")
 
 if(WIN32)
 else()
