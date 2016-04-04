@@ -1,49 +1,30 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#include <cstdlib>
-#include <cstring>
+#include <stdlib.h>
 #ifdef _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
 #endif
+#include <string.h>
 
 #include "testrunnerswitcher.h"
-#include "micromock.h"
-#include "micromockcharstararenullterminatedstrings.h"
 #include "constmap.h"
 #include "lock.h"
 
-static MICROMOCK_MUTEX_HANDLE g_testByTest;
-static MICROMOCK_GLOBAL_SEMAPHORE_HANDLE g_dllByDll;
+static TEST_MUTEX_HANDLE g_testByTest;
+static TEST_MUTEX_HANDLE g_dllByDll;
 
 #define GBALLOC_H
 
-extern "C" int gballoc_init(void);
-extern "C" void gballoc_deinit(void);
-extern "C" void* gballoc_malloc(size_t size);
-extern "C" void* gballoc_calloc(size_t nmemb, size_t size);
-extern "C" void* gballoc_realloc(void* ptr, size_t size);
-extern "C" void gballoc_free(void* ptr);
-
-namespace BASEIMPLEMENTATION
-{
-    /*if malloc is defined as gballoc_malloc at this moment, there'd be serious trouble*/
-#define Lock(x) (LOCK_OK + gballocState - gballocState) /*compiler warning about constant in if condition*/
-#define Unlock(x) (LOCK_OK + gballocState - gballocState)
-#define Lock_Init() (LOCK_HANDLE)0x42
-#define Lock_Deinit(x) (LOCK_OK + gballocState - gballocState)
-#include "gballoc.c"
-#undef Lock
-#undef Unlock
-#undef Lock_Init
-#undef Lock_Deinit
-
-};
+void* real_gballoc_malloc(size_t size);
+void* real_gballoc_calloc(size_t nmemb, size_t size);
+void* real_gballoc_realloc(void* ptr, size_t size);
+void real_gballoc_free(void* ptr);
 
 static size_t currentmalloc_call;
 static size_t whenShallmalloc_fail;
 
-DEFINE_MICROMOCK_ENUM_TO_STRING(CONSTMAP_RESULT, CONSTMAP_RESULT_VALUES);
+TEST_DEFINE_ENUM_TYPE(CONSTMAP_RESULT, CONSTMAP_RESULT_VALUES);
 
 #define VALID_MAP_HANDLE    (MAP_HANDLE)0xDEAF
 #define VALID_CONST_CHAR_POINTER (const char*const*)0xDADA
@@ -56,37 +37,38 @@ DEFINE_MICROMOCK_ENUM_TO_STRING(CONSTMAP_RESULT, CONSTMAP_RESULT_VALUES);
 
 static MAP_RESULT currentMapResult;
 
-DEFINE_MICROMOCK_ENUM_TO_STRING(MAP_RESULT, MAP_RESULT_VALUES);
+TEST_DEFINE_ENUM_TYPE(MAP_RESULT, MAP_RESULT_VALUES);
 
-TYPED_MOCK_CLASS(CConstMapMocks, CGlobalMock)
+void* my_gballoc_malloc(size_t size)
 {
-public:
-
-    // memory related
-    MOCK_STATIC_METHOD_1(, void*, gballoc_malloc, size_t, size)
-        void* result2;
+    void* result;
     currentmalloc_call++;
-    if (whenShallmalloc_fail>0)
+    if (whenShallmalloc_fail > 0)
     {
         if (currentmalloc_call == whenShallmalloc_fail)
         {
-            result2 = NULL;
+            result = NULL;
         }
         else
         {
-            result2 = BASEIMPLEMENTATION::gballoc_malloc(size);
+            result = real_gballoc_malloc(size);
         }
     }
     else
     {
-        result2 = BASEIMPLEMENTATION::gballoc_malloc(size);
+        result = real_gballoc_malloc(size);
     }
-    MOCK_METHOD_END(void*, result2);
+    return result;
+}
 
-    MOCK_STATIC_METHOD_1(, void, gballoc_free, void*, ptr)
-        BASEIMPLEMENTATION::gballoc_free(ptr);
-	MOCK_VOID_METHOD_END()
+void my_gballoc_free(void* ptr)
+{
+    real_gballoc_free(ptr);
+}
 
+TYPED_MOCK_CLASS(CConstMapMocks, CGlobalMock)
+{
+public:
 	// Map related
 
 	// Map_Clone
@@ -155,9 +137,6 @@ public:
 	MOCK_METHOD_END(MAP_RESULT, result6);
 };
 
-DECLARE_GLOBAL_MOCK_METHOD_1(CConstMapMocks, , void*, gballoc_malloc, size_t, size);
-DECLARE_GLOBAL_MOCK_METHOD_1(CConstMapMocks, , void, gballoc_free, void*, ptr);
-
 DECLARE_GLOBAL_MOCK_METHOD_1(CConstMapMocks, , MAP_HANDLE, Map_Clone, MAP_HANDLE, sourceMap);
 DECLARE_GLOBAL_MOCK_METHOD_1(CConstMapMocks, , void, Map_Destroy, MAP_HANDLE, ptr);
 DECLARE_GLOBAL_MOCK_METHOD_3(CConstMapMocks, , MAP_RESULT, Map_ContainsKey, MAP_HANDLE, handle, const char*, key, bool*, keyExists);
@@ -171,19 +150,19 @@ BEGIN_TEST_SUITE(constmap_unittests)
     TEST_SUITE_INITIALIZE(TestClassInitialize)
     {
         TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
-        g_testByTest = MicroMockCreateMutex();
+        g_testByTest = TEST_MUTEX_CREATE();
         ASSERT_IS_NOT_NULL(g_testByTest);
     }
 
     TEST_SUITE_CLEANUP(TestClassCleanup)
     {
-        MicroMockDestroyMutex(g_testByTest);
+        TEST_MUTEX_DESTROY(g_testByTest);
         TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
     }
 
     TEST_FUNCTION_INITIALIZE(TestMethodInitialize)
     {
-        if (!MicroMockAcquireMutex(g_testByTest))
+        if (TEST_MUTEX_ACQUIRE(g_testByTest) != 0)
         {
             ASSERT_FAIL("our mutex is ABANDONED. Failure in test framework");
         }
@@ -194,10 +173,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
 
     TEST_FUNCTION_CLEANUP(TestMethodCleanup)
     {
-        if (!MicroMockReleaseMutex(g_testByTest))
-        {
-            ASSERT_FAIL("failure in test framework at ReleaseMutex");
-        }
+        TEST_MUTEX_RELEASE(g_testByTest);
     }
 
 	/*Tests_SRS_CONSTMAP_17_001: [ConstMap_Create shall create an immutable map, populated by the key, value pairs in the source map.]*/
@@ -207,14 +183,12 @@ BEGIN_TEST_SUITE(constmap_unittests)
     TEST_FUNCTION(ConstMap_Create_Destroy_Success)
     {
 		// Arrange
-		CConstMapMocks mocks;
-
-		STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG))
+		STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
 			.IgnoreArgument(1);
-		STRICT_EXPECTED_CALL(mocks, Map_Clone(VALID_MAP_HANDLE));
+		STRICT_EXPECTED_CALL(Map_Clone(VALID_MAP_HANDLE));
 
-		STRICT_EXPECTED_CALL(mocks, Map_Destroy(VALID_MAP_CLONE1));
-		STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
+		STRICT_EXPECTED_CALL(Map_Destroy(VALID_MAP_CLONE1));
+		STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
 			.IgnoreArgument(1);
 
         MAP_HANDLE sourceMap = VALID_MAP_HANDLE;
@@ -227,7 +201,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
 		ConstMap_Destroy(aHandle);
 
 		///Assert
-		mocks.AssertActualAndExpectedCalls();
+		ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
 		//Ablution                
 
@@ -237,9 +211,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
     TEST_FUNCTION(ConstMap_Create_Malloc_Failed)
     {
 		// Arrange
-		CConstMapMocks mocks;
-
-		STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG))
+		STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
 			.IgnoreArgument(1);
 		whenShallmalloc_fail = 1;
 
@@ -251,7 +223,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
 		///Assert
 		ASSERT_IS_NULL(aHandle);
 
-		mocks.AssertActualAndExpectedCalls();
+		ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
 		//Ablution                
 
@@ -261,12 +233,10 @@ BEGIN_TEST_SUITE(constmap_unittests)
     TEST_FUNCTION(ConstMap_Clone_Map_Failed)
     {
 		// Arrange
-		CConstMapMocks mocks;
-
-		STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG))
+		STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
 			.IgnoreArgument(1);
-		STRICT_EXPECTED_CALL(mocks, Map_Clone(INVALID_MAP_HANDLE));
-		STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
+		STRICT_EXPECTED_CALL(Map_Clone(INVALID_MAP_HANDLE));
+		STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
 			.IgnoreArgument(1);
 
 		MAP_HANDLE sourceMap = INVALID_MAP_HANDLE;
@@ -277,7 +247,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
 		///Assert
 		ASSERT_IS_NULL(aHandle);
 
-		mocks.AssertActualAndExpectedCalls();
+		ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
 		//Ablution                
 
@@ -287,19 +257,17 @@ BEGIN_TEST_SUITE(constmap_unittests)
 	TEST_FUNCTION(ConstMap_Clone_Destroy_Success)
 	{
 		// Arrange
-		CConstMapMocks mocks;
-
 		MAP_HANDLE sourceMap = VALID_MAP_HANDLE;
 		CONSTMAP_HANDLE aHandle = ConstMap_Create(sourceMap);
 		CONSTMAP_HANDLE aClone = ConstMap_Clone(aHandle);
 
-		mocks.ResetAllCalls();
+		umock_c_reset_all_calls();
 
 		///Act
 		ConstMap_Destroy(aClone);
 
 		///Assert
-		mocks.AssertActualAndExpectedCalls();
+		ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
 		//Ablution    
 		ConstMap_Destroy(aHandle);
@@ -309,14 +277,13 @@ BEGIN_TEST_SUITE(constmap_unittests)
 	TEST_FUNCTION(ConstMap_Destroy_Null)
 	{
 		///Arrange
-		CConstMapMocks mocks;
 		CONSTMAP_HANDLE handle = NULL;
 
 		///Act
 		ConstMap_Destroy(handle);
 
 		///Assert
-		mocks.AssertActualAndExpectedCalls();
+		ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
 		///Ablution
 	}
@@ -326,12 +293,10 @@ BEGIN_TEST_SUITE(constmap_unittests)
 	TEST_FUNCTION(ConstMap_Clone_Success)
 	{
 		// Arrange
-		CConstMapMocks mocks;
-
 		MAP_HANDLE sourceMap = VALID_MAP_HANDLE;
 		CONSTMAP_HANDLE aHandle = ConstMap_Create(sourceMap);
 
-		mocks.ResetAllCalls();
+		umock_c_reset_all_calls();
 
 		///Act
 		CONSTMAP_HANDLE aClone = ConstMap_Clone(aHandle);
@@ -339,7 +304,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
 		///Assert
 		ASSERT_ARE_EQUAL(void_ptr, aHandle, aClone);
 
-		mocks.AssertActualAndExpectedCalls();
+		ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
 		//Ablution    
 		ConstMap_Destroy(aClone);
@@ -351,8 +316,6 @@ BEGIN_TEST_SUITE(constmap_unittests)
 	TEST_FUNCTION(ConstMap_Clone_Null)
 	{
 		// Arrange
-		CConstMapMocks mocks;
-
 		CONSTMAP_HANDLE aHandle = NULL;
 
 		///Act
@@ -360,7 +323,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
 
 		///Assert
 		ASSERT_IS_NULL(aClone);
-		mocks.AssertActualAndExpectedCalls();
+		ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
 		//Ablution       
 	}
@@ -370,15 +333,13 @@ BEGIN_TEST_SUITE(constmap_unittests)
 	TEST_FUNCTION(ConstMap_CloneWritable_Success)
 	{
 		// Arrange
-		CConstMapMocks mocks;
-
 		MAP_HANDLE sourceMap = VALID_MAP_HANDLE;
 		CONSTMAP_HANDLE aHandle = ConstMap_Create(sourceMap);
 		MAP_HANDLE newMap = NULL;
 
-		mocks.ResetAllCalls();
+		umock_c_reset_all_calls();
 
-		STRICT_EXPECTED_CALL(mocks, Map_Clone(VALID_MAP_CLONE1)).IgnoreArgument(1);
+		STRICT_EXPECTED_CALL(Map_Clone(VALID_MAP_CLONE1)).IgnoreArgument(1);
 
 		//Act 
 		newMap = ConstMap_CloneWriteable(aHandle);
@@ -386,7 +347,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
 		//Assert
 		ASSERT_ARE_EQUAL(void_ptr, VALID_MAP_CLONE2, newMap);
 
-		mocks.AssertActualAndExpectedCalls();
+		ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
 		//Ablution
 		ConstMap_Destroy(aHandle);
@@ -398,15 +359,13 @@ BEGIN_TEST_SUITE(constmap_unittests)
 	TEST_FUNCTION(ConstMap_CloneWritable_Fail)
 	{
 		// Arrange
-		CConstMapMocks mocks;
-
 		MAP_HANDLE sourceMap = INVALID_CLONE_HANDLE;
 		CONSTMAP_HANDLE aHandle = ConstMap_Create(sourceMap);
 		MAP_HANDLE newMap = NULL;
 
-		mocks.ResetAllCalls();
+		umock_c_reset_all_calls();
 
-		STRICT_EXPECTED_CALL(mocks, Map_Clone(INVALID_MAP_HANDLE)).IgnoreArgument(1);
+		STRICT_EXPECTED_CALL(Map_Clone(INVALID_MAP_HANDLE)).IgnoreArgument(1);
 
 		//Act 
 		newMap = ConstMap_CloneWriteable(aHandle);
@@ -414,7 +373,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
 		//Assert
 		ASSERT_IS_NULL(newMap);
 
-		mocks.AssertActualAndExpectedCalls();
+		ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
 		//Ablution
 		ConstMap_Destroy(aHandle);
@@ -425,8 +384,6 @@ BEGIN_TEST_SUITE(constmap_unittests)
 	TEST_FUNCTION(ConstMap_CloneWritable_NULL)
 	{
 		// Arrange
-		CConstMapMocks mocks;
-
 		MAP_HANDLE newMap = NULL;
 
 		//Act 
@@ -435,7 +392,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
 		//Assert
 		ASSERT_IS_NULL(newMap);
 
-		mocks.AssertActualAndExpectedCalls();
+		ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
 		//Ablution
 	}
@@ -445,17 +402,16 @@ BEGIN_TEST_SUITE(constmap_unittests)
 	TEST_FUNCTION(ConstMap_ContainsKey_Success)
 	{
 		// Arrange
-		CConstMapMocks mocks;
 		const char * key = "aKey";
 		bool keyExists;
 
 		MAP_HANDLE sourceMap = VALID_MAP_HANDLE;
 		CONSTMAP_HANDLE aHandle = ConstMap_Create(sourceMap);
 
-		mocks.ResetAllCalls();
+		umock_c_reset_all_calls();
 
 		// Call to Map
-		STRICT_EXPECTED_CALL(mocks, Map_ContainsKey(IGNORED_PTR_ARG, key, IGNORED_PTR_ARG))
+		STRICT_EXPECTED_CALL(Map_ContainsKey(IGNORED_PTR_ARG, key, IGNORED_PTR_ARG))
 			.IgnoreArgument(1).IgnoreArgument(3);
 
 		///Act
@@ -465,7 +421,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
 		///Assert
 		ASSERT_IS_TRUE(keyExists);
 
-		mocks.AssertActualAndExpectedCalls();
+		ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
 		//Ablution    
 		ConstMap_Destroy(aHandle);
@@ -475,7 +431,6 @@ BEGIN_TEST_SUITE(constmap_unittests)
 	TEST_FUNCTION(ConstMap_ContainsKey_Null)
 	{
 		// Arrange
-		CConstMapMocks mocks;
 		const char * key1 = "aKey";
 		const char * key2 = NULL;
 		bool keyExists1;
@@ -485,7 +440,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
 		MAP_HANDLE sourceMap = VALID_MAP_HANDLE;
 
 		aHandle2 = ConstMap_Create(sourceMap);
-		mocks.ResetAllCalls();
+		umock_c_reset_all_calls();
 
 		///Act
 		// NULL Handle
@@ -497,7 +452,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
 		///Assert
 		ASSERT_IS_FALSE(keyExists1);
 		ASSERT_IS_FALSE(keyExists2);
-		mocks.AssertActualAndExpectedCalls();
+		ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
 		//Ablution    
 		ConstMap_Destroy(aHandle2);
@@ -508,24 +463,23 @@ BEGIN_TEST_SUITE(constmap_unittests)
 	TEST_FUNCTION(ConstMap_ContainsKey_Failures)
 	{
 		// Arrange
-		CConstMapMocks mocks;
 		const char * key = "aKey";
 		bool keyExists;
 
 		MAP_HANDLE sourceMap = VALID_MAP_HANDLE;
 		CONSTMAP_HANDLE aHandle = ConstMap_Create(sourceMap);
-		mocks.ResetAllCalls();
+		umock_c_reset_all_calls();
 
 		// Call to Map_ContainsKey (match with mapErrorList size)
-		STRICT_EXPECTED_CALL(mocks, Map_ContainsKey(IGNORED_PTR_ARG, key, IGNORED_PTR_ARG))
+		STRICT_EXPECTED_CALL(Map_ContainsKey(IGNORED_PTR_ARG, key, IGNORED_PTR_ARG))
 			.IgnoreArgument(1).IgnoreArgument(3);
-		STRICT_EXPECTED_CALL(mocks, Map_ContainsKey(IGNORED_PTR_ARG, key, IGNORED_PTR_ARG))
+		STRICT_EXPECTED_CALL(Map_ContainsKey(IGNORED_PTR_ARG, key, IGNORED_PTR_ARG))
 			.IgnoreArgument(1).IgnoreArgument(3);
-		STRICT_EXPECTED_CALL(mocks, Map_ContainsKey(IGNORED_PTR_ARG, key, IGNORED_PTR_ARG))
+		STRICT_EXPECTED_CALL(Map_ContainsKey(IGNORED_PTR_ARG, key, IGNORED_PTR_ARG))
 			.IgnoreArgument(1).IgnoreArgument(3);
-		STRICT_EXPECTED_CALL(mocks, Map_ContainsKey(IGNORED_PTR_ARG, key, IGNORED_PTR_ARG))
+		STRICT_EXPECTED_CALL(Map_ContainsKey(IGNORED_PTR_ARG, key, IGNORED_PTR_ARG))
 			.IgnoreArgument(1).IgnoreArgument(3);
-		STRICT_EXPECTED_CALL(mocks, Map_ContainsKey(IGNORED_PTR_ARG, key, IGNORED_PTR_ARG))
+		STRICT_EXPECTED_CALL(Map_ContainsKey(IGNORED_PTR_ARG, key, IGNORED_PTR_ARG))
 			.IgnoreArgument(1).IgnoreArgument(3);
 
 
@@ -555,7 +509,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
 
 		///Assert
 
-		mocks.AssertActualAndExpectedCalls();
+		ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
 		//Ablution    
 		ConstMap_Destroy(aHandle);
@@ -565,17 +519,16 @@ BEGIN_TEST_SUITE(constmap_unittests)
 	TEST_FUNCTION(ConstMap_ContainsValue_Success)
 	{
 		// Arrange
-		CConstMapMocks mocks;
 		const char * value = "aValue";
 		bool valueExists;
 
 		MAP_HANDLE sourceMap = VALID_MAP_HANDLE;
 		CONSTMAP_HANDLE aHandle = ConstMap_Create(sourceMap);
 
-		mocks.ResetAllCalls();
+		umock_c_reset_all_calls();
 
 		// Call to Map
-		STRICT_EXPECTED_CALL(mocks, Map_ContainsValue(IGNORED_PTR_ARG, value, IGNORED_PTR_ARG))
+		STRICT_EXPECTED_CALL(Map_ContainsValue(IGNORED_PTR_ARG, value, IGNORED_PTR_ARG))
 			.IgnoreArgument(1).IgnoreArgument(3);
 
 		///Act
@@ -584,7 +537,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
 		///Assert
 		ASSERT_IS_TRUE(valueExists);
 
-		mocks.AssertActualAndExpectedCalls();
+		ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
 		//Ablution    
 		ConstMap_Destroy(aHandle);
@@ -594,7 +547,6 @@ BEGIN_TEST_SUITE(constmap_unittests)
 	TEST_FUNCTION(ConstMap_ContainsValue_Null)
 	{
 		// Arrange
-		CConstMapMocks mocks;
 		const char * value1 = "aValue";
 		bool valueExists1;
 		const char * value2 = NULL;
@@ -605,7 +557,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
 
 		aHandle2 = ConstMap_Create(sourceMap);
 
-		mocks.ResetAllCalls();
+		umock_c_reset_all_calls();
 
 		///Act
 		valueExists1 = ConstMap_ContainsValue(aHandle1, value1);
@@ -616,7 +568,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
 		ASSERT_IS_FALSE(valueExists1);
 		ASSERT_IS_FALSE(valueExists2);
 
-		mocks.AssertActualAndExpectedCalls();
+		ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
 		//Ablution   
 		ConstMap_Destroy(aHandle2);
@@ -626,24 +578,23 @@ BEGIN_TEST_SUITE(constmap_unittests)
 	TEST_FUNCTION(ConstMap_ContainsValue_Failures)
 	{
 		// Arrange
-		CConstMapMocks mocks;
 		const char * value = "aValue";
 		bool valueExists;
 
 		MAP_HANDLE sourceMap = VALID_MAP_HANDLE;
 		CONSTMAP_HANDLE aHandle = ConstMap_Create(sourceMap);
-		mocks.ResetAllCalls();
+		umock_c_reset_all_calls();
 
 		// Call to Map_ContainsValue (match with mapErrorList size)
-		STRICT_EXPECTED_CALL(mocks, Map_ContainsValue(IGNORED_PTR_ARG, value, IGNORED_PTR_ARG))
+		STRICT_EXPECTED_CALL(Map_ContainsValue(IGNORED_PTR_ARG, value, IGNORED_PTR_ARG))
 			.IgnoreArgument(1).IgnoreArgument(3);
-		STRICT_EXPECTED_CALL(mocks, Map_ContainsValue(IGNORED_PTR_ARG, value, IGNORED_PTR_ARG))
+		STRICT_EXPECTED_CALL(Map_ContainsValue(IGNORED_PTR_ARG, value, IGNORED_PTR_ARG))
 			.IgnoreArgument(1).IgnoreArgument(3);
-		STRICT_EXPECTED_CALL(mocks, Map_ContainsValue(IGNORED_PTR_ARG, value, IGNORED_PTR_ARG))
+		STRICT_EXPECTED_CALL(Map_ContainsValue(IGNORED_PTR_ARG, value, IGNORED_PTR_ARG))
 			.IgnoreArgument(1).IgnoreArgument(3);
-		STRICT_EXPECTED_CALL(mocks, Map_ContainsValue(IGNORED_PTR_ARG, value, IGNORED_PTR_ARG))
+		STRICT_EXPECTED_CALL(Map_ContainsValue(IGNORED_PTR_ARG, value, IGNORED_PTR_ARG))
 			.IgnoreArgument(1).IgnoreArgument(3);
-		STRICT_EXPECTED_CALL(mocks, Map_ContainsValue(IGNORED_PTR_ARG, value, IGNORED_PTR_ARG))
+		STRICT_EXPECTED_CALL(Map_ContainsValue(IGNORED_PTR_ARG, value, IGNORED_PTR_ARG))
 			.IgnoreArgument(1).IgnoreArgument(3);
 
 		///Act
@@ -672,7 +623,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
 
 		///Assert
 
-		mocks.AssertActualAndExpectedCalls();
+		ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
 		//Ablution    
 		ConstMap_Destroy(aHandle);
@@ -682,16 +633,15 @@ BEGIN_TEST_SUITE(constmap_unittests)
 	TEST_FUNCTION(ConstMap_GetValue_Success)
 	{
 		// Arrange
-		CConstMapMocks mocks;
 		const char * key = "aKey";
 		const char * value;
 
 		MAP_HANDLE sourceMap = VALID_MAP_HANDLE;
 		CONSTMAP_HANDLE aHandle = ConstMap_Create(sourceMap);
-		mocks.ResetAllCalls();
+		umock_c_reset_all_calls();
 
 		// Call to Map
-		STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(IGNORED_PTR_ARG, key))
+		STRICT_EXPECTED_CALL(Map_GetValueFromKey(IGNORED_PTR_ARG, key))
 			.IgnoreArgument(1);
 
 		///Act
@@ -701,7 +651,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
 		///Assert
 		ASSERT_ARE_EQUAL(char_ptr, VALID_VALUE, value);
 
-		mocks.AssertActualAndExpectedCalls();
+		ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
 		//Ablution    
 		ConstMap_Destroy(aHandle);
@@ -711,7 +661,6 @@ BEGIN_TEST_SUITE(constmap_unittests)
 	TEST_FUNCTION(ConstMap_GetValue_Null)
 	{
 		// Arrange
-		CConstMapMocks mocks;
 		const char * key1 = "aKey";
 		const char * value1;
 		CONSTMAP_HANDLE aHandle1 = NULL;
@@ -720,7 +669,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
 		MAP_HANDLE sourceMap = VALID_MAP_HANDLE;
 		CONSTMAP_HANDLE aHandle2 = ConstMap_Create(sourceMap);
 
-		mocks.ResetAllCalls();
+		umock_c_reset_all_calls();
 
 		///Act
 		value1 = ConstMap_GetValue(aHandle1, key1);
@@ -730,7 +679,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
 		ASSERT_IS_NULL(value1);
 		ASSERT_IS_NULL(value2);
 
-		mocks.AssertActualAndExpectedCalls();
+		ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
 		//Ablution   
 		ConstMap_Destroy(aHandle2);
@@ -742,24 +691,23 @@ BEGIN_TEST_SUITE(constmap_unittests)
 	TEST_FUNCTION(ConstMap_GetValue_Failures)
 	{
 		// Arrange
-		CConstMapMocks mocks;
 		const char * key = "aKey";
 		const char * value;
 
 		MAP_HANDLE sourceMap = VALID_MAP_HANDLE;
 		CONSTMAP_HANDLE aHandle = ConstMap_Create(sourceMap);
-		mocks.ResetAllCalls();
+		umock_c_reset_all_calls();
 
 		// Call to Map_ContainsKey (match with mapErrorList size)
-		STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(IGNORED_PTR_ARG, key))
+		STRICT_EXPECTED_CALL(Map_GetValueFromKey(IGNORED_PTR_ARG, key))
 			.IgnoreArgument(1);
-		STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(IGNORED_PTR_ARG, key))
+		STRICT_EXPECTED_CALL(Map_GetValueFromKey(IGNORED_PTR_ARG, key))
 			.IgnoreArgument(1);
-		STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(IGNORED_PTR_ARG, key))
+		STRICT_EXPECTED_CALL(Map_GetValueFromKey(IGNORED_PTR_ARG, key))
 			.IgnoreArgument(1);
-		STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(IGNORED_PTR_ARG, key))
+		STRICT_EXPECTED_CALL(Map_GetValueFromKey(IGNORED_PTR_ARG, key))
 			.IgnoreArgument(1);
-		STRICT_EXPECTED_CALL(mocks, Map_GetValueFromKey(IGNORED_PTR_ARG, key))
+		STRICT_EXPECTED_CALL(Map_GetValueFromKey(IGNORED_PTR_ARG, key))
 			.IgnoreArgument(1);
 
 
@@ -790,7 +738,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
 
 		///Assert
 
-		mocks.AssertActualAndExpectedCalls();
+		ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
 		//Ablution    
 		ConstMap_Destroy(aHandle);
@@ -802,17 +750,16 @@ BEGIN_TEST_SUITE(constmap_unittests)
 	TEST_FUNCTION(ConstMap_GetInternals_Success)
 	{
 		// Arrange
-		CConstMapMocks mocks;
 		const char*const* keys;
 		const char*const* values;
 		size_t count;
 
 		MAP_HANDLE sourceMap = VALID_MAP_HANDLE;
 		CONSTMAP_HANDLE aHandle = ConstMap_Create(sourceMap);
-		mocks.ResetAllCalls();
+		umock_c_reset_all_calls();
 
 		// Call to Map
-		STRICT_EXPECTED_CALL(mocks, Map_GetInternals(IGNORED_PTR_ARG, &keys, &values, &count))
+		STRICT_EXPECTED_CALL(Map_GetInternals(IGNORED_PTR_ARG, &keys, &values, &count))
 			.IgnoreArgument(1);
 
 		///Act
@@ -824,7 +771,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
 		ASSERT_ARE_EQUAL(void_ptr, VALID_CONST_CHAR_POINTER, values);
 		ASSERT_ARE_EQUAL(int, VALID_KV_COUNT, count);
 
-		mocks.AssertActualAndExpectedCalls();
+		ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
 		//Ablution    
 		ConstMap_Destroy(aHandle);
@@ -834,7 +781,6 @@ BEGIN_TEST_SUITE(constmap_unittests)
 	TEST_FUNCTION(ConstMap_GetInternals_Null)
 	{
 		// Arrange
-		CConstMapMocks mocks;
 		const char*const* keys;
 		const char*const* values;
 		size_t count;
@@ -847,7 +793,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
 		///Assert
 		ASSERT_ARE_EQUAL(CONSTMAP_RESULT, CONSTMAP_INVALIDARG, result);
 
-		mocks.AssertActualAndExpectedCalls();
+		ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
 		//Ablution    
 	}
@@ -855,7 +801,6 @@ BEGIN_TEST_SUITE(constmap_unittests)
 	TEST_FUNCTION(ConstMap_GetInternals_Failures)
 	{
 		// Arrange
-		CConstMapMocks mocks;
 		const char*const* keys;
 		const char*const* values;
 		size_t count;
@@ -863,18 +808,18 @@ BEGIN_TEST_SUITE(constmap_unittests)
 		MAP_HANDLE sourceMap = VALID_MAP_HANDLE;
 		CONSTMAP_HANDLE aHandle = ConstMap_Create(sourceMap);
 
-		mocks.ResetAllCalls();
+		umock_c_reset_all_calls();
 
 		// Call to Map_GetInternals (match with mapErrorList size)
-		STRICT_EXPECTED_CALL(mocks, Map_GetInternals(IGNORED_PTR_ARG, &keys, &values, &count))
+		STRICT_EXPECTED_CALL(Map_GetInternals(IGNORED_PTR_ARG, &keys, &values, &count))
 			.IgnoreArgument(1);
-		STRICT_EXPECTED_CALL(mocks, Map_GetInternals(IGNORED_PTR_ARG, &keys, &values, &count))
+		STRICT_EXPECTED_CALL(Map_GetInternals(IGNORED_PTR_ARG, &keys, &values, &count))
 			.IgnoreArgument(1);
-		STRICT_EXPECTED_CALL(mocks, Map_GetInternals(IGNORED_PTR_ARG, &keys, &values, &count))
+		STRICT_EXPECTED_CALL(Map_GetInternals(IGNORED_PTR_ARG, &keys, &values, &count))
 			.IgnoreArgument(1);
-		STRICT_EXPECTED_CALL(mocks, Map_GetInternals(IGNORED_PTR_ARG, &keys, &values, &count))
+		STRICT_EXPECTED_CALL(Map_GetInternals(IGNORED_PTR_ARG, &keys, &values, &count))
 			.IgnoreArgument(1);
-		STRICT_EXPECTED_CALL(mocks, Map_GetInternals(IGNORED_PTR_ARG, &keys, &values, &count))
+		STRICT_EXPECTED_CALL(Map_GetInternals(IGNORED_PTR_ARG, &keys, &values, &count))
 			.IgnoreArgument(1);
 
 		///Act
@@ -903,7 +848,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
 
 		///Assert
 
-		mocks.AssertActualAndExpectedCalls();
+		ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
 		//Ablution    
 		ConstMap_Destroy(aHandle);
@@ -911,3 +856,18 @@ BEGIN_TEST_SUITE(constmap_unittests)
 
 
 END_TEST_SUITE(constmap_unittests)
+
+/*if malloc is defined as gballoc_malloc at this moment, there'd be serious trouble*/
+#define Lock(x) (LOCK_OK + gballocState - gballocState) /*compiler warning about constant in if condition*/
+#define Unlock(x) (LOCK_OK + gballocState - gballocState)
+#define Lock_Init() (LOCK_HANDLE)0x42
+#define Lock_Deinit(x) (LOCK_OK + gballocState - gballocState)
+#define gballoc_malloc real_gballoc_malloc
+#define gballoc_realloc real_gballoc_realloc
+#define gballoc_calloc real_gballoc_calloc
+#define gballoc_free real_gballoc_free
+#include "gballoc.c"
+#undef Lock
+#undef Unlock
+#undef Lock_Init
+#undef Lock_Deinit
