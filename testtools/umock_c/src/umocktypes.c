@@ -180,6 +180,78 @@ int umocktypes_register_type(const char* type, UMOCKTYPE_STRINGIFY_FUNC stringif
     return result;
 }
 
+int umocktypes_register_alias_type(const char* type, const char* is_type)
+{
+    int result;
+
+    if ((type == NULL) || (is_type == NULL))
+    {
+        result = __LINE__;
+    }
+    else if (umocktypes_state != UMOCKTYPES_STATE_INITIALIZED)
+    {
+        result = __LINE__;
+    }
+    else
+    {
+        char* normalized_is_type = umocktypename_normalize(is_type);
+        if (normalized_is_type == NULL)
+        {
+            result = __LINE__;
+        }
+        else
+        {
+            UMOCK_VALUE_TYPE_HANDLERS* value_type_handlers = get_value_type_handlers(normalized_is_type);
+            if (value_type_handlers == NULL)
+            {
+                result = __LINE__;
+            }
+            else
+            {
+                char* normalized_type = umocktypename_normalize(type);
+                if (normalized_type == NULL)
+                {
+                    result = __LINE__;
+                }
+                else
+                {
+                    if (strcmp(normalized_type, normalized_is_type) == 0)
+                    {
+                        free(normalized_type);
+
+                        result = 0;
+                    }
+                    else
+                    {
+                        UMOCK_VALUE_TYPE_HANDLERS* new_type_handlers = (UMOCK_VALUE_TYPE_HANDLERS*)realloc(type_handlers, sizeof(UMOCK_VALUE_TYPE_HANDLERS) * (type_handler_count + 1));
+                        if (new_type_handlers == NULL)
+                        {
+                            free(normalized_type);
+                            result = __LINE__;
+                        }
+                        else
+                        {
+                            type_handlers = new_type_handlers;
+                            type_handlers[type_handler_count].type = normalized_type;
+                            type_handlers[type_handler_count].stringify_func = value_type_handlers->stringify_func;
+                            type_handlers[type_handler_count].copy_func = value_type_handlers->copy_func;
+                            type_handlers[type_handler_count].free_func = value_type_handlers->free_func;
+                            type_handlers[type_handler_count].are_equal_func = value_type_handlers->are_equal_func;
+                            type_handler_count++;
+
+                            result = 0;
+                        }
+                    }
+                }
+            }
+
+            free(normalized_is_type);
+        }
+    }
+
+    return result;
+}
+
 /* Codes_SRS_UMOCKTYPES_01_013: [ umocktypes_stringify shall return a char\* with the string representation of the value argument. ]*/
 char* umocktypes_stringify(const char* type, const void* value)
 {

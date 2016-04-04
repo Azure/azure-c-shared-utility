@@ -120,6 +120,11 @@ size_t my_BUFFER_length(BUFFER_HANDLE handle)
     return result;
 }
 
+void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
+{
+    ASSERT_FAIL("umock_c reported error");
+}
+
 BEGIN_TEST_SUITE(constbuffer_unittests)
 
     TEST_SUITE_INITIALIZE(setsBufferTempSize)
@@ -127,6 +132,10 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
         g_testByTest = TEST_MUTEX_CREATE();
         ASSERT_IS_NOT_NULL(g_testByTest);
+
+        umock_c_init(on_umock_c_error);
+
+        REGISTER_ALIAS_TYPE(BUFFER_HANDLE, void*);
 
         REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, my_gballoc_malloc);
         REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, my_gballoc_free);
@@ -146,6 +155,8 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         {
             ASSERT_FAIL("our mutex is ABANDONED. Failure in test framework");
         }
+
+        umock_c_reset_all_calls();
 
         currentmalloc_call = 0;
         whenShallmalloc_fail = 0;
@@ -213,8 +224,8 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         /*this is the content*/
         STRICT_EXPECTED_CALL(gballoc_malloc(BUFFER1_length));
 
-        STRICT_EXPECTED_CALL(BUFFER_u_char(BUFFER1_HANDLE));
         STRICT_EXPECTED_CALL(BUFFER_length(BUFFER1_HANDLE));
+        STRICT_EXPECTED_CALL(BUFFER_u_char(BUFFER1_HANDLE));
 
         CONSTBUFFER_HANDLE handle = CONSTBUFFER_CreateFromBuffer(BUFFER1_HANDLE);
 

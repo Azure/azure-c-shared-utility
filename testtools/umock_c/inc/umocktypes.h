@@ -19,6 +19,7 @@ extern "C" {
     extern int umocktypes_init(void);
     extern void umocktypes_deinit(void);
     extern int umocktypes_register_type(const char* type, UMOCKTYPE_STRINGIFY_FUNC stringify_func, UMOCKTYPE_ARE_EQUAL_FUNC are_equal_func, UMOCKTYPE_COPY_FUNC copy_func, UMOCKTYPE_FREE_FUNC free_func);
+    extern int umocktypes_register_alias_type(const char* type, const char* alias_type);
 
     extern char* umocktypes_stringify(const char* type, const void* value);
     extern int umocktypes_are_equal(const char* type, const void* left, const void* right);
