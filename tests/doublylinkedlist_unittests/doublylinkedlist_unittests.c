@@ -6,10 +6,7 @@
 #endif
 
 #include "doublylinkedlist.h"
-
 #include "testrunnerswitcher.h"
-#include "micromock.h"
-
 
 typedef struct simpleItem_tag
 {
@@ -23,8 +20,8 @@ static simpleItem simp3 = { 3 };
 static simpleItem simp4 = { 4 };
 static simpleItem simp5 = { 5 };
 
-static MICROMOCK_GLOBAL_SEMAPHORE_HANDLE g_dllByDll;
-static MICROMOCK_MUTEX_HANDLE g_testByTest;
+static TEST_MUTEX_HANDLE g_dllByDll;
+static TEST_MUTEX_HANDLE g_testByTest;
 
 BEGIN_TEST_SUITE(doublylinkedlist_unittests)
 
@@ -32,21 +29,19 @@ TEST_SUITE_INITIALIZE(TestClassInitialize)
 {
     TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
 
-    g_testByTest = MicroMockCreateMutex();
+    g_testByTest = TEST_MUTEX_CREATE();
     ASSERT_IS_NOT_NULL(g_testByTest);
 }
 
 TEST_SUITE_CLEANUP(TestClassCleanup)
 {
-    MicroMockDestroyMutex(g_testByTest);
-
+    TEST_MUTEX_DESTROY(g_testByTest);
     TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
-
 }
 
 TEST_FUNCTION_INITIALIZE(TestMethodInitialize)
 {
-    if (!MicroMockAcquireMutex(g_testByTest))
+    if (TEST_MUTEX_ACQUIRE(g_testByTest) != 0)
     {
         ASSERT_FAIL("our mutex is ABANDONED. Failure in test framework");
     }
@@ -54,10 +49,7 @@ TEST_FUNCTION_INITIALIZE(TestMethodInitialize)
 
 TEST_FUNCTION_CLEANUP(TestMethodCleanup)
 {
-    if (!MicroMockReleaseMutex(g_testByTest))
-    {
-        ASSERT_FAIL("failure in test framework at ReleaseMutex");
-    }
+    TEST_MUTEX_RELEASE(g_testByTest);
 }
 
     /* Tests_SRS_DLIST_06_005: [DList_InitializeListHead will initialize the Flink & Blink to the address of the DLIST_ENTRY.] */
