@@ -8,8 +8,23 @@
 #include <string.h>
 
 #include "testrunnerswitcher.h"
+
+#define ENABLE_MOCKS
+
+#include "umock_c.h"
+#include "umocktypes_charptr.h"
 #include "constmap.h"
 #include "lock.h"
+#include "map.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+    MOCKABLE_FUNCTION(void*, gballoc_malloc, size_t, size);
+    MOCKABLE_FUNCTION(void, gballoc_free, void*, ptr);
+#ifdef __cplusplus
+}
+#endif
 
 static TEST_MUTEX_HANDLE g_testByTest;
 static TEST_MUTEX_HANDLE g_dllByDll;
@@ -66,96 +81,108 @@ void my_gballoc_free(void* ptr)
     real_gballoc_free(ptr);
 }
 
-TYPED_MOCK_CLASS(CConstMapMocks, CGlobalMock)
+MAP_HANDLE my_Map_Clone(MAP_HANDLE sourceMap)
 {
-public:
-	// Map related
+    MAP_HANDLE result;
+    if (sourceMap == VALID_MAP_HANDLE)
+    {
+        result = VALID_MAP_CLONE1;
+    }
+    else if (sourceMap == VALID_MAP_CLONE1)
+    {
+        result = VALID_MAP_CLONE2;
+    }
+    else if (sourceMap == INVALID_CLONE_HANDLE)
+    {
+        result = INVALID_MAP_HANDLE;
+    }
+    else if (sourceMap == INVALID_MAP_HANDLE)
+    {
+        result = NULL;
+    }
 
-	// Map_Clone
-	MOCK_STATIC_METHOD_1(, MAP_HANDLE, Map_Clone, MAP_HANDLE, sourceMap)
-		MAP_HANDLE result2;
-		if (sourceMap == VALID_MAP_HANDLE)
-		{
-			result2 = VALID_MAP_CLONE1;
-		}
-		else if (sourceMap == VALID_MAP_CLONE1)
-		{
-			result2 = VALID_MAP_CLONE2;
-		}
-		else if (sourceMap == INVALID_CLONE_HANDLE)
-		{
-			result2 = INVALID_MAP_HANDLE;
-		}
-		else if (sourceMap == INVALID_MAP_HANDLE)
-		{
-			result2 = NULL;
-		}
-	MOCK_METHOD_END(MAP_HANDLE, result2);
+    return result;
+}
 
-	// Map_Destroy
-	MOCK_STATIC_METHOD_1(, void, Map_Destroy, MAP_HANDLE, ptr)
-	MOCK_VOID_METHOD_END();
+MAP_RESULT my_Map_ContainsKey(MAP_HANDLE handle, const char* key, bool* keyExists)
+{
+    MAP_RESULT result = currentMapResult;
+    if (result == MAP_OK)
+    {
+        *keyExists = true;
+    }
+    return result;
+}
 
-	// Map_ContainsKey
-	MOCK_STATIC_METHOD_3(, MAP_RESULT, Map_ContainsKey, MAP_HANDLE, handle, const char*, key, bool*, keyExists)
-		MAP_RESULT result3 = currentMapResult;
-		if (result3 == MAP_OK)
-		{
-			*keyExists = true;
-		}
-	MOCK_METHOD_END(MAP_RESULT, result3);
+MAP_RESULT my_Map_ContainsValue(MAP_HANDLE handle, const char* value, bool* valueExists)
+{
+    MAP_RESULT result = currentMapResult;
+    if (result == MAP_OK)
+    {
+        *valueExists = true;
+    }
+    return result;
+}
 
-	// Map_ContainsValue 
-	// MAP_RESULT Map_ContainsValue(MAP_HANDLE handle, const char* value, bool* valueExists);
-	MOCK_STATIC_METHOD_3(, MAP_RESULT, Map_ContainsValue, MAP_HANDLE, handle, const char*, value, bool*, valueExists)
-		MAP_RESULT result4 = currentMapResult;
-		if (result4 == MAP_OK)
-		{
-			*valueExists = true;
-		}
-	MOCK_METHOD_END(MAP_RESULT, result4);
+const char* my_Map_GetValueFromKey(MAP_HANDLE sourceMap, const char* key)
+{
+    const char* result;
+    if (currentMapResult == MAP_OK)
+    {
+        result = VALID_VALUE;
+    }
+    else
+    {
+        result = NULL;
+    }
+    return result;
+}
 
-	// Map_GetValueFromKey
-	MOCK_STATIC_METHOD_2(, const char*, Map_GetValueFromKey, MAP_HANDLE, sourceMap, const char*, key)
-		const char* result5;
-		if (currentMapResult == MAP_OK)
-		{
-			result5 = VALID_VALUE;
-		}
-		else
-		{
-			result5 = NULL;
-		}
-	MOCK_METHOD_END(const char*, result5);
+MAP_RESULT my_Map_GetInternals(MAP_HANDLE handle, const char*const** keys, const char*const** values, size_t* count)
+{
+    MAP_RESULT result = currentMapResult;
+    *keys = VALID_CONST_CHAR_POINTER;
+    *values = VALID_CONST_CHAR_POINTER;
+    *count = VALID_KV_COUNT;
+    return result;
+}
 
-	// Map_GetInternals
-	MOCK_STATIC_METHOD_4(, MAP_RESULT, Map_GetInternals, MAP_HANDLE, handle, const char*const**, keys, const char*const**, values, size_t*, count)
-		MAP_RESULT result6 = currentMapResult;
-		*keys = VALID_CONST_CHAR_POINTER;
-		*values = VALID_CONST_CHAR_POINTER;
-		*count = VALID_KV_COUNT;
-	MOCK_METHOD_END(MAP_RESULT, result6);
-};
-
-DECLARE_GLOBAL_MOCK_METHOD_1(CConstMapMocks, , MAP_HANDLE, Map_Clone, MAP_HANDLE, sourceMap);
-DECLARE_GLOBAL_MOCK_METHOD_1(CConstMapMocks, , void, Map_Destroy, MAP_HANDLE, ptr);
-DECLARE_GLOBAL_MOCK_METHOD_3(CConstMapMocks, , MAP_RESULT, Map_ContainsKey, MAP_HANDLE, handle, const char*, key, bool*, keyExists);
-DECLARE_GLOBAL_MOCK_METHOD_3(CConstMapMocks, , MAP_RESULT, Map_ContainsValue, MAP_HANDLE, handle, const char*, key, bool*, keyExists);
-DECLARE_GLOBAL_MOCK_METHOD_2(CConstMapMocks, , const char*, Map_GetValueFromKey, MAP_HANDLE, ptr, const char*, key);
-DECLARE_GLOBAL_MOCK_METHOD_4(CConstMapMocks, , MAP_RESULT, Map_GetInternals, MAP_HANDLE, handle, const char*const**, keys, const char*const**, values, size_t*, count);
-/* capacity */
+void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
+{
+    ASSERT_FAIL("umock_c reported error");
+}
 
 BEGIN_TEST_SUITE(constmap_unittests)
 
     TEST_SUITE_INITIALIZE(TestClassInitialize)
     {
+        int result;
         TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
         g_testByTest = TEST_MUTEX_CREATE();
         ASSERT_IS_NOT_NULL(g_testByTest);
+
+        umock_c_init(on_umock_c_error);
+    
+        REGISTER_ALIAS_TYPE(CONSTMAP_HANDLE, void*);
+        REGISTER_ALIAS_TYPE(MAP_HANDLE, void*);
+        REGISTER_ALIAS_TYPE(const char*const**, void*);
+        REGISTER_ALIAS_TYPE(size_t*, void*);
+        result = umocktypes_charptr_register_types();
+        ASSERT_ARE_EQUAL(int, 0, result);
+
+        REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, my_gballoc_malloc);
+        REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, my_gballoc_free);
+        REGISTER_GLOBAL_MOCK_HOOK(Map_Clone, my_Map_Clone);
+        REGISTER_GLOBAL_MOCK_HOOK(Map_ContainsKey, my_Map_ContainsKey);
+        REGISTER_GLOBAL_MOCK_HOOK(Map_ContainsValue, my_Map_ContainsValue);
+        REGISTER_GLOBAL_MOCK_HOOK(Map_GetValueFromKey, my_Map_GetValueFromKey);
+        REGISTER_GLOBAL_MOCK_HOOK(Map_GetInternals, my_Map_GetInternals);
     }
 
     TEST_SUITE_CLEANUP(TestClassCleanup)
     {
+        umock_c_deinit();
+
         TEST_MUTEX_DESTROY(g_testByTest);
         TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
     }
@@ -169,6 +196,8 @@ BEGIN_TEST_SUITE(constmap_unittests)
         currentmalloc_call = 0;
         whenShallmalloc_fail = 0;
 		currentMapResult = MAP_OK;
+
+        umock_c_reset_all_calls();
     }
 
     TEST_FUNCTION_CLEANUP(TestMethodCleanup)
