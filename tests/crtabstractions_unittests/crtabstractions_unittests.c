@@ -1,17 +1,16 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#include <cstdlib>
+#include <stdlib.h>
 #ifdef _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
 #endif
 
+#include <limits.h>
+
 #include "testrunnerswitcher.h"
 #include "crt_abstractions.h"
 #include "errno.h"
-#include <climits>
-#include "micromock.h"
-
 
 #ifdef _MSC_VER
 #pragma warning(disable:4505)
@@ -112,7 +111,7 @@ static const size_t interestingSize_tNumbersToBeConverted[] =
     0x42
 };
 
-static MICROMOCK_GLOBAL_SEMAPHORE_HANDLE g_dllByDll;
+static TEST_MUTEX_HANDLE g_dllByDll;
 
 BEGIN_TEST_SUITE(CRTAbstractions_UnitTests)
 
