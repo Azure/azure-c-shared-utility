@@ -27,7 +27,7 @@ typedef struct STRING_TOKEN_TAG
 
 STRING_TOKENIZER_HANDLE STRING_TOKENIZER_create(STRING_HANDLE handle)
 {
-    STRING_TOKEN* result;
+    STRING_TOKENIZER_HANDLE result;
 
     /* Codes_SRS_STRING_04_001: [STRING_TOKENIZER_create shall return an NULL STRING_TOKENIZER_HANDLE if parameter handle is NULL] */
     if (handle == NULL)
