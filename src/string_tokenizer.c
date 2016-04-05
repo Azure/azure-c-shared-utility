@@ -27,8 +27,7 @@ typedef struct STRING_TOKEN_TAG
 
 STRING_TOKENIZER_HANDLE STRING_TOKENIZER_create(STRING_HANDLE handle)
 {
-    STRING_TOKEN *result;
-    char* inputStringToMalloc;
+    STRING_TOKENIZER_HANDLE result;
 
     /* Codes_SRS_STRING_04_001: [STRING_TOKENIZER_create shall return an NULL STRING_TOKENIZER_HANDLE if parameter handle is NULL] */
     if (handle == NULL)
@@ -36,12 +35,32 @@ STRING_TOKENIZER_HANDLE STRING_TOKENIZER_create(STRING_HANDLE handle)
         LogError("Invalid Argument. Handle cannot be NULL.\r\n");
         result = NULL;
     }
-    /* Codes_SRS_STRING_04_002: [STRING_TOKENIZER_create shall allocate a new STRING_TOKENIZER_HANDLE having the content of the STRING_HANDLE copied and current position pointing at the beginning of the string] */
-    else if((result = (STRING_TOKEN *)malloc(sizeof(STRING_TOKEN))) == NULL)
+    else
+    {
+        /* Codes_SRS_STRING_04_002: [STRING_TOKENIZER_create shall allocate a new STRING_TOKENIZER_HANDLE having the content of the STRING_HANDLE copied and current position pointing at the beginning of the string] */
+        result = STRING_TOKENIZER_create_from_char(STRING_c_str(handle));
+    }
+
+    return result;
+}
+
+extern STRING_TOKENIZER_HANDLE STRING_TOKENIZER_create_from_char(const char* input)
+{
+    STRING_TOKEN *result;
+    char* inputStringToMalloc;
+
+    /* Codes_SRS_STRING_07_001: [STRING_TOKENIZER_create shall return an NULL STRING_TOKENIZER_HANDLE if parameter input is NULL] */
+    if (input == NULL)
+    {
+        LogError("Invalid Argument. Handle cannot be NULL.\r\n");
+        result = NULL;
+    }
+    /* Codes_SRS_STRING_07_002: [STRING_TOKENIZER_create shall allocate a new STRING_TOKENIZER_HANDLE having the content of the STRING_HANDLE copied and current position pointing at the beginning of the string] */
+    else if ((result = (STRING_TOKEN*)malloc(sizeof(STRING_TOKEN))) == NULL)
     {
         LogError("Memory Allocation failed. Cannot allocate STRING_TOKENIZER.\r\n");
     }
-    else if ((mallocAndStrcpy_s(&inputStringToMalloc, STRING_c_str(handle))) != 0)
+    else if ((mallocAndStrcpy_s(&inputStringToMalloc, input)) != 0)
     {
         LogError("Memory Allocation Failed. Cannot allocate and copy string Content.\r\n");
         free(result);
@@ -53,10 +72,8 @@ STRING_TOKENIZER_HANDLE STRING_TOKENIZER_create(STRING_HANDLE handle)
         result->currentPos = result->inputString; //Current Pos will point to the initial position of Token.
         result->sizeOfinputString = strlen(result->inputString); //Calculate Size of Current String
     }
-    
     return (STRING_TOKENIZER_HANDLE)result;
 }
-
 
 int STRING_TOKENIZER_get_next_token(STRING_TOKENIZER_HANDLE tokenizer, STRING_HANDLE output, const char* delimiters)
 {

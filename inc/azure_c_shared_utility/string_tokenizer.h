@@ -15,6 +15,7 @@ extern "C"
 typedef struct STRING_TOKEN_TAG* STRING_TOKENIZER_HANDLE;
 
 extern STRING_TOKENIZER_HANDLE STRING_TOKENIZER_create(STRING_HANDLE handle);
+extern STRING_TOKENIZER_HANDLE STRING_TOKENIZER_create_from_char(const char* input);
 extern int STRING_TOKENIZER_get_next_token(STRING_TOKENIZER_HANDLE t, STRING_HANDLE output, const char* delimiters);
 extern void STRING_TOKENIZER_destroy(STRING_TOKENIZER_HANDLE t);
 
