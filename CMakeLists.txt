@@ -174,17 +174,18 @@ function(linux_unittests_add_exe whatIsBuilding)
 			SET(PARSING_ADDITIONAL_LIBS ON)
 			SET(PARSING_VALGRIND_SUPRESSION_FILE OFF)
 			#also unset all the other states
-			continue()
-                elseif(${f} STREQUAL "VALGRIND_SUPPRESSIONS_FILE")
+			
+		elseif(${f} STREQUAL "VALGRIND_SUPPRESSIONS_FILE")
 			SET(PARSING_ADDITIONAL_LIBS OFF)
-                        SET(PARSING_VALGRIND_SUPPRESSION_FILE ON)
-			continue()
-		endif()
+			SET(PARSING_VALGRIND_SUPPRESSION_FILE ON)
+			
+		else()
 		
-		if(PARSING_ADDITIONAL_LIBS)
-			target_link_libraries(${whatIsBuilding}_exe ${f})
-                elseif(PARSING_VALGRIND_SUPPRESSION_FILE)
-                        set(VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER "--suppressions=${f}")
+			if(PARSING_ADDITIONAL_LIBS)
+				target_link_libraries(${whatIsBuilding}_exe ${f})
+			elseif(PARSING_VALGRIND_SUPPRESSION_FILE)
+				set(VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER "--suppressions=${f}")
+			endif()
 		endif()	
 		
 	endforeach()
