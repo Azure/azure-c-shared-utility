@@ -24,7 +24,7 @@
 #pragma warning(disable:4505)
 #endif
 
-#include "strings.h"
+#include "azure_c_shared_utility/strings.h"
 
 
 static const char TEST_STRING_VALUE []= "DataValueTest";

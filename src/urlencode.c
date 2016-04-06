@@ -15,9 +15,9 @@
 //
 // PUT NO CLIENT LIBRARY INCLUDES BEFORE HERE !!!!
 //
-#include "urlencode.h"
-#include "iot_logging.h"
-#include "strings.h"
+#include "azure_c_shared_utility/urlencode.h"
+#include "azure_c_shared_utility/iot_logging.h"
+#include "azure_c_shared_utility/strings.h"
 
 static const struct {
     size_t numberOfChars;

@@ -16,7 +16,7 @@
 // PUT NO CLIENT LIBRARY INCLUDES BEFORE HERE !!!!
 //
 #include "testrunnerswitcher.h"
-#include "string_tokenizer.h"
+#include "azure_c_shared_utility/string_tokenizer.h"
 #include "azure_c_shared_utility/strings.h"
 #include "micromock.h"
 #include "azure_c_shared_utility/lock.h"

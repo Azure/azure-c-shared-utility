@@ -4,7 +4,7 @@
 #ifndef UMOCKTYPES_C_H
 #define UMOCKTYPES_C_H
 
-#include "macro_utils.h"
+#include "azure_c_shared_utility/macro_utils.h"
 
 #ifdef __cplusplus
 extern "C" {
