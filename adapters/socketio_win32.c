@@ -445,6 +445,7 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                 PENDING_SOCKET_IO* pending_socket_io = (PENDING_SOCKET_IO*)list_item_get_value(first_pending_io);
                 if (pending_socket_io == NULL)
                 {
+                    LogError("Failure: retrieving socket from list\r\n");
                     indicate_error(socket_io_instance);
                     break;
                 }
@@ -475,6 +476,7 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                     free(pending_socket_io);
                     if (list_remove(socket_io_instance->pending_io_list, first_pending_io) != 0)
                     {
+                        LogError("Failure: removing socket from list\r\n");
                         indicate_error(socket_io_instance);
                     }
                 }
@@ -505,6 +507,7 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                     int last_error = WSAGetLastError();
                     if (last_error != WSAEWOULDBLOCK && last_error != ERROR_SUCCESS)
                     {
+                        LogError("Socketio_Failure: Recieving data from endpoint: %d.\r\n", last_error);
                         indicate_error(socket_io_instance);
                     }
                 }
