@@ -14,9 +14,9 @@
 // PUT NO CLIENT LIBRARY INCLUDES BEFORE HERE !!!!
 //
 
-#include "base64.h"
-#include "strings.h"
-#include "buffer_.h"
+#include "azure_c_shared_utility/base64.h"
+#include "azure_c_shared_utility/strings.h"
+#include "azure_c_shared_utility/buffer_.h"
 
 #include "testrunnerswitcher.h"
 #include "micromock.h"

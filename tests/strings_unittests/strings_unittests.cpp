@@ -18,7 +18,7 @@
 
 #include "micromock.h"
 #include "micromockcharstararenullterminatedstrings.h"
-#include "lock.h"
+#include "azure_c_shared_utility/lock.h"
 
 #ifdef _MSC_VER
 #pragma warning(disable:4505)

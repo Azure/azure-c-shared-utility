@@ -9,14 +9,14 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cctype>
-#include "httpapi.h"
-#include "httpheaders.h"
-#include "crt_abstractions.h"
+#include "azure_c_shared_utility/httpapi.h"
+#include "azure_c_shared_utility/httpheaders.h"
+#include "azure_c_shared_utility/crt_abstractions.h"
 #include "mbed.h"
 #include "EthernetInterface.h"
-#include "wolfssl_connection.h"
-#include "iot_logging.h"
-#include "string.h"
+#include "azure_c_shared_utility/wolfssl_connection.h"
+#include "azure_c_shared_utility/iot_logging.h"
+#include <string.h>
 
 #define MAX_HOSTNAME     64
 #define TEMP_BUFFER_SIZE 4096

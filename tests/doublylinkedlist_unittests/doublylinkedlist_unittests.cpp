@@ -5,7 +5,7 @@
 #include <crtdbg.h>
 #endif
 
-#include "doublylinkedlist.h"
+#include "azure_c_shared_utility/doublylinkedlist.h"
 
 #include "testrunnerswitcher.h"
 #include "micromock.h"

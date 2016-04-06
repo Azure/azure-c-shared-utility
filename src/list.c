@@ -7,8 +7,8 @@
 #endif
 #include <stdbool.h>
 
-#include "gballoc.h"
-#include "list.h"
+#include "azure_c_shared_utility/gballoc.h"
+#include "azure_c_shared_utility/list.h"
 
 typedef struct LIST_ITEM_INSTANCE_TAG
 {

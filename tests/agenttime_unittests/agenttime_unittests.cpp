@@ -10,7 +10,7 @@
 #include "micromock.h"
 #include "micromockcharstararenullterminatedstrings.h"
 
-#include "agenttime.h"
+#include "azure_c_shared_utility/agenttime.h"
 
 static MICROMOCK_MUTEX_HANDLE g_testByTest;
 

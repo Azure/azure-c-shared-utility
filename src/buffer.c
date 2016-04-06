@@ -8,7 +8,7 @@
 #ifdef _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
 #endif
-#include "gballoc.h"
+#include "azure_c_shared_utility/gballoc.h"
 
 #include <stddef.h>
 #include <string.h>
@@ -16,8 +16,8 @@
 // PUT NO CLIENT LIBRARY INCLUDES BEFORE HERE
 //
 
-#include "buffer_.h"
-#include "iot_logging.h"
+#include "azure_c_shared_utility/buffer_.h"
+#include "azure_c_shared_utility/iot_logging.h"
 
 typedef struct BUFFER_TAG
 {

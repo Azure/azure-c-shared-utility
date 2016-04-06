@@ -3,7 +3,7 @@
 
 #define _DEFAULT_SOURCE
 
-#include "threadapi.h"
+#include "azure_c_shared_utility/threadapi.h"
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -17,7 +17,7 @@
 
 #include <pthread.h>
 #include <time.h>
-#include "iot_logging.h"
+#include "azure_c_shared_utility/iot_logging.h"
 
 DEFINE_ENUM_STRINGS(THREADAPI_RESULT, THREADAPI_RESULT_VALUES);
 

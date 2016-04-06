@@ -7,11 +7,11 @@
 #endif
 
 #include <windows.h>
-#include "gballoc.h"
+#include "azure_c_shared_utility/gballoc.h"
 #include <stdint.h>
 #include <time.h>
-#include "tickcounter.h"
-#include "iot_logging.h"
+#include "azure_c_shared_utility/tickcounter.h"
+#include "azure_c_shared_utility/iot_logging.h"
 
 #define INVALID_TIME_VALUE      (time_t)(-1)
 typedef struct TICK_COUNTER_INSTANCE_TAG

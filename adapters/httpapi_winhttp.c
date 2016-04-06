@@ -10,11 +10,11 @@
 #include <stddef.h>
 #include "windows.h"
 #include "winhttp.h"
-#include "string.h"
-#include "httpapi.h"
-#include "httpheaders.h"
-#include "iot_logging.h"
-#include "strings.h"
+#include <string.h>
+#include "azure_c_shared_utility/httpapi.h"
+#include "azure_c_shared_utility/httpheaders.h"
+#include "azure_c_shared_utility/iot_logging.h"
+#include "azure_c_shared_utility/strings.h"
 
 #define TEMP_BUFFER_SIZE 1024
 #define MESSAGE_BUFFER_SIZE 260

@@ -6,8 +6,8 @@
 #include <crtdbg.h>
 #endif
 
-#include "lock.h"
-#include "iot_logging.h"
+#include "azure_c_shared_utility/lock.h"
+#include "azure_c_shared_utility/iot_logging.h"
 #include "rtos.h"
 
 DEFINE_ENUM_STRINGS(LOCK_RESULT, LOCK_RESULT_VALUES);

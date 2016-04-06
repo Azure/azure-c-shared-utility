@@ -13,7 +13,7 @@
 // PUT NO CLIENT LIBRARY INCLUDES BEFORE HERE !!!!
 //
 #include "testrunnerswitcher.h"
-#include "strings.h"
+#include "azure_c_shared_utility/strings.h"
 #include "urlencode.h"
 #include "micromock.h"
 

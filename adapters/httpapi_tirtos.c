@@ -7,9 +7,9 @@
 
 #include <ti/net/http/httpcli.h>
 
-#include "httpapi.h"
-#include "strings.h"
-#include "iot_logging.h"
+#include "azure_c_shared_utility/httpapi.h"
+#include "azure_c_shared_utility/strings.h"
+#include "azure_c_shared_utility/iot_logging.h"
 
 #define CONTENT_BUF_LEN     128
 

@@ -8,7 +8,7 @@
 #include "gballoc.h"
 
 #include <time.h>
-#include "agenttime.h"
+#include "azure_c_shared_utility/agenttime.h"
 
 time_t get_time(time_t* p)
 {

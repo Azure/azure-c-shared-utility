@@ -7,9 +7,9 @@
 #ifdef _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
 #endif
-#include "gballoc.h"
+#include "azure_c_shared_utility/gballoc.h"
 
-#include "crt_abstractions.h"
+#include "azure_c_shared_utility/crt_abstractions.h"
 #include "errno.h"
 #include <stddef.h>
 #include <limits.h>
@@ -17,7 +17,7 @@
 #ifdef _MSC_VER
 #else
 
-#include "stdarg.h"
+#include <stdarg.h>
 
 /*Codes_SRS_CRT_ABSTRACTIONS_99_008: [strcat_s shall append the src to dst and terminates the resulting string with a null character.]*/
 int strcat_s(char* dst, size_t dstSizeInBytes, const char* src)

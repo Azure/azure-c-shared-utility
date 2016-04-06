@@ -11,10 +11,10 @@
 #include "openssl/crypto.h"
 #include <stdio.h>
 #include <stdbool.h>
-#include "tlsio.h"
-#include "tlsio_openssl.h"
-#include "socketio.h"
-#include "xlogging.h"
+#include "azure_c_shared_utility/tlsio.h"
+#include "azure_c_shared_utility/tlsio_openssl.h"
+#include "azure_c_shared_utility/socketio.h"
+#include "azure_c_shared_utility/xlogging.h"
 
 typedef enum TLSIO_STATE_TAG
 {

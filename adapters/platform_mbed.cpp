@@ -5,11 +5,11 @@
 #ifdef _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
 #endif
-#include "platform.h"
+#include "azure_c_shared_utility/platform.h"
 #include "EthernetInterface.h"
 #include "NTPClient.h"
-#include "xio.h"
-#include "tlsio_wolfssl.h"
+#include "azure_c_shared_utility/xio.h"
+#include "azure_c_shared_utility/tlsio_wolfssl.h"
 
 int setupRealTime(void)
 {

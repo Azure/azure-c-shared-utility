@@ -2,15 +2,15 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include "malloc.h"
-#include "stddef.h"
+#include <stddef.h>
 #include "windows.h"
 #include "wininet.h"
-#include "string.h"
-#include "httpapi.h"
-#include "httpheaders.h"
-#include "iot_logging.h"
-#include "macro_utils.h"
-#include "strings.h"
+#include <string.h>
+#include "azure_c_shared_utility/httpapi.h"
+#include "azure_c_shared_utility/httpheaders.h"
+#include "azure_c_shared_utility/iot_logging.h"
+#include "azure_c_shared_utility/macro_utils.h"
+#include "azure_c_shared_utility/strings.h"
 
 #define TEMP_BUFFER_SIZE 1024
 

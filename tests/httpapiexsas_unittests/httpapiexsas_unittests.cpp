@@ -13,14 +13,14 @@
 #include "micromock.h"
 #include "micromockcharstararenullterminatedstrings.h"
 
-#include "agenttime.h"
-#include "lock.h"
-#include "strings.h"
-#include "buffer_.h"
-#include "sastoken.h"
-#include "httpheaders.h"
-#include "httpapiex.h"
-#include "httpapiexsas.h"
+#include "azure_c_shared_utility/agenttime.h"
+#include "azure_c_shared_utility/lock.h"
+#include "azure_c_shared_utility/strings.h"
+#include "azure_c_shared_utility/buffer_.h"
+#include "azure_c_shared_utility/sastoken.h"
+#include "azure_c_shared_utility/httpheaders.h"
+#include "azure_c_shared_utility/httpapiex.h"
+#include "azure_c_shared_utility/httpapiexsas.h"
 
 DEFINE_MICROMOCK_ENUM_TO_STRING(HTTPAPIEX_RESULT, HTTPAPIEX_RESULT_VALUES);
 

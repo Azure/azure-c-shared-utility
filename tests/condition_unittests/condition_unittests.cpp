@@ -9,11 +9,11 @@
 
 #include "testrunnerswitcher.h"
 #include "micromock.h"
-#include "crt_abstractions.h"
-#include "condition.h"
-#include "lock.h"
-#include "agenttime.h"
-#include "threadapi.h"
+#include "azure_c_shared_utility/crt_abstractions.h"
+#include "azure_c_shared_utility/condition.h"
+#include "azure_c_shared_utility/lock.h"
+#include "azure_c_shared_utility/agenttime.h"
+#include "azure_c_shared_utility/threadapi.h"
 
 #define GBALLOC_H
 
