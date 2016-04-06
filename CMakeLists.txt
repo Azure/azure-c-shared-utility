@@ -39,8 +39,6 @@ endif()
 option(compileOption_C "passes a string to the command line of the C compiler" OFF)
 option(compileOption_CXX "passes a string to the command line of the C++ compiler" OFF)
 
-include_directories(${CMAKE_CURRENT_LIST_DIR}/inc/azure_c_shared_utility)
-
 # Start of variables used during install
 set (INCLUDE_INSTALL_DIR "/usr/include" CACHE PATH "Include file directory")
 set (LIB_INSTALL_DIR lib CACHE PATH "Library object file directory")
