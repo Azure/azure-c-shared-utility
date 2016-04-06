@@ -27,7 +27,7 @@ typedef struct STRING_TOKEN_TAG
 
 STRING_TOKENIZER_HANDLE STRING_TOKENIZER_create(STRING_HANDLE handle)
 {
-    STRING_TOKEN* result;
+    STRING_TOKENIZER_HANDLE result;
 
     /* Codes_SRS_STRING_04_001: [STRING_TOKENIZER_create shall return an NULL STRING_TOKENIZER_HANDLE if parameter handle is NULL] */
     if (handle == NULL)
@@ -35,8 +35,13 @@ STRING_TOKENIZER_HANDLE STRING_TOKENIZER_create(STRING_HANDLE handle)
         LogError("Invalid Argument. Handle cannot be NULL.\r\n");
         result = NULL;
     }
-    /* Codes_SRS_STRING_04_002: [STRING_TOKENIZER_create shall allocate a new STRING_TOKENIZER_HANDLE having the content of the STRING_HANDLE copied and current position pointing at the beginning of the string] */
-    return STRING_TOKENIZER_create_from_char(STRING_c_str(handle));
+    else
+    {
+        /* Codes_SRS_STRING_04_002: [STRING_TOKENIZER_create shall allocate a new STRING_TOKENIZER_HANDLE having the content of the STRING_HANDLE copied and current position pointing at the beginning of the string] */
+        result = STRING_TOKENIZER_create_from_char(STRING_c_str(handle));
+    }
+
+    return result;
 }
 
 extern STRING_TOKENIZER_HANDLE STRING_TOKENIZER_create_from_char(const char* input)

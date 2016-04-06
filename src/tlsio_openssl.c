@@ -402,7 +402,7 @@ CONCRETE_IO_HANDLE tlsio_openssl_create(void* io_create_parameters, LOGGER_LOG l
                     result->out_bio = BIO_new(BIO_s_mem());
                     if (result->out_bio == NULL)
                     {
-                        (void)BIO_free(result->out_bio);
+                        (void)BIO_free(result->in_bio);
                         SSL_CTX_free(result->ssl_context);
                         free(result);
                         result = NULL;

@@ -59,7 +59,7 @@ static bool operator==<T*>(_In_ const CMockValue<T*>& lhs,          \
 
 // A strict expected call implies that all arguments are checked
 #define STRICT_EXPECTED_CALL(ClassName,  ...)        \
-    ClassName.Expected_##__VA_ARGS__
+    C2(ClassName.Expected_, __VA_ARGS__)
 
 // By using the below macro, none of the arguments are checked by default
 // To specify checking the argument values, use the ValidateArgument 
