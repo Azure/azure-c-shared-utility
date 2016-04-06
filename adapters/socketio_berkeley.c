@@ -15,7 +15,7 @@
 #include <netdb.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include "list.h"
+#include "azure_c_shared_utility/list.h"
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/iot_logging.h"
 
