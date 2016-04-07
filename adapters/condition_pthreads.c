@@ -8,16 +8,45 @@
 #include <errno.h>
 #include <pthread.h>
 #include "azure_c_shared_utility/gballoc.h"
+#include "pthread.h"
+#include "time.h"
 
 DEFINE_ENUM_STRINGS(COND_RESULT, COND_RESULT_VALUES);
 
+// Set our time basis based on what clock is available.  Give preference to CLOCK_MONOTONIC,
+// then CLOCK_REALTIME.  If neither is available, query the default pthread_condattr_t value 
+// and use that.
+#ifdef CLOCK_MONOTONIC 
+clockid_t time_basis = CLOCK_MONOTONIC;
+#else 
+#ifdef CLOCK_REALTIME
+clockid_t time_basis = CLOCK_REALTIME;
+#else
+clockid_t time_basis = -1
+#endif
+#endif
+
 COND_HANDLE Condition_Init(void)
 {
+    // If we don't know our time basis, find it.
+    if (time_basis == -1)
+    {
+        pthread_condattr_t cattr;
+        pthread_condattr_init(&cattr);
+        pthread_condattr_getclock(&cattr, &time_basis);
+        pthread_condattr_destroy(&cattr);
+    }
+
     // Codes_SRS_CONDITION_18_002: [ Condition_Init shall create and return a CONDITION_HANDLE ]
     pthread_cond_t * cond = (pthread_cond_t*)malloc(sizeof(pthread_cond_t));
     if (cond != NULL)
     {
-        pthread_cond_init(cond, NULL);
+        // set our time basis when configuring the condition
+        pthread_condattr_t cattr;
+        pthread_condattr_init(&cattr);
+        pthread_condattr_setclock(&cattr, time_basis);
+        pthread_cond_init(cond, &cattr);
+        pthread_condattr_destroy(&cattr);
     }
     // Codes_SRS_CONDITION_18_008: [ Condition_Init shall return NULL if it fails to allocate the CONDITION_HANDLE ]
     return cond;
@@ -66,7 +95,7 @@ COND_RESULT Condition_Wait(COND_HANDLE handle, LOCK_HANDLE lock, int timeout_mil
         {
             // Codes_SRS_CONDITION_18_013: [ Condition_Wait shall accept relative timeouts ]
             struct timespec tm;
-            clock_gettime(CLOCK_REALTIME,&tm);
+            clock_gettime(time_basis,&tm);
             tm.tv_nsec += (timeout_milliseconds % MILLISECONDS_IN_1_SECOND) * NANOSECONDS_IN_1_MILLISECOND;
             tm.tv_sec += timeout_milliseconds / MILLISECONDS_IN_1_SECOND;
             // handle overflow in tv_nsec
