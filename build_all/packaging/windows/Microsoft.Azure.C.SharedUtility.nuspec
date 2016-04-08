@@ -32,7 +32,7 @@
 
 		<file src="Microsoft.Azure.C.SharedUtility.targets" target="build\native"/>
 
-		<file src="..\..\..\inc\*.h" target="build\native\include"/>
+		<file src="..\..\..\inc\azure_c_shared_utility\*.h" target="build\native\include\azure_c_shared_utility"/>
 	</files>
 
 </package>
