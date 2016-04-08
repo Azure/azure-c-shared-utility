@@ -13,9 +13,9 @@
 #ifndef HTTPAPI_H
 #define HTTPAPI_H
 
-#include "httpheaders.h"
-#include "macro_utils.h"
-#include "buffer_.h"
+#include "azure_c_shared_utility/httpheaders.h"
+#include "azure_c_shared_utility/macro_utils.h"
+#include "azure_c_shared_utility/buffer_.h"
 
 #ifdef __cplusplus
 #include <cstddef>

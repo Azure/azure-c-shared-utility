@@ -9,15 +9,15 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
-#include "socketio.h"
+#include "azure_c_shared_utility/socketio.h"
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include "list.h"
-#include "gballoc.h"
-#include "iot_logging.h"
+#include "azure_c_shared_utility/list.h"
+#include "azure_c_shared_utility/gballoc.h"
+#include "azure_c_shared_utility/iot_logging.h"
 
 #define SOCKET_SUCCESS      0
 #define INVALID_SOCKET      -1
@@ -236,7 +236,7 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
         {
             // Opening an accepted socket
             socket_io_instance->on_bytes_received_context = on_bytes_received_context;
-			socket_io_instance->on_bytes_received = on_bytes_received;
+            socket_io_instance->on_bytes_received = on_bytes_received;
             socket_io_instance->on_io_error = on_io_error;
             socket_io_instance->on_io_error_context = on_io_error_context;
 
@@ -460,6 +460,7 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                 {
                     socket_io_instance->io_state = IO_STATE_ERROR;
                     indicate_error(socket_io_instance);
+                    LogError("Failure: retrieving socket from list\r\n");
                     break;
                 }
 
@@ -472,6 +473,7 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                         free(pending_socket_io);
                         (void)list_remove(socket_io_instance->pending_io_list, first_pending_io);
 
+                        LogError("Failure: sending Socket information\r\n");
                         socket_io_instance->io_state = IO_STATE_ERROR;
                         indicate_error(socket_io_instance);
                     }
@@ -494,6 +496,7 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                     {
                         socket_io_instance->io_state = IO_STATE_ERROR;
                         indicate_error(socket_io_instance);
+                        LogError("Failure: unable to remove socket from list\r\n");
                     }
                 }
 

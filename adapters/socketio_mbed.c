@@ -9,9 +9,9 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
-#include "socketio.h"
-#include "list.h"
-#include "tcpsocketconnection_c.h"
+#include "azure_c_shared_utility/socketio.h"
+#include "azure_c_shared_utility/list.h"
+#include "azure_c_shared_utility/tcpsocketconnection_c.h"
 
 #define UNABLE_TO_COMPLETE -2
 

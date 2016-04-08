@@ -6,10 +6,10 @@
 #include <crtdbg.h>
 #endif
 
-#include "gballoc.h"
-#include "map.h"
-#include "iot_logging.h"
-#include "strings.h"
+#include "azure_c_shared_utility/gballoc.h"
+#include "azure_c_shared_utility/map.h"
+#include "azure_c_shared_utility/iot_logging.h"
+#include "azure_c_shared_utility/strings.h"
 
 DEFINE_ENUM_STRINGS(MAP_RESULT, MAP_RESULT_VALUES);
 

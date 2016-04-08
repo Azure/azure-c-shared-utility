@@ -9,10 +9,10 @@
 #include <stddef.h>
 
 #include "testrunnerswitcher.h"
-#include "tickcounter.h"
+#include "azure_c_shared_utility/tickcounter.h"
 #include "micromock.h"
-#include "lock.h"
-#include "threadapi.h"
+#include "azure_c_shared_utility/lock.h"
+#include "azure_c_shared_utility/threadapi.h"
 
 static MICROMOCK_MUTEX_HANDLE g_testByTest;
 static MICROMOCK_GLOBAL_SEMAPHORE_HANDLE g_dllByDll;

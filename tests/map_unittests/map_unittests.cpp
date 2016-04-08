@@ -9,8 +9,8 @@
 #include "testrunnerswitcher.h"
 #include "micromock.h"
 #include "micromockcharstararenullterminatedstrings.h"
-#include "map.h"
-#include "lock.h"
+#include "azure_c_shared_utility/map.h"
+#include "azure_c_shared_utility/lock.h"
 
 static MICROMOCK_MUTEX_HANDLE g_testByTest;
 static MICROMOCK_GLOBAL_SEMAPHORE_HANDLE g_dllByDll;

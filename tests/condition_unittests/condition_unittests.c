@@ -8,10 +8,10 @@
 #include <stddef.h>
 
 #include "testrunnerswitcher.h"
-#include "crt_abstractions.h"
-#include "condition.h"
-#include "lock.h"
-#include "threadapi.h"
+#include "azure_c_shared_utility/crt_abstractions.h"
+#include "azure_c_shared_utility/condition.h"
+#include "azure_c_shared_utility/lock.h"
+#include "azure_c_shared_utility/threadapi.h"
 
 #define ENABLE_MOCKS
 
@@ -48,10 +48,10 @@ TEST_DEFINE_ENUM_TYPE(COND_RESULT, COND_RESULT_VALUES)
 void* my_gballoc_malloc(size_t size)
 {
     void* result = NULL;
-    if (malloc_will_fail == false)
-    {
+        if (malloc_will_fail == false)
+        {
         result = real_gballoc_malloc(size);
-    }
+        }
 
     return result;
 }

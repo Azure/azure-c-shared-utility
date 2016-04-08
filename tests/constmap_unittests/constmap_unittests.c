@@ -13,9 +13,9 @@
 
 #include "umock_c.h"
 #include "umocktypes_charptr.h"
-#include "constmap.h"
-#include "lock.h"
-#include "map.h"
+#include "azure_c_shared_utility/constmap.h"
+#include "azure_c_shared_utility/lock.h"
+#include "azure_c_shared_utility/map.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -84,66 +84,66 @@ void my_gballoc_free(void* ptr)
 MAP_HANDLE my_Map_Clone(MAP_HANDLE sourceMap)
 {
     MAP_HANDLE result;
-    if (sourceMap == VALID_MAP_HANDLE)
-    {
+		if (sourceMap == VALID_MAP_HANDLE)
+		{
         result = VALID_MAP_CLONE1;
-    }
-    else if (sourceMap == VALID_MAP_CLONE1)
-    {
+		}
+		else if (sourceMap == VALID_MAP_CLONE1)
+		{
         result = VALID_MAP_CLONE2;
-    }
-    else if (sourceMap == INVALID_CLONE_HANDLE)
-    {
+		}
+		else if (sourceMap == INVALID_CLONE_HANDLE)
+		{
         result = INVALID_MAP_HANDLE;
-    }
-    else if (sourceMap == INVALID_MAP_HANDLE)
-    {
+		}
+		else if (sourceMap == INVALID_MAP_HANDLE)
+		{
         result = NULL;
-    }
+		}
 
     return result;
 }
 
 MAP_RESULT my_Map_ContainsKey(MAP_HANDLE handle, const char* key, bool* keyExists)
-{
+		{
     MAP_RESULT result = currentMapResult;
     if (result == MAP_OK)
     {
-        *keyExists = true;
-    }
+			*keyExists = true;
+		}
     return result;
 }
 
 MAP_RESULT my_Map_ContainsValue(MAP_HANDLE handle, const char* value, bool* valueExists)
-{
+		{
     MAP_RESULT result = currentMapResult;
     if (result == MAP_OK)
     {
-        *valueExists = true;
-    }
+			*valueExists = true;
+		}
     return result;
 }
 
 const char* my_Map_GetValueFromKey(MAP_HANDLE sourceMap, const char* key)
 {
     const char* result;
-    if (currentMapResult == MAP_OK)
-    {
+		if (currentMapResult == MAP_OK)
+		{
         result = VALID_VALUE;
-    }
-    else
-    {
+		}
+		else
+		{
         result = NULL;
-    }
+		}
     return result;
 }
 
 MAP_RESULT my_Map_GetInternals(MAP_HANDLE handle, const char*const** keys, const char*const** values, size_t* count)
 {
     MAP_RESULT result = currentMapResult;
-    *keys = VALID_CONST_CHAR_POINTER;
-    *values = VALID_CONST_CHAR_POINTER;
-    *count = VALID_KV_COUNT;
+		*keys = VALID_CONST_CHAR_POINTER;
+		*values = VALID_CONST_CHAR_POINTER;
+		*count = VALID_KV_COUNT;
     return result;
 }
 

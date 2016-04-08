@@ -10,13 +10,13 @@
 #include <time.h>
 
 
-#include "agenttime.h"
-#include "crt_abstractions.h"
-#include "sastoken.h"
-#include "hmacsha256.h"
-#include "urlencode.h"
-#include "base64.h"
-#include "buffer_.h"
+#include "azure_c_shared_utility/agenttime.h"
+#include "azure_c_shared_utility/crt_abstractions.h"
+#include "azure_c_shared_utility/sastoken.h"
+#include "azure_c_shared_utility/hmacsha256.h"
+#include "azure_c_shared_utility/urlencode.h"
+#include "azure_c_shared_utility/base64.h"
+#include "azure_c_shared_utility/buffer_.h"
 
 #include "testrunnerswitcher.h"
 #include "micromock.h"

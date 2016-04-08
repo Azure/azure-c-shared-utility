@@ -9,8 +9,8 @@
 #ifndef BASE64_H
 #define BASE64_H
 
-#include "strings.h"
-#include "buffer_.h"
+#include "azure_c_shared_utility/strings.h"
+#include "azure_c_shared_utility/buffer_.h"
 
 #ifdef __cplusplus
 #include <cstddef>

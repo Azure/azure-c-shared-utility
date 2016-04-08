@@ -9,7 +9,7 @@
 #include <limits.h>
 
 #include "testrunnerswitcher.h"
-#include "crt_abstractions.h"
+#include "azure_c_shared_utility/crt_abstractions.h"
 #include "errno.h"
 
 #ifdef _MSC_VER

@@ -13,7 +13,7 @@
 extern "C" {
 #endif
 
-#include "macro_utils.h"
+#include "azure_c_shared_utility/macro_utils.h"
 
 typedef int(*THREAD_START_FUNC)(void *);
 

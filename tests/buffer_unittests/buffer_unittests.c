@@ -19,7 +19,7 @@
 //
 #include "testrunnerswitcher.h"
 #include "umock_c.h"
-#include "lock.h"
+#include "azure_c_shared_utility/lock.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -157,7 +157,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION_CLEANUP(cleans)
     {
         TEST_MUTEX_RELEASE(g_testByTest);
-    }
+        }
 
     /* Tests_SRS_BUFFER_07_001: [BUFFER_new shall allocate a BUFFER_HANDLE that will contain a NULL unsigned char*.] */
     TEST_FUNCTION(BUFFER_new_Succeed)
@@ -165,7 +165,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         ///arrange
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
-
+        
         ///act
         BUFFER_HANDLE g_hBuffer = BUFFER_new();
 

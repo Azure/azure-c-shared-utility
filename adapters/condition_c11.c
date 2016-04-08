@@ -5,12 +5,12 @@
 #ifdef _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
 #endif
-#include "stdlib.h"
+#include <stdlib.h>
 
-#include "condition.h"
-#include "iot_logging.h"
+#include "azure_c_shared_utility/condition.h"
+#include "azure_c_shared_utility/iot_logging.h"
 #include <thr/threads.h>
-#include "gballoc.h"
+#include "azure_c_shared_utility/gballoc.h"
 
 DEFINE_ENUM_STRINGS(COND_RESULT, COND_RESULT_VALUES);
 

@@ -3,8 +3,8 @@
 
 #include <stdlib.h>
 #include <stdint.h>
-#include "uniqueid.h"
-#include "iot_logging.h"
+#include "azure_c_shared_utility/uniqueid.h"
+#include "azure_c_shared_utility/iot_logging.h"
 #include <time.h>
 
 DEFINE_ENUM_STRINGS(UNIQUEIDS_RESULT, UNIQUEIDS_RESULT_VALUES);

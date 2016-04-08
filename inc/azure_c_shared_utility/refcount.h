@@ -25,7 +25,7 @@ extern "C"
 #endif
 
 
-#include "macro_utils.h"
+#include "azure_c_shared_utility/macro_utils.h"
 
 #define REFCOUNT_TYPE(type) \
 struct C2(C2(REFCOUNT_, type), _TAG)

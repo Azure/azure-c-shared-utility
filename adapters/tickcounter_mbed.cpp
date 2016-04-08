@@ -10,7 +10,7 @@
 #include <cstdio>
 #include <cctype>
 #include "mbed.h"
-#include "tickcounter.h"
+#include "azure_c_shared_utility/tickcounter.h"
 
 class TICK_COUNTER_INSTANCE_TAG
 {

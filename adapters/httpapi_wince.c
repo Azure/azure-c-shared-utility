@@ -5,11 +5,11 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cctype>
-#include "httpapi.h"
-#include "httpheaders.h"
-#include "crt_abstractions.h"
-#include "iot_logging.h"
-#include "string.h"
+#include "azure_c_shared_utility/httpapi.h"
+#include "azure_c_shared_utility/httpheaders.h"
+#include "azure_c_shared_utility/crt_abstractions.h"
+#include "azure_c_shared_utility/iot_logging.h"
+#include <string.h>
 #include "certs.h"
 #include "winsock2.h"
 #include "sslsock.h"

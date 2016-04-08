@@ -5,13 +5,13 @@
 #ifdef _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
 #endif
-#include "gballoc.h"
+#include "azure_c_shared_utility/gballoc.h"
 
-#include "httpapiex.h"
-#include "iot_logging.h"
-#include "strings.h"
-#include "crt_abstractions.h"
-#include "vector.h"
+#include "azure_c_shared_utility/httpapiex.h"
+#include "azure_c_shared_utility/iot_logging.h"
+#include "azure_c_shared_utility/strings.h"
+#include "azure_c_shared_utility/crt_abstractions.h"
+#include "azure_c_shared_utility/vector.h"
 
 typedef struct HTTPAPIEX_SAVED_OPTION_TAG
 {

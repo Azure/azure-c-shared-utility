@@ -36,7 +36,7 @@ add_library(umock_c ${umock_c_c_files} ${umock_c_h_files})
 #the following "set" statetement exports across the project a global variable called UMOCK_C_INC_FOLDER that expands to whatever needs to included when using umock_c library
 set(UMOCK_C_INC_FOLDER ${CMAKE_CURRENT_LIST_DIR}/inc CACHE INTERNAL "this is what needs to be included if using umock_c lib" FORCE)
 
-include_directories(${UMOCK_C_INC_FOLDER})
+include_directories(${UMOCK_C_INC_FOLDER} ${SHARED_UTIL_INC_FOLDER})
 
 function(umockc_windows_unittests_add_dll whatIsBuilding)
     link_directories(${whatIsBuilding}_dll $ENV{VCInstallDir}UnitTest/lib)

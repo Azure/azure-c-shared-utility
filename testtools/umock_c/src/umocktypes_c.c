@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <stddef.h>
 #include <string.h>
-#include "macro_utils.h"
+#include "azure_c_shared_utility/macro_utils.h"
 #include "umocktypes.h"
 #include "umocktypes_c.h"
 

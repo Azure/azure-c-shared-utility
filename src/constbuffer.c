@@ -8,11 +8,11 @@
 #ifdef _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
 #endif
-#include "gballoc.h"
+#include "azure_c_shared_utility/gballoc.h"
 
-#include "constbuffer.h"
-#include "iot_logging.h"
-#include "refcount.h"
+#include "azure_c_shared_utility/constbuffer.h"
+#include "azure_c_shared_utility/iot_logging.h"
+#include "azure_c_shared_utility/refcount.h"
 
 typedef struct CONSTBUFFER_HANDLE_DATA_TAG
 {

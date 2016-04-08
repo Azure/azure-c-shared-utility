@@ -4,7 +4,7 @@
 #ifndef STRING_TOKENIZER_H
 #define STRING_TOKENIZER_H
 
-#include "strings.h"
+#include "azure_c_shared_utility/strings.h"
 
 #ifdef __cplusplus
 extern "C"

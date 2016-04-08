@@ -13,7 +13,7 @@ extern "C" {
 
 #include <stdio.h>
 
-#include "macro_utils.h"
+#include "azure_c_shared_utility/macro_utils.h"
 #include "umocktypes.h"
 #include "umockcall.h"
 #include "umockcallrecorder.h"
@@ -295,7 +295,7 @@ typedef struct ARG_BUFFER_TAG
             if (umocktypes_copy(#return_type, &mock_call_data->return_value, &return_value) != 0) \
             { \
                 umock_c_indicate_error(UMOCK_C_ERROR); \
-            } \
+        } \
         } \
         return mock_call_modifier; \
     }
@@ -315,7 +315,7 @@ typedef struct ARG_BUFFER_TAG
             if (umocktypes_copy(#return_type, &mock_call_data->fail_return_value, &return_value) != 0) \
             { \
                 umock_c_indicate_error(UMOCK_C_ERROR); \
-            } \
+        } \
         } \
         return mock_call_modifier; \
     }

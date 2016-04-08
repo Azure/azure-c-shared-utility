@@ -5,7 +5,7 @@
 #ifdef _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
 #endif
-#include "platform.h"
+#include "azure_c_shared_utility/platform.h"
 
 int platform_init(void)
 {

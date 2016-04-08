@@ -5,12 +5,11 @@
 #ifdef _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
 #endif
-#include "stdlib.h"
 
-#include "macro_utils.h"
-#include "lock.h"
+#include "azure_c_shared_utility/macro_utils.h"
+#include "azure_c_shared_utility/lock.h"
 #include <thr/threads.h>
-#include "iot_logging.h"
+#include "azure_c_shared_utility/iot_logging.h"
 
 DEFINE_ENUM_STRINGS(LOCK_RESULT, LOCK_RESULT_VALUES);
 
