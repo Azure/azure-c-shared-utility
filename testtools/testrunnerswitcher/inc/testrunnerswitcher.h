@@ -4,7 +4,7 @@
 #ifndef TESTRUNNERSWITCHER_H
 #define TESTRUNNERSWITCHER_H
 
-#include "macro_utils.h"
+#include "azure_c_shared_utility/macro_utils.h"
 
 #ifdef MBED_BUILD_TIMESTAMP
 #define USE_CTEST

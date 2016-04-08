@@ -6,7 +6,7 @@
 #endif
 
 #include "stdafx.h"
-#include "macro_utils.h"
+#include "azure_c_shared_utility/macro_utils.h"
 
 
 using namespace std;

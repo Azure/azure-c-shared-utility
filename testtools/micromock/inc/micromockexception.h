@@ -12,7 +12,7 @@
 #endif
 
 #include "stdafx.h"
-#include "macro_utils.h"
+#include "azure_c_shared_utility/macro_utils.h"
 
 #define MICROMOCK_EXCEPTION_VALUES                        \
 MICROMOCK_EXCEPTION_INVALID_VALIDATE_BUFFERS,             \
