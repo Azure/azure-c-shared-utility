@@ -10,7 +10,7 @@
 #endif
 
 #include <stddef.h>
-#include "buffer_.h"
+#include "azure_c_shared_utility/buffer_.h"
 
 #define ENABLE_MOCKS
 

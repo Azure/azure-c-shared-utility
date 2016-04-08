@@ -18,7 +18,7 @@
 
 #define ENABLE_MOCKS
 #include "umock_c.h"
-#include "buffer_.h"
+#include "azure_c_shared_utility/buffer_.h"
 
 #ifdef __cplusplus
 extern "C" {
