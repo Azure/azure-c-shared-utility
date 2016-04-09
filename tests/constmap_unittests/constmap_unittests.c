@@ -9,35 +9,48 @@
 
 #include "testrunnerswitcher.h"
 
-#define ENABLE_MOCKS
+static size_t currentmalloc_call;
+static size_t whenShallmalloc_fail;
 
+void* my_gballoc_malloc(size_t size)
+{
+    void* result;
+    currentmalloc_call++;
+    if (whenShallmalloc_fail > 0)
+    {
+        if (currentmalloc_call == whenShallmalloc_fail)
+        {
+            result = NULL;
+        }
+        else
+        {
+            result = malloc(size);
+        }
+    }
+    else
+    {
+        result = malloc(size);
+    }
+    return result;
+}
+
+void my_gballoc_free(void* ptr)
+{
+    free(ptr);
+}
+
+#define ENABLE_MOCKS
 #include "umock_c.h"
 #include "umocktypes_charptr.h"
-#include "azure_c_shared_utility/constmap.h"
-#include "azure_c_shared_utility/lock.h"
 #include "azure_c_shared_utility/map.h"
+#define GB_DEBUG_ALLOC
+#include "azure_c_shared_utility/gballoc.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-    MOCKABLE_FUNCTION(void*, gballoc_malloc, size_t, size);
-    MOCKABLE_FUNCTION(void, gballoc_free, void*, ptr);
-#ifdef __cplusplus
-}
-#endif
+#undef ENABLE_MOCKS
+#include "azure_c_shared_utility/constmap.h"
 
 static TEST_MUTEX_HANDLE g_testByTest;
 static TEST_MUTEX_HANDLE g_dllByDll;
-
-#define GBALLOC_H
-
-void* real_gballoc_malloc(size_t size);
-void* real_gballoc_calloc(size_t nmemb, size_t size);
-void* real_gballoc_realloc(void* ptr, size_t size);
-void real_gballoc_free(void* ptr);
-
-static size_t currentmalloc_call;
-static size_t whenShallmalloc_fail;
 
 TEST_DEFINE_ENUM_TYPE(CONSTMAP_RESULT, CONSTMAP_RESULT_VALUES);
 
@@ -54,96 +67,70 @@ static MAP_RESULT currentMapResult;
 
 TEST_DEFINE_ENUM_TYPE(MAP_RESULT, MAP_RESULT_VALUES);
 
-void* my_gballoc_malloc(size_t size)
-{
-    void* result;
-    currentmalloc_call++;
-    if (whenShallmalloc_fail > 0)
-    {
-        if (currentmalloc_call == whenShallmalloc_fail)
-        {
-            result = NULL;
-        }
-        else
-        {
-            result = real_gballoc_malloc(size);
-        }
-    }
-    else
-    {
-        result = real_gballoc_malloc(size);
-    }
-    return result;
-}
-
-void my_gballoc_free(void* ptr)
-{
-    real_gballoc_free(ptr);
-}
-
 MAP_HANDLE my_Map_Clone(MAP_HANDLE sourceMap)
 {
     MAP_HANDLE result;
-		if (sourceMap == VALID_MAP_HANDLE)
-		{
+
+    if (sourceMap == VALID_MAP_HANDLE)
+    {
         result = VALID_MAP_CLONE1;
-		}
-		else if (sourceMap == VALID_MAP_CLONE1)
-		{
+    }
+    else if (sourceMap == VALID_MAP_CLONE1)
+    {
         result = VALID_MAP_CLONE2;
-		}
-		else if (sourceMap == INVALID_CLONE_HANDLE)
-		{
+    }
+    else if (sourceMap == INVALID_CLONE_HANDLE)
+    {
         result = INVALID_MAP_HANDLE;
-		}
-		else if (sourceMap == INVALID_MAP_HANDLE)
-		{
+    }
+    else if (sourceMap == INVALID_MAP_HANDLE)
+    {
         result = NULL;
-		}
+    }
 
     return result;
 }
 
 MAP_RESULT my_Map_ContainsKey(MAP_HANDLE handle, const char* key, bool* keyExists)
-		{
+{
     MAP_RESULT result = currentMapResult;
     if (result == MAP_OK)
     {
-			*keyExists = true;
-		}
+        *keyExists = true;
+    }
     return result;
 }
 
 MAP_RESULT my_Map_ContainsValue(MAP_HANDLE handle, const char* value, bool* valueExists)
-		{
+{
     MAP_RESULT result = currentMapResult;
     if (result == MAP_OK)
     {
-			*valueExists = true;
-		}
+        *valueExists = true;
+    }
     return result;
 }
 
 const char* my_Map_GetValueFromKey(MAP_HANDLE sourceMap, const char* key)
 {
     const char* result;
-		if (currentMapResult == MAP_OK)
-		{
+    if (currentMapResult == MAP_OK)
+    {
         result = VALID_VALUE;
-		}
-		else
-		{
+    }
+    else
+    {
         result = NULL;
-		}
+    }
     return result;
 }
 
 MAP_RESULT my_Map_GetInternals(MAP_HANDLE handle, const char*const** keys, const char*const** values, size_t* count)
 {
     MAP_RESULT result = currentMapResult;
-		*keys = VALID_CONST_CHAR_POINTER;
-		*values = VALID_CONST_CHAR_POINTER;
-		*count = VALID_KV_COUNT;
+    *keys = VALID_CONST_CHAR_POINTER;
+    *values = VALID_CONST_CHAR_POINTER;
+    *count = VALID_KV_COUNT;
     return result;
 }
 
@@ -883,20 +870,4 @@ BEGIN_TEST_SUITE(constmap_unittests)
 		ConstMap_Destroy(aHandle);
 	}
 
-
 END_TEST_SUITE(constmap_unittests)
-
-/*if malloc is defined as gballoc_malloc at this moment, there'd be serious trouble*/
-#define Lock(x) (LOCK_OK + gballocState - gballocState) /*compiler warning about constant in if condition*/
-#define Unlock(x) (LOCK_OK + gballocState - gballocState)
-#define Lock_Init() (LOCK_HANDLE)0x42
-#define Lock_Deinit(x) (LOCK_OK + gballocState - gballocState)
-#define gballoc_malloc real_gballoc_malloc
-#define gballoc_realloc real_gballoc_realloc
-#define gballoc_calloc real_gballoc_calloc
-#define gballoc_free real_gballoc_free
-#include "gballoc.c"
-#undef Lock
-#undef Unlock
-#undef Lock_Init
-#undef Lock_Deinit

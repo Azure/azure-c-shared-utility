@@ -7,8 +7,11 @@
 #endif
 
 #include "testrunnerswitcher.h"
-#include "azure_c_shared_utility/hmacsha256.h"
+#define ENABLE_MOCKS
 #include "azure_c_shared_utility/strings.h"
+
+#undef ENABLE_MOCKS
+#include "azure_c_shared_utility/hmacsha256.h"
 
 static TEST_MUTEX_HANDLE g_testByTest;
 

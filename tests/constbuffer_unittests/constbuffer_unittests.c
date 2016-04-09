@@ -16,21 +16,44 @@
 //
 #include "testrunnerswitcher.h"
 
+static size_t currentmalloc_call = 0;
+static size_t whenShallmalloc_fail = 0;
+
+void* my_gballoc_malloc(size_t size)
+{
+    void* result;
+    currentmalloc_call++;
+    if (whenShallmalloc_fail > 0)
+    {
+        if (currentmalloc_call == whenShallmalloc_fail)
+        {
+            result = NULL;
+        }
+        else
+        {
+            result = malloc(size);
+        }
+    }
+    else
+    {
+        result = malloc(size);
+    }
+    return result;
+}
+
+void my_gballoc_free(void* ptr)
+{
+    free(ptr);
+}
+
 #define ENABLE_MOCKS
 #include "umock_c.h"
 #include "azure_c_shared_utility/buffer_.h"
+#define GB_DEBUG_ALLOC
+#include "azure_c_shared_utility/gballoc.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-    MOCKABLE_FUNCTION(void*, gballoc_malloc, size_t, size);
-    MOCKABLE_FUNCTION(void, gballoc_free, void*, ptr);
-#ifdef __cplusplus
-}
-#endif
-
+#undef ENABLE_MOCKS
 #include "azure_c_shared_utility/constbuffer.h"
-#include "azure_c_shared_utility/lock.h"
 
 #ifdef _MSC_VER
 #pragma warning(disable:4505)
@@ -38,13 +61,6 @@ extern "C" {
 
 static TEST_MUTEX_HANDLE g_testByTest;
 static TEST_MUTEX_HANDLE g_dllByDll;
-
-#define GBALLOC_H
-
-void* real_gballoc_malloc(size_t size);
-void* real_gballoc_calloc(size_t nmemb, size_t size);
-void* real_gballoc_realloc(void* ptr, size_t size);
-void real_gballoc_free(void* ptr);
 
 static const char* buffer1 = "le buffer no 1";
 static const char* buffer2 = NULL;
@@ -61,36 +77,6 @@ static const char* buffer3 = "three";
 #define BUFFER3_HANDLE (BUFFER_HANDLE)3
 #define BUFFER3_u_char ((unsigned char*)buffer3)
 #define BUFFER3_length ((size_t)0)
-
-static size_t currentmalloc_call = 0;
-static size_t whenShallmalloc_fail = 0;
-
-void* my_gballoc_malloc(size_t size)
-{
-    void* result;
-    currentmalloc_call++;
-    if (whenShallmalloc_fail > 0)
-    {
-        if (currentmalloc_call == whenShallmalloc_fail)
-        {
-            result = NULL;
-        }
-        else
-        {
-            result = real_gballoc_malloc(size);
-        }
-    }
-    else
-    {
-        result = real_gballoc_malloc(size);
-    }
-    return result;
-}
-
-void my_gballoc_free(void* ptr)
-{
-    real_gballoc_free(ptr);
-}
 
 unsigned char* my_BUFFER_u_char(BUFFER_HANDLE handle)
 {
@@ -607,18 +593,3 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
     }
 
 END_TEST_SUITE(constbuffer_unittests)
-
-/*if malloc is defined as gballoc_malloc at this moment, there'd be serious trouble*/
-#define Lock(x) (LOCK_OK + gballocState - gballocState) /*compiler warning about constant in if condition*/
-#define Unlock(x) (LOCK_OK + gballocState - gballocState)
-#define Lock_Init() (LOCK_HANDLE)0x42
-#define Lock_Deinit(x) (LOCK_OK + gballocState - gballocState)
-#define gballoc_malloc real_gballoc_malloc
-#define gballoc_realloc real_gballoc_realloc
-#define gballoc_calloc real_gballoc_calloc
-#define gballoc_free real_gballoc_free
-#include "gballoc.c"
-#undef Lock
-#undef Unlock
-#undef Lock_Init
-#undef Lock_Deinit
