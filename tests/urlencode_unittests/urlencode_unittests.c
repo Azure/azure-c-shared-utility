@@ -4,7 +4,7 @@
 //
 // PUT NO INCLUDES BEFORE HERE !!!!
 //
-#include <cstdlib>
+#include <stdlib.h>
 #ifdef _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
 #endif
@@ -15,8 +15,6 @@
 #include "testrunnerswitcher.h"
 #include "azure_c_shared_utility/strings.h"
 #include "azure_c_shared_utility/urlencode.h"
-#include "micromock.h"
-
 
 #ifdef _MSC_VER
 #pragma warning(disable:4505)
@@ -287,17 +285,18 @@ static const struct
 
 const char* UNRESERVED_CHAR = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._";
 
-static MICROMOCK_GLOBAL_SEMAPHORE_HANDLE g_dllByDll;
+static TEST_MUTEX_HANDLE g_dllByDll;
 
 BEGIN_TEST_SUITE(URLEncode_UnitTests)
+
 TEST_SUITE_INITIALIZE(zzz)
 {
     TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
 }
+
 TEST_SUITE_CLEANUP(TestClassCleanup)
 {
     TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
-
 }
 
 TEST_FUNCTION(URL_EncodeString_is_null_should_yield_NULL)
@@ -549,4 +548,5 @@ TEST_FUNCTION(URL_Exhaustive_chars)
         STRING_delete(encodedOriginal);
     }
 }
+
 END_TEST_SUITE(URLEncode_UnitTests)
