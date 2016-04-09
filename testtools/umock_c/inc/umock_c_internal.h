@@ -613,6 +613,7 @@ typedef struct ARG_BUFFER_TAG
         IF(IS_NOT_VOID(return_type),unsigned int fail_return_value_set : 1;,) \
         IF(IS_NOT_VOID(return_type),unsigned int return_value_set : 1;,) \
         IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2(DECLARE_IGNORE_FLAG_FOR_ARG, __VA_ARGS__),) \
+        IF(COUNT_ARG(__VA_ARGS__), , IF(IS_NOT_VOID(return_type),, unsigned char dummy : 1;)) \
     } C2(mock_call_,name); \
     char* C2(mock_call_data_stringify_,name)(void* mock_call_data) \
     { \

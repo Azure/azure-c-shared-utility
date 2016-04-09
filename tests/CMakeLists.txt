@@ -12,6 +12,7 @@ add_subdirectory(doublylinkedlist_unittests)
 add_subdirectory(gballoc_unittests)
 add_subdirectory(gballoc_without_init_unittests)
 add_subdirectory(hmacsha256_unittests)
+
 if(0)
 if(${use_condition})
     add_subdirectory(condition_unittests)

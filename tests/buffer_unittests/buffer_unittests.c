@@ -12,48 +12,6 @@
 #include <stddef.h>
 #include "azure_c_shared_utility/buffer_.h"
 
-#define ENABLE_MOCKS
-
-//
-// PUT NO CLIENT LIBRARY INCLUDES BEFORE HERE !!!!
-//
-#include "testrunnerswitcher.h"
-#include "umock_c.h"
-#include "azure_c_shared_utility/lock.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-MOCKABLE_FUNCTION(void*, gballoc_malloc, size_t, size);
-MOCKABLE_FUNCTION(void*, gballoc_realloc, void*, ptr, size_t, size);
-MOCKABLE_FUNCTION(void, gballoc_free, void*, ptr);
-#ifdef __cplusplus
-}
-#endif
-
-#ifdef _MSC_VER
-#pragma warning(disable:4505)
-#endif
-
-#define ALLOCATION_SIZE             16
-#define TOTAL_ALLOCATION_SIZE       32
-
-unsigned char BUFFER_TEST_VALUE[] = {0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x10,0x11,0x12,0x13,0x14,0x15,0x16};
-unsigned char ADDITIONAL_BUFFER[] = {0x17,0x18,0x19,0x1a,0x1b,0x1c,0x1d,0x1e,0x1f,0x20,0x21,0x22,0x23,0x24,0x25,0x26};
-unsigned char TOTAL_BUFFER[] = {0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,0x18,0x19,0x1a,0x1b,0x1c,0x1d,0x1e,0x1f,0x20,0x21,0x22,0x23,0x24,0x25,0x26};
-
-static TEST_MUTEX_HANDLE g_testByTest;
-static TEST_MUTEX_HANDLE g_dllByDll;
-
-#define GBALLOC_H
-
-int real_gballoc_init(void);
-void real_gballoc_deinit(void);
-void* real_gballoc_malloc(size_t size);
-void* real_gballoc_calloc(size_t nmemb, size_t size);
-void* real_gballoc_realloc(void* ptr, size_t size);
-void real_gballoc_free(void* ptr);
-
 static size_t currentmalloc_call = 0;
 static size_t whenShallmalloc_fail = 0;
 
@@ -72,12 +30,12 @@ void* my_gballoc_malloc(size_t size)
         }
         else
         {
-            result = real_gballoc_malloc(size);
+            result = malloc(size);
         }
     }
     else
     {
-        result = real_gballoc_malloc(size);
+        result = malloc(size);
     }
     return result;
 }
@@ -94,12 +52,12 @@ void* my_gballoc_realloc(void* ptr, size_t size)
         }
         else
         {
-            result = real_gballoc_realloc(ptr, size);
+            result = realloc(ptr, size);
         }
     }
     else
     {
-        result = real_gballoc_realloc(ptr, size);
+        result = realloc(ptr, size);
     }
 
     return result;
@@ -107,8 +65,27 @@ void* my_gballoc_realloc(void* ptr, size_t size)
 
 void my_gballoc_free(void* ptr)
 {
-    real_gballoc_free(ptr);
+    free(ptr);
 }
+
+#define ENABLE_MOCKS
+#include "azure_c_shared_utility/gballoc.h"
+#include "testrunnerswitcher.h"
+#include "umock_c.h"
+
+#ifdef _MSC_VER
+#pragma warning(disable:4505)
+#endif
+
+#define ALLOCATION_SIZE             16
+#define TOTAL_ALLOCATION_SIZE       32
+
+unsigned char BUFFER_TEST_VALUE[] = {0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x10,0x11,0x12,0x13,0x14,0x15,0x16};
+unsigned char ADDITIONAL_BUFFER[] = {0x17,0x18,0x19,0x1a,0x1b,0x1c,0x1d,0x1e,0x1f,0x20,0x21,0x22,0x23,0x24,0x25,0x26};
+unsigned char TOTAL_BUFFER[] = {0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,0x18,0x19,0x1a,0x1b,0x1c,0x1d,0x1e,0x1f,0x20,0x21,0x22,0x23,0x24,0x25,0x26};
+
+static TEST_MUTEX_HANDLE g_testByTest;
+static TEST_MUTEX_HANDLE g_dllByDll;
 
 void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
@@ -1066,18 +1043,3 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     }
 
 END_TEST_SUITE(Buffer_UnitTests)
-
-/*if malloc is defined as gballoc_malloc at this moment, there'd be serious trouble*/
-#define Lock(x) (LOCK_OK + gballocState - gballocState) /*compiler warning about constant in if condition*/
-#define Unlock(x) (LOCK_OK + gballocState - gballocState)
-#define Lock_Init() (LOCK_HANDLE)0x42
-#define Lock_Deinit(x) (LOCK_OK + gballocState - gballocState)
-#define gballoc_malloc real_gballoc_malloc
-#define gballoc_realloc real_gballoc_realloc
-#define gballoc_calloc real_gballoc_calloc
-#define gballoc_free real_gballoc_free
-#include "gballoc.c"
-#undef Lock
-#undef Unlock
-#undef Lock_Init
-#undef Lock_Deinit
