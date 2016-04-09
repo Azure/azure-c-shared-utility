@@ -152,7 +152,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
     TEST_FUNCTION_CLEANUP(cleans)
     {
         TEST_MUTEX_RELEASE(g_testByTest);
-        }
+    }
 
     /*Tests_SRS_CONSTBUFFER_02_001: [If source is NULL and size is different than 0 then CONSTBUFFER_Create shall fail and return NULL.]*/
     TEST_FUNCTION(CONSTBUFFER_Create_with_invalid_args_fails)

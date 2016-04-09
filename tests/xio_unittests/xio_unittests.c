@@ -1,82 +1,43 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+#include <stdlib.h>
 #include "testrunnerswitcher.h"
-#include "micromock.h"
-#include "azure_c_shared_utility/xio.h"
-#include "azure_c_shared_utility/lock.h"
-
-#define TEST_CONCRETE_IO_HANDLE (CONCRETE_IO_HANDLE)0x4242
-
-#define GBALLOC_H
-extern "C" int gballoc_init(void);
-extern "C" void gballoc_deinit(void);
-extern "C" void* gballoc_malloc(size_t size);
-extern "C" void* gballoc_calloc(size_t nmemb, size_t size);
-extern "C" void* gballoc_realloc(void* ptr, size_t size);
-extern "C" void gballoc_free(void* ptr);
 
 static bool g_fail_alloc_calls;
 
-namespace BASEIMPLEMENTATION
+void* my_gballoc_malloc(size_t size)
 {
-    /*if malloc is defined as gballoc_malloc at this moment, there'd be serious trouble*/
-#define Lock(x) (LOCK_OK + gballocState - gballocState) /*compiler warning about constant in if condition*/
-#define Unlock(x) (LOCK_OK + gballocState - gballocState)
-#define Lock_Init() (LOCK_HANDLE)0x42
-#define Lock_Deinit(x) (LOCK_OK + gballocState - gballocState)
-#include "gballoc.c"
-#undef Lock
-#undef Unlock
-#undef Lock_Init
-#undef Lock_Deinit
-};
+    void* result = NULL;
+    if (!g_fail_alloc_calls)
+    {
+        result = malloc(size);
+    }
+    return result;
+}
 
-TYPED_MOCK_CLASS(io_mocks, CGlobalMock)
+void my_gballoc_free(void* ptr)
 {
-public:
-    MOCK_STATIC_METHOD_1(, void*, gballoc_malloc, size_t, size)
-        void* ptr = NULL;
-        if (!g_fail_alloc_calls)
-        {
-            ptr = BASEIMPLEMENTATION::gballoc_malloc(size);
-        }
-    MOCK_METHOD_END(void*, ptr);
+    free(ptr);
+}
 
-    MOCK_STATIC_METHOD_1(, void, gballoc_free, void*, ptr)
-        BASEIMPLEMENTATION::gballoc_free(ptr);
-    MOCK_VOID_METHOD_END()
+#define ENABLE_MOCKS
+#include "azure_c_shared_utility/gballoc.h"
+#include "azure_c_shared_utility/xio.h"
 
-    /* io interface mocks */
-    MOCK_STATIC_METHOD_2(, CONCRETE_IO_HANDLE, test_xio_create, void*, xio_create_parameters, LOGGER_LOG, logger_log)
-    MOCK_METHOD_END(CONCRETE_IO_HANDLE, TEST_CONCRETE_IO_HANDLE);
-    MOCK_STATIC_METHOD_1(, void, test_xio_destroy, CONCRETE_IO_HANDLE, handle)
-    MOCK_VOID_METHOD_END();
-    MOCK_STATIC_METHOD_7(, int, test_xio_open, CONCRETE_IO_HANDLE, handle, ON_IO_OPEN_COMPLETE, on_io_open_complete, void*, on_io_open_complete_context, ON_BYTES_RECEIVED, on_bytes_received, void*, on_bytes_received_context, ON_IO_ERROR, on_io_error, void*, on_io_error_context)
-    MOCK_METHOD_END(int, 0);
-    MOCK_STATIC_METHOD_3(, int, test_xio_close, CONCRETE_IO_HANDLE, handle, ON_IO_CLOSE_COMPLETE, on_io_close_complete, void*, callback_context)
-    MOCK_METHOD_END(int, 0);
-    MOCK_STATIC_METHOD_5(, int, test_xio_send, CONCRETE_IO_HANDLE, handle, const void*, buffer, size_t, size, ON_SEND_COMPLETE, on_send_complete, void*, callback_context)
-    MOCK_METHOD_END(int, 0);
-    MOCK_STATIC_METHOD_1(, void, test_xio_dowork, CONCRETE_IO_HANDLE, handle)
-    MOCK_VOID_METHOD_END();
-    MOCK_STATIC_METHOD_3(, int, test_xio_setoption, CONCRETE_IO_HANDLE, handle, const char*, optionName, const void*, value)
-    MOCK_METHOD_END(int, 0);
-};
+MOCKABLE_FUNCTION(CONCRETE_IO_HANDLE, test_xio_create, void*, xio_create_parameters, LOGGER_LOG, logger_log)
+MOCKABLE_FUNCTION(void, test_xio_destroy, CONCRETE_IO_HANDLE, handle)
+MOCKABLE_FUNCTION(int, test_xio_open, CONCRETE_IO_HANDLE, handle, ON_IO_OPEN_COMPLETE, on_io_open_complete, void*, on_io_open_complete_context, ON_BYTES_RECEIVED, on_bytes_received, void*, on_bytes_received_context, ON_IO_ERROR, on_io_error, void*, on_io_error_context)
+MOCKABLE_FUNCTION(int, test_xio_close, CONCRETE_IO_HANDLE, handle, ON_IO_CLOSE_COMPLETE, on_io_close_complete, void*, callback_context)
+MOCKABLE_FUNCTION(int, test_xio_send, CONCRETE_IO_HANDLE, handle, const void*, buffer, size_t, size, ON_SEND_COMPLETE, on_send_complete, void*, callback_context)
+MOCKABLE_FUNCTION(void, test_xio_dowork, CONCRETE_IO_HANDLE, handle)
+MOCKABLE_FUNCTION(int, test_xio_setoption, CONCRETE_IO_HANDLE, handle, const char*, optionName, const void*, value)
 
-DECLARE_GLOBAL_MOCK_METHOD_1(io_mocks, , void*, gballoc_malloc, size_t, size);
-DECLARE_GLOBAL_MOCK_METHOD_1(io_mocks, , void, gballoc_free, void*, ptr);
+#define TEST_CONCRETE_IO_HANDLE (CONCRETE_IO_HANDLE)0x4242
 
-extern "C"
-{
-    DECLARE_GLOBAL_MOCK_METHOD_2(io_mocks, , CONCRETE_IO_HANDLE, test_xio_create, void*, xio_create_parameters, LOGGER_LOG, logger_log);
-    DECLARE_GLOBAL_MOCK_METHOD_1(io_mocks, , void, test_xio_destroy, CONCRETE_IO_HANDLE, handle);
-    DECLARE_GLOBAL_MOCK_METHOD_7(io_mocks, , int, test_xio_open, CONCRETE_IO_HANDLE, handle, ON_IO_OPEN_COMPLETE, on_io_open_complete, void*, on_io_open_complete_context, ON_BYTES_RECEIVED, on_bytes_received, void*, on_bytes_received_context, ON_IO_ERROR, on_io_error, void*, on_io_error_context);
-    DECLARE_GLOBAL_MOCK_METHOD_3(io_mocks, , int, test_xio_close, CONCRETE_IO_HANDLE, handle, ON_IO_CLOSE_COMPLETE, on_io_close_complete, void*, callback_context);
-    DECLARE_GLOBAL_MOCK_METHOD_5(io_mocks, , int, test_xio_send, CONCRETE_IO_HANDLE, handle, const void*, buffer, size_t, size, ON_SEND_COMPLETE, on_send_complete, void*, callback_context);
-    DECLARE_GLOBAL_MOCK_METHOD_1(io_mocks, , void, test_xio_dowork, CONCRETE_IO_HANDLE, handle);
-    DECLARE_GLOBAL_MOCK_METHOD_3(io_mocks, , int, test_xio_setoption, CONCRETE_IO_HANDLE, handle, const char*, optionName, const void*, value);
-
+#ifdef __cplusplus
+extern "C" {
+#endif
     void test_on_bytes_received(void* context, const unsigned char* buffer, size_t size)
     {
         (void)context;
@@ -111,7 +72,9 @@ extern "C"
         (void)options;
         (void)format;
     }
+#ifdef __cplusplus
 }
+#endif
 
 const IO_INTERFACE_DESCRIPTION test_io_description =
 {
@@ -124,24 +87,40 @@ const IO_INTERFACE_DESCRIPTION test_io_description =
     test_xio_setoption
 };
 
-MICROMOCK_MUTEX_HANDLE test_serialize_mutex;
+static TEST_MUTEX_HANDLE g_testByTest;
+static TEST_MUTEX_HANDLE g_dllByDll;
 
 BEGIN_TEST_SUITE(xio_unittests)
 
+void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
+{
+    ASSERT_FAIL("umock_c reported error");
+}
+
 TEST_SUITE_INITIALIZE(suite_init)
 {
-    test_serialize_mutex = MicroMockCreateMutex();
-    ASSERT_IS_NOT_NULL(test_serialize_mutex);
+    TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
+    g_testByTest = TEST_MUTEX_CREATE();
+    ASSERT_IS_NOT_NULL(g_testByTest);
+
+    umock_c_init(on_umock_c_error);
+
+    REGISTER_ALIAS_TYPE(CONCRETE_IO_HANDLE, void*);
+    REGISTER_ALIAS_TYPE(XIO_HANDLE, void*);
+
+    REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, my_gballoc_malloc);
+    REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, my_gballoc_free);
 }
 
 TEST_SUITE_CLEANUP(suite_cleanup)
 {
-    MicroMockDestroyMutex(test_serialize_mutex);
+    TEST_MUTEX_DESTROY(g_testByTest);
+    TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
 }
 
 TEST_FUNCTION_INITIALIZE(method_init)
 {
-    if (!MicroMockAcquireMutex(test_serialize_mutex))
+    if (TEST_MUTEX_ACQUIRE(g_testByTest) != 0)
     {
         ASSERT_FAIL("Could not acquire test serialization mutex.");
     }
@@ -150,10 +129,7 @@ TEST_FUNCTION_INITIALIZE(method_init)
 
 TEST_FUNCTION_CLEANUP(method_cleanup)
 {
-    if (!MicroMockReleaseMutex(test_serialize_mutex))
-    {
-        ASSERT_FAIL("Could not release test serialization mutex.");
-    }
+    TEST_MUTEX_RELEASE(g_testByTest);
 }
 
 /* xio_create */
@@ -163,17 +139,15 @@ TEST_FUNCTION_CLEANUP(method_cleanup)
 TEST_FUNCTION(xio_create_with_all_args_except_interface_description_NULL_succeeds)
 {
     // arrange
-    io_mocks mocks;
-
-    EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(mocks, test_xio_create(NULL, NULL));
+    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(test_xio_create(NULL, NULL));
 
     // act
     XIO_HANDLE result = xio_create(&test_io_description, NULL, NULL);
 
     // assert
     ASSERT_IS_NOT_NULL(result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
     xio_destroy(result);
@@ -183,17 +157,15 @@ TEST_FUNCTION(xio_create_with_all_args_except_interface_description_NULL_succeed
 TEST_FUNCTION(xio_create_passes_the_args_to_the_concrete_io_implementation)
 {
     // arrange
-    io_mocks mocks;
-
-    EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(mocks, test_xio_create((void*)0x4243, test_logger_log));
+    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(test_xio_create((void*)0x4243, test_logger_log));
 
     // act
     XIO_HANDLE result = xio_create(&test_io_description, (void*)0x4243, test_logger_log);
 
     // assert
     ASSERT_IS_NOT_NULL(result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
     xio_destroy(result);
@@ -203,12 +175,10 @@ TEST_FUNCTION(xio_create_passes_the_args_to_the_concrete_io_implementation)
 TEST_FUNCTION(when_concrete_xxio_create_fails_then_xio_create_fails)
 {
     // arrange
-    io_mocks mocks;
-
-    STRICT_EXPECTED_CALL(mocks, test_xio_create(NULL, NULL))
+    STRICT_EXPECTED_CALL(test_xio_create(NULL, NULL))
         .SetReturn((CONCRETE_IO_HANDLE)NULL);
-    EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
-    EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
+    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
     // act
     XIO_HANDLE result = xio_create(&test_io_description, NULL, NULL);
@@ -221,12 +191,12 @@ TEST_FUNCTION(when_concrete_xxio_create_fails_then_xio_create_fails)
 TEST_FUNCTION(when_io_interface_description_is_NULL_then_xio_create_fails)
 {
     // arrange
-    io_mocks mocks;
 
     // act
     XIO_HANDLE result = xio_create(NULL, NULL, NULL);
 
     // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_IS_NULL(result);
 }
 
@@ -234,7 +204,6 @@ TEST_FUNCTION(when_io_interface_description_is_NULL_then_xio_create_fails)
 TEST_FUNCTION(when_concrete_xio_create_is_NULL_then_xio_create_fails)
 {
     // arrange
-    io_mocks mocks;
     const IO_INTERFACE_DESCRIPTION io_description_null =
     {
         NULL,
@@ -250,6 +219,7 @@ TEST_FUNCTION(when_concrete_xio_create_is_NULL_then_xio_create_fails)
     XIO_HANDLE result = xio_create(&io_description_null, NULL, NULL);
 
     // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_IS_NULL(result);
 }
 
@@ -257,7 +227,6 @@ TEST_FUNCTION(when_concrete_xio_create_is_NULL_then_xio_create_fails)
 TEST_FUNCTION(when_concrete_xio_destroy_is_NULL_then_xio_create_fails)
 {
     // arrange
-    io_mocks mocks;
     const IO_INTERFACE_DESCRIPTION io_description_null =
     {
         test_xio_create,
@@ -273,6 +242,7 @@ TEST_FUNCTION(when_concrete_xio_destroy_is_NULL_then_xio_create_fails)
     XIO_HANDLE result = xio_create(&io_description_null, NULL, NULL);
 
     // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_IS_NULL(result);
 }
 
@@ -280,7 +250,6 @@ TEST_FUNCTION(when_concrete_xio_destroy_is_NULL_then_xio_create_fails)
 TEST_FUNCTION(when_concrete_xio_open_is_NULL_then_xio_create_fails)
 {
     // arrange
-    io_mocks mocks;
     const IO_INTERFACE_DESCRIPTION io_description_null =
     {
         test_xio_create,
@@ -296,6 +265,7 @@ TEST_FUNCTION(when_concrete_xio_open_is_NULL_then_xio_create_fails)
     XIO_HANDLE result = xio_create(&io_description_null, NULL, NULL);
 
     // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_IS_NULL(result);
 }
 
@@ -303,7 +273,6 @@ TEST_FUNCTION(when_concrete_xio_open_is_NULL_then_xio_create_fails)
 TEST_FUNCTION(when_concrete_xio_close_is_NULL_then_xio_create_fails)
 {
     // arrange
-    io_mocks mocks;
     const IO_INTERFACE_DESCRIPTION io_description_null =
     {
         test_xio_create,
@@ -319,6 +288,7 @@ TEST_FUNCTION(when_concrete_xio_close_is_NULL_then_xio_create_fails)
     XIO_HANDLE result = xio_create(&io_description_null, NULL, NULL);
 
     // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_IS_NULL(result);
 }
 
@@ -326,7 +296,6 @@ TEST_FUNCTION(when_concrete_xio_close_is_NULL_then_xio_create_fails)
 TEST_FUNCTION(when_concrete_xio_send_is_NULL_then_xio_create_fails)
 {
     // arrange
-    io_mocks mocks;
     const IO_INTERFACE_DESCRIPTION io_description_null =
     {
         test_xio_create,
@@ -342,6 +311,7 @@ TEST_FUNCTION(when_concrete_xio_send_is_NULL_then_xio_create_fails)
     XIO_HANDLE result = xio_create(&io_description_null, NULL, NULL);
 
     // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_IS_NULL(result);
 }
 
@@ -349,7 +319,6 @@ TEST_FUNCTION(when_concrete_xio_send_is_NULL_then_xio_create_fails)
 TEST_FUNCTION(when_concrete_xio_dowork_is_NULL_then_xio_create_fails)
 {
     // arrange
-    io_mocks mocks;
     const IO_INTERFACE_DESCRIPTION io_description_null =
     {
         test_xio_create,
@@ -366,13 +335,13 @@ TEST_FUNCTION(when_concrete_xio_dowork_is_NULL_then_xio_create_fails)
 
     // assert
     ASSERT_IS_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
 /* Tests_SRS_XIO_01_004: [If any io_interface_description member is NULL, xio_create shall return NULL.] */
 TEST_FUNCTION(when_concrete_xio_setoption_is_NULL_then_xio_create_fails)
 {
     // arrange
-    io_mocks mocks;
     const IO_INTERFACE_DESCRIPTION io_description_null =
     {
         test_xio_create,
@@ -388,6 +357,7 @@ TEST_FUNCTION(when_concrete_xio_setoption_is_NULL_then_xio_create_fails)
     XIO_HANDLE result = xio_create(&io_description_null, NULL, NULL);
 
     // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_IS_NULL(result);
 }
 
@@ -395,16 +365,16 @@ TEST_FUNCTION(when_concrete_xio_setoption_is_NULL_then_xio_create_fails)
 TEST_FUNCTION(when_allocating_memory_Fails_then_xio_create_fails)
 {
     // arrange
-    io_mocks mocks;
     g_fail_alloc_calls = true;
 
-    EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG))
+    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
         .SetReturn((void*)NULL);
 
     // act
     XIO_HANDLE result = xio_create(&test_io_description, NULL, NULL);
 
     // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_IS_NULL(result);
 }
 
@@ -415,29 +385,29 @@ TEST_FUNCTION(when_allocating_memory_Fails_then_xio_create_fails)
 TEST_FUNCTION(xio_destroy_calls_concrete_xio_destroy_and_frees_memory)
 {
     // arrange
-    io_mocks mocks;
     XIO_HANDLE handle = xio_create(&test_io_description, NULL, NULL);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(mocks, test_xio_destroy(TEST_CONCRETE_IO_HANDLE));
-    EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(test_xio_destroy(TEST_CONCRETE_IO_HANDLE));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
     // act
     xio_destroy(handle);
 
     // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
 /* Tests_SRS_XIO_01_007: [If handle is NULL, xio_destroy shall do nothing.] */
 TEST_FUNCTION(xio_destroy_with_null_handle_does_nothing)
 {
     // arrange
-    io_mocks mocks;
 
     // act
     xio_destroy(NULL);
 
     // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
 /* xio_open */
@@ -447,18 +417,17 @@ TEST_FUNCTION(xio_destroy_with_null_handle_does_nothing)
 TEST_FUNCTION(xio_open_calls_the_underlying_concrete_xio_open_and_succeeds)
 {
     // arrange
-    io_mocks mocks;
     XIO_HANDLE handle = xio_create(&test_io_description, NULL, NULL);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(mocks, test_xio_open(TEST_CONCRETE_IO_HANDLE, test_on_io_open_complete, (void*)1, test_on_bytes_received, (void*)2, test_on_io_error, (void*)3));
+    STRICT_EXPECTED_CALL(test_xio_open(TEST_CONCRETE_IO_HANDLE, test_on_io_open_complete, (void*)1, test_on_bytes_received, (void*)2, test_on_io_error, (void*)3));
 
     // act
     int result = xio_open(handle, test_on_io_open_complete, (void*)1, test_on_bytes_received, (void*)2, test_on_io_error, (void*)3);
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
     xio_destroy(handle);
@@ -468,12 +437,12 @@ TEST_FUNCTION(xio_open_calls_the_underlying_concrete_xio_open_and_succeeds)
 TEST_FUNCTION(xio_open_with_NULL_handle_fails)
 {
     // arrange
-    io_mocks mocks;
 
     // act
     int result = xio_open(NULL, test_on_io_open_complete, (void*)1, test_on_bytes_received, (void*)2, test_on_io_error, (void*)3);
 
     // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
 }
 
@@ -481,11 +450,10 @@ TEST_FUNCTION(xio_open_with_NULL_handle_fails)
 TEST_FUNCTION(when_the_concrete_xio_open_fails_then_xio_open_fails)
 {
     // arrange
-    io_mocks mocks;
     XIO_HANDLE handle = xio_create(&test_io_description, NULL, NULL);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(mocks, test_xio_open(TEST_CONCRETE_IO_HANDLE, test_on_io_open_complete, (void*)1, test_on_bytes_received, (void*)2, test_on_io_error, (void*)3))
+    STRICT_EXPECTED_CALL(test_xio_open(TEST_CONCRETE_IO_HANDLE, test_on_io_open_complete, (void*)1, test_on_bytes_received, (void*)2, test_on_io_error, (void*)3))
         .SetReturn(1);
 
     // act
@@ -493,7 +461,7 @@ TEST_FUNCTION(when_the_concrete_xio_open_fails_then_xio_open_fails)
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
     xio_destroy(handle);
@@ -506,18 +474,17 @@ TEST_FUNCTION(when_the_concrete_xio_open_fails_then_xio_open_fails)
 TEST_FUNCTION(xio_close_calls_the_underlying_concrete_xio_close_and_succeeds)
 {
     // arrange
-    io_mocks mocks;
     XIO_HANDLE handle = xio_create(&test_io_description, NULL, NULL);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(mocks, test_xio_close(TEST_CONCRETE_IO_HANDLE, test_on_io_close_complete, (void*)0x4242));
+    STRICT_EXPECTED_CALL(test_xio_close(TEST_CONCRETE_IO_HANDLE, test_on_io_close_complete, (void*)0x4242));
 
     // act
     int result = xio_close(handle, test_on_io_close_complete, (void*)0x4242);
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
     xio_destroy(handle);
@@ -527,12 +494,12 @@ TEST_FUNCTION(xio_close_calls_the_underlying_concrete_xio_close_and_succeeds)
 TEST_FUNCTION(xio_close_with_NULL_handle_fails)
 {
     // arrange
-    io_mocks mocks;
 
     // act
     int result = xio_close(NULL, test_on_io_close_complete, (void*)0x4242);
 
     // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
 }
 
@@ -540,11 +507,10 @@ TEST_FUNCTION(xio_close_with_NULL_handle_fails)
 TEST_FUNCTION(when_the_concrete_xio_close_fails_then_xio_close_fails)
 {
     // arrange
-    io_mocks mocks;
     XIO_HANDLE handle = xio_create(&test_io_description, NULL, NULL);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(mocks, test_xio_close(TEST_CONCRETE_IO_HANDLE, test_on_io_close_complete, (void*)0x4242))
+    STRICT_EXPECTED_CALL(test_xio_close(TEST_CONCRETE_IO_HANDLE, test_on_io_close_complete, (void*)0x4242))
         .SetReturn(1);
 
     // act
@@ -552,7 +518,7 @@ TEST_FUNCTION(when_the_concrete_xio_close_fails_then_xio_close_fails)
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
     xio_destroy(handle);
@@ -565,19 +531,18 @@ TEST_FUNCTION(when_the_concrete_xio_close_fails_then_xio_close_fails)
 TEST_FUNCTION(xio_send_calls_the_underlying_concrete_xio_send_and_succeeds)
 {
     // arrange
-    io_mocks mocks;
     unsigned char send_data[] = { 0x42, 43 };
     XIO_HANDLE handle = xio_create(&test_io_description, NULL, NULL);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(mocks, test_xio_send(TEST_CONCRETE_IO_HANDLE, send_data, sizeof(send_data), test_on_send_complete, (void*)0x4242));
+    STRICT_EXPECTED_CALL(test_xio_send(TEST_CONCRETE_IO_HANDLE, send_data, sizeof(send_data), test_on_send_complete, (void*)0x4242));
 
     // act
     int result = xio_send(handle, send_data, sizeof(send_data), test_on_send_complete, (void*)0x4242);
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
     xio_destroy(handle);
@@ -587,9 +552,8 @@ TEST_FUNCTION(xio_send_calls_the_underlying_concrete_xio_send_and_succeeds)
 TEST_FUNCTION(xio_send_with_NULL_handle_fails)
 {
     // arrange
-    io_mocks mocks;
     unsigned char send_data[] = { 0x42, 43 };
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
     // act
     int result = xio_send(NULL, send_data, sizeof(send_data), test_on_send_complete, (void*)0x4242);
@@ -602,12 +566,11 @@ TEST_FUNCTION(xio_send_with_NULL_handle_fails)
 TEST_FUNCTION(when_the_concrete_xio_send_fails_then_xio_send_fails)
 {
     // arrange
-    io_mocks mocks;
     unsigned char send_data[] = { 0x42, 43 };
     XIO_HANDLE handle = xio_create(&test_io_description, NULL, NULL);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(mocks, test_xio_send(TEST_CONCRETE_IO_HANDLE, send_data, sizeof(send_data), test_on_send_complete, (void*)0x4242))
+    STRICT_EXPECTED_CALL(test_xio_send(TEST_CONCRETE_IO_HANDLE, send_data, sizeof(send_data), test_on_send_complete, (void*)0x4242))
         .SetReturn(42);
 
     // act
@@ -615,7 +578,7 @@ TEST_FUNCTION(when_the_concrete_xio_send_fails_then_xio_send_fails)
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
     xio_destroy(handle);
@@ -625,18 +588,17 @@ TEST_FUNCTION(when_the_concrete_xio_send_fails_then_xio_send_fails)
 TEST_FUNCTION(xio_send_with_NULL_buffer_and_nonzero_length_passes_the_args_down_and_succeeds)
 {
     // arrange
-    io_mocks mocks;
     XIO_HANDLE handle = xio_create(&test_io_description, NULL, NULL);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(mocks, test_xio_send(TEST_CONCRETE_IO_HANDLE, NULL, 1, test_on_send_complete, (void*)0x4242));
+    STRICT_EXPECTED_CALL(test_xio_send(TEST_CONCRETE_IO_HANDLE, NULL, 1, test_on_send_complete, (void*)0x4242));
 
     // act
     int result = xio_send(handle, NULL, 1, test_on_send_complete, (void*)0x4242);
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
     xio_destroy(handle);
@@ -646,18 +608,17 @@ TEST_FUNCTION(xio_send_with_NULL_buffer_and_nonzero_length_passes_the_args_down_
 TEST_FUNCTION(xio_send_with_NULL_buffer_and_zero_length_passes_the_args_down_and_succeeds)
 {
     // arrange
-    io_mocks mocks;
     XIO_HANDLE handle = xio_create(&test_io_description, NULL, NULL);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(mocks, test_xio_send(TEST_CONCRETE_IO_HANDLE, NULL, 0, test_on_send_complete, (void*)0x4242));
+    STRICT_EXPECTED_CALL(test_xio_send(TEST_CONCRETE_IO_HANDLE, NULL, 0, test_on_send_complete, (void*)0x4242));
 
     // act
     int result = xio_send(handle, NULL, 0, test_on_send_complete, (void*)0x4242);
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
     xio_destroy(handle);
@@ -667,19 +628,18 @@ TEST_FUNCTION(xio_send_with_NULL_buffer_and_zero_length_passes_the_args_down_and
 TEST_FUNCTION(xio_send_with_non_NULL_buffer_and_zero_length_passes_the_args_down_and_succeeds)
 {
     // arrange
-    io_mocks mocks;
     unsigned char send_data[] = { 0x42, 43 };
     XIO_HANDLE handle = xio_create(&test_io_description, NULL, NULL);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(mocks, test_xio_send(TEST_CONCRETE_IO_HANDLE, send_data, 0, test_on_send_complete, (void*)0x4242));
+    STRICT_EXPECTED_CALL(test_xio_send(TEST_CONCRETE_IO_HANDLE, send_data, 0, test_on_send_complete, (void*)0x4242));
 
     // act
     int result = xio_send(handle, send_data, 0, test_on_send_complete, (void*)0x4242);
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
     xio_destroy(handle);
@@ -691,18 +651,17 @@ TEST_FUNCTION(xio_send_with_non_NULL_buffer_and_zero_length_passes_the_args_down
 TEST_FUNCTION(xio_dowork_calls_the_concrete_dowork_and_succeeds)
 {
     // arrange
-    io_mocks mocks;
     unsigned char send_data[] = { 0x42, 43 };
     XIO_HANDLE handle = xio_create(&test_io_description, NULL, NULL);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(mocks, test_xio_dowork(TEST_CONCRETE_IO_HANDLE));
+    STRICT_EXPECTED_CALL(test_xio_dowork(TEST_CONCRETE_IO_HANDLE));
 
     // act
     xio_dowork(handle);
 
     // assert
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
     xio_destroy(handle);
@@ -712,29 +671,28 @@ TEST_FUNCTION(xio_dowork_calls_the_concrete_dowork_and_succeeds)
 TEST_FUNCTION(xio_dowork_with_NULL_handle_does_nothing)
 {
     // arrange
-    io_mocks mocks;
 
     // act
     xio_dowork(NULL);
 
     // assert
-    // uMock checks the calls
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
 /* Tests_SRS_XIO_03_030: [If the xio argumnent or the optionName argument is NULL, xio_setoption shall return a non-zero value.] */
 TEST_FUNCTION(xio_setoption_with_NULL_handle_fails)
 {
     // arrange
-    io_mocks mocks;
     const char* optionName = "TheOptionName";
     const void* optionValue = (void*)1;
 
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
     // act
     int result = xio_setoption(NULL, optionName, optionValue);
 
     // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
 }
 
@@ -742,19 +700,18 @@ TEST_FUNCTION(xio_setoption_with_NULL_handle_fails)
 TEST_FUNCTION(xio_setoption_with_NULL_optionName_fails)
 {
     // arrange
-    io_mocks mocks;
     const char* optionName = "TheOptionName";
     const void* optionValue = (void*)1;
     XIO_HANDLE handle = xio_create(&test_io_description, NULL, NULL);
 
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
     // act
     int result = xio_setoption(handle, NULL, optionValue);
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
     xio_destroy(handle);
@@ -765,21 +722,20 @@ TEST_FUNCTION(xio_setoption_with_NULL_optionName_fails)
 TEST_FUNCTION(xio_setoption_with_valid_args_passes_the_args_down_and_succeeds)
 {
     // arrange
-    io_mocks mocks;
     const char* optionName = "TheOptionName";
     const void* optionValue = (void*)1;
     XIO_HANDLE handle = xio_create(&test_io_description, NULL, NULL);
 
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(mocks, test_xio_setoption(TEST_CONCRETE_IO_HANDLE, optionName, optionValue));
+    STRICT_EXPECTED_CALL(test_xio_setoption(TEST_CONCRETE_IO_HANDLE, optionName, optionValue));
 
     // act
     int result = xio_setoption(handle, optionName, optionValue);
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
     xio_destroy(handle);
@@ -789,14 +745,13 @@ TEST_FUNCTION(xio_setoption_with_valid_args_passes_the_args_down_and_succeeds)
 TEST_FUNCTION(xio_setoption_fails_when_concrete_xio_setoption_fails)
 {
     // arrange
-    io_mocks mocks;
     const char* optionName = "TheOptionName";
     const void* optionValue = (void*)1;
     XIO_HANDLE handle = xio_create(&test_io_description, NULL, NULL);
 
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(mocks, test_xio_setoption(TEST_CONCRETE_IO_HANDLE, optionName, optionValue))
+    STRICT_EXPECTED_CALL(test_xio_setoption(TEST_CONCRETE_IO_HANDLE, optionName, optionValue))
         .SetReturn(42);
 
     // act
@@ -804,7 +759,7 @@ TEST_FUNCTION(xio_setoption_fails_when_concrete_xio_setoption_fails)
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
     xio_destroy(handle);

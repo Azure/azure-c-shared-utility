@@ -13,6 +13,8 @@ add_subdirectory(gballoc_unittests)
 add_subdirectory(gballoc_without_init_unittests)
 add_subdirectory(hmacsha256_unittests)
 
+add_subdirectory(xio_unittests)
+
 if(0)
 if(${use_condition})
     add_subdirectory(condition_unittests)
@@ -24,7 +26,6 @@ if(${use_http})
 	add_subdirectory(httpheaders_unittests)
 endif()
 
-add_subdirectory(xio_unittests)
 add_subdirectory(list_unittests)
 add_subdirectory(lock_unittests)
 add_subdirectory(map_unittests)
