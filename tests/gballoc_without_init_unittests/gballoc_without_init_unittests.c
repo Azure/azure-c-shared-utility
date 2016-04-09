@@ -1,62 +1,56 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+#if defined(GB_MEASURE_MEMORY_FOR_THIS)
+#undef GB_MEASURE_MEMORY_FOR_THIS
+#endif
+
 #include <stdlib.h>
 #ifdef _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
 #endif
 #include "azure_c_shared_utility/gballoc.h"
 #include "testrunnerswitcher.h"
-#include "micromock.h"
 #include "azure_c_shared_utility/lock.h"
 
 #ifndef SIZE_MAX
 #define SIZE_MAX ((size_t)~(size_t)0)
 #endif
 
-
-static MICROMOCK_MUTEX_HANDLE g_testByTest;
+static TEST_MUTEX_HANDLE g_testByTest;
 
 static void* TEST_ALLOC_PTR1 = (void*)0x4242;
 static const LOCK_HANDLE TEST_LOCK_HANDLE = (LOCK_HANDLE)0x4244;
 
-TYPED_MOCK_CLASS(CGBAllocMocks, CGlobalMock)
-{
-public:
-    MOCK_STATIC_METHOD_1(, void*, mock_malloc, size_t, size)
-    MOCK_METHOD_END(void*, TEST_ALLOC_PTR1)
-    MOCK_STATIC_METHOD_2(, void*, mock_calloc, size_t, nmemb, size_t, size)
-    MOCK_METHOD_END(void*, TEST_ALLOC_PTR1)
-    MOCK_STATIC_METHOD_2(, void*, mock_realloc, void*, ptr, size_t, size)
-    MOCK_METHOD_END(void*, TEST_ALLOC_PTR1)
-    MOCK_STATIC_METHOD_1(, void, mock_free, void*, ptr)
-    MOCK_VOID_METHOD_END()
+#define ENABLE_MOCKS
 
-    /* Lock Mocks */
-    MOCK_STATIC_METHOD_0(, LOCK_HANDLE, Lock_Init)
-    MOCK_METHOD_END(LOCK_HANDLE, TEST_LOCK_HANDLE)
-    MOCK_STATIC_METHOD_1(, LOCK_RESULT, Lock_Deinit, LOCK_HANDLE, handle)
-    MOCK_METHOD_END(LOCK_RESULT, LOCK_OK)
-    MOCK_STATIC_METHOD_1(, LOCK_RESULT, Lock, LOCK_HANDLE, handle)
-    MOCK_METHOD_END(LOCK_RESULT, LOCK_OK)
-    MOCK_STATIC_METHOD_1(, LOCK_RESULT, Unlock, LOCK_HANDLE, handle)
-    MOCK_METHOD_END(LOCK_RESULT, LOCK_OK)
-};
+#include "umock_c.h"
 
-extern "C"
-{
-    DECLARE_GLOBAL_MOCK_METHOD_1(CGBAllocMocks, , void*, mock_malloc, size_t, size);
-    DECLARE_GLOBAL_MOCK_METHOD_2(CGBAllocMocks, , void*, mock_calloc, size_t, nmemb, size_t, size);
-    DECLARE_GLOBAL_MOCK_METHOD_2(CGBAllocMocks, , void*, mock_realloc, void*, ptr, size_t, size);
-    DECLARE_GLOBAL_MOCK_METHOD_1(CGBAllocMocks, , void, mock_free, void*, ptr);
+TEST_DEFINE_ENUM_TYPE(LOCK_RESULT, LOCK_RESULT_VALUES);
+IMPLEMENT_UMOCK_C_ENUM_TYPE(LOCK_RESULT, LOCK_RESULT_VALUES);
 
-    DECLARE_GLOBAL_MOCK_METHOD_0(CGBAllocMocks, , LOCK_HANDLE, Lock_Init);
-    DECLARE_GLOBAL_MOCK_METHOD_1(CGBAllocMocks, , LOCK_RESULT, Lock_Deinit, LOCK_HANDLE, handle);
-    DECLARE_GLOBAL_MOCK_METHOD_1(CGBAllocMocks, , LOCK_RESULT, Lock, LOCK_HANDLE, handle);
-    DECLARE_GLOBAL_MOCK_METHOD_1(CGBAllocMocks, , LOCK_RESULT, Unlock, LOCK_HANDLE, handle);
+#ifdef __cplusplus
+extern "C" {
+#endif
+    MOCKABLE_FUNCTION(void*, mock_malloc, size_t, size);
+    MOCKABLE_FUNCTION(void*, mock_calloc, size_t, nmemb, size_t, size);
+    MOCKABLE_FUNCTION(void*, mock_realloc, void*, ptr, size_t, size);
+    MOCKABLE_FUNCTION(void, mock_free, void*, ptr);
+
+    MOCKABLE_FUNCTION(LOCK_HANDLE, Lock_Init);
+    MOCKABLE_FUNCTION(LOCK_RESULT, Lock_Deinit, LOCK_HANDLE, handle);
+    MOCKABLE_FUNCTION(LOCK_RESULT, Lock, LOCK_HANDLE, handle);
+    MOCKABLE_FUNCTION(LOCK_RESULT, Unlock, LOCK_HANDLE, handle);
+#ifdef __cplusplus
 }
+#endif
 
-static MICROMOCK_GLOBAL_SEMAPHORE_HANDLE g_dllByDll;
+static TEST_MUTEX_HANDLE g_dllByDll;
+
+void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
+{
+    ASSERT_FAIL("umock_c reported error");
+}
 
 BEGIN_TEST_SUITE(GBAlloc_For_Init_UnitTests)
 
@@ -64,32 +58,45 @@ TEST_SUITE_INITIALIZE(TestClassInitialize)
 {
     TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
 
-    g_testByTest = MicroMockCreateMutex();
+    g_testByTest = TEST_MUTEX_CREATE();
     ASSERT_IS_NOT_NULL(g_testByTest);
+
+    umock_c_init(on_umock_c_error);
+
+    REGISTER_ALIAS_TYPE(LOCK_HANDLE, void*);
+    REGISTER_TYPE(LOCK_RESULT, LOCK_RESULT);
+
+    REGISTER_GLOBAL_MOCK_RETURN(mock_malloc, TEST_ALLOC_PTR1);
+    REGISTER_GLOBAL_MOCK_RETURN(mock_realloc, TEST_ALLOC_PTR1);
+    REGISTER_GLOBAL_MOCK_RETURN(mock_calloc, TEST_ALLOC_PTR1);
+
+    REGISTER_GLOBAL_MOCK_RETURN(Lock_Init, TEST_LOCK_HANDLE);
+    REGISTER_GLOBAL_MOCK_RETURN(Lock, LOCK_OK);
+    REGISTER_GLOBAL_MOCK_RETURN(Unlock, LOCK_OK);
 }
 
 TEST_SUITE_CLEANUP(TestClassCleanup)
 {
-    MicroMockDestroyMutex(g_testByTest);
+    umock_c_deinit();
+
+    TEST_MUTEX_DESTROY(g_testByTest);
 
     TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
-
 }
 
 TEST_FUNCTION_INITIALIZE(TestMethodInitialize)
 {
-    if (!MicroMockAcquireMutex(g_testByTest))
+    if (TEST_MUTEX_ACQUIRE(g_testByTest) != 0)
     {
         ASSERT_FAIL("our mutex is ABANDONED. Failure in test framework");
     }
+
+    umock_c_reset_all_calls();
 }
 
 TEST_FUNCTION_CLEANUP(TestMethodCleanup)
 {
-    if (!MicroMockReleaseMutex(g_testByTest))
-    {
-        ASSERT_FAIL("failure in test framework at ReleaseMutex");
-    }
+    TEST_MUTEX_RELEASE(g_testByTest);
 }
 
 /* gballoc_deinit */
@@ -98,13 +105,12 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
 TEST_FUNCTION(when_gballoc_is_not_initialized_gballoc_deinit_doesnot_free_lock)
 {
     //arrange
-    CGBAllocMocks mocks;
 
     // act
     gballoc_deinit();
 
     // assert
-    // no explicit assert, uMock checks the calls
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
 /* gballoc_malloc */
@@ -113,15 +119,15 @@ TEST_FUNCTION(when_gballoc_is_not_initialized_gballoc_deinit_doesnot_free_lock)
 TEST_FUNCTION(when_gballoc_is_not_initialized_gballoc_malloc_calls_crt_malloc)
 {
     // arrange
-    CGBAllocMocks mocks;
-
-    STRICT_EXPECTED_CALL(mocks, mock_malloc(1));
+    
+    STRICT_EXPECTED_CALL(mock_malloc(1));
 
     //act
     void* result = gballoc_malloc(1);
 
     //assert
     ASSERT_IS_NOT_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
 /* gballoc_calloc */
@@ -130,15 +136,14 @@ TEST_FUNCTION(when_gballoc_is_not_initialized_gballoc_malloc_calls_crt_malloc)
 TEST_FUNCTION(when_gballoc_is_not_initialized_then_gballoc_calloc_calls_crt_calloc)
 {
     // arrange
-    CGBAllocMocks mocks;
-
-    STRICT_EXPECTED_CALL(mocks, mock_calloc(1, 1));
+    STRICT_EXPECTED_CALL(mock_calloc(1, 1));
 
     // act
     void* result = gballoc_calloc(1, 1);
 
     // assert
     ASSERT_IS_NOT_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
 /* gballoc_realloc */
@@ -147,15 +152,14 @@ TEST_FUNCTION(when_gballoc_is_not_initialized_then_gballoc_calloc_calls_crt_call
 TEST_FUNCTION(when_gballoc_is_not_initialized_then_gballoc_realloc_calls_crt_realloc)
 {
     // arrange
-    CGBAllocMocks mocks;
-
-    STRICT_EXPECTED_CALL(mocks, mock_realloc(NULL, 1));
+    STRICT_EXPECTED_CALL(mock_realloc(NULL, 1));
 
     // act
     void* result = gballoc_realloc(NULL, 1);
 
     // assert
     ASSERT_IS_NOT_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
 /* gballoc_free */
@@ -164,15 +168,13 @@ TEST_FUNCTION(when_gballoc_is_not_initialized_then_gballoc_realloc_calls_crt_rea
 TEST_FUNCTION(when_gballoc_is_not_initialized_then_gballoc_free_does_nothing)
 {
     // arrange
-    CGBAllocMocks mocks;
-
-    STRICT_EXPECTED_CALL(mocks, mock_free((void*)0x4242));
+    STRICT_EXPECTED_CALL(mock_free((void*)0x4242));
 
     // act
     gballoc_free((void*)0x4242);
 
     // assert
-    // no explicit assert, uMock checks the calls
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
 /* gballoc_getMaximumMemoryUsed */
@@ -181,13 +183,13 @@ TEST_FUNCTION(when_gballoc_is_not_initialized_then_gballoc_free_does_nothing)
 TEST_FUNCTION(without_gballoc_being_initialized_gballoc_getMaximumMemoryUsed_fails)
 {
     // arrange
-    CGBAllocMocks mocks;
 
     // act
     size_t result = gballoc_getMaximumMemoryUsed();
 
     // assert
     ASSERT_ARE_EQUAL(size_t, SIZE_MAX, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
 /* gballoc_getCurrentMemoryUsed */
@@ -196,13 +198,13 @@ TEST_FUNCTION(without_gballoc_being_initialized_gballoc_getMaximumMemoryUsed_fai
 TEST_FUNCTION(without_gballoc_being_initialized_gballoc_getCurrentMemoryUsed_fails)
 {
     // arrange
-    CGBAllocMocks mocks;
 
     // act
     size_t result = gballoc_getCurrentMemoryUsed();
 
     // assert
     ASSERT_ARE_EQUAL(size_t, SIZE_MAX, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
 END_TEST_SUITE(GBAlloc_For_Init_UnitTests)

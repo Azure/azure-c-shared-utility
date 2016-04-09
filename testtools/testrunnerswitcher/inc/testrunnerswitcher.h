@@ -6,6 +6,12 @@
 
 #include "azure_c_shared_utility/macro_utils.h"
 
+#ifdef __cplusplush
+#include <cstdbool>
+#else
+#include <stdbool.h>
+#endif
+
 #ifdef MBED_BUILD_TIMESTAMP
 #define USE_CTEST
 #endif

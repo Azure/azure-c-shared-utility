@@ -16,7 +16,6 @@ set(micromock_cpp_files
 
 set(micromock_h_files
 ./inc/globalmock.h
-./inc/macro_utils.h
 ./inc/micromock.h
 ./inc/micromockcallmacros.h
 ./inc/micromockcharstararenullterminatedstrings.h

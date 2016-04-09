@@ -19,6 +19,8 @@
 
 static TEST_MUTEX_HANDLE g_testByTest;
 
+TEST_DEFINE_ENUM_TYPE(LOCK_RESULT, LOCK_RESULT_VALUES);
+
 static void* TEST_ALLOC_PTR1 = (void*)0x4242;
 static void* TEST_ALLOC_PTR2 = (void*)0x4243;
 static void* TEST_REALLOC_PTR = (void*)0x4245;
@@ -29,6 +31,8 @@ static const LOCK_HANDLE TEST_LOCK_HANDLE = (LOCK_HANDLE)0x4244;
 #define ENABLE_MOCKS
 
 #include "umock_c.h"
+
+IMPLEMENT_UMOCK_C_ENUM_TYPE(LOCK_RESULT, LOCK_RESULT_VALUES);
 
 #ifdef __cplusplus
 extern "C" {
@@ -66,6 +70,17 @@ TEST_SUITE_INITIALIZE(TestClassInitialize)
 
     result = umock_c_init(on_umock_c_error);
     ASSERT_ARE_EQUAL(int, 0, result);
+
+    REGISTER_ALIAS_TYPE(LOCK_HANDLE, void*);
+    REGISTER_TYPE(LOCK_RESULT, LOCK_RESULT);
+
+    REGISTER_GLOBAL_MOCK_RETURN(mock_malloc, TEST_ALLOC_PTR1);
+    REGISTER_GLOBAL_MOCK_RETURN(mock_realloc, TEST_ALLOC_PTR1);
+    REGISTER_GLOBAL_MOCK_RETURN(mock_calloc, TEST_ALLOC_PTR1);
+
+    REGISTER_GLOBAL_MOCK_RETURN(Lock_Init, TEST_LOCK_HANDLE);
+    REGISTER_GLOBAL_MOCK_RETURN(Lock, LOCK_OK);
+    REGISTER_GLOBAL_MOCK_RETURN(Unlock, LOCK_OK);
 }
 
 TEST_SUITE_CLEANUP(TestClassCleanup)
