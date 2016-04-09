@@ -13,6 +13,7 @@ add_subdirectory(gballoc_unittests)
 add_subdirectory(gballoc_without_init_unittests)
 add_subdirectory(hmacsha256_unittests)
 
+add_subdirectory(vector_unittests)
 add_subdirectory(xio_unittests)
 
 if(0)
@@ -35,7 +36,6 @@ add_subdirectory(strings_unittests)
 add_subdirectory(tickcounter_unittests)
 add_subdirectory(urlencode_unittests)
 add_subdirectory(uniqueid_unittests)
-add_subdirectory(vector_unittests)
 
 if(WIN32)
 	add_subdirectory(socketio_win32_unittests)

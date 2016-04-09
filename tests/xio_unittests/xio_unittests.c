@@ -4,12 +4,12 @@
 #include <stdlib.h>
 #include "testrunnerswitcher.h"
 
-static bool g_fail_alloc_calls;
+static unsigned int g_fail_alloc_calls;
 
 void* my_gballoc_malloc(size_t size)
 {
     void* result = NULL;
-    if (!g_fail_alloc_calls)
+    if (g_fail_alloc_calls == 0)
     {
         result = malloc(size);
     }
@@ -124,7 +124,7 @@ TEST_FUNCTION_INITIALIZE(method_init)
     {
         ASSERT_FAIL("Could not acquire test serialization mutex.");
     }
-    g_fail_alloc_calls = false;
+    g_fail_alloc_calls = 0;
 }
 
 TEST_FUNCTION_CLEANUP(method_cleanup)
@@ -365,7 +365,7 @@ TEST_FUNCTION(when_concrete_xio_setoption_is_NULL_then_xio_create_fails)
 TEST_FUNCTION(when_allocating_memory_Fails_then_xio_create_fails)
 {
     // arrange
-    g_fail_alloc_calls = true;
+    g_fail_alloc_calls = 1;
 
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
         .SetReturn((void*)NULL);

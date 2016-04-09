@@ -1,16 +1,15 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#include <cstdlib>
+#include <stdlib.h>
 #ifdef _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
 #endif
 
+#include <stddef.h>
 #include "testrunnerswitcher.h"
-#include "micromock.h"
 
 #include "azure_c_shared_utility/vector.h"
-
 
 #ifdef _MSC_VER
 #pragma warning(disable:4505)
@@ -31,7 +30,7 @@ VECTOR_HANDLE g_handle;
 
 #define NUM_ITEM_PUSH_BACK      128
 
-static MICROMOCK_GLOBAL_SEMAPHORE_HANDLE g_dllByDll;
+static TEST_MUTEX_HANDLE g_dllByDll;
 
 BEGIN_TEST_SUITE(Vector_UnitTests)
 
