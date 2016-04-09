@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#include <cstdlib>
+#include <stdlib.h>
 #ifdef _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
 #endif
@@ -9,17 +9,19 @@
 #include "testrunnerswitcher.h"
 #include "azure_c_shared_utility/hmacsha256.h"
 #include "azure_c_shared_utility/strings.h"
-#include "micromock.h"
-#include "micromockcharstararenullterminatedstrings.h"
 
+static TEST_MUTEX_HANDLE g_testByTest;
 
-static MICROMOCK_MUTEX_HANDLE g_testByTest;
-
-DEFINE_MICROMOCK_ENUM_TO_STRING(HMACSHA256_RESULT, HMACSHA256_RESULT_VALUES);
+TEST_ENUM_TYPE_HANDLER(HMACSHA256_RESULT, HMACSHA256_RESULT_VALUES);
 
 static BUFFER_HANDLE hash;
 
-static MICROMOCK_GLOBAL_SEMAPHORE_HANDLE g_dllByDll;
+static TEST_MUTEX_HANDLE g_dllByDll;
+
+void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
+{
+    ASSERT_FAIL("umock_c reported error");
+}
 
 BEGIN_TEST_SUITE(HMACSHA256_UnitTests)
 
@@ -27,33 +29,34 @@ TEST_SUITE_INITIALIZE(TestClassInitialize)
 {
     TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
 
-    g_testByTest = MicroMockCreateMutex();
+    g_testByTest = TEST_MUTEX_CREATE();
     ASSERT_IS_NOT_NULL(g_testByTest);
+
+    umock_c_init(on_umock_c_error);
 }
 
 TEST_SUITE_CLEANUP(TestClassCleanup)
 {
-    MicroMockDestroyMutex(g_testByTest);
-    TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
+    umock_c_deinit();
 
+    TEST_MUTEX_DESTROY(g_testByTest);
+    TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
 }
 
 TEST_FUNCTION_INITIALIZE(TestMethodInitialize)
 {
-    if (!MicroMockAcquireMutex(g_testByTest))
+    if (TEST_MUTEX_ACQUIRE(g_testByTest) != 0)
     {
         ASSERT_FAIL("our mutex is ABANDONED. Failure in test framework");
     }
+    umock_c_reset_all_calls();
     hash = BUFFER_new();
 }
 
 TEST_FUNCTION_CLEANUP(TestMethodCleanup)
 {
     BUFFER_delete(hash);
-    if (!MicroMockReleaseMutex(g_testByTest))
-    {
-        ASSERT_FAIL("failure in test framework at ReleaseMutex");
-    }
+    TEST_MUTEX_RELEASE(g_testByTest);
 }
 
 /* HMACSHA256_ComputeHash */
