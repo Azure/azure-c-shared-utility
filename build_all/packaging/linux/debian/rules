@@ -19,6 +19,6 @@ include /usr/share/dpkg/default.mk
 
 # main packaging script based on dh7 syntax
 %:
-	dh $@ --buildsystem=cmake --DSYSINSTALL_BINDINGS=ON 
+	dh $@ --buildsystem=cmake --DSYSINSTALL_BINDINGS=ON --Dskip_unittests=ON
 
 
