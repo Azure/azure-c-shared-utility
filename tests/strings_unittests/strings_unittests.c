@@ -4,7 +4,7 @@
 //
 // PUT NO INCLUDES BEFORE HERE !!!!
 //
-#include <cstdlib>
+#include <stdlib.h>
 #ifdef _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
 #endif
@@ -16,16 +16,51 @@
 //
 #include "testrunnerswitcher.h"
 
-#include "micromock.h"
-#include "micromockcharstararenullterminatedstrings.h"
-#include "azure_c_shared_utility/lock.h"
-
 #ifdef _MSC_VER
 #pragma warning(disable:4505)
 #endif
 
-#include "azure_c_shared_utility/strings.h"
+static size_t currentmalloc_call;
+static size_t whenShallmalloc_fail;
 
+void* my_gballoc_malloc(size_t size)
+{
+    void* result;
+    currentmalloc_call++;
+    if (whenShallmalloc_fail > 0)
+    {
+        if (currentmalloc_call == whenShallmalloc_fail)
+        {
+            result = NULL;
+        }
+        else
+        {
+            result = malloc(size);
+        }
+    }
+    else
+    {
+        result = malloc(size);
+    }
+    return result;
+}
+
+void* my_gballoc_realloc(void* ptr, size_t size)
+{
+    return realloc(ptr, size);
+}
+
+void my_gballoc_free(void* ptr)
+{
+    free(ptr);
+}
+
+#define ENABLE_MOCKS
+
+#include "umock_c.h"
+#include "umocktypes_charptr.h"
+#include "azure_c_shared_utility/gballoc.h"
+#include "azure_c_shared_utility/strings.h"
 
 static const char TEST_STRING_VALUE []= "DataValueTest";
 static const char INITAL_STRING_VALUE []= "Initial_";
@@ -36,70 +71,8 @@ static const char* EMPTY_STRING = "";
 
 #define NUMBER_OF_CHAR_TOCOPY               8
 
-#define GBALLOC_H
-
-extern "C" int gballoc_init(void);
-extern "C" void gballoc_deinit(void);
-extern "C" void* gballoc_malloc(size_t size);
-extern "C" void* gballoc_calloc(size_t nmemb, size_t size);
-extern "C" void* gballoc_realloc(void* ptr, size_t size);
-extern "C" void gballoc_free(void* ptr);
-
-namespace BASEIMPLEMENTATION
-{
-    /*if malloc is defined as gballoc_malloc at this moment, there'd be serious trouble*/
-#define Lock(x) (LOCK_OK + gballocState - gballocState) /*compiler warning about constant in if condition*/
-#define Unlock(x) (LOCK_OK + gballocState - gballocState)
-#define Lock_Init() (LOCK_HANDLE)0x42
-#define Lock_Deinit(x) (LOCK_OK + gballocState - gballocState)
-#include "gballoc.c"
-#undef Lock
-#undef Unlock
-#undef Lock_Init
-#undef Lock_Deinit
-
-};
-
-static size_t currentmalloc_call;
-static size_t whenShallmalloc_fail;
-
-TYPED_MOCK_CLASS(CSTRINGSMocks, CGlobalMock)
-{
-public:
-    MOCK_STATIC_METHOD_1(, void*, gballoc_malloc, size_t, size)
-        void* result2;
-    currentmalloc_call++;
-    if (whenShallmalloc_fail > 0)
-    {
-        if (currentmalloc_call == whenShallmalloc_fail)
-        {
-            result2 = (STRING_HANDLE)NULL;
-        }
-        else
-        {
-            result2 = BASEIMPLEMENTATION::gballoc_malloc(size);
-        }
-    }
-    else
-    {
-        result2 = BASEIMPLEMENTATION::gballoc_malloc(size);
-    }
-    MOCK_METHOD_END(void*, result2);
-
-    MOCK_STATIC_METHOD_2(, void*, gballoc_realloc, void*, ptr, size_t, size)
-        MOCK_METHOD_END(void*, BASEIMPLEMENTATION::gballoc_realloc(ptr, size));
-
-    MOCK_STATIC_METHOD_1(, void, gballoc_free, void*, ptr)
-        BASEIMPLEMENTATION::gballoc_free(ptr);
-    MOCK_VOID_METHOD_END()
-};
-
-DECLARE_GLOBAL_MOCK_METHOD_1(CSTRINGSMocks, , void*, gballoc_malloc, size_t, size);
-DECLARE_GLOBAL_MOCK_METHOD_2(CSTRINGSMocks, , void*, gballoc_realloc, void*, ptr, size_t, size);
-DECLARE_GLOBAL_MOCK_METHOD_1(CSTRINGSMocks, , void, gballoc_free, void*, ptr);
-
-static MICROMOCK_GLOBAL_SEMAPHORE_HANDLE g_dllByDll;
-static MICROMOCK_MUTEX_HANDLE g_testByTest;
+static TEST_MUTEX_HANDLE g_dllByDll;
+static TEST_MUTEX_HANDLE g_testByTest;
 
 static const struct JSONEncoding {
     const char* source;
@@ -119,38 +92,54 @@ static const struct JSONEncoding {
 
     };
 
+void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
+{
+    ASSERT_FAIL("umock_c reported error");
+}
+
 BEGIN_TEST_SUITE(strings_unittests)
 
     TEST_SUITE_INITIALIZE(setsBufferTempSize)
     {
+        int result;
+
         TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
-        g_testByTest = MicroMockCreateMutex();
+        g_testByTest = TEST_MUTEX_CREATE();
         ASSERT_IS_NOT_NULL(g_testByTest);
+
+        umock_c_init(on_umock_c_error);
+
+        REGISTER_ALIAS_TYPE(STRING_HANDLE, void*);
+        result = umocktypes_charptr_register_types();
+        ASSERT_ARE_EQUAL(int, 0, result);
+
+        REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, my_gballoc_malloc);
+        REGISTER_GLOBAL_MOCK_HOOK(gballoc_realloc, my_gballoc_realloc);
+        REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, my_gballoc_free);
     }
 
     TEST_SUITE_CLEANUP(TestClassCleanup)
     {
-        MicroMockDestroyMutex(g_testByTest);
+        TEST_MUTEX_DESTROY(g_testByTest);
         TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
     }
 
     TEST_FUNCTION_INITIALIZE(a)
     {
-        if (!MicroMockAcquireMutex(g_testByTest))
+        if (TEST_MUTEX_ACQUIRE(g_testByTest) != 0)
         {
             ASSERT_FAIL("our mutex is ABANDONED. Failure in test framework");
         }
+
+        umock_c_reset_all_calls();
+
         currentmalloc_call = 0;
         whenShallmalloc_fail = 0;
-
     }
 
     TEST_FUNCTION_CLEANUP(cleans)
     {
-        if (!MicroMockReleaseMutex(g_testByTest))
-        {
-            ASSERT_FAIL("failure in test framework at ReleaseMutex");
-        }
+        TEST_MUTEX_RELEASE(g_testByTest);
     }
 
     /* STRING_Tests BEGIN */
@@ -158,19 +147,18 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_new_Succeed)
     {
         ///arrange
-        CSTRINGSMocks mocks;
         STRING_HANDLE g_hString;
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG))
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(1));
+        STRICT_EXPECTED_CALL(gballoc_malloc(1));
 
         ///act
         g_hString = STRING_new();
 
         ///assert
         ASSERT_IS_NOT_NULL(g_hString);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         STRING_delete(g_hString);
@@ -186,6 +174,7 @@ BEGIN_TEST_SUITE(strings_unittests)
         g_hString = STRING_new_with_memory(NULL);
 
         ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_IS_NULL(g_hString);
     }
 
@@ -193,14 +182,13 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_new_With_Memory_Succeed)
     {
         ///arrange
-        CSTRINGSMocks mocks;
         STRING_HANDLE g_hString;
         size_t nLen = strlen(TEST_STRING_VALUE) + 1;
         char* szTestString = (char*)malloc(nLen);
         strncpy(szTestString, TEST_STRING_VALUE, nLen);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
         
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG))
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
 
         ///act
@@ -208,7 +196,7 @@ BEGIN_TEST_SUITE(strings_unittests)
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, TEST_STRING_VALUE, STRING_c_str(g_hString) );
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         STRING_delete(g_hString);
@@ -218,19 +206,18 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_construct_Succeed)
     {
         ///arrange
-        CSTRINGSMocks mocks;
         STRING_HANDLE g_hString;
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG))
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_STRING_VALUE) + 1));
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_STRING_VALUE) + 1));
 
         ///act
         g_hString = STRING_construct(TEST_STRING_VALUE);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, TEST_STRING_VALUE, STRING_c_str(g_hString) );
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         STRING_delete(g_hString);
@@ -246,6 +233,7 @@ BEGIN_TEST_SUITE(strings_unittests)
         g_hString = STRING_construct(NULL);
 
         ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_IS_NULL(g_hString);
     }
 
@@ -253,19 +241,18 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_new_quoted_Succeed)
     {
         ///arrange
-        CSTRINGSMocks mocks;
         STRING_HANDLE g_hString;
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG))
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(2 + strlen(TEST_STRING_VALUE) + 1));
+        STRICT_EXPECTED_CALL(gballoc_malloc(2 + strlen(TEST_STRING_VALUE) + 1));
 
         ///act
         g_hString = STRING_new_quoted(TEST_STRING_VALUE);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, QUOTED_TEST_STRING_VALUE, STRING_c_str(g_hString) );
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         STRING_delete(g_hString);
@@ -281,6 +268,7 @@ BEGIN_TEST_SUITE(strings_unittests)
         g_hString = STRING_new_quoted(NULL);
 
         ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_IS_NULL(g_hString);
     }
 
@@ -288,12 +276,11 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_Concat_Succeed)
     {
         ///arrange
-        CSTRINGSMocks mocks;
         STRING_HANDLE g_hString;
         g_hString = STRING_construct(INITAL_STRING_VALUE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(IGNORED_PTR_ARG, strlen(INITAL_STRING_VALUE) + strlen(TEST_STRING_VALUE) + 1))
+        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, strlen(INITAL_STRING_VALUE) + strlen(TEST_STRING_VALUE) + 1))
             .IgnoreArgument(1);
 
         ///act
@@ -302,7 +289,7 @@ BEGIN_TEST_SUITE(strings_unittests)
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, COMBINED_STRING_VALUE, STRING_c_str(g_hString) );
         ASSERT_ARE_EQUAL(int, nResult, 0);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         STRING_delete(g_hString);
@@ -312,17 +299,16 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_Concat_HANDLE_NULL_Fail)
     {
         ///arrange
-        CSTRINGSMocks mocks;
         STRING_HANDLE g_hString;
         g_hString = STRING_construct(INITAL_STRING_VALUE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         ///act
         int nResult = STRING_concat(NULL, TEST_STRING_VALUE);
 
         ///assert
         ASSERT_ARE_NOT_EQUAL(int, nResult, 0);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         STRING_delete(g_hString);
@@ -333,16 +319,15 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_Concat_CharPtr_NULL_Fail)
     {
         ///arrange
-        CSTRINGSMocks mocks;
         STRING_HANDLE g_hString;
         g_hString = STRING_construct(INITAL_STRING_VALUE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         ///act
         int nResult = STRING_concat(g_hString, NULL);
-        mocks.AssertActualAndExpectedCalls();
 
         ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_NOT_EQUAL(int, nResult, 0);
 
         ///cleanup
@@ -353,7 +338,6 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_Concat_HANDLE_and_CharPtr_NULL_Fail)
     {
         ///arrange
-        CSTRINGSMocks mocks;
         ///act
         
         int nResult = STRING_concat(NULL, TEST_STRING_VALUE);
@@ -368,13 +352,12 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_Concat_Copy_Multiple_Succeed)
     {
         ///arrange
-        CSTRINGSMocks mocks;
         STRING_HANDLE g_hString;
         g_hString = STRING_new();
         STRING_copy(g_hString, TEST_STRING_VALUE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(IGNORED_PTR_ARG, strlen(TEST_STRING_VALUE) + strlen(TEST_STRING_VALUE)+1))
+        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, strlen(TEST_STRING_VALUE) + strlen(TEST_STRING_VALUE)+1))
             .IgnoreArgument(1)
             .IgnoreArgument(2);
 
@@ -383,7 +366,7 @@ BEGIN_TEST_SUITE(strings_unittests)
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, MULTIPLE_TEST_STRING_VALUE, STRING_c_str(g_hString) );
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         STRING_delete(g_hString);
@@ -393,13 +376,12 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_Concat_With_STRING_SUCCEED)
     {
         ///arrange
-        CSTRINGSMocks mocks;
         STRING_HANDLE g_hString;
         g_hString = STRING_construct(INITAL_STRING_VALUE);
         STRING_HANDLE hAppend = STRING_construct(TEST_STRING_VALUE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(IGNORED_PTR_ARG, strlen(INITAL_STRING_VALUE) + strlen(TEST_STRING_VALUE) + 1))
+        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, strlen(INITAL_STRING_VALUE) + strlen(TEST_STRING_VALUE) + 1))
             .IgnoreArgument(1);
 
         ///act
@@ -408,7 +390,7 @@ BEGIN_TEST_SUITE(strings_unittests)
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, COMBINED_STRING_VALUE, STRING_c_str(g_hString) );
         ASSERT_ARE_EQUAL(int, nResult, 0);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         // Clean up
         STRING_delete(hAppend);
@@ -419,16 +401,15 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_Concat_With_STRING_HANDLE_NULL_Fail)
     {
         ///arrange
-        CSTRINGSMocks mocks;
         STRING_HANDLE hAppend = STRING_construct(TEST_STRING_VALUE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         ///act
         int nResult = STRING_concat_with_STRING(NULL, hAppend);
 
         ///assert
         ASSERT_ARE_NOT_EQUAL(int, nResult, 0);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         // Clean up
         STRING_delete(hAppend);
@@ -438,17 +419,16 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_Concat_With_STRING_Append_HANDLE_NULL_Fail)
     {
         ///arrange
-        CSTRINGSMocks mocks;
         STRING_HANDLE g_hString;
         g_hString = STRING_construct(INITAL_STRING_VALUE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         ///act
         int nResult = STRING_concat_with_STRING(g_hString, NULL);
 
         ///assert
         ASSERT_ARE_NOT_EQUAL(int, nResult, 0);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         STRING_delete(g_hString);
@@ -463,6 +443,7 @@ BEGIN_TEST_SUITE(strings_unittests)
         int nResult = STRING_concat_with_STRING(NULL, NULL);
 
         ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_NOT_EQUAL(int, nResult, 0);
     }
 
@@ -470,12 +451,11 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_Copy_Succeed)
     {
         ///arrange
-        CSTRINGSMocks mocks;
         STRING_HANDLE g_hString;
         g_hString = STRING_construct(INITAL_STRING_VALUE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(IGNORED_PTR_ARG, strlen(TEST_STRING_VALUE) + 1))
+        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, strlen(TEST_STRING_VALUE) + 1))
             .IgnoreArgument(1);
 
         ///act
@@ -484,7 +464,7 @@ BEGIN_TEST_SUITE(strings_unittests)
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, TEST_STRING_VALUE, STRING_c_str(g_hString) );
         ASSERT_ARE_EQUAL(int, nResult, 0);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         STRING_delete(g_hString);
@@ -494,17 +474,16 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_Copy_NULL_Fail)
     {
         ///arrange
-        CSTRINGSMocks mocks;
         STRING_HANDLE g_hString;
         g_hString = STRING_construct(INITAL_STRING_VALUE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         ///act
         int nResult = STRING_copy(g_hString, NULL);
 
         ///assert
         ASSERT_ARE_NOT_EQUAL(int, nResult, 0);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         STRING_delete(g_hString);
@@ -514,12 +493,11 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_Copy_n_Succeed)
     {
         ///arrange
-        CSTRINGSMocks mocks;
         STRING_HANDLE g_hString;
         g_hString = STRING_construct(INITAL_STRING_VALUE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
         
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(IGNORED_PTR_ARG, NUMBER_OF_CHAR_TOCOPY + 1))
+        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, NUMBER_OF_CHAR_TOCOPY + 1))
             .IgnoreArgument(1);
 
         ///act
@@ -528,7 +506,7 @@ BEGIN_TEST_SUITE(strings_unittests)
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, INITAL_STRING_VALUE, STRING_c_str(g_hString) );
         ASSERT_ARE_EQUAL(int, nResult, 0);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         STRING_delete(g_hString);
@@ -543,6 +521,7 @@ BEGIN_TEST_SUITE(strings_unittests)
         int nResult = STRING_copy_n(NULL, COMBINED_STRING_VALUE, NUMBER_OF_CHAR_TOCOPY);
 
         ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_NOT_EQUAL(int, nResult, 0);
     }
 
@@ -550,17 +529,16 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_Copy_n_With_CONST_CHAR_NULL_Fail)
     {
         ///arrange
-        CSTRINGSMocks mocks;
         STRING_HANDLE g_hString;
         g_hString = STRING_construct(INITAL_STRING_VALUE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         ///act
         int nResult = STRING_copy_n(g_hString, NULL, NUMBER_OF_CHAR_TOCOPY);
 
         ///assert
         ASSERT_ARE_NOT_EQUAL(int, nResult, 0);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         STRING_delete(g_hString);
@@ -570,12 +548,11 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_Copy_n_With_Size_0_Succeed)
     {
         ///arrange
-        CSTRINGSMocks mocks;
         STRING_HANDLE g_hString;
         g_hString = STRING_construct(INITAL_STRING_VALUE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(IGNORED_PTR_ARG, 1))
+        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, 1))
             .IgnoreArgument(1);
 
         ///act
@@ -584,7 +561,7 @@ BEGIN_TEST_SUITE(strings_unittests)
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, EMPTY_STRING, STRING_c_str(g_hString) );
         ASSERT_ARE_EQUAL(int, nResult, 0);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         STRING_delete(g_hString);
@@ -594,12 +571,11 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_quote_Succeed)
     {
         ///arrange
-        CSTRINGSMocks mocks;
         STRING_HANDLE g_hString;
         g_hString = STRING_construct(TEST_STRING_VALUE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(IGNORED_PTR_ARG, 2 + strlen(TEST_STRING_VALUE) + 1))
+        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, 2 + strlen(TEST_STRING_VALUE) + 1))
             .IgnoreArgument(1);
 
         ///act
@@ -608,7 +584,7 @@ BEGIN_TEST_SUITE(strings_unittests)
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, QUOTED_TEST_STRING_VALUE, STRING_c_str(g_hString) );
         ASSERT_ARE_EQUAL(int, nResult, 0);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         STRING_delete(g_hString);
@@ -623,6 +599,7 @@ BEGIN_TEST_SUITE(strings_unittests)
         int nResult = STRING_quote(NULL);
 
         ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_NOT_EQUAL(int, nResult, 0);
     }
 
@@ -635,6 +612,7 @@ BEGIN_TEST_SUITE(strings_unittests)
         const char* s = STRING_c_str(NULL);
 
         ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_IS_NULL(s);
     }
 
@@ -642,12 +620,11 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_c_str_Success)
     {
         ///arrange
-        CSTRINGSMocks mocks;
         STRING_HANDLE g_hString;
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG))
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_STRING_VALUE) + 1));
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_STRING_VALUE) + 1));
 
         ///act
         g_hString = STRING_construct(TEST_STRING_VALUE);
@@ -655,7 +632,7 @@ BEGIN_TEST_SUITE(strings_unittests)
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, s, TEST_STRING_VALUE);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         STRING_delete(g_hString);
@@ -665,12 +642,11 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_empty_Succeed)
     {
         ///arrange
-        CSTRINGSMocks mocks;
         STRING_HANDLE g_hString;
         g_hString = STRING_construct(TEST_STRING_VALUE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(IGNORED_PTR_ARG, 1))
+        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, 1))
             .IgnoreArgument(1);
 
         ///act
@@ -679,7 +655,7 @@ BEGIN_TEST_SUITE(strings_unittests)
         ///assert
         ASSERT_ARE_EQUAL(int, nResult, 0);
         ASSERT_ARE_EQUAL(char_ptr, EMPTY_STRING, STRING_c_str(g_hString) );
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         STRING_delete(g_hString);
@@ -694,6 +670,7 @@ BEGIN_TEST_SUITE(strings_unittests)
         int nResult = STRING_empty(NULL);
 
         ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_NOT_EQUAL(int, nResult, 0);
     }
 
@@ -706,46 +683,42 @@ BEGIN_TEST_SUITE(strings_unittests)
         STRING_delete(NULL);
 
         ///assert
-        // Just checking for exception here
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     }
 
     /* Tests_SRS_STRING_07_011: [STRING_delete will not attempt to free anything with a NULL STRING_HANDLE.] */
     TEST_FUNCTION(STRING_delete_Succeed)
     {
         ///arrange
-        CSTRINGSMocks mocks;
         STRING_HANDLE g_hString;
         g_hString = STRING_new();
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
 
         ///act
         STRING_delete(g_hString);
         
         ///assert
-        mocks.AssertActualAndExpectedCalls();
-
-
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     }
 
     TEST_FUNCTION(STRING_length_Succeed)
     {
         ///arrange
-        CSTRINGSMocks mocks;
         STRING_HANDLE g_hString;
         g_hString = STRING_construct(TEST_STRING_VALUE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         ///act
         size_t nResult = STRING_length(g_hString);
 
         ///assert
         ASSERT_ARE_EQUAL(size_t, nResult, strlen(TEST_STRING_VALUE) );
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         STRING_delete(g_hString);
@@ -759,6 +732,7 @@ BEGIN_TEST_SUITE(strings_unittests)
         size_t nResult = STRING_length(NULL);
 
         ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_EQUAL(size_t, nResult, 0);
     }
 
@@ -771,6 +745,7 @@ BEGIN_TEST_SUITE(strings_unittests)
         STRING_HANDLE result = STRING_clone(NULL);
 
         ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_IS_NULL( result);
     }
 
@@ -778,22 +753,21 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_clone_succeeds)
     {
         ///arrange
-        CSTRINGSMocks mocks;
-        auto hSource = STRING_construct("aa");
-        mocks.ResetAllCalls();
+        STRING_HANDLE hSource = STRING_construct("aa");
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG))
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(sizeof("aa")));
+        STRICT_EXPECTED_CALL(gballoc_malloc(sizeof("aa")));
 
         ///act
-        auto result = STRING_clone(hSource);
+        STRING_HANDLE result = STRING_clone(hSource);
 
         ///assert
         ASSERT_ARE_NOT_EQUAL(void_ptr, NULL, result);
         ASSERT_ARE_NOT_EQUAL(void_ptr, STRING_c_str(hSource), STRING_c_str(result));
         ASSERT_ARE_EQUAL    (char_ptr, STRING_c_str(hSource), STRING_c_str(result));
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         STRING_delete(hSource);
@@ -806,9 +780,10 @@ BEGIN_TEST_SUITE(strings_unittests)
         ///arrange
 
         ///act
-        auto result = STRING_construct_n(NULL, 3);
+        STRING_HANDLE result = STRING_construct_n(NULL, 3);
 
         ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_IS_NULL(result);
     }
 
@@ -818,9 +793,10 @@ BEGIN_TEST_SUITE(strings_unittests)
         ///arrange
 
         ///act
-        auto result = STRING_construct_n("a", 2);
+        STRING_HANDLE result = STRING_construct_n("a", 2);
 
         ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_IS_NULL(result);
     }
 
@@ -828,20 +804,18 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_construct_n_succeeds_with_2_char)
     {
         ///arrange
-        CSTRINGSMocks mocks;
-
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG))
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(3))
+        STRICT_EXPECTED_CALL(gballoc_malloc(3))
             .IgnoreArgument(1);
 
         ///act
-        auto result = STRING_construct_n("qq", 2);
+        STRING_HANDLE result = STRING_construct_n("qq", 2);
 
         ///assert
         ASSERT_IS_NOT_NULL(result);
         ASSERT_ARE_EQUAL(char_ptr, "qq", STRING_c_str(result));
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         STRING_delete(result);
@@ -851,20 +825,18 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_construct_n_succeeds_with_3_char_out_of_five)
     {
         ///arrange
-        CSTRINGSMocks mocks;
-
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG))
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(4))
+        STRICT_EXPECTED_CALL(gballoc_malloc(4))
             .IgnoreArgument(1);
 
         ///act
-        auto result = STRING_construct_n("12345", 3);
+        STRING_HANDLE result = STRING_construct_n("12345", 3);
 
         ///assert
         ASSERT_IS_NOT_NULL(result);
         ASSERT_ARE_EQUAL(char_ptr, "123", STRING_c_str(result));
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         STRING_delete(result);
@@ -874,16 +846,15 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_compare_s1_NULL)
     {
         ///arrange
-        CSTRINGSMocks mocks;
-        auto h2 = STRING_construct("bb");
-        mocks.ResetAllCalls();
+        STRING_HANDLE h2 = STRING_construct("bb");
+        umock_c_reset_all_calls();
 
         ///act
-        auto result = STRING_compare(NULL, h2);
+        int result = STRING_compare(NULL, h2);
 
         ///assert
         ASSERT_ARE_EQUAL(int, 1, result);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         STRING_delete(h2);
@@ -893,16 +864,15 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_compare_s2_NULL)
     {
         ///arrange
-        CSTRINGSMocks mocks;
-        auto h1 = STRING_construct("aa");
-        mocks.ResetAllCalls();
+        STRING_HANDLE h1 = STRING_construct("aa");
+        umock_c_reset_all_calls();
 
         ///act
-        auto result = STRING_compare(h1, NULL);
+        int result = STRING_compare(h1, NULL);
 
         ///assert
         ASSERT_ARE_EQUAL(int, -1, result);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         STRING_delete(h1);
@@ -914,9 +884,10 @@ BEGIN_TEST_SUITE(strings_unittests)
         ///arrange
 
         ///act
-        auto result = STRING_compare(NULL, NULL);
+        int result = STRING_compare(NULL, NULL);
 
         ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_EQUAL(int, 0, result);
 
         ///cleanup
@@ -926,17 +897,16 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_compare_s1_first_SUCCEED)
     {
         ///arrange
-        CSTRINGSMocks mocks;
-        auto h1 = STRING_construct("aa");
-        auto h2 = STRING_construct("bb");
-        mocks.ResetAllCalls();
+        STRING_HANDLE h1 = STRING_construct("aa");
+        STRING_HANDLE h2 = STRING_construct("bb");
+        umock_c_reset_all_calls();
 
         ///act
-        auto result = STRING_compare(h1, h2);
+        int result = STRING_compare(h1, h2);
 
         ///assert
         ASSERT_ARE_EQUAL(int, -1, result);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         STRING_delete(h1);
@@ -947,17 +917,16 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_compare_s2_first_SUCCEED)
     {
         ///arrange
-        CSTRINGSMocks mocks;
-        auto h1 = STRING_construct("aa");
-        auto h2 = STRING_construct("bb");
-        mocks.ResetAllCalls();
+        STRING_HANDLE h1 = STRING_construct("aa");
+        STRING_HANDLE h2 = STRING_construct("bb");
+        umock_c_reset_all_calls();
 
         ///act
-        auto result = STRING_compare(h2, h1);
+        int result = STRING_compare(h2, h1);
 
         ///assert
         ASSERT_ARE_EQUAL(int, 1, result);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         STRING_delete(h1);
@@ -969,17 +938,16 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_compare_Equal_SUCCEED)
     {
         ///arrange
-        CSTRINGSMocks mocks;
-        auto h1 = STRING_construct("a1234");
-        auto h2 = STRING_construct("a1234");
-        mocks.ResetAllCalls();
+        STRING_HANDLE h1 = STRING_construct("a1234");
+        STRING_HANDLE h2 = STRING_construct("a1234");
+        umock_c_reset_all_calls();
 
         ///act
-        auto result = STRING_compare(h1, h2);
+        int result = STRING_compare(h1, h2);
 
         ///assert
         ASSERT_ARE_EQUAL(int, 0, result);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         STRING_delete(h1);
@@ -992,9 +960,10 @@ BEGIN_TEST_SUITE(strings_unittests)
         ///arrange
 
         ///act
-        auto result = STRING_new_JSON(NULL);
+        STRING_HANDLE result = STRING_new_JSON(NULL);
         
         ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_IS_NULL(result);
 
         ///cleanup
@@ -1013,17 +982,18 @@ BEGIN_TEST_SUITE(strings_unittests)
         for (size_t i = 0; i < sizeof(JSONtests) / sizeof(JSONtests[0]); i++)
         {
             ///arrange
-            CSTRINGSMocks mocks;
-            STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG))
+            umock_c_reset_all_calls();
+
+            STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
                 .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(JSONtests[i].expectedJSON) + 1));
+            STRICT_EXPECTED_CALL(gballoc_malloc(strlen(JSONtests[i].expectedJSON) + 1));
 
             ///act
-            auto result = STRING_new_JSON(JSONtests[i].source);
+            STRING_HANDLE result = STRING_new_JSON(JSONtests[i].source);
 
             ///assert
             ASSERT_ARE_EQUAL(char_ptr, JSONtests[i].expectedJSON, STRING_c_str(result));
-            mocks.AssertActualAndExpectedCalls();
+            ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
             ///cleanup
             STRING_delete(result);
@@ -1034,21 +1004,20 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_new_JSON_when_gballoc_fails_it_fails_1)
     {
         ///arrange
-        CSTRINGSMocks mocks;
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG))
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
 
         whenShallmalloc_fail = 2;
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen("ab") + 2+1));
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen("ab") + 2+1));
 
         ///act
-        auto result = STRING_new_JSON("ab");
+        STRING_HANDLE result = STRING_new_JSON("ab");
 
         ///assert
         ASSERT_IS_NULL(result);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
     }
@@ -1057,17 +1026,16 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_new_JSON_when_gballoc_fails_it_fails_2)
     {
         ///arrange
-        CSTRINGSMocks mocks;
         whenShallmalloc_fail = 1;
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG))
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
 
         ///act
-        auto result = STRING_new_JSON("wwwa");
+        STRING_HANDLE result = STRING_new_JSON("wwwa");
 
         ///assert
         ASSERT_IS_NULL(result);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
     }
@@ -1076,14 +1044,13 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_new_JSON_when_character_not_ASCII_fails)
     {
         ///arrange
-        CSTRINGSMocks mocks;
 
         ///act
-        auto result = STRING_new_JSON("a\xFF");
+        STRING_HANDLE result = STRING_new_JSON("a\xFF");
 
         ///assert
         ASSERT_IS_NULL(result);
-        mocks.ResetAllCalls(); /*not caring of any calls*/
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
     }
