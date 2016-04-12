@@ -2,13 +2,11 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include "testrunnerswitcher.h"
-#include "micromock.h"
-#include "micromockcharstararenullterminatedstrings.h"
 #include "azure_c_shared_utility/uniqueid.h"
 
-static MICROMOCK_MUTEX_HANDLE g_testByTest;
+static TEST_MUTEX_HANDLE g_testByTest;
 
-DEFINE_MICROMOCK_ENUM_TO_STRING(UNIQUEID_RESULT, UNIQUEID_RESULT_VALUES);
+TEST_DEFINE_ENUM_TYPE(UNIQUEID_RESULT, UNIQUEID_RESULT_VALUES);
 
 #define BUFFER_SIZE         37
 
@@ -17,30 +15,22 @@ static char* uidBuffer2 = NULL;
 
 BEGIN_TEST_SUITE(uniqueid_unittests)
 
-
-TEST_SUITE_INITIALIZE(TestClassInitialize)
+TEST_SUITE_INITIALIZE(suite_init)
 {
-    g_testByTest = MicroMockCreateMutex();
+    TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
+    g_testByTest = TEST_MUTEX_CREATE();
     ASSERT_IS_NOT_NULL(g_testByTest);
 }
 
-TEST_SUITE_CLEANUP(TestClassCleanup)
+TEST_SUITE_CLEANUP(suite_cleanup)
 {
-    MicroMockDestroyMutex(g_testByTest);
-
-#ifdef _CRTDBG_MAP_ALLOC
-    if (_CrtDumpMemoryLeaks())
-    {
-#ifdef CPP_UNITTEST
-        Logger::WriteMessage("Memory Leak found!!! Run test in debug mode & review Debug output for details.");
-#endif
-    }
-#endif
+    TEST_MUTEX_DESTROY(g_testByTest);
+    TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
 }
 
 TEST_FUNCTION_INITIALIZE(TestMethodInitialize)
 {
-    if (!MicroMockAcquireMutex(g_testByTest))
+    if (TEST_MUTEX_ACQUIRE(g_testByTest) != 0)
     {
         ASSERT_FAIL("our mutex is ABANDONED. Failure in test framework");
     }
@@ -60,10 +50,7 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
         uidBuffer2 = NULL;
     }
 
-    if (!MicroMockReleaseMutex(g_testByTest))
-    {
-        ASSERT_FAIL("failure in test framework at ReleaseMutex");
-    }
+    TEST_MUTEX_RELEASE(g_testByTest);
 }
 
 /* UniqueId_Generate */

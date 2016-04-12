@@ -10,14 +10,15 @@
 
 #include "testrunnerswitcher.h"
 #include "azure_c_shared_utility/tickcounter.h"
-#include "micromock.h"
 #include "azure_c_shared_utility/lock.h"
 #include "azure_c_shared_utility/threadapi.h"
 
-static MICROMOCK_MUTEX_HANDLE g_testByTest;
-static MICROMOCK_GLOBAL_SEMAPHORE_HANDLE g_dllByDll;
+static TEST_MUTEX_HANDLE g_testByTest;
+static TEST_MUTEX_HANDLE g_dllByDll;
 
-#define GBALLOC_H
+#define ENABLE_MOCKS
+
+#include "gballoc.h"
 
 #define BUSY_LOOP_TIME      1000000
 

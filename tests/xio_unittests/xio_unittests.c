@@ -90,12 +90,12 @@ const IO_INTERFACE_DESCRIPTION test_io_description =
 static TEST_MUTEX_HANDLE g_testByTest;
 static TEST_MUTEX_HANDLE g_dllByDll;
 
-BEGIN_TEST_SUITE(xio_unittests)
-
 void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
     ASSERT_FAIL("umock_c reported error");
 }
+
+BEGIN_TEST_SUITE(xio_unittests)
 
 TEST_SUITE_INITIALIZE(suite_init)
 {
