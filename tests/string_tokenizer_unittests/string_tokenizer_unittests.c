@@ -4,7 +4,7 @@
 //
 // PUT NO INCLUDES BEFORE HERE !!!!
 //
-#include <cstdlib>
+#include <stdlib.h>
 #ifdef _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
 #endif
@@ -16,131 +16,107 @@
 // PUT NO CLIENT LIBRARY INCLUDES BEFORE HERE !!!!
 //
 #include "testrunnerswitcher.h"
-#include "azure_c_shared_utility/string_tokenizer.h"
 #include "azure_c_shared_utility/strings.h"
-#include "micromock.h"
-#include "azure_c_shared_utility/lock.h"
 
+static size_t currentmalloc_call;
+static size_t whenShallmalloc_fail;
 
-
-#define GBALLOC_H
-
-extern "C" int gballoc_init(void);
-extern "C" void gballoc_deinit(void);
-extern "C" void* gballoc_malloc(size_t size);
-extern "C" void* gballoc_calloc(size_t nmemb, size_t size);
-extern "C" void* gballoc_realloc(void* ptr, size_t size);
-extern "C" void gballoc_free(void* ptr);
-
-namespace BASEIMPLEMENTATION
+void* my_gballoc_malloc(size_t size)
 {
-    /*if malloc is defined as gballoc_malloc at this moment, there'd be serious trouble*/
-#define Lock(x) (LOCK_OK + gballocState - gballocState) /*compiler warning about constant in if condition*/
-#define Unlock(x) (LOCK_OK + gballocState - gballocState)
-#define Lock_Init() (LOCK_HANDLE)0x42
-#define Lock_Deinit(x) (LOCK_OK + gballocState - gballocState)
-#include "gballoc.c"
-#undef Lock
-#undef Unlock
-#undef Lock_Init
-#undef Lock_Deinit
-};
+    void* result;
+    currentmalloc_call++;
+    if (whenShallmalloc_fail > 0)
+    {
+        if (currentmalloc_call == whenShallmalloc_fail)
+        {
+            result = NULL;
+        }
+        else
+        {
+            result = malloc(size);
+        }
+    }
+    else
+    {
+        result = malloc(size);
+    }
+    return result;
+}
+
+void* my_gballoc_realloc(void* ptr, size_t size)
+{
+    return realloc(ptr, size);
+}
+
+void my_gballoc_free(void* ptr)
+{
+    free(ptr);
+}
+
+#define ENABLE_MOCKS
+#include "umock_c.h"
+#include "umocktypes_charptr.h"
+#include "azure_c_shared_utility/gballoc.h"
+#include "azure_c_shared_utility/string_tokenizer.h"
 
 #ifdef _MSC_VER
 #pragma warning(disable:4505)
 #endif
 
-static MICROMOCK_GLOBAL_SEMAPHORE_HANDLE g_dllByDll;
-static MICROMOCK_MUTEX_HANDLE g_testByTest;
+static TEST_MUTEX_HANDLE g_dllByDll;
+static TEST_MUTEX_HANDLE g_testByTest;
 
 #define TEST_STRING_HANDLE (STRING_HANDLE)0x42
 #define FAKE_LOCK_HANDLE (LOCK_HANDLE)0x4f
 
-static size_t currentmalloc_call;
-static size_t whenShallmalloc_fail;
-
-
-// ** Mocks **
-TYPED_MOCK_CLASS(CStringTokenizerMocks, CGlobalMock)
+void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-public:
-        /*Memory allocation*/
-        MOCK_STATIC_METHOD_1(, void*, gballoc_malloc, size_t, size)
-        void* result2;
-        currentmalloc_call++;
-        if (whenShallmalloc_fail>0)
-        {
-            if (currentmalloc_call == whenShallmalloc_fail)
-            {
-                result2 = NULL;
-            }
-            else
-            {
-                result2 = BASEIMPLEMENTATION::gballoc_malloc(size);
-            }
-        }
-        else
-        {
-            result2 = BASEIMPLEMENTATION::gballoc_malloc(size);
-        }
-        MOCK_METHOD_END(void*, result2);
-
-        MOCK_STATIC_METHOD_2(, void*, gballoc_realloc, void*, ptr, size_t, size)
-            MOCK_METHOD_END(void*, BASEIMPLEMENTATION::gballoc_realloc(ptr, size));
-
-        MOCK_STATIC_METHOD_1(, void, gballoc_free, void*, ptr)
-            BASEIMPLEMENTATION::gballoc_free(ptr);
-        MOCK_VOID_METHOD_END();
-
-        MOCK_STATIC_METHOD_0(, LOCK_HANDLE, Lock_Init)
-        MOCK_METHOD_END(LOCK_HANDLE, FAKE_LOCK_HANDLE);
-        MOCK_STATIC_METHOD_1(, LOCK_RESULT, Lock, LOCK_HANDLE, handle)
-            MOCK_METHOD_END(LOCK_RESULT, LOCK_OK);
-        MOCK_STATIC_METHOD_1(, LOCK_RESULT, Unlock, LOCK_HANDLE, handle)
-            MOCK_METHOD_END(LOCK_RESULT, LOCK_OK);
-        MOCK_STATIC_METHOD_1(, LOCK_RESULT, Lock_Deinit, LOCK_HANDLE, handle)
-            MOCK_METHOD_END(LOCK_RESULT, LOCK_OK);
-};
-
-DECLARE_GLOBAL_MOCK_METHOD_1(CStringTokenizerMocks, , void*, gballoc_malloc, size_t, size);
-DECLARE_GLOBAL_MOCK_METHOD_2(CStringTokenizerMocks, , void*, gballoc_realloc, void*, ptr, size_t, size);
-DECLARE_GLOBAL_MOCK_METHOD_1(CStringTokenizerMocks, , void, gballoc_free, void*, ptr)
-DECLARE_GLOBAL_MOCK_METHOD_0(CStringTokenizerMocks, , LOCK_HANDLE, Lock_Init);
-DECLARE_GLOBAL_MOCK_METHOD_1(CStringTokenizerMocks, , LOCK_RESULT, Lock, LOCK_HANDLE, handle);
-DECLARE_GLOBAL_MOCK_METHOD_1(CStringTokenizerMocks, , LOCK_RESULT, Unlock, LOCK_HANDLE, handle);
-DECLARE_GLOBAL_MOCK_METHOD_1(CStringTokenizerMocks, , LOCK_RESULT, Lock_Deinit, LOCK_HANDLE, handle)
+    ASSERT_FAIL("umock_c reported error");
+}
 
 BEGIN_TEST_SUITE(string_tokenizer_unittests)
 
+    TEST_SUITE_INITIALIZE(setsBufferTempSize)
+    {
+        int result;
+
+        TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
+        g_testByTest = TEST_MUTEX_CREATE();
+        ASSERT_IS_NOT_NULL(g_testByTest);
+
+        umock_c_init(on_umock_c_error);
+
+        REGISTER_ALIAS_TYPE(STRING_HANDLE, void*);
+        result = umocktypes_charptr_register_types();
+        ASSERT_ARE_EQUAL(int, 0, result);
+
+        REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, my_gballoc_malloc);
+        REGISTER_GLOBAL_MOCK_HOOK(gballoc_realloc, my_gballoc_realloc);
+        REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, my_gballoc_free);
+    }
+
     TEST_SUITE_CLEANUP(TestClassCleanup)
     {
+        TEST_MUTEX_DESTROY(g_testByTest);
         TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
     }
 
-    TEST_SUITE_INITIALIZE(setsBufferTempSize)
+    TEST_FUNCTION_INITIALIZE(a)
     {
-        TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
-        g_testByTest = MicroMockCreateMutex();
-        ASSERT_IS_NOT_NULL(g_testByTest);
-    }
-
-    TEST_FUNCTION_INITIALIZE(TestMethodInitialize)
-    {
-        if (!MicroMockAcquireMutex(g_testByTest))
+        if (TEST_MUTEX_ACQUIRE(g_testByTest) != 0)
         {
             ASSERT_FAIL("our mutex is ABANDONED. Failure in test framework");
         }
+
+        umock_c_reset_all_calls();
 
         currentmalloc_call = 0;
         whenShallmalloc_fail = 0;
     }
 
-    TEST_FUNCTION_CLEANUP(TestMethodCleanup)
+    TEST_FUNCTION_CLEANUP(cleans)
     {
-        if (!MicroMockReleaseMutex(g_testByTest))
-        {
-            ASSERT_FAIL("failure in test framework at ReleaseMutex");
-        }
+        TEST_MUTEX_RELEASE(g_testByTest);
     }
 
     /* STRING_TOKENIZER_Tests BEGIN */
@@ -155,6 +131,7 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
         STRING_TOKENIZER_HANDLE t = STRING_TOKENIZER_create(NULL);
 
         ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_IS_NULL(t);
     }
 
@@ -162,24 +139,23 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
     TEST_FUNCTION(STRING_TOKENIZER_create_succeed)
     {
         ///arrange
-        CStringTokenizerMocks stMocks;
         const char* inputString = "Pirlimpimpim";
 
         STRING_HANDLE input_string_handle = STRING_construct(inputString);
 
-        stMocks.ResetAllCalls();
+        umock_c_reset_all_calls();
         ///act
 
-        STRICT_EXPECTED_CALL(stMocks, gballoc_malloc(0))  //Token Allocation.
+        STRICT_EXPECTED_CALL(gballoc_malloc(0))  //Token Allocation.
             .IgnoreArgument(1);
 
-        STRICT_EXPECTED_CALL(stMocks, gballoc_malloc(0))  //Token Content Allocation.
+        STRICT_EXPECTED_CALL(gballoc_malloc(0))  //Token Content Allocation.
             .IgnoreArgument(1);
 
 
         STRING_TOKENIZER_HANDLE t = STRING_TOKENIZER_create(input_string_handle);
 
-        stMocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ///assert
         ASSERT_IS_NOT_NULL(t);
 
@@ -191,16 +167,14 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
     TEST_FUNCTION(STRING_TOKENIZER_create_from_char_input_NULL_fail)
     {
         ///arrange
-        CStringTokenizerMocks stMocks;
 
-        stMocks.ResetAllCalls();
         ///act
 
         STRING_TOKENIZER_HANDLE t = STRING_TOKENIZER_create_from_char(NULL);
 
         ///assert
         ASSERT_IS_NULL(t);
-        stMocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         //Cleanup
         STRING_TOKENIZER_destroy(t);
@@ -209,23 +183,22 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
     TEST_FUNCTION(STRING_TOKENIZER_create_from_char_succeed)
     {
         ///arrange
-        CStringTokenizerMocks stMocks;
         const char* inputString = "Pirlimpimpim";
 
-        stMocks.ResetAllCalls();
+        umock_c_reset_all_calls();
         ///act
 
-        STRICT_EXPECTED_CALL(stMocks, gballoc_malloc(0))  //Token Allocation.
+        STRICT_EXPECTED_CALL(gballoc_malloc(0))  //Token Allocation.
             .IgnoreArgument(1);
 
-        STRICT_EXPECTED_CALL(stMocks, gballoc_malloc(0))  //Token Content Allocation.
+        STRICT_EXPECTED_CALL(gballoc_malloc(0))  //Token Content Allocation.
             .IgnoreArgument(1);
 
 
         STRING_TOKENIZER_HANDLE t = STRING_TOKENIZER_create_from_char(inputString);
 
-        stMocks.AssertActualAndExpectedCalls();
         ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_IS_NOT_NULL(t);
 
         //Cleanup
@@ -236,16 +209,15 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
     TEST_FUNCTION(STRING_TOKENIZER_create_when_malloc_fails_then_string_tokenizer_create_fails)
     {
         ///arrange
-        CStringTokenizerMocks stMocks;
         const char* inputString = "Pirlimpimpim";
 
         STRING_HANDLE input_string_handle = STRING_construct(inputString);
 
-        stMocks.ResetAllCalls();
+        umock_c_reset_all_calls();
         ///act
 
         
-        EXPECTED_CALL(stMocks, gballoc_malloc(0));  //Token Allocation.
+        EXPECTED_CALL(gballoc_malloc(0));  //Token Allocation.
 
 
         whenShallmalloc_fail = currentmalloc_call + 1;
@@ -253,7 +225,7 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
 
         ///assert
         ASSERT_IS_NULL(t);
-        stMocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         //Cleanup
         STRING_delete(input_string_handle);
@@ -264,18 +236,16 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
     TEST_FUNCTION(STRING_TOKENIZER_get_next_token_handle_NULL_Fail)
     {
         ///arrange
-        CStringTokenizerMocks stMocks;
-
         STRING_HANDLE output_string_handle = STRING_new();
 
-        stMocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         ///act
         int r = STRING_TOKENIZER_get_next_token(NULL, output_string_handle, "m");
 
         ///assert
         ASSERT_ARE_NOT_EQUAL(int, r, 0);
-        stMocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         //Cleanup
         STRING_delete(output_string_handle);
     }
@@ -284,18 +254,16 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
     TEST_FUNCTION(STRING_TOKENIZER_get_next_token_Delimiter_empty_Fail)
     {
         ///arrange
-        CStringTokenizerMocks stMocks;
-
         STRING_HANDLE output_string_handle = STRING_new();
 
-        stMocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         ///act
         int r = STRING_TOKENIZER_get_next_token(NULL, output_string_handle, "");
 
         ///assert
         ASSERT_ARE_NOT_EQUAL(int, r, 0);
-        stMocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         //Cleanup
         STRING_delete(output_string_handle);
@@ -305,21 +273,20 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
     TEST_FUNCTION(STRING_TOKENIZER_get_next_token_output_NULL_Fail)
     {
         ///arrange
-        CStringTokenizerMocks stMocks;
         const char* inputString = "Pirlimpimpim";
 
         STRING_HANDLE input_string_handle = STRING_construct(inputString);
 
         STRING_TOKENIZER_HANDLE t = STRING_TOKENIZER_create(input_string_handle);
 
-        stMocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         ///act
         int r = STRING_TOKENIZER_get_next_token(t, NULL, "m");
 
         ///assert
         ASSERT_ARE_NOT_EQUAL(int, r, 0);
-        stMocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         //Cleanup
         STRING_TOKENIZER_destroy(t);
         STRING_delete(input_string_handle);
@@ -329,7 +296,6 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
     TEST_FUNCTION(STRING_TOKENIZER_get_next_token_delimiters_NULL_Fail)
     {
         ///arrange
-        CStringTokenizerMocks stMocks;
         const char* inputString = "Pirlimpimpim";
 
         STRING_HANDLE input_string_handle = STRING_construct(inputString);
@@ -337,11 +303,11 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
 
         STRING_TOKENIZER_HANDLE t = STRING_TOKENIZER_create(input_string_handle);
 
-        stMocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         ///act
         int r = STRING_TOKENIZER_get_next_token(t, output_string_handle, NULL);
-        stMocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ///assert
         ASSERT_ARE_NOT_EQUAL(int, r, 0);
         //Cleanup
@@ -354,7 +320,6 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
     TEST_FUNCTION(STRING_TOKENIZER_get_next_token_PIRLI_Succeed)
     {
         ///arrange
-        CStringTokenizerMocks stMocks;
         const char* inputString = "Pirlimpimpim";
 
         STRING_HANDLE input_string_handle = STRING_construct(inputString);
@@ -362,9 +327,9 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
 
         STRING_TOKENIZER_HANDLE t = STRING_TOKENIZER_create(input_string_handle);
 
-        stMocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        EXPECTED_CALL(stMocks, gballoc_realloc(0, 0))  //Alloc memory to copy result. 
+        EXPECTED_CALL(gballoc_realloc(0, 0))  //Alloc memory to copy result. 
             .IgnoreArgument(1)
             .IgnoreArgument(2);
 
@@ -374,7 +339,7 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, "Pirli", STRING_c_str(output_string_handle));
         ASSERT_ARE_EQUAL(int, r, 0);
-        stMocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         //Cleanup
         STRING_TOKENIZER_destroy(t);
         STRING_delete(input_string_handle);
@@ -385,7 +350,6 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
     TEST_FUNCTION(STRING_TOKENIZER_get_next_token_Start_With_Delimiter_Succeed)
     {
         ///arrange
-        CStringTokenizerMocks stMocks;
         const char* inputString = "Pirlimpimpim";
 
         STRING_HANDLE input_string_handle = STRING_construct(inputString);
@@ -393,9 +357,9 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
 
         STRING_TOKENIZER_HANDLE t = STRING_TOKENIZER_create(input_string_handle);
 
-        stMocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        EXPECTED_CALL(stMocks, gballoc_realloc(0, 0))  //Alloc memory to copy result. 
+        EXPECTED_CALL(gballoc_realloc(0, 0))  //Alloc memory to copy result. 
             .IgnoreArgument(1)
             .IgnoreArgument(2);
 
@@ -405,7 +369,7 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, "irlimpimpim", STRING_c_str(output_string_handle));
         ASSERT_ARE_EQUAL(int, r, 0);
-        stMocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         //Cleanup
         STRING_TOKENIZER_destroy(t);
         STRING_delete(input_string_handle);
@@ -417,7 +381,6 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
     TEST_FUNCTION(STRING_TOKENIZER_get_next_token_Start_And_End_With_Delimiter_Succeed)
     {
         ///arrange
-        CStringTokenizerMocks stMocks;
         const char* inputString = "PirlimP";
 
         STRING_HANDLE input_string_handle = STRING_construct(inputString);
@@ -425,9 +388,9 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
 
         STRING_TOKENIZER_HANDLE t = STRING_TOKENIZER_create(input_string_handle);
 
-        stMocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        EXPECTED_CALL(stMocks, gballoc_realloc(0, 0))  //Alloc memory to copy result. 
+        EXPECTED_CALL(gballoc_realloc(0, 0))  //Alloc memory to copy result. 
             .IgnoreArgument(1)
             .IgnoreArgument(2);
 
@@ -437,7 +400,7 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, "irlim", STRING_c_str(output_string_handle));
         ASSERT_ARE_EQUAL(int, r, 0);
-        stMocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         //Cleanup
         STRING_TOKENIZER_destroy(t);
         STRING_delete(input_string_handle);
@@ -448,7 +411,6 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
     TEST_FUNCTION(STRING_TOKENIZER_get_next_token_with_All_token_String_Fail)
     {
         ///arrange
-        CStringTokenizerMocks stMocks;
         const char* inputString = "PPPPPP";
 
         STRING_HANDLE input_string_handle = STRING_construct(inputString);
@@ -456,14 +418,14 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
 
         STRING_TOKENIZER_HANDLE t = STRING_TOKENIZER_create(input_string_handle);
 
-        stMocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         ///act
         int r = STRING_TOKENIZER_get_next_token(t, output_string_handle, "P");
 
         ///assert
         ASSERT_ARE_NOT_EQUAL(int, r, 0);
-        stMocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         //Cleanup
         STRING_TOKENIZER_destroy(t);
         STRING_delete(input_string_handle);
@@ -474,7 +436,6 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
     TEST_FUNCTION(STRING_TOKENIZER_get_next_token_2Times_With_Just_1Token_SecondCall_Fail)
     {
         ///arrange
-        CStringTokenizerMocks stMocks;
         const char* inputString = "TestP";
 
         STRING_HANDLE input_string_handle = STRING_construct(inputString);
@@ -482,9 +443,9 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
 
         STRING_TOKENIZER_HANDLE t = STRING_TOKENIZER_create(input_string_handle);
 
-        stMocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        EXPECTED_CALL(stMocks, gballoc_realloc(0, 0))  //Alloc memory to copy result. 
+        EXPECTED_CALL(gballoc_realloc(0, 0))  //Alloc memory to copy result. 
             .IgnoreArgument(1)
             .IgnoreArgument(2);
 
@@ -500,7 +461,7 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
 
         ///assert
         ASSERT_ARE_NOT_EQUAL(int, r, 0);
-        stMocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         //Cleanup
         STRING_TOKENIZER_destroy(t);
         STRING_delete(input_string_handle);
@@ -512,7 +473,6 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
     TEST_FUNCTION(STRING_TOKENIZER_get_next_token_2charactersToken_at_begin_of_input_call_1_Time_Succeed)
     {
         ///arrange
-        CStringTokenizerMocks stMocks;
         const char* inputString = "??This is a Test";
 
         STRING_HANDLE input_string_handle = STRING_construct(inputString);
@@ -520,9 +480,9 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
 
         STRING_TOKENIZER_HANDLE t = STRING_TOKENIZER_create(input_string_handle);
 
-        stMocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        EXPECTED_CALL(stMocks, gballoc_realloc(0, 0))  //Alloc memory to copy result. 
+        EXPECTED_CALL(gballoc_realloc(0, 0))  //Alloc memory to copy result. 
             .IgnoreArgument(1)
             .IgnoreArgument(2);
 
@@ -532,7 +492,7 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
         ///Assert1
         ASSERT_ARE_EQUAL(char_ptr, "This is a Test", STRING_c_str(output_string_handle));
         ASSERT_ARE_EQUAL(int, r, 0);
-        stMocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         //Cleanup
         STRING_TOKENIZER_destroy(t);
         STRING_delete(input_string_handle);
@@ -544,7 +504,6 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
     TEST_FUNCTION(STRING_TOKENIZER_get_next_token_stringWith3Tokens_Call3Times_Succeed)
     {
         ///arrange
-        CStringTokenizerMocks stMocks;
         const char* inputString = "Test1PTest2PTest3";
 
         STRING_HANDLE input_string_handle = STRING_construct(inputString);
@@ -552,15 +511,15 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
 
         STRING_TOKENIZER_HANDLE t = STRING_TOKENIZER_create(input_string_handle);
 
-        stMocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        EXPECTED_CALL(stMocks, gballoc_realloc(0, 0))  //Alloc memory to copy result1. 
+        EXPECTED_CALL(gballoc_realloc(0, 0))  //Alloc memory to copy result1. 
             .IgnoreArgument(1)
             .IgnoreArgument(2);
-        EXPECTED_CALL(stMocks, gballoc_realloc(0, 0))  //Alloc memory to copy result2. 
+        EXPECTED_CALL(gballoc_realloc(0, 0))  //Alloc memory to copy result2. 
             .IgnoreArgument(1)
             .IgnoreArgument(2);
-        EXPECTED_CALL(stMocks, gballoc_realloc(0, 0))  //Alloc memory to copy result3. 
+        EXPECTED_CALL(gballoc_realloc(0, 0))  //Alloc memory to copy result3. 
             .IgnoreArgument(1)
             .IgnoreArgument(2);
 
@@ -584,7 +543,7 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
         ///Assert3
         ASSERT_ARE_EQUAL(char_ptr,"Test3", STRING_c_str(output_string_handle));
         ASSERT_ARE_EQUAL(int, r, 0);
-        stMocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         //Cleanup
         STRING_TOKENIZER_destroy(t);
         STRING_delete(input_string_handle);
@@ -595,7 +554,6 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
     TEST_FUNCTION(STRING_TOKENIZER_get_next_token_inputEmptyString_Fail)
     {
         ///arrange
-        CStringTokenizerMocks stMocks;
         const char* inputString = "";
 
         STRING_HANDLE input_string_handle = STRING_construct(inputString);
@@ -603,14 +561,14 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
 
         STRING_TOKENIZER_HANDLE t = STRING_TOKENIZER_create(input_string_handle);
 
-        stMocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         ///act
         int r = STRING_TOKENIZER_get_next_token(t, output_string_handle, "P");
 
         ///Assert
         ASSERT_ARE_NOT_EQUAL(int, r, 0);
-        stMocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         //Cleanup
         STRING_TOKENIZER_destroy(t);
         STRING_delete(input_string_handle);
@@ -622,7 +580,6 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
     TEST_FUNCTION(STRING_TOKENIZER_get_next_token_multipleCalls_DifferentToken_Succeed)
     {
         ///arrange
-        CStringTokenizerMocks stMocks;
         const char* inputString = "?a???b,,,#c";
 
         STRING_HANDLE input_string_handle = STRING_construct(inputString);
@@ -630,10 +587,10 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
 
         STRING_TOKENIZER_HANDLE t = STRING_TOKENIZER_create(input_string_handle);
 
-        stMocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         ///act1
-        EXPECTED_CALL(stMocks, gballoc_realloc(0, 0))  //Alloc memory to copy result. 
+        EXPECTED_CALL(gballoc_realloc(0, 0))  //Alloc memory to copy result. 
             .IgnoreArgument(1)
             .IgnoreArgument(2);
 
@@ -645,7 +602,7 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
         ASSERT_ARE_EQUAL(int, r, 0);
 
         ///act2
-        EXPECTED_CALL(stMocks, gballoc_realloc(0, 0))  //Alloc memory to copy result. 
+        EXPECTED_CALL(gballoc_realloc(0, 0))  //Alloc memory to copy result. 
             .IgnoreArgument(1)
             .IgnoreArgument(2);
 
@@ -657,7 +614,7 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
         ASSERT_ARE_EQUAL(int, r, 0);
 
         ///act3
-        EXPECTED_CALL(stMocks, gballoc_realloc(0, 0))  //Alloc memory to copy result. 
+        EXPECTED_CALL(gballoc_realloc(0, 0))  //Alloc memory to copy result. 
             .IgnoreArgument(1)
             .IgnoreArgument(2);
 
@@ -672,7 +629,7 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
 
         ///Assert4
         ASSERT_ARE_NOT_EQUAL(int, r, 0);
-        stMocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ///Cleanup
         STRING_TOKENIZER_destroy(t);
         STRING_delete(input_string_handle);
@@ -684,7 +641,6 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
     TEST_FUNCTION(STRING_TOKENIZER_get_next_token_inputString_with_SingleCharacter_call2Times_succeed)
     {
         ///arrange
-        CStringTokenizerMocks stMocks;
         const char* inputString = "c";
 
         STRING_HANDLE input_string_handle = STRING_construct(inputString);
@@ -692,10 +648,10 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
 
         STRING_TOKENIZER_HANDLE t = STRING_TOKENIZER_create(input_string_handle);
 
-        stMocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         ///act1
-        EXPECTED_CALL(stMocks, gballoc_realloc(0, 0))  //Alloc memory to copy result. 
+        EXPECTED_CALL(gballoc_realloc(0, 0))  //Alloc memory to copy result. 
             .IgnoreArgument(1)
             .IgnoreArgument(2);
 
@@ -711,7 +667,7 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
 
         ///Assert2
         ASSERT_ARE_NOT_EQUAL(int, r, 0);
-        stMocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ///Clean Up
         STRING_TOKENIZER_destroy(t);
         STRING_delete(input_string_handle);
@@ -723,7 +679,6 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
     TEST_FUNCTION(STRING_TOKENIZER_get_next_token_inputString_with_NULL_in_the_Middle_succeed)
     {
         ///arrange
-        CStringTokenizerMocks stMocks;
         const char* inputString = "This is a Test \0 1234";
 
         STRING_HANDLE input_string_handle = STRING_construct(inputString);
@@ -731,10 +686,10 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
 
         STRING_TOKENIZER_HANDLE t = STRING_TOKENIZER_create(input_string_handle);
 
-        stMocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         ///act1
-        EXPECTED_CALL(stMocks, gballoc_realloc(0, 0))  //Alloc memory to copy result. 
+        EXPECTED_CALL(gballoc_realloc(0, 0))  //Alloc memory to copy result. 
             .IgnoreArgument(1)
             .IgnoreArgument(2);
 
@@ -745,7 +700,7 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
         ASSERT_ARE_EQUAL(char_ptr,"This is a Test ", STRING_c_str(output_string_handle));
         ASSERT_ARE_EQUAL(int, r, 0);
 
-        stMocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ///Clean Up
         STRING_TOKENIZER_destroy(t);
         STRING_delete(input_string_handle);
@@ -757,7 +712,6 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
     TEST_FUNCTION(STRING_TOKENIZER_get_next_token_inputString_with_specialCharacters_succeed)
     {
         ///arrange
-        CStringTokenizerMocks stMocks;
         const char* inputString = "This is a Test \r\n 1234 \r\n\t 12345";
 
         STRING_HANDLE input_string_handle = STRING_construct(inputString);
@@ -765,10 +719,10 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
 
         STRING_TOKENIZER_HANDLE t = STRING_TOKENIZER_create(input_string_handle);
 
-        stMocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         ///act1
-        EXPECTED_CALL(stMocks, gballoc_realloc(0, 0))  //Alloc memory to copy result. 
+        EXPECTED_CALL(gballoc_realloc(0, 0))  //Alloc memory to copy result. 
             .IgnoreArgument(1)
             .IgnoreArgument(2);
 
@@ -780,7 +734,7 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
         ASSERT_ARE_EQUAL(int, r, 0);
 
         ///act2
-        EXPECTED_CALL(stMocks, gballoc_realloc(0, 0))  //Alloc memory to copy result. 
+        EXPECTED_CALL(gballoc_realloc(0, 0))  //Alloc memory to copy result. 
             .IgnoreArgument(1)
             .IgnoreArgument(2);
 
@@ -792,7 +746,7 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
         ASSERT_ARE_EQUAL(int, r, 0);
 
         ///act3
-        EXPECTED_CALL(stMocks, gballoc_realloc(0, 0))  //Alloc memory to copy result. 
+        EXPECTED_CALL(gballoc_realloc(0, 0))  //Alloc memory to copy result. 
             .IgnoreArgument(1)
             .IgnoreArgument(2);
 
@@ -803,7 +757,7 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
         ASSERT_ARE_EQUAL(char_ptr," 12345", STRING_c_str(output_string_handle));
         ASSERT_ARE_EQUAL(int, r, 0);
 
-        stMocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ///Clean Up
         STRING_TOKENIZER_destroy(t);
         STRING_delete(input_string_handle);
@@ -814,26 +768,25 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
     TEST_FUNCTION(STRING_TOKENIZER_DESTROY_Succeed)
     {
         ///arrange
-        CStringTokenizerMocks stMocks;
         const char* inputString = "Pirlimpimpim";
 
         STRING_HANDLE input_string_handle = STRING_construct(inputString);
         STRING_TOKENIZER_HANDLE t = STRING_TOKENIZER_create(input_string_handle);
 
-        stMocks.ResetAllCalls();
+        umock_c_reset_all_calls();
         ///act
 
-        EXPECTED_CALL(stMocks, gballoc_free(0))  //Free Token content.
+        EXPECTED_CALL(gballoc_free(0))  //Free Token content.
             .IgnoreArgument(1);
 
-        EXPECTED_CALL(stMocks, gballoc_free(0))  //Free Token.
+        EXPECTED_CALL(gballoc_free(0))  //Free Token.
             .IgnoreArgument(1);
 
 
         STRING_TOKENIZER_destroy(t);
 
         ///assert
-        stMocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         //Cleanup
         STRING_delete(input_string_handle);
     }
@@ -842,8 +795,12 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
     TEST_FUNCTION(STRING_TOKENIZER_DESTROY_WITH_NULL_HANDLE_NO_FREE)
     {
         ///arrange
+
+        // act
         STRING_TOKENIZER_destroy(NULL);
+
         ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     }
 
 END_TEST_SUITE(string_tokenizer_unittests)
