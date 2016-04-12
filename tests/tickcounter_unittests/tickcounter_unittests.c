@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#include <cstdlib>
+#include <stdlib.h>
 #ifdef _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
 #endif
@@ -9,108 +9,89 @@
 #include <stddef.h>
 
 #include "testrunnerswitcher.h"
-#include "azure_c_shared_utility/tickcounter.h"
-#include "azure_c_shared_utility/lock.h"
 #include "azure_c_shared_utility/threadapi.h"
 
 static TEST_MUTEX_HANDLE g_testByTest;
 static TEST_MUTEX_HANDLE g_dllByDll;
 
+void* my_gballoc_malloc(size_t size)
+{
+    return malloc(size);
+}
+
+void my_gballoc_free(void* ptr)
+{
+    free(ptr);
+}
+
 #define ENABLE_MOCKS
 
-#include "gballoc.h"
+#include "azure_c_shared_utility/gballoc.h"
+#include "azure_c_shared_utility/tickcounter.h"
 
 #define BUSY_LOOP_TIME      1000000
 
-extern "C" int gballoc_init(void);
-extern "C" void gballoc_deinit(void);
-extern "C" void* gballoc_malloc(size_t size);
-extern "C" void* gballoc_calloc(size_t nmemb, size_t size);
-extern "C" void* gballoc_realloc(void* ptr, size_t size);
-extern "C" void gballoc_free(void* ptr);
-
-namespace BASEIMPLEMENTATION
+void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    /*if malloc is defined as gballoc_malloc at this moment, there'd be serious trouble*/
-    #define Lock(x) (LOCK_OK + gballocState - gballocState) /*compiler warning about constant in if condition*/
-    #define Unlock(x) (LOCK_OK + gballocState - gballocState)
-    #define Lock_Init() (LOCK_HANDLE)0x42
-    #define Lock_Deinit(x) (LOCK_OK + gballocState - gballocState)
-    #include "gballoc.c"
-    #undef Lock
-    #undef Unlock
-    #undef Lock_Init
-    #undef Lock_Deinit
-};
-
-TYPED_MOCK_CLASS(CTickCounterMocks, CGlobalMock)
-{
-public:
-    MOCK_STATIC_METHOD_1(, void*, gballoc_malloc, size_t, size)
-        void* result2 = BASEIMPLEMENTATION::gballoc_malloc(size);
-    MOCK_METHOD_END(void*, result2);
-
-    MOCK_STATIC_METHOD_1(, void, gballoc_free, void*, ptr)
-        BASEIMPLEMENTATION::gballoc_free(ptr);
-    MOCK_VOID_METHOD_END()
-};
-
-DECLARE_GLOBAL_MOCK_METHOD_1(CTickCounterMocks, , void*, gballoc_malloc, size_t, size);
-DECLARE_GLOBAL_MOCK_METHOD_1(CTickCounterMocks, , void, gballoc_free, void*, ptr);
+    ASSERT_FAIL("umock_c reported error");
+}
 
 BEGIN_TEST_SUITE(tickcounter_unittests)
 
 TEST_SUITE_INITIALIZE(suite_init)
 {
     TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
-    g_testByTest = MicroMockCreateMutex();
+    g_testByTest = TEST_MUTEX_CREATE();
     ASSERT_IS_NOT_NULL(g_testByTest);
+
+    umock_c_init(on_umock_c_error);
+
+    REGISTER_ALIAS_TYPE(TICK_COUNTER_HANDLE, void*);
+
+    REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, my_gballoc_malloc);
+    REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, my_gballoc_free);
 }
 
 TEST_SUITE_CLEANUP(suite_cleanup)
 {
-    MicroMockDestroyMutex(g_testByTest);
+    TEST_MUTEX_DESTROY(g_testByTest);
     TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
 }
 
 TEST_FUNCTION_INITIALIZE(TestMethodInitialize)
 {
-    if (!MicroMockAcquireMutex(g_testByTest))
+    if (TEST_MUTEX_ACQUIRE(g_testByTest) != 0)
     {
         ASSERT_FAIL("our mutex is ABANDONED. Failure in test framework");
     }
+
+    umock_c_reset_all_calls();
 }
 
 TEST_FUNCTION_CLEANUP(TestMethodCleanup)
 {
-    if (!MicroMockReleaseMutex(g_testByTest))
-    {
-        ASSERT_FAIL("failure in test framework at ReleaseMutex");
-    }
+    TEST_MUTEX_RELEASE(g_testByTest);
 }
 
 TEST_FUNCTION(tickcounter_create_fails)
 {
     ///arrange
-    CTickCounterMocks mocks;
-
-    STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG))
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
         .IgnoreArgument(1)
-        .SetFailReturn((void*)NULL);
+        .SetReturn((void*)NULL);
 
     ///act
     TICK_COUNTER_HANDLE tickHandle = tickcounter_create();
 
     ///assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_IS_NULL(tickHandle);
 }
 
 TEST_FUNCTION(tickcounter_create_succeed)
 {
     ///arrange
-    CTickCounterMocks mocks;
-
-    STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG))
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
         .IgnoreArgument(1);
 
     ///act
@@ -118,7 +99,7 @@ TEST_FUNCTION(tickcounter_create_succeed)
 
     ///assert
     ASSERT_IS_NOT_NULL(tickHandle);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     tickcounter_destroy(tickHandle);
 }
@@ -126,22 +107,21 @@ TEST_FUNCTION(tickcounter_create_succeed)
 TEST_FUNCTION(tickcounter_destroy_tick_counter_NULL_succeed)
 {
     ///arrange
-    CTickCounterMocks mocks;
 
     ///act
     tickcounter_destroy(NULL);
 
     ///assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
 TEST_FUNCTION(tickcounter_destroy_succeed)
 {
     ///arrange
-    CTickCounterMocks mocks;
     TICK_COUNTER_HANDLE tickHandle = tickcounter_create();
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
 
     ///act
@@ -149,12 +129,12 @@ TEST_FUNCTION(tickcounter_destroy_succeed)
 
     ///assert
     ASSERT_IS_NOT_NULL(tickHandle);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
 TEST_FUNCTION(tickcounter_get_current_ms_tick_counter_NULL_fail)
 {
     ///arrange
-    CTickCounterMocks mocks;
     uint64_t current_ms = 0;
 
     ///act
@@ -162,22 +142,21 @@ TEST_FUNCTION(tickcounter_get_current_ms_tick_counter_NULL_fail)
 
     ///assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
 TEST_FUNCTION(tickcounter_get_current_ms_current_ms_NULL_fail)
 {
     ///arrange
-    CTickCounterMocks mocks;
     TICK_COUNTER_HANDLE tickHandle = tickcounter_create();
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
     ///act
     int result = tickcounter_get_current_ms(tickHandle, NULL);
 
     ///assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     tickcounter_destroy(tickHandle);
 }
@@ -185,9 +164,8 @@ TEST_FUNCTION(tickcounter_get_current_ms_current_ms_NULL_fail)
 TEST_FUNCTION(tickcounter_get_current_ms_succeed)
 {
     ///arrange
-    CTickCounterMocks mocks;
     TICK_COUNTER_HANDLE tickHandle = tickcounter_create();
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
     uint64_t current_ms = 0;
 
@@ -196,7 +174,7 @@ TEST_FUNCTION(tickcounter_get_current_ms_succeed)
 
     ///assert
     ASSERT_ARE_EQUAL(int, 0, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     /// clean
     tickcounter_destroy(tickHandle);
@@ -207,7 +185,7 @@ TEST_FUNCTION(tickcounter_get_current_ms_succeed)
 //    ///arrange
 //    CTickCounterMocks mocks;
 //    TICK_COUNTER_HANDLE tickHandle = tickcounter_create();
-//    mocks.ResetAllCalls();
+//    umock_c_reset_all_calls();
 //
 //    uint64_t first_ms = 0;
 //
@@ -228,7 +206,7 @@ TEST_FUNCTION(tickcounter_get_current_ms_succeed)
 //    ASSERT_ARE_EQUAL(int, 0, resultAlso);
 //    ASSERT_IS_TRUE(first_ms > 0);
 //    ASSERT_IS_TRUE(next_ms > first_ms);
-//    mocks.AssertActualAndExpectedCalls();
+//    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 //
 //    /// clean
 //    tickcounter_destroy(tickHandle);
