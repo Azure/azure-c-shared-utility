@@ -545,6 +545,10 @@ int tlsio_wolfssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
                 result = 0;
             }
         }
+        else if (tls_io_instance->socket_io == NULL)
+        {
+            result = __LINE__;
+        }
         else
         {
             result = xio_setoption(tls_io_instance->socket_io, optionName, value);

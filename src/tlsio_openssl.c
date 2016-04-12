@@ -691,7 +691,14 @@ int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
         }
         else
         {
-            result = xio_setoption(tls_io_instance->underlying_io, optionName, value);
+            if (tls_io_instance->underlying_io == NULL)
+            {
+                result = __LINE__;
+            }
+            else
+            {
+                result = xio_setoption(tls_io_instance->underlying_io, optionName, value);
+            }
         }
     }
 
