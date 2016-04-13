@@ -263,7 +263,7 @@ IMPLEMENT_TYPE_HANDLERS(double, double, "%f")
 /* Codes_SRS_UMOCKTYPES_C_01_156: [ If source or destination are NULL, umocktypes_copy_longdouble shall return a non-zero value. ]*/
 /* Codes_SRS_UMOCKTYPES_C_01_155: [ On success umocktypes_copy_longdouble shall return 0. ]*/
 /* Codes_SRS_UMOCKTYPES_C_01_157: [ umocktypes_free_longdouble shall do nothing. ]*/
-IMPLEMENT_TYPE_HANDLERS(long double, longdouble, "%lf")
+IMPLEMENT_TYPE_HANDLERS(long double, longdouble, "%Lf")
 
 /* Codes_SRS_UMOCKTYPES_C_01_158: [ umocktypes_stringify_size_t shall return the string representation of value. ]*/
 /* Codes_SRS_UMOCKTYPES_C_01_159: [ If value is NULL, umocktypes_stringify_size_t shall return NULL. ]*/
@@ -277,7 +277,7 @@ IMPLEMENT_TYPE_HANDLERS(long double, longdouble, "%lf")
 /* Codes_SRS_UMOCKTYPES_C_01_168: [ If source or destination are NULL, umocktypes_copy_size_t shall return a non-zero value. ]*/
 /* Codes_SRS_UMOCKTYPES_C_01_167: [ On success umocktypes_copy_size_t shall return 0. ]*/
 /* Codes_SRS_UMOCKTYPES_C_01_169: [ umocktypes_free_size_t shall do nothing. ]*/
-IMPLEMENT_TYPE_HANDLERS(size_t, size_t, "%u")
+IMPLEMENT_TYPE_HANDLERS(size_t, size_t, "%zu")
 
 int umocktypes_c_register_types(void)
 {

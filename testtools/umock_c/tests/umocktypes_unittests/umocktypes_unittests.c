@@ -251,7 +251,7 @@ void reset_umocktypename_normalize_calls(void)
         free(umocktypename_normalize_calls);
         umocktypename_normalize_calls = NULL;
     }
-    umocktypename_normalize_call_count = NULL;
+    umocktypename_normalize_call_count = 0;
 }
 
 void reset_test_stringify_testtype_calls(void)
@@ -261,7 +261,7 @@ void reset_test_stringify_testtype_calls(void)
         free(test_stringify_func_testtype_calls);
         test_stringify_func_testtype_calls = NULL;
     }
-    test_stringify_func_testtype_call_count = NULL;
+    test_stringify_func_testtype_call_count = 0;
 }
 
 void reset_test_are_equal_testtype_calls(void)
@@ -271,7 +271,7 @@ void reset_test_are_equal_testtype_calls(void)
         free(test_are_equal_func_testtype_calls);
         test_are_equal_func_testtype_calls = NULL;
     }
-    test_are_equal_func_testtype_call_count = NULL;
+    test_are_equal_func_testtype_call_count = 0;
 }
 
 void reset_test_copy_testtype_calls(void)
@@ -281,7 +281,7 @@ void reset_test_copy_testtype_calls(void)
         free(test_copy_func_testtype_calls);
         test_copy_func_testtype_calls = NULL;
     }
-    test_copy_func_testtype_call_count = NULL;
+    test_copy_func_testtype_call_count = 0;
 }
 
 void reset_test_free_testtype_calls(void)
@@ -291,7 +291,7 @@ void reset_test_free_testtype_calls(void)
         free(test_free_func_testtype_calls);
         test_free_func_testtype_calls = NULL;
     }
-    test_free_func_testtype_call_count = NULL;
+    test_free_func_testtype_call_count = 0;
 }
 
 static TEST_MUTEX_HANDLE test_mutex;

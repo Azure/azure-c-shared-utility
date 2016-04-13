@@ -26,8 +26,8 @@ set(umock_c_h_files
 )
 
 IF(WIN32)
-	#windows needs this define
-	add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+    #windows needs this define
+    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 ENDIF()
 
 add_library(umock_c ${umock_c_c_files} ${umock_c_h_files})
@@ -131,4 +131,6 @@ function(umockc_build_test_artifacts whatIsBuilding use_gballoc)
     endif()
 endfunction()
 
-add_subdirectory(tests)
+if (NOT ${skip_unittests})
+    add_subdirectory(tests)
+endif()

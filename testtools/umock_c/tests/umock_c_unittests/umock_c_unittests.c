@@ -275,7 +275,7 @@ void reset_all_calls(void)
     }
     umockcallrecorder_add_expected_call_calls = NULL;
     umockcallrecorder_add_expected_call_call_count = 0;
-    umockcallrecorder_add_expected_call_call_result = NULL;
+    umockcallrecorder_add_expected_call_call_result = 0;
 
     if (umockcallrecorder_add_actual_call_calls != NULL)
     {
