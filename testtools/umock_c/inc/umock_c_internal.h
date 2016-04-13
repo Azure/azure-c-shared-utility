@@ -535,7 +535,7 @@ typedef struct ARG_BUFFER_TAG
 /* Codes_SRS_UMOCK_C_LIB_01_138: [ - If a global mock hook has been specified then it shall be called and its result returned. ]*/
 /* Codes_SRS_UMOCK_C_LIB_01_139: [ - If a global return value has been specified then it shall be returned. ]*/
 /* Codes_SRS_UMOCK_C_LIB_01_140: [ - Otherwise the value of a static variable of the same type as the return type shall be returned. ]*/
-#define MOCKABLE_FUNCTION_UMOCK_INTERNAL_WITH_MOCK(return_type, name, ...) \
+#define MOCKABLE_FUNCTION_UMOCK_INTERNAL_WITH_MOCK_NO_CODE(return_type, name, ...) \
     typedef return_type (*C2(mock_hook_func_type_, name))(IF(COUNT_ARG(__VA_ARGS__),,void) FOR_EACH_2_COUNTED(ARG_IN_SIGNATURE, __VA_ARGS__)); \
     static C2(mock_hook_func_type_,name) C2(mock_hook_,name) = NULL; \
     struct C2(_mock_call_modifier_,name); \
@@ -701,7 +701,16 @@ typedef struct ARG_BUFFER_TAG
     IF(COUNT_ARG(__VA_ARGS__),IMPLEMENT_COPY_OUT_ARGUMENT_FUNCTION(return_type, name, __VA_ARGS__),) \
     IF(COUNT_ARG(__VA_ARGS__),IMPLEMENT_VALIDATE_ARGUMENT_BUFFER_FUNCTION(return_type, name, __VA_ARGS__),) \
     IMPLEMENT_IGNORE_ALL_CALLS_FUNCTION(return_type, name, __VA_ARGS__) \
-	return_type name(IF(COUNT_ARG(__VA_ARGS__),,void) FOR_EACH_2_COUNTED(ARG_IN_SIGNATURE, __VA_ARGS__)) \
+    IMPLEMENT_REGISTER_GLOBAL_MOCK_HOOK(return_type, name, __VA_ARGS__) \
+    IMPLEMENT_REGISTER_GLOBAL_MOCK_RETURN(return_type, name, __VA_ARGS__) \
+    IMPLEMENT_REGISTER_GLOBAL_MOCK_FAIL_RETURN(return_type, name, __VA_ARGS__) \
+    IMPLEMENT_REGISTER_GLOBAL_MOCK_RETURNS(return_type, name, __VA_ARGS__) \
+    IMPLEMENT_STRICT_EXPECTED_MOCK(return_type, name, __VA_ARGS__) \
+    IMPLEMENT_EXPECTED_MOCK(return_type, name, __VA_ARGS__) \
+
+#define MOCKABLE_FUNCTION_UMOCK_INTERNAL_WITH_MOCK(return_type, name, ...) \
+    MOCKABLE_FUNCTION_UMOCK_INTERNAL_WITH_MOCK_NO_CODE(return_type, name, __VA_ARGS__) \
+    return_type name(IF(COUNT_ARG(__VA_ARGS__),,void) FOR_EACH_2_COUNTED(ARG_IN_SIGNATURE, __VA_ARGS__)) \
 	{ \
         UMOCKCALL_HANDLE mock_call; \
         UMOCKCALL_HANDLE matched_call; \
@@ -770,12 +779,16 @@ typedef struct ARG_BUFFER_TAG
         } \
 		IF(IS_NOT_VOID(return_type),return result;,) \
 	} \
-    IMPLEMENT_STRICT_EXPECTED_MOCK(return_type, name, __VA_ARGS__) \
-    IMPLEMENT_EXPECTED_MOCK(return_type, name, __VA_ARGS__) \
-    IMPLEMENT_REGISTER_GLOBAL_MOCK_HOOK(return_type, name, __VA_ARGS__) \
-    IMPLEMENT_REGISTER_GLOBAL_MOCK_RETURN(return_type, name, __VA_ARGS__) \
-    IMPLEMENT_REGISTER_GLOBAL_MOCK_FAIL_RETURN(return_type, name, __VA_ARGS__) \
-    IMPLEMENT_REGISTER_GLOBAL_MOCK_RETURNS(return_type, name, __VA_ARGS__) \
+
+#define MOCK_FUNCTION_WITH_CODE(modifiers, return_type, name, ...) \
+    MOCKABLE_FUNCTION_UMOCK_INTERNAL_WITH_MOCK_NO_CODE(return_type, name, __VA_ARGS__) \
+    return_type modifiers name(IF(COUNT_ARG(__VA_ARGS__),,void) FOR_EACH_2_COUNTED(ARG_IN_SIGNATURE, __VA_ARGS__)) \
+    { \
+        IF(IS_NOT_VOID(return_type), return_type result;, ) \
+
+#define MOCK_FUNCTION_END(...) \
+        IF(COUNT_ARG(__VA_ARGS__), return __VA_ARGS__;, ) \
+    }
 
 #ifdef __cplusplus
 	}
