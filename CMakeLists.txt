@@ -159,39 +159,39 @@ function(linux_unittests_add_exe whatIsBuilding)
                 
     target_compile_definitions(${whatIsBuilding}_exe PUBLIC -DUSE_CTEST)
     target_include_directories(${whatIsBuilding}_exe PUBLIC ${sharedutil_include_directories})
-	
-	#this part detects 
+    
+    #this part detects 
         #       - the additional libraries that might be needed.
-	#     additional libraries are started by ADDITIONAL_LIBS parameter and ended by any other known parameter (or end of variable arguments)
-	#   - a valgring suppression file (VALGRIND_SUPRESSIONS_FILE) for memcheck
-	#     the file name follows immediately after 
-	
-	set(PARSING_ADDITIONAL_LIBS OFF)
-	set(PARSING_VALGRIND_SUPRESSIONS_FILE OFF)
+    #     additional libraries are started by ADDITIONAL_LIBS parameter and ended by any other known parameter (or end of variable arguments)
+    #   - a valgring suppression file (VALGRIND_SUPRESSIONS_FILE) for memcheck
+    #     the file name follows immediately after 
+    
+    set(PARSING_ADDITIONAL_LIBS OFF)
+    set(PARSING_VALGRIND_SUPRESSIONS_FILE OFF)
         set(VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER)
-	foreach(f ${ARGN})
-		if(${f} STREQUAL "ADDITIONAL_LIBS")
-			SET(PARSING_ADDITIONAL_LIBS ON)
-			SET(PARSING_VALGRIND_SUPRESSION_FILE OFF)
-			#also unset all the other states
-			
-		elseif(${f} STREQUAL "VALGRIND_SUPPRESSIONS_FILE")
-			SET(PARSING_ADDITIONAL_LIBS OFF)
-			SET(PARSING_VALGRIND_SUPPRESSION_FILE ON)
-			
-		else()
-		
-			if(PARSING_ADDITIONAL_LIBS)
-				target_link_libraries(${whatIsBuilding}_exe ${f})
-			elseif(PARSING_VALGRIND_SUPPRESSION_FILE)
-				set(VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER "--suppressions=${f}")
-			endif()
-		endif()	
-		
-	endforeach()
-	
-	target_link_libraries(${whatIsBuilding}_exe micromock_ctest umock_c ctest)
-	
+    foreach(f ${ARGN})
+        if(${f} STREQUAL "ADDITIONAL_LIBS")
+            SET(PARSING_ADDITIONAL_LIBS ON)
+            SET(PARSING_VALGRIND_SUPRESSION_FILE OFF)
+            #also unset all the other states
+            
+        elseif(${f} STREQUAL "VALGRIND_SUPPRESSIONS_FILE")
+            SET(PARSING_ADDITIONAL_LIBS OFF)
+            SET(PARSING_VALGRIND_SUPPRESSION_FILE ON)
+            
+        else()
+        
+            if(PARSING_ADDITIONAL_LIBS)
+                target_link_libraries(${whatIsBuilding}_exe ${f})
+            elseif(PARSING_VALGRIND_SUPPRESSION_FILE)
+                set(VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER "--suppressions=${f}")
+            endif()
+        endif()	
+        
+    endforeach()
+    
+    target_link_libraries(${whatIsBuilding}_exe micromock_ctest umock_c ctest)
+    
     add_test(NAME ${whatIsBuilding} COMMAND $<TARGET_FILE:${whatIsBuilding}_exe>)
     
     if(${run_valgrind})
@@ -265,7 +265,7 @@ function(set_platform_files)
         set(PLATFORM_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/platform_win32.c PARENT_SCOPE)
         set(SOCKETIO_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/socketio_win32.c PARENT_SCOPE)
         set(TICKCOUTER_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/tickcounter_win32.c PARENT_SCOPE)
-    	set(UNIQUEID_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/uniqueid_win32.c PARENT_SCOPE)
+        set(UNIQUEID_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/uniqueid_win32.c PARENT_SCOPE)
     else()
         if(${use_condition})
             set(CONDITION_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/condition_pthreads.c PARENT_SCOPE)
@@ -487,9 +487,8 @@ else()
     target_link_libraries(aziotsharedutil pthread)
 endif()
 
-if (skip_unittests)
-else()
-add_subdirectory(tests)
+if (NOT ${skip_unittests})
+    add_subdirectory(tests)
 endif()
 
 if(WIN32)
