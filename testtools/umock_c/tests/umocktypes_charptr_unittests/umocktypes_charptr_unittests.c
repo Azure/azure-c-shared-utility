@@ -65,7 +65,7 @@ void reset_umocktypes_register_type_calls(void)
         free(umocktypes_register_type_calls);
         umocktypes_register_type_calls = NULL;
     }
-    umocktypes_register_type_call_count = NULL;
+    umocktypes_register_type_call_count = 0;
 }
 
 static size_t malloc_call_count;

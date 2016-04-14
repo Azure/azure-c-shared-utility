@@ -36,7 +36,7 @@ set(micromock_h_files
 ./inc/mockvaluebase.h
 ./inc/nicecallcomparer.h
 ./inc/runtimemock.h 
-./inc/stdafx.h	
+./inc/stdafx.h
 ./inc/strictorderedcallcomparer.h
 ./inc/strictunorderedcallcomparer.h
 ./inc/targetver.h
@@ -49,28 +49,28 @@ string(REPLACE "./inc/" ";./testtools/micromock/inc/" FILES_TO_INSTALL ${micromo
 add_files_to_install("${FILES_TO_INSTALL}")
 
 IF(WIN32)
-	#windows needs this define
-	add_definitions(-D_CRT_SECURE_NO_WARNINGS)
-	
-	#windows needs to be build 2 flavor of micromock, one for CTEST reporting, one for CPP_UNITTEST
-	add_library(micromock_cpp_unittest ${micromock_cpp_files} ${micromock_h_files})
-	target_compile_definitions(micromock_cpp_unittest PUBLIC CPP_UNITTEST)
-	target_include_directories(micromock_cpp_unittest PUBLIC $ENV{VCInstallDir}UnitTest/include)
+    #windows needs this define
+    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+    
+    #windows needs to be build 2 flavor of micromock, one for CTEST reporting, one for CPP_UNITTEST
+    add_library(micromock_cpp_unittest ${micromock_cpp_files} ${micromock_h_files})
+    target_compile_definitions(micromock_cpp_unittest PUBLIC CPP_UNITTEST)
+    target_include_directories(micromock_cpp_unittest PUBLIC $ENV{VCInstallDir}UnitTest/include)
 
-	set_target_properties(micromock_cpp_unittest
-	   PROPERTIES
-	   FOLDER "SharedTestTools")
-	
-	add_library(micromock_ctest ${micromock_cpp_files} ${micromock_h_files})
-	target_compile_definitions(micromock_ctest PUBLIC USE_CTEST)
+    set_target_properties(micromock_cpp_unittest
+       PROPERTIES
+       FOLDER "SharedTestTools")
+    
+    add_library(micromock_ctest ${micromock_cpp_files} ${micromock_h_files})
+    target_compile_definitions(micromock_ctest PUBLIC USE_CTEST)
 else()
-	add_library(micromock_ctest ${micromock_cpp_files} ${micromock_h_files})
-	target_compile_definitions(micromock_ctest PUBLIC USE_CTEST)
+    add_library(micromock_ctest ${micromock_cpp_files} ${micromock_h_files})
+    target_compile_definitions(micromock_ctest PUBLIC USE_CTEST)
 ENDIF()
 
 set_target_properties(micromock_ctest
-			   PROPERTIES
-			   FOLDER "SharedTestTools")
+               PROPERTIES
+               FOLDER "SharedTestTools")
 
 #these are the include folders
 #the following "set" statetement exports across the project a global variable called MICROMOCK_INC_FOLDER that expands to whatever needs to included when using micromock library
@@ -78,13 +78,15 @@ set(MICROMOCK_INC_FOLDER ${CMAKE_CURRENT_LIST_DIR}/inc CACHE INTERNAL "this is w
 
 include_directories(${TESTRUNNERSWITCHER_INC_FOLDER} ${CTEST_INC_FOLDER} ${SAL_INC_FOLDER} ${MICROMOCK_INC_FOLDER} )
 
-add_subdirectory(unittests)
+if (NOT ${skip_unittests})
+     add_subdirectory(unittests)
+endif()
 
 if(WIN32)
 else()
-	install (TARGETS micromock_ctest DESTINATION lib)
+    install (TARGETS micromock_ctest DESTINATION lib)
 endif (WIN32)
 
 if(WIN32)
-	add_executable(micromock_generator ./tools/micromockgenerator/micromockgenerator.cpp)
+    add_executable(micromock_generator ./tools/micromockgenerator/micromockgenerator.cpp)
 endif()
