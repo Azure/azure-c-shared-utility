@@ -224,6 +224,7 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_ALIAS_TYPE(LIST_HANDLE, void*);
     REGISTER_ALIAS_TYPE(LIST_ITEM_HANDLE, void*);
     REGISTER_ALIAS_TYPE(SOCKET, void*);
+    REGISTER_ALIAS_TYPE(PCSTR, char*);
 
     result = umocktypes_charptr_register_types();
     ASSERT_ARE_EQUAL(int, 0, result);
@@ -248,10 +249,12 @@ TEST_SUITE_CLEANUP(suite_cleanup)
 
 TEST_FUNCTION_INITIALIZE(method_init)
 {
-    if (TEST_MUTEX_ACQUIRE(test_serialize_mutex) != 0)
+    if (TEST_MUTEX_ACQUIRE(g_testByTest) != 0)
     {
         ASSERT_FAIL("Could not acquire test serialization mutex.");
     }
+
+    umock_c_reset_all_calls();
 
     currentmalloc_call = 0;
     whenShallmalloc_fail = 0;
@@ -278,8 +281,6 @@ static void OnSendComplete(void* context, IO_SEND_RESULT send_result)
     (void)context;
     (void)send_result;
 }
-
-#if 0
 
 /* socketio_win32_create */
 TEST_FUNCTION(socketio_create_io_create_parameters_NULL_fails)
@@ -473,8 +474,8 @@ TEST_FUNCTION(socketio_open_ioctlsocket_fails)
     EXPECTED_CALL(ioctlsocket(IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG))
         .SetReturn(WSAENETDOWN);
     EXPECTED_CALL(freeaddrinfo(IGNORED_PTR_ARG));
-    EXPECTED_CALL(closesocket(IGNORED_NUM_ARG));
     EXPECTED_CALL(WSAGetLastError());
+    EXPECTED_CALL(closesocket(IGNORED_NUM_ARG));
 
     // act
     int result = socketio_open(ioHandle, test_on_io_open_complete, &callbackContext, test_on_bytes_received, &callbackContext, test_on_io_error, &callbackContext);
@@ -677,7 +678,6 @@ TEST_FUNCTION(socketio_dowork_succeeds)
 
     socketio_destroy(ioHandle);
 }
-#endif
 
 TEST_FUNCTION(socketio_dowork_recv_bytes_succeeds)
 {
