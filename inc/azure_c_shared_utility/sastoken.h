@@ -5,12 +5,13 @@
 #define SASTOKEN_H
 
 #include "azure_c_shared_utility/strings.h"
+#include "umock_c_prod.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern STRING_HANDLE SASToken_Create(STRING_HANDLE key, STRING_HANDLE scope, STRING_HANDLE keyName, size_t expiry);
+    MOCKABLE_FUNCTION(STRING_HANDLE, SASToken_Create, STRING_HANDLE, key, STRING_HANDLE, scope, STRING_HANDLE, keyName, size_t, expiry);
 
 #ifdef __cplusplus
 }

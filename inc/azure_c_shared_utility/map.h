@@ -21,7 +21,7 @@ extern "C"
 #include "azure_c_shared_utility/macro_utils.h"
 #include "azure_c_shared_utility/strings.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
-#include "umock_c.h"
+#include "umock_c_prod.h"
 
 #define MAP_RESULT_VALUES \
     MAP_OK, \

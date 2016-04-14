@@ -10,7 +10,9 @@
 #endif
 
 #include <stddef.h>
+#include "umock_c.h"
 #include "azure_c_shared_utility/buffer_.h"
+#include "testrunnerswitcher.h"
 
 static size_t currentmalloc_call = 0;
 static size_t whenShallmalloc_fail = 0;
@@ -70,8 +72,6 @@ void my_gballoc_free(void* ptr)
 
 #define ENABLE_MOCKS
 #include "azure_c_shared_utility/gballoc.h"
-#include "testrunnerswitcher.h"
-#include "umock_c.h"
 
 #ifdef _MSC_VER
 #pragma warning(disable:4505)

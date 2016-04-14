@@ -14,7 +14,8 @@ extern "C" {
 #endif
 
 #include "azure_c_shared_utility/macro_utils.h"
-
+#include "umock_c_prod.h"
+    
 typedef int(*THREAD_START_FUNC)(void *);
 
 #define THREADAPI_RESULT_VALUES \
@@ -44,7 +45,7 @@ typedef void* THREAD_HANDLE;
  * @return	@c THREADAPI_OK if the API call is successful or an error
  * 			code in case it fails.
  */
-extern THREADAPI_RESULT ThreadAPI_Create(THREAD_HANDLE* threadHandle, THREAD_START_FUNC func, void* arg);
+MOCKABLE_FUNCTION(THREADAPI_RESULT, ThreadAPI_Create, THREAD_HANDLE*, threadHandle, THREAD_START_FUNC, func, void*, arg);
 
 /**
  * @brief	Blocks the calling thread by waiting on the thread identified by
@@ -61,7 +62,7 @@ extern THREADAPI_RESULT ThreadAPI_Create(THREAD_HANDLE* threadHandle, THREAD_STA
  * @return	@c THREADAPI_OK if the API call is successful or an error
  * 			code in case it fails.
  */
-extern THREADAPI_RESULT ThreadAPI_Join(THREAD_HANDLE threadHandle, int* res);
+MOCKABLE_FUNCTION(THREADAPI_RESULT, ThreadAPI_Join, THREAD_HANDLE, threadHandle, int*, res);
 
 /**
  * @brief	This function is called by a thread when the thread exits.
@@ -73,14 +74,14 @@ extern THREADAPI_RESULT ThreadAPI_Join(THREAD_HANDLE threadHandle, int* res);
  * 			function. The @p res value must be copied into the @p res out
  * 			argument passed to the ::ThreadAPI_Join function.
  */
-extern void ThreadAPI_Exit(int res);
+MOCKABLE_FUNCTION(void, ThreadAPI_Exit, int, res);
 
 /**
  * @brief	Sleeps the current thread for the given number of milliseconds.
  *
  * @param	milliseconds	The number of milliseconds to sleep.
  */
-extern void ThreadAPI_Sleep(unsigned int milliseconds);
+MOCKABLE_FUNCTION(void, ThreadAPI_Sleep, unsigned int, milliseconds);
 
 #ifdef __cplusplus
 }

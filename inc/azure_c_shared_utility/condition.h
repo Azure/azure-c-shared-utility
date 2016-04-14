@@ -6,6 +6,7 @@
 
 #include "azure_c_shared_utility/macro_utils.h"
 #include "azure_c_shared_utility/lock.h"
+#include "umock_c_prod.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,7 +30,7 @@ DEFINE_ENUM(COND_RESULT, COND_RESULT_VALUES);
 *
 * @return	A valid @c COND_HANDLE when successful or @c NULL otherwise.
 */
-extern COND_HANDLE Condition_Init(void);
+MOCKABLE_FUNCTION(COND_HANDLE, Condition_Init);
 
 /**
 * @brief	unblock all currently working condition.
@@ -40,7 +41,7 @@ extern COND_HANDLE Condition_Init(void);
 * 			destroyed and @c COND_ERROR when an error occurs
 * 			and @c COND_TIMEOUT when the handle times out.
 */
-extern COND_RESULT Condition_Post(COND_HANDLE  handle);
+MOCKABLE_FUNCTION(COND_RESULT, Condition_Post, COND_HANDLE, handle);
 
 /**
 * @brief	block on the condition handle unti the thread is signalled
@@ -52,7 +53,7 @@ extern COND_RESULT Condition_Post(COND_HANDLE  handle);
 * 			destroyed and @c COND_ERROR when an error occurs
 * 			and @c COND_TIMEOUT when the handle times out.
 */
-extern COND_RESULT Condition_Wait(COND_HANDLE  handle, LOCK_HANDLE lock, int timeout_milliseconds);
+MOCKABLE_FUNCTION(COND_RESULT, Condition_Wait, COND_HANDLE, handle, LOCK_HANDLE, lock, int, timeout_milliseconds);
 
 /**
 * @brief	The condition instance is deinitialized.
@@ -62,10 +63,10 @@ extern COND_RESULT Condition_Wait(COND_HANDLE  handle, LOCK_HANDLE lock, int tim
 * @return	Returns @c COND_OK when the condition object has been
 * 			destroyed and @c COND_ERROR when an error occurs.
 */
-extern void Condition_Deinit(COND_HANDLE  handle);
+MOCKABLE_FUNCTION(void, Condition_Deinit, COND_HANDLE, handle);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* LOCK_H */
+#endif /* CONDITION_H */

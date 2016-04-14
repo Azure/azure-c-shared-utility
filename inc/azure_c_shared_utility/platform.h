@@ -9,10 +9,11 @@ extern "C" {
 #endif /* __cplusplus */
 
 #include "azure_c_shared_utility/xio.h"
+#include "umock_c_prod.h"
 
-	extern int platform_init(void);
-	extern void platform_deinit(void);
-    extern const IO_INTERFACE_DESCRIPTION* platform_get_default_tlsio(void);
+    MOCKABLE_FUNCTION(int, platform_init);
+    MOCKABLE_FUNCTION(void, platform_deinit);
+    MOCKABLE_FUNCTION(const IO_INTERFACE_DESCRIPTION*, platform_get_default_tlsio);
 
 #ifdef __cplusplus
 }

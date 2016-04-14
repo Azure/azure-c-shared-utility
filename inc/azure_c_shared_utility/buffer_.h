@@ -12,7 +12,7 @@ extern "C"
 #include <stddef.h>
 #endif
 
-#include "umock_c.h"
+#include "umock_c_prod.h"
 
 typedef struct BUFFER_TAG* BUFFER_HANDLE;
 

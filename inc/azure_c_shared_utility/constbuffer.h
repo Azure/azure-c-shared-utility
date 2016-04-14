@@ -14,6 +14,8 @@ extern "C"
 #include <stddef.h>
 #endif
 
+#include "umock_c_prod.h"
+
 /*this is the handle*/
 typedef struct CONSTBUFFER_HANDLE_DATA_TAG* CONSTBUFFER_HANDLE;
 
@@ -25,16 +27,16 @@ typedef struct CONSTBUFFER_TAG
 } CONSTBUFFER;
 
 /*this creates a new constbuffer from a memory area*/
-extern CONSTBUFFER_HANDLE CONSTBUFFER_Create(const unsigned char* source, size_t size);
+MOCKABLE_FUNCTION(CONSTBUFFER_HANDLE, CONSTBUFFER_Create, const unsigned char*, source, size_t, size);
 
 /*this creates a new constbuffer from an existing BUFFER_HANDLE*/
-extern CONSTBUFFER_HANDLE CONSTBUFFER_CreateFromBuffer(BUFFER_HANDLE buffer);
+MOCKABLE_FUNCTION(CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromBuffer, BUFFER_HANDLE, buffer);
 
-extern CONSTBUFFER_HANDLE CONSTBUFFER_Clone(CONSTBUFFER_HANDLE constbufferHandle);
+MOCKABLE_FUNCTION(CONSTBUFFER_HANDLE, CONSTBUFFER_Clone, CONSTBUFFER_HANDLE, constbufferHandle);
 
-extern const CONSTBUFFER* CONSTBUFFER_GetContent(CONSTBUFFER_HANDLE constbufferHandle);
+MOCKABLE_FUNCTION(const CONSTBUFFER*, CONSTBUFFER_GetContent, CONSTBUFFER_HANDLE, constbufferHandle);
 
-extern void CONSTBUFFER_Destroy(CONSTBUFFER_HANDLE constbufferHandle);
+MOCKABLE_FUNCTION(void, CONSTBUFFER_Destroy, CONSTBUFFER_HANDLE, constbufferHandle);
 
 #ifdef __cplusplus
 }

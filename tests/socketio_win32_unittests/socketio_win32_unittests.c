@@ -267,7 +267,7 @@ TEST_FUNCTION_INITIALIZE(method_init)
 
 TEST_FUNCTION_CLEANUP(method_cleanup)
 {
-    TEST_MUTEX_RELEASE(test_serialize_mutex);
+    TEST_MUTEX_RELEASE(g_testByTest);
 }
 
 static void PrintLogFunction(unsigned int options, char* format, ...)

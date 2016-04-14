@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#include <cstdlib>
+#include <stdlib.h>
 #ifdef _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
 #endif
@@ -9,18 +9,19 @@
 #include <stdio.h>
 #include <time.h>
 
+#include "testrunnerswitcher.h"
 
-#include "azure_c_shared_utility/agenttime.h"
+#define ENABLE_MOCKS
+
+#include "azure_c_shared_utility/hmacsha256.h"
+#include "azure_c_shared_utility/strings.h"
+#include "azure_c_shared_utility/buffer_.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
 #include "azure_c_shared_utility/sastoken.h"
-#include "azure_c_shared_utility/hmacsha256.h"
 #include "azure_c_shared_utility/urlencode.h"
 #include "azure_c_shared_utility/base64.h"
-#include "azure_c_shared_utility/buffer_.h"
 
-#include "testrunnerswitcher.h"
-#include "micromock.h"
-#include "micromockcharstararenullterminatedstrings.h"
+#if 0
 
 #define TEST_STRING_HANDLE (STRING_HANDLE)0x46
 #define TEST_NULL_STRING_HANDLE (STRING_HANDLE)0x00
@@ -47,8 +48,8 @@ static char TEST_CHAR_ARRAY[10] = "ABCD";
 static unsigned char TEST_UNSIGNED_CHAR_ARRAY[] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09 };
 static char TEST_TOKEN_EXPIRATION_TIME[32] = "7200";
 
-static MICROMOCK_MUTEX_HANDLE g_testByTest;
-static MICROMOCK_GLOBAL_SEMAPHORE_HANDLE g_dllByDll;
+static TEST_MUTEX_HANDLE g_testByTest;
+static TEST_MUTEX_HANDLE g_dllByDll;
 
 TYPED_MOCK_CLASS(CSASTokenMocks, CGlobalMock)
 {
@@ -960,3 +961,5 @@ TEST_FUNCTION(SASToken_Create_succeeds)
 }
 
 END_TEST_SUITE(sastoken_unittests)
+
+#endif
