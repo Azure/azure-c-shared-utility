@@ -353,9 +353,9 @@ TEST_FUNCTION(socketio_destroy_socket_succeeds)
 
     EXPECTED_CALL(closesocket(IGNORED_NUM_ARG));
     EXPECTED_CALL(list_get_head_item(IGNORED_PTR_ARG));
-    EXPECTED_CALL(list_get_head_item(IGNORED_PTR_ARG));
     EXPECTED_CALL(list_item_get_value(IGNORED_PTR_ARG));
     EXPECTED_CALL(list_remove(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+    EXPECTED_CALL(list_get_head_item(IGNORED_PTR_ARG));
     EXPECTED_CALL(list_destroy(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
@@ -473,9 +473,9 @@ TEST_FUNCTION(socketio_open_ioctlsocket_fails)
     EXPECTED_CALL(connect(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG));
     EXPECTED_CALL(ioctlsocket(IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG))
         .SetReturn(WSAENETDOWN);
-    EXPECTED_CALL(freeaddrinfo(IGNORED_PTR_ARG));
     EXPECTED_CALL(WSAGetLastError());
     EXPECTED_CALL(closesocket(IGNORED_NUM_ARG));
+    EXPECTED_CALL(freeaddrinfo(IGNORED_PTR_ARG));
 
     // act
     int result = socketio_open(ioHandle, test_on_io_open_complete, &callbackContext, test_on_bytes_received, &callbackContext, test_on_io_error, &callbackContext);

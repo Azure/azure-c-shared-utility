@@ -123,6 +123,9 @@ void free_func_TEST_STRUCT_COPY_FAILS(TEST_STRUCT_COPY_FAILS* value)
 
 static TEST_MUTEX_HANDLE test_mutex;
 
+MOCK_FUNCTION_WITH_CODE(, void, test_mock_function_with_code_1_arg, int, a);
+MOCK_FUNCTION_END()
+
 BEGIN_TEST_SUITE(umock_c_integrationtests)
 
 TEST_SUITE_INITIALIZE(suite_init)
@@ -1683,6 +1686,34 @@ TEST_FUNCTION(when_no_return_value_is_specified_for_a_function_returning_int_0_i
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
+}
+
+/* MOCK_FUNCTION_WITH_CODE tests */
+
+TEST_FUNCTION(a_strict_expected_Call_mock_function_with_code_validates_args)
+{
+    // arrange
+    STRICT_EXPECTED_CALL(test_mock_function_with_code_1_arg(42));
+
+    // act
+    test_mock_function_with_code_1_arg(42);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_expected_calls());
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
+}
+
+TEST_FUNCTION(an_expected_call_for_a_mock_function_with_code_ignores_args)
+{
+    // arrange
+    EXPECTED_CALL(test_mock_function_with_code_1_arg(0));
+
+    // act
+    test_mock_function_with_code_1_arg(42);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_expected_calls());
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
 }
 
 END_TEST_SUITE(umock_c_integrationtests)
