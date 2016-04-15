@@ -96,9 +96,9 @@ extern int strncpy_s(char* dst, size_t dstSizeInBytes, const char* src, size_t m
 extern int sprintf_s(char* dst, size_t dstSizeInBytes, const char* format, ...);
 #endif
 
-extern int mallocAndStrcpy_s(char** destination, const char*source);
-extern int unsignedIntToString(char* destination, size_t destinationSize, unsigned int value);
-extern int size_tToString(char* destination, size_t destinationSize, size_t value);
+MOCKABLE_FUNCTION(int, mallocAndStrcpy_s, char**, destination, const char*, source);
+MOCKABLE_FUNCTION(int, unsignedIntToString, char*, destination, size_t, destinationSize, unsigned int, value);
+MOCKABLE_FUNCTION(int, size_tToString, char*, destination, size_t, destinationSize, size_t, value);
 /*following logic shall define the ISNAN macro*/
 /*if runing on Microsoft Visual C compiler, than ISNAN shall be _isnan*/
 /*else if running on C99 or C11, ISNAN shall be isnan*/

@@ -17,9 +17,12 @@
 #include "azure_c_shared_utility/strings.h"
 #include "azure_c_shared_utility/buffer_.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
-#include "azure_c_shared_utility/sastoken.h"
 #include "azure_c_shared_utility/urlencode.h"
 #include "azure_c_shared_utility/base64.h"
+
+#undef ENABLE_MOCKS
+
+#include "azure_c_shared_utility/sastoken.h"
 
 #if 0
 
