@@ -4,6 +4,8 @@
 #ifndef CRT_ABSTRACTIONS_H
 #define CRT_ABSTRACTIONS_H
 
+#include "umock_c_prod.h"
+
 #ifdef __cplusplus
 #include <cstdio>
 #include <cstring>
