@@ -30,7 +30,7 @@ MOCKABLE_FUNCTION(int, socketio_send, CONCRETE_IO_HANDLE, socket_io, const void*
 MOCKABLE_FUNCTION(void, socketio_dowork, CONCRETE_IO_HANDLE, socket_io);
 MOCKABLE_FUNCTION(int, socketio_setoption, CONCRETE_IO_HANDLE, socket_io, const char*, optionName, const void*, value);
 
-MOCKABLE_FUNCTION(const, IO_INTERFACE_DESCRIPTION*, socketio_get_interface_description);
+MOCKABLE_FUNCTION(const IO_INTERFACE_DESCRIPTION*, socketio_get_interface_description);
 
 #ifdef __cplusplus
 }

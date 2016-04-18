@@ -24,10 +24,11 @@ void my_gballoc_free(void* ptr)
     free(ptr);
 }
 
+#include "azure_c_shared_utility/tickcounter.h"
+
 #define ENABLE_MOCKS
 
 #include "azure_c_shared_utility/gballoc.h"
-#include "azure_c_shared_utility/tickcounter.h"
 
 #define BUSY_LOOP_TIME      1000000
 

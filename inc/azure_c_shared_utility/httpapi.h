@@ -153,7 +153,7 @@ MOCKABLE_FUNCTION(void, HTTPAPI_CloseConnection, HTTP_HANDLE, handle);
  * @return	@c HTTPAPI_OK if the API call is successful or an error
  * 			code in case it fails.
  */
-MOCKABLE_FUNCTION(HTTPAPI_RESULT, HTTPAPI_ExecuteRequest(HTTP_HANDLE, handle, HTTPAPI_REQUEST_TYPE, requestType, const char*, relativePath,
+MOCKABLE_FUNCTION(HTTPAPI_RESULT, HTTPAPI_ExecuteRequest, HTTP_HANDLE, handle, HTTPAPI_REQUEST_TYPE, requestType, const char*, relativePath,
                                              HTTP_HEADERS_HANDLE, httpHeadersHandle, const unsigned char*, content,
                                              size_t, contentLength, unsigned int*, statusCode,
                                              HTTP_HEADERS_HANDLE, responseHeadersHandle, BUFFER_HANDLE, responseContent);

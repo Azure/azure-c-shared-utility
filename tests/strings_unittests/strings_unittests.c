@@ -60,6 +60,9 @@ void my_gballoc_free(void* ptr)
 #include "umock_c.h"
 #include "umocktypes_charptr.h"
 #include "azure_c_shared_utility/gballoc.h"
+
+#undef ENABLE_MOCKS
+
 #include "azure_c_shared_utility/strings.h"
 
 static const char TEST_STRING_VALUE []= "DataValueTest";

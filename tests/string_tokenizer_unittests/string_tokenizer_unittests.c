@@ -53,11 +53,12 @@ void my_gballoc_free(void* ptr)
     free(ptr);
 }
 
+#include "azure_c_shared_utility/string_tokenizer.h"
+
 #define ENABLE_MOCKS
 #include "umock_c.h"
 #include "umocktypes_charptr.h"
 #include "azure_c_shared_utility/gballoc.h"
-#include "azure_c_shared_utility/string_tokenizer.h"
 
 #ifdef _MSC_VER
 #pragma warning(disable:4505)

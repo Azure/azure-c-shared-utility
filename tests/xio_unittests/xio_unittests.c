@@ -21,9 +21,11 @@ void my_gballoc_free(void* ptr)
     free(ptr);
 }
 
+#undef ENABLE_MOCKS
+#include "azure_c_shared_utility/xio.h"
+
 #define ENABLE_MOCKS
 #include "azure_c_shared_utility/gballoc.h"
-#include "azure_c_shared_utility/xio.h"
 
 MOCKABLE_FUNCTION(CONCRETE_IO_HANDLE, test_xio_create, void*, xio_create_parameters, LOGGER_LOG, logger_log)
 MOCKABLE_FUNCTION(void, test_xio_destroy, CONCRETE_IO_HANDLE, handle)

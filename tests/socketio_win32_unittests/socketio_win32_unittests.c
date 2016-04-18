@@ -39,11 +39,12 @@ void my_gballoc_free(void* ptr)
     free(ptr);
 }
 
+#include "azure_c_shared_utility/socketio.h"
+
 #define ENABLE_MOCKS
 
 #include "umock_c.h"
 #include "umocktypes_charptr.h"
-#include "azure_c_shared_utility/socketio.h"
 #include "azure_c_shared_utility/list.h"
 
 static bool g_addrinfo_call_fail;
