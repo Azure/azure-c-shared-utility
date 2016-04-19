@@ -1,18 +1,16 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#include <cstdlib>
+#include <stdlib.h>
 #ifdef _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
 #endif
 
-#include "micromock.h"
 #include "testrunnerswitcher.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
 #include "azure_c_shared_utility/lock.h"
 
-
-DEFINE_MICROMOCK_ENUM_TO_STRING(LOCK_RESULT, LOCK_RESULT_VALUES);
+TEST_DEFINE_ENUM_TYPE(LOCK_RESULT, LOCK_RESULT_VALUES);
 
 LOCK_RESULT Lock_Handle_ToString(LOCK_HANDLE handle)
 {
@@ -26,7 +24,7 @@ LOCK_RESULT Lock_Handle_ToString(LOCK_HANDLE handle)
     return result;
 }
 
-static MICROMOCK_GLOBAL_SEMAPHORE_HANDLE g_dllByDll;
+static TEST_MUTEX_HANDLE g_dllByDll;
 
 BEGIN_TEST_SUITE(Lock_UnitTests)
 
@@ -38,6 +36,7 @@ TEST_SUITE_CLEANUP(b)
 {
     TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
 }
+
 TEST_FUNCTION(Test_Lock_Lock_Unlock)
 {
     //arrange
