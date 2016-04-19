@@ -1,66 +1,101 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#include <cstdlib>
+#include <stdlib.h>
 #ifdef _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
 #endif
 
-#include "testrunnerswitcher.h"
-#include "micromock.h"
-#include "micromockcharstararenullterminatedstrings.h"
-#include "azure_c_shared_utility/map.h"
-#include "azure_c_shared_utility/lock.h"
+static size_t currentmalloc_call = 0;
+static size_t whenShallmalloc_fail = 0;
 
-static MICROMOCK_MUTEX_HANDLE g_testByTest;
-static MICROMOCK_GLOBAL_SEMAPHORE_HANDLE g_dllByDll;
+static size_t currentrealloc_call = 0;
+static size_t whenShallrealloc_fail = 0;
 
-#define GBALLOC_H
-
-extern "C" int gballoc_init(void);
-extern "C" void gballoc_deinit(void);
-extern "C" void* gballoc_malloc(size_t size);
-extern "C" void* gballoc_calloc(size_t nmemb, size_t size);
-extern "C" void* gballoc_realloc(void* ptr, size_t size);
-extern "C" void gballoc_free(void* ptr);
-
-namespace BASEIMPLEMENTATION
+void* my_gballoc_malloc(size_t size)
 {
-    /*if malloc is defined as gballoc_malloc at this moment, there'd be serious trouble*/
-#define Lock(x) (LOCK_OK + gballocState - gballocState) /*compiler warning about constant in if condition*/
-#define Unlock(x) (LOCK_OK + gballocState - gballocState)
-#define Lock_Init() (LOCK_HANDLE)0x42
-#define Lock_Deinit(x) (LOCK_OK + gballocState - gballocState)
-#include "gballoc.c"
-#undef Lock
-#undef Unlock
-#undef Lock_Init
-#undef Lock_Deinit
+    void* result;
+    currentmalloc_call++;
+    if (whenShallmalloc_fail > 0)
+    {
+        if (currentmalloc_call == whenShallmalloc_fail)
+        {
+            result = NULL;
+        }
+        else
+        {
+            result = malloc(size);
+        }
+    }
+    else
+    {
+        result = malloc(size);
+    }
+    return result;
+}
 
-#include "strings.c"
-};
+void* my_gballoc_realloc(void* ptr, size_t size)
+{
+    void* result;
+    currentrealloc_call++;
+    if (whenShallrealloc_fail > 0)
+    {
+        if (currentrealloc_call == whenShallrealloc_fail)
+        {
+            result = NULL;
+        }
+        else
+        {
+            result = realloc(ptr, size);
+        }
+    }
+    else
+    {
+        result = realloc(ptr, size);
+    }
 
+    return result;
+}
 
-#define MAKE_FAIL(API, WHEN) do{C2(C2(whenShall,API), _fail) = C2(C2(current,API),_call) + WHEN;} while(0)
-static size_t currentmalloc_call;
-static size_t whenShallmalloc_fail;
+void my_gballoc_free(void* ptr)
+{
+    free(ptr);
+}
 
-static size_t currentrealloc_call;
-static size_t whenShallrealloc_fail;
+#include "testrunnerswitcher.h"
+#include "umock_c.h"
+#include "umocktypes_charptr.h"
 
-static size_t currentSTRING_construct_call;
-static size_t whenShallSTRING_construct_fail;
+static TEST_MUTEX_HANDLE g_testByTest;
+static TEST_MUTEX_HANDLE g_dllByDll;
 
-static size_t currentSTRING_concat_with_STRING_call;
-static size_t whenShallSTRING_concat_with_STRING_fail;
+#define ENABLE_MOCKS
 
-static size_t currentSTRING_concat_call;
-static size_t whenShallSTRING_concat_fail;
+#include "azure_c_shared_utility/strings.h"
 
-static size_t currentSTRING_new_JSON_call;
-static size_t whenShallSTRING_new_JSON_fail;
+STRING_HANDLE my_STRING_construct(const char* psz)
+{
+    return (STRING_HANDLE)malloc(1);
+}
 
-DEFINE_MICROMOCK_ENUM_TO_STRING(MAP_RESULT, MAP_RESULT_VALUES);
+void my_STRING_delete(STRING_HANDLE handle)
+{
+    free(handle);
+}
+
+STRING_HANDLE my_STRING_new_JSON(const char* source)
+{
+    return (STRING_HANDLE)malloc(1);
+}
+
+#include "azure_c_shared_utility/gballoc.h"
+
+#undef ENABLE_MOCKS
+
+#include "azure_c_shared_utility/map.h"
+
+TEST_DEFINE_ENUM_TYPE(MAP_RESULT, MAP_RESULT_VALUES)
+IMPLEMENT_UMOCK_C_ENUM_TYPE(MAP_RESULT, MAP_RESULT_VALUES);
 
 static int DontAllowCapitalsFilters(const char* mapProperty, const char* mapValue)
 {
@@ -93,120 +128,6 @@ static int DontAllowCapitalsFilters(const char* mapProperty, const char* mapValu
     return result;
 }
 
-TYPED_MOCK_CLASS(CMapMocks, CGlobalMock)
-{
-public:
-
-    MOCK_STATIC_METHOD_1(, void*, gballoc_malloc, size_t, size)
-        void* result2;
-    currentmalloc_call++;
-    if (whenShallmalloc_fail>0)
-    {
-        if (currentmalloc_call == whenShallmalloc_fail)
-        {
-            result2 = NULL;
-        }
-        else
-        {
-            result2 = BASEIMPLEMENTATION::gballoc_malloc(size);
-        }
-    }
-    else
-    {
-        result2 = BASEIMPLEMENTATION::gballoc_malloc(size);
-    }
-    MOCK_METHOD_END(void*, result2);
-
-    MOCK_STATIC_METHOD_2(, void*, gballoc_realloc, void*, ptr, size_t, size)
-        void* result2;
-    currentrealloc_call++;
-    if (whenShallrealloc_fail>0)
-    {
-        if (currentrealloc_call == whenShallrealloc_fail)
-        {
-            result2 = NULL;
-        }
-        else
-        {
-            result2 = BASEIMPLEMENTATION::gballoc_realloc(ptr, size);
-        }
-    }
-    else
-    {
-        result2 = BASEIMPLEMENTATION::gballoc_realloc(ptr, size);
-    }
-    MOCK_METHOD_END(void*, result2);
-
-    MOCK_STATIC_METHOD_1(, void, gballoc_free, void*, ptr)
-        BASEIMPLEMENTATION::gballoc_free(ptr);
-    MOCK_VOID_METHOD_END()
-
-        
-        MOCK_STATIC_METHOD_1(, STRING_HANDLE, STRING_new_JSON, const char*, source)
-        STRING_HANDLE result2;
-    currentSTRING_new_JSON_call++;
-    if (whenShallSTRING_new_JSON_fail > 0)
-    {
-        if (currentSTRING_new_JSON_call == whenShallSTRING_new_JSON_fail)
-        {
-            result2 = (STRING_HANDLE)NULL;
-        }
-        else
-        {
-            result2 = BASEIMPLEMENTATION::STRING_new_JSON(source);
-        }
-    }
-    else
-    {
-        result2 = BASEIMPLEMENTATION::STRING_new_JSON(source);
-    }
-    MOCK_METHOD_END(STRING_HANDLE, result2)
-
-
-        MOCK_STATIC_METHOD_1(, STRING_HANDLE, STRING_construct, const char*, source)
-        STRING_HANDLE result2;
-    currentSTRING_construct_call++;
-    if (whenShallSTRING_construct_fail > 0)
-    {
-        if (currentSTRING_construct_call == whenShallSTRING_construct_fail)
-        {
-            result2 = (STRING_HANDLE)NULL;
-        }
-        else
-        {
-            result2 = BASEIMPLEMENTATION::STRING_construct(source);
-        }
-    }
-    else
-    {
-        result2 = BASEIMPLEMENTATION::STRING_construct(source);
-    }
-    MOCK_METHOD_END(STRING_HANDLE, result2)
-
-        MOCK_STATIC_METHOD_1(, void, STRING_delete, STRING_HANDLE, s)
-        BASEIMPLEMENTATION::STRING_delete(s);
-    MOCK_VOID_METHOD_END()
-
-        MOCK_STATIC_METHOD_2(, int, STRING_concat, STRING_HANDLE, s1, const char*, s2)
-        currentSTRING_concat_call++;
-    MOCK_METHOD_END(int, (((whenShallSTRING_concat_fail > 0) && (currentSTRING_concat_call == whenShallSTRING_concat_fail)) ? __LINE__ : BASEIMPLEMENTATION::STRING_concat(s1, s2)));
-
-    MOCK_STATIC_METHOD_2(, int, STRING_concat_with_STRING, STRING_HANDLE, s1, STRING_HANDLE, s2)
-        currentSTRING_concat_with_STRING_call++;
-    MOCK_METHOD_END(int, (((currentSTRING_concat_with_STRING_call > 0) && (currentSTRING_concat_with_STRING_call == whenShallSTRING_concat_with_STRING_fail)) ? __LINE__ : BASEIMPLEMENTATION::STRING_concat_with_STRING(s1, s2)));
-
-};
-
-DECLARE_GLOBAL_MOCK_METHOD_1(CMapMocks, , void*, gballoc_malloc, size_t, size);
-DECLARE_GLOBAL_MOCK_METHOD_2(CMapMocks, , void*, gballoc_realloc, void*, ptr, size_t, size);
-DECLARE_GLOBAL_MOCK_METHOD_1(CMapMocks, , void, gballoc_free, void*, ptr);
-
-DECLARE_GLOBAL_MOCK_METHOD_1(CMapMocks, , STRING_HANDLE, STRING_construct, const char*, s);
-DECLARE_GLOBAL_MOCK_METHOD_1(CMapMocks, , STRING_HANDLE, STRING_new_JSON, const char*, s);
-DECLARE_GLOBAL_MOCK_METHOD_1(CMapMocks, , void, STRING_delete, STRING_HANDLE, s);
-DECLARE_GLOBAL_MOCK_METHOD_2(CMapMocks, , int, STRING_concat, STRING_HANDLE, s1, const char*, s2);
-DECLARE_GLOBAL_MOCK_METHOD_2(CMapMocks, , int, STRING_concat_with_STRING, STRING_HANDLE, s1, STRING_HANDLE, s2);
-
 /* capacity */
 
 static const char* TEST_REDKEY = "testRedKey";
@@ -221,53 +142,62 @@ static const char* TEST_BLUEVALUE = "cyan";
 static const char* TEST_GREENKEY = "testgreenkey";
 static const char* TEST_GREENVALUE = "green";
 
+void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
+{
+    ASSERT_FAIL("umock_c reported error");
+}
+
 BEGIN_TEST_SUITE(map_unittests)
 
     TEST_SUITE_INITIALIZE(TestClassInitialize)
     {
+        int result;
+
         TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
-        g_testByTest = MicroMockCreateMutex();
+        g_testByTest = TEST_MUTEX_CREATE();
         ASSERT_IS_NOT_NULL(g_testByTest);
+
+        umock_c_init(on_umock_c_error);
+
+        result = umocktypes_charptr_register_types();
+        ASSERT_ARE_EQUAL(int, 0, result);
+
+        REGISTER_ALIAS_TYPE(MAP_HANDLE, void*);
+        REGISTER_ALIAS_TYPE(STRING_HANDLE, void*);
+
+        REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, my_gballoc_malloc);
+        REGISTER_GLOBAL_MOCK_HOOK(gballoc_realloc, my_gballoc_realloc);
+        REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, my_gballoc_free);
+        REGISTER_GLOBAL_MOCK_HOOK(STRING_construct, my_STRING_construct);
+        REGISTER_GLOBAL_MOCK_HOOK(STRING_delete, my_STRING_delete);
+        REGISTER_GLOBAL_MOCK_HOOK(STRING_new_JSON, my_STRING_new_JSON);
     }
 
     TEST_SUITE_CLEANUP(TestClassCleanup)
     {
-        MicroMockDestroyMutex(g_testByTest);
+        TEST_MUTEX_DESTROY(g_testByTest);
         TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
     }
 
     TEST_FUNCTION_INITIALIZE(TestMethodInitialize)
     {
-        if (!MicroMockAcquireMutex(g_testByTest))
+        if (TEST_MUTEX_ACQUIRE(g_testByTest) != 0)
         {
             ASSERT_FAIL("our mutex is ABANDONED. Failure in test framework");
         }
+
+        umock_c_reset_all_calls();
+
         currentmalloc_call = 0;
         whenShallmalloc_fail = 0;
 
         currentrealloc_call = 0;
         whenShallrealloc_fail = 0;
-
-        currentSTRING_construct_call = 0;
-        whenShallSTRING_construct_fail = 0;
-
-        currentSTRING_concat_with_STRING_call = 0;
-        whenShallSTRING_concat_with_STRING_fail = 0;
-
-        currentSTRING_concat_call = 0;
-        whenShallSTRING_concat_fail = 0;
-
-        currentSTRING_new_JSON_call = 0;
-        whenShallSTRING_new_JSON_fail = 0;
-
     }
 
     TEST_FUNCTION_CLEANUP(TestMethodCleanup)
     {
-        if (!MicroMockReleaseMutex(g_testByTest))
-        {
-            ASSERT_FAIL("failure in test framework at ReleaseMutex");
-        }
+        TEST_MUTEX_RELEASE(g_testByTest);
     }
 
     /*Tests_SRS_MAP_02_001: [Map_Create shall create a new, empty map.]*/ /*this tests "create"*/
@@ -276,16 +206,14 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Create_Destroy_succeeds)
     {
         ///arrange
-        CMapMocks mocks;
-        
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG))
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG)) /*keys*/
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)) /*keys*/
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG)) /*values*/
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)) /*values*/
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG)) /*handleData*/
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)) /*handleData*/
             .IgnoreArgument(1);
 
         ///act
@@ -293,6 +221,7 @@ BEGIN_TEST_SUITE(map_unittests)
         Map_Destroy(handle);
 
         ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
     }
@@ -301,31 +230,30 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Destroy_on_non_empty_map_succeeds_1)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
         Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG)) /*free the red key*/
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)) /*free the red key*/
             .ValidateArgumentBuffer(1, TEST_REDKEY, strlen(TEST_REDKEY)+1);
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))/*free the red value*/
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))/*free the red value*/
             .ValidateArgumentBuffer(1, TEST_REDVALUE, strlen(TEST_REDVALUE)+1);
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG)) /*free keys array*/
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)) /*free keys array*/
             .IgnoreArgument(1);
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG)) /*free values array*/
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)) /*free values array*/
             .IgnoreArgument(1);
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG)) /*free handle*/
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)) /*free handle*/
             .IgnoreArgument(1);
 
         ///act
         Map_Destroy(handle);
 
         ///assert
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
     }
@@ -334,32 +262,31 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Destroy_on_non_empty_map_succeeds_2)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
         Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
         Map_AddOrUpdate(handle, TEST_REDKEY, "a"); /*overwrites to something smaller*/
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG)) /*free the red key*/
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)) /*free the red key*/
             .ValidateArgumentBuffer(1, TEST_REDKEY, strlen(TEST_REDKEY)+1);
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))/*free the red value*/
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))/*free the red value*/
             .ValidateArgumentBuffer(1, "a", 2);
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG)) /*free keys array*/
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)) /*free keys array*/
             .IgnoreArgument(1);
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG)) /*free values array*/
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)) /*free values array*/
             .IgnoreArgument(1);
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG)) /*free handle*/
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)) /*free handle*/
             .IgnoreArgument(1);
 
         ///act
         Map_Destroy(handle);
 
         ///assert
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
     }
@@ -368,9 +295,8 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Create_Destroy_succeeds_2)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
         const char*const* keys;
         const char*const* values;
         size_t count;
@@ -383,7 +309,7 @@ BEGIN_TEST_SUITE(map_unittests)
         ASSERT_ARE_EQUAL(size_t, 0, count);
         ASSERT_ARE_EQUAL(void_ptr, NULL, keys);
         ASSERT_ARE_EQUAL(void_ptr, NULL, values);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -393,9 +319,8 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Create_fails_when_malloc_fails)
     {
         ///arrange
-        CMapMocks mocks;
         whenShallmalloc_fail = 1;
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG))
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
 
         ///act
@@ -403,7 +328,7 @@ BEGIN_TEST_SUITE(map_unittests)
 
         ///assert
         ASSERT_IS_NULL(handle);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -413,13 +338,11 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Destroy_with_NULL_argument_does_nothing)
     {
         ///arrange
-        CMapMocks mocks;
-
         ///act
         Map_Destroy(NULL);
 
         ///assert
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
     }
@@ -428,16 +351,15 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Add_with_NULL_parameter_handle_fails)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         ///act
         auto result= Map_Add(NULL, TEST_REDKEY, TEST_REDVALUE);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_INVALIDARG, result);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -447,16 +369,15 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Add_with_NULL_parameter_key_fails)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         ///act
         auto result = Map_Add(handle, NULL, TEST_REDVALUE);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_INVALIDARG, result);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -466,16 +387,15 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Add_with_NULL_parameter_value_fails)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         ///act
         auto result = Map_Add(handle, TEST_REDKEY, NULL);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_INVALIDARG, result);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -486,20 +406,19 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Add_succeeds_1)
     {
         ///arrange
-        CMapMocks mocks;
         const char*const* keys;
         const char*const* values;
         size_t count;
         auto handle = Map_Create(NULL);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(NULL, sizeof(const char*))); /*growing values*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*))); /*growing values*/
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_REDKEY) + 1)); /*copy of red key*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_REDKEY) + 1)); /*copy of red key*/
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_REDVALUE) + 1)); /*copy of red value*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_REDVALUE) + 1)); /*copy of red value*/
 
         ///act
         auto result1 = Map_Add(handle, TEST_REDKEY, TEST_REDVALUE);
@@ -511,7 +430,7 @@ BEGIN_TEST_SUITE(map_unittests)
         ASSERT_ARE_EQUAL(size_t, 1, count);
         ASSERT_ARE_EQUAL(char_ptr, TEST_REDKEY, keys[0]);
         ASSERT_ARE_EQUAL(char_ptr, TEST_REDVALUE, values[0]);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -525,30 +444,29 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Add_succeeds_2)
     {
         ///arrange
-        CMapMocks mocks;
         const char*const* keys;
         const char*const* values;
         size_t count;
         auto handle = Map_Create(NULL);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(NULL, sizeof(const char*))); /*growing values*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*))); /*growing values*/
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_REDKEY) + 1)); /*copy of red key*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_REDKEY) + 1)); /*copy of red key*/
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_REDVALUE) + 1)); /*copy of red value*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_REDVALUE) + 1)); /*copy of red value*/
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(IGNORED_PTR_ARG, 2*sizeof(const char*))) /*growing keys*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, 2*sizeof(const char*))) /*growing keys*/
             .IgnoreArgument(1);
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(IGNORED_PTR_ARG, 2*sizeof(const char*))) /*growing values*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, 2*sizeof(const char*))) /*growing values*/
             .IgnoreArgument(1);
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_BLUEKEY) + 1)); /*copy of blue key*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_BLUEKEY) + 1)); /*copy of blue key*/
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_BLUEVALUE) + 1)); /*copy of blue value*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_BLUEVALUE) + 1)); /*copy of blue value*/
 
         ///act
         auto result1 = Map_Add(handle, TEST_REDKEY, TEST_REDVALUE);
@@ -565,7 +483,7 @@ BEGIN_TEST_SUITE(map_unittests)
         ASSERT_ARE_EQUAL(char_ptr, TEST_BLUEKEY, keys[1]);
         ASSERT_ARE_EQUAL(char_ptr, TEST_BLUEVALUE, values[1]);
 
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -575,38 +493,37 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Add_fails_when_gballoc_fails_1)
     {
         ///arrange
-        CMapMocks mocks;
         const char*const* keys;
         const char*const* values;
         size_t count;
         auto handle = Map_Create(NULL);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(NULL, sizeof(const char*))); /*growing values*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*))); /*growing values*/
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_REDKEY) + 1)); /*copy of red key*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_REDKEY) + 1)); /*copy of red key*/
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_REDVALUE) + 1)); /*copy of red value*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_REDVALUE) + 1)); /*copy of red value*/
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(IGNORED_PTR_ARG, 2 * sizeof(const char*))) /*growing keys*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, 2 * sizeof(const char*))) /*growing keys*/
             .IgnoreArgument(1);
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(IGNORED_PTR_ARG, 2 * sizeof(const char*))) /*growing values*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, 2 * sizeof(const char*))) /*growing values*/
             .IgnoreArgument(1);
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_BLUEKEY) + 1)); /*copy of blue key*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_BLUEKEY) + 1)); /*copy of blue key*/
         
         whenShallmalloc_fail =currentmalloc_call+ 4;
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_BLUEVALUE) + 1)); /*copy of blue value*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_BLUEVALUE) + 1)); /*copy of blue value*/
 
         /*below are undo actions*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG)) /*undo copy of blue key*/
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)) /*undo copy of blue key*/
             .ValidateArgumentBuffer(1, TEST_BLUEKEY, strlen(TEST_BLUEKEY) + 1);
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(IGNORED_PTR_ARG, 1 * sizeof(const char*))) /*undo growing keys*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, 1 * sizeof(const char*))) /*undo growing keys*/
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(IGNORED_PTR_ARG, 1 * sizeof(const char*))) /*undo growing values*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, 1 * sizeof(const char*))) /*undo growing values*/
             .IgnoreArgument(1);
 
 
@@ -623,7 +540,7 @@ BEGIN_TEST_SUITE(map_unittests)
         ASSERT_ARE_EQUAL(char_ptr, TEST_REDKEY, keys[0]);
         ASSERT_ARE_EQUAL(char_ptr, TEST_REDVALUE, values[0]);
 
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -633,34 +550,33 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Add_fails_when_gballoc_fails_2)
     {
         ///arrange
-        CMapMocks mocks;
         const char*const* keys;
         const char*const* values;
         size_t count;
         auto handle = Map_Create(NULL);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(NULL, sizeof(const char*))); /*growing values*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*))); /*growing values*/
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_REDKEY) + 1)); /*copy of red key*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_REDKEY) + 1)); /*copy of red key*/
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_REDVALUE) + 1)); /*copy of red value*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_REDVALUE) + 1)); /*copy of red value*/
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(IGNORED_PTR_ARG, 2 * sizeof(const char*))) /*growing keys*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, 2 * sizeof(const char*))) /*growing keys*/
             .IgnoreArgument(1);
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(IGNORED_PTR_ARG, 2 * sizeof(const char*))) /*growing values*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, 2 * sizeof(const char*))) /*growing values*/
             .IgnoreArgument(1);
 
         whenShallmalloc_fail = currentmalloc_call + 3;
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_BLUEKEY) + 1)); /*copy of blue key*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_BLUEKEY) + 1)); /*copy of blue key*/
 
         /*below are undo actions*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(IGNORED_PTR_ARG, 1 * sizeof(const char*))) /*undo growing keys*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, 1 * sizeof(const char*))) /*undo growing keys*/
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(IGNORED_PTR_ARG, 1 * sizeof(const char*))) /*undo growing values*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, 1 * sizeof(const char*))) /*undo growing values*/
             .IgnoreArgument(1);
 
 
@@ -677,7 +593,7 @@ BEGIN_TEST_SUITE(map_unittests)
         ASSERT_ARE_EQUAL(char_ptr, TEST_REDKEY, keys[0]);
         ASSERT_ARE_EQUAL(char_ptr, TEST_REDVALUE, values[0]);
 
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -687,30 +603,29 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Add_fails_when_gballoc_fails_3)
     {
         ///arrange
-        CMapMocks mocks;
         const char*const* keys;
         const char*const* values;
         size_t count;
         auto handle = Map_Create(NULL);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(NULL, sizeof(const char*))); /*growing values*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*))); /*growing values*/
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_REDKEY) + 1)); /*copy of red key*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_REDKEY) + 1)); /*copy of red key*/
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_REDVALUE) + 1)); /*copy of red value*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_REDVALUE) + 1)); /*copy of red value*/
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(IGNORED_PTR_ARG, 2 * sizeof(const char*))) /*growing keys*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, 2 * sizeof(const char*))) /*growing keys*/
             .IgnoreArgument(1);
 
         whenShallrealloc_fail = currentrealloc_call + 4;
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(IGNORED_PTR_ARG, 2 * sizeof(const char*))) /*growing values*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, 2 * sizeof(const char*))) /*growing values*/
             .IgnoreArgument(1);
 
         /*below are undo actions*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(IGNORED_PTR_ARG, 1 * sizeof(const char*))) /*undo growing keys*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, 1 * sizeof(const char*))) /*undo growing keys*/
             .IgnoreArgument(1);
 
         ///act
@@ -726,7 +641,7 @@ BEGIN_TEST_SUITE(map_unittests)
         ASSERT_ARE_EQUAL(char_ptr, TEST_REDKEY, keys[0]);
         ASSERT_ARE_EQUAL(char_ptr, TEST_REDVALUE, values[0]);
 
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -736,23 +651,22 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Add_fails_when_gballoc_fails_4)
     {
         ///arrange
-        CMapMocks mocks;
         const char*const* keys;
         const char*const* values;
         size_t count;
         auto handle = Map_Create(NULL);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(NULL, sizeof(const char*))); /*growing values*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*))); /*growing values*/
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_REDKEY) + 1)); /*copy of red key*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_REDKEY) + 1)); /*copy of red key*/
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_REDVALUE) + 1)); /*copy of red value*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_REDVALUE) + 1)); /*copy of red value*/
 
         whenShallrealloc_fail = currentrealloc_call + 3;
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(IGNORED_PTR_ARG, 2 * sizeof(const char*))) /*growing keys*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, 2 * sizeof(const char*))) /*growing keys*/
             .IgnoreArgument(1);
 
         /*below are undo actions*/
@@ -770,7 +684,7 @@ BEGIN_TEST_SUITE(map_unittests)
         ASSERT_ARE_EQUAL(char_ptr, TEST_REDKEY, keys[0]);
         ASSERT_ARE_EQUAL(char_ptr, TEST_REDVALUE, values[0]);
 
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -780,28 +694,27 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Add_fails_when_gballoc_fails_5)
     {
         ///arrange
-        CMapMocks mocks;
         const char*const* keys;
         const char*const* values;
         size_t count;
         auto handle = Map_Create(NULL);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(NULL, sizeof(const char*))); /*growing values*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*))); /*growing values*/
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_REDKEY) + 1)); /*copy of red key*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_REDKEY) + 1)); /*copy of red key*/
 
         whenShallmalloc_fail = currentmalloc_call + 2;
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_REDVALUE) + 1)); /*copy of red value*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_REDVALUE) + 1)); /*copy of red value*/
 
         /*below are undo actions*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG)) /*undo copy of red key*/
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)) /*undo copy of red key*/
             .ValidateArgumentBuffer(1, TEST_REDKEY, strlen(TEST_REDKEY) + 1);
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG)) /*undo growing keys*/
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)) /*undo growing keys*/
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))/*undo growing values*/
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))/*undo growing values*/
             .IgnoreArgument(1);
 
         ///act
@@ -813,7 +726,7 @@ BEGIN_TEST_SUITE(map_unittests)
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_OK, result3);
         ASSERT_ARE_EQUAL(size_t, 0, count);
 
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -823,24 +736,23 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Add_fails_when_gballoc_fails_6)
     {
         ///arrange
-        CMapMocks mocks;
         const char*const* keys;
         const char*const* values;
         size_t count;
         auto handle = Map_Create(NULL);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(NULL, sizeof(const char*))); /*growing values*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*))); /*growing values*/
 
         whenShallmalloc_fail = currentmalloc_call + 1;
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_REDKEY) + 1)); /*copy of red key*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_REDKEY) + 1)); /*copy of red key*/
 
         /*below are undo actions*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG)) /*undo growing keys*/
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)) /*undo growing keys*/
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))/*undo growing values*/
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))/*undo growing values*/
             .IgnoreArgument(1);
 
         ///act
@@ -852,7 +764,7 @@ BEGIN_TEST_SUITE(map_unittests)
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_OK, result3);
         ASSERT_ARE_EQUAL(size_t, 0, count);
 
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -862,20 +774,19 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Add_fails_when_gballoc_fails_7)
     {
         ///arrange
-        CMapMocks mocks;
         const char*const* keys;
         const char*const* values;
         size_t count;
         auto handle = Map_Create(NULL);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
 
         whenShallrealloc_fail = currentrealloc_call + 2;
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(NULL, sizeof(const char*))); /*growing values*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*))); /*growing values*/
 
         /*below are undo actions*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG)) /*undo growing keys*/
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)) /*undo growing keys*/
             .IgnoreArgument(1);
 
         ///act
@@ -887,7 +798,7 @@ BEGIN_TEST_SUITE(map_unittests)
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_OK, result3);
         ASSERT_ARE_EQUAL(size_t, 0, count);
 
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -897,15 +808,14 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Add_fails_when_gballoc_fails_8)
     {
         ///arrange
-        CMapMocks mocks;
         const char*const* keys;
         const char*const* values;
         size_t count;
         auto handle = Map_Create(NULL);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         whenShallrealloc_fail = currentrealloc_call + 1;
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
 
         /*below are undo actions*/ /*none*/
 
@@ -918,7 +828,7 @@ BEGIN_TEST_SUITE(map_unittests)
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_OK, result3);
         ASSERT_ARE_EQUAL(size_t, 0, count);
 
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -928,13 +838,12 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Add_with_existing_key_fails_1)
     {
         ///arrange
-        CMapMocks mocks;
         const char*const* keys;
         const char*const* values;
         size_t count;
         auto handle = Map_Create(NULL);
         (void)Map_Add(handle, TEST_REDKEY, TEST_REDVALUE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         /*below are undo actions*/ /*none*/
 
@@ -949,7 +858,7 @@ BEGIN_TEST_SUITE(map_unittests)
         ASSERT_ARE_EQUAL(char_ptr, TEST_REDKEY, keys[0]);
         ASSERT_ARE_EQUAL(char_ptr, TEST_REDVALUE, values[0]);
 
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -959,14 +868,13 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Add_with_existing_key_fails_2)
     {
         ///arrange
-        CMapMocks mocks;
         const char*const* keys;
         const char*const* values;
         size_t count;
         auto handle = Map_Create(NULL);
         (void)Map_Add(handle, TEST_REDKEY, TEST_REDVALUE);
         (void)Map_Add(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         /*below are undo actions*/ /*none*/
 
@@ -983,7 +891,7 @@ BEGIN_TEST_SUITE(map_unittests)
         ASSERT_ARE_EQUAL(char_ptr, TEST_BLUEKEY, keys[1]);
         ASSERT_ARE_EQUAL(char_ptr, TEST_BLUEVALUE, values[1]);
 
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -993,15 +901,13 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_AddOrUpdate_with_NULL_parameter_handle_fails)
     {
         ///arrange
-        CMapMocks mocks;
-        mocks.ResetAllCalls();
 
         ///act
         auto result1 = Map_AddOrUpdate(NULL, TEST_BLUEKEY, TEST_YELLOWVALUE);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_INVALIDARG, result1);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
     }
@@ -1010,16 +916,15 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_AddOrUpdate_with_NULL_key_handle_fails)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         ///act
         auto result1 = Map_AddOrUpdate(handle, NULL, TEST_YELLOWVALUE);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_INVALIDARG, result1);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -1029,16 +934,15 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_AddOrUpdate_with_NULL_value_handle_fails)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         ///act
         auto result1 = Map_AddOrUpdate(handle, TEST_REDKEY, NULL);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_INVALIDARG, result1);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -1049,17 +953,16 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_AddOrUpdate_with_1_pair_succeeded)
     {
         ///arrange
-        CMapMocks mocks;
         const char*const* keys;
         const char*const* values;
         size_t count;
         auto handle = Map_Create(NULL);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(NULL, sizeof(const char*))); /*growing values*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_REDKEY)+1)); /*copy of red key*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_REDVALUE) + 1)); /*copy of red value*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*))); /*growing values*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_REDKEY)+1)); /*copy of red key*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_REDVALUE) + 1)); /*copy of red value*/
 
         ///act
         auto result1 = Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
@@ -1071,7 +974,7 @@ BEGIN_TEST_SUITE(map_unittests)
         ASSERT_ARE_EQUAL(size_t, 1, count);
         ASSERT_ARE_EQUAL(char_ptr, TEST_REDKEY, keys[0]);
         ASSERT_ARE_EQUAL(char_ptr, TEST_REDVALUE, values[0]);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -1081,24 +984,23 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_AddOrUpdate_with_2_pair_succeeded)
     {
         ///arrange
-        CMapMocks mocks;
         const char*const* keys;
         const char*const* values;
         size_t count;
         auto handle = Map_Create(NULL);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(NULL, sizeof(const char*))); /*growing values*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_REDKEY) + 1)); /*copy of red key*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_REDVALUE) + 1)); /*copy of red value*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*))); /*growing values*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_REDKEY) + 1)); /*copy of red key*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_REDVALUE) + 1)); /*copy of red value*/
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(IGNORED_PTR_ARG, 2 * sizeof(const char*))) /*growing keys*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, 2 * sizeof(const char*))) /*growing keys*/
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(IGNORED_PTR_ARG, 2 * sizeof(const char*))) /*growing values*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, 2 * sizeof(const char*))) /*growing values*/
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_BLUEKEY) + 1)); /*copy of red key*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_BLUEVALUE) + 1)); /*copy of red value*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_BLUEKEY) + 1)); /*copy of red key*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_BLUEVALUE) + 1)); /*copy of red value*/
 
         ///act
         auto result1 = Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
@@ -1115,7 +1017,7 @@ BEGIN_TEST_SUITE(map_unittests)
         ASSERT_ARE_EQUAL(char_ptr, TEST_BLUEKEY, keys[1]);
         ASSERT_ARE_EQUAL(char_ptr, TEST_BLUEVALUE, values[1]);
 
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -1125,33 +1027,32 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_AddOrUpdate_with_2_differnt_pair_fails_when_gballoc_fails_1)
     {
         ///arrange
-        CMapMocks mocks;
         const char*const* keys;
         const char*const* values;
         size_t count;
         auto handle = Map_Create(NULL);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(NULL, sizeof(const char*))); /*growing values*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_REDKEY) + 1)); /*copy of red key*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_REDVALUE) + 1)); /*copy of red value*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*))); /*growing values*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_REDKEY) + 1)); /*copy of red key*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_REDVALUE) + 1)); /*copy of red value*/
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(IGNORED_PTR_ARG, 2 * sizeof(const char*))) /*growing keys*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, 2 * sizeof(const char*))) /*growing keys*/
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(IGNORED_PTR_ARG, 2 * sizeof(const char*))) /*growing values*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, 2 * sizeof(const char*))) /*growing values*/
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_BLUEKEY) + 1)); /*copy of red key*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_BLUEKEY) + 1)); /*copy of red key*/
 
         whenShallmalloc_fail = currentmalloc_call + 4;
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_BLUEVALUE) + 1)); /*copy of red value*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_BLUEVALUE) + 1)); /*copy of red value*/
 
         /*below are undo actions*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG)) /*undo blue key value*/
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)) /*undo blue key value*/
             .ValidateArgumentBuffer(1, TEST_BLUEKEY, strlen(TEST_BLUEKEY) + 1);
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(IGNORED_PTR_ARG, 1 * sizeof(const char*))) /*undo growing keys*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, 1 * sizeof(const char*))) /*undo growing keys*/
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(IGNORED_PTR_ARG, 1 * sizeof(const char*))) /*undo growing values*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, 1 * sizeof(const char*))) /*undo growing values*/
             .IgnoreArgument(1);
 
         ///act
@@ -1166,7 +1067,7 @@ BEGIN_TEST_SUITE(map_unittests)
         ASSERT_ARE_EQUAL(size_t, 1, count);
         ASSERT_ARE_EQUAL(char_ptr, TEST_REDKEY, keys[0]);
         ASSERT_ARE_EQUAL(char_ptr, TEST_REDVALUE, values[0]);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -1176,29 +1077,28 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_AddOrUpdate_with_2_differnt_pair_fails_when_gballoc_fails_2)
     {
         ///arrange
-        CMapMocks mocks;
         const char*const* keys;
         const char*const* values;
         size_t count;
         auto handle = Map_Create(NULL);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(NULL, sizeof(const char*))); /*growing values*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_REDKEY) + 1)); /*copy of red key*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_REDVALUE) + 1)); /*copy of red value*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*))); /*growing values*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_REDKEY) + 1)); /*copy of red key*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_REDVALUE) + 1)); /*copy of red value*/
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(IGNORED_PTR_ARG, 2 * sizeof(const char*))) /*growing keys*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, 2 * sizeof(const char*))) /*growing keys*/
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(IGNORED_PTR_ARG, 2 * sizeof(const char*))) /*growing values*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, 2 * sizeof(const char*))) /*growing values*/
             .IgnoreArgument(1);
         whenShallmalloc_fail = currentmalloc_call + 3;
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_BLUEKEY) + 1)); /*copy of red key*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_BLUEKEY) + 1)); /*copy of red key*/
 
         /*below are undo actions*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(IGNORED_PTR_ARG, 1 * sizeof(const char*))) /*undo growing keys*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, 1 * sizeof(const char*))) /*undo growing keys*/
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(IGNORED_PTR_ARG, 1 * sizeof(const char*))) /*undo growing values*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, 1 * sizeof(const char*))) /*undo growing values*/
             .IgnoreArgument(1);
 
         ///act
@@ -1213,7 +1113,7 @@ BEGIN_TEST_SUITE(map_unittests)
         ASSERT_ARE_EQUAL(size_t, 1, count);
         ASSERT_ARE_EQUAL(char_ptr, TEST_REDKEY, keys[0]);
         ASSERT_ARE_EQUAL(char_ptr, TEST_REDVALUE, values[0]);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -1223,26 +1123,25 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_AddOrUpdate_with_2_differnt_pair_fails_when_gballoc_fails_3)
     {
         ///arrange
-        CMapMocks mocks;
         const char*const* keys;
         const char*const* values;
         size_t count;
         auto handle = Map_Create(NULL);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(NULL, sizeof(const char*))); /*growing values*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_REDKEY) + 1)); /*copy of red key*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_REDVALUE) + 1)); /*copy of red value*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*))); /*growing values*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_REDKEY) + 1)); /*copy of red key*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_REDVALUE) + 1)); /*copy of red value*/
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(IGNORED_PTR_ARG, 2 * sizeof(const char*))) /*growing keys*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, 2 * sizeof(const char*))) /*growing keys*/
             .IgnoreArgument(1);
         whenShallrealloc_fail = currentrealloc_call + 4;
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(IGNORED_PTR_ARG, 2 * sizeof(const char*))) /*growing values*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, 2 * sizeof(const char*))) /*growing values*/
             .IgnoreArgument(1);
 
         /*below are undo actions*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(IGNORED_PTR_ARG, 1 * sizeof(const char*))) /*undo growing keys*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, 1 * sizeof(const char*))) /*undo growing keys*/
             .IgnoreArgument(1);
 
         ///act
@@ -1257,7 +1156,7 @@ BEGIN_TEST_SUITE(map_unittests)
         ASSERT_ARE_EQUAL(size_t, 1, count);
         ASSERT_ARE_EQUAL(char_ptr, TEST_REDKEY, keys[0]);
         ASSERT_ARE_EQUAL(char_ptr, TEST_REDVALUE, values[0]);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -1267,20 +1166,19 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_AddOrUpdate_with_2_differnt_pair_fails_when_gballoc_fails_4)
     {
         ///arrange
-        CMapMocks mocks;
         const char*const* keys;
         const char*const* values;
         size_t count;
         auto handle = Map_Create(NULL);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(NULL, sizeof(const char*))); /*growing values*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_REDKEY) + 1)); /*copy of red key*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_REDVALUE) + 1)); /*copy of red value*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*))); /*growing values*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_REDKEY) + 1)); /*copy of red key*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_REDVALUE) + 1)); /*copy of red value*/
 
         whenShallrealloc_fail = currentrealloc_call + 3;
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(IGNORED_PTR_ARG, 2 * sizeof(const char*))) /*growing keys*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, 2 * sizeof(const char*))) /*growing keys*/
             .IgnoreArgument(1);
         
         /*below are undo actions*/ /*none*/
@@ -1297,7 +1195,7 @@ BEGIN_TEST_SUITE(map_unittests)
         ASSERT_ARE_EQUAL(size_t, 1, count);
         ASSERT_ARE_EQUAL(char_ptr, TEST_REDKEY, keys[0]);
         ASSERT_ARE_EQUAL(char_ptr, TEST_REDVALUE, values[0]);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -1307,25 +1205,24 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_AddOrUpdate_with_2_differnt_pair_fails_when_gballoc_fails_5)
     {
         ///arrange
-        CMapMocks mocks;
         const char*const* keys;
         const char*const* values;
         size_t count;
         auto handle = Map_Create(NULL);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(NULL, sizeof(const char*))); /*growing values*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_REDKEY) + 1)); /*copy of red key*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*))); /*growing values*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_REDKEY) + 1)); /*copy of red key*/
         whenShallmalloc_fail = currentmalloc_call + 2;
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_REDVALUE) + 1)); /*copy of red value*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_REDVALUE) + 1)); /*copy of red value*/
 
         /*below are undo actions*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG)) /*undo red key value*/
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)) /*undo red key value*/
             .ValidateArgumentBuffer(1, TEST_REDKEY, strlen(TEST_REDKEY) + 1);
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG)) /*undo growing keys*/
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)) /*undo growing keys*/
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG)) /*undo growing values*/
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)) /*undo growing values*/
             .IgnoreArgument(1);
 
         ///act
@@ -1336,7 +1233,7 @@ BEGIN_TEST_SUITE(map_unittests)
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_ERROR, result1);
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_OK, result3);
         ASSERT_ARE_EQUAL(size_t, 0, count);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -1346,23 +1243,22 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_AddOrUpdate_with_2_differnt_pair_fails_when_gballoc_fails_6)
     {
         ///arrange
-        CMapMocks mocks;
         const char*const* keys;
         const char*const* values;
         size_t count;
         auto handle = Map_Create(NULL);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(NULL, sizeof(const char*))); /*growing values*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*))); /*growing values*/
 
         whenShallmalloc_fail = currentmalloc_call + 1;
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_REDKEY) + 1)); /*copy of red key*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_REDKEY) + 1)); /*copy of red key*/
         
         /*below are undo actions*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG)) /*undo growing keys*/
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)) /*undo growing keys*/
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG)) /*undo growing values*/
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)) /*undo growing values*/
             .IgnoreArgument(1);
 
         ///act
@@ -1373,7 +1269,7 @@ BEGIN_TEST_SUITE(map_unittests)
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_ERROR, result1);
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_OK, result3);
         ASSERT_ARE_EQUAL(size_t, 0, count);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -1383,19 +1279,18 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_AddOrUpdate_with_2_differnt_pair_fails_when_gballoc_fails_7)
     {
         ///arrange
-        CMapMocks mocks;
         const char*const* keys;
         const char*const* values;
         size_t count;
         auto handle = Map_Create(NULL);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
         whenShallrealloc_fail = currentrealloc_call + 2;
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(NULL, sizeof(const char*))); /*growing values*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*))); /*growing values*/
 
         /*below are undo actions*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG)) /*undo growing keys*/
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)) /*undo growing keys*/
             .IgnoreArgument(1);
 
         ///act
@@ -1406,7 +1301,7 @@ BEGIN_TEST_SUITE(map_unittests)
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_ERROR, result1);
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_OK, result3);
         ASSERT_ARE_EQUAL(size_t, 0, count);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -1416,15 +1311,14 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_AddOrUpdate_with_2_differnt_pair_fails_when_gballoc_fails_8)
     {
         ///arrange
-        CMapMocks mocks;
         const char*const* keys;
         const char*const* values;
         size_t count;
         auto handle = Map_Create(NULL);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         whenShallrealloc_fail = currentrealloc_call + 1;
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
 
         /*below are undo actions*/
 
@@ -1436,7 +1330,7 @@ BEGIN_TEST_SUITE(map_unittests)
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_ERROR, result1);
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_OK, result3);
         ASSERT_ARE_EQUAL(size_t, 0, count);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -1446,16 +1340,15 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_AddOrUpdate_with_2_pair_overwrites_firstValue_succeeds)
     {
         ///arrange
-        CMapMocks mocks;
         const char*const* keys;
         const char*const* values;
         size_t count;
         auto handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
         (void)Map_AddOrUpdate(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(IGNORED_PTR_ARG, strlen(TEST_YELLOWVALUE) + 1)) /*changing redkey value to yellow*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, strlen(TEST_YELLOWVALUE) + 1)) /*changing redkey value to yellow*/
             .ValidateArgumentBuffer(1, TEST_REDVALUE, strlen(TEST_REDVALUE) + 1);
 
         ///act
@@ -1472,7 +1365,7 @@ BEGIN_TEST_SUITE(map_unittests)
         ASSERT_ARE_EQUAL(char_ptr, TEST_BLUEKEY, keys[1]);
         ASSERT_ARE_EQUAL(char_ptr, TEST_BLUEVALUE, values[1]);
 
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -1482,17 +1375,16 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_AddOrUpdate_with_2_pair_overwrites_firstValue_when_gballoc_fails_it_does_not_change_the_value)
     {
         ///arrange
-        CMapMocks mocks;
         const char*const* keys;
         const char*const* values;
         size_t count;
         auto handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
         (void)Map_AddOrUpdate(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         whenShallrealloc_fail = currentrealloc_call + 1;
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(IGNORED_PTR_ARG, strlen(TEST_YELLOWVALUE) + 1)) /*changing redkey value to yellow*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, strlen(TEST_YELLOWVALUE) + 1)) /*changing redkey value to yellow*/
             .ValidateArgumentBuffer(1, TEST_REDVALUE, strlen(TEST_REDVALUE) + 1);
 
         ///act
@@ -1508,7 +1400,7 @@ BEGIN_TEST_SUITE(map_unittests)
         ASSERT_ARE_EQUAL(char_ptr, TEST_BLUEKEY, keys[1]);
         ASSERT_ARE_EQUAL(char_ptr, TEST_BLUEVALUE, values[1]);
 
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -1518,16 +1410,15 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_AddOrUpdate_with_2_pair_overwrites_secondValue)
     {
         ///arrange
-        CMapMocks mocks;
         const char*const* keys;
         const char*const* values;
         size_t count;
         auto handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
         (void)Map_AddOrUpdate(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(IGNORED_PTR_ARG, strlen(TEST_YELLOWVALUE) + 1)) /*changing bluekey value to yellow*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, strlen(TEST_YELLOWVALUE) + 1)) /*changing bluekey value to yellow*/
             .ValidateArgumentBuffer(1, TEST_BLUEVALUE, strlen(TEST_BLUEVALUE) + 1);
 
         ///act
@@ -1543,7 +1434,7 @@ BEGIN_TEST_SUITE(map_unittests)
         ASSERT_ARE_EQUAL(char_ptr, TEST_BLUEKEY, keys[1]);
         ASSERT_ARE_EQUAL(char_ptr, TEST_YELLOWVALUE, values[1]);
 
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -1553,17 +1444,16 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_AddOrUpdate_with_2_pair_overwrites_secondValue_doesn_not_change_the_value_when_gballoc_fails)
     {
         ///arrange
-        CMapMocks mocks;
         const char*const* keys;
         const char*const* values;
         size_t count;
         auto handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
         (void)Map_AddOrUpdate(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         whenShallrealloc_fail = currentrealloc_call + 1;
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(IGNORED_PTR_ARG, strlen(TEST_YELLOWVALUE) + 1)) /*changing bluekey value to yellow*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, strlen(TEST_YELLOWVALUE) + 1)) /*changing bluekey value to yellow*/
             .ValidateArgumentBuffer(1, TEST_BLUEVALUE, strlen(TEST_BLUEVALUE) + 1);
 
         ///act
@@ -1579,7 +1469,7 @@ BEGIN_TEST_SUITE(map_unittests)
         ASSERT_ARE_EQUAL(char_ptr, TEST_BLUEKEY, keys[1]);
         ASSERT_ARE_EQUAL(char_ptr, TEST_BLUEVALUE, values[1]);
 
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -1589,14 +1479,13 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Delete_with_NULL_handle_fails)
     {
         ///arrange
-        CMapMocks mocks;
         
         ///act
         auto result1 = Map_Delete(NULL, TEST_BLUEKEY);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_INVALIDARG, result1);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
     }
@@ -1605,16 +1494,15 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Delete_with_NULL_key_fails)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         ///act
         auto result1 = Map_Delete(handle, NULL);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_INVALIDARG, result1);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -1624,16 +1512,15 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Delete_with_not_found_key_succeeds_1)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         ///act
         auto result1 = Map_Delete(handle, TEST_REDKEY);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_KEYNOTFOUND, result1);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -1643,17 +1530,16 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Delete_with_not_found_key_succeeds_2)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, TEST_YELLOWKEY, TEST_YELLOWVALUE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         ///act
         auto result1 = Map_Delete(handle, TEST_REDKEY);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_KEYNOTFOUND, result1);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -1663,24 +1549,23 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Delete_with_1_found_key_succeeds)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
         const char*const* keys;
         const char*const* values;
         size_t count;
         (void)Map_AddOrUpdate(handle, TEST_YELLOWKEY, TEST_YELLOWVALUE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG)) /*freeing yellow key*/
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)) /*freeing yellow key*/
             .ValidateArgumentBuffer(1, TEST_YELLOWKEY, strlen(TEST_YELLOWKEY) + 1);
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG)) /*freeing yellow value*/
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)) /*freeing yellow value*/
             .ValidateArgumentBuffer(1, TEST_YELLOWVALUE, strlen(TEST_YELLOWVALUE) + 1);
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG)) /*ungrowing values*/
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)) /*ungrowing values*/
             .IgnoreArgument(1);
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG)) /*ungowing keys*/
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)) /*ungowing keys*/
             .IgnoreArgument(1);
 
         ///act
@@ -1691,7 +1576,7 @@ BEGIN_TEST_SUITE(map_unittests)
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_OK, result1);
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_OK, result3);
         ASSERT_ARE_EQUAL(size_t, 0, count);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -1701,7 +1586,6 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Delete_with_1_found_key_succeeds_2)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
         const char*const* keys;
         const char*const* values;
@@ -1709,18 +1593,18 @@ BEGIN_TEST_SUITE(map_unittests)
         (void)Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
         (void)Map_AddOrUpdate(handle, TEST_YELLOWKEY, TEST_YELLOWVALUE);
         
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG)) /*freeing yellow key*/
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)) /*freeing yellow key*/
             .ValidateArgumentBuffer(1, TEST_YELLOWKEY, strlen(TEST_YELLOWKEY) + 1);
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG)) /*freeing yellow value*/
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)) /*freeing yellow value*/
             .ValidateArgumentBuffer(1, TEST_YELLOWVALUE, strlen(TEST_YELLOWVALUE) + 1);
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(IGNORED_PTR_ARG, 1* sizeof(const char*))) /*ungrowing values*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, 1* sizeof(const char*))) /*ungrowing values*/
             .IgnoreArgument(1);
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(IGNORED_PTR_ARG, 1 * sizeof(const char*))) /*ungrowing keys*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, 1 * sizeof(const char*))) /*ungrowing keys*/
             .IgnoreArgument(1);
 
         ///act
@@ -1733,7 +1617,7 @@ BEGIN_TEST_SUITE(map_unittests)
         ASSERT_ARE_EQUAL(size_t, 1, count);
         ASSERT_ARE_EQUAL(char_ptr, TEST_REDKEY, keys[0]);
         ASSERT_ARE_EQUAL(char_ptr, TEST_REDVALUE, values[0]);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -1743,7 +1627,6 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Delete_with_1_found_key_succeeds_3)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
         const char*const* keys;
         const char*const* values;
@@ -1751,18 +1634,18 @@ BEGIN_TEST_SUITE(map_unittests)
         (void)Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
         (void)Map_AddOrUpdate(handle, TEST_YELLOWKEY, TEST_YELLOWVALUE);
 
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG)) /*freeing yellow key*/
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)) /*freeing yellow key*/
             .ValidateArgumentBuffer(1, TEST_REDKEY, strlen(TEST_REDKEY) + 1);
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG)) /*freeing yellow value*/
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)) /*freeing yellow value*/
             .ValidateArgumentBuffer(1, TEST_REDVALUE, strlen(TEST_REDVALUE) + 1);
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(IGNORED_PTR_ARG, 1 * sizeof(const char*))) /*ungrowing values*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, 1 * sizeof(const char*))) /*ungrowing values*/
             .IgnoreArgument(1);
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(IGNORED_PTR_ARG, 1 * sizeof(const char*))) /*ungrowing keys*/
+        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, 1 * sizeof(const char*))) /*ungrowing keys*/
             .IgnoreArgument(1);
 
         ///act
@@ -1775,7 +1658,7 @@ BEGIN_TEST_SUITE(map_unittests)
         ASSERT_ARE_EQUAL(size_t, 1, count);
         ASSERT_ARE_EQUAL(char_ptr, TEST_YELLOWKEY, keys[0]);
         ASSERT_ARE_EQUAL(char_ptr, TEST_YELLOWVALUE, values[0]);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -1785,16 +1668,15 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ContainsKey_fails_with_invalid_arg_1)
     {
         ///arrange
-        CMapMocks mocks;
         bool exists;
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         ///act
         auto result1 = Map_ContainsKey(NULL,TEST_REDKEY, &exists);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_INVALIDARG, result1);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
     }
@@ -1803,17 +1685,16 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ContainsKey_fails_with_invalid_arg_2)
     {
         ///arrange
-        CMapMocks mocks;
         bool exists;
         auto handle = Map_Create(NULL);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         ///act
         auto result1 = Map_ContainsKey(handle, NULL, &exists);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_INVALIDARG, result1);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -1823,16 +1704,15 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ContainsKey_fails_with_invalid_arg_3)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         ///act
         auto result1 = Map_ContainsKey(handle, TEST_REDKEY, NULL);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_INVALIDARG, result1);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -1843,11 +1723,10 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ContainsKey_fails_with_known_key_succeeds)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
         bool e1, e2;
         (void)Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         ///act
         auto result1 = Map_ContainsKey(handle, TEST_REDKEY, &e1);
@@ -1859,7 +1738,7 @@ BEGIN_TEST_SUITE(map_unittests)
 
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_OK, result2);
         ASSERT_IS_FALSE(e2);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -1869,16 +1748,15 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ContainsValue_fails_with_NULL_handle)
     {
         ///arrange
-        CMapMocks mocks;
         bool e1;
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         ///act
         auto result1 = Map_ContainsValue(NULL, TEST_REDKEY, &e1);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_INVALIDARG, result1);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
     }
@@ -1887,17 +1765,16 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ContainsValue_fails_with_NULL_key)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
         bool e1;
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         ///act
         auto result1 = Map_ContainsValue(handle, NULL, &e1);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_INVALIDARG, result1);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -1907,16 +1784,15 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ContainsValue_fails_with_NULL_exists)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         ///act
         auto result1 = Map_ContainsValue(handle, TEST_REDKEY, NULL);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_INVALIDARG, result1);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -1927,11 +1803,10 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ContainsValue_succeeds)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
         bool e1, e2;
         (void)Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         ///act
         auto result1 = Map_ContainsValue(handle, TEST_REDVALUE, &e1);
@@ -1942,7 +1817,7 @@ BEGIN_TEST_SUITE(map_unittests)
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_OK, result2);
         ASSERT_IS_TRUE(e1);
         ASSERT_IS_FALSE(e2);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -1952,15 +1827,13 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_GetValueFromKey_returns_NULL__for_invalid_handle)
     {
         ///arrange
-        CMapMocks mocks;
-        mocks.ResetAllCalls();
 
         ///act
         auto result = Map_GetValueFromKey(NULL, TEST_REDKEY);
 
         ///assert
         ASSERT_IS_NULL(result);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
     }
@@ -1969,16 +1842,15 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_GetValueFromKey_returns_NULL_for_NULL_key)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         ///act
         auto result = Map_GetValueFromKey(handle, NULL);
 
         ///assert
         ASSERT_IS_NULL(result);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -1988,16 +1860,15 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_GetValueFromKey_returns_NULL_for_notfound_key)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         ///act
         auto result = Map_GetValueFromKey(handle, TEST_REDKEY);
 
         ///assert
         ASSERT_IS_NULL(result);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -2007,17 +1878,16 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_GetValueFromKey_returns_non_NULL_for_found_key)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
         Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         ///act
         auto result = Map_GetValueFromKey(handle, TEST_REDKEY);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, TEST_REDVALUE, result);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -2036,7 +1906,7 @@ BEGIN_TEST_SUITE(map_unittests)
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT,MAP_INVALIDARG, result);
-        
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     }
 
     /*Tests_SRS_MAP_02_046: [If parameter handle, keys, values or count is NULL then Map_GetInternals shall return MAP_INVALIDARG.] */
@@ -2045,16 +1915,15 @@ BEGIN_TEST_SUITE(map_unittests)
         ///arrange
         const char*const* values;
         size_t size;
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         ///act
         auto result = Map_GetInternals(handle, NULL, &values, &size);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_INVALIDARG, result);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -2066,16 +1935,15 @@ BEGIN_TEST_SUITE(map_unittests)
         ///arrange
         const char*const* keys;
         size_t size;
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         ///act
         auto result = Map_GetInternals(handle, &keys, NULL, &size);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_INVALIDARG, result);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -2087,16 +1955,15 @@ BEGIN_TEST_SUITE(map_unittests)
         ///arrange
         const char*const* keys;
         const char*const* values;
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         ///act
         auto result = Map_GetInternals(handle, &keys, &values, NULL);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_INVALIDARG, result);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -2117,6 +1984,8 @@ BEGIN_TEST_SUITE(map_unittests)
 
         ///assert
         ASSERT_IS_NULL(result);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
         ///cleanup
     }
 
@@ -2124,14 +1993,13 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Clone_with_empty_map_returns_empty_map)
     {
         ///arrange
-        CMapMocks mocks;        
         const char*const* keys;
         const char*const* values;
         size_t count;
         auto handle = Map_Create(NULL);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG))
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
 
         ///act
@@ -2143,7 +2011,7 @@ BEGIN_TEST_SUITE(map_unittests)
         ASSERT_IS_NULL(keys);
         ASSERT_IS_NULL(values);
         ASSERT_ARE_EQUAL(size_t, 0, count);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -2154,12 +2022,11 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Clone_with_empty_fails_when_malloc_fails)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         whenShallmalloc_fail = currentmalloc_call + 1;
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG))
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
 
         ///act
@@ -2167,7 +2034,7 @@ BEGIN_TEST_SUITE(map_unittests)
 
         ///assert
         ASSERT_IS_NULL(result);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -2177,24 +2044,23 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Clone_with_map_with_1_element_succeeds)
     {
         ///arrange
-        CMapMocks mocks;
         const char*const* keys;
         const char*const* values;
         size_t count;
         auto handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG)) /*this is creating the HANDLE structure*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)) /*this is creating the HANDLE structure*/
             .IgnoreArgument(1);
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(sizeof(char*))); /*this is creating a clone of the storage for keys*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(sizeof(char*))); /*this is creating a clone of the storage for keys*/
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_REDKEY) + 1)); /*this is creating a clone of RED key*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_REDKEY) + 1)); /*this is creating a clone of RED key*/
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(sizeof(char*))); /*this is creating a clone of the storage for values*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(sizeof(char*))); /*this is creating a clone of the storage for values*/
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_REDVALUE) + 1)); /*this is creating a clone of RED value*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_REDVALUE) + 1)); /*this is creating a clone of RED value*/
 
         ///act
         auto result = Map_Clone(handle);
@@ -2207,7 +2073,7 @@ BEGIN_TEST_SUITE(map_unittests)
         ASSERT_ARE_EQUAL(size_t, 1, count);
         ASSERT_ARE_EQUAL(char_ptr, TEST_REDKEY, keys[0]);
         ASSERT_ARE_EQUAL(char_ptr, TEST_REDVALUE, values[0]);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -2218,37 +2084,37 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Clone_with_map_with_1_element_fails_when_gbaloc_fails_1)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG)) /*this is creating the HANDLE structure*/
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)) /*this is creating the HANDLE structure*/
             .IgnoreArgument(1);
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(sizeof(char*))); /*this is creating a clone of the storage for keys*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_malloc(sizeof(char*))); /*this is creating a clone of the storage for keys*/
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_REDKEY) + 1)); /*this is creating a clone of RED key*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_REDKEY) + 1)); /*this is creating a clone of RED key*/
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(sizeof(char*))); /*this is creating a clone of the storage for values*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_malloc(sizeof(char*))); /*this is creating a clone of the storage for values*/
 
         whenShallmalloc_fail = currentmalloc_call + 5;
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_REDVALUE) + 1)); /*this is creating a clone of RED value*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_REDVALUE) + 1)); /*this is creating a clone of RED value*/
+
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
 
         ///act
         auto result = Map_Clone(handle);
 
         ///assert
         ASSERT_IS_NULL(result);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -2259,33 +2125,33 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Clone_with_map_with_1_element_fails_when_gbaloc_fails_2)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG)) /*this is creating the HANDLE structure*/
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)) /*this is creating the HANDLE structure*/
             .IgnoreArgument(1);
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(sizeof(char*))); /*this is creating a clone of the storage for keys*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_malloc(sizeof(char*))); /*this is creating a clone of the storage for keys*/
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_REDKEY) + 1)); /*this is creating a clone of RED key*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_REDKEY) + 1)); /*this is creating a clone of RED key*/
 
         whenShallmalloc_fail = currentmalloc_call + 4;
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(sizeof(char*))); /*this is creating a clone of the storage for values*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(sizeof(char*))); /*this is creating a clone of the storage for values*/
+
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
 
         ///act
         auto result = Map_Clone(handle);
 
         ///assert
         ASSERT_IS_NULL(result);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -2296,29 +2162,29 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Clone_with_map_with_1_element_fails_when_gbaloc_fails_3)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG)) /*this is creating the HANDLE structure*/
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)) /*this is creating the HANDLE structure*/
             .IgnoreArgument(1);
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(sizeof(char*))); /*this is creating a clone of the storage for keys*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_malloc(sizeof(char*))); /*this is creating a clone of the storage for keys*/
 
         whenShallmalloc_fail = currentmalloc_call + 3;
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_REDKEY) + 1)); /*this is creating a clone of RED key*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_REDKEY) + 1)); /*this is creating a clone of RED key*/
+
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
 
         ///act
         auto result = Map_Clone(handle);
 
         ///assert
         ASSERT_IS_NULL(result);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -2329,25 +2195,24 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Clone_with_map_with_1_element_fails_when_gbaloc_fails_4)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG)) /*this is creating the HANDLE structure*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)) /*this is creating the HANDLE structure*/
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
 
         whenShallmalloc_fail = currentmalloc_call + 2;
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(sizeof(char*))); /*this is creating a clone of the storage for keys*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(sizeof(char*))); /*this is creating a clone of the storage for keys*/
 
         ///act
         auto result = Map_Clone(handle);
 
         ///assert
         ASSERT_IS_NULL(result);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -2358,13 +2223,12 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Clone_with_map_with_1_element_fails_when_gbaloc_fails_5)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         whenShallmalloc_fail = currentmalloc_call + 1;
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG)) /*this is creating the HANDLE structure*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)) /*this is creating the HANDLE structure*/
             .IgnoreArgument(1);
 
         ///act
@@ -2372,7 +2236,7 @@ BEGIN_TEST_SUITE(map_unittests)
 
         ///assert
         ASSERT_IS_NULL(result);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -2383,27 +2247,26 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Clone_with_map_with_2_element_succeeds)
     {
         ///arrange
-        CMapMocks mocks;
         const char*const* keys;
         const char*const* values;
         size_t count;
         auto handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
         (void)Map_AddOrUpdate(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG)) /*this is creating the HANDLE structure*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)) /*this is creating the HANDLE structure*/
             .IgnoreArgument(1);
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(2*sizeof(char*))); /*this is creating a clone of the storage for keys*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(2*sizeof(char*))); /*this is creating a clone of the storage for keys*/
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_REDKEY) + 1)); /*this is creating a clone of RED key*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_BLUEKEY) + 1)); /*this is creating a clone of BLUE key*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_REDKEY) + 1)); /*this is creating a clone of RED key*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_BLUEKEY) + 1)); /*this is creating a clone of BLUE key*/
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(2*sizeof(char*))); /*this is creating a clone of the storage for values*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(2*sizeof(char*))); /*this is creating a clone of the storage for values*/
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_REDVALUE) + 1)); /*this is creating a clone of RED value*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_BLUEVALUE) + 1)); /*this is creating a clone of RED value*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_REDVALUE) + 1)); /*this is creating a clone of RED value*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_BLUEVALUE) + 1)); /*this is creating a clone of RED value*/
 
         ///act
         auto result = Map_Clone(handle);
@@ -2418,7 +2281,7 @@ BEGIN_TEST_SUITE(map_unittests)
         ASSERT_ARE_EQUAL(char_ptr, TEST_REDVALUE, values[0]);
         ASSERT_ARE_EQUAL(char_ptr, TEST_BLUEKEY, keys[1]);
         ASSERT_ARE_EQUAL(char_ptr, TEST_BLUEVALUE, values[1]);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -2429,46 +2292,46 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Clone_with_map_with_2_element_fails_when_gballoc_fails_1)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
         (void)Map_AddOrUpdate(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG)) /*this is creating the HANDLE structure*/
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)) /*this is creating the HANDLE structure*/
             .IgnoreArgument(1);
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(2 * sizeof(char*))); /*this is creating a clone of the storage for keys*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_malloc(2 * sizeof(char*))); /*this is creating a clone of the storage for keys*/
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_REDKEY) + 1)); /*this is creating a clone of RED key*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_REDKEY) + 1)); /*this is creating a clone of RED key*/
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_BLUEKEY) + 1)); /*this is creating a clone of BLUE key*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_BLUEKEY) + 1)); /*this is creating a clone of BLUE key*/
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(2 * sizeof(char*))); /*this is creating a clone of the storage for values*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_malloc(2 * sizeof(char*))); /*this is creating a clone of the storage for values*/
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_REDVALUE) + 1)); /*this is creating a clone of RED value*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_REDVALUE) + 1)); /*this is creating a clone of RED value*/
 
         whenShallmalloc_fail = currentmalloc_call + 7;
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_BLUEVALUE) + 1)); /*this is creating a clone of BLUE value*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_BLUEVALUE) + 1)); /*this is creating a clone of BLUE value*/
+
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
 
         ///act
         auto result = Map_Clone(handle);
 
         ///assert
         ASSERT_IS_NULL(result);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -2479,42 +2342,42 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Clone_with_map_with_2_element_fails_when_gballoc_fails_2)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
         (void)Map_AddOrUpdate(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG)) /*this is creating the HANDLE structure*/
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)) /*this is creating the HANDLE structure*/
             .IgnoreArgument(1);
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(2 * sizeof(char*))); /*this is creating a clone of the storage for keys*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_malloc(2 * sizeof(char*))); /*this is creating a clone of the storage for keys*/
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_REDKEY) + 1)); /*this is creating a clone of RED key*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_REDKEY) + 1)); /*this is creating a clone of RED key*/
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_BLUEKEY) + 1)); /*this is creating a clone of BLUE key*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_BLUEKEY) + 1)); /*this is creating a clone of BLUE key*/
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(2 * sizeof(char*))); /*this is creating a clone of the storage for values*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_malloc(2 * sizeof(char*))); /*this is creating a clone of the storage for values*/
 
         whenShallmalloc_fail = currentmalloc_call + 6;
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_REDVALUE) + 1)); /*this is creating a clone of RED value*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_REDVALUE) + 1)); /*this is creating a clone of RED value*/
+
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
 
         ///act
         auto result = Map_Clone(handle);
 
         ///assert
         ASSERT_IS_NULL(result);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -2525,38 +2388,38 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Clone_with_map_with_2_element_fails_when_gballoc_fails_3)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
         (void)Map_AddOrUpdate(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG)) /*this is creating the HANDLE structure*/
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)) /*this is creating the HANDLE structure*/
             .IgnoreArgument(1);
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(2 * sizeof(char*))); /*this is creating a clone of the storage for keys*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_malloc(2 * sizeof(char*))); /*this is creating a clone of the storage for keys*/
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_REDKEY) + 1)); /*this is creating a clone of RED key*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_REDKEY) + 1)); /*this is creating a clone of RED key*/
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_BLUEKEY) + 1)); /*this is creating a clone of BLUE key*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_BLUEKEY) + 1)); /*this is creating a clone of BLUE key*/
 
         whenShallmalloc_fail = currentmalloc_call + 5;
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(2 * sizeof(char*))); /*this is creating a clone of the storage for values*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(2 * sizeof(char*))); /*this is creating a clone of the storage for values*/
+
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
 
         ///act
         auto result = Map_Clone(handle);
 
         ///assert
         ASSERT_IS_NULL(result);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -2567,34 +2430,34 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Clone_with_map_with_2_element_fails_when_gballoc_fails_4)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
         (void)Map_AddOrUpdate(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG)) /*this is creating the HANDLE structure*/
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)) /*this is creating the HANDLE structure*/
             .IgnoreArgument(1);
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(2 * sizeof(char*))); /*this is creating a clone of the storage for keys*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_malloc(2 * sizeof(char*))); /*this is creating a clone of the storage for keys*/
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_REDKEY) + 1)); /*this is creating a clone of RED key*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_REDKEY) + 1)); /*this is creating a clone of RED key*/
 
         whenShallmalloc_fail = currentmalloc_call + 4;
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_BLUEKEY) + 1)); /*this is creating a clone of BLUE key*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_BLUEKEY) + 1)); /*this is creating a clone of BLUE key*/
+
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
 
         ///act
         auto result = Map_Clone(handle);
 
         ///assert
         ASSERT_IS_NULL(result);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -2605,30 +2468,30 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Clone_with_map_with_2_element_fails_when_gballoc_fails_5)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
         (void)Map_AddOrUpdate(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG)) /*this is creating the HANDLE structure*/
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)) /*this is creating the HANDLE structure*/
             .IgnoreArgument(1);
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(2 * sizeof(char*))); /*this is creating a clone of the storage for keys*/
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_malloc(2 * sizeof(char*))); /*this is creating a clone of the storage for keys*/
 
-        whenShallmalloc_fail = currentmalloc_call + 3;
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_REDKEY) + 1)); /*this is creating a clone of RED key*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_REDKEY) + 1))
+            .SetReturn(NULL); /*this is creating a clone of RED key*/
+
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
 
         ///act
         auto result = Map_Clone(handle);
 
         ///assert
         ASSERT_IS_NULL(result);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -2639,26 +2502,25 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Clone_with_map_with_2_element_fails_when_gballoc_fails_6)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
         (void)Map_AddOrUpdate(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG)) /*this is creating the HANDLE structure*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)) /*this is creating the HANDLE structure*/
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
 
         whenShallmalloc_fail = currentmalloc_call + 2;
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(2 * sizeof(char*))); /*this is creating a clone of the storage for keys*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(2 * sizeof(char*))); /*this is creating a clone of the storage for keys*/
 
         ///act
         auto result = Map_Clone(handle);
 
         ///assert
         ASSERT_IS_NULL(result);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -2669,14 +2531,13 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Clone_with_map_with_2_element_fails_when_gballoc_fails_7)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
         (void)Map_AddOrUpdate(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
         whenShallmalloc_fail = currentmalloc_call + 1;
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG)) /*this is creating the HANDLE structure*/
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)) /*this is creating the HANDLE structure*/
             .IgnoreArgument(1);
 
         ///act
@@ -2684,7 +2545,7 @@ BEGIN_TEST_SUITE(map_unittests)
 
         ///assert
         ASSERT_IS_NULL(result);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -2695,14 +2556,13 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Add_With_Filter_Succeed)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(DontAllowCapitalsFilters);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(NULL, sizeof(const char*)));
-        STRICT_EXPECTED_CALL(mocks, gballoc_realloc(NULL, sizeof(const char*)));
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_GREENKEY) + 1));
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_GREENVALUE) + 1));
+        STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*)));
+        STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*)));
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_GREENKEY) + 1));
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_GREENVALUE) + 1));
 
         ///act
         auto result1 = Map_Add(handle, TEST_REDKEY, TEST_REDVALUE);
@@ -2713,7 +2573,7 @@ BEGIN_TEST_SUITE(map_unittests)
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_FILTER_REJECT, result1);
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_FILTER_REJECT, result2);
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_OK, result3);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -2723,14 +2583,13 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_AddOrUpdate_With_Filter_Succeed)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(DontAllowCapitalsFilters);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        EXPECTED_CALL(mocks, gballoc_realloc(NULL, sizeof(const char*)));
-        EXPECTED_CALL(mocks, gballoc_realloc(NULL, sizeof(const char*)));
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_GREENKEY) + 1));
-        STRICT_EXPECTED_CALL(mocks, gballoc_malloc(strlen(TEST_GREENVALUE) + 1));
+        EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*)));
+        EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*)));
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_GREENKEY) + 1));
+        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_GREENVALUE) + 1));
 
         ///act
         auto result1 = Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
@@ -2739,7 +2598,7 @@ BEGIN_TEST_SUITE(map_unittests)
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_FILTER_REJECT, result1);
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_OK, result2);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -2749,13 +2608,13 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ToJSON_fails_with_NULL_argument)
     {
         ///arrange
-        CMapMocks mocks;
         
         ///act
         auto toJSON = Map_ToJSON(NULL);
 
         ///assert
         ASSERT_IS_NULL(toJSON);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
     }
@@ -2765,22 +2624,20 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ToJSON_with_empty_MAP_produces_empty_JSON)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, STRING_construct("{"))
+        STRICT_EXPECTED_CALL(STRING_construct("{"))
             .IgnoreArgument(1);
 
-        STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, "}"))
+        STRICT_EXPECTED_CALL(STRING_concat(IGNORED_PTR_ARG, "}"))
             .IgnoreArgument(1);
 
         ///act
         auto toJSON = Map_ToJSON(handle);
 
         ///assert
-        mocks.AssertActualAndExpectedCalls();
-        ASSERT_ARE_EQUAL(char_ptr, "{}", BASEIMPLEMENTATION::STRING_c_str(toJSON));
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -2791,17 +2648,16 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ToJSON_with_empty_MAP_produces_empty_JSON_fails_when_STRING_concat_fails)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, STRING_construct("{"))
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(STRING_construct("{"))
             .IgnoreArgument(1);
 
-        MAKE_FAIL(STRING_concat, 1);
-        STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, "}"))
+        STRICT_EXPECTED_CALL(STRING_concat(IGNORED_PTR_ARG, "}"))
+            .IgnoreArgument(1).SetReturn(1);
+
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
 
         ///act
@@ -2809,7 +2665,7 @@ BEGIN_TEST_SUITE(map_unittests)
 
         ///assert
         ASSERT_IS_NULL(toJSON);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -2819,20 +2675,18 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ToJSON_with_empty_MAP_produces_empty_JSON_fails_when_STRING_construct_fails)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        MAKE_FAIL(STRING_construct, 1);
-        STRICT_EXPECTED_CALL(mocks, STRING_construct("{"))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(STRING_construct("{"))
+            .IgnoreArgument(1).SetReturn(NULL);
 
         ///act
         auto toJSON = Map_ToJSON(handle);
 
         ///assert
         ASSERT_IS_NULL(toJSON);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -2842,30 +2696,30 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ToJSON_with_1_MAP_element_succeeds)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, STRING_construct("{"))
+        STRICT_EXPECTED_CALL(STRING_construct("{"))
             .IgnoreArgument(1);
 
-        STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("redkey")); /*prepare the key*/
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("reddoor")); /*prepare the value*/
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
+        STRICT_EXPECTED_CALL(STRING_new_JSON("redkey")); /*prepare the key*/
+        STRICT_EXPECTED_CALL(STRING_new_JSON("reddoor")); /*prepare the value*/
+        STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
             .IgnoreArgument(1)
             .IgnoreArgument(2);
-        STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
+        STRICT_EXPECTED_CALL(STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey":"reddoor"*/
+        STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey":"reddoor"*/
             .IgnoreArgument(1)
             .IgnoreArgument(2);
 
-        STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, "}"))/*now JSON is {"redkey":"redoor"}*/
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
+            .IgnoreArgument(1);
+
+        STRICT_EXPECTED_CALL(STRING_concat(IGNORED_PTR_ARG, "}"))/*now JSON is {"redkey":"redoor"}*/
             .IgnoreArgument(1);
 
         ///act
@@ -2873,8 +2727,7 @@ BEGIN_TEST_SUITE(map_unittests)
 
         ///assert
         ASSERT_IS_NOT_NULL(toJSON);
-        mocks.AssertActualAndExpectedCalls();
-        ASSERT_ARE_EQUAL(char_ptr, "{\"redkey\":\"reddoor\"}", BASEIMPLEMENTATION::STRING_c_str(toJSON));
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -2885,33 +2738,33 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ToJSON_with_1_MAP_element_fail_when_STRING_fails_1)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, STRING_construct("{"))
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(STRING_construct("{"))
             .IgnoreArgument(1);
 
-        STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("redkey")); /*prepare the key*/
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("reddoor")); /*prepare the value*/
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
+        STRICT_EXPECTED_CALL(STRING_new_JSON("redkey")); /*prepare the key*/
+        STRICT_EXPECTED_CALL(STRING_new_JSON("reddoor")); /*prepare the value*/
+        STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
             .IgnoreArgument(1)
             .IgnoreArgument(2);
-        STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
+        STRICT_EXPECTED_CALL(STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey":"reddoor"*/
+        STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey":"reddoor"*/
             .IgnoreArgument(1)
             .IgnoreArgument(2);
 
-        MAKE_FAIL(STRING_concat, 2);
-        STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, "}"))/*now JSON is {"redkey":"redoor"}*/
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
+            .IgnoreArgument(1);
+
+        STRICT_EXPECTED_CALL(STRING_concat(IGNORED_PTR_ARG, "}"))/*now JSON is {"redkey":"redoor"}*/
+            .IgnoreArgument(1).SetReturn(1);
+
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
 
         ///act
@@ -2919,7 +2772,7 @@ BEGIN_TEST_SUITE(map_unittests)
 
         ///assert
         ASSERT_IS_NULL(toJSON);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -2929,39 +2782,40 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ToJSON_with_1_MAP_element_fail_when_STRING_fails_2)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, STRING_construct("{"))
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(STRING_construct("{"))
             .IgnoreArgument(1);
 
-        STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("redkey")); /*prepare the key*/
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("reddoor")); /*prepare the value*/
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
+        STRICT_EXPECTED_CALL(STRING_new_JSON("redkey")); /*prepare the key*/
+        STRICT_EXPECTED_CALL(STRING_new_JSON("reddoor")); /*prepare the value*/
+        STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
             .IgnoreArgument(1)
             .IgnoreArgument(2);
-        STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
+        STRICT_EXPECTED_CALL(STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
             .IgnoreArgument(1);
 
-        MAKE_FAIL(STRING_concat_with_STRING, 2);
-        STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey":"reddoor"*/
+        STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey":"reddoor"*/
             .IgnoreArgument(1)
-            .IgnoreArgument(2);
+            .IgnoreArgument(2)
+            .SetReturn(1);
+
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
+            .IgnoreArgument(1);
+
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
 
         ///act
         auto toJSON = Map_ToJSON(handle);
 
         ///assert
         ASSERT_IS_NULL(toJSON);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -2971,27 +2825,28 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ToJSON_with_1_MAP_element_fail_when_STRING_fails_3)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, STRING_construct("{"))
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(STRING_construct("{"))
             .IgnoreArgument(1);
 
-        STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("redkey")); /*prepare the key*/
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("reddoor")); /*prepare the value*/
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
+        STRICT_EXPECTED_CALL(STRING_new_JSON("redkey")); /*prepare the key*/
+        STRICT_EXPECTED_CALL(STRING_new_JSON("reddoor")); /*prepare the value*/
+        STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
             .IgnoreArgument(1)
             .IgnoreArgument(2);
-        MAKE_FAIL(STRING_concat, 1);
-        STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
+        STRICT_EXPECTED_CALL(STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
+            .IgnoreArgument(1)
+            .SetReturn(1);
+
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
+            .IgnoreArgument(1);
+
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
 
         ///act
@@ -2999,7 +2854,7 @@ BEGIN_TEST_SUITE(map_unittests)
 
         ///assert
         ASSERT_IS_NULL(toJSON);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -3009,33 +2864,34 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ToJSON_with_1_MAP_element_fail_when_STRING_fails_4)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, STRING_construct("{"))
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(STRING_construct("{"))
             .IgnoreArgument(1);
 
-        STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("redkey")); /*prepare the key*/
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("reddoor")); /*prepare the value*/
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
-            .IgnoreArgument(1);
-        MAKE_FAIL(STRING_concat_with_STRING, 1);
-        STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
+        STRICT_EXPECTED_CALL(STRING_new_JSON("redkey")); /*prepare the key*/
+        STRICT_EXPECTED_CALL(STRING_new_JSON("reddoor")); /*prepare the value*/
+        STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
             .IgnoreArgument(1)
-            .IgnoreArgument(2);
+            .IgnoreArgument(2)
+            .SetReturn(1);
+
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
+            .IgnoreArgument(1);
+
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
 
         ///act
         auto toJSON = Map_ToJSON(handle);
 
         ///assert
         ASSERT_IS_NULL(toJSON);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -3045,28 +2901,29 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ToJSON_with_1_MAP_element_fail_when_STRING_fails_5)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, STRING_construct("{"))
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(STRING_construct("{"))
             .IgnoreArgument(1);
 
-        STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("redkey")); /*prepare the key*/
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
+        STRICT_EXPECTED_CALL(STRING_new_JSON("redkey")); /*prepare the key*/
+        STRICT_EXPECTED_CALL(STRING_new_JSON("reddoor"))
+            .SetReturn(NULL); /*prepare the value*/
+
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
             .IgnoreArgument(1);
-        MAKE_FAIL(STRING_new_JSON, 2);
-        STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("reddoor")); /*prepare the value*/
+
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
 
         ///act
         auto toJSON = Map_ToJSON(handle);
 
         ///assert
         ASSERT_IS_NULL(toJSON);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -3076,25 +2933,24 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ToJSON_with_1_MAP_element_fail_when_STRING_fails_6)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, STRING_construct("{"))
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(STRING_construct("{"))
             .IgnoreArgument(1);
 
-        MAKE_FAIL(STRING_new_JSON, 1);
-        STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("redkey")); /*prepare the key*/
+        STRICT_EXPECTED_CALL(STRING_new_JSON("redkey")).SetReturn(NULL); /*prepare the key*/
+
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
 
         ///act
         auto toJSON = Map_ToJSON(handle);
 
         ///assert
         ASSERT_IS_NULL(toJSON);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -3104,21 +2960,20 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ToJSON_with_1_MAP_element_fail_when_STRING_fails_7)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        MAKE_FAIL(STRING_construct, 1);
-        STRICT_EXPECTED_CALL(mocks, STRING_construct("{"))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(STRING_construct("{"))
+            .IgnoreArgument(1)
+            .SetReturn(NULL);
 
         ///act
         auto toJSON = Map_ToJSON(handle);
 
         ///assert
         ASSERT_IS_NULL(toJSON);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -3128,52 +2983,53 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ToJSON_with_2_MAP_elements_succeeds)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
         (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, STRING_construct("{"))
+        STRICT_EXPECTED_CALL(STRING_construct("{"))
             .IgnoreArgument(1);
 
         { /*artificial scope for first key:value*/
-            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("redkey")); /*prepare the key*/
-            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("reddoor")); /*prepare the value*/
-            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
+            STRICT_EXPECTED_CALL(STRING_new_JSON("redkey")); /*prepare the key*/
+            STRICT_EXPECTED_CALL(STRING_new_JSON("reddoor")); /*prepare the value*/
+            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
                 .IgnoreArgument(1)
                 .IgnoreArgument(2);
-            STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
+            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
                 .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey":"reddoor"*/
+            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey":"reddoor"*/
                 .IgnoreArgument(1)
                 .IgnoreArgument(2);
+
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
+                .IgnoreArgument(1);
         }
 
         { /*artificial scope for second key:value*/
-            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("yellowkey")); /*prepare the key*/
-            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
+            STRICT_EXPECTED_CALL(STRING_new_JSON("yellowkey")); /*prepare the key*/
+            STRICT_EXPECTED_CALL(STRING_new_JSON("yellowdoor")); /*prepare the value*/
+            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_PTR_ARG, ","))
                 .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("yellowdoor")); /*prepare the value*/
-            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, ","))
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
+            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
                 .IgnoreArgument(1)
                 .IgnoreArgument(2);
-            STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
+            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
                 .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey":"reddoor"*/
+            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey":"reddoor"*/
                 .IgnoreArgument(1)
                 .IgnoreArgument(2);
+
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
+                .IgnoreArgument(1);
         }
 
-        STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, "}"))/*now JSON is {"redkey":"redoor"}*/
+        STRICT_EXPECTED_CALL(STRING_concat(IGNORED_PTR_ARG, "}"))/*now JSON is {"redkey":"redoor"}*/
             .IgnoreArgument(1);
 
         ///act
@@ -3181,8 +3037,7 @@ BEGIN_TEST_SUITE(map_unittests)
 
         ///assert
         ASSERT_IS_NOT_NULL(toJSON);
-        mocks.AssertActualAndExpectedCalls();
-        ASSERT_ARE_EQUAL(char_ptr, "{\"redkey\":\"reddoor\",\"yellowkey\":\"yellowdoor\"}", BASEIMPLEMENTATION::STRING_c_str(toJSON));
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -3193,55 +3048,57 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ToJSON_with_2_MAP_elements_fails_when_STRING_fails_1)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
         (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, STRING_construct("{"))
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(STRING_construct("{"))
             .IgnoreArgument(1);
 
         { /*artificial scope for first key:value*/
-            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("redkey")); /*prepare the key*/
-            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("reddoor")); /*prepare the value*/
-            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
+            STRICT_EXPECTED_CALL(STRING_new_JSON("redkey")); /*prepare the key*/
+            STRICT_EXPECTED_CALL(STRING_new_JSON("reddoor")); /*prepare the value*/
+            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
                 .IgnoreArgument(1)
                 .IgnoreArgument(2);
-            STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
+            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
                 .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey":"reddoor"*/
+            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey":"reddoor"*/
                 .IgnoreArgument(1)
                 .IgnoreArgument(2);
+
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
+                .IgnoreArgument(1);
         }
 
         { /*artificial scope for second key:value*/
-            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("yellowkey")); /*prepare the key*/
-            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
+            STRICT_EXPECTED_CALL(STRING_new_JSON("yellowkey")); /*prepare the key*/
+            STRICT_EXPECTED_CALL(STRING_new_JSON("yellowdoor")); /*prepare the value*/
+            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_PTR_ARG, ","))
                 .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("yellowdoor")); /*prepare the value*/
-            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, ","))
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
+            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
                 .IgnoreArgument(1)
                 .IgnoreArgument(2);
-            STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
+            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
                 .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey":"reddoor"*/
+            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey":"reddoor"*/
                 .IgnoreArgument(1)
                 .IgnoreArgument(2);
+
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
+                .IgnoreArgument(1);
         }
 
-        MAKE_FAIL(STRING_concat, 4);
-        STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, "}"))/*now JSON is {"redkey":"redoor"}*/
+        STRICT_EXPECTED_CALL(STRING_concat(IGNORED_PTR_ARG, "}"))/*now JSON is {"redkey":"redoor"}*/
+            .IgnoreArgument(1)
+            .SetReturn(1);
+
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
 
         ///act
@@ -3249,7 +3106,7 @@ BEGIN_TEST_SUITE(map_unittests)
 
         ///assert
         ASSERT_IS_NULL(toJSON);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -3259,60 +3116,62 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ToJSON_with_2_MAP_elements_fails_when_STRING_fails_2)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
         (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, STRING_construct("{"))
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(STRING_construct("{"))
             .IgnoreArgument(1);
 
         { /*artificial scope for first key:value*/
-            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("redkey")); /*prepare the key*/
-            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("reddoor")); /*prepare the value*/
-            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
+            STRICT_EXPECTED_CALL(STRING_new_JSON("redkey")); /*prepare the key*/
+            STRICT_EXPECTED_CALL(STRING_new_JSON("reddoor")); /*prepare the value*/
+            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
                 .IgnoreArgument(1)
                 .IgnoreArgument(2);
-            STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
+            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
                 .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey":"reddoor"*/
+            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey":"reddoor"*/
                 .IgnoreArgument(1)
                 .IgnoreArgument(2);
+
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
+                .IgnoreArgument(1);
         }
 
         { /*artificial scope for second key:value*/
-            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("yellowkey")); /*prepare the key*/
-            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
+            STRICT_EXPECTED_CALL(STRING_new_JSON("yellowkey")); /*prepare the key*/
+            STRICT_EXPECTED_CALL(STRING_new_JSON("yellowdoor")); /*prepare the value*/
+            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_PTR_ARG, ","))
                 .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("yellowdoor")); /*prepare the value*/
-            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, ","))
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
+            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
                 .IgnoreArgument(1)
                 .IgnoreArgument(2);
-            STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
+            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
                 .IgnoreArgument(1);
-            MAKE_FAIL(STRING_concat_with_STRING, 4);
-            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey":"reddoor"*/
+            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey":"reddoor"*/
                 .IgnoreArgument(1)
-                .IgnoreArgument(2);
+                .IgnoreArgument(2)
+                .SetReturn(1);
+
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
+                .IgnoreArgument(1);
         }
+
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
 
         ///act
         auto toJSON = Map_ToJSON(handle);
 
         ///assert
         ASSERT_IS_NULL(toJSON);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -3322,57 +3181,59 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ToJSON_with_2_MAP_elements_fails_when_STRING_fails_3)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
         (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, STRING_construct("{"))
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(STRING_construct("{"))
             .IgnoreArgument(1);
 
         { /*artificial scope for first key:value*/
-            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("redkey")); /*prepare the key*/
-            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("reddoor")); /*prepare the value*/
-            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
+            STRICT_EXPECTED_CALL(STRING_new_JSON("redkey")); /*prepare the key*/
+            STRICT_EXPECTED_CALL(STRING_new_JSON("reddoor")); /*prepare the value*/
+            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
                 .IgnoreArgument(1)
                 .IgnoreArgument(2);
-            STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
+            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
                 .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey":"reddoor"*/
+            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey":"reddoor"*/
                 .IgnoreArgument(1)
                 .IgnoreArgument(2);
+
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
+                .IgnoreArgument(1);
         }
 
         { /*artificial scope for second key:value*/
-            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("yellowkey")); /*prepare the key*/
-            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
+            STRICT_EXPECTED_CALL(STRING_new_JSON("yellowkey")); /*prepare the key*/
+            STRICT_EXPECTED_CALL(STRING_new_JSON("yellowdoor")); /*prepare the value*/
+            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_PTR_ARG, ","))
                 .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("yellowdoor")); /*prepare the value*/
-            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, ","))
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
+            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
                 .IgnoreArgument(1)
                 .IgnoreArgument(2);
-            MAKE_FAIL(STRING_concat, 3);
-            STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
+            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
+                .IgnoreArgument(1)
+                .SetReturn(1);
+
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
                 .IgnoreArgument(1);
         }
+
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
 
         ///act
         auto toJSON = Map_ToJSON(handle);
 
         ///assert
         ASSERT_IS_NULL(toJSON);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -3382,56 +3243,58 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ToJSON_with_2_MAP_elements_fails_when_STRING_fails_4)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
         (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, STRING_construct("{"))
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(STRING_construct("{"))
             .IgnoreArgument(1);
 
         { /*artificial scope for first key:value*/
-            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("redkey")); /*prepare the key*/
-            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("reddoor")); /*prepare the value*/
-            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
+            STRICT_EXPECTED_CALL(STRING_new_JSON("redkey")); /*prepare the key*/
+            STRICT_EXPECTED_CALL(STRING_new_JSON("reddoor")); /*prepare the value*/
+            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
                 .IgnoreArgument(1)
                 .IgnoreArgument(2);
-            STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
+            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
                 .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey":"reddoor"*/
+            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey":"reddoor"*/
                 .IgnoreArgument(1)
                 .IgnoreArgument(2);
+
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
+                .IgnoreArgument(1);
         }
 
         { /*artificial scope for second key:value*/
-            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("yellowkey")); /*prepare the key*/
-            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("yellowdoor")); /*prepare the value*/
-            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, ","))
+            STRICT_EXPECTED_CALL(STRING_new_JSON("yellowkey")); /*prepare the key*/
+            STRICT_EXPECTED_CALL(STRING_new_JSON("yellowdoor")); /*prepare the value*/
+            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_PTR_ARG, ","))
                 .IgnoreArgument(1);
 
-            MAKE_FAIL(STRING_concat_with_STRING, 3);
-            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
+            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
                 .IgnoreArgument(1)
-                .IgnoreArgument(2);
+                .IgnoreArgument(2)
+                .SetReturn(1);
+
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
+                .IgnoreArgument(1);
         }
+
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
 
         ///act
         auto toJSON = Map_ToJSON(handle);
 
         ///assert
         ASSERT_IS_NULL(toJSON);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -3441,52 +3304,53 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ToJSON_with_2_MAP_elements_fails_when_STRING_fails_5)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
         (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, STRING_construct("{"))
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(STRING_construct("{"))
             .IgnoreArgument(1);
 
         { /*artificial scope for first key:value*/
-            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("redkey")); /*prepare the key*/
-            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("reddoor")); /*prepare the value*/
-            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
+            STRICT_EXPECTED_CALL(STRING_new_JSON("redkey")); /*prepare the key*/
+            STRICT_EXPECTED_CALL(STRING_new_JSON("reddoor")); /*prepare the value*/
+            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
                 .IgnoreArgument(1)
                 .IgnoreArgument(2);
-            STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
+            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
                 .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey":"reddoor"*/
+            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey":"reddoor"*/
                 .IgnoreArgument(1)
                 .IgnoreArgument(2);
+
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
+                .IgnoreArgument(1);
         }
 
         { /*artificial scope for second key:value*/
-            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("yellowkey")); /*prepare the key*/
-            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
+            STRICT_EXPECTED_CALL(STRING_new_JSON("yellowkey")); /*prepare the key*/
+            STRICT_EXPECTED_CALL(STRING_new_JSON("yellowdoor")); /*prepare the value*/
+            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_PTR_ARG, ","))
+                .IgnoreArgument(1).SetReturn(1);
+
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
                 .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("yellowdoor")); /*prepare the value*/
-            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
-                .IgnoreArgument(1);
-            MAKE_FAIL(STRING_concat, 2);
-            STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, ","))
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
                 .IgnoreArgument(1);
         }
+
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
 
         ///act
         auto toJSON = Map_ToJSON(handle);
 
         ///assert
         ASSERT_IS_NULL(toJSON);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -3496,48 +3360,47 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ToJSON_with_2_MAP_elements_fails_when_STRING_fails_6)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
         (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, STRING_construct("{"))
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(STRING_construct("{"))
             .IgnoreArgument(1);
 
         { /*artificial scope for first key:value*/
-            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("redkey")); /*prepare the key*/
-            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("reddoor")); /*prepare the value*/
-            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
+            STRICT_EXPECTED_CALL(STRING_new_JSON("redkey")); /*prepare the key*/
+            STRICT_EXPECTED_CALL(STRING_new_JSON("reddoor")); /*prepare the value*/
+            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
                 .IgnoreArgument(1)
                 .IgnoreArgument(2);
-            STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
+            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
                 .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey":"reddoor"*/
+            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey":"reddoor"*/
                 .IgnoreArgument(1)
                 .IgnoreArgument(2);
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
+                .IgnoreArgument(1);
         }
 
         { /*artificial scope for second key:value*/
-            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("yellowkey")); /*prepare the key*/
-            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
+            STRICT_EXPECTED_CALL(STRING_new_JSON("yellowkey")); /*prepare the key*/
+            STRICT_EXPECTED_CALL(STRING_new_JSON("yellowdoor")).SetReturn(NULL); /*prepare the value*/
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
                 .IgnoreArgument(1);
-            MAKE_FAIL(STRING_new_JSON,4);
-            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("yellowdoor")); /*prepare the value*/
         }
+
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
 
         ///act
         auto toJSON = Map_ToJSON(handle);
 
         ///assert
         ASSERT_IS_NULL(toJSON);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -3547,45 +3410,44 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ToJSON_with_2_MAP_elements_fails_when_STRING_fails_7)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
         (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, STRING_construct("{"))
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(STRING_construct("{"))
             .IgnoreArgument(1);
 
         { /*artificial scope for first key:value*/
-            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("redkey")); /*prepare the key*/
-            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("reddoor")); /*prepare the value*/
-            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
+            STRICT_EXPECTED_CALL(STRING_new_JSON("redkey")); /*prepare the key*/
+            STRICT_EXPECTED_CALL(STRING_new_JSON("reddoor")); /*prepare the value*/
+            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
                 .IgnoreArgument(1)
                 .IgnoreArgument(2);
-            STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
+            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
                 .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey":"reddoor"*/
+            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey":"reddoor"*/
                 .IgnoreArgument(1)
                 .IgnoreArgument(2);
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
+                .IgnoreArgument(1);
         }
 
         { /*artificial scope for second key:value*/
-            MAKE_FAIL(STRING_new_JSON, 3);
-            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("yellowkey")); /*prepare the key*/
+            STRICT_EXPECTED_CALL(STRING_new_JSON("yellowkey")).SetReturn(NULL); /*prepare the key*/
         }
+
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
 
         ///act
         auto toJSON = Map_ToJSON(handle);
 
         ///assert
         ASSERT_IS_NULL(toJSON);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -3595,41 +3457,41 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ToJSON_with_2_MAP_elements_fails_when_STRING_fails_8)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
         (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, STRING_construct("{"))
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(STRING_construct("{"))
             .IgnoreArgument(1);
 
         { /*artificial scope for first key:value*/
-            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("redkey")); /*prepare the key*/
-            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("reddoor")); /*prepare the value*/
-            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
+            STRICT_EXPECTED_CALL(STRING_new_JSON("redkey")); /*prepare the key*/
+            STRICT_EXPECTED_CALL(STRING_new_JSON("reddoor")); /*prepare the value*/
+            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
                 .IgnoreArgument(1)
                 .IgnoreArgument(2);
-            STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
+            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
                 .IgnoreArgument(1);
-            MAKE_FAIL(STRING_concat_with_STRING, 2);
-            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey":"reddoor"*/
+            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey":"reddoor"*/
                 .IgnoreArgument(1)
-                .IgnoreArgument(2);
+                .IgnoreArgument(2)
+                .SetReturn(1);
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
+                .IgnoreArgument(1);
         }
+
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
 
         ///act
         auto toJSON = Map_ToJSON(handle);
 
         ///assert
         ASSERT_IS_NULL(toJSON);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -3639,33 +3501,32 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ToJSON_with_2_MAP_elements_fails_when_STRING_fails_9)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
         (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, STRING_construct("{"))
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(STRING_construct("{"))
             .IgnoreArgument(1);
 
         { /*artificial scope for first key:value*/
-            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("redkey")); /*prepare the key*/
-            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("reddoor")); /*prepare the value*/
-            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
+            STRICT_EXPECTED_CALL(STRING_new_JSON("redkey")); /*prepare the key*/
+            STRICT_EXPECTED_CALL(STRING_new_JSON("reddoor")); /*prepare the value*/
+            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
                 .IgnoreArgument(1)
                 .IgnoreArgument(2);
-            STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
+            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
                 .IgnoreArgument(1);
-            MAKE_FAIL(STRING_concat_with_STRING, 2);
-            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey":"reddoor"*/
+            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey":"reddoor"*/
                 .IgnoreArgument(1)
-                .IgnoreArgument(2);
+                .IgnoreArgument(2)
+                .SetReturn(1);
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG))
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
+                .IgnoreArgument(1);
         }
 
         ///act
@@ -3673,7 +3534,7 @@ BEGIN_TEST_SUITE(map_unittests)
 
         ///assert
         ASSERT_IS_NULL(toJSON);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -3683,29 +3544,28 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ToJSON_with_2_MAP_elements_fails_when_STRING_fails_10)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
         (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, STRING_construct("{"))
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(STRING_construct("{"))
             .IgnoreArgument(1);
 
         { /*artificial scope for first key:value*/
-            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("redkey")); /*prepare the key*/
-            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("reddoor")); /*prepare the value*/
-            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
+            STRICT_EXPECTED_CALL(STRING_new_JSON("redkey")); /*prepare the key*/
+            STRICT_EXPECTED_CALL(STRING_new_JSON("reddoor")); /*prepare the value*/
+            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
                 .IgnoreArgument(1)
                 .IgnoreArgument(2);
-            MAKE_FAIL(STRING_concat, 1);
-            STRICT_EXPECTED_CALL(mocks, STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
+            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_PTR_ARG, ":")) /*now JSON is {"redkey":*/
+                .IgnoreArgument(1)
+                .SetReturn(1);
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG))
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
                 .IgnoreArgument(1);
         }
 
@@ -3714,7 +3574,7 @@ BEGIN_TEST_SUITE(map_unittests)
 
         ///assert
         ASSERT_IS_NULL(toJSON);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -3724,28 +3584,27 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ToJSON_with_2_MAP_elements_fails_when_STRING_fails_11)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
         (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, STRING_construct("{"))
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(STRING_construct("{"))
             .IgnoreArgument(1);
 
         { /*artificial scope for first key:value*/
-            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("redkey")); /*prepare the key*/
-            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("reddoor")); /*prepare the value*/
-            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
-                .IgnoreArgument(1);
-            MAKE_FAIL(STRING_concat_with_STRING, 1);
-            STRICT_EXPECTED_CALL(mocks, STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
+            STRICT_EXPECTED_CALL(STRING_new_JSON("redkey")); /*prepare the key*/
+            STRICT_EXPECTED_CALL(STRING_new_JSON("reddoor")); /*prepare the value*/
+            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_PTR_ARG, IGNORED_PTR_ARG)) /*now JSON is {"redkey"*/
                 .IgnoreArgument(1)
-                .IgnoreArgument(2);
+                .IgnoreArgument(2)
+                .SetReturn(1);
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG)) /*delete the value*/
+                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG))
+                .IgnoreArgument(1);
         }
 
         ///act
@@ -3753,7 +3612,7 @@ BEGIN_TEST_SUITE(map_unittests)
 
         ///assert
         ASSERT_IS_NULL(toJSON);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -3763,31 +3622,27 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ToJSON_with_2_MAP_elements_fails_when_STRING_fails_12)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
         (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, STRING_construct("{"))
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(STRING_construct("{"))
             .IgnoreArgument(1);
 
-        { /*artificial scope for first key:value*/
-            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("redkey")); /*prepare the key*/
-            STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
-                .IgnoreArgument(1);
-            MAKE_FAIL(STRING_new_JSON, 2);
-            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("reddoor")); /*prepare the value*/
-        }
+        STRICT_EXPECTED_CALL(STRING_new_JSON("redkey")); /*prepare the key*/
+        STRICT_EXPECTED_CALL(STRING_new_JSON("reddoor")).SetReturn(NULL); /*prepare the value*/
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG)) /*delete the key*/
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
 
         ///act
         auto toJSON = Map_ToJSON(handle);
 
         ///assert
         ASSERT_IS_NULL(toJSON);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -3797,28 +3652,23 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ToJSON_with_2_MAP_elements_fails_when_STRING_fails_13)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
         (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mocks, STRING_construct("{"))
+        STRICT_EXPECTED_CALL(STRING_construct("{"))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(STRING_new_JSON("redkey")).SetReturn(NULL); /*prepare the key*/
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
-
-        { /*artificial scope for first key:value*/
-            MAKE_FAIL(STRING_new_JSON, 1);
-            STRICT_EXPECTED_CALL(mocks, STRING_new_JSON("redkey")); /*prepare the key*/
-        }
 
         ///act
         auto toJSON = Map_ToJSON(handle);
 
         ///assert
         ASSERT_IS_NULL(toJSON);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);
@@ -3828,22 +3678,21 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ToJSON_with_2_MAP_elements_fails_when_STRING_fails_14)
     {
         ///arrange
-        CMapMocks mocks;
         auto handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
         (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
-        mocks.ResetAllCalls();
+        umock_c_reset_all_calls();
 
-        MAKE_FAIL(STRING_construct, 1);
-        STRICT_EXPECTED_CALL(mocks, STRING_construct("{"))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(STRING_construct("{"))
+            .IgnoreArgument(1)
+            .SetReturn(NULL);
 
         ///act
         auto toJSON = Map_ToJSON(handle);
 
         ///assert
         ASSERT_IS_NULL(toJSON);
-        mocks.AssertActualAndExpectedCalls();
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         Map_Destroy(handle);

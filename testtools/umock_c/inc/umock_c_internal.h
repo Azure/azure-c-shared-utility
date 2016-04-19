@@ -18,6 +18,7 @@ extern "C" {
 #include "umockcall.h"
 #include "umockcallrecorder.h"
 #include "umock_c.h"
+#include "umock_log.h"
 
 extern void umock_c_indicate_error(UMOCK_C_ERROR_CODE error_code);
 extern UMOCKCALL_HANDLE umock_c_get_last_expected_call(void);
@@ -182,6 +183,7 @@ typedef struct ARG_BUFFER_TAG
         DECLARE_MOCK_CALL_MODIFIER(name) \
         if (mock_call_data == NULL) \
         { \
+            UMOCK_LOG("ValidateAllArguments called without having an expected call.\r\n"); \
             umock_c_indicate_error(UMOCK_C_ERROR); \
         } \
         else \
@@ -199,6 +201,7 @@ typedef struct ARG_BUFFER_TAG
         C2(mock_call_, name)* mock_call_data = (C2(mock_call_, name)*)umockcall_get_call_data(umock_c_get_last_expected_call()); \
         if (mock_call_data == NULL) \
         { \
+            UMOCK_LOG("IgnoreArgument_%s called without having an expected call.\r\n", TOSTRING(arg_name)); \
             umock_c_indicate_error(UMOCK_C_ERROR); \
         } \
         else \
@@ -216,6 +219,7 @@ typedef struct ARG_BUFFER_TAG
         C2(mock_call_, name)* mock_call_data = (C2(mock_call_, name)*)umockcall_get_call_data(umock_c_get_last_expected_call()); \
         if (mock_call_data == NULL) \
         { \
+            UMOCK_LOG("ValidateArgument_%s called without having an expected call.\r\n", TOSTRING(arg_name)); \
             umock_c_indicate_error(UMOCK_C_ERROR); \
         } \
         else \
@@ -234,6 +238,7 @@ typedef struct ARG_BUFFER_TAG
         C2(mock_call_, name)* mock_call_data = (C2(mock_call_, name)*)umockcall_get_call_data(umock_c_get_last_expected_call()); \
         if (mock_call_data == NULL) \
         { \
+            UMOCK_LOG("IgnoreArgument called without having an expected call.\r\n"); \
             umock_c_indicate_error(UMOCK_C_ERROR); \
         } \
         else \
@@ -241,6 +246,7 @@ typedef struct ARG_BUFFER_TAG
             IF(COUNT_ARG(__VA_ARGS__), \
                 if ((arg_index < 1) || (arg_index > (sizeof(C2(ignore_one_argument_array_,name)) / sizeof(C2(ignore_one_argument_array_,name)[0])))) \
                 { \
+                    UMOCK_LOG("Bad argument index in call to IgnoreArgument %u.\r\n", (unsigned int)arg_index); \
                     umock_c_indicate_error(UMOCK_C_ARG_INDEX_OUT_OF_RANGE); \
                 } \
                 else \
@@ -261,6 +267,7 @@ typedef struct ARG_BUFFER_TAG
         C2(mock_call_, name)* mock_call_data = (C2(mock_call_, name)*)umockcall_get_call_data(umock_c_get_last_expected_call()); \
         if (mock_call_data == NULL) \
         { \
+            UMOCK_LOG("ValidateArgument called without having an expected call.\r\n"); \
             umock_c_indicate_error(UMOCK_C_ERROR); \
         } \
         else \
@@ -268,6 +275,7 @@ typedef struct ARG_BUFFER_TAG
             IF(COUNT_ARG(__VA_ARGS__), \
                 if ((arg_index < 1) || (arg_index > (sizeof(C2(validate_one_argument_array_,name)) / sizeof(C2(validate_one_argument_array_,name)[0])))) \
                 { \
+                    UMOCK_LOG("Bad argument index in call to ValidateArgument %u.\r\n", (unsigned int)arg_index); \
                     umock_c_indicate_error(UMOCK_C_ARG_INDEX_OUT_OF_RANGE); \
                 } \
                 else \
@@ -287,6 +295,7 @@ typedef struct ARG_BUFFER_TAG
         C2(mock_call_, name)* mock_call_data = (C2(mock_call_, name)*)umockcall_get_call_data(umock_c_get_last_expected_call()); \
         if (mock_call_data == NULL) \
         { \
+            UMOCK_LOG("SetReturn called without having an expected call.\r\n"); \
             umock_c_indicate_error(UMOCK_C_ERROR); \
         } \
         else \
@@ -294,11 +303,13 @@ typedef struct ARG_BUFFER_TAG
             mock_call_data->return_value_set = 1; \
             if (umocktypes_copy(#return_type, &mock_call_data->return_value, &return_value) != 0) \
             { \
+                UMOCK_LOG("Could not copy return value of type %s.\r\n", TOSTRING(return_type)); \
                 umock_c_indicate_error(UMOCK_C_ERROR); \
-        } \
+            } \
         } \
         return mock_call_modifier; \
     }
+
 /* Codes_SRS_UMOCK_C_LIB_01_085: [The SetFailReturn call modifier shall record a fail return value.]*/
 #define IMPLEMENT_SET_FAIL_RETURN_FUNCTION(return_type, name, ...) \
     static C2(mock_call_modifier_,name) C2(set_fail_return_func_,name)(return_type return_value) \
@@ -307,6 +318,7 @@ typedef struct ARG_BUFFER_TAG
         C2(mock_call_, name)* mock_call_data = (C2(mock_call_, name)*)umockcall_get_call_data(umock_c_get_last_expected_call()); \
         if (mock_call_data == NULL) \
         { \
+            UMOCK_LOG("SetFailReturn called without having an expected call.\r\n"); \
             umock_c_indicate_error(UMOCK_C_ERROR); \
         } \
         else \
@@ -314,8 +326,9 @@ typedef struct ARG_BUFFER_TAG
             mock_call_data->fail_return_value_set = 1; \
             if (umocktypes_copy(#return_type, &mock_call_data->fail_return_value, &return_value) != 0) \
             { \
+                UMOCK_LOG("Could not copy fail return value of type %s.\r\n", TOSTRING(return_type)); \
                 umock_c_indicate_error(UMOCK_C_ERROR); \
-        } \
+            } \
         } \
         return mock_call_modifier; \
     }
@@ -334,10 +347,12 @@ typedef struct ARG_BUFFER_TAG
         DECLARE_MOCK_CALL_MODIFIER(name) \
         if ((index < 1) || (index > DIV2(COUNT_ARG(__VA_ARGS__)))) \
         { \
+            UMOCK_LOG("Bad argument index in CopyOutArgumentBuffer: %u.\r\n", index); \
             umock_c_indicate_error(UMOCK_C_ARG_INDEX_OUT_OF_RANGE); \
         } \
         else if ((bytes == NULL) || (length == 0)) \
         { \
+            UMOCK_LOG("Bad arguments to CopyOutArgumentBuffer: bytes = %p, length = %u.\r\n", bytes, (unsigned int)length); \
             umock_c_indicate_error(UMOCK_C_INVALID_ARGUMENT_BUFFER); \
         } \
         else \
@@ -345,6 +360,7 @@ typedef struct ARG_BUFFER_TAG
             C2(mock_call_, name)* mock_call_data = (C2(mock_call_, name)*)umockcall_get_call_data(umock_c_get_last_expected_call()); \
             if (mock_call_data == NULL) \
             { \
+                UMOCK_LOG("CopyOutArgumentBuffer called without having an expected call.\r\n"); \
                 umock_c_indicate_error(UMOCK_C_ERROR); \
             } \
             else \
@@ -353,6 +369,7 @@ typedef struct ARG_BUFFER_TAG
                 mock_call_data->out_arg_buffers[index - 1].bytes = malloc(length); \
                 if (mock_call_data->out_arg_buffers[index - 1].bytes == NULL) \
                 { \
+                    UMOCK_LOG("Could not allocate memory for out argument buffers.\r\n"); \
                     umock_c_indicate_error(UMOCK_C_MALLOC_ERROR); \
                 } \
                 else \
@@ -386,10 +403,12 @@ typedef struct ARG_BUFFER_TAG
         DECLARE_MOCK_CALL_MODIFIER(name) \
         if ((index < 1) || (index > DIV2(COUNT_ARG(__VA_ARGS__)))) \
         { \
+            UMOCK_LOG("Bad argument index in ValidateArgumentBuffer: %u.\r\n", index); \
             umock_c_indicate_error(UMOCK_C_ARG_INDEX_OUT_OF_RANGE); \
         } \
         else if ((bytes == NULL) || (length == 0)) \
         { \
+            UMOCK_LOG("Bad arguments to ValidateArgumentBuffer: bytes = %p, length = %u.\r\n", bytes, (unsigned int)length); \
             umock_c_indicate_error(UMOCK_C_INVALID_ARGUMENT_BUFFER); \
         } \
         else \
@@ -397,6 +416,7 @@ typedef struct ARG_BUFFER_TAG
             C2(mock_call_, name)* mock_call_data = (C2(mock_call_, name)*)umockcall_get_call_data(umock_c_get_last_expected_call()); \
             if (mock_call_data == NULL) \
             { \
+                UMOCK_LOG("ValidateArgumentBuffer called without having an expected call.\r\n"); \
                 umock_c_indicate_error(UMOCK_C_ERROR); \
             } \
             else \
@@ -405,6 +425,7 @@ typedef struct ARG_BUFFER_TAG
                 mock_call_data->validate_arg_buffers[index - 1].bytes = malloc(length); \
                 if (mock_call_data->validate_arg_buffers[index - 1].bytes == NULL) \
                 { \
+                    UMOCK_LOG("Could not allocate memory for validating argument buffers.\r\n"); \
                     umock_c_indicate_error(UMOCK_C_MALLOC_ERROR); \
                 } \
                 else \
@@ -440,6 +461,7 @@ typedef struct ARG_BUFFER_TAG
         mock_call = umockcall_create(#name, mock_call_data, C2(mock_call_data_free_func_,name), C2(mock_call_data_stringify_,name), C2(mock_call_data_are_equal_,name)); \
         if (mock_call == NULL) \
         { \
+            UMOCK_LOG("Failed creating mock call.\r\n"); \
             umock_c_indicate_error(UMOCK_C_ERROR); \
         } \
         else \
@@ -472,6 +494,7 @@ typedef struct ARG_BUFFER_TAG
     { \
         if (umocktypes_copy(TOSTRING(return_type), &C2(mock_call_default_result_,name), &return_value) != 0) \
         { \
+            UMOCK_LOG("Could not copy value of type %s when setting global mock return.\r\n", TOSTRING(return_type)); \
             umock_c_indicate_error(UMOCK_C_ERROR); \
         } \
     }, ) \
@@ -484,6 +507,7 @@ typedef struct ARG_BUFFER_TAG
     { \
         if (umocktypes_copy(TOSTRING(return_type), &C2(mock_call_fail_result_,name), &fail_return_value) != 0) \
         { \
+            UMOCK_LOG("Could not copy value of type %s when setting global mock fail return.\r\n", TOSTRING(return_type)); \
             umock_c_indicate_error(UMOCK_C_ERROR); \
         } \
     }, ) \
@@ -497,6 +521,7 @@ typedef struct ARG_BUFFER_TAG
         if ((umocktypes_copy(TOSTRING(return_type), &C2(mock_call_default_result_,name), &return_value) != 0) || \
             (umocktypes_copy(TOSTRING(return_type), &C2(mock_call_fail_result_, name), &fail_return_value) != 0)) \
         { \
+            UMOCK_LOG("Could not copy value of type %s when setting global mock fail returns.\r\n", TOSTRING(return_type)); \
             umock_c_indicate_error(UMOCK_C_ERROR); \
         } \
     }, ) \
@@ -507,6 +532,7 @@ typedef struct ARG_BUFFER_TAG
 #define COPY_RETURN_VALUE(return_type, name) \
     if (umocktypes_copy(TOSTRING(return_type), &result, &C2(mock_call_default_result_, name)) != 0) \
     { \
+        UMOCK_LOG("Could not copy value of type %s.\r\n", TOSTRING(return_type)); \
         umock_c_indicate_error(UMOCK_C_ERROR); \
     }
 
@@ -727,6 +753,7 @@ typedef struct ARG_BUFFER_TAG
         if (mock_call == NULL) \
         { \
             IF(IS_NOT_VOID(return_type),COPY_RETURN_VALUE(return_type, name),) \
+            UMOCK_LOG("Could not create a mock call in the actual call for %s.\r\n", TOSTRING(name)); \
             umock_c_indicate_error(UMOCK_C_ERROR); \
         } \
         else \
@@ -734,6 +761,7 @@ typedef struct ARG_BUFFER_TAG
             if (umock_c_add_actual_call(mock_call, &matched_call) != 0) \
             { \
                 umockcall_destroy(mock_call); \
+                UMOCK_LOG("Could not add an actual call for %s.\r\n", TOSTRING(name)); \
                 umock_c_indicate_error(UMOCK_C_COMPARE_CALL_ERROR); \
             } \
             if (matched_call != NULL) \
@@ -745,6 +773,7 @@ typedef struct ARG_BUFFER_TAG
                     { \
                         if (umocktypes_copy(#return_type, &result, &matched_call_data->return_value) != 0) \
                         { \
+                            UMOCK_LOG("Could not copy a value of type %s in an actual call for %s.\r\n", TOSTRING(return_type), TOSTRING(name)); \
                             umock_c_indicate_error(UMOCK_C_ERROR); \
                         } \
                         IF(IS_NOT_VOID(return_type),result_value_set = 1;,) \
