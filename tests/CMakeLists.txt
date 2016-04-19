@@ -14,6 +14,7 @@ add_subdirectory(gballoc_without_init_unittests)
 add_subdirectory(hmacsha256_unittests)
 
 if(${use_http})
+	add_subdirectory(httpapiexsas_unittests)
 	add_subdirectory(httpheaders_unittests)
 endif()
 add_subdirectory(list_unittests)
@@ -41,7 +42,6 @@ endif()
 
 if(${use_http})
 	add_subdirectory(httpapiex_unittests)
-	add_subdirectory(httpapiexsas_unittests)
 endif()
 
 endif()
