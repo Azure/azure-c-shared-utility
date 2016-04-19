@@ -66,7 +66,7 @@ void reset_umocktypes_register_type_calls(void)
         free(umocktypes_register_type_calls);
         umocktypes_register_type_calls = NULL;
     }
-    umocktypes_register_type_call_count = NULL;
+    umocktypes_register_type_call_count = 0;
 }
 
 static size_t malloc_call_count;
@@ -2427,7 +2427,7 @@ TEST_FUNCTION(umocktypes_stringify_longdouble_with_0_0_value)
     char* result = umocktypes_stringify_longdouble(&input);
 
     // assert
-    (void)sprintf(expected_string, "%lf", input);
+    (void)sprintf(expected_string, "%Lf", input);
     ASSERT_ARE_EQUAL(char_ptr, expected_string, result);
 
     // cleanup
@@ -2445,7 +2445,7 @@ TEST_FUNCTION(umocktypes_stringify_longdouble_with_negative_value)
     char* result = umocktypes_stringify_longdouble(&input);
 
     // assert
-    (void)sprintf(expected_string, "%lf", input);
+    (void)sprintf(expected_string, "%Lf", input);
     ASSERT_ARE_EQUAL(char_ptr, expected_string, result);
 
     // cleanup
@@ -2463,7 +2463,7 @@ TEST_FUNCTION(umocktypes_stringify_longdouble_with_positive_value)
     char* result = umocktypes_stringify_longdouble(&input);
 
     // assert
-    (void)sprintf(expected_string, "%lf", input);
+    (void)sprintf(expected_string, "%Lf", input);
     ASSERT_ARE_EQUAL(char_ptr, expected_string, result);
 
     // cleanup
@@ -2625,7 +2625,7 @@ TEST_FUNCTION(umocktypes_stringify_size_t_with_0_0_value)
     char* result = umocktypes_stringify_size_t(&input);
 
     // assert
-    (void)sprintf(expected_string, "%u", input);
+    (void)sprintf(expected_string, "%zu", input);
     ASSERT_ARE_EQUAL(char_ptr, expected_string, result);
 
     // cleanup
@@ -2643,7 +2643,7 @@ TEST_FUNCTION(umocktypes_stringify_size_t_with_max_value)
     char* result = umocktypes_stringify_size_t(&input);
 
     // assert
-    (void)sprintf(expected_string, "%u", input);
+    (void)sprintf(expected_string, "%zu", input);
     ASSERT_ARE_EQUAL(char_ptr, expected_string, result);
 
     // cleanup

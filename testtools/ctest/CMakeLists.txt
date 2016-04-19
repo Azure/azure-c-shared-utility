@@ -23,8 +23,8 @@ set(CTEST_INC_FOLDER ${CMAKE_CURRENT_LIST_DIR}/inc CACHE INTERNAL "this is what 
 include_directories(${CTEST_INC_FOLDER})
 
 IF(WIN32)
-	#windows needs this define
-	add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+    #windows needs this define
+    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 ENDIF(WIN32)
 
 add_library(
@@ -32,12 +32,14 @@ ctest ${ctest_c_files} ${ctest_h_files}
 )
 
 set_target_properties(ctest
-			   PROPERTIES
-			   FOLDER "SharedTestTools")
+               PROPERTIES
+               FOLDER "SharedTestTools")
 
-add_subdirectory(unittests)
+if (NOT ${skip_unittests})
+     add_subdirectory(unittests)
+endif()
 
 if(WIN32)
 else()
-	install (TARGETS ctest DESTINATION lib)
+    install (TARGETS ctest DESTINATION lib)
 endif (WIN32)
