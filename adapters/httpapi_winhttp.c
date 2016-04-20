@@ -501,12 +501,6 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
                                                                     else if (responseBytesAvailable == 0)
                                                                     {
                                                                         /*end of the stream, go out*/
-                                                                        if (dwStatusCode >= HTTP_STATUS_AMBIGUOUS)
-                                                                        {
-                                                                            LogError("HTTP status code was: %d \r\n", (int)dwStatusCode);
-                                                                            LogError("(result = %s)\r\n", ENUM_TO_STRING(HTTPAPI_RESULT, result));
-                                                                        }
-
                                                                         result = HTTPAPI_OK;
                                                                         goOnAndReadEverything = 0;
                                                                     }
@@ -566,18 +560,11 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
 
                                                                 } while (goOnAndReadEverything != 0);
 
-                                                                if (responseContent != NULL)
-                                                                {
-                                                                    if (BUFFER_u_char(responseContent) != NULL)
-                                                                    {
-                                                                        LogInfo("Buffer Content:\r\n %.*s\r\n", BUFFER_length(responseContent), BUFFER_u_char(responseContent));
-                                                                    }
-                                                                }
-                                                                else if (useToReadAllResponse != NULL)
+                                                                if (responseContent == NULL && useToReadAllResponse != NULL)
                                                                 {
                                                                     if (BUFFER_u_char(useToReadAllResponse) != NULL)
                                                                     {
-                                                                        LogInfo("Buffer Content:\r\n %.*s\r\n", BUFFER_length(useToReadAllResponse), BUFFER_u_char(useToReadAllResponse));
+                                                                        LogInfo("Buffer Content:\r\n %.*s\r\n", (int)BUFFER_length(useToReadAllResponse), BUFFER_u_char(useToReadAllResponse));
                                                                     }
                                                                     BUFFER_delete(useToReadAllResponse);
                                                                 }
