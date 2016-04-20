@@ -28,7 +28,7 @@ THREADAPI_RESULT ThreadAPI_Create(THREAD_HANDLE* threadHandle, THREAD_START_FUNC
         (func == NULL))
     {
         result = THREADAPI_INVALID_ARG;
-        LogError("(result = %s)\r\n", ENUM_TO_STRING(THREADAPI_RESULT, result));
+        LogError("(result = %s)", ENUM_TO_STRING(THREADAPI_RESULT, result));
     }
     else
     {
@@ -36,7 +36,7 @@ THREADAPI_RESULT ThreadAPI_Create(THREAD_HANDLE* threadHandle, THREAD_START_FUNC
         if (thrd_t_ptr == NULL)
         {
             result = THREADAPI_NO_MEMORY;
-            LogError("(result = %s)\r\n", ENUM_TO_STRING(THREADAPI_RESULT, result));
+            LogError("(result = %s)", ENUM_TO_STRING(THREADAPI_RESULT, result));
         }
         else
         {
@@ -45,7 +45,7 @@ THREADAPI_RESULT ThreadAPI_Create(THREAD_HANDLE* threadHandle, THREAD_START_FUNC
             {
                 free(thrd_t_ptr);
                 result = THREADAPI_ERROR;
-                LogError("(result = %s)\r\n", ENUM_TO_STRING(THREADAPI_RESULT, result));
+                LogError("(result = %s)", ENUM_TO_STRING(THREADAPI_RESULT, result));
             }
             else
             {
@@ -66,7 +66,7 @@ THREADAPI_RESULT ThreadAPI_Join(THREAD_HANDLE threadHandle, int *res)
     if (threadHandle == NULL)
     {
         result = THREADAPI_INVALID_ARG;
-        LogError("(result = %s)\r\n", ENUM_TO_STRING(THREADAPI_RESULT, result));
+        LogError("(result = %s)", ENUM_TO_STRING(THREADAPI_RESULT, result));
     }
     else
     {
@@ -75,7 +75,7 @@ THREADAPI_RESULT ThreadAPI_Join(THREAD_HANDLE threadHandle, int *res)
         default:
         case thrd_error:
             result = THREADAPI_ERROR;
-            LogError("(result = %s)\r\n", ENUM_TO_STRING(THREADAPI_RESULT, result));
+            LogError("(result = %s)", ENUM_TO_STRING(THREADAPI_RESULT, result));
             break;
 
         case thrd_success:
@@ -84,7 +84,7 @@ THREADAPI_RESULT ThreadAPI_Join(THREAD_HANDLE threadHandle, int *res)
 
         case thrd_nomem:
             result = THREADAPI_NO_MEMORY;
-            LogError("(result = %s)\r\n", ENUM_TO_STRING(THREADAPI_RESULT, result));
+            LogError("(result = %s)", ENUM_TO_STRING(THREADAPI_RESULT, result));
             break;
         }
 

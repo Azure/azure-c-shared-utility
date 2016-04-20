@@ -21,7 +21,7 @@ typedef struct MAP_HANDLE_DATA_TAG
     MAP_FILTER_CALLBACK mapFilterCallback;
 }MAP_HANDLE_DATA;
 
-#define LOG_MAP_ERROR LogError("result = %s\r\n", ENUM_TO_STRING(MAP_RESULT, result));
+#define LOG_MAP_ERROR LogError("result = %s", ENUM_TO_STRING(MAP_RESULT, result));
 
 MAP_HANDLE Map_Create(MAP_FILTER_CALLBACK mapFilterFunc)
 {
@@ -106,7 +106,7 @@ MAP_HANDLE Map_Clone(MAP_HANDLE handle)
     {
         /*Codes_SRS_MAP_02_038: [Map_Clone returns NULL if parameter handle is NULL.]*/
         result = NULL;
-        LogError("invalid arg to Map_Clone (NULL)\r\n");
+        LogError("invalid arg to Map_Clone (NULL)");
     }
     else
     {
@@ -116,7 +116,7 @@ MAP_HANDLE Map_Clone(MAP_HANDLE handle)
         {
             /*Codes_SRS_MAP_02_047: [If during cloning, any operation fails, then Map_Clone shall return NULL.] */
             /*do nothing, proceed to return it, this is an error case*/
-            LogError("unable to malloc\r\n");
+            LogError("unable to malloc");
         }
         else
         {
@@ -134,14 +134,14 @@ MAP_HANDLE Map_Clone(MAP_HANDLE handle)
                 if( (result->keys = Map_CloneVector((const char* const*)handleData->keys, handleData->count))==NULL)
                 {
                     /*Codes_SRS_MAP_02_047: [If during cloning, any operation fails, then Map_Clone shall return NULL.] */
-                    LogError("unable to clone keys\r\n");
+                    LogError("unable to clone keys");
                     free(result);
                     result = NULL;
                 }
                 else if ((result->values = Map_CloneVector((const char* const*)handleData->values, handleData->count)) == NULL)
                 {
                     /*Codes_SRS_MAP_02_047: [If during cloning, any operation fails, then Map_Clone shall return NULL.] */
-                    LogError("unable to clone values\r\n");
+                    LogError("unable to clone values");
                     size_t i;
                     for (i = 0; i < result->count; i++)
                     {
@@ -167,7 +167,7 @@ static int Map_IncreaseStorageKeysValues(MAP_HANDLE_DATA* handleData)
     char** newKeys = (char**)realloc(handleData->keys, (handleData->count + 1) * sizeof(char*));
     if (newKeys == NULL)
     {
-        LogError("realloc error\r\n");
+        LogError("realloc error");
         result = __LINE__;
     }
     else
@@ -178,7 +178,7 @@ static int Map_IncreaseStorageKeysValues(MAP_HANDLE_DATA* handleData)
         newValues = (char**)realloc(handleData->values, (handleData->count + 1) * sizeof(char*));
         if (newValues == NULL)
         {
-            LogError("realloc error\r\n");
+            LogError("realloc error");
             if (handleData->count == 0) /*avoiding an implementation defined behavior */
             {
                 free(handleData->keys);
@@ -189,7 +189,7 @@ static int Map_IncreaseStorageKeysValues(MAP_HANDLE_DATA* handleData)
                 char** undoneKeys = (char**)realloc(handleData->keys, (handleData->count) * sizeof(char*));
                 if (undoneKeys == NULL)
                 {
-                    LogError("CATASTROPHIC error, unable to undo through realloc to a smaller size\r\n");
+                    LogError("CATASTROPHIC error, unable to undo through realloc to a smaller size");
                 }
                 else
                 {
@@ -227,7 +227,7 @@ static void Map_DecreaseStorageKeysValues(MAP_HANDLE_DATA* handleData)
         char** undoneKeys = (char**)realloc(handleData->keys, sizeof(char*)* (handleData->count - 1)); 
         if (undoneKeys == NULL)
         {
-            LogError("CATASTROPHIC error, unable to undo through realloc to a smaller size\r\n");
+            LogError("CATASTROPHIC error, unable to undo through realloc to a smaller size");
         }
         else
         {
@@ -237,7 +237,7 @@ static void Map_DecreaseStorageKeysValues(MAP_HANDLE_DATA* handleData)
         undoneValues = (char**)realloc(handleData->values, sizeof(char*)* (handleData->count - 1));
         if (undoneValues == NULL)
         {
-            LogError("CATASTROPHIC error, unable to undo through realloc to a smaller size\r\n");
+            LogError("CATASTROPHIC error, unable to undo through realloc to a smaller size");
         }
         else
         {
@@ -306,7 +306,7 @@ static int insertNewKeyValue(MAP_HANDLE_DATA* handleData, const char* key, const
         if (mallocAndStrcpy_s(&(handleData->keys[handleData->count - 1]), key) != 0)
         {
             Map_DecreaseStorageKeysValues(handleData);
-            LogError("unable to mallocAndStrcpy_s\r\n");
+            LogError("unable to mallocAndStrcpy_s");
             result = __LINE__;
         }
         else
@@ -315,7 +315,7 @@ static int insertNewKeyValue(MAP_HANDLE_DATA* handleData, const char* key, const
             {
                 free(handleData->keys[handleData->count - 1]);
                 Map_DecreaseStorageKeysValues(handleData);
-                LogError("unable to mallocAndStrcpy_s\r\n");
+                LogError("unable to mallocAndStrcpy_s");
                 result = __LINE__;
             }
             else
@@ -538,7 +538,7 @@ const char* Map_GetValueFromKey(MAP_HANDLE handle, const char* key)
         )
     {
         result = NULL;
-        LogError("invalid parameter to Map_GetValueFromKey\r\n");
+        LogError("invalid parameter to Map_GetValueFromKey");
     }
     else
     {

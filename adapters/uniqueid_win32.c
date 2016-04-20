@@ -18,7 +18,7 @@ UNIQUEID_RESULT UniqueId_Generate(char* uid, size_t len)
     if (uid == NULL || len < 37)
     {
         result = UNIQUEID_INVALID_ARG;
-        LogError("Buffer Size is Null or length is less then 37 bytes\r\n");
+        LogError("Buffer Size is Null or length is less then 37 bytes");
     }
     else 
     {
@@ -26,7 +26,7 @@ UNIQUEID_RESULT UniqueId_Generate(char* uid, size_t len)
         RPC_STATUS status = UuidCreate(&uuidVal);
         if (status != RPC_S_OK && status != RPC_S_UUID_LOCAL_ONLY)
         {
-            LogError("Unable to aquire unique Id\r\n");
+            LogError("Unable to aquire unique Id");
             result = UNIQUEID_ERROR;
         }
         else
@@ -35,7 +35,7 @@ UNIQUEID_RESULT UniqueId_Generate(char* uid, size_t len)
             status = UuidToStringA(&uuidVal, &randomResult);
             if (status != RPC_S_OK)
             {
-                LogError("Unable to convert Id to string\r\n");
+                LogError("Unable to convert Id to string");
                 result = UNIQUEID_ERROR;
             }
             else

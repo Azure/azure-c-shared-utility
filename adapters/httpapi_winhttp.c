@@ -25,7 +25,7 @@
                 CHAR messageBuffer[MESSAGE_BUFFER_SIZE]; \
                 if (errorMessageID == 0) \
                 {\
-                    LogError("GetLastError() returned 0. Make sure you are calling this right after the code that failed. \r\n"); \
+                    LogError("GetLastError() returned 0. Make sure you are calling this right after the code that failed. "); \
                 } \
                 else\
                 {\
@@ -36,16 +36,16 @@
                         size = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, errorMessageID, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), messageBuffer, MESSAGE_BUFFER_SIZE, NULL); \
                         if (size == 0)\
                         {\
-                            LogError("GetLastError Code: %d. \r\n", errorMessageID); \
+                            LogError("GetLastError Code: %d. ", errorMessageID); \
                         }\
                         else\
                         {\
-                            LogError("GetLastError: %s.\r\n", messageBuffer); \
+                            LogError("GetLastError: %s.", messageBuffer); \
                         }\
                     }\
                     else\
                     {\
-                        LogError("GetLastError: %s.\r\n", messageBuffer); \
+                        LogError("GetLastError: %s.", messageBuffer); \
                     }\
                 }\
             } \
@@ -79,7 +79,7 @@ static const char* ConstructHeadersString(HTTP_HEADERS_HANDLE httpHeadersHandle)
     if (HTTPHeaders_GetHeaderCount(httpHeadersHandle, &headersCount) != HTTP_HEADERS_OK)
     {
         result = NULL;
-        LogError("HTTPHeaders_GetHeaderCount failed.\r\n");
+        LogError("HTTPHeaders_GetHeaderCount failed.");
     }
     else
     {
@@ -98,7 +98,7 @@ static const char* ConstructHeadersString(HTTP_HEADERS_HANDLE httpHeadersHandle)
             }
             else
             {
-                LogError("HTTPHeaders_GetHeader failed\r\n");
+                LogError("HTTPHeaders_GetHeader failed");
                 break;
             }
         }
@@ -113,7 +113,7 @@ static const char* ConstructHeadersString(HTTP_HEADERS_HANDLE httpHeadersHandle)
             
             if (result == NULL)
             {
-                LogError("unable to malloc\r\n");
+                LogError("unable to malloc");
                 /*let it be returned*/
             }
             else
@@ -212,7 +212,7 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
     HTTP_HANDLE_DATA* result;
     if (g_HTTPAPIState != HTTPAPI_INITIALIZED)
     {
-        LogError("g_HTTPAPIState not HTTPAPI_INITIALIZED\r\n");
+        LogError("g_HTTPAPIState not HTTPAPI_INITIALIZED");
         result = NULL;
     }
     else
@@ -220,7 +220,7 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
         result = (HTTP_HANDLE_DATA*)malloc(sizeof(HTTP_HANDLE_DATA));
         if (result == NULL)
         {
-            LogError("malloc returned NULL.\r\n");
+            LogError("malloc returned NULL.");
         }
         else
         {
@@ -228,20 +228,20 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
             size_t hostNameTemp_size = MultiByteToWideChar(CP_ACP, 0, hostName, -1, NULL, 0);
             if (hostNameTemp_size == 0)
             {
-                LogError("MultiByteToWideChar failed\r\n");
+                LogError("MultiByteToWideChar failed");
             }
             else
             {
                 hostNameTemp = malloc(sizeof(wchar_t)*hostNameTemp_size);
                 if (hostNameTemp == NULL)
                 {
-                    LogError("malloc failed\r\n");
+                    LogError("malloc failed");
                 }
                 else
                 {
                     if (MultiByteToWideChar(CP_ACP, 0, hostName, -1, hostNameTemp, hostNameTemp_size) == 0)
                     {
-                        LogError("MultiByteToWideChar failed\r\n");
+                        LogError("MultiByteToWideChar failed");
                         free(result);
                         result = NULL;
                     }
@@ -277,7 +277,7 @@ void HTTPAPI_CloseConnection(HTTP_HANDLE handle)
 {
     if (g_HTTPAPIState != HTTPAPI_INITIALIZED)
     {
-        LogError("g_HTTPAPIState not HTTPAPI_INITIALIZED\r\n");
+        LogError("g_HTTPAPIState not HTTPAPI_INITIALIZED");
     }
     else
     {
@@ -303,7 +303,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
     HTTPAPI_RESULT result;
     if (g_HTTPAPIState != HTTPAPI_INITIALIZED)
     {
-        LogError("g_HTTPAPIState not HTTPAPI_INITIALIZED\r\n");
+        LogError("g_HTTPAPIState not HTTPAPI_INITIALIZED");
         result = HTTPAPI_NOT_INIT;
     }
     else
@@ -315,7 +315,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
             (httpHeadersHandle == NULL))
         {
             result = HTTPAPI_INVALID_ARG;
-            LogError("NULL parameter detected (result = %s)\r\n", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+            LogError("NULL parameter detected (result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
         }
         else
         {
@@ -350,7 +350,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
             if (requestTypeString == NULL)
             {
                 result = HTTPAPI_INVALID_ARG;
-                LogError("requestTypeString was NULL (result = %s)\r\n", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                LogError("requestTypeString was NULL (result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
             }
             else
             {
@@ -365,14 +365,14 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
                     if (relativePathTemp == NULL)
                     {
                         result = HTTPAPI_ALLOC_FAILED;
-                        LogError("malloc failed (result = %s)\r\n", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                        LogError("malloc failed (result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
                     }
                     else
                     {
                         if (MultiByteToWideChar(CP_ACP, 0, relativePath, -1, relativePathTemp, requiredCharactersForRelativePath) == 0)
                         {
                             result = HTTPAPI_STRING_PROCESSING_ERROR;
-                            LogError("MultiByteToWideChar was 0. (result = %s)\r\n", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                            LogError("MultiByteToWideChar was 0. (result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
                         }
                         else
                         {
@@ -382,14 +382,14 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
                             if (headersTemp == NULL)
                             {
                                 result = HTTPAPI_STRING_PROCESSING_ERROR;
-                                LogError("MultiByteToWideChar was 0. (result = %s)\r\n", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                                LogError("MultiByteToWideChar was 0. (result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
                             }
                             else
                             {
                                 if (MultiByteToWideChar(CP_ACP, 0, headers2, -1, headersTemp, requiredCharactersForHeaders) == 0)
                                 {
                                     result = HTTPAPI_STRING_PROCESSING_ERROR;
-                                    LogError("MultiByteToWideChar was 0(result = %s)\r\n", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                                    LogError("MultiByteToWideChar was 0(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
                                 }
                                 else
                                 {
@@ -483,7 +483,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
                                                             if (useToReadAllResponse == NULL)
                                                             {
                                                                 result = HTTPAPI_ERROR;
-                                                                LogError("(result = %s)\r\n", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                                                                LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
                                                             }
                                                             else
                                                             {
@@ -509,7 +509,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
                                                                         if (BUFFER_enlarge(useToReadAllResponse, responseBytesAvailable) != 0)
                                                                         {
                                                                             result = HTTPAPI_ERROR;
-                                                                            LogError("(result = %s)\r\n", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                                                                            LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
                                                                             goOnAndReadEverything = 0;
                                                                         }
                                                                         else
@@ -521,13 +521,13 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
                                                                             if (BUFFER_content(useToReadAllResponse, &bufferContent) != 0)
                                                                             {
                                                                                 result = HTTPAPI_ERROR;
-                                                                                LogError("(result = %s)\r\n", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                                                                                LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
                                                                                 goOnAndReadEverything = 0;
                                                                             }
                                                                             else if (BUFFER_size(useToReadAllResponse, &bufferSize) != 0)
                                                                             {
                                                                                 result = HTTPAPI_ERROR;
-                                                                                LogError("(result = %s)\r\n", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                                                                                LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
                                                                                 goOnAndReadEverything = 0;
                                                                             }
                                                                             else
@@ -546,7 +546,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
                                                                                     {
                                                                                         /*end of everything, but this looks like an error still, or a non-conformance between WinHttpQueryDataAvailable and WinHttpReadData*/
                                                                                         result = HTTPAPI_READ_DATA_FAILED;
-                                                                                        LogError("bytesReceived was unexpectedly zero (result = %s)\r\n", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                                                                                        LogError("bytesReceived was unexpectedly zero (result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
                                                                                         goOnAndReadEverything = 0;
                                                                                     }
                                                                                     else
@@ -588,7 +588,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
                                                             if (responseHeadersTemp == NULL)
                                                             {
                                                                 result = HTTPAPI_ALLOC_FAILED;
-                                                                LogError("malloc failed: (result = %s)\r\n", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                                                                LogError("malloc failed: (result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
                                                             }
                                                             else
                                                             {
@@ -611,14 +611,14 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
                                                                         tokenTemp_size = WideCharToMultiByte(CP_ACP, 0, token, -1, NULL, 0, NULL, NULL);
                                                                         if (tokenTemp_size == 0)
                                                                         {
-                                                                            LogError("WideCharToMultiByte failed\r\n");
+                                                                            LogError("WideCharToMultiByte failed");
                                                                         }
                                                                         else
                                                                         {
                                                                             tokenTemp = malloc(sizeof(char)*tokenTemp_size);
                                                                             if (tokenTemp == NULL)
                                                                             {
-                                                                                LogError("malloc failed\r\n");
+                                                                                LogError("malloc failed");
                                                                             }
                                                                             else
                                                                             {
@@ -634,7 +634,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
                                                                                         *whereIsColon = '\0';
                                                                                         if (HTTPHeaders_AddHeaderNameValuePair(responseHeadersHandle, tokenTemp, whereIsColon + 1) != HTTP_HEADERS_OK)
                                                                                         {
-                                                                                            LogError("HTTPHeaders_AddHeaderNameValuePair failed\r\n");
+                                                                                            LogError("HTTPHeaders_AddHeaderNameValuePair failed");
                                                                                             result = HTTPAPI_HTTP_HEADERS_FAILED;
                                                                                             break;
                                                                                         }
@@ -642,7 +642,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
                                                                                 }
                                                                                 else
                                                                                 {
-                                                                                    LogError("WideCharToMultiByte failed\r\n");
+                                                                                    LogError("WideCharToMultiByte failed");
                                                                                 }
                                                                                 free(tokenTemp);
                                                                             }
@@ -654,7 +654,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
                                                                 }
                                                                 else
                                                                 {
-                                                                    LogError("WinHttpQueryHeaders failed\r\n");
+                                                                    LogError("WinHttpQueryHeaders failed");
                                                                 }
 
                                                                 free(responseHeadersTemp);
@@ -677,7 +677,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
                 else
                 {
                     result = HTTPAPI_ALLOC_FAILED; /*likely*/
-                    LogError("ConstructHeadersString failed\r\n");
+                    LogError("ConstructHeadersString failed");
                 }
             }
         }
@@ -696,7 +696,7 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
         )
     {
         result = HTTPAPI_INVALID_ARG;
-        LogError("invalid parameter (NULL) passed to HTTPAPI_SetOption\r\n");
+        LogError("invalid parameter (NULL) passed to HTTPAPI_SetOption");
     }
     else
     {
@@ -710,7 +710,7 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
         else
         {
             result = HTTPAPI_INVALID_ARG;
-            LogError("unknown option %s\r\n", optionName);
+            LogError("unknown option %s", optionName);
         }
     }
     return result;
@@ -726,7 +726,7 @@ HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, co
         )
     {
         result = HTTPAPI_INVALID_ARG;
-        LogError("invalid argument(NULL) passed to HTTPAPI_CloneOption\r\n");
+        LogError("invalid argument(NULL) passed to HTTPAPI_CloneOption");
     }
     else
     {
@@ -737,7 +737,7 @@ HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, co
             if (temp == NULL)
             {
                 result = HTTPAPI_ERROR;
-                LogError("malloc failed (result = %s)\r\n", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                LogError("malloc failed (result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
             }
             else
             {
@@ -749,7 +749,7 @@ HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, co
         else
         {
             result = HTTPAPI_INVALID_ARG;
-            LogError("unknown option %s\r\n", optionName);
+            LogError("unknown option %s", optionName);
         }
     }
     return result;

@@ -84,7 +84,7 @@ COND_RESULT Condition_Wait(COND_HANDLE handle, LOCK_HANDLE lock, int timeout_mil
             }
             else
             {
-                LogError("Failed to Condition_Wait\r\n");
+                LogError("Failed to Condition_Wait");
                 result = COND_ERROR;
             }
         }
@@ -92,7 +92,7 @@ COND_RESULT Condition_Wait(COND_HANDLE handle, LOCK_HANDLE lock, int timeout_mil
         {
             if (cnd_wait((cnd_t*)handle, (mtx_t *)lock) != thrd_success)
             {
-                LogError("Failed to cnd_wait\r\n");
+                LogError("Failed to cnd_wait");
                 result = COND_ERROR;
             }
             else

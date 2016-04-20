@@ -33,17 +33,17 @@ HTTPAPIEX_SAS_HANDLE HTTPAPIEX_SAS_Create(STRING_HANDLE key, STRING_HANDLE uriRe
     if (key == NULL)
     {
         /*Codes_SRS_HTTPAPIEXSAS_06_001: [If the parameter key is NULL then HTTPAPIEX_SAS_Create shall return NULL.]*/
-        LogError("No key passed to HTTPAPIEX_SAS_Create.\r\n");
+        LogError("No key passed to HTTPAPIEX_SAS_Create.");
     }
     else if (uriResource == NULL)
     {
         /*Codes_SRS_HTTPAPIEXSAS_06_002: [If the parameter uriResource is NULL then HTTPAPIEX_SAS_Create shall return NULL.]*/
-        LogError("No uri resource passed to HTTPAPIEX_SAS_Create.\r\n");
+        LogError("No uri resource passed to HTTPAPIEX_SAS_Create.");
     }
     else if (keyName == NULL)
     {
         /*Codes_SRS_HTTPAPIEXSAS_06_003: [If the parameter keyName is NULL then HTTPAPIEX_SAS_Create shall return NULL.]*/
-        LogError("No key name passed to HTTPAPIEX_SAS_Create.\r\n");
+        LogError("No key name passed to HTTPAPIEX_SAS_Create.");
     }
     else
     {
@@ -59,7 +59,7 @@ HTTPAPIEX_SAS_HANDLE HTTPAPIEX_SAS_Create(STRING_HANDLE key, STRING_HANDLE uriRe
                 ((state->keyName = STRING_clone(keyName)) == NULL))
             {
                 /*Codes_SRS_HTTPAPIEXSAS_06_004: [If there are any other errors in the instantiation of this handle then HTTPAPIEX_SAS_Create shall return NULL.]*/
-                LogError("Unable to clone the arguments.\r\n");
+                LogError("Unable to clone the arguments.");
                 HTTPAPIEX_SAS_Destroy(state);
             }
             else
@@ -112,7 +112,7 @@ HTTPAPIEX_RESULT HTTPAPIEX_SAS_ExecuteRequest(HTTPAPIEX_SAS_HANDLE sasHandle, HT
                 /*Codes_SRS_HTTPAPIEXSAS_06_019: [If the value of currentTime is (time_t)-1 is then fallthrough.]*/
                 if (currentTime == (time_t)-1)
                 {
-                    LogError("Time does not appear to be working.\r\n");
+                    LogError("Time does not appear to be working.");
                 }
                 else
                 {
@@ -126,14 +126,14 @@ HTTPAPIEX_RESULT HTTPAPIEX_SAS_ExecuteRequest(HTTPAPIEX_SAS_HANDLE sasHandle, HT
                         if (HTTPHeaders_ReplaceHeaderNameValuePair(requestHttpHeadersHandle, "Authorization", STRING_c_str(newSASToken)) != HTTP_HEADERS_OK)
                         {
                             /*Codes_SRS_HTTPAPIEXSAS_06_014: [If the result of the invocation of HTTPHeaders_ReplaceHeaderNameValuePair is NOT HTTP_HEADERS_OK then fallthrough.]*/
-                            LogError("Unable to replace the old SAS Token.\r\n");
+                            LogError("Unable to replace the old SAS Token.");
                         }
                         /*Codes_SRS_HTTPAPIEXSAS_06_015: [STRING_delete(newSASToken) will be invoked.]*/
                         STRING_delete(newSASToken);
                     }
                     else
                     {
-                        LogError("Unable to create a new SAS token.\r\n");
+                        LogError("Unable to create a new SAS token.");
                     }
                 }
             }

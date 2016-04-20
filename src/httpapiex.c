@@ -29,7 +29,7 @@ typedef struct HTTPAPIEX_HANDLE_DATA_TAG
 
 DEFINE_ENUM_STRINGS(HTTPAPIEX_RESULT, HTTPAPIEX_RESULT_VALUES);
 
-#define LOG_HTTAPIEX_ERROR() LogError("error code = %s\r\n", ENUM_TO_STRING(HTTPAPIEX_RESULT, result))
+#define LOG_HTTAPIEX_ERROR() LogError("error code = %s", ENUM_TO_STRING(HTTPAPIEX_RESULT, result))
 
 HTTPAPIEX_HANDLE HTTPAPIEX_Create(const char* hostName)
 {
@@ -37,7 +37,7 @@ HTTPAPIEX_HANDLE HTTPAPIEX_Create(const char* hostName)
     /*Codes_SRS_HTTPAPIEX_02_001: [If parameter hostName is NULL then HTTPAPIEX_Create shall return NULL.]*/
     if (hostName == NULL)
     {
-        LogError("invalid (NULL) parameter\r\n");
+        LogError("invalid (NULL) parameter");
         result = NULL;
     }
     else
@@ -46,7 +46,7 @@ HTTPAPIEX_HANDLE HTTPAPIEX_Create(const char* hostName)
         HTTPAPIEX_HANDLE_DATA* handleData = (HTTPAPIEX_HANDLE_DATA*)malloc(sizeof(HTTPAPIEX_HANDLE_DATA));
         if (handleData == NULL)
         {
-            LogError("malloc failed.\r\n");
+            LogError("malloc failed.");
             result = NULL;
         }
         else
@@ -56,7 +56,7 @@ HTTPAPIEX_HANDLE HTTPAPIEX_Create(const char* hostName)
             if (handleData->hostName == NULL)
             {
                 free(handleData);
-                LogError("unable to STRING_construct\r\n");
+                LogError("unable to STRING_construct");
                 result = NULL;
             }
             else
@@ -108,7 +108,7 @@ static int buildRequestHttpHeadersHandle(HTTPAPIEX_HANDLE_DATA *handleData, BUFF
     if (*toBeUsedRequestHttpHeadersHandle == NULL)
     {
         result = __LINE__;
-        LogError("unable to HTTPHeaders_Alloc\r\n");
+        LogError("unable to HTTPHeaders_Alloc");
     }
     else
     {
@@ -212,7 +212,7 @@ static int buildAllRequests(HTTPAPIEX_HANDLE_DATA* handle, HTTPAPI_REQUEST_TYPE 
     if (buildBufferIfNotExist(requestContent, isOriginalRequestContent, toBeUsedRequestContent) != 0)
     {
         result = __LINE__;
-        LogError("unable to build the request content\r\n");
+        LogError("unable to build the request content");
     }
     else
     {
@@ -224,7 +224,7 @@ static int buildAllRequests(HTTPAPIEX_HANDLE_DATA* handle, HTTPAPI_REQUEST_TYPE 
             {
                 BUFFER_delete(*toBeUsedRequestContent);
             }
-            LogError("unable to build the request http headers handle\r\n");
+            LogError("unable to build the request http headers handle");
         }
         else
         {
@@ -263,7 +263,7 @@ static int buildAllRequests(HTTPAPIEX_HANDLE_DATA* handle, HTTPAPI_REQUEST_TYPE 
                 {
                     HTTPHeaders_Free(*toBeUsedRequestHttpHeadersHandle);
                 }
-                LogError("unable to build response content\r\n");
+                LogError("unable to build response content");
             }
             else
             {
@@ -285,7 +285,7 @@ static int buildAllRequests(HTTPAPIEX_HANDLE_DATA* handle, HTTPAPI_REQUEST_TYPE 
                     {
                         HTTPHeaders_Free(*toBeUsedResponseHttpHeadersHandle);
                     }
-                    LogError("unable to build response content\r\n");
+                    LogError("unable to build response content");
                 }
                 else
                 {
@@ -400,7 +400,7 @@ HTTPAPIEX_RESULT HTTPAPIEX_ExecuteRequest(HTTPAPIEX_HANDLE handle, HTTPAPI_REQUE
                                     HTTPAPIEX_SAVED_OPTION* option = VECTOR_element(handleData->savedOptions, i);
                                     if (HTTPAPI_SetOption(handleData->httpHandle, option->optionName, option->value) != HTTPAPI_OK)
                                     {
-                                        LogError("HTTPAPI_SetOption failed when called for option %s\r\n", option->optionName);
+                                        LogError("HTTPAPI_SetOption failed when called for option %s", option->optionName);
                                     }
                                 }
                                 goOn = true;
@@ -473,7 +473,7 @@ HTTPAPIEX_RESULT HTTPAPIEX_ExecuteRequest(HTTPAPIEX_HANDLE handle, HTTPAPI_REQUE
                 } while (handleData->k >= 0);
                 /*Codes_SRS_HTTPAPIEX_02_029: [Otherwise, HTTAPIEX_ExecuteRequest shall return HTTPAPIEX_RECOVERYFAILED.] */
                 result = HTTPAPIEX_RECOVERYFAILED;
-                LogError("unable to recover sending to a working state\r\n");
+                LogError("unable to recover sending to a working state");
             out:;
                 /*in all cases, unbuild the temporaries*/
                 if (isOriginalRequestContent == false)
@@ -565,7 +565,7 @@ static int createOrUpdateOption(HTTPAPIEX_HANDLE_DATA* handleData, const char* o
             newOption.value = value;
             if (VECTOR_push_back(handleData->savedOptions, &newOption, 1) != 0)
             {
-                LogError("unable to VECTOR_push_back\r\n");
+                LogError("unable to VECTOR_push_back");
                 free((void*)newOption.optionName);
                 free((void*)value);
                 result = __LINE__;
