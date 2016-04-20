@@ -14,6 +14,7 @@
 #include "azure_c_shared_utility/tcpsocketconnection_c.h"
 
 #define UNABLE_TO_COMPLETE -2
+#define MBED_RECEIVE_BYTES_VALUE    128
 
 typedef enum IO_STATE_TAG
 {
@@ -401,15 +402,24 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
 
             while (received > 0)
             {
-                unsigned char recv_bytes[128];
-                received = tcpsocketconnection_receive(socket_io_instance->tcp_socket_connection, (char*)recv_bytes, sizeof(recv_bytes));
-                if (received > 0)
+                unsigned char* recv_bytes = malloc(MBED_RECEIVE_BYTES_VALUE);
+                if (recv_bytes == NULL)
                 {
-                    if (socket_io_instance->on_bytes_received != NULL)
+                    LogError("Socketio_Failure: NULL allocating input buffer.");
+                    indicate_error(socket_io_instance);
+                }
+                else
+                {
+                    received = tcpsocketconnection_receive(socket_io_instance->tcp_socket_connection, (char*)recv_bytes, MBED_RECEIVE_BYTES_VALUE);
+                    if (received > 0)
                     {
-                        /* explictly ignoring here the result of the callback */
-                        (void)socket_io_instance->on_bytes_received(socket_io_instance->on_bytes_received_context, recv_bytes, received);
+                        if (socket_io_instance->on_bytes_received != NULL)
+                        {
+                            /* explictly ignoring here the result of the callback */
+                            (void)socket_io_instance->on_bytes_received(socket_io_instance->on_bytes_received_context, recv_bytes, received);
+                        }
                     }
+                    free(recv_bytes);
                 }
             }
         }

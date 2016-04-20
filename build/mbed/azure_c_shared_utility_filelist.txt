@@ -33,6 +33,7 @@ set(mbed_exported_project_files
 		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/tickcounter.h
 		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/tlsio.h
 		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/tlsio_wolfssl.h
+		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/uniqueid.h
 		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/urlencode.h
 		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/vector.h
 		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/xio.h
@@ -78,6 +79,7 @@ set(mbed_project_files
 		${CMAKE_CURRENT_SOURCE_DIR}/../../adapters/tcpsocketconnection_c.h
 		${CMAKE_CURRENT_SOURCE_DIR}/../../adapters/threadapi_rtx_mbed.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/../../adapters/tickcounter_mbed.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/../../adapters/uniqueid_stub.c
 		${CMAKE_CURRENT_SOURCE_DIR}/../../adapters/wolfssl_connection.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/../../adapters/wolfssl_connection.h
 		)

@@ -486,8 +486,15 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
 
             while (received > 0)
             {
-                unsigned char recv_bytes[1];
-                received = recv(socket_io_instance->socket, recv_bytes, sizeof(recv_bytes), 0);
+                unsigned char* recv_bytes = malloc(RECEIVE_BYTES_VALUE);
+                if (recv_bytes == NULL)
+                {
+                    LogError("Socketio_Failure: NULL allocating input buffer.");
+                    indicate_error(socket_io_instance);
+                }
+                else
+                {
+                    received = recv(socket_io_instance->socket, recv_bytes, RECEIVE_BYTES_VALUE, 0);
                 if (received > 0)
                 {
                     int i;
@@ -510,6 +517,8 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                         LogError("Socketio_Failure: Recieving data from endpoint: %d.", last_error);
                         indicate_error(socket_io_instance);
                     }
+                    }
+                    free(recv_bytes);
                 }
             }
         }
