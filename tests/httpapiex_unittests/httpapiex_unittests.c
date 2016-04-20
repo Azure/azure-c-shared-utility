@@ -6,97 +6,93 @@
 #include <crtdbg.h>
 #endif
 
+static size_t currentmalloc_call = 0;
+static size_t whenShallmalloc_fail = 0;
+
+static size_t currentrealloc_call = 0;
+static size_t whenShallrealloc_fail = 0;
+
+void* my_gballoc_malloc(size_t size)
+{
+    void* result;
+    currentmalloc_call++;
+    if (whenShallmalloc_fail > 0)
+    {
+        if (currentmalloc_call == whenShallmalloc_fail)
+        {
+            result = NULL;
+        }
+        else
+        {
+            result = malloc(size);
+        }
+    }
+    else
+    {
+        result = malloc(size);
+    }
+    return result;
+}
+
+void* my_gballoc_realloc(void* ptr, size_t size)
+{
+    void* result;
+    currentrealloc_call++;
+    if (whenShallrealloc_fail > 0)
+    {
+        if (currentrealloc_call == whenShallrealloc_fail)
+        {
+            result = NULL;
+        }
+        else
+        {
+            result = realloc(ptr, size);
+        }
+    }
+    else
+    {
+        result = realloc(ptr, size);
+    }
+
+    return result;
+}
+
+void my_gballoc_free(void* ptr)
+{
+    free(ptr);
+}
+
 #include "testrunnerswitcher.h"
 /*the below is a horrible hack*/
 #include "azure_c_shared_utility/macro_utils.h"
-#undef DEFINE_ENUM
-#define DEFINE_ENUM(enumName, ...) typedef enum C2(enumName, _TAG) { FOR_EACH_1(DEFINE_ENUMERATION_CONSTANT, __VA_ARGS__)} enumName; 
 
-#include "azure_c_shared_utility/map.h"
-#include "azure_c_shared_utility/httpapiex.h"
-#include "azure_c_shared_utility/lock.h"
-#include "azure_c_shared_utility/strings.h"
+#define ENABLE_MOCKS
+
 #include "azure_c_shared_utility/crt_abstractions.h"
 #include "azure_c_shared_utility/vector.h"
+#include "azure_c_shared_utility/map.h"
+#include "azure_c_shared_utility/strings.h"
+#include "azure_c_shared_utility/buffer_.h"
+#include "azure_c_shared_utility/httpheaders.h"
+#include "azure_c_shared_utility/httpapi.h"
+#include "azure_c_shared_utility/gballoc.h"
+
+#undef ENABLE_MOCKS
+
+#include "azure_c_shared_utility/httpapiex.h"
 
 TEST_ENUM_TYPE_HANDLER(HTTPAPIEX_RESULT, HTTPAPIEX_RESULT_VALUES);
-
-#define GBALLOC_H
-
-extern "C" int gballoc_init(void);
-extern "C" void gballoc_deinit(void);
-extern "C" void* gballoc_malloc(size_t size);
-extern "C" void* gballoc_calloc(size_t nmemb, size_t size);
-extern "C" void* gballoc_realloc(void* ptr, size_t size);
-extern "C" void gballoc_free(void* ptr);
-
-
-namespace BASEIMPLEMENTATION
-{
-    /*if malloc is defined as gballoc_malloc at this moment, there'd be serious trouble*/
-#define Lock(x) (LOCK_OK + gballocState - gballocState) /*compiler warning about constant in if condition*/
-#define Unlock(x) (LOCK_OK + gballocState - gballocState)
-#define Lock_Init() (LOCK_HANDLE)0x42
-#define Lock_Deinit(x) (LOCK_OK + gballocState - gballocState)
-#include "gballoc.c"
-#undef Lock
-#undef Unlock
-#undef Lock_Init
-#undef Lock_Deinit
-
-#include "strings.c"
-#include "buffer.c"
-#include "vector.c"
-};
-
-static size_t currentmalloc_call;
-static size_t whenShallmalloc_fail;
-
-static size_t currentrealloc_call;
-static size_t whenShallrealloc_fail;
 
 static size_t currentHTTPAPI_SaveOption_call;
 static size_t whenShallHTTPAPI_SaveOption_fail;
 
 /*different STRING constructors*/
-static size_t currentSTRING_new_call;
-static size_t whenShallSTRING_new_fail;
-
-static size_t currentSTRING_clone_call;
-static size_t whenShallSTRING_clone_fail;
-
-static size_t currentSTRING_construct_call;
-static size_t whenShallSTRING_construct_fail;
-
-static size_t currentSTRING_concat_call;
-static size_t whenShallSTRING_concat_fail;
-
-static size_t currentSTRING_empty_call;
-static size_t whenShallSTRING_empty_fail;
-
-static size_t currentSTRING_concat_with_STRING_call;
-static size_t whenShallSTRING_concat_with_STRING_fail;
-
-static size_t currentBUFFER_new_call;
-static size_t whenShallBUFFER_new_fail;
-
-static size_t currentBUFFER_build_call;
-static size_t whenShallBUFFER_build_fail;
 
 static size_t currentBUFFER_content_call;
 static size_t whenShallBUFFER_content_fail;
 
 static size_t currentBUFFER_size_call;
 static size_t whenShallBUFFER_size_fail;
-
-static size_t currentHTTPHeaders_Alloc_call;
-static size_t whenShallHTTPHeaders_Alloc_fail;
-
-static size_t currentVECTOR_create_call;
-static size_t whenShallVECTOR_create_fail;
-
-static size_t currentVECTOR_push_back_call;
-static size_t whenShallVECTOR_push_back_fail;
 
 #define N_MAX_FAILS 5
 static size_t currentHTTPAPI_CreateConnection_call;
@@ -105,8 +101,6 @@ static size_t whenShallHTTPAPI_CreateConnection_fail[N_MAX_FAILS];
 static size_t currentHTTPAPI_Init_call;
 static size_t whenShallHTTPAPI_Init_fail[N_MAX_FAILS];
 static size_t HTTPAPI_Init_calls;
-
-HTTPAPI_RESULT g_httpResult = HTTPAPI_OK;
 
 #define TEST_HOSTNAME "aaa"
 #define TEST_RELATIVE_PATH "nothing/to/see/here/devices"
@@ -118,454 +112,208 @@ HTTPAPI_RESULT g_httpResult = HTTPAPI_OK;
 #define TEST_BUFFER "333333"
 #define TEST_BUFFER_SIZE 6
 
-TYPED_MOCK_CLASS(CHTTPAPIEXMocks, CGlobalMock)
+STRING_HANDLE my_STRING_construct(const char* psz)
 {
-public:
+    return (STRING_HANDLE)malloc(1);
+}
 
-    MOCK_STATIC_METHOD_1(, void*, gballoc_malloc, size_t, size)
-        void* result2;
-    currentmalloc_call++;
-    if (whenShallmalloc_fail>0)
+void my_STRING_delete(STRING_HANDLE handle)
+{
+    free(handle);
+}
+
+HTTP_HEADERS_HANDLE my_HTTPHeaders_Alloc(void)
+{
+    return (HTTP_HEADERS_HANDLE)malloc(1);
+}
+
+void my_HTTPHeaders_Free(HTTP_HEADERS_HANDLE handle)
+{
+    free(handle);
+}
+
+BUFFER_HANDLE my_BUFFER_new(void)
+{
+    return (BUFFER_HANDLE)malloc(1);
+}
+
+void my_BUFFER_delete(BUFFER_HANDLE handle)
+{
+    free(handle);
+}
+
+HTTPAPI_RESULT my_HTTPAPI_Init(void)
+{
+    HTTPAPI_RESULT result2;
+    currentHTTPAPI_Init_call++;
+    size_t i;
+    for (i = 0; i < N_MAX_FAILS; i++)
     {
-        if (currentmalloc_call == whenShallmalloc_fail)
+        if (whenShallHTTPAPI_Init_fail[i] > 0)
         {
-            result2 = (STRING_HANDLE)NULL;
+            if (currentHTTPAPI_Init_call == whenShallHTTPAPI_Init_fail[i])
+            {
+                break;
+            }
         }
-        else
-        {
-            result2 = BASEIMPLEMENTATION::gballoc_malloc(size);
-        }
+    }
+
+    if (i == N_MAX_FAILS)
+    {
+        HTTPAPI_Init_calls++;
+        result2 = HTTPAPI_OK;
     }
     else
     {
-        result2 = BASEIMPLEMENTATION::gballoc_malloc(size);
+        result2 = HTTPAPI_ERROR;
     }
-    MOCK_METHOD_END(void*, result2);
+    return result2;
+}
 
-    MOCK_STATIC_METHOD_2(, void*, gballoc_realloc, void*, ptr, size_t, size)
-        void* result2;
-    currentrealloc_call++;
-    if (whenShallrealloc_fail>0)
+void my_HTTPAPI_Deinit(void)
+{
+    HTTPAPI_Init_calls--;
+}
+
+HTTP_HANDLE my_HTTPAPI_CreateConnection(const char* hostName)
+{
+    HTTP_HANDLE result2;
+    currentHTTPAPI_CreateConnection_call++;
+    size_t i;
+    for (i = 0; i < N_MAX_FAILS; i++)
     {
-        if (currentrealloc_call == whenShallrealloc_fail)
+        if (whenShallHTTPAPI_CreateConnection_fail[i] > 0)
         {
-            result2 = (STRING_HANDLE)NULL;
+            if (currentHTTPAPI_CreateConnection_call == whenShallHTTPAPI_CreateConnection_fail[i])
+            {
+                result2 = (HTTP_HANDLE)NULL;
+                break;
+            }
         }
-        else
-        {
-            result2 = BASEIMPLEMENTATION::gballoc_realloc(ptr,size);
-        }
+    }
+
+    if (i == N_MAX_FAILS)
+    {
+        result2 = (HTTP_HANDLE)malloc(1);
+    }
+    return result2;
+}
+
+void my_HTTPAPI_CloseConnection(HTTP_HANDLE handle)
+{
+    free(handle);
+}
+
+HTTPAPI_RESULT my_HTTPAPI_CloneOption(const char* optionName, const void* value, const void** savedValue)
+{
+    HTTPAPI_RESULT result2;
+    currentHTTPAPI_SaveOption_call++;
+    if (currentHTTPAPI_SaveOption_call == whenShallHTTPAPI_SaveOption_fail)
+    {
+        result2 = HTTPAPI_ERROR;
     }
     else
     {
-        result2 = BASEIMPLEMENTATION::gballoc_realloc(ptr, size);
+        result2 = HTTPAPI_OK;
+        if (strcmp("someOption", optionName) == 0)
+        {
+            char* temp;
+            temp = (char *)malloc(strlen((const char*)value) + 1);
+            strcpy(temp, (const char*)value);
+            *savedValue = temp;
+        }
+        else if (strcmp("someOption1", optionName) == 0)
+        {
+            char* temp;
+            temp = (char *)malloc(strlen((const char*)value) + 1);
+            strcpy(temp, (const char*)value);
+            *savedValue = temp;
+        }
+        else if (strcmp("someOption2", optionName) == 0)
+        {
+            char* temp;
+            temp = (char *)malloc(strlen((const char*)value) + 1);
+            strcpy(temp, (const char*)value);
+            *savedValue = temp;
+        }
+        else
+        {
+            result2 = HTTPAPI_INVALID_ARG;
+        }
     }
-    MOCK_METHOD_END(void*,result2);
+    return result2;
+}
 
-    MOCK_STATIC_METHOD_1(, void, gballoc_free, void*, ptr)
-        BASEIMPLEMENTATION::gballoc_free(ptr);
-    MOCK_VOID_METHOD_END()
+VECTOR_HANDLE my_VECTOR_create(size_t elementSize)
+{
+    return (VECTOR_HANDLE)malloc(1);
+}
 
-        /*Strings*/
-    MOCK_STATIC_METHOD_0(, STRING_HANDLE, STRING_new)
-        STRING_HANDLE result2;
-        currentSTRING_new_call++;
-        if (whenShallSTRING_new_fail > 0)
-        {
-            if (currentSTRING_new_call == whenShallSTRING_new_fail)
-            {
-                result2 = (STRING_HANDLE)NULL;
-            }
-            else
-            {
-                result2 = BASEIMPLEMENTATION::STRING_new();
-            }
-        }
-        else
-        {
-            result2 = BASEIMPLEMENTATION::STRING_new();
-        }
-        MOCK_METHOD_END(STRING_HANDLE, result2)
+void my_VECTOR_destroy(VECTOR_HANDLE handle)
+{
+    free(handle);
+}
 
-        MOCK_STATIC_METHOD_1(, STRING_HANDLE, STRING_clone, STRING_HANDLE, handle)
-        STRING_HANDLE result2;
-        currentSTRING_clone_call++;
-        if (whenShallSTRING_clone_fail > 0)
-        {
-            if (currentSTRING_clone_call == whenShallSTRING_clone_fail)
-            {
-                result2 = (STRING_HANDLE)NULL;
-            }
-            else
-            {
-                result2 = BASEIMPLEMENTATION::STRING_clone(handle);
-            }
-        }
-        else
-        {
-            result2 = BASEIMPLEMENTATION::STRING_clone(handle);
-        }
-    MOCK_METHOD_END(STRING_HANDLE, result2)
+static TEST_MUTEX_HANDLE g_testByTest;
+static TEST_MUTEX_HANDLE g_dllByDll;
 
-     MOCK_STATIC_METHOD_1(, STRING_HANDLE, STRING_construct, const char*, source)
-        STRING_HANDLE result2;
-        currentSTRING_construct_call++;
-        if (whenShallSTRING_construct_fail > 0)
-        {
-            if (currentSTRING_construct_call == whenShallSTRING_construct_fail)
-            {
-                result2 = (STRING_HANDLE)NULL;
-            }
-            else
-            {
-                result2 = BASEIMPLEMENTATION::STRING_construct(source);
-            }
-        }
-        else
-        {
-            result2 = BASEIMPLEMENTATION::STRING_construct(source);
-        }
-    MOCK_METHOD_END(STRING_HANDLE, result2)
-
-    MOCK_STATIC_METHOD_1(, void, STRING_delete, STRING_HANDLE, s)
-        BASEIMPLEMENTATION::STRING_delete(s);
-    MOCK_VOID_METHOD_END()
-
-    MOCK_STATIC_METHOD_2(, int, STRING_concat, STRING_HANDLE, s1, const char*, s2)
-        currentSTRING_concat_call++;
-    MOCK_METHOD_END(int, (((whenShallSTRING_concat_fail > 0) && (currentSTRING_concat_call == whenShallSTRING_concat_fail)) ? __LINE__ : BASEIMPLEMENTATION::STRING_concat(s1, s2)));
-
-    MOCK_STATIC_METHOD_2(, int, STRING_concat_with_STRING, STRING_HANDLE, s1, STRING_HANDLE, s2)
-        currentSTRING_concat_with_STRING_call++;
-    MOCK_METHOD_END(int, (((currentSTRING_concat_with_STRING_call > 0) && (currentSTRING_concat_with_STRING_call == whenShallSTRING_concat_with_STRING_fail)) ? __LINE__ : BASEIMPLEMENTATION::STRING_concat_with_STRING(s1, s2)));
-
-    MOCK_STATIC_METHOD_1(, int, STRING_empty, STRING_HANDLE, s)
-        currentSTRING_concat_call++;
-    MOCK_METHOD_END(int, BASEIMPLEMENTATION::STRING_empty(s));
-
-    MOCK_STATIC_METHOD_1(, const char*, STRING_c_str, STRING_HANDLE, s)
-        MOCK_METHOD_END(const char*, BASEIMPLEMENTATION::STRING_c_str(s))
-
-        /* HTTPHeaders mocks */
-    MOCK_STATIC_METHOD_0(, HTTP_HEADERS_HANDLE, HTTPHeaders_Alloc)
-        HTTP_HEADERS_HANDLE result2;
-        currentHTTPHeaders_Alloc_call++;
-        if ((whenShallHTTPHeaders_Alloc_fail > 0) && (whenShallHTTPHeaders_Alloc_fail == currentHTTPHeaders_Alloc_call))
-        {
-            result2 = NULL;
-        }
-        else
-        {
-            result2 = (HTTP_HEADERS_HANDLE)malloc(1);
-        }
-    MOCK_METHOD_END(HTTP_HEADERS_HANDLE, result2)
-
-    MOCK_STATIC_METHOD_1(, void, HTTPHeaders_Free, HTTP_HEADERS_HANDLE, httpHeadersHandle)
-        free(httpHeadersHandle);
-    MOCK_VOID_METHOD_END()
-
-    MOCK_STATIC_METHOD_3(, HTTP_HEADERS_RESULT, HTTPHeaders_AddHeaderNameValuePair, HTTP_HEADERS_HANDLE, httpHeadersHandle, const char*, name, const char*, value)
-    MOCK_METHOD_END(HTTP_HEADERS_RESULT, HTTP_HEADERS_OK)
-
-    MOCK_STATIC_METHOD_3(, HTTP_HEADERS_RESULT, HTTPHeaders_ReplaceHeaderNameValuePair, HTTP_HEADERS_HANDLE, httpHeadersHandle, const char*, name, const char*, value)
-    MOCK_METHOD_END(HTTP_HEADERS_RESULT, HTTP_HEADERS_OK)
-
-        /* BUFFER Mocks */
-    MOCK_STATIC_METHOD_0(, BUFFER_HANDLE, BUFFER_new)
-        BUFFER_HANDLE result2;
-        currentBUFFER_new_call++;
-        if (whenShallBUFFER_new_fail > 0)
-        {
-            if (currentBUFFER_new_call == whenShallBUFFER_new_fail)
-            {
-                result2 = (BUFFER_HANDLE)NULL;
-            }
-            else
-            {
-                result2 = BASEIMPLEMENTATION::BUFFER_new();
-            }
-        }
-        else
-        {
-            result2 = BASEIMPLEMENTATION::BUFFER_new();
-        }
-    MOCK_METHOD_END(BUFFER_HANDLE, result2)
-
-    MOCK_STATIC_METHOD_1(, void, BUFFER_delete, BUFFER_HANDLE, s)
-        BASEIMPLEMENTATION::BUFFER_delete(s);
-    MOCK_VOID_METHOD_END()
-
-    MOCK_STATIC_METHOD_1(, unsigned char*, BUFFER_u_char, BUFFER_HANDLE, handle);
-        unsigned char* result2;
-         result2 = BASEIMPLEMENTATION::BUFFER_u_char(handle);
-    MOCK_METHOD_END(unsigned char*, result2)
-    
-    MOCK_STATIC_METHOD_1(, size_t, BUFFER_length, BUFFER_HANDLE, handle);
-        size_t result2;
-        result2 = BASEIMPLEMENTATION::BUFFER_length(handle);
-    MOCK_METHOD_END(size_t, result2)
-
-    MOCK_STATIC_METHOD_3(, int, BUFFER_build, BUFFER_HANDLE, handle, const unsigned char*, source, size_t, size)
-    MOCK_METHOD_END(int, BASEIMPLEMENTATION::BUFFER_build(handle, source, size))
-
-    /* HTTPAPI mocks */
-    
-    MOCK_STATIC_METHOD_0(, HTTPAPI_RESULT, HTTPAPI_Init)
-        HTTPAPI_RESULT result2;
-        currentHTTPAPI_Init_call++;
-        size_t i;
-        for (i = 0; i < N_MAX_FAILS; i++)
-        {
-            if (whenShallHTTPAPI_Init_fail[i] > 0)
-            {
-                if (currentHTTPAPI_Init_call == whenShallHTTPAPI_Init_fail[i])
-                {
-                    break;
-                }
-            }
-        }
-
-        if (i == N_MAX_FAILS)
-        {
-            HTTPAPI_Init_calls++;
-            result2 = HTTPAPI_OK;
-        }
-        else
-        {
-            result2 = HTTPAPI_ERROR;
-        }
-    MOCK_METHOD_END(HTTPAPI_RESULT, result2)
-
-    MOCK_STATIC_METHOD_0(, void, HTTPAPI_Deinit)
-        HTTPAPI_Init_calls--;
-    MOCK_VOID_METHOD_END()
-
-    MOCK_STATIC_METHOD_1(, HTTP_HANDLE, HTTPAPI_CreateConnection, const char*, hostName)
-        HTTP_HANDLE result2;
-        currentHTTPAPI_CreateConnection_call++;
-        size_t i;
-        for (i = 0; i < N_MAX_FAILS; i++)
-        {
-            if (whenShallHTTPAPI_CreateConnection_fail[i] > 0)
-            {
-                if (currentHTTPAPI_CreateConnection_call == whenShallHTTPAPI_CreateConnection_fail[i])
-                {
-                    result2 = (HTTP_HANDLE)NULL;
-                    break;
-                }
-            }
-        }
-
-        if (i==N_MAX_FAILS)
-        {
-            result2 = (HTTP_HANDLE)malloc(1);
-        }
-    MOCK_METHOD_END(HTTP_HANDLE, result2)
-
-    MOCK_STATIC_METHOD_1(, void, HTTPAPI_CloseConnection, HTTP_HANDLE, handle)
-        free(handle);
-    MOCK_VOID_METHOD_END()
-
-    MOCK_STATIC_METHOD_9(, HTTPAPI_RESULT, HTTPAPI_ExecuteRequest, HTTP_HANDLE, handle, HTTPAPI_REQUEST_TYPE, requestType, const char*, relativePath,
-            HTTP_HEADERS_HANDLE, httpHeadersHandle, const unsigned char*, content, size_t, contentLength, unsigned int*, statusCode,
-            HTTP_HEADERS_HANDLE, responseHeadersHandle, BUFFER_HANDLE, responseContent)
-    MOCK_METHOD_END(HTTPAPI_RESULT, HTTPAPI_OK)
-
-    MOCK_STATIC_METHOD_3(, HTTPAPI_RESULT, HTTPAPI_SetOption, HTTP_HANDLE, handle, const char*, optionName, const void*, value)
-    MOCK_METHOD_END(HTTPAPI_RESULT, g_httpResult)
-
-    MOCK_STATIC_METHOD_3(, HTTPAPI_RESULT, HTTPAPI_CloneOption, const char*, optionName, const void*, value, const void**, savedValue)
-        HTTPAPI_RESULT result2;
-        currentHTTPAPI_SaveOption_call++;
-        if (currentHTTPAPI_SaveOption_call == whenShallHTTPAPI_SaveOption_fail)
-        {
-            result2 = HTTPAPI_ERROR;
-        }
-        else
-        {
-            result2 = HTTPAPI_OK;
-            if (strcmp("someOption", optionName) == 0)
-            {
-                char* temp;
-                temp = (char *)BASEIMPLEMENTATION::gballoc_malloc(strlen((const char*)value) + 1);
-                strcpy(temp, (const char*)value);
-                *savedValue = temp;
-            }
-            else if (strcmp("someOption1", optionName) == 0)
-            {
-                char* temp;
-                temp = (char *)BASEIMPLEMENTATION::gballoc_malloc(strlen((const char*)value) + 1);
-                strcpy(temp, (const char*)value);
-                *savedValue = temp;
-            }
-            else if (strcmp("someOption2", optionName) == 0)
-            {
-                char* temp;
-                temp = (char *)BASEIMPLEMENTATION::gballoc_malloc(strlen((const char*)value) + 1);
-                strcpy(temp, (const char*)value);
-                *savedValue = temp;
-            }
-            else
-            {
-                result2 = HTTPAPI_INVALID_ARG;
-            }
-        }
-    MOCK_METHOD_END(HTTPAPI_RESULT, result2)
-
-    MOCK_STATIC_METHOD_1(, VECTOR_HANDLE, VECTOR_create, size_t, elementSize)
-    VECTOR_HANDLE result2;
-    currentVECTOR_create_call++;
-    if (currentVECTOR_create_call == whenShallVECTOR_create_fail)
-    {
-        result2 = NULL;
-    }
-    else
-    {
-        result2 = BASEIMPLEMENTATION::VECTOR_create(elementSize);
-    }
-    MOCK_METHOD_END(VECTOR_HANDLE, result2)
-
-    MOCK_STATIC_METHOD_1(, void, VECTOR_destroy, VECTOR_HANDLE, handle)
-        BASEIMPLEMENTATION::VECTOR_destroy(handle);
-    MOCK_VOID_METHOD_END()
-
-    MOCK_STATIC_METHOD_3(, int, VECTOR_push_back, VECTOR_HANDLE, handle, const void*, elements, size_t, numElements)
-    int result2;
-    currentVECTOR_push_back_call++;
-    if (currentVECTOR_push_back_call == whenShallVECTOR_push_back_fail)
-    {
-        result2 = __LINE__;
-    }
-    else
-    {
-        result2 = BASEIMPLEMENTATION::VECTOR_push_back(handle, elements, numElements);
-    }
-    MOCK_METHOD_END(int, result2)
-
-    MOCK_STATIC_METHOD_2(, void*, VECTOR_element, VECTOR_HANDLE, handle, size_t, index)
-    MOCK_METHOD_END(void*, BASEIMPLEMENTATION::VECTOR_element(handle, index))
-
-    MOCK_STATIC_METHOD_3(, void*, VECTOR_find_if, VECTOR_HANDLE, handle, PREDICATE_FUNCTION, pred, const void*, value)
-    MOCK_METHOD_END(void*, BASEIMPLEMENTATION::VECTOR_find_if(handle, pred, value))
-
-    MOCK_STATIC_METHOD_1(, size_t, VECTOR_size, VECTOR_HANDLE, handle)
-    MOCK_METHOD_END(size_t, BASEIMPLEMENTATION::VECTOR_size(handle))
-};
-
-DECLARE_GLOBAL_MOCK_METHOD_1(CHTTPAPIEXMocks, , void*, gballoc_malloc, size_t, size);
-DECLARE_GLOBAL_MOCK_METHOD_2(CHTTPAPIEXMocks, , void*, gballoc_realloc, void*, ptr, size_t, size);
-DECLARE_GLOBAL_MOCK_METHOD_1(CHTTPAPIEXMocks, , void, gballoc_free, void*, ptr);
-
-DECLARE_GLOBAL_MOCK_METHOD_0(CHTTPAPIEXMocks, , STRING_HANDLE, STRING_new);
-DECLARE_GLOBAL_MOCK_METHOD_1(CHTTPAPIEXMocks, , STRING_HANDLE, STRING_clone, STRING_HANDLE, handle);
-DECLARE_GLOBAL_MOCK_METHOD_1(CHTTPAPIEXMocks, , STRING_HANDLE, STRING_construct, const char*, s);
-
-DECLARE_GLOBAL_MOCK_METHOD_1(CHTTPAPIEXMocks, , void, STRING_delete, STRING_HANDLE, s);
-DECLARE_GLOBAL_MOCK_METHOD_2(CHTTPAPIEXMocks, , int, STRING_concat, STRING_HANDLE, s1, const char*, s2);
-DECLARE_GLOBAL_MOCK_METHOD_2(CHTTPAPIEXMocks, , int, STRING_concat_with_STRING, STRING_HANDLE, s1, STRING_HANDLE, s2);
-DECLARE_GLOBAL_MOCK_METHOD_1(CHTTPAPIEXMocks, , int, STRING_empty, STRING_HANDLE, s1);
-DECLARE_GLOBAL_MOCK_METHOD_1(CHTTPAPIEXMocks, , const char*, STRING_c_str, STRING_HANDLE, s);
-
-DECLARE_GLOBAL_MOCK_METHOD_0(CHTTPAPIEXMocks, , HTTP_HEADERS_HANDLE, HTTPHeaders_Alloc);
-DECLARE_GLOBAL_MOCK_METHOD_1(CHTTPAPIEXMocks, , void, HTTPHeaders_Free, HTTP_HEADERS_HANDLE, httpHeadersHandle);
-DECLARE_GLOBAL_MOCK_METHOD_3(CHTTPAPIEXMocks, , HTTP_HEADERS_RESULT, HTTPHeaders_AddHeaderNameValuePair, HTTP_HEADERS_HANDLE, httpHeadersHandle, const char*, name, const char*, value);
-DECLARE_GLOBAL_MOCK_METHOD_3(CHTTPAPIEXMocks, , HTTP_HEADERS_RESULT, HTTPHeaders_ReplaceHeaderNameValuePair, HTTP_HEADERS_HANDLE, httpHeadersHandle, const char*, name, const char*, value);
-
-DECLARE_GLOBAL_MOCK_METHOD_0(CHTTPAPIEXMocks, , BUFFER_HANDLE, BUFFER_new);
-DECLARE_GLOBAL_MOCK_METHOD_1(CHTTPAPIEXMocks, , void, BUFFER_delete, BUFFER_HANDLE, handle);
-DECLARE_GLOBAL_MOCK_METHOD_1(CHTTPAPIEXMocks, , unsigned char*, BUFFER_u_char, BUFFER_HANDLE, handle);
-DECLARE_GLOBAL_MOCK_METHOD_1(CHTTPAPIEXMocks, , size_t, BUFFER_length, BUFFER_HANDLE, handle);
-DECLARE_GLOBAL_MOCK_METHOD_3(CHTTPAPIEXMocks, , int, BUFFER_build, BUFFER_HANDLE, handle, const unsigned char*, source, size_t, size)
-
-DECLARE_GLOBAL_MOCK_METHOD_0(CHTTPAPIEXMocks, , HTTPAPI_RESULT, HTTPAPI_Init);
-DECLARE_GLOBAL_MOCK_METHOD_0(CHTTPAPIEXMocks, , void, HTTPAPI_Deinit);
-DECLARE_GLOBAL_MOCK_METHOD_1(CHTTPAPIEXMocks, , HTTP_HANDLE, HTTPAPI_CreateConnection, const char*, hostName);
-DECLARE_GLOBAL_MOCK_METHOD_1(CHTTPAPIEXMocks, , void, HTTPAPI_CloseConnection, HTTP_HANDLE, handle);
-DECLARE_GLOBAL_MOCK_METHOD_9(CHTTPAPIEXMocks, , HTTPAPI_RESULT, HTTPAPI_ExecuteRequest, HTTP_HANDLE, handle, HTTPAPI_REQUEST_TYPE, requestType, const char*, relativePath,HTTP_HEADERS_HANDLE, httpHeadersHandle, const unsigned char*, content,size_t, contentLength, unsigned int*, statusCode,HTTP_HEADERS_HANDLE, responseHeadersHandle, BUFFER_HANDLE, responseContent);
-DECLARE_GLOBAL_MOCK_METHOD_3(CHTTPAPIEXMocks, , HTTPAPI_RESULT, HTTPAPI_SetOption, HTTP_HANDLE, handle, const char*, optionName, const void*, value)
-DECLARE_GLOBAL_MOCK_METHOD_3(CHTTPAPIEXMocks, , HTTPAPI_RESULT, HTTPAPI_CloneOption, const char*, optionName, const void*, value, const void**, savedValue);
-
-DECLARE_GLOBAL_MOCK_METHOD_1(CHTTPAPIEXMocks, , VECTOR_HANDLE, VECTOR_create, size_t, elementSize);
-DECLARE_GLOBAL_MOCK_METHOD_1(CHTTPAPIEXMocks, , void, VECTOR_destroy, VECTOR_HANDLE, handle);
-DECLARE_GLOBAL_MOCK_METHOD_3(CHTTPAPIEXMocks, , int, VECTOR_push_back, VECTOR_HANDLE, handle, const void*, elements, size_t, numElements)
-DECLARE_GLOBAL_MOCK_METHOD_2(CHTTPAPIEXMocks, , void*, VECTOR_element, VECTOR_HANDLE, handle, size_t, index)
-DECLARE_GLOBAL_MOCK_METHOD_3(CHTTPAPIEXMocks, , void*, VECTOR_find_if, VECTOR_HANDLE, handle, PREDICATE_FUNCTION, pred, const void*, value)
-DECLARE_GLOBAL_MOCK_METHOD_1(CHTTPAPIEXMocks, , size_t, VECTOR_size, VECTOR_HANDLE, handle);
-
-static MICROMOCK_MUTEX_HANDLE g_testByTest;
-static MICROMOCK_GLOBAL_SEMAPHORE_HANDLE g_dllByDll;
-
-
-static void createHttpObjects(HTTP_HEADERS_HANDLE* requestHttpHeaders, BUFFER_HANDLE* requestHttpBody, HTTP_HEADERS_HANDLE* responseHttpHeaders, BUFFER_HANDLE* responseHttpBody)
+static void createHttpObjects(HTTP_HEADERS_HANDLE* requestHttpHeaders, HTTP_HEADERS_HANDLE* responseHttpHeaders)
 {
     /*assumed to never fail*/
     *requestHttpHeaders = HTTPHeaders_Alloc();
-    *requestHttpBody = BUFFER_new();
-    BUFFER_build(*requestHttpBody, (const unsigned char*)TEST_BUFFER, TEST_BUFFER_SIZE);
     *responseHttpHeaders = HTTPHeaders_Alloc();
-    *responseHttpBody = BUFFER_new();
     if (
         (*requestHttpHeaders == NULL) ||
-        (*requestHttpBody == NULL) ||
-        (*responseHttpHeaders == NULL)||
-        (*responseHttpBody == NULL)
+        (*responseHttpHeaders == NULL)
         )
     {
         ASSERT_FAIL("unable to build test prerequisites");
     }
 }
 
-static void destroyHttpObjects(HTTP_HEADERS_HANDLE* requestHttpHeaders, BUFFER_HANDLE* requestHttpBody, HTTP_HEADERS_HANDLE* responseHttpHeaders, BUFFER_HANDLE* responseHttpBody)
+static void destroyHttpObjects(HTTP_HEADERS_HANDLE* requestHttpHeaders, HTTP_HEADERS_HANDLE* responseHttpHeaders)
 {
     HTTPHeaders_Free(*requestHttpHeaders);
     *requestHttpHeaders = NULL;
-    BUFFER_delete(*requestHttpBody);
-    *requestHttpBody = NULL;
     HTTPHeaders_Free(*responseHttpHeaders);
     *responseHttpHeaders = NULL;
-    BUFFER_delete(*responseHttpBody);
-    *responseHttpBody = NULL;
 }
 
 /*this function takes care of setting expected call for httpapiex_executerequest assuming all the parameters are non-null*/
-static void setupAllCallBeforeHTTPsequence(CHTTPAPIEXMocks* mocks)
+static void setupAllCallBeforeHTTPsequence(void)
 {
-    (void)(*mocks);
     /*this is building the host and content-length for the http request headers*/
-    STRICT_EXPECTED_CALL((*mocks), BUFFER_length(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL((*mocks), STRING_c_str(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL((*mocks), HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
+    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL((*mocks), HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", TOSTRING(TEST_BUFFER_SIZE)))
+    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", TOSTRING(TEST_BUFFER_SIZE)))
         .IgnoreArgument(1);
 }
 
-static void setupAllCallForHTTPsequence(CHTTPAPIEXMocks* mocks, const char* relativePath, HTTP_HEADERS_HANDLE requestHttpHeaders, BUFFER_HANDLE requestHttpBody, HTTP_HEADERS_HANDLE responseHttpHeaders, BUFFER_HANDLE responseHttpBody)
+static void setupAllCallForHTTPsequence(const char* relativePath, HTTP_HEADERS_HANDLE requestHttpHeaders, BUFFER_HANDLE requestHttpBody, HTTP_HEADERS_HANDLE responseHttpHeaders, BUFFER_HANDLE responseHttpBody)
 {
-    (void)(*mocks, requestHttpBody);
-    STRICT_EXPECTED_CALL((*mocks), HTTPAPI_Init());
+    STRICT_EXPECTED_CALL(HTTPAPI_Init());
 
     /*this is getting the hostname for the HTTAPI_connect call)*/
-    STRICT_EXPECTED_CALL((*mocks), STRING_c_str(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL((*mocks), HTTPAPI_CreateConnection(TEST_HOSTNAME));
-    STRICT_EXPECTED_CALL((*mocks), VECTOR_size(IGNORED_PTR_ARG)) /*this is passing the options*/ /*there are none saved in the regular sequences*/
+    STRICT_EXPECTED_CALL(HTTPAPI_CreateConnection(TEST_HOSTNAME));
+    STRICT_EXPECTED_CALL(VECTOR_size(IGNORED_PTR_ARG)) /*this is passing the options*/ /*there are none saved in the regular sequences*/
         .IgnoreArgument(1);
 
-    STRICT_EXPECTED_CALL((*mocks), BUFFER_length(requestHttpBody));
-    STRICT_EXPECTED_CALL((*mocks), BUFFER_length(requestHttpBody)); /*two times because once in here, one in the code under test*/
+    STRICT_EXPECTED_CALL(BUFFER_length(requestHttpBody));
+    STRICT_EXPECTED_CALL(BUFFER_length(requestHttpBody)); /*two times because once in here, one in the code under test*/
     size_t requestHttpBodyLength = BUFFER_length(requestHttpBody);
 
-    STRICT_EXPECTED_CALL((*mocks), BUFFER_u_char(requestHttpBody));
-    STRICT_EXPECTED_CALL((*mocks), BUFFER_u_char(requestHttpBody)); /*two times because once in here, one in the code under test*/
+    STRICT_EXPECTED_CALL(BUFFER_u_char(requestHttpBody));
+    STRICT_EXPECTED_CALL(BUFFER_u_char(requestHttpBody)); /*two times because once in here, one in the code under test*/
     const unsigned char* requestHttpBodyContent = BUFFER_u_char(requestHttpBody);
 
-
-
     /*this is getting the buffer content and buffer length to pass to httpapi_executerequest*/
-    STRICT_EXPECTED_CALL((*mocks), HTTPAPI_ExecuteRequest(
+    STRICT_EXPECTED_CALL(HTTPAPI_ExecuteRequest(
         IGNORED_PTR_ARG,
         HTTPAPI_REQUEST_PATCH,
         relativePath,
@@ -578,29 +326,27 @@ static void setupAllCallForHTTPsequence(CHTTPAPIEXMocks* mocks, const char* rela
         .IgnoreArgument(1)
         .IgnoreArgument(7)
         ;
-
 }
 
 /*every time HttpApi_Execute request is executed several things will be auto-aupdated by the code*/
 /*request headers to match the content-length, host to match hostname*/
-static void prepareHTTPAPIEX_ExecuteRequest(CHTTPAPIEXMocks* mocks, unsigned int *asGivenyHttpApi, HTTP_HEADERS_HANDLE requestHttpHeaders, HTTP_HEADERS_HANDLE responseHttpHeaders, BUFFER_HANDLE responseHttpBody, HTTPAPI_RESULT resultToBeUsed)
+static void prepareHTTPAPIEX_ExecuteRequest(unsigned int *asGivenyHttpApi, HTTP_HEADERS_HANDLE requestHttpHeaders, HTTP_HEADERS_HANDLE responseHttpHeaders, BUFFER_HANDLE responseHttpBody, HTTPAPI_RESULT resultToBeUsed)
 {
-    (void)(*mocks);
     /*this is building the host and content-length for the http request headers, this happens every time*/
-    STRICT_EXPECTED_CALL((*mocks), BUFFER_length(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL((*mocks), STRING_c_str(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL((*mocks), HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
+    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL((*mocks), HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", TOSTRING(TEST_BUFFER_SIZE)))
+    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", TOSTRING(TEST_BUFFER_SIZE)))
         .IgnoreArgument(1);
 
-    STRICT_EXPECTED_CALL((*mocks), BUFFER_length(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL((*mocks), BUFFER_u_char(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(BUFFER_u_char(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL((*mocks), HTTPAPI_ExecuteRequest(
+    STRICT_EXPECTED_CALL(HTTPAPI_ExecuteRequest(
         IGNORED_PTR_ARG,
         HTTPAPI_REQUEST_PATCH,
         TEST_RELATIVE_PATH,
@@ -617,7 +363,11 @@ static void prepareHTTPAPIEX_ExecuteRequest(CHTTPAPIEXMocks* mocks, unsigned int
         .ValidateArgumentBuffer(5, TEST_BUFFER, TEST_BUFFER_SIZE)
         .CopyOutArgumentBuffer(7, asGivenyHttpApi, sizeof(*asGivenyHttpApi))
         .SetReturn(resultToBeUsed);
-        ;
+}
+
+void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
+{
+    ASSERT_FAIL("umock_c reported error");
 }
 
 BEGIN_TEST_SUITE(httpapiex_unittests)
@@ -625,19 +375,47 @@ BEGIN_TEST_SUITE(httpapiex_unittests)
 TEST_SUITE_INITIALIZE(TestClassInitialize)
 {
     TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
-    g_testByTest = MicroMockCreateMutex();
+    g_testByTest = TEST_MUTEX_CREATE();
     ASSERT_IS_NOT_NULL(g_testByTest);
+
+    umock_c_init(on_umock_c_error);
+
+    REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, my_gballoc_malloc);
+    REGISTER_GLOBAL_MOCK_HOOK(gballoc_realloc, my_gballoc_realloc);
+    REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, my_gballoc_free);
+    REGISTER_GLOBAL_MOCK_HOOK(STRING_construct, my_STRING_construct);
+    REGISTER_GLOBAL_MOCK_HOOK(STRING_delete, my_STRING_delete);
+    REGISTER_GLOBAL_MOCK_RETURN(STRING_c_str, TEST_HOSTNAME);
+    REGISTER_GLOBAL_MOCK_HOOK(HTTPHeaders_Alloc, my_HTTPHeaders_Alloc);
+    REGISTER_GLOBAL_MOCK_HOOK(HTTPHeaders_Free, my_HTTPHeaders_Free);
+    REGISTER_GLOBAL_MOCK_RETURN(HTTPHeaders_AddHeaderNameValuePair, HTTP_HEADERS_OK);
+    REGISTER_GLOBAL_MOCK_RETURN(HTTPHeaders_ReplaceHeaderNameValuePair, HTTP_HEADERS_OK);
+    REGISTER_GLOBAL_MOCK_HOOK(BUFFER_new, my_BUFFER_new);
+    REGISTER_GLOBAL_MOCK_HOOK(BUFFER_delete, my_BUFFER_delete);
+    REGISTER_GLOBAL_MOCK_RETURN(BUFFER_u_char, TEST_BUFFER);
+    REGISTER_GLOBAL_MOCK_RETURN(BUFFER_length, TEST_BUFFER_SIZE);
+    REGISTER_GLOBAL_MOCK_HOOK(HTTPAPI_Init, my_HTTPAPI_Init);
+    REGISTER_GLOBAL_MOCK_HOOK(HTTPAPI_Deinit, my_HTTPAPI_Deinit);
+    REGISTER_GLOBAL_MOCK_HOOK(HTTPAPI_CreateConnection, my_HTTPAPI_CreateConnection);
+    REGISTER_GLOBAL_MOCK_HOOK(HTTPAPI_CloseConnection, my_HTTPAPI_CloseConnection);
+    REGISTER_GLOBAL_MOCK_RETURN(HTTPAPI_ExecuteRequest, HTTPAPI_OK);
+    REGISTER_GLOBAL_MOCK_RETURN(HTTPAPI_SetOption, HTTPAPI_OK);
+    REGISTER_GLOBAL_MOCK_HOOK(HTTPAPI_CloneOption, my_HTTPAPI_CloneOption);
+    REGISTER_GLOBAL_MOCK_HOOK(VECTOR_create, my_VECTOR_create);
+    REGISTER_GLOBAL_MOCK_HOOK(VECTOR_destroy, my_VECTOR_destroy);
+    REGISTER_GLOBAL_MOCK_RETURN(VECTOR_push_back, 0);
+    REGISTER_GLOBAL_MOCK_RETURN(VECTOR_size, 0);
 }
 
 TEST_SUITE_CLEANUP(TestClassCleanup)
 {
-    MicroMockDestroyMutex(g_testByTest);
+    TEST_MUTEX_DESTROY(g_testByTest);
     TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
 }
 
 TEST_FUNCTION_INITIALIZE(TestMethodInitialize)
 {
-    if (!MicroMockAcquireMutex(g_testByTest))
+    if (TEST_MUTEX_ACQUIRE(g_testByTest))
     {
         ASSERT_FAIL("our mutex is ABANDONED. Failure in test framework");
     }
@@ -651,45 +429,12 @@ TEST_FUNCTION_INITIALIZE(TestMethodInitialize)
     currentHTTPAPI_SaveOption_call = 0;
     whenShallHTTPAPI_SaveOption_fail = 0;
 
-    currentSTRING_new_call = 0;
-    whenShallSTRING_new_fail = 0;
-
-    currentSTRING_clone_call = 0;
-    whenShallSTRING_clone_fail = 0;
-
-    currentSTRING_construct_call = 0;
-    whenShallSTRING_construct_fail = 0;
-
-    currentSTRING_concat_call = 0;
-    whenShallSTRING_concat_fail = 0;
-
-    currentSTRING_empty_call = 0;
-    whenShallSTRING_empty_fail = 0;
-
-    currentSTRING_concat_with_STRING_call = 0;
-    whenShallSTRING_concat_with_STRING_fail = 0;
-
-    currentBUFFER_new_call = 0;
-    whenShallBUFFER_new_fail = 0;
-
-    currentBUFFER_build_call = 0;
-    whenShallBUFFER_build_fail = 0;
-
     currentBUFFER_content_call = 0;
     whenShallBUFFER_content_fail = 0;
 
     currentBUFFER_size_call = 0;
     whenShallBUFFER_size_fail = 0;
     
-    currentHTTPHeaders_Alloc_call = 0;
-    whenShallHTTPHeaders_Alloc_fail = 0;
-
-    currentVECTOR_create_call = 0;
-    whenShallVECTOR_create_fail = 0;
-
-    currentVECTOR_push_back_call = 0;
-    whenShallVECTOR_push_back_fail = 0;
-
     HTTPAPI_Init_calls = 0;
 
     currentHTTPAPI_CreateConnection_call = 0;
@@ -697,18 +442,13 @@ TEST_FUNCTION_INITIALIZE(TestMethodInitialize)
 
     currentHTTPAPI_Init_call = 0;
     for (size_t i = 0; i<N_MAX_FAILS; i++) whenShallHTTPAPI_Init_fail[i] = 0;
-
-    g_httpResult = HTTPAPI_OK;
 }
 
 TEST_FUNCTION_CLEANUP(TestMethodCleanup)
 {
     ASSERT_ARE_EQUAL(size_t, 0, HTTPAPI_Init_calls);
 
-    if (!MicroMockReleaseMutex(g_testByTest))
-    {
-        ASSERT_FAIL("failure in test framework at ReleaseMutex");
-    }
+    TEST_MUTEX_RELEASE(g_testByTest);
 }
 
 /*Tests_SRS_HTTPAPIEX_02_001: [If parameter hostName is NULL then HTTPAPIEX_Create shall return NULL.] */
@@ -721,6 +461,7 @@ TEST_FUNCTION(HTTPAPIEX_Create_with_NULL_name_fails)
 
     /// assert
     ASSERT_ARE_EQUAL(void_ptr, NULL, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
 /*Tests_SRS_HTTPAPIEX_02_002: [Parameter hostName shall be saved.] */
@@ -728,13 +469,11 @@ TEST_FUNCTION(HTTPAPIEX_Create_with_NULL_name_fails)
 TEST_FUNCTION(HTTPAPIEX_Create_succeeds)
 {
     /// arrange
-    CHTTPAPIEXMocks mocks;
-
-    STRICT_EXPECTED_CALL(mocks, STRING_construct(TEST_HOSTNAME));
-    STRICT_EXPECTED_CALL(mocks, gballoc_malloc(0))
+    STRICT_EXPECTED_CALL(STRING_construct(TEST_HOSTNAME));
+    STRICT_EXPECTED_CALL(gballoc_malloc(0))
         .IgnoreArgument(1);
 
-    STRICT_EXPECTED_CALL(mocks, VECTOR_create(IGNORED_NUM_ARG))
+    STRICT_EXPECTED_CALL(VECTOR_create(IGNORED_NUM_ARG))
         .IgnoreArgument(1);
 
     /// act
@@ -742,7 +481,7 @@ TEST_FUNCTION(HTTPAPIEX_Create_succeeds)
 
     /// assert
     ASSERT_ARE_NOT_EQUAL(void_ptr, NULL, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
     HTTPAPIEX_Destroy(result);
@@ -752,69 +491,66 @@ TEST_FUNCTION(HTTPAPIEX_Create_succeeds)
 TEST_FUNCTION(HTTPAPIEX_Destroy_frees_resources_1) /*this is destroy after created*/
 {
     /// arrange
-    CHTTPAPIEXMocks mocks;
     auto handle = HTTPAPIEX_Create(TEST_HOSTNAME);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*this is the copy of the hostName*/
+    STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG)) /*this is the copy of the hostName*/
         .IgnoreArgument(1);
 
-    STRICT_EXPECTED_CALL(mocks, VECTOR_size(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(VECTOR_size(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
 
-    STRICT_EXPECTED_CALL(mocks, VECTOR_destroy(IGNORED_PTR_ARG)) /*these are the options vector*/
+    STRICT_EXPECTED_CALL(VECTOR_destroy(IGNORED_PTR_ARG)) /*these are the options vector*/
         .IgnoreArgument(1);
 
-    STRICT_EXPECTED_CALL(mocks, gballoc_free(handle)); /*this is handle data*/
+    STRICT_EXPECTED_CALL(gballoc_free(handle)); /*this is handle data*/
 
     /// act
     HTTPAPIEX_Destroy(handle);
     
     /// assert
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
 /*Tests_SRS_HTTPAPIEX_02_042: [HTTPAPIEX_Destroy shall free all the resources used by HTTAPIEX_HANDLE.] */
 TEST_FUNCTION(HTTPAPIEX_Destroy_frees_resources_2) /*this is destroy after setting options*/
 {
     /// arrange
-    CHTTPAPIEXMocks mocks;
     auto handle = HTTPAPIEX_Create(TEST_HOSTNAME);
     (void)HTTPAPIEX_SetOption(handle, "notAnOption", "notAValue"); /*this is not something handled*/
     (void)HTTPAPIEX_SetOption(handle, "someOption1", "someValue"); /*this is something handled*/
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*this is the copy of the hostName*/
+    STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG)) /*this is the copy of the hostName*/
         .IgnoreArgument(1);
 
-    STRICT_EXPECTED_CALL(mocks, VECTOR_size(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(VECTOR_size(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
 
-    STRICT_EXPECTED_CALL(mocks, VECTOR_element(IGNORED_PTR_ARG, 0))
+    STRICT_EXPECTED_CALL(VECTOR_element(IGNORED_PTR_ARG, 0))
         .IgnoreArgument(1);
 
-    STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG)) /*this is "someValue"*/
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)) /*this is "someValue"*/
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG)) /*this is "someOption"*/
-        .IgnoreArgument(1);
-
-    STRICT_EXPECTED_CALL(mocks, VECTOR_destroy(IGNORED_PTR_ARG)) /*these are the options vector*/
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)) /*this is "someOption"*/
         .IgnoreArgument(1);
 
-    STRICT_EXPECTED_CALL(mocks, gballoc_free(handle)); /*this is handle data*/
+    STRICT_EXPECTED_CALL(VECTOR_destroy(IGNORED_PTR_ARG)) /*these are the options vector*/
+        .IgnoreArgument(1);
+
+    STRICT_EXPECTED_CALL(gballoc_free(handle)); /*this is handle data*/
 
     /// act
     HTTPAPIEX_Destroy(handle);
 
     /// assert
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
 /*Tests_SRS_HTTPAPIEX_02_042: [HTTPAPIEX_Destroy shall free all the resources used by HTTAPIEX_HANDLE.] */
 TEST_FUNCTION(HTTPAPIEX_Destroy_frees_resources_3) /*this is destroy after having a sequence build*/
 {
     /// arrange
-    CHTTPAPIEXMocks mocks;
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
 
     unsigned int httpStatusCode;
@@ -823,32 +559,32 @@ TEST_FUNCTION(HTTPAPIEX_Destroy_frees_resources_3) /*this is destroy after havin
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
     createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
-    setupAllCallBeforeHTTPsequence(&mocks);
-    setupAllCallForHTTPsequence(&mocks, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, responseHttpHeaders, responseHttpBody);
+    setupAllCallBeforeHTTPsequence();
+    setupAllCallForHTTPsequence(TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, responseHttpHeaders, responseHttpBody);
     (void)HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, responseHttpHeaders, responseHttpBody);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(mocks, HTTPAPI_CloseConnection(IGNORED_PTR_ARG)) /*closing the conenction*/
+    STRICT_EXPECTED_CALL(HTTPAPI_CloseConnection(IGNORED_PTR_ARG)) /*closing the conenction*/
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, HTTPAPI_Deinit()); /*deinit */
+    STRICT_EXPECTED_CALL(HTTPAPI_Deinit()); /*deinit */
         
-    STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG)) /*this is hostname*/
+    STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG)) /*this is hostname*/
         .IgnoreArgument(1);
 
-    STRICT_EXPECTED_CALL(mocks, VECTOR_size(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(VECTOR_size(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
 
-    STRICT_EXPECTED_CALL(mocks, VECTOR_destroy(IGNORED_PTR_ARG)) /*these are the options vector*/
+    STRICT_EXPECTED_CALL(VECTOR_destroy(IGNORED_PTR_ARG)) /*these are the options vector*/
         .IgnoreArgument(1);
 
-    STRICT_EXPECTED_CALL(mocks, gballoc_free(httpapiexhandle)); /*this is the handle*/
+    STRICT_EXPECTED_CALL(gballoc_free(httpapiexhandle)); /*this is the handle*/
 
     /// act
     HTTPAPIEX_Destroy(httpapiexhandle);
 
     ///assert
 
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
     destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
@@ -859,10 +595,8 @@ TEST_FUNCTION(HTTPAPIEX_Destroy_frees_resources_3) /*this is destroy after havin
 TEST_FUNCTION(HTTPAPIEX_Create_fails_when_malloc_fails)
 {
     /// arrange
-    CHTTPAPIEXMocks mocks;
-
     whenShallmalloc_fail = currentmalloc_call + 1;
-    STRICT_EXPECTED_CALL(mocks, gballoc_malloc(0))
+    STRICT_EXPECTED_CALL(gballoc_malloc(0))
         .IgnoreArgument(1);
 
     /// act
@@ -870,7 +604,7 @@ TEST_FUNCTION(HTTPAPIEX_Create_fails_when_malloc_fails)
 
     /// assert
     ASSERT_ARE_EQUAL(void_ptr, NULL, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
 }
@@ -879,16 +613,14 @@ TEST_FUNCTION(HTTPAPIEX_Create_fails_when_malloc_fails)
 TEST_FUNCTION(HTTPAPIEX_Create_fails_when_STRING_construct_fails)
 {
     /// arrange
-    CHTTPAPIEXMocks mocks;
-
-    STRICT_EXPECTED_CALL(mocks, gballoc_malloc(0))
+    STRICT_EXPECTED_CALL(gballoc_malloc(0))
         .IgnoreArgument(1);
 
 
-    whenShallSTRING_construct_fail = currentSTRING_construct_call + 1;
-    STRICT_EXPECTED_CALL(mocks, STRING_construct(TEST_HOSTNAME));
+    STRICT_EXPECTED_CALL(STRING_construct(TEST_HOSTNAME))
+        .SetReturn(NULL);
 
-    STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
 
     /// act
@@ -896,7 +628,7 @@ TEST_FUNCTION(HTTPAPIEX_Create_fails_when_STRING_construct_fails)
 
     /// assert
     ASSERT_ARE_EQUAL(void_ptr, NULL, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
 }
@@ -905,20 +637,17 @@ TEST_FUNCTION(HTTPAPIEX_Create_fails_when_STRING_construct_fails)
 TEST_FUNCTION(HTTPAPIEX_Create_fails_when_VECTOR_create_fails)
 {
     /// arrange
-    CHTTPAPIEXMocks mocks;
-
-    STRICT_EXPECTED_CALL(mocks, gballoc_malloc(0))
+    STRICT_EXPECTED_CALL(gballoc_malloc(0))
         .IgnoreArgument(1);
 
-    STRICT_EXPECTED_CALL(mocks, STRING_construct(TEST_HOSTNAME));
-    STRICT_EXPECTED_CALL(mocks, STRING_delete(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(STRING_construct(TEST_HOSTNAME));
+    STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
 
-    whenShallVECTOR_create_fail = currentVECTOR_create_call + 1;
-    STRICT_EXPECTED_CALL(mocks, VECTOR_create(IGNORED_NUM_ARG))
-        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(VECTOR_create(IGNORED_NUM_ARG))
+        .IgnoreArgument(1).SetReturn(NULL);
 
-    STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
 
     /// act
@@ -926,7 +655,7 @@ TEST_FUNCTION(HTTPAPIEX_Create_fails_when_VECTOR_create_fails)
 
     /// assert
     ASSERT_ARE_EQUAL(void_ptr, NULL, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
 }
@@ -943,24 +672,24 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_handle_fails)
 
     ///assert
     ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_INVALID_ARG, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
 /*Tests_SRS_HTTPAPIEX_02_007: [If parameter requestType does not indicate a valid request, HTTPAPIEX_ExecuteRequest shall fail and return HTTPAPIEX_INVALID_ARG.] */
 TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_fails_with_invalid_request_type)
 {
     /// arrange
-    CHTTPAPIEXMocks mocks;
     unsigned int httpStatusCode;
 
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
     /// act
     auto result = HTTPAPIEX_ExecuteRequest(httpapiexhandle, (HTTPAPI_REQUEST_TYPE)(COUNT_ARG(HTTPAPI_REQUEST_TYPE_VALUES)), TEST_RELATIVE_PATH, TEST_REQUEST_HTTP_HEADERS, TEST_REQUEST_BODY, &httpStatusCode, TEST_RESPONSE_HTTP_HEADERS, TEST_RESPONSE_BODY);
 
     ///assert
     ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_INVALID_ARG, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
     HTTPAPIEX_Destroy(httpapiexhandle);
@@ -970,7 +699,6 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_fails_with_invalid_request_type)
 TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_happy_path_with_all_non_NULL_parameters)
 {
     /// arrange
-    CHTTPAPIEXMocks mocks;
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
 
     unsigned int httpStatusCode;
@@ -979,17 +707,17 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_happy_path_with_all_non_NULL_parameters)
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
     createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
-    setupAllCallBeforeHTTPsequence(&mocks);
-    setupAllCallForHTTPsequence(&mocks, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, responseHttpHeaders, responseHttpBody);
+    setupAllCallBeforeHTTPsequence();
+    setupAllCallForHTTPsequence(TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, responseHttpHeaders, responseHttpBody);
 
     /// act
     auto result = HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, responseHttpHeaders, responseHttpBody);
 
     ///assert
     ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_OK, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
     destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
@@ -1000,7 +728,6 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_happy_path_with_all_non_NULL_parameters)
 TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_relativePath_uses_empty)
 {
     /// arrange
-    CHTTPAPIEXMocks mocks;
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
 
     unsigned int httpStatusCode;
@@ -1009,17 +736,17 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_relativePath_uses_empty)
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
     createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
-    setupAllCallBeforeHTTPsequence(&mocks);
-    setupAllCallForHTTPsequence(&mocks, "", requestHttpHeaders, requestHttpBody, responseHttpHeaders, responseHttpBody);
+    setupAllCallBeforeHTTPsequence();
+    setupAllCallForHTTPsequence("", requestHttpHeaders, requestHttpBody, responseHttpHeaders, responseHttpBody);
 
     /// act
     auto result = HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, NULL, requestHttpHeaders, requestHttpBody, &httpStatusCode, responseHttpHeaders, responseHttpBody);
 
     ///assert
     ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_OK, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
     destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
@@ -1034,7 +761,6 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_relativePath_uses_empty)
 TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_request_headers_and_NULL_requestBody_succeeds)
 {
     /// arrange
-    CHTTPAPIEXMocks mocks;
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
 
     unsigned int httpStatusCode;
@@ -1043,39 +769,39 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_request_headers_and_NULL_reques
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
     createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(mocks, BUFFER_new()); /*because it makes a fake buffer*/
-    STRICT_EXPECTED_CALL(mocks, BUFFER_delete(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(BUFFER_new()); /*because it makes a fake buffer*/
+    STRICT_EXPECTED_CALL(BUFFER_delete(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
 
-    STRICT_EXPECTED_CALL(mocks, HTTPHeaders_Alloc()); /*because it makes fakes request headers*/
-    STRICT_EXPECTED_CALL(mocks, HTTPHeaders_Free(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(HTTPHeaders_Alloc()); /*because it makes fakes request headers*/
+    STRICT_EXPECTED_CALL(HTTPHeaders_Free(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
     /*this is building the host and content-length for the http request headers*/
-    STRICT_EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, STRING_c_str(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
+    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", "0"))
+    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", "0"))
         .IgnoreArgument(1);
 
     /*this is getting the buffer content and buffer length to pass to httpapi_executerequest*/
-    STRICT_EXPECTED_CALL(mocks, HTTPAPI_Init());
-    STRICT_EXPECTED_CALL(mocks, STRING_c_str(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(HTTPAPI_Init());
+    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, HTTPAPI_CreateConnection(TEST_HOSTNAME));
-    STRICT_EXPECTED_CALL(mocks, VECTOR_size(IGNORED_PTR_ARG)) /*this is passing the options*/ /*there are none saved in the regular sequences*/
-        .IgnoreArgument(1);
-
-    STRICT_EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG))
-        .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, BUFFER_u_char(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(HTTPAPI_CreateConnection(TEST_HOSTNAME));
+    STRICT_EXPECTED_CALL(VECTOR_size(IGNORED_PTR_ARG)) /*this is passing the options*/ /*there are none saved in the regular sequences*/
         .IgnoreArgument(1);
 
-    STRICT_EXPECTED_CALL(mocks, HTTPAPI_ExecuteRequest(
+    STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(BUFFER_u_char(IGNORED_PTR_ARG))
+        .IgnoreArgument(1);
+
+    STRICT_EXPECTED_CALL(HTTPAPI_ExecuteRequest(
         IGNORED_PTR_ARG,
         HTTPAPI_REQUEST_PATCH,
         TEST_RELATIVE_PATH,
@@ -1096,7 +822,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_request_headers_and_NULL_reques
 
     ///assert
     ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_OK, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
     destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
@@ -1107,7 +833,6 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_request_headers_and_NULL_reques
 TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_request_headers_and_NULL_requestBody_fails_when_HTTPHeaders_ReplaceHeaderNameValuePair_fails)
 {
     /// arrange
-    CHTTPAPIEXMocks mocks;
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
 
     unsigned int httpStatusCode;
@@ -1116,23 +841,23 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_request_headers_and_NULL_reques
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
     createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(mocks, BUFFER_new()); /*because it makes a fake buffer*/
-    STRICT_EXPECTED_CALL(mocks, BUFFER_delete(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(BUFFER_new()); /*because it makes a fake buffer*/
+    STRICT_EXPECTED_CALL(BUFFER_delete(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
 
-    STRICT_EXPECTED_CALL(mocks, HTTPHeaders_Alloc()); /*because it makes fakes request headers*/
-    STRICT_EXPECTED_CALL(mocks, HTTPHeaders_Free(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(HTTPHeaders_Alloc()); /*because it makes fakes request headers*/
+    STRICT_EXPECTED_CALL(HTTPHeaders_Free(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
     /*this is building the host and content-length for the http request headers*/
-    STRICT_EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, STRING_c_str(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
+    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", "0"))
+    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", "0"))
         .IgnoreArgument(1)
         .SetReturn(HTTP_HEADERS_ERROR);
 
@@ -1141,7 +866,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_request_headers_and_NULL_reques
 
     ///assert
     ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_ERROR, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
     destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
@@ -1152,7 +877,6 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_request_headers_and_NULL_reques
 TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_request_headers_and_NULL_requestBody_fails_when_HTTPHeaders_ReplaceHeaderNameValuePair_fails_2)
 {
     /// arrange
-    CHTTPAPIEXMocks mocks;
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
 
     unsigned int httpStatusCode;
@@ -1161,21 +885,21 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_request_headers_and_NULL_reques
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
     createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(mocks, BUFFER_new()); /*because it makes a fake buffer*/
-    STRICT_EXPECTED_CALL(mocks, BUFFER_delete(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(BUFFER_new()); /*because it makes a fake buffer*/
+    STRICT_EXPECTED_CALL(BUFFER_delete(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
 
-    STRICT_EXPECTED_CALL(mocks, HTTPHeaders_Alloc()); /*because it makes fakes request headers*/
-    STRICT_EXPECTED_CALL(mocks, HTTPHeaders_Free(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(HTTPHeaders_Alloc()); /*because it makes fakes request headers*/
+    STRICT_EXPECTED_CALL(HTTPHeaders_Free(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
     /*this is building the host and content-length for the http request headers*/
-    STRICT_EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, STRING_c_str(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
+    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
         .IgnoreArgument(1)
         .SetReturn(HTTP_HEADERS_ERROR);
 
@@ -1184,7 +908,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_request_headers_and_NULL_reques
 
     ///assert
     ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_ERROR, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
     destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
@@ -1195,7 +919,6 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_request_headers_and_NULL_reques
 TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_request_headers_and_NULL_requestBody_fails_when_HTTPHeaders_ReplaceHeaderNameValuePair_fails_3)
 {
     /// arrange
-    CHTTPAPIEXMocks mocks;
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
 
     unsigned int httpStatusCode;
@@ -1204,21 +927,21 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_request_headers_and_NULL_reques
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
     createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(mocks, BUFFER_new()); /*because it makes a fake buffer*/
-    STRICT_EXPECTED_CALL(mocks, BUFFER_delete(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(BUFFER_new()); /*because it makes a fake buffer*/
+    STRICT_EXPECTED_CALL(BUFFER_delete(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
 
-    whenShallHTTPHeaders_Alloc_fail = currentHTTPHeaders_Alloc_call + 1;
-    STRICT_EXPECTED_CALL(mocks, HTTPHeaders_Alloc()); /*because it makes fakes request headers*/
+    STRICT_EXPECTED_CALL(HTTPHeaders_Alloc())
+        .SetReturn(NULL); /*because it makes fakes request headers*/
 
     /// act
     auto result = HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, NULL, NULL, &httpStatusCode, responseHttpHeaders, responseHttpBody);
 
     ///assert
     ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_ERROR, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
     destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
@@ -1232,7 +955,6 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_request_headers_and_NULL_reques
 TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_request_headers_and_NULL_requestBody_succeeds)
 {
     /// arrange
-    CHTTPAPIEXMocks mocks;
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
 
     unsigned int httpStatusCode;
@@ -1241,36 +963,36 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_request_headers_and_NULL_re
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
     createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(mocks, BUFFER_new()); /*because it makes a fake buffer*/
-    STRICT_EXPECTED_CALL(mocks, BUFFER_delete(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(BUFFER_new()); /*because it makes a fake buffer*/
+    STRICT_EXPECTED_CALL(BUFFER_delete(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
 
     /*this is building the host and content-length for the http request headers*/
-    STRICT_EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, STRING_c_str(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
+    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", "0"))
+    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", "0"))
         .IgnoreArgument(1);
 
     /*this is getting the buffer content and buffer length to pass to httpapi_executerequest*/
-    STRICT_EXPECTED_CALL(mocks, HTTPAPI_Init());
-    STRICT_EXPECTED_CALL(mocks, STRING_c_str(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(HTTPAPI_Init());
+    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, HTTPAPI_CreateConnection(TEST_HOSTNAME));
-    STRICT_EXPECTED_CALL(mocks, VECTOR_size(IGNORED_PTR_ARG)) /*this is passing the options*/ /*there are none saved in the regular sequences*/
-        .IgnoreArgument(1);
-
-    STRICT_EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG))
-        .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, BUFFER_u_char(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(HTTPAPI_CreateConnection(TEST_HOSTNAME));
+    STRICT_EXPECTED_CALL(VECTOR_size(IGNORED_PTR_ARG)) /*this is passing the options*/ /*there are none saved in the regular sequences*/
         .IgnoreArgument(1);
 
-    STRICT_EXPECTED_CALL(mocks, HTTPAPI_ExecuteRequest(
+    STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(BUFFER_u_char(IGNORED_PTR_ARG))
+        .IgnoreArgument(1);
+
+    STRICT_EXPECTED_CALL(HTTPAPI_ExecuteRequest(
         IGNORED_PTR_ARG,
         HTTPAPI_REQUEST_PATCH,
         TEST_RELATIVE_PATH,
@@ -1291,7 +1013,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_request_headers_and_NULL_re
 
     ///assert
     ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_OK, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
     destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
@@ -1302,7 +1024,6 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_request_headers_and_NULL_re
 TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_request_headers_and_NULL_requestBody_fails_when_HTTPHeaders_ReplaceHeaderNameValuePair_fails_1)
 {
     /// arrange
-    CHTTPAPIEXMocks mocks;
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
 
     unsigned int httpStatusCode;
@@ -1311,20 +1032,20 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_request_headers_and_NULL_re
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
     createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(mocks, BUFFER_new()); /*because it makes a fake buffer*/
-    STRICT_EXPECTED_CALL(mocks, BUFFER_delete(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(BUFFER_new()); /*because it makes a fake buffer*/
+    STRICT_EXPECTED_CALL(BUFFER_delete(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
 
     /*this is building the host and content-length for the http request headers*/
-    STRICT_EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, STRING_c_str(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
+    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", "0"))
+    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", "0"))
         .IgnoreArgument(1)
         .SetReturn(HTTP_HEADERS_ERROR);
 
@@ -1333,7 +1054,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_request_headers_and_NULL_re
 
     ///assert
     ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_ERROR, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
     destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
@@ -1344,7 +1065,6 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_request_headers_and_NULL_re
 TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_request_headers_and_NULL_requestBody_fails_when_HTTPHeaders_ReplaceHeaderNameValuePair_fails_2)
 {
     /// arrange
-    CHTTPAPIEXMocks mocks;
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
 
     unsigned int httpStatusCode;
@@ -1353,18 +1073,18 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_request_headers_and_NULL_re
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
     createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(mocks, BUFFER_new()); /*because it makes a fake buffer*/
-    STRICT_EXPECTED_CALL(mocks, BUFFER_delete(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(BUFFER_new()); /*because it makes a fake buffer*/
+    STRICT_EXPECTED_CALL(BUFFER_delete(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
 
     /*this is building the host and content-length for the http request headers*/
-    STRICT_EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, STRING_c_str(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
+    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
         .IgnoreArgument(1)
         .SetReturn(HTTP_HEADERS_ERROR);
 
@@ -1373,7 +1093,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_request_headers_and_NULL_re
 
     ///assert
     ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_ERROR, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
     destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
@@ -1384,7 +1104,6 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_request_headers_and_NULL_re
 TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_request_headers_and_NULL_requestBody_fails_when_fake_requestbody_creation_fails)
 {
     /// arrange
-    CHTTPAPIEXMocks mocks;
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
 
     unsigned int httpStatusCode;
@@ -1393,17 +1112,17 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_request_headers_and_NULL_re
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
     createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
-    whenShallBUFFER_new_fail = currentBUFFER_new_call + 1;
-    STRICT_EXPECTED_CALL(mocks, BUFFER_new()); /*because it makes a fake buffer*/
+    STRICT_EXPECTED_CALL(BUFFER_new())
+        .SetReturn(NULL); /*because it makes a fake buffer*/
 
     /// act
     auto result = HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, NULL, &httpStatusCode, responseHttpHeaders, responseHttpBody);
 
     ///assert
     ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_ERROR, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
     destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
@@ -1414,7 +1133,6 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_request_headers_and_NULL_re
 TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_request_headers_and_non_NULL_requestBody_succeeds)
 {
     /// arrange
-    CHTTPAPIEXMocks mocks;
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
 
     unsigned int httpStatusCode;
@@ -1423,32 +1141,32 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_request_headers_and_non_NUL
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
     createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
     /*this is building the host and content-length for the http request headers*/
-    STRICT_EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, STRING_c_str(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
+    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", TOSTRING(TEST_BUFFER_SIZE)))
+    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", TOSTRING(TEST_BUFFER_SIZE)))
         .IgnoreArgument(1);
 
     /*this is getting the buffer content and buffer length to pass to httpapi_executerequest*/
-    STRICT_EXPECTED_CALL(mocks, HTTPAPI_Init());
-    STRICT_EXPECTED_CALL(mocks, STRING_c_str(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(HTTPAPI_Init());
+    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, HTTPAPI_CreateConnection(TEST_HOSTNAME));
-    STRICT_EXPECTED_CALL(mocks, VECTOR_size(IGNORED_PTR_ARG)) /*this is passing the options*/ /*there are none saved in the regular sequences*/
-        .IgnoreArgument(1);
-
-    STRICT_EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG))
-        .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, BUFFER_u_char(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(HTTPAPI_CreateConnection(TEST_HOSTNAME));
+    STRICT_EXPECTED_CALL(VECTOR_size(IGNORED_PTR_ARG)) /*this is passing the options*/ /*there are none saved in the regular sequences*/
         .IgnoreArgument(1);
 
-    STRICT_EXPECTED_CALL(mocks, HTTPAPI_ExecuteRequest(
+    STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(BUFFER_u_char(IGNORED_PTR_ARG))
+        .IgnoreArgument(1);
+
+    STRICT_EXPECTED_CALL(HTTPAPI_ExecuteRequest(
         IGNORED_PTR_ARG,
         HTTPAPI_REQUEST_PATCH,
         TEST_RELATIVE_PATH,
@@ -1470,7 +1188,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_request_headers_and_non_NUL
 
     ///assert
     ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_OK, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
     destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
@@ -1481,7 +1199,6 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_request_headers_and_non_NUL
 TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_request_headers_and_non_NULL_requestBody_fails_when_HTTPHeaders_ReplaceHeaderNameValuePair_fails_1)
 {
     /// arrange
-    CHTTPAPIEXMocks mocks;
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
 
     unsigned int httpStatusCode;
@@ -1490,16 +1207,16 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_request_headers_and_non_NUL
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
     createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
     /*this is building the host and content-length for the http request headers*/
-    STRICT_EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, STRING_c_str(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
+    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", TOSTRING(TEST_BUFFER_SIZE)))
+    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", TOSTRING(TEST_BUFFER_SIZE)))
         .IgnoreArgument(1)
         .SetReturn(HTTP_HEADERS_ERROR);
 
@@ -1508,7 +1225,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_request_headers_and_non_NUL
 
     ///assert
     ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_ERROR, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
     destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
@@ -1519,7 +1236,6 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_request_headers_and_non_NUL
 TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_request_headers_and_non_NULL_requestBody_fails_when_HTTPHeaders_ReplaceHeaderNameValuePair_fails_2)
 {
     /// arrange
-    CHTTPAPIEXMocks mocks;
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
 
     unsigned int httpStatusCode;
@@ -1528,14 +1244,14 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_request_headers_and_non_NUL
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
     createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
     /*this is building the host and content-length for the http request headers*/
-    STRICT_EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, STRING_c_str(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
+    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
         .IgnoreArgument(1)
         .SetReturn(HTTP_HEADERS_ERROR);
 
@@ -1544,7 +1260,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_request_headers_and_non_NUL
 
     ///assert
     ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_ERROR, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
     destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
@@ -1555,7 +1271,6 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_request_headers_and_non_NUL
 TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_statusCode_succeeds)
 {
     /// arrange
-    CHTTPAPIEXMocks mocks;
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
 
     HTTP_HEADERS_HANDLE requestHttpHeaders;
@@ -1563,32 +1278,32 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_statusCode_succeeds)
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
     createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
     /*this is building the host and content-length for the http request headers*/
-    STRICT_EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, STRING_c_str(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
+    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", TOSTRING(TEST_BUFFER_SIZE)))
+    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", TOSTRING(TEST_BUFFER_SIZE)))
         .IgnoreArgument(1);
 
     /*this is getting the buffer content and buffer length to pass to httpapi_executerequest*/
-    STRICT_EXPECTED_CALL(mocks, HTTPAPI_Init());
-    STRICT_EXPECTED_CALL(mocks, STRING_c_str(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(HTTPAPI_Init());
+    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, HTTPAPI_CreateConnection(TEST_HOSTNAME));
-    STRICT_EXPECTED_CALL(mocks, VECTOR_size(IGNORED_PTR_ARG)) /*this is passing the options*/ /*there are none saved in the regular sequences*/
-        .IgnoreArgument(1);
-
-    STRICT_EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG))
-        .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, BUFFER_u_char(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(HTTPAPI_CreateConnection(TEST_HOSTNAME));
+    STRICT_EXPECTED_CALL(VECTOR_size(IGNORED_PTR_ARG)) /*this is passing the options*/ /*there are none saved in the regular sequences*/
         .IgnoreArgument(1);
 
-    STRICT_EXPECTED_CALL(mocks, HTTPAPI_ExecuteRequest(
+    STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(BUFFER_u_char(IGNORED_PTR_ARG))
+        .IgnoreArgument(1);
+
+    STRICT_EXPECTED_CALL(HTTPAPI_ExecuteRequest(
         IGNORED_PTR_ARG,
         HTTPAPI_REQUEST_PATCH,
         TEST_RELATIVE_PATH,
@@ -1610,7 +1325,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_statusCode_succeeds)
 
     ///assert
     ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_OK, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
     destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
@@ -1621,7 +1336,6 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_statusCode_succeeds)
 TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_statusCode_returns_that_code_to_the_caller_suceeds)
 {
     /// arrange
-    CHTTPAPIEXMocks mocks;
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
 
     unsigned int httpStatusCode;
@@ -1631,32 +1345,32 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_statusCode_returns_that_cod
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
     createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
     /*this is building the host and content-length for the http request headers*/
-    STRICT_EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, STRING_c_str(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
+    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", TOSTRING(TEST_BUFFER_SIZE)))
+    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", TOSTRING(TEST_BUFFER_SIZE)))
         .IgnoreArgument(1);
 
     /*this is getting the buffer content and buffer length to pass to httpapi_executerequest*/
-    STRICT_EXPECTED_CALL(mocks, HTTPAPI_Init());
-    STRICT_EXPECTED_CALL(mocks, STRING_c_str(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(HTTPAPI_Init());
+    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, HTTPAPI_CreateConnection(TEST_HOSTNAME));
-    STRICT_EXPECTED_CALL(mocks, VECTOR_size(IGNORED_PTR_ARG)) /*this is passing the options*/ /*there are none saved in the regular sequences*/
-        .IgnoreArgument(1);
-
-    STRICT_EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG))
-        .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, BUFFER_u_char(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(HTTPAPI_CreateConnection(TEST_HOSTNAME));
+    STRICT_EXPECTED_CALL(VECTOR_size(IGNORED_PTR_ARG)) /*this is passing the options*/ /*there are none saved in the regular sequences*/
         .IgnoreArgument(1);
 
-    STRICT_EXPECTED_CALL(mocks, HTTPAPI_ExecuteRequest(
+    STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(BUFFER_u_char(IGNORED_PTR_ARG))
+        .IgnoreArgument(1);
+
+    STRICT_EXPECTED_CALL(HTTPAPI_ExecuteRequest(
         IGNORED_PTR_ARG,
         HTTPAPI_REQUEST_PATCH,
         TEST_RELATIVE_PATH,
@@ -1680,7 +1394,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_statusCode_returns_that_cod
     ///assert
     ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_OK, result);
     ASSERT_ARE_EQUAL(int, 4567, (int)httpStatusCode);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
     destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
@@ -1691,7 +1405,6 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_statusCode_returns_that_cod
 TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_cleans_when_originalhttpbody_is_NULL_and_response_headers_fails)
 {
     /// arrange
-    CHTTPAPIEXMocks mocks;
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
 
     unsigned int httpStatusCode;
@@ -1700,36 +1413,36 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_cleans_when_originalhttpbody_is_NULL_and_
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
     createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(mocks, BUFFER_new()); /*because it makes a fake buffer*/
-    STRICT_EXPECTED_CALL(mocks, BUFFER_delete(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(BUFFER_new()); /*because it makes a fake buffer*/
+    STRICT_EXPECTED_CALL(BUFFER_delete(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
 
-    STRICT_EXPECTED_CALL(mocks, HTTPHeaders_Alloc());
-    STRICT_EXPECTED_CALL(mocks, HTTPHeaders_Free(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(HTTPHeaders_Alloc());
+    STRICT_EXPECTED_CALL(HTTPHeaders_Free(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
 
     /*this is building the host and content-length for the http request headers*/
-    STRICT_EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, STRING_c_str(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
+    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", "0"))
+    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", "0"))
         .IgnoreArgument(1);
 
     /*Becauyse it is creating fake response headers*/
-    whenShallHTTPHeaders_Alloc_fail = currentHTTPHeaders_Alloc_call + 2;
-    STRICT_EXPECTED_CALL(mocks, HTTPHeaders_Alloc());
+    STRICT_EXPECTED_CALL(HTTPHeaders_Alloc())
+        .SetReturn(NULL);
 
     /// act
     auto result = HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, NULL, NULL, &httpStatusCode, NULL, responseHttpBody);
 
     ///assert
     ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_ERROR, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
     destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
@@ -1739,7 +1452,6 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_cleans_when_originalhttpbody_is_NULL_and_
 TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_cleans_when_responsehttpbody_is_NULL_and_creating_a_fake_one_fails)
 {
     /// arrange
-    CHTTPAPIEXMocks mocks;
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
 
     unsigned int httpStatusCode;
@@ -1748,40 +1460,40 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_cleans_when_responsehttpbody_is_NULL_and_
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
     createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(mocks, BUFFER_new()); /*because it makes a fake buffer*/
-    STRICT_EXPECTED_CALL(mocks, BUFFER_delete(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(BUFFER_new()); /*because it makes a fake buffer*/
+    STRICT_EXPECTED_CALL(BUFFER_delete(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
 
-    STRICT_EXPECTED_CALL(mocks, HTTPHeaders_Alloc());
-    STRICT_EXPECTED_CALL(mocks, HTTPHeaders_Free(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(HTTPHeaders_Alloc());
+    STRICT_EXPECTED_CALL(HTTPHeaders_Free(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
 
     /*this is building the host and content-length for the http request headers*/
-    STRICT_EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, STRING_c_str(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
+    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", "0"))
+    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", "0"))
         .IgnoreArgument(1);
 
     /*Becauyse it is creating fake response headers*/
-    STRICT_EXPECTED_CALL(mocks, HTTPHeaders_Alloc());
-    STRICT_EXPECTED_CALL(mocks, HTTPHeaders_Free(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(HTTPHeaders_Alloc());
+    STRICT_EXPECTED_CALL(HTTPHeaders_Free(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
 
-    whenShallBUFFER_new_fail = currentBUFFER_new_call + 2;
-    STRICT_EXPECTED_CALL(mocks, BUFFER_new()); /*because it makes a fake buffer*/
+    STRICT_EXPECTED_CALL(BUFFER_new())
+        .SetReturn(NULL); /*because it makes a fake buffer*/
 
     /// act
     auto result = HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, NULL, NULL, &httpStatusCode, NULL, NULL);
 
     ///assert
     ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_ERROR, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
     destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
@@ -1792,7 +1504,6 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_cleans_when_responsehttpbody_is_NULL_and_
 TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_response_headers_suceeds)
 {
     /// arrange
-    CHTTPAPIEXMocks mocks;
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
 
     unsigned int httpStatusCode;
@@ -1802,37 +1513,37 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_response_headers_suceeds)
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
     createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
     /*this is building the host and content-length for the http request headers*/
-    STRICT_EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, STRING_c_str(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
+    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", TOSTRING(TEST_BUFFER_SIZE)))
+    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", TOSTRING(TEST_BUFFER_SIZE)))
         .IgnoreArgument(1);
 
     /*Becauyse it is creating fake response headers*/
-    STRICT_EXPECTED_CALL(mocks, HTTPHeaders_Alloc());
-    STRICT_EXPECTED_CALL(mocks, HTTPHeaders_Free(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(HTTPHeaders_Alloc());
+    STRICT_EXPECTED_CALL(HTTPHeaders_Free(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
 
     /*this is getting the buffer content and buffer length to pass to httpapi_executerequest*/
-    STRICT_EXPECTED_CALL(mocks, HTTPAPI_Init());
-    STRICT_EXPECTED_CALL(mocks, STRING_c_str(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(HTTPAPI_Init());
+    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, HTTPAPI_CreateConnection(TEST_HOSTNAME));
-    STRICT_EXPECTED_CALL(mocks, VECTOR_size(IGNORED_PTR_ARG)) /*this is passing the options*/ /*there are none saved in the regular sequences*/
-        .IgnoreArgument(1);
-
-    STRICT_EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG))
-        .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, BUFFER_u_char(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(HTTPAPI_CreateConnection(TEST_HOSTNAME));
+    STRICT_EXPECTED_CALL(VECTOR_size(IGNORED_PTR_ARG)) /*this is passing the options*/ /*there are none saved in the regular sequences*/
         .IgnoreArgument(1);
 
-    STRICT_EXPECTED_CALL(mocks, HTTPAPI_ExecuteRequest(
+    STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(BUFFER_u_char(IGNORED_PTR_ARG))
+        .IgnoreArgument(1);
+
+    STRICT_EXPECTED_CALL(HTTPAPI_ExecuteRequest(
         IGNORED_PTR_ARG,
         HTTPAPI_REQUEST_PATCH,
         TEST_RELATIVE_PATH,
@@ -1857,7 +1568,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_response_headers_suceeds)
     ///assert
     ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_OK, result);
     ASSERT_ARE_EQUAL(int, 4567, (int)httpStatusCode);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
     destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
@@ -1868,7 +1579,6 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_response_headers_suceeds)
 TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_response_headers_fails_when_HTTPHeaders_Alloc_fails)
 {
     /// arrange
-    CHTTPAPIEXMocks mocks;
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
 
     unsigned int httpStatusCode;
@@ -1877,28 +1587,28 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_response_headers_fails_when_HTT
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
     createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
     /*this is building the host and content-length for the http request headers*/
-    STRICT_EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, STRING_c_str(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
+    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", TOSTRING(TEST_BUFFER_SIZE)))
+    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", TOSTRING(TEST_BUFFER_SIZE)))
         .IgnoreArgument(1);
 
     /*Becauyse it is creating fake response headers*/
-    whenShallHTTPHeaders_Alloc_fail = currentHTTPHeaders_Alloc_call + 1;
-    STRICT_EXPECTED_CALL(mocks, HTTPHeaders_Alloc());
+    STRICT_EXPECTED_CALL(HTTPHeaders_Alloc())
+        .SetReturn(NULL);
 
     /// act
     auto result = HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, NULL, responseHttpBody);
 
     ///assert
     ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_ERROR, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
     destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
@@ -1909,7 +1619,6 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_response_headers_fails_when_HTT
 TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_response_headers_suceeds)
 {
     /// arrange
-    CHTTPAPIEXMocks mocks;
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
 
     unsigned int httpStatusCode;
@@ -1919,32 +1628,32 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_response_headers_suceeds)
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
     createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
     /*this is building the host and content-length for the http request headers*/
-    STRICT_EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, STRING_c_str(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
+    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", TOSTRING(TEST_BUFFER_SIZE)))
+    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", TOSTRING(TEST_BUFFER_SIZE)))
         .IgnoreArgument(1);
 
     /*this is getting the buffer content and buffer length to pass to httpapi_executerequest*/
-    STRICT_EXPECTED_CALL(mocks, HTTPAPI_Init());
-    STRICT_EXPECTED_CALL(mocks, STRING_c_str(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(HTTPAPI_Init());
+    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, HTTPAPI_CreateConnection(TEST_HOSTNAME));
-    STRICT_EXPECTED_CALL(mocks, VECTOR_size(IGNORED_PTR_ARG)) /*this is passing the options*/ /*there are none saved in the regular sequences*/
-        .IgnoreArgument(1);
-
-    STRICT_EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG))
-        .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, BUFFER_u_char(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(HTTPAPI_CreateConnection(TEST_HOSTNAME));
+    STRICT_EXPECTED_CALL(VECTOR_size(IGNORED_PTR_ARG)) /*this is passing the options*/ /*there are none saved in the regular sequences*/
         .IgnoreArgument(1);
 
-    STRICT_EXPECTED_CALL(mocks, HTTPAPI_ExecuteRequest(
+    STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(BUFFER_u_char(IGNORED_PTR_ARG))
+        .IgnoreArgument(1);
+
+    STRICT_EXPECTED_CALL(HTTPAPI_ExecuteRequest(
         IGNORED_PTR_ARG,
         HTTPAPI_REQUEST_PATCH,
         TEST_RELATIVE_PATH,
@@ -1967,7 +1676,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_response_headers_suceeds)
     ///assert
     ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_OK, result);
     ASSERT_ARE_EQUAL(int, 4567, (int)httpStatusCode);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
     destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
@@ -1978,7 +1687,6 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_response_headers_suceeds)
 TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_response_body_suceeds)
 {
     /// arrange
-    CHTTPAPIEXMocks mocks;
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
 
     unsigned int httpStatusCode;
@@ -1988,36 +1696,36 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_response_body_suceeds)
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
     createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
     /*this is building the host and content-length for the http request headers*/
-    STRICT_EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, STRING_c_str(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
+    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", TOSTRING(TEST_BUFFER_SIZE)))
+    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", TOSTRING(TEST_BUFFER_SIZE)))
         .IgnoreArgument(1);
 
-    STRICT_EXPECTED_CALL(mocks, BUFFER_new()); /*because it makes a fake response buffer*/
-    STRICT_EXPECTED_CALL(mocks, BUFFER_delete(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(BUFFER_new()); /*because it makes a fake response buffer*/
+    STRICT_EXPECTED_CALL(BUFFER_delete(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
 
     /*this is getting the buffer content and buffer length to pass to httpapi_executerequest*/
-    STRICT_EXPECTED_CALL(mocks, HTTPAPI_Init());
-    STRICT_EXPECTED_CALL(mocks, STRING_c_str(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(HTTPAPI_Init());
+    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, HTTPAPI_CreateConnection(TEST_HOSTNAME));
-    STRICT_EXPECTED_CALL(mocks, VECTOR_size(IGNORED_PTR_ARG)) /*this is passing the options*/ /*there are none saved in the regular sequences*/
-        .IgnoreArgument(1);
-
-    STRICT_EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG))
-        .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, BUFFER_u_char(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(HTTPAPI_CreateConnection(TEST_HOSTNAME));
+    STRICT_EXPECTED_CALL(VECTOR_size(IGNORED_PTR_ARG)) /*this is passing the options*/ /*there are none saved in the regular sequences*/
         .IgnoreArgument(1);
 
-    STRICT_EXPECTED_CALL(mocks, HTTPAPI_ExecuteRequest(
+    STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(BUFFER_u_char(IGNORED_PTR_ARG))
+        .IgnoreArgument(1);
+
+    STRICT_EXPECTED_CALL(HTTPAPI_ExecuteRequest(
         IGNORED_PTR_ARG,
         HTTPAPI_REQUEST_PATCH,
         TEST_RELATIVE_PATH,
@@ -2042,7 +1750,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_response_body_suceeds)
     ///assert
     ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_OK, result);
     ASSERT_ARE_EQUAL(int, 4567, (int)httpStatusCode);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
     destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
@@ -2053,7 +1761,6 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_response_body_suceeds)
 TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_fails_when_BUFFER_new_fails)
 {
     /// arrange
-    CHTTPAPIEXMocks mocks;
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
 
     unsigned int httpStatusCode;
@@ -2062,27 +1769,27 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_fails_when_BUFFER_new_fails)
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
     createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
     /*this is building the host and content-length for the http request headers*/
-    STRICT_EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, STRING_c_str(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
+    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", TOSTRING(TEST_BUFFER_SIZE)))
+    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", TOSTRING(TEST_BUFFER_SIZE)))
         .IgnoreArgument(1);
 
-    whenShallBUFFER_new_fail = currentBUFFER_new_call + 1;
-    STRICT_EXPECTED_CALL(mocks, BUFFER_new()); /*because it makes a fake response buffer*/
+    STRICT_EXPECTED_CALL(BUFFER_new())
+        .SetReturn(NULL); /*because it makes a fake response buffer*/
 
     /// act
     auto result = HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, responseHttpHeaders, NULL);
 
     ///assert
     ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_ERROR, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
     destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
@@ -2093,7 +1800,6 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_fails_when_BUFFER_new_fails)
 TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_response_body_suceeds)
 {
     /// arrange
-    CHTTPAPIEXMocks mocks;
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
 
     unsigned int httpStatusCode;
@@ -2103,32 +1809,32 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_response_body_suceeds)
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
     createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
     /*this is building the host and content-length for the http request headers*/
-    STRICT_EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, STRING_c_str(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
+    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", TOSTRING(TEST_BUFFER_SIZE)))
+    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", TOSTRING(TEST_BUFFER_SIZE)))
         .IgnoreArgument(1);
 
     /*this is getting the buffer content and buffer length to pass to httpapi_executerequest*/
-    STRICT_EXPECTED_CALL(mocks, HTTPAPI_Init());
-    STRICT_EXPECTED_CALL(mocks, STRING_c_str(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(HTTPAPI_Init());
+    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, HTTPAPI_CreateConnection(TEST_HOSTNAME));
-    STRICT_EXPECTED_CALL(mocks, VECTOR_size(IGNORED_PTR_ARG)) /*this is passing the options*/ /*there are none saved in the regular sequences*/
-        .IgnoreArgument(1);
-
-    STRICT_EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG))
-        .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, BUFFER_u_char(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(HTTPAPI_CreateConnection(TEST_HOSTNAME));
+    STRICT_EXPECTED_CALL(VECTOR_size(IGNORED_PTR_ARG)) /*this is passing the options*/ /*there are none saved in the regular sequences*/
         .IgnoreArgument(1);
 
-    STRICT_EXPECTED_CALL(mocks, HTTPAPI_ExecuteRequest(
+    STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(BUFFER_u_char(IGNORED_PTR_ARG))
+        .IgnoreArgument(1);
+
+    STRICT_EXPECTED_CALL(HTTPAPI_ExecuteRequest(
         IGNORED_PTR_ARG,
         HTTPAPI_REQUEST_PATCH,
         TEST_RELATIVE_PATH,
@@ -2152,7 +1858,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_response_body_suceeds)
     ///assert
     ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_OK, result);
     ASSERT_ARE_EQUAL(int, 4567, (int)httpStatusCode);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
     destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
@@ -2168,7 +1874,6 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_response_body_suceeds)
 TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_S1) /*refer to httpapiex_retry_mechanism.vsdx*/
 {
     /// arrange
-    CHTTPAPIEXMocks mocks;
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
 
     unsigned int httpStatusCode;
@@ -2179,9 +1884,9 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_S1) /*refer to httpapiex_retry_m
     BUFFER_HANDLE responseHttpBody;
     createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
     (void)HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, responseHttpHeaders, responseHttpBody);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
-    prepareHTTPAPIEX_ExecuteRequest(&mocks, &asGivenyHttpApi, requestHttpHeaders, responseHttpHeaders, responseHttpBody, HTTPAPI_OK);
+    prepareHTTPAPIEX_ExecuteRequest(&asGivenyHttpApi, requestHttpHeaders, responseHttpHeaders, responseHttpBody, HTTPAPI_OK);
 
     /// act
     auto result = HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, responseHttpHeaders, responseHttpBody);
@@ -2189,7 +1894,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_S1) /*refer to httpapiex_retry_m
     ///assert
     ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_OK, result);
     ASSERT_ARE_EQUAL(int, 23, (int)httpStatusCode);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
     destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
@@ -2199,7 +1904,6 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_S1) /*refer to httpapiex_retry_m
 TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_S2) /*refer to httpapiex_retry_mechanism.vsdx*/
 {
     /// arrange
-    CHTTPAPIEXMocks mocks;
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
 
     unsigned int httpStatusCode;
@@ -2210,28 +1914,28 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_S2) /*refer to httpapiex_retry_m
     BUFFER_HANDLE responseHttpBody;
     createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
     (void)HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, responseHttpHeaders, responseHttpBody);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
-    prepareHTTPAPIEX_ExecuteRequest(&mocks, &asGivenyHttpApi, requestHttpHeaders, responseHttpHeaders, responseHttpBody, HTTPAPI_ERROR);
+    prepareHTTPAPIEX_ExecuteRequest(&asGivenyHttpApi, requestHttpHeaders, responseHttpHeaders, responseHttpBody, HTTPAPI_ERROR);
 
     {
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_CloseConnection(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(HTTPAPI_CloseConnection(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
 
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_CreateConnection(TEST_HOSTNAME));
-        STRICT_EXPECTED_CALL(mocks, VECTOR_size(IGNORED_PTR_ARG)) /*this is passing the options*/ /*there are none saved in the regular sequences*/
+        STRICT_EXPECTED_CALL(HTTPAPI_CreateConnection(TEST_HOSTNAME));
+        STRICT_EXPECTED_CALL(VECTOR_size(IGNORED_PTR_ARG)) /*this is passing the options*/ /*there are none saved in the regular sequences*/
             .IgnoreArgument(1);
 
     }
 
     {
-        STRICT_EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, BUFFER_u_char(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(BUFFER_u_char(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_ExecuteRequest(
+        STRICT_EXPECTED_CALL(HTTPAPI_ExecuteRequest(
             IGNORED_PTR_ARG,
             HTTPAPI_REQUEST_PATCH,
             TEST_RELATIVE_PATH,
@@ -2255,7 +1959,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_S2) /*refer to httpapiex_retry_m
     ///assert
     ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_OK, result);
     ASSERT_ARE_EQUAL(int, 23, (int)httpStatusCode);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
     destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
@@ -2265,7 +1969,6 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_S2) /*refer to httpapiex_retry_m
 TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_S3) /*refer to httpapiex_retry_mechanism.vsdx*/
 {
     /// arrange
-    CHTTPAPIEXMocks mocks;
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
 
     unsigned int httpStatusCode;
@@ -2276,27 +1979,27 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_S3) /*refer to httpapiex_retry_m
     BUFFER_HANDLE responseHttpBody;
     createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
     (void)HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, responseHttpHeaders, responseHttpBody);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
-    prepareHTTPAPIEX_ExecuteRequest(&mocks, &asGivenyHttpApi, requestHttpHeaders, responseHttpHeaders, responseHttpBody, HTTPAPI_ERROR);
+    prepareHTTPAPIEX_ExecuteRequest(&asGivenyHttpApi, requestHttpHeaders, responseHttpHeaders, responseHttpBody, HTTPAPI_ERROR);
 
     {
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_CloseConnection(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(HTTPAPI_CloseConnection(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
 
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_CreateConnection(TEST_HOSTNAME));
-        STRICT_EXPECTED_CALL(mocks, VECTOR_size(IGNORED_PTR_ARG)) /*this is passing the options*/ /*there are none saved in the regular sequences*/
+        STRICT_EXPECTED_CALL(HTTPAPI_CreateConnection(TEST_HOSTNAME));
+        STRICT_EXPECTED_CALL(VECTOR_size(IGNORED_PTR_ARG)) /*this is passing the options*/ /*there are none saved in the regular sequences*/
             .IgnoreArgument(1);
     }
 
     {
-        STRICT_EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, BUFFER_u_char(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(BUFFER_u_char(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_ExecuteRequest(
+        STRICT_EXPECTED_CALL(HTTPAPI_ExecuteRequest(
             IGNORED_PTR_ARG,
             HTTPAPI_REQUEST_PATCH,
             TEST_RELATIVE_PATH,
@@ -2317,27 +2020,27 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_S3) /*refer to httpapiex_retry_m
     }
 
     {
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_CloseConnection(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(HTTPAPI_CloseConnection(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_Deinit());
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_Init())
+        STRICT_EXPECTED_CALL(HTTPAPI_Deinit());
+        STRICT_EXPECTED_CALL(HTTPAPI_Init())
             .SetReturn(HTTPAPI_OK);
     }
 
     {
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_CreateConnection(TEST_HOSTNAME));
-        STRICT_EXPECTED_CALL(mocks, VECTOR_size(IGNORED_PTR_ARG)) /*this is passing the options*/ /*there are none saved in the regular sequences*/
+        STRICT_EXPECTED_CALL(HTTPAPI_CreateConnection(TEST_HOSTNAME));
+        STRICT_EXPECTED_CALL(VECTOR_size(IGNORED_PTR_ARG)) /*this is passing the options*/ /*there are none saved in the regular sequences*/
             .IgnoreArgument(1);
     }
 
     {
-        STRICT_EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, BUFFER_u_char(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(BUFFER_u_char(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_ExecuteRequest(
+        STRICT_EXPECTED_CALL(HTTPAPI_ExecuteRequest(
             IGNORED_PTR_ARG,
             HTTPAPI_REQUEST_PATCH,
             TEST_RELATIVE_PATH,
@@ -2362,7 +2065,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_S3) /*refer to httpapiex_retry_m
     ///assert
     ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_OK, result);
     ASSERT_ARE_EQUAL(int, 23, (int)httpStatusCode);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
     destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
@@ -2372,7 +2075,6 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_S3) /*refer to httpapiex_retry_m
 TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_S4) /*refer to httpapiex_retry_mechanism.vsdx*/
 {
     /// arrange
-    CHTTPAPIEXMocks mocks;
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
 
     unsigned int httpStatusCode;
@@ -2383,40 +2085,40 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_S4) /*refer to httpapiex_retry_m
     BUFFER_HANDLE responseHttpBody;
     createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
     (void)HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, responseHttpHeaders, responseHttpBody);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
-    prepareHTTPAPIEX_ExecuteRequest(&mocks, &asGivenyHttpApi, requestHttpHeaders, responseHttpHeaders, responseHttpBody, HTTPAPI_ERROR);
+    prepareHTTPAPIEX_ExecuteRequest(&asGivenyHttpApi, requestHttpHeaders, responseHttpHeaders, responseHttpBody, HTTPAPI_ERROR);
 
     {
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_CloseConnection(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(HTTPAPI_CloseConnection(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
 
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
         whenShallHTTPAPI_CreateConnection_fail[0] = currentHTTPAPI_CreateConnection_call + 1;
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_CreateConnection(TEST_HOSTNAME));
+        STRICT_EXPECTED_CALL(HTTPAPI_CreateConnection(TEST_HOSTNAME));
     }
 
     {
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_Deinit());
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_Init())
+        STRICT_EXPECTED_CALL(HTTPAPI_Deinit());
+        STRICT_EXPECTED_CALL(HTTPAPI_Init())
             .SetReturn(HTTPAPI_OK);
     }
 
     {
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_CreateConnection(TEST_HOSTNAME));
-        STRICT_EXPECTED_CALL(mocks, VECTOR_size(IGNORED_PTR_ARG)) /*this is passing the options*/ /*there are none saved in the regular sequences*/
+        STRICT_EXPECTED_CALL(HTTPAPI_CreateConnection(TEST_HOSTNAME));
+        STRICT_EXPECTED_CALL(VECTOR_size(IGNORED_PTR_ARG)) /*this is passing the options*/ /*there are none saved in the regular sequences*/
             .IgnoreArgument(1);
     }
 
     {
-        STRICT_EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, BUFFER_u_char(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(BUFFER_u_char(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_ExecuteRequest(
+        STRICT_EXPECTED_CALL(HTTPAPI_ExecuteRequest(
             IGNORED_PTR_ARG,
             HTTPAPI_REQUEST_PATCH,
             TEST_RELATIVE_PATH,
@@ -2441,7 +2143,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_S4) /*refer to httpapiex_retry_m
     ///assert
     ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_OK, result);
     ASSERT_ARE_EQUAL(int, 23, (int)httpStatusCode);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
     destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
@@ -2453,7 +2155,6 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_S4) /*refer to httpapiex_retry_m
 TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F1) /*refer to httpapiex_retry_mechanism.vsdx*/
 {
     /// arrange
-    CHTTPAPIEXMocks mocks;
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
 
     unsigned int httpStatusCode;
@@ -2464,24 +2165,24 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F1) /*refer to httpapiex_retry_m
     BUFFER_HANDLE responseHttpBody;
     createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
     (void)HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, responseHttpHeaders, responseHttpBody);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
-    prepareHTTPAPIEX_ExecuteRequest(&mocks, &asGivenyHttpApi, requestHttpHeaders, responseHttpHeaders, responseHttpBody, HTTPAPI_ERROR);
+    prepareHTTPAPIEX_ExecuteRequest(&asGivenyHttpApi, requestHttpHeaders, responseHttpHeaders, responseHttpBody, HTTPAPI_ERROR);
 
     {
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_CloseConnection(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(HTTPAPI_CloseConnection(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
 
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
         whenShallHTTPAPI_CreateConnection_fail[0] = currentHTTPAPI_CreateConnection_call + 1;
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_CreateConnection(TEST_HOSTNAME));
+        STRICT_EXPECTED_CALL(HTTPAPI_CreateConnection(TEST_HOSTNAME));
     }
 
     {
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_Deinit());
+        STRICT_EXPECTED_CALL(HTTPAPI_Deinit());
         whenShallHTTPAPI_Init_fail[0] = currentHTTPAPI_Init_call + 1;
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_Init());
+        STRICT_EXPECTED_CALL(HTTPAPI_Init());
     }
 
     /// act
@@ -2489,7 +2190,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F1) /*refer to httpapiex_retry_m
 
     ///assert
     ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_RECOVERYFAILED, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
     destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
@@ -2501,7 +2202,6 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F1) /*refer to httpapiex_retry_m
 TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F2) /*refer to httpapiex_retry_mechanism.vsdx*/
 {
     /// arrange
-    CHTTPAPIEXMocks mocks;
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
 
     unsigned int httpStatusCode;
@@ -2512,36 +2212,36 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F2) /*refer to httpapiex_retry_m
     BUFFER_HANDLE responseHttpBody;
     createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
     (void)HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, responseHttpHeaders, responseHttpBody);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
-    prepareHTTPAPIEX_ExecuteRequest(&mocks, &asGivenyHttpApi, requestHttpHeaders, responseHttpHeaders, responseHttpBody, HTTPAPI_ERROR);
+    prepareHTTPAPIEX_ExecuteRequest(&asGivenyHttpApi, requestHttpHeaders, responseHttpHeaders, responseHttpBody, HTTPAPI_ERROR);
 
     {
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_CloseConnection(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(HTTPAPI_CloseConnection(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
 
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
         whenShallHTTPAPI_CreateConnection_fail[0] = currentHTTPAPI_CreateConnection_call + 1;
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_CreateConnection(TEST_HOSTNAME));
+        STRICT_EXPECTED_CALL(HTTPAPI_CreateConnection(TEST_HOSTNAME));
     }
 
     {
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_Deinit());
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_Init());
+        STRICT_EXPECTED_CALL(HTTPAPI_Deinit());
+        STRICT_EXPECTED_CALL(HTTPAPI_Init());
     }
 
     {
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
         whenShallHTTPAPI_CreateConnection_fail[1] = currentHTTPAPI_CreateConnection_call + 2;
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_CreateConnection(TEST_HOSTNAME));
+        STRICT_EXPECTED_CALL(HTTPAPI_CreateConnection(TEST_HOSTNAME));
 
     }
 
     /*this is post final fail - sequence is reset to a clean start*/
     {        
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_Deinit());
+        STRICT_EXPECTED_CALL(HTTPAPI_Deinit());
     }
 
     /// act
@@ -2549,7 +2249,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F2) /*refer to httpapiex_retry_m
 
     ///assert
     ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_RECOVERYFAILED, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
     destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
@@ -2560,7 +2260,6 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F2) /*refer to httpapiex_retry_m
 TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F3) /*refer to httpapiex_retry_mechanism.vsdx*/
 {
     /// arrange
-    CHTTPAPIEXMocks mocks;
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
 
     unsigned int httpStatusCode;
@@ -2571,40 +2270,40 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F3) /*refer to httpapiex_retry_m
     BUFFER_HANDLE responseHttpBody;
     createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
     (void)HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, responseHttpHeaders, responseHttpBody);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
-    prepareHTTPAPIEX_ExecuteRequest(&mocks, &asGivenyHttpApi, requestHttpHeaders, responseHttpHeaders, responseHttpBody, HTTPAPI_ERROR);
+    prepareHTTPAPIEX_ExecuteRequest(&asGivenyHttpApi, requestHttpHeaders, responseHttpHeaders, responseHttpBody, HTTPAPI_ERROR);
 
     {
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_CloseConnection(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(HTTPAPI_CloseConnection(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
 
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
         whenShallHTTPAPI_CreateConnection_fail[0] = currentHTTPAPI_CreateConnection_call + 1;
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_CreateConnection(TEST_HOSTNAME));
+        STRICT_EXPECTED_CALL(HTTPAPI_CreateConnection(TEST_HOSTNAME));
     }
 
     {
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_Deinit());
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_Init());
+        STRICT_EXPECTED_CALL(HTTPAPI_Deinit());
+        STRICT_EXPECTED_CALL(HTTPAPI_Init());
     }
 
     {
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_CreateConnection(TEST_HOSTNAME));
-        STRICT_EXPECTED_CALL(mocks, VECTOR_size(IGNORED_PTR_ARG)) /*this is passing the options*/ /*there are none saved in the regular sequences*/
+        STRICT_EXPECTED_CALL(HTTPAPI_CreateConnection(TEST_HOSTNAME));
+        STRICT_EXPECTED_CALL(VECTOR_size(IGNORED_PTR_ARG)) /*this is passing the options*/ /*there are none saved in the regular sequences*/
             .IgnoreArgument(1);
 
     }
 
     {
-        STRICT_EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, BUFFER_u_char(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(BUFFER_u_char(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_ExecuteRequest(
+        STRICT_EXPECTED_CALL(HTTPAPI_ExecuteRequest(
             IGNORED_PTR_ARG,
             HTTPAPI_REQUEST_PATCH,
             TEST_RELATIVE_PATH,
@@ -2626,9 +2325,9 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F3) /*refer to httpapiex_retry_m
 
     /*this is post final fail - sequence is reset to a clean start*/
     {
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_CloseConnection(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(HTTPAPI_CloseConnection(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_Deinit());
+        STRICT_EXPECTED_CALL(HTTPAPI_Deinit());
     }
 
     /// act
@@ -2636,7 +2335,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F3) /*refer to httpapiex_retry_m
 
     ///assert
     ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_RECOVERYFAILED, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
     destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
@@ -2647,7 +2346,6 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F3) /*refer to httpapiex_retry_m
 TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F4) /*refer to httpapiex_retry_mechanism.vsdx*/
 {
     /// arrange
-    CHTTPAPIEXMocks mocks;
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
 
     unsigned int httpStatusCode;
@@ -2658,28 +2356,28 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F4) /*refer to httpapiex_retry_m
     BUFFER_HANDLE responseHttpBody;
     createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
     (void)HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, responseHttpHeaders, responseHttpBody);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
-    prepareHTTPAPIEX_ExecuteRequest(&mocks, &asGivenyHttpApi, requestHttpHeaders, responseHttpHeaders, responseHttpBody, HTTPAPI_ERROR);
+    prepareHTTPAPIEX_ExecuteRequest(&asGivenyHttpApi, requestHttpHeaders, responseHttpHeaders, responseHttpBody, HTTPAPI_ERROR);
 
     {
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_CloseConnection(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(HTTPAPI_CloseConnection(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
 
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_CreateConnection(TEST_HOSTNAME));
-        STRICT_EXPECTED_CALL(mocks, VECTOR_size(IGNORED_PTR_ARG)) /*this is passing the options*/ /*there are none saved in the regular sequences*/
+        STRICT_EXPECTED_CALL(HTTPAPI_CreateConnection(TEST_HOSTNAME));
+        STRICT_EXPECTED_CALL(VECTOR_size(IGNORED_PTR_ARG)) /*this is passing the options*/ /*there are none saved in the regular sequences*/
             .IgnoreArgument(1);
 
     }
 
     {
-        STRICT_EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, BUFFER_u_char(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(BUFFER_u_char(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_ExecuteRequest(
+        STRICT_EXPECTED_CALL(HTTPAPI_ExecuteRequest(
             IGNORED_PTR_ARG,
             HTTPAPI_REQUEST_PATCH,
             TEST_RELATIVE_PATH,
@@ -2700,12 +2398,12 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F4) /*refer to httpapiex_retry_m
     }
 
     {
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_CloseConnection(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(HTTPAPI_CloseConnection(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_Deinit());
+        STRICT_EXPECTED_CALL(HTTPAPI_Deinit());
 
         whenShallHTTPAPI_Init_fail[0] = currentHTTPAPI_Init_call + 1;
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_Init());
+        STRICT_EXPECTED_CALL(HTTPAPI_Init());
     }
 
     /// act
@@ -2713,7 +2411,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F4) /*refer to httpapiex_retry_m
 
     ///assert
     ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_RECOVERYFAILED, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
     destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
@@ -2724,7 +2422,6 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F4) /*refer to httpapiex_retry_m
 TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F5) /*refer to httpapiex_retry_mechanism.vsdx*/
 {
     /// arrange
-    CHTTPAPIEXMocks mocks;
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
 
     unsigned int httpStatusCode;
@@ -2735,28 +2432,28 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F5) /*refer to httpapiex_retry_m
     BUFFER_HANDLE responseHttpBody;
     createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
     (void)HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, responseHttpHeaders, responseHttpBody);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
-    prepareHTTPAPIEX_ExecuteRequest(&mocks, &asGivenyHttpApi, requestHttpHeaders, responseHttpHeaders, responseHttpBody, HTTPAPI_ERROR);
+    prepareHTTPAPIEX_ExecuteRequest(&asGivenyHttpApi, requestHttpHeaders, responseHttpHeaders, responseHttpBody, HTTPAPI_ERROR);
 
     {
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_CloseConnection(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(HTTPAPI_CloseConnection(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
 
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_CreateConnection(TEST_HOSTNAME));
-        STRICT_EXPECTED_CALL(mocks, VECTOR_size(IGNORED_PTR_ARG)) /*this is passing the options*/ /*there are none saved in the regular sequences*/
+        STRICT_EXPECTED_CALL(HTTPAPI_CreateConnection(TEST_HOSTNAME));
+        STRICT_EXPECTED_CALL(VECTOR_size(IGNORED_PTR_ARG)) /*this is passing the options*/ /*there are none saved in the regular sequences*/
             .IgnoreArgument(1);
 
     }
 
     {
-        STRICT_EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, BUFFER_u_char(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(BUFFER_u_char(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_ExecuteRequest(
+        STRICT_EXPECTED_CALL(HTTPAPI_ExecuteRequest(
             IGNORED_PTR_ARG,
             HTTPAPI_REQUEST_PATCH,
             TEST_RELATIVE_PATH,
@@ -2777,21 +2474,21 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F5) /*refer to httpapiex_retry_m
     }
 
     {
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_CloseConnection(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(HTTPAPI_CloseConnection(IGNORED_PTR_ARG))
             .IgnoreArgument(1); 
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_Deinit());
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_Init());
+        STRICT_EXPECTED_CALL(HTTPAPI_Deinit());
+        STRICT_EXPECTED_CALL(HTTPAPI_Init());
     }
 
     {
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
         whenShallHTTPAPI_CreateConnection_fail[1] = currentHTTPAPI_CreateConnection_call + 1;
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_CreateConnection(TEST_HOSTNAME));
+        STRICT_EXPECTED_CALL(HTTPAPI_CreateConnection(TEST_HOSTNAME));
     }
 
     {
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_Deinit());
+        STRICT_EXPECTED_CALL(HTTPAPI_Deinit());
     }
 
     /// act
@@ -2799,7 +2496,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F5) /*refer to httpapiex_retry_m
 
     ///assert
     ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_RECOVERYFAILED, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
     destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
@@ -2810,7 +2507,6 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F5) /*refer to httpapiex_retry_m
 TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F6) /*refer to httpapiex_retry_mechanism.vsdx*/
 {
     /// arrange
-    CHTTPAPIEXMocks mocks;
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
 
     unsigned int httpStatusCode;
@@ -2821,28 +2517,28 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F6) /*refer to httpapiex_retry_m
     BUFFER_HANDLE responseHttpBody;
     createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
     (void)HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, responseHttpHeaders, responseHttpBody);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
-    prepareHTTPAPIEX_ExecuteRequest(&mocks, &asGivenyHttpApi, requestHttpHeaders, responseHttpHeaders, responseHttpBody, HTTPAPI_ERROR);
+    prepareHTTPAPIEX_ExecuteRequest(&asGivenyHttpApi, requestHttpHeaders, responseHttpHeaders, responseHttpBody, HTTPAPI_ERROR);
 
     {
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_CloseConnection(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(HTTPAPI_CloseConnection(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
 
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_CreateConnection(TEST_HOSTNAME));
-        STRICT_EXPECTED_CALL(mocks, VECTOR_size(IGNORED_PTR_ARG)) /*this is passing the options*/ /*there are none saved in the regular sequences*/
+        STRICT_EXPECTED_CALL(HTTPAPI_CreateConnection(TEST_HOSTNAME));
+        STRICT_EXPECTED_CALL(VECTOR_size(IGNORED_PTR_ARG)) /*this is passing the options*/ /*there are none saved in the regular sequences*/
             .IgnoreArgument(1);
 
     }
 
     {
-        STRICT_EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, BUFFER_u_char(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(BUFFER_u_char(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_ExecuteRequest(
+        STRICT_EXPECTED_CALL(HTTPAPI_ExecuteRequest(
             IGNORED_PTR_ARG,
             HTTPAPI_REQUEST_PATCH,
             TEST_RELATIVE_PATH,
@@ -2863,27 +2559,27 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F6) /*refer to httpapiex_retry_m
     }
 
     {
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_CloseConnection(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(HTTPAPI_CloseConnection(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_Deinit());
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_Init());
+        STRICT_EXPECTED_CALL(HTTPAPI_Deinit());
+        STRICT_EXPECTED_CALL(HTTPAPI_Init());
     }
 
     {
-        STRICT_EXPECTED_CALL(mocks, STRING_c_str(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_CreateConnection(TEST_HOSTNAME));
-        STRICT_EXPECTED_CALL(mocks, VECTOR_size(IGNORED_PTR_ARG)) /*this is passing the options*/ /*there are none saved in the regular sequences*/
+        STRICT_EXPECTED_CALL(HTTPAPI_CreateConnection(TEST_HOSTNAME));
+        STRICT_EXPECTED_CALL(VECTOR_size(IGNORED_PTR_ARG)) /*this is passing the options*/ /*there are none saved in the regular sequences*/
             .IgnoreArgument(1);
 
     }
 
     {
-        STRICT_EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, BUFFER_u_char(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(BUFFER_u_char(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_ExecuteRequest(
+        STRICT_EXPECTED_CALL(HTTPAPI_ExecuteRequest(
             IGNORED_PTR_ARG,
             HTTPAPI_REQUEST_PATCH,
             TEST_RELATIVE_PATH,
@@ -2904,9 +2600,9 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F6) /*refer to httpapiex_retry_m
     }
 
     {
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_CloseConnection(IGNORED_PTR_ARG))
+        STRICT_EXPECTED_CALL(HTTPAPI_CloseConnection(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(mocks, HTTPAPI_Deinit());
+        STRICT_EXPECTED_CALL(HTTPAPI_Deinit());
     }
 
     /// act
@@ -2914,7 +2610,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F6) /*refer to httpapiex_retry_m
 
     ///assert
     ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_RECOVERYFAILED, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
     destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
@@ -2925,14 +2621,13 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F6) /*refer to httpapiex_retry_m
 TEST_FUNCTION(HTTPAPIEX_SetOption_fails_with_NULL_handle)
 {
     /// arrange
-    CHTTPAPIEXMocks mocks;
     
     /// act
     auto result = HTTPAPIEX_SetOption(NULL, "someOption", (void*)42);
 
     ///assert
     ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_INVALID_ARG, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
 }
@@ -2941,16 +2636,15 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_fails_with_NULL_handle)
 TEST_FUNCTION(HTTPAPIEX_SetOption_fails_with_NULL_optionName_fails)
 {
     /// arrange
-    CHTTPAPIEXMocks mocks;
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
     /// act
     auto result = HTTPAPIEX_SetOption(httpapiexhandle, NULL, (void*)42);
 
     ///assert
     ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_INVALID_ARG, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
     HTTPAPIEX_Destroy(httpapiexhandle);
@@ -2960,16 +2654,15 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_fails_with_NULL_optionName_fails)
 TEST_FUNCTION(HTTPAPIEX_SetOption_fails_with_NULL_value_fails)
 {
     /// arrange
-    CHTTPAPIEXMocks mocks;
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
     /// act
     auto result = HTTPAPIEX_SetOption(httpapiexhandle, "someOption", NULL);
 
     ///assert
     ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_INVALID_ARG, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
     HTTPAPIEX_Destroy(httpapiexhandle);
@@ -2980,17 +2673,16 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_fails_with_NULL_value_fails)
 TEST_FUNCTION(HTTPAPIEX_SetOption_happy_path_without_httpapi_handle_succeeds)
 {
     /// arrange
-    CHTTPAPIEXMocks mocks;
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
-    EXPECTED_CALL(mocks, HTTPAPI_CloneOption("someOption", "333", IGNORED_PTR_ARG));  /*this asks lower HTTPAPI to create a clone of the option*/
+    EXPECTED_CALL(HTTPAPI_CloneOption("someOption", "333", IGNORED_PTR_ARG));  /*this asks lower HTTPAPI to create a clone of the option*/
 
-    EXPECTED_CALL(mocks, VECTOR_find_if(IGNORED_PTR_ARG, IGNORED_PTR_ARG, "someOption")); /*this is looking for optionName*/
+    EXPECTED_CALL(VECTOR_find_if(IGNORED_PTR_ARG, IGNORED_PTR_ARG, "someOption")); /*this is looking for optionName*/
 
-    STRICT_EXPECTED_CALL(mocks, gballoc_malloc(sizeof("someOption"))); /*this is creating a clone of the optionName*/
+    STRICT_EXPECTED_CALL(gballoc_malloc(sizeof("someOption"))); /*this is creating a clone of the optionName*/
 
-    STRICT_EXPECTED_CALL(mocks, VECTOR_push_back(IGNORED_PTR_ARG, IGNORED_PTR_ARG, 1)) /*this is adding the optionName, value*/
+    STRICT_EXPECTED_CALL(VECTOR_push_back(IGNORED_PTR_ARG, IGNORED_PTR_ARG, 1)) /*this is adding the optionName, value*/
         .IgnoreArgument(1)
         .IgnoreArgument(2);
 
@@ -2999,7 +2691,7 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_happy_path_without_httpapi_handle_succeeds)
 
     ///assert
     ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_OK, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
     HTTPAPIEX_Destroy(httpapiexhandle);
@@ -3010,27 +2702,26 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_happy_path_without_httpapi_handle_succeeds)
 TEST_FUNCTION(HTTPAPIEX_SetOption_happy_path_without_httpapi_handle_can_save_2_options_succeeds)
 {
     /// arrange
-    CHTTPAPIEXMocks mocks;
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
-    EXPECTED_CALL(mocks, HTTPAPI_CloneOption("someOption1", (void*)"3", IGNORED_PTR_ARG));  /*this asks lower HTTPAPI to create a clone of the option*/
+    EXPECTED_CALL(HTTPAPI_CloneOption("someOption1", (void*)"3", IGNORED_PTR_ARG));  /*this asks lower HTTPAPI to create a clone of the option*/
 
-    EXPECTED_CALL(mocks, VECTOR_find_if(IGNORED_PTR_ARG, IGNORED_PTR_ARG, "someOption1")); /*this is looking for hte option to device between update / create*/
+    EXPECTED_CALL(VECTOR_find_if(IGNORED_PTR_ARG, IGNORED_PTR_ARG, "someOption1")); /*this is looking for hte option to device between update / create*/
 
-    STRICT_EXPECTED_CALL(mocks, gballoc_malloc(sizeof("someOption1"))); /*this is creating a clone of the optionName*/
+    STRICT_EXPECTED_CALL(gballoc_malloc(sizeof("someOption1"))); /*this is creating a clone of the optionName*/
 
-    STRICT_EXPECTED_CALL(mocks, VECTOR_push_back(IGNORED_PTR_ARG, IGNORED_PTR_ARG, 1)) /*this is increasing the array of options by 1*/
+    STRICT_EXPECTED_CALL(VECTOR_push_back(IGNORED_PTR_ARG, IGNORED_PTR_ARG, 1)) /*this is increasing the array of options by 1*/
         .IgnoreArgument(1)
         .IgnoreArgument(2);
 
-    EXPECTED_CALL(mocks, HTTPAPI_CloneOption("someOption2", (void*)"33", IGNORED_PTR_ARG));  /*this asks lower HTTPAPI to create a clone of the option*/
+    EXPECTED_CALL(HTTPAPI_CloneOption("someOption2", (void*)"33", IGNORED_PTR_ARG));  /*this asks lower HTTPAPI to create a clone of the option*/
 
-    EXPECTED_CALL(mocks, VECTOR_find_if(IGNORED_PTR_ARG, IGNORED_PTR_ARG, "someOption2")); /*this is looking for hte option to device between update / create*/
+    EXPECTED_CALL(VECTOR_find_if(IGNORED_PTR_ARG, IGNORED_PTR_ARG, "someOption2")); /*this is looking for hte option to device between update / create*/
 
-    STRICT_EXPECTED_CALL(mocks, gballoc_malloc(sizeof("someOption2"))); /*this is creating a clone of the optionName*/
+    STRICT_EXPECTED_CALL(gballoc_malloc(sizeof("someOption2"))); /*this is creating a clone of the optionName*/
 
-    STRICT_EXPECTED_CALL(mocks, VECTOR_push_back(IGNORED_PTR_ARG, IGNORED_PTR_ARG, 1)) /*this is increasing the array of options by 1*/
+    STRICT_EXPECTED_CALL(VECTOR_push_back(IGNORED_PTR_ARG, IGNORED_PTR_ARG, 1)) /*this is increasing the array of options by 1*/
         .IgnoreArgument(1)
         .IgnoreArgument(2);
 
@@ -3041,7 +2732,7 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_happy_path_without_httpapi_handle_can_save_2_o
     ///assert
     ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_OK, result1);
     ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_OK, result2);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
     HTTPAPIEX_Destroy(httpapiexhandle);
@@ -3051,7 +2742,6 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_happy_path_without_httpapi_handle_can_save_2_o
 TEST_FUNCTION(HTTPAPIEX_SetOption_passes_saved_options_to_httpapi_succeeds)
 {
     /// arrange
-    CHTTPAPIEXMocks mocks;
     unsigned int httpStatusCode;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
     BUFFER_HANDLE requestHttpBody;
@@ -3062,20 +2752,20 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_passes_saved_options_to_httpapi_succeeds)
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
     (void)HTTPAPIEX_SetOption(httpapiexhandle, "someOption1", (void*)"3");
     (void)HTTPAPIEX_SetOption(httpapiexhandle, "someOption2", (void*)"33");
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
-    setupAllCallBeforeHTTPsequence(&mocks);
-    setupAllCallForHTTPsequence(&mocks, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, responseHttpHeaders, responseHttpBody);
+    setupAllCallBeforeHTTPsequence();
+    setupAllCallForHTTPsequence(TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, responseHttpHeaders, responseHttpBody);
 
-    STRICT_EXPECTED_CALL(mocks, VECTOR_element(IGNORED_PTR_ARG, 0))
-        .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, VECTOR_element(IGNORED_PTR_ARG, 1))
-        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(VECTOR_element(IGNORED_PTR_ARG, 0))
+        .IgnoreArgument(1).SetReturn((void*)"3");
+    STRICT_EXPECTED_CALL(VECTOR_element(IGNORED_PTR_ARG, 1))
+        .IgnoreArgument(1).SetReturn((void*)"33");
 
-    STRICT_EXPECTED_CALL(mocks, HTTPAPI_SetOption(IGNORED_PTR_ARG, "someOption1", (void*)"3"))
+    STRICT_EXPECTED_CALL(HTTPAPI_SetOption(IGNORED_PTR_ARG, "someOption1", (void*)"3"))
         .IgnoreArgument(1)
         .IgnoreArgument(3);
-    STRICT_EXPECTED_CALL(mocks, HTTPAPI_SetOption(IGNORED_PTR_ARG, "someOption2", (void*)"33"))
+    STRICT_EXPECTED_CALL(HTTPAPI_SetOption(IGNORED_PTR_ARG, "someOption2", (void*)"33"))
         .IgnoreArgument(1)
         .IgnoreArgument(3);
 
@@ -3084,7 +2774,7 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_passes_saved_options_to_httpapi_succeeds)
 
     ///assert
     ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_OK, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
     destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
@@ -3095,7 +2785,6 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_passes_saved_options_to_httpapi_succeeds)
 TEST_FUNCTION(HTTPAPIEX_SetOption_passes_saved_options_to_httpapi_ignores_errors_succeeds)
 {
     /// arrange
-    CHTTPAPIEXMocks mocks;
     unsigned int httpStatusCode;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
     BUFFER_HANDLE requestHttpBody;
@@ -3106,21 +2795,21 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_passes_saved_options_to_httpapi_ignores_errors
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
     (void)HTTPAPIEX_SetOption(httpapiexhandle, "someOption1", (void*)"3");
     (void)HTTPAPIEX_SetOption(httpapiexhandle, "someOption2", (void*)"33");
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
-    setupAllCallBeforeHTTPsequence(&mocks);
-    setupAllCallForHTTPsequence(&mocks, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, responseHttpHeaders, responseHttpBody); /*contains VECTOR_size*/
+    setupAllCallBeforeHTTPsequence();
+    setupAllCallForHTTPsequence(TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, responseHttpHeaders, responseHttpBody); /*contains VECTOR_size*/
     
-    STRICT_EXPECTED_CALL(mocks, VECTOR_element(IGNORED_PTR_ARG, 0))
+    STRICT_EXPECTED_CALL(VECTOR_element(IGNORED_PTR_ARG, 0))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mocks, VECTOR_element(IGNORED_PTR_ARG, 1))
+    STRICT_EXPECTED_CALL(VECTOR_element(IGNORED_PTR_ARG, 1))
         .IgnoreArgument(1);
 
-    STRICT_EXPECTED_CALL(mocks, HTTPAPI_SetOption(IGNORED_PTR_ARG, "someOption1", (void*)"3"))
+    STRICT_EXPECTED_CALL(HTTPAPI_SetOption(IGNORED_PTR_ARG, "someOption1", (void*)"3"))
         .IgnoreArgument(1)
         .IgnoreArgument(3)
         .SetReturn(HTTPAPI_ERROR);
-    STRICT_EXPECTED_CALL(mocks, HTTPAPI_SetOption(IGNORED_PTR_ARG, "someOption2", (void*)"33"))
+    STRICT_EXPECTED_CALL(HTTPAPI_SetOption(IGNORED_PTR_ARG, "someOption2", (void*)"33"))
         .IgnoreArgument(1)
         .IgnoreArgument(3)
         .SetReturn(HTTPAPI_ERROR);
@@ -3130,7 +2819,7 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_passes_saved_options_to_httpapi_ignores_errors
 
     ///assert
     ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_OK, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
     destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
@@ -3141,31 +2830,30 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_passes_saved_options_to_httpapi_ignores_errors
 TEST_FUNCTION(HTTPAPIEX_SetOption_fails_when_VECTOR_push_back_fails)
 {
     /// arrange
-    CHTTPAPIEXMocks mocks;
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
-    EXPECTED_CALL(mocks, HTTPAPI_CloneOption("someOption2", (void*)"33", IGNORED_PTR_ARG));  /*this asks lower HTTPAPI to create a clone of the option*/
-    STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG)) /*this is freeing the clone created by HTTPAPI_CloneOption*/
+    EXPECTED_CALL(HTTPAPI_CloneOption("someOption2", (void*)"33", IGNORED_PTR_ARG));  /*this asks lower HTTPAPI to create a clone of the option*/
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)) /*this is freeing the clone created by HTTPAPI_CloneOption*/
         .IgnoreArgument(1);
 
-    STRICT_EXPECTED_CALL(mocks, gballoc_malloc(sizeof("someOption2"))); /*this is creating a clone of the optionName*/
-    STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(gballoc_malloc(sizeof("someOption2"))); /*this is creating a clone of the optionName*/
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
 
-    EXPECTED_CALL(mocks, VECTOR_find_if(IGNORED_PTR_ARG, IGNORED_PTR_ARG, "someOption2")); /*this is looking for hte option to device between update / create*/
+    EXPECTED_CALL(VECTOR_find_if(IGNORED_PTR_ARG, IGNORED_PTR_ARG, "someOption2")); /*this is looking for hte option to device between update / create*/
 
-    whenShallVECTOR_push_back_fail = currentVECTOR_push_back_call + 1;
-    STRICT_EXPECTED_CALL(mocks, VECTOR_push_back(IGNORED_PTR_ARG, IGNORED_PTR_ARG, 1))
+    STRICT_EXPECTED_CALL(VECTOR_push_back(IGNORED_PTR_ARG, IGNORED_PTR_ARG, 1))
         .IgnoreArgument(1)
-        .IgnoreArgument(2);
+        .IgnoreArgument(2)
+        .SetReturn(1);
 
     /// act
     auto result = HTTPAPIEX_SetOption(httpapiexhandle, "someOption2", (void*)"33");
 
     ///assert
     ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_ERROR, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
     HTTPAPIEX_Destroy(httpapiexhandle);
@@ -3175,25 +2863,24 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_fails_when_VECTOR_push_back_fails)
 TEST_FUNCTION(HTTPAPIEX_SetOption_fails_when_gballoc_fails_1)
 {
     /// arrange
-    CHTTPAPIEXMocks mocks;
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
-    EXPECTED_CALL(mocks, HTTPAPI_CloneOption("someOption2", (void*)"33", IGNORED_PTR_ARG));  /*this asks lower HTTPAPI to create a clone of the option*/
-    STRICT_EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG)) /*this is freeing the clone created by HTTPAPI_CloneOption*/
+    EXPECTED_CALL(HTTPAPI_CloneOption("someOption2", (void*)"33", IGNORED_PTR_ARG));  /*this asks lower HTTPAPI to create a clone of the option*/
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)) /*this is freeing the clone created by HTTPAPI_CloneOption*/
         .IgnoreArgument(1);
 
-    EXPECTED_CALL(mocks, VECTOR_find_if(IGNORED_PTR_ARG, IGNORED_PTR_ARG, "someOption2")); /*this is looking for hte option to device between update / create*/
+    EXPECTED_CALL(VECTOR_find_if(IGNORED_PTR_ARG, IGNORED_PTR_ARG, "someOption2")); /*this is looking for hte option to device between update / create*/
 
     whenShallmalloc_fail = currentmalloc_call + 1;
-    STRICT_EXPECTED_CALL(mocks, gballoc_malloc(sizeof("someOption2"))); /*this is creating a clone of the optionName*/
+    STRICT_EXPECTED_CALL(gballoc_malloc(sizeof("someOption2"))); /*this is creating a clone of the optionName*/
 
     /// act
     auto result = HTTPAPIEX_SetOption(httpapiexhandle, "someOption2", (void*)"33");
 
     ///assert
     ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_ERROR, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
     HTTPAPIEX_Destroy(httpapiexhandle);
@@ -3204,12 +2891,11 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_fails_when_gballoc_fails_1)
 TEST_FUNCTION(HTTPAPIEX_SetOption_fails_when_HTTPAPI_SaveOption_fails_3)
 {
     /// arrange
-    CHTTPAPIEXMocks mocks;
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
     
     whenShallHTTPAPI_SaveOption_fail = currentHTTPAPI_SaveOption_call + 1;
-    EXPECTED_CALL(mocks, HTTPAPI_CloneOption("someOption2", (void*)"33", IGNORED_PTR_ARG))  /*this asks lower HTTPAPI to create a clone of the option*/
+    EXPECTED_CALL(HTTPAPI_CloneOption("someOption2", (void*)"33", IGNORED_PTR_ARG))  /*this asks lower HTTPAPI to create a clone of the option*/
         .SetReturn(HTTPAPI_ALREADY_INIT); /*some random error code*/
 
     /// act
@@ -3217,7 +2903,7 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_fails_when_HTTPAPI_SaveOption_fails_3)
 
     ///assert
     ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_ERROR, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
     HTTPAPIEX_Destroy(httpapiexhandle);
@@ -3227,13 +2913,11 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_fails_when_HTTPAPI_SaveOption_fails_3)
 TEST_FUNCTION(HTTPAPIEX_SetOption_fails_when_HTTPAPI_SaveOption_fails_4)
 {
     /// arrange
-    CHTTPAPIEXMocks mocks;
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
     whenShallHTTPAPI_SaveOption_fail = currentHTTPAPI_SaveOption_call + 1;
-    g_httpResult = HTTPAPI_INVALID_ARG;
-    EXPECTED_CALL(mocks, HTTPAPI_CloneOption("someOption2", (void*)"33", IGNORED_PTR_ARG))  /*this asks lower HTTPAPI to create a clone of the option*/
+    EXPECTED_CALL(HTTPAPI_CloneOption("someOption2", (void*)"33", IGNORED_PTR_ARG))  /*this asks lower HTTPAPI to create a clone of the option*/
         .SetReturn(HTTPAPI_INVALID_ARG);
 
     /// act
@@ -3241,7 +2925,7 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_fails_when_HTTPAPI_SaveOption_fails_4)
 
     ///assert
     ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_INVALID_ARG, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
     HTTPAPIEX_Destroy(httpapiexhandle);
@@ -3251,7 +2935,6 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_fails_when_HTTPAPI_SaveOption_fails_4)
 TEST_FUNCTION(HTTPAPIEX_SetOption_passes_saved_options_to_existing_httpapi_handle_succeeds)
 {
     /// arrange
-    CHTTPAPIEXMocks mocks;
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
 
     unsigned int httpStatusCode;
@@ -3260,30 +2943,30 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_passes_saved_options_to_existing_httpapi_handl
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
     createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
-    setupAllCallBeforeHTTPsequence(&mocks);
-    setupAllCallForHTTPsequence(&mocks, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, responseHttpHeaders, responseHttpBody);
+    setupAllCallBeforeHTTPsequence();
+    setupAllCallForHTTPsequence(TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, responseHttpHeaders, responseHttpBody);
     (void)HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, responseHttpHeaders, responseHttpBody);
 
-    EXPECTED_CALL(mocks, HTTPAPI_CloneOption("someOption", "3", IGNORED_PTR_ARG));  /*this asks lower HTTPAPI to create a clone of the option*/
+    EXPECTED_CALL(HTTPAPI_CloneOption("someOption", "3", IGNORED_PTR_ARG));  /*this asks lower HTTPAPI to create a clone of the option*/
 
-    EXPECTED_CALL(mocks, VECTOR_find_if(IGNORED_PTR_ARG, IGNORED_PTR_ARG, "someOption")); /*this is looking for hte option to device between update / create*/
+    EXPECTED_CALL(VECTOR_find_if(IGNORED_PTR_ARG, IGNORED_PTR_ARG, "someOption")); /*this is looking for hte option to device between update / create*/
 
-    STRICT_EXPECTED_CALL(mocks, gballoc_malloc(sizeof("someOption"))); /*this is creating a clone of the optionName*/
+    STRICT_EXPECTED_CALL(gballoc_malloc(sizeof("someOption"))); /*this is creating a clone of the optionName*/
 
-    STRICT_EXPECTED_CALL(mocks, VECTOR_push_back(IGNORED_PTR_ARG, IGNORED_PTR_ARG, 1)) /*this is increasing the array of options by 1*/
+    STRICT_EXPECTED_CALL(VECTOR_push_back(IGNORED_PTR_ARG, IGNORED_PTR_ARG, 1)) /*this is increasing the array of options by 1*/
         .IgnoreArgument(1)
         .IgnoreArgument(2);
 
-    EXPECTED_CALL(mocks, HTTPAPI_SetOption(IGNORED_PTR_ARG, "someOption", "3"));
+    EXPECTED_CALL(HTTPAPI_SetOption(IGNORED_PTR_ARG, "someOption", "3"));
 
     /// act
     auto result = HTTPAPIEX_SetOption(httpapiexhandle, "someOption", "3");
 
     ///assert
     ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_OK, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
     destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
@@ -3294,7 +2977,6 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_passes_saved_options_to_existing_httpapi_handl
 TEST_FUNCTION(HTTPAPIEX_SetOption_passes_saved_options_to_existing_httpapi_handle_fails_1)
 {
     /// arrange
-    CHTTPAPIEXMocks mocks;
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
 
     unsigned int httpStatusCode;
@@ -3303,24 +2985,23 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_passes_saved_options_to_existing_httpapi_handl
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
     createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
-    setupAllCallBeforeHTTPsequence(&mocks);
-    setupAllCallForHTTPsequence(&mocks, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, responseHttpHeaders, responseHttpBody);
+    setupAllCallBeforeHTTPsequence();
+    setupAllCallForHTTPsequence(TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, responseHttpHeaders, responseHttpBody);
     (void)HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, responseHttpHeaders, responseHttpBody);
 
-    EXPECTED_CALL(mocks, HTTPAPI_CloneOption("someOption", "3", IGNORED_PTR_ARG));  /*this asks lower HTTPAPI to create a clone of the option*/
+    EXPECTED_CALL(HTTPAPI_CloneOption("someOption", "3", IGNORED_PTR_ARG));  /*this asks lower HTTPAPI to create a clone of the option*/
 
-    EXPECTED_CALL(mocks, VECTOR_find_if(IGNORED_PTR_ARG, IGNORED_PTR_ARG, "someOption")); /*this is looking for hte option to device between update / create*/
+    EXPECTED_CALL(VECTOR_find_if(IGNORED_PTR_ARG, IGNORED_PTR_ARG, "someOption")); /*this is looking for hte option to device between update / create*/
 
-    STRICT_EXPECTED_CALL(mocks, gballoc_malloc(sizeof("someOption"))); /*this is creating a clone of the optionName*/
+    STRICT_EXPECTED_CALL(gballoc_malloc(sizeof("someOption"))); /*this is creating a clone of the optionName*/
 
-    STRICT_EXPECTED_CALL(mocks, VECTOR_push_back(IGNORED_PTR_ARG, IGNORED_PTR_ARG, 1)) /*this is increasing the array of options by 1*/
+    STRICT_EXPECTED_CALL(VECTOR_push_back(IGNORED_PTR_ARG, IGNORED_PTR_ARG, 1)) /*this is increasing the array of options by 1*/
         .IgnoreArgument(1)
         .IgnoreArgument(2);
 
-    g_httpResult = HTTPAPI_INVALID_ARG;
-    EXPECTED_CALL(mocks, HTTPAPI_SetOption(IGNORED_PTR_ARG, "someOption", "3"))
+    EXPECTED_CALL(HTTPAPI_SetOption(IGNORED_PTR_ARG, "someOption", "3"))
         .SetReturn(HTTPAPI_INVALID_ARG);
 
     /// act
@@ -3328,7 +3009,7 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_passes_saved_options_to_existing_httpapi_handl
 
     ///assert
     ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_INVALID_ARG, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
     destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
@@ -3339,7 +3020,6 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_passes_saved_options_to_existing_httpapi_handl
 TEST_FUNCTION(HTTPAPIEX_SetOption_passes_saved_options_to_existing_httpapi_handle_fails_2)
 {
     /// arrange
-    CHTTPAPIEXMocks mocks;
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
 
     unsigned int httpStatusCode;
@@ -3348,31 +3028,31 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_passes_saved_options_to_existing_httpapi_handl
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
     createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
-    setupAllCallBeforeHTTPsequence(&mocks);
-    setupAllCallForHTTPsequence(&mocks, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, responseHttpHeaders, responseHttpBody);
+    setupAllCallBeforeHTTPsequence();
+    setupAllCallForHTTPsequence(TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, responseHttpHeaders, responseHttpBody);
     (void)HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, responseHttpHeaders, responseHttpBody);
 
-    EXPECTED_CALL(mocks, HTTPAPI_CloneOption("someOption", "3", IGNORED_PTR_ARG));  /*this asks lower HTTPAPI to create a clone of the option*/
+    EXPECTED_CALL(HTTPAPI_CloneOption("someOption", "3", IGNORED_PTR_ARG));  /*this asks lower HTTPAPI to create a clone of the option*/
 
-    EXPECTED_CALL(mocks, VECTOR_find_if(IGNORED_PTR_ARG, IGNORED_PTR_ARG, "someOption")); /*this is looking for hte option to device between update / create*/
+    EXPECTED_CALL(VECTOR_find_if(IGNORED_PTR_ARG, IGNORED_PTR_ARG, "someOption")); /*this is looking for hte option to device between update / create*/
 
-    STRICT_EXPECTED_CALL(mocks, gballoc_malloc(sizeof("someOption"))); /*this is creating a clone of the optionName*/
+    STRICT_EXPECTED_CALL(gballoc_malloc(sizeof("someOption"))); /*this is creating a clone of the optionName*/
 
-    STRICT_EXPECTED_CALL(mocks, VECTOR_push_back(IGNORED_PTR_ARG, IGNORED_PTR_ARG, 1)) /*this is increasing the array of options by 1*/
+    STRICT_EXPECTED_CALL(VECTOR_push_back(IGNORED_PTR_ARG, IGNORED_PTR_ARG, 1)) /*this is increasing the array of options by 1*/
         .IgnoreArgument(1)
         .IgnoreArgument(2);
 
-    g_httpResult = HTTPAPI_ALLOC_FAILED;
-    EXPECTED_CALL(mocks, HTTPAPI_SetOption(IGNORED_PTR_ARG, "someOption", "3"));
+    EXPECTED_CALL(HTTPAPI_SetOption(IGNORED_PTR_ARG, "someOption", "3"))
+        .SetReturn(HTTPAPI_ALLOC_FAILED);
 
     /// act
     auto result = HTTPAPIEX_SetOption(httpapiexhandle, "someOption", "3");
     
     ///assert
     ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_ERROR, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
     destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
@@ -3385,23 +3065,22 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_happy_path_on_update_option_value_succeeds)
     const char* OPTION_NAME = "someOption";
 
     /// arrange
-    CHTTPAPIEXMocks mocks;
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
     HTTPAPIEX_SetOption(httpapiexhandle, OPTION_NAME, "333");
-    mocks.ResetAllCalls();
+    umock_c_reset_all_calls();
 
-    EXPECTED_CALL(mocks, HTTPAPI_CloneOption(OPTION_NAME, "4", IGNORED_PTR_ARG));  /*this asks lower HTTPAPI to create a clone of the option*/
+    EXPECTED_CALL(HTTPAPI_CloneOption(OPTION_NAME, "4", IGNORED_PTR_ARG));  /*this asks lower HTTPAPI to create a clone of the option*/
 
-    EXPECTED_CALL(mocks, VECTOR_find_if(IGNORED_PTR_ARG, IGNORED_PTR_ARG, OPTION_NAME)); /*this is looking for hte option to device between update / create*/
+    EXPECTED_CALL(VECTOR_find_if(IGNORED_PTR_ARG, IGNORED_PTR_ARG, OPTION_NAME)); /*this is looking for hte option to device between update / create*/
 
-    EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG)); /*this is free-ing the previos value*/
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); /*this is free-ing the previos value*/
 
     /// act
     auto result = HTTPAPIEX_SetOption(httpapiexhandle, OPTION_NAME, "4");
 
     ///assert
     ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_OK, result);
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
     HTTPAPIEX_Destroy(httpapiexhandle);
@@ -3410,13 +3089,12 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_happy_path_on_update_option_value_succeeds)
 /*Tests_SRS_HTTPAPIEX_02_043: [If parameter handle is NULL then HTTPAPIEX_Destroy shall take no action.] */
 TEST_FUNCTION(HTTPAPIEX_Destroy_with_NULL_argument_does_nothing)
 {
-    CHTTPAPIEXMocks mocks;
-   
+    /// arrange
     /// act
     HTTPAPIEX_Destroy(NULL);
 
     ///assert
-    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
 }
