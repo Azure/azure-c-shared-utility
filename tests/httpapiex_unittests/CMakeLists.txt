@@ -17,7 +17,6 @@ ${theseTestsName}.c
 
 set(${theseTestsName}_c_files
 ../../src/httpapiex.c
-../../src/crt_abstractions.c
 )
 
 set(${theseTestsName}_h_files
