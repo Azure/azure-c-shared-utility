@@ -114,7 +114,7 @@ COND_RESULT Condition_Wait(COND_HANDLE handle, LOCK_HANDLE lock, int timeout_mil
             }
             else
             {
-                LogError("Failed to pthread_cond_timedwait\r\n");
+                LogError("Failed to pthread_cond_timedwait");
                 return COND_ERROR;
             }
         }
@@ -122,7 +122,7 @@ COND_RESULT Condition_Wait(COND_HANDLE handle, LOCK_HANDLE lock, int timeout_mil
         {
             if (pthread_cond_wait((pthread_cond_t*)handle, (pthread_mutex_t *)lock) != 0)
             {
-                LogError("Failed to pthread_cond_wait\r\n");
+                LogError("Failed to pthread_cond_wait");
                 return COND_ERROR;
             }
             else

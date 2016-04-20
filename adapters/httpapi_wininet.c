@@ -39,7 +39,7 @@ static HTTPAPI_RESULT ConstructHeadersString(HTTP_HEADERS_HANDLE httpHeadersHand
     if (HTTPHeaders_GetHeaderCount(httpHeadersHandle, &headersCount) != HTTP_HEADERS_OK)
     {
         result = HTTPAPI_HTTP_HEADERS_FAILED;
-        LogError("(result = %s)\r\n", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+        LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
     }
     else
     {
@@ -181,7 +181,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
         (httpHeadersHandle == NULL))
     {
         result = HTTPAPI_INVALID_ARG;
-        LogError("(result = %s)\r\n", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+        LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
     }
     else
     {
@@ -216,7 +216,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
         if (requestTypeString == NULL)
         {
             result = HTTPAPI_INVALID_ARG;
-            LogError("(result = %s)\r\n", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+            LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
         }
         else
         {
@@ -230,14 +230,14 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
                 if (MultiByteToWideChar(CP_ACP, 0, relativePath, -1, relativePathTemp, sizeof(relativePathTemp) / sizeof(relativePathTemp[0])) == 0)
                 {
                     result = HTTPAPI_STRING_PROCESSING_ERROR;
-                    LogError("(result = %s)\r\n", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                    LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
                 }
                 else
                 {
                     if (MultiByteToWideChar(CP_ACP, 0, headers, -1, headersTemp, sizeof(headersTemp) / sizeof(headersTemp[0])) == 0)
                     {
                         result = HTTPAPI_STRING_PROCESSING_ERROR;
-                        LogError("(result = %s)\r\n", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                        LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
                     }
                     else
                     {
@@ -254,7 +254,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
                         if (requestHandle == NULL)
                         {
                             result = HTTPAPI_OPEN_REQUEST_FAILED;
-                            LogError("(result = %s)\r\n", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                            LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
                         }
                         else
                         {
@@ -266,7 +266,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
                                 sizeof(timeout)))
                             {
                                 result = HTTPAPI_SET_TIMEOUTS_FAILED;
-                                LogError("(result = %s)\r\n", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                                LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
                             }
                             else
                             {
@@ -278,7 +278,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
                                     sizeof(dwSecurityFlags)))
                                 {
                                     result = HTTPAPI_SET_OPTION_FAILED;
-                                    LogError("(result = %s)\r\n", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                                    LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
                                 }
                                 else
                                 {
@@ -290,7 +290,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
                                         contentLength))
                                     {
                                         result = HTTPAPI_SEND_REQUEST_FAILED;
-LogError("(result = %s)\r\n", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                                        LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
                                     }
                                     else
                                     {
@@ -343,7 +343,7 @@ LogError("(result = %s)\r\n", ENUM_TO_STRING(HTTPAPI_RESULT, result));
                                             0))
                                         {
                                             result = HTTPAPI_QUERY_HEADERS_FAILED;
-                                            LogError("(result = %s)\r\n", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                                            LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
                                         }
                                         else
                                         {
@@ -352,7 +352,7 @@ LogError("(result = %s)\r\n", ENUM_TO_STRING(HTTPAPI_RESULT, result));
                                             if (useToReadAllResponse == NULL)
                                             {
                                                 result = HTTPAPI_ERROR;
-                                                LogError("(result = %s)\r\n", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                                                LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
                                             }
                                             else
                                             {
@@ -369,7 +369,7 @@ LogError("(result = %s)\r\n", ENUM_TO_STRING(HTTPAPI_RESULT, result));
                                                     if (!InternetQueryDataAvailable(requestHandle, &responseBytesAvailable, 0, 0))
                                                     {
                                                         result = HTTPAPI_QUERY_DATA_AVAILABLE_FAILED;
-                                                        LogError("InternetQueryDataAvailable failed (result = %s) GetLastError = %d\r\n", ENUM_TO_STRING(HTTPAPI_RESULT, result), GetLastError());
+                                                        LogError("InternetQueryDataAvailable failed (result = %s) GetLastError = %d", ENUM_TO_STRING(HTTPAPI_RESULT, result), GetLastError());
                                                         goOnAndReadEverything = 0;
                                                     }
                                                     else if (responseBytesAvailable == 0)
@@ -377,7 +377,7 @@ LogError("(result = %s)\r\n", ENUM_TO_STRING(HTTPAPI_RESULT, result));
                                                         /*end of the stream, go out*/
                                                         if (dwStatusCode >= HTTP_STATUS_AMBIGUOUS)
                                                         {
-                                                            LogError("(result = %s)\r\n", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                                                            LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
                                                         }
 
                                                         result = HTTPAPI_OK;
@@ -389,7 +389,7 @@ LogError("(result = %s)\r\n", ENUM_TO_STRING(HTTPAPI_RESULT, result));
                                                         if (BUFFER_enlarge(useToReadAllResponse, responseBytesAvailable) != 0)
                                                         {
                                                             result = HTTPAPI_ERROR;
-                                                            LogError("(result = %s)\r\n", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                                                            LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
                                                             goOnAndReadEverything = 0;
                                                         }
                                                         else
@@ -400,13 +400,13 @@ LogError("(result = %s)\r\n", ENUM_TO_STRING(HTTPAPI_RESULT, result));
                                                             if (BUFFER_content(useToReadAllResponse, &bufferContent) != 0)
                                                             {
                                                                 result = HTTPAPI_ERROR;
-                                                                LogError("(result = %s)\r\n", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                                                                LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
                                                                 goOnAndReadEverything = 0;
                                                             }
                                                             else if (BUFFER_size(useToReadAllResponse, &bufferSize) != 0)
                                                             {
                                                                 result = HTTPAPI_ERROR;
-                                                                LogError("(result = %s)\r\n", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                                                                LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
                                                                 goOnAndReadEverything = 0;
                                                             }
                                                             else
@@ -415,7 +415,7 @@ LogError("(result = %s)\r\n", ENUM_TO_STRING(HTTPAPI_RESULT, result));
                                                                 if (!InternetReadFile(requestHandle, bufferContent + bufferSize - responseBytesAvailable, responseBytesAvailable, &bytesReceived))
                                                                 {
                                                                     result = HTTPAPI_READ_DATA_FAILED;
-                                                                    LogError("InternetReadFile failed (result = %s)\r\n", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                                                                    LogError("InternetReadFile failed (result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
                                                                     goOnAndReadEverything = 0;
                                                                 }
                                                                 else
@@ -425,7 +425,7 @@ LogError("(result = %s)\r\n", ENUM_TO_STRING(HTTPAPI_RESULT, result));
                                                                     {
                                                                         /*end of everything, but this looks like an error still, or a non-conformance between InternetQueryDataAvailable and InternetReadFile*/
                                                                         result = HTTPAPI_READ_DATA_FAILED;
-                                                                        LogError("InternetReadFile failed (result = %s)\r\n", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                                                                        LogError("InternetReadFile failed (result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
                                                                         goOnAndReadEverything = 0;
                                                                     }
                                                                     else

@@ -18,7 +18,7 @@ THREADAPI_RESULT ThreadAPI_Create(THREAD_HANDLE* threadHandle, THREAD_START_FUNC
         (func == NULL))
     {
         result = THREADAPI_INVALID_ARG;
-        LogError("(result = %s)\r\n", ENUM_TO_STRING(THREADAPI_RESULT, result));
+        LogError("(result = %s)", ENUM_TO_STRING(THREADAPI_RESULT, result));
     }
     else
     {
@@ -26,7 +26,7 @@ THREADAPI_RESULT ThreadAPI_Create(THREAD_HANDLE* threadHandle, THREAD_START_FUNC
         if(threadHandle == NULL)
         {
             result = THREADAPI_ERROR;
-            LogError("(result = %s)\r\n", ENUM_TO_STRING(THREADAPI_RESULT, result));
+            LogError("(result = %s)", ENUM_TO_STRING(THREADAPI_RESULT, result));
         }
         else
         {
@@ -44,7 +44,7 @@ THREADAPI_RESULT ThreadAPI_Join(THREAD_HANDLE threadHandle, int *res)
     if (threadHandle == NULL)
     {
         result = THREADAPI_INVALID_ARG;
-        LogError("(result = %s)\r\n", ENUM_TO_STRING(THREADAPI_RESULT, result));
+        LogError("(result = %s)", ENUM_TO_STRING(THREADAPI_RESULT, result));
     }
     else
     {
@@ -53,13 +53,13 @@ THREADAPI_RESULT ThreadAPI_Join(THREAD_HANDLE threadHandle, int *res)
         if( returnCode != WAIT_OBJECT_0)
         {
             result = THREADAPI_ERROR;
-            LogError("Error waiting for Single Object. Return Code: %d. Error Code: %d\r\n", returnCode);
+            LogError("Error waiting for Single Object. Return Code: %d. Error Code: %d", returnCode);
         }
         else if((res != NULL) && !GetExitCodeThread(threadHandle, res)) //If thread end is signaled we need to get the Thread Exit Code;
         {
             DWORD errorCode = GetLastError();
             result = THREADAPI_ERROR;
-            LogError("Error Getting Exit Code. Error Code: %d.\r\n", errorCode);
+            LogError("Error Getting Exit Code. Error Code: %d.", errorCode);
         }
         CloseHandle(threadHandle);
     }

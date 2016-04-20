@@ -28,7 +28,7 @@ LOCK_RESULT Lock(LOCK_HANDLE handle)
     {
         /*Tests_SRS_LOCK_99_007:[ This API on NULL handle passed returns LOCK_ERROR]*/
         result = LOCK_ERROR;
-        LogError("(result = %s)\r\n", ENUM_TO_STRING(LOCK_RESULT, result));
+        LogError("(result = %s)", ENUM_TO_STRING(LOCK_RESULT, result));
     }
     else
     {
@@ -42,7 +42,7 @@ LOCK_RESULT Lock(LOCK_HANDLE handle)
         {
             /*Tests_SRS_LOCK_99_006:[ This API on error should return LOCK_ERROR]*/
             result = LOCK_ERROR;
-            LogError("(result = %s)\r\n", ENUM_TO_STRING(LOCK_RESULT, result));
+            LogError("(result = %s)", ENUM_TO_STRING(LOCK_RESULT, result));
         }
     }
     return result;
@@ -54,7 +54,7 @@ LOCK_RESULT Unlock(LOCK_HANDLE handle)
     {
         /*Tests_SRS_LOCK_99_011:[ This API on NULL handle passed returns LOCK_ERROR]*/
         result = LOCK_ERROR;
-        LogError("(result = %s)\r\n", ENUM_TO_STRING(LOCK_RESULT, result));
+        LogError("(result = %s)", ENUM_TO_STRING(LOCK_RESULT, result));
     }
     else
     {
@@ -68,7 +68,7 @@ LOCK_RESULT Unlock(LOCK_HANDLE handle)
         {
             /*Tests_SRS_LOCK_99_010:[ This API on error should return LOCK_ERROR]*/
             result = LOCK_ERROR;
-            LogError("(result = %s)\r\n", ENUM_TO_STRING(LOCK_RESULT, result));
+            LogError("(result = %s)", ENUM_TO_STRING(LOCK_RESULT, result));
         }
     }
     return result;
@@ -81,7 +81,7 @@ LOCK_RESULT Lock_Deinit(LOCK_HANDLE handle)
     {
         /*Tests_SRS_LOCK_99_013:[ This API on NULL handle passed returns LOCK_ERROR]*/
         result = LOCK_ERROR;
-        LogError("(result = %s)\r\n", ENUM_TO_STRING(LOCK_RESULT, result));
+        LogError("(result = %s)", ENUM_TO_STRING(LOCK_RESULT, result));
     }
     else
     {

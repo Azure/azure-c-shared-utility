@@ -28,7 +28,7 @@ TICK_COUNTER_HANDLE tickcounter_create(void)
         result->init_time_value = time(NULL);
         if (result->init_time_value == INVALID_TIME_VALUE)
         {
-            LogError("tickcounter failed: time return INVALID_TIME.\r\n");
+            LogError("tickcounter failed: time return INVALID_TIME.");
             free(result);
             result = NULL;
         }
@@ -54,7 +54,7 @@ int tickcounter_get_current_ms(TICK_COUNTER_HANDLE tick_counter, uint64_t* curre
 
     if (tick_counter == NULL || current_ms == NULL)
     {
-        LogError("tickcounter failed: Invalid Arguments.\r\n");
+        LogError("tickcounter failed: Invalid Arguments.");
         result = __LINE__;
     }
     else

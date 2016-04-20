@@ -91,27 +91,27 @@ int WolfSSLConnection::connect(const char* host, const int port)
     
     if(sslContext == NULL)
     {
-		LogError("NULL SSL context\r\n");
+		LogError("NULL SSL context");
         result = __LINE__;
     }
     else
     {
         if (init_socket(SOCK_STREAM) < 0)
         {
-			LogError("init_socket failed\r\n");
+			LogError("init_socket failed");
             result = __LINE__;
         }
         else
         {
             if (set_address(host, port) != 0)
             {
-				LogError("set_address failed\r\n");
+				LogError("set_address failed");
                 result = __LINE__;
             }
             else if (lwip_connect(_sock_fd, (const struct sockaddr *) &_remoteHost, sizeof(_remoteHost)) < 0)
             {
                 close();
-				LogError("lwip_connect failed\r\n");
+				LogError("lwip_connect failed");
                 result = __LINE__;
             }
             else
@@ -122,7 +122,7 @@ int WolfSSLConnection::connect(const char* host, const int port)
                 ssl = wolfSSL_new(sslContext);
                 if(ssl == NULL) 
                 {
-					LogError("wolfssl new error\r\n");
+					LogError("wolfssl new error");
                     result = __LINE__;
                 }
                 else
@@ -132,7 +132,7 @@ int WolfSSLConnection::connect(const char* host, const int port)
                     result = wolfSSL_connect(ssl);
                     if (result != SSL_SUCCESS) 
                     {
-                        LogError("wolfssl connect error=%d\r\n", result);
+                        LogError("wolfssl connect error=%d", result);
                         result = __LINE__;
                     }
                     else
@@ -220,7 +220,7 @@ bool WolfSSLConnection::load_certificate(const unsigned char* certificate, size_
     
     if (sslContext == NULL)
     {
-		LogError("NULL SSL context\r\n");
+		LogError("NULL SSL context");
 		result = false;
     }
     else

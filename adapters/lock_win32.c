@@ -36,7 +36,7 @@ LOCK_RESULT Lock(LOCK_HANDLE handle)
     {
         /*SRS_LOCK_99_007:[ This API on NULL handle passed returns LOCK_ERROR]*/
         result = LOCK_ERROR;
-        LogError("(result = %s)\r\n", Lock_ResultAsString[result]);
+        LogError("(result = %s)", Lock_ResultAsString[result]);
     }
     else 
     {
@@ -52,7 +52,7 @@ LOCK_RESULT Unlock(LOCK_HANDLE handle)
     {
         /*SRS_LOCK_99_007:[ This API on NULL handle passed returns LOCK_ERROR]*/
         result = LOCK_ERROR;
-        LogError("(result = %s)\r\n", Lock_ResultAsString[result]);
+        LogError("(result = %s)", Lock_ResultAsString[result]);
     }
     else
     {
@@ -69,7 +69,7 @@ LOCK_RESULT Lock_Deinit(LOCK_HANDLE handle)
     {
         /*SRS_LOCK_99_007:[ This API on NULL handle passed returns LOCK_ERROR]*/
         result = LOCK_ERROR;
-        LogError("(result = %s)\r\n", Lock_ResultAsString[result]);
+        LogError("(result = %s)", Lock_ResultAsString[result]);
     }
     else
     {
