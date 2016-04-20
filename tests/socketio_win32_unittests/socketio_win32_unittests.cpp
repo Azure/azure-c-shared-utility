@@ -683,6 +683,8 @@ TEST_FUNCTION(socketio_dowork_succeeds)
     EXPECTED_CALL(mocks, list_get_head_item(IGNORED_PTR_ARG));
     EXPECTED_CALL(mocks, recv(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_NUM_ARG));
     EXPECTED_CALL(mocks, WSAGetLastError());
+    EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
+    EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
 
     // act
     socketio_dowork(ioHandle);
@@ -711,6 +713,8 @@ TEST_FUNCTION(socketio_dowork_recv_bytes_succeeds)
         .SetReturn(1);
     EXPECTED_CALL(mocks, recv(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_NUM_ARG));
     EXPECTED_CALL(mocks, WSAGetLastError());
+    EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG)).ExpectedTimesExactly(2);
+    EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG)).ExpectedTimesExactly(2);
 
     // act
     socketio_dowork(ioHandle);

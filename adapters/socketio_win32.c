@@ -486,30 +486,39 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
 
             while (received > 0)
             {
-                unsigned char recv_bytes[1];
-                received = recv(socket_io_instance->socket, recv_bytes, sizeof(recv_bytes), 0);
-                if (received > 0)
+                unsigned char* recv_bytes = malloc(RECEIVE_BYTES_VALUE);
+                if (recv_bytes == NULL)
                 {
-                    int i;
-                    for (i = 0; i < received; i++)
-                    {
-                        LOG(socket_io_instance->logger_log, 0, "<-%02x ", (unsigned char)recv_bytes[i]);
-                    }
-
-                    if (socket_io_instance->on_bytes_received != NULL)
-                    {
-                        /* explictly ignoring here the result of the callback */
-                        (void)socket_io_instance->on_bytes_received(socket_io_instance->on_bytes_received_context, recv_bytes, received);
-                    }
+                    LogError("Socketio_Failure: NULL allocating input buffer.");
+                    indicate_error(socket_io_instance);
                 }
                 else
                 {
-                    int last_error = WSAGetLastError();
-                    if (last_error != WSAEWOULDBLOCK && last_error != ERROR_SUCCESS)
+                    received = recv(socket_io_instance->socket, recv_bytes, RECEIVE_BYTES_VALUE, 0);
+                    if (received > 0)
                     {
-                        LogError("Socketio_Failure: Recieving data from endpoint: %d.\r\n", last_error);
-                        indicate_error(socket_io_instance);
+                        int i;
+                        for (i = 0; i < received; i++)
+                        {
+                            LOG(socket_io_instance->logger_log, 0, "<-%02x ", (unsigned char)recv_bytes[i]);
+                        }
+
+                        if (socket_io_instance->on_bytes_received != NULL)
+                        {
+                            /* explictly ignoring here the result of the callback */
+                            (void)socket_io_instance->on_bytes_received(socket_io_instance->on_bytes_received_context, recv_bytes, received);
+                        }
                     }
+                    else
+                    {
+                        int last_error = WSAGetLastError();
+                        if (last_error != WSAEWOULDBLOCK && last_error != ERROR_SUCCESS)
+                        {
+                            LogError("Socketio_Failure: Recieving data from endpoint: %d.\r\n", last_error);
+                            indicate_error(socket_io_instance);
+                        }
+                    }
+                    free(recv_bytes);
                 }
             }
         }
