@@ -165,7 +165,7 @@ HTTPAPI_RESULT HTTPAPI_Init(void)
             WINHTTP_NO_PROXY_BYPASS,
             0)) == NULL)
         {
-            LogErrorWinHTTPWithGetLastErrorAsString("WinHttpOpen failed.\r\n");
+            LogErrorWinHTTPWithGetLastErrorAsString("WinHttpOpen failed.");
             result = HTTPAPI_INIT_FAILED;
         }
         else
@@ -255,7 +255,7 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
 
                         if (result->ConnectionHandle == NULL)
                         {
-                            LogErrorWinHTTPWithGetLastErrorAsString("WinHttpConnect returned NULL.\r\n");
+                            LogErrorWinHTTPWithGetLastErrorAsString("WinHttpConnect returned NULL.");
                             free(result);
                             result = NULL;
                         }
@@ -404,7 +404,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
                                     if (requestHandle == NULL)
                                     {
                                         result = HTTPAPI_OPEN_REQUEST_FAILED;
-                                        LogErrorWinHTTPWithGetLastErrorAsString("WinHttpOpenRequest failed (result = %s).\r\n", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                                        LogErrorWinHTTPWithGetLastErrorAsString("WinHttpOpenRequest failed (result = %s).", ENUM_TO_STRING(HTTPAPI_RESULT, result));
                                     }
                                     else
                                     {
@@ -416,7 +416,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
                                             ) == FALSE)
                                         {
                                             result = HTTPAPI_SET_TIMEOUTS_FAILED;
-                                            LogErrorWinHTTPWithGetLastErrorAsString("WinHttpOpenRequest failed (result = %s)\r\n", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                                            LogErrorWinHTTPWithGetLastErrorAsString("WinHttpOpenRequest failed (result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
                                         }
                                         else
                                         {
@@ -429,7 +429,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
                                                 sizeof(dwSecurityFlags)))
                                             {
                                                 result = HTTPAPI_SET_OPTION_FAILED;
-                                                LogErrorWinHTTPWithGetLastErrorAsString("WinHttpSetOption failed (result = %s).\r\n", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                                                LogErrorWinHTTPWithGetLastErrorAsString("WinHttpSetOption failed (result = %s).", ENUM_TO_STRING(HTTPAPI_RESULT, result));
                                             }
                                             else
                                             {
@@ -443,7 +443,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
                                                     0))
                                                 {
                                                     result = HTTPAPI_SEND_REQUEST_FAILED;
-                                                    LogErrorWinHTTPWithGetLastErrorAsString("WinHttpSendRequest: (result = %s).\r\n", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                                                    LogErrorWinHTTPWithGetLastErrorAsString("WinHttpSendRequest: (result = %s).", ENUM_TO_STRING(HTTPAPI_RESULT, result));
                                                 }
                                                 else
                                                 {
@@ -452,7 +452,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
                                                         0))
                                                     {
                                                         result = HTTPAPI_RECEIVE_RESPONSE_FAILED;
-                                                        LogErrorWinHTTPWithGetLastErrorAsString("WinHttpReceiveResponse: (result = %s).\r\n", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                                                        LogErrorWinHTTPWithGetLastErrorAsString("WinHttpReceiveResponse: (result = %s).", ENUM_TO_STRING(HTTPAPI_RESULT, result));
                                                     }
                                                     else
                                                     {
@@ -469,7 +469,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
                                                             WINHTTP_NO_HEADER_INDEX))
                                                         {
                                                             result = HTTPAPI_QUERY_HEADERS_FAILED;
-                                                            LogErrorWinHTTPWithGetLastErrorAsString("WinHttpQueryHeaders failed (result = %s)\r\n", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                                                            LogErrorWinHTTPWithGetLastErrorAsString("WinHttpQueryHeaders failed (result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
                                                         }
                                                         else
                                                         {
@@ -495,7 +495,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
                                                                     if (!WinHttpQueryDataAvailable(requestHandle, &responseBytesAvailable))
                                                                     {
                                                                         result = HTTPAPI_QUERY_DATA_AVAILABLE_FAILED;
-                                                                        LogErrorWinHTTPWithGetLastErrorAsString("WinHttpQueryDataAvailable failed (result = %s).\r\n", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                                                                        LogErrorWinHTTPWithGetLastErrorAsString("WinHttpQueryDataAvailable failed (result = %s).", ENUM_TO_STRING(HTTPAPI_RESULT, result));
                                                                         goOnAndReadEverything = 0;
                                                                     }
                                                                     else if (responseBytesAvailable == 0)
@@ -536,7 +536,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
                                                                                 if (!WinHttpReadData(requestHandle, (LPVOID)(bufferContent + bufferSize - responseBytesAvailable), responseBytesAvailable, &bytesReceived))
                                                                                 {
                                                                                     result = HTTPAPI_READ_DATA_FAILED;
-                                                                                    LogErrorWinHTTPWithGetLastErrorAsString("WinHttpReadData failed (result = %s)\r\n", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                                                                                    LogErrorWinHTTPWithGetLastErrorAsString("WinHttpReadData failed (result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
                                                                                     goOnAndReadEverything = 0;
                                                                                 }
                                                                                 else
