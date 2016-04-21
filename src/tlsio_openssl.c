@@ -15,6 +15,7 @@
 #include "azure_c_shared_utility/tlsio_openssl.h"
 #include "azure_c_shared_utility/socketio.h"
 #include "azure_c_shared_utility/xlogging.h"
+#include "azure_c_shared_utility/iot_logging.h"
 
 typedef enum TLSIO_STATE_TAG
 {
