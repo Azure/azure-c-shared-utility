@@ -63,7 +63,6 @@ void my_gballoc_free(void* ptr)
 }
 
 #include "testrunnerswitcher.h"
-/*the below is a horrible hack*/
 #include "azure_c_shared_utility/macro_utils.h"
 #include "umock_c.h"
 #include "umocktypes_charptr.h"
@@ -227,15 +226,27 @@ HTTPAPI_RESULT my_HTTPAPI_CloneOption(const char* optionName, const void* value,
     return result2;
 }
 
-VECTOR_HANDLE my_VECTOR_create(size_t elementSize)
-{
-    return (VECTOR_HANDLE)malloc(1);
-}
+VECTOR_HANDLE real_VECTOR_create(size_t elementSize);
+void real_VECTOR_destroy(VECTOR_HANDLE handle);
 
-void my_VECTOR_destroy(VECTOR_HANDLE handle)
-{
-    free(handle);
-}
+/* insertion */
+int real_VECTOR_push_back(VECTOR_HANDLE handle, const void* elements, size_t numElements);
+
+/* removal */
+void real_VECTOR_erase(VECTOR_HANDLE handle, void* elements, size_t numElements);
+void real_VECTOR_clear(VECTOR_HANDLE handle);
+
+/* access */
+void* real_VECTOR_element(const VECTOR_HANDLE handle, size_t index);
+void* real_VECTOR_front(const VECTOR_HANDLE handle);
+void* real_VECTOR_back(const VECTOR_HANDLE handle);
+void* real_VECTOR_find_if(const VECTOR_HANDLE handle, PREDICATE_FUNCTION pred, const void* value);
+
+/* capacity */
+size_t real_VECTOR_size(const VECTOR_HANDLE handle);
+
+int real_mallocAndStrcpy_s(char** destination, const char* source);
+int real_size_tToString(char* destination, size_t destinationSize, size_t value);
 
 #include "azure_c_shared_utility/gballoc.h"
 
@@ -259,6 +270,8 @@ IMPLEMENT_UMOCK_C_ENUM_TYPE(HTTPAPI_REQUEST_TYPE, HTTPAPI_REQUEST_TYPE_VALUES);
 #define TEST_RESPONSE_HTTP_HEADERS (HTTP_HEADERS_HANDLE) 0x45
 #define TEST_RESPONSE_BODY (BUFFER_HANDLE) 0x46
 #define TEST_HTTP_HEADERS_HANDLE (HTTP_HEADERS_HANDLE) 0x47
+#define TEST_BUFFER_REQ_BODY    (BUFFER_HANDLE) 0x48
+#define TEST_BUFFER_RESP_BODY   (BUFFER_HANDLE) 0x49
 #define TEST_BUFFER "333333"
 #define TEST_BUFFER_SIZE 6
 
@@ -292,7 +305,9 @@ static void setupAllCallBeforeHTTPsequence(void)
 {
     /*this is building the host and content-length for the http request headers*/
     STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
-        .IgnoreArgument(1);
+        .IgnoreArgument(1).SetReturn(TEST_BUFFER_SIZE);
+    STRICT_EXPECTED_CALL(size_tToString(IGNORED_PTR_ARG, IGNORED_PTR_ARG, TEST_BUFFER_SIZE))
+        .IgnoreArgument(1).IgnoreArgument(2);
     STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
@@ -312,13 +327,13 @@ static void setupAllCallForHTTPsequence(const char* relativePath, HTTP_HEADERS_H
     STRICT_EXPECTED_CALL(VECTOR_size(IGNORED_PTR_ARG)) /*this is passing the options*/ /*there are none saved in the regular sequences*/
         .IgnoreArgument(1);
 
-    STRICT_EXPECTED_CALL(BUFFER_length(requestHttpBody));
-    STRICT_EXPECTED_CALL(BUFFER_length(requestHttpBody)); /*two times because once in here, one in the code under test*/
-    size_t requestHttpBodyLength = BUFFER_length(requestHttpBody);
+    STRICT_EXPECTED_CALL(BUFFER_length(requestHttpBody))
+        .SetReturn(TEST_BUFFER_SIZE);
+    size_t requestHttpBodyLength = TEST_BUFFER_SIZE;
 
-    STRICT_EXPECTED_CALL(BUFFER_u_char(requestHttpBody));
-    STRICT_EXPECTED_CALL(BUFFER_u_char(requestHttpBody)); /*two times because once in here, one in the code under test*/
-    const unsigned char* requestHttpBodyContent = BUFFER_u_char(requestHttpBody);
+    STRICT_EXPECTED_CALL(BUFFER_u_char(requestHttpBody))
+        .SetReturn(TEST_BUFFER);
+    const unsigned char* requestHttpBodyContent = TEST_BUFFER;
 
     /*this is getting the buffer content and buffer length to pass to httpapi_executerequest*/
     STRICT_EXPECTED_CALL(HTTPAPI_ExecuteRequest(
@@ -331,6 +346,7 @@ static void setupAllCallForHTTPsequence(const char* relativePath, HTTP_HEADERS_H
         IGNORED_PTR_ARG,
         responseHttpHeaders,
         responseHttpBody))
+        .ValidateArgumentBuffer(5, TEST_BUFFER, TEST_BUFFER_SIZE)
         .IgnoreArgument(1)
         .IgnoreArgument(7)
         ;
@@ -430,10 +446,18 @@ TEST_SUITE_INITIALIZE(TestClassInitialize)
     REGISTER_GLOBAL_MOCK_RETURN(HTTPAPI_ExecuteRequest, HTTPAPI_OK);
     REGISTER_GLOBAL_MOCK_RETURN(HTTPAPI_SetOption, HTTPAPI_OK);
     REGISTER_GLOBAL_MOCK_HOOK(HTTPAPI_CloneOption, my_HTTPAPI_CloneOption);
-    REGISTER_GLOBAL_MOCK_HOOK(VECTOR_create, my_VECTOR_create);
-    REGISTER_GLOBAL_MOCK_HOOK(VECTOR_destroy, my_VECTOR_destroy);
-    REGISTER_GLOBAL_MOCK_RETURN(VECTOR_push_back, 0);
-    REGISTER_GLOBAL_MOCK_RETURN(VECTOR_size, 0);
+    REGISTER_GLOBAL_MOCK_HOOK(VECTOR_create, real_VECTOR_create);
+    REGISTER_GLOBAL_MOCK_HOOK(VECTOR_destroy, real_VECTOR_destroy);
+    REGISTER_GLOBAL_MOCK_HOOK(VECTOR_push_back, real_VECTOR_push_back);
+    REGISTER_GLOBAL_MOCK_HOOK(VECTOR_erase, real_VECTOR_erase);
+    REGISTER_GLOBAL_MOCK_HOOK(VECTOR_clear, real_VECTOR_clear);
+    REGISTER_GLOBAL_MOCK_HOOK(VECTOR_element, real_VECTOR_element);
+    REGISTER_GLOBAL_MOCK_HOOK(VECTOR_front, real_VECTOR_front);
+    REGISTER_GLOBAL_MOCK_HOOK(VECTOR_back, real_VECTOR_back);
+    REGISTER_GLOBAL_MOCK_HOOK(VECTOR_find_if, real_VECTOR_find_if);
+    REGISTER_GLOBAL_MOCK_HOOK(VECTOR_size, real_VECTOR_size);
+    REGISTER_GLOBAL_MOCK_HOOK(mallocAndStrcpy_s, real_mallocAndStrcpy_s);
+    REGISTER_GLOBAL_MOCK_HOOK(size_tToString, real_size_tToString);
 }
 
 TEST_SUITE_CLEANUP(TestClassCleanup)
@@ -588,7 +612,7 @@ TEST_FUNCTION(HTTPAPIEX_Destroy_frees_resources_3) /*this is destroy after havin
     BUFFER_HANDLE requestHttpBody;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
-    createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     setupAllCallBeforeHTTPsequence();
     setupAllCallForHTTPsequence(TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, responseHttpHeaders, responseHttpBody);
     (void)HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, responseHttpHeaders, responseHttpBody);
@@ -617,7 +641,7 @@ TEST_FUNCTION(HTTPAPIEX_Destroy_frees_resources_3) /*this is destroy after havin
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
-    destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     
 }
 
@@ -736,7 +760,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_happy_path_with_all_non_NULL_parameters)
     BUFFER_HANDLE requestHttpBody;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
-    createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     umock_c_reset_all_calls();
 
     setupAllCallBeforeHTTPsequence();
@@ -750,7 +774,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_happy_path_with_all_non_NULL_parameters)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
-    destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     HTTPAPIEX_Destroy(httpapiexhandle);
 }
 
@@ -765,7 +789,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_relativePath_uses_empty)
     BUFFER_HANDLE requestHttpBody;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
-    createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     umock_c_reset_all_calls();
 
     setupAllCallBeforeHTTPsequence();
@@ -779,7 +803,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_relativePath_uses_empty)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
-    destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     HTTPAPIEX_Destroy(httpapiexhandle);
 }
 
@@ -798,7 +822,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_request_headers_and_NULL_reques
     BUFFER_HANDLE requestHttpBody;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
-    createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(BUFFER_new()); /*because it makes a fake buffer*/
@@ -855,7 +879,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_request_headers_and_NULL_reques
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
-    destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     HTTPAPIEX_Destroy(httpapiexhandle);
 }
 
@@ -870,7 +894,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_request_headers_and_NULL_reques
     BUFFER_HANDLE requestHttpBody;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
-    createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(BUFFER_new()); /*because it makes a fake buffer*/
@@ -899,7 +923,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_request_headers_and_NULL_reques
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
-    destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     HTTPAPIEX_Destroy(httpapiexhandle);
 }
 
@@ -914,7 +938,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_request_headers_and_NULL_reques
     BUFFER_HANDLE requestHttpBody;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
-    createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(BUFFER_new()); /*because it makes a fake buffer*/
@@ -941,7 +965,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_request_headers_and_NULL_reques
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
-    destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     HTTPAPIEX_Destroy(httpapiexhandle);
 }
 
@@ -956,7 +980,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_request_headers_and_NULL_reques
     BUFFER_HANDLE requestHttpBody;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
-    createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(BUFFER_new()); /*because it makes a fake buffer*/
@@ -974,7 +998,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_request_headers_and_NULL_reques
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
-    destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     HTTPAPIEX_Destroy(httpapiexhandle);
 }
 
@@ -992,7 +1016,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_request_headers_and_NULL_re
     BUFFER_HANDLE requestHttpBody;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
-    createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(BUFFER_new()); /*because it makes a fake buffer*/
@@ -1046,7 +1070,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_request_headers_and_NULL_re
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
-    destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     HTTPAPIEX_Destroy(httpapiexhandle);
 }
 
@@ -1061,7 +1085,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_request_headers_and_NULL_re
     BUFFER_HANDLE requestHttpBody;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
-    createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(BUFFER_new()); /*because it makes a fake buffer*/
@@ -1087,7 +1111,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_request_headers_and_NULL_re
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
-    destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     HTTPAPIEX_Destroy(httpapiexhandle);
 }
 
@@ -1102,7 +1126,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_request_headers_and_NULL_re
     BUFFER_HANDLE requestHttpBody;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
-    createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(BUFFER_new()); /*because it makes a fake buffer*/
@@ -1126,7 +1150,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_request_headers_and_NULL_re
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
-    destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     HTTPAPIEX_Destroy(httpapiexhandle);
 }
 
@@ -1141,7 +1165,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_request_headers_and_NULL_re
     BUFFER_HANDLE requestHttpBody;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
-    createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(BUFFER_new())
@@ -1155,7 +1179,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_request_headers_and_NULL_re
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
-    destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     HTTPAPIEX_Destroy(httpapiexhandle);
 }
 
@@ -1170,7 +1194,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_request_headers_and_non_NUL
     BUFFER_HANDLE requestHttpBody;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
-    createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     umock_c_reset_all_calls();
 
     /*this is building the host and content-length for the http request headers*/
@@ -1221,7 +1245,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_request_headers_and_non_NUL
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
-    destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     HTTPAPIEX_Destroy(httpapiexhandle);
 }
 
@@ -1236,7 +1260,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_request_headers_and_non_NUL
     BUFFER_HANDLE requestHttpBody;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
-    createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     umock_c_reset_all_calls();
 
     /*this is building the host and content-length for the http request headers*/
@@ -1258,7 +1282,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_request_headers_and_non_NUL
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
-    destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     HTTPAPIEX_Destroy(httpapiexhandle);
 }
 
@@ -1273,7 +1297,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_request_headers_and_non_NUL
     BUFFER_HANDLE requestHttpBody;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
-    createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     umock_c_reset_all_calls();
 
     /*this is building the host and content-length for the http request headers*/
@@ -1293,7 +1317,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_request_headers_and_non_NUL
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
-    destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     HTTPAPIEX_Destroy(httpapiexhandle);
 }
 
@@ -1307,7 +1331,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_statusCode_succeeds)
     BUFFER_HANDLE requestHttpBody;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
-    createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     umock_c_reset_all_calls();
 
     /*this is building the host and content-length for the http request headers*/
@@ -1358,7 +1382,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_statusCode_succeeds)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
-    destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     HTTPAPIEX_Destroy(httpapiexhandle);
 }
 
@@ -1374,7 +1398,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_statusCode_returns_that_cod
     BUFFER_HANDLE requestHttpBody;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
-    createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     umock_c_reset_all_calls();
 
     /*this is building the host and content-length for the http request headers*/
@@ -1427,7 +1451,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_statusCode_returns_that_cod
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
-    destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     HTTPAPIEX_Destroy(httpapiexhandle);
 }
 
@@ -1442,7 +1466,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_cleans_when_originalhttpbody_is_NULL_and_
     BUFFER_HANDLE requestHttpBody;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
-    createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(BUFFER_new()); /*because it makes a fake buffer*/
@@ -1475,7 +1499,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_cleans_when_originalhttpbody_is_NULL_and_
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
-    destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     HTTPAPIEX_Destroy(httpapiexhandle);
 }
 
@@ -1489,7 +1513,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_cleans_when_responsehttpbody_is_NULL_and_
     BUFFER_HANDLE requestHttpBody;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
-    createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(BUFFER_new()); /*because it makes a fake buffer*/
@@ -1526,7 +1550,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_cleans_when_responsehttpbody_is_NULL_and_
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
-    destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     HTTPAPIEX_Destroy(httpapiexhandle);
 }
 
@@ -1542,7 +1566,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_response_headers_suceeds)
     BUFFER_HANDLE requestHttpBody;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
-    createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     umock_c_reset_all_calls();
 
     /*this is building the host and content-length for the http request headers*/
@@ -1601,7 +1625,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_response_headers_suceeds)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
-    destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     HTTPAPIEX_Destroy(httpapiexhandle);
 }
 
@@ -1616,7 +1640,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_response_headers_fails_when_HTT
     BUFFER_HANDLE requestHttpBody;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
-    createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     umock_c_reset_all_calls();
 
     /*this is building the host and content-length for the http request headers*/
@@ -1641,7 +1665,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_response_headers_fails_when_HTT
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
-    destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     HTTPAPIEX_Destroy(httpapiexhandle);
 }
 
@@ -1657,7 +1681,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_response_headers_suceeds)
     BUFFER_HANDLE requestHttpBody;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
-    createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     umock_c_reset_all_calls();
 
     /*this is building the host and content-length for the http request headers*/
@@ -1709,7 +1733,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_response_headers_suceeds)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
-    destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     HTTPAPIEX_Destroy(httpapiexhandle);
 }
 
@@ -1725,7 +1749,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_response_body_suceeds)
     BUFFER_HANDLE requestHttpBody;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
-    createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     umock_c_reset_all_calls();
 
     /*this is building the host and content-length for the http request headers*/
@@ -1783,7 +1807,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_response_body_suceeds)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
-    destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     HTTPAPIEX_Destroy(httpapiexhandle);
 }
 
@@ -1798,7 +1822,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_fails_when_BUFFER_new_fails)
     BUFFER_HANDLE requestHttpBody;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
-    createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     umock_c_reset_all_calls();
 
     /*this is building the host and content-length for the http request headers*/
@@ -1822,7 +1846,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_fails_when_BUFFER_new_fails)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
-    destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     HTTPAPIEX_Destroy(httpapiexhandle);
 }
 
@@ -1838,7 +1862,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_response_body_suceeds)
     BUFFER_HANDLE requestHttpBody;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
-    createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     umock_c_reset_all_calls();
 
     /*this is building the host and content-length for the http request headers*/
@@ -1891,7 +1915,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_response_body_suceeds)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
-    destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     HTTPAPIEX_Destroy(httpapiexhandle);
 }
 
@@ -1912,7 +1936,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_S1) /*refer to httpapiex_retry_m
     BUFFER_HANDLE requestHttpBody;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
-    createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     (void)HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, responseHttpHeaders, responseHttpBody);
     umock_c_reset_all_calls();
 
@@ -1927,7 +1951,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_S1) /*refer to httpapiex_retry_m
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
-    destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     HTTPAPIEX_Destroy(httpapiexhandle);
 }
 
@@ -1942,7 +1966,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_S2) /*refer to httpapiex_retry_m
     BUFFER_HANDLE requestHttpBody;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
-    createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     (void)HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, responseHttpHeaders, responseHttpBody);
     umock_c_reset_all_calls();
 
@@ -1992,7 +2016,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_S2) /*refer to httpapiex_retry_m
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
-    destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     HTTPAPIEX_Destroy(httpapiexhandle);
 }
 
@@ -2007,7 +2031,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_S3) /*refer to httpapiex_retry_m
     BUFFER_HANDLE requestHttpBody;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
-    createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     (void)HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, responseHttpHeaders, responseHttpBody);
     umock_c_reset_all_calls();
 
@@ -2098,7 +2122,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_S3) /*refer to httpapiex_retry_m
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
-    destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     HTTPAPIEX_Destroy(httpapiexhandle);
 }
 
@@ -2113,7 +2137,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_S4) /*refer to httpapiex_retry_m
     BUFFER_HANDLE requestHttpBody;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
-    createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     (void)HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, responseHttpHeaders, responseHttpBody);
     umock_c_reset_all_calls();
 
@@ -2176,7 +2200,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_S4) /*refer to httpapiex_retry_m
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
-    destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     HTTPAPIEX_Destroy(httpapiexhandle);
 }
 
@@ -2193,7 +2217,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F1) /*refer to httpapiex_retry_m
     BUFFER_HANDLE requestHttpBody;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
-    createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     (void)HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, responseHttpHeaders, responseHttpBody);
     umock_c_reset_all_calls();
 
@@ -2223,7 +2247,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F1) /*refer to httpapiex_retry_m
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
-    destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     HTTPAPIEX_Destroy(httpapiexhandle);
 }
 
@@ -2240,7 +2264,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F2) /*refer to httpapiex_retry_m
     BUFFER_HANDLE requestHttpBody;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
-    createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     (void)HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, responseHttpHeaders, responseHttpBody);
     umock_c_reset_all_calls();
 
@@ -2282,7 +2306,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F2) /*refer to httpapiex_retry_m
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
-    destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     HTTPAPIEX_Destroy(httpapiexhandle);
 }
 
@@ -2298,7 +2322,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F3) /*refer to httpapiex_retry_m
     BUFFER_HANDLE requestHttpBody;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
-    createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     (void)HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, responseHttpHeaders, responseHttpBody);
     umock_c_reset_all_calls();
 
@@ -2368,7 +2392,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F3) /*refer to httpapiex_retry_m
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
-    destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     HTTPAPIEX_Destroy(httpapiexhandle);
 }
 
@@ -2384,7 +2408,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F4) /*refer to httpapiex_retry_m
     BUFFER_HANDLE requestHttpBody;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
-    createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     (void)HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, responseHttpHeaders, responseHttpBody);
     umock_c_reset_all_calls();
 
@@ -2444,7 +2468,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F4) /*refer to httpapiex_retry_m
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
-    destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     HTTPAPIEX_Destroy(httpapiexhandle);
 }
 
@@ -2460,7 +2484,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F5) /*refer to httpapiex_retry_m
     BUFFER_HANDLE requestHttpBody;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
-    createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     (void)HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, responseHttpHeaders, responseHttpBody);
     umock_c_reset_all_calls();
 
@@ -2529,7 +2553,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F5) /*refer to httpapiex_retry_m
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
-    destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     HTTPAPIEX_Destroy(httpapiexhandle);
 }
 
@@ -2545,7 +2569,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F6) /*refer to httpapiex_retry_m
     BUFFER_HANDLE requestHttpBody;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
-    createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     (void)HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, responseHttpHeaders, responseHttpBody);
     umock_c_reset_all_calls();
 
@@ -2643,7 +2667,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F6) /*refer to httpapiex_retry_m
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
-    destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     HTTPAPIEX_Destroy(httpapiexhandle);
 }
 
@@ -2737,7 +2761,7 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_happy_path_without_httpapi_handle_can_save_2_o
 
     EXPECTED_CALL(HTTPAPI_CloneOption("someOption1", (void*)"3", IGNORED_PTR_ARG));  /*this asks lower HTTPAPI to create a clone of the option*/
 
-    EXPECTED_CALL(VECTOR_find_if(IGNORED_PTR_ARG, IGNORED_PTR_ARG, "someOption1")); /*this is looking for hte option to device between update / create*/
+    EXPECTED_CALL(VECTOR_find_if(IGNORED_PTR_ARG, IGNORED_PTR_ARG, "someOption1")); /*this is looking for the option to device between update / create*/
 
     STRICT_EXPECTED_CALL(gballoc_malloc(sizeof("someOption1"))); /*this is creating a clone of the optionName*/
 
@@ -2747,7 +2771,7 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_happy_path_without_httpapi_handle_can_save_2_o
 
     EXPECTED_CALL(HTTPAPI_CloneOption("someOption2", (void*)"33", IGNORED_PTR_ARG));  /*this asks lower HTTPAPI to create a clone of the option*/
 
-    EXPECTED_CALL(VECTOR_find_if(IGNORED_PTR_ARG, IGNORED_PTR_ARG, "someOption2")); /*this is looking for hte option to device between update / create*/
+    EXPECTED_CALL(VECTOR_find_if(IGNORED_PTR_ARG, IGNORED_PTR_ARG, "someOption2")); /*this is looking for the option to device between update / create*/
 
     STRICT_EXPECTED_CALL(gballoc_malloc(sizeof("someOption2"))); /*this is creating a clone of the optionName*/
 
@@ -2777,7 +2801,7 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_passes_saved_options_to_httpapi_succeeds)
     BUFFER_HANDLE requestHttpBody;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     BUFFER_HANDLE responseHttpBody;
-    createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
 
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
     (void)HTTPAPIEX_SetOption(httpapiexhandle, "someOption1", (void*)"3");
@@ -2788,9 +2812,9 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_passes_saved_options_to_httpapi_succeeds)
     setupAllCallForHTTPsequence(TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, responseHttpHeaders, responseHttpBody);
 
     STRICT_EXPECTED_CALL(VECTOR_element(IGNORED_PTR_ARG, 0))
-        .IgnoreArgument(1).SetReturn((void*)"3");
+        .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(VECTOR_element(IGNORED_PTR_ARG, 1))
-        .IgnoreArgument(1).SetReturn((void*)"33");
+        .IgnoreArgument(1);
 
     STRICT_EXPECTED_CALL(HTTPAPI_SetOption(IGNORED_PTR_ARG, "someOption1", (void*)"3"))
         .IgnoreArgument(1)
@@ -2807,9 +2831,10 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_passes_saved_options_to_httpapi_succeeds)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
-    destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     HTTPAPIEX_Destroy(httpapiexhandle);
 }
+#endif
 
 /*Tests_SRS_HTTPAPIEX_02_036: [If setting the option fails, then the failure shall be ignored.] */
 TEST_FUNCTION(HTTPAPIEX_SetOption_passes_saved_options_to_httpapi_ignores_errors_succeeds)
@@ -2817,10 +2842,10 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_passes_saved_options_to_httpapi_ignores_errors
     /// arrange
     unsigned int httpStatusCode;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
-    BUFFER_HANDLE requestHttpBody;
+    BUFFER_HANDLE requestHttpBody = TEST_BUFFER_REQ_BODY;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
-    BUFFER_HANDLE responseHttpBody;
-    createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    BUFFER_HANDLE responseHttpBody = TEST_BUFFER_RESP_BODY;
+    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
 
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
     (void)HTTPAPIEX_SetOption(httpapiexhandle, "someOption1", (void*)"3");
@@ -2828,21 +2853,52 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_passes_saved_options_to_httpapi_ignores_errors
     umock_c_reset_all_calls();
 
     setupAllCallBeforeHTTPsequence();
-    setupAllCallForHTTPsequence(TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, responseHttpHeaders, responseHttpBody); /*contains VECTOR_size*/
-    
-    STRICT_EXPECTED_CALL(VECTOR_element(IGNORED_PTR_ARG, 0))
+    STRICT_EXPECTED_CALL(HTTPAPI_Init());
+
+    /*this is getting the hostname for the HTTAPI_connect call)*/
+    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(VECTOR_element(IGNORED_PTR_ARG, 1))
+    STRICT_EXPECTED_CALL(HTTPAPI_CreateConnection(TEST_HOSTNAME));
+    STRICT_EXPECTED_CALL(VECTOR_size(IGNORED_PTR_ARG)) /*this is passing the options*/ /*there are none saved in the regular sequences*/
         .IgnoreArgument(1);
 
+    STRICT_EXPECTED_CALL(VECTOR_element(IGNORED_PTR_ARG, 0))
+        .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(HTTPAPI_SetOption(IGNORED_PTR_ARG, "someOption1", (void*)"3"))
         .IgnoreArgument(1)
         .IgnoreArgument(3)
         .SetReturn(HTTPAPI_ERROR);
+
+    STRICT_EXPECTED_CALL(VECTOR_element(IGNORED_PTR_ARG, 1))
+        .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(HTTPAPI_SetOption(IGNORED_PTR_ARG, "someOption2", (void*)"33"))
         .IgnoreArgument(1)
         .IgnoreArgument(3)
         .SetReturn(HTTPAPI_ERROR);
+
+    STRICT_EXPECTED_CALL(BUFFER_length(requestHttpBody))
+        .SetReturn(TEST_BUFFER_SIZE);
+    size_t requestHttpBodyLength = TEST_BUFFER_SIZE;
+
+    STRICT_EXPECTED_CALL(BUFFER_u_char(requestHttpBody))
+        .SetReturn(TEST_BUFFER);
+    const unsigned char* requestHttpBodyContent = TEST_BUFFER;
+
+    /*this is getting the buffer content and buffer length to pass to httpapi_executerequest*/
+    STRICT_EXPECTED_CALL(HTTPAPI_ExecuteRequest(
+        IGNORED_PTR_ARG,
+        HTTPAPI_REQUEST_PATCH,
+        TEST_RELATIVE_PATH,
+        requestHttpHeaders,
+        requestHttpBodyContent,
+        requestHttpBodyLength,
+        IGNORED_PTR_ARG,
+        responseHttpHeaders,
+        responseHttpBody))
+        .ValidateArgumentBuffer(5, TEST_BUFFER, TEST_BUFFER_SIZE)
+        .IgnoreArgument(1)
+        .IgnoreArgument(7)
+        ;
 
     /// act
     auto result = HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, responseHttpHeaders, responseHttpBody);
@@ -2852,7 +2908,7 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_passes_saved_options_to_httpapi_ignores_errors
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
-    destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     HTTPAPIEX_Destroy(httpapiexhandle);
 }
 
@@ -2864,19 +2920,21 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_fails_when_VECTOR_push_back_fails)
     umock_c_reset_all_calls();
 
     EXPECTED_CALL(HTTPAPI_CloneOption("someOption2", (void*)"33", IGNORED_PTR_ARG));  /*this asks lower HTTPAPI to create a clone of the option*/
-    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)) /*this is freeing the clone created by HTTPAPI_CloneOption*/
-        .IgnoreArgument(1);
 
-    STRICT_EXPECTED_CALL(gballoc_malloc(sizeof("someOption2"))); /*this is creating a clone of the optionName*/
-    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
-        .IgnoreArgument(1);
+    EXPECTED_CALL(VECTOR_find_if(IGNORED_PTR_ARG, IGNORED_PTR_ARG, "someOption2")); /*this is looking for the option to device between update / create*/
 
-    EXPECTED_CALL(VECTOR_find_if(IGNORED_PTR_ARG, IGNORED_PTR_ARG, "someOption2")); /*this is looking for hte option to device between update / create*/
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, "someOption2"))
+        .IgnoreArgument(1); /*this is creating a clone of the optionName*/
 
     STRICT_EXPECTED_CALL(VECTOR_push_back(IGNORED_PTR_ARG, IGNORED_PTR_ARG, 1))
         .IgnoreArgument(1)
         .IgnoreArgument(2)
         .SetReturn(1);
+
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)) /*this is freeing the clone created by HTTPAPI_CloneOption*/
+        .IgnoreArgument(1);
 
     /// act
     auto result = HTTPAPIEX_SetOption(httpapiexhandle, "someOption2", (void*)"33");
@@ -2897,13 +2955,14 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_fails_when_gballoc_fails_1)
     umock_c_reset_all_calls();
 
     EXPECTED_CALL(HTTPAPI_CloneOption("someOption2", (void*)"33", IGNORED_PTR_ARG));  /*this asks lower HTTPAPI to create a clone of the option*/
+
+    EXPECTED_CALL(VECTOR_find_if(IGNORED_PTR_ARG, IGNORED_PTR_ARG, "someOption2")); /*this is looking for the option to device between update / create*/
+
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, "someOption2"))
+        .IgnoreArgument(1).SetReturn(1); /*this is creating a clone of the optionName*/
+
     STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)) /*this is freeing the clone created by HTTPAPI_CloneOption*/
         .IgnoreArgument(1);
-
-    EXPECTED_CALL(VECTOR_find_if(IGNORED_PTR_ARG, IGNORED_PTR_ARG, "someOption2")); /*this is looking for hte option to device between update / create*/
-
-    whenShallmalloc_fail = currentmalloc_call + 1;
-    STRICT_EXPECTED_CALL(gballoc_malloc(sizeof("someOption2"))); /*this is creating a clone of the optionName*/
 
     /// act
     auto result = HTTPAPIEX_SetOption(httpapiexhandle, "someOption2", (void*)"33");
@@ -2960,7 +3019,6 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_fails_when_HTTPAPI_SaveOption_fails_4)
     ///destroy
     HTTPAPIEX_Destroy(httpapiexhandle);
 }
-#endif
 
 /*Tests_SRS_HTTPAPIEX_02_031: [If HTTPAPI_HANDLE exists then HTTPAPIEX_SetOption shall call HTTPAPI_SetOption passing the same optionName and value and shall return a value conforming to the below table:] */
 TEST_FUNCTION(HTTPAPIEX_SetOption_passes_saved_options_to_existing_httpapi_handle_succeeds)
@@ -2970,10 +3028,10 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_passes_saved_options_to_existing_httpapi_handl
 
     unsigned int httpStatusCode;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
-    BUFFER_HANDLE requestHttpBody;
+    BUFFER_HANDLE requestHttpBody = TEST_BUFFER_REQ_BODY;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
-    BUFFER_HANDLE responseHttpBody;
-    createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    BUFFER_HANDLE responseHttpBody = TEST_BUFFER_RESP_BODY;
+    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
 
     setupAllCallBeforeHTTPsequence();
     setupAllCallForHTTPsequence(TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, responseHttpHeaders, responseHttpBody);
@@ -2982,7 +3040,7 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_passes_saved_options_to_existing_httpapi_handl
 
     EXPECTED_CALL(HTTPAPI_CloneOption("someOption", "3", IGNORED_PTR_ARG));  /*this asks lower HTTPAPI to create a clone of the option*/
 
-    EXPECTED_CALL(VECTOR_find_if(IGNORED_PTR_ARG, IGNORED_PTR_ARG, "someOption")); /*this is looking for hte option to device between update / create*/
+    EXPECTED_CALL(VECTOR_find_if(IGNORED_PTR_ARG, IGNORED_PTR_ARG, "someOption")); /*this is looking for the option to device between update / create*/
 
     STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, "someOption"))
         .IgnoreArgument(1); /*this is creating a clone of the optionName*/
@@ -3001,7 +3059,7 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_passes_saved_options_to_existing_httpapi_handl
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
-    destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     HTTPAPIEX_Destroy(httpapiexhandle);
 }
 
@@ -3013,10 +3071,10 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_passes_saved_options_to_existing_httpapi_handl
 
     unsigned int httpStatusCode;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
-    BUFFER_HANDLE requestHttpBody;
+    BUFFER_HANDLE requestHttpBody = TEST_BUFFER_REQ_BODY;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
-    BUFFER_HANDLE responseHttpBody;
-    createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    BUFFER_HANDLE responseHttpBody = TEST_BUFFER_RESP_BODY;
+    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
 
     setupAllCallBeforeHTTPsequence();
     setupAllCallForHTTPsequence(TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, responseHttpHeaders, responseHttpBody);
@@ -3025,7 +3083,7 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_passes_saved_options_to_existing_httpapi_handl
 
     EXPECTED_CALL(HTTPAPI_CloneOption("someOption", "3", IGNORED_PTR_ARG));  /*this asks lower HTTPAPI to create a clone of the option*/
 
-    EXPECTED_CALL(VECTOR_find_if(IGNORED_PTR_ARG, IGNORED_PTR_ARG, "someOption")); /*this is looking for hte option to device between update / create*/
+    EXPECTED_CALL(VECTOR_find_if(IGNORED_PTR_ARG, IGNORED_PTR_ARG, "someOption")); /*this is looking for the option to device between update / create*/
 
     STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, "someOption"))
         .IgnoreArgument(1); /*this is creating a clone of the optionName*/
@@ -3045,7 +3103,7 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_passes_saved_options_to_existing_httpapi_handl
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
-    destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     HTTPAPIEX_Destroy(httpapiexhandle);
 }
 
@@ -3057,10 +3115,10 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_passes_saved_options_to_existing_httpapi_handl
 
     unsigned int httpStatusCode;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
-    BUFFER_HANDLE requestHttpBody;
+    BUFFER_HANDLE requestHttpBody = TEST_BUFFER_REQ_BODY;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
-    BUFFER_HANDLE responseHttpBody;
-    createHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    BUFFER_HANDLE responseHttpBody = TEST_BUFFER_RESP_BODY;
+    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
 
     setupAllCallBeforeHTTPsequence();
     setupAllCallForHTTPsequence(TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, responseHttpHeaders, responseHttpBody);
@@ -3085,11 +3143,11 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_passes_saved_options_to_existing_httpapi_handl
     HTTPAPIEX_RESULT result = HTTPAPIEX_SetOption(httpapiexhandle, "someOption", "3");
     
     ///assert
-    //ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_ERROR, result);
+    ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_ERROR, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///destroy
-    destroyHttpObjects(&requestHttpHeaders, &requestHttpBody, &responseHttpHeaders, &responseHttpBody);
+    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     HTTPAPIEX_Destroy(httpapiexhandle);
 }
 
@@ -3105,8 +3163,7 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_happy_path_on_update_option_value_succeeds)
 
     EXPECTED_CALL(HTTPAPI_CloneOption(OPTION_NAME, "4", IGNORED_PTR_ARG));  /*this asks lower HTTPAPI to create a clone of the option*/
 
-    EXPECTED_CALL(VECTOR_find_if(IGNORED_PTR_ARG, IGNORED_PTR_ARG, OPTION_NAME))
-        .SetReturn("333"); /*this is looking for the option to device between update / create*/
+    EXPECTED_CALL(VECTOR_find_if(IGNORED_PTR_ARG, IGNORED_PTR_ARG, OPTION_NAME)); /*this is looking for the option to device between update / create*/
 
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); /*this is free-ing the previos value*/
 
@@ -3133,4 +3190,5 @@ TEST_FUNCTION(HTTPAPIEX_Destroy_with_NULL_argument_does_nothing)
 
     ///destroy
 }
+
 END_TEST_SUITE(httpapiex_unittests)
