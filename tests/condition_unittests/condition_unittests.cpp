@@ -350,29 +350,29 @@ TEST_FUNCTION(Condition_Wait_timeout_when_not_triggered)
     Condition_Deinit(m.condition);
 }
 
-// Tests_SRS_CONDITION_18_012: [ Condition_Wait shall return COND_OK if the condition is triggered and timeout_milliseconds is not 0 ]
-// Tests_SRS_CONDITION_18_013: [ Condition_Wait shall accept relative timeouts ]
-TEST_FUNCTION(Condition_Wait_ok_on_trigger_with_timeout)
-{
-    conditionMocks mocks;
+// // Tests_SRS_CONDITION_18_012: [ Condition_Wait shall return COND_OK if the condition is triggered and timeout_milliseconds is not 0 ]
+// // Tests_SRS_CONDITION_18_013: [ Condition_Wait shall accept relative timeouts ]
+// TEST_FUNCTION(Condition_Wait_ok_on_trigger_with_timeout)
+// {
+    // conditionMocks mocks;
 
-    // arrange
-    LockAndCondition m;
-    m.condition = Condition_Init();
-    m.lock = Lock_Init();
+    // // arrange
+    // LockAndCondition m;
+    // m.condition = Condition_Init();
+    // m.lock = Lock_Init();
 
-    // act
-    THREAD_HANDLE th = trigger_after_50_ms(&m);
-    Lock(m.lock);
-    COND_RESULT result = Condition_Wait(m.condition, m.lock, 1000);
-    Unlock(m.lock);
-    ThreadAPI_Join(th, NULL);
+    // // act
+    // THREAD_HANDLE th = trigger_after_50_ms(&m);
+    // Lock(m.lock);
+    // COND_RESULT result = Condition_Wait(m.condition, m.lock, 1000);
+    // Unlock(m.lock);
+    // ThreadAPI_Join(th, NULL);
 
-    // assert
-    ASSERT_ARE_EQUAL(COND_RESULT, COND_OK, result);
-    Lock_Deinit(m.lock);
-    Condition_Deinit(m.condition);
-    mocks.ResetAllCalls();
-}
+    // // assert
+    // ASSERT_ARE_EQUAL(COND_RESULT, COND_OK, result);
+    // Lock_Deinit(m.lock);
+    // Condition_Deinit(m.condition);
+    // mocks.ResetAllCalls();
+// }
 
 END_TEST_SUITE(Condition_UnitTests);
