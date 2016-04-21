@@ -2750,6 +2750,7 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_happy_path_without_httpapi_handle_succeeds)
     ///destroy
     HTTPAPIEX_Destroy(httpapiexhandle);
 }
+#endif
 
 /*Tests_SRS_HTTPAPIEX_02_037: [HTTPAPIEX_SetOption shall attempt to save the value of the option by calling HTTPAPI_CloneOption passing optionName and value, irrespective of the existence of a HTTPAPI_HANDLE] */
 /*Tests_SRS_HTTPAPIEX_02_039: [If HTTPAPI_CloneOption returns HTTPAPI_OK then HTTPAPIEX_SetOption shall create or update the pair optionName/value.]*/
@@ -2763,7 +2764,8 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_happy_path_without_httpapi_handle_can_save_2_o
 
     EXPECTED_CALL(VECTOR_find_if(IGNORED_PTR_ARG, IGNORED_PTR_ARG, "someOption1")); /*this is looking for the option to device between update / create*/
 
-    STRICT_EXPECTED_CALL(gballoc_malloc(sizeof("someOption1"))); /*this is creating a clone of the optionName*/
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, "someOption1"))
+        .IgnoreArgument(1); /*this is creating a clone of the optionName*/
 
     STRICT_EXPECTED_CALL(VECTOR_push_back(IGNORED_PTR_ARG, IGNORED_PTR_ARG, 1)) /*this is increasing the array of options by 1*/
         .IgnoreArgument(1)
@@ -2773,7 +2775,8 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_happy_path_without_httpapi_handle_can_save_2_o
 
     EXPECTED_CALL(VECTOR_find_if(IGNORED_PTR_ARG, IGNORED_PTR_ARG, "someOption2")); /*this is looking for the option to device between update / create*/
 
-    STRICT_EXPECTED_CALL(gballoc_malloc(sizeof("someOption2"))); /*this is creating a clone of the optionName*/
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, "someOption2"))
+        .IgnoreArgument(1); /*this is creating a clone of the optionName*/
 
     STRICT_EXPECTED_CALL(VECTOR_push_back(IGNORED_PTR_ARG, IGNORED_PTR_ARG, 1)) /*this is increasing the array of options by 1*/
         .IgnoreArgument(1)
@@ -2798,9 +2801,9 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_passes_saved_options_to_httpapi_succeeds)
     /// arrange
     unsigned int httpStatusCode;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
-    BUFFER_HANDLE requestHttpBody;
+    BUFFER_HANDLE requestHttpBody = TEST_BUFFER_REQ_BODY;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
-    BUFFER_HANDLE responseHttpBody;
+    BUFFER_HANDLE responseHttpBody = TEST_BUFFER_RESP_BODY;
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
 
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
@@ -2809,19 +2812,50 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_passes_saved_options_to_httpapi_succeeds)
     umock_c_reset_all_calls();
 
     setupAllCallBeforeHTTPsequence();
-    setupAllCallForHTTPsequence(TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, responseHttpHeaders, responseHttpBody);
+    STRICT_EXPECTED_CALL(HTTPAPI_Init());
+
+    /*this is getting the hostname for the HTTAPI_connect call)*/
+    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(HTTPAPI_CreateConnection(TEST_HOSTNAME));
+    STRICT_EXPECTED_CALL(VECTOR_size(IGNORED_PTR_ARG)) /*this is passing the options*/ /*there are none saved in the regular sequences*/
+        .IgnoreArgument(1);
 
     STRICT_EXPECTED_CALL(VECTOR_element(IGNORED_PTR_ARG, 0))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(VECTOR_element(IGNORED_PTR_ARG, 1))
-        .IgnoreArgument(1);
-
     STRICT_EXPECTED_CALL(HTTPAPI_SetOption(IGNORED_PTR_ARG, "someOption1", (void*)"3"))
         .IgnoreArgument(1)
         .IgnoreArgument(3);
+
+    STRICT_EXPECTED_CALL(VECTOR_element(IGNORED_PTR_ARG, 1))
+        .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(HTTPAPI_SetOption(IGNORED_PTR_ARG, "someOption2", (void*)"33"))
         .IgnoreArgument(1)
         .IgnoreArgument(3);
+
+    STRICT_EXPECTED_CALL(BUFFER_length(requestHttpBody))
+        .SetReturn(TEST_BUFFER_SIZE);
+    size_t requestHttpBodyLength = TEST_BUFFER_SIZE;
+
+    STRICT_EXPECTED_CALL(BUFFER_u_char(requestHttpBody))
+        .SetReturn(TEST_BUFFER);
+    const unsigned char* requestHttpBodyContent = TEST_BUFFER;
+
+    /*this is getting the buffer content and buffer length to pass to httpapi_executerequest*/
+    STRICT_EXPECTED_CALL(HTTPAPI_ExecuteRequest(
+        IGNORED_PTR_ARG,
+        HTTPAPI_REQUEST_PATCH,
+        TEST_RELATIVE_PATH,
+        requestHttpHeaders,
+        requestHttpBodyContent,
+        requestHttpBodyLength,
+        IGNORED_PTR_ARG,
+        responseHttpHeaders,
+        responseHttpBody))
+        .ValidateArgumentBuffer(5, TEST_BUFFER, TEST_BUFFER_SIZE)
+        .IgnoreArgument(1)
+        .IgnoreArgument(7)
+        ;
 
     /// act
     auto result = HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, responseHttpHeaders, responseHttpBody);
@@ -2834,7 +2868,6 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_passes_saved_options_to_httpapi_succeeds)
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     HTTPAPIEX_Destroy(httpapiexhandle);
 }
-#endif
 
 /*Tests_SRS_HTTPAPIEX_02_036: [If setting the option fails, then the failure shall be ignored.] */
 TEST_FUNCTION(HTTPAPIEX_SetOption_passes_saved_options_to_httpapi_ignores_errors_succeeds)
