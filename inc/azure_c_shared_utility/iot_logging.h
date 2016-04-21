@@ -21,7 +21,11 @@ extern "C" {
 
 #define LOG_LINE 0x01
 
-#define LogInfo(...) (void)printf("Info: " __VA_ARGS__)
+#if defined _MSC_VER
+#define LogInfo(FORMAT, ...) {(void)fprintf(stdout,"Info: " FORMAT "\r\n", __VA_ARGS__); }
+#else
+#define LogInfo(FORMAT, ...) {(void)fprintf(stdout,"Info: " FORMAT "\r\n", ##__VA_ARGS__); }
+#endif
 
 #if defined _MSC_VER
 #define LogError(FORMAT, ...) { time_t t = time(NULL); (void)fprintf(stderr,"Error: Time:%.24s File:%s Func:%s Line:%d " FORMAT "\r\n", ctime(&t), __FILE__, __FUNCDNAME__, __LINE__, __VA_ARGS__); }

@@ -68,18 +68,18 @@ HTTPAPI_RESULT HTTPAPI_Init(void)
 
     if (nUsersOfHTTPAPI == 0)
     {
-        LogInfo("HTTP_API first init.\r\n");
+        LogInfo("HTTP_API first init.");
         /*do internetOpen here... TFS202146*/
         nUsersOfHTTPAPI++;
         g_HTTPAPIState = HTTPAPI_INITIALIZED;
         result = HTTPAPI_OK;
-        LogInfo("HTTP_API has now %d users\r\n", (int)nUsersOfHTTPAPI);
+        LogInfo("HTTP_API has now %d users", (int)nUsersOfHTTPAPI);
     }
     else
     {
         nUsersOfHTTPAPI++;
         result = HTTPAPI_OK;
-        LogInfo("HTTP_API has now %d users\r\n", (int)nUsersOfHTTPAPI);
+        LogInfo("HTTP_API has now %d users", (int)nUsersOfHTTPAPI);
     }
 
     return result;
@@ -90,10 +90,10 @@ void HTTPAPI_Deinit(void)
     if (nUsersOfHTTPAPI > 0)
     {
         nUsersOfHTTPAPI--;
-        LogInfo("HTTP_API has now %d users\r\n", (int)nUsersOfHTTPAPI);
+        LogInfo("HTTP_API has now %d users", (int)nUsersOfHTTPAPI);
         if (nUsersOfHTTPAPI == 0)
         {
-            LogInfo("Deinitializing HTTP_API\r\n");
+            LogInfo("Deinitializing HTTP_API");
             g_HTTPAPIState = HTTPAPI_NOT_INITIALIZED;
 
         }

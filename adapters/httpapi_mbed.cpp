@@ -38,7 +38,7 @@ HTTPAPI_RESULT HTTPAPI_Init(void)
     time_t ctTime;
     ctTime = time(NULL);
     HTTPAPI_RESULT result;
-    LogInfo("HTTAPI_Init::Time is now (UTC) %s\r\n", ctime(&ctTime));
+    LogInfo("HTTAPI_Init::Time is now (UTC) %s", ctime(&ctTime));
 
     result = HTTPAPI_OK;
 
@@ -70,7 +70,7 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
     }
     else
     {
-        LogInfo("HTTPAPI_CreateConnection:: null hostName parameter\r\n");
+        LogInfo("HTTPAPI_CreateConnection:: null hostName parameter");
     }
 
     return (HTTP_HANDLE)handle;
@@ -84,7 +84,7 @@ void HTTPAPI_CloseConnection(HTTP_HANDLE handle)
     {
         if (h->con.is_connected())
         {
-            LogInfo("HTTPAPI_CloseConnection  h->con.close(); to %s\r\n", h->host);
+            LogInfo("HTTPAPI_CloseConnection  h->con.close(); to %s", h->host);
             h->con.close();
         }
         if (h->certificate)
@@ -290,7 +290,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
     if (sscanf(buf, "HTTP/%*d.%*d %d %*[^\r\n]", &ret) != 1)
     {
         //Cannot match string, error
-        LogInfo("HTTPAPI_ExecuteRequest::Not a correct HTTP answer=%s\r\n", buf);
+        LogInfo("HTTPAPI_ExecuteRequest::Not a correct HTTP answer=%s", buf);
         result = HTTPAPI_READ_DATA_FAILED;
         LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
         goto exit;

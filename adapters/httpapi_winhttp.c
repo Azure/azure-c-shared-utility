@@ -157,7 +157,7 @@ HTTPAPI_RESULT HTTPAPI_Init(void)
 
     if (nUsersOfHTTPAPI == 0)
     {
-        LogInfo("HTTP_API first init.\r\n");
+        LogInfo("HTTP_API first init.");
         if ((g_SessionHandle = WinHttpOpen(
             NULL,
             WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
@@ -173,14 +173,14 @@ HTTPAPI_RESULT HTTPAPI_Init(void)
             nUsersOfHTTPAPI++;
             g_HTTPAPIState = HTTPAPI_INITIALIZED;
             result = HTTPAPI_OK;
-            LogInfo("HTTP_API has now %d users\r\n", (int)nUsersOfHTTPAPI);
+            LogInfo("HTTP_API has now %d users", (int)nUsersOfHTTPAPI);
         }
     }
     else
     {
         nUsersOfHTTPAPI++;
         result = HTTPAPI_OK;
-        LogInfo("HTTP_API has now %d users\r\n", (int)nUsersOfHTTPAPI);
+        LogInfo("HTTP_API has now %d users", (int)nUsersOfHTTPAPI);
     }
 
     return result;
@@ -191,10 +191,10 @@ void HTTPAPI_Deinit(void)
     if (nUsersOfHTTPAPI > 0)
     {
         nUsersOfHTTPAPI--;
-        LogInfo("HTTP_API has now %d users\r\n", (int)nUsersOfHTTPAPI);
+        LogInfo("HTTP_API has now %d users", (int)nUsersOfHTTPAPI);
         if (nUsersOfHTTPAPI == 0)
         {
-            LogInfo("Deinitializing HTTP_API\r\n");
+            LogInfo("Deinitializing HTTP_API");
             if (g_SessionHandle != NULL)
             {
                 (void)WinHttpCloseHandle(g_SessionHandle);
@@ -564,7 +564,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
                                                                 {
                                                                     if (BUFFER_u_char(useToReadAllResponse) != NULL)
                                                                     {
-                                                                        LogInfo("Buffer Content:\r\n %.*s\r\n", (int)BUFFER_length(useToReadAllResponse), BUFFER_u_char(useToReadAllResponse));
+                                                                        LogInfo("Buffer Content:\r\n %.*s", (int)BUFFER_length(useToReadAllResponse), BUFFER_u_char(useToReadAllResponse));
                                                                     }
                                                                     BUFFER_delete(useToReadAllResponse);
                                                                 }

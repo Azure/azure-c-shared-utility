@@ -443,7 +443,7 @@ CONCRETE_IO_HANDLE tlsio_openssl_create(void* io_create_parameters, LOGGER_LOG l
                                 if (SSL_CTX_set_default_verify_paths(result->ssl_context) != 1)
                                 {
                                     /* This is only a warning to the user. They can still specify the certificate via SetOption. */
-                                    LogInfo("WARNING: Unable to specify the default location for CA certificates on this platform.\r\n");
+                                    LogInfo("WARNING: Unable to specify the default location for CA certificates on this platform.");
                                 }
 
                                 result->ssl = SSL_new(result->ssl_context);
