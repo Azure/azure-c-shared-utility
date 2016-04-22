@@ -9,10 +9,12 @@
 
 #ifdef __cplusplus
 #include <cstddef>
+#include <cstdbool>
 extern "C"
 {
 #else
 #include <stddef.h>
+#include <stdbool.h>
 #endif
 
 typedef struct VECTOR_TAG* VECTOR_HANDLE;

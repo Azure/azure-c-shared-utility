@@ -76,13 +76,13 @@ typedef struct ARG_BUFFER_TAG
 #define MOCKABLE_FUNCTION_UMOCK_INTERNAL(return_type, name, ...) \
 	return_type name(IF(COUNT_ARG(__VA_ARGS__),,void) FOR_EACH_2_COUNTED(ARG_IN_SIGNATURE, __VA_ARGS__));
 
-#define COPY_ARG_TO_MOCK_STRUCT(arg_type, arg_name) umocktypes_copy(#arg_type, &mock_call_data->arg_name, &arg_name);
+#define COPY_ARG_TO_MOCK_STRUCT(arg_type, arg_name) umocktypes_copy(#arg_type, (void*)&mock_call_data->arg_name, (void*)&arg_name);
 #define DECLARE_MOCK_CALL_STRUCT_STACK(arg_type, arg_name) arg_type arg_name;
 #define MARK_ARG_AS_NOT_IGNORED(arg_type, arg_name) mock_call_data->C2(is_ignored_, arg_name) = 0;
 #define MARK_ARG_AS_IGNORED(arg_type, arg_name) mock_call_data->C2(is_ignored_, arg_name) = 1;
 #define CLEAR_OUT_ARG_BUFFERS(count, arg_type, arg_name) mock_call_data->out_arg_buffers[COUNT_OF(mock_call_data->out_arg_buffers) - DIV2(count)].bytes = NULL;
 #define CLEAR_VALIDATE_ARG_BUFFERS(count, arg_type, arg_name) mock_call_data->validate_arg_buffers[COUNT_OF(mock_call_data->validate_arg_buffers) - DIV2(count)].bytes = NULL;
-#define FREE_ARG_VALUE(count, arg_type, arg_name) umocktypes_free(TOSTRING(arg_type), &typed_mock_call_data->arg_name);
+#define FREE_ARG_VALUE(count, arg_type, arg_name) umocktypes_free(TOSTRING(arg_type), (void*)&typed_mock_call_data->arg_name);
 #define FREE_OUT_ARG_BUFFERS(count, arg_type, arg_name) free(typed_mock_call_data->out_arg_buffers[COUNT_OF(typed_mock_call_data->out_arg_buffers) - DIV2(count)].bytes);
 #define FREE_VALIDATE_ARG_BUFFERS(count, arg_type, arg_name) free(typed_mock_call_data->validate_arg_buffers[COUNT_OF(typed_mock_call_data->validate_arg_buffers) - DIV2(count)].bytes);
 #define ARG_IN_SIGNATURE(count, arg_type, arg_name) arg_type arg_name IFCOMMA(count)
@@ -301,7 +301,7 @@ typedef struct ARG_BUFFER_TAG
         else \
         { \
             mock_call_data->return_value_set = 1; \
-            if (umocktypes_copy(#return_type, &mock_call_data->return_value, &return_value) != 0) \
+            if (umocktypes_copy(#return_type, (void*)&mock_call_data->return_value, (void*)&return_value) != 0) \
             { \
                 UMOCK_LOG("Could not copy return value of type %s.\r\n", TOSTRING(return_type)); \
                 umock_c_indicate_error(UMOCK_C_ERROR); \
@@ -324,7 +324,7 @@ typedef struct ARG_BUFFER_TAG
         else \
         { \
             mock_call_data->fail_return_value_set = 1; \
-            if (umocktypes_copy(#return_type, &mock_call_data->fail_return_value, &return_value) != 0) \
+            if (umocktypes_copy(#return_type, (void*)&mock_call_data->fail_return_value, (void*)&return_value) != 0) \
             { \
                 UMOCK_LOG("Could not copy fail return value of type %s.\r\n", TOSTRING(return_type)); \
                 umock_c_indicate_error(UMOCK_C_ERROR); \
@@ -492,7 +492,7 @@ typedef struct ARG_BUFFER_TAG
 #define IMPLEMENT_REGISTER_GLOBAL_MOCK_RETURN(return_type, name, ...) \
     IF(IS_NOT_VOID(return_type), void C2(set_global_mock_return_, name)(return_type return_value) \
     { \
-        if (umocktypes_copy(TOSTRING(return_type), &C2(mock_call_default_result_,name), &return_value) != 0) \
+        if (umocktypes_copy(TOSTRING(return_type), (void*)&C2(mock_call_default_result_,name), (void*)&return_value) != 0) \
         { \
             UMOCK_LOG("Could not copy value of type %s when setting global mock return.\r\n", TOSTRING(return_type)); \
             umock_c_indicate_error(UMOCK_C_ERROR); \
@@ -505,7 +505,7 @@ typedef struct ARG_BUFFER_TAG
 #define IMPLEMENT_REGISTER_GLOBAL_MOCK_FAIL_RETURN(return_type, name, ...) \
     IF(IS_NOT_VOID(return_type), void C2(set_global_mock_fail_return_, name)(return_type fail_return_value) \
     { \
-        if (umocktypes_copy(TOSTRING(return_type), &C2(mock_call_fail_result_,name), &fail_return_value) != 0) \
+        if (umocktypes_copy(TOSTRING(return_type), (void*)&C2(mock_call_fail_result_,name), (void*)&fail_return_value) != 0) \
         { \
             UMOCK_LOG("Could not copy value of type %s when setting global mock fail return.\r\n", TOSTRING(return_type)); \
             umock_c_indicate_error(UMOCK_C_ERROR); \
@@ -518,8 +518,8 @@ typedef struct ARG_BUFFER_TAG
 #define IMPLEMENT_REGISTER_GLOBAL_MOCK_RETURNS(return_type, name, ...) \
     IF(IS_NOT_VOID(return_type), void C2(set_global_mock_returns_, name)(return_type return_value, return_type fail_return_value) \
     { \
-        if ((umocktypes_copy(TOSTRING(return_type), &C2(mock_call_default_result_,name), &return_value) != 0) || \
-            (umocktypes_copy(TOSTRING(return_type), &C2(mock_call_fail_result_, name), &fail_return_value) != 0)) \
+        if ((umocktypes_copy(TOSTRING(return_type), (void*)&C2(mock_call_default_result_,name), (void*)&return_value) != 0) || \
+            (umocktypes_copy(TOSTRING(return_type), (void*)&C2(mock_call_fail_result_, name), (void*)&fail_return_value) != 0)) \
         { \
             UMOCK_LOG("Could not copy value of type %s when setting global mock fail returns.\r\n", TOSTRING(return_type)); \
             umock_c_indicate_error(UMOCK_C_ERROR); \
@@ -530,7 +530,7 @@ typedef struct ARG_BUFFER_TAG
     typedef struct C2(_mock_call_modifier_, name) (*C2(validate_one_argument_func_type_, name))(void);
 
 #define COPY_RETURN_VALUE(return_type, name) \
-    if (umocktypes_copy(TOSTRING(return_type), &result, &C2(mock_call_default_result_, name)) != 0) \
+    if (umocktypes_copy(TOSTRING(return_type), (void*)&result, (void*)&C2(mock_call_default_result_, name)) != 0) \
     { \
         UMOCK_LOG("Could not copy value of type %s.\r\n", TOSTRING(return_type)); \
         umock_c_indicate_error(UMOCK_C_ERROR); \
@@ -771,7 +771,7 @@ typedef struct ARG_BUFFER_TAG
                 { \
                     if (matched_call_data->return_value_set) \
                     { \
-                        if (umocktypes_copy(#return_type, &result, &matched_call_data->return_value) != 0) \
+                        if (umocktypes_copy(#return_type, (void*)&result, (void*)&matched_call_data->return_value) != 0) \
                         { \
                             UMOCK_LOG("Could not copy a value of type %s in an actual call for %s.\r\n", TOSTRING(return_type), TOSTRING(name)); \
                             umock_c_indicate_error(UMOCK_C_ERROR); \

@@ -102,14 +102,6 @@ STRING_HANDLE my_SASToken_Create(STRING_HANDLE key, STRING_HANDLE scope, STRING_
     return (STRING_HANDLE)malloc(1);
 }
 
-static void mocksResetAllCalls(void)
-{
-    umock_c_reset_all_calls();
-
-    currentmalloc_call = 0;
-    whenShallmalloc_fail = 0;
-}
-
 static void setupSAS_Create_happy_path(void)
 {
     STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
@@ -161,13 +153,13 @@ TEST_SUITE_INITIALIZE(TestClassInitialize)
 
 TEST_SUITE_CLEANUP(TestClassCleanup)
 {
-    MicroMockDestroyMutex(g_testByTest);
+    TEST_MUTEX_DESTROY(g_testByTest);
     TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
 }
 
 TEST_FUNCTION_INITIALIZE(TestMethodInitialize)
 {
-    if (!MicroMockAcquireMutex(g_testByTest))
+    if (TEST_MUTEX_ACQUIRE(g_testByTest) != 0)
     {
         ASSERT_FAIL("our mutex is ABANDONED. Failure in test framework");
     }
@@ -175,11 +167,12 @@ TEST_FUNCTION_INITIALIZE(TestMethodInitialize)
 
 TEST_FUNCTION_CLEANUP(TestMethodCleanup)
 {
-    if (!MicroMockReleaseMutex(g_testByTest))
-    {
-        ASSERT_FAIL("failure in test framework at ReleaseMutex");
-    }
-    mocksResetAllCalls(NULL);
+    TEST_MUTEX_RELEASE(g_testByTest);
+
+    umock_c_reset_all_calls();
+
+    currentmalloc_call = 0;
+    whenShallmalloc_fail = 0;
 }
 
 TEST_FUNCTION(HTTPAPIEX_SAS_is_zero_the_epoch)

@@ -226,27 +226,36 @@ HTTPAPI_RESULT my_HTTPAPI_CloneOption(const char* optionName, const void* value,
     return result2;
 }
 
-VECTOR_HANDLE real_VECTOR_create(size_t elementSize);
-void real_VECTOR_destroy(VECTOR_HANDLE handle);
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
-/* insertion */
-int real_VECTOR_push_back(VECTOR_HANDLE handle, const void* elements, size_t numElements);
+    VECTOR_HANDLE real_VECTOR_create(size_t elementSize);
+    void real_VECTOR_destroy(VECTOR_HANDLE handle);
 
-/* removal */
-void real_VECTOR_erase(VECTOR_HANDLE handle, void* elements, size_t numElements);
-void real_VECTOR_clear(VECTOR_HANDLE handle);
+    /* insertion */
+    int real_VECTOR_push_back(VECTOR_HANDLE handle, const void* elements, size_t numElements);
 
-/* access */
-void* real_VECTOR_element(const VECTOR_HANDLE handle, size_t index);
-void* real_VECTOR_front(const VECTOR_HANDLE handle);
-void* real_VECTOR_back(const VECTOR_HANDLE handle);
-void* real_VECTOR_find_if(const VECTOR_HANDLE handle, PREDICATE_FUNCTION pred, const void* value);
+    /* removal */
+    void real_VECTOR_erase(VECTOR_HANDLE handle, void* elements, size_t numElements);
+    void real_VECTOR_clear(VECTOR_HANDLE handle);
 
-/* capacity */
-size_t real_VECTOR_size(const VECTOR_HANDLE handle);
+    /* access */
+    void* real_VECTOR_element(const VECTOR_HANDLE handle, size_t index);
+    void* real_VECTOR_front(const VECTOR_HANDLE handle);
+    void* real_VECTOR_back(const VECTOR_HANDLE handle);
+    void* real_VECTOR_find_if(const VECTOR_HANDLE handle, PREDICATE_FUNCTION pred, const void* value);
 
-int real_mallocAndStrcpy_s(char** destination, const char* source);
-int real_size_tToString(char* destination, size_t destinationSize, size_t value);
+    /* capacity */
+    size_t real_VECTOR_size(const VECTOR_HANDLE handle);
+
+    int real_mallocAndStrcpy_s(char** destination, const char* source);
+    int real_size_tToString(char* destination, size_t destinationSize, size_t value);
+
+#ifdef __cplusplus
+}
+#endif
 
 #include "azure_c_shared_utility/gballoc.h"
 
@@ -254,13 +263,13 @@ int real_size_tToString(char* destination, size_t destinationSize, size_t value)
 
 #include "azure_c_shared_utility/httpapiex.h"
 
-TEST_ENUM_TYPE_HANDLER(HTTPAPI_RESULT, HTTPAPI_RESULT_VALUES);
+TEST_DEFINE_ENUM_TYPE(HTTPAPI_RESULT, HTTPAPI_RESULT_VALUES);
 IMPLEMENT_UMOCK_C_ENUM_TYPE(HTTPAPI_RESULT, HTTPAPI_RESULT_VALUES);
-TEST_ENUM_TYPE_HANDLER(HTTPAPIEX_RESULT, HTTPAPIEX_RESULT_VALUES);
+TEST_DEFINE_ENUM_TYPE(HTTPAPIEX_RESULT, HTTPAPIEX_RESULT_VALUES);
 IMPLEMENT_UMOCK_C_ENUM_TYPE(HTTPAPIEX_RESULT, HTTPAPIEX_RESULT_VALUES);
-TEST_ENUM_TYPE_HANDLER(HTTP_HEADERS_RESULT, HTTP_HEADERS_RESULT_VALUES);
+TEST_DEFINE_ENUM_TYPE(HTTP_HEADERS_RESULT, HTTP_HEADERS_RESULT_VALUES);
 IMPLEMENT_UMOCK_C_ENUM_TYPE(HTTP_HEADERS_RESULT, HTTP_HEADERS_RESULT_VALUES);
-TEST_ENUM_TYPE_HANDLER(HTTPAPI_REQUEST_TYPE, HTTPAPI_REQUEST_TYPE_VALUES);
+TEST_DEFINE_ENUM_TYPE(HTTPAPI_REQUEST_TYPE, HTTPAPI_REQUEST_TYPE_VALUES);
 IMPLEMENT_UMOCK_C_ENUM_TYPE(HTTPAPI_REQUEST_TYPE, HTTPAPI_REQUEST_TYPE_VALUES);
 
 #define TEST_HOSTNAME "aaa"
@@ -272,7 +281,7 @@ IMPLEMENT_UMOCK_C_ENUM_TYPE(HTTPAPI_REQUEST_TYPE, HTTPAPI_REQUEST_TYPE_VALUES);
 #define TEST_HTTP_HEADERS_HANDLE (HTTP_HEADERS_HANDLE) 0x47
 #define TEST_BUFFER_REQ_BODY    (BUFFER_HANDLE) 0x48
 #define TEST_BUFFER_RESP_BODY   (BUFFER_HANDLE) 0x49
-#define TEST_BUFFER "333333"
+unsigned char* TEST_BUFFER = (unsigned char*)"333333";
 #define TEST_BUFFER_SIZE 6
 
 static TEST_MUTEX_HANDLE g_testByTest;
