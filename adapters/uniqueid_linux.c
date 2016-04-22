@@ -19,7 +19,7 @@ UNIQUEID_RESULT UniqueId_Generate(char* uid, size_t len)
     if (uid == NULL || len < 37)
     {
         result = UNIQUEID_INVALID_ARG;
-        LogError("Buffer Size is Null. (result = %s)\r\n", ENUM_TO_STRING(UNIQUEID_RESULT, result));
+        LogError("Buffer Size is Null. (result = %s)", ENUM_TO_STRING(UNIQUEID_RESULT, result));
     }
     else
     {

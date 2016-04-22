@@ -34,7 +34,7 @@ HTTP_HEADERS_HANDLE HTTPHeaders_Alloc(void)
 
     if (result == NULL)
     {
-        LogError("malloc failed\r\n");
+        LogError("malloc failed");
     }
     else
     {
@@ -42,7 +42,7 @@ HTTP_HEADERS_HANDLE HTTPHeaders_Alloc(void)
         result->headers = Map_Create(NULL);
         if (result->headers == NULL)
         {
-            LogError("Map_Create failed\r\n");
+            LogError("Map_Create failed");
             free(result);
             result = NULL;
         }
@@ -86,7 +86,7 @@ static HTTP_HEADERS_RESULT headers_ReplaceHeaderNameValuePair(HTTP_HEADERS_HANDL
         )
     {
         result = HTTP_HEADERS_INVALID_ARG;
-        LogError("invalid arg (NULL) , result= %s\r\n", ENUM_TO_STRING(HTTP_HEADERS_RESULT, result));
+        LogError("invalid arg (NULL) , result= %s", ENUM_TO_STRING(HTTP_HEADERS_RESULT, result));
     }
     else
     {
@@ -105,7 +105,7 @@ static HTTP_HEADERS_RESULT headers_ReplaceHeaderNameValuePair(HTTP_HEADERS_HANDL
         if (i < nameLen)
         {
             result = HTTP_HEADERS_INVALID_ARG;
-            LogError("(result = %s)\r\n", ENUM_TO_STRING(HTTP_HEADERS_RESULT, result));
+            LogError("(result = %s)", ENUM_TO_STRING(HTTP_HEADERS_RESULT, result));
         }
         else
         {
@@ -125,7 +125,7 @@ static HTTP_HEADERS_RESULT headers_ReplaceHeaderNameValuePair(HTTP_HEADERS_HANDL
                 {
                     /*Codes_SRS_HTTP_HEADERS_99_015:[ The function shall return HTTP_HEADERS_ALLOC_FAILED when an internal request to allocate memory fails.]*/
                     result = HTTP_HEADERS_ALLOC_FAILED;
-                    LogError("failed to malloc , result= %s\r\n", ENUM_TO_STRING(HTTP_HEADERS_RESULT, result));
+                    LogError("failed to malloc , result= %s", ENUM_TO_STRING(HTTP_HEADERS_RESULT, result));
                 }
                 else
                 {
@@ -139,7 +139,7 @@ static HTTP_HEADERS_RESULT headers_ReplaceHeaderNameValuePair(HTTP_HEADERS_HANDL
                     {
                         /*Codes_SRS_HTTP_HEADERS_99_015:[ The function shall return HTTP_HEADERS_ALLOC_FAILED when an internal request to allocate memory fails.]*/
                         result = HTTP_HEADERS_ERROR;
-                        LogError("failed to Map_AddOrUpdate, result= %s\r\n", ENUM_TO_STRING(HTTP_HEADERS_RESULT, result));
+                        LogError("failed to Map_AddOrUpdate, result= %s", ENUM_TO_STRING(HTTP_HEADERS_RESULT, result));
                     }
                     else
                     {
@@ -156,7 +156,7 @@ static HTTP_HEADERS_RESULT headers_ReplaceHeaderNameValuePair(HTTP_HEADERS_HANDL
                 {
                     /*Codes_SRS_HTTP_HEADERS_99_015:[ The function shall return HTTP_HEADERS_ALLOC_FAILED when an internal request to allocate memory fails.]*/
                     result = HTTP_HEADERS_ALLOC_FAILED;
-                    LogError("failed to Map_AddOrUpdate, result= %s\r\n", ENUM_TO_STRING(HTTP_HEADERS_RESULT, result));
+                    LogError("failed to Map_AddOrUpdate, result= %s", ENUM_TO_STRING(HTTP_HEADERS_RESULT, result));
                 }
                 else
                 {
@@ -213,7 +213,7 @@ HTTP_HEADERS_RESULT HTTPHeaders_GetHeaderCount(HTTP_HEADERS_HANDLE handle, size_
         (headerCount == NULL))
     {
         result = HTTP_HEADERS_INVALID_ARG;
-        LogError("(result = %s)\r\n", ENUM_TO_STRING(HTTP_HEADERS_RESULT, result));
+        LogError("(result = %s)", ENUM_TO_STRING(HTTP_HEADERS_RESULT, result));
     }
     else
     {
@@ -225,7 +225,7 @@ HTTP_HEADERS_RESULT HTTPHeaders_GetHeaderCount(HTTP_HEADERS_HANDLE handle, size_
         {
             /*Codes_SRS_HTTP_HEADERS_99_037:[ The function shall return HTTP_HEADERS_ERROR when an internal error occurs.]*/
             result = HTTP_HEADERS_ERROR;
-            LogError("Map_GetInternals failed, result= %s\r\n", ENUM_TO_STRING(HTTP_HEADERS_RESULT, result));
+            LogError("Map_GetInternals failed, result= %s", ENUM_TO_STRING(HTTP_HEADERS_RESULT, result));
         }
         else
         {
@@ -250,7 +250,7 @@ HTTP_HEADERS_RESULT HTTPHeaders_GetHeader(HTTP_HEADERS_HANDLE handle, size_t ind
         )
     {
         result = HTTP_HEADERS_INVALID_ARG;
-        LogError("invalid arg (NULL), result= %s\r\n", ENUM_TO_STRING(HTTP_HEADERS_RESULT, result));
+        LogError("invalid arg (NULL), result= %s", ENUM_TO_STRING(HTTP_HEADERS_RESULT, result));
     }
     /*Codes_SRS_HTTP_HEADERS_99_029:[ The function shall return HTTP_HEADERS_INVALID_ARG if index is not valid (for example, out of range) for the currently stored headers.]*/
     else
@@ -263,7 +263,7 @@ HTTP_HEADERS_RESULT HTTPHeaders_GetHeader(HTTP_HEADERS_HANDLE handle, size_t ind
         {
             /*Codes_SRS_HTTP_HEADERS_99_034:[ The function shall return HTTP_HEADERS_ERROR when an internal error occurs]*/
             result = HTTP_HEADERS_ERROR;
-            LogError("Map_GetInternals failed, result= %s\r\n", ENUM_TO_STRING(HTTP_HEADERS_RESULT, result));
+            LogError("Map_GetInternals failed, result= %s", ENUM_TO_STRING(HTTP_HEADERS_RESULT, result));
         }
         else
         {
@@ -271,7 +271,7 @@ HTTP_HEADERS_RESULT HTTPHeaders_GetHeader(HTTP_HEADERS_HANDLE handle, size_t ind
             if (index >= headerCount)
             {
                 result = HTTP_HEADERS_INVALID_ARG;
-                LogError("index out of bounds, result= %s\r\n", ENUM_TO_STRING(HTTP_HEADERS_RESULT, result));
+                LogError("index out of bounds, result= %s", ENUM_TO_STRING(HTTP_HEADERS_RESULT, result));
             }
             else
             {
@@ -280,7 +280,7 @@ HTTP_HEADERS_RESULT HTTPHeaders_GetHeader(HTTP_HEADERS_HANDLE handle, size_t ind
                 {
                     /*Codes_SRS_HTTP_HEADERS_99_034:[ The function shall return HTTP_HEADERS_ERROR when an internal error occurs]*/
                     result = HTTP_HEADERS_ERROR;
-                    LogError("unable to malloc, result= %s\r\n", ENUM_TO_STRING(HTTP_HEADERS_RESULT, result));
+                    LogError("unable to malloc, result= %s", ENUM_TO_STRING(HTTP_HEADERS_RESULT, result));
                 }
                 else
                 {

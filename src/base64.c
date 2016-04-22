@@ -180,14 +180,14 @@ BUFFER_HANDLE Base64_Decoder(const char* source)
         if ((lengthOfSource % 4) == 1)
         {
             /*Codes_SRS_BASE64_06_011: [If the source string has an invalid length for a base 64 encoded string then Base64_Decode shall return NULL.]*/
-            LogError("Invalid length Base64 string!\r\n");
+            LogError("Invalid length Base64 string!");
         }
         else
         {
             if ((result = BUFFER_new()) == NULL)
             {
                 /*Codes_SRS_BASE64_06_010: [If there is any memory allocation failure during the decode then Base64_Decode shall return NULL.]*/
-                LogError("Could not create a buffer to decoding.\r\n");
+                LogError("Could not create a buffer to decoding.");
             }
             else
             {
@@ -198,7 +198,7 @@ BUFFER_HANDLE Base64_Decoder(const char* source)
                     if (BUFFER_pre_build(result, sizeOfOutputBuffer) != 0)
                     {
                         /*Codes_SRS_BASE64_06_010: [If there is any memory allocation failure during the decode then Base64_Decode shall return NULL.]*/
-                        LogError("Could not prebuild a buffer for base 64 decoding.\r\n");
+                        LogError("Could not prebuild a buffer for base 64 decoding.");
                         BUFFER_delete(result);
                         result = NULL;
                     }
@@ -227,7 +227,7 @@ static STRING_HANDLE Base64_Encode_Internal(const unsigned char* source, size_t 
     if (encoded == NULL)
     {
         result = NULL;
-        LogError("Base64_Encode:: Allocation failed.\r\n");
+        LogError("Base64_Encode:: Allocation failed.");
     }
     else
     {
@@ -288,7 +288,7 @@ static STRING_HANDLE Base64_Encode_Internal(const unsigned char* source, size_t 
         if (result == NULL)
         {
             free(encoded);
-            LogError("Base64_Encode:: Allocation failed for return value.\r\n");
+            LogError("Base64_Encode:: Allocation failed for return value.");
         }
     }
     return result;
@@ -328,7 +328,7 @@ STRING_HANDLE Base64_Encode(BUFFER_HANDLE input)
     if (input == NULL)
     {
         result = NULL;
-        LogError("Base64_Encode:: NULL input\r\n");
+        LogError("Base64_Encode:: NULL input");
     }
     else
     {
@@ -338,7 +338,7 @@ STRING_HANDLE Base64_Encode(BUFFER_HANDLE input)
             (BUFFER_size(input, &inputSize) != 0))
         {
             result = NULL;
-            LogError("Base64_Encode:: BUFFER_routines failure.\r\n");
+            LogError("Base64_Encode:: BUFFER_routines failure.");
         }
         else
         {

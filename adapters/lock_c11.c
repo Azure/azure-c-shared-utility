@@ -24,7 +24,7 @@ LOCK_HANDLE Lock_Init(void)
             /*SRS_LOCK_99_003:[ On Error Should return NULL]*/
             free(lock_mtx);
             lock_mtx = NULL;
-            LogError("Failed to initialize mutex\r\n");
+            LogError("Failed to initialize mutex");
         }
     }
     
@@ -39,7 +39,7 @@ LOCK_RESULT Lock(LOCK_HANDLE handle)
     {
         /*SRS_LOCK_99_007:[ This API on NULL handle passed returns LOCK_ERROR]*/
         result = LOCK_ERROR;
-        LogError("(result = %s)\r\n", ENUM_TO_STRING(LOCK_RESULT, result));
+        LogError("(result = %s)", ENUM_TO_STRING(LOCK_RESULT, result));
     }
     else
     {
@@ -52,7 +52,7 @@ LOCK_RESULT Lock(LOCK_HANDLE handle)
         {
             /*SRS_LOCK_99_006:[ This API on error should return LOCK_ERROR]*/
             result = LOCK_ERROR;
-            LogError("(result = %s)\r\n", ENUM_TO_STRING(LOCK_RESULT, result));
+            LogError("(result = %s)", ENUM_TO_STRING(LOCK_RESULT, result));
         }
     }
     return result;
@@ -65,7 +65,7 @@ LOCK_RESULT Unlock(LOCK_HANDLE handle)
     {
         /*SRS_LOCK_99_011:[ This API on NULL handle passed returns LOCK_ERROR]*/
         result = LOCK_ERROR;
-        LogError("(result = %s)\r\n", ENUM_TO_STRING(LOCK_RESULT, result));
+        LogError("(result = %s)", ENUM_TO_STRING(LOCK_RESULT, result));
     }
     else
     {
@@ -78,7 +78,7 @@ LOCK_RESULT Unlock(LOCK_HANDLE handle)
         {
             /*SRS_LOCK_99_010:[ This API on error should return LOCK_ERROR]*/
             result = LOCK_ERROR;
-            LogError("(result = %s)\r\n", ENUM_TO_STRING(LOCK_RESULT, result));
+            LogError("(result = %s)", ENUM_TO_STRING(LOCK_RESULT, result));
         }
     }
     return result;
@@ -91,7 +91,7 @@ LOCK_RESULT Lock_Deinit(LOCK_HANDLE handle)
     {
         /*SRS_LOCK_99_013:[ This API on NULL handle passed returns LOCK_ERROR]*/
         result = LOCK_ERROR;
-        LogError("(result = %s)\r\n", ENUM_TO_STRING(LOCK_RESULT, result));
+        LogError("(result = %s)", ENUM_TO_STRING(LOCK_RESULT, result));
     }
     else
     {

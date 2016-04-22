@@ -21,12 +21,17 @@ extern "C" {
 
 #define LOG_LINE 0x01
 
-#define LogInfo(...) (void)printf("Info: " __VA_ARGS__)
+//Adding a do while(0) to force the user to add ; after LogInfo and LogError.
+#if defined _MSC_VER
+#define LogInfo(FORMAT, ...) do{(void)fprintf(stdout,"Info: " FORMAT "\r\n", __VA_ARGS__); }while(0)
+#else
+#define LogInfo(FORMAT, ...) do{(void)fprintf(stdout,"Info: " FORMAT "\r\n", ##__VA_ARGS__); }while(0)
+#endif
 
 #if defined _MSC_VER
-#define LogError(FORMAT, ...) { time_t t = time(NULL); (void)fprintf(stderr,"Error: Time:%.24s File:%s Func:%s Line:%d " FORMAT, ctime(&t), __FILE__, __FUNCDNAME__, __LINE__, __VA_ARGS__); }
+#define LogError(FORMAT, ...) do{ time_t t = time(NULL); (void)fprintf(stderr,"Error: Time:%.24s File:%s Func:%s Line:%d " FORMAT "\r\n", ctime(&t), __FILE__, __FUNCDNAME__, __LINE__, __VA_ARGS__); }while(0)
 #else
-#define LogError(FORMAT, ...) { time_t t = time(NULL); (void)fprintf(stderr,"Error: Time:%.24s File:%s Func:%s Line:%d " FORMAT, ctime(&t), __FILE__, __func__, __LINE__, ##__VA_ARGS__); }
+#define LogError(FORMAT, ...) do{ time_t t = time(NULL); (void)fprintf(stderr,"Error: Time:%.24s File:%s Func:%s Line:%d " FORMAT "\r\n", ctime(&t), __FILE__, __func__, __LINE__, ##__VA_ARGS__); }while(0)
 #endif
 
 #ifdef __cplusplus

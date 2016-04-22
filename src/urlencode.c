@@ -311,7 +311,7 @@ STRING_HANDLE URL_Encode(STRING_HANDLE input)
     {
         /*Codes_SRS_URL_ENCODE_06_001: [If input is NULL then URL_Encode will return NULL.]*/
         result = NULL;
-        LogError("URL_Encode:: NULL input\r\n");
+        LogError("URL_Encode:: NULL input");
     }
     else
     {
@@ -330,7 +330,7 @@ STRING_HANDLE URL_Encode(STRING_HANDLE input)
         {
             /*Codes_SRS_URL_ENCODE_06_002: [If an error occurs during the encoding of input then URL_Encode will return NULL.]*/
             result = NULL;
-            LogError("URL_Encode:: MALLOC failure on encode.\r\n");
+            LogError("URL_Encode:: MALLOC failure on encode.");
         }
         else
         {

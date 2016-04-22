@@ -32,7 +32,7 @@ STRING_HANDLE SASToken_Create(STRING_HANDLE key, STRING_HANDLE scope, STRING_HAN
         (scope == NULL) ||
         (keyName == NULL))
     {
-        LogError("Invalid Parameter to SASToken_Create. handle key: %p, handle scope: %p, handle keyName: %p\r\n", key, scope, keyName);
+        LogError("Invalid Parameter to SASToken_Create. handle key: %p, handle scope: %p, handle keyName: %p", key, scope, keyName);
     }
     else
     {
@@ -41,14 +41,14 @@ STRING_HANDLE SASToken_Create(STRING_HANDLE key, STRING_HANDLE scope, STRING_HAN
         if ((decodedKey = Base64_Decoder(STRING_c_str(key))) == NULL)
         {
             /*Codes_SRS_SASTOKEN_06_030: [If there is an error in the decoding then SASToken_Create shall return NULL.]*/
-            LogError("Unable to decode the key for generating the SAS.\r\n");
+            LogError("Unable to decode the key for generating the SAS.");
         }
         else
         {
             /*Codes_SRS_SASTOKEN_06_026: [If the conversion to string form fails for any reason then SASToken_Create shall return NULL.]*/
             if (size_tToString(tokenExpirationTime, sizeof(tokenExpirationTime), expiry) != 0)
             {
-                LogError("For some reason converting seconds to a string failed.  No SAS can be generated.\r\n");
+                LogError("For some reason converting seconds to a string failed.  No SAS can be generated.");
             }
             else
             {
@@ -58,7 +58,7 @@ STRING_HANDLE SASToken_Create(STRING_HANDLE key, STRING_HANDLE scope, STRING_HAN
                     ((toBeHashed = STRING_new()) == NULL) ||
                     ((result = STRING_new()) == NULL))
                 {
-                    LogError("Unable to allocate memory to prepare SAS token.\r\n");
+                    LogError("Unable to allocate memory to prepare SAS token.");
                 }
                 else
                 {
@@ -69,7 +69,7 @@ STRING_HANDLE SASToken_Create(STRING_HANDLE key, STRING_HANDLE scope, STRING_HAN
                         (STRING_concat(toBeHashed, "\n") != 0) ||
                         (STRING_concat(toBeHashed, tokenExpirationTime) != 0))
                     {
-                        LogError("Unable to build the input to the HMAC to prepare SAS token.\r\n");
+                        LogError("Unable to build the input to the HMAC to prepare SAS token.");
                         STRING_delete(result);
                         result = NULL;
                     }
@@ -102,7 +102,7 @@ STRING_HANDLE SASToken_Create(STRING_HANDLE key, STRING_HANDLE scope, STRING_HAN
                             (STRING_concat(result, "&skn=") != 0) ||
                             (STRING_concat_with_STRING(result, keyName) != 0))
                         {
-                            LogError("Unable to build the SAS token.\r\n");
+                            LogError("Unable to build the SAS token.");
                             STRING_delete(result);
                             result = NULL;
                         }

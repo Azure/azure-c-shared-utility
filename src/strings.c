@@ -180,7 +180,7 @@ STRING_HANDLE STRING_new_JSON(const char* source)
     {
         /*Codes_SRS_STRING_02_011: [If source is NULL then STRING_new_JSON shall return NULL.] */
         result = NULL;
-        LogError("invalid arg (NULL)\r\n");
+        LogError("invalid arg (NULL)");
     }
     else
     {
@@ -216,21 +216,21 @@ STRING_HANDLE STRING_new_JSON(const char* source)
         if (i < vlen)
         {
             result = NULL;
-            LogError("invalid character in input string\r\n");
+            LogError("invalid character in input string");
         }
         else
         {
             if ((result = (STRING*)malloc(sizeof(STRING))) == NULL)
             {
                 /*Codes_SRS_STRING_02_021: [If the complete JSON representation cannot be produced, then STRING_new_JSON shall fail and return NULL.] */
-                LogError("malloc failure\r\n");
+                LogError("malloc failure");
             }
             else if ((result->s = (char*)malloc(vlen + 5 * nControlCharacters + nEscapeCharacters + 3)) == NULL)
             {
                 /*Codes_SRS_STRING_02_021: [If the complete JSON representation cannot be produced, then STRING_new_JSON shall fail and return NULL.] */
                 free(result);
                 result = NULL;
-                LogError("malloc failed\r\n");
+                LogError("malloc failed");
             }
             else
             {
@@ -549,7 +549,7 @@ STRING_HANDLE STRING_construct_n(const char* psz, size_t n)
     if (psz == NULL)
     {
         result = NULL;
-        LogError("invalid arg (NULL)\r\n");
+        LogError("invalid arg (NULL)");
     }
     else
     {
@@ -558,7 +558,7 @@ STRING_HANDLE STRING_construct_n(const char* psz, size_t n)
         if (n > len)
         {
             result = NULL;
-            LogError("invalig arg (n is bigger than the size of the string)\r\n");
+            LogError("invalig arg (n is bigger than the size of the string)");
         }
         else
         {

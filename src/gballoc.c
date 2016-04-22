@@ -88,7 +88,7 @@ void* gballoc_malloc(size_t size)
     else if (LOCK_OK != Lock(gballocThreadSafeLock))
     {
         /* Codes_SRS_GBALLOC_01_048: [If acquiring the lock fails, gballoc_malloc shall return NULL.] */
-        LogError("Failed to get the Lock.\r\n");
+        LogError("Failed to get the Lock.");
         result = NULL;
     }
     else
@@ -143,7 +143,7 @@ void* gballoc_calloc(size_t nmemb, size_t size)
     else if (LOCK_OK != Lock(gballocThreadSafeLock))
     {
         /* Codes_SRS_GBALLOC_01_046: [If acquiring the lock fails, gballoc_calloc shall return NULL.] */
-        LogError("Failed to get the Lock.\r\n");
+        LogError("Failed to get the Lock.");
         result = NULL;
     }
     else
@@ -200,7 +200,7 @@ void* gballoc_realloc(void* ptr, size_t size)
     else if (LOCK_OK != Lock(gballocThreadSafeLock))
     {
         /* Codes_SRS_GBALLOC_01_047: [If acquiring the lock fails, gballoc_realloc shall return NULL.] */
-        LogError("Failed to get the Lock.\r\n");
+        LogError("Failed to get the Lock.");
         result = NULL;
     }
     else
@@ -293,7 +293,7 @@ void gballoc_free(void* ptr)
     else if (LOCK_OK != Lock(gballocThreadSafeLock))
     {
         /* Codes_SRS_GBALLOC_01_049: [If acquiring the lock fails, gballoc_free shall do nothing.] */
-        LogError("Failed to get the Lock.\r\n");
+        LogError("Failed to get the Lock.");
     }
     else
     {
@@ -327,7 +327,7 @@ void gballoc_free(void* ptr)
         /* Codes_SRS_GBALLOC_01_019: [When the ptr pointer cannot be found in the pointers tracked by gballoc, gballoc_free shall not free any memory.] */
 
         /* could not find the allocation */
-        LogError("Could not free allocation for address %p (not found)\r\n", ptr);
+        LogError("Could not free allocation for address %p (not found)", ptr);
     }
         (void)Unlock(gballocThreadSafeLock);
     }
@@ -340,14 +340,14 @@ size_t gballoc_getMaximumMemoryUsed(void)
     /* Codes_SRS_GBALLOC_01_038: [If gballoc was not initialized gballoc_getMaximumMemoryUsed shall return MAX_INT_SIZE.] */
     if (gballocState != GBALLOC_STATE_INIT)
     {
-        LogError("gballoc is not initialized.\r\n");
+        LogError("gballoc is not initialized.");
         result = SIZE_MAX;
     }
     /* Codes_SRS_GBALLOC_01_034: [gballoc_getMaximumMemoryUsed shall ensure thread safety by using the lock created by gballoc_Init.]  */
     else if (LOCK_OK != Lock(gballocThreadSafeLock))
     {
         /* Codes_SRS_GBALLOC_01_050: [If the lock cannot be acquired, gballoc_getMaximumMemoryUsed shall return SIZE_MAX.]  */
-        LogError("Failed to get the Lock.\r\n");
+        LogError("Failed to get the Lock.");
         result = SIZE_MAX;
     }
     else
@@ -367,14 +367,14 @@ size_t gballoc_getCurrentMemoryUsed(void)
     /* Codes_SRS_GBALLOC_01_044: [If gballoc was not initialized gballoc_getCurrentMemoryUsed shall return SIZE_MAX.] */
     if (gballocState != GBALLOC_STATE_INIT)
     {
-        LogError("gballoc is not initialized.\r\n");
+        LogError("gballoc is not initialized.");
         result = SIZE_MAX;
     }
     /* Codes_SRS_GBALLOC_01_036: [gballoc_getCurrentMemoryUsed shall ensure thread safety by using the lock created by gballoc_Init.]*/
     else if (LOCK_OK != Lock(gballocThreadSafeLock))
     {
         /* Codes_SRS_GBALLOC_01_051: [If the lock cannot be acquired, gballoc_getCurrentMemoryUsed shall return SIZE_MAX.] */
-        LogError("Failed to get the Lock.\r\n");
+        LogError("Failed to get the Lock.");
         result = SIZE_MAX;
     }
     else

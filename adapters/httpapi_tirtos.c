@@ -64,20 +64,20 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
 
     ret = HTTPCli_initSockAddr(&addr, hostName, 0);
     if (ret < 0) {
-		LogError("HTTPCli_initSockAddr failed, ret=%d\r\n", ret);
+		LogError("HTTPCli_initSockAddr failed, ret=%d", ret);
         return (NULL);
     }
     ((struct sockaddr_in *) (&addr))->sin_port = htons(HTTPStd_SECURE_PORT);
 
     cli = HTTPCli_create();
     if (cli == NULL) {
-		LogError("HTTPCli_create failed\r\n");
+		LogError("HTTPCli_create failed");
         return (NULL);
     }
 
     ret = HTTPCli_connect(cli, &addr, HTTPCli_TYPE_TLS, NULL);
     if (ret < 0) {
-		LogError("HTTPCli_connect failed, ret=%d\r\n", ret);
+		LogError("HTTPCli_connect failed, ret=%d", ret);
         HTTPCli_delete(&cli);
         return (NULL);
     }
@@ -116,7 +116,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle,
 
     if ((cli == NULL) || (method == NULL) || (relativePath == NULL)
             || (statusCode == NULL) || (responseHeadersHandle == NULL)) {
-		LogError("Invalid arguments: handle=%p, requestType=%d, relativePath=%p, statusCode=%p, responseHeadersHandle=%p\r\n",
+		LogError("Invalid arguments: handle=%p, requestType=%d, relativePath=%p, statusCode=%p, responseHeadersHandle=%p",
 			handle, (int)requestType, relativePath, statusCode, responseHeadersHandle);
         return (HTTPAPI_INVALID_ARG);
     }
@@ -129,7 +129,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle,
     /* Send the request line */
     ret = HTTPCli_sendRequest(cli, method, relativePath, true);
     if (ret < 0) {
-		LogError("HTTPCli_sendRequest failed, ret=%d\r\n", ret);
+		LogError("HTTPCli_sendRequest failed, ret=%d", ret);
         return (HTTPAPI_SEND_REQUEST_FAILED);
     }
 
@@ -137,7 +137,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle,
     while (cnt--) {
         ret = HTTPHeaders_GetHeader(httpHeadersHandle, cnt, &hname);
         if (ret != HTTP_HEADERS_OK) {
-			LogError("Cannot get request header %d\r\n", cnt);
+			LogError("Cannot get request header %d", cnt);
             return (HTTPAPI_QUERY_HEADERS_FAILED);
         }
 
@@ -151,7 +151,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle,
         hname = NULL;
 
         if (ret < 0) {
-			LogError("HTTP send field failed, ret=%d\r\n", ret);
+			LogError("HTTP send field failed, ret=%d", ret);
 			return (HTTPAPI_SEND_REQUEST_FAILED);
         }
     }
@@ -159,7 +159,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle,
     /* Send the last header and request body */
     ret = HTTPCli_sendField(cli, NULL, NULL, true);
     if (ret < 0) {
-		LogError("HTTP send empty field failed, ret=%d\r\n", ret);
+		LogError("HTTP send empty field failed, ret=%d", ret);
         return (HTTPAPI_SEND_REQUEST_FAILED);
     }
 
@@ -167,7 +167,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle,
         ret = HTTPCli_sendRequestBody(cli, (const char *)content,
                 contentLength);
         if (ret < 0) {
-			LogError("HTTP send request body failed, ret=%d\r\n", ret);
+			LogError("HTTP send request body failed, ret=%d", ret);
             return (HTTPAPI_SEND_REQUEST_FAILED);
         }
     }
@@ -175,7 +175,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle,
     /* Get the response status code */
     ret = HTTPCli_getResponseStatus(cli);
     if (ret < 0) {
-		LogError("HTTP receive response failed, ret=%d\r\n", ret);
+		LogError("HTTP receive response failed, ret=%d", ret);
         return (HTTPAPI_RECEIVE_RESPONSE_FAILED);
     }
     *statusCode = (unsigned int)ret;
@@ -188,7 +188,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle,
         ret = HTTPCli_readResponseHeader(cli, contentBuf, CONTENT_BUF_LEN,
             &moreFlag);
         if (ret < 0) {
-			LogError("HTTP read response header failed, ret=%d\r\n", ret);
+			LogError("HTTP read response header failed, ret=%d", ret);
             ret = HTTPAPI_RECEIVE_RESPONSE_FAILED;
             goto headersDone;
         }
@@ -200,7 +200,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle,
         if (cnt < offset + ret) {
             hname = (char *)realloc(hname, offset + ret);
             if (hname == NULL) {
-				LogError("Failed reallocating memory\r\n");
+				LogError("Failed reallocating memory");
                 ret = HTTPAPI_ALLOC_FAILED;
                 goto headersDone;
             }
@@ -216,7 +216,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle,
 
         ret = splitHeader(hname, &hvalue);
         if (ret < 0) {
-			LogError("HTTP split header failed, ret=%d\r\n", ret);
+			LogError("HTTP split header failed, ret=%d", ret);
             ret = HTTPAPI_HTTP_HEADERS_FAILED;
             goto headersDone;
         }
@@ -224,7 +224,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle,
         ret = HTTPHeaders_AddHeaderNameValuePair(responseHeadersHandle,
                 hname, hvalue);
         if (ret != HTTP_HEADERS_OK) {
-			LogError("Adding the response header failed\r\n");
+			LogError("Adding the response header failed");
             ret = HTTPAPI_HTTP_HEADERS_FAILED;
             goto headersDone;
         }
@@ -248,7 +248,7 @@ headersDone:
                     &moreFlag);
 
             if (ret < 0) {
-				LogError("HTTP read response body failed, ret=%d\r\n", ret);
+				LogError("HTTP read response body failed, ret=%d", ret);
                 ret = HTTPAPI_RECEIVE_RESPONSE_FAILED;
                 goto contentDone;
             }
@@ -257,7 +257,7 @@ headersDone:
                 cnt = ret;
                 ret = BUFFER_enlarge(responseContent, cnt); 
                 if (ret != 0) {
-					LogError("Failed enlarging response buffer\r\n");
+					LogError("Failed enlarging response buffer");
                     ret = HTTPAPI_ALLOC_FAILED;
                     goto contentDone;
                 }
@@ -265,7 +265,7 @@ headersDone:
                 ret = BUFFER_content(responseContent,
                         (const unsigned char **)&hname);
                 if (ret != 0) {
-					LogError("Failed getting the response buffer content\r\n");
+					LogError("Failed getting the response buffer content");
                     ret = HTTPAPI_ALLOC_FAILED;
                     goto contentDone;
                 }

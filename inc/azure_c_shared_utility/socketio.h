@@ -22,6 +22,8 @@ typedef struct SOCKETIO_CONFIG_TAG
     void* accepted_socket;
 } SOCKETIO_CONFIG;
 
+#define RECEIVE_BYTES_VALUE     64
+
 MOCKABLE_FUNCTION(CONCRETE_IO_HANDLE, socketio_create, void*, io_create_parameters, LOGGER_LOG, logger_log);
 MOCKABLE_FUNCTION(void, socketio_destroy, CONCRETE_IO_HANDLE, socket_io);
 MOCKABLE_FUNCTION(int, socketio_open, CONCRETE_IO_HANDLE, socket_io, ON_IO_OPEN_COMPLETE, on_io_open_complete, void*, on_io_open_complete_context, ON_BYTES_RECEIVED, on_bytes_received, void*, on_bytes_received_context, ON_IO_ERROR, on_io_error, void*, on_io_error_context);

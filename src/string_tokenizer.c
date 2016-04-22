@@ -32,7 +32,7 @@ STRING_TOKENIZER_HANDLE STRING_TOKENIZER_create(STRING_HANDLE handle)
     /* Codes_SRS_STRING_04_001: [STRING_TOKENIZER_create shall return an NULL STRING_TOKENIZER_HANDLE if parameter handle is NULL] */
     if (handle == NULL)
     {
-        LogError("Invalid Argument. Handle cannot be NULL.\r\n");
+        LogError("Invalid Argument. Handle cannot be NULL.");
         result = NULL;
     }
     else
@@ -52,17 +52,17 @@ extern STRING_TOKENIZER_HANDLE STRING_TOKENIZER_create_from_char(const char* inp
     /* Codes_SRS_STRING_07_001: [STRING_TOKENIZER_create shall return an NULL STRING_TOKENIZER_HANDLE if parameter input is NULL] */
     if (input == NULL)
     {
-        LogError("Invalid Argument. Handle cannot be NULL.\r\n");
+        LogError("Invalid Argument. Handle cannot be NULL.");
         result = NULL;
     }
     /* Codes_SRS_STRING_07_002: [STRING_TOKENIZER_create shall allocate a new STRING_TOKENIZER_HANDLE having the content of the STRING_HANDLE copied and current position pointing at the beginning of the string] */
     else if ((result = (STRING_TOKEN*)malloc(sizeof(STRING_TOKEN))) == NULL)
     {
-        LogError("Memory Allocation failed. Cannot allocate STRING_TOKENIZER.\r\n");
+        LogError("Memory Allocation failed. Cannot allocate STRING_TOKENIZER.");
     }
     else if ((mallocAndStrcpy_s(&inputStringToMalloc, input)) != 0)
     {
-        LogError("Memory Allocation Failed. Cannot allocate and copy string Content.\r\n");
+        LogError("Memory Allocation Failed. Cannot allocate and copy string Content.");
         free(result);
         result = NULL;
     }
@@ -98,7 +98,7 @@ int STRING_TOKENIZER_get_next_token(STRING_TOKENIZER_HANDLE tokenizer, STRING_HA
         }
         else if (delimitterSize == 0)
         {
-            LogError("Empty delimiters parameter.\r\n");
+            LogError("Empty delimiters parameter.");
             result = __LINE__;
         }
         else
@@ -169,7 +169,7 @@ int STRING_TOKENIZER_get_next_token(STRING_TOKENIZER_HANDLE tokenizer, STRING_HA
                 //copy here the string to output. 
                 if (STRING_copy_n(output, token->currentPos, amountOfCharactersToCopy) != 0)
                 {
-                    LogError("Problem copying token to output String.\r\n");
+                    LogError("Problem copying token to output String.");
                     result = __LINE__;
                 }
                 else

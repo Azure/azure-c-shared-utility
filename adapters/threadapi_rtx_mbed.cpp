@@ -45,7 +45,7 @@ THREADAPI_RESULT ThreadAPI_Create(THREAD_HANDLE* threadHandle, THREAD_START_FUNC
         (func == NULL))
     {
         result = THREADAPI_INVALID_ARG;
-        LogError("(result = %s)\r\n", ENUM_TO_STRING(THREADAPI_RESULT, result));
+        LogError("(result = %s)", ENUM_TO_STRING(THREADAPI_RESULT, result));
     }
     else
     {
@@ -71,13 +71,13 @@ THREADAPI_RESULT ThreadAPI_Create(THREAD_HANDLE* threadHandle, THREAD_START_FUNC
             else
             {
                 result = THREADAPI_NO_MEMORY;
-                LogError("(result = %s)\r\n", ENUM_TO_STRING(THREADAPI_RESULT, result));
+                LogError("(result = %s)", ENUM_TO_STRING(THREADAPI_RESULT, result));
             }
         }
         else
         {
             result = THREADAPI_NO_MEMORY;
-            LogError("(result = %s)\r\n", ENUM_TO_STRING(THREADAPI_RESULT, result));
+            LogError("(result = %s)", ENUM_TO_STRING(THREADAPI_RESULT, result));
         }
     }
 
@@ -102,13 +102,13 @@ THREADAPI_RESULT ThreadAPI_Join(THREAD_HANDLE thr, int *res)
         else
         {
             result = THREADAPI_ERROR;
-            LogError("(result = %s)\r\n", ENUM_TO_STRING(THREADAPI_RESULT, result));
+            LogError("(result = %s)", ENUM_TO_STRING(THREADAPI_RESULT, result));
         }
     }
     else
     {
         result = THREADAPI_INVALID_ARG;
-        LogError("(result = %s)\r\n", ENUM_TO_STRING(THREADAPI_RESULT, result));
+        LogError("(result = %s)", ENUM_TO_STRING(THREADAPI_RESULT, result));
     }
     return result;
 }

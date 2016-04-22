@@ -32,7 +32,7 @@ TICK_COUNTER_HANDLE tickcounter_create(void)
             result->backup_time_value = time(NULL);
             if (result->backup_time_value == INVALID_TIME_VALUE)
             {
-                LogError("tickcounter failed: time return INVALID_TIME.\r\n");
+                LogError("tickcounter failed: time return INVALID_TIME.");
                 free(result);
                 result = NULL;
             }
@@ -45,7 +45,7 @@ TICK_COUNTER_HANDLE tickcounter_create(void)
         {
             if (!QueryPerformanceCounter(&result->last_perf_counter))
             {
-                LogError("tickcounter failed: QueryPerformanceCounter failed %d.\r\n", GetLastError());
+                LogError("tickcounter failed: QueryPerformanceCounter failed %d.", GetLastError());
                 free(result);
                 result = NULL;
             }
@@ -72,7 +72,7 @@ int tickcounter_get_current_ms(TICK_COUNTER_HANDLE tick_counter, uint64_t* curre
     int result;
     if (tick_counter == NULL || current_ms == NULL)
     {
-        LogError("tickcounter failed: Invalid Arguments.\r\n");
+        LogError("tickcounter failed: Invalid Arguments.");
         result = __LINE__;
     }
     else
@@ -84,7 +84,7 @@ int tickcounter_get_current_ms(TICK_COUNTER_HANDLE tick_counter, uint64_t* curre
             LARGE_INTEGER curr_perf_item;
             if (!QueryPerformanceCounter(&curr_perf_item))
             {
-                LogError("tickcounter failed: QueryPerformanceCounter failed %d.\r\n", GetLastError() );
+                LogError("tickcounter failed: QueryPerformanceCounter failed %d.", GetLastError() );
                 result = __LINE__;
             }
             else
