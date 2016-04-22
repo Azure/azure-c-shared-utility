@@ -61,7 +61,8 @@ static int PORT_NUM = 80;
 static bool list_add_called = false;
 static const char* HOSTNAME_ARG = "hostname";
 static size_t callbackContext = 11;
-static ADDRINFO TEST_ADDR_INFO = { AI_PASSIVE, AF_INET, SOCK_STREAM, IPPROTO_TCP, 128, NULL, (struct sockaddr*)0x11, NULL };
+static struct sockaddr test_sock_addr = { 0 };
+static ADDRINFO TEST_ADDR_INFO = { AI_PASSIVE, AF_INET, SOCK_STREAM, IPPROTO_TCP, 128, NULL, &test_sock_addr, NULL };
 
 static const char* TEST_BUFFER_VALUE = "test_buffer_value";
 #define TEST_BUFFER_SIZE    17
@@ -71,7 +72,7 @@ MOCK_FUNCTION_WITH_CODE(WSAAPI, SOCKET, socket, int, af, int, type, int, protoco
 MOCK_FUNCTION_END(test_socket)
 MOCK_FUNCTION_WITH_CODE(WSAAPI, int, closesocket, SOCKET, s)
 MOCK_FUNCTION_END(0)
-MOCK_FUNCTION_WITH_CODE(WSAAPI, int, connect, SOCKET, s, const struct sockaddr FAR*, name, int, namelen)
+MOCK_FUNCTION_WITH_CODE(WSAAPI, int, connect, SOCKET, s, const struct sockaddr*, name, int, namelen)
 MOCK_FUNCTION_END(0)
 MOCK_FUNCTION_WITH_CODE(WSAAPI, int, recv, SOCKET, s, char*, buf, int, len, int, flags)
     if (g_socket_recv_size_value >= 0)
@@ -199,6 +200,125 @@ static void test_on_io_error(void* context)
     (void)context;
 }
 
+char* umocktypes_stringify_const_ADDRINFOA_ptr(const ADDRINFOA** value)
+{
+    char* result = NULL;
+    char temp_buffer[256];
+    int length;
+
+    length = sprintf(temp_buffer, "{ ai_flags = %d, ai_family = %d, ai_socktype = %d, ai_protocol = %d, ai_addrlen = %u, ai_canonname = %s", (*value)->ai_flags, (*value)->ai_family, (*value)->ai_socktype, (*value)->ai_protocol, (unsigned int)((*value)->ai_addrlen), (*value)->ai_canonname);
+    if (length > 0)
+    {
+        result = malloc(strlen(temp_buffer) + 1);
+        if (result != NULL)
+        {
+            (void)memcpy(result, temp_buffer, strlen(temp_buffer) + 1);
+        }
+    }
+
+    return result;
+}
+
+int umocktypes_are_equal_const_ADDRINFOA_ptr(const ADDRINFOA** left, const ADDRINFOA** right)
+{
+    int result = 1;
+    if (((*left)->ai_flags != (*right)->ai_flags) ||
+        ((*left)->ai_family != (*right)->ai_family) ||
+        ((*left)->ai_socktype != (*right)->ai_socktype) ||
+        ((*left)->ai_protocol != (*right)->ai_protocol) ||
+        ((((*left)->ai_canonname == NULL) || ((*right)->ai_canonname == NULL)) && ((*left)->ai_canonname != (*right)->ai_canonname)) ||
+        (strcmp((*left)->ai_canonname, (*right)->ai_canonname) != 0))
+    {
+        result = 0;
+    }
+
+    return result;
+}
+
+int umocktypes_copy_const_ADDRINFOA_ptr(ADDRINFOA** destination, const ADDRINFOA** source)
+{
+    int result;
+
+    *destination = (ADDRINFOA*)malloc(sizeof(ADDRINFOA));
+    if (*destination == NULL)
+    {
+        result = __LINE__;
+    }
+    else
+    {
+        (*destination)->ai_flags = (*source)->ai_flags;
+        (*destination)->ai_family = (*source)->ai_family;
+        (*destination)->ai_socktype = (*source)->ai_socktype;
+        (*destination)->ai_protocol = (*source)->ai_protocol;
+        (*destination)->ai_canonname = (*source)->ai_canonname;
+
+        result = 0;
+    }
+
+    return result;
+}
+
+void umocktypes_free_const_ADDRINFOA_ptr(const ADDRINFOA** value)
+{
+    free(*value);
+}
+
+char* umocktypes_stringify_const_struct_sockaddr_ptr(const struct sockaddr** value)
+{
+    char* result = NULL;
+    char temp_buffer[256];
+    int length;
+
+    length = sprintf(temp_buffer, "{ sa_family = %u, sa_data = ... }", (unsigned int)((*value)->sa_family));
+    if (length > 0)
+    {
+        result = malloc(strlen(temp_buffer) + 1);
+        if (result != NULL)
+        {
+            (void)memcpy(result, temp_buffer, strlen(temp_buffer) + 1);
+        }
+    }
+
+    return result;
+}
+
+int umocktypes_are_equal_const_struct_sockaddr_ptr(const struct sockaddr** left, const struct sockaddr** right)
+{
+    int result = 1;
+    if (((*left)->sa_family != (*left)->sa_family) ||
+        (memcmp((*left)->sa_data, (*right)->sa_data, sizeof((*left)->sa_data) != 0)))
+    {
+        result = 0;
+    }
+
+    return result;
+}
+
+int umocktypes_copy_const_struct_sockaddr_ptr(struct sockaddr** destination, const struct sockaddr** source)
+{
+    int result;
+
+    *destination = (struct sockaddr*)malloc(sizeof(struct sockaddr));
+    if (*destination == NULL)
+    {
+        result = __LINE__;
+    }
+    else
+    {
+        (*destination)->sa_family = (*source)->sa_family;
+        memcpy((*destination)->sa_data, (*source)->sa_data, sizeof((*source)->sa_data));
+
+        result = 0;
+    }
+
+    return result;
+}
+
+void umocktypes_free_const_struct_sockaddr_ptr(const struct sockaddr** value)
+{
+    free(*value);
+}
+
 /* after this point malloc is gballoc */
 #include "azure_c_shared_utility/gballoc.h"
 
@@ -221,14 +341,19 @@ TEST_SUITE_INITIALIZE(suite_init)
 
     umock_c_init(on_umock_c_error);
 
+    result = umocktypes_charptr_register_types();
+    ASSERT_ARE_EQUAL(int, 0, result);
+
     REGISTER_ALIAS_TYPE(CONCRETE_IO_HANDLE, void*);
     REGISTER_ALIAS_TYPE(LIST_HANDLE, void*);
     REGISTER_ALIAS_TYPE(LIST_ITEM_HANDLE, void*);
     REGISTER_ALIAS_TYPE(SOCKET, void*);
     REGISTER_ALIAS_TYPE(PCSTR, char*);
-
-    result = umocktypes_charptr_register_types();
-    ASSERT_ARE_EQUAL(int, 0, result);
+    REGISTER_TYPE(const ADDRINFOA*, const_ADDRINFOA_ptr);
+    REGISTER_ALIAS_TYPE(PADDRINFOA*, void*);
+    REGISTER_ALIAS_TYPE(PADDRINFOA, const ADDRINFOA*);
+    REGISTER_ALIAS_TYPE(u_long*, void*);
+    REGISTER_TYPE(const struct sockaddr*, const_struct_sockaddr_ptr);
 
     REGISTER_GLOBAL_MOCK_RETURN(list_remove, 0);
     REGISTER_GLOBAL_MOCK_RETURN(list_create, TEST_LIST_HANDLE);
@@ -419,7 +544,7 @@ TEST_FUNCTION(socketio_open_getaddrinfo_fails)
 
     g_addrinfo_call_fail = true;
     EXPECTED_CALL(socket(IGNORED_NUM_ARG, IGNORED_NUM_ARG, IGNORED_NUM_ARG));
-    EXPECTED_CALL(getaddrinfo(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+    EXPECTED_CALL(getaddrinfo(IGNORED_PTR_ARG, IGNORED_PTR_ARG, &TEST_ADDR_INFO, IGNORED_PTR_ARG));
     EXPECTED_CALL(closesocket(IGNORED_NUM_ARG));
     EXPECTED_CALL(WSAGetLastError());
 
@@ -443,11 +568,11 @@ TEST_FUNCTION(socketio_open_connect_fails)
     umock_c_reset_all_calls();
 
     EXPECTED_CALL(socket(IGNORED_NUM_ARG, IGNORED_NUM_ARG, IGNORED_NUM_ARG));
-    EXPECTED_CALL(getaddrinfo(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
-    EXPECTED_CALL(connect(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG))
+    EXPECTED_CALL(getaddrinfo(IGNORED_PTR_ARG, IGNORED_PTR_ARG, &TEST_ADDR_INFO, IGNORED_PTR_ARG));
+    EXPECTED_CALL(connect(IGNORED_PTR_ARG, &test_sock_addr, IGNORED_NUM_ARG))
         .SetReturn(WSAECONNREFUSED);
     EXPECTED_CALL(closesocket(IGNORED_NUM_ARG));
-    EXPECTED_CALL(freeaddrinfo(IGNORED_PTR_ARG));
+    EXPECTED_CALL(freeaddrinfo(&TEST_ADDR_INFO));
     EXPECTED_CALL(WSAGetLastError());
 
     // act
@@ -470,13 +595,13 @@ TEST_FUNCTION(socketio_open_ioctlsocket_fails)
     umock_c_reset_all_calls();
 
     EXPECTED_CALL(socket(IGNORED_NUM_ARG, IGNORED_NUM_ARG, IGNORED_NUM_ARG));
-    EXPECTED_CALL(getaddrinfo(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
-    EXPECTED_CALL(connect(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG));
+    EXPECTED_CALL(getaddrinfo(IGNORED_PTR_ARG, IGNORED_PTR_ARG, &TEST_ADDR_INFO, IGNORED_PTR_ARG));
+    EXPECTED_CALL(connect(IGNORED_PTR_ARG, &test_sock_addr, IGNORED_NUM_ARG));
     EXPECTED_CALL(ioctlsocket(IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG))
         .SetReturn(WSAENETDOWN);
     EXPECTED_CALL(WSAGetLastError());
     EXPECTED_CALL(closesocket(IGNORED_NUM_ARG));
-    EXPECTED_CALL(freeaddrinfo(IGNORED_PTR_ARG));
+    EXPECTED_CALL(freeaddrinfo(&TEST_ADDR_INFO));
 
     // act
     int result = socketio_open(ioHandle, test_on_io_open_complete, &callbackContext, test_on_bytes_received, &callbackContext, test_on_io_error, &callbackContext);
@@ -498,10 +623,10 @@ TEST_FUNCTION(socketio_open_succeeds)
     umock_c_reset_all_calls();
 
     EXPECTED_CALL(socket(IGNORED_NUM_ARG, IGNORED_NUM_ARG, IGNORED_NUM_ARG));
-    EXPECTED_CALL(getaddrinfo(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
-    EXPECTED_CALL(connect(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG));
+    EXPECTED_CALL(getaddrinfo(IGNORED_PTR_ARG, IGNORED_PTR_ARG, &TEST_ADDR_INFO, IGNORED_PTR_ARG));
+    EXPECTED_CALL(connect(IGNORED_PTR_ARG, &test_sock_addr, IGNORED_NUM_ARG));
     EXPECTED_CALL(ioctlsocket(IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG));
-    EXPECTED_CALL(freeaddrinfo(IGNORED_PTR_ARG));
+    EXPECTED_CALL(freeaddrinfo(&TEST_ADDR_INFO));
 
     // act
     int result = socketio_open(ioHandle, test_on_io_open_complete, &callbackContext, test_on_bytes_received, &callbackContext, test_on_io_error, &callbackContext);
@@ -661,19 +786,16 @@ TEST_FUNCTION(socketio_dowork_succeeds)
     // arrange
     SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
     CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
-    static ADDRINFO addrInfo = { AI_PASSIVE, AF_INET, SOCK_STREAM, IPPROTO_TCP, 128, NULL, (struct sockaddr*)0x11, NULL };
 
     int result = socketio_open(ioHandle, test_on_io_open_complete, &callbackContext, test_on_bytes_received, &callbackContext, test_on_io_error, &callbackContext);
 
     umock_c_reset_all_calls();
 
     EXPECTED_CALL(list_get_head_item(IGNORED_PTR_ARG));
+    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
     EXPECTED_CALL(recv(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_NUM_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(WSAGetLastError());
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
     // act
     socketio_dowork(ioHandle);
@@ -689,22 +811,21 @@ TEST_FUNCTION(socketio_dowork_recv_bytes_succeeds)
     // arrange
     SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
     CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
-    static ADDRINFO addrInfo = { AI_PASSIVE, AF_INET, SOCK_STREAM, IPPROTO_TCP, 128, NULL, (struct sockaddr*)0x11, NULL };
 
     int result = socketio_open(ioHandle, test_on_io_open_complete, &callbackContext, test_on_bytes_received, &callbackContext, test_on_io_error, &callbackContext);
 
     umock_c_reset_all_calls();
 
     EXPECTED_CALL(list_get_head_item(IGNORED_PTR_ARG));
+    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
     EXPECTED_CALL(recv(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_NUM_ARG))
         .CopyOutArgumentBuffer(2, "t", 1)
         .SetReturn(1);
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
     EXPECTED_CALL(recv(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_NUM_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(WSAGetLastError());
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
     // act
     socketio_dowork(ioHandle);
