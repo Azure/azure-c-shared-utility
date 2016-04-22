@@ -12,7 +12,6 @@ add_subdirectory(doublylinkedlist_unittests)
 add_subdirectory(gballoc_unittests)
 add_subdirectory(gballoc_without_init_unittests)
 add_subdirectory(hmacsha256_unittests)
-
 if(${use_http})
 	add_subdirectory(httpapiex_unittests)
 	add_subdirectory(httpapiexsas_unittests)

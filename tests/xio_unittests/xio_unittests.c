@@ -21,21 +21,32 @@ void my_gballoc_free(void* ptr)
     free(ptr);
 }
 
+#include "umock_c.h"
+#include "umocktypes_charptr.h"
+
 #undef ENABLE_MOCKS
 #include "azure_c_shared_utility/xio.h"
 
 #define ENABLE_MOCKS
+
+static CONCRETE_IO_HANDLE TEST_CONCRETE_IO_HANDLE = (CONCRETE_IO_HANDLE)0x4242;
+
+MOCK_FUNCTION_WITH_CODE(, CONCRETE_IO_HANDLE, test_xio_create, void*, xio_create_parameters, LOGGER_LOG, logger_log)
+MOCK_FUNCTION_END(TEST_CONCRETE_IO_HANDLE)
+MOCK_FUNCTION_WITH_CODE(, void, test_xio_destroy, CONCRETE_IO_HANDLE, handle)
+MOCK_FUNCTION_END()
+MOCK_FUNCTION_WITH_CODE(, int, test_xio_open, CONCRETE_IO_HANDLE, handle, ON_IO_OPEN_COMPLETE, on_io_open_complete, void*, on_io_open_complete_context, ON_BYTES_RECEIVED, on_bytes_received, void*, on_bytes_received_context, ON_IO_ERROR, on_io_error, void*, on_io_error_context)
+MOCK_FUNCTION_END(0)
+MOCK_FUNCTION_WITH_CODE(, int, test_xio_close, CONCRETE_IO_HANDLE, handle, ON_IO_CLOSE_COMPLETE, on_io_close_complete, void*, callback_context)
+MOCK_FUNCTION_END(0)
+MOCK_FUNCTION_WITH_CODE(, int, test_xio_send, CONCRETE_IO_HANDLE, handle, const void*, buffer, size_t, size, ON_SEND_COMPLETE, on_send_complete, void*, callback_context)
+MOCK_FUNCTION_END(0)
+MOCK_FUNCTION_WITH_CODE(, void, test_xio_dowork, CONCRETE_IO_HANDLE, handle)
+MOCK_FUNCTION_END()
+MOCK_FUNCTION_WITH_CODE(, int, test_xio_setoption, CONCRETE_IO_HANDLE, handle, const char*, optionName, const void*, value)
+MOCK_FUNCTION_END(0)
+
 #include "azure_c_shared_utility/gballoc.h"
-
-MOCKABLE_FUNCTION(CONCRETE_IO_HANDLE, test_xio_create, void*, xio_create_parameters, LOGGER_LOG, logger_log)
-MOCKABLE_FUNCTION(void, test_xio_destroy, CONCRETE_IO_HANDLE, handle)
-MOCKABLE_FUNCTION(int, test_xio_open, CONCRETE_IO_HANDLE, handle, ON_IO_OPEN_COMPLETE, on_io_open_complete, void*, on_io_open_complete_context, ON_BYTES_RECEIVED, on_bytes_received, void*, on_bytes_received_context, ON_IO_ERROR, on_io_error, void*, on_io_error_context)
-MOCKABLE_FUNCTION(int, test_xio_close, CONCRETE_IO_HANDLE, handle, ON_IO_CLOSE_COMPLETE, on_io_close_complete, void*, callback_context)
-MOCKABLE_FUNCTION(int, test_xio_send, CONCRETE_IO_HANDLE, handle, const void*, buffer, size_t, size, ON_SEND_COMPLETE, on_send_complete, void*, callback_context)
-MOCKABLE_FUNCTION(void, test_xio_dowork, CONCRETE_IO_HANDLE, handle)
-MOCKABLE_FUNCTION(int, test_xio_setoption, CONCRETE_IO_HANDLE, handle, const char*, optionName, const void*, value)
-
-#define TEST_CONCRETE_IO_HANDLE (CONCRETE_IO_HANDLE)0x4242
 
 #ifdef __cplusplus
 extern "C" {
@@ -101,14 +112,25 @@ BEGIN_TEST_SUITE(xio_unittests)
 
 TEST_SUITE_INITIALIZE(suite_init)
 {
+    int result;
+
     TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
     g_testByTest = TEST_MUTEX_CREATE();
     ASSERT_IS_NOT_NULL(g_testByTest);
 
     umock_c_init(on_umock_c_error);
 
+    result = umocktypes_charptr_register_types();
+    ASSERT_ARE_EQUAL(int, 0, result);
+
     REGISTER_ALIAS_TYPE(CONCRETE_IO_HANDLE, void*);
     REGISTER_ALIAS_TYPE(XIO_HANDLE, void*);
+    REGISTER_ALIAS_TYPE(LOGGER_LOG, void*);
+    REGISTER_ALIAS_TYPE(ON_SEND_COMPLETE, void*);
+    REGISTER_ALIAS_TYPE(ON_IO_CLOSE_COMPLETE, void*);
+    REGISTER_ALIAS_TYPE(ON_IO_OPEN_COMPLETE, void*);
+    REGISTER_ALIAS_TYPE(ON_BYTES_RECEIVED, void*);
+    REGISTER_ALIAS_TYPE(ON_IO_ERROR, void*);
 
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, my_gballoc_malloc);
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, my_gballoc_free);
@@ -127,6 +149,8 @@ TEST_FUNCTION_INITIALIZE(method_init)
         ASSERT_FAIL("Could not acquire test serialization mutex.");
     }
     g_fail_alloc_calls = 0;
+
+    umock_c_reset_all_calls();
 }
 
 TEST_FUNCTION_CLEANUP(method_cleanup)
