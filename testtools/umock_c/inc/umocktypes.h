@@ -27,7 +27,7 @@ extern "C" {
     extern void umocktypes_free(const char* type, void* value);
 
     /* This is a convenience macro that allows registering a type by simply specifying the name and a function_postfix*/
-    #define REGISTER_TYPE(type, function_postfix) \
+#define REGISTER_TYPE(type, function_postfix) \
         umocktypes_register_type(TOSTRING(type), (UMOCKTYPE_STRINGIFY_FUNC)C2(umocktypes_stringify_, function_postfix), \
             (UMOCKTYPE_ARE_EQUAL_FUNC)C2(umocktypes_are_equal_,function_postfix), \
             (UMOCKTYPE_COPY_FUNC)C2(umocktypes_copy_,function_postfix), \

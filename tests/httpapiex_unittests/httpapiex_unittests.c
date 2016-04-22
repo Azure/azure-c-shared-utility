@@ -354,11 +354,13 @@ static void setupAllCallForHTTPsequence(const char* relativePath, HTTP_HEADERS_H
 
 /*every time HttpApi_Execute request is executed several things will be auto-aupdated by the code*/
 /*request headers to match the content-length, host to match hostname*/
-static void prepareHTTPAPIEX_ExecuteRequest(unsigned int *asGivenyHttpApi, HTTP_HEADERS_HANDLE requestHttpHeaders, HTTP_HEADERS_HANDLE responseHttpHeaders, BUFFER_HANDLE responseHttpBody, HTTPAPI_RESULT resultToBeUsed)
+static void prepareHTTPAPIEX_ExecuteRequest(unsigned int *asGivenByHttpApi, HTTP_HEADERS_HANDLE requestHttpHeaders, HTTP_HEADERS_HANDLE responseHttpHeaders, BUFFER_HANDLE responseHttpBody, HTTPAPI_RESULT resultToBeUsed)
 {
     /*this is building the host and content-length for the http request headers, this happens every time*/
     STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
-        .IgnoreArgument(1);
+        .IgnoreArgument(1).SetReturn(TEST_BUFFER_SIZE);
+    STRICT_EXPECTED_CALL(size_tToString(IGNORED_PTR_ARG, IGNORED_NUM_ARG, TEST_BUFFER_SIZE))
+        .IgnoreArgument(1).IgnoreArgument(2);
     STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
@@ -367,9 +369,9 @@ static void prepareHTTPAPIEX_ExecuteRequest(unsigned int *asGivenyHttpApi, HTTP_
         .IgnoreArgument(1);
 
     STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
-        .IgnoreArgument(1);
+        .IgnoreArgument(1).SetReturn(TEST_BUFFER_SIZE);
     STRICT_EXPECTED_CALL(BUFFER_u_char(IGNORED_PTR_ARG))
-        .IgnoreArgument(1);
+        .IgnoreArgument(1).SetReturn(TEST_BUFFER);
     STRICT_EXPECTED_CALL(HTTPAPI_ExecuteRequest(
         IGNORED_PTR_ARG,
         HTTPAPI_REQUEST_PATCH,
@@ -385,7 +387,7 @@ static void prepareHTTPAPIEX_ExecuteRequest(unsigned int *asGivenyHttpApi, HTTP_
         .IgnoreArgument(5)
         .IgnoreArgument(7)
         .ValidateArgumentBuffer(5, TEST_BUFFER, TEST_BUFFER_SIZE)
-        .CopyOutArgumentBuffer(7, asGivenyHttpApi, sizeof(*asGivenyHttpApi))
+        .CopyOutArgumentBuffer(7, asGivenByHttpApi, sizeof(*asGivenByHttpApi))
         .SetReturn(resultToBeUsed);
 }
 
@@ -495,6 +497,8 @@ TEST_FUNCTION_INITIALIZE(TestMethodInitialize)
 
     currentHTTPAPI_Init_call = 0;
     for (size_t i = 0; i<N_MAX_FAILS; i++) whenShallHTTPAPI_Init_fail[i] = 0;
+
+    umock_c_reset_all_calls();
 }
 
 TEST_FUNCTION_CLEANUP(TestMethodCleanup)
@@ -504,7 +508,6 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
     TEST_MUTEX_RELEASE(g_testByTest);
 }
 
-#if 0
 /*Tests_SRS_HTTPAPIEX_02_001: [If parameter hostName is NULL then HTTPAPIEX_Create shall return NULL.] */
 TEST_FUNCTION(HTTPAPIEX_Create_with_NULL_name_fails)
 {
@@ -523,9 +526,9 @@ TEST_FUNCTION(HTTPAPIEX_Create_with_NULL_name_fails)
 TEST_FUNCTION(HTTPAPIEX_Create_succeeds)
 {
     /// arrange
-    STRICT_EXPECTED_CALL(STRING_construct(TEST_HOSTNAME));
-    STRICT_EXPECTED_CALL(gballoc_malloc(0))
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
         .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(STRING_construct(TEST_HOSTNAME));
 
     STRICT_EXPECTED_CALL(VECTOR_create(IGNORED_NUM_ARG))
         .IgnoreArgument(1);
@@ -609,9 +612,9 @@ TEST_FUNCTION(HTTPAPIEX_Destroy_frees_resources_3) /*this is destroy after havin
 
     unsigned int httpStatusCode;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
-    BUFFER_HANDLE requestHttpBody;
+    BUFFER_HANDLE requestHttpBody = TEST_BUFFER_REQ_BODY;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
-    BUFFER_HANDLE responseHttpBody;
+    BUFFER_HANDLE responseHttpBody = TEST_BUFFER_RESP_BODY;
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     setupAllCallBeforeHTTPsequence();
     setupAllCallForHTTPsequence(TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, responseHttpHeaders, responseHttpBody);
@@ -695,12 +698,12 @@ TEST_FUNCTION(HTTPAPIEX_Create_fails_when_VECTOR_create_fails)
         .IgnoreArgument(1);
 
     STRICT_EXPECTED_CALL(STRING_construct(TEST_HOSTNAME));
-    STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG))
-        .IgnoreArgument(1);
 
     STRICT_EXPECTED_CALL(VECTOR_create(IGNORED_NUM_ARG))
         .IgnoreArgument(1).SetReturn(NULL);
 
+    STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG))
+        .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
 
@@ -713,7 +716,6 @@ TEST_FUNCTION(HTTPAPIEX_Create_fails_when_VECTOR_create_fails)
 
     ///destroy
 }
-
 
 /*Tests_SRS_HTTPAPIEX_02_006: [If parameter handle is NULL then HTTPAPIEX_ExecuteRequest shall fail and return HTTPAPIEX_INVALID_ARG.]*/
 TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_handle_fails)
@@ -757,9 +759,9 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_happy_path_with_all_non_NULL_parameters)
 
     unsigned int httpStatusCode;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
-    BUFFER_HANDLE requestHttpBody;
+    BUFFER_HANDLE requestHttpBody = TEST_BUFFER_REQ_BODY;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
-    BUFFER_HANDLE responseHttpBody;
+    BUFFER_HANDLE responseHttpBody = TEST_BUFFER_RESP_BODY;
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     umock_c_reset_all_calls();
 
@@ -786,9 +788,9 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_relativePath_uses_empty)
 
     unsigned int httpStatusCode;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
-    BUFFER_HANDLE requestHttpBody;
+    BUFFER_HANDLE requestHttpBody = TEST_BUFFER_REQ_BODY;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
-    BUFFER_HANDLE responseHttpBody;
+    BUFFER_HANDLE responseHttpBody = TEST_BUFFER_RESP_BODY;
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     umock_c_reset_all_calls();
 
@@ -819,22 +821,20 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_request_headers_and_NULL_reques
 
     unsigned int httpStatusCode;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
-    BUFFER_HANDLE requestHttpBody;
+    BUFFER_HANDLE requestHttpBody = TEST_BUFFER_REQ_BODY;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
-    BUFFER_HANDLE responseHttpBody;
+    BUFFER_HANDLE responseHttpBody = TEST_BUFFER_RESP_BODY;
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(BUFFER_new()); /*because it makes a fake buffer*/
-    STRICT_EXPECTED_CALL(BUFFER_delete(IGNORED_PTR_ARG))
-        .IgnoreArgument(1);
 
     STRICT_EXPECTED_CALL(HTTPHeaders_Alloc()); /*because it makes fakes request headers*/
-    STRICT_EXPECTED_CALL(HTTPHeaders_Free(IGNORED_PTR_ARG))
-        .IgnoreArgument(1);
     /*this is building the host and content-length for the http request headers*/
     STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
-        .IgnoreArgument(1);
+        .IgnoreArgument(1).SetReturn(0);
+    STRICT_EXPECTED_CALL(size_tToString(IGNORED_PTR_ARG, IGNORED_PTR_ARG, 0))
+        .IgnoreArgument(1).IgnoreArgument(2);
     STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
@@ -851,9 +851,9 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_request_headers_and_NULL_reques
         .IgnoreArgument(1);
 
     STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
-        .IgnoreArgument(1);
+        .IgnoreArgument(1).SetReturn(0);
     STRICT_EXPECTED_CALL(BUFFER_u_char(IGNORED_PTR_ARG))
-        .IgnoreArgument(1);
+        .IgnoreArgument(1).SetReturn(NULL);
 
     STRICT_EXPECTED_CALL(HTTPAPI_ExecuteRequest(
         IGNORED_PTR_ARG,
@@ -870,6 +870,11 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_request_headers_and_NULL_reques
         .IgnoreArgument(5)
         .IgnoreArgument(7)
         ;
+
+    STRICT_EXPECTED_CALL(BUFFER_delete(IGNORED_PTR_ARG))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(HTTPHeaders_Free(IGNORED_PTR_ARG))
+        .IgnoreArgument(1);
 
     /// act
     auto result = HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, NULL, NULL, &httpStatusCode, responseHttpHeaders, responseHttpBody);
@@ -891,22 +896,20 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_request_headers_and_NULL_reques
 
     unsigned int httpStatusCode;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
-    BUFFER_HANDLE requestHttpBody;
+    BUFFER_HANDLE requestHttpBody = TEST_BUFFER_REQ_BODY;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
-    BUFFER_HANDLE responseHttpBody;
+    BUFFER_HANDLE responseHttpBody = TEST_BUFFER_RESP_BODY;
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(BUFFER_new()); /*because it makes a fake buffer*/
-    STRICT_EXPECTED_CALL(BUFFER_delete(IGNORED_PTR_ARG))
-        .IgnoreArgument(1);
 
     STRICT_EXPECTED_CALL(HTTPHeaders_Alloc()); /*because it makes fakes request headers*/
-    STRICT_EXPECTED_CALL(HTTPHeaders_Free(IGNORED_PTR_ARG))
-        .IgnoreArgument(1);
     /*this is building the host and content-length for the http request headers*/
     STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
-        .IgnoreArgument(1);
+        .IgnoreArgument(1).SetReturn(0);
+    STRICT_EXPECTED_CALL(size_tToString(IGNORED_PTR_ARG, IGNORED_PTR_ARG, 0))
+        .IgnoreArgument(1).IgnoreArgument(2);
     STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
@@ -914,6 +917,11 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_request_headers_and_NULL_reques
     STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", "0"))
         .IgnoreArgument(1)
         .SetReturn(HTTP_HEADERS_ERROR);
+
+    STRICT_EXPECTED_CALL(HTTPHeaders_Free(IGNORED_PTR_ARG))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(BUFFER_delete(IGNORED_PTR_ARG))
+        .IgnoreArgument(1);
 
     /// act
     auto result = HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, NULL, NULL, &httpStatusCode, responseHttpHeaders, responseHttpBody);
@@ -935,27 +943,30 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_request_headers_and_NULL_reques
 
     unsigned int httpStatusCode;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
-    BUFFER_HANDLE requestHttpBody;
+    BUFFER_HANDLE requestHttpBody = TEST_BUFFER_REQ_BODY;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
-    BUFFER_HANDLE responseHttpBody;
+    BUFFER_HANDLE responseHttpBody = TEST_BUFFER_RESP_BODY;
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(BUFFER_new()); /*because it makes a fake buffer*/
-    STRICT_EXPECTED_CALL(BUFFER_delete(IGNORED_PTR_ARG))
-        .IgnoreArgument(1);
 
     STRICT_EXPECTED_CALL(HTTPHeaders_Alloc()); /*because it makes fakes request headers*/
-    STRICT_EXPECTED_CALL(HTTPHeaders_Free(IGNORED_PTR_ARG))
-        .IgnoreArgument(1);
     /*this is building the host and content-length for the http request headers*/
     STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
-        .IgnoreArgument(1);
+        .IgnoreArgument(1).SetReturn(TEST_BUFFER_SIZE);
+    STRICT_EXPECTED_CALL(size_tToString(IGNORED_PTR_ARG, IGNORED_PTR_ARG, TEST_BUFFER_SIZE))
+        .IgnoreArgument(1).IgnoreArgument(2);
     STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
         .IgnoreArgument(1)
         .SetReturn(HTTP_HEADERS_ERROR);
+
+    STRICT_EXPECTED_CALL(HTTPHeaders_Free(IGNORED_PTR_ARG))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(BUFFER_delete(IGNORED_PTR_ARG))
+        .IgnoreArgument(1);
 
     /// act
     auto result = HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, NULL, NULL, &httpStatusCode, responseHttpHeaders, responseHttpBody);
@@ -977,18 +988,19 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_request_headers_and_NULL_reques
 
     unsigned int httpStatusCode;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
-    BUFFER_HANDLE requestHttpBody;
+    BUFFER_HANDLE requestHttpBody = TEST_BUFFER_REQ_BODY;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
-    BUFFER_HANDLE responseHttpBody;
+    BUFFER_HANDLE responseHttpBody = TEST_BUFFER_RESP_BODY;
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(BUFFER_new()); /*because it makes a fake buffer*/
-    STRICT_EXPECTED_CALL(BUFFER_delete(IGNORED_PTR_ARG))
-        .IgnoreArgument(1);
 
     STRICT_EXPECTED_CALL(HTTPHeaders_Alloc())
         .SetReturn(NULL); /*because it makes fakes request headers*/
+
+    STRICT_EXPECTED_CALL(BUFFER_delete(IGNORED_PTR_ARG))
+        .IgnoreArgument(1);
 
     /// act
     auto result = HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, NULL, NULL, &httpStatusCode, responseHttpHeaders, responseHttpBody);
@@ -1013,19 +1025,19 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_request_headers_and_NULL_re
 
     unsigned int httpStatusCode;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
-    BUFFER_HANDLE requestHttpBody;
+    BUFFER_HANDLE requestHttpBody = TEST_BUFFER_REQ_BODY;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
-    BUFFER_HANDLE responseHttpBody;
+    BUFFER_HANDLE responseHttpBody = TEST_BUFFER_RESP_BODY;
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(BUFFER_new()); /*because it makes a fake buffer*/
-    STRICT_EXPECTED_CALL(BUFFER_delete(IGNORED_PTR_ARG))
-        .IgnoreArgument(1);
 
     /*this is building the host and content-length for the http request headers*/
     STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
-        .IgnoreArgument(1);
+        .IgnoreArgument(1).SetReturn(0);
+    STRICT_EXPECTED_CALL(size_tToString(IGNORED_PTR_ARG, IGNORED_PTR_ARG, 0))
+        .IgnoreArgument(1).IgnoreArgument(2);
     STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
@@ -1042,9 +1054,9 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_request_headers_and_NULL_re
         .IgnoreArgument(1);
 
     STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
-        .IgnoreArgument(1);
+        .IgnoreArgument(1).SetReturn(0);
     STRICT_EXPECTED_CALL(BUFFER_u_char(IGNORED_PTR_ARG))
-        .IgnoreArgument(1);
+        .IgnoreArgument(1).SetReturn(NULL);
 
     STRICT_EXPECTED_CALL(HTTPAPI_ExecuteRequest(
         IGNORED_PTR_ARG,
@@ -1061,6 +1073,9 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_request_headers_and_NULL_re
         .IgnoreArgument(5)
         .IgnoreArgument(7)
         ;
+
+    STRICT_EXPECTED_CALL(BUFFER_delete(IGNORED_PTR_ARG))
+        .IgnoreArgument(1);
 
     /// act
     auto result = HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, NULL, &httpStatusCode, responseHttpHeaders, responseHttpBody);
@@ -1082,19 +1097,19 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_request_headers_and_NULL_re
 
     unsigned int httpStatusCode;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
-    BUFFER_HANDLE requestHttpBody;
+    BUFFER_HANDLE requestHttpBody = TEST_BUFFER_REQ_BODY;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
-    BUFFER_HANDLE responseHttpBody;
+    BUFFER_HANDLE responseHttpBody = TEST_BUFFER_RESP_BODY;
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(BUFFER_new()); /*because it makes a fake buffer*/
-    STRICT_EXPECTED_CALL(BUFFER_delete(IGNORED_PTR_ARG))
-        .IgnoreArgument(1);
 
     /*this is building the host and content-length for the http request headers*/
     STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
-        .IgnoreArgument(1);
+        .IgnoreArgument(1).SetReturn(0);
+    STRICT_EXPECTED_CALL(size_tToString(IGNORED_PTR_ARG, IGNORED_PTR_ARG, 0))
+        .IgnoreArgument(1).IgnoreArgument(2);
     STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
@@ -1102,6 +1117,9 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_request_headers_and_NULL_re
     STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", "0"))
         .IgnoreArgument(1)
         .SetReturn(HTTP_HEADERS_ERROR);
+
+    STRICT_EXPECTED_CALL(BUFFER_delete(IGNORED_PTR_ARG))
+        .IgnoreArgument(1);
 
     /// act
     auto result = HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, NULL, &httpStatusCode, responseHttpHeaders, responseHttpBody);
@@ -1123,24 +1141,27 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_request_headers_and_NULL_re
 
     unsigned int httpStatusCode;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
-    BUFFER_HANDLE requestHttpBody;
+    BUFFER_HANDLE requestHttpBody = TEST_BUFFER_REQ_BODY;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
-    BUFFER_HANDLE responseHttpBody;
+    BUFFER_HANDLE responseHttpBody = TEST_BUFFER_RESP_BODY;
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(BUFFER_new()); /*because it makes a fake buffer*/
-    STRICT_EXPECTED_CALL(BUFFER_delete(IGNORED_PTR_ARG))
-        .IgnoreArgument(1);
 
     /*this is building the host and content-length for the http request headers*/
     STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(size_tToString(IGNORED_PTR_ARG, IGNORED_PTR_ARG, TEST_BUFFER_SIZE))
+        .IgnoreArgument(1).IgnoreArgument(2);
     STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
         .IgnoreArgument(1)
         .SetReturn(HTTP_HEADERS_ERROR);
+
+    STRICT_EXPECTED_CALL(BUFFER_delete(IGNORED_PTR_ARG))
+        .IgnoreArgument(1);
 
     /// act
     auto result = HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, NULL, &httpStatusCode, responseHttpHeaders, responseHttpBody);
@@ -1162,9 +1183,9 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_request_headers_and_NULL_re
 
     unsigned int httpStatusCode;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
-    BUFFER_HANDLE requestHttpBody;
+    BUFFER_HANDLE requestHttpBody = TEST_BUFFER_REQ_BODY;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
-    BUFFER_HANDLE responseHttpBody;
+    BUFFER_HANDLE responseHttpBody = TEST_BUFFER_RESP_BODY;
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     umock_c_reset_all_calls();
 
@@ -1191,15 +1212,17 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_request_headers_and_non_NUL
 
     unsigned int httpStatusCode;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
-    BUFFER_HANDLE requestHttpBody;
+    BUFFER_HANDLE requestHttpBody = TEST_BUFFER_REQ_BODY;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
-    BUFFER_HANDLE responseHttpBody;
+    BUFFER_HANDLE responseHttpBody = TEST_BUFFER_RESP_BODY;
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     umock_c_reset_all_calls();
 
     /*this is building the host and content-length for the http request headers*/
     STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(size_tToString(IGNORED_PTR_ARG, IGNORED_PTR_ARG, TEST_BUFFER_SIZE))
+        .IgnoreArgument(1).IgnoreArgument(2);
     STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
@@ -1257,15 +1280,17 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_request_headers_and_non_NUL
 
     unsigned int httpStatusCode;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
-    BUFFER_HANDLE requestHttpBody;
+    BUFFER_HANDLE requestHttpBody = TEST_BUFFER_REQ_BODY;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
-    BUFFER_HANDLE responseHttpBody;
+    BUFFER_HANDLE responseHttpBody = TEST_BUFFER_RESP_BODY;
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     umock_c_reset_all_calls();
 
     /*this is building the host and content-length for the http request headers*/
     STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(size_tToString(IGNORED_PTR_ARG, IGNORED_PTR_ARG, TEST_BUFFER_SIZE))
+        .IgnoreArgument(1).IgnoreArgument(2);
     STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
@@ -1294,15 +1319,17 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_request_headers_and_non_NUL
 
     unsigned int httpStatusCode;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
-    BUFFER_HANDLE requestHttpBody;
+    BUFFER_HANDLE requestHttpBody = TEST_BUFFER_REQ_BODY;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
-    BUFFER_HANDLE responseHttpBody;
+    BUFFER_HANDLE responseHttpBody = TEST_BUFFER_RESP_BODY;
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     umock_c_reset_all_calls();
 
     /*this is building the host and content-length for the http request headers*/
     STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(size_tToString(IGNORED_PTR_ARG, IGNORED_PTR_ARG, TEST_BUFFER_SIZE))
+        .IgnoreArgument(1).IgnoreArgument(2);
     STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
@@ -1328,15 +1355,17 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_statusCode_succeeds)
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
 
     HTTP_HEADERS_HANDLE requestHttpHeaders;
-    BUFFER_HANDLE requestHttpBody;
+    BUFFER_HANDLE requestHttpBody = TEST_BUFFER_REQ_BODY;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
-    BUFFER_HANDLE responseHttpBody;
+    BUFFER_HANDLE responseHttpBody = TEST_BUFFER_RESP_BODY;
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     umock_c_reset_all_calls();
 
     /*this is building the host and content-length for the http request headers*/
     STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
-        .IgnoreArgument(1);
+        .IgnoreArgument(1).SetReturn(TEST_BUFFER_SIZE);
+    STRICT_EXPECTED_CALL(size_tToString(IGNORED_PTR_ARG, IGNORED_PTR_ARG, TEST_BUFFER_SIZE))
+        .IgnoreArgument(1).IgnoreArgument(2);
     STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
@@ -1393,17 +1422,19 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_statusCode_returns_that_cod
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
 
     unsigned int httpStatusCode;
-    unsigned int asGivenyHttpApi = 4567;
+    unsigned int asGivenByHttpApi = 4567;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
-    BUFFER_HANDLE requestHttpBody;
+    BUFFER_HANDLE requestHttpBody = TEST_BUFFER_REQ_BODY;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
-    BUFFER_HANDLE responseHttpBody;
+    BUFFER_HANDLE responseHttpBody = TEST_BUFFER_RESP_BODY;
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     umock_c_reset_all_calls();
 
     /*this is building the host and content-length for the http request headers*/
     STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
-        .IgnoreArgument(1);
+        .IgnoreArgument(1).SetReturn(TEST_BUFFER_SIZE);
+    STRICT_EXPECTED_CALL(size_tToString(IGNORED_PTR_ARG, IGNORED_PTR_ARG, TEST_BUFFER_SIZE))
+        .IgnoreArgument(1).IgnoreArgument(2);
     STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
@@ -1439,7 +1470,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_statusCode_returns_that_cod
         .IgnoreArgument(5)
         .IgnoreArgument(7)
         .ValidateArgumentBuffer(5, TEST_BUFFER, TEST_BUFFER_SIZE)
-        .CopyOutArgumentBuffer(7, &asGivenyHttpApi, sizeof(asGivenyHttpApi))
+        .CopyOutArgumentBuffer(7, &asGivenByHttpApi, sizeof(asGivenByHttpApi))
         ;
 
     /// act
@@ -1455,7 +1486,6 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_statusCode_returns_that_cod
     HTTPAPIEX_Destroy(httpapiexhandle);
 }
 
-
 TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_cleans_when_originalhttpbody_is_NULL_and_response_headers_fails)
 {
     /// arrange
@@ -1463,23 +1493,21 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_cleans_when_originalhttpbody_is_NULL_and_
 
     unsigned int httpStatusCode;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
-    BUFFER_HANDLE requestHttpBody;
+    BUFFER_HANDLE requestHttpBody = TEST_BUFFER_REQ_BODY;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
-    BUFFER_HANDLE responseHttpBody;
+    BUFFER_HANDLE responseHttpBody = TEST_BUFFER_RESP_BODY;
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(BUFFER_new()); /*because it makes a fake buffer*/
-    STRICT_EXPECTED_CALL(BUFFER_delete(IGNORED_PTR_ARG))
-        .IgnoreArgument(1);
 
     STRICT_EXPECTED_CALL(HTTPHeaders_Alloc());
-    STRICT_EXPECTED_CALL(HTTPHeaders_Free(IGNORED_PTR_ARG))
-        .IgnoreArgument(1);
 
     /*this is building the host and content-length for the http request headers*/
     STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
-        .IgnoreArgument(1);
+        .IgnoreArgument(1).SetReturn(0);
+    STRICT_EXPECTED_CALL(size_tToString(IGNORED_PTR_ARG, IGNORED_PTR_ARG, 0))
+        .IgnoreArgument(1).IgnoreArgument(2);
     STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
@@ -1487,9 +1515,14 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_cleans_when_originalhttpbody_is_NULL_and_
     STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", "0"))
         .IgnoreArgument(1);
 
-    /*Becauyse it is creating fake response headers*/
+    /*Because it is creating fake response headers*/
     STRICT_EXPECTED_CALL(HTTPHeaders_Alloc())
         .SetReturn(NULL);
+
+    STRICT_EXPECTED_CALL(BUFFER_delete(IGNORED_PTR_ARG))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(HTTPHeaders_Free(IGNORED_PTR_ARG))
+        .IgnoreArgument(1);
 
     /// act
     auto result = HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, NULL, NULL, &httpStatusCode, NULL, responseHttpBody);
@@ -1510,23 +1543,21 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_cleans_when_responsehttpbody_is_NULL_and_
 
     unsigned int httpStatusCode;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
-    BUFFER_HANDLE requestHttpBody;
+    BUFFER_HANDLE requestHttpBody = TEST_BUFFER_REQ_BODY;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
-    BUFFER_HANDLE responseHttpBody;
+    BUFFER_HANDLE responseHttpBody = TEST_BUFFER_RESP_BODY;
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(BUFFER_new()); /*because it makes a fake buffer*/
-    STRICT_EXPECTED_CALL(BUFFER_delete(IGNORED_PTR_ARG))
-        .IgnoreArgument(1);
 
     STRICT_EXPECTED_CALL(HTTPHeaders_Alloc());
-    STRICT_EXPECTED_CALL(HTTPHeaders_Free(IGNORED_PTR_ARG))
-        .IgnoreArgument(1);
 
     /*this is building the host and content-length for the http request headers*/
     STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
-        .IgnoreArgument(1);
+        .IgnoreArgument(1).SetReturn(0);
+    STRICT_EXPECTED_CALL(size_tToString(IGNORED_PTR_ARG, IGNORED_PTR_ARG, 0))
+        .IgnoreArgument(1).IgnoreArgument(2);
     STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
@@ -1534,13 +1565,18 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_cleans_when_responsehttpbody_is_NULL_and_
     STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", "0"))
         .IgnoreArgument(1);
 
-    /*Becauyse it is creating fake response headers*/
+    /*Because it is creating fake response headers*/
     STRICT_EXPECTED_CALL(HTTPHeaders_Alloc());
-    STRICT_EXPECTED_CALL(HTTPHeaders_Free(IGNORED_PTR_ARG))
-        .IgnoreArgument(1);
 
     STRICT_EXPECTED_CALL(BUFFER_new())
         .SetReturn(NULL); /*because it makes a fake buffer*/
+
+    STRICT_EXPECTED_CALL(BUFFER_delete(IGNORED_PTR_ARG))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(HTTPHeaders_Free(IGNORED_PTR_ARG))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(HTTPHeaders_Free(IGNORED_PTR_ARG))
+        .IgnoreArgument(1);
 
     /// act
     auto result = HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, NULL, NULL, &httpStatusCode, NULL, NULL);
@@ -1561,17 +1597,19 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_response_headers_suceeds)
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
 
     unsigned int httpStatusCode;
-    unsigned int asGivenyHttpApi = 4567;
+    unsigned int asGivenByHttpApi = 4567;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
-    BUFFER_HANDLE requestHttpBody;
+    BUFFER_HANDLE requestHttpBody = TEST_BUFFER_REQ_BODY;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
-    BUFFER_HANDLE responseHttpBody;
+    BUFFER_HANDLE responseHttpBody = TEST_BUFFER_RESP_BODY;
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     umock_c_reset_all_calls();
 
     /*this is building the host and content-length for the http request headers*/
     STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(size_tToString(IGNORED_PTR_ARG, IGNORED_PTR_ARG, TEST_BUFFER_SIZE))
+        .IgnoreArgument(1).IgnoreArgument(2);
     STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
@@ -1579,10 +1617,8 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_response_headers_suceeds)
     STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", TOSTRING(TEST_BUFFER_SIZE)))
         .IgnoreArgument(1);
 
-    /*Becauyse it is creating fake response headers*/
+    /*Because it is creating fake response headers*/
     STRICT_EXPECTED_CALL(HTTPHeaders_Alloc());
-    STRICT_EXPECTED_CALL(HTTPHeaders_Free(IGNORED_PTR_ARG))
-        .IgnoreArgument(1);
 
     /*this is getting the buffer content and buffer length to pass to httpapi_executerequest*/
     STRICT_EXPECTED_CALL(HTTPAPI_Init());
@@ -1613,8 +1649,11 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_response_headers_suceeds)
         .IgnoreArgument(7)
         .IgnoreArgument(8)
         .ValidateArgumentBuffer(5, TEST_BUFFER, TEST_BUFFER_SIZE)
-        .CopyOutArgumentBuffer(7, &asGivenyHttpApi, sizeof(asGivenyHttpApi))
+        .CopyOutArgumentBuffer(7, &asGivenByHttpApi, sizeof(asGivenByHttpApi))
         ;
+
+    STRICT_EXPECTED_CALL(HTTPHeaders_Free(IGNORED_PTR_ARG))
+        .IgnoreArgument(1);
 
     /// act
     auto result = HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, NULL, responseHttpBody);
@@ -1637,15 +1676,17 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_response_headers_fails_when_HTT
 
     unsigned int httpStatusCode;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
-    BUFFER_HANDLE requestHttpBody;
+    BUFFER_HANDLE requestHttpBody = TEST_BUFFER_REQ_BODY;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
-    BUFFER_HANDLE responseHttpBody;
+    BUFFER_HANDLE responseHttpBody = TEST_BUFFER_RESP_BODY;
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     umock_c_reset_all_calls();
 
     /*this is building the host and content-length for the http request headers*/
     STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(size_tToString(IGNORED_PTR_ARG, IGNORED_PTR_ARG, TEST_BUFFER_SIZE))
+        .IgnoreArgument(1).IgnoreArgument(2);
     STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
@@ -1653,7 +1694,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_response_headers_fails_when_HTT
     STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", TOSTRING(TEST_BUFFER_SIZE)))
         .IgnoreArgument(1);
 
-    /*Becauyse it is creating fake response headers*/
+    /*Because it is creating fake response headers*/
     STRICT_EXPECTED_CALL(HTTPHeaders_Alloc())
         .SetReturn(NULL);
 
@@ -1676,17 +1717,19 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_response_headers_suceeds)
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
 
     unsigned int httpStatusCode;
-    unsigned int asGivenyHttpApi = 4567;
+    unsigned int asGivenByHttpApi = 4567;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
-    BUFFER_HANDLE requestHttpBody;
+    BUFFER_HANDLE requestHttpBody = TEST_BUFFER_REQ_BODY;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
-    BUFFER_HANDLE responseHttpBody;
+    BUFFER_HANDLE responseHttpBody = TEST_BUFFER_RESP_BODY;
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     umock_c_reset_all_calls();
 
     /*this is building the host and content-length for the http request headers*/
     STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(size_tToString(IGNORED_PTR_ARG, IGNORED_PTR_ARG, TEST_BUFFER_SIZE))
+        .IgnoreArgument(1).IgnoreArgument(2);
     STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
@@ -1703,9 +1746,9 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_response_headers_suceeds)
         .IgnoreArgument(1);
 
     STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
-        .IgnoreArgument(1);
+        .IgnoreArgument(1).SetReturn(TEST_BUFFER_SIZE);
     STRICT_EXPECTED_CALL(BUFFER_u_char(IGNORED_PTR_ARG))
-        .IgnoreArgument(1);
+        .IgnoreArgument(1).SetReturn(TEST_BUFFER);
 
     STRICT_EXPECTED_CALL(HTTPAPI_ExecuteRequest(
         IGNORED_PTR_ARG,
@@ -1721,7 +1764,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_response_headers_suceeds)
         .IgnoreArgument(5)
         .IgnoreArgument(7)
         .ValidateArgumentBuffer(5, TEST_BUFFER, TEST_BUFFER_SIZE)
-        .CopyOutArgumentBuffer(7, &asGivenyHttpApi, sizeof(asGivenyHttpApi))
+        .CopyOutArgumentBuffer(7, &asGivenByHttpApi, sizeof(asGivenByHttpApi))
         ;
 
     /// act
@@ -1744,17 +1787,19 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_response_body_suceeds)
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
 
     unsigned int httpStatusCode;
-    unsigned int asGivenyHttpApi = 4567;
+    unsigned int asGivenByHttpApi = 4567;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
-    BUFFER_HANDLE requestHttpBody;
+    BUFFER_HANDLE requestHttpBody = TEST_BUFFER_REQ_BODY;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
-    BUFFER_HANDLE responseHttpBody;
+    BUFFER_HANDLE responseHttpBody = TEST_BUFFER_RESP_BODY;
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     umock_c_reset_all_calls();
 
     /*this is building the host and content-length for the http request headers*/
     STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(size_tToString(IGNORED_PTR_ARG, IGNORED_PTR_ARG, TEST_BUFFER_SIZE))
+        .IgnoreArgument(1).IgnoreArgument(2);
     STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
@@ -1763,8 +1808,6 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_response_body_suceeds)
         .IgnoreArgument(1);
 
     STRICT_EXPECTED_CALL(BUFFER_new()); /*because it makes a fake response buffer*/
-    STRICT_EXPECTED_CALL(BUFFER_delete(IGNORED_PTR_ARG))
-        .IgnoreArgument(1);
 
     /*this is getting the buffer content and buffer length to pass to httpapi_executerequest*/
     STRICT_EXPECTED_CALL(HTTPAPI_Init());
@@ -1775,9 +1818,9 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_response_body_suceeds)
         .IgnoreArgument(1);
 
     STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
-        .IgnoreArgument(1);
+        .IgnoreArgument(1).SetReturn(TEST_BUFFER_SIZE);
     STRICT_EXPECTED_CALL(BUFFER_u_char(IGNORED_PTR_ARG))
-        .IgnoreArgument(1);
+        .IgnoreArgument(1).SetReturn(TEST_BUFFER);
 
     STRICT_EXPECTED_CALL(HTTPAPI_ExecuteRequest(
         IGNORED_PTR_ARG,
@@ -1795,8 +1838,11 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_response_body_suceeds)
         .IgnoreArgument(7)
         .IgnoreArgument(9)
         .ValidateArgumentBuffer(5, TEST_BUFFER, TEST_BUFFER_SIZE)
-        .CopyOutArgumentBuffer(7, &asGivenyHttpApi, sizeof(asGivenyHttpApi))
+        .CopyOutArgumentBuffer(7, &asGivenByHttpApi, sizeof(asGivenByHttpApi))
         ;
+
+    STRICT_EXPECTED_CALL(BUFFER_delete(IGNORED_PTR_ARG))
+        .IgnoreArgument(1);
 
     /// act
     auto result = HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, responseHttpHeaders, NULL);
@@ -1819,15 +1865,17 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_fails_when_BUFFER_new_fails)
 
     unsigned int httpStatusCode;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
-    BUFFER_HANDLE requestHttpBody;
+    BUFFER_HANDLE requestHttpBody = TEST_BUFFER_REQ_BODY;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
-    BUFFER_HANDLE responseHttpBody;
+    BUFFER_HANDLE responseHttpBody = TEST_BUFFER_RESP_BODY;
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     umock_c_reset_all_calls();
 
     /*this is building the host and content-length for the http request headers*/
     STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(size_tToString(IGNORED_PTR_ARG, IGNORED_PTR_ARG, TEST_BUFFER_SIZE))
+        .IgnoreArgument(1).IgnoreArgument(2);
     STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
@@ -1857,17 +1905,19 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_response_body_suceeds)
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
 
     unsigned int httpStatusCode;
-    unsigned int asGivenyHttpApi = 4567;
+    unsigned int asGivenByHttpApi = 4567;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
-    BUFFER_HANDLE requestHttpBody;
+    BUFFER_HANDLE requestHttpBody = TEST_BUFFER_REQ_BODY;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
-    BUFFER_HANDLE responseHttpBody;
+    BUFFER_HANDLE responseHttpBody = TEST_BUFFER_RESP_BODY;
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     umock_c_reset_all_calls();
 
     /*this is building the host and content-length for the http request headers*/
     STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(size_tToString(IGNORED_PTR_ARG, IGNORED_PTR_ARG, TEST_BUFFER_SIZE))
+        .IgnoreArgument(1).IgnoreArgument(2);
     STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
@@ -1903,7 +1953,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_response_body_suceeds)
         .IgnoreArgument(5)
         .IgnoreArgument(7)
         .ValidateArgumentBuffer(5, TEST_BUFFER, TEST_BUFFER_SIZE)
-        .CopyOutArgumentBuffer(7, &asGivenyHttpApi, sizeof(asGivenyHttpApi))
+        .CopyOutArgumentBuffer(7, &asGivenByHttpApi, sizeof(asGivenByHttpApi))
         ;
 
     /// act
@@ -1931,16 +1981,16 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_S1) /*refer to httpapiex_retry_m
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
 
     unsigned int httpStatusCode;
-    unsigned int asGivenyHttpApi = 23;
+    unsigned int asGivenByHttpApi = 23;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
-    BUFFER_HANDLE requestHttpBody;
+    BUFFER_HANDLE requestHttpBody = TEST_BUFFER_REQ_BODY;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
-    BUFFER_HANDLE responseHttpBody;
+    BUFFER_HANDLE responseHttpBody = TEST_BUFFER_RESP_BODY;
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     (void)HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, responseHttpHeaders, responseHttpBody);
     umock_c_reset_all_calls();
 
-    prepareHTTPAPIEX_ExecuteRequest(&asGivenyHttpApi, requestHttpHeaders, responseHttpHeaders, responseHttpBody, HTTPAPI_OK);
+    prepareHTTPAPIEX_ExecuteRequest(&asGivenByHttpApi, requestHttpHeaders, responseHttpHeaders, responseHttpBody, HTTPAPI_OK);
 
     /// act
     auto result = HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, responseHttpHeaders, responseHttpBody);
@@ -1961,16 +2011,16 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_S2) /*refer to httpapiex_retry_m
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
 
     unsigned int httpStatusCode;
-    unsigned int asGivenyHttpApi = 23;
+    unsigned int asGivenByHttpApi = 23;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
-    BUFFER_HANDLE requestHttpBody;
+    BUFFER_HANDLE requestHttpBody = TEST_BUFFER_REQ_BODY;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
-    BUFFER_HANDLE responseHttpBody;
+    BUFFER_HANDLE responseHttpBody = TEST_BUFFER_RESP_BODY;
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     (void)HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, responseHttpHeaders, responseHttpBody);
     umock_c_reset_all_calls();
 
-    prepareHTTPAPIEX_ExecuteRequest(&asGivenyHttpApi, requestHttpHeaders, responseHttpHeaders, responseHttpBody, HTTPAPI_ERROR);
+    prepareHTTPAPIEX_ExecuteRequest(&asGivenByHttpApi, requestHttpHeaders, responseHttpHeaders, responseHttpBody, HTTPAPI_ERROR);
 
     {
         STRICT_EXPECTED_CALL(HTTPAPI_CloseConnection(IGNORED_PTR_ARG))
@@ -2004,7 +2054,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_S2) /*refer to httpapiex_retry_m
             .IgnoreArgument(5)
             .IgnoreArgument(7)
             .ValidateArgumentBuffer(5, TEST_BUFFER, TEST_BUFFER_SIZE)
-            .CopyOutArgumentBuffer(7, &asGivenyHttpApi, sizeof(asGivenyHttpApi))
+            .CopyOutArgumentBuffer(7, &asGivenByHttpApi, sizeof(asGivenByHttpApi))
             ;
     }
     /// act
@@ -2026,16 +2076,16 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_S3) /*refer to httpapiex_retry_m
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
 
     unsigned int httpStatusCode;
-    unsigned int asGivenyHttpApi = 23;
+    unsigned int asGivenByHttpApi = 23;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
-    BUFFER_HANDLE requestHttpBody;
+    BUFFER_HANDLE requestHttpBody = TEST_BUFFER_REQ_BODY;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
-    BUFFER_HANDLE responseHttpBody;
+    BUFFER_HANDLE responseHttpBody = TEST_BUFFER_RESP_BODY;
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     (void)HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, responseHttpHeaders, responseHttpBody);
     umock_c_reset_all_calls();
 
-    prepareHTTPAPIEX_ExecuteRequest(&asGivenyHttpApi, requestHttpHeaders, responseHttpHeaders, responseHttpBody, HTTPAPI_ERROR);
+    prepareHTTPAPIEX_ExecuteRequest(&asGivenByHttpApi, requestHttpHeaders, responseHttpHeaders, responseHttpBody, HTTPAPI_ERROR);
 
     {
         STRICT_EXPECTED_CALL(HTTPAPI_CloseConnection(IGNORED_PTR_ARG))
@@ -2068,7 +2118,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_S3) /*refer to httpapiex_retry_m
             .IgnoreArgument(5)
             .IgnoreArgument(7)
             .ValidateArgumentBuffer(5, TEST_BUFFER, TEST_BUFFER_SIZE)
-            .CopyOutArgumentBuffer(7, &asGivenyHttpApi, sizeof(asGivenyHttpApi))
+            .CopyOutArgumentBuffer(7, &asGivenByHttpApi, sizeof(asGivenByHttpApi))
             .SetReturn(HTTPAPI_ERROR)
             ;
     }
@@ -2109,7 +2159,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_S3) /*refer to httpapiex_retry_m
             .IgnoreArgument(5)
             .IgnoreArgument(7)
             .ValidateArgumentBuffer(5, TEST_BUFFER, TEST_BUFFER_SIZE)
-            .CopyOutArgumentBuffer(7, &asGivenyHttpApi, sizeof(asGivenyHttpApi))
+            .CopyOutArgumentBuffer(7, &asGivenByHttpApi, sizeof(asGivenByHttpApi))
             ;
     }
 
@@ -2132,16 +2182,16 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_S4) /*refer to httpapiex_retry_m
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
 
     unsigned int httpStatusCode;
-    unsigned int asGivenyHttpApi = 23;
+    unsigned int asGivenByHttpApi = 23;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
-    BUFFER_HANDLE requestHttpBody;
+    BUFFER_HANDLE requestHttpBody = TEST_BUFFER_REQ_BODY;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
-    BUFFER_HANDLE responseHttpBody;
+    BUFFER_HANDLE responseHttpBody = TEST_BUFFER_RESP_BODY;
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     (void)HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, responseHttpHeaders, responseHttpBody);
     umock_c_reset_all_calls();
 
-    prepareHTTPAPIEX_ExecuteRequest(&asGivenyHttpApi, requestHttpHeaders, responseHttpHeaders, responseHttpBody, HTTPAPI_ERROR);
+    prepareHTTPAPIEX_ExecuteRequest(&asGivenByHttpApi, requestHttpHeaders, responseHttpHeaders, responseHttpBody, HTTPAPI_ERROR);
 
     {
         STRICT_EXPECTED_CALL(HTTPAPI_CloseConnection(IGNORED_PTR_ARG))
@@ -2187,7 +2237,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_S4) /*refer to httpapiex_retry_m
             .IgnoreArgument(5)
             .IgnoreArgument(7)
             .ValidateArgumentBuffer(5, TEST_BUFFER, TEST_BUFFER_SIZE)
-            .CopyOutArgumentBuffer(7, &asGivenyHttpApi, sizeof(asGivenyHttpApi))
+            .CopyOutArgumentBuffer(7, &asGivenByHttpApi, sizeof(asGivenByHttpApi))
             ;
     }
 
@@ -2212,16 +2262,16 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F1) /*refer to httpapiex_retry_m
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
 
     unsigned int httpStatusCode;
-    unsigned int asGivenyHttpApi = 23;
+    unsigned int asGivenByHttpApi = 23;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
-    BUFFER_HANDLE requestHttpBody;
+    BUFFER_HANDLE requestHttpBody = TEST_BUFFER_REQ_BODY;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
-    BUFFER_HANDLE responseHttpBody;
+    BUFFER_HANDLE responseHttpBody = TEST_BUFFER_RESP_BODY;
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     (void)HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, responseHttpHeaders, responseHttpBody);
     umock_c_reset_all_calls();
 
-    prepareHTTPAPIEX_ExecuteRequest(&asGivenyHttpApi, requestHttpHeaders, responseHttpHeaders, responseHttpBody, HTTPAPI_ERROR);
+    prepareHTTPAPIEX_ExecuteRequest(&asGivenByHttpApi, requestHttpHeaders, responseHttpHeaders, responseHttpBody, HTTPAPI_ERROR);
 
     {
         STRICT_EXPECTED_CALL(HTTPAPI_CloseConnection(IGNORED_PTR_ARG))
@@ -2251,7 +2301,6 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F1) /*refer to httpapiex_retry_m
     HTTPAPIEX_Destroy(httpapiexhandle);
 }
 
-
 /*Tests_SRS_HTTPAPIEX_02_029: [Otherwise, HTTAPIEX_ExecuteRequest shall return HTTPAPIEX_RECOVERYFAILED.] */
 TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F2) /*refer to httpapiex_retry_mechanism.vsdx*/
 {
@@ -2259,16 +2308,16 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F2) /*refer to httpapiex_retry_m
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
 
     unsigned int httpStatusCode;
-    unsigned int asGivenyHttpApi = 23;
+    unsigned int asGivenByHttpApi = 23;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
-    BUFFER_HANDLE requestHttpBody;
+    BUFFER_HANDLE requestHttpBody = TEST_BUFFER_REQ_BODY;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
-    BUFFER_HANDLE responseHttpBody;
+    BUFFER_HANDLE responseHttpBody = TEST_BUFFER_RESP_BODY;
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     (void)HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, responseHttpHeaders, responseHttpBody);
     umock_c_reset_all_calls();
 
-    prepareHTTPAPIEX_ExecuteRequest(&asGivenyHttpApi, requestHttpHeaders, responseHttpHeaders, responseHttpBody, HTTPAPI_ERROR);
+    prepareHTTPAPIEX_ExecuteRequest(&asGivenByHttpApi, requestHttpHeaders, responseHttpHeaders, responseHttpBody, HTTPAPI_ERROR);
 
     {
         STRICT_EXPECTED_CALL(HTTPAPI_CloseConnection(IGNORED_PTR_ARG))
@@ -2317,16 +2366,16 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F3) /*refer to httpapiex_retry_m
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
 
     unsigned int httpStatusCode;
-    unsigned int asGivenyHttpApi = 23;
+    unsigned int asGivenByHttpApi = 23;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
-    BUFFER_HANDLE requestHttpBody;
+    BUFFER_HANDLE requestHttpBody = TEST_BUFFER_REQ_BODY;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
-    BUFFER_HANDLE responseHttpBody;
+    BUFFER_HANDLE responseHttpBody = TEST_BUFFER_RESP_BODY;
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     (void)HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, responseHttpHeaders, responseHttpBody);
     umock_c_reset_all_calls();
 
-    prepareHTTPAPIEX_ExecuteRequest(&asGivenyHttpApi, requestHttpHeaders, responseHttpHeaders, responseHttpBody, HTTPAPI_ERROR);
+    prepareHTTPAPIEX_ExecuteRequest(&asGivenByHttpApi, requestHttpHeaders, responseHttpHeaders, responseHttpBody, HTTPAPI_ERROR);
 
     {
         STRICT_EXPECTED_CALL(HTTPAPI_CloseConnection(IGNORED_PTR_ARG))
@@ -2372,7 +2421,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F3) /*refer to httpapiex_retry_m
             .IgnoreArgument(5)
             .IgnoreArgument(7)
             .ValidateArgumentBuffer(5, TEST_BUFFER, TEST_BUFFER_SIZE)
-            .CopyOutArgumentBuffer(7, &asGivenyHttpApi, sizeof(asGivenyHttpApi))
+            .CopyOutArgumentBuffer(7, &asGivenByHttpApi, sizeof(asGivenByHttpApi))
             .SetReturn(HTTPAPI_ERROR);
             ;
     }
@@ -2403,16 +2452,16 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F4) /*refer to httpapiex_retry_m
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
 
     unsigned int httpStatusCode;
-    unsigned int asGivenyHttpApi = 23;
+    unsigned int asGivenByHttpApi = 23;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
-    BUFFER_HANDLE requestHttpBody;
+    BUFFER_HANDLE requestHttpBody = TEST_BUFFER_REQ_BODY;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
-    BUFFER_HANDLE responseHttpBody;
+    BUFFER_HANDLE responseHttpBody = TEST_BUFFER_RESP_BODY;
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     (void)HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, responseHttpHeaders, responseHttpBody);
     umock_c_reset_all_calls();
 
-    prepareHTTPAPIEX_ExecuteRequest(&asGivenyHttpApi, requestHttpHeaders, responseHttpHeaders, responseHttpBody, HTTPAPI_ERROR);
+    prepareHTTPAPIEX_ExecuteRequest(&asGivenByHttpApi, requestHttpHeaders, responseHttpHeaders, responseHttpBody, HTTPAPI_ERROR);
 
     {
         STRICT_EXPECTED_CALL(HTTPAPI_CloseConnection(IGNORED_PTR_ARG))
@@ -2446,7 +2495,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F4) /*refer to httpapiex_retry_m
             .IgnoreArgument(5)
             .IgnoreArgument(7)
             .ValidateArgumentBuffer(5, TEST_BUFFER, TEST_BUFFER_SIZE)
-            .CopyOutArgumentBuffer(7, &asGivenyHttpApi, sizeof(asGivenyHttpApi))
+            .CopyOutArgumentBuffer(7, &asGivenByHttpApi, sizeof(asGivenByHttpApi))
             .SetReturn(HTTPAPI_ERROR);
         ;
     }
@@ -2479,16 +2528,16 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F5) /*refer to httpapiex_retry_m
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
 
     unsigned int httpStatusCode;
-    unsigned int asGivenyHttpApi = 23;
+    unsigned int asGivenByHttpApi = 23;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
-    BUFFER_HANDLE requestHttpBody;
+    BUFFER_HANDLE requestHttpBody = TEST_BUFFER_REQ_BODY;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
-    BUFFER_HANDLE responseHttpBody;
+    BUFFER_HANDLE responseHttpBody = TEST_BUFFER_RESP_BODY;
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     (void)HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, responseHttpHeaders, responseHttpBody);
     umock_c_reset_all_calls();
 
-    prepareHTTPAPIEX_ExecuteRequest(&asGivenyHttpApi, requestHttpHeaders, responseHttpHeaders, responseHttpBody, HTTPAPI_ERROR);
+    prepareHTTPAPIEX_ExecuteRequest(&asGivenByHttpApi, requestHttpHeaders, responseHttpHeaders, responseHttpBody, HTTPAPI_ERROR);
 
     {
         STRICT_EXPECTED_CALL(HTTPAPI_CloseConnection(IGNORED_PTR_ARG))
@@ -2522,7 +2571,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F5) /*refer to httpapiex_retry_m
             .IgnoreArgument(5)
             .IgnoreArgument(7)
             .ValidateArgumentBuffer(5, TEST_BUFFER, TEST_BUFFER_SIZE)
-            .CopyOutArgumentBuffer(7, &asGivenyHttpApi, sizeof(asGivenyHttpApi))
+            .CopyOutArgumentBuffer(7, &asGivenByHttpApi, sizeof(asGivenByHttpApi))
             .SetReturn(HTTPAPI_ERROR);
         ;
     }
@@ -2537,7 +2586,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F5) /*refer to httpapiex_retry_m
     {
         STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
-        whenShallHTTPAPI_CreateConnection_fail[1] = currentHTTPAPI_CreateConnection_call + 1;
+        whenShallHTTPAPI_CreateConnection_fail[1] = currentHTTPAPI_CreateConnection_call + 2;
         STRICT_EXPECTED_CALL(HTTPAPI_CreateConnection(TEST_HOSTNAME));
     }
 
@@ -2564,16 +2613,16 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F6) /*refer to httpapiex_retry_m
     auto httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
 
     unsigned int httpStatusCode;
-    unsigned int asGivenyHttpApi = 23;
+    unsigned int asGivenByHttpApi = 23;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
-    BUFFER_HANDLE requestHttpBody;
+    BUFFER_HANDLE requestHttpBody = TEST_BUFFER_REQ_BODY;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
-    BUFFER_HANDLE responseHttpBody;
+    BUFFER_HANDLE responseHttpBody = TEST_BUFFER_RESP_BODY;
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     (void)HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, responseHttpHeaders, responseHttpBody);
     umock_c_reset_all_calls();
 
-    prepareHTTPAPIEX_ExecuteRequest(&asGivenyHttpApi, requestHttpHeaders, responseHttpHeaders, responseHttpBody, HTTPAPI_ERROR);
+    prepareHTTPAPIEX_ExecuteRequest(&asGivenByHttpApi, requestHttpHeaders, responseHttpHeaders, responseHttpBody, HTTPAPI_ERROR);
 
     {
         STRICT_EXPECTED_CALL(HTTPAPI_CloseConnection(IGNORED_PTR_ARG))
@@ -2607,7 +2656,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F6) /*refer to httpapiex_retry_m
             .IgnoreArgument(5)
             .IgnoreArgument(7)
             .ValidateArgumentBuffer(5, TEST_BUFFER, TEST_BUFFER_SIZE)
-            .CopyOutArgumentBuffer(7, &asGivenyHttpApi, sizeof(asGivenyHttpApi))
+            .CopyOutArgumentBuffer(7, &asGivenByHttpApi, sizeof(asGivenByHttpApi))
             .SetReturn(HTTPAPI_ERROR);
         ;
     }
@@ -2648,7 +2697,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F6) /*refer to httpapiex_retry_m
             .IgnoreArgument(5)
             .IgnoreArgument(7)
             .ValidateArgumentBuffer(5, TEST_BUFFER, TEST_BUFFER_SIZE)
-            .CopyOutArgumentBuffer(7, &asGivenyHttpApi, sizeof(asGivenyHttpApi))
+            .CopyOutArgumentBuffer(7, &asGivenByHttpApi, sizeof(asGivenByHttpApi))
             .SetReturn(HTTPAPI_ERROR);
         ;
     }
@@ -2660,7 +2709,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F6) /*refer to httpapiex_retry_m
     }
 
     /// act
-    auto result = HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, responseHttpHeaders, responseHttpBody);
+    HTTPAPIEX_RESULT result = HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, responseHttpHeaders, responseHttpBody);
 
     ///assert
     ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_RECOVERYFAILED, result);
@@ -2734,7 +2783,8 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_happy_path_without_httpapi_handle_succeeds)
 
     EXPECTED_CALL(VECTOR_find_if(IGNORED_PTR_ARG, IGNORED_PTR_ARG, "someOption")); /*this is looking for optionName*/
 
-    STRICT_EXPECTED_CALL(gballoc_malloc(sizeof("someOption"))); /*this is creating a clone of the optionName*/
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, "someOption"))
+        .IgnoreArgument(1); /*this is creating a clone of the optionName*/
 
     STRICT_EXPECTED_CALL(VECTOR_push_back(IGNORED_PTR_ARG, IGNORED_PTR_ARG, 1)) /*this is adding the optionName, value*/
         .IgnoreArgument(1)
@@ -2750,7 +2800,6 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_happy_path_without_httpapi_handle_succeeds)
     ///destroy
     HTTPAPIEX_Destroy(httpapiexhandle);
 }
-#endif
 
 /*Tests_SRS_HTTPAPIEX_02_037: [HTTPAPIEX_SetOption shall attempt to save the value of the option by calling HTTPAPI_CloneOption passing optionName and value, irrespective of the existence of a HTTPAPI_HANDLE] */
 /*Tests_SRS_HTTPAPIEX_02_039: [If HTTPAPI_CloneOption returns HTTPAPI_OK then HTTPAPIEX_SetOption shall create or update the pair optionName/value.]*/
