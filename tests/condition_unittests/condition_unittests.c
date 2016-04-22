@@ -120,7 +120,7 @@ TEST_FUNCTION(Condition_Init_Success)
     //arrange
     COND_HANDLE handle = NULL;
     EXPECTED_CALL(gballoc_malloc(4));
-    EXPECTED_CALL(gballoc_free(0)).IgnoreAllArguments();
+    EXPECTED_CALL(gballoc_free(0));
 
     //act
     handle = Condition_Init();
@@ -156,7 +156,7 @@ TEST_FUNCTION(Condition_Post_Handle_Succeed)
     COND_RESULT result;
 
     EXPECTED_CALL(gballoc_malloc(4));
-    EXPECTED_CALL(gballoc_free(0)).IgnoreAllArguments();
+    EXPECTED_CALL(gballoc_free(0));
 
     handle = Condition_Init();
 
@@ -196,7 +196,7 @@ TEST_FUNCTION(Condition_Wait_LOCK_NULL_Fail)
     COND_HANDLE handle = NULL;
     COND_RESULT result;
     EXPECTED_CALL(gballoc_malloc(4));
-    EXPECTED_CALL(gballoc_free(0)).IgnoreAllArguments();
+    EXPECTED_CALL(gballoc_free(0));
 
     handle = Condition_Init();
 
@@ -217,7 +217,7 @@ TEST_FUNCTION(Condition_Wait_LOCK_NULL_Ms_Fail)
     COND_HANDLE handle = NULL;
     COND_RESULT result;
     EXPECTED_CALL(gballoc_malloc(4));
-    EXPECTED_CALL(gballoc_free(0)).IgnoreAllArguments();
+    EXPECTED_CALL(gballoc_free(0));
 
     handle = Condition_Init();
 
@@ -271,7 +271,7 @@ TEST_FUNCTION(Condition_Deinit_deallocates_handle)
     COND_HANDLE handle = NULL;
     handle = Condition_Init();
     umock_c_reset_all_calls();
-    EXPECTED_CALL(gballoc_free(NULL)).IgnoreAllArguments();
+    EXPECTED_CALL(gballoc_free(NULL));
 
     // act
     Condition_Deinit(handle);
