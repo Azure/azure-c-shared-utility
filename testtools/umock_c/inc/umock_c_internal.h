@@ -492,11 +492,7 @@ typedef struct ARG_BUFFER_TAG
 #define IMPLEMENT_REGISTER_GLOBAL_MOCK_RETURN(return_type, name, ...) \
     IF(IS_NOT_VOID(return_type), void C2(set_global_mock_return_, name)(return_type return_value) \
     { \
-        if (umocktypes_copy(TOSTRING(return_type), (void*)&C2(mock_call_default_result_,name), (void*)&return_value) != 0) \
-        { \
-            UMOCK_LOG("Could not copy value of type %s when setting global mock return.\r\n", TOSTRING(return_type)); \
-            umock_c_indicate_error(UMOCK_C_ERROR); \
-        } \
+        C2(mock_call_default_result_,name) = return_value; \
     }, ) \
 
 /* Codes_SRS_UMOCK_C_LIB_01_111: [The REGISTER_GLOBAL_MOCK_FAIL_RETURN shall register a fail return value to be returned by a mock function when marked as failed in the expected calls.]*/
@@ -505,11 +501,7 @@ typedef struct ARG_BUFFER_TAG
 #define IMPLEMENT_REGISTER_GLOBAL_MOCK_FAIL_RETURN(return_type, name, ...) \
     IF(IS_NOT_VOID(return_type), void C2(set_global_mock_fail_return_, name)(return_type fail_return_value) \
     { \
-        if (umocktypes_copy(TOSTRING(return_type), (void*)&C2(mock_call_fail_result_,name), (void*)&fail_return_value) != 0) \
-        { \
-            UMOCK_LOG("Could not copy value of type %s when setting global mock fail return.\r\n", TOSTRING(return_type)); \
-            umock_c_indicate_error(UMOCK_C_ERROR); \
-        } \
+        C2(mock_call_fail_result_,name) = fail_return_value; \
     }, ) \
 
 /* Codes_SRS_UMOCK_C_LIB_01_113: [The REGISTER_GLOBAL_MOCK_RETURNS shall register both a success and a fail return value associated with a mock function.]*/
@@ -518,23 +510,22 @@ typedef struct ARG_BUFFER_TAG
 #define IMPLEMENT_REGISTER_GLOBAL_MOCK_RETURNS(return_type, name, ...) \
     IF(IS_NOT_VOID(return_type), void C2(set_global_mock_returns_, name)(return_type return_value, return_type fail_return_value) \
     { \
-        if ((umocktypes_copy(TOSTRING(return_type), (void*)&C2(mock_call_default_result_,name), (void*)&return_value) != 0) || \
-            (umocktypes_copy(TOSTRING(return_type), (void*)&C2(mock_call_fail_result_, name), (void*)&fail_return_value) != 0)) \
-        { \
-            UMOCK_LOG("Could not copy value of type %s when setting global mock fail returns.\r\n", TOSTRING(return_type)); \
-            umock_c_indicate_error(UMOCK_C_ERROR); \
-        } \
+        C2(mock_call_default_result_,name) = return_value; \
+        C2(mock_call_fail_result_,name) = fail_return_value; \
     }, ) \
 
 #define DECLARE_VALIDATE_ONE_ARGUMENT_FUNC_TYPE(name) \
     typedef struct C2(_mock_call_modifier_, name) (*C2(validate_one_argument_func_type_, name))(void);
 
 #define COPY_RETURN_VALUE(return_type, name) \
-    if (umocktypes_copy(TOSTRING(return_type), (void*)&result, (void*)&C2(mock_call_default_result_, name)) != 0) \
+    result = C2(mock_call_default_result_, name);
+
+/*if (umocktypes_copy(TOSTRING(return_type), (void*)&result, (void*)&C2(mock_call_default_result_, name)) != 0) \
     { \
         UMOCK_LOG("Could not copy value of type %s.\r\n", TOSTRING(return_type)); \
         umock_c_indicate_error(UMOCK_C_ERROR); \
     }
+*/
 
 /* Codes_SRS_UMOCK_C_LIB_01_004: [If ENABLE_MOCKS is defined, MOCKABLE_FUNCTION shall generate the declaration of the function and code for the mocked function, thus allowing setting up of expectations in test functions.] */
 /* Codes_SRS_UMOCK_C_LIB_01_014: [For each argument the argument value shall be stored for later comparison with actual calls.] */
@@ -771,12 +762,8 @@ typedef struct ARG_BUFFER_TAG
                 { \
                     if (matched_call_data->return_value_set) \
                     { \
-                        if (umocktypes_copy(#return_type, (void*)&result, (void*)&matched_call_data->return_value) != 0) \
-                        { \
-                            UMOCK_LOG("Could not copy a value of type %s in an actual call for %s.\r\n", TOSTRING(return_type), TOSTRING(name)); \
-                            umock_c_indicate_error(UMOCK_C_ERROR); \
-                        } \
-                        IF(IS_NOT_VOID(return_type),result_value_set = 1;,) \
+                        result = matched_call_data->return_value; \
+                        result_value_set = 1; \
                     } \
                     else \
                     { \

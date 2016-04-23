@@ -127,6 +127,9 @@ static TEST_MUTEX_HANDLE test_mutex;
 MOCK_FUNCTION_WITH_CODE(, void, test_mock_function_with_code_1_arg, int, a);
 MOCK_FUNCTION_END()
 
+MOCK_FUNCTION_WITH_CODE(, char*, test_mock_function_returning_string_with_code);
+MOCK_FUNCTION_END("a")
+
 BEGIN_TEST_SUITE(umock_c_integrationtests)
 
 TEST_SUITE_INITIALIZE(suite_init)
@@ -1730,6 +1733,40 @@ TEST_FUNCTION(the_value_for_a_function_that_returns_a_char_ptr_is_freed)
     ASSERT_ARE_EQUAL(char_ptr, "a", result);
     ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_expected_calls());
     ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
+}
+
+TEST_FUNCTION(the_value_for_a_function_that_returns_a_char_ptr_is_freed_when_no_matched_return)
+{
+    // arrange
+
+    // act
+    const char* result = test_mock_function_returning_string();
+
+    // assert
+    ASSERT_IS_NULL(result);
+}
+
+TEST_FUNCTION(the_value_for_a_function_that_returns_a_char_ptr_with_a_default_is_freed_when_no_matched_return)
+{
+    // arrange
+
+    // act
+    const char* result = test_mock_function_returning_string_with_code();
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "a", result);
+}
+
+TEST_FUNCTION(the_value_for_a_function_that_returns_a_char_ptr_set_by_macro_is_freed)
+{
+    // arrange
+    REGISTER_GLOBAL_MOCK_RETURN(test_mock_function_returning_string_with_macro, "a");
+
+    // act
+    const char* result = test_mock_function_returning_string_with_macro();
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "a", result);
 }
 
 END_TEST_SUITE(umock_c_integrationtests)

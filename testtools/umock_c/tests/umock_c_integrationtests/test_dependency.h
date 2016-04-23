@@ -49,6 +49,7 @@ extern "C" {
     MOCKABLE_FUNCTION(int, test_dependency_with_global_return);
     MOCKABLE_FUNCTION(int, test_dependency_returning_int);
     MOCKABLE_FUNCTION(char*, test_mock_function_returning_string);
+    MOCKABLE_FUNCTION(char*, test_mock_function_returning_string_with_macro);
 
 #ifdef __cplusplus
 }
