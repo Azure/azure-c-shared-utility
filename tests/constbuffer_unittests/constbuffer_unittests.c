@@ -49,7 +49,6 @@ void my_gballoc_free(void* ptr)
 #define ENABLE_MOCKS
 #include "umock_c.h"
 #include "azure_c_shared_utility/buffer_.h"
-#define GB_DEBUG_ALLOC
 #include "azure_c_shared_utility/gballoc.h"
 
 #undef ENABLE_MOCKS

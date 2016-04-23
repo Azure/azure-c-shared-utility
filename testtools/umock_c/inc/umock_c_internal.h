@@ -129,7 +129,7 @@ typedef struct ARG_BUFFER_TAG
     if ((result == 1) && (C2(typed_left->is_ignored_, arg_name) == 0) \
         && (C2(typed_right->is_ignored_, arg_name) == 0)) \
     { \
-        result = umocktypes_are_equal(#arg_type, &typed_left->arg_name, &typed_right->arg_name); \
+        result = umocktypes_are_equal(#arg_type, (void*)&typed_left->arg_name, (void*)&typed_right->arg_name); \
     }
 
 #define DECLARE_MOCK_CALL_MODIFIER(name, ...) \
@@ -705,11 +705,11 @@ typedef struct ARG_BUFFER_TAG
         IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_COUNTED(FREE_VALIDATE_ARG_BUFFERS, __VA_ARGS__),) \
         IF(IS_NOT_VOID(return_type),if (typed_mock_call_data->return_value_set) \
         { \
-            umocktypes_free(TOSTRING(return_type), &typed_mock_call_data->return_value); \
+            umocktypes_free(TOSTRING(return_type), (void*)&typed_mock_call_data->return_value); \
         } \
         if (typed_mock_call_data->fail_return_value_set) \
         { \
-            umocktypes_free(TOSTRING(return_type), &typed_mock_call_data->fail_return_value); \
+            umocktypes_free(TOSTRING(return_type), (void*)&typed_mock_call_data->fail_return_value); \
         },) \
         free(mock_call_data); \
     } \

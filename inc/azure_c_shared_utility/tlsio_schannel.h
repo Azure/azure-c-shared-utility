@@ -22,7 +22,7 @@ MOCKABLE_FUNCTION(int, tlsio_schannel_send, CONCRETE_IO_HANDLE, tls_io, const vo
 MOCKABLE_FUNCTION(void, tlsio_schannel_dowork, CONCRETE_IO_HANDLE, tls_io);
 MOCKABLE_FUNCTION(int, tlsio_schannel_setoption, CONCRETE_IO_HANDLE, tls_io, const char*, optionName, const void*, value);
 
-MOCKABLE_FUNCTION(const, IO_INTERFACE_DESCRIPTION*, tlsio_schannel_get_interface_description);
+MOCKABLE_FUNCTION(const IO_INTERFACE_DESCRIPTION*, tlsio_schannel_get_interface_description);
 
 #ifdef __cplusplus
 }

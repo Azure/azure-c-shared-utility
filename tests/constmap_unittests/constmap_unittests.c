@@ -43,7 +43,6 @@ void my_gballoc_free(void* ptr)
 #include "umock_c.h"
 #include "umocktypes_charptr.h"
 #include "azure_c_shared_utility/map.h"
-#define GB_DEBUG_ALLOC
 #include "azure_c_shared_utility/gballoc.h"
 
 #undef ENABLE_MOCKS
