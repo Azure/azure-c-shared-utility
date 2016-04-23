@@ -778,7 +778,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
 			.IgnoreArgument(1);
 
 		///Act
-		auto result = ConstMap_GetInternals(aHandle, &keys, &values, &count);
+		CONSTMAP_RESULT result = ConstMap_GetInternals(aHandle, &keys, &values, &count);
 
 		///Assert
 		ASSERT_ARE_EQUAL(CONSTMAP_RESULT, CONSTMAP_OK, result);
@@ -803,7 +803,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
 		CONSTMAP_HANDLE aHandle = NULL;
 
 		///Act
-		auto result = ConstMap_GetInternals(aHandle, &keys, &values, &count);
+		CONSTMAP_RESULT result = ConstMap_GetInternals(aHandle, &keys, &values, &count);
 
 		///Assert
 		ASSERT_ARE_EQUAL(CONSTMAP_RESULT, CONSTMAP_INVALIDARG, result);
@@ -857,7 +857,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
 		for (size_t e = 0; e < errors; e++)
 		{
 			currentMapResult = mapErrorList[e];
-			auto result = ConstMap_GetInternals(aHandle, &keys, &values, &count);
+			CONSTMAP_RESULT result = ConstMap_GetInternals(aHandle, &keys, &values, &count);
 			ASSERT_ARE_EQUAL(CONSTMAP_RESULT, constErrorList[e], result);
 		}
 

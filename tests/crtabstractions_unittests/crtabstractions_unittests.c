@@ -832,7 +832,7 @@ TEST_SUITE_CLEANUP(b)
             // arrange
 
             // act
-            auto result = unsignedIntToString(NULL, 100, 43);
+            int result = unsignedIntToString(NULL, 100, 43);
 
             // assert
             ASSERT_ARE_NOT_EQUAL(int, 0, result);
@@ -978,7 +978,7 @@ TEST_SUITE_CLEANUP(b)
             // arrange
 
             // act
-            auto result = size_tToString(NULL, 100, 43);
+            int result = size_tToString(NULL, 100, 43);
 
             // assert
             ASSERT_ARE_NOT_EQUAL(int, 0, result);

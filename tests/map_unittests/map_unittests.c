@@ -217,7 +217,7 @@ BEGIN_TEST_SUITE(map_unittests)
             .IgnoreArgument(1);
 
         ///act
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         Map_Destroy(handle);
 
         ///assert
@@ -230,7 +230,7 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Destroy_on_non_empty_map_succeeds_1)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
         umock_c_reset_all_calls();
 
@@ -262,7 +262,7 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Destroy_on_non_empty_map_succeeds_2)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
         Map_AddOrUpdate(handle, TEST_REDKEY, "a"); /*overwrites to something smaller*/
         umock_c_reset_all_calls();
@@ -295,14 +295,14 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Create_Destroy_succeeds_2)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
         const char*const* keys;
         const char*const* values;
         size_t count;
 
         ///act
-        auto result = Map_GetInternals(handle, &keys, &values, &count);
+        MAP_RESULT result = Map_GetInternals(handle, &keys, &values, &count);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_OK, result);
@@ -324,7 +324,7 @@ BEGIN_TEST_SUITE(map_unittests)
             .IgnoreArgument(1);
 
         ///act
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
 
         ///assert
         ASSERT_IS_NULL(handle);
@@ -351,11 +351,11 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Add_with_NULL_parameter_handle_fails)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
         ///act
-        auto result= Map_Add(NULL, TEST_REDKEY, TEST_REDVALUE);
+        MAP_RESULT result = Map_Add(NULL, TEST_REDKEY, TEST_REDVALUE);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_INVALIDARG, result);
@@ -369,11 +369,11 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Add_with_NULL_parameter_key_fails)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
         ///act
-        auto result = Map_Add(handle, NULL, TEST_REDVALUE);
+        MAP_RESULT result = Map_Add(handle, NULL, TEST_REDVALUE);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_INVALIDARG, result);
@@ -387,11 +387,11 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Add_with_NULL_parameter_value_fails)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
         ///act
-        auto result = Map_Add(handle, TEST_REDKEY, NULL);
+        MAP_RESULT result = Map_Add(handle, TEST_REDKEY, NULL);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_INVALIDARG, result);
@@ -409,7 +409,7 @@ BEGIN_TEST_SUITE(map_unittests)
         const char*const* keys;
         const char*const* values;
         size_t count;
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
         STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
@@ -421,8 +421,8 @@ BEGIN_TEST_SUITE(map_unittests)
         STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_REDVALUE) + 1)); /*copy of red value*/
 
         ///act
-        auto result1 = Map_Add(handle, TEST_REDKEY, TEST_REDVALUE);
-        auto result2 = Map_GetInternals(handle, &keys, &values, &count);
+        MAP_RESULT result1 = Map_Add(handle, TEST_REDKEY, TEST_REDVALUE);
+        MAP_RESULT result2 = Map_GetInternals(handle, &keys, &values, &count);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_OK, result1);
@@ -447,7 +447,7 @@ BEGIN_TEST_SUITE(map_unittests)
         const char*const* keys;
         const char*const* values;
         size_t count;
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
         STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
@@ -469,9 +469,9 @@ BEGIN_TEST_SUITE(map_unittests)
         STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_BLUEVALUE) + 1)); /*copy of blue value*/
 
         ///act
-        auto result1 = Map_Add(handle, TEST_REDKEY, TEST_REDVALUE);
-        auto result2 = Map_Add(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
-        auto result3 = Map_GetInternals(handle, &keys, &values, &count);
+        MAP_RESULT result1 = Map_Add(handle, TEST_REDKEY, TEST_REDVALUE);
+        MAP_RESULT result2 = Map_Add(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
+        MAP_RESULT result3 = Map_GetInternals(handle, &keys, &values, &count);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_OK, result1);
@@ -496,7 +496,7 @@ BEGIN_TEST_SUITE(map_unittests)
         const char*const* keys;
         const char*const* values;
         size_t count;
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
         STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
@@ -528,9 +528,9 @@ BEGIN_TEST_SUITE(map_unittests)
 
 
         ///act
-        auto result1 = Map_Add(handle, TEST_REDKEY, TEST_REDVALUE);
-        auto result2 = Map_Add(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
-        auto result3 = Map_GetInternals(handle, &keys, &values, &count);
+        MAP_RESULT result1 = Map_Add(handle, TEST_REDKEY, TEST_REDVALUE);
+        MAP_RESULT result2 = Map_Add(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
+        MAP_RESULT result3 = Map_GetInternals(handle, &keys, &values, &count);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_OK, result1);
@@ -553,7 +553,7 @@ BEGIN_TEST_SUITE(map_unittests)
         const char*const* keys;
         const char*const* values;
         size_t count;
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
         STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
@@ -581,9 +581,9 @@ BEGIN_TEST_SUITE(map_unittests)
 
 
         ///act
-        auto result1 = Map_Add(handle, TEST_REDKEY, TEST_REDVALUE);
-        auto result2 = Map_Add(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
-        auto result3 = Map_GetInternals(handle, &keys, &values, &count);
+        MAP_RESULT result1 = Map_Add(handle, TEST_REDKEY, TEST_REDVALUE);
+        MAP_RESULT result2 = Map_Add(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
+        MAP_RESULT result3 = Map_GetInternals(handle, &keys, &values, &count);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_OK, result1);
@@ -606,7 +606,7 @@ BEGIN_TEST_SUITE(map_unittests)
         const char*const* keys;
         const char*const* values;
         size_t count;
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
         STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
@@ -629,9 +629,9 @@ BEGIN_TEST_SUITE(map_unittests)
             .IgnoreArgument(1);
 
         ///act
-        auto result1 = Map_Add(handle, TEST_REDKEY, TEST_REDVALUE);
-        auto result2 = Map_Add(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
-        auto result3 = Map_GetInternals(handle, &keys, &values, &count);
+        MAP_RESULT result1 = Map_Add(handle, TEST_REDKEY, TEST_REDVALUE);
+        MAP_RESULT result2 = Map_Add(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
+        MAP_RESULT result3 = Map_GetInternals(handle, &keys, &values, &count);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_OK, result1);
@@ -654,7 +654,7 @@ BEGIN_TEST_SUITE(map_unittests)
         const char*const* keys;
         const char*const* values;
         size_t count;
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
         STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
@@ -672,9 +672,9 @@ BEGIN_TEST_SUITE(map_unittests)
         /*below are undo actions*/
 
         ///act
-        auto result1 = Map_Add(handle, TEST_REDKEY, TEST_REDVALUE);
-        auto result2 = Map_Add(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
-        auto result3 = Map_GetInternals(handle, &keys, &values, &count);
+        MAP_RESULT result1 = Map_Add(handle, TEST_REDKEY, TEST_REDVALUE);
+        MAP_RESULT result2 = Map_Add(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
+        MAP_RESULT result3 = Map_GetInternals(handle, &keys, &values, &count);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_OK, result1);
@@ -697,7 +697,7 @@ BEGIN_TEST_SUITE(map_unittests)
         const char*const* keys;
         const char*const* values;
         size_t count;
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
         STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
@@ -718,8 +718,8 @@ BEGIN_TEST_SUITE(map_unittests)
             .IgnoreArgument(1);
 
         ///act
-        auto result1 = Map_Add(handle, TEST_REDKEY, TEST_REDVALUE);
-        auto result3 = Map_GetInternals(handle, &keys, &values, &count);
+        MAP_RESULT result1 = Map_Add(handle, TEST_REDKEY, TEST_REDVALUE);
+        MAP_RESULT result3 = Map_GetInternals(handle, &keys, &values, &count);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_ERROR, result1);
@@ -739,7 +739,7 @@ BEGIN_TEST_SUITE(map_unittests)
         const char*const* keys;
         const char*const* values;
         size_t count;
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
         STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
@@ -756,8 +756,8 @@ BEGIN_TEST_SUITE(map_unittests)
             .IgnoreArgument(1);
 
         ///act
-        auto result1 = Map_Add(handle, TEST_REDKEY, TEST_REDVALUE);
-        auto result3 = Map_GetInternals(handle, &keys, &values, &count);
+        MAP_RESULT result1 = Map_Add(handle, TEST_REDKEY, TEST_REDVALUE);
+        MAP_RESULT result3 = Map_GetInternals(handle, &keys, &values, &count);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_ERROR, result1);
@@ -777,7 +777,7 @@ BEGIN_TEST_SUITE(map_unittests)
         const char*const* keys;
         const char*const* values;
         size_t count;
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
         STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
@@ -790,8 +790,8 @@ BEGIN_TEST_SUITE(map_unittests)
             .IgnoreArgument(1);
 
         ///act
-        auto result1 = Map_Add(handle, TEST_REDKEY, TEST_REDVALUE);
-        auto result3 = Map_GetInternals(handle, &keys, &values, &count);
+        MAP_RESULT result1 = Map_Add(handle, TEST_REDKEY, TEST_REDVALUE);
+        MAP_RESULT result3 = Map_GetInternals(handle, &keys, &values, &count);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_ERROR, result1);
@@ -811,7 +811,7 @@ BEGIN_TEST_SUITE(map_unittests)
         const char*const* keys;
         const char*const* values;
         size_t count;
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
         whenShallrealloc_fail = currentrealloc_call + 1;
@@ -820,8 +820,8 @@ BEGIN_TEST_SUITE(map_unittests)
         /*below are undo actions*/ /*none*/
 
         ///act
-        auto result1 = Map_Add(handle, TEST_REDKEY, TEST_REDVALUE);
-        auto result3 = Map_GetInternals(handle, &keys, &values, &count);
+        MAP_RESULT result1 = Map_Add(handle, TEST_REDKEY, TEST_REDVALUE);
+        MAP_RESULT result3 = Map_GetInternals(handle, &keys, &values, &count);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_ERROR, result1);
@@ -841,15 +841,15 @@ BEGIN_TEST_SUITE(map_unittests)
         const char*const* keys;
         const char*const* values;
         size_t count;
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         (void)Map_Add(handle, TEST_REDKEY, TEST_REDVALUE);
         umock_c_reset_all_calls();
 
         /*below are undo actions*/ /*none*/
 
         ///act
-        auto result1 = Map_Add(handle, TEST_REDKEY, TEST_REDVALUE);
-        auto result3 = Map_GetInternals(handle, &keys, &values, &count);
+        MAP_RESULT result1 = Map_Add(handle, TEST_REDKEY, TEST_REDVALUE);
+        MAP_RESULT result3 = Map_GetInternals(handle, &keys, &values, &count);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_KEYEXISTS, result1);
@@ -871,7 +871,7 @@ BEGIN_TEST_SUITE(map_unittests)
         const char*const* keys;
         const char*const* values;
         size_t count;
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         (void)Map_Add(handle, TEST_REDKEY, TEST_REDVALUE);
         (void)Map_Add(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
         umock_c_reset_all_calls();
@@ -879,8 +879,8 @@ BEGIN_TEST_SUITE(map_unittests)
         /*below are undo actions*/ /*none*/
 
         ///act
-        auto result1 = Map_Add(handle, TEST_BLUEKEY, TEST_YELLOWVALUE);
-        auto result3 = Map_GetInternals(handle, &keys, &values, &count);
+        MAP_RESULT result1 = Map_Add(handle, TEST_BLUEKEY, TEST_YELLOWVALUE);
+        MAP_RESULT result3 = Map_GetInternals(handle, &keys, &values, &count);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_KEYEXISTS, result1);
@@ -903,7 +903,7 @@ BEGIN_TEST_SUITE(map_unittests)
         ///arrange
 
         ///act
-        auto result1 = Map_AddOrUpdate(NULL, TEST_BLUEKEY, TEST_YELLOWVALUE);
+        MAP_RESULT result1 = Map_AddOrUpdate(NULL, TEST_BLUEKEY, TEST_YELLOWVALUE);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_INVALIDARG, result1);
@@ -916,11 +916,11 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_AddOrUpdate_with_NULL_key_handle_fails)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
         ///act
-        auto result1 = Map_AddOrUpdate(handle, NULL, TEST_YELLOWVALUE);
+        MAP_RESULT result1 = Map_AddOrUpdate(handle, NULL, TEST_YELLOWVALUE);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_INVALIDARG, result1);
@@ -934,11 +934,11 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_AddOrUpdate_with_NULL_value_handle_fails)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
         ///act
-        auto result1 = Map_AddOrUpdate(handle, TEST_REDKEY, NULL);
+        MAP_RESULT result1 = Map_AddOrUpdate(handle, TEST_REDKEY, NULL);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_INVALIDARG, result1);
@@ -956,7 +956,7 @@ BEGIN_TEST_SUITE(map_unittests)
         const char*const* keys;
         const char*const* values;
         size_t count;
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
         STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
@@ -965,8 +965,8 @@ BEGIN_TEST_SUITE(map_unittests)
         STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_REDVALUE) + 1)); /*copy of red value*/
 
         ///act
-        auto result1 = Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
-        auto result2 = Map_GetInternals(handle, &keys, &values, &count);
+        MAP_RESULT result1 = Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
+        MAP_RESULT result2 = Map_GetInternals(handle, &keys, &values, &count);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_OK, result1);
@@ -987,7 +987,7 @@ BEGIN_TEST_SUITE(map_unittests)
         const char*const* keys;
         const char*const* values;
         size_t count;
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
         STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
@@ -1003,9 +1003,9 @@ BEGIN_TEST_SUITE(map_unittests)
         STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_BLUEVALUE) + 1)); /*copy of red value*/
 
         ///act
-        auto result1 = Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
-        auto result2 = Map_AddOrUpdate(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
-        auto result3 = Map_GetInternals(handle, &keys, &values, &count);
+        MAP_RESULT result1 = Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
+        MAP_RESULT result2 = Map_AddOrUpdate(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
+        MAP_RESULT result3 = Map_GetInternals(handle, &keys, &values, &count);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_OK, result1);
@@ -1030,7 +1030,7 @@ BEGIN_TEST_SUITE(map_unittests)
         const char*const* keys;
         const char*const* values;
         size_t count;
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
         STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
@@ -1056,9 +1056,9 @@ BEGIN_TEST_SUITE(map_unittests)
             .IgnoreArgument(1);
 
         ///act
-        auto result1 = Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
-        auto result2 = Map_AddOrUpdate(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
-        auto result3 = Map_GetInternals(handle, &keys, &values, &count);
+        MAP_RESULT result1 = Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
+        MAP_RESULT result2 = Map_AddOrUpdate(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
+        MAP_RESULT result3 = Map_GetInternals(handle, &keys, &values, &count);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_OK, result1);
@@ -1080,7 +1080,7 @@ BEGIN_TEST_SUITE(map_unittests)
         const char*const* keys;
         const char*const* values;
         size_t count;
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
         STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
@@ -1102,9 +1102,9 @@ BEGIN_TEST_SUITE(map_unittests)
             .IgnoreArgument(1);
 
         ///act
-        auto result1 = Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
-        auto result2 = Map_AddOrUpdate(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
-        auto result3 = Map_GetInternals(handle, &keys, &values, &count);
+        MAP_RESULT result1 = Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
+        MAP_RESULT result2 = Map_AddOrUpdate(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
+        MAP_RESULT result3 = Map_GetInternals(handle, &keys, &values, &count);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_OK, result1);
@@ -1126,7 +1126,7 @@ BEGIN_TEST_SUITE(map_unittests)
         const char*const* keys;
         const char*const* values;
         size_t count;
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
         STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
@@ -1145,9 +1145,9 @@ BEGIN_TEST_SUITE(map_unittests)
             .IgnoreArgument(1);
 
         ///act
-        auto result1 = Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
-        auto result2 = Map_AddOrUpdate(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
-        auto result3 = Map_GetInternals(handle, &keys, &values, &count);
+        MAP_RESULT result1 = Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
+        MAP_RESULT result2 = Map_AddOrUpdate(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
+        MAP_RESULT result3 = Map_GetInternals(handle, &keys, &values, &count);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_OK, result1);
@@ -1169,7 +1169,7 @@ BEGIN_TEST_SUITE(map_unittests)
         const char*const* keys;
         const char*const* values;
         size_t count;
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
         STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
@@ -1184,9 +1184,9 @@ BEGIN_TEST_SUITE(map_unittests)
         /*below are undo actions*/ /*none*/
 
         ///act
-        auto result1 = Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
-        auto result2 = Map_AddOrUpdate(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
-        auto result3 = Map_GetInternals(handle, &keys, &values, &count);
+        MAP_RESULT result1 = Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
+        MAP_RESULT result2 = Map_AddOrUpdate(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
+        MAP_RESULT result3 = Map_GetInternals(handle, &keys, &values, &count);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_OK, result1);
@@ -1208,7 +1208,7 @@ BEGIN_TEST_SUITE(map_unittests)
         const char*const* keys;
         const char*const* values;
         size_t count;
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
         STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
@@ -1226,8 +1226,8 @@ BEGIN_TEST_SUITE(map_unittests)
             .IgnoreArgument(1);
 
         ///act
-        auto result1 = Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
-        auto result3 = Map_GetInternals(handle, &keys, &values, &count);
+        MAP_RESULT result1 = Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
+        MAP_RESULT result3 = Map_GetInternals(handle, &keys, &values, &count);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_ERROR, result1);
@@ -1246,7 +1246,7 @@ BEGIN_TEST_SUITE(map_unittests)
         const char*const* keys;
         const char*const* values;
         size_t count;
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
         STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
@@ -1262,8 +1262,8 @@ BEGIN_TEST_SUITE(map_unittests)
             .IgnoreArgument(1);
 
         ///act
-        auto result1 = Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
-        auto result3 = Map_GetInternals(handle, &keys, &values, &count);
+        MAP_RESULT result1 = Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
+        MAP_RESULT result3 = Map_GetInternals(handle, &keys, &values, &count);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_ERROR, result1);
@@ -1282,7 +1282,7 @@ BEGIN_TEST_SUITE(map_unittests)
         const char*const* keys;
         const char*const* values;
         size_t count;
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
         STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*))); /*growing keys*/
@@ -1294,8 +1294,8 @@ BEGIN_TEST_SUITE(map_unittests)
             .IgnoreArgument(1);
 
         ///act
-        auto result1 = Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
-        auto result3 = Map_GetInternals(handle, &keys, &values, &count);
+        MAP_RESULT result1 = Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
+        MAP_RESULT result3 = Map_GetInternals(handle, &keys, &values, &count);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_ERROR, result1);
@@ -1314,7 +1314,7 @@ BEGIN_TEST_SUITE(map_unittests)
         const char*const* keys;
         const char*const* values;
         size_t count;
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
         whenShallrealloc_fail = currentrealloc_call + 1;
@@ -1323,8 +1323,8 @@ BEGIN_TEST_SUITE(map_unittests)
         /*below are undo actions*/
 
         ///act
-        auto result1 = Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
-        auto result3 = Map_GetInternals(handle, &keys, &values, &count);
+        MAP_RESULT result1 = Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
+        MAP_RESULT result3 = Map_GetInternals(handle, &keys, &values, &count);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_ERROR, result1);
@@ -1343,7 +1343,7 @@ BEGIN_TEST_SUITE(map_unittests)
         const char*const* keys;
         const char*const* values;
         size_t count;
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
         (void)Map_AddOrUpdate(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
         umock_c_reset_all_calls();
@@ -1352,8 +1352,8 @@ BEGIN_TEST_SUITE(map_unittests)
             .ValidateArgumentBuffer(1, TEST_REDVALUE, strlen(TEST_REDVALUE) + 1);
 
         ///act
-        auto result1 = Map_AddOrUpdate(handle, TEST_REDKEY, TEST_YELLOWVALUE);
-        auto result3 = Map_GetInternals(handle, &keys, &values, &count);
+        MAP_RESULT result1 = Map_AddOrUpdate(handle, TEST_REDKEY, TEST_YELLOWVALUE);
+        MAP_RESULT result3 = Map_GetInternals(handle, &keys, &values, &count);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_OK, result1);
@@ -1378,7 +1378,7 @@ BEGIN_TEST_SUITE(map_unittests)
         const char*const* keys;
         const char*const* values;
         size_t count;
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
         (void)Map_AddOrUpdate(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
         umock_c_reset_all_calls();
@@ -1388,8 +1388,8 @@ BEGIN_TEST_SUITE(map_unittests)
             .ValidateArgumentBuffer(1, TEST_REDVALUE, strlen(TEST_REDVALUE) + 1);
 
         ///act
-        auto result1 = Map_AddOrUpdate(handle, TEST_REDKEY, TEST_YELLOWVALUE);
-        auto result3 = Map_GetInternals(handle, &keys, &values, &count);
+        MAP_RESULT result1 = Map_AddOrUpdate(handle, TEST_REDKEY, TEST_YELLOWVALUE);
+        MAP_RESULT result3 = Map_GetInternals(handle, &keys, &values, &count);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_ERROR, result1);
@@ -1413,7 +1413,7 @@ BEGIN_TEST_SUITE(map_unittests)
         const char*const* keys;
         const char*const* values;
         size_t count;
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
         (void)Map_AddOrUpdate(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
         umock_c_reset_all_calls();
@@ -1422,8 +1422,8 @@ BEGIN_TEST_SUITE(map_unittests)
             .ValidateArgumentBuffer(1, TEST_BLUEVALUE, strlen(TEST_BLUEVALUE) + 1);
 
         ///act
-        auto result1 = Map_AddOrUpdate(handle, TEST_BLUEKEY, TEST_YELLOWVALUE);
-        auto result3 = Map_GetInternals(handle, &keys, &values, &count);
+        MAP_RESULT result1 = Map_AddOrUpdate(handle, TEST_BLUEKEY, TEST_YELLOWVALUE);
+        MAP_RESULT result3 = Map_GetInternals(handle, &keys, &values, &count);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_OK, result1);
@@ -1447,7 +1447,7 @@ BEGIN_TEST_SUITE(map_unittests)
         const char*const* keys;
         const char*const* values;
         size_t count;
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
         (void)Map_AddOrUpdate(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
         umock_c_reset_all_calls();
@@ -1457,8 +1457,8 @@ BEGIN_TEST_SUITE(map_unittests)
             .ValidateArgumentBuffer(1, TEST_BLUEVALUE, strlen(TEST_BLUEVALUE) + 1);
 
         ///act
-        auto result1 = Map_AddOrUpdate(handle, TEST_BLUEKEY, TEST_YELLOWVALUE);
-        auto result3 = Map_GetInternals(handle, &keys, &values, &count);
+        MAP_RESULT result1 = Map_AddOrUpdate(handle, TEST_BLUEKEY, TEST_YELLOWVALUE);
+        MAP_RESULT result3 = Map_GetInternals(handle, &keys, &values, &count);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_ERROR, result1);
@@ -1481,7 +1481,7 @@ BEGIN_TEST_SUITE(map_unittests)
         ///arrange
         
         ///act
-        auto result1 = Map_Delete(NULL, TEST_BLUEKEY);
+        MAP_RESULT result1 = Map_Delete(NULL, TEST_BLUEKEY);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_INVALIDARG, result1);
@@ -1494,11 +1494,11 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Delete_with_NULL_key_fails)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
         ///act
-        auto result1 = Map_Delete(handle, NULL);
+        MAP_RESULT result1 = Map_Delete(handle, NULL);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_INVALIDARG, result1);
@@ -1512,11 +1512,11 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Delete_with_not_found_key_succeeds_1)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
         ///act
-        auto result1 = Map_Delete(handle, TEST_REDKEY);
+        MAP_RESULT result1 = Map_Delete(handle, TEST_REDKEY);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_KEYNOTFOUND, result1);
@@ -1530,12 +1530,12 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Delete_with_not_found_key_succeeds_2)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, TEST_YELLOWKEY, TEST_YELLOWVALUE);
         umock_c_reset_all_calls();
 
         ///act
-        auto result1 = Map_Delete(handle, TEST_REDKEY);
+        MAP_RESULT result1 = Map_Delete(handle, TEST_REDKEY);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_KEYNOTFOUND, result1);
@@ -1549,7 +1549,7 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Delete_with_1_found_key_succeeds)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         const char*const* keys;
         const char*const* values;
         size_t count;
@@ -1569,8 +1569,8 @@ BEGIN_TEST_SUITE(map_unittests)
             .IgnoreArgument(1);
 
         ///act
-        auto result1 = Map_Delete(handle, TEST_YELLOWKEY);
-        auto result3 = Map_GetInternals(handle, &keys, &values, &count);
+        MAP_RESULT result1 = Map_Delete(handle, TEST_YELLOWKEY);
+        MAP_RESULT result3 = Map_GetInternals(handle, &keys, &values, &count);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_OK, result1);
@@ -1586,7 +1586,7 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Delete_with_1_found_key_succeeds_2)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         const char*const* keys;
         const char*const* values;
         size_t count;
@@ -1608,8 +1608,8 @@ BEGIN_TEST_SUITE(map_unittests)
             .IgnoreArgument(1);
 
         ///act
-        auto result1 = Map_Delete(handle, TEST_YELLOWKEY);
-        auto result3 = Map_GetInternals(handle, &keys, &values, &count);
+        MAP_RESULT result1 = Map_Delete(handle, TEST_YELLOWKEY);
+        MAP_RESULT result3 = Map_GetInternals(handle, &keys, &values, &count);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_OK, result1);
@@ -1627,7 +1627,7 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Delete_with_1_found_key_succeeds_3)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         const char*const* keys;
         const char*const* values;
         size_t count;
@@ -1649,8 +1649,8 @@ BEGIN_TEST_SUITE(map_unittests)
             .IgnoreArgument(1);
 
         ///act
-        auto result1 = Map_Delete(handle, TEST_REDKEY);
-        auto result3 = Map_GetInternals(handle, &keys, &values, &count);
+        MAP_RESULT result1 = Map_Delete(handle, TEST_REDKEY);
+        MAP_RESULT result3 = Map_GetInternals(handle, &keys, &values, &count);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_OK, result1);
@@ -1672,7 +1672,7 @@ BEGIN_TEST_SUITE(map_unittests)
         umock_c_reset_all_calls();
 
         ///act
-        auto result1 = Map_ContainsKey(NULL,TEST_REDKEY, &exists);
+        MAP_RESULT result1 = Map_ContainsKey(NULL,TEST_REDKEY, &exists);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_INVALIDARG, result1);
@@ -1686,11 +1686,11 @@ BEGIN_TEST_SUITE(map_unittests)
     {
         ///arrange
         bool exists;
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
         ///act
-        auto result1 = Map_ContainsKey(handle, NULL, &exists);
+        MAP_RESULT result1 = Map_ContainsKey(handle, NULL, &exists);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_INVALIDARG, result1);
@@ -1704,11 +1704,11 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ContainsKey_fails_with_invalid_arg_3)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
         ///act
-        auto result1 = Map_ContainsKey(handle, TEST_REDKEY, NULL);
+        MAP_RESULT result1 = Map_ContainsKey(handle, TEST_REDKEY, NULL);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_INVALIDARG, result1);
@@ -1723,14 +1723,14 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ContainsKey_fails_with_known_key_succeeds)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         bool e1, e2;
         (void)Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
         umock_c_reset_all_calls();
 
         ///act
-        auto result1 = Map_ContainsKey(handle, TEST_REDKEY, &e1);
-        auto result2 = Map_ContainsKey(handle, TEST_BLUEKEY, &e2);
+        MAP_RESULT result1 = Map_ContainsKey(handle, TEST_REDKEY, &e1);
+        MAP_RESULT result2 = Map_ContainsKey(handle, TEST_BLUEKEY, &e2);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_OK, result1);
@@ -1752,7 +1752,7 @@ BEGIN_TEST_SUITE(map_unittests)
         umock_c_reset_all_calls();
 
         ///act
-        auto result1 = Map_ContainsValue(NULL, TEST_REDKEY, &e1);
+        MAP_RESULT result1 = Map_ContainsValue(NULL, TEST_REDKEY, &e1);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_INVALIDARG, result1);
@@ -1765,12 +1765,12 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ContainsValue_fails_with_NULL_key)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         bool e1;
         umock_c_reset_all_calls();
 
         ///act
-        auto result1 = Map_ContainsValue(handle, NULL, &e1);
+        MAP_RESULT result1 = Map_ContainsValue(handle, NULL, &e1);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_INVALIDARG, result1);
@@ -1784,11 +1784,11 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ContainsValue_fails_with_NULL_exists)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
         ///act
-        auto result1 = Map_ContainsValue(handle, TEST_REDKEY, NULL);
+        MAP_RESULT result1 = Map_ContainsValue(handle, TEST_REDKEY, NULL);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_INVALIDARG, result1);
@@ -1803,14 +1803,14 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ContainsValue_succeeds)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         bool e1, e2;
         (void)Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
         umock_c_reset_all_calls();
 
         ///act
-        auto result1 = Map_ContainsValue(handle, TEST_REDVALUE, &e1);
-        auto result2 = Map_ContainsValue(handle, TEST_BLUEVALUE, &e2);
+        MAP_RESULT result1 = Map_ContainsValue(handle, TEST_REDVALUE, &e1);
+        MAP_RESULT result2 = Map_ContainsValue(handle, TEST_BLUEVALUE, &e2);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_OK, result1);
@@ -1829,7 +1829,7 @@ BEGIN_TEST_SUITE(map_unittests)
         ///arrange
 
         ///act
-        auto result = Map_GetValueFromKey(NULL, TEST_REDKEY);
+        const char* result = Map_GetValueFromKey(NULL, TEST_REDKEY);
 
         ///assert
         ASSERT_IS_NULL(result);
@@ -1842,11 +1842,11 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_GetValueFromKey_returns_NULL_for_NULL_key)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
         ///act
-        auto result = Map_GetValueFromKey(handle, NULL);
+        const char* result = Map_GetValueFromKey(handle, NULL);
 
         ///assert
         ASSERT_IS_NULL(result);
@@ -1860,11 +1860,11 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_GetValueFromKey_returns_NULL_for_notfound_key)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
         ///act
-        auto result = Map_GetValueFromKey(handle, TEST_REDKEY);
+        const char* result = Map_GetValueFromKey(handle, TEST_REDKEY);
 
         ///assert
         ASSERT_IS_NULL(result);
@@ -1878,12 +1878,12 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_GetValueFromKey_returns_non_NULL_for_found_key)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
         umock_c_reset_all_calls();
 
         ///act
-        auto result = Map_GetValueFromKey(handle, TEST_REDKEY);
+        const char* result = Map_GetValueFromKey(handle, TEST_REDKEY);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, TEST_REDVALUE, result);
@@ -1902,7 +1902,7 @@ BEGIN_TEST_SUITE(map_unittests)
         size_t size;
 
         ///act
-        auto result = Map_GetInternals(NULL, &keys, &values, &size);
+        MAP_RESULT result = Map_GetInternals(NULL, &keys, &values, &size);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT,MAP_INVALIDARG, result);
@@ -1915,11 +1915,11 @@ BEGIN_TEST_SUITE(map_unittests)
         ///arrange
         const char*const* values;
         size_t size;
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
         ///act
-        auto result = Map_GetInternals(handle, NULL, &values, &size);
+        MAP_RESULT result = Map_GetInternals(handle, NULL, &values, &size);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_INVALIDARG, result);
@@ -1935,11 +1935,11 @@ BEGIN_TEST_SUITE(map_unittests)
         ///arrange
         const char*const* keys;
         size_t size;
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
         ///act
-        auto result = Map_GetInternals(handle, &keys, NULL, &size);
+        MAP_RESULT result = Map_GetInternals(handle, &keys, NULL, &size);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_INVALIDARG, result);
@@ -1955,11 +1955,11 @@ BEGIN_TEST_SUITE(map_unittests)
         ///arrange
         const char*const* keys;
         const char*const* values;
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
         ///act
-        auto result = Map_GetInternals(handle, &keys, &values, NULL);
+        MAP_RESULT result = Map_GetInternals(handle, &keys, &values, NULL);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_INVALIDARG, result);
@@ -1980,7 +1980,7 @@ BEGIN_TEST_SUITE(map_unittests)
         ///arrange
 
         ///act
-        auto result = Map_Clone(NULL);
+        MAP_HANDLE result = Map_Clone(NULL);
 
         ///assert
         ASSERT_IS_NULL(result);
@@ -1996,14 +1996,14 @@ BEGIN_TEST_SUITE(map_unittests)
         const char*const* keys;
         const char*const* values;
         size_t count;
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
 
         ///act
-        auto result = Map_Clone(handle);
+        MAP_HANDLE result = Map_Clone(handle);
 
         ///assert
         ASSERT_IS_NOT_NULL(result);
@@ -2022,7 +2022,7 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Clone_with_empty_fails_when_malloc_fails)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
         whenShallmalloc_fail = currentmalloc_call + 1;
@@ -2030,7 +2030,7 @@ BEGIN_TEST_SUITE(map_unittests)
             .IgnoreArgument(1);
 
         ///act
-        auto result = Map_Clone(handle);
+        MAP_HANDLE result = Map_Clone(handle);
 
         ///assert
         ASSERT_IS_NULL(result);
@@ -2047,7 +2047,7 @@ BEGIN_TEST_SUITE(map_unittests)
         const char*const* keys;
         const char*const* values;
         size_t count;
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
         umock_c_reset_all_calls();
 
@@ -2063,7 +2063,7 @@ BEGIN_TEST_SUITE(map_unittests)
         STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_REDVALUE) + 1)); /*this is creating a clone of RED value*/
 
         ///act
-        auto result = Map_Clone(handle);
+        MAP_HANDLE result = Map_Clone(handle);
 
         ///assert
         ASSERT_IS_NOT_NULL(result);
@@ -2084,7 +2084,7 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Clone_with_map_with_1_element_fails_when_gbaloc_fails_1)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
         umock_c_reset_all_calls();
 
@@ -2110,7 +2110,7 @@ BEGIN_TEST_SUITE(map_unittests)
             .IgnoreArgument(1);
 
         ///act
-        auto result = Map_Clone(handle);
+        MAP_HANDLE result = Map_Clone(handle);
 
         ///assert
         ASSERT_IS_NULL(result);
@@ -2125,7 +2125,7 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Clone_with_map_with_1_element_fails_when_gbaloc_fails_2)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
         umock_c_reset_all_calls();
 
@@ -2147,7 +2147,7 @@ BEGIN_TEST_SUITE(map_unittests)
             .IgnoreArgument(1);
 
         ///act
-        auto result = Map_Clone(handle);
+        MAP_HANDLE result = Map_Clone(handle);
 
         ///assert
         ASSERT_IS_NULL(result);
@@ -2162,7 +2162,7 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Clone_with_map_with_1_element_fails_when_gbaloc_fails_3)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
         umock_c_reset_all_calls();
 
@@ -2180,7 +2180,7 @@ BEGIN_TEST_SUITE(map_unittests)
             .IgnoreArgument(1);
 
         ///act
-        auto result = Map_Clone(handle);
+        MAP_HANDLE result = Map_Clone(handle);
 
         ///assert
         ASSERT_IS_NULL(result);
@@ -2195,7 +2195,7 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Clone_with_map_with_1_element_fails_when_gbaloc_fails_4)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
         umock_c_reset_all_calls();
 
@@ -2208,7 +2208,7 @@ BEGIN_TEST_SUITE(map_unittests)
         STRICT_EXPECTED_CALL(gballoc_malloc(sizeof(char*))); /*this is creating a clone of the storage for keys*/
 
         ///act
-        auto result = Map_Clone(handle);
+        MAP_HANDLE result = Map_Clone(handle);
 
         ///assert
         ASSERT_IS_NULL(result);
@@ -2223,7 +2223,7 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Clone_with_map_with_1_element_fails_when_gbaloc_fails_5)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
         umock_c_reset_all_calls();
 
@@ -2232,7 +2232,7 @@ BEGIN_TEST_SUITE(map_unittests)
             .IgnoreArgument(1);
 
         ///act
-        auto result = Map_Clone(handle);
+        MAP_HANDLE result = Map_Clone(handle);
 
         ///assert
         ASSERT_IS_NULL(result);
@@ -2250,7 +2250,7 @@ BEGIN_TEST_SUITE(map_unittests)
         const char*const* keys;
         const char*const* values;
         size_t count;
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
         (void)Map_AddOrUpdate(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
         umock_c_reset_all_calls();
@@ -2269,7 +2269,7 @@ BEGIN_TEST_SUITE(map_unittests)
         STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_BLUEVALUE) + 1)); /*this is creating a clone of RED value*/
 
         ///act
-        auto result = Map_Clone(handle);
+        MAP_HANDLE result = Map_Clone(handle);
 
         ///assert
         ASSERT_IS_NOT_NULL(result);
@@ -2292,7 +2292,7 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Clone_with_map_with_2_element_fails_when_gballoc_fails_1)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
         (void)Map_AddOrUpdate(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
         umock_c_reset_all_calls();
@@ -2327,7 +2327,7 @@ BEGIN_TEST_SUITE(map_unittests)
             .IgnoreArgument(1);
 
         ///act
-        auto result = Map_Clone(handle);
+        MAP_HANDLE result = Map_Clone(handle);
 
         ///assert
         ASSERT_IS_NULL(result);
@@ -2342,7 +2342,7 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Clone_with_map_with_2_element_fails_when_gballoc_fails_2)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
         (void)Map_AddOrUpdate(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
         umock_c_reset_all_calls();
@@ -2373,7 +2373,7 @@ BEGIN_TEST_SUITE(map_unittests)
             .IgnoreArgument(1);
 
         ///act
-        auto result = Map_Clone(handle);
+        MAP_HANDLE result = Map_Clone(handle);
 
         ///assert
         ASSERT_IS_NULL(result);
@@ -2388,7 +2388,7 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Clone_with_map_with_2_element_fails_when_gballoc_fails_3)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
         (void)Map_AddOrUpdate(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
         umock_c_reset_all_calls();
@@ -2415,7 +2415,7 @@ BEGIN_TEST_SUITE(map_unittests)
             .IgnoreArgument(1);
 
         ///act
-        auto result = Map_Clone(handle);
+        MAP_HANDLE result = Map_Clone(handle);
 
         ///assert
         ASSERT_IS_NULL(result);
@@ -2430,7 +2430,7 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Clone_with_map_with_2_element_fails_when_gballoc_fails_4)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
         (void)Map_AddOrUpdate(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
         umock_c_reset_all_calls();
@@ -2453,7 +2453,7 @@ BEGIN_TEST_SUITE(map_unittests)
             .IgnoreArgument(1);
 
         ///act
-        auto result = Map_Clone(handle);
+        MAP_HANDLE result = Map_Clone(handle);
 
         ///assert
         ASSERT_IS_NULL(result);
@@ -2468,7 +2468,7 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Clone_with_map_with_2_element_fails_when_gballoc_fails_5)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
         (void)Map_AddOrUpdate(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
         umock_c_reset_all_calls();
@@ -2487,7 +2487,7 @@ BEGIN_TEST_SUITE(map_unittests)
             .IgnoreArgument(1);
 
         ///act
-        auto result = Map_Clone(handle);
+        MAP_HANDLE result = Map_Clone(handle);
 
         ///assert
         ASSERT_IS_NULL(result);
@@ -2502,7 +2502,7 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Clone_with_map_with_2_element_fails_when_gballoc_fails_6)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
         (void)Map_AddOrUpdate(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
         umock_c_reset_all_calls();
@@ -2516,7 +2516,7 @@ BEGIN_TEST_SUITE(map_unittests)
         STRICT_EXPECTED_CALL(gballoc_malloc(2 * sizeof(char*))); /*this is creating a clone of the storage for keys*/
 
         ///act
-        auto result = Map_Clone(handle);
+        MAP_HANDLE result = Map_Clone(handle);
 
         ///assert
         ASSERT_IS_NULL(result);
@@ -2531,7 +2531,7 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Clone_with_map_with_2_element_fails_when_gballoc_fails_7)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
         (void)Map_AddOrUpdate(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
         umock_c_reset_all_calls();
@@ -2541,7 +2541,7 @@ BEGIN_TEST_SUITE(map_unittests)
             .IgnoreArgument(1);
 
         ///act
-        auto result = Map_Clone(handle);
+        MAP_HANDLE result = Map_Clone(handle);
 
         ///assert
         ASSERT_IS_NULL(result);
@@ -2556,7 +2556,7 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_Add_With_Filter_Succeed)
     {
         ///arrange
-        auto handle = Map_Create(DontAllowCapitalsFilters);
+        MAP_HANDLE handle = Map_Create(DontAllowCapitalsFilters);
         umock_c_reset_all_calls();
 
         STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*)));
@@ -2565,9 +2565,9 @@ BEGIN_TEST_SUITE(map_unittests)
         STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_GREENVALUE) + 1));
 
         ///act
-        auto result1 = Map_Add(handle, TEST_REDKEY, TEST_REDVALUE);
-        auto result2 = Map_Add(handle, TEST_YELLOWKEY, TEST_YELLOWVALUE);
-        auto result3 = Map_Add(handle, TEST_GREENKEY, TEST_GREENVALUE);
+        MAP_RESULT result1 = Map_Add(handle, TEST_REDKEY, TEST_REDVALUE);
+        MAP_RESULT result2 = Map_Add(handle, TEST_YELLOWKEY, TEST_YELLOWVALUE);
+        MAP_RESULT result3 = Map_Add(handle, TEST_GREENKEY, TEST_GREENVALUE);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_FILTER_REJECT, result1);
@@ -2583,7 +2583,7 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_AddOrUpdate_With_Filter_Succeed)
     {
         ///arrange
-        auto handle = Map_Create(DontAllowCapitalsFilters);
+        MAP_HANDLE handle = Map_Create(DontAllowCapitalsFilters);
         umock_c_reset_all_calls();
 
         EXPECTED_CALL(gballoc_realloc(NULL, sizeof(const char*)));
@@ -2592,8 +2592,8 @@ BEGIN_TEST_SUITE(map_unittests)
         STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_GREENVALUE) + 1));
 
         ///act
-        auto result1 = Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
-        auto result2 = Map_AddOrUpdate(handle, TEST_GREENKEY, TEST_GREENVALUE);
+        MAP_RESULT result1 = Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
+        MAP_RESULT result2 = Map_AddOrUpdate(handle, TEST_GREENKEY, TEST_GREENVALUE);
 
         ///assert
         ASSERT_ARE_EQUAL(MAP_RESULT, MAP_FILTER_REJECT, result1);
@@ -2610,7 +2610,7 @@ BEGIN_TEST_SUITE(map_unittests)
         ///arrange
         
         ///act
-        auto toJSON = Map_ToJSON(NULL);
+        STRING_HANDLE toJSON = Map_ToJSON(NULL);
 
         ///assert
         ASSERT_IS_NULL(toJSON);
@@ -2624,7 +2624,7 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ToJSON_with_empty_MAP_produces_empty_JSON)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
         STRICT_EXPECTED_CALL(STRING_construct("{"))
@@ -2634,7 +2634,7 @@ BEGIN_TEST_SUITE(map_unittests)
             .IgnoreArgument(1);
 
         ///act
-        auto toJSON = Map_ToJSON(handle);
+        STRING_HANDLE toJSON = Map_ToJSON(handle);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -2648,7 +2648,7 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ToJSON_with_empty_MAP_produces_empty_JSON_fails_when_STRING_concat_fails)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
         STRICT_EXPECTED_CALL(STRING_construct("{"))
@@ -2661,7 +2661,7 @@ BEGIN_TEST_SUITE(map_unittests)
             .IgnoreArgument(1);
 
         ///act
-        auto toJSON = Map_ToJSON(handle);
+        STRING_HANDLE toJSON = Map_ToJSON(handle);
 
         ///assert
         ASSERT_IS_NULL(toJSON);
@@ -2675,14 +2675,14 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ToJSON_with_empty_MAP_produces_empty_JSON_fails_when_STRING_construct_fails)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
         STRICT_EXPECTED_CALL(STRING_construct("{"))
             .IgnoreArgument(1).SetReturn(NULL);
 
         ///act
-        auto toJSON = Map_ToJSON(handle);
+        STRING_HANDLE toJSON = Map_ToJSON(handle);
 
         ///assert
         ASSERT_IS_NULL(toJSON);
@@ -2696,7 +2696,7 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ToJSON_with_1_MAP_element_succeeds)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
         umock_c_reset_all_calls();
 
@@ -2723,7 +2723,7 @@ BEGIN_TEST_SUITE(map_unittests)
             .IgnoreArgument(1);
 
         ///act
-        auto toJSON = Map_ToJSON(handle);
+        STRING_HANDLE toJSON = Map_ToJSON(handle);
 
         ///assert
         ASSERT_IS_NOT_NULL(toJSON);
@@ -2738,7 +2738,7 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ToJSON_with_1_MAP_element_fail_when_STRING_fails_1)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
         umock_c_reset_all_calls();
 
@@ -2768,7 +2768,7 @@ BEGIN_TEST_SUITE(map_unittests)
             .IgnoreArgument(1);
 
         ///act
-        auto toJSON = Map_ToJSON(handle);
+        STRING_HANDLE toJSON = Map_ToJSON(handle);
 
         ///assert
         ASSERT_IS_NULL(toJSON);
@@ -2782,7 +2782,7 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ToJSON_with_1_MAP_element_fail_when_STRING_fails_2)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
         umock_c_reset_all_calls();
 
@@ -2811,7 +2811,7 @@ BEGIN_TEST_SUITE(map_unittests)
             .IgnoreArgument(1);
 
         ///act
-        auto toJSON = Map_ToJSON(handle);
+        STRING_HANDLE toJSON = Map_ToJSON(handle);
 
         ///assert
         ASSERT_IS_NULL(toJSON);
@@ -2825,7 +2825,7 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ToJSON_with_1_MAP_element_fail_when_STRING_fails_3)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
         umock_c_reset_all_calls();
 
@@ -2850,7 +2850,7 @@ BEGIN_TEST_SUITE(map_unittests)
             .IgnoreArgument(1);
 
         ///act
-        auto toJSON = Map_ToJSON(handle);
+        STRING_HANDLE toJSON = Map_ToJSON(handle);
 
         ///assert
         ASSERT_IS_NULL(toJSON);
@@ -2864,7 +2864,7 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ToJSON_with_1_MAP_element_fail_when_STRING_fails_4)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
         umock_c_reset_all_calls();
 
@@ -2887,7 +2887,7 @@ BEGIN_TEST_SUITE(map_unittests)
             .IgnoreArgument(1);
 
         ///act
-        auto toJSON = Map_ToJSON(handle);
+        STRING_HANDLE toJSON = Map_ToJSON(handle);
 
         ///assert
         ASSERT_IS_NULL(toJSON);
@@ -2901,7 +2901,7 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ToJSON_with_1_MAP_element_fail_when_STRING_fails_5)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
         umock_c_reset_all_calls();
 
@@ -2919,7 +2919,7 @@ BEGIN_TEST_SUITE(map_unittests)
             .IgnoreArgument(1);
 
         ///act
-        auto toJSON = Map_ToJSON(handle);
+        STRING_HANDLE toJSON = Map_ToJSON(handle);
 
         ///assert
         ASSERT_IS_NULL(toJSON);
@@ -2933,7 +2933,7 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ToJSON_with_1_MAP_element_fail_when_STRING_fails_6)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
         umock_c_reset_all_calls();
 
@@ -2946,7 +2946,7 @@ BEGIN_TEST_SUITE(map_unittests)
             .IgnoreArgument(1);
 
         ///act
-        auto toJSON = Map_ToJSON(handle);
+        STRING_HANDLE toJSON = Map_ToJSON(handle);
 
         ///assert
         ASSERT_IS_NULL(toJSON);
@@ -2960,7 +2960,7 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ToJSON_with_1_MAP_element_fail_when_STRING_fails_7)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
         umock_c_reset_all_calls();
 
@@ -2969,7 +2969,7 @@ BEGIN_TEST_SUITE(map_unittests)
             .SetReturn(NULL);
 
         ///act
-        auto toJSON = Map_ToJSON(handle);
+        STRING_HANDLE toJSON = Map_ToJSON(handle);
 
         ///assert
         ASSERT_IS_NULL(toJSON);
@@ -2983,7 +2983,7 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ToJSON_with_2_MAP_elements_succeeds)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
         (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
         umock_c_reset_all_calls();
@@ -3033,7 +3033,7 @@ BEGIN_TEST_SUITE(map_unittests)
             .IgnoreArgument(1);
 
         ///act
-        auto toJSON = Map_ToJSON(handle);
+        STRING_HANDLE toJSON = Map_ToJSON(handle);
 
         ///assert
         ASSERT_IS_NOT_NULL(toJSON);
@@ -3048,7 +3048,7 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ToJSON_with_2_MAP_elements_fails_when_STRING_fails_1)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
         (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
         umock_c_reset_all_calls();
@@ -3102,7 +3102,7 @@ BEGIN_TEST_SUITE(map_unittests)
             .IgnoreArgument(1);
 
         ///act
-        auto toJSON = Map_ToJSON(handle);
+        STRING_HANDLE toJSON = Map_ToJSON(handle);
 
         ///assert
         ASSERT_IS_NULL(toJSON);
@@ -3116,7 +3116,7 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ToJSON_with_2_MAP_elements_fails_when_STRING_fails_2)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
         (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
         umock_c_reset_all_calls();
@@ -3167,7 +3167,7 @@ BEGIN_TEST_SUITE(map_unittests)
             .IgnoreArgument(1);
 
         ///act
-        auto toJSON = Map_ToJSON(handle);
+        STRING_HANDLE toJSON = Map_ToJSON(handle);
 
         ///assert
         ASSERT_IS_NULL(toJSON);
@@ -3181,7 +3181,7 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ToJSON_with_2_MAP_elements_fails_when_STRING_fails_3)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
         (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
         umock_c_reset_all_calls();
@@ -3229,7 +3229,7 @@ BEGIN_TEST_SUITE(map_unittests)
             .IgnoreArgument(1);
 
         ///act
-        auto toJSON = Map_ToJSON(handle);
+        STRING_HANDLE toJSON = Map_ToJSON(handle);
 
         ///assert
         ASSERT_IS_NULL(toJSON);
@@ -3243,7 +3243,7 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ToJSON_with_2_MAP_elements_fails_when_STRING_fails_4)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
         (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
         umock_c_reset_all_calls();
@@ -3290,7 +3290,7 @@ BEGIN_TEST_SUITE(map_unittests)
             .IgnoreArgument(1);
 
         ///act
-        auto toJSON = Map_ToJSON(handle);
+        STRING_HANDLE toJSON = Map_ToJSON(handle);
 
         ///assert
         ASSERT_IS_NULL(toJSON);
@@ -3304,7 +3304,7 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ToJSON_with_2_MAP_elements_fails_when_STRING_fails_5)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
         (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
         umock_c_reset_all_calls();
@@ -3346,7 +3346,7 @@ BEGIN_TEST_SUITE(map_unittests)
             .IgnoreArgument(1);
 
         ///act
-        auto toJSON = Map_ToJSON(handle);
+        STRING_HANDLE toJSON = Map_ToJSON(handle);
 
         ///assert
         ASSERT_IS_NULL(toJSON);
@@ -3360,7 +3360,7 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ToJSON_with_2_MAP_elements_fails_when_STRING_fails_6)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
         (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
         umock_c_reset_all_calls();
@@ -3396,7 +3396,7 @@ BEGIN_TEST_SUITE(map_unittests)
             .IgnoreArgument(1);
 
         ///act
-        auto toJSON = Map_ToJSON(handle);
+        STRING_HANDLE toJSON = Map_ToJSON(handle);
 
         ///assert
         ASSERT_IS_NULL(toJSON);
@@ -3410,7 +3410,7 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ToJSON_with_2_MAP_elements_fails_when_STRING_fails_7)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
         (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
         umock_c_reset_all_calls();
@@ -3443,7 +3443,7 @@ BEGIN_TEST_SUITE(map_unittests)
             .IgnoreArgument(1);
 
         ///act
-        auto toJSON = Map_ToJSON(handle);
+        STRING_HANDLE toJSON = Map_ToJSON(handle);
 
         ///assert
         ASSERT_IS_NULL(toJSON);
@@ -3457,7 +3457,7 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ToJSON_with_2_MAP_elements_fails_when_STRING_fails_8)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
         (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
         umock_c_reset_all_calls();
@@ -3487,7 +3487,7 @@ BEGIN_TEST_SUITE(map_unittests)
             .IgnoreArgument(1);
 
         ///act
-        auto toJSON = Map_ToJSON(handle);
+        STRING_HANDLE toJSON = Map_ToJSON(handle);
 
         ///assert
         ASSERT_IS_NULL(toJSON);
@@ -3501,7 +3501,7 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ToJSON_with_2_MAP_elements_fails_when_STRING_fails_9)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
         (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
         umock_c_reset_all_calls();
@@ -3530,7 +3530,7 @@ BEGIN_TEST_SUITE(map_unittests)
         }
 
         ///act
-        auto toJSON = Map_ToJSON(handle);
+        STRING_HANDLE toJSON = Map_ToJSON(handle);
 
         ///assert
         ASSERT_IS_NULL(toJSON);
@@ -3544,7 +3544,7 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ToJSON_with_2_MAP_elements_fails_when_STRING_fails_10)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
         (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
         umock_c_reset_all_calls();
@@ -3570,7 +3570,7 @@ BEGIN_TEST_SUITE(map_unittests)
         }
 
         ///act
-        auto toJSON = Map_ToJSON(handle);
+        STRING_HANDLE toJSON = Map_ToJSON(handle);
 
         ///assert
         ASSERT_IS_NULL(toJSON);
@@ -3584,7 +3584,7 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ToJSON_with_2_MAP_elements_fails_when_STRING_fails_11)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
         (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
         umock_c_reset_all_calls();
@@ -3608,7 +3608,7 @@ BEGIN_TEST_SUITE(map_unittests)
         }
 
         ///act
-        auto toJSON = Map_ToJSON(handle);
+        STRING_HANDLE toJSON = Map_ToJSON(handle);
 
         ///assert
         ASSERT_IS_NULL(toJSON);
@@ -3622,7 +3622,7 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ToJSON_with_2_MAP_elements_fails_when_STRING_fails_12)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
         (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
         umock_c_reset_all_calls();
@@ -3638,7 +3638,7 @@ BEGIN_TEST_SUITE(map_unittests)
             .IgnoreArgument(1);
 
         ///act
-        auto toJSON = Map_ToJSON(handle);
+        STRING_HANDLE toJSON = Map_ToJSON(handle);
 
         ///assert
         ASSERT_IS_NULL(toJSON);
@@ -3652,7 +3652,7 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ToJSON_with_2_MAP_elements_fails_when_STRING_fails_13)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
         (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
         umock_c_reset_all_calls();
@@ -3664,7 +3664,7 @@ BEGIN_TEST_SUITE(map_unittests)
             .IgnoreArgument(1);
 
         ///act
-        auto toJSON = Map_ToJSON(handle);
+        STRING_HANDLE toJSON = Map_ToJSON(handle);
 
         ///assert
         ASSERT_IS_NULL(toJSON);
@@ -3678,7 +3678,7 @@ BEGIN_TEST_SUITE(map_unittests)
     TEST_FUNCTION(Map_ToJSON_with_2_MAP_elements_fails_when_STRING_fails_14)
     {
         ///arrange
-        auto handle = Map_Create(NULL);
+        MAP_HANDLE handle = Map_Create(NULL);
         (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
         (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
         umock_c_reset_all_calls();
@@ -3688,7 +3688,7 @@ BEGIN_TEST_SUITE(map_unittests)
             .SetReturn(NULL);
 
         ///act
-        auto toJSON = Map_ToJSON(handle);
+        STRING_HANDLE toJSON = Map_ToJSON(handle);
 
         ///assert
         ASSERT_IS_NULL(toJSON);

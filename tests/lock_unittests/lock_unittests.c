@@ -44,7 +44,7 @@ TEST_FUNCTION(Test_Lock_Lock_Unlock)
     LOCK_RESULT result;
     //act
     handle =Lock_Init();
-    auto res = Lock_Handle_ToString(handle);
+    LOCK_RESULT res = Lock_Handle_ToString(handle);
     //assert
     ASSERT_ARE_EQUAL(LOCK_RESULT, LOCK_OK, res);
 
@@ -67,7 +67,7 @@ TEST_FUNCTION(Test_Lock_Init_DeInit)
     handle = Lock_Init();
     //assert
     /*Tests_SRS_LOCK_99_002:[ This API on success will return a valid lock handle which should be a non NULL value]*/
-    auto res = Lock_Handle_ToString(handle);
+    LOCK_RESULT res = Lock_Handle_ToString(handle);
     //assert
     ASSERT_ARE_EQUAL(LOCK_RESULT, LOCK_OK, res);
     //free
