@@ -13,7 +13,7 @@
 #include "umocktypes_c.h"
 
 #define IMPLEMENT_STRINGIFY(type, function_postfix, printf_specifier) \
-    char* C2(umocktypes_stringify_,function_postfix)(const type* value) \
+    char* C2(umocktypes_stringify_,function_postfix)(type* value) \
     { \
         char* result; \
         if (value == NULL) \
@@ -41,7 +41,7 @@
     }
 
 #define IMPLEMENT_ARE_EQUAL(type, function_postfix) \
-    int C2(umocktypes_are_equal_,function_postfix)(const type* left, const type* right) \
+    int C2(umocktypes_are_equal_,function_postfix)(type* left, type* right) \
     { \
         int result; \
         if ((left == NULL) || (right == NULL)) \
@@ -56,7 +56,7 @@
     }
 
 #define IMPLEMENT_COPY(type, function_postfix) \
-    int C2(umocktypes_copy_,function_postfix)(type* destination, const type* source) \
+    int C2(umocktypes_copy_,function_postfix)(type* destination, type* source) \
     { \
         int result; \
         if ((destination == NULL) || \
@@ -75,6 +75,7 @@
 #define IMPLEMENT_FREE(type, function_postfix) \
     void C2(umocktypes_free_,function_postfix)(type* value) \
     { \
+        (void)value; \
     }
 
 #define IMPLEMENT_TYPE_HANDLERS(type, function_postfix, printf_specifier) \

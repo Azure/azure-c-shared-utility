@@ -15,7 +15,7 @@
 
 #define ENABLE_MOCKS
 
-#include "umock_c.h"
+#include "umock_c_prod.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,6 +25,8 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
+
+#include "umock_c.h"
 
 #define GBALLOC_H
 
@@ -45,6 +47,10 @@ static bool malloc_will_fail = false;
 
 TEST_DEFINE_ENUM_TYPE(COND_RESULT, COND_RESULT_VALUES)
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void* my_gballoc_malloc(size_t size)
 {
     void* result = NULL;
@@ -60,6 +66,10 @@ void my_gballoc_free(void* ptr)
 {
     real_gballoc_free(ptr);
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {

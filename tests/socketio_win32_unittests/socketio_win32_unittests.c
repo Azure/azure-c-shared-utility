@@ -6,6 +6,8 @@
 
 #undef DECLSPEC_IMPORT
 
+#pragma warning(disable: 4273)
+
 #include "winsock2.h"
 #include "ws2tcpip.h"
 
@@ -61,8 +63,8 @@ static int PORT_NUM = 80;
 static bool list_add_called = false;
 static const char* HOSTNAME_ARG = "hostname";
 static size_t callbackContext = 11;
-static struct sockaddr test_sock_addr = { 0 };
-static ADDRINFO TEST_ADDR_INFO = { AI_PASSIVE, AF_INET, SOCK_STREAM, IPPROTO_TCP, 128, NULL, &test_sock_addr, NULL };
+static const struct sockaddr test_sock_addr = { 0 };
+static ADDRINFO TEST_ADDR_INFO = { AI_PASSIVE, AF_INET, SOCK_STREAM, IPPROTO_TCP, 128, NULL, (struct sockaddr*)&test_sock_addr, NULL };
 
 static const char* TEST_BUFFER_VALUE = "test_buffer_value";
 #define TEST_BUFFER_SIZE    17
@@ -124,7 +126,7 @@ LIST_ITEM_HANDLE my_list_get_head_item(LIST_HANDLE list)
 
 LIST_ITEM_HANDLE my_list_add(LIST_HANDLE list, const void* item)
 {
-    const void** items = (const void**)realloc(list_items, (list_item_count + 1) * sizeof(item));
+    const void** items = (const void**)realloc((void*)list_items, (list_item_count + 1) * sizeof(item));
     if (items != NULL)
     {
         list_items = items;
@@ -168,7 +170,7 @@ MOCK_FUNCTION_WITH_CODE(, int, list_remove_matching_item, LIST_HANDLE, handle, L
     {
         if (match_function((LIST_ITEM_HANDLE)list_items[i], match_context))
         {
-            (void)memcpy(&list_items[i], &list_items[i + 1], (list_item_count - i - 1) * sizeof(const void*));
+            (void)memcpy((void**)&list_items[i], &list_items[i + 1], (list_item_count - i - 1) * sizeof(const void*));
             list_item_count--;
             res = 0;
             break;
@@ -209,7 +211,7 @@ char* umocktypes_stringify_const_ADDRINFOA_ptr(const ADDRINFOA** value)
     length = sprintf(temp_buffer, "{ ai_flags = %d, ai_family = %d, ai_socktype = %d, ai_protocol = %d, ai_addrlen = %u, ai_canonname = %s", (*value)->ai_flags, (*value)->ai_family, (*value)->ai_socktype, (*value)->ai_protocol, (unsigned int)((*value)->ai_addrlen), (*value)->ai_canonname);
     if (length > 0)
     {
-        result = malloc(strlen(temp_buffer) + 1);
+        result = (char*)malloc(strlen(temp_buffer) + 1);
         if (result != NULL)
         {
             (void)memcpy(result, temp_buffer, strlen(temp_buffer) + 1);
@@ -258,7 +260,7 @@ int umocktypes_copy_const_ADDRINFOA_ptr(ADDRINFOA** destination, const ADDRINFOA
     return result;
 }
 
-void umocktypes_free_const_ADDRINFOA_ptr(const ADDRINFOA** value)
+void umocktypes_free_const_ADDRINFOA_ptr(ADDRINFOA** value)
 {
     free(*value);
 }
@@ -272,7 +274,7 @@ char* umocktypes_stringify_const_struct_sockaddr_ptr(const struct sockaddr** val
     length = sprintf(temp_buffer, "{ sa_family = %u, sa_data = ... }", (unsigned int)((*value)->sa_family));
     if (length > 0)
     {
-        result = malloc(strlen(temp_buffer) + 1);
+        result = (char*)malloc(strlen(temp_buffer) + 1);
         if (result != NULL)
         {
             (void)memcpy(result, temp_buffer, strlen(temp_buffer) + 1);
@@ -314,7 +316,7 @@ int umocktypes_copy_const_struct_sockaddr_ptr(struct sockaddr** destination, con
     return result;
 }
 
-void umocktypes_free_const_struct_sockaddr_ptr(const struct sockaddr** value)
+void umocktypes_free_const_struct_sockaddr_ptr(struct sockaddr** value)
 {
     free(*value);
 }
@@ -515,7 +517,6 @@ TEST_FUNCTION(socketio_open_socket_fails)
     // arrange
     SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
     CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
-    static ADDRINFO addrInfo = { AI_PASSIVE, AF_INET, SOCK_STREAM, IPPROTO_TCP, 128, NULL, (struct sockaddr*)0x11, NULL };
 
     umock_c_reset_all_calls();
 
@@ -538,7 +539,6 @@ TEST_FUNCTION(socketio_open_getaddrinfo_fails)
     // arrange
     SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
     CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
-    static ADDRINFO addrInfo = { AI_PASSIVE, AF_INET, SOCK_STREAM, IPPROTO_TCP, 128, NULL, (struct sockaddr*)0x11, NULL };
 
     umock_c_reset_all_calls();
 
@@ -563,13 +563,12 @@ TEST_FUNCTION(socketio_open_connect_fails)
     // arrange
     SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
     CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
-    static ADDRINFO addrInfo = { AI_PASSIVE, AF_INET, SOCK_STREAM, IPPROTO_TCP, 128, NULL, (struct sockaddr*)0x11, NULL };
 
     umock_c_reset_all_calls();
 
     EXPECTED_CALL(socket(IGNORED_NUM_ARG, IGNORED_NUM_ARG, IGNORED_NUM_ARG));
     EXPECTED_CALL(getaddrinfo(IGNORED_PTR_ARG, IGNORED_PTR_ARG, &TEST_ADDR_INFO, IGNORED_PTR_ARG));
-    EXPECTED_CALL(connect(IGNORED_PTR_ARG, &test_sock_addr, IGNORED_NUM_ARG))
+    EXPECTED_CALL(connect(IGNORED_NUM_ARG, &test_sock_addr, IGNORED_NUM_ARG))
         .SetReturn(WSAECONNREFUSED);
     EXPECTED_CALL(closesocket(IGNORED_NUM_ARG));
     EXPECTED_CALL(freeaddrinfo(&TEST_ADDR_INFO));
@@ -596,8 +595,8 @@ TEST_FUNCTION(socketio_open_ioctlsocket_fails)
 
     EXPECTED_CALL(socket(IGNORED_NUM_ARG, IGNORED_NUM_ARG, IGNORED_NUM_ARG));
     EXPECTED_CALL(getaddrinfo(IGNORED_PTR_ARG, IGNORED_PTR_ARG, &TEST_ADDR_INFO, IGNORED_PTR_ARG));
-    EXPECTED_CALL(connect(IGNORED_PTR_ARG, &test_sock_addr, IGNORED_NUM_ARG));
-    EXPECTED_CALL(ioctlsocket(IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG))
+    EXPECTED_CALL(connect(IGNORED_NUM_ARG, &test_sock_addr, IGNORED_NUM_ARG));
+    EXPECTED_CALL(ioctlsocket(IGNORED_NUM_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG))
         .SetReturn(WSAENETDOWN);
     EXPECTED_CALL(WSAGetLastError());
     EXPECTED_CALL(closesocket(IGNORED_NUM_ARG));
@@ -624,8 +623,8 @@ TEST_FUNCTION(socketio_open_succeeds)
 
     EXPECTED_CALL(socket(IGNORED_NUM_ARG, IGNORED_NUM_ARG, IGNORED_NUM_ARG));
     EXPECTED_CALL(getaddrinfo(IGNORED_PTR_ARG, IGNORED_PTR_ARG, &TEST_ADDR_INFO, IGNORED_PTR_ARG));
-    EXPECTED_CALL(connect(IGNORED_PTR_ARG, &test_sock_addr, IGNORED_NUM_ARG));
-    EXPECTED_CALL(ioctlsocket(IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG));
+    EXPECTED_CALL(connect(IGNORED_NUM_ARG, &test_sock_addr, IGNORED_NUM_ARG));
+    EXPECTED_CALL(ioctlsocket(IGNORED_NUM_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG));
     EXPECTED_CALL(freeaddrinfo(&TEST_ADDR_INFO));
 
     // act
@@ -730,7 +729,7 @@ TEST_FUNCTION(socketio_send_succeeds)
     umock_c_reset_all_calls();
 
     EXPECTED_CALL(list_get_head_item(IGNORED_PTR_ARG));
-    EXPECTED_CALL(send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG));
+    EXPECTED_CALL(send(IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_NUM_ARG));
 
     // act
     result = socketio_send(ioHandle, (const void*)TEST_BUFFER_VALUE, TEST_BUFFER_SIZE, OnSendComplete, (void*)TEST_CALLBACK_CONTEXT);
@@ -754,7 +753,7 @@ TEST_FUNCTION(socketio_send_returns_1_succeeds)
     umock_c_reset_all_calls();
 
     EXPECTED_CALL(list_get_head_item(IGNORED_PTR_ARG));
-    EXPECTED_CALL(send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG)).SetReturn(1);
+    EXPECTED_CALL(send(IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_NUM_ARG)).SetReturn(1);
     EXPECTED_CALL(WSAGetLastError()).SetReturn(WSAEWOULDBLOCK);
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
@@ -793,7 +792,7 @@ TEST_FUNCTION(socketio_dowork_succeeds)
 
     EXPECTED_CALL(list_get_head_item(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    EXPECTED_CALL(recv(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_NUM_ARG));
+    EXPECTED_CALL(recv(IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_NUM_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(WSAGetLastError());
 
@@ -818,12 +817,12 @@ TEST_FUNCTION(socketio_dowork_recv_bytes_succeeds)
 
     EXPECTED_CALL(list_get_head_item(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    EXPECTED_CALL(recv(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+    EXPECTED_CALL(recv(IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_NUM_ARG))
         .CopyOutArgumentBuffer(2, "t", 1)
         .SetReturn(1);
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    EXPECTED_CALL(recv(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_NUM_ARG));
+    EXPECTED_CALL(recv(IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_NUM_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(WSAGetLastError());
 
