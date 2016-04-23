@@ -7,6 +7,7 @@
 
 /* TODO:
 - Test freeing of return values allocated by the user in the copy functions
+- Add a test for void function that has a hook
 */
 
 /* Tested by unit tests for umock_c:

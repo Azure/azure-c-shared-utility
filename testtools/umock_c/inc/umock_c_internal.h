@@ -786,7 +786,12 @@ typedef struct ARG_BUFFER_TAG
                             IF(IS_NOT_VOID(return_type),result_value_set = 1;,) \
                         } \
                     } \
-                },) \
+                }, \
+                if (C2(mock_hook_, name) != NULL) \
+                { \
+                    C2(mock_hook_, name)(FOR_EACH_2_COUNTED(ARG_NAME_ONLY_IN_CALL, __VA_ARGS__)); \
+                } \
+                ) \
                 IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_COUNTED(COPY_OUT_ARG_VALUE_FROM_MATCHED_CALL, __VA_ARGS__),) \
             } \
             else \

@@ -134,7 +134,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION_CLEANUP(cleans)
     {
         TEST_MUTEX_RELEASE(g_testByTest);
-        }
+    }
 
     /* Tests_SRS_BUFFER_07_001: [BUFFER_new shall allocate a BUFFER_HANDLE that will contain a NULL unsigned char*.] */
     TEST_FUNCTION(BUFFER_new_Succeed)
