@@ -138,6 +138,8 @@ TEST_SUITE_INITIALIZE(suite_init)
 
 TEST_SUITE_CLEANUP(suite_cleanup)
 {
+    umock_c_deinit();
+
     TEST_MUTEX_DESTROY(g_testByTest);
     TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
 }

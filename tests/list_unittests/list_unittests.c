@@ -83,6 +83,8 @@ TEST_SUITE_INITIALIZE(suite_init)
 
 TEST_SUITE_CLEANUP(suite_cleanup)
 {
+    umock_c_deinit();
+
     TEST_MUTEX_DESTROY(test_serialize_mutex);
 }
 

@@ -175,6 +175,8 @@ BEGIN_TEST_SUITE(map_unittests)
 
     TEST_SUITE_CLEANUP(TestClassCleanup)
     {
+        umock_c_deinit();
+
         TEST_MUTEX_DESTROY(g_testByTest);
         TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
     }
