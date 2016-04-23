@@ -4,7 +4,7 @@
 #ifndef TEST_DEPENDENCY_H
 #define TEST_DEPENDENCY_H
 
-#include "umock_c.h"
+#include "umock_c_prod.h"
 
 #ifdef __cplusplus
 #include <cstddef>
@@ -48,6 +48,7 @@ extern "C" {
     MOCKABLE_FUNCTION(int, test_dependency_with_global_mock_hook);
     MOCKABLE_FUNCTION(int, test_dependency_with_global_return);
     MOCKABLE_FUNCTION(int, test_dependency_returning_int);
+    MOCKABLE_FUNCTION(char*, test_mock_function_returning_string);
 
 #ifdef __cplusplus
 }

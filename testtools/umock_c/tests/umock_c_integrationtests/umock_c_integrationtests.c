@@ -22,7 +22,7 @@ Tests_SRS_UMOCK_C_LIB_01_012: [If umock_c was not initialized, umock_c_deinit sh
 
 /* Tested by unittests of umocktypes and umocktypename:
 Tests_SRS_UMOCK_C_LIB_01_145: [ Since umock_c needs to maintain a list of registered types, the following rules shall be applied: ]
-Tests_SRS_UMOCK_C_LIB_01_146: [** Each type shall be normalized to a form where all extra spaces are removed. ]
+Tests_SRS_UMOCK_C_LIB_01_146: [ Each type shall be normalized to a form where all extra spaces are removed. ]
 Tests_SRS_UMOCK_C_LIB_01_147: [ Type names are case sensitive. ]
 */
 
@@ -1713,6 +1713,21 @@ TEST_FUNCTION(an_expected_call_for_a_mock_function_with_code_ignores_args)
     test_mock_function_with_code_1_arg(42);
 
     // assert
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_expected_calls());
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
+}
+
+TEST_FUNCTION(the_value_for_a_function_that_returns_a_char_ptr_is_freed)
+{
+    // arrange
+    EXPECTED_CALL(test_mock_function_returning_string())
+        .SetReturn("a");
+
+    // act
+    const char* result = test_mock_function_returning_string();
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "a", result);
     ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_expected_calls());
     ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
 }
