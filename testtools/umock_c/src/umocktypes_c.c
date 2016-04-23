@@ -281,7 +281,6 @@ IMPLEMENT_TYPE_HANDLERS(long double, longdouble, "%Lf")
 IMPLEMENT_TYPE_HANDLERS(size_t, size_t, "%zu")
 
 IMPLEMENT_TYPE_HANDLERS(void*, void_ptr, "%p")
-IMPLEMENT_TYPE_HANDLERS(const void*, const_void_ptr, "%p")
 
 int umocktypes_c_register_types(void)
 {
@@ -303,7 +302,7 @@ int umocktypes_c_register_types(void)
         (REGISTER_TYPE(long double, longdouble) != 0) ||
         (REGISTER_TYPE(size_t, size_t) != 0) ||
         (REGISTER_TYPE(void*, void_ptr) != 0) ||
-        (REGISTER_TYPE(const void*, const_void_ptr) != 0))
+        (REGISTER_TYPE(const void*, void_ptr) != 0))
     {
         /* Codes_SRS_UMOCKTYPES_C_01_171: [ If registering any of the types fails, umocktypes_c_register_types shall fail and return a non-zero value. ]*/
         result = __LINE__;

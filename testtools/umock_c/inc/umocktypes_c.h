@@ -32,6 +32,7 @@ UMOCKTYPES_HANDLERS(float, float)
 UMOCKTYPES_HANDLERS(double, double)
 UMOCKTYPES_HANDLERS(long double, longdouble)
 UMOCKTYPES_HANDLERS(size_t, size_t)
+UMOCKTYPES_HANDLERS(void*, void_ptr)
 
 #ifdef __cplusplus
 }
