@@ -339,6 +339,8 @@ Out of the box umock_c shall support the following types through the header umoc
 -	double
 -	long double
 -	size_t
+-	void*
+-	const void*
 
 ###Custom types
 

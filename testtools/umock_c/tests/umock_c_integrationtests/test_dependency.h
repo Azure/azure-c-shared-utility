@@ -43,7 +43,7 @@ extern "C" {
     MOCKABLE_FUNCTION(, int, test_dependency_global_mock_return_test);
     MOCKABLE_FUNCTION(, TEST_STRUCT_COPY_FAILS, test_dependency_global_mock_return_copy_fails);
     MOCKABLE_FUNCTION(, void, test_dependency_type_with_space, char *,s);
-    MOCKABLE_FUNCTION(, void, test_dependency_all_types, char, char_arg, unsigned char, unsignedchar_arg, short, short_arg, unsigned short, unsignedshort_arg, int, int_arg, unsigned int, unsignedint_arg, long, long_arg, unsigned long, unsignedlong_arg, long long, longlong_arg, unsigned long long, unsignedlonglong_arg, float, float_arg, double, double_arg, long double, longdouble_arg, size_t, size_t_arg);
+    MOCKABLE_FUNCTION(, void, test_dependency_all_types, char, char_arg, unsigned char, unsignedchar_arg, short, short_arg, unsigned short, unsignedshort_arg, int, int_arg, unsigned int, unsignedint_arg, long, long_arg, unsigned long, unsignedlong_arg, long long, longlong_arg, unsigned long long, unsignedlonglong_arg, float, float_arg, double, double_arg, long double, longdouble_arg, size_t, size_t_arg, void*, void_ptr_arg, const void*, const_void_ptr_arg);
     MOCKABLE_FUNCTION(, void, test_dependency_type_not_registered, TEST_STRUCT_NOT_REGISTERED, a);
     MOCKABLE_FUNCTION(, int, test_dependency_with_global_mock_hook);
     MOCKABLE_FUNCTION(, int, test_dependency_with_global_return);

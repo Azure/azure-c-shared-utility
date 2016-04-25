@@ -1474,6 +1474,8 @@ TEST_FUNCTION(spaces_are_stripped_from_typenames)
 /* Tests_SRS_UMOCK_C_LIB_01_039 : [**double**] */
 /* Tests_SRS_UMOCK_C_LIB_01_040 : [**long double**] */
 /* Tests_SRS_UMOCK_C_LIB_01_041 : [**size_t**] */
+/* Tests_SRS_UMOCK_C_LIB_01_151: [ void\* ]*/
+/* Tests_SRS_UMOCK_C_LIB_01_152: [ const void\* ]*/
 TEST_FUNCTION(native_c_types_are_supported)
 {
     // arrange
@@ -1485,7 +1487,9 @@ TEST_FUNCTION(native_c_types_are_supported)
         -42.42f,  /* float */
         4242.42, /* double */
         4242.42, /* long double */
-        0x42 /* size_t*/
+        0x42, /* size_t*/
+        (void*)0x42, /* void* */
+        (const void*)0x42 /* const void* */
         ));
 
     // act
@@ -1497,7 +1501,9 @@ TEST_FUNCTION(native_c_types_are_supported)
         -42.42f,  /* float */
         4242.42, /* double */
         4242.42, /* long double */
-        0x42 /* size_t*/
+        0x42, /* size_t*/
+        (void*)0x42, /* void* */
+        (const void*)0x42 /* const void* */
         );
 
     // assert

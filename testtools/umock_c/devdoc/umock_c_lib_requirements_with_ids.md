@@ -340,6 +340,8 @@ XX**SRS_UMOCK_C_LIB_01_148: [** If call comparison fails an error shall be indic
 -	**SRS_UMOCK_C_LIB_01_039: [**double**]**
 -	**SRS_UMOCK_C_LIB_01_040: [**long double**]**
 -	**SRS_UMOCK_C_LIB_01_041: [**size_t**]**
+-   **SRS_UMOCK_C_LIB_01_151: [** void\* **]**
+-   **SRS_UMOCK_C_LIB_01_152: [** const void\* **]**
 
 ###Custom types
 

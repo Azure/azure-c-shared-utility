@@ -49,6 +49,8 @@ int umock_c_init(ON_UMOCK_C_ERROR on_umock_c_error)
         /* Codes_SRS_UMOCK_C_LIB_01_039 : [**double**] */
         /* Codes_SRS_UMOCK_C_LIB_01_040 : [**long double**] */
         /* Codes_SRS_UMOCK_C_LIB_01_041 : [**size_t**] */
+        /* Codes_SRS_UMOCK_C_LIB_01_151: [ void\* ]*/
+        /* Codes_SRS_UMOCK_C_LIB_01_152: [ const void\* ]*/
         /* Codes_SRS_UMOCK_C_01_023: [ umock_c_init shall initialize the umock types by calling umocktypes_init. ]*/
         if ((umocktypes_init() != 0) ||
             /* Codes_SRS_UMOCK_C_01_002: [ umock_c_init shall register the C naive types by calling umocktypes_c_register_types. ]*/
