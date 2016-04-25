@@ -112,7 +112,7 @@ BEGIN_TEST_SUITE(strings_unittests)
 
         umock_c_init(on_umock_c_error);
 
-        REGISTER_ALIAS_TYPE(STRING_HANDLE, void*);
+        REGISTER_UMOCK_ALIAS_TYPE(STRING_HANDLE, void*);
         result = umocktypes_charptr_register_types();
         ASSERT_ARE_EQUAL(int, 0, result);
 

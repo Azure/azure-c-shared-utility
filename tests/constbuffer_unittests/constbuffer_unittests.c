@@ -120,7 +120,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
 
         umock_c_init(on_umock_c_error);
 
-        REGISTER_ALIAS_TYPE(BUFFER_HANDLE, void*);
+        REGISTER_UMOCK_ALIAS_TYPE(BUFFER_HANDLE, void*);
 
         REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, my_gballoc_malloc);
         REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, my_gballoc_free);

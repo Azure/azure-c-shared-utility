@@ -89,7 +89,7 @@ extern "C" {
     umocktypes_register_type(TOSTRING(value_type), (UMOCKTYPE_STRINGIFY_FUNC)stringify_func, (UMOCKTYPE_ARE_EQUAL_FUNC)are_equal_func, (UMOCKTYPE_COPY_FUNC)copy_func, (UMOCKTYPE_FREE_FUNC)free_func); \
 }
 
-#define REGISTER_ALIAS_TYPE(value_type, is_value_type) \
+#define REGISTER_UMOCK_ALIAS_TYPE(value_type, is_value_type) \
     umocktypes_register_alias_type(TOSTRING(value_type), TOSTRING(is_value_type));
 
 extern int umock_c_init(ON_UMOCK_C_ERROR on_umock_c_error);

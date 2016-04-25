@@ -64,7 +64,7 @@ TEST_SUITE_INITIALIZE(TestClassInitialize)
 
     umock_c_init(on_umock_c_error);
 
-    REGISTER_ALIAS_TYPE(LOCK_HANDLE, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(LOCK_HANDLE, void*);
     REGISTER_TYPE(LOCK_RESULT, LOCK_RESULT);
 
     REGISTER_GLOBAL_MOCK_RETURN(mock_malloc, TEST_ALLOC_PTR1);

@@ -495,6 +495,14 @@ Example:
 REGISTER_UMOCK_VALUE_TYPE(TEST_STRUCT);
 ```
 
+####REGISTER_UMOCK_ALIAS_TYPE
+
+```c
+REGISTER_UMOCK_ALIAS_TYPE(value_type, is_value_type)
+```
+
+**SRS_UMOCK_C_LIB_01_149: [** REGISTER_UMOCK_ALIAS_TYPE registers a new alias type for another type. **]** That means that the handlers used for is_value_type will also be used for the new alias value_type.
+
 ###Extra optional C types
 
 ####umockvalue_charptr

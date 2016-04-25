@@ -145,10 +145,10 @@ BEGIN_TEST_SUITE(HTTPHeaders_UnitTests)
             ASSERT_ARE_EQUAL(int, 0, result);
 
             REGISTER_TYPE(MAP_RESULT, MAP_RESULT);
-            REGISTER_ALIAS_TYPE(MAP_FILTER_CALLBACK, void*);
-            REGISTER_ALIAS_TYPE(MAP_HANDLE, void*);
-            REGISTER_ALIAS_TYPE(const char*const**, void*);
-            REGISTER_ALIAS_TYPE(size_t*, void*);
+            REGISTER_UMOCK_ALIAS_TYPE(MAP_FILTER_CALLBACK, void*);
+            REGISTER_UMOCK_ALIAS_TYPE(MAP_HANDLE, void*);
+            REGISTER_UMOCK_ALIAS_TYPE(const char*const**, void*);
+            REGISTER_UMOCK_ALIAS_TYPE(size_t*, void*);
 
             REGISTER_GLOBAL_MOCK_HOOK(Map_Create, my_Map_Create);
             REGISTER_GLOBAL_MOCK_HOOK(Map_Clone, my_Map_Clone);

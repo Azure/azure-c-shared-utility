@@ -162,8 +162,8 @@ BEGIN_TEST_SUITE(map_unittests)
         result = umocktypes_charptr_register_types();
         ASSERT_ARE_EQUAL(int, 0, result);
 
-        REGISTER_ALIAS_TYPE(MAP_HANDLE, void*);
-        REGISTER_ALIAS_TYPE(STRING_HANDLE, void*);
+        REGISTER_UMOCK_ALIAS_TYPE(MAP_HANDLE, void*);
+        REGISTER_UMOCK_ALIAS_TYPE(STRING_HANDLE, void*);
 
         REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, my_gballoc_malloc);
         REGISTER_GLOBAL_MOCK_HOOK(gballoc_realloc, my_gballoc_realloc);

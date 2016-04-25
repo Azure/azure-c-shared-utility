@@ -86,9 +86,6 @@ static void my_hook_test_dependency_void_return(void)
     test_dependency_void_return_called = 1;
 }
 
-static int test_dependency_global_mock_return_copy_fails_call_count = 0;
-static int test_dependency_global_mock_return_copy_fails_fail_call = 0;
-
 char* stringify_func_TEST_STRUCT_COPY_FAILS(const TEST_STRUCT_COPY_FAILS* value)
 {
     char* result = (char*)malloc(1);
@@ -103,19 +100,7 @@ int are_equal_func_TEST_STRUCT_COPY_FAILS(const TEST_STRUCT_COPY_FAILS* left, co
 
 int copy_func_TEST_STRUCT_COPY_FAILS(TEST_STRUCT_COPY_FAILS* destination, const TEST_STRUCT_COPY_FAILS* source)
 {
-    int result;
-
-    test_dependency_global_mock_return_copy_fails_call_count++;
-    if (test_dependency_global_mock_return_copy_fails_fail_call == test_dependency_global_mock_return_copy_fails_call_count)
-    {
-        result = 1;
-    }
-    else
-    {
-        result = 0;
-    }
-
-    return result;
+    return 0;
 }
 
 void free_func_TEST_STRUCT_COPY_FAILS(TEST_STRUCT_COPY_FAILS* value)
@@ -129,6 +114,11 @@ MOCK_FUNCTION_END()
 
 MOCK_FUNCTION_WITH_CODE(, char*, test_mock_function_returning_string_with_code);
 MOCK_FUNCTION_END("a")
+
+typedef int funkytype;
+
+MOCK_FUNCTION_WITH_CODE(, funkytype, test_mock_function_with_funkytype, funkytype, x);
+MOCK_FUNCTION_END(42)
 
 BEGIN_TEST_SUITE(umock_c_integrationtests)
 
@@ -1375,23 +1365,6 @@ TEST_FUNCTION(REGISTER_GLOBAL_MOCK_RETURN_twice_only_makes_the_second_call_stick
     ASSERT_ARE_EQUAL(int, 0x46, result);
 }
 
-/* Tests_SRS_UMOCK_C_LIB_01_141: [ If any error occurs during REGISTER_GLOBAL_MOCK_RETURN, umock_c shall raise an error with the code UMOCK_C_ERROR. ]*/
-TEST_FUNCTION(when_copy_fails_in_REGISTER_GLOBAL_MOCK_RETURN_then_on_error_is_triggered)
-{
-    // arrange
-    TEST_STRUCT_COPY_FAILS test_struct = { 0x42 };
-    test_dependency_global_mock_return_copy_fails_fail_call = 1;
-    test_dependency_global_mock_return_copy_fails_call_count = 0;
-    REGISTER_GLOBAL_MOCK_RETURN(test_dependency_global_mock_return_copy_fails, test_struct);
-
-    // act
-    (void)test_dependency_global_mock_return_copy_fails();
-
-    // assert
-    ASSERT_ARE_EQUAL(int, 1, test_on_umock_c_error_call_count);
-    ASSERT_ARE_EQUAL(int, (int)UMOCK_C_ERROR, test_on_umock_c_error_calls[0].error_code);
-}
-
 /* REGISTER_GLOBAL_MOCK_FAIL_RETURN */
 
 /* Tests_SRS_UMOCK_C_LIB_01_111: [The REGISTER_GLOBAL_MOCK_FAIL_RETURN shall register a fail return value to be returned by a mock function when marked as failed in the expected calls.]*/
@@ -1464,41 +1437,6 @@ TEST_FUNCTION(REGISTER_GLOBAL_MOCK_RETURNS_twice_makes_only_the_last_call_stick)
 
     // assert
     ASSERT_ARE_EQUAL(int, 0xAB, result);
-}
-
-/* Tests_SRS_UMOCK_C_LIB_01_143: [ If any error occurs during REGISTER_GLOBAL_MOCK_RETURNS, umock_c shall raise an error with the code UMOCK_C_ERROR. ]*/
-TEST_FUNCTION(when_copy_fails_in_REGISTER_GLOBAL_MOCK_RETURNS_then_on_error_is_triggered)
-{
-    TEST_STRUCT_COPY_FAILS test_struct = { 0x42 };
-    TEST_STRUCT_COPY_FAILS test_struct_fail = { 0x43 };
-    test_dependency_global_mock_return_copy_fails_fail_call = 1;
-    test_dependency_global_mock_return_copy_fails_call_count = 0;
-    REGISTER_GLOBAL_MOCK_RETURNS(test_dependency_global_mock_return_copy_fails, test_struct, test_struct_fail);
-
-    // act
-    (void)test_dependency_global_mock_return_copy_fails();
-
-    // assert
-    ASSERT_ARE_EQUAL(int, 1, test_on_umock_c_error_call_count);
-    ASSERT_ARE_EQUAL(int, (int)UMOCK_C_ERROR, test_on_umock_c_error_calls[0].error_code);
-}
-
-/* Tests_SRS_UMOCK_C_LIB_01_143: [ If any error occurs during REGISTER_GLOBAL_MOCK_RETURNS, umock_c shall raise an error with the code UMOCK_C_ERROR. ]*/
-TEST_FUNCTION(when_copy_fails_for_the_second_call_in_REGISTER_GLOBAL_MOCK_RETURNS_then_on_error_is_triggered)
-{
-    TEST_STRUCT_COPY_FAILS test_struct = { 0x42 };
-    TEST_STRUCT_COPY_FAILS test_struct_fail = { 0x43 };
-    test_dependency_global_mock_return_copy_fails_fail_call = 2;
-    test_dependency_global_mock_return_copy_fails_call_count = 0;
-
-    REGISTER_GLOBAL_MOCK_RETURNS(test_dependency_global_mock_return_copy_fails, test_struct, test_struct_fail);
-
-    // act
-    (void)test_dependency_global_mock_return_copy_fails();
-
-    // assert
-    ASSERT_ARE_EQUAL(int, 1, test_on_umock_c_error_call_count);
-    ASSERT_ARE_EQUAL(int, (int)UMOCK_C_ERROR, test_on_umock_c_error_calls[0].error_code);
 }
 
 /* Type names */
@@ -1771,6 +1709,25 @@ TEST_FUNCTION(the_value_for_a_function_that_returns_a_char_ptr_set_by_macro_is_f
 
     // assert
     ASSERT_ARE_EQUAL(char_ptr, "a", result);
+}
+
+/* REGISTER_UMOCK_ALIAS_TYPE */
+
+/* Tests SRS_UMOCK_C_LIB_01_149: [ REGISTER_UMOCK_ALIAS_TYPE registers a new alias type for another type. ]*/
+TEST_FUNCTION(registering_an_alias_type_works)
+{
+    // arrange
+    REGISTER_UMOCK_ALIAS_TYPE(funkytype, int);
+    STRICT_EXPECTED_CALL(test_mock_function_with_funkytype(42))
+        .SetReturn(42);
+
+    // act
+    funkytype result = test_mock_function_with_funkytype(42);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 42, (int)result);
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_expected_calls());
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
 }
 
 END_TEST_SUITE(umock_c_integrationtests)
