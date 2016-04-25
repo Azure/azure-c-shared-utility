@@ -4,11 +4,13 @@
 #ifndef UMOCKTYPES_BOOL_H
 #define UMOCKTYPES_BOOL_H
 
-#include <stdbool.h>
 #include "azure_c_shared_utility/macro_utils.h"
 
 #ifdef __cplusplus
 extern "C" {
+#include <cstdbool>
+#else
+#include <stdbool.h>
 #endif
 
     extern int umocktypes_bool_register_types(void);

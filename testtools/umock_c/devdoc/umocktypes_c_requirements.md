@@ -34,7 +34,7 @@ UMOCKTYPES_HANDLERS(const void*, void_ptr)
 
 ```
 
-##umocktypes_charptr_register_types
+##umocktypes_c_register_types
 
 ```c
 extern int umocktypes_c_register_types(void);
