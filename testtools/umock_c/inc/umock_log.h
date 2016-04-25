@@ -5,13 +5,12 @@
 #define UMOCK_LOG_H
 
 #ifdef __cplusplus
-#include <cstdlib>
+#include <cstdio>
 #else
-#include <stdlib.h>
+#include <stdio.h>
 #endif
 
-#define UMOCK_LOG(...) \
-    (void)printf(__VA_ARGS__); \
-    (void)printf("\r\n");
+#define UMOCK_LOG(format, ...) \
+    (void)printf(format "\r\n", __VA_ARGS__);
 
 #endif /* UMOCK_LOG_H */
