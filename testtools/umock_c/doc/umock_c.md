@@ -19,7 +19,7 @@ In unit B’s header one would write:
 ```c
 #include "umock_prod.h"
 
-MOCKABLE_FUNCTION(int, test_dependency_1_arg, int, a);
+MOCKABLE_FUNCTION(, int, test_dependency_1_arg, int, a);
 ```
 
 Let’s assume unit A has a function called function_under_test.
@@ -69,7 +69,7 @@ typedef void(*ON_UMOCK_C_ERROR)(UMOCK_C_ERROR_CODE error_code);
 #define IGNORED_PTR_ARG (NULL)
 #define IGNORED_NUM_ARG (0)
 
-#define MOCKABLE_FUNCTION(result, function, ...) \
+#define MOCKABLE_FUNCTION(modifiers, result, function, ...) \
 	...
 
 #define REGISTER_GLOBAL_MOCK_HOOK(mock_function, mock_hook_function) \
@@ -103,7 +103,7 @@ typedef void(*ON_UMOCK_C_ERROR)(UMOCK_C_ERROR_CODE error_code);
 ###MOCKABLE_FUNCTION
 
 ```c
-MOCKABLE_FUNCTION(result, function, ...)
+MOCKABLE_FUNCTION(modifiers, result, function, ...)
 ```
 
 MOCKABLE_FUNCTION shall be used to wrap function definition allow the user to declare a function that can be mocked.
@@ -113,13 +113,13 @@ The macro shall generate a function signature in case ENABLE_MOCKS is not define
 Example:
 
 ```c
-MOCKABLE_FUNCTION(int, test_function, int, arg1)
+MOCKABLE_FUNCTION(FAR, int, test_function, int, arg1)
 ```
 
 should generate for production code:
 
 ```c
-int test_function(int arg1);
+int FAR test_function(int arg1);
 ```
 
 ###MOCK_FUNCTION_WITH_CODE
