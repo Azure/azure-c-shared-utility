@@ -2792,6 +2792,186 @@ TEST_FUNCTION(umocktypes_free_size_t_does_nothing)
     // no explicit assert
 }
 
+/* umocktypes_stringify_void_ptr */
+
+/* Tests_SRS_UMOCKTYPES_C_01_170: [ umocktypes_stringify_void_ptr shall return the string representation of value. ]*/
+TEST_FUNCTION(umocktypes_stringify_void_ptr_with_NULL_value)
+{
+    // arrange
+    void* input = NULL;
+    char expected_string[32];
+
+    // act
+    char* result = umocktypes_stringify_void_ptr(&input);
+
+    // assert
+    (void)sprintf(expected_string, "%p", input);
+    ASSERT_ARE_EQUAL(char_ptr, expected_string, result);
+
+    // cleanup
+    free(result);
+}
+
+/* Tests_SRS_UMOCKTYPES_C_01_170: [ umocktypes_stringify_void_ptr shall return the string representation of value. ]*/
+TEST_FUNCTION(umocktypes_stringify_void_ptr_with_a_pointer)
+{
+    // arrange
+    void* input = (void*)0x4242;
+    char expected_string[32];
+
+    // act
+    char* result = umocktypes_stringify_void_ptr(&input);
+
+    // assert
+    (void)sprintf(expected_string, "%p", input);
+    ASSERT_ARE_EQUAL(char_ptr, expected_string, result);
+
+    // cleanup
+    free(result);
+}
+
+/* Tests_SRS_UMOCKTYPES_C_01_171: [ If value is NULL, umocktypes_stringify_void_ptr shall return NULL. ]*/
+TEST_FUNCTION(umocktypes_stringify_void_ptr_with_NULL_fails)
+{
+    // arrange
+
+    // act
+    char* result = umocktypes_stringify_void_ptr(NULL);
+
+    // assert
+    ASSERT_IS_NULL(result);
+}
+
+/* Tests_SRS_UMOCKTYPES_C_01_172: [ If allocating a new string to hold the string representation fails, umocktypes_stringify_void_ptr shall return NULL. ]*/
+TEST_FUNCTION(when_allocating_memory_fails_umocktypes_stringify_void_ptr_fails)
+{
+    // arrange
+    void* input = (void*)0x4242;
+    when_shall_malloc_fail = 1;
+
+    // act
+    char* result = umocktypes_stringify_void_ptr(&input);
+
+    // assert
+    ASSERT_IS_NULL(result);
+}
+
+/* umocktypes_are_equal_void_ptr */
+
+/* Tests_SRS_UMOCKTYPES_C_01_174: [ umocktypes_are_equal_void_ptr shall compare the 2 void_ptrs pointed to by left and right. ]*/
+/* Tests_SRS_UMOCKTYPES_C_01_176: [ If the values pointed to by left and right are equal, umocktypes_are_equal_void_ptr shall return 1. ]*/
+TEST_FUNCTION(umocktypes_are_equal_void_ptr_with_2_equal_values_returns_1)
+{
+    // arrange
+    void* left = (void*)0x4242;
+    void* right = (void*)0x4242;
+
+    // act
+    int result = umocktypes_are_equal_void_ptr(&left, &right);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 1, result);
+}
+
+/* Tests_SRS_UMOCKTYPES_C_01_177: [ If the values pointed to by left and right are different, umocktypes_are_equal_void_ptr shall return 0. ]*/
+TEST_FUNCTION(umocktypes_are_equal_void_ptr_with_2_different_values_returns_0)
+{
+    // arrange
+    void* left = (void*)0x4242;
+    void* right = (void*)0x4243;
+
+    // act
+    int result = umocktypes_are_equal_void_ptr(&left, &right);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+}
+
+/* Tests_SRS_UMOCKTYPES_C_01_175: [ If any of the arguments is NULL, umocktypes_are_equal_void_ptr shall return -1. ]*/
+TEST_FUNCTION(umocktypes_are_equal_void_ptr_with_NULL_left_fails)
+{
+    // arrange
+    void* right = (void*)0x4243;
+
+    // act
+    int result = umocktypes_are_equal_void_ptr(NULL, &right);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, -1, result);
+}
+
+/* Tests_SRS_UMOCKTYPES_C_01_175: [ If any of the arguments is NULL, umocktypes_are_equal_void_ptr shall return -1. ]*/
+TEST_FUNCTION(umocktypes_are_equal_void_ptr_with_NULL_right_fails)
+{
+    // arrange
+    void* left = (void*)0x4242;
+
+    // act
+    int result = umocktypes_are_equal_void_ptr(&left, NULL);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, -1, result);
+}
+
+/* umocktypes_copy_void_ptr */
+
+/* Tests_SRS_UMOCKTYPES_C_01_178: [ umocktypes_copy_void_ptr shall copy the void_ptr value from source to destination. ]*/
+/* Tests_SRS_UMOCKTYPES_C_01_179: [ On success umocktypes_copy_void_ptr shall return 0. ]*/
+TEST_FUNCTION(umocktypes_copy_void_ptr_succeeds)
+{
+    // arrange
+    void* destination = NULL;
+    void* source = (void*)0x4242;
+
+    // act
+    int result = umocktypes_copy_void_ptr(&destination, &source);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(void_ptr, (void*)0x4242, destination);
+}
+
+/* Tests_SRS_UMOCKTYPES_C_01_180: [ If source or destination are NULL, umocktypes_copy_void_ptr shall return a non-zero value. ]*/
+TEST_FUNCTION(umocktypes_copy_void_ptr_with_NULL_destination_fails)
+{
+    // arrange
+    void* source = (void*)0x4242;
+
+    // act
+    int result = umocktypes_copy_void_ptr(NULL, &source);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+}
+
+/* Tests_SRS_UMOCKTYPES_C_01_180: [ If source or destination are NULL, umocktypes_copy_void_ptr shall return a non-zero value. ]*/
+TEST_FUNCTION(umocktypes_copy_void_ptr_with_NULL_source_fails)
+{
+    // arrange
+    void* destination = NULL;
+
+    // act
+    int result = umocktypes_copy_void_ptr(&destination, NULL);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+}
+
+/* umocktypes_free_void_ptr */
+
+/* Tests_SRS_UMOCKTYPES_C_01_181: [ umocktypes_free_void_ptr shall do nothing. ]*/
+TEST_FUNCTION(umocktypes_free_void_ptr_does_nothing)
+{
+    // arrange
+    void* value = NULL;
+
+    // act
+    umocktypes_free_void_ptr(&value);
+
+    // assert
+    // no explicit assert
+}
+
 /* umocktypes_c_register_types */
 
 /* Tests_SRS_UMOCKTYPES_C_01_001: [ umocktypes_c_register_types shall register support for all the types in the module. ]*/
@@ -2808,7 +2988,7 @@ TEST_FUNCTION(umocktypes_c_register_types_registers_all_types)
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(int, 14, umocktypes_register_type_call_count);
+    ASSERT_ARE_EQUAL(int, 16, umocktypes_register_type_call_count);
     ASSERT_ARE_EQUAL(char_ptr, "char", umocktypes_register_type_calls[0].type);
     ASSERT_ARE_EQUAL(char_ptr, "unsigned char", umocktypes_register_type_calls[1].type);
     ASSERT_ARE_EQUAL(char_ptr, "short", umocktypes_register_type_calls[2].type);
@@ -2823,8 +3003,10 @@ TEST_FUNCTION(umocktypes_c_register_types_registers_all_types)
     ASSERT_ARE_EQUAL(char_ptr, "double", umocktypes_register_type_calls[11].type);
     ASSERT_ARE_EQUAL(char_ptr, "long double", umocktypes_register_type_calls[12].type);
     ASSERT_ARE_EQUAL(char_ptr, "size_t", umocktypes_register_type_calls[13].type);
+    ASSERT_ARE_EQUAL(char_ptr, "void*", umocktypes_register_type_calls[14].type);
+    ASSERT_ARE_EQUAL(char_ptr, "const void*", umocktypes_register_type_calls[15].type);
     
-    for (i = 0; i < 14; i++)
+    for (i = 0; i < 16; i++)
     {
         ASSERT_IS_NOT_NULL(umocktypes_register_type_calls[i].stringify_func);
         ASSERT_IS_NOT_NULL(umocktypes_register_type_calls[i].are_equal_func);

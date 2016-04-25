@@ -30,6 +30,7 @@ UMOCKTYPES_HANDLERS(double, double)
 UMOCKTYPES_HANDLERS(long double, longdouble)
 UMOCKTYPES_HANDLERS(size_t, size_t)
 UMOCKTYPES_HANDLERS(void*, void_ptr)
+UMOCKTYPES_HANDLERS(const void*, void_ptr)
 
 ```
 
