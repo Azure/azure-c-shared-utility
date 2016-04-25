@@ -11,6 +11,7 @@
 #include "umockcallrecorder.h"
 #include "umockcall.h"
 #include "umocktypes.h"
+#include "umock_log.h"
 
 typedef struct UMOCK_EXPECTED_CALL_TAG
 {
@@ -68,6 +69,7 @@ int umockcallrecorder_reset_all_calls(UMOCKCALLRECORDER_HANDLE umock_call_record
     if (umock_call_recorder == NULL)
     {
         /* Codes_SRS_UMOCKCALLRECORDER_01_007: [ If umock_call_recorder is NULL, umockcallrecorder_reset_all_calls shall fail and return a non-zero value. ]*/
+        UMOCK_LOG("umockcallrecorder: Reset all calls failed: NULL umock_call_recorder.");
         result = __LINE__;
     }
     else
@@ -114,6 +116,8 @@ int umockcallrecorder_add_expected_call(UMOCKCALLRECORDER_HANDLE umock_call_reco
         (mock_call == NULL))
     {
         /* Codes_SRS_UMOCKCALLRECORDER_01_012: [ If any of the arguments is NULL, umockcallrecorder_add_expected_call shall fail and return a non-zero value. ]*/
+        UMOCK_LOG("umockcallrecorder: Bad arguments in add expected call: umock_call_recorder = %p, mock_call = %p.",
+            umock_call_recorder, mock_call);
         result = __LINE__;
     }
     else
@@ -122,6 +126,7 @@ int umockcallrecorder_add_expected_call(UMOCKCALLRECORDER_HANDLE umock_call_reco
         if (new_expected_calls == NULL)
         {
             /* Codes_SRS_UMOCKCALLRECORDER_01_013: [ If allocating memory for the expected calls fails, umockcallrecorder_add_expected_call shall fail and return a non-zero value. ] */
+            UMOCK_LOG("umockcallrecorder: Cannot allocate memory in add expected call.");
             result = __LINE__;
         }
         else
@@ -148,6 +153,8 @@ int umockcallrecorder_add_actual_call(UMOCKCALLRECORDER_HANDLE umock_call_record
         (matched_call == NULL))
     {
         /* Codes_SRS_UMOCKCALLRECORDER_01_019: [ If any of the arguments is NULL, umockcallrecorder_add_actual_call shall fail and return a non-zero value. ]*/
+        UMOCK_LOG("umockcallrecorder: Bad arguments in add actual call: umock_call_recorder = %p, mock_call = %p, matched_call = %p.",
+            umock_call_recorder, mock_call, matched_call);
         result = __LINE__;
     }
     else
@@ -187,6 +194,7 @@ int umockcallrecorder_add_actual_call(UMOCKCALLRECORDER_HANDLE umock_call_record
 
         if (is_error)
         {
+            UMOCK_LOG("umockcallrecorder: Error in finding a matched call.");
             result = __LINE__;
         }
         else
@@ -198,6 +206,7 @@ int umockcallrecorder_add_actual_call(UMOCKCALLRECORDER_HANDLE umock_call_record
                 UMOCKCALL_HANDLE* new_actual_calls = (UMOCKCALL_HANDLE*)realloc(umock_call_recorder->actual_calls, sizeof(UMOCKCALL_HANDLE) * (umock_call_recorder->actual_call_count + 1));
                 if (new_actual_calls == NULL)
                 {
+                    UMOCK_LOG("umockcallrecorder: Cannot allocate memory for actual calls.");
                     result = __LINE__;
                 }
                 else
@@ -229,6 +238,7 @@ const char* umockcallrecorder_get_expected_calls(UMOCKCALLRECORDER_HANDLE umock_
     if (umock_call_recorder == NULL)
     {
         /* Codes_SRS_UMOCKCALLRECORDER_01_029: [ If the umock_call_recorder is NULL, umockcallrecorder_get_expected_calls shall fail and return NULL. ]*/
+        UMOCK_LOG("umockcallrecorder: NULL umock_call_recorder in get expected calls.");
         result = NULL;
     }
     else
@@ -283,6 +293,7 @@ const char* umockcallrecorder_get_expected_calls(UMOCKCALLRECORDER_HANDLE umock_
                 if (new_expected_calls_string == NULL)
                 {
                     /* Codes_SRS_UMOCKCALLRECORDER_01_031: [ If allocating memory for the resulting string fails, umockcallrecorder_get_expected_calls shall fail and return NULL. ]*/
+                    UMOCK_LOG("umockcallrecorder: Cannot allocate memory for expected calls.");
                     result = NULL;
                 }
                 else
@@ -312,6 +323,7 @@ const char* umockcallrecorder_get_actual_calls(UMOCKCALLRECORDER_HANDLE umock_ca
     if (umock_call_recorder == NULL)
     {
         /* Codes_SRS_UMOCKCALLRECORDER_01_024: [ If the umock_call_recorder is NULL, umockcallrecorder_get_actual_calls shall fail and return NULL. ]*/
+        UMOCK_LOG("umockcallrecorder: NULL umock_call_recorder in get actual calls.");
         result = NULL;
     }
     else
@@ -325,6 +337,7 @@ const char* umockcallrecorder_get_actual_calls(UMOCKCALLRECORDER_HANDLE umock_ca
             if (new_actual_calls_string == NULL)
             {
                 /* Codes_SRS_UMOCKCALLRECORDER_01_026: [ If allocating memory for the resulting string fails, umockcallrecorder_get_actual_calls shall fail and return NULL. ]*/
+                UMOCK_LOG("umockcallrecorder: Cannot allocate memory for actual calls.");
                 result = NULL;
             }
             else
@@ -393,6 +406,7 @@ UMOCKCALL_HANDLE umockcallrecorder_get_last_expected_call(UMOCKCALLRECORDER_HAND
     if (umock_call_recorder == NULL)
     {
         /* Codes_SRS_UMOCKCALLRECORDER_01_033: [ If umock_call_recorder is NULL, umockcallrecorder_get_last_expected_call shall fail and return NULL. ]*/
+        UMOCK_LOG("umockcallrecorder: NULL umock_call_recorder in get last expected calls.");
         result = NULL;
     }
     else
@@ -400,6 +414,7 @@ UMOCKCALL_HANDLE umockcallrecorder_get_last_expected_call(UMOCKCALLRECORDER_HAND
         if (umock_call_recorder->expected_call_count == 0)
         {
             /* Codes_SRS_UMOCKCALLRECORDER_01_034: [ If no expected call has been recorded for umock_call_recorder then umockcallrecorder_get_last_expected_call shall fail and return NULL. ]*/
+            UMOCK_LOG("umockcallrecorder: No expected calls recorded.");
             result = NULL;
         }
         else

@@ -10,6 +10,7 @@
 #include "umocktypes.h"
 #include "azure_c_shared_utility/macro_utils.h"
 #include "umocktypes_charptr.h"
+#include "umock_log.h"
 
 char* umocktypes_stringify_charptr(const char** value)
 {
@@ -18,6 +19,7 @@ char* umocktypes_stringify_charptr(const char** value)
     if (value == NULL)
     {
         /* Codes_SRS_UMOCKTYPES_CHARPTR_01_004: [ If value is NULL, umocktypes_stringify_charptr shall return NULL. ]*/
+        UMOCK_LOG("umocktypes_stringify_charptr: NULL value.");
         result = NULL;
     }
     else
@@ -36,7 +38,11 @@ char* umocktypes_stringify_charptr(const char** value)
             size_t length = strlen(*value);
             result = (char*)malloc(length + 3);
             /* Codes_SRS_UMOCKTYPES_CHARPTR_01_003: [ If allocating a new string to hold the string representation fails, umocktypes_stringify_charptr shall return NULL. ]*/
-            if (result != NULL)
+            if (result == NULL)
+            {
+                UMOCK_LOG("umocktypes_stringify_charptr: Cannot allocate memory for result.");
+            }
+            else
             {
                 result[0] = '\"';
                 (void)memcpy(result + 1, *value, length);
@@ -82,6 +88,8 @@ int umocktypes_copy_charptr(char** destination, const char** source)
     /* Codes_SRS_UMOCKTYPES_CHARPTR_01_013: [ If source or destination are NULL, umocktypes_copy_charptr shall return a non-zero value. ]*/
     if ((destination == NULL) || (source == NULL))
     {
+        UMOCK_LOG("umocktypes_copy_charptr: Bad arguments: destination = %p, source = %p.",
+            destination, source);
         result = __LINE__;
     }
     else
@@ -101,6 +109,7 @@ int umocktypes_copy_charptr(char** destination, const char** source)
             if (*destination == NULL)
             {
                 /* Codes_SRS_UMOCKTYPES_CHARPTR_01_036: [ If allocating the memory for the new string fails, umocktypes_copy_charptr shall fail and return a non-zero value. ]*/
+                UMOCK_LOG("umocktypes_copy_charptr: Failed allocating memory for the destination string.");
                 result = __LINE__;
             }
             else
@@ -133,6 +142,7 @@ char* umocktypes_stringify_const_charptr(const char** value)
     if (value == NULL)
     {
         /* Codes_SRS_UMOCKTYPES_CHARPTR_01_020: [ If value is NULL, umocktypes_stringify_const_charptr shall return NULL. ]*/
+        UMOCK_LOG("umocktypes_stringify_const_charptr: NULL value.");
         result = NULL;
     }
     else
@@ -140,7 +150,11 @@ char* umocktypes_stringify_const_charptr(const char** value)
         if (*value == NULL)
         {
             result = (char*)malloc(sizeof("NULL") + 1);
-            if (result != NULL)
+            if (result == NULL)
+            {
+                UMOCK_LOG("umocktypes_stringify_const_charptr: Cannot allocate memoryfor result string.");
+            }
+            else
             {
                 (void)memcpy(result, "NULL", sizeof("NULL") + 1);
             }
@@ -197,6 +211,8 @@ int umocktypes_copy_const_charptr(const char** destination, const char** source)
     /* Codes_SRS_UMOCKTYPES_CHARPTR_01_033: [ If source or destination are NULL, umocktypes_copy_const_charptr shall return a non-zero value. ]*/
     if ((destination == NULL) || (source == NULL))
     {
+        UMOCK_LOG("umocktypes_copy_const_charptr: Bad arguments: destination = %p, source = %p.",
+            destination, source);
         result = __LINE__;
     }
     else
@@ -216,6 +232,7 @@ int umocktypes_copy_const_charptr(const char** destination, const char** source)
             if (*destination == NULL)
             {
                 /* Codes_SRS_UMOCKTYPES_CHARPTR_01_037: [ If allocating the memory for the new string fails, umocktypes_copy_const_charptr shall fail and return a non-zero value. ]*/
+                UMOCK_LOG("umocktypes_copy_const_charptr: Cannot allocate memory for destination string.");
                 result = __LINE__;
             }
             else
@@ -250,6 +267,7 @@ int umocktypes_charptr_register_types(void)
         (REGISTER_TYPE(const char*, const_charptr) != 0))
     {
         /* Codes_SRS_UMOCKTYPES_CHARPTR_01_039: [ If registering any of the types fails, umocktypes_charptr_register_types shall fail and return a non-zero value. ]*/
+        UMOCK_LOG("umocktypes_charptr_register_types: Cannot register types.");
         result = __LINE__;
     }
     else

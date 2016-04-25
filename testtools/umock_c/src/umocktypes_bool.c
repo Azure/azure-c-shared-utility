@@ -22,24 +22,23 @@ char* umocktypes_stringify_bool(const bool* value)
     /* Codes_SRS_UMOCKTYPES_BOOL_01_003: [ If value is NULL, umocktypes_stringify_bool shall return NULL. ]*/
     if (value == NULL)
     {
+        UMOCK_LOG("umocktypes_stringify_bool: NULL value.");
         result = NULL;
     }
     else
     {
         const char* stringified_bool = *value ? "true" : "false";
-        int length = strlen(stringified_bool);
-        if (length < 0)
+        size_t length = strlen(stringified_bool);
+
+        /* Codes_SRS_UMOCKTYPES_BOOL_01_004: [ If allocating a new string to hold the string representation fails, umocktypes_stringify_bool shall return NULL. ]*/
+        result = (char*)malloc(length + 1);
+        if (result == NULL)
         {
-            result = NULL;
+            UMOCK_LOG("umocktypes_stringify_bool: Cannot allocate memory for result.");
         }
         else
         {
-            /* Codes_SRS_UMOCKTYPES_BOOL_01_004: [ If allocating a new string to hold the string representation fails, umocktypes_stringify_bool shall return NULL. ]*/
-            result = (char*)malloc(length + 1);
-            if (result != NULL)
-            {
-                (void)memcpy(result, stringified_bool, length + 1);
-            }
+            (void)memcpy(result, stringified_bool, length + 1);
         }
     }
     return result;
@@ -49,9 +48,11 @@ char* umocktypes_stringify_bool(const bool* value)
 int umocktypes_are_equal_bool(const bool* left, const bool* right)
 {
     int result;
+
     if ((left == NULL) || (right == NULL))
     {
         /* Codes_SRS_UMOCKTYPES_BOOL_01_007: [ If any of the arguments is NULL, umocktypes_are_equal_bool shall return -1. ]*/
+        UMOCK_LOG("umocktypes_are_equal_bool: Bad arguments:left = %p, right = %p.", left, right);
         result = -1;
     }
     else
@@ -60,6 +61,7 @@ int umocktypes_are_equal_bool(const bool* left, const bool* right)
         /* Codes_SRS_UMOCKTYPES_BOOL_01_008: [ If the values pointed to by left and right are equal, umocktypes_are_equal_bool shall return 1. ]*/
         result = ((*left) == (*right)) ? 1 : 0;
     }
+
     return result;
 }
 
@@ -72,6 +74,7 @@ int umocktypes_copy_bool(bool* destination, const bool* source)
         (source == NULL))
     {
         /* Codes_SRS_UMOCKTYPES_BOOL_01_012: [ If source or destination are NULL, umocktypes_copy_bool shall return a non-zero value. ]*/
+        UMOCK_LOG("umocktypes_copy_bool: Bad arguments:destination = %p, source = %p.", destination, source);
         result = __LINE__;
     }
     else
@@ -99,6 +102,7 @@ int umocktypes_bool_register_types(void)
         (umocktypes_register_type("_Bool", umocktypes_stringify_bool, umocktypes_are_equal_bool, umocktypes_copy_bool, umocktypes_free_bool) != 0))
     {
         /* Codes_SRS_UMOCKTYPES_BOOL_01_015: [ If registering any of the types fails, umocktypes_bool_register_types shall fail and return a non-zero value. ]*/
+        UMOCK_LOG("umocktypes_bool_register_types: Cannot register types.");
         result = __LINE__;
     }
     else

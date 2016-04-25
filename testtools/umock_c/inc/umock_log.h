@@ -4,6 +4,8 @@
 #ifndef UMOCK_LOG_H
 #define UMOCK_LOG_H
 
-#define UMOCK_LOG(...) printf(__VA_ARGS__)
+#define UMOCK_LOG(...) \
+    (void)printf(__VA_ARGS__); \
+    (void)printf("\r\n");
 
 #endif /* UMOCK_LOG_H */

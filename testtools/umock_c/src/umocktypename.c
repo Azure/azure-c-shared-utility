@@ -8,6 +8,7 @@
 #include <ctype.h>
 #include <string.h>
 #include "umocktypename.h"
+#include "umock_log.h"
 
 char* umocktypename_normalize(const char* type_name)
 {
@@ -16,6 +17,7 @@ char* umocktypename_normalize(const char* type_name)
     if (type_name == NULL)
     {
         /* Codes_SRS_UMOCKTYPENAME_01_005: [ If typename is NULL, then umocktypename_normalize shall fail and return NULL. ]*/
+        UMOCK_LOG("umocktypename: NULL type_name.");
         result = NULL;
     }
     else
@@ -64,6 +66,7 @@ char* umocktypename_normalize(const char* type_name)
         if (length == 0)
         {
             /* Codes_SRS_UMOCKTYPENAME_01_007: [ If the length of the normalized typename is 0, umocktypename_normalize shall return NULL. ]*/
+            UMOCK_LOG("umocktypename: 0 length for the normalized type name.");
             result = NULL;
         }
         else

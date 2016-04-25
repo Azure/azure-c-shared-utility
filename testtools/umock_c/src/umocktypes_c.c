@@ -11,6 +11,7 @@
 #include "azure_c_shared_utility/macro_utils.h"
 #include "umocktypes.h"
 #include "umocktypes_c.h"
+#include "umock_log.h"
 
 #define IMPLEMENT_STRINGIFY(type, function_postfix, printf_specifier) \
     char* C2(umocktypes_stringify_,function_postfix)(type* value) \
@@ -18,23 +19,21 @@
         char* result; \
         if (value == NULL) \
         { \
+            UMOCK_LOG(TOSTRING(C2(umocktypes_stringify_,function_postfix)) ": NULL value."); \
             result = NULL; \
         } \
         else \
         { \
             char temp_buffer[32]; \
-            int length = sprintf(temp_buffer, printf_specifier, *value); \
-            if (length < 0) \
+            size_t length = sprintf(temp_buffer, printf_specifier, *value); \
+            result = (char*)malloc(length + 1); \
+            if (result == NULL) \
             { \
-                result = NULL; \
+                UMOCK_LOG(TOSTRING(C2(umocktypes_stringify_,function_postfix)) ": Cannot allocate memory for result string."); \
             } \
             else \
             { \
-                result = (char*)malloc(length + 1); \
-                if (result != NULL) \
-                { \
-                    (void)memcpy(result, temp_buffer, length + 1); \
-                } \
+                (void)memcpy(result, temp_buffer, length + 1); \
             } \
         } \
         return result; \
@@ -46,6 +45,7 @@
         int result; \
         if ((left == NULL) || (right == NULL)) \
         { \
+            UMOCK_LOG(TOSTRING(C2(umocktypes_are_equal_,function_postfix)) ": Bad arguments: left = %p, right = %p", left, right); \
             result = -1; \
         } \
         else \
@@ -62,6 +62,7 @@
         if ((destination == NULL) || \
             (source == NULL)) \
         { \
+            UMOCK_LOG(TOSTRING(C2(umocktypes_are_equal_,function_postfix)) ": Bad arguments: destination = %p, source = %p", destination, source); \
             result = __LINE__; \
         } \
         else \
@@ -305,6 +306,7 @@ int umocktypes_c_register_types(void)
         (REGISTER_TYPE(const void*, void_ptr) != 0))
     {
         /* Codes_SRS_UMOCKTYPES_C_01_171: [ If registering any of the types fails, umocktypes_c_register_types shall fail and return a non-zero value. ]*/
+        UMOCK_LOG("umocktypes_c_register_types: Failed registering types."); \
         result = __LINE__;
     }
     else
