@@ -17,6 +17,8 @@ Let’s assume unit A depends on unit B. unit B has a function called test_depen
 In unit B’s header one would write:
 
 ```c
+#include "umock_prod.h"
+
 MOCKABLE_FUNCTION(int, test_dependency_1_arg, int, a);
 ```
 
