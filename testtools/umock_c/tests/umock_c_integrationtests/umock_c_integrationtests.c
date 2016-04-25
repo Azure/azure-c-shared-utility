@@ -134,13 +134,17 @@ BEGIN_TEST_SUITE(umock_c_integrationtests)
 
 TEST_SUITE_INITIALIZE(suite_init)
 {
+    int result;
+
     test_mutex = TEST_MUTEX_CREATE();
     ASSERT_IS_NOT_NULL(test_mutex);
 
-    ASSERT_ARE_EQUAL(int, 0, umock_c_init(test_on_umock_c_error));
+    result = umock_c_init(test_on_umock_c_error);
+    ASSERT_ARE_EQUAL(int, 0, result);
     /* Tests_SRS_UMOCK_C_LIB_01_069: [The signature shall be: ...*/
     /* Tests_SRS_UMOCK_C_LIB_01_070: [umockvalue_charptr_register_types shall return 0 on success and non-zero on failure.]*/
-    ASSERT_ARE_EQUAL(int, 0, umocktypes_charptr_register_types());
+    result = umocktypes_charptr_register_types();
+    ASSERT_ARE_EQUAL(int, 0, result);
     REGISTER_UMOCK_VALUE_TYPE(int*, stringify_func_intptr, are_equal_func_intptr, copy_func_intptr, free_func_intptr);
     REGISTER_UMOCK_VALUE_TYPE(unsigned char*, stringify_func_unsignedcharptr, are_equal_func_unsignedcharptr, copy_func_unsignedcharptr, free_func_unsignedcharptr);
     REGISTER_UMOCK_VALUE_TYPE(TEST_STRUCT_COPY_FAILS, stringify_func_TEST_STRUCT_COPY_FAILS, are_equal_func_TEST_STRUCT_COPY_FAILS, copy_func_TEST_STRUCT_COPY_FAILS, free_func_TEST_STRUCT_COPY_FAILS);
@@ -379,7 +383,7 @@ TEST_FUNCTION(EXPECTED_CALL_with_2_args_does_not_compare_arguments)
     // arrange
 
     // act
-    EXPECTED_CALL(test_dependency_2_args(42,43));
+    EXPECTED_CALL(test_dependency_2_args(42, 43));
 
     test_dependency_2_args(43, 44);
 

@@ -116,10 +116,10 @@ MOCK_FUNCTION_END(0)
 LIST_ITEM_HANDLE my_list_get_head_item(LIST_HANDLE list)
 {
     LIST_ITEM_HANDLE listHandle = NULL;
-    if (list_head_count > 0)
+    if (list_item_count > 0)
     {
-        listHandle = TEST_LIST_ITEM_HANDLE;
-        list_head_count--;
+        listHandle = (LIST_ITEM_HANDLE)list_items[0];
+        list_item_count--;
     }
     return listHandle;
 }
@@ -163,21 +163,11 @@ LIST_ITEM_HANDLE my_list_find(LIST_HANDLE handle, LIST_MATCH_FUNCTION match_func
     return (LIST_ITEM_HANDLE)found_item;
 }
 
-MOCK_FUNCTION_WITH_CODE(, int, list_remove_matching_item, LIST_HANDLE, handle, LIST_MATCH_FUNCTION, match_function, const void*, match_context)
-    size_t i;
-    int res = __LINE__;
-    for (i = 0; i < list_item_count; i++)
-    {
-        if (match_function((LIST_ITEM_HANDLE)list_items[i], match_context))
-        {
-            (void)memcpy((void**)&list_items[i], &list_items[i + 1], (list_item_count - i - 1) * sizeof(const void*));
-            list_item_count--;
-            res = 0;
-            break;
-        }
-    }
-    return res;
-MOCK_FUNCTION_END()
+void my_list_destroy(LIST_HANDLE handle)
+{
+    free((void*)list_items);
+    list_items = NULL;
+}
 
 static void test_on_bytes_received(void* context, const unsigned char* buffer, size_t size)
 {
@@ -365,6 +355,7 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_GLOBAL_MOCK_HOOK(list_add, my_list_add);
     REGISTER_GLOBAL_MOCK_HOOK(list_item_get_value, my_list_item_get_value);
     REGISTER_GLOBAL_MOCK_HOOK(list_find, my_list_find);
+    REGISTER_GLOBAL_MOCK_HOOK(list_destroy, my_list_destroy);
 }
 
 TEST_SUITE_CLEANUP(suite_cleanup)
@@ -476,19 +467,27 @@ TEST_FUNCTION(socketio_destroy_socket_succeeds)
     // arrange
     SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
     CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
+    socketio_open(ioHandle, test_on_io_open_complete, &callbackContext, test_on_bytes_received, &callbackContext, test_on_io_error, &callbackContext);
+
+    umock_c_reset_all_calls();
+    EXPECTED_CALL(send(IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+        .SetReturn(0);
+    EXPECTED_CALL(WSAGetLastError())
+        .SetReturn(WSAEWOULDBLOCK);
+    (void)socketio_send(ioHandle, TEST_BUFFER_VALUE, TEST_BUFFER_SIZE, OnSendComplete, (void*)TEST_CALLBACK_CONTEXT);
 
     umock_c_reset_all_calls();
 
     EXPECTED_CALL(closesocket(IGNORED_NUM_ARG));
     EXPECTED_CALL(list_get_head_item(IGNORED_PTR_ARG));
     EXPECTED_CALL(list_item_get_value(IGNORED_PTR_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(list_remove(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
     EXPECTED_CALL(list_get_head_item(IGNORED_PTR_ARG));
     EXPECTED_CALL(list_destroy(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-
-    list_head_count = 1;
 
     // act
     socketio_destroy(ioHandle);
@@ -531,6 +530,7 @@ TEST_FUNCTION(socketio_open_socket_fails)
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
+    // cleanup
     socketio_destroy(ioHandle);
 }
 
@@ -555,6 +555,7 @@ TEST_FUNCTION(socketio_open_getaddrinfo_fails)
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
+    // cleanup
     socketio_destroy(ioHandle);
 }
 
@@ -581,6 +582,7 @@ TEST_FUNCTION(socketio_open_connect_fails)
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
+    // cleanup
     socketio_destroy(ioHandle);
 }
 
@@ -609,6 +611,7 @@ TEST_FUNCTION(socketio_open_ioctlsocket_fails)
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
+    // cleanup
     socketio_destroy(ioHandle);
 }
 
@@ -617,7 +620,6 @@ TEST_FUNCTION(socketio_open_succeeds)
     // arrange
     SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
     CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
-    static ADDRINFO addrInfo = { AI_PASSIVE, AF_INET, SOCK_STREAM, IPPROTO_TCP, 128, NULL, (struct sockaddr*)0x11, NULL };
 
     umock_c_reset_all_calls();
 
@@ -634,6 +636,7 @@ TEST_FUNCTION(socketio_open_succeeds)
     ASSERT_ARE_EQUAL(int, 0, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
+    // cleanup
     socketio_destroy(ioHandle);
 }
 
@@ -665,6 +668,9 @@ TEST_FUNCTION(socketio_close_Succeeds)
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
+
+    // cleanup
+    socketio_destroy(ioHandle);
 }
 
 TEST_FUNCTION(socketio_send_socket_io_fails)
@@ -696,6 +702,9 @@ TEST_FUNCTION(socketio_send_buffer_NULL_fails)
     // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
+
+    // cleanup
+    socketio_destroy(ioHandle);
 }
 
 TEST_FUNCTION(socketio_send_size_zero_fails)
@@ -715,6 +724,9 @@ TEST_FUNCTION(socketio_send_size_zero_fails)
     // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
+
+    // cleanup
+    socketio_destroy(ioHandle);
 }
 
 TEST_FUNCTION(socketio_send_succeeds)
@@ -738,6 +750,7 @@ TEST_FUNCTION(socketio_send_succeeds)
     ASSERT_ARE_EQUAL(int, 0, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
+    // cleanup
     socketio_destroy(ioHandle);
 }
 
@@ -766,6 +779,7 @@ TEST_FUNCTION(socketio_send_returns_1_succeeds)
     ASSERT_ARE_EQUAL(int, 0, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
+    list_head_count = list_item_count;
     socketio_destroy(ioHandle);
 }
 

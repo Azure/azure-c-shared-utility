@@ -9,6 +9,7 @@ set(theseTestsName umock_c_integrationtests)
 set(${theseTestsName}_test_files
 umock_c_integrationtests.c
 umock_c_generate_function_declaration_integrationtests.c
+umock_c_ptrarg_leak_integrationtests.c
 )
 
 set(${theseTestsName}_c_files

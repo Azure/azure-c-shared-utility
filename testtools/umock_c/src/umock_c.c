@@ -90,11 +90,12 @@ void umock_c_deinit(void)
     /* Codes_SRS_UMOCK_C_01_010: [ If the module is not initialized, umock_c_deinit shall do nothing. ] */
     if (umock_c_state == UMOCK_C_STATE_INITIALIZED)
     {
-        /* Codes_SRS_UMOCK_C_01_008: [ umock_c_deinit shall deinitialize the umock types by calling umocktypes_deinit. ]*/
-        umocktypes_deinit();
         /* Codes_SRS_UMOCK_C_01_009: [ umock_c_deinit shall free the call recorder created in umock_c_init. ]*/
         umockcallrecorder_destroy(call_recorder);
         umock_c_state = UMOCK_C_STATE_NOT_INITIALIZED;
+
+        /* Codes_SRS_UMOCK_C_01_008: [ umock_c_deinit shall deinitialize the umock types by calling umocktypes_deinit. ]*/
+        umocktypes_deinit();
     }
 }
 
