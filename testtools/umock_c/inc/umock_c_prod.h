@@ -3,6 +3,8 @@
 
 #undef MOCKABLE_FUNCTION
 
+/* This header is meant to be included by production code headers, so that the MOCKABLE_FUNCTION gets enabled. */
+
 #ifdef ENABLE_MOCKS
 /* Codes_SRS_UMOCK_C_LIB_01_001: [MOCKABLE_FUNCTION shall be used to wrap function definition allowing the user to declare a function that can be mocked.]*/
 #define MOCKABLE_FUNCTION(modifiers, result, function, ...) \
