@@ -98,8 +98,8 @@ int umocktypes_bool_register_types(void)
     int result;
 
     /* Codes_SRS_UMOCKTYPES_BOOL_01_001: [ umocktypes_bool_register_types shall register support for all the types in the module. ]*/
-    if ((umocktypes_register_type("bool", umocktypes_stringify_bool, umocktypes_are_equal_bool, umocktypes_copy_bool, umocktypes_free_bool) != 0) ||
-        (umocktypes_register_type("_Bool", umocktypes_stringify_bool, umocktypes_are_equal_bool, umocktypes_copy_bool, umocktypes_free_bool) != 0))
+    if ((umocktypes_register_type("bool", (UMOCKTYPE_STRINGIFY_FUNC)umocktypes_stringify_bool, (UMOCKTYPE_ARE_EQUAL_FUNC)umocktypes_are_equal_bool, (UMOCKTYPE_COPY_FUNC)umocktypes_copy_bool, (UMOCKTYPE_FREE_FUNC)umocktypes_free_bool) != 0) ||
+        (umocktypes_register_type("_Bool", (UMOCKTYPE_STRINGIFY_FUNC)umocktypes_stringify_bool, (UMOCKTYPE_ARE_EQUAL_FUNC)umocktypes_are_equal_bool, (UMOCKTYPE_COPY_FUNC)umocktypes_copy_bool, (UMOCKTYPE_FREE_FUNC)umocktypes_free_bool) != 0))
     {
         /* Codes_SRS_UMOCKTYPES_BOOL_01_015: [ If registering any of the types fails, umocktypes_bool_register_types shall fail and return a non-zero value. ]*/
         UMOCK_LOG("umocktypes_bool_register_types: Cannot register types.");
