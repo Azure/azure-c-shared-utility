@@ -141,6 +141,23 @@ ENABLE_MOCKS should be used in the translation unit that contains the tests just
 
 ```
 
+Note that it is possible (and sometimes necessary) to undefine ENABLE_MOCKS:
+
+```c
+
+#include <stdlib.h>
+// ... other various includes
+
+#define ENABLE_MOCKS
+#include "test_dependency.h"
+#undef ENABLE_MOCKS
+
+#include "unit_under_test.h"
+
+// ... tests
+
+```
+
 ##umock init/deinit
 
 ###umock_c_init
