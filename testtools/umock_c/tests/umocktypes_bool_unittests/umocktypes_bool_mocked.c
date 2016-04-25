@@ -25,4 +25,4 @@ extern void mock_free(void* ptr);
 #endif
 
 /* include code under test */
-#include "../../src/umocktypes_c.c"
+#include "../../src/umocktypes_bool.c"

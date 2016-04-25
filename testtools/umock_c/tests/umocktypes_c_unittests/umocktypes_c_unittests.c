@@ -256,8 +256,8 @@ TEST_FUNCTION(when_allocating_memory_fails_umocktypes_stringify_char_fails)
 
 /* umocktypes_are_equal_char */
 
-/* Tests_SRS_UMOCKTYPES_C_01_006: [ umocktypes_are_equal_char shall compare the 2 chars pochared to by left and right. ]*/
-/* Tests_SRS_UMOCKTYPES_C_01_008: [ If the values pochared to by left and right are equal, umocktypes_are_equal_char shall return 1. ]*/
+/* Tests_SRS_UMOCKTYPES_C_01_006: [ umocktypes_are_equal_char shall compare the 2 chars pointed to by left and right. ]*/
+/* Tests_SRS_UMOCKTYPES_C_01_008: [ If the values pointed to by left and right are equal, umocktypes_are_equal_char shall return 1. ]*/
 TEST_FUNCTION(umocktypes_are_equal_char_with_2_equal_values_returns_1)
 {
     // arrange
@@ -271,7 +271,7 @@ TEST_FUNCTION(umocktypes_are_equal_char_with_2_equal_values_returns_1)
     ASSERT_ARE_EQUAL(int, 1, result);
 }
 
-/* Tests_SRS_UMOCKTYPES_C_01_009: [ If the values pochared to by left and right are different, umocktypes_are_equal_char shall return 0. ]*/
+/* Tests_SRS_UMOCKTYPES_C_01_009: [ If the values pointed to by left and right are different, umocktypes_are_equal_char shall return 0. ]*/
 TEST_FUNCTION(umocktypes_are_equal_char_with_2_different_values_returns_0)
 {
     // arrange

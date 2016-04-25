@@ -22,8 +22,8 @@ extern int umocktypes_bool_register_types(void);
 ```
 
 **SRS_UMOCKTYPES_BOOL_01_001: [** umocktypes_bool_register_types shall register support for the C99 bool type. **]**
-**SRS_UMOCKTYPES_BOOL_01_170: [** On success, umocktypes_bool_register_types shall return 0. **]**
-**SRS_UMOCKTYPES_BOOL_01_171: [** If registering fails, umocktypes_bool_register_types shall fail and return a non-zero value. **]**
+**SRS_UMOCKTYPES_BOOL_01_014: [** On success, umocktypes_bool_register_types shall return 0. **]**
+**SRS_UMOCKTYPES_BOOL_01_015: [** If registering fails, umocktypes_bool_register_types shall fail and return a non-zero value. **]**
 
 ##umocktypes_stringify_char
 
@@ -53,7 +53,7 @@ extern int umocktypes_are_equal_char(bool* left, bool* right);
 extern int umocktypes_copy_bool(bool* destination, const bool* source);
 ```
 
-**SRS_UMOCKTYPES_BOOL_01_010: [** umocktypes_copy_bool shall copy the char value from source to destination. **]**
+**SRS_UMOCKTYPES_BOOL_01_010: [** umocktypes_copy_bool shall copy the bool value from source to destination. **]**
 **SRS_UMOCKTYPES_BOOL_01_011: [** On success umocktypes_copy_bool shall return 0. **]**
 **SRS_UMOCKTYPES_BOOL_01_012: [** If source or destination are NULL, umocktypes_copy_bool shall return a non-zero value. **]**
 

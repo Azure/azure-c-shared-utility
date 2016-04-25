@@ -14,9 +14,12 @@
 #include "umock_c.h"
 #include "umocktypes_bool.h"
 
+/* Codes_SRS_UMOCKTYPES_BOOL_01_002: [ umocktypes_stringify_bool shall return the string representation of value. ]*/
 char* umocktypes_stringify_bool(const bool* value)
 {
     char* result;
+
+    /* Codes_SRS_UMOCKTYPES_BOOL_01_003: [ If value is NULL, umocktypes_stringify_bool shall return NULL. ]*/
     if (value == NULL)
     {
         result = NULL;
@@ -31,6 +34,7 @@ char* umocktypes_stringify_bool(const bool* value)
         }
         else
         {
+            /* Codes_SRS_UMOCKTYPES_BOOL_01_004: [ If allocating a new string to hold the string representation fails, umocktypes_stringify_bool shall return NULL. ]*/
             result = (char*)malloc(length + 1);
             if (result != NULL)
             {
@@ -41,51 +45,65 @@ char* umocktypes_stringify_bool(const bool* value)
     return result;
 }
 
+/* Codes_SRS_UMOCKTYPES_BOOL_01_006: [ umocktypes_are_equal_bool shall compare the 2 chars pointed to by left and right. ]*/
 int umocktypes_are_equal_bool(const bool* left, const bool* right)
 {
     int result;
     if ((left == NULL) || (right == NULL))
     {
+        /* Codes_SRS_UMOCKTYPES_BOOL_01_007: [ If any of the arguments is NULL, umocktypes_are_equal_bool shall return -1. ]*/
         result = -1;
     }
     else
     {
+        /* Codes_SRS_UMOCKTYPES_BOOL_01_009: [ If the values pointed to by left and right are different, umocktypes_are_equal_bool shall return 0. ]*/
+        /* Codes_SRS_UMOCKTYPES_BOOL_01_008: [ If the values pointed to by left and right are equal, umocktypes_are_equal_bool shall return 1. ]*/
         result = ((*left) == (*right)) ? 1 : 0;
     }
     return result;
 }
 
+/* Codes_SRS_UMOCKTYPES_BOOL_01_010: [ umocktypes_copy_bool shall copy the bool value from source to destination. ]*/
 int umocktypes_copy_bool(bool* destination, const bool* source)
 {
     int result;
+
     if ((destination == NULL) ||
         (source == NULL))
     {
+        /* Codes_SRS_UMOCKTYPES_BOOL_01_012: [ If source or destination are NULL, umocktypes_copy_bool shall return a non-zero value. ]*/
         result = __LINE__;
     }
     else
     {
         *destination = *source;
+
+        /* Codes_SRS_UMOCKTYPES_BOOL_01_011: [ On success umocktypes_copy_bool shall return 0. ]*/
         result = 0;
     }
     return result;
 }
 
+/* Codes_SRS_UMOCKTYPES_BOOL_01_013: [ umocktypes_free_bool shall do nothing. ]*/
 void umocktypes_free_bool(bool* value)
 {
+    (void)value;
 }
 
 int umocktypes_bool_register_types(void)
 {
     int result;
 
+    /* Codes_SRS_UMOCKTYPES_BOOL_01_001: [ umocktypes_bool_register_types shall register support for all the types in the module. ]*/
     if ((umocktypes_register_type("bool", umocktypes_stringify_bool, umocktypes_are_equal_bool, umocktypes_copy_bool, umocktypes_free_bool) != 0) ||
-        (umocktypes_register_alias_type("_Bool", "bool") != 0))
+        (umocktypes_register_type("_Bool", umocktypes_stringify_bool, umocktypes_are_equal_bool, umocktypes_copy_bool, umocktypes_free_bool) != 0))
     {
+        /* Codes_SRS_UMOCKTYPES_BOOL_01_015: [ If registering any of the types fails, umocktypes_bool_register_types shall fail and return a non-zero value. ]*/
         result = __LINE__;
     }
     else
     {
+        /* Codes_SRS_UMOCKTYPES_BOOL_01_014: [ On success, umocktypes_bool_register_types shall return 0. ]*/
         result = 0;
     }
 
