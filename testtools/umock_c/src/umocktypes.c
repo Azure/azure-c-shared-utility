@@ -188,10 +188,12 @@ int umocktypes_register_type(const char* type, UMOCKTYPE_STRINGIFY_FUNC stringif
     return result;
 }
 
+/* Codes_SRS_UMOCKTYPES_01_053: [ umocktypes_register_alias_type shall register a new alias type for the type "is_type". ]*/
 int umocktypes_register_alias_type(const char* type, const char* is_type)
 {
     int result;
 
+    /* Codes_SRS_UMOCKTYPES_01_055: [ If any of the arguments is NULL, umocktypes_register_alias_type shall fail and return a non-zero value. ]*/
     if ((type == NULL) || (is_type == NULL))
     {
         UMOCK_LOG("Could not register alias type, bad arguments: type = %p, is_type = %p.\r\n", type, is_type);
@@ -204,9 +206,11 @@ int umocktypes_register_alias_type(const char* type, const char* is_type)
     }
     else
     {
+        /* Codes_SRS_UMOCKTYPES_01_058: [ Before looking it up, is_type shall be normalized by using umocktypename_normalize. ] */
         char* normalized_is_type = umocktypename_normalize(is_type);
         if (normalized_is_type == NULL)
         {
+            /* Codes_SRS_UMOCKTYPES_01_060: [ If umocktypename_normalize fails, umocktypes_register_alias_type shall fail and return a non-zero value. ]*/
             UMOCK_LOG("Could not register alias type, normalizing type %s failed.\r\n", is_type);
             result = __LINE__;
         }
@@ -215,14 +219,17 @@ int umocktypes_register_alias_type(const char* type, const char* is_type)
             UMOCK_VALUE_TYPE_HANDLERS* value_type_handlers = get_value_type_handlers(normalized_is_type);
             if (value_type_handlers == NULL)
             {
+                /* Codes_SRS_UMOCKTYPES_01_057: [ If is_type was not already registered, umocktypes_register_alias_type shall fail and return a non-zero value. ]*/
                 UMOCK_LOG("Could not register alias type, type %s was not previously registered.\r\n", normalized_is_type);
                 result = __LINE__;
             }
             else
             {
+                /* Codes_SRS_UMOCKTYPES_01_059: [ Before adding it as alias, type shall be normalized by using umocktypename_normalize. ]*/
                 char* normalized_type = umocktypename_normalize(type);
                 if (normalized_type == NULL)
                 {
+                    /* Codes_SRS_UMOCKTYPES_01_060: [ If umocktypename_normalize fails, umocktypes_register_alias_type shall fail and return a non-zero value. ]*/
                     UMOCK_LOG("Could not register alias type, normalizing type %s failed.\r\n", type);
                     result = __LINE__;
                 }
@@ -232,6 +239,7 @@ int umocktypes_register_alias_type(const char* type, const char* is_type)
                     {
                         free(normalized_type);
 
+                        /* Codes_SRS_UMOCKTYPES_01_062: [ If type and is_type are the same, umocktypes_register_alias_type shall succeed and return 0. ]*/
                         result = 0;
                     }
                     else
@@ -253,6 +261,7 @@ int umocktypes_register_alias_type(const char* type, const char* is_type)
                             type_handlers[type_handler_count].are_equal_func = value_type_handlers->are_equal_func;
                             type_handler_count++;
 
+                            /* Codes_SRS_UMOCKTYPES_01_054: [ On success, umocktypes_register_alias_type shall return 0. ]*/
                             result = 0;
                         }
                     }
