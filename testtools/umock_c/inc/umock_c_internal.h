@@ -802,6 +802,7 @@ typedef struct ARG_BUFFER_TAG
         return result;,) \
 	} \
 
+/* Codes_SRS_UMOCK_C_LIB_01_150: [ MOCK_FUNCTION_WITH_CODE shall define a mock function and allow the user to embed code between this define and a MOCK_FUNCTION_END call. ]*/
 #define MOCK_FUNCTION_WITH_CODE(modifiers, return_type, name, ...) \
     MOCKABLE_FUNCTION_UMOCK_INTERNAL_WITH_MOCK_NO_CODE(return_type, name, __VA_ARGS__) \
     MOCKABLE_FUNCTION_BODY_WITHOUT_RETURN(modifiers, return_type, name, __VA_ARGS__) \

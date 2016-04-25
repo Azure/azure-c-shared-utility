@@ -117,6 +117,7 @@ MOCK_FUNCTION_END("a")
 
 typedef int funkytype;
 
+/* Tests_SRS_UMOCK_C_LIB_01_150: [ MOCK_FUNCTION_WITH_CODE shall define a mock function and allow the user to embed code between this define and a MOCK_FUNCTION_END call. ]*/
 MOCK_FUNCTION_WITH_CODE(, funkytype, test_mock_function_with_funkytype, funkytype, x);
 MOCK_FUNCTION_END(42)
 

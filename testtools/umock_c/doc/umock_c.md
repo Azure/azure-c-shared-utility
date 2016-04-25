@@ -122,6 +122,17 @@ should generate for production code:
 int test_function(int arg1);
 ```
 
+###MOCK_FUNCTION_WITH_CODE
+
+MOCK_FUNCTION_WITH_CODE shall define a mock function and allow the user to embed code between this define and a MOCK_FUNCTION_END call.
+
+```c
+MOCK_FUNCTION_WITH_CODE(, void, test_mock_function_with_code_1_arg, int, a);
+    int some_value = 42;
+    /* more code here */
+MOCK_FUNCTION_END()
+```
+
 ###ENABLE_MOCKS
 
 If ENABLE_MOCKS is defined, MOCKABLE_FUNCTION shall generate the declaration of the function and code for the mocked function, thus allowing setting up of expectations in test functions. If ENABLE_MOCKS is not defined, MOCKABLE_FUNCTION shall only generate a declaration for the function.
