@@ -1,4 +1,4 @@
-﻿#umocktypes_c requirements
+﻿#umocktypes_bool requirements
  
 #Overview
 
