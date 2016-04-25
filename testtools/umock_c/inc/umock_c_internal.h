@@ -246,7 +246,7 @@ typedef struct ARG_BUFFER_TAG
             IF(COUNT_ARG(__VA_ARGS__), \
                 if ((arg_index < 1) || (arg_index > (sizeof(C2(ignore_one_argument_array_,name)) / sizeof(C2(ignore_one_argument_array_,name)[0])))) \
                 { \
-                    UMOCK_LOG("Bad argument index in call to IgnoreArgument %u.", (unsigned int)arg_index); \
+                    UMOCK_LOG("Bad argument index in call to IgnoreArgument %zu.", arg_index); \
                     umock_c_indicate_error(UMOCK_C_ARG_INDEX_OUT_OF_RANGE); \
                 } \
                 else \
@@ -275,7 +275,7 @@ typedef struct ARG_BUFFER_TAG
             IF(COUNT_ARG(__VA_ARGS__), \
                 if ((arg_index < 1) || (arg_index > (sizeof(C2(validate_one_argument_array_,name)) / sizeof(C2(validate_one_argument_array_,name)[0])))) \
                 { \
-                    UMOCK_LOG("Bad argument index in call to ValidateArgument %u.", (unsigned int)arg_index); \
+                    UMOCK_LOG("Bad argument index in call to ValidateArgument %zu.", arg_index); \
                     umock_c_indicate_error(UMOCK_C_ARG_INDEX_OUT_OF_RANGE); \
                 } \
                 else \
@@ -347,12 +347,12 @@ typedef struct ARG_BUFFER_TAG
         DECLARE_MOCK_CALL_MODIFIER(name) \
         if ((index < 1) || (index > DIV2(COUNT_ARG(__VA_ARGS__)))) \
         { \
-            UMOCK_LOG("Bad argument index in CopyOutArgumentBuffer: %u.", index); \
+            UMOCK_LOG("Bad argument index in CopyOutArgumentBuffer: %zu.", index); \
             umock_c_indicate_error(UMOCK_C_ARG_INDEX_OUT_OF_RANGE); \
         } \
         else if ((bytes == NULL) || (length == 0)) \
         { \
-            UMOCK_LOG("Bad arguments to CopyOutArgumentBuffer: bytes = %p, length = %u.", bytes, (unsigned int)length); \
+            UMOCK_LOG("Bad arguments to CopyOutArgumentBuffer: bytes = %p, length = %zu.", bytes, length); \
             umock_c_indicate_error(UMOCK_C_INVALID_ARGUMENT_BUFFER); \
         } \
         else \
@@ -403,12 +403,12 @@ typedef struct ARG_BUFFER_TAG
         DECLARE_MOCK_CALL_MODIFIER(name) \
         if ((index < 1) || (index > DIV2(COUNT_ARG(__VA_ARGS__)))) \
         { \
-            UMOCK_LOG("Bad argument index in ValidateArgumentBuffer: %u.", index); \
+            UMOCK_LOG("Bad argument index in ValidateArgumentBuffer: %zu.", index); \
             umock_c_indicate_error(UMOCK_C_ARG_INDEX_OUT_OF_RANGE); \
         } \
         else if ((bytes == NULL) || (length == 0)) \
         { \
-            UMOCK_LOG("Bad arguments to ValidateArgumentBuffer: bytes = %p, length = %u.", bytes, (unsigned int)length); \
+            UMOCK_LOG("Bad arguments to ValidateArgumentBuffer: bytes = %p, length = %zu.", bytes, length); \
             umock_c_indicate_error(UMOCK_C_INVALID_ARGUMENT_BUFFER); \
         } \
         else \
@@ -536,7 +536,7 @@ typedef struct ARG_BUFFER_TAG
 /* Codes_SRS_UMOCK_C_LIB_01_119: [ CopyOutArgumentBuffer shall only be available for mock functions that have arguments. ]*/
 /* Codes_SRS_UMOCK_C_LIB_01_128: [ CopyOutArgument shall only be available for mock functions that have arguments. ]*/
 /* Codes_SRS_UMOCK_C_LIB_01_129: [ ValidateArgumentBuffer shall only be available for mock functions that have arguments. ]*/
-/* Codes_SRS_UMOCK_C_LIB_01_105: [The hook’s result shall be returned by the mock to the production code.]*/
+/* Codes_SRS_UMOCK_C_LIB_01_105: [The hook\92s result shall be returned by the mock to the production code.]*/
 /* Codes_SRS_UMOCK_C_LIB_01_106: [The signature for the hook shall be assumed to have exactly the same arguments and return as the mocked function.]*/
 /* Codes_SRS_UMOCK_C_LIB_01_135: [ All parameters passed to the mock shall be passed down to the mock hook. ]*/
 /* Codes_SRS_UMOCK_C_LIB_01_148: [ If call comparison fails an error shall be indicated by calling the error callback with UMOCK_C_COMPARE_CALL_ERROR. ]*/
