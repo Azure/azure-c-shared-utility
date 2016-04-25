@@ -56,13 +56,13 @@ typedef struct IO_INTERFACE_DESCRIPTION_TAG
     IO_SETOPTION concrete_io_setoption;
 } IO_INTERFACE_DESCRIPTION;
 
-MOCKABLE_FUNCTION(XIO_HANDLE, xio_create, const IO_INTERFACE_DESCRIPTION*, io_interface_description, const void*, io_create_parameters, LOGGER_LOG, logger_log);
-MOCKABLE_FUNCTION(void, xio_destroy, XIO_HANDLE, xio);
-MOCKABLE_FUNCTION(int, xio_open, XIO_HANDLE, xio, ON_IO_OPEN_COMPLETE, on_io_open_complete, void*, on_io_open_complete_context, ON_BYTES_RECEIVED, on_bytes_received, void*, on_bytes_received_context, ON_IO_ERROR, on_io_error, void*, on_io_error_context);
-MOCKABLE_FUNCTION(int, xio_close, XIO_HANDLE, xio, ON_IO_CLOSE_COMPLETE, on_io_close_complete, void*, callback_context);
-MOCKABLE_FUNCTION(int, xio_send, XIO_HANDLE, xio, const void*, buffer, size_t, size, ON_SEND_COMPLETE, on_send_complete, void*, callback_context);
-MOCKABLE_FUNCTION(void, xio_dowork, XIO_HANDLE, xio);
-MOCKABLE_FUNCTION(int, xio_setoption, XIO_HANDLE, xio, const char*, optionName, const void*, value);
+MOCKABLE_FUNCTION(, XIO_HANDLE, xio_create, const IO_INTERFACE_DESCRIPTION*, io_interface_description, const void*, io_create_parameters, LOGGER_LOG, logger_log);
+MOCKABLE_FUNCTION(, void, xio_destroy, XIO_HANDLE, xio);
+MOCKABLE_FUNCTION(, int, xio_open, XIO_HANDLE, xio, ON_IO_OPEN_COMPLETE, on_io_open_complete, void*, on_io_open_complete_context, ON_BYTES_RECEIVED, on_bytes_received, void*, on_bytes_received_context, ON_IO_ERROR, on_io_error, void*, on_io_error_context);
+MOCKABLE_FUNCTION(, int, xio_close, XIO_HANDLE, xio, ON_IO_CLOSE_COMPLETE, on_io_close_complete, void*, callback_context);
+MOCKABLE_FUNCTION(, int, xio_send, XIO_HANDLE, xio, const void*, buffer, size_t, size, ON_SEND_COMPLETE, on_send_complete, void*, callback_context);
+MOCKABLE_FUNCTION(, void, xio_dowork, XIO_HANDLE, xio);
+MOCKABLE_FUNCTION(, int, xio_setoption, XIO_HANDLE, xio, const char*, optionName, const void*, value);
 
 #ifdef __cplusplus
 }

@@ -12,8 +12,8 @@
 extern "C" {
 #endif
 
-    MOCKABLE_FUNCTION(STRING_HANDLE, URL_EncodeString, const char*, textEncode);
-    MOCKABLE_FUNCTION(STRING_HANDLE, URL_Encode, STRING_HANDLE, input);
+    MOCKABLE_FUNCTION(, STRING_HANDLE, URL_EncodeString, const char*, textEncode);
+    MOCKABLE_FUNCTION(, STRING_HANDLE, URL_Encode, STRING_HANDLE, input);
 
 #ifdef __cplusplus
 }

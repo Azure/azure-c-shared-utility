@@ -73,8 +73,8 @@ typedef struct ARG_BUFFER_TAG
 
 /* Codes_SRS_UMOCK_C_LIB_01_002: [The macro shall generate a function signature in case ENABLE_MOCKS is not defined.] */
 /* Codes_SRS_UMOCK_C_LIB_01_005: [**If ENABLE_MOCKS is not defined, MOCKABLE_FUNCTION shall only generate a declaration for the function.] */
-#define MOCKABLE_FUNCTION_UMOCK_INTERNAL(return_type, name, ...) \
-	return_type name(IF(COUNT_ARG(__VA_ARGS__),,void) FOR_EACH_2_COUNTED(ARG_IN_SIGNATURE, __VA_ARGS__));
+#define MOCKABLE_FUNCTION_UMOCK_INTERNAL(modifiers, return_type, name, ...) \
+	return_type modifiers name(IF(COUNT_ARG(__VA_ARGS__),,void) FOR_EACH_2_COUNTED(ARG_IN_SIGNATURE, __VA_ARGS__));
 
 #define COPY_ARG_TO_MOCK_STRUCT(arg_type, arg_name) umocktypes_copy(#arg_type, (void*)&mock_call_data->arg_name, (void*)&arg_name);
 #define DECLARE_MOCK_CALL_STRUCT_STACK(arg_type, arg_name) arg_type arg_name;
@@ -520,13 +520,6 @@ typedef struct ARG_BUFFER_TAG
 #define COPY_RETURN_VALUE(return_type, name) \
     result = C2(mock_call_default_result_, name);
 
-/*if (umocktypes_copy(TOSTRING(return_type), (void*)&result, (void*)&C2(mock_call_default_result_, name)) != 0) \
-    { \
-        UMOCK_LOG("Could not copy value of type %s.\r\n", TOSTRING(return_type)); \
-        umock_c_indicate_error(UMOCK_C_ERROR); \
-    }
-*/
-
 /* Codes_SRS_UMOCK_C_LIB_01_004: [If ENABLE_MOCKS is defined, MOCKABLE_FUNCTION shall generate the declaration of the function and code for the mocked function, thus allowing setting up of expectations in test functions.] */
 /* Codes_SRS_UMOCK_C_LIB_01_014: [For each argument the argument value shall be stored for later comparison with actual calls.] */
 /* Codes_SRS_UMOCK_C_LIB_01_017: [No arguments shall be saved by default, unless other modifiers state it.]*/
@@ -791,9 +784,9 @@ typedef struct ARG_BUFFER_TAG
             } \
         } \
 
-#define MOCKABLE_FUNCTION_UMOCK_INTERNAL_WITH_MOCK(return_type, name, ...) \
+#define MOCKABLE_FUNCTION_UMOCK_INTERNAL_WITH_MOCK(modifiers, return_type, name, ...) \
     MOCKABLE_FUNCTION_UMOCK_INTERNAL_WITH_MOCK_NO_CODE(return_type, name, __VA_ARGS__) \
-    MOCKABLE_FUNCTION_BODY_WITHOUT_RETURN(,return_type, name, __VA_ARGS__) \
+    MOCKABLE_FUNCTION_BODY_WITHOUT_RETURN(modifiers, return_type, name, __VA_ARGS__) \
         IF(IS_NOT_VOID(return_type), \
         if (result_value_set == 0) \
         { \

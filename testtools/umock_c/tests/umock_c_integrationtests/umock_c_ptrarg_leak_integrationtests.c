@@ -10,7 +10,7 @@
 #include "umock_c.h"
 #include "umocktypes_charptr.h"
 
-MOCKABLE_FUNCTION(int, a_char_star_arg_function, char*, x);
+MOCKABLE_FUNCTION(, int, a_char_star_arg_function, char*, x);
 
 static void test_on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {

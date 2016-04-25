@@ -33,15 +33,15 @@ IMPLEMENT_UMOCK_C_ENUM_TYPE(LOCK_RESULT, LOCK_RESULT_VALUES);
 #ifdef __cplusplus
 extern "C" {
 #endif
-    MOCKABLE_FUNCTION(void*, mock_malloc, size_t, size);
-    MOCKABLE_FUNCTION(void*, mock_calloc, size_t, nmemb, size_t, size);
-    MOCKABLE_FUNCTION(void*, mock_realloc, void*, ptr, size_t, size);
-    MOCKABLE_FUNCTION(void, mock_free, void*, ptr);
+    MOCKABLE_FUNCTION(, void*, mock_malloc, size_t, size);
+    MOCKABLE_FUNCTION(, void*, mock_calloc, size_t, nmemb, size_t, size);
+    MOCKABLE_FUNCTION(, void*, mock_realloc, void*, ptr, size_t, size);
+    MOCKABLE_FUNCTION(, void, mock_free, void*, ptr);
 
-    MOCKABLE_FUNCTION(LOCK_HANDLE, Lock_Init);
-    MOCKABLE_FUNCTION(LOCK_RESULT, Lock_Deinit, LOCK_HANDLE, handle);
-    MOCKABLE_FUNCTION(LOCK_RESULT, Lock, LOCK_HANDLE, handle);
-    MOCKABLE_FUNCTION(LOCK_RESULT, Unlock, LOCK_HANDLE, handle);
+    MOCKABLE_FUNCTION(, LOCK_HANDLE, Lock_Init);
+    MOCKABLE_FUNCTION(, LOCK_RESULT, Lock_Deinit, LOCK_HANDLE, handle);
+    MOCKABLE_FUNCTION(, LOCK_RESULT, Lock, LOCK_HANDLE, handle);
+    MOCKABLE_FUNCTION(, LOCK_RESULT, Unlock, LOCK_HANDLE, handle);
 #ifdef __cplusplus
 }
 #endif

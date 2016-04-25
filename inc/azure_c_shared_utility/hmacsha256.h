@@ -19,7 +19,7 @@ extern "C" {
 
 DEFINE_ENUM(HMACSHA256_RESULT, HMACSHA256_RESULT_VALUES)
 
-MOCKABLE_FUNCTION(HMACSHA256_RESULT, HMACSHA256_ComputeHash, const unsigned char*, key, size_t, keyLen, const unsigned char*, payload, size_t, payloadLen, BUFFER_HANDLE, hash);
+MOCKABLE_FUNCTION(, HMACSHA256_RESULT, HMACSHA256_ComputeHash, const unsigned char*, key, size_t, keyLen, const unsigned char*, payload, size_t, payloadLen, BUFFER_HANDLE, hash);
 
 #ifdef __cplusplus
 }

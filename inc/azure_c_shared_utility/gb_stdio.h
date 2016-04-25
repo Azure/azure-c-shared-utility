@@ -40,20 +40,20 @@ extern "C"
 
 #undef fopen
 #define fopen gb_fopen
-MOCKABLE_FUNCTION(FILE*, gb_fopen, const char*, filename, const char*, mode);
+MOCKABLE_FUNCTION(, FILE*, gb_fopen, const char*, filename, const char*, mode);
 
 
 #undef fclose
 #define fclose gb_fclose
-MOCKABLE_FUNCTION(int, fclose, FILE *, stream);
+MOCKABLE_FUNCTION(, int, fclose, FILE *, stream);
 
 #undef fseek
 #define fseek gb_fseek
-MOCKABLE_FUNCTION(int, fseek, FILE *,stream, long int, offset, int, whence);
+MOCKABLE_FUNCTION(, int, fseek, FILE *,stream, long int, offset, int, whence);
 
 #undef ftell
 #define ftell gb_ftell
-MOCKABLE_FUNCTION(long int, ftell, FILE *, stream);
+MOCKABLE_FUNCTION(, long int, ftell, FILE *, stream);
 
 #undef fprintf
 #define fprintf gb_fprintf

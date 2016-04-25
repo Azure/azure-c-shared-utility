@@ -11,7 +11,7 @@ extern "C" {
 #include "azure_c_shared_utility/sha.h"
 #include "umock_c_prod.h"
 
-    MOCKABLE_FUNCTION(int, hmac, SHAversion, whichSha, const unsigned char *, text, int, text_len,
+    MOCKABLE_FUNCTION(, int, hmac, SHAversion, whichSha, const unsigned char *, text, int, text_len,
     const unsigned char *, key, int, key_len,
     uint8_t, digest[USHAMaxHashSize]);
 

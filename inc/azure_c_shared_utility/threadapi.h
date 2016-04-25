@@ -45,7 +45,7 @@ typedef void* THREAD_HANDLE;
  * @return	@c THREADAPI_OK if the API call is successful or an error
  * 			code in case it fails.
  */
-MOCKABLE_FUNCTION(THREADAPI_RESULT, ThreadAPI_Create, THREAD_HANDLE*, threadHandle, THREAD_START_FUNC, func, void*, arg);
+MOCKABLE_FUNCTION(, THREADAPI_RESULT, ThreadAPI_Create, THREAD_HANDLE*, threadHandle, THREAD_START_FUNC, func, void*, arg);
 
 /**
  * @brief	Blocks the calling thread by waiting on the thread identified by
@@ -62,7 +62,7 @@ MOCKABLE_FUNCTION(THREADAPI_RESULT, ThreadAPI_Create, THREAD_HANDLE*, threadHand
  * @return	@c THREADAPI_OK if the API call is successful or an error
  * 			code in case it fails.
  */
-MOCKABLE_FUNCTION(THREADAPI_RESULT, ThreadAPI_Join, THREAD_HANDLE, threadHandle, int*, res);
+MOCKABLE_FUNCTION(, THREADAPI_RESULT, ThreadAPI_Join, THREAD_HANDLE, threadHandle, int*, res);
 
 /**
  * @brief	This function is called by a thread when the thread exits.
@@ -74,14 +74,14 @@ MOCKABLE_FUNCTION(THREADAPI_RESULT, ThreadAPI_Join, THREAD_HANDLE, threadHandle,
  * 			function. The @p res value must be copied into the @p res out
  * 			argument passed to the ::ThreadAPI_Join function.
  */
-MOCKABLE_FUNCTION(void, ThreadAPI_Exit, int, res);
+MOCKABLE_FUNCTION(, void, ThreadAPI_Exit, int, res);
 
 /**
  * @brief	Sleeps the current thread for the given number of milliseconds.
  *
  * @param	milliseconds	The number of milliseconds to sleep.
  */
-MOCKABLE_FUNCTION(void, ThreadAPI_Sleep, unsigned int, milliseconds);
+MOCKABLE_FUNCTION(, void, ThreadAPI_Sleep, unsigned int, milliseconds);
 
 #ifdef __cplusplus
 }

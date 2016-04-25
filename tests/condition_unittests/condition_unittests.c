@@ -20,8 +20,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-    MOCKABLE_FUNCTION(void*, gballoc_malloc, size_t, size);
-    MOCKABLE_FUNCTION(void, gballoc_free, void*, ptr);
+    MOCKABLE_FUNCTION(, void*, gballoc_malloc, size_t, size);
+    MOCKABLE_FUNCTION(, void, gballoc_free, void*, ptr);
 #ifdef __cplusplus
 }
 #endif

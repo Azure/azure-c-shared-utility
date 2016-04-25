@@ -22,15 +22,15 @@ extern "C"
 /* GB_DEBUG_ALLOC is the switch that turns the measurement on/off, so that it is not on always */
 #if defined(GB_DEBUG_ALLOC)
 
-MOCKABLE_FUNCTION(int, gballoc_init);
-MOCKABLE_FUNCTION(void, gballoc_deinit);
-MOCKABLE_FUNCTION(void*, gballoc_malloc, size_t, size);
-MOCKABLE_FUNCTION(void*, gballoc_calloc, size_t, nmemb, size_t, size);
-MOCKABLE_FUNCTION(void*, gballoc_realloc, void*, ptr, size_t, size);
-MOCKABLE_FUNCTION(void, gballoc_free, void*, ptr);
+MOCKABLE_FUNCTION(, int, gballoc_init);
+MOCKABLE_FUNCTION(, void, gballoc_deinit);
+MOCKABLE_FUNCTION(, void*, gballoc_malloc, size_t, size);
+MOCKABLE_FUNCTION(, void*, gballoc_calloc, size_t, nmemb, size_t, size);
+MOCKABLE_FUNCTION(, void*, gballoc_realloc, void*, ptr, size_t, size);
+MOCKABLE_FUNCTION(, void, gballoc_free, void*, ptr);
 
-MOCKABLE_FUNCTION(size_t, gballoc_getMaximumMemoryUsed);
-MOCKABLE_FUNCTION(size_t, gballoc_getCurrentMemoryUsed);
+MOCKABLE_FUNCTION(, size_t, gballoc_getMaximumMemoryUsed);
+MOCKABLE_FUNCTION(, size_t, gballoc_getCurrentMemoryUsed);
 
 /* if GB_MEASURE_MEMORY_FOR_THIS is defined then we want to redirect memory allocation functions to gballoc_xxx functions */
 #ifdef GB_MEASURE_MEMORY_FOR_THIS

@@ -11,7 +11,7 @@
 extern "C" {
 #endif
 
-    MOCKABLE_FUNCTION(STRING_HANDLE, SASToken_Create, STRING_HANDLE, key, STRING_HANDLE, scope, STRING_HANDLE, keyName, size_t, expiry);
+    MOCKABLE_FUNCTION(, STRING_HANDLE, SASToken_Create, STRING_HANDLE, key, STRING_HANDLE, scope, STRING_HANDLE, keyName, size_t, expiry);
 
 #ifdef __cplusplus
 }

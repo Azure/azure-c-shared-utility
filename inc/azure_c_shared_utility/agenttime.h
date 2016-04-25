@@ -25,21 +25,21 @@ extern "C"
 *	@details This function provides the same functionality as the
 *	standard C @c time() function.
 */
-MOCKABLE_FUNCTION(time_t, get_time, time_t*, currentTime);
+MOCKABLE_FUNCTION(, time_t, get_time, time_t*, currentTime);
 
 /** @brief Get UTC in @c tm struct.
 *
 *	@details This function provides the same functionality as the
 *	standard C @c gmtime() function.
 */
-MOCKABLE_FUNCTION(struct tm*, get_gmtime, time_t*, currentTime);
+MOCKABLE_FUNCTION(, struct tm*, get_gmtime, time_t*, currentTime);
 
 /** @brief Gets a C-string representation of the given time.
 *
 *	@details This function provides the same functionality as the
 *	standard C @c ctime() function.
 */
-MOCKABLE_FUNCTION(char*, get_ctime, time_t*, timeToGet);
+MOCKABLE_FUNCTION(, char*, get_ctime, time_t*, timeToGet);
 
 /** @brief Gets the difference in seconds between @c stopTime and
 *	@c startTime.
@@ -47,7 +47,7 @@ MOCKABLE_FUNCTION(char*, get_ctime, time_t*, timeToGet);
 *	@details This function provides the same functionality as the
 *	standard C @c difftime() function.
 */
-MOCKABLE_FUNCTION(double, get_difftime, time_t, stopTime, time_t, startTime);
+MOCKABLE_FUNCTION(, double, get_difftime, time_t, stopTime, time_t, startTime);
 
 #ifdef __cplusplus
 }

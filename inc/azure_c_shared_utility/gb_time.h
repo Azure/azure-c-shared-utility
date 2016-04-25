@@ -37,15 +37,15 @@ extern "C"
 
 #undef time
 #define time gb_time
-MOCKABLE_FUNCTION(time_t, time, time_t *, timer);
+MOCKABLE_FUNCTION(, time_t, time, time_t *, timer);
 
 #undef localtime
 #define localtime gb_localtime
-MOCKABLE_FUNCTION(struct tm *, localtime, const time_t *, timer);
+MOCKABLE_FUNCTION(, struct tm *, localtime, const time_t *, timer);
 
 #undef strftime
 #define strftime gb_strftime
-MOCKABLE_FUNCTION(size_t, strftime, char *, s, size_t, maxsize, const char *, format, const struct tm *, timeptr);
+MOCKABLE_FUNCTION(, size_t, strftime, char *, s, size_t, maxsize, const char *, format, const struct tm *, timeptr);
 
 
 #ifdef __cplusplus
