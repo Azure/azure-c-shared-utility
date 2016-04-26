@@ -6,6 +6,6 @@
 int main(void)
 {
     size_t failedTestCount = 0;
-    RUN_TEST_SUITE(base64_UnitTests, failedTestCount);
+    RUN_TEST_SUITE(base64_unittests, failedTestCount);
     return failedTestCount;
 }

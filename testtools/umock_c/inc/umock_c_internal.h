@@ -11,11 +11,14 @@ extern "C" {
 #include <stdlib.h>
 #endif
 
+#include <stdio.h>
+
 #include "azure_c_shared_utility/macro_utils.h"
 #include "umocktypes.h"
 #include "umockcall.h"
 #include "umockcallrecorder.h"
 #include "umock_c.h"
+#include "umock_log.h"
 
 extern void umock_c_indicate_error(UMOCK_C_ERROR_CODE error_code);
 extern UMOCKCALL_HANDLE umock_c_get_last_expected_call(void);
@@ -68,18 +71,13 @@ typedef struct ARG_BUFFER_TAG
 
 #define COUNT_OF(A) (sizeof(A) / sizeof((A)[0]))
 
-/* Codes_SRS_UMOCK_C_LIB_01_002: [The macro shall generate a function signature in case ENABLE_MOCKS is not defined.] */
-/* Codes_SRS_UMOCK_C_LIB_01_005: [**If ENABLE_MOCKS is not defined, MOCKABLE_FUNCTION shall only generate a declaration for the function.] */
-#define MOCKABLE_FUNCTION_UMOCK_INTERNAL(return_type, name, ...) \
-	return_type name(IF(COUNT_ARG(__VA_ARGS__),,void) FOR_EACH_2_COUNTED(ARG_IN_SIGNATURE, __VA_ARGS__));
-
-#define COPY_ARG_TO_MOCK_STRUCT(arg_type, arg_name) umocktypes_copy(#arg_type, &mock_call_data->arg_name, &arg_name);
+#define COPY_ARG_TO_MOCK_STRUCT(arg_type, arg_name) umocktypes_copy(#arg_type, (void*)&mock_call_data->arg_name, (void*)&arg_name);
 #define DECLARE_MOCK_CALL_STRUCT_STACK(arg_type, arg_name) arg_type arg_name;
 #define MARK_ARG_AS_NOT_IGNORED(arg_type, arg_name) mock_call_data->C2(is_ignored_, arg_name) = 0;
 #define MARK_ARG_AS_IGNORED(arg_type, arg_name) mock_call_data->C2(is_ignored_, arg_name) = 1;
 #define CLEAR_OUT_ARG_BUFFERS(count, arg_type, arg_name) mock_call_data->out_arg_buffers[COUNT_OF(mock_call_data->out_arg_buffers) - DIV2(count)].bytes = NULL;
 #define CLEAR_VALIDATE_ARG_BUFFERS(count, arg_type, arg_name) mock_call_data->validate_arg_buffers[COUNT_OF(mock_call_data->validate_arg_buffers) - DIV2(count)].bytes = NULL;
-#define FREE_ARG_VALUE(count, arg_type, arg_name) umocktypes_free(TOSTRING(arg_type), &typed_mock_call_data->arg_name);
+#define FREE_ARG_VALUE(count, arg_type, arg_name) umocktypes_free(TOSTRING(arg_type), (void*)&typed_mock_call_data->arg_name);
 #define FREE_OUT_ARG_BUFFERS(count, arg_type, arg_name) free(typed_mock_call_data->out_arg_buffers[COUNT_OF(typed_mock_call_data->out_arg_buffers) - DIV2(count)].bytes);
 #define FREE_VALIDATE_ARG_BUFFERS(count, arg_type, arg_name) free(typed_mock_call_data->validate_arg_buffers[COUNT_OF(typed_mock_call_data->validate_arg_buffers) - DIV2(count)].bytes);
 #define ARG_IN_SIGNATURE(count, arg_type, arg_name) arg_type arg_name IFCOMMA(count)
@@ -126,7 +124,7 @@ typedef struct ARG_BUFFER_TAG
     if ((result == 1) && (C2(typed_left->is_ignored_, arg_name) == 0) \
         && (C2(typed_right->is_ignored_, arg_name) == 0)) \
     { \
-        result = umocktypes_are_equal(#arg_type, &typed_left->arg_name, &typed_right->arg_name); \
+        result = umocktypes_are_equal(#arg_type, (void*)&typed_left->arg_name, (void*)&typed_right->arg_name); \
     }
 
 #define DECLARE_MOCK_CALL_MODIFIER(name, ...) \
@@ -180,6 +178,7 @@ typedef struct ARG_BUFFER_TAG
         DECLARE_MOCK_CALL_MODIFIER(name) \
         if (mock_call_data == NULL) \
         { \
+            UMOCK_LOG("ValidateAllArguments called without having an expected call."); \
             umock_c_indicate_error(UMOCK_C_ERROR); \
         } \
         else \
@@ -197,6 +196,7 @@ typedef struct ARG_BUFFER_TAG
         C2(mock_call_, name)* mock_call_data = (C2(mock_call_, name)*)umockcall_get_call_data(umock_c_get_last_expected_call()); \
         if (mock_call_data == NULL) \
         { \
+            UMOCK_LOG("IgnoreArgument_%s called without having an expected call.", TOSTRING(arg_name)); \
             umock_c_indicate_error(UMOCK_C_ERROR); \
         } \
         else \
@@ -214,6 +214,7 @@ typedef struct ARG_BUFFER_TAG
         C2(mock_call_, name)* mock_call_data = (C2(mock_call_, name)*)umockcall_get_call_data(umock_c_get_last_expected_call()); \
         if (mock_call_data == NULL) \
         { \
+            UMOCK_LOG("ValidateArgument_%s called without having an expected call.", TOSTRING(arg_name)); \
             umock_c_indicate_error(UMOCK_C_ERROR); \
         } \
         else \
@@ -232,6 +233,7 @@ typedef struct ARG_BUFFER_TAG
         C2(mock_call_, name)* mock_call_data = (C2(mock_call_, name)*)umockcall_get_call_data(umock_c_get_last_expected_call()); \
         if (mock_call_data == NULL) \
         { \
+            UMOCK_LOG("IgnoreArgument called without having an expected call."); \
             umock_c_indicate_error(UMOCK_C_ERROR); \
         } \
         else \
@@ -239,6 +241,7 @@ typedef struct ARG_BUFFER_TAG
             IF(COUNT_ARG(__VA_ARGS__), \
                 if ((arg_index < 1) || (arg_index > (sizeof(C2(ignore_one_argument_array_,name)) / sizeof(C2(ignore_one_argument_array_,name)[0])))) \
                 { \
+                    UMOCK_LOG("Bad argument index in call to IgnoreArgument %zu.", arg_index); \
                     umock_c_indicate_error(UMOCK_C_ARG_INDEX_OUT_OF_RANGE); \
                 } \
                 else \
@@ -259,6 +262,7 @@ typedef struct ARG_BUFFER_TAG
         C2(mock_call_, name)* mock_call_data = (C2(mock_call_, name)*)umockcall_get_call_data(umock_c_get_last_expected_call()); \
         if (mock_call_data == NULL) \
         { \
+            UMOCK_LOG("ValidateArgument called without having an expected call."); \
             umock_c_indicate_error(UMOCK_C_ERROR); \
         } \
         else \
@@ -266,6 +270,7 @@ typedef struct ARG_BUFFER_TAG
             IF(COUNT_ARG(__VA_ARGS__), \
                 if ((arg_index < 1) || (arg_index > (sizeof(C2(validate_one_argument_array_,name)) / sizeof(C2(validate_one_argument_array_,name)[0])))) \
                 { \
+                    UMOCK_LOG("Bad argument index in call to ValidateArgument %zu.", arg_index); \
                     umock_c_indicate_error(UMOCK_C_ARG_INDEX_OUT_OF_RANGE); \
                 } \
                 else \
@@ -285,15 +290,21 @@ typedef struct ARG_BUFFER_TAG
         C2(mock_call_, name)* mock_call_data = (C2(mock_call_, name)*)umockcall_get_call_data(umock_c_get_last_expected_call()); \
         if (mock_call_data == NULL) \
         { \
+            UMOCK_LOG("SetReturn called without having an expected call."); \
             umock_c_indicate_error(UMOCK_C_ERROR); \
         } \
         else \
         { \
             mock_call_data->return_value_set = 1; \
-            (void)umocktypes_copy(#return_type, &mock_call_data->return_value, &return_value); \
+            if (umocktypes_copy(#return_type, (void*)&mock_call_data->return_value, (void*)&return_value) != 0) \
+            { \
+                UMOCK_LOG("Could not copy return value of type %s.", TOSTRING(return_type)); \
+                umock_c_indicate_error(UMOCK_C_ERROR); \
+            } \
         } \
         return mock_call_modifier; \
     }
+
 /* Codes_SRS_UMOCK_C_LIB_01_085: [The SetFailReturn call modifier shall record a fail return value.]*/
 #define IMPLEMENT_SET_FAIL_RETURN_FUNCTION(return_type, name, ...) \
     static C2(mock_call_modifier_,name) C2(set_fail_return_func_,name)(return_type return_value) \
@@ -302,12 +313,17 @@ typedef struct ARG_BUFFER_TAG
         C2(mock_call_, name)* mock_call_data = (C2(mock_call_, name)*)umockcall_get_call_data(umock_c_get_last_expected_call()); \
         if (mock_call_data == NULL) \
         { \
+            UMOCK_LOG("SetFailReturn called without having an expected call."); \
             umock_c_indicate_error(UMOCK_C_ERROR); \
         } \
         else \
         { \
             mock_call_data->fail_return_value_set = 1; \
-            (void)umocktypes_copy(#return_type, &mock_call_data->fail_return_value, &return_value); \
+            if (umocktypes_copy(#return_type, (void*)&mock_call_data->fail_return_value, (void*)&return_value) != 0) \
+            { \
+                UMOCK_LOG("Could not copy fail return value of type %s.", TOSTRING(return_type)); \
+                umock_c_indicate_error(UMOCK_C_ERROR); \
+            } \
         } \
         return mock_call_modifier; \
     }
@@ -326,10 +342,12 @@ typedef struct ARG_BUFFER_TAG
         DECLARE_MOCK_CALL_MODIFIER(name) \
         if ((index < 1) || (index > DIV2(COUNT_ARG(__VA_ARGS__)))) \
         { \
+            UMOCK_LOG("Bad argument index in CopyOutArgumentBuffer: %zu.", index); \
             umock_c_indicate_error(UMOCK_C_ARG_INDEX_OUT_OF_RANGE); \
         } \
         else if ((bytes == NULL) || (length == 0)) \
         { \
+            UMOCK_LOG("Bad arguments to CopyOutArgumentBuffer: bytes = %p, length = %zu.", bytes, length); \
             umock_c_indicate_error(UMOCK_C_INVALID_ARGUMENT_BUFFER); \
         } \
         else \
@@ -337,6 +355,7 @@ typedef struct ARG_BUFFER_TAG
             C2(mock_call_, name)* mock_call_data = (C2(mock_call_, name)*)umockcall_get_call_data(umock_c_get_last_expected_call()); \
             if (mock_call_data == NULL) \
             { \
+                UMOCK_LOG("CopyOutArgumentBuffer called without having an expected call."); \
                 umock_c_indicate_error(UMOCK_C_ERROR); \
             } \
             else \
@@ -345,6 +364,7 @@ typedef struct ARG_BUFFER_TAG
                 mock_call_data->out_arg_buffers[index - 1].bytes = malloc(length); \
                 if (mock_call_data->out_arg_buffers[index - 1].bytes == NULL) \
                 { \
+                    UMOCK_LOG("Could not allocate memory for out argument buffers."); \
                     umock_c_indicate_error(UMOCK_C_MALLOC_ERROR); \
                 } \
                 else \
@@ -378,10 +398,12 @@ typedef struct ARG_BUFFER_TAG
         DECLARE_MOCK_CALL_MODIFIER(name) \
         if ((index < 1) || (index > DIV2(COUNT_ARG(__VA_ARGS__)))) \
         { \
+            UMOCK_LOG("Bad argument index in ValidateArgumentBuffer: %zu.", index); \
             umock_c_indicate_error(UMOCK_C_ARG_INDEX_OUT_OF_RANGE); \
         } \
         else if ((bytes == NULL) || (length == 0)) \
         { \
+            UMOCK_LOG("Bad arguments to ValidateArgumentBuffer: bytes = %p, length = %zu.", bytes, length); \
             umock_c_indicate_error(UMOCK_C_INVALID_ARGUMENT_BUFFER); \
         } \
         else \
@@ -389,6 +411,7 @@ typedef struct ARG_BUFFER_TAG
             C2(mock_call_, name)* mock_call_data = (C2(mock_call_, name)*)umockcall_get_call_data(umock_c_get_last_expected_call()); \
             if (mock_call_data == NULL) \
             { \
+                UMOCK_LOG("ValidateArgumentBuffer called without having an expected call."); \
                 umock_c_indicate_error(UMOCK_C_ERROR); \
             } \
             else \
@@ -397,6 +420,7 @@ typedef struct ARG_BUFFER_TAG
                 mock_call_data->validate_arg_buffers[index - 1].bytes = malloc(length); \
                 if (mock_call_data->validate_arg_buffers[index - 1].bytes == NULL) \
                 { \
+                    UMOCK_LOG("Could not allocate memory for validating argument buffers."); \
                     umock_c_indicate_error(UMOCK_C_MALLOC_ERROR); \
                 } \
                 else \
@@ -432,6 +456,7 @@ typedef struct ARG_BUFFER_TAG
         mock_call = umockcall_create(#name, mock_call_data, C2(mock_call_data_free_func_,name), C2(mock_call_data_stringify_,name), C2(mock_call_data_are_equal_,name)); \
         if (mock_call == NULL) \
         { \
+            UMOCK_LOG("Failed creating mock call."); \
             umock_c_indicate_error(UMOCK_C_ERROR); \
         } \
         else \
@@ -462,10 +487,7 @@ typedef struct ARG_BUFFER_TAG
 #define IMPLEMENT_REGISTER_GLOBAL_MOCK_RETURN(return_type, name, ...) \
     IF(IS_NOT_VOID(return_type), void C2(set_global_mock_return_, name)(return_type return_value) \
     { \
-        if (umocktypes_copy(TOSTRING(return_type), &C2(mock_call_default_result_,name), &return_value) != 0) \
-        { \
-            umock_c_indicate_error(UMOCK_C_ERROR); \
-        } \
+        C2(mock_call_default_result_,name) = return_value; \
     }, ) \
 
 /* Codes_SRS_UMOCK_C_LIB_01_111: [The REGISTER_GLOBAL_MOCK_FAIL_RETURN shall register a fail return value to be returned by a mock function when marked as failed in the expected calls.]*/
@@ -474,10 +496,7 @@ typedef struct ARG_BUFFER_TAG
 #define IMPLEMENT_REGISTER_GLOBAL_MOCK_FAIL_RETURN(return_type, name, ...) \
     IF(IS_NOT_VOID(return_type), void C2(set_global_mock_fail_return_, name)(return_type fail_return_value) \
     { \
-        if (umocktypes_copy(TOSTRING(return_type), &C2(mock_call_fail_result_,name), &fail_return_value) != 0) \
-        { \
-            umock_c_indicate_error(UMOCK_C_ERROR); \
-        } \
+        C2(mock_call_fail_result_,name) = fail_return_value; \
     }, ) \
 
 /* Codes_SRS_UMOCK_C_LIB_01_113: [The REGISTER_GLOBAL_MOCK_RETURNS shall register both a success and a fail return value associated with a mock function.]*/
@@ -486,18 +505,15 @@ typedef struct ARG_BUFFER_TAG
 #define IMPLEMENT_REGISTER_GLOBAL_MOCK_RETURNS(return_type, name, ...) \
     IF(IS_NOT_VOID(return_type), void C2(set_global_mock_returns_, name)(return_type return_value, return_type fail_return_value) \
     { \
-        if ((umocktypes_copy(TOSTRING(return_type), &C2(mock_call_default_result_,name), &return_value) != 0) || \
-            (umocktypes_copy(TOSTRING(return_type), &C2(mock_call_fail_result_, name), &fail_return_value) != 0)) \
-        { \
-            umock_c_indicate_error(UMOCK_C_ERROR); \
-        } \
+        C2(mock_call_default_result_,name) = return_value; \
+        C2(mock_call_fail_result_,name) = fail_return_value; \
     }, ) \
 
 #define DECLARE_VALIDATE_ONE_ARGUMENT_FUNC_TYPE(name) \
     typedef struct C2(_mock_call_modifier_, name) (*C2(validate_one_argument_func_type_, name))(void);
 
 #define COPY_RETURN_VALUE(return_type, name) \
-    (void)umocktypes_copy(TOSTRING(return_type), &result, &C2(mock_call_default_result_, name));
+    result = C2(mock_call_default_result_, name);
 
 /* Codes_SRS_UMOCK_C_LIB_01_004: [If ENABLE_MOCKS is defined, MOCKABLE_FUNCTION shall generate the declaration of the function and code for the mocked function, thus allowing setting up of expectations in test functions.] */
 /* Codes_SRS_UMOCK_C_LIB_01_014: [For each argument the argument value shall be stored for later comparison with actual calls.] */
@@ -515,7 +531,7 @@ typedef struct ARG_BUFFER_TAG
 /* Codes_SRS_UMOCK_C_LIB_01_119: [ CopyOutArgumentBuffer shall only be available for mock functions that have arguments. ]*/
 /* Codes_SRS_UMOCK_C_LIB_01_128: [ CopyOutArgument shall only be available for mock functions that have arguments. ]*/
 /* Codes_SRS_UMOCK_C_LIB_01_129: [ ValidateArgumentBuffer shall only be available for mock functions that have arguments. ]*/
-/* Codes_SRS_UMOCK_C_LIB_01_105: [The hook’s result shall be returned by the mock to the production code.]*/
+/* Codes_SRS_UMOCK_C_LIB_01_105: [The hook\92s result shall be returned by the mock to the production code.]*/
 /* Codes_SRS_UMOCK_C_LIB_01_106: [The signature for the hook shall be assumed to have exactly the same arguments and return as the mocked function.]*/
 /* Codes_SRS_UMOCK_C_LIB_01_135: [ All parameters passed to the mock shall be passed down to the mock hook. ]*/
 /* Codes_SRS_UMOCK_C_LIB_01_148: [ If call comparison fails an error shall be indicated by calling the error callback with UMOCK_C_COMPARE_CALL_ERROR. ]*/
@@ -524,7 +540,7 @@ typedef struct ARG_BUFFER_TAG
 /* Codes_SRS_UMOCK_C_LIB_01_138: [ - If a global mock hook has been specified then it shall be called and its result returned. ]*/
 /* Codes_SRS_UMOCK_C_LIB_01_139: [ - If a global return value has been specified then it shall be returned. ]*/
 /* Codes_SRS_UMOCK_C_LIB_01_140: [ - Otherwise the value of a static variable of the same type as the return type shall be returned. ]*/
-#define MOCKABLE_FUNCTION_UMOCK_INTERNAL_WITH_MOCK(return_type, name, ...) \
+#define MOCKABLE_FUNCTION_UMOCK_INTERNAL_WITH_MOCK_NO_CODE(return_type, name, ...) \
     typedef return_type (*C2(mock_hook_func_type_, name))(IF(COUNT_ARG(__VA_ARGS__),,void) FOR_EACH_2_COUNTED(ARG_IN_SIGNATURE, __VA_ARGS__)); \
     static C2(mock_hook_func_type_,name) C2(mock_hook_,name) = NULL; \
     struct C2(_mock_call_modifier_,name); \
@@ -602,6 +618,7 @@ typedef struct ARG_BUFFER_TAG
         IF(IS_NOT_VOID(return_type),unsigned int fail_return_value_set : 1;,) \
         IF(IS_NOT_VOID(return_type),unsigned int return_value_set : 1;,) \
         IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2(DECLARE_IGNORE_FLAG_FOR_ARG, __VA_ARGS__),) \
+        IF(COUNT_ARG(__VA_ARGS__), , IF(IS_NOT_VOID(return_type),, unsigned char dummy : 1;)) \
     } C2(mock_call_,name); \
     char* C2(mock_call_data_stringify_,name)(void* mock_call_data) \
     { \
@@ -667,11 +684,11 @@ typedef struct ARG_BUFFER_TAG
         IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_COUNTED(FREE_VALIDATE_ARG_BUFFERS, __VA_ARGS__),) \
         IF(IS_NOT_VOID(return_type),if (typed_mock_call_data->return_value_set) \
         { \
-            umocktypes_free(TOSTRING(return_type), &typed_mock_call_data->return_value); \
+            umocktypes_free(TOSTRING(return_type), (void*)&typed_mock_call_data->return_value); \
         } \
         if (typed_mock_call_data->fail_return_value_set) \
         { \
-            umocktypes_free(TOSTRING(return_type), &typed_mock_call_data->fail_return_value); \
+            umocktypes_free(TOSTRING(return_type), (void*)&typed_mock_call_data->fail_return_value); \
         },) \
         free(mock_call_data); \
     } \
@@ -689,10 +706,19 @@ typedef struct ARG_BUFFER_TAG
     IF(COUNT_ARG(__VA_ARGS__),IMPLEMENT_COPY_OUT_ARGUMENT_FUNCTION(return_type, name, __VA_ARGS__),) \
     IF(COUNT_ARG(__VA_ARGS__),IMPLEMENT_VALIDATE_ARGUMENT_BUFFER_FUNCTION(return_type, name, __VA_ARGS__),) \
     IMPLEMENT_IGNORE_ALL_CALLS_FUNCTION(return_type, name, __VA_ARGS__) \
-	return_type name(IF(COUNT_ARG(__VA_ARGS__),,void) FOR_EACH_2_COUNTED(ARG_IN_SIGNATURE, __VA_ARGS__)) \
+    IMPLEMENT_REGISTER_GLOBAL_MOCK_HOOK(return_type, name, __VA_ARGS__) \
+    IMPLEMENT_REGISTER_GLOBAL_MOCK_RETURN(return_type, name, __VA_ARGS__) \
+    IMPLEMENT_REGISTER_GLOBAL_MOCK_FAIL_RETURN(return_type, name, __VA_ARGS__) \
+    IMPLEMENT_REGISTER_GLOBAL_MOCK_RETURNS(return_type, name, __VA_ARGS__) \
+    IMPLEMENT_STRICT_EXPECTED_MOCK(return_type, name, __VA_ARGS__) \
+    IMPLEMENT_EXPECTED_MOCK(return_type, name, __VA_ARGS__) \
+
+#define MOCKABLE_FUNCTION_BODY_WITHOUT_RETURN(modifiers, return_type, name, ...) \
+    return_type modifiers name(IF(COUNT_ARG(__VA_ARGS__),,void) FOR_EACH_2_COUNTED(ARG_IN_SIGNATURE, __VA_ARGS__)) \
 	{ \
         UMOCKCALL_HANDLE mock_call; \
         UMOCKCALL_HANDLE matched_call; \
+        unsigned int result_value_set = 0; \
         IF(IS_NOT_VOID(return_type),return_type result;,) \
         C2(mock_call_,name)* matched_call_data; \
         C2(mock_call_,name)* mock_call_data = (C2(mock_call_,name)*)malloc(sizeof(C2(mock_call_,name))); \
@@ -700,10 +726,13 @@ typedef struct ARG_BUFFER_TAG
         IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2(MARK_ARG_AS_NOT_IGNORED, __VA_ARGS__),) \
         IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_COUNTED(CLEAR_OUT_ARG_BUFFERS, __VA_ARGS__),) \
         IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_COUNTED(CLEAR_VALIDATE_ARG_BUFFERS, __VA_ARGS__),) \
+        IF(IS_NOT_VOID(return_type),mock_call_data->return_value_set = 0;,) \
+        IF(IS_NOT_VOID(return_type),mock_call_data->fail_return_value_set = 0;,) \
         mock_call = umockcall_create(#name, mock_call_data, C2(mock_call_data_free_func_,name), C2(mock_call_data_stringify_,name), C2(mock_call_data_are_equal_,name)); \
         if (mock_call == NULL) \
         { \
             IF(IS_NOT_VOID(return_type),COPY_RETURN_VALUE(return_type, name),) \
+            UMOCK_LOG("Could not create a mock call in the actual call for %s.", TOSTRING(name)); \
             umock_c_indicate_error(UMOCK_C_ERROR); \
         } \
         else \
@@ -711,6 +740,7 @@ typedef struct ARG_BUFFER_TAG
             if (umock_c_add_actual_call(mock_call, &matched_call) != 0) \
             { \
                 umockcall_destroy(mock_call); \
+                UMOCK_LOG("Could not add an actual call for %s.", TOSTRING(name)); \
                 umock_c_indicate_error(UMOCK_C_COMPARE_CALL_ERROR); \
             } \
             if (matched_call != NULL) \
@@ -720,20 +750,23 @@ typedef struct ARG_BUFFER_TAG
                 { \
                     if (matched_call_data->return_value_set) \
                     { \
-                        (void)umocktypes_copy(#return_type, &result, &matched_call_data->return_value); \
+                        result = matched_call_data->return_value; \
+                        result_value_set = 1; \
                     } \
                     else \
                     { \
                         if (C2(mock_hook_, name) != NULL) \
                         { \
                             IF(IS_NOT_VOID(return_type),result =,) C2(mock_hook_, name)(FOR_EACH_2_COUNTED(ARG_NAME_ONLY_IN_CALL, __VA_ARGS__)); \
+                            IF(IS_NOT_VOID(return_type),result_value_set = 1;,) \
                         } \
-                        IF(IS_NOT_VOID(return_type),else \
-                        { \
-                            (void)umocktypes_copy(TOSTRING(return_type), &result, &C2(mock_call_default_result_,name)); \
-                        },) \
                     } \
-                },) \
+                }, \
+                if (C2(mock_hook_, name) != NULL) \
+                { \
+                    C2(mock_hook_, name)(FOR_EACH_2_COUNTED(ARG_NAME_ONLY_IN_CALL, __VA_ARGS__)); \
+                } \
+                ) \
                 IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_COUNTED(COPY_OUT_ARG_VALUE_FROM_MATCHED_CALL, __VA_ARGS__),) \
             } \
             else \
@@ -741,21 +774,34 @@ typedef struct ARG_BUFFER_TAG
                 if (C2(mock_hook_, name) != NULL) \
                 { \
                     IF(IS_NOT_VOID(return_type),result =,) C2(mock_hook_, name)(FOR_EACH_2_COUNTED(ARG_NAME_ONLY_IN_CALL, __VA_ARGS__)); \
+                    IF(IS_NOT_VOID(return_type),result_value_set = 1;,) \
                 } \
-                IF(IS_NOT_VOID(return_type),else \
-                { \
-                    COPY_RETURN_VALUE(return_type, name) \
-                },) \
             } \
         } \
-		IF(IS_NOT_VOID(return_type),return result;,) \
+
+#define MOCKABLE_FUNCTION_UMOCK_INTERNAL_WITH_MOCK(modifiers, return_type, name, ...) \
+    MOCKABLE_FUNCTION_UMOCK_INTERNAL_WITH_MOCK_NO_CODE(return_type, name, __VA_ARGS__) \
+    MOCKABLE_FUNCTION_BODY_WITHOUT_RETURN(modifiers, return_type, name, __VA_ARGS__) \
+        IF(IS_NOT_VOID(return_type), \
+        if (result_value_set == 0) \
+        { \
+            COPY_RETURN_VALUE(return_type, name) \
+        }; \
+        return result;,) \
 	} \
-    IMPLEMENT_STRICT_EXPECTED_MOCK(return_type, name, __VA_ARGS__) \
-    IMPLEMENT_EXPECTED_MOCK(return_type, name, __VA_ARGS__) \
-    IMPLEMENT_REGISTER_GLOBAL_MOCK_HOOK(return_type, name, __VA_ARGS__) \
-    IMPLEMENT_REGISTER_GLOBAL_MOCK_RETURN(return_type, name, __VA_ARGS__) \
-    IMPLEMENT_REGISTER_GLOBAL_MOCK_FAIL_RETURN(return_type, name, __VA_ARGS__) \
-    IMPLEMENT_REGISTER_GLOBAL_MOCK_RETURNS(return_type, name, __VA_ARGS__) \
+
+/* Codes_SRS_UMOCK_C_LIB_01_150: [ MOCK_FUNCTION_WITH_CODE shall define a mock function and allow the user to embed code between this define and a MOCK_FUNCTION_END call. ]*/
+#define MOCK_FUNCTION_WITH_CODE(modifiers, return_type, name, ...) \
+    MOCKABLE_FUNCTION_UMOCK_INTERNAL_WITH_MOCK_NO_CODE(return_type, name, __VA_ARGS__) \
+    MOCKABLE_FUNCTION_BODY_WITHOUT_RETURN(modifiers, return_type, name, __VA_ARGS__) \
+
+#define MOCK_FUNCTION_END(...) \
+        if (result_value_set == 0) \
+        { \
+            IF(COUNT_ARG(__VA_ARGS__), result = __VA_ARGS__;,) \
+        }; \
+        IF(COUNT_ARG(__VA_ARGS__), return result;,) \
+    }
 
 #ifdef __cplusplus
 	}

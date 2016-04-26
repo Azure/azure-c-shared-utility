@@ -6,9 +6,9 @@
 
 #include "umock_c.h"
 
-MOCKABLE_FUNCTION(int, test_generate_signature, int, a, double, b, char*, s);
-MOCKABLE_FUNCTION(void, test_generate_signature_void_return, int, a);
-MOCKABLE_FUNCTION(void, test_generate_signature_no_args);
+MOCKABLE_FUNCTION(, int, test_generate_signature, int, a, double, b, char*, s);
+MOCKABLE_FUNCTION(, void, test_generate_signature_void_return, int, a);
+MOCKABLE_FUNCTION(, void, test_generate_signature_no_args);
 
 int test_generate_signature(int a, double b, char* s)
 {

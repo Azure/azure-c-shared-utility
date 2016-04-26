@@ -21,6 +21,7 @@ extern "C"
 #include "azure_c_shared_utility/macro_utils.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
 #include "azure_c_shared_utility/map.h"
+#include "azure_c_shared_utility/umock_c_prod.h"
 
 #define CONSTMAP_RESULT_VALUES \
     CONSTMAP_OK, \
@@ -44,20 +45,20 @@ typedef struct CONSTMAP_HANDLE_DATA_TAG* CONSTMAP_HANDLE;
  *
  * @return  A valid @c CONSTMAP_HANDLE or @c NULL in case an error occurs.
  */
-extern CONSTMAP_HANDLE ConstMap_Create(MAP_HANDLE sourceMap);
+MOCKABLE_FUNCTION(, CONSTMAP_HANDLE, ConstMap_Create, MAP_HANDLE, sourceMap);
 
  /** 
   * @brief  Destroy a read-only map.  Deallocate memory associated with handle.
   * @param  handle      Handle to a read-only map.
   */
-extern void ConstMap_Destroy(CONSTMAP_HANDLE handle);
+MOCKABLE_FUNCTION(, void, ConstMap_Destroy, CONSTMAP_HANDLE, handle);
 
  /** 
   * @brief  Clone a read-only map from another read-only map. 
   * @param  handle      Handle to a read-only map.
   * @return A valid @c CONSTMAP_HANDLE or @c NULL in case an error occurs.
   */
-extern CONSTMAP_HANDLE ConstMap_Clone(CONSTMAP_HANDLE handle);
+MOCKABLE_FUNCTION(, CONSTMAP_HANDLE, ConstMap_Clone, CONSTMAP_HANDLE, handle);
 
  /** 
   * @brief  Create a map handle populated from the read-only map.
@@ -66,7 +67,7 @@ extern CONSTMAP_HANDLE ConstMap_Clone(CONSTMAP_HANDLE handle);
   *  
   * The new MAP_HANDLE needs to be destroyed when it is no longer needed.
   */
-extern MAP_HANDLE ConstMap_CloneWriteable(CONSTMAP_HANDLE handle);
+MOCKABLE_FUNCTION(, MAP_HANDLE, ConstMap_CloneWriteable, CONSTMAP_HANDLE, handle);
 
 /**
  * @brief   This function returns a true if the map contains a key 
@@ -79,7 +80,7 @@ extern MAP_HANDLE ConstMap_CloneWriteable(CONSTMAP_HANDLE handle);
  *						in the map and @c false if key is not found or 
  *						parameters are invalid.
  */
-extern bool ConstMap_ContainsKey(CONSTMAP_HANDLE handle, const char* key);
+MOCKABLE_FUNCTION(, bool, ConstMap_ContainsKey, CONSTMAP_HANDLE, handle, const char*, key);
 
 /**
  * @brief   This function returns @c true if at least one <key,value> pair 
@@ -93,7 +94,7 @@ extern bool ConstMap_ContainsKey(CONSTMAP_HANDLE handle, const char* key);
  *							in the map and @c false if value is not found or 
  *							parameters are invalid.
  */
-extern bool ConstMap_ContainsValue(CONSTMAP_HANDLE handle, const char* value);
+MOCKABLE_FUNCTION(, bool, ConstMap_ContainsValue, CONSTMAP_HANDLE, handle, const char*, value);
 
 /**
  * @brief   Retrieves the value of a stored key.
@@ -105,7 +106,7 @@ extern bool ConstMap_ContainsValue(CONSTMAP_HANDLE handle, const char* value);
  *          requested key is not found in the map. Returns a pointer to the
  *          key's value otherwise.
  */
-extern const char* ConstMap_GetValue(CONSTMAP_HANDLE handle, const char* key);
+MOCKABLE_FUNCTION(, const char*, ConstMap_GetValue, CONSTMAP_HANDLE, handle, const char*, key);
  
  /**
  * @brief   Retrieves the complete list of keys and values from the map
@@ -121,7 +122,7 @@ extern const char* ConstMap_GetValue(CONSTMAP_HANDLE handle, const char* key);
  * @return  Returns @c CONSTMAP_OK if the keys and values are retrieved
  *                     and written successfully or an error code otherwise.
  */
-extern CONSTMAP_RESULT ConstMap_GetInternals(CONSTMAP_HANDLE handle, const char*const** keys, const char*const** values, size_t* count);
+MOCKABLE_FUNCTION(, CONSTMAP_RESULT, ConstMap_GetInternals, CONSTMAP_HANDLE, handle, const char*const**, keys, const char*const**, values, size_t*, count);
 
 
 #ifdef __cplusplus

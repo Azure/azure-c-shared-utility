@@ -1,4 +1,4 @@
-#umocktypes_c requirements
+﻿#umocktypes_c requirements
  
 #Overview
 
@@ -29,10 +29,12 @@ UMOCKTYPES_HANDLERS(float, float)
 UMOCKTYPES_HANDLERS(double, double)
 UMOCKTYPES_HANDLERS(long double, longdouble)
 UMOCKTYPES_HANDLERS(size_t, size_t)
+UMOCKTYPES_HANDLERS(void*, void_ptr)
+UMOCKTYPES_HANDLERS(const void*, void_ptr)
 
 ```
 
-##umocktypes_charptr_register_types
+##umocktypes_c_register_types
 
 ```c
 extern int umocktypes_c_register_types(void);
@@ -601,3 +603,43 @@ extern void umocktypes_free_size_t(size_t* value);
 ```
 
 **SRS_UMOCKTYPES_C_01_169: [** umocktypes_free_size_t shall do nothing. **]**
+
+##umocktypes_stringify_void_ptr
+
+```c
+extern char* umocktypes_stringify_void_ptr(const void** value);
+```
+
+**SRS_UMOCKTYPES_C_01_170: [** umocktypes_stringify_void_ptr shall return the string representation of the value pointer. **]**
+**SRS_UMOCKTYPES_C_01_171: [** If value is NULL, umocktypes_stringify_void_ptr shall return NULL. **]**
+**SRS_UMOCKTYPES_C_01_172: [** If allocating a new string to hold the string representation fails, umocktypes_stringify_void_ptr shall return NULL. **]**
+**SRS_UMOCKTYPES_C_01_173: [** If any other error occurs when creating the string representation, umocktypes_stringify_void_ptr shall return NULL. **]**
+
+##umocktypes_are_equal_void_ptr
+
+```c
+extern int umocktypes_are_equal_void_ptr(const void** left, const void** right);
+```
+
+**SRS_UMOCKTYPES_C_01_174: [** umocktypes_are_equal_void_ptr shall compare the 2 void_ptrs pointed to by left and right. **]**
+**SRS_UMOCKTYPES_C_01_175: [** If any of the arguments is NULL, umocktypes_are_equal_void_ptr shall return -1. **]**
+**SRS_UMOCKTYPES_C_01_176: [** If the values pointed to by left and right are equal, umocktypes_are_equal_void_ptr shall return 1. **]**
+**SRS_UMOCKTYPES_C_01_177: [** If the values pointed to by left and right are different, umocktypes_are_equal_void_ptr shall return 0. **]**
+
+##umocktypes_copy_void_ptr
+
+```c
+extern int umocktypes_copy_void_ptr(void** destination, const void** source);
+```
+
+**SRS_UMOCKTYPES_C_01_178: [** umocktypes_copy_void_ptr shall copy the void_ptr value from source to destination. **]**
+**SRS_UMOCKTYPES_C_01_179: [** On success umocktypes_copy_void_ptr shall return 0. **]**
+**SRS_UMOCKTYPES_C_01_180: [** If source or destination are NULL, umocktypes_copy_void_ptr shall return a non-zero value. **]**
+
+##umocktypes_free_void_ptr
+
+```c
+extern void umocktypes_free_void_ptr(void** value);
+```
+
+**SRS_UMOCKTYPES_C_01_181: [** umocktypes_free_void_ptr shall do nothing. **]**

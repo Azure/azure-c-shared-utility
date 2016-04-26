@@ -4,11 +4,21 @@
 #ifndef TESTRUNNERSWITCHER_H
 #define TESTRUNNERSWITCHER_H
 
+#include "azure_c_shared_utility/macro_utils.h"
+
+#ifdef __cplusplush
+#include <cstdbool>
+#else
+#include <stdbool.h>
+#endif
+
 #ifdef MBED_BUILD_TIMESTAMP
 #define USE_CTEST
 #endif
 
 typedef void* TEST_MUTEX_HANDLE;
+
+#define TEST_DEFINE_ENUM_TYPE(type, ...) TEST_ENUM_TYPE_HANDLER(type, FOR_EACH_1(DEFINE_ENUMERATION_CONSTANT_AS_WIDESTRING, __VA_ARGS__));
 
 #ifdef USE_CTEST
 
@@ -44,6 +54,23 @@ typedef void* TEST_MUTEX_HANDLE;
 #define TEST_MUTEX_ACQUIRE(mutex)       0
 #define TEST_MUTEX_RELEASE(mutex)
 #define TEST_MUTEX_DESTROY(mutex)
+
+#define TEST_INITIALIZE_MEMORY_DEBUG(semaphore)
+#define TEST_DEINITIALIZE_MEMORY_DEBUG(semaphore)
+
+#define TEST_ENUM_TYPE_HANDLER(EnumName, ...) \
+const wchar_t *EnumName##_Strings[]= \
+{ \
+__VA_ARGS__ \
+}; \
+static void EnumName##_ToString(char* dest, size_t bufferSize, EnumName enumValue) \
+{ \
+    (void)snprintf(dest, bufferSize, "%S", EnumName##_Strings[enumValue]); \
+} \
+static bool EnumName##_Compare(EnumName left, EnumName right) \
+{ \
+    return left != right; \
+}
 
 #elif defined CPP_UNITTEST
 
@@ -87,11 +114,46 @@ typedef void* void_ptr;
 #define TEST_MUTEX_RELEASE(mutex)                           testmutex_release(mutex)
 #define TEST_MUTEX_DESTROY(mutex)                           testmutex_destroy(mutex)
 
+#define TEST_INITIALIZE_MEMORY_DEBUG(semaphore) \
+    semaphore = testmutex_acquire_global_semaphore(); \
+    ASSERT_IS_NOT_NULL_WITH_MSG(semaphore, "Unable to acquire global semaphore");
+
+#define TEST_DEINITIALIZE_MEMORY_DEBUG(semaphore) \
+if (testmutex_release_global_semaphore(semaphore))\
+{                                                        \
+    REPORT_MEMORY_LEAKS;                                 \
+}                                                        \
+
+#define TEST_ENUM_TYPE_HANDLER(EnumName, ...) \
+namespace Microsoft \
+{ \
+    namespace VisualStudio \
+    { \
+        namespace CppUnitTestFramework \
+        { \
+            static const wchar_t *EnumName##_Strings[]= \
+            { \
+                __VA_ARGS__ \
+            }; \
+            template <> std::wstring ToString < EnumName > (const EnumName & q)  \
+            {  \
+                if((size_t)q>=sizeof(EnumName##_Strings)/sizeof(EnumName##_Strings[0])) \
+                { \
+                    Assert::Fail(L"out of range value for " L#EnumName); \
+                    return L""; \
+                } \
+                else \
+                { \
+                    return EnumName##_Strings[q]; \
+                } \
+            } \
+        } \
+    } \
+};
+
 #else
 #error No test runner defined
 #endif
-
-#define SEMAPHORE_HIGH_WATER 1000000
 
 #ifdef _CRTDBG_MAP_ALLOC
 
@@ -105,17 +167,5 @@ typedef void* void_ptr;
 #else
 #define REPORT_MEMORY_LEAKS ((void)0);
 #endif
-
-#define INITIALIZE_MEMORY_DEBUG(semaphore) \
-semaphore = MicroMockCreateGlobalSemaphore("MICROMOCK_DLL_BY_DLL", SEMAPHORE_HIGH_WATER); \
-ASSERT_IS_NOT_NULL(semaphore); \
-MicroMockAcquireGlobalSemaphore(semaphore) ; \
-
-#define DEINITIALIZE_MEMORY_DEBUG(semaphore)\
-if (MicroMockReleaseGlobalSemaphore(g_dllByDll) == SEMAPHORE_HIGH_WATER-1)\
-{                                                        \
-    REPORT_MEMORY_LEAKS;                                 \
-}                                                        \
-MicroMockDestroyGlobalSemaphore(g_dllByDll);             \
 
 #endif

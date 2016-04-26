@@ -13,6 +13,8 @@ extern "C" {
 #include <stddef.h>
 #endif
 
+#include "azure_c_shared_utility/umock_c_prod.h"
+
 #define UNIQUEID_RESULT_VALUES    \
     UNIQUEID_OK,                  \
     UNIQUEID_INVALID_ARG,         \
@@ -20,7 +22,7 @@ extern "C" {
 
     DEFINE_ENUM(UNIQUEID_RESULT, UNIQUEID_RESULT_VALUES)
 
-    extern UNIQUEID_RESULT UniqueId_Generate(char* uid, size_t bufferSize);
+        MOCKABLE_FUNCTION(, UNIQUEID_RESULT, UniqueId_Generate, char*, uid, size_t, bufferSize);
 
 #ifdef __cplusplus
 }

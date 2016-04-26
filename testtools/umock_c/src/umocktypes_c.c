@@ -11,41 +11,41 @@
 #include "azure_c_shared_utility/macro_utils.h"
 #include "umocktypes.h"
 #include "umocktypes_c.h"
+#include "umock_log.h"
 
 #define IMPLEMENT_STRINGIFY(type, function_postfix, printf_specifier) \
-    char* C2(umocktypes_stringify_,function_postfix)(const type* value) \
+    char* C2(umocktypes_stringify_,function_postfix)(type* value) \
     { \
         char* result; \
         if (value == NULL) \
         { \
+            UMOCK_LOG(TOSTRING(C2(umocktypes_stringify_,function_postfix)) ": NULL value."); \
             result = NULL; \
         } \
         else \
         { \
             char temp_buffer[32]; \
-            int length = sprintf(temp_buffer, printf_specifier, *value); \
-            if (length < 0) \
+            size_t length = sprintf(temp_buffer, printf_specifier, *value); \
+            result = (char*)malloc(length + 1); \
+            if (result == NULL) \
             { \
-                result = NULL; \
+                UMOCK_LOG(TOSTRING(C2(umocktypes_stringify_,function_postfix)) ": Cannot allocate memory for result string."); \
             } \
             else \
             { \
-                result = (char*)malloc(length + 1); \
-                if (result != NULL) \
-                { \
-                    (void)memcpy(result, temp_buffer, length + 1); \
-                } \
+                (void)memcpy(result, temp_buffer, length + 1); \
             } \
         } \
         return result; \
     }
 
 #define IMPLEMENT_ARE_EQUAL(type, function_postfix) \
-    int C2(umocktypes_are_equal_,function_postfix)(const type* left, const type* right) \
+    int C2(umocktypes_are_equal_,function_postfix)(type* left, type* right) \
     { \
         int result; \
         if ((left == NULL) || (right == NULL)) \
         { \
+            UMOCK_LOG(TOSTRING(C2(umocktypes_are_equal_,function_postfix)) ": Bad arguments: left = %p, right = %p", left, right); \
             result = -1; \
         } \
         else \
@@ -56,12 +56,13 @@
     }
 
 #define IMPLEMENT_COPY(type, function_postfix) \
-    int C2(umocktypes_copy_,function_postfix)(type* destination, const type* source) \
+    int C2(umocktypes_copy_,function_postfix)(type* destination, type* source) \
     { \
         int result; \
         if ((destination == NULL) || \
             (source == NULL)) \
         { \
+            UMOCK_LOG(TOSTRING(C2(umocktypes_are_equal_,function_postfix)) ": Bad arguments: destination = %p, source = %p", destination, source); \
             result = __LINE__; \
         } \
         else \
@@ -75,6 +76,7 @@
 #define IMPLEMENT_FREE(type, function_postfix) \
     void C2(umocktypes_free_,function_postfix)(type* value) \
     { \
+        (void)value; \
     }
 
 #define IMPLEMENT_TYPE_HANDLERS(type, function_postfix, printf_specifier) \
@@ -279,6 +281,8 @@ IMPLEMENT_TYPE_HANDLERS(long double, longdouble, "%Lf")
 /* Codes_SRS_UMOCKTYPES_C_01_169: [ umocktypes_free_size_t shall do nothing. ]*/
 IMPLEMENT_TYPE_HANDLERS(size_t, size_t, "%zu")
 
+IMPLEMENT_TYPE_HANDLERS(void*, void_ptr, "%p")
+
 int umocktypes_c_register_types(void)
 {
     int result;
@@ -297,9 +301,12 @@ int umocktypes_c_register_types(void)
         (REGISTER_TYPE(float, float) != 0) ||
         (REGISTER_TYPE(double, double) != 0) ||
         (REGISTER_TYPE(long double, longdouble) != 0) ||
-        (REGISTER_TYPE(size_t, size_t) != 0))
+        (REGISTER_TYPE(size_t, size_t) != 0) ||
+        (REGISTER_TYPE(void*, void_ptr) != 0) ||
+        (REGISTER_TYPE(const void*, void_ptr) != 0))
     {
         /* Codes_SRS_UMOCKTYPES_C_01_171: [ If registering any of the types fails, umocktypes_c_register_types shall fail and return a non-zero value. ]*/
+        UMOCK_LOG("umocktypes_c_register_types: Failed registering types."); \
         result = __LINE__;
     }
     else

@@ -8,6 +8,7 @@
 #include <stddef.h>
 #include <string.h>
 #include "umockcall.h"
+#include "umock_log.h"
 
 typedef struct UMOCKCALL_TAG
 {
@@ -29,6 +30,8 @@ UMOCKCALL_HANDLE umockcall_create(const char* function_name, void* umockcall_dat
         (umockcall_data_are_equal == NULL))
     {
         /* Codes_SRS_UMOCKCALL_01_003: [ If any of the arguments are NULL, umockcall_create shall fail and return NULL. ] */
+        UMOCK_LOG("umockcall: Cannot create call, invalid arguments: function_name = %p, umockcall_data = %p, umockcall_data_free = %p, umockcall_data_stringify = %p, umockcall_data_are_equal = %p.",
+            function_name, umockcall_data, umockcall_data_free, umockcall_data_stringify, umockcall_data_are_equal);
         result = NULL;
     }
     else
@@ -43,6 +46,7 @@ UMOCKCALL_HANDLE umockcall_create(const char* function_name, void* umockcall_dat
             if (result->function_name == NULL)
             {
                 /* Codes_SRS_UMOCKCALL_01_002: [ If allocating memory for the umock call instance fails, umockcall_create shall return NULL. ] */
+                UMOCK_LOG("umockcall: Cannot allocate memory for the call function name.");
                 free(result);
                 result = NULL;
             }
@@ -106,6 +110,7 @@ int umockcall_are_equal(UMOCKCALL_HANDLE left, UMOCKCALL_HANDLE right)
             {
             default:
                 /* Codes_SRS_UMOCKCALL_01_029: [ If the underlying umockcall_data_are_equal fails (returns anything else than 0 or 1), then umockcall_are_equal shall fail and return -1. ] */
+                UMOCK_LOG("umockcall: comparing call data failed.");
                 result = -1;
                 break;
             case 1:
@@ -130,6 +135,7 @@ char* umockcall_stringify(UMOCKCALL_HANDLE umockcall)
     if (umockcall == NULL)
     {
         /* Codes_SRS_UMOCKCALL_01_020: [ If the underlying umockcall_data_stringify call fails, umockcall_stringify shall fail and return NULL. ]*/
+        UMOCK_LOG("umockcall: NULL umockcall in stringify.");
         result = NULL;
     }
     else
@@ -139,6 +145,7 @@ char* umockcall_stringify(UMOCKCALL_HANDLE umockcall)
         if (stringified_args == NULL)
         {
             /* Codes_SRS_UMOCKCALL_01_020: [ If the underlying umockcall_data_stringify call fails, umockcall_stringify shall fail and return NULL. ]*/
+            UMOCK_LOG("umockcall: umockcall data stringify failed.");
             result = NULL;
         }
         else
@@ -178,6 +185,7 @@ void* umockcall_get_call_data(UMOCKCALL_HANDLE umockcall)
 
     if (umockcall == NULL)
     {
+        UMOCK_LOG("umockcall: NULL umockcall in getting call data.");
         umockcall_data = NULL;
     }
     else

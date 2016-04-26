@@ -18,6 +18,7 @@
 
 #include "azure_c_shared_utility/macro_utils.h"
 #include "azure_c_shared_utility/httpapi.h"
+#include "azure_c_shared_utility/umock_c_prod.h"
  
 #ifdef __cplusplus
 #include <cstddef>
@@ -53,7 +54,7 @@ DEFINE_ENUM(HTTPAPIEX_RESULT, HTTPAPIEX_RESULT_VALUES);
  *
  * @return	An @c HTTAPIEX_HANDLE suitable for further calls to the module.
  */
-extern HTTPAPIEX_HANDLE HTTPAPIEX_Create(const char* hostName);
+MOCKABLE_FUNCTION(, HTTPAPIEX_HANDLE, HTTPAPIEX_Create, const char*, hostName);
 
 /**
  * @brief	Tries to execute an HTTP request.
@@ -78,14 +79,14 @@ extern HTTPAPIEX_HANDLE HTTPAPIEX_Create(const char* hostName);
  *
  * @return	An @c HTTAPIEX_HANDLE suitable for further calls to the module.
  */
-extern HTTPAPIEX_RESULT HTTPAPIEX_ExecuteRequest(HTTPAPIEX_HANDLE handle, HTTPAPI_REQUEST_TYPE requestType, const char* relativePath, HTTP_HEADERS_HANDLE requestHttpHeadersHandle, BUFFER_HANDLE requestContent, unsigned int* statusCode, HTTP_HEADERS_HANDLE responseHttpHeadersHandle, BUFFER_HANDLE responseContent);
+MOCKABLE_FUNCTION(, HTTPAPIEX_RESULT, HTTPAPIEX_ExecuteRequest, HTTPAPIEX_HANDLE, handle, HTTPAPI_REQUEST_TYPE, requestType, const char*, relativePath, HTTP_HEADERS_HANDLE, requestHttpHeadersHandle, BUFFER_HANDLE, requestContent, unsigned int*, statusCode, HTTP_HEADERS_HANDLE, responseHttpHeadersHandle, BUFFER_HANDLE, responseContent);
 
 /**
  * @brief	Frees all resources used by the @c HTTPAPIEX_HANDLE object.
  *
  * @param	handle	The @c HTTPAPIEX_HANDLE object to be freed.
  */
-extern void HTTPAPIEX_Destroy(HTTPAPIEX_HANDLE handle);
+MOCKABLE_FUNCTION(, void, HTTPAPIEX_Destroy, HTTPAPIEX_HANDLE, handle);
 
 /**
  * @brief	Sets the option @p optionName to the value pointed to by @p value.
@@ -96,7 +97,7 @@ extern void HTTPAPIEX_Destroy(HTTPAPIEX_HANDLE handle);
  *
  * @return	An @c HTTPAPIEX_RESULT indicating the status of the call.
  */
-extern HTTPAPIEX_RESULT HTTPAPIEX_SetOption(HTTPAPIEX_HANDLE handle, const char* optionName, const void* value);
+MOCKABLE_FUNCTION(, HTTPAPIEX_RESULT, HTTPAPIEX_SetOption, HTTPAPIEX_HANDLE, handle, const char*, optionName, const void*, value);
 
 #ifdef __cplusplus
 }

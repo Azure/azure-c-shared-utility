@@ -112,7 +112,7 @@ static int buildRequestHttpHeadersHandle(HTTPAPIEX_HANDLE_DATA *handleData, BUFF
     }
     else
     {
-        char temp[22];
+        char temp[22] = { 0 };
         (void)size_tToString(temp, 22, BUFFER_length(requestContent)); /*cannot fail, MAX_uint64 has 19 digits*/
         /*Codes_SRS_HTTPAPIEX_02_011: [If parameter requestHttpHeadersHandle is not NULL then HTTPAPIEX_ExecuteRequest shall create or update the following headers of the request:
         Host:{hostname}

@@ -12,6 +12,7 @@
 #include "umocktypes.h"
 #include "umocktypes_c.h"
 #include "umockcallrecorder.h"
+#include "umock_log.h"
 
 typedef enum UMOCK_C_STATE_TAG
 {
@@ -30,6 +31,7 @@ int umock_c_init(ON_UMOCK_C_ERROR on_umock_c_error)
     if (umock_c_state != UMOCK_C_STATE_NOT_INITIALIZED)
     {
         /* Codes_SRS_UMOCK_C_01_007: [ umock_c_init when umock is already initialized shall fail and return a non-zero value. ]*/
+        UMOCK_LOG("umock_c: umock_c already initialized.");
         result = __LINE__;
     }
     else
@@ -49,12 +51,15 @@ int umock_c_init(ON_UMOCK_C_ERROR on_umock_c_error)
         /* Codes_SRS_UMOCK_C_LIB_01_039 : [**double**] */
         /* Codes_SRS_UMOCK_C_LIB_01_040 : [**long double**] */
         /* Codes_SRS_UMOCK_C_LIB_01_041 : [**size_t**] */
+        /* Codes_SRS_UMOCK_C_LIB_01_151: [ void\* ]*/
+        /* Codes_SRS_UMOCK_C_LIB_01_152: [ const void\* ]*/
         /* Codes_SRS_UMOCK_C_01_023: [ umock_c_init shall initialize the umock types by calling umocktypes_init. ]*/
         if ((umocktypes_init() != 0) ||
             /* Codes_SRS_UMOCK_C_01_002: [ umock_c_init shall register the C naive types by calling umocktypes_c_register_types. ]*/
             (umocktypes_c_register_types() != 0))
         {
             /* Codes_SRS_UMOCK_C_01_005: [ If any of the calls fails, umock_c_init shall fail and return a non-zero value. ]*/
+            UMOCK_LOG("umock_c: Could not register standard C types with umock_c.");
             result = __LINE__;
         }
         else
@@ -64,6 +69,7 @@ int umock_c_init(ON_UMOCK_C_ERROR on_umock_c_error)
             if (call_recorder == NULL)
             {
                 /* Codes_SRS_UMOCK_C_01_005: [ If any of the calls fails, umock_c_init shall fail and return a non-zero value. ]*/
+                UMOCK_LOG("umock_c: Could not create the call recorder.");
                 result = __LINE__;
             }
             else
@@ -90,11 +96,12 @@ void umock_c_deinit(void)
     /* Codes_SRS_UMOCK_C_01_010: [ If the module is not initialized, umock_c_deinit shall do nothing. ] */
     if (umock_c_state == UMOCK_C_STATE_INITIALIZED)
     {
-        /* Codes_SRS_UMOCK_C_01_008: [ umock_c_deinit shall deinitialize the umock types by calling umocktypes_deinit. ]*/
-        umocktypes_deinit();
         /* Codes_SRS_UMOCK_C_01_009: [ umock_c_deinit shall free the call recorder created in umock_c_init. ]*/
         umockcallrecorder_destroy(call_recorder);
         umock_c_state = UMOCK_C_STATE_NOT_INITIALIZED;
+
+        /* Codes_SRS_UMOCK_C_01_008: [ umock_c_deinit shall deinitialize the umock types by calling umocktypes_deinit. ]*/
+        umocktypes_deinit();
     }
 }
 
@@ -119,6 +126,7 @@ int umock_c_add_expected_call(UMOCKCALL_HANDLE mock_call)
     if (umock_c_state != UMOCK_C_STATE_INITIALIZED)
     {
         /* Codes_SRS_UMOCK_C_01_020: [ If the module is not initialized, umock_c_add_expected_call shall return a non-zero value. ]*/
+        UMOCK_LOG("umock_c: Cannot add an expected call, umock_c not initialized.");
         result = __LINE__;
     }
     else
@@ -137,6 +145,7 @@ int umock_c_add_actual_call(UMOCKCALL_HANDLE mock_call, UMOCKCALL_HANDLE* matche
     if (umock_c_state != UMOCK_C_STATE_INITIALIZED)
     {
         /* Codes_SRS_UMOCK_C_01_022: [ If the module is not initialized, umock_c_add_actual_call shall return a non-zero value. ]*/
+        UMOCK_LOG("umock_c: Cannot add an actual call, umock_c not initialized.");
         result = __LINE__;
     }
     else
@@ -155,6 +164,7 @@ const char* umock_c_get_expected_calls(void)
     if (umock_c_state != UMOCK_C_STATE_INITIALIZED)
     {
         /* Codes_SRS_UMOCK_C_01_016: [ If the module is not initialized, umock_c_get_expected_calls shall return NULL. ]*/
+        UMOCK_LOG("umock_c: Cannot get the expected calls, umock_c not initialized.");
         result = NULL;
     }
     else
@@ -173,6 +183,7 @@ const char* umock_c_get_actual_calls(void)
     if (umock_c_state != UMOCK_C_STATE_INITIALIZED)
     {
         /* Codes_SRS_UMOCK_C_01_014: [ If the module is not initialized, umock_c_get_actual_calls shall return NULL. ]*/
+        UMOCK_LOG("umock_c: Cannot get the actual calls, umock_c not initialized.");
         result = NULL;
     }
     else
@@ -191,6 +202,7 @@ UMOCKCALL_HANDLE umock_c_get_last_expected_call(void)
     if (umock_c_state != UMOCK_C_STATE_INITIALIZED)
     {
         /* Codes_SRS_UMOCK_C_01_018: [ If the module is not initialized, umock_c_get_last_expected_call shall return NULL. ]*/
+        UMOCK_LOG("umock_c: Cannot get the last expected call, umock_c not initialized.");
         result = NULL;
     }
     else

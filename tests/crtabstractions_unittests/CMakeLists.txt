@@ -8,8 +8,8 @@ compileAsC11()
 
 set(theseTestsName crt_abstractions_unittests)
 
-set(${theseTestsName}_cpp_files
-crtabstractions_unittests.cpp
+set(${theseTestsName}_test_files
+crtabstractions_unittests.c
 )
 
 set(${theseTestsName}_c_files
@@ -21,4 +21,4 @@ ${LOCK_C_FILE}
 set(${theseTestsName}_h_files
 )
 
-build_test_artifacts(${theseTestsName} ON)
+build_c_test_artifacts(${theseTestsName} ON "azure_c_shared_utility_tests")

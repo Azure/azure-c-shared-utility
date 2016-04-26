@@ -27,6 +27,7 @@
 #define ftell           ftell_never_called_never_implemented_always_forgotten
 #define fprintf         fprintf_never_called_never_implemented_always_forgotten
 
+#include "azure_c_shared_utility/umock_c_prod.h"
 
 
 #ifdef __cplusplus
@@ -39,20 +40,20 @@ extern "C"
 
 #undef fopen
 #define fopen gb_fopen
-extern FILE* gb_fopen(const char* filename, const char* mode);
+MOCKABLE_FUNCTION(, FILE*, gb_fopen, const char*, filename, const char*, mode);
 
 
 #undef fclose
 #define fclose gb_fclose
-extern int fclose(FILE *stream);
+MOCKABLE_FUNCTION(, int, fclose, FILE *, stream);
 
 #undef fseek
 #define fseek gb_fseek
-extern int fseek(FILE *stream, long int offset, int whence);
+MOCKABLE_FUNCTION(, int, fseek, FILE *,stream, long int, offset, int, whence);
 
 #undef ftell
 #define ftell gb_ftell
-extern long int ftell(FILE *stream);
+MOCKABLE_FUNCTION(, long int, ftell, FILE *, stream);
 
 #undef fprintf
 #define fprintf gb_fprintf

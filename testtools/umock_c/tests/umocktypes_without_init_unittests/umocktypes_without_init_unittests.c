@@ -293,6 +293,21 @@ TEST_FUNCTION(umocktypes_register_type_when_the_module_is_not_initialized_fails)
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
 }
 
+/* umocktypes_register_alias_type */
+
+/* Tests_SRS_UMOCKTYPES_01_061: [ If umocktypes_register_alias_type is called when the module is not initialized, umocktypes_register_type shall fail and return a non zero value. ] */
+TEST_FUNCTION(umocktypes_register_alias_when_module_is_not_initialized_fails)
+{
+    // arrange
+
+    // act
+    int result = umocktypes_register_alias_type("PSTR", "char*");
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(size_t, 0, umocktypename_normalize_call_count);
+}
+
 /* umocktypes_stringify */
 
 /* Tests_SRS_UMOCKTYPES_01_049: [ If umocktypes_stringify is called when the module is not initialized, umocktypes_stringify shall return NULL. ]*/

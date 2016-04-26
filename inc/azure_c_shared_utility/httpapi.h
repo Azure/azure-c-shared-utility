@@ -16,6 +16,7 @@
 #include "azure_c_shared_utility/httpheaders.h"
 #include "azure_c_shared_utility/macro_utils.h"
 #include "azure_c_shared_utility/buffer_.h"
+#include "azure_c_shared_utility/umock_c_prod.h"
 
 #ifdef __cplusplus
 #include <cstddef>
@@ -74,10 +75,10 @@ DEFINE_ENUM(HTTPAPI_REQUEST_TYPE, HTTPAPI_REQUEST_TYPE_VALUES);
  * @return	@c HTTPAPI_OK if initialization is successful or an error
  * 			code in case it fails.
  */
-extern HTTPAPI_RESULT HTTPAPI_Init(void);
+MOCKABLE_FUNCTION(, HTTPAPI_RESULT, HTTPAPI_Init);
 
 /** @brief	Free resources allocated in ::HTTPAPI_Init. */
-extern void HTTPAPI_Deinit(void);
+MOCKABLE_FUNCTION(, void, HTTPAPI_Deinit);
 
 /**
  * @brief	Creates an HTTPS connection to the host specified by the @p
@@ -92,7 +93,7 @@ extern void HTTPAPI_Deinit(void);
  * @return	A @c HTTP_HANDLE to the newly created connection or @c NULL in
  * 			case an error occurs.
  */
-extern HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName);
+MOCKABLE_FUNCTION(, HTTP_HANDLE, HTTPAPI_CreateConnection, const char*, hostName);
 
 /**
  * @brief	Closes a connection created with ::HTTPAPI_CreateConnection.
@@ -102,7 +103,7 @@ extern HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName);
  * 			All resources allocated by ::HTTPAPI_CreateConnection should be
  * 			freed in ::HTTPAPI_CloseConnection.
  */
-extern void HTTPAPI_CloseConnection(HTTP_HANDLE handle);
+MOCKABLE_FUNCTION(, void, HTTPAPI_CloseConnection, HTTP_HANDLE, handle);
 
 /**
  * @brief	Sends the HTTP request to the host and handles the response for
@@ -152,10 +153,10 @@ extern void HTTPAPI_CloseConnection(HTTP_HANDLE handle);
  * @return	@c HTTPAPI_OK if the API call is successful or an error
  * 			code in case it fails.
  */
-extern HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE requestType, const char* relativePath,
-                                             HTTP_HEADERS_HANDLE httpHeadersHandle, const unsigned char* content,
-                                             size_t contentLength, unsigned int* statusCode,
-                                             HTTP_HEADERS_HANDLE responseHeadersHandle, BUFFER_HANDLE responseContent);
+MOCKABLE_FUNCTION(, HTTPAPI_RESULT, HTTPAPI_ExecuteRequest, HTTP_HANDLE, handle, HTTPAPI_REQUEST_TYPE, requestType, const char*, relativePath,
+                                             HTTP_HEADERS_HANDLE, httpHeadersHandle, const unsigned char*, content,
+                                             size_t, contentLength, unsigned int*, statusCode,
+                                             HTTP_HEADERS_HANDLE, responseHeadersHandle, BUFFER_HANDLE, responseContent);
 
 /**
  * @brief	Sets the option named @p optionName bearing the value
@@ -170,7 +171,7 @@ extern HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST
  * @return	@c HTTPAPI_OK if initialization is successful or an error
  * 			code in case it fails.
  */
-extern HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, const void* value);
+MOCKABLE_FUNCTION(, HTTPAPI_RESULT, HTTPAPI_SetOption, HTTP_HANDLE, handle, const char*, optionName, const void*, value);
 
 /**
  * @brief	Clones the option named @p optionName bearing the value @p value
@@ -185,7 +186,7 @@ extern HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionNa
  * @return	@c HTTPAPI_OK if initialization is successful or an error
  * 			code in case it fails.
  */
-extern HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, const void** savedValue);
+MOCKABLE_FUNCTION(, HTTPAPI_RESULT, HTTPAPI_CloneOption, const char*, optionName, const void*, value, const void**, savedValue);
 
 #ifdef __cplusplus
 }

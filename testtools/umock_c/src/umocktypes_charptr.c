@@ -10,6 +10,7 @@
 #include "umocktypes.h"
 #include "azure_c_shared_utility/macro_utils.h"
 #include "umocktypes_charptr.h"
+#include "umock_log.h"
 
 char* umocktypes_stringify_charptr(const char** value)
 {
@@ -18,20 +19,36 @@ char* umocktypes_stringify_charptr(const char** value)
     if (value == NULL)
     {
         /* Codes_SRS_UMOCKTYPES_CHARPTR_01_004: [ If value is NULL, umocktypes_stringify_charptr shall return NULL. ]*/
+        UMOCK_LOG("umocktypes_stringify_charptr: NULL value.");
         result = NULL;
     }
     else
     {
-        /* Codes_SRS_UMOCKTYPES_CHARPTR_01_002: [ umocktypes_stringify_charptr shall return a string containing the string representation of value, enclosed by quotes ("value"). ] */
-        size_t length = strlen(*value);
-        result = (char*)malloc(length + 3);
-        /* Codes_SRS_UMOCKTYPES_CHARPTR_01_003: [ If allocating a new string to hold the string representation fails, umocktypes_stringify_charptr shall return NULL. ]*/
-        if (result != NULL)
+        if (*value == NULL)
         {
-            result[0] = '\"';
-            (void)memcpy(result + 1, *value, length);
-            result[length + 1] = '\"';
-            result[length + 2] = '\0';
+            result = (char*)malloc(sizeof("NULL") + 1);
+            if (result != NULL)
+            {
+                (void)memcpy(result, "NULL", sizeof("NULL") + 1);
+            }
+        }
+        else
+        {
+            /* Codes_SRS_UMOCKTYPES_CHARPTR_01_002: [ umocktypes_stringify_charptr shall return a string containing the string representation of value, enclosed by quotes ("value"). ] */
+            size_t length = strlen(*value);
+            result = (char*)malloc(length + 3);
+            /* Codes_SRS_UMOCKTYPES_CHARPTR_01_003: [ If allocating a new string to hold the string representation fails, umocktypes_stringify_charptr shall return NULL. ]*/
+            if (result == NULL)
+            {
+                UMOCK_LOG("umocktypes_stringify_charptr: Cannot allocate memory for result.");
+            }
+            else
+            {
+                result[0] = '\"';
+                (void)memcpy(result + 1, *value, length);
+                result[length + 1] = '\"';
+                result[length + 2] = '\0';
+            }
         }
     }
 
@@ -71,26 +88,37 @@ int umocktypes_copy_charptr(char** destination, const char** source)
     /* Codes_SRS_UMOCKTYPES_CHARPTR_01_013: [ If source or destination are NULL, umocktypes_copy_charptr shall return a non-zero value. ]*/
     if ((destination == NULL) || (source == NULL))
     {
+        UMOCK_LOG("umocktypes_copy_charptr: Bad arguments: destination = %p, source = %p.",
+            destination, source);
         result = __LINE__;
     }
     else
     {
-        size_t source_length = strlen(*source);
-        /* Codes_SRS_UMOCKTYPES_CHARPTR_01_012: [ The number of bytes allocated shall accomodate the string pointed to by source. ]*/
-        /* Codes_SRS_UMOCKTYPES_CHARPTR_01_011: [ umocktypes_copy_charptr shall allocate a new sequence of chars by using malloc. ]*/
-        /* Codes_SRS_UMOCKTYPES_CHARPTR_01_015: [ The newly allocated string shall be returned in the destination argument. ]*/
-        *destination = (char*)malloc(source_length + 1);
-        if (*destination == NULL)
+        if (*source == NULL)
         {
-            /* Codes_SRS_UMOCKTYPES_CHARPTR_01_036: [ If allocating the memory for the new string fails, umocktypes_copy_charptr shall fail and return a non-zero value. ]*/
-            result = __LINE__;
+            *destination = NULL;
+            result = 0;
         }
         else
         {
-            /* Codes_SRS_UMOCKTYPES_CHARPTR_01_014: [ umocktypes_copy_charptr shall copy the string pointed to by source to the newly allocated memory. ]*/
-            (void)memcpy(*destination, *source, source_length + 1);
-            /* Codes_SRS_UMOCKTYPES_CHARPTR_01_016: [ On success umocktypes_copy_charptr shall return 0. ]*/
-            result = 0;
+            size_t source_length = strlen(*source);
+            /* Codes_SRS_UMOCKTYPES_CHARPTR_01_012: [ The number of bytes allocated shall accomodate the string pointed to by source. ]*/
+            /* Codes_SRS_UMOCKTYPES_CHARPTR_01_011: [ umocktypes_copy_charptr shall allocate a new sequence of chars by using malloc. ]*/
+            /* Codes_SRS_UMOCKTYPES_CHARPTR_01_015: [ The newly allocated string shall be returned in the destination argument. ]*/
+            *destination = (char*)malloc(source_length + 1);
+            if (*destination == NULL)
+            {
+                /* Codes_SRS_UMOCKTYPES_CHARPTR_01_036: [ If allocating the memory for the new string fails, umocktypes_copy_charptr shall fail and return a non-zero value. ]*/
+                UMOCK_LOG("umocktypes_copy_charptr: Failed allocating memory for the destination string.");
+                result = __LINE__;
+            }
+            else
+            {
+                /* Codes_SRS_UMOCKTYPES_CHARPTR_01_014: [ umocktypes_copy_charptr shall copy the string pointed to by source to the newly allocated memory. ]*/
+                (void)memcpy(*destination, *source, source_length + 1);
+                /* Codes_SRS_UMOCKTYPES_CHARPTR_01_016: [ On success umocktypes_copy_charptr shall return 0. ]*/
+                result = 0;
+            }
         }
     }
 
@@ -114,20 +142,36 @@ char* umocktypes_stringify_const_charptr(const char** value)
     if (value == NULL)
     {
         /* Codes_SRS_UMOCKTYPES_CHARPTR_01_020: [ If value is NULL, umocktypes_stringify_const_charptr shall return NULL. ]*/
+        UMOCK_LOG("umocktypes_stringify_const_charptr: NULL value.");
         result = NULL;
     }
     else
     {
-        /* Codes_SRS_UMOCKTYPES_CHARPTR_01_019: [ umocktypes_stringify_const_charptr shall return a string containing the string representation of value, enclosed by quotes ("value"). ] */
-        size_t length = strlen(*value);
-        result = (char*)malloc(length + 3);
-        /* Codes_SRS_UMOCKTYPES_CHARPTR_01_021: [ If allocating a new string to hold the string representation fails, umocktypes_stringify_const_charptr shall return NULL. ]*/
-        if (result != NULL)
+        if (*value == NULL)
         {
-            result[0] = '\"';
-            (void)memcpy(result + 1, *value, length);
-            result[length + 1] = '\"';
-            result[length + 2] = '\0';
+            result = (char*)malloc(sizeof("NULL") + 1);
+            if (result == NULL)
+            {
+                UMOCK_LOG("umocktypes_stringify_const_charptr: Cannot allocate memoryfor result string.");
+            }
+            else
+            {
+                (void)memcpy(result, "NULL", sizeof("NULL") + 1);
+            }
+        }
+        else
+        {
+            /* Codes_SRS_UMOCKTYPES_CHARPTR_01_019: [ umocktypes_stringify_const_charptr shall return a string containing the string representation of value, enclosed by quotes ("value"). ] */
+            size_t length = strlen(*value);
+            result = (char*)malloc(length + 3);
+            /* Codes_SRS_UMOCKTYPES_CHARPTR_01_021: [ If allocating a new string to hold the string representation fails, umocktypes_stringify_const_charptr shall return NULL. ]*/
+            if (result != NULL)
+            {
+                result[0] = '\"';
+                (void)memcpy(result + 1, *value, length);
+                result[length + 1] = '\"';
+                result[length + 2] = '\0';
+            }
         }
     }
 
@@ -167,26 +211,37 @@ int umocktypes_copy_const_charptr(const char** destination, const char** source)
     /* Codes_SRS_UMOCKTYPES_CHARPTR_01_033: [ If source or destination are NULL, umocktypes_copy_const_charptr shall return a non-zero value. ]*/
     if ((destination == NULL) || (source == NULL))
     {
+        UMOCK_LOG("umocktypes_copy_const_charptr: Bad arguments: destination = %p, source = %p.",
+            destination, source);
         result = __LINE__;
     }
     else
     {
-        size_t source_length = strlen(*source);
-        /* Codes_SRS_UMOCKTYPES_CHARPTR_01_029: [ The number of bytes allocated shall accomodate the string pointed to by source. ]*/
-        /* Codes_SRS_UMOCKTYPES_CHARPTR_01_028: [ umocktypes_copy_const_charptr shall allocate a new sequence of chars by using malloc. ]*/
-        /* Codes_SRS_UMOCKTYPES_CHARPTR_01_031: [ The newly allocated string shall be returned in the destination argument. ]*/
-        *destination = (char*)malloc(source_length + 1);
-        if (*destination == NULL)
+        if (*source == NULL)
         {
-            /* Codes_SRS_UMOCKTYPES_CHARPTR_01_037: [ If allocating the memory for the new string fails, umocktypes_copy_const_charptr shall fail and return a non-zero value. ]*/
-            result = __LINE__;
+            *destination = NULL;
+            result = 0;
         }
         else
         {
-            /* Codes_SRS_UMOCKTYPES_CHARPTR_01_030: [ umocktypes_copy_const_charptr shall copy the string pointed to by source to the newly allocated memory. ]*/
-            (void)memcpy((void*)*destination, *source, source_length + 1);
-            /* Codes_SRS_UMOCKTYPES_CHARPTR_01_032: [ On success umocktypes_copy_const_charptr shall return 0. ]*/
-            result = 0;
+            size_t source_length = strlen(*source);
+            /* Codes_SRS_UMOCKTYPES_CHARPTR_01_029: [ The number of bytes allocated shall accomodate the string pointed to by source. ]*/
+            /* Codes_SRS_UMOCKTYPES_CHARPTR_01_028: [ umocktypes_copy_const_charptr shall allocate a new sequence of chars by using malloc. ]*/
+            /* Codes_SRS_UMOCKTYPES_CHARPTR_01_031: [ The newly allocated string shall be returned in the destination argument. ]*/
+            *destination = (char*)malloc(source_length + 1);
+            if (*destination == NULL)
+            {
+                /* Codes_SRS_UMOCKTYPES_CHARPTR_01_037: [ If allocating the memory for the new string fails, umocktypes_copy_const_charptr shall fail and return a non-zero value. ]*/
+                UMOCK_LOG("umocktypes_copy_const_charptr: Cannot allocate memory for destination string.");
+                result = __LINE__;
+            }
+            else
+            {
+                /* Codes_SRS_UMOCKTYPES_CHARPTR_01_030: [ umocktypes_copy_const_charptr shall copy the string pointed to by source to the newly allocated memory. ]*/
+                (void)memcpy((void*)*destination, *source, source_length + 1);
+                /* Codes_SRS_UMOCKTYPES_CHARPTR_01_032: [ On success umocktypes_copy_const_charptr shall return 0. ]*/
+                result = 0;
+            }
         }
     }
 
@@ -212,6 +267,7 @@ int umocktypes_charptr_register_types(void)
         (REGISTER_TYPE(const char*, const_charptr) != 0))
     {
         /* Codes_SRS_UMOCKTYPES_CHARPTR_01_039: [ If registering any of the types fails, umocktypes_charptr_register_types shall fail and return a non-zero value. ]*/
+        UMOCK_LOG("umocktypes_charptr_register_types: Cannot register types.");
         result = __LINE__;
     }
     else

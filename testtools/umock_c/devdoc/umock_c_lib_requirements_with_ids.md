@@ -17,6 +17,8 @@ Let’s assume unit A depends on unit B. unit B has a function called test_depen
 In unit B’s header one would write:
 
 ```c
+#include "umock_prod.h"
+
 MOCKABLE_FUNCTION(int, test_dependency_1_arg, int, a);
 ```
 
@@ -67,7 +69,7 @@ typedef void(*ON_UMOCK_C_ERROR)(UMOCK_C_ERROR_CODE error_code);
 #define IGNORED_PTR_ARG (NULL)
 #define IGNORED_NUM_ARG (0)
 
-#define MOCKABLE_FUNCTION(result, function, ...) \
+#define MOCKABLE_FUNCTION(modifiers, result, function, ...) \
 	...
 
 #define REGISTER_GLOBAL_MOCK_HOOK(mock_function, mock_hook_function) \
@@ -101,7 +103,7 @@ typedef void(*ON_UMOCK_C_ERROR)(UMOCK_C_ERROR_CODE error_code);
 ###MOCKABLE_FUNCTION
 
 ```c
-MOCKABLE_FUNCTION(result, function, ...)
+MOCKABLE_FUNCTION(modifiers, result, function, ...)
 ```
 
 XX**SRS_UMOCK_C_LIB_01_001: [**MOCKABLE_FUNCTION shall be used to wrap function definition allowing the user to declare a function that can be mocked.**]**
@@ -111,13 +113,24 @@ XX**SRS_UMOCK_C_LIB_01_002: [**The macro shall generate a function signature in 
 Example:
 
 ```c
-MOCKABLE_FUNCTION(int, test_function, int, arg1)
+MOCKABLE_FUNCTION(FAR, int, test_function, int, arg1)
 ```
 
 should generate for production code:
 
 ```c
-int test_function(int arg1);
+int FAR test_function(int arg1);
+```
+
+###MOCK_FUNCTION_WITH_CODE
+
+XX**SRS_UMOCK_C_LIB_01_150: [** MOCK_FUNCTION_WITH_CODE shall define a mock function and allow the user to embed code between this define and a MOCK_FUNCTION_END call. **]**
+
+```c
+MOCK_FUNCTION_WITH_CODE(, void, test_mock_function_with_code_1_arg, int, a);
+    int some_value = 42;
+    /* more code here */
+MOCK_FUNCTION_END()
 ```
 
 ###ENABLE_MOCKS
@@ -134,6 +147,23 @@ ENABLE_MOCKS should be used in the translation unit that contains the tests just
 
 #define ENABLE_MOCKS
 #include "test_dependency.h"
+
+// ... tests
+
+```
+
+Note that it is possible (and sometimes necessary) to undefine ENABLE_MOCKS:
+
+```c
+
+#include <stdlib.h>
+// ... other various includes
+
+#define ENABLE_MOCKS
+#include "test_dependency.h"
+#undef ENABLE_MOCKS
+
+#include "unit_under_test.h"
 
 // ... tests
 
@@ -310,6 +340,8 @@ XX**SRS_UMOCK_C_LIB_01_148: [** If call comparison fails an error shall be indic
 -	**SRS_UMOCK_C_LIB_01_039: [**double**]**
 -	**SRS_UMOCK_C_LIB_01_040: [**long double**]**
 -	**SRS_UMOCK_C_LIB_01_041: [**size_t**]**
+-   **SRS_UMOCK_C_LIB_01_151: [** void\* **]**
+-   **SRS_UMOCK_C_LIB_01_152: [** const void\* **]**
 
 ###Custom types
 
@@ -494,6 +526,14 @@ Example:
 ```c
 REGISTER_UMOCK_VALUE_TYPE(TEST_STRUCT);
 ```
+
+####REGISTER_UMOCK_ALIAS_TYPE
+
+```c
+REGISTER_UMOCK_ALIAS_TYPE(value_type, is_value_type)
+```
+
+**SRS_UMOCK_C_LIB_01_149: [** REGISTER_UMOCK_ALIAS_TYPE registers a new alias type for another type. **]** That means that the handlers used for is_value_type will also be used for the new alias value_type.
 
 ###Extra optional C types
 

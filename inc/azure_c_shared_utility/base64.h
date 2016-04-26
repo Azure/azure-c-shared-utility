@@ -19,6 +19,8 @@ extern "C" {
 #include <stddef.h>
 #endif
 
+#include "azure_c_shared_utility/umock_c_prod.h"
+
 /**
  * @brief	Base64 encodes a buffer and returns the resulting string.
  *
@@ -34,7 +36,7 @@ extern "C" {
  *
  * @return	A @c STRING_HANDLE containing the base64 encoding of @p input.
  */
-extern STRING_HANDLE Base64_Encode(BUFFER_HANDLE input);
+MOCKABLE_FUNCTION(, STRING_HANDLE, Base64_Encode, BUFFER_HANDLE, input);
 
 /**
  * @brief	Base64 encodes the buffer pointed to by @p source and returns the resulting string.
@@ -54,7 +56,7 @@ extern STRING_HANDLE Base64_Encode(BUFFER_HANDLE input);
  * 			of @p input.
  *
  */
-extern STRING_HANDLE Base64_Encode_Bytes(const unsigned char* source, size_t size);
+MOCKABLE_FUNCTION(, STRING_HANDLE, Base64_Encode_Bytes, const unsigned char*, source, size_t, size);
 
 /**
  * @brief	Base64 decodes the buffer pointed to by @p source and returns the resulting buffer.
@@ -71,7 +73,7 @@ extern STRING_HANDLE Base64_Encode_Bytes(const unsigned char* source, size_t siz
  * @return	A @c BUFFER_HANDLE pointing to a buffer containing the result of base64 decoding @p
  * 			source.
  */
-extern BUFFER_HANDLE Base64_Decoder(const char* source);
+MOCKABLE_FUNCTION(, BUFFER_HANDLE, Base64_Decoder, const char*, source);
 
 #ifdef __cplusplus
 }

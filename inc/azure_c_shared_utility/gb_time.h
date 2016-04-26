@@ -33,17 +33,19 @@ extern "C"
 #include <time.h>
 #endif
 
+#include "azure_c_shared_utility/umock_c_prod.h"
+
 #undef time
 #define time gb_time
-extern time_t time(time_t *timer);
+MOCKABLE_FUNCTION(, time_t, time, time_t *, timer);
 
 #undef localtime
 #define localtime gb_localtime
-extern struct tm *localtime(const time_t *timer);
+MOCKABLE_FUNCTION(, struct tm *, localtime, const time_t *, timer);
 
 #undef strftime
 #define strftime gb_strftime
-extern size_t strftime(char * s, size_t maxsize, const char * format, const struct tm * timeptr);
+MOCKABLE_FUNCTION(, size_t, strftime, char *, s, size_t, maxsize, const char *, format, const struct tm *, timeptr);
 
 
 #ifdef __cplusplus

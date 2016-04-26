@@ -15,6 +15,7 @@
 #define LOCK_H
 
 #include "azure_c_shared_utility/macro_utils.h"
+#include "azure_c_shared_utility/umock_c_prod.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -35,7 +36,7 @@ DEFINE_ENUM(LOCK_RESULT, LOCK_RESULT_VALUES);
  *
  * @return	A valid @c LOCK_HANDLE when successful or @c NULL otherwise.
  */
-extern LOCK_HANDLE Lock_Init(void);
+MOCKABLE_FUNCTION(, LOCK_HANDLE, Lock_Init);
 
 /**
  * @brief	Acquires a lock on the given lock handle. Uses platform
@@ -46,7 +47,7 @@ extern LOCK_HANDLE Lock_Init(void);
  * @return	Returns @c LOCK_OK when a lock has been acquired and
  * 			@c LOCK_ERROR when an error occurs.
  */
-extern LOCK_RESULT Lock(LOCK_HANDLE  handle);
+MOCKABLE_FUNCTION(, LOCK_RESULT, Lock, LOCK_HANDLE, handle);
 
 /**
  * @brief	Releases the lock on the given lock handle. Uses platform
@@ -57,7 +58,7 @@ extern LOCK_RESULT Lock(LOCK_HANDLE  handle);
  * @return	Returns @c LOCK_OK when the lock has been released and
  * 			@c LOCK_ERROR when an error occurs.
  */
-extern LOCK_RESULT Unlock(LOCK_HANDLE  handle);
+MOCKABLE_FUNCTION(, LOCK_RESULT, Unlock, LOCK_HANDLE, handle);
 
 /**
  * @brief	The lock instance is destroyed.
@@ -67,7 +68,7 @@ extern LOCK_RESULT Unlock(LOCK_HANDLE  handle);
  * @return	Returns @c LOCK_OK when the lock object has been
  * 			destroyed and @c LOCK_ERROR when an error occurs.
  */
-extern LOCK_RESULT Lock_Deinit(LOCK_HANDLE  handle);
+MOCKABLE_FUNCTION(, LOCK_RESULT, Lock_Deinit, LOCK_HANDLE, handle);
 
 #ifdef __cplusplus
 }

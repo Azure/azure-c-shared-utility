@@ -10,6 +10,7 @@
 #include <string.h>
 #include "umocktypes.h"
 #include "umocktypename.h"
+#include "umock_log.h"
 
 typedef struct UMOCK_VALUE_TYPE_HANDLERS_TAG
 {
@@ -64,6 +65,7 @@ int umocktypes_init(void)
     if (umocktypes_state == UMOCKTYPES_STATE_INITIALIZED)
     {
         /* Codes_SRS_UMOCKTYPES_01_004: [ umocktypes_init after another umocktypes_init without deinitializing the module shall fail and return a non-zero value. ]*/
+        UMOCK_LOG("umock_c already initialized.\r\n");
         result = __LINE__;
     }
     else
@@ -114,11 +116,14 @@ int umocktypes_register_type(const char* type, UMOCKTYPE_STRINGIFY_FUNC stringif
         (free_func == NULL))
     {
         /* Codes_SRS_UMOCKTYPES_01_009: [ If any of the arguments is NULL, umocktypes_register_type shall fail and return a non-zero value. ]*/
+        UMOCK_LOG("Invalid arguments when registering umock_c type: type = %p, stringify_func = %p, are_equal_func = %p, copy_func = %p, free_func = %p.\r\n",
+            type, stringify_func, are_equal_func, copy_func, free_func);
         result = __LINE__;
     }
     /* Codes_SRS_UMOCKTYPES_01_050: [ If umocktypes_register_type is called when the module is not initialized, umocktypes_register_type shall fail and return a non zero value. ]*/
     else if (umocktypes_state != UMOCKTYPES_STATE_INITIALIZED)
     {
+        UMOCK_LOG("Could not register type, umock_c not initialized.\r\n");
         result = __LINE__;
     }
     else
@@ -127,6 +132,7 @@ int umocktypes_register_type(const char* type, UMOCKTYPE_STRINGIFY_FUNC stringif
         if (normalized_type == NULL)
         {
             /* Codes_SRS_UMOCKTYPES_01_045: [ If normalizing the typename fails, umocktypes_register_type shall fail and return a non-zero value. ]*/
+            UMOCK_LOG("Normalizing type %s failed.\r\n", type);
             result = __LINE__;
         }
         else
@@ -142,6 +148,7 @@ int umocktypes_register_type(const char* type, UMOCKTYPE_STRINGIFY_FUNC stringif
                     (free_func != type_handler->free_func))
                 {
                     /* Codes_SRS_UMOCKTYPES_01_011: [ If the type has already been registered but at least one of the function pointers is different, umocktypes_register_type shall fail and return a non-zero value. ]*/
+                    UMOCK_LOG("Could not register type, type %s already registered with different handlers.\r\n", type);
                     result = __LINE__;
                 }
                 else
@@ -157,6 +164,7 @@ int umocktypes_register_type(const char* type, UMOCKTYPE_STRINGIFY_FUNC stringif
                 {
                     /* Codes_SRS_UMOCKTYPES_01_012: [ If an error occurs allocating memory for the newly registered type, umocktypes_register_type shall fail and return a non-zero value. ]*/
                     free(normalized_type);
+                    UMOCK_LOG("Could not register type, failed allocating memory for types.\r\n");
                     result = __LINE__;
                 }
                 else
@@ -180,6 +188,93 @@ int umocktypes_register_type(const char* type, UMOCKTYPE_STRINGIFY_FUNC stringif
     return result;
 }
 
+/* Codes_SRS_UMOCKTYPES_01_053: [ umocktypes_register_alias_type shall register a new alias type for the type "is_type". ]*/
+int umocktypes_register_alias_type(const char* type, const char* is_type)
+{
+    int result;
+
+    /* Codes_SRS_UMOCKTYPES_01_055: [ If any of the arguments is NULL, umocktypes_register_alias_type shall fail and return a non-zero value. ]*/
+    if ((type == NULL) || (is_type == NULL))
+    {
+        UMOCK_LOG("Could not register alias type, bad arguments: type = %p, is_type = %p.\r\n", type, is_type);
+        result = __LINE__;
+    }
+    else if (umocktypes_state != UMOCKTYPES_STATE_INITIALIZED)
+    {
+        UMOCK_LOG("Could not register alias type, umock_c_types not initialized.\r\n");
+        result = __LINE__;
+    }
+    else
+    {
+        /* Codes_SRS_UMOCKTYPES_01_058: [ Before looking it up, is_type shall be normalized by using umocktypename_normalize. ] */
+        char* normalized_is_type = umocktypename_normalize(is_type);
+        if (normalized_is_type == NULL)
+        {
+            /* Codes_SRS_UMOCKTYPES_01_060: [ If umocktypename_normalize fails, umocktypes_register_alias_type shall fail and return a non-zero value. ]*/
+            UMOCK_LOG("Could not register alias type, normalizing type %s failed.\r\n", is_type);
+            result = __LINE__;
+        }
+        else
+        {
+            UMOCK_VALUE_TYPE_HANDLERS* new_type_handlers = (UMOCK_VALUE_TYPE_HANDLERS*)realloc(type_handlers, sizeof(UMOCK_VALUE_TYPE_HANDLERS) * (type_handler_count + 1));
+            if (new_type_handlers == NULL)
+            {
+                UMOCK_LOG("Could not register alias type, failed allocating memory.\r\n");
+                result = __LINE__;
+            }
+            else
+            {
+                UMOCK_VALUE_TYPE_HANDLERS* value_type_handlers;
+                type_handlers = new_type_handlers;
+                value_type_handlers = get_value_type_handlers(normalized_is_type);
+                if (value_type_handlers == NULL)
+                {
+                    /* Codes_SRS_UMOCKTYPES_01_057: [ If is_type was not already registered, umocktypes_register_alias_type shall fail and return a non-zero value. ]*/
+                    UMOCK_LOG("Could not register alias type, type %s was not previously registered.\r\n", normalized_is_type);
+                    result = __LINE__;
+                }
+                else
+                {
+                    /* Codes_SRS_UMOCKTYPES_01_059: [ Before adding it as alias, type shall be normalized by using umocktypename_normalize. ]*/
+                    char* normalized_type = umocktypename_normalize(type);
+                    if (normalized_type == NULL)
+                    {
+                        /* Codes_SRS_UMOCKTYPES_01_060: [ If umocktypename_normalize fails, umocktypes_register_alias_type shall fail and return a non-zero value. ]*/
+                        UMOCK_LOG("Could not register alias type, normalizing type %s failed.\r\n", type);
+                        result = __LINE__;
+                    }
+                    else
+                    {
+                        if (strcmp(normalized_type, normalized_is_type) == 0)
+                        {
+                            free(normalized_type);
+
+                            /* Codes_SRS_UMOCKTYPES_01_062: [ If type and is_type are the same, umocktypes_register_alias_type shall succeed and return 0. ]*/
+                            result = 0;
+                        }
+                        else
+                        {
+                            type_handlers[type_handler_count].type = normalized_type;
+                            type_handlers[type_handler_count].stringify_func = value_type_handlers->stringify_func;
+                            type_handlers[type_handler_count].copy_func = value_type_handlers->copy_func;
+                            type_handlers[type_handler_count].free_func = value_type_handlers->free_func;
+                            type_handlers[type_handler_count].are_equal_func = value_type_handlers->are_equal_func;
+                            type_handler_count++;
+
+                            /* Codes_SRS_UMOCKTYPES_01_054: [ On success, umocktypes_register_alias_type shall return 0. ]*/
+                            result = 0;
+                        }
+                    }
+                }
+            }
+
+            free(normalized_is_type);
+        }
+    }
+
+    return result;
+}
+
 /* Codes_SRS_UMOCKTYPES_01_013: [ umocktypes_stringify shall return a char\* with the string representation of the value argument. ]*/
 char* umocktypes_stringify(const char* type, const void* value)
 {
@@ -189,11 +284,13 @@ char* umocktypes_stringify(const char* type, const void* value)
         (value == NULL))
     {
         /* Codes_SRS_UMOCKTYPES_01_016: [ If any of the arguments is NULL, umocktypes_stringify shall fail and return NULL. ]*/
+        UMOCK_LOG("Could not stringify type, bad arguments: type = %p, value = %p.\r\n", type, value);
         result = NULL;
     }
     /* Codes_SRS_UMOCKTYPES_01_049: [ If umocktypes_stringify is called when the module is not initialized, umocktypes_stringify shall return NULL. ]*/
     else if (umocktypes_state != UMOCKTYPES_STATE_INITIALIZED)
     {
+        UMOCK_LOG("Could not stringify type, umock_c_types not initialized.\r\n");
         result = NULL;
     }
     else
@@ -203,6 +300,7 @@ char* umocktypes_stringify(const char* type, const void* value)
         if (normalized_type == NULL)
         {
             /* Codes_SRS_UMOCKTYPES_01_044: [ If normalizing the typename fails, umocktypes_stringify shall fail and return NULL. ]*/
+            UMOCK_LOG("Could not stringify type, normalizing type %s failed.\r\n", type);
             result = NULL;
         }
         else
@@ -211,6 +309,7 @@ char* umocktypes_stringify(const char* type, const void* value)
             if (value_type_handlers == NULL)
             {
                 /* Codes_SRS_UMOCKTYPES_01_017: [ If type can not be found in the registered types list maintained by the module, umocktypes_stringify shall fail and return NULL. ]*/
+                UMOCK_LOG("Could not stringify type, type %s not registered.\r\n", normalized_type);
                 result = NULL;
             }
             else
@@ -237,11 +336,13 @@ int umocktypes_are_equal(const char* type, const void* left, const void* right)
         (right == NULL))
     {
         /* Codes_SRS_UMOCKTYPES_01_023: [ If any of the arguments is NULL, umocktypes_are_equal shall fail and return -1. ]*/
+        UMOCK_LOG("Could not compare values for type, bad arguments: type = %p, left = %p, right = %p.\r\n", type, left, right);
         result = -1;
     }
     else if(umocktypes_state != UMOCKTYPES_STATE_INITIALIZED)
     {
         /* Codes_SRS_UMOCKTYPES_01_046: [ If umocktypes_are_equal is called when the module is not initialized, umocktypes_are_equal shall return -1. ] */
+        UMOCK_LOG("Could not compare values for type, umock_c_types not initialized.\r\n");
         result = -1;
     }
     else
@@ -251,6 +352,7 @@ int umocktypes_are_equal(const char* type, const void* left, const void* right)
         if (normalized_type == NULL)
         {
             /* Codes_SRS_UMOCKTYPES_01_043: [ If normalizing the typename fails, umocktypes_are_equal shall fail and return -1. ]*/
+            UMOCK_LOG("Could not compare values for type, normalizing type %s failed.\r\n", type);
             result = -1;
         }
         else
@@ -259,6 +361,7 @@ int umocktypes_are_equal(const char* type, const void* left, const void* right)
             if (value_type_handlers == NULL)
             {
                 /* Codes_SRS_UMOCKTYPES_01_024: [ If type can not be found in the registered types list maintained by the module, umocktypes_are_equal shall fail and return -1. ]*/
+                UMOCK_LOG("Could not compare values for type, type %s not registered.\r\n", normalized_type);
                 result = -1;
             }
             else
@@ -275,6 +378,7 @@ int umocktypes_are_equal(const char* type, const void* left, const void* right)
                     {
                     default:
                         /* Codes_SRS_UMOCKTYPES_01_020: [ If the underlying are_equal function fails,, umocktypes_are_equal shall fail and return -1. ] */
+                        UMOCK_LOG("Underlying compare failed for type %s.\r\n", normalized_type);
                         result = -1;
                         break;
 
@@ -308,11 +412,13 @@ int umocktypes_copy(const char* type, void* destination, const void* source)
         (source == NULL))
     {
         /* Codes_SRS_UMOCKTYPES_01_027: [ If any of the arguments is NULL, umocktypes_copy shall return -1. ]*/
+        UMOCK_LOG("Could not copy type, bad arguments: type = %p, destination = %p, source = %p.\r\n", type, destination, source);
         result = -1;
     }
     else if (umocktypes_state != UMOCKTYPES_STATE_INITIALIZED)
     {
         /* Codes_SRS_UMOCKTYPES_01_047: [ If umocktypes_copy is called when the module is not initialized, umocktypes_copy shall fail and return a non zero value. ]*/
+        UMOCK_LOG("Could not copy type, umock_c_types not initialized.\r\n");
         result = -1;
     }
     else
@@ -322,6 +428,7 @@ int umocktypes_copy(const char* type, void* destination, const void* source)
         if (normalized_type == NULL)
         {
             /* Codes_SRS_UMOCKTYPES_01_042: [ If normalizing the typename fails, umocktypes_copy shall fail and return a non-zero value. ]*/
+            UMOCK_LOG("Could not copy type, normalizing type %s failed.\r\n", type);
             result = -1;
         }
         else
@@ -330,6 +437,7 @@ int umocktypes_copy(const char* type, void* destination, const void* source)
             if (value_type_handlers == NULL)
             {
                 /* Codes_SRS_UMOCKTYPES_01_029: [ If type can not be found in the registered types list maintained by the module, umocktypes_copy shall fail and return -1. ]*/
+                UMOCK_LOG("Could not copy type, type %s not registered.\r\n", normalized_type);
                 result = __LINE__;
             }
             else

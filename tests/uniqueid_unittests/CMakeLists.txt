@@ -8,12 +8,12 @@ compileAsC11()
 set(theseTestsName uniqueid_unittests)
 
 if(WIN32)
-    set(uniqueid_unittests_test_file ${theseTestsName}_win32.cpp)
+    set(uniqueid_unittests_test_file ${theseTestsName}_win32.c)
 else()
-    set(uniqueid_unittests_test_file ${theseTestsName}_linux.cpp)
+    set(uniqueid_unittests_test_file ${theseTestsName}_linux.c)
 endif()
 
-set(${theseTestsName}_cpp_files
+set(${theseTestsName}_test_files
 ${uniqueid_unittests_test_file}
 )
 
@@ -24,7 +24,7 @@ ${UNIQUEID_C_FILE}
 set(${theseTestsName}_h_files
 )
 
-build_test_artifacts(${theseTestsName} ON)
+build_c_test_artifacts(${theseTestsName} ON "azure_c_shared_utility_tests")
 
 if(WIN32)
     target_link_libraries(${theseTestsName}_exe rpcrt4.lib)

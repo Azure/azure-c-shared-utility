@@ -17,7 +17,9 @@ Let’s assume unit A depends on unit B. unit B has a function called test_depen
 In unit B’s header one would write:
 
 ```c
-MOCKABLE_FUNCTION(int, test_dependency_1_arg, int, a);
+#include "umock_prod.h"
+
+MOCKABLE_FUNCTION(, int, test_dependency_1_arg, int, a);
 ```
 
 Let’s assume unit A has a function called function_under_test.
@@ -67,7 +69,7 @@ typedef void(*ON_UMOCK_C_ERROR)(UMOCK_C_ERROR_CODE error_code);
 #define IGNORED_PTR_ARG (NULL)
 #define IGNORED_NUM_ARG (0)
 
-#define MOCKABLE_FUNCTION(result, function, ...) \
+#define MOCKABLE_FUNCTION(modifiers, result, function, ...) \
 	...
 
 #define REGISTER_GLOBAL_MOCK_HOOK(mock_function, mock_hook_function) \
@@ -101,7 +103,7 @@ typedef void(*ON_UMOCK_C_ERROR)(UMOCK_C_ERROR_CODE error_code);
 ###MOCKABLE_FUNCTION
 
 ```c
-MOCKABLE_FUNCTION(result, function, ...)
+MOCKABLE_FUNCTION(modifiers, result, function, ...)
 ```
 
 MOCKABLE_FUNCTION shall be used to wrap function definition allow the user to declare a function that can be mocked.
@@ -111,13 +113,24 @@ The macro shall generate a function signature in case ENABLE_MOCKS is not define
 Example:
 
 ```c
-MOCKABLE_FUNCTION(int, test_function, int, arg1)
+MOCKABLE_FUNCTION(FAR, int, test_function, int, arg1)
 ```
 
 should generate for production code:
 
 ```c
-int test_function(int arg1);
+int FAR test_function(int arg1);
+```
+
+###MOCK_FUNCTION_WITH_CODE
+
+MOCK_FUNCTION_WITH_CODE shall define a mock function and allow the user to embed code between this define and a MOCK_FUNCTION_END call.
+
+```c
+MOCK_FUNCTION_WITH_CODE(, void, test_mock_function_with_code_1_arg, int, a);
+    int some_value = 42;
+    /* more code here */
+MOCK_FUNCTION_END()
 ```
 
 ###ENABLE_MOCKS
@@ -133,6 +146,23 @@ ENABLE_MOCKS should be used in the translation unit that contains the tests just
 
 #define ENABLE_MOCKS
 #include "test_dependency.h"
+
+// ... tests
+
+```
+
+Note that it is possible (and sometimes necessary) to undefine ENABLE_MOCKS:
+
+```c
+
+#include <stdlib.h>
+// ... other various includes
+
+#define ENABLE_MOCKS
+#include "test_dependency.h"
+#undef ENABLE_MOCKS
+
+#include "unit_under_test.h"
 
 // ... tests
 
@@ -309,6 +339,8 @@ Out of the box umock_c shall support the following types through the header umoc
 -	double
 -	long double
 -	size_t
+-	void*
+-	const void*
 
 ###Custom types
 
@@ -490,6 +522,14 @@ Example:
 ```c
 REGISTER_UMOCK_VALUE_TYPE(TEST_STRUCT);
 ```
+
+####REGISTER_UMOCK_ALIAS_TYPE
+
+```c
+REGISTER_UMOCK_ALIAS_TYPE(value_type, is_value_type)
+```
+
+REGISTER_UMOCK_ALIAS_TYPE registers a new alias type for another type. That means that the handlers used for is_value_type will also be used for the new alias value_type.
 
 ###Extra optional C types
 

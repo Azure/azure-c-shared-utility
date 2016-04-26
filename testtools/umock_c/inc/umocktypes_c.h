@@ -13,9 +13,9 @@ extern "C" {
     extern int umocktypes_c_register_types(void);
 
 #define UMOCKTYPES_HANDLERS(type, function_postfix) \
-    extern char* C2(umocktypes_stringify_,function_postfix)(const type* value); \
-    extern int C2(umocktypes_are_equal_, function_postfix)(const type* left, const type* right); \
-    extern int C2(umocktypes_copy_, function_postfix)(type* destination, const type* source); \
+    extern char* C2(umocktypes_stringify_,function_postfix)(type* value); \
+    extern int C2(umocktypes_are_equal_, function_postfix)(type* left, type* right); \
+    extern int C2(umocktypes_copy_, function_postfix)(type* destination, type* source); \
     extern void C2(umocktypes_free_, function_postfix)(type* value);
 
 UMOCKTYPES_HANDLERS(char, char)
@@ -32,6 +32,7 @@ UMOCKTYPES_HANDLERS(float, float)
 UMOCKTYPES_HANDLERS(double, double)
 UMOCKTYPES_HANDLERS(long double, longdouble)
 UMOCKTYPES_HANDLERS(size_t, size_t)
+UMOCKTYPES_HANDLERS(void*, void_ptr)
 
 #ifdef __cplusplus
 }

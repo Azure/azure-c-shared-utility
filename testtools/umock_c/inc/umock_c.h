@@ -1,12 +1,6 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#ifdef ENABLE_MOCKS
-#ifndef UMOCK_INTERNAL
-#define UMOCK_INTERNAL UMOCK_INTERNAL_WITH_MOCK
-#endif
-#endif
-
 #ifndef UMOCK_C_H
 #define UMOCK_C_H
 
@@ -33,10 +27,6 @@ extern "C" {
 
 #define IGNORED_PTR_ARG (NULL)
 #define IGNORED_NUM_ARG (0)
-
-/* Codes_SRS_UMOCK_C_LIB_01_001: [MOCKABLE_FUNCTION shall be used to wrap function definition allowing the user to declare a function that can be mocked.]*/
-#define MOCKABLE_FUNCTION(result, function, ...) \
-    C2(MOCKABLE_FUNCTION_,UMOCK_INTERNAL)(result, function, __VA_ARGS__)
 
 #define REGISTER_GLOBAL_MOCK_HOOK(mock_function, mock_hook_function) \
     C2(set_global_mock_hook_,mock_function)(mock_hook_function);
@@ -99,6 +89,9 @@ extern "C" {
     umocktypes_register_type(TOSTRING(value_type), (UMOCKTYPE_STRINGIFY_FUNC)stringify_func, (UMOCKTYPE_ARE_EQUAL_FUNC)are_equal_func, (UMOCKTYPE_COPY_FUNC)copy_func, (UMOCKTYPE_FREE_FUNC)free_func); \
 }
 
+#define REGISTER_UMOCK_ALIAS_TYPE(value_type, is_value_type) \
+    umocktypes_register_alias_type(TOSTRING(value_type), TOSTRING(is_value_type));
+
 extern int umock_c_init(ON_UMOCK_C_ERROR on_umock_c_error);
 extern void umock_c_deinit(void);
 extern void umock_c_reset_all_calls(void);
@@ -106,6 +99,7 @@ extern const char* umock_c_get_actual_calls(void);
 extern const char* umock_c_get_expected_calls(void);
 
 #include "umock_c_internal.h"
+#include "umock_c_prod.h"
 
 #ifdef __cplusplus
 }

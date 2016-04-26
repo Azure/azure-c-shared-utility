@@ -12,22 +12,24 @@ extern "C"
 #include <stddef.h>
 #endif
 
+#include "azure_c_shared_utility/umock_c_prod.h"
+
 typedef struct BUFFER_TAG* BUFFER_HANDLE;
 
-extern BUFFER_HANDLE BUFFER_new(void);
-extern BUFFER_HANDLE BUFFER_create(const unsigned char* source, size_t size);
-extern void BUFFER_delete(BUFFER_HANDLE handle);
-extern int BUFFER_pre_build(BUFFER_HANDLE handle, size_t size);
-extern int BUFFER_build(BUFFER_HANDLE handle, const unsigned char* source, size_t size);
-extern int BUFFER_unbuild(BUFFER_HANDLE handle);
-extern int BUFFER_enlarge(BUFFER_HANDLE handle, size_t enlargeSize);
-extern int BUFFER_content(BUFFER_HANDLE handle, const unsigned char** content);
-extern int BUFFER_size(BUFFER_HANDLE handle, size_t* size);
-extern int BUFFER_append(BUFFER_HANDLE handle1, BUFFER_HANDLE handle2);
-extern int BUFFER_prepend(BUFFER_HANDLE handle1, BUFFER_HANDLE handle2);
-extern unsigned char* BUFFER_u_char(BUFFER_HANDLE handle);
-extern size_t BUFFER_length(BUFFER_HANDLE handle);
-extern BUFFER_HANDLE BUFFER_clone(BUFFER_HANDLE handle);
+MOCKABLE_FUNCTION(, BUFFER_HANDLE, BUFFER_new);
+MOCKABLE_FUNCTION(, BUFFER_HANDLE, BUFFER_create, const unsigned char*, source, size_t, size);
+MOCKABLE_FUNCTION(, void, BUFFER_delete, BUFFER_HANDLE, handle);
+MOCKABLE_FUNCTION(, int, BUFFER_pre_build, BUFFER_HANDLE, handle, size_t, size);
+MOCKABLE_FUNCTION(, int, BUFFER_build, BUFFER_HANDLE, handle, const unsigned char*, source, size_t, size);
+MOCKABLE_FUNCTION(, int, BUFFER_unbuild, BUFFER_HANDLE, handle);
+MOCKABLE_FUNCTION(, int, BUFFER_enlarge, BUFFER_HANDLE, handle, size_t, enlargeSize);
+MOCKABLE_FUNCTION(, int, BUFFER_content, BUFFER_HANDLE, handle, const unsigned char**, content);
+MOCKABLE_FUNCTION(, int, BUFFER_size, BUFFER_HANDLE, handle, size_t*, size);
+MOCKABLE_FUNCTION(, int, BUFFER_append, BUFFER_HANDLE, handle1, BUFFER_HANDLE, handle2);
+MOCKABLE_FUNCTION(, int, BUFFER_prepend, BUFFER_HANDLE, handle1, BUFFER_HANDLE, handle2);
+MOCKABLE_FUNCTION(, unsigned char*, BUFFER_u_char, BUFFER_HANDLE, handle);
+MOCKABLE_FUNCTION(, size_t, BUFFER_length, BUFFER_HANDLE, handle);
+MOCKABLE_FUNCTION(, BUFFER_HANDLE, BUFFER_clone, BUFFER_HANDLE, handle);
 
 #ifdef __cplusplus
 }

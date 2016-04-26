@@ -11,8 +11,8 @@ endif()
 compileAsC11()
 set(theseTestsName httpapiexsas_unittests)
 
-set(${theseTestsName}_cpp_files
-${theseTestsName}.cpp
+set(${theseTestsName}_test_files
+${theseTestsName}.c
 )
 
 set(${theseTestsName}_c_files
@@ -23,6 +23,4 @@ set(${theseTestsName}_c_files
 set(${theseTestsName}_h_files
 )
 
-build_test_artifacts(${theseTestsName} ON)
-
-
+build_c_test_artifacts(${theseTestsName} ON "azure_c_shared_utility_tests")
