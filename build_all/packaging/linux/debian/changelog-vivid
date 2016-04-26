@@ -1,4 +1,4 @@
-azure-c-shared-util (0.1.0-13) vivid; urgency=low
+azure-c-shared-util (0.1.0-15) vivid; urgency=low
 
   * Initial release (Closes: #5069014)
 
@@ -16,4 +16,6 @@ azure-c-shared-util (0.1.0-13) vivid; urgency=low
 
   * Change azure_c_shared_utility to have all namespaced includes (#d588c49)
 
- -- AzureIoT User <aziotsdklinux@outlook.com>  Fri, 11 Mar 2016 12:18:53 -0800
+  * Update socket to recieve Data in bulk (#57b1ac6)
+
+ -- AzureIoT User <aziotsdklinux@outlook.com>  Fri, 22 Apr 2016 14:18:00 -0800
