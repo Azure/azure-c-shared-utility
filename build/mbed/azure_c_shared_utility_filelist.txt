@@ -82,5 +82,5 @@ set(mbed_project_files
 		${CMAKE_CURRENT_SOURCE_DIR}/../../adapters/uniqueid_stub.c
 		${CMAKE_CURRENT_SOURCE_DIR}/../../adapters/wolfssl_connection.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/../../adapters/wolfssl_connection.h
-		${CMAKE_CURRENT_SOURCE_DIR}/../../../testtools/umock_c/inc/umock_c_prod.h
+		${CMAKE_CURRENT_SOURCE_DIR}/../../testtools/umock_c/inc/umock_c_prod.h
 		)
