@@ -12,7 +12,7 @@ extern "C"
 #include <stddef.h>
 #endif
 
-#include "umock_c_prod.h"
+#include "azure_c_shared_utility/umock_c_prod.h"
 
 typedef struct STRING_TAG* STRING_HANDLE;
 

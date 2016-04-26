@@ -12,7 +12,7 @@ extern "C" {
 #endif /* __cplusplus */
 
 #include "azure_c_shared_utility/xio.h"
-#include "umock_c_prod.h"
+#include "azure_c_shared_utility/umock_c_prod.h"
 
 MOCKABLE_FUNCTION(, CONCRETE_IO_HANDLE, tlsio_schannel_create, void*, io_create_parameters, LOGGER_LOG, logger_log);
 MOCKABLE_FUNCTION(, void, tlsio_schannel_destroy, CONCRETE_IO_HANDLE, tls_io);

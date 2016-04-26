@@ -4,7 +4,7 @@
 #ifndef CRT_ABSTRACTIONS_H
 #define CRT_ABSTRACTIONS_H
 
-#include "umock_c_prod.h"
+#include "azure_c_shared_utility/umock_c_prod.h"
 
 #ifdef __cplusplus
 #include <cstdio>

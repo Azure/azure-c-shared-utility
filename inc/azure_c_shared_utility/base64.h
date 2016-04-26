@@ -19,7 +19,7 @@ extern "C" {
 #include <stddef.h>
 #endif
 
-#include "umock_c_prod.h"
+#include "azure_c_shared_utility/umock_c_prod.h"
 
 /**
  * @brief	Base64 encodes a buffer and returns the resulting string.

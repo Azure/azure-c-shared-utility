@@ -11,7 +11,7 @@ extern "C" {
 #include <stdint.h>
 #endif /* __cplusplus */
 
-#include "umock_c_prod.h"
+#include "azure_c_shared_utility/umock_c_prod.h"
 
 	typedef struct TICK_COUNTER_INSTANCE_TAG* TICK_COUNTER_HANDLE;
 

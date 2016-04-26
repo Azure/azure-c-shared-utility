@@ -18,7 +18,7 @@
 
 #include "azure_c_shared_utility/macro_utils.h"
 #include "azure_c_shared_utility/httpapi.h"
-#include "umock_c_prod.h"
+#include "azure_c_shared_utility/umock_c_prod.h"
  
 #ifdef __cplusplus
 #include <cstddef>
