@@ -531,6 +531,7 @@ set(source_h_files
 ./inc/azure_c_shared_utility/tickcounter.h
 ./inc/azure_c_shared_utility/threadapi.h
 ./inc/azure_c_shared_utility/xio.h
+./inc/azure_c_shared_utility/umock_c_prod.h
 ./inc/azure_c_shared_utility/uniqueid.h
 ./inc/azure_c_shared_utility/urlencode.h
 ./inc/azure_c_shared_utility/vector.h
