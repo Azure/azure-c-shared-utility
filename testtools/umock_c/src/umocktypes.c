@@ -216,44 +216,44 @@ int umocktypes_register_alias_type(const char* type, const char* is_type)
         }
         else
         {
-            UMOCK_VALUE_TYPE_HANDLERS* value_type_handlers = get_value_type_handlers(normalized_is_type);
-            if (value_type_handlers == NULL)
+            UMOCK_VALUE_TYPE_HANDLERS* new_type_handlers = (UMOCK_VALUE_TYPE_HANDLERS*)realloc(type_handlers, sizeof(UMOCK_VALUE_TYPE_HANDLERS) * (type_handler_count + 1));
+            if (new_type_handlers == NULL)
             {
-                /* Codes_SRS_UMOCKTYPES_01_057: [ If is_type was not already registered, umocktypes_register_alias_type shall fail and return a non-zero value. ]*/
-                UMOCK_LOG("Could not register alias type, type %s was not previously registered.\r\n", normalized_is_type);
+                UMOCK_LOG("Could not register alias type, failed allocating memory.\r\n");
                 result = __LINE__;
             }
             else
             {
-                /* Codes_SRS_UMOCKTYPES_01_059: [ Before adding it as alias, type shall be normalized by using umocktypename_normalize. ]*/
-                char* normalized_type = umocktypename_normalize(type);
-                if (normalized_type == NULL)
+                UMOCK_VALUE_TYPE_HANDLERS* value_type_handlers;
+                type_handlers = new_type_handlers;
+                value_type_handlers = get_value_type_handlers(normalized_is_type);
+                if (value_type_handlers == NULL)
                 {
-                    /* Codes_SRS_UMOCKTYPES_01_060: [ If umocktypename_normalize fails, umocktypes_register_alias_type shall fail and return a non-zero value. ]*/
-                    UMOCK_LOG("Could not register alias type, normalizing type %s failed.\r\n", type);
+                    /* Codes_SRS_UMOCKTYPES_01_057: [ If is_type was not already registered, umocktypes_register_alias_type shall fail and return a non-zero value. ]*/
+                    UMOCK_LOG("Could not register alias type, type %s was not previously registered.\r\n", normalized_is_type);
                     result = __LINE__;
                 }
                 else
                 {
-                    if (strcmp(normalized_type, normalized_is_type) == 0)
+                    /* Codes_SRS_UMOCKTYPES_01_059: [ Before adding it as alias, type shall be normalized by using umocktypename_normalize. ]*/
+                    char* normalized_type = umocktypename_normalize(type);
+                    if (normalized_type == NULL)
                     {
-                        free(normalized_type);
-
-                        /* Codes_SRS_UMOCKTYPES_01_062: [ If type and is_type are the same, umocktypes_register_alias_type shall succeed and return 0. ]*/
-                        result = 0;
+                        /* Codes_SRS_UMOCKTYPES_01_060: [ If umocktypename_normalize fails, umocktypes_register_alias_type shall fail and return a non-zero value. ]*/
+                        UMOCK_LOG("Could not register alias type, normalizing type %s failed.\r\n", type);
+                        result = __LINE__;
                     }
                     else
                     {
-                        UMOCK_VALUE_TYPE_HANDLERS* new_type_handlers = (UMOCK_VALUE_TYPE_HANDLERS*)realloc(type_handlers, sizeof(UMOCK_VALUE_TYPE_HANDLERS) * (type_handler_count + 1));
-                        if (new_type_handlers == NULL)
+                        if (strcmp(normalized_type, normalized_is_type) == 0)
                         {
                             free(normalized_type);
-                            UMOCK_LOG("Could not register alias type, failed allocating memory.\r\n");
-                            result = __LINE__;
+
+                            /* Codes_SRS_UMOCKTYPES_01_062: [ If type and is_type are the same, umocktypes_register_alias_type shall succeed and return 0. ]*/
+                            result = 0;
                         }
                         else
                         {
-                            type_handlers = new_type_handlers;
                             type_handlers[type_handler_count].type = normalized_type;
                             type_handlers[type_handler_count].stringify_func = value_type_handlers->stringify_func;
                             type_handlers[type_handler_count].copy_func = value_type_handlers->copy_func;
