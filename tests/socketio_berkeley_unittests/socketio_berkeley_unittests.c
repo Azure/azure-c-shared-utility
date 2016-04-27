@@ -21,6 +21,152 @@ TEST_MUTEX_HANDLE test_serialize_mutex;
 
 BEGIN_TEST_SUITE(socketio_berkeley_unittests)
 
+#if 0
+
+// SOCKETIO_SETOPTION TESTS WERE WORKING BEFORE SWITCH TO umock_c...need to finish the conversion
+
+// socketio_setoption tests
+
+static CONCRETE_IO_HANDLE setup_socket()
+{
+    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
+    CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
+    int result = socketio_open(ioHandle, test_on_io_open_complete, &callbackContext,
+        test_on_bytes_received, &callbackContext, test_on_io_error, &callbackContext);
+    ASSERT_ARE_EQUAL(int, 0, result);
+    return ioHandle;
+}
+
+static void verify_mocks_and_destroy_socket(CONCRETE_IO_HANDLE ioHandle)
+{
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    socketio_destroy(ioHandle);
+}
+
+TEST_FUNCTION(socketio_setoption_fails_when_handle_is_null)
+{
+    // arrange
+    int irrelevant = 1;
+
+    // act
+    int result = socketio_setoption(NULL, "tcp_keepalive", &irrelevant);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+TEST_FUNCTION(socketio_setoption_fails_when_option_name_is_null)
+{
+    // arrange
+    int irrelevant = 1;
+
+    CONCRETE_IO_HANDLE ioHandle = setup_socket();
+
+    umock_c_reset_all_calls();
+
+    // act
+    int result = socketio_setoption(ioHandle, NULL, &irrelevant);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    verify_mocks_and_destroy_socket(ioHandle);
+}
+
+TEST_FUNCTION(socketio_setoption_fails_when_value_is_null)
+{
+    // arrange
+    CONCRETE_IO_HANDLE ioHandle = setup_socket();
+
+    umock_c_reset_all_calls();
+
+    // act
+    int result = socketio_setoption(ioHandle, "tcp_keepalive", NULL);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    verify_mocks_and_destroy_socket(ioHandle);
+}
+
+TEST_FUNCTION(socketio_setoption_fails_when_it_receives_an_unsupported_option)
+{
+    // arrange
+    int irrelevant = 1;
+
+    CONCRETE_IO_HANDLE ioHandle = setup_socket();
+
+    umock_c_reset_all_calls();
+
+    // act
+    int result = socketio_setoption(ioHandle, "unsupported_option_name", &irrelevant);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    verify_mocks_and_destroy_socket(ioHandle);
+}
+
+TEST_FUNCTION(socketio_setoption_passes_tcp_keepalive_to_setsockopt)
+{
+    // arrange
+    CONCRETE_IO_HANDLE ioHandle = setup_socket();
+
+    umock_c_reset_all_calls();
+
+    int onoff = -42;
+
+    STRICT_EXPECTED_CALL(setsockopt(*(int*)ioHandle, SOL_SOCKET, SO_KEEPALIVE,
+        &onoff, sizeof(int)));
+
+    // act
+    int result = socketio_setoption(ioHandle, "tcp_keepalive", &onoff);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+    verify_mocks_and_destroy_socket(ioHandle);
+}
+
+TEST_FUNCTION(socketio_setoption_passes_tcp_keepalive_time_to_setsockopt)
+{
+    // arrange
+    CONCRETE_IO_HANDLE ioHandle = setup_socket();
+
+    umock_c_reset_all_calls();
+
+    int time = 3;
+
+    STRICT_EXPECTED_CALL(setsockopt(*(int*)ioHandle, SOL_TCP, TCP_KEEPIDLE,
+        &time, sizeof(int)));
+
+    // act
+    int result = socketio_setoption(ioHandle, "tcp_keepalive_time", &time);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+    verify_mocks_and_destroy_socket(ioHandle);
+}
+
+TEST_FUNCTION(socketio_setoption_passes_tcp_keepalive_interval_to_setsockopt)
+{
+    // arrange
+    CONCRETE_IO_HANDLE ioHandle = setup_socket();
+
+    umock_c_reset_all_calls();
+
+    int interval = 15;
+
+    STRICT_EXPECTED_CALL(setsockopt(*(int*)ioHandle, SOL_TCP, TCP_KEEPINTVL,
+        &interval, sizeof(int)));
+
+    // act
+    int result = socketio_setoption(ioHandle, "tcp_keepalive_interval", &interval);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+    verify_mocks_and_destroy_socket(ioHandle);
+}
+
+#endif
+
 /* Seems like the below tests require a full blown rewrite */
 
 #if 0
