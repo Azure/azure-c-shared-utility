@@ -8,8 +8,10 @@
 
 #pragma warning(disable: 4273)
 
-#include "winsock2.h"
-#include "ws2tcpip.h"
+#include <winsock2.h>
+#include <mstcpip.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
 
 static size_t currentmalloc_call;
 static size_t whenShallmalloc_fail;
@@ -70,6 +72,8 @@ static const char* TEST_BUFFER_VALUE = "test_buffer_value";
 #define TEST_BUFFER_SIZE    17
 #define TEST_CALLBACK_CONTEXT   0x951753
 
+static struct tcp_keepalive persisted_tcp_keepalive;
+
 MOCK_FUNCTION_WITH_CODE(WSAAPI, SOCKET, socket, int, af, int, type, int, protocol)
 MOCK_FUNCTION_END(test_socket)
 MOCK_FUNCTION_WITH_CODE(WSAAPI, int, closesocket, SOCKET, s)
@@ -111,6 +115,9 @@ MOCK_FUNCTION_END()
 MOCK_FUNCTION_WITH_CODE(WSAAPI, int, WSAGetLastError)
 MOCK_FUNCTION_END(0)
 MOCK_FUNCTION_WITH_CODE(WSAAPI, int, ioctlsocket, SOCKET, s, long, cmd, u_long FAR*, argp)
+MOCK_FUNCTION_END(0)
+MOCK_FUNCTION_WITH_CODE(WSAAPI, int, WSAIoctl, SOCKET, s, DWORD, dwIoControlCode, LPVOID, lpvInBuffer, DWORD, cbInBuffer, LPVOID, lpvOutBuffer, DWORD, cbOutBuffer, LPDWORD, lpcbBytesReturned, LPWSAOVERLAPPED, lpOverlapped, LPWSAOVERLAPPED_COMPLETION_ROUTINE, lpCompletionRoutine)
+memcpy(&persisted_tcp_keepalive, lpvInBuffer, sizeof(struct tcp_keepalive));
 MOCK_FUNCTION_END(0)
 
 LIST_ITEM_HANDLE my_list_get_head_item(LIST_HANDLE list)
@@ -346,6 +353,11 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_UMOCK_ALIAS_TYPE(PADDRINFOA, const ADDRINFOA*);
     REGISTER_UMOCK_ALIAS_TYPE(u_long*, void*);
     REGISTER_TYPE(const struct sockaddr*, const_struct_sockaddr_ptr);
+    REGISTER_UMOCK_ALIAS_TYPE(DWORD, unsigned long);
+    REGISTER_UMOCK_ALIAS_TYPE(LPVOID, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(LPDWORD, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(LPWSAOVERLAPPED, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(LPWSAOVERLAPPED_COMPLETION_ROUTINE, void*);
 
     REGISTER_GLOBAL_MOCK_RETURN(list_remove, 0);
     REGISTER_GLOBAL_MOCK_RETURN(list_create, TEST_LIST_HANDLE);
@@ -847,6 +859,244 @@ TEST_FUNCTION(socketio_dowork_recv_bytes_succeeds)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     socketio_destroy(ioHandle);
+}
+
+// socketio_setoption tests
+
+static CONCRETE_IO_HANDLE setup_socket()
+{
+    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
+    CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
+    int result = socketio_open(ioHandle, test_on_io_open_complete, &callbackContext, test_on_bytes_received, &callbackContext, test_on_io_error, &callbackContext);
+    ASSERT_ARE_EQUAL(int, 0, result);
+    return ioHandle;
+}
+
+static CONCRETE_IO_HANDLE setup_socket_and_expect_WSAIoctl()
+{
+    CONCRETE_IO_HANDLE ioHandle = setup_socket();
+
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(WSAIoctl(*(SOCKET*)ioHandle, SIO_KEEPALIVE_VALS, IGNORED_PTR_ARG,
+        sizeof(struct tcp_keepalive), NULL, 0, IGNORED_PTR_ARG, NULL, NULL))
+        .IgnoreArgument_lpvInBuffer()
+        .IgnoreArgument_lpcbBytesReturned();
+
+    memset(&persisted_tcp_keepalive, 0, sizeof(struct tcp_keepalive));
+
+    return ioHandle;
+}
+
+static void verify_mocks_and_destroy_socket(CONCRETE_IO_HANDLE ioHandle)
+{
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    socketio_destroy(ioHandle);
+}
+
+TEST_FUNCTION(socketio_setoption_fails_when_handle_is_null)
+{
+    // arrange
+    int irrelevant = 1;
+
+    // act
+    int result = socketio_setoption(NULL, "tcp_keepalive", &irrelevant);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+TEST_FUNCTION(socketio_setoption_fails_when_option_name_is_null)
+{
+    // arrange
+    int irrelevant = 1;
+
+    CONCRETE_IO_HANDLE ioHandle = setup_socket();
+
+    umock_c_reset_all_calls();
+
+    // act
+    int result = socketio_setoption(ioHandle, NULL, &irrelevant);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+
+    verify_mocks_and_destroy_socket(ioHandle);
+}
+
+TEST_FUNCTION(socketio_setoption_fails_when_value_is_null)
+{
+    // arrange
+    CONCRETE_IO_HANDLE ioHandle = setup_socket();
+
+    umock_c_reset_all_calls();
+
+    // act
+    int result = socketio_setoption(ioHandle, "tcp_keepalive", NULL);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+
+    verify_mocks_and_destroy_socket(ioHandle);
+}
+
+TEST_FUNCTION(socketio_setoption_fails_when_it_receives_an_unsupported_option)
+{
+    // arrange
+    int irrelevant = 1;
+
+    CONCRETE_IO_HANDLE ioHandle = setup_socket();
+
+    umock_c_reset_all_calls();
+
+    // act
+    int result = socketio_setoption(ioHandle, "unsupported_option_name", &irrelevant);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+
+    verify_mocks_and_destroy_socket(ioHandle);
+}
+
+TEST_FUNCTION(calling_socketio_setoption_with_tcp_keepalive_does_not_impact_the_other_two_options)
+{
+    // arrange
+    int irrelevant = 1;
+    CONCRETE_IO_HANDLE ioHandle = setup_socket_and_expect_WSAIoctl();
+
+    // act
+    int result = socketio_setoption(ioHandle, "tcp_keepalive", &irrelevant);
+    ASSERT_ARE_EQUAL(int, 0, result);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, persisted_tcp_keepalive.keepalivetime);
+    ASSERT_ARE_EQUAL(int, 0, persisted_tcp_keepalive.keepaliveinterval);
+
+    verify_mocks_and_destroy_socket(ioHandle);
+}
+
+TEST_FUNCTION(calling_socketio_setoption_for_option_tcp_keepalive_time_does_not_impact_the_other_two)
+{
+    // arrange
+    int irrelevant = 1;
+    CONCRETE_IO_HANDLE ioHandle = setup_socket_and_expect_WSAIoctl();
+
+    // act
+    int result = socketio_setoption(ioHandle, "tcp_keepalive_time", &irrelevant);
+    ASSERT_ARE_EQUAL(int, 0, result);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, persisted_tcp_keepalive.onoff);
+    ASSERT_ARE_EQUAL(int, 0, persisted_tcp_keepalive.keepaliveinterval);
+
+    verify_mocks_and_destroy_socket(ioHandle);
+}
+
+TEST_FUNCTION(calling_socketio_setoption_for_option_tcp_keepalive_interval_does_not_impact_the_other_two)
+{
+    // arrange
+    int irrelevant = 1;
+    CONCRETE_IO_HANDLE ioHandle = setup_socket_and_expect_WSAIoctl();
+
+    // act
+    int result = socketio_setoption(ioHandle, "tcp_keepalive_interval", &irrelevant);
+    ASSERT_ARE_EQUAL(int, 0, result);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, persisted_tcp_keepalive.onoff);
+    ASSERT_ARE_EQUAL(int, 0, persisted_tcp_keepalive.keepalivetime);
+
+    verify_mocks_and_destroy_socket(ioHandle);
+}
+
+TEST_FUNCTION(tcp_keepalive_time_arg_to_socketio_setoption_is_converted_to_milliseconds)
+{
+    // arrange
+    int result;
+    CONCRETE_IO_HANDLE ioHandle = setup_socket_and_expect_WSAIoctl();
+
+    int time = 3;
+
+    // act
+    result = socketio_setoption(ioHandle, "tcp_keepalive_time", &time);
+    ASSERT_ARE_EQUAL(int, 0, result);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, time * 1000, persisted_tcp_keepalive.keepalivetime);
+
+    verify_mocks_and_destroy_socket(ioHandle);
+}
+
+TEST_FUNCTION(tcp_keepalive_interval_arg_to_socketio_setoption_is_converted_to_milliseconds)
+{
+    // arrange
+    int result;
+    CONCRETE_IO_HANDLE ioHandle = setup_socket_and_expect_WSAIoctl();
+
+    int interval = 15;
+
+    // act
+    result = socketio_setoption(ioHandle, "tcp_keepalive_interval", &interval);
+    ASSERT_ARE_EQUAL(int, 0, result);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, interval * 1000, persisted_tcp_keepalive.keepaliveinterval);
+
+    verify_mocks_and_destroy_socket(ioHandle);
+}
+
+TEST_FUNCTION(tcp_keepalive_arg_is_not_modified_by_socketio_setoption)
+{
+    // arrange
+    int result;
+    CONCRETE_IO_HANDLE ioHandle = setup_socket_and_expect_WSAIoctl();
+
+    int onoff = -42;
+
+    // act
+    result = socketio_setoption(ioHandle, "tcp_keepalive", &onoff);
+    ASSERT_ARE_EQUAL(int, 0, result);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, onoff, persisted_tcp_keepalive.onoff);
+
+    verify_mocks_and_destroy_socket(ioHandle);
+}
+
+TEST_FUNCTION(socketio_setoption_does_not_persist_keepalive_values_if_WSAIoctl_fails)
+{
+    // arrange
+    int irrelevant = 1;
+
+    CONCRETE_IO_HANDLE ioHandle = setup_socket();
+
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(WSAIoctl(*(SOCKET*)ioHandle, SIO_KEEPALIVE_VALS, IGNORED_PTR_ARG,
+        sizeof(struct tcp_keepalive), NULL, 0, IGNORED_PTR_ARG, NULL, NULL))
+        .IgnoreArgument_lpvInBuffer()
+        .IgnoreArgument_lpcbBytesReturned()
+        .SetReturn(1); // 1st call fails, keepalive changes should be discarded
+    STRICT_EXPECTED_CALL(WSAIoctl(*(SOCKET*)ioHandle, SIO_KEEPALIVE_VALS, IGNORED_PTR_ARG,
+        sizeof(struct tcp_keepalive), NULL, 0, IGNORED_PTR_ARG, NULL, NULL))
+        .IgnoreArgument_lpvInBuffer()
+        .IgnoreArgument_lpcbBytesReturned()
+        .SetReturn(0); // purpose of 2nd call is just to see the keepalive state after the 1st call
+
+    memset(&persisted_tcp_keepalive, 0, sizeof(struct tcp_keepalive));
+
+    // act
+    int result = socketio_setoption(ioHandle, "tcp_keepalive", &irrelevant);
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+
+    result = socketio_setoption(ioHandle, "tcp_keepalive_time", &irrelevant); // use different option for 2nd call so we don't overwrite the value from the 1st
+    ASSERT_ARE_EQUAL(int, 0, result);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, persisted_tcp_keepalive.onoff);
+
+    verify_mocks_and_destroy_socket(ioHandle);
 }
 
 END_TEST_SUITE(socketio_win32_unittests)

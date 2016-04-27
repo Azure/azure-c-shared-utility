@@ -7,10 +7,11 @@
 #endif
 #include <stddef.h>
 #include <stdio.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#include <windows.h>
+#include <mstcpip.h>
 #include "azure_c_shared_utility/socketio.h"
-#include "winsock2.h"
-#include "ws2tcpip.h"
-#include "windows.h"
 #include "azure_c_shared_utility/list.h"
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/iot_logging.h"
@@ -44,6 +45,7 @@ typedef struct SOCKET_IO_INSTANCE_TAG
     int port;
     IO_STATE io_state;
     LIST_HANDLE pending_io_list;
+    struct tcp_keepalive keep_alive;
 } SOCKET_IO_INSTANCE;
 
 static const IO_INTERFACE_DESCRIPTION socket_io_interface_description =
@@ -163,6 +165,7 @@ CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters, LOGGER_LOG logger
                     result->on_io_error_context = NULL;
                     result->logger_log = logger_log;
                     result->io_state = IO_STATE_CLOSED;
+                    result->keep_alive = (struct tcp_keepalive) { 0, 0, 0 };
                 }
             }
         }
@@ -525,10 +528,71 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
     }
 }
 
+static int set_keepalive(SOCKET_IO_INSTANCE* socket_io, struct tcp_keepalive* keepAlive)
+{
+    int result;
+    DWORD bytesReturned;
+
+    int err = WSAIoctl(socket_io->socket, SIO_KEEPALIVE_VALS, keepAlive,
+        sizeof(struct tcp_keepalive), NULL, 0, &bytesReturned, NULL, NULL);
+    if (err != 0)
+    {
+        LogError("Failure: setting keep-alive on the socket: %d.\r\n", err == SOCKET_ERROR ? WSAGetLastError() : err);
+        result = __LINE__;
+    }
+    else
+    {
+        socket_io->keep_alive = *keepAlive;
+        result = 0;
+    }
+
+    return result;
+}
+
 int socketio_setoption(CONCRETE_IO_HANDLE socket_io, const char* optionName, const void* value)
 {
-    /* Not implementing any options */
-    return __LINE__;
+    int result;
+
+    if (socket_io == NULL ||
+        optionName == NULL ||
+        value == NULL)
+    {
+        result = __LINE__;
+    }
+    else
+    {
+        SOCKET_IO_INSTANCE* socket_io_instance = (SOCKET_IO_INSTANCE*)socket_io;
+
+        if (strcmp(optionName, "tcp_keepalive") == 0)
+        {
+            struct tcp_keepalive keepAlive = socket_io_instance->keep_alive;
+            keepAlive.onoff = *(int *)value;
+
+            result = set_keepalive(socket_io_instance, &keepAlive);
+        }
+        else if (strcmp(optionName, "tcp_keepalive_time") == 0)
+        {
+            unsigned long kaTime = *(int *)value * 1000; // convert to ms
+            struct tcp_keepalive keepAlive = socket_io_instance->keep_alive;
+            keepAlive.keepalivetime = kaTime;
+
+            result = set_keepalive(socket_io_instance, &keepAlive);
+        }
+        else if (strcmp(optionName, "tcp_keepalive_interval") == 0)
+        {
+            unsigned long kaInterval = *(int *)value * 1000; // convert to ms
+            struct tcp_keepalive keepAlive = socket_io_instance->keep_alive;
+            keepAlive.keepaliveinterval = kaInterval;
+
+            result = set_keepalive(socket_io_instance, &keepAlive);
+        }
+        else
+        {
+            result = __LINE__;
+        }
+    }
+
+    return result;
 }
 
 const IO_INTERFACE_DESCRIPTION* socketio_get_interface_description(void)

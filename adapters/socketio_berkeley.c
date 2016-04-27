@@ -12,6 +12,8 @@
 #include "azure_c_shared_utility/socketio.h"
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <netinet/tcp.h>
+#include <errno.h>
 #include <netdb.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -535,10 +537,47 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
     }
 }
 
+// Edison is missing this from netinet/tcp.h, but this code still works if we manually define it.
+#ifndef SOL_TCP
+#define SOL_TCP 6
+#endif
+
 int socketio_setoption(CONCRETE_IO_HANDLE socket_io, const char* optionName, const void* value)
 {
-    /* Not implementing any options */
-    return __LINE__;
+    int result;
+
+    if (socket_io == NULL ||
+        optionName == NULL ||
+        value == NULL)
+    {
+        result = __LINE__;
+    }
+    else
+    {
+        SOCKET_IO_INSTANCE* socket_io_instance = (SOCKET_IO_INSTANCE*)socket_io;
+
+        if (strcmp(optionName, "tcp_keepalive") == 0)
+        {
+            result = setsockopt(socket_io_instance->socket, SOL_SOCKET, SO_KEEPALIVE, value, sizeof(int));
+            if (result == -1) result = errno;
+        }
+        else if (strcmp(optionName, "tcp_keepalive_time") == 0)
+        {
+            result = setsockopt(socket_io_instance->socket, SOL_TCP, TCP_KEEPIDLE, value, sizeof(int));
+            if (result == -1) result = errno;
+        }
+        else if (strcmp(optionName, "tcp_keepalive_interval") == 0)
+        {
+            result = setsockopt(socket_io_instance->socket, SOL_TCP, TCP_KEEPINTVL, value, sizeof(int));
+            if (result == -1) result = errno;
+        }
+        else
+        {
+            result = __LINE__;
+        }
+    }
+
+    return result;
 }
 
 const IO_INTERFACE_DESCRIPTION* socketio_get_interface_description(void)
