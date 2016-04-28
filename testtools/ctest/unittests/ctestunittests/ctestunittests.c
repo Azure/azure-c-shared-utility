@@ -12,11 +12,11 @@ int main()
 
     CTEST_RUN_TEST_SUITE(SimpleTestSuiteOneTest, failedTests);
     CTEST_RUN_TEST_SUITE(SimpleTestSuiteTwoTests, failedTests);
-    CTEST_RUN_TEST_SUITE(AssertFailureTests, failedTests);
+    CTEST_RUN_TEST_SUITE(TestSuiteInitializeCleanupTests, failedTests);
     CTEST_RUN_TEST_SUITE(AssertSuccessTests, failedTests);
     {
         size_t temp_failed_tests = 0;
-        CTEST_RUN_TEST_SUITE(TestSuiteInitializeCleanupTests, temp_failed_tests);
+        CTEST_RUN_TEST_SUITE(AssertFailureTests, temp_failed_tests);
         if (temp_failed_tests != 71)
         {
             failedTests ++;
