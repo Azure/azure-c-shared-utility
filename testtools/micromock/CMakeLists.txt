@@ -59,7 +59,7 @@ IF(WIN32)
 
     set_target_properties(micromock_cpp_unittest
        PROPERTIES
-       FOLDER "SharedTestTools")
+       FOLDER "shared_test_tools")
     
     add_library(micromock_ctest ${micromock_cpp_files} ${micromock_h_files})
     target_compile_definitions(micromock_ctest PUBLIC USE_CTEST)
@@ -70,7 +70,7 @@ ENDIF()
 
 set_target_properties(micromock_ctest
                PROPERTIES
-               FOLDER "SharedTestTools")
+               FOLDER "shared_test_tools")
 
 #these are the include folders
 #the following "set" statetement exports across the project a global variable called MICROMOCK_INC_FOLDER that expands to whatever needs to included when using micromock library

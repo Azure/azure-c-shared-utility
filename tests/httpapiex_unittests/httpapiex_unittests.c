@@ -514,8 +514,6 @@ TEST_FUNCTION_INITIALIZE(TestMethodInitialize)
 
 TEST_FUNCTION_CLEANUP(TestMethodCleanup)
 {
-    ASSERT_ARE_EQUAL(size_t, 0, HTTPAPI_Init_calls);
-
     TEST_MUTEX_RELEASE(g_testByTest);
 }
 

@@ -14,10 +14,42 @@ int main()
     CTEST_RUN_TEST_SUITE(SimpleTestSuiteTwoTests, failedTests);
     CTEST_RUN_TEST_SUITE(AssertFailureTests, failedTests);
     CTEST_RUN_TEST_SUITE(AssertSuccessTests, failedTests);
-    CTEST_RUN_TEST_SUITE(TestSuiteInitializeCleanupTests, failedTests);
-    failedTests -= 71; /*71 is the number of tests EXPECTED to fail in the previous unit. Because there should be exactly 0 failed tests...*/
+    {
+        size_t temp_failed_tests = 0;
+        CTEST_RUN_TEST_SUITE(TestSuiteInitializeCleanupTests, temp_failed_tests);
+        if (temp_failed_tests != 71)
+        {
+            failedTests ++;
+        }
+    }
     CTEST_RUN_TEST_SUITE(TestFunctionInitializeTests, failedTests);
     CTEST_RUN_TEST_SUITE(TestFunctionCleanupTests, failedTests);
+
+    {
+        size_t temp_failed_tests = 0;
+        CTEST_RUN_TEST_SUITE(whentestfunctioninitializefailstests, temp_failed_tests);
+        if (temp_failed_tests != 2)
+        {
+            failedTests ++;
+        }
+    }
+    {
+        size_t temp_failed_tests = 0;
+        CTEST_RUN_TEST_SUITE(whentestsuiteinitializefailstests, temp_failed_tests);
+        if (temp_failed_tests != 1)
+        {
+            failedTests ++;
+        }
+    }
+
+    {
+        size_t temp_failed_tests = 0;
+        CTEST_RUN_TEST_SUITE(testfunctioncleanupfailstests, temp_failed_tests);
+        if (temp_failed_tests != 2)
+        {
+            failedTests ++;
+        }
+    }
 
     return failedTests;
 }

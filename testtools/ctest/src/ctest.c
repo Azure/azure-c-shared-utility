@@ -67,66 +67,83 @@ size_t RunTests(const TEST_FUNCTION_DATA* testListHead, const char* testSuiteNam
     }
     else
     {
+        unsigned int is_test_runner_ok = 1;
+
         currentTestFunction = (const TEST_FUNCTION_DATA*)testListHead->NextTestFunctionData;
         while (currentTestFunction->TestFunction != NULL)
         {
             if (currentTestFunction->FunctionType == CTEST_TEST_FUNCTION)
             {
-                int testFunctionInitializeFailed = 0;
-
-                if (testFunctionInitialize != NULL)
+                if (is_test_runner_ok == 1)
                 {
-                    if (setjmp(g_ExceptionJump) == 0)
+                    int testFunctionInitializeFailed = 0;
+
+                    if (testFunctionInitialize != NULL)
                     {
-                        testFunctionInitialize->TestFunction();
+                        if (setjmp(g_ExceptionJump) == 0)
+                        {
+                            testFunctionInitialize->TestFunction();
+                        }
+                        else
+                        {
+                            testFunctionInitializeFailed = 1;
+                            (void)printf("TEST_FUNCTION_INITIALIZE failed - next TEST_FUNCTION will fail\n");
+                        }
+                    }
+
+
+                    if (testFunctionInitializeFailed)
+                    {
+                        *currentTestFunction->TestResult = TEST_FAILED;
+                        (void)printf("Not executing test %s ...\n", currentTestFunction->TestFunctionName);
                     }
                     else
                     {
-                        testFunctionInitializeFailed = 1;
-                        (void)printf("TEST_FUNCTION_INITIALIZE failed - next TEST_FUNCTION will fail\n");
-                    }
-                }
+                        (void)printf("Executing test %s ...\n", currentTestFunction->TestFunctionName);
 
-                
-                if (testFunctionInitializeFailed)
-                {
-                    *currentTestFunction->TestResult = TEST_FAILED;
-                    (void)printf("Not executing test %s ...\n", currentTestFunction->TestFunctionName);
+                        g_CurrentTestFunction = currentTestFunction;
+
+                        if (setjmp(g_ExceptionJump) == 0)
+                        {
+                            currentTestFunction->TestFunction();
+                        }
+                        else
+                        {
+                            /*can only get here if there was a longjmp called while executing currentTestFunction->TestFunction();*/
+                            /*we don't do anything*/
+                        }
+                        g_CurrentTestFunction = NULL;/*g_CurrentTestFunction is limited to actually executing a TEST_FUNCTION, otherwise it should be NULL*/
+
+                        /*in the case when the cleanup can assert... have to prepare the long jump*/
+                        if (setjmp(g_ExceptionJump) == 0)
+                        {
+                            if (testFunctionCleanup != NULL)
+                            {
+                                testFunctionCleanup->TestFunction();
+                            }
+                        }
+                        else
+                        {
+                            /* this is a fatal error, if we got a fail in cleanup we can't do much */
+                            *currentTestFunction->TestResult = TEST_FAILED;
+                            is_test_runner_ok = 0;
+                        }
+                    }
                 }
                 else
                 {
-                    (void)printf("Executing test %s ...\n", currentTestFunction->TestFunctionName);
-                    
-                    g_CurrentTestFunction = currentTestFunction;
-
-                    if (setjmp(g_ExceptionJump) == 0)
-                    {
-                        currentTestFunction->TestFunction();
-                    }
-                    else
-                    {
-                        /*can only get here if there was a longjmp called while executing currentTestFunction->TestFunction();*/
-                        /*we don't do anything*/
-                    }
-                    g_CurrentTestFunction = NULL;/*g_CurrentTestFunction is limited to actually executing a TEST_FUNCTION, otherwise it should be NULL*/
-
-                    /*in the case when the cleanup can assert... have to prepare the long jump*/
-                    if (setjmp(g_ExceptionJump) == 0)
-                    {
-                        if (testFunctionCleanup != NULL)
-                        {
-                            testFunctionCleanup->TestFunction();
-                        }
-                    }
-                    else
-                    {
-                    }
+                    *currentTestFunction->TestResult = TEST_NOT_EXECUTED;
                 }
 
                 if (*currentTestFunction->TestResult == TEST_FAILED)
                 {
                     failedTestCount++;
                     (void)printf("!!! FAILED !!!\n");
+                }
+                else if (*currentTestFunction->TestResult == TEST_NOT_EXECUTED)
+                {
+                    failedTestCount++;
+                    (void)printf("Test %s ... SKIPPED due to a failure in test function cleanup. \n", currentTestFunction->TestFunctionName);
                 }
                 else
                 {
