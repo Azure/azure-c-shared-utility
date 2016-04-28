@@ -33,7 +33,7 @@ ctest ${ctest_c_files} ${ctest_h_files}
 
 set_target_properties(ctest
                PROPERTIES
-               FOLDER "SharedTestTools")
+               FOLDER "test_tools")
 
 if (NOT ${skip_unittests})
      add_subdirectory(unittests)
