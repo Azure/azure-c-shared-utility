@@ -10,6 +10,8 @@ typedef struct mystruct_tag
     unsigned char x;
 } mystruct;
 
+CTEST_REGISTER_TYPE(mystruct_ptr, mystruct*)
+
 CTEST_COMPARE(mystruct_ptr, mystruct*)
 {
     return (left->x != right->x);

@@ -179,13 +179,14 @@ extern C_LINKAGE int int64_t_Compare(int64_t left, int64_t right);
 
 #endif
 
+#define CTEST_REGISTER_TYPE(toStringType, cType) \
+	typedef cType toStringType;
+
 #define CTEST_COMPARE(toStringType, cType) \
-    typedef cType toStringType; \
     static int toStringType##_Compare(toStringType left, toStringType right)
 
 #define CTEST_TO_STRING(toStringType, cType, string, bufferSize, value) \
-typedef cType toStringType; \
-static void toStringType##_ToString(char* string, size_t bufferSize, cType value)
+	static void toStringType##_ToString(char* string, size_t bufferSize, cType value)
 
 
 #define EAT_2(X1,X2, NAME,...) NAME
