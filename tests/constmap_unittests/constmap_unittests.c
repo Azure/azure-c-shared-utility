@@ -151,8 +151,6 @@ BEGIN_TEST_SUITE(constmap_unittests)
     
         REGISTER_UMOCK_ALIAS_TYPE(CONSTMAP_HANDLE, void*);
         REGISTER_UMOCK_ALIAS_TYPE(MAP_HANDLE, void*);
-        REGISTER_UMOCK_ALIAS_TYPE(const char*const**, void*);
-        REGISTER_UMOCK_ALIAS_TYPE(size_t*, void*);
         result = umocktypes_charptr_register_types();
         ASSERT_ARE_EQUAL(int, 0, result);
 

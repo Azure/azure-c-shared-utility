@@ -147,8 +147,6 @@ BEGIN_TEST_SUITE(HTTPHeaders_UnitTests)
             REGISTER_TYPE(MAP_RESULT, MAP_RESULT);
             REGISTER_UMOCK_ALIAS_TYPE(MAP_FILTER_CALLBACK, void*);
             REGISTER_UMOCK_ALIAS_TYPE(MAP_HANDLE, void*);
-            REGISTER_UMOCK_ALIAS_TYPE(const char*const**, void*);
-            REGISTER_UMOCK_ALIAS_TYPE(size_t*, void*);
 
             REGISTER_GLOBAL_MOCK_HOOK(Map_Create, my_Map_Create);
             REGISTER_GLOBAL_MOCK_HOOK(Map_Clone, my_Map_Clone);

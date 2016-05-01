@@ -5,11 +5,6 @@
 #include <stdlib.h>
 #include "testrunnerswitcher.h"
 
-/* TODO:
-- Test freeing of return values allocated by the user in the copy functions
-- Add a test for void function that has a hook
-*/
-
 /* Tested by unit tests for umock_c:
 Tests_SRS_UMOCK_C_LIB_01_006: [umock_c_init shall initialize umock_c.]
 Tests_SRS_UMOCK_C_LIB_01_007: [umock_c_init called if already initialized shall fail and return a non-zero value.]
@@ -120,6 +115,11 @@ typedef int funkytype;
 /* Tests_SRS_UMOCK_C_LIB_01_150: [ MOCK_FUNCTION_WITH_CODE shall define a mock function and allow the user to embed code between this define and a MOCK_FUNCTION_END call. ]*/
 MOCK_FUNCTION_WITH_CODE(, funkytype, test_mock_function_with_funkytype, funkytype, x);
 MOCK_FUNCTION_END(42)
+
+static unsigned char*** result_value = (unsigned char***)0x4242;
+
+MOCK_FUNCTION_WITH_CODE(, unsigned char***, test_mock_function_with_unregistered_ptr_type, unsigned char***, x);
+MOCK_FUNCTION_END(result_value)
 
 BEGIN_TEST_SUITE(umock_c_integrationtests)
 
@@ -1733,6 +1733,23 @@ TEST_FUNCTION(registering_an_alias_type_works)
 
     // assert
     ASSERT_ARE_EQUAL(int, 42, (int)result);
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_expected_calls());
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_UMOCK_C_LIB_01_153: [ If no custom handler has beed registered for a pointer type, it shall be trated as void*. ] */
+TEST_FUNCTION(when_an_unregistered_pointer_type_is_used_it_defaults_to_void_ptr)
+{
+    // arrange
+    REGISTER_UMOCK_ALIAS_TYPE(funkytype, int);
+    STRICT_EXPECTED_CALL(test_mock_function_with_unregistered_ptr_type((unsigned char***)0x42))
+        .SetReturn((unsigned char***)0x42);
+
+    // act
+    unsigned char*** result = test_mock_function_with_unregistered_ptr_type((unsigned char***)0x42);
+
+    // assert
+    ASSERT_ARE_EQUAL(void_ptr, (void*)0x42, result);
     ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_expected_calls());
     ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
 }

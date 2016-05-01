@@ -109,8 +109,6 @@ TEST_SUITE_INITIALIZE(TestClassInitialize)
 
     REGISTER_UMOCK_ALIAS_TYPE(STRING_HANDLE, void*);
     REGISTER_UMOCK_ALIAS_TYPE(BUFFER_HANDLE, void*);
-    REGISTER_UMOCK_ALIAS_TYPE(unsigned char*, void*);
-    REGISTER_UMOCK_ALIAS_TYPE(const unsigned char*, void*);
     result = umocktypes_charptr_register_types();
     ASSERT_ARE_EQUAL(int, 0, result);
     REGISTER_TYPE(HMACSHA256_RESULT, HMACSHA256_RESULT);

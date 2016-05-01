@@ -34,8 +34,8 @@ static UMOCKTYPES_STATE umocktypes_state = UMOCKTYPES_STATE_NOT_INITIALIZED;
 static UMOCK_VALUE_TYPE_HANDLERS* get_value_type_handlers(const char* type_name)
 {
     UMOCK_VALUE_TYPE_HANDLERS* result;
-
     size_t i;
+    size_t length = strlen(type_name);
 
     for (i = 0; i < type_handler_count; i++)
     {
@@ -305,7 +305,16 @@ char* umocktypes_stringify(const char* type, const void* value)
         }
         else
         {
+            size_t normalized_type_length = strlen(normalized_type);
             UMOCK_VALUE_TYPE_HANDLERS* value_type_handlers = get_value_type_handlers(normalized_type);
+            
+            /* Codes_SRS_UMOCK_C_LIB_01_153: [ If no custom handler has beed registered for a pointer type, it shall be trated as void*. ] */
+            if ((value_type_handlers == NULL) && (normalized_type[normalized_type_length - 1] == '*'))
+            {
+                /* Codes_SRS_UMOCKTYPES_01_063: [ If type is a pointer type and type was not registered then umocktypes_stringify shall execute as if type is void*. ]*/
+                value_type_handlers = get_value_type_handlers("void*");
+            }
+
             if (value_type_handlers == NULL)
             {
                 /* Codes_SRS_UMOCKTYPES_01_017: [ If type can not be found in the registered types list maintained by the module, umocktypes_stringify shall fail and return NULL. ]*/
@@ -357,7 +366,16 @@ int umocktypes_are_equal(const char* type, const void* left, const void* right)
         }
         else
         {
+            size_t normalized_type_length = strlen(normalized_type);
             UMOCK_VALUE_TYPE_HANDLERS* value_type_handlers = get_value_type_handlers(normalized_type);
+
+            /* Codes_SRS_UMOCK_C_LIB_01_153: [ If no custom handler has beed registered for a pointer type, it shall be trated as void*. ] */
+            if ((value_type_handlers == NULL) && (normalized_type[normalized_type_length - 1] == '*'))
+            {
+                /* Codes_SRS_UMOCKTYPES_01_064: [ If type is a pointer type and type was not registered then umocktypes_are_equal shall execute as if type is void*. ]*/
+                value_type_handlers = get_value_type_handlers("void*");
+            }
+
             if (value_type_handlers == NULL)
             {
                 /* Codes_SRS_UMOCKTYPES_01_024: [ If type can not be found in the registered types list maintained by the module, umocktypes_are_equal shall fail and return -1. ]*/
@@ -433,7 +451,16 @@ int umocktypes_copy(const char* type, void* destination, const void* source)
         }
         else
         {
+            size_t normalized_type_length = strlen(normalized_type);
             UMOCK_VALUE_TYPE_HANDLERS* value_type_handlers = get_value_type_handlers(normalized_type);
+
+            /* Codes_SRS_UMOCK_C_LIB_01_153: [ If no custom handler has beed registered for a pointer type, it shall be trated as void*. ] */
+            if ((value_type_handlers == NULL) && (normalized_type[normalized_type_length - 1] == '*'))
+            {
+                /* Codes_SRS_UMOCKTYPES_01_065: [ If type is a pointer type and type was not registered then umocktypes_copy shall execute as if type is void*. ]*/
+                value_type_handlers = get_value_type_handlers("void*");
+            }
+
             if (value_type_handlers == NULL)
             {
                 /* Codes_SRS_UMOCKTYPES_01_029: [ If type can not be found in the registered types list maintained by the module, umocktypes_copy shall fail and return -1. ]*/
@@ -469,7 +496,16 @@ void umocktypes_free(const char* type, void* value)
         /* Codes_SRS_UMOCKTYPES_01_032: [ If type can not be found in the registered types list maintained by the module, umocktypes_free shall do nothing. ]*/
         if (normalized_type != NULL)
         {
+            size_t normalized_type_length = strlen(normalized_type);
             UMOCK_VALUE_TYPE_HANDLERS* value_type_handlers = get_value_type_handlers(normalized_type);
+
+            /* Codes_SRS_UMOCK_C_LIB_01_153: [ If no custom handler has beed registered for a pointer type, it shall be trated as void*. ] */
+            if ((value_type_handlers == NULL) && (normalized_type[normalized_type_length - 1] == '*'))
+            {
+                /* Codes_SRS_UMOCKTYPES_01_066: [ If type is a pointer type and type was not registered then umocktypes_free shall execute as if type is void*. ]*/
+                value_type_handlers = get_value_type_handlers("void*");
+            }
+
             if (value_type_handlers != NULL)
             {
                 /* Codes_SRS_UMOCKTYPES_01_033: [ The free shall be done by calling the underlying free function (passed in umocktypes_register_type) for the type identified by the type argument. ]*/

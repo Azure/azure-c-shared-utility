@@ -342,6 +342,10 @@ Out of the box umock_c shall support the following types through the header umoc
 -	void*
 -	const void*
 
+###Pointer types
+
+If no custom handler has beed registered for a pointer type, it shall be trated as void*. 
+
 ###Custom types
 
 Custom types, like structures shall be supported by allowing the user to define a set of functions that can be used by umock_c to operate with these types.

@@ -343,6 +343,10 @@ XX**SRS_UMOCK_C_LIB_01_148: [** If call comparison fails an error shall be indic
 -   **SRS_UMOCK_C_LIB_01_151: [** void\* **]**
 -   **SRS_UMOCK_C_LIB_01_152: [** const void\* **]**
 
+###Pointer types
+
+**SRS_UMOCK_C_LIB_01_153: [** If no custom handler has beed registered for a pointer type, it shall be trated as void*. **]**
+
 ###Custom types
 
 **SRS_UMOCK_C_LIB_01_045: [**Custom types, like structures shall be supported by allowing the user to define a set of functions that can be used by umock_c to operate with these types.**]**
