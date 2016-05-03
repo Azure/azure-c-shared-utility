@@ -661,6 +661,27 @@ XX**SRS_UMOCK_C_LIB_01_116: [** The argument targetted by CopyOutArgumentBuffer 
 
 X**SRS_UMOCK_C_LIB_01_119: [** CopyOutArgumentBuffer shall only be available for mock functions that have arguments. **]**
 
+###CopyOutArgumentBuffer_{arg_name}(const void* bytes, size_t length)
+
+XX**SRS_UMOCK_C_LIB_01_154: [** The CopyOutArgumentBuffer_{arg_name} call modifier shall copy the memory pointed to by bytes and being length bytes so that it is later injected as an out argument when the code under test calls the mock function. **]**
+
+XX**SRS_UMOCK_C_LIB_01_155: [** The memory shall be copied. **]**
+XX**SRS_UMOCK_C_LIB_01_156: [** If several calls to CopyOutArgumentBuffer are made, only the last buffer shall be kept. **]**
+
+XX**SRS_UMOCK_C_LIB_01_163: [** The buffers for previous CopyOutArgumentBuffer calls shall be freed. **]**
+
+**SRS_UMOCK_C_LIB_01_157: [** CopyOutArgumentBuffer_{arg_name} shall only be applicable to pointer types. **]**
+
+XX**SRS_UMOCK_C_LIB_01_158: [** If bytes is NULL or length is 0, umock_c shall raise an error with the code UMOCK_C_INVALID_ARGUMENT_BUFFER. **]**
+
+XX**SRS_UMOCK_C_LIB_01_159: [** The argument targetted by CopyOutArgumentBuffer_{arg_name} shall also be marked as ignored. **]**
+
+**SRS_UMOCK_C_LIB_01_160: [** If any memory allocation error occurs, umock_c shall raise an error with the code UMOCK_C_MALLOC_ERROR. **]**
+
+**SRS_UMOCK_C_LIB_01_161: [** If any other error occurs, umock_c shall raise an error with the code UMOCK_C_ERROR. **]**
+
+**SRS_UMOCK_C_LIB_01_162: [** CopyOutArgumentBuffer_{arg_name} shall only be available for mock functions that have arguments. **]**
+
 ###CopyOutArgument(arg_type value)
 
 **SRS_UMOCK_C_LIB_01_093: [**The CopyOutArgument call modifier shall copy an argument value to be injected as an out argument value when the code under test calls the mock function.**]**

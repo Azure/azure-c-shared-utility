@@ -655,6 +655,25 @@ If any other error occurs, umock_c shall raise an error with the code UMOCK_C_ER
 
 CopyOutArgumentBuffer shall only be available for mock functions that have arguments.
 
+###CopyOutArgumentBuffer_{arg_name}(const void* bytes, size_t length)
+
+The CopyOutArgumentBuffer_{arg_name} call modifier shall copy the memory pointed to by bytes and being length bytes so that it is later injected as an out argument when the code under test calls the mock function.
+
+The memory shall be copied.
+If several calls to CopyOutArgumentBuffer are made, only the last buffer shall be kept.
+
+CopyOutArgumentBuffer_{arg_name} shall only be applicable to pointer types.
+
+If bytes is NULL or length is 0, umock_c shall raise an error with the code UMOCK_C_INVALID_ARGUMENT_BUFFER.
+
+The argument targetted by CopyOutArgumentBuffer_{arg_name} shall also be marked as ignored.
+
+If any memory allocation error occurs, umock_c shall raise an error with the code UMOCK_C_MALLOC_ERROR.
+
+If any other error occurs, umock_c shall raise an error with the code UMOCK_C_ERROR.
+
+CopyOutArgumentBuffer_{arg_name} shall only be available for mock functions that have arguments.
+
 ###CopyOutArgument(arg_type value)
 
 The CopyOutArgument call modifier shall copy an argument value to be injected as an out argument value when the code under test calls the mock function.
