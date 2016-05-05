@@ -338,24 +338,19 @@ int socketio_close(CONCRETE_IO_HANDLE socket_io, ON_IO_CLOSE_COMPLETE on_io_clos
     else
     {
         SOCKET_IO_INSTANCE* socket_io_instance = (SOCKET_IO_INSTANCE*)socket_io;
-        if ((socket_io_instance->io_state == IO_STATE_CLOSED) ||
-            (socket_io_instance->io_state == IO_STATE_CLOSING))
+        if ((socket_io_instance->io_state != IO_STATE_CLOSED) && (socket_io_instance->io_state != IO_STATE_CLOSING))
         {
-            result = __LINE__;
-        }
-        else
-        {
+            // Only close if the socket isn't already in the closed or closing state
             (void)shutdown(socket_io_instance->socket, SHUT_RDWR);
             close(socket_io_instance->socket);
             socket_io_instance->socket = INVALID_SOCKET;
             socket_io_instance->io_state = IO_STATE_CLOSED;
-
-            if (on_io_close_complete != NULL)
-            {
-                on_io_close_complete(callback_context);
-            }
         }
 
+        if (on_io_close_complete != NULL)
+        {
+            on_io_close_complete(callback_context);
+        }
         result = 0;
     }
 
@@ -584,4 +579,3 @@ const IO_INTERFACE_DESCRIPTION* socketio_get_interface_description(void)
 {
     return &socket_io_interface_description;
 }
-

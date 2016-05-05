@@ -16,6 +16,7 @@
 #include "azure_c_shared_utility/socketio.h"
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/iot_logging.h"
+#include "azure_c_shared_utility/crt_abstractions.h"
 
 typedef enum TLSIO_STATE_TAG
 {
@@ -44,6 +45,9 @@ typedef struct TLS_IO_INSTANCE_TAG
     BIO* in_bio;
     BIO* out_bio;
     TLSIO_STATE tlsio_state;
+    char* hostname;
+    int port;
+    char* certificate;
 } TLS_IO_INSTANCE;
 
 static const IO_INTERFACE_DESCRIPTION tlsio_openssl_interface_description =
@@ -176,29 +180,25 @@ static void on_underlying_io_close_complete(void* context)
 
     switch (tls_io_instance->tlsio_state)
     {
-    default:
-    case TLSIO_STATE_NOT_OPEN:
-    case TLSIO_STATE_OPEN:
-        break;
+        default:
+        case TLSIO_STATE_NOT_OPEN:
+        case TLSIO_STATE_OPEN:
+            break;
 
-    case TLSIO_STATE_OPENING_UNDERLYING_IO:
-    case TLSIO_STATE_IN_HANDSHAKE:
-        tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
-        indicate_open_complete(tls_io_instance, IO_OPEN_ERROR);
-        break;
+        case TLSIO_STATE_OPENING_UNDERLYING_IO:
+        case TLSIO_STATE_IN_HANDSHAKE:
+            tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
+            indicate_open_complete(tls_io_instance, IO_OPEN_ERROR);
+            break;
 
-    case TLSIO_STATE_CLOSING:
-        tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
+        case TLSIO_STATE_CLOSING:
+            tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
 
-        if (tls_io_instance->on_io_close_complete == NULL)
-        {
-            LogError("NULL on_io_close_complete.");
-        }
-        else
-        {
-            tls_io_instance->on_io_close_complete(tls_io_instance->on_io_close_complete_context);
-        }
-        break;
+            if (tls_io_instance->on_io_close_complete != NULL)
+            {
+                tls_io_instance->on_io_close_complete(tls_io_instance->on_io_close_complete_context);
+            }
+            break;
     }
 }
 
@@ -210,25 +210,14 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
     {
         if (open_result == IO_OPEN_OK)
         {
-            if (SSL_is_init_finished(tls_io_instance->ssl))
+            tls_io_instance->tlsio_state = TLSIO_STATE_IN_HANDSHAKE;
+
+            if (send_handshake_bytes(tls_io_instance) != 0)
             {
                 if (xio_close(tls_io_instance->underlying_io, on_underlying_io_close_complete, tls_io_instance) != 0)
                 {
                     indicate_open_complete(tls_io_instance, IO_OPEN_ERROR);
                     LogError("Error in xio_close.");
-                }
-            }
-            else
-            {
-                tls_io_instance->tlsio_state = TLSIO_STATE_IN_HANDSHAKE;
-
-                if (send_handshake_bytes(tls_io_instance) != 0)
-                {
-                    if (xio_close(tls_io_instance->underlying_io, on_underlying_io_close_complete, tls_io_instance) != 0)
-                    {
-                        indicate_open_complete(tls_io_instance, IO_OPEN_ERROR);
-                        LogError("Error in xio_close.");
-                    }
                 }
             }
         }
@@ -246,18 +235,18 @@ static void on_underlying_io_error(void* context)
 
     switch (tls_io_instance->tlsio_state)
     {
-    default:
-        break;
+        default:
+            break;
 
-    case TLSIO_STATE_OPENING_UNDERLYING_IO:
-    case TLSIO_STATE_IN_HANDSHAKE:
-        tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
-        indicate_open_complete(tls_io_instance, IO_OPEN_ERROR);
-        break;
+        case TLSIO_STATE_OPENING_UNDERLYING_IO:
+        case TLSIO_STATE_IN_HANDSHAKE:
+            tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
+            indicate_open_complete(tls_io_instance, IO_OPEN_ERROR);
+            break;
 
-    case TLSIO_STATE_OPEN:
-        indicate_error(tls_io_instance);
-        break;
+        case TLSIO_STATE_OPEN:
+            indicate_error(tls_io_instance);
+            break;
     }
 }
 
@@ -301,30 +290,186 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
     {
         switch (tls_io_instance->tlsio_state)
         {
-        default:
-            break;
+            default:
+                break;
 
-        case TLSIO_STATE_IN_HANDSHAKE:
-            if (send_handshake_bytes(tls_io_instance) != 0)
-            {
-                if (xio_close(tls_io_instance->underlying_io, on_underlying_io_close_complete, tls_io_instance) != 0)
+            case TLSIO_STATE_IN_HANDSHAKE:
+                if (send_handshake_bytes(tls_io_instance) != 0)
                 {
-                    indicate_open_complete(tls_io_instance, IO_OPEN_ERROR);
-                    LogError("Error in xio_close.");
+                    if (xio_close(tls_io_instance->underlying_io, on_underlying_io_close_complete, tls_io_instance) != 0)
+                    {
+                        indicate_open_complete(tls_io_instance, IO_OPEN_ERROR);
+                        LogError("Error in xio_close.");
+                    }
                 }
-            }
-            break;
+                break;
 
-        case TLSIO_STATE_OPEN:
-            if (decode_ssl_received_bytes(tls_io_instance) != 0)
-            {
-                tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
-                indicate_error(tls_io_instance);
-                LogError("Error in decode_ssl_received_bytes.");
-            }
-            break;
+            case TLSIO_STATE_OPEN:
+                if (decode_ssl_received_bytes(tls_io_instance) != 0)
+                {
+                    tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
+                    indicate_error(tls_io_instance);
+                    LogError("Error in decode_ssl_received_bytes.");
+                }
+                break;
         }
     }
+}
+
+static void destroy_openssl_instance(TLS_IO_INSTANCE* tls_io_instance)
+{
+    if (tls_io_instance != NULL)
+    {
+        SSL_free(tls_io_instance->ssl);
+        SSL_CTX_free(tls_io_instance->ssl_context);
+    }
+}
+
+static int add_certificate_to_store(TLS_IO_INSTANCE* tls_io_instance, const char* certValue)
+{
+    int result = 0;
+
+    if (certValue != NULL)
+    {
+        BIO* cert_memory_bio;
+        X509* xcert;
+
+        X509_STORE* cert_store = SSL_CTX_get_cert_store(tls_io_instance->ssl_context);
+        if (cert_store == NULL)
+        {
+            LogError("Failed calling SSL_CTX_get_cert_store.");
+            result = __LINE__;
+        }
+        else
+        {
+            cert_memory_bio = BIO_new_mem_buf((void*)certValue, -1);
+            if (cert_memory_bio == NULL)
+            {
+                LogError("Failed calling BIO_new_mem_buf.");
+                result = __LINE__;
+            }
+            else
+            {
+                xcert = PEM_read_bio_X509(cert_memory_bio, NULL, NULL, NULL);
+                if (xcert == NULL)
+                {
+                    LogError("Failed calling PEM_read_bio_X509.");
+                    result = __LINE__;
+                }
+                else
+                {
+                    if (X509_STORE_add_cert(cert_store, xcert) != 1)
+                    {
+                        LogError("Failed calling X509_STORE_add_cert.");
+                        X509_free(xcert);
+                        result = __LINE__;
+                    }
+                    else
+                    {
+                        result = 0;
+                    }
+                }
+                BIO_free(cert_memory_bio);
+            }
+        }
+    }
+    return result;
+}
+
+static int create_openssl_instance(TLS_IO_INSTANCE* tlsInstance)
+{
+    int result;
+
+    tlsInstance->ssl_context = SSL_CTX_new(TLSv1_method());
+    if (tlsInstance->ssl_context == NULL)
+    {
+        result = __LINE__;
+        LogError("Failed allocating OpenSSL context.");
+    }
+    else if (add_certificate_to_store(tlsInstance, tlsInstance->certificate) != 0)
+    {
+        result = __LINE__;
+    }
+    else
+    {
+        tlsInstance->in_bio = BIO_new(BIO_s_mem());
+        if (tlsInstance->in_bio == NULL)
+        {
+            SSL_CTX_free(tlsInstance->ssl_context);
+            LogError("Failed BIO_new for in BIO.");
+            result = __LINE__;
+        }
+        else
+        {
+            tlsInstance->out_bio = BIO_new(BIO_s_mem());
+            if (tlsInstance->out_bio == NULL)
+            {
+                (void)BIO_free(tlsInstance->in_bio);
+                SSL_CTX_free(tlsInstance->ssl_context);
+                result = __LINE__;
+                LogError("Failed BIO_new for out BIO.");
+            }
+            else
+            {
+                const IO_INTERFACE_DESCRIPTION* underlying_io_interface = socketio_get_interface_description();
+                if (underlying_io_interface == NULL)
+                {
+                    (void)BIO_free(tlsInstance->in_bio);
+                    (void)BIO_free(tlsInstance->out_bio);
+                    SSL_CTX_free(tlsInstance->ssl_context);
+                    result = __LINE__;
+                    LogError("Failed getting socket IO interface description.");
+                }
+                else
+                {
+                    SOCKETIO_CONFIG socketio_config;
+                    socketio_config.hostname = tlsInstance->hostname;
+                    socketio_config.port = tlsInstance->port;
+                    socketio_config.accepted_socket = NULL;
+
+                    tlsInstance->underlying_io = xio_create(underlying_io_interface, &socketio_config, tlsInstance->logger_log);
+                    if ((tlsInstance->underlying_io == NULL) ||
+                        (BIO_set_mem_eof_return(tlsInstance->in_bio, -1) <= 0) ||
+                        (BIO_set_mem_eof_return(tlsInstance->out_bio, -1) <= 0))
+                    {
+                        (void)BIO_free(tlsInstance->in_bio);
+                        (void)BIO_free(tlsInstance->out_bio);
+                        SSL_CTX_free(tlsInstance->ssl_context);
+                        result = __LINE__;
+                        LogError("Failed xio_create.");
+                    }
+                    else
+                    {
+                        SSL_CTX_set_verify(tlsInstance->ssl_context, SSL_VERIFY_PEER, NULL);
+
+                        // Specifies that the default locations for which CA certificates are loaded should be used.
+                        if (SSL_CTX_set_default_verify_paths(tlsInstance->ssl_context) != 1)
+                        {
+                            // This is only a warning to the user. They can still specify the certificate via SetOption.
+                            LogInfo("WARNING: Unable to specify the default location for CA certificates on this platform.");
+                        }
+
+                        tlsInstance->ssl = SSL_new(tlsInstance->ssl_context);
+                        if (tlsInstance->ssl == NULL)
+                        {
+                            (void)BIO_free(tlsInstance->in_bio);
+                            (void)BIO_free(tlsInstance->out_bio);
+                            SSL_CTX_free(tlsInstance->ssl_context);
+                            result = __LINE__;
+                            LogError("Failed creating OpenSSL instance.");
+                        }
+                        else
+                        {
+                            SSL_set_bio(tlsInstance->ssl, tlsInstance->in_bio, tlsInstance->out_bio);
+                            SSL_set_connect_state(tlsInstance->ssl);
+                            result = 0;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return result;
 }
 
 int tlsio_openssl_init(void)
@@ -360,11 +505,14 @@ CONCRETE_IO_HANDLE tlsio_openssl_create(void* io_create_parameters, LOGGER_LOG l
         }
         else
         {
-            SOCKETIO_CONFIG socketio_config;
+            mallocAndStrcpy_s(&result->hostname, tls_io_config->hostname);
+            result->port = tls_io_config->port;
 
-            socketio_config.hostname = tls_io_config->hostname;
-            socketio_config.port = tls_io_config->port;
-            socketio_config.accepted_socket = NULL;
+            result->ssl_context = NULL;
+            result->ssl = NULL;
+            result->in_bio = NULL;
+            result->out_bio = NULL;
+            result->certificate = NULL;
 
             result->on_bytes_received = NULL;
             result->on_bytes_received_context = NULL;
@@ -380,92 +528,6 @@ CONCRETE_IO_HANDLE tlsio_openssl_create(void* io_create_parameters, LOGGER_LOG l
 
             result->logger_log = logger_log;
             result->tlsio_state = TLSIO_STATE_NOT_OPEN;
-
-            result->ssl_context = SSL_CTX_new(TLSv1_method());
-            if (result->ssl_context == NULL)
-            {
-                free(result);
-                result = NULL;
-                LogError("Failed allocating OpenSSL context.");
-            }
-            else
-            {
-                result->in_bio = BIO_new(BIO_s_mem());
-                if (result->in_bio == NULL)
-                {
-                    SSL_CTX_free(result->ssl_context);
-                    free(result);
-                    result = NULL;
-                    LogError("Failed BIO_new for in BIO.");
-                }
-                else
-                {
-                    result->out_bio = BIO_new(BIO_s_mem());
-                    if (result->out_bio == NULL)
-                    {
-                        (void)BIO_free(result->in_bio);
-                        SSL_CTX_free(result->ssl_context);
-                        free(result);
-                        result = NULL;
-                        LogError("Failed BIO_new for out BIO.");
-                    }
-                    else
-                    {
-                        const IO_INTERFACE_DESCRIPTION* underlying_io_interface = socketio_get_interface_description();
-                        if (underlying_io_interface == NULL)
-                        {
-                            (void)BIO_free(result->in_bio);
-                            (void)BIO_free(result->out_bio);
-                            SSL_CTX_free(result->ssl_context);
-                            free(result);
-                            result = NULL;
-                            LogError("Failed getting socket IO interface description.");
-                        }
-                        else
-                        {
-                            result->underlying_io = xio_create(underlying_io_interface, &socketio_config, logger_log);
-                            if ((result->underlying_io == NULL) ||
-                                (BIO_set_mem_eof_return(result->in_bio, -1) <= 0) ||
-                                (BIO_set_mem_eof_return(result->out_bio, -1) <= 0))
-                            {
-                                (void)BIO_free(result->in_bio);
-                                (void)BIO_free(result->out_bio);
-                                SSL_CTX_free(result->ssl_context);
-                                free(result);
-                                result = NULL;
-                                LogError("Failed xio_create.");
-                            }
-                            else
-                            {
-                                SSL_CTX_set_verify(result->ssl_context, SSL_VERIFY_PEER, NULL);
-
-                                /* Specifies that the default locations for which CA certificates are loaded should be used. */
-                                if (SSL_CTX_set_default_verify_paths(result->ssl_context) != 1)
-                                {
-                                    /* This is only a warning to the user. They can still specify the certificate via SetOption. */
-                                    LogInfo("WARNING: Unable to specify the default location for CA certificates on this platform.");
-                                }
-
-                                result->ssl = SSL_new(result->ssl_context);
-                                if (result->ssl == NULL)
-                                {
-                                    (void)BIO_free(result->in_bio);
-                                    (void)BIO_free(result->out_bio);
-                                    SSL_CTX_free(result->ssl_context);
-                                    free(result);
-                                    result = NULL;
-                                    LogError("Failed creating OpenSSL instance.");
-                                }
-                                else
-                                {
-                                    SSL_set_bio(result->ssl, result->in_bio, result->out_bio);
-                                    SSL_set_connect_state(result->ssl);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
         }
     }
 
@@ -481,9 +543,12 @@ void tlsio_openssl_destroy(CONCRETE_IO_HANDLE tls_io)
     else
     {
         TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tls_io;
-        SSL_free(tls_io_instance->ssl);
-        SSL_CTX_free(tls_io_instance->ssl_context);
-
+        if (tls_io_instance->certificate != NULL)
+        {
+            free(tls_io_instance->certificate);
+            tls_io_instance->certificate = NULL;
+        }
+        free(tls_io_instance->hostname);
         xio_destroy(tls_io_instance->underlying_io);
         free(tls_io);
     }
@@ -520,10 +585,15 @@ int tlsio_openssl_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_open
 
             tls_io_instance->tlsio_state = TLSIO_STATE_OPENING_UNDERLYING_IO;
 
-            if (xio_open(tls_io_instance->underlying_io, on_underlying_io_open_complete, tls_io_instance, on_underlying_io_bytes_received, tls_io_instance, on_underlying_io_error, tls_io_instance) != 0)
+            if (create_openssl_instance(tls_io_instance) != 0)
+            {
+                tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
+                result = __LINE__;
+            }
+            else if (xio_open(tls_io_instance->underlying_io, on_underlying_io_open_complete, tls_io_instance, on_underlying_io_bytes_received, tls_io_instance, on_underlying_io_error, tls_io_instance) != 0)
             {
                 result = __LINE__;
-                LogError("Error in xio_open.");
+                tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
             }
             else
             {
@@ -563,10 +633,12 @@ int tlsio_openssl_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_cl
             if (xio_close(tls_io_instance->underlying_io, on_underlying_io_close_complete, tls_io_instance) != 0)
             {
                 result = __LINE__;
+                tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
                 LogError("Error in xio_close.");
             }
             else
             {
+                destroy_openssl_instance(tls_io_instance);
                 result = 0;
             }
         }
@@ -654,40 +726,31 @@ int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
 
         if (strcmp("TrustedCerts", optionName) == 0)
         {
-            cert_store = SSL_CTX_get_cert_store(tls_io_instance->ssl_context);
-            if (cert_store == NULL)
+            const char* cert = (const char*)value;
+
+            if (tls_io_instance->certificate != NULL)
+            {
+                // Free the memory if it has been previously allocated
+                free(tls_io_instance->certificate);
+            }
+
+            // Store the certificate
+            size_t len = strlen(cert);
+            tls_io_instance->certificate = malloc(len+1);
+            if (tls_io_instance->certificate == NULL)
             {
                 result = __LINE__;
             }
             else
             {
-                cert_memory_bio = BIO_new_mem_buf((void*)value, -1);
+                strcpy(tls_io_instance->certificate, cert);
+                result = 0;
+            }
 
-                if (cert_memory_bio == NULL)
-                {
-                    result = __LINE__;
-                }
-                else
-                {
-                    xcert = PEM_read_bio_X509(cert_memory_bio, NULL, NULL, NULL);
-
-                    if (xcert == NULL) {
-                        result = __LINE__;
-                    }
-                    else
-                    {
-                        if (X509_STORE_add_cert(cert_store, xcert) != 1)
-                        {
-                            X509_free(xcert);
-                            result = __LINE__;
-                        }
-                        else
-                        {
-                            result = 0;
-                        }
-                    }
-                    BIO_free(cert_memory_bio);
-                }
+            // If we're previously connected then add the cert to the context
+            if (tls_io_instance->ssl_context != NULL)
+            {
+                result = add_certificate_to_store(tls_io_instance, cert);
             }
         }
         else

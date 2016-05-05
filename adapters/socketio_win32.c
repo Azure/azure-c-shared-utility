@@ -315,7 +315,7 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
 
 int socketio_close(CONCRETE_IO_HANDLE socket_io, ON_IO_CLOSE_COMPLETE on_io_close_complete, void* callback_context)
 {
-    int result = 0;
+    int result;
 
     if (socket_io == NULL)
     {
@@ -326,24 +326,18 @@ int socketio_close(CONCRETE_IO_HANDLE socket_io, ON_IO_CLOSE_COMPLETE on_io_clos
     {
         SOCKET_IO_INSTANCE* socket_io_instance = (SOCKET_IO_INSTANCE*)socket_io;
 
-        if ((socket_io_instance->io_state != IO_STATE_OPEN) &&
-            (socket_io_instance->io_state != IO_STATE_OPENING))
-        {
-            result = __LINE__;
-        }
-        else
+        if ((socket_io_instance->io_state != IO_STATE_CLOSING) &&
+            (socket_io_instance->io_state != IO_STATE_CLOSED))
         {
             (void)closesocket(socket_io_instance->socket);
             socket_io_instance->socket = INVALID_SOCKET;
             socket_io_instance->io_state = IO_STATE_CLOSED;
-
-            if (on_io_close_complete != NULL)
-            {
-                on_io_close_complete(callback_context);
-            }
-
-            result = 0;
         }
+        if (on_io_close_complete != NULL)
+        {
+            on_io_close_complete(callback_context);
+        }
+        result = 0;
     }
 
     return result;
