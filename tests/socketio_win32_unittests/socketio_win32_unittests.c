@@ -321,8 +321,8 @@ void umocktypes_free_const_struct_sockaddr_ptr(struct sockaddr** value)
 /* after this point malloc is gballoc */
 #include "azure_c_shared_utility/gballoc.h"
 
-TEST_MUTEX_HANDLE g_testByTest;
-TEST_MUTEX_HANDLE g_dllByDll;
+static TEST_MUTEX_HANDLE g_testByTest;
+static TEST_MUTEX_HANDLE g_dllByDll;
 
 void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {

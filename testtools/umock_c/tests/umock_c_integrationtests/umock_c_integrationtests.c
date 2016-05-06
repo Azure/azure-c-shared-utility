@@ -103,6 +103,7 @@ void free_func_TEST_STRUCT_COPY_FAILS(TEST_STRUCT_COPY_FAILS* value)
 }
 
 static TEST_MUTEX_HANDLE test_mutex;
+static TEST_MUTEX_HANDLE global_mutex;
 
 MOCK_FUNCTION_WITH_CODE(, void, test_mock_function_with_code_1_arg, int, a);
 MOCK_FUNCTION_END()
@@ -127,6 +128,8 @@ TEST_SUITE_INITIALIZE(suite_init)
 {
     int result;
 
+    TEST_INITIALIZE_MEMORY_DEBUG(global_mutex);
+
     test_mutex = TEST_MUTEX_CREATE();
     ASSERT_IS_NOT_NULL(test_mutex);
 
@@ -146,6 +149,7 @@ TEST_SUITE_CLEANUP(suite_cleanup)
     umock_c_deinit();
 
     TEST_MUTEX_DESTROY(test_mutex);
+    TEST_DEINITIALIZE_MEMORY_DEBUG(global_mutex);
 }
 
 TEST_FUNCTION_INITIALIZE(test_function_init)

@@ -90,11 +90,14 @@ int umocktypes_c_register_types(void)
 }
 
 static TEST_MUTEX_HANDLE test_mutex;
+static TEST_MUTEX_HANDLE global_mutex;
 
 BEGIN_TEST_SUITE(umock_c_without_init_unittests)
 
 TEST_SUITE_INITIALIZE(suite_init)
 {
+    TEST_INITIALIZE_MEMORY_DEBUG(global_mutex);
+
     test_mutex = TEST_MUTEX_CREATE();
     ASSERT_IS_NOT_NULL(test_mutex);
 }
@@ -102,6 +105,7 @@ TEST_SUITE_INITIALIZE(suite_init)
 TEST_SUITE_CLEANUP(suite_cleanup)
 {
     TEST_MUTEX_DESTROY(test_mutex);
+    TEST_DEINITIALIZE_MEMORY_DEBUG(global_mutex);
 }
 
 TEST_FUNCTION_INITIALIZE(test_function_init)
