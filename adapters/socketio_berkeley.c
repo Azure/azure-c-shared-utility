@@ -12,6 +12,7 @@
 #include "azure_c_shared_utility/socketio.h"
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/select.h>
 #include <netinet/tcp.h>
 #include <errno.h>
 #include <netdb.h>
