@@ -3,14 +3,14 @@
 
 cmake_minimum_required(VERSION 2.8.11)
 
-set(theseTestsName umock_c_unittests)
+set(theseTestsName umock_c_negative_tests_no_init_unittests)
 
 set(${theseTestsName}_test_files
-umock_c_unittests.c
+umock_c_negative_tests_no_init_unittests.c
 )
 
 set(${theseTestsName}_c_files
-../../src/umock_c.c
+../../src/umock_c_negative_tests.c
 )
 
 umockc_build_test_artifacts(${theseTestsName} ON)

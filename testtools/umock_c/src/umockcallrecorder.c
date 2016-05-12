@@ -426,3 +426,178 @@ UMOCKCALL_HANDLE umockcallrecorder_get_last_expected_call(UMOCKCALLRECORDER_HAND
 
     return result;
 }
+
+/* Codes_SRS_UMOCKCALLRECORDER_01_035: [ umockcallrecorder_clone shall clone a call recorder and return a handle to the newly cloned call recorder. ]*/
+UMOCKCALLRECORDER_HANDLE umockcallrecorder_clone(UMOCKCALLRECORDER_HANDLE umock_call_recorder)
+{
+    UMOCKCALLRECORDER_HANDLE result;
+
+    if (umock_call_recorder == NULL)
+    {
+        /* Codes_SRS_UMOCKCALLRECORDER_01_036: [ If the umock_call_recorder argument is NULL, umockcallrecorder_clone shall fail and return NULL. ]*/
+        UMOCK_LOG("umockcallrecorder_clone: NULL umock_call_recorder.");
+        result = NULL;
+    }
+    else
+    {
+        /* Codes_SRS_UMOCKCALLRECORDER_01_037: [ If allocating memory for the new umock call recorder instance fails, umockcallrecorder_clone shall fail and return NULL. ]*/
+        result = umockcallrecorder_create();
+        if (result != NULL)
+        {
+            size_t i;
+
+            result->expected_calls = (UMOCK_EXPECTED_CALL*)malloc(sizeof(UMOCK_EXPECTED_CALL) * sizeof(umock_call_recorder->expected_call_count));
+            if (result->expected_calls == NULL)
+            {
+                /* Codes_SRS_UMOCKCALLRECORDER_01_052: [ If allocating memory for the expected calls fails, umockcallrecorder_clone shall fail and return NULL. ]*/
+                umockcallrecorder_destroy(result);
+                result = NULL;
+                UMOCK_LOG("umockcallrecorder: clone call recorder failed - cannot allocate expected_calls.");
+            }
+            else
+            {
+                for (i = 0; i < umock_call_recorder->expected_call_count; i++)
+                {
+                    result->expected_calls[i].umockcall = NULL;
+                }
+
+                /* Codes_SRS_UMOCKCALLRECORDER_01_038: [ umockcallrecorder_clone shall clone all the expected calls. ]*/
+                for (i = 0; i < umock_call_recorder->expected_call_count; i++)
+                {
+                    result->expected_calls[i].is_matched = umock_call_recorder->expected_calls[i].is_matched;
+
+                    /* Codes_SRS_UMOCKCALLRECORDER_01_039: [ Each expected call shall be cloned by calling umockcall_clone. ]*/
+                    result->expected_calls[i].umockcall = umockcall_clone(umock_call_recorder->expected_calls[i].umockcall);
+                    if (result->expected_calls[i].umockcall == NULL)
+                    {
+                        break;
+                    }
+                }
+
+                if (i < umock_call_recorder->expected_call_count)
+                {
+                    size_t j;
+
+                    /* Codes_SRS_UMOCKCALLRECORDER_01_040: [ If cloning an expected call fails, umockcallrecorder_clone shall fail and return NULL. ]*/
+                    for (j = 0; j < i; j++)
+                    {
+                        umockcall_destroy(result->expected_calls[j].umockcall);
+                        result->expected_calls[j].umockcall = NULL;
+                    }
+
+                    umockcallrecorder_destroy(result);
+                    result = NULL;
+                    UMOCK_LOG("umockcallrecorder: clone call recorder failed - cannot clone all expected calls.");
+                }
+                else
+                {
+                    result->expected_call_count = umock_call_recorder->expected_call_count;
+
+                    result->actual_calls = (UMOCKCALL_HANDLE*)malloc(sizeof(UMOCKCALL_HANDLE) * umock_call_recorder->actual_call_count);
+                    if (result->actual_calls == NULL)
+                    {
+                        /* Codes_SRS_UMOCKCALLRECORDER_01_053: [ If allocating memory for the actual calls fails, umockcallrecorder_clone shall fail and return NULL. ]*/
+                        umockcallrecorder_destroy(result);
+                        result = NULL;
+                        UMOCK_LOG("umockcallrecorder: clone call recorder failed - cannot allocate expected_calls.");
+                    }
+                    else
+                    {
+                        for (i = 0; i < umock_call_recorder->actual_call_count; i++)
+                        {
+                            result->actual_calls[i] = NULL;
+                        }
+
+                        /* Codes_SRS_UMOCKCALLRECORDER_01_041: [ umockcallrecorder_clone shall clone all the actual calls. ]*/
+                        for (i = 0; i < umock_call_recorder->actual_call_count; i++)
+                        {
+                            /* Codes_SRS_UMOCKCALLRECORDER_01_042: [ Each actual call shall be cloned by calling umockcall_clone. ]*/
+                            result->actual_calls[i] = umockcall_clone(umock_call_recorder->actual_calls[i]);
+                            if (result->actual_calls[i] == NULL)
+                            {
+                                break;
+                            }
+                        }
+
+                        if (i < umock_call_recorder->actual_call_count)
+                        {
+                            size_t j;
+
+                            /* Codes_SRS_UMOCKCALLRECORDER_01_043: [ If cloning an actual call fails, umockcallrecorder_clone shall fail and return NULL. ]*/
+                            for (j = 0; j < i; j++)
+                            {
+                                umockcall_destroy(result->actual_calls[j]);
+                                result->actual_calls[j] = NULL;
+                            }
+
+                            umockcallrecorder_destroy(result);
+                            result = NULL;
+                            UMOCK_LOG("umockcallrecorder: clone call recorder failed - cannot clone all actual calls.");
+                        }
+                        else
+                        {
+                            result->actual_call_count = umock_call_recorder->actual_call_count;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return result;
+}
+
+int umockcallrecorder_get_expected_call_count(UMOCKCALLRECORDER_HANDLE umock_call_recorder, size_t* expected_call_count)
+{
+    int result;
+
+    if ((umock_call_recorder == NULL) ||
+        (expected_call_count == NULL))
+    {
+        /* Codes_SRS_UMOCKCALLRECORDER_01_046: [ If any of the arguments is NULL, umockcallrecorder_get_expected_call_count shall return a non-zero value. ]*/
+        result = __LINE__;
+        UMOCK_LOG("umockcallrecorder_get_expected_call_count: Invalid arguments, umock_call_recorder = %p, expected_call_count = %p",
+            umock_call_recorder, expected_call_count);
+    }
+    else
+    {
+        /* Codes_SRS_UMOCKCALLRECORDER_01_044: [ umockcallrecorder_get_expected_call_count shall return in the expected_call_count argument the number of expected calls associated with the call recorder. ]*/
+        *expected_call_count = umock_call_recorder->expected_call_count;
+        /* Codes_SRS_UMOCKCALLRECORDER_01_045: [ On success umockcallrecorder_get_expected_call_count shall return 0. ]*/
+        result = 0;
+    }
+
+    return result;
+}
+
+int umockcallrecorder_fail_call(UMOCKCALLRECORDER_HANDLE umock_call_recorder, size_t index)
+{
+    int result;
+
+    /* Codes_SRS_UMOCKCALLRECORDER_01_049: [ If umock_call_recorder is NULL, umockcallrecorder_fail_call shall return a non-zero value. ]*/
+    if ((umock_call_recorder == NULL) ||
+        /* Codes_SRS_UMOCKCALLRECORDER_01_050: [ If index is invalid, umockcallrecorder_fail_call shall return a non-zero value. ]*/
+        (index >= umock_call_recorder->expected_call_count))
+    {
+        result = __LINE__;
+        UMOCK_LOG("umockcallrecorder_fail_call: NULL Invalid arguments, umock_call_recorder = %p, index = %zu",
+            umock_call_recorder, index);
+    }
+    else
+    {
+        /* Codes_SRS_UMOCKCALLRECORDER_01_047: [ umockcallrecorder_fail_call shall mark an expected call as to be failed by calling umockcall_set_fail_call with a 1 value for fail_call. ]*/
+        if (umockcall_set_fail_call(umock_call_recorder->expected_calls[index].umockcall, 1) != 0)
+        {
+            /* Codes_SRS_UMOCKCALLRECORDER_01_051: [ If umockcall_set_fail_call fails, umockcallrecorder_fail_call shall return a non-zero value. ]*/
+            result = __LINE__;
+            UMOCK_LOG("umockcallrecorder_fail_call: umockcall_set_fail_call failed.");
+        }
+        else
+        {
+            /* Codes_SRS_UMOCKCALLRECORDER_01_048: [ On success, umockcallrecorder_fail_call shall return 0. ]*/
+            result = 0;
+        }
+    }
+
+    return result;
+}

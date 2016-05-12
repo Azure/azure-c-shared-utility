@@ -770,3 +770,131 @@ XX**SRS_UMOCK_C_LIB_01_113: [**The REGISTER_GLOBAL_MOCK_RETURNS shall register b
 XX**SRS_UMOCK_C_LIB_01_114: [**If there are multiple invocations of REGISTER_GLOBAL_MOCK_RETURNS, the last one shall take effect over the previous ones.**]**
 
 XX**SRS_UMOCK_C_LIB_01_143: [** If any error occurs during REGISTER_GLOBAL_MOCK_RETURNS, umock_c shall raise an error with the code UMOCK_C_ERROR. **]**
+
+## negative tests addon
+
+In order to automate negative tests writing, a separate API surface is provided: umock_c_negative_tests.
+
+Example:
+
+Given a function under test with the following code:
+```c
+int function_under_test(void)
+{
+    int result;
+    
+    if (function_1() != 0)
+    {
+        result = __LINE__;
+    }
+    else
+    {
+        if (function_2() != 0)
+        {
+            result = __LINE__;
+        }
+        else
+        {
+            result = 0;
+        }
+    }
+
+    return result;
+}
+```
+
+The function calls two functions that return int:
+
+```c
+    MOCKABLE_FUNCTION(, int, function_1);
+    MOCKABLE_FUNCTION(, int, function_2);
+```
+
+In order to test that for each case where either function_1 or function_2 fails and returns a non-zero value, one could write the following test that loops through all cases as opposed to writing individual negative tests:
+
+```c
+    size_t i;
+    STRICT_EXPECTED_CALL(function_1())
+        .SetReturn(0).SetFailReturn(1);
+    STRICT_EXPECTED_CALL(function_2())
+        .SetReturn(0).SetFailReturn(1);
+    umock_c_negative_tests_snapshot();
+
+    for (i = 0; i < umock_c_negative_tests_call_count(); i++)
+    {
+        // arrange
+        char temp_str[128];
+        int result;
+        umock_c_negative_tests_reset();
+        umock_c_negative_tests_fail_call(i);
+
+        // act
+        result = function_under_test();
+
+        // assert
+        sprintf(temp_str, "On failed call %zu", i + 1);
+        ASSERT_ARE_NOT_EQUAL_WITH_MSG(int, 0, result, temp_str);
+    }
+```
+
+Note that a return value and a fail return value must be specified for the negative tests. If they are not specified that will result in undefined behavior.  
+
+###umock_c_negative_tests_init
+
+```c
+int umock_c_negative_tests_init(void)
+```
+
+**SRS_UMOCK_C_LIB_01_164: [** umock_c_negative_tests_init shall initialize the negative tests umock_c module. **]**
+**SRS_UMOCK_C_LIB_01_165: [** On success it shall return 0. If any error occurs, it shall return a non-zero value. **]**
+This call is typically made in the test function setup.
+
+###umock_c_negative_tests_deinit
+
+```c
+void umock_c_negative_tests_deinit(void)
+```
+
+**SRS_UMOCK_C_LIB_01_166: [** umock_c_negative_tests_deinit shall free all resources used by the negative tests module. **]**
+
+###umock_c_negative_tests_snapshot
+
+```c
+void umock_c_negative_tests_snapshot(void)
+```
+
+XX**SRS_UMOCK_C_LIB_01_167: [** umock_c_negative_tests_snapshot shall take a snapshot of the current setup of expected calls (a.k.a happy path). **]**
+This is in order for these calls to be replayed as many times as needed, each time allowing different calls to be failed.
+X**SRS_UMOCK_C_LIB_01_168: [** If umock_c_negative_tests_snapshot is called without the module being initialized, it shall do nothing. **]**
+X**SRS_UMOCK_C_LIB_01_169: [** All errors shall be reported by calling the umock_c on error function. **]** 
+
+###umock_c_negative_tests_reset
+
+```c
+void umock_c_negative_tests_reset(void)
+```
+
+XX**SRS_UMOCK_C_LIB_01_170: [** umock_c_negative_tests_reset shall bring umock_c expected and actual calls to the state recorded when umock_c_negative_tests_snapshot was called. **]**
+This is done typically in preparation of running each negative test.
+X**SRS_UMOCK_C_LIB_01_171: [** If umock_c_negative_tests_reset is called without the module being initialized, it shall do nothing. **]**
+X**SRS_UMOCK_C_LIB_01_172: [** All errors shall be reported by calling the umock_c on error function. **]**
+
+###umock_c_negative_tests_fail_call
+
+```c
+void umock_c_negative_tests_fail_call(size_t index)
+```
+
+XX**SRS_UMOCK_C_LIB_01_173: [** umock_c_negative_tests_fail_call shall instruct the negative tests module to fail a specific call. **]**
+X**SRS_UMOCK_C_LIB_01_174: [** If umock_c_negative_tests_fail_call is called without the module being initialized, it shall do nothing. **]**
+X**SRS_UMOCK_C_LIB_01_175: [** All errors shall be reported by calling the umock_c on error function. **]**
+
+###umock_c_negative_tests_call_count
+
+```c
+size_t umock_c_negative_tests_call_count(void)
+```
+
+XX**SRS_UMOCK_C_LIB_01_176: [** umock_c_negative_tests_call_count shall provide the number of expected calls, so that the test code can iterate through all negative cases. **]**
+X**SRS_UMOCK_C_LIB_01_177: [** If umock_c_negative_tests_fail_call is called without the module being initialized, it shall return 0. **]**
+X**SRS_UMOCK_C_LIB_01_178: [** All errors shall be reported by calling the umock_c on error function. **]**

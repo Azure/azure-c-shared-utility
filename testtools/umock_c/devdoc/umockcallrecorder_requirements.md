@@ -17,6 +17,9 @@ umockcallrecorder is a module that implements recording the expected and actual 
     extern const char* umockcallrecorder_get_actual_calls(UMOCKCALLRECORDER_HANDLE umock_call_recorder);
     extern const char* umockcallrecorder_get_expected_calls(UMOCKCALLRECORDER_HANDLE umock_call_recorder);
     extern UMOCKCALL_HANDLE umockcallrecorder_get_last_expected_call(UMOCKCALLRECORDER_HANDLE umock_call_recorder);
+    extern UMOCKCALLRECORDER_HANDLE umockcallrecorder_clone(UMOCKCALLRECORDER_HANDLE umock_call_recorder);
+    extern int umockcallrecorder_get_expected_call_count(UMOCKCALLRECORDER_HANDLE umock_call_recorder, size_t* expected_call_count);
+    extern int umockcallrecorder_fail_call(UMOCKCALLRECORDER_HANDLE umock_call_recorder, size_t index);
 ```
 
 ##umockcallrecorder_create
@@ -106,3 +109,43 @@ extern UMOCKCALL_HANDLE umockcallrecorder_get_last_expected_call(UMOCKCALLRECORD
 **SRS_UMOCKCALLRECORDER_01_032: [** umockcallrecorder_get_last_expected_call shall return the last expected call for the umock_call_recorder call recorder. **]**
 **SRS_UMOCKCALLRECORDER_01_033: [** If umock_call_recorder is NULL, umockcallrecorder_get_last_expected_call shall fail and return NULL. **]**
 **SRS_UMOCKCALLRECORDER_01_034: [** If no expected call has been recorded for umock_call_recorder then umockcallrecorder_get_last_expected_call shall fail and return NULL. **]**
+
+##umockcallrecorder_clone
+
+```c
+extern UMOCKCALLRECORDER_HANDLE umockcallrecorder_clone(UMOCKCALLRECORDER_HANDLE umock_call_recorder);
+```
+
+**SRS_UMOCKCALLRECORDER_01_035: [** umockcallrecorder_clone shall clone a call recorder and return a handle to the newly cloned call recorder. **]**
+**SRS_UMOCKCALLRECORDER_01_036: [** If the umock_call_recorder argument is NULL, umockcallrecorder_clone shall fail and return NULL. **]**
+**SRS_UMOCKCALLRECORDER_01_037: [** If allocating memory for the new umock call recorder instance fails, umockcallrecorder_clone shall fail and return NULL. **]**
+**SRS_UMOCKCALLRECORDER_01_038: [** umockcallrecorder_clone shall clone all the expected calls. **]**
+**SRS_UMOCKCALLRECORDER_01_039: [** Each expected call shall be cloned by calling umockcall_clone. **]**
+**SRS_UMOCKCALLRECORDER_01_040: [** If cloning an expected call fails, umockcallrecorder_clone shall fail and return NULL. **]**
+**SRS_UMOCKCALLRECORDER_01_041: [** umockcallrecorder_clone shall clone all the actual calls. **]**
+**SRS_UMOCKCALLRECORDER_01_042: [** Each actual call shall be cloned by calling umockcall_clone. **]**
+**SRS_UMOCKCALLRECORDER_01_043: [** If cloning an actual call fails, umockcallrecorder_clone shall fail and return NULL. **]**
+**SRS_UMOCKCALLRECORDER_01_052: [** If allocating memory for the expected calls fails, umockcallrecorder_clone shall fail and return NULL. **]**
+**SRS_UMOCKCALLRECORDER_01_053: [** If allocating memory for the actual calls fails, umockcallrecorder_clone shall fail and return NULL. **]**
+
+##umockcallrecorder_get_expected_call_count
+
+```c
+extern int umockcallrecorder_get_expected_call_count(UMOCKCALLRECORDER_HANDLE umock_call_recorder, size_t* expected_call_count);
+```
+
+**SRS_UMOCKCALLRECORDER_01_044: [** umockcallrecorder_get_expected_call_count shall return in the expected_call_count argument the number of expected calls associated with the call recorder. **]**
+**SRS_UMOCKCALLRECORDER_01_045: [** On success umockcallrecorder_get_expected_call_count shall return 0. **]**
+**SRS_UMOCKCALLRECORDER_01_046: [** If any of the arguments is NULL, umockcallrecorder_get_expected_call_count shall return a non-zero value. **]**
+
+##umockcallrecorder_fail_call
+
+```c
+extern int umockcallrecorder_fail_call(UMOCKCALLRECORDER_HANDLE umock_call_recorder, size_t index);
+```
+
+**SRS_UMOCKCALLRECORDER_01_047: [** umockcallrecorder_fail_call shall mark an expected call as to be failed by calling umockcall_set_fail_call with a 1 value for fail_call. **]**
+**SRS_UMOCKCALLRECORDER_01_048: [** On success, umockcallrecorder_fail_call shall return 0. **]**
+**SRS_UMOCKCALLRECORDER_01_049: [** If umock_call_recorder is NULL, umockcallrecorder_fail_call shall return a non-zero value. **]**
+**SRS_UMOCKCALLRECORDER_01_050: [** If index is invalid, umockcallrecorder_fail_call shall return a non-zero value. **]**
+**SRS_UMOCKCALLRECORDER_01_051: [** If umockcall_set_fail_call fails, umockcallrecorder_fail_call shall return a non-zero value. **]**

@@ -11,16 +11,17 @@ extern "C" {
 #include <stdlib.h>
 #endif
 #include "azure_c_shared_utility/macro_utils.h"
+#include "umockcallrecorder.h"
 
-    typedef enum UMOCK_C_ERROR_CODE_TAG
-    {
-        UMOCK_C_ARG_INDEX_OUT_OF_RANGE,
-        UMOCK_C_MALLOC_ERROR,
-        UMOCK_C_INVALID_ARGUMENT_BUFFER,
-        UMOCK_C_COMPARE_CALL_ERROR,
-        UMOCK_C_RESET_CALLS_ERROR,
+#define UMOCK_C_ERROR_CODE_VALUES \
+        UMOCK_C_ARG_INDEX_OUT_OF_RANGE, \
+        UMOCK_C_MALLOC_ERROR, \
+        UMOCK_C_INVALID_ARGUMENT_BUFFER, \
+        UMOCK_C_COMPARE_CALL_ERROR, \
+        UMOCK_C_RESET_CALLS_ERROR, \
         UMOCK_C_ERROR
-    } UMOCK_C_ERROR_CODE;
+
+DEFINE_ENUM(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
     /* This is the type for the error callback by which umock_c shall indicate errors to the user */
     typedef void(*ON_UMOCK_C_ERROR)(UMOCK_C_ERROR_CODE error_code);
@@ -97,6 +98,8 @@ extern void umock_c_deinit(void);
 extern void umock_c_reset_all_calls(void);
 extern const char* umock_c_get_actual_calls(void);
 extern const char* umock_c_get_expected_calls(void);
+extern UMOCKCALLRECORDER_HANDLE umock_c_get_call_recorder(void);
+extern int umock_c_set_call_recorder(UMOCKCALLRECORDER_HANDLE umockc_call_recorder);
 
 #include "umock_c_internal.h"
 #include "umock_c_prod.h"
