@@ -175,7 +175,6 @@ int umockcallrecorder_add_actual_call(UMOCKCALLRECORDER_HANDLE umock_call_record
                 {
                     /* Codes_SRS_UMOCKCALLRECORDER_01_016: [ If the call matches one of the expected calls, a handle to the matched call shall be filled into the matched_call argument. ]*/
                     *matched_call = umock_call_recorder->expected_calls[i].umockcall;
-                    umock_call_recorder->expected_calls[i].is_matched = 1;
                     break;
                 }
                 /* Codes_SRS_UMOCKCALLRECORDER_01_021: [ If umockcall_are_equal fails, umockcallrecorder_add_actual_call shall fail and return a non-zero value. ]*/
@@ -190,6 +189,15 @@ int umockcallrecorder_add_actual_call(UMOCKCALLRECORDER_HANDLE umock_call_record
                     break;
                 }
             }
+        }
+
+        if ((umock_call_recorder->actual_call_count == 0) && (i < umock_call_recorder->expected_call_count))
+        {
+            umock_call_recorder->expected_calls[i].is_matched = 1;
+        }
+        else
+        {
+            i = umock_call_recorder->expected_call_count;
         }
 
         if (is_error)
