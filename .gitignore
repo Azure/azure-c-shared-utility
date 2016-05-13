@@ -5,3 +5,6 @@
 /build_all/windows/nuget.exe
 /cmake
 /devdoc/~$o_requirements.docm
+#### Manully added section
+# Ignore eclipse project file
+.project
