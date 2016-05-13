@@ -16,8 +16,7 @@ DEFINE_ENUM_STRINGS(COND_RESULT, COND_RESULT_VALUES);
 
 typedef struct CONDITION_TAG
 {
-    int waiting_thread_count;
-    CRITICAL_SECTION count_lock;
+    volatile LONG waiting_thread_count;
     HANDLE event_handle;
 }
 CONDITION;
@@ -42,7 +41,6 @@ COND_HANDLE Condition_Init(void)
         {
             /* Needed to emulate pthread_signal as we only signal the event when there are waiting threads */
             cond->waiting_thread_count = 0;
-            InitializeCriticalSection(&cond->count_lock);
         }
     }
 
@@ -60,13 +58,9 @@ COND_RESULT Condition_Post(COND_HANDLE handle)
     else
     {
         CONDITION* cond = (CONDITION*)handle;
-        int waiting_thread_count;
 
-        EnterCriticalSection(&cond->count_lock);
-        waiting_thread_count = cond->waiting_thread_count;
-        LeaveCriticalSection(&cond->count_lock);
-
-        if (waiting_thread_count == 0 || SetEvent(cond->event_handle))
+        /* Emulate pthreads signalling, by only unblocking *one* waiting thread if there is one waiting */
+        if (cond->waiting_thread_count == 0 || SetEvent(cond->event_handle))
         {
             // Codes_SRS_CONDITION_18_003: [ Condition_Post shall return COND_OK if it succcessfully posts the condition ]
             result = COND_OK;
@@ -82,6 +76,7 @@ COND_RESULT Condition_Post(COND_HANDLE handle)
 COND_RESULT Condition_Wait(COND_HANDLE handle, LOCK_HANDLE lock, int timeout_milliseconds)
 {
     COND_RESULT result;
+
     // Codes_SRS_CONDITION_18_004: [ Condition_Wait shall return COND_INVALID_ARG if handle is NULL ]
     // Codes_SRS_CONDITION_18_005: [ Condition_Wait shall return COND_INVALID_ARG if lock is NULL and timeout_milliseconds is 0 ]
     // Codes_SRS_CONDITION_18_006: [ Condition_Wait shall return COND_INVALID_ARG if lock is NULL and timeout_milliseconds is not 0 ]
@@ -94,39 +89,35 @@ COND_RESULT Condition_Wait(COND_HANDLE handle, LOCK_HANDLE lock, int timeout_mil
         CONDITION* cond = (CONDITION*)handle;
         DWORD wait_result;
 
-        if (timeout_milliseconds == 0)
-        {
-            timeout_milliseconds = INFINITE;
-        }
-
-        EnterCriticalSection(&cond->count_lock);
-        cond->waiting_thread_count++;
-        LeaveCriticalSection(&cond->count_lock);
-
-        Unlock(lock);
+        /* Increment the waiting thread count, unlock the lock and wait */
+        InterlockedIncrement(&cond->waiting_thread_count);
+        
+        (void)Unlock(lock);
 
         // Codes_SRS_CONDITION_18_013: [ Condition_Wait shall accept relative timeouts ]
-        wait_result = WaitForSingleObject(cond->event_handle, timeout_milliseconds);
+        wait_result = WaitForSingleObject(cond->event_handle, timeout_milliseconds == 0 ? INFINITE : timeout_milliseconds);
 
-        Lock(lock);
+        (void)Lock(lock);
 
-        if (wait_result != WAIT_OBJECT_0 || wait_result != WAIT_TIMEOUT)
+        if (wait_result != WAIT_OBJECT_0 && wait_result != WAIT_TIMEOUT)
         {
             /* cond might be freed at this point, just return error */
             result = COND_ERROR;
         }
         else
         {
-            EnterCriticalSection(&cond->count_lock);
-            cond->waiting_thread_count--;
-            LeaveCriticalSection(&cond->count_lock);
+            /* To handle the chance of a race condition reset the event again when there are no more waiting threads */
+            if (InterlockedDecrement(&cond->waiting_thread_count) == 0)
+            {
+                (void)ResetEvent(cond->event_handle);
+            }
 
             if (wait_result == WAIT_TIMEOUT)
             {
                 // Codes_SRS_CONDITION_18_011: [ Condition_Wait shall return COND_TIMEOUT if the condition is NOT triggered and timeout_milliseconds is not 0 ]
                 result = COND_TIMEOUT;
             }
-            else 
+            else
             {
                 // Codes_SRS_CONDITION_18_012: [ Condition_Wait shall return COND_OK if the condition is triggered and timeout_milliseconds is not 0 ]
                 result = COND_OK;
@@ -146,9 +137,6 @@ void Condition_Deinit(COND_HANDLE handle)
 
         (void)CloseHandle(cond->event_handle);
         cond->event_handle = INVALID_HANDLE_VALUE;
-
-        DeleteCriticalSection(&cond->count_lock);
-        cond->waiting_thread_count = 0;
 
         free(cond);
     }
