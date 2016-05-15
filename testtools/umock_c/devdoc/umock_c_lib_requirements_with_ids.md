@@ -61,6 +61,8 @@ typedef enum UMOCK_C_ERROR_CODE_TAG
     UMOCK_C_INVALID_ARGUMENT_BUFFER,
     UMOCK_C_COMPARE_CALL_ERROR,
     UMOCK_C_RESET_CALLS_ERROR,
+    UMOCK_C_CAPTURE_RETURN_ALREADY_USED,
+    UMOCK_C_NULL_ARGUMENT,
     UMOCK_C_ERROR
 } UMOCK_C_ERROR_CODE;
 
@@ -715,6 +717,18 @@ X**SRS_UMOCK_C_LIB_01_129: [** ValidateArgumentBuffer shall only be available fo
 **SRS_UMOCK_C_LIB_01_101: [**The IgnoreAllCalls call modifier shall record that all calls matching the expected call shall be ignored. If no matching call occurs no missing call shall be reported.**]**
 **SRS_UMOCK_C_LIB_01_102: [**If multiple matching actual calls occur no unexpected calls shall be reported.**]**
 **SRS_UMOCK_C_LIB_01_103: [**The call matching shall be done taking into account arguments and call modifiers referring to arguments.**]**
+
+###CaptureReturn(return_type* captured_return_value)
+
+XX**SRS_UMOCK_C_LIB_01_179: [** The CaptureReturn call modifier shall copy the return value that is being returned to the code under test when an actual call is matched with the expected call. **]**
+XX**SRS_UMOCK_C_LIB_01_180: [** If CaptureReturn is called multiple times for the same call, an error shall be indicated with the code UMOCK_C_CAPTURE_RETURN_ALREADY_USED. **]**
+XX**SRS_UMOCK_C_LIB_01_182: [** If captured_return_value is NULL, umock_c shall raise an error with the code UMOCK_C_NULL_ARGUMENT. **]**
+**SRS_UMOCK_C_LIB_01_181: [** CaptureReturn shall only be available if the return type is not void. **]**
+
+Example:
+
+```c
+```
 
 ##Global mock modifiers
 
