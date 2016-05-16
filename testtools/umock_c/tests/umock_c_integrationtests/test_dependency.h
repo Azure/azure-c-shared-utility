@@ -51,6 +51,14 @@ extern "C" {
     MOCKABLE_FUNCTION(, char*, test_mock_function_returning_string);
     MOCKABLE_FUNCTION(, char*, test_mock_function_returning_string_with_macro);
 
+    typedef enum TEST_ENUM_TAG
+    {
+        TEST_ENUM_VALUE_1,
+        TEST_ENUM_VALUE_2
+    } TEST_ENUM;
+
+    MOCKABLE_FUNCTION(, void, test_mock_function_with_enum_type, TEST_ENUM, enum_type);
+
 #ifdef __cplusplus
 }
 #endif

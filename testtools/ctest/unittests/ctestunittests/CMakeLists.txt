@@ -36,10 +36,6 @@ add_executable(
 ctest_unittests ${ctest_unittests_c_files} ${ctest_unittests_cpp_files} ${ctest_unittests_h_files}
 )
 
-set_target_properties(ctest
-			   PROPERTIES
-			   FOLDER "shared_test_tools")
-
 set_target_properties(ctest_unittests
 			   PROPERTIES
 			   FOLDER "ctest_unit_tests")

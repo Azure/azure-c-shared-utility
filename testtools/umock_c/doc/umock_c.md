@@ -499,6 +499,35 @@ void umockvalue_free_int(int* value)
 }
 ```
 
+###Custom enum types
+
+####IMPLEMENT_UMOCK_C_ENUM_TYPE
+
+```c
+IMPLEMENT_UMOCK_C_ENUM_TYPE(type, ...)
+```
+
+IMPLEMENT_UMOCK_C_ENUM_TYPE shall implement umock_c handlers for an enum type.
+The variable arguments are a list making up the enum values.
+If a value that is not part of the enum is used, it shall be treated as an int value.
+Note: IMPLEMENT_UMOCK_C_ENUM_TYPE only generates the handlers, registering the handlers still has to be done by using the macro REGISTER_UMOCK_VALUE_TYPE.
+
+Example:
+
+```c
+IMPLEMENT_UMOCK_C_ENUM_TYPE(my_enum, enum_value1, enum_value2)
+```  
+
+This provides the handlers (stringify, are_equal, etc.) for the below C enum:
+
+```c
+typedef enum my_enum_tag
+{
+    enum_value1,
+    enum_value2
+} my_enum
+```
+
 ### Type names
 
 Since umock_c needs to maintain a list of registered types, the following rules shall be applied:
