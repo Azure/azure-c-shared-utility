@@ -435,8 +435,8 @@ TEST_FUNCTION(when_allocating_memory_fails_umocktypes_stringify_unsignedchar_fai
 
 /* umocktypes_are_equal_unsignedchar */
 
-/* Tests_SRS_UMOCKTYPES_C_01_018: [ umocktypes_are_equal_unsignedchar shall compare the 2 unsigned chars pounsigned chared to by left and right. ]*/
-/* Tests_SRS_UMOCKTYPES_C_01_020: [ If the values pounsigned chared to by left and right are equal, umocktypes_are_equal_unsignedchar shall return 1. ]*/
+/* Tests_SRS_UMOCKTYPES_C_01_018: [ umocktypes_are_equal_unsignedchar shall compare the 2 unsigned chars pointed to by left and right. ]*/
+/* Tests_SRS_UMOCKTYPES_C_01_020: [ If the values pointed to by left and right are equal, umocktypes_are_equal_unsignedchar shall return 1. ]*/
 TEST_FUNCTION(umocktypes_are_equal_unsignedchar_with_2_equal_values_returns_1)
 {
     // arrange
@@ -450,7 +450,7 @@ TEST_FUNCTION(umocktypes_are_equal_unsignedchar_with_2_equal_values_returns_1)
     ASSERT_ARE_EQUAL(int, 1, result);
 }
 
-/* Tests_SRS_UMOCKTYPES_C_01_021: [ If the values pounsigned chared to by left and right are different, umocktypes_are_equal_unsignedchar shall return 0. ]*/
+/* Tests_SRS_UMOCKTYPES_C_01_021: [ If the values pointed to by left and right are different, umocktypes_are_equal_unsignedchar shall return 0. ]*/
 TEST_FUNCTION(umocktypes_are_equal_unsignedchar_with_2_different_values_returns_0)
 {
     // arrange

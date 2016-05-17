@@ -12,6 +12,7 @@ set(umock_c_c_files
 ./src/umocktypes.c
 ./src/umocktypes_bool.c
 ./src/umocktypes_c.c
+./src/umocktypes_stdint.c
 ./src/umocktypes_charptr.c
 )
 
@@ -24,6 +25,7 @@ set(umock_c_h_files
 ./inc/umocktypes.h
 ./inc/umocktypes_bool.h
 ./inc/umocktypes_c.h
+./inc/umocktypes_stdint.h
 ./inc/umocktypes_charptr.h
 )
 

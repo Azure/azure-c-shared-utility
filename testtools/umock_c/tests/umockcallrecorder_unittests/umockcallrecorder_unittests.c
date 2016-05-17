@@ -789,6 +789,31 @@ TEST_FUNCTION(only_the_first_expected_call_is_checked_for_match)
     umockcallrecorder_destroy(call_recorder);
 }
 
+/* Tests_SRS_UMOCKCALLRECORDER_01_014: [ umockcallrecorder_add_actual_call shall check whether the call mock_call matches any of the expected calls maintained by umock_call_recorder. ]*/
+TEST_FUNCTION(if_matching_fails_subsequent_actual_calls_are_not_matched)
+{
+    // arrange
+    UMOCKCALLRECORDER_HANDLE call_recorder = umockcallrecorder_create();
+    UMOCKCALL_HANDLE matched_call;
+    umockcall_stringify_call_result = "[a()]";
+    umockcall_are_equal_call_result = 0;
+    (void)umockcallrecorder_add_expected_call(call_recorder, test_expected_umockcall_1);
+    (void)umockcallrecorder_add_actual_call(call_recorder, test_actual_umockcall_1, &matched_call);
+    reset_malloc_calls();
+
+    umockcall_are_equal_call_result = 1;
+    (void)umockcallrecorder_add_actual_call(call_recorder, test_actual_umockcall_2, &matched_call);
+
+    // act
+    const char* result = umockcallrecorder_get_actual_calls(call_recorder);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "[a()][a()]", result);
+
+    // cleanup
+    umockcallrecorder_destroy(call_recorder);
+}
+
 /* umockcallrecorder_get_actual_calls */
 
 /* Tests_SRS_UMOCKCALLRECORDER_01_022: [ umockcallrecorder_get_actual_calls shall return a pointer to the string representation of all the actual calls. ]*/
@@ -921,6 +946,29 @@ TEST_FUNCTION(when_allocating_memory_for_the_resulting_string_fails_then_umockca
     // assert
     ASSERT_IS_NULL(result);
     ASSERT_ARE_EQUAL(size_t, 1, realloc_call_count);
+
+    // cleanup
+    umockcallrecorder_destroy(call_recorder);
+}
+
+/* Tests_SRS_UMOCKCALLRECORDER_01_022: [ umockcallrecorder_get_actual_calls shall return a pointer to the string representation of all the actual calls. ]*/
+/* Tests_SRS_UMOCKCALLRECORDER_01_023: [ The string for each call shall be obtained by calling umockcall_stringify. ]*/
+TEST_FUNCTION(umockcallrecorder_get_actual_calls_when_the_actual_call_does_not_match_the_expected_should_return_the_actual_call)
+{
+    // arrange
+    UMOCKCALLRECORDER_HANDLE call_recorder = umockcallrecorder_create();
+    UMOCKCALL_HANDLE matched_call;
+    umockcall_stringify_call_result = "[a()]";
+    umockcall_are_equal_call_result = 0;
+    (void)umockcallrecorder_add_expected_call(call_recorder, test_expected_umockcall_1);
+    (void)umockcallrecorder_add_actual_call(call_recorder, test_actual_umockcall_1, &matched_call);
+    reset_malloc_calls();
+
+    // act
+    const char* result = umockcallrecorder_get_actual_calls(call_recorder);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "[a()]", result);
 
     // cleanup
     umockcallrecorder_destroy(call_recorder);
@@ -1074,6 +1122,29 @@ TEST_FUNCTION(umockcallrecorder_get_expected_calls_with_a_matched_expected_call_
 
     // assert
     ASSERT_ARE_EQUAL(char_ptr, "", result);
+
+    // cleanup
+    umockcallrecorder_destroy(call_recorder);
+}
+
+/* Tests_SRS_UMOCKCALLRECORDER_01_027: [ umockcallrecorder_get_expected_calls shall return a pointer to the string representation of all the expected calls. ]*/
+/* Tests_SRS_UMOCKCALLRECORDER_01_028: [ The string for each call shall be obtained by calling umockcall_stringify. ]*/
+TEST_FUNCTION(umockcallrecorder_get_expected_calls_when_the_actual_call_does_not_match_the_expected_should_return_the_expected_call)
+{
+    // arrange
+    UMOCKCALLRECORDER_HANDLE call_recorder = umockcallrecorder_create();
+    UMOCKCALL_HANDLE matched_call;
+    umockcall_stringify_call_result = "[a()]";
+    umockcall_are_equal_call_result = 0;
+    (void)umockcallrecorder_add_expected_call(call_recorder, test_expected_umockcall_1);
+    (void)umockcallrecorder_add_actual_call(call_recorder, test_actual_umockcall_1, &matched_call);
+    reset_malloc_calls();
+
+    // act
+    const char* result = umockcallrecorder_get_expected_calls(call_recorder);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "[a()]", result);
 
     // cleanup
     umockcallrecorder_destroy(call_recorder);

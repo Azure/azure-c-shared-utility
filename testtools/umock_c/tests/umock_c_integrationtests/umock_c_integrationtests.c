@@ -124,6 +124,8 @@ static unsigned char*** result_value = (unsigned char***)0x4242;
 MOCK_FUNCTION_WITH_CODE(, unsigned char***, test_mock_function_with_unregistered_ptr_type, unsigned char***, x);
 MOCK_FUNCTION_END(result_value)
 
+IMPLEMENT_UMOCK_C_ENUM_TYPE(TEST_ENUM, TEST_ENUM_VALUE_1, TEST_ENUM_VALUE_2)
+
 static int test_return_value = 42;
 
 MOCK_FUNCTION_WITH_CODE(, int, test_dependency_for_capture_return)
@@ -1733,7 +1735,6 @@ TEST_FUNCTION(when_a_type_is_not_supported_an_error_is_triggered)
     test_dependency_type_not_registered(a);
 
     // assert
-    ASSERT_IS_NULL(umock_c_get_expected_calls());
     ASSERT_ARE_EQUAL(int, 1, test_on_umock_c_error_call_count);
 }
 
@@ -1961,6 +1962,38 @@ TEST_FUNCTION(when_an_unregistered_pointer_type_is_used_it_defaults_to_void_ptr)
     ASSERT_ARE_EQUAL(void_ptr, (void*)0x42, result);
     ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_expected_calls());
     ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_UMOCK_C_LIB_01_179: [ IMPLEMENT_UMOCK_C_ENUM_TYPE shall implement umock_c handlers for an enum type. ]*/
+/* Tests_SRS_UMOCK_C_LIB_01_180: [ The variable arguments are a list making up the enum values. ]*/
+TEST_FUNCTION(matching_with_an_enum_type_works)
+{
+    // arrange
+    REGISTER_TYPE(TEST_ENUM, TEST_ENUM);
+    STRICT_EXPECTED_CALL(test_mock_function_with_enum_type(TEST_ENUM_VALUE_1));
+
+    // act
+    test_mock_function_with_enum_type(TEST_ENUM_VALUE_2);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "[test_mock_function_with_enum_type(TEST_ENUM_VALUE_1)]", umock_c_get_expected_calls());
+    ASSERT_ARE_EQUAL(char_ptr, "[test_mock_function_with_enum_type(TEST_ENUM_VALUE_2)]", umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_UMOCK_C_LIB_01_179: [ IMPLEMENT_UMOCK_C_ENUM_TYPE shall implement umock_c handlers for an enum type. ]*/
+/* Tests_SRS_UMOCK_C_LIB_01_181: [ If a value that is not part of the enum is used, it shall be treated as an int value. ]*/
+TEST_FUNCTION(when_the_enum_value_is_not_within_the_enum_the_int_value_is_filled_in)
+{
+    // arrange
+    REGISTER_TYPE(TEST_ENUM, TEST_ENUM);
+    STRICT_EXPECTED_CALL(test_mock_function_with_enum_type((TEST_ENUM)(TEST_ENUM_VALUE_1+2)));
+
+    // act
+    test_mock_function_with_enum_type(TEST_ENUM_VALUE_2);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "[test_mock_function_with_enum_type(2)]", umock_c_get_expected_calls());
+    ASSERT_ARE_EQUAL(char_ptr, "[test_mock_function_with_enum_type(TEST_ENUM_VALUE_2)]", umock_c_get_actual_calls());
 }
 
 /* CaptureReturn */

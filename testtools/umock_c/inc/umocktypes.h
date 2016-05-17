@@ -33,6 +33,7 @@ extern "C" {
             (UMOCKTYPE_COPY_FUNC)C2(umocktypes_copy_,function_postfix), \
             (UMOCKTYPE_FREE_FUNC)C2(umocktypes_free_,function_postfix))
 
+/* Codes_SRS_UMOCK_C_LIB_01_181: [ If a value that is not part of the enum is used, it shall be treated as an int value. ]*/
 #define IMPLEMENT_UMOCK_C_ENUM_STRINGIFY(type, ...) \
     char* C2(umocktypes_stringify_,type)(const type* value) \
     { \
@@ -47,17 +48,28 @@ extern "C" {
         } \
         else \
         { \
-            size_t length = strlen(C2(enum_name_,strings)[*value]); \
-            if (length < 0) \
+            if (*value < sizeof(C2(enum_name,_strings)) / sizeof(C2(enum_name,_strings)[0])) \
             { \
-                result = NULL; \
+                size_t length = strlen(C2(enum_name_, strings)[*value]); \
+                if (length < 0) \
+                { \
+                    result = NULL; \
+                } \
+                else \
+                { \
+                    result = (char*)malloc(length + 1); \
+                    if (result != NULL) \
+                    { \
+                        (void)memcpy(result, C2(enum_name_, strings)[*value], length + 1); \
+                    } \
+                } \
             } \
             else \
             { \
-                result = (char*)malloc(length + 1); \
+                result = (char*)malloc(64); \
                 if (result != NULL) \
                 { \
-                    (void)memcpy(result, C2(enum_name_,strings)[*value], length + 1); \
+                    (void)sprintf(result, "%d", (int)*value); \
                 } \
             } \
         } \
@@ -101,6 +113,8 @@ extern "C" {
     { \
     }
 
+/* Codes_SRS_UMOCK_C_LIB_01_179: [ IMPLEMENT_UMOCK_C_ENUM_TYPE shall implement umock_c handlers for an enum type. ]*/
+/* Codes_SRS_UMOCK_C_LIB_01_180: [ The variable arguments are a list making up the enum values. ]*/
 #define IMPLEMENT_UMOCK_C_ENUM_TYPE(type, ...) \
     IMPLEMENT_UMOCK_C_ENUM_STRINGIFY(type, __VA_ARGS__) \
     IMPLEMENT_UMOCK_C_ENUM_ARE_EQUAL(type) \
