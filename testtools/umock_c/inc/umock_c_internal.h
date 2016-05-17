@@ -835,6 +835,7 @@ typedef struct ARG_BUFFER_TAG
             umocktypes_copy(TOSTRING(return_type), (void*)&result->return_value, (void*)&typed_mock_call_data->return_value); \
             result->return_value_set = 1; \
         } \
+        result->captured_return_value = typed_mock_call_data->captured_return_value; \
         if (typed_mock_call_data->fail_return_value_set) \
         { \
             umocktypes_copy(TOSTRING(return_type), (void*)&result->fail_return_value, (void*)&typed_mock_call_data->fail_return_value); \
