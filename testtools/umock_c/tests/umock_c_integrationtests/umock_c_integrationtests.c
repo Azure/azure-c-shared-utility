@@ -1723,7 +1723,6 @@ TEST_FUNCTION(when_a_type_is_not_supported_an_error_is_triggered)
     test_dependency_type_not_registered(a);
 
     // assert
-    ASSERT_IS_NULL(umock_c_get_expected_calls());
     ASSERT_ARE_EQUAL(int, 1, test_on_umock_c_error_call_count);
 }
 
