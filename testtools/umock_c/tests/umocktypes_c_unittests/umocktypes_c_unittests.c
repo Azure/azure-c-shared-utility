@@ -149,11 +149,13 @@ void reset_malloc_calls(void)
 }
 
 static TEST_MUTEX_HANDLE test_mutex;
+static TEST_MUTEX_HANDLE global_mutex;
 
 BEGIN_TEST_SUITE(umocktypes_c_unittests)
 
 TEST_SUITE_INITIALIZE(suite_init)
 {
+    TEST_INITIALIZE_MEMORY_DEBUG(global_mutex);
     test_mutex = TEST_MUTEX_CREATE();
     ASSERT_IS_NOT_NULL(test_mutex);
 }
@@ -161,6 +163,7 @@ TEST_SUITE_INITIALIZE(suite_init)
 TEST_SUITE_CLEANUP(suite_cleanup)
 {
     TEST_MUTEX_DESTROY(test_mutex);
+    TEST_DEINITIALIZE_MEMORY_DEBUG(global_mutex);
 }
 
 TEST_FUNCTION_INITIALIZE(test_function_init)
@@ -432,8 +435,8 @@ TEST_FUNCTION(when_allocating_memory_fails_umocktypes_stringify_unsignedchar_fai
 
 /* umocktypes_are_equal_unsignedchar */
 
-/* Tests_SRS_UMOCKTYPES_C_01_018: [ umocktypes_are_equal_unsignedchar shall compare the 2 unsigned chars pounsigned chared to by left and right. ]*/
-/* Tests_SRS_UMOCKTYPES_C_01_020: [ If the values pounsigned chared to by left and right are equal, umocktypes_are_equal_unsignedchar shall return 1. ]*/
+/* Tests_SRS_UMOCKTYPES_C_01_018: [ umocktypes_are_equal_unsignedchar shall compare the 2 unsigned chars pointed to by left and right. ]*/
+/* Tests_SRS_UMOCKTYPES_C_01_020: [ If the values pointed to by left and right are equal, umocktypes_are_equal_unsignedchar shall return 1. ]*/
 TEST_FUNCTION(umocktypes_are_equal_unsignedchar_with_2_equal_values_returns_1)
 {
     // arrange
@@ -447,7 +450,7 @@ TEST_FUNCTION(umocktypes_are_equal_unsignedchar_with_2_equal_values_returns_1)
     ASSERT_ARE_EQUAL(int, 1, result);
 }
 
-/* Tests_SRS_UMOCKTYPES_C_01_021: [ If the values pounsigned chared to by left and right are different, umocktypes_are_equal_unsignedchar shall return 0. ]*/
+/* Tests_SRS_UMOCKTYPES_C_01_021: [ If the values pointed to by left and right are different, umocktypes_are_equal_unsignedchar shall return 0. ]*/
 TEST_FUNCTION(umocktypes_are_equal_unsignedchar_with_2_different_values_returns_0)
 {
     // arrange

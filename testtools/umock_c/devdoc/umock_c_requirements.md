@@ -62,6 +62,8 @@ extern const char* umock_c_get_expected_calls(void);
 extern UMOCKCALL_HANDLE umock_c_get_last_expected_call(void);
 extern int umock_c_add_expected_call(UMOCKCALL_HANDLE mock_call);
 extern int umock_c_add_actual_call(UMOCKCALL_HANDLE mock_call, UMOCKCALL_HANDLE* matched_call);
+extern UMOCKCALLRECORDER_HANDLE umock_c_get_call_recorder(void);
+extern int umock_c_set_call_recorder(UMOCKCALLRECORDER_HANDLE call_recorder);
 ```
 
 ##umock_c_init
@@ -144,3 +146,26 @@ extern int umock_c_add_actual_call(UMOCKCALL_HANDLE mock_call, UMOCKCALL_HANDLE*
 
 **SRS_UMOCK_C_01_021: [** umock_c_add_actual_call shall add an actual call by calling umockcallrecorder_add_actual_call on the call recorder created in umock_c_init. **]**
 **SRS_UMOCK_C_01_022: [** If the module is not initialized, umock_c_add_actual_call shall return a non-zero value. **]**
+
+##umock_c_get_call_recorder
+
+```c
+extern UMOCKCALLRECORDER_HANDLE umock_c_get_call_recorder(void);
+```
+
+**SRS_UMOCK_C_01_026: [** umock_c_get_call_recorder shall return the handle to the currently used call recorder. **]**
+**SRS_UMOCK_C_01_027: [** If the module is not initialized, umock_c_get_call_recorder shall return NULL. **]**
+
+##umock_c_set_call_recorder
+
+```c
+extern int umock_c_set_call_recorder(UMOCKCALLRECORDER_HANDLE call_recorder);
+```
+
+**SRS_UMOCK_C_01_028: [** umock_c_set_call_recorder shall replace the currently used call recorder with the one identified by the call_recorder argument. **]**
+**SRS_UMOCK_C_01_029: [** On success, umock_c_set_call_recorder shall return 0. **]**
+**SRS_UMOCK_C_01_030: [** If call_recorder is NULL, umock_c_set_call_recorder shall return a non-zero value. **]**
+**SRS_UMOCK_C_01_031: [** umock_c_set_call_recorder shall make a copy of call_recorder by calling umockcallrecorder_clone and use the copy for future actions. **]**
+**SRS_UMOCK_C_01_032: [** If umockcallrecorder_clone fails, umock_c_set_call_recorder shall return a non-zero value. **]**
+**SRS_UMOCK_C_01_033: [** If the module is not initialized, umock_c_set_call_recorder shall return a non-zero value. **]**
+**SRS_UMOCK_C_01_034: [** The previously used call recorder shall be destroyed by calling umockcallrecorder_destroy. **]**

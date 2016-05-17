@@ -12,6 +12,7 @@
 #include "azure_c_shared_utility/socketio.h"
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/select.h>
 #include <netinet/tcp.h>
 #include <errno.h>
 #include <netdb.h>
@@ -23,6 +24,9 @@
 
 #define SOCKET_SUCCESS          0
 #define INVALID_SOCKET          -1
+
+// connect timeout in seconds
+#define CONNECT_TIMEOUT         10
 
 typedef enum IO_STATE_TAG
 {
@@ -280,42 +284,83 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
                 }
                 else
                 {
-                    err = connect(socket_io_instance->socket, addrInfo->ai_addr, sizeof(*addrInfo->ai_addr));
-                    if (err != 0)
+                    int flags;
+                    if ((-1 == (flags = fcntl(socket_io_instance->socket, F_GETFL, 0))) ||
+                        (fcntl(socket_io_instance->socket, F_SETFL, flags | O_NONBLOCK) == -1))
                     {
-                        LogError("Failure: connect failure %d.", err);
+                        LogError("Failure: fcntl failure.");
                         close(socket_io_instance->socket);
                         socket_io_instance->socket = INVALID_SOCKET;
                         result = __LINE__;
                     }
                     else
                     {
-                        int flags;
-
-                        if ((-1 == (flags = fcntl(socket_io_instance->socket, F_GETFL, 0))) ||
-                            (fcntl(socket_io_instance->socket, F_SETFL, flags | O_NONBLOCK) == -1))
+                        err = connect(socket_io_instance->socket, addrInfo->ai_addr, sizeof(*addrInfo->ai_addr));
+                        if ((err != 0) && (errno != EINPROGRESS))
                         {
-                            LogError("Failure: fcntl failure.");
+                            LogError("Failure: connect failure %d.", errno);
                             close(socket_io_instance->socket);
                             socket_io_instance->socket = INVALID_SOCKET;
                             result = __LINE__;
                         }
                         else
                         {
-                            socket_io_instance->on_bytes_received = on_bytes_received;
-                            socket_io_instance->on_bytes_received_context = on_bytes_received_context;
-
-                            socket_io_instance->on_io_error = on_io_error;
-                            socket_io_instance->on_io_error_context = on_io_error_context;
-
-                            socket_io_instance->io_state = IO_STATE_OPEN;
-
-                            if (on_io_open_complete != NULL)
+                            if (err != 0)
                             {
-                                on_io_open_complete(on_io_open_complete_context, IO_OPEN_OK);
-                            }
+                                fd_set fdset;
+                                struct timeval tv;
 
-                            result = 0;
+                                FD_ZERO(&fdset);
+                                FD_SET(socket_io_instance->socket, &fdset);
+                                tv.tv_sec = CONNECT_TIMEOUT;
+                                tv.tv_usec = 0;
+
+                                if (select(socket_io_instance->socket + 1, NULL, &fdset, NULL, &tv) != 1)
+                                {
+                                    LogError("Failure: select failure.");
+                                    close(socket_io_instance->socket);
+                                    socket_io_instance->socket = INVALID_SOCKET;
+                                    result = __LINE__;
+                                }
+                                else
+                                {
+                                    int so_error = 0;
+                                    socklen_t len = sizeof(so_error);
+                                    err = getsockopt(socket_io_instance->socket, SOL_SOCKET, SO_ERROR, &so_error, &len);
+                                    if (err != 0)
+                                    {
+                                        LogError("Failure: getsockopt failure %d.", errno);
+                                        close(socket_io_instance->socket);
+                                        socket_io_instance->socket = INVALID_SOCKET;
+                                        result = __LINE__;
+                                    }
+                                    else if (so_error != 0)
+                                    {
+                                        err = so_error;
+                                        LogError("Failure: connect failure %d.", so_error);
+                                        close(socket_io_instance->socket);
+                                        socket_io_instance->socket = INVALID_SOCKET;
+                                        result = __LINE__;
+                                    }
+                                }
+                            }
+                            if (err == 0)
+                            {
+                                socket_io_instance->on_bytes_received = on_bytes_received;
+                                socket_io_instance->on_bytes_received_context = on_bytes_received_context;
+
+                                socket_io_instance->on_io_error = on_io_error;
+                                socket_io_instance->on_io_error_context = on_io_error_context;
+
+                                socket_io_instance->io_state = IO_STATE_OPEN;
+
+                                if (on_io_open_complete != NULL)
+                                {
+                                    on_io_open_complete(on_io_open_complete_context, IO_OPEN_OK);
+                                }
+
+                                result = 0;
+                            }
                         }
                     }
                     freeaddrinfo(addrInfo);
@@ -351,6 +396,7 @@ int socketio_close(CONCRETE_IO_HANDLE socket_io, ON_IO_CLOSE_COMPLETE on_io_clos
         {
             on_io_close_complete(callback_context);
         }
+
         result = 0;
     }
 
@@ -579,3 +625,4 @@ const IO_INTERFACE_DESCRIPTION* socketio_get_interface_description(void)
 {
     return &socket_io_interface_description;
 }
+

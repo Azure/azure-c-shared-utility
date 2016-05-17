@@ -14,17 +14,20 @@ typedef struct UMOCKCALL_TAG
 {
     char* function_name;
     void* umockcall_data;
+    UMOCKCALL_DATA_COPY_FUNC umockcall_data_copy;
     UMOCKCALL_DATA_FREE_FUNC umockcall_data_free;
     UMOCKCALL_DATA_STRINGIFY_FUNC umockcall_data_stringify;
     UMOCKCALL_DATA_ARE_EQUAL_FUNC umockcall_data_are_equal;
+    unsigned int fail_call : 1;
 } UMOCKCALL;
 
-UMOCKCALL_HANDLE umockcall_create(const char* function_name, void* umockcall_data, UMOCKCALL_DATA_FREE_FUNC umockcall_data_free, UMOCKCALL_DATA_STRINGIFY_FUNC umockcall_data_stringify, UMOCKCALL_DATA_ARE_EQUAL_FUNC umockcall_data_are_equal)
+UMOCKCALL_HANDLE umockcall_create(const char* function_name, void* umockcall_data, UMOCKCALL_DATA_COPY_FUNC umockcall_data_copy, UMOCKCALL_DATA_FREE_FUNC umockcall_data_free, UMOCKCALL_DATA_STRINGIFY_FUNC umockcall_data_stringify, UMOCKCALL_DATA_ARE_EQUAL_FUNC umockcall_data_are_equal)
 {
     UMOCKCALL* result;
 
     if ((function_name == NULL) ||
         (umockcall_data == NULL) ||
+        (umockcall_data_copy == NULL) ||
         (umockcall_data_free == NULL) ||
         (umockcall_data_stringify == NULL) ||
         (umockcall_data_are_equal == NULL))
@@ -54,9 +57,11 @@ UMOCKCALL_HANDLE umockcall_create(const char* function_name, void* umockcall_dat
             {
                 (void)memcpy(result->function_name, function_name, function_name_length + 1);
                 result->umockcall_data = umockcall_data;
+                result->umockcall_data_copy = umockcall_data_copy;
                 result->umockcall_data_free = umockcall_data_free;
                 result->umockcall_data_stringify = umockcall_data_stringify;
                 result->umockcall_data_are_equal = umockcall_data_are_equal;
+                result->fail_call = 0;
             }
         }
     }
@@ -194,4 +199,119 @@ void* umockcall_get_call_data(UMOCKCALL_HANDLE umockcall)
     }
 
     return umockcall_data;
+}
+
+/* Codes_SRS_UMOCKCALL_01_031: [ umockcall_clone shall clone a umock call and on success it shall return a handle to the newly cloned call. ] */
+UMOCKCALL_HANDLE umockcall_clone(UMOCKCALL_HANDLE umockcall)
+{
+    UMOCKCALL_HANDLE result;
+
+    if (umockcall == NULL)
+    {
+        /* Codes_SRS_UMOCKCALL_01_032: [ If umockcall is NULL, umockcall_clone shall return NULL. ]*/
+        UMOCK_LOG("umockcall_clone: NULL umockcall in getting call data.");
+        result = NULL;
+    }
+    else
+    {
+        result = (UMOCKCALL*)malloc(sizeof(UMOCKCALL));
+        if (result == NULL)
+        {
+            /* Codes_SRS_UMOCKCALL_01_043: [ If allocating memory for the new umock call fails, umockcall_clone shall return NULL. ]*/
+            UMOCK_LOG("umockcall_clone: Failed allocating memory for new copied call.");
+        }
+        else
+        {
+            size_t function_name_length = strlen(umockcall->function_name);
+            result->function_name = (char*)malloc(function_name_length + 1);
+            if (result->function_name == NULL)
+            {
+                /* Codes_SRS_UMOCKCALL_01_036: [ If allocating memory for the function name fails, umockcall_clone shall return NULL. ]*/
+                UMOCK_LOG("umockcall_clone: Failed allocating memory for new copied call function name.");
+                free(result);
+                result = NULL;
+            }
+            else
+            {
+                /* Codes_SRS_UMOCKCALL_01_035: [ umockcall_clone shall copy also the function name. ]*/
+                (void)memcpy(result->function_name, umockcall->function_name, function_name_length + 1);
+
+                /* Codes_SRS_UMOCKCALL_01_033: [ The call data shall be cloned by calling the umockcall_data_copy function passed in umockcall_create and passing as argument the umockcall_data value passed in umockcall_create. ]*/
+                result->umockcall_data = umockcall->umockcall_data_copy(umockcall->umockcall_data);
+                if (result->umockcall_data == NULL)
+                {
+                    /* Codes_SRS_UMOCKCALL_01_034: [ If umockcall_data_copy fails then umockcall_clone shall return NULL. ]*/
+                    UMOCK_LOG("umockcall_clone: Failed copying call data.");
+                    free(result->function_name);
+                    free(result);
+                    result = NULL;
+                }
+                else
+                {
+                    /* Codes_SRS_UMOCKCALL_01_037: [ umockcall_clone shall also copy all the functions passed to umockcall_create (umockcall_data_copy, umockcall_data_free, umockcall_data_are_equal, umockcall_data_stringify). ]*/
+                    result->umockcall_data_are_equal = umockcall->umockcall_data_are_equal;
+                    result->umockcall_data_copy = umockcall->umockcall_data_copy;
+                    result->umockcall_data_free = umockcall->umockcall_data_free;
+                    result->umockcall_data_stringify = umockcall->umockcall_data_stringify;
+                    result->fail_call = umockcall->fail_call;
+                }
+            }
+        }
+    }
+
+    return result;
+}
+
+int umockcall_set_fail_call(UMOCKCALL_HANDLE umockcall, int fail_call)
+{
+    int result;
+
+    if (umockcall == NULL)
+    {
+        /* Codes_SRS_UMOCKCALL_01_039: [ If umockcall is NULL, umockcall_set_fail_call shall return a non-zero value. ]*/
+        UMOCK_LOG("umockcall_set_fail_call: NULL umockcall.");
+        result = __LINE__;
+    }
+    else
+    {
+        switch (fail_call)
+        {
+        default:
+            UMOCK_LOG("umockcall_set_fail_call: Invalid fail_cal value: %d.", fail_call);
+            result = __LINE__;
+            break;
+        case 0:
+            /* Codes_SRS_UMOCKCALL_01_038: [ umockcall_set_fail_call shall store the fail_call value, associating it with the umockcall call instance. ]*/
+            umockcall->fail_call = 0;
+            /* Codes_SRS_UMOCKCALL_01_044: [ On success umockcall_set_fail_call shall return 0. ]*/
+            result = 0;
+            break;
+        case 1:
+            /* Codes_SRS_UMOCKCALL_01_038: [ umockcall_set_fail_call shall store the fail_call value, associating it with the umockcall call instance. ]*/
+            umockcall->fail_call = 1;
+            /* Codes_SRS_UMOCKCALL_01_044: [ On success umockcall_set_fail_call shall return 0. ]*/
+            result = 0;
+            break;
+        }
+    }
+
+    return result;
+}
+
+int umockcall_get_fail_call(UMOCKCALL_HANDLE umockcall)
+{
+    int result;
+
+    if (umockcall == NULL)
+    {
+        /* Codes_SRS_UMOCKCALL_01_042: [ If umockcall is NULL, umockcall_get_fail_call shall return -1. ]*/
+        result = -1;
+    }
+    else
+    {
+        /* Codes_SRS_UMOCKCALL_01_041: [ umockcall_get_fail_call shall retrieve the fail_call value, associated with the umockcall call instance. ]*/
+        result = umockcall->fail_call ? 1 : 0;
+    }
+
+    return result;
 }

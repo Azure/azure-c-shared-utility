@@ -31,7 +31,7 @@ int testmutex_release(TEST_MUTEX_HANDLE mutex)
 
 TEST_MUTEX_HANDLE testmutex_acquire_global_semaphore(void)
 {
-    TEST_MUTEX_HANDLE semaphore = CreateSemaphoreW(NULL, SEMAPHORE_HIGH_WATER, SEMAPHORE_HIGH_WATER, L"MICROMOCK_DLL_BY_DLL");
+    TEST_MUTEX_HANDLE semaphore = CreateSemaphoreW(NULL, SEMAPHORE_HIGH_WATER, SEMAPHORE_HIGH_WATER, L"Global/MICROMOCK_DLL_BY_DLL");
     if (semaphore != NULL)
     {
         if (WaitForSingleObject(semaphore, INFINITE) != WAIT_OBJECT_0)
@@ -52,13 +52,13 @@ int testmutex_release_global_semaphore(TEST_MUTEX_HANDLE semaphore)
     
     if (prev == SEMAPHORE_HIGH_WATER - 1)
     {
+        (void)CloseHandle(semaphore);
         result = 1;
     }
     else
     {
         result = 0;
     }
-    (void)CloseHandle(semaphore);
     return result;
 }
 #endif

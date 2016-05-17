@@ -308,9 +308,9 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                 case SEC_E_OK:
                     consumed_bytes = tls_io_instance->received_byte_count;
                     /* Any extra bytes left over or did we fully consume the receive buffer? */
-                    if (output_buffers[1].BufferType == SECBUFFER_EXTRA)
+                    if (input_buffers[1].BufferType == SECBUFFER_EXTRA)
                     {
-                        consumed_bytes -= output_buffers[1].cbBuffer;
+                        consumed_bytes -= input_buffers[1].cbBuffer;
                         (void)memmove(tls_io_instance->received_bytes, tls_io_instance->received_bytes + consumed_bytes, tls_io_instance->received_byte_count - consumed_bytes);
                     }
                     tls_io_instance->received_byte_count -= consumed_bytes;
@@ -350,9 +350,9 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                     {
                         consumed_bytes = tls_io_instance->received_byte_count;
                         /* Any extra bytes left over or did we fully consume the receive buffer? */
-                        if (output_buffers[1].BufferType == SECBUFFER_EXTRA)
+                        if (input_buffers[1].BufferType == SECBUFFER_EXTRA)
                         {
-                            consumed_bytes -= output_buffers[1].cbBuffer;
+                            consumed_bytes -= input_buffers[1].cbBuffer;
                             (void)memmove(tls_io_instance->received_bytes, tls_io_instance->received_bytes + consumed_bytes, tls_io_instance->received_byte_count - consumed_bytes);
                         }
                         tls_io_instance->received_byte_count -= consumed_bytes;

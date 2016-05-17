@@ -12,6 +12,7 @@
 static UMOCKCALL_HANDLE test_expected_call = (UMOCKCALL_HANDLE)0x4242;
 static UMOCKCALL_HANDLE test_actual_call = (UMOCKCALL_HANDLE)0x4243;
 static UMOCKCALLRECORDER_HANDLE test_call_recorder = (UMOCKCALLRECORDER_HANDLE)0x4244;
+static UMOCKCALLRECORDER_HANDLE test_cloned_call_recorder = (UMOCKCALLRECORDER_HANDLE)0x4245;
 
 static size_t umocktypes_init_call_count;
 static int umocktypes_init_call_result;
@@ -86,6 +87,15 @@ static umockcallrecorder_add_actual_call_CALL* umockcallrecorder_add_actual_call
 static size_t umockcallrecorder_add_actual_call_call_count;
 static int umockcallrecorder_add_actual_call_call_result;
 
+typedef struct umockcallrecorder_clone_CALL_TAG
+{
+    UMOCKCALLRECORDER_HANDLE umock_call_recorder;
+} umockcallrecorder_clone_CALL;
+
+static umockcallrecorder_clone_CALL* umockcallrecorder_clone_calls;
+static size_t umockcallrecorder_clone_call_count;
+static UMOCKCALLRECORDER_HANDLE umockcallrecorder_clone_call_result;
+
 UMOCKCALLRECORDER_HANDLE umockcallrecorder_create(void)
 {
     umockcallrecorder_create_call_count++;
@@ -140,6 +150,19 @@ int umockcallrecorder_add_actual_call(UMOCKCALLRECORDER_HANDLE umock_call_record
     }
 
     return umockcallrecorder_add_actual_call_call_result;
+}
+
+UMOCKCALLRECORDER_HANDLE umockcallrecorder_clone(UMOCKCALLRECORDER_HANDLE umock_call_recorder)
+{
+    umockcallrecorder_clone_CALL* new_calls = (umockcallrecorder_clone_CALL*)realloc(umockcallrecorder_clone_calls, sizeof(umockcallrecorder_clone_CALL) * (umockcallrecorder_clone_call_count + 1));
+    if (new_calls != NULL)
+    {
+        umockcallrecorder_clone_calls = new_calls;
+        umockcallrecorder_clone_calls[umockcallrecorder_clone_call_count].umock_call_recorder = umock_call_recorder;
+        umockcallrecorder_clone_call_count++;
+    }
+
+    return umockcallrecorder_clone_call_result;
 }
 
 const char* umockcallrecorder_get_actual_calls(UMOCKCALLRECORDER_HANDLE umock_call_recorder)
@@ -285,6 +308,14 @@ void reset_all_calls(void)
     umockcallrecorder_add_actual_call_call_count = 0;
     umockcallrecorder_add_actual_call_call_result = 0;
 
+    if (umockcallrecorder_clone_calls != NULL)
+    {
+        free(umockcallrecorder_clone_calls);
+    }
+    umockcallrecorder_clone_calls = NULL;
+    umockcallrecorder_clone_call_count = 0;
+    umockcallrecorder_clone_call_result = test_cloned_call_recorder;
+
     if (test_on_umock_c_error_calls != NULL)
     {
         free(test_on_umock_c_error_calls);
@@ -294,11 +325,14 @@ void reset_all_calls(void)
 }
 
 static TEST_MUTEX_HANDLE test_mutex;
+static TEST_MUTEX_HANDLE g_dllByDll;
 
 BEGIN_TEST_SUITE(umock_c_unittests)
 
 TEST_SUITE_INITIALIZE(suite_init)
 {
+    TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
+
     test_mutex = TEST_MUTEX_CREATE();
     ASSERT_IS_NOT_NULL(test_mutex);
 }
@@ -306,6 +340,7 @@ TEST_SUITE_INITIALIZE(suite_init)
 TEST_SUITE_CLEANUP(suite_cleanup)
 {
     TEST_MUTEX_DESTROY(test_mutex);
+    TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
 }
 
 TEST_FUNCTION_INITIALIZE(test_function_init)
@@ -739,6 +774,105 @@ TEST_FUNCTION(umock_c_add_actual_call_when_the_module_is_not_initialized_fails)
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
     ASSERT_ARE_EQUAL(size_t, 0, umockcallrecorder_add_actual_call_call_count);
+}
+
+/* umock_c_get_call_recorder */
+
+/* Tests_SRS_UMOCK_C_01_026: [ umock_c_get_call_recorder shall return the handle to the currently used call recorder. ]*/
+TEST_FUNCTION(umock_c_get_call_recorder_returns_a_non_NULL_call_recorder)
+{
+    // arrange
+    (void)umock_c_init(test_on_umock_c_error);
+
+    // act
+    UMOCKCALLRECORDER_HANDLE result = umock_c_get_call_recorder();
+
+    // assert
+    ASSERT_IS_NOT_NULL(result);
+}
+
+/* Tests_SRS_UMOCK_C_01_027: [ If the module is not initialized, umock_c_get_call_recorder shall return NULL. ]*/
+TEST_FUNCTION(umock_c_get_call_recorder_when_not_initialized_fails)
+{
+    // arrange
+    (void)umock_c_init(test_on_umock_c_error);
+    umock_c_deinit();
+
+    // act
+    UMOCKCALLRECORDER_HANDLE result = umock_c_get_call_recorder();
+
+    // assert
+    ASSERT_IS_NULL(result);
+}
+
+/* umock_c_set_call_recorder */
+
+/* Tests_SRS_UMOCK_C_01_028: [ umock_c_set_call_recorder shall replace the currently used call recorder with the one identified by the call_recorder argument. ]*/
+/* Tests_SRS_UMOCK_C_01_029: [ On success, umock_c_set_call_recorder shall return 0. ]*/
+/* Tests_SRS_UMOCK_C_01_031: [ umock_c_set_call_recorder shall make a copy of call_recorder by calling umockcallrecorder_clone and use the copy for future actions. ]*/
+/* Tests_SRS_UMOCK_C_01_034: [ The previously used call recorder shall be destroyed by calling umockcallrecorder_destroy. ]*/
+TEST_FUNCTION(umock_c_set_call_recorder_replaces_the_recorder)
+{
+    // arrange
+    (void)umock_c_init(test_on_umock_c_error);
+
+    // act
+    int result = umock_c_set_call_recorder(test_call_recorder);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(size_t, 1, umockcallrecorder_clone_call_count);
+    ASSERT_ARE_EQUAL(void_ptr, test_call_recorder, umockcallrecorder_clone_calls[0].umock_call_recorder);
+    ASSERT_ARE_EQUAL(size_t, 1, umockcallrecorder_destroy_call_count);
+}
+
+/* Tests_SRS_UMOCK_C_01_030: [ If call_recorder is NULL, umock_c_set_call_recorder shall return a non-zero value. ]*/
+TEST_FUNCTION(umock_c_set_call_recorder_with_NULL_call_recorder_fails)
+{
+    // arrange
+    (void)umock_c_init(test_on_umock_c_error);
+
+    // act
+    int result = umock_c_set_call_recorder(NULL);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(size_t, 0, umockcallrecorder_clone_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, umockcallrecorder_destroy_call_count);
+}
+
+/* Tests_SRS_UMOCK_C_01_032: [ If umockcallrecorder_clone fails, umock_c_set_call_recorder shall return a non-zero value. ]*/
+TEST_FUNCTION(when_cloning_the_call_recorder_fails_umock_c_set_call_recorder_fails)
+{
+    // arrange
+    (void)umock_c_init(test_on_umock_c_error);
+    umockcallrecorder_clone_call_result = NULL;
+
+    // act
+    int result = umock_c_set_call_recorder(test_call_recorder);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(size_t, 1, umockcallrecorder_clone_call_count);
+    ASSERT_ARE_EQUAL(void_ptr, test_call_recorder, umockcallrecorder_clone_calls[0].umock_call_recorder);
+    ASSERT_ARE_EQUAL(size_t, 0, umockcallrecorder_destroy_call_count);
+}
+
+/* Tests_SRS_UMOCK_C_01_033: [ If the module is not initialized, umock_c_set_call_recorder shall return a non-zero value. ]*/
+TEST_FUNCTION(when_the_module_is_not_initialize_umock_c_set_call_recorder_fails)
+{
+    // arrange
+    (void)umock_c_init(test_on_umock_c_error);
+    umock_c_deinit();
+    reset_all_calls();
+
+    // act
+    int result = umock_c_set_call_recorder(test_call_recorder);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(size_t, 0, umockcallrecorder_clone_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, umockcallrecorder_destroy_call_count);
 }
 
 END_TEST_SUITE(umock_c_unittests)

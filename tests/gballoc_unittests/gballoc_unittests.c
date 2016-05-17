@@ -937,6 +937,7 @@ TEST_FUNCTION(gballoc_malloc_free_2_times_with_1_byte_yields_1_byte_as_max)
 {
     // arrange
     gballoc_init();
+    umock_c_reset_all_calls();
     void* allocation = malloc(OVERHEAD_SIZE);
 
     /* don't quite like this, but I'm unsure I want to invest more in this memory counting */
@@ -947,6 +948,7 @@ TEST_FUNCTION(gballoc_malloc_free_2_times_with_1_byte_yields_1_byte_as_max)
     gballoc_free(block);
 
     /* don't quite like this, but I'm unsure I want to invest more in this memory counting */
+    STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
     EXPECTED_CALL(mock_malloc(0))
         .SetReturn(allocation);
     block = gballoc_realloc(NULL, 1);
@@ -973,9 +975,11 @@ TEST_FUNCTION(gballoc_free_with_an_untracked_pointer_does_not_alter_total_memory
 {
     // arrange
     gballoc_init();
+    umock_c_reset_all_calls();
     void* allocation = malloc(OVERHEAD_SIZE);
 
     /* don't quite like this, but I'm unsure I want to invest more in this memory counting */
+    STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
     EXPECTED_CALL(mock_malloc(0))
         .SetReturn(allocation);
 
@@ -1055,9 +1059,11 @@ TEST_FUNCTION(gballoc_getCurrentMemoryUsed_after_1_byte_malloc_returns_1)
 {
     // arrange
     gballoc_init();
-    
+    umock_c_reset_all_calls();
+
     void* allocation = malloc(OVERHEAD_SIZE);
 
+    STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
     EXPECTED_CALL(mock_malloc(0))
         .SetReturn(allocation);
     STRICT_EXPECTED_CALL(mock_malloc(1));
@@ -1084,8 +1090,10 @@ TEST_FUNCTION(gballoc_getCurrentMemoryUsed_after_2x3_byte_calloc_returns_6)
 {
     // arrange
     gballoc_init();
+    umock_c_reset_all_calls();
     void* allocation = malloc(OVERHEAD_SIZE);
 
+    STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
     EXPECTED_CALL(mock_malloc(0))
         .SetReturn(allocation);
     void *toBeFreed = gballoc_calloc(2, 3);
@@ -1111,11 +1119,14 @@ TEST_FUNCTION(gballoc_getCurrentMemoryUsed_after_1_byte_malloc_and_3_bytes_reall
 {
     // arrange
     gballoc_init();
+    umock_c_reset_all_calls();
     void* allocation = malloc(OVERHEAD_SIZE);
 
+    STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
     EXPECTED_CALL(mock_malloc(0))
         .SetReturn(allocation);
     STRICT_EXPECTED_CALL(mock_malloc(1));
+    STRICT_EXPECTED_CALL(Unlock(TEST_LOCK_HANDLE));
 
     void *toBeFreed = gballoc_malloc(1);
     toBeFreed = gballoc_realloc(toBeFreed, 3);
@@ -1141,11 +1152,14 @@ TEST_FUNCTION(gballoc_getCurrentMemoryUsed_after_1_byte_malloc_and_free_returns_
 {
     // arrange
     gballoc_init();
+    umock_c_reset_all_calls();
     void* allocation = malloc(OVERHEAD_SIZE);
 
+    STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
     EXPECTED_CALL(mock_malloc(0))
         .SetReturn(allocation);
     STRICT_EXPECTED_CALL(mock_malloc(1));
+    STRICT_EXPECTED_CALL(Unlock(TEST_LOCK_HANDLE));
 
     void *toBeFreed = gballoc_malloc(1);
     gballoc_free(toBeFreed);
@@ -1170,10 +1184,13 @@ TEST_FUNCTION(gballoc_getCurrentMemoryUsed_after_2x3_byte_calloc_and_free_return
 {
     // arrange
     gballoc_init();
+    umock_c_reset_all_calls();
     void* allocation = malloc(OVERHEAD_SIZE);
 
+    STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
     EXPECTED_CALL(mock_malloc(0))
         .SetReturn(allocation);
+    STRICT_EXPECTED_CALL(Unlock(TEST_LOCK_HANDLE));
 
     void *toBeFreed = gballoc_calloc(2, 3);
     gballoc_free(toBeFreed);
@@ -1198,11 +1215,14 @@ TEST_FUNCTION(gballoc_getCurrentMemoryUsed_after_realloc_and_free_returns_0)
 {
     // arrange
     gballoc_init();
+    umock_c_reset_all_calls();
     void* allocation = malloc(OVERHEAD_SIZE);
 
+    STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
     EXPECTED_CALL(mock_malloc(0))
         .SetReturn(allocation);
     STRICT_EXPECTED_CALL(mock_malloc(1));
+    STRICT_EXPECTED_CALL(Unlock(TEST_LOCK_HANDLE));
 
     void *toBeFreed = gballoc_malloc(1);
     toBeFreed = gballoc_realloc(toBeFreed, 3);
@@ -1228,16 +1248,21 @@ TEST_FUNCTION(gballoc_getCurrentMemoryUsed_after_1_byte_malloc_and_1_byte_malloc
 {
     // arrange
     gballoc_init();
+    umock_c_reset_all_calls();
 
     void* allocation1 = malloc(OVERHEAD_SIZE);
     void* allocation2 = malloc(OVERHEAD_SIZE);
 
+    STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
     EXPECTED_CALL(mock_malloc(0))
         .SetReturn(allocation1);
     STRICT_EXPECTED_CALL(mock_malloc(1));
+    STRICT_EXPECTED_CALL(Unlock(TEST_LOCK_HANDLE));
+    STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
     EXPECTED_CALL(mock_malloc(0))
         .SetReturn(allocation2);
     STRICT_EXPECTED_CALL(mock_malloc(1));
+    STRICT_EXPECTED_CALL(Unlock(TEST_LOCK_HANDLE));
 
     void *toBeFreed1 = gballoc_malloc(1);
     void *toBeFreed2 = gballoc_malloc(1);
@@ -1270,12 +1295,16 @@ TEST_FUNCTION(gballoc_getCurrentMemoryUsed_after_1_byte_malloc_and_1_byte_malloc
     void* allocation1 = malloc(OVERHEAD_SIZE);
     void* allocation2 = malloc(OVERHEAD_SIZE);
 
+    STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
     EXPECTED_CALL(mock_malloc(0))
         .SetReturn(allocation1);
     STRICT_EXPECTED_CALL(mock_malloc(1));
+    STRICT_EXPECTED_CALL(Unlock(TEST_LOCK_HANDLE));
+    STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
     EXPECTED_CALL(mock_malloc(0))
         .SetReturn(allocation2);
     STRICT_EXPECTED_CALL(mock_malloc(1));
+    STRICT_EXPECTED_CALL(Unlock(TEST_LOCK_HANDLE));
 
     void *toBeFreed1 = gballoc_malloc(1);
     void *toBeFreed2 = gballoc_malloc(1);
@@ -1304,16 +1333,21 @@ TEST_FUNCTION(gballoc_getCurrentMemoryUsed_after_1_byte_malloc_and_6_byte_calloc
 {
     // arrange
     gballoc_init();
+    umock_c_reset_all_calls();
 
     void* allocation1 = malloc(OVERHEAD_SIZE);
     void* allocation2 = malloc(OVERHEAD_SIZE);
 
+    STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
     EXPECTED_CALL(mock_malloc(0))
         .SetReturn(allocation1);
     STRICT_EXPECTED_CALL(mock_malloc(1));
+    STRICT_EXPECTED_CALL(Unlock(TEST_LOCK_HANDLE));
+    STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
     EXPECTED_CALL(mock_malloc(0))
         .SetReturn(allocation2);
     STRICT_EXPECTED_CALL(mock_calloc(2, 3));
+    STRICT_EXPECTED_CALL(Unlock(TEST_LOCK_HANDLE));
 
     void *toBeFreed1 = gballoc_malloc(1);
     void *toBeFreed2 = gballoc_calloc(2, 3);
@@ -1341,17 +1375,22 @@ TEST_FUNCTION(gballoc_getCurrentMemoryUsed_after_1_byte_malloc_and_6_byte_calloc
 {
     // arrange
     gballoc_init();
+    umock_c_reset_all_calls();
     void* allocation1 = malloc(OVERHEAD_SIZE);
     void* allocation2 = malloc(OVERHEAD_SIZE);
 
+    STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
     EXPECTED_CALL(mock_malloc(0))
         .SetReturn(allocation1);
     STRICT_EXPECTED_CALL(mock_malloc(1))
         .SetReturn((char*)allocation1 + OVERHEAD_SIZE / 2); /*somewhere in the middle of allocation*/
+    STRICT_EXPECTED_CALL(Unlock(TEST_LOCK_HANDLE));
+    STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
     EXPECTED_CALL(mock_malloc(0))
         .SetReturn(allocation2);
     STRICT_EXPECTED_CALL(mock_calloc(2, 3))
         .SetReturn((char*)allocation2 + OVERHEAD_SIZE / 2);
+    STRICT_EXPECTED_CALL(Unlock(TEST_LOCK_HANDLE));
 
     void *toBeFreed1 = gballoc_malloc(1);
     void *toBeFreed2 = gballoc_calloc(2, 3);
@@ -1379,18 +1418,23 @@ TEST_FUNCTION(gballoc_getCurrentMemoryUsed_after_1_byte_malloc_and_1_byte_malloc
 {
     // arrange
     gballoc_init();
+    umock_c_reset_all_calls();
     void* allocation1 = malloc(OVERHEAD_SIZE);
     void* allocation2 = malloc(OVERHEAD_SIZE);
 
+    STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
     EXPECTED_CALL(mock_malloc(0))
         .SetReturn(allocation1);
     STRICT_EXPECTED_CALL(mock_malloc(1))
         .SetReturn((char*)allocation1 + OVERHEAD_SIZE / 2); /*somewhere in the middle of allocation*/
+    STRICT_EXPECTED_CALL(Unlock(TEST_LOCK_HANDLE));
+    STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
     EXPECTED_CALL(mock_malloc(0))
         .SetReturn(allocation2);
     STRICT_EXPECTED_CALL(mock_realloc(IGNORED_PTR_ARG, 3))
         .IgnoreArgument(1)
         .SetReturn((char*)allocation2 + OVERHEAD_SIZE / 2); /*somewhere in the middle of allocation*/
+    STRICT_EXPECTED_CALL(Unlock(TEST_LOCK_HANDLE));
 
     void *toBeFreed1 = gballoc_malloc(1);
     void *toBeFreed2 = gballoc_malloc(1);

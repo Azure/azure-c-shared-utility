@@ -61,6 +61,8 @@ typedef enum UMOCK_C_ERROR_CODE_TAG
     UMOCK_C_INVALID_ARGUMENT_BUFFER,
     UMOCK_C_COMPARE_CALL_ERROR,
     UMOCK_C_RESET_CALLS_ERROR,
+    UMOCK_C_CAPTURE_RETURN_ALREADY_USED,
+    UMOCK_C_NULL_ARGUMENT,
     UMOCK_C_ERROR
 } UMOCK_C_ERROR_CODE;
 
@@ -499,6 +501,35 @@ void umockvalue_free_int(int* value)
 }
 ```
 
+###Custom enum types
+
+####IMPLEMENT_UMOCK_C_ENUM_TYPE
+
+```c
+IMPLEMENT_UMOCK_C_ENUM_TYPE(type, ...)
+```
+
+IMPLEMENT_UMOCK_C_ENUM_TYPE shall implement umock_c handlers for an enum type.
+The variable arguments are a list making up the enum values.
+If a value that is not part of the enum is used, it shall be treated as an int value.
+Note: IMPLEMENT_UMOCK_C_ENUM_TYPE only generates the handlers, registering the handlers still has to be done by using the macro REGISTER_UMOCK_VALUE_TYPE.
+
+Example:
+
+```c
+IMPLEMENT_UMOCK_C_ENUM_TYPE(my_enum, enum_value1, enum_value2)
+```  
+
+This provides the handlers (stringify, are_equal, etc.) for the below C enum:
+
+```c
+typedef enum my_enum_tag
+{
+    enum_value1,
+    enum_value2
+} my_enum
+```
+
 ### Type names
 
 Since umock_c needs to maintain a list of registered types, the following rules shall be applied:
@@ -706,6 +737,18 @@ ValidateArgumentBuffer shall only be available for mock functions that have argu
 The IgnoreAllCalls call modifier shall record that all calls matching the expected call shall be ignored. If no matching call occurs no missing call shall be reported. If multiple matching actual calls occur no unexpected calls shall be reported.
 The call matching shall be done taking into account arguments and call modifiers referring to arguments.
 
+###CaptureReturn(return_type* captured_return_value)
+
+The CaptureReturn call modifier shall copy the return value that is being returned to the code under test when an actual call is matched with the expected call.
+If CaptureReturn is called multiple times for the same call, an error shall be indicated with the code UMOCK_C_CAPTURE_RETURN_ALREADY_USED.
+If captured_return_value is NULL, umock_c shall raise an error with the code UMOCK_C_NULL_ARGUMENT.
+CaptureReturn shall only be available if the return type is not void.
+
+Example:
+
+```c
+```
+
 ##Global mock modifiers
 
 ###REGISTER_GLOBAL_MOCK_HOOK
@@ -759,3 +802,131 @@ The REGISTER_GLOBAL_MOCK_RETURNS shall register both a success and a fail return
 If there are multiple invocations of REGISTER_GLOBAL_MOCK_RETURNS, the last one shall take effect over the previous ones.
 
 If any error occurs during REGISTER_GLOBAL_MOCK_RETURNS, umock_c shall raise an error with the code UMOCK_C_ERROR.
+
+## negative tests addon
+
+In order to automate negative tests writing, a separate API surface is provided: umock_c_negative_tests.
+
+Example:
+
+Given a function under test with the following code:
+```c
+int function_under_test(void)
+{
+    int result;
+    
+    if (function_1() != 0)
+    {
+        result = __LINE__;
+    }
+    else
+    {
+        if (function_2() != 0)
+        {
+            result = __LINE__;
+        }
+        else
+        {
+            result = 0;
+        }
+    }
+
+    return result;
+}
+```
+
+The function calls two functions that return int:
+
+```c
+    MOCKABLE_FUNCTION(, int, function_1);
+    MOCKABLE_FUNCTION(, int, function_2);
+```
+
+In order to test that for each case where either function_1 or function_2 fails and returns a non-zero value, one could write the following test that loops through all cases as opposed to writing individual negative tests:
+
+```c
+    size_t i;
+    STRICT_EXPECTED_CALL(function_1())
+        .SetReturn(0).SetFailReturn(1);
+    STRICT_EXPECTED_CALL(function_2())
+        .SetReturn(0).SetFailReturn(1);
+    umock_c_negative_tests_snapshot();
+
+    for (i = 0; i < umock_c_negative_tests_call_count(); i++)
+    {
+        // arrange
+        char temp_str[128];
+        int result;
+        umock_c_negative_tests_reset();
+        umock_c_negative_tests_fail_call(i);
+
+        // act
+        result = function_under_test();
+
+        // assert
+        sprintf(temp_str, "On failed call %zu", i + 1);
+        ASSERT_ARE_NOT_EQUAL_WITH_MSG(int, 0, result, temp_str);
+    }
+```
+
+Note that a return value and a fail return value must be specified for the negative tests. If they are not specified that will result in undefined behavior.  
+
+###umock_c_negative_tests_init
+
+```c
+int umock_c_negative_tests_init(void)
+```
+
+umock_c_negative_tests_init shall initialize the negative tests umock_c module.
+On success it shall return 0. If any error occurs, it shall return a non-zero value.
+This call is typically made in the test function setup.
+
+###umock_c_negative_tests_deinit
+
+```c
+void umock_c_negative_tests_deinit(void)
+```
+
+umock_c_negative_tests_deinit shall free all resources used by the negative tests module.
+
+###umock_c_negative_tests_snapshot
+
+```c
+void umock_c_negative_tests_snapshot(void)
+```
+
+umock_c_negative_tests_snapshot shall take a snapshot of the current setup of expected calls (a.k.a happy path).
+This is in order for these calls to be replayed as many times as needed, each time allowing different calls to be failed.
+If umock_c_negative_tests_snapshot is called without the module being initialized, it shall do nothing.
+All errors shall be reported by calling the umock_c on error function. 
+
+###umock_c_negative_tests_reset
+
+```c
+void umock_c_negative_tests_reset(void)
+```
+
+umock_c_negative_tests_reset shall bring umock_c expected and actual calls to the state recorded when umock_c_negative_tests_snapshot was called.
+This is done typically in preparation of running each negative test.
+If umock_c_negative_tests_reset is called without the module being initialized, it shall do nothing.
+All errors shall be reported by calling the umock_c on error function.
+
+###umock_c_negative_tests_fail_call
+
+```c
+void umock_c_negative_tests_fail_call(size_t index)
+```
+
+umock_c_negative_tests_fail_call shall instruct the negative tests module to fail a specific call.
+If umock_c_negative_tests_fail_call is called without the module being initialized, it shall do nothing.
+All errors shall be reported by calling the umock_c on error function.
+
+###umock_c_negative_tests_call_count
+
+```c
+size_t umock_c_negative_tests_call_count(void)
+```
+
+umock_c_negative_tests_call_count shall provide the number of expected calls, so that the test code can iterate through all negative cases.
+If umock_c_negative_tests_fail_call is called without the module being initialized, it shall return 0.
+All errors shall be reported by calling the umock_c on error function.

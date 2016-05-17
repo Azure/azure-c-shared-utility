@@ -1004,11 +1004,11 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_malloc(1));
         STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
 
         whenShallmalloc_fail = 2;
-        STRICT_EXPECTED_CALL(gballoc_malloc(1));
 
         ///act
         BUFFER_HANDLE res = BUFFER_create((const unsigned char*)&c, 1);

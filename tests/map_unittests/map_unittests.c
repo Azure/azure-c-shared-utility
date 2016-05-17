@@ -2203,11 +2203,10 @@ BEGIN_TEST_SUITE(map_unittests)
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)) /*this is creating the HANDLE structure*/
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
-            .IgnoreArgument(1);
-
         whenShallmalloc_fail = currentmalloc_call + 2;
         STRICT_EXPECTED_CALL(gballoc_malloc(sizeof(char*))); /*this is creating a clone of the storage for keys*/
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
 
         ///act
         MAP_HANDLE result = Map_Clone(handle);
@@ -2511,11 +2510,11 @@ BEGIN_TEST_SUITE(map_unittests)
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)) /*this is creating the HANDLE structure*/
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
-            .IgnoreArgument(1);
 
         whenShallmalloc_fail = currentmalloc_call + 2;
         STRICT_EXPECTED_CALL(gballoc_malloc(2 * sizeof(char*))); /*this is creating a clone of the storage for keys*/
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
 
         ///act
         MAP_HANDLE result = Map_Clone(handle);
