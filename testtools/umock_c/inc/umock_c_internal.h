@@ -87,26 +87,26 @@ typedef struct ARG_BUFFER_TAG
 #define COPY_OUT_ARG_BUFFERS(count, arg_type, arg_name) \
     result->out_arg_buffers[COUNT_OF(result->out_arg_buffers) - DIV2(count)] = &result->C2(out_arg_buffer_,arg_name); \
     result->out_arg_buffers[COUNT_OF(result->out_arg_buffers) - DIV2(count)]->length = typed_mock_call_data->out_arg_buffers[COUNT_OF(typed_mock_call_data->out_arg_buffers) - DIV2(count)]->length; \
-    if (result->out_arg_buffers[COUNT_OF(result->out_arg_buffers) - DIV2(count)]->length > 0) \
+    if (typed_mock_call_data->out_arg_buffers[COUNT_OF(typed_mock_call_data->out_arg_buffers) - DIV2(count)]->bytes != NULL) \
     { \
         result->out_arg_buffers[COUNT_OF(result->out_arg_buffers) - DIV2(count)]->bytes = malloc(typed_mock_call_data->out_arg_buffers[COUNT_OF(typed_mock_call_data->out_arg_buffers) - DIV2(count)]->length); \
         (void)memcpy(result->out_arg_buffers[COUNT_OF(result->out_arg_buffers) - DIV2(count)]->bytes, typed_mock_call_data->out_arg_buffers[COUNT_OF(typed_mock_call_data->out_arg_buffers) - DIV2(count)]->bytes, typed_mock_call_data->out_arg_buffers[COUNT_OF(typed_mock_call_data->out_arg_buffers) - DIV2(count)]->length); \
     } \
     else \
     { \
-        result->out_arg_buffers[COUNT_OF(result->out_arg_buffers) - DIV2(count)]->bytes = 0; \
+        result->out_arg_buffers[COUNT_OF(result->out_arg_buffers) - DIV2(count)]->bytes = NULL; \
     }
 
 #define COPY_VALIDATE_ARG_BUFFERS(count, arg_type, arg_name) \
     result->validate_arg_buffers[COUNT_OF(result->validate_arg_buffers) - DIV2(count)].length = typed_mock_call_data->validate_arg_buffers[COUNT_OF(typed_mock_call_data->validate_arg_buffers) - DIV2(count)].length; \
-    if (result->validate_arg_buffers[COUNT_OF(result->validate_arg_buffers) - DIV2(count)].length > 0) \
+    if (typed_mock_call_data->validate_arg_buffers[COUNT_OF(typed_mock_call_data->validate_arg_buffers) - DIV2(count)].bytes != NULL) \
     { \
         result->validate_arg_buffers[COUNT_OF(result->validate_arg_buffers) - DIV2(count)].bytes = malloc(typed_mock_call_data->validate_arg_buffers[COUNT_OF(typed_mock_call_data->validate_arg_buffers) - DIV2(count)].length); \
         (void)memcpy(result->validate_arg_buffers[COUNT_OF(result->validate_arg_buffers) - DIV2(count)].bytes, typed_mock_call_data->validate_arg_buffers[COUNT_OF(typed_mock_call_data->validate_arg_buffers) - DIV2(count)].bytes, typed_mock_call_data->validate_arg_buffers[COUNT_OF(typed_mock_call_data->validate_arg_buffers) - DIV2(count)].length); \
     } \
     else \
     { \
-        result->validate_arg_buffers[COUNT_OF(result->validate_arg_buffers) - DIV2(count)].bytes = 0; \
+        result->validate_arg_buffers[COUNT_OF(result->validate_arg_buffers) - DIV2(count)].bytes = NULL; \
     }
 
 #define ARG_IN_SIGNATURE(count, arg_type, arg_name) arg_type arg_name IFCOMMA(count)
