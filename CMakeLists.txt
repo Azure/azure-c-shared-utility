@@ -47,7 +47,7 @@ option(compileOption_C "passes a string to the command line of the C compiler" O
 option(compileOption_CXX "passes a string to the command line of the C++ compiler" OFF)
 
 # Start of variables used during install
-set (INCLUDE_INSTALL_DIR "/usr/include" CACHE PATH "Include file directory")
+set (INCLUDE_INSTALL_DIR "/usr/include/azureiot/azure_c_shared_utility" CACHE PATH "Include file directory")
 set (LIB_INSTALL_DIR lib CACHE PATH "Library object file directory")
 
 #Use solution folders. 
@@ -574,13 +574,6 @@ endif()
 if(WIN32)
 else()
     add_files_to_install("${source_h_files}")
-    add_files_to_install("./src/buffer.c")
-    add_files_to_install("./src/constbuffer.c")
-    add_files_to_install("./src/crt_abstractions.c")
-    add_files_to_install("./src/doublylinkedlist.c")
-    add_files_to_install("./src/gballoc.c")
-    add_files_to_install("./src/strings.c")
-    add_files_to_install("./src/vector.c")
 endif()
 
 get_directory_property(hasParent PARENT_DIRECTORY)
@@ -637,16 +630,6 @@ endif()
 if(WIN32)
 else()
     install (TARGETS aziotsharedutil DESTINATION lib)
-    install (FILES ${INSTALL_H_FILES} 
-        ${LOCK_C_FILE} 
-        ./src/buffer.c
-        ./src/constbuffer.c
-        ./src/crt_abstractions.c
-        ./src/doublylinkedlist.c
-        ./src/gballoc.c
-        ${HTTP_C_FILE}
-        ./src/strings.c
-        ./src/vector.c
-        DESTINATION ${INCLUDE_INSTALL_DIR}/azureiot)
+    install (FILES ${source_h_files} DESTINATION ${INCLUDE_INSTALL_DIR})
 endif (WIN32)
 
