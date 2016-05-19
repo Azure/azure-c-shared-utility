@@ -16,6 +16,7 @@ extern "C" {
     MOCKABLE_FUNCTION(, int, function_1);
     MOCKABLE_FUNCTION(, int, function_2);
     MOCKABLE_FUNCTION(, void, function_3_void_return);
+    MOCKABLE_FUNCTION(, void*, function_3_void_ptr_return, void*, a);
 
 #ifdef __cplusplus
 }
