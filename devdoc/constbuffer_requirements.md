@@ -12,7 +12,7 @@ zero copy.
 ## References
 [refcount](../inc/refcount.h)
 
-[buffer](buffer_requirements.docm)
+[buffer](buffer_requirements.md)
 
 ## Exposed API
 ```C

@@ -9,7 +9,7 @@ It provides a mechanism for signalling events between threads and for waiting on
 
 ## References
 
-[lock](lock_requirements.docm)
+[lock](lock_requirements.md)
 
 ## Exposed API
 ```C
