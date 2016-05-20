@@ -69,7 +69,27 @@ int function_under_test_3_call_dep_void_ptr_return(void)
 {
     int result;
 
-    if (function_3_void_ptr_return((void*)0x42) != 0)
+    if (function_3_void_ptr_return((void*)0x42) == NULL)
+    {
+        result = __LINE__;
+    }
+    else
+    {
+        result = 0;
+    }
+
+    return result;
+}
+
+MOCK_FUNCTION_WITH_CODE(, void*, function_4_void_ptr_return_non_NULL, void*, a)
+    void* my_result = (void*)0x42;
+MOCK_FUNCTION_END(my_result)
+
+int function_under_test_4_call_dep_void_ptr_return_non_NULL(void)
+{
+    int result;
+
+    if (function_4_void_ptr_return_non_NULL((void*)0x42) == NULL)
     {
         result = __LINE__;
     }
@@ -229,7 +249,35 @@ TEST_FUNCTION(negative_tests_with_1_call_with_void_ptr_return_dependency)
 
         // assert
         sprintf(temp_str, "On failed call %zu", i + 1);
-        ASSERT_ARE_EQUAL_WITH_MSG(int, 0, result, temp_str);
+        ASSERT_ARE_NOT_EQUAL_WITH_MSG(int, 0, result, temp_str);
+    }
+}
+
+/* Tests_SRS_UMOCK_C_LIB_01_167: [ umock_c_negative_tests_snapshot shall take a snapshot of the current setup of expected calls (a.k.a happy path). ]*/
+/* Tests_SRS_UMOCK_C_LIB_01_170: [ umock_c_negative_tests_reset shall bring umock_c expected and actual calls to the state recorded when umock_c_negative_tests_snapshot was called. ]*/
+/* Tests_SRS_UMOCK_C_LIB_01_173: [ umock_c_negative_tests_fail_call shall instruct the negative tests module to fail a specific call. ]*/
+/* Tests_SRS_UMOCK_C_LIB_01_176: [ umock_c_negative_tests_call_count shall provide the number of expected calls, so that the test code can iterate through all negative cases. ]*/
+TEST_FUNCTION(negative_tests_with_1_call_with_ignored_arguments_takes_the_ignoreargument_flags_into_account)
+{
+    size_t i;
+    STRICT_EXPECTED_CALL(function_4_void_ptr_return_non_NULL(IGNORED_PTR_ARG))
+        .SetFailReturn(NULL).IgnoreArgument(1);
+    umock_c_negative_tests_snapshot();
+
+    for (i = 0; i < umock_c_negative_tests_call_count(); i++)
+    {
+        // arrange
+        char temp_str[128];
+        int result;
+        umock_c_negative_tests_reset();
+        umock_c_negative_tests_fail_call(i);
+
+        // act
+        result = function_under_test_4_call_dep_void_ptr_return_non_NULL();
+
+        // assert
+        sprintf(temp_str, "On failed call %zu", i + 1);
+        ASSERT_ARE_NOT_EQUAL_WITH_MSG(int, 0, result, temp_str);
     }
 }
 
