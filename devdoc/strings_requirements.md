@@ -19,6 +19,7 @@ extern STRING_HANDLE STRING_construct_n(const char* psz, size_t n);
 extern STRING_HANDLE STRING_new_with_memory(const char* memory);
 extern STRING_HANDLE STRING_new_quoted(const char* source);
 extern STRING_HANDLE STRING_new_JSON(const char* source);
+extern STRING_HANDLE STRING_from_byte_array(const unsigned char* source, size_t size);
 extern void STRING_delete(STRING_HANDLE handle);
 extern int STRING_concat(STRING_HANDLE handle, const char* s2);
 extern int STRING_concat_with_STRING(STRING_HANDLE s1, STRING_HANDLE s2);
@@ -29,6 +30,7 @@ extern const char* STRING_c_str(STRING_HANDLE handle);
 extern int STRING_empty(STRING_HANDLE handle);
 extern size_t STRING_length(STRING_HANDLE handle);
 extern int STRING_compare(STRING_HANDLE h1, STRING_HANDLE h2);
+
 ```
 
 ###STRING_new
@@ -183,3 +185,14 @@ extern int STRING_compare(STRING_HANDLE h1, STRING_HANDLE h2);
 **SRS_STRING_07_036: [**If h1 is NULL and h2 is a nonNULL value then STRING_compare shall return 1.**]** 
 **SRS_STRING_07_037: [**If h2 is NULL and h1 is a nonNULL value then STRING_compare shall return -1.**]** 
 **SRS_STRING_07_038: [**STRING_compare shall compare the char s variable using the strcmp function.**]**
+
+###STRING_from_byte_array
+```c
+extern STRING_HANDLE STRING_from_byte_array(const unsigned char* source, size_t size)
+```
+
+STRING_from_BUFFER builds a string that has the same content (byte-by-byte) as a byte array. 
+
+**SRS_STRING_02_022: [** If `source` is NULL and size > 0 then `STRING_from_BUFFER` shall fail and return NULL. **]**
+**SRS_STRING_02_023: [** Otherwise, `STRING_from_BUFFER` shall build a string that has the same content (byte-by-byte) as source and return a non-NULL handle. **]**
+**SRS_STRING_02_024: [** If building the string fails, then `STRING_from_BUFFER` shall fail and return NULL. **]**

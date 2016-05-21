@@ -23,6 +23,7 @@ MOCKABLE_FUNCTION(, STRING_HANDLE, STRING_construct_n, const char*, psz, size_t,
 MOCKABLE_FUNCTION(, STRING_HANDLE, STRING_new_with_memory, const char*, memory);
 MOCKABLE_FUNCTION(, STRING_HANDLE, STRING_new_quoted, const char*, source);
 MOCKABLE_FUNCTION(, STRING_HANDLE, STRING_new_JSON, const char*, source);
+MOCKABLE_FUNCTION(, STRING_HANDLE, STRING_from_byte_array, const unsigned char*, source, size_t, size);
 MOCKABLE_FUNCTION(, void, STRING_delete, STRING_HANDLE, handle);
 MOCKABLE_FUNCTION(, int, STRING_concat, STRING_HANDLE, handle, const char*, s2);
 MOCKABLE_FUNCTION(, int, STRING_concat_with_STRING, STRING_HANDLE, s1, STRING_HANDLE, s2);
