@@ -83,6 +83,9 @@ typedef struct ARG_BUFFER_TAG
 #define FREE_OUT_ARG_BUFFERS(count, arg_type, arg_name) free(typed_mock_call_data->out_arg_buffers[COUNT_OF(typed_mock_call_data->out_arg_buffers) - DIV2(count)]->bytes);
 #define FREE_VALIDATE_ARG_BUFFERS(count, arg_type, arg_name) free(typed_mock_call_data->validate_arg_buffers[COUNT_OF(typed_mock_call_data->validate_arg_buffers) - DIV2(count)].bytes);
 
+#define COPY_IGNORE_ARG(count, arg_type, arg_name) \
+    result->C2(is_ignored_, arg_name) = typed_mock_call_data->C2(is_ignored_, arg_name);
+
 #define COPY_ARG_VALUE(count, arg_type, arg_name) umocktypes_copy(TOSTRING(arg_type), (void*)&result->arg_name, (void*)&typed_mock_call_data->arg_name);
 #define COPY_OUT_ARG_BUFFERS(count, arg_type, arg_name) \
     result->out_arg_buffers[COUNT_OF(result->out_arg_buffers) - DIV2(count)] = &result->C2(out_arg_buffer_,arg_name); \
@@ -827,6 +830,7 @@ typedef struct ARG_BUFFER_TAG
     { \
         C2(mock_call_,name)* result = (C2(mock_call_,name)*)malloc(sizeof(C2(mock_call_,name))); \
         C2(mock_call_,name)* typed_mock_call_data = (C2(mock_call_,name)*)mock_call_data; \
+        IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_COUNTED(COPY_IGNORE_ARG, __VA_ARGS__),) \
         IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_COUNTED(COPY_ARG_VALUE, __VA_ARGS__),) \
         IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_COUNTED(COPY_OUT_ARG_BUFFERS, __VA_ARGS__),) \
         IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_COUNTED(COPY_VALIDATE_ARG_BUFFERS, __VA_ARGS__),) \
