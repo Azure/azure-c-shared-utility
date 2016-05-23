@@ -834,16 +834,17 @@ typedef struct ARG_BUFFER_TAG
         IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_COUNTED(COPY_ARG_VALUE, __VA_ARGS__),) \
         IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_COUNTED(COPY_OUT_ARG_BUFFERS, __VA_ARGS__),) \
         IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_COUNTED(COPY_VALIDATE_ARG_BUFFERS, __VA_ARGS__),) \
-        IF(IS_NOT_VOID(return_type),if (typed_mock_call_data->return_value_set) \
+        IF(IS_NOT_VOID(return_type), \
+        result->return_value_set = typed_mock_call_data->return_value_set; \
+        result->fail_return_value_set = typed_mock_call_data->fail_return_value_set; \
+        if (typed_mock_call_data->return_value_set) \
         { \
             umocktypes_copy(TOSTRING(return_type), (void*)&result->return_value, (void*)&typed_mock_call_data->return_value); \
-            result->return_value_set = 1; \
         } \
         result->captured_return_value = typed_mock_call_data->captured_return_value; \
         if (typed_mock_call_data->fail_return_value_set) \
         { \
             umocktypes_copy(TOSTRING(return_type), (void*)&result->fail_return_value, (void*)&typed_mock_call_data->fail_return_value); \
-            result->fail_return_value_set = 1; \
         },) \
         return result; \
     } \
