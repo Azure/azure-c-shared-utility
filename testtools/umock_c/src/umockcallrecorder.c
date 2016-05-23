@@ -454,7 +454,7 @@ UMOCKCALLRECORDER_HANDLE umockcallrecorder_clone(UMOCKCALLRECORDER_HANDLE umock_
         {
             size_t i;
 
-            result->expected_calls = (UMOCK_EXPECTED_CALL*)malloc(sizeof(UMOCK_EXPECTED_CALL) * sizeof(umock_call_recorder->expected_call_count));
+            result->expected_calls = (UMOCK_EXPECTED_CALL*)malloc(sizeof(UMOCK_EXPECTED_CALL) * umock_call_recorder->expected_call_count);
             if (result->expected_calls == NULL)
             {
                 /* Codes_SRS_UMOCKCALLRECORDER_01_052: [ If allocating memory for the expected calls fails, umockcallrecorder_clone shall fail and return NULL. ]*/
