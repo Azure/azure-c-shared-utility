@@ -11,6 +11,7 @@ umock_c_negative_tests_integrationtests.c
 
 set(${theseTestsName}_c_files
 ../../src/umock_c.c
+../../src/umockalloc.c
 ../../src/umockcall.c
 ../../src/umockcallrecorder.c
 ../../src/umocktypes.c

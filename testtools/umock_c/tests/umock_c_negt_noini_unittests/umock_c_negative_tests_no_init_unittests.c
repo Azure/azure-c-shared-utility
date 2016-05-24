@@ -206,6 +206,16 @@ void reset_all_calls(void)
     umock_c_indicate_error_call_count = 0;
 }
 
+void* umockalloc_malloc(size_t size)
+{
+    return malloc(size);
+}
+
+void umockalloc_free(void* ptr)
+{
+    free(ptr);
+}
+
 static TEST_MUTEX_HANDLE test_mutex;
 static TEST_MUTEX_HANDLE g_dllByDll;
 

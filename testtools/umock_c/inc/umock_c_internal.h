@@ -19,6 +19,7 @@ extern "C" {
 #include "umockcallrecorder.h"
 #include "umock_c.h"
 #include "umock_log.h"
+#include "umockalloc.h"
 
 extern void umock_c_indicate_error(UMOCK_C_ERROR_CODE error_code);
 extern UMOCKCALL_HANDLE umock_c_get_last_expected_call(void);
@@ -34,7 +35,7 @@ static char* stringify_buffer(const void* bytes, size_t length)
         string_length += length - 1;
     }
 
-    result = (char*)malloc(string_length + 1);
+    result = (char*)umockalloc_malloc(string_length + 1);
     if (result != NULL)
     {
         size_t i;
@@ -50,7 +51,7 @@ static char* stringify_buffer(const void* bytes, size_t length)
 
         if (i < length)
         {
-            free(result);
+            umockalloc_free(result);
             result = NULL;
         }
         else
@@ -80,8 +81,8 @@ typedef struct ARG_BUFFER_TAG
     mock_call_data->out_arg_buffers[COUNT_OF(mock_call_data->out_arg_buffers) - DIV2(count)] = &C2(mock_call_data->out_arg_buffer_,arg_name);
 #define CLEAR_VALIDATE_ARG_BUFFERS(count, arg_type, arg_name) mock_call_data->validate_arg_buffers[COUNT_OF(mock_call_data->validate_arg_buffers) - DIV2(count)].bytes = NULL;
 #define FREE_ARG_VALUE(count, arg_type, arg_name) umocktypes_free(TOSTRING(arg_type), (void*)&typed_mock_call_data->arg_name);
-#define FREE_OUT_ARG_BUFFERS(count, arg_type, arg_name) free(typed_mock_call_data->out_arg_buffers[COUNT_OF(typed_mock_call_data->out_arg_buffers) - DIV2(count)]->bytes);
-#define FREE_VALIDATE_ARG_BUFFERS(count, arg_type, arg_name) free(typed_mock_call_data->validate_arg_buffers[COUNT_OF(typed_mock_call_data->validate_arg_buffers) - DIV2(count)].bytes);
+#define FREE_OUT_ARG_BUFFERS(count, arg_type, arg_name) umockalloc_free(typed_mock_call_data->out_arg_buffers[COUNT_OF(typed_mock_call_data->out_arg_buffers) - DIV2(count)]->bytes);
+#define FREE_VALIDATE_ARG_BUFFERS(count, arg_type, arg_name) umockalloc_free(typed_mock_call_data->validate_arg_buffers[COUNT_OF(typed_mock_call_data->validate_arg_buffers) - DIV2(count)].bytes);
 
 #define COPY_IGNORE_ARG(count, arg_type, arg_name) \
     result->C2(is_ignored_, arg_name) = typed_mock_call_data->C2(is_ignored_, arg_name);
@@ -92,7 +93,7 @@ typedef struct ARG_BUFFER_TAG
     result->out_arg_buffers[COUNT_OF(result->out_arg_buffers) - DIV2(count)]->length = typed_mock_call_data->out_arg_buffers[COUNT_OF(typed_mock_call_data->out_arg_buffers) - DIV2(count)]->length; \
     if (typed_mock_call_data->out_arg_buffers[COUNT_OF(typed_mock_call_data->out_arg_buffers) - DIV2(count)]->bytes != NULL) \
     { \
-        result->out_arg_buffers[COUNT_OF(result->out_arg_buffers) - DIV2(count)]->bytes = malloc(typed_mock_call_data->out_arg_buffers[COUNT_OF(typed_mock_call_data->out_arg_buffers) - DIV2(count)]->length); \
+        result->out_arg_buffers[COUNT_OF(result->out_arg_buffers) - DIV2(count)]->bytes = umockalloc_malloc(typed_mock_call_data->out_arg_buffers[COUNT_OF(typed_mock_call_data->out_arg_buffers) - DIV2(count)]->length); \
         (void)memcpy(result->out_arg_buffers[COUNT_OF(result->out_arg_buffers) - DIV2(count)]->bytes, typed_mock_call_data->out_arg_buffers[COUNT_OF(typed_mock_call_data->out_arg_buffers) - DIV2(count)]->bytes, typed_mock_call_data->out_arg_buffers[COUNT_OF(typed_mock_call_data->out_arg_buffers) - DIV2(count)]->length); \
     } \
     else \
@@ -104,7 +105,7 @@ typedef struct ARG_BUFFER_TAG
     result->validate_arg_buffers[COUNT_OF(result->validate_arg_buffers) - DIV2(count)].length = typed_mock_call_data->validate_arg_buffers[COUNT_OF(typed_mock_call_data->validate_arg_buffers) - DIV2(count)].length; \
     if (typed_mock_call_data->validate_arg_buffers[COUNT_OF(typed_mock_call_data->validate_arg_buffers) - DIV2(count)].bytes != NULL) \
     { \
-        result->validate_arg_buffers[COUNT_OF(result->validate_arg_buffers) - DIV2(count)].bytes = malloc(typed_mock_call_data->validate_arg_buffers[COUNT_OF(typed_mock_call_data->validate_arg_buffers) - DIV2(count)].length); \
+        result->validate_arg_buffers[COUNT_OF(result->validate_arg_buffers) - DIV2(count)].bytes = umockalloc_malloc(typed_mock_call_data->validate_arg_buffers[COUNT_OF(typed_mock_call_data->validate_arg_buffers) - DIV2(count)].length); \
         (void)memcpy(result->validate_arg_buffers[COUNT_OF(result->validate_arg_buffers) - DIV2(count)].bytes, typed_mock_call_data->validate_arg_buffers[COUNT_OF(typed_mock_call_data->validate_arg_buffers) - DIV2(count)].bytes, typed_mock_call_data->validate_arg_buffers[COUNT_OF(typed_mock_call_data->validate_arg_buffers) - DIV2(count)].length); \
     } \
     else \
@@ -135,7 +136,7 @@ typedef struct ARG_BUFFER_TAG
 #define STRINGIFY_ARGS_CHECK_ARG_STRINGIFY_SUCCESS(arg_type, arg_name) if (C2(arg_name,_stringified) == NULL) is_error = 1;
 #define STRINGIFY_ARGS_DECLARE_ARG_STRING_LENGTH(arg_type, arg_name) size_t C2(arg_name,_stringified_length) = strlen(C2(arg_name,_stringified));
 #define STRINGIFY_ARGS_COUNT_LENGTH(arg_type, arg_name) args_string_length += C2(arg_name,_stringified_length);
-#define STRINGIFY_ARGS_FREE_STRINGIFIED_ARG(arg_type, arg_name) free(C2(arg_name,_stringified));
+#define STRINGIFY_ARGS_FREE_STRINGIFIED_ARG(arg_type, arg_name) umockalloc_free(C2(arg_name,_stringified));
 #define STRINGIFY_ARGS_COPY_ARG_STRING(arg_type, arg_name) \
     if (arg_index > 0) \
     { \
@@ -404,8 +405,8 @@ typedef struct ARG_BUFFER_TAG
             else \
             { \
                 ARG_BUFFER* arg_buffer = mock_call_data->out_arg_buffers[index - 1]; \
-                free(arg_buffer->bytes); \
-                arg_buffer->bytes = malloc(length); \
+                umockalloc_free(arg_buffer->bytes); \
+                arg_buffer->bytes = umockalloc_malloc(length); \
                 if (arg_buffer->bytes == NULL) \
                 { \
                     UMOCK_LOG("Could not allocate memory for out argument buffers."); \
@@ -447,8 +448,8 @@ typedef struct ARG_BUFFER_TAG
             else \
             { \
                 ARG_BUFFER* arg_buffer = &C2(mock_call_data->out_arg_buffer_, arg_name); \
-                free(arg_buffer->bytes); \
-                arg_buffer->bytes = malloc(length); \
+                umockalloc_free(arg_buffer->bytes); \
+                arg_buffer->bytes = umockalloc_malloc(length); \
                 if (arg_buffer->bytes == NULL) \
                 { \
                     UMOCK_LOG("Could not allocate memory for out argument buffers."); \
@@ -503,8 +504,8 @@ typedef struct ARG_BUFFER_TAG
             } \
             else \
             { \
-                free(mock_call_data->validate_arg_buffers[index - 1].bytes); \
-                mock_call_data->validate_arg_buffers[index - 1].bytes = malloc(length); \
+                umockalloc_free(mock_call_data->validate_arg_buffers[index - 1].bytes); \
+                mock_call_data->validate_arg_buffers[index - 1].bytes = umockalloc_malloc(length); \
                 if (mock_call_data->validate_arg_buffers[index - 1].bytes == NULL) \
                 { \
                     UMOCK_LOG("Could not allocate memory for validating argument buffers."); \
@@ -569,7 +570,7 @@ typedef struct ARG_BUFFER_TAG
 	{ \
         UMOCKCALL_HANDLE mock_call; \
         DECLARE_MOCK_CALL_MODIFIER(name) \
-        C2(mock_call_,name)* mock_call_data = (C2(mock_call_,name)*)malloc(sizeof(C2(mock_call_,name))); \
+        C2(mock_call_,name)* mock_call_data = (C2(mock_call_,name)*)umockalloc_malloc(sizeof(C2(mock_call_,name))); \
         IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2(COPY_ARG_TO_MOCK_STRUCT, __VA_ARGS__),) \
         IF(COUNT_ARG(__VA_ARGS__), IF(args_ignored, FOR_EACH_2(MARK_ARG_AS_IGNORED, __VA_ARGS__), FOR_EACH_2(MARK_ARG_AS_NOT_IGNORED, __VA_ARGS__)),) \
         IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_COUNTED(CLEAR_OUT_ARG_BUFFERS, __VA_ARGS__),) \
@@ -772,7 +773,7 @@ typedef struct ARG_BUFFER_TAG
             IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2(STRINGIFY_ARGS_DECLARE_ARG_STRING_LENGTH, __VA_ARGS__), ) \
             IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2(STRINGIFY_ARGS_COUNT_LENGTH, __VA_ARGS__), ) \
             IF(COUNT_ARG(__VA_ARGS__), args_string_length += COUNT_ARG(__VA_ARGS__) - 1;,) \
-            result = (char*)malloc(args_string_length + 1); \
+            result = (char*)umockalloc_malloc(args_string_length + 1); \
             if (result != NULL) \
             { \
                 if (args_string_length == 0) \
@@ -824,11 +825,11 @@ typedef struct ARG_BUFFER_TAG
         { \
             umocktypes_free(TOSTRING(return_type), (void*)&typed_mock_call_data->fail_return_value); \
         },) \
-        free(mock_call_data); \
+        umockalloc_free(mock_call_data); \
     } \
     void* C2(mock_call_data_copy_func_,name)(void* mock_call_data) \
     { \
-        C2(mock_call_,name)* result = (C2(mock_call_,name)*)malloc(sizeof(C2(mock_call_,name))); \
+        C2(mock_call_,name)* result = (C2(mock_call_,name)*)umockalloc_malloc(sizeof(C2(mock_call_,name))); \
         C2(mock_call_,name)* typed_mock_call_data = (C2(mock_call_,name)*)mock_call_data; \
         IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_COUNTED(COPY_IGNORE_ARG, __VA_ARGS__),) \
         IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_COUNTED(COPY_ARG_VALUE, __VA_ARGS__),) \
@@ -882,7 +883,7 @@ typedef struct ARG_BUFFER_TAG
             IF(IS_NOT_VOID(return_type),TOSTRING(return_type), NULL); \
         IF(IS_NOT_VOID(return_type),return_type result;,) \
         C2(mock_call_,name)* matched_call_data; \
-        C2(mock_call_,name)* mock_call_data = (C2(mock_call_,name)*)malloc(sizeof(C2(mock_call_,name))); \
+        C2(mock_call_,name)* mock_call_data = (C2(mock_call_,name)*)umockalloc_malloc(sizeof(C2(mock_call_,name))); \
         IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2(COPY_ARG_TO_MOCK_STRUCT, __VA_ARGS__),) \
         IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2(MARK_ARG_AS_NOT_IGNORED, __VA_ARGS__),) \
         IF(COUNT_ARG(__VA_ARGS__), FOR_EACH_2_COUNTED(CLEAR_OUT_ARG_BUFFERS, __VA_ARGS__),) \

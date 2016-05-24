@@ -1,4 +1,4 @@
-#umocktypes_charptr requirements
+﻿#umocktypes_charptr requirements
  
 #Overview
 
@@ -59,7 +59,7 @@ extern int umocktypes_are_equal_charptr(const char** left, const char** right);
 extern int umocktypes_copy_charptr(char** destination, const char** source);
 ```
 
-**SRS_UMOCKTYPES_CHARPTR_01_011: [** umocktypes_copy_charptr shall allocate a new sequence of chars by using malloc. **]**
+**SRS_UMOCKTYPES_CHARPTR_01_011: [** umocktypes_copy_charptr shall allocate a new sequence of chars by using umockalloc_malloc. **]**
 **SRS_UMOCKTYPES_CHARPTR_01_012: [** The number of bytes allocated shall accomodate the string pointed to by source. **]**
 **SRS_UMOCKTYPES_CHARPTR_01_014: [** umocktypes_copy_charptr shall copy the string pointed to by source to the newly allocated memory. **]**
 **SRS_UMOCKTYPES_CHARPTR_01_015: [** The newly allocated string shall be returned in the destination argument. **]**
@@ -105,7 +105,7 @@ extern int umocktypes_are_equal_const_charptr(const char** left, const char** ri
 extern int umocktypes_copy_const_charptr(const char** destination, const char** source);
 ```
 
-**SRS_UMOCKTYPES_CHARPTR_01_028: [** umocktypes_copy_const_charptr shall allocate a new sequence of chars by using malloc. **]**
+**SRS_UMOCKTYPES_CHARPTR_01_028: [** umocktypes_copy_const_charptr shall allocate a new sequence of chars by using umockalloc_malloc. **]**
 **SRS_UMOCKTYPES_CHARPTR_01_029: [** The number of bytes allocated shall accomodate the string pointed to by source. **]**
 **SRS_UMOCKTYPES_CHARPTR_01_030: [** umocktypes_copy_const_charptr shall copy the string pointed to by source to the newly allocated memory. **]**
 **SRS_UMOCKTYPES_CHARPTR_01_031: [** The newly allocated string shall be returned in the destination argument. **]**

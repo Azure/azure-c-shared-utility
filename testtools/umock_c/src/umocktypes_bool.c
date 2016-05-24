@@ -12,6 +12,7 @@
 #include "azure_c_shared_utility/macro_utils.h"
 #include "umocktypes.h"
 #include "umock_c.h"
+#include "umockalloc.h"
 #include "umocktypes_bool.h"
 
 /* Codes_SRS_UMOCKTYPES_BOOL_01_002: [ umocktypes_stringify_bool shall return the string representation of value. ]*/
@@ -31,7 +32,7 @@ char* umocktypes_stringify_bool(const bool* value)
         size_t length = strlen(stringified_bool);
 
         /* Codes_SRS_UMOCKTYPES_BOOL_01_004: [ If allocating a new string to hold the string representation fails, umocktypes_stringify_bool shall return NULL. ]*/
-        result = (char*)malloc(length + 1);
+        result = (char*)umockalloc_malloc(length + 1);
         if (result == NULL)
         {
             UMOCK_LOG("umocktypes_stringify_bool: Cannot allocate memory for result.");

@@ -5,12 +5,44 @@
 #include <stdlib.h>
 #include "testrunnerswitcher.h"
 
+static size_t my_malloc_count;
+
+void* my_malloc(size_t size)
+{
+    my_malloc_count++;
+    return malloc(size);
+}
+
+static size_t my_realloc_count;
+
+void* my_realloc(void* ptr, size_t size)
+{
+    my_realloc_count++;
+    return realloc(ptr, size);
+}
+
+static size_t my_free_count;
+
+void my_free(void* ptr)
+{
+    my_free_count++;
+    free(ptr);
+}
+
+#ifdef _CRTDBG_MAP_ALLOC
+#define _malloc_dbg(size, ...) my_malloc(size)
+#define _realloc_dbg(ptr, size, ...) my_realloc(ptr, size)
+#define _free_dbg(ptr, ...) my_free(ptr)
+#else
+#define malloc my_malloc
+#define realloc my_realloc
+#define free my_free
+#endif
+
 #define ENABLE_MOCKS
 
 #include "umock_c.h"
 #include "umocktypes_charptr.h"
-
-MOCKABLE_FUNCTION(, int, a_char_star_arg_function, char*, x);
 
 static void test_on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
@@ -20,7 +52,10 @@ static void test_on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 static TEST_MUTEX_HANDLE test_mutex;
 static TEST_MUTEX_HANDLE global_mutex;
 
-BEGIN_TEST_SUITE(umock_c_ptrarg_leak_integrationtests)
+MOCK_FUNCTION_WITH_CODE(, int, function1, int, a)
+MOCK_FUNCTION_END(42)
+
+BEGIN_TEST_SUITE(umock_c_malloc_hook_integrationtests)
 
 TEST_SUITE_INITIALIZE(suite_init)
 {
@@ -51,6 +86,9 @@ TEST_FUNCTION_INITIALIZE(test_function_init)
     ASSERT_ARE_EQUAL(int, 0, mutex_acquire_result);
 
     umock_c_reset_all_calls();
+    my_malloc_count = 0;
+    my_realloc_count = 0;
+    my_free_count = 0;
 }
 
 TEST_FUNCTION_CLEANUP(test_function_cleanup)
@@ -58,17 +96,18 @@ TEST_FUNCTION_CLEANUP(test_function_cleanup)
     TEST_MUTEX_RELEASE(test_mutex);
 }
 
-TEST_FUNCTION(a_matched_call_with_pointer_type_argument_does_not_leak)
+TEST_FUNCTION(when_malloc_is_hooked_no_calls_are_made_to_it)
 {
     // arrange
-    EXPECTED_CALL(a_char_star_arg_function("a"));
-    (void)a_char_star_arg_function("a");
+    STRICT_EXPECTED_CALL(function1(42));
 
     // act
-    umock_c_deinit();
+    function1(42);
 
     // assert
-    // no leaks expected
+    ASSERT_ARE_EQUAL(size_t, 0, my_malloc_count);
+    ASSERT_ARE_EQUAL(size_t, 0, my_realloc_count);
+    ASSERT_ARE_EQUAL(size_t, 0, my_free_count);
 }
 
-END_TEST_SUITE(umock_c_ptrarg_leak_integrationtests)
+END_TEST_SUITE(umock_c_malloc_hook_integrationtests)

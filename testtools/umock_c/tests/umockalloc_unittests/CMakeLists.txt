@@ -3,14 +3,14 @@
 
 cmake_minimum_required(VERSION 2.8.11)
 
-set(theseTestsName umocktypes_without_init_unittests)
+set(theseTestsName umockalloc_unittests)
 
 set(${theseTestsName}_test_files
-umocktypes_without_init_unittests.c
+umockalloc_unittests.c
 )
 
 set(${theseTestsName}_c_files
-umocktypes_mocked.c
+umockalloc_mocked.c
 )
 
 set(${theseTestsName}_h_files

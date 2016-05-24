@@ -12,6 +12,7 @@
 #include "azure_c_shared_utility/macro_utils.h"
 #include "umocktypes.h"
 #include "umocktypes_stdint.h"
+#include "umockalloc.h"
 #include "umock_log.h"
 #include "inttypes.h"
 
@@ -28,7 +29,7 @@
         { \
             char temp_buffer[32]; \
             size_t length = sprintf(temp_buffer, printf_specifier, *value); \
-            result = (char*)malloc(length + 1); \
+            result = (char*)umockalloc_malloc(length + 1); \
             if (result == NULL) \
             { \
                 UMOCK_LOG(TOSTRING(C2(umocktypes_stringify_,function_postfix)) ": Cannot allocate memory for result string."); \

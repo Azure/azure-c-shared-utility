@@ -10,6 +10,7 @@
 #include <string.h>
 #include "umocktypes.h"
 #include "umocktypename.h"
+#include "umockalloc.h"
 #include "umock_log.h"
 
 typedef struct UMOCK_VALUE_TYPE_HANDLERS_TAG
@@ -93,10 +94,10 @@ void umocktypes_deinit(void)
         /* Codes_SRS_UMOCKTYPES_01_005: [ umocktypes_deinit shall free all resources associated with the registered types and shall leave the module in a state where another init is possible. ]*/
         for (i = 0; i < type_handler_count; i++)
         {
-            free(type_handlers[i].type);
+            umockalloc_free(type_handlers[i].type);
         }
 
-        free(type_handlers);
+        umockalloc_free(type_handlers);
         type_handlers = NULL;
         type_handler_count = 0;
 
@@ -140,7 +141,7 @@ int umocktypes_register_type(const char* type, UMOCKTYPE_STRINGIFY_FUNC stringif
             UMOCK_VALUE_TYPE_HANDLERS* type_handler = get_value_type_handlers(normalized_type);
             if (type_handler != NULL)
             {
-                free(normalized_type);
+                umockalloc_free(normalized_type);
 
                 if ((stringify_func != type_handler->stringify_func) ||
                     (are_equal_func != type_handler->are_equal_func) ||
@@ -159,11 +160,11 @@ int umocktypes_register_type(const char* type, UMOCKTYPE_STRINGIFY_FUNC stringif
             }
             else
             {
-                UMOCK_VALUE_TYPE_HANDLERS* new_type_handlers = (UMOCK_VALUE_TYPE_HANDLERS*)realloc(type_handlers, sizeof(UMOCK_VALUE_TYPE_HANDLERS) * (type_handler_count + 1));
+                UMOCK_VALUE_TYPE_HANDLERS* new_type_handlers = (UMOCK_VALUE_TYPE_HANDLERS*)umockalloc_realloc(type_handlers, sizeof(UMOCK_VALUE_TYPE_HANDLERS) * (type_handler_count + 1));
                 if (new_type_handlers == NULL)
                 {
                     /* Codes_SRS_UMOCKTYPES_01_012: [ If an error occurs allocating memory for the newly registered type, umocktypes_register_type shall fail and return a non-zero value. ]*/
-                    free(normalized_type);
+                    umockalloc_free(normalized_type);
                     UMOCK_LOG("Could not register type, failed allocating memory for types.\r\n");
                     result = __LINE__;
                 }
@@ -216,7 +217,7 @@ int umocktypes_register_alias_type(const char* type, const char* is_type)
         }
         else
         {
-            UMOCK_VALUE_TYPE_HANDLERS* new_type_handlers = (UMOCK_VALUE_TYPE_HANDLERS*)realloc(type_handlers, sizeof(UMOCK_VALUE_TYPE_HANDLERS) * (type_handler_count + 1));
+            UMOCK_VALUE_TYPE_HANDLERS* new_type_handlers = (UMOCK_VALUE_TYPE_HANDLERS*)umockalloc_realloc(type_handlers, sizeof(UMOCK_VALUE_TYPE_HANDLERS) * (type_handler_count + 1));
             if (new_type_handlers == NULL)
             {
                 UMOCK_LOG("Could not register alias type, failed allocating memory.\r\n");
@@ -247,7 +248,7 @@ int umocktypes_register_alias_type(const char* type, const char* is_type)
                     {
                         if (strcmp(normalized_type, normalized_is_type) == 0)
                         {
-                            free(normalized_type);
+                            umockalloc_free(normalized_type);
 
                             /* Codes_SRS_UMOCKTYPES_01_062: [ If type and is_type are the same, umocktypes_register_alias_type shall succeed and return 0. ]*/
                             result = 0;
@@ -268,7 +269,7 @@ int umocktypes_register_alias_type(const char* type, const char* is_type)
                 }
             }
 
-            free(normalized_is_type);
+            umockalloc_free(normalized_is_type);
         }
     }
 
@@ -328,7 +329,7 @@ char* umocktypes_stringify(const char* type, const void* value)
                 result = value_type_handlers->stringify_func(value);
             }
 
-            free(normalized_type);
+            umockalloc_free(normalized_type);
         }
     }
 
@@ -413,7 +414,7 @@ int umocktypes_are_equal(const char* type, const void* left, const void* right)
                 }
             }
 
-            free(normalized_type);
+            umockalloc_free(normalized_type);
         }
     }
 
@@ -475,7 +476,7 @@ int umocktypes_copy(const char* type, void* destination, const void* source)
                 result = value_type_handlers->copy_func(destination, source);
             }
 
-            free(normalized_type);
+            umockalloc_free(normalized_type);
         }
     }
 
@@ -512,7 +513,7 @@ void umocktypes_free(const char* type, void* value)
                 value_type_handlers->free_func(value);
             }
 
-            free(normalized_type);
+            umockalloc_free(normalized_type);
         }
     }
 }

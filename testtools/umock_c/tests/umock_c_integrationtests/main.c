@@ -13,5 +13,7 @@ int main(void)
     totalFailedTestCount += failedTestCount;
     RUN_TEST_SUITE(umock_c_ptrarg_leak_integrationtests, failedTestCount);
     totalFailedTestCount += failedTestCount;
+    RUN_TEST_SUITE(umock_c_malloc_hook_integrationtests, failedTestCount);
+    totalFailedTestCount += failedTestCount;
     return totalFailedTestCount;
 }

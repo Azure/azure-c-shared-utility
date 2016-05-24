@@ -6,6 +6,8 @@ cmake_minimum_required(VERSION 2.8.11)
 
 set(umock_c_c_files
 ./src/umock_c.c
+./src/umock_c_negative_tests.c
+./src/umockalloc.c
 ./src/umockcall.c
 ./src/umockcallrecorder.c
 ./src/umocktypename.c
@@ -19,6 +21,8 @@ set(umock_c_c_files
 set(umock_c_h_files
 ./inc/umock_c.h
 ./inc/umock_c_internal.h
+./inc/umock_c_negative_tests.h
+./inc/umockalloc.h
 ./inc/umockcall.h
 ./inc/umockcallrecorder.h
 ./inc/umocktypename.h
