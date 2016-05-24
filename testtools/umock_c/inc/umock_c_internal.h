@@ -965,7 +965,7 @@ typedef struct ARG_BUFFER_TAG
         }; \
         if (captured_return_value != NULL) \
         { \
-            umocktypes_copy(return_type_string, captured_return_value, &result); \
+            (void)memcpy(captured_return_value, &result, sizeof(result)); \
         } \
         return result;,) \
 	} \
@@ -983,7 +983,7 @@ typedef struct ARG_BUFFER_TAG
         IF(COUNT_ARG(__VA_ARGS__), \
         if (captured_return_value != NULL) \
         { \
-            umocktypes_copy(return_type_string, captured_return_value, &result); \
+            (void)memcpy(captured_return_value, &result, sizeof(result)); \
         } \
         return result;,) \
     }
