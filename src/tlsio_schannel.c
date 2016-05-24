@@ -145,7 +145,7 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT io_open
         auth_data.dwMinimumCipherStrength = 0;
         auth_data.dwMaximumCipherStrength = 0;
         auth_data.dwSessionLifespan = 0;
-        auth_data.dwFlags = SCH_USE_STRONG_CRYPTO;
+        auth_data.dwFlags = SCH_USE_STRONG_CRYPTO | SCH_CRED_NO_DEFAULT_CREDS;
         auth_data.dwCredFormat = 0;
 
         status = AcquireCredentialsHandle(NULL, UNISP_NAME, SECPKG_CRED_OUTBOUND, NULL,
