@@ -747,6 +747,54 @@ CaptureReturn shall only be available if the return type is not void.
 Example:
 
 ```c
+TEST_FUNCTION(capture_return_captures_the_return_value)
+{
+    // arrange
+    int captured_return;
+
+    STRICT_EXPECTED_CALL(test_dependency_for_capture_return())
+        .CaptureReturn(&captured_return);
+
+    // act
+    test_dependency_for_capture_return();
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 42, captured_return);
+}
+```
+
+###ValidateArgumentValue_{arg_name}(arg_type* arg_value)
+
+The ValidateArgumentValue_{arg_name} shall validate that the value of an argument matches the value pointed by arg_value.
+If arg_value is NULL, umock_c shall raise an error with the code UMOCK_C_NULL_ARGUMENT.
+The ValidateArgumentValue_{arg_name} modifier shall inhibit comparing with any value passed directly as an argument in the expected call. 
+The ValidateArgumentValue_{arg_name} shall implicitly do a ValidateArgument for the arg_name argument, making sure the argument is not ignored.
+
+Example:
+
+Given a function with the prototype:
+
+```c
+void function_with_int_arg(int a);
+```
+
+```c
+TEST_FUNCTION(validate_argument_sample)
+{
+    // arrange
+    int arg_value = 0;
+
+    STRICT_EXPECTED_CALL(function_with_int_arg(0))
+        .ValidateArgumentValue_a(&arg_value);
+
+    arg_value = 42;
+
+    // act
+    function_with_int_arg(42);
+
+    // assert
+    // ... calls should match ...
+}
 ```
 
 ##Global mock modifiers

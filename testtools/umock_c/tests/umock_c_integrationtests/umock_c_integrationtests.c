@@ -2114,4 +2114,97 @@ TEST_FUNCTION(capture_return_captures_the_return_value_different_value)
     ASSERT_ARE_EQUAL(int, 45, captured_return);
 }
 
+/* ValidateArgumentValue_{arg_name} */
+
+/* Tests_SRS_UMOCK_C_LIB_01_183: [ The ValidateArgumentValue_{arg_name} shall validate that the value of an argument matches the value pointed by arg_value. ]*/
+TEST_FUNCTION(validate_argument_value_validates_the_value_pointed_by_arg_value)
+{
+    // arrange
+    int arg_value = 0;
+
+    STRICT_EXPECTED_CALL(test_dependency_1_arg(0))
+        .ValidateArgumentValue_a(&arg_value);
+
+    arg_value = 42;
+
+    // act
+    (void)test_dependency_1_arg(42);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_expected_calls());
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_UMOCK_C_LIB_01_183: [ The ValidateArgumentValue_{arg_name} shall validate that the value of an argument matches the value pointed by arg_value. ]*/
+TEST_FUNCTION(validate_argument_value_validates_the_value_pointed_by_arg_value_for_a_char_star)
+{
+    // arrange
+    char* arg_value = "42";
+
+    STRICT_EXPECTED_CALL(test_dependency_char_star_arg(NULL))
+        .ValidateArgumentValue_s(&arg_value);
+
+    arg_value = "43";
+
+    // act
+    (void)test_dependency_char_star_arg("43");
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_expected_calls());
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_UMOCK_C_LIB_01_184: [ If arg_value is NULL, umock_c shall raise an error with the code UMOCK_C_NULL_ARGUMENT. ]*/
+TEST_FUNCTION(validate_argument_value_with_NULL_value_triggers_an_error)
+{
+    // arrange
+
+    // act
+    STRICT_EXPECTED_CALL(test_dependency_char_star_arg(NULL))
+        .ValidateArgumentValue_s(NULL);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 1, test_on_umock_c_error_call_count);
+    ASSERT_ARE_EQUAL(int, (int)UMOCK_C_NULL_ARGUMENT, test_on_umock_c_error_calls[0].error_code);
+}
+
+/* Tests_SRS_UMOCK_C_LIB_01_185: [ The ValidateArgumentValue_{arg_name} modifier shall inhibit comparing with any value passed directly as an argument in the expected call. ]*/
+TEST_FUNCTION(validate_argument_value_overrides_existing_arg_value)
+{
+    // arrange
+    char* arg_value = "42";
+
+    STRICT_EXPECTED_CALL(test_dependency_char_star_arg("42"))
+        .ValidateArgumentValue_s(&arg_value);
+
+    arg_value = "43";
+
+    // act
+    (void)test_dependency_char_star_arg("43");
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_expected_calls());
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_UMOCK_C_LIB_01_186: [ The ValidateArgumentValue_{arg_name} shall implicitly do a ValidateArgument for the arg_name argument, making sure the argument is not ignored. ]*/
+TEST_FUNCTION(validate_argument_value_shall_implicitly_validate_the_argument)
+{
+    // arrange
+    char* arg_value = "42";
+
+    STRICT_EXPECTED_CALL(test_dependency_char_star_arg("42"))
+        .IgnoreArgument_s()
+        .ValidateArgumentValue_s(&arg_value);
+
+    arg_value = "41";
+
+    // act
+    (void)test_dependency_char_star_arg("43");
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "[test_dependency_char_star_arg(\"41\")]", umock_c_get_expected_calls());
+    ASSERT_ARE_EQUAL(char_ptr, "[test_dependency_char_star_arg(\"43\")]", umock_c_get_actual_calls());
+}
+
 END_TEST_SUITE(umock_c_integrationtests)
