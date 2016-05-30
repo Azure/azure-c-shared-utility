@@ -1,4 +1,4 @@
-ConstMap Requirements
+﻿ConstMap Requirements
 ================
 
 
@@ -10,7 +10,7 @@ Const Map is a module that implements a read-only dictionary of `const char*` ke
 ## References
 [refcount](../inc/refcount.h)
 
-[Map](map_requirements.docm)
+[Map](map_requirements.md)
 
 ## Exposed API
 ```C

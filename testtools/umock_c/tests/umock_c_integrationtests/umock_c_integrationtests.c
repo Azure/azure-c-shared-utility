@@ -36,6 +36,8 @@ typedef struct test_on_umock_c_error_CALL_TAG
 static test_on_umock_c_error_CALL* test_on_umock_c_error_calls;
 static size_t test_on_umock_c_error_call_count;
 
+TEST_DEFINE_ENUM_TYPE(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES);
+
 DECLARE_UMOCK_POINTER_TYPE_FOR_TYPE(int, int);
 DECLARE_UMOCK_POINTER_TYPE_FOR_TYPE(unsigned char, unsignedchar);
 
@@ -122,6 +124,16 @@ static unsigned char*** result_value = (unsigned char***)0x4242;
 MOCK_FUNCTION_WITH_CODE(, unsigned char***, test_mock_function_with_unregistered_ptr_type, unsigned char***, x);
 MOCK_FUNCTION_END(result_value)
 
+IMPLEMENT_UMOCK_C_ENUM_TYPE(TEST_ENUM, TEST_ENUM_VALUE_1, TEST_ENUM_VALUE_2)
+
+static int test_return_value = 42;
+
+MOCK_FUNCTION_WITH_CODE(, int, test_dependency_for_capture_return)
+MOCK_FUNCTION_END(test_return_value)
+
+MOCK_FUNCTION_WITH_CODE(, int, test_dependency_for_capture_return_with_arg, int, a)
+MOCK_FUNCTION_END(test_return_value)
+
 BEGIN_TEST_SUITE(umock_c_integrationtests)
 
 TEST_SUITE_INITIALIZE(suite_init)
@@ -159,6 +171,8 @@ TEST_FUNCTION_INITIALIZE(test_function_init)
 
     test_on_umock_c_error_calls = NULL;
     test_on_umock_c_error_call_count = 0;
+
+    test_return_value = 42;
 }
 
 TEST_FUNCTION_CLEANUP(test_function_cleanup)
@@ -1721,7 +1735,6 @@ TEST_FUNCTION(when_a_type_is_not_supported_an_error_is_triggered)
     test_dependency_type_not_registered(a);
 
     // assert
-    ASSERT_IS_NULL(umock_c_get_expected_calls());
     ASSERT_ARE_EQUAL(int, 1, test_on_umock_c_error_call_count);
 }
 
@@ -1949,6 +1962,249 @@ TEST_FUNCTION(when_an_unregistered_pointer_type_is_used_it_defaults_to_void_ptr)
     ASSERT_ARE_EQUAL(void_ptr, (void*)0x42, result);
     ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_expected_calls());
     ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_UMOCK_C_LIB_01_179: [ IMPLEMENT_UMOCK_C_ENUM_TYPE shall implement umock_c handlers for an enum type. ]*/
+/* Tests_SRS_UMOCK_C_LIB_01_180: [ The variable arguments are a list making up the enum values. ]*/
+TEST_FUNCTION(matching_with_an_enum_type_works)
+{
+    // arrange
+    REGISTER_TYPE(TEST_ENUM, TEST_ENUM);
+    STRICT_EXPECTED_CALL(test_mock_function_with_enum_type(TEST_ENUM_VALUE_1));
+
+    // act
+    test_mock_function_with_enum_type(TEST_ENUM_VALUE_2);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "[test_mock_function_with_enum_type(TEST_ENUM_VALUE_1)]", umock_c_get_expected_calls());
+    ASSERT_ARE_EQUAL(char_ptr, "[test_mock_function_with_enum_type(TEST_ENUM_VALUE_2)]", umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_UMOCK_C_LIB_01_179: [ IMPLEMENT_UMOCK_C_ENUM_TYPE shall implement umock_c handlers for an enum type. ]*/
+/* Tests_SRS_UMOCK_C_LIB_01_181: [ If a value that is not part of the enum is used, it shall be treated as an int value. ]*/
+TEST_FUNCTION(when_the_enum_value_is_not_within_the_enum_the_int_value_is_filled_in)
+{
+    // arrange
+    REGISTER_TYPE(TEST_ENUM, TEST_ENUM);
+    STRICT_EXPECTED_CALL(test_mock_function_with_enum_type((TEST_ENUM)(TEST_ENUM_VALUE_1+2)));
+
+    // act
+    test_mock_function_with_enum_type(TEST_ENUM_VALUE_2);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "[test_mock_function_with_enum_type(2)]", umock_c_get_expected_calls());
+    ASSERT_ARE_EQUAL(char_ptr, "[test_mock_function_with_enum_type(TEST_ENUM_VALUE_2)]", umock_c_get_actual_calls());
+}
+
+/* CaptureReturn */
+
+/* Tests_SRS_UMOCK_C_LIB_01_179: [ The CaptureReturn call modifier shall copy the return value that is being returned to the code under test when an actual call is matched with the expected call. ]*/
+TEST_FUNCTION(capture_return_captures_the_return_value)
+{
+    // arrange
+    int captured_return;
+
+    STRICT_EXPECTED_CALL(test_dependency_for_capture_return())
+        .CaptureReturn(&captured_return);
+
+    // act
+    test_dependency_for_capture_return();
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 42, captured_return);
+}
+
+/* Tests_SRS_UMOCK_C_LIB_01_180: [ If CaptureReturn is called multiple times for the same call, an error shall be indicated with the code UMOCK_C_CAPTURE_RETURN_ALREADY_USED. ]*/
+TEST_FUNCTION(capture_return_twice_captures_the_return_value_in_the_pointer_indicated_by_the_second_call)
+{
+    // arrange
+    int captured_return_1;
+    int captured_return_2;
+
+    STRICT_EXPECTED_CALL(test_dependency_for_capture_return())
+        .CaptureReturn(&captured_return_1)
+        .CaptureReturn(&captured_return_2);
+
+    // act
+    test_dependency_for_capture_return();
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 1, test_on_umock_c_error_call_count);
+    ASSERT_ARE_EQUAL(UMOCK_C_ERROR_CODE, UMOCK_C_CAPTURE_RETURN_ALREADY_USED, test_on_umock_c_error_calls[0].error_code);
+}
+
+/* Tests_SRS_UMOCK_C_LIB_01_182: [ If captured_return_value is NULL, umock_c shall raise an error with the code UMOCK_C_NULL_ARGUMENT. ]*/
+TEST_FUNCTION(capture_return_with_NULL_argument_indicates_an_error)
+{
+    // arrange
+    STRICT_EXPECTED_CALL(test_dependency_for_capture_return())
+        .CaptureReturn(NULL);
+
+    // act
+    test_dependency_for_capture_return();
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 1, test_on_umock_c_error_call_count);
+    ASSERT_ARE_EQUAL(UMOCK_C_ERROR_CODE, UMOCK_C_NULL_ARGUMENT, test_on_umock_c_error_calls[0].error_code);
+}
+
+/* Tests_SRS_UMOCK_C_LIB_01_179: [ The CaptureReturn call modifier shall copy the return value that is being returned to the code under test when an actual call is matched with the expected call. ]*/
+TEST_FUNCTION(capture_return_when_no_actual_call_does_not_capture_anything)
+{
+    // arrange
+    int captured_return = 0;
+
+    STRICT_EXPECTED_CALL(test_dependency_for_capture_return())
+        .CaptureReturn(&captured_return);
+
+    // act
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, captured_return);
+}
+
+/* Tests_SRS_UMOCK_C_LIB_01_179: [ The CaptureReturn call modifier shall copy the return value that is being returned to the code under test when an actual call is matched with the expected call. ]*/
+TEST_FUNCTION(capture_return_when_no_matching_actual_call_does_not_capture_anything)
+{
+    // arrange
+    int captured_return = 0;
+
+    STRICT_EXPECTED_CALL(test_dependency_for_capture_return_with_arg(42))
+        .CaptureReturn(&captured_return);
+
+    // act
+    test_dependency_for_capture_return_with_arg(41);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, captured_return);
+}
+
+/* Tests_SRS_UMOCK_C_LIB_01_179: [ The CaptureReturn call modifier shall copy the return value that is being returned to the code under test when an actual call is matched with the expected call. ]*/
+TEST_FUNCTION(capture_return_takes_into_account_a_set_return_call)
+{
+    // arrange
+    int captured_return = 0;
+
+    STRICT_EXPECTED_CALL(test_dependency_for_capture_return())
+        .SetReturn(42)
+        .CaptureReturn(&captured_return);
+
+    // act
+    test_dependency_for_capture_return();
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 42, captured_return);
+}
+
+/* Tests_SRS_UMOCK_C_LIB_01_179: [ The CaptureReturn call modifier shall copy the return value that is being returned to the code under test when an actual call is matched with the expected call. ]*/
+TEST_FUNCTION(capture_return_captures_the_return_value_different_value)
+{
+    // arrange
+    int captured_return = 0;
+
+    STRICT_EXPECTED_CALL(test_dependency_for_capture_return())
+        .CaptureReturn(&captured_return);
+
+    test_return_value = 45;
+
+    // act
+    test_dependency_for_capture_return();
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 45, captured_return);
+}
+
+/* ValidateArgumentValue_{arg_name} */
+
+/* Tests_SRS_UMOCK_C_LIB_01_183: [ The ValidateArgumentValue_{arg_name} shall validate that the value of an argument matches the value pointed by arg_value. ]*/
+TEST_FUNCTION(validate_argument_value_validates_the_value_pointed_by_arg_value)
+{
+    // arrange
+    int arg_value = 0;
+
+    STRICT_EXPECTED_CALL(test_dependency_1_arg(0))
+        .ValidateArgumentValue_a(&arg_value);
+
+    arg_value = 42;
+
+    // act
+    (void)test_dependency_1_arg(42);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_expected_calls());
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_UMOCK_C_LIB_01_183: [ The ValidateArgumentValue_{arg_name} shall validate that the value of an argument matches the value pointed by arg_value. ]*/
+TEST_FUNCTION(validate_argument_value_validates_the_value_pointed_by_arg_value_for_a_char_star)
+{
+    // arrange
+    char* arg_value = "42";
+
+    STRICT_EXPECTED_CALL(test_dependency_char_star_arg(NULL))
+        .ValidateArgumentValue_s(&arg_value);
+
+    arg_value = "43";
+
+    // act
+    (void)test_dependency_char_star_arg("43");
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_expected_calls());
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_UMOCK_C_LIB_01_184: [ If arg_value is NULL, umock_c shall raise an error with the code UMOCK_C_NULL_ARGUMENT. ]*/
+TEST_FUNCTION(validate_argument_value_with_NULL_value_triggers_an_error)
+{
+    // arrange
+
+    // act
+    STRICT_EXPECTED_CALL(test_dependency_char_star_arg(NULL))
+        .ValidateArgumentValue_s(NULL);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 1, test_on_umock_c_error_call_count);
+    ASSERT_ARE_EQUAL(int, (int)UMOCK_C_NULL_ARGUMENT, test_on_umock_c_error_calls[0].error_code);
+}
+
+/* Tests_SRS_UMOCK_C_LIB_01_185: [ The ValidateArgumentValue_{arg_name} modifier shall inhibit comparing with any value passed directly as an argument in the expected call. ]*/
+TEST_FUNCTION(validate_argument_value_overrides_existing_arg_value)
+{
+    // arrange
+    char* arg_value = "42";
+
+    STRICT_EXPECTED_CALL(test_dependency_char_star_arg("42"))
+        .ValidateArgumentValue_s(&arg_value);
+
+    arg_value = "43";
+
+    // act
+    (void)test_dependency_char_star_arg("43");
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_expected_calls());
+    ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_UMOCK_C_LIB_01_186: [ The ValidateArgumentValue_{arg_name} shall implicitly do a ValidateArgument for the arg_name argument, making sure the argument is not ignored. ]*/
+TEST_FUNCTION(validate_argument_value_shall_implicitly_validate_the_argument)
+{
+    // arrange
+    char* arg_value = "42";
+
+    STRICT_EXPECTED_CALL(test_dependency_char_star_arg("42"))
+        .IgnoreArgument_s()
+        .ValidateArgumentValue_s(&arg_value);
+
+    arg_value = "41";
+
+    // act
+    (void)test_dependency_char_star_arg("43");
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "[test_dependency_char_star_arg(\"41\")]", umock_c_get_expected_calls());
+    ASSERT_ARE_EQUAL(char_ptr, "[test_dependency_char_star_arg(\"43\")]", umock_c_get_actual_calls());
 }
 
 END_TEST_SUITE(umock_c_integrationtests)

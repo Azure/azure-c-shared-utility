@@ -479,6 +479,7 @@ TEST_FUNCTION(socketio_destroy_socket_succeeds)
     socketio_open(ioHandle, test_on_io_open_complete, &callbackContext, test_on_bytes_received, &callbackContext, test_on_io_error, &callbackContext);
 
     umock_c_reset_all_calls();
+    EXPECTED_CALL(list_get_head_item(IGNORED_PTR_ARG));
     EXPECTED_CALL(send(IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_NUM_ARG))
         .SetReturn(0);
     EXPECTED_CALL(WSAGetLastError())
@@ -554,8 +555,8 @@ TEST_FUNCTION(socketio_open_getaddrinfo_fails)
     g_addrinfo_call_fail = true;
     EXPECTED_CALL(socket(IGNORED_NUM_ARG, IGNORED_NUM_ARG, IGNORED_NUM_ARG));
     EXPECTED_CALL(getaddrinfo(IGNORED_PTR_ARG, IGNORED_PTR_ARG, &TEST_ADDR_INFO, IGNORED_PTR_ARG));
-    EXPECTED_CALL(closesocket(IGNORED_NUM_ARG));
     EXPECTED_CALL(WSAGetLastError());
+    EXPECTED_CALL(closesocket(IGNORED_NUM_ARG));
 
     // act
     int result = socketio_open(ioHandle, test_on_io_open_complete, &callbackContext, test_on_bytes_received, &callbackContext, test_on_io_error, &callbackContext);
@@ -580,9 +581,9 @@ TEST_FUNCTION(socketio_open_connect_fails)
     EXPECTED_CALL(getaddrinfo(IGNORED_PTR_ARG, IGNORED_PTR_ARG, &TEST_ADDR_INFO, IGNORED_PTR_ARG));
     EXPECTED_CALL(connect(IGNORED_NUM_ARG, &test_sock_addr, IGNORED_NUM_ARG))
         .SetReturn(WSAECONNREFUSED);
+    EXPECTED_CALL(WSAGetLastError());
     EXPECTED_CALL(closesocket(IGNORED_NUM_ARG));
     EXPECTED_CALL(freeaddrinfo(&TEST_ADDR_INFO));
-    EXPECTED_CALL(WSAGetLastError());
 
     // act
     int result = socketio_open(ioHandle, test_on_io_open_complete, &callbackContext, test_on_bytes_received, &callbackContext, test_on_io_error, &callbackContext);
@@ -816,8 +817,8 @@ TEST_FUNCTION(socketio_dowork_succeeds)
     EXPECTED_CALL(list_get_head_item(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
     EXPECTED_CALL(recv(IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_NUM_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(WSAGetLastError());
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
     // act
     socketio_dowork(ioHandle);
@@ -846,8 +847,8 @@ TEST_FUNCTION(socketio_dowork_recv_bytes_succeeds)
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
     EXPECTED_CALL(recv(IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_NUM_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(WSAGetLastError());
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
     // act
     socketio_dowork(ioHandle);

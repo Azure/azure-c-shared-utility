@@ -32,6 +32,26 @@
       <AdditionalDependencies>Secur32.lib;Ws2_32.lib;$(MSBuildThisFileDirectory)../../build/native/x64/Release/aziotsharedutil.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
+  <ItemDefinitionGroup Label="ARMDebug" Condition="(( $(Configuration.ToLower().IndexOf('debug')) &gt; -1 ) And ('$(Platform)' == 'ARM' ) )">
+    <Link>
+      <AdditionalDependencies>Secur32.lib;Ws2_32.lib;$(MSBuildThisFileDirectory)../../build/native/arm/Debug/aziotsharedutil.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Label="ARMRelease" Condition="(( $(Configuration.ToLower().IndexOf('debug')) == -1 ) And ('$(Platform)' == 'ARM' ) )">
+    <Link>
+      <AdditionalDependencies>Secur32.lib;Ws2_32.lib;$(MSBuildThisFileDirectory)../../build/native/arm/Release/aziotsharedutil.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Label="ARM64Debug" Condition="(( $(Configuration.ToLower().IndexOf('debug')) &gt; -1 ) And ('$(Platform)' == 'ARM64' ) )">
+    <Link>
+      <AdditionalDependencies>Secur32.lib;Ws2_32.lib;$(MSBuildThisFileDirectory)../../build/native/arm64/Debug/aziotsharedutil.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Label="ARM64Release" Condition="(( $(Configuration.ToLower().IndexOf('debug')) == -1 ) And ('$(Platform)' == 'ARM64' ) )">
+    <Link>
+      <AdditionalDependencies>Secur32.lib;Ws2_32.lib;$(MSBuildThisFileDirectory)../../build/native/arm64/Release/aziotsharedutil.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
   <UsingTask TaskName="Microsoft_Azure_Shared_Util_Contains" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll" TaskFactory="CodeTaskFactory">
     <ParameterGroup>
       <Text Output="false" ParameterType="System.String" />
@@ -72,7 +92,7 @@
       <Output TaskParameter="Result" PropertyName="CallingConvention-Microsoft_Azure_Shared_Util" />
     </Microsoft_Azure_Shared_Util_Contains>
   </Target>
-    <Target Name="Microsoft_Azure_Shared_Util_redist_AfterBuild" AfterTargets="AfterBuild" />
+  <Target Name="Microsoft_Azure_Shared_Util_redist_AfterBuild" AfterTargets="AfterBuild" />
   <Target Name="Microsoft_Azure_Shared_Util_redist_AfterBuild_Win32_and_Debug" Label="Win32 and Debug" Condition="'$(Platform.ToLower())' == 'win32' And ( $(Configuration.ToLower().IndexOf('debug')) &gt; -1 )" AfterTargets="Microsoft_Azure_Shared_Util_redist_AfterBuild">
   </Target>
   <Target Name="Microsoft_Azure_Shared_Util_redist_AfterBuild_Win32_and_Release" Label="Win32 and Release" Condition="'$(Platform.ToLower())' == 'win32' And ( $(Configuration.ToLower().IndexOf('debug')) == -1 )" AfterTargets="Microsoft_Azure_Shared_Util_redist_AfterBuild">
@@ -82,4 +102,14 @@
   </Target>
   <Target Name="Microsoft_Azure_Shared_Util_redist_AfterBuild_Win64_and_Release" Label="Win64 and Release" Condition="'$(Platform.ToLower())' == 'x64' And ( $(Configuration.ToLower().IndexOf('debug')) == -1 )" AfterTargets="Microsoft_Azure_Shared_Util_redist_AfterBuild">
   </Target>
+  
+  <Target Name="Microsoft_Azure_Shared_Util_redist_AfterBuild_ARM_and_Debug" Label="ARM and Debug" Condition="'$(Platform.ToLower())' == 'ARM' And ( $(Configuration.ToLower().IndexOf('debug')) &gt; -1 )" AfterTargets="Microsoft_Azure_Shared_Util_redist_AfterBuild">
+  </Target>
+  <Target Name="Microsoft_Azure_Shared_Util_redist_AfterBuild_ARM_and_Release" Label="ARM and Release" Condition="'$(Platform.ToLower())' == 'ARM' And ( $(Configuration.ToLower().IndexOf('debug')) == -1 )" AfterTargets="Microsoft_Azure_Shared_Util_redist_AfterBuild">
+  </Target>  
+  <Target Name="Microsoft_Azure_Shared_Util_redist_AfterBuild_ARM64_and_Debug" Label="ARM64 and Debug" Condition="'$(Platform.ToLower())' == 'ARM64' And ( $(Configuration.ToLower().IndexOf('debug')) &gt; -1 )" AfterTargets="Microsoft_Azure_Shared_Util_redist_AfterBuild">
+  </Target>
+  <Target Name="Microsoft_Azure_Shared_Util_redist_AfterBuild_ARM64_and_Release" Label="ARM64 and Release" Condition="'$(Platform.ToLower())' == 'ARM64' And ( $(Configuration.ToLower().IndexOf('debug')) == -1 )" AfterTargets="Microsoft_Azure_Shared_Util_redist_AfterBuild">
+  </Target>  
+  
 </Project>

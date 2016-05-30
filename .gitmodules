@@ -1,0 +1,3 @@
+[submodule "testtools/ctest"]
+	path = testtools/ctest
+	url = https://github.com/Azure/azure-ctest.git

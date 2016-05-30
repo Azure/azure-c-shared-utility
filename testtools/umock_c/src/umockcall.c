@@ -8,6 +8,7 @@
 #include <stddef.h>
 #include <string.h>
 #include "umockcall.h"
+#include "umockalloc.h"
 #include "umock_log.h"
 
 typedef struct UMOCKCALL_TAG
@@ -40,17 +41,17 @@ UMOCKCALL_HANDLE umockcall_create(const char* function_name, void* umockcall_dat
     else
     {
         /* Codes_SRS_UMOCKCALL_01_001: [ umockcall_create shall create a new instance of a umock call and on success it shall return a non-NULL handle to it. ] */
-        result = (UMOCKCALL*)malloc(sizeof(UMOCKCALL));
+        result = (UMOCKCALL*)umockalloc_malloc(sizeof(UMOCKCALL));
         /* Codes_SRS_UMOCKCALL_01_002: [ If allocating memory for the umock call instance fails, umockcall_create shall return NULL. ] */
         if (result != NULL)
         {
             size_t function_name_length = strlen(function_name);
-            result->function_name = (char*)malloc(function_name_length + 1);
+            result->function_name = (char*)umockalloc_malloc(function_name_length + 1);
             if (result->function_name == NULL)
             {
                 /* Codes_SRS_UMOCKCALL_01_002: [ If allocating memory for the umock call instance fails, umockcall_create shall return NULL. ] */
                 UMOCK_LOG("umockcall: Cannot allocate memory for the call function name.");
-                free(result);
+                umockalloc_free(result);
                 result = NULL;
             }
             else
@@ -76,8 +77,8 @@ void umockcall_destroy(UMOCKCALL_HANDLE umockcall)
     {
         /* Codes_SRS_UMOCKCALL_01_004: [ umockcall_destroy shall free a previously allocated umock call instance. ] */
         umockcall->umockcall_data_free(umockcall->umockcall_data);
-        free(umockcall->function_name);
-        free(umockcall);
+        umockalloc_free(umockcall->function_name);
+        umockalloc_free(umockcall);
     }
 }
 
@@ -163,7 +164,7 @@ char* umockcall_stringify(UMOCKCALL_HANDLE umockcall)
             size_t call_length = function_name_length + stringified_args_length + 4;
 
             /* Codes_SRS_UMOCKCALL_01_018: [ The returned string shall be a newly allocated string and it is to be freed by the caller. ]*/
-            result = (char*)malloc(call_length + 1);
+            result = (char*)umockalloc_malloc(call_length + 1);
             /* Codes_SRS_UMOCKCALL_01_021: [ If not enough memory can be allocated for the string to be returned, umockcall_stringify shall fail and return NULL. ]*/
             if (result != NULL)
             {
@@ -177,7 +178,7 @@ char* umockcall_stringify(UMOCKCALL_HANDLE umockcall)
             }
 
             /* Codes_SRS_UMOCKCALL_01_030: [ umockcall_stringify shall free the string obtained from umockcall_data_stringify. ]*/
-            free(stringified_args);
+            umockalloc_free(stringified_args);
         }
     }
 
@@ -214,7 +215,7 @@ UMOCKCALL_HANDLE umockcall_clone(UMOCKCALL_HANDLE umockcall)
     }
     else
     {
-        result = (UMOCKCALL*)malloc(sizeof(UMOCKCALL));
+        result = (UMOCKCALL*)umockalloc_malloc(sizeof(UMOCKCALL));
         if (result == NULL)
         {
             /* Codes_SRS_UMOCKCALL_01_043: [ If allocating memory for the new umock call fails, umockcall_clone shall return NULL. ]*/
@@ -223,12 +224,12 @@ UMOCKCALL_HANDLE umockcall_clone(UMOCKCALL_HANDLE umockcall)
         else
         {
             size_t function_name_length = strlen(umockcall->function_name);
-            result->function_name = (char*)malloc(function_name_length + 1);
+            result->function_name = (char*)umockalloc_malloc(function_name_length + 1);
             if (result->function_name == NULL)
             {
                 /* Codes_SRS_UMOCKCALL_01_036: [ If allocating memory for the function name fails, umockcall_clone shall return NULL. ]*/
                 UMOCK_LOG("umockcall_clone: Failed allocating memory for new copied call function name.");
-                free(result);
+                umockalloc_free(result);
                 result = NULL;
             }
             else
@@ -242,8 +243,8 @@ UMOCKCALL_HANDLE umockcall_clone(UMOCKCALL_HANDLE umockcall)
                 {
                     /* Codes_SRS_UMOCKCALL_01_034: [ If umockcall_data_copy fails then umockcall_clone shall return NULL. ]*/
                     UMOCK_LOG("umockcall_clone: Failed copying call data.");
-                    free(result->function_name);
-                    free(result);
+                    umockalloc_free(result->function_name);
+                    umockalloc_free(result);
                     result = NULL;
                 }
                 else

@@ -10,7 +10,7 @@ umocktypes_without_init_unittests.c
 )
 
 set(${theseTestsName}_c_files
-../../src/umocktypes.c
+umocktypes_mocked.c
 )
 
 set(${theseTestsName}_h_files

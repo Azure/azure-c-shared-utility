@@ -61,6 +61,8 @@ typedef enum UMOCK_C_ERROR_CODE_TAG
     UMOCK_C_INVALID_ARGUMENT_BUFFER,
     UMOCK_C_COMPARE_CALL_ERROR,
     UMOCK_C_RESET_CALLS_ERROR,
+    UMOCK_C_CAPTURE_RETURN_ALREADY_USED,
+    UMOCK_C_NULL_ARGUMENT,
     UMOCK_C_ERROR
 } UMOCK_C_ERROR_CODE;
 
@@ -501,6 +503,35 @@ void umockvalue_free_int(int* value)
 }
 ```
 
+###Custom enum types
+
+####IMPLEMENT_UMOCK_C_ENUM_TYPE
+
+```c
+IMPLEMENT_UMOCK_C_ENUM_TYPE(type, ...)
+```
+
+XX**SRS_UMOCK_C_LIB_01_179: [** IMPLEMENT_UMOCK_C_ENUM_TYPE shall implement umock_c handlers for an enum type. **]**
+XX**SRS_UMOCK_C_LIB_01_180: [** The variable arguments are a list making up the enum values. **]**
+XX**SRS_UMOCK_C_LIB_01_181: [** If a value that is not part of the enum is used, it shall be treated as an int value. **]**
+Note: IMPLEMENT_UMOCK_C_ENUM_TYPE only generates the handlers, registering the handlers still has to be done by using the macro REGISTER_UMOCK_VALUE_TYPE.
+
+Example:
+
+```c
+IMPLEMENT_UMOCK_C_ENUM_TYPE(my_enum, enum_value1, enum_value2)
+```  
+
+This provides the handlers (stringify, are_equal, etc.) for the below C enum:
+
+```c
+typedef enum my_enum_tag
+{
+    enum_value1,
+    enum_value2
+} my_enum
+```
+
 ### Type names
 
 XX**SRS_UMOCK_C_LIB_01_145: [** Since umock_c needs to maintain a list of registered types, the following rules shall be applied: **]**
@@ -715,6 +746,66 @@ X**SRS_UMOCK_C_LIB_01_129: [** ValidateArgumentBuffer shall only be available fo
 **SRS_UMOCK_C_LIB_01_101: [**The IgnoreAllCalls call modifier shall record that all calls matching the expected call shall be ignored. If no matching call occurs no missing call shall be reported.**]**
 **SRS_UMOCK_C_LIB_01_102: [**If multiple matching actual calls occur no unexpected calls shall be reported.**]**
 **SRS_UMOCK_C_LIB_01_103: [**The call matching shall be done taking into account arguments and call modifiers referring to arguments.**]**
+
+###CaptureReturn(return_type* captured_return_value)
+
+XX**SRS_UMOCK_C_LIB_01_179: [** The CaptureReturn call modifier shall copy the return value that is being returned to the code under test when an actual call is matched with the expected call. **]**
+XX**SRS_UMOCK_C_LIB_01_180: [** If CaptureReturn is called multiple times for the same call, an error shall be indicated with the code UMOCK_C_CAPTURE_RETURN_ALREADY_USED. **]**
+XX**SRS_UMOCK_C_LIB_01_182: [** If captured_return_value is NULL, umock_c shall raise an error with the code UMOCK_C_NULL_ARGUMENT. **]**
+**SRS_UMOCK_C_LIB_01_181: [** CaptureReturn shall only be available if the return type is not void. **]**
+
+Example:
+
+```c
+TEST_FUNCTION(capture_return_captures_the_return_value)
+{
+    // arrange
+    int captured_return;
+
+    STRICT_EXPECTED_CALL(test_dependency_for_capture_return())
+        .CaptureReturn(&captured_return);
+
+    // act
+    test_dependency_for_capture_return();
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 42, captured_return);
+}
+```
+
+###ValidateArgumentValue_{arg_name}(arg_type* arg_value)
+
+XX**SRS_UMOCK_C_LIB_01_183: [** The ValidateArgumentValue_{arg_name} shall validate that the value of an argument matches the value pointed by arg_value. **]**
+XX**SRS_UMOCK_C_LIB_01_184: [** If arg_value is NULL, umock_c shall raise an error with the code UMOCK_C_NULL_ARGUMENT. **]**
+XX**SRS_UMOCK_C_LIB_01_185: [** The ValidateArgumentValue_{arg_name} modifier shall inhibit comparing with any value passed directly as an argument in the expected call. **]**
+XX**SRS_UMOCK_C_LIB_01_186: [** The ValidateArgumentValue_{arg_name} shall implicitly do a ValidateArgument for the arg_name argument, making sure the argument is not ignored. **]**
+
+Example:
+
+Given a function with the prototype:
+
+```c
+void function_with_int_arg(int a);
+```
+
+```c
+TEST_FUNCTION(validate_argument_sample)
+{
+    // arrange
+    int arg_value = 0;
+
+    STRICT_EXPECTED_CALL(function_with_int_arg(0))
+        .ValidateArgumentValue_a(&arg_value);
+
+    arg_value = 42;
+
+    // act
+    function_with_int_arg(42);
+
+    // assert
+    // ... calls should match ...
+}
+```
 
 ##Global mock modifiers
 

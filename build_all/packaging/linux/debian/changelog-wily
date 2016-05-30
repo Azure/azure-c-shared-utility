@@ -1,4 +1,4 @@
-azure-c-shared-util (0.1.0.0-11) wily; urgency=low
+azure-c-shared-util (0.1.0.0-12) wily; urgency=low
 
   * Initial release (Closes: #5069014)
 
@@ -16,5 +16,7 @@ azure-c-shared-util (0.1.0.0-11) wily; urgency=low
 
   * Update socket to recieve Data in bulk (#57b1ac6)
 
- -- AzureIoT User <aziotsdklinux@outlook.com>  Fri, 22 Apr 2016 14:18:00 -0800
+  * Updated tlsio to to successfully use certificates (#975b971e)
+
+ -- AzureIoT User <aziotsdklinux@outlook.com>  Fri, 6 May 2016 14:18:00 -0800
 

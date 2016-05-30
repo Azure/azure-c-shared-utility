@@ -58,7 +58,7 @@ TEST_FUNCTION_CLEANUP(test_function_cleanup)
     TEST_MUTEX_RELEASE(test_mutex);
 }
 
-TEST_FUNCTION(_matched_call_with_pointer_type_argument_does_not_leak)
+TEST_FUNCTION(a_matched_call_with_pointer_type_argument_does_not_leak)
 {
     // arrange
     EXPECTED_CALL(a_char_star_arg_function("a"));

@@ -98,6 +98,16 @@ int umocktypes_c_register_types(void)
     return 0;
 }
 
+void* umockalloc_malloc(size_t size)
+{
+    return malloc(size);
+}
+
+void umockalloc_free(void* ptr)
+{
+    free(ptr);
+}
+
 static TEST_MUTEX_HANDLE test_mutex;
 static TEST_MUTEX_HANDLE global_mutex;
 

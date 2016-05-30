@@ -205,14 +205,14 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         ///arrange
 
         ///act
+
+        STRICT_EXPECTED_CALL(BUFFER_length(BUFFER1_HANDLE));
+        STRICT_EXPECTED_CALL(BUFFER_u_char(BUFFER1_HANDLE));
         /*this is the handle*/
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
         /*this is the content*/
         STRICT_EXPECTED_CALL(gballoc_malloc(BUFFER1_length));
-
-        STRICT_EXPECTED_CALL(BUFFER_length(BUFFER1_HANDLE));
-        STRICT_EXPECTED_CALL(BUFFER_u_char(BUFFER1_HANDLE));
 
         CONSTBUFFER_HANDLE handle = CONSTBUFFER_CreateFromBuffer(BUFFER1_HANDLE);
 
@@ -242,12 +242,12 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         /*this is the handle*/
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
-            .IgnoreArgument(1);
 
         /*this is the content*/
         whenShallmalloc_fail = 2;
         STRICT_EXPECTED_CALL(gballoc_malloc(BUFFER1_length));
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
 
 
         CONSTBUFFER_HANDLE handle = CONSTBUFFER_CreateFromBuffer(BUFFER1_HANDLE);
@@ -334,11 +334,11 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         /*this is the handle*/
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
-            .IgnoreArgument(1);
         /*this is the content*/
         whenShallmalloc_fail = 2;
         STRICT_EXPECTED_CALL(gballoc_malloc(BUFFER1_length));
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
 
         CONSTBUFFER_HANDLE handle = CONSTBUFFER_Create(BUFFER1_u_char, BUFFER1_length);
 

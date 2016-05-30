@@ -4,6 +4,7 @@
 #this is CMakeLists for micromock unittests folder, it is empty
 cmake_minimum_required(VERSION 2.8.11)
 
+add_subdirectory(umockalloc_unittests)
 add_subdirectory(umockcall_unittests)
 add_subdirectory(umockcallrecorder_unittests)
 add_subdirectory(umock_c_integrationtests)
@@ -15,6 +16,7 @@ add_subdirectory(umocktypes_without_init_unittests)
 add_subdirectory(umocktypes_bool_unittests)
 add_subdirectory(umocktypes_c_unittests)
 add_subdirectory(umocktypes_charptr_unittests)
-add_subdirectory(umock_c_negative_tests_no_init_unittests)
+add_subdirectory(umocktypes_stdint_unittests)
+add_subdirectory(umock_c_negt_noini_unittests)
 add_subdirectory(umock_c_negative_tests_unittests)
-add_subdirectory(umock_c_negative_tests_integrationtests)
+add_subdirectory(umock_c_negt_int_tests)

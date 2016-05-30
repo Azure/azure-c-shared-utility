@@ -17,7 +17,7 @@ azure-c-shared-utility uses cmake for configuring build files.
 
 1. Clone **azure-c-shared-utility**
 
-2. Create a folder called *cmake* under *azure-c-shared-utility\c*
+2. Create a folder called *cmake* under *azure-c-shared-utility*
 
 3. Switch to the *cmake* folder and run
 ```

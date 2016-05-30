@@ -616,3 +616,43 @@ int STRING_compare(STRING_HANDLE s1, STRING_HANDLE s2)
     }
     return result;
 }
+
+STRING_HANDLE STRING_from_byte_array(const unsigned char* source, size_t size)
+{
+    STRING* result;
+    /*Codes_SRS_STRING_02_022: [ If source is NULL and size > 0 then STRING_from_BUFFER shall fail and return NULL. ]*/
+    if ((source == NULL) && (size > 0))
+    {
+        LogError("invalid parameter (NULL)");
+        result = NULL;
+    }
+    else
+    {
+        /*Codes_SRS_STRING_02_023: [ Otherwise, STRING_from_BUFFER shall build a string that has the same content (byte-by-byte) as source and return a non-NULL handle. ]*/
+        result = (STRING*)malloc(sizeof(STRING));
+        if (result == NULL)
+        {
+            /*Codes_SRS_STRING_02_024: [ If building the string fails, then STRING_from_BUFFER shall fail and return NULL. ]*/
+            LogError("oom - unable to malloc");
+            /*return as is*/
+        }
+        else
+        {
+            /*Codes_SRS_STRING_02_023: [ Otherwise, STRING_from_BUFFER shall build a string that has the same content (byte-by-byte) as source and return a non-NULL handle. ]*/
+            result->s = (char*)malloc(size + 1);
+            if (result->s == NULL)
+            {
+                /*Codes_SRS_STRING_02_024: [ If building the string fails, then STRING_from_BUFFER shall fail and return NULL. ]*/
+                LogError("oom - unable to malloc");
+                free(result);
+                result = NULL;
+            }
+            else
+            {
+                memcpy(result->s, source, size);
+                result->s[size] = '\0'; /*all is fine*/
+            }
+        }
+    }
+    return (STRING_HANDLE)result;
+}

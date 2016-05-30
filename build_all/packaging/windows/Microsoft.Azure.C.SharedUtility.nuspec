@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
 	<metadata>
 		<id>Microsoft.Azure.C.SharedUtility</id>
-		<version>1.0.7</version>
+		<version>1.0.8</version>
 		<title>Microsoft Azure C Shared Utility</title>
 		<authors>Microsoft Corp</authors>
 		<owners>Azure-IoT</owners>
@@ -13,7 +13,7 @@
 		<iconUrl>http://go.microsoft.com/fwlink/?LinkID=288890</iconUrl>
 		<summary>This nuget package can be used to develop applications and libraries</summary>
 		<copyright>Copyright 2016</copyright>
-		<tags>Microsoft Azure C Native x86 x64 native package</tags>
+		<tags>Microsoft Azure C Native x86 ARM x64 native package</tags>
 		<dependencies>
 		</dependencies>
 	</metadata>
@@ -21,14 +21,19 @@
 		<file src="Microsoft.Azure.C.SharedUtility_thirdpartynotice.txt" target="thirdpartynotice.txt"/>
 
 		<!-- these are files for x86 plaform -->
-		<file src="..\..\..\shared-util_output\win32\debug\aziotsharedutil.lib" target="build\native\Win32\Debug"/>
-		<file src="..\..\..\shared-util_output\win32\debug\aziotsharedutil.pdb" target="build\native\Win32\Debug"/>
-		<file src="..\..\..\shared-util_output\win32\release\aziotsharedutil.lib" target="build\native\Win32\Release"/>
+		<file src="..\..\..\cmake\shared-util_output\win32\debug\aziotsharedutil.lib" target="build\native\Win32\Debug"/>
+		<file src="..\..\..\cmake\shared-util_output\win32\debug\aziotsharedutil.pdb" target="build\native\Win32\Debug"/>
+		<file src="..\..\..\cmake\shared-util_output\win32\release\aziotsharedutil.lib" target="build\native\Win32\Release"/>
 
 		<!-- these are files for x64 plaform -->
-		<file src="..\..\..\shared-util_output\x64\debug\aziotsharedutil.lib" target="build\native\x64\Debug"/>
-		<file src="..\..\..\shared-util_output\x64\debug\aziotsharedutil.pdb" target="build\native\x64\Debug"/>
-		<file src="..\..\..\shared-util_output\x64\release\aziotsharedutil.lib" target="build\native\x64\Release"/>
+		<file src="..\..\..\cmake\shared-util_output\x64\debug\aziotsharedutil.lib" target="build\native\x64\Debug"/>
+		<file src="..\..\..\cmake\shared-util_output\x64\debug\aziotsharedutil.pdb" target="build\native\x64\Debug"/>
+		<file src="..\..\..\cmake\shared-util_output\x64\release\aziotsharedutil.lib" target="build\native\x64\Release"/>
+
+		<!-- these are files for arm plaform -->
+		<file src="..\..\..\cmake\shared-util_output\arm\debug\aziotsharedutil.lib" target="build\native\arm\Debug"/>
+		<file src="..\..\..\cmake\shared-util_output\arm\debug\aziotsharedutil.pdb" target="build\native\arm\Debug"/>
+		<file src="..\..\..\cmake\shared-util_output\arm\release\aziotsharedutil.lib" target="build\native\arm\Release"/>
 
 		<file src="Microsoft.Azure.C.SharedUtility.targets" target="build\native"/>
 

@@ -1011,11 +1011,11 @@ BEGIN_TEST_SUITE(strings_unittests)
         ///arrange
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
-            .IgnoreArgument(1);
 
         whenShallmalloc_fail = 2;
         STRICT_EXPECTED_CALL(gballoc_malloc(strlen("ab") + 2+1));
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
 
         ///act
         STRING_HANDLE result = STRING_new_JSON("ab");
@@ -1060,4 +1060,105 @@ BEGIN_TEST_SUITE(strings_unittests)
         ///cleanup
     }
 
+    /*Tests_SRS_STRING_02_022: [ If source is NULL and size > 0 then STRING_from_BUFFER shall fail and return NULL. ]*/
+    TEST_FUNCTION(STRING_from_byte_array_with_NULL_array_and_size_not_zero_fails)
+    {
+        ///arrange
+
+        ///act
+        STRING_HANDLE result = STRING_from_byte_array(NULL, 1);
+
+        ///assert
+        ASSERT_IS_NULL(result);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        ///cleanup
+    }
+
+    /*Tests_SRS_STRING_02_023: [ Otherwise, STRING_from_BUFFER shall build a string that has the same content (byte-by-byte) as source and return a non-NULL handle. ]*/
+    TEST_FUNCTION(STRING_from_byte_array_succeeds)
+    {
+        ///arrange
+
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
+            .IgnoreArgument_size();
+
+        STRICT_EXPECTED_CALL(gballoc_malloc(1 + 1));
+
+        ///act
+        STRING_HANDLE result = STRING_from_byte_array((const unsigned char*)"a", 1);
+
+        ///assert
+        ASSERT_IS_NOT_NULL(result);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+        ASSERT_ARE_EQUAL(char_ptr, "a", STRING_c_str(result));
+
+        ///cleanup
+        STRING_delete(result);
+    }
+
+    /*Tests_SRS_STRING_02_023: [ Otherwise, STRING_from_BUFFER shall build a string that has the same content (byte-by-byte) as source and return a non-NULL handle. ]*/
+    TEST_FUNCTION(STRING_from_byte_array_succeeds_2)
+    {
+        ///arrange
+
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
+            .IgnoreArgument_size();
+
+        STRICT_EXPECTED_CALL(gballoc_malloc(1 + 0));
+
+        ///act
+        STRING_HANDLE result = STRING_from_byte_array(NULL, 0);
+
+        ///assert
+        ASSERT_IS_NOT_NULL(result);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+        ASSERT_ARE_EQUAL(char_ptr, "", STRING_c_str(result));
+
+        ///cleanup
+        STRING_delete(result);
+    }
+
+    /*Tests_SRS_STRING_02_024: [ If building the string fails, then STRING_from_BUFFER shall fail and return NULL. ]*/
+    TEST_FUNCTION(STRING_from_byte_array_fails_1)
+    {
+        ///arrange
+
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
+            .IgnoreArgument_size();
+        
+        STRICT_EXPECTED_CALL(gballoc_malloc(1 + 1))
+            .SetReturn(NULL);
+
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
+            .IgnoreArgument_ptr();
+
+        ///act
+        STRING_HANDLE result = STRING_from_byte_array((const unsigned char*)"a", 1);
+
+        ///assert
+        ASSERT_IS_NULL(result);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        ///cleanup
+    }
+
+    /*Tests_SRS_STRING_02_024: [ If building the string fails, then STRING_from_BUFFER shall fail and return NULL. ]*/
+    TEST_FUNCTION(STRING_from_byte_array_fails_2)
+    {
+        ///arrange
+
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
+            .IgnoreArgument_size()
+            .SetReturn(NULL);
+
+        ///act
+        STRING_HANDLE result = STRING_from_byte_array((const unsigned char*)"a", 1);
+
+        ///assert
+        ASSERT_IS_NULL(result);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        ///cleanup
+    }
 END_TEST_SUITE(strings_unittests)
