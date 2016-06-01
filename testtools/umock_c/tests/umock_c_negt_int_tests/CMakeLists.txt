@@ -6,7 +6,7 @@ cmake_minimum_required(VERSION 2.8.11)
 set(theseTestsName umock_c_negative_tests_integrationtests)
 
 set(${theseTestsName}_test_files
-umock_c_negative_tests_integrationtests.c
+umock_c_negt_int_tests.c
 )
 
 set(${theseTestsName}_c_files
