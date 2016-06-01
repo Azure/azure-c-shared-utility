@@ -34,6 +34,7 @@ COND_HANDLE Condition_Init(void)
 
         if (cond->event_handle == INVALID_HANDLE_VALUE)
         {
+            LogError("CreateEvent failed with error %d", GetLastError());
             free(cond);
             cond = NULL;
         }
@@ -42,6 +43,10 @@ COND_HANDLE Condition_Init(void)
             /* Needed to emulate pthread_signal as we only signal the event when there are waiting threads */
             cond->waiting_thread_count = 0;
         }
+    }
+    else
+    {
+        LogError("Failed to allocate condition handle");
     }
 
     return (COND_HANDLE)cond;
@@ -52,6 +57,8 @@ COND_RESULT Condition_Post(COND_HANDLE handle)
     COND_RESULT result;
     if (handle == NULL)
     {
+        LogError("Null argument handle passed to Condition_Post");
+
         // Codes_SRS_CONDITION_18_001: [ Condition_Post shall return COND_INVALID_ARG if handle is NULL ]
         result = COND_INVALID_ARG;
     }
@@ -67,6 +74,8 @@ COND_RESULT Condition_Post(COND_HANDLE handle)
         }
         else
         {
+            LogError("Failed SetEvent call with error %d", GetLastError());
+
             result = COND_ERROR;
         }
     }
@@ -84,7 +93,7 @@ COND_RESULT Condition_Wait(COND_HANDLE handle, LOCK_HANDLE lock, int timeout_mil
     {
         result = COND_INVALID_ARG;
     }
-    else
+    else if (Unlock(lock) == 0)
     {
         CONDITION* cond = (CONDITION*)handle;
         DWORD wait_result;
@@ -92,16 +101,17 @@ COND_RESULT Condition_Wait(COND_HANDLE handle, LOCK_HANDLE lock, int timeout_mil
         /* Increment the waiting thread count, unlock the lock and wait */
         InterlockedIncrement(&cond->waiting_thread_count);
         
-        (void)Unlock(lock);
-
         // Codes_SRS_CONDITION_18_013: [ Condition_Wait shall accept relative timeouts ]
         wait_result = WaitForSingleObject(cond->event_handle, timeout_milliseconds == 0 ? INFINITE : timeout_milliseconds);
 
+        /* If we unlocked ok, it means the lock handle is valid, lock must succeed since it wraps EnterCriticalSection */
         (void)Lock(lock);
 
         if (wait_result != WAIT_OBJECT_0 && wait_result != WAIT_TIMEOUT)
         {
-            /* cond might be freed at this point, just return error */
+            LogError("Failed wait, wait returned with %x", wait_result);
+
+            /* cond might be freed at this point, just return error and do not touch condition */
             result = COND_ERROR;
         }
         else
@@ -123,6 +133,11 @@ COND_RESULT Condition_Wait(COND_HANDLE handle, LOCK_HANDLE lock, int timeout_mil
                 result = COND_OK;
             }
         }
+    }
+    else
+    {
+        LogError("Invalid lock passed which failed to unlock");
+        result = COND_ERROR;
     }
     return result;
 }
