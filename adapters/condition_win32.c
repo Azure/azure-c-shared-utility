@@ -99,7 +99,7 @@ COND_RESULT Condition_Wait(COND_HANDLE handle, LOCK_HANDLE lock, int timeout_mil
         DWORD wait_result;
 
         /* Increment the waiting thread count, unlock the lock and wait */
-        InterlockedIncrement(&cond->waiting_thread_count);
+        (void)InterlockedIncrement(&cond->waiting_thread_count);
         
         // Codes_SRS_CONDITION_18_013: [ Condition_Wait shall accept relative timeouts ]
         wait_result = WaitForSingleObject(cond->event_handle, timeout_milliseconds == 0 ? INFINITE : timeout_milliseconds);
