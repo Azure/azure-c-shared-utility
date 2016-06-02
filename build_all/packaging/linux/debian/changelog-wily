@@ -1,4 +1,4 @@
-azure-c-shared-util (0.1.0.0-12) wily; urgency=low
+azure-c-shared-util (0.1.0.0-13) wily; urgency=low
 
   * Initial release (Closes: #5069014)
 
@@ -18,5 +18,7 @@ azure-c-shared-util (0.1.0.0-12) wily; urgency=low
 
   * Updated tlsio to to successfully use certificates (#975b971e)
 
- -- AzureIoT User <aziotsdklinux@outlook.com>  Fri, 6 May 2016 14:18:00 -0800
+  * Fix tlsio_schannel bug (not all input bytes were being read) (#975b971e) 
+
+ -- AzureIoT User <aziotsdklinux@outlook.com>  Fri, 20 May 2016 14:18:00 -0800
 
