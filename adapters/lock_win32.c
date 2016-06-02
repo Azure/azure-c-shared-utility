@@ -7,10 +7,14 @@
 #include "azure_c_shared_utility/iot_logging.h"
 
 #ifdef WINCE
-    const char* Lock_ResultAsString[] = { "OK", "ERROR" };
-#endif
+const char* Lock_ResultAsString[] = { "OK", "ERROR" };
+#define ENUM_TO_STRING(l, result) Lock_ResultAsString[result]
+#else
 
+#include "azure_c_shared_utility/macro_utils.h"
 DEFINE_ENUM_STRINGS(LOCK_RESULT, LOCK_RESULT_VALUES);
+
+#endif
 
 /*SRS_LOCK_99_002:[ This API on success will return a valid lock handle which should be a non NULL value]*/
 LOCK_HANDLE Lock_Init(void)
@@ -36,7 +40,7 @@ LOCK_RESULT Lock(LOCK_HANDLE handle)
     {
         /*SRS_LOCK_99_007:[ This API on NULL handle passed returns LOCK_ERROR]*/
         result = LOCK_ERROR;
-        LogError("(result = %s)", Lock_ResultAsString[result]);
+        LogError("(result = %s)", ENUM_TO_STRING(LOCK_RESULT, result));
     }
     else 
     {
@@ -52,7 +56,7 @@ LOCK_RESULT Unlock(LOCK_HANDLE handle)
     {
         /*SRS_LOCK_99_007:[ This API on NULL handle passed returns LOCK_ERROR]*/
         result = LOCK_ERROR;
-        LogError("(result = %s)", Lock_ResultAsString[result]);
+        LogError("(result = %s)", ENUM_TO_STRING(LOCK_RESULT, result));
     }
     else
     {
@@ -69,7 +73,7 @@ LOCK_RESULT Lock_Deinit(LOCK_HANDLE handle)
     {
         /*SRS_LOCK_99_007:[ This API on NULL handle passed returns LOCK_ERROR]*/
         result = LOCK_ERROR;
-        LogError("(result = %s)", Lock_ResultAsString[result]);
+        LogError("(result = %s)", ENUM_TO_STRING(LOCK_RESULT, result));
     }
     else
     {

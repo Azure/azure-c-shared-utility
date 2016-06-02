@@ -22,7 +22,7 @@ THREADAPI_RESULT ThreadAPI_Create(THREAD_HANDLE* threadHandle, THREAD_START_FUNC
     }
     else
     {
-        *threadHandle = CreateThread(NULL, 0, func, arg, 0, NULL);
+        *threadHandle = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)func, arg, 0, NULL);
         if(threadHandle == NULL)
         {
             result = THREADAPI_ERROR;
@@ -53,7 +53,7 @@ THREADAPI_RESULT ThreadAPI_Join(THREAD_HANDLE threadHandle, int *res)
         if( returnCode != WAIT_OBJECT_0)
         {
             result = THREADAPI_ERROR;
-            LogError("Error waiting for Single Object. Return Code: %d. Error Code: %d", returnCode);
+            LogError("Error waiting for Single Object. Return Code: %d. Error Code: %d", result, returnCode);
         }
         else if((res != NULL) && !GetExitCodeThread(threadHandle, res)) //If thread end is signaled we need to get the Thread Exit Code;
         {

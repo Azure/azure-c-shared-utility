@@ -255,7 +255,6 @@ TEST_FUNCTION(Condition_Deinit_Fail)
     Condition_Deinit(handle);
 }
 
-
 // Tests_SRS_CONDITION_18_008: [ Condition_Init shall return NULL if it fails to allocate the CONDITION_HANDLE ]
 TEST_FUNCTION(Condition_Init_allocation_fail)
 {
@@ -338,26 +337,23 @@ TEST_FUNCTION(Condition_Wait_ok_on_trigger_and_zero_timeout)
 }
 
 // Tests_SRS_CONDITION_18_011: [Condition_wait shall return COND_TIMEOUT if the condition is NOT triggered and timeout_milliseconds is not 0]
-// TEST_FUNCTION(Condition_Wait_timeout_when_not_triggered)
-// {
-    // // arrange
-    // EXPECTED_CALL(gballoc_malloc(8));
-    // EXPECTED_CALL(gballoc_free(NULL)).IgnoreAllArguments();
+TEST_FUNCTION(Condition_Wait_timeout_when_not_triggered)
+{
+    // arrange
+    LockAndCondition m; 
+    m.condition = Condition_Init();
+    m.lock = Lock_Init();
 
-    // LockAndCondition m;
-    // m.condition = Condition_Init();
-    // m.lock = Lock_Init();
+    // act
+    Lock(m.lock);
+    COND_RESULT result = Condition_Wait(m.condition, m.lock, 150);
+    Unlock(m.lock);
 
-    // // act
-    // Lock(m.lock);
-    // COND_RESULT result = Condition_Wait(m.condition, m.lock, 150);
-    // Unlock(m.lock);
-
-    // // assert
-    // ASSERT_ARE_EQUAL(COND_RESULT, COND_TIMEOUT, result);
-    // Lock_Deinit(m.lock);
-    // Condition_Deinit(m.condition);
-// }
+    // assert
+    ASSERT_ARE_EQUAL(COND_RESULT, COND_TIMEOUT, result);
+    Lock_Deinit(m.lock);
+    Condition_Deinit(m.condition);
+}
 
 // Tests_SRS_CONDITION_18_012: [ Condition_Wait shall return COND_OK if the condition is triggered and timeout_milliseconds is not 0 ]
 // Tests_SRS_CONDITION_18_013: [ Condition_Wait shall accept relative timeouts ]

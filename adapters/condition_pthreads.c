@@ -63,7 +63,7 @@ COND_RESULT Condition_Post(COND_HANDLE handle)
     else
     {
         // Codes_SRS_CONDITION_18_003: [ Condition_Post shall return COND_OK if it succcessfully posts the condition ]
-        if (pthread_cond_broadcast((pthread_cond_t*)handle) == 0)
+        if (pthread_cond_signal((pthread_cond_t*)handle) == 0)
         {
             result = COND_OK;
         }
