@@ -433,7 +433,11 @@ add_subdirectory(testtools)
 
 include_directories(${UMOCK_C_INC_FOLDER})
 
-compileAsC99()
+if(${use_condition})
+    compileAsC11()
+else()
+    compileAsC99()
+endif()
 
 #these are the C source files
 set(source_c_files
