@@ -44,7 +44,7 @@ HTTPAPI_RESULT HTTPAPI_Init(void)
     HTTPAPI_RESULT result;
     if (nUsersOfHTTPAPI == 0)
     {
-        if (curl_global_init(CURL_GLOBAL_DEFAULT) != 0)
+        if (curl_global_init(CURL_GLOBAL_NOTHING) != 0)
         {
             result = HTTPAPI_INIT_FAILED;
             LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
