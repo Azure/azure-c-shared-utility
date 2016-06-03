@@ -18,6 +18,7 @@
 #include <netdb.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <errno.h>
 #include "azure_c_shared_utility/list.h"
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/iot_logging.h"
@@ -445,9 +446,16 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
                 {
                     if (send_result == INVALID_SOCKET)
                     {
-                        indicate_error(socket_io_instance);
-                        LogError("Failure: sending socket failed.");
-                        result = __LINE__;
+                        if (errno == EAGAIN) /*send says "come back later" with EAGAIN - likely the socket buffer cannot accept more data*/
+                        {
+                            /*do nothing*/
+                        }
+                        else
+                        {
+                            indicate_error(socket_io_instance);
+                            LogError("Failure: sending socket failed. errno=%d (%s).", errno, strerror(errno));
+                            result = __LINE__;
+                        }
                     }
                     else
                     {
@@ -512,13 +520,20 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                 {
                     if (send_result == INVALID_SOCKET)
                     {
-                        free(pending_socket_io->bytes);
-                        free(pending_socket_io);
-                        (void)list_remove(socket_io_instance->pending_io_list, first_pending_io);
+                        if (errno == EAGAIN) /*send says "come back later" with EAGAIN - likely the socket buffer cannot accept more data*/
+                        {
+                            /*do nothing*/
+                        }
+                        else
+                        {
+                            free(pending_socket_io->bytes);
+                            free(pending_socket_io);
+                            (void)list_remove(socket_io_instance->pending_io_list, first_pending_io);
 
-                        LogError("Failure: sending Socket information");
-                        socket_io_instance->io_state = IO_STATE_ERROR;
-                        indicate_error(socket_io_instance);
+                            LogError("Failure: sending Socket information. errno=%d (%s).", errno, strerror(errno));
+                            socket_io_instance->io_state = IO_STATE_ERROR;
+                            indicate_error(socket_io_instance);
+                        }
                     }
                     else
                     {
