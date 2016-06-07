@@ -369,7 +369,7 @@ TEST_FUNCTION(umocktypes_copy_uint8_t_succeeds)
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(uint8_t, 0x42, destination);
+    ASSERT_ARE_EQUAL(uint8_t, source, destination);
 }
 
 /* Tests_SRS_UMOCKTYPES_STDINT_01_014: [ If source or destination are NULL, umocktypes_copy_uint8_t shall return a non-zero value. ]*/
@@ -545,7 +545,7 @@ TEST_FUNCTION(umocktypes_copy_int8_t_succeeds)
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(int8_t, 0x42, destination);
+    ASSERT_ARE_EQUAL(int8_t, source, destination);
 }
 
 /* Tests_SRS_UMOCKTYPES_STDINT_01_026: [ If source or destination are NULL, umocktypes_copy_int8_t shall return a non-zero value. ]*/
@@ -721,7 +721,7 @@ TEST_FUNCTION(umocktypes_copy_uint16_t_succeeds)
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(uint32_t, (uint32_t)0x42, destination);
+    ASSERT_ARE_EQUAL(uint32_t, (uint32_t)source, destination);
 }
 
 /* Tests_SRS_UMOCKTYPES_STDINT_01_038: [ If source or destination are NULL, umocktypes_copy_uint16_t shall return a non-zero value. ]*/
@@ -897,7 +897,7 @@ TEST_FUNCTION(umocktypes_copy_int16_t_succeeds)
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(int16_t, 0x42, destination);
+    ASSERT_ARE_EQUAL(int16_t, source, destination);
 }
 
 /* Tests_SRS_UMOCKTYPES_STDINT_01_050: [ If source or destination are NULL, umocktypes_copy_int16_t shall return a non-zero value. ]*/
@@ -1073,7 +1073,7 @@ TEST_FUNCTION(umocktypes_copy_uint32_t_succeeds)
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(uint32_t, 0x42, destination);
+    ASSERT_ARE_EQUAL(uint32_t, source, destination);
 }
 
 /* Tests_SRS_UMOCKTYPES_STDINT_01_062: [ If source or destination are NULL, umocktypes_copy_uint32_t shall return a non-zero value. ]*/
@@ -1249,7 +1249,7 @@ TEST_FUNCTION(umocktypes_copy_int32_t_succeeds)
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(int32_t, 0x42, destination);
+    ASSERT_ARE_EQUAL(int32_t, source, destination);
 }
 
 /* Tests_SRS_UMOCKTYPES_STDINT_01_074: [ If source or destination are NULL, umocktypes_copy_int32_t shall return a non-zero value. ]*/
@@ -1425,7 +1425,7 @@ TEST_FUNCTION(umocktypes_copy_uint64_t_succeeds)
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(uint64_t, 0x42, destination);
+    ASSERT_ARE_EQUAL(uint64_t, source, destination);
 }
 
 /* Tests_SRS_UMOCKTYPES_STDINT_01_086: [ If source or destination are NULL, umocktypes_copy_uint64_t shall return a non-zero value. ]*/
@@ -1601,7 +1601,7 @@ TEST_FUNCTION(umocktypes_copy_int64_t_succeeds)
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(uint64_t, 0x42, destination);
+    ASSERT_ARE_EQUAL(uint64_t, source, destination);
 }
 
 /* Tests_SRS_UMOCKTYPES_STDINT_01_098: [ If source or destination are NULL, umocktypes_copy_int64_t shall return a non-zero value. ]*/

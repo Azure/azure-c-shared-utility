@@ -9,8 +9,10 @@
 #include "openssl/ssl.h"
 #include "openssl/err.h"
 #include "openssl/crypto.h"
+#include "openssl/opensslv.h"
 #include <stdio.h>
 #include <stdbool.h>
+#include "azure_c_shared_utility/lock.h"
 #include "azure_c_shared_utility/tlsio.h"
 #include "azure_c_shared_utility/tlsio_openssl.h"
 #include "azure_c_shared_utility/socketio.h"
@@ -50,6 +52,11 @@ typedef struct TLS_IO_INSTANCE_TAG
     char* certificate;
 } TLS_IO_INSTANCE;
 
+struct CRYPTO_dynlock_value 
+{
+    LOCK_HANDLE lock; 
+};
+
 static const IO_INTERFACE_DESCRIPTION tlsio_openssl_interface_description =
 {
     tlsio_openssl_create,
@@ -61,12 +68,190 @@ static const IO_INTERFACE_DESCRIPTION tlsio_openssl_interface_description =
     tlsio_openssl_setoption
 };
 
+static LOCK_HANDLE * openssl_locks = NULL;
+
+
+static void openssl_lock_unlock_helper(LOCK_HANDLE lock, int lock_mode, const char* file, int line)
+{
+    if (lock_mode & CRYPTO_LOCK)
+    {
+        if (Lock(lock) != 0)
+        {
+            LogError("Failed to lock openssl lock (%s:%d)", file, line);
+        }
+    }
+    else
+    {
+        if (Unlock(lock) != 0)
+        {
+            LogError("Failed to unlock openssl lock (%s:%d)", file, line);
+        }
+    }
+}
+
+static void log_ERR_get_error(const char* message)
+{
+    char buf[128];
+    unsigned long error;
+    
+    if (message != NULL)
+    {
+        LogError("%s", message);
+    }
+    
+    error = ERR_get_error();
+    
+    for(int i = 0; 0 != error; i++)
+    {
+        LogError("  [%d] %s", i, ERR_error_string(error, buf));
+        error = ERR_get_error();
+    }
+}
+
+static struct CRYPTO_dynlock_value* openssl_dynamic_locks_create_cb(const char* file, int line)
+{
+    struct CRYPTO_dynlock_value* result;
+    
+    result = malloc(sizeof(struct CRYPTO_dynlock_value));
+    
+    if (result == NULL)
+    {
+        LogError("Failed to allocate lock!  Out of memory (%s:%d).", file, line);
+    }
+    else
+    {
+        result->lock = Lock_Init();
+        if (result->lock == NULL)
+        {
+            LogError("Failed to create lock for dynamic lock (%s:%d).", file, line);
+            
+            free(result);
+            result = NULL;
+        }
+    }
+    
+    return result;
+}
+
+static void openssl_dynamic_locks_lock_unlock_cb(int lock_mode, struct CRYPTO_dynlock_value* dynlock_value, const char* file, int line)
+{
+    openssl_lock_unlock_helper(dynlock_value->lock, lock_mode, file, line);
+}
+
+static void openssl_dynamic_locks_destroy_cb(struct CRYPTO_dynlock_value* dynlock_value, const char* file, int line)
+{
+    Lock_Deinit(dynlock_value->lock);
+    free(dynlock_value);
+}
+
+static void openssl_dynamic_locks_uninstall(void)
+{
+#if (OPENSSL_VERSION_NUMBER >= 0x00906000)
+    CRYPTO_set_dynlock_create_callback(NULL);
+    CRYPTO_set_dynlock_lock_callback(NULL);
+    CRYPTO_set_dynlock_destroy_callback(NULL);
+#endif
+}
+
+static void openssl_dynamic_locks_install(void)
+{
+#if (OPENSSL_VERSION_NUMBER >= 0x00906000)
+    CRYPTO_set_dynlock_destroy_callback(openssl_dynamic_locks_destroy_cb);
+    CRYPTO_set_dynlock_lock_callback(openssl_dynamic_locks_lock_unlock_cb);
+    CRYPTO_set_dynlock_create_callback(openssl_dynamic_locks_create_cb);
+#endif
+}
+
+static void openssl_static_locks_lock_unlock_cb(int lock_mode, int lock_index, const char * file, int line)
+{
+    if (lock_index < 0 || lock_index >= CRYPTO_num_locks())
+    {
+        LogError("Bad lock index %d passed (%s:%d)", lock_index, file, line);
+    }
+    else
+    {
+        openssl_lock_unlock_helper(openssl_locks[lock_index], lock_mode, file, line);
+    }
+}
+
+static void openssl_static_locks_uninstall(void)
+{
+    if (openssl_locks != NULL)
+    {
+        CRYPTO_set_locking_callback(NULL);
+        
+        for(int i = 0; i < CRYPTO_num_locks(); i++)
+        {
+            if (openssl_locks[i] != NULL)
+            {
+                Lock_Deinit(openssl_locks[i]);
+            }
+        }
+        
+        free(openssl_locks);
+        openssl_locks = NULL;
+    }
+    else
+    {
+        LogError("Locks already uninstalled");
+    }
+}
+
+static int openssl_static_locks_install(void)
+{
+    int result;
+    
+    if (openssl_locks != NULL)
+    {
+        LogError("Locks already initialized");
+        result = __LINE__;
+    }
+    else
+    {
+        openssl_locks = malloc(CRYPTO_num_locks() * sizeof(LOCK_HANDLE));
+        if(openssl_locks == NULL)
+        {
+            LogError("Failed to allocate locks");
+            result = __LINE__;
+        }
+        else
+        {
+            int i;
+            for(i = 0; i < CRYPTO_num_locks(); i++)
+            {
+                openssl_locks[i] = Lock_Init();
+                if (openssl_locks[i] == NULL)
+                {
+                    LogError("Failed to allocate lock %d", i);
+                    break;
+                }
+            }
+            
+            if (i != CRYPTO_num_locks())
+            {
+                result = __LINE__;
+                
+                for (int j = 0; j < i; j++)
+                {
+                    Lock_Deinit(openssl_locks[j]);
+                }
+            }
+            else
+            {
+                CRYPTO_set_locking_callback(openssl_static_locks_lock_unlock_cb);
+                
+                result = 0;
+            }
+        }
+    }
+    return result;
+}
+
 static void indicate_error(TLS_IO_INSTANCE* tls_io_instance)
 {
     if (tls_io_instance->on_io_error == NULL)
     {
         LogError("NULL on_io_error.");
-
     }
     else
     {
@@ -108,7 +293,7 @@ static int write_outgoing_bytes(TLS_IO_INSTANCE* tls_io_instance, ON_SEND_COMPLE
             if (BIO_read(tls_io_instance->out_bio, bytes_to_send, pending) != pending)
             {
                 result = __LINE__;
-                LogError("BIO_read not in pending state.");
+                log_ERR_get_error("BIO_read not in pending state.");
             }
             else
             {
@@ -284,7 +469,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
     {
         tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
         indicate_error(tls_io_instance);
-        LogError("Error in BIO_write.");
+        log_ERR_get_error("Error in BIO_write.");
     }
     else
     {
@@ -337,7 +522,7 @@ static int add_certificate_to_store(TLS_IO_INSTANCE* tls_io_instance, const char
         X509_STORE* cert_store = SSL_CTX_get_cert_store(tls_io_instance->ssl_context);
         if (cert_store == NULL)
         {
-            LogError("Failed calling SSL_CTX_get_cert_store.");
+            log_ERR_get_error("Failed calling SSL_CTX_get_cert_store.");
             result = __LINE__;
         }
         else
@@ -345,7 +530,7 @@ static int add_certificate_to_store(TLS_IO_INSTANCE* tls_io_instance, const char
             cert_memory_bio = BIO_new_mem_buf((void*)certValue, -1);
             if (cert_memory_bio == NULL)
             {
-                LogError("Failed calling BIO_new_mem_buf.");
+                log_ERR_get_error("Failed calling BIO_new_mem_buf.");
                 result = __LINE__;
             }
             else
@@ -353,14 +538,14 @@ static int add_certificate_to_store(TLS_IO_INSTANCE* tls_io_instance, const char
                 xcert = PEM_read_bio_X509(cert_memory_bio, NULL, NULL, NULL);
                 if (xcert == NULL)
                 {
-                    LogError("Failed calling PEM_read_bio_X509.");
+                    log_ERR_get_error("Failed calling PEM_read_bio_X509.");
                     result = __LINE__;
                 }
                 else
                 {
                     if (X509_STORE_add_cert(cert_store, xcert) != 1)
                     {
-                        LogError("Failed calling X509_STORE_add_cert.");
+                        log_ERR_get_error("Failed calling X509_STORE_add_cert.");
                         X509_free(xcert);
                         result = __LINE__;
                     }
@@ -384,7 +569,7 @@ static int create_openssl_instance(TLS_IO_INSTANCE* tlsInstance)
     if (tlsInstance->ssl_context == NULL)
     {
         result = __LINE__;
-        LogError("Failed allocating OpenSSL context.");
+        log_ERR_get_error("Failed allocating OpenSSL context.");
     }
     else if (add_certificate_to_store(tlsInstance, tlsInstance->certificate) != 0)
     {
@@ -396,7 +581,7 @@ static int create_openssl_instance(TLS_IO_INSTANCE* tlsInstance)
         if (tlsInstance->in_bio == NULL)
         {
             SSL_CTX_free(tlsInstance->ssl_context);
-            LogError("Failed BIO_new for in BIO.");
+            log_ERR_get_error("Failed BIO_new for in BIO.");
             result = __LINE__;
         }
         else
@@ -407,7 +592,7 @@ static int create_openssl_instance(TLS_IO_INSTANCE* tlsInstance)
                 (void)BIO_free(tlsInstance->in_bio);
                 SSL_CTX_free(tlsInstance->ssl_context);
                 result = __LINE__;
-                LogError("Failed BIO_new for out BIO.");
+                log_ERR_get_error("Failed BIO_new for out BIO.");
             }
             else
             {
@@ -455,8 +640,8 @@ static int create_openssl_instance(TLS_IO_INSTANCE* tlsInstance)
                             (void)BIO_free(tlsInstance->in_bio);
                             (void)BIO_free(tlsInstance->out_bio);
                             SSL_CTX_free(tlsInstance->ssl_context);
+                            log_ERR_get_error("Failed creating OpenSSL instance.");
                             result = __LINE__;
-                            LogError("Failed creating OpenSSL instance.");
                         }
                         else
                         {
@@ -475,15 +660,27 @@ static int create_openssl_instance(TLS_IO_INSTANCE* tlsInstance)
 int tlsio_openssl_init(void)
 {
     (void)SSL_library_init();
+
     SSL_load_error_strings();
     ERR_load_BIO_strings();
     OpenSSL_add_all_algorithms();
 
+    if (openssl_static_locks_install() != 0)
+    {
+        LogError("Failed to install static locks in OpenSSL!");
+        return __LINE__;
+    }
+
+    openssl_dynamic_locks_install();
     return 0;
 }
 
 void tlsio_openssl_deinit(void)
 {
+    openssl_dynamic_locks_uninstall();
+    openssl_static_locks_uninstall();
+
+    ERR_free_strings();
 }
 
 CONCRETE_IO_HANDLE tlsio_openssl_create(void* io_create_parameters, LOGGER_LOG logger_log)
@@ -505,6 +702,7 @@ CONCRETE_IO_HANDLE tlsio_openssl_create(void* io_create_parameters, LOGGER_LOG l
         }
         else
         {
+            memset(result, 0, sizeof(TLS_IO_INSTANCE));
             mallocAndStrcpy_s(&result->hostname, tls_io_config->hostname);
             result->port = tls_io_config->port;
 
@@ -671,7 +869,7 @@ int tlsio_openssl_send(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t siz
             if (res != size)
             {
                 result = __LINE__;
-                LogError("SSL_write error.");
+                log_ERR_get_error("SSL_write error.");
             }
             else
             {
