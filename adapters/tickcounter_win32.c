@@ -90,10 +90,15 @@ int tickcounter_get_current_ms(TICK_COUNTER_HANDLE tick_counter, uint64_t* curre
             else
             {
                 LARGE_INTEGER perf_in_ms;
+                LONGLONG remainder;
+
                 perf_in_ms.QuadPart = (curr_perf_item.QuadPart - tick_counter_instance->last_perf_counter.QuadPart) * 1000000;
+                remainder = (perf_in_ms.QuadPart % tick_counter_instance->perf_freqency.QuadPart) / 1000000;
                 perf_in_ms.QuadPart /= tick_counter_instance->perf_freqency.QuadPart;
                 tick_counter_instance->current_ms += perf_in_ms.QuadPart;
                 tick_counter_instance->last_perf_counter = curr_perf_item;
+                tick_counter_instance->last_perf_counter.QuadPart -= remainder;
+
                 *current_ms = tick_counter_instance->current_ms / 1000;
                 result = 0;
             }
