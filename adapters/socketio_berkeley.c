@@ -522,7 +522,8 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                     {
                         if (errno == EAGAIN) /*send says "come back later" with EAGAIN - likely the socket buffer cannot accept more data*/
                         {
-                            /*do nothing*/
+                            /*do nothing until next dowork */
+                            break;
                         }
                         else
                         {
@@ -537,8 +538,10 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                     }
                     else
                     {
-                        /* simply wait */
+                        /* simply wait until next dowork */
                         (void)memmove(pending_socket_io->bytes, pending_socket_io->bytes + send_result, pending_socket_io->size - send_result);
+                        pending_socket_io->size -= send_result;
+                        break;
                     }
                 }
                 else
