@@ -3,10 +3,10 @@
 
 cmake_minimum_required(VERSION 2.8.11)
 
-set(theseTestsName umock_c_inttests)
+set(theseTestsName umock_c_gen_func_decl_inttests)
 
 set(${theseTestsName}_test_files
-umock_c_inttests.c
+umock_c_gen_func_decl_inttests.c
 )
 
 set(${theseTestsName}_c_files
@@ -21,7 +21,6 @@ set(${theseTestsName}_c_files
 )
 
 set(${theseTestsName}_h_files
-test_dependency.h
 )
 
 umockc_build_test_artifacts(${theseTestsName} ON)
