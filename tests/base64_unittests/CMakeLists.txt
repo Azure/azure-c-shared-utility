@@ -5,7 +5,7 @@
 cmake_minimum_required(VERSION 2.8.11)
 
 compileAsC11()
-set(theseTestsName base64_unittests )
+set(theseTestsName base64_unittests)
 
 set(${theseTestsName}_test_files
 ${theseTestsName}.c

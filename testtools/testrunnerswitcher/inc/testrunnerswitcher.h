@@ -82,6 +82,10 @@ using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 typedef const char* char_ptr;
 typedef void* void_ptr;
 
+#ifdef CPPUNITTEST_SYMBOL
+extern "C" void CPPUNITTEST_SYMBOL(void) {}
+#endif
+
 #define BEGIN_TEST_SUITE(name)          TEST_CLASS(name) {
 
 #define END_TEST_SUITE(name)            };
