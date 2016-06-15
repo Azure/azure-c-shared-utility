@@ -1632,6 +1632,8 @@ TEST_FUNCTION(Base64_Decoder_exhaustive_succeeds)
 
         ///act
         result = Base64_Decoder(testVector_BINARY_with_equal_signs[i].expectedOutput);
+
+        ///assert
         ASSERT_ARE_EQUAL(size_t, testVector_BINARY_with_equal_signs[i].inputLength, BUFFER_length(result));
         ASSERT_ARE_EQUAL(int, (int)0, memcmp(BUFFER_u_char(result), testVector_BINARY_with_equal_signs[i].inputData, BUFFER_length(result)));
 
@@ -1648,6 +1650,8 @@ TEST_FUNCTION(Base64_Decoder_null_return_null)
 
     ///act
     result = Base64_Decoder(NULL);
+
+    ///assert
     ASSERT_IS_NULL(result);
 }
 
@@ -1659,6 +1663,8 @@ TEST_FUNCTION(Base64_Decoder_zero_length_returns_zero_length)
 
     ///act
     result = Base64_Decoder("");
+
+    ///assert
     ASSERT_IS_NOT_NULL(result);
     ASSERT_ARE_EQUAL(size_t, 0, BUFFER_length(result));
 
@@ -1667,15 +1673,86 @@ TEST_FUNCTION(Base64_Decoder_zero_length_returns_zero_length)
 }
 
 /*Tests_SRS_BASE64_06_011: [If the source string has an invalid length for a base 64 encoded string then Base64_Decoder shall return NULL.]*/
-TEST_FUNCTION(Base64_Decoder_invalid_length_fails)
+TEST_FUNCTION(Base64_Decoder_invalid_length_fails_1)
 {
     ///Arrange
     BUFFER_HANDLE result;
 
     ///act
-    result = Base64_Decoder("A");
+    result = Base64_Decoder("1");
+
+    ///assert
     ASSERT_IS_NULL(result);
 
 }
+
+/*Tests_SRS_BASE64_06_011: [If the source string has an invalid length for a base 64 encoded string then Base64_Decoder shall return NULL.]*/
+TEST_FUNCTION(Base64_Decoder_invalid_length_fails_2)
+{
+    ///Arrange
+    BUFFER_HANDLE result;
+
+    ///act
+    result = Base64_Decoder("12");
+
+    ///assert
+    ASSERT_IS_NULL(result);
+
+}
+
+/*Tests_SRS_BASE64_06_011: [If the source string has an invalid length for a base 64 encoded string then Base64_Decoder shall return NULL.]*/
+TEST_FUNCTION(Base64_Decoder_invalid_length_fails_3)
+{
+    ///Arrange
+    BUFFER_HANDLE result;
+
+    ///act
+    result = Base64_Decoder("123");
+
+    ///assert
+    ASSERT_IS_NULL(result);
+
+}
+
+/*Tests_SRS_BASE64_06_011: [If the source string has an invalid length for a base 64 encoded string then Base64_Decoder shall return NULL.]*/
+TEST_FUNCTION(Base64_Decoder_invalid_length_fails_4)
+{
+    ///Arrange
+    BUFFER_HANDLE result;
+
+    ///act
+    result = Base64_Decoder("12345");
+
+    ///assert
+    ASSERT_IS_NULL(result);
+
+}
+
+/*Tests_SRS_BASE64_06_011: [If the source string has an invalid length for a base 64 encoded string then Base64_Decoder shall return NULL.]*/
+TEST_FUNCTION(Base64_Decoder_invalid_length_fails_5)
+{
+    ///Arrange
+    BUFFER_HANDLE result;
+
+    ///act
+    result = Base64_Decoder("123456");
+    ASSERT_IS_NULL(result);
+
+}
+
+/*Tests_SRS_BASE64_06_011: [If the source string has an invalid length for a base 64 encoded string then Base64_Decoder shall return NULL.]*/
+TEST_FUNCTION(Base64_Decoder_invalid_length_fails_6)
+{
+    ///Arrange
+    BUFFER_HANDLE result;
+
+    ///act
+    result = Base64_Decoder("1234567");
+
+    ///assert
+    ASSERT_IS_NULL(result);
+
+}
+
 
 END_TEST_SUITE(base64_unittests);

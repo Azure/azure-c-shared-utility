@@ -78,37 +78,31 @@ static size_t numberOfBase64Characters(const char* encodedString)
     }
     return length;
 }
+
+/*returns the count of original bytes before being base64 encoded*/
+/*notice NO validation of the content of encodedString. Its length is validated to be a multiple of 4.*/
 static size_t Base64decode_len(const char *encodedString)
 {
-    size_t absoluteLengthOfString;
-    size_t numberOfBytesToAdd = 0;
-
-    absoluteLengthOfString = strlen(encodedString);
-    if (absoluteLengthOfString)
+    size_t result;
+    size_t sourceLength = strlen(encodedString);
+    
+    if (sourceLength == 0)
     {
-        if (encodedString[absoluteLengthOfString - 1] == '=')
+        result = 0;
+    }
+    else
+    {
+        result = sourceLength / 4 * 3;
+        if (encodedString[sourceLength - 1] == '=')
         {
-            // See if there are two.
-            absoluteLengthOfString--;
-            if (absoluteLengthOfString)
+            if (encodedString[sourceLength - 2] == '=')
             {
-                if (encodedString[absoluteLengthOfString - 1] == '=')
-                {
-                    absoluteLengthOfString--;
-                    numberOfBytesToAdd = 1;
-                }
-                else
-                {
-                    numberOfBytesToAdd = 2;
-                }
+                result --;
             }
-            else
-            {
-                numberOfBytesToAdd = 2;
-            }
+            result--;
         }
     }
-    return ((absoluteLengthOfString / 4)*3) + numberOfBytesToAdd;
+    return result;
 }
 
 static void Base64decode(unsigned char *decodedString, const char *base64String)
@@ -172,18 +166,24 @@ static void Base64decode(unsigned char *decodedString, const char *base64String)
 
 BUFFER_HANDLE Base64_Decoder(const char* source)
 {
-    BUFFER_HANDLE result = NULL;
+    BUFFER_HANDLE result;
     /*Codes_SRS_BASE64_06_008: [If source is NULL then Base64_Decode shall return NULL.]*/
-    if (source)
+    if (source == NULL)
     {
-        size_t lengthOfSource = numberOfBase64Characters(source);
-        if ((lengthOfSource % 4) == 1)
+        LogError("invalid parameter const char* source=%p", source);
+        result = NULL;
+    }
+    else
+    {
+        if ((strlen(source) % 4) != 0)
         {
             /*Codes_SRS_BASE64_06_011: [If the source string has an invalid length for a base 64 encoded string then Base64_Decode shall return NULL.]*/
             LogError("Invalid length Base64 string!");
+            result = NULL;
         }
         else
         {
+            size_t lengthOfSource = numberOfBase64Characters(source);
             if ((result = BUFFER_new()) == NULL)
             {
                 /*Codes_SRS_BASE64_06_010: [If there is any memory allocation failure during the decode then Base64_Decode shall return NULL.]*/

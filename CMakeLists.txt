@@ -42,6 +42,7 @@ else()
     option(use_openssl "set use_openssl to ON if openssl is to be used, set to OFF to not use openssl" ON)
     option(use_wolfssl "set use_wolfssl to ON if wolfssl is to be used, set to OFF to not use wolfssl" OFF)
 endif()
+option(use_socketio "set use_socketio to ON if socketio is to be included in the library, set to OFF if a different implementation will be provided" ON)
 
 option(compileOption_C "passes a string to the command line of the C compiler" OFF)
 option(compileOption_CXX "passes a string to the command line of the C++ compiler" OFF)
@@ -244,9 +245,14 @@ endfunction(build_test_artifacts)
 function(c_windows_unittests_add_dll whatIsBuilding folder)
     link_directories(${whatIsBuilding}_dll $ENV{VCInstallDir}UnitTest/lib)
 
-    add_library(${whatIsBuilding}_testsonly_lib STATIC 
-        ${${whatIsBuilding}_test_files} 
-    )
+    SET(VAR 1)
+    foreach(file ${${whatIsBuilding}_test_files})
+        add_library(${whatIsBuilding}_testsonly_lib STATIC 
+            ${file}
+        )
+        set_source_files_properties(${file} PROPERTIES COMPILE_FLAGS -DCPPUNITTEST_SYMBOL=some_symbol_for_cppunittest_${VAR})
+        MATH(EXPR VAR "${VAR}+1")
+    endforeach()
 
     set_target_properties(${whatIsBuilding}_testsonly_lib
                PROPERTIES
@@ -269,6 +275,11 @@ function(c_windows_unittests_add_dll whatIsBuilding folder)
     target_include_directories(${whatIsBuilding}_dll PUBLIC ${sharedutil_include_directories} $ENV{VCInstallDir}UnitTest/include)
     target_compile_definitions(${whatIsBuilding}_dll PUBLIC -DCPP_UNITTEST)
     target_link_libraries(${whatIsBuilding}_dll micromock_cpp_unittest umock_c ctest testrunnerswitcher ${whatIsBuilding}_testsonly_lib ${ARGN})
+    SET(VAR 1)
+    foreach(file ${${whatIsBuilding}_test_files})
+        set_property(TARGET ${whatIsBuilding}_dll APPEND PROPERTY LINK_FLAGS /INCLUDE:"_some_symbol_for_cppunittest_${VAR}")
+        MATH(EXPR VAR "${VAR}+1")
+    endforeach()
 endfunction()
 
 function(c_windows_unittests_add_exe whatIsBuilding folder)
@@ -409,7 +420,9 @@ function(set_platform_files)
             set(HTTP_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/httpapi_winhttp.c PARENT_SCOPE)
         endif()
         set(PLATFORM_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/platform_win32.c PARENT_SCOPE)
-        set(SOCKETIO_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/socketio_win32.c PARENT_SCOPE)
+        if (${use_socketio})
+            set(SOCKETIO_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/socketio_win32.c PARENT_SCOPE)
+        endif()
         set(TICKCOUTER_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/tickcounter_win32.c PARENT_SCOPE)
         set(UNIQUEID_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/uniqueid_win32.c PARENT_SCOPE)
     else()
@@ -419,7 +432,9 @@ function(set_platform_files)
         set(HTTP_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/httpapi_curl.c PARENT_SCOPE)
         set(LOCK_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/lock_pthreads.c PARENT_SCOPE)
         set(PLATFORM_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/platform_linux.c PARENT_SCOPE)
-        set(SOCKETIO_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/socketio_berkeley.c PARENT_SCOPE)
+        if (${use_socketio})
+            set(SOCKETIO_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/socketio_berkeley.c PARENT_SCOPE)
+        endif()
         set(THREAD_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/threadapi_pthreads.c PARENT_SCOPE)
         set(TICKCOUTER_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/tickcounter_linux.c PARENT_SCOPE)
         set(UNIQUEID_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/uniqueid_linux.c PARENT_SCOPE)
@@ -428,8 +443,6 @@ endfunction(set_platform_files)
 
 #Setup the platform files
 set_platform_files()
-
-add_subdirectory(testtools)
 
 include_directories(${UMOCK_C_INC_FOLDER})
 
@@ -623,6 +636,7 @@ else()
 endif()
 
 if (NOT ${skip_unittests})
+    add_subdirectory(testtools)
     add_subdirectory(tests)
 endif()
 
