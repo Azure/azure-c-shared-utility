@@ -1667,15 +1667,76 @@ TEST_FUNCTION(Base64_Decoder_zero_length_returns_zero_length)
 }
 
 /*Tests_SRS_BASE64_06_011: [If the source string has an invalid length for a base 64 encoded string then Base64_Decoder shall return NULL.]*/
-TEST_FUNCTION(Base64_Decoder_invalid_length_fails)
+TEST_FUNCTION(Base64_Decoder_invalid_length_fails_1)
 {
     ///Arrange
     BUFFER_HANDLE result;
 
     ///act
-    result = Base64_Decoder("A");
+    result = Base64_Decoder("1");
     ASSERT_IS_NULL(result);
 
 }
+
+/*Tests_SRS_BASE64_06_011: [If the source string has an invalid length for a base 64 encoded string then Base64_Decoder shall return NULL.]*/
+TEST_FUNCTION(Base64_Decoder_invalid_length_fails_2)
+{
+    ///Arrange
+    BUFFER_HANDLE result;
+
+    ///act
+    result = Base64_Decoder("12");
+    ASSERT_IS_NULL(result);
+
+}
+
+/*Tests_SRS_BASE64_06_011: [If the source string has an invalid length for a base 64 encoded string then Base64_Decoder shall return NULL.]*/
+TEST_FUNCTION(Base64_Decoder_invalid_length_fails_3)
+{
+    ///Arrange
+    BUFFER_HANDLE result;
+
+    ///act
+    result = Base64_Decoder("123");
+    ASSERT_IS_NULL(result);
+
+}
+
+/*Tests_SRS_BASE64_06_011: [If the source string has an invalid length for a base 64 encoded string then Base64_Decoder shall return NULL.]*/
+TEST_FUNCTION(Base64_Decoder_invalid_length_fails_4)
+{
+    ///Arrange
+    BUFFER_HANDLE result;
+
+    ///act
+    result = Base64_Decoder("12345");
+    ASSERT_IS_NULL(result);
+
+}
+
+/*Tests_SRS_BASE64_06_011: [If the source string has an invalid length for a base 64 encoded string then Base64_Decoder shall return NULL.]*/
+TEST_FUNCTION(Base64_Decoder_invalid_length_fails_5)
+{
+    ///Arrange
+    BUFFER_HANDLE result;
+
+    ///act
+    result = Base64_Decoder("123456");
+    ASSERT_IS_NULL(result);
+
+}
+
+/*Tests_SRS_BASE64_06_011: [If the source string has an invalid length for a base 64 encoded string then Base64_Decoder shall return NULL.]*/
+TEST_FUNCTION(Base64_Decoder_invalid_length_fails_6)
+{
+    ///Arrange
+    BUFFER_HANDLE result;
+
+    ///act
+    result = Base64_Decoder("1234567");
+    ASSERT_IS_NULL(result);
+
+}
+
 
 END_TEST_SUITE(base64_unittests);

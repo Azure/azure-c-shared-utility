@@ -6,7 +6,7 @@ Base64 Requirements
 This module is used to encode a BUFFER using the standard base64 encoding stream.
 
 ##References
-[IETF RFC 4648]
+[IETF RFC 4648](https://tools.ietf.org/html/rfc4648)
 
 ##Exposed API
 
