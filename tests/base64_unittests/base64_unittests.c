@@ -1632,6 +1632,8 @@ TEST_FUNCTION(Base64_Decoder_exhaustive_succeeds)
 
         ///act
         result = Base64_Decoder(testVector_BINARY_with_equal_signs[i].expectedOutput);
+
+        ///assert
         ASSERT_ARE_EQUAL(size_t, testVector_BINARY_with_equal_signs[i].inputLength, BUFFER_length(result));
         ASSERT_ARE_EQUAL(int, (int)0, memcmp(BUFFER_u_char(result), testVector_BINARY_with_equal_signs[i].inputData, BUFFER_length(result)));
 
@@ -1648,6 +1650,8 @@ TEST_FUNCTION(Base64_Decoder_null_return_null)
 
     ///act
     result = Base64_Decoder(NULL);
+
+    ///assert
     ASSERT_IS_NULL(result);
 }
 
@@ -1659,6 +1663,8 @@ TEST_FUNCTION(Base64_Decoder_zero_length_returns_zero_length)
 
     ///act
     result = Base64_Decoder("");
+
+    ///assert
     ASSERT_IS_NOT_NULL(result);
     ASSERT_ARE_EQUAL(size_t, 0, BUFFER_length(result));
 
@@ -1674,6 +1680,8 @@ TEST_FUNCTION(Base64_Decoder_invalid_length_fails_1)
 
     ///act
     result = Base64_Decoder("1");
+
+    ///assert
     ASSERT_IS_NULL(result);
 
 }
@@ -1686,6 +1694,8 @@ TEST_FUNCTION(Base64_Decoder_invalid_length_fails_2)
 
     ///act
     result = Base64_Decoder("12");
+
+    ///assert
     ASSERT_IS_NULL(result);
 
 }
@@ -1698,6 +1708,8 @@ TEST_FUNCTION(Base64_Decoder_invalid_length_fails_3)
 
     ///act
     result = Base64_Decoder("123");
+
+    ///assert
     ASSERT_IS_NULL(result);
 
 }
@@ -1710,6 +1722,8 @@ TEST_FUNCTION(Base64_Decoder_invalid_length_fails_4)
 
     ///act
     result = Base64_Decoder("12345");
+
+    ///assert
     ASSERT_IS_NULL(result);
 
 }
@@ -1734,6 +1748,8 @@ TEST_FUNCTION(Base64_Decoder_invalid_length_fails_6)
 
     ///act
     result = Base64_Decoder("1234567");
+
+    ///assert
     ASSERT_IS_NULL(result);
 
 }
