@@ -245,9 +245,14 @@ endfunction(build_test_artifacts)
 function(c_windows_unittests_add_dll whatIsBuilding folder)
     link_directories(${whatIsBuilding}_dll $ENV{VCInstallDir}UnitTest/lib)
 
-    add_library(${whatIsBuilding}_testsonly_lib STATIC 
-        ${${whatIsBuilding}_test_files} 
-    )
+    SET(VAR 1)
+    foreach(file ${${whatIsBuilding}_test_files})
+        add_library(${whatIsBuilding}_testsonly_lib STATIC 
+            ${file}
+        )
+        set_source_files_properties(${file} PROPERTIES COMPILE_FLAGS -DCPPUNITTEST_SYMBOL=some_symbol_for_cppunittest_${VAR})
+        MATH(EXPR VAR "${VAR}+1")
+    endforeach()
 
     set_target_properties(${whatIsBuilding}_testsonly_lib
                PROPERTIES
@@ -270,6 +275,11 @@ function(c_windows_unittests_add_dll whatIsBuilding folder)
     target_include_directories(${whatIsBuilding}_dll PUBLIC ${sharedutil_include_directories} $ENV{VCInstallDir}UnitTest/include)
     target_compile_definitions(${whatIsBuilding}_dll PUBLIC -DCPP_UNITTEST)
     target_link_libraries(${whatIsBuilding}_dll micromock_cpp_unittest umock_c ctest testrunnerswitcher ${whatIsBuilding}_testsonly_lib ${ARGN})
+    SET(VAR 1)
+    foreach(file ${${whatIsBuilding}_test_files})
+        set_property(TARGET ${whatIsBuilding}_dll APPEND PROPERTY LINK_FLAGS /INCLUDE:"_some_symbol_for_cppunittest_${VAR}")
+        MATH(EXPR VAR "${VAR}+1")
+    endforeach()
 endfunction()
 
 function(c_windows_unittests_add_exe whatIsBuilding folder)

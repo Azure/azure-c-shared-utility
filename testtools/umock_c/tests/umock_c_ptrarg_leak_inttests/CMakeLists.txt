@@ -3,10 +3,10 @@
 
 cmake_minimum_required(VERSION 2.8.11)
 
-set(theseTestsName umock_c_negative_tests_integrationtests)
+set(theseTestsName umock_c_ptrarg_leak_inttests)
 
 set(${theseTestsName}_test_files
-umock_c_negt_int_tests.c
+umock_c_ptrarg_leak_inttests.c
 )
 
 set(${theseTestsName}_c_files
@@ -18,12 +18,9 @@ set(${theseTestsName}_c_files
 ../../src/umocktypes_charptr.c
 ../../src/umocktypes_c.c
 ../../src/umocktypename.c
-../../src/umock_c_negative_tests.c
 )
 
 set(${theseTestsName}_h_files
-../../inc/umock_c_negative_tests.h
-test_dependency.h
 )
 
 umockc_build_test_artifacts(${theseTestsName} ON)
