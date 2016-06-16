@@ -56,6 +56,37 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 enable_testing()
 
+include(CheckSymbolExists)
+function(detect_architecture symbol arch) 
+    if (NOT DEFINED SU_ARCHITECTURE) 
+        set(CMAKE_REQUIRED_QUIET 1)
+        check_symbol_exists("${symbol}" "" SU_ARCHITECTURE_${arch}) 
+        unset(CMAKE_REQUIRED_QUIET) 
+  
+        # The output variable needs to be unique across invocations otherwise 
+        # CMake's crazy scope rules will keep it defined 
+        if (SU_ARCHITECTURE_${arch}) 
+            set(SU_ARCHITECTURE "${arch}" PARENT_SCOPE) 
+            set(SU_ARCHITECTURE_${arch} 1 PARENT_SCOPE) 
+            add_definitions(-DSU_ARCHITECTURE_${arch}=1) 
+        endif() 
+    endif() 
+endfunction() 
+
+if (MSVC) 
+    detect_architecture("_M_AMD64" x86_64) 
+    detect_architecture("_M_IX86" x86) 
+    detect_architecture("_M_ARM" ARM) 
+else() 
+    detect_architecture("__x86_64__" x86_64) 
+    detect_architecture("__i386__" x86) 
+    detect_architecture("__arm__" ARM) 
+endif() 
+if (NOT DEFINED SU_ARCHITECTURE) 
+    set(SU_ARCHITECTURE "GENERIC") 
+endif() 
+message(STATUS "Shared_Util architecture: ${SU_ARCHITECTURE}")
+
 #if any compiler has a command line switch called "OFF" then it will need special care
 if(NOT "${compileOption_C}" STREQUAL "OFF")
     set(CMAKE_C_FLAGS "${compileOption_C} ${CMAKE_C_FLAGS}")
@@ -277,7 +308,13 @@ function(c_windows_unittests_add_dll whatIsBuilding folder)
     target_link_libraries(${whatIsBuilding}_dll micromock_cpp_unittest umock_c ctest testrunnerswitcher ${whatIsBuilding}_testsonly_lib ${ARGN})
     SET(VAR 1)
     foreach(file ${${whatIsBuilding}_test_files})
-        set_property(TARGET ${whatIsBuilding}_dll APPEND PROPERTY LINK_FLAGS /INCLUDE:"_some_symbol_for_cppunittest_${VAR}")
+
+		# for x64 the underscore is not needed
+		if (${SU_ARCHITECTURE} STREQUAL "x86_64")
+			set_property(TARGET ${whatIsBuilding}_dll APPEND PROPERTY LINK_FLAGS /INCLUDE:"some_symbol_for_cppunittest_${VAR}")
+		else()
+			set_property(TARGET ${whatIsBuilding}_dll APPEND PROPERTY LINK_FLAGS /INCLUDE:"_some_symbol_for_cppunittest_${VAR}")
+		endif()
         MATH(EXPR VAR "${VAR}+1")
     endforeach()
 endfunction()
