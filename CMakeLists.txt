@@ -25,13 +25,13 @@ include (CTest)
 set(SHARED_UTIL_INC_FOLDER ${CMAKE_CURRENT_LIST_DIR}/inc CACHE INTERNAL "this is what needs to be included if using sharedLib lib" FORCE)
 set(SHARED_UTIL_SRC_FOLDER ${CMAKE_CURRENT_LIST_DIR}/src CACHE INTERNAL "this is what needs to be included when doing include sources" FORCE)
 set(SHARED_UTIL_ADAPTER_FOLDER "${CMAKE_CURRENT_LIST_DIR}/adapters" CACHE INTERNAL "this is where the adapters live" FORCE)
+
 include_directories(${SHARED_UTIL_INC_FOLDER})
 
 #the following variables are project-wide and can be used with cmake-gui
 option(skip_unittests "set skip_unittests to ON to skip unittests (default is OFF)[if possible, they are always build]" OFF)
 option(use_http "set use_http to ON if http is to be used, set to OFF to not use http" ON)
 option(use_condition "set use_condition to ON if the condition module and its adapters should be enabled" ON)
-
 
 if(WIN32)
     option(use_schannel "set use_schannel to ON if schannel is to be used, set to OFF to not use schannel" ON)
@@ -58,34 +58,33 @@ enable_testing()
 
 include(CheckSymbolExists)
 function(detect_architecture symbol arch) 
-    if (NOT DEFINED SU_ARCHITECTURE) 
+    if (NOT DEFINED ARCHITECTURE OR ARCHITECTURE STREQUAL "")
         set(CMAKE_REQUIRED_QUIET 1)
-        check_symbol_exists("${symbol}" "" SU_ARCHITECTURE_${arch}) 
+        check_symbol_exists("${symbol}" "" ARCHITECTURE_${arch}) 
         unset(CMAKE_REQUIRED_QUIET) 
   
         # The output variable needs to be unique across invocations otherwise 
         # CMake's crazy scope rules will keep it defined 
-        if (SU_ARCHITECTURE_${arch}) 
-            set(SU_ARCHITECTURE "${arch}" PARENT_SCOPE) 
-            set(SU_ARCHITECTURE_${arch} 1 PARENT_SCOPE) 
-            add_definitions(-DSU_ARCHITECTURE_${arch}=1) 
-        endif() 
-    endif() 
-endfunction() 
-
-if (MSVC) 
-    detect_architecture("_M_AMD64" x86_64) 
-    detect_architecture("_M_IX86" x86) 
-    detect_architecture("_M_ARM" ARM) 
+        if (ARCHITECTURE_${arch}) 
+            set(ARCHITECTURE "${arch}" PARENT_SCOPE) 
+            set(ARCHITECTURE_${arch} 1 PARENT_SCOPE) 
+            add_definitions(-DARCHITECTURE_${arch}=1) 
+        endif()
+    endif()
+endfunction()
+if (MSVC)
+    detect_architecture("_M_AMD64" x86_64)
+    detect_architecture("_M_IX86" x86)
+    detect_architecture("_M_ARM" ARM)
 else() 
-    detect_architecture("__x86_64__" x86_64) 
-    detect_architecture("__i386__" x86) 
-    detect_architecture("__arm__" ARM) 
+    detect_architecture("__x86_64__" x86_64)
+    detect_architecture("__i386__" x86)
+    detect_architecture("__arm__" ARM)
 endif() 
-if (NOT DEFINED SU_ARCHITECTURE) 
-    set(SU_ARCHITECTURE "GENERIC") 
+if (NOT DEFINED ARCHITECTURE OR ARCHITECTURE STREQUAL "") 
+    set(ARCHITECTURE "GENERIC") 
 endif() 
-message(STATUS "Shared_Util architecture: ${SU_ARCHITECTURE}")
+message(STATUS "Shared_Util architecture: ${ARCHITECTURE}")
 
 #if any compiler has a command line switch called "OFF" then it will need special care
 if(NOT "${compileOption_C}" STREQUAL "OFF")
@@ -309,12 +308,12 @@ function(c_windows_unittests_add_dll whatIsBuilding folder)
     SET(VAR 1)
     foreach(file ${${whatIsBuilding}_test_files})
 
-		# for x64 the underscore is not needed
-		if (${SU_ARCHITECTURE} STREQUAL "x86_64")
-			set_property(TARGET ${whatIsBuilding}_dll APPEND PROPERTY LINK_FLAGS /INCLUDE:"some_symbol_for_cppunittest_${VAR}")
-		else()
-			set_property(TARGET ${whatIsBuilding}_dll APPEND PROPERTY LINK_FLAGS /INCLUDE:"_some_symbol_for_cppunittest_${VAR}")
-		endif()
+        # for x64 the underscore is not needed
+        if (ARCHITECTURE STREQUAL "x86_64")
+            set_property(TARGET ${whatIsBuilding}_dll APPEND PROPERTY LINK_FLAGS /INCLUDE:"some_symbol_for_cppunittest_${VAR}")
+        else()
+            set_property(TARGET ${whatIsBuilding}_dll APPEND PROPERTY LINK_FLAGS /INCLUDE:"_some_symbol_for_cppunittest_${VAR}")
+        endif()
         MATH(EXPR VAR "${VAR}+1")
     endforeach()
 endfunction()
@@ -355,38 +354,38 @@ function(c_linux_unittests_add_exe whatIsBuilding folder)
 
     target_compile_definitions(${whatIsBuilding}_exe PUBLIC -DUSE_CTEST)
     target_include_directories(${whatIsBuilding}_exe PUBLIC ${sharedutil_include_directories})
-	
-	#this part detects 
+    
+    #this part detects 
         #       - the additional libraries that might be needed.
-	#     additional libraries are started by ADDITIONAL_LIBS parameter and ended by any other known parameter (or end of variable arguments)
-	#   - a valgring suppression file (VALGRIND_SUPRESSIONS_FILE) for memcheck
-	#     the file name follows immediately after 
-	
-	set(PARSING_ADDITIONAL_LIBS OFF)
-	set(PARSING_VALGRIND_SUPRESSIONS_FILE OFF)
+    #     additional libraries are started by ADDITIONAL_LIBS parameter and ended by any other known parameter (or end of variable arguments)
+    #   - a valgring suppression file (VALGRIND_SUPRESSIONS_FILE) for memcheck
+    #     the file name follows immediately after 
+    
+    set(PARSING_ADDITIONAL_LIBS OFF)
+    set(PARSING_VALGRIND_SUPRESSIONS_FILE OFF)
         set(VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER)
-	foreach(f ${ARGN})
-		if(${f} STREQUAL "ADDITIONAL_LIBS")
-			SET(PARSING_ADDITIONAL_LIBS ON)
-			SET(PARSING_VALGRIND_SUPRESSION_FILE OFF)
-			#also unset all the other states
-			continue()
+    foreach(f ${ARGN})
+        if(${f} STREQUAL "ADDITIONAL_LIBS")
+            SET(PARSING_ADDITIONAL_LIBS ON)
+            SET(PARSING_VALGRIND_SUPRESSION_FILE OFF)
+            #also unset all the other states
+            continue()
                 elseif(${f} STREQUAL "VALGRIND_SUPPRESSIONS_FILE")
-			SET(PARSING_ADDITIONAL_LIBS OFF)
+            SET(PARSING_ADDITIONAL_LIBS OFF)
                         SET(PARSING_VALGRIND_SUPPRESSION_FILE ON)
-			continue()
-		endif()
-		
-		if(PARSING_ADDITIONAL_LIBS)
-			target_link_libraries(${whatIsBuilding}_exe ${f})
+            continue()
+        endif()
+        
+        if(PARSING_ADDITIONAL_LIBS)
+            target_link_libraries(${whatIsBuilding}_exe ${f})
                 elseif(PARSING_VALGRIND_SUPPRESSION_FILE)
                         set(VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER "--suppressions=${f}")
-		endif()	
-		
-	endforeach()
-	
-	target_link_libraries(${whatIsBuilding}_exe micromock_ctest umock_c ctest)
-	
+        endif()	
+        
+    endforeach()
+    
+    target_link_libraries(${whatIsBuilding}_exe micromock_ctest umock_c ctest)
+    
     add_test(NAME ${whatIsBuilding} COMMAND $<TARGET_FILE:${whatIsBuilding}_exe>)
     
     if(${run_valgrind})
