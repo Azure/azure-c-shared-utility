@@ -6,7 +6,7 @@
 
 #include "azure_c_shared_utility/macro_utils.h"
 
-#ifdef __cplusplush
+#ifdef __cplusplus
 #include <cstdbool>
 #else
 #include <stdbool.h>
