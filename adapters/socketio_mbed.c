@@ -12,7 +12,7 @@
 #include "azure_c_shared_utility/socketio.h"
 #include "azure_c_shared_utility/list.h"
 #include "azure_c_shared_utility/tcpsocketconnection_c.h"
-#include "azure_c_shared_utility/iot_logging.h"
+#include "azure_c_shared_utility/xlogging.h"
 
 #define UNABLE_TO_COMPLETE -2
 #define MBED_RECEIVE_BYTES_VALUE    128

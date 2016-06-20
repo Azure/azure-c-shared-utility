@@ -36,7 +36,6 @@ typedef struct TLS_IO_INSTANCE_TAG
     void* on_io_open_complete_context;
     void* on_io_close_complete_context;
     void* on_io_error_context;
-    LOGGER_LOG logger_log;
     WOLFSSL* ssl;
     WOLFSSL_CTX* ssl_context;
     TLSIO_STATE_ENUM tlsio_state;
@@ -263,7 +262,7 @@ void tlsio_wolfssl_deinit(void)
 {
 }
 
-CONCRETE_IO_HANDLE tlsio_wolfssl_create(void* io_create_parameters, LOGGER_LOG logger_log)
+CONCRETE_IO_HANDLE tlsio_wolfssl_create(void* io_create_parameters)
 {
     TLSIO_CONFIG* tls_io_config = io_create_parameters;
     TLS_IO_INSTANCE* result;
@@ -295,8 +294,6 @@ CONCRETE_IO_HANDLE tlsio_wolfssl_create(void* io_create_parameters, LOGGER_LOG l
             result->on_io_error = NULL;
             result->on_io_error_context = NULL;
 
-            result->logger_log = logger_log;
-
             result->ssl_context = wolfSSL_CTX_new(wolfTLSv1_client_method());
             if (result->ssl_context == NULL)
             {
@@ -314,7 +311,7 @@ CONCRETE_IO_HANDLE tlsio_wolfssl_create(void* io_create_parameters, LOGGER_LOG l
                 }
                 else
                 {
-                    result->socket_io = xio_create(socket_io_interface, &socketio_config, logger_log);
+                    result->socket_io = xio_create(socket_io_interface, &socketio_config);
                     if (result->socket_io == NULL)
                     {
                         wolfSSL_CTX_free(result->ssl_context);

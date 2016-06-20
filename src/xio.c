@@ -15,7 +15,7 @@ typedef struct XIO_INSTANCE_TAG
     XIO_HANDLE concrete_xio_handle;
 } XIO_INSTANCE;
 
-XIO_HANDLE xio_create(const IO_INTERFACE_DESCRIPTION* io_interface_description, const void* xio_create_parameters, LOGGER_LOG logger_log)
+XIO_HANDLE xio_create(const IO_INTERFACE_DESCRIPTION* io_interface_description, const void* xio_create_parameters)
 {
     XIO_INSTANCE* xio_instance;
     /* Codes_SRS_XIO_01_003: [If the argument io_interface_description is NULL, xio_create shall return NULL.] */
@@ -41,8 +41,8 @@ XIO_HANDLE xio_create(const IO_INTERFACE_DESCRIPTION* io_interface_description, 
             /* Codes_SRS_XIO_01_001: [xio_create shall return on success a non-NULL handle to a new IO interface.] */
             xio_instance->io_interface_description = io_interface_description;
 
-            /* Codes_SRS_XIO_01_002: [In order to instantiate the concrete IO implementation the function concrete_io_create from the io_interface_description shall be called, passing the xio_create_parameters and logger_log arguments.] */
-            xio_instance->concrete_xio_handle = xio_instance->io_interface_description->concrete_io_create((void*)xio_create_parameters, logger_log);
+            /* Codes_SRS_XIO_01_002: [In order to instantiate the concrete IO implementation the function concrete_io_create from the io_interface_description shall be called, passing the xio_create_parameters argument.] */
+            xio_instance->concrete_xio_handle = xio_instance->io_interface_description->concrete_io_create((void*)xio_create_parameters);
 
             /* Codes_SRS_XIO_01_016: [If the underlying concrete_io_create call fails, xio_create shall return NULL.] */
             if (xio_instance->concrete_xio_handle == NULL)

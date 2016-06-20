@@ -13,7 +13,7 @@
 #include <string.h>
 #include "azure_c_shared_utility/httpapi.h"
 #include "azure_c_shared_utility/httpheaders.h"
-#include "azure_c_shared_utility/iot_logging.h"
+#include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/strings.h"
 
 #define TEMP_BUFFER_SIZE 1024

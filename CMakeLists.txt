@@ -137,6 +137,7 @@ function(windows_unittests_add_dll whatIsBuilding)
         ${${whatIsBuilding}_cpp_files} 
         ${${whatIsBuilding}_h_files} 
         ${${whatIsBuilding}_c_files}
+        ${sharedutil_include_directories}../../src/xlogging.c
     )
 
     set_target_properties(${whatIsBuilding}_dll
@@ -154,6 +155,7 @@ function(windows_unittests_add_exe whatIsBuilding)
         ${${whatIsBuilding}_h_files} 
         ${${whatIsBuilding}_c_files}
         ${CMAKE_CURRENT_LIST_DIR}/main.c
+        ${sharedutil_include_directories}../../src/xlogging.c
     )
     set_target_properties(${whatIsBuilding}_exe
                PROPERTIES
@@ -174,6 +176,7 @@ function(linux_unittests_add_exe whatIsBuilding)
         ${${whatIsBuilding}_h_files} 
         ${${whatIsBuilding}_c_files}
         ${CMAKE_CURRENT_LIST_DIR}/main.c
+        ${sharedutil_include_directories}../../src/xlogging.c
     )
     set_target_properties(${whatIsBuilding}_exe
                PROPERTIES
@@ -296,6 +299,7 @@ function(c_windows_unittests_add_dll whatIsBuilding folder)
         ${${whatIsBuilding}_cpp_files} 
         ${${whatIsBuilding}_h_files} 
         ${${whatIsBuilding}_c_files}
+        ${sharedutil_include_directories}../../src/xlogging.c
     )
 
     set_target_properties(${whatIsBuilding}_dll
@@ -325,6 +329,7 @@ function(c_windows_unittests_add_exe whatIsBuilding folder)
         ${${whatIsBuilding}_h_files} 
         ${${whatIsBuilding}_c_files}
         ${CMAKE_CURRENT_LIST_DIR}/main.c
+        ${sharedutil_include_directories}../../src/xlogging.c
     )
     set_target_properties(${whatIsBuilding}_exe
                PROPERTIES
@@ -347,6 +352,7 @@ function(c_linux_unittests_add_exe whatIsBuilding folder)
         ${${whatIsBuilding}_h_files} 
         ${${whatIsBuilding}_c_files}
         ${CMAKE_CURRENT_LIST_DIR}/main.c
+        ${sharedutil_include_directories}../../src/xlogging.c
     )
     set_target_properties(${whatIsBuilding}_exe
                PROPERTIES
@@ -493,6 +499,7 @@ set(source_c_files
 ./src/base64.c
 ./src/buffer.c
 ./src/constbuffer.c
+./src/consolelogger.c
 ./src/crt_abstractions.c
 ./src/constmap.c
 ./src/doublylinkedlist.c
@@ -513,6 +520,7 @@ set(source_c_files
 ./src/urlencode.c
 ./src/usha.c
 ./src/vector.c
+./src/xlogging.c
 ./adapters/agenttime.c
 ${CONDITION_C_FILE}
 ${LOCK_C_FILE}
@@ -556,13 +564,13 @@ set(source_h_files
 ./inc/azure_c_shared_utility/crt_abstractions.h
 ./inc/azure_c_shared_utility/constmap.h
 ./inc/azure_c_shared_utility/condition.h
+./inc/azure_c_shared_utility/consolelogger.h
 ./inc/azure_c_shared_utility/doublylinkedlist.h
 ./inc/azure_c_shared_utility/gballoc.h
 ./inc/azure_c_shared_utility/gb_stdio.h
 ./inc/azure_c_shared_utility/gb_time.h
 ./inc/azure_c_shared_utility/hmac.h
 ./inc/azure_c_shared_utility/hmacsha256.h
-./inc/azure_c_shared_utility/iot_logging.h
 ./inc/azure_c_shared_utility/list.h
 ./inc/azure_c_shared_utility/lock.h
 ./inc/azure_c_shared_utility/macro_utils.h

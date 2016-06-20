@@ -66,7 +66,7 @@ extern XIO_HANDLE xio_create(const IO_INTERFACE_DESCRIPTION* io_interface_descri
 ```
 
 **SRS_XIO_01_001: [**xio_create shall return on success a non-NULL handle to a new IO interface.**]**
-**SRS_XIO_01_002: [**In order to instantiate the concrete IO implementation the function concrete_xio_create from the io_interface_description shall be called, passing the xio_create_parameters and logger_log arguments.**]**
+**SRS_XIO_01_002: [**In order to instantiate the concrete IO implementation the function concrete_xio_create from the io_interface_description shall be called, passing the xio_create_parameters argument.**]**
 **SRS_XIO_01_016: [**If the underlying concrete_xio_create call fails, xio_create shall return NULL.**]**
 **SRS_XIO_01_003: [**If the argument io_interface_description is NULL, xio_create shall return NULL.**]**
 **SRS_XIO_01_004: [**If any io_interface_description member is NULL, xio_create shall return NULL.**]**

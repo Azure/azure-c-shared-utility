@@ -9,7 +9,7 @@
 
 #include "azure_c_shared_utility/condition.h"
 #include "windows.h"
-#include "azure_c_shared_utility/iot_logging.h"
+#include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/gballoc.h"
 
 DEFINE_ENUM_STRINGS(COND_RESULT, COND_RESULT_VALUES);

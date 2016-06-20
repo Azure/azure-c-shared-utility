@@ -17,7 +17,7 @@
 #include "azure_c_shared_utility/tlsio_openssl.h"
 #include "azure_c_shared_utility/socketio.h"
 #include "azure_c_shared_utility/xlogging.h"
-#include "azure_c_shared_utility/iot_logging.h"
+#include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
 
 typedef enum TLSIO_STATE_TAG
@@ -41,7 +41,6 @@ typedef struct TLS_IO_INSTANCE_TAG
     void* on_io_open_complete_context;
     void* on_io_close_complete_context;
     void* on_io_error_context;
-    LOGGER_LOG logger_log;
     SSL* ssl;
     SSL_CTX* ssl_context;
     BIO* in_bio;
@@ -612,7 +611,7 @@ static int create_openssl_instance(TLS_IO_INSTANCE* tlsInstance)
                     socketio_config.port = tlsInstance->port;
                     socketio_config.accepted_socket = NULL;
 
-                    tlsInstance->underlying_io = xio_create(underlying_io_interface, &socketio_config, tlsInstance->logger_log);
+                    tlsInstance->underlying_io = xio_create(underlying_io_interface, &socketio_config);
                     if ((tlsInstance->underlying_io == NULL) ||
                         (BIO_set_mem_eof_return(tlsInstance->in_bio, -1) <= 0) ||
                         (BIO_set_mem_eof_return(tlsInstance->out_bio, -1) <= 0))
@@ -683,7 +682,7 @@ void tlsio_openssl_deinit(void)
     ERR_free_strings();
 }
 
-CONCRETE_IO_HANDLE tlsio_openssl_create(void* io_create_parameters, LOGGER_LOG logger_log)
+CONCRETE_IO_HANDLE tlsio_openssl_create(void* io_create_parameters)
 {
     TLSIO_CONFIG* tls_io_config = io_create_parameters;
     TLS_IO_INSTANCE* result;
@@ -724,7 +723,6 @@ CONCRETE_IO_HANDLE tlsio_openssl_create(void* io_create_parameters, LOGGER_LOG l
             result->on_io_error = NULL;
             result->on_io_error_context = NULL;
 
-            result->logger_log = logger_log;
             result->tlsio_state = TLSIO_STATE_NOT_OPEN;
         }
     }

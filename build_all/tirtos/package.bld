@@ -19,6 +19,7 @@ var SRCS = [
     "agenttime.c", 
     "base64.c",
     "buffer.c",
+    "consolelogger.c",
     "crt_abstractions.c",
     "doublylinkedlist.c",
     "gballoc.c",
@@ -38,6 +39,7 @@ var SRCS = [
     "urlencode.c",
     "usha.c",
     "vector.c"
+    "xlogging.c"
 ];
 
 /* Paths to external source libraries */

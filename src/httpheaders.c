@@ -11,7 +11,7 @@
 #include "azure_c_shared_utility/httpheaders.h"
 #include <string.h>
 #include "azure_c_shared_utility/crt_abstractions.h"
-#include "azure_c_shared_utility/iot_logging.h"
+#include "azure_c_shared_utility/xlogging.h"
 
 static const char COLON_AND_SPACE[] = { ':', ' ', '\0' };
 #define COLON_AND_SPACE_LENGTH  ((sizeof(COLON_AND_SPACE)/sizeof(COLON_AND_SPACE[0]))-1)

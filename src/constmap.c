@@ -9,7 +9,7 @@
 
 #include "azure_c_shared_utility/map.h"
 #include "azure_c_shared_utility/constmap.h"
-#include "azure_c_shared_utility/iot_logging.h"
+#include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/refcount.h"
 
 DEFINE_ENUM_STRINGS(CONSTMAP_RESULT, CONSTMAP_RESULT_VALUES);

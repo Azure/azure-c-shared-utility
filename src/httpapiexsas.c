@@ -17,7 +17,7 @@
 #include "azure_c_shared_utility/httpheaders.h"
 #include "azure_c_shared_utility/httpapiex.h"
 #include "azure_c_shared_utility/httpapiexsas.h"
-#include "azure_c_shared_utility/iot_logging.h"
+#include "azure_c_shared_utility/xlogging.h"
 
 typedef struct HTTPAPIEX_SAS_STATE_TAG
 {
