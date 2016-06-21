@@ -12,10 +12,10 @@
 #include "azure_c_shared_utility/httpapi.h"
 #include "azure_c_shared_utility/httpheaders.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
+#include "azure_c_shared_utility/xlogging.h"
+#include "azure_c_shared_utility/wolfssl_connection.h"
 #include "mbed.h"
 #include "EthernetInterface.h"
-#include "azure_c_shared_utility/wolfssl_connection.h"
-#include "azure_c_shared_utility/iot_logging.h"
 #include <string.h>
 
 #define MAX_HOSTNAME     64

@@ -7,8 +7,8 @@
 #endif
 
 #include "azure_c_shared_utility/threadapi.h"
+#include "azure_c_shared_utility/xlogging.h"
 #include "rtos.h"
-#include "azure_c_shared_utility/iot_logging.h"
 
 DEFINE_ENUM_STRINGS(THREADAPI_RESULT, THREADAPI_RESULT_VALUES);
 

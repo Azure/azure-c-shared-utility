@@ -4,6 +4,7 @@ inc\buffer_.h
 inc\condition.h
 inc\constbuffer.h
 inc\constmap.h
+inc\consolelogger.h
 inc\crt_abstractions.h
 inc\doublylinkedlist.h
 inc\gb_stdio.h
@@ -15,7 +16,6 @@ inc\httpapi.h
 inc\httpapiex.h
 inc\httpapiexsas.h
 inc\httpheaders.h
-inc\iot_logging.h
 inc\list.h
 inc\lock.h
 inc\macro_utils.h
@@ -40,6 +40,7 @@ inc\xlogging.h
 src\base64.c
 src\buffer.c
 src\constbuffer.c
+src\consolelogger.c
 src\constmap.c
 src\crt_abstractions.c
 src\doublylinkedlist.c
@@ -64,3 +65,4 @@ src\urlencode.c
 src\usha.c
 src\vector.c
 src\xio.c
+src\xlogging.c
