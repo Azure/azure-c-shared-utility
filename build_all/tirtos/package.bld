@@ -38,7 +38,7 @@ var SRCS = [
     "tickcounter_tirtos.c",
     "urlencode.c",
     "usha.c",
-    "vector.c"
+    "vector.c",
     "xlogging.c"
 ];
 
