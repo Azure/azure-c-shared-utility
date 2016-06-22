@@ -444,16 +444,6 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                     }
                     else
                     {
-                        size_t i;
-                        if (xlogging_get_log_function() != NULL)
-                        {
-                            for (i = 0; i < security_buffers[1].cbBuffer; i++)
-                            {
-                                LOG(LOG_TRACE, 0, "-> %02x ", ((unsigned char*)security_buffers[1].pvBuffer)[i]);
-                            }
-                            LOG(LOG_TRACE, LOG_LINE, "");
-                        }
-
                         /* notify of the received data */
                         if (tls_io_instance->on_bytes_received != NULL)
                         {
