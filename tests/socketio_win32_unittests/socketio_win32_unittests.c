@@ -525,6 +525,7 @@ TEST_FUNCTION(socketio_open_socket_fails)
 
     EXPECTED_CALL(socket(IGNORED_NUM_ARG, IGNORED_NUM_ARG, IGNORED_NUM_ARG))
         .SetReturn(INVALID_SOCKET);
+    EXPECTED_CALL(WSAGetLastError());
 
     // act
     int result = socketio_open(ioHandle, test_on_io_open_complete, &callbackContext, test_on_bytes_received, &callbackContext, test_on_io_error, &callbackContext);
@@ -548,6 +549,7 @@ TEST_FUNCTION(socketio_open_getaddrinfo_fails)
     g_addrinfo_call_fail = true;
     EXPECTED_CALL(socket(IGNORED_NUM_ARG, IGNORED_NUM_ARG, IGNORED_NUM_ARG));
     EXPECTED_CALL(getaddrinfo(IGNORED_PTR_ARG, IGNORED_PTR_ARG, &TEST_ADDR_INFO, IGNORED_PTR_ARG));
+    EXPECTED_CALL(WSAGetLastError());
     EXPECTED_CALL(closesocket(IGNORED_NUM_ARG));
 
     // act
@@ -573,6 +575,7 @@ TEST_FUNCTION(socketio_open_connect_fails)
     EXPECTED_CALL(getaddrinfo(IGNORED_PTR_ARG, IGNORED_PTR_ARG, &TEST_ADDR_INFO, IGNORED_PTR_ARG));
     EXPECTED_CALL(connect(IGNORED_NUM_ARG, &test_sock_addr, IGNORED_NUM_ARG))
         .SetReturn(WSAECONNREFUSED);
+    EXPECTED_CALL(WSAGetLastError());
     EXPECTED_CALL(closesocket(IGNORED_NUM_ARG));
     EXPECTED_CALL(freeaddrinfo(&TEST_ADDR_INFO));
 
@@ -601,6 +604,7 @@ TEST_FUNCTION(socketio_open_ioctlsocket_fails)
     EXPECTED_CALL(connect(IGNORED_NUM_ARG, &test_sock_addr, IGNORED_NUM_ARG));
     EXPECTED_CALL(ioctlsocket(IGNORED_NUM_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG))
         .SetReturn(WSAENETDOWN);
+    EXPECTED_CALL(WSAGetLastError());
     EXPECTED_CALL(closesocket(IGNORED_NUM_ARG));
     EXPECTED_CALL(freeaddrinfo(&TEST_ADDR_INFO));
 

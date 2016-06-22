@@ -138,6 +138,7 @@ function(windows_unittests_add_dll whatIsBuilding)
         ${${whatIsBuilding}_h_files} 
         ${${whatIsBuilding}_c_files}
         ${sharedutil_include_directories}../../src/xlogging.c
+        ${sharedutil_include_directories}../../src/consolelogger.c
     )
 
     set_target_properties(${whatIsBuilding}_dll
@@ -156,6 +157,7 @@ function(windows_unittests_add_exe whatIsBuilding)
         ${${whatIsBuilding}_c_files}
         ${CMAKE_CURRENT_LIST_DIR}/main.c
         ${sharedutil_include_directories}../../src/xlogging.c
+        ${sharedutil_include_directories}../../src/consolelogger.c
     )
     set_target_properties(${whatIsBuilding}_exe
                PROPERTIES
@@ -177,6 +179,7 @@ function(linux_unittests_add_exe whatIsBuilding)
         ${${whatIsBuilding}_c_files}
         ${CMAKE_CURRENT_LIST_DIR}/main.c
         ${sharedutil_include_directories}../../src/xlogging.c
+        ${sharedutil_include_directories}../../src/consolelogger.c
     )
     set_target_properties(${whatIsBuilding}_exe
                PROPERTIES
@@ -300,6 +303,7 @@ function(c_windows_unittests_add_dll whatIsBuilding folder)
         ${${whatIsBuilding}_h_files} 
         ${${whatIsBuilding}_c_files}
         ${sharedutil_include_directories}../../src/xlogging.c
+        ${sharedutil_include_directories}../../src/consolelogger.c
     )
 
     set_target_properties(${whatIsBuilding}_dll
@@ -330,6 +334,7 @@ function(c_windows_unittests_add_exe whatIsBuilding folder)
         ${${whatIsBuilding}_c_files}
         ${CMAKE_CURRENT_LIST_DIR}/main.c
         ${sharedutil_include_directories}../../src/xlogging.c
+        ${sharedutil_include_directories}../../src/consolelogger.c
     )
     set_target_properties(${whatIsBuilding}_exe
                PROPERTIES
@@ -353,6 +358,7 @@ function(c_linux_unittests_add_exe whatIsBuilding folder)
         ${${whatIsBuilding}_c_files}
         ${CMAKE_CURRENT_LIST_DIR}/main.c
         ${sharedutil_include_directories}../../src/xlogging.c
+        ${sharedutil_include_directories}../../src/consolelogger.c
     )
     set_target_properties(${whatIsBuilding}_exe
                PROPERTIES
