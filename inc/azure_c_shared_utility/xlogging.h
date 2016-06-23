@@ -13,7 +13,11 @@ typedef void(*LOGGER_LOG)(unsigned int options, char* format, ...);
 
 #define LOG_LINE 0x01
 
+#ifndef NO_LOGGING
 #define LOG(logger, ...) if (logger != NULL) logger(__VA_ARGS__)
+#else
+#define LOG(logger, ...)
+#endif
 
 #ifdef __cplusplus
 }
