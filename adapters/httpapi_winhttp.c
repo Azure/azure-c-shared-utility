@@ -234,7 +234,7 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
                 }
                 else
                 {
-                    if (MultiByteToWideChar(CP_ACP, 0, hostName, -1, hostNameTemp, hostNameTemp_size) == 0)
+                    if (MultiByteToWideChar(CP_ACP, 0, hostName, -1, hostNameTemp, (int)hostNameTemp_size) == 0)
                     {
                         LogError("MultiByteToWideChar failed");
                         free(result);
@@ -364,7 +364,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
                     }
                     else
                     {
-                        if (MultiByteToWideChar(CP_ACP, 0, relativePath, -1, relativePathTemp, requiredCharactersForRelativePath) == 0)
+                        if (MultiByteToWideChar(CP_ACP, 0, relativePath, -1, relativePathTemp, (int)requiredCharactersForRelativePath) == 0)
                         {
                             result = HTTPAPI_STRING_PROCESSING_ERROR;
                             LogError("MultiByteToWideChar was 0. (result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
@@ -381,7 +381,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
                             }
                             else
                             {
-                                if (MultiByteToWideChar(CP_ACP, 0, headers2, -1, headersTemp, requiredCharactersForHeaders) == 0)
+                                if (MultiByteToWideChar(CP_ACP, 0, headers2, -1, headersTemp, (int)requiredCharactersForHeaders) == 0)
                                 {
                                     result = HTTPAPI_STRING_PROCESSING_ERROR;
                                     LogError("MultiByteToWideChar was 0(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
@@ -608,7 +608,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
                                                                             }
                                                                             else
                                                                             {
-                                                                                if (WideCharToMultiByte(CP_ACP, 0, token, -1, tokenTemp, tokenTemp_size, NULL, NULL) > 0)
+                                                                                if (WideCharToMultiByte(CP_ACP, 0, token, -1, tokenTemp, (int)tokenTemp_size, NULL, NULL) > 0)
                                                                                 {
                                                                                     /*breaking the token in 2 parts: everything before the first ":" and everything after the first ":"*/
                                                                                     /* if there is no such character, then skip it*/

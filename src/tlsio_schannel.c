@@ -251,7 +251,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                 ULONG context_attributes;
 
                 /* we need to try and perform the second (next) step of the init */
-                input_buffers[0].cbBuffer = tls_io_instance->received_byte_count;
+                input_buffers[0].cbBuffer = (int)tls_io_instance->received_byte_count;
                 input_buffers[0].BufferType = SECBUFFER_TOKEN;
                 input_buffers[0].pvBuffer = (void*)tls_io_instance->received_bytes;
                 input_buffers[1].cbBuffer = 0;
@@ -758,7 +758,7 @@ static int send_chunk(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t size
                     security_buffers[0].cbBuffer = sizes.cbHeader;
                     security_buffers[0].pvBuffer = out_buffer;
                     security_buffers[1].BufferType = SECBUFFER_DATA;
-                    security_buffers[1].cbBuffer = size;
+                    security_buffers[1].cbBuffer = (int)size;
                     security_buffers[1].pvBuffer = out_buffer + sizes.cbHeader;
                     security_buffers[2].BufferType = SECBUFFER_STREAM_TRAILER;
                     security_buffers[2].cbBuffer = sizes.cbTrailer;
