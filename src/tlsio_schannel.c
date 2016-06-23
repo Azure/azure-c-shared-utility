@@ -407,7 +407,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
 
                 security_buffers[0].BufferType = SECBUFFER_DATA;
                 security_buffers[0].pvBuffer = tls_io_instance->received_bytes;
-                security_buffers[0].cbBuffer = tls_io_instance->received_byte_count;
+                security_buffers[0].cbBuffer = (unsigned long)tls_io_instance->received_byte_count;
                 security_buffers[1].BufferType = SECBUFFER_EMPTY;
                 security_buffers[2].BufferType = SECBUFFER_EMPTY;
                 security_buffers[3].BufferType = SECBUFFER_EMPTY;
@@ -454,7 +454,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
 
                         LOG(LOG_TRACE, LOG_LINE, "%d consumed", tls_io_instance->received_byte_count);
 
-                        for (i = 0; i < sizeof(security_buffers) / sizeof(security_buffers[0]); i++)
+                        for (size_t i = 0; i < sizeof(security_buffers) / sizeof(security_buffers[0]); i++)
                         {
                             /* Any extra bytes left over or did we fully consume the receive buffer? */
                             if (security_buffers[i].BufferType == SECBUFFER_EXTRA)

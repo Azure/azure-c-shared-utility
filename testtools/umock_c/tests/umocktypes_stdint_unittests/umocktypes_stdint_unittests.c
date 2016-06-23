@@ -197,7 +197,7 @@ TEST_FUNCTION(umocktypes_stdint_register_types_registers_all_types)
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(int, 8, umocktypes_register_type_call_count);
+    ASSERT_ARE_EQUAL(size_t, 8, umocktypes_register_type_call_count);
     ASSERT_ARE_EQUAL(char_ptr, "uint8_t", umocktypes_register_type_calls[0].type);
     ASSERT_ARE_EQUAL(char_ptr, "int8_t", umocktypes_register_type_calls[1].type);
     ASSERT_ARE_EQUAL(char_ptr, "uint16_t", umocktypes_register_type_calls[2].type);
@@ -233,7 +233,7 @@ TEST_FUNCTION(when_the_underlying_register_fails_umocktypes_stdint_register_type
 
         // assert
         ASSERT_ARE_NOT_EQUAL(int, 0, result);
-        ASSERT_ARE_EQUAL(int, i + 1, umocktypes_register_type_call_count);
+        ASSERT_ARE_EQUAL(size_t, i + 1, umocktypes_register_type_call_count);
     }
 }
 

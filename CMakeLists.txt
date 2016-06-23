@@ -646,6 +646,11 @@ endif()
 IF(WIN32)
     #windows needs this define
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+    # Make warning as error
+    add_definitions(/WX)
+ELSE()
+    # Make warning as error
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
 ENDIF(WIN32)
 
 #this is the product (a library)
