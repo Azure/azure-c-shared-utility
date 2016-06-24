@@ -476,14 +476,6 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
                         on_send_complete(callback_context, IO_SEND_OK);
                     }
 
-                    size_t i;
-                    for (i = 0; i < size; i++)
-                    {
-                        LOG(LOG_TRACE, 0, "%02x-> ", ((unsigned char*)buffer)[i]);
-                    }
-
-                    LOG(LOG_TRACE, LOG_LINE, "");
-
                     result = 0;
                 }
             }
@@ -576,12 +568,6 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                     received = recv(socket_io_instance->socket, recv_bytes, RECEIVE_BYTES_VALUE, 0);
                     if (received > 0)
                     {
-                        int i;
-                        for (i = 0; i < received; i++)
-                        {
-                            LOG(LOG_TRACE, 0, "<-%02x ", (unsigned char)recv_bytes[i]);
-                        }
-
                         if (socket_io_instance->on_bytes_received != NULL)
                         {
                             /* explictly ignoring here the result of the callback */
