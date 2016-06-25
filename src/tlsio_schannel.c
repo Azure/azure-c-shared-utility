@@ -225,8 +225,6 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
     TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)context;
     size_t consumed_bytes;
 
-    LOG(LOG_TRACE, LOG_LINE, "%d received on tls_schannel", size);
-
     if (resize_receive_buffer(tls_io_instance, tls_io_instance->received_byte_count + size) == 0)
     {
         memcpy(tls_io_instance->received_bytes + tls_io_instance->received_byte_count, buffer, size);
@@ -451,8 +449,6 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                         }
 
                         consumed_bytes = tls_io_instance->received_byte_count;
-
-                        LOG(LOG_TRACE, LOG_LINE, "%d consumed", tls_io_instance->received_byte_count);
 
                         for (size_t i = 0; i < sizeof(security_buffers) / sizeof(security_buffers[0]); i++)
                         {
@@ -784,13 +780,6 @@ static int send_chunk(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t size
                         }
                         else
                         {
-                            size_t i;
-                            for (i = 0; i < size; i++)
-                            {
-                                LOG(LOG_TRACE, 0, "%02x-> ", ((unsigned char*)buffer)[i]);
-                            }
-                            LOG(LOG_TRACE, LOG_LINE, "");
-
                             result = 0;
                         }
                     }
