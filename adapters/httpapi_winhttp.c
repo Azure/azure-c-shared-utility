@@ -66,7 +66,7 @@ typedef struct X509CRYPTO_TAG
     PCCERT_CONTEXT x509certificate_context;
 }X509_CRYPTO;
 
-static X509_CRYPTO*  HTTPAPI_CreateCrypto(const char* x509certificate, const char* x509privatekey)
+static X509_CRYPTO* HTTPAPI_CreateCrypto(const char* x509certificate, const char* x509privatekey)
 {
     X509_CRYPTO *result;
     /*this is what happens with the x509 certificate and the x509 private key in this function*/
@@ -649,7 +649,6 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
                                             LogErrorWinHTTPWithGetLastErrorAsString("unable to WinHttpSetOption");
                                             result = HTTPAPI_SET_X509_FAILURE;
                                         }
-
                                         else
                                         {
                                             if (WinHttpSetTimeouts(requestHandle,
