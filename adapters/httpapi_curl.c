@@ -12,6 +12,10 @@
 #include "azure_c_shared_utility/httpheaders.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
 #include "curl/curl.h"
+#include <openssl/x509_vfy.h>
+#include <openssl/pem.h>
+#include <openssl/ssl.h>
+#include <openssl/bio.h>
 #include "azure_c_shared_utility/xlogging.h"
 
 #define TEMP_BUFFER_SIZE 1024
@@ -28,6 +32,8 @@ typedef struct HTTP_HANDLE_DATA_TAG
     long forbidReuse;
     long freshConnect;
     long verbose;
+    const char* x509privatekey;
+    const char* x509certificate;
 } HTTP_HANDLE_DATA;
 
 typedef struct HTTP_RESPONSE_CONTENT_BUFFER_TAG
@@ -78,9 +84,14 @@ void HTTPAPI_Deinit(void)
 
 HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
 {
-    HTTP_HANDLE_DATA* httpHandleData = NULL;
+    HTTP_HANDLE_DATA* httpHandleData;
 
-    if (hostName != NULL)
+    if (hostName == NULL)
+    {
+        LogError("invalid arg const char* hostName = %p", hostName);
+        httpHandleData = NULL;
+    }
+    else
     {
         httpHandleData = (HTTP_HANDLE_DATA*)malloc(sizeof(HTTP_HANDLE_DATA));
         if (httpHandleData != NULL)
@@ -90,6 +101,8 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
             if (httpHandleData->hostURL == NULL)
             {
                 LogError("unable to malloc");
+                free(httpHandleData);
+                httpHandleData = NULL;
             }
             else
             {
@@ -194,6 +207,85 @@ static size_t ContentWriteFunction(void *ptr, size_t size, size_t nmemb, void *u
     }
 
     return size * nmemb;
+}
+
+static CURLcode ssl_ctx_callback(CURL *curl, void *ssl_ctx, void *userptr)
+{
+    CURLcode result;
+    
+    if (
+        (curl == NULL) ||
+        (ssl_ctx == NULL) ||
+        (userptr == NULL)
+        )
+    {
+        LogError("unexpected parameter CURL *curl=%p, void *ssl_ctx=%p, void *userptr=%p", curl, ssl_ctx, userptr);
+        result = CURLE_SSL_CERTPROBLEM;
+    }
+    else
+    {
+        HTTP_HANDLE_DATA *httpHandleData = (HTTP_HANDLE_DATA *)userptr;
+        BIO *bio_certificate;
+        bio_certificate = BIO_new_mem_buf(httpHandleData->x509certificate, -1);
+        if (bio_certificate == NULL)
+        {
+            LogError("cannot create  BIO *bio_certificate;\n");
+            result = CURLE_OUT_OF_MEMORY;
+        }
+        else
+        {
+            X509 *cert = PEM_read_bio_X509(bio_certificate, NULL, 0, NULL);
+            if (cert == NULL)
+            {
+                LogError("cannot create X509 *cert\n");
+                result = CURLE_SSL_CERTPROBLEM;
+            }
+            else
+            {
+                BIO *bio_privatekey;
+                bio_privatekey = BIO_new_mem_buf(httpHandleData->x509privatekey, -1);
+                if (bio_privatekey == NULL)
+                {
+                    LogError("cannot create BIO *bio_privatekey;\n");
+                    result = CURLE_OUT_OF_MEMORY;
+                }
+                else
+                {
+                    RSA* privatekey = PEM_read_bio_RSAPrivateKey(bio_privatekey, NULL, 0, NULL);
+                    if (privatekey == NULL)
+                    {
+                        LogError("cannot create RSA* privatekey\n");
+                        result = CURLE_SSL_CERTPROBLEM; /*there's no better code in CURL about not being able to load a private key*/
+                    }
+                    else
+                    {
+                        if (SSL_CTX_use_certificate((SSL_CTX*)ssl_ctx, cert) != 1)
+                        {
+                            LogError("cannot SSL_CTX_use_certificat\n");
+                            result = CURLE_SSL_CERTPROBLEM; /*there's no better code in CURL about not being able to SSL_CTX_use_certificate*/
+                        }
+                        else
+                        {
+                            if (SSL_CTX_use_RSAPrivateKey(ssl_ctx, privatekey) != 1)
+                            {
+                                LogError("error (SSL_CTX_use_RSAPrivateKey(sslctx, privatekey) != 1)\n");
+                                result = CURLE_SSL_CERTPROBLEM; /*there's no better code in CURL about not being able to put a private key in an SSL context*/
+                            }
+                            else
+                            {
+                                result = CURLE_OK;
+                            }
+                        }
+                        RSA_free(privatekey);
+                    }
+                    BIO_free(bio_privatekey);
+                }
+                X509_free(cert);
+            }
+            BIO_free(bio_certificate);
+        }
+    }
+    return result;
 }
 
 HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE requestType, const char* relativePath,
@@ -604,6 +696,66 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
             httpHandleData->verbose = *(const long*)value;
             result = HTTPAPI_OK;
         }
+        else if (strcmp("x509privatekey", optionName) == 0)
+        {
+            httpHandleData->x509privatekey = value;
+            if (httpHandleData->x509certificate != NULL)
+            {
+                if (curl_easy_setopt(httpHandleData->curl, CURLOPT_SSL_CTX_FUNCTION, ssl_ctx_callback) != CURLE_OK)
+                {
+                    LogError("unable to curl_easy_setopt");
+                    result = HTTPAPI_ERROR;
+                }
+                else
+                {
+                    if (curl_easy_setopt(httpHandleData->curl, CURLOPT_SSL_CTX_DATA, httpHandleData) != CURLE_OK)
+                    {
+                        LogError("unable to curl_easy_setopt");
+                        result = HTTPAPI_ERROR;
+                    }
+                    else
+                    {
+                        result = HTTPAPI_OK;
+                    }
+                }
+            }
+            else
+            {
+                /*if privatekey comes 1st and certificate is not set yet, then return OK and wait for the certificate to be set*/
+                result = HTTPAPI_OK;
+            }
+            result = HTTPAPI_OK;
+        }
+        else if (strcmp("x509certificate", optionName) == 0)
+        {
+            httpHandleData->x509certificate = value;
+            if (httpHandleData->x509privatekey != NULL)
+            {
+                if (curl_easy_setopt(httpHandleData->curl, CURLOPT_SSL_CTX_FUNCTION, ssl_ctx_callback) != CURLE_OK)
+                {
+                    LogError("unable to curl_easy_setopt");
+                    result = HTTPAPI_ERROR;
+                }
+                else
+                {
+                    if (curl_easy_setopt(httpHandleData->curl, CURLOPT_SSL_CTX_DATA, httpHandleData) != CURLE_OK)
+                    {
+                        LogError("unable to curl_easy_setopt");
+                        result = HTTPAPI_ERROR;
+                    }
+                    else
+                    {
+                        result = HTTPAPI_OK;
+                    }
+                }
+            }
+            else
+            {
+                /*if certificate comes 1st and private key is not set yet, then return OK and wait for the private key to be set*/
+                result = HTTPAPI_OK;
+            }
+            result = HTTPAPI_OK;
+        }
         else
         {
             result = HTTPAPI_INVALID_ARG;
@@ -640,6 +792,34 @@ HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, co
             {
                 *temp = *(const unsigned int*)value;
                 *savedValue = temp;
+                result = HTTPAPI_OK;
+            }
+        }
+        else if (strcmp("x509certificate", optionName) == 0)
+        {
+            /*this is getting the x509 certificate. In this case, value is a pointer to a const char* that contains the certificate as a null terminated string*/
+            if (mallocAndStrcpy_s((char**)savedValue, value) != 0)
+            {
+                LogError("unable to clone the x509 certificate content");
+                result = HTTPAPI_ERROR;
+            }
+            else
+            {
+                /*return OK when the certificate has been clones successfully*/
+                result = HTTPAPI_OK;
+            }
+        }
+        else if (strcmp("x509privatekey", optionName) == 0)
+        {
+            /*this is getting the x509 private key. In this case, value is a pointer to a const char* that contains the private key as a null terminated string*/
+            if (mallocAndStrcpy_s((char**)savedValue, value) != 0)
+            {
+                LogError("unable to clone the x509 private key content");
+                result = HTTPAPI_ERROR;
+            }
+            else
+            {
+                /*return OK when the private key has been clones successfully*/
                 result = HTTPAPI_OK;
             }
         }
