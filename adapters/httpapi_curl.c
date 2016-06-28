@@ -231,7 +231,7 @@ static CURLcode ssl_ctx_callback(CURL *curl, void *ssl_ctx, void *userptr)
         bio_certificate = BIO_new_mem_buf(httpHandleData->x509certificate, -1);
         if (bio_certificate == NULL)
         {
-            LogError("cannot create  BIO *bio_certificate;\n");
+            LogError("cannot create  BIO *bio_certificate");
             result = CURLE_OUT_OF_MEMORY;
         }
         else
@@ -239,7 +239,7 @@ static CURLcode ssl_ctx_callback(CURL *curl, void *ssl_ctx, void *userptr)
             X509 *cert = PEM_read_bio_X509(bio_certificate, NULL, 0, NULL);
             if (cert == NULL)
             {
-                LogError("cannot create X509 *cert\n");
+                LogError("cannot create X509 *cert");
                 result = CURLE_SSL_CERTPROBLEM;
             }
             else
@@ -248,7 +248,7 @@ static CURLcode ssl_ctx_callback(CURL *curl, void *ssl_ctx, void *userptr)
                 bio_privatekey = BIO_new_mem_buf(httpHandleData->x509privatekey, -1);
                 if (bio_privatekey == NULL)
                 {
-                    LogError("cannot create BIO *bio_privatekey;\n");
+                    LogError("cannot create BIO *bio_privatekey;");
                     result = CURLE_OUT_OF_MEMORY;
                 }
                 else
@@ -256,21 +256,21 @@ static CURLcode ssl_ctx_callback(CURL *curl, void *ssl_ctx, void *userptr)
                     RSA* privatekey = PEM_read_bio_RSAPrivateKey(bio_privatekey, NULL, 0, NULL);
                     if (privatekey == NULL)
                     {
-                        LogError("cannot create RSA* privatekey\n");
+                        LogError("cannot create RSA* privatekey");
                         result = CURLE_SSL_CERTPROBLEM; /*there's no better code in CURL about not being able to load a private key*/
                     }
                     else
                     {
                         if (SSL_CTX_use_certificate((SSL_CTX*)ssl_ctx, cert) != 1)
                         {
-                            LogError("cannot SSL_CTX_use_certificat\n");
+                            LogError("cannot SSL_CTX_use_certificate");
                             result = CURLE_SSL_CERTPROBLEM; /*there's no better code in CURL about not being able to SSL_CTX_use_certificate*/
                         }
                         else
                         {
                             if (SSL_CTX_use_RSAPrivateKey(ssl_ctx, privatekey) != 1)
                             {
-                                LogError("error (SSL_CTX_use_RSAPrivateKey(sslctx, privatekey) != 1)\n");
+                                LogError("cannot SSL_CTX_use_RSAPrivateKey");
                                 result = CURLE_SSL_CERTPROBLEM; /*there's no better code in CURL about not being able to put a private key in an SSL context*/
                             }
                             else
