@@ -136,6 +136,48 @@ static void on_io_open_complete(void* context, IO_OPEN_RESULT open_result)
     }
 }
 
+static int my_strnicmp(const char* s1, const char* s2, size_t n)
+{
+    size_t i;
+    int result = 0;
+
+    for (i = 0; i < n; i++)
+    {
+        /* compute the difference between the chars */
+        result = tolower(s1[i]) - tolower(s2[i]);
+
+        /* break if we have a difference ... */
+        if ((result != 0) ||
+            /* ... or if we got to the end of one the strings */
+            (s1[i] == '\0') || (s2[i] == '\0'))
+        {
+            break;
+        }
+    }
+
+    return result;
+}
+
+static int my_stricmp(const char* s1, const char* s2)
+{
+    size_t i = 0;
+
+    while ((s1[i] != '\0') && (s2[i] != '\0'))
+    {
+        /* break if we have a difference ... */
+        if (tolower(s1[i]) != tolower(s2[i]))
+        {
+            break;
+        }
+
+        i++;
+    }
+
+    /* if we broke because we are at end of string this will yield 0 */
+    /* if we broke because there was a difference this will yield non-zero  */
+    return tolower(s1[i]) - tolower(s2[i]);
+}
+
 static void on_bytes_received(void* context, const unsigned char* buffer, size_t size)
 {
     HTTP_HANDLE_DATA* h = (HTTP_HANDLE_DATA*)context;
@@ -511,7 +553,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
         const char ContentLength[] = "content-length:";
         const char TransferEncoding[] = "transfer-encoding:";
 
-        if (_strnicmp(buf, ContentLength, CHAR_COUNT(ContentLength)) == 0)
+        if (my_strnicmp(buf, ContentLength, CHAR_COUNT(ContentLength)) == 0)
         {
             if (sscanf(buf + CHAR_COUNT(ContentLength), " %d", &bodyLength) != 1)
             {
@@ -520,11 +562,11 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
                 goto exit;
             }
         }
-        else if (_strnicmp(buf, TransferEncoding, CHAR_COUNT(TransferEncoding)) == 0)
+        else if (my_strnicmp(buf, TransferEncoding, CHAR_COUNT(TransferEncoding)) == 0)
         {
             const char* p = buf + CHAR_COUNT(TransferEncoding);
             while (isspace(*p)) p++;
-            if (_stricmp(p, "chunked") == 0)
+            if (my_stricmp(p, "chunked") == 0)
                 chunked = true;
         }
 
