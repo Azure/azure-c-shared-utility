@@ -1,4 +1,4 @@
-azure-c-shared-util (0.1.0.0-13) wily; urgency=low
+azure-c-shared-util (0.1.0.0-15) wily; urgency=low
 
   * Initial release (Closes: #5069014)
 
@@ -20,5 +20,9 @@ azure-c-shared-util (0.1.0.0-13) wily; urgency=low
 
   * Fix tlsio_schannel bug (not all input bytes were being read) (#975b971e) 
 
- -- AzureIoT User <aziotsdklinux@outlook.com>  Fri, 20 May 2016 14:18:00 -0800
+  * Adjusted the tls not to provide credentials by default (#6fd9b6dd)
+
+  * Fix bug in Base64_Decode not crash with invalid lengths (#4626bb4)
+
+ -- AzureIoT User <aziotsdklinux@outlook.com>  Fri, 17 Jun 2016 14:18:00 -0800
 
