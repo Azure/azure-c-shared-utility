@@ -5,7 +5,7 @@
 #include <time.h>
 #include "wolfssl/ssl.h"
 #include "wolfssl_connection.h"
-#include "azure_c_shared_utility/iot_logging.h"
+#include "azure_c_shared_utility/xlogging.h"
 
 static timeval receiveTimeout = {0,1};
 static timeval sendTimeout = {0,1};

@@ -16,7 +16,7 @@
 // PUT NO CLIENT LIBRARY INCLUDES BEFORE HERE !!!!
 //
 #include "azure_c_shared_utility/base64.h"
-#include "azure_c_shared_utility/iot_logging.h"
+#include "azure_c_shared_utility/xlogging.h"
 
 static const char base64char[64] = {
     'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',

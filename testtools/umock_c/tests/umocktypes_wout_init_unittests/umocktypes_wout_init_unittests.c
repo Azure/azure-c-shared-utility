@@ -407,8 +407,8 @@ TEST_FUNCTION(umocktypes_are_equal_when_the_module_is_not_initialized_fails)
 
     // assert
     ASSERT_ARE_EQUAL(int, -1, result);
-    ASSERT_ARE_EQUAL(int, 0, umocktypename_normalize_call_count);
-    ASSERT_ARE_EQUAL(int, 0, test_are_equal_func_testtype_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, test_are_equal_func_testtype_call_count);
 }
 
 /* umocktypes_copy */
@@ -427,8 +427,8 @@ TEST_FUNCTION(when_the_module_is_not_initialized_then_umocktypes_copy_fails)
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(int, 0, umocktypename_normalize_call_count);
-    ASSERT_ARE_EQUAL(int, 0, test_copy_func_testtype_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, test_copy_func_testtype_call_count);
 }
 
 /* umocktypes_free */
@@ -443,8 +443,8 @@ TEST_FUNCTION(umocktypes_free_when_the_module_is_not_initialized_does_not_free_a
     umocktypes_free("char *", test_value_1);
 
     // assert
-    ASSERT_ARE_EQUAL(int, 0, umocktypename_normalize_call_count);
-    ASSERT_ARE_EQUAL(int, 0, test_free_func_testtype_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, test_free_func_testtype_call_count);
 }
 
 END_TEST_SUITE(umocktypes_without_init_unittests)

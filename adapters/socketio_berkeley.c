@@ -21,7 +21,7 @@
 #include <errno.h>
 #include "azure_c_shared_utility/list.h"
 #include "azure_c_shared_utility/gballoc.h"
-#include "azure_c_shared_utility/iot_logging.h"
+#include "azure_c_shared_utility/xlogging.h"
 
 #define SOCKET_SUCCESS          0
 #define INVALID_SOCKET          -1
@@ -50,7 +50,6 @@ typedef struct PENDING_SOCKET_IO_TAG
 typedef struct SOCKET_IO_INSTANCE_TAG
 {
     int socket;
-    LOGGER_LOG logger_log;
     ON_BYTES_RECEIVED on_bytes_received;
     ON_IO_ERROR on_io_error;
     void* on_bytes_received_context;
@@ -122,7 +121,7 @@ static int add_pending_io(SOCKET_IO_INSTANCE* socket_io_instance, const unsigned
     return result;
 }
 
-CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters, LOGGER_LOG logger_log)
+CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters)
 {
     SOCKETIO_CONFIG* socket_io_config = io_create_parameters;
     SOCKET_IO_INSTANCE* result;
@@ -176,7 +175,6 @@ CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters, LOGGER_LOG logger
                     result->on_io_error = NULL;
                     result->on_bytes_received_context = NULL;
                     result->on_io_error_context = NULL;
-                    result->logger_log = logger_log;
                     result->io_state = IO_STATE_CLOSED;
                 }
             }
@@ -478,13 +476,6 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
                         on_send_complete(callback_context, IO_SEND_OK);
                     }
 
-                    size_t i;
-                    for (i = 0; i < size; i++)
-                    {
-                        LOG(socket_io_instance->logger_log, 0, "%02x-> ", ((unsigned char*)buffer)[i]);
-                    }
-                    LOG(socket_io_instance->logger_log, LOG_LINE, "");
-
                     result = 0;
                 }
             }
@@ -577,12 +568,6 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                     received = recv(socket_io_instance->socket, recv_bytes, RECEIVE_BYTES_VALUE, 0);
                     if (received > 0)
                     {
-                        int i;
-                        for (i = 0; i < received; i++)
-                        {
-                            LOG(socket_io_instance->logger_log, 0, "<-%02x ", (unsigned char)recv_bytes[i]);
-                        }
-
                         if (socket_io_instance->on_bytes_received != NULL)
                         {
                             /* explictly ignoring here the result of the callback */

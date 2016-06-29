@@ -14,6 +14,8 @@
 #include "azure_c_shared_utility/tlsio.h"
 #include "azure_c_shared_utility/tlsio_wolfssl.h"
 #include "azure_c_shared_utility/socketio.h"
+#include "azure_c_shared_utility/crt_abstractions.h"
+#include "azure_c_shared_utility/xlogging.h"
 
 typedef enum TLSIO_STATE_ENUM_TAG
 {
@@ -36,7 +38,6 @@ typedef struct TLS_IO_INSTANCE_TAG
     void* on_io_open_complete_context;
     void* on_io_close_complete_context;
     void* on_io_error_context;
-    LOGGER_LOG logger_log;
     WOLFSSL* ssl;
     WOLFSSL_CTX* ssl_context;
     TLSIO_STATE_ENUM tlsio_state;
@@ -44,6 +45,9 @@ typedef struct TLS_IO_INSTANCE_TAG
     size_t socket_io_read_byte_count;
     ON_SEND_COMPLETE on_send_complete;
     void* on_send_complete_callback_context;
+    char* certificate;
+    char* hostname;
+    int port;
 } TLS_IO_INSTANCE;
 
 static const IO_INTERFACE_DESCRIPTION tlsio_wolfssl_interface_description =
@@ -112,6 +116,7 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
         if (res != SSL_SUCCESS)
         {
             indicate_open_complete(tls_io_instance, IO_OPEN_ERROR);
+            tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
         }
     }
 }
@@ -140,21 +145,21 @@ static void on_underlying_io_error(void* context)
 
     switch (tls_io_instance->tlsio_state)
     {
-    default:
-    case TLSIO_STATE_NOT_OPEN:
-    case TLSIO_STATE_ERROR:
-        break;
+        default:
+        case TLSIO_STATE_NOT_OPEN:
+        case TLSIO_STATE_ERROR:
+            break;
 
-    case TLSIO_STATE_OPENING_UNDERLYING_IO:
-    case TLSIO_STATE_IN_HANDSHAKE:
-        tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
-        indicate_open_complete(tls_io_instance, IO_OPEN_ERROR);
-        break;
+        case TLSIO_STATE_OPENING_UNDERLYING_IO:
+        case TLSIO_STATE_IN_HANDSHAKE:
+            tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
+            indicate_open_complete(tls_io_instance, IO_OPEN_ERROR);
+            break;
 
-    case TLSIO_STATE_OPEN:
-        tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
-        indicate_error(tls_io_instance);
-        break;
+        case TLSIO_STATE_OPEN:
+            tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
+            indicate_error(tls_io_instance);
+            break;
     }
 }
 
@@ -168,6 +173,7 @@ static void on_underlying_io_close_complete(void* context)
         {
             tls_io_instance->on_io_close_complete(tls_io_instance->on_io_close_complete_context);
         }
+        tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
     }
 }
 
@@ -180,7 +186,7 @@ static int on_io_recv(WOLFSSL *ssl, char *buf, int sz, void *context)
     while (tls_io_instance->socket_io_read_byte_count == 0)
     {
         xio_dowork(tls_io_instance->socket_io);
-        if (tls_io_instance->tlsio_state == TLSIO_STATE_OPEN)
+        if (tls_io_instance->tlsio_state != TLSIO_STATE_IN_HANDSHAKE)
         {
             break;
         }
@@ -215,6 +221,10 @@ static int on_io_recv(WOLFSSL *ssl, char *buf, int sz, void *context)
     if ((result == 0) && (tls_io_instance->tlsio_state == TLSIO_STATE_OPEN))
     {
         result = WOLFSSL_CBIO_ERR_WANT_READ;
+    }
+    else if ((result == 0) && tls_io_instance->tlsio_state == TLSIO_STATE_CLOSING)
+    {
+        result = WOLFSSL_CBIO_ERR_CONN_CLOSE;
     }
 
     return result;
@@ -251,6 +261,71 @@ static int on_handshake_done(WOLFSSL* ssl, void* context)
     return 0;
 }
 
+static int add_certificate_to_store(TLS_IO_INSTANCE* tls_io_instance)
+{
+    int result;
+    if (tls_io_instance->certificate != NULL)
+    {
+        int res = wolfSSL_CTX_load_verify_buffer(tls_io_instance->ssl_context, (const unsigned char*)tls_io_instance->certificate, strlen(tls_io_instance->certificate)+1, SSL_FILETYPE_PEM);
+        if (res != SSL_SUCCESS)
+        {
+            result = __LINE__;
+        }
+        else
+        {
+            result = 0;
+        }
+    }
+    else
+    {
+        result = 0;
+    }
+    return result;
+}
+
+static int create_wolfssl_instance(TLS_IO_INSTANCE* tls_io_instance)
+{
+    int result;
+
+    if (add_certificate_to_store(tls_io_instance) != 0)
+    {
+        wolfSSL_CTX_free(tls_io_instance->ssl_context);
+        result = __LINE__;
+    }
+    else
+    {
+        tls_io_instance->ssl = wolfSSL_new(tls_io_instance->ssl_context);
+        if (tls_io_instance->ssl == NULL)
+        {
+            wolfSSL_CTX_free(tls_io_instance->ssl_context);
+            result = __LINE__;
+        }
+        else
+        {
+            tls_io_instance->socket_io_read_bytes = NULL;
+            tls_io_instance->socket_io_read_byte_count = 0;
+            tls_io_instance->on_send_complete = NULL;
+            tls_io_instance->on_send_complete_callback_context = NULL;
+
+            wolfSSL_set_using_nonblock(tls_io_instance->ssl, 1);
+            wolfSSL_SetIOSend(tls_io_instance->ssl_context, on_io_send);
+            wolfSSL_SetIORecv(tls_io_instance->ssl_context, on_io_recv);
+            wolfSSL_SetHsDoneCb(tls_io_instance->ssl, on_handshake_done, tls_io_instance);
+            wolfSSL_SetIOWriteCtx(tls_io_instance->ssl, tls_io_instance);
+            wolfSSL_SetIOReadCtx(tls_io_instance->ssl, tls_io_instance);
+
+            tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
+            result = 0;
+        }
+    }
+    return result;
+}
+
+static void destroy_wolfssl_instance(TLS_IO_INSTANCE* tls_io_instance)
+{
+    wolfSSL_free(tls_io_instance->ssl);
+}
+
 int tlsio_wolfssl_init(void)
 {
     (void)wolfSSL_library_init();
@@ -263,7 +338,7 @@ void tlsio_wolfssl_deinit(void)
 {
 }
 
-CONCRETE_IO_HANDLE tlsio_wolfssl_create(void* io_create_parameters, LOGGER_LOG logger_log)
+CONCRETE_IO_HANDLE tlsio_wolfssl_create(void* io_create_parameters)
 {
     TLSIO_CONFIG* tls_io_config = io_create_parameters;
     TLS_IO_INSTANCE* result;
@@ -274,14 +349,20 @@ CONCRETE_IO_HANDLE tlsio_wolfssl_create(void* io_create_parameters, LOGGER_LOG l
     }
     else
     {
-        result = malloc(sizeof(TLS_IO_INSTANCE));
+        result = (TLS_IO_INSTANCE*)malloc(sizeof(TLS_IO_INSTANCE));
         if (result != NULL)
         {
-            SOCKETIO_CONFIG socketio_config;
+            memset(result, 0, sizeof(TLS_IO_INSTANCE));
+            mallocAndStrcpy_s(&result->hostname, tls_io_config->hostname);
+            result->port = tls_io_config->port;
 
-            socketio_config.hostname = tls_io_config->hostname;
-            socketio_config.port = tls_io_config->port;
-            socketio_config.accepted_socket = NULL;
+            result->socket_io_read_bytes = 0;
+            result->socket_io_read_byte_count = 0;
+            result->socket_io = NULL;
+
+            result->ssl = NULL;
+            result->ssl_context = NULL;
+            result->certificate = NULL;
 
             result->on_bytes_received = NULL;
             result->on_bytes_received_context = NULL;
@@ -295,7 +376,7 @@ CONCRETE_IO_HANDLE tlsio_wolfssl_create(void* io_create_parameters, LOGGER_LOG l
             result->on_io_error = NULL;
             result->on_io_error_context = NULL;
 
-            result->logger_log = logger_log;
+            result->tlsio_state = TLSIO_STATE_NOT_OPEN;
 
             result->ssl_context = wolfSSL_CTX_new(wolfTLSv1_client_method());
             if (result->ssl_context == NULL)
@@ -314,41 +395,23 @@ CONCRETE_IO_HANDLE tlsio_wolfssl_create(void* io_create_parameters, LOGGER_LOG l
                 }
                 else
                 {
-                    result->socket_io = xio_create(socket_io_interface, &socketio_config, logger_log);
+                    SOCKETIO_CONFIG socketio_config;
+                    socketio_config.hostname = result->hostname;
+                    socketio_config.port = result->port;
+                    socketio_config.accepted_socket = NULL;
+
+                    result->socket_io = xio_create(socket_io_interface, &socketio_config);
                     if (result->socket_io == NULL)
                     {
+                        LogError("Failure connecting to underlying socket_io");
                         wolfSSL_CTX_free(result->ssl_context);
                         free(result);
                         result = NULL;
                     }
-                    else
-                    {
-                        result->ssl = wolfSSL_new(result->ssl_context);
-                        if (result->ssl == NULL)
-                        {
-                            wolfSSL_CTX_free(result->ssl_context);
-                            free(result);
-                            result = NULL;
-                        }
-                        else
-                        {
-                            result->socket_io_read_bytes = NULL;
-                            result->socket_io_read_byte_count = 0;
-                            result->on_send_complete = NULL;
-                            result->on_send_complete_callback_context = NULL;
-
-                            wolfSSL_set_using_nonblock(result->ssl, 1);
-                            wolfSSL_SetIOSend(result->ssl_context, on_io_send);
-                            wolfSSL_SetIORecv(result->ssl_context, on_io_recv);
-                            wolfSSL_SetHsDoneCb(result->ssl, on_handshake_done, result);
-                            wolfSSL_SetIOWriteCtx(result->ssl, result);
-                            wolfSSL_SetIOReadCtx(result->ssl, result);
-
-                            result->tlsio_state = TLSIO_STATE_NOT_OPEN;
-                        }
-                    }
                 }
             }
+
+
         }
     }
 
@@ -360,14 +423,17 @@ void tlsio_wolfssl_destroy(CONCRETE_IO_HANDLE tls_io)
     if (tls_io != NULL)
     {
         TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tls_io;
-        wolfSSL_free(tls_io_instance->ssl);
-        wolfSSL_CTX_free(tls_io_instance->ssl_context);
-
         if (tls_io_instance->socket_io_read_bytes != NULL)
         {
             free(tls_io_instance->socket_io_read_bytes);
         }
 
+        if (tls_io_instance->certificate != NULL)
+        {
+            free(tls_io_instance->certificate);
+            tls_io_instance->certificate = NULL;
+        }
+        wolfSSL_CTX_free(tls_io_instance->ssl_context);
         xio_destroy(tls_io_instance->socket_io);
         free(tls_io);
     }
@@ -387,6 +453,7 @@ int tlsio_wolfssl_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_open
 
         if (tls_io_instance->tlsio_state != TLSIO_STATE_NOT_OPEN)
         {
+            LogError("Invalid state encountered.");
             result = __LINE__;
         }
         else
@@ -402,24 +469,39 @@ int tlsio_wolfssl_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_open
 
             tls_io_instance->tlsio_state = TLSIO_STATE_OPENING_UNDERLYING_IO;
 
-            if (xio_open(tls_io_instance->socket_io, on_underlying_io_open_complete, tls_io_instance, on_underlying_io_bytes_received, tls_io_instance, on_underlying_io_error, tls_io_instance) != 0)
+            if (create_wolfssl_instance(tls_io_instance) != 0)
+            {
+                tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
+                result = __LINE__;
+            }
+            else if (xio_open(tls_io_instance->socket_io, on_underlying_io_open_complete, tls_io_instance, on_underlying_io_bytes_received, tls_io_instance, on_underlying_io_error, tls_io_instance) != 0)
             {
                 tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
                 result = __LINE__;
             }
             else
             {
-                int res;
-                tls_io_instance->tlsio_state = TLSIO_STATE_IN_HANDSHAKE;
-
-                res = wolfSSL_connect(tls_io_instance->ssl);
-                if (res != SSL_SUCCESS)
+                // The state can get changed in the on_underlying_io_open_complete
+                if (tls_io_instance->tlsio_state == TLSIO_STATE_ERROR)
                 {
+                    LogError("Failed to connect to server.  The certificates may not be correct.");
                     result = __LINE__;
                 }
                 else
                 {
-                    result = 0;
+                    int res;
+                    tls_io_instance->tlsio_state = TLSIO_STATE_IN_HANDSHAKE;
+                    res = wolfSSL_connect(tls_io_instance->ssl);
+                    if (res != SSL_SUCCESS)
+                    {
+                        LogError("Failed to connect to server.");
+                        tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
+                        result = __LINE__;
+                    }
+                    else
+                    {
+                        result = 0;
+                    }
                 }
             }
         }
@@ -457,6 +539,7 @@ int tlsio_wolfssl_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_cl
             }
             else
             {
+                destroy_wolfssl_instance(tls_io_instance);
                 result = 0;
             }
         }
@@ -535,13 +618,23 @@ int tlsio_wolfssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
 
         if (strcmp("TrustedCerts", optionName) == 0)
         {
-            int res = wolfSSL_CTX_load_verify_buffer(tls_io_instance->ssl_context, (const unsigned char*)value, strlen(value) + 1, SSL_FILETYPE_PEM);
-            if (res != SSL_SUCCESS)
+            const char* cert = (const char*)value;
+            if (tls_io_instance->certificate != NULL)
+            {
+                // Free the memory if it has been previously allocated
+                free(tls_io_instance->certificate);
+            }
+
+            // Store the certificate
+            size_t len = strlen(cert);
+            tls_io_instance->certificate = (const char*)malloc(len+1);
+            if (tls_io_instance->certificate == NULL)
             {
                 result = __LINE__;
             }
             else
             {
+                (void)strcpy(tls_io_instance->certificate, cert);
                 result = 0;
             }
         }

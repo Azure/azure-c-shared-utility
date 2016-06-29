@@ -264,14 +264,16 @@ int mallocAndStrcpy_s(char** destination, const char* source)
     else
     {
         size_t l = strlen(source);
-        *destination = (char*)malloc(l + 1);
+        char* temp = (char*)malloc(l + 1);
+        
         /*Codes_SRS_CRT_ABSTRACTIONS_99_037: [Upon failure to allocate memory for the destination, the function will return ENOMEM.]*/
-        if (*destination == NULL)
+        if (temp == NULL)
         {
             result = ENOMEM;
         }
         else
         {
+            *destination = temp;
             /*Codes_SRS_CRT_ABSTRACTIONS_99_039: [mallocAndstrcpy_s shall copy the contents in the address source, including the terminating null character into location specified by the destination pointer after the memory allocation.]*/
             int temp = strcpy_s(*destination, l + 1, source);
             if (temp < 0) /*strcpy_s error*/

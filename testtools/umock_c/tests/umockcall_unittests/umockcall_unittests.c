@@ -378,7 +378,7 @@ TEST_FUNCTION(umockcall_are_equal_with_the_same_call_for_both_args_returns_1)
 
     // assert
     ASSERT_ARE_EQUAL(int, 1, result);
-    ASSERT_ARE_EQUAL(int, 0, test_mock_call_data_are_equal_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, test_mock_call_data_are_equal_call_count);
 
     // cleanup
     umockcall_destroy(call);
@@ -397,7 +397,7 @@ TEST_FUNCTION(umockcall_are_equal_with_2_equal_calls_returns_1)
 
     // assert
     ASSERT_ARE_EQUAL(int, 1, result);
-    ASSERT_ARE_EQUAL(int, 1, test_mock_call_data_are_equal_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, test_mock_call_data_are_equal_call_count);
     ASSERT_ARE_EQUAL(void_ptr, (void*)0x4242, test_mock_call_data_are_equal_calls[0].left);
     ASSERT_ARE_EQUAL(void_ptr, (void*)0x4243, test_mock_call_data_are_equal_calls[0].right);
 
@@ -416,7 +416,7 @@ TEST_FUNCTION(when_left_and_right_are_NULL_umockcall_are_equal_returns_1)
 
     // assert
     ASSERT_ARE_EQUAL(int, 1, result);
-    ASSERT_ARE_EQUAL(int, 0, test_mock_call_data_are_equal_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, test_mock_call_data_are_equal_call_count);
 }
 
 /* Tests_SRS_UMOCKCALL_01_015: [ If only one of the left or right arguments are NULL, umockcall_are_equal shall return 0. ] */
@@ -430,7 +430,7 @@ TEST_FUNCTION(when_only_left_is_NULL_umockcall_are_equal_returns_0)
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(int, 0, test_mock_call_data_are_equal_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, test_mock_call_data_are_equal_call_count);
 
     // cleanup
     umockcall_destroy(call);
@@ -447,7 +447,7 @@ TEST_FUNCTION(when_only_right_is_NULL_umockcall_are_equal_returns_0)
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(int, 0, test_mock_call_data_are_equal_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, test_mock_call_data_are_equal_call_count);
 
     // cleanup
     umockcall_destroy(call);
@@ -467,7 +467,7 @@ TEST_FUNCTION(when_the_function_name_does_not_match_then_umockcall_are_equal_ret
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(int, 0, test_mock_call_data_are_equal_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, test_mock_call_data_are_equal_call_count);
 
     // cleanup
     umockcall_destroy(call1);
@@ -489,7 +489,7 @@ TEST_FUNCTION(when_the_underlying_are_equal_returns_0_umockcall_are_equal_return
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(int, 1, test_mock_call_data_are_equal_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, test_mock_call_data_are_equal_call_count);
     ASSERT_ARE_EQUAL(void_ptr, (void*)0x4242, test_mock_call_data_are_equal_calls[0].left);
     ASSERT_ARE_EQUAL(void_ptr, (void*)0x4243, test_mock_call_data_are_equal_calls[0].right);
 
@@ -512,7 +512,7 @@ TEST_FUNCTION(when_the_underlying_are_equal_returns_minus_1_umockcall_are_equal_
 
     // assert
     ASSERT_ARE_EQUAL(int, -1, result);
-    ASSERT_ARE_EQUAL(int, 1, test_mock_call_data_are_equal_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, test_mock_call_data_are_equal_call_count);
     ASSERT_ARE_EQUAL(void_ptr, (void*)0x4242, test_mock_call_data_are_equal_calls[0].left);
     ASSERT_ARE_EQUAL(void_ptr, (void*)0x4243, test_mock_call_data_are_equal_calls[0].right);
 
@@ -535,7 +535,7 @@ TEST_FUNCTION(when_the_underlying_are_equal_returns_2_umockcall_are_equal_return
 
     // assert
     ASSERT_ARE_EQUAL(int, -1, result);
-    ASSERT_ARE_EQUAL(int, 1, test_mock_call_data_are_equal_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, test_mock_call_data_are_equal_call_count);
     ASSERT_ARE_EQUAL(void_ptr, (void*)0x4242, test_mock_call_data_are_equal_calls[0].left);
     ASSERT_ARE_EQUAL(void_ptr, (void*)0x4243, test_mock_call_data_are_equal_calls[0].right);
 
@@ -558,7 +558,7 @@ TEST_FUNCTION(when_the_are_equal_function_pointers_are_different_umockcall_are_e
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(int, 0, test_mock_call_data_are_equal_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, test_mock_call_data_are_equal_call_count);
 
     // cleanup
     umockcall_destroy(call1);
@@ -583,7 +583,7 @@ TEST_FUNCTION(umockcall_stringify_calls_the_underlying_stringify_function_and_re
 
     // assert
     ASSERT_ARE_EQUAL(char_ptr, "[test_function()]", result);
-    ASSERT_ARE_EQUAL(int, 1, test_mock_call_data_stringify_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, test_mock_call_data_stringify_call_count);
 
     // cleanup
     free(result);
@@ -606,7 +606,7 @@ TEST_FUNCTION(umockcall_stringify_uses_the_stringified_args_as_obtained_from_the
 
     // assert
     ASSERT_ARE_EQUAL(char_ptr, "[test_function(45)]", result);
-    ASSERT_ARE_EQUAL(int, 1, test_mock_call_data_stringify_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, test_mock_call_data_stringify_call_count);
 
     // cleanup
     free(result);
@@ -638,7 +638,7 @@ TEST_FUNCTION(when_the_underlying_stringify_fails_then_umockcall_stringify_calls
 
     // assert
     ASSERT_IS_NULL(result);
-    ASSERT_ARE_EQUAL(int, 1, test_mock_call_data_stringify_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, test_mock_call_data_stringify_call_count);
 
     // cleanup
     umockcall_destroy(call);
@@ -658,8 +658,8 @@ TEST_FUNCTION(when_allocating_memory_fails_then_umockcall_stringify_fails)
 
     // assert
     ASSERT_IS_NULL(result);
-    ASSERT_ARE_EQUAL(int, 1, test_mock_call_data_stringify_call_count);
-    ASSERT_ARE_EQUAL(int, 1, free_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, test_mock_call_data_stringify_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, free_call_count);
 
     // cleanup
     umockcall_destroy(call);

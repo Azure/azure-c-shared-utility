@@ -7,7 +7,7 @@
 #endif
 
 #include "azure_c_shared_utility/lock.h"
-#include "azure_c_shared_utility/iot_logging.h"
+#include "azure_c_shared_utility/xlogging.h"
 #include <stdint.h>
 
 #ifndef SIZE_MAX

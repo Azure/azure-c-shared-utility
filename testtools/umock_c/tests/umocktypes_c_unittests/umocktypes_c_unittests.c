@@ -2996,7 +2996,7 @@ TEST_FUNCTION(umocktypes_c_register_types_registers_all_types)
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(int, 16, umocktypes_register_type_call_count);
+    ASSERT_ARE_EQUAL(size_t, 16, umocktypes_register_type_call_count);
     ASSERT_ARE_EQUAL(char_ptr, "char", umocktypes_register_type_calls[0].type);
     ASSERT_ARE_EQUAL(char_ptr, "unsigned char", umocktypes_register_type_calls[1].type);
     ASSERT_ARE_EQUAL(char_ptr, "short", umocktypes_register_type_calls[2].type);
@@ -3040,7 +3040,7 @@ TEST_FUNCTION(when_the_underlying_register_fails_umocktypes_c_register_types_fai
 
         // assert
         ASSERT_ARE_NOT_EQUAL(int, 0, result);
-        ASSERT_ARE_EQUAL(int, i + 1, umocktypes_register_type_call_count);
+        ASSERT_ARE_EQUAL(size_t, i + 1, umocktypes_register_type_call_count);
     }
 }
 

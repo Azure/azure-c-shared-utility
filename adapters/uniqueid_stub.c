@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include "azure_c_shared_utility/uniqueid.h"
-#include "azure_c_shared_utility/iot_logging.h"
+#include "azure_c_shared_utility/xlogging.h"
 #include <time.h>
 
 DEFINE_ENUM_STRINGS(UNIQUEID_RESULT, UNIQUEID_RESULT_VALUES);

@@ -694,7 +694,7 @@ TEST_FUNCTION(IgnoreArgument_by_index_with_index_0_triggers_the_on_error_callbac
         .IgnoreArgument(0);
 
     // assert
-    ASSERT_ARE_EQUAL(int, 1, test_on_umock_c_error_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, test_on_umock_c_error_call_count);
     ASSERT_ARE_EQUAL(int, (int)UMOCK_C_ARG_INDEX_OUT_OF_RANGE, test_on_umock_c_error_calls[0].error_code);
 }
 
@@ -708,7 +708,7 @@ TEST_FUNCTION(IgnoreArgument_by_index_with_index_greater_than_arg_count_triggers
         .IgnoreArgument(3);
 
     // assert
-    ASSERT_ARE_EQUAL(int, 1, test_on_umock_c_error_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, test_on_umock_c_error_call_count);
     ASSERT_ARE_EQUAL(int, (int)UMOCK_C_ARG_INDEX_OUT_OF_RANGE, test_on_umock_c_error_calls[0].error_code);
 }
 
@@ -784,7 +784,7 @@ TEST_FUNCTION(ValidateArgument_by_index_with_0_index_triggers_the_on_error_callb
         .ValidateArgument(0);
 
     // assert
-    ASSERT_ARE_EQUAL(int, 1, test_on_umock_c_error_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, test_on_umock_c_error_call_count);
     ASSERT_ARE_EQUAL(int, (int)UMOCK_C_ARG_INDEX_OUT_OF_RANGE, test_on_umock_c_error_calls[0].error_code);
 }
 
@@ -798,7 +798,7 @@ TEST_FUNCTION(ValidateArgument_by_index_with_index_greater_than_arg_count_trigge
         .ValidateArgument(3);
 
     // assert
-    ASSERT_ARE_EQUAL(int, 1, test_on_umock_c_error_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, test_on_umock_c_error_call_count);
     ASSERT_ARE_EQUAL(int, (int)UMOCK_C_ARG_INDEX_OUT_OF_RANGE, test_on_umock_c_error_calls[0].error_code);
 }
 
@@ -988,7 +988,7 @@ TEST_FUNCTION(CopyOutArgumentBuffer_with_0_index_triggers_the_error_callback)
         .CopyOutArgumentBuffer(0, &injected_int, sizeof(injected_int));
 
     // assert
-    ASSERT_ARE_EQUAL(int, 1, test_on_umock_c_error_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, test_on_umock_c_error_call_count);
     ASSERT_ARE_EQUAL(int, (int)UMOCK_C_ARG_INDEX_OUT_OF_RANGE, test_on_umock_c_error_calls[0].error_code);
 }
 
@@ -1003,7 +1003,7 @@ TEST_FUNCTION(CopyOutArgumentBuffer_with_index_higher_than_count_of_args_trigger
         .CopyOutArgumentBuffer(2, &injected_int, sizeof(injected_int));
 
     // assert
-    ASSERT_ARE_EQUAL(int, 1, test_on_umock_c_error_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, test_on_umock_c_error_call_count);
     ASSERT_ARE_EQUAL(int, (int)UMOCK_C_ARG_INDEX_OUT_OF_RANGE, test_on_umock_c_error_calls[0].error_code);
 }
 
@@ -1017,7 +1017,7 @@ TEST_FUNCTION(CopyOutArgumentBuffer_with_NULL_bytes_triggers_the_error_callback)
         .CopyOutArgumentBuffer(1, NULL, sizeof(int));
 
     // assert
-    ASSERT_ARE_EQUAL(int, 1, test_on_umock_c_error_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, test_on_umock_c_error_call_count);
     ASSERT_ARE_EQUAL(int, (int)UMOCK_C_INVALID_ARGUMENT_BUFFER, test_on_umock_c_error_calls[0].error_code);
 }
 
@@ -1032,7 +1032,7 @@ TEST_FUNCTION(CopyOutArgumentBuffer_with_0_length_triggers_the_error_callback)
         .CopyOutArgumentBuffer(1, &injected_int, 0);
 
     // assert
-    ASSERT_ARE_EQUAL(int, 1, test_on_umock_c_error_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, test_on_umock_c_error_call_count);
     ASSERT_ARE_EQUAL(int, (int)UMOCK_C_INVALID_ARGUMENT_BUFFER, test_on_umock_c_error_calls[0].error_code);
 }
 
@@ -1176,7 +1176,7 @@ TEST_FUNCTION(CopyOutArgumentBuffer_arg_name_with_NULL_bytes_triggers_the_error_
         .CopyOutArgumentBuffer_a(NULL, sizeof(int));
 
     // assert
-    ASSERT_ARE_EQUAL(int, 1, test_on_umock_c_error_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, test_on_umock_c_error_call_count);
     ASSERT_ARE_EQUAL(int, (int)UMOCK_C_INVALID_ARGUMENT_BUFFER, test_on_umock_c_error_calls[0].error_code);
 }
 
@@ -1191,7 +1191,7 @@ TEST_FUNCTION(CopyOutArgumentBuffer_arg_name_with_0_length_triggers_the_error_ca
         .CopyOutArgumentBuffer_a(&injected_int, 0);
 
     // assert
-    ASSERT_ARE_EQUAL(int, 1, test_on_umock_c_error_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, test_on_umock_c_error_call_count);
     ASSERT_ARE_EQUAL(int, (int)UMOCK_C_INVALID_ARGUMENT_BUFFER, test_on_umock_c_error_calls[0].error_code);
 }
 
@@ -1326,7 +1326,7 @@ TEST_FUNCTION(ValidateArgumentBuffer_with_0_index_triggers_an_error)
     test_dependency_buffer_arg(actual_buffer);
 
     // assert
-    ASSERT_ARE_EQUAL(int, 1, test_on_umock_c_error_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, test_on_umock_c_error_call_count);
     ASSERT_ARE_EQUAL(int, (int)UMOCK_C_ARG_INDEX_OUT_OF_RANGE, test_on_umock_c_error_calls[0].error_code);
 }
 
@@ -1343,7 +1343,7 @@ TEST_FUNCTION(ValidateArgumentBuffer_with_index_higher_than_the_Arg_count_trigge
     test_dependency_buffer_arg(actual_buffer);
 
     // assert
-    ASSERT_ARE_EQUAL(int, 1, test_on_umock_c_error_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, test_on_umock_c_error_call_count);
     ASSERT_ARE_EQUAL(int, (int)UMOCK_C_ARG_INDEX_OUT_OF_RANGE, test_on_umock_c_error_calls[0].error_code);
 }
 
@@ -1357,7 +1357,7 @@ TEST_FUNCTION(ValidateArgumentBuffer_with_NULL_buffer_triggers_the_error_callbac
         .ValidateArgumentBuffer(1, NULL, 1);
 
     // assert
-    ASSERT_ARE_EQUAL(int, 1, test_on_umock_c_error_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, test_on_umock_c_error_call_count);
     ASSERT_ARE_EQUAL(int, (int)UMOCK_C_INVALID_ARGUMENT_BUFFER, test_on_umock_c_error_calls[0].error_code);
 }
 
@@ -1372,7 +1372,7 @@ TEST_FUNCTION(ValidateArgumentBuffer_with_0_length_triggers_the_error_callback)
         .ValidateArgumentBuffer(1, expected_buffer, 0);
 
     // assert
-    ASSERT_ARE_EQUAL(int, 1, test_on_umock_c_error_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, test_on_umock_c_error_call_count);
     ASSERT_ARE_EQUAL(int, (int)UMOCK_C_INVALID_ARGUMENT_BUFFER, test_on_umock_c_error_calls[0].error_code);
 }
 
@@ -1720,7 +1720,7 @@ TEST_FUNCTION(native_c_types_are_supported)
     // assert
     ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_expected_calls());
     ASSERT_ARE_EQUAL(char_ptr, "", umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(int, 0, test_on_umock_c_error_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, test_on_umock_c_error_call_count);
 }
 
 /* Tests_SRS_UMOCK_C_LIB_01_148: [ If call comparison fails an error shall be indicated by calling the error callback with UMOCK_C_COMPARE_CALL_ERROR. ]*/
@@ -1735,7 +1735,7 @@ TEST_FUNCTION(when_a_type_is_not_supported_an_error_is_triggered)
     test_dependency_type_not_registered(a);
 
     // assert
-    ASSERT_ARE_EQUAL(int, 1, test_on_umock_c_error_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, test_on_umock_c_error_call_count);
 }
 
 /* Call comparison rules */
@@ -2029,7 +2029,7 @@ TEST_FUNCTION(capture_return_twice_captures_the_return_value_in_the_pointer_indi
     test_dependency_for_capture_return();
 
     // assert
-    ASSERT_ARE_EQUAL(int, 1, test_on_umock_c_error_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, test_on_umock_c_error_call_count);
     ASSERT_ARE_EQUAL(UMOCK_C_ERROR_CODE, UMOCK_C_CAPTURE_RETURN_ALREADY_USED, test_on_umock_c_error_calls[0].error_code);
 }
 
@@ -2044,7 +2044,7 @@ TEST_FUNCTION(capture_return_with_NULL_argument_indicates_an_error)
     test_dependency_for_capture_return();
 
     // assert
-    ASSERT_ARE_EQUAL(int, 1, test_on_umock_c_error_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, test_on_umock_c_error_call_count);
     ASSERT_ARE_EQUAL(UMOCK_C_ERROR_CODE, UMOCK_C_NULL_ARGUMENT, test_on_umock_c_error_calls[0].error_code);
 }
 
@@ -2164,7 +2164,7 @@ TEST_FUNCTION(validate_argument_value_with_NULL_value_triggers_an_error)
         .ValidateArgumentValue_s(NULL);
 
     // assert
-    ASSERT_ARE_EQUAL(int, 1, test_on_umock_c_error_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, test_on_umock_c_error_call_count);
     ASSERT_ARE_EQUAL(int, (int)UMOCK_C_NULL_ARGUMENT, test_on_umock_c_error_calls[0].error_code);
 }
 

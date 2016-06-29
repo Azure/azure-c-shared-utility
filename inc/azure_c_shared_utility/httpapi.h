@@ -47,6 +47,7 @@ HTTPAPI_STRING_PROCESSING_ERROR,             \
 HTTPAPI_ALLOC_FAILED,                        \
 HTTPAPI_INIT_FAILED,                         \
 HTTPAPI_INSUFFICIENT_RESPONSE_BUFFER,        \
+HTTPAPI_SET_X509_FAILURE,                    \
 HTTPAPI_SET_TIMEOUTS_FAILED                  \
 
 /** @brief Enumeration specifying the possible return values for the APIs in  

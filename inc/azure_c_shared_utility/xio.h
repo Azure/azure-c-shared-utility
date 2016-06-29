@@ -37,7 +37,7 @@ typedef void(*ON_IO_OPEN_COMPLETE)(void* context, IO_OPEN_RESULT open_result);
 typedef void(*ON_IO_CLOSE_COMPLETE)(void* context);
 typedef void(*ON_IO_ERROR)(void* context);
 
-typedef CONCRETE_IO_HANDLE(*IO_CREATE)(void* io_create_parameters, LOGGER_LOG logger_log);
+typedef CONCRETE_IO_HANDLE(*IO_CREATE)(void* io_create_parameters);
 typedef void(*IO_DESTROY)(CONCRETE_IO_HANDLE concrete_io);
 typedef int(*IO_OPEN)(CONCRETE_IO_HANDLE concrete_io, ON_IO_OPEN_COMPLETE on_io_open_complete, void* on_io_open_complete_context, ON_BYTES_RECEIVED on_bytes_received, void* on_bytes_received_context, ON_IO_ERROR on_io_error, void* on_io_error_context);
 typedef int(*IO_CLOSE)(CONCRETE_IO_HANDLE concrete_io, ON_IO_CLOSE_COMPLETE on_io_close_complete, void* callback_context);
@@ -56,7 +56,7 @@ typedef struct IO_INTERFACE_DESCRIPTION_TAG
     IO_SETOPTION concrete_io_setoption;
 } IO_INTERFACE_DESCRIPTION;
 
-MOCKABLE_FUNCTION(, XIO_HANDLE, xio_create, const IO_INTERFACE_DESCRIPTION*, io_interface_description, const void*, io_create_parameters, LOGGER_LOG, logger_log);
+MOCKABLE_FUNCTION(, XIO_HANDLE, xio_create, const IO_INTERFACE_DESCRIPTION*, io_interface_description, const void*, io_create_parameters);
 MOCKABLE_FUNCTION(, void, xio_destroy, XIO_HANDLE, xio);
 MOCKABLE_FUNCTION(, int, xio_open, XIO_HANDLE, xio, ON_IO_OPEN_COMPLETE, on_io_open_complete, void*, on_io_open_complete_context, ON_BYTES_RECEIVED, on_bytes_received, void*, on_bytes_received_context, ON_IO_ERROR, on_io_error, void*, on_io_error_context);
 MOCKABLE_FUNCTION(, int, xio_close, XIO_HANDLE, xio, ON_IO_CLOSE_COMPLETE, on_io_close_complete, void*, callback_context);

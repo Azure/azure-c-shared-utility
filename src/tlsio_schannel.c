@@ -17,7 +17,7 @@
 #include "windows.h"
 #include "sspi.h"
 #include "schannel.h"
-#include "azure_c_shared_utility/iot_logging.h"
+#include "azure_c_shared_utility/xlogging.h"
 
 typedef enum TLSIO_STATE_TAG
 {
@@ -41,7 +41,6 @@ typedef struct TLS_IO_INSTANCE_TAG
     void* on_io_close_complete_context;
     void* on_bytes_received_context;
     void* on_io_error_context;
-    LOGGER_LOG logger_log;
     CtxtHandle security_context;
     TLSIO_STATE tlsio_state;
     SEC_CHAR* host_name;
@@ -226,8 +225,6 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
     TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)context;
     size_t consumed_bytes;
 
-    LOG(tls_io_instance->logger_log, LOG_LINE, "%d received on tls_schannel", size);
-
     if (resize_receive_buffer(tls_io_instance, tls_io_instance->received_byte_count + size) == 0)
     {
         memcpy(tls_io_instance->received_bytes + tls_io_instance->received_byte_count, buffer, size);
@@ -252,7 +249,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                 ULONG context_attributes;
 
                 /* we need to try and perform the second (next) step of the init */
-                input_buffers[0].cbBuffer = tls_io_instance->received_byte_count;
+                input_buffers[0].cbBuffer = (unsigned long)tls_io_instance->received_byte_count;
                 input_buffers[0].BufferType = SECBUFFER_TOKEN;
                 input_buffers[0].pvBuffer = (void*)tls_io_instance->received_bytes;
                 input_buffers[1].cbBuffer = 0;
@@ -408,7 +405,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
 
                 security_buffers[0].BufferType = SECBUFFER_DATA;
                 security_buffers[0].pvBuffer = tls_io_instance->received_bytes;
-                security_buffers[0].cbBuffer = tls_io_instance->received_byte_count;
+                security_buffers[0].cbBuffer = (unsigned long)tls_io_instance->received_byte_count;
                 security_buffers[1].BufferType = SECBUFFER_EMPTY;
                 security_buffers[2].BufferType = SECBUFFER_EMPTY;
                 security_buffers[3].BufferType = SECBUFFER_EMPTY;
@@ -445,16 +442,6 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                     }
                     else
                     {
-                        size_t i;
-                        if (tls_io_instance->logger_log)
-                        {
-                            for (i = 0; i < security_buffers[1].cbBuffer; i++)
-                            {
-                                LOG(tls_io_instance->logger_log, 0, "-> %02x ", ((unsigned char*)security_buffers[1].pvBuffer)[i]);
-                            }
-                            LOG(tls_io_instance->logger_log, LOG_LINE, "");
-                        }
-
                         /* notify of the received data */
                         if (tls_io_instance->on_bytes_received != NULL)
                         {
@@ -463,9 +450,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
 
                         consumed_bytes = tls_io_instance->received_byte_count;
 
-                        LOG(tls_io_instance->logger_log, LOG_LINE, "%d consumed", tls_io_instance->received_byte_count);
-
-                        for (i = 0; i < sizeof(security_buffers) / sizeof(security_buffers[0]); i++)
+                        for (size_t i = 0; i < sizeof(security_buffers) / sizeof(security_buffers[0]); i++)
                         {
                             /* Any extra bytes left over or did we fully consume the receive buffer? */
                             if (security_buffers[i].BufferType == SECBUFFER_EXTRA)
@@ -553,7 +538,7 @@ static void on_underlying_io_error(void* context)
     }
 }
 
-CONCRETE_IO_HANDLE tlsio_schannel_create(void* io_create_parameters, LOGGER_LOG logger_log)
+CONCRETE_IO_HANDLE tlsio_schannel_create(void* io_create_parameters)
 {
     TLSIO_CONFIG* tls_io_config = io_create_parameters;
     TLS_IO_INSTANCE* result;
@@ -577,7 +562,6 @@ CONCRETE_IO_HANDLE tlsio_schannel_create(void* io_create_parameters, LOGGER_LOG 
             result->on_io_open_complete = NULL;
             result->on_io_close_complete = NULL;
             result->on_io_error = NULL;
-            result->logger_log = logger_log;
             result->on_io_open_complete_context = NULL;
             result->on_io_close_complete_context = NULL;
             result->on_bytes_received_context = NULL;
@@ -603,7 +587,7 @@ CONCRETE_IO_HANDLE tlsio_schannel_create(void* io_create_parameters, LOGGER_LOG 
                 }
                 else
                 {
-                    result->socket_io = xio_create(socket_io_interface, &socketio_config, logger_log);
+                    result->socket_io = xio_create(socket_io_interface, &socketio_config);
                     if (result->socket_io == NULL)
                     {
                         free(result->host_name);
@@ -770,7 +754,7 @@ static int send_chunk(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t size
                     security_buffers[0].cbBuffer = sizes.cbHeader;
                     security_buffers[0].pvBuffer = out_buffer;
                     security_buffers[1].BufferType = SECBUFFER_DATA;
-                    security_buffers[1].cbBuffer = size;
+                    security_buffers[1].cbBuffer = (unsigned long)size;
                     security_buffers[1].pvBuffer = out_buffer + sizes.cbHeader;
                     security_buffers[2].BufferType = SECBUFFER_STREAM_TRAILER;
                     security_buffers[2].cbBuffer = sizes.cbTrailer;
@@ -796,13 +780,6 @@ static int send_chunk(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t size
                         }
                         else
                         {
-                            size_t i;
-                            for (i = 0; i < size; i++)
-                            {
-                                LOG(tls_io_instance->logger_log, 0, "%02x-> ", ((unsigned char*)buffer)[i]);
-                            }
-                            LOG(tls_io_instance->logger_log, LOG_LINE, "");
-
                             result = 0;
                         }
                     }

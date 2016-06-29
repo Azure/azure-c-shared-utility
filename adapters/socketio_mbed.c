@@ -12,7 +12,7 @@
 #include "azure_c_shared_utility/socketio.h"
 #include "azure_c_shared_utility/list.h"
 #include "azure_c_shared_utility/tcpsocketconnection_c.h"
-#include "azure_c_shared_utility/iot_logging.h"
+#include "azure_c_shared_utility/xlogging.h"
 
 #define UNABLE_TO_COMPLETE -2
 #define MBED_RECEIVE_BYTES_VALUE    128
@@ -38,7 +38,6 @@ typedef struct PENDING_SOCKET_IO_TAG
 typedef struct SOCKET_IO_INSTANCE_TAG
 {
     TCPSOCKETCONNECTION_HANDLE tcp_socket_connection;
-    LOGGER_LOG logger_log;
     ON_BYTES_RECEIVED on_bytes_received;
     ON_IO_ERROR on_io_error;
     void* on_bytes_received_context;
@@ -108,7 +107,7 @@ static int add_pending_io(SOCKET_IO_INSTANCE* socket_io_instance, const unsigned
     return result;
 }
 
-CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters, LOGGER_LOG logger_log)
+CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters)
 {
     SOCKETIO_CONFIG* socket_io_config = io_create_parameters;
     SOCKET_IO_INSTANCE* result;
@@ -143,7 +142,6 @@ CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters, LOGGER_LOG logger
                     result->port = socket_io_config->port;
                     result->on_bytes_received = NULL;
                     result->on_io_error = NULL;
-                    result->logger_log = logger_log;
                     result->on_bytes_received_context = NULL;
                     result->on_io_error_context = NULL;
                     result->io_state = IO_STATE_CLOSED;
@@ -326,12 +324,6 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
                     if (on_send_complete != NULL)
                     {
                         on_send_complete(callback_context, IO_SEND_OK);
-                    }
-
-                    size_t i;
-                    for (i = 0; i < size; i++)
-                    {
-                        LOG(socket_io_instance->logger_log, 0, "%02x-> ", ((unsigned char*)buffer)[i]);
                     }
 
                     result = 0;

@@ -374,7 +374,7 @@ TEST_FUNCTION(umocktypes_bool_register_types_registers_all_types)
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(int, 2, umocktypes_register_type_call_count);
+    ASSERT_ARE_EQUAL(size_t, 2, umocktypes_register_type_call_count);
     ASSERT_ARE_EQUAL(char_ptr, "bool", umocktypes_register_type_calls[0].type);
     ASSERT_ARE_EQUAL(char_ptr, "_Bool", umocktypes_register_type_calls[1].type);
     
@@ -404,7 +404,7 @@ TEST_FUNCTION(when_the_underlying_register_fails_umocktypes_bool_register_types_
 
         // assert
         ASSERT_ARE_NOT_EQUAL(int, 0, result);
-        ASSERT_ARE_EQUAL(int, i + 1, umocktypes_register_type_call_count);
+        ASSERT_ARE_EQUAL(size_t, i + 1, umocktypes_register_type_call_count);
     }
 }
 

@@ -15,7 +15,7 @@
 
 #include <stdbool.h>
 #include "azure_c_shared_utility/string_tokenizer.h"
-#include "azure_c_shared_utility/iot_logging.h"
+#include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
 
 typedef struct STRING_TOKEN_TAG

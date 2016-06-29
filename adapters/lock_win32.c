@@ -4,7 +4,7 @@
 #include "azure_c_shared_utility/lock.h"
 #include <windows.h>
 #include <stdlib.h>
-#include "azure_c_shared_utility/iot_logging.h"
+#include "azure_c_shared_utility/xlogging.h"
 
 #ifdef WINCE
 const char* Lock_ResultAsString[] = { "OK", "ERROR" };

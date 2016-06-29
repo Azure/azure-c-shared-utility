@@ -398,12 +398,6 @@ TEST_FUNCTION_CLEANUP(method_cleanup)
     TEST_MUTEX_RELEASE(g_testByTest);
 }
 
-static void PrintLogFunction(unsigned int options, char* format, ...)
-{
-    (void)options;
-    (void)format;
-}
-
 static void OnSendComplete(void* context, IO_SEND_RESULT send_result)
 {
     (void)context;
@@ -416,7 +410,7 @@ TEST_FUNCTION(socketio_create_io_create_parameters_NULL_fails)
     // arrange
 
     // act
-    CONCRETE_IO_HANDLE ioHandle = socketio_create(NULL, PrintLogFunction);
+    CONCRETE_IO_HANDLE ioHandle = socketio_create(NULL);
 
     // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -433,7 +427,7 @@ TEST_FUNCTION(socketio_create_list_create_fails)
     SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
 
     // act
-    CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
+    CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig);
 
     // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -450,7 +444,7 @@ TEST_FUNCTION(socketio_create_succeeds)
     SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
 
     // act
-    CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
+    CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig);
 
     // assert
     ASSERT_IS_NOT_NULL(ioHandle);
@@ -475,7 +469,7 @@ TEST_FUNCTION(socketio_destroy_socket_succeeds)
 {
     // arrange
     SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
-    CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
+    CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig);
     socketio_open(ioHandle, test_on_io_open_complete, &callbackContext, test_on_bytes_received, &callbackContext, test_on_io_error, &callbackContext);
 
     umock_c_reset_all_calls();
@@ -525,7 +519,7 @@ TEST_FUNCTION(socketio_open_socket_fails)
 {
     // arrange
     SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
-    CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
+    CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig);
 
     umock_c_reset_all_calls();
 
@@ -548,7 +542,7 @@ TEST_FUNCTION(socketio_open_getaddrinfo_fails)
 {
     // arrange
     SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
-    CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
+    CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig);
 
     umock_c_reset_all_calls();
 
@@ -573,7 +567,7 @@ TEST_FUNCTION(socketio_open_connect_fails)
 {
     // arrange
     SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
-    CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
+    CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig);
 
     umock_c_reset_all_calls();
 
@@ -600,7 +594,7 @@ TEST_FUNCTION(socketio_open_ioctlsocket_fails)
 {
     // arrange
     SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
-    CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
+    CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig);
     static ADDRINFO addrInfo = { AI_PASSIVE, AF_INET, SOCK_STREAM, IPPROTO_TCP, 128, NULL, (struct sockaddr*)0x11, NULL };
 
     umock_c_reset_all_calls();
@@ -629,7 +623,7 @@ TEST_FUNCTION(socketio_open_succeeds)
 {
     // arrange
     SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
-    CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
+    CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig);
 
     umock_c_reset_all_calls();
 
@@ -664,7 +658,7 @@ TEST_FUNCTION(socketio_close_Succeeds)
 {
     // arrange
     SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
-    CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
+    CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig);
     static ADDRINFO addrInfo = { AI_PASSIVE, AF_INET, SOCK_STREAM, IPPROTO_TCP, 128, NULL, (struct sockaddr*)0x11, NULL };
 
     int result = socketio_open(ioHandle, test_on_io_open_complete, &callbackContext, test_on_bytes_received, &callbackContext, test_on_io_error, &callbackContext);
@@ -699,7 +693,7 @@ TEST_FUNCTION(socketio_send_buffer_NULL_fails)
 {
     // arrange
     SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
-    CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
+    CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig);
     static ADDRINFO addrInfo = { AI_PASSIVE, AF_INET, SOCK_STREAM, IPPROTO_TCP, 128, NULL, (struct sockaddr*)0x11, NULL };
 
     int result = socketio_open(ioHandle, test_on_io_open_complete, &callbackContext, test_on_bytes_received, &callbackContext, test_on_io_error, &callbackContext);
@@ -721,7 +715,7 @@ TEST_FUNCTION(socketio_send_size_zero_fails)
 {
     // arrange
     SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
-    CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
+    CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig);
     static ADDRINFO addrInfo = { AI_PASSIVE, AF_INET, SOCK_STREAM, IPPROTO_TCP, 128, NULL, (struct sockaddr*)0x11, NULL };
 
     int result = socketio_open(ioHandle, test_on_io_open_complete, &callbackContext, test_on_bytes_received, &callbackContext, test_on_io_error, &callbackContext);
@@ -743,7 +737,7 @@ TEST_FUNCTION(socketio_send_succeeds)
 {
     // arrange
     SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
-    CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
+    CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig);
     static ADDRINFO addrInfo = { AI_PASSIVE, AF_INET, SOCK_STREAM, IPPROTO_TCP, 128, NULL, (struct sockaddr*)0x11, NULL };
 
     int result = socketio_open(ioHandle, test_on_io_open_complete, &callbackContext, test_on_bytes_received, &callbackContext, test_on_io_error, &callbackContext);
@@ -768,7 +762,7 @@ TEST_FUNCTION(socketio_send_returns_1_succeeds)
 {
     // arrange
     SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
-    CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
+    CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig);
     static ADDRINFO addrInfo = { AI_PASSIVE, AF_INET, SOCK_STREAM, IPPROTO_TCP, 128, NULL, (struct sockaddr*)0x11, NULL };
 
     int result = socketio_open(ioHandle, test_on_io_open_complete, &callbackContext, test_on_bytes_received, &callbackContext, test_on_io_error, &callbackContext);
@@ -808,7 +802,7 @@ TEST_FUNCTION(socketio_dowork_succeeds)
 {
     // arrange
     SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
-    CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
+    CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig);
 
     int result = socketio_open(ioHandle, test_on_io_open_complete, &callbackContext, test_on_bytes_received, &callbackContext, test_on_io_error, &callbackContext);
 
@@ -833,7 +827,7 @@ TEST_FUNCTION(socketio_dowork_recv_bytes_succeeds)
 {
     // arrange
     SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
-    CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
+    CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig);
 
     int result = socketio_open(ioHandle, test_on_io_open_complete, &callbackContext, test_on_bytes_received, &callbackContext, test_on_io_error, &callbackContext);
 
@@ -864,7 +858,7 @@ TEST_FUNCTION(socketio_dowork_recv_bytes_succeeds)
 static CONCRETE_IO_HANDLE setup_socket()
 {
     SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
-    CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
+    CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig);
     int result = socketio_open(ioHandle, test_on_io_open_complete, &callbackContext, test_on_bytes_received, &callbackContext, test_on_io_error, &callbackContext);
     ASSERT_ARE_EQUAL(int, 0, result);
     return ioHandle;

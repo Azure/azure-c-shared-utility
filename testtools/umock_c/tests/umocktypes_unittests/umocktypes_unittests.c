@@ -484,7 +484,7 @@ TEST_FUNCTION(umocktypes_register_type_when_module_is_initialized_succeeds)
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(int, 1, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, umocktypename_normalize_call_count);
     ASSERT_ARE_EQUAL(char_ptr, "testtype", umocktypename_normalize_calls[0].type_name);
 }
 
@@ -499,7 +499,7 @@ TEST_FUNCTION(umocktypes_register_type_with_NULL_type_fails)
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(int, 0, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, umocktypename_normalize_call_count);
 }
 
 /* Tests_SRS_UMOCKTYPES_01_009: [ If any of the arguments is NULL, umocktypes_register_type shall fail and return a non-zero value. ]*/
@@ -513,7 +513,7 @@ TEST_FUNCTION(umocktypes_register_type_with_NULL_stringify_function_fails)
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(int, 0, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, umocktypename_normalize_call_count);
 }
 
 /* Tests_SRS_UMOCKTYPES_01_009: [ If any of the arguments is NULL, umocktypes_register_type shall fail and return a non-zero value. ]*/
@@ -527,7 +527,7 @@ TEST_FUNCTION(umocktypes_register_type_with_NULL_are_equal_function_fails)
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(int, 0, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, umocktypename_normalize_call_count);
 }
 
 /* Tests_SRS_UMOCKTYPES_01_009: [ If any of the arguments is NULL, umocktypes_register_type shall fail and return a non-zero value. ]*/
@@ -541,7 +541,7 @@ TEST_FUNCTION(umocktypes_register_type_with_NULL_copy_function_fails)
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(int, 0, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, umocktypename_normalize_call_count);
 }
 
 /* Tests_SRS_UMOCKTYPES_01_009: [ If any of the arguments is NULL, umocktypes_register_type shall fail and return a non-zero value. ]*/
@@ -555,7 +555,7 @@ TEST_FUNCTION(umocktypes_register_type_with_NULL_free_function_fails)
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(int, 0, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, umocktypename_normalize_call_count);
 }
 
 /* Tests_SRS_UMOCKTYPES_01_010: [ If the type has already been registered with the same function pointers then umocktypes_register_type shall succeed and return 0. ]*/
@@ -574,7 +574,7 @@ TEST_FUNCTION(umocktypes_register_type_2_times_on_the_same_type_with_the_same_fu
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(int, 1, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, umocktypename_normalize_call_count);
     ASSERT_ARE_EQUAL(char_ptr, "testtype", umocktypename_normalize_calls[0].type_name);
 }
 
@@ -594,7 +594,7 @@ TEST_FUNCTION(umocktypes_register_type_2_times_on_the_same_type_with_different_s
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(int, 1, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, umocktypename_normalize_call_count);
     ASSERT_ARE_EQUAL(char_ptr, "testtype", umocktypename_normalize_calls[0].type_name);
 }
 
@@ -614,7 +614,7 @@ TEST_FUNCTION(umocktypes_register_type_2_times_on_the_same_type_with_different_a
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(int, 1, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, umocktypename_normalize_call_count);
     ASSERT_ARE_EQUAL(char_ptr, "testtype", umocktypename_normalize_calls[0].type_name);
 }
 
@@ -634,7 +634,7 @@ TEST_FUNCTION(umocktypes_register_type_2_times_on_the_same_type_with_different_c
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(int, 1, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, umocktypename_normalize_call_count);
     ASSERT_ARE_EQUAL(char_ptr, "testtype", umocktypename_normalize_calls[0].type_name);
 }
 
@@ -654,7 +654,7 @@ TEST_FUNCTION(umocktypes_register_type_2_times_on_the_same_type_with_different_f
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(int, 1, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, umocktypename_normalize_call_count);
     ASSERT_ARE_EQUAL(char_ptr, "testtype", umocktypename_normalize_calls[0].type_name);
 }
 
@@ -671,7 +671,7 @@ TEST_FUNCTION(when_normalizing_the_type_fails_umocktypes_register_type_fails)
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(int, 1, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, umocktypename_normalize_call_count);
     ASSERT_ARE_EQUAL(char_ptr, "char  *", umocktypename_normalize_calls[0].type_name);
 }
 
@@ -842,9 +842,9 @@ TEST_FUNCTION(umocktypes_stringify_calls_the_underlying_stringify)
 
     // assert
     ASSERT_ARE_EQUAL(char_ptr, "blahblah", result);
-    ASSERT_ARE_EQUAL(int, 1, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, umocktypename_normalize_call_count);
     ASSERT_ARE_EQUAL(char_ptr, "char *", umocktypename_normalize_calls[0].type_name);
-    ASSERT_ARE_EQUAL(int, 1, test_stringify_func_testtype_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, test_stringify_func_testtype_call_count);
     ASSERT_ARE_EQUAL(void_ptr, test_value_1, test_stringify_func_testtype_calls[0].value);
 
     // cleanup
@@ -948,9 +948,9 @@ TEST_FUNCTION(umocktypes_stringify_with_an_unregistered_pointer_type_defaults_to
 
     // assert
     ASSERT_ARE_EQUAL(char_ptr, "blahblah", result);
-    ASSERT_ARE_EQUAL(int, 1, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, umocktypename_normalize_call_count);
     ASSERT_ARE_EQUAL(char_ptr, "char  *", umocktypename_normalize_calls[0].type_name);
-    ASSERT_ARE_EQUAL(int, 1, test_stringify_func_testtype_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, test_stringify_func_testtype_call_count);
     ASSERT_ARE_EQUAL(void_ptr, test_value_1, test_stringify_func_testtype_calls[0].value);
 
     // cleanup
@@ -974,9 +974,9 @@ TEST_FUNCTION(umocktypes_stringify_with_an_unregistered_non_pointer_type_fails)
 
     // assert
     ASSERT_IS_NULL(result);
-    ASSERT_ARE_EQUAL(int, 1, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, umocktypename_normalize_call_count);
     ASSERT_ARE_EQUAL(char_ptr, "char", umocktypename_normalize_calls[0].type_name);
-    ASSERT_ARE_EQUAL(int, 0, test_stringify_func_testtype_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, test_stringify_func_testtype_call_count);
 }
 
 /* umocktypes_are_equal */
@@ -1000,9 +1000,9 @@ TEST_FUNCTION(umocktypes_are_equal_with_2_equal_values_returns_1)
 
     // assert
     ASSERT_ARE_EQUAL(int, 1, result);
-    ASSERT_ARE_EQUAL(int, 1, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, umocktypename_normalize_call_count);
     ASSERT_ARE_EQUAL(char_ptr, "char *", umocktypename_normalize_calls[0].type_name);
-    ASSERT_ARE_EQUAL(int, 1, test_are_equal_func_testtype_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, test_are_equal_func_testtype_call_count);
     ASSERT_ARE_EQUAL(void_ptr, test_value_1, test_are_equal_func_testtype_calls[0].left);
     ASSERT_ARE_EQUAL(void_ptr, test_value_2, test_are_equal_func_testtype_calls[0].right);
 }
@@ -1025,9 +1025,9 @@ TEST_FUNCTION(umocktypes_are_equal_with_2_different_values_returns_0)
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(int, 1, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, umocktypename_normalize_call_count);
     ASSERT_ARE_EQUAL(char_ptr, "char *", umocktypename_normalize_calls[0].type_name);
-    ASSERT_ARE_EQUAL(int, 1, test_are_equal_func_testtype_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, test_are_equal_func_testtype_call_count);
     ASSERT_ARE_EQUAL(void_ptr, test_value_1, test_are_equal_func_testtype_calls[0].left);
     ASSERT_ARE_EQUAL(void_ptr, test_value_2, test_are_equal_func_testtype_calls[0].right);
 }
@@ -1048,8 +1048,8 @@ TEST_FUNCTION(umocktypes_are_equal_with_NULL_type_fails)
 
     // assert
     ASSERT_ARE_EQUAL(int, -1, result);
-    ASSERT_ARE_EQUAL(int, 0, umocktypename_normalize_call_count);
-    ASSERT_ARE_EQUAL(int, 0, test_are_equal_func_testtype_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, test_are_equal_func_testtype_call_count);
 }
 
 /* Tests_SRS_UMOCKTYPES_01_023: [ If any of the arguments is NULL, umocktypes_are_equal shall fail and return -1. ]*/
@@ -1068,8 +1068,8 @@ TEST_FUNCTION(umocktypes_are_equal_with_NULL_left_argument_fails)
 
     // assert
     ASSERT_ARE_EQUAL(int, -1, result);
-    ASSERT_ARE_EQUAL(int, 0, umocktypename_normalize_call_count);
-    ASSERT_ARE_EQUAL(int, 0, test_are_equal_func_testtype_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, test_are_equal_func_testtype_call_count);
 }
 
 /* Tests_SRS_UMOCKTYPES_01_023: [ If any of the arguments is NULL, umocktypes_are_equal shall fail and return -1. ]*/
@@ -1088,8 +1088,8 @@ TEST_FUNCTION(umocktypes_are_equal_with_NULL_right_argument_fails)
 
     // assert
     ASSERT_ARE_EQUAL(int, -1, result);
-    ASSERT_ARE_EQUAL(int, 0, umocktypename_normalize_call_count);
-    ASSERT_ARE_EQUAL(int, 0, test_are_equal_func_testtype_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, test_are_equal_func_testtype_call_count);
 }
 
 /* Tests_SRS_UMOCKTYPES_01_024: [ If type can not be found in the registered types list maintained by the module, umocktypes_are_equal shall fail and return -1. ]*/
@@ -1109,9 +1109,9 @@ TEST_FUNCTION(umocktypes_are_equal_with_a_not_registered_type_fails)
 
     // assert
     ASSERT_ARE_EQUAL(int, -1, result);
-    ASSERT_ARE_EQUAL(int, 1, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, umocktypename_normalize_call_count);
     ASSERT_ARE_EQUAL(char_ptr, "const char *", umocktypename_normalize_calls[0].type_name);
-    ASSERT_ARE_EQUAL(int, 0, test_are_equal_func_testtype_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, test_are_equal_func_testtype_call_count);
 }
 
 /* Tests_SRS_UMOCKTYPES_01_043: [ If normalizing the typename fails, umocktypes_are_equal shall fail and return -1. ]*/
@@ -1131,9 +1131,9 @@ TEST_FUNCTION(when_normalizing_the_typename_fails_umocktypes_are_equal_fails)
 
     // assert
     ASSERT_ARE_EQUAL(int, -1, result);
-    ASSERT_ARE_EQUAL(int, 1, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, umocktypename_normalize_call_count);
     ASSERT_ARE_EQUAL(char_ptr, "const char *", umocktypename_normalize_calls[0].type_name);
-    ASSERT_ARE_EQUAL(int, 0, test_are_equal_func_testtype_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, test_are_equal_func_testtype_call_count);
 }
 
 /* Tests_SRS_UMOCKTYPES_01_046: [ If umocktypes_are_equal is called when the module is not initialized, umocktypes_are_equal shall return -1. ] */
@@ -1148,8 +1148,8 @@ TEST_FUNCTION(umocktypes_are_equal_when_the_module_is_not_initialized_fails)
 
     // assert
     ASSERT_ARE_EQUAL(int, -1, result);
-    ASSERT_ARE_EQUAL(int, 0, umocktypename_normalize_call_count);
-    ASSERT_ARE_EQUAL(int, 0, test_are_equal_func_testtype_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, test_are_equal_func_testtype_call_count);
 }
 
 /* Tests_SRS_UMOCKTYPES_01_020: [ If the underlying are_equal function fails,, umocktypes_are_equal shall fail and return -1. ] */
@@ -1168,9 +1168,9 @@ TEST_FUNCTION(when_the_underlying_are_equal_call_fails_with_minus_1_umocktypes_a
 
     // assert
     ASSERT_ARE_EQUAL(int, -1, result);
-    ASSERT_ARE_EQUAL(int, 1, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, umocktypename_normalize_call_count);
     ASSERT_ARE_EQUAL(char_ptr, "char *", umocktypename_normalize_calls[0].type_name);
-    ASSERT_ARE_EQUAL(int, 1, test_are_equal_func_testtype_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, test_are_equal_func_testtype_call_count);
     ASSERT_ARE_EQUAL(void_ptr, test_value_1, test_are_equal_func_testtype_calls[0].left);
     ASSERT_ARE_EQUAL(void_ptr, test_value_2, test_are_equal_func_testtype_calls[0].right);
 }
@@ -1191,9 +1191,9 @@ TEST_FUNCTION(when_the_underlying_are_equal_call_fails_with_2_umocktypes_are_equ
 
     // assert
     ASSERT_ARE_EQUAL(int, -1, result);
-    ASSERT_ARE_EQUAL(int, 1, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, umocktypename_normalize_call_count);
     ASSERT_ARE_EQUAL(char_ptr, "char *", umocktypename_normalize_calls[0].type_name);
-    ASSERT_ARE_EQUAL(int, 1, test_are_equal_func_testtype_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, test_are_equal_func_testtype_call_count);
     ASSERT_ARE_EQUAL(void_ptr, test_value_1, test_are_equal_func_testtype_calls[0].left);
     ASSERT_ARE_EQUAL(void_ptr, test_value_2, test_are_equal_func_testtype_calls[0].right);
 }
@@ -1214,9 +1214,9 @@ TEST_FUNCTION(umocktypes_are_equal_with_2_equal_pointers_returns_1)
 
     // assert
     ASSERT_ARE_EQUAL(int, 1, result);
-    ASSERT_ARE_EQUAL(int, 1, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, umocktypename_normalize_call_count);
     ASSERT_ARE_EQUAL(char_ptr, "char *", umocktypename_normalize_calls[0].type_name);
-    ASSERT_ARE_EQUAL(int, 0, test_are_equal_func_testtype_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, test_are_equal_func_testtype_call_count);
 }
 
 /* Tests_SRS_UMOCKTYPES_01_064: [ If type is a pointer type and type was not registered then umocktypes_are_equal shall execute as if type is void*. ]*/
@@ -1236,9 +1236,9 @@ TEST_FUNCTION(umocktypes_are_equal_with_a_pointer_type_that_was_not_registered_d
 
     // assert
     ASSERT_ARE_EQUAL(int, 1, result);
-    ASSERT_ARE_EQUAL(int, 1, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, umocktypename_normalize_call_count);
     ASSERT_ARE_EQUAL(char_ptr, "char *", umocktypename_normalize_calls[0].type_name);
-    ASSERT_ARE_EQUAL(int, 0, test_are_equal_func_testtype_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, test_are_equal_func_testtype_call_count);
 }
 
 /* Tests_SRS_UMOCKTYPES_01_064: [ If type is a pointer type and type was not registered then umocktypes_are_equal shall execute as if type is void*. ]*/
@@ -1258,9 +1258,9 @@ TEST_FUNCTION(umocktypes_are_equal_with_a_non_pointer_type_that_was_not_register
 
     // assert
     ASSERT_ARE_EQUAL(int, -1, result);
-    ASSERT_ARE_EQUAL(int, 1, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, umocktypename_normalize_call_count);
     ASSERT_ARE_EQUAL(char_ptr, "char", umocktypename_normalize_calls[0].type_name);
-    ASSERT_ARE_EQUAL(int, 0, test_are_equal_func_testtype_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, test_are_equal_func_testtype_call_count);
 }
 
 /* umocktypes_copy */
@@ -1285,9 +1285,9 @@ TEST_FUNCTION(umocktypes_copy_calls_the_underlying_copy_function)
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(int, 1, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, umocktypename_normalize_call_count);
     ASSERT_ARE_EQUAL(char_ptr, "char *", umocktypename_normalize_calls[0].type_name);
-    ASSERT_ARE_EQUAL(int, 1, test_copy_func_testtype_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, test_copy_func_testtype_call_count);
     ASSERT_ARE_EQUAL(void_ptr, destination, test_copy_func_testtype_calls[0].destination);
     ASSERT_ARE_EQUAL(void_ptr, test_value_1, test_copy_func_testtype_calls[0].source);
 }
@@ -1309,8 +1309,8 @@ TEST_FUNCTION(umocktypes_copy_with_NULL_type_fails)
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(int, 0, umocktypename_normalize_call_count);
-    ASSERT_ARE_EQUAL(int, 0, test_copy_func_testtype_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, test_copy_func_testtype_call_count);
 }
 
 /* Tests_SRS_UMOCKTYPES_01_027: [ If any of the arguments is NULL, umocktypes_copy shall return -1. ]*/
@@ -1329,8 +1329,8 @@ TEST_FUNCTION(umocktypes_copy_with_NULL_destination_fails)
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(int, 0, umocktypename_normalize_call_count);
-    ASSERT_ARE_EQUAL(int, 0, test_copy_func_testtype_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, test_copy_func_testtype_call_count);
 }
 
 /* Tests_SRS_UMOCKTYPES_01_027: [ If any of the arguments is NULL, umocktypes_copy shall return -1. ]*/
@@ -1350,8 +1350,8 @@ TEST_FUNCTION(umocktypes_copy_with_NULL_source_fails)
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(int, 0, umocktypename_normalize_call_count);
-    ASSERT_ARE_EQUAL(int, 0, test_copy_func_testtype_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, test_copy_func_testtype_call_count);
 }
 
 /* Tests_SRS_UMOCKTYPES_01_028: [ If the underlying copy fails, umocktypes_copy shall return -1. ]*/
@@ -1371,9 +1371,9 @@ TEST_FUNCTION(when_the_underlying_copy_fails_then_umocktypes_copy_fails)
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(int, 1, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, umocktypename_normalize_call_count);
     ASSERT_ARE_EQUAL(char_ptr, "char *", umocktypename_normalize_calls[0].type_name);
-    ASSERT_ARE_EQUAL(int, 1, test_copy_func_testtype_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, test_copy_func_testtype_call_count);
     ASSERT_ARE_EQUAL(void_ptr, destination, test_copy_func_testtype_calls[0].destination);
     ASSERT_ARE_EQUAL(void_ptr, test_value_1, test_copy_func_testtype_calls[0].source);
 }
@@ -1396,9 +1396,9 @@ TEST_FUNCTION(when_the_type_is_not_found_in_the_registered_types_list_umocktypes
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(int, 1, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, umocktypename_normalize_call_count);
     ASSERT_ARE_EQUAL(char_ptr, "const char *", umocktypename_normalize_calls[0].type_name);
-    ASSERT_ARE_EQUAL(int, 0, test_copy_func_testtype_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, test_copy_func_testtype_call_count);
 }
 
 /* Tests_SRS_UMOCKTYPES_01_042: [ If normalizing the typename fails, umocktypes_copy shall fail and return a non-zero value. ]*/
@@ -1419,9 +1419,9 @@ TEST_FUNCTION(when_normalizing_the_type_fails_then_umocktypes_copy_fails)
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(int, 1, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, umocktypename_normalize_call_count);
     ASSERT_ARE_EQUAL(char_ptr, "const char *", umocktypename_normalize_calls[0].type_name);
-    ASSERT_ARE_EQUAL(int, 0, test_copy_func_testtype_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, test_copy_func_testtype_call_count);
 }
 
 /* Tests_SRS_UMOCKTYPES_01_047: [ If umocktypes_copy is called when the module is not initialized, umocktypes_copy shall fail and return a non zero value. ]*/
@@ -1438,8 +1438,8 @@ TEST_FUNCTION(when_the_module_is_not_initialized_then_umocktypes_copy_fails)
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(int, 0, umocktypename_normalize_call_count);
-    ASSERT_ARE_EQUAL(int, 0, test_copy_func_testtype_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, test_copy_func_testtype_call_count);
 }
 
 /* Tests_SRS_UMOCKTYPES_01_065: [ If type is a pointer type and type was not registered then umocktypes_copy shall execute as if type is void*. ]*/
@@ -1460,9 +1460,9 @@ TEST_FUNCTION(umocktypes_copy_with_a_pointer_type_that_was_not_registered_defaul
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(int, 1, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, umocktypename_normalize_call_count);
     ASSERT_ARE_EQUAL(char_ptr, "const char *", umocktypename_normalize_calls[0].type_name);
-    ASSERT_ARE_EQUAL(int, 1, test_copy_func_testtype_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, test_copy_func_testtype_call_count);
     ASSERT_ARE_EQUAL(void_ptr, destination, test_copy_func_testtype_calls[0].destination);
     ASSERT_ARE_EQUAL(void_ptr, test_value_1, test_copy_func_testtype_calls[0].source);
 }
@@ -1485,9 +1485,9 @@ TEST_FUNCTION(umocktypes_copy_with_a_non_pointer_type_that_was_not_registered_fa
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(int, 1, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, umocktypename_normalize_call_count);
     ASSERT_ARE_EQUAL(char_ptr, "const char", umocktypename_normalize_calls[0].type_name);
-    ASSERT_ARE_EQUAL(int, 0, test_copy_func_testtype_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, test_copy_func_testtype_call_count);
 }
 
 /* umocktypes_free */
@@ -1507,9 +1507,9 @@ TEST_FUNCTION(umocktypes_free_calls_the_underlying_free_function)
     umocktypes_free("char *", test_value_1);
 
     // assert
-    ASSERT_ARE_EQUAL(int, 1, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, umocktypename_normalize_call_count);
     ASSERT_ARE_EQUAL(char_ptr, "char *", umocktypename_normalize_calls[0].type_name);
-    ASSERT_ARE_EQUAL(int, 1, test_free_func_testtype_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, test_free_func_testtype_call_count);
     ASSERT_ARE_EQUAL(void_ptr, test_value_1, test_free_func_testtype_calls[0].value);
 }
 
@@ -1526,8 +1526,8 @@ TEST_FUNCTION(umocktypes_free_with_NULL_type_fails)
     umocktypes_free(NULL, test_value_1);
 
     // assert
-    ASSERT_ARE_EQUAL(int, 0, umocktypename_normalize_call_count);
-    ASSERT_ARE_EQUAL(int, 0, test_free_func_testtype_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, test_free_func_testtype_call_count);
 }
 
 /* Tests_SRS_UMOCKTYPES_01_031: [ If any of the arguments is NULL, umocktypes_free shall do nothing. ]*/
@@ -1543,8 +1543,8 @@ TEST_FUNCTION(umocktypes_free_with_NULL_value_fails)
     umocktypes_free("char *", NULL);
 
     // assert
-    ASSERT_ARE_EQUAL(int, 0, umocktypename_normalize_call_count);
-    ASSERT_ARE_EQUAL(int, 0, test_free_func_testtype_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, test_free_func_testtype_call_count);
 }
 
 /* Tests_SRS_UMOCKTYPES_01_032: [ If type can not be found in the registered types list maintained by the module, umocktypes_free shall do nothing. ]*/
@@ -1562,9 +1562,9 @@ TEST_FUNCTION(when_the_type_is_not_found_in_the_registered_type_list_umocktypes_
     umocktypes_free("const char *", test_value_1);
 
     // assert
-    ASSERT_ARE_EQUAL(int, 1, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, umocktypename_normalize_call_count);
     ASSERT_ARE_EQUAL(char_ptr, "const char *", umocktypename_normalize_calls[0].type_name);
-    ASSERT_ARE_EQUAL(int, 0, test_free_func_testtype_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, test_free_func_testtype_call_count);
 }
 
 /* Tests_SRS_UMOCKTYPES_01_041: [ If normalizing the typename fails, umocktypes_free shall do nothing. ]*/
@@ -1582,9 +1582,9 @@ TEST_FUNCTION(when_normalizing_the_type_fails_then_umocktypes_free_does_not_free
     umocktypes_free("const char *", test_value_1);
 
     // assert
-    ASSERT_ARE_EQUAL(int, 1, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, umocktypename_normalize_call_count);
     ASSERT_ARE_EQUAL(char_ptr, "const char *", umocktypename_normalize_calls[0].type_name);
-    ASSERT_ARE_EQUAL(int, 0, test_free_func_testtype_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, test_free_func_testtype_call_count);
 }
 
 /* Tests_SRS_UMOCKTYPES_01_048: [ If umocktypes_free is called when the module is not initialized, umocktypes_free shall do nothing. ]*/
@@ -1597,8 +1597,8 @@ TEST_FUNCTION(umocktypes_free_when_the_module_is_not_initialized_does_not_free_a
     umocktypes_free("char *", test_value_1);
 
     // assert
-    ASSERT_ARE_EQUAL(int, 0, umocktypename_normalize_call_count);
-    ASSERT_ARE_EQUAL(int, 0, test_free_func_testtype_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, test_free_func_testtype_call_count);
 }
 
 /* Tests_SRS_UMOCKTYPES_01_066: [ If type is a pointer type and type was not registered then umocktypes_free shall execute as if type is void*. ]*/
@@ -1616,9 +1616,9 @@ TEST_FUNCTION(umocktypes_free_with_a_pointer_type_that_is_not_registered_default
     umocktypes_free("const char *", test_value_1);
 
     // assert
-    ASSERT_ARE_EQUAL(int, 1, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, umocktypename_normalize_call_count);
     ASSERT_ARE_EQUAL(char_ptr, "const char *", umocktypename_normalize_calls[0].type_name);
-    ASSERT_ARE_EQUAL(int, 1, test_free_func_testtype_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, test_free_func_testtype_call_count);
     ASSERT_ARE_EQUAL(void_ptr, test_value_1, test_free_func_testtype_calls[0].value);
 }
 
@@ -1637,9 +1637,9 @@ TEST_FUNCTION(umocktypes_free_with_a_non_pointer_type_that_is_not_registered_doe
     umocktypes_free("const char", test_value_1);
 
     // assert
-    ASSERT_ARE_EQUAL(int, 1, umocktypename_normalize_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, umocktypename_normalize_call_count);
     ASSERT_ARE_EQUAL(char_ptr, "const char", umocktypename_normalize_calls[0].type_name);
-    ASSERT_ARE_EQUAL(int, 0, test_free_func_testtype_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, test_free_func_testtype_call_count);
 }
 
 END_TEST_SUITE(umocktypes_unittests)

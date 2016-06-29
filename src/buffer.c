@@ -17,7 +17,7 @@
 //
 
 #include "azure_c_shared_utility/buffer_.h"
-#include "azure_c_shared_utility/iot_logging.h"
+#include "azure_c_shared_utility/xlogging.h"
 
 typedef struct BUFFER_TAG
 {
