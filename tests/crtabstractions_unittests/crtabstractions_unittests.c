@@ -7,6 +7,8 @@
 #endif
 
 #include <limits.h>
+#include <float.h>
+#include <math.h>
 
 #include "testrunnerswitcher.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
@@ -743,6 +745,1539 @@ TEST_SUITE_CLEANUP(b)
             // assert
             ASSERT_ARE_EQUAL(char_ptr, "", dstString);
             ASSERT_ARE_EQUAL(int, -1, result);
+        }
+
+        /* strtoull_s */
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_014: [If the correct value is outside the range, the strtoull_s returns the value ULLONG_MAX, and errno will receive the value ERANGE.]*/
+        TEST_FUNCTION(strtoull_s_decimal_base_max_ull_64bit_success)
+        {
+            // arrange
+            const char* subjectStr = "18446744073709551615";
+            char* endptr;
+            int base = 10;
+            uint64_t result;
+
+            uint64_t expectedResult = ULLONG_MAX;
+            char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
+
+            // act
+            result = strtoull_s(subjectStr, &endptr, base);
+
+            // assert
+            ASSERT_ARE_EQUAL(int, 0, errno);
+            ASSERT_ARE_EQUAL(char_ptr, "18446744073709551615", subjectStr);
+            ASSERT_ARE_EQUAL(uint64_t, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_014: [If the correct value is outside the range, the strtoull_s returns the value ULLONG_MAX, and errno will receive the value ERANGE.]*/
+        TEST_FUNCTION(strtoull_s_hexadecimal_base_max_ull_128bit_success)
+        {
+            // arrange
+            const char* subjectStr = "0xffffffffffffffffffffffffffffffff";
+            char* endptr;
+            int base = 16;
+            unsigned long long result;
+
+            unsigned long long expectedResult = ULLONG_MAX;
+            char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
+
+            // act
+            result = strtoull_s(subjectStr, &endptr, base);
+
+            // assert
+            ASSERT_ARE_EQUAL(char_ptr, "0xffffffffffffffffffffffffffffffff", subjectStr);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+            if (sizeof(unsigned long long) == 128)
+            {
+                ASSERT_ARE_EQUAL(int, 0, errno);
+                uint64_t upperResult = (uint64_t)((result >> 63)/2);
+                uint64_t lowerResult = (uint64_t)(result & ULLONG_MAX);
+                ASSERT_ARE_EQUAL(uint64_t, expectedResult, upperResult);
+                ASSERT_ARE_EQUAL(uint64_t, expectedResult, lowerResult);
+            }
+            else
+            {
+                ASSERT_ARE_EQUAL(int, ERANGE, errno);
+                ASSERT_ARE_EQUAL(uint64_t, expectedResult, result);
+            }
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_038: [If the subject sequence starts with a negative sign, the strtoull_s will convert it to the posive representation of the negative value.]*/
+        TEST_FUNCTION(strtoull_s_negative_nanber_decimal_base_ull_success)
+        {
+            // arrange
+            const char* subjectStr = "-5";
+            char* endptr;
+            int base = 10;
+            uint64_t result;
+
+            uint64_t expectedResult = (uint64_t)(-5);
+            char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
+
+            // act
+            result = strtoull_s(subjectStr, &endptr, base);
+
+            // assert
+            ASSERT_ARE_EQUAL(int, 0, errno);
+            ASSERT_ARE_EQUAL(char_ptr, "-5", subjectStr);
+            ASSERT_ARE_EQUAL(uint64_t, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_014: [If the correct value is outside the range, the strtoull_s returns the value ULLONG_MAX, and errno will receive the value ERANGE.]*/
+        TEST_FUNCTION(strtoull_s_decimal_base_overflow_max_ull_fail)
+        {
+            // arrange
+            const char* subjectStr = "18446744073709551616";
+            char* endptr;
+            int base = 10;
+            uint64_t result;
+
+            uint64_t expectedResult = ULLONG_MAX;
+            char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
+
+            // act
+            result = strtoull_s(subjectStr, &endptr, base);
+
+            // assert
+            ASSERT_ARE_EQUAL(int, ERANGE, errno);
+            ASSERT_ARE_EQUAL(char_ptr, "18446744073709551616", subjectStr);
+            ASSERT_ARE_EQUAL(uint64_t, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_014: [If the correct value is outside the range, the strtoull_s returns the value ULLONG_MAX, and errno will receive the value ERANGE.]*/
+        TEST_FUNCTION(strtoull_s_hexadecimal_base_overflow_max_ull_fail)
+        {
+            // arrange
+            const char* subjectStr = "0xFFFFFFFFFFFFFFFFF";
+            char* endptr;
+            int base = 16;
+            uint64_t result;
+
+            uint64_t expectedResult = ULLONG_MAX;
+            char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
+
+            // act
+            result = strtoull_s(subjectStr, &endptr, base);
+
+            // assert
+            ASSERT_ARE_EQUAL(int, ERANGE, errno);
+            ASSERT_ARE_EQUAL(char_ptr, "0xFFFFFFFFFFFFFFFFF", subjectStr);
+            ASSERT_ARE_EQUAL(uint64_t, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_001: [The strtoull_s must convert the initial portion of the string pointed to by nptr to uint64_t int representation.]*/
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_002: [The strtoull_s must resembling an integer represented in some radix determined by the value of base.]*/
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_003: [The strtoull_s must return the integer that represents the value in the initial part of the string. If any.]*/
+        TEST_FUNCTION(strtoull_s_decimal_base_success)
+        {
+            // arrange
+            const char* subjectStr = "123456";
+            char* endptr;
+            int base = 10;
+            uint64_t result;
+
+            uint64_t expectedResult = 123456ULL;
+            char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
+
+            // act
+            result = strtoull_s(subjectStr, &endptr, base);
+
+            // assert
+            ASSERT_ARE_EQUAL(char_ptr, "123456", subjectStr);
+            ASSERT_ARE_EQUAL(uint64_t, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_011: [The valid sequence starts after the first non-white-space character, followed by an optional positive or negative sign, a number or a letter(depending of the base).]*/
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_010: [The white-space must be one of the characters ' ', '\f', '\n', '\r', '\t', '\v'.]*/
+        TEST_FUNCTION(strtoull_s_decimal_base_with_spaces_success)
+        {
+            // arrange
+            const char* subjectStr = "  123456";
+            char* endptr;
+            int base = 10;
+            uint64_t result;
+
+            uint64_t expectedResult = 123456ULL;
+            char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
+
+            // act
+            result = strtoull_s(subjectStr, &endptr, base);
+
+            // assert
+            ASSERT_ARE_EQUAL(char_ptr, "  123456", subjectStr);
+            ASSERT_ARE_EQUAL(uint64_t, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_010: [The white-space must be one of the characters ' ', '\f', '\n', '\r', '\t', '\v'.]*/
+        TEST_FUNCTION(strtoull_s_decimal_base_with_tab_success)
+        {
+            // arrange
+            const char* subjectStr = " \t 123456";
+            char* endptr;
+            int base = 10;
+            uint64_t result;
+
+            uint64_t expectedResult = 123456ULL;
+            char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
+
+            // act
+            result = strtoull_s(subjectStr, &endptr, base);
+
+            // assert
+            ASSERT_ARE_EQUAL(char_ptr, " \t 123456", subjectStr);
+            ASSERT_ARE_EQUAL(uint64_t, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_011: [The valid sequence starts after the first non-white-space character, followed by an optional positive or negative sign, a number or a letter(depending of the base).]*/
+        TEST_FUNCTION(strtoull_s_decimal_base_with_plus_signal_success)
+        {
+            // arrange
+            const char* subjectStr = "  +123456";
+            char* endptr;
+            int base = 10;
+            uint64_t result;
+
+            uint64_t expectedResult = 123456ULL;
+            char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
+
+            // act
+            result = strtoull_s(subjectStr, &endptr, base);
+
+            // assert
+            ASSERT_ARE_EQUAL(char_ptr, "  +123456", subjectStr);
+            ASSERT_ARE_EQUAL(uint64_t, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_038: [If the subject sequence starts with a negative sign, the strtoull_s will convert it to the posive representation of the negative value.]*/
+        TEST_FUNCTION(strtoull_s_decimal_base_with_minus_sign_fail)
+        {
+            // arrange
+            const char* subjectStr = "  -123456";
+            char* endptr;
+            int base = 10;
+            uint64_t result;
+
+            uint64_t expectedResult = (uint64_t)(-123456);
+            char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
+
+            // act
+            result = strtoull_s(subjectStr, &endptr, base);
+
+            // assert
+            ASSERT_ARE_EQUAL(char_ptr, "  -123456", subjectStr);
+            ASSERT_ARE_EQUAL(uint64_t, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_004: [The strtoull_s must return in endptr a final string of one or more unrecognized characters, including the terminating null character of the input string.]*/
+        TEST_FUNCTION(strtoull_s_decimal_base_follow_by_spaces_success)
+        {
+            // arrange
+            const char* subjectStr = "123456   ";
+            char* endptr;
+            int base = 10;
+            uint64_t result;
+
+            uint64_t expectedResult = 123456ULL;
+            char* expectedEndptr = (char*)subjectStr + 6;
+
+            // act
+            result = strtoull_s(subjectStr, &endptr, base);
+
+            // assert
+            ASSERT_ARE_EQUAL(char_ptr, "123456   ", subjectStr);
+            ASSERT_ARE_EQUAL(uint64_t, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_004: [The strtoull_s must return in endptr a final string of one or more unrecognized characters, including the terminating null character of the input string.]*/
+        TEST_FUNCTION(strtoull_s_decimal_base_follow_by_spaces_and_number_success)
+        {
+            // arrange
+            const char* subjectStr = "123456 789";
+            char* endptr;
+            int base = 10;
+            uint64_t result;
+
+            uint64_t expectedResult = 123456ULL;
+            char* expectedEndptr = (char*)subjectStr + 6;
+
+            // act
+            result = strtoull_s(subjectStr, &endptr, base);
+
+            // assert
+            ASSERT_ARE_EQUAL(char_ptr, "123456 789", subjectStr);
+            ASSERT_ARE_EQUAL(uint64_t, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_004: [The strtoull_s must return in endptr a final string of one or more unrecognized characters, including the terminating null character of the input string.]*/
+        TEST_FUNCTION(strtoull_s_decimal_base_follow_by_percent_success)
+        {
+            // arrange
+            const char* subjectStr = "123456%%";
+            char* endptr;
+            int base = 10;
+            uint64_t result;
+
+            uint64_t expectedResult = 123456ULL;
+            char* expectedEndptr = (char*)subjectStr + 6;
+
+            // act
+            result = strtoull_s(subjectStr, &endptr, base);
+
+            // assert
+            ASSERT_ARE_EQUAL(char_ptr, "123456%%", subjectStr);
+            ASSERT_ARE_EQUAL(uint64_t, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_004: [The strtoull_s must return in endptr a final string of one or more unrecognized characters, including the terminating null character of the input string.]*/
+        TEST_FUNCTION(strtoull_s_decimal_base_follow_by_string_success)
+        {
+            // arrange
+            const char* subjectStr = "123456abc";
+            char* endptr;
+            int base = 10;
+            uint64_t result;
+
+            uint64_t expectedResult = 123456ULL;
+            char* expectedEndptr = (char*)subjectStr + 6;
+
+            // act
+            result = strtoull_s(subjectStr, &endptr, base);
+
+            // assert
+            ASSERT_ARE_EQUAL(char_ptr, "123456abc", subjectStr);
+            ASSERT_ARE_EQUAL(uint64_t, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_005: [The strtoull_s must convert number using base 2 to 36.]*/
+        TEST_FUNCTION(strtoull_s_hexadecimal_base_uppercase_success)
+        {
+            // arrange
+            const char* subjectStr = "1E240";
+            char* endptr;
+            int base = 16;
+            uint64_t result;
+
+            uint64_t expectedResult = 123456ULL;
+            char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
+
+            // act
+            result = strtoull_s(subjectStr, &endptr, base);
+
+            // assert
+            ASSERT_ARE_EQUAL(char_ptr, "1E240", subjectStr);
+            ASSERT_ARE_EQUAL(uint64_t, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_005: [The strtoull_s must convert number using base 2 to 36.]*/
+        TEST_FUNCTION(strtoull_s_hexadecimal_base_lowercase_success)
+        {
+            // arrange
+            const char* subjectStr = "1e240";
+            char* endptr;
+            int base = 16;
+            uint64_t result;
+
+            uint64_t expectedResult = 123456ULL;
+            char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
+
+            // act
+            result = strtoull_s(subjectStr, &endptr, base);
+
+            // assert
+            ASSERT_ARE_EQUAL(char_ptr, "1e240", subjectStr);
+            ASSERT_ARE_EQUAL(uint64_t, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_005: [The strtoull_s must convert number using base 2 to 36.]*/
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_008: [If the base is 0 and '0x' or '0X' precedes the number, strtoull_s must convert to a hexadecimal (base 16).]*/
+        TEST_FUNCTION(strtoull_s_0x_hexadecimal_base_uppercase_success)
+        {
+            // arrange
+            const char* subjectStr = "0X1e240";
+            char* endptr;
+            int base = 16;
+            uint64_t result;
+
+            uint64_t expectedResult = 123456ULL;
+            char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
+
+            // act
+            result = strtoull_s(subjectStr, &endptr, base);
+
+            // assert
+            ASSERT_ARE_EQUAL(char_ptr, "0X1e240", subjectStr);
+            ASSERT_ARE_EQUAL(uint64_t, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_005: [The strtoull_s must convert number using base 2 to 36.]*/
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_008: [If the base is 0 and '0x' or '0X' precedes the number, strtoull_s must convert to a hexadecimal (base 16).]*/
+        TEST_FUNCTION(strtoull_s_0x_hexadecimal_base_lowercase_success)
+        {
+            // arrange
+            const char* subjectStr = "0x1e240";
+            char* endptr;
+            int base = 16;
+            uint64_t result;
+
+            uint64_t expectedResult = 123456ULL;
+            char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
+
+            // act
+            result = strtoull_s(subjectStr, &endptr, base);
+
+            // assert
+            ASSERT_ARE_EQUAL(char_ptr, "0x1e240", subjectStr);
+            ASSERT_ARE_EQUAL(uint64_t, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_005: [The strtoull_s must convert number using base 2 to 36.]*/
+        TEST_FUNCTION(strtoull_s_0x_hexadecimal_base_out_of_base_range_character_fail)
+        {
+            // arrange
+            const char* subjectStr = "0xje240";
+            char* endptr;
+            int base = 16;
+            uint64_t result;
+
+            uint64_t expectedResult = 0ULL;
+            char* expectedEndptr = (char*)subjectStr;
+
+            // act
+            result = strtoull_s(subjectStr, &endptr, base);
+
+            // assert
+            ASSERT_ARE_EQUAL(char_ptr, "0xje240", subjectStr);
+            ASSERT_ARE_EQUAL(uint64_t, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_005: [The strtoull_s must convert number using base 2 to 36.]*/
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_008: [If the base is 0 and '0x' or '0X' precedes the number, strtoull_s must convert to a hexadecimal (base 16).]*/
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_009: [If the base is 0 and '0' precedes the number, strtoull_s must convert to an octal (base 8).]*/
+        TEST_FUNCTION(strtoull_s_0x_hexadecimal_with_base_8_character_success)
+        {
+            // arrange
+            const char* subjectStr = "0x1e240";
+            char* endptr;
+            int base = 8;
+            uint64_t result;
+
+            uint64_t expectedResult = 0ULL;
+            char* expectedEndptr = (char*)subjectStr + 1;
+
+            // act
+            result = strtoull_s(subjectStr, &endptr, base);
+
+            // assert
+            ASSERT_ARE_EQUAL(char_ptr, "0x1e240", subjectStr);
+            ASSERT_ARE_EQUAL(uint64_t, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_005: [The strtoull_s must convert number using base 2 to 36.]*/
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_008: [If the base is 0 and '0x' or '0X' precedes the number, strtoull_s must convert to a hexadecimal (base 16).]*/
+        TEST_FUNCTION(strtoull_s_0_base_with_0x_hexadecimal_success)
+        {
+            // arrange
+            const char* subjectStr = "0x1e240";
+            char* endptr;
+            int base = 0;
+            uint64_t result;
+
+            uint64_t expectedResult = 123456ULL;
+            char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
+
+            // act
+            result = strtoull_s(subjectStr, &endptr, base);
+
+            // assert
+            ASSERT_ARE_EQUAL(char_ptr, "0x1e240", subjectStr);
+            ASSERT_ARE_EQUAL(uint64_t, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_005: [The strtoull_s must convert number using base 2 to 36.]*/
+        TEST_FUNCTION(strtoull_s_octal_base_success)
+        {
+            // arrange
+            const char* subjectStr = "361100";
+            char* endptr;
+            int base = 8;
+            uint64_t result;
+
+            uint64_t expectedResult = 123456ULL;
+            char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
+
+            // act
+            result = strtoull_s(subjectStr, &endptr, base);
+
+            // assert
+            ASSERT_ARE_EQUAL(char_ptr, "361100", subjectStr);
+            ASSERT_ARE_EQUAL(uint64_t, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_005: [The strtoull_s must convert number using base 2 to 36.]*/
+        TEST_FUNCTION(strtoull_s_binary_base_success)
+        {
+            // arrange
+            const char* subjectStr = "11110001001000000";
+            char* endptr;
+            int base = 2;
+            uint64_t result;
+
+            uint64_t expectedResult = 123456ULL;
+            char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
+
+            // act
+            result = strtoull_s(subjectStr, &endptr, base);
+
+            // assert
+            ASSERT_ARE_EQUAL(char_ptr, "11110001001000000", subjectStr);
+            ASSERT_ARE_EQUAL(uint64_t, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_005: [The strtoull_s must convert number using base 2 to 36.]*/
+        TEST_FUNCTION(strtoull_s_36_base_success)
+        {
+            // arrange
+            const char* subjectStr = "hello";
+            char* endptr;
+            int base = 36;
+            uint64_t result;
+
+            uint64_t expectedResult = (uint64_t)((17*1679616)+(14*46656)+(21*1296)+(21*36)+(24));
+            char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
+
+            // act
+            result = strtoull_s(subjectStr, &endptr, base);
+
+            // assert
+            ASSERT_ARE_EQUAL(char_ptr, "hello", subjectStr);
+            ASSERT_ARE_EQUAL(uint64_t, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_005: [The strtoull_s must convert number using base 2 to 36.]*/
+        TEST_FUNCTION(strtoull_s_36_base_looks_like_hexadecimal_with_0x_success)
+        {
+            // arrange
+            const char* subjectStr = "0x1";
+            char* endptr;
+            int base = 36;
+            uint64_t result;
+
+            uint64_t expectedResult = (uint64_t)((33 * 36) + (1));
+            char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
+
+            // act
+            result = strtoull_s(subjectStr, &endptr, base);
+
+            // assert
+            ASSERT_ARE_EQUAL(char_ptr, "0x1", subjectStr);
+            ASSERT_ARE_EQUAL(uint64_t, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_005: [The strtoull_s must convert number using base 2 to 36.]*/
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_009: [If the base is 0 and '0' precedes the number, strtoull_s must convert to an octal (base 8).]*/
+        TEST_FUNCTION(strtoull_s_0_base_with_actal_success)
+        {
+            // arrange
+            const char* subjectStr = "0361100";
+            char* endptr;
+            int base = 0;
+            uint64_t result;
+
+            uint64_t expectedResult = 123456ULL;
+            char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
+
+            // act
+            result = strtoull_s(subjectStr, &endptr, base);
+
+            // assert
+            ASSERT_ARE_EQUAL(char_ptr, "0361100", subjectStr);
+            ASSERT_ARE_EQUAL(uint64_t, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_005: [The strtoull_s must convert number using base 2 to 36.]*/
+        TEST_FUNCTION(strtoull_s_base_out_of_the_range_underflow_fail)
+        {
+            // arrange
+            const char* subjectStr = "10";
+            char* endptr;
+            int base = 1;
+            uint64_t result;
+
+            uint64_t expectedResult = 0ULL;
+            char* expectedEndptr = (char*)subjectStr;
+
+            // act
+            result = strtoull_s(subjectStr, &endptr, base);
+ 
+            // assert
+            ASSERT_ARE_EQUAL(uint64_t, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_005: [The strtoull_s must convert number using base 2 to 36.]*/
+        TEST_FUNCTION(strtoull_s_base_out_of_the_range_overflow_fail)
+        {
+            // arrange
+            const char* subjectStr = "10";
+            char* endptr;
+            int base = 37;
+            uint64_t result;
+
+            uint64_t expectedResult = 0ULL;
+            char* expectedEndptr = (char*)subjectStr;
+
+            // act
+            result = strtoull_s(subjectStr, &endptr, base);
+
+            // assert
+            ASSERT_ARE_EQUAL(uint64_t, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_013: [If no conversion could be performed, the strtoull_s returns the value 0L.]*/
+        TEST_FUNCTION(strtoull_s_invalid_string_blahblah_fail)
+        {
+            // arrange
+            const char* subjectStr = "blahblah";
+            char* endptr;
+            int base = 10;
+            uint64_t result;
+
+            uint64_t expectedResult = 0ULL;
+            char* expectedEndptr = (char*)subjectStr;
+
+            // act
+            result = strtoull_s(subjectStr, &endptr, base);
+
+            // assert
+            ASSERT_ARE_EQUAL(char_ptr, "blahblah", subjectStr);
+            ASSERT_ARE_EQUAL(uint64_t, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_013: [If no conversion could be performed, the strtoull_s returns the value 0L.]*/
+        TEST_FUNCTION(strtoull_s_empty_string_fail)
+        {
+            // arrange
+            const char* subjectStr = "";
+            char* endptr;
+            int base = 10;
+            uint64_t result;
+
+            uint64_t expectedResult = 0ULL;
+            char* expectedEndptr = (char*)subjectStr;
+
+            // act
+            result = strtoull_s(subjectStr, &endptr, base);
+
+            // assert
+            ASSERT_ARE_EQUAL(char_ptr, "", subjectStr);
+            ASSERT_ARE_EQUAL(uint64_t, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_013: [If no conversion could be performed, the strtoull_s returns the value 0L.]*/
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_035: [If the nptr is NULL, the strtoull_s must not perform any conversion and must returns 0L; endptr must receive NULL, provided that endptr is not a NULL pointer.]*/
+        TEST_FUNCTION(strtoull_s_null_ptr_to_string_fail)
+        {
+            // arrange
+            const char* subjectStr = NULL;
+            char* endptr;
+            int base = 10;
+            uint64_t result;
+
+            uint64_t expectedResult = 0ULL;
+            char* expectedEndptr = (char*)subjectStr;
+
+            // act
+            result = strtoull_s(subjectStr, &endptr, base);
+
+            // assert
+            ASSERT_ARE_EQUAL(uint64_t, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /* strtof_s */
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_015: [The strtof_s must convert the initial portion of the string pointed to by nptr to float representation.]*/
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_016: [The strtof_s must return the float that represents the value in the initial part of the string. If any.]*/
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_019: [The valid sequence for strtof_s starts after the first non-white - space character, followed by an optional positive or negative sign, a number, 'INF', or 'NAN' (ignoring case).]*/
+        TEST_FUNCTION(strtof_s_exponential_number_success)
+        {
+            // arrange
+            const char* subjectStr = "1.0e5";
+            char* endptr;
+            float result;
+
+            float expectedResult = 1.0e5;
+            char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
+
+            // act
+            result = strtof_s(subjectStr, &endptr);
+
+            // assert
+            ASSERT_ARE_EQUAL(char_ptr, "1.0e5", subjectStr);
+            ASSERT_ARE_EQUAL(float, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_016: [The strtof_s must return the float that represents the value in the initial part of the string. If any.]*/
+        TEST_FUNCTION(strtof_s_uppercase_exponential_number_success)
+        {
+            // arrange
+            const char* subjectStr = "1.98E5";
+            char* endptr;
+            float result;
+
+            float expectedResult = 1.98E5;
+            char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
+
+            // act
+            result = strtof_s(subjectStr, &endptr);
+
+            // assert
+            ASSERT_ARE_EQUAL(char_ptr, "1.98E5", subjectStr);
+            ASSERT_ARE_EQUAL(float, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_016: [The strtof_s must return the float that represents the value in the initial part of the string. If any.]*/
+        TEST_FUNCTION(strtof_s_float_without_exponential_number_success)
+        {
+            // arrange
+            const char* subjectStr = "1234.5678910";
+            char* endptr;
+            float result;
+
+            float expectedResult = 1234.5678910f;
+            char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
+
+            // act
+            result = strtof_s(subjectStr, &endptr);
+
+            // assert
+            ASSERT_ARE_EQUAL(char_ptr, "1234.5678910", subjectStr);
+            ASSERT_ARE_EQUAL(float, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_016: [The strtof_s must return the float that represents the value in the initial part of the string. If any.]*/
+        TEST_FUNCTION(strtof_s_integer_number_success)
+        {
+            // arrange
+            const char* subjectStr = "12345678910";
+            char* endptr;
+            float result;
+
+            float expectedResult = 12345678910.0f;
+            char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
+
+            // act
+            result = strtof_s(subjectStr, &endptr);
+
+            // assert
+            ASSERT_ARE_EQUAL(char_ptr, "12345678910", subjectStr);
+            ASSERT_ARE_EQUAL(float, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_016: [The strtof_s must return the float that represents the value in the initial part of the string. If any.]*/
+        TEST_FUNCTION(strtof_s_only_fraction_number_success)
+        {
+            // arrange
+            const char* subjectStr = "0.12345678910";
+            char* endptr;
+            float result;
+
+            float expectedResult = 0.12345678910f;
+            char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
+
+            // act
+            result = strtof_s(subjectStr, &endptr);
+
+            // assert
+            ASSERT_ARE_EQUAL(char_ptr, "0.12345678910", subjectStr);
+            ASSERT_ARE_EQUAL(float, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_016: [The strtof_s must return the float that represents the value in the initial part of the string. If any.]*/
+        TEST_FUNCTION(strtof_s_0_with_exponential_number_success)
+        {
+            // arrange
+            const char* subjectStr = "0.0e10";
+            char* endptr;
+            float result;
+
+            float expectedResult = 0.0f;
+            char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
+
+            // act
+            result = strtof_s(subjectStr, &endptr);
+
+            // assert
+            ASSERT_ARE_EQUAL(char_ptr, "0.0e10", subjectStr);
+            ASSERT_ARE_EQUAL(float, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_016: [The strtof_s must return the float that represents the value in the initial part of the string. If any.]*/
+        TEST_FUNCTION(strtof_s_float_positive_number_success)
+        {
+            // arrange
+            const char* subjectStr = "42.42";
+            char* endptr;
+            float result;
+
+            float expectedResult = 42.42f;
+            char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
+
+            // act
+            result = strtof_s(subjectStr, &endptr);
+
+            // assert
+            ASSERT_ARE_EQUAL(char_ptr, "42.42", subjectStr);
+            ASSERT_ARE_EQUAL(float, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_016: [The strtof_s must return the float that represents the value in the initial part of the string. If any.]*/
+        TEST_FUNCTION(strtof_s_float_negative_number_success)
+        {
+            // arrange
+            const char* subjectStr = "-42.42";
+            char* endptr;
+            float result;
+
+            float expectedResult = -42.42f;
+            char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
+
+            // act
+            result = strtof_s(subjectStr, &endptr);
+
+            // assert
+            ASSERT_ARE_EQUAL(char_ptr, "-42.42", subjectStr);
+            ASSERT_ARE_EQUAL(float, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_018: [The white-space for strtof_s must be one of the characters ' ', '\f', '\n', '\r', '\t', '\v'.]*/
+        TEST_FUNCTION(strtof_s_exponential_number_with_spaces_before_the_number_success)
+        {
+            // arrange
+            const char* subjectStr = "\r\n1.0e5";
+            char* endptr;
+            float result;
+
+            float expectedResult = 1.0e5;
+            char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
+
+            // act
+            result = strtof_s(subjectStr, &endptr);
+
+            // assert
+            ASSERT_ARE_EQUAL(char_ptr, "\r\n1.0e5", subjectStr);
+            ASSERT_ARE_EQUAL(float, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_018: [The white-space for strtof_s must be one of the characters ' ', '\f', '\n', '\r', '\t', '\v'.]*/
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_017: [The strtof_s must return in endptr a final string of one or more unrecognized characters, including the terminating null character of the input string.]*/
+        TEST_FUNCTION(strtof_s_exponential_number_with_characters_after_the_number_success)
+        {
+            // arrange
+            const char* subjectStr = "1.0e5 123";
+            char* endptr;
+            float result;
+
+            float expectedResult = 1.0e5;
+            char* expectedEndptr = (char*)subjectStr + 5;
+
+            // act
+            result = strtof_s(subjectStr, &endptr);
+
+            // assert
+            ASSERT_ARE_EQUAL(char_ptr, "1.0e5 123", subjectStr);
+            ASSERT_ARE_EQUAL(float, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_016: [The strtof_s must return the float that represents the value in the initial part of the string. If any.]*/
+        TEST_FUNCTION(strtof_s_min_positive_value_success)
+        {
+            // arrange
+            const char* subjectStr = "1.175494351e-38";
+            char* endptr;
+            float result;
+
+            float expectedResult = FLT_MIN;
+            char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
+
+            // act
+            result = strtof_s(subjectStr, &endptr);
+
+            // assert
+            ASSERT_ARE_EQUAL(int, 0, errno);
+            ASSERT_ARE_EQUAL(char_ptr, "1.175494351e-38", subjectStr);
+            ASSERT_ARE_EQUAL(float, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_022: [If the correct value is outside the range, the strtof_s returns the value plus or minus HUGE_VALF, and errno will receive the value ERANGE.]*/
+        TEST_FUNCTION(strtof_s_min_negative_value_success)
+        {
+            // arrange
+            const char* subjectStr = "-3.402823466e+38";
+            char* endptr;
+            float result;
+
+            float expectedResult = -3.402823466e+38f;
+            char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
+
+            // act
+            result = strtof_s(subjectStr, &endptr);
+
+            // assert
+            ASSERT_ARE_EQUAL(int, 0, errno);
+            ASSERT_ARE_EQUAL(char_ptr, "-3.402823466e+38", subjectStr);
+            ASSERT_ARE_EQUAL(float, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_022: [If the correct value is outside the range, the strtof_s returns the value plus or minus HUGE_VALF, and errno will receive the value ERANGE.]*/
+        TEST_FUNCTION(strtof_s_overflow_max_positive_value_fail)
+        {
+            // arrange
+            const char* subjectStr = "3.402823467e+38";
+            char* endptr;
+            float result;
+
+            float expectedResult = HUGE_VALF;
+            char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
+
+            // act
+            result = strtof_s(subjectStr, &endptr);
+
+            // assert
+            ASSERT_ARE_EQUAL(int, ERANGE, errno);
+            ASSERT_ARE_EQUAL(char_ptr, "3.402823467e+38", subjectStr);
+            ASSERT_ARE_EQUAL(float, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_022: [If the correct value is outside the range, the strtof_s returns the value plus or minus HUGE_VALF, and errno will receive the value ERANGE.]*/
+        TEST_FUNCTION(strtof_s_overflow_in_the_integer_part_value_fail)
+        {
+            // arrange
+            const char* subjectStr = "18446744073709551616";
+            char* endptr;
+            float result;
+
+            float expectedResult = HUGE_VALF;
+            char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
+
+            // act
+            result = strtof_s(subjectStr, &endptr);
+
+            // assert
+            ASSERT_ARE_EQUAL(int, ERANGE, errno);
+            ASSERT_ARE_EQUAL(char_ptr, "18446744073709551616", subjectStr);
+            ASSERT_ARE_EQUAL(float, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_022: [If the correct value is outside the range, the strtof_s returns the value plus or minus HUGE_VALF, and errno will receive the value ERANGE.]*/
+        TEST_FUNCTION(strtof_s_big_integer_part_value_success)
+        {
+            // arrange
+            const char* subjectStr = "184467440737095516";
+            char* endptr;
+            float result;
+
+            float expectedResult = 184467440737095516.0f;
+            char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
+
+            // act
+            result = strtof_s(subjectStr, &endptr);
+
+            // assert
+            ASSERT_ARE_EQUAL(int, 0, errno);
+            ASSERT_ARE_EQUAL(char_ptr, "184467440737095516", subjectStr);
+            ASSERT_ARE_EQUAL(float, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_022: [If the correct value is outside the range, the strtof_s returns the value plus or minus HUGE_VALF, and errno will receive the value ERANGE.]*/
+        TEST_FUNCTION(strtof_s_exponential_number_overflow_max_positive_value_fail)
+        {
+            // arrange
+            const char* subjectStr = "1.0e39";
+            char* endptr;
+            float result;
+
+            float expectedResult = HUGE_VALF;
+            char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
+
+            // act
+            result = strtof_s(subjectStr, &endptr);
+
+            // assert
+            ASSERT_ARE_EQUAL(int, ERANGE, errno);
+            ASSERT_ARE_EQUAL(char_ptr, "1.0e39", subjectStr);
+            ASSERT_ARE_EQUAL(float, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_023: [If the string is 'INF' of 'INFINITY' (ignoring case), the strtof_s must return the INFINITY value for float.]*/
+        TEST_FUNCTION(strtof_s_short_infinity_uppercase_success)
+        {
+            // arrange
+            const char* subjectStr = "INF";
+            char* endptr;
+            float result;
+
+            float expectedResult = INFINITY;
+            char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
+
+            // act
+            result = strtof_s(subjectStr, &endptr);
+
+            // assert
+            ASSERT_ARE_EQUAL(char_ptr, "INF", subjectStr);
+            ASSERT_ARE_EQUAL(float, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_023: [If the string is 'INF' of 'INFINITY' (ignoring case), the strtof_s must return the INFINITY value for float.]*/
+        TEST_FUNCTION(strtof_s_short_negative_infinity_uppercase_success)
+        {
+            // arrange
+            const char* subjectStr = "-INF";
+            char* endptr;
+            float result;
+
+            float expectedResult = -INFINITY;
+            char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
+
+            // act
+            result = strtof_s(subjectStr, &endptr);
+
+            // assert
+            ASSERT_ARE_EQUAL(char_ptr, "-INF", subjectStr);
+            ASSERT_ARE_EQUAL(float, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_023: [If the string is 'INF' of 'INFINITY' (ignoring case), the strtof_s must return the INFINITY value for float.]*/
+        TEST_FUNCTION(strtof_s_long_infinity_uppercase_success)
+        {
+            // arrange
+            const char* subjectStr = "INFINITY";
+            char* endptr;
+            float result;
+
+            float expectedResult = INFINITY;
+            char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
+
+            // act
+            result = strtof_s(subjectStr, &endptr);
+
+            // assert
+            ASSERT_ARE_EQUAL(char_ptr, "INFINITY", subjectStr);
+            ASSERT_ARE_EQUAL(float, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_023: [If the string is 'INF' of 'INFINITY' (ignoring case), the strtof_s must return the INFINITY value for float.]*/
+        TEST_FUNCTION(strtof_s_long_infinity_mixedcase_success)
+        {
+            // arrange
+            const char* subjectStr = "InFINiTY";
+            char* endptr;
+            float result;
+
+            float expectedResult = INFINITY;
+            char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
+
+            // act
+            result = strtof_s(subjectStr, &endptr);
+
+            // assert
+            ASSERT_ARE_EQUAL(char_ptr, "InFINiTY", subjectStr);
+            ASSERT_ARE_EQUAL(float, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_024: [If the string is 'NAN' or 'NAN(...)' (ignoring case), the strtof_s must return 0.0f and points endptr to the first character after the 'NAN' sequence.]*/
+        TEST_FUNCTION(strtof_s_short_nan_uppercase_success)
+        {
+            // arrange
+            const char* subjectStr = "NAN";
+            char* endptr;
+            float result;
+
+            char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
+
+            // act
+            result = strtof_s(subjectStr, &endptr);
+
+            // assert
+            ASSERT_ARE_EQUAL(char_ptr, "NAN", subjectStr);
+            ASSERT_IS_TRUE(isnan(result));
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_024: [If the string is 'NAN' or 'NAN(...)' (ignoring case), the strtof_s must return 0.0f and points endptr to the first character after the 'NAN' sequence.]*/
+        TEST_FUNCTION(strtof_s_long_nan_uppercase_success)
+        {
+            // arrange
+            const char* subjectStr = "NAN(1234)";
+            char* endptr;
+            float result;
+
+            char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
+
+            // act
+            result = strtof_s(subjectStr, &endptr);
+
+            // assert
+            ASSERT_ARE_EQUAL(char_ptr, "NAN(1234)", subjectStr);
+            ASSERT_IS_TRUE(isnan(result));
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_024: [If the string is 'NAN' or 'NAN(...)' (ignoring case), the strtof_s must return 0.0f and points endptr to the first character after the 'NAN' sequence.]*/
+        TEST_FUNCTION(strtof_s_long_nan_mixedcase_success)
+        {
+            // arrange
+            const char* subjectStr = "NaN(1234)";
+            char* endptr;
+            float result;
+
+            char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
+
+            // act
+            result = strtof_s(subjectStr, &endptr);
+
+            // assert
+            ASSERT_ARE_EQUAL(char_ptr, "NaN(1234)", subjectStr);
+            ASSERT_IS_TRUE(isnan(result));
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_024: [If the string is 'NAN' or 'NAN(...)' (ignoring case), the strtof_s must return 0.0f and points endptr to the first character after the 'NAN' sequence.]*/
+        TEST_FUNCTION(strtof_s_long_nan_withou_close_parenthesis_fail)
+        {
+            // arrange
+            const char* subjectStr = "NaN(1234";
+            char* endptr;
+            float result;
+
+            float expectedResult = 0.0f;
+            char* expectedEndptr = (char*)subjectStr;
+
+            // act
+            result = strtof_s(subjectStr, &endptr);
+
+            // assert
+            ASSERT_ARE_EQUAL(char_ptr, "NaN(1234", subjectStr);
+            ASSERT_ARE_EQUAL(float, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_020: [If the subject sequence is empty or does not have the expected form, the strtof_s must not perform any conversion and must returns 0.0f; the value of nptr is stored in the object pointed to by endptr, provided that endptr is not a NULL pointer.]*/
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_021: [If no conversion could be performed, the strtof_s returns the value 0.0f.]*/
+        TEST_FUNCTION(strtof_s_empty_string_success)
+        {
+            // arrange
+            const char* subjectStr = "";
+            char* endptr;
+            float result;
+
+            float expectedResult = 0.0f;
+            char* expectedEndptr = (char*)subjectStr;
+
+            // act
+            result = strtof_s(subjectStr, &endptr);
+
+            // assert
+            ASSERT_ARE_EQUAL(char_ptr, "", subjectStr);
+            ASSERT_ARE_EQUAL(float, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_036: [**If the nptr is NULL, the strtof_s must not perform any conversion and must returns 0.0f; endptr must receive NULL, provided that endptr is not a NULL pointer.]*/
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_021: [If no conversion could be performed, the strtof_s returns the value 0.0f.]*/
+        TEST_FUNCTION(strtof_s_string_to_null_pointer_success)
+        {
+            // arrange
+            const char* subjectStr = NULL;
+            char* endptr;
+            float result;
+
+            float expectedResult = 0.0f;
+            char* expectedEndptr = NULL;
+
+            // act
+            result = strtof_s(subjectStr, &endptr);
+
+            // assert
+            ASSERT_ARE_EQUAL(char_ptr, NULL, subjectStr);
+            ASSERT_ARE_EQUAL(float, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_020: [If the subject sequence is empty or does not have the expected form, the strtof_s must not perform any conversion and must returns 0.0f; the value of nptr is stored in the object pointed to by endptr, provided that endptr is not a NULL pointer.]*/
+        TEST_FUNCTION(strtof_s_valid_conversion_with_return_string_null_pointer_success)
+        {
+            // arrange
+            const char* subjectStr = "1.0e5";
+            float result;
+
+            float expectedResult = 1.0e5;
+            char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
+
+            // act
+            result = strtof_s(subjectStr, NULL);
+
+            // assert
+            ASSERT_ARE_EQUAL(char_ptr, "1.0e5", subjectStr);
+            ASSERT_ARE_EQUAL(float, expectedResult, result);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_020: [If the subject sequence is empty or does not have the expected form, the strtof_s must not perform any conversion and must returns 0.0f; the value of nptr is stored in the object pointed to by endptr, provided that endptr is not a NULL pointer.]*/
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_021: [If no conversion could be performed, the strtof_s returns the value 0.0f.]*/
+        TEST_FUNCTION(strtof_s_invalid_conversion_with_return_string_null_pointer_success)
+        {
+            // arrange
+            const char* subjectStr = "blahblah";
+            float result;
+
+            float expectedResult = 0.0f;
+            char* expectedEndptr = (char*)subjectStr;
+
+            // act
+            result = strtof_s(subjectStr, NULL);
+
+            // assert
+            ASSERT_ARE_EQUAL(char_ptr, "blahblah", subjectStr);
+            ASSERT_ARE_EQUAL(float, expectedResult, result);
+        }
+
+        /* strtold_s */
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_025: [The strtold_s must convert the initial portion of the string pointed to by nptr to long double representation.]*/
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_026: [The strtold_s must return the long double that represents the value in the initial part of the string. If any.]*/
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_029: [The valid sequence for strtold_s starts after the first non-white - space character, followed by an optional positive or negative sign, a number, 'INF', or 'NAN' (ignoring case).]*/
+        TEST_FUNCTION(strtold_s_exponential_number_success)
+        {
+            // arrange
+            const char* subjectStr = "1.0e5";
+            char* endptr;
+            long double result;
+
+            double expectedResult = 1.0e5;
+            char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
+
+            // act
+            result = strtold_s(subjectStr, &endptr);
+
+            // assert
+            ASSERT_ARE_EQUAL(char_ptr, "1.0e5", subjectStr);
+            ASSERT_ARE_EQUAL(double, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_028: [The white-space for strtold_s must be one of the characters ' ', '\f', '\n', '\r', '\t', '\v'.]*/
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_027: [The strtold_s must return in endptr a final string of one or more unrecognized characters, including the terminating null character of the input string.]*/
+        TEST_FUNCTION(strtold_s_exponential_number_with_characters_after_the_number_success)
+        {
+            // arrange
+            const char* subjectStr = "1.0e5 123";
+            char* endptr;
+            long double result;
+
+            long double expectedResult = 1.0e5;
+            char* expectedEndptr = (char*)subjectStr + 5;
+
+            // act
+            result = strtold_s(subjectStr, &endptr);
+
+            // assert
+            ASSERT_ARE_EQUAL(char_ptr, "1.0e5 123", subjectStr);
+            ASSERT_ARE_EQUAL(double, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_026: [The strtold_s must return the long double that represents the value in the initial part of the string. If any.]*/
+        TEST_FUNCTION(strtold_s_min_positive_value_success)
+        {
+            // arrange
+            const char* subjectStr = "2.2250738585072014e-308";
+            char* endptr;
+            long double result;
+
+            long double expectedResult = DBL_MIN;
+            char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
+
+            // act
+            result = strtold_s(subjectStr, &endptr);
+
+            // assert
+            ASSERT_ARE_EQUAL(int, 0, errno);
+            ASSERT_ARE_EQUAL(char_ptr, "2.2250738585072014e-308", subjectStr);
+            ASSERT_ARE_EQUAL(double, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_032: [If the correct value is outside the range, the strtold_s returns the value plus or minus HUGE_VALL, and errno will receive the value ERANGE.]*/
+        TEST_FUNCTION(strtold_s_max_positive_exponential_number_success)
+        {
+            // arrange
+            const char* subjectStr = "1.7976931348623158e+308";
+            char* endptr;
+            long double result;
+
+            double expectedResult = 1.7976931348623158e+308;
+            char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
+
+            // act
+            result = strtold_s(subjectStr, &endptr);
+
+            // assert
+            ASSERT_ARE_EQUAL(int, 0, errno);
+            ASSERT_ARE_EQUAL(char_ptr, "1.7976931348623158e+308", subjectStr);
+            ASSERT_ARE_EQUAL(double, expectedResult, (double)result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_032: [If the correct value is outside the range, the strtold_s returns the value plus or minus HUGE_VALL, and errno will receive the value ERANGE.]*/
+        TEST_FUNCTION(strtold_s_min_negative_value_success)
+        {
+            // arrange
+            const char* subjectStr = "-1.7976931348623158e+308";
+            char* endptr;
+            long double result;
+
+            long double expectedResult = -1.7976931348623158e+308;
+            char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
+
+            // act
+            result = strtold_s(subjectStr, &endptr);
+
+            // assert
+            ASSERT_ARE_EQUAL(int, 0, errno);
+            ASSERT_ARE_EQUAL(char_ptr, "-1.7976931348623158e+308", subjectStr);
+            ASSERT_ARE_EQUAL(double, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_032: [If the correct value is outside the range, the strtold_s returns the value plus or minus HUGE_VALL, and errno will receive the value ERANGE.]*/
+        TEST_FUNCTION(strtold_s_overflow_max_positive_value_fail)
+        {
+            // arrange
+            const char* subjectStr = "1.8e+308";
+            char* endptr;
+            long double result;
+
+            long double expectedResult = HUGE_VALL;
+            char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
+
+            // act
+            result = strtold_s(subjectStr, &endptr);
+
+            // assert
+            ASSERT_ARE_EQUAL(int, ERANGE, errno);
+            ASSERT_ARE_EQUAL(char_ptr, "1.8e+308", subjectStr);
+            ASSERT_ARE_EQUAL(double, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_032: [If the correct value is outside the range, the strtold_s returns the value plus or minus HUGE_VALL, and errno will receive the value ERANGE.]*/
+        TEST_FUNCTION(strtold_s_exponential_number_overflow_max_positive_value_fail)
+        {
+            // arrange
+            const char* subjectStr = "1.0e309";
+            char* endptr;
+            long double result;
+
+            long double expectedResult = HUGE_VALF;
+            char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
+
+            // act
+            result = strtold_s(subjectStr, &endptr);
+
+            // assert
+            ASSERT_ARE_EQUAL(int, ERANGE, errno);
+            ASSERT_ARE_EQUAL(char_ptr, "1.0e309", subjectStr);
+            ASSERT_ARE_EQUAL(double, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_033: [If the string is 'INF' of 'INFINITY' (ignoring case), the strtold_s must return the INFINITY value for long double.]*/
+        TEST_FUNCTION(strtold_s_short_infinity_uppercase_success)
+        {
+            // arrange
+            const char* subjectStr = "INF";
+            char* endptr;
+            long double result;
+
+            long double expectedResult = INFINITY;
+            char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
+
+            // act
+            result = strtold_s(subjectStr, &endptr);
+
+            // assert
+            ASSERT_ARE_EQUAL(char_ptr, "INF", subjectStr);
+            ASSERT_ARE_EQUAL(double, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_033: [If the string is 'INF' of 'INFINITY' (ignoring case), the strtold_s must return the INFINITY value for long double.]*/
+        TEST_FUNCTION(strtold_s_short_negative_infinity_uppercase_success)
+        {
+            // arrange
+            const char* subjectStr = "-INF";
+            char* endptr;
+            long double result;
+
+            long double expectedResult = -INFINITY;
+            char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
+
+            // act
+            result = strtold_s(subjectStr, &endptr);
+
+            // assert
+            ASSERT_ARE_EQUAL(char_ptr, "-INF", subjectStr);
+            ASSERT_ARE_EQUAL(double, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_034: [If the string is 'NAN' or 'NAN(...)' (ignoring case), the strtold_s must return 0.0 and points endptr to the first character after the 'NAN' sequence.]*/
+        TEST_FUNCTION(strtold_s_long_nan_mixedcase_success)
+        {
+            // arrange
+            const char* subjectStr = "NaN(1234)";
+            char* endptr;
+            long double result;
+
+            char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
+
+            // act
+            result = strtold_s(subjectStr, &endptr);
+
+            // assert
+            ASSERT_ARE_EQUAL(char_ptr, "NaN(1234)", subjectStr);
+            ASSERT_IS_TRUE(isnan(result));
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_030: [If the subject sequence is empty or does not have the expected form, the strtold_s must not perform any conversion and must returns 0.0; the value of nptr is stored in the object pointed to by endptr, provided that endptr is not a NULL pointer.]*/
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_031: [If no conversion could be performed, the strtold_s returns the value 0.0.]*/
+        TEST_FUNCTION(strtold_s_empty_string_success)
+        {
+            // arrange
+            const char* subjectStr = "";
+            char* endptr;
+            long double result;
+
+            long double expectedResult = 0.0;
+            char* expectedEndptr = (char*)subjectStr;
+
+            // act
+            result = strtold_s(subjectStr, &endptr);
+
+            // assert
+            ASSERT_ARE_EQUAL(char_ptr, "", subjectStr);
+            ASSERT_ARE_EQUAL(double, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_030: [If the subject sequence is empty or does not have the expected form, the strtold_s must not perform any conversion and must returns 0.0; the value of nptr is stored in the object pointed to by endptr, provided that endptr is not a NULL pointer.]*/
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_031: [If no conversion could be performed, the strtold_s returns the value 0.0.]*/
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_037: [If the nptr is NULL, the strtold_s must not perform any conversion and must returns 0.0; endptr must receive NULL, provided that endptr is not a NULL pointer.]*/
+        TEST_FUNCTION(strtold_s_string_to_null_pointer_success)
+        {
+            // arrange
+            const char* subjectStr = NULL;
+            char* endptr;
+            long double result;
+
+            long double expectedResult = 0.0;
+            char* expectedEndptr = NULL;
+
+            // act
+            result = strtold_s(subjectStr, &endptr);
+
+            // assert
+            ASSERT_ARE_EQUAL(char_ptr, NULL, subjectStr);
+            ASSERT_ARE_EQUAL(double, expectedResult, result);
+            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_030: [If the subject sequence is empty or does not have the expected form, the strtold_s must not perform any conversion and must returns 0.0; the value of nptr is stored in the object pointed to by endptr, provided that endptr is not a NULL pointer.]*/
+        TEST_FUNCTION(strtold_s_valid_conversion_with_return_string_null_pointer_success)
+        {
+            // arrange
+            const char* subjectStr = "1.0e5";
+            long double result;
+
+            long double expectedResult = 1.0e5;
+            char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
+
+            // act
+            result = strtold_s(subjectStr, NULL);
+
+            // assert
+            ASSERT_ARE_EQUAL(char_ptr, "1.0e5", subjectStr);
+            ASSERT_ARE_EQUAL(double, expectedResult, result);
+        }
+
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_030: [If the subject sequence is empty or does not have the expected form, the strtold_s must not perform any conversion and must returns 0.0; the value of nptr is stored in the object pointed to by endptr, provided that endptr is not a NULL pointer.]*/
+        /*Tests_SRS_CRT_ABSTRACTIONS_21_031: [If no conversion could be performed, the strtold_s returns the value 0.0.]*/
+        TEST_FUNCTION(strtold_s_invalid_conversion_with_return_string_null_pointer_success)
+        {
+            // arrange
+            const char* subjectStr = "blahblah";
+            long double result;
+
+            long double expectedResult = 0.0;
+            char* expectedEndptr = (char*)subjectStr;
+
+            // act
+            result = strtold_s(subjectStr, NULL);
+
+            // assert
+            ASSERT_ARE_EQUAL(char_ptr, "blahblah", subjectStr);
+            ASSERT_ARE_EQUAL(double, expectedResult, result);
         }
 
         /* mallocAndStrcpy_s */
