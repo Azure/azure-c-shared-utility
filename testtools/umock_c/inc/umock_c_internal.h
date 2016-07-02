@@ -20,6 +20,7 @@ extern "C" {
 #include "umock_c.h"
 #include "umock_log.h"
 #include "umockalloc.h"
+#include "umockcallpairs.h"
 
 extern void umock_c_indicate_error(UMOCK_C_ERROR_CODE error_code);
 extern UMOCKCALL_HANDLE umock_c_get_last_expected_call(void);
@@ -117,8 +118,11 @@ typedef struct ARG_BUFFER_TAG
         result->validate_arg_buffers[COUNT_OF(result->validate_arg_buffers) - DIV2(count)].bytes = NULL; \
     }
 
+#define ONLY_FIRST_ARG(arg0type, arg0name, ...) arg0name
+#define FILL_ARG_IN_METADATA(arg_type, arg_name) { TOSTRING(arg_type), TOSTRING(arg_name) },
 #define ARG_IN_SIGNATURE(count, arg_type, arg_name) arg_type arg_name IFCOMMA(count)
 #define ARG_NAME_ONLY_IN_CALL(count, arg_type, arg_name) arg_name IFCOMMA(count)
+#define ONLY_FIRST_ARG_NAME_IN_CALL(count, arg_type, arg_name) count
 #define ARG_ASSIGN_IN_ARRAY(arg_type, arg_name) arg_name_local
 #define DECLARE_VALIDATE_ARG_VALUE(arg_type, arg_name) void* C2(validate_arg_value_pointer_,arg_name);
 #define DECLARE_IGNORE_FLAG_FOR_ARG(arg_type, arg_name) unsigned int C2(is_ignored_,arg_name) : 1;
@@ -706,6 +710,20 @@ typedef struct ARG_BUFFER_TAG
 #define COPY_RETURN_VALUE(return_type, name) \
     result = C2(mock_call_default_result_, name);
 
+typedef struct MOCK_CALL_ARG_METADATA_TAG
+{
+    const char* type;
+    const char* name;
+} MOCK_CALL_ARG_METADATA;
+
+typedef struct MOCK_CALL_METADATA_TAG
+{
+    const char* return_type;
+    const char* name;
+    size_t arg_count;
+    const MOCK_CALL_ARG_METADATA* args;
+} MOCK_CALL_METADATA;
+
 /* Codes_SRS_UMOCK_C_LIB_01_004: [If ENABLE_MOCKS is defined, MOCKABLE_FUNCTION shall generate the declaration of the function and code for the mocked function, thus allowing setting up of expectations in test functions.] */
 /* Codes_SRS_UMOCK_C_LIB_01_014: [For each argument the argument value shall be stored for later comparison with actual calls.] */
 /* Codes_SRS_UMOCK_C_LIB_01_017: [No arguments shall be saved by default, unless other modifiers state it.]*/
@@ -731,9 +749,18 @@ typedef struct ARG_BUFFER_TAG
 /* Codes_SRS_UMOCK_C_LIB_01_138: [ - If a global mock hook has been specified then it shall be called and its result returned. ]*/
 /* Codes_SRS_UMOCK_C_LIB_01_139: [ - If a global return value has been specified then it shall be returned. ]*/
 /* Codes_SRS_UMOCK_C_LIB_01_140: [ - Otherwise the value of a static variable of the same type as the return type shall be returned. ]*/
+/* Codes_SRS_UMOCK_C_LIB_01_188: [ The create call shall have a non-void return type. ]*/
 #define MOCKABLE_FUNCTION_UMOCK_INTERNAL_WITH_MOCK_NO_CODE(return_type, name, ...) \
     typedef return_type (*C2(mock_hook_func_type_, name))(IF(COUNT_ARG(__VA_ARGS__),,void) FOR_EACH_2_COUNTED(ARG_IN_SIGNATURE, __VA_ARGS__)); \
     static C2(mock_hook_func_type_,name) C2(mock_hook_,name) = NULL; \
+    static TRACK_CREATE_FUNC_TYPE C2(track_create_destroy_pair_malloc_,name) = NULL; \
+    static TRACK_DESTROY_FUNC_TYPE C2(track_create_destroy_pair_free_,name) = NULL; \
+    static PAIRED_HANDLES C2(paired_handles_,name); \
+    static PAIRED_HANDLES* C2(used_paired_handles_,name) = NULL; \
+    IF(COUNT_ARG(__VA_ARGS__),static const MOCK_CALL_ARG_METADATA C2(mock_call_args_metadata_,name)[] = \
+        { FOR_EACH_2(FILL_ARG_IN_METADATA, __VA_ARGS__) };,) \
+    static const MOCK_CALL_METADATA C2(mock_call_metadata_,name) = { TOSTRING(return_type), TOSTRING(name), DIV2(COUNT_ARG(__VA_ARGS__)), \
+        IF(COUNT_ARG(__VA_ARGS__),C2(mock_call_args_metadata_,name), NULL) }; \
     struct C2(_mock_call_modifier_,name); \
     IF(COUNT_ARG(__VA_ARGS__),typedef struct C2(_mock_call_modifier_,name) (*C2(ignore_all_arguments_func_type_,name))(void);,) \
     IF(COUNT_ARG(__VA_ARGS__),typedef struct C2(_mock_call_modifier_,name) (*C2(validate_all_arguments_func_type_,name))(void);,) \
@@ -945,6 +972,9 @@ typedef struct ARG_BUFFER_TAG
     IMPLEMENT_STRICT_EXPECTED_MOCK(return_type, name, __VA_ARGS__) \
     IMPLEMENT_EXPECTED_MOCK(return_type, name, __VA_ARGS__) \
 
+/* Codes_SRS_UMOCK_C_LIB_01_193: [ When a destroy_call happens the memory block associated with the argument passed to it shall be freed. ] */
+/* Codes_SRS_UMOCK_C_LIB_01_195: [ If any error occurs during the destroy_call related then umock_c shall raise an error with the code UMOCK_C_ERROR. ]*/
+/* Codes_SRS_UMOCK_C_LIB_01_194: [ If the first argument passed to destroy_call is not found in the list of tracked handles (returned by create_call) then umock_c shall raise an error with the code UMOCK_C_INVALID_PAIRED_CALLS. ]*/
 #define MOCKABLE_FUNCTION_BODY_WITHOUT_RETURN(modifiers, return_type, name, ...) \
     return_type modifiers name(IF(COUNT_ARG(__VA_ARGS__),,void) FOR_EACH_2_COUNTED(ARG_IN_SIGNATURE, __VA_ARGS__)) \
 	{ \
@@ -952,6 +982,8 @@ typedef struct ARG_BUFFER_TAG
         UMOCKCALL_HANDLE matched_call; \
         unsigned int result_value_set = 0; \
         void* captured_return_value = NULL; \
+        TRACK_CREATE_FUNC_TYPE track_create_destroy_pair_malloc_local = C2(track_create_destroy_pair_malloc_,name); \
+        PAIRED_HANDLES* used_paired_handles_local = C2(used_paired_handles_,name); \
         const char* return_type_string = \
             IF(IS_NOT_VOID(return_type),TOSTRING(return_type), NULL); \
         IF(IS_NOT_VOID(return_type),return_type result;,) \
@@ -1028,7 +1060,18 @@ typedef struct ARG_BUFFER_TAG
                 } \
             } \
         } \
+        IF(COUNT_ARG(__VA_ARGS__), if (C2(track_create_destroy_pair_free_, name) != NULL) \
+        { \
+            if (C2(track_create_destroy_pair_free_, name)(C2(used_paired_handles_, name), &ONLY_FIRST_ARG(__VA_ARGS__, 1)) != 0) \
+            { \
+                UMOCK_LOG("Could not track the destroy call for %s.", TOSTRING(name)); \
+                umock_c_indicate_error(UMOCK_C_ERROR); \
+            } \
+        },)
 
+/* Codes_SRS_UMOCK_C_LIB_01_188: [ The create call shall have a non-void return type. ]*/
+/* Codes_SRS_UMOCK_C_LIB_01_191: [ At each create_call a memory block shall be allocated so that it can be reported as a leak by any memory checker. ]*/
+/* Codes_SRS_UMOCK_C_LIB_01_192: [ If any error occurs during the create_call related then umock_c shall raise an error with the code UMOCK_C_ERROR. ]*/
 #define MOCKABLE_FUNCTION_UMOCK_INTERNAL_WITH_MOCK(modifiers, return_type, name, ...) \
     MOCKABLE_FUNCTION_UMOCK_INTERNAL_WITH_MOCK_NO_CODE(return_type, name, __VA_ARGS__) \
     MOCKABLE_FUNCTION_BODY_WITHOUT_RETURN(modifiers, return_type, name, __VA_ARGS__) \
@@ -1041,6 +1084,14 @@ typedef struct ARG_BUFFER_TAG
         { \
             (void)memcpy(captured_return_value, &result, sizeof(result)); \
         } \
+        IF(IS_NOT_VOID(return_type),if (track_create_destroy_pair_malloc_local != NULL) \
+        { \
+            if (track_create_destroy_pair_malloc_local(used_paired_handles_local, (const void*)&result, TOSTRING(result), sizeof(result)) != 0) \
+            { \
+                UMOCK_LOG("Could not track the create call for %s.", TOSTRING(name)); \
+                umock_c_indicate_error(UMOCK_C_ERROR); \
+            } \
+        },) \
         return result;,) \
 	} \
 
@@ -1049,6 +1100,9 @@ typedef struct ARG_BUFFER_TAG
     MOCKABLE_FUNCTION_UMOCK_INTERNAL_WITH_MOCK_NO_CODE(return_type, name, __VA_ARGS__) \
     MOCKABLE_FUNCTION_BODY_WITHOUT_RETURN(modifiers, return_type, name, __VA_ARGS__) \
 
+/* Codes_SRS_UMOCK_C_LIB_01_188: [ The create call shall have a non-void return type. ]*/
+/* Codes_SRS_UMOCK_C_LIB_01_191: [ At each create_call a memory block shall be allocated so that it can be reported as a leak by any memory checker. ]*/
+/* Codes_SRS_UMOCK_C_LIB_01_192: [ If any error occurs during the create_call related then umock_c shall raise an error with the code UMOCK_C_ERROR. ]*/
 #define MOCK_FUNCTION_END(...) \
         if (result_value_set == 0) \
         { \
@@ -1059,7 +1113,33 @@ typedef struct ARG_BUFFER_TAG
         { \
             (void)memcpy(captured_return_value, &result, sizeof(result)); \
         } \
+        if (track_create_destroy_pair_malloc_local != NULL) \
+        { \
+            if (track_create_destroy_pair_malloc_local(used_paired_handles_local, (const void*)&result, TOSTRING(result), sizeof(result)) != 0) \
+            { \
+                UMOCK_LOG("Could not track the create call for %s.", TOSTRING(name)); \
+                umock_c_indicate_error(UMOCK_C_ERROR); \
+            } \
+        } \
         return result;,) \
+    }
+
+/* Codes_SRS_UMOCK_C_LIB_01_187: [ REGISTER_UMOCKC_PAIRED_CREATE_DESTROY_CALLS shall register with umock two calls that are expected to be paired. ]*/
+/* Codes_SRS_UMOCK_C_LIB_01_190: [ If create_call or destroy_call do not obey these rules, at the time of calling REGISTER_UMOCKC_PAIRED_CREATE_DESTROY_CALLS umock_c shall raise an error with the code UMOCK_C_INVALID_PAIRED_CALLS. ]*/
+/* Codes_SRS_UMOCK_C_LIB_01_189: [ The destroy call shall take as argument at least one argument. The type of the first argument shall be of the same type as the return type for the create_call. ]*/
+#define REGISTER_UMOCKC_PAIRED_CREATE_DESTROY_CALLS(create_call, destroy_call) \
+    if ((strcmp(C2(mock_call_metadata_,create_call).return_type, "void") == 0) || \
+        (C2(mock_call_metadata_,destroy_call).arg_count == 0) || \
+        (strcmp(C2(mock_call_metadata_, create_call).return_type, C2(mock_call_metadata_, destroy_call).args[0].type) != 0)) \
+    { \
+        umock_c_indicate_error(UMOCK_C_INVALID_PAIRED_CALLS); \
+    } \
+    else \
+    { \
+        C2(track_create_destroy_pair_malloc_, create_call) = umockcallpairs_track_create_paired_call; \
+        C2(track_create_destroy_pair_free_, destroy_call) = umockcallpairs_track_destroy_paired_call; \
+        C2(used_paired_handles_, create_call) = &C2(paired_handles_, create_call); \
+        C2(used_paired_handles_, destroy_call) = &C2(paired_handles_, create_call); \
     }
 
 #ifdef __cplusplus

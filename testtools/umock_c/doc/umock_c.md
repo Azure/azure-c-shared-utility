@@ -54,19 +54,18 @@ TEST_FUNCTION(my_first_test)
 #Exposed API (umock_c.h)
 
 ```c
-typedef enum UMOCK_C_ERROR_CODE_TAG
-{
-    UMOCK_C_ARG_INDEX_OUT_OF_RANGE,
-    UMOCK_C_MALLOC_ERROR,
-    UMOCK_C_INVALID_ARGUMENT_BUFFER,
-    UMOCK_C_COMPARE_CALL_ERROR,
-    UMOCK_C_RESET_CALLS_ERROR,
-    UMOCK_C_CAPTURE_RETURN_ALREADY_USED,
-    UMOCK_C_NULL_ARGUMENT,
-    UMOCK_C_ERROR
-} UMOCK_C_ERROR_CODE;
+#define UMOCK_C_ERROR_CODE_VALUES \
+        UMOCK_C_ARG_INDEX_OUT_OF_RANGE, \
+        UMOCK_C_MALLOC_ERROR, \
+        UMOCK_C_INVALID_ARGUMENT_BUFFER, \
+        UMOCK_C_COMPARE_CALL_ERROR, \
+        UMOCK_C_RESET_CALLS_ERROR, \
+        UMOCK_C_CAPTURE_RETURN_ALREADY_USED, \
+        UMOCK_C_NULL_ARGUMENT, \
+        UMOCK_C_INVALID_PAIRED_CALLS, \
+        UMOCK_C_ERROR
 
-typedef void(*ON_UMOCK_C_ERROR)(UMOCK_C_ERROR_CODE error_code);
+DEFINE_ENUM(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 #define IGNORED_PTR_ARG (NULL)
 #define IGNORED_NUM_ARG (0)
@@ -978,3 +977,43 @@ size_t umock_c_negative_tests_call_count(void)
 umock_c_negative_tests_call_count shall provide the number of expected calls, so that the test code can iterate through all negative cases.
 If umock_c_negative_tests_fail_call is called without the module being initialized, it shall return 0.
 All errors shall be reported by calling the umock_c on error function.
+
+## paired calls addon
+
+The paired calls addon can be used in order to ensure that function calls are paired correctly when needed.
+For example, given a create and destroy function pair:
+
+```c
+SOME_HANDLE some_create(void);
+void some_destroy(SOME_HANDLE handle, ...);
+```
+
+It is desirable to make sure that all create calls are paired with appropriate destroy calls.
+umockc provides the ability for the user to declare that by using a macro like:
+
+```c
+REGISTER_UMOCKC_PAIRED_CREATE_DESTROY_CALLS(some_create, some_destroy);
+```
+
+The paired calls addon can based on this information figure out if any calls are made to some_create without having a counterpart some_destroy.
+Typically registering the pairs with umockc would be done in the test suite setup.
+
+### REGISTER_UMOCKC_PAIRED_CREATE_DESTROY_CALLS(create_call, destroy_call)
+
+```c
+REGISTER_UMOCKC_PAIRED_CREATE_DESTROY_CALLS(create_call, destroy_call)
+```
+
+REGISTER_UMOCKC_PAIRED_CREATE_DESTROY_CALLS shall register with umock two calls that are expected to be paired.
+The create call shall have a non-void return type.
+The destroy call shall take as argument at least one argument. The type of the first argument shall be of the same type as the return type for the create_call.
+If create_call or destroy_call do not obey these rules, at the time of calling REGISTER_UMOCKC_PAIRED_CREATE_DESTROY_CALLS umock_c shall raise an error with the code UMOCK_C_INVALID_PAIRED_CALLS.
+
+At each create_call a memory block shall be allocated so that it can be reported as a leak by any memory checker.
+If any error occurs during the create_call related then umock_c shall raise an error with the code UMOCK_C_ERROR.
+
+When a destroy_call happens the memory block associated with the argument passed to it shall be freed.
+If the first argument passed to destroy_call is not found in the list of tracked handles (returned by create_call) then umock_c shall raise an error with the code UMOCK_C_INVALID_PAIRED_CALLS.
+If any error occurs during the destroy_call related then umock_c shall raise an error with the code UMOCK_C_ERROR.
+
+The type used for the return of create_call and first argument of destroy_call shall be allowed to be any type registered with umock.

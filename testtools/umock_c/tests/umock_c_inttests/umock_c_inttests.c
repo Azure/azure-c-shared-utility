@@ -21,6 +21,10 @@ Tests_SRS_UMOCK_C_LIB_01_146: [ Each type shall be normalized to a form where al
 Tests_SRS_UMOCK_C_LIB_01_147: [ Type names are case sensitive. ]
 */
 
+/* Tested by unittests of umockcallpairs:
+Tests_SRS_UMOCK_C_LIB_01_194: [ If the first argument passed to destroy_call is not found in the list of tracked handles (returned by create_call) then umock_c shall raise an error with the code UMOCK_C_INVALID_PAIRED_CALLS. ]
+*/
+
 #include "umock_c.h"
 #define ENABLE_MOCKS
 #include "test_dependency.h"
@@ -134,6 +138,37 @@ MOCK_FUNCTION_END(test_return_value)
 MOCK_FUNCTION_WITH_CODE(, int, test_dependency_for_capture_return_with_arg, int, a)
 MOCK_FUNCTION_END(test_return_value)
 
+typedef void* SOME_HANDLE;
+static const SOME_HANDLE test_handle = (SOME_HANDLE)0x4242;
+
+typedef struct SOME_STRUCT_TAG
+{
+    unsigned char a;
+} SOME_STRUCT;
+
+SOME_STRUCT test_struct = { 42 };
+
+MOCK_FUNCTION_WITH_CODE(, SOME_HANDLE, some_create, int, a);
+MOCK_FUNCTION_END(test_handle)
+MOCK_FUNCTION_WITH_CODE(, void, some_destroy, SOME_HANDLE, h);
+MOCK_FUNCTION_END()
+MOCK_FUNCTION_WITH_CODE(, void, some_create_void_return, int, a);
+MOCK_FUNCTION_END()
+MOCK_FUNCTION_WITH_CODE(, void, some_destroy_void_return, SOME_HANDLE, h);
+MOCK_FUNCTION_END()
+MOCK_FUNCTION_WITH_CODE(, SOME_HANDLE, some_create_no_args, int, a);
+MOCK_FUNCTION_END(test_handle)
+MOCK_FUNCTION_WITH_CODE(, void, some_destroy_no_args);
+MOCK_FUNCTION_END()
+MOCK_FUNCTION_WITH_CODE(, SOME_HANDLE, some_create_arg_different, int, a);
+MOCK_FUNCTION_END(test_handle)
+MOCK_FUNCTION_WITH_CODE(, void, some_destroy_arg_different, int, a);
+MOCK_FUNCTION_END()
+MOCK_FUNCTION_WITH_CODE(, SOME_STRUCT, some_create_with_struct, int, a);
+MOCK_FUNCTION_END(test_struct)
+MOCK_FUNCTION_WITH_CODE(, void, some_destroy_with_struct, SOME_STRUCT, s);
+MOCK_FUNCTION_END()
+
 BEGIN_TEST_SUITE(umock_c_integrationtests)
 
 TEST_SUITE_INITIALIZE(suite_init)
@@ -154,6 +189,7 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_UMOCK_VALUE_TYPE(int*, stringify_func_intptr, are_equal_func_intptr, copy_func_intptr, free_func_intptr);
     REGISTER_UMOCK_VALUE_TYPE(unsigned char*, stringify_func_unsignedcharptr, are_equal_func_unsignedcharptr, copy_func_unsignedcharptr, free_func_unsignedcharptr);
     REGISTER_UMOCK_VALUE_TYPE(TEST_STRUCT_COPY_FAILS, stringify_func_TEST_STRUCT_COPY_FAILS, are_equal_func_TEST_STRUCT_COPY_FAILS, copy_func_TEST_STRUCT_COPY_FAILS, free_func_TEST_STRUCT_COPY_FAILS);
+    REGISTER_UMOCK_ALIAS_TYPE(SOME_HANDLE, void*);
 }
 
 TEST_SUITE_CLEANUP(suite_cleanup)
@@ -2205,6 +2241,79 @@ TEST_FUNCTION(validate_argument_value_shall_implicitly_validate_the_argument)
     // assert
     ASSERT_ARE_EQUAL(char_ptr, "[test_dependency_char_star_arg(\"41\")]", umock_c_get_expected_calls());
     ASSERT_ARE_EQUAL(char_ptr, "[test_dependency_char_star_arg(\"43\")]", umock_c_get_actual_calls());
+}
+
+/* pair calls */
+
+/* Tests_SRS_UMOCK_C_LIB_01_187: [ REGISTER_UMOCKC_PAIRED_CREATE_DESTROY_CALLS shall register with umock two calls that are expected to be paired. ]*/
+/* Tests_SRS_UMOCK_C_LIB_01_188: [ The create call shall have a non-void return type. ]*/
+/* Tests_SRS_UMOCK_C_LIB_01_191: [ At each create_call a memory block shall be allocated so that it can be reported as a leak by any memory checker. ]*/
+/* Tests_SRS_UMOCK_C_LIB_01_193: [ When a destroy_call happens the memory block associated with the argument passed to it shall be freed. ] */
+TEST_FUNCTION(paired_calls_are_checked_and_no_leak_happens)
+{
+    // arrange
+    REGISTER_UMOCKC_PAIRED_CREATE_DESTROY_CALLS(some_create, some_destroy);
+
+    // act
+    SOME_HANDLE h = some_create(42);
+    some_destroy(h);
+
+    // assert
+    // no explicit assert
+}
+
+/* Tests_SRS_UMOCK_C_LIB_01_190: [ If create_call or destroy_call do not obey these rules, at the time of calling REGISTER_UMOCKC_PAIRED_CREATE_DESTROY_CALLS umock_c shall raise an error with the code UMOCK_C_INVALID_PAIRED_CALLS. ]*/
+/* Tests_SRS_UMOCK_C_LIB_01_188: [ The create call shall have a non-void return type. ]*/
+TEST_FUNCTION(when_registering_paired_calls_for_a_create_with_void_return_an_error_is_fired)
+{
+    // arrange
+
+    // act
+    REGISTER_UMOCKC_PAIRED_CREATE_DESTROY_CALLS(some_create_void_return, some_destroy_void_return);
+
+    // assert
+    ASSERT_ARE_EQUAL(size_t, 1, test_on_umock_c_error_call_count);
+    ASSERT_ARE_EQUAL(UMOCK_C_ERROR_CODE, UMOCK_C_INVALID_PAIRED_CALLS, test_on_umock_c_error_calls[0].error_code);
+}
+
+/* Tests_SRS_UMOCK_C_LIB_01_189: [ The destroy call shall take as argument at least one argument. The type of the first argument shall be of the same type as the return type for the create_call. ]*/
+TEST_FUNCTION(when_registering_paired_calls_for_a_destroy_with_no_args_an_error_is_fired)
+{
+    // arrange
+
+    // act
+    REGISTER_UMOCKC_PAIRED_CREATE_DESTROY_CALLS(some_create_no_args, some_destroy_no_args);
+
+    // assert
+    ASSERT_ARE_EQUAL(size_t, 1, test_on_umock_c_error_call_count);
+    ASSERT_ARE_EQUAL(UMOCK_C_ERROR_CODE, UMOCK_C_INVALID_PAIRED_CALLS, test_on_umock_c_error_calls[0].error_code);
+}
+
+/* Tests_SRS_UMOCK_C_LIB_01_189: [ The destroy call shall take as argument at least one argument. The type of the first argument shall be of the same type as the return type for the create_call. ]*/
+TEST_FUNCTION(when_registering_paired_calls_for_a_destroy_with_different_arg_type_an_error_is_fired)
+{
+    // arrange
+
+    // act
+    REGISTER_UMOCKC_PAIRED_CREATE_DESTROY_CALLS(some_create_arg_different, some_destroy_arg_different);
+
+    // assert
+    ASSERT_ARE_EQUAL(size_t, 1, test_on_umock_c_error_call_count);
+    ASSERT_ARE_EQUAL(UMOCK_C_ERROR_CODE, UMOCK_C_INVALID_PAIRED_CALLS, test_on_umock_c_error_calls[0].error_code);
+}
+
+/* Tests_SRS_UMOCK_C_LIB_01_196: [ The type used for the return of create_call and first argument of destroy_call shall be allowed to be any type registered with umock. ]*/
+TEST_FUNCTION(paired_calls_are_checked_with_a_struct_as_instance_type)
+{
+    // arrange
+    REGISTER_UMOCKC_PAIRED_CREATE_DESTROY_CALLS(some_create_with_struct, some_destroy_with_struct);
+
+    // act
+    SOME_STRUCT s = some_create_with_struct(42);
+    some_destroy_with_struct(s);
+
+    // assert
+    // no explicit assert
 }
 
 END_TEST_SUITE(umock_c_integrationtests)
