@@ -735,8 +735,8 @@ typedef struct MOCK_CALL_METADATA_TAG
     static TRACK_DESTROY_FUNC_TYPE C2(track_create_destroy_pair_free_,name) = NULL; \
     static PAIRED_HANDLES C2(paired_handles_,name); \
     static PAIRED_HANDLES* C2(used_paired_handles_,name) = NULL; \
-    static const MOCK_CALL_ARG_METADATA C2(mock_call_args_metadata_,name)[IF(COUNT_ARG(__VA_ARGS__), DIV2(COUNT_ARG(__VA_ARGS__)), 1)] IF(COUNT_ARG(__VA_ARGS__), = \
-        {,) FOR_EACH_2(FILL_ARG_IN_METADATA, __VA_ARGS__) IF(COUNT_ARG(__VA_ARGS__), },); \
+    static const MOCK_CALL_ARG_METADATA C2(mock_call_args_metadata_,name)[IF(COUNT_ARG(__VA_ARGS__), DIV2(COUNT_ARG(__VA_ARGS__)), 1)] \
+        = { IF(COUNT_ARG(__VA_ARGS__),,NULL) FOR_EACH_2(FILL_ARG_IN_METADATA, __VA_ARGS__) }; \
     static const MOCK_CALL_METADATA C2(mock_call_metadata_,name) = { TOSTRING(return_type), TOSTRING(name), DIV2(COUNT_ARG(__VA_ARGS__)), \
         C2(mock_call_args_metadata_,name) }; \
     struct C2(_mock_call_modifier_,name); \
