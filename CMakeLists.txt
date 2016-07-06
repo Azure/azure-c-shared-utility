@@ -691,7 +691,11 @@ endif()
 
 if(WIN32)
 else()
-    target_link_libraries(aziotsharedutil pthread)
+    target_link_libraries(aziotsharedutil pthread m)
+endif()
+
+if(LINUX)
+    target_link_libraries(aziotsharedutil m)
 endif()
 
 if (NOT ${skip_unittests})
