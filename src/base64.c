@@ -183,7 +183,6 @@ BUFFER_HANDLE Base64_Decoder(const char* source)
         }
         else
         {
-            size_t lengthOfSource = numberOfBase64Characters(source);
             if ((result = BUFFER_new()) == NULL)
             {
                 /*Codes_SRS_BASE64_06_010: [If there is any memory allocation failure during the decode then Base64_Decode shall return NULL.]*/

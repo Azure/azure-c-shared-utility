@@ -378,8 +378,10 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
             }
             else
             {
+                /* TODO: we need to do more than a cast here to be 100% clean 
+                The following bug was filed: [WarnL4] socketio_win32 does not account for already sent bytes and there is a truncation of size from size_t to int */
                 int send_result = send(socket_io_instance->socket, buffer, (int)size, 0);
-                if (send_result != size)
+                if (send_result != (int)size)
                 {
                     int last_error = WSAGetLastError();
                     if (last_error != WSAEWOULDBLOCK)
@@ -438,8 +440,10 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                     break;
                 }
 
-                int send_result = send(socket_io_instance->socket, pending_socket_io->bytes, (int)pending_socket_io->size, 0);
-                if (send_result != pending_socket_io->size)
+                /* TODO: we need to do more than a cast here to be 100% clean
+                The following bug was filed: [WarnL4] socketio_win32 does not account for already sent bytes and there is a truncation of size from size_t to int */
+                int send_result = send(socket_io_instance->socket, (const char*)pending_socket_io->bytes, (int)pending_socket_io->size, 0);
+                if (send_result != (int)pending_socket_io->size)
                 {
                     int last_error = WSAGetLastError();
                     if (last_error != WSAEWOULDBLOCK)
@@ -482,23 +486,23 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                 }
                 else
                 {
-                    received = recv(socket_io_instance->socket, recv_bytes, RECEIVE_BYTES_VALUE, 0);
-                if (received > 0)
-                {
-                    if (socket_io_instance->on_bytes_received != NULL)
+                    received = recv(socket_io_instance->socket, (char*)recv_bytes, RECEIVE_BYTES_VALUE, 0);
+                    if (received > 0)
                     {
-                        /* explictly ignoring here the result of the callback */
-                        (void)socket_io_instance->on_bytes_received(socket_io_instance->on_bytes_received_context, recv_bytes, received);
+                        if (socket_io_instance->on_bytes_received != NULL)
+                        {
+                            /* explictly ignoring here the result of the callback */
+                            (void)socket_io_instance->on_bytes_received(socket_io_instance->on_bytes_received_context, recv_bytes, received);
+                        }
                     }
-                }
-                else
-                {
-                    int last_error = WSAGetLastError();
-                    if (last_error != WSAEWOULDBLOCK && last_error != ERROR_SUCCESS)
+                    else
                     {
-                        LogError("Socketio_Failure: Recieving data from endpoint: %d.", last_error);
-                        indicate_error(socket_io_instance);
-                    }
+                        int last_error = WSAGetLastError();
+                        if (last_error != WSAEWOULDBLOCK && last_error != ERROR_SUCCESS)
+                        {
+                            LogError("Socketio_Failure: Recieving data from endpoint: %d.", last_error);
+                            indicate_error(socket_io_instance);
+                        }
                     }
                     free(recv_bytes);
                 }

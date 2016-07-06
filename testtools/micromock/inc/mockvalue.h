@@ -127,6 +127,7 @@ public:
     virtual _Must_inspect_result_
         bool EqualTo(_In_ const CMockValueBase* right)
     {
+        (void)right;
         return true;
     }
 

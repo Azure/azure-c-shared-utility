@@ -6,6 +6,7 @@
 #include <crtdbg.h>
 #endif
 #include <stddef.h>
+#include <stdio.h>
 #include "umockalloc.h"
 
 void* umockalloc_malloc(size_t size)
@@ -26,4 +27,42 @@ void umockalloc_free(void* ptr)
 {
     /* Codes_SRS_UMOCKALLOC_01_005: [ umockalloc_free shall call free, while passing the ptr argument to free. ]*/
     free(ptr);
+}
+
+char* umockc_stringify_buffer(const void* bytes, size_t length)
+{
+    size_t string_length = 2 + (4 * length);
+    char* result;
+    if (length > 1)
+    {
+        string_length += length - 1;
+    }
+
+    result = (char*)umockalloc_malloc(string_length + 1);
+    if (result != NULL)
+    {
+        size_t i;
+
+        result[0] = '[';
+        for (i = 0; i < length; i++)
+        {
+            if (sprintf(result + 1 + (i * 5), "0x%02X ", ((const unsigned char*)bytes)[i]) < 0)
+            {
+                break;
+            }
+        }
+
+        if (i < length)
+        {
+            umockalloc_free(result);
+            result = NULL;
+        }
+        else
+        {
+            result[string_length - 1] = ']';
+            result[string_length] = '\0';
+        }
+    }
+
+    return result;
 }

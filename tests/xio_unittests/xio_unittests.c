@@ -97,9 +97,13 @@ const IO_INTERFACE_DESCRIPTION test_io_description =
 static TEST_MUTEX_HANDLE g_testByTest;
 static TEST_MUTEX_HANDLE g_dllByDll;
 
-void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
+DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
+
+static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    ASSERT_FAIL("umock_c reported error");
+    char temp_str[256];
+    (void)snprintf(temp_str, sizeof(temp_str), "umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
+    ASSERT_FAIL(temp_str);
 }
 
 BEGIN_TEST_SUITE(xio_unittests)
@@ -140,7 +144,7 @@ TEST_SUITE_CLEANUP(suite_cleanup)
 
 TEST_FUNCTION_INITIALIZE(method_init)
 {
-    if (TEST_MUTEX_ACQUIRE(g_testByTest) != 0)
+    if (TEST_MUTEX_ACQUIRE(g_testByTest))
     {
         ASSERT_FAIL("Could not acquire test serialization mutex.");
     }
@@ -673,7 +677,6 @@ TEST_FUNCTION(xio_send_with_non_NULL_buffer_and_zero_length_passes_the_args_down
 TEST_FUNCTION(xio_dowork_calls_the_concrete_dowork_and_succeeds)
 {
     // arrange
-    unsigned char send_data[] = { 0x42, 43 };
     XIO_HANDLE handle = xio_create(&test_io_description, NULL);
     umock_c_reset_all_calls();
 
@@ -722,7 +725,6 @@ TEST_FUNCTION(xio_setoption_with_NULL_handle_fails)
 TEST_FUNCTION(xio_setoption_with_NULL_optionName_fails)
 {
     // arrange
-    const char* optionName = "TheOptionName";
     const void* optionValue = (void*)1;
     XIO_HANDLE handle = xio_create(&test_io_description, NULL);
 

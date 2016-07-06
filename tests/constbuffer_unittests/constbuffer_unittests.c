@@ -105,9 +105,13 @@ size_t my_BUFFER_length(BUFFER_HANDLE handle)
     return result;
 }
 
-void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
+DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
+
+static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    ASSERT_FAIL("umock_c reported error");
+    char temp_str[256];
+    (void)snprintf(temp_str, sizeof(temp_str), "umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
+    ASSERT_FAIL(temp_str);
 }
 
 BEGIN_TEST_SUITE(constbuffer_unittests)
@@ -138,7 +142,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
 
     TEST_FUNCTION_INITIALIZE(f)
     {
-        if (TEST_MUTEX_ACQUIRE(g_testByTest) != 0)
+        if (TEST_MUTEX_ACQUIRE(g_testByTest))
         {
             ASSERT_FAIL("our mutex is ABANDONED. Failure in test framework");
         }

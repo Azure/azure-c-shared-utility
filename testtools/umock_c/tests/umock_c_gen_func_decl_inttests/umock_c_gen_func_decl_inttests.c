@@ -12,11 +12,15 @@ MOCKABLE_FUNCTION(, void, test_generate_signature_no_args);
 
 int test_generate_signature(int a, double b, char* s)
 {
+    (void)a;
+    (void)b;
+    (void)s;
     return 42;
 }
 
 void test_generate_signature_void_return(int a)
 {
+    (void)a;
 }
 
 void test_generate_signature_no_args(void)

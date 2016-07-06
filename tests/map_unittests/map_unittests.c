@@ -75,6 +75,7 @@ static TEST_MUTEX_HANDLE g_dllByDll;
 
 STRING_HANDLE my_STRING_construct(const char* psz)
 {
+    (void)psz;
     return (STRING_HANDLE)malloc(1);
 }
 
@@ -85,6 +86,7 @@ void my_STRING_delete(STRING_HANDLE handle)
 
 STRING_HANDLE my_STRING_new_JSON(const char* source)
 {
+    (void)source;
     return (STRING_HANDLE)malloc(1);
 }
 
@@ -142,9 +144,13 @@ static const char* TEST_BLUEVALUE = "cyan";
 static const char* TEST_GREENKEY = "testgreenkey";
 static const char* TEST_GREENVALUE = "green";
 
-void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
+DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
+
+static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    ASSERT_FAIL("umock_c reported error");
+    char temp_str[256];
+    (void)snprintf(temp_str, sizeof(temp_str), "umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
+    ASSERT_FAIL(temp_str);
 }
 
 BEGIN_TEST_SUITE(map_unittests)
@@ -183,7 +189,7 @@ BEGIN_TEST_SUITE(map_unittests)
 
     TEST_FUNCTION_INITIALIZE(TestMethodInitialize)
     {
-        if (TEST_MUTEX_ACQUIRE(g_testByTest) != 0)
+        if (TEST_MUTEX_ACQUIRE(g_testByTest))
         {
             ASSERT_FAIL("our mutex is ABANDONED. Failure in test framework");
         }

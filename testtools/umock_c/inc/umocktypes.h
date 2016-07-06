@@ -111,6 +111,7 @@ extern "C" {
 #define IMPLEMENT_UMOCK_C_ENUM_FREE(type) \
     void C2(umocktypes_free_,type)(type* value) \
     { \
+        (void)value; \
     }
 
 /* Codes_SRS_UMOCK_C_LIB_01_179: [ IMPLEMENT_UMOCK_C_ENUM_TYPE shall implement umock_c handlers for an enum type. ]*/

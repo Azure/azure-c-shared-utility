@@ -659,16 +659,16 @@ TEST_SUITE_CLEANUP(b)
             // arrange
             char dstString[1024];
             size_t dstSizeInBytes = sizeof(dstString);
-            char expectedString[] = "sprintf_s: 123, hello, Z, 1.5";
-            int expectedStringSize = (int)(sizeof(expectedString));
+            char expected_string[] = "sprintf_s: 123, hello, Z, 1.5";
+            int expected_string_size = (int)(sizeof(expected_string));
             int result;
 
             // act
             result = sprintf_s(dstString, dstSizeInBytes, "sprintf_s: %d, %s, %c, %3.1f", 123, "hello", 'Z', 1.5f);
 
             // assert
-            ASSERT_ARE_EQUAL(char_ptr, expectedString, dstString);
-            ASSERT_ARE_EQUAL(int, expectedStringSize-1, result);
+            ASSERT_ARE_EQUAL(char_ptr, expected_string, dstString);
+            ASSERT_ARE_EQUAL(int, expected_string_size -1, result);
         }
 
         // Tests_SRS_CRT_ABSTRACTIONS_99_028: [If dst or format is a null pointer, sprintf_s shall return -1.]
@@ -779,27 +779,24 @@ TEST_SUITE_CLEANUP(b)
             char* endptr;
             int base = 16;
             unsigned long long result;
+            size_t ull_size = sizeof(unsigned long long);
 
             unsigned long long expectedResult = ULLONG_MAX;
-            char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
 
             // act
             result = strtoull_s(subjectStr, &endptr, base);
 
             // assert
-            ASSERT_ARE_EQUAL(char_ptr, "0xffffffffffffffffffffffffffffffff", subjectStr);
-            ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
-            if (sizeof(unsigned long long) == 128)
+            ASSERT_ARE_EQUAL(int, ERANGE, errno);
+            if (ull_size == 128)
             {
-                ASSERT_ARE_EQUAL(int, 0, errno);
-                uint64_t upperResult = (uint64_t)((result >> 63)/2);
+                uint64_t upperResult = (uint64_t)((result >> 63) / 2);
                 uint64_t lowerResult = (uint64_t)(result & ULLONG_MAX);
                 ASSERT_ARE_EQUAL(uint64_t, expectedResult, upperResult);
                 ASSERT_ARE_EQUAL(uint64_t, expectedResult, lowerResult);
             }
             else
             {
-                ASSERT_ARE_EQUAL(int, ERANGE, errno);
                 ASSERT_ARE_EQUAL(uint64_t, expectedResult, result);
             }
         }
@@ -1961,7 +1958,6 @@ TEST_SUITE_CLEANUP(b)
             float result;
 
             float expectedResult = 1.0e5;
-            char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
 
             // act
             result = strtof_s(subjectStr, NULL);
@@ -1980,7 +1976,6 @@ TEST_SUITE_CLEANUP(b)
             float result;
 
             float expectedResult = 0.0f;
-            char* expectedEndptr = (char*)subjectStr;
 
             // act
             result = strtof_s(subjectStr, NULL);
@@ -2010,7 +2005,7 @@ TEST_SUITE_CLEANUP(b)
 
             // assert
             ASSERT_ARE_EQUAL(char_ptr, "1.0e5", subjectStr);
-            ASSERT_ARE_EQUAL(double, expectedResult, result);
+            ASSERT_IS_TRUE(expectedResult == result);
             ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
         }
 
@@ -2031,7 +2026,7 @@ TEST_SUITE_CLEANUP(b)
 
             // assert
             ASSERT_ARE_EQUAL(char_ptr, "1.0e5 123", subjectStr);
-            ASSERT_ARE_EQUAL(double, expectedResult, result);
+            ASSERT_IS_TRUE(expectedResult == result);
             ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
         }
 
@@ -2053,7 +2048,7 @@ TEST_SUITE_CLEANUP(b)
             // assert
             ASSERT_ARE_EQUAL(int, 0, errno);
             ASSERT_ARE_EQUAL(char_ptr, "2.2250738585072014e-308", subjectStr);
-            ASSERT_ARE_EQUAL(double, expectedResult, result);
+            ASSERT_IS_TRUE(expectedResult == result);
             ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
         }
 
@@ -2095,7 +2090,7 @@ TEST_SUITE_CLEANUP(b)
             // assert
             ASSERT_ARE_EQUAL(int, 0, errno);
             ASSERT_ARE_EQUAL(char_ptr, "-1.7976931348623158e+308", subjectStr);
-            ASSERT_ARE_EQUAL(double, expectedResult, result);
+            ASSERT_IS_TRUE(expectedResult == result);
             ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
         }
 
@@ -2116,7 +2111,7 @@ TEST_SUITE_CLEANUP(b)
             // assert
             ASSERT_ARE_EQUAL(int, ERANGE, errno);
             ASSERT_ARE_EQUAL(char_ptr, "1.8e+308", subjectStr);
-            ASSERT_ARE_EQUAL(double, expectedResult, result);
+            ASSERT_IS_TRUE(expectedResult == result);
             ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
         }
 
@@ -2137,7 +2132,7 @@ TEST_SUITE_CLEANUP(b)
             // assert
             ASSERT_ARE_EQUAL(int, ERANGE, errno);
             ASSERT_ARE_EQUAL(char_ptr, "1.0e309", subjectStr);
-            ASSERT_ARE_EQUAL(double, expectedResult, result);
+            ASSERT_IS_TRUE(expectedResult == result);
             ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
         }
 
@@ -2157,7 +2152,7 @@ TEST_SUITE_CLEANUP(b)
 
             // assert
             ASSERT_ARE_EQUAL(char_ptr, "INF", subjectStr);
-            ASSERT_ARE_EQUAL(double, expectedResult, result);
+            ASSERT_IS_TRUE(expectedResult == result);
             ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
         }
 
@@ -2177,7 +2172,7 @@ TEST_SUITE_CLEANUP(b)
 
             // assert
             ASSERT_ARE_EQUAL(char_ptr, "-INF", subjectStr);
-            ASSERT_ARE_EQUAL(double, expectedResult, result);
+            ASSERT_IS_TRUE(expectedResult == result);
             ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
         }
 
@@ -2217,7 +2212,7 @@ TEST_SUITE_CLEANUP(b)
 
             // assert
             ASSERT_ARE_EQUAL(char_ptr, "", subjectStr);
-            ASSERT_ARE_EQUAL(double, expectedResult, result);
+            ASSERT_IS_TRUE(expectedResult == result);
             ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
         }
 
@@ -2239,7 +2234,7 @@ TEST_SUITE_CLEANUP(b)
 
             // assert
             ASSERT_ARE_EQUAL(char_ptr, NULL, subjectStr);
-            ASSERT_ARE_EQUAL(double, expectedResult, result);
+            ASSERT_IS_TRUE(expectedResult == result);
             ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
         }
 
@@ -2251,14 +2246,13 @@ TEST_SUITE_CLEANUP(b)
             long double result;
 
             long double expectedResult = 1.0e5;
-            char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
 
             // act
             result = strtold_s(subjectStr, NULL);
 
             // assert
             ASSERT_ARE_EQUAL(char_ptr, "1.0e5", subjectStr);
-            ASSERT_ARE_EQUAL(double, expectedResult, result);
+            ASSERT_IS_TRUE(expectedResult == result);
         }
 
         /*Tests_SRS_CRT_ABSTRACTIONS_21_030: [If the subject sequence is empty or does not have the expected form, the strtold_s must not perform any conversion and must returns 0.0; the value of nptr is stored in the object pointed to by endptr, provided that endptr is not a NULL pointer.]*/
@@ -2270,14 +2264,13 @@ TEST_SUITE_CLEANUP(b)
             long double result;
 
             long double expectedResult = 0.0;
-            char* expectedEndptr = (char*)subjectStr;
 
             // act
             result = strtold_s(subjectStr, NULL);
 
             // assert
             ASSERT_ARE_EQUAL(char_ptr, "blahblah", subjectStr);
-            ASSERT_ARE_EQUAL(double, expectedResult, result);
+            ASSERT_IS_TRUE(expectedResult == result);
         }
 
         /* mallocAndStrcpy_s */

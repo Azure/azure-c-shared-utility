@@ -41,11 +41,17 @@ C2(REFCOUNT_, type)
 /*the newly allocated memory shall be free'd by free()*/
 /*and the ref counting is handled internally by the type in the _Create/ _Clone /_Destroy functions */
 
+#if defined(WIN32)
+#define COUNT_TYPE LONG
+#else
+#define COUNT_TYPE uint32_t
+#endif
+
 #define DEFINE_REFCOUNT_TYPE(type)                                                                   \
 REFCOUNT_TYPE(type)                                                                                  \
 {                                                                                                    \
     type counted;                                                                                    \
-    uint32_t count;                                                                                  \
+    COUNT_TYPE count;                                                                                  \
 };                                                                                                   \
 static type* REFCOUNT_TYPE_DECLARE_CREATE(type) (void)                                               \
 {                                                                                                    \

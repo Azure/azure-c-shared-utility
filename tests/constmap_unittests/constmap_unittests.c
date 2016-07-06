@@ -82,7 +82,7 @@ MAP_HANDLE my_Map_Clone(MAP_HANDLE sourceMap)
     {
         result = INVALID_MAP_HANDLE;
     }
-    else if (sourceMap == INVALID_MAP_HANDLE)
+    else
     {
         result = NULL;
     }
@@ -93,6 +93,7 @@ MAP_HANDLE my_Map_Clone(MAP_HANDLE sourceMap)
 MAP_RESULT my_Map_ContainsKey(MAP_HANDLE handle, const char* key, bool* keyExists)
 {
     MAP_RESULT result = currentMapResult;
+    (void)handle, key;
     if (result == MAP_OK)
     {
         *keyExists = true;
@@ -103,6 +104,7 @@ MAP_RESULT my_Map_ContainsKey(MAP_HANDLE handle, const char* key, bool* keyExist
 MAP_RESULT my_Map_ContainsValue(MAP_HANDLE handle, const char* value, bool* valueExists)
 {
     MAP_RESULT result = currentMapResult;
+    (void)handle, value;
     if (result == MAP_OK)
     {
         *valueExists = true;
@@ -113,6 +115,7 @@ MAP_RESULT my_Map_ContainsValue(MAP_HANDLE handle, const char* value, bool* valu
 const char* my_Map_GetValueFromKey(MAP_HANDLE sourceMap, const char* key)
 {
     const char* result;
+    (void)key, sourceMap;
     if (currentMapResult == MAP_OK)
     {
         result = VALID_VALUE;
@@ -127,15 +130,20 @@ const char* my_Map_GetValueFromKey(MAP_HANDLE sourceMap, const char* key)
 MAP_RESULT my_Map_GetInternals(MAP_HANDLE handle, const char*const** keys, const char*const** values, size_t* count)
 {
     MAP_RESULT result = currentMapResult;
+    (void)handle;
     *keys = VALID_CONST_CHAR_POINTER;
     *values = VALID_CONST_CHAR_POINTER;
     *count = VALID_KV_COUNT;
     return result;
 }
 
-void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
+DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
+
+static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    ASSERT_FAIL("umock_c reported error");
+    char temp_str[256];
+    (void)snprintf(temp_str, sizeof(temp_str), "umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
+    ASSERT_FAIL(temp_str);
 }
 
 BEGIN_TEST_SUITE(constmap_unittests)
@@ -173,7 +181,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
 
     TEST_FUNCTION_INITIALIZE(TestMethodInitialize)
     {
-        if (TEST_MUTEX_ACQUIRE(g_testByTest) != 0)
+        if (TEST_MUTEX_ACQUIRE(g_testByTest))
         {
             ASSERT_FAIL("our mutex is ABANDONED. Failure in test framework");
         }
@@ -505,13 +513,6 @@ BEGIN_TEST_SUITE(constmap_unittests)
             MAP_FILTER_REJECT
         };
         size_t errors = sizeof(mapErrorList) / sizeof(MAP_RESULT);
-        CONSTMAP_RESULT constErrorList[] = {
-            CONSTMAP_ERROR,
-            CONSTMAP_INVALIDARG,
-            CONSTMAP_ERROR,
-            CONSTMAP_KEYNOTFOUND,
-            CONSTMAP_ERROR
-        };
 
         for (size_t e = 0; e < errors; e++)
         {
@@ -619,13 +620,6 @@ BEGIN_TEST_SUITE(constmap_unittests)
             MAP_FILTER_REJECT
         };
         size_t errors = sizeof(mapErrorList) / sizeof(MAP_RESULT);
-        CONSTMAP_RESULT constErrorList[] = {
-            CONSTMAP_ERROR,
-            CONSTMAP_INVALIDARG,
-            CONSTMAP_ERROR,
-            CONSTMAP_KEYNOTFOUND,
-            CONSTMAP_ERROR
-        };
 
         for (size_t e = 0; e < errors; e++)
         {
@@ -733,14 +727,6 @@ BEGIN_TEST_SUITE(constmap_unittests)
             MAP_FILTER_REJECT
         };
         size_t errors = sizeof(mapErrorList) / sizeof(MAP_RESULT);
-        CONSTMAP_RESULT constErrorList[] = {
-            CONSTMAP_ERROR,
-            CONSTMAP_INVALIDARG,
-            CONSTMAP_ERROR,
-            CONSTMAP_KEYNOTFOUND,
-            CONSTMAP_ERROR
-        };
-
         // Errors from Map_GetValueFromKey
         for (size_t e = 0; e < errors; e++)
         {

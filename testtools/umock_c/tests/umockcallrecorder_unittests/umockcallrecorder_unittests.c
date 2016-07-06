@@ -35,6 +35,7 @@ static UMOCKCALL_HANDLE umockcall_clone_call_result;
 typedef struct umockcall_set_fail_call_CALL_TAG
 {
     UMOCKCALL_HANDLE umockcall;
+    int fail_call;
 } umockcall_set_fail_call_CALL;
 
 static umockcall_set_fail_call_CALL* umockcall_set_fail_call_calls;
@@ -123,6 +124,7 @@ int umockcall_set_fail_call(UMOCKCALL_HANDLE umockcall, int fail_call)
     {
         umockcall_set_fail_call_calls = new_calls;
         umockcall_set_fail_call_calls[umockcall_set_fail_call_call_count].umockcall = umockcall;
+        umockcall_set_fail_call_calls[umockcall_set_fail_call_call_count].fail_call = fail_call;
         umockcall_set_fail_call_call_count++;
     }
 
@@ -1619,6 +1621,7 @@ TEST_FUNCTION(umockcallrecorder_fail_call_sets_fail_call_to_1_for_the_first_call
     ASSERT_ARE_EQUAL(int, 0, result);
     ASSERT_ARE_EQUAL(size_t, 1, umockcall_set_fail_call_call_count);
     ASSERT_ARE_EQUAL(void_ptr, test_expected_umockcall_1, umockcall_set_fail_call_calls[0].umockcall);
+    ASSERT_ARE_EQUAL(int, 1, umockcall_set_fail_call_calls[0].fail_call);
 
     // cleanup
     umockcallrecorder_destroy(call_recorder);

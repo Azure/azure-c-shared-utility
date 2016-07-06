@@ -57,9 +57,13 @@ static TEST_MUTEX_HANDLE g_dllByDll;
 
 #define TEST_CONTEXT ((const void*)0x4242)
 
-void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
+DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
+
+static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    ASSERT_FAIL("umock_c reported error");
+    char temp_str[256];
+    (void)snprintf(temp_str, sizeof(temp_str), "umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
+    ASSERT_FAIL(temp_str);
 }
 
 BEGIN_TEST_SUITE(list_unittests)
@@ -94,7 +98,7 @@ TEST_SUITE_CLEANUP(suite_cleanup)
 
 TEST_FUNCTION_INITIALIZE(method_init)
 {
-    if (TEST_MUTEX_ACQUIRE(test_serialize_mutex) != 0)
+    if (TEST_MUTEX_ACQUIRE(test_serialize_mutex))
     {
         ASSERT_FAIL("Could not acquire test serialization mutex.");
     }
@@ -704,9 +708,7 @@ TEST_FUNCTION(list_remove_with_NULL_list_fails)
 TEST_FUNCTION(list_remove_with_NULL_item_fails)
 {
 	// arrange
-	int x1 = 0x42;
 	LIST_HANDLE list = list_create();
-	LIST_ITEM_HANDLE item = list_add(list, &x1);
 	umock_c_reset_all_calls();
 
 	// act
@@ -746,10 +748,8 @@ TEST_FUNCTION(list_remove_first_of_2_items_succeeds)
 {
 	// arrange
 	int x1 = 0x42;
-	int x2 = 0x43;
 	LIST_HANDLE list = list_create();
 	LIST_ITEM_HANDLE item1 = list_add(list, &x1);
-	LIST_ITEM_HANDLE item2 = list_add(list, &x2);
 	umock_c_reset_all_calls();
 
 	EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
@@ -769,10 +769,8 @@ TEST_FUNCTION(list_remove_first_of_2_items_succeeds)
 TEST_FUNCTION(list_remove_second_of_2_items_succeeds)
 {
 	// arrange
-	int x1 = 0x42;
 	int x2 = 0x43;
 	LIST_HANDLE list = list_create();
-	LIST_ITEM_HANDLE item1 = list_add(list, &x1);
 	LIST_ITEM_HANDLE item2 = list_add(list, &x2);
 	umock_c_reset_all_calls();
 

@@ -71,9 +71,13 @@ void my_gballoc_free(void* ptr)
 }
 #endif
 
-void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
+DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
+
+static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    ASSERT_FAIL("umock_c reported error");
+    char temp_str[256];
+    (void)snprintf(temp_str, sizeof(temp_str), "umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
+    ASSERT_FAIL(temp_str);
 }
 
 COND_RESULT Condition_Handle_ToString(COND_HANDLE handle)
@@ -110,7 +114,7 @@ TEST_SUITE_CLEANUP(b)
 
 TEST_FUNCTION_INITIALIZE(f)
 {
-    if (TEST_MUTEX_ACQUIRE(g_testByTest) != 0)
+    if (TEST_MUTEX_ACQUIRE(g_testByTest))
     {
         ASSERT_FAIL("our mutex is ABANDONED. Failure in test framework");
     }
@@ -146,7 +150,6 @@ TEST_FUNCTION(Condition_Init_Success)
 TEST_FUNCTION(Condition_Post_Handle_NULL_Failure)
 {
     //arrange
-    COND_HANDLE handle = NULL;
     COND_RESULT result;
 
     //act
