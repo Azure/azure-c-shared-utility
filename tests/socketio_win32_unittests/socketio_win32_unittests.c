@@ -61,14 +61,16 @@ static const void** list_items = NULL;
 static size_t list_item_count = 0;
 static SOCKET test_socket = (SOCKET)0x4243;
 static size_t list_head_count = 0;
-static int PORT_NUM = 80;
 static bool list_add_called = false;
-static const char* HOSTNAME_ARG = "hostname";
 static size_t callbackContext = 11;
 static const struct sockaddr test_sock_addr = { 0 };
 static ADDRINFO TEST_ADDR_INFO = { AI_PASSIVE, AF_INET, SOCK_STREAM, IPPROTO_TCP, 128, NULL, (struct sockaddr*)&test_sock_addr, NULL };
 
 static const char* TEST_BUFFER_VALUE = "test_buffer_value";
+
+#define PORT_NUM 80
+#define HOSTNAME_ARG "hostname"
+
 #define TEST_BUFFER_SIZE    17
 #define TEST_CALLBACK_CONTEXT   0x951753
 
@@ -123,6 +125,7 @@ MOCK_FUNCTION_END(0)
 LIST_ITEM_HANDLE my_list_get_head_item(LIST_HANDLE list)
 {
     LIST_ITEM_HANDLE listHandle = NULL;
+    (void)list;
     if (list_item_count > 0)
     {
         listHandle = (LIST_ITEM_HANDLE)list_items[0];
@@ -134,6 +137,7 @@ LIST_ITEM_HANDLE my_list_get_head_item(LIST_HANDLE list)
 LIST_ITEM_HANDLE my_list_add(LIST_HANDLE list, const void* item)
 {
     const void** items = (const void**)realloc((void*)list_items, (list_item_count + 1) * sizeof(item));
+    (void)list;
     if (items != NULL)
     {
         list_items = items;
@@ -157,6 +161,7 @@ const void* my_list_item_get_value(LIST_ITEM_HANDLE item_handle)
 LIST_ITEM_HANDLE my_list_find(LIST_HANDLE handle, LIST_MATCH_FUNCTION match_function, const void* match_context)
 {
     size_t i;
+    (void)handle;
     const void* found_item = NULL;
     for (i = 0; i < list_item_count; i++)
     {
@@ -172,6 +177,7 @@ LIST_ITEM_HANDLE my_list_find(LIST_HANDLE handle, LIST_MATCH_FUNCTION match_func
 
 void my_list_destroy(LIST_HANDLE handle)
 {
+    (void)handle;
     free((void*)list_items);
     list_items = NULL;
 }
@@ -324,9 +330,13 @@ void umocktypes_free_const_struct_sockaddr_ptr(struct sockaddr** value)
 static TEST_MUTEX_HANDLE g_testByTest;
 static TEST_MUTEX_HANDLE g_dllByDll;
 
-void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
+DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
+
+static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    ASSERT_FAIL("umock_c reported error");
+    char temp_str[256];
+    (void)snprintf(temp_str, sizeof(temp_str), "umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
+    ASSERT_FAIL(temp_str);
 }
 
 BEGIN_TEST_SUITE(socketio_win32_unittests)
@@ -377,7 +387,7 @@ TEST_SUITE_CLEANUP(suite_cleanup)
 
 TEST_FUNCTION_INITIALIZE(method_init)
 {
-    if (TEST_MUTEX_ACQUIRE(g_testByTest) != 0)
+    if (TEST_MUTEX_ACQUIRE(g_testByTest))
     {
         ASSERT_FAIL("Could not acquire test serialization mutex.");
     }
@@ -503,9 +513,6 @@ TEST_FUNCTION(socketio_destroy_socket_succeeds)
 TEST_FUNCTION(socketio_open_socket_io_NULL_fails)
 {
     // arrange
-    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
-
-    umock_c_reset_all_calls();
 
     // act
     int result = socketio_open(NULL, test_on_io_open_complete, &callbackContext, test_on_bytes_received, &callbackContext, test_on_io_error, &callbackContext);
@@ -804,7 +811,7 @@ TEST_FUNCTION(socketio_dowork_succeeds)
     SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
     CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig);
 
-    int result = socketio_open(ioHandle, test_on_io_open_complete, &callbackContext, test_on_bytes_received, &callbackContext, test_on_io_error, &callbackContext);
+    (void)socketio_open(ioHandle, test_on_io_open_complete, &callbackContext, test_on_bytes_received, &callbackContext, test_on_io_error, &callbackContext);
 
     umock_c_reset_all_calls();
 
@@ -829,7 +836,7 @@ TEST_FUNCTION(socketio_dowork_recv_bytes_succeeds)
     SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
     CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig);
 
-    int result = socketio_open(ioHandle, test_on_io_open_complete, &callbackContext, test_on_bytes_received, &callbackContext, test_on_io_error, &callbackContext);
+    (void)socketio_open(ioHandle, test_on_io_open_complete, &callbackContext, test_on_bytes_received, &callbackContext, test_on_io_error, &callbackContext);
 
     umock_c_reset_all_calls();
 

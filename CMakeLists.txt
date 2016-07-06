@@ -20,6 +20,10 @@ endif()
 
 include (CTest)
 
+if(MSVC)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
+endif()
+
 #these are the include folders
 #the following "set" statetement exports across the project a global variable called COMMON_INC_FOLDER that expands to whatever needs to included when using COMMON library
 set(SHARED_UTIL_INC_FOLDER ${CMAKE_CURRENT_LIST_DIR}/inc CACHE INTERNAL "this is what needs to be included if using sharedLib lib" FORCE)
@@ -687,7 +691,11 @@ endif()
 
 if(WIN32)
 else()
-    target_link_libraries(aziotsharedutil pthread)
+    target_link_libraries(aziotsharedutil pthread m)
+endif()
+
+if(LINUX)
+    target_link_libraries(aziotsharedutil m)
 endif()
 
 if (NOT ${skip_unittests})

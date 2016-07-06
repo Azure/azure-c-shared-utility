@@ -39,16 +39,19 @@ BUFFER_HANDLE my_BUFFER_new(void)
 
 STRING_HANDLE my_Base64_Encode(BUFFER_HANDLE input)
 {
+    (void)input;
     return (STRING_HANDLE)malloc(1);
 }
 
 BUFFER_HANDLE my_Base64_Decoder(const char* source)
 {
+    (void)source;
     return (BUFFER_HANDLE)malloc(1);
 }
 
 STRING_HANDLE my_URL_Encode(STRING_HANDLE input)
 {
+    (void)input;
     return (STRING_HANDLE)malloc(1);
 }
 
@@ -87,9 +90,13 @@ extern "C"
 {
 #endif
 
-    void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
+    DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
+
+    static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
     {
-        ASSERT_FAIL("umock_c reported error");
+        char temp_str[256];
+        (void)snprintf(temp_str, sizeof(temp_str), "umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
+        ASSERT_FAIL(temp_str);
     }
 
 #ifdef __cplusplus
@@ -141,7 +148,7 @@ TEST_SUITE_CLEANUP(TestClassCleanup)
 
 TEST_FUNCTION_INITIALIZE(TestMethodInitialize)
 {
-    if (TEST_MUTEX_ACQUIRE(g_testByTest) != 0)
+    if (TEST_MUTEX_ACQUIRE(g_testByTest))
     {
         ASSERT_FAIL("our mutex is ABANDONED. Failure in test framework");
     }

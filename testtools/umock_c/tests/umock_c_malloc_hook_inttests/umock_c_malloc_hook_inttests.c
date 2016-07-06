@@ -43,10 +43,15 @@ void my_free(void* ptr)
 
 #include "umock_c.h"
 #include "umocktypes_charptr.h"
+#include "azure_c_shared_utility/macro_utils.h"
+
+DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void test_on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    ASSERT_FAIL("umock_c reported error");
+    char temp_str[256];
+    (void)snprintf(temp_str, sizeof(temp_str), "umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
+    ASSERT_FAIL(temp_str);
 }
 
 static TEST_MUTEX_HANDLE test_mutex;

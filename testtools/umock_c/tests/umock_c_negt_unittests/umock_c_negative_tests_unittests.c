@@ -100,6 +100,7 @@ int umockcallrecorder_get_expected_call_count(UMOCKCALLRECORDER_HANDLE umock_cal
         umockcallrecorder_get_expected_call_count_calls[umockcallrecorder_get_expected_call_count_call_count].umock_call_recorder = umock_call_recorder;
         umockcallrecorder_get_expected_call_count_calls[umockcallrecorder_get_expected_call_count_call_count].expected_call_count = expected_call_count;
         umockcallrecorder_get_expected_call_count_call_count++;
+        *expected_call_count = 42;
     }
 
     return umockcallrecorder_get_expected_call_count_call_result;
@@ -582,6 +583,7 @@ TEST_FUNCTION(umock_c_negative_tests_call_count_gets_the_expected_call_count_fro
     size_t result = umock_c_negative_tests_call_count();
 
     // assert
+    ASSERT_ARE_EQUAL(size_t, 42, result);
     ASSERT_ARE_EQUAL(size_t, 1, umockcallrecorder_get_expected_call_count_call_count);
     ASSERT_ARE_EQUAL(void_ptr, test_call_recorder, umockcallrecorder_get_expected_call_count_calls[0].umock_call_recorder);
     ASSERT_ARE_EQUAL(size_t, 0, umock_c_indicate_error_call_count);

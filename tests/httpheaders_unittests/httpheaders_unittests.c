@@ -74,11 +74,13 @@ void my_gballoc_free(void* ptr)
 
 MAP_HANDLE my_Map_Create(MAP_FILTER_CALLBACK mapFilterFunc)
 {
+    (void)mapFilterFunc;
     return (MAP_HANDLE)malloc(1);
 }
 
 MAP_HANDLE my_Map_Clone(MAP_HANDLE handle)
 {
+    (void)handle;
     return (MAP_HANDLE)malloc(1);
 }
 
@@ -123,9 +125,13 @@ static char tempBuffer[TEMP_BUFFER_SIZE];
 
 static TEST_MUTEX_HANDLE g_dllByDll;
 
-void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
+DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
+
+static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    ASSERT_FAIL("umock_c reported error");
+    char temp_str[256];
+    (void)snprintf(temp_str, sizeof(temp_str), "umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
+    ASSERT_FAIL(temp_str);
 }
 
 BEGIN_TEST_SUITE(HTTPHeaders_UnitTests)
@@ -170,7 +176,7 @@ BEGIN_TEST_SUITE(HTTPHeaders_UnitTests)
 
         TEST_FUNCTION_INITIALIZE(TestMethodInitialize)
         {
-            if (TEST_MUTEX_ACQUIRE(g_testByTest) != 0)
+            if (TEST_MUTEX_ACQUIRE(g_testByTest))
             {
                 ASSERT_FAIL("our mutex is ABANDONED. Failure in test framework");
             }

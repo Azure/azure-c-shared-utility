@@ -40,10 +40,10 @@ typedef struct test_on_umock_c_error_CALL_TAG
 static test_on_umock_c_error_CALL* test_on_umock_c_error_calls;
 static size_t test_on_umock_c_error_call_count;
 
-TEST_DEFINE_ENUM_TYPE(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES);
-
 DECLARE_UMOCK_POINTER_TYPE_FOR_TYPE(int, int);
 DECLARE_UMOCK_POINTER_TYPE_FOR_TYPE(unsigned char, unsignedchar);
+
+TEST_DEFINE_ENUM_TYPE(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES);
 
 static void test_on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
@@ -90,22 +90,26 @@ static void my_hook_test_dependency_void_return(void)
 char* stringify_func_TEST_STRUCT_COPY_FAILS(const TEST_STRUCT_COPY_FAILS* value)
 {
     char* result = (char*)malloc(1);
+    (void)value;
     result[0] = '\0';
     return result;
 }
 
 int are_equal_func_TEST_STRUCT_COPY_FAILS(const TEST_STRUCT_COPY_FAILS* left, const TEST_STRUCT_COPY_FAILS* right)
 {
+    (void)left, right;
     return 1;
 }
 
 int copy_func_TEST_STRUCT_COPY_FAILS(TEST_STRUCT_COPY_FAILS* destination, const TEST_STRUCT_COPY_FAILS* source)
 {
+    (void)source, destination;
     return 0;
 }
 
 void free_func_TEST_STRUCT_COPY_FAILS(TEST_STRUCT_COPY_FAILS* value)
 {
+    (void)value;
 }
 
 static TEST_MUTEX_HANDLE test_mutex;

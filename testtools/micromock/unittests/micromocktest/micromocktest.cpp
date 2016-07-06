@@ -60,7 +60,7 @@ static int UINT8_Compare(UINT8 a, UINT8 b)
 }
 static void UINT8_ToString(char* string, size_t bufferSize, UINT8 val)
 {
-    sprintf(string, "%d", (int)val);
+    (void)snprintf(string, bufferSize, "%d", (int)val);
 }
 
 /*CTest spec says: tstring_Compare*/
@@ -81,7 +81,7 @@ static int bool_Compare(bool a, bool b)
 }
 static void bool_ToString(char* string, size_t bufferSize, bool val)
 {
-    sprintf(string, "%s", val?"true":"false");
+    (void)snprintf(string, bufferSize, "%s", val?"true":"false");
 }
 
 
@@ -3549,7 +3549,7 @@ static MICROMOCK_GLOBAL_SEMAPHORE_HANDLE g_dllByDll;
 
             STRICT_EXPECTED_CALL(testMock, StaticTestFunctionWith1Arg(1))
                 .ValidateArgument(1)
-                .SetFailReturn(3);
+                .SetFailReturn((UINT8)3);
 
             ///act
             int result = CTestStaticAllArgsMock::StaticTestFunctionWith1Arg(1);
@@ -3570,7 +3570,7 @@ static MICROMOCK_GLOBAL_SEMAPHORE_HANDLE g_dllByDll;
 
             STRICT_EXPECTED_CALL(testMock, StaticTestFunctionWith1Arg(1))
                 .ValidateArgument(1)
-                .SetFailReturn(3);
+                .SetFailReturn((UINT8)3);
 
             ///act
             int result1 = CTestStaticAllArgsMock::StaticTestFunctionWith1Arg(1);
@@ -3590,7 +3590,7 @@ static MICROMOCK_GLOBAL_SEMAPHORE_HANDLE g_dllByDll;
 
             STRICT_EXPECTED_CALL(testMock, StaticTestFunctionWith1Arg(1))
                 .ValidateArgument(1)
-                .SetFailReturn(3);
+                .SetFailReturn((UINT8)3);
 
             STRICT_EXPECTED_CALL(testMock, StaticTestFunctionWith1Arg(1))
                 .ValidateArgument(1);
@@ -3613,7 +3613,7 @@ static MICROMOCK_GLOBAL_SEMAPHORE_HANDLE g_dllByDll;
             CTestStaticAllArgsMock testMock;
 
             STRICT_EXPECTED_CALL(testMock, StaticTestFunctionWith1Arg_Clone(1))
-                .SetFailReturn(3);
+                .SetFailReturn((UINT8)3);
 
             ///act
             int result1 = CTestStaticAllArgsMock::StaticTestFunctionWith1Arg_Clone(1);
@@ -3631,7 +3631,7 @@ static MICROMOCK_GLOBAL_SEMAPHORE_HANDLE g_dllByDll;
             CTestStaticAllArgsMock testMock;
 
             STRICT_EXPECTED_CALL(testMock, StaticTestFunctionWith1Arg_Clone(1))
-                .SetReturn(3);
+                .SetReturn((UINT8)3);
 
             ///act
             int result1 = CTestStaticAllArgsMock::StaticTestFunctionWith1Arg_Clone(1);
@@ -3649,10 +3649,10 @@ static MICROMOCK_GLOBAL_SEMAPHORE_HANDLE g_dllByDll;
             CTestStaticAllArgsMock testMock;
 
             STRICT_EXPECTED_CALL(testMock, StaticTestFunctionWith1Arg_Clone(1))
-                .SetReturn(3);
+                .SetReturn((UINT8)3);
 
             STRICT_EXPECTED_CALL(testMock, StaticTestFunctionWith1Arg_Clone(1))
-                .SetFailReturn(5);
+                .SetFailReturn((UINT8)5);
 
 
             ///act

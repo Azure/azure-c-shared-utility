@@ -36,7 +36,6 @@ static UMOCK_VALUE_TYPE_HANDLERS* get_value_type_handlers(const char* type_name)
 {
     UMOCK_VALUE_TYPE_HANDLERS* result;
     size_t i;
-    size_t length = strlen(type_name);
 
     for (i = 0; i < type_handler_count; i++)
     {

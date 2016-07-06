@@ -104,10 +104,11 @@ int STRING_TOKENIZER_get_next_token(STRING_TOKENIZER_HANDLE tokenizer, STRING_HA
         else
         {
             size_t i;
-            size_t j;
             /* Codes_SRS_STRING_04_005: [STRING_TOKENIZER_get_next_token searches the string inside STRING_TOKENIZER_HANDLE for the first character that is NOT contained in the current delimiter] */
             for (i = 0; i < remainingInputStringSize; i++)
             {
+                size_t j;
+
                 bool foundDelimitter = false;
                 for (j = 0; j < delimitterSize; j++)
                 {

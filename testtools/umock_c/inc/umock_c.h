@@ -26,8 +26,8 @@ extern "C" {
 
 DEFINE_ENUM(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
-    /* This is the type for the error callback by which umock_c shall indicate errors to the user */
-    typedef void(*ON_UMOCK_C_ERROR)(UMOCK_C_ERROR_CODE error_code);
+/* This is the type for the error callback by which umock_c shall indicate errors to the user */
+typedef void(*ON_UMOCK_C_ERROR)(UMOCK_C_ERROR_CODE error_code);
 
 #define IGNORED_PTR_ARG (NULL)
 #define IGNORED_NUM_ARG (0)
@@ -82,6 +82,7 @@ DEFINE_ENUM(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
     } \
     void C3(free_func_,alias,ptr)(value_type** value) \
     { \
+        (void)value; \
     } \
 
 #define REGISTER_UMOCK_VALUE_TYPE(value_type, stringify_func, are_equal_func, copy_func, free_func) \

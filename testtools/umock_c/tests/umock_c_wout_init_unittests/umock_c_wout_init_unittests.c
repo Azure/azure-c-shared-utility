@@ -50,7 +50,7 @@ int umockcallrecorder_add_expected_call(UMOCKCALLRECORDER_HANDLE umock_call_reco
 
 int umockcallrecorder_add_actual_call(UMOCKCALLRECORDER_HANDLE umock_call_recorder, UMOCKCALL_HANDLE mock_call, UMOCKCALL_HANDLE* matched_call)
 {
-    (void)umock_call_recorder, mock_call;
+    (void)umock_call_recorder, mock_call, matched_call;
     umock_c_add_actual_call_call_count++;
     return 0;
 }
