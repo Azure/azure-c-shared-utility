@@ -35,6 +35,9 @@ typedef struct ARG_BUFFER_TAG
     size_t length;
 } ARG_BUFFER;
 
+typedef int(*TRACK_CREATE_FUNC_TYPE)(PAIRED_HANDLES* paired_handles, const void* handle, const char* handle_type, size_t handle_type_size);
+typedef int(*TRACK_DESTROY_FUNC_TYPE)(PAIRED_HANDLES* paired_handles, const void* handle);
+
 #define ARG_IS_IGNORED -1
 #define ARG_IS_NOT_IGNORED 0
 
@@ -960,10 +963,8 @@ typedef struct MOCK_CALL_METADATA_TAG
         UMOCKCALL_HANDLE matched_call; \
         IF(IS_NOT_VOID(return_type),unsigned int result_value_set = 0; \
             void* captured_return_value = NULL;,) \
-        TRACK_CREATE_FUNC_TYPE track_create_destroy_pair_malloc_local = C2(track_create_destroy_pair_malloc_,name); \
-        PAIRED_HANDLES* used_paired_handles_local = C2(used_paired_handles_,name); \
-        const char* return_type_string = \
-            IF(IS_NOT_VOID(return_type),TOSTRING(return_type), NULL); \
+        IF(IS_NOT_VOID(return_type),TRACK_CREATE_FUNC_TYPE track_create_destroy_pair_malloc_local = C2(track_create_destroy_pair_malloc_,name); \
+            PAIRED_HANDLES* used_paired_handles_local = C2(used_paired_handles_,name);,) \
         IF(IS_NOT_VOID(return_type),return_type result = C2(mock_call_default_result_,name);,) \
         C2(mock_call_,name)* matched_call_data; \
         C2(mock_call_,name)* mock_call_data = (C2(mock_call_,name)*)umockalloc_malloc(sizeof(C2(mock_call_,name))); \

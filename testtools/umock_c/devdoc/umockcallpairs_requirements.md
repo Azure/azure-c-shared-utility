@@ -19,9 +19,6 @@ umockcallpairs is a module that handles tracking of call pairs.
         size_t paired_handle_count;
     } PAIRED_HANDLES;
     
-    typedef int(*TRACK_CREATE_FUNC_TYPE)(PAIRED_HANDLES* paired_handles, const void* handle, const char* handle_type, size_t handle_type_size);
-    typedef int(*TRACK_DESTROY_FUNC_TYPE)(PAIRED_HANDLES* paired_handles, const void* handle);
-
     extern int umockcallpairs_track_create_paired_call(PAIRED_HANDLES* paired_handles, const void* handle, const char* handle_type, size_t handle_type_size);
     extern int umockcallpairs_track_destroy_paired_call(PAIRED_HANDLES* paired_handles, const void* handle);
 ```

@@ -29,8 +29,7 @@ int umockcallpairs_track_create_paired_call(PAIRED_HANDLES* paired_handles, cons
     else
     {
         /* Codes_SRS_UMOCKCALLPAIRS_01_001: [ umockcallpairs_track_create_paired_call shall add a new entry to the PAIRED_HANDLES array and on success it shall return 0. ]*/
-        paired_handles->paired_handle_count++;
-        new_paired_handles = (PAIRED_HANDLE*)umockalloc_realloc(paired_handles->paired_handles, sizeof(PAIRED_HANDLE) * paired_handles->paired_handle_count);
+        new_paired_handles = (PAIRED_HANDLE*)umockalloc_realloc(paired_handles->paired_handles, sizeof(PAIRED_HANDLE) * (paired_handles->paired_handle_count + 1));
         if (new_paired_handles == NULL)
         {
             result = __LINE__;
@@ -38,6 +37,7 @@ int umockcallpairs_track_create_paired_call(PAIRED_HANDLES* paired_handles, cons
         }
         else
         {
+            paired_handles->paired_handle_count++;
             paired_handles->paired_handles = new_paired_handles;
 
             /* Codes_SRS_UMOCKCALLPAIRS_01_003: [ umockcallpairs_track_create_paired_call shall allocate a memory block and store a pointer to it in the memory field of the new entry. ]*/
@@ -111,7 +111,6 @@ int umockcallpairs_track_destroy_paired_call(PAIRED_HANDLES* paired_handles, con
 {
     size_t i;
     int result;
-    unsigned char is_found = 0;
 
     if ((paired_handles == NULL) ||
         (handle == NULL))
@@ -122,6 +121,8 @@ int umockcallpairs_track_destroy_paired_call(PAIRED_HANDLES* paired_handles, con
     }
     else
     {
+        unsigned char is_error = 0;
+
         /* Codes_SRS_UMOCKCALLPAIRS_01_008: [ umockcallpairs_track_destroy_paired_call shall remove from the paired handles array pointed by the paired_handles field the entry that is associated with the handle passed in the handle argument. ]*/
         for (i = 0; i < paired_handles->paired_handle_count; i++)
         {
@@ -131,6 +132,7 @@ int umockcallpairs_track_destroy_paired_call(PAIRED_HANDLES* paired_handles, con
             {
                 /* Codes_SRS_UMOCKCALLPAIRS_01_014: [ If umocktypes_are_equal fails, umockcallpairs_track_destroy_paired_call shall fail and return a non-zero value. ]*/
                 result = __LINE__;
+                is_error = 1;
                 UMOCK_LOG("umock_track_create_destroy_paired_calls_free: are_equal failed");
                 break;
             }
@@ -138,34 +140,40 @@ int umockcallpairs_track_destroy_paired_call(PAIRED_HANDLES* paired_handles, con
             {
                 if (are_equal_result == 1)
                 {
-                    /* Codes_SRS_UMOCKCALLPAIRS_01_011: [ umockcallpairs_track_destroy_paired_call shall free the memory pointed by the memory field in the PAIRED_HANDLES array entry associated with handle. ]*/
-                    umocktypes_free(paired_handles->paired_handles[i].handle_type, paired_handles->paired_handles[i].handle_value);
-                    umockalloc_free(paired_handles->paired_handles[i].handle_type);
-                    umockalloc_free(paired_handles->paired_handles[i].handle_value);
-                    (void)memmove(&paired_handles->paired_handles[i], &paired_handles->paired_handles[i + 1], sizeof(PAIRED_HANDLE) * (paired_handles->paired_handle_count - 1));
-                    paired_handles->paired_handle_count--;
-                    if (paired_handles->paired_handle_count == 0)
-                    {
-                        /* Codes_SRS_UMOCKCALLPAIRS_01_012: [ If the array paired handles array is empty after removing the entry, the paired_handles field shall be freed and set to NULL. ]*/
-                        umockalloc_free(paired_handles->paired_handles);
-                        paired_handles->paired_handles = NULL;
-                    }
-
-                    is_found = 1;
                     break;
                 }
             }
         }
 
-        if (is_found == 0)
+        if (i == paired_handles->paired_handle_count)
         {
             result = __LINE__;
             UMOCK_LOG("umock_track_create_destroy_paired_calls_free: could not find handle");
         }
         else
         {
-            /* Codes_SRS_UMOCKCALLPAIRS_01_009: [ On success umockcallpairs_track_destroy_paired_call shall return 0. ]*/
-            result = 0;
+            if (!is_error)
+            {
+                /* Codes_SRS_UMOCKCALLPAIRS_01_011: [ umockcallpairs_track_destroy_paired_call shall free the memory pointed by the memory field in the PAIRED_HANDLES array entry associated with handle. ]*/
+                umocktypes_free(paired_handles->paired_handles[i].handle_type, paired_handles->paired_handles[i].handle_value);
+                umockalloc_free(paired_handles->paired_handles[i].handle_type);
+                umockalloc_free(paired_handles->paired_handles[i].handle_value);
+                (void)memmove(&paired_handles->paired_handles[i], &paired_handles->paired_handles[i + 1], sizeof(PAIRED_HANDLE) * (paired_handles->paired_handle_count - 1));
+                paired_handles->paired_handle_count--;
+                if (paired_handles->paired_handle_count == 0)
+                {
+                    /* Codes_SRS_UMOCKCALLPAIRS_01_012: [ If the array paired handles array is empty after removing the entry, the paired_handles field shall be freed and set to NULL. ]*/
+                    umockalloc_free(paired_handles->paired_handles);
+                    paired_handles->paired_handles = NULL;
+                }
+
+                /* Codes_SRS_UMOCKCALLPAIRS_01_009: [ On success umockcallpairs_track_destroy_paired_call shall return 0. ]*/
+                result = 0;
+            }
+            else
+            {
+                result = __LINE__;
+            }
         }
     }
 
