@@ -283,9 +283,9 @@ TEST_FUNCTION(umockcallpairs_track_create_paired_call_succeeds)
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(int, 2, malloc_call_count);
-    ASSERT_ARE_EQUAL(int, 1, realloc_call_count);
-    ASSERT_ARE_EQUAL(int, 1, umocktypes_copy_call_count);
+    ASSERT_ARE_EQUAL(size_t, 2, malloc_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, realloc_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, umocktypes_copy_call_count);
     ASSERT_ARE_EQUAL(char_ptr, "void*", umocktypes_copy_calls[0].type);
     ASSERT_ARE_EQUAL(void_ptr, &handle, umocktypes_copy_calls[0].source);
 
@@ -306,8 +306,8 @@ TEST_FUNCTION(when_paired_handles_is_NULL_umockcallpairs_track_create_paired_cal
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(int, 0, malloc_call_count);
-    ASSERT_ARE_EQUAL(int, 0, realloc_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, malloc_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, realloc_call_count);
 }
 
 /* Tests_SRS_UMOCKCALLPAIRS_01_004: [ If any of the arguments paired_handles, handle or handle_type is NULL, umockcallpairs_track_create_paired_call shallfail and return a non-zero value. ]*/
@@ -321,8 +321,8 @@ TEST_FUNCTION(when_handle_is_NULL_umockcallpairs_track_create_paired_call_fails)
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(int, 0, malloc_call_count);
-    ASSERT_ARE_EQUAL(int, 0, realloc_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, malloc_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, realloc_call_count);
 }
 
 /* Tests_SRS_UMOCKCALLPAIRS_01_004: [ If any of the arguments paired_handles, handle or handle_type is NULL, umockcallpairs_track_create_paired_call shallfail and return a non-zero value. ]*/
@@ -337,8 +337,8 @@ TEST_FUNCTION(when_handle_type_is_NULL_umockcallpairs_track_create_paired_call_f
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(int, 0, malloc_call_count);
-    ASSERT_ARE_EQUAL(int, 0, realloc_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, malloc_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, realloc_call_count);
 }
 
 /* Tests_SRS_UMOCKCALLPAIRS_01_005: [ If allocating memory fails, umockcallpairs_track_create_paired_call shall fail and return a non-zero value. ]*/
@@ -355,8 +355,8 @@ TEST_FUNCTION(when_reallocating_the_entire_paired_handles_array_fails_umockcallp
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(int, 1, realloc_call_count);
-    ASSERT_ARE_EQUAL(int, 0, malloc_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, realloc_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, malloc_call_count);
 }
 
 /* Tests_SRS_UMOCKCALLPAIRS_01_005: [ If allocating memory fails, umockcallpairs_track_create_paired_call shall fail and return a non-zero value. ]*/
@@ -373,9 +373,9 @@ TEST_FUNCTION(when_allocating_the_handle_value_memory_block_fails_umockcallpairs
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(int, 1, malloc_call_count);
-    ASSERT_ARE_EQUAL(int, 1, realloc_call_count);
-    ASSERT_ARE_EQUAL(int, 1, free_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, malloc_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, realloc_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, free_call_count);
 }
 
 /* Tests_SRS_UMOCKCALLPAIRS_01_005: [ If allocating memory fails, umockcallpairs_track_create_paired_call shall fail and return a non-zero value. ]*/
@@ -392,9 +392,9 @@ TEST_FUNCTION(when_allocating_the_handle_type_block_fails_umockcallpairs_track_c
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(int, 2, malloc_call_count);
-    ASSERT_ARE_EQUAL(int, 1, realloc_call_count);
-    ASSERT_ARE_EQUAL(int, 2, free_call_count);
+    ASSERT_ARE_EQUAL(size_t, 2, malloc_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, realloc_call_count);
+    ASSERT_ARE_EQUAL(size_t, 2, free_call_count);
 }
 
 /* Tests_SRS_UMOCKCALLPAIRS_01_007: [ If umocktypes_copy fails, umockcallpairs_track_create_paired_call shall fail and return a non-zero value. ]*/
@@ -412,10 +412,10 @@ TEST_FUNCTION(when_copying_the_handle_fails_umockcallpairs_track_create_paired_c
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(int, 1, realloc_call_count);
-    ASSERT_ARE_EQUAL(int, 3, free_call_count);
-    ASSERT_ARE_EQUAL(int, 1, umocktypes_copy_call_count);
-    ASSERT_ARE_EQUAL(int, 2, malloc_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, realloc_call_count);
+    ASSERT_ARE_EQUAL(size_t, 3, free_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, umocktypes_copy_call_count);
+    ASSERT_ARE_EQUAL(size_t, 2, malloc_call_count);
     ASSERT_ARE_EQUAL(char_ptr, "void*", umocktypes_copy_calls[0].type);
     ASSERT_ARE_EQUAL(void_ptr, &handle, umocktypes_copy_calls[0].source);
 }
@@ -439,9 +439,9 @@ TEST_FUNCTION(when_realloc_fails_a_subsequent_create_and_destroy_succeeds)
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(int, 3, free_call_count);
-    ASSERT_ARE_EQUAL(int, 1, umocktypes_are_equal_call_count);
-    ASSERT_ARE_EQUAL(int, 1, umocktypes_free_call_count);
+    ASSERT_ARE_EQUAL(size_t, 3, free_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, umocktypes_are_equal_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, umocktypes_free_call_count);
     ASSERT_ARE_EQUAL(char_ptr, "void*", umocktypes_free_calls[0].type);
     ASSERT_ARE_EQUAL(void_ptr, copied_handle, umocktypes_free_calls[0].value);
 }
@@ -467,9 +467,9 @@ TEST_FUNCTION(umockcallpairs_track_destroy_paired_call_removes_a_tracked_handle)
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(int, 3, free_call_count);
-    ASSERT_ARE_EQUAL(int, 1, umocktypes_are_equal_call_count);
-    ASSERT_ARE_EQUAL(int, 1, umocktypes_free_call_count);
+    ASSERT_ARE_EQUAL(size_t, 3, free_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, umocktypes_are_equal_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, umocktypes_free_call_count);
     ASSERT_ARE_EQUAL(char_ptr, "void*", umocktypes_free_calls[0].type);
     ASSERT_ARE_EQUAL(void_ptr, copied_handle, umocktypes_free_calls[0].value);
 }
@@ -494,9 +494,9 @@ TEST_FUNCTION(umockcallpairs_track_destroy_paired_call_with_2_creates_removes_th
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(int, 2, free_call_count);
-    ASSERT_ARE_EQUAL(int, 1, umocktypes_are_equal_call_count);
-    ASSERT_ARE_EQUAL(int, 1, umocktypes_free_call_count);
+    ASSERT_ARE_EQUAL(size_t, 2, free_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, umocktypes_are_equal_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, umocktypes_free_call_count);
     ASSERT_ARE_EQUAL(char_ptr, "void*", umocktypes_free_calls[0].type);
 
     // cleanup
@@ -527,7 +527,7 @@ TEST_FUNCTION(when_the_handle_is_found_at_the_second_index_umockcallpairs_track_
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(int, 1, umocktypes_free_call_count);
+    ASSERT_ARE_EQUAL(size_t, 1, umocktypes_free_call_count);
     ASSERT_ARE_EQUAL(char_ptr, "void*", umocktypes_free_calls[0].type);
 
     // cleanup
@@ -547,9 +547,9 @@ TEST_FUNCTION(umockcallpairs_track_destroy_paired_call_with_NULL_paired_handles_
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(int, 0, free_call_count);
-    ASSERT_ARE_EQUAL(int, 0, umocktypes_are_equal_call_count);
-    ASSERT_ARE_EQUAL(int, 0, umocktypes_free_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, free_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, umocktypes_are_equal_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, umocktypes_free_call_count);
 }
 
 /* Tests_SRS_UMOCKCALLPAIRS_01_010: [ If any of the arguments is NULL, umockcallpairs_track_destroy_paired_call shall fail and return a non-zero value. ]*/
@@ -566,9 +566,9 @@ TEST_FUNCTION(umockcallpairs_track_destroy_paired_call_with_NULL_handle_fails)
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(int, 0, free_call_count);
-    ASSERT_ARE_EQUAL(int, 0, umocktypes_are_equal_call_count);
-    ASSERT_ARE_EQUAL(int, 0, umocktypes_free_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, free_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, umocktypes_are_equal_call_count);
+    ASSERT_ARE_EQUAL(size_t, 0, umocktypes_free_call_count);
 
     // cleanup
     free(paired_handles.paired_handles[0].handle_type);

@@ -483,7 +483,7 @@ static FLOAT_STRING_TYPE splitFloatString(const char* nptr, char** endptr, int *
         char* startptr = *endptr;
         /* integers will go to the fraction and exponential. */
         ullInteger = strtoull_s(startptr, endptr, 10);
-        integerSize = (*endptr) - startptr;
+        integerSize = (int)((*endptr) - startptr);
         if ((ullInteger == ULLONG_MAX) && (errno != 0))
         {
             result = FST_OVERFLOW;
@@ -494,7 +494,7 @@ static FLOAT_STRING_TYPE splitFloatString(const char* nptr, char** endptr, int *
         {
             startptr = (*endptr) + 1;
             ullFraction = strtoull_s(startptr, endptr, 10);
-            fractionSize = (*endptr) - startptr;
+            fractionSize = (int)((*endptr) - startptr);
             if ((ullFraction == ULLONG_MAX) && (errno != 0))
             {
                 result = FST_OVERFLOW;
@@ -518,7 +518,7 @@ static FLOAT_STRING_TYPE splitFloatString(const char* nptr, char** endptr, int *
         if (result == FST_NUMBER)
         {
             /* Add ullInteger to ullFraction. */
-            ullFraction += (ullInteger * (unsigned long long)(pow(10, fractionSize)));
+            ullFraction += (ullInteger * (unsigned long long)(pow(10, (double)fractionSize)));
             (*fraction) = ((double)ullFraction / (pow(10.0f, (double)(fractionSize + integerSize - 1))));
 
             /* Unify rest of integerSize and fractionSize in the exponential. */
