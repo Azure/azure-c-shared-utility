@@ -31,6 +31,7 @@ extern HTTPAPIEX_RESULT HTTPAPIEX_SAS_ExecuteRequest(HTTPAPIEX_SAS_HANDLE sasHan
 extern HTTPAPIEX_SAS_HANDLE HTTPAPIEX_SAS_Create(STRING_HANDLE key, STRING_HANDLE uriResource, STRING_HANDLE keyName);
 ```  
 
+**SRS_HTTPAPIEXSAS_01_001: [** HTTPAPIEX_SAS_Create shall create a new instance of HTTPAPIEX_SAS and return a non-NULL handle to it. **]**
 **SRS_HTTPAPIEXSAS_06_001: [**If the parameter key is NULL then HTTPAPIEX_SAS_Create shall return NULL.**]**
 **SRS_HTTPAPIEXSAS_06_002: [**If the parameter uriResource is NULL then HTTPAPIEX_SAS_Create shall return NULL.**]**
 **SRS_HTTPAPIEXSAS_06_003: [**If the parameter keyName is NULL then HTTPAPIEX_SAS_Create shall return NULL.**]**

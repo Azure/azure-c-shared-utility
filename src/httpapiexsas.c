@@ -47,6 +47,7 @@ HTTPAPIEX_SAS_HANDLE HTTPAPIEX_SAS_Create(STRING_HANDLE key, STRING_HANDLE uriRe
     }
     else
     {
+        /*Codes_SRS_HTTPAPIEXSAS_01_001: [ HTTPAPIEX_SAS_Create shall create a new instance of HTTPAPIEX_SAS and return a non-NULL handle to it. ]*/
         HTTPAPIEX_SAS_STATE* state = malloc(sizeof(HTTPAPIEX_SAS_STATE));
         /*Codes_SRS_HTTPAPIEXSAS_06_004: [If there are any other errors in the instantiation of this handle then HTTPAPIEX_SAS_Create shall return NULL.]*/
         if (state != NULL)
