@@ -16,10 +16,6 @@
 #include "azure_c_shared_utility/strings.h"
 #include "azure_c_shared_utility/urlencode.h"
 
-#ifdef _MSC_VER
-#pragma warning(disable:4505)
-#endif
-
 static const struct
 {
     const char* inputData;

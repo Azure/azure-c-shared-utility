@@ -20,10 +20,6 @@
 
 #include "testrunnerswitcher.h"
 
-#ifdef _MSC_VER
-#pragma warning(disable:4505)
-#endif
-
 static const struct
 {
     size_t inputLength;

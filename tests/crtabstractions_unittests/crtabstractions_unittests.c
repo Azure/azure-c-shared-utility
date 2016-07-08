@@ -14,10 +14,6 @@
 #include "azure_c_shared_utility/crt_abstractions.h"
 #include "errno.h"
 
-#ifdef _MSC_VER
-#pragma warning(disable:4505)
-#endif
-
 #if defined _MSC_VER
 #include "crtdbg.h"
 static _invalid_parameter_handler oldInvalidParameterHandler;

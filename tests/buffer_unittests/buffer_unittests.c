@@ -73,10 +73,6 @@ void my_gballoc_free(void* ptr)
 #define ENABLE_MOCKS
 #include "azure_c_shared_utility/gballoc.h"
 
-#ifdef _MSC_VER
-#pragma warning(disable:4505)
-#endif
-
 #define ALLOCATION_SIZE             16
 #define TOTAL_ALLOCATION_SIZE       32
 

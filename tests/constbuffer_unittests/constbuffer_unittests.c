@@ -54,10 +54,6 @@ void my_gballoc_free(void* ptr)
 #undef ENABLE_MOCKS
 #include "azure_c_shared_utility/constbuffer.h"
 
-#ifdef _MSC_VER
-#pragma warning(disable:4505)
-#endif
-
 static TEST_MUTEX_HANDLE g_testByTest;
 static TEST_MUTEX_HANDLE g_dllByDll;
 
@@ -86,6 +82,7 @@ unsigned char* my_BUFFER_u_char(BUFFER_HANDLE handle)
     }
     else
     {
+        result = NULL;
         ASSERT_FAIL("who am I?");
     }
     return result;
@@ -100,6 +97,7 @@ size_t my_BUFFER_length(BUFFER_HANDLE handle)
     }
     else
     {
+        result = 0;
         ASSERT_FAIL("who am I?");
     }
     return result;

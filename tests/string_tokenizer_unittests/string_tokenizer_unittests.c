@@ -60,10 +60,6 @@ void my_gballoc_free(void* ptr)
 #include "umocktypes_charptr.h"
 #include "azure_c_shared_utility/gballoc.h"
 
-#ifdef _MSC_VER
-#pragma warning(disable:4505)
-#endif
-
 static TEST_MUTEX_HANDLE g_dllByDll;
 static TEST_MUTEX_HANDLE g_testByTest;
 

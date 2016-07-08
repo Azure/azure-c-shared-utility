@@ -16,10 +16,6 @@
 //
 #include "testrunnerswitcher.h"
 
-#ifdef _MSC_VER
-#pragma warning(disable:4505)
-#endif
-
 static size_t currentmalloc_call;
 static size_t whenShallmalloc_fail;
 

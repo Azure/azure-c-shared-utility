@@ -74,6 +74,10 @@ static bool EnumName##_Compare(EnumName left, EnumName right) \
 
 #elif defined CPP_UNITTEST
 
+#ifdef _MSC_VER
+#pragma warning(disable:4505)
+#endif
+
 #include "CppUnitTest.h"
 #include "testmutex.h"
 

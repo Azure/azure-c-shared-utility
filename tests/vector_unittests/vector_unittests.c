@@ -11,10 +11,6 @@
 
 #include "azure_c_shared_utility/vector.h"
 
-#ifdef _MSC_VER
-#pragma warning(disable:4505)
-#endif
-
 typedef struct VECTOR_UNITTEST_TAG
 {
     size_t nValue1;
