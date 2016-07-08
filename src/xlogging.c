@@ -4,6 +4,8 @@
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/consolelogger.h"
 
+#ifndef NO_LOGGING
+
 static LOGGER_LOG global_log_function = consolelogger_log;
 
 void xlogging_set_log_function(LOGGER_LOG log_function)
@@ -15,3 +17,5 @@ LOGGER_LOG xlogging_get_log_function(void)
 {
     return global_log_function;
 }
+
+#endif

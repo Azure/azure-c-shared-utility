@@ -13,14 +13,6 @@ extern "C" {
 
 #include "azure_c_shared_utility/agenttime.h"
 
-/*no logging is useful when time and fprintf are mocked*/
-#ifdef NO_LOGGING
-#define LOG(...)
-#define LogInfo(...)
-#define LogError(...)
-#define xlogging_get_log_function() NULL
-#else
-
 typedef enum LOG_CATEGORY_TAG
 {
     LOG_ERROR,
@@ -30,29 +22,62 @@ typedef enum LOG_CATEGORY_TAG
 
 typedef void(*LOGGER_LOG)(LOG_CATEGORY log_category, unsigned int options, const char* format, ...);
 
+#define LOG_NONE 0x00
 #define LOG_LINE 0x01
+
+/*no logging is useful when time and fprintf are mocked*/
+#ifdef NO_LOGGING
+#define LOG(...)
+#define LogInfo(...)
+#define LogError(...)
+#define xlogging_get_log_function() NULL
+#elif defined(ARDUINO_ARCH_ESP8266)
+/*
+The ESP8266 compiler don’t do a good job compiling this code, it do not understand that the ‘format’ is
+a ‘cont char*’ and moves it to the RAM as a global variable, increasing a lot the .bss. So, we create a
+specific LogInfo that explicitly pin the ‘format’ on the PROGMEM (flash) using a _localFORMAT variable
+with the macro PSTR.
+
+#define ICACHE_FLASH_ATTR   __attribute__((section(".irom0.text")))
+#define PROGMEM     ICACHE_RODATA_ATTR
+#define PSTR(s) (__extension__({static const char __c[] PROGMEM = (s); &__c[0];}))
+const char* __localFORMAT = PSTR(FORMAT);
+
+On the other hand, vsprintf do not support the pinned ‘format’ and os_printf do not works with va_list,
+so we compacted the log in the macro LogInfo.
+*/
+#include "esp8266/azcpgmspace.h"
+#define LogInfo(FORMAT, ...) { \
+        const char* __localFORMAT = PSTR(FORMAT); \
+        os_printf(__localFORMAT, ##__VA_ARGS__); \
+        os_printf("\r\n"); \
+}
+#define LogError LogInfo
+
+#else /* !ARDUINO_ARCH_ESP8266 */
 
 #if defined _MSC_VER
 #define LOG(log_category, log_options, format, ...) { LOGGER_LOG l = xlogging_get_log_function(); if (l != NULL) l(log_category, log_options, format, __VA_ARGS__); }
 #else
-#define LOG(log_category, log_options, format, ...) { LOGGER_LOG l = xlogging_get_log_function(); if (l != NULL) l(log_category, log_options, format, ##__VA_ARGS__); }
+#define LOG(log_category, log_options, format, ...) { LOGGER_LOG l = xlogging_get_log_function(); if (l != NULL) l(log_category, log_options, format, ##__VA_ARGS__); } 
 #endif
 
 #if defined _MSC_VER
-#define LogInfo(FORMAT, ...) do{LOG(LOG_INFO, LOG_LINE, "Info: " FORMAT, __VA_ARGS__); }while(0)
+#define LogInfo(FORMAT, ...) do{LOG(LOG_INFO, LOG_LINE, FORMAT, __VA_ARGS__); }while(0)
 #else
-#define LogInfo(FORMAT, ...) do{LOG(LOG_INFO, LOG_LINE, "Info: " FORMAT, ##__VA_ARGS__); }while(0)
+#define LogInfo(FORMAT, ...) do{LOG(LOG_INFO, LOG_LINE, FORMAT, ##__VA_ARGS__); }while(0)
 #endif
 
 #if defined _MSC_VER
-#define LogError(FORMAT, ...) do{ time_t t = time(NULL); LOG(LOG_ERROR, LOG_LINE, "Error: Time:%.24s File:%s Func:%s Line:%d " FORMAT, ctime(&t), __FILE__, __FUNCDNAME__, __LINE__, __VA_ARGS__); }while(0)
+#define LogError(FORMAT, ...) do{ LOG(LOG_ERROR, LOG_LINE, FORMAT, __VA_ARGS__); }while(0)
 #else
-#define LogError(FORMAT, ...) do{ time_t t = time(NULL); LOG(LOG_ERROR, LOG_LINE, "Error: Time:%.24s File:%s Func:%s Line:%d " FORMAT, ctime(&t), __FILE__, __func__, __LINE__, ##__VA_ARGS__); }while(0)
+#define LogError(FORMAT, ...) do{ LOG(LOG_ERROR, LOG_LINE, FORMAT, ##__VA_ARGS__); }while(0)
 #endif
 
 extern void xlogging_set_log_function(LOGGER_LOG log_function);
 extern LOGGER_LOG xlogging_get_log_function(void);
-#endif
+
+#endif /* ARDUINO_ARCH_ESP8266 */
 
 #ifdef __cplusplus
 }
