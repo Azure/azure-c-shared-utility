@@ -46,6 +46,68 @@ typedef struct HTTP_HANDLE_DATA_TAG
     unsigned int    is_connected : 1;
 } HTTP_HANDLE_DATA;
 
+/*the following function does the same as sscanf(pos2, "%d", &sec)*/
+/*this function only exists because some of platforms do not have sscanf. */
+static int ParseStringToDecimal(const char *src, int* dst)
+{
+    char* next;
+    (*dst) = strtol(src, &next, 0);
+    if ((src == next) || ((((*dst) == LONG_MAX) || ((*dst) == LONG_MIN)) && (errno != 0)))
+    {
+        return EOF;
+    }
+    return 1;
+}
+
+/*the following function does the same as sscanf(pos2, "%x", &sec)*/
+/*this function only exists because some of platforms do not have sscanf. This is not a full implementation; it only works with well-defined x numbers. */
+#define HEXA_DIGIT_VAL(c)         (((c>='0') && (c<='9')) ? (c-'0') : ((c>='a') && (c<='f')) ? (c-'a'+10) : ((c>='A') && (c<='F')) ? (c-'A'+10) : -1)
+static int ParseStringToHexadecimal(const char *src, int* dst)
+{
+    if (src == NULL)
+        return EOF;
+    if (HEXA_DIGIT_VAL(*src) == -1)
+        return EOF;
+
+    int digitVal;
+    (*dst) = 0;
+    while ((digitVal = HEXA_DIGIT_VAL(*src)) != -1)
+    {
+        (*dst) *= 0x10;
+        (*dst) += digitVal;
+        src++;
+    }
+    return 1;
+}
+
+/*the following function does the same as sscanf(buf, "HTTP/%*d.%*d %d %*[^\r\n]", &ret) */
+/*this function only exists because some of platforms do not have sscanf. This is not a full implementation; it only works with well-defined HTTP response. */
+static int ParseHttpResponse(const char* src, int* dst)
+{
+    const char* prefix = "HTTP/";
+    while ((*prefix) != '\0')
+    {
+        if ((*prefix) != (*src))
+            return EOF;
+        prefix++;
+        src++;
+    }
+
+    while ((*src) != '.')
+    {
+        if ((*src) == '\0')
+            return EOF;
+    }
+
+    while ((*src) != ' ')
+    {
+        if ((*src) == '\0')
+            return EOF;
+    }
+
+    return ParseStringToDecimal(src, dst);
+}
+
 HTTPAPI_RESULT HTTPAPI_Init(void)
 {
     return HTTPAPI_OK;
@@ -529,7 +591,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
     }
 
     //Parse HTTP response
-    if (sscanf(buf, "HTTP/%*d.%*d %d %*[^\r\n]", &ret) != 1)
+    if (ParseHttpResponse(buf, &ret) != 1)
     {
         //Cannot match string, error
         LogInfo("HTTPAPI_ExecuteRequest::Not a correct HTTP answer=%s", buf);
@@ -555,7 +617,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
 
         if (my_strnicmp(buf, ContentLength, CHAR_COUNT(ContentLength)) == 0)
         {
-            if (sscanf(buf + CHAR_COUNT(ContentLength), " %d", &bodyLength) != 1)
+            if (ParseStringToDecimal(buf + CHAR_COUNT(ContentLength), &bodyLength) != 1)
             {
                 result = HTTPAPI_READ_DATA_FAILED;
                 LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
@@ -640,7 +702,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
                 LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
                 goto exit;
             }
-            if (sscanf(buf, "%x", &chunkSize) != 1)     // chunkSize is length of next line (/r/n is not counted)
+            if (ParseStringToHexadecimal(buf, &chunkSize) != 1)     // chunkSize is length of next line (/r/n is not counted)
             {
                 //Cannot match string, error
                 result = HTTPAPI_RECEIVE_RESPONSE_FAILED;
