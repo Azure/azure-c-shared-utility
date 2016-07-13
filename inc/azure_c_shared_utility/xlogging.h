@@ -70,6 +70,38 @@ so we compacted the log in the macro LogInfo.
 
 #if defined _MSC_VER
 #define LogError(FORMAT, ...) do{ LOG(LOG_ERROR, LOG_LINE, FORMAT, __VA_ARGS__); }while(0)
+#define TEMP_BUFFER_SIZE 1024
+#define MESSAGE_BUFFER_SIZE 260
+#define LogErrorWinHTTPWithGetLastErrorAsString(FORMAT, ...) do { \
+                DWORD errorMessageID = GetLastError(); \
+                LogError(FORMAT, __VA_ARGS__); \
+                CHAR messageBuffer[MESSAGE_BUFFER_SIZE]; \
+                if (errorMessageID == 0) \
+                {\
+                    LogError("GetLastError() returned 0. Make sure you are calling this right after the code that failed. "); \
+                } \
+                else\
+                {\
+                    int size = FormatMessage(FORMAT_MESSAGE_FROM_HMODULE | FORMAT_MESSAGE_IGNORE_INSERTS, \
+                        GetModuleHandle("WinHttp"), errorMessageID, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), messageBuffer, MESSAGE_BUFFER_SIZE, NULL); \
+                    if (size == 0)\
+                    {\
+                        size = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, errorMessageID, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), messageBuffer, MESSAGE_BUFFER_SIZE, NULL); \
+                        if (size == 0)\
+                        {\
+                            LogError("GetLastError Code: %d. ", errorMessageID); \
+                        }\
+                        else\
+                        {\
+                            LogError("GetLastError: %s.", messageBuffer); \
+                        }\
+                    }\
+                    else\
+                    {\
+                        LogError("GetLastError: %s.", messageBuffer); \
+                    }\
+                }\
+            } while(0)
 #else
 #define LogError(FORMAT, ...) do{ LOG(LOG_ERROR, LOG_LINE, FORMAT, ##__VA_ARGS__); }while(0)
 #endif

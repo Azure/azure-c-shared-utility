@@ -16,40 +16,7 @@
 #include "azure_c_shared_utility/httpheaders.h"
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/strings.h"
-
-#define TEMP_BUFFER_SIZE 1024
-#define MESSAGE_BUFFER_SIZE 260
-
-#define LogErrorWinHTTPWithGetLastErrorAsString(FORMAT, ...) { \
-                DWORD errorMessageID = GetLastError(); \
-                LogError(FORMAT, __VA_ARGS__); \
-                CHAR messageBuffer[MESSAGE_BUFFER_SIZE]; \
-                if (errorMessageID == 0) \
-                {\
-                    LogError("GetLastError() returned 0. Make sure you are calling this right after the code that failed. "); \
-                } \
-                else\
-                {\
-                    int size = FormatMessage(FORMAT_MESSAGE_FROM_HMODULE | FORMAT_MESSAGE_IGNORE_INSERTS, \
-                        GetModuleHandle("WinHttp"), errorMessageID, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), messageBuffer, MESSAGE_BUFFER_SIZE, NULL); \
-                    if (size == 0)\
-                    {\
-                        size = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, errorMessageID, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), messageBuffer, MESSAGE_BUFFER_SIZE, NULL); \
-                        if (size == 0)\
-                        {\
-                            LogError("GetLastError Code: %d. ", errorMessageID); \
-                        }\
-                        else\
-                        {\
-                            LogError("GetLastError: %s.", messageBuffer); \
-                        }\
-                    }\
-                    else\
-                    {\
-                        LogError("GetLastError: %s.", messageBuffer); \
-                    }\
-                }\
-            } \
+#include "azure_c_shared_utility/x509_schannel.h"
 
 DEFINE_ENUM_STRINGS(HTTPAPI_RESULT, HTTPAPI_RESULT_VALUES)
 
@@ -59,231 +26,13 @@ typedef enum HTTPAPI_STATE_TAG
     HTTPAPI_INITIALIZED
 } HTTPAPI_STATE;
 
-typedef struct X509CRYPTO_TAG
-{
-    HCRYPTPROV hProv;
-    HCRYPTKEY x509hcryptkey;
-    PCCERT_CONTEXT x509certificate_context;
-}X509_CRYPTO;
 
-static X509_CRYPTO* HTTPAPI_CreateCrypto(const char* x509certificate, const char* x509privatekey)
-{
-    X509_CRYPTO *result;
-    /*this is what happens with the x509 certificate and the x509 private key in this function*/
-    /*
-    step 1: they are converted to binary form.
-    step 1.1: the size of the binary form is computed
-    step 1.2: the conversion happens
-    step 2: the binary form is decoded
-    step 2.1: the decoded form needed size is computed
-    step 2.2: the decoded form is actually decoded
-    step 3: a crypto provider is created
-    step 4: the x509 private key is associated with the crypto provider
-    step 5: a certificate context is created
-    step 6: the certificate context is linked to the crypto provider
-    */
-
-    result = (X509_CRYPTO*)malloc(sizeof(X509_CRYPTO));
-    if (result == NULL)
-    {
-        LogError("unable to malloc");
-        /*return as is*/
-
-    }
-    else
-    {
-        DWORD binaryx509certificateSize;
-        if (!CryptStringToBinaryA(x509certificate, 0, CRYPT_STRING_ANY, NULL, &binaryx509certificateSize, NULL, NULL))
-        {
-            LogErrorWinHTTPWithGetLastErrorAsString("Failed convert x509 certificate");
-            free(result);
-            result = NULL;
-        }
-        else
-        {
-            unsigned char* binaryx509Certificate = (unsigned char*)malloc(binaryx509certificateSize);
-            if (binaryx509Certificate == NULL)
-            {
-                LogError("unable to allocate memory for x509 certificate");
-                free(result);
-                result = NULL;
-            }
-            else
-            {
-                if (!CryptStringToBinaryA(x509certificate, 0, CRYPT_STRING_ANY, binaryx509Certificate, &binaryx509certificateSize, NULL, NULL))
-                {
-                    LogErrorWinHTTPWithGetLastErrorAsString("Failed convert x509 certificate");
-                    free(result);
-                    result = NULL;
-                }
-                else
-                {
-                    /*at this moment x509 certificate is ready to be used in CertCreateCertificateContext*/
-                    DWORD binaryx509privatekeySize;
-                    if (!CryptStringToBinaryA(x509privatekey, 0, CRYPT_STRING_ANY, NULL, &binaryx509privatekeySize, NULL, NULL))
-                    {
-                        LogErrorWinHTTPWithGetLastErrorAsString("Failed convert x509 private key");
-                        free(result);
-                        result = NULL;
-                    }
-                    else
-                    {
-                        unsigned char* binaryx509privatekey = (unsigned char*)malloc(binaryx509privatekeySize);
-                        if (binaryx509privatekey == NULL)
-                        {
-                            LogError("unable to malloc for binaryx509privatekey");
-                            free(result);
-                            result = NULL;
-                        }
-                        else
-                        {
-                            if (!CryptStringToBinaryA(x509privatekey, 0, CRYPT_STRING_ANY, binaryx509privatekey, &binaryx509privatekeySize, NULL, NULL))
-                            {
-                                LogErrorWinHTTPWithGetLastErrorAsString("Failed convert x509 private key");
-                                free(result);
-                                result = NULL;
-                            }
-                            else
-                            {
-                                DWORD x509privatekeyBlobSize;
-                                if (!CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, PKCS_RSA_PRIVATE_KEY, binaryx509privatekey, binaryx509privatekeySize, 0, NULL, NULL, &x509privatekeyBlobSize))
-                                {
-                                    LogErrorWinHTTPWithGetLastErrorAsString("Failed to CryptDecodeObjectEx x509 private key");
-                                    free(result);
-                                    result = NULL;
-                                }
-                                else
-                                {
-                                    unsigned char* x509privatekeyBlob = (unsigned char*)malloc(x509privatekeyBlobSize);
-                                    if (x509privatekeyBlob == NULL)
-                                    {
-                                        LogError("unable to malloc for x509 private key blob");
-                                        free(result);
-                                        result = NULL;
-                                    }
-                                    else
-                                    {
-                                        if (!CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, PKCS_RSA_PRIVATE_KEY, binaryx509privatekey, binaryx509privatekeySize, 0, NULL, x509privatekeyBlob, &x509privatekeyBlobSize))
-                                        {
-                                            LogErrorWinHTTPWithGetLastErrorAsString("Failed to CryptDecodeObjectEx x509 private key");
-                                            free(result);
-                                            result = NULL;
-                                        }
-                                        else
-                                        {
-                                            /*at this moment, both the private key and the certificate are decoded for further usage*/
-                                            if (!CryptAcquireContext(&(result->hProv), NULL, MS_ENHANCED_PROV, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT))
-                                            {
-                                                LogErrorWinHTTPWithGetLastErrorAsString("CryptAcquireContext failed");
-                                                free(result);
-                                                result = NULL;
-                                            }
-                                            else
-                                            {
-                                                if (!CryptImportKey(result->hProv, x509privatekeyBlob, x509privatekeyBlobSize, (HCRYPTKEY)NULL, 0, &(result->x509hcryptkey)))
-                                                {
-                                                    if (!CryptReleaseContext(result->hProv, 0))
-                                                    {
-                                                        LogErrorWinHTTPWithGetLastErrorAsString("unable to CryptReleaseContext");
-                                                    }
-                                                    LogErrorWinHTTPWithGetLastErrorAsString("CryptImportKey for private key failed");
-                                                    free(result);
-                                                    result = NULL;
-                                                }
-                                                else
-                                                {
-                                                     result->x509certificate_context = CertCreateCertificateContext(
-                                                        X509_ASN_ENCODING | PKCS_7_ASN_ENCODING,
-                                                        binaryx509Certificate,
-                                                        binaryx509certificateSize
-                                                    );
-                                                    if (result->x509certificate_context == NULL)
-                                                    {
-                                                        LogErrorWinHTTPWithGetLastErrorAsString("unable to CertCreateCertificateContext");
-                                                        if (!CryptDestroyKey(result->x509hcryptkey))
-                                                        {
-                                                            LogErrorWinHTTPWithGetLastErrorAsString("unable to CryptDestroyKey");
-                                                        }
-                                                        if (!CryptReleaseContext(result->hProv, 0))
-                                                        {
-                                                            LogErrorWinHTTPWithGetLastErrorAsString("unable to CryptReleaseContext");
-                                                        }
-                                                        free(result);
-                                                        result = NULL;
-                                                    }
-                                                    else
-                                                    {
-                                                        if (!CertSetCertificateContextProperty(result->x509certificate_context, CERT_KEY_PROV_HANDLE_PROP_ID, 0, (void*)result->hProv))
-                                                        {
-                                                            LogErrorWinHTTPWithGetLastErrorAsString("unable to CertSetCertificateContextProperty");
-                                                            if (!CertFreeCertificateContext(result->x509certificate_context))
-                                                            {
-                                                                LogErrorWinHTTPWithGetLastErrorAsString("unable to CertFreeCertificateContext");
-                                                            }
-                                                            if (!CryptDestroyKey(result->x509hcryptkey))
-                                                            {
-                                                                LogErrorWinHTTPWithGetLastErrorAsString("unable to CryptDestroyKey");
-                                                            }
-                                                            if (!CryptReleaseContext(result->hProv, 0))
-                                                            {
-                                                                LogErrorWinHTTPWithGetLastErrorAsString("unable to CryptReleaseContext");
-                                                            }
-                                                            free(result);
-                                                            result = NULL;
-                                                        }
-                                                        else
-                                                        {
-                                                            /*return as is, all is fine*/
-                                                        }
-                                                        
-                                                    }
-                                                    
-                                                }
-                                            }
-                                        }
-                                        free(x509privatekeyBlob);
-                                    }
-                                }
-                            }
-                            free(binaryx509privatekey);
-                        }
-                    }
-                }
-                free(binaryx509Certificate);
-            }
-        }
-    }
-    return result;
-}
-
-static void HTTPAPI_DestroyCrypto(X509_CRYPTO* x509crypto)
-{
-    if (x509crypto != NULL)
-    {
-        if (!CertFreeCertificateContext(x509crypto->x509certificate_context))
-        {
-            LogErrorWinHTTPWithGetLastErrorAsString("unable to CertFreeCertificateContext");
-        }
-
-        if (!CryptDestroyKey(x509crypto->x509hcryptkey))
-        {
-            LogErrorWinHTTPWithGetLastErrorAsString("unable to CryptDestroyKey");
-        }
-
-        if (!CryptReleaseContext(x509crypto->hProv, 0))
-        {
-            LogErrorWinHTTPWithGetLastErrorAsString("unable to CryptReleaseContext");
-        }
-
-        free(x509crypto);
-    }
-}
 
 typedef struct HTTP_HANDLE_DATA_TAG
 {
     /*working set*/
     HINTERNET ConnectionHandle;
-    X509_CRYPTO* x509crypto;
+    X509_SCHANNEL_HANDLE x509SchannelHandle;
     /*options*/
     unsigned int timeout;
     const char* x509certificate;
@@ -489,7 +238,7 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
                             result->timeout = 30000; /*default from MSDN (  https://msdn.microsoft.com/en-us/library/windows/desktop/aa384116(v=vs.85).aspx  )*/
                             result->x509certificate = NULL;
                             result->x509privatekey = NULL;
-                            result->x509crypto = NULL;
+                            result->x509SchannelHandle = NULL;
                         }
                     }
                     free(hostNameTemp);
@@ -519,7 +268,7 @@ void HTTPAPI_CloseConnection(HTTP_HANDLE handle)
                 /*no x509 free because the options are owned by httpapiex.*/
                 handleData->ConnectionHandle = NULL;
             }
-            HTTPAPI_DestroyCrypto(handleData->x509crypto);
+            x509_schannel_destroy(handleData->x509SchannelHandle);
             free(handleData);
         }
     }
@@ -638,11 +387,11 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
                                     }
                                     else
                                     {
-                                        if ((handleData->x509crypto!=NULL) && 
+                                        if ((handleData->x509SchannelHandle!=NULL) && 
                                             !WinHttpSetOption(
                                                 requestHandle,
                                                 WINHTTP_OPTION_CLIENT_CERT_CONTEXT,
-                                                (void*)handleData->x509crypto->x509certificate_context,
+                                                (void*)x509_schannel_get_certificate_context(handleData->x509SchannelHandle),
                                                 sizeof(CERT_CONTEXT)
                                         ))
                                         {
@@ -947,10 +696,10 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
             httpHandleData->x509certificate = value;
             if (httpHandleData->x509privatekey != NULL)
             {
-                httpHandleData->x509crypto = HTTPAPI_CreateCrypto(httpHandleData->x509certificate, httpHandleData->x509privatekey);
-                if (httpHandleData->x509crypto == NULL)
+                httpHandleData->x509SchannelHandle = x509_schannel_create(httpHandleData->x509certificate, httpHandleData->x509privatekey);
+                if (httpHandleData->x509SchannelHandle == NULL)
                 {
-                    LogError("unable to HTTPAPI_CreateCrypto");
+                    LogError("unable to x509_schannel_create");
                     result = HTTPAPI_ERROR;
                 }
                 else
@@ -969,10 +718,10 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
             httpHandleData->x509privatekey = value;
             if (httpHandleData->x509certificate != NULL)
             {
-                httpHandleData->x509crypto = HTTPAPI_CreateCrypto(httpHandleData->x509certificate, httpHandleData->x509privatekey);
-                if (httpHandleData->x509crypto == NULL)
+                httpHandleData->x509SchannelHandle = x509_schannel_create(httpHandleData->x509certificate, httpHandleData->x509privatekey);
+                if (httpHandleData->x509SchannelHandle == NULL)
                 {
-                    LogError("unable to HTTPAPI_CreateCrypto");
+                    LogError("unable to x509_schannel_create");
                     result = HTTPAPI_ERROR;
                 }
                 else

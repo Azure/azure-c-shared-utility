@@ -554,6 +554,7 @@ endif()
 if(${use_schannel})
     set(source_c_files ${source_c_files}
         ./src/tlsio_schannel.c
+        ./src/x509_schannel.c
     )
 endif()
 if(${use_wolfssl})
@@ -605,6 +606,7 @@ set(source_h_files
 ./inc/azure_c_shared_utility/xlogging.h
 ./inc/azure_c_shared_utility/constbuffer.h
 ./inc/azure_c_shared_utility/tlsio.h
+./inc/azure_c_shared_utility/x509_schannel.h
 )
 
 if(${use_http})

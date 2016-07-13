@@ -199,7 +199,21 @@ int umocktypes_are_equal_const_charptr(const char** left, const char** right)
         /* Codes_SRS_UMOCKTYPES_CHARPTR_01_026: [ If the string pointed to by left is equal to the string pointed to by right, umocktypes_are_equal_const_charptr shall return 1. ]*/
         /* Codes_SRS_UMOCKTYPES_CHARPTR_01_027: [ If the string pointed to by left is different than the string pointed to by right, umocktypes_are_equal_const_charptr shall return 0. ]*/
         /* Codes_SRS_UMOCKTYPES_CHARPTR_01_023: [ The comparison shall be case sensitive. ]*/
-        result = (strcmp(*left, *right) == 0) ? 1 : 0;
+        if (*left == *right)
+        {
+            result = 1;
+        }
+        else
+        {
+            if ((*left == NULL) || (*right == NULL))
+            {
+                result = 0;
+            }
+            else
+            {
+                result = (strcmp(*left, *right) == 0) ? 1 : 0;
+            }
+        }
     }
 
     return result;
