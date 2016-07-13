@@ -18,6 +18,7 @@
 #include "azure_c_shared_utility/tlsio.h"
 #include "azure_c_shared_utility/threadapi.h"
 #include <string.h>
+#include <limits.h>
 
 #define MAX_HOSTNAME     64
 #define TEMP_BUFFER_SIZE 4096
