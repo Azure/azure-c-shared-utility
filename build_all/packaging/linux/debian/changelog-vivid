@@ -1,4 +1,4 @@
-azure-c-shared-util (0.1.0-19) vivid; urgency=low
+azure-c-shared-util (0.1.0-20) vivid; urgency=low
 
   * Initial release (Closes: #5069014)
 
@@ -26,4 +26,12 @@ azure-c-shared-util (0.1.0-19) vivid; urgency=low
 
   * Fix bug in Base64_Decode not crash with invalid lengths (#4626bb4)
 
- -- AzureIoT User <aziotsdklinux@outlook.com>  Fri, 17 Jun 2016 14:18:00 -0800
+  * Consolidate logging headers and introduce a global function pointer for logging
+
+  * Enable consolelogger to be the default logger
+
+  * Fix socketIO compile error for MBED
+
+  * Added support on winhttp to understand a x509 certificate
+
+ -- AzureIoT User <aziotsdklinux@outlook.com>  Fri, 30 Jun 2016 17:00:00 -0800
