@@ -18,6 +18,7 @@
 #include "sspi.h"
 #include "schannel.h"
 #include "azure_c_shared_utility/xlogging.h"
+#include "azure_c_shared_utility/x509_schannel.h"
 
 typedef enum TLSIO_STATE_TAG
 {
@@ -50,6 +51,9 @@ typedef struct TLS_IO_INSTANCE_TAG
     size_t received_byte_count;
     size_t buffer_size;
     size_t needed_bytes;
+    const char* x509certificate;
+    const char* x509privatekey;
+    X509_SCHANNEL_HANDLE x509_schannel_handle;
 } TLS_IO_INSTANCE;
 
 static const IO_INTERFACE_DESCRIPTION tlsio_schannel_interface_description =
@@ -146,8 +150,17 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT io_open
             SCHANNEL_CRED auth_data;
 
             auth_data.dwVersion = SCHANNEL_CRED_VERSION;
-            auth_data.cCreds = 0;
-            auth_data.paCred = NULL;
+            if(tls_io_instance->x509_schannel_handle!=NULL)
+            {
+                PCCERT_CONTEXT certContext = x509_schannel_get_certificate_context(tls_io_instance->x509_schannel_handle);
+                auth_data.cCreds = 1;
+                auth_data.paCred = &certContext;
+            }
+            else
+            {
+                auth_data.cCreds = 0;
+                auth_data.paCred = NULL;
+            }
             auth_data.hRootStore = NULL;
             auth_data.cSupportedAlgs = 0;
             auth_data.palgSupportedAlgs = NULL;
@@ -612,6 +625,8 @@ CONCRETE_IO_HANDLE tlsio_schannel_create(void* io_create_parameters)
                         result->received_byte_count = 0;
                         result->buffer_size = 0;
                         result->tlsio_state = TLSIO_STATE_NOT_OPEN;
+                        result->x509certificate = NULL;
+                        result->x509privatekey = NULL;
                     }
                 }
             }
@@ -635,6 +650,11 @@ void tlsio_schannel_destroy(CONCRETE_IO_HANDLE tls_io)
         if (tls_io_instance->received_bytes != NULL)
         {
             free(tls_io_instance->received_bytes);
+        }
+
+        if (tls_io_instance->x509_schannel_handle != NULL)
+        {
+            x509_schannel_destroy(tls_io_instance->x509_schannel_handle);
         }
 
         xio_destroy(tls_io_instance->socket_io);
@@ -858,8 +878,68 @@ int tlsio_schannel_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, 
     else
     {
         TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tls_io;
-
-        if (tls_io_instance->socket_io == NULL)
+        /*x509certificate and x509privatekey are "referenced" by this layer*/
+        if (strcmp("x509certificate", optionName) == 0)
+        {
+            if (tls_io_instance->x509certificate != NULL)
+            {
+                LogError("unable to set x509 options more than once");
+                result =__LINE__;
+            }
+            else
+            {
+                tls_io_instance->x509certificate = value; /*this option is owned by iothubtransport layer... in theory*/
+                if (tls_io_instance->x509privatekey != NULL)
+                {
+                    tls_io_instance->x509_schannel_handle = x509_schannel_create(tls_io_instance->x509certificate, tls_io_instance->x509privatekey);
+                    if (tls_io_instance->x509_schannel_handle == NULL)
+                    {
+                        LogError("x509_schannel_create failed");
+                        result = __LINE__;
+                    }
+                    else
+                    {
+                        /*all is fine, the x509 shall be used later*/
+                        result = 0;
+                    }
+                }
+                else
+                {
+                    result = 0; /*all is fine, maybe x509 privatekey will come and then x509 is set*/
+                }
+            }
+        }
+        else if (strcmp("x509privatekey", optionName) == 0)
+        {
+            if (tls_io_instance->x509privatekey != NULL)
+            {
+                LogError("unable to set more than once x509 options");
+                result = __LINE__;
+            }
+            else
+            {
+                tls_io_instance->x509privatekey = value; /*this option is owned by iothubtransport layer... in theory*/
+                if (tls_io_instance->x509certificate!= NULL)
+                {
+                    tls_io_instance->x509_schannel_handle = x509_schannel_create(tls_io_instance->x509certificate, tls_io_instance->x509privatekey);
+                    if (tls_io_instance->x509_schannel_handle == NULL)
+                    {
+                        LogError("x509_schannel_create failed");
+                        result = __LINE__;
+                    }
+                    else
+                    {
+                        /*all is fine, the x509 shall be used later*/
+                        result = 0;
+                    }
+                }
+                else
+                {
+                    result = 0; /*all is fine, maybe x509 privatekey will come and then x509 is set*/
+                }
+            }
+        }
+        else if (tls_io_instance->socket_io == NULL)
         {
             result = __LINE__;
         }
