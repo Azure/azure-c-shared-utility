@@ -16,6 +16,21 @@
 #include <float.h>
 #include <math.h>
 
+
+#ifdef WINCE
+// These defines are missing in math.h for WEC2013 SDK
+#ifndef _HUGE_ENUF
+#define _HUGE_ENUF  1e+300  // _HUGE_ENUF*_HUGE_ENUF must overflow
+#endif
+
+#define INFINITY   ((float)(_HUGE_ENUF * _HUGE_ENUF))
+#define HUGE_VALF  ((float)INFINITY)
+#define HUGE_VALL  ((long double)INFINITY)
+#define NAN        ((float)(INFINITY * 0.0F))
+#endif
+
+
+
 #ifdef _MSC_VER
 #else
 
@@ -270,6 +285,7 @@ unsigned long long strtoull_s(const char* nptr, char** endptr, int base)
     bool validStr = true;
     char* runner = (char*)nptr;
     bool isNegative = false;
+	int digitVal;
 
     /*Codes_SRS_CRT_ABSTRACTIONS_21_005: [The strtoull_s must convert number using base 2 to 36.]*/
     /*Codes_SRS_CRT_ABSTRACTIONS_21_012: [If the subject sequence is empty or does not have the expected form, the strtoull_s must not perform any conversion; the value of nptr is stored in the object pointed to by endptr, provided that endptr is not a NULL pointer.]*/
@@ -322,7 +338,7 @@ unsigned long long strtoull_s(const char* nptr, char** endptr, int base)
             base = 10;
         }
 
-        int digitVal = DIGIT_VAL(*runner);
+        digitVal = DIGIT_VAL(*runner);
         if (validStr && IN_BASE_RANGE(digitVal, base))
         {
             errno = 0;
@@ -442,6 +458,7 @@ static FLOAT_STRING_TYPE splitFloatString(const char* nptr, char** endptr, int *
     unsigned long long ullFraction = 0;
     int integerSize = 0;
     int fractionSize = 0;
+	char* startptr;
 
     (*endptr) = (char*)nptr;
 
@@ -480,7 +497,7 @@ static FLOAT_STRING_TYPE splitFloatString(const char* nptr, char** endptr, int *
     else if (IN_BASE_RANGE(DIGIT_VAL(**endptr), 10))
     {
         result = FST_NUMBER;
-        char* startptr = *endptr;
+        startptr = *endptr;
         /* integers will go to the fraction and exponential. */
         ullInteger = strtoull_s(startptr, endptr, 10);
         integerSize = (int)((*endptr) - startptr);
@@ -657,6 +674,7 @@ long double strtold_s(const char* nptr, char** endptr)
 int mallocAndStrcpy_s(char** destination, const char* source)
 {
     int result;
+	int copied_result;
     /*Codes_SRS_CRT_ABSTRACTIONS_99_036: [destination parameter or source parameter is NULL, the error code returned shall be EINVAL and destination shall not be modified.]*/
     if ((destination == NULL) || (source == NULL))
     {
@@ -677,7 +695,7 @@ int mallocAndStrcpy_s(char** destination, const char* source)
         {
             *destination = temp;
             /*Codes_SRS_CRT_ABSTRACTIONS_99_039: [mallocAndstrcpy_s shall copy the contents in the address source, including the terminating null character into location specified by the destination pointer after the memory allocation.]*/
-            int copied_result = strcpy_s(*destination, l + 1, source);
+            copied_result = strcpy_s(*destination, l + 1, source);
             if (copied_result < 0) /*strcpy_s error*/
             {
                 free(*destination);

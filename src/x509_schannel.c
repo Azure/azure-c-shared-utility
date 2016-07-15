@@ -3,6 +3,9 @@
 
 #include "windows.h"
 
+#ifdef WINCE
+#include <wincrypt.h>
+#endif
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/x509_schannel.h"
 #include "azure_c_shared_utility/xlogging.h"

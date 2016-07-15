@@ -8,6 +8,7 @@
 #include <crtdbg.h>
 #endif
 
+
 #include <stddef.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -18,6 +19,10 @@
 #include "sspi.h"
 #include "schannel.h"
 #include "azure_c_shared_utility/xlogging.h"
+
+#ifdef WINCE
+#define SCH_USE_STRONG_CRYPTO  0x00400000
+#endif
 
 typedef enum TLSIO_STATE_TAG
 {
@@ -77,7 +82,7 @@ static int resize_receive_buffer(TLS_IO_INSTANCE* tls_io_instance, size_t needed
 
     if (needed_buffer_size > tls_io_instance->buffer_size)
     {
-        unsigned char* new_buffer = realloc(tls_io_instance->received_bytes, needed_buffer_size);
+		unsigned char* new_buffer = (unsigned char*) realloc(tls_io_instance->received_bytes, needed_buffer_size);
         if (new_buffer == NULL)
         {
             result = __LINE__;
@@ -217,7 +222,7 @@ static int set_receive_buffer(TLS_IO_INSTANCE* tls_io_instance, size_t buffer_si
 {
     int result;
 
-    unsigned char* new_buffer = realloc(tls_io_instance->received_bytes, buffer_size);
+	unsigned char* new_buffer = (unsigned char*) realloc(tls_io_instance->received_bytes, buffer_size);
     if (new_buffer == NULL)
     {
         result = __LINE__;
@@ -457,7 +462,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                         /* notify of the received data */
                         if (tls_io_instance->on_bytes_received != NULL)
                         {
-                            tls_io_instance->on_bytes_received(tls_io_instance->on_bytes_received_context, security_buffers[1].pvBuffer, security_buffers[1].cbBuffer);
+							tls_io_instance->on_bytes_received(tls_io_instance->on_bytes_received_context, (const unsigned char *) security_buffers[1].pvBuffer, security_buffers[1].cbBuffer);
                         }
 
                         consumed_bytes = tls_io_instance->received_byte_count;
@@ -552,7 +557,7 @@ static void on_underlying_io_error(void* context)
 
 CONCRETE_IO_HANDLE tlsio_schannel_create(void* io_create_parameters)
 {
-    TLSIO_CONFIG* tls_io_config = io_create_parameters;
+	TLSIO_CONFIG* tls_io_config = (TLSIO_CONFIG *) io_create_parameters;
     TLS_IO_INSTANCE* result;
 
     if (tls_io_config == NULL)
@@ -561,7 +566,7 @@ CONCRETE_IO_HANDLE tlsio_schannel_create(void* io_create_parameters)
     }
     else
     {
-        result = malloc(sizeof(TLS_IO_INSTANCE));
+		result = (TLS_IO_INSTANCE *) malloc(sizeof(TLS_IO_INSTANCE));
         if (result != NULL)
         {
             SOCKETIO_CONFIG socketio_config;

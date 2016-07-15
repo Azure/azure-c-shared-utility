@@ -112,7 +112,8 @@ CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters)
 {
     SOCKETIO_CONFIG* socket_io_config = io_create_parameters;
     SOCKET_IO_INSTANCE* result;
-
+	struct tcp_keepalive tcp_keepalive = { 0, 0, 0 };
+	
     if (socket_io_config == NULL)
     {
         LogError("Invalid argument: socket_io_config is NULL");
@@ -163,7 +164,8 @@ CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters)
                     result->on_bytes_received_context = NULL;
                     result->on_io_error_context = NULL;
                     result->io_state = IO_STATE_CLOSED;
-                    result->keep_alive = (struct tcp_keepalive) { 0, 0, 0 };
+					result->keep_alive = tcp_keepalive;
+					
                 }
             }
         }
@@ -178,14 +180,16 @@ CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters)
 
 void socketio_destroy(CONCRETE_IO_HANDLE socket_io)
 {
-    if (socket_io != NULL)
+	LIST_ITEM_HANDLE first_pending_io;
+
+	if (socket_io != NULL)
     {
         SOCKET_IO_INSTANCE* socket_io_instance = (SOCKET_IO_INSTANCE*)socket_io;
         /* we cannot do much if the close fails, so just ignore the result */
         (void)closesocket(socket_io_instance->socket);
 
         /* clear allpending IOs */
-        LIST_ITEM_HANDLE first_pending_io;
+        
         while ((first_pending_io = list_get_head_item(socket_io_instance->pending_io_list)) != NULL)
         {
             PENDING_SOCKET_IO* pending_socket_io = (PENDING_SOCKET_IO*)list_item_get_value(first_pending_io);
@@ -422,7 +426,8 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
 
 void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
 {
-    if (socket_io != NULL)
+	int send_result;
+	if (socket_io != NULL)
     {
         SOCKET_IO_INSTANCE* socket_io_instance = (SOCKET_IO_INSTANCE*)socket_io;
         if (socket_io_instance->io_state == IO_STATE_OPEN)
@@ -442,7 +447,7 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
 
                 /* TODO: we need to do more than a cast here to be 100% clean
                 The following bug was filed: [WarnL4] socketio_win32 does not account for already sent bytes and there is a truncation of size from size_t to int */
-                int send_result = send(socket_io_instance->socket, (const char*)pending_socket_io->bytes, (int)pending_socket_io->size, 0);
+                send_result = send(socket_io_instance->socket, (const char*)pending_socket_io->bytes, (int)pending_socket_io->size, 0);
                 if (send_result != (int)pending_socket_io->size)
                 {
                     int last_error = WSAGetLastError();

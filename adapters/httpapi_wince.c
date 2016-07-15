@@ -10,7 +10,6 @@
 #include "azure_c_shared_utility/crt_abstractions.h"
 #include "azure_c_shared_utility/xlogging.h"
 #include <string.h>
-#include "certs.h"
 #include "winsock2.h"
 #include "sslsock.h"
 #include "schnlsp.h"
