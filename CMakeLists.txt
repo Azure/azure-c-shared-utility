@@ -53,7 +53,6 @@ option(compileOption_C "passes a string to the command line of the C compiler" O
 option(compileOption_CXX "passes a string to the command line of the C++ compiler" OFF)
 
 # Start of variables used during install
-set (INCLUDE_INSTALL_DIR "/usr/include/azureiot/azure_c_shared_utility" CACHE PATH "Include file directory")
 set (LIB_INSTALL_DIR lib CACHE PATH "Library object file directory")
 
 #Use solution folders. 
@@ -709,6 +708,6 @@ endif()
 if(WIN32)
 else()
     install (TARGETS aziotsharedutil DESTINATION lib)
-    install (FILES ${source_h_files} DESTINATION ${INCLUDE_INSTALL_DIR})
+    install (FILES ${source_h_files} DESTINATION include/azureiot/azure_c_shared_utility)
 endif (WIN32)
 
