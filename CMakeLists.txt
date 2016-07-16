@@ -25,7 +25,7 @@ if (WINCE) # Be lax with WEC 2013 compiler
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W3")
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W3")
   # WEC 2013 uses older VS compiler. Build some files as C++ files to resolve C99 related compile issues
-  SET_SOURCE_FILES_PROPERTIES(src/consolelogger.c src/map.c adapters/uniqueid_win32.c adapters/httpapi_wince.c src/tlsio_schannel.c src/x509_schannel.c PROPERTIES LANGUAGE CXX)
+  SET_SOURCE_FILES_PROPERTIES(src/consolelogger.c src/xlogging.c src/map.c adapters/uniqueid_win32.c adapters/httpapi_wince.c src/tlsio_schannel.c src/x509_schannel.c PROPERTIES LANGUAGE CXX)
   add_definitions(-DWIN32) #WEC 2013 
   ELSE()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
