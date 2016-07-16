@@ -2,6 +2,9 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #define SECURITY_WIN32
+#ifdef WINCE
+#define UNICODE // Only Unicode version of secur32.lib functions supported on Windows CE
+#endif
 
 #include <stdlib.h>
 #ifdef _CRTDBG_MAP_ALLOC
@@ -186,11 +189,20 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT io_open
                 security_buffers_desc.pBuffers = init_security_buffers;
                 security_buffers_desc.ulVersion = SECBUFFER_VERSION;
 
+                #ifdef WINCE
+				// This need to be actually converted into Wide Char (To be fixed)
                 status = InitializeSecurityContext(&tls_io_instance->credential_handle,
-                    NULL, (SEC_CHAR*)tls_io_instance->host_name, ISC_REQ_EXTENDED_ERROR | ISC_REQ_STREAM | ISC_REQ_ALLOCATE_MEMORY | ISC_REQ_USE_SUPPLIED_CREDS, 0, 0, NULL, 0,
+					NULL, (SEC_WCHAR*)tls_io_instance->host_name, ISC_REQ_EXTENDED_ERROR | ISC_REQ_STREAM | ISC_REQ_ALLOCATE_MEMORY | ISC_REQ_USE_SUPPLIED_CREDS, 0, 0, NULL, 0,
                     &tls_io_instance->security_context, &security_buffers_desc,
                     &context_attributes, NULL);
+				#else
+					status = InitializeSecurityContext(&tls_io_instance->credential_handle,
+					NULL, (SEC_CHAR*)tls_io_instance->host_name, ISC_REQ_EXTENDED_ERROR | ISC_REQ_STREAM | ISC_REQ_ALLOCATE_MEMORY | ISC_REQ_USE_SUPPLIED_CREDS, 0, 0, NULL, 0,
+					&tls_io_instance->security_context, &security_buffers_desc,
+					&context_attributes, NULL);
+               #endif
 
+					
                 if ((status == SEC_I_COMPLETE_NEEDED) || (status == SEC_I_CONTINUE_NEEDED) || (status == SEC_I_COMPLETE_AND_CONTINUE))
                 {
                     if (xio_send(tls_io_instance->socket_io, init_security_buffers[0].pvBuffer, init_security_buffers[0].cbBuffer, NULL, NULL) != 0)
@@ -290,11 +302,21 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                 output_buffers_desc.pBuffers = output_buffers;
                 output_buffers_desc.ulVersion = SECBUFFER_VERSION;
 
+				#ifdef WINCE
+				// This need to be actually converted into Wide Char (To be fixed)
+
                 unsigned long flags = ISC_REQ_EXTENDED_ERROR | ISC_REQ_STREAM | ISC_REQ_ALLOCATE_MEMORY | ISC_REQ_USE_SUPPLIED_CREDS;
                 SECURITY_STATUS status = InitializeSecurityContext(&tls_io_instance->credential_handle,
-                    &tls_io_instance->security_context, (SEC_CHAR*)tls_io_instance->host_name, flags, 0, 0, &input_buffers_desc, 0,
+					&tls_io_instance->security_context, (SEC_WCHAR*)tls_io_instance->host_name, flags, 0, 0, &input_buffers_desc, 0,
                     &tls_io_instance->security_context, &output_buffers_desc,
                     &context_attributes, NULL);
+                #else
+				SECURITY_STATUS status = InitializeSecurityContext(&tls_io_instance->credential_handle,
+					&tls_io_instance->security_context, (SEC_CHAR*)tls_io_instance->host_name, flags, 0, 0, &input_buffers_desc, 0,
+					&tls_io_instance->security_context, &output_buffers_desc,
+					&context_attributes, NULL);
+                #endif
+
 
                 switch (status)
                 {

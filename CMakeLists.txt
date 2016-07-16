@@ -695,7 +695,11 @@ endif()
 
 if(${use_schannel})
     if(WIN32)
-        target_link_libraries(aziotsharedutil ws2_32 secur32)
+	 if (WINCE)
+        target_link_libraries(aziotsharedutil secur32)
+		else()
+		target_link_libraries(aziotsharedutil ws2_32 secur32)
+		endif()
     endif()
 endif()
 
