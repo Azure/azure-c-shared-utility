@@ -4,6 +4,7 @@
 #define SECURITY_WIN32
 #ifdef WINCE
 #define UNICODE // Only Unicode version of secur32.lib functions supported on Windows CE
+#define SCH_USE_STRONG_CRYPTO  0x00400000 // not defined in header file
 #endif
 
 #include <stdlib.h>
@@ -22,10 +23,6 @@
 #include "sspi.h"
 #include "schannel.h"
 #include "azure_c_shared_utility/xlogging.h"
-
-#ifdef WINCE
-#define SCH_USE_STRONG_CRYPTO  0x00400000
-#endif
 
 typedef enum TLSIO_STATE_TAG
 {
@@ -51,8 +48,12 @@ typedef struct TLS_IO_INSTANCE_TAG
     void* on_io_error_context;
     CtxtHandle security_context;
     TLSIO_STATE tlsio_state;
+	#ifndef WINCE
     SEC_CHAR* host_name;
-    CredHandle credential_handle;
+	#else
+	SEC_WCHAR* host_name; // For WEC 2013 parameter is wide char
+	#endif
+	CredHandle credential_handle;
     bool credential_handle_allocated;
     unsigned char* received_bytes;
     size_t received_byte_count;
@@ -189,19 +190,11 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT io_open
                 security_buffers_desc.pBuffers = init_security_buffers;
                 security_buffers_desc.ulVersion = SECBUFFER_VERSION;
 
-                #ifdef WINCE
-				// This need to be actually converted into Wide Char (To be fixed)
-                status = InitializeSecurityContext(&tls_io_instance->credential_handle,
-					NULL, (SEC_WCHAR*)tls_io_instance->host_name, ISC_REQ_EXTENDED_ERROR | ISC_REQ_STREAM | ISC_REQ_ALLOCATE_MEMORY | ISC_REQ_USE_SUPPLIED_CREDS, 0, 0, NULL, 0,
-                    &tls_io_instance->security_context, &security_buffers_desc,
-                    &context_attributes, NULL);
-				#else
-					status = InitializeSecurityContext(&tls_io_instance->credential_handle,
-					NULL, (SEC_CHAR*)tls_io_instance->host_name, ISC_REQ_EXTENDED_ERROR | ISC_REQ_STREAM | ISC_REQ_ALLOCATE_MEMORY | ISC_REQ_USE_SUPPLIED_CREDS, 0, 0, NULL, 0,
+               	status = InitializeSecurityContext(&tls_io_instance->credential_handle,
+					NULL, tls_io_instance->host_name, ISC_REQ_EXTENDED_ERROR | ISC_REQ_STREAM | ISC_REQ_ALLOCATE_MEMORY | ISC_REQ_USE_SUPPLIED_CREDS, 0, 0, NULL, 0,
 					&tls_io_instance->security_context, &security_buffers_desc,
 					&context_attributes, NULL);
-               #endif
-
+               
 					
                 if ((status == SEC_I_COMPLETE_NEEDED) || (status == SEC_I_CONTINUE_NEEDED) || (status == SEC_I_COMPLETE_AND_CONTINUE))
                 {
@@ -302,21 +295,13 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                 output_buffers_desc.pBuffers = output_buffers;
                 output_buffers_desc.ulVersion = SECBUFFER_VERSION;
 
-				#ifdef WINCE
-				// This need to be actually converted into Wide Char (To be fixed)
-
+				
                 unsigned long flags = ISC_REQ_EXTENDED_ERROR | ISC_REQ_STREAM | ISC_REQ_ALLOCATE_MEMORY | ISC_REQ_USE_SUPPLIED_CREDS;
                 SECURITY_STATUS status = InitializeSecurityContext(&tls_io_instance->credential_handle,
-					&tls_io_instance->security_context, (SEC_WCHAR*)tls_io_instance->host_name, flags, 0, 0, &input_buffers_desc, 0,
-                    &tls_io_instance->security_context, &output_buffers_desc,
-                    &context_attributes, NULL);
-                #else
-				SECURITY_STATUS status = InitializeSecurityContext(&tls_io_instance->credential_handle,
-					&tls_io_instance->security_context, (SEC_CHAR*)tls_io_instance->host_name, flags, 0, 0, &input_buffers_desc, 0,
+					&tls_io_instance->security_context, tls_io_instance->host_name, flags, 0, 0, &input_buffers_desc, 0,
 					&tls_io_instance->security_context, &output_buffers_desc,
 					&context_attributes, NULL);
-                #endif
-
+                
 
                 switch (status)
                 {
@@ -607,7 +592,13 @@ CONCRETE_IO_HANDLE tlsio_schannel_create(void* io_create_parameters)
             result->on_io_error_context = NULL;
             result->credential_handle_allocated = false;
 
-            result->host_name = (SEC_CHAR*)malloc(sizeof(SEC_CHAR) * (1 + strlen(tls_io_config->hostname)));
+			#ifdef WINCE
+			result->host_name = (SEC_WCHAR*)malloc(sizeof(SEC_WCHAR) * (1 + strlen(tls_io_config->hostname)));
+			#else
+			result->host_name = (SEC_CHAR*)malloc(sizeof(SEC_CHAR) * (1 + strlen(tls_io_config->hostname)));
+			#endif
+
+
             if (result->host_name == NULL)
             {
                 free(result);
@@ -615,8 +606,12 @@ CONCRETE_IO_HANDLE tlsio_schannel_create(void* io_create_parameters)
             }
             else
             {
-                (void)strcpy(result->host_name, tls_io_config->hostname);
-
+				#ifdef WINCE
+				(void) mbstowcs(result->host_name, tls_io_config->hostname, strlen(tls_io_config->hostname));
+				#else
+				(void)strcpy(result->host_name, tls_io_config->hostname);
+				#endif
+				
                 const IO_INTERFACE_DESCRIPTION* socket_io_interface = socketio_get_interface_description();
                 if (socket_io_interface == NULL)
                 {
