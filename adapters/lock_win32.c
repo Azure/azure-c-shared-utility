@@ -6,15 +6,9 @@
 #include <stdlib.h>
 #include "azure_c_shared_utility/xlogging.h"
 
-#ifdef WINCE
-const char* Lock_ResultAsString[] = { "OK", "ERROR" };
-#define ENUM_TO_STRING(l, result) Lock_ResultAsString[result]
-#else
-
 #include "azure_c_shared_utility/macro_utils.h"
 DEFINE_ENUM_STRINGS(LOCK_RESULT, LOCK_RESULT_VALUES);
 
-#endif
 
 /*SRS_LOCK_99_002:[ This API on success will return a valid lock handle which should be a non NULL value]*/
 LOCK_HANDLE Lock_Init(void)
