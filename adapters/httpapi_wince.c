@@ -15,7 +15,7 @@
 #include "schnlsp.h"
 
 #define MAX_HOSTNAME     64
-#define TEMP_BUFFER_SIZE 4096
+#define TEMPORARY_BUFFER_SIZE 4096
 
 #define CHAR_COUNT(A)   (sizeof(A) - 1)
 
@@ -116,7 +116,7 @@ int CALLBACK SSLValidateCertHook(DWORD  dwType, LPVOID pvArg,
 
     CertFreeCertificateContext(pCertPassed);
 
-    return retcode;
+	return retcode;
 }
 
 // Initializes SSL layer, called only once on initialization
@@ -126,7 +126,7 @@ int SSLInit(SOCKET s, int SslOptions)
     SSLVALIDATECERTHOOK hook;
     SSLPROTOCOLS protocolsToUse;
     int ret;
-
+	
     g_SslOptions = SslOptions;//WSAIoctl cannot handle the pointer copy, use a global variable
 
     if (setsockopt(s, SOL_SOCKET, SO_SECURE, (LPSTR)&optval, sizeof(optval)) ==
@@ -324,7 +324,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
 
     HTTPAPI_RESULT result;
     size_t  headersCount;
-    char    buf[TEMP_BUFFER_SIZE];
+	char    buf[TEMPORARY_BUFFER_SIZE];
     int     ret;
     size_t  bodyLength = 0;
     bool    chunked = false;
