@@ -17,14 +17,13 @@ static void my_gballoc_free(void* s)
     free(s);
 }
 
-/*define this symbol so that CryptDecodeObjectEx is not linked with dll linkage*/
-
 #include <stddef.h>
 #include "testrunnerswitcher.h"
 #include "umock_c.h"
 
 #include "openssl/ssl.h"
 #include "openssl/x509.h"
+#include "openssl/err.h"
 #include "azure_c_shared_utility/x509_openssl.h"
 #include "umocktypes_charptr.h"
 #include "umock_c_negative_tests.h"
@@ -51,6 +50,10 @@ MOCKABLE_FUNCTION(,RSA *,PEM_read_bio_RSAPrivateKey, BIO *,bp, RSA **,x, pem_pas
 /*from openssl/ssl.h*/
 MOCKABLE_FUNCTION(,int, SSL_CTX_use_RSAPrivateKey, SSL_CTX *,ctx, RSA *,rsa);
 MOCKABLE_FUNCTION(,int, SSL_CTX_use_certificate, SSL_CTX *,ctx, X509*, x);
+
+/*from openssl/err.h*/
+MOCKABLE_FUNCTION(,unsigned long, ERR_get_error);
+MOCKABLE_FUNCTION(, char *,ERR_error_string, unsigned long, e, char *,buf);
 
 #undef ENABLE_MOCKS
 
@@ -117,15 +120,21 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
         REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, my_gballoc_free);
 
         REGISTER_GLOBAL_MOCK_HOOK(BIO_new_mem_buf, my_BIO_new_mem_buf);
-        REGISTER_GLOBAL_MOCK_HOOK(BIO_free, my_BIO_free);
-        REGISTER_GLOBAL_MOCK_HOOK(RSA_free, my_RSA_free);
-        REGISTER_GLOBAL_MOCK_HOOK(X509_free, my_X509_free);
+        REGISTER_GLOBAL_MOCK_FAIL_RETURN(BIO_new_mem_buf, NULL);
+
         REGISTER_GLOBAL_MOCK_HOOK(PEM_read_bio_X509, my_PEM_read_bio_X509);
+        REGISTER_GLOBAL_MOCK_FAIL_RETURN(PEM_read_bio_X509, NULL);
+
         REGISTER_GLOBAL_MOCK_HOOK(PEM_read_bio_RSAPrivateKey, my_PEM_read_bio_RSAPrivateKey);
+        REGISTER_GLOBAL_MOCK_FAIL_RETURN(PEM_read_bio_X509, NULL);
         
         REGISTER_GLOBAL_MOCK_RETURNS(SSL_CTX_use_certificate, 1, 0);
 
         REGISTER_GLOBAL_MOCK_RETURNS(SSL_CTX_use_RSAPrivateKey, 1, 0);
+
+        REGISTER_GLOBAL_MOCK_HOOK(BIO_free, my_BIO_free);
+        REGISTER_GLOBAL_MOCK_HOOK(RSA_free, my_RSA_free);
+        REGISTER_GLOBAL_MOCK_HOOK(X509_free, my_X509_free);
     }
 
     TEST_SUITE_CLEANUP(TestClassCleanup)
@@ -304,7 +313,6 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
         umock_c_negative_tests_snapshot();
 
         ///act
-
 
         for (size_t i = 0; i < umock_c_negative_tests_call_count(); i++)
         {

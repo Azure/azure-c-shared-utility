@@ -7,6 +7,21 @@
 #include "openssl/rsa.h"
 #include "openssl/x509.h"
 #include "openssl/pem.h"
+#include "openssl/err.h"
+
+static void print_OPENSSL_error_queue(void)
+{
+    char buf[128];
+    unsigned long error;
+
+    error = ERR_get_error();
+
+    for (int i = 0; 0 != error; i++)
+    {
+        LogError("  [%d] %s", i, ERR_error_string(error, buf));
+        error = ERR_get_error();
+    }
+}
 
 /*return 0 if everything was ok, any other number to signal an error*/
 /*this function inserts a x509certificate+x509privatekey to a SSL_CTX (ssl context) in order to authenticate the device with the service*/
@@ -62,6 +77,7 @@ int x509_openssl_add_credentials(SSL_CTX* ssl_ctx, const char* x509certificate, 
                         if (SSL_CTX_use_certificate((SSL_CTX*)ssl_ctx, cert) != 1)
                         {
                             LogError("cannot SSL_CTX_use_certificate");
+                            print_OPENSSL_error_queue();
                             result = __LINE__; 
                         }
                         else
@@ -69,6 +85,7 @@ int x509_openssl_add_credentials(SSL_CTX* ssl_ctx, const char* x509certificate, 
                             if (SSL_CTX_use_RSAPrivateKey(ssl_ctx, privatekey) != 1)
                             {
                                 LogError("cannot SSL_CTX_use_RSAPrivateKey");
+                                print_OPENSSL_error_queue();
                                 result = __LINE__;
                             }
                             else

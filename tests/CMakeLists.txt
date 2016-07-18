@@ -1,7 +1,7 @@
 #Copyright (c) Microsoft. All rights reserved.
 #Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#this is CMakeLists.txt for the folder tests of common
+#this is CMakeLists.txt for the folder tests of C shared utility
 add_subdirectory(agenttime_unittests)
 add_subdirectory(base64_unittests)
 add_subdirectory(buffer_unittests)
@@ -34,7 +34,7 @@ endif()
 
 #normally, with proper include paths, the below tests can be run under windows too.
 #however, because of the setup involved, they are restricted to Linux
-if(LINUX)
+if(${use_openssl})
 add_subdirectory(x509_openssl_unittests)
 endif()
 

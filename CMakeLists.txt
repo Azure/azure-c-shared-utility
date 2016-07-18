@@ -622,7 +622,6 @@ if(${use_schannel})
         ./inc/azure_c_shared_utility/tlsio_schannel.h
         ./inc/azure_c_shared_utility/x509_schannel.h
         )
-    )
 endif()
 if(${use_wolfssl})
     set(source_h_files ${source_h_files}

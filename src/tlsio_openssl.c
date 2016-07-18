@@ -575,6 +575,8 @@ static int create_openssl_instance(TLS_IO_INSTANCE* tlsInstance)
     }
     else if (add_certificate_to_store(tlsInstance, tlsInstance->certificate) != 0)
     {
+        SSL_CTX_free(tlsInstance->ssl_context);
+        log_ERR_get_error("unable to add_certificate_to_store.");
         result = __LINE__;
     }
     /*x509 authentication can only be build before underlying connection is realized*/
@@ -584,7 +586,8 @@ static int create_openssl_instance(TLS_IO_INSTANCE* tlsInstance)
             (x509_openssl_add_credentials(tlsInstance->ssl_context, tlsInstance->x509certificate, tlsInstance->x509privatekey) != 0)
         )
         {
-            LogError("unable to use x509 authentication");
+            SSL_CTX_free(tlsInstance->ssl_context);
+            log_ERR_get_error("unable to use x509 authentication");
             result = __LINE__;
         }
     else
