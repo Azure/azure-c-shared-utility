@@ -8,7 +8,6 @@
 
 #ifdef __cplusplus
 extern "C" {
-#else
 #endif
 
 #include "azure_c_shared_utility/umock_c_prod.h"

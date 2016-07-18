@@ -3,7 +3,7 @@ x509_openssl
 
 ## Overview
 
-x509_openssl provides a utility function that inports into a SSL context a pair of x509 certificate/private key  
+x509_openssl provides a utility function that imports into a SSL context a pair of x509 certificate/private key  
 
 ## References
 
