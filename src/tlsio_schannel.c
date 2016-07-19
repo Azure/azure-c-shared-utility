@@ -7,6 +7,12 @@
 #define SCH_USE_STRONG_CRYPTO  0x00400000 // not defined in header file
 #endif
 
+#ifdef UNICODE
+#define SEC_TCHAR   SEC_WCHAR
+#else
+#define SEC_TCHAR   SEC_CHAR
+#endif
+
 #include <stdlib.h>
 #ifdef _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
@@ -48,11 +54,7 @@ typedef struct TLS_IO_INSTANCE_TAG
     void* on_io_error_context;
     CtxtHandle security_context;
     TLSIO_STATE tlsio_state;
-	#ifndef WINCE
-    SEC_CHAR* host_name;
-	#else
-	SEC_WCHAR* host_name; // For WEC 2013 parameter is wide char
-	#endif
+	SEC_TCHAR* host_name;
 	CredHandle credential_handle;
     bool credential_handle_allocated;
     unsigned char* received_bytes;
@@ -592,13 +594,8 @@ CONCRETE_IO_HANDLE tlsio_schannel_create(void* io_create_parameters)
             result->on_io_error_context = NULL;
             result->credential_handle_allocated = false;
 
-			#ifdef WINCE
-			result->host_name = (SEC_WCHAR*)malloc(sizeof(SEC_WCHAR) * (1 + strlen(tls_io_config->hostname)));
-			#else
-			result->host_name = (SEC_CHAR*)malloc(sizeof(SEC_CHAR) * (1 + strlen(tls_io_config->hostname)));
-			#endif
-
-
+			result->host_name = (SEC_TCHAR*)malloc(sizeof(SEC_TCHAR) * (1 + strlen(tls_io_config->hostname)));
+			
             if (result->host_name == NULL)
             {
                 free(result);
