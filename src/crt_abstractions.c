@@ -18,6 +18,8 @@
 
 
 #ifdef WINCE
+#pragma warning(disable:4756) // warning C4756: overflow in constant arithmetic
+
 // These defines are missing in math.h for WEC2013 SDK
 #ifndef _HUGE_ENUF
 #define _HUGE_ENUF  1e+300  // _HUGE_ENUF*_HUGE_ENUF must overflow

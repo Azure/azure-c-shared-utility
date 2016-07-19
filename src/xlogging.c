@@ -6,6 +6,7 @@
 
 #ifndef NO_LOGGING
 
+
 #ifdef WINCE
 #include <stdarg.h>
 #if defined _MSC_VER
@@ -45,6 +46,7 @@ void consolelogger_log(LOG_CATEGORY log_category, unsigned int options, const ch
 #endif
 
 LOGGER_LOG global_log_function = consolelogger_log;
+
 
 void xlogging_set_log_function(LOGGER_LOG log_function)
 {

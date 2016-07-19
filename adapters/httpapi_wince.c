@@ -1,18 +1,14 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#include <cstdlib>
-#include <cstdio>
-#include <cstdlib>
-#include <cctype>
 #include "azure_c_shared_utility/httpapi.h"
 #include "azure_c_shared_utility/httpheaders.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
 #include "azure_c_shared_utility/xlogging.h"
-#include <string.h>
 #include "winsock2.h"
 #include "sslsock.h"
 #include "schnlsp.h"
+
 
 #define MAX_HOSTNAME     64
 #define TEMPORARY_BUFFER_SIZE 4096
