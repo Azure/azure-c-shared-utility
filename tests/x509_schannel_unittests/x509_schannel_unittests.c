@@ -530,12 +530,12 @@ BEGIN_TEST_SUITE(x509_schannel_unittests)
         X509_SCHANNEL_HANDLE h = x509_schannel_create("certificate", "private key");
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(CertFreeCertificateContext(IGNORED_PTR_ARG))
-            .IgnoreArgument_pCertContext();
         STRICT_EXPECTED_CALL(CryptDestroyKey((HCRYPTKEY)IGNORED_PTR_ARG))
             .IgnoreArgument_hKey();
         STRICT_EXPECTED_CALL(CryptReleaseContext((HCRYPTPROV)IGNORED_PTR_ARG, 0))
             .IgnoreArgument_hProv();
+        STRICT_EXPECTED_CALL(CertFreeCertificateContext(IGNORED_PTR_ARG))
+            .IgnoreArgument_pCertContext();
         STRICT_EXPECTED_CALL(gballoc_free(h));
 
         ///act
