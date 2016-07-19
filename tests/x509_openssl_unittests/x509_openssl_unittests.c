@@ -24,6 +24,7 @@ static void my_gballoc_free(void* s)
 #include "openssl/ssl.h"
 #include "openssl/x509.h"
 #include "openssl/err.h"
+#include "openssl/opensslv.h"
 #include "azure_c_shared_utility/x509_openssl.h"
 #include "umocktypes_charptr.h"
 #include "umock_c_negative_tests.h"
@@ -35,7 +36,15 @@ static void my_gballoc_free(void* s)
 
 /*from openssl/bio.h*/
 MOCKABLE_FUNCTION(,int, BIO_free, BIO *,a);
+
+/*the below function has different signatures on different versions of OPENSSL*/
+#if OPENSSL_VERSION_NUMBER >= 0x1000207fL
+/*known to work on 1.0.2g-fips 1 Mar 2016*/
 MOCKABLE_FUNCTION(,BIO *,BIO_new_mem_buf, const void *,buf, int, len);
+#else
+/*known to work on 0x1000207fL - OpenSSL 1.0.2d 9 Jul 2015*/
+MOCKABLE_FUNCTION(, BIO *, BIO_new_mem_buf, void *, buf, int, len);
+#endif
 
 /*from openssl/rsa.h*/
 MOCKABLE_FUNCTION(,void, RSA_free, RSA *,rsa);
@@ -57,7 +66,14 @@ MOCKABLE_FUNCTION(, char *,ERR_error_string, unsigned long, e, char *,buf);
 
 #undef ENABLE_MOCKS
 
+/*the below function has different signatures on different versions of OPENSSL*/
+#if OPENSSL_VERSION_NUMBER >= 0x1000207fL
+/*known to work on 1.0.2g-fips 1 Mar 2016*/
 static BIO* my_BIO_new_mem_buf(const void * buf, int len)
+#else
+/*known to work on 0x1000207fL - OpenSSL 1.0.2d 9 Jul 2015*/
+static BIO* my_BIO_new_mem_buf(void * buf, int len)
+#endif
 {
     (void)(len,buf);
     return (BIO*)my_gballoc_malloc(sizeof(BIO));
@@ -215,8 +231,8 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
     {
         
         ///arrange
-        const char* certificateText = "certificate";
-        const char* privatekeyText = "privatekeyText";
+        char* certificateText = (char*)"certificate";
+        char* privatekeyText = (char*)"privatekeyText";
         BIO* certificate;
         BIO* privatekey;
         X509* certificateAsX509;
@@ -275,8 +291,8 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
             9 /*BIO_free*/
         };
 
-        const char* certificateText = "certificate";
-        const char* privatekeyText = "privatekeyText";
+        char* certificateText = (char*)"certificate";
+        char* privatekeyText = (char*)"privatekeyText";
         BIO* certificate;
         BIO* privatekey;
         X509* certificateAsX509;
