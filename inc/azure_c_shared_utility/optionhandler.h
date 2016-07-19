@@ -13,13 +13,6 @@ OPTIONHANDLER_INVALIDARG
 
 DEFINE_ENUM(OPTIONHANDLER_RESULT, OPTIONHANDLER_RESULT_VALUES)
 
-#define SETOPTION_RESULT_VALUES
-SETOPTION_OK, /*returned when the option has been set*/
-SETOPTION_ERROR, /*returned when the option has NOT been set*/ 
-SETOPTION_INVALIDARG /*returned when arguments are invalid (such as NULL arguments, or option names not handled by the  module*/
-
-DEFINE_ENUM(SETOPTION_RESULT, SETOPTION_RESULT_VALUES)
-
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
@@ -39,7 +32,8 @@ typedef void (*pfDestroyOption)(const char* name, void* value);
 
 /*the following function pointer points to a function that sets an option for a module*/
 /*to be implemented by every module*/
-typedef SETOPTION_RESULT (*pfSetOption)(void* handle, const char* name, void* value);
+/*returns 0 if _SetOption succeeded, any other value is error, if the option is not intended for that module, returns 0*/
+typedef int (*pfSetOption)(void* handle, const char* name, void* value);
 
 MOCKABLE_FUNCTION(,OPTIONHANDLER_HANDLE, OptionHandler_Create, pfCloneOption, cloneOption, pfDestroyOption, destroyOption, pfSetOption setOption);
 MOCKABLE_FUNCTION(,OPTIONHANDLER_RESULT, OptionHandler_AddProperty, OPTIONHANDLER_HANDLE, handle, const char*, name, void*, value);

@@ -16,13 +16,6 @@ OPTIONHANDLER_INVALIDARG
 
 DEFINE_ENUM(OPTIONHANDLER_RESULT, OPTIONHANDLER_RESULT_VALUES)
 
-#define SETOPTION_RESULT_VALUES
-SETOPTION_OK, /*returned when the option has been set*/
-SETOPTION_ERROR, /*returned when the option has NOT been set*/ 
-SETOPTION_INVALIDARG /*returned when arguments are invalid (such as NULL arguments, or option names not handled by the  module*/
-
-DEFINE_ENUM(SETOPTION_RESULT, SETOPTION_RESULT_VALUES)
-
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
@@ -42,10 +35,10 @@ typedef void (*pfDestroyOption)(const char* name, void* value);
 
 /*the following function pointer points to a function that sets an option for a module*/
 /*to be implemented by every module*/
-typedef SETOPTION_RESULT (*pfSetOption)(void* handle, const char* name, void* value);
+typedef int (*pfSetOption)(void* handle, const char* name, void* value);
 
 MOCKABLE_FUNCTION(,OPTIONHANDLER_HANDLE, OptionHandler_Create, pfCloneOption, cloneOption, pfDestroyOption, destroyOption, pfSetOption setOption);
-MOCKABLE_FUNCTION(,OPTIONHANDLER_RESULT, OptionHandler_AddProperty, OPTIONHANDLER_HANDLE, handle, const char*, name, void*, value);
+MOCKABLE_FUNCTION(,OPTIONHANDLER_RESULT, OptionHandler_AddOption, OPTIONHANDLER_HANDLE, handle, const char*, name, void*, value);
 MOCKABLE_FUNCTION(,OPTIONHANDLER_RESULT, OptionHandler_FeedOptions, OPTIONHANDLER_HANDLE, handle, void*, destinationHandle);
 MOCKABLE_FUNCTION(,void, OptionHandler_Destroy, OPTIONHANDLER_HANDLE, handle);
 
@@ -57,34 +50,37 @@ MOCKABLE_FUNCTION(,void, OptionHandler_Destroy, OPTIONHANDLER_HANDLE, handle);
 ```c
 OPTIONHANDLER_HANDLE OptionHandler_Create(pfCloneOption cloneOption, pfDestroyOption destroyOption, pfSetOption setOption)
 ```
-`OptionHandler_Create` shall fail and retun `NULL` if any parameters are `NULL`.
-`OptionHandler_Create` shall create an empty VECTOR that will hold pairs of `const char*` and `void*`.
-If all the operations succeed then `OptionHandler_Create` shall succeed and return a non-`NULL` handle.
-Otherwise, `OptionHandler_Create` shall fail and return `NULL`.
+
+**SRS_OPTIONHANDLER_02_001: [** `OptionHandler_Create` shall fail and retun `NULL` if any parameters are `NULL`. **]**
+**SRS_OPTIONHANDLER_02_002: [** `OptionHandler_Create` shall create an empty VECTOR that will hold pairs of `const char*` and `void*`. **]**
+**SRS_OPTIONHANDLER_02_003: [** If all the operations succeed then `OptionHandler_Create` shall succeed and return a non-`NULL` handle. **]**
+**SRS_OPTIONHANDLER_02_004: [** Otherwise, `OptionHandler_Create` shall fail and return `NULL`. **]**
 
 ### OptionHandler_AddProperty
 ```c
 OPTIONHANDLER_RESULT OptionHandler_AddProperty(OPTIONHANDLER_HANDLE handle, const char* name, void* value)
 ```
-`OptionHandler_AddProperty` shall fail and return `OPTIONHANDLER_INVALIDARG` if any parameter is NULL.
-OptionHandler_AddProperty shall call `pfCloneOption` passing `name` and `value`.
-OptionHandler_AddProperty shall use `VECTOR` APIs to save the `name` and the newly created clone of `value`.
-If all the operations succed then `OptionHandler_AddProperty` shall succeed and return `OPTIONHANDLER_OK`.
-Otherwise, `OptionHandler_AddProperty` shall succeed and return `OPTIONHANDLER_ERROR`.
+
+**SRS_OPTIONHANDLER_02_005: [** `OptionHandler_AddProperty` shall fail and return `OPTIONHANDLER_INVALIDARG` if any parameter is NULL. **]**
+**SRS_OPTIONHANDLER_02_006: [** OptionHandler_AddProperty shall call `pfCloneOption` passing `name` and `value`. **]**
+**SRS_OPTIONHANDLER_02_007: [** OptionHandler_AddProperty shall use `VECTOR` APIs to save the `name` and the newly created clone of `value`. **]**
+**SRS_OPTIONHANDLER_02_008: [** If all the operations succed then `OptionHandler_AddProperty` shall succeed and return `OPTIONHANDLER_OK`. **]**
+**SRS_OPTIONHANDLER_02_009: [** Otherwise, `OptionHandler_AddProperty` shall succeed and return `OPTIONHANDLER_ERROR`. **]**
 
 ### OptionHandler_FeedOptions
 ```c
 OPTIONHANDLER_RESULT OptionHandler_FeedOptions(OPTIONHANDLER_HANDLE handle, void* destinationHandle);
 ```
-`OptionHandler_FeedOptions` shall fail and return `OPTIONHANDLER_INVALIDARG` if any argument is `NULL`.
-Otherwise, `OptionHandler_FeedOptions` shall use `VECTOR`'s iteration mechanisms to retrieve pairs of name, value (`const char*` and `void*`).
-`OptionHandler_FeedOptions` shall call for every pair of name,value `setOption` passing `destinationHandle`, name and value.
-If all the operations succed then `OptionHandler_FeedOptions` shall succeed and return `OPTIONHANDLER_OK`.
-Otherwise, `OptionHandler_FeedOptions` shall fail and return `OPTIONHANDLER_ERROR`.
+
+**SRS_OPTIONHANDLER_02_010: [** `OptionHandler_FeedOptions` shall fail and return `OPTIONHANDLER_INVALIDARG` if any argument is `NULL`. **]**
+**SRS_OPTIONHANDLER_02_011: [** Otherwise, `OptionHandler_FeedOptions` shall use `VECTOR`'s iteration mechanisms to retrieve pairs of name, value (`const char*` and `void*`). **]**
+**SRS_OPTIONHANDLER_02_012: [** `OptionHandler_FeedOptions` shall call for every pair of name,value `setOption` passing `destinationHandle`, name and value. **]**
+**SRS_OPTIONHANDLER_02_013: [** If all the operations succeed then `OptionHandler_FeedOptions` shall succeed and return `OPTIONHANDLER_OK`. **]**
+**SRS_OPTIONHANDLER_02_014: [** Otherwise, `OptionHandler_FeedOptions` shall fail and return `OPTIONHANDLER_ERROR`. **]**
 
 ### OptionHandler_Destroy
 ```c
 void OptionHandler_Destroy(OPTIONHANDLER_HANDLE handle)
 ```
-OptionHandler_Destroy shall do nothing is parameter `handle` is `NULL`.
-Otherwise, OptionHandler_Destroy shall free all used resources.
+**SRS_OPTIONHANDLER_02_015: [** OptionHandler_Destroy shall do nothing if parameter `handle` is `NULL`. **]**
+**SRS_OPTIONHANDLER_02_016: [** Otherwise, OptionHandler_Destroy shall free all used resources. **]**
