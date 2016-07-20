@@ -46,7 +46,7 @@ void list_destroy(LIST_HANDLE list)
         while (list_instance->head != NULL)
         {
             LIST_ITEM_INSTANCE* current_item = list_instance->head;
-            list_instance->head = current_item->next;
+            list_instance->head = (LIST_ITEM_INSTANCE*)current_item->next;
             free(current_item);
         }
 
@@ -90,7 +90,7 @@ LIST_ITEM_HANDLE list_add(LIST_HANDLE list, const void* item)
                 LIST_ITEM_INSTANCE* current = list_instance->head;
                 while (current->next != NULL)
                 {
-                    current = current->next;
+                    current = (LIST_ITEM_INSTANCE*)current->next;
                 }
 
                 current->next = result;
@@ -127,7 +127,7 @@ int list_remove(LIST_HANDLE list, LIST_ITEM_HANDLE item)
                 }
                 else
                 {
-                    list_instance->head = current_item->next;
+                    list_instance->head = (LIST_ITEM_INSTANCE*)current_item->next;
                 }
 
                 free(current_item);
@@ -135,7 +135,7 @@ int list_remove(LIST_HANDLE list, LIST_ITEM_HANDLE item)
                 break;
             }
             previous_item = current_item;
-			current_item = current_item->next;
+			current_item = (LIST_ITEM_INSTANCE*)current_item->next;
         }
 
 		if (current_item == NULL)
@@ -186,7 +186,7 @@ LIST_ITEM_HANDLE list_get_next_item(LIST_ITEM_HANDLE item_handle)
     else
     {
         /* Codes_SRS_LIST_01_018: [list_get_next_item shall return the next item in the list following the item item_handle.] */
-        result = ((LIST_ITEM_INSTANCE*)item_handle)->next;
+        result = (LIST_ITEM_HANDLE)((LIST_ITEM_INSTANCE*)item_handle)->next;
     }
 
     return result;
@@ -237,7 +237,7 @@ LIST_ITEM_HANDLE list_find(LIST_HANDLE list, LIST_MATCH_FUNCTION match_function,
             }
 
             /* Codes_SRS_LIST_01_016: [If the match function returns false, list_find shall consider that item as not matching.] */
-            current = current->next;
+            current = (LIST_ITEM_INSTANCE*)current->next;
         }
 
         if (current == NULL)

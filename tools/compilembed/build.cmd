@@ -19,11 +19,11 @@ set "msbuild-args=/m "/p:Configuration=Release;Platform=Any CPU" "%current-path%
 
 if %build-clean%==1 (
     msbuild /t:Clean %msbuild-args%
-    if not %errorlevel%==0 exit /b %errorlevel%
+    if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 )
 
 msbuild %msbuild-args%
-if not %errorlevel%==0 exit /b %errorlevel%
+if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 
 goto :eof
 
