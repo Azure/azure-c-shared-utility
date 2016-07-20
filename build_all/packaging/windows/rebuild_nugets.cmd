@@ -60,7 +60,7 @@ mkdir %build-path%\shared-util_output
 rem no error checking
 
 call %build-root%\build_all\windows\build.cmd --make_nuget yes
-if not %errorlevel%==0 exit /b %errorlevel%
+if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 
 rem -----------------------------------------------------------------------------
 rem -- Copy Win32 binaries
@@ -68,11 +68,11 @@ rem ----------------------------------------------------------------------------
 
 rem -- Copy all Win32 files from cmake build directory to the repo directory
 xcopy /q /y /R %build-path%\shared-util_Win32\Debug\*.* %build-path%\shared-util_output\win32\debug\*.*
-if %errorlevel% neq 0 exit /b %errorlevel%
+if !ERRORLEVEL! neq 0 exit /b !ERRORLEVEL!
 
 rem -- Copy all Win32 Release files from cmake build directory to the repo directory
 xcopy /q /y /R %build-path%\shared-util_Win32\Release\*.* %build-path%\shared-util_output\win32\Release\*.*
-if %errorlevel% neq 0 exit /b %errorlevel%
+if !ERRORLEVEL! neq 0 exit /b !ERRORLEVEL!
 
 rem -----------------------------------------------------------------------------
 rem -- Copy x64 binaries
@@ -80,11 +80,11 @@ rem ----------------------------------------------------------------------------
 
 rem -- Copy all x64 files from cmake build directory to the repo directory
 xcopy /q /y /R %build-path%\shared-util_x64\Debug\*.* %build-path%\shared-util_output\x64\debug\*.*
-if %errorlevel% neq 0 exit /b %errorlevel%
+if !ERRORLEVEL! neq 0 exit /b !ERRORLEVEL!
 
 rem -- Copy all x64 Release files from cmake build directory to the repo directory
 xcopy /q /y /R %build-path%\shared-util_x64\Release\*.* %build-path%\shared-util_output\x64\Release\*.*
-if %errorlevel% neq 0 exit /b %errorlevel%
+if !ERRORLEVEL! neq 0 exit /b !ERRORLEVEL!
 
 rem -----------------------------------------------------------------------------
 rem -- Copy x64 binaries
@@ -92,11 +92,11 @@ rem ----------------------------------------------------------------------------
 
 rem -- Copy all x64 files from cmake build directory to the repo directory
 xcopy /q /y /R %build-path%\shared-util_arm\Debug\*.* %build-path%\shared-util_output\arm\debug\*.*
-if %errorlevel% neq 0 exit /b %errorlevel%
+if !ERRORLEVEL! neq 0 exit /b !ERRORLEVEL!
 
 rem -- Copy all x64 Release files from cmake build directory to the repo directory
 xcopy /q /y /R %build-path%\shared-util_arm\Release\*.* %build-path%\shared-util_output\arm\Release\*.*
-if %errorlevel% neq 0 exit /b %errorlevel%
+if !ERRORLEVEL! neq 0 exit /b !ERRORLEVEL!
 
 rem -- Package Nuget
 nuget pack %build-root%\build_all\packaging\windows\Microsoft.Azure.C.SharedUtility.nuspec -OutputDirectory %build-root%\build_all\packaging\windows
