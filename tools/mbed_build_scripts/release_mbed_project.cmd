@@ -1,7 +1,7 @@
 @REM  Copyright (c) Microsoft. All rights reserved.
 @REM  Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-setlocal
+@setlocal EnableDelayedExpansion
 
 @REM  Script arguments:
 @REM  %1 Local path to the project to be released.
@@ -19,3 +19,4 @@ mkdir hg
 cd hg
 
 cmake -DHG_COMMIT_MSG:string=%hg_commit_message% -Drelease_the_project:bool=ON %project_name_override% %project_path%\mbed
+if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
