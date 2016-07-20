@@ -627,6 +627,7 @@ CONCRETE_IO_HANDLE tlsio_schannel_create(void* io_create_parameters)
                         result->tlsio_state = TLSIO_STATE_NOT_OPEN;
                         result->x509certificate = NULL;
                         result->x509privatekey = NULL;
+                        result->x509_schannel_handle = NULL;
                     }
                 }
             }
