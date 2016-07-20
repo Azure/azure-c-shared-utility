@@ -56,16 +56,16 @@ OPTIONHANDLER_HANDLE OptionHandler_Create(pfCloneOption cloneOption, pfDestroyOp
 **SRS_OPTIONHANDLER_02_003: [** If all the operations succeed then `OptionHandler_Create` shall succeed and return a non-`NULL` handle. **]**
 **SRS_OPTIONHANDLER_02_004: [** Otherwise, `OptionHandler_Create` shall fail and return `NULL`. **]**
 
-### OptionHandler_AddProperty
+### OptionHandler_AddOption
 ```c
-OPTIONHANDLER_RESULT OptionHandler_AddProperty(OPTIONHANDLER_HANDLE handle, const char* name, void* value)
+OPTIONHANDLER_RESULT OptionHandler_AddOption(OPTIONHANDLER_HANDLE handle, const char* name, void* value)
 ```
 
-**SRS_OPTIONHANDLER_02_005: [** `OptionHandler_AddProperty` shall fail and return `OPTIONHANDLER_INVALIDARG` if any parameter is NULL. **]**
-**SRS_OPTIONHANDLER_02_006: [** OptionHandler_AddProperty shall call `pfCloneOption` passing `name` and `value`. **]**
-**SRS_OPTIONHANDLER_02_007: [** OptionHandler_AddProperty shall use `VECTOR` APIs to save the `name` and the newly created clone of `value`. **]**
-**SRS_OPTIONHANDLER_02_008: [** If all the operations succed then `OptionHandler_AddProperty` shall succeed and return `OPTIONHANDLER_OK`. **]**
-**SRS_OPTIONHANDLER_02_009: [** Otherwise, `OptionHandler_AddProperty` shall succeed and return `OPTIONHANDLER_ERROR`. **]**
+**SRS_OPTIONHANDLER_02_005: [** `OptionHandler_AddOption` shall fail and return `OPTIONHANDLER_INVALIDARG` if any parameter is NULL. **]**
+**SRS_OPTIONHANDLER_02_006: [** OptionHandler_AddOption shall call `pfCloneOption` passing `name` and `value`. **]**
+**SRS_OPTIONHANDLER_02_007: [** OptionHandler_AddOption shall use `VECTOR` APIs to save the `name` and the newly created clone of `value`. **]**
+**SRS_OPTIONHANDLER_02_008: [** If all the operations succed then `OptionHandler_AddOption` shall succeed and return `OPTIONHANDLER_OK`. **]**
+**SRS_OPTIONHANDLER_02_009: [** Otherwise, `OptionHandler_AddOption` shall succeed and return `OPTIONHANDLER_ERROR`. **]**
 
 ### OptionHandler_FeedOptions
 ```c

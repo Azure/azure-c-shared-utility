@@ -1,0 +1,678 @@
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
+
+#include <stdlib.h>
+#ifdef _CRTDBG_MAP_ALLOC
+#include <crtdbg.h>
+#endif
+
+static void* my_gballoc_malloc(size_t size)
+{
+    return malloc(size);
+}
+
+static void my_gballoc_free(void* s)
+{
+    free(s);
+}
+
+#include <stddef.h>
+#include "testrunnerswitcher.h"
+#include "umock_c.h"
+#include "umocktypes_charptr.h"
+#include "umock_c_negative_tests.h"
+#include "azure_c_shared_utility/optionhandler.h"
+
+/*not very nice source level preprocessor mocking... */
+/*but real implementation of VECTOR is paramount here, because -> operator cannot be mocked*/
+#define GBALLOC_H
+#define VECTOR_create real_VECTOR_create
+#define VECTOR_destroy real_VECTOR_destroy
+#define VECTOR_push_back real_VECTOR_push_back 
+#define VECTOR_erase real_VECTOR_erase 
+#define VECTOR_clear real_VECTOR_clear 
+#define VECTOR_element real_VECTOR_element 
+#define VECTOR_front real_VECTOR_front 
+#define VECTOR_back real_VECTOR_back 
+#define VECTOR_find_if real_VECTOR_find_if 
+#define VECTOR_size real_VECTOR_size 
+#include "../src/vector.c"
+#undef VECTOR_create 
+#undef VECTOR_destroy 
+#undef VECTOR_push_back 
+#undef VECTOR_erase 
+#undef VECTOR_clear 
+#undef VECTOR_element 
+#undef VECTOR_front 
+#undef VECTOR_back 
+#undef VECTOR_find_if 
+#undef VECTOR_size 
+#undef VECTOR_H
+#undef GBALLOC_H
+#undef CRT_ABSTRACTIONS_H
+
+#define ENABLE_MOCKS
+#include "azure_c_shared_utility/gballoc.h"
+#include "azure_c_shared_utility/umock_c_prod.h"
+#include "azure_c_shared_utility/crt_abstractions.h"
+#include "azure_c_shared_utility/vector.h"
+
+MOCKABLE_FUNCTION(, void*, aCloneOption, const char*, name, void*, value);
+MOCKABLE_FUNCTION(, void, aDestroyOption, const char*, name, void*, value);
+MOCKABLE_FUNCTION(, int, aSetOption, void*, handle, const char*, name, void*, value);
+
+#undef ENABLE_MOCKS
+
+static TEST_MUTEX_HANDLE g_testByTest;
+static TEST_MUTEX_HANDLE g_dllByDll;
+
+static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
+{
+    (void)error_code;
+    ASSERT_FAIL("umock_c reported error");
+}
+
+TEST_DEFINE_ENUM_TYPE(OPTIONHANDLER_RESULT, OPTIONHANDLER_RESULT_VALUES);
+IMPLEMENT_UMOCK_C_ENUM_TYPE(OPTIONHANDLER_RESULT, OPTIONHANDLER_RESULT_VALUES);
+
+static int my_mallocAndStrcpy_s(char** destination, const char* source)
+{
+
+    size_t l = strlen(source);
+    char* temp = (char*)my_gballoc_malloc(l + 1);
+    memcpy(temp, source, l+1);
+    *destination=temp;
+    return 0;
+}
+
+static void* my_aCloneOption(const char* name, void* value)
+{
+    (void)(name, value);
+    return my_gballoc_malloc(2);
+}
+
+static void my_aDestroyOption(const char* name, void* value)
+{
+    (void)(name);
+    my_gballoc_free(value);
+}
+
+
+BEGIN_TEST_SUITE(optionhandler_unittests)
+
+    TEST_SUITE_INITIALIZE(a)
+    {
+        TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
+        g_testByTest = TEST_MUTEX_CREATE();
+        ASSERT_IS_NOT_NULL(g_testByTest);
+
+        (void)umock_c_init(on_umock_c_error);
+
+        (void)umocktypes_charptr_register_types();
+
+        REGISTER_UMOCK_ALIAS_TYPE(const VECTOR_HANDLE, void*);
+        REGISTER_UMOCK_ALIAS_TYPE(VECTOR_HANDLE, void*);
+        
+        REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, my_gballoc_malloc);
+        REGISTER_GLOBAL_MOCK_FAIL_RETURN(gballoc_malloc, NULL);
+        REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, my_gballoc_free);
+
+        REGISTER_GLOBAL_MOCK_HOOK(VECTOR_create, real_VECTOR_create);
+        REGISTER_GLOBAL_MOCK_FAIL_RETURN(VECTOR_create, NULL);
+
+        REGISTER_GLOBAL_MOCK_HOOK(VECTOR_size, real_VECTOR_size);
+        REGISTER_GLOBAL_MOCK_HOOK(VECTOR_push_back, real_VECTOR_push_back);
+        REGISTER_GLOBAL_MOCK_FAIL_RETURN(VECTOR_push_back, __LINE__);
+
+        REGISTER_GLOBAL_MOCK_HOOK(VECTOR_element, real_VECTOR_element);
+
+        REGISTER_GLOBAL_MOCK_HOOK(VECTOR_destroy, real_VECTOR_destroy);
+
+        REGISTER_GLOBAL_MOCK_HOOK(mallocAndStrcpy_s, my_mallocAndStrcpy_s);
+        REGISTER_GLOBAL_MOCK_FAIL_RETURN(mallocAndStrcpy_s, __LINE__);
+
+        REGISTER_GLOBAL_MOCK_HOOK(aCloneOption, my_aCloneOption);
+        REGISTER_GLOBAL_MOCK_FAIL_RETURN(aCloneOption, NULL);
+
+        REGISTER_GLOBAL_MOCK_FAIL_RETURN(aSetOption, __LINE__);
+
+        REGISTER_GLOBAL_MOCK_HOOK(aDestroyOption, my_aDestroyOption);
+    }
+
+    TEST_SUITE_CLEANUP(TestClassCleanup)
+    {
+        umock_c_deinit();
+
+        TEST_MUTEX_DESTROY(g_testByTest);
+        TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
+    }
+
+    TEST_FUNCTION_INITIALIZE(initialize)
+    {
+        umock_c_reset_all_calls();
+    }
+
+    TEST_FUNCTION_CLEANUP(cleans)
+    {
+
+    }
+
+    /*Tests_SRS_OPTIONHANDLER_02_001: [ OptionHandler_Create shall fail and retun NULL if any parameters are NULL. ]*/
+    TEST_FUNCTION(OptionHandler_Create_fails_with_NULL_cloneOption_parameter)
+    {
+        ///arrange
+
+        ///act
+        OPTIONHANDLER_HANDLE h = OptionHandler_Create(NULL, aDestroyOption, aSetOption);
+
+        ///assert
+        ASSERT_IS_NULL(h);
+
+        ///cleanup
+    }
+
+    /*Tests_SRS_OPTIONHANDLER_02_001: [ OptionHandler_Create shall fail and retun NULL if any parameters are NULL. ]*/
+    TEST_FUNCTION(OptionHandler_Create_fails_with_NULL_destroyOption_parameter)
+    {
+        ///arrange
+
+        ///act
+        OPTIONHANDLER_HANDLE h = OptionHandler_Create(aCloneOption, NULL, aSetOption);
+
+        ///assert
+        ASSERT_IS_NULL(h);
+
+        ///cleanup
+    }
+
+    /*Tests_SRS_OPTIONHANDLER_02_001: [ OptionHandler_Create shall fail and retun NULL if any parameters are NULL. ]*/
+    TEST_FUNCTION(OptionHandler_Create_fails_with_NULL_setOption_parameter)
+    {
+        ///arrange
+
+        ///act
+        OPTIONHANDLER_HANDLE h = OptionHandler_Create(aCloneOption, aDestroyOption, NULL);
+
+        ///assert
+        ASSERT_IS_NULL(h);
+
+        ///cleanup
+    }
+
+    /*the following function, called "inert" - allegedly half happy and half unhappy is hared between the positive and negative test cases*/
+    static void OptionHandler_Create_inert_path(void)
+    {
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)) /*this is creating the handle*/
+            .IgnoreArgument_size();
+
+        STRICT_EXPECTED_CALL(VECTOR_create(IGNORED_NUM_ARG)) /*this is creating the vector that stores the options*/
+            .IgnoreArgument_elementSize();
+    }
+
+    /*Tests_SRS_OPTIONHANDLER_02_002: [ OptionHandler_Create shall create an empty VECTOR that will hold pairs of const char* and void*. ]*/
+    /*Tests_SRS_OPTIONHANDLER_02_003: [ If all the operations succeed then OptionHandler_Create shall succeed and return a non-NULL handle. ]*/
+    TEST_FUNCTION(OptionHandler_Create_happy_path)
+    {
+        ///arrange
+
+        OptionHandler_Create_inert_path(); /*in this case, it is happy*/
+
+        ///act
+        OPTIONHANDLER_HANDLE h = OptionHandler_Create(aCloneOption, aDestroyOption, aSetOption);
+
+        ///assert
+        
+        ASSERT_IS_NOT_NULL(h);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        ///cleanup
+        OptionHandler_Destroy(h);
+    }
+
+    /*Tests_SRS_OPTIONHANDLER_02_004: [ Otherwise, OptionHandler_Create shall fail and return NULL. ]*/
+    TEST_FUNCTION(OptionHandler_Create_unhappy_paths)
+    {
+        ///arrange
+        int negativeTestsInitResult = umock_c_negative_tests_init();
+        ASSERT_ARE_EQUAL(int, 0, negativeTestsInitResult);
+
+        OptionHandler_Create_inert_path(); /*in this case, it is unhappy*/
+
+        umock_c_negative_tests_snapshot();
+
+        for (size_t i = 0; i < umock_c_negative_tests_call_count(); i++)
+        {
+           
+            umock_c_negative_tests_reset();
+            umock_c_negative_tests_fail_call(i);
+            
+            ///act
+            char temp_str[128];
+            (void)sprintf(temp_str, "On failed call %zu", i);
+            
+            ///act
+            OPTIONHANDLER_HANDLE h = OptionHandler_Create(aCloneOption, aDestroyOption, aSetOption);
+
+            ///assert
+            ASSERT_IS_NULL_WITH_MSG(h, temp_str);
+        }
+        
+        ///cleanup
+        umock_c_negative_tests_deinit();
+    }
+
+    /*Tests_SRS_OPTIONHANDLER_02_005: [ OptionHandler_AddOption shall fail and return OPTIONHANDLER_INVALIDARG if any parameter is NULL. ]*/
+    TEST_FUNCTION(OptionHandler_AddOption_with_NULL_handle_fails)
+    {
+        ///arrange
+
+        ///act
+        OPTIONHANDLER_RESULT result = OptionHandler_AddOption(NULL, "name", "some value");
+
+        ///assert
+        ASSERT_ARE_EQUAL(OPTIONHANDLER_RESULT, OPTIONHANDLER_INVALIDARG, result);
+
+        ///cleanup
+    }
+
+    /*Tests_SRS_OPTIONHANDLER_02_005: [ OptionHandler_AddOption shall fail and return OPTIONHANDLER_INVALIDARG if any parameter is NULL. ]*/
+    TEST_FUNCTION(OptionHandler_AddOption_with_NULL_name_fails)
+    {
+        ///arrange
+        OPTIONHANDLER_HANDLE handle = OptionHandler_Create(aCloneOption, aDestroyOption, aSetOption);
+
+        ///act
+        OPTIONHANDLER_RESULT result = OptionHandler_AddOption(handle, NULL, "some value");
+
+        ///assert
+        ASSERT_ARE_EQUAL(OPTIONHANDLER_RESULT, OPTIONHANDLER_INVALIDARG, result);
+
+        ///cleanup
+        OptionHandler_Destroy(handle);
+    }
+
+    /*Tests_SRS_OPTIONHANDLER_02_005: [ OptionHandler_AddOption shall fail and return OPTIONHANDLER_INVALIDARG if any parameter is NULL. ]*/
+    TEST_FUNCTION(OptionHandler_AddOption_with_NULL_value_fails)
+    {
+        ///arrange
+        OPTIONHANDLER_HANDLE handle = OptionHandler_Create(aCloneOption, aDestroyOption, aSetOption);
+
+        ///act
+        OPTIONHANDLER_RESULT result = OptionHandler_AddOption(handle, "name", NULL);
+
+        ///assert
+        ASSERT_ARE_EQUAL(OPTIONHANDLER_RESULT, OPTIONHANDLER_INVALIDARG, result);
+
+        ///cleanup
+        OptionHandler_Destroy(handle);
+    }
+
+    void OptionHandler_AddOption_inert_path(void* value)
+    {
+        STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, "name"))
+            .IgnoreArgument_destination();
+        STRICT_EXPECTED_CALL(aCloneOption("name", value))
+            .IgnoreAllArguments();
+        STRICT_EXPECTED_CALL(VECTOR_push_back(IGNORED_PTR_ARG, IGNORED_PTR_ARG, 1))
+            .IgnoreArgument_handle()
+            .IgnoreArgument_elements();
+    }
+
+    /*Tests_SRS_OPTIONHANDLER_02_006: [ OptionHandler_AddOption shall call pfCloneOption passing name and value. ]*/
+    /*Tests_SRS_OPTIONHANDLER_02_007: [ OptionHandler_AddOption shall use VECTOR APIs to save the name and the newly created clone of value. ]*/
+    /*Tests_SRS_OPTIONHANDLER_02_008: [ If all the operations succed then OptionHandler_AddOption shall succeed and return OPTIONHANDLER_OK. ]*/
+    TEST_FUNCTION(OptionHandler_AddOption_happy_path)
+    {
+        ///arrange
+        OPTIONHANDLER_HANDLE handle = OptionHandler_Create(aCloneOption, aDestroyOption, aSetOption);
+
+        void* value = "value";
+        OptionHandler_AddOption_inert_path(value);
+
+        ///act
+        OPTIONHANDLER_RESULT result = OptionHandler_AddOption(handle, "name", value);
+
+        ///assert
+        ASSERT_ARE_EQUAL(OPTIONHANDLER_RESULT, OPTIONHANDLER_OK, result);
+
+        ///cleanup
+        OptionHandler_Destroy(handle);
+    }
+
+    /*Tests_SRS_OPTIONHANDLER_02_009: [ Otherwise, OptionHandler_AddOption shall succeed and return OPTIONHANDLER_ERROR. ]*/
+    /*Tests_SRS_OPTIONHANDLER_02_008: [ If all the operations succed then OptionHandler_AddOption shall succeed and return OPTIONHANDLER_OK. ]*/
+    TEST_FUNCTION(OptionHandler_AddOption_unhappy_path)
+    {
+        ///arrange
+        int negativeTestsInitResult = umock_c_negative_tests_init();
+        ASSERT_ARE_EQUAL(int, 0, negativeTestsInitResult);
+        
+        OPTIONHANDLER_HANDLE handle = OptionHandler_Create(aCloneOption, aDestroyOption, aSetOption);
+        umock_c_reset_all_calls();
+
+        void* value = "value";
+        OptionHandler_AddOption_inert_path(value);
+
+        umock_c_negative_tests_snapshot();
+
+        for (size_t i = 0; i < umock_c_negative_tests_call_count(); i++)
+        {
+            umock_c_negative_tests_reset();
+            umock_c_negative_tests_fail_call(i);
+
+            ///act
+            char temp_str[128];
+            (void)sprintf(temp_str, "On failed call %zu", i);
+
+            ///act
+            OPTIONHANDLER_RESULT result = OptionHandler_AddOption(handle, "name", value);
+
+            ///assert
+            ASSERT_ARE_EQUAL_WITH_MSG(OPTIONHANDLER_RESULT, OPTIONHANDLER_ERROR, result, temp_str);
+        }
+
+        ///cleanup
+        OptionHandler_Destroy(handle);
+        umock_c_negative_tests_deinit();
+    }
+
+    /*Tests_SRS_OPTIONHANDLER_02_010: [ OptionHandler_FeedOptions shall fail and return OPTIONHANDLER_INVALIDARG if any argument is NULL. ]*/
+    TEST_FUNCTION(OptionHandler_FeedOptions_with_NULL_handle_fails)
+    {
+        ///arrange
+
+        ///act
+        OPTIONHANDLER_RESULT result = OptionHandler_FeedOptions(NULL, "something non NULL");
+
+        ///assert
+        ASSERT_ARE_EQUAL(OPTIONHANDLER_RESULT, OPTIONHANDLER_INVALIDARG, result);
+
+        ///cleanup
+    }
+
+    /*Tests_SRS_OPTIONHANDLER_02_010: [ OptionHandler_FeedOptions shall fail and return OPTIONHANDLER_INVALIDARG if any argument is NULL. ]*/
+    TEST_FUNCTION(OptionHandler_FeedOptions_with_NULL_destinationhandle_fails)
+    {
+        ///arrange
+        OPTIONHANDLER_HANDLE handle = OptionHandler_Create(aCloneOption, aDestroyOption, aSetOption);
+
+        ///act
+        OPTIONHANDLER_RESULT result = OptionHandler_FeedOptions(handle, NULL);
+
+        ///assert
+        ASSERT_ARE_EQUAL(OPTIONHANDLER_RESULT, OPTIONHANDLER_INVALIDARG, result);
+
+        ///cleanup
+        OptionHandler_Destroy(handle);
+    }
+
+    /*Tests_SRS_OPTIONHANDLER_02_011: [ Otherwise, OptionHandler_FeedOptions shall use VECTOR's iteration mechanisms to retrieve pairs of name, value (const char* and void*). ]*/
+    /*Tests_SRS_OPTIONHANDLER_02_012: [ OptionHandler_FeedOptions shall call for every pair of name,value setOption passing destinationHandle, name and value. ]*/
+    /*Tests_SRS_OPTIONHANDLER_02_013: [ If all the operations succeed then OptionHandler_FeedOptions shall succeed and return OPTIONHANDLER_OK. ]*/
+    TEST_FUNCTION(OptionHandler_FeedOptions_with_0_saved_options_feeds_0_succeeds)
+    {
+        ///arrange
+        OPTIONHANDLER_HANDLE handle = OptionHandler_Create(aCloneOption, aDestroyOption, aSetOption);
+        umock_c_reset_all_calls();
+
+        STRICT_EXPECTED_CALL(VECTOR_size(IGNORED_PTR_ARG)) /*will return 0, so nothing else happens*/
+            .IgnoreArgument_handle();
+
+        ///act
+        OPTIONHANDLER_RESULT result = OptionHandler_FeedOptions(handle, (void*)42);
+
+        ///assert
+        ASSERT_ARE_EQUAL(OPTIONHANDLER_RESULT, OPTIONHANDLER_OK, result);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        ///cleanup
+        OptionHandler_Destroy(handle);
+    }
+
+    static void OptionHandler_FeedOptions_with_1_saved_options_feeds_1_inert_path(void)
+    {
+        STRICT_EXPECTED_CALL(VECTOR_size(IGNORED_PTR_ARG)) /*will return 0, so nothing else happens*/
+            .IgnoreArgument_handle();
+        STRICT_EXPECTED_CALL(VECTOR_element(IGNORED_PTR_ARG, 0))
+            .IgnoreArgument_handle();
+        STRICT_EXPECTED_CALL(aSetOption((void*)42, "a", IGNORED_PTR_ARG))
+            .IgnoreArgument_value();
+    }
+
+    /*Tests_SRS_OPTIONHANDLER_02_011: [ Otherwise, OptionHandler_FeedOptions shall use VECTOR's iteration mechanisms to retrieve pairs of name, value (const char* and void*). ]*/
+    /*Tests_SRS_OPTIONHANDLER_02_012: [ OptionHandler_FeedOptions shall call for every pair of name,value setOption passing destinationHandle, name and value. ]*/
+    /*Tests_SRS_OPTIONHANDLER_02_013: [ If all the operations succeed then OptionHandler_FeedOptions shall succeed and return OPTIONHANDLER_OK. ]*/
+    TEST_FUNCTION(OptionHandler_FeedOptions_with_1_saved_options_feeds_1_happypath)
+    {
+        ///arrange
+        OPTIONHANDLER_HANDLE handle = OptionHandler_Create(aCloneOption, aDestroyOption, aSetOption);
+        (void)OptionHandler_AddOption(handle, "a", "b");
+        umock_c_reset_all_calls();
+
+        OptionHandler_FeedOptions_with_1_saved_options_feeds_1_inert_path();
+
+        ///act
+        OPTIONHANDLER_RESULT result = OptionHandler_FeedOptions(handle, (void*)42);
+
+        ///assert
+        ASSERT_ARE_EQUAL(OPTIONHANDLER_RESULT, OPTIONHANDLER_OK, result);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        ///cleanup
+        OptionHandler_Destroy(handle);
+    }
+
+    /*Tests_SRS_OPTIONHANDLER_02_014: [ Otherwise, OptionHandler_FeedOptions shall fail and return OPTIONHANDLER_ERROR. ]*/
+    TEST_FUNCTION(OptionHandler_FeedOptions_with_1_saved_options_feeds_1_unhappypaths)
+    {
+
+        ///arrange
+        int negativeTestsInitResult = umock_c_negative_tests_init();
+        ASSERT_ARE_EQUAL(int, 0, negativeTestsInitResult);
+
+        OPTIONHANDLER_HANDLE handle = OptionHandler_Create(aCloneOption, aDestroyOption, aSetOption);
+        (void)OptionHandler_AddOption(handle, "a", "b");
+        umock_c_reset_all_calls();
+
+        OptionHandler_FeedOptions_with_1_saved_options_feeds_1_inert_path();
+
+        umock_c_negative_tests_snapshot();
+
+        size_t calls_that_cannot_fail[] =
+        {
+            0, 
+            1,
+        };
+
+        for (size_t i = 0; i < umock_c_negative_tests_call_count(); i++)
+        {
+            size_t j;
+            for (j = 0;j < sizeof(calls_that_cannot_fail) / sizeof(calls_that_cannot_fail[0]);j++)
+            {
+                if (calls_that_cannot_fail[j] == i)
+                {
+                    break;
+                }
+            }
+
+            if (j != sizeof(calls_that_cannot_fail) / sizeof(calls_that_cannot_fail[0]))
+            {
+                continue; //just go to the next call that might be failed.
+            }
+
+            umock_c_negative_tests_reset();
+            umock_c_negative_tests_fail_call(i);
+
+            ///act
+            char temp_str[128];
+            (void)sprintf(temp_str, "On failed call %zu", i);
+
+            ///act
+            OPTIONHANDLER_RESULT result = OptionHandler_FeedOptions(handle, (void*)42);
+
+            ///assert
+            ASSERT_ARE_EQUAL_WITH_MSG(OPTIONHANDLER_RESULT, OPTIONHANDLER_ERROR, result, temp_str);
+            
+        }
+
+        ///cleanup
+        OptionHandler_Destroy(handle);
+        umock_c_negative_tests_deinit();
+    }
+
+    static void OptionHandler_FeedOptions_with_2_saved_options_feeds_2_inert_path(void)
+    {
+        STRICT_EXPECTED_CALL(VECTOR_size(IGNORED_PTR_ARG)) /*will return 0, so nothing else happens*/
+            .IgnoreArgument_handle();
+        STRICT_EXPECTED_CALL(VECTOR_element(IGNORED_PTR_ARG, 0))
+            .IgnoreArgument_handle();
+        STRICT_EXPECTED_CALL(aSetOption((void*)42, "a", IGNORED_PTR_ARG))
+            .IgnoreArgument_value();
+
+        STRICT_EXPECTED_CALL(VECTOR_element(IGNORED_PTR_ARG, 1))
+            .IgnoreArgument_handle();
+        STRICT_EXPECTED_CALL(aSetOption((void*)42, "c", IGNORED_PTR_ARG))
+            .IgnoreArgument_value();
+    }
+
+    /*Tests_SRS_OPTIONHANDLER_02_011: [ Otherwise, OptionHandler_FeedOptions shall use VECTOR's iteration mechanisms to retrieve pairs of name, value (const char* and void*). ]*/
+    /*Tests_SRS_OPTIONHANDLER_02_012: [ OptionHandler_FeedOptions shall call for every pair of name,value setOption passing destinationHandle, name and value. ]*/
+    /*Tests_SRS_OPTIONHANDLER_02_013: [ If all the operations succeed then OptionHandler_FeedOptions shall succeed and return OPTIONHANDLER_OK. ]*/
+    TEST_FUNCTION(OptionHandler_FeedOptions_with_2_saved_options_feeds_2_happypath)
+    {
+        ///arrange
+        OPTIONHANDLER_HANDLE handle = OptionHandler_Create(aCloneOption, aDestroyOption, aSetOption);
+        (void)OptionHandler_AddOption(handle, "a", "b");
+        (void)OptionHandler_AddOption(handle, "c", "b2");
+        umock_c_reset_all_calls();
+
+        OptionHandler_FeedOptions_with_2_saved_options_feeds_2_inert_path();
+
+        ///act
+        OPTIONHANDLER_RESULT result = OptionHandler_FeedOptions(handle, (void*)42);
+
+        ///assert
+        ASSERT_ARE_EQUAL(OPTIONHANDLER_RESULT, OPTIONHANDLER_OK, result);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        ///cleanup
+        OptionHandler_Destroy(handle);
+    }
+
+    /*Tests_SRS_OPTIONHANDLER_02_014: [ Otherwise, OptionHandler_FeedOptions shall fail and return OPTIONHANDLER_ERROR. ]*/
+    TEST_FUNCTION(OptionHandler_FeedOptions_with_2_saved_options_feeds_2_unhappypaths)
+    {
+
+        ///arrange
+        int negativeTestsInitResult = umock_c_negative_tests_init();
+        ASSERT_ARE_EQUAL(int, 0, negativeTestsInitResult);
+
+        OPTIONHANDLER_HANDLE handle = OptionHandler_Create(aCloneOption, aDestroyOption, aSetOption);
+        (void)OptionHandler_AddOption(handle, "a", "b");
+        (void)OptionHandler_AddOption(handle, "c", "b2");
+        umock_c_reset_all_calls();
+
+        OptionHandler_FeedOptions_with_2_saved_options_feeds_2_inert_path();
+
+        umock_c_negative_tests_snapshot();
+
+        size_t calls_that_cannot_fail[] =
+        {
+            0,
+            1,
+            3,
+        };
+
+        for (size_t i = 0; i < umock_c_negative_tests_call_count(); i++)
+        {
+            size_t j;
+            for (j = 0;j < sizeof(calls_that_cannot_fail) / sizeof(calls_that_cannot_fail[0]);j++)
+            {
+                if (calls_that_cannot_fail[j] == i)
+                {
+                    break;
+                }
+            }
+
+            if (j != sizeof(calls_that_cannot_fail) / sizeof(calls_that_cannot_fail[0]))
+            {
+                continue; //just go to the next call that might be failed.
+            }
+
+            umock_c_negative_tests_reset();
+            umock_c_negative_tests_fail_call(i);
+
+            ///act
+            char temp_str[128];
+            (void)sprintf(temp_str, "On failed call %zu", i);
+
+            ///act
+            OPTIONHANDLER_RESULT result = OptionHandler_FeedOptions(handle, (void*)42);
+
+            ///assert
+            ASSERT_ARE_EQUAL_WITH_MSG(OPTIONHANDLER_RESULT, OPTIONHANDLER_ERROR, result, temp_str);
+        }
+
+        ///cleanup
+        OptionHandler_Destroy(handle);
+        umock_c_negative_tests_deinit();
+    }
+
+    /*Tests_SRS_OPTIONHANDLER_02_015: [ OptionHandler_Destroy shall do nothing if parameter handle is NULL. ]*/
+    TEST_FUNCTION(OptionHandler_Destroy_with_2_options_happy_path)
+    {
+        ///arrange
+
+        ///act
+        OptionHandler_Destroy(NULL);
+
+        ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        ///cleanup
+    }
+
+    /*Tests_SRS_OPTIONHANDLER_02_016: [ Otherwise, OptionHandler_Destroy shall free all used resources. ]*/
+    TEST_FUNCTION(OptionHandler_Destroy_with_non_NULL_handle_succeeds)
+    {
+        ///arrange
+        OPTIONHANDLER_HANDLE handle = OptionHandler_Create(aCloneOption, aDestroyOption, aSetOption);
+        (void)OptionHandler_AddOption(handle, "a", "b");
+        (void)OptionHandler_AddOption(handle, "c", "b2");
+        umock_c_reset_all_calls();
+
+        STRICT_EXPECTED_CALL(VECTOR_size(IGNORED_PTR_ARG))
+            .IgnoreArgument_handle();
+        STRICT_EXPECTED_CALL(VECTOR_element(IGNORED_PTR_ARG, 0))
+            .IgnoreArgument_handle();
+        STRICT_EXPECTED_CALL(aDestroyOption("a", IGNORED_PTR_ARG))
+            .IgnoreArgument_value();
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
+            .IgnoreArgument_ptr();
+
+        STRICT_EXPECTED_CALL(VECTOR_element(IGNORED_PTR_ARG, 1))
+            .IgnoreArgument_handle();
+        STRICT_EXPECTED_CALL(aDestroyOption("c", IGNORED_PTR_ARG))
+            .IgnoreArgument_value();
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
+            .IgnoreArgument_ptr();
+
+        STRICT_EXPECTED_CALL(VECTOR_destroy(IGNORED_PTR_ARG))
+            .IgnoreArgument_handle();
+
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
+            .IgnoreArgument_ptr();
+
+        ///act
+        OptionHandler_Destroy(handle);
+
+        ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        ///cleanup
+    }
+
+END_TEST_SUITE(optionhandler_unittests)
+
+

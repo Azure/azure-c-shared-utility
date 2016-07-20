@@ -531,6 +531,7 @@ set(source_c_files
 ./src/usha.c
 ./src/vector.c
 ./src/xlogging.c
+./src/optionhandler.c
 ./adapters/agenttime.c
 ${CONDITION_C_FILE}
 ${LOCK_C_FILE}
@@ -606,6 +607,7 @@ set(source_h_files
 ./inc/azure_c_shared_utility/xlogging.h
 ./inc/azure_c_shared_utility/constbuffer.h
 ./inc/azure_c_shared_utility/tlsio.h
+./inc/azure_c_shared_utility/optionhandler.h
 )
 
 if(${use_http})
