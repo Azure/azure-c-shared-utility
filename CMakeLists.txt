@@ -207,7 +207,7 @@ function(linux_unittests_add_exe whatIsBuilding)
     target_include_directories(${whatIsBuilding}_exe PUBLIC ${sharedutil_include_directories})
     
     #this part detects 
-        #       - the additional libraries that might be needed.
+    #   - the additional libraries that might be needed.
     #     additional libraries are started by ADDITIONAL_LIBS parameter and ended by any other known parameter (or end of variable arguments)
     #   - a valgring suppression file (VALGRIND_SUPRESSIONS_FILE) for memcheck
     #     the file name follows immediately after 
@@ -545,6 +545,7 @@ set(source_c_files
 ./src/usha.c
 ./src/vector.c
 ./src/xlogging.c
+./src/optionhandler.c
 ./adapters/agenttime.c
 ${CONDITION_C_FILE}
 ${LOCK_C_FILE}
@@ -578,6 +579,7 @@ endif()
 if(${use_openssl})
     set(source_c_files ${source_c_files}
         ./src/tlsio_openssl.c
+        ./src/x509_openssl.c
     )
 endif()
 
@@ -619,7 +621,7 @@ set(source_h_files
 ./inc/azure_c_shared_utility/xlogging.h
 ./inc/azure_c_shared_utility/constbuffer.h
 ./inc/azure_c_shared_utility/tlsio.h
-./inc/azure_c_shared_utility/x509_schannel.h
+./inc/azure_c_shared_utility/optionhandler.h
 )
 
 if(${use_http})
@@ -634,7 +636,8 @@ endif()
 if(${use_schannel})
     set(source_h_files ${source_h_files}
         ./inc/azure_c_shared_utility/tlsio_schannel.h
-    )
+        ./inc/azure_c_shared_utility/x509_schannel.h
+        )
 endif()
 if(${use_wolfssl})
     set(source_h_files ${source_h_files}
@@ -647,6 +650,7 @@ endif()
 if(${use_openssl})
     set(source_h_files ${source_h_files}
         ./inc/azure_c_shared_utility/tlsio_openssl.h
+	./inc/azure_c_shared_utility/x509_openssl.h
     )
     if(WIN32)
         include_directories($ENV{OpenSSLDir}/include)

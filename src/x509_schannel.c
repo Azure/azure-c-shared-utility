@@ -200,10 +200,7 @@ X509_SCHANNEL_HANDLE x509_schannel_create(const char* x509certificate, const cha
                                                             {
                                                                 /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
                                                                 LogErrorWinHTTPWithGetLastErrorAsString("unable to CertSetCertificateContextProperty");
-                                                                if (!CertFreeCertificateContext(result->x509certificate_context))
-                                                                {
-                                                                    LogErrorWinHTTPWithGetLastErrorAsString("unable to CertFreeCertificateContext");
-                                                                }
+
                                                                 if (!CryptDestroyKey(result->x509hcryptkey))
                                                                 {
                                                                     LogErrorWinHTTPWithGetLastErrorAsString("unable to CryptDestroyKey");
@@ -211,6 +208,10 @@ X509_SCHANNEL_HANDLE x509_schannel_create(const char* x509certificate, const cha
                                                                 if (!CryptReleaseContext(result->hProv, 0))
                                                                 {
                                                                     LogErrorWinHTTPWithGetLastErrorAsString("unable to CryptReleaseContext");
+                                                                }
+                                                                if (!CertFreeCertificateContext(result->x509certificate_context))
+                                                                {
+                                                                    LogErrorWinHTTPWithGetLastErrorAsString("unable to CertFreeCertificateContext");
                                                                 }
                                                                 free(result);
                                                                 result = NULL;
@@ -248,11 +249,6 @@ void x509_schannel_destroy(X509_SCHANNEL_HANDLE x509_schannel_handle)
         /*Codes_SRS_X509_SCHANNEL_02_012: [ Otherwise, x509_schannel_destroy shall free all used resources. ]*/
         X509_SCHANNEL_HANDLE_DATA* x509crypto = (X509_SCHANNEL_HANDLE_DATA*)x509_schannel_handle;
 
-        if (!CertFreeCertificateContext(x509crypto->x509certificate_context))
-        {
-            LogErrorWinHTTPWithGetLastErrorAsString("unable to CertFreeCertificateContext");
-        }
-
         if (!CryptDestroyKey(x509crypto->x509hcryptkey))
         {
             LogErrorWinHTTPWithGetLastErrorAsString("unable to CryptDestroyKey");
@@ -261,6 +257,11 @@ void x509_schannel_destroy(X509_SCHANNEL_HANDLE x509_schannel_handle)
         if (!CryptReleaseContext(x509crypto->hProv, 0))
         {
             LogErrorWinHTTPWithGetLastErrorAsString("unable to CryptReleaseContext");
+        }
+
+        if (!CertFreeCertificateContext(x509crypto->x509certificate_context))
+        {
+            LogErrorWinHTTPWithGetLastErrorAsString("unable to CertFreeCertificateContext");
         }
 
         free(x509crypto);

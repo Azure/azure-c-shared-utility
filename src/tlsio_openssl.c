@@ -19,6 +19,7 @@
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
+#include "azure_c_shared_utility/x509_openssl.h"
 
 typedef enum TLSIO_STATE_TAG
 {
@@ -49,6 +50,8 @@ typedef struct TLS_IO_INSTANCE_TAG
     char* hostname;
     int port;
     char* certificate;
+    const char* x509certificate;
+    const char* x509privatekey;
 } TLS_IO_INSTANCE;
 
 struct CRYPTO_dynlock_value 
@@ -572,8 +575,21 @@ static int create_openssl_instance(TLS_IO_INSTANCE* tlsInstance)
     }
     else if (add_certificate_to_store(tlsInstance, tlsInstance->certificate) != 0)
     {
+        SSL_CTX_free(tlsInstance->ssl_context);
+        log_ERR_get_error("unable to add_certificate_to_store.");
         result = __LINE__;
     }
+    /*x509 authentication can only be build before underlying connection is realized*/
+    else if(
+            (tlsInstance->x509certificate != NULL) &&
+            (tlsInstance->x509privatekey != NULL) &&
+            (x509_openssl_add_credentials(tlsInstance->ssl_context, tlsInstance->x509certificate, tlsInstance->x509privatekey) != 0)
+        )
+        {
+            SSL_CTX_free(tlsInstance->ssl_context);
+            log_ERR_get_error("unable to use x509 authentication");
+            result = __LINE__;
+        }
     else
     {
         tlsInstance->in_bio = BIO_new(BIO_s_mem());
@@ -724,6 +740,9 @@ CONCRETE_IO_HANDLE tlsio_openssl_create(void* io_create_parameters)
             result->on_io_error_context = NULL;
 
             result->tlsio_state = TLSIO_STATE_NOT_OPEN;
+
+            result->x509certificate = NULL;
+            result->x509privatekey = NULL;
         }
     }
 
@@ -949,6 +968,35 @@ int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
                 result = add_certificate_to_store(tls_io_instance, cert);
             }
         }
+        else if (strcmp("x509certificate", optionName) == 0)
+        {
+            if (tls_io_instance->x509certificate != NULL)
+            {
+                LogError("unable to set x509 options more than once");
+                result = __LINE__;
+            }
+            else
+            {
+                tls_io_instance->x509certificate = value; /*this option is owned by iothubtransport layer... in theory*/
+                /*all is fine, the x509 shall be used later*/
+                result = 0;
+            }
+        }
+        else if (strcmp("x509privatekey", optionName) == 0)
+        {
+            if (tls_io_instance->x509privatekey != NULL)
+            {
+                LogError("unable to set more than once x509 options");
+                result = __LINE__;
+            }
+            else
+            {
+                tls_io_instance->x509privatekey = value; /*this option is owned by iothubtransport layer... in theory*/
+                /*all is fine, the x509 shall be used later*/
+                result = 0;
+            }
+        }
+
         else
         {
             if (tls_io_instance->underlying_io == NULL)

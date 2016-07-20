@@ -85,7 +85,7 @@ pushd %build-root%\cmake\%CMAKE_DIR%
 if %MAKE_NUGET_PKG% == yes (
 	echo ***Running CMAKE for Win32 ***
 	cmake -Dskip_unittests:BOOL=ON %build-root%
-	if not %errorlevel%==0 exit /b %errorlevel%
+	if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 	popd
 
 	echo *** Running CMAKE x64 ***
@@ -96,7 +96,7 @@ if %MAKE_NUGET_PKG% == yes (
 	mkdir %build-root%\cmake\shared-util_x64
 	pushd %build-root%\cmake\shared-util_x64
 	cmake -Dskip_unittests:BOOL=ON %build-root% -G "Visual Studio 14 Win64"
-	if not %errorlevel%==0 exit /b %errorlevel%
+	if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 	popd
 
 	echo *** Running CMAKE ARM ***
@@ -106,19 +106,19 @@ if %MAKE_NUGET_PKG% == yes (
 	mkdir %build-root%\cmake\shared-util_arm
 	pushd %build-root%\cmake\shared-util_arm
 	cmake -Dskip_unittests:BOOL=ON %build-root% -G "Visual Studio 14 ARM"
-	if not %errorlevel%==0 exit /b %errorlevel%
+	if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 ) else if %build-platform% == Win32 (
 	echo ***Running CMAKE for Win32***
 	cmake %build-root%
-	if not %errorlevel%==0 exit /b %errorlevel%
+	if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 ) else if %build-platform% == ARM (
 	echo ***Running CMAKE for ARM***
 	cmake %build-root% -G "Visual Studio 14 ARM"
-	if not %errorlevel%==0 exit /b %errorlevel%
+	if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 ) else (
 	echo ***Running CMAKE for Win64***
 	cmake %build-root% -G "Visual Studio 14 Win64"
-	if not %errorlevel%==0 exit /b %errorlevel%
+	if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 )
 
 if %MAKE_NUGET_PKG% == yes (
@@ -126,29 +126,29 @@ if %MAKE_NUGET_PKG% == yes (
 		echo ***Building all configurations***
 		msbuild /m %build-root%\cmake\shared-util_Win32\azure_c_shared_utility.sln /p:Configuration=Release
 		msbuild /m %build-root%\cmake\shared-util_Win32\azure_c_shared_utility.sln /p:Configuration=Debug
-		if not %errorlevel%==0 exit /b %errorlevel%
+		if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 
 		msbuild /m %build-root%\cmake\shared-util_x64\azure_c_shared_utility.sln /p:Configuration=Release
 		msbuild /m %build-root%\cmake\shared-util_x64\azure_c_shared_utility.sln /p:Configuration=Debug
-		if not %errorlevel%==0 exit /b %errorlevel%
+		if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 
 		msbuild /m %build-root%\cmake\shared-util_arm\azure_c_shared_utility.sln /p:Configuration=Release
 		msbuild /m %build-root%\cmake\shared-util_arm\azure_c_shared_utility.sln /p:Configuration=Debug
-		if not %errorlevel%==0 exit /b %errorlevel%
+		if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 ) else (
 	if not defined build-config (
 		echo ***Building both configurations***
 		msbuild /m azure_c_shared_utility.sln /p:Configuration=Release
 		msbuild /m azure_c_shared_utility.sln /p:Configuration=Debug
-		if not %errorlevel%==0 exit /b %errorlevel%
+		if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 	) else (
 		echo ***Building %build-config% only***
 		msbuild /m azure_c_shared_utility.sln /p:Configuration=%build-config%
-		if not %errorlevel%==0 exit /b %errorlevel%
+		if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 	)
 
 	ctest -C "debug" -V
-	if not %errorlevel%==0 exit /b %errorlevel%
+	if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 )
 
 popd

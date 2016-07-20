@@ -17,6 +17,7 @@
 #include <openssl/ssl.h>
 #include <openssl/bio.h>
 #include "azure_c_shared_utility/xlogging.h"
+#include "azure_c_shared_utility/x509_openssl.h"
 
 #define TEMP_BUFFER_SIZE 1024
 
@@ -227,64 +228,14 @@ static CURLcode ssl_ctx_callback(CURL *curl, void *ssl_ctx, void *userptr)
     else
     {
         HTTP_HANDLE_DATA *httpHandleData = (HTTP_HANDLE_DATA *)userptr;
-        BIO *bio_certificate;
-        bio_certificate = BIO_new_mem_buf(httpHandleData->x509certificate, -1);
-        if (bio_certificate == NULL)
+        if (x509_openssl_add_credentials(ssl_ctx, httpHandleData->x509certificate, httpHandleData->x509privatekey) != 0)
         {
-            LogError("cannot create  BIO *bio_certificate");
-            result = CURLE_OUT_OF_MEMORY;
+            LogError("unable to x509_openssl_add_credentials");
+            result = CURLE_SSL_CERTPROBLEM;
         }
         else
         {
-            X509 *cert = PEM_read_bio_X509(bio_certificate, NULL, 0, NULL);
-            if (cert == NULL)
-            {
-                LogError("cannot create X509 *cert");
-                result = CURLE_SSL_CERTPROBLEM;
-            }
-            else
-            {
-                BIO *bio_privatekey;
-                bio_privatekey = BIO_new_mem_buf(httpHandleData->x509privatekey, -1);
-                if (bio_privatekey == NULL)
-                {
-                    LogError("cannot create BIO *bio_privatekey;");
-                    result = CURLE_OUT_OF_MEMORY;
-                }
-                else
-                {
-                    RSA* privatekey = PEM_read_bio_RSAPrivateKey(bio_privatekey, NULL, 0, NULL);
-                    if (privatekey == NULL)
-                    {
-                        LogError("cannot create RSA* privatekey");
-                        result = CURLE_SSL_CERTPROBLEM; /*there's no better code in CURL about not being able to load a private key*/
-                    }
-                    else
-                    {
-                        if (SSL_CTX_use_certificate((SSL_CTX*)ssl_ctx, cert) != 1)
-                        {
-                            LogError("cannot SSL_CTX_use_certificate");
-                            result = CURLE_SSL_CERTPROBLEM; /*there's no better code in CURL about not being able to SSL_CTX_use_certificate*/
-                        }
-                        else
-                        {
-                            if (SSL_CTX_use_RSAPrivateKey(ssl_ctx, privatekey) != 1)
-                            {
-                                LogError("cannot SSL_CTX_use_RSAPrivateKey");
-                                result = CURLE_SSL_CERTPROBLEM; /*there's no better code in CURL about not being able to put a private key in an SSL context*/
-                            }
-                            else
-                            {
-                                result = CURLE_OK;
-                            }
-                        }
-                        RSA_free(privatekey);
-                    }
-                    BIO_free(bio_privatekey);
-                }
-                X509_free(cert);
-            }
-            BIO_free(bio_certificate);
+            result = CURLE_OK;
         }
     }
     return result;

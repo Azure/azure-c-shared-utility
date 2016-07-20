@@ -18,12 +18,12 @@ echo Copying files ...
 
 for /f "tokens=*" %%i in (%filelist%) DO (
     xcopy /y "%project_path%\%%i" "source"
-    if %errorlevel% neq 0 goto :eof
+    if !ERRORLEVEL! neq 0 goto :eof
 )
 echo .
 
 yotta target frdm-k64f-gcc
-if %errorlevel% neq 0 goto :eof
+if !ERRORLEVEL! neq 0 goto :eof
 
 yotta build
-if %errorlevel% neq 0 goto :eof
+if !ERRORLEVEL! neq 0 goto :eof
