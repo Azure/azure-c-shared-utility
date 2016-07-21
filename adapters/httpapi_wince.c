@@ -1,22 +1,17 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#include <cstdlib>
-#include <cstdio>
-#include <cstdlib>
-#include <cctype>
 #include "azure_c_shared_utility/httpapi.h"
 #include "azure_c_shared_utility/httpheaders.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
 #include "azure_c_shared_utility/xlogging.h"
-#include <string.h>
-#include "certs.h"
 #include "winsock2.h"
 #include "sslsock.h"
 #include "schnlsp.h"
 
+
 #define MAX_HOSTNAME     64
-#define TEMP_BUFFER_SIZE 4096
+#define TEMPORARY_BUFFER_SIZE 4096
 
 #define CHAR_COUNT(A)   (sizeof(A) - 1)
 
@@ -31,105 +26,27 @@ public:
     struct sockaddr_in _remoteHost;
 };
 
-// Thanks to Luca Calligaris for his article:
-// https://lcalligaris.wordpress.com/2011/04/07/implementing-a-secure-socket/
-
-#define SSL_OPT_NO_CHECK  0
-#define SSL_OPT_ISSUER_CHECK 1
-#define SSL_OPT_STRICT_CHECK 2
-
-#define SSL_OPT_DEFAULT   SSL_OPT_STRICT_CHECK
-
-static int g_SslOptions = SSL_OPT_DEFAULT;
-
-// callback called every time a certificate needs to be validated, depending on g_SslOptions global var it can perform
-// a strict validation (default) or just validate any certificate (may be needed for testing and debugging, not in production)
+// If Root CA is not found in CA database, dwFlags will be set to SSL_CERT_FLAG_ISSUER_UNKNOWN (value 1). In that case return SSL_ERR_CERT_UNKNOWN (value 10)
 int CALLBACK SSLValidateCertHook(DWORD  dwType, LPVOID pvArg,
     DWORD  dwChainLen, LPBLOB pCertChain, DWORD dwFlags)
 {
-    HCERTSTORE hCertStore = NULL;
-    PCCERT_CONTEXT pCertInStore = NULL, pCertPassed = NULL, pPrevCertContext = NULL;
-    const LPCTSTR SystemStore[] = { _T("CA"), _T("ROOT"), _T("MY") };
-    unsigned int i;
-    int retcode = SSL_ERR_NO_CERT;
+	DWORD dwRetValue = SSL_ERR_OKAY; // SSL_ERR_OKAY : The certificate is acceptable
+	if (dwFlags)
+		dwRetValue = SSL_ERR_CERT_UNKNOWN; // Issuer is unknown
 
-    //The only thing we can handle
-    if (dwType != SSL_CERT_X509)
-        return SSL_ERR_CERT_UNKNOWN;
+	return dwRetValue;
 
-    //Do not check the certificate at all
-    if (g_SslOptions == SSL_OPT_NO_CHECK)
-        return SSL_ERR_OKAY;
-
-    //Get a context struct from the certificate blob
-    pCertPassed = CertCreateCertificateContext(X509_ASN_ENCODING, pCertChain->pBlobData, pCertChain->cbSize);
-
-    if (!pCertPassed)
-        return SSL_ERR_FAILED;
-
-    //Check for a matching certificate in the stores
-    for (i = 0; i<(sizeof(SystemStore) / sizeof(SystemStore[0])); i++)
-    {
-        //open the store
-        hCertStore = CertOpenSystemStore((HCRYPTPROV)NULL, SystemStore[i]);
-
-        if (!hCertStore)
-            continue;
-
-        pPrevCertContext = NULL;
-
-        do
-        {
-            //Find a certificate from the same issuer
-            pCertInStore = CertFindCertificateInStore(hCertStore, X509_ASN_ENCODING,
-                0, CERT_FIND_ISSUER_NAME, &pCertPassed->pCertInfo->Issuer, pPrevCertContext);
-
-            if (pCertInStore)
-            {
-                //It's enough if we have a certificate from the same issuer
-                if (g_SslOptions == SSL_OPT_ISSUER_CHECK)
-                {
-                    retcode = SSL_ERR_OKAY;
-                    break;
-                }
-                else if (g_SslOptions == SSL_OPT_STRICT_CHECK)
-                {
-                    //Compare (exact match) the certificate with the one we have found
-                    if (CertCompareCertificate(X509_ASN_ENCODING, pCertInStore->pCertInfo, pCertPassed->pCertInfo))
-                    {
-                        retcode = SSL_ERR_OKAY;
-                        break;
-                    }
-                }
-            }
-
-            pPrevCertContext = pCertInStore;
-        } while (pCertInStore);
-
-        CertCloseStore(hCertStore, 0);
-
-        if (retcode != SSL_ERR_NO_CERT)
-            break;
-    }
-
-    if (pCertInStore)
-        CertFreeCertificateContext(pCertInStore);
-
-    CertFreeCertificateContext(pCertPassed);
-
-    return retcode;
 }
 
 // Initializes SSL layer, called only once on initialization
-int SSLInit(SOCKET s, int SslOptions)
+int SSLInit(SOCKET s)
 {
     DWORD optval = SO_SEC_SSL;
     SSLVALIDATECERTHOOK hook;
     SSLPROTOCOLS protocolsToUse;
     int ret;
-
-    g_SslOptions = SslOptions;//WSAIoctl cannot handle the pointer copy, use a global variable
-
+	
+    
     if (setsockopt(s, SOL_SOCKET, SO_SECURE, (LPSTR)&optval, sizeof(optval)) ==
         SOCKET_ERROR)
     {
@@ -325,7 +242,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
 
     HTTPAPI_RESULT result;
     size_t  headersCount;
-    char    buf[TEMP_BUFFER_SIZE];
+	char    buf[TEMPORARY_BUFFER_SIZE];
     int     ret;
     size_t  bodyLength = 0;
     bool    chunked = false;
@@ -393,7 +310,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
             // Set port
             httpHandle->_remoteHost.sin_port = htons(443);
 
-            if (SSLInit(httpHandle->_sock_fd, SSL_OPT_DEFAULT))
+            if (SSLInit(httpHandle->_sock_fd))
             {
                 LogError("SSLInit failed");
                 result = HTTPAPI_ERROR;

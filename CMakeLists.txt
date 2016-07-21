@@ -21,12 +21,21 @@ endif()
 include (CTest)
 
 if(MSVC)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4")
+    if (WINCE) # Be lax with WEC 2013 compiler
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W3")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W3")
+        # WEC 2013 uses older VS compiler. Build some files as C++ files to resolve C99 related compile issues
+        SET_SOURCE_FILES_PROPERTIES(src/consolelogger.c src/xlogging.c src/map.c adapters/uniqueid_win32.c adapters/httpapi_wince.c src/tlsio_schannel.c src/x509_schannel.c PROPERTIES LANGUAGE CXX)
+        add_definitions(-DWIN32) #WEC 2013 
+    ELSE()
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4")
+    endif()
 elseif(LINUX)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
 endif()
+
 
 #these are the include folders
 #the following "set" statetement exports across the project a global variable called COMMON_INC_FOLDER that expands to whatever needs to included when using COMMON library
@@ -35,6 +44,10 @@ set(SHARED_UTIL_SRC_FOLDER ${CMAKE_CURRENT_LIST_DIR}/src CACHE INTERNAL "this is
 set(SHARED_UTIL_ADAPTER_FOLDER "${CMAKE_CURRENT_LIST_DIR}/adapters" CACHE INTERNAL "this is where the adapters live" FORCE)
 
 include_directories(${SHARED_UTIL_INC_FOLDER})
+if (WINCE)
+include_directories(${SHARED_UTIL_INC_FOLDER}/azure_c_shared_utility/windowsce) #windowsce SDK doesn't have stdbool.h
+ENDIF()
+
 
 #the following variables are project-wide and can be used with cmake-gui
 option(skip_unittests "set skip_unittests to ON to skip unittests (default is OFF)[if possible, they are always build]" OFF)
@@ -470,7 +483,7 @@ function(set_platform_files)
         set(THREAD_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/threadapi_win32.c PARENT_SCOPE)
         set(LOCK_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/lock_win32.c PARENT_SCOPE)
         if (WINCE)
-            set(HTTP_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/httpapi_wince.cpp PARENT_SCOPE)
+            set(HTTP_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/httpapi_wince.c PARENT_SCOPE)
         else()
             set(HTTP_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/httpapi_winhttp.c PARENT_SCOPE)
         endif()
@@ -659,8 +672,13 @@ endif()
 IF(WIN32)
     #windows needs this define
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
-    # Make warning as error
+	IF(WINCE)
+	# Don't treat warning as errors for WEC 2013. WEC 2013 uses older compiler version 
+	add_definitions(/WX-)
+	ELSE()
+	# Make warning as error
     add_definitions(/WX)
+	ENDIF()
 ELSE()
     # Make warning as error
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
@@ -683,7 +701,11 @@ endif()
 
 if(${use_schannel})
     if(WIN32)
-        target_link_libraries(aziotsharedutil ws2_32 secur32)
+	 if (WINCE)
+        target_link_libraries(aziotsharedutil secur32)
+		else()
+		target_link_libraries(aziotsharedutil ws2_32 secur32)
+		endif()
     endif()
 endif()
 

@@ -29,7 +29,12 @@ int platform_init(void)
 
 const IO_INTERFACE_DESCRIPTION* platform_get_default_tlsio(void)
 {
+#ifndef WINCE
     return tlsio_schannel_get_interface_description();
+#else
+	LogError("TLS IO interface currently not supported on WEC 2013");
+	return (IO_INTERFACE_DESCRIPTION*)NULL;
+#endif
 }
 
 void platform_deinit(void)
