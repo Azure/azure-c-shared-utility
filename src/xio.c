@@ -9,7 +9,7 @@
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/xio.h"
 
-#define CONCRETE_OPTIONS "concreteOptions"
+static const char* CONCRETE_OPTIONS = "concreteOptions";
 
 typedef struct XIO_INSTANCE_TAG
 {
@@ -205,7 +205,6 @@ int xio_setoption(XIO_HANDLE xio, const char* optionName, const void* value)
     return result;
 }
 
-/*interesting - should never be called?*/
 static void* xio_CloneOption(const char* name, const void* value)
 {
     void *result;
@@ -221,8 +220,6 @@ static void* xio_CloneOption(const char* name, const void* value)
     {
         if (strcmp(name, CONCRETE_OPTIONS) == 0)
         {
-            /*how does one clone a OPTIONHANDLER_HANDLE object...??????*/
-            /*bery good question*/
             result = (void*)value;
         }
         else
