@@ -908,7 +908,7 @@ int tlsio_schannel_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, 
             }
             else
             {
-                tls_io_instance->x509certificate = value; /*this option is owned by iothubtransport layer... in theory*/
+                tls_io_instance->x509certificate =(const char*) value; /*this option is owned by iothubtransport layer... in theory*/
                 if (tls_io_instance->x509privatekey != NULL)
                 {
                     tls_io_instance->x509_schannel_handle = x509_schannel_create(tls_io_instance->x509certificate, tls_io_instance->x509privatekey);
@@ -938,7 +938,7 @@ int tlsio_schannel_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, 
             }
             else
             {
-                tls_io_instance->x509privatekey = value; /*this option is owned by iothubtransport layer... in theory*/
+                tls_io_instance->x509privatekey =(const char*) value; /*this option is owned by iothubtransport layer... in theory*/
                 if (tls_io_instance->x509certificate!= NULL)
                 {
                     tls_io_instance->x509_schannel_handle = x509_schannel_create(tls_io_instance->x509certificate, tls_io_instance->x509privatekey);
