@@ -39,7 +39,8 @@ var SRCS = [
     "urlencode.c",
     "usha.c",
     "vector.c",
-    "xlogging.c"
+    "xlogging.c",
+    "optionhandler.c"
 ];
 
 /* Paths to external source libraries */
