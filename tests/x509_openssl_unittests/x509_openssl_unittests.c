@@ -38,11 +38,18 @@ static void my_gballoc_free(void* s)
 MOCKABLE_FUNCTION(,int, BIO_free, BIO *,a);
 
 /*the below function has different signatures on different versions of OPENSSL*/
+/*
+|openssl version (number) | openssl string                   | BIO_new_mem_buf prototype                         | Observations                    |
+|-------------------------|----------------------------------|---------------------------------------------------|---------------------------------|
+| 0x1000106fL             | OpenSSL 1.0.1f 6 Jan 2014        | BIO *BIO_new_mem_buf(void *buf, int len);         | Ubuntu 14.04                    |
+| 0x1000204fL             | OpenSSL 1.0.2d 9 Jul 2015        | BIO *BIO_new_mem_buf(void *buf, int len);         | Ubuntu 15.10                    |
+| 0x1000207fL             | OpenSSL 1.0.2g-fips  1 Mar 2016  | BIO *BIO_new_mem_buf(const void *buf, int len);   | Ubuntu 16.10                    |
+
+*/
+
 #if OPENSSL_VERSION_NUMBER >= 0x1000207fL
-/*known to work on 1.0.2g-fips 1 Mar 2016*/
 MOCKABLE_FUNCTION(,BIO *,BIO_new_mem_buf, const void *,buf, int, len);
 #else
-/*known to work on 0x1000207fL - OpenSSL 1.0.2d 9 Jul 2015*/
 MOCKABLE_FUNCTION(, BIO *, BIO_new_mem_buf, void *, buf, int, len);
 #endif
 
@@ -68,10 +75,8 @@ MOCKABLE_FUNCTION(, char *,ERR_error_string, unsigned long, e, char *,buf);
 
 /*the below function has different signatures on different versions of OPENSSL*/
 #if OPENSSL_VERSION_NUMBER >= 0x1000207fL
-/*known to work on 1.0.2g-fips 1 Mar 2016*/
 static BIO* my_BIO_new_mem_buf(const void * buf, int len)
 #else
-/*known to work on 0x1000207fL - OpenSSL 1.0.2d 9 Jul 2015*/
 static BIO* my_BIO_new_mem_buf(void * buf, int len)
 #endif
 {

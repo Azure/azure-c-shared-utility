@@ -41,7 +41,7 @@ int x509_openssl_add_credentials(SSL_CTX* ssl_ctx, const char* x509certificate, 
     else
     { 
         BIO *bio_certificate;
-        bio_certificate = BIO_new_mem_buf(x509certificate, -1);
+        bio_certificate = BIO_new_mem_buf((char*)x509certificate, -1); /*taking off the const from the pointer is needed on older versions of OPENSSL*/
         if (bio_certificate == NULL)
         {
             LogError("cannot create  BIO *bio_certificate");
@@ -58,7 +58,7 @@ int x509_openssl_add_credentials(SSL_CTX* ssl_ctx, const char* x509certificate, 
             else
             {
                 BIO *bio_privatekey;
-                bio_privatekey = BIO_new_mem_buf(x509privatekey, -1);
+                bio_privatekey = BIO_new_mem_buf((char*)x509privatekey, -1); /*taking off the const from the pointer is needed on older versions of OPENSSL*/
                 if (bio_privatekey == NULL)
                 {
                     LogError("cannot create BIO *bio_privatekey;");
