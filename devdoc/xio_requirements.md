@@ -31,6 +31,7 @@ typedef void(*ON_IO_OPEN_COMPLETE)(void* context, IO_OPEN_RESULT open_result);
 typedef void(*ON_IO_CLOSE_COMPLETE)(void* context);
 typedef void(*ON_IO_ERROR)(void* context);
 
+typedef OPTIONHANDLER_HANDLE (*IO_RETRIEVEOPTIONS)(CONCRETE_IO_HANDLE concrete_io);
 typedef CONCRETE_IO_HANDLE(*IO_CREATE)(void* io_create_parameters);
 typedef void(*IO_DESTROY)(CONCRETE_IO_HANDLE concrete_io);
 typedef int(*IO_OPEN)(CONCRETE_IO_HANDLE concrete_io, ON_IO_OPEN_COMPLETE on_io_open_complete, void* on_io_open_complete_context, ON_BYTES_RECEIVED on_bytes_received, void* on_bytes_received_context, ON_IO_ERROR on_io_error, void* on_io_error_context);
@@ -41,6 +42,7 @@ typedef int(*IO_SETOPTION)(CONCRETE_IO_HANDLE concrete_io, const char* optionNam
 
 typedef struct IO_INTERFACE_DESCRIPTION_TAG
 {
+    IO_RETRIEVEOPTIONS concrete_io_retrieveoptions;
     IO_CREATE concrete_io_create;
     IO_DESTROY concrete_io_destroy;
     IO_OPEN concrete_io_open;
@@ -138,3 +140,15 @@ extern int xio_setoption(XIO_HANDLE xio, const char* optionName, const void* val
 **SRS_XIO_03_029: [**xio_setoption shall return 0 upon success.**]**
 **SRS_XIO_03_030: [**If the xio argument or the optionName argument is NULL, xio_setoption shall return a non-zero value.**]**
 **SRS_XIO_03_031: [**If the underlying concrete_xio_setoption fails, xio_setOption shall return a non-zero value.**]**
+
+### xio_retrieveoptions
+```
+OPTIONHANDLER_HANDLE xio_retrieveoptions(XIO_HANDLE xio)
+```
+
+**SRS_XIO_02_001: [** If argument `xio` is `NULL` then `xio_retrieveoptions` shall fail and return `NULL`. **]**
+**SRS_XIO_02_002: [** `xio_retrieveoptions` shall create a `OPTIONHANDLER_HANDLE` by calling `OptionHandler_Create` passing `xio_setoption` as `setOption` argument and `xio_CloneOption` and `xio_DestroyOption` for `cloneOption` and `destroyOption`. **]**
+**SRS_XIO_02_003: [** `xio_retrieveoptions` shall retrieve the concrete handle's options by a call to `concrete_io_retrieveoptions`. **]**
+**SRS_XIO_02_004: [** `xio_retrieveoptions` shall add a hardcoded option named `concreteOptions` having the same content as the concrete handle's options. **]**
+**SRS_XIO_02_005: [** If any operation fails, then `xio_retrieveoptions` shall fail and return NULL. **]**
+**SRS_XIO_02_006: [** Otherwise, `xio_retrieveoptions` shall succeed and return a non-NULL handle. **]** 

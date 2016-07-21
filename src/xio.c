@@ -9,6 +9,8 @@
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/xio.h"
 
+#define CONCRETE_OPTIONS "concreteOptions"
+
 typedef struct XIO_INSTANCE_TAG
 {
     const IO_INTERFACE_DESCRIPTION* io_interface_description;
@@ -21,6 +23,7 @@ XIO_HANDLE xio_create(const IO_INTERFACE_DESCRIPTION* io_interface_description, 
     /* Codes_SRS_XIO_01_003: [If the argument io_interface_description is NULL, xio_create shall return NULL.] */
     if ((io_interface_description == NULL) ||
         /* Codes_SRS_XIO_01_004: [If any io_interface_description member is NULL, xio_create shall return NULL.] */
+        (io_interface_description->concrete_io_retrieveoptions == NULL) ||
         (io_interface_description->concrete_io_create == NULL) ||
         (io_interface_description->concrete_io_destroy == NULL) ||
         (io_interface_description->concrete_io_open == NULL) ||
@@ -168,7 +171,7 @@ int xio_setoption(XIO_HANDLE xio, const char* optionName, const void* value)
 {
     int result;
 
-    /* Codes_SRS_XIO_03_030: [If the xio argumnent or the optionName argument is NULL, xio_setoption shall return a non-zero value.] */
+    /* Codes_SRS_XIO_03_030: [If the xio argument or the optionName argument is NULL, xio_setoption shall return a non-zero value.] */
     if (xio == NULL || optionName == NULL)
     {
         result = __LINE__;
@@ -177,11 +180,128 @@ int xio_setoption(XIO_HANDLE xio, const char* optionName, const void* value)
     {
         XIO_INSTANCE* xio_instance = (XIO_INSTANCE*)xio;
 
-        /* Codes_SRS_XIO_003_028: [xio_setoption shall pass the optionName and value to the concrete IO implementation specified in xio_create by invoking the concrete_xio_setoption function.] */
-        /* Codes_SRS_XIO_03_029: [xio_setoption shall return 0 upon success.] */
-        /* Codes_SRS_XIO_03_031: [If the underlying concrete_xio_setoption fails, xio_setOption shall return a non-zero value.] */
-        result = xio_instance->io_interface_description->concrete_io_setoption(xio_instance->concrete_xio_handle, optionName, value);
+        if (strcmp(CONCRETE_OPTIONS, optionName) == 0)
+        {
+            /*then value is a pointer to OPTIONHANDLER_HANDLE*/
+            if (OptionHandler_FeedOptions((OPTIONHANDLER_HANDLE)value, xio_instance->concrete_xio_handle) != OPTIONHANDLER_OK)
+            {
+                LogError("unable to OptionHandler_FeedOptions");
+                result = __LINE__;
+            }
+            else
+            {
+                result = 0;
+            }
+        }
+        else /*passthrough*/ 
+        {
+            /* Codes_SRS_XIO_003_028: [xio_setoption shall pass the optionName and value to the concrete IO implementation specified in xio_create by invoking the concrete_xio_setoption function.] */
+            /* Codes_SRS_XIO_03_029: [xio_setoption shall return 0 upon success.] */
+            /* Codes_SRS_XIO_03_031: [If the underlying concrete_xio_setoption fails, xio_setOption shall return a non-zero value.] */
+            result = xio_instance->io_interface_description->concrete_io_setoption(xio_instance->concrete_xio_handle, optionName, value);
+        }
     }
 
     return result;
 }
+
+/*interesting - should never be called?*/
+static void* xio_CloneOption(const char* name, const void* value)
+{
+    void *result;
+    if (
+        (name == NULL) ||
+        (value == NULL)
+        )
+    {
+        LogError("invalid argument detected: const char* name=%p, const void* value=%p", name, value);
+        result = NULL;
+    }
+    else
+    {
+        if (strcmp(name, CONCRETE_OPTIONS) == 0)
+        {
+            /*how does one clone a OPTIONHANDLER_HANDLE object...??????*/
+            /*bery good question*/
+            result = (void*)value;
+        }
+        else
+        {
+            LogError("unknown option: %s", name);
+            result = NULL;
+        }
+    }
+    return result;
+}
+
+
+static void xio_DestroyOption(const char* name, const void* value)
+{
+    if (
+        (name == NULL) ||
+        (value == NULL)
+        )
+    {
+        LogError("invalid argument detected: const char* name=%p, const void* value=%p", name, value);
+    }
+    else
+    {
+        if (strcmp(name, CONCRETE_OPTIONS) == 0)
+        {
+            OptionHandler_Destroy((OPTIONHANDLER_HANDLE)value);
+        }
+        else
+        {
+            LogError("unknown option: %s", name);
+        }
+    }
+}
+
+OPTIONHANDLER_HANDLE xio_retrieveoptions(XIO_HANDLE xio)
+{
+    OPTIONHANDLER_HANDLE result;
+
+    if (xio == NULL)
+    {
+        LogError("invalid argument detected: XIO_HANDLE xio=%p", xio);
+        result = NULL;
+    }
+    else
+    {
+        XIO_INSTANCE* xio_instance = (XIO_INSTANCE*)xio;
+        /*xio_retrieveoptions shall return a OPTIONHANDLER_HANDLE that has 1 option called "underlyingOptions" which is of type OPTIONHANDLER_HANDLE*/
+        result = OptionHandler_Create(xio_CloneOption, xio_DestroyOption, (pfSetOption)xio_setoption);
+        if (result == NULL)
+        {
+            LogError("unable to OptionHandler_Create");
+            /*return as is*/
+        }
+        else
+        {
+            OPTIONHANDLER_HANDLE concreteOptions = xio_instance->io_interface_description->concrete_io_retrieveoptions(xio_instance->concrete_xio_handle);
+            if (concreteOptions == NULL)
+            {
+                LogError("unable to concrete_io_retrieveoptions");
+                OptionHandler_Destroy(result);
+                result = NULL;
+            }
+            else
+            {
+                if (OptionHandler_AddOption(result, CONCRETE_OPTIONS, concreteOptions) != OPTIONHANDLER_OK)
+                {
+                    LogError("unable to OptionHandler_AddOption");
+                    OptionHandler_Destroy(concreteOptions);
+                    OptionHandler_Destroy(result);
+                    result = NULL;
+                }
+                else
+                {
+                    /*all is fine*/
+                }
+            }
+        }
+    }
+
+    return result;
+}
+

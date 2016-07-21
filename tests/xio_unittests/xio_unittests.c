@@ -6,7 +6,7 @@
 
 static unsigned int g_fail_alloc_calls;
 
-void* my_gballoc_malloc(size_t size)
+static void* my_gballoc_malloc(size_t size)
 {
     void* result = NULL;
     if (g_fail_alloc_calls == 0)
@@ -16,21 +16,24 @@ void* my_gballoc_malloc(size_t size)
     return result;
 }
 
-void my_gballoc_free(void* ptr)
+static void my_gballoc_free(void* ptr)
 {
     free(ptr);
 }
 
 #include "umock_c.h"
 #include "umocktypes_charptr.h"
-
-#undef ENABLE_MOCKS
-#include "azure_c_shared_utility/xio.h"
+#include "umock_c_negative_tests.h"
 
 #define ENABLE_MOCKS
+#include "azure_c_shared_utility/gballoc.h"
+#include "azure_c_shared_utility/optionhandler.h"
+#undef ENABLE_MOCKS
 
+#include "azure_c_shared_utility/xio.h"
 static CONCRETE_IO_HANDLE TEST_CONCRETE_IO_HANDLE = (CONCRETE_IO_HANDLE)0x4242;
 
+#define ENABLE_MOCKS
 MOCK_FUNCTION_WITH_CODE(, CONCRETE_IO_HANDLE, test_xio_create, void*, xio_create_parameters)
 MOCK_FUNCTION_END(TEST_CONCRETE_IO_HANDLE)
 MOCK_FUNCTION_WITH_CODE(, void, test_xio_destroy, CONCRETE_IO_HANDLE, handle)
@@ -46,7 +49,15 @@ MOCK_FUNCTION_END()
 MOCK_FUNCTION_WITH_CODE(, int, test_xio_setoption, CONCRETE_IO_HANDLE, handle, const char*, optionName, const void*, value)
 MOCK_FUNCTION_END(0)
 
-#include "azure_c_shared_utility/gballoc.h"
+#include "azure_c_shared_utility/umock_c_prod.h"
+/*this function will clone an option given by name and value*/
+MOCKABLE_FUNCTION(,void*, test_xio_CloneOption, const char*, name, const void*, value);
+
+MOCKABLE_FUNCTION(, void, test_xio_DestroyOption, const char*, name, const void*, value);
+
+MOCKABLE_FUNCTION(, OPTIONHANDLER_HANDLE, test_xio_retrieveoptions, CONCRETE_IO_HANDLE, handle);
+
+#undef ENABLE_MOCKS
 
 #ifdef __cplusplus
 extern "C" {
@@ -83,8 +94,11 @@ extern "C" {
 }
 #endif
 
+
+
 const IO_INTERFACE_DESCRIPTION test_io_description =
 {
+    test_xio_retrieveoptions,
     test_xio_create,
     test_xio_destroy,
     test_xio_open,
@@ -105,6 +119,32 @@ static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
     (void)snprintf(temp_str, sizeof(temp_str), "umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
     ASSERT_FAIL(temp_str);
 }
+
+static OPTIONHANDLER_HANDLE my_OptionHandler_Create(pfCloneOption cloneOption, pfDestroyOption destroyOption, pfSetOption setOption)
+{
+    (void)(cloneOption, destroyOption, setOption);
+    return (OPTIONHANDLER_HANDLE)my_gballoc_malloc(1);
+}
+
+static OPTIONHANDLER_HANDLE my_test_xio_retrieveoptions(CONCRETE_IO_HANDLE handle)
+{
+    (void)(handle);
+    return (OPTIONHANDLER_HANDLE)my_gballoc_malloc(2);
+}
+
+static OPTIONHANDLER_RESULT my_OptionHandler_AddOption(OPTIONHANDLER_HANDLE handle, const char* name, const void* value)
+{
+    (void)(name, handle, value);
+    /*if an option is added here, it is because it was cloned (malloc'd) so safe to free it here*/
+    my_gballoc_free((void*)value);
+    return OPTIONHANDLER_OK;
+}
+
+static void my_OptionHandler_Destroy(OPTIONHANDLER_HANDLE handle)
+{
+    my_gballoc_free((void*)handle);
+}
+
 
 BEGIN_TEST_SUITE(xio_unittests)
 
@@ -130,8 +170,24 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_UMOCK_ALIAS_TYPE(ON_BYTES_RECEIVED, void*);
     REGISTER_UMOCK_ALIAS_TYPE(ON_IO_ERROR, void*);
 
+    REGISTER_UMOCK_ALIAS_TYPE(pfCloneOption, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(pfDestroyOption, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(pfSetOption, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(OPTIONHANDLER_HANDLE, void*);
+    
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, my_gballoc_malloc);
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, my_gballoc_free);
+
+    REGISTER_GLOBAL_MOCK_HOOK(OptionHandler_Create, my_OptionHandler_Create);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(OptionHandler_Create, (OPTIONHANDLER_HANDLE)NULL);
+
+    REGISTER_GLOBAL_MOCK_HOOK(test_xio_retrieveoptions, my_test_xio_retrieveoptions);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(test_xio_retrieveoptions, (OPTIONHANDLER_HANDLE)NULL);
+
+    REGISTER_GLOBAL_MOCK_HOOK(OptionHandler_AddOption, my_OptionHandler_AddOption);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(OptionHandler_AddOption, OPTIONHANDLER_ERROR);
+    
+    REGISTER_GLOBAL_MOCK_HOOK(OptionHandler_Destroy, my_OptionHandler_Destroy);
 }
 
 TEST_SUITE_CLEANUP(suite_cleanup)
@@ -227,11 +283,36 @@ TEST_FUNCTION(when_io_interface_description_is_NULL_then_xio_create_fails)
 }
 
 /* Tests_SRS_XIO_01_004: [If any io_interface_description member is NULL, xio_create shall return NULL.] */
+TEST_FUNCTION(when_concrete_xio_retrieveoptions_is_NULL_then_xio_create_fails)
+{
+    // arrange
+    const IO_INTERFACE_DESCRIPTION io_description_null =
+    {
+        NULL,
+        test_xio_create,
+        test_xio_destroy,
+        test_xio_open,
+        test_xio_close,
+        test_xio_send,
+        test_xio_dowork,
+        test_xio_setoption
+    };
+
+    // act
+    XIO_HANDLE result = xio_create(&io_description_null, NULL);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_IS_NULL(result);
+}
+
+/* Tests_SRS_XIO_01_004: [If any io_interface_description member is NULL, xio_create shall return NULL.] */
 TEST_FUNCTION(when_concrete_xio_create_is_NULL_then_xio_create_fails)
 {
     // arrange
     const IO_INTERFACE_DESCRIPTION io_description_null =
     {
+        test_xio_retrieveoptions,
         NULL,
         test_xio_destroy,
         test_xio_open,
@@ -255,6 +336,7 @@ TEST_FUNCTION(when_concrete_xio_destroy_is_NULL_then_xio_create_fails)
     // arrange
     const IO_INTERFACE_DESCRIPTION io_description_null =
     {
+        test_xio_retrieveoptions,
         test_xio_create,
         NULL,
         test_xio_open,
@@ -278,6 +360,7 @@ TEST_FUNCTION(when_concrete_xio_open_is_NULL_then_xio_create_fails)
     // arrange
     const IO_INTERFACE_DESCRIPTION io_description_null =
     {
+        test_xio_retrieveoptions,
         test_xio_create,
         test_xio_destroy,
         NULL,
@@ -301,6 +384,7 @@ TEST_FUNCTION(when_concrete_xio_close_is_NULL_then_xio_create_fails)
     // arrange
     const IO_INTERFACE_DESCRIPTION io_description_null =
     {
+        test_xio_retrieveoptions,
         test_xio_create,
         test_xio_destroy,
         test_xio_open,
@@ -324,6 +408,7 @@ TEST_FUNCTION(when_concrete_xio_send_is_NULL_then_xio_create_fails)
     // arrange
     const IO_INTERFACE_DESCRIPTION io_description_null =
     {
+        test_xio_retrieveoptions,
         test_xio_create,
         test_xio_destroy,
         test_xio_open,
@@ -347,6 +432,7 @@ TEST_FUNCTION(when_concrete_xio_dowork_is_NULL_then_xio_create_fails)
     // arrange
     const IO_INTERFACE_DESCRIPTION io_description_null =
     {
+        test_xio_retrieveoptions,
         test_xio_create,
         test_xio_destroy,
         test_xio_open,
@@ -370,6 +456,7 @@ TEST_FUNCTION(when_concrete_xio_setoption_is_NULL_then_xio_create_fails)
     // arrange
     const IO_INTERFACE_DESCRIPTION io_description_null =
     {
+        test_xio_retrieveoptions,
         test_xio_create,
         test_xio_destroy,
         test_xio_open,
@@ -704,7 +791,7 @@ TEST_FUNCTION(xio_dowork_with_NULL_handle_does_nothing)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_XIO_03_030: [If the xio argumnent or the optionName argument is NULL, xio_setoption shall return a non-zero value.] */
+/* Tests_SRS_XIO_03_030: [If the xio argument or the optionName argument is NULL, xio_setoption shall return a non-zero value.] */
 TEST_FUNCTION(xio_setoption_with_NULL_handle_fails)
 {
     // arrange
@@ -721,7 +808,7 @@ TEST_FUNCTION(xio_setoption_with_NULL_handle_fails)
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
 }
 
-/* Tests_SRS_XIO_03_030: [If the xio argumnent or the optionName argument is NULL, xio_setoption shall return a non-zero value.] */
+/* Tests_SRS_XIO_03_030: [If the xio argument or the optionName argument is NULL, xio_setoption shall return a non-zero value.] */
 TEST_FUNCTION(xio_setoption_with_NULL_optionName_fails)
 {
     // arrange
@@ -788,5 +875,96 @@ TEST_FUNCTION(xio_setoption_fails_when_concrete_xio_setoption_fails)
     // cleanup
     xio_destroy(handle);
 }
+
+/*Tests_SRS_XIO_02_001: [ If argument xio is NULL then xio_retrieveoptions shall fail and return NULL. ]*/
+TEST_FUNCTION(xio_retrieveoptions_with_NULL_xio_fails)
+{
+    ///arrange
+
+    ///act
+    OPTIONHANDLER_HANDLE h = xio_retrieveoptions(NULL);
+
+    ///assert
+    ASSERT_IS_NULL(h);
+
+    ///cleanup
+}
+
+/*this function exists for the purpose of sharing code between happy and unhappy paths*/
+static void xio_retrieveoptions_inert_path(void)
+{
+    STRICT_EXPECTED_CALL(OptionHandler_Create(IGNORED_PTR_ARG, IGNORED_PTR_ARG, (pfSetOption)xio_setoption))
+        .IgnoreArgument_cloneOption()
+        .IgnoreArgument_destroyOption();
+    STRICT_EXPECTED_CALL(test_xio_retrieveoptions(IGNORED_PTR_ARG))
+        .IgnoreArgument_handle();
+
+    STRICT_EXPECTED_CALL(OptionHandler_AddOption(IGNORED_PTR_ARG, "concreteOptions", IGNORED_PTR_ARG))
+        .IgnoreArgument_handle()
+        .IgnoreArgument_value();
+}
+
+/*Tests_SRS_XIO_02_002: [ xio_retrieveoptions shall create a OPTIONHANDLER_HANDLE by calling OptionHandler_Create passing xio_setoption as setOption argument and xio_CloneOption and xio_DestroyOption for cloneOption and destroyOption. ]*/
+/*Tests_SRS_XIO_02_003: [ xio_retrieveoptions shall retrieve the concrete handle's options by a call to concrete_io_retrieveoptions. ]*/
+/*Tests_SRS_XIO_02_004: [ xio_retrieveoptions shall add a hardcoded option named concreteOptions having the same content as the concrete handle's options. ]*/
+/*Tests_SRS_XIO_02_006: [ Otherwise, xio_retrieveoptions shall succeed and return a non-NULL handle. ]*/
+TEST_FUNCTION(xio_retrieveoptions_happypath)
+{
+    ///arrange
+    XIO_HANDLE x = xio_create(&test_io_description, NULL);
+    umock_c_reset_all_calls();
+
+    xio_retrieveoptions_inert_path();
+
+    ///act
+    OPTIONHANDLER_HANDLE h = xio_retrieveoptions(x);
+
+    ///assert
+    ASSERT_IS_NOT_NULL(h);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///cleanup
+    OptionHandler_Destroy(h);
+    xio_destroy(x);
+}
+
+/*Tests_SRS_XIO_02_005: [ If any operation fails, then xio_retrieveoptions shall fail and return NULL. ]*/
+
+TEST_FUNCTION(xio_retrieveoptions_unhappypaths)
+{
+    ///arrange
+    int negativeTestsInitResult = umock_c_negative_tests_init();
+    ASSERT_ARE_EQUAL(int, 0, negativeTestsInitResult);
+
+    XIO_HANDLE x = xio_create(&test_io_description, NULL);
+    umock_c_reset_all_calls();
+
+    xio_retrieveoptions_inert_path();
+
+    umock_c_negative_tests_snapshot();
+
+    ///act
+    for (size_t i = 0; i < umock_c_negative_tests_call_count(); i++)
+    {
+
+        umock_c_negative_tests_reset();
+        umock_c_negative_tests_fail_call(i);
+
+        ///act
+        char temp_str[128];
+        (void)sprintf(temp_str, "On failed call %zu", i);
+
+        ///act
+        OPTIONHANDLER_HANDLE h = xio_retrieveoptions(x);
+
+        ///assert
+        ASSERT_IS_NULL_WITH_MSG(h, temp_str);
+    }
+
+    ///cleanup
+    xio_destroy(x);
+    umock_c_negative_tests_deinit();
+}
+
 
 END_TEST_SUITE(xio_unittests)

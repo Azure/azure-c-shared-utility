@@ -43,6 +43,10 @@ void my_gballoc_free(void* ptr)
     free(ptr);
 }
 
+#define ENABLE_MOCKS
+#include "azure_c_shared_utility/optionhandler.h"
+#undef ENABLE_MOCKS
+
 #include "azure_c_shared_utility/socketio.h"
 
 #define ENABLE_MOCKS
@@ -50,7 +54,6 @@ void my_gballoc_free(void* ptr)
 #include "umock_c.h"
 #include "umocktypes_charptr.h"
 #include "azure_c_shared_utility/list.h"
-
 static bool g_addrinfo_call_fail;
 //static int g_socket_send_size_value;
 static int g_socket_recv_size_value;

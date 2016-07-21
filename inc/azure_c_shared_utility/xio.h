@@ -4,6 +4,8 @@
 #ifndef XIO_H
 #define XIO_H
 
+#include "azure_c_shared_utility/optionhandler.h"
+
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/umock_c_prod.h"
 
@@ -37,6 +39,7 @@ typedef void(*ON_IO_OPEN_COMPLETE)(void* context, IO_OPEN_RESULT open_result);
 typedef void(*ON_IO_CLOSE_COMPLETE)(void* context);
 typedef void(*ON_IO_ERROR)(void* context);
 
+typedef OPTIONHANDLER_HANDLE (*IO_RETRIEVEOPTIONS)(CONCRETE_IO_HANDLE concrete_io);
 typedef CONCRETE_IO_HANDLE(*IO_CREATE)(void* io_create_parameters);
 typedef void(*IO_DESTROY)(CONCRETE_IO_HANDLE concrete_io);
 typedef int(*IO_OPEN)(CONCRETE_IO_HANDLE concrete_io, ON_IO_OPEN_COMPLETE on_io_open_complete, void* on_io_open_complete_context, ON_BYTES_RECEIVED on_bytes_received, void* on_bytes_received_context, ON_IO_ERROR on_io_error, void* on_io_error_context);
@@ -45,8 +48,10 @@ typedef int(*IO_SEND)(CONCRETE_IO_HANDLE concrete_io, const void* buffer, size_t
 typedef void(*IO_DOWORK)(CONCRETE_IO_HANDLE concrete_io);
 typedef int(*IO_SETOPTION)(CONCRETE_IO_HANDLE concrete_io, const char* optionName, const void* value);
 
+
 typedef struct IO_INTERFACE_DESCRIPTION_TAG
 {
+    IO_RETRIEVEOPTIONS concrete_io_retrieveoptions;
     IO_CREATE concrete_io_create;
     IO_DESTROY concrete_io_destroy;
     IO_OPEN concrete_io_open;
@@ -63,6 +68,7 @@ MOCKABLE_FUNCTION(, int, xio_close, XIO_HANDLE, xio, ON_IO_CLOSE_COMPLETE, on_io
 MOCKABLE_FUNCTION(, int, xio_send, XIO_HANDLE, xio, const void*, buffer, size_t, size, ON_SEND_COMPLETE, on_send_complete, void*, callback_context);
 MOCKABLE_FUNCTION(, void, xio_dowork, XIO_HANDLE, xio);
 MOCKABLE_FUNCTION(, int, xio_setoption, XIO_HANDLE, xio, const char*, optionName, const void*, value);
+MOCKABLE_FUNCTION(, OPTIONHANDLER_HANDLE, xio_retrieveoptions, XIO_HANDLE, xio);
 
 #ifdef __cplusplus
 }

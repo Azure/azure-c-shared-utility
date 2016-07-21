@@ -58,9 +58,9 @@ static void my_gballoc_free(void* s)
 #include "azure_c_shared_utility/crt_abstractions.h"
 #include "azure_c_shared_utility/vector.h"
 
-MOCKABLE_FUNCTION(, void*, aCloneOption, const char*, name, void*, value);
-MOCKABLE_FUNCTION(, void, aDestroyOption, const char*, name, void*, value);
-MOCKABLE_FUNCTION(, int, aSetOption, void*, handle, const char*, name, void*, value);
+MOCKABLE_FUNCTION(, void*, aCloneOption, const char*, name, const void*, value);
+MOCKABLE_FUNCTION(, void, aDestroyOption, const char*, name, const void*, value);
+MOCKABLE_FUNCTION(, int, aSetOption, void*, handle, const char*, name, const void*, value);
 
 #undef ENABLE_MOCKS
 
@@ -86,16 +86,16 @@ static int my_mallocAndStrcpy_s(char** destination, const char* source)
     return 0;
 }
 
-static void* my_aCloneOption(const char* name, void* value)
+static void* my_aCloneOption(const char* name, const void* value)
 {
     (void)(name, value);
     return my_gballoc_malloc(2);
 }
 
-static void my_aDestroyOption(const char* name, void* value)
+static void my_aDestroyOption(const char* name, const void* value)
 {
     (void)(name);
-    my_gballoc_free(value);
+    my_gballoc_free((void*)value);
 }
 
 

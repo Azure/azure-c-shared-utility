@@ -67,7 +67,7 @@ OPTIONHANDLER_HANDLE OptionHandler_Create(pfCloneOption cloneOption, pfDestroyOp
 
 }
 
-OPTIONHANDLER_RESULT OptionHandler_AddOption(OPTIONHANDLER_HANDLE handle, const char* name, void* value)
+OPTIONHANDLER_RESULT OptionHandler_AddOption(OPTIONHANDLER_HANDLE handle, const char* name, const void* value)
 {
     OPTIONHANDLER_RESULT result;
     /*Codes_SRS_OPTIONHANDLER_02_001: [ OptionHandler_Create shall fail and retun NULL if any parameters are NULL. ]*/
@@ -143,7 +143,7 @@ OPTIONHANDLER_RESULT OptionHandler_FeedOptions(OPTIONHANDLER_HANDLE handle, void
         size_t nOptions = VECTOR_size(handle->storage), i;
         for (i = 0;i < nOptions;i++)
         {
-            OPTION* option = VECTOR_element(handle->storage, i);
+            OPTION* option = (OPTION*)VECTOR_element(handle->storage, i);
             /*Codes_SRS_OPTIONHANDLER_02_012: [ OptionHandler_FeedOptions shall call for every pair of name,value setOption passing destinationHandle, name and value. ]*/
             if (handle->setOption(destinationHandle, option->name, option->storage) != 0)
             {
@@ -179,7 +179,7 @@ void OptionHandler_Destroy(OPTIONHANDLER_HANDLE handle)
         size_t nOptions = VECTOR_size(handle->storage), i;
         for (i = 0;i < nOptions;i++)
         {
-            OPTION* option = VECTOR_element(handle->storage, i);
+            OPTION* option = (OPTION*)VECTOR_element(handle->storage, i);
             handle->destroyOption(option->name, option->storage);
             free((void*)option->name);
         }

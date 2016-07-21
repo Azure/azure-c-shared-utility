@@ -59,8 +59,151 @@ struct CRYPTO_dynlock_value
     LOCK_HANDLE lock; 
 };
 
+/*this function will clone an option given by name and value*/
+static void* tlsio_openssl_CloneOption(const char* name, const void* value)
+{
+    void* result;
+    if(
+        (name == NULL) || (value == NULL)
+    )
+    {
+        LogError("invalid parameter detected: const char* name=%p, const void* value=%p", name, value);
+        result = NULL;
+    }
+    else
+    {
+        if (strcmp(name, "TrustedCerts") == 0)
+        {
+            if(mallocAndStrcpy_s((char**)&result, value) != 0)
+            {
+                LogError("unable to mallocAndStrcpy_s TrustedCerts value");
+                result = NULL;
+            }
+            else
+            {
+                /*return as is*/
+            }
+        }
+        else if (strcmp(name, "x509certificate") == 0)
+        {
+            if (mallocAndStrcpy_s((char**)&result, value) != 0)
+            {
+                LogError("unable to mallocAndStrcpy_s x509certificate value");
+                result = NULL;
+            }
+            else
+            {
+                /*return as is*/
+            }
+        }
+        else if (strcmp(name, "x509privatekey") == 0)
+        {
+            if (mallocAndStrcpy_s((char**)&result, value) != 0)
+            {
+                LogError("unable to mallocAndStrcpy_s x509privatekey value");
+                result = NULL;
+            }
+            else
+            {
+                /*return as is*/
+            }
+        }
+        else
+        {
+            LogError("not handled option : %s", name);
+            result = NULL;
+        }
+    }
+    return result;
+}
+
+/*this function destroys an option previously created*/
+static void tlsio_openssl_DestroyOption(const char* name, const void* value)
+{
+    /*since all options for this layer are actually string copies., disposing of one is just calling free*/
+    if (
+        (name == NULL) || (value == NULL)
+        )
+    {
+        LogError("invalid parameter detected: const char* name=%p, const void* value=%p", name, value);
+    }
+    else
+    {
+        if (
+            (strcmp(name, "TrustedCerts") == 0) ||
+            (strcmp(name, "x509certificate") == 0) ||
+            (strcmp(name, "x509privatekey") == 0)
+        )
+        {
+            free((void*)value);
+        }
+        else
+        {
+            LogError("not handled option : %s", name);
+        }
+    }
+}
+
+static OPTIONHANDLER_HANDLE tlsio_openssl_retrieveoptions(CONCRETE_IO_HANDLE handle)
+{
+    OPTIONHANDLER_HANDLE result;
+    if(handle == NULL)
+    {
+        LogError("invalid parameter detected: CONCRETE_IO_HANDLE handle=%p", handle);
+        result = NULL;
+    }
+    else
+    {
+        result = OptionHandler_Create(tlsio_openssl_CloneOption, tlsio_openssl_DestroyOption, tlsio_openssl_setoption);
+        if (result == NULL)
+        {
+            LogError("unable to OptionHandler_Create");
+            /*return as is*/
+        }
+        else
+        {
+            /*this layer cares about the certificates and the x509 credentials*/
+            TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)handle;
+            if(
+                (tls_io_instance->certificate != NULL) && 
+                (OptionHandler_AddOption(result, "TrustedCerts", tls_io_instance->certificate) != 0)
+            )
+            {
+                LogError("unable to save TrustedCerts option");
+                OptionHandler_Destroy(result);
+                result = NULL;
+            }
+            else if (
+                (tls_io_instance->x509certificate != NULL) &&
+                (OptionHandler_AddOption(result, "x509certificate", tls_io_instance->x509certificate) != 0)
+                )
+            {
+                LogError("unable to save x509certificate option");
+                OptionHandler_Destroy(result);
+                result = NULL;
+            }
+            else if (
+                (tls_io_instance->x509privatekey != NULL) && 
+                (OptionHandler_AddOption(result, "x509privatekey", tls_io_instance->x509privatekey) != 0)
+            )
+            {
+                LogError("unable to save x509privatekey option");
+                OptionHandler_Destroy(result);
+                result = NULL;
+            }
+            else
+            {
+                /*all is fine, all interesting options have been saved*/
+                /*return as is*/
+            }
+        }
+    }
+    return result;
+}
+
 static const IO_INTERFACE_DESCRIPTION tlsio_openssl_interface_description =
 {
+    tlsio_openssl_retrieveoptions,
     tlsio_openssl_create,
     tlsio_openssl_destroy,
     tlsio_openssl_open,
@@ -764,6 +907,8 @@ void tlsio_openssl_destroy(CONCRETE_IO_HANDLE tls_io)
             tls_io_instance->certificate = NULL;
         }
         free(tls_io_instance->hostname);
+        free((void*)tls_io_instance->x509certificate);
+        free((void*)tls_io_instance->x509privatekey);
         xio_destroy(tls_io_instance->underlying_io);
         free(tls_io);
     }
@@ -927,9 +1072,6 @@ void tlsio_openssl_dowork(CONCRETE_IO_HANDLE tls_io)
 int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, const void* value)
 {
     int result;
-    X509_STORE* cert_store;
-    BIO* cert_memory_bio;
-    X509* xcert;
 
     if (tls_io == NULL || optionName == NULL)
     {
@@ -976,10 +1118,17 @@ int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
                 result = __LINE__;
             }
             else
-            {
-                tls_io_instance->x509certificate = value; /*this option is owned by iothubtransport layer... in theory*/
-                /*all is fine, the x509 shall be used later*/
-                result = 0;
+            {   
+                /*let's make a copy of this option*/
+                if (mallocAndStrcpy_s((char**)&tls_io_instance->x509certificate, value) != 0)
+                {
+                    LogError("unable to mallocAndStrcpy_s");
+                    result = __LINE__;
+                }
+                else
+                {
+                    result = 0;
+                }
             }
         }
         else if (strcmp("x509privatekey", optionName) == 0)
@@ -991,9 +1140,16 @@ int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
             }
             else
             {
-                tls_io_instance->x509privatekey = value; /*this option is owned by iothubtransport layer... in theory*/
-                /*all is fine, the x509 shall be used later*/
-                result = 0;
+                /*let's make a copy of this option*/
+                if (mallocAndStrcpy_s((char**)&tls_io_instance->x509privatekey, value) != 0)
+                {
+                    LogError("unable to mallocAndStrcpy_s");
+                    result = __LINE__;
+                }
+                else
+                {
+                    result = 0;
+                }
             }
         }
 

@@ -19,6 +19,7 @@
 #include "schannel.h"
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/x509_schannel.h"
+#include "azure_c_shared_utility/crt_abstractions.h"
 
 typedef enum TLSIO_STATE_TAG
 {
@@ -56,8 +57,129 @@ typedef struct TLS_IO_INSTANCE_TAG
     X509_SCHANNEL_HANDLE x509_schannel_handle;
 } TLS_IO_INSTANCE;
 
+/*this function will clone an option given by name and value*/
+static void* tlsio_schannel_CloneOption(const char* name, const void* value)
+{
+    void* result;
+    if (
+        (name == NULL) || (value == NULL)
+        )
+    {
+        LogError("invalid parameter detected: const char* name=%p, const void* value=%p", name, value);
+        result = NULL;
+    }
+    else
+    {
+        if (strcmp(name, "x509certificate") == 0)
+        {
+            if (mallocAndStrcpy_s((char**)&result, value) != 0)
+            {
+                LogError("unable to mallocAndStrcpy_s x509certificate value");
+                result = NULL;
+            }
+            else
+            {
+                /*return as is*/
+            }
+        }
+        else if (strcmp(name, "x509privatekey") == 0)
+        {
+            if (mallocAndStrcpy_s((char**)&result, value) != 0)
+            {
+                LogError("unable to mallocAndStrcpy_s x509privatekey value");
+                result = NULL;
+            }
+            else
+            {
+                /*return as is*/
+            }
+        }
+        else
+        {
+            LogError("not handled option : %s", name);
+            result = NULL;
+        }
+    }
+    return result;
+}
+
+/*this function destroys an option previously created*/
+static void tlsio_schannel_DestroyOption(const char* name, const void* value)
+{
+    /*since all options for this layer are actually string copies., disposing of one is just calling free*/
+    if (
+        (name == NULL) || (value == NULL)
+        )
+    {
+        LogError("invalid parameter detected: const char* name=%p, const void* value=%p", name, value);
+    }
+    else
+    {
+        if (
+            (strcmp(name, "x509certificate") == 0) ||
+            (strcmp(name, "x509privatekey") == 0)
+            )
+        {
+            free((void*)value);
+        }
+        else
+        {
+            LogError("not handled option : %s", name);
+        }
+    }
+}
+
+static OPTIONHANDLER_HANDLE tlsio_schannel_retrieveoptions(CONCRETE_IO_HANDLE handle)
+{
+    OPTIONHANDLER_HANDLE result;
+    if (handle == NULL)
+    {
+        LogError("invalid parameter detected: CONCRETE_IO_HANDLE handle=%p", handle);
+        result = NULL;
+    }
+    else
+    {
+        result = OptionHandler_Create(tlsio_schannel_CloneOption, tlsio_schannel_DestroyOption, tlsio_schannel_setoption);
+        if (result == NULL)
+        {
+            LogError("unable to OptionHandler_Create");
+            /*return as is*/
+        }
+        else
+        {
+            /*this layer cares about the certificates and the x509 credentials*/
+            TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)handle;
+            if (
+                (tls_io_instance->x509certificate != NULL) &&
+                (OptionHandler_AddOption(result, "x509certificate", tls_io_instance->x509certificate) != 0)
+                )
+            {
+                LogError("unable to save x509certificate option");
+                OptionHandler_Destroy(result);
+                result = NULL;
+            }
+            else if (
+                (tls_io_instance->x509privatekey != NULL) &&
+                (OptionHandler_AddOption(result, "x509privatekey", tls_io_instance->x509privatekey) != 0)
+                )
+            {
+                LogError("unable to save x509privatekey option");
+                OptionHandler_Destroy(result);
+                result = NULL;
+            }
+            else
+            {
+                /*all is fine, all interesting options have been saved*/
+                /*return as is*/
+            }
+        }
+    }
+    return result;
+}
+
 static const IO_INTERFACE_DESCRIPTION tlsio_schannel_interface_description =
 {
+    tlsio_schannel_retrieveoptions,
     tlsio_schannel_create,
     tlsio_schannel_destroy,
     tlsio_schannel_open,

@@ -467,13 +467,13 @@ static FLOAT_STRING_TYPE splitFloatString(const char* nptr, char** endptr, int *
 
     /*Codes_SRS_CRT_ABSTRACTIONS_21_023: [If the string is 'INF' of 'INFINITY' (ignoring case), the strtof_s must return the INFINITY value for float.]*/
     /*Codes_SRS_CRT_ABSTRACTIONS_21_033: [If the string is 'INF' of 'INFINITY' (ignoring case), the strtold_s must return the INFINITY value for long double.]*/
-    if (isInfinity(endptr))
+    if (isInfinity((const char**)endptr))
     {
         result = FST_INFINITY;
     }
     /*Codes_SRS_CRT_ABSTRACTIONS_21_034: [If the string is 'NAN' or 'NAN(...)' (ignoring case), the strtold_s must return 0.0 and points endptr to the first character after the 'NAN' sequence.]*/
     /*Codes_SRS_CRT_ABSTRACTIONS_21_024: [If the string is 'NAN' or 'NAN(...)' (ignoring case), the strtof_s must return 0.0f and points endptr to the first character after the 'NAN' sequence.]*/
-    else if (isNaN(endptr))
+    else if (isNaN((const char**)endptr))
     {
         result = FST_NAN;
     }
