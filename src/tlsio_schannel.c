@@ -83,7 +83,7 @@ static void* tlsio_schannel_CloneOption(const char* name, const void* value)
     {
         if (strcmp(name, "x509certificate") == 0)
         {
-            if (mallocAndStrcpy_s((char**)&result, value) != 0)
+			if (mallocAndStrcpy_s((char**)&result, (const char *) value) != 0)
             {
                 LogError("unable to mallocAndStrcpy_s x509certificate value");
                 result = NULL;
@@ -95,7 +95,7 @@ static void* tlsio_schannel_CloneOption(const char* name, const void* value)
         }
         else if (strcmp(name, "x509privatekey") == 0)
         {
-            if (mallocAndStrcpy_s((char**)&result, value) != 0)
+			if (mallocAndStrcpy_s((char**)&result, (const char *) value) != 0)
             {
                 LogError("unable to mallocAndStrcpy_s x509privatekey value");
                 result = NULL;
