@@ -34,6 +34,13 @@ MOCKABLE_FUNCTION(, time_t, get_time, time_t*, currentTime);
 */
 MOCKABLE_FUNCTION(, struct tm*, get_gmtime, time_t*, currentTime);
 
+/** @brief Get current time representation of the given calendar time.
+*
+*	@details This function provides the same functionality as the
+*	standard C @c mktime() function.
+*/
+MOCKABLE_FUNCTION(, time_t, get_mktime, struct tm*, cal_time);
+
 /** @brief Gets a C-string representation of the given time.
 *
 *	@details This function provides the same functionality as the
