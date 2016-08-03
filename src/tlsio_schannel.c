@@ -256,6 +256,8 @@ static void on_underlying_io_close_complete(void* context)
     }
 }
 
+
+
 static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT io_open_result)
 {
     TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)context;
@@ -281,11 +283,11 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT io_open
             ULONG context_attributes;
             SECURITY_STATUS status;
             SCHANNEL_CRED auth_data;
-
+            PCCERT_CONTEXT certContext;
             auth_data.dwVersion = SCHANNEL_CRED_VERSION;
             if(tls_io_instance->x509_schannel_handle!=NULL)
             {
-                PCCERT_CONTEXT certContext = x509_schannel_get_certificate_context(tls_io_instance->x509_schannel_handle);
+                certContext = x509_schannel_get_certificate_context(tls_io_instance->x509_schannel_handle);
                 auth_data.cCreds = 1;
                 auth_data.paCred = &certContext;
             }

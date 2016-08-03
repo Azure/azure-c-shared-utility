@@ -149,7 +149,7 @@ X509_SCHANNEL_HANDLE x509_schannel_create(const char* x509certificate, const cha
                                             {
                                                 /*Codes_SRS_X509_SCHANNEL_02_005: [ x509_schannel_create shall call CryptAcquireContext. ]*/
                                                 /*at this moment, both the private key and the certificate are decoded for further usage*/
-                                                if (!CryptAcquireContext(&(result->hProv), NULL, MS_ENHANCED_PROV, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT))
+                                                if (!CryptAcquireContext(&(result->hProv), NULL, MS_ENH_RSA_AES_PROV, PROV_RSA_AES, CRYPT_VERIFYCONTEXT))
                                                 {
                                                     /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
                                                     LogErrorWinHTTPWithGetLastErrorAsString("CryptAcquireContext failed");

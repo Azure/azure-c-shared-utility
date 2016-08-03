@@ -369,7 +369,7 @@ BEGIN_TEST_SUITE(x509_schannel_unittests)
             .IgnoreArgument_pvStructInfo()
             .IgnoreArgument_pcbStructInfo();
 
-        STRICT_EXPECTED_CALL(CryptAcquireContextA(IGNORED_PTR_ARG, NULL, MS_ENHANCED_PROV, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT)) /*this is acquire a handle to a key container within a cryptographic service provider*/
+        STRICT_EXPECTED_CALL(CryptAcquireContextA(IGNORED_PTR_ARG, NULL, MS_ENH_RSA_AES_PROV, PROV_RSA_AES, CRYPT_VERIFYCONTEXT)) /*this is acquire a handle to a key container within a cryptographic service provider*/
             .IgnoreArgument_phProv();
 
         STRICT_EXPECTED_CALL(CryptImportKey((HCRYPTPROV)IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, (HCRYPTKEY)NULL, 0, IGNORED_PTR_ARG)) /*tranferring the key from the blob to the cryptrographic key provider*/
@@ -444,7 +444,7 @@ BEGIN_TEST_SUITE(x509_schannel_unittests)
             .IgnoreArgument_pvStructInfo()
             .IgnoreArgument_pcbStructInfo();
 
-        STRICT_EXPECTED_CALL(CryptAcquireContextA(IGNORED_PTR_ARG, NULL, MS_ENHANCED_PROV, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT)) /*this is acquire a handle to a key container within a cryptographic service provider*/
+        STRICT_EXPECTED_CALL(CryptAcquireContextA(IGNORED_PTR_ARG, NULL, MS_ENH_RSA_AES_PROV, PROV_RSA_AES, CRYPT_VERIFYCONTEXT)) /*this is acquire a handle to a key container within a cryptographic service provider*/
             .IgnoreArgument_phProv();
 
         STRICT_EXPECTED_CALL(CryptImportKey((HCRYPTPROV)IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, (HCRYPTKEY)NULL, 0, IGNORED_PTR_ARG)) /*tranferring the key from the blob to the cryptrographic key provider*/
