@@ -35,8 +35,9 @@ if(MSVC)
 elseif(LINUX)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
-    if(!OPENWRT)
-        set (CMAKE_C_FLAGS "-D_POSIX_SOURCE ${CMAKE_C_FLAGS}")
+    if(NOT IN_OPENWRT)
+        set (CMAKE_C_FLAGS "-D_POSIX_C_SOURCE=200112L ${CMAKE_C_FLAGS}")
+
     endif()
 endif()
 
