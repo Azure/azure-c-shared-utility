@@ -31,6 +31,11 @@ typedef void(*LOGGER_LOG)(LOG_CATEGORY log_category, unsigned int options, const
 #define LogInfo(...)
 #define LogError(...)
 #define xlogging_get_log_function() NULL
+#define xlogging_set_log_function(...)
+#define LogErrorWinHTTPWithGetLastErrorAsString(...)
+#define log_incoming_frame(...)
+#define log_outgoing_frame(...)
+#define UNUSED(x) (void)(x)
 #elif defined(ARDUINO_ARCH_ESP8266)
 /*
 The ESP8266 compiler don’t do a good job compiling this code, it do not understand that the ‘format’ is
