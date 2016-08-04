@@ -10,7 +10,7 @@ extern "C" {
 
 #include "azure_c_shared_utility/xlogging.h"
 
-	extern void consolelogger_log(LOG_CATEGORY log_category, unsigned int options, const char* format, ...);
+    extern void consolelogger_log(LOG_CATEGORY log_category, const char* file, const char* func, const int line, unsigned int options, const char* format, ...);
 
 #ifdef __cplusplus
 }
