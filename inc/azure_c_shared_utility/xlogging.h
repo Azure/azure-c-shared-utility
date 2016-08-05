@@ -20,7 +20,13 @@ typedef enum LOG_CATEGORY_TAG
     LOG_TRACE
 } LOG_CATEGORY;
 
-typedef void(*LOGGER_LOG)(LOG_CATEGORY log_category, unsigned int options, const char* format, ...);
+#if defined _MSC_VER
+#define FUNC_NAME __FUNCDNAME__
+#else
+#define FUNC_NAME __func__
+#endif
+
+typedef void(*LOGGER_LOG)(LOG_CATEGORY log_category, const char* file, const char* func, const int line, unsigned int options, const char* format, ...);
 
 #define LOG_NONE 0x00
 #define LOG_LINE 0x01
@@ -62,9 +68,9 @@ so we compacted the log in the macro LogInfo.
 #else /* !ARDUINO_ARCH_ESP8266 */
 
 #if defined _MSC_VER
-#define LOG(log_category, log_options, format, ...) { LOGGER_LOG l = xlogging_get_log_function(); if (l != NULL) l(log_category, log_options, format, __VA_ARGS__); }
+#define LOG(log_category, log_options, format, ...) { LOGGER_LOG l = xlogging_get_log_function(); if (l != NULL) l(log_category, __FILE__, FUNC_NAME, __LINE__, log_options, format, __VA_ARGS__); }
 #else
-#define LOG(log_category, log_options, format, ...) { LOGGER_LOG l = xlogging_get_log_function(); if (l != NULL) l(log_category, log_options, format, ##__VA_ARGS__); } 
+#define LOG(log_category, log_options, format, ...) { LOGGER_LOG l = xlogging_get_log_function(); if (l != NULL) l(log_category, __FILE__, FUNC_NAME, __LINE__, log_options, format, ##__VA_ARGS__); } 
 #endif
 
 #if defined _MSC_VER

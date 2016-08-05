@@ -15,10 +15,10 @@
 #define FUNC_NAME __func__
 #endif
 
-void consolelogger_log(LOG_CATEGORY log_category,unsigned int options, const char* format, ...)
+void consolelogger_log(LOG_CATEGORY log_category, const char* file, const char* func, const int line, unsigned int options, const char* format, ...)
 {
-	va_list args;
-	va_start(args, format);
+    va_list args;
+    va_start(args, format);
 
     time_t t = time(NULL); 
     
@@ -28,7 +28,7 @@ void consolelogger_log(LOG_CATEGORY log_category,unsigned int options, const cha
         (void)printf("Info: ");
         break;
     case LOG_ERROR:
-        (void)printf("Error: Time:%.24s File:%s Func:%s Line:%d ", ctime(&t), __FILE__, FUNC_NAME, __LINE__);
+        (void)printf("Error: Time:%.24s File:%s Func:%s Line:%d ", ctime(&t), file, func, line);
         break;
     default:
         break;
