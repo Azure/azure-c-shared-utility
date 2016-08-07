@@ -638,7 +638,16 @@ int socketio_setoption(CONCRETE_IO_HANDLE socket_io, const char* optionName, con
         }
         else if (strcmp(optionName, "tcp_keepalive_time") == 0)
         {
+#ifdef __APPLE__
+            int on = 1;
+            result = setsockopt( socket_io_instance->socket, SOL_SOCKET, SO_KEEPALIVE, &on, sizeof on);
+            if (result == -1)
+                result = errno;
+            else
+                result = setsockopt(socket_io_instance->socket, IPPROTO_TCP, TCP_KEEPALIVE, value, sizeof(int));
+#else
             result = setsockopt(socket_io_instance->socket, SOL_TCP, TCP_KEEPIDLE, value, sizeof(int));
+#endif
             if (result == -1) result = errno;
         }
         else if (strcmp(optionName, "tcp_keepalive_interval") == 0)

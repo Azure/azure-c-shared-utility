@@ -22,7 +22,7 @@ clockid_t time_basis = CLOCK_MONOTONIC;
 #ifdef CLOCK_REALTIME
 clockid_t time_basis = CLOCK_REALTIME;
 #else
-clockid_t time_basis = -1
+clockid_t time_basis = -1;
 #endif
 #endif
 
@@ -34,7 +34,8 @@ COND_HANDLE Condition_Init(void)
         pthread_condattr_t cattr;
         pthread_condattr_init(&cattr);
         pthread_condattr_getclock(&cattr, &time_basis);
-        pthread_condattr_destroy(&cattr);
+        pthread_condattr_destroy(&cattr);
+
     }
 
     // Codes_SRS_CONDITION_18_002: [ Condition_Init shall create and return a CONDITION_HANDLE ]
@@ -46,7 +47,8 @@ COND_HANDLE Condition_Init(void)
         pthread_condattr_init(&cattr);
         pthread_condattr_setclock(&cattr, time_basis);
         pthread_cond_init(cond, &cattr);
-        pthread_condattr_destroy(&cattr);
+        pthread_condattr_destroy(&cattr);
+
     }
     // Codes_SRS_CONDITION_18_008: [ Condition_Init shall return NULL if it fails to allocate the CONDITION_HANDLE ]
     return cond;
