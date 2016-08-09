@@ -30,6 +30,8 @@ extern const char* STRING_c_str(STRING_HANDLE handle);
 extern int STRING_empty(STRING_HANDLE handle);
 extern size_t STRING_length(STRING_HANDLE handle);
 extern int STRING_compare(STRING_HANDLE h1, STRING_HANDLE h2);
+extern STRING_HANDLE STRING_construct_sprintf(const char* format, ...);
+extern int STRING_sprintf(STRING_HANDLE s1, const char* format, ...);
 
 ```
 
@@ -186,7 +188,8 @@ extern int STRING_compare(STRING_HANDLE h1, STRING_HANDLE h2);
 **SRS_STRING_07_037: [**If h2 is NULL and h1 is a nonNULL value then STRING_compare shall return -1.**]** 
 **SRS_STRING_07_038: [**STRING_compare shall compare the char s variable using the strcmp function.**]**
 
-###STRING_from_byte_array
+### STRING_from_byte_array
+
 ```c
 extern STRING_HANDLE STRING_from_byte_array(const unsigned char* source, size_t size)
 ```
@@ -196,3 +199,28 @@ STRING_from_BUFFER builds a string that has the same content (byte-by-byte) as a
 **SRS_STRING_02_022: [** If `source` is NULL and size > 0 then `STRING_from_BUFFER` shall fail and return NULL. **]**
 **SRS_STRING_02_023: [** Otherwise, `STRING_from_BUFFER` shall build a string that has the same content (byte-by-byte) as source and return a non-NULL handle. **]**
 **SRS_STRING_02_024: [** If building the string fails, then `STRING_from_BUFFER` shall fail and return NULL. **]**
+
+### STRING_construct_sprintf
+
+```c
+extern STRING_HANDLE STRING_construct_sprintf(const char* format, ...);
+```
+
+STRING_construct_sprintf constructs the STRING_HANDLE from a printf formatting
+
+**SRS_STRING_07_039: [**If the parameter format is NULL then STRING_construct_sprintf shall return NULL.**]**  
+**SRS_STRING_07_040: [**If any error is encountered STRING_construct_sprintf shall return NULL.**]**  
+**SRS_STRING_07_041: [**STRING_construct_sprintf shall determine the size of the resulting string and allocate the necessary memory.**]**  
+**SRS_STRING_07_045: [**STRING_construct_sprintf shall allocate a new string with the value of the specified printf formated const char. **]**  
+
+### STRING_sprintf
+
+```c
+extern int STRING_sprintf(STRING_HANDLE s1, const char* format, ...);
+```
+
+STRING_sprintf shall append a printf format style string to the end of a STRING_HANDLE.
+
+**SRS_STRING_07_042: [**if the parameters s1 or format are NULL then STRING_sprintf shall return non zero value.**]**  
+**SRS_STRING_07_043: [**If any error is encountered STRING_sprintf shall return a non zero value.**]**  
+**SRS_STRING_07_044: [**On success STRING_sprintf shall return 0.**]**  

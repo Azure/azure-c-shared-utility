@@ -12,6 +12,9 @@
 
 #include <stddef.h>
 #include <string.h>
+#include <stdarg.h>
+#include <stdio.h>
+
 //
 // PUT NO CLIENT LIBRARY INCLUDES BEFORE HERE
 //
@@ -45,7 +48,7 @@ STRING_HANDLE STRING_new(void)
             result = NULL;
         }
     }
-    return (STRING_HANDLE)result;
+    return result;
 }
 
 /*Codes_SRS_STRING_02_001: [STRING_clone shall produce a new string having the same content as the handle string.*/
@@ -80,7 +83,7 @@ STRING_HANDLE STRING_clone(STRING_HANDLE handle)
             /*not much to do, result is NULL from malloc*/
         }
     }
-    return (STRING_HANDLE)result;
+    return result;
 }
 
 /* Codes_SRS_STRING_07_003: [STRING_construct shall allocate a new string with the value of the specified const char*.] */
@@ -116,6 +119,65 @@ STRING_HANDLE STRING_construct(const char* psz)
             result = NULL;
         }
     }
+    return result;
+}
+
+STRING_HANDLE STRING_construct_sprintf(const char* format, ...)
+{
+    STRING* result;
+    if (format != NULL)
+    {
+        va_list arg_list;
+        va_start(arg_list, format);
+        /* Codes_SRS_STRING_07_041: [STRING_construct_sprintf shall determine the size of the resulting string and allocate the necessary memory.] */
+        int length = vsnprintf(NULL, 0, format, arg_list);
+        if (length > 0)
+        {
+            result = (STRING*)malloc(sizeof(STRING));
+            if (result != NULL)
+            {
+                result->s = malloc(length+1);
+                if (result->s != NULL)
+                {
+                    if (vsnprintf(result->s, length+1, format, arg_list) < 0)
+                    {
+                        /* Codes_SRS_STRING_07_040: [If any error is encountered STRING_construct_sprintf shall return NULL.] */
+                        free(result->s);
+                        free(result);
+                        result = NULL;
+                        LogError("Failure: vsnprintf formatting failed.");
+                    }
+                }
+                else
+                {
+                    /* Codes_SRS_STRING_07_040: [If any error is encountered STRING_construct_sprintf shall return NULL.] */
+                    free(result);
+                    result = NULL;
+                    LogError("Failure: allocation failed.");
+                }
+            }
+            else
+            {
+                LogError("Failure: allocation failed.");
+            }
+        }
+        else if (length == 0)
+        {
+            result = STRING_new();
+        }
+        else
+        {
+            /* Codes_SRS_STRING_07_039: [If the parameter format is NULL then STRING_construct_sprintf shall return NULL.] */
+            result = NULL;
+            LogError("Failure: vsnprintf return 0 length");
+        }
+    }
+    else
+    {
+        LogError("Failure: invalid argument.");
+        result = NULL;
+    }
+    /* Codes_SRS_STRING_07_045: [STRING_construct_sprintf shall allocate a new string with the value of the specified printf formated const char. ] */
     return result;
 }
 
@@ -430,6 +492,64 @@ int STRING_copy_n(STRING_HANDLE handle, const char* s2, size_t n)
             result = 0;
         }
 
+    }
+    return result;
+}
+
+int STRING_sprintf(STRING_HANDLE handle, const char* format, ...)
+{
+    int result;
+    if (handle == NULL || format == NULL)
+    {
+        /* Codes_SRS_STRING_07_042: [if the parameters s1 or format are NULL then STRING_sprintf shall return non zero value.] */
+        result = __LINE__;
+        LogError("Invalid arg (NULL)");
+    }
+    else
+    {
+        va_list arg_list;
+        va_start(arg_list, format);
+
+        int s2Length = vsnprintf(NULL, 0, format, arg_list);
+        if (s2Length < 0)
+        {
+            /* Codes_SRS_STRING_07_043: [If any error is encountered STRING_sprintf shall return a non zero value.] */
+            result = __LINE__;
+            LogError("Failure vsnprintf return < 0");
+        }
+        else if (s2Length == 0)
+        {
+            // Don't need to reallocate and nothing should be added
+            result = 0;
+        }
+        else
+        {
+            STRING* s1 = (STRING*)handle;
+            size_t s1Length = strlen(s1->s);
+            char* temp = (char*)realloc(s1->s, s1Length + s2Length + 1);
+            if (temp != NULL)
+            {
+                s1->s = temp;
+                if (vsnprintf(s1->s + s1Length, s1Length + s2Length + 1, format, arg_list) < 0)
+                {
+                    /* Codes_SRS_STRING_07_043: [If any error is encountered STRING_sprintf shall return a non zero value.] */
+                    LogError("Failure vsnprintf formatting error");
+                    s1->s[s1Length] = '\0';
+                    result = __LINE__;
+                }
+                else
+                {
+                    /* Codes_SRS_STRING_07_044: [On success STRING_sprintf shall return 0.]*/
+                    result = 0;
+                }
+            }
+            else
+            {
+                /* Codes_SRS_STRING_07_043: [If any error is encountered STRING_sprintf shall return a non zero value.] */
+                LogError("Failure unable to reallocate memory");
+                result = __LINE__;
+            }
+        }
     }
     return result;
 }

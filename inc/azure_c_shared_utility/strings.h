@@ -35,6 +35,8 @@ MOCKABLE_FUNCTION(, int, STRING_empty, STRING_HANDLE, handle);
 MOCKABLE_FUNCTION(, size_t, STRING_length, STRING_HANDLE, handle);
 MOCKABLE_FUNCTION(, int, STRING_compare, STRING_HANDLE, s1, STRING_HANDLE, s2);
 
+extern STRING_HANDLE STRING_construct_sprintf(const char* format, ...);
+extern int STRING_sprintf(STRING_HANDLE s1, const char* format, ...);
 
 #ifdef __cplusplus
 }
