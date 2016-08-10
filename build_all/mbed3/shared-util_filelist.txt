@@ -26,6 +26,7 @@ inc\refcount.h
 inc\sastoken.h
 inc\sha.h
 inc\sha-private.h
+inc\shared_util_options.h
 inc\socketio.h
 inc\string_tokenizer.h
 inc\strings.h
