@@ -17,6 +17,7 @@
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/strings.h"
 #include "azure_c_shared_utility/x509_schannel.h"
+#include "azure_c_shared_utility/shared_util_options.h"
 
 DEFINE_ENUM_STRINGS(HTTPAPI_RESULT, HTTPAPI_RESULT_VALUES)
 
@@ -25,8 +26,6 @@ typedef enum HTTPAPI_STATE_TAG
     HTTPAPI_NOT_INITIALIZED,
     HTTPAPI_INITIALIZED
 } HTTPAPI_STATE;
-
-
 
 typedef struct HTTP_HANDLE_DATA_TAG
 {
@@ -685,13 +684,13 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
     else
     {
         HTTP_HANDLE_DATA* httpHandleData = (HTTP_HANDLE_DATA*)handle;
-        if (strcmp("timeout", optionName) == 0)
+        if (strcmp(OPTION_HTTP_TIMEOUT, optionName) == 0)
         {
             long timeout = (long)(*(unsigned int*)value);
             httpHandleData->timeout = timeout;
             result = HTTPAPI_OK;
         }
-        else if (strcmp("x509certificate", optionName) == 0)
+        else if (strcmp(SU_OPTION_X509_CERT, optionName) == 0)
         {
             httpHandleData->x509certificate = value;
             if (httpHandleData->x509privatekey != NULL)
@@ -713,7 +712,7 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
                 result = HTTPAPI_OK;
             }
         }
-        else if (strcmp("x509privatekey", optionName) == 0)
+        else if (strcmp(SU_OPTION_X509_PRIVATE_KEY, optionName) == 0)
         {
             httpHandleData->x509privatekey = value;
             if (httpHandleData->x509certificate != NULL)
@@ -758,7 +757,7 @@ HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, co
     }
     else
     {
-        if (strcmp("timeout", optionName) == 0)
+        if (strcmp(OPTION_HTTP_TIMEOUT, optionName) == 0)
         {
             /*by convention value is pointing to an unsigned int */
             unsigned int* temp = malloc(sizeof(unsigned int)); /*shall be freed by HTTPAPIEX*/
@@ -774,7 +773,7 @@ HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, co
                 result = HTTPAPI_OK;
             }
         }
-        else if (strcmp("x509certificate", optionName) == 0)
+        else if (strcmp(SU_OPTION_X509_CERT, optionName) == 0)
         {
             /*this is getting the x509 certificate. In this case, value is a pointer to a const char* that contains the certificate as a null terminated string*/
             if (mallocAndStrcpy_s((char**)savedValue, value) != 0)
@@ -788,7 +787,7 @@ HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, co
                 result = HTTPAPI_OK;
             }
         }
-        else if (strcmp("x509privatekey", optionName) == 0)
+        else if (strcmp(SU_OPTION_X509_PRIVATE_KEY, optionName) == 0)
         {
             /*this is getting the x509 private key. In this case, value is a pointer to a const char* that contains the private key as a null terminated string*/
             if (mallocAndStrcpy_s((char**)savedValue, value) != 0)

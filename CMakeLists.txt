@@ -612,6 +612,7 @@ set(source_h_files
 ./inc/azure_c_shared_utility/refcount.h
 ./inc/azure_c_shared_utility/sastoken.h
 ./inc/azure_c_shared_utility/sha-private.h
+./inc/azure_c_shared_utility/shared_util_options.h
 ./inc/azure_c_shared_utility/sha.h
 ./inc/azure_c_shared_utility/socketio.h
 ./inc/azure_c_shared_utility/stdint_ce6.h

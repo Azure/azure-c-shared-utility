@@ -18,6 +18,7 @@
 #include <openssl/bio.h>
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/x509_openssl.h"
+#include "azure_c_shared_utility/shared_util_options.h"
 
 #define TEMP_BUFFER_SIZE 1024
 
@@ -618,38 +619,38 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
     else
     {
         HTTP_HANDLE_DATA* httpHandleData = (HTTP_HANDLE_DATA*)handle;
-        if (strcmp("timeout", optionName) == 0)
+        if (strcmp(OPTION_HTTP_TIMEOUT, optionName) == 0)
         {
             long timeout = (long)(*(unsigned int*)value);
             httpHandleData->timeout = timeout;
             result = HTTPAPI_OK;
         }
-        else if (strcmp("CURLOPT_LOW_SPEED_LIMIT", optionName) == 0)
+        else if (strcmp(OPTION_CURL_LOW_SPEED_LIMIT, optionName) == 0)
         {
             httpHandleData->lowSpeedLimit = *(const long*)value;
             result = HTTPAPI_OK;
         }
-        else if (strcmp("CURLOPT_LOW_SPEED_TIME", optionName) == 0)
+        else if (strcmp(OPTION_CURL_LOW_SPEED_TIME, optionName) == 0)
         {
             httpHandleData->lowSpeedTime = *(const long*)value; 
             result = HTTPAPI_OK;
         }
-        else if (strcmp("CURLOPT_FRESH_CONNECT", optionName) == 0)
+        else if (strcmp(OPTION_CURL_FRESH_CONNECT, optionName) == 0)
         {
             httpHandleData->freshConnect = *(const long*)value;
             result = HTTPAPI_OK;
         }
-        else if (strcmp("CURLOPT_FORBID_REUSE", optionName) == 0)
+        else if (strcmp(OPTION_CURL_FORBID_REUSE, optionName) == 0)
         {
             httpHandleData->forbidReuse = *(const long*)value;
             result = HTTPAPI_OK;
         }
-        else if (strcmp("CURLOPT_VERBOSE", optionName) == 0)
+        else if (strcmp(OPTION_CURL_VERBOSE, optionName) == 0)
         {
             httpHandleData->verbose = *(const long*)value;
             result = HTTPAPI_OK;
         }
-        else if (strcmp("x509privatekey", optionName) == 0)
+        else if (strcmp(SU_OPTION_X509_PRIVATE_KEY, optionName) == 0)
         {
             httpHandleData->x509privatekey = value;
             if (httpHandleData->x509certificate != NULL)
@@ -679,7 +680,7 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
             }
             result = HTTPAPI_OK;
         }
-        else if (strcmp("x509certificate", optionName) == 0)
+        else if (strcmp(SU_OPTION_X509_CERT, optionName) == 0)
         {
             httpHandleData->x509certificate = value;
             if (httpHandleData->x509privatekey != NULL)
@@ -709,6 +710,66 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
             }
             result = HTTPAPI_OK;
         }
+        else if (strcmp(OPTION_HTTP_PROXY, optionName) == 0)
+        {
+            char proxy[MAX_HOSTNAME_LEN];
+            char* proxy_auth;
+
+            HTTP_PROXY_OPTIONS* proxy_data = (HTTP_PROXY_OPTIONS*)value;
+
+            if (sprintf_s(proxy, MAX_HOSTNAME_LEN, "%s:%d", proxy_data->host_address, proxy_data->port) <= 0)
+            {
+                LogError("failure constructing proxy address");
+                result = HTTPAPI_ERROR;
+            }
+            else
+            {
+                if (curl_easy_setopt(httpHandleData->curl, CURLOPT_PROXY, proxy) != CURLE_OK)
+                {
+                    LogError("failure setting curl proxy address");
+                    result = HTTPAPI_ERROR;
+                }
+                else
+                {
+                    if (proxy_data->username != NULL && proxy_data->password != NULL)
+                    {
+                        size_t authLen = strlen(proxy_data->username)+strlen(proxy_data->password)+1;
+                        proxy_auth = malloc(authLen+1);
+                        if (proxy_auth == NULL)
+                        {
+                            LogError("failure allocating proxy authentication");
+                            result = HTTPAPI_ERROR;
+                        }
+                        else
+                        {
+                            // From curl website 'Pass a char * as parameter, which should be [user name]:[password]'
+                            if (sprintf_s(proxy_auth, MAX_HOSTNAME_LEN, "%s:%s", proxy_data->username, proxy_data->password) <= 0)
+                            {
+                                LogError("failure constructing proxy authentication");
+                                result = HTTPAPI_ERROR;
+                            }
+                            else
+                            {
+                                if (curl_easy_setopt(httpHandleData->curl, CURLOPT_PROXYUSERPWD, proxy_auth) != CURLE_OK)
+                                {
+                                    LogError("failure setting curl proxy authentication");
+                                    result = HTTPAPI_ERROR;
+                                }
+                                else
+                                {
+                                    result = HTTPAPI_OK;
+                                }
+                            }
+                            free(proxy_auth);
+                        }
+                    }
+                    else
+                    {
+                        result = HTTPAPI_OK;
+                    }
+                }
+            }
+        }
         else
         {
             result = HTTPAPI_INVALID_ARG;
@@ -732,7 +793,7 @@ HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, co
     }
     else
     {
-        if (strcmp("timeout", optionName) == 0)
+        if (strcmp(OPTION_HTTP_TIMEOUT, optionName) == 0)
         {
             /*by convention value is pointing to an unsigned int */
             unsigned int* temp = malloc(sizeof(unsigned int)); /*shall be freed by HTTPAPIEX*/
@@ -748,7 +809,7 @@ HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, co
                 result = HTTPAPI_OK;
             }
         }
-        else if (strcmp("x509certificate", optionName) == 0)
+        else if (strcmp(SU_OPTION_X509_CERT, optionName) == 0)
         {
             /*this is getting the x509 certificate. In this case, value is a pointer to a const char* that contains the certificate as a null terminated string*/
             if (mallocAndStrcpy_s((char**)savedValue, value) != 0)
@@ -762,7 +823,7 @@ HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, co
                 result = HTTPAPI_OK;
             }
         }
-        else if (strcmp("x509privatekey", optionName) == 0)
+        else if (strcmp(SU_OPTION_X509_PRIVATE_KEY, optionName) == 0)
         {
             /*this is getting the x509 private key. In this case, value is a pointer to a const char* that contains the private key as a null terminated string*/
             if (mallocAndStrcpy_s((char**)savedValue, value) != 0)
@@ -776,13 +837,33 @@ HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, co
                 result = HTTPAPI_OK;
             }
         }
+        else if (strcmp(OPTION_HTTP_PROXY, optionName) == 0)
+        {
+            HTTP_PROXY_OPTIONS* proxy_data = (HTTP_PROXY_OPTIONS*)value;
+
+            HTTP_PROXY_OPTIONS* new_proxy_info = malloc(sizeof(HTTP_PROXY_OPTIONS));
+            if (new_proxy_info == NULL)
+            {
+                LogError("unable to allocate proxy option information");
+                result = HTTPAPI_ERROR;
+            }
+            else
+            {
+                new_proxy_info->host_address = proxy_data->host_address;
+                new_proxy_info->port = proxy_data->port;
+                new_proxy_info->password = proxy_data->password;
+                new_proxy_info->username = proxy_data->username;
+                *savedValue = new_proxy_info;
+                result = HTTPAPI_OK;
+            }
+        }
         /*all "long" options are cloned in the same way*/
         else if (
-            (strcmp("CURLOPT_LOW_SPEED_LIMIT", optionName) == 0) ||
-            (strcmp("CURLOPT_LOW_SPEED_TIME", optionName) == 0) ||
-            (strcmp("CURLOPT_FRESH_CONNECT", optionName) == 0) ||
-            (strcmp("CURLOPT_FORBID_REUSE", optionName) == 0) ||
-            (strcmp("CURLOPT_VERBOSE", optionName) == 0) 
+            (strcmp(OPTION_CURL_LOW_SPEED_LIMIT, optionName) == 0) ||
+            (strcmp(OPTION_CURL_LOW_SPEED_TIME, optionName) == 0) ||
+            (strcmp(OPTION_CURL_FRESH_CONNECT, optionName) == 0) ||
+            (strcmp(OPTION_CURL_FORBID_REUSE, optionName) == 0) ||
+            (strcmp(OPTION_CURL_VERBOSE, optionName) == 0)
             )
         {
             /*by convention value is pointing to an long */
