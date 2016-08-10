@@ -48,7 +48,7 @@ STRING_HANDLE STRING_new(void)
             result = NULL;
         }
     }
-    return result;
+    return (STRING_HANDLE)result;
 }
 
 /*Codes_SRS_STRING_02_001: [STRING_clone shall produce a new string having the same content as the handle string.*/
@@ -83,7 +83,7 @@ STRING_HANDLE STRING_clone(STRING_HANDLE handle)
             /*not much to do, result is NULL from malloc*/
         }
     }
-    return result;
+    return (STRING_HANDLE)result;
 }
 
 /* Codes_SRS_STRING_07_003: [STRING_construct shall allocate a new string with the value of the specified const char*.] */
@@ -139,7 +139,7 @@ STRING_HANDLE STRING_construct_sprintf(const char* format, ...)
             result = (STRING*)malloc(sizeof(STRING));
             if (result != NULL)
             {
-                result->s = malloc(length+1);
+                result->s = (char*)malloc(length+1);
                 if (result->s != NULL)
                 {
                     if (vsnprintf(result->s, length+1, format, arg_list) < 0)
@@ -166,7 +166,7 @@ STRING_HANDLE STRING_construct_sprintf(const char* format, ...)
         }
         else if (length == 0)
         {
-            result = STRING_new();
+            result = (STRING*)STRING_new();
         }
         else
         {
@@ -183,7 +183,7 @@ STRING_HANDLE STRING_construct_sprintf(const char* format, ...)
         result = NULL;
     }
     /* Codes_SRS_STRING_07_045: [STRING_construct_sprintf shall allocate a new string with the value of the specified printf formated const char. ] */
-    return result;
+    return (STRING_HANDLE)result;
 }
 
 /*this function will return a new STRING with the memory for the actual string passed in as a parameter.*/
