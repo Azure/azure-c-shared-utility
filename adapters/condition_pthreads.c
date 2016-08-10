@@ -10,6 +10,7 @@
 #include "azure_c_shared_utility/gballoc.h"
 #include "pthread.h"
 #include "time.h"
+#include "mach_gettime.h"
 
 DEFINE_ENUM_STRINGS(COND_RESULT, COND_RESULT_VALUES);
 
@@ -22,19 +23,23 @@ clockid_t time_basis = CLOCK_MONOTONIC;
 #ifdef CLOCK_REALTIME
 clockid_t time_basis = CLOCK_REALTIME;
 #else
-clockid_t time_basis = -1
+clockid_t time_basis = -1;
 #endif
 #endif
 
 COND_HANDLE Condition_Init(void)
 {
+#if TARGET_OS_IPHONE
+    //pthread_condattr_getclock and pthread_condattr_setclock not available on iOS 9.3
+    return NULL;
+#else
     // If we don't know our time basis, find it.
     if (time_basis == -1)
     {
         pthread_condattr_t cattr;
         pthread_condattr_init(&cattr);
         pthread_condattr_getclock(&cattr, &time_basis);
-        pthread_condattr_destroy(&cattr);
+        pthread_condattr_destroy(&cattr);
     }
 
     // Codes_SRS_CONDITION_18_002: [ Condition_Init shall create and return a CONDITION_HANDLE ]
@@ -46,10 +51,12 @@ COND_HANDLE Condition_Init(void)
         pthread_condattr_init(&cattr);
         pthread_condattr_setclock(&cattr, time_basis);
         pthread_cond_init(cond, &cattr);
-        pthread_condattr_destroy(&cattr);
+        pthread_condattr_destroy(&cattr);
+
     }
     // Codes_SRS_CONDITION_18_008: [ Condition_Init shall return NULL if it fails to allocate the CONDITION_HANDLE ]
     return cond;
+#endif
 }
 
 COND_RESULT Condition_Post(COND_HANDLE handle)

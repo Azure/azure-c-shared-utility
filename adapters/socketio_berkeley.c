@@ -638,8 +638,12 @@ int socketio_setoption(CONCRETE_IO_HANDLE socket_io, const char* optionName, con
         }
         else if (strcmp(optionName, "tcp_keepalive_time") == 0)
         {
+#if TARGET_OS_IPHONE
+            result = -1;
+#else
             result = setsockopt(socket_io_instance->socket, SOL_TCP, TCP_KEEPIDLE, value, sizeof(int));
             if (result == -1) result = errno;
+#endif
         }
         else if (strcmp(optionName, "tcp_keepalive_interval") == 0)
         {
