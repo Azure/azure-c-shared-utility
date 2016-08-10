@@ -127,10 +127,13 @@ STRING_HANDLE STRING_construct_sprintf(const char* format, ...)
     STRING* result;
     if (format != NULL)
     {
-        va_list arg_list;
+        va_list arg_list, arg_length;
         va_start(arg_list, format);
+        // Need to make a copy because vsnprintf may modify va_list
+        va_copy(arg_length, arg_list);
+
         /* Codes_SRS_STRING_07_041: [STRING_construct_sprintf shall determine the size of the resulting string and allocate the necessary memory.] */
-        int length = vsnprintf(NULL, 0, format, arg_list);
+        int length = vsnprintf(NULL, 0, format, arg_length);
         if (length > 0)
         {
             result = (STRING*)malloc(sizeof(STRING));
@@ -171,6 +174,8 @@ STRING_HANDLE STRING_construct_sprintf(const char* format, ...)
             result = NULL;
             LogError("Failure: vsnprintf return 0 length");
         }
+        va_end(arg_length);
+        va_end(arg_list);
     }
     else
     {
@@ -507,10 +512,12 @@ int STRING_sprintf(STRING_HANDLE handle, const char* format, ...)
     }
     else
     {
-        va_list arg_list;
+        va_list arg_list, arg_length;
         va_start(arg_list, format);
+        // Need to make a copy because vsnprintf may modify va_list
+        va_copy(arg_length, arg_list);
 
-        int s2Length = vsnprintf(NULL, 0, format, arg_list);
+        int s2Length = vsnprintf(NULL, 0, format, arg_length);
         if (s2Length < 0)
         {
             /* Codes_SRS_STRING_07_043: [If any error is encountered STRING_sprintf shall return a non zero value.] */
@@ -550,6 +557,8 @@ int STRING_sprintf(STRING_HANDLE handle, const char* format, ...)
                 result = __LINE__;
             }
         }
+        va_end(arg_length);
+        va_end(arg_list);
     }
     return result;
 }
