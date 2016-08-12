@@ -128,10 +128,11 @@ STRING_HANDLE STRING_construct_sprintf(const char* format, ...)
     if (format != NULL)
     {
         va_list arg_list;
+		int length;
         va_start(arg_list, format);
 
         /* Codes_SRS_STRING_07_041: [STRING_construct_sprintf shall determine the size of the resulting string and allocate the necessary memory.] */
-        int length = vsnprintf(NULL, 0, format, arg_list);
+        length = vsnprintf(NULL, 0, format, arg_list);
         va_end(arg_list);
         if (length > 0)
         {
@@ -512,9 +513,10 @@ int STRING_sprintf(STRING_HANDLE handle, const char* format, ...)
     else
     {
         va_list arg_list;
+		int s2Length;
         va_start(arg_list, format);
 
-        int s2Length = vsnprintf(NULL, 0, format, arg_list);
+        s2Length = vsnprintf(NULL, 0, format, arg_list);
         va_end(arg_list);
         if (s2Length < 0)
         {
@@ -530,8 +532,9 @@ int STRING_sprintf(STRING_HANDLE handle, const char* format, ...)
         else
         {
             STRING* s1 = (STRING*)handle;
+			char* temp;
             size_t s1Length = strlen(s1->s);
-            char* temp = (char*)realloc(s1->s, s1Length + s2Length + 1);
+            temp = (char*)realloc(s1->s, s1Length + s2Length + 1);
             if (temp != NULL)
             {
                 s1->s = temp;
