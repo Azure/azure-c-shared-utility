@@ -46,3 +46,7 @@ add_subdirectory(urlencode_ut)
 add_subdirectory(vector_ut)
 add_subdirectory(xio_ut)
 add_subdirectory(optionhandler_ut)
+
+if(use_wsio)
+    add_subdirectory(wsio_ut)
+endif()

@@ -78,6 +78,46 @@ set (LIB_INSTALL_DIR lib CACHE PATH "Library object file directory")
 #Use solution folders. 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
+if(${use_wsio})
+    include_directories($ENV{OpenSSLDir}/include)
+    include_directories(deps/libwebsockets/lib)
+    include_directories(${PROJECT_BINARY_DIR}/deps/libwebsockets)
+
+	if(WIN32)
+		string(REPLACE "/W4" "/W0" CMAKE_C_FLAGS ${CMAKE_C_FLAGS})
+		string(REPLACE "/W4" "/W0" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
+		
+		set(CMAKE_EXE_LINKER_FLAGS_PREV ${CMAKE_EXE_LINKER_FLAGS})
+		set(CMAKE_SHARED_LINKER_FLAGS_PREV ${CMAKE_SHARED_LINKER_FLAGS})
+		set(CMAKE_MODULE_LINKER_FLAGS_PREV ${CMAKE_MODULE_LINKER_FLAGS})
+		set(CMAKE_STATIC_LINKER_FLAGS_PREV ${CMAKE_MODULE_STATIC_FLAGS})
+
+		set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /IGNORE:4006 /IGNORE:4221")
+		set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /IGNORE:4006 /IGNORE:4221")
+		set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} /IGNORE:4006 /IGNORE:4221")
+		set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} /IGNORE:4006 /IGNORE:4221")
+
+		remove_definitions(/WX)
+		add_subdirectory(deps/libwebsockets)
+		add_definitions(/WX)
+		set(CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS_PREV})
+		set(CMAKE_SHARED_LINKER_FLAGS ${CMAKE_SHARED_LINKER_FLAGS_PREV})
+		set(CMAKE_MODULE_LINKER_FLAGS ${CMAKE_MODULE_LINKER_FLAGS_PREV})
+		set(CMAKE_STATIC_LINKER_FLAGS ${CMAKE_STATIC_LINKER_FLAGS_PREV})
+		
+		string(REPLACE "/W0" "/W4" CMAKE_C_FLAGS ${CMAKE_C_FLAGS})
+		string(REPLACE "/W0" "/W4" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
+	
+	elseif(LINUX)
+        #because libwebsockets? is sensible to -Werror, it shall be removed, and re-added after
+        string(REPLACE "-Werror" "" CMAKE_C_FLAGS ${CMAKE_C_FLAGS})
+        string(REPLACE "-Werror" "" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
+        add_subdirectory(deps/libwebsockets)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
+	endif()
+endif()
+
 enable_testing()
 
 include(CheckSymbolExists)
@@ -630,6 +670,15 @@ set(source_h_files
 ./inc/azure_c_shared_utility/tlsio.h
 ./inc/azure_c_shared_utility/optionhandler.h
 )
+
+if(${use_wsio})
+    set(source_h_files ${source_h_files}
+        ./inc/azure_c_shared_utility/wsio.h
+    )
+    set(source_c_files ${source_c_files}
+        ./src/wsio.c
+    )
+endif()
 
 if(${use_http})
     set(source_h_files ${source_h_files}
