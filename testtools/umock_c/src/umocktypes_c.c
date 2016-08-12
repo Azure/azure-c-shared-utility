@@ -25,8 +25,7 @@
         } \
         else \
         { \
-            char temp_buffer[32]; \
-            size_t length = sprintf(temp_buffer, printf_specifier, *value); \
+            size_t length = snprintf(NULL, 0, printf_specifier, *value); \
             result = (char*)umockalloc_malloc(length + 1); \
             if (result == NULL) \
             { \
@@ -34,7 +33,7 @@
             } \
             else \
             { \
-                (void)memcpy(result, temp_buffer, length + 1); \
+                (void)snprintf(result, length + 1, printf_specifier, *value); \
             } \
         } \
         return result; \
