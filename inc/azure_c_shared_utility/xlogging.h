@@ -39,8 +39,6 @@ typedef void(*LOGGER_LOG)(LOG_CATEGORY log_category, const char* file, const cha
 #define xlogging_get_log_function() NULL
 #define xlogging_set_log_function(...)
 #define LogErrorWinHTTPWithGetLastErrorAsString(...)
-#define log_incoming_frame(...)
-#define log_outgoing_frame(...)
 #define UNUSED(x) (void)(x)
 #elif defined(ARDUINO_ARCH_ESP8266)
 /*
