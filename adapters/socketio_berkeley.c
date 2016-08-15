@@ -349,6 +349,8 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
 
 								do
 								{
+									retval = select(socket_io_instance->socket + 1, NULL, &fdset, NULL, &tv);
+
 									if (retval < 0)
 									{
 										select_errno = errno;
