@@ -254,6 +254,8 @@ void socketio_destroy(CONCRETE_IO_HANDLE socket_io)
 int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_complete, void* on_io_open_complete_context, ON_BYTES_RECEIVED on_bytes_received, void* on_bytes_received_context, ON_IO_ERROR on_io_error, void* on_io_error_context)
 {
     int result;
+	int retval = -1;
+	int select_errno = 0;
 
     SOCKET_IO_INSTANCE* socket_io_instance = (SOCKET_IO_INSTANCE*)socket_io;
     if (socket_io == NULL)
@@ -345,7 +347,15 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
                                 tv.tv_sec = CONNECT_TIMEOUT;
                                 tv.tv_usec = 0;
 
-                                if (select(socket_io_instance->socket + 1, NULL, &fdset, NULL, &tv) != 1)
+								do
+								{
+									if (retval < 0)
+									{
+										select_errno = errno;
+									}
+								} while (retval < 0 && select_errno == EINTR);
+								
+                                if (retval != 1)
                                 {
                                     LogError("Failure: select failure.");
                                     close(socket_io_instance->socket);
