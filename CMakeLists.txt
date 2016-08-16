@@ -558,11 +558,7 @@ set_platform_files()
 
 include_directories(${UMOCK_C_INC_FOLDER})
 
-if(${use_condition})
-    compileAsC11()
-else()
-    compileAsC99()
-endif()
+compileAsC99()
 
 #these are the C source files
 set(source_c_files
