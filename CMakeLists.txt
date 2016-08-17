@@ -739,9 +739,6 @@ if (NOT ${skip_unittests})
     add_subdirectory(tests)
 endif()
 
-if(WIN32)
-else()
-    install (TARGETS aziotsharedutil DESTINATION lib)
-    install (FILES ${source_h_files} DESTINATION include/azureiot/azure_c_shared_utility)
-endif (WIN32)
+install (TARGETS aziotsharedutil DESTINATION lib)
+install (FILES ${source_h_files} DESTINATION include/azureiot/azure_c_shared_utility)
 
