@@ -7,9 +7,7 @@
 
 int platform_init(void)
 {
-	tlsio_openssl_init();
-
-	return 0;
+    return tlsio_openssl_init();
 }
 
 const IO_INTERFACE_DESCRIPTION* platform_get_default_tlsio(void)
