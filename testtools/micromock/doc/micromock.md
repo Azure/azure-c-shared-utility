@@ -199,7 +199,7 @@ If it is desired to completely reset a mock, this can be achieved by a call to R
 Good tests do not typically require these features, so they should be used cautiously. 
 #Non-compare actions 
 In some cases it is needed to specify that a certain result is returned by a mocked function from a given point of the test execution forward, without actually checking that actual calls exist to match that call. 
-A typical example is setting up the time for a piece of code under test. For example, let’s take the case when the code under test uses GetTickCount64 to retrieve the current system tick count. The test needs to inject a known tick count value to be used by all calls coming from the production code, so that any time dependency and flakiness of the test can be eliminated. 
+A typical example is setting up the time for a piece of code under test. For example, let's take the case when the code under test uses GetTickCount64 to retrieve the current system tick count. The test needs to inject a known tick count value to be used by all calls coming from the production code, so that any time dependency and flakiness of the test can be eliminated. 
 Also the test needs in some cases to inject different values of the time to simulate passing of time and test how the code under test behaves. 
 For these cases the construct WHEN_CALLED can be used, as shown below:
 ```c 
