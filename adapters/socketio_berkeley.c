@@ -63,14 +63,20 @@ typedef struct SOCKET_IO_INSTANCE_TAG
 /*this function will clone an option given by name and value*/
 static void* socketio_CloneOption(const char* name, const void* value)
 {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-value"
     (void)(name, value);
     return NULL;
+#pragma clang diagnostic pop
 }
 
 /*this function destroys an option previously created*/
 static void socketio_DestroyOption(const char* name, const void* value)
 {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-value"
     (void)(name, value);
+#pragma clang diagnostic pop
 }
 
 static OPTIONHANDLER_HANDLE socketio_retrieveoptions(CONCRETE_IO_HANDLE handle)
