@@ -9,6 +9,7 @@
 #include "azure_c_shared_utility/wsio.h"
 #include "azure_c_shared_utility/list.h"
 #include "azure_c_shared_utility/lock.h"
+#include "azure_c_shared_utility/shared_util_options.h"
 #include "libwebsockets.h"
 #include "openssl/ssl.h"
 
@@ -34,6 +35,9 @@ namespace BASEIMPLEMENTATION
 
 static const void** list_items = NULL;
 static size_t list_item_count = 0;
+static const char* TEST_HOST_ADDRESS = "host_address.com";
+static const char* TEST_USERNAME = "user_name";
+static const char* TEST_PASSWORD = "user_pwd";
 
 static const LIST_HANDLE TEST_LIST_HANDLE = (LIST_HANDLE)0x4242;
 static const LIST_ITEM_HANDLE TEST_LIST_ITEM_HANDLE = (LIST_ITEM_HANDLE)0x11;
@@ -314,9 +318,17 @@ public:
     MOCK_STATIC_METHOD_2(, void, test_on_send_complete, void*, context, IO_SEND_RESULT, send_result)
     MOCK_VOID_METHOD_END()
 
-    MOCK_STATIC_METHOD_3(, OPTIONHANDLER_HANDLE, OptionHandler_Create, pfCloneOption, clone, pfDestroyOption, destroy, pfSetOption, setoption);
-		OPTIONHANDLER_HANDLE r = (OPTIONHANDLER_HANDLE) malloc(1);
+    MOCK_STATIC_METHOD_3(, OPTIONHANDLER_HANDLE, OptionHandler_Create, pfCloneOption, clone, pfDestroyOption, destroy, pfSetOption, setoption)
+        OPTIONHANDLER_HANDLE r = (OPTIONHANDLER_HANDLE) malloc(1);
     MOCK_METHOD_END(OPTIONHANDLER_HANDLE, r)
+    MOCK_STATIC_METHOD_3(, OPTIONHANDLER_RESULT, OptionHandler_AddOption, OPTIONHANDLER_HANDLE, handle, const char*, name, const void*, value)
+    MOCK_METHOD_END(OPTIONHANDLER_RESULT, OPTIONHANDLER_OK)
+    MOCK_STATIC_METHOD_1(, void, OptionHandler_Destroy, OPTIONHANDLER_HANDLE, handle)
+    MOCK_VOID_METHOD_END()
+
+
+    MOCK_STATIC_METHOD_2(, int, mallocAndStrcpy_s, char**, destination, const char*, source);
+    MOCK_METHOD_END(int, (*destination = (char*)BASEIMPLEMENTATION::gballoc_malloc(strlen(source) + 1), strcpy(*destination, source), 0) )
 };
 
 extern "C"
@@ -356,6 +368,8 @@ extern "C"
     DECLARE_GLOBAL_MOCK_METHOD_2(wsio_mocks, , void, test_on_send_complete, void*, context, IO_SEND_RESULT, send_result);
 
     DECLARE_GLOBAL_MOCK_METHOD_3(wsio_mocks, , OPTIONHANDLER_HANDLE, OptionHandler_Create, pfCloneOption, clone, pfDestroyOption, destroy, pfSetOption, setoption);
+    DECLARE_GLOBAL_MOCK_METHOD_3(wsio_mocks, , OPTIONHANDLER_RESULT, OptionHandler_AddOption, OPTIONHANDLER_HANDLE, handle, const char*, name, const void*, value);
+    DECLARE_GLOBAL_MOCK_METHOD_1(wsio_mocks, , void, OptionHandler_Destroy, OPTIONHANDLER_HANDLE, handle);
 
     DECLARE_GLOBAL_MOCK_METHOD_1(wsio_mocks, , void*, gballoc_malloc, size_t, size);
     DECLARE_GLOBAL_MOCK_METHOD_2(wsio_mocks, , void*, gballoc_realloc, void*, ptr, size_t, size);
@@ -365,6 +379,8 @@ extern "C"
     DECLARE_GLOBAL_MOCK_METHOD_1(wsio_mocks, , LOCK_RESULT, Lock, LOCK_HANDLE, handle);
     DECLARE_GLOBAL_MOCK_METHOD_1(wsio_mocks, , LOCK_RESULT, Unlock, LOCK_HANDLE, handle);
     DECLARE_GLOBAL_MOCK_METHOD_1(wsio_mocks, , LOCK_RESULT, Lock_Deinit, LOCK_HANDLE, handle);
+    
+    DECLARE_GLOBAL_MOCK_METHOD_2(wsio_mocks, , int, mallocAndStrcpy_s, char**, destination, const char*, source);	
 }
 
 MICROMOCK_MUTEX_HANDLE test_serialize_mutex;
@@ -373,21 +389,21 @@ BEGIN_TEST_SUITE(wsio_ut)
 
 TEST_SUITE_INITIALIZE(suite_init)
 {
-	test_serialize_mutex = MicroMockCreateMutex();
-	ASSERT_IS_NOT_NULL(test_serialize_mutex);
+    test_serialize_mutex = MicroMockCreateMutex();
+    ASSERT_IS_NOT_NULL(test_serialize_mutex);
 }
 
 TEST_SUITE_CLEANUP(suite_cleanup)
 {
-	MicroMockDestroyMutex(test_serialize_mutex);
+    MicroMockDestroyMutex(test_serialize_mutex);
 }
 
 TEST_FUNCTION_INITIALIZE(method_init)
 {
-	if (!MicroMockAcquireMutex(test_serialize_mutex))
-	{
-		ASSERT_FAIL("Could not acquire test serialization mutex.");
-	}
+    if (!MicroMockAcquireMutex(test_serialize_mutex))
+    {
+        ASSERT_FAIL("Could not acquire test serialization mutex.");
+    }
 }
 
 TEST_FUNCTION_CLEANUP(method_cleanup)
@@ -395,10 +411,10 @@ TEST_FUNCTION_CLEANUP(method_cleanup)
     free(list_items);
     list_items = NULL;
     list_item_count = 0;
-	if (!MicroMockReleaseMutex(test_serialize_mutex))
-	{
-		ASSERT_FAIL("Could not release test serialization mutex.");
-	}
+    if (!MicroMockReleaseMutex(test_serialize_mutex))
+    {
+        ASSERT_FAIL("Could not release test serialization mutex.");
+    }
 }
 
 /* wsio_create */
@@ -409,10 +425,10 @@ TEST_FUNCTION_CLEANUP(method_cleanup)
 /* Tests_SRS_WSIO_01_006: [The members host, protocol_name, relative_path and trusted_ca shall be copied for later use (they are needed when the IO is opened).] */
 TEST_FUNCTION(wsio_create_with_valid_args_succeeds)
 {
-	// arrange
-	wsio_mocks mocks;
+    // arrange
+    wsio_mocks mocks;
 
-	EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
+    EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
     STRICT_EXPECTED_CALL(mocks, list_create());
     EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
     EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
@@ -420,15 +436,15 @@ TEST_FUNCTION(wsio_create_with_valid_args_succeeds)
     EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
     EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
 
-	// act
+    // act
     CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
 
-	// assert
-	ASSERT_IS_NOT_NULL(wsio);
+    // assert
+    ASSERT_IS_NOT_NULL(wsio);
     mocks.AssertActualAndExpectedCalls();
 
-	// cleanup
-	wsio_destroy(wsio);
+    // cleanup
+    wsio_destroy(wsio);
 }
 
 /* Tests_SRS_WSIO_01_002: [If the argument io_create_parameters is NULL then wsio_create shall return NULL.] */
@@ -905,6 +921,73 @@ TEST_FUNCTION(wsio_open_with_different_config_succeeds)
     // cleanup
     wsio_destroy(wsio);
 }
+
+/* Tests_SRS_WSIO_01_015: [name shall be set to protocol_name as passed to wsio_create] */
+/* Tests_SRS_WSIO_01_025: [address shall be the hostname passed to wsio_create] */
+/* Tests_SRS_WSIO_01_026: [port shall be the port passed to wsio_create] */
+/* Tests_SRS_WSIO_01_027: [if use_ssl passed in wsio_create is true, the use_ssl argument shall be 1] */
+/* Tests_SRS_WSIO_01_028: [path shall be the relative_path passed in wsio_create] */
+/* Tests_SRS_WSIO_01_029: [host shall be the host passed to wsio_create] */
+/* Tests_SRS_WSIO_01_030: [origin shall be the host passed to wsio_create] */
+/* Tests_SRS_WSIO_01_031: [protocol shall be the protocol_name passed to wsio_create] */
+/* Tests_SRS_WSIO_01_091: [The extensions field shall be set to the internal extensions obtained by calling lws_get_internal_extensions.] */
+/* Tests_SRS_WSIO_01_104: [On success, wsio_open shall return 0.] */
+TEST_FUNCTION(wsio_open_with_proxy_config_succeeds)
+{
+    // arrange
+    wsio_mocks mocks;
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+
+    HTTP_PROXY_OPTIONS proxy_options;
+    proxy_options.host_address = TEST_HOST_ADDRESS;
+    proxy_options.port = 8080;
+    proxy_options.username = NULL;
+    proxy_options.password = TEST_PASSWORD;
+    wsio_setoption(wsio, OPTION_HTTP_PROXY, &proxy_options);
+
+    mocks.ResetAllCalls();
+
+    lws_context_creation_info lws_context_info;
+    lws_protocols protocols[] =
+    {
+        { default_wsio_config.protocol_name, NULL, 0, 0, 0, NULL },
+        { NULL, NULL, 0, 0, 0, NULL }
+    };
+
+    lws_context_info.port = CONTEXT_PORT_NO_LISTEN;
+    lws_context_info.extensions = TEST_INTERNAL_EXTENSIONS;
+    lws_context_info.gid = -1;
+    lws_context_info.uid = -1;
+    lws_context_info.iface = NULL;
+    lws_context_info.token_limits = NULL;
+    lws_context_info.ssl_cert_filepath = NULL;
+    lws_context_info.ssl_private_key_filepath = NULL;
+    lws_context_info.ssl_private_key_password = NULL;
+    lws_context_info.ssl_ca_filepath = NULL;
+    lws_context_info.ssl_cipher_list = NULL;
+    lws_context_info.provided_client_ssl_ctx = NULL;
+    lws_context_info.http_proxy_address = NULL;
+    lws_context_info.options = 0;
+    lws_context_info.ka_time = 0;
+    lws_context_info.http_proxy_address = proxy_options.host_address;
+    lws_context_info.http_proxy_port = proxy_options.port;
+    lws_context_info.protocols = protocols;
+
+    STRICT_EXPECTED_CALL(mocks, lws_get_internal_extensions());
+    STRICT_EXPECTED_CALL(mocks, lws_create_context(&lws_context_info)).IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(mocks, lws_client_connect(TEST_LIBWEBSOCKET_CONTEXT, default_wsio_config.host, default_wsio_config.port, 0, default_wsio_config.relative_path, default_wsio_config.host, default_wsio_config.host, default_wsio_config.protocol_name, -1));
+
+    // act
+    int result = wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+    mocks.AssertActualAndExpectedCalls();
+
+    // cleanup
+    wsio_destroy(wsio);
+}
+
 
 /* Tests_SRS_WSIO_01_022: [If creating the context fails then wsio_open shall fail and return a non-zero value.] */
 TEST_FUNCTION(when_creating_the_libwebsockets_context_fails_then_wsio_open_fails)
@@ -3511,6 +3594,372 @@ TEST_FUNCTION(wsio_retrieveoptions_when_OptionHandler_Create_fails_it_fails)
     mocks.AssertActualAndExpectedCalls();
 
     ///cleanup
+    wsio_destroy(wsio);
+}
+
+TEST_FUNCTION(wsio_setoption_socket_io_NULL_fails)
+{
+    //arrange
+    wsio_mocks mocks;
+
+    HTTP_PROXY_OPTIONS proxy_options;
+    proxy_options.host_address = NULL;
+    proxy_options.port = 8080;
+    proxy_options.username = NULL;
+    proxy_options.password = NULL;
+
+    // act
+    int option_result = wsio_setoption(NULL, OPTION_HTTP_PROXY, &proxy_options);
+
+    // assert
+    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_NOT_EQUAL(int, 0, option_result);
+
+    // cleanup
+}
+
+TEST_FUNCTION(wsio_setoption_option_name_NULL_fails)
+{
+    //arrange
+    wsio_mocks mocks;
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+    mocks.ResetAllCalls();
+
+    HTTP_PROXY_OPTIONS proxy_options;
+    proxy_options.host_address = NULL;
+    proxy_options.port = 8080;
+    proxy_options.username = NULL;
+    proxy_options.password = NULL;
+
+    // act
+    int option_result = wsio_setoption(wsio, NULL, &proxy_options);
+
+    // assert
+    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_NOT_EQUAL(int, 0, option_result);
+
+    // cleanup
+    wsio_destroy(wsio);
+}
+
+TEST_FUNCTION(wsio_setoption_value_NULL_fails)
+{
+    //arrange
+    wsio_mocks mocks;
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+    mocks.ResetAllCalls();
+
+    // act
+    int option_result = wsio_setoption(wsio, OPTION_HTTP_PROXY, NULL);
+
+    // assert
+    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_NOT_EQUAL(int, 0, option_result);
+
+    // cleanup
+    wsio_destroy(wsio);
+}
+
+TEST_FUNCTION(wsio_setoption_optionName_invalid_fails)
+{
+    //arrange
+    wsio_mocks mocks;
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+    mocks.ResetAllCalls();
+
+    HTTP_PROXY_OPTIONS proxy_options;
+    proxy_options.host_address = NULL;
+    proxy_options.port = 8080;
+    proxy_options.username = NULL;
+    proxy_options.password = NULL;
+
+    // act
+    int option_result = wsio_setoption(wsio, "Invalid_options", &proxy_options);
+
+    // assert
+    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_NOT_EQUAL(int, 0, option_result);
+
+    // cleanup
+    wsio_destroy(wsio);
+}
+
+TEST_FUNCTION(wsio_setoption_succeed)
+{
+    //arrange
+    wsio_mocks mocks;
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+    mocks.ResetAllCalls();
+
+    HTTP_PROXY_OPTIONS proxy_options;
+    proxy_options.host_address = TEST_HOST_ADDRESS;
+    proxy_options.port = 8080;
+    proxy_options.username = TEST_USERNAME;
+    proxy_options.password = TEST_PASSWORD;
+
+    EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
+
+    // act
+    int option_result = wsio_setoption(wsio, OPTION_HTTP_PROXY, &proxy_options);
+
+    // assert
+    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(int, 0, option_result);
+
+    // cleanup
+    wsio_destroy(wsio);
+}
+
+TEST_FUNCTION(wsio_setoption_no_username_password_succeed)
+{
+    //arrange
+    wsio_mocks mocks;
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+    mocks.ResetAllCalls();
+
+    HTTP_PROXY_OPTIONS proxy_options;
+    proxy_options.host_address = TEST_HOST_ADDRESS;
+    proxy_options.port = 8080;
+    proxy_options.username = NULL;
+    proxy_options.password = NULL;
+
+    EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
+
+    // act
+    int option_result = wsio_setoption(wsio, OPTION_HTTP_PROXY, &proxy_options);
+
+    // assert
+    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(int, 0, option_result);
+
+    // cleanup
+    wsio_destroy(wsio);
+}
+
+TEST_FUNCTION(wsio_setoption_username_NULL_password_Valid_succeed)
+{
+    //arrange
+    wsio_mocks mocks;
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+    mocks.ResetAllCalls();
+
+    HTTP_PROXY_OPTIONS proxy_options;
+    proxy_options.host_address = TEST_HOST_ADDRESS;
+    proxy_options.port = 8080;
+    proxy_options.username = NULL;
+    proxy_options.password = TEST_PASSWORD;
+
+    EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
+
+    // act
+    int option_result = wsio_setoption(wsio, OPTION_HTTP_PROXY, &proxy_options);
+
+    // assert
+    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_EQUAL(int, 0, option_result);
+
+    // cleanup
+    wsio_destroy(wsio);
+}
+
+TEST_FUNCTION(wsio_setoption_username_valid_password_NULL_fail)
+{
+    //arrange
+    wsio_mocks mocks;
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+    mocks.ResetAllCalls();
+
+    HTTP_PROXY_OPTIONS proxy_options;
+    proxy_options.host_address = TEST_HOST_ADDRESS;
+    proxy_options.port = 8080;
+    proxy_options.username = TEST_USERNAME;
+    proxy_options.password = NULL;
+
+    // act
+    int option_result = wsio_setoption(wsio, OPTION_HTTP_PROXY, &proxy_options);
+
+    // assert
+    mocks.AssertActualAndExpectedCalls();
+    ASSERT_ARE_NOT_EQUAL(int, 0, option_result);
+
+    // cleanup
+    wsio_destroy(wsio);
+}
+
+TEST_FUNCTION(wsio_cloneoption_name_NULL_fail)
+{
+    //arrange
+    wsio_mocks mocks;
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+
+    mocks.ResetAllCalls();
+
+    HTTP_PROXY_OPTIONS proxy_options;
+    proxy_options.host_address = TEST_HOST_ADDRESS;
+    proxy_options.port = 8080;
+    proxy_options.username = NULL;
+    proxy_options.password = TEST_PASSWORD;
+
+    // act
+    void* option_result = wsio_CloneOption(NULL, &proxy_options);
+
+    // assert
+    ASSERT_IS_NULL(option_result);
+    mocks.AssertActualAndExpectedCalls();
+
+    // cleanup
+    wsio_destroy(wsio);
+}
+
+TEST_FUNCTION(wsio_cloneoption_value_NULL_fail)
+{
+    //arrange
+    wsio_mocks mocks;
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+
+    mocks.ResetAllCalls();
+
+    // act
+    void* option_result = wsio_CloneOption(OPTION_HTTP_PROXY, NULL);
+
+    // assert
+    mocks.AssertActualAndExpectedCalls();
+    ASSERT_IS_NULL(option_result);
+
+    // cleanup
+    wsio_DestroyOption(OPTION_HTTP_PROXY, option_result);
+    wsio_destroy(wsio);
+}
+
+TEST_FUNCTION(wsio_cloneoption_proxy_address_succeed)
+{
+    //arrange
+    wsio_mocks mocks;
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+
+    mocks.ResetAllCalls();
+
+    EXPECTED_CALL(mocks, mallocAndStrcpy_s(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+
+    // act
+    void* option_result = wsio_CloneOption(OPTION_PROXY_ADDRESS, TEST_HOST_ADDRESS);
+
+    // assert
+    mocks.AssertActualAndExpectedCalls();
+    ASSERT_IS_NOT_NULL(option_result);
+
+    // cleanup
+    wsio_DestroyOption(OPTION_PROXY_ADDRESS, option_result);
+    wsio_destroy(wsio);
+}
+
+TEST_FUNCTION(wsio_cloneoption_proxy_port_succeed)
+{
+    //arrange
+    wsio_mocks mocks;
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+
+    mocks.ResetAllCalls();
+
+    EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
+
+    // act
+    int port = 8080;
+    void* option_result = wsio_CloneOption(OPTION_PROXY_PORT, &port);
+
+    // assert
+    mocks.AssertActualAndExpectedCalls();
+    ASSERT_IS_NOT_NULL(option_result);
+
+    // cleanup
+    wsio_DestroyOption(OPTION_PROXY_PORT, option_result);
+    wsio_destroy(wsio);
+}
+
+TEST_FUNCTION(wsio_destroyoption_name_NULL_fail)
+{
+    //arrange
+    wsio_mocks mocks;
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+
+    mocks.ResetAllCalls();
+
+    // act
+    int port = 8080;
+    wsio_DestroyOption(NULL, &port);
+
+    // assert
+    mocks.AssertActualAndExpectedCalls();
+
+    // cleanup
+    wsio_destroy(wsio);
+}
+
+TEST_FUNCTION(wsio_destroyoption_value_NULL_fail)
+{
+    //arrange
+    wsio_mocks mocks;
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+
+    mocks.ResetAllCalls();
+
+    // act
+    wsio_DestroyOption(OPTION_PROXY_PORT, NULL);
+
+    // assert
+    mocks.AssertActualAndExpectedCalls();
+
+    // cleanup
+    wsio_destroy(wsio);
+}
+
+TEST_FUNCTION(wsio_retrieveoptions_handle_NULL_fail)
+{
+    //arrange
+    wsio_mocks mocks;
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+
+    mocks.ResetAllCalls();
+
+    // act
+    OPTIONHANDLER_HANDLE handle = wsio_retrieveoptions(NULL);
+
+    // assert
+    ASSERT_IS_NULL(handle);
+    mocks.AssertActualAndExpectedCalls();
+
+    // cleanup
+    wsio_destroy(wsio);
+}
+
+TEST_FUNCTION(wsio_retrieveoptions_handle_succeed)
+{
+    //arrange
+    wsio_mocks mocks;
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+
+    HTTP_PROXY_OPTIONS proxy_options;
+    proxy_options.host_address = TEST_HOST_ADDRESS;
+    proxy_options.port = 8080;
+    proxy_options.username = NULL;
+    proxy_options.password = TEST_PASSWORD;
+
+    /*int result = */wsio_setoption(wsio, OPTION_HTTP_PROXY, &proxy_options);
+
+    mocks.ResetAllCalls();
+
+    EXPECTED_CALL(mocks, OptionHandler_Create(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+    EXPECTED_CALL(mocks, OptionHandler_AddOption(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+    EXPECTED_CALL(mocks, OptionHandler_AddOption(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+
+    // act
+    OPTIONHANDLER_HANDLE handle = wsio_retrieveoptions(wsio);
+
+    // assert
+    ASSERT_IS_NOT_NULL(handle);
+    mocks.AssertActualAndExpectedCalls();
+
+    // cleanup
     wsio_destroy(wsio);
 }
 
