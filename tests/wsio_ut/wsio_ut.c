@@ -2,8 +2,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include "testrunnerswitcher.h"
-#include "azure_c_shared_utility/xio.h"
-#include "azure_c_shared_utility/optionhandler.h"
 #include "libwebsockets.h"
 #include "openssl/ssl.h"
 
@@ -12,10 +10,17 @@
 
 #define ENABLE_MOCKS
 
+#include "azure_c_shared_utility/xio.h"
+#include "azure_c_shared_utility/optionhandler.h"
+#include "azure_c_shared_utility/shared_util_options.h"
+#include "azure_c_shared_utility/crt_abstractions.h"
 #include "azure_c_shared_utility/list.h"
 
 static const void** list_items = NULL;
 static size_t list_item_count = 0;
+static const char* TEST_HOST_ADDRESS = "host_address.com";
+static const char* TEST_USERNAME = "user_name";
+static const char* TEST_PASSWORD = "user_pwd";
 
 static const LIST_HANDLE TEST_LIST_HANDLE = (LIST_HANDLE)0x4242;
 static const LIST_ITEM_HANDLE TEST_LIST_ITEM_HANDLE = (LIST_ITEM_HANDLE)0x11;
@@ -454,9 +459,18 @@ LIST_ITEM_HANDLE my_list_find(LIST_HANDLE handle, LIST_MATCH_FUNCTION match_func
     return (LIST_ITEM_HANDLE)found_item;
 }
 
-MOCK_FUNCTION_WITH_CODE(, OPTIONHANDLER_HANDLE, OptionHandler_Create, pfCloneOption, clone, pfDestroyOption, destroy, pfSetOption, setoption)
-OPTIONHANDLER_HANDLE r = (OPTIONHANDLER_HANDLE)malloc(1);
-MOCK_FUNCTION_END(r)
+OPTIONHANDLER_HANDLE my_OptionHandler_Create(pfCloneOption clone, pfDestroyOption destroy, pfSetOption setoption)
+{
+    (void)clone, destroy, setoption;
+    return (OPTIONHANDLER_HANDLE)malloc(1);
+}
+
+int my_mallocAndStrcpy_s(char** destination, const char* source)
+{
+    *destination = (char*)malloc(strlen(source) + 1);
+    (void)strcpy(*destination, source);
+    return 0;
+}
 
 #include "azure_c_shared_utility/gballoc.h"
 
@@ -560,6 +574,9 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_GLOBAL_MOCK_HOOK(list_add, my_list_add);
     REGISTER_GLOBAL_MOCK_HOOK(list_item_get_value, my_list_item_get_value);
     REGISTER_GLOBAL_MOCK_HOOK(list_find, my_list_find);
+    REGISTER_GLOBAL_MOCK_HOOK(mallocAndStrcpy_s, my_mallocAndStrcpy_s);
+    REGISTER_GLOBAL_MOCK_HOOK(OptionHandler_Create, my_OptionHandler_Create);
+    REGISTER_GLOBAL_MOCK_RETURN(OptionHandler_AddOption, OPTIONHANDLER_OK);
     REGISTER_TYPE(IO_OPEN_RESULT, IO_OPEN_RESULT);
     REGISTER_TYPE(IO_SEND_RESULT, IO_SEND_RESULT);
     REGISTER_TYPE(my_lws_write_protocol_enum, my_lws_write_protocol_enum);
@@ -627,8 +644,8 @@ TEST_FUNCTION(wsio_create_with_valid_args_succeeds)
 	ASSERT_IS_NOT_NULL(wsio);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
-	// cleanup
-	wsio_destroy(wsio);
+    // cleanup
+    wsio_destroy(wsio);
 }
 
 /* Tests_SRS_WSIO_01_002: [If the argument io_create_parameters is NULL then wsio_create shall return NULL.] */
@@ -1099,6 +1116,79 @@ TEST_FUNCTION(wsio_open_with_different_config_succeeds)
         .SetReturn((struct lws_extension*)NULL);
     STRICT_EXPECTED_CALL(lws_create_context(&lws_context_info));
     STRICT_EXPECTED_CALL(lws_client_connect(TEST_LIBWEBSOCKET_CONTEXT, wsio_config.host, wsio_config.port, 1, wsio_config.relative_path, wsio_config.host, wsio_config.host, wsio_config.protocol_name, -1));
+
+    // act
+    int result = wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_015: [name shall be set to protocol_name as passed to wsio_create] */
+/* Tests_SRS_WSIO_01_025: [address shall be the hostname passed to wsio_create] */
+/* Tests_SRS_WSIO_01_026: [port shall be the port passed to wsio_create] */
+/* Tests_SRS_WSIO_01_027: [if use_ssl passed in wsio_create is true, the use_ssl argument shall be 1] */
+/* Tests_SRS_WSIO_01_028: [path shall be the relative_path passed in wsio_create] */
+/* Tests_SRS_WSIO_01_029: [host shall be the host passed to wsio_create] */
+/* Tests_SRS_WSIO_01_030: [origin shall be the host passed to wsio_create] */
+/* Tests_SRS_WSIO_01_031: [protocol shall be the protocol_name passed to wsio_create] */
+/* Tests_SRS_WSIO_01_091: [The extensions field shall be set to the internal extensions obtained by calling lws_get_internal_extensions.] */
+/* Tests_SRS_WSIO_01_104: [On success, wsio_open shall return 0.] */
+TEST_FUNCTION(wsio_open_with_proxy_config_succeeds)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+    struct lws_context_creation_info lws_context_info;
+    struct lws_protocols protocols[2];
+
+    HTTP_PROXY_OPTIONS proxy_options;
+    proxy_options.host_address = TEST_HOST_ADDRESS;
+    proxy_options.port = 8080;
+    proxy_options.username = NULL;
+    proxy_options.password = TEST_PASSWORD;
+    wsio_setoption(wsio, OPTION_HTTP_PROXY, &proxy_options);
+
+    umock_c_reset_all_calls();
+
+    protocols[0].name = default_wsio_config.protocol_name;
+    protocols[0].callback = NULL;
+    protocols[0].per_session_data_size = 0;
+    protocols[0].rx_buffer_size = 0;
+    protocols[0].id = 0;
+    protocols[0].user = NULL;
+    protocols[1].name = NULL;
+    protocols[1].callback = NULL;
+    protocols[1].per_session_data_size = 0;
+    protocols[1].rx_buffer_size = 0;
+    protocols[1].id = 0;
+    protocols[1].user = NULL;
+
+    lws_context_info.port = CONTEXT_PORT_NO_LISTEN;
+    lws_context_info.extensions = TEST_INTERNAL_EXTENSIONS;
+    lws_context_info.gid = -1;
+    lws_context_info.uid = -1;
+    lws_context_info.iface = NULL;
+    lws_context_info.token_limits = NULL;
+    lws_context_info.ssl_cert_filepath = NULL;
+    lws_context_info.ssl_private_key_filepath = NULL;
+    lws_context_info.ssl_private_key_password = NULL;
+    lws_context_info.ssl_ca_filepath = NULL;
+    lws_context_info.ssl_cipher_list = NULL;
+    lws_context_info.provided_client_ssl_ctx = NULL;
+    lws_context_info.http_proxy_address = NULL;
+    lws_context_info.options = 0;
+    lws_context_info.ka_time = 0;
+    lws_context_info.http_proxy_address = proxy_options.host_address;
+    lws_context_info.http_proxy_port = proxy_options.port;
+    lws_context_info.protocols = protocols;
+
+    STRICT_EXPECTED_CALL(lws_get_internal_extensions());
+    STRICT_EXPECTED_CALL(lws_create_context(&lws_context_info)).IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(lws_client_connect(TEST_LIBWEBSOCKET_CONTEXT, default_wsio_config.host, default_wsio_config.port, 0, default_wsio_config.relative_path, default_wsio_config.host, default_wsio_config.host, default_wsio_config.protocol_name, -1));
 
     // act
     int result = wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
@@ -3701,6 +3791,354 @@ TEST_FUNCTION(wsio_retrieveoptions_when_OptionHandler_Create_fails_it_fails)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///cleanup
+    wsio_destroy(wsio);
+}
+
+TEST_FUNCTION(wsio_setoption_socket_io_NULL_fails)
+{
+    //arrange
+    HTTP_PROXY_OPTIONS proxy_options;
+    proxy_options.host_address = NULL;
+    proxy_options.port = 8080;
+    proxy_options.username = NULL;
+    proxy_options.password = NULL;
+
+    // act
+    int option_result = wsio_setoption(NULL, OPTION_HTTP_PROXY, &proxy_options);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, option_result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+}
+
+TEST_FUNCTION(wsio_setoption_option_name_NULL_fails)
+{
+    //arrange
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+    HTTP_PROXY_OPTIONS proxy_options;
+    proxy_options.host_address = NULL;
+    proxy_options.port = 8080;
+    proxy_options.username = NULL;
+    proxy_options.password = NULL;
+    umock_c_reset_all_calls();
+
+    // act
+    int option_result = wsio_setoption(wsio, NULL, &proxy_options);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, option_result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_destroy(wsio);
+}
+
+TEST_FUNCTION(wsio_setoption_value_NULL_fails)
+{
+    //arrange
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+    umock_c_reset_all_calls();
+
+    // act
+    int option_result = wsio_setoption(wsio, OPTION_HTTP_PROXY, NULL);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, option_result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_destroy(wsio);
+}
+
+TEST_FUNCTION(wsio_setoption_optionName_invalid_fails)
+{
+    //arrange
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+    umock_c_reset_all_calls();
+
+    HTTP_PROXY_OPTIONS proxy_options;
+    proxy_options.host_address = NULL;
+    proxy_options.port = 8080;
+    proxy_options.username = NULL;
+    proxy_options.password = NULL;
+
+    // act
+    int option_result = wsio_setoption(wsio, "Invalid_options", &proxy_options);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, option_result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_destroy(wsio);
+}
+
+TEST_FUNCTION(wsio_setoption_succeed)
+{
+    //arrange
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+    umock_c_reset_all_calls();
+
+    HTTP_PROXY_OPTIONS proxy_options;
+    proxy_options.host_address = TEST_HOST_ADDRESS;
+    proxy_options.port = 8080;
+    proxy_options.username = TEST_USERNAME;
+    proxy_options.password = TEST_PASSWORD;
+
+    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+
+    // act
+    int option_result = wsio_setoption(wsio, OPTION_HTTP_PROXY, &proxy_options);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, option_result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_destroy(wsio);
+}
+
+TEST_FUNCTION(wsio_setoption_no_username_password_succeed)
+{
+    //arrange
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+    umock_c_reset_all_calls();
+
+    HTTP_PROXY_OPTIONS proxy_options;
+    proxy_options.host_address = TEST_HOST_ADDRESS;
+    proxy_options.port = 8080;
+    proxy_options.username = NULL;
+    proxy_options.password = NULL;
+
+    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+
+    // act
+    int option_result = wsio_setoption(wsio, OPTION_HTTP_PROXY, &proxy_options);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, option_result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_destroy(wsio);
+}
+
+TEST_FUNCTION(wsio_setoption_username_NULL_password_Valid_succeed)
+{
+    //arrange
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+    umock_c_reset_all_calls();
+
+    HTTP_PROXY_OPTIONS proxy_options;
+    proxy_options.host_address = TEST_HOST_ADDRESS;
+    proxy_options.port = 8080;
+    proxy_options.username = NULL;
+    proxy_options.password = TEST_PASSWORD;
+
+    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+
+    // act
+    int option_result = wsio_setoption(wsio, OPTION_HTTP_PROXY, &proxy_options);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, option_result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_destroy(wsio);
+}
+
+TEST_FUNCTION(wsio_setoption_username_valid_password_NULL_fail)
+{
+    //arrange
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+    umock_c_reset_all_calls();
+
+    HTTP_PROXY_OPTIONS proxy_options;
+    proxy_options.host_address = TEST_HOST_ADDRESS;
+    proxy_options.port = 8080;
+    proxy_options.username = TEST_USERNAME;
+    proxy_options.password = NULL;
+
+    // act
+    int option_result = wsio_setoption(wsio, OPTION_HTTP_PROXY, &proxy_options);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, option_result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_destroy(wsio);
+}
+
+TEST_FUNCTION(wsio_cloneoption_name_NULL_fail)
+{
+    //arrange
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+
+    umock_c_reset_all_calls();
+
+    HTTP_PROXY_OPTIONS proxy_options;
+    proxy_options.host_address = TEST_HOST_ADDRESS;
+    proxy_options.port = 8080;
+    proxy_options.username = NULL;
+    proxy_options.password = TEST_PASSWORD;
+
+    // act
+    void* option_result = wsio_CloneOption(NULL, &proxy_options);
+
+    // assert
+    ASSERT_IS_NULL(option_result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_destroy(wsio);
+}
+
+TEST_FUNCTION(wsio_cloneoption_value_NULL_fail)
+{
+    //arrange
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+
+    umock_c_reset_all_calls();
+
+    // act
+    void* option_result = wsio_CloneOption(OPTION_HTTP_PROXY, NULL);
+
+    // assert
+    ASSERT_IS_NULL(option_result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_DestroyOption(OPTION_HTTP_PROXY, option_result);
+    wsio_destroy(wsio);
+}
+
+TEST_FUNCTION(wsio_cloneoption_proxy_address_succeed)
+{
+    //arrange
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+
+    umock_c_reset_all_calls();
+
+    EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+
+    // act
+    void* option_result = wsio_CloneOption(OPTION_PROXY_ADDRESS, TEST_HOST_ADDRESS);
+
+    // assert
+    ASSERT_IS_NOT_NULL(option_result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_DestroyOption(OPTION_PROXY_ADDRESS, option_result);
+    wsio_destroy(wsio);
+}
+
+TEST_FUNCTION(wsio_cloneoption_proxy_port_succeed)
+{
+    //arrange
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+
+    umock_c_reset_all_calls();
+
+    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+
+    // act
+    int port = 8080;
+    void* option_result = wsio_CloneOption(OPTION_PROXY_PORT, &port);
+
+    // assert
+    ASSERT_IS_NOT_NULL(option_result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_DestroyOption(OPTION_PROXY_PORT, option_result);
+    wsio_destroy(wsio);
+}
+
+TEST_FUNCTION(wsio_destroyoption_name_NULL_fail)
+{
+    //arrange
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+
+    umock_c_reset_all_calls();
+
+    // act
+    int port = 8080;
+    wsio_DestroyOption(NULL, &port);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_destroy(wsio);
+}
+
+TEST_FUNCTION(wsio_destroyoption_value_NULL_fail)
+{
+    //arrange
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+
+    umock_c_reset_all_calls();
+
+    // act
+    wsio_DestroyOption(OPTION_PROXY_PORT, NULL);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_destroy(wsio);
+}
+
+TEST_FUNCTION(wsio_retrieveoptions_handle_NULL_fail)
+{
+    //arrange
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+
+    umock_c_reset_all_calls();
+
+    // act
+    OPTIONHANDLER_HANDLE handle = wsio_retrieveoptions(NULL);
+
+    // assert
+    ASSERT_IS_NULL(handle);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_destroy(wsio);
+}
+
+TEST_FUNCTION(wsio_retrieveoptions_handle_succeed)
+{
+    //arrange
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+
+    HTTP_PROXY_OPTIONS proxy_options;
+    proxy_options.host_address = TEST_HOST_ADDRESS;
+    proxy_options.port = 8080;
+    proxy_options.username = NULL;
+    proxy_options.password = TEST_PASSWORD;
+
+    (void)wsio_setoption(wsio, OPTION_HTTP_PROXY, &proxy_options);
+
+    umock_c_reset_all_calls();
+
+    EXPECTED_CALL(OptionHandler_Create(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+    EXPECTED_CALL(OptionHandler_AddOption(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+    EXPECTED_CALL(OptionHandler_AddOption(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+
+    // act
+    OPTIONHANDLER_HANDLE handle = wsio_retrieveoptions(wsio);
+
+    // assert
+    ASSERT_IS_NOT_NULL(handle);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
     wsio_destroy(wsio);
 }
 
