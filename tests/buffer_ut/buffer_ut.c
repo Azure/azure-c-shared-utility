@@ -982,6 +982,21 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     }
 
+    /* Tests_SRS_BUFFER_07_029: [BUFFER_u_char shall return NULL if underlying buffer size is zero.] */
+    TEST_FUNCTION(BUFFER_U_CHAR_HANDLE_SIZE_ZERO_Fail)
+    {
+        ///arrange
+        unsigned char c = 'c';
+        BUFFER_HANDLE g_hBuffer = BUFFER_create(&c, 0);
+        umock_c_reset_all_calls();
+
+        ///act
+        ASSERT_IS_NULL(BUFFER_u_char(g_hBuffer));
+
+        /// assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    }
+
     /* BUFFER_length Tests BEGIN */
     /* Tests_SRS_BUFFER_07_027: [BUFFER_length shall return the size of the underlying buffer.] */
     TEST_FUNCTION(BUFFER_length_Succeed)
@@ -1069,7 +1084,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         ///cleanup
     }
 
-    /*Tests_SRS_BUFFER_02_002: [Otherwise, BUFFER_create shall allocate memory to hold size bytes and shall copy from source size bytes into the newly allocated memory. If size parameter is 0 then buffer field of BUFFER_TAG shall still hold a valid pointer whose content is '\0' and size field shall be 0.] */
+    /*Tests_SRS_BUFFER_02_002: [Otherwise, BUFFER_create shall allocate memory to hold size bytes and shall copy from source size bytes into the newly allocated memory.] */
     /*Tests_SRS_BUFFER_02_004: [Otherwise, BUFFER_create shall return a non-NULL handle*/
     TEST_FUNCTION(BUFFER_create_happy_path)
     {
@@ -1097,7 +1112,8 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         BUFFER_delete(res);
     }
 
-    /*Tests_SRS_BUFFER_02_002: [Otherwise, BUFFER_create shall allocate memory to hold size bytes and shall copy from source size bytes into the newly allocated memory. If size parameter is 0 then buffer field of BUFFER_TAG shall still hold a valid pointer whose content is '\0' and size field shall be 0.] */
+    /*Tests_SRS_BUFFER_02_002: [Otherwise, BUFFER_create shall allocate memory to hold size bytes and shall copy from source size bytes into the newly allocated memory.] */
+    /* Tests_SRS_BUFFER_02_005: [If size parameter is 0 then 1 byte of memory shall be allocated yet size of the buffer shall be set to 0.]*/
     TEST_FUNCTION(BUFFER_create_ZERO_SIZE_SUCCEED)
     {
         ///arrange
