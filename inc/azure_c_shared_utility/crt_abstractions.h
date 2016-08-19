@@ -10,6 +10,7 @@
 #include <cstdio>
 #include <cstring>
 #include <cerrno>
+#include <cmath>
 extern "C" {
 #else
 #include <stdio.h>
@@ -124,7 +125,9 @@ MOCKABLE_FUNCTION(, int, size_tToString, char*, destination, size_t, destination
 #else
 #ifdef __cplusplus
 /*C++ defines isnan... in C11*/
+extern "C++" {
 #define ISNAN std::isnan
+}
 #else
 #error unknown (or C89) compiler, provide ISNAN with the same meaning as isnan in C99 standard  
 #endif

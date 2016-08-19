@@ -27,6 +27,10 @@ extern "C"
 
 #include "azure_c_shared_utility/macro_utils.h"
 
+#if defined(__STDC_VERSION__) && (__STDC_VERSION__ == 201112) && (__STDC_NO_ATOMICS__!=1)
+#define REFCOUNT_USE_STD_ATOMIC 1
+#endif
+
 #define REFCOUNT_TYPE(type) \
 struct C2(C2(REFCOUNT_, type), _TAG)
 
@@ -41,7 +45,9 @@ C2(REFCOUNT_, type)
 /*the newly allocated memory shall be free'd by free()*/
 /*and the ref counting is handled internally by the type in the _Create/ _Clone /_Destroy functions */
 
-#if defined(WIN32)
+#if defined(REFCOUNT_USE_STD_ATOMIC)
+#define COUNT_TYPE _Atomic uint32_t
+#elif defined(WIN32)
 #define COUNT_TYPE LONG
 #else
 #define COUNT_TYPE uint32_t
@@ -87,7 +93,7 @@ The macro DEC_RETURN_ZERO will be "0" on windows, and "1" on the other cases.
 */
 
 /*if macro DEC_REF returns DEC_RETURN_ZERO that means the ref count has reached zero.*/
-#if defined(__STDC_VERSION__) && (__STDC_VERSION__ == 201112) && (__STDC_NO_ATOMICS__!=1)
+#if defined(REFCOUNT_USE_STD_ATOMIC)
 #include <stdatomic.h>
 #define DEC_RETURN_ZERO (1)
 #define INC_REF(type, var) atomic_fetch_add((&((REFCOUNT_TYPE(type)*)var)->count), 1)

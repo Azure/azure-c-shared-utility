@@ -77,6 +77,10 @@ STRING_HANDLE SASToken_Create(STRING_HANDLE key, STRING_HANDLE scope, STRING_HAN
                     {
                         STRING_HANDLE base64Signature = NULL;
                         STRING_HANDLE urlEncodedSignature = NULL;
+                        size_t inLen = STRING_length(toBeHashed);
+                        const unsigned char* inBuf = (const unsigned char*)STRING_c_str(toBeHashed);
+                        size_t outLen = BUFFER_length(decodedKey);
+                        unsigned char* outBuf = BUFFER_u_char(decodedKey);
                         /*Codes_SRS_SASTOKEN_06_013: [If an error is returned from the HMAC256 function then NULL is returned from SASToken_Create.]*/
                         /*Codes_SRS_SASTOKEN_06_012: [An HMAC256 hash is calculated using the decodedKey, over toBeHashed.]*/
                         /*Codes_SRS_SASTOKEN_06_014: [If there are any errors from the following operations then NULL shall be returned.]*/
@@ -90,7 +94,7 @@ STRING_HANDLE SASToken_Create(STRING_HANDLE key, STRING_HANDLE scope, STRING_HAN
                         /*Codes_SRS_SASTOKEN_06_021: [tokenExpirationTime is appended to result.]*/
                         /*Codes_SRS_SASTOKEN_06_022: [The string "&skn=" is appended to result.]*/
                         /*Codes_SRS_SASTOKEN_06_023: [The argument keyName is appended to result.]*/
-                        if ((HMACSHA256_ComputeHash(BUFFER_u_char(decodedKey), BUFFER_length(decodedKey), (const unsigned char*)STRING_c_str(toBeHashed), STRING_length(toBeHashed), hash) != HMACSHA256_OK) ||
+                        if ((HMACSHA256_ComputeHash(outBuf, outLen, inBuf, inLen, hash) != HMACSHA256_OK) ||
                             ((base64Signature = Base64_Encode(hash)) == NULL) ||
                             ((urlEncodedSignature = URL_Encode(base64Signature)) == NULL) ||
                             (STRING_copy(result, "SharedAccessSignature sr=") != 0) ||

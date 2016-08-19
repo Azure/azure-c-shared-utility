@@ -409,7 +409,9 @@ HTTPAPIEX_RESULT HTTPAPIEX_ExecuteRequest(HTTPAPIEX_HANDLE handle, HTTPAPI_REQUE
                         }
                         case 2:
                         {
-                            if (HTTPAPI_ExecuteRequest(handleData->httpHandle, requestType, toBeUsedRelativePath, toBeUsedRequestHttpHeadersHandle, BUFFER_u_char(toBeUsedRequestContent), BUFFER_length(toBeUsedRequestContent), toBeUsedStatusCode, toBeUsedResponseHttpHeadersHandle, toBeUsedResponseContent) != HTTPAPI_OK)
+                            size_t length = BUFFER_length(toBeUsedRequestContent);
+                            unsigned char* buffer = BUFFER_u_char(toBeUsedRequestContent);
+                            if (HTTPAPI_ExecuteRequest(handleData->httpHandle, requestType, toBeUsedRelativePath, toBeUsedRequestHttpHeadersHandle, buffer, length, toBeUsedStatusCode, toBeUsedResponseHttpHeadersHandle, toBeUsedResponseContent) != HTTPAPI_OK)
                             {
                                 goOn = false;
                             }

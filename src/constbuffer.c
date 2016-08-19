@@ -98,7 +98,9 @@ CONSTBUFFER_HANDLE CONSTBUFFER_CreateFromBuffer(BUFFER_HANDLE buffer)
     }
     else
     {
-        result = (CONSTBUFFER_HANDLE_DATA*)CONSTBUFFER_Create_Internal(BUFFER_u_char(buffer), BUFFER_length(buffer));
+        size_t length = BUFFER_length(buffer);
+        unsigned char* rawBuffer = BUFFER_u_char(buffer);
+        result = (CONSTBUFFER_HANDLE_DATA*)CONSTBUFFER_Create_Internal(rawBuffer, length);
     }
     return (CONSTBUFFER_HANDLE)result;
 }

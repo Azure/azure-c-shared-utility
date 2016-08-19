@@ -51,11 +51,14 @@ process_args ()
 
 process_args $*
 
+# Set the default cores
+CORES=$(grep -c ^processor /proc/cpuinfo 2>/dev/null || sysctl -n hw.ncpu)
+
 rm -r -f $build_folder
 mkdir -p $build_folder
 pushd $build_folder
 cmake -DcompileOption_C:STRING="$extracloptions" -Drun_valgrind:BOOL=$run_valgrind $build_root -Dskip_unittests:BOOL=$skip_unittests
-make --jobs=$(nproc)
+make --jobs=$CORES
 if [[ $make_install == 1 ]] ;
 then
     echo "Installing packaging" 
@@ -67,10 +70,10 @@ if [[ $run_valgrind == 1 ]] ;
 then
 	#use doctored openssl
 	export LD_LIBRARY_PATH=/usr/local/ssl/lib
-	ctest -j $(nproc) --output-on-failure
+	ctest -j $CORES --output-on-failure
 	export LD_LIBRARY_PATH=
 else
-	ctest -j $(nproc) -C "Debug" --output-on-failure
+	ctest -j $CORES -C "Debug" --output-on-failure
 fi
 
 popd

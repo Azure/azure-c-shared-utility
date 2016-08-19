@@ -9,6 +9,11 @@
 #ifndef MAP_H
 #define MAP_H
 
+#include "azure_c_shared_utility/macro_utils.h"
+#include "azure_c_shared_utility/strings.h"
+#include "azure_c_shared_utility/crt_abstractions.h"
+#include "azure_c_shared_utility/umock_c_prod.h"
+
 #ifdef __cplusplus
 #include <cstddef>
 extern "C"
@@ -16,12 +21,6 @@ extern "C"
 #else
 #include <stddef.h>
 #endif
-
-
-#include "azure_c_shared_utility/macro_utils.h"
-#include "azure_c_shared_utility/strings.h"
-#include "azure_c_shared_utility/crt_abstractions.h"
-#include "azure_c_shared_utility/umock_c_prod.h"
 
 #define MAP_RESULT_VALUES \
     MAP_OK, \

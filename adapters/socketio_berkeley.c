@@ -63,14 +63,16 @@ typedef struct SOCKET_IO_INSTANCE_TAG
 /*this function will clone an option given by name and value*/
 static void* socketio_CloneOption(const char* name, const void* value)
 {
-    (void)(name, value);
+    (void)name;
+    (void)value;
     return NULL;
 }
 
 /*this function destroys an option previously created*/
 static void socketio_DestroyOption(const char* name, const void* value)
 {
-    (void)(name, value);
+    (void)name;
+    (void)value;
 }
 
 static OPTIONHANDLER_HANDLE socketio_retrieveoptions(CONCRETE_IO_HANDLE handle)
@@ -650,7 +652,11 @@ int socketio_setoption(CONCRETE_IO_HANDLE socket_io, const char* optionName, con
         }
         else if (strcmp(optionName, "tcp_keepalive_time") == 0)
         {
+#ifdef __APPLE__
+            result = setsockopt(socket_io_instance->socket, IPPROTO_TCP, TCP_KEEPALIVE, value, sizeof(int));
+#else
             result = setsockopt(socket_io_instance->socket, SOL_TCP, TCP_KEEPIDLE, value, sizeof(int));
+#endif
             if (result == -1) result = errno;
         }
         else if (strcmp(optionName, "tcp_keepalive_interval") == 0)
