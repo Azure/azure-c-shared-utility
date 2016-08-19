@@ -1088,7 +1088,8 @@ void wsio_DestroyOption(const char* name, const void* value)
         }
         free(proxy_data);
     }
-    else if (strcmp(name, OPTION_PROXY_ADDRESS) == 0)
+    else if ((strcmp(name, OPTION_PROXY_ADDRESS) == 0) ||
+        (strcmp(name, OPTION_PROXY_PORT) == 0))
     {
         free((void*)value);
     }

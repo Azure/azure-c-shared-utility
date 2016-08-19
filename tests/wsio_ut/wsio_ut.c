@@ -414,6 +414,11 @@ static int my_list_remove(LIST_HANDLE list, LIST_ITEM_HANDLE item)
     (void)list;
     (void)memmove((void*)&list_items[index], &list_items[index + 1], sizeof(const void*) * (list_item_count - index - 1));
     list_item_count--;
+    if (list_item_count == 0)
+    {
+        free((void*)list_items);
+        list_items = NULL;
+    }
     return list_remove_result;
 }
 
@@ -463,6 +468,11 @@ OPTIONHANDLER_HANDLE my_OptionHandler_Create(pfCloneOption clone, pfDestroyOptio
 {
     (void)clone, destroy, setoption;
     return (OPTIONHANDLER_HANDLE)malloc(1);
+}
+
+void my_OptionHandler_Destroy(OPTIONHANDLER_HANDLE handle)
+{
+    free(handle);
 }
 
 int my_mallocAndStrcpy_s(char** destination, const char* source)
@@ -576,6 +586,7 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_GLOBAL_MOCK_HOOK(list_find, my_list_find);
     REGISTER_GLOBAL_MOCK_HOOK(mallocAndStrcpy_s, my_mallocAndStrcpy_s);
     REGISTER_GLOBAL_MOCK_HOOK(OptionHandler_Create, my_OptionHandler_Create);
+    REGISTER_GLOBAL_MOCK_HOOK(OptionHandler_Destroy, my_OptionHandler_Destroy);
     REGISTER_GLOBAL_MOCK_RETURN(OptionHandler_AddOption, OPTIONHANDLER_OK);
     REGISTER_TYPE(IO_OPEN_RESULT, IO_OPEN_RESULT);
     REGISTER_TYPE(IO_SEND_RESULT, IO_SEND_RESULT);
@@ -4139,6 +4150,7 @@ TEST_FUNCTION(wsio_retrieveoptions_handle_succeed)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
+    OptionHandler_Destroy(handle);
     wsio_destroy(wsio);
 }
 
