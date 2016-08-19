@@ -54,7 +54,7 @@ ENDIF()
 #the following variables are project-wide and can be used with cmake-gui
 option(skip_unittests "set skip_unittests to ON to skip unittests (default is OFF)[if possible, they are always build]" OFF)
 option(use_http "set use_http to ON if http is to be used, set to OFF to not use http" ON)
-option(use_condition "set use_condition to ON if the condition module and its adapters should be enabled" OFF)
+option(use_condition "set use_condition to ON if the condition module and its adapters should be enabled" ON)
 option(use_wsio "set use_wsio to ON to use libwebsockets for WebSocket support (default is OFF)" OFF)
 
 if(WIN32)
