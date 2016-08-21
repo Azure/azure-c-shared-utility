@@ -19,6 +19,9 @@
 
 #include <string.h>
 
+/*"pointer or NULL" macro - because when printf-ing arguments NULL is not valid for %p or %s (section 7.1.4 of C11 standard) */
+#define P_OR_NULL(p) (((p)!=NULL)?(p):"NULL")
+
 #define TOSTRING_(x) #x
 #define TOSTRING(x) TOSTRING_(x)
 
@@ -147,6 +150,10 @@ FOR_EACH_2_KEEP_1_<#=i-2#>(X, keep, <#for(var j=3;j<=i;j++){#>P<#=(j).ToString()
 
 
 <#}#>
+
+#define FOR_EACH_2_KEEP_1_1(...)
+
+#define FOR_EACH_2_KEEP_1_0(...)
 
 #define FOR_EACH_2_KEEP_1_2(X, keep, P1, P2) \
     X(keep, P1, P2) \

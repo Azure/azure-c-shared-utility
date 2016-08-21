@@ -10,6 +10,9 @@
 
 #include <string.h>
 
+/*"pointer or NULL" macro - because when printf-ing arguments NULL is not valid for %p or %s (section 7.1.4 of C11 standard) */
+#define P_OR_NULL(p) (((p)!=NULL)?(p):"NULL")
+
 #define TOSTRING_(x) #x
 #define TOSTRING(x) TOSTRING_(x)
 
@@ -4765,13 +4768,12 @@ FOR_EACH_2_KEEP_1_2(X, keep, P3, P4)
 
 
 
-#define FOR_EACH_2_KEEP_1_2(X, keep, P1, P2) \
-    X(keep, P1, P2) \
-
-
 #define FOR_EACH_2_KEEP_1_1(...)
 
 #define FOR_EACH_2_KEEP_1_0(...)
+
+#define FOR_EACH_2_KEEP_1_2(X, keep, P1, P2) \
+    X(keep, P1, P2) \
 
 #ifdef _MSC_VER
 #define FOR_EACH_2_KEEP_1(MACRO_TO_INVOKE, ...) C2(FOR_EACH_2_KEEP_1_, C2(DEC,C1(COUNT_ARG(__VA_ARGS__)))) LPAREN MACRO_TO_INVOKE, __VA_ARGS__)
