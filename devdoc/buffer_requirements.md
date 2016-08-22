@@ -20,6 +20,7 @@ extern int BUFFER_enlarge(BUFFER_HANDLE handle, size_t enlargeSize);
 extern int BUFFER_content(BUFFER_HANDLE handle, const unsigned char** content);
 extern int BUFFER_size(BUFFER_HANDLE handle, size_t* size);
 extern int BUFFER_append(BUFFER_HANDLE handle1, BUFFER_HANDLE handle2);
+extern int BUFFER_prepend(BUFFER_HANDLE handle1, BUFFER_HANDLE handle2);
 extern unsigned char* BUFFER_u_char(BUFFER_HANDLE handle);
 extern size_t BUFFER_length(BUFFER_HANDLE handle);
 extern BUFFER_HANDLE BUFFER_clone(BUFFER_HANDLE handle);
@@ -39,10 +40,10 @@ extern BUFFER_HANDLE BUFFER_create(const unsigned char* source, size_t size);
 
 BUFFER_create creates a new buffer from the memory at source, having size "size".
 **SRS_BUFFER_02_001: [**If source is NULL then BUFFER_create shall return NULL.**]** 
-**SRS_BUFFER_02_002: [**Otherwise, BUFFER_create shall allocate memory to hold size bytes and shall copy from source size bytes into the newly allocated memory.**]**
+**SRS_BUFFER_02_002: [**Otherwise, BUFFER_create shall allocate memory to hold size bytes and shall copy from source size bytes into the newly allocated memory.**]** 
 **SRS_BUFFER_02_003: [**If allocating memory fails, then BUFFER_create shall return NULL.**]** 
 **SRS_BUFFER_02_004: [**Otherwise, BUFFER_create shall return a non-NULL handle.**]**
-**SRS_BUFFER_02_005: [**If size parameter is 0 then 1 byte of memory shall be allocated yet size of the buffer shall be set to 0.**]**
+
 ###BUFFER_delete
 ```c
 void BUFFER_delete(BUFFER_HANDLE handle)
@@ -109,11 +110,19 @@ int BUFFER_size(BUFFER_HANDLE b, size_t* size)
  
 ###BUFFER_append
 ```c
-int BUFFER_append(BUFFER_HANDLE b1, BUFFER_HANDLE b2)
+int BUFFER_append(BUFFER_HANDLE handle1, BUFFER_HANDLE handle2)
 ```
 
 **SRS_BUFFER_07_024: [**BUFFER_append concatenates b2 onto b1 without modifying b2 and shall return zero on success.**]** 
 **SRS_BUFFER_07_023: [**BUFFER_append shall return a nonzero upon any error that is encountered.**]**
+
+###BUFFER_prepend
+```c
+int BUFFER_prepend(BUFFER_HANDLE handle1, BUFFER_HANDLE handle2)
+```
+
+**SRS_BUFFER_01_004: [** BUFFER_prepend concatenates handle1 onto handle2 without modifying handle1 and shall return zero on success. **]** 
+**SRS_BUFFER_01_005: [** BUFFER_prepend shall return a non-zero upon value any error that is encountered. **]**
  
 ###BUFFER_u_char
 ```c
@@ -122,7 +131,6 @@ unsigned char* BUFFER_u_char(BUFFER_HANDLE handle)
 
 **SRS_BUFFER_07_025: [**BUFFER_u_char shall return a pointer to the underlying unsigned char*.**]** 
 **SRS_BUFFER_07_026: [**BUFFER_u_char shall return NULL for any error that is encountered.**]**
-**SRS_BUFFER_07_029: [**BUFFER_u_char shall return NULL if underlying buffer size is zero.**]**
  
 ###BUFFER_length
 ```c

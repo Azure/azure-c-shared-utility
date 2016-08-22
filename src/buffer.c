@@ -41,7 +41,7 @@ BUFFER_HANDLE BUFFER_new(void)
 static int BUFFER_safemalloc(BUFFER_HANDLE* handleptr, size_t size)
 {
     int result;
-    unsigned int sizetomalloc = size;
+    size_t sizetomalloc = size;
     if (size == 0)
     {
         sizetomalloc = 1;
@@ -343,9 +343,10 @@ int BUFFER_append(BUFFER_HANDLE handle1, BUFFER_HANDLE handle2)
                 }
                 else
                 {
+                    /* Codes_SRS_BUFFER_07_024: [BUFFER_append concatenates b2 onto b1 without modifying b2 and shall return zero on success.]*/
                     b1->buffer = temp;
                     // Append the BUFFER
-                    memcpy(&b1->buffer[b1->size], b2->buffer, b2->size);
+                    (void)memcpy(&b1->buffer[b1->size], b2->buffer, b2->size);
                     b1->size += b2->size;
                     result = 0;
                 }
@@ -360,7 +361,7 @@ int BUFFER_prepend(BUFFER_HANDLE handle1, BUFFER_HANDLE handle2)
     int result;
     if ((handle1 == NULL) || (handle2 == NULL) || (handle1 == handle2))
     {
-        /* : [BUFFER_append shall return a nonzero upon any error that is encountered.] */
+        /* Codes_SRS_BUFFER_01_005: [ BUFFER_prepend shall return a non-zero upon value any error that is encountered. ]*/
         result = __LINE__;
     }
     else
@@ -369,12 +370,12 @@ int BUFFER_prepend(BUFFER_HANDLE handle1, BUFFER_HANDLE handle2)
         BUFFER* b2 = (BUFFER*)handle2;
         if (b1->buffer == NULL)
         {
-            /* : [BUFFER_append shall return a nonzero upon any error that is encountered.] */
+            /* Codes_SRS_BUFFER_01_005: [ BUFFER_prepend shall return a non-zero upon value any error that is encountered. ]*/
             result = __LINE__;
         }
         else if (b2->buffer == NULL)
         {
-            /* : [BUFFER_append shall return a nonzero upon any error that is encountered.] */
+            /* Codes_SRS_BUFFER_01_005: [ BUFFER_prepend shall return a non-zero upon value any error that is encountered. ]*/
             result = __LINE__;
         }
         else
@@ -391,15 +392,16 @@ int BUFFER_prepend(BUFFER_HANDLE handle1, BUFFER_HANDLE handle2)
                 unsigned char* temp = (unsigned char*)malloc(b1->size + b2->size);
                 if (temp == NULL)
                 {
-                    /* : [BUFFER_append shall return a nonzero upon any error that is encountered.] */
+                    /* Codes_SRS_BUFFER_01_005: [ BUFFER_prepend shall return a non-zero upon value any error that is encountered. ]*/
                     result = __LINE__;
                 }
                 else
                 {
+                    /* Codes_SRS_BUFFER_01_004: [ BUFFER_prepend concatenates handle1 onto handle2 without modifying handle1 and shall return zero on success. ]*/
                     // Append the BUFFER
-                    memcpy(temp, b2->buffer, b2->size);
+                    (void)memcpy(temp, b2->buffer, b2->size);
                     // start from b1->size to append b1
-                    memcpy(&temp[b2->size], b1->buffer, b1->size);
+                    (void)memcpy(&temp[b2->size], b1->buffer, b1->size);
                     free(b1->buffer);
                     b1->buffer = temp;
                     b1->size += b2->size;
@@ -460,7 +462,11 @@ BUFFER_HANDLE BUFFER_clone(BUFFER_HANDLE handle)
         BUFFER* b = (BUFFER*)malloc(sizeof(BUFFER));
         if (b != NULL)
         {
-            if ( BUFFER_safemalloc((BUFFER_HANDLE*)&b, suppliedBuff->size) == 0 )
+            if (BUFFER_safemalloc((BUFFER_HANDLE*)&b, suppliedBuff->size) != 0)
+            {
+                result = NULL;
+            }
+            else
             {
                 memcpy(b->buffer, suppliedBuff->buffer, suppliedBuff->size);
                 b->size = suppliedBuff->size;

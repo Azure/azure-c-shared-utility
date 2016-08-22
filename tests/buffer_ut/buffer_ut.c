@@ -787,7 +787,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         BUFFER_delete(g_hBuffer);
     }
 
-    /* Codes_SRS_BUFFER_07_024: [BUFFER_append concatenates b2 onto b1 without modifying b2 and shall return zero on success.] */
+    /* Tests_SRS_BUFFER_07_024: [BUFFER_append concatenates b2 onto b1 without modifying b2 and shall return zero on success.] */
     TEST_FUNCTION(BUFFER_append_HANDLE2_SIZE_ZERO_SUCCEED)
     {
         ///arrange
@@ -812,7 +812,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         BUFFER_delete(handle2);
     }
 
-    /* Codes_SRS_BUFFER_07_024: [BUFFER_append concatenates b2 onto b1 without modifying b2 and shall return zero on success.] */
+    /* Tests_SRS_BUFFER_07_024: [BUFFER_append concatenates b2 onto b1 without modifying b2 and shall return zero on success.] */
     TEST_FUNCTION(BUFFER_append_HANDLE1_SIZE_ZERO_SUCCEED)
     {
         ///arrange
@@ -836,6 +836,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         BUFFER_delete(handle2);
     }
 
+    /* Tests_SRS_BUFFER_07_024: [BUFFER_append concatenates b2 onto b1 without modifying b2 and shall return zero on success.] */
     TEST_FUNCTION(BUFFER_prepend_HANDLE1_SIZE_ZERO_SUCCEED)
     {
         ///arrange
@@ -859,6 +860,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         BUFFER_delete(handle2);
     }
 
+    /* Tests_SRS_BUFFER_07_024: [BUFFER_append concatenates b2 onto b1 without modifying b2 and shall return zero on success.] */
     TEST_FUNCTION(BUFFER_prepend_HANDLE2_SIZE_ZERO_SUCCEED)
     {
         ///arrange
@@ -883,6 +885,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     }
     
 
+    /* Tests_SRS_BUFFER_01_005: [ BUFFER_prepend shall return a non-zero upon value any error that is encountered. ]*/
     TEST_FUNCTION(BUFFER_prepend_APPEND_HANDLE1_NULL_Fail)
     {
         ///arrange
@@ -902,6 +905,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         BUFFER_delete(g_hBuffer);
     }
 
+    /* Tests_SRS_BUFFER_01_005: [ BUFFER_prepend shall return a non-zero upon value any error that is encountered. ]*/
     TEST_FUNCTION(BUFFER_prepend_APPEND_HANDLE2_NULL_Fail)
     {
         ///arrange
@@ -920,6 +924,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         BUFFER_delete(hAppend);
     }
 
+    /* Tests_SRS_BUFFER_07_024: [BUFFER_append concatenates b2 onto b1 without modifying b2 and shall return zero on success.] */
     TEST_FUNCTION(BUFFER_prepend_Succeed)
     {
         ///arrange
@@ -949,7 +954,8 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         BUFFER_delete(g_hBuffer);
     }
 
-    /* BUFFER_u_char Tests BEGIN */
+    /* BUFFER_u_char */
+
     /* Tests_SRS_BUFFER_07_025: [BUFFER_u_char shall return a pointer to the underlying unsigned char*.] */
     TEST_FUNCTION(BUFFER_U_CHAR_Succeed)
     {
@@ -995,9 +1001,13 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
 
         /// assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        /// cleanup
+        BUFFER_delete(g_hBuffer);
     }
 
-    /* BUFFER_length Tests BEGIN */
+    /* BUFFER_length */
+
     /* Tests_SRS_BUFFER_07_027: [BUFFER_length shall return the size of the underlying buffer.] */
     TEST_FUNCTION(BUFFER_length_Succeed)
     {
