@@ -193,6 +193,18 @@ function(add_files_to_install filesToBeInstalled)
     set(INSTALL_H_FILES ${INSTALL_H_FILES} ${filesToBeInstalled} CACHE INTERNAL "Files that will be installed on the system")
 endfunction()
 
+function(set_test_target_folder whatIsBuilding ext)
+    if("${whatIsBuilding}" MATCHES ".*e2e.*")
+        set_target_properties(${whatIsBuilding}_${ext}
+                   PROPERTIES
+                   FOLDER "E2ETests")
+    else()
+        set_target_properties(${whatIsBuilding}_${ext}
+                   PROPERTIES
+                   FOLDER "UnitTests")
+    endif()
+endfunction()
+
 function(windows_unittests_add_dll whatIsBuilding)
     link_directories(${whatIsBuilding}_dll $ENV{VCInstallDir}UnitTest/lib)
     
@@ -204,9 +216,7 @@ function(windows_unittests_add_dll whatIsBuilding)
         ${sharedutil_include_directories}../../src/consolelogger.c
     )
 
-    set_target_properties(${whatIsBuilding}_dll
-               PROPERTIES
-               FOLDER "UnitTests") 
+    set_test_target_folder(${whatIsBuilding} "dll")
     
     target_include_directories(${whatIsBuilding}_dll PUBLIC ${sharedutil_include_directories} $ENV{VCInstallDir}UnitTest/include)
     target_compile_definitions(${whatIsBuilding}_dll PUBLIC -DCPP_UNITTEST)
@@ -222,9 +232,8 @@ function(windows_unittests_add_exe whatIsBuilding)
         ${sharedutil_include_directories}../../src/xlogging.c
         ${sharedutil_include_directories}../../src/consolelogger.c
     )
-    set_target_properties(${whatIsBuilding}_exe
-               PROPERTIES
-               FOLDER "UnitTests")
+
+    set_test_target_folder(${whatIsBuilding} "exe")
                 
     target_compile_definitions(${whatIsBuilding}_exe PUBLIC -DUSE_CTEST)
     target_include_directories(${whatIsBuilding}_exe PUBLIC ${sharedutil_include_directories})
@@ -244,9 +253,8 @@ function(linux_unittests_add_exe whatIsBuilding)
         ${sharedutil_include_directories}../../src/xlogging.c
         ${sharedutil_include_directories}../../src/consolelogger.c
     )
-    set_target_properties(${whatIsBuilding}_exe
-               PROPERTIES
-               FOLDER "UnitTests")
+
+    set_test_target_folder(${whatIsBuilding} "exe")
                 
     target_compile_definitions(${whatIsBuilding}_exe PUBLIC -DUSE_CTEST)
     target_include_directories(${whatIsBuilding}_exe PUBLIC ${sharedutil_include_directories})
