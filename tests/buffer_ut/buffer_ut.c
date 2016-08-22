@@ -76,6 +76,11 @@ void my_gballoc_free(void* ptr)
 #define ALLOCATION_SIZE             16
 #define TOTAL_ALLOCATION_SIZE       32
 
+#define BUFFER_TEST1_SIZE             5
+#define BUFFER_TEST2_SIZE             6
+
+unsigned char BUFFER_Test1[] = {0x01,0x02,0x03,0x04,0x05};
+unsigned char BUFFER_Test2[] = {0x06,0x07,0x08,0x09,0x10,0x11};
 unsigned char BUFFER_TEST_VALUE[] = {0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x10,0x11,0x12,0x13,0x14,0x15,0x16};
 unsigned char ADDITIONAL_BUFFER[] = {0x17,0x18,0x19,0x1a,0x1b,0x1c,0x1d,0x1e,0x1f,0x20,0x21,0x22,0x23,0x24,0x25,0x26};
 unsigned char TOTAL_BUFFER[] = {0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,0x18,0x19,0x1a,0x1b,0x1c,0x1d,0x1e,0x1f,0x20,0x21,0x22,0x23,0x24,0x25,0x26};
@@ -782,6 +787,102 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         BUFFER_delete(g_hBuffer);
     }
 
+    /* Codes_SRS_BUFFER_07_024: [BUFFER_append concatenates b2 onto b1 without modifying b2 and shall return zero on success.] */
+    TEST_FUNCTION(BUFFER_append_HANDLE2_SIZE_ZERO_SUCCEED)
+    {
+        ///arrange
+        
+        BUFFER_HANDLE handle1 = BUFFER_create(BUFFER_Test1, BUFFER_TEST1_SIZE);
+        BUFFER_HANDLE handle2 = BUFFER_create(BUFFER_Test2, 0);
+        // umock_c_reset_all_calls();
+
+        ///act
+        int nResult = BUFFER_append(handle1, handle2);
+
+        ///assert
+        ASSERT_ARE_EQUAL(int, nResult, 0);
+        size_t howBig = BUFFER_length(handle1);
+        ASSERT_ARE_EQUAL(int, 0, memcmp(BUFFER_u_char(handle1), BUFFER_Test1, BUFFER_TEST1_SIZE));
+        ASSERT_ARE_EQUAL(size_t, BUFFER_TEST1_SIZE, howBig);
+
+        //ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        ///cleanup
+        BUFFER_delete(handle1);
+        BUFFER_delete(handle2);
+    }
+
+    /* Codes_SRS_BUFFER_07_024: [BUFFER_append concatenates b2 onto b1 without modifying b2 and shall return zero on success.] */
+    TEST_FUNCTION(BUFFER_append_HANDLE1_SIZE_ZERO_SUCCEED)
+    {
+        ///arrange
+        BUFFER_HANDLE handle1 = BUFFER_create(BUFFER_Test1, 0);
+        BUFFER_HANDLE handle2 = BUFFER_create(BUFFER_Test2, BUFFER_TEST2_SIZE);
+        // umock_c_reset_all_calls();
+
+        ///act
+        int nResult = BUFFER_append(handle1, handle2);
+
+        ///assert
+        ASSERT_ARE_EQUAL(int, nResult, 0);
+        size_t howBig = BUFFER_length(handle1);
+        ASSERT_ARE_EQUAL(int, 0, memcmp(BUFFER_u_char(handle1), BUFFER_Test2, BUFFER_TEST2_SIZE));
+        ASSERT_ARE_EQUAL(size_t, BUFFER_TEST2_SIZE, howBig);
+
+        //ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        ///cleanup
+        BUFFER_delete(handle1);
+        BUFFER_delete(handle2);
+    }
+
+    TEST_FUNCTION(BUFFER_prepend_HANDLE1_SIZE_ZERO_SUCCEED)
+    {
+        ///arrange
+        BUFFER_HANDLE handle1 = BUFFER_create(BUFFER_Test1, 0);
+        BUFFER_HANDLE handle2 = BUFFER_create(BUFFER_Test2, BUFFER_TEST2_SIZE);
+        // umock_c_reset_all_calls();
+
+        ///act
+        int nResult = BUFFER_prepend(handle1, handle2);
+
+        ///assert
+        ASSERT_ARE_EQUAL(int, nResult, 0);
+        size_t howBig = BUFFER_length(handle1);
+        ASSERT_ARE_EQUAL(int, 0, memcmp(BUFFER_u_char(handle1), BUFFER_Test2, BUFFER_TEST2_SIZE));
+        ASSERT_ARE_EQUAL(size_t, BUFFER_TEST2_SIZE, howBig);
+
+        //ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        ///cleanup
+        BUFFER_delete(handle1);
+        BUFFER_delete(handle2);
+    }
+
+    TEST_FUNCTION(BUFFER_prepend_HANDLE2_SIZE_ZERO_SUCCEED)
+    {
+        ///arrange
+        BUFFER_HANDLE handle1 = BUFFER_create(BUFFER_Test1, BUFFER_TEST1_SIZE);
+        BUFFER_HANDLE handle2 = BUFFER_create(BUFFER_Test2, 0);
+        // umock_c_reset_all_calls();
+
+        ///act
+        int nResult = BUFFER_prepend(handle1, handle2);
+
+        ///assert
+        ASSERT_ARE_EQUAL(int, nResult, 0);
+        size_t howBig = BUFFER_length(handle1);
+        ASSERT_ARE_EQUAL(int, 0, memcmp(BUFFER_u_char(handle1), BUFFER_Test1, BUFFER_TEST1_SIZE));
+        ASSERT_ARE_EQUAL(size_t, BUFFER_TEST1_SIZE, howBig);
+
+        //ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        ///cleanup
+        BUFFER_delete(handle1);
+        BUFFER_delete(handle2);
+    }
+    
+
     TEST_FUNCTION(BUFFER_prepend_APPEND_HANDLE1_NULL_Fail)
     {
         ///arrange
@@ -876,6 +977,21 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
 
         ///act
         ASSERT_IS_NULL(BUFFER_u_char(NULL));
+
+        /// assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    }
+
+    /* Tests_SRS_BUFFER_07_029: [BUFFER_u_char shall return NULL if underlying buffer size is zero.] */
+    TEST_FUNCTION(BUFFER_U_CHAR_HANDLE_SIZE_ZERO_Fail)
+    {
+        ///arrange
+        unsigned char c = 'c';
+        BUFFER_HANDLE g_hBuffer = BUFFER_create(&c, 0);
+        umock_c_reset_all_calls();
+
+        ///act
+        ASSERT_IS_NULL(BUFFER_u_char(g_hBuffer));
 
         /// assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -995,6 +1111,34 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         ///cleanup
         BUFFER_delete(res);
     }
+
+    /*Tests_SRS_BUFFER_02_002: [Otherwise, BUFFER_create shall allocate memory to hold size bytes and shall copy from source size bytes into the newly allocated memory.] */
+    /* Tests_SRS_BUFFER_02_005: [If size parameter is 0 then 1 byte of memory shall be allocated yet size of the buffer shall be set to 0.]*/
+    TEST_FUNCTION(BUFFER_create_ZERO_SIZE_SUCCEED)
+    {
+        ///arrange
+        char c = '3';
+
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
+            .IgnoreArgument(1);
+
+        STRICT_EXPECTED_CALL(gballoc_malloc(1));
+
+        ///act
+        BUFFER_HANDLE res = BUFFER_create((const unsigned char*)&c, 0);
+        ///assert
+        ASSERT_IS_NOT_NULL(res);
+        size_t howBig = BUFFER_length(res);
+        const unsigned char* data = BUFFER_u_char(res);
+        ASSERT_IS_NULL(data);
+        ASSERT_ARE_EQUAL(size_t, 0, howBig);
+
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        ///cleanup
+        BUFFER_delete(res);
+    }
+
 
     /*Tests_SRS_BUFFER_02_003: [If allocating memory fails, then BUFFER_create shall return NULL.] */
     TEST_FUNCTION(BUFFER_create_fails_when_gballoc_fails_1)

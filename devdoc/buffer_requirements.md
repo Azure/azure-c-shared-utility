@@ -39,10 +39,10 @@ extern BUFFER_HANDLE BUFFER_create(const unsigned char* source, size_t size);
 
 BUFFER_create creates a new buffer from the memory at source, having size "size".
 **SRS_BUFFER_02_001: [**If source is NULL then BUFFER_create shall return NULL.**]** 
-**SRS_BUFFER_02_002: [**Otherwise, BUFFER_create shall allocate memory to hold size bytes and shall copy from source size bytes into the newly allocated memory.**]** 
+**SRS_BUFFER_02_002: [**Otherwise, BUFFER_create shall allocate memory to hold size bytes and shall copy from source size bytes into the newly allocated memory.**]**
 **SRS_BUFFER_02_003: [**If allocating memory fails, then BUFFER_create shall return NULL.**]** 
 **SRS_BUFFER_02_004: [**Otherwise, BUFFER_create shall return a non-NULL handle.**]**
-
+**SRS_BUFFER_02_005: [**If size parameter is 0 then 1 byte of memory shall be allocated yet size of the buffer shall be set to 0.**]**
 ###BUFFER_delete
 ```c
 void BUFFER_delete(BUFFER_HANDLE handle)
@@ -122,6 +122,7 @@ unsigned char* BUFFER_u_char(BUFFER_HANDLE handle)
 
 **SRS_BUFFER_07_025: [**BUFFER_u_char shall return a pointer to the underlying unsigned char*.**]** 
 **SRS_BUFFER_07_026: [**BUFFER_u_char shall return NULL for any error that is encountered.**]**
+**SRS_BUFFER_07_029: [**BUFFER_u_char shall return NULL if underlying buffer size is zero.**]**
  
 ###BUFFER_length
 ```c
