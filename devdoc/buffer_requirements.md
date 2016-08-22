@@ -20,6 +20,7 @@ extern int BUFFER_enlarge(BUFFER_HANDLE handle, size_t enlargeSize);
 extern int BUFFER_content(BUFFER_HANDLE handle, const unsigned char** content);
 extern int BUFFER_size(BUFFER_HANDLE handle, size_t* size);
 extern int BUFFER_append(BUFFER_HANDLE handle1, BUFFER_HANDLE handle2);
+extern int BUFFER_prepend(BUFFER_HANDLE handle1, BUFFER_HANDLE handle2);
 extern unsigned char* BUFFER_u_char(BUFFER_HANDLE handle);
 extern size_t BUFFER_length(BUFFER_HANDLE handle);
 extern BUFFER_HANDLE BUFFER_clone(BUFFER_HANDLE handle);
@@ -109,11 +110,19 @@ int BUFFER_size(BUFFER_HANDLE b, size_t* size)
  
 ###BUFFER_append
 ```c
-int BUFFER_append(BUFFER_HANDLE b1, BUFFER_HANDLE b2)
+int BUFFER_append(BUFFER_HANDLE handle1, BUFFER_HANDLE handle2)
 ```
 
 **SRS_BUFFER_07_024: [**BUFFER_append concatenates b2 onto b1 without modifying b2 and shall return zero on success.**]** 
 **SRS_BUFFER_07_023: [**BUFFER_append shall return a nonzero upon any error that is encountered.**]**
+
+###BUFFER_prepend
+```c
+int BUFFER_prepend(BUFFER_HANDLE handle1, BUFFER_HANDLE handle2)
+```
+
+**SRS_BUFFER_01_004: [** BUFFER_prepend concatenates handle1 onto handle2 without modifying handle1 and shall return zero on success. **]** 
+**SRS_BUFFER_01_005: [** BUFFER_prepend shall return a non-zero upon value any error that is encountered. **]**
  
 ###BUFFER_u_char
 ```c

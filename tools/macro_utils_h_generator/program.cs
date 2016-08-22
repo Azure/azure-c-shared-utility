@@ -15,7 +15,7 @@ namespace macro_utils_h_generator
         {
             var macro_utilsTransform = new macro_utils();
             var macro_utilsTransform_text = macro_utilsTransform.TransformText();
-            System.IO.File.WriteAllText(@"..\..\inc\macro_utils.h", macro_utilsTransform_text);
+            System.IO.File.WriteAllText(@"..\..\inc\azure_c_shared_utility\macro_utils.h", macro_utilsTransform_text);
 
         }
     }
