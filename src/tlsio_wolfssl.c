@@ -50,8 +50,75 @@ typedef struct TLS_IO_INSTANCE_TAG
     int port;
 } TLS_IO_INSTANCE;
 
+/*this function will clone an option given by name and value*/
+static void* tlsio_wolfssl_CloneOption(const char* name, const void* value)
+{
+    void* result;
+    if (
+        (name == NULL) || (value == NULL)
+        )
+    {
+        result = NULL;
+    }
+    else
+    {
+        if (strcmp(name, "TrustedCerts") == 0)
+        {
+            if (mallocAndStrcpy_s((char**)&result, value) != 0)
+            {
+                result = NULL;
+            }
+            else
+            {
+                /*return as is*/
+            }
+        }
+        else
+        {
+            /*option is not handled*/
+            result = NULL;
+        }
+    }
+    return result;
+}
+
+/*this function destroys an option previously created*/
+static void tlsio_wolfssl_DestroyOption(const char* name, const void* value)
+{
+    /*since all options for this layer are actually string copies., disposing of one is just calling free*/
+    if ((name != NULL) && (value != NULL))
+    {
+        if (strcmp(name, "TrustedCerts") == 0)
+        {
+            free((void*)value);
+        }
+        else
+        {
+            /*option is not handled*/
+        }
+    }
+}
+
+static OPTIONHANDLER_HANDLE tlsio_wolfssl_retrieveoptions(CONCRETE_IO_HANDLE tls_io)
+{
+    OPTIONHANDLER_HANDLE result;
+    (void)tls_io;
+
+    result = OptionHandler_Create(tlsio_wolfssl_CloneOption, tlsio_wolfssl_DestroyOption, tlsio_wolfssl_setoption);
+    if (result == NULL)
+    {
+        /*return as is*/
+    }
+    else
+    {
+        /*insert here work to add the options to "result" handle*/
+    }
+    return result;
+}
+
 static const IO_INTERFACE_DESCRIPTION tlsio_wolfssl_interface_description =
 {
+    tlsio_wolfssl_retrieveoptions,
     tlsio_wolfssl_create,
     tlsio_wolfssl_destroy,
     tlsio_wolfssl_open,

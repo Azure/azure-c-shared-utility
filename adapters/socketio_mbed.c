@@ -48,8 +48,38 @@ typedef struct SOCKET_IO_INSTANCE_TAG
     LIST_HANDLE pending_io_list;
 } SOCKET_IO_INSTANCE;
 
+/*this function will clone an option given by name and value*/
+static void* socketio_CloneOption(const char* name, const void* value)
+{
+    (void)(name, value);
+    return NULL;
+}
+
+/*this function destroys an option previously created*/
+static void socketio_DestroyOption(const char* name, const void* value)
+{
+    (void)(name, value);
+}
+
+static OPTIONHANDLER_HANDLE socketio_retrieveoptions(CONCRETE_IO_HANDLE socket_io)
+{
+    OPTIONHANDLER_HANDLE result;
+    (void)socket_io;
+    result = OptionHandler_Create(socketio_CloneOption, socketio_DestroyOption, socketio_setoption);
+    if (result == NULL)
+    {
+        /*return as is*/
+    }
+    else
+    {
+        /*insert here work to add the options to "result" handle*/
+    }
+    return result;
+}
+
 static const IO_INTERFACE_DESCRIPTION socket_io_interface_description =
 {
+    socketio_retrieveoptions,
     socketio_create,
     socketio_destroy,
     socketio_open,
