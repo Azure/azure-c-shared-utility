@@ -31,6 +31,8 @@ typedef enum TLSIO_STATE_TAG
     TLSIO_STATE_ERROR
 } TLSIO_STATE;
 
+typedef int(*TLS_CERTIFICATE_VALIDATION_CALLBACK)(X509_STORE_CTX*, void*);
+
 typedef struct TLS_IO_INSTANCE_TAG
 {
     XIO_HANDLE underlying_io;
@@ -52,6 +54,9 @@ typedef struct TLS_IO_INSTANCE_TAG
     char* certificate;
     const char* x509certificate;
     const char* x509privatekey;
+	int tls_version;
+	TLS_CERTIFICATE_VALIDATION_CALLBACK tls_validation_callback;
+	void* tls_validation_callback_data;
 } TLS_IO_INSTANCE;
 
 struct CRYPTO_dynlock_value 
@@ -108,6 +113,14 @@ static void* tlsio_openssl_CloneOption(const char* name, const void* value)
                 /*return as is*/
             }
         }
+		else if (
+			(strcmp(name, "tls_version") == 0) ||
+			(strcmp(name, "tls_validation_callback") == 0) ||
+			(strcmp(name, "tls_validation_callback_data") == 0)
+			)
+		{
+			result = (void*)value;
+		}
         else
         {
             LogError("not handled option : %s", name);
@@ -127,16 +140,24 @@ static void tlsio_openssl_DestroyOption(const char* name, const void* value)
     {
         LogError("invalid parameter detected: const char* name=%p, const void* value=%p", name, value);
     }
-    else
-    {
-        if (
-            (strcmp(name, "TrustedCerts") == 0) ||
-            (strcmp(name, "x509certificate") == 0) ||
-            (strcmp(name, "x509privatekey") == 0)
-        )
-        {
-            free((void*)value);
-        }
+	else
+	{
+		if (
+			(strcmp(name, "TrustedCerts") == 0) ||
+			(strcmp(name, "x509certificate") == 0) ||
+			(strcmp(name, "x509privatekey") == 0)
+			)
+		{
+			free((void*)value);
+		}
+		else if (
+			(strcmp(name, "tls_version") == 0) ||
+			(strcmp(name, "tls_validation_callback") == 0) ||
+			(strcmp(name, "tls_validation_callback_data") == 0)
+			)
+		{
+			// nothing to free.
+		}
         else
         {
             LogError("not handled option : %s", name);
@@ -191,6 +212,36 @@ static OPTIONHANDLER_HANDLE tlsio_openssl_retrieveoptions(CONCRETE_IO_HANDLE han
                 OptionHandler_Destroy(result);
                 result = NULL;
             }
+			else if (tls_io_instance->tls_version != 0)
+			{
+				if (OptionHandler_AddOption(result, "tls_version", (const char*)tls_io_instance->tls_version) != 0)
+				{
+					LogError("unable to save tls_version option");
+					OptionHandler_Destroy(result);
+					result = NULL;
+				}
+			}
+			else if (tls_io_instance->tls_validation_callback != NULL)
+			{
+				#pragma warning(push)
+				#pragma warning(disable:4152)
+				void* ptr = tls_io_instance->tls_validation_callback;
+				#pragma warning(pop)
+
+				if (OptionHandler_AddOption(result, "tls_validation_callback", (const char*)ptr) != 0)
+				{
+					LogError("unable to save tls_validation_callback option");
+					OptionHandler_Destroy(result);
+					result = NULL;
+				}
+
+				if (OptionHandler_AddOption(result, "tls_validation_callback_data", (const char*)tls_io_instance->tls_validation_callback_data) != 0)
+				{
+					LogError("unable to save tls_validation_callback_data option");
+					OptionHandler_Destroy(result);
+					result = NULL;
+				}
+			}
             else
             {
                 /*all is fine, all interesting options have been saved*/
@@ -285,6 +336,8 @@ static void openssl_dynamic_locks_lock_unlock_cb(int lock_mode, struct CRYPTO_dy
 
 static void openssl_dynamic_locks_destroy_cb(struct CRYPTO_dynlock_value* dynlock_value, const char* file, int line)
 {
+	(void)file;
+	(void)line;
     Lock_Deinit(dynlock_value->lock);
     free(dynlock_value);
 }
@@ -463,8 +516,6 @@ static int write_outgoing_bytes(TLS_IO_INSTANCE* tls_io_instance, ON_SEND_COMPLE
 static int send_handshake_bytes(TLS_IO_INSTANCE* tls_io_instance)
 {
     int result;
-    int r = 0;
-    int pending = 0;
 
     if (SSL_is_init_finished(tls_io_instance->ssl))
     {
@@ -610,7 +661,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
     TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)context;
 
     int written = BIO_write(tls_io_instance->in_bio, buffer, size);
-    if (written != size)
+    if (written != (int)size)
     {
         tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
         indicate_error(tls_io_instance);
@@ -710,7 +761,18 @@ static int create_openssl_instance(TLS_IO_INSTANCE* tlsInstance)
 {
     int result;
 
-    tlsInstance->ssl_context = SSL_CTX_new(TLSv1_method());
+	const SSL_METHOD* method = TLSv1_method();
+
+	if (tlsInstance->tls_version == 12)
+	{
+		method = TLSv1_2_method();
+	}
+	else if (tlsInstance->tls_version == 11)
+	{
+		method = TLSv1_1_method();
+	}
+
+    tlsInstance->ssl_context = SSL_CTX_new(method);
     if (tlsInstance->ssl_context == NULL)
     {
         result = __LINE__;
@@ -719,6 +781,7 @@ static int create_openssl_instance(TLS_IO_INSTANCE* tlsInstance)
     else if (add_certificate_to_store(tlsInstance, tlsInstance->certificate) != 0)
     {
         SSL_CTX_free(tlsInstance->ssl_context);
+		tlsInstance->ssl_context = NULL;
         log_ERR_get_error("unable to add_certificate_to_store.");
         result = __LINE__;
     }
@@ -730,15 +793,19 @@ static int create_openssl_instance(TLS_IO_INSTANCE* tlsInstance)
         )
         {
             SSL_CTX_free(tlsInstance->ssl_context);
+			tlsInstance->ssl_context = NULL;
             log_ERR_get_error("unable to use x509 authentication");
             result = __LINE__;
         }
     else
     {
+		SSL_CTX_set_cert_verify_callback(tlsInstance->ssl_context, tlsInstance->tls_validation_callback, tlsInstance->tls_validation_callback_data);
+
         tlsInstance->in_bio = BIO_new(BIO_s_mem());
         if (tlsInstance->in_bio == NULL)
         {
             SSL_CTX_free(tlsInstance->ssl_context);
+			tlsInstance->ssl_context = NULL;
             log_ERR_get_error("Failed BIO_new for in BIO.");
             result = __LINE__;
         }
@@ -749,6 +816,7 @@ static int create_openssl_instance(TLS_IO_INSTANCE* tlsInstance)
             {
                 (void)BIO_free(tlsInstance->in_bio);
                 SSL_CTX_free(tlsInstance->ssl_context);
+				tlsInstance->ssl_context = NULL;
                 result = __LINE__;
                 log_ERR_get_error("Failed BIO_new for out BIO.");
             }
@@ -760,6 +828,7 @@ static int create_openssl_instance(TLS_IO_INSTANCE* tlsInstance)
                     (void)BIO_free(tlsInstance->in_bio);
                     (void)BIO_free(tlsInstance->out_bio);
                     SSL_CTX_free(tlsInstance->ssl_context);
+					tlsInstance->ssl_context = NULL;
                     result = __LINE__;
                     LogError("Failed getting socket IO interface description.");
                 }
@@ -778,6 +847,7 @@ static int create_openssl_instance(TLS_IO_INSTANCE* tlsInstance)
                         (void)BIO_free(tlsInstance->in_bio);
                         (void)BIO_free(tlsInstance->out_bio);
                         SSL_CTX_free(tlsInstance->ssl_context);
+						tlsInstance->ssl_context = NULL;
                         result = __LINE__;
                         LogError("Failed xio_create.");
                     }
@@ -798,6 +868,7 @@ static int create_openssl_instance(TLS_IO_INSTANCE* tlsInstance)
                             (void)BIO_free(tlsInstance->in_bio);
                             (void)BIO_free(tlsInstance->out_bio);
                             SSL_CTX_free(tlsInstance->ssl_context);
+							tlsInstance->ssl_context = NULL;
                             log_ERR_get_error("Failed creating OpenSSL instance.");
                             result = __LINE__;
                         }
@@ -838,7 +909,14 @@ void tlsio_openssl_deinit(void)
     openssl_dynamic_locks_uninstall();
     openssl_static_locks_uninstall();
 
+	FIPS_mode_set(0);
+	CRYPTO_set_locking_callback(NULL);
+	CRYPTO_set_id_callback(NULL);
+	ERR_remove_state(0);
+	SSL_COMP_free_compression_methods();
     ERR_free_strings();
+	EVP_cleanup();
+	CRYPTO_cleanup_all_ex_data();
 }
 
 CONCRETE_IO_HANDLE tlsio_openssl_create(void* io_create_parameters)
@@ -886,6 +964,9 @@ CONCRETE_IO_HANDLE tlsio_openssl_create(void* io_create_parameters)
 
             result->x509certificate = NULL;
             result->x509privatekey = NULL;
+			result->tls_version = 0;
+			result->tls_validation_callback = NULL;
+			result->tls_validation_callback_data = NULL;
         }
     }
 
@@ -1028,7 +1109,7 @@ int tlsio_openssl_send(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t siz
         else
         {
             int res = SSL_write(tls_io_instance->ssl, buffer, size);
-            if (res != size)
+            if (res != (int)size)
             {
                 result = __LINE__;
                 log_ERR_get_error("SSL_write error.");
@@ -1152,7 +1233,36 @@ int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
                 }
             }
         }
+        else if (strcmp("tls_validation_callback", optionName) == 0)
+        {
+            #pragma warning(push)
+            #pragma warning(disable:4055)
+            tls_io_instance->tls_validation_callback = (TLS_CERTIFICATE_VALIDATION_CALLBACK)value;
+            #pragma warning(pop)
 
+            if (tls_io_instance->ssl_context != NULL)
+            {
+                SSL_CTX_set_cert_verify_callback(tls_io_instance->ssl_context, tls_io_instance->tls_validation_callback, tls_io_instance->tls_validation_callback_data);
+            }
+
+            result = 0;
+        }
+        else if (strcmp("tls_validation_callback_data", optionName) == 0)
+        {
+            tls_io_instance->tls_validation_callback_data = (void*)value;
+
+            if (tls_io_instance->ssl_context != NULL)
+            {
+                SSL_CTX_set_cert_verify_callback(tls_io_instance->ssl_context, tls_io_instance->tls_validation_callback, tls_io_instance->tls_validation_callback_data);
+            }
+
+            result = 0;
+        }
+		else if (strcmp("tls_version", optionName) == 0)
+		{
+			tls_io_instance->tls_version = (int)value;
+			result = 0;
+		}
         else
         {
             if (tls_io_instance->underlying_io == NULL)
