@@ -7,9 +7,8 @@
 #endif
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <ctype.h>
-#include "azure_c_shared_utility/httpapi.h"
+#include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/httpheaders.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
 #include "azure_c_shared_utility/xlogging.h"
@@ -20,10 +19,14 @@
 #include <string.h>
 #include <limits.h>
 
-#define MAX_HOSTNAME     64
-#define TEMP_BUFFER_SIZE 4096
+/*Codes_SRS_HTTPAPI_COMPACT_21_001: [ The httpapi_compact shall implement the methods defined by the `httpapi.h`. ]*/ 
+/*Codes_SRS_HTTPAPI_COMPACT_21_002: [ The httpapi_compact shall support the http requests. ]*/
+/*Codes_SRS_HTTPAPI_COMPACT_21_003: [ The httpapi_compact shall return error codes defined by HTTPAPI_RESULT. ]*/
+#include "azure_c_shared_utility/httpapi.h"
 
-#define CHAR_COUNT(A)   (sizeof(A) - 1)
+#define MAX_HOSTNAME     64
+#define TEMP_BUFFER_SIZE 1024
+
 
 DEFINE_ENUM_STRINGS(HTTPAPI_RESULT, HTTPAPI_RESULT_VALUES)
 
@@ -37,7 +40,6 @@ typedef enum SEND_ALL_RESULT_TAG
 
 typedef struct HTTP_HANDLE_DATA_TAG
 {
-    char            host[MAX_HOSTNAME];
     char*           certificate;
     XIO_HANDLE      xio_handle;
     size_t          received_bytes_count;
@@ -51,13 +53,18 @@ typedef struct HTTP_HANDLE_DATA_TAG
 /*this function only exists because some of platforms do not have sscanf. */
 static int ParseStringToDecimal(const char *src, int* dst)
 {
+	int result;
     char* next;
     (*dst) = strtol(src, &next, 0);
     if ((src == next) || ((((*dst) == LONG_MAX) || ((*dst) == LONG_MIN)) && (errno != 0)))
     {
-        return EOF;
+		result = EOF;
     }
-    return 1;
+	else
+	{
+		result = 1;
+	}
+    return result;
 }
 
 /*the following function does the same as sscanf(pos2, "%x", &sec)*/
@@ -65,274 +72,380 @@ static int ParseStringToDecimal(const char *src, int* dst)
 #define HEXA_DIGIT_VAL(c)         (((c>='0') && (c<='9')) ? (c-'0') : ((c>='a') && (c<='f')) ? (c-'a'+10) : ((c>='A') && (c<='F')) ? (c-'A'+10) : -1)
 static int ParseStringToHexadecimal(const char *src, int* dst)
 {
-    if (src == NULL)
-        return EOF;
-    if (HEXA_DIGIT_VAL(*src) == -1)
-        return EOF;
-
+	int result;
     int digitVal;
-    (*dst) = 0;
-    while ((digitVal = HEXA_DIGIT_VAL(*src)) != -1)
-    {
-        (*dst) *= 0x10;
-        (*dst) += digitVal;
-        src++;
-    }
-    return 1;
+    if (src == NULL)
+	{
+		result = EOF;
+	}
+	else if (HEXA_DIGIT_VAL(*src) == -1)
+	{
+		result = EOF;
+	}
+	else
+	{
+		(*dst) = 0;
+		while ((digitVal = HEXA_DIGIT_VAL(*src)) != -1)
+		{
+			(*dst) *= 0x10;
+			(*dst) += digitVal;
+			src++;
+		}
+		result = 1;
+	}
+    return result;
 }
 
 /*the following function does the same as sscanf(buf, "HTTP/%*d.%*d %d %*[^\r\n]", &ret) */
 /*this function only exists because some of platforms do not have sscanf. This is not a full implementation; it only works with well-defined HTTP response. */
-static int ParseHttpResponse(const char* src, int* dst)
+static int  ParseHttpResponse(const char* src, int* dst)
 {
-    const char* prefix = "HTTP/";
-    while ((*prefix) != '\0')
-    {
-        if ((*prefix) != (*src))
-            return EOF;
-        prefix++;
-        src++;
-    }
+	int result;
+	static const char HTTPPrefix[] = "HTTP/";
+    bool fail;
+    const char* runPrefix;
 
-    while ((*src) != '.')
-    {
-        if ((*src) == '\0')
-            return EOF;
-    }
+	if ((src == NULL) || (dst == NULL))
+	{
+		result = EOF;
+	}
+	else
+	{
+		fail = false;
+		runPrefix = HTTPPrefix;
 
-    while ((*src) != ' ')
-    {
-        if ((*src) == '\0')
-            return EOF;
-    }
+		while((*runPrefix) != '\0')
+		{
+			if ((*runPrefix) != (*src))
+			{
+				fail = true;
+				break;
+			}
+			src++;
+			runPrefix++;
+		}
 
-    return ParseStringToDecimal(src, dst);
+		if (!fail)
+		{
+			while ((*src) != '.')
+			{
+				if ((*src) == '\0')
+				{
+					fail = true;
+                    break;
+				}
+				src++;
+			}
+		}
+
+		if (!fail)
+		{
+			while ((*src) != ' ')
+			{
+				if ((*src) == '\0')
+				{
+					fail = true;
+                    break;
+				}
+				src++;
+			}
+		}
+
+		if (fail)
+		{
+			result = EOF;
+		}
+		else
+		{
+			result = ParseStringToDecimal(src, dst);
+		}
+	}
+
+    return result;
 }
 
 HTTPAPI_RESULT HTTPAPI_Init(void)
 {
+	/*Codes_SRS_HTTPAPI_COMPACT_21_004: [ The HTTPAPI_Init shall allocate all memory to control the http protocol. ]*/
+	/*Codes_SRS_HTTPAPI_COMPACT_21_007: [ If there is not enough memory to control the http protocol, the HTTPAPI_Init shall return HTTPAPI_ALLOC_FAILED. ]*/
+	/**
+	 * No memory is necessary. 
+	 */
+
+	/*Codes_SRS_HTTPAPI_COMPACT_21_006: [ If HTTPAPI_Init succeed allocating all the needed memory, it shall return HTTPAPI_OK. ]*/
     return HTTPAPI_OK;
 }
 
 void HTTPAPI_Deinit(void)
 {
+	/*Codes_SRS_HTTPAPI_COMPACT_21_009: [ The HTTPAPI_Init shall release all memory allocated by the httpapi_compact. ]*/
+	/**
+	* No memory was necessary.
+	*/
 }
 
+/*Codes_SRS_HTTPAPI_COMPACT_21_011: [ The HTTPAPI_CreateConnection shall create an http connection to the host specified by the hostName parameter. ]*/
 HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
 {
-    HTTP_HANDLE_DATA* handle = NULL;
+    HTTP_HANDLE_DATA* httpHandle;
+    TLSIO_CONFIG tlsio_config;
 
-    if (hostName)
-    {
-        handle = (HTTP_HANDLE_DATA*)malloc(sizeof(HTTP_HANDLE_DATA));
-        if (handle != NULL)
-        {
-            if (strcpy_s(handle->host, MAX_HOSTNAME, hostName) != 0)
-            {
-                LogError("HTTPAPI_CreateConnection::Could not strcpy_s");
-                free(handle);
-                handle = NULL;
-            }
-            else
-            {
-                TLSIO_CONFIG tlsio_config = { hostName, 443 };
-                handle->xio_handle = xio_create(platform_get_default_tlsio(), (void*)&tlsio_config);
-                if (handle->xio_handle == NULL)
-                {
-                    LogError("HTTPAPI_CreateConnection::xio_create failed");
-                    free(handle->host);
-                    free(handle);
-                    handle = NULL;
-                }
-                else
-                {
-                    handle->is_connected = 0;
-                    handle->is_io_error = 0;
-                    handle->received_bytes_count = 0;
-                    handle->received_bytes = NULL;
-                    handle->send_all_result = SEND_ALL_RESULT_NOT_STARTED;
-                    handle->certificate = NULL;
-                }
-            }
-        }
-    }
-    else
-    {
-        LogInfo("HTTPAPI_CreateConnection:: null hostName parameter");
-    }
+	if (hostName == NULL)
+	{
+		/*Codes_SRS_HTTPAPI_COMPACT_21_014: [ If the hostName is NULL, the HTTPAPI_CreateConnection shall return NULL as the handle. ]*/
+		LogError("Invalid host name. Null hostName parameter.");
+		httpHandle = NULL;
+	}
+	else if (*hostName == '\0')
+	{
+		/*Codes_SRS_HTTPAPI_COMPACT_21_015: [ If the hostName is empty, the HTTPAPI_CreateConnection shall return NULL as the handle. ]*/
+		LogError("Invalid host name. Empty string.");
+		httpHandle = NULL;
+	}
+	else
+	{
+		httpHandle = (HTTP_HANDLE_DATA*)malloc(sizeof(HTTP_HANDLE_DATA));
+		/*Codes_SRS_HTTPAPI_COMPACT_21_013: [ If there is not enough memory to control the http connection, the HTTPAPI_CreateConnection shall return NULL as the handle. ]*/
+		if (httpHandle == NULL)
+		{
+			LogError("There is no memory to control the http connection");
+		}
+		else
+		{
+			tlsio_config.hostname = hostName;
+			tlsio_config.port = 443;
 
-    return (HTTP_HANDLE)handle;
+			httpHandle->xio_handle = xio_create(platform_get_default_tlsio(), (void*)&tlsio_config);
+
+			/*Codes_SRS_HTTPAPI_COMPACT_21_016: [ If the HTTPAPI_CreateConnection failed to create the connection, it shall return NULL as the handle. ]*/
+			if (httpHandle->xio_handle == NULL)
+			{
+				LogError("Create connection failed");
+				free(httpHandle);
+				httpHandle = NULL;
+			}
+			else
+			{
+				httpHandle->is_connected = 0;
+				httpHandle->is_io_error = 0;
+				httpHandle->received_bytes_count = 0;
+				httpHandle->received_bytes = NULL;
+				httpHandle->send_all_result = SEND_ALL_RESULT_NOT_STARTED;
+				httpHandle->certificate = NULL;
+			}
+		}
+	}
+
+	/*Codes_SRS_HTTPAPI_COMPACT_21_012: [ The HTTPAPI_CreateConnection shall return a non-NULL handle on success. ]*/
+	return (HTTP_HANDLE)httpHandle;
 }
 
 void HTTPAPI_CloseConnection(HTTP_HANDLE handle)
 {
-    HTTP_HANDLE_DATA* h = (HTTP_HANDLE_DATA*)handle;
+    HTTP_HANDLE_DATA* httpHandle = (HTTP_HANDLE_DATA*)handle;
 
-    if (h)
+	/*Codes_SRS_HTTPAPI_COMPACT_21_020: [ If the connection handle is NULL, the HTTPAPI_CloseConnection shall not do anything. ]*/
+	if (httpHandle != NULL)
     {
-        if (h->xio_handle != NULL)
+		/*Codes_SRS_HTTPAPI_COMPACT_21_019: [ If there is no previous connection, the HTTPAPI_CloseConnection shall not do anything. ]*/
+		if (httpHandle->xio_handle != NULL)
         {
-            LogInfo("HTTPAPI_CloseConnection xio_destroy(); to %s", h->host);
-            xio_destroy(h->xio_handle);
+			/*Codes_SRS_HTTPAPI_COMPACT_21_017: [ The HTTPAPI_CloseConnection shall close the connection previously created in HTTPAPI_CreateConnection. ]*/
+			LogInfo("Close http connection.");
+            xio_destroy(httpHandle->xio_handle);
         }
 
-        if (h->certificate)
+		/*Codes_SRS_HTTPAPI_COMPACT_21_018: [ If there is a certificate associated to this connection, the HTTPAPI_CloseConnection shall free all allocated memory for the certificate. ]*/
+		if (httpHandle->certificate)
         {
-            free(h->certificate);
+            free(httpHandle->certificate);
         }
 
-        free(h);
+        free(httpHandle);
     }
 }
 
 static void on_io_open_complete(void* context, IO_OPEN_RESULT open_result)
 {
-    HTTP_HANDLE_DATA* h = (HTTP_HANDLE_DATA*)context;
-    if (open_result == IO_OPEN_OK)
-    {
-        h->is_connected = 1;
-        h->is_io_error = 0;
-    }
-    else
-    {
-        h->is_io_error = 1;
-    }
+    HTTP_HANDLE_DATA* httpHandle = (HTTP_HANDLE_DATA*)context;
+    
+    if (httpHandle != NULL)
+	{
+		if (open_result == IO_OPEN_OK)
+		{
+			httpHandle->is_connected = 1;
+			httpHandle->is_io_error = 0;
+		}
+		else
+		{
+			httpHandle->is_io_error = 1;
+		}
+	}
 }
 
-static int my_strnicmp(const char* s1, const char* s2, size_t n)
+#define TOLOWER(c) (((c>='A') && (c<='Z'))?c-'A'+'a':c)
+static int InternStrnicmp(const char* s1, const char* s2, size_t n)
 {
-    size_t i;
-    int result = 0;
+    int result;
 
-    for (i = 0; i < n; i++)
-    {
-        /* compute the difference between the chars */
-        result = tolower(s1[i]) - tolower(s2[i]);
+	if ((s1 == NULL) || (s2 == NULL))
+	{
+		result = -1;
+	}
+	else
+	{
+		result = 0;
+		while (((n--) >= 0) && ((*s1) != '\0') && ((*s2) != '\0') && (result == 0))
+		{
+			/* compute the difference between the chars */
+			result = TOLOWER(*s1) - TOLOWER(*s2);
+			s1++;
+			s2++;
+		}
 
-        /* break if we have a difference ... */
-        if ((result != 0) ||
-            /* ... or if we got to the end of one the strings */
-            (s1[i] == '\0') || (s2[i] == '\0'))
+        if ((*s2) != '\0')
         {
-            break;
+            result = -1;
         }
-    }
+	}
 
     return result;
-}
-
-static int my_stricmp(const char* s1, const char* s2)
-{
-    size_t i = 0;
-
-    while ((s1[i] != '\0') && (s2[i] != '\0'))
-    {
-        /* break if we have a difference ... */
-        if (tolower(s1[i]) != tolower(s2[i]))
-        {
-            break;
-        }
-
-        i++;
-    }
-
-    /* if we broke because we are at end of string this will yield 0 */
-    /* if we broke because there was a difference this will yield non-zero  */
-    return tolower(s1[i]) - tolower(s2[i]);
 }
 
 static void on_bytes_received(void* context, const unsigned char* buffer, size_t size)
 {
-    HTTP_HANDLE_DATA* h = (HTTP_HANDLE_DATA*)context;
+    unsigned char* new_received_bytes;
+    HTTP_HANDLE_DATA* httpHandle = (HTTP_HANDLE_DATA*)context;
 
-    /* Here we got some bytes so we'll buffer them so the receive functions can consumer it */
-    unsigned char* new_received_bytes = (unsigned char*)realloc(h->received_bytes, h->received_bytes_count + size);
-    if (new_received_bytes == NULL)
-    {
-        h->is_io_error = 1;
-        LogError("on_bytes_received: Error allocating memory for received data");
-    }
-    else
-    {
-        h->received_bytes = new_received_bytes;
-        (void)memcpy(h->received_bytes + h->received_bytes_count, buffer, size);
-        h->received_bytes_count += size;
-    }
+    if (httpHandle != NULL)
+	{
+
+        if (buffer == NULL)
+        {
+            httpHandle->is_io_error = 1;
+            LogError("on_bytes_received: NULL pointer error");
+        }
+        else
+        {
+            /* Here we got some bytes so we'll buffer them so the receive functions can consumer it */
+            new_received_bytes = (unsigned char*)realloc(httpHandle->received_bytes, httpHandle->received_bytes_count + size);
+            if (new_received_bytes == NULL)
+            {
+                httpHandle->is_io_error = 1;
+                LogError("on_bytes_received: Error allocating memory for received data");
+            }
+            else
+            {
+                httpHandle->received_bytes = new_received_bytes;
+                if (memcpy(httpHandle->received_bytes + httpHandle->received_bytes_count, buffer, size) == NULL)
+                {
+                    httpHandle->is_io_error = 1;
+                    LogError("on_bytes_received: Error copping received data to the HTTP bufffer");
+                }
+                else
+                {
+                    httpHandle->received_bytes_count += size;
+                }
+            }
+        }
+	}
 }
 
 static void on_io_error(void* context)
 {
-    HTTP_HANDLE_DATA* h = (HTTP_HANDLE_DATA*)context;
-    h->is_io_error = 1;
-    LogError("on_io_error: Error signalled by underlying IO");
+    HTTP_HANDLE_DATA* httpHandle = (HTTP_HANDLE_DATA*)context;
+    if (httpHandle != NULL)
+	{
+		httpHandle->is_io_error = 1;
+		LogError("on_io_error: Error signalled by underlying IO");
+	}
 }
 
 static int conn_receive(HTTP_HANDLE_DATA* http_instance, char* buffer, int count)
 {
-    int result = 0;
+    int result;
 
-    if (count < 0)
-    {
+	if ((http_instance == NULL) || (buffer == NULL) || (count < 0))
+	{
+        LogError("conn_receive: %s", ((http_instance == NULL) ? "Invalid HTTP instance" : "Invalid HTTP buffer"));
         result = -1;
-    }
-    else
-    {
-        while (result < count)
-        {
-            xio_dowork(http_instance->xio_handle);
+	}
+	else
+	{
+		result = 0;
+		while (result < count)
+		{
+			xio_dowork(http_instance->xio_handle);
 
-            /* if any error was detected while receiving then simply break and report it */
-            if (http_instance->is_io_error != 0)
-            {
+			/* if any error was detected while receiving then simply break and report it */
+			if (http_instance->is_io_error != 0)
+			{
+                LogError("conn_receive: xio reported error on dowork");
                 result = -1;
-                break;
-            }
+				break;
+			}
 
-            if (http_instance->received_bytes_count >= (size_t)count)
-            {
-                /* Consuming bytes from the receive buffer */
-                (void)memcpy(buffer, http_instance->received_bytes, count);
-                (void)memmove(http_instance->received_bytes, http_instance->received_bytes + count, http_instance->received_bytes_count - count);
-                http_instance->received_bytes_count -= count;
+			if (http_instance->received_bytes_count >= (size_t)count)
+			{
+				/* Consuming bytes from the receive buffer */
+				(void)memcpy(buffer, http_instance->received_bytes, count);
+				(void)memmove(http_instance->received_bytes, http_instance->received_bytes + count, http_instance->received_bytes_count - count);
+				http_instance->received_bytes_count -= count;
 
-                /* we're not reallocating at each consumption so that we don't trash due to byte by byte consumption */
-                if (http_instance->received_bytes_count == 0)
-                {
-                    free(http_instance->received_bytes);
-                    http_instance->received_bytes = NULL;
-                }
+				/* we're not reallocating at each consumption so that we don't trash due to byte by byte consumption */
+				if (http_instance->received_bytes_count == 0)
+				{
+					free(http_instance->received_bytes);
+					http_instance->received_bytes = NULL;
+				}
 
-                result = count;
-                break;
-            }
+				result = count;
+				break;
+			}
 
-            ThreadAPI_Sleep(1);
-        }
-    }
+			ThreadAPI_Sleep(1);
+		}
+	}
 
     return result;
 }
 
-static void on_send_complete(void* context, IO_SEND_RESULT send_result)
+static void conn_receive_discard_buffer(HTTP_HANDLE_DATA* http_instance)
 {
-    /* If a send is complete we'll simply signal this by changing the send all state */
-    HTTP_HANDLE_DATA* http_instance = (HTTP_HANDLE_DATA*)context;
-    if (send_result == IO_SEND_OK)
+    if (http_instance->received_bytes != NULL)
     {
-        http_instance->send_all_result = SEND_ALL_RESULT_OK;
+        free(http_instance->received_bytes);
+        http_instance->received_bytes = NULL;
     }
-    else
-    {
-        http_instance->send_all_result = SEND_ALL_RESULT_ERROR;
-    }
+    http_instance->received_bytes_count = 0;
 }
 
-static int conn_send_all(HTTP_HANDLE_DATA* http_instance, char* buffer, int count)
+
+static void on_send_complete(void* context, IO_SEND_RESULT send_result)
+{
+    HTTP_HANDLE_DATA* http_instance = (HTTP_HANDLE_DATA*)context;
+    
+    if (http_instance != NULL)
+	{
+		/* If a send is complete we'll simply signal this by changing the send all state */
+		if (send_result == IO_SEND_OK)
+		{
+			http_instance->send_all_result = SEND_ALL_RESULT_OK;
+		}
+		else
+		{
+			http_instance->send_all_result = SEND_ALL_RESULT_ERROR;
+		}
+	}
+}
+
+static int conn_send_all(HTTP_HANDLE_DATA* http_instance, const unsigned char* buffer, int count)
 {
     int result;
 
-    if (count < 0)
-    {
+	if ((http_instance == NULL) || (buffer == 0) || (count < 0))
+	{
+        LogError("conn_send_all: %s", ((http_instance == NULL) ? "Invalid HTTP instance" : "Invalid HTTP buffer"));
         result = -1;
     }
     else
@@ -340,6 +453,7 @@ static int conn_send_all(HTTP_HANDLE_DATA* http_instance, char* buffer, int coun
         http_instance->send_all_result = SEND_ALL_RESULT_PENDING;
         if (xio_send(http_instance->xio_handle, buffer, count, on_send_complete, http_instance) != 0)
         {
+            LogError("conn_send_all: xio failed sending data");
             result = -1;
         }
         else
@@ -347,8 +461,6 @@ static int conn_send_all(HTTP_HANDLE_DATA* http_instance, char* buffer, int coun
             /* We have to loop in here until all bytes are sent or we encounter an error. */
             while (1)
             {
-                xio_dowork(http_instance->xio_handle);
-
                 /* If we got an error signalled from the underlying IO we simply report it up */
                 if (http_instance->is_io_error)
                 {
@@ -360,6 +472,8 @@ static int conn_send_all(HTTP_HANDLE_DATA* http_instance, char* buffer, int coun
                 {
                     break;
                 }
+
+                xio_dowork(http_instance->xio_handle);
 
                 /* We yield the CPU for a bit so others can do their work */
                 ThreadAPI_Sleep(1);
@@ -394,21 +508,53 @@ static int conn_send_all(HTTP_HANDLE_DATA* http_instance, char* buffer, int coun
 static int readLine(HTTP_HANDLE_DATA* http_instance, char* buf, const size_t size)
 {
     // reads until \r\n is encountered. writes in buf all the characters
-    char* p = buf;
+	int result;
+    char* substr = buf;
     char  c;
-    if (conn_receive(http_instance, &c, 1) < 0)
-        return -1;
-    while (c != '\r') {
-        if ((p - buf + 1) >= (int)size)
-            return -1;
-        *p++ = c;
-        if (conn_receive(http_instance, &c, 1) < 0)
-            return -1;
+
+	if (conn_receive(http_instance, &c, 1) < 0)
+	{
+        result = -1;
+	}
+	else
+	{
+		result = 0;
+		while (c != '\r') 
+		{
+			if ((substr - buf + 1) >= (int)size)
+			{
+                result = -1;
+                conn_receive_discard_buffer(http_instance);
+                break;
+			}
+            else
+            {
+                *substr++ = c;
+            }
+			
+			if (conn_receive(http_instance, &c, 1) < 0)
+			{
+				result = -1;
+				break;
+			}
+		}
+
+		if (result != -1)
+		{
+			*substr = 0;
+			if (conn_receive(http_instance, &c, 1) < 0 || c != '\n') // skip \n
+			{
+				result = -1;
+			}
+		}
+
+        if (result != -1)
+        {
+            result = substr - buf;
+        }
     }
-    *p = 0;
-    if (conn_receive(http_instance, &c, 1) < 0 || c != '\n') // skip \n
-        return -1;
-    return p - buf;
+
+	return result;
 }
 
 static int readChunk(HTTP_HANDLE_DATA* http_instance, char* buf, size_t size)
@@ -424,8 +570,10 @@ static int readChunk(HTTP_HANDLE_DATA* http_instance, char* buf, size_t size)
         cur = conn_receive(http_instance, buf + offset, size);
 
         // end of stream reached
-        if (cur == 0)
-            return offset;
+		if (cur == 0)
+		{
+			break;
+		}
 
         // read cur bytes (might be less than requested)
         size -= cur;
@@ -437,23 +585,444 @@ static int readChunk(HTTP_HANDLE_DATA* http_instance, char* buf, size_t size)
 
 static int skipN(HTTP_HANDLE_DATA* http_instance, size_t n, char* buf, size_t size)
 {
-    size_t org = n;
+    int org = (int)n;
     // read and abandon response content with specified length
     // returns -1 in case of error.
     while (n > size)
     {
-        if (readChunk(http_instance, (char*)buf, size) < 0)
-            return -1;
+		if (readChunk(http_instance, (char*)buf, size) < 0)
+		{
+			org = -1;
+			break;
+		}
 
         n -= size;
     }
 
-    if (readChunk(http_instance, (char*)buf, n) < 0)
-        return -1;
+	if (org >= 0)
+	{
+		if (readChunk(http_instance, (char*)buf, n) < 0)
+		{
+			org = -1;
+		}
+	}
 
     return org;
 }
 
+
+/*Codes_SRS_HTTPAPI_COMPACT_21_021: [ The HTTPAPI_ExecuteRequest shall execute the http communtication with the provided host, sending a request and reciving the response. ]*/
+static HTTPAPI_RESULT OpenXIOConnection(HTTP_HANDLE_DATA* httpHandle)
+{
+	HTTPAPI_RESULT result;
+
+	if (httpHandle->is_connected != 0)
+	{
+		/*Codes_SRS_HTTPAPI_COMPACT_21_033: [ If the whole process succeed, the HTTPAPI_ExecuteRequest shall retur HTTPAPI_OK. ]*/
+		result = HTTPAPI_OK;
+	}
+	else
+	{
+		/*Codes_SRS_HTTPAPI_COMPACT_21_022: [ If a Certificate was provided, the HTTPAPI_ExecuteRequest shall set this option on the transport layer. ]*/
+		if ((httpHandle->certificate != NULL) &&
+			(xio_setoption(httpHandle->xio_handle, "TrustedCerts", httpHandle->certificate) != 0))
+		{
+			/*Codes_SRS_HTTPAPI_COMPACT_21_023: [ If the transport failed setting the Certificate, the HTTPAPI_ExecuteRequest shall not send any request and return HTTPAPI_SET_OPTION_FAILED. ]*/
+			result = HTTPAPI_SET_OPTION_FAILED;
+			LogInfo("Could not load certificate");
+		}
+		else
+		{
+			/*Codes_SRS_HTTPAPI_COMPACT_21_024: [ The HTTPAPI_ExecuteRequest shall open the transport connection with the host to send the request. ]*/
+			if (xio_open(httpHandle->xio_handle, on_io_open_complete, httpHandle, on_bytes_received, httpHandle, on_io_error, httpHandle) != 0)
+			{
+				/*Codes_SRS_HTTPAPI_COMPACT_21_025: [ If the open process failed, the HTTPAPI_ExecuteRequest shall not send any request and return HTTPAPI_OPEN_REQUEST_FAILED. ]*/
+				result = HTTPAPI_OPEN_REQUEST_FAILED;
+			}
+			else
+			{
+				/*Codes_SRS_HTTPAPI_COMPACT_21_033: [ If the whole process succeed, the HTTPAPI_ExecuteRequest shall retur HTTPAPI_OK. ]*/
+				result = HTTPAPI_OK;
+				while ((httpHandle->is_connected == 0) &&
+					(httpHandle->is_io_error == 0))
+				{
+					xio_dowork(httpHandle->xio_handle);
+					LogInfo("Waiting for TLS connection");
+					ThreadAPI_Sleep(1);
+				}
+			}
+		}
+	}
+	
+	if ((httpHandle->is_io_error != 0) && (result == HTTPAPI_OK))
+	{
+		/*Codes_SRS_HTTPAPI_COMPACT_21_025: [ If the open process failed, the HTTPAPI_ExecuteRequest shall not send any request and return HTTPAPI_OPEN_REQUEST_FAILED. ]*/
+		result = HTTPAPI_OPEN_REQUEST_FAILED;
+	}
+
+	return result;
+}
+
+/*Codes_SRS_HTTPAPI_COMPACT_21_035: [ The HTTPAPI_ExecuteRequest shall execute resquest for types `GET`, `POST`, `PUT`, `DELETE`, `PATCH`. ]*/
+const char httpapiRequestString[5][7] = { "GET", "POST", "PUT", "DELETE", "PATCH" };
+const char* get_request_type(HTTPAPI_REQUEST_TYPE requestType)
+{
+    return (const char*)httpapiRequestString[requestType];
+}
+
+/*Codes_SRS_HTTPAPI_COMPACT_21_026: [ If the open process succeed, the HTTPAPI_ExecuteRequest shall send the request message to the host. ]*/
+static HTTPAPI_RESULT SendHeadsToXIO(HTTP_HANDLE_DATA* httpHandle, HTTPAPI_REQUEST_TYPE requestType, const char* relativePath, HTTP_HEADERS_HANDLE httpHeadersHandle, size_t headersCount)
+{
+	HTTPAPI_RESULT result;
+	char    buf[TEMP_BUFFER_SIZE];
+	int     ret;
+
+	//Send request
+	/*Codes_SRS_HTTPAPI_COMPACT_21_038: [ The HTTPAPI_ExecuteRequest shall execute the resquest for the path in relativePath parameter. ]*/
+	/*Codes_SRS_HTTPAPI_COMPACT_21_036: [ The request type shall be provided in the parameter requestType. ]*/
+	if (((ret = snprintf(buf, sizeof(buf), "%s %s HTTP/1.1\r\n", get_request_type(requestType), relativePath)) < 0) ||
+		(ret >= sizeof(buf)))
+	{
+		/*Codes_SRS_HTTPAPI_COMPACT_21_027: [ If the HTTPAPI_ExecuteRequest cannot create a buffer to send the request, it shall not send any request and return HTTPAPI_STRING_PROCESSING_ERROR. ]*/
+		result = HTTPAPI_STRING_PROCESSING_ERROR;
+	}
+	else if (conn_send_all(httpHandle, (const unsigned char*)buf, strlen(buf)) < 0)
+	{
+		/*Codes_SRS_HTTPAPI_COMPACT_21_028: [ If the HTTPAPI_ExecuteRequest cannot send the request header, it shall return HTTPAPI_HTTP_HEADERS_FAILED. ]*/
+		result = HTTPAPI_SEND_REQUEST_FAILED;
+	}
+	else
+	{
+		//Send default headers
+		/*Codes_SRS_HTTPAPI_COMPACT_21_033: [ If the whole process succeed, the HTTPAPI_ExecuteRequest shall retur HTTPAPI_OK. ]*/
+		result = HTTPAPI_OK;
+		for (size_t i = 0; ((i < headersCount) && (result == HTTPAPI_OK)); i++)
+		{
+			char* header;
+			if (HTTPHeaders_GetHeader(httpHeadersHandle, i, &header) != HTTP_HEADERS_OK)
+			{
+				/*Codes_SRS_HTTPAPI_COMPACT_21_027: [ If the HTTPAPI_ExecuteRequest cannot create a buffer to send the request, it shall not send any request and return HTTPAPI_STRING_PROCESSING_ERROR. ]*/
+				result = HTTPAPI_STRING_PROCESSING_ERROR;
+			}
+			else
+			{
+				if (conn_send_all(httpHandle, (const unsigned char*)header, strlen(header)) < 0)
+				{
+					/*Codes_SRS_HTTPAPI_COMPACT_21_028: [ If the HTTPAPI_ExecuteRequest cannot send the request header, it shall return HTTPAPI_HTTP_HEADERS_FAILED. ]*/
+					result = HTTPAPI_SEND_REQUEST_FAILED;
+				}
+				if (conn_send_all(httpHandle, (const unsigned char*)"\r\n", 2) < 0)
+				{
+					/*Codes_SRS_HTTPAPI_COMPACT_21_028: [ If the HTTPAPI_ExecuteRequest cannot send the request header, it shall return HTTPAPI_HTTP_HEADERS_FAILED. ]*/
+					result = HTTPAPI_SEND_REQUEST_FAILED;
+				}
+				free(header);
+			}
+		}
+
+		//Close headers
+		if (conn_send_all(httpHandle, (const unsigned char*)"\r\n", 2) < 0)
+		{
+			/*Codes_SRS_HTTPAPI_COMPACT_21_028: [ If the HTTPAPI_ExecuteRequest cannot send the request header, it shall return HTTPAPI_HTTP_HEADERS_FAILED. ]*/
+			result = HTTPAPI_SEND_REQUEST_FAILED;
+		}
+	}
+	return result;
+}
+
+/*Codes_SRS_HTTPAPI_COMPACT_21_042: [ The request can contain the a content message, provided in content parameter. ]*/
+static HTTPAPI_RESULT SendContentToXIO(HTTP_HANDLE_DATA* httpHandle, const unsigned char* content, size_t contentLength)
+{
+	HTTPAPI_RESULT result;
+
+	//Send data (if available)
+	/*Codes_SRS_HTTPAPI_COMPACT_21_045: [ If the contentLength is lower than one, the HTTPAPI_ExecuteRequest shall send the request without content. ]*/
+	if (content && contentLength > 0)
+	{
+		/*Codes_SRS_HTTPAPI_COMPACT_21_044: [ If the content is not NULL, the number of bytes in the content shall be provided in contentLength parameter. ]*/
+		if (conn_send_all(httpHandle, content, contentLength) < 0)
+		{
+			/*Codes_SRS_HTTPAPI_COMPACT_21_029: [ If the HTTPAPI_ExecuteRequest cannot send the buffer with the request, it shall return HTTPAPI_SEND_REQUEST_FAILED. ]*/
+			result = HTTPAPI_SEND_REQUEST_FAILED;
+		}
+		else
+		{
+			/*Codes_SRS_HTTPAPI_COMPACT_21_033: [ If the whole process succeed, the HTTPAPI_ExecuteRequest shall retur HTTPAPI_OK. ]*/
+			result = HTTPAPI_OK;
+		}
+	}
+	else
+	{
+		/*Codes_SRS_HTTPAPI_COMPACT_21_043: [ If the content is NULL, the HTTPAPI_ExecuteRequest shall send the request without content. ]*/
+		/*Codes_SRS_HTTPAPI_COMPACT_21_033: [ If the whole process succeed, the HTTPAPI_ExecuteRequest shall retur HTTPAPI_OK. ]*/
+		result = HTTPAPI_OK;
+	}
+	return result;
+}
+
+/*Codes_SRS_HTTPAPI_COMPACT_21_030: [ At the end of the transmission, the HTTPAPI_ExecuteRequest shall receive the response from the host. ]*/
+static HTTPAPI_RESULT RecieveHeaderFromXIO(HTTP_HANDLE_DATA* httpHandle, unsigned int* statusCode)
+{
+	HTTPAPI_RESULT result;
+	char    buf[TEMP_BUFFER_SIZE];
+	int     ret;
+
+	//Receive response
+	if (readLine(httpHandle, buf, TEMP_BUFFER_SIZE) < 0)
+	{
+		/*Codes_SRS_HTTPAPI_COMPACT_21_032: [ If the HTTPAPI_ExecuteRequest cannot read the message with the request result, it shall return HTTPAPI_READ_DATA_FAILED. ]*/
+		result = HTTPAPI_READ_DATA_FAILED;
+	}
+	//Parse HTTP response
+	else if (ParseHttpResponse(buf, &ret) != 1)
+	{
+		//Cannot match string, error
+        /*Codes_SRS_HTTPAPI_COMPACT_21_055: [ If the HTTPAPI_ExecuteRequest cannot parser the recived message, it shall return HTTPAPI_RECEIVE_RESPONSE_FAILED. ]*/
+        LogInfo("HTTPAPI_ExecuteRequest::Not a correct HTTP answer");
+		result = HTTPAPI_RECEIVE_RESPONSE_FAILED;
+	}
+	else
+	{
+		/*Codes_SRS_HTTPAPI_COMPACT_21_046: [ The HTTPAPI_ExecuteRequest shall return the http status reported by the host in the received response. ]*/
+		/*Codes_SRS_HTTPAPI_COMPACT_21_048: [ If the statusCode is NULL, the HTTPAPI_ExecuteRequest shall report not report any status. ]*/
+		if (statusCode)
+		{
+			/*Codes_SRS_HTTPAPI_COMPACT_21_047: [ The HTTPAPI_ExecuteRequest shall report the status in the statusCode parameter. ]*/
+			*statusCode = ret;
+		}
+		/*Codes_SRS_HTTPAPI_COMPACT_21_033: [ If the whole process succeed, the HTTPAPI_ExecuteRequest shall retur HTTPAPI_OK. ]*/
+		result = HTTPAPI_OK;
+	}
+
+	return result;
+}
+
+static HTTPAPI_RESULT RecieveContentInfoFromXIO(HTTP_HANDLE_DATA* httpHandle, HTTP_HEADERS_HANDLE responseHeadersHandle, size_t* bodyLength, bool* chunked)
+{
+	HTTPAPI_RESULT result;
+	char    buf[TEMP_BUFFER_SIZE];
+    const char* substr;
+    char* whereIsColon;
+    int lengthInMsg;
+	const char* ContentLength = "content-length:";
+	const int ContentLengthSize = 16;
+	const char* TransferEncoding = "transfer-encoding:";
+	const int TransferEncodingSize = 19;
+	const char* Chunked = "chunked";
+	const int ChunkedSize = 8;
+
+	//Read HTTP response headers
+	if (readLine(httpHandle, buf, sizeof(buf)) < 0)
+	{
+		/*Codes_SRS_HTTPAPI_COMPACT_21_032: [ If the HTTPAPI_ExecuteRequest cannot read the message with the request result, it shall return HTTPAPI_READ_DATA_FAILED. ]*/
+		result = HTTPAPI_READ_DATA_FAILED;
+	}
+	else
+	{
+		/*Codes_SRS_HTTPAPI_COMPACT_21_033: [ If the whole process succeed, the HTTPAPI_ExecuteRequest shall retur HTTPAPI_OK. ]*/
+		result = HTTPAPI_OK;
+
+		while (*buf && (result == HTTPAPI_OK))
+		{
+			if (InternStrnicmp(buf, ContentLength, ContentLengthSize) == 0)
+			{
+				substr = buf + ContentLengthSize;
+				if (ParseStringToDecimal(substr, &lengthInMsg) != 1)
+				{
+					/*Codes_SRS_HTTPAPI_COMPACT_21_032: [ If the HTTPAPI_ExecuteRequest cannot read the message with the request result, it shall return HTTPAPI_READ_DATA_FAILED. ]*/
+					result = HTTPAPI_READ_DATA_FAILED;
+				}
+				else
+				{
+					(*bodyLength) = (size_t)lengthInMsg;
+				}
+			}
+			else if (InternStrnicmp(buf, TransferEncoding, TransferEncodingSize) == 0)
+			{
+				substr = buf + TransferEncodingSize -1;
+
+				while (isspace(*substr)) substr++;
+				
+				if (InternStrnicmp(substr, Chunked, ChunkedSize) == 0)
+				{
+					(*chunked) = true;
+				}
+			}
+
+			if (result == HTTPAPI_OK)
+			{
+				whereIsColon = strchr((char*)buf, ':');
+				/*Codes_SRS_HTTPAPI_COMPACT_21_049: [ If responseHeadersHandle is provide, the HTTPAPI_ExecuteRequest shall prepare a Response Header usign the HTTPHeaders_AddHeaderNameValuePair. ]*/
+				if (whereIsColon && (responseHeadersHandle != NULL))
+				{
+					*whereIsColon = '\0';
+					HTTPHeaders_AddHeaderNameValuePair(responseHeadersHandle, buf, whereIsColon + 1);
+				}
+
+				if (readLine(httpHandle, buf, sizeof(buf)) < 0)
+				{
+					/*Codes_SRS_HTTPAPI_COMPACT_21_032: [ If the HTTPAPI_ExecuteRequest cannot read the message with the request result, it shall return HTTPAPI_READ_DATA_FAILED. ]*/
+					result = HTTPAPI_READ_DATA_FAILED;
+				}
+			}
+		}
+	}
+
+	return result;
+}
+
+static HTTPAPI_RESULT ReadHTTPResponseBodyFromXIO(HTTP_HANDLE_DATA* httpHandle, size_t bodyLength, bool chunked, BUFFER_HANDLE responseContent)
+{
+	HTTPAPI_RESULT result;
+	char    buf[TEMP_BUFFER_SIZE];
+	unsigned char* receivedContent;
+
+	//Read HTTP response body
+	if (!chunked)
+	{
+		if (bodyLength)
+		{
+			if (responseContent != NULL)
+			{
+				if (BUFFER_pre_build(responseContent, bodyLength) != 0)
+				{
+					/*Codes_SRS_HTTPAPI_COMPACT_21_052: [ If any memory allocation get fail, the HTTPAPI_ExecuteRequest shall return HTTPAPI_ALLOC_FAILED. ]*/
+					result = HTTPAPI_ALLOC_FAILED;
+				}
+				else if (BUFFER_content(responseContent, &receivedContent) != 0)
+				{
+					(void)BUFFER_unbuild(responseContent);
+
+					/*Codes_SRS_HTTPAPI_COMPACT_21_052: [ If any memory allocation get fail, the HTTPAPI_ExecuteRequest shall return HTTPAPI_ALLOC_FAILED. ]*/
+					result = HTTPAPI_ALLOC_FAILED;
+				}
+				else if (readChunk(httpHandle, (char*)receivedContent, bodyLength) < 0)
+				{
+					/*Codes_SRS_HTTPAPI_COMPACT_21_032: [ If the HTTPAPI_ExecuteRequest cannot read the message with the request result, it shall return HTTPAPI_READ_DATA_FAILED. ]*/
+					result = HTTPAPI_READ_DATA_FAILED;
+				}
+				else
+				{
+					/*Codes_SRS_HTTPAPI_COMPACT_21_033: [ If the whole process succeed, the HTTPAPI_ExecuteRequest shall retur HTTPAPI_OK. ]*/
+					result = HTTPAPI_OK;
+				}
+			}
+			else
+			{
+				/*Codes_SRS_HTTPAPI_COMPACT_21_051: [ If the responseContent is NULL, the HTTPAPI_ExecuteRequest shall ignore any content in the response. ]*/
+				(void)skipN(httpHandle, bodyLength, buf, sizeof(buf));
+				result = HTTPAPI_OK;
+			}
+		}
+		else
+		{
+			/*Codes_SRS_HTTPAPI_COMPACT_21_033: [ If the whole process succeed, the HTTPAPI_ExecuteRequest shall retur HTTPAPI_OK. ]*/
+			result = HTTPAPI_OK;
+		}
+	}
+	else
+	{
+		size_t size = 0;
+		/*Codes_SRS_HTTPAPI_COMPACT_21_033: [ If the whole process succeed, the HTTPAPI_ExecuteRequest shall retur HTTPAPI_OK. ]*/
+		result = HTTPAPI_OK;
+		while (result == HTTPAPI_OK)
+		{
+			int chunkSize;
+			if (readLine(httpHandle, buf, sizeof(buf)) < 0)    // read [length in hex]/r/n
+			{
+				/*Codes_SRS_HTTPAPI_COMPACT_21_032: [ If the HTTPAPI_ExecuteRequest cannot read the message with the request result, it shall return HTTPAPI_READ_DATA_FAILED. ]*/
+				result = HTTPAPI_READ_DATA_FAILED;
+			}
+			else if (ParseStringToHexadecimal(buf, &chunkSize) != 1)     // chunkSize is length of next line (/r/n is not counted)
+			{
+				//Cannot match string, error
+				/*Codes_SRS_HTTPAPI_COMPACT_21_055: [ If the HTTPAPI_ExecuteRequest cannot parser the recived message, it shall return HTTPAPI_RECEIVE_RESPONSE_FAILED. ]*/
+				result = HTTPAPI_RECEIVE_RESPONSE_FAILED;
+			}
+			else if (chunkSize == 0)
+			{
+				// 0 length means next line is just '\r\n' and end of chunks
+				if (readChunk(httpHandle, (char*)buf, 2) < 0
+					|| buf[0] != '\r' || buf[1] != '\n') // skip /r/n
+				{
+					(void)BUFFER_unbuild(responseContent);
+
+					result = HTTPAPI_READ_DATA_FAILED;
+				}
+				break;
+			}
+			else
+			{
+				if (responseContent != NULL)
+				{
+					if (BUFFER_enlarge(responseContent, chunkSize) != 0)
+					{
+						(void)BUFFER_unbuild(responseContent);
+
+						/*Codes_SRS_HTTPAPI_COMPACT_21_052: [ If any memory allocation get fail, the HTTPAPI_ExecuteRequest shall return HTTPAPI_ALLOC_FAILED. ]*/
+						result = HTTPAPI_ALLOC_FAILED;
+					}
+					else if (BUFFER_content(responseContent, &receivedContent) != 0)
+					{
+						(void)BUFFER_unbuild(responseContent);
+
+						/*Codes_SRS_HTTPAPI_COMPACT_21_052: [ If any memory allocation get fail, the HTTPAPI_ExecuteRequest shall return HTTPAPI_ALLOC_FAILED. ]*/
+						result = HTTPAPI_ALLOC_FAILED;
+					}
+					else if (readChunk(httpHandle, (char*)receivedContent + size, chunkSize) < 0)
+					{
+						result = HTTPAPI_READ_DATA_FAILED;
+					}
+				}
+				else
+				{
+					/*Codes_SRS_HTTPAPI_COMPACT_21_051: [ If the responseContent is NULL, the HTTPAPI_ExecuteRequest shall ignore any content in the response. ]*/
+					if (skipN(httpHandle, chunkSize, buf, sizeof(buf)) < 0)
+					{
+						result = HTTPAPI_READ_DATA_FAILED;
+					}
+				}
+
+				if (result == HTTPAPI_OK)
+				{
+					if (readChunk(httpHandle, (char*)buf, 2) < 0
+						|| buf[0] != '\r' || buf[1] != '\n') // skip /r/n
+					{
+						result = HTTPAPI_READ_DATA_FAILED;
+					}
+					size += chunkSize;
+				}
+			}
+		}
+
+	}
+	return result;
+}
+
+
+/*Codes_SRS_HTTPAPI_COMPACT_21_037: [ If the request type is unknown, the HTTPAPI_ExecuteRequest shall return HTTPAPI_INVALID_ARG. ]*/
+static bool validRequestType(HTTPAPI_REQUEST_TYPE requestType)
+{
+	bool result;
+
+	if ((requestType == HTTPAPI_REQUEST_GET) ||
+		(requestType == HTTPAPI_REQUEST_POST) ||
+		(requestType == HTTPAPI_REQUEST_PUT) ||
+		(requestType == HTTPAPI_REQUEST_DELETE) ||
+		(requestType == HTTPAPI_REQUEST_PATCH))
+	{
+		result = true;
+	}
+	else
+	{
+		result = false;
+	}
+
+	return result;
+}
+
+/*Codes_SRS_HTTPAPI_COMPACT_21_021: [ The HTTPAPI_ExecuteRequest shall execute the http communtication with the provided host, sending a request and reciving the response. ]*/
+/*Codes_SRS_HTTPAPI_COMPACT_21_050: [ If there is a content in the response, the HTTPAPI_ExecuteRequest shall copy it in the responseContent buffer. ]*/
 //Note: This function assumes that "Host:" and "Content-Length:" headers are setup
 //      by the caller of HTTPAPI_ExecuteRequest() (which is true for httptransport.c).
 HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE requestType, const char* relativePath,
@@ -461,403 +1030,162 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
     size_t contentLength, unsigned int* statusCode,
     HTTP_HEADERS_HANDLE responseHeadersHandle, BUFFER_HANDLE responseContent)
 {
-
-    HTTPAPI_RESULT result;
+    HTTPAPI_RESULT result = HTTPAPI_ERROR;
     size_t  headersCount;
-    char    buf[TEMP_BUFFER_SIZE];
-    int     ret;
     size_t  bodyLength = 0;
     bool    chunked = false;
-    const unsigned char* receivedContent;
+	HTTP_HANDLE_DATA* httpHandle = (HTTP_HANDLE_DATA*)handle;
 
-    const char* method = (requestType == HTTPAPI_REQUEST_GET) ? "GET"
-        : (requestType == HTTPAPI_REQUEST_POST) ? "POST"
-        : (requestType == HTTPAPI_REQUEST_PUT) ? "PUT"
-        : (requestType == HTTPAPI_REQUEST_DELETE) ? "DELETE"
-        : (requestType == HTTPAPI_REQUEST_PATCH) ? "PATCH"
-        : NULL;
-
-    if (handle == NULL ||
+	/*Codes_SRS_HTTPAPI_COMPACT_21_034: [ If there is no previous connection, the HTTPAPI_ExecuteRequest shall return HTTPAPI_INVALID_ARG. ]*/
+	/*Codes_SRS_HTTPAPI_COMPACT_21_037: [ If the request type is unknown, the HTTPAPI_ExecuteRequest shall return HTTPAPI_INVALID_ARG. ]*/
+	/*Codes_SRS_HTTPAPI_COMPACT_21_039: [ If the relativePath is NULL or invalid, the HTTPAPI_ExecuteRequest shall return HTTPAPI_INVALID_ARG. ]*/
+	/*Codes_SRS_HTTPAPI_COMPACT_21_041: [ If the httpHeadersHandle is NULL or invalid, the HTTPAPI_ExecuteRequest shall return HTTPAPI_INVALID_ARG. ]*/
+	/*Codes_SRS_HTTPAPI_COMPACT_21_053: [ The HTTPAPI_ExecuteRequest shall produce a set of http header to send to the host. ]*/
+	/*Codes_SRS_HTTPAPI_COMPACT_21_040: [ The request shall contain the http header provided in httpHeadersHandle parameter. ]*/
+	/*Codes_SRS_HTTPAPI_COMPACT_21_054: [ If Http header maker cannot provide the number of headers, the HTTPAPI_ExecuteRequest shall return HTTPAPI_INVALID_ARG. ]*/
+	if (httpHandle == NULL ||
         relativePath == NULL ||
         httpHeadersHandle == NULL ||
-        method == NULL ||
+		!validRequestType(requestType) ||
         HTTPHeaders_GetHeaderCount(httpHeadersHandle, &headersCount) != HTTP_HEADERS_OK)
     {
         result = HTTPAPI_INVALID_ARG;
         LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
-        goto exit;
     }
+	/*Codes_SRS_HTTPAPI_COMPACT_21_024: [ The HTTPAPI_ExecuteRequest shall open the transport connection with the host to send the request. ]*/
+	else if ((result = OpenXIOConnection(httpHandle)) != HTTPAPI_OK)
+	{
+		LogError("Open HTTP connection failed (result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+	}
+	/*Codes_SRS_HTTPAPI_COMPACT_21_026: [ If the open process succeed, the HTTPAPI_ExecuteRequest shall send the request message to the host. ]*/
+	else if ((result = SendHeadsToXIO(httpHandle, requestType, relativePath, httpHeadersHandle, headersCount)) != HTTPAPI_OK)
+	{
+		LogError("Send heads to HTTP failed (result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+	}
+	/*Codes_SRS_HTTPAPI_COMPACT_21_042: [ The request can contain the a content message, provided in content parameter. ]*/
+	else if ((result = SendContentToXIO(httpHandle, content, contentLength)) != HTTPAPI_OK)
+	{
+		LogError("Send content to HTTP failed (result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+	}
+	/*Codes_SRS_HTTPAPI_COMPACT_21_030: [ At the end of the transmission, the HTTPAPI_ExecuteRequest shall receive the response from the host. ]*/
+	/*Codes_SRS_HTTPAPI_COMPACT_21_073: [ The message recived by the HTTPAPI_ExecuteRequest shall starts with a valid header. ]*/
+	else if ((result = RecieveHeaderFromXIO(httpHandle, statusCode)) != HTTPAPI_OK)
+	{
+		LogError("Receive header from HTTP failed (result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+	}
+	/*Codes_SRS_HTTPAPI_COMPACT_21_074: [ After the header, the message recieved by the HTTPAPI_ExecuteRequest can contain addition information about the content. ]*/
+	else if ((result = RecieveContentInfoFromXIO(httpHandle, responseHeadersHandle, &bodyLength, &chunked)) != HTTPAPI_OK)
+	{
+		LogError("Receive content information from HTTP failed (result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+	}
+	/*Codes_SRS_HTTPAPI_COMPACT_21_075: [ The message recieved by the HTTPAPI_ExecuteRequest can contain a body with the message content. ]*/
+	else if ((result = ReadHTTPResponseBodyFromXIO(httpHandle, bodyLength, chunked, responseContent)) != HTTPAPI_OK)
+	{
+		LogError("Read HTTP response body from HTTP failed (result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+	}
 
-    HTTP_HANDLE_DATA* httpHandle = (HTTP_HANDLE_DATA*)handle;
-
-    if (handle->is_connected == 0)
+	/*Codes_SRS_HTTPAPI_COMPACT_21_031: [ After receive the response, the HTTPAPI_ExecuteRequest shall close the transport connection with the host. ]*/
+	if ((httpHandle != NULL) &&
+        (httpHandle->is_connected != 0))
     {
-        // Load the certificate
-        if ((httpHandle->certificate != NULL) &&
-			(xio_setoption(httpHandle->xio_handle, "TrustedCerts", httpHandle->certificate) != 0))
-        {
-            result = HTTPAPI_ERROR;
-            LogError("Could not load certificate (result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
-            goto exit;
-        }
-
-        // Make the connection
-        if (xio_open(httpHandle->xio_handle, on_io_open_complete, httpHandle, on_bytes_received, httpHandle, on_io_error, httpHandle) != 0)
-        {
-            result = HTTPAPI_ERROR;
-            LogError("Could not connect (result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
-            goto exit;
-        }
-
-        while (1)
-        {
-            xio_dowork(httpHandle->xio_handle);
-            if ((handle->is_connected == 1) ||
-                (handle->is_io_error == 1))
-            {
-                break;
-            }
-
-            ThreadAPI_Sleep(1);
-        }
-    }
-
-    //Send request
-    if ((ret = snprintf(buf, sizeof(buf), "%s %s HTTP/1.1\r\n", method, relativePath)) < 0
-        || ret >= sizeof(buf))
-    {
-        result = HTTPAPI_STRING_PROCESSING_ERROR;
-        LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
-        goto exit;
-    }
-    if (conn_send_all(httpHandle, buf, strlen(buf)) < 0)
-    {
-        result = HTTPAPI_SEND_REQUEST_FAILED;
-        LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
-        goto exit;
-    }
-
-    //Send default headers
-    for (size_t i = 0; i < headersCount; i++)
-    {
-        char* header;
-        if (HTTPHeaders_GetHeader(httpHeadersHandle, i, &header) != HTTP_HEADERS_OK)
-        {
-            result = HTTPAPI_HTTP_HEADERS_FAILED;
-            LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
-            goto exit;
-        }
-        if (conn_send_all(httpHandle, header, strlen(header)) < 0)
-        {
-            result = HTTPAPI_SEND_REQUEST_FAILED;
-            LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
-            free(header);
-            goto exit;
-        }
-        if (conn_send_all(httpHandle, "\r\n", 2) < 0)
-        {
-            result = HTTPAPI_SEND_REQUEST_FAILED;
-            LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
-            free(header);
-            goto exit;
-        }
-        free(header);
-    }
-
-    //Close headers
-    if (conn_send_all(httpHandle, "\r\n", 2) < 0)
-    {
-        result = HTTPAPI_SEND_REQUEST_FAILED;
-        LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
-        goto exit;
-    }
-
-    //Send data (if available)
-    if (content && contentLength > 0)
-    {
-        if (conn_send_all(httpHandle, (char*)content, contentLength) < 0)
-        {
-            result = HTTPAPI_SEND_REQUEST_FAILED;
-            LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
-            goto exit;
-        }
-    }
-
-    //Receive response
-    if (readLine(httpHandle, buf, sizeof(buf)) < 0)
-    {
-        result = HTTPAPI_READ_DATA_FAILED;
-        LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
-        goto exit;
-    }
-
-    //Parse HTTP response
-    if (ParseHttpResponse(buf, &ret) != 1)
-    {
-        //Cannot match string, error
-        LogInfo("HTTPAPI_ExecuteRequest::Not a correct HTTP answer=%s", buf);
-        result = HTTPAPI_READ_DATA_FAILED;
-        LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
-        goto exit;
-    }
-    if (statusCode)
-        *statusCode = ret;
-
-    //Read HTTP response headers
-    if (readLine(httpHandle, buf, sizeof(buf)) < 0)
-    {
-        result = HTTPAPI_READ_DATA_FAILED;
-        LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
-        goto exit;
-    }
-
-    while (buf[0])
-    {
-        const char ContentLength[] = "content-length:";
-        const char TransferEncoding[] = "transfer-encoding:";
-
-        if (my_strnicmp(buf, ContentLength, CHAR_COUNT(ContentLength)) == 0)
-        {
-            if (ParseStringToDecimal(buf + CHAR_COUNT(ContentLength), &bodyLength) != 1)
-            {
-                result = HTTPAPI_READ_DATA_FAILED;
-                LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
-                goto exit;
-            }
-        }
-        else if (my_strnicmp(buf, TransferEncoding, CHAR_COUNT(TransferEncoding)) == 0)
-        {
-            const char* p = buf + CHAR_COUNT(TransferEncoding);
-            while (isspace(*p)) p++;
-            if (my_stricmp(p, "chunked") == 0)
-                chunked = true;
-        }
-
-        char* whereIsColon = strchr((char*)buf, ':');
-        if (whereIsColon && responseHeadersHandle != NULL)
-        {
-            *whereIsColon = '\0';
-            HTTPHeaders_AddHeaderNameValuePair(responseHeadersHandle, buf, whereIsColon + 1);
-        }
-
-        if (readLine(httpHandle, buf, sizeof(buf)) < 0)
-        {
-            result = HTTPAPI_READ_DATA_FAILED;
-            LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
-            goto exit;
-        }
-    }
-
-    //Read HTTP response body
-    if (!chunked)
-    {
-        if (bodyLength)
-        {
-            if (responseContent != NULL)
-            {
-                if (BUFFER_pre_build(responseContent, bodyLength) != 0)
-                {
-                    result = HTTPAPI_ALLOC_FAILED;
-                    LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
-                }
-                else if (BUFFER_content(responseContent, &receivedContent) != 0)
-                {
-                    (void)BUFFER_unbuild(responseContent);
-
-                    result = HTTPAPI_ALLOC_FAILED;
-                    LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
-                }
-
-                if (readChunk(httpHandle, (char*)receivedContent, bodyLength) < 0)
-                {
-                    result = HTTPAPI_READ_DATA_FAILED;
-                    LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
-                    goto exit;
-                }
-                else
-                {
-                    result = HTTPAPI_OK;
-                }
-            }
-            else
-            {
-                (void)skipN(httpHandle, bodyLength, buf, sizeof(buf));
-                result = HTTPAPI_OK;
-            }
-        }
-        else
-        {
-            result = HTTPAPI_OK;
-        }
-    }
-    else
-    {
-        size_t size = 0;
-        result = HTTPAPI_OK;
-        for (;;)
-        {
-            int chunkSize;
-            if (readLine(httpHandle, buf, sizeof(buf)) < 0)    // read [length in hex]/r/n
-            {
-                result = HTTPAPI_READ_DATA_FAILED;
-                LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
-                goto exit;
-            }
-            if (ParseStringToHexadecimal(buf, &chunkSize) != 1)     // chunkSize is length of next line (/r/n is not counted)
-            {
-                //Cannot match string, error
-                result = HTTPAPI_RECEIVE_RESPONSE_FAILED;
-                LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
-                goto exit;
-            }
-
-            if (chunkSize == 0)
-            {
-                // 0 length means next line is just '\r\n' and end of chunks
-                if (readChunk(httpHandle, (char*)buf, 2) < 0
-                    || buf[0] != '\r' || buf[1] != '\n') // skip /r/n
-                {
-                    (void)BUFFER_unbuild(responseContent);
-
-                    result = HTTPAPI_READ_DATA_FAILED;
-                    LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
-                    goto exit;
-                }
-                break;
-            }
-            else
-            {
-                if (responseContent != NULL)
-                {
-                    if (BUFFER_enlarge(responseContent, chunkSize) != 0)
-                    {
-                        (void)BUFFER_unbuild(responseContent);
-
-                        result = HTTPAPI_ALLOC_FAILED;
-                        LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
-                    }
-                    else if (BUFFER_content(responseContent, &receivedContent) != 0)
-                    {
-                        (void)BUFFER_unbuild(responseContent);
-
-                        result = HTTPAPI_ALLOC_FAILED;
-                        LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
-                    }
-
-                    if (readChunk(httpHandle, (char*)receivedContent + size, chunkSize) < 0)
-                    {
-                        result = HTTPAPI_READ_DATA_FAILED;
-                        LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
-                        goto exit;
-                    }
-                }
-                else
-                {
-                    if (skipN(httpHandle, chunkSize, buf, sizeof(buf)) < 0)
-                    {
-                        result = HTTPAPI_READ_DATA_FAILED;
-                        LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
-                        goto exit;
-                    }
-                }
-
-                if (readChunk(httpHandle, (char*)buf, 2) < 0
-                    || buf[0] != '\r' || buf[1] != '\n') // skip /r/n
-                {
-                    result = HTTPAPI_READ_DATA_FAILED;
-                    LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
-                    goto exit;
-                }
-                size += chunkSize;
-            }
-        }
-
-    }
-
-exit:
-    if ((handle != NULL) &&
-        (handle->is_io_error != 0))
-    {
-        xio_close(handle->xio_handle, NULL, NULL);
-        handle->is_connected = 0;
+        xio_close(httpHandle->xio_handle, NULL, NULL);
+        httpHandle->is_connected = 0;
     }
 
     return result;
 }
 
+/*Codes_SRS_HTTPAPI_COMPACT_21_056: [ The HTTPAPI_SetOption shall change the HTTP options. ]*/
+/*Codes_SRS_HTTPAPI_COMPACT_21_057: [ The HTTPAPI_SetOption shall recieve a handle that identiry the HTTP connection. ]*/
+/*Codes_SRS_HTTPAPI_COMPACT_21_058: [ The HTTPAPI_SetOption shall recieve the option as a pair optionName/value. ]*/
 HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, const void* value)
 {
     HTTPAPI_RESULT result;
-    if (
-        (handle == NULL) ||
+    HTTP_HANDLE_DATA* httpHandle = (HTTP_HANDLE_DATA*)handle;
+
+	if (
+        (httpHandle == NULL) ||
         (optionName == NULL) ||
         (value == NULL)
         )
     {
-        result = HTTPAPI_INVALID_ARG;
-        LogError("invalid parameter (NULL) passed to HTTPAPI_SetOption");
+		/*Codes_SRS_HTTPAPI_COMPACT_21_059: [ If the handle is NULL, the HTTPAPI_SetOption shall return HTTPAPI_INVALID_ARG. ]*/
+		/*Codes_SRS_HTTPAPI_COMPACT_21_060: [ If the optionName is NULL, the HTTPAPI_SetOption shall return HTTPAPI_INVALID_ARG. ]*/
+		/*Codes_SRS_HTTPAPI_COMPACT_21_061: [ If the value is NULL, the HTTPAPI_SetOption shall return HTTPAPI_INVALID_ARG. ]*/
+		result = HTTPAPI_INVALID_ARG;
     }
     else if (strcmp("TrustedCerts", optionName) == 0)
     {
-        HTTP_HANDLE_DATA* h = (HTTP_HANDLE_DATA*)handle;
-        if (h->certificate)
+        if (httpHandle->certificate)
         {
-            free(h->certificate);
+            free(httpHandle->certificate);
         }
 
         int len = strlen((char*)value);
-        h->certificate = (char*)malloc(len + 1);
-        if (h->certificate == NULL)
+        httpHandle->certificate = (char*)malloc((len + 1) * sizeof(char));
+        if (httpHandle->certificate == NULL)
         {
-            result = HTTPAPI_ERROR;
-            LogError("unable to allocate certificate memory in HTTPAPI_SetOption");
+			/*SRS_HTTPAPI_COMPACT_21_062: [ If any memory allocation get fail, the HTTPAPI_SetOption shall return HTTPAPI_ALLOC_FAILED. ]*/
+			result = HTTPAPI_ALLOC_FAILED;
+            LogInfo("unable to allocate memory for the certificate in HTTPAPI_SetOption");
         }
         else
         {
-            (void)strcpy(h->certificate, (const char*)value);
+			/*SRS_HTTPAPI_COMPACT_21_064: [ If the HTTPAPI_SetOption get success setting the option, it shall return HTTPAPI_OK. ]*/
+            (void)strcpy(httpHandle->certificate, (const char*)value);
             result = HTTPAPI_OK;
         }
     }
     else
     {
+		/*Codes_SRS_HTTPAPI_COMPACT_21_063: [ If the HTTP do not support the optionName, the HTTPAPI_SetOption shall return HTTPAPI_INVALID_ARG. ]*/
         result = HTTPAPI_INVALID_ARG;
-        LogError("unknown option %s", optionName);
+        LogInfo("unknown option %s", optionName);
     }
     return result;
 }
 
+/*Codes_SRS_HTTPAPI_COMPACT_21_065: [ The HTTPAPI_CloneOption shall provide the means to clone the HTTP option. ]*/
+/*Codes_SRS_HTTPAPI_COMPACT_21_066: [ The HTTPAPI_CloneOption shall return a clone of the value identified by the optionName. ]*/
 HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, const void** savedValue)
 {
     HTTPAPI_RESULT result;
-    if (
+    size_t certLen;
+    char* tempCert;
+
+	if (
         (optionName == NULL) ||
         (value == NULL) ||
         (savedValue == NULL)
         )
     {
-        result = HTTPAPI_INVALID_ARG;
-        LogError("invalid argument(NULL) passed to HTTPAPI_CloneOption");
+		/*Codes_SRS_HTTPAPI_COMPACT_21_067: [ If the optionName is NULL, the HTTPAPI_CloneOption shall return HTTPAPI_INVALID_ARG. ]*/
+		/*Codes_SRS_HTTPAPI_COMPACT_21_068: [ If the value is NULL, the HTTPAPI_CloneOption shall return HTTPAPI_INVALID_ARG. ]*/
+		/*Codes_SRS_HTTPAPI_COMPACT_21_069: [ If the savedValue is NULL, the HTTPAPI_CloneOption shall return HTTPAPI_INVALID_ARG. ]*/
+		result = HTTPAPI_INVALID_ARG;
     }
     else if (strcmp("TrustedCerts", optionName) == 0)
     {
-        size_t certLen = strlen((const char*)value);
-        char* tempCert = (char*)malloc(certLen+1);
+        certLen = strlen((const char*)value);
+        tempCert = (char*)malloc((certLen + 1) * sizeof(char));
         if (tempCert == NULL)
         {
-            result = HTTPAPI_INVALID_ARG;
-            LogError("unable to allocate certificate memory in HTTPAPI_CloneOption");
+			/*Codes_SRS_HTTPAPI_COMPACT_21_070: [ If any memory allocation get fail, the HTTPAPI_CloneOption shall return HTTPAPI_ALLOC_FAILED. ]*/
+			result = HTTPAPI_ALLOC_FAILED;
         }
         else
         {
-            (void)strcpy(tempCert, (const char*)value);
+			/*Codes_SRS_HTTPAPI_COMPACT_21_072: [ If the HTTPAPI_CloneOption get success setting the option, it shall return HTTPAPI_OK. ]*/
+			(void)strcpy(tempCert, (const char*)value);
             *savedValue = tempCert;
             result = HTTPAPI_OK;
         }
     }
     else
     {
-        result = HTTPAPI_INVALID_ARG;
-        LogError("unknown option %s", optionName);
+		/*Codes_SRS_HTTPAPI_COMPACT_21_071: [ If the HTTP do not support the optionName, the HTTPAPI_CloneOption shall return HTTPAPI_INVALID_ARG. ]*/
+		result = HTTPAPI_INVALID_ARG;
+        LogInfo("unknown option %s", optionName);
     }
     return result;
 }
