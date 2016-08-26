@@ -12,6 +12,7 @@ extern "C"
 #include <stddef.h>
 #endif
 
+#include <stdint.h>
 #include "azure_c_shared_utility/umock_c_prod.h"
 
 typedef struct DLIST_ENTRY_TAG
