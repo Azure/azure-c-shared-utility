@@ -1,4 +1,4 @@
-azure-c-shared-util (0.1.0-22) vivid; urgency=low
+azure-c-shared-util (0.1.0-24) vivid; urgency=low
 
   * Initial release (Closes: #5069014)
 
@@ -36,4 +36,8 @@ azure-c-shared-util (0.1.0-22) vivid; urgency=low
 
   * Implemented code and unittests for x509 support using openssl
 
- -- AzureIoT User <aziotsdklinux@outlook.com>  Tue, 2 Aug 2016 11:00:00 +0000
+  * Add sprintf implemenation for to string_handle
+
+  * Implement retrieveoptions for MBED
+
+ -- AzureIoT User <aziotsdklinux@outlook.com>  Sat, 27 Aug 2016 11:00:00 +0000
