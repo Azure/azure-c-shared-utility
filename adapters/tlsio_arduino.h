@@ -21,3 +21,4 @@ MOCKABLE_FUNCTION(, const IO_INTERFACE_DESCRIPTION*, tlsio_arduino_get_interface
 #endif /* __cplusplus */
 
 #endif /* TLSIO_ARDUINO_H */
+
