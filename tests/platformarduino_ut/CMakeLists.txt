@@ -12,7 +12,7 @@ ${theseTestsName}.c
 )
 
 set(${theseTestsName}_c_files
-../../src/platform_arduino.c
+../../adapters/platform_arduino.c
 )
 
 set(${theseTestsName}_h_files
