@@ -38,8 +38,6 @@ static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
     ASSERT_FAIL(temp_str);
 }
 
-#define TESTS_VALID_POINTER	0xCAFECAFE
-
 static IO_INTERFACE_DESCRIPTION* my_tlsio_arduino_get_interface_description_return = NULL;
 const IO_INTERFACE_DESCRIPTION* my_tlsio_arduino_get_interface_description(void)
 {
@@ -125,8 +123,10 @@ BEGIN_TEST_SUITE(platformarduino_ut)
 	TEST_FUNCTION(platform_get_default_tlsio__valid_ptr_succeed)
 	{
 		///arrange
-		my_tlsio_arduino_get_interface_description_return = (IO_INTERFACE_DESCRIPTION*)TESTS_VALID_POINTER;
+		my_tlsio_arduino_get_interface_description_return = (IO_INTERFACE_DESCRIPTION*)malloc(sizeof(IO_INTERFACE_DESCRIPTION));
 		const IO_INTERFACE_DESCRIPTION* result;
+
+        umock_c_reset_all_calls();
 
 		STRICT_EXPECTED_CALL(tlsio_arduino_get_interface_description());
 
@@ -136,11 +136,13 @@ BEGIN_TEST_SUITE(platformarduino_ut)
 		result = platform_get_default_tlsio();
 
 		///assert
-		ASSERT_ARE_EQUAL(void_ptr, (void*)TESTS_VALID_POINTER, result);
+		ASSERT_ARE_EQUAL(void_ptr, (void*)my_tlsio_arduino_get_interface_description_return, result);
 		ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
 		///cleanup
         platform_deinit();
+        free(my_tlsio_arduino_get_interface_description_return);
+        my_tlsio_arduino_get_interface_description_return = NULL;
     }
 
 	/*Tests_SRS_PLATFORM_ARDUINO_21_007: [ The platform_get_default_tlsio shall return a set of tlsio functions provided by the Arduino tlsio implementation. ]*/
