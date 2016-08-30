@@ -107,8 +107,8 @@ The macro DEC_RETURN_ZERO will be "0" on windows, and "1" on the other cases.
 #else
 #if defined(REFCOUNT_ATOMIC_DONTCARE)
 #define DEC_RETURN_ZERO (0)
-#define INC_REF(type, var) ++(&(((REFCOUNT_TYPE(type)*)var)->count))
-#define DEC_REF(type, var) --(&(((REFCOUNT_TYPE(type)*)var)->count))
+#define INC_REF(type, var) ++((((REFCOUNT_TYPE(type)*)var)->count))
+#define DEC_REF(type, var) --((((REFCOUNT_TYPE(type)*)var)->count))
 #else
 #error do not know how to atomically increment and decrement a uint32_t :(. Platform support needs to be extended to your platform.
 #endif /*defined(REFCOUNT_ATOMIC_DONTCARE)*/
