@@ -50,3 +50,6 @@ add_subdirectory(optionhandler_ut)
 if(use_wsio)
     add_subdirectory(wsio_ut)
 endif()
+
+#Add adapters tests
+add_subdirectory(platformarduino_ut)
