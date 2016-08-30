@@ -16,7 +16,7 @@ var SRCS = [
     "base64.c",
     "buffer.c",
     "consolelogger.c",
-	"constbuffer.c"
+	"constbuffer.c",
     "crt_abstractions.c",
     "doublylinkedlist.c",
     "gballoc.c",
