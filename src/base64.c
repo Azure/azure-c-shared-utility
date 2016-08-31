@@ -18,7 +18,7 @@
 #include "azure_c_shared_utility/base64.h"
 #include "azure_c_shared_utility/xlogging.h"
 
-static const char base64char[64] = {
+const char base64char[64] = {
     'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
     'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
     'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd',
@@ -28,12 +28,12 @@ static const char base64char[64] = {
     '8', '9', '+', '/'
 };
 
-static const char base64b16[16] = {
+const char base64b16[16] = {
     'A', 'E', 'I', 'M', 'Q', 'U', 'Y', 'c', 'g', 'k',
     'o', 's', 'w', '0', '4', '8'
 };
 
-static const char base64b8[4] = {
+const char base64b8[4] = {
     'A', 'Q', 'g', 'w'
 };
 
