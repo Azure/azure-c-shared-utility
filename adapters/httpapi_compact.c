@@ -826,7 +826,7 @@ static HTTPAPI_RESULT RecieveContentInfoFromXIO(HTTP_HANDLE_DATA* httpHandle, HT
 		{
 			if (InternStrnicmp(buf, ContentLength, ContentLengthSize) == 0)
 			{
-				substr = buf + ContentLengthSize;
+				substr = buf + ContentLengthSize - 1;
 				if (ParseStringToDecimal(substr, &lengthInMsg) != 1)
 				{
 					/*Codes_SRS_HTTPAPI_COMPACT_21_032: [ If the HTTPAPI_ExecuteRequest cannot read the message with the request result, it shall return HTTPAPI_READ_DATA_FAILED. ]*/
@@ -839,7 +839,7 @@ static HTTPAPI_RESULT RecieveContentInfoFromXIO(HTTP_HANDLE_DATA* httpHandle, HT
 			}
 			else if (InternStrnicmp(buf, TransferEncoding, TransferEncodingSize) == 0)
 			{
-				substr = buf + TransferEncodingSize -1;
+				substr = buf + TransferEncodingSize - 1;
 
 				while (isspace(*substr)) substr++;
 				
@@ -1088,6 +1088,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
 	if ((httpHandle != NULL) &&
         (httpHandle->is_connected != 0))
     {
+        conn_receive_discard_buffer(httpHandle);
         xio_close(httpHandle->xio_handle, NULL, NULL);
         httpHandle->is_connected = 0;
     }

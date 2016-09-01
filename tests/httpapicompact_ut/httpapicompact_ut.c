@@ -528,7 +528,7 @@ static void setupAllCallBeforeSendHTTPsequence(int numberOfDoWork)
 }
 
 
-#define TEST_RECEIVED_ANSWER (const unsigned char*)"HTTP/111.222 433 555\r\ncontent-length:10\r\ntransfer-encoding:\r\n0123456789\r\n\r\n"
+#define TEST_RECEIVED_ANSWER (const unsigned char*)"HTTP/111.222 433 555\r\ncontent-length:10\r\ntransfer-encoding:\r\n\r\n0123456789\r\n\r\n"
 static void setupAllCallBeforeReceiveHTTPsequenceWithSuccess()
 {
     STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
@@ -549,7 +549,7 @@ static void setupAllCallBeforeReceiveHTTPsequenceWithSuccess()
     }
     STRICT_EXPECTED_CALL(HTTPHeaders_AddHeaderNameValuePair(IGNORED_PTR_ARG, "transfer-encoding", "")).IgnoreArgument(1);
 
-    for (size_t countChar = 0; countChar < 14; countChar++)
+    for (size_t countChar = 0; countChar < 3; countChar++)
     {
         STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
@@ -604,7 +604,7 @@ static void setupAllCallBeforeSendHTTPsequenceWithSuccess(HTTP_HEADERS_HANDLE re
 static const IO_OPEN_RESULT* DoworkJobsOpenResult_ReceiveHead = (const IO_OPEN_RESULT*)openresult_ok;
 static const IO_SEND_RESULT* DoworkJobsSendResult_ReceiveHead = (const IO_SEND_RESULT*) sendresult_7ok;
 
-static void PrepareReceiveHead(HTTP_HEADERS_HANDLE requestHttpHeaders, size_t bufferSize[], int countSizes)
+static void PrepareReceiveHead(HTTP_HEADERS_HANDLE requestHttpHeaders, size_t bufferSize[], int doworkReduction[], int countSizes)
 {
     int maxSize;
     int countChar;
@@ -624,7 +624,7 @@ static void PrepareReceiveHead(HTTP_HEADERS_HANDLE requestHttpHeaders, size_t bu
         STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
         STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_NUM_ARG, bufferSize[countBuffer])).IgnoreArgument(1);
-        maxSize = (int)(bufferSize[countBuffer]) - 1;
+        maxSize = (int)(bufferSize[countBuffer]) - 1 - doworkReduction[countBuffer];
         if (maxSize > 1023)
         {
             maxSize = 1023;
@@ -2257,8 +2257,9 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_read_wrong_URL_header_failed)
 
     DoworkJobsReceivedBuffer = (const unsigned char*)"HTTP/111222 433 555\r\n";
     DoworkJobsReceivedBuffer_size[0] = strlen((const char*)DoworkJobsReceivedBuffer);
+    int doworkReduction[1] = { 0 };
     DoworkJobsReceivedBuffer_counter = 0;
-    PrepareReceiveHead(requestHttpHeaders, DoworkJobsReceivedBuffer_size, 1);
+    PrepareReceiveHead(requestHttpHeaders, DoworkJobsReceivedBuffer_size, doworkReduction, 1);
     DoworkJobs = (const xio_dowork_job*)doworkjob_o_7s_re;
 
     /// act
@@ -2298,8 +2299,9 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_read_header_with_no_statusCode_failed)
 
     DoworkJobsReceivedBuffer = (const unsigned char*)"HTTP/111.222\r\n";
     DoworkJobsReceivedBuffer_size[0] = strlen((const char*)DoworkJobsReceivedBuffer);
+    int doworkReduction[1] = { 0 };
     DoworkJobsReceivedBuffer_counter = 0;
-    PrepareReceiveHead(requestHttpHeaders, DoworkJobsReceivedBuffer_size, 1);
+    PrepareReceiveHead(requestHttpHeaders, DoworkJobsReceivedBuffer_size, doworkReduction, 1);
     DoworkJobs = (const xio_dowork_job*)doworkjob_o_7s_re;
 
     /// act
@@ -2339,8 +2341,9 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_read_header_incomplete_failed)
 
     DoworkJobsReceivedBuffer = (const unsigned char*)"HTTP/111\r\n";
     DoworkJobsReceivedBuffer_size[0] = strlen((const char*)DoworkJobsReceivedBuffer);
+    int doworkReduction[1] = { 0 };
     DoworkJobsReceivedBuffer_counter = 0;
-    PrepareReceiveHead(requestHttpHeaders, DoworkJobsReceivedBuffer_size, 1);
+    PrepareReceiveHead(requestHttpHeaders, DoworkJobsReceivedBuffer_size, doworkReduction, 1);
     DoworkJobs = (const xio_dowork_job*)doworkjob_o_7s_re;
 
     /// act
@@ -2381,8 +2384,9 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_read_multi_header_with_size_0_and_error
     DoworkJobsReceivedBuffer = (const unsigned char*)"HTTP/111\r\n";
     DoworkJobsReceivedBuffer_size[0] = 0;
     DoworkJobsReceivedBuffer_size[1] = strlen((const char*)DoworkJobsReceivedBuffer);
+    int doworkReduction[2] = { 0, 0 };
     DoworkJobsReceivedBuffer_counter = 0;
-    PrepareReceiveHead(requestHttpHeaders, DoworkJobsReceivedBuffer_size, 2);
+    PrepareReceiveHead(requestHttpHeaders, DoworkJobsReceivedBuffer_size, doworkReduction, 2);
     DoworkJobs = (const xio_dowork_job*)doworkjob_o_7s_rre;
 
     /// act
@@ -2435,7 +2439,8 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__read_huge_header_failed)
     DoworkJobsReceivedBuffer = (const unsigned char*)hugeBuffer;
     DoworkJobsReceivedBuffer_size[0] = strlen((const char*)DoworkJobsReceivedBuffer);
     DoworkJobsReceivedBuffer_counter = 0;
-    PrepareReceiveHead(requestHttpHeaders, DoworkJobsReceivedBuffer_size, 1);
+    int doworkReduction[1] = { 0 };
+    PrepareReceiveHead(requestHttpHeaders, DoworkJobsReceivedBuffer_size, doworkReduction, 1);
     DoworkJobs = (const xio_dowork_job*)doworkjob_o_7s_re;
 
     /// act
@@ -2473,10 +2478,11 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__content_length_without_value_failed)
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     setHttpCertificate(httpHandle);
 
-    DoworkJobsReceivedBuffer = (const unsigned char*)"HTTP/111.222 433 555\r\ncontent-length:\r\n";
+    DoworkJobsReceivedBuffer = (const unsigned char*)"HTTP/111.222 433 555\r\ncontent-length:\r\n\r\n";
     DoworkJobsReceivedBuffer_size[0] = strlen((const char*)DoworkJobsReceivedBuffer);
+    int doworkReduction[1] = { 2 };
+    PrepareReceiveHead(requestHttpHeaders, DoworkJobsReceivedBuffer_size, doworkReduction, 1);
     DoworkJobsReceivedBuffer_counter = 0;
-    PrepareReceiveHead(requestHttpHeaders, DoworkJobsReceivedBuffer_size, 1);
     DoworkJobs = (const xio_dowork_job*)doworkjob_o_7s_re;
 
     /// act
@@ -3172,7 +3178,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__Execute_request_no_responseHeadersHandle_s
     STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
         .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_NUM_ARG, DoworkJobsReceivedBuffer_size[0])).IgnoreArgument(1);
-    for (size_t countChar = 0; countChar < 74; countChar++)
+    for (size_t countChar = 0; countChar < 63; countChar++)
     {
         STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
