@@ -1290,7 +1290,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__clone_certificate_out_of_memory_failed)
         .IgnoreArgument(1);
 
     /// act
-    result = HTTPAPI_CloneOption("TrustedCerts", TEST_SETOPTIONS_CERTIFICATE, (void**)&cloneCertificate);
+    result = HTTPAPI_CloneOption("TrustedCerts", TEST_SETOPTIONS_CERTIFICATE, (const void**)&cloneCertificate);
 
     /// assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -1313,7 +1313,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__clone_certificate_succeed)
         .IgnoreArgument(1);
 
     /// act
-    result = HTTPAPI_CloneOption("TrustedCerts", TEST_SETOPTIONS_CERTIFICATE, (void**)&cloneCertificate);
+    result = HTTPAPI_CloneOption("TrustedCerts", TEST_SETOPTIONS_CERTIFICATE, (const void**)&cloneCertificate);
 
     /// assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -1333,7 +1333,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__clone_certificate_NULL_optionName_failed)
     unsigned char* cloneCertificate;
 
     /// act
-    result = HTTPAPI_CloneOption(NULL, TEST_SETOPTIONS_CERTIFICATE, (void**)&cloneCertificate);
+    result = HTTPAPI_CloneOption(NULL, TEST_SETOPTIONS_CERTIFICATE, (const void**)&cloneCertificate);
 
     /// assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -1351,7 +1351,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__clone_certificate_NULL_value_failed)
     unsigned char* cloneCertificate;
 
     /// act
-    result = HTTPAPI_CloneOption("TrustedCerts", NULL, (void**)&cloneCertificate);
+    result = HTTPAPI_CloneOption("TrustedCerts", NULL, (const void**)&cloneCertificate);
 
     /// assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -1386,7 +1386,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__clone_certificate_invalid_optionName_faile
     unsigned char* cloneCertificate;
 
     /// act
-    result = HTTPAPI_CloneOption("InvalidOptionName", TEST_SETOPTIONS_CERTIFICATE, (void**)&cloneCertificate);
+    result = HTTPAPI_CloneOption("InvalidOptionName", TEST_SETOPTIONS_CERTIFICATE, (const void**)&cloneCertificate);
 
     /// assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
