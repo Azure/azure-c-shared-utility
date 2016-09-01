@@ -6,8 +6,8 @@
 #include <crtdbg.h>
 #endif
 
-static size_t currentmalloc_call = 0;
-static size_t whenShallmalloc_fail = 0;
+static int currentmalloc_call = 0;
+static int whenShallmalloc_fail = 0;
 
 void* my_gballoc_malloc(size_t size)
 {
@@ -122,7 +122,6 @@ int my_xio_setoption(XIO_HANDLE xio, const char* optionName, const void* value)
 static int xio_open_shallReturn;
 static int xio_send_shallReturn;
 static char xio_send_transmited_buffer[1024];
-static int xio_send_transmited_buffer_size;
 static int xio_send_transmited_buffer_target = 0;
 
 typedef enum xio_dowork_job_tag
@@ -287,7 +286,6 @@ int my_xio_send(XIO_HANDLE xio, const void* buffer, size_t size, ON_SEND_COMPLET
             if (xio_send_transmited_buffer_target == 0)
             {
                 memcpy(xio_send_transmited_buffer, buffer, size);
-                xio_send_transmited_buffer_size = size;
             }
         }
         result = xio_send_shallReturn;
