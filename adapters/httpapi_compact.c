@@ -70,7 +70,7 @@ static int ParseStringToDecimal(const char *src, int* dst)
 /*the following function does the same as sscanf(pos2, "%x", &sec)*/
 /*this function only exists because some of platforms do not have sscanf. This is not a full implementation; it only works with well-defined x numbers. */
 #define HEXA_DIGIT_VAL(c)         (((c>='0') && (c<='9')) ? (c-'0') : ((c>='a') && (c<='f')) ? (c-'a'+10) : ((c>='A') && (c<='F')) ? (c-'A'+10) : -1)
-static int ParseStringToHexadecimal(const char *src, int* dst)
+static int ParseStringToHexadecimal(const char *src, size_t* dst)
 {
 	int result;
     int digitVal;
@@ -88,7 +88,7 @@ static int ParseStringToHexadecimal(const char *src, int* dst)
 		while ((digitVal = HEXA_DIGIT_VAL(*src)) != -1)
 		{
 			(*dst) *= 0x10;
-			(*dst) += digitVal;
+			(*dst) += (size_t)digitVal;
 			src++;
 		}
 		result = 1;
@@ -875,7 +875,7 @@ static HTTPAPI_RESULT ReadHTTPResponseBodyFromXIO(HTTP_HANDLE_DATA* httpHandle, 
 {
 	HTTPAPI_RESULT result;
 	char    buf[TEMP_BUFFER_SIZE];
-	unsigned char* receivedContent;
+	const unsigned char* receivedContent;
 
 	//Read HTTP response body
 	if (!chunked)
@@ -927,7 +927,7 @@ static HTTPAPI_RESULT ReadHTTPResponseBodyFromXIO(HTTP_HANDLE_DATA* httpHandle, 
 		result = HTTPAPI_OK;
 		while (result == HTTPAPI_OK)
 		{
-			int chunkSize;
+			size_t chunkSize;
 			if (readLine(httpHandle, buf, sizeof(buf)) < 0)    // read [length in hex]/r/n
 			{
 				/*Codes_SRS_HTTPAPI_COMPACT_21_032: [ If the HTTPAPI_ExecuteRequest cannot read the message with the request result, it shall return HTTPAPI_READ_DATA_FAILED. ]*/

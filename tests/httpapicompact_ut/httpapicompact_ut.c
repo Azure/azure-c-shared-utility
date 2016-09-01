@@ -61,10 +61,10 @@ void my_gballoc_free(void* ptr)
 #define MAX_RECEIVE_BUFFER_SIZES    3
 #define HUGE_RELATIVE_PATH_SIZE		10000
 
-#define TEST_CREATE_CONNECTION_HOST_NAME "https://test.azure-devices.net"
+#define TEST_CREATE_CONNECTION_HOST_NAME (const char*)"https://test.azure-devices.net"
 #define TEST_EXECUTE_REQUEST_RELATIVE_PATH (const char*)"/devices/Huzzah_w_DHT22/messages/events?api-version=2016-02-03"
 #define TEST_EXECUTE_REQUEST_CONTENT (const unsigned char*)"{\"ObjectType\":\"DeviceInfo\", \"Version\":\"1.0\", \"IsSimulatedDevice\":false, \"DeviceProperties\":{\"DeviceID\":\"Huzzah_w_DHT22\", \"HubEnabledState\":true}, \"Commands\":[{ \"Name\":\"SetHumidity\", \"Parameters\":[{\"Name\":\"humidity\",\"Type\":\"int\"}]},{ \"Name\":\"SetTemperature\", \"Parameters\":[{\"Name\":\"temperature\",\"Type\":\"int\"}]}]}peratè¼"
-#define TEST_EXECUTE_REQUEST_CONTENT_LENGTH 320 
+#define TEST_EXECUTE_REQUEST_CONTENT_LENGTH (size_t)320 
 #define TEST_SETOPTIONS_CERTIFICATE	(const unsigned char*)"blah!blah!blah!"
 #define TEST_GET_HEADER_HEAD_COUNT (size_t)2
 
@@ -712,13 +712,12 @@ TEST_FUNCTION(HTTPAPI_Deinit__just_call_Succeed)
 TEST_FUNCTION(HTTPAPI_CreateConnection__hostName_NULL_Failed)
 {
     /// arrange
-    char* hostName = NULL;
     HTTP_HANDLE httpHandle;
     HTTPAPI_Init();
     current_xioCreate_must_fail = false;
 
     /// act
-    httpHandle = HTTPAPI_CreateConnection(hostName);	/* currentmalloc_call += 0 */
+    httpHandle = HTTPAPI_CreateConnection(NULL);	/* currentmalloc_call += 0 */
 
     /// assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -733,7 +732,7 @@ TEST_FUNCTION(HTTPAPI_CreateConnection__hostName_NULL_Failed)
 TEST_FUNCTION(HTTPAPI_CreateConnection__empty_hostName_Failed)
 {
     /// arrange
-    char* hostName = "";
+    const char* hostName = "";
     HTTP_HANDLE httpHandle;
     HTTPAPI_Init();
     current_xioCreate_must_fail = false;
