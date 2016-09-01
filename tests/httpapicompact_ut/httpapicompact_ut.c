@@ -135,7 +135,91 @@ typedef enum xio_dowork_job_tag
     XIO_DOWORK_JOB_END
 } xio_dowork_job;
 
-static const xio_dowork_job* DoworkJobs = (const xio_dowork_job[]) { XIO_DOWORK_JOB_END };
+static const xio_dowork_job doworkjob_end[1] = { XIO_DOWORK_JOB_END };
+static const xio_dowork_job doworkjob_oe[2] = { XIO_DOWORK_JOB_OPEN, XIO_DOWORK_JOB_END };
+static const xio_dowork_job doworkjob_4none_oe[6] = { XIO_DOWORK_JOB_NONE, XIO_DOWORK_JOB_NONE, XIO_DOWORK_JOB_NONE, XIO_DOWORK_JOB_NONE, XIO_DOWORK_JOB_OPEN, XIO_DOWORK_JOB_END };
+static const xio_dowork_job doworkjob_4none_ee[6] = { XIO_DOWORK_JOB_NONE, XIO_DOWORK_JOB_NONE, XIO_DOWORK_JOB_NONE, XIO_DOWORK_JOB_NONE, XIO_DOWORK_JOB_ERROR, XIO_DOWORK_JOB_END };
+static const xio_dowork_job doworkjob_o_3none_ee[6] = { XIO_DOWORK_JOB_OPEN, XIO_DOWORK_JOB_NONE, XIO_DOWORK_JOB_NONE, XIO_DOWORK_JOB_NONE, XIO_DOWORK_JOB_ERROR, XIO_DOWORK_JOB_END };
+static const xio_dowork_job doworkjob_oee[3] = { XIO_DOWORK_JOB_OPEN, XIO_DOWORK_JOB_ERROR, XIO_DOWORK_JOB_END };
+static const xio_dowork_job doworkjob_ose[3] = { XIO_DOWORK_JOB_OPEN, XIO_DOWORK_JOB_SEND, XIO_DOWORK_JOB_END };
+static const xio_dowork_job doworkjob_onnse[5] = { XIO_DOWORK_JOB_OPEN, XIO_DOWORK_JOB_NONE, XIO_DOWORK_JOB_NONE, XIO_DOWORK_JOB_SEND, XIO_DOWORK_JOB_END };
+static const xio_dowork_job doworkjob_o_4s_e[6] = { XIO_DOWORK_JOB_OPEN, XIO_DOWORK_JOB_SEND, XIO_DOWORK_JOB_SEND, XIO_DOWORK_JOB_SEND, XIO_DOWORK_JOB_SEND, XIO_DOWORK_JOB_END };
+static const xio_dowork_job doworkjob_ee[2] = { XIO_DOWORK_JOB_ERROR, XIO_DOWORK_JOB_END };
+static const xio_dowork_job doworkjob_o_7s_e[9] = {
+    XIO_DOWORK_JOB_OPEN,
+        XIO_DOWORK_JOB_SEND,
+        XIO_DOWORK_JOB_SEND,
+        XIO_DOWORK_JOB_SEND,
+        XIO_DOWORK_JOB_SEND,
+        XIO_DOWORK_JOB_SEND,
+        XIO_DOWORK_JOB_SEND,
+        XIO_DOWORK_JOB_SEND,
+        XIO_DOWORK_JOB_END
+};
+static const xio_dowork_job doworkjob_o_7s_ee[10] = {
+    XIO_DOWORK_JOB_OPEN,
+        XIO_DOWORK_JOB_SEND,
+        XIO_DOWORK_JOB_SEND,
+        XIO_DOWORK_JOB_SEND,
+        XIO_DOWORK_JOB_SEND,
+        XIO_DOWORK_JOB_SEND,
+        XIO_DOWORK_JOB_SEND,
+        XIO_DOWORK_JOB_SEND,
+        XIO_DOWORK_JOB_ERROR,
+        XIO_DOWORK_JOB_END
+};
+static const xio_dowork_job doworkjob_o_7s_re[10] = {
+    XIO_DOWORK_JOB_OPEN,
+        XIO_DOWORK_JOB_SEND,
+        XIO_DOWORK_JOB_SEND,
+        XIO_DOWORK_JOB_SEND,
+        XIO_DOWORK_JOB_SEND,
+        XIO_DOWORK_JOB_SEND,
+        XIO_DOWORK_JOB_SEND,
+        XIO_DOWORK_JOB_SEND,
+        XIO_DOWORK_JOB_RECEIVED,
+        XIO_DOWORK_JOB_END
+};
+static const xio_dowork_job doworkjob_o_7s_rre[11] = {
+    XIO_DOWORK_JOB_OPEN,
+        XIO_DOWORK_JOB_SEND,
+        XIO_DOWORK_JOB_SEND,
+        XIO_DOWORK_JOB_SEND,
+        XIO_DOWORK_JOB_SEND,
+        XIO_DOWORK_JOB_SEND,
+        XIO_DOWORK_JOB_SEND,
+        XIO_DOWORK_JOB_SEND,
+        XIO_DOWORK_JOB_RECEIVED,
+        XIO_DOWORK_JOB_RECEIVED,
+        XIO_DOWORK_JOB_END
+};
+
+static const IO_OPEN_RESULT openresult_ok[1] = { IO_OPEN_OK };
+static const IO_OPEN_RESULT openresult_error[1] = { IO_OPEN_ERROR };
+
+static const IO_SEND_RESULT sendresult_error[1]  = { IO_SEND_ERROR };
+static const IO_SEND_RESULT sendresult_o_3error[4] = { IO_SEND_OK, IO_SEND_ERROR, IO_SEND_ERROR, IO_SEND_ERROR };
+static const IO_SEND_RESULT sendresult_7ok[7] = {
+    IO_SEND_OK,
+        IO_SEND_OK,
+        IO_SEND_OK,
+        IO_SEND_OK,
+        IO_SEND_OK,
+        IO_SEND_OK,
+        IO_SEND_OK
+};
+static const IO_SEND_RESULT sendresult_6ok_error[7] = {
+    IO_SEND_OK,
+    IO_SEND_OK,
+    IO_SEND_OK,
+    IO_SEND_OK,
+    IO_SEND_OK,
+    IO_SEND_OK,
+    IO_SEND_ERROR
+};
+
+
+static const xio_dowork_job* DoworkJobs = (const xio_dowork_job*)doworkjob_end;
 static const IO_OPEN_RESULT* DoworkJobsOpenResult;
 static const IO_SEND_RESULT* DoworkJobsSendResult;
 
@@ -517,17 +601,8 @@ static void setupAllCallBeforeSendHTTPsequenceWithSuccess(HTTP_HEADERS_HANDLE re
         .IgnoreArgument(1);
 }
 
-static const IO_OPEN_RESULT* DoworkJobsOpenResult_ReceiveHead = (const IO_OPEN_RESULT[]) { IO_OPEN_OK };
-static const IO_SEND_RESULT* DoworkJobsSendResult_ReceiveHead = (const IO_SEND_RESULT[])
-{
-    IO_SEND_OK,
-        IO_SEND_OK,
-        IO_SEND_OK,
-        IO_SEND_OK,
-        IO_SEND_OK,
-        IO_SEND_OK,
-        IO_SEND_OK
-};
+static const IO_OPEN_RESULT* DoworkJobsOpenResult_ReceiveHead = (const IO_OPEN_RESULT*)openresult_ok;
+static const IO_SEND_RESULT* DoworkJobsSendResult_ReceiveHead = (const IO_SEND_RESULT*) sendresult_7ok;
 
 static void PrepareReceiveHead(HTTP_HEADERS_HANDLE requestHttpHeaders, size_t bufferSize[], int countSizes)
 {
@@ -1444,8 +1519,8 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_io_open_complete_with_error_on_openning
     setHttpCertificate(httpHandle);
     unsigned int statusCode;
 
-    DoworkJobs = (xio_dowork_job[]) { XIO_DOWORK_JOB_OPEN, XIO_DOWORK_JOB_END };
-    DoworkJobsOpenResult = (IO_OPEN_RESULT[]) { IO_OPEN_ERROR };
+    DoworkJobs = (const xio_dowork_job*)doworkjob_oe;
+    DoworkJobsOpenResult = (const IO_OPEN_RESULT*)openresult_error;
 
     setupAllCallBeforeOpenHTTPsequence(requestHttpHeaders, 1);
 
@@ -1484,8 +1559,8 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_io_open_complete_with_error_on_working_
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     setHttpCertificate(httpHandle);
 
-    DoworkJobs = (xio_dowork_job[]) { XIO_DOWORK_JOB_NONE, XIO_DOWORK_JOB_NONE, XIO_DOWORK_JOB_NONE, XIO_DOWORK_JOB_NONE, XIO_DOWORK_JOB_OPEN, XIO_DOWORK_JOB_END };
-    DoworkJobsOpenResult = (IO_OPEN_RESULT[]) { IO_OPEN_ERROR };
+    DoworkJobs = (const xio_dowork_job*) doworkjob_4none_oe;
+    DoworkJobsOpenResult = (const IO_OPEN_RESULT*)openresult_error;
 
     setupAllCallBeforeOpenHTTPsequence(requestHttpHeaders, 5);
 
@@ -1524,7 +1599,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_io_error_on_openning_failed)
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     setHttpCertificate(httpHandle);
 
-    DoworkJobs = (xio_dowork_job[]) { XIO_DOWORK_JOB_ERROR, XIO_DOWORK_JOB_END };
+    DoworkJobs = (const xio_dowork_job*)doworkjob_ee;
 
     setupAllCallBeforeOpenHTTPsequence(requestHttpHeaders, 1);
 
@@ -1563,7 +1638,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_io_error_on_working_failed)
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     setHttpCertificate(httpHandle);
 
-    DoworkJobs = (xio_dowork_job[]) { XIO_DOWORK_JOB_NONE, XIO_DOWORK_JOB_NONE, XIO_DOWORK_JOB_NONE, XIO_DOWORK_JOB_NONE, XIO_DOWORK_JOB_ERROR, XIO_DOWORK_JOB_END };
+    DoworkJobs = (const xio_dowork_job*)doworkjob_4none_ee;
 
     setupAllCallBeforeOpenHTTPsequence(requestHttpHeaders, 5);
 
@@ -1603,8 +1678,8 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__huge_relative_path_failed)
     char hugeRelativePath[HUGE_RELATIVE_PATH_SIZE];
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
 
-    DoworkJobs = (xio_dowork_job[]) { XIO_DOWORK_JOB_OPEN, XIO_DOWORK_JOB_END };
-    DoworkJobsOpenResult = (IO_OPEN_RESULT[]) { IO_OPEN_OK };
+    DoworkJobs = (const xio_dowork_job*)doworkjob_oe;
+    DoworkJobsOpenResult = (const IO_OPEN_RESULT*)openresult_ok;
 
     setHttpCertificate(httpHandle);
     setupAllCallBeforeOpenHTTPsequence(requestHttpHeaders, 1);
@@ -1654,8 +1729,8 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__io_send_header_return_error_failed)
     HTTP_HANDLE httpHandle = createHttpConnection();
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
 
-    DoworkJobs = (xio_dowork_job[]) { XIO_DOWORK_JOB_OPEN, XIO_DOWORK_JOB_END };
-    DoworkJobsOpenResult = (IO_OPEN_RESULT[]) { IO_OPEN_OK };
+    DoworkJobs = (const xio_dowork_job*)doworkjob_oe;
+    DoworkJobsOpenResult = (const IO_OPEN_RESULT*)openresult_ok;
 
     setHttpCertificate(httpHandle);
     setupAllCallBeforeOpenHTTPsequence(requestHttpHeaders, 1);
@@ -1699,9 +1774,9 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_send_header_complete_with_error_on_send
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     setHttpCertificate(httpHandle);
 
-    DoworkJobs = (xio_dowork_job[]) { XIO_DOWORK_JOB_OPEN, XIO_DOWORK_JOB_SEND, XIO_DOWORK_JOB_END };
-    DoworkJobsOpenResult = (IO_OPEN_RESULT[]) { IO_OPEN_OK };
-    DoworkJobsSendResult = (IO_SEND_RESULT[]) { IO_SEND_ERROR };
+    DoworkJobs = (const xio_dowork_job*)doworkjob_ose;
+    DoworkJobsOpenResult = (const IO_OPEN_RESULT*)openresult_ok;
+    DoworkJobsSendResult = (const IO_SEND_RESULT*)sendresult_error;
 
     setupAllCallBeforeOpenHTTPsequence(requestHttpHeaders, 1);
     setupAllCallBeforeSendHTTPsequence(1);
@@ -1743,9 +1818,9 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_send_header_complete_with_error_on_work
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     setHttpCertificate(httpHandle);
 
-    DoworkJobs = (xio_dowork_job[]) { XIO_DOWORK_JOB_OPEN, XIO_DOWORK_JOB_NONE, XIO_DOWORK_JOB_NONE, XIO_DOWORK_JOB_SEND, XIO_DOWORK_JOB_END };
-    DoworkJobsOpenResult = (IO_OPEN_RESULT[]) { IO_OPEN_OK };
-    DoworkJobsSendResult = (IO_SEND_RESULT[]) { IO_SEND_ERROR };
+    DoworkJobs = (const xio_dowork_job*)doworkjob_onnse;
+    DoworkJobsOpenResult = (const IO_OPEN_RESULT*)openresult_ok;
+    DoworkJobsSendResult = (const IO_SEND_RESULT*)sendresult_error;
 
     setupAllCallBeforeOpenHTTPsequence(requestHttpHeaders, 1);
     setupAllCallBeforeSendHTTPsequence(3);
@@ -1787,8 +1862,8 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_io_error_on_sending_header_failed)
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     setHttpCertificate(httpHandle);
 
-    DoworkJobs = (xio_dowork_job[]) { XIO_DOWORK_JOB_OPEN, XIO_DOWORK_JOB_ERROR, XIO_DOWORK_JOB_END };
-    DoworkJobsOpenResult = (IO_OPEN_RESULT[]) { IO_OPEN_OK };
+    DoworkJobs = (const xio_dowork_job*)doworkjob_oee;
+    DoworkJobsOpenResult = (const IO_OPEN_RESULT*)openresult_ok;
 
     setupAllCallBeforeOpenHTTPsequence(requestHttpHeaders, 1);
     setupAllCallBeforeSendHTTPsequence(1);
@@ -1830,8 +1905,8 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_io_error_for_send_header_on_working_fai
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     setHttpCertificate(httpHandle);
 
-    DoworkJobs = (xio_dowork_job[]) { XIO_DOWORK_JOB_OPEN, XIO_DOWORK_JOB_NONE, XIO_DOWORK_JOB_NONE, XIO_DOWORK_JOB_NONE, XIO_DOWORK_JOB_ERROR, XIO_DOWORK_JOB_END };
-    DoworkJobsOpenResult = (IO_OPEN_RESULT[]) { IO_OPEN_OK };
+    DoworkJobs = (const xio_dowork_job*)doworkjob_o_3none_ee;
+    DoworkJobsOpenResult = (const IO_OPEN_RESULT*)openresult_ok;
 
     setupAllCallBeforeOpenHTTPsequence(requestHttpHeaders, 1);
     setupAllCallBeforeSendHTTPsequence(4);
@@ -1872,9 +1947,9 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_send_header_complete_with_success_befor
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     setHttpCertificate(httpHandle);
 
-    DoworkJobs = (xio_dowork_job[]) { XIO_DOWORK_JOB_OPEN, XIO_DOWORK_JOB_SEND, XIO_DOWORK_JOB_SEND, XIO_DOWORK_JOB_SEND, XIO_DOWORK_JOB_SEND, XIO_DOWORK_JOB_END };
-    DoworkJobsOpenResult = (IO_OPEN_RESULT[]) { IO_OPEN_OK };
-    DoworkJobsSendResult = (IO_SEND_RESULT[]) { IO_SEND_OK, IO_SEND_ERROR, IO_SEND_ERROR, IO_SEND_ERROR };
+    DoworkJobs = (const xio_dowork_job*)doworkjob_o_4s_e;
+    DoworkJobsOpenResult = (const IO_OPEN_RESULT*)openresult_ok;
+    DoworkJobsSendResult = (const IO_SEND_RESULT*)sendresult_o_3error;
 
     setupAllCallBeforeOpenHTTPsequence(requestHttpHeaders, 1);
     setupAllCallBeforeSendHTTPsequence(1);
@@ -1935,29 +2010,9 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_send_buffer_complete_with_error_failed)
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     setHttpCertificate(httpHandle);
 
-    DoworkJobs = (xio_dowork_job[])
-    {
-        XIO_DOWORK_JOB_OPEN,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_END
-    };
-    DoworkJobsOpenResult = (IO_OPEN_RESULT[]) { IO_OPEN_OK };
-    DoworkJobsSendResult = (IO_SEND_RESULT[])
-    {
-        IO_SEND_OK,
-            IO_SEND_OK,
-            IO_SEND_OK,
-            IO_SEND_OK,
-            IO_SEND_OK,
-            IO_SEND_OK,
-            IO_SEND_ERROR
-    };
+    DoworkJobs = (const xio_dowork_job*)doworkjob_o_7s_e;
+    DoworkJobsOpenResult = (const IO_OPEN_RESULT*)openresult_ok;
+    DoworkJobsSendResult = (const IO_SEND_RESULT*)sendresult_6ok_error;
 
     setupAllCallBeforeOpenHTTPsequence(requestHttpHeaders, 1);
 
@@ -2038,30 +2093,9 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_read_header_failed_failed)
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     setHttpCertificate(httpHandle);
 
-    DoworkJobs = (xio_dowork_job[])
-    {
-        XIO_DOWORK_JOB_OPEN,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_ERROR,
-            XIO_DOWORK_JOB_END
-    };
-    DoworkJobsOpenResult = (IO_OPEN_RESULT[]) { IO_OPEN_OK };
-    DoworkJobsSendResult = (IO_SEND_RESULT[])
-    {
-        IO_SEND_OK,
-            IO_SEND_OK,
-            IO_SEND_OK,
-            IO_SEND_OK,
-            IO_SEND_OK,
-            IO_SEND_OK,
-            IO_SEND_OK
-    };
+    DoworkJobs = (const xio_dowork_job*)doworkjob_o_7s_ee;
+    DoworkJobsOpenResult = (const IO_OPEN_RESULT*)openresult_ok;
+    DoworkJobsSendResult = (const IO_SEND_RESULT*)sendresult_7ok;
 
     setupAllCallBeforeOpenHTTPsequence(requestHttpHeaders, 1);
     setupAllCallBeforeSendHTTPsequenceWithSuccess(requestHttpHeaders);
@@ -2111,19 +2145,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_read_NULL_header_failed)
     DoworkJobsReceivedBuffer = NULL;
     DoworkJobsReceivedBuffer_size[0] = 10;
     DoworkJobsReceivedBuffer_counter = 0;
-    DoworkJobs = (const xio_dowork_job[])
-    {
-        XIO_DOWORK_JOB_OPEN,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_RECEIVED,
-            XIO_DOWORK_JOB_END
-    };
+    DoworkJobs = (const xio_dowork_job*)doworkjob_o_7s_re;
     DoworkJobsOpenResult = DoworkJobsOpenResult_ReceiveHead;
     DoworkJobsSendResult = DoworkJobsSendResult_ReceiveHead;
 
@@ -2176,19 +2198,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_read_not_HTTP_header_failed)
     DoworkJobsReceivedBuffer = (const unsigned char*)"HTTPS/111.222 433 555\r\n";
     DoworkJobsReceivedBuffer_size[0] = strlen((const char*)DoworkJobsReceivedBuffer);
     DoworkJobsReceivedBuffer_counter = 0;
-    DoworkJobs = (const xio_dowork_job[])
-    {
-        XIO_DOWORK_JOB_OPEN,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_RECEIVED,
-            XIO_DOWORK_JOB_END
-    };
+    DoworkJobs = (const xio_dowork_job*)doworkjob_o_7s_re;
     DoworkJobsOpenResult = DoworkJobsOpenResult_ReceiveHead;
     DoworkJobsSendResult = DoworkJobsSendResult_ReceiveHead;
 
@@ -2249,19 +2259,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_read_wrong_URL_header_failed)
     DoworkJobsReceivedBuffer_size[0] = strlen((const char*)DoworkJobsReceivedBuffer);
     DoworkJobsReceivedBuffer_counter = 0;
     PrepareReceiveHead(requestHttpHeaders, DoworkJobsReceivedBuffer_size, 1);
-    DoworkJobs = (const xio_dowork_job[])
-    {
-        XIO_DOWORK_JOB_OPEN,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_RECEIVED,
-            XIO_DOWORK_JOB_END
-    };
+    DoworkJobs = (const xio_dowork_job*)doworkjob_o_7s_re;
 
     /// act
     result = HTTPAPI_ExecuteRequest(
@@ -2302,19 +2300,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_read_header_with_no_statusCode_failed)
     DoworkJobsReceivedBuffer_size[0] = strlen((const char*)DoworkJobsReceivedBuffer);
     DoworkJobsReceivedBuffer_counter = 0;
     PrepareReceiveHead(requestHttpHeaders, DoworkJobsReceivedBuffer_size, 1);
-    DoworkJobs = (const xio_dowork_job[])
-    {
-        XIO_DOWORK_JOB_OPEN,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_RECEIVED,
-            XIO_DOWORK_JOB_END
-    };
+    DoworkJobs = (const xio_dowork_job*)doworkjob_o_7s_re;
 
     /// act
     result = HTTPAPI_ExecuteRequest(
@@ -2355,19 +2341,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_read_header_incomplete_failed)
     DoworkJobsReceivedBuffer_size[0] = strlen((const char*)DoworkJobsReceivedBuffer);
     DoworkJobsReceivedBuffer_counter = 0;
     PrepareReceiveHead(requestHttpHeaders, DoworkJobsReceivedBuffer_size, 1);
-    DoworkJobs = (const xio_dowork_job[])
-    {
-        XIO_DOWORK_JOB_OPEN,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_RECEIVED,
-            XIO_DOWORK_JOB_END
-    };
+    DoworkJobs = (const xio_dowork_job*)doworkjob_o_7s_re;
 
     /// act
     result = HTTPAPI_ExecuteRequest(
@@ -2409,20 +2383,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_read_multi_header_with_size_0_and_error
     DoworkJobsReceivedBuffer_size[1] = strlen((const char*)DoworkJobsReceivedBuffer);
     DoworkJobsReceivedBuffer_counter = 0;
     PrepareReceiveHead(requestHttpHeaders, DoworkJobsReceivedBuffer_size, 2);
-    DoworkJobs = (const xio_dowork_job[])
-    {
-        XIO_DOWORK_JOB_OPEN,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_RECEIVED,
-            XIO_DOWORK_JOB_RECEIVED,
-            XIO_DOWORK_JOB_END
-    };
+    DoworkJobs = (const xio_dowork_job*)doworkjob_o_7s_rre;
 
     /// act
     result = HTTPAPI_ExecuteRequest(
@@ -2475,19 +2436,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__read_huge_header_failed)
     DoworkJobsReceivedBuffer_size[0] = strlen((const char*)DoworkJobsReceivedBuffer);
     DoworkJobsReceivedBuffer_counter = 0;
     PrepareReceiveHead(requestHttpHeaders, DoworkJobsReceivedBuffer_size, 1);
-    DoworkJobs = (const xio_dowork_job[])
-    {
-        XIO_DOWORK_JOB_OPEN,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_RECEIVED,
-            XIO_DOWORK_JOB_END
-    };
+    DoworkJobs = (const xio_dowork_job*)doworkjob_o_7s_re;
 
     /// act
     result = HTTPAPI_ExecuteRequest(
@@ -2528,19 +2477,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__content_length_without_value_failed)
     DoworkJobsReceivedBuffer_size[0] = strlen((const char*)DoworkJobsReceivedBuffer);
     DoworkJobsReceivedBuffer_counter = 0;
     PrepareReceiveHead(requestHttpHeaders, DoworkJobsReceivedBuffer_size, 1);
-    DoworkJobs = (const xio_dowork_job[])
-    {
-        XIO_DOWORK_JOB_OPEN,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_RECEIVED,
-            XIO_DOWORK_JOB_END
-    };
+    DoworkJobs = (const xio_dowork_job*)doworkjob_o_7s_re;
 
     /// act
     result = HTTPAPI_ExecuteRequest(
@@ -2591,19 +2528,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__Execute_request_succeed)
     DoworkJobsReceivedBuffer = TEST_RECEIVED_ANSWER;
     DoworkJobsReceivedBuffer_size[0] = strlen((const char*)DoworkJobsReceivedBuffer);
     DoworkJobsReceivedBuffer_counter = 0;
-    DoworkJobs = (const xio_dowork_job[])
-    {
-        XIO_DOWORK_JOB_OPEN,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_RECEIVED,
-            XIO_DOWORK_JOB_END
-    };
+    DoworkJobs = (const xio_dowork_job*)doworkjob_o_7s_re;
     DoworkJobsOpenResult = DoworkJobsOpenResult_ReceiveHead;
     DoworkJobsSendResult = DoworkJobsSendResult_ReceiveHead;
 
@@ -2653,19 +2578,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_get_succeed)
     DoworkJobsReceivedBuffer = TEST_RECEIVED_ANSWER;
     DoworkJobsReceivedBuffer_size[0] = strlen((const char*)DoworkJobsReceivedBuffer);
     DoworkJobsReceivedBuffer_counter = 0;
-    DoworkJobs = (const xio_dowork_job[])
-    {
-        XIO_DOWORK_JOB_OPEN,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_RECEIVED,
-            XIO_DOWORK_JOB_END
-    };
+    DoworkJobs = (const xio_dowork_job*)doworkjob_o_7s_re;
     DoworkJobsOpenResult = DoworkJobsOpenResult_ReceiveHead;
     DoworkJobsSendResult = DoworkJobsSendResult_ReceiveHead;
 
@@ -2717,19 +2630,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_post_succeed)
     DoworkJobsReceivedBuffer = TEST_RECEIVED_ANSWER;
     DoworkJobsReceivedBuffer_size[0] = strlen((const char*)DoworkJobsReceivedBuffer);
     DoworkJobsReceivedBuffer_counter = 0;
-    DoworkJobs = (const xio_dowork_job[])
-    {
-        XIO_DOWORK_JOB_OPEN,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_RECEIVED,
-            XIO_DOWORK_JOB_END
-    };
+    DoworkJobs = (const xio_dowork_job*)doworkjob_o_7s_re;
     DoworkJobsOpenResult = DoworkJobsOpenResult_ReceiveHead;
     DoworkJobsSendResult = DoworkJobsSendResult_ReceiveHead;
 
@@ -2781,19 +2682,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_put_succeed)
     DoworkJobsReceivedBuffer = TEST_RECEIVED_ANSWER;
     DoworkJobsReceivedBuffer_size[0] = strlen((const char*)DoworkJobsReceivedBuffer);
     DoworkJobsReceivedBuffer_counter = 0;
-    DoworkJobs = (const xio_dowork_job[])
-    {
-        XIO_DOWORK_JOB_OPEN,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_RECEIVED,
-            XIO_DOWORK_JOB_END
-    };
+    DoworkJobs = (const xio_dowork_job*)doworkjob_o_7s_re;
     DoworkJobsOpenResult = DoworkJobsOpenResult_ReceiveHead;
     DoworkJobsSendResult = DoworkJobsSendResult_ReceiveHead;
 
@@ -2845,19 +2734,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_delete_succeed)
     DoworkJobsReceivedBuffer = TEST_RECEIVED_ANSWER;
     DoworkJobsReceivedBuffer_size[0] = strlen((const char*)DoworkJobsReceivedBuffer);
     DoworkJobsReceivedBuffer_counter = 0;
-    DoworkJobs = (const xio_dowork_job[])
-    {
-        XIO_DOWORK_JOB_OPEN,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_RECEIVED,
-            XIO_DOWORK_JOB_END
-    };
+    DoworkJobs = (const xio_dowork_job*)doworkjob_o_7s_re;
     DoworkJobsOpenResult = DoworkJobsOpenResult_ReceiveHead;
     DoworkJobsSendResult = DoworkJobsSendResult_ReceiveHead;
 
@@ -2909,19 +2786,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_patch_succeed)
     DoworkJobsReceivedBuffer = TEST_RECEIVED_ANSWER;
     DoworkJobsReceivedBuffer_size[0] = strlen((const char*)DoworkJobsReceivedBuffer);
     DoworkJobsReceivedBuffer_counter = 0;
-    DoworkJobs = (const xio_dowork_job[])
-    {
-        XIO_DOWORK_JOB_OPEN,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_RECEIVED,
-            XIO_DOWORK_JOB_END
-    };
+    DoworkJobs = (const xio_dowork_job*)doworkjob_o_7s_re;
     DoworkJobsOpenResult = DoworkJobsOpenResult_ReceiveHead;
     DoworkJobsSendResult = DoworkJobsSendResult_ReceiveHead;
 
@@ -2973,19 +2838,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_relative_path_succeed)
     DoworkJobsReceivedBuffer = TEST_RECEIVED_ANSWER;
     DoworkJobsReceivedBuffer_size[0] = strlen((const char*)DoworkJobsReceivedBuffer);
     DoworkJobsReceivedBuffer_counter = 0;
-    DoworkJobs = (const xio_dowork_job[])
-    {
-        XIO_DOWORK_JOB_OPEN,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_RECEIVED,
-            XIO_DOWORK_JOB_END
-    };
+    DoworkJobs = (const xio_dowork_job*)doworkjob_o_7s_re;
     DoworkJobsOpenResult = DoworkJobsOpenResult_ReceiveHead;
     DoworkJobsSendResult = DoworkJobsSendResult_ReceiveHead;
 
@@ -3039,19 +2892,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_with_content_succeed)
     DoworkJobsReceivedBuffer = TEST_RECEIVED_ANSWER;
     DoworkJobsReceivedBuffer_size[0] = strlen((const char*)DoworkJobsReceivedBuffer);
     DoworkJobsReceivedBuffer_counter = 0;
-    DoworkJobs = (const xio_dowork_job[])
-    {
-        XIO_DOWORK_JOB_OPEN,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_RECEIVED,
-            XIO_DOWORK_JOB_END
-    };
+    DoworkJobs = (const xio_dowork_job*)doworkjob_o_7s_re;
     DoworkJobsOpenResult = DoworkJobsOpenResult_ReceiveHead;
     DoworkJobsSendResult = DoworkJobsSendResult_ReceiveHead;
 
@@ -3102,19 +2943,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_NULL_content_succeed)
     DoworkJobsReceivedBuffer = TEST_RECEIVED_ANSWER;
     DoworkJobsReceivedBuffer_size[0] = strlen((const char*)DoworkJobsReceivedBuffer);
     DoworkJobsReceivedBuffer_counter = 0;
-    DoworkJobs = (const xio_dowork_job[])
-    {
-        XIO_DOWORK_JOB_OPEN,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_RECEIVED,
-            XIO_DOWORK_JOB_END
-    };
+    DoworkJobs = (const xio_dowork_job*)doworkjob_o_7s_re;
     DoworkJobsOpenResult = DoworkJobsOpenResult_ReceiveHead;
     DoworkJobsSendResult = DoworkJobsSendResult_ReceiveHead;
 
@@ -3200,19 +3029,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_content_size_0_succeed)
     DoworkJobsReceivedBuffer = TEST_RECEIVED_ANSWER;
     DoworkJobsReceivedBuffer_size[0] = strlen((const char*)DoworkJobsReceivedBuffer);
     DoworkJobsReceivedBuffer_counter = 0;
-    DoworkJobs = (const xio_dowork_job[])
-    {
-        XIO_DOWORK_JOB_OPEN,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_RECEIVED,
-            XIO_DOWORK_JOB_END
-    };
+    DoworkJobs = (const xio_dowork_job*)doworkjob_o_7s_re;
     DoworkJobsOpenResult = DoworkJobsOpenResult_ReceiveHead;
     DoworkJobsSendResult = DoworkJobsSendResult_ReceiveHead;
 
@@ -3297,19 +3114,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__Execute_request_no_statusCode_succeed)
     DoworkJobsReceivedBuffer = TEST_RECEIVED_ANSWER;
     DoworkJobsReceivedBuffer_size[0] = strlen((const char*)DoworkJobsReceivedBuffer);
     DoworkJobsReceivedBuffer_counter = 0;
-    DoworkJobs = (const xio_dowork_job[])
-    {
-        XIO_DOWORK_JOB_OPEN,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_RECEIVED,
-            XIO_DOWORK_JOB_END
-    };
+    DoworkJobs = (const xio_dowork_job*)doworkjob_o_7s_re;
     DoworkJobsOpenResult = DoworkJobsOpenResult_ReceiveHead;
     DoworkJobsSendResult = DoworkJobsSendResult_ReceiveHead;
 
@@ -3357,19 +3162,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__Execute_request_no_responseHeadersHandle_s
     DoworkJobsReceivedBuffer = TEST_RECEIVED_ANSWER;
     DoworkJobsReceivedBuffer_size[0] = strlen((const char*)DoworkJobsReceivedBuffer);
     DoworkJobsReceivedBuffer_counter = 0;
-    DoworkJobs = (const xio_dowork_job[])
-    {
-        XIO_DOWORK_JOB_OPEN,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_RECEIVED,
-            XIO_DOWORK_JOB_END
-    };
+    DoworkJobs = (const xio_dowork_job*)doworkjob_o_7s_re;
     DoworkJobsOpenResult = DoworkJobsOpenResult_ReceiveHead;
     DoworkJobsSendResult = DoworkJobsSendResult_ReceiveHead;
 
@@ -3430,19 +3223,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__Execute_request_responseContent_NULL_succe
     DoworkJobsReceivedBuffer = TEST_RECEIVED_ANSWER;
     DoworkJobsReceivedBuffer_size[0] = strlen((const char*)DoworkJobsReceivedBuffer);
     DoworkJobsReceivedBuffer_counter = 0;
-    DoworkJobs = (const xio_dowork_job[])
-    {
-        XIO_DOWORK_JOB_OPEN,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_SEND,
-            XIO_DOWORK_JOB_RECEIVED,
-            XIO_DOWORK_JOB_END
-    };
+    DoworkJobs = (const xio_dowork_job*)doworkjob_o_7s_re;
     DoworkJobsOpenResult = DoworkJobsOpenResult_ReceiveHead;
     DoworkJobsSendResult = DoworkJobsSendResult_ReceiveHead;
 
