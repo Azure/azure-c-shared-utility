@@ -19,267 +19,90 @@
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/strings.h"
 
-static const struct {
-    size_t numberOfChars;
-    const char* encoding;
-} urlEncoding[] = {
-    { 1, "\0"  },
-    { 3, "%01" },
-    { 3, "%02" },
-    { 3, "%03" },
-    { 3, "%04" },
-    { 3, "%05" },
-    { 3, "%06" },
-    { 3, "%07" },
-    { 3, "%08" },
-    { 3, "%09" },
-    { 3, "%0a" },
-    { 3, "%0b" },
-    { 3, "%0c" },
-    { 3, "%0d" },
-    { 3, "%0e" },
-    { 3, "%0f" },
-    { 3, "%10" },
-    { 3, "%11" },
-    { 3, "%12" },
-    { 3, "%13" },
-    { 3, "%14" },
-    { 3, "%15" },
-    { 3, "%16" },
-    { 3, "%17" },
-    { 3, "%18" },
-    { 3, "%19" },
-    { 3, "%1a" },
-    { 3, "%1b" },
-    { 3, "%1c" },
-    { 3, "%1d" },
-    { 3, "%1e" },
-    { 3, "%1f" },
-    { 3, "%20" },
-    { 1, "!" },
-    { 3, "%22" },
-    { 3, "%23" },
-    { 3, "%24" },
-    { 3, "%25" },
-    { 3, "%26" },
-    { 3, "%27" },
-    { 1, "(" },
-    { 1, ")" },
-    { 1, "*" },
-    { 3, "%2b" },
-    { 3, "%2c" },
-    { 1, "-" },
-    { 1, "." },
-    { 3, "%2f" },
-    { 1, "0" },
-    { 1, "1" },
-    { 1, "2" },
-    { 1, "3" },
-    { 1, "4" },
-    { 1, "5" },
-    { 1, "6" },
-    { 1, "7" },
-    { 1, "8" },
-    { 1, "9" },
-    { 3, "%3a" },
-    { 3, "%3b" },
-    { 3, "%3c" },
-    { 3, "%3d" },
-    { 3, "%3e" },
-    { 3, "%3f" },
-    { 3, "%40" },
-    { 1, "A" },
-    { 1, "B" },
-    { 1, "C" },
-    { 1, "D" },
-    { 1, "E" },
-    { 1, "F" },
-    { 1, "G" },
-    { 1, "H" },
-    { 1, "I" },
-    { 1, "J" },
-    { 1, "K" },
-    { 1, "L" },
-    { 1, "M" },
-    { 1, "N" },
-    { 1, "O" },
-    { 1, "P" },
-    { 1, "Q" },
-    { 1, "R" },
-    { 1, "S" },
-    { 1, "T" },
-    { 1, "U" },
-    { 1, "V" },
-    { 1, "W" },
-    { 1, "X" },
-    { 1, "Y" },
-    { 1, "Z" },
-    { 3, "%5b" },
-    { 3, "%5c" },
-    { 3, "%5d" },
-    { 3, "%5e" },
-    { 1, "_" },
-    { 3, "%60" },
-    { 1, "a" },
-    { 1, "b" },
-    { 1, "c" },
-    { 1, "d" },
-    { 1, "e" },
-    { 1, "f" },
-    { 1, "g" },
-    { 1, "h" },
-    { 1, "i" },
-    { 1, "j" },
-    { 1, "k" },
-    { 1, "l" },
-    { 1, "m" },
-    { 1, "n" },
-    { 1, "o" },
-    { 1, "p" },
-    { 1, "q" },
-    { 1, "r" },
-    { 1, "s" },
-    { 1, "t" },
-    { 1, "u" },
-    { 1, "v" },
-    { 1, "w" },
-    { 1, "x" },
-    { 1, "y" },
-    { 1, "z" },
-    { 3, "%7b" },
-    { 3, "%7c" },
-    { 3, "%7d" },
-    { 3, "%7e" },
-    { 3, "%7f" },
-    { 6, "%c2%80" },
-    { 6, "%c2%81" },
-    { 6, "%c2%82" },
-    { 6, "%c2%83" },
-    { 6, "%c2%84" },
-    { 6, "%c2%85" },
-    { 6, "%c2%86" },
-    { 6, "%c2%87" },
-    { 6, "%c2%88" },
-    { 6, "%c2%89" },
-    { 6, "%c2%8a" },
-    { 6, "%c2%8b" },
-    { 6, "%c2%8c" },
-    { 6, "%c2%8d" },
-    { 6, "%c2%8e" },
-    { 6, "%c2%8f" },
-    { 6, "%c2%90" },
-    { 6, "%c2%91" },
-    { 6, "%c2%92" },
-    { 6, "%c2%93" },
-    { 6, "%c2%94" },
-    { 6, "%c2%95" },
-    { 6, "%c2%96" },
-    { 6, "%c2%97" },
-    { 6, "%c2%98" },
-    { 6, "%c2%99" },
-    { 6, "%c2%9a" },
-    { 6, "%c2%9b" },
-    { 6, "%c2%9c" },
-    { 6, "%c2%9d" },
-    { 6, "%c2%9e" },
-    { 6, "%c2%9f" },
-    { 6, "%c2%a0" },
-    { 6, "%c2%a1" },
-    { 6, "%c2%a2" },
-    { 6, "%c2%a3" },
-    { 6, "%c2%a4" },
-    { 6, "%c2%a5" },
-    { 6, "%c2%a6" },
-    { 6, "%c2%a7" },
-    { 6, "%c2%a8" },
-    { 6, "%c2%a9" },
-    { 6, "%c2%aa" },
-    { 6, "%c2%ab" },
-    { 6, "%c2%ac" },
-    { 6, "%c2%ad" },
-    { 6, "%c2%ae" },
-    { 6, "%c2%af" },
-    { 6, "%c2%b0" },
-    { 6, "%c2%b1" },
-    { 6, "%c2%b2" },
-    { 6, "%c2%b3" },
-    { 6, "%c2%b4" },
-    { 6, "%c2%b5" },
-    { 6, "%c2%b6" },
-    { 6, "%c2%b7" },
-    { 6, "%c2%b8" },
-    { 6, "%c2%b9" },
-    { 6, "%c2%ba" },
-    { 6, "%c2%bb" },
-    { 6, "%c2%bc" },
-    { 6, "%c2%bd" },
-    { 6, "%c2%be" },
-    { 6, "%c2%bf" },
-    { 6, "%c3%80" },
-    { 6, "%c3%81" },
-    { 6, "%c3%82" },
-    { 6, "%c3%83" },
-    { 6, "%c3%84" },
-    { 6, "%c3%85" },
-    { 6, "%c3%86" },
-    { 6, "%c3%87" },
-    { 6, "%c3%88" },
-    { 6, "%c3%89" },
-    { 6, "%c3%8a" },
-    { 6, "%c3%8b" },
-    { 6, "%c3%8c" },
-    { 6, "%c3%8d" },
-    { 6, "%c3%8e" },
-    { 6, "%c3%8f" },
-    { 6, "%c3%90" },
-    { 6, "%c3%91" },
-    { 6, "%c3%92" },
-    { 6, "%c3%93" },
-    { 6, "%c3%94" },
-    { 6, "%c3%95" },
-    { 6, "%c3%96" },
-    { 6, "%c3%97" },
-    { 6, "%c3%98" },
-    { 6, "%c3%99" },
-    { 6, "%c3%9a" },
-    { 6, "%c3%9b" },
-    { 6, "%c3%9c" },
-    { 6, "%c3%9d" },
-    { 6, "%c3%9e" },
-    { 6, "%c3%9f" },
-    { 6, "%c3%a0" },
-    { 6, "%c3%a1" },
-    { 6, "%c3%a2" },
-    { 6, "%c3%a3" },
-    { 6, "%c3%a4" },
-    { 6, "%c3%a5" },
-    { 6, "%c3%a6" },
-    { 6, "%c3%a7" },
-    { 6, "%c3%a8" },
-    { 6, "%c3%a9" },
-    { 6, "%c3%aa" },
-    { 6, "%c3%ab" },
-    { 6, "%c3%ac" },
-    { 6, "%c3%ad" },
-    { 6, "%c3%ae" },
-    { 6, "%c3%af" },
-    { 6, "%c3%b0" },
-    { 6, "%c3%b1" },
-    { 6, "%c3%b2" },
-    { 6, "%c3%b3" },
-    { 6, "%c3%b4" },
-    { 6, "%c3%b5" },
-    { 6, "%c3%b6" },
-    { 6, "%c3%b7" },
-    { 6, "%c3%b8" },
-    { 6, "%c3%b9" },
-    { 6, "%c3%ba" },
-    { 6, "%c3%bb" },
-    { 6, "%c3%bc" },
-    { 6, "%c3%bd" },
-    { 6, "%c3%be" },
-    { 6, "%c3%bf" }
-};
+#define NIBBLE_STR(c) (char)(c < 10 ? c + '0' : c - 10 + 'a')
+#define IS_PRINTABLE(c) (                           \
+    (c == 0) ||                                     \
+    (c == '!') ||                                   \
+    (c == '(') || (c == ')') || (c == '*') ||       \
+    (c == '-') || (c == '.') ||                     \
+    ((c >= '0') && (c <= '9')) ||                   \
+    ((c >= 'A') && (c <= 'Z')) ||                   \
+    (c == '_') ||                                   \
+    ((c >= 'a') && (c <= 'z'))                      \
+)
+
+static size_t URL_PrintableChar(unsigned char charVal, char* buffer)
+{
+    size_t size;
+    if (IS_PRINTABLE(charVal))
+    {
+        buffer[0] = (char)charVal;
+        size = 1;
+    }
+    else
+    {
+        char bigNibbleStr;
+        char littleNibbleStr;
+        unsigned char bigNibbleVal = charVal >> 4;
+        unsigned char littleNibbleVal = charVal & 0x0F;
+
+        if (bigNibbleVal >= 0x0C)
+        {
+            bigNibbleVal -= 0x04;
+        }
+
+        bigNibbleStr = NIBBLE_STR(bigNibbleVal);
+        littleNibbleStr = NIBBLE_STR(littleNibbleVal);
+
+        buffer[0] = '%';
+
+        if (charVal < 0x80)
+        {
+            buffer[1] = bigNibbleStr;
+            buffer[2] = littleNibbleStr;
+            size = 3;
+        }
+        else
+        {
+            buffer[1] = 'c';
+            buffer[3] = '%';
+            buffer[4] = bigNibbleStr;
+            buffer[5] = littleNibbleStr;
+            if (charVal < 0xC0)
+            {
+                buffer[2] = '2';
+            }
+            else
+            {
+                buffer[2] = '3';
+            }
+            size = 6;
+        }
+    }
+
+    return size;
+}
+
+static size_t URL_PrintableCharSize(unsigned char charVal)
+{
+    size_t size;
+    if (IS_PRINTABLE(charVal))
+    {
+        size = 1;
+    }
+    else
+    {
+        if (charVal < 0x80)
+        {
+            size = 3;
+        }
+        else
+        {
+            size = 6;
+        }
+    }
+    return size;
+}
 
 STRING_HANDLE URL_EncodeString(const char* textEncode)
 {
@@ -324,7 +147,7 @@ STRING_HANDLE URL_Encode(STRING_HANDLE input)
         do
         {
             currentUnsignedChar = (unsigned char)(*currentInput++);
-            lengthOfResult += urlEncoding[currentUnsignedChar].numberOfChars;
+            lengthOfResult += URL_PrintableCharSize(currentUnsignedChar);
         } while (currentUnsignedChar != 0);
         if ((encodedURL = malloc(lengthOfResult)) == NULL)
         {
@@ -339,17 +162,15 @@ STRING_HANDLE URL_Encode(STRING_HANDLE input)
             do
             {
                 currentUnsignedChar = (unsigned char)(*currentInput++);
-                if (urlEncoding[currentUnsignedChar].numberOfChars == 1)
-                {
-                    encodedURL[currentEncodePosition++] = *(urlEncoding[currentUnsignedChar].encoding);
-                }
-                else
-                {
-                    memcpy(encodedURL + currentEncodePosition, urlEncoding[currentUnsignedChar].encoding, urlEncoding[currentUnsignedChar].numberOfChars);
-                    currentEncodePosition += urlEncoding[currentUnsignedChar].numberOfChars;
-                }
+                currentEncodePosition += URL_PrintableChar(currentUnsignedChar, &encodedURL[currentEncodePosition]);
             } while (currentUnsignedChar != 0);
+
             result = STRING_new_with_memory(encodedURL);
+            if (result == NULL)
+            {
+                LogError("URL_Encode:: MALLOC failure on encode.");
+                free(encodedURL);
+            }
         }
     }
     return result;

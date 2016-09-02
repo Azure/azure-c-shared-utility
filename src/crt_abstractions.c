@@ -443,14 +443,14 @@ static bool isNaN(const char** endptr)
     return result;
 }
 
-typedef enum
-{
-    FST_INFINITY,
-    FST_NAN,
-    FST_NUMBER,
-    FST_OVERFLOW,
-    FST_ERROR
-} FLOAT_STRING_TYPE;
+#define FLOAT_STRING_TYPE_VALUES    \
+            FST_INFINITY,           \
+            FST_NAN,                \
+            FST_NUMBER,             \
+            FST_OVERFLOW,           \
+            FST_ERROR
+
+DEFINE_ENUM(FLOAT_STRING_TYPE, FLOAT_STRING_TYPE_VALUES);
 
 static FLOAT_STRING_TYPE splitFloatString(const char* nptr, char** endptr, int *signal, double *fraction, int *exponential)
 {

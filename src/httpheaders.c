@@ -13,12 +13,6 @@
 #include "azure_c_shared_utility/crt_abstractions.h"
 #include "azure_c_shared_utility/xlogging.h"
 
-static const char COLON_AND_SPACE[] = { ':', ' ', '\0' };
-#define COLON_AND_SPACE_LENGTH  ((sizeof(COLON_AND_SPACE)/sizeof(COLON_AND_SPACE[0]))-1)
-
-static const char COMMA_AND_SPACE[] = { ',', ' ', '\0' };
-#define COMMA_AND_SPACE_LENGTH  ((sizeof(COMMA_AND_SPACE)/sizeof(COMMA_AND_SPACE[0]))-1)
-
 DEFINE_ENUM_STRINGS(HTTP_HEADERS_RESULT, HTTP_HEADERS_RESULT_VALUES);
 
 typedef struct HTTP_HEADERS_HANDLE_DATA_TAG
@@ -120,7 +114,9 @@ static HTTP_HEADERS_RESULT headers_ReplaceHeaderNameValuePair(HTTP_HEADERS_HANDL
 
             if (!replace && (existingValue != NULL))
             {
-                char* newValue = (char*)malloc(strlen(existingValue) + COMMA_AND_SPACE_LENGTH + strlen(value) + 1);
+                size_t existingValueLen = strlen(existingValue);
+                size_t valueLen = strlen(value);
+                char* newValue = (char*)malloc(sizeof(char) * (existingValueLen + /*COMMA_AND_SPACE_LENGTH*/ 2 + valueLen + /*EOL*/ 1));
                 if (newValue == NULL)
                 {
                     /*Codes_SRS_HTTP_HEADERS_99_015:[ The function shall return HTTP_HEADERS_ALLOC_FAILED when an internal request to allocate memory fails.]*/
@@ -129,10 +125,13 @@ static HTTP_HEADERS_RESULT headers_ReplaceHeaderNameValuePair(HTTP_HEADERS_HANDL
                 }
                 else
                 {
+                    char* runNewValue;
                     /*Codes_SRS_HTTP_HEADERS_99_017:[ If the name already exists in the collection of headers, the function shall concatenate the new value after the existing value, separated by a comma and a space as in: old-value+", "+new-value.]*/
-                    (void)strcpy(newValue, existingValue);
-                    (void)strcat(newValue, COMMA_AND_SPACE);
-                    (void)strcat(newValue, value);
+                    (void)memcpy(newValue, existingValue, existingValueLen);
+                    runNewValue = newValue + existingValueLen;
+                    (*runNewValue++) = ',';
+                    (*runNewValue++) = ' ';
+                    (void)memcpy(runNewValue, value, valueLen + /*EOL*/ 1);
 
                     /*Codes_SRS_HTTP_HEADERS_99_016:[ The function shall store the name:value pair in such a way that when later retrieved by a call to GetHeader it will return a string that shall strcmp equal to the name+": "+value.]*/
                     if (Map_AddOrUpdate(handleData->headers, name, newValue) != MAP_OK)
@@ -275,7 +274,9 @@ HTTP_HEADERS_RESULT HTTPHeaders_GetHeader(HTTP_HEADERS_HANDLE handle, size_t ind
             }
             else
             {
-                *destination = (char*)malloc(strlen(keys[index]) + COLON_AND_SPACE_LENGTH + strlen(values[index]) + 1);
+                size_t keyLen = strlen(keys[index]);
+                size_t valueLen = strlen(values[index]);
+                *destination = (char*)malloc(sizeof(char) * (keyLen + /*COLON_AND_SPACE_LENGTH*/ 2 + valueLen + /*EOL*/ 1));
                 if (*destination == NULL)
                 {
                     /*Codes_SRS_HTTP_HEADERS_99_034:[ The function shall return HTTP_HEADERS_ERROR when an internal error occurs]*/
@@ -286,9 +287,12 @@ HTTP_HEADERS_RESULT HTTPHeaders_GetHeader(HTTP_HEADERS_HANDLE handle, size_t ind
                 {
                     /*Codes_SRS_HTTP_HEADERS_99_016:[ The function shall store the name:value pair in such a way that when later retrieved by a call to GetHeader it will return a string that shall strcmp equal to the name+": "+value.]*/
                     /*Codes_SRS_HTTP_HEADERS_99_027:[ Calling this API shall produce the string value+": "+pair) for the index header in the *destination parameter.]*/
-                    strcpy(*destination, keys[index]);
-                    strcat(*destination, COLON_AND_SPACE);
-                    strcat(*destination, values[index]);
+                    char* runDestination = (*destination);
+                    (void)memcpy(runDestination, keys[index], keyLen);
+                    runDestination += keyLen;
+                    (*runDestination++) = ':';
+                    (*runDestination++) = ' ';
+                    (void)memcpy(runDestination, values[index], valueLen + /*EOL*/ 1);
                     /*Codes_SRS_HTTP_HEADERS_99_035:[ The function shall return HTTP_HEADERS_OK when the function executed without error.]*/
                     result = HTTP_HEADERS_OK;
                 }
