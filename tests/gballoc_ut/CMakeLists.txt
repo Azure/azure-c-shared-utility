@@ -16,5 +16,5 @@ gballoc_undertest.c
 set(${theseTestsName}_h_files
 )
 
-build_c_test_artifacts(${theseTestsName} ON "azure_c_shared_utility_tests")
+build_c_test_artifacts(${theseTestsName} ON "tests/azure_c_shared_utility_tests")
 

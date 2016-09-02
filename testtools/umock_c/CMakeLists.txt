@@ -63,7 +63,7 @@ function(umockc_windows_unittests_add_dll whatIsBuilding)
 
     set_target_properties(${whatIsBuilding}_dll
                PROPERTIES
-               FOLDER "umockc_tests") 
+               FOLDER "tests/umockc_tests") 
     
     target_include_directories(${whatIsBuilding}_dll PUBLIC ${sharedutil_include_directories} $ENV{VCInstallDir}UnitTest/include)
     target_compile_definitions(${whatIsBuilding}_dll PUBLIC -DCPP_UNITTEST)
@@ -94,7 +94,7 @@ function(umockc_windows_unittests_add_exe whatIsBuilding)
     )
     set_target_properties(${whatIsBuilding}_exe
                PROPERTIES
-               FOLDER "umockc_tests")
+               FOLDER "tests/umockc_tests")
                 
     target_compile_definitions(${whatIsBuilding}_exe PUBLIC -DUSE_CTEST)
     target_include_directories(${whatIsBuilding}_exe PUBLIC ${sharedutil_include_directories})

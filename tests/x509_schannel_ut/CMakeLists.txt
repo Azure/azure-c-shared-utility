@@ -29,4 +29,4 @@ set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} /ignore:4217")
 string(REPLACE "advapi32.lib" "" CMAKE_C_STANDARD_LIBRARIES ${CMAKE_C_STANDARD_LIBRARIES})
 string(REPLACE "advapi32.lib" "" CMAKE_CXX_STANDARD_LIBRARIES ${CMAKE_CXX_STANDARD_LIBRARIES})
 
-build_c_test_artifacts(${theseTestsName} ON "azure_c_shared_utility_tests")
+build_c_test_artifacts(${theseTestsName} ON "tests/azure_c_shared_utility_tests")

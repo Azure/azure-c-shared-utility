@@ -205,11 +205,11 @@ function(set_test_target_folder whatIsBuilding ext)
     if("${whatIsBuilding}" MATCHES ".*e2e.*")
         set_target_properties(${whatIsBuilding}_${ext}
                    PROPERTIES
-                   FOLDER "E2ETests")
+                   FOLDER "tests/E2ETests")
     else()
         set_target_properties(${whatIsBuilding}_${ext}
                    PROPERTIES
-                   FOLDER "UnitTests")
+                   FOLDER "tests/UnitTests")
     endif()
 endfunction()
 
