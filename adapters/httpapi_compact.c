@@ -439,11 +439,11 @@ static void on_send_complete(void* context, IO_SEND_RESULT send_result)
 	}
 }
 
-static int conn_send_all(HTTP_HANDLE_DATA* http_instance, const unsigned char* buffer, int count)
+static int conn_send_all(HTTP_HANDLE_DATA* http_instance, const unsigned char* buffer, size_t count)
 {
     int result;
 
-	if ((http_instance == NULL) || (buffer == 0) || (count < 0))
+	if ((http_instance == NULL) || (buffer == 0) || (count < (size_t)0))
 	{
         LogError("conn_send_all: %s", ((http_instance == NULL) ? "Invalid HTTP instance" : "Invalid HTTP buffer"));
         result = -1;
@@ -492,7 +492,7 @@ static int conn_send_all(HTTP_HANDLE_DATA* http_instance, const unsigned char* b
                     break;
 
                 case SEND_ALL_RESULT_OK:
-                    result = count;
+                    result = (int)count;
                     break;
 
                 case SEND_ALL_RESULT_ERROR:
@@ -550,7 +550,7 @@ static int readLine(HTTP_HANDLE_DATA* http_instance, char* buf, const size_t siz
 
         if (result != -1)
         {
-            result = substr - buf;
+            result = (int)(substr - buf);
         }
     }
 
@@ -559,15 +559,15 @@ static int readLine(HTTP_HANDLE_DATA* http_instance, char* buf, const size_t siz
 
 static int readChunk(HTTP_HANDLE_DATA* http_instance, char* buf, size_t size)
 {
-    size_t cur, offset;
+    int cur, offset;
 
     // read content with specified length, even if it is received
     // only in chunks due to fragmentation in the networking layer.
     // returns -1 in case of error.
     offset = 0;
-    while (size > 0)
+    while (size > (size_t)0)
     {
-        cur = conn_receive(http_instance, buf + offset, size);
+        cur = conn_receive(http_instance, buf + offset, (int)size);
 
         // end of stream reached
 		if (cur == 0)
@@ -576,7 +576,7 @@ static int readChunk(HTTP_HANDLE_DATA* http_instance, char* buf, size_t size)
 		}
 
         // read cur bytes (might be less than requested)
-        size -= cur;
+        size -= (size_t)cur;
         offset += cur;
     }
 
@@ -711,7 +711,7 @@ static HTTPAPI_RESULT SendHeadsToXIO(HTTP_HANDLE_DATA* httpHandle, HTTPAPI_REQUE
 					/*Codes_SRS_HTTPAPI_COMPACT_21_028: [ If the HTTPAPI_ExecuteRequest cannot send the request header, it shall return HTTPAPI_HTTP_HEADERS_FAILED. ]*/
 					result = HTTPAPI_SEND_REQUEST_FAILED;
 				}
-				if (conn_send_all(httpHandle, (const unsigned char*)"\r\n", 2) < 0)
+				if (conn_send_all(httpHandle, (const unsigned char*)"\r\n", (size_t)2) < 0)
 				{
 					/*Codes_SRS_HTTPAPI_COMPACT_21_028: [ If the HTTPAPI_ExecuteRequest cannot send the request header, it shall return HTTPAPI_HTTP_HEADERS_FAILED. ]*/
 					result = HTTPAPI_SEND_REQUEST_FAILED;
@@ -721,7 +721,7 @@ static HTTPAPI_RESULT SendHeadsToXIO(HTTP_HANDLE_DATA* httpHandle, HTTPAPI_REQUE
 		}
 
 		//Close headers
-		if (conn_send_all(httpHandle, (const unsigned char*)"\r\n", 2) < 0)
+		if (conn_send_all(httpHandle, (const unsigned char*)"\r\n", (size_t)2) < 0)
 		{
 			/*Codes_SRS_HTTPAPI_COMPACT_21_028: [ If the HTTPAPI_ExecuteRequest cannot send the request header, it shall return HTTPAPI_HTTP_HEADERS_FAILED. ]*/
 			result = HTTPAPI_SEND_REQUEST_FAILED;
@@ -942,7 +942,7 @@ static HTTPAPI_RESULT ReadHTTPResponseBodyFromXIO(HTTP_HANDLE_DATA* httpHandle, 
 			else if (chunkSize == 0)
 			{
 				// 0 length means next line is just '\r\n' and end of chunks
-				if (readChunk(httpHandle, (char*)buf, 2) < 0
+				if (readChunk(httpHandle, (char*)buf, (size_t)2) < 0
 					|| buf[0] != '\r' || buf[1] != '\n') // skip /r/n
 				{
 					(void)BUFFER_unbuild(responseContent);
@@ -985,7 +985,7 @@ static HTTPAPI_RESULT ReadHTTPResponseBodyFromXIO(HTTP_HANDLE_DATA* httpHandle, 
 
 				if (result == HTTPAPI_OK)
 				{
-					if (readChunk(httpHandle, (char*)buf, 2) < 0
+					if (readChunk(httpHandle, (char*)buf, (size_t)2) < 0
 						|| buf[0] != '\r' || buf[1] != '\n') // skip /r/n
 					{
 						result = HTTPAPI_READ_DATA_FAILED;
@@ -1122,7 +1122,7 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
             free(httpHandle->certificate);
         }
 
-        int len = strlen((char*)value);
+        int len = (int)strlen((char*)value);
         httpHandle->certificate = (char*)malloc((len + 1) * sizeof(char));
         if (httpHandle->certificate == NULL)
         {
