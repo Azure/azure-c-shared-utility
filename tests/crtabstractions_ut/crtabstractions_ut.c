@@ -2031,20 +2031,22 @@ TEST_SUITE_CLEANUP(b)
         TEST_FUNCTION(strtold_s_min_positive_value_success)
         {
             // arrange
-            const char* subjectStr = "2.2250738585072014e-308";
+            const char* subjectStr = "2.225073858507201e-308";
             char* endptr;
             long double result;
 
-            long double expectedResult = DBL_MIN;
+            long double maxExpectedSignificant = 2.225073858507202;
+            long double minExpectedSignificant = 2.225073858507200;
             char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
 
             // act
             result = strtold_s(subjectStr, &endptr);
+            long double significant = result*1e308;
 
             // assert
             ASSERT_ARE_EQUAL(int, 0, errno);
-            ASSERT_ARE_EQUAL(char_ptr, "2.2250738585072014e-308", subjectStr);
-            ASSERT_IS_TRUE(expectedResult == result);
+            ASSERT_ARE_EQUAL(char_ptr, "2.225073858507201e-308", subjectStr);
+            ASSERT_IS_TRUE((significant >= minExpectedSignificant) && (significant <= maxExpectedSignificant));
             ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
         }
 
@@ -2052,20 +2054,22 @@ TEST_SUITE_CLEANUP(b)
         TEST_FUNCTION(strtold_s_max_positive_exponential_number_success)
         {
             // arrange
-            const char* subjectStr = "1.7976931348623158e+308";
+            const char* subjectStr = "1.797693134862315e+308";
             char* endptr;
             long double result;
 
-            double expectedResult = 1.7976931348623158e+308;
+            long double maxExpectedSignificant = 1.797693134862316;
+            long double minExpectedSignificant = 1.797693134862314;
             char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
 
             // act
             result = strtold_s(subjectStr, &endptr);
+            long double significant = result*1e-308;
 
             // assert
             ASSERT_ARE_EQUAL(int, 0, errno);
-            ASSERT_ARE_EQUAL(char_ptr, "1.7976931348623158e+308", subjectStr);
-            ASSERT_ARE_EQUAL(double, expectedResult, (double)result);
+            ASSERT_ARE_EQUAL(char_ptr, "1.797693134862315e+308", subjectStr);
+            ASSERT_IS_TRUE((significant >= minExpectedSignificant) && (significant <= maxExpectedSignificant));
             ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
         }
 
@@ -2073,20 +2077,22 @@ TEST_SUITE_CLEANUP(b)
         TEST_FUNCTION(strtold_s_min_negative_value_success)
         {
             // arrange
-            const char* subjectStr = "-1.7976931348623158e+308";
+            const char* subjectStr = "-1.797693134862315e+308";
             char* endptr;
             long double result;
 
-            long double expectedResult = -1.7976931348623158e+308;
+            long double maxExpectedSignificant = -1.797693134862314;
+            long double minExpectedSignificant = -1.797693134862316;
             char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
 
             // act
             result = strtold_s(subjectStr, &endptr);
+            long double significant = result*1e-308;
 
             // assert
             ASSERT_ARE_EQUAL(int, 0, errno);
-            ASSERT_ARE_EQUAL(char_ptr, "-1.7976931348623158e+308", subjectStr);
-            ASSERT_IS_TRUE(expectedResult == result);
+            ASSERT_ARE_EQUAL(char_ptr, "-1.797693134862315e+308", subjectStr);
+            ASSERT_IS_TRUE((significant >= minExpectedSignificant) && (significant <= maxExpectedSignificant));
             ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
         }
 
