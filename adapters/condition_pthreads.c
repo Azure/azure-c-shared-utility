@@ -11,45 +11,89 @@
 #include "pthread.h"
 #include "time.h"
 
+#ifdef __MACH__
+#include <mach/clock.h>
+#include <mach/mach.h>
+#endif
+
 DEFINE_ENUM_STRINGS(COND_RESULT, COND_RESULT_VALUES);
 
-// Set our time basis based on what clock is available.  Give preference to CLOCK_MONOTONIC,
-// then CLOCK_REALTIME.  If neither is available, query the default pthread_condattr_t value 
-// and use that.
-#ifdef CLOCK_MONOTONIC 
-clockid_t time_basis = CLOCK_MONOTONIC;
-#else 
-#ifdef CLOCK_REALTIME
-clockid_t time_basis = CLOCK_REALTIME;
-#else
-clockid_t time_basis = -1
-#endif
+#ifndef __MACH__
+clockid_t time_basis = -1;
 #endif
 
-COND_HANDLE Condition_Init(void)
+void set_time_basis(void)
 {
-    // If we don't know our time basis, find it.
-    if (time_basis == -1)
-    {
-        pthread_condattr_t cattr;
-        pthread_condattr_init(&cattr);
-        pthread_condattr_getclock(&cattr, &time_basis);
-        pthread_condattr_destroy(&cattr);
-    }
+// The time basis depends on what clock is available. Prefer CLOCK_MONOTONIC,
+// then CLOCK_REALTIME, otherwise query the default pthread_condattr_t value 
+// and use that. Note the time basis stuff requires _POSIX_TIMERS [TMR] at a
+// minimum; querying pthread_condattr_t requires _POSIX_CLOCK_SELECTION [CS].
+// OSX has neither so we use a platform-specific clock.
+#ifndef __MACH__
+#if defined(CLOCK_MONOTONIC)
+    time_basis = CLOCK_MONOTONIC;
+#elif defined(CLOCK_REALTIME)
+    time_basis = CLOCK_REALTIME;
+#else
+    pthread_condattr_t cattr;
+    pthread_condattr_init(&cattr);
+    pthread_condattr_getclock(&cattr, &time_basis);
+    pthread_condattr_destroy(&cattr);
+#endif
+#endif
+}
 
-    // Codes_SRS_CONDITION_18_002: [ Condition_Init shall create and return a CONDITION_HANDLE ]
+pthread_cond_t* create_cond(void)
+{
     pthread_cond_t * cond = (pthread_cond_t*)malloc(sizeof(pthread_cond_t));
     if (cond != NULL)
     {
-        // set our time basis when configuring the condition
+#ifdef __MACH__
+        pthread_cond_init(cond, NULL);
+#else
         pthread_condattr_t cattr;
         pthread_condattr_init(&cattr);
         pthread_condattr_setclock(&cattr, time_basis);
         pthread_cond_init(cond, &cattr);
-        pthread_condattr_destroy(&cattr);
+        pthread_condattr_destroy(&cattr);
+#endif
     }
-    // Codes_SRS_CONDITION_18_008: [ Condition_Init shall return NULL if it fails to allocate the CONDITION_HANDLE ]
+
     return cond;
+}
+
+int get_time_ns(struct timespec* ts)
+{
+    int err;
+
+#ifdef __MACH__
+    clock_serv_t cclock;
+    mach_timespec_t mts;
+    err = host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &cclock);
+    if (!err)
+    {
+        err = clock_get_time(cclock, &mts);
+        mach_port_deallocate(mach_task_self(), cclock);
+
+        if (!err)
+        {
+            ts->tv_sec = mts.tv_sec;
+            ts->tv_nsec = mts.tv_nsec;
+        } 
+    }
+#else
+    err = clock_gettime(time_basis, ts);
+#endif
+    return err;
+}
+
+COND_HANDLE Condition_Init(void)
+{
+    set_time_basis();
+
+    // Codes_SRS_CONDITION_18_002: [ Condition_Init shall create and return a CONDITION_HANDLE ]
+    // Codes_SRS_CONDITION_18_008: [ Condition_Init shall return NULL if it fails to allocate the CONDITION_HANDLE ]
+    return create_cond();
 }
 
 COND_RESULT Condition_Post(COND_HANDLE handle)
@@ -75,7 +119,6 @@ COND_RESULT Condition_Post(COND_HANDLE handle)
     return result;
 }
 
-
 #define NANOSECONDS_IN_1_SECOND 1000000000L
 #define MILLISECONDS_IN_1_SECOND 1000
 #define NANOSECONDS_IN_1_MILLISECOND 1000000L
@@ -95,7 +138,12 @@ COND_RESULT Condition_Wait(COND_HANDLE handle, LOCK_HANDLE lock, int timeout_mil
         {
             // Codes_SRS_CONDITION_18_013: [ Condition_Wait shall accept relative timeouts ]
             struct timespec tm;
-            clock_gettime(time_basis,&tm);
+            if (get_time_ns(&tm) != 0)
+            {
+                LogError("Failed to get the current time");
+                return COND_ERROR;
+            }
+
             tm.tv_nsec += (timeout_milliseconds % MILLISECONDS_IN_1_SECOND) * NANOSECONDS_IN_1_MILLISECOND;
             tm.tv_sec += timeout_milliseconds / MILLISECONDS_IN_1_SECOND;
             // handle overflow in tv_nsec
