@@ -4,3 +4,6 @@
 [submodule "deps/libwebsockets"]
 	path = deps/libwebsockets
 	url = https://github.com/warmcat/libwebsockets.git
+[submodule "testtools/umock-c"]
+	path = testtools/umock-c
+	url = https://github.com/Azure/umock-c.git
