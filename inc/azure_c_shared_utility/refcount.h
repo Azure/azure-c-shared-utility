@@ -43,6 +43,8 @@ C2(REFCOUNT_, type)
 
 #if defined(WIN32)
 #define COUNT_TYPE LONG
+#elif defined(__APPLE__)
+#define COUNT_TYPE atomic_int
 #else
 #define COUNT_TYPE uint32_t
 #endif
