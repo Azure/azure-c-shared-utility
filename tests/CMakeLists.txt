@@ -53,4 +53,5 @@ if(use_wsio)
 endif()
 
 #Add adapters tests
+add_subdirectory(tlsioarduino_ut)
 add_subdirectory(platformarduino_ut)
