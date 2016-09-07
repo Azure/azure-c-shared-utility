@@ -18,6 +18,9 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     set(LINUX TRUE)
 endif()
 
+# Set CMAKE_INSTALL_LIBDIR if not defined
+include(GNUInstallDirs)
+
 include (CTest)
 
 #these are the include folders
@@ -53,7 +56,11 @@ option(compileOption_C "passes a string to the command line of the C compiler" O
 option(compileOption_CXX "passes a string to the command line of the C++ compiler" OFF)
 
 # Start of variables used during install
-set (LIB_INSTALL_DIR lib CACHE PATH "Library object file directory")
+if (CMAKE_INSTALL_LIBDIR)
+  set (LIB_INSTALL_DIR "${CMAKE_INSTALL_LIBDIR}" CACHE PATH "Library object file directory")
+else ()
+  set (LIB_INSTALL_DIR "lib" CACHE PATH "Library object file directory")
+endif ()
 
 #Use solution folders. 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -807,7 +814,7 @@ endif()
 
 if(WIN32)
 else()
-    install (TARGETS aziotsharedutil DESTINATION lib)
-    install (FILES ${source_h_files} DESTINATION include/azureiot/azure_c_shared_utility)
+    install (TARGETS aziotsharedutil DESTINATION ${LIB_INSTALL_DIR})
+    install (FILES ${source_h_files} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azureiot/azure_c_shared_utility)
 endif (WIN32)
 
