@@ -259,7 +259,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         size_t num = VECTOR_size(g_handle);
 
         ///act
-        VECTOR_UNITTEST* pResult = (VECTOR_UNITTEST*)VECTOR_element(g_handle, num+1);
+        VECTOR_UNITTEST* pResult = (VECTOR_UNITTEST*)VECTOR_element(g_handle, num);
 
         ///assert
         ASSERT_IS_NULL(pResult);
