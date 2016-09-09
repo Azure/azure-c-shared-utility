@@ -725,7 +725,7 @@ if(${use_openssl})
         ./inc/azure_c_shared_utility/tlsio_openssl.h
     ./inc/azure_c_shared_utility/x509_openssl.h
     )
-    if(WIN32)
+    if(WIN32 OR APPLE)
         include_directories($ENV{OpenSSLDir}/include)
     endif()
 endif()
