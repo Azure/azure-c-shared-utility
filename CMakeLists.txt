@@ -805,6 +805,9 @@ if (NOT ${skip_unittests})
     add_subdirectory(tests)
 endif()
 
+# Set CMAKE_INSTALL_* if not defined
+include(GNUInstallDirs)
+
 # Install Azure C Shared Utility
-install (TARGETS aziotsharedutil DESTINATION lib)
-install (FILES ${source_h_files} DESTINATION include/azureiot/azure_c_shared_utility)
+install (TARGETS aziotsharedutil DESTINATION ${CMAKE_INSTALL_LIBDIR})
+install (FILES ${source_h_files} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azureiot/azure_c_shared_utility)
