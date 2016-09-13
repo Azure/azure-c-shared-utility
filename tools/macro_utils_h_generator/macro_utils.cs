@@ -18,7 +18,7 @@ namespace macro_utils_h_generator
     /// Class to produce the template output
     /// </summary>
     
-    #line 1 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+    #line 1 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.TextTemplating", "14.0.0.0")]
     public partial class macro_utils : macro_utilsBase
     {
@@ -33,211 +33,224 @@ namespace macro_utils_h_generator
                     " FILE IS GENERATED*/\r\n/*DO NOT EDIT BY HAND!!!*/\r\n/*instead edit macro_utils.tt " +
                     "*/\r\n");
             
-            #line 13 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 13 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 /*CHANGE BELOW 2 VARIABLES TO GET MORE / LESS */ 
             
             #line default
             #line hidden
             
-            #line 14 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 14 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 int nArithmetic=1024;
             
             #line default
             #line hidden
             
-            #line 15 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 15 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 int nMacroParameters=124;/*127 parameters in one macro deﬁnition in C99 in chapter 5.2.4.1 Translation limits*/
             
             #line default
             #line hidden
-            this.Write("\r\n#ifndef MACRO_UTILS_H\r\n#define MACRO_UTILS_H\r\n\r\n#include <string.h>\r\n\r\n#define " +
-                    "TOSTRING_(x) #x\r\n#define TOSTRING(x) TOSTRING_(x)\r\n\r\n#define IFCOMMA(N) C2(IFCOM" +
-                    "MA_, N)\r\n#define IFCOMMA_0\r\n#define IFCOMMA_2\r\n");
+            this.Write(@"
+#ifndef MACRO_UTILS_H
+#define MACRO_UTILS_H
+
+#include <string.h>
+
+/*""pointer or NULL"" macro - because when printf-ing arguments NULL is not valid for %p or %s (section 7.1.4 of C11 standard) */
+#define P_OR_NULL(p) (((p)!=NULL)?(p):""NULL"")
+
+#define TOSTRING_(x) #x
+#define TOSTRING(x) TOSTRING_(x)
+
+#define IFCOMMA(N) C2(IFCOMMA_, N)
+#define IFCOMMA_0
+#define IFCOMMA_2
+");
             
-            #line 28 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 31 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 for(var i=4;i<=nMacroParameters;i+=2)
             
             #line default
             #line hidden
             
-            #line 29 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 32 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 {
             
             #line default
             #line hidden
             this.Write("#define IFCOMMA_");
             
-            #line 30 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 33 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(i));
             
             #line default
             #line hidden
             this.Write(" ,\r\n");
             
-            #line 31 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 34 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 }
             
             #line default
             #line hidden
             this.Write("\r\n#define IFCOMMA_NOFIRST(N) C2(IFCOMMA_NOFIRST, N)\r\n#define IFCOMMA_NOFIRST1 \r\n");
             
-            #line 35 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 38 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 for(var i=2;i<=nMacroParameters;i++)
             
             #line default
             #line hidden
             
-            #line 36 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 39 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 {
             
             #line default
             #line hidden
             this.Write("#define IFCOMMA_NOFIRST");
             
-            #line 37 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 40 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(i));
             
             #line default
             #line hidden
             this.Write(" ,\r\n");
             
-            #line 38 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 41 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 }
             
             #line default
             #line hidden
             this.Write("\r\n#define DEC(x) C2(DEC,x)\r\n");
             
-            #line 41 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 44 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 for(var i=nArithmetic;i>=1;i--)
             
             #line default
             #line hidden
             
-            #line 42 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 45 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 {
             
             #line default
             #line hidden
             this.Write("#define DEC");
             
-            #line 43 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 46 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(i));
             
             #line default
             #line hidden
             this.Write(" ");
             
-            #line 43 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 46 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(i-1));
             
             #line default
             #line hidden
             this.Write("\r\n");
             
-            #line 44 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 47 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 }
             
             #line default
             #line hidden
             this.Write("\r\n#define INC(x) C2(INC,x)\r\n");
             
-            #line 47 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 50 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 for(var i=nArithmetic;i>=0;i--)
             
             #line default
             #line hidden
             
-            #line 48 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 51 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 {
             
             #line default
             #line hidden
             this.Write("#define INC");
             
-            #line 49 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 52 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(i));
             
             #line default
             #line hidden
             this.Write(" ");
             
-            #line 49 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 52 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(i+1));
             
             #line default
             #line hidden
             this.Write("\r\n");
             
-            #line 50 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 53 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 }
             
             #line default
             #line hidden
             this.Write("\r\n#define DIV2(x) C2(DIV2_,x)\r\n\r\n");
             
-            #line 54 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 57 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 for(var i=nArithmetic;i>=0;i--)
             
             #line default
             #line hidden
             
-            #line 55 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 58 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 {
             
             #line default
             #line hidden
             this.Write("#define DIV2_");
             
-            #line 56 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 59 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(i));
             
             #line default
             #line hidden
             this.Write(" ");
             
-            #line 56 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 59 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(i/2));
             
             #line default
             #line hidden
             this.Write("\r\n");
             
-            #line 57 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 60 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 }
             
             #line default
             #line hidden
             this.Write("\r\n#define THE_NTH_ARG(");
             
-            #line 59 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 62 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 for(var i=1;i<=nMacroParameters;i++)
             
             #line default
             #line hidden
             
-            #line 60 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 63 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 {
             
             #line default
             #line hidden
             this.Write("P");
             
-            #line 60 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 63 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(i));
             
             #line default
             #line hidden
             this.Write(", ");
             
-            #line 60 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 63 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 }
             
             #line default
             #line hidden
             this.Write(" ... ) P");
             
-            #line 60 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 63 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(nMacroParameters));
             
             #line default
@@ -245,78 +258,78 @@ for(var i=1;i<=nMacroParameters;i++)
             this.Write("\r\n\r\n#define _TRIGGER_PARENTHESIS_(...) ,\r\n\r\n#ifdef _MSC_VER\r\n#define LPAREN (\r\n#d" +
                     "efine COUNT_1_OR_MORE_ARG(...) THE_NTH_ARG LPAREN __VA_ARGS__, \\\r\n");
             
-            #line 67 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 70 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 for(var i=nMacroParameters-1;i>=1;i--){
             
             #line default
             #line hidden
             
-            #line 67 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 70 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(i.ToString()+((i>1)?", ":"")));
             
             #line default
             #line hidden
             
-            #line 67 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 70 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 }
             
             #line default
             #line hidden
             this.Write(")\r\n#define MORE_THAN_1_ARG(...) THE_NTH_ARG LPAREN __VA_ARGS__, ");
             
-            #line 68 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 71 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 for(var i=nMacroParameters-2;i>=1;i--){
             
             #line default
             #line hidden
             
-            #line 68 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 71 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(1));
             
             #line default
             #line hidden
             this.Write(",");
             
-            #line 68 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 71 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 }
             
             #line default
             #line hidden
             this.Write("0)\r\n#else\r\n#define COUNT_1_OR_MORE_ARG(...) THE_NTH_ARG (__VA_ARGS__, \\\r\n");
             
-            #line 71 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 74 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 for(var i=nMacroParameters-1;i>=1;i--){
             
             #line default
             #line hidden
             
-            #line 71 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 74 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(i.ToString()+((i>1)?", ":"")));
             
             #line default
             #line hidden
             
-            #line 71 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 74 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 }
             
             #line default
             #line hidden
             this.Write(")\r\n#define MORE_THAN_1_ARG(...) THE_NTH_ARG(__VA_ARGS__, ");
             
-            #line 72 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 75 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 for(var i=nMacroParameters-2;i>=1;i--){
             
             #line default
             #line hidden
             
-            #line 72 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 75 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(1));
             
             #line default
             #line hidden
             this.Write(",");
             
-            #line 72 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 75 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 }
             
             #line default
@@ -359,74 +372,74 @@ for(var i=nMacroParameters-2;i>=1;i--){
 
 ");
             
-            #line 108 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 111 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 for(var i=nMacroParameters;i>=2;i--)
             
             #line default
             #line hidden
             
-            #line 109 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 112 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 {
             
             #line default
             #line hidden
             this.Write("#define FOR_EACH_1_");
             
-            #line 110 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 113 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(i));
             
             #line default
             #line hidden
             this.Write("(X, ");
             
-            #line 110 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 113 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 for(var j=1;j<=i;j++){
             
             #line default
             #line hidden
             this.Write("P");
             
-            #line 110 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 113 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(j.ToString()+((j<i)?", ":"")));
             
             #line default
             #line hidden
             
-            #line 110 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 113 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 }
             
             #line default
             #line hidden
             this.Write(") \\\r\nX(P1) \\\r\nFOR_EACH_1_");
             
-            #line 112 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 115 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(i-1));
             
             #line default
             #line hidden
             this.Write("(X, ");
             
-            #line 112 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 115 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 for(var j=2;j<=i;j++){
             
             #line default
             #line hidden
             this.Write("P");
             
-            #line 112 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 115 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(j.ToString()+((j<i)?", ":"")));
             
             #line default
             #line hidden
             
-            #line 112 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 115 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 }
             
             #line default
             #line hidden
             this.Write(")\r\n\r\n");
             
-            #line 114 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 117 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 }
             
             #line default
@@ -442,74 +455,74 @@ X(P1)
 
 ");
             
-            #line 124 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 127 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 for(var i=nMacroParameters;i>=2;i--)
             
             #line default
             #line hidden
             
-            #line 125 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 128 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 {
             
             #line default
             #line hidden
             this.Write("#define FOR_EACH_1_KEEP_1_");
             
-            #line 126 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 129 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(i));
             
             #line default
             #line hidden
             this.Write("(X, keep, ");
             
-            #line 126 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 129 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 for(var j=1;j<=i;j++){
             
             #line default
             #line hidden
             this.Write("P");
             
-            #line 126 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 129 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(j.ToString()+(j<i?", ":"")));
             
             #line default
             #line hidden
             
-            #line 126 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 129 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 }
             
             #line default
             #line hidden
             this.Write(") \\\r\nX(keep, P1) \\\r\nFOR_EACH_1_KEEP_1_");
             
-            #line 128 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 131 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(i-1));
             
             #line default
             #line hidden
             this.Write("(X, keep, ");
             
-            #line 128 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 131 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 for(var j=2;j<=i;j++){
             
             #line default
             #line hidden
             this.Write("P");
             
-            #line 128 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 131 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture((j).ToString()+(j<i?", ":"")));
             
             #line default
             #line hidden
             
-            #line 128 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 131 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 }
             
             #line default
             #line hidden
             this.Write(")\r\n\r\n\r\n");
             
-            #line 131 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 134 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 }
             
             #line default
@@ -526,79 +539,83 @@ X(keep, P1)
 
 ");
             
-            #line 142 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 145 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 for(var i=nMacroParameters;i>=4;i-=2)
             
             #line default
             #line hidden
             
-            #line 143 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 146 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 {
             
             #line default
             #line hidden
             this.Write("#define FOR_EACH_2_KEEP_1_");
             
-            #line 144 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 147 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(i));
             
             #line default
             #line hidden
             this.Write("(X, keep, ");
             
-            #line 144 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 147 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 for(var j=1;j<=i;j++){
             
             #line default
             #line hidden
             this.Write("P");
             
-            #line 144 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 147 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(j.ToString()+(j<i?", ":"")));
             
             #line default
             #line hidden
             
-            #line 144 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 147 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 }
             
             #line default
             #line hidden
             this.Write(") \\\r\nX(keep, P1, P2) \\\r\nFOR_EACH_2_KEEP_1_");
             
-            #line 146 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 149 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(i-2));
             
             #line default
             #line hidden
             this.Write("(X, keep, ");
             
-            #line 146 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 149 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 for(var j=3;j<=i;j++){
             
             #line default
             #line hidden
             this.Write("P");
             
-            #line 146 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 149 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture((j).ToString()+(j<i?", ":"")));
             
             #line default
             #line hidden
             
-            #line 146 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 149 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 }
             
             #line default
             #line hidden
             this.Write(")\r\n\r\n\r\n");
             
-            #line 149 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 152 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 }
             
             #line default
             #line hidden
             this.Write(@"
+#define FOR_EACH_2_KEEP_1_1(...)
+
+#define FOR_EACH_2_KEEP_1_0(...)
+
 #define FOR_EACH_2_KEEP_1_2(X, keep, P1, P2) \
     X(keep, P1, P2) \
 
@@ -608,6 +625,96 @@ for(var j=3;j<=i;j++){
 #define FOR_EACH_2_KEEP_1(MACRO_TO_INVOKE, ...) C2(FOR_EACH_2_KEEP_1_, C2(DEC,C1(COUNT_ARG(__VA_ARGS__)))) ( MACRO_TO_INVOKE, __VA_ARGS__)
 #endif
 
+
+");
+            
+            #line 168 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
+for(var i=nMacroParameters;i>=4;i-=2)
+            
+            #line default
+            #line hidden
+            
+            #line 169 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
+{
+            
+            #line default
+            #line hidden
+            this.Write("#define FOR_EACH_2_KEEP_2_");
+            
+            #line 170 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(i));
+            
+            #line default
+            #line hidden
+            this.Write("(X, keep1, keep2, ");
+            
+            #line 170 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
+for(var j=1;j<=i;j++){
+            
+            #line default
+            #line hidden
+            this.Write("P");
+            
+            #line 170 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(j.ToString()+(j<i?", ":"")));
+            
+            #line default
+            #line hidden
+            
+            #line 170 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
+}
+            
+            #line default
+            #line hidden
+            this.Write(") \\\r\nX(keep1, keep2, P1, P2) \\\r\nFOR_EACH_2_KEEP_2_");
+            
+            #line 172 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(i-2));
+            
+            #line default
+            #line hidden
+            this.Write("(X, keep1, keep2, ");
+            
+            #line 172 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
+for(var j=3;j<=i;j++){
+            
+            #line default
+            #line hidden
+            this.Write("P");
+            
+            #line 172 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture((j).ToString()+(j<i?", ":"")));
+            
+            #line default
+            #line hidden
+            
+            #line 172 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
+}
+            
+            #line default
+            #line hidden
+            this.Write(")\r\n\r\n\r\n");
+            
+            #line 175 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
+}
+            
+            #line default
+            #line hidden
+            this.Write(@"
+#define FOR_EACH_2_KEEP_2_1(...)
+
+#define FOR_EACH_2_KEEP_2_0(...)
+
+#define FOR_EACH_2_KEEP_2_2(X, keep1, keep2, P1, P2) \
+    X(keep1, keep2, P1, P2) \
+
+#ifdef _MSC_VER
+#define FOR_EACH_2_KEEP_2(MACRO_TO_INVOKE, ...) C2(FOR_EACH_2_KEEP_2_, C2(DEC,C2(DEC,C1(COUNT_ARG(__VA_ARGS__))))) LPAREN MACRO_TO_INVOKE, __VA_ARGS__)
+#else
+#define FOR_EACH_2_KEEP_2(MACRO_TO_INVOKE, ...) C2(FOR_EACH_2_KEEP_2_, C2(DEC, C2(DEC,C1(COUNT_ARG(__VA_ARGS__))))) ( MACRO_TO_INVOKE, __VA_ARGS__)
+#endif
+
+
 #define FOR_EACH_2_0(...)
 
 #define FOR_EACH_2_2(X, P1, P2) \
@@ -615,68 +722,68 @@ X(P1, P2)
 
 ");
             
-            #line 165 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 196 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 for(var i=4;i<=nMacroParameters;i+=2) {
             
             #line default
             #line hidden
             this.Write("#define FOR_EACH_2_");
             
-            #line 166 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 197 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(i));
             
             #line default
             #line hidden
             this.Write("(X, ");
             
-            #line 166 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 197 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 for(var j=1;j<=i;j++){
             
             #line default
             #line hidden
             this.Write("P");
             
-            #line 166 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 197 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(j.ToString()+((j<i)?", ":"")));
             
             #line default
             #line hidden
             
-            #line 166 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 197 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 }
             
             #line default
             #line hidden
             this.Write(") \\\r\nX(P1, P2) \\\r\nFOR_EACH_2_");
             
-            #line 168 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 199 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(i-2));
             
             #line default
             #line hidden
             this.Write("(X, ");
             
-            #line 168 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 199 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 for(var j=3;j<=i;j++){
             
             #line default
             #line hidden
             this.Write("P");
             
-            #line 168 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 199 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(j.ToString()+((j<i)?", ":"")));
             
             #line default
             #line hidden
             
-            #line 168 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 199 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 }
             
             #line default
             #line hidden
             this.Write(")\r\n\r\n");
             
-            #line 170 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 201 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 }
             
             #line default
@@ -684,75 +791,75 @@ for(var j=3;j<=i;j++){
             this.Write("\r\n#define FOR_EACH_1_COUNTED_0(...)\r\n\r\n#define FOR_EACH_1_COUNTED_1(X, P1) \\\r\n   " +
                     " X(1, P1)\r\n\r\n");
             
-            #line 177 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 208 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 for(var i=2;i<=nMacroParameters;i++) {
             
             #line default
             #line hidden
             this.Write("#define FOR_EACH_1_COUNTED_");
             
-            #line 178 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 209 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(i));
             
             #line default
             #line hidden
             this.Write("(X, ");
             
-            #line 178 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 209 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 for(var j=1;j<=i;j++){
             
             #line default
             #line hidden
             this.Write("P");
             
-            #line 178 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 209 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(j.ToString()+((j<i)?", ":"")));
             
             #line default
             #line hidden
             
-            #line 178 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 209 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 }
             
             #line default
             #line hidden
             this.Write(") \\\r\nX(");
             
-            #line 179 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 210 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(i));
             
             #line default
             #line hidden
             this.Write(", P1) \\\r\nFOR_EACH_1_COUNTED_");
             
-            #line 180 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 211 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(i-1));
             
             #line default
             #line hidden
             this.Write("(X, ");
             
-            #line 180 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 211 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 for(var j=2;j<=i;j++){
             
             #line default
             #line hidden
             this.Write("P");
             
-            #line 180 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 211 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(j.ToString()+((j<i)?", ":"")));
             
             #line default
             #line hidden
             
-            #line 180 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 211 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 }
             
             #line default
             #line hidden
             this.Write(")\r\n\r\n");
             
-            #line 182 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 213 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 }
             
             #line default
@@ -760,75 +867,75 @@ for(var j=2;j<=i;j++){
             this.Write("\r\n#define FOR_EACH_2_COUNTED_0(...)\r\n\r\n#define FOR_EACH_2_COUNTED_2(X, P1, P2) \\\r" +
                     "\n    X(2, P1, P2)\r\n\r\n");
             
-            #line 189 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 220 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 for(var i=4;i<=nMacroParameters;i+=2) {
             
             #line default
             #line hidden
             this.Write("#define FOR_EACH_2_COUNTED_");
             
-            #line 190 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 221 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(i));
             
             #line default
             #line hidden
             this.Write("(X, ");
             
-            #line 190 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 221 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 for(var j=1;j<=i;j++){
             
             #line default
             #line hidden
             this.Write("P");
             
-            #line 190 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 221 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(j.ToString()+((j<i)?", ":"")));
             
             #line default
             #line hidden
             
-            #line 190 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 221 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 }
             
             #line default
             #line hidden
             this.Write(") \\\r\nX(");
             
-            #line 191 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 222 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(i));
             
             #line default
             #line hidden
             this.Write(", P1, P2) \\\r\nFOR_EACH_2_COUNTED_");
             
-            #line 192 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 223 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(i-2));
             
             #line default
             #line hidden
             this.Write("(X, ");
             
-            #line 192 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 223 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 for(var j=3;j<=i;j++){
             
             #line default
             #line hidden
             this.Write("P");
             
-            #line 192 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 223 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(j.ToString()+((j<i)?", ":"")));
             
             #line default
             #line hidden
             
-            #line 192 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 223 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 }
             
             #line default
             #line hidden
             this.Write(")\r\n\r\n");
             
-            #line 194 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 225 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 }
             
             #line default
@@ -865,35 +972,35 @@ MACRO(0, __VA_ARGS__)
 
 ");
             
-            #line 225 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 256 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 for(var i=1;i<=nArithmetic;i++){
             
             #line default
             #line hidden
             this.Write("#define DO_");
             
-            #line 226 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 257 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(i));
             
             #line default
             #line hidden
             this.Write("(MACRO, ...) \\\r\nMACRO(");
             
-            #line 227 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 258 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(i));
             
             #line default
             #line hidden
             this.Write(", __VA_ARGS__) \\\r\nDO_");
             
-            #line 228 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 259 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(i-1));
             
             #line default
             #line hidden
             this.Write("(MACRO, __VA_ARGS__)\r\n\r\n\r\n");
             
-            #line 231 "G:\Enlistment\azure-iot-suite-sdks\c\common\tools\macro_utils_h_generator\macro_utils.tt"
+            #line 262 "d:\repos\azure-iot-dt-sdks\c\azure-c-shared-utility\tools\macro_utils_h_generator\macro_utils.tt"
 }
             
             #line default
