@@ -285,6 +285,7 @@ static void openssl_dynamic_locks_lock_unlock_cb(int lock_mode, struct CRYPTO_dy
 
 static void openssl_dynamic_locks_destroy_cb(struct CRYPTO_dynlock_value* dynlock_value, const char* file, int line)
 {
+    (void)line, file;
     Lock_Deinit(dynlock_value->lock);
     free(dynlock_value);
 }
@@ -463,8 +464,6 @@ static int write_outgoing_bytes(TLS_IO_INSTANCE* tls_io_instance, ON_SEND_COMPLE
 static int send_handshake_bytes(TLS_IO_INSTANCE* tls_io_instance)
 {
     int result;
-    int r = 0;
-    int pending = 0;
 
     if (SSL_is_init_finished(tls_io_instance->ssl))
     {
@@ -610,7 +609,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
     TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)context;
 
     int written = BIO_write(tls_io_instance->in_bio, buffer, size);
-    if (written != size)
+    if (written != (int)size)
     {
         tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
         indicate_error(tls_io_instance);
@@ -691,13 +690,14 @@ static int add_certificate_to_store(TLS_IO_INSTANCE* tls_io_instance, const char
                     if (X509_STORE_add_cert(cert_store, xcert) != 1)
                     {
                         log_ERR_get_error("Failed calling X509_STORE_add_cert.");
-                        X509_free(xcert);
                         result = __LINE__;
                     }
                     else
                     {
                         result = 0;
                     }
+
+                    X509_free(xcert);
                 }
                 BIO_free(cert_memory_bio);
             }
@@ -1028,7 +1028,7 @@ int tlsio_openssl_send(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t siz
         else
         {
             int res = SSL_write(tls_io_instance->ssl, buffer, size);
-            if (res != size)
+            if (res != (int)size)
             {
                 result = __LINE__;
                 log_ERR_get_error("SSL_write error.");
