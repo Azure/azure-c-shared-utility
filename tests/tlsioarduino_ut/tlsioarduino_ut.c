@@ -69,7 +69,6 @@ void my_gballoc_free(void* ptr)
 
 #define TEST_CREATE_CONNECTION_HOST_NAME (const char*)"https://test.azure-devices.net"
 #define TEST_CREATE_CONNECTION_PORT (int)443
-#define TEST_CALLBACK_CONTEXT (void*)0xdeadbeef
 
 static const TLSIO_CONFIG tlsioConfig = { TEST_CREATE_CONNECTION_HOST_NAME, TEST_CREATE_CONNECTION_PORT };
 
@@ -99,6 +98,7 @@ static const size_t SendReturnList_twice_zero[2] = { (const size_t)10, (const si
 static const char* ReceivedBuffer = (const char*)"This is the received buffer";
 static const int ReceivedReturnList[1] = { (const int)28 };
 
+static void* CallbackContext;
 
 DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
@@ -299,6 +299,9 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         result = umocktypes_charptr_register_types();
 		ASSERT_ARE_EQUAL(int, 0, result);
 
+        CallbackContext = malloc(1);
+        ASSERT_IS_NULL(CallbackContext);
+
 		REGISTER_UMOCK_ALIAS_TYPE(SSLCLIENT_HANDLE, void*);
         REGISTER_UMOCK_ALIAS_TYPE(CONCRETE_IO_HANDLE, void*);
         REGISTER_UMOCK_ALIAS_TYPE(OPTIONHANDLER_HANDLE, void*);
@@ -436,14 +439,14 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ASSERT_IS_NOT_NULL(tlsioHandle);
         result = tlsioInterfaces->concrete_io_open(
             tlsioHandle,
-            on_io_open_complete, TEST_CALLBACK_CONTEXT,
-            on_bytes_received, TEST_CALLBACK_CONTEXT,
-            on_io_error, TEST_CALLBACK_CONTEXT);
+            on_io_open_complete, CallbackContext,
+            on_bytes_received, CallbackContext,
+            on_io_error, CallbackContext);
         result = tlsioInterfaces->concrete_io_open(
             tlsioHandle,
-            on_io_open_complete, TEST_CALLBACK_CONTEXT,
-            on_bytes_received, TEST_CALLBACK_CONTEXT,
-            on_io_error, TEST_CALLBACK_CONTEXT);
+            on_io_open_complete, CallbackContext,
+            on_bytes_received, CallbackContext,
+            on_io_error, CallbackContext);
         ASSERT_ARE_NOT_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_ERROR, (int)tlsio_arduino_get_state(tlsioHandle));
 
@@ -524,13 +527,13 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ASSERT_IS_NOT_NULL(tlsioHandle);
         result = tlsioInterfaces->concrete_io_open(
             tlsioHandle,
-            on_io_open_complete, TEST_CALLBACK_CONTEXT,
-            on_bytes_received, TEST_CALLBACK_CONTEXT,
-            on_io_error, TEST_CALLBACK_CONTEXT);
+            on_io_open_complete, CallbackContext,
+            on_bytes_received, CallbackContext,
+            on_io_error, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
 
-        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, TEST_CALLBACK_CONTEXT);
+        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_CLOSED, (int)tlsio_arduino_get_state(tlsioHandle));
 
@@ -576,13 +579,13 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ASSERT_IS_NOT_NULL(tlsioHandle);
         result = tlsioInterfaces->concrete_io_open(
             tlsioHandle,
-            on_io_open_complete, TEST_CALLBACK_CONTEXT,
-            on_bytes_received, TEST_CALLBACK_CONTEXT,
-            on_io_error, TEST_CALLBACK_CONTEXT);
+            on_io_open_complete, CallbackContext,
+            on_bytes_received, CallbackContext,
+            on_io_error, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
 
-        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, TEST_CALLBACK_CONTEXT);
+        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_CLOSED, (int)tlsio_arduino_get_state(tlsioHandle));
 
@@ -632,13 +635,13 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
 
         result = tlsioInterfaces->concrete_io_open(
             tlsioHandle,
-            on_io_open_complete, TEST_CALLBACK_CONTEXT,
-            on_bytes_received, TEST_CALLBACK_CONTEXT,
-            on_io_error, TEST_CALLBACK_CONTEXT);
+            on_io_open_complete, CallbackContext,
+            on_bytes_received, CallbackContext,
+            on_io_error, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
 
-        result = tlsioInterfaces->concrete_io_send(tlsioHandle, (const void*)SendBuffer, SendBufferSize, on_send_complete, TEST_CALLBACK_CONTEXT);
+        result = tlsioInterfaces->concrete_io_send(tlsioHandle, (const void*)SendBuffer, SendBufferSize, on_send_complete, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
 
@@ -653,7 +656,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_ERROR, (int)tlsio_arduino_get_state(tlsioHandle));
 
         ///cleanup
-        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, TEST_CALLBACK_CONTEXT);
+        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, CallbackContext);
         tlsioInterfaces->concrete_io_destroy(tlsioHandle);
     }
 
@@ -700,7 +703,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
 
-        result = tlsioInterfaces->concrete_io_send(tlsioHandle, (const void*)SendBuffer, SendBufferSize, on_send_complete, TEST_CALLBACK_CONTEXT);
+        result = tlsioInterfaces->concrete_io_send(tlsioHandle, (const void*)SendBuffer, SendBufferSize, on_send_complete, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
 
@@ -715,7 +718,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
 
         ///cleanup
-        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, TEST_CALLBACK_CONTEXT);
+        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, CallbackContext);
         tlsioInterfaces->concrete_io_destroy(tlsioHandle);
     }
 
@@ -759,13 +762,13 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
 
         result = tlsioInterfaces->concrete_io_open(
             tlsioHandle,
-            on_io_open_complete, TEST_CALLBACK_CONTEXT,
-            on_bytes_received, TEST_CALLBACK_CONTEXT,
-            on_io_error, TEST_CALLBACK_CONTEXT);
+            on_io_open_complete, CallbackContext,
+            on_bytes_received, CallbackContext,
+            on_io_error, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
 
-        result = tlsioInterfaces->concrete_io_send(tlsioHandle, (const void*)SendBuffer, SendBufferSize, on_send_complete, TEST_CALLBACK_CONTEXT);
+        result = tlsioInterfaces->concrete_io_send(tlsioHandle, (const void*)SendBuffer, SendBufferSize, on_send_complete, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
 
@@ -782,7 +785,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
 
         ///cleanup
-        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, TEST_CALLBACK_CONTEXT);
+        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, CallbackContext);
         tlsioInterfaces->concrete_io_destroy(tlsioHandle);
     }
 
@@ -814,14 +817,14 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
 
         result = tlsioInterfaces->concrete_io_open(
             tlsioHandle,
-            on_io_open_complete, TEST_CALLBACK_CONTEXT,
-            on_bytes_received, TEST_CALLBACK_CONTEXT,
-            on_io_error, TEST_CALLBACK_CONTEXT);
+            on_io_open_complete, CallbackContext,
+            on_bytes_received, CallbackContext,
+            on_io_error, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
 
         ///act
-        result = tlsioInterfaces->concrete_io_send(tlsioHandle, (const void*)SendBuffer, 0, on_send_complete, TEST_CALLBACK_CONTEXT);
+        result = tlsioInterfaces->concrete_io_send(tlsioHandle, (const void*)SendBuffer, 0, on_send_complete, CallbackContext);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -831,7 +834,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
 
         ///cleanup
-        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, TEST_CALLBACK_CONTEXT);
+        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, CallbackContext);
         tlsioInterfaces->concrete_io_destroy(tlsioHandle);
     }
 
@@ -863,14 +866,14 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
 
         result = tlsioInterfaces->concrete_io_open(
             tlsioHandle,
-            on_io_open_complete, TEST_CALLBACK_CONTEXT,
-            on_bytes_received, TEST_CALLBACK_CONTEXT,
-            on_io_error, TEST_CALLBACK_CONTEXT);
+            on_io_open_complete, CallbackContext,
+            on_bytes_received, CallbackContext,
+            on_io_error, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
 
         ///act
-        result = tlsioInterfaces->concrete_io_send(tlsioHandle, (const void*)NULL, SendBufferSize, on_send_complete, TEST_CALLBACK_CONTEXT);
+        result = tlsioInterfaces->concrete_io_send(tlsioHandle, (const void*)NULL, SendBufferSize, on_send_complete, CallbackContext);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -880,7 +883,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
 
         ///cleanup
-        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, TEST_CALLBACK_CONTEXT);
+        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, CallbackContext);
         tlsioInterfaces->concrete_io_destroy(tlsioHandle);
     }
 
@@ -894,7 +897,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
         ///act
-        result = tlsioInterfaces->concrete_io_send(NULL, (const void*)SendBuffer, SendBufferSize, on_send_complete, TEST_CALLBACK_CONTEXT);
+        result = tlsioInterfaces->concrete_io_send(NULL, (const void*)SendBuffer, SendBufferSize, on_send_complete, CallbackContext);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -925,7 +928,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_CLOSED, (int)tlsio_arduino_get_state(tlsioHandle));
 
         ///act
-        result = tlsioInterfaces->concrete_io_send(tlsioHandle, (const void*)SendBuffer, SendBufferSize, on_send_complete, TEST_CALLBACK_CONTEXT);
+        result = tlsioInterfaces->concrete_io_send(tlsioHandle, (const void*)SendBuffer, SendBufferSize, on_send_complete, CallbackContext);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -966,18 +969,18 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ASSERT_IS_NOT_NULL(tlsioHandle);
         result = tlsioInterfaces->concrete_io_open(
             tlsioHandle,
-            on_io_open_complete, TEST_CALLBACK_CONTEXT,
-            on_bytes_received, TEST_CALLBACK_CONTEXT,
-            on_io_error, TEST_CALLBACK_CONTEXT);
+            on_io_open_complete, CallbackContext,
+            on_bytes_received, CallbackContext,
+            on_io_error, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
 
-        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, TEST_CALLBACK_CONTEXT);
+        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_CLOSED, (int)tlsio_arduino_get_state(tlsioHandle));
 
         ///act
-        result = tlsioInterfaces->concrete_io_send(tlsioHandle, (const void*)SendBuffer, SendBufferSize, on_send_complete, TEST_CALLBACK_CONTEXT);
+        result = tlsioInterfaces->concrete_io_send(tlsioHandle, (const void*)SendBuffer, SendBufferSize, on_send_complete, CallbackContext);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -1018,18 +1021,18 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ASSERT_IS_NOT_NULL(tlsioHandle);
         result = tlsioInterfaces->concrete_io_open(
             tlsioHandle,
-            on_io_open_complete, TEST_CALLBACK_CONTEXT,
-            on_bytes_received, TEST_CALLBACK_CONTEXT,
-            on_io_error, TEST_CALLBACK_CONTEXT);
+            on_io_open_complete, CallbackContext,
+            on_bytes_received, CallbackContext,
+            on_io_error, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
 
-        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, TEST_CALLBACK_CONTEXT);
+        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_CLOSING, (int)tlsio_arduino_get_state(tlsioHandle));
 
         ///act
-        result = tlsioInterfaces->concrete_io_send(tlsioHandle, (const void*)SendBuffer, SendBufferSize, on_send_complete, TEST_CALLBACK_CONTEXT);
+        result = tlsioInterfaces->concrete_io_send(tlsioHandle, (const void*)SendBuffer, SendBufferSize, on_send_complete, CallbackContext);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -1068,14 +1071,14 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ASSERT_IS_NOT_NULL(tlsioHandle);
         result = tlsioInterfaces->concrete_io_open(
             tlsioHandle,
-            on_io_open_complete, TEST_CALLBACK_CONTEXT,
-            on_bytes_received, TEST_CALLBACK_CONTEXT,
-            on_io_error, TEST_CALLBACK_CONTEXT);
+            on_io_open_complete, CallbackContext,
+            on_bytes_received, CallbackContext,
+            on_io_error, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPENING, (int)tlsio_arduino_get_state(tlsioHandle));
 
         ///act
-        result = tlsioInterfaces->concrete_io_send(tlsioHandle, (const void*)SendBuffer, SendBufferSize, on_send_complete, TEST_CALLBACK_CONTEXT);
+        result = tlsioInterfaces->concrete_io_send(tlsioHandle, (const void*)SendBuffer, SendBufferSize, on_send_complete, CallbackContext);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -1085,7 +1088,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPENING, (int)tlsio_arduino_get_state(tlsioHandle));
 
         ///cleanup
-        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, TEST_CALLBACK_CONTEXT);
+        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, CallbackContext);
         tlsioInterfaces->concrete_io_destroy(tlsioHandle);
     }
 
@@ -1115,19 +1118,19 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ASSERT_IS_NOT_NULL(tlsioHandle);
         result = tlsioInterfaces->concrete_io_open(
             tlsioHandle,
-            on_io_open_complete, TEST_CALLBACK_CONTEXT,
-            on_bytes_received, TEST_CALLBACK_CONTEXT,
-            on_io_error, TEST_CALLBACK_CONTEXT);
+            on_io_open_complete, CallbackContext,
+            on_bytes_received, CallbackContext,
+            on_io_error, CallbackContext);
         result = tlsioInterfaces->concrete_io_open(
             tlsioHandle,
-            on_io_open_complete, TEST_CALLBACK_CONTEXT,
-            on_bytes_received, TEST_CALLBACK_CONTEXT,
-            on_io_error, TEST_CALLBACK_CONTEXT);
+            on_io_open_complete, CallbackContext,
+            on_bytes_received, CallbackContext,
+            on_io_error, CallbackContext);
         ASSERT_ARE_NOT_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_ERROR, (int)tlsio_arduino_get_state(tlsioHandle));
 
         ///act
-        result = tlsioInterfaces->concrete_io_send(tlsioHandle, (const void*)SendBuffer, SendBufferSize, on_send_complete, TEST_CALLBACK_CONTEXT);
+        result = tlsioInterfaces->concrete_io_send(tlsioHandle, (const void*)SendBuffer, SendBufferSize, on_send_complete, CallbackContext);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -1170,14 +1173,14 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
 
         result = tlsioInterfaces->concrete_io_open(
             tlsioHandle,
-            on_io_open_complete, TEST_CALLBACK_CONTEXT,
-            on_bytes_received, TEST_CALLBACK_CONTEXT,
-            on_io_error, TEST_CALLBACK_CONTEXT);
+            on_io_open_complete, CallbackContext,
+            on_bytes_received, CallbackContext,
+            on_io_error, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
 
         ///act
-        result = tlsioInterfaces->concrete_io_send(tlsioHandle, (const void*)SendBuffer, SendBufferSize, on_send_complete, TEST_CALLBACK_CONTEXT);
+        result = tlsioInterfaces->concrete_io_send(tlsioHandle, (const void*)SendBuffer, SendBufferSize, on_send_complete, CallbackContext);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -1188,7 +1191,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
 
         ///cleanup
-        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, TEST_CALLBACK_CONTEXT);
+        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, CallbackContext);
         tlsioInterfaces->concrete_io_destroy(tlsioHandle);
     }
 
@@ -1222,14 +1225,14 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
 
         result = tlsioInterfaces->concrete_io_open(
             tlsioHandle,
-            on_io_open_complete, TEST_CALLBACK_CONTEXT,
-            on_bytes_received, TEST_CALLBACK_CONTEXT,
-            on_io_error, TEST_CALLBACK_CONTEXT);
+            on_io_open_complete, CallbackContext,
+            on_bytes_received, CallbackContext,
+            on_io_error, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
 
         ///act
-        result = tlsioInterfaces->concrete_io_send(tlsioHandle, (const void*)SendBuffer, SendBufferSize, on_send_complete, TEST_CALLBACK_CONTEXT);
+        result = tlsioInterfaces->concrete_io_send(tlsioHandle, (const void*)SendBuffer, SendBufferSize, on_send_complete, CallbackContext);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -1240,7 +1243,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
 
         ///cleanup
-        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, TEST_CALLBACK_CONTEXT);
+        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, CallbackContext);
         tlsioInterfaces->concrete_io_destroy(tlsioHandle);
     }
 
@@ -1275,14 +1278,14 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
 
         result = tlsioInterfaces->concrete_io_open(
             tlsioHandle,
-            on_io_open_complete, TEST_CALLBACK_CONTEXT,
-            on_bytes_received, TEST_CALLBACK_CONTEXT,
-            on_io_error, TEST_CALLBACK_CONTEXT);
+            on_io_open_complete, CallbackContext,
+            on_bytes_received, CallbackContext,
+            on_io_error, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
 
         ///act
-        result = tlsioInterfaces->concrete_io_send(tlsioHandle, (const void*)SendBuffer, SendBufferSize, on_send_complete, TEST_CALLBACK_CONTEXT);
+        result = tlsioInterfaces->concrete_io_send(tlsioHandle, (const void*)SendBuffer, SendBufferSize, on_send_complete, CallbackContext);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -1293,7 +1296,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
 
         ///cleanup
-        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, TEST_CALLBACK_CONTEXT);
+        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, CallbackContext);
         tlsioInterfaces->concrete_io_destroy(tlsioHandle);
     }
 
@@ -1328,9 +1331,9 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
 
         result = tlsioInterfaces->concrete_io_open(
             tlsioHandle,
-            on_io_open_complete, TEST_CALLBACK_CONTEXT,
-            on_bytes_received, TEST_CALLBACK_CONTEXT,
-            on_io_error, TEST_CALLBACK_CONTEXT);
+            on_io_open_complete, CallbackContext,
+            on_bytes_received, CallbackContext,
+            on_io_error, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
 
@@ -1345,7 +1348,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
 
         ///cleanup
-        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, TEST_CALLBACK_CONTEXT);
+        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, CallbackContext);
         tlsioInterfaces->concrete_io_destroy(tlsioHandle);
     }
 
@@ -1382,14 +1385,14 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
 
         result = tlsioInterfaces->concrete_io_open(
             tlsioHandle,
-            on_io_open_complete, TEST_CALLBACK_CONTEXT,
-            on_bytes_received, TEST_CALLBACK_CONTEXT,
-            on_io_error, TEST_CALLBACK_CONTEXT);
+            on_io_open_complete, CallbackContext,
+            on_bytes_received, CallbackContext,
+            on_io_error, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
 
         ///act
-        result = tlsioInterfaces->concrete_io_send(tlsioHandle, (const void*)SendBuffer, SendBufferSize, on_send_complete, TEST_CALLBACK_CONTEXT);
+        result = tlsioInterfaces->concrete_io_send(tlsioHandle, (const void*)SendBuffer, SendBufferSize, on_send_complete, CallbackContext);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -1397,11 +1400,11 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ASSERT_ARE_EQUAL(int, 1, currentmalloc_call);
         ASSERT_CALLBACK_COUNTERS(0, 1, 0, 1, 0);
         ASSERT_ARE_EQUAL(int, (int)IO_SEND_OK, (int)on_send_complete_result);
-        ASSERT_ARE_EQUAL(void_ptr, TEST_CALLBACK_CONTEXT, on_send_complete_context);
+        ASSERT_ARE_EQUAL(void_ptr, CallbackContext, on_send_complete_context);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
 
         ///cleanup
-        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, TEST_CALLBACK_CONTEXT);
+        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, CallbackContext);
         tlsioInterfaces->concrete_io_destroy(tlsioHandle);
     }
 
@@ -1455,13 +1458,13 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
 
         result = tlsioInterfaces->concrete_io_open(
             tlsioHandle,
-            on_io_open_complete, TEST_CALLBACK_CONTEXT,
-            on_bytes_received, TEST_CALLBACK_CONTEXT,
-            on_io_error, TEST_CALLBACK_CONTEXT);
+            on_io_open_complete, CallbackContext,
+            on_bytes_received, CallbackContext,
+            on_io_error, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
 
-        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, TEST_CALLBACK_CONTEXT);
+        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_CLOSING, (int)tlsio_arduino_get_state(tlsioHandle));
 
@@ -1505,22 +1508,22 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
 
         result = tlsioInterfaces->concrete_io_open(
             tlsioHandle,
-            on_io_open_complete, TEST_CALLBACK_CONTEXT,
-            on_bytes_received, TEST_CALLBACK_CONTEXT,
-            on_io_error, TEST_CALLBACK_CONTEXT);
+            on_io_open_complete, CallbackContext,
+            on_bytes_received, CallbackContext,
+            on_io_error, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
 
-        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, TEST_CALLBACK_CONTEXT);
+        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_CLOSING, (int)tlsio_arduino_get_state(tlsioHandle));
 
         ///act
         result = tlsioInterfaces->concrete_io_open(
             tlsioHandle,
-            on_io_open_complete, TEST_CALLBACK_CONTEXT,
-            on_bytes_received, TEST_CALLBACK_CONTEXT,
-            on_io_error, TEST_CALLBACK_CONTEXT);
+            on_io_open_complete, CallbackContext,
+            on_bytes_received, CallbackContext,
+            on_io_error, CallbackContext);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -1557,12 +1560,12 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ASSERT_IS_NOT_NULL(tlsioHandle);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_CLOSED, (int)tlsio_arduino_get_state(tlsioHandle));
 
-        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, TEST_CALLBACK_CONTEXT);
+        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, CallbackContext);
         ASSERT_ARE_NOT_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_ERROR, (int)tlsio_arduino_get_state(tlsioHandle));
 
         ///act
-        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, TEST_CALLBACK_CONTEXT);
+        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, CallbackContext);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -1602,14 +1605,14 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
 
         result = tlsioInterfaces->concrete_io_open(
             tlsioHandle,
-            on_io_open_complete, TEST_CALLBACK_CONTEXT,
-            on_bytes_received, TEST_CALLBACK_CONTEXT,
-            on_io_error, TEST_CALLBACK_CONTEXT);
+            on_io_open_complete, CallbackContext,
+            on_bytes_received, CallbackContext,
+            on_io_error, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPENING, (int)tlsio_arduino_get_state(tlsioHandle));
 
         ///act
-        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, TEST_CALLBACK_CONTEXT);
+        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, CallbackContext);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -1651,18 +1654,18 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
 
         result = tlsioInterfaces->concrete_io_open(
             tlsioHandle,
-            on_io_open_complete, TEST_CALLBACK_CONTEXT,
-            on_bytes_received, TEST_CALLBACK_CONTEXT,
-            on_io_error, TEST_CALLBACK_CONTEXT);
+            on_io_open_complete, CallbackContext,
+            on_bytes_received, CallbackContext,
+            on_io_error, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
 
-        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, TEST_CALLBACK_CONTEXT);
+        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_CLOSING, (int)tlsio_arduino_get_state(tlsioHandle));
 
         ///act
-        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, TEST_CALLBACK_CONTEXT);
+        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, CallbackContext);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -1704,18 +1707,18 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
 
         result = tlsioInterfaces->concrete_io_open(
             tlsioHandle,
-            on_io_open_complete, TEST_CALLBACK_CONTEXT,
-            on_bytes_received, TEST_CALLBACK_CONTEXT,
-            on_io_error, TEST_CALLBACK_CONTEXT);
+            on_io_open_complete, CallbackContext,
+            on_bytes_received, CallbackContext,
+            on_io_error, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
 
-        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, TEST_CALLBACK_CONTEXT);
+        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_CLOSED, (int)tlsio_arduino_get_state(tlsioHandle));
 
         ///act
-        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, TEST_CALLBACK_CONTEXT);
+        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, CallbackContext);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -1752,7 +1755,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_CLOSED, (int)tlsio_arduino_get_state(tlsioHandle));
 
         ///act
-        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, TEST_CALLBACK_CONTEXT);
+        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, CallbackContext);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -1859,13 +1862,13 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
 
         result = tlsioInterfaces->concrete_io_open(
             tlsioHandle,
-            on_io_open_complete, TEST_CALLBACK_CONTEXT,
-            on_bytes_received, TEST_CALLBACK_CONTEXT,
-            on_io_error, TEST_CALLBACK_CONTEXT);
+            on_io_open_complete, CallbackContext,
+            on_bytes_received, CallbackContext,
+            on_io_error, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
 
-        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, TEST_CALLBACK_CONTEXT);
+        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
 
         ///act
@@ -1919,13 +1922,13 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
 
         result = tlsioInterfaces->concrete_io_open(
             tlsioHandle,
-            on_io_open_complete, TEST_CALLBACK_CONTEXT,
-            on_bytes_received, TEST_CALLBACK_CONTEXT,
-            on_io_error, TEST_CALLBACK_CONTEXT);
+            on_io_open_complete, CallbackContext,
+            on_bytes_received, CallbackContext,
+            on_io_error, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
 
-        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, TEST_CALLBACK_CONTEXT);
+        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
 
         ///act
@@ -1940,7 +1943,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, 1, currentmalloc_call);
         ASSERT_CALLBACK_COUNTERS(0, 1, 1, 0, 0);
-        ASSERT_ARE_EQUAL(void_ptr, TEST_CALLBACK_CONTEXT, on_io_close_complete_context);
+        ASSERT_ARE_EQUAL(void_ptr, CallbackContext, on_io_close_complete_context);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_CLOSED, (int)tlsio_arduino_get_state(tlsioHandle));
 
         ///cleanup
@@ -2033,21 +2036,21 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
 
         result = tlsioInterfaces->concrete_io_open(
             tlsioHandle,
-            on_io_open_complete, TEST_CALLBACK_CONTEXT,
-            on_bytes_received, TEST_CALLBACK_CONTEXT,
-            on_io_error, TEST_CALLBACK_CONTEXT);
+            on_io_open_complete, CallbackContext,
+            on_bytes_received, CallbackContext,
+            on_io_error, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
 
         ///act
-        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, TEST_CALLBACK_CONTEXT);
+        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, CallbackContext);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, 1, currentmalloc_call);
         ASSERT_CALLBACK_COUNTERS(0, 1, 1, 0, 0);
-        ASSERT_ARE_EQUAL(void_ptr, TEST_CALLBACK_CONTEXT, on_io_close_complete_context);
+        ASSERT_ARE_EQUAL(void_ptr, CallbackContext, on_io_close_complete_context);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_CLOSED, (int)tlsio_arduino_get_state(tlsioHandle));
 
         ///cleanup
@@ -2084,14 +2087,14 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
 
         result = tlsioInterfaces->concrete_io_open(
             tlsioHandle,
-            on_io_open_complete, TEST_CALLBACK_CONTEXT,
-            on_bytes_received, TEST_CALLBACK_CONTEXT,
-            on_io_error, TEST_CALLBACK_CONTEXT);
+            on_io_open_complete, CallbackContext,
+            on_bytes_received, CallbackContext,
+            on_io_error, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
 
         ///act
-        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, TEST_CALLBACK_CONTEXT);
+        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, CallbackContext);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -2131,9 +2134,9 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ///act
         result = tlsioInterfaces->concrete_io_open(
             tlsioHandle,
-            on_io_open_complete, TEST_CALLBACK_CONTEXT,
-            on_bytes_received, TEST_CALLBACK_CONTEXT,
-            on_io_error, TEST_CALLBACK_CONTEXT);
+            on_io_open_complete, CallbackContext,
+            on_bytes_received, CallbackContext,
+            on_io_error, CallbackContext);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -2173,9 +2176,9 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ///act
         result = tlsioInterfaces->concrete_io_open(
             tlsioHandle,
-            on_io_open_complete, TEST_CALLBACK_CONTEXT,
-            on_bytes_received, TEST_CALLBACK_CONTEXT,
-            on_io_error, TEST_CALLBACK_CONTEXT);
+            on_io_open_complete, CallbackContext,
+            on_bytes_received, CallbackContext,
+            on_io_error, CallbackContext);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -2201,9 +2204,9 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ///act
         result = tlsioInterfaces->concrete_io_open(
             NULL,
-            on_io_open_complete, TEST_CALLBACK_CONTEXT,
-            on_bytes_received, TEST_CALLBACK_CONTEXT,
-            on_io_error, TEST_CALLBACK_CONTEXT);
+            on_io_open_complete, CallbackContext,
+            on_bytes_received, CallbackContext,
+            on_io_error, CallbackContext);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -2243,23 +2246,23 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ASSERT_IS_NOT_NULL(tlsioHandle);
         result = tlsioInterfaces->concrete_io_open(
             tlsioHandle,
-            on_io_open_complete, TEST_CALLBACK_CONTEXT,
-            on_bytes_received, TEST_CALLBACK_CONTEXT,
-            on_io_error, TEST_CALLBACK_CONTEXT);
+            on_io_open_complete, CallbackContext,
+            on_bytes_received, CallbackContext,
+            on_io_error, CallbackContext);
         result = tlsioInterfaces->concrete_io_open(
             tlsioHandle,
-            on_io_open_complete, TEST_CALLBACK_CONTEXT,
-            on_bytes_received, TEST_CALLBACK_CONTEXT,
-            on_io_error, TEST_CALLBACK_CONTEXT);
+            on_io_open_complete, CallbackContext,
+            on_bytes_received, CallbackContext,
+            on_io_error, CallbackContext);
         ASSERT_ARE_NOT_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_ERROR, (int)tlsio_arduino_get_state(tlsioHandle));
 
         ///act
         result = tlsioInterfaces->concrete_io_open(
             tlsioHandle,
-            on_io_open_complete, TEST_CALLBACK_CONTEXT,
-            on_bytes_received, TEST_CALLBACK_CONTEXT,
-            on_io_error, TEST_CALLBACK_CONTEXT);
+            on_io_open_complete, CallbackContext,
+            on_bytes_received, CallbackContext,
+            on_io_error, CallbackContext);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -2301,18 +2304,18 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ASSERT_IS_NOT_NULL(tlsioHandle);
         result = tlsioInterfaces->concrete_io_open(
             tlsioHandle,
-            on_io_open_complete, TEST_CALLBACK_CONTEXT,
-            on_bytes_received, TEST_CALLBACK_CONTEXT,
-            on_io_error, TEST_CALLBACK_CONTEXT);
+            on_io_open_complete, CallbackContext,
+            on_bytes_received, CallbackContext,
+            on_io_error, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
 
         ///act
         result = tlsioInterfaces->concrete_io_open(
             tlsioHandle,
-            on_io_open_complete, TEST_CALLBACK_CONTEXT,
-            on_bytes_received, TEST_CALLBACK_CONTEXT,
-            on_io_error, TEST_CALLBACK_CONTEXT);
+            on_io_open_complete, CallbackContext,
+            on_bytes_received, CallbackContext,
+            on_io_error, CallbackContext);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -2355,18 +2358,18 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ASSERT_IS_NOT_NULL(tlsioHandle);
         result = tlsioInterfaces->concrete_io_open(
             tlsioHandle,
-            on_io_open_complete, TEST_CALLBACK_CONTEXT,
-            on_bytes_received, TEST_CALLBACK_CONTEXT,
-            on_io_error, TEST_CALLBACK_CONTEXT);
+            on_io_open_complete, CallbackContext,
+            on_bytes_received, CallbackContext,
+            on_io_error, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPENING, (int)tlsio_arduino_get_state(tlsioHandle));
 
         ///act
         result = tlsioInterfaces->concrete_io_open(
             tlsioHandle,
-            on_io_open_complete, TEST_CALLBACK_CONTEXT,
-            on_bytes_received, TEST_CALLBACK_CONTEXT,
-            on_io_error, TEST_CALLBACK_CONTEXT);
+            on_io_open_complete, CallbackContext,
+            on_bytes_received, CallbackContext,
+            on_io_error, CallbackContext);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -2474,9 +2477,9 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
 
         result = tlsioInterfaces->concrete_io_open(
             tlsioHandle,
-            on_io_open_complete, TEST_CALLBACK_CONTEXT,
-            on_bytes_received, TEST_CALLBACK_CONTEXT,
-            on_io_error, TEST_CALLBACK_CONTEXT);
+            on_io_open_complete, CallbackContext,
+            on_bytes_received, CallbackContext,
+            on_io_error, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
 
         ///act
@@ -2490,7 +2493,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_EQUAL(int, 1, currentmalloc_call);
         ASSERT_CALLBACK_COUNTERS(1, 1, 0, 0, 0);
-        ASSERT_ARE_EQUAL(void_ptr, TEST_CALLBACK_CONTEXT, on_io_error_context);
+        ASSERT_ARE_EQUAL(void_ptr, CallbackContext, on_io_error_context);
         ASSERT_ARE_EQUAL(int, (int)IO_OPEN_CANCELLED, (int)on_io_open_complete_result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_ERROR, (int)tlsio_arduino_get_state(tlsioHandle));
 
@@ -2529,9 +2532,9 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
 
         result = tlsioInterfaces->concrete_io_open(
             tlsioHandle,
-            on_io_open_complete, TEST_CALLBACK_CONTEXT,
-            on_bytes_received, TEST_CALLBACK_CONTEXT,
-            on_io_error, TEST_CALLBACK_CONTEXT);
+            on_io_open_complete, CallbackContext,
+            on_bytes_received, CallbackContext,
+            on_io_error, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
 
         ///act
@@ -2631,16 +2634,16 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ///act
         result = tlsioInterfaces->concrete_io_open(
             tlsioHandle,
-            on_io_open_complete, TEST_CALLBACK_CONTEXT,
-            on_bytes_received, TEST_CALLBACK_CONTEXT,
-            on_io_error, TEST_CALLBACK_CONTEXT);
+            on_io_open_complete, CallbackContext,
+            on_bytes_received, CallbackContext,
+            on_io_error, CallbackContext);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, 1, currentmalloc_call);
         ASSERT_CALLBACK_COUNTERS(0, 1, 0, 0, 0);
-        ASSERT_ARE_EQUAL(void_ptr, TEST_CALLBACK_CONTEXT, on_io_open_complete_context);
+        ASSERT_ARE_EQUAL(void_ptr, CallbackContext, on_io_open_complete_context);
         ASSERT_ARE_EQUAL(int, (int)IO_OPEN_OK, (int)on_io_open_complete_result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
         
@@ -2678,9 +2681,9 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ///act
         result = tlsioInterfaces->concrete_io_open(
             tlsioHandle, 
-            on_io_open_complete, TEST_CALLBACK_CONTEXT,
-            on_bytes_received, TEST_CALLBACK_CONTEXT,
-            on_io_error, TEST_CALLBACK_CONTEXT);
+            on_io_open_complete, CallbackContext,
+            on_bytes_received, CallbackContext,
+            on_io_error, CallbackContext);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -2722,9 +2725,9 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
 
         result = tlsioInterfaces->concrete_io_open(
             tlsioHandle,
-            on_io_open_complete, TEST_CALLBACK_CONTEXT,
-            on_bytes_received, TEST_CALLBACK_CONTEXT,
-            on_io_error, TEST_CALLBACK_CONTEXT);
+            on_io_open_complete, CallbackContext,
+            on_bytes_received, CallbackContext,
+            on_io_error, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
 
@@ -2768,9 +2771,9 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
 
         result = tlsioInterfaces->concrete_io_open(
             tlsioHandle,
-            on_io_open_complete, TEST_CALLBACK_CONTEXT,
-            on_bytes_received, TEST_CALLBACK_CONTEXT,
-            on_io_error, TEST_CALLBACK_CONTEXT);
+            on_io_open_complete, CallbackContext,
+            on_bytes_received, CallbackContext,
+            on_io_error, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPENING, (int)tlsio_arduino_get_state(tlsioHandle));
 

@@ -728,6 +728,8 @@ TEST_FUNCTION_INITIALIZE(f)
 
     currentmalloc_call = 0;
     whenShallmalloc_fail = 0;
+
+    xio_send_transmited_buffer[0] = '\0';
 }
 
 TEST_FUNCTION_CLEANUP(cleans)

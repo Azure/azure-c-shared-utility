@@ -387,7 +387,7 @@ unsigned long long strtoull_s(const char* nptr, char** endptr, int base)
 /*Codes_SRS_CRT_ABSTRACTIONS_21_033: [If the string is 'INF' of 'INFINITY' (ignoring case), the strtold_s must return the INFINITY value for long double.]*/
 /*Codes_SRS_CRT_ABSTRACTIONS_21_034: [If the string is 'NAN' or 'NAN(...)' (ignoring case), the strtold_s must return 0.0 and points endptr to the first character after the 'NAN' sequence.]*/
 #define TOUPPER(c)      (((c>='a') && (c<='z'))?c-'a'+'A':c)
-static int substricmp(const char* nptr, char* subsrt)
+static int substricmp(const char* nptr, const char* subsrt)
 {
     int result = 0;
     while (((*subsrt) != '\0') && (result == 0))

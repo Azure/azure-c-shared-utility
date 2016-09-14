@@ -164,6 +164,30 @@ FOR_EACH_2_KEEP_1_<#=i-2#>(X, keep, <#for(var j=3;j<=i;j++){#>P<#=(j).ToString()
 #define FOR_EACH_2_KEEP_1(MACRO_TO_INVOKE, ...) C2(FOR_EACH_2_KEEP_1_, C2(DEC,C1(COUNT_ARG(__VA_ARGS__)))) ( MACRO_TO_INVOKE, __VA_ARGS__)
 #endif
 
+
+<#for(var i=nMacroParameters;i>=4;i-=2)#>
+<#{#>
+#define FOR_EACH_2_KEEP_2_<#=i#>(X, keep1, keep2, <#for(var j=1;j<=i;j++){#>P<#=j.ToString()+(j<i?", ":"")#><#}#>) \
+X(keep1, keep2, P1, P2) \
+FOR_EACH_2_KEEP_2_<#=i-2#>(X, keep1, keep2, <#for(var j=3;j<=i;j++){#>P<#=(j).ToString()+(j<i?", ":"")#><#}#>)
+
+
+<#}#>
+
+#define FOR_EACH_2_KEEP_2_1(...)
+
+#define FOR_EACH_2_KEEP_2_0(...)
+
+#define FOR_EACH_2_KEEP_2_2(X, keep1, keep2, P1, P2) \
+    X(keep1, keep2, P1, P2) \
+
+#ifdef _MSC_VER
+#define FOR_EACH_2_KEEP_2(MACRO_TO_INVOKE, ...) C2(FOR_EACH_2_KEEP_2_, C2(DEC,C2(DEC,C1(COUNT_ARG(__VA_ARGS__))))) LPAREN MACRO_TO_INVOKE, __VA_ARGS__)
+#else
+#define FOR_EACH_2_KEEP_2(MACRO_TO_INVOKE, ...) C2(FOR_EACH_2_KEEP_2_, C2(DEC, C2(DEC,C1(COUNT_ARG(__VA_ARGS__))))) ( MACRO_TO_INVOKE, __VA_ARGS__)
+#endif
+
+
 #define FOR_EACH_2_0(...)
 
 #define FOR_EACH_2_2(X, P1, P2) \

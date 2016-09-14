@@ -413,87 +413,87 @@ static int on_ws_callback(struct lws *wsi, enum lws_callback_reasons reason, voi
         {
             if (wsio_instance->trusted_ca != NULL)
             {
-            /* Codes_SRS_WSIO_01_089: [When LWS_CALLBACK_OPENSSL_LOAD_EXTRA_CLIENT_VERIFY_CERTS is triggered, the certificates passed in the trusted_ca member of WSIO_CONFIG passed in wsio_init shall be loaded in the certificate store.] */
-            /* Codes_SRS_WSIO_01_131: [Get the certificate store for the OpenSSL context by calling SSL_CTX_get_cert_store] */
-            /* Codes_SRS_WSIO_01_090: [The OpenSSL certificate store is passed in the user argument.] */
-            X509_STORE* cert_store = SSL_CTX_get_cert_store(user);
-            BIO* cert_memory_bio;
-            X509* certificate;
-            bool is_error = false;
+                /* Codes_SRS_WSIO_01_089: [When LWS_CALLBACK_OPENSSL_LOAD_EXTRA_CLIENT_VERIFY_CERTS is triggered, the certificates passed in the trusted_ca member of WSIO_CONFIG passed in wsio_init shall be loaded in the certificate store.] */
+                /* Codes_SRS_WSIO_01_131: [Get the certificate store for the OpenSSL context by calling SSL_CTX_get_cert_store] */
+                /* Codes_SRS_WSIO_01_090: [The OpenSSL certificate store is passed in the user argument.] */
+                X509_STORE* cert_store = SSL_CTX_get_cert_store(user);
+                BIO* cert_memory_bio;
+                X509* certificate;
+                bool is_error = false;
 
-            if (cert_store == NULL)
-            {
-                /* Codes_SRS_WSIO_01_129: [If any of the APIs fails and an open call is pending the on_open_complete callback shall be triggered with IO_OPEN_ERROR.] */
-                is_error = true;
-            }
-            else
-            {
-                /* Codes_SRS_WSIO_01_123: [Creating a new BIO by calling BIO_new.] */
-                /* Codes_SRS_WSIO_01_124: [The BIO shall be a memory one (obtained by calling BIO_s_mem).] */
-                BIO_METHOD* bio_method = BIO_s_mem();
-                if (bio_method == NULL)
+                if (cert_store == NULL)
                 {
                     /* Codes_SRS_WSIO_01_129: [If any of the APIs fails and an open call is pending the on_open_complete callback shall be triggered with IO_OPEN_ERROR.] */
                     is_error = true;
                 }
                 else
                 {
-                    cert_memory_bio = BIO_new(bio_method);
-                    if (cert_memory_bio == NULL)
+                    /* Codes_SRS_WSIO_01_123: [Creating a new BIO by calling BIO_new.] */
+                    /* Codes_SRS_WSIO_01_124: [The BIO shall be a memory one (obtained by calling BIO_s_mem).] */
+                    BIO_METHOD* bio_method = BIO_s_mem();
+                    if (bio_method == NULL)
                     {
                         /* Codes_SRS_WSIO_01_129: [If any of the APIs fails and an open call is pending the on_open_complete callback shall be triggered with IO_OPEN_ERROR.] */
                         is_error = true;
                     }
                     else
                     {
-                        int puts_result = BIO_puts(cert_memory_bio, wsio_instance->trusted_ca);
-
-                        /* Codes_SRS_WSIO_01_125: [Setting the certificates string as the input by using BIO_puts.] */
-                        if ((puts_result < 0) || 
-                            ((size_t)puts_result != strlen(wsio_instance->trusted_ca)))
+                        cert_memory_bio = BIO_new(bio_method);
+                        if (cert_memory_bio == NULL)
                         {
                             /* Codes_SRS_WSIO_01_129: [If any of the APIs fails and an open call is pending the on_open_complete callback shall be triggered with IO_OPEN_ERROR.] */
                             is_error = true;
                         }
                         else
                         {
-                            do
+                            int puts_result = BIO_puts(cert_memory_bio, wsio_instance->trusted_ca);
+
+                            /* Codes_SRS_WSIO_01_125: [Setting the certificates string as the input by using BIO_puts.] */
+                            if ((puts_result < 0) ||
+                                ((size_t)puts_result != strlen(wsio_instance->trusted_ca)))
                             {
-                                /* Codes_SRS_WSIO_01_126: [Reading every certificate by calling PEM_read_bio_X509] */
-                                certificate = PEM_read_bio_X509(cert_memory_bio, NULL, NULL, NULL);
-
-                                /* Codes_SRS_WSIO_01_132: [When PEM_read_bio_X509 returns NULL then no more certificates are available in the input string.] */
-                                if (certificate != NULL)
+                                /* Codes_SRS_WSIO_01_129: [If any of the APIs fails and an open call is pending the on_open_complete callback shall be triggered with IO_OPEN_ERROR.] */
+                                is_error = true;
+                            }
+                            else
+                            {
+                                do
                                 {
-                                    /* Codes_SRS_WSIO_01_127: [Adding the read certificate to the store by calling X509_STORE_add_cert] */
-                                    if (!X509_STORE_add_cert(cert_store, certificate))
-                                    {
-                                        /* Codes_SRS_WSIO_01_129: [If any of the APIs fails and an open call is pending the on_open_complete callback shall be triggered with IO_OPEN_ERROR.] */
-                                        is_error = true;
-                                        X509_free(certificate);
-                                        break;
-                                    }
-                                }
-                            } while (certificate != NULL);
-                        }
+                                    /* Codes_SRS_WSIO_01_126: [Reading every certificate by calling PEM_read_bio_X509] */
+                                    certificate = PEM_read_bio_X509(cert_memory_bio, NULL, NULL, NULL);
 
-                        /* Codes_SRS_WSIO_01_128: [Freeing the BIO] */
-                        BIO_free(cert_memory_bio);
+                                    /* Codes_SRS_WSIO_01_132: [When PEM_read_bio_X509 returns NULL then no more certificates are available in the input string.] */
+                                    if (certificate != NULL)
+                                    {
+                                        /* Codes_SRS_WSIO_01_127: [Adding the read certificate to the store by calling X509_STORE_add_cert] */
+                                        if (!X509_STORE_add_cert(cert_store, certificate))
+                                        {
+                                            /* Codes_SRS_WSIO_01_129: [If any of the APIs fails and an open call is pending the on_open_complete callback shall be triggered with IO_OPEN_ERROR.] */
+                                            is_error = true;
+                                            X509_free(certificate);
+                                            break;
+                                        }
+                                    }
+                                } while (certificate != NULL);
+                            }
+
+                            /* Codes_SRS_WSIO_01_128: [Freeing the BIO] */
+                            BIO_free(cert_memory_bio);
+                        }
                     }
                 }
-            }
 
-            if (is_error)
-            {
-                /* Codes_SRS_WSIO_01_129: [If any of the APIs fails and an open call is pending the on_open_complete callback shall be triggered with IO_OPEN_ERROR.] */
-                if (wsio_instance->io_state == IO_STATE_OPENING)
+                if (is_error)
                 {
-                    indicate_open_complete(wsio_instance, IO_OPEN_ERROR);
+                    /* Codes_SRS_WSIO_01_129: [If any of the APIs fails and an open call is pending the on_open_complete callback shall be triggered with IO_OPEN_ERROR.] */
+                    if (wsio_instance->io_state == IO_STATE_OPENING)
+                    {
+                        indicate_open_complete(wsio_instance, IO_OPEN_ERROR);
+                    }
                 }
-            }
 
-            break;
-        }
+                break;
+            }
         }
         }
         break;
@@ -624,27 +624,6 @@ CONCRETE_IO_HANDLE wsio_create(void* io_create_parameters)
                                 result->port = ws_io_config->port;
                                 result->use_ssl = ws_io_config->use_ssl;
                                 result->io_state = IO_STATE_NOT_OPEN;
-
-                                /* Codes_SRS_WSIO_01_100: [The trusted_ca member shall be optional (it can be NULL).] */
-                                if (ws_io_config->trusted_ca != NULL)
-                                {
-                                    result->trusted_ca = (char*)malloc(strlen(ws_io_config->trusted_ca) + 1);
-                                    if (result->trusted_ca == NULL)
-                                    {
-                                        /* Codes_SRS_WSIO_01_005: [If allocating memory for the new wsio instance fails then wsio_create shall return NULL.] */
-                                        free(result->protocols);
-                                        free(result->protocol_name);
-                                        free(result->relative_path);
-                                        free(result->host);
-                                        list_destroy(result->pending_io_list);
-                                        free(result);
-                                        result = NULL;
-                                    }
-                                    else
-                                    {
-                                        (void)strcpy(result->trusted_ca, ws_io_config->trusted_ca);
-                                    }
-                                }
                             }
                         }
                     }
@@ -935,16 +914,15 @@ void wsio_dowork(CONCRETE_IO_HANDLE ws_io)
     }
 }
 
-/* Codes_SRS_WSIO_03_001: [wsio_setoption does not support any options and shall always return non-zero value.] */
 int wsio_setoption(CONCRETE_IO_HANDLE ws_io, const char* optionName, const void* value)
 {
     int result;
     if (
         (ws_io == NULL) ||
-        (optionName == NULL) ||
-        (value == NULL)
+        (optionName == NULL)
         )
     {
+        /* Codes_SRS_WSIO_01_136: [ If any of the arguments ws_io or option_name is NULL wsio_setoption shall return a non-zero value. ] ]*/
         result = __LINE__;
         LogError("invalid parameter (NULL) passed to HTTPAPI_SetOption");
     }
@@ -975,8 +953,8 @@ int wsio_setoption(CONCRETE_IO_HANDLE ws_io, const char* optionName, const void*
                 wsio_instance->proxy_port = proxy_data->port;
                 if (proxy_data->username != NULL)
                 {
-                    size_t length = strlen(proxy_data->host_address)+strlen(proxy_data->username)+strlen(proxy_data->password)+3+5;
-                    wsio_instance->proxy_address = (char*)malloc(length+1);
+                    size_t length = strlen(proxy_data->host_address) + strlen(proxy_data->username) + strlen(proxy_data->password) + 3 + 5;
+                    wsio_instance->proxy_address = (char*)malloc(length + 1);
                     if (wsio_instance->proxy_address == NULL)
                     {
                         result = __LINE__;
@@ -996,8 +974,8 @@ int wsio_setoption(CONCRETE_IO_HANDLE ws_io, const char* optionName, const void*
                 }
                 else
                 {
-                    size_t length = strlen(proxy_data->host_address)+6+1;
-                    wsio_instance->proxy_address = (char*)malloc(length+1);
+                    size_t length = strlen(proxy_data->host_address) + 6 + 1;
+                    wsio_instance->proxy_address = (char*)malloc(length + 1);
                     if (wsio_instance->proxy_address == NULL)
                     {
                         result = __LINE__;
@@ -1017,22 +995,46 @@ int wsio_setoption(CONCRETE_IO_HANDLE ws_io, const char* optionName, const void*
                 }
             }
         }
+        else if (strcmp("TrustedCerts", optionName) == 0)
+        {
+            if (wsio_instance->trusted_ca != NULL)
+            {
+                /* Codes_SRS_WSIO_01_139: [ If a previous TrustedCerts option was saved, then the previous value shall be freed. ]*/
+                free(wsio_instance->trusted_ca);
+                wsio_instance->trusted_ca = NULL;
+            }
+
+            /* Codes_SRS_WSIO_01_148: [ A NULL value shall be allowed for TrustedCerts, in which case the previously stored TrustedCerts option value shall be cleared. ]*/
+            if (value != NULL)
+            {
+                /* Codes_SRS_WSIO_01_138: [ If the option was handled by wsio, then wsio_setoption shall return 0. ]*/
+                result = mallocAndStrcpy_s(&wsio_instance->trusted_ca, (const char*)value);
+            }
+            else
+            {
+                /* Codes_SRS_WSIO_01_138: [ If the option was handled by wsio, then wsio_setoption shall return 0. ]*/
+                result = 0;
+            }
+        }
         else
         {
+            /* Codes_SRS_WSIO_01_137: [ If the option_name argument indicates an option that is not handled by wsio, then wsio_setoption shall return a non-zero value. ]*/
             result = __LINE__;
         }
     }
+
     return result;
 }
 
 /*this function will clone an option given by name and value*/
-void* wsio_CloneOption(const char* name, const void* value)
+void* wsio_clone_option(const char* name, const void* value)
 {
     void* result;
     if (
         (name == NULL) || (value == NULL)
        )
     {
+        /* Codes_SRS_WSIO_01_140: [ If the name or value arguments are NULL, wsio_clone_option shall return NULL. ]*/
         LogError("invalid parameter detected: const char* name=%p, const void* value=%p", name, value);
         result = NULL;
     }
@@ -1058,20 +1060,33 @@ void* wsio_CloneOption(const char* name, const void* value)
             result = temp;
         }
     }
+    else if (strcmp("TrustedCerts", name) == 0)
+    {
+        /* Codes_SRS_WSIO_01_141: [ wsio_clone_option shall clone the option named `TrustedCerts` by calling mallocAndStrcpy_s. ]*/
+        /* Codes_SRS_WSIO_01_143: [ On success it shall return a non-NULL pointer to the cloned option. ]*/
+        if (mallocAndStrcpy_s((char**)&result, (const char*)value) != 0)
+        {
+            /* Codes_SRS_WSIO_01_142: [ If mallocAndStrcpy_s for `TrustedCerts` fails, wsio_clone_option shall return NULL. ]*/
+            LogError("unable to mallocAndStrcpy_s TrustedCerts value");
+            result = NULL;
+        }
+    }
     else
     {
         result = NULL;
     }
+
     return result;
 }
 
 /*this function destroys an option previously created*/
-void wsio_DestroyOption(const char* name, const void* value)
+void wsio_destroy_option(const char* name, const void* value)
 {
     if (
         (name == NULL) || (value == NULL)
        )
     {
+        /* Codes_SRS_WSIO_01_147: [ If any of the arguments is NULL, wsio_destroy_option shall do nothing. ]*/
         LogError("invalid parameter detected: const char* name=%p, const void* value=%p", name, value);
     }
     else if (strcmp(name, OPTION_HTTP_PROXY) == 0)
@@ -1089,7 +1104,9 @@ void wsio_DestroyOption(const char* name, const void* value)
         free(proxy_data);
     }
     else if ((strcmp(name, OPTION_PROXY_ADDRESS) == 0) ||
-        (strcmp(name, OPTION_PROXY_PORT) == 0))
+        (strcmp(name, OPTION_PROXY_PORT) == 0) ||
+        /* Codes_SRS_WSIO_01_144: [ If the option name is `TrustedCerts`, wsio_destroy_option shall free the char\* option indicated by value. ]*/
+        (strcmp(name, "TrustedCerts") == 0))
     {
         free((void*)value);
     }
@@ -1101,13 +1118,13 @@ OPTIONHANDLER_HANDLE wsio_retrieveoptions(CONCRETE_IO_HANDLE handle)
     /*Codes_SRS_WSIO_02_001: [ If parameter handle is NULL then wsio_retrieveoptions shall fail and return NULL. */
     if (handle == NULL)
     {
-        LogError(" parameter CONCRETE_IO_HANDLE handle=%p", handle);
+        LogError("parameter handle is NULL");
         result = NULL;
     }
     else
     {
-        /*Codes_SRS_WSIO_02_002: [ wsio_retrieveoptions shall produce an empty OPTIOHANDLER_HANDLE. ]*/
-        result = OptionHandler_Create(wsio_CloneOption, wsio_DestroyOption, wsio_setoption);
+        /*Codes_SRS_WSIO_02_002: [** `wsio_retrieveoptions` shall produce an OPTIONHANDLER_HANDLE. ]*/
+        result = OptionHandler_Create(wsio_clone_option, wsio_destroy_option, wsio_setoption);
         if (result == NULL)
         {
             /*Codes_SRS_WSIO_02_003: [ If producing the OPTIONHANDLER_HANDLE fails then wsio_retrieveoptions shall fail and return NULL. ]*/
@@ -1116,6 +1133,7 @@ OPTIONHANDLER_HANDLE wsio_retrieveoptions(CONCRETE_IO_HANDLE handle)
         }
         else
         {
+            /* Codes_SRS_WSIO_01_145: [ `wsio_retrieveoptions` shall add to it the options: ]*/
             WSIO_INSTANCE* wsio_instance = (WSIO_INSTANCE*)handle;
             if (
                 (wsio_instance->proxy_address != NULL) && 
@@ -1135,11 +1153,22 @@ OPTIONHANDLER_HANDLE wsio_retrieveoptions(CONCRETE_IO_HANDLE handle)
                 OptionHandler_Destroy(result);
                 result = NULL;
             }
+            /* Codes_SRS_WSIO_01_146: [ - TrustedCerts ]*/
+            else if (
+                (wsio_instance->trusted_ca != NULL) &&
+                (OptionHandler_AddOption(result, "TrustedCerts", wsio_instance->trusted_ca) != 0)
+                )
+            {
+                /* Codes_SRS_WSIO_02_003: [ If producing the OPTIONHANDLER_HANDLE fails then wsio_retrieveoptions shall fail and return NULL. ]*/
+                LogError("unable to save TrustedCerts option");
+                OptionHandler_Destroy(result);
+                result = NULL;
+            }
         }
     }
+
     return result;
 }
-
 
 static const IO_INTERFACE_DESCRIPTION ws_io_interface_description =
 {
