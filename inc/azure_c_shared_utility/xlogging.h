@@ -6,7 +6,6 @@
 
 #ifdef __cplusplus
 #include <cstdio>
-extern "C" {
 #else
 #include <stdio.h>
 #endif /* __cplusplus */
@@ -115,13 +114,17 @@ so we compacted the log in the macro LogInfo.
 #define LogError(FORMAT, ...) do{ LOG(LOG_ERROR, LOG_LINE, FORMAT, ##__VA_ARGS__); }while(0)
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
 extern void xlogging_set_log_function(LOGGER_LOG log_function);
 extern LOGGER_LOG xlogging_get_log_function(void);
-
-#endif /* ARDUINO_ARCH_ESP8266 */
 
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
+
+#endif /* ARDUINO_ARCH_ESP8266 */
 
 #endif /* XLOGGING_H */
