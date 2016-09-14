@@ -99,6 +99,7 @@ static const char* ReceivedBuffer = (const char*)"This is the received buffer";
 static const int ReceivedReturnList[1] = { (const int)28 };
 
 static void* CallbackContext;
+static SSLCLIENT_HANDLE SSLClientHandel;
 
 DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
@@ -110,7 +111,6 @@ static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 }
 
 #define SSLCLIENT_HANDEL_NULL (SSLCLIENT_HANDLE)NULL
-#define SSLCLIENT_HANDEL_NOT_NULL (SSLCLIENT_HANDLE)0xCAFECAFE
 static SSLCLIENT_HANDLE my_sslClient_new_return;
 SSLCLIENT_HANDLE my_sslClient_new(void)
 {
@@ -299,9 +299,6 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         result = umocktypes_charptr_register_types();
 		ASSERT_ARE_EQUAL(int, 0, result);
 
-        CallbackContext = malloc(1);
-        ASSERT_IS_NULL(CallbackContext);
-
 		REGISTER_UMOCK_ALIAS_TYPE(SSLCLIENT_HANDLE, void*);
         REGISTER_UMOCK_ALIAS_TYPE(CONCRETE_IO_HANDLE, void*);
         REGISTER_UMOCK_ALIAS_TYPE(OPTIONHANDLER_HANDLE, void*);
@@ -322,7 +319,13 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
 		REGISTER_GLOBAL_MOCK_HOOK(sslClient_write, my_sslClient_write);
 		REGISTER_GLOBAL_MOCK_HOOK(sslClient_read, my_sslClient_read);
         REGISTER_GLOBAL_MOCK_HOOK(sslClient_hostByName, my_sslClient_hostByName);
-    }
+
+        CallbackContext = malloc(1);
+        ASSERT_IS_NOT_NULL(CallbackContext);
+
+        SSLClientHandel = (SSLCLIENT_HANDLE)malloc(1);
+        ASSERT_IS_NOT_NULL(SSLClientHandel);
+}
 
     TEST_SUITE_CLEANUP(TestClassCleanup)
     {
@@ -422,18 +425,18 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
-        my_sslClient_new_return = SSLCLIENT_HANDEL_NOT_NULL;
+        my_sslClient_new_return = SSLClientHandel;
         my_sslClient_hostByName_return = SSLCLIENT_IP_ADDRESS_SUCCEED;
         my_sslClient_connected_return_list = (const bool*)ConnectedReturnList_ft;
         my_sslClient_connect_return_list = (const int*)ConnectReturnList_true;
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(sslClient_new());
-        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLCLIENT_HANDEL_NOT_NULL, 10000));
+        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLClientHandel, 10000));
         STRICT_EXPECTED_CALL(sslClient_hostByName(TEST_CREATE_CONNECTION_HOST_NAME, IGNORED_PTR_ARG)).IgnoreArgument(2);
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_connect(SSLCLIENT_HANDEL_NOT_NULL, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_connect(SSLClientHandel, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
 
         tlsioHandle = tlsioInterfaces->concrete_io_create((void*)&tlsioConfig);
         ASSERT_IS_NOT_NULL(tlsioHandle);
@@ -472,14 +475,14 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
         my_sslClient_connected_return_list = (const bool*)ConnectedReturnList_f;
-        my_sslClient_new_return = SSLCLIENT_HANDEL_NOT_NULL;
+        my_sslClient_new_return = SSLClientHandel;
         my_sslClient_hostByName_return = SSLCLIENT_IP_ADDRESS_SUCCEED;
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(sslClient_new());
-        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLCLIENT_HANDEL_NOT_NULL, 10000));
+        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLClientHandel, 10000));
         STRICT_EXPECTED_CALL(sslClient_hostByName(TEST_CREATE_CONNECTION_HOST_NAME, IGNORED_PTR_ARG)).IgnoreArgument(2);
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
 
         tlsioHandle = tlsioInterfaces->concrete_io_create((void*)&tlsioConfig);
         ASSERT_IS_NOT_NULL(tlsioHandle);
@@ -507,21 +510,21 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
-        my_sslClient_new_return = SSLCLIENT_HANDEL_NOT_NULL;
+        my_sslClient_new_return = SSLClientHandel;
         my_sslClient_hostByName_return = SSLCLIENT_IP_ADDRESS_SUCCEED;
         my_sslClient_connected_return_list = (const bool*)ConnectedReturnList_ftft;
         my_sslClient_connect_return_list = (const int*)ConnectReturnList_true;
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(sslClient_new());
-        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLCLIENT_HANDEL_NOT_NULL, 10000));
+        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLClientHandel, 10000));
         STRICT_EXPECTED_CALL(sslClient_hostByName(TEST_CREATE_CONNECTION_HOST_NAME, IGNORED_PTR_ARG)).IgnoreArgument(2);
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_connect(SSLCLIENT_HANDEL_NOT_NULL, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_stop(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_connect(SSLClientHandel, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_stop(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
 
         tlsioHandle = tlsioInterfaces->concrete_io_create((void*)&tlsioConfig);
         ASSERT_IS_NOT_NULL(tlsioHandle);
@@ -559,21 +562,21 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
-        my_sslClient_new_return = SSLCLIENT_HANDEL_NOT_NULL;
+        my_sslClient_new_return = SSLClientHandel;
         my_sslClient_hostByName_return = SSLCLIENT_IP_ADDRESS_SUCCEED;
         my_sslClient_connected_return_list = (const bool*)ConnectedReturnList_ftff;
         my_sslClient_connect_return_list = (const int*)ConnectReturnList_true;
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(sslClient_new());
-        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLCLIENT_HANDEL_NOT_NULL, 10000));
+        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLClientHandel, 10000));
         STRICT_EXPECTED_CALL(sslClient_hostByName(TEST_CREATE_CONNECTION_HOST_NAME, IGNORED_PTR_ARG)).IgnoreArgument(2);
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_connect(SSLCLIENT_HANDEL_NOT_NULL, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_stop(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_connect(SSLClientHandel, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_stop(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
 
         tlsioHandle = tlsioInterfaces->concrete_io_create((void*)&tlsioConfig);
         ASSERT_IS_NOT_NULL(tlsioHandle);
@@ -611,7 +614,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
-        my_sslClient_new_return = SSLCLIENT_HANDEL_NOT_NULL;
+        my_sslClient_new_return = SSLClientHandel;
         my_sslClient_hostByName_return = SSLCLIENT_IP_ADDRESS_SUCCEED;
         my_sslClient_connected_return_list = (const bool*)ConnectedReturnList_ftf;
         my_sslClient_connect_return_list = (const int*)ConnectReturnList_true;
@@ -621,14 +624,14 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(sslClient_new());
-        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLCLIENT_HANDEL_NOT_NULL, 10000));
+        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLClientHandel, 10000));
         STRICT_EXPECTED_CALL(sslClient_hostByName(TEST_CREATE_CONNECTION_HOST_NAME, IGNORED_PTR_ARG)).IgnoreArgument(2);
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_connect(SSLCLIENT_HANDEL_NOT_NULL, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_write(SSLCLIENT_HANDEL_NOT_NULL, (uint8_t*)SendBuffer, SendBufferSize));
-        STRICT_EXPECTED_CALL(sslClient_write(SSLCLIENT_HANDEL_NOT_NULL, (uint8_t*)SendBuffer + SendReturnList_twice[0], SendBufferSize - SendReturnList_twice[0]));
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_connect(SSLClientHandel, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_write(SSLClientHandel, (uint8_t*)SendBuffer, SendBufferSize));
+        STRICT_EXPECTED_CALL(sslClient_write(SSLClientHandel, (uint8_t*)SendBuffer + SendReturnList_twice[0], SendBufferSize - SendReturnList_twice[0]));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
 
         tlsioHandle = tlsioInterfaces->concrete_io_create((void*)&tlsioConfig);
         ASSERT_IS_NOT_NULL(tlsioHandle);
@@ -672,7 +675,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
-        my_sslClient_new_return = SSLCLIENT_HANDEL_NOT_NULL;
+        my_sslClient_new_return = SSLClientHandel;
         my_sslClient_hostByName_return = SSLCLIENT_IP_ADDRESS_SUCCEED;
         my_sslClient_connected_return_list = (const bool*)ConnectedReturnList_ftt;
         my_sslClient_connect_return_list = (const int*)ConnectReturnList_true;
@@ -682,15 +685,15 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(sslClient_new());
-        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLCLIENT_HANDEL_NOT_NULL, 10000));
+        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLClientHandel, 10000));
         STRICT_EXPECTED_CALL(sslClient_hostByName(TEST_CREATE_CONNECTION_HOST_NAME, IGNORED_PTR_ARG)).IgnoreArgument(2);
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_connect(SSLCLIENT_HANDEL_NOT_NULL, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_write(SSLCLIENT_HANDEL_NOT_NULL, (uint8_t*)SendBuffer, SendBufferSize));
-        STRICT_EXPECTED_CALL(sslClient_write(SSLCLIENT_HANDEL_NOT_NULL, (uint8_t*)SendBuffer + SendReturnList_twice[0], SendBufferSize - SendReturnList_twice[0]));
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_read(SSLCLIENT_HANDEL_NOT_NULL, IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(2).IgnoreArgument(3);
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_connect(SSLClientHandel, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_write(SSLClientHandel, (uint8_t*)SendBuffer, SendBufferSize));
+        STRICT_EXPECTED_CALL(sslClient_write(SSLClientHandel, (uint8_t*)SendBuffer + SendReturnList_twice[0], SendBufferSize - SendReturnList_twice[0]));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_read(SSLClientHandel, IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(2).IgnoreArgument(3);
 
         tlsioHandle = tlsioInterfaces->concrete_io_create((void*)&tlsioConfig);
         ASSERT_IS_NOT_NULL(tlsioHandle);
@@ -737,7 +740,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
-        my_sslClient_new_return = SSLCLIENT_HANDEL_NOT_NULL;
+        my_sslClient_new_return = SSLClientHandel;
         my_sslClient_hostByName_return = SSLCLIENT_IP_ADDRESS_SUCCEED;
         my_sslClient_connected_return_list = (const bool*)ConnectedReturnList_ftt;
         my_sslClient_connect_return_list = (const int*)ConnectReturnList_true;
@@ -747,15 +750,15 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(sslClient_new());
-        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLCLIENT_HANDEL_NOT_NULL, 10000));
+        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLClientHandel, 10000));
         STRICT_EXPECTED_CALL(sslClient_hostByName(TEST_CREATE_CONNECTION_HOST_NAME, IGNORED_PTR_ARG)).IgnoreArgument(2);
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_connect(SSLCLIENT_HANDEL_NOT_NULL, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_write(SSLCLIENT_HANDEL_NOT_NULL, (uint8_t*)SendBuffer, SendBufferSize));
-        STRICT_EXPECTED_CALL(sslClient_write(SSLCLIENT_HANDEL_NOT_NULL, (uint8_t*)SendBuffer + SendReturnList_twice[0], SendBufferSize - SendReturnList_twice[0]));
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_read(SSLCLIENT_HANDEL_NOT_NULL, IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(2).IgnoreArgument(3);
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_connect(SSLClientHandel, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_write(SSLClientHandel, (uint8_t*)SendBuffer, SendBufferSize));
+        STRICT_EXPECTED_CALL(sslClient_write(SSLClientHandel, (uint8_t*)SendBuffer + SendReturnList_twice[0], SendBufferSize - SendReturnList_twice[0]));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_read(SSLClientHandel, IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(2).IgnoreArgument(3);
 
         tlsioHandle = tlsioInterfaces->concrete_io_create((void*)&tlsioConfig);
         ASSERT_IS_NOT_NULL(tlsioHandle);
@@ -798,7 +801,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
-        my_sslClient_new_return = SSLCLIENT_HANDEL_NOT_NULL;
+        my_sslClient_new_return = SSLClientHandel;
         my_sslClient_hostByName_return = SSLCLIENT_IP_ADDRESS_SUCCEED;
         my_sslClient_connected_return_list = (const bool*)ConnectedReturnList_ft;
         my_sslClient_connect_return_list = (const int*)ConnectReturnList_true;
@@ -806,11 +809,11 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(sslClient_new());
-        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLCLIENT_HANDEL_NOT_NULL, 10000));
+        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLClientHandel, 10000));
         STRICT_EXPECTED_CALL(sslClient_hostByName(TEST_CREATE_CONNECTION_HOST_NAME, IGNORED_PTR_ARG)).IgnoreArgument(2);
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_connect(SSLCLIENT_HANDEL_NOT_NULL, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_connect(SSLClientHandel, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
 
         tlsioHandle = tlsioInterfaces->concrete_io_create((void*)&tlsioConfig);
         ASSERT_IS_NOT_NULL(tlsioHandle);
@@ -847,7 +850,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
-        my_sslClient_new_return = SSLCLIENT_HANDEL_NOT_NULL;
+        my_sslClient_new_return = SSLClientHandel;
         my_sslClient_hostByName_return = SSLCLIENT_IP_ADDRESS_SUCCEED;
         my_sslClient_connected_return_list = (const bool*)ConnectedReturnList_ft;
         my_sslClient_connect_return_list = (const int*)ConnectReturnList_true;
@@ -855,11 +858,11 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(sslClient_new());
-        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLCLIENT_HANDEL_NOT_NULL, 10000));
+        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLClientHandel, 10000));
         STRICT_EXPECTED_CALL(sslClient_hostByName(TEST_CREATE_CONNECTION_HOST_NAME, IGNORED_PTR_ARG)).IgnoreArgument(2);
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_connect(SSLCLIENT_HANDEL_NOT_NULL, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_connect(SSLClientHandel, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
 
         tlsioHandle = tlsioInterfaces->concrete_io_create((void*)&tlsioConfig);
         ASSERT_IS_NOT_NULL(tlsioHandle);
@@ -915,12 +918,12 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
-        my_sslClient_new_return = SSLCLIENT_HANDEL_NOT_NULL;
+        my_sslClient_new_return = SSLClientHandel;
         my_sslClient_hostByName_return = SSLCLIENT_IP_ADDRESS_SUCCEED;
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(sslClient_new());
-        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLCLIENT_HANDEL_NOT_NULL, 10000));
+        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLClientHandel, 10000));
         STRICT_EXPECTED_CALL(sslClient_hostByName(TEST_CREATE_CONNECTION_HOST_NAME, IGNORED_PTR_ARG)).IgnoreArgument(2);
 
         tlsioHandle = tlsioInterfaces->concrete_io_create((void*)&tlsioConfig);
@@ -950,20 +953,20 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
-        my_sslClient_new_return = SSLCLIENT_HANDEL_NOT_NULL;
+        my_sslClient_new_return = SSLClientHandel;
         my_sslClient_hostByName_return = SSLCLIENT_IP_ADDRESS_SUCCEED;
         my_sslClient_connected_return_list = (const bool*)ConnectedReturnList_ftf;
         my_sslClient_connect_return_list = (const int*)ConnectReturnList_true;
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(sslClient_new());
-        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLCLIENT_HANDEL_NOT_NULL, 10000));
+        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLClientHandel, 10000));
         STRICT_EXPECTED_CALL(sslClient_hostByName(TEST_CREATE_CONNECTION_HOST_NAME, IGNORED_PTR_ARG)).IgnoreArgument(2);
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_connect(SSLCLIENT_HANDEL_NOT_NULL, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_stop(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_connect(SSLClientHandel, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_stop(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
 
         tlsioHandle = tlsioInterfaces->concrete_io_create((void*)&tlsioConfig);
         ASSERT_IS_NOT_NULL(tlsioHandle);
@@ -1002,20 +1005,20 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
-        my_sslClient_new_return = SSLCLIENT_HANDEL_NOT_NULL;
+        my_sslClient_new_return = SSLClientHandel;
         my_sslClient_hostByName_return = SSLCLIENT_IP_ADDRESS_SUCCEED;
         my_sslClient_connected_return_list = (const bool*)ConnectedReturnList_ftt;
         my_sslClient_connect_return_list = (const int*)ConnectReturnList_true;
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(sslClient_new());
-        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLCLIENT_HANDEL_NOT_NULL, 10000));
+        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLClientHandel, 10000));
         STRICT_EXPECTED_CALL(sslClient_hostByName(TEST_CREATE_CONNECTION_HOST_NAME, IGNORED_PTR_ARG)).IgnoreArgument(2);
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_connect(SSLCLIENT_HANDEL_NOT_NULL, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_stop(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_connect(SSLClientHandel, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_stop(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
 
         tlsioHandle = tlsioInterfaces->concrete_io_create((void*)&tlsioConfig);
         ASSERT_IS_NOT_NULL(tlsioHandle);
@@ -1054,18 +1057,18 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
-        my_sslClient_new_return = SSLCLIENT_HANDEL_NOT_NULL;
+        my_sslClient_new_return = SSLClientHandel;
         my_sslClient_hostByName_return = SSLCLIENT_IP_ADDRESS_SUCCEED;
         my_sslClient_connected_return_list = (const bool*)ConnectedReturnList_ff;
         my_sslClient_connect_return_list = (const int*)ConnectReturnList_true;
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(sslClient_new());
-        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLCLIENT_HANDEL_NOT_NULL, 10000));
+        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLClientHandel, 10000));
         STRICT_EXPECTED_CALL(sslClient_hostByName(TEST_CREATE_CONNECTION_HOST_NAME, IGNORED_PTR_ARG)).IgnoreArgument(2);
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_connect(SSLCLIENT_HANDEL_NOT_NULL, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_connect(SSLClientHandel, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
 
         tlsioHandle = tlsioInterfaces->concrete_io_create((void*)&tlsioConfig);
         ASSERT_IS_NOT_NULL(tlsioHandle);
@@ -1101,18 +1104,18 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
-        my_sslClient_new_return = SSLCLIENT_HANDEL_NOT_NULL;
+        my_sslClient_new_return = SSLClientHandel;
         my_sslClient_hostByName_return = SSLCLIENT_IP_ADDRESS_SUCCEED;
         my_sslClient_connected_return_list = (const bool*)ConnectedReturnList_ft;
         my_sslClient_connect_return_list = (const int*)ConnectReturnList_true;
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(sslClient_new());
-        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLCLIENT_HANDEL_NOT_NULL, 10000));
+        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLClientHandel, 10000));
         STRICT_EXPECTED_CALL(sslClient_hostByName(TEST_CREATE_CONNECTION_HOST_NAME, IGNORED_PTR_ARG)).IgnoreArgument(2);
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_connect(SSLCLIENT_HANDEL_NOT_NULL, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_connect(SSLClientHandel, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
 
         tlsioHandle = tlsioInterfaces->concrete_io_create((void*)&tlsioConfig);
         ASSERT_IS_NOT_NULL(tlsioHandle);
@@ -1152,7 +1155,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
-        my_sslClient_new_return = SSLCLIENT_HANDEL_NOT_NULL;
+        my_sslClient_new_return = SSLClientHandel;
         my_sslClient_hostByName_return = SSLCLIENT_IP_ADDRESS_SUCCEED;
         my_sslClient_connected_return_list = (const bool*)ConnectedReturnList_ftt;
         my_sslClient_connect_return_list = (const int*)ConnectReturnList_true;
@@ -1160,13 +1163,13 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(sslClient_new());
-        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLCLIENT_HANDEL_NOT_NULL, 10000));
+        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLClientHandel, 10000));
         STRICT_EXPECTED_CALL(sslClient_hostByName(TEST_CREATE_CONNECTION_HOST_NAME, IGNORED_PTR_ARG)).IgnoreArgument(2);
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_connect(SSLCLIENT_HANDEL_NOT_NULL, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_write(SSLCLIENT_HANDEL_NOT_NULL, (uint8_t*)SendBuffer, SendBufferSize));
-        STRICT_EXPECTED_CALL(sslClient_write(SSLCLIENT_HANDEL_NOT_NULL, (uint8_t*)SendBuffer + SendReturnList_twice[0], SendBufferSize - SendReturnList_twice[0]));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_connect(SSLClientHandel, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_write(SSLClientHandel, (uint8_t*)SendBuffer, SendBufferSize));
+        STRICT_EXPECTED_CALL(sslClient_write(SSLClientHandel, (uint8_t*)SendBuffer + SendReturnList_twice[0], SendBufferSize - SendReturnList_twice[0]));
 
         tlsioHandle = tlsioInterfaces->concrete_io_create((void*)&tlsioConfig);
         ASSERT_IS_NOT_NULL(tlsioHandle);
@@ -1205,7 +1208,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
-        my_sslClient_new_return = SSLCLIENT_HANDEL_NOT_NULL;
+        my_sslClient_new_return = SSLClientHandel;
         my_sslClient_hostByName_return = SSLCLIENT_IP_ADDRESS_SUCCEED;
         my_sslClient_connected_return_list = (const bool*)ConnectedReturnList_ft;
         my_sslClient_connect_return_list = (const int*)ConnectReturnList_true;
@@ -1213,12 +1216,12 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(sslClient_new());
-        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLCLIENT_HANDEL_NOT_NULL, 10000));
+        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLClientHandel, 10000));
         STRICT_EXPECTED_CALL(sslClient_hostByName(TEST_CREATE_CONNECTION_HOST_NAME, IGNORED_PTR_ARG)).IgnoreArgument(2);
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_connect(SSLCLIENT_HANDEL_NOT_NULL, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_write(SSLCLIENT_HANDEL_NOT_NULL, (uint8_t*)SendBuffer, SendBufferSize));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_connect(SSLClientHandel, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_write(SSLClientHandel, (uint8_t*)SendBuffer, SendBufferSize));
 
         tlsioHandle = tlsioInterfaces->concrete_io_create((void*)&tlsioConfig);
         ASSERT_IS_NOT_NULL(tlsioHandle);
@@ -1257,7 +1260,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
-        my_sslClient_new_return = SSLCLIENT_HANDEL_NOT_NULL;
+        my_sslClient_new_return = SSLClientHandel;
         my_sslClient_hostByName_return = SSLCLIENT_IP_ADDRESS_SUCCEED;
         my_sslClient_connected_return_list = (const bool*)ConnectedReturnList_ft;
         my_sslClient_connect_return_list = (const int*)ConnectReturnList_true;
@@ -1265,13 +1268,13 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(sslClient_new());
-        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLCLIENT_HANDEL_NOT_NULL, 10000));
+        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLClientHandel, 10000));
         STRICT_EXPECTED_CALL(sslClient_hostByName(TEST_CREATE_CONNECTION_HOST_NAME, IGNORED_PTR_ARG)).IgnoreArgument(2);
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_connect(SSLCLIENT_HANDEL_NOT_NULL, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_write(SSLCLIENT_HANDEL_NOT_NULL, (uint8_t*)SendBuffer, SendBufferSize));
-        STRICT_EXPECTED_CALL(sslClient_write(SSLCLIENT_HANDEL_NOT_NULL, (uint8_t*)SendBuffer + SendReturnList_twice[0], SendBufferSize - SendReturnList_twice[0]));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_connect(SSLClientHandel, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_write(SSLClientHandel, (uint8_t*)SendBuffer, SendBufferSize));
+        STRICT_EXPECTED_CALL(sslClient_write(SSLClientHandel, (uint8_t*)SendBuffer + SendReturnList_twice[0], SendBufferSize - SendReturnList_twice[0]));
 
         tlsioHandle = tlsioInterfaces->concrete_io_create((void*)&tlsioConfig);
         ASSERT_IS_NOT_NULL(tlsioHandle);
@@ -1311,7 +1314,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
-        my_sslClient_new_return = SSLCLIENT_HANDEL_NOT_NULL;
+        my_sslClient_new_return = SSLClientHandel;
         my_sslClient_hostByName_return = SSLCLIENT_IP_ADDRESS_SUCCEED;
         my_sslClient_connected_return_list = (const bool*)ConnectedReturnList_ft;
         my_sslClient_connect_return_list = (const int*)ConnectReturnList_true;
@@ -1319,12 +1322,12 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(sslClient_new());
-        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLCLIENT_HANDEL_NOT_NULL, 10000));
+        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLClientHandel, 10000));
         STRICT_EXPECTED_CALL(sslClient_hostByName(TEST_CREATE_CONNECTION_HOST_NAME, IGNORED_PTR_ARG)).IgnoreArgument(2);
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_connect(SSLCLIENT_HANDEL_NOT_NULL, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_write(SSLCLIENT_HANDEL_NOT_NULL, (uint8_t*)SendBuffer, SendBufferSize));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_connect(SSLClientHandel, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_write(SSLClientHandel, (uint8_t*)SendBuffer, SendBufferSize));
 
         tlsioHandle = tlsioInterfaces->concrete_io_create((void*)&tlsioConfig);
         ASSERT_IS_NOT_NULL(tlsioHandle);
@@ -1365,7 +1368,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
-        my_sslClient_new_return = SSLCLIENT_HANDEL_NOT_NULL;
+        my_sslClient_new_return = SSLClientHandel;
         my_sslClient_hostByName_return = SSLCLIENT_IP_ADDRESS_SUCCEED;
         my_sslClient_connected_return_list = (const bool*)ConnectedReturnList_ft;
         my_sslClient_connect_return_list = (const int*)ConnectReturnList_true;
@@ -1373,12 +1376,12 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(sslClient_new());
-        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLCLIENT_HANDEL_NOT_NULL, 10000));
+        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLClientHandel, 10000));
         STRICT_EXPECTED_CALL(sslClient_hostByName(TEST_CREATE_CONNECTION_HOST_NAME, IGNORED_PTR_ARG)).IgnoreArgument(2);
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_connect(SSLCLIENT_HANDEL_NOT_NULL, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_write(SSLCLIENT_HANDEL_NOT_NULL, (uint8_t*)SendBuffer, SendBufferSize));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_connect(SSLClientHandel, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_write(SSLClientHandel, (uint8_t*)SendBuffer, SendBufferSize));
 
         tlsioHandle = tlsioInterfaces->concrete_io_create((void*)&tlsioConfig);
         ASSERT_IS_NOT_NULL(tlsioHandle);
@@ -1436,20 +1439,20 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
-        my_sslClient_new_return = SSLCLIENT_HANDEL_NOT_NULL;
+        my_sslClient_new_return = SSLClientHandel;
         my_sslClient_hostByName_return = SSLCLIENT_IP_ADDRESS_SUCCEED;
         my_sslClient_connected_return_list = (const bool*)ConnectedReturnList_ftt;
         my_sslClient_connect_return_list = (const int*)ConnectReturnList_true;
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(sslClient_new());
-        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLCLIENT_HANDEL_NOT_NULL, 10000));
+        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLClientHandel, 10000));
         STRICT_EXPECTED_CALL(sslClient_hostByName(TEST_CREATE_CONNECTION_HOST_NAME, IGNORED_PTR_ARG)).IgnoreArgument(2);
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_connect(SSLCLIENT_HANDEL_NOT_NULL, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_stop(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_connect(SSLClientHandel, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_stop(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
         STRICT_EXPECTED_CALL(sslClient_delete(IGNORED_PTR_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)).IgnoreArgument(1);
 
@@ -1488,20 +1491,20 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
-        my_sslClient_new_return = SSLCLIENT_HANDEL_NOT_NULL;
+        my_sslClient_new_return = SSLClientHandel;
         my_sslClient_hostByName_return = SSLCLIENT_IP_ADDRESS_SUCCEED;
         my_sslClient_connected_return_list = (const bool*)ConnectedReturnList_ftt;
         my_sslClient_connect_return_list = (const int*)ConnectReturnList_true;
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(sslClient_new());
-        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLCLIENT_HANDEL_NOT_NULL, 10000));
+        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLClientHandel, 10000));
         STRICT_EXPECTED_CALL(sslClient_hostByName(TEST_CREATE_CONNECTION_HOST_NAME, IGNORED_PTR_ARG)).IgnoreArgument(2);
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_connect(SSLCLIENT_HANDEL_NOT_NULL, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_stop(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_connect(SSLClientHandel, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_stop(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
 
         tlsioHandle = tlsioInterfaces->concrete_io_create((void*)&tlsioConfig);
         ASSERT_IS_NOT_NULL(tlsioHandle);
@@ -1546,14 +1549,14 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
-        my_sslClient_new_return = SSLCLIENT_HANDEL_NOT_NULL;
+        my_sslClient_new_return = SSLClientHandel;
         my_sslClient_hostByName_return = SSLCLIENT_IP_ADDRESS_SUCCEED;
         my_sslClient_connected_return_list = (const bool*)ConnectedReturnList_f;
         my_sslClient_connect_return_list = (const int*)ConnectReturnList_true;
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(sslClient_new());
-        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLCLIENT_HANDEL_NOT_NULL, 10000));
+        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLClientHandel, 10000));
         STRICT_EXPECTED_CALL(sslClient_hostByName(TEST_CREATE_CONNECTION_HOST_NAME, IGNORED_PTR_ARG)).IgnoreArgument(2);
 
         tlsioHandle = tlsioInterfaces->concrete_io_create((void*)&tlsioConfig);
@@ -1587,18 +1590,18 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
-        my_sslClient_new_return = SSLCLIENT_HANDEL_NOT_NULL;
+        my_sslClient_new_return = SSLClientHandel;
         my_sslClient_hostByName_return = SSLCLIENT_IP_ADDRESS_SUCCEED;
         my_sslClient_connected_return_list = (const bool*)ConnectedReturnList_ff;
         my_sslClient_connect_return_list = (const int*)ConnectReturnList_true;
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(sslClient_new());
-        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLCLIENT_HANDEL_NOT_NULL, 10000));
+        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLClientHandel, 10000));
         STRICT_EXPECTED_CALL(sslClient_hostByName(TEST_CREATE_CONNECTION_HOST_NAME, IGNORED_PTR_ARG)).IgnoreArgument(2);
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_connect(SSLCLIENT_HANDEL_NOT_NULL, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_connect(SSLClientHandel, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
 
         tlsioHandle = tlsioInterfaces->concrete_io_create((void*)&tlsioConfig);
         ASSERT_IS_NOT_NULL(tlsioHandle);
@@ -1634,20 +1637,20 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
-        my_sslClient_new_return = SSLCLIENT_HANDEL_NOT_NULL;
+        my_sslClient_new_return = SSLClientHandel;
         my_sslClient_hostByName_return = SSLCLIENT_IP_ADDRESS_SUCCEED;
         my_sslClient_connected_return_list = (const bool*)ConnectedReturnList_ftt;
         my_sslClient_connect_return_list = (const int*)ConnectReturnList_true;
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(sslClient_new());
-        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLCLIENT_HANDEL_NOT_NULL, 10000));
+        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLClientHandel, 10000));
         STRICT_EXPECTED_CALL(sslClient_hostByName(TEST_CREATE_CONNECTION_HOST_NAME, IGNORED_PTR_ARG)).IgnoreArgument(2);
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_connect(SSLCLIENT_HANDEL_NOT_NULL, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_stop(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_connect(SSLClientHandel, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_stop(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
 
         tlsioHandle = tlsioInterfaces->concrete_io_create((void*)&tlsioConfig);
         ASSERT_IS_NOT_NULL(tlsioHandle);
@@ -1687,20 +1690,20 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
-        my_sslClient_new_return = SSLCLIENT_HANDEL_NOT_NULL;
+        my_sslClient_new_return = SSLClientHandel;
         my_sslClient_hostByName_return = SSLCLIENT_IP_ADDRESS_SUCCEED;
         my_sslClient_connected_return_list = (const bool*)ConnectedReturnList_ftf;
         my_sslClient_connect_return_list = (const int*)ConnectReturnList_true;
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(sslClient_new());
-        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLCLIENT_HANDEL_NOT_NULL, 10000));
+        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLClientHandel, 10000));
         STRICT_EXPECTED_CALL(sslClient_hostByName(TEST_CREATE_CONNECTION_HOST_NAME, IGNORED_PTR_ARG)).IgnoreArgument(2);
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_connect(SSLCLIENT_HANDEL_NOT_NULL, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_stop(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_connect(SSLClientHandel, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_stop(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
 
         tlsioHandle = tlsioInterfaces->concrete_io_create((void*)&tlsioConfig);
         ASSERT_IS_NOT_NULL(tlsioHandle);
@@ -1740,14 +1743,14 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
-        my_sslClient_new_return = SSLCLIENT_HANDEL_NOT_NULL;
+        my_sslClient_new_return = SSLClientHandel;
         my_sslClient_hostByName_return = SSLCLIENT_IP_ADDRESS_SUCCEED;
         my_sslClient_connected_return_list = (const bool*)ConnectedReturnList_ftf;
         my_sslClient_connect_return_list = (const int*)ConnectReturnList_true;
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(sslClient_new());
-        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLCLIENT_HANDEL_NOT_NULL, 10000));
+        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLClientHandel, 10000));
         STRICT_EXPECTED_CALL(sslClient_hostByName(TEST_CREATE_CONNECTION_HOST_NAME, IGNORED_PTR_ARG)).IgnoreArgument(2);
 
         tlsioHandle = tlsioInterfaces->concrete_io_create((void*)&tlsioConfig);
@@ -1777,22 +1780,22 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
-        my_sslClient_new_return = SSLCLIENT_HANDEL_NOT_NULL;
+        my_sslClient_new_return = SSLClientHandel;
         my_sslClient_hostByName_return = SSLCLIENT_IP_ADDRESS_SUCCEED;
         my_sslClient_connected_return_list = (const bool*)ConnectedReturnList_f12t;
         my_sslClient_connect_return_list = (const int*)ConnectReturnList_true;
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(sslClient_new());
-        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLCLIENT_HANDEL_NOT_NULL, 10000));
+        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLClientHandel, 10000));
         STRICT_EXPECTED_CALL(sslClient_hostByName(TEST_CREATE_CONNECTION_HOST_NAME, IGNORED_PTR_ARG)).IgnoreArgument(2);
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_connect(SSLCLIENT_HANDEL_NOT_NULL, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_stop(SSLCLIENT_HANDEL_NOT_NULL));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_connect(SSLClientHandel, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_stop(SSLClientHandel));
         for (size_t i = 0; i < 11; i++)
         {
-            STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
+            STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
         }
 
         tlsioHandle = tlsioInterfaces->concrete_io_create((void*)&tlsioConfig);
@@ -1839,22 +1842,22 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
-        my_sslClient_new_return = SSLCLIENT_HANDEL_NOT_NULL;
+        my_sslClient_new_return = SSLClientHandel;
         my_sslClient_hostByName_return = SSLCLIENT_IP_ADDRESS_SUCCEED;
         my_sslClient_connected_return_list = (const bool*)ConnectedReturnList_f12t;
         my_sslClient_connect_return_list = (const int*)ConnectReturnList_true;
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(sslClient_new());
-        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLCLIENT_HANDEL_NOT_NULL, 10000));
+        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLClientHandel, 10000));
         STRICT_EXPECTED_CALL(sslClient_hostByName(TEST_CREATE_CONNECTION_HOST_NAME, IGNORED_PTR_ARG)).IgnoreArgument(2);
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_connect(SSLCLIENT_HANDEL_NOT_NULL, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_stop(SSLCLIENT_HANDEL_NOT_NULL));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_connect(SSLClientHandel, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_stop(SSLClientHandel));
         for (size_t i = 0; i < 11; i++)
         {
-            STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
+            STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
         }
 
         tlsioHandle = tlsioInterfaces->concrete_io_create((void*)&tlsioConfig);
@@ -1899,22 +1902,22 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
-        my_sslClient_new_return = SSLCLIENT_HANDEL_NOT_NULL;
+        my_sslClient_new_return = SSLClientHandel;
         my_sslClient_hostByName_return = SSLCLIENT_IP_ADDRESS_SUCCEED;
         my_sslClient_connected_return_list = (const bool*)ConnectedReturnList_f11tf;
         my_sslClient_connect_return_list = (const int*)ConnectReturnList_true;
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(sslClient_new());
-        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLCLIENT_HANDEL_NOT_NULL, 10000));
+        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLClientHandel, 10000));
         STRICT_EXPECTED_CALL(sslClient_hostByName(TEST_CREATE_CONNECTION_HOST_NAME, IGNORED_PTR_ARG)).IgnoreArgument(2);
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_connect(SSLCLIENT_HANDEL_NOT_NULL, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_stop(SSLCLIENT_HANDEL_NOT_NULL));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_connect(SSLClientHandel, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_stop(SSLClientHandel));
         for (size_t i = 0; i < 11; i++)
         {
-            STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
+            STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
         }
 
         tlsioHandle = tlsioInterfaces->concrete_io_create((void*)&tlsioConfig);
@@ -1963,20 +1966,20 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
-        my_sslClient_new_return = SSLCLIENT_HANDEL_NOT_NULL;
+        my_sslClient_new_return = SSLClientHandel;
         my_sslClient_hostByName_return = SSLCLIENT_IP_ADDRESS_SUCCEED;
         my_sslClient_connected_return_list = (const bool*)ConnectedReturnList_ftf;
         my_sslClient_connect_return_list = (const int*)ConnectReturnList_true;
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(sslClient_new());
-        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLCLIENT_HANDEL_NOT_NULL, 10000));
+        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLClientHandel, 10000));
         STRICT_EXPECTED_CALL(sslClient_hostByName(TEST_CREATE_CONNECTION_HOST_NAME, IGNORED_PTR_ARG)).IgnoreArgument(2);
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_connect(SSLCLIENT_HANDEL_NOT_NULL, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_stop(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_connect(SSLClientHandel, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_stop(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
 
         tlsioHandle = tlsioInterfaces->concrete_io_create((void*)&tlsioConfig);
         ASSERT_IS_NOT_NULL(tlsioHandle);
@@ -2016,20 +2019,20 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
-        my_sslClient_new_return = SSLCLIENT_HANDEL_NOT_NULL;
+        my_sslClient_new_return = SSLClientHandel;
         my_sslClient_hostByName_return = SSLCLIENT_IP_ADDRESS_SUCCEED;
         my_sslClient_connected_return_list = (const bool*)ConnectedReturnList_ftf;
         my_sslClient_connect_return_list = (const int*)ConnectReturnList_true;
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(sslClient_new());
-        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLCLIENT_HANDEL_NOT_NULL, 10000));
+        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLClientHandel, 10000));
         STRICT_EXPECTED_CALL(sslClient_hostByName(TEST_CREATE_CONNECTION_HOST_NAME, IGNORED_PTR_ARG)).IgnoreArgument(2);
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_connect(SSLCLIENT_HANDEL_NOT_NULL, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_stop(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_connect(SSLClientHandel, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_stop(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
 
         tlsioHandle = tlsioInterfaces->concrete_io_create((void*)&tlsioConfig);
         ASSERT_IS_NOT_NULL(tlsioHandle);
@@ -2067,20 +2070,20 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
-        my_sslClient_new_return = SSLCLIENT_HANDEL_NOT_NULL;
+        my_sslClient_new_return = SSLClientHandel;
         my_sslClient_hostByName_return = SSLCLIENT_IP_ADDRESS_SUCCEED;
         my_sslClient_connected_return_list = (const bool*)ConnectedReturnList_ftt;
         my_sslClient_connect_return_list = (const int*)ConnectReturnList_true;
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(sslClient_new());
-        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLCLIENT_HANDEL_NOT_NULL, 10000));
+        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLClientHandel, 10000));
         STRICT_EXPECTED_CALL(sslClient_hostByName(TEST_CREATE_CONNECTION_HOST_NAME, IGNORED_PTR_ARG)).IgnoreArgument(2);
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_connect(SSLCLIENT_HANDEL_NOT_NULL, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_stop(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_connect(SSLClientHandel, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_stop(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
 
         tlsioHandle = tlsioInterfaces->concrete_io_create((void*)&tlsioConfig);
         ASSERT_IS_NOT_NULL(tlsioHandle);
@@ -2116,17 +2119,17 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
-        my_sslClient_new_return = SSLCLIENT_HANDEL_NOT_NULL;
+        my_sslClient_new_return = SSLClientHandel;
         my_sslClient_hostByName_return = SSLCLIENT_IP_ADDRESS_SUCCEED;
         my_sslClient_connected_return_list = (const bool*)ConnectedReturnList_f;
         my_sslClient_connect_return_list = (const int*)ConnectReturnList_false;
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(sslClient_new());
-        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLCLIENT_HANDEL_NOT_NULL, 10000));
+        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLClientHandel, 10000));
         STRICT_EXPECTED_CALL(sslClient_hostByName(TEST_CREATE_CONNECTION_HOST_NAME, IGNORED_PTR_ARG)).IgnoreArgument(2);
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_connect(SSLCLIENT_HANDEL_NOT_NULL, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_connect(SSLClientHandel, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
 
         tlsioHandle = tlsioInterfaces->concrete_io_create((void*)&tlsioConfig);
         ASSERT_IS_NOT_NULL(tlsioHandle);
@@ -2159,16 +2162,16 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
-        my_sslClient_new_return = SSLCLIENT_HANDEL_NOT_NULL;
+        my_sslClient_new_return = SSLClientHandel;
         my_sslClient_hostByName_return = SSLCLIENT_IP_ADDRESS_SUCCEED;
         my_sslClient_connected_return_list = (const bool*)ConnectedReturnList_t;
         my_sslClient_connect_return_list = (const int*)ConnectReturnList_true;
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(sslClient_new());
-        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLCLIENT_HANDEL_NOT_NULL, 10000));
+        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLClientHandel, 10000));
         STRICT_EXPECTED_CALL(sslClient_hostByName(TEST_CREATE_CONNECTION_HOST_NAME, IGNORED_PTR_ARG)).IgnoreArgument(2);
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
 
         tlsioHandle = tlsioInterfaces->concrete_io_create((void*)&tlsioConfig);
         ASSERT_IS_NOT_NULL(tlsioHandle);
@@ -2229,18 +2232,18 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
-        my_sslClient_new_return = SSLCLIENT_HANDEL_NOT_NULL;
+        my_sslClient_new_return = SSLClientHandel;
         my_sslClient_hostByName_return = SSLCLIENT_IP_ADDRESS_SUCCEED;
         my_sslClient_connected_return_list = (const bool*)ConnectedReturnList_ft;
         my_sslClient_connect_return_list = (const int*)ConnectReturnList_true;
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(sslClient_new());
-        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLCLIENT_HANDEL_NOT_NULL, 10000));
+        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLClientHandel, 10000));
         STRICT_EXPECTED_CALL(sslClient_hostByName(TEST_CREATE_CONNECTION_HOST_NAME, IGNORED_PTR_ARG)).IgnoreArgument(2);
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_connect(SSLCLIENT_HANDEL_NOT_NULL, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_connect(SSLClientHandel, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
 
         tlsioHandle = tlsioInterfaces->concrete_io_create((void*)&tlsioConfig);
         ASSERT_IS_NOT_NULL(tlsioHandle);
@@ -2287,18 +2290,18 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
-        my_sslClient_new_return = SSLCLIENT_HANDEL_NOT_NULL;
+        my_sslClient_new_return = SSLClientHandel;
         my_sslClient_hostByName_return = SSLCLIENT_IP_ADDRESS_SUCCEED;
         my_sslClient_connected_return_list = (const bool*)ConnectedReturnList_ft;
         my_sslClient_connect_return_list = (const int*)ConnectReturnList_true;
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(sslClient_new());
-        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLCLIENT_HANDEL_NOT_NULL, 10000));
+        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLClientHandel, 10000));
         STRICT_EXPECTED_CALL(sslClient_hostByName(TEST_CREATE_CONNECTION_HOST_NAME, IGNORED_PTR_ARG)).IgnoreArgument(2);
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_connect(SSLCLIENT_HANDEL_NOT_NULL, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_connect(SSLClientHandel, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
 
         tlsioHandle = tlsioInterfaces->concrete_io_create((void*)&tlsioConfig);
         ASSERT_IS_NOT_NULL(tlsioHandle);
@@ -2341,18 +2344,18 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
-        my_sslClient_new_return = SSLCLIENT_HANDEL_NOT_NULL;
+        my_sslClient_new_return = SSLClientHandel;
         my_sslClient_hostByName_return = SSLCLIENT_IP_ADDRESS_SUCCEED;
         my_sslClient_connected_return_list = (const bool*)ConnectedReturnList_ff;
         my_sslClient_connect_return_list = (const int*)ConnectReturnList_true;
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(sslClient_new());
-        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLCLIENT_HANDEL_NOT_NULL, 10000));
+        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLClientHandel, 10000));
         STRICT_EXPECTED_CALL(sslClient_hostByName(TEST_CREATE_CONNECTION_HOST_NAME, IGNORED_PTR_ARG)).IgnoreArgument(2);
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_connect(SSLCLIENT_HANDEL_NOT_NULL, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_connect(SSLClientHandel, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
 
         tlsioHandle = tlsioInterfaces->concrete_io_create((void*)&tlsioConfig);
         ASSERT_IS_NOT_NULL(tlsioHandle);
@@ -2396,20 +2399,20 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
-        my_sslClient_new_return = SSLCLIENT_HANDEL_NOT_NULL;
+        my_sslClient_new_return = SSLClientHandel;
         my_sslClient_hostByName_return = SSLCLIENT_IP_ADDRESS_SUCCEED;
         my_sslClient_connected_return_list = (const bool*)ConnectedReturnList_12f;
         my_sslClient_connect_return_list = (const int*)ConnectReturnList_true;
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(sslClient_new());
-        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLCLIENT_HANDEL_NOT_NULL, 10000));
+        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLClientHandel, 10000));
         STRICT_EXPECTED_CALL(sslClient_hostByName(TEST_CREATE_CONNECTION_HOST_NAME, IGNORED_PTR_ARG)).IgnoreArgument(2);
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_connect(SSLCLIENT_HANDEL_NOT_NULL, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_connect(SSLClientHandel, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
         for (size_t i = 0; i < 11; i++)
         {
-            STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
+            STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
         }
 
         tlsioHandle = tlsioInterfaces->concrete_io_create((void*)&tlsioConfig);
@@ -2456,20 +2459,20 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
-        my_sslClient_new_return = SSLCLIENT_HANDEL_NOT_NULL;
+        my_sslClient_new_return = SSLClientHandel;
         my_sslClient_hostByName_return = SSLCLIENT_IP_ADDRESS_SUCCEED;
         my_sslClient_connected_return_list = (const bool*)ConnectedReturnList_12f;
         my_sslClient_connect_return_list = (const int*)ConnectReturnList_true;
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(sslClient_new());
-        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLCLIENT_HANDEL_NOT_NULL, 10000));
+        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLClientHandel, 10000));
         STRICT_EXPECTED_CALL(sslClient_hostByName(TEST_CREATE_CONNECTION_HOST_NAME, IGNORED_PTR_ARG)).IgnoreArgument(2);
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_connect(SSLCLIENT_HANDEL_NOT_NULL, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_connect(SSLClientHandel, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
         for (size_t i = 0; i < 11; i++)
         {
-            STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
+            STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
         }
 
         tlsioHandle = tlsioInterfaces->concrete_io_create((void*)&tlsioConfig);
@@ -2511,20 +2514,20 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
-        my_sslClient_new_return = SSLCLIENT_HANDEL_NOT_NULL;
+        my_sslClient_new_return = SSLClientHandel;
         my_sslClient_hostByName_return = SSLCLIENT_IP_ADDRESS_SUCCEED;
         my_sslClient_connected_return_list = (const bool*)ConnectedReturnList_11ft;
         my_sslClient_connect_return_list = (const int*)ConnectReturnList_true;
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(sslClient_new());
-        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLCLIENT_HANDEL_NOT_NULL, 10000));
+        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLClientHandel, 10000));
         STRICT_EXPECTED_CALL(sslClient_hostByName(TEST_CREATE_CONNECTION_HOST_NAME, IGNORED_PTR_ARG)).IgnoreArgument(2);
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_connect(SSLCLIENT_HANDEL_NOT_NULL, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_connect(SSLClientHandel, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
         for (size_t i = 0; i < 11; i++)
         {
-            STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
+            STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
         }
 
         tlsioHandle = tlsioInterfaces->concrete_io_create((void*)&tlsioConfig);
@@ -2567,18 +2570,18 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
-        my_sslClient_new_return = SSLCLIENT_HANDEL_NOT_NULL;
+        my_sslClient_new_return = SSLClientHandel;
         my_sslClient_hostByName_return = SSLCLIENT_IP_ADDRESS_SUCCEED;
         my_sslClient_connected_return_list = (const bool*)ConnectedReturnList_ft;
         my_sslClient_connect_return_list = (const int*)ConnectReturnList_true;
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(sslClient_new());
-        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLCLIENT_HANDEL_NOT_NULL, 10000));
+        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLClientHandel, 10000));
         STRICT_EXPECTED_CALL(sslClient_hostByName(TEST_CREATE_CONNECTION_HOST_NAME, IGNORED_PTR_ARG)).IgnoreArgument(2);
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_connect(SSLCLIENT_HANDEL_NOT_NULL, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_connect(SSLClientHandel, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
 
         tlsioHandle = tlsioInterfaces->concrete_io_create((void*)&tlsioConfig);
         ASSERT_IS_NOT_NULL(tlsioHandle);
@@ -2615,18 +2618,18 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
-        my_sslClient_new_return = SSLCLIENT_HANDEL_NOT_NULL;
+        my_sslClient_new_return = SSLClientHandel;
         my_sslClient_hostByName_return = SSLCLIENT_IP_ADDRESS_SUCCEED;
         my_sslClient_connected_return_list = (const bool*)ConnectedReturnList_ft;
         my_sslClient_connect_return_list = (const int*)ConnectReturnList_true;
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(sslClient_new());
-        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLCLIENT_HANDEL_NOT_NULL, 10000));
+        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLClientHandel, 10000));
         STRICT_EXPECTED_CALL(sslClient_hostByName(TEST_CREATE_CONNECTION_HOST_NAME, IGNORED_PTR_ARG)).IgnoreArgument(2);
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_connect(SSLCLIENT_HANDEL_NOT_NULL, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_connect(SSLClientHandel, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
 
         tlsioHandle = tlsioInterfaces->concrete_io_create((void*)&tlsioConfig);
         ASSERT_IS_NOT_NULL(tlsioHandle);
@@ -2662,18 +2665,18 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
-        my_sslClient_new_return = SSLCLIENT_HANDEL_NOT_NULL;
+        my_sslClient_new_return = SSLClientHandel;
         my_sslClient_hostByName_return = SSLCLIENT_IP_ADDRESS_SUCCEED;
         my_sslClient_connected_return_list = (const bool*)ConnectedReturnList_ff;
         my_sslClient_connect_return_list = (const int*)ConnectReturnList_true;
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(sslClient_new());
-        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLCLIENT_HANDEL_NOT_NULL, 10000));
+        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLClientHandel, 10000));
         STRICT_EXPECTED_CALL(sslClient_hostByName(TEST_CREATE_CONNECTION_HOST_NAME, IGNORED_PTR_ARG)).IgnoreArgument(2);
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_connect(SSLCLIENT_HANDEL_NOT_NULL, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_connect(SSLClientHandel, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
 
         tlsioHandle = tlsioInterfaces->concrete_io_create((void*)&tlsioConfig);
         ASSERT_IS_NOT_NULL(tlsioHandle);
@@ -2705,18 +2708,18 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
-        my_sslClient_new_return = SSLCLIENT_HANDEL_NOT_NULL;
+        my_sslClient_new_return = SSLClientHandel;
         my_sslClient_hostByName_return = SSLCLIENT_IP_ADDRESS_SUCCEED;
         my_sslClient_connected_return_list = (const bool*)ConnectedReturnList_ft;
         my_sslClient_connect_return_list = (const int*)ConnectReturnList_true;
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(sslClient_new());
-        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLCLIENT_HANDEL_NOT_NULL, 10000));
+        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLClientHandel, 10000));
         STRICT_EXPECTED_CALL(sslClient_hostByName(TEST_CREATE_CONNECTION_HOST_NAME, IGNORED_PTR_ARG)).IgnoreArgument(2);
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_connect(SSLCLIENT_HANDEL_NOT_NULL, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_connect(SSLClientHandel, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
         STRICT_EXPECTED_CALL(sslClient_delete(IGNORED_PTR_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)).IgnoreArgument(1);
 
@@ -2751,18 +2754,18 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
-        my_sslClient_new_return = SSLCLIENT_HANDEL_NOT_NULL;
+        my_sslClient_new_return = SSLClientHandel;
         my_sslClient_hostByName_return = SSLCLIENT_IP_ADDRESS_SUCCEED;
         my_sslClient_connected_return_list = (const bool*)ConnectedReturnList_ff;
         my_sslClient_connect_return_list = (const int*)ConnectReturnList_true;
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(sslClient_new());
-        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLCLIENT_HANDEL_NOT_NULL, 10000));
+        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLClientHandel, 10000));
         STRICT_EXPECTED_CALL(sslClient_hostByName(TEST_CREATE_CONNECTION_HOST_NAME, IGNORED_PTR_ARG)).IgnoreArgument(2);
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
-        STRICT_EXPECTED_CALL(sslClient_connect(SSLCLIENT_HANDEL_NOT_NULL, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
-        STRICT_EXPECTED_CALL(sslClient_connected(SSLCLIENT_HANDEL_NOT_NULL));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
+        STRICT_EXPECTED_CALL(sslClient_connect(SSLClientHandel, SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
+        STRICT_EXPECTED_CALL(sslClient_connected(SSLClientHandel));
         STRICT_EXPECTED_CALL(sslClient_delete(IGNORED_PTR_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)).IgnoreArgument(1);
 
@@ -2817,12 +2820,12 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
-        my_sslClient_new_return = SSLCLIENT_HANDEL_NOT_NULL;
+        my_sslClient_new_return = SSLClientHandel;
         my_sslClient_hostByName_return = SSLCLIENT_IP_ADDRESS_SUCCEED;
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(sslClient_new());
-        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLCLIENT_HANDEL_NOT_NULL, 10000));
+        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLClientHandel, 10000));
         STRICT_EXPECTED_CALL(sslClient_hostByName(TEST_CREATE_CONNECTION_HOST_NAME, IGNORED_PTR_ARG)).IgnoreArgument(2);
         STRICT_EXPECTED_CALL(sslClient_delete(IGNORED_PTR_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)).IgnoreArgument(1);
@@ -2857,12 +2860,12 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
-        my_sslClient_new_return = SSLCLIENT_HANDEL_NOT_NULL;
+        my_sslClient_new_return = SSLClientHandel;
         my_sslClient_hostByName_return = SSLCLIENT_IP_ADDRESS_SUCCEED;
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(sslClient_new());
-        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLCLIENT_HANDEL_NOT_NULL, 10000));
+        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLClientHandel, 10000));
         STRICT_EXPECTED_CALL(sslClient_hostByName(TEST_CREATE_CONNECTION_HOST_NAME, IGNORED_PTR_ARG)).IgnoreArgument(2);
         
         ///act
@@ -2887,12 +2890,12 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
-        my_sslClient_new_return = SSLCLIENT_HANDEL_NOT_NULL;
+        my_sslClient_new_return = SSLClientHandel;
         my_sslClient_hostByName_return = SSLCLIENT_IP_ADDRESS_FAILED;
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(sslClient_new());
-        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLCLIENT_HANDEL_NOT_NULL, 10000));
+        STRICT_EXPECTED_CALL(sslClient_setTimeout(SSLClientHandel, 10000));
         STRICT_EXPECTED_CALL(sslClient_hostByName(TEST_CREATE_CONNECTION_HOST_NAME, IGNORED_PTR_ARG)).IgnoreArgument(2);
         STRICT_EXPECTED_CALL(sslClient_delete(IGNORED_PTR_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)).IgnoreArgument(1);
@@ -2945,7 +2948,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
-        my_sslClient_new_return = SSLCLIENT_HANDEL_NOT_NULL;
+        my_sslClient_new_return = SSLClientHandel;
         whenShallmalloc_fail = 1;
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
