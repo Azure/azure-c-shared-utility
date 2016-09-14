@@ -517,6 +517,13 @@ static int send_handshake_bytes(TLS_IO_INSTANCE* tls_io_instance)
 {
     int result;
 
+	if (tls_io_instance->ssl == NULL)
+	{
+		result = __LINE__;
+		LogError("SSL channel closed in send_handshake_bytes.");
+		return result;
+	}
+
     if (SSL_is_init_finished(tls_io_instance->ssl))
     {
         tls_io_instance->tlsio_state = TLSIO_STATE_OPEN;
@@ -637,8 +644,16 @@ static int decode_ssl_received_bytes(TLS_IO_INSTANCE* tls_io_instance)
     unsigned char buffer[64];
 
     int rcv_bytes = 1;
+
     while (rcv_bytes > 0)
     {
+		if (tls_io_instance->ssl == NULL)
+		{
+			result = __LINE__;
+			LogError("SSL channel closed in decode_ssl_received_bytes.");
+			return result;
+		}
+
         rcv_bytes = SSL_read(tls_io_instance->ssl, buffer, sizeof(buffer));
         if (rcv_bytes > 0)
         {
@@ -702,7 +717,9 @@ static void destroy_openssl_instance(TLS_IO_INSTANCE* tls_io_instance)
     if (tls_io_instance != NULL)
     {
         SSL_free(tls_io_instance->ssl);
+		tls_io_instance->ssl = NULL;
         SSL_CTX_free(tls_io_instance->ssl_context);
+		tls_io_instance->ssl_context = NULL;
     }
 }
 
@@ -1108,6 +1125,13 @@ int tlsio_openssl_send(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t siz
         }
         else
         {
+			if (tls_io_instance->ssl == NULL)
+			{
+				result = __LINE__;
+				LogError("SSL channel closed in tlsio_openssl_send.");
+				return result;
+			}
+
             int res = SSL_write(tls_io_instance->ssl, buffer, size);
             if (res != (int)size)
             {
