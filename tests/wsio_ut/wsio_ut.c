@@ -61,6 +61,8 @@ TEST_DEFINE_ENUM_TYPE(my_lws_write_protocol_enum, lws_write_protocol_VALUES);
 IMPLEMENT_UMOCK_C_ENUM_TYPE(my_lws_write_protocol_enum, lws_write_protocol_VALUES);
 TEST_DEFINE_ENUM_TYPE(IO_SEND_RESULT, IO_SEND_RESULT_VALUES);
 IMPLEMENT_UMOCK_C_ENUM_TYPE(IO_SEND_RESULT, IO_SEND_RESULT_VALUES);
+TEST_DEFINE_ENUM_TYPE(OPTIONHANDLER_RESULT, OPTIONHANDLER_RESULT_VALUES);
+IMPLEMENT_UMOCK_C_ENUM_TYPE(OPTIONHANDLER_RESULT, OPTIONHANDLER_RESULT_VALUES);
 
 static size_t currentmalloc_call;
 static size_t whenShallmalloc_fail;
@@ -494,8 +496,7 @@ static WSIO_CONFIG default_wsio_config =
     443,
     "test_ws_protocol",
     "a/b/c",
-    false,
-    "my_trusted_ca_payload"
+    false
 };
 
 // libwebsockets mocks
@@ -590,6 +591,7 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_GLOBAL_MOCK_RETURN(OptionHandler_AddOption, OPTIONHANDLER_OK);
     REGISTER_TYPE(IO_OPEN_RESULT, IO_OPEN_RESULT);
     REGISTER_TYPE(IO_SEND_RESULT, IO_SEND_RESULT);
+    REGISTER_TYPE(OPTIONHANDLER_RESULT, OPTIONHANDLER_RESULT);
     REGISTER_TYPE(my_lws_write_protocol_enum, my_lws_write_protocol_enum);
     REGISTER_TYPE(const struct lws_context_creation_info*, const_struct_lws_context_creation_info_ptr);
 
@@ -646,7 +648,6 @@ TEST_FUNCTION(wsio_create_with_valid_args_succeeds)
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
 
 	// act
     CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
@@ -682,8 +683,7 @@ TEST_FUNCTION(wsio_create_with_NULL_hostname_fails)
         443,
         "test_ws_protocol",
         "a/b/c",
-        false,
-        "my_trusted_ca_payload"
+        false
     };
 
     // act
@@ -704,8 +704,7 @@ TEST_FUNCTION(wsio_create_with_NULL_protocol_name_fails)
         443,
         NULL,
         "a/b/c",
-        false,
-        "my_trusted_ca_payload"
+        false
     };
 
     // act
@@ -726,8 +725,7 @@ TEST_FUNCTION(wsio_create_with_NULL_relative_path_fails)
         443,
         "test_ws_protocol",
         NULL,
-        false,
-        "my_trusted_ca_payload"
+        false
     };
 
     // act
@@ -736,39 +734,6 @@ TEST_FUNCTION(wsio_create_with_NULL_relative_path_fails)
     // assert
     ASSERT_IS_NULL(wsio);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-}
-
-/* Tests_SRS_WSIO_01_100: [The trusted_ca member shall be optional (it can be NULL).] */
-/* Tests_SRS_WSIO_01_006: [The members host, protocol_name, relative_path and trusted_ca shall be copied for later use (they are needed when the IO is opened).] */
-TEST_FUNCTION(wsio_create_with_NULL_trusted_ca_and_the_Rest_of_the_args_valid_succeeds)
-{
-    // arrange
-    static WSIO_CONFIG test_wsio_config =
-    {
-        "testhost",
-        443,
-        "test_ws_protocol",
-        "a/b/c",
-        false,
-        NULL
-    };
-
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(list_create());
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-
-    // act
-    CONCRETE_IO_HANDLE wsio = wsio_create(&test_wsio_config);
-
-    // assert
-    ASSERT_IS_NOT_NULL(wsio);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
 }
 
 /* Tests_SRS_WSIO_01_005: [If allocating memory for the new wsio instance fails then wsio_create shall return NULL.] */
@@ -876,33 +841,6 @@ TEST_FUNCTION(when_allocating_memory_for_the_protocols_fails_wsio_create_fails)
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
         .SetReturn((LIST_HANDLE)NULL);
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(list_destroy(TEST_LIST_HANDLE));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-
-    // act
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-
-    // assert
-    ASSERT_IS_NULL(wsio);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-}
-
-/* Tests_SRS_WSIO_01_005: [If allocating memory for the new wsio instance fails then wsio_create shall return NULL.] */
-TEST_FUNCTION(when_allocating_memory_for_the_trusted_ca_fails_wsio_create_fails)
-{
-    // arrange
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(list_create());
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
-        .SetReturn((LIST_HANDLE)NULL);
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
@@ -1084,8 +1022,7 @@ TEST_FUNCTION(wsio_open_with_different_config_succeeds)
         1234,
         "another_proto",
         "d1/e2/f3",
-        true,
-        "booohoo"
+        true
     };
     CONCRETE_IO_HANDLE wsio = wsio_create(&wsio_config);
     struct lws_context_creation_info lws_context_info;
@@ -3427,6 +3364,7 @@ TEST_FUNCTION(LOAD_EXTRA_CLIENT_VERIFY_CERTS_with_a_string_that_has_no_certs_add
     // arrange
     CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
     (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
+    (void)wsio_setoption(wsio, "TrustedCerts", "boohoo");
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
@@ -3435,8 +3373,8 @@ TEST_FUNCTION(LOAD_EXTRA_CLIENT_VERIFY_CERTS_with_a_string_that_has_no_certs_add
     STRICT_EXPECTED_CALL(SSL_CTX_get_cert_store(TEST_SSL_CONTEXT));
     STRICT_EXPECTED_CALL(BIO_s_mem());
     STRICT_EXPECTED_CALL(BIO_new(TEST_BIO_METHOD));
-    STRICT_EXPECTED_CALL(BIO_puts(TEST_BIO, default_wsio_config.trusted_ca))
-        .SetReturn((int)strlen(default_wsio_config.trusted_ca));
+    STRICT_EXPECTED_CALL(BIO_puts(TEST_BIO, "boohoo"))
+        .SetReturn((int)strlen("boohoo"));
     STRICT_EXPECTED_CALL(PEM_read_bio_X509(TEST_BIO, NULL, NULL, NULL))
         .SetReturn((X509*)NULL);
     STRICT_EXPECTED_CALL(BIO_free(TEST_BIO));
@@ -3458,6 +3396,7 @@ TEST_FUNCTION(LOAD_EXTRA_CLIENT_VERIFY_CERTS_with_a_string_that_has_1_cert_loads
     // arrange
     CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
     (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
+    (void)wsio_setoption(wsio, "TrustedCerts", "boohoo");
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
@@ -3466,8 +3405,8 @@ TEST_FUNCTION(LOAD_EXTRA_CLIENT_VERIFY_CERTS_with_a_string_that_has_1_cert_loads
     STRICT_EXPECTED_CALL(SSL_CTX_get_cert_store(TEST_SSL_CONTEXT));
     STRICT_EXPECTED_CALL(BIO_s_mem());
     STRICT_EXPECTED_CALL(BIO_new(TEST_BIO_METHOD));
-    STRICT_EXPECTED_CALL(BIO_puts(TEST_BIO, default_wsio_config.trusted_ca))
-        .SetReturn((int)strlen(default_wsio_config.trusted_ca));
+    STRICT_EXPECTED_CALL(BIO_puts(TEST_BIO, "boohoo"))
+        .SetReturn((int)strlen("boohoo"));
     STRICT_EXPECTED_CALL(PEM_read_bio_X509(TEST_BIO, NULL, NULL, NULL))
         .SetReturn(TEST_X509_CERT_1);
     STRICT_EXPECTED_CALL(X509_STORE_add_cert(TEST_CERT_STORE, TEST_X509_CERT_1));
@@ -3492,6 +3431,7 @@ TEST_FUNCTION(LOAD_EXTRA_CLIENT_VERIFY_CERTS_with_a_string_that_has_2_certs_load
     // arrange
     CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
     (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
+    (void)wsio_setoption(wsio, "TrustedCerts", "boohoo");
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
@@ -3500,8 +3440,8 @@ TEST_FUNCTION(LOAD_EXTRA_CLIENT_VERIFY_CERTS_with_a_string_that_has_2_certs_load
     STRICT_EXPECTED_CALL(SSL_CTX_get_cert_store(TEST_SSL_CONTEXT));
     STRICT_EXPECTED_CALL(BIO_s_mem());
     STRICT_EXPECTED_CALL(BIO_new(TEST_BIO_METHOD));
-    STRICT_EXPECTED_CALL(BIO_puts(TEST_BIO, default_wsio_config.trusted_ca))
-        .SetReturn((int)strlen(default_wsio_config.trusted_ca));
+    STRICT_EXPECTED_CALL(BIO_puts(TEST_BIO, "boohoo"))
+        .SetReturn((int)strlen("boohoo"));
     STRICT_EXPECTED_CALL(PEM_read_bio_X509(TEST_BIO, NULL, NULL, NULL))
         .SetReturn(TEST_X509_CERT_1);
     STRICT_EXPECTED_CALL(X509_STORE_add_cert(TEST_CERT_STORE, TEST_X509_CERT_1));
@@ -3554,6 +3494,7 @@ TEST_FUNCTION(when_getting_the_cert_store_fails_in_LOAD_EXTRA_CLIENT_VERIFY_CERT
     // arrange
     CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
     (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
+    (void)wsio_setoption(wsio, "TrustedCerts", "boohoo");
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
@@ -3579,6 +3520,7 @@ TEST_FUNCTION(when_getting_the_memory_BIO_METHOD_fails_in_LOAD_EXTRA_CLIENT_VERI
     // arrange
     CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
     (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
+    (void)wsio_setoption(wsio, "TrustedCerts", "boohoo");
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
@@ -3605,6 +3547,7 @@ TEST_FUNCTION(when_creating_the_BIO_fails_in_LOAD_EXTRA_CLIENT_VERIFY_CERTS_an_o
     // arrange
     CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
     (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
+    (void)wsio_setoption(wsio, "TrustedCerts", "boohoo");
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
@@ -3632,6 +3575,7 @@ TEST_FUNCTION(when_setting_the_input_string_for_the_memory_BIO_fails_with_0_in_L
     // arrange
     CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
     (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
+    (void)wsio_setoption(wsio, "TrustedCerts", "boohoo");
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
@@ -3640,7 +3584,7 @@ TEST_FUNCTION(when_setting_the_input_string_for_the_memory_BIO_fails_with_0_in_L
     STRICT_EXPECTED_CALL(SSL_CTX_get_cert_store(TEST_SSL_CONTEXT));
     STRICT_EXPECTED_CALL(BIO_s_mem());
     STRICT_EXPECTED_CALL(BIO_new(TEST_BIO_METHOD));
-    STRICT_EXPECTED_CALL(BIO_puts(TEST_BIO, default_wsio_config.trusted_ca))
+    STRICT_EXPECTED_CALL(BIO_puts(TEST_BIO, "boohoo"))
         .SetReturn(0);
     STRICT_EXPECTED_CALL(BIO_free(TEST_BIO));
     STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_ERROR));
@@ -3661,6 +3605,7 @@ TEST_FUNCTION(when_setting_the_input_string_for_the_memory_BIO_fails_with_len_mi
     // arrange
     CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
     (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
+    (void)wsio_setoption(wsio, "TrustedCerts", "boohoo");
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
@@ -3669,8 +3614,8 @@ TEST_FUNCTION(when_setting_the_input_string_for_the_memory_BIO_fails_with_len_mi
     STRICT_EXPECTED_CALL(SSL_CTX_get_cert_store(TEST_SSL_CONTEXT));
     STRICT_EXPECTED_CALL(BIO_s_mem());
     STRICT_EXPECTED_CALL(BIO_new(TEST_BIO_METHOD));
-    STRICT_EXPECTED_CALL(BIO_puts(TEST_BIO, default_wsio_config.trusted_ca))
-        .SetReturn((int)strlen(default_wsio_config.trusted_ca) - 1);
+    STRICT_EXPECTED_CALL(BIO_puts(TEST_BIO, "boohoo"))
+        .SetReturn((int)strlen("boohoo") - 1);
     STRICT_EXPECTED_CALL(BIO_free(TEST_BIO));
     STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_ERROR));
 
@@ -3690,6 +3635,7 @@ TEST_FUNCTION(when_setting_the_input_string_for_the_memory_BIO_fails_with_len_pl
     // arrange
     CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
     (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
+    (void)wsio_setoption(wsio, "TrustedCerts", "boohoo");
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
@@ -3698,8 +3644,8 @@ TEST_FUNCTION(when_setting_the_input_string_for_the_memory_BIO_fails_with_len_pl
     STRICT_EXPECTED_CALL(SSL_CTX_get_cert_store(TEST_SSL_CONTEXT));
     STRICT_EXPECTED_CALL(BIO_s_mem());
     STRICT_EXPECTED_CALL(BIO_new(TEST_BIO_METHOD));
-    STRICT_EXPECTED_CALL(BIO_puts(TEST_BIO, default_wsio_config.trusted_ca))
-        .SetReturn((int)strlen(default_wsio_config.trusted_ca) + 1);
+    STRICT_EXPECTED_CALL(BIO_puts(TEST_BIO, "boohoo"))
+        .SetReturn((int)strlen("boohoo") + 1);
     STRICT_EXPECTED_CALL(BIO_free(TEST_BIO));
     STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_ERROR));
 
@@ -3720,6 +3666,7 @@ TEST_FUNCTION(when_adding_the_cert_to_the_store_fails_in_LOAD_EXTRA_CLIENT_VERIF
     // arrange
     CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
     (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
+    (void)wsio_setoption(wsio, "TrustedCerts", "boohoo");
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
@@ -3728,8 +3675,8 @@ TEST_FUNCTION(when_adding_the_cert_to_the_store_fails_in_LOAD_EXTRA_CLIENT_VERIF
     STRICT_EXPECTED_CALL(SSL_CTX_get_cert_store(TEST_SSL_CONTEXT));
     STRICT_EXPECTED_CALL(BIO_s_mem());
     STRICT_EXPECTED_CALL(BIO_new(TEST_BIO_METHOD));
-    STRICT_EXPECTED_CALL(BIO_puts(TEST_BIO, default_wsio_config.trusted_ca))
-        .SetReturn((int)strlen(default_wsio_config.trusted_ca));
+    STRICT_EXPECTED_CALL(BIO_puts(TEST_BIO, "boohoo"))
+        .SetReturn((int)strlen("boohoo"));
     STRICT_EXPECTED_CALL(PEM_read_bio_X509(TEST_BIO, NULL, NULL, NULL))
         .SetReturn(TEST_X509_CERT_1);
     STRICT_EXPECTED_CALL(X509_STORE_add_cert(TEST_CERT_STORE, TEST_X509_CERT_1))
@@ -3761,7 +3708,7 @@ TEST_FUNCTION(wsio_retrieveoptions_with_NULL_handle_returns_NULL)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/*Tests_SRS_WSIO_02_002: [ wsio_retrieveoptions shall produce an empty OPTIOHANDLER_HANDLE. ]*/
+/*Tests_SRS_WSIO_02_002: [** `wsio_retrieveoptions` shall produce an OPTIONHANDLER_HANDLE. ]*/
 TEST_FUNCTION(wsio_retrieveoptions_returns_non_NULL_empty)
 {
     ///arrange
@@ -3805,7 +3752,8 @@ TEST_FUNCTION(wsio_retrieveoptions_when_OptionHandler_Create_fails_it_fails)
     wsio_destroy(wsio);
 }
 
-TEST_FUNCTION(wsio_setoption_socket_io_NULL_fails)
+/* Tests_SRS_WSIO_01_136: [ If any of the arguments ws_io or option_name is NULL wsio_setoption shall return a non-zero value. ] ]*/
+TEST_FUNCTION(wsio_setoption_with_NULL_io_handle_fails)
 {
     //arrange
     HTTP_PROXY_OPTIONS proxy_options;
@@ -3824,7 +3772,8 @@ TEST_FUNCTION(wsio_setoption_socket_io_NULL_fails)
     // cleanup
 }
 
-TEST_FUNCTION(wsio_setoption_option_name_NULL_fails)
+/* Tests_SRS_WSIO_01_136: [ If any of the arguments ws_io or option_name is NULL wsio_setoption shall return a non-zero value. ] ]*/
+TEST_FUNCTION(wsio_setoption_with_NULL_option_name_fails)
 {
     //arrange
     CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
@@ -3846,23 +3795,7 @@ TEST_FUNCTION(wsio_setoption_option_name_NULL_fails)
     wsio_destroy(wsio);
 }
 
-TEST_FUNCTION(wsio_setoption_value_NULL_fails)
-{
-    //arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    umock_c_reset_all_calls();
-
-    // act
-    int option_result = wsio_setoption(wsio, OPTION_HTTP_PROXY, NULL);
-
-    // assert
-    ASSERT_ARE_NOT_EQUAL(int, 0, option_result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
+/* Tests_SRS_WSIO_01_137: [ If the option_name argument indicates an option that is not handled by wsio, then wsio_setoption shall return a non-zero value. ]*/
 TEST_FUNCTION(wsio_setoption_optionName_invalid_fails)
 {
     //arrange
@@ -3880,6 +3813,72 @@ TEST_FUNCTION(wsio_setoption_optionName_invalid_fails)
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, option_result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_134: [ - "TrustedCerts" - a char\* that shall be saved by wsio as it shall be used to validate the server cert in the LWS_CALLBACK_OPENSSL_LOAD_EXTRA_CLIENT_VERIFY_CERTS callback. ]*/
+/* Tests_SRS_WSIO_01_138: [ If the option was handled by wsio, then wsio_setoption shall return 0. ]*/
+TEST_FUNCTION(wsio_setoption_with_trustedcerts_succeeds)
+{
+    //arrange
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_NUM_ARG, "pupu"))
+        .IgnoreArgument_destination();
+
+    // act
+    int option_result = wsio_setoption(wsio, "TrustedCerts", "pupu");
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, option_result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_139: [ If a previous TrustedCerts option was saved, then the previous value shall be freed. ]*/
+TEST_FUNCTION(wsio_setoption_with_a_previous_trustedcerts_frees_the_previous_string)
+{
+    //arrange
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+    (void)wsio_setoption(wsio, "TrustedCerts", "boohoo");
+    umock_c_reset_all_calls();
+
+    EXPECTED_CALL(gballoc_free(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_NUM_ARG, "pupu"))
+        .IgnoreArgument_destination();
+
+    // act
+    int option_result = wsio_setoption(wsio, "TrustedCerts", "pupu");
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, option_result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_148: [ A NULL value shall be allowed for TrustedCerts, in which case the previously stored TrustedCerts option value shall be cleared. ]*/
+TEST_FUNCTION(wsio_setoption_with_trustedcerts_and_NULL_value_clears_the_TrustedCerts_option)
+{
+    //arrange
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+    (void)wsio_setoption(wsio, "TrustedCerts", "boohoo");
+    umock_c_reset_all_calls();
+
+    EXPECTED_CALL(gballoc_free(IGNORED_NUM_ARG));
+
+    // act
+    int option_result = wsio_setoption(wsio, "TrustedCerts", NULL);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, option_result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
@@ -3984,6 +3983,9 @@ TEST_FUNCTION(wsio_setoption_username_valid_password_NULL_fail)
     wsio_destroy(wsio);
 }
 
+/* wsio_clone_option */
+
+/* Tests_SRS_WSIO_01_140: [ If the name or value arguments are NULL, wsio_clone_option shall return NULL. ]*/
 TEST_FUNCTION(wsio_cloneoption_name_NULL_fail)
 {
     //arrange
@@ -3998,7 +4000,7 @@ TEST_FUNCTION(wsio_cloneoption_name_NULL_fail)
     proxy_options.password = TEST_PASSWORD;
 
     // act
-    void* option_result = wsio_CloneOption(NULL, &proxy_options);
+    void* option_result = wsio_clone_option(NULL, &proxy_options);
 
     // assert
     ASSERT_IS_NULL(option_result);
@@ -4008,6 +4010,7 @@ TEST_FUNCTION(wsio_cloneoption_name_NULL_fail)
     wsio_destroy(wsio);
 }
 
+/* Tests_SRS_WSIO_01_140: [ If the name or value arguments are NULL, wsio_clone_option shall return NULL. ]*/
 TEST_FUNCTION(wsio_cloneoption_value_NULL_fail)
 {
     //arrange
@@ -4016,14 +4019,14 @@ TEST_FUNCTION(wsio_cloneoption_value_NULL_fail)
     umock_c_reset_all_calls();
 
     // act
-    void* option_result = wsio_CloneOption(OPTION_HTTP_PROXY, NULL);
+    void* option_result = wsio_clone_option(OPTION_HTTP_PROXY, NULL);
 
     // assert
     ASSERT_IS_NULL(option_result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
-    wsio_DestroyOption(OPTION_HTTP_PROXY, option_result);
+    wsio_destroy_option(OPTION_HTTP_PROXY, option_result);
     wsio_destroy(wsio);
 }
 
@@ -4037,14 +4040,14 @@ TEST_FUNCTION(wsio_cloneoption_proxy_address_succeed)
     EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
 
     // act
-    void* option_result = wsio_CloneOption(OPTION_PROXY_ADDRESS, TEST_HOST_ADDRESS);
+    void* option_result = wsio_clone_option(OPTION_PROXY_ADDRESS, TEST_HOST_ADDRESS);
 
     // assert
     ASSERT_IS_NOT_NULL(option_result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
-    wsio_DestroyOption(OPTION_PROXY_ADDRESS, option_result);
+    wsio_destroy_option(OPTION_PROXY_ADDRESS, option_result);
     wsio_destroy(wsio);
 }
 
@@ -4059,18 +4062,68 @@ TEST_FUNCTION(wsio_cloneoption_proxy_port_succeed)
 
     // act
     int port = 8080;
-    void* option_result = wsio_CloneOption(OPTION_PROXY_PORT, &port);
+    void* option_result = wsio_clone_option(OPTION_PROXY_PORT, &port);
 
     // assert
     ASSERT_IS_NOT_NULL(option_result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
-    wsio_DestroyOption(OPTION_PROXY_PORT, option_result);
+    wsio_destroy_option(OPTION_PROXY_PORT, option_result);
     wsio_destroy(wsio);
 }
 
-TEST_FUNCTION(wsio_destroyoption_name_NULL_fail)
+/* Tests_SRS_WSIO_01_141: [ wsio_clone_option shall clone the option named `TrustedCerts` by calling mallocAndStrcpy_s. ]*/
+/* Tests_SRS_WSIO_01_143: [ On success it shall return a non-NULL pointer to the cloned option. ]*/
+TEST_FUNCTION(wsio_cloneoption_clones_TrustedCerts)
+{
+    //arrange
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+    (void)wsio_setoption(wsio, "TrustedCerts", "boohoo");
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_NUM_ARG, "boohoo"))
+        .IgnoreArgument_destination();
+
+    // act
+    void* option_result = wsio_clone_option("TrustedCerts", "boohoo");
+
+    // assert
+    ASSERT_IS_NOT_NULL(option_result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_destroy_option("TrustedCerts", option_result);
+    wsio_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_142: [ If mallocAndStrcpy_s for `TrustedCerts` fails, wsio_clone_option shall return NULL. ]*/
+TEST_FUNCTION(when_cloning_the_TrustedCerts_option_fails_then_wsio_cloneoption_fails)
+{
+    //arrange
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+    (void)wsio_setoption(wsio, "TrustedCerts", "boohoo");
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_NUM_ARG, "boohoo"))
+        .IgnoreArgument_destination()
+        .SetReturn(1);
+
+    // act
+    void* option_result = wsio_clone_option("TrustedCerts", "boohoo");
+
+    // assert
+    ASSERT_IS_NULL(option_result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_destroy(wsio);
+}
+
+/* wsio_destroy_option */
+
+/* Tests_SRS_WSIO_01_147: [ If any of the arguments is NULL, wsio_destroy_option shall do nothing. ]*/
+TEST_FUNCTION(wsio_destroy_option_name_NULL_fail)
 {
     //arrange
     CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
@@ -4079,7 +4132,7 @@ TEST_FUNCTION(wsio_destroyoption_name_NULL_fail)
 
     // act
     int port = 8080;
-    wsio_DestroyOption(NULL, &port);
+    wsio_destroy_option(NULL, &port);
 
     // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -4088,7 +4141,8 @@ TEST_FUNCTION(wsio_destroyoption_name_NULL_fail)
     wsio_destroy(wsio);
 }
 
-TEST_FUNCTION(wsio_destroyoption_value_NULL_fail)
+/* Tests_SRS_WSIO_01_147: [ If any of the arguments is NULL, wsio_destroy_option shall do nothing. ]*/
+TEST_FUNCTION(wsio_destroy_option_value_NULL_fail)
 {
     //arrange
     CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
@@ -4096,7 +4150,7 @@ TEST_FUNCTION(wsio_destroyoption_value_NULL_fail)
     umock_c_reset_all_calls();
 
     // act
-    wsio_DestroyOption(OPTION_PROXY_PORT, NULL);
+    wsio_destroy_option(OPTION_PROXY_PORT, NULL);
 
     // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -4105,6 +4159,30 @@ TEST_FUNCTION(wsio_destroyoption_value_NULL_fail)
     wsio_destroy(wsio);
 }
 
+/* Tests_SRS_WSIO_01_144: [ If the option name is `TrustedCerts`, wsio_destroy_option shall free the char\* option indicated by value. ]*/
+TEST_FUNCTION(wsio_destroy_TrustedCerts_option_succeeds)
+{
+    //arrange
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+    (void)wsio_setoption(wsio, "TrustedCerts", "boohoo");
+    void* option_result = wsio_clone_option("TrustedCerts", "boohoo");
+    umock_c_reset_all_calls();
+
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+
+    // act
+    wsio_destroy_option("TrustedCerts", option_result);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_destroy(wsio);
+}
+
+/* wsio_retrieveoptions */
+
+/*Tests_SRS_WSIO_02_001: [ If parameter handle is NULL then wsio_retrieveoptions shall fail and return NULL. */
 TEST_FUNCTION(wsio_retrieveoptions_handle_NULL_fail)
 {
     //arrange
@@ -4123,7 +4201,7 @@ TEST_FUNCTION(wsio_retrieveoptions_handle_NULL_fail)
     wsio_destroy(wsio);
 }
 
-TEST_FUNCTION(wsio_retrieveoptions_handle_succeed)
+TEST_FUNCTION(wsio_retrieveoptions_returns_previously_set_proxy_options)
 {
     //arrange
     CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
@@ -4151,6 +4229,65 @@ TEST_FUNCTION(wsio_retrieveoptions_handle_succeed)
 
     // cleanup
     OptionHandler_Destroy(handle);
+    wsio_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_02_002: [ `wsio_retrieveoptions` shall produce an OPTIONHANDLER_HANDLE. ]*/
+/* Tests_SRS_WSIO_01_145: [ `wsio_retrieveoptions` shall add to it the options: ]*/
+/* Tests_SRS_WSIO_01_146: [ - TrustedCerts ]*/
+TEST_FUNCTION(wsio_retrieveoptions_returns_previously_set_trusted_certs_option)
+{
+    //arrange
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+    OPTIONHANDLER_HANDLE optionhandler_handle;
+    (void)wsio_setoption(wsio, "TrustedCerts", "boohoo");
+
+    umock_c_reset_all_calls();
+
+    EXPECTED_CALL(OptionHandler_Create(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+        .CaptureReturn(&optionhandler_handle);
+    STRICT_EXPECTED_CALL(OptionHandler_AddOption(IGNORED_PTR_ARG, "TrustedCerts", IGNORED_PTR_ARG))
+        .ValidateArgumentValue_handle(&optionhandler_handle)
+        .ValidateArgumentBuffer(3, "boohoo", sizeof("boohoo"));
+
+    // act
+    OPTIONHANDLER_HANDLE handle = wsio_retrieveoptions(wsio);
+
+    // assert
+    ASSERT_IS_NOT_NULL(handle);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    OptionHandler_Destroy(handle);
+    wsio_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_02_003: [ If producing the OPTIONHANDLER_HANDLE fails then wsio_retrieveoptions shall fail and return NULL. ]*/
+TEST_FUNCTION(when_AddOption_fails_wsio_retrieveoptions_fails)
+{
+    //arrange
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+    OPTIONHANDLER_HANDLE optionhandler_handle;
+    (void)wsio_setoption(wsio, "TrustedCerts", "boohoo");
+
+    umock_c_reset_all_calls();
+
+    EXPECTED_CALL(OptionHandler_Create(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+        .CaptureReturn(&optionhandler_handle);
+    STRICT_EXPECTED_CALL(OptionHandler_AddOption(IGNORED_PTR_ARG, "TrustedCerts", IGNORED_PTR_ARG))
+        .IgnoreArgument_handle().IgnoreArgument_value()
+        .SetReturn(OPTIONHANDLER_ERROR);
+    STRICT_EXPECTED_CALL(OptionHandler_Destroy(IGNORED_PTR_ARG))
+        .ValidateArgumentValue_handle(&optionhandler_handle);
+
+    // act
+    OPTIONHANDLER_HANDLE handle = wsio_retrieveoptions(wsio);
+
+    // assert
+    ASSERT_IS_NULL(handle);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
     wsio_destroy(wsio);
 }
 

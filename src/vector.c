@@ -125,7 +125,7 @@ void* VECTOR_element(const VECTOR_HANDLE handle, size_t index)
     if (handle != NULL)
     {
         const VECTOR* vec = (const VECTOR*)handle;
-        if (index <= vec->count)
+        if (index < vec->count)
         {
             result = (unsigned char*)vec->storage + (vec->elementSize * index);
         }

@@ -5,6 +5,7 @@
 
 int main(int argc, void** argv)
 {
+    (void)argc, argv;
     (void)printf("Hello world");
     return 0;
 }
