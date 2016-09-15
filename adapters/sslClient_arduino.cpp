@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+#include <IPAddress.h>
 #include "sslClient_arduino.h"
 #include "azure_c_shared_utility/xlogging.h"
 
@@ -79,12 +80,13 @@ int sslClient_connect(SSLCLIENT_HANDLE handle, uint32_t ipAddress, uint16_t port
     if (handle == NULL)
     {
         LogError("NULL handle.");
-        result = (int)0;
+        result = 0;
     }
     else
     {
         Client* sslClient = (Client*)handle;
-        resutl = (int)sslClient->connect(new IPAddress(ipAddress), port);
+        IPAddress* ip = new IPAddress(ipAddress);
+        result = (int)sslClient->connect(*ip, port);
     }
     return result;
 }
@@ -124,7 +126,7 @@ int sslClient_read(SSLCLIENT_HANDLE handle, uint8_t *buf, size_t size)
     if (handle == NULL)
     {
         LogError("NULL handle.");
-        result = (int)0;
+        result = 0;
     }
     else
     {
@@ -136,6 +138,9 @@ int sslClient_read(SSLCLIENT_HANDLE handle, uint8_t *buf, size_t size)
 
 uint8_t sslClient_hostByName(const char* hostName, uint32_t* ipAddress)
 {
-    return WiFi.hostByName(hostname, ipAddress);
+    IPAddress ip;
+    uint8_t result = WiFi.hostByName(hostName, ip);
+    (*ipAddress) = (uint32_t)ip;
+    return result;
 }
 
