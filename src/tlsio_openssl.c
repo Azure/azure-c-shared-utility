@@ -12,6 +12,7 @@
 #include "openssl/opensslv.h"
 #include <stdio.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include "azure_c_shared_utility/lock.h"
 #include "azure_c_shared_utility/tlsio.h"
 #include "azure_c_shared_utility/tlsio_openssl.h"
@@ -214,7 +215,7 @@ static OPTIONHANDLER_HANDLE tlsio_openssl_retrieveoptions(CONCRETE_IO_HANDLE han
             }
 			else if (tls_io_instance->tls_version != 0)
 			{
-				if (OptionHandler_AddOption(result, "tls_version", (const char*)tls_io_instance->tls_version) != 0)
+				if (OptionHandler_AddOption(result, "tls_version", (void*)(intptr_t)tls_io_instance->tls_version) != 0)
 				{
 					LogError("unable to save tls_version option");
 					OptionHandler_Destroy(result);
@@ -931,7 +932,6 @@ void tlsio_openssl_deinit(void)
 	CRYPTO_set_locking_callback(NULL);
 	CRYPTO_set_id_callback(NULL);
 	ERR_remove_state(0);
-	SSL_COMP_free_compression_methods();
     ERR_free_strings();
 	EVP_cleanup();
 	CRYPTO_cleanup_all_ex_data();
@@ -1285,7 +1285,7 @@ int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
         }
 		else if (strcmp("tls_version", optionName) == 0)
 		{
-			tls_io_instance->tls_version = (int)value;
+			tls_io_instance->tls_version = (int)(intptr_t)value;
 			result = 0;
 		}
         else
