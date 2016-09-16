@@ -421,7 +421,7 @@ function(c_windows_unittests_add_dll whatIsBuilding folder)
         endif()
         
         if(PARSING_ADDITIONAL_LIBS)
-            target_link_libraries(${whatIsBuilding}_exe ${f})
+            target_link_libraries(${whatIsBuilding}_dll ${f})
         endif() 
         
     endforeach()
