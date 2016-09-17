@@ -231,10 +231,31 @@ function(windows_unittests_add_dll whatIsBuilding)
     )
 
     set_test_target_folder(${whatIsBuilding} "dll")
+
+    set(PARSING_ADDITIONAL_LIBS OFF)
+    set(PARSING_VALGRIND_SUPPRESSIONS_FILE OFF)
+    set(VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER)
+    foreach(f ${ARGN})
+        if(${f} STREQUAL "ADDITIONAL_LIBS")
+            SET(PARSING_ADDITIONAL_LIBS ON)
+            SET(PARSING_VALGRIND_SUPPRESSIONS_FILE OFF)
+            #also unset all the other states
+            continue()
+        elseif(${f} STREQUAL "VALGRIND_SUPPRESSIONS_FILE")
+            SET(PARSING_ADDITIONAL_LIBS OFF)
+            SET(PARSING_VALGRIND_SUPPRESSIONS_FILE ON)
+            continue()
+        endif()
+        
+        if(PARSING_ADDITIONAL_LIBS)
+            target_link_libraries(${whatIsBuilding}_dll ${f})
+        endif() 
+        
+    endforeach()
     
     target_include_directories(${whatIsBuilding}_dll PUBLIC ${sharedutil_include_directories} $ENV{VCInstallDir}UnitTest/include)
     target_compile_definitions(${whatIsBuilding}_dll PUBLIC -DCPP_UNITTEST)
-    target_link_libraries(${whatIsBuilding}_dll micromock_cpp_unittest umock_c ctest testrunnerswitcher ${ARGN})
+    target_link_libraries(${whatIsBuilding}_dll micromock_cpp_unittest umock_c ctest testrunnerswitcher)
 endfunction()
 
 function(windows_unittests_add_exe whatIsBuilding)
@@ -249,9 +270,30 @@ function(windows_unittests_add_exe whatIsBuilding)
 
     set_test_target_folder(${whatIsBuilding} "exe")
                 
+    set(PARSING_ADDITIONAL_LIBS OFF)
+    set(PARSING_VALGRIND_SUPPRESSIONS_FILE OFF)
+    set(VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER)
+    foreach(f ${ARGN})
+        if(${f} STREQUAL "ADDITIONAL_LIBS")
+            SET(PARSING_ADDITIONAL_LIBS ON)
+            SET(PARSING_VALGRIND_SUPPRESSIONS_FILE OFF)
+            #also unset all the other states
+            continue()
+        elseif(${f} STREQUAL "VALGRIND_SUPPRESSIONS_FILE")
+            SET(PARSING_ADDITIONAL_LIBS OFF)
+            SET(PARSING_VALGRIND_SUPPRESSIONS_FILE ON)
+            continue()
+        endif()
+        
+        if(PARSING_ADDITIONAL_LIBS)
+            target_link_libraries(${whatIsBuilding}_exe ${f})
+        endif() 
+        
+    endforeach()
+				
     target_compile_definitions(${whatIsBuilding}_exe PUBLIC -DUSE_CTEST)
     target_include_directories(${whatIsBuilding}_exe PUBLIC ${sharedutil_include_directories})
-    target_link_libraries(${whatIsBuilding}_exe micromock_ctest umock_c ctest testrunnerswitcher ${ARGN})
+    target_link_libraries(${whatIsBuilding}_exe micromock_ctest umock_c ctest testrunnerswitcher)
     add_test(NAME ${whatIsBuilding} COMMAND ${whatIsBuilding}_exe)
 endfunction()
 
