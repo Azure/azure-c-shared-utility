@@ -3,10 +3,8 @@
 
 cmake_minimum_required(VERSION 2.8.11)
 
-if (DEFINED AZURE_C_SHARED_UTILITY_BUILT)
+if (TARGET aziotsharedutil)
     RETURN()
-else()
-    SET(AZURE_C_SHARED_UTILITY_BUILT ON)
 endif()
 
 project(azure_c_shared_utility)
@@ -825,11 +823,6 @@ endif()
 if(WIN32)
 else()
     add_files_to_install("${source_h_files}")
-endif()
-
-get_directory_property(hasParent PARENT_DIRECTORY)
-if(hasParent)
-    set(AZURE_C_SHARED_UTILITY_BUILT "77772C70-53C7-4CB0" PARENT_SCOPE)
 endif()
 
 IF(WIN32)
