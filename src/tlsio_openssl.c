@@ -927,13 +927,13 @@ void tlsio_openssl_deinit(void)
 {
     openssl_dynamic_locks_uninstall();
     openssl_static_locks_uninstall();
-
 	FIPS_mode_set(0);
 	CRYPTO_set_locking_callback(NULL);
 	CRYPTO_set_id_callback(NULL);
 	ERR_remove_state(0);
     ERR_free_strings();
 	EVP_cleanup();
+	SSL_COMP_free_compression_methods();
 	CRYPTO_cleanup_all_ex_data();
 }
 
