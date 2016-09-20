@@ -2,8 +2,6 @@
 @REM Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 @setlocal EnableExtensions EnableDelayedExpansion
-
-@setlocal
 @echo off
 
 set current-path=%~dp0
@@ -14,6 +12,19 @@ set current-path=%current-path:~0,-1%
 set build-root=%current-path%\..
 rem // resolve to fully qualified path
 for %%i in ("%build-root%") do set build-root=%%~fi
+
+REM check that we have a valid argument
+if "%1" equ "" (
+  set jenkins_job=_integrate-into-develop
+) else if /i "%1" equ "c" (
+  set jenkins_job=_integrate-into-develop-c-and-wrappers
+) else (
+  echo Usage:
+  echo kick_jenkins
+  echo     or
+  echo kick_jenkins c
+  exit /b 1
+)
 
 REM check that we have java handy
 call :checkExists java
@@ -82,11 +93,12 @@ echo commit_id: %current_branch%
 echo repo_url:  %repo_url%
 echo remote:    %remote%
 echo trackingN: %tracking_name%
+echo jenkinJob: %jenkins_job%
 echo ****************************************************************
 
 
 REM kick off the build!
-java -jar "%build-root%"\tools\jenkins-cli.jar -s http://azure-iot-sdks-ci.westus.cloudapp.azure.com:8080/ build _integrate-into-develop -p COMMIT_ID=%tracking_name% -p AZURE_REPO=%repo_url% -p BRANCH_TO_MERGE_TO=develop -s -v
+java -jar "%build-root%"\tools\jenkins-cli.jar -s http://azure-iot-sdks-ci.westus.cloudapp.azure.com:8080/ build %jenkins_job% -p COMMIT_ID=%tracking_name% -p AZURE_REPO=%repo_url% -p BRANCH_TO_MERGE_TO=develop -s -v
 
 rem -----------------------------------------------------------------------------
 rem -- done
