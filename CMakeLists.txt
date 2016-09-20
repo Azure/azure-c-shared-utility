@@ -3,10 +3,8 @@
 
 cmake_minimum_required(VERSION 2.8.11)
 
-if (DEFINED AZURE_C_SHARED_UTILITY_BUILT)
+if (TARGET aziotsharedutil)
     RETURN()
-else()
-    SET(AZURE_C_SHARED_UTILITY_BUILT ON)
 endif()
 
 project(azure_c_shared_utility)
@@ -231,10 +229,34 @@ function(windows_unittests_add_dll whatIsBuilding)
     )
 
     set_test_target_folder(${whatIsBuilding} "dll")
+
+    set(PARSING_ADDITIONAL_LIBS OFF)
+    set(PARSING_VALGRIND_SUPPRESSIONS_FILE OFF)
+    set(VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER)
+    foreach(f ${ARGN})
+        set(skip_to_next FALSE)
+        if(${f} STREQUAL "ADDITIONAL_LIBS")
+            SET(PARSING_ADDITIONAL_LIBS ON)
+            SET(PARSING_VALGRIND_SUPPRESSIONS_FILE OFF)
+            #also unset all the other states
+            set(skip_to_next TRUE)
+        elseif(${f} STREQUAL "VALGRIND_SUPPRESSIONS_FILE")
+            SET(PARSING_ADDITIONAL_LIBS OFF)
+            SET(PARSING_VALGRIND_SUPPRESSIONS_FILE ON)
+            set(skip_to_next TRUE)
+        endif()
+        
+        if(NOT skip_to_next)
+            if(PARSING_ADDITIONAL_LIBS)
+                target_link_libraries(${whatIsBuilding}_dll ${f})
+            endif()
+        endif() 
+        
+    endforeach()
     
     target_include_directories(${whatIsBuilding}_dll PUBLIC ${sharedutil_include_directories} $ENV{VCInstallDir}UnitTest/include)
     target_compile_definitions(${whatIsBuilding}_dll PUBLIC -DCPP_UNITTEST)
-    target_link_libraries(${whatIsBuilding}_dll micromock_cpp_unittest umock_c ctest testrunnerswitcher ${ARGN})
+    target_link_libraries(${whatIsBuilding}_dll micromock_cpp_unittest umock_c ctest testrunnerswitcher)
 endfunction()
 
 function(windows_unittests_add_exe whatIsBuilding)
@@ -249,9 +271,33 @@ function(windows_unittests_add_exe whatIsBuilding)
 
     set_test_target_folder(${whatIsBuilding} "exe")
                 
+    set(PARSING_ADDITIONAL_LIBS OFF)
+    set(PARSING_VALGRIND_SUPPRESSIONS_FILE OFF)
+    set(VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER)
+    foreach(f ${ARGN})
+        set(skip_to_next FALSE)
+        if(${f} STREQUAL "ADDITIONAL_LIBS")
+            SET(PARSING_ADDITIONAL_LIBS ON)
+            SET(PARSING_VALGRIND_SUPPRESSIONS_FILE OFF)
+            #also unset all the other states
+            set(skip_to_next TRUE)
+        elseif(${f} STREQUAL "VALGRIND_SUPPRESSIONS_FILE")
+            SET(PARSING_ADDITIONAL_LIBS OFF)
+            SET(PARSING_VALGRIND_SUPPRESSIONS_FILE ON)
+            set(skip_to_next TRUE)
+        endif()
+        
+        if(NOT skip_to_next)
+            if(PARSING_ADDITIONAL_LIBS)
+                target_link_libraries(${whatIsBuilding}_exe ${f})
+            endif()
+        endif() 
+        
+    endforeach()
+				
     target_compile_definitions(${whatIsBuilding}_exe PUBLIC -DUSE_CTEST)
     target_include_directories(${whatIsBuilding}_exe PUBLIC ${sharedutil_include_directories})
-    target_link_libraries(${whatIsBuilding}_exe micromock_ctest umock_c ctest testrunnerswitcher ${ARGN})
+    target_link_libraries(${whatIsBuilding}_exe micromock_ctest umock_c ctest testrunnerswitcher)
     add_test(NAME ${whatIsBuilding} COMMAND ${whatIsBuilding}_exe)
 endfunction()
 
@@ -276,27 +322,27 @@ function(linux_unittests_add_exe whatIsBuilding)
     #this part detects 
     #   - the additional libraries that might be needed.
     #     additional libraries are started by ADDITIONAL_LIBS parameter and ended by any other known parameter (or end of variable arguments)
-    #   - a valgring suppression file (VALGRIND_SUPRESSIONS_FILE) for memcheck
+    #   - a valgrind suppression file (VALGRIND_SUPPRESSIONS_FILE) for memcheck
     #     the file name follows immediately after 
     
     set(PARSING_ADDITIONAL_LIBS OFF)
-    set(PARSING_VALGRIND_SUPRESSIONS_FILE OFF)
-        set(VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER)
+    set(PARSING_VALGRIND_SUPPRESSIONS_FILE OFF)
+    set(VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER)
     foreach(f ${ARGN})
         if(${f} STREQUAL "ADDITIONAL_LIBS")
             SET(PARSING_ADDITIONAL_LIBS ON)
-            SET(PARSING_VALGRIND_SUPRESSION_FILE OFF)
+            SET(PARSING_VALGRIND_SUPPRESSIONS_FILE OFF)
             #also unset all the other states
             
         elseif(${f} STREQUAL "VALGRIND_SUPPRESSIONS_FILE")
             SET(PARSING_ADDITIONAL_LIBS OFF)
-            SET(PARSING_VALGRIND_SUPPRESSION_FILE ON)
+            SET(PARSING_VALGRIND_SUPPRESSIONS_FILE ON)
             
         else()
         
             if(PARSING_ADDITIONAL_LIBS)
                 target_link_libraries(${whatIsBuilding}_exe ${f})
-            elseif(PARSING_VALGRIND_SUPPRESSION_FILE)
+            elseif(PARSING_VALGRIND_SUPPRESSIONS_FILE)
                 set(VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER "--suppressions=${f}")
             endif()
         endif() 
@@ -313,8 +359,8 @@ function(linux_unittests_add_exe whatIsBuilding)
             message(WARNING "run_valgrind was TRUE, but valgrind was not found - there will be no tests run under valgrind")
         else()
             add_test(NAME ${whatIsBuilding}_valgrind COMMAND valgrind                 --num-callers=100 --error-exitcode=1 --trace-children=yes --leak-check=full --track-origins=yes ${VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER} $<TARGET_FILE:${whatIsBuilding}_exe>)
-            add_test(NAME ${whatIsBuilding}_helgrind COMMAND valgrind --tool=helgrind --num-callers=100 --error-exitcode=1 $<TARGET_FILE:${whatIsBuilding}_exe>)
-            add_test(NAME ${whatIsBuilding}_drd      COMMAND valgrind --tool=drd      --num-callers=100 --error-exitcode=1 $<TARGET_FILE:${whatIsBuilding}_exe>)
+            add_test(NAME ${whatIsBuilding}_helgrind COMMAND valgrind --tool=helgrind --num-callers=100 --error-exitcode=1 ${VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER} $<TARGET_FILE:${whatIsBuilding}_exe>)
+            add_test(NAME ${whatIsBuilding}_drd      COMMAND valgrind --tool=drd      --num-callers=100 --error-exitcode=1 ${VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER} $<TARGET_FILE:${whatIsBuilding}_exe>)
         endif()
     endif()
 endfunction()
@@ -403,7 +449,32 @@ function(c_windows_unittests_add_dll whatIsBuilding folder)
 
     target_include_directories(${whatIsBuilding}_dll PUBLIC ${sharedutil_include_directories} $ENV{VCInstallDir}UnitTest/include)
     target_compile_definitions(${whatIsBuilding}_dll PUBLIC -DCPP_UNITTEST)
-    target_link_libraries(${whatIsBuilding}_dll micromock_cpp_unittest umock_c ctest testrunnerswitcher ${whatIsBuilding}_testsonly_lib ${ARGN})
+    target_link_libraries(${whatIsBuilding}_dll micromock_cpp_unittest umock_c ctest testrunnerswitcher ${whatIsBuilding}_testsonly_lib )
+    
+    set(PARSING_ADDITIONAL_LIBS OFF)
+    set(PARSING_VALGRIND_SUPPRESSIONS_FILE OFF)
+    set(VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER)
+    foreach(f ${ARGN})
+        set(skip_to_next FALSE)
+        if(${f} STREQUAL "ADDITIONAL_LIBS")
+            SET(PARSING_ADDITIONAL_LIBS ON)
+            SET(PARSING_VALGRIND_SUPPRESSIONS_FILE OFF)
+            #also unset all the other states
+            set(skip_to_next TRUE)
+        elseif(${f} STREQUAL "VALGRIND_SUPPRESSIONS_FILE")
+            SET(PARSING_ADDITIONAL_LIBS OFF)
+            SET(PARSING_VALGRIND_SUPPRESSIONS_FILE ON)
+            set(skip_to_next TRUE)
+        endif()
+        
+        if(NOT skip_to_next)
+            if(PARSING_ADDITIONAL_LIBS)
+                target_link_libraries(${whatIsBuilding}_dll ${f})
+            endif()
+        endif() 
+        
+    endforeach()
+    
     SET(VAR 1)
     foreach(file ${${whatIsBuilding}_test_files})
 
@@ -433,7 +504,32 @@ function(c_windows_unittests_add_exe whatIsBuilding folder)
                 
     target_compile_definitions(${whatIsBuilding}_exe PUBLIC -DUSE_CTEST)
     target_include_directories(${whatIsBuilding}_exe PUBLIC ${sharedutil_include_directories})
-    target_link_libraries(${whatIsBuilding}_exe micromock_ctest umock_c ctest testrunnerswitcher ${ARGN})
+    target_link_libraries(${whatIsBuilding}_exe micromock_ctest umock_c ctest testrunnerswitcher)
+    
+    set(PARSING_ADDITIONAL_LIBS OFF)
+    set(PARSING_VALGRIND_SUPPRESSIONS_FILE OFF)
+    set(VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER)
+    foreach(f ${ARGN})
+        set(skip_to_next FALSE)
+        if(${f} STREQUAL "ADDITIONAL_LIBS")
+            SET(PARSING_ADDITIONAL_LIBS ON)
+            SET(PARSING_VALGRIND_SUPPRESSIONS_FILE OFF)
+            #also unset all the other states
+            set(skip_to_next TRUE)
+        elseif(${f} STREQUAL "VALGRIND_SUPPRESSIONS_FILE")
+            SET(PARSING_ADDITIONAL_LIBS OFF)
+            SET(PARSING_VALGRIND_SUPPRESSIONS_FILE ON)
+            set(skip_to_next TRUE)
+        endif()
+        
+        if(NOT skip_to_next)
+            if(PARSING_ADDITIONAL_LIBS)
+                target_link_libraries(${whatIsBuilding}_exe ${f})
+            endif()
+        endif() 
+        
+    endforeach()
+    
     add_test(NAME ${whatIsBuilding} COMMAND ${whatIsBuilding}_exe)
 endfunction()
 
@@ -459,30 +555,33 @@ function(c_linux_unittests_add_exe whatIsBuilding folder)
     target_include_directories(${whatIsBuilding}_exe PUBLIC ${sharedutil_include_directories})
     
     #this part detects 
-        #       - the additional libraries that might be needed.
+	#       - the additional libraries that might be needed.
     #     additional libraries are started by ADDITIONAL_LIBS parameter and ended by any other known parameter (or end of variable arguments)
-    #   - a valgring suppression file (VALGRIND_SUPRESSIONS_FILE) for memcheck
+    #   - a valgrind suppression file (VALGRIND_SUPPRESSIONS_FILE) for memcheck
     #     the file name follows immediately after 
     
     set(PARSING_ADDITIONAL_LIBS OFF)
-    set(PARSING_VALGRIND_SUPRESSIONS_FILE OFF)
-        set(VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER)
+    set(PARSING_VALGRIND_SUPPRESSIONS_FILE OFF)
+    set(VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER)
     foreach(f ${ARGN})
+        set(skip_to_next FALSE)
         if(${f} STREQUAL "ADDITIONAL_LIBS")
             SET(PARSING_ADDITIONAL_LIBS ON)
-            SET(PARSING_VALGRIND_SUPRESSION_FILE OFF)
+            SET(PARSING_VALGRIND_SUPPRESSIONS_FILE OFF)
             #also unset all the other states
-            continue()
-                elseif(${f} STREQUAL "VALGRIND_SUPPRESSIONS_FILE")
+            set(skip_to_next TRUE)
+        elseif(${f} STREQUAL "VALGRIND_SUPPRESSIONS_FILE")
             SET(PARSING_ADDITIONAL_LIBS OFF)
-                        SET(PARSING_VALGRIND_SUPPRESSION_FILE ON)
-            continue()
+            SET(PARSING_VALGRIND_SUPPRESSIONS_FILE ON)
+            set(skip_to_next TRUE)
         endif()
         
-        if(PARSING_ADDITIONAL_LIBS)
-            target_link_libraries(${whatIsBuilding}_exe ${f})
-                elseif(PARSING_VALGRIND_SUPPRESSION_FILE)
-                        set(VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER "--suppressions=${f}")
+        if(NOT skip_to_next)
+            if(PARSING_ADDITIONAL_LIBS)
+                target_link_libraries(${whatIsBuilding}_exe ${f})
+            elseif(PARSING_VALGRIND_SUPPRESSIONS_FILE)
+                set(VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER "--suppressions=${f}")
+            endif()
         endif() 
         
     endforeach()
@@ -497,8 +596,8 @@ function(c_linux_unittests_add_exe whatIsBuilding folder)
             message(WARNING "run_valgrind was TRUE, but valgrind was not found - there will be no tests run under valgrind")
         else()
             add_test(NAME ${whatIsBuilding}_valgrind COMMAND valgrind                 --num-callers=100 --error-exitcode=1 --trace-children=yes --leak-check=full --track-origins=yes ${VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER} $<TARGET_FILE:${whatIsBuilding}_exe>)
-            add_test(NAME ${whatIsBuilding}_helgrind COMMAND valgrind --tool=helgrind --num-callers=100 --error-exitcode=1 $<TARGET_FILE:${whatIsBuilding}_exe>)
-            add_test(NAME ${whatIsBuilding}_drd      COMMAND valgrind --tool=drd      --num-callers=100 --error-exitcode=1 $<TARGET_FILE:${whatIsBuilding}_exe>)
+            add_test(NAME ${whatIsBuilding}_helgrind COMMAND valgrind --tool=helgrind --num-callers=100 --error-exitcode=1 ${VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER} $<TARGET_FILE:${whatIsBuilding}_exe>)
+            add_test(NAME ${whatIsBuilding}_drd      COMMAND valgrind --tool=drd      --num-callers=100 --error-exitcode=1 ${VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER} $<TARGET_FILE:${whatIsBuilding}_exe>)
         endif()
     endif()
 endfunction()
@@ -741,11 +840,6 @@ else()
     add_files_to_install("${source_h_files}")
 endif()
 
-get_directory_property(hasParent PARENT_DIRECTORY)
-if(hasParent)
-    set(AZURE_C_SHARED_UTILITY_BUILT "77772C70-53C7-4CB0" PARENT_SCOPE)
-endif()
-
 IF(WIN32)
     #windows needs this define
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
@@ -799,7 +893,7 @@ endif()
 
 if(WIN32)
 else()
-    target_link_libraries(aziotsharedutil pthread m)
+    target_link_libraries(aziotsharedutil pthread uuid m)
 endif()
 
 if(LINUX)
