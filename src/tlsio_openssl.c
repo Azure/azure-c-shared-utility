@@ -930,10 +930,12 @@ void tlsio_openssl_deinit(void)
 	FIPS_mode_set(0);
 	CRYPTO_set_locking_callback(NULL);
 	CRYPTO_set_id_callback(NULL);
-	ERR_remove_state(0);
     ERR_free_strings();
 	EVP_cleanup();
+# ifndef OPENSSL_NO_DEPRECATED
+	ERR_remove_state(0);
 	SSL_COMP_free_compression_methods();
+#endif
 	CRYPTO_cleanup_all_ex_data();
 }
 
