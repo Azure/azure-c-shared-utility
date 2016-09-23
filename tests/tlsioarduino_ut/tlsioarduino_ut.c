@@ -282,6 +282,14 @@ static void on_io_error(void* context)
         ASSERT_ARE_EQUAL(int, send, on_send_complete_count);\
         ASSERT_ARE_EQUAL(int, received, on_bytes_received_count);
 
+TEST_DEFINE_ENUM_TYPE(TLSIO_ARDUINO_STATE, TLSIO_ARDUINO_STATE_VALUES);
+IMPLEMENT_UMOCK_C_ENUM_TYPE(TLSIO_ARDUINO_STATE, TLSIO_ARDUINO_STATE_VALUES);
+
+TEST_DEFINE_ENUM_TYPE(IO_OPEN_RESULT, IO_OPEN_RESULT_VALUES);
+IMPLEMENT_UMOCK_C_ENUM_TYPE(IO_OPEN_RESULT, IO_OPEN_RESULT_VALUES);
+
+
+
 static TEST_MUTEX_HANDLE g_testByTest;
 static TEST_MUTEX_HANDLE g_dllByDll;
 
@@ -305,6 +313,10 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         REGISTER_UMOCK_ALIAS_TYPE(uint32_t, unsigned int);
         REGISTER_UMOCK_ALIAS_TYPE(uint16_t, unsigned short);
         REGISTER_UMOCK_ALIAS_TYPE(uint8_t, unsigned char);
+        REGISTER_UMOCK_ALIAS_TYPE(TLSIO_ARDUINO_STATE, int);
+        REGISTER_UMOCK_ALIAS_TYPE(IO_OPEN_RESULT, int);
+        
+        
 
 		REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, my_gballoc_malloc);
 		REGISTER_GLOBAL_MOCK_HOOK(gballoc_realloc, my_gballoc_realloc);
@@ -2428,7 +2440,10 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ///act
         for (size_t i = 0; i < 10; i++)
         {
-            ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPENING, (int)tlsio_arduino_get_state(tlsioHandle));
+            char temp[100];
+            sprintf(temp, "on failed call %zu", i);
+            TLSIO_ARDUINO_STATE state = tlsio_arduino_get_state(tlsioHandle);
+            ASSERT_ARE_EQUAL_WITH_MSG(TLSIO_ARDUINO_STATE, TLSIO_ARDUINO_STATE_OPENING, state, temp);
             tlsioInterfaces->concrete_io_dowork(tlsioHandle);
         }
 
@@ -2436,8 +2451,8 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_EQUAL(int, 1, currentmalloc_call);
         ASSERT_CALLBACK_COUNTERS(0, 0, 0, 0, 0);
-        ASSERT_ARE_EQUAL(int, (int)IO_OPEN_CANCELLED, (int)on_io_open_complete_result);
-        ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_ERROR, (int)tlsio_arduino_get_state(tlsioHandle));
+        TLSIO_ARDUINO_STATE state = tlsio_arduino_get_state(tlsioHandle);
+        ASSERT_ARE_EQUAL(TLSIO_ARDUINO_STATE, TLSIO_ARDUINO_STATE_ERROR, state);
 
         ///cleanup
         tlsioInterfaces->concrete_io_destroy(tlsioHandle);
