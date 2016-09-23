@@ -53,7 +53,7 @@ option(compileOption_CXX "passes a string to the command line of the C++ compile
 # Start of variables used during install
 set (LIB_INSTALL_DIR lib CACHE PATH "Library object file directory")
 
-#Use solution folders. 
+#Use solution folders.
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 if(MSVC)
@@ -62,12 +62,12 @@ if(MSVC)
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W3")
         # WEC 2013 uses older VS compiler. Build some files as C++ files to resolve C99 related compile issues
         SET_SOURCE_FILES_PROPERTIES(src/consolelogger.c src/xlogging.c src/map.c adapters/uniqueid_win32.c adapters/httpapi_wince.c src/tlsio_schannel.c src/x509_schannel.c PROPERTIES LANGUAGE CXX)
-        add_definitions(-DWIN32) #WEC 2013 
+        add_definitions(-DWIN32) #WEC 2013
     ELSE()
-	
+
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4")
-		
+
 		if(${use_openssl})
 			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_OPENSSL")
 			set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_OPENSSL")
@@ -90,7 +90,7 @@ if(${use_wsio})
     if(WIN32)
         string(REPLACE "/W4" "/W0" CMAKE_C_FLAGS ${CMAKE_C_FLAGS})
         string(REPLACE "/W4" "/W0" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
-        
+
         set(CMAKE_EXE_LINKER_FLAGS_PREV ${CMAKE_EXE_LINKER_FLAGS})
         set(CMAKE_SHARED_LINKER_FLAGS_PREV ${CMAKE_SHARED_LINKER_FLAGS})
         set(CMAKE_MODULE_LINKER_FLAGS_PREV ${CMAKE_MODULE_LINKER_FLAGS})
@@ -111,7 +111,7 @@ if(${use_wsio})
 
         string(REPLACE "/W0" "/W4" CMAKE_C_FLAGS ${CMAKE_C_FLAGS})
         string(REPLACE "/W0" "/W4" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
-   
+
     elseif(LINUX)
         #because libwebsockets? is sensible to -Werror, it shall be removed, and re-added after
         string(REPLACE "-Werror" "" CMAKE_C_FLAGS ${CMAKE_C_FLAGS})
@@ -125,25 +125,25 @@ if(${use_wsio})
         if(NOT IN_OPENWRT)
             set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_POSIX_C_SOURCE=200112L")
         endif()
-        
+
     endif()
 endif()
 
 enable_testing()
 
 include(CheckSymbolExists)
-function(detect_architecture symbol arch) 
+function(detect_architecture symbol arch)
     if (NOT DEFINED ARCHITECTURE OR ARCHITECTURE STREQUAL "")
         set(CMAKE_REQUIRED_QUIET 1)
-        check_symbol_exists("${symbol}" "" ARCHITECTURE_${arch}) 
-        unset(CMAKE_REQUIRED_QUIET) 
-  
-        # The output variable needs to be unique across invocations otherwise 
-        # CMake's crazy scope rules will keep it defined 
-        if (ARCHITECTURE_${arch}) 
-            set(ARCHITECTURE "${arch}" PARENT_SCOPE) 
-            set(ARCHITECTURE_${arch} 1 PARENT_SCOPE) 
-            add_definitions(-DARCHITECTURE_${arch}=1) 
+        check_symbol_exists("${symbol}" "" ARCHITECTURE_${arch})
+        unset(CMAKE_REQUIRED_QUIET)
+
+        # The output variable needs to be unique across invocations otherwise
+        # CMake's crazy scope rules will keep it defined
+        if (ARCHITECTURE_${arch})
+            set(ARCHITECTURE "${arch}" PARENT_SCOPE)
+            set(ARCHITECTURE_${arch} 1 PARENT_SCOPE)
+            add_definitions(-DARCHITECTURE_${arch}=1)
         endif()
     endif()
 endfunction()
@@ -151,14 +151,14 @@ if (MSVC)
     detect_architecture("_M_AMD64" x86_64)
     detect_architecture("_M_IX86" x86)
     detect_architecture("_M_ARM" ARM)
-else() 
+else()
     detect_architecture("__x86_64__" x86_64)
     detect_architecture("__i386__" x86)
     detect_architecture("__arm__" ARM)
-endif() 
-if (NOT DEFINED ARCHITECTURE OR ARCHITECTURE STREQUAL "") 
-    set(ARCHITECTURE "GENERIC") 
-endif() 
+endif()
+if (NOT DEFINED ARCHITECTURE OR ARCHITECTURE STREQUAL "")
+    set(ARCHITECTURE "GENERIC")
+endif()
 message(STATUS "Shared_Util architecture: ${ARCHITECTURE}")
 
 #if any compiler has a command line switch called "OFF" then it will need special care
@@ -219,10 +219,10 @@ endfunction()
 
 function(windows_unittests_add_dll whatIsBuilding)
     link_directories(${whatIsBuilding}_dll $ENV{VCInstallDir}UnitTest/lib)
-    
-    add_library(${whatIsBuilding}_dll SHARED 
-        ${${whatIsBuilding}_cpp_files} 
-        ${${whatIsBuilding}_h_files} 
+
+    add_library(${whatIsBuilding}_dll SHARED
+        ${${whatIsBuilding}_cpp_files}
+        ${${whatIsBuilding}_h_files}
         ${${whatIsBuilding}_c_files}
         ${sharedutil_include_directories}../../src/xlogging.c
         ${sharedutil_include_directories}../../src/consolelogger.c
@@ -245,15 +245,15 @@ function(windows_unittests_add_dll whatIsBuilding)
             SET(PARSING_VALGRIND_SUPPRESSIONS_FILE ON)
             set(skip_to_next TRUE)
         endif()
-        
+
         if(NOT skip_to_next)
             if(PARSING_ADDITIONAL_LIBS)
                 target_link_libraries(${whatIsBuilding}_dll ${f})
             endif()
-        endif() 
-        
+        endif()
+
     endforeach()
-    
+
     target_include_directories(${whatIsBuilding}_dll PUBLIC ${sharedutil_include_directories} $ENV{VCInstallDir}UnitTest/include)
     target_compile_definitions(${whatIsBuilding}_dll PUBLIC -DCPP_UNITTEST)
     target_link_libraries(${whatIsBuilding}_dll micromock_cpp_unittest umock_c ctest testrunnerswitcher)
@@ -261,8 +261,8 @@ endfunction()
 
 function(windows_unittests_add_exe whatIsBuilding)
     add_executable(${whatIsBuilding}_exe
-        ${${whatIsBuilding}_cpp_files} 
-        ${${whatIsBuilding}_h_files} 
+        ${${whatIsBuilding}_cpp_files}
+        ${${whatIsBuilding}_h_files}
         ${${whatIsBuilding}_c_files}
         ${CMAKE_CURRENT_LIST_DIR}/main.c
         ${sharedutil_include_directories}../../src/xlogging.c
@@ -270,7 +270,7 @@ function(windows_unittests_add_exe whatIsBuilding)
     )
 
     set_test_target_folder(${whatIsBuilding} "exe")
-                
+
     set(PARSING_ADDITIONAL_LIBS OFF)
     set(PARSING_VALGRIND_SUPPRESSIONS_FILE OFF)
     set(VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER)
@@ -286,15 +286,15 @@ function(windows_unittests_add_exe whatIsBuilding)
             SET(PARSING_VALGRIND_SUPPRESSIONS_FILE ON)
             set(skip_to_next TRUE)
         endif()
-        
+
         if(NOT skip_to_next)
             if(PARSING_ADDITIONAL_LIBS)
                 target_link_libraries(${whatIsBuilding}_exe ${f})
             endif()
-        endif() 
-        
+        endif()
+
     endforeach()
-				
+
     target_compile_definitions(${whatIsBuilding}_exe PUBLIC -DUSE_CTEST)
     target_include_directories(${whatIsBuilding}_exe PUBLIC ${sharedutil_include_directories})
     target_link_libraries(${whatIsBuilding}_exe micromock_ctest umock_c ctest testrunnerswitcher)
@@ -306,8 +306,8 @@ endfunction()
 #for example, ADDITIONAL_LIBS starts a list of needed libraries
 function(linux_unittests_add_exe whatIsBuilding)
     add_executable(${whatIsBuilding}_exe
-        ${${whatIsBuilding}_cpp_files} 
-        ${${whatIsBuilding}_h_files} 
+        ${${whatIsBuilding}_cpp_files}
+        ${${whatIsBuilding}_h_files}
         ${${whatIsBuilding}_c_files}
         ${CMAKE_CURRENT_LIST_DIR}/main.c
         ${sharedutil_include_directories}../../src/xlogging.c
@@ -315,16 +315,16 @@ function(linux_unittests_add_exe whatIsBuilding)
     )
 
     set_test_target_folder(${whatIsBuilding} "exe")
-                
+
     target_compile_definitions(${whatIsBuilding}_exe PUBLIC -DUSE_CTEST)
     target_include_directories(${whatIsBuilding}_exe PUBLIC ${sharedutil_include_directories})
-    
-    #this part detects 
+
+    #this part detects
     #   - the additional libraries that might be needed.
     #     additional libraries are started by ADDITIONAL_LIBS parameter and ended by any other known parameter (or end of variable arguments)
     #   - a valgrind suppression file (VALGRIND_SUPPRESSIONS_FILE) for memcheck
-    #     the file name follows immediately after 
-    
+    #     the file name follows immediately after
+
     set(PARSING_ADDITIONAL_LIBS OFF)
     set(PARSING_VALGRIND_SUPPRESSIONS_FILE OFF)
     set(VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER)
@@ -333,26 +333,26 @@ function(linux_unittests_add_exe whatIsBuilding)
             SET(PARSING_ADDITIONAL_LIBS ON)
             SET(PARSING_VALGRIND_SUPPRESSIONS_FILE OFF)
             #also unset all the other states
-            
+
         elseif(${f} STREQUAL "VALGRIND_SUPPRESSIONS_FILE")
             SET(PARSING_ADDITIONAL_LIBS OFF)
             SET(PARSING_VALGRIND_SUPPRESSIONS_FILE ON)
-            
+
         else()
-        
+
             if(PARSING_ADDITIONAL_LIBS)
                 target_link_libraries(${whatIsBuilding}_exe ${f})
             elseif(PARSING_VALGRIND_SUPPRESSIONS_FILE)
                 set(VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER "--suppressions=${f}")
             endif()
-        endif() 
-        
+        endif()
+
     endforeach()
-    
+
     target_link_libraries(${whatIsBuilding}_exe micromock_ctest umock_c ctest)
-    
+
     add_test(NAME ${whatIsBuilding} COMMAND $<TARGET_FILE:${whatIsBuilding}_exe>)
-    
+
     if(${run_valgrind})
         find_program(VALGRIND_FOUND NAMES valgrind)
         if(${VALGRIND_FOUND} STREQUAL VALGRIND_FOUND-NOTFOUND)
@@ -366,22 +366,22 @@ function(linux_unittests_add_exe whatIsBuilding)
 endfunction()
 
 function(build_test_artifacts whatIsBuilding use_gballoc)
-    
+
     #the first argument is what is building
     #the second argument is whether the tests should be build with gballoc #defines or not
     #the following arguments are a list of libraries to link with
-    
+
     if(${use_gballoc})
         add_definitions(-DGB_MEASURE_MEMORY_FOR_THIS -DGB_DEBUG_ALLOC)
-    else()    
+    else()
     endif()
-    
+
     #setting #defines
     if(WIN32)
         add_definitions(-D_CRT_SECURE_NO_WARNINGS)
     else()
     endif()
-    
+
     #setting includes
     set(sharedutil_include_directories ${MICROMOCK_INC_FOLDER} ${TESTRUNNERSWITCHER_INC_FOLDER} ${CTEST_INC_FOLDER} ${SAL_INC_FOLDER} ${SHARED_UTIL_INC_FOLDER} ${SHARED_UTIL_SRC_FOLDER})
     if(WIN32)
@@ -420,7 +420,7 @@ function(c_windows_unittests_add_dll whatIsBuilding folder)
 
     SET(VAR 1)
     foreach(file ${${whatIsBuilding}_test_files})
-        add_library(${whatIsBuilding}_testsonly_lib STATIC 
+        add_library(${whatIsBuilding}_testsonly_lib STATIC
             ${file}
         )
         set_source_files_properties(${file} PROPERTIES COMPILE_FLAGS -DCPPUNITTEST_SYMBOL=some_symbol_for_cppunittest_${VAR})
@@ -429,15 +429,15 @@ function(c_windows_unittests_add_dll whatIsBuilding folder)
 
     set_target_properties(${whatIsBuilding}_testsonly_lib
                PROPERTIES
-               FOLDER ${folder} ) 
+               FOLDER ${folder} )
 
     target_include_directories(${whatIsBuilding}_testsonly_lib PUBLIC ${sharedutil_include_directories} $ENV{VCInstallDir}UnitTest/include)
     target_compile_definitions(${whatIsBuilding}_testsonly_lib PUBLIC -DCPP_UNITTEST)
     target_compile_options(${whatIsBuilding}_testsonly_lib PUBLIC /TP /EHsc)
-  
-    add_library(${whatIsBuilding}_dll SHARED 
-        ${${whatIsBuilding}_cpp_files} 
-        ${${whatIsBuilding}_h_files} 
+
+    add_library(${whatIsBuilding}_dll SHARED
+        ${${whatIsBuilding}_cpp_files}
+        ${${whatIsBuilding}_h_files}
         ${${whatIsBuilding}_c_files}
         ${sharedutil_include_directories}../../src/xlogging.c
         ${sharedutil_include_directories}../../src/consolelogger.c
@@ -445,12 +445,12 @@ function(c_windows_unittests_add_dll whatIsBuilding folder)
 
     set_target_properties(${whatIsBuilding}_dll
                PROPERTIES
-               FOLDER ${folder} ) 
+               FOLDER ${folder} )
 
     target_include_directories(${whatIsBuilding}_dll PUBLIC ${sharedutil_include_directories} $ENV{VCInstallDir}UnitTest/include)
     target_compile_definitions(${whatIsBuilding}_dll PUBLIC -DCPP_UNITTEST)
     target_link_libraries(${whatIsBuilding}_dll micromock_cpp_unittest umock_c ctest testrunnerswitcher ${whatIsBuilding}_testsonly_lib )
-    
+
     set(PARSING_ADDITIONAL_LIBS OFF)
     set(PARSING_VALGRIND_SUPPRESSIONS_FILE OFF)
     set(VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER)
@@ -466,15 +466,15 @@ function(c_windows_unittests_add_dll whatIsBuilding folder)
             SET(PARSING_VALGRIND_SUPPRESSIONS_FILE ON)
             set(skip_to_next TRUE)
         endif()
-        
+
         if(NOT skip_to_next)
             if(PARSING_ADDITIONAL_LIBS)
                 target_link_libraries(${whatIsBuilding}_dll ${f})
             endif()
-        endif() 
-        
+        endif()
+
     endforeach()
-    
+
     SET(VAR 1)
     foreach(file ${${whatIsBuilding}_test_files})
 
@@ -490,9 +490,9 @@ endfunction()
 
 function(c_windows_unittests_add_exe whatIsBuilding folder)
     add_executable(${whatIsBuilding}_exe
-        ${${whatIsBuilding}_test_files} 
-        ${${whatIsBuilding}_cpp_files} 
-        ${${whatIsBuilding}_h_files} 
+        ${${whatIsBuilding}_test_files}
+        ${${whatIsBuilding}_cpp_files}
+        ${${whatIsBuilding}_h_files}
         ${${whatIsBuilding}_c_files}
         ${CMAKE_CURRENT_LIST_DIR}/main.c
         ${sharedutil_include_directories}../../src/xlogging.c
@@ -501,11 +501,11 @@ function(c_windows_unittests_add_exe whatIsBuilding folder)
     set_target_properties(${whatIsBuilding}_exe
                PROPERTIES
                FOLDER ${folder})
-                
+
     target_compile_definitions(${whatIsBuilding}_exe PUBLIC -DUSE_CTEST)
     target_include_directories(${whatIsBuilding}_exe PUBLIC ${sharedutil_include_directories})
     target_link_libraries(${whatIsBuilding}_exe micromock_ctest umock_c ctest testrunnerswitcher)
-    
+
     set(PARSING_ADDITIONAL_LIBS OFF)
     set(PARSING_VALGRIND_SUPPRESSIONS_FILE OFF)
     set(VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER)
@@ -521,15 +521,15 @@ function(c_windows_unittests_add_exe whatIsBuilding folder)
             SET(PARSING_VALGRIND_SUPPRESSIONS_FILE ON)
             set(skip_to_next TRUE)
         endif()
-        
+
         if(NOT skip_to_next)
             if(PARSING_ADDITIONAL_LIBS)
                 target_link_libraries(${whatIsBuilding}_exe ${f})
             endif()
-        endif() 
-        
+        endif()
+
     endforeach()
-    
+
     add_test(NAME ${whatIsBuilding} COMMAND ${whatIsBuilding}_exe)
 endfunction()
 
@@ -539,9 +539,9 @@ endfunction()
 function(c_linux_unittests_add_exe whatIsBuilding folder)
 
     add_executable(${whatIsBuilding}_exe
-        ${${whatIsBuilding}_test_files} 
-        ${${whatIsBuilding}_cpp_files} 
-        ${${whatIsBuilding}_h_files} 
+        ${${whatIsBuilding}_test_files}
+        ${${whatIsBuilding}_cpp_files}
+        ${${whatIsBuilding}_h_files}
         ${${whatIsBuilding}_c_files}
         ${CMAKE_CURRENT_LIST_DIR}/main.c
         ${sharedutil_include_directories}../../src/xlogging.c
@@ -553,13 +553,13 @@ function(c_linux_unittests_add_exe whatIsBuilding folder)
 
     target_compile_definitions(${whatIsBuilding}_exe PUBLIC -DUSE_CTEST)
     target_include_directories(${whatIsBuilding}_exe PUBLIC ${sharedutil_include_directories})
-    
-    #this part detects 
+
+    #this part detects
 	#       - the additional libraries that might be needed.
     #     additional libraries are started by ADDITIONAL_LIBS parameter and ended by any other known parameter (or end of variable arguments)
     #   - a valgrind suppression file (VALGRIND_SUPPRESSIONS_FILE) for memcheck
-    #     the file name follows immediately after 
-    
+    #     the file name follows immediately after
+
     set(PARSING_ADDITIONAL_LIBS OFF)
     set(PARSING_VALGRIND_SUPPRESSIONS_FILE OFF)
     set(VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER)
@@ -575,21 +575,21 @@ function(c_linux_unittests_add_exe whatIsBuilding folder)
             SET(PARSING_VALGRIND_SUPPRESSIONS_FILE ON)
             set(skip_to_next TRUE)
         endif()
-        
+
         if(NOT skip_to_next)
             if(PARSING_ADDITIONAL_LIBS)
                 target_link_libraries(${whatIsBuilding}_exe ${f})
             elseif(PARSING_VALGRIND_SUPPRESSIONS_FILE)
                 set(VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER "--suppressions=${f}")
             endif()
-        endif() 
-        
+        endif()
+
     endforeach()
-    
+
     target_link_libraries(${whatIsBuilding}_exe micromock_ctest umock_c ctest)
-    
+
     add_test(NAME ${whatIsBuilding} COMMAND $<TARGET_FILE:${whatIsBuilding}_exe>)
-    
+
     if(${run_valgrind})
         find_program(VALGRIND_FOUND NAMES valgrind)
         if(${VALGRIND_FOUND} STREQUAL VALGRIND_FOUND-NOTFOUND)
@@ -603,22 +603,22 @@ function(c_linux_unittests_add_exe whatIsBuilding folder)
 endfunction()
 
 function(build_c_test_artifacts whatIsBuilding use_gballoc folder)
-    
+
     #the first argument is what is building
     #the second argument is whether the tests should be build with gballoc #defines or not
     #the following arguments are a list of libraries to link with
-    
+
     if(${use_gballoc})
         add_definitions(-DGB_MEASURE_MEMORY_FOR_THIS -DGB_DEBUG_ALLOC)
-    else()    
+    else()
     endif()
-    
+
     #setting #defines
     if(WIN32)
         add_definitions(-D_CRT_SECURE_NO_WARNINGS)
     else()
     endif()
-    
+
     #setting includes
     set(sharedutil_include_directories ${MICROMOCK_INC_FOLDER} ${UMOCK_C_INC_FOLDER} ${TESTRUNNERSWITCHER_INC_FOLDER} ${CTEST_INC_FOLDER} ${SAL_INC_FOLDER} ${SHARED_UTIL_INC_FOLDER} ${SHARED_UTIL_SRC_FOLDER})
     if(WIN32)
@@ -844,7 +844,7 @@ IF(WIN32)
     #windows needs this define
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
     IF(WINCE)
-    # Don't treat warning as errors for WEC 2013. WEC 2013 uses older compiler version 
+    # Don't treat warning as errors for WEC 2013. WEC 2013 uses older compiler version
     add_definitions(/WX-)
     ELSE()
     # Make warning as error
@@ -892,12 +892,11 @@ if(${use_wolfssl})
 endif()
 
 if(WIN32)
-else()
-    target_link_libraries(aziotsharedutil pthread uuid m)
+	target_link_libraries(aziotsharedutil rpcrt4.lib)
 endif()
 
 if(LINUX)
-    target_link_libraries(aziotsharedutil m)
+    target_link_libraries(aziotsharedutil pthread uuid m)
 endif()
 
 if (NOT ${skip_unittests})
