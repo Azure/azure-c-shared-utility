@@ -4,3 +4,5 @@
 cmake_minimum_required(VERSION 2.8.11)
 
 add_subdirectory(azure_c_shared_hello_world)
+add_subdirectory(socketio_connect)
+add_subdirectory(tlsio_connect)

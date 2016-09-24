@@ -904,6 +904,8 @@ if (NOT ${skip_unittests})
     add_subdirectory(tests)
 endif()
 
+add_subdirectory(samples)
+
 # Set CMAKE_INSTALL_* if not defined
 include(GNUInstallDirs)
 
