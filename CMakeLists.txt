@@ -882,6 +882,8 @@ endif()
 
 if(${use_openssl})
     if (WIN32)
+		target_link_libraries(aziotsharedutil
+			$ENV{OpenSSLDir}/lib/ssleay32.lib $ENV{OpenSSLDir}/lib/libeay32.lib)
     else()
         target_link_libraries(aziotsharedutil ssl crypto)
     endif()

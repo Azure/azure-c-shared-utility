@@ -19,6 +19,11 @@ target_link_libraries(socketio_connect
     aziotsharedutil
 )
 
+if(${use_openssl} AND WIN32)
+	file(COPY $ENV{OpenSSLDir}/bin/libeay32.dll DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+	file(COPY $ENV{OpenSSLDir}/bin/ssleay32.dll DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+endif()
+
 set_target_properties(socketio_connect
 			   PROPERTIES
 			   FOLDER "azure_c_shared_utility_samples")

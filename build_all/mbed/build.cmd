@@ -24,9 +24,6 @@ rem ----------------------------------------------------------------------------
 call %repo-build-root%\tools\mbed_build_scripts\release_mbed_project.cmd %repo-build-root%\build_all
 if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 
-call :compile azure_c_shared_hello_world %repo-build-root%\samples\azure_c_shared_hello_world\mbed
-if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
-
 goto :eof
 
 :compile
