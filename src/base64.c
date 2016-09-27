@@ -12,30 +12,61 @@
 
 #include <stddef.h>
 #include <string.h>
+#include <stdint.h>
 //
 // PUT NO CLIENT LIBRARY INCLUDES BEFORE HERE !!!!
 //
 #include "azure_c_shared_utility/base64.h"
 #include "azure_c_shared_utility/xlogging.h"
 
-const char base64char[64] = {
-    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
-    'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
-    'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd',
-    'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
-    'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x',
-    'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7',
-    '8', '9', '+', '/'
-};
 
-const char base64b16[16] = {
-    'A', 'E', 'I', 'M', 'Q', 'U', 'Y', 'c', 'g', 'k',
-    'o', 's', 'w', '0', '4', '8'
-};
+#define splitInt(intVal, bytePos)   (char)((intVal >> (bytePos << 3)) & 0xFF)
+#define joinChars(a, b, c, d) (uint32_t)((uint32_t)a + ((uint32_t)b << 8) + ((uint32_t)c << 16) + ((uint32_t)d << 24))
 
-const char base64b8[4] = {
-    'A', 'Q', 'g', 'w'
-};
+static char base64char(unsigned char val)
+{
+    char result;
+
+    if (val < 26)
+    {
+        result = 'A' + (char)val;
+    }
+    else if (val < 52)
+    {
+        result = 'a' + ((char)val - 26);
+    }
+    else if (val < 62)
+    {
+        result = '0' + ((char)val - 52);
+    }
+    else if (val == 62)
+    {
+        result = '+';
+    }
+    else
+    {
+        result = '/';
+    }
+
+    return result;
+}
+
+static char base64b16(unsigned char val)
+{
+    const uint32_t base64b16values[4] = {
+        joinChars('A', 'E', 'I', 'M'),
+        joinChars('Q', 'U', 'Y', 'c'),
+        joinChars('g', 'k', 'o', 's'),
+        joinChars('w', '0', '4', '8')
+    };
+    return splitInt(base64b16values[val >> 2], (val & 0x03));
+}
+
+static char base64b8(unsigned char val)
+{
+    const uint32_t base64b8values = joinChars('A', 'Q', 'g', 'w');
+    return splitInt(base64b8values, val);
+}
 
 static int base64toValue(char base64character, unsigned char* value)
 {
@@ -238,18 +269,18 @@ static STRING_HANDLE Base64_Encode_Internal(const unsigned char* source, size_t 
         size_t destinationPosition = 0;
         while (size - currentPosition >= 3)
         {
-            char c1 = base64char[source[currentPosition] >> 2];
-            char c2 = base64char[
+            char c1 = base64char(source[currentPosition] >> 2);
+            char c2 = base64char(
                 ((source[currentPosition] & 3) << 4) |
                     (source[currentPosition + 1] >> 4)
-            ];
-            char c3 = base64char[
+            );
+            char c3 = base64char(
                 ((source[currentPosition + 1] & 0x0F) << 2) |
                     ((source[currentPosition + 2] >> 6) & 3)
-            ];
-            char c4 = base64char[
+            );
+            char c4 = base64char(
                 source[currentPosition + 2] & 0x3F
-            ];
+            );
             currentPosition += 3;
             encoded[destinationPosition++] = c1;
             encoded[destinationPosition++] = c2;
@@ -259,12 +290,12 @@ static STRING_HANDLE Base64_Encode_Internal(const unsigned char* source, size_t 
         }
         if (size - currentPosition == 2)
         {
-            char c1 = base64char[source[currentPosition] >> 2];
-            char c2 = base64char[
+            char c1 = base64char(source[currentPosition] >> 2);
+            char c2 = base64char(
                 ((source[currentPosition] & 0x03) << 4) |
                     (source[currentPosition + 1] >> 4)
-            ];
-            char c3 = base64b16[source[currentPosition + 1] & 0x0F];
+            );
+            char c3 = base64b16(source[currentPosition + 1] & 0x0F);
             encoded[destinationPosition++] = c1;
             encoded[destinationPosition++] = c2;
             encoded[destinationPosition++] = c3;
@@ -272,8 +303,8 @@ static STRING_HANDLE Base64_Encode_Internal(const unsigned char* source, size_t 
         }
         else if (size - currentPosition == 1)
         {
-            char c1 = base64char[source[currentPosition] >> 2];
-            char c2 = base64b8[source[currentPosition] & 0x03];
+            char c1 = base64char(source[currentPosition] >> 2);
+            char c2 = base64b8(source[currentPosition] & 0x03);
             encoded[destinationPosition++] = c1;
             encoded[destinationPosition++] = c2;
             encoded[destinationPosition++] = '=';

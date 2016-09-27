@@ -21,9 +21,6 @@ extern "C" {
 
 #include "azure_c_shared_utility/umock_c_prod.h"
 
-extern const char base64char[64];
-extern const char base64b16[16];
-extern const char base64b8[4];
 
 /**
  * @brief	Base64 encodes a buffer and returns the resulting string.
