@@ -472,7 +472,7 @@ static int readLine(HTTP_HANDLE_DATA* http_instance, char* buf, const size_t max
                             receivedByte++;
                         }
                         (*destByte) = '\0';
-                        resultLineSize = destByte - buf;
+                        resultLineSize = (int)(destByte - buf);
                         endOfSearch = true;
                         break;
                     }
@@ -551,7 +551,7 @@ static int skipN(HTTP_HANDLE_DATA* http_instance, size_t n)
     {
         /*Codes_SRS_HTTPAPI_COMPACT_21_076: [ The HTTPAPI_ExecuteRequest shall try to read the message with the response up to 20 times. ]*/
         int countRetry = MAX_RECEIVE_RETRY;
-        result = n;
+        result = (int)n;
         while (n > 0)
         {
             xio_dowork(http_instance->xio_handle);
