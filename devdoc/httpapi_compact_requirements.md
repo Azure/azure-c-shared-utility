@@ -208,10 +208,15 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName);
 ```
 
 **SRS_HTTPAPI_COMPACT_21_011: [** The HTTPAPI_CreateConnection shall create an http connection to the host specified by the hostName parameter. **]**
+
 **SRS_HTTPAPI_COMPACT_21_012: [** The HTTPAPI_CreateConnection shall return a non-NULL handle on success. **]**
+
 **SRS_HTTPAPI_COMPACT_21_013: [** If there is not enough memory to control the http connection, the HTTPAPI_CreateConnection shall return NULL as the handle. **]**
+
 **SRS_HTTPAPI_COMPACT_21_014: [** If the hostName is NULL, the HTTPAPI_CreateConnection shall return NULL as the handle. **]**
+
 **SRS_HTTPAPI_COMPACT_21_015: [** If the hostName is empty, the HTTPAPI_CreateConnection shall return NULL as the handle. **]**
+
 **SRS_HTTPAPI_COMPACT_21_016: [** If the HTTPAPI_CreateConnection failed to create the connection, it shall return NULL as the handle. **]**
 
 
@@ -221,8 +226,11 @@ void HTTPAPI_CloseConnection(HTTP_HANDLE handle);
 ```
 
 **SRS_HTTPAPI_COMPACT_21_017: [** The HTTPAPI_CloseConnection shall close the connection previously created in HTTPAPI_CreateConnection. **]**
+
 **SRS_HTTPAPI_COMPACT_21_018: [** If there is a certificate associated to this connection, the HTTPAPI_CloseConnection shall free all allocated memory for the certificate. **]**
+
 **SRS_HTTPAPI_COMPACT_21_019: [** If there is no previous connection, the HTTPAPI_CloseConnection shall not do anything. **]**
+
 **SRS_HTTPAPI_COMPACT_21_020: [** If the connection handle is NULL, the HTTPAPI_CloseConnection shall not do anything. **]**
 
 
@@ -235,43 +243,86 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
 ```
 
 **SRS_HTTPAPI_COMPACT_21_021: [** The HTTPAPI_ExecuteRequest shall execute the http communtication with the provided host, sending a request and reciving the response. **]**
+
 **SRS_HTTPAPI_COMPACT_21_022: [** If a Certificate was provided, the HTTPAPI_ExecuteRequest shall set this option on the transport layer. **]**
+
 **SRS_HTTPAPI_COMPACT_21_023: [** If the transport failed setting the Certificate, the HTTPAPI_ExecuteRequest shall not send any request and return HTTPAPI_SET_OPTION_FAILED. **]**
+
 **SRS_HTTPAPI_COMPACT_21_024: [** The HTTPAPI_ExecuteRequest shall open the transport connection with the host to send the request. **]**
+
 **SRS_HTTPAPI_COMPACT_21_025: [** If the open process failed, the HTTPAPI_ExecuteRequest shall not send any request and return HTTPAPI_OPEN_REQUEST_FAILED. **]**
+
 **SRS_HTTPAPI_COMPACT_21_026: [** If the open process succeed, the HTTPAPI_ExecuteRequest shall send the request message to the host. **]**
+
 **SRS_HTTPAPI_COMPACT_21_027: [** If the HTTPAPI_ExecuteRequest cannot create a buffer to send the request, it shall not send any request and return HTTPAPI_STRING_PROCESSING_ERROR. **]**
+
 **SRS_HTTPAPI_COMPACT_21_028: [** If the HTTPAPI_ExecuteRequest cannot send the request header, it shall return HTTPAPI_HTTP_HEADERS_FAILED. **]**
+
 **SRS_HTTPAPI_COMPACT_21_029: [** If the HTTPAPI_ExecuteRequest cannot send the buffer with the request, it shall return HTTPAPI_SEND_REQUEST_FAILED. **]**
+
 **SRS_HTTPAPI_COMPACT_21_030: [** At the end of the transmission, the HTTPAPI_ExecuteRequest shall receive the response from the host. **]**
+
 **SRS_HTTPAPI_COMPACT_21_031: [** After receive the response, the HTTPAPI_ExecuteRequest shall close the transport connection with the host. **]**
+
 **SRS_HTTPAPI_COMPACT_21_032: [** If the HTTPAPI_ExecuteRequest cannot read the message with the request result, it shall return HTTPAPI_READ_DATA_FAILED. **]**
+
 **SRS_HTTPAPI_COMPACT_21_033: [** If the whole process succeed, the HTTPAPI_ExecuteRequest shall retur HTTPAPI_OK. **]**
+
 **SRS_HTTPAPI_COMPACT_21_034: [** If there is no previous connection, the HTTPAPI_ExecuteRequest shall return HTTPAPI_INVALID_ARG. **]**
+
 **SRS_HTTPAPI_COMPACT_21_035: [** The HTTPAPI_ExecuteRequest shall execute resquest for types `GET`, `POST`, `PUT`, `DELETE`, `PATCH`. **]**
+
 **SRS_HTTPAPI_COMPACT_21_036: [** The request type shall be provided in the parameter requestType. **]**
+
 **SRS_HTTPAPI_COMPACT_21_037: [** If the request type is unknown, the HTTPAPI_ExecuteRequest shall return HTTPAPI_INVALID_ARG. **]**
+
 **SRS_HTTPAPI_COMPACT_21_038: [** The HTTPAPI_ExecuteRequest shall execute the resquest for the path in relativePath parameter. **]**
+
 **SRS_HTTPAPI_COMPACT_21_039: [** If the relativePath is NULL or invalid, the HTTPAPI_ExecuteRequest shall return HTTPAPI_INVALID_ARG. **]**
+
 **SRS_HTTPAPI_COMPACT_21_040: [** The request shall contain the http header provided in httpHeadersHandle parameter. **]**
+
 **SRS_HTTPAPI_COMPACT_21_041: [** If the httpHeadersHandle is NULL or invalid, the HTTPAPI_ExecuteRequest shall return HTTPAPI_INVALID_ARG. **]**
+
 **SRS_HTTPAPI_COMPACT_21_042: [** The request can contain the a content message, provided in content parameter. **]**
+
 **SRS_HTTPAPI_COMPACT_21_043: [** If the content is NULL, the HTTPAPI_ExecuteRequest shall send the request without content. **]**
+
 **SRS_HTTPAPI_COMPACT_21_044: [** If the content is not NULL, the number of bytes in the content shall be provided in contentLength parameter. **]**
+
 **SRS_HTTPAPI_COMPACT_21_045: [** If the contentLength is lower than one, the HTTPAPI_ExecuteRequest shall send the request without content. **]**
+
 **SRS_HTTPAPI_COMPACT_21_046: [** The HTTPAPI_ExecuteRequest shall return the http status reported by the host in the received response. **]**
+
 **SRS_HTTPAPI_COMPACT_21_047: [** The HTTPAPI_ExecuteRequest shall report the status in the statusCode parameter. **]**
+
 **SRS_HTTPAPI_COMPACT_21_048: [** If the statusCode is NULL, the HTTPAPI_ExecuteRequest shall report not report any status. **]**
+
 **SRS_HTTPAPI_COMPACT_21_049: [** If responseHeadersHandle is provide, the HTTPAPI_ExecuteRequest shall prepare a Response Header usign the HTTPHeaders_AddHeaderNameValuePair. **]**
+
 **SRS_HTTPAPI_COMPACT_21_050: [** If there is a content in the response, the HTTPAPI_ExecuteRequest shall copy it in the responseContent buffer. **]**
+
 **SRS_HTTPAPI_COMPACT_21_051: [** If the responseContent is NULL, the HTTPAPI_ExecuteRequest shall ignore any content in the response. **]**
+
 **SRS_HTTPAPI_COMPACT_21_052: [** If any memory allocation get fail, the HTTPAPI_ExecuteRequest shall return HTTPAPI_ALLOC_FAILED. **]**
+
 **SRS_HTTPAPI_COMPACT_21_053: [** The HTTPAPI_ExecuteRequest shall produce a set of http header to send to the host. **]**
+
 **SRS_HTTPAPI_COMPACT_21_054: [** If Http header maker cannot provide the number of headers, the HTTPAPI_ExecuteRequest shall return HTTPAPI_INVALID_ARG. **]**
+
 **SRS_HTTPAPI_COMPACT_21_055: [** If the HTTPAPI_ExecuteRequest cannot parser the recieved message, it shall return HTTPAPI_RECEIVE_RESPONSE_FAILED. **]**
+
 **SRS_HTTPAPI_COMPACT_21_073: [** The message recieved by the HTTPAPI_ExecuteRequest shall starts with a valid header. **]**
+
 **SRS_HTTPAPI_COMPACT_21_074: [** After the header, the message recieved by the HTTPAPI_ExecuteRequest can contain addition information about the content. **]**
+
 **SRS_HTTPAPI_COMPACT_21_075: [** The message recieved by the HTTPAPI_ExecuteRequest can contain a body with the message content. **]**
+
+**SRS_HTTPAPI_COMPACT_21_076: [** The HTTPAPI_ExecuteRequest shall try to read the message with the response up to 20 times. **]**
+
+**SRS_HTTPAPI_COMPACT_21_077: [** If the HTTPAPI_ExecuteRequest retries 20 times to receive the message without success, it shall fail and return HTTPAPI_READ_DATA_FAILED. **]**
+
+**SRS_HTTPAPI_COMPACT_21_078: [** The HTTPAPI_ExecuteRequest shall wait, at least, 100 milliseconds between retries. **]**
 
 
 ###  HTTPAPI_SetOption
@@ -280,13 +331,21 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
 ```
 
 **SRS_HTTPAPI_COMPACT_21_056: [** The HTTPAPI_SetOption shall change the HTTP options. **]**
+
 **SRS_HTTPAPI_COMPACT_21_057: [** The HTTPAPI_SetOption shall recieve a handle that identiry the HTTP connection. **]**
+
 **SRS_HTTPAPI_COMPACT_21_058: [** The HTTPAPI_SetOption shall recieve the option as a pair optionName/value. **]**
+
 **SRS_HTTPAPI_COMPACT_21_059: [** If the handle is NULL, the HTTPAPI_SetOption shall return HTTPAPI_INVALID_ARG. **]**
+
 **SRS_HTTPAPI_COMPACT_21_060: [** If the optionName is NULL, the HTTPAPI_SetOption shall return HTTPAPI_INVALID_ARG. **]**
+
 **SRS_HTTPAPI_COMPACT_21_061: [** If the value is NULL, the HTTPAPI_SetOption shall return HTTPAPI_INVALID_ARG. **]**
+
 **SRS_HTTPAPI_COMPACT_21_062: [** If any memory allocation get fail, the HTTPAPI_SetOption shall return HTTPAPI_ALLOC_FAILED. **]**
+
 **SRS_HTTPAPI_COMPACT_21_063: [** If the HTTP do not support the optionName, the HTTPAPI_SetOption shall return HTTPAPI_INVALID_ARG. **]**
+
 **SRS_HTTPAPI_COMPACT_21_064: [** If the HTTPAPI_SetOption get success setting the option, it shall return HTTPAPI_OK. **]**
 
 
@@ -296,10 +355,17 @@ HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, co
 ```
 
 **SRS_HTTPAPI_COMPACT_21_065: [** The HTTPAPI_CloneOption shall provide the means to clone the HTTP option. **]**
+
 **SRS_HTTPAPI_COMPACT_21_066: [** The HTTPAPI_CloneOption shall return a clone of the value identified by the optionName. **]**
+
 **SRS_HTTPAPI_COMPACT_21_067: [** If the optionName is NULL, the HTTPAPI_CloneOption shall return HTTPAPI_INVALID_ARG. **]**
+
 **SRS_HTTPAPI_COMPACT_21_068: [** If the value is NULL, the HTTPAPI_CloneOption shall return HTTPAPI_INVALID_ARG. **]**
+
 **SRS_HTTPAPI_COMPACT_21_069: [** If the savedValue is NULL, the HTTPAPI_CloneOption shall return HTTPAPI_INVALID_ARG. **]**
+
 **SRS_HTTPAPI_COMPACT_21_070: [** If any memory allocation get fail, the HTTPAPI_CloneOption shall return HTTPAPI_ALLOC_FAILED. **]**
+
 **SRS_HTTPAPI_COMPACT_21_071: [** If the HTTP do not support the optionName, the HTTPAPI_CloneOption shall return HTTPAPI_INVALID_ARG. **]**
+
 **SRS_HTTPAPI_COMPACT_21_072: [** If the HTTPAPI_CloneOption get success setting the option, it shall return HTTPAPI_OK. **]**
