@@ -120,7 +120,8 @@ int my_xio_setoption(XIO_HANDLE xio, const char* optionName, const void* value)
 }
 
 static int xio_open_shallReturn;
-static int xio_send_shallReturn;
+static const int* xio_send_shallReturn;
+static int xio_send_shallReturn_counter;
 static char xio_send_transmited_buffer[1024];
 static int xio_send_transmited_buffer_target = 0;
 
@@ -134,6 +135,12 @@ typedef enum xio_dowork_job_tag
     XIO_DOWORK_JOB_END
 } xio_dowork_job;
 
+static const int xio_send_0[10] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+static const int xio_send_e[4] = { 123, 123, 123, 123 };
+static const int xio_send_0_e[4] = { 0, 123, 0, 0 };
+static const int xio_send_00_e[4] = { 0, 0, 123, 0 };
+static const int xio_send_7x0[7] = { 0, 0, 0, 0, 0, 0, 0 };
+static const int xio_send_6x0_e[7] = { 0, 0, 0, 0, 0, 0, 123 };
 static const xio_dowork_job doworkjob_end[1] = { XIO_DOWORK_JOB_END };
 static const xio_dowork_job doworkjob_oe[2] = { XIO_DOWORK_JOB_OPEN, XIO_DOWORK_JOB_END };
 static const xio_dowork_job doworkjob_4none_oe[6] = { XIO_DOWORK_JOB_NONE, XIO_DOWORK_JOB_NONE, XIO_DOWORK_JOB_NONE, XIO_DOWORK_JOB_NONE, XIO_DOWORK_JOB_OPEN, XIO_DOWORK_JOB_END };
@@ -142,56 +149,9 @@ static const xio_dowork_job doworkjob_o_3none_ee[6] = { XIO_DOWORK_JOB_OPEN, XIO
 static const xio_dowork_job doworkjob_oee[3] = { XIO_DOWORK_JOB_OPEN, XIO_DOWORK_JOB_ERROR, XIO_DOWORK_JOB_END };
 static const xio_dowork_job doworkjob_ose[3] = { XIO_DOWORK_JOB_OPEN, XIO_DOWORK_JOB_SEND, XIO_DOWORK_JOB_END };
 static const xio_dowork_job doworkjob_onnse[5] = { XIO_DOWORK_JOB_OPEN, XIO_DOWORK_JOB_NONE, XIO_DOWORK_JOB_NONE, XIO_DOWORK_JOB_SEND, XIO_DOWORK_JOB_END };
-static const xio_dowork_job doworkjob_o_4s_e[6] = { XIO_DOWORK_JOB_OPEN, XIO_DOWORK_JOB_SEND, XIO_DOWORK_JOB_SEND, XIO_DOWORK_JOB_SEND, XIO_DOWORK_JOB_SEND, XIO_DOWORK_JOB_END };
 static const xio_dowork_job doworkjob_ee[2] = { XIO_DOWORK_JOB_ERROR, XIO_DOWORK_JOB_END };
-static const xio_dowork_job doworkjob_o_7s_e[9] = {
-    XIO_DOWORK_JOB_OPEN,
-        XIO_DOWORK_JOB_SEND,
-        XIO_DOWORK_JOB_SEND,
-        XIO_DOWORK_JOB_SEND,
-        XIO_DOWORK_JOB_SEND,
-        XIO_DOWORK_JOB_SEND,
-        XIO_DOWORK_JOB_SEND,
-        XIO_DOWORK_JOB_SEND,
-        XIO_DOWORK_JOB_END
-};
-static const xio_dowork_job doworkjob_o_7s_ee[10] = {
-    XIO_DOWORK_JOB_OPEN,
-        XIO_DOWORK_JOB_SEND,
-        XIO_DOWORK_JOB_SEND,
-        XIO_DOWORK_JOB_SEND,
-        XIO_DOWORK_JOB_SEND,
-        XIO_DOWORK_JOB_SEND,
-        XIO_DOWORK_JOB_SEND,
-        XIO_DOWORK_JOB_SEND,
-        XIO_DOWORK_JOB_ERROR,
-        XIO_DOWORK_JOB_END
-};
-static const xio_dowork_job doworkjob_o_7s_re[10] = {
-    XIO_DOWORK_JOB_OPEN,
-        XIO_DOWORK_JOB_SEND,
-        XIO_DOWORK_JOB_SEND,
-        XIO_DOWORK_JOB_SEND,
-        XIO_DOWORK_JOB_SEND,
-        XIO_DOWORK_JOB_SEND,
-        XIO_DOWORK_JOB_SEND,
-        XIO_DOWORK_JOB_SEND,
-        XIO_DOWORK_JOB_RECEIVED,
-        XIO_DOWORK_JOB_END
-};
-static const xio_dowork_job doworkjob_o_7s_rre[11] = {
-    XIO_DOWORK_JOB_OPEN,
-        XIO_DOWORK_JOB_SEND,
-        XIO_DOWORK_JOB_SEND,
-        XIO_DOWORK_JOB_SEND,
-        XIO_DOWORK_JOB_SEND,
-        XIO_DOWORK_JOB_SEND,
-        XIO_DOWORK_JOB_SEND,
-        XIO_DOWORK_JOB_SEND,
-        XIO_DOWORK_JOB_RECEIVED,
-        XIO_DOWORK_JOB_RECEIVED,
-        XIO_DOWORK_JOB_END
-};
+static const xio_dowork_job doworkjob_o_re[3] = { XIO_DOWORK_JOB_OPEN, XIO_DOWORK_JOB_RECEIVED, XIO_DOWORK_JOB_END };
+static const xio_dowork_job doworkjob_o_rre[4] = { XIO_DOWORK_JOB_OPEN, XIO_DOWORK_JOB_RECEIVED, XIO_DOWORK_JOB_RECEIVED, XIO_DOWORK_JOB_END };
 
 static const IO_OPEN_RESULT openresult_ok[1] = { IO_OPEN_OK };
 static const IO_OPEN_RESULT openresult_error[1] = { IO_OPEN_ERROR };
@@ -270,7 +230,6 @@ int my_xio_send(XIO_HANDLE xio, const void* buffer, size_t size, ON_SEND_COMPLET
 {
     int result;
     if ((xio == NULL) ||
-        (on_send_complete == NULL) || (callback_context == NULL) ||
         (buffer == NULL) || (size == 0))
     {
         result = __LINE__;
@@ -288,9 +247,8 @@ int my_xio_send(XIO_HANDLE xio, const void* buffer, size_t size, ON_SEND_COMPLET
                 memcpy(xio_send_transmited_buffer, buffer, size);
             }
         }
-        result = xio_send_shallReturn;
-
-        xio_dowork(xio);
+        result = xio_send_shallReturn[xio_send_shallReturn_counter];
+        xio_send_shallReturn_counter++;
     }
     return result;
 }
@@ -446,7 +404,8 @@ static void destroyHttpObjects(HTTP_HEADERS_HANDLE* requestHttpHeaders, HTTP_HEA
 static HTTP_HANDLE createHttpConnection(void)
 {
     xio_open_shallReturn = 0;
-    xio_send_shallReturn = 0;
+    xio_send_shallReturn_counter = 0;
+    xio_send_shallReturn = (const int*)xio_send_0;
 
     my_on_io_open_complete = NULL;
     my_on_io_open_complete_context = NULL;
@@ -505,26 +464,10 @@ static void setupAllCallBeforeOpenHTTPsequence(HTTP_HEADERS_HANDLE requestHttpHe
             .IgnoreArgument(1);
         if (i > 0)
         {
-            STRICT_EXPECTED_CALL(ThreadAPI_Sleep(1));
+            STRICT_EXPECTED_CALL(ThreadAPI_Sleep(100));
         }
     }
 }
-
-static void setupAllCallBeforeSendHTTPsequence(int numberOfDoWork)
-{
-    STRICT_EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
-        .IgnoreAllArguments();
-    for (int i = 0; i < numberOfDoWork; i++)
-    {
-        STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
-            .IgnoreArgument(1);
-        if (i > 0)
-        {
-            STRICT_EXPECTED_CALL(ThreadAPI_Sleep(1));
-        }
-    }
-}
-
 
 #define TEST_RECEIVED_ANSWER (const unsigned char*)"HTTP/111.222 433 555\r\ncontent-length:10\r\ntransfer-encoding:\r\n\r\n0123456789\r\n\r\n"
 static void setupAllCallBeforeReceiveHTTPsequenceWithSuccess()
@@ -533,25 +476,18 @@ static void setupAllCallBeforeReceiveHTTPsequenceWithSuccess()
         .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_NUM_ARG, DoworkJobsReceivedBuffer_size[0])).IgnoreArgument(1);
 
-    for (size_t countChar = 0; countChar < 40; countChar++)
-    {
-        STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
-            .IgnoreArgument(1);
-    }
+    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
+        .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(HTTPHeaders_AddHeaderNameValuePair(IGNORED_PTR_ARG, "content-length", "10")).IgnoreArgument(1);
 
-    for (size_t countChar = 0; countChar < 20; countChar++)
-    {
-        STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
-            .IgnoreArgument(1);
-    }
+    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
+        .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(HTTPHeaders_AddHeaderNameValuePair(IGNORED_PTR_ARG, "transfer-encoding", "")).IgnoreArgument(1);
 
-    for (size_t countChar = 0; countChar < 3; countChar++)
-    {
-        STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
-            .IgnoreArgument(1);
-    }
+    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
+        .IgnoreArgument(1);
 
     STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
@@ -561,18 +497,15 @@ static void setupAllCallBeforeReceiveHTTPsequenceWithSuccess()
 
 static void setupAllCallBeforeSendHTTPsequenceWithSuccess(HTTP_HEADERS_HANDLE requestHttpHeaders)
 {
-    setupAllCallBeforeSendHTTPsequence(1);
+    STRICT_EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+        .IgnoreAllArguments();
     STRICT_EXPECTED_CALL(HTTPHeaders_GetHeader(requestHttpHeaders, IGNORED_NUM_ARG, IGNORED_PTR_ARG))
         .IgnoreArgument(2).IgnoreArgument(3);
     STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
     STRICT_EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
         .IgnoreAllArguments();
-    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
-        .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
         .IgnoreAllArguments();
-    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
-        .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(HTTPHeaders_GetHeader(requestHttpHeaders, IGNORED_NUM_ARG, IGNORED_PTR_ARG))
@@ -580,23 +513,15 @@ static void setupAllCallBeforeSendHTTPsequenceWithSuccess(HTTP_HEADERS_HANDLE re
     STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
     STRICT_EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
         .IgnoreAllArguments();
-    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
-        .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
         .IgnoreAllArguments();
-    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
-        .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
         .IgnoreAllArguments();
-    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
-        .IgnoreArgument(1);
 
     STRICT_EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
         .IgnoreAllArguments();
-    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
-        .IgnoreArgument(1);
 }
 
 static const IO_OPEN_RESULT* DoworkJobsOpenResult_ReceiveHead = (const IO_OPEN_RESULT*)openresult_ok;
@@ -604,9 +529,6 @@ static const IO_SEND_RESULT* DoworkJobsSendResult_ReceiveHead = (const IO_SEND_R
 
 static void PrepareReceiveHead(HTTP_HEADERS_HANDLE requestHttpHeaders, size_t bufferSize[], int doworkReduction[], int countSizes)
 {
-    int maxSize;
-    int countChar;
-
     DoworkJobsOpenResult = DoworkJobsOpenResult_ReceiveHead;
     DoworkJobsSendResult = DoworkJobsSendResult_ReceiveHead;
 
@@ -617,24 +539,19 @@ static void PrepareReceiveHead(HTTP_HEADERS_HANDLE requestHttpHeaders, size_t bu
     {
         if (countBuffer > 0)
         {
-            STRICT_EXPECTED_CALL(ThreadAPI_Sleep(1));
+            STRICT_EXPECTED_CALL(ThreadAPI_Sleep(100));
         }
         STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
         STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_NUM_ARG, bufferSize[countBuffer])).IgnoreArgument(1);
-        maxSize = (int)(bufferSize[countBuffer]) - 1 - doworkReduction[countBuffer];
-        if (maxSize > 1023)
-        {
-            maxSize = 1023;
-        }
-        for (countChar = 0; countChar < maxSize; countChar++)
+        for (int countChar = 0; countChar < doworkReduction[countBuffer]; countChar++)
         {
             STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
                 .IgnoreArgument(1);
         }
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
     }
-    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
-        .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(xio_close(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
         .IgnoreAllArguments();
 
@@ -992,9 +909,9 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__NULL_handle_failed)
         TestBufferHandle);
 
     /// assert
+    ASSERT_ARE_EQUAL(int, HTTPAPI_INVALID_ARG, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(int, 2, currentmalloc_call);
-    ASSERT_ARE_EQUAL(int, HTTPAPI_INVALID_ARG, result);
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
@@ -1025,9 +942,9 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__invalid_request_type_failed)
         TestBufferHandle);
 
     /// assert
+    ASSERT_ARE_EQUAL(int, HTTPAPI_INVALID_ARG, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(int, 4, currentmalloc_call);
-    ASSERT_ARE_EQUAL(int, HTTPAPI_INVALID_ARG, result);
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
@@ -1059,9 +976,9 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__NULL_relative_path_failed)
         TestBufferHandle);
 
     /// assert
+    ASSERT_ARE_EQUAL(int, HTTPAPI_INVALID_ARG, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(int, 4, currentmalloc_call);
-    ASSERT_ARE_EQUAL(int, HTTPAPI_INVALID_ARG, result);
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
@@ -1093,9 +1010,9 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__NULL_http_headers_handle_failed)
         TestBufferHandle);
 
     /// assert
+    ASSERT_ARE_EQUAL(int, HTTPAPI_INVALID_ARG, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(int, 4, currentmalloc_call);
-    ASSERT_ARE_EQUAL(int, HTTPAPI_INVALID_ARG, result);
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
@@ -1131,9 +1048,9 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__invalid_http_headers_handle_failed)
         TestBufferHandle);
 
     /// assert
+    ASSERT_ARE_EQUAL(int, HTTPAPI_INVALID_ARG, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(int, 4, currentmalloc_call);
-    ASSERT_ARE_EQUAL(int, HTTPAPI_INVALID_ARG, result);
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
@@ -1169,9 +1086,9 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__http_headers_handle_failed)
         TestBufferHandle);
 
     /// assert
+    ASSERT_ARE_EQUAL(int, HTTPAPI_INVALID_ARG, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(int, 4, currentmalloc_call);
-    ASSERT_ARE_EQUAL(int, HTTPAPI_INVALID_ARG, result);
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
@@ -1212,9 +1129,9 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__certificate_failed)
         TestBufferHandle);
 
     /// assert
+    ASSERT_ARE_EQUAL(int, HTTPAPI_SET_OPTION_FAILED, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(int, 5, currentmalloc_call);
-    ASSERT_ARE_EQUAL(int, HTTPAPI_SET_OPTION_FAILED, result);
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
@@ -1239,9 +1156,9 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__certificate_out_of_memory_failed)
     result = HTTPAPI_SetOption(httpHandle, "TrustedCerts", TEST_SETOPTIONS_CERTIFICATE);
 
     /// assert
+    ASSERT_ARE_EQUAL(int, HTTPAPI_ALLOC_FAILED, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(int, 2, currentmalloc_call);
-    ASSERT_ARE_EQUAL(int, HTTPAPI_ALLOC_FAILED, result);
 
     /// cleanup
     HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 2 */
@@ -1263,9 +1180,9 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__certificate_succeed)
     result = HTTPAPI_SetOption(httpHandle, "TrustedCerts", TEST_SETOPTIONS_CERTIFICATE);
 
     /// assert
+    ASSERT_ARE_EQUAL(int, HTTPAPI_OK, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(int, 3, currentmalloc_call);
-    ASSERT_ARE_EQUAL(int, HTTPAPI_OK, result);
 
     /// cleanup
     HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
@@ -1301,9 +1218,9 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__certificate_NULL_optionName_failed)
     result = HTTPAPI_SetOption(httpHandle, NULL, TEST_SETOPTIONS_CERTIFICATE);
 
     /// assert
+    ASSERT_ARE_EQUAL(int, HTTPAPI_INVALID_ARG, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(int, 2, currentmalloc_call);
-    ASSERT_ARE_EQUAL(int, HTTPAPI_INVALID_ARG, result);
 
     /// cleanup
     HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 2 */
@@ -1322,9 +1239,9 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__certificate_invalid_optionName_failed)
     result = HTTPAPI_SetOption(httpHandle, "InvalidOptionName", TEST_SETOPTIONS_CERTIFICATE);
 
     /// assert
+    ASSERT_ARE_EQUAL(int, HTTPAPI_INVALID_ARG, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(int, 2, currentmalloc_call);
-    ASSERT_ARE_EQUAL(int, HTTPAPI_INVALID_ARG, result);
 
     /// cleanup
     HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 2 */
@@ -1343,9 +1260,9 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__certificate_NULL_value_failed)
     result = HTTPAPI_SetOption(httpHandle, "TrustedCerts", NULL);
 
     /// assert
+    ASSERT_ARE_EQUAL(int, HTTPAPI_INVALID_ARG, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(int, 2, currentmalloc_call);
-    ASSERT_ARE_EQUAL(int, HTTPAPI_INVALID_ARG, result);
 
     /// cleanup
     HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 2 */
@@ -1368,9 +1285,9 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__clone_certificate_out_of_memory_failed)
     result = HTTPAPI_CloneOption("TrustedCerts", TEST_SETOPTIONS_CERTIFICATE, (const void**)&cloneCertificate);
 
     /// assert
+    ASSERT_ARE_EQUAL(int, HTTPAPI_ALLOC_FAILED, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(int, 0, currentmalloc_call);
-    ASSERT_ARE_EQUAL(int, HTTPAPI_ALLOC_FAILED, result);
 
     /// cleanup
 }
@@ -1391,10 +1308,10 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__clone_certificate_succeed)
     result = HTTPAPI_CloneOption("TrustedCerts", TEST_SETOPTIONS_CERTIFICATE, (const void**)&cloneCertificate);
 
     /// assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(char_ptr, (char*)TEST_SETOPTIONS_CERTIFICATE, (char*)cloneCertificate);
-    ASSERT_ARE_EQUAL(int, 1, currentmalloc_call);
     ASSERT_ARE_EQUAL(int, HTTPAPI_OK, result);
+    ASSERT_ARE_EQUAL(char_ptr, (char*)TEST_SETOPTIONS_CERTIFICATE, (char*)cloneCertificate);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_ARE_EQUAL(int, 1, currentmalloc_call);
 
     /// cleanup
     free((void*)cloneCertificate);
@@ -1411,9 +1328,9 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__clone_certificate_NULL_optionName_failed)
     result = HTTPAPI_CloneOption(NULL, TEST_SETOPTIONS_CERTIFICATE, (const void**)&cloneCertificate);
 
     /// assert
+    ASSERT_ARE_EQUAL(int, HTTPAPI_INVALID_ARG, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(int, 0, currentmalloc_call);
-    ASSERT_ARE_EQUAL(int, HTTPAPI_INVALID_ARG, result);
 
     /// cleanup
 }
@@ -1429,9 +1346,9 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__clone_certificate_NULL_value_failed)
     result = HTTPAPI_CloneOption("TrustedCerts", NULL, (const void**)&cloneCertificate);
 
     /// assert
+    ASSERT_ARE_EQUAL(int, HTTPAPI_INVALID_ARG, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(int, 0, currentmalloc_call);
-    ASSERT_ARE_EQUAL(int, HTTPAPI_INVALID_ARG, result);
 
     /// cleanup
 }
@@ -1446,9 +1363,9 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__clone_certificate_NULL_savadValue_failed)
     result = HTTPAPI_CloneOption("TrustedCerts", TEST_SETOPTIONS_CERTIFICATE, NULL);
 
     /// assert
+    ASSERT_ARE_EQUAL(int, HTTPAPI_INVALID_ARG, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(int, 0, currentmalloc_call);
-    ASSERT_ARE_EQUAL(int, HTTPAPI_INVALID_ARG, result);
 
     /// cleanup
 }
@@ -1464,9 +1381,9 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__clone_certificate_invalid_optionName_faile
     result = HTTPAPI_CloneOption("InvalidOptionName", TEST_SETOPTIONS_CERTIFICATE, (const void**)&cloneCertificate);
 
     /// assert
+    ASSERT_ARE_EQUAL(int, HTTPAPI_INVALID_ARG, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(int, 0, currentmalloc_call);
-    ASSERT_ARE_EQUAL(int, HTTPAPI_INVALID_ARG, result);
 
     /// cleanup
 }
@@ -1498,9 +1415,9 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__xoi_open_returns_LINE_failed)
         TestBufferHandle);
 
     /// assert
+    ASSERT_ARE_EQUAL(int, HTTPAPI_OPEN_REQUEST_FAILED, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(int, 5, currentmalloc_call);
-    ASSERT_ARE_EQUAL(int, HTTPAPI_OPEN_REQUEST_FAILED, result);
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
@@ -1538,9 +1455,9 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_io_open_complete_with_error_on_openning
         TestBufferHandle);
 
     /// assert
+    ASSERT_ARE_EQUAL(int, HTTPAPI_OPEN_REQUEST_FAILED, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(int, 5, currentmalloc_call);
-    ASSERT_ARE_EQUAL(int, HTTPAPI_OPEN_REQUEST_FAILED, result);
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
@@ -1578,9 +1495,9 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_io_open_complete_with_error_on_working_
         TestBufferHandle);
 
     /// assert
+    ASSERT_ARE_EQUAL(int, HTTPAPI_OPEN_REQUEST_FAILED, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(int, 5, currentmalloc_call);
-    ASSERT_ARE_EQUAL(int, HTTPAPI_OPEN_REQUEST_FAILED, result);
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
@@ -1617,9 +1534,9 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_io_error_on_openning_failed)
         TestBufferHandle);
 
     /// assert
+    ASSERT_ARE_EQUAL(int, HTTPAPI_OPEN_REQUEST_FAILED, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(int, 5, currentmalloc_call);
-    ASSERT_ARE_EQUAL(int, HTTPAPI_OPEN_REQUEST_FAILED, result);
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
@@ -1656,9 +1573,9 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_io_error_on_working_failed)
         TestBufferHandle);
 
     /// assert
+    ASSERT_ARE_EQUAL(int, HTTPAPI_OPEN_REQUEST_FAILED, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(int, 5, currentmalloc_call);
-    ASSERT_ARE_EQUAL(int, HTTPAPI_OPEN_REQUEST_FAILED, result);
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders);	/* currentmalloc_call -= 2 */
@@ -1706,9 +1623,9 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__huge_relative_path_failed)
         TestBufferHandle);
 
     /// assert
+    ASSERT_ARE_EQUAL(int, HTTPAPI_STRING_PROCESSING_ERROR, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(int, 5, currentmalloc_call);
-    ASSERT_ARE_EQUAL(int, HTTPAPI_STRING_PROCESSING_ERROR, result);
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
@@ -1735,8 +1652,9 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__io_send_header_return_error_failed)
 
     setHttpCertificate(httpHandle);
     setupAllCallBeforeOpenHTTPsequence(requestHttpHeaders, 1);
-    xio_send_shallReturn = __LINE__;
-    setupAllCallBeforeSendHTTPsequence(1);
+    xio_send_shallReturn = (const int*)xio_send_e;
+    STRICT_EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+        .IgnoreAllArguments();
     STRICT_EXPECTED_CALL(xio_close(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
         .IgnoreAllArguments();
 
@@ -1753,187 +1671,14 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__io_send_header_return_error_failed)
         TestBufferHandle);
 
     /// assert
+    ASSERT_ARE_EQUAL(int, HTTPAPI_SEND_REQUEST_FAILED, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(int, 5, currentmalloc_call);
-    ASSERT_ARE_EQUAL(int, HTTPAPI_SEND_REQUEST_FAILED, result);
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
     HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
     HTTPAPI_Deinit();
-}
-
-/*Tests_SRS_HTTPAPI_COMPACT_21_028: [ If the HTTPAPI_ExecuteRequest cannot send the request header, it shall return HTTPAPI_SEND_REQUEST_FAILED. ]*/
-TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_send_header_complete_with_error_on_sending_failed)
-{
-    /// arrange
-    unsigned int statusCode;
-    HTTPAPI_RESULT result;
-    HTTP_HEADERS_HANDLE requestHttpHeaders;
-    HTTP_HEADERS_HANDLE responseHttpHeaders;
-    HTTP_HANDLE httpHandle = createHttpConnection();
-    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
-    setHttpCertificate(httpHandle);
-
-    DoworkJobs = (const xio_dowork_job*)doworkjob_ose;
-    DoworkJobsOpenResult = (const IO_OPEN_RESULT*)openresult_ok;
-    DoworkJobsSendResult = (const IO_SEND_RESULT*)sendresult_error;
-
-    setupAllCallBeforeOpenHTTPsequence(requestHttpHeaders, 1);
-    setupAllCallBeforeSendHTTPsequence(1);
-    STRICT_EXPECTED_CALL(xio_close(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
-        .IgnoreAllArguments();
-
-    /// act
-    result = HTTPAPI_ExecuteRequest(
-        httpHandle,
-        HTTPAPI_REQUEST_GET,
-        TEST_EXECUTE_REQUEST_RELATIVE_PATH,
-        requestHttpHeaders,
-        TEST_EXECUTE_REQUEST_CONTENT,
-        TEST_EXECUTE_REQUEST_CONTENT_LENGTH,
-        &statusCode,
-        responseHttpHeaders,
-        TestBufferHandle);
-
-    /// assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(int, 5, currentmalloc_call);
-    ASSERT_ARE_EQUAL(int, HTTPAPI_SEND_REQUEST_FAILED, result);
-
-    /// cleanup
-    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
-    HTTPAPI_Deinit();
-}
-
-/*Tests_SRS_HTTPAPI_COMPACT_21_028: [ If the HTTPAPI_ExecuteRequest cannot send the request header, it shall return HTTPAPI_SEND_REQUEST_FAILED. ]*/
-TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_send_header_complete_with_error_on_working_failed)
-{
-    /// arrange
-    unsigned int statusCode;
-    HTTPAPI_RESULT result;
-    HTTP_HEADERS_HANDLE requestHttpHeaders;
-    HTTP_HEADERS_HANDLE responseHttpHeaders;
-    HTTP_HANDLE httpHandle = createHttpConnection();
-    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
-    setHttpCertificate(httpHandle);
-
-    DoworkJobs = (const xio_dowork_job*)doworkjob_onnse;
-    DoworkJobsOpenResult = (const IO_OPEN_RESULT*)openresult_ok;
-    DoworkJobsSendResult = (const IO_SEND_RESULT*)sendresult_error;
-
-    setupAllCallBeforeOpenHTTPsequence(requestHttpHeaders, 1);
-    setupAllCallBeforeSendHTTPsequence(3);
-    STRICT_EXPECTED_CALL(xio_close(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
-        .IgnoreAllArguments();
-
-    /// act
-    result = HTTPAPI_ExecuteRequest(
-        httpHandle,
-        HTTPAPI_REQUEST_GET,
-        TEST_EXECUTE_REQUEST_RELATIVE_PATH,
-        requestHttpHeaders,
-        TEST_EXECUTE_REQUEST_CONTENT,
-        TEST_EXECUTE_REQUEST_CONTENT_LENGTH,
-        &statusCode,
-        responseHttpHeaders,
-        TestBufferHandle);
-
-    /// assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(int, 5, currentmalloc_call);
-    ASSERT_ARE_EQUAL(int, HTTPAPI_SEND_REQUEST_FAILED, result);
-
-    /// cleanup
-    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
-    HTTPAPI_Deinit();
-}
-
-/*Tests_SRS_HTTPAPI_COMPACT_21_028: [ If the HTTPAPI_ExecuteRequest cannot send the request header, it shall return HTTPAPI_SEND_REQUEST_FAILED. ]*/
-TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_io_error_on_sending_header_failed)
-{
-    /// arrange
-    unsigned int statusCode;
-    HTTPAPI_RESULT result;
-    HTTP_HEADERS_HANDLE requestHttpHeaders;
-    HTTP_HEADERS_HANDLE responseHttpHeaders;
-    HTTP_HANDLE httpHandle = createHttpConnection();
-    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
-    setHttpCertificate(httpHandle);
-
-    DoworkJobs = (const xio_dowork_job*)doworkjob_oee;
-    DoworkJobsOpenResult = (const IO_OPEN_RESULT*)openresult_ok;
-
-    setupAllCallBeforeOpenHTTPsequence(requestHttpHeaders, 1);
-    setupAllCallBeforeSendHTTPsequence(1);
-    STRICT_EXPECTED_CALL(xio_close(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
-        .IgnoreAllArguments();
-
-    /// act
-    result = HTTPAPI_ExecuteRequest(
-        httpHandle,
-        HTTPAPI_REQUEST_GET,
-        TEST_EXECUTE_REQUEST_RELATIVE_PATH,
-        requestHttpHeaders,
-        TEST_EXECUTE_REQUEST_CONTENT,
-        TEST_EXECUTE_REQUEST_CONTENT_LENGTH,
-        &statusCode,
-        responseHttpHeaders,
-        TestBufferHandle);
-
-    /// assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(int, 5, currentmalloc_call);
-    ASSERT_ARE_EQUAL(int, HTTPAPI_SEND_REQUEST_FAILED, result);
-
-    /// cleanup
-    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
-    HTTPAPI_Deinit();
-}
-
-/*Tests_SRS_HTTPAPI_COMPACT_21_028: [ If the HTTPAPI_ExecuteRequest cannot send the request header, it shall return HTTPAPI_SEND_REQUEST_FAILED. ]*/
-TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_io_error_for_send_header_on_working_failed)
-{
-    /// arrange
-    unsigned int statusCode;
-    HTTPAPI_RESULT result;
-    HTTP_HEADERS_HANDLE requestHttpHeaders;
-    HTTP_HEADERS_HANDLE responseHttpHeaders;
-    HTTP_HANDLE httpHandle = createHttpConnection();
-    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
-    setHttpCertificate(httpHandle);
-
-    DoworkJobs = (const xio_dowork_job*)doworkjob_o_3none_ee;
-    DoworkJobsOpenResult = (const IO_OPEN_RESULT*)openresult_ok;
-
-    setupAllCallBeforeOpenHTTPsequence(requestHttpHeaders, 1);
-    setupAllCallBeforeSendHTTPsequence(4);
-    STRICT_EXPECTED_CALL(xio_close(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
-        .IgnoreAllArguments();
-
-    /// act
-    result = HTTPAPI_ExecuteRequest(
-        httpHandle,
-        HTTPAPI_REQUEST_GET,
-        TEST_EXECUTE_REQUEST_RELATIVE_PATH,
-        requestHttpHeaders,
-        TEST_EXECUTE_REQUEST_CONTENT,
-        TEST_EXECUTE_REQUEST_CONTENT_LENGTH,
-        &statusCode,
-        responseHttpHeaders,
-        TestBufferHandle);
-
-    /// assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(int, 5, currentmalloc_call);
-    ASSERT_ARE_EQUAL(int, HTTPAPI_SEND_REQUEST_FAILED, result);
-
-    /// cleanup
-    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
-    destroyHttpConnection(httpHandle);
 }
 
 /*Tests_SRS_HTTPAPI_COMPACT_21_028: [ If the HTTPAPI_ExecuteRequest cannot send the request header, it shall return HTTPAPI_SEND_REQUEST_FAILED. ]*/
@@ -1948,29 +1693,25 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_send_header_complete_with_success_befor
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     setHttpCertificate(httpHandle);
 
-    DoworkJobs = (const xio_dowork_job*)doworkjob_o_4s_e;
+    DoworkJobs = (const xio_dowork_job*)doworkjob_oe;
     DoworkJobsOpenResult = (const IO_OPEN_RESULT*)openresult_ok;
     DoworkJobsSendResult = (const IO_SEND_RESULT*)sendresult_o_3error;
+    xio_send_shallReturn = (const int*)xio_send_0_e;
 
     setupAllCallBeforeOpenHTTPsequence(requestHttpHeaders, 1);
-    setupAllCallBeforeSendHTTPsequence(1);
+    STRICT_EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+        .IgnoreAllArguments();
     STRICT_EXPECTED_CALL(HTTPHeaders_GetHeader(requestHttpHeaders, IGNORED_NUM_ARG, IGNORED_PTR_ARG))
         .IgnoreArgument(2).IgnoreArgument(3);
     STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
     STRICT_EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
         .IgnoreAllArguments();
-    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
-        .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
         .IgnoreAllArguments();
-    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
-        .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
         .IgnoreAllArguments();
-    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
-        .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(xio_close(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
         .IgnoreAllArguments();
 
@@ -1989,9 +1730,68 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_send_header_complete_with_success_befor
         TestBufferHandle);
 
     /// assert
+    ASSERT_ARE_EQUAL(int, HTTPAPI_SEND_REQUEST_FAILED, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(int, 5, currentmalloc_call);
+
+    /// cleanup
+    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
+    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
+    HTTPAPI_Deinit();
+}
+
+/*Tests_SRS_HTTPAPI_COMPACT_21_028: [ If the HTTPAPI_ExecuteRequest cannot send the request header, it shall return HTTPAPI_SEND_REQUEST_FAILED. ]*/
+TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_send_header_complete_with_2_success_before_error_failed)
+{
+    /// arrange
+    unsigned int statusCode;
+    HTTPAPI_RESULT result;
+    HTTP_HEADERS_HANDLE requestHttpHeaders;
+    HTTP_HEADERS_HANDLE responseHttpHeaders;
+    HTTP_HANDLE httpHandle = createHttpConnection();
+    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
+    setHttpCertificate(httpHandle);
+
+    DoworkJobs = (const xio_dowork_job*)doworkjob_oe;
+    DoworkJobsOpenResult = (const IO_OPEN_RESULT*)openresult_ok;
+    DoworkJobsSendResult = (const IO_SEND_RESULT*)sendresult_o_3error;
+    xio_send_shallReturn = (const int*)xio_send_00_e;
+
+    setupAllCallBeforeOpenHTTPsequence(requestHttpHeaders, 1);
+    STRICT_EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+        .IgnoreAllArguments();
+    STRICT_EXPECTED_CALL(HTTPHeaders_GetHeader(requestHttpHeaders, IGNORED_NUM_ARG, IGNORED_PTR_ARG))
+        .IgnoreArgument(2).IgnoreArgument(3);
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+        .IgnoreAllArguments();
+    STRICT_EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+        .IgnoreAllArguments();
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+        .IgnoreAllArguments();
+    STRICT_EXPECTED_CALL(xio_close(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+        .IgnoreAllArguments();
+
+    HTTPHeaders_GetHeader_shallReturn = HTTP_HEADERS_OK;
+
+    /// act
+    result = HTTPAPI_ExecuteRequest(
+        httpHandle,
+        HTTPAPI_REQUEST_GET,
+        TEST_EXECUTE_REQUEST_RELATIVE_PATH,
+        requestHttpHeaders,
+        TEST_EXECUTE_REQUEST_CONTENT,
+        TEST_EXECUTE_REQUEST_CONTENT_LENGTH,
+        &statusCode,
+        responseHttpHeaders,
+        TestBufferHandle);
+
+    /// assert
     ASSERT_ARE_EQUAL(int, HTTPAPI_SEND_REQUEST_FAILED, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_ARE_EQUAL(int, 5, currentmalloc_call);
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
@@ -2011,24 +1811,22 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_send_buffer_complete_with_error_failed)
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     setHttpCertificate(httpHandle);
 
-    DoworkJobs = (const xio_dowork_job*)doworkjob_o_7s_e;
+    DoworkJobs = (const xio_dowork_job*)doworkjob_oe;
     DoworkJobsOpenResult = (const IO_OPEN_RESULT*)openresult_ok;
     DoworkJobsSendResult = (const IO_SEND_RESULT*)sendresult_6ok_error;
+    xio_send_shallReturn = (const int*)xio_send_6x0_e;
 
     setupAllCallBeforeOpenHTTPsequence(requestHttpHeaders, 1);
 
-    setupAllCallBeforeSendHTTPsequence(1);
+    STRICT_EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+        .IgnoreAllArguments();
     STRICT_EXPECTED_CALL(HTTPHeaders_GetHeader(requestHttpHeaders, IGNORED_NUM_ARG, IGNORED_PTR_ARG))
         .IgnoreArgument(2).IgnoreArgument(3);
     STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
     STRICT_EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
         .IgnoreAllArguments();
-    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
-        .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
         .IgnoreAllArguments();
-    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
-        .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(HTTPHeaders_GetHeader(requestHttpHeaders, IGNORED_NUM_ARG, IGNORED_PTR_ARG))
@@ -2036,23 +1834,16 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_send_buffer_complete_with_error_failed)
     STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
     STRICT_EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
         .IgnoreAllArguments();
-    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
-        .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
         .IgnoreAllArguments();
-    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
-        .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
         .IgnoreAllArguments();
-    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
-        .IgnoreArgument(1);
 
     STRICT_EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
         .IgnoreAllArguments();
-    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
-        .IgnoreArgument(1);
+
     STRICT_EXPECTED_CALL(xio_close(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
         .IgnoreAllArguments();
 
@@ -2071,9 +1862,9 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_send_buffer_complete_with_error_failed)
         TestBufferHandle);
 
     /// assert
+    ASSERT_ARE_EQUAL(int, HTTPAPI_SEND_REQUEST_FAILED, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(int, 5, currentmalloc_call);
-    ASSERT_ARE_EQUAL(int, HTTPAPI_SEND_REQUEST_FAILED, result);
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
@@ -2094,7 +1885,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_read_header_failed_failed)
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     setHttpCertificate(httpHandle);
 
-    DoworkJobs = (const xio_dowork_job*)doworkjob_o_7s_ee;
+    DoworkJobs = (const xio_dowork_job*)doworkjob_oee;
     DoworkJobsOpenResult = (const IO_OPEN_RESULT*)openresult_ok;
     DoworkJobsSendResult = (const IO_SEND_RESULT*)sendresult_7ok;
 
@@ -2121,9 +1912,9 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_read_header_failed_failed)
         TestBufferHandle);
 
     /// assert
+    ASSERT_ARE_EQUAL(int, HTTPAPI_READ_DATA_FAILED, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(int, 5, currentmalloc_call);
-    ASSERT_ARE_EQUAL(int, HTTPAPI_READ_DATA_FAILED, result);
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
@@ -2146,7 +1937,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_read_NULL_header_failed)
     DoworkJobsReceivedBuffer = NULL;
     DoworkJobsReceivedBuffer_size[0] = 10;
     DoworkJobsReceivedBuffer_counter = 0;
-    DoworkJobs = (const xio_dowork_job*)doworkjob_o_7s_re;
+    DoworkJobs = (const xio_dowork_job*)doworkjob_o_re;
     DoworkJobsOpenResult = DoworkJobsOpenResult_ReceiveHead;
     DoworkJobsSendResult = DoworkJobsSendResult_ReceiveHead;
 
@@ -2173,9 +1964,9 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_read_NULL_header_failed)
         TestBufferHandle);
 
     /// assert
+    ASSERT_ARE_EQUAL(int, HTTPAPI_READ_DATA_FAILED, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(int, 5, currentmalloc_call);
-    ASSERT_ARE_EQUAL(int, HTTPAPI_READ_DATA_FAILED, result);
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
@@ -2192,14 +1983,13 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_read_not_HTTP_header_failed)
     HTTP_HEADERS_HANDLE requestHttpHeaders;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     HTTP_HANDLE httpHandle = createHttpConnection();
-    size_t i;
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     setHttpCertificate(httpHandle);
 
     DoworkJobsReceivedBuffer = (const unsigned char*)"HTTPS/111.222 433 555\r\n";
     DoworkJobsReceivedBuffer_size[0] = strlen((const char*)DoworkJobsReceivedBuffer);
     DoworkJobsReceivedBuffer_counter = 0;
-    DoworkJobs = (const xio_dowork_job*)doworkjob_o_7s_re;
+    DoworkJobs = (const xio_dowork_job*)doworkjob_o_re;
     DoworkJobsOpenResult = DoworkJobsOpenResult_ReceiveHead;
     DoworkJobsSendResult = DoworkJobsSendResult_ReceiveHead;
 
@@ -2209,11 +1999,6 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_read_not_HTTP_header_failed)
     STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
         .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_NUM_ARG, DoworkJobsReceivedBuffer_size[0])).IgnoreArgument(1);
-    for (i = 0; i < DoworkJobsReceivedBuffer_size[0] - 1; i++)
-    {
-        STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
-            .IgnoreArgument(1);
-    }
     STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(xio_close(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
@@ -2234,9 +2019,9 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_read_not_HTTP_header_failed)
         TestBufferHandle);
 
     /// assert
+    ASSERT_ARE_EQUAL(int, HTTPAPI_RECEIVE_RESPONSE_FAILED, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(int, 5, currentmalloc_call);
-    ASSERT_ARE_EQUAL(int, HTTPAPI_RECEIVE_RESPONSE_FAILED, result);
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
@@ -2261,7 +2046,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_read_wrong_URL_header_failed)
     int doworkReduction[1] = { 0 };
     DoworkJobsReceivedBuffer_counter = 0;
     PrepareReceiveHead(requestHttpHeaders, DoworkJobsReceivedBuffer_size, doworkReduction, 1);
-    DoworkJobs = (const xio_dowork_job*)doworkjob_o_7s_re;
+    DoworkJobs = (const xio_dowork_job*)doworkjob_o_re;
 
     /// act
     result = HTTPAPI_ExecuteRequest(
@@ -2276,9 +2061,9 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_read_wrong_URL_header_failed)
         TestBufferHandle);
 
     /// assert
+    ASSERT_ARE_EQUAL(int, HTTPAPI_RECEIVE_RESPONSE_FAILED, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(int, 5, currentmalloc_call);
-    ASSERT_ARE_EQUAL(int, HTTPAPI_RECEIVE_RESPONSE_FAILED, result);
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
@@ -2303,7 +2088,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_read_header_with_no_statusCode_failed)
     int doworkReduction[1] = { 0 };
     DoworkJobsReceivedBuffer_counter = 0;
     PrepareReceiveHead(requestHttpHeaders, DoworkJobsReceivedBuffer_size, doworkReduction, 1);
-    DoworkJobs = (const xio_dowork_job*)doworkjob_o_7s_re;
+    DoworkJobs = (const xio_dowork_job*)doworkjob_o_re;
 
     /// act
     result = HTTPAPI_ExecuteRequest(
@@ -2318,9 +2103,9 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_read_header_with_no_statusCode_failed)
         TestBufferHandle);
 
     /// assert
+    ASSERT_ARE_EQUAL(int, HTTPAPI_RECEIVE_RESPONSE_FAILED, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(int, 5, currentmalloc_call);
-    ASSERT_ARE_EQUAL(int, HTTPAPI_RECEIVE_RESPONSE_FAILED, result);
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
@@ -2345,7 +2130,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_read_header_incomplete_failed)
     int doworkReduction[1] = { 0 };
     DoworkJobsReceivedBuffer_counter = 0;
     PrepareReceiveHead(requestHttpHeaders, DoworkJobsReceivedBuffer_size, doworkReduction, 1);
-    DoworkJobs = (const xio_dowork_job*)doworkjob_o_7s_re;
+    DoworkJobs = (const xio_dowork_job*)doworkjob_o_re;
 
     /// act
     result = HTTPAPI_ExecuteRequest(
@@ -2360,9 +2145,9 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_read_header_incomplete_failed)
         TestBufferHandle);
 
     /// assert
+    ASSERT_ARE_EQUAL(int, HTTPAPI_RECEIVE_RESPONSE_FAILED, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(int, 5, currentmalloc_call);
-    ASSERT_ARE_EQUAL(int, HTTPAPI_RECEIVE_RESPONSE_FAILED, result);
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
@@ -2388,7 +2173,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_read_multi_header_with_size_0_and_error
     int doworkReduction[2] = { 0, 0 };
     DoworkJobsReceivedBuffer_counter = 0;
     PrepareReceiveHead(requestHttpHeaders, DoworkJobsReceivedBuffer_size, doworkReduction, 2);
-    DoworkJobs = (const xio_dowork_job*)doworkjob_o_7s_rre;
+    DoworkJobs = (const xio_dowork_job*)doworkjob_o_rre;
 
     /// act
     result = HTTPAPI_ExecuteRequest(
@@ -2403,9 +2188,9 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_read_multi_header_with_size_0_and_error
         TestBufferHandle);
 
     /// assert
+    ASSERT_ARE_EQUAL(int, HTTPAPI_RECEIVE_RESPONSE_FAILED, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(int, 5, currentmalloc_call);
-    ASSERT_ARE_EQUAL(int, HTTPAPI_RECEIVE_RESPONSE_FAILED, result);
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
@@ -2439,10 +2224,10 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__read_huge_header_failed)
 
     DoworkJobsReceivedBuffer = (const unsigned char*)hugeBuffer;
     DoworkJobsReceivedBuffer_size[0] = strlen((const char*)DoworkJobsReceivedBuffer);
-    DoworkJobsReceivedBuffer_counter = 0;
     int doworkReduction[1] = { 0 };
+    DoworkJobsReceivedBuffer_counter = 0;
     PrepareReceiveHead(requestHttpHeaders, DoworkJobsReceivedBuffer_size, doworkReduction, 1);
-    DoworkJobs = (const xio_dowork_job*)doworkjob_o_7s_re;
+    DoworkJobs = (const xio_dowork_job*)doworkjob_o_re;
 
     /// act
     result = HTTPAPI_ExecuteRequest(
@@ -2457,9 +2242,9 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__read_huge_header_failed)
         TestBufferHandle);
 
     /// assert
+    ASSERT_ARE_EQUAL(int, HTTPAPI_READ_DATA_FAILED, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(int, 5, currentmalloc_call);
-    ASSERT_ARE_EQUAL(int, HTTPAPI_READ_DATA_FAILED, result);
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
@@ -2481,10 +2266,10 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__content_length_without_value_failed)
 
     DoworkJobsReceivedBuffer = (const unsigned char*)"HTTP/111.222 433 555\r\ncontent-length:\r\n\r\n";
     DoworkJobsReceivedBuffer_size[0] = strlen((const char*)DoworkJobsReceivedBuffer);
-    int doworkReduction[1] = { 2 };
+    int doworkReduction[1] = { 1 };
     PrepareReceiveHead(requestHttpHeaders, DoworkJobsReceivedBuffer_size, doworkReduction, 1);
     DoworkJobsReceivedBuffer_counter = 0;
-    DoworkJobs = (const xio_dowork_job*)doworkjob_o_7s_re;
+    DoworkJobs = (const xio_dowork_job*)doworkjob_o_re;
 
     /// act
     result = HTTPAPI_ExecuteRequest(
@@ -2499,10 +2284,9 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__content_length_without_value_failed)
         TestBufferHandle);
 
     /// assert
+    ASSERT_ARE_EQUAL(int, HTTPAPI_READ_DATA_FAILED, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(int, 5, currentmalloc_call);
-    ASSERT_ARE_EQUAL(int, 433, statusCode);
-    ASSERT_ARE_EQUAL(int, HTTPAPI_READ_DATA_FAILED, result);
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
@@ -2535,7 +2319,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__Execute_request_succeed)
     DoworkJobsReceivedBuffer = TEST_RECEIVED_ANSWER;
     DoworkJobsReceivedBuffer_size[0] = strlen((const char*)DoworkJobsReceivedBuffer);
     DoworkJobsReceivedBuffer_counter = 0;
-    DoworkJobs = (const xio_dowork_job*)doworkjob_o_7s_re;
+    DoworkJobs = (const xio_dowork_job*)doworkjob_o_re;
     DoworkJobsOpenResult = DoworkJobsOpenResult_ReceiveHead;
     DoworkJobsSendResult = DoworkJobsSendResult_ReceiveHead;
 
@@ -2558,10 +2342,10 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__Execute_request_succeed)
         TestBufferHandle);
 
     /// assert
+    ASSERT_ARE_EQUAL(int, HTTPAPI_OK, result);
+    ASSERT_ARE_EQUAL(int, 433, statusCode);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(int, 5, currentmalloc_call);
-    ASSERT_ARE_EQUAL(int, 433, statusCode);
-    ASSERT_ARE_EQUAL(int, HTTPAPI_OK, result);
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
@@ -2585,7 +2369,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_get_succeed)
     DoworkJobsReceivedBuffer = TEST_RECEIVED_ANSWER;
     DoworkJobsReceivedBuffer_size[0] = strlen((const char*)DoworkJobsReceivedBuffer);
     DoworkJobsReceivedBuffer_counter = 0;
-    DoworkJobs = (const xio_dowork_job*)doworkjob_o_7s_re;
+    DoworkJobs = (const xio_dowork_job*)doworkjob_o_re;
     DoworkJobsOpenResult = DoworkJobsOpenResult_ReceiveHead;
     DoworkJobsSendResult = DoworkJobsSendResult_ReceiveHead;
 
@@ -2609,12 +2393,12 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_get_succeed)
         TestBufferHandle);
 
     /// assert
+    ASSERT_ARE_EQUAL(int, HTTPAPI_OK, result);
+    ASSERT_ARE_EQUAL(int, 433, statusCode);
     xio_send_transmited_buffer[3] = '\0';
     ASSERT_ARE_EQUAL(char_ptr, "GET", xio_send_transmited_buffer);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(int, 5, currentmalloc_call);
-    ASSERT_ARE_EQUAL(int, 433, statusCode);
-    ASSERT_ARE_EQUAL(int, HTTPAPI_OK, result);
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
@@ -2637,7 +2421,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_post_succeed)
     DoworkJobsReceivedBuffer = TEST_RECEIVED_ANSWER;
     DoworkJobsReceivedBuffer_size[0] = strlen((const char*)DoworkJobsReceivedBuffer);
     DoworkJobsReceivedBuffer_counter = 0;
-    DoworkJobs = (const xio_dowork_job*)doworkjob_o_7s_re;
+    DoworkJobs = (const xio_dowork_job*)doworkjob_o_re;
     DoworkJobsOpenResult = DoworkJobsOpenResult_ReceiveHead;
     DoworkJobsSendResult = DoworkJobsSendResult_ReceiveHead;
 
@@ -2661,12 +2445,12 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_post_succeed)
         TestBufferHandle);
 
     /// assert
+    ASSERT_ARE_EQUAL(int, HTTPAPI_OK, result);
+    ASSERT_ARE_EQUAL(int, 433, statusCode);
     xio_send_transmited_buffer[4] = '\0';
     ASSERT_ARE_EQUAL(char_ptr, "POST", xio_send_transmited_buffer);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(int, 5, currentmalloc_call);
-    ASSERT_ARE_EQUAL(int, 433, statusCode);
-    ASSERT_ARE_EQUAL(int, HTTPAPI_OK, result);
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
@@ -2689,7 +2473,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_put_succeed)
     DoworkJobsReceivedBuffer = TEST_RECEIVED_ANSWER;
     DoworkJobsReceivedBuffer_size[0] = strlen((const char*)DoworkJobsReceivedBuffer);
     DoworkJobsReceivedBuffer_counter = 0;
-    DoworkJobs = (const xio_dowork_job*)doworkjob_o_7s_re;
+    DoworkJobs = (const xio_dowork_job*)doworkjob_o_re;
     DoworkJobsOpenResult = DoworkJobsOpenResult_ReceiveHead;
     DoworkJobsSendResult = DoworkJobsSendResult_ReceiveHead;
 
@@ -2713,12 +2497,12 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_put_succeed)
         TestBufferHandle);
 
     /// assert
+    ASSERT_ARE_EQUAL(int, HTTPAPI_OK, result);
+    ASSERT_ARE_EQUAL(int, 433, statusCode);
     xio_send_transmited_buffer[3] = '\0';
     ASSERT_ARE_EQUAL(char_ptr, "PUT", xio_send_transmited_buffer);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(int, 5, currentmalloc_call);
-    ASSERT_ARE_EQUAL(int, 433, statusCode);
-    ASSERT_ARE_EQUAL(int, HTTPAPI_OK, result);
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
@@ -2741,7 +2525,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_delete_succeed)
     DoworkJobsReceivedBuffer = TEST_RECEIVED_ANSWER;
     DoworkJobsReceivedBuffer_size[0] = strlen((const char*)DoworkJobsReceivedBuffer);
     DoworkJobsReceivedBuffer_counter = 0;
-    DoworkJobs = (const xio_dowork_job*)doworkjob_o_7s_re;
+    DoworkJobs = (const xio_dowork_job*)doworkjob_o_re;
     DoworkJobsOpenResult = DoworkJobsOpenResult_ReceiveHead;
     DoworkJobsSendResult = DoworkJobsSendResult_ReceiveHead;
 
@@ -2765,12 +2549,12 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_delete_succeed)
         TestBufferHandle);
 
     /// assert
+    ASSERT_ARE_EQUAL(int, HTTPAPI_OK, result);
+    ASSERT_ARE_EQUAL(int, 433, statusCode);
     xio_send_transmited_buffer[6] = '\0';
     ASSERT_ARE_EQUAL(char_ptr, "DELETE", xio_send_transmited_buffer);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(int, 5, currentmalloc_call);
-    ASSERT_ARE_EQUAL(int, 433, statusCode);
-    ASSERT_ARE_EQUAL(int, HTTPAPI_OK, result);
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
@@ -2793,7 +2577,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_patch_succeed)
     DoworkJobsReceivedBuffer = TEST_RECEIVED_ANSWER;
     DoworkJobsReceivedBuffer_size[0] = strlen((const char*)DoworkJobsReceivedBuffer);
     DoworkJobsReceivedBuffer_counter = 0;
-    DoworkJobs = (const xio_dowork_job*)doworkjob_o_7s_re;
+    DoworkJobs = (const xio_dowork_job*)doworkjob_o_re;
     DoworkJobsOpenResult = DoworkJobsOpenResult_ReceiveHead;
     DoworkJobsSendResult = DoworkJobsSendResult_ReceiveHead;
 
@@ -2817,12 +2601,12 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_patch_succeed)
         TestBufferHandle);
 
     /// assert
+    ASSERT_ARE_EQUAL(int, HTTPAPI_OK, result);
+    ASSERT_ARE_EQUAL(int, 433, statusCode);
     xio_send_transmited_buffer[5] = '\0';
     ASSERT_ARE_EQUAL(char_ptr, "PATCH", xio_send_transmited_buffer);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(int, 5, currentmalloc_call);
-    ASSERT_ARE_EQUAL(int, 433, statusCode);
-    ASSERT_ARE_EQUAL(int, HTTPAPI_OK, result);
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
@@ -2845,7 +2629,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_relative_path_succeed)
     DoworkJobsReceivedBuffer = TEST_RECEIVED_ANSWER;
     DoworkJobsReceivedBuffer_size[0] = strlen((const char*)DoworkJobsReceivedBuffer);
     DoworkJobsReceivedBuffer_counter = 0;
-    DoworkJobs = (const xio_dowork_job*)doworkjob_o_7s_re;
+    DoworkJobs = (const xio_dowork_job*)doworkjob_o_re;
     DoworkJobsOpenResult = DoworkJobsOpenResult_ReceiveHead;
     DoworkJobsSendResult = DoworkJobsSendResult_ReceiveHead;
 
@@ -2869,12 +2653,12 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_relative_path_succeed)
         TestBufferHandle);
 
     /// assert
+    ASSERT_ARE_EQUAL(int, HTTPAPI_OK, result);
+    ASSERT_ARE_EQUAL(int, 433, statusCode);
     xio_send_transmited_buffer[66] = '\0';
     ASSERT_ARE_EQUAL(char_ptr, TEST_EXECUTE_REQUEST_RELATIVE_PATH, &(xio_send_transmited_buffer[4]));
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(int, 5, currentmalloc_call);
-    ASSERT_ARE_EQUAL(int, 433, statusCode);
-    ASSERT_ARE_EQUAL(int, HTTPAPI_OK, result);
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
@@ -2899,7 +2683,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_with_content_succeed)
     DoworkJobsReceivedBuffer = TEST_RECEIVED_ANSWER;
     DoworkJobsReceivedBuffer_size[0] = strlen((const char*)DoworkJobsReceivedBuffer);
     DoworkJobsReceivedBuffer_counter = 0;
-    DoworkJobs = (const xio_dowork_job*)doworkjob_o_7s_re;
+    DoworkJobs = (const xio_dowork_job*)doworkjob_o_re;
     DoworkJobsOpenResult = DoworkJobsOpenResult_ReceiveHead;
     DoworkJobsSendResult = DoworkJobsSendResult_ReceiveHead;
 
@@ -2923,11 +2707,11 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_with_content_succeed)
         TestBufferHandle);
 
     /// assert
+    ASSERT_ARE_EQUAL(int, HTTPAPI_OK, result);
+    ASSERT_ARE_EQUAL(int, 433, statusCode);
     ASSERT_ARE_EQUAL(char_ptr, (const char*)TEST_EXECUTE_REQUEST_CONTENT, xio_send_transmited_buffer);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(int, 5, currentmalloc_call);
-    ASSERT_ARE_EQUAL(int, 433, statusCode);
-    ASSERT_ARE_EQUAL(int, HTTPAPI_OK, result);
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
@@ -2950,24 +2734,20 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_NULL_content_succeed)
     DoworkJobsReceivedBuffer = TEST_RECEIVED_ANSWER;
     DoworkJobsReceivedBuffer_size[0] = strlen((const char*)DoworkJobsReceivedBuffer);
     DoworkJobsReceivedBuffer_counter = 0;
-    DoworkJobs = (const xio_dowork_job*)doworkjob_o_7s_re;
+    DoworkJobs = (const xio_dowork_job*)doworkjob_o_re;
     DoworkJobsOpenResult = DoworkJobsOpenResult_ReceiveHead;
     DoworkJobsSendResult = DoworkJobsSendResult_ReceiveHead;
 
     setupAllCallBeforeOpenHTTPsequence(requestHttpHeaders, 1);
-
-    setupAllCallBeforeSendHTTPsequence(1);
+    STRICT_EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+        .IgnoreAllArguments();
     STRICT_EXPECTED_CALL(HTTPHeaders_GetHeader(requestHttpHeaders, IGNORED_NUM_ARG, IGNORED_PTR_ARG))
         .IgnoreArgument(2).IgnoreArgument(3);
     STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
     STRICT_EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
         .IgnoreAllArguments();
-    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
-        .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
         .IgnoreAllArguments();
-    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
-        .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(HTTPHeaders_GetHeader(requestHttpHeaders, IGNORED_NUM_ARG, IGNORED_PTR_ARG))
@@ -2975,22 +2755,12 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_NULL_content_succeed)
     STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
     STRICT_EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
         .IgnoreAllArguments();
-    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
-        .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
         .IgnoreAllArguments();
-    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
-        .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
         .IgnoreAllArguments();
-    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
-        .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
-        .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(ThreadAPI_Sleep(1));
-
     setupAllCallBeforeReceiveHTTPsequenceWithSuccess();
 
     HTTPHeaders_GetHeader_shallReturn = HTTP_HEADERS_OK;
@@ -3009,11 +2779,11 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_NULL_content_succeed)
         TestBufferHandle);
 
     /// assert
+    ASSERT_ARE_EQUAL(int, HTTPAPI_OK, result);
+    ASSERT_ARE_EQUAL(int, 433, statusCode);
     ASSERT_ARE_EQUAL(char_ptr, (const char*)"", xio_send_transmited_buffer);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(int, 5, currentmalloc_call);
-    ASSERT_ARE_EQUAL(int, 433, statusCode);
-    ASSERT_ARE_EQUAL(int, HTTPAPI_OK, result);
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
@@ -3036,24 +2806,21 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_content_size_0_succeed)
     DoworkJobsReceivedBuffer = TEST_RECEIVED_ANSWER;
     DoworkJobsReceivedBuffer_size[0] = strlen((const char*)DoworkJobsReceivedBuffer);
     DoworkJobsReceivedBuffer_counter = 0;
-    DoworkJobs = (const xio_dowork_job*)doworkjob_o_7s_re;
+    DoworkJobs = (const xio_dowork_job*)doworkjob_o_re;
     DoworkJobsOpenResult = DoworkJobsOpenResult_ReceiveHead;
     DoworkJobsSendResult = DoworkJobsSendResult_ReceiveHead;
 
     setupAllCallBeforeOpenHTTPsequence(requestHttpHeaders, 1);
 
-    setupAllCallBeforeSendHTTPsequence(1);
+    STRICT_EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+        .IgnoreAllArguments();
     STRICT_EXPECTED_CALL(HTTPHeaders_GetHeader(requestHttpHeaders, IGNORED_NUM_ARG, IGNORED_PTR_ARG))
         .IgnoreArgument(2).IgnoreArgument(3);
     STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
     STRICT_EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
         .IgnoreAllArguments();
-    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
-        .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
         .IgnoreAllArguments();
-    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
-        .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(HTTPHeaders_GetHeader(requestHttpHeaders, IGNORED_NUM_ARG, IGNORED_PTR_ARG))
@@ -3061,22 +2828,12 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_content_size_0_succeed)
     STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
     STRICT_EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
         .IgnoreAllArguments();
-    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
-        .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
         .IgnoreAllArguments();
-    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
-        .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
         .IgnoreAllArguments();
-    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
-        .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
-        .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(ThreadAPI_Sleep(1));
-
     setupAllCallBeforeReceiveHTTPsequenceWithSuccess();
 
     HTTPHeaders_GetHeader_shallReturn = HTTP_HEADERS_OK;
@@ -3095,11 +2852,11 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_content_size_0_succeed)
         TestBufferHandle);
 
     /// assert
+    ASSERT_ARE_EQUAL(int, HTTPAPI_OK, result);
+    ASSERT_ARE_EQUAL(int, 433, statusCode);
     ASSERT_ARE_EQUAL(char_ptr, (const char*)"", xio_send_transmited_buffer);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(int, 5, currentmalloc_call);
-    ASSERT_ARE_EQUAL(int, 433, statusCode);
-    ASSERT_ARE_EQUAL(int, HTTPAPI_OK, result);
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
@@ -3121,7 +2878,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__Execute_request_no_statusCode_succeed)
     DoworkJobsReceivedBuffer = TEST_RECEIVED_ANSWER;
     DoworkJobsReceivedBuffer_size[0] = strlen((const char*)DoworkJobsReceivedBuffer);
     DoworkJobsReceivedBuffer_counter = 0;
-    DoworkJobs = (const xio_dowork_job*)doworkjob_o_7s_re;
+    DoworkJobs = (const xio_dowork_job*)doworkjob_o_re;
     DoworkJobsOpenResult = DoworkJobsOpenResult_ReceiveHead;
     DoworkJobsSendResult = DoworkJobsSendResult_ReceiveHead;
 
@@ -3144,9 +2901,9 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__Execute_request_no_statusCode_succeed)
         TestBufferHandle);
 
     /// assert
+    ASSERT_ARE_EQUAL(int, HTTPAPI_OK, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(int, 5, currentmalloc_call);
-    ASSERT_ARE_EQUAL(int, HTTPAPI_OK, result);
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
@@ -3169,21 +2926,49 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__Execute_request_no_responseHeadersHandle_s
     DoworkJobsReceivedBuffer = TEST_RECEIVED_ANSWER;
     DoworkJobsReceivedBuffer_size[0] = strlen((const char*)DoworkJobsReceivedBuffer);
     DoworkJobsReceivedBuffer_counter = 0;
-    DoworkJobs = (const xio_dowork_job*)doworkjob_o_7s_re;
+    DoworkJobs = (const xio_dowork_job*)doworkjob_o_re;
     DoworkJobsOpenResult = DoworkJobsOpenResult_ReceiveHead;
     DoworkJobsSendResult = DoworkJobsSendResult_ReceiveHead;
 
     setupAllCallBeforeOpenHTTPsequence(requestHttpHeaders, 1);
-    setupAllCallBeforeSendHTTPsequenceWithSuccess(requestHttpHeaders);
 
+    STRICT_EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+        .IgnoreAllArguments();
+    STRICT_EXPECTED_CALL(HTTPHeaders_GetHeader(requestHttpHeaders, IGNORED_NUM_ARG, IGNORED_PTR_ARG))
+        .IgnoreArgument(2).IgnoreArgument(3);
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+        .IgnoreAllArguments();
+    STRICT_EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+        .IgnoreAllArguments();
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(HTTPHeaders_GetHeader(requestHttpHeaders, IGNORED_NUM_ARG, IGNORED_PTR_ARG))
+        .IgnoreArgument(2).IgnoreArgument(3);
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+        .IgnoreAllArguments();
+    STRICT_EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+        .IgnoreAllArguments();
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+        .IgnoreAllArguments();
+    STRICT_EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+        .IgnoreAllArguments();
     STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
         .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_NUM_ARG, DoworkJobsReceivedBuffer_size[0])).IgnoreArgument(1);
-    for (size_t countChar = 0; countChar < 63; countChar++)
-    {
-        STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
-            .IgnoreArgument(1);
-    }
+
+    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
+        .IgnoreArgument(1);
+
     STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(xio_close(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
@@ -3204,10 +2989,10 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__Execute_request_no_responseHeadersHandle_s
         TestBufferHandle);
 
     /// assert
+    ASSERT_ARE_EQUAL(int, HTTPAPI_OK, result);
+    ASSERT_ARE_EQUAL(int, 433, statusCode);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(int, 5, currentmalloc_call);
-    ASSERT_ARE_EQUAL(int, 433, statusCode);
-    ASSERT_ARE_EQUAL(int, HTTPAPI_OK, result);
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
@@ -3230,7 +3015,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__Execute_request_responseContent_NULL_succe
     DoworkJobsReceivedBuffer = TEST_RECEIVED_ANSWER;
     DoworkJobsReceivedBuffer_size[0] = strlen((const char*)DoworkJobsReceivedBuffer);
     DoworkJobsReceivedBuffer_counter = 0;
-    DoworkJobs = (const xio_dowork_job*)doworkjob_o_7s_re;
+    DoworkJobs = (const xio_dowork_job*)doworkjob_o_re;
     DoworkJobsOpenResult = DoworkJobsOpenResult_ReceiveHead;
     DoworkJobsSendResult = DoworkJobsSendResult_ReceiveHead;
 
@@ -3253,10 +3038,226 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__Execute_request_responseContent_NULL_succe
         NULL);
 
     /// assert
+    ASSERT_ARE_EQUAL(int, HTTPAPI_OK, result);
+    ASSERT_ARE_EQUAL(int, 433, statusCode);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(int, 5, currentmalloc_call);
-    ASSERT_ARE_EQUAL(int, 433, statusCode);
-    ASSERT_ARE_EQUAL(int, HTTPAPI_OK, result);
+
+    /// cleanup
+    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
+    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
+    HTTPAPI_Deinit();
+}
+
+/*Tests_SRS_HTTPAPI_COMPACT_21_076: [ The HTTPAPI_ExecuteRequest shall try to read the message with the response up to 20 times. ]*/
+/*Tests_SRS_HTTPAPI_COMPACT_21_077: [ If the HTTPAPI_ExecuteRequest retries 20 times to receive the message without success, it shall fail and return HTTPAPI_READ_DATA_FAILED. ]*/
+/*Tests_SRS_HTTPAPI_COMPACT_21_078: [ The HTTPAPI_ExecuteRequest shall wait, at least, 100 milliseconds between retries. ]*/
+TEST_FUNCTION(HTTPAPI_ExecuteRequest__Execute_request_with_truncated_content_failed)
+{
+    /// arrange
+    unsigned int statusCode;
+    HTTPAPI_RESULT result;
+    HTTP_HEADERS_HANDLE requestHttpHeaders;
+    HTTP_HEADERS_HANDLE responseHttpHeaders;
+    HTTP_HANDLE httpHandle = createHttpConnection();
+    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
+    setHttpCertificate(httpHandle);
+
+    DoworkJobsReceivedBuffer = (const unsigned char*)"HTTP/111.222 433 555\r\ncontent-length:10\r\ntransfer-encoding:\r\n\r\n0123";
+    DoworkJobsReceivedBuffer_size[0] = strlen((const char*)DoworkJobsReceivedBuffer);
+    DoworkJobsReceivedBuffer_counter = 0;
+    DoworkJobs = (const xio_dowork_job*)doworkjob_o_re;
+    DoworkJobsOpenResult = DoworkJobsOpenResult_ReceiveHead;
+    DoworkJobsSendResult = DoworkJobsSendResult_ReceiveHead;
+
+    setupAllCallBeforeOpenHTTPsequence(requestHttpHeaders, 1);
+    setupAllCallBeforeSendHTTPsequenceWithSuccess(requestHttpHeaders);
+
+    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_NUM_ARG, DoworkJobsReceivedBuffer_size[0])).IgnoreArgument(1);
+
+    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(HTTPHeaders_AddHeaderNameValuePair(IGNORED_PTR_ARG, "content-length", "10")).IgnoreArgument(1);
+
+    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(HTTPHeaders_AddHeaderNameValuePair(IGNORED_PTR_ARG, "transfer-encoding", "")).IgnoreArgument(1);
+
+    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
+        .IgnoreArgument(1);
+
+    for (int i = 0; i < 20; i++)
+    {
+        STRICT_EXPECTED_CALL(ThreadAPI_Sleep(100));
+        STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
+            .IgnoreArgument(1);
+    }
+
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(xio_close(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+        .IgnoreAllArguments();
+
+    HTTPHeaders_GetHeader_shallReturn = HTTP_HEADERS_OK;
+
+    /// act
+    result = HTTPAPI_ExecuteRequest(
+        httpHandle,
+        HTTPAPI_REQUEST_GET,
+        TEST_EXECUTE_REQUEST_RELATIVE_PATH,
+        requestHttpHeaders,
+        TEST_EXECUTE_REQUEST_CONTENT,
+        TEST_EXECUTE_REQUEST_CONTENT_LENGTH,
+        &statusCode,
+        responseHttpHeaders,
+        TestBufferHandle);
+
+    /// assert
+    ASSERT_ARE_EQUAL(int, HTTPAPI_READ_DATA_FAILED, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_ARE_EQUAL(int, 5, currentmalloc_call);
+
+    /// cleanup
+    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
+    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
+    HTTPAPI_Deinit();
+}
+
+/*Tests_SRS_HTTPAPI_COMPACT_21_076: [ The HTTPAPI_ExecuteRequest shall try to read the message with the response up to 20 times. ]*/
+/*Tests_SRS_HTTPAPI_COMPACT_21_077: [ If the HTTPAPI_ExecuteRequest retries 20 times to receive the message without success, it shall fail and return HTTPAPI_READ_DATA_FAILED. ]*/
+/*Tests_SRS_HTTPAPI_COMPACT_21_078: [ The HTTPAPI_ExecuteRequest shall wait, at least, 100 milliseconds between retries. ]*/
+TEST_FUNCTION(HTTPAPI_ExecuteRequest__Execute_request_with_truncated_parameter_failed)
+{
+    /// arrange
+    unsigned int statusCode;
+    HTTPAPI_RESULT result;
+    HTTP_HEADERS_HANDLE requestHttpHeaders;
+    HTTP_HEADERS_HANDLE responseHttpHeaders;
+    HTTP_HANDLE httpHandle = createHttpConnection();
+    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
+    setHttpCertificate(httpHandle);
+
+    DoworkJobsReceivedBuffer = (const unsigned char*)"HTTP/111.222 433 555\r\ncontent-length:10\r\ntransfer-enc";
+    DoworkJobsReceivedBuffer_size[0] = strlen((const char*)DoworkJobsReceivedBuffer);
+    DoworkJobsReceivedBuffer_counter = 0;
+    DoworkJobs = (const xio_dowork_job*)doworkjob_o_re;
+    DoworkJobsOpenResult = DoworkJobsOpenResult_ReceiveHead;
+    DoworkJobsSendResult = DoworkJobsSendResult_ReceiveHead;
+
+    setupAllCallBeforeOpenHTTPsequence(requestHttpHeaders, 1);
+    setupAllCallBeforeSendHTTPsequenceWithSuccess(requestHttpHeaders);
+
+    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_NUM_ARG, DoworkJobsReceivedBuffer_size[0])).IgnoreArgument(1);
+
+    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(HTTPHeaders_AddHeaderNameValuePair(IGNORED_PTR_ARG, "content-length", "10")).IgnoreArgument(1);
+
+    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
+        .IgnoreArgument(1);
+
+    for (int i = 0; i < 20; i++)
+    {
+        STRICT_EXPECTED_CALL(ThreadAPI_Sleep(100));
+        STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
+            .IgnoreArgument(1);
+    }
+
+    STRICT_EXPECTED_CALL(xio_close(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+        .IgnoreAllArguments();
+
+    HTTPHeaders_GetHeader_shallReturn = HTTP_HEADERS_OK;
+
+    /// act
+    result = HTTPAPI_ExecuteRequest(
+        httpHandle,
+        HTTPAPI_REQUEST_GET,
+        TEST_EXECUTE_REQUEST_RELATIVE_PATH,
+        requestHttpHeaders,
+        TEST_EXECUTE_REQUEST_CONTENT,
+        TEST_EXECUTE_REQUEST_CONTENT_LENGTH,
+        &statusCode,
+        responseHttpHeaders,
+        TestBufferHandle);
+
+    /// assert
+    ASSERT_ARE_EQUAL(int, HTTPAPI_READ_DATA_FAILED, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_ARE_EQUAL(int, 5, currentmalloc_call);
+
+    /// cleanup
+    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
+    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
+    HTTPAPI_Deinit();
+}
+
+/*Tests_SRS_HTTPAPI_COMPACT_21_076: [ The HTTPAPI_ExecuteRequest shall try to read the message with the response up to 20 times. ]*/
+/*Tests_SRS_HTTPAPI_COMPACT_21_077: [ If the HTTPAPI_ExecuteRequest retries 20 times to receive the message without success, it shall fail and return HTTPAPI_READ_DATA_FAILED. ]*/
+/*Tests_SRS_HTTPAPI_COMPACT_21_078: [ The HTTPAPI_ExecuteRequest shall wait, at least, 100 milliseconds between retries. ]*/
+TEST_FUNCTION(HTTPAPI_ExecuteRequest__Execute_request_with_truncated_header_failed)
+{
+    /// arrange
+    unsigned int statusCode;
+    HTTPAPI_RESULT result;
+    HTTP_HEADERS_HANDLE requestHttpHeaders;
+    HTTP_HEADERS_HANDLE responseHttpHeaders;
+    HTTP_HANDLE httpHandle = createHttpConnection();
+    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
+    setHttpCertificate(httpHandle);
+
+    DoworkJobsReceivedBuffer = (const unsigned char*)"HTTP/111.222 ";
+    DoworkJobsReceivedBuffer_size[0] = strlen((const char*)DoworkJobsReceivedBuffer);
+    DoworkJobsReceivedBuffer_counter = 0;
+    DoworkJobs = (const xio_dowork_job*)doworkjob_o_re;
+    DoworkJobsOpenResult = DoworkJobsOpenResult_ReceiveHead;
+    DoworkJobsSendResult = DoworkJobsSendResult_ReceiveHead;
+
+    setupAllCallBeforeOpenHTTPsequence(requestHttpHeaders, 1);
+    setupAllCallBeforeSendHTTPsequenceWithSuccess(requestHttpHeaders);
+
+    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_NUM_ARG, DoworkJobsReceivedBuffer_size[0])).IgnoreArgument(1);
+
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
+        .IgnoreArgument(1);
+
+    for (int i = 0; i < 20; i++)
+    {
+        STRICT_EXPECTED_CALL(ThreadAPI_Sleep(100));
+        STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
+            .IgnoreArgument(1);
+    }
+
+    STRICT_EXPECTED_CALL(xio_close(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+        .IgnoreAllArguments();
+
+    HTTPHeaders_GetHeader_shallReturn = HTTP_HEADERS_OK;
+
+    /// act
+    result = HTTPAPI_ExecuteRequest(
+        httpHandle,
+        HTTPAPI_REQUEST_GET,
+        TEST_EXECUTE_REQUEST_RELATIVE_PATH,
+        requestHttpHeaders,
+        TEST_EXECUTE_REQUEST_CONTENT,
+        TEST_EXECUTE_REQUEST_CONTENT_LENGTH,
+        &statusCode,
+        responseHttpHeaders,
+        TestBufferHandle);
+
+    /// assert
+    ASSERT_ARE_EQUAL(int, HTTPAPI_READ_DATA_FAILED, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_ARE_EQUAL(int, 5, currentmalloc_call);
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */

@@ -65,8 +65,6 @@ static const IO_INTERFACE_DESCRIPTION tlsio_handle_interface_description =
 
 typedef struct ArduinoTLS_tag
 {
-    SSLCLIENT_HANDLE sslClient;
-
     ON_IO_OPEN_COMPLETE on_io_open_complete;
     void* on_io_open_complete_context;
 
@@ -130,51 +128,37 @@ CONCRETE_IO_HANDLE tlsio_arduino_create(void* io_create_parameters)
         }
         else
         {
-            /* Codes_SRS_TLSIO_ARDUINO_21_013: [ The tlsio_arduino_create shall create a new instance of the sslClient. ]*/
-            tlsio_instance->sslClient = (SSLCLIENT_HANDLE)sslClient_new();
+            /* Codes_SRS_TLSIO_ARDUINO_21_005: [ The tlsio_arduino shall received the connection information using the TLSIO_CONFIG structure defined in `tlsio.h`. ]*/
+            /* Codes_SRS_TLSIO_ARDUINO_21_017: [ The tlsio_arduino_create shall receive the connection configuration (TLSIO_CONFIG). ]*/
+            TLSIO_CONFIG* tlsio_config = (TLSIO_CONFIG*)io_create_parameters;
 
-            if (tlsio_instance->sslClient == NULL)
+            /* Codes_SRS_TLSIO_ARDUINO_21_015: [ The tlsio_arduino_create shall set 10 seconds for the sslClient timeout. ]*/
+            sslClient_setTimeout(10000);
+
+            /* Codes_SRS_TLSIO_ARDUINO_21_016: [ The tlsio_arduino_create shall initialize all callback pointers as NULL. ]*/
+            tlsio_instance->on_io_open_complete = NULL;
+            tlsio_instance->on_io_open_complete_context = NULL;
+            tlsio_instance->on_bytes_received = NULL;
+            tlsio_instance->on_bytes_received_context = NULL;
+            tlsio_instance->on_io_error = NULL;
+            tlsio_instance->on_io_error_context = NULL;
+            tlsio_instance->on_io_close_complete = NULL;
+            tlsio_instance->on_io_close_complete_context = NULL;
+
+            /* Codes_SRS_TLSIO_ARDUINO_21_020: [ If tlsio_arduino_create get success to create the tlsio instance, it shall set the tlsio state as TLSIO_ARDUINO_STATE_CLOSED. ]*/
+            tlsio_instance->state = TLSIO_ARDUINO_STATE_CLOSED;
+
+            /* Codes_SRS_TLSIO_ARDUINO_21_018: [ The tlsio_arduino_create shall convert the provide hostName to an IP address. ]*/
+            if (sslClient_hostByName(tlsio_config->hostname, &(tlsio_instance->remote_addr)))
             {
-                /* Codes_SRS_TLSIO_ARDUINO_21_014: [ If the tlsio_arduino_create failed to create a new instance of the sslClient, it shall return NULL as the handle. ]*/
-                LogError("TLS failed to create a instance of the SSL client.");
-                free(tlsio_instance);
-                tlsio_instance = NULL;
+                tlsio_instance->port = (uint16_t)tlsio_config->port;
             }
             else
             {
-                /* Codes_SRS_TLSIO_ARDUINO_21_005: [ The tlsio_arduino shall received the connection information using the TLSIO_CONFIG structure defined in `tlsio.h`. ]*/
-                /* Codes_SRS_TLSIO_ARDUINO_21_017: [ The tlsio_arduino_create shall receive the connection configuration (TLSIO_CONFIG). ]*/
-                TLSIO_CONFIG* tlsio_config = (TLSIO_CONFIG*)io_create_parameters;
-
-                /* Codes_SRS_TLSIO_ARDUINO_21_015: [ The tlsio_arduino_create shall set 10 seconds for the sslClient timeout. ]*/
-                sslClient_setTimeout(tlsio_instance->sslClient, 10000);
-
-                /* Codes_SRS_TLSIO_ARDUINO_21_016: [ The tlsio_arduino_create shall initialize all callback pointers as NULL. ]*/
-                tlsio_instance->on_io_open_complete = NULL;
-                tlsio_instance->on_io_open_complete_context = NULL;
-                tlsio_instance->on_bytes_received = NULL;
-                tlsio_instance->on_bytes_received_context = NULL;
-                tlsio_instance->on_io_error = NULL;
-                tlsio_instance->on_io_error_context = NULL;
-                tlsio_instance->on_io_close_complete = NULL;
-                tlsio_instance->on_io_close_complete_context = NULL;
-
-                /* Codes_SRS_TLSIO_ARDUINO_21_020: [ If tlsio_arduino_create get success to create the tlsio instance, it shall set the tlsio state as TLSIO_ARDUINO_STATE_CLOSED. ]*/
-                tlsio_instance->state = TLSIO_ARDUINO_STATE_CLOSED;
-
-                /* Codes_SRS_TLSIO_ARDUINO_21_018: [ The tlsio_arduino_create shall convert the provide hostName to an IP address. ]*/
-                if (sslClient_hostByName(tlsio_config->hostname, &(tlsio_instance->remote_addr)))
-                {
-                    tlsio_instance->port = (uint16_t)tlsio_config->port;
-                }
-                else
-                {
-                    /* Codes_SRS_TLSIO_ARDUINO_21_019: [ If the WiFi cannot find the IP for the hostName, the tlsio_arduino_create shall destroy the sslClient and tlsio instances and return NULL as the handle. ]*/
-                    LogError("Host %s not found.", tlsio_config->hostname);
-                    sslClient_delete(tlsio_instance->sslClient);
-                    free(tlsio_instance);
-                    tlsio_instance = NULL;
-                }
+                /* Codes_SRS_TLSIO_ARDUINO_21_019: [ If the WiFi cannot find the IP for the hostName, the tlsio_arduino_create shall destroy the sslClient and tlsio instances and return NULL as the handle. ]*/
+                LogError("Host %s not found.", tlsio_config->hostname);
+                free(tlsio_instance);
+                tlsio_instance = NULL;
             }
         }
     }
@@ -202,9 +186,6 @@ void tlsio_arduino_destroy(CONCRETE_IO_HANDLE tlsio_handle)
             /* Codes_SRS_TLSIO_ARDUINO_21_026: [ If the tlsio state is TLSIO_ARDUINO_STATE_OPENING, TLSIO_ARDUINO_STATE_OPEN, or TLSIO_ARDUINO_STATE_CLOSING, the tlsio_arduino_destroy shall close destroy the tlsio, but log an error. ]*/
             LogError("TLS destroyed with a SSL connection still active.");
         }
-
-        /* Codes_SRS_TLSIO_ARDUINO_21_023: [ If there is an instance of sslClient, the tlsio_arduino_destroy shall destroy the instance of the sslClient. ]*/
-        sslClient_delete(tlsio_instance->sslClient);
 
         /* Codes_SRS_TLSIO_ARDUINO_21_022: [ The tlsio_arduino_destroy shall free the memory allocated for tlsio_instance. ]*/
         free(tlsio_instance);
@@ -262,7 +243,7 @@ int tlsio_arduino_open(
         }
         else
         {
-            if (sslClient_connected(tlsio_instance->sslClient))
+            if (sslClient_connected())
             {
                 /* Codes_SRS_TLSIO_ARDUINO_21_037: [ If the ssl client is connected, the tlsio_arduino_open shall change the state to TLSIO_ARDUINO_STATE_ERROR, log the error, and return _LINE_. ]*/
                 LogError("No SSL clients available.");
@@ -270,7 +251,7 @@ int tlsio_arduino_open(
                 result = __LINE__;
             }
             /* Codes_SRS_TLSIO_ARDUINO_21_027: [ The tlsio_arduino_open shall set the tlsio to try to open the connection for 10 times before assuming that connection failed. ]*/
-            else if (sslClient_connect(tlsio_instance->sslClient, tlsio_instance->remote_addr, tlsio_instance->port))
+            else if (sslClient_connect(tlsio_instance->remote_addr, tlsio_instance->port))
             {
                 /* Codes_SRS_TLSIO_ARDUINO_21_034: [ If tlsio_arduino_open get success to start the process to open the ssl connection, it shall set the tlsio state as TLSIO_ARDUINO_STATE_OPENING, and return 0. ]*/
                 tlsio_instance->state = TLSIO_ARDUINO_STATE_OPENING;
@@ -338,7 +319,7 @@ int tlsio_arduino_close(CONCRETE_IO_HANDLE tlsio_handle, ON_IO_CLOSE_COMPLETE on
         }
         else
         {
-            sslClient_stop(tlsio_instance->sslClient);
+            sslClient_stop();
             /* Codes_SRS_TLSIO_ARDUINO_21_047: [ If tlsio_arduino_close get success to start the process to close the ssl connection, it shall set the tlsio state as TLSIO_ARDUINO_STATE_CLOSING, and return 0. ]*/
             tlsio_instance->state = TLSIO_ARDUINO_STATE_CLOSING;
             result = 0;
@@ -381,7 +362,7 @@ int tlsio_arduino_send(CONCRETE_IO_HANDLE tlsio_handle, const void* buffer, size
         /* Codes_SRS_TLSIO_ARDUINO_21_055: [ if the ssl was not able to send all data in the buffer, the tlsio_arduino_send shall call the ssl again to send the remaining bytes. ]*/
         while (send_size > 0)
         {
-            send_result = sslClient_write(tlsio_instance->sslClient, runBuffer, send_size);
+            send_result = sslClient_write(runBuffer, send_size);
 
             if (send_result == 0) /* Didn't transmit anything! Failed. */
             {
@@ -438,7 +419,7 @@ void tlsio_arduino_dowork(CONCRETE_IO_HANDLE tlsio_handle)
         switch (tlsio_instance->state)
         {
         case TLSIO_ARDUINO_STATE_OPENING:
-            if (sslClient_connected(tlsio_instance->sslClient))
+            if (sslClient_connected())
             {
                 /* Codes_SRS_TLSIO_ARDUINO_21_063: [ If the tlsio state is TLSIO_ARDUINO_STATE_OPENING, and ssl client is connected, the tlsio_arduino_dowork shall change the tlsio state to TLSIO_ARDUINO_STATE_OPEN, and call the on_io_open_complete with IO_OPEN_OK. ]*/
                 tlsio_instance->state = TLSIO_ARDUINO_STATE_OPEN;
@@ -458,7 +439,7 @@ void tlsio_arduino_dowork(CONCRETE_IO_HANDLE tlsio_handle)
             }
             break;
         case TLSIO_ARDUINO_STATE_OPEN:
-            if (!sslClient_connected(tlsio_instance->sslClient))
+            if (!sslClient_connected())
             {
                 /* Codes_SRS_TLSIO_ARDUINO_21_071: [ If the tlsio state is TLSIO_ARDUINO_STATE_OPEN, and ssl client is not connected, the tlsio_arduino_dowork shall change the state to TLSIO_ARDUINO_STATE_ERROR, call on_io_error. ]*/
                 tlsio_instance->state = TLSIO_ARDUINO_STATE_ERROR;
@@ -468,7 +449,7 @@ void tlsio_arduino_dowork(CONCRETE_IO_HANDLE tlsio_handle)
             else
             {
                 /* Codes_SRS_TLSIO_ARDUINO_21_069: [ If the tlsio state is TLSIO_ARDUINO_STATE_OPEN, the tlsio_arduino_dowork shall read data from the ssl client. ]*/
-                received = sslClient_read(tlsio_instance->sslClient, (uint8_t*)RecvBuffer, RECEIVE_BUFFER_SIZE);
+                received = sslClient_read((uint8_t*)RecvBuffer, RECEIVE_BUFFER_SIZE);
                 if (received > 0)
                 {
                     /* Codes_SRS_TLSIO_ARDUINO_21_070: [ If the tlsio state is TLSIO_ARDUINO_STATE_OPEN, and there are received data in the ssl client, the tlsio_arduino_dowork shall read this data and call the on_bytes_received with the pointer to the buffer with the data. ]*/
@@ -481,7 +462,7 @@ void tlsio_arduino_dowork(CONCRETE_IO_HANDLE tlsio_handle)
             }
             break;
         case TLSIO_ARDUINO_STATE_CLOSING:
-            if (!sslClient_connected(tlsio_instance->sslClient))
+            if (!sslClient_connected())
             {
                 /* Codes_SRS_TLSIO_ARDUINO_21_066: [ If the tlsio state is TLSIO_ARDUINO_STATE_CLOSING, and ssl client is not connected, the tlsio_arduino_dowork shall change the tlsio state to TLSIO_ARDUINO_STATE_CLOSE, and call the on_io_close_complete. ]*/
                 tlsio_instance->state = TLSIO_ARDUINO_STATE_CLOSED;
@@ -499,7 +480,7 @@ void tlsio_arduino_dowork(CONCRETE_IO_HANDLE tlsio_handle)
             }
             break;
         case TLSIO_ARDUINO_STATE_CLOSED:
-            if (sslClient_connected(tlsio_instance->sslClient))
+            if (sslClient_connected())
             {
                 /* Codes_SRS_TLSIO_ARDUINO_21_072: [ If the tlsio state is TLSIO_ARDUINO_STATE_CLOSED, and ssl client is connected, the tlsio_arduino_dowork shall change the state to TLSIO_ARDUINO_STATE_ERROR, call on_io_error. ]*/
                 tlsio_instance->state = TLSIO_ARDUINO_STATE_ERROR;

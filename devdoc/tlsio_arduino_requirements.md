@@ -114,10 +114,6 @@ CONCRETE_IO_HANDLE tlsio_arduino_create(void* io_create_parameters);
 
 **SRS_TLSIO_ARDUINO_21_012: [** If there is not enough memory to control the tlsio, the tlsio_arduino_create shall return NULL as the handle. **]**
 
-**SRS_TLSIO_ARDUINO_21_013: [** The tlsio_arduino_create shall create a new instance of the sslClient. **]**
-
-**SRS_TLSIO_ARDUINO_21_014: [** If the tlsio_arduino_create failed to create a new instance of the sslClient, it shall return NULL as the handle. **]**
-
 **SRS_TLSIO_ARDUINO_21_015: [** The tlsio_arduino_create shall set 10 seconds for the sslClient timeout. **]**
 
 **SRS_TLSIO_ARDUINO_21_016: [** The tlsio_arduino_create shall initialize all callback pointers as NULL. **]**
@@ -140,8 +136,6 @@ void tlsio_arduino_destroy(CONCRETE_IO_HANDLE tlsio_handle);
 **SRS_TLSIO_ARDUINO_21_021: [** The tlsio_arduino_destroy shall destroy a created instance of the tlsio for Arduino identified by the CONCRETE_IO_HANDLE. **]**
 
 **SRS_TLSIO_ARDUINO_21_022: [** The tlsio_arduino_destroy shall free the memory allocated for tlsio_instance. **]**
-
-**SRS_TLSIO_ARDUINO_21_023: [** If there is an instance of sslClient, the tlsio_arduino_destroy shall destroy the instance of the sslClient. **]**
 
 **SRS_TLSIO_ARDUINO_21_024: [** If the tlsio_handle is NULL, the tlsio_arduino_destroy shall not do anything. **]**
 

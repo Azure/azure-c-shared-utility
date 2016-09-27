@@ -8,132 +8,57 @@
 #ifdef ARDUINO_ARCH_ESP8266
 #include "ESP8266WiFi.h"
 #include "WiFiClientSecure.h"
+static WiFiClientSecure sslClient; // for ESP8266
 #elif ARDUINO_SAMD_FEATHER_M0
 #include "Adafruit_WINC1500.h"
 #include "Adafruit_WINC1500Client.h"
 #include "Adafruit_WINC1500SSLClient.h"
+static Adafruit_WINC1500SSLClient sslClient; // for Adafruit WINC1500
 #else
 #include "WiFi101.h"
 #include "WiFiSSLClient.h"
+static WiFiSSLClient sslClient;
 #endif
 
-SSLCLIENT_HANDLE sslClient_new(void)
+void sslClient_setTimeout(unsigned long timeout)
 {
-	Client* sslClient;
-
-#ifdef ARDUINO_ARCH_ESP8266
-	sslClient = new WiFiClientSecure(); // for ESP8266
-#elif ARDUINO_SAMD_FEATHER_M0
-	sslClient = new Adafruit_WINC1500SSLClient(); // for Adafruit WINC1500
-#else
-	sslClient = new WiFiSSLClient();
-#endif
-	
-	return (SSLCLIENT_HANDLE)sslClient;
+    sslClient.setTimeout(timeout);
 }
 
-void sslClient_delete(SSLCLIENT_HANDLE handle)
+uint8_t sslClient_connected(void)
 {
-    if (handle == NULL)
-    {
-        LogError("NULL handle.");
-    }
-    else
-    {
-        Client* sslClient = (Client*)handle;
-        delete sslClient;
-    }
+    return (uint8_t)sslClient.connected();
 }
 
-void sslClient_setTimeout(SSLCLIENT_HANDLE handle, unsigned long timeout)
+int sslClient_connect(uint32_t ipAddress, uint16_t port)
 {
-    if (handle == NULL)
-    {
-        LogError("NULL handle.");
-    }
-    else
-    {
-        Client* sslClient = (Client*)handle;
-        sslClient->setTimeout(timeout);
-    }
+    IPAddress ip = IPAddress(ipAddress);
+    return (int)sslClient.connect(ip, port);
 }
 
-uint8_t sslClient_connected(SSLCLIENT_HANDLE handle)
+void sslClient_stop(void)
 {
-    uint8_t result;
-    if (handle == NULL)
-    {
-        LogError("NULL handle.");
-        result = (uint8_t)false;
-    }
-    else
-    {
-        Client* sslClient = (Client*)handle;
-        result = (uint8_t)sslClient->connected();
-    }
-    return result;
+    sslClient.stop();
 }
 
-int sslClient_connect(SSLCLIENT_HANDLE handle, uint32_t ipAddress, uint16_t port)
+size_t sslClient_write(const uint8_t *buf, size_t size)
 {
-    int result;
-    if (handle == NULL)
-    {
-        LogError("NULL handle.");
-        result = 0;
-    }
-    else
-    {
-        Client* sslClient = (Client*)handle;
-        IPAddress* ip = new IPAddress(ipAddress);
-        result = (int)sslClient->connect(*ip, port);
-    }
-    return result;
+    return sslClient.write(buf, size);
 }
 
-void sslClient_stop(SSLCLIENT_HANDLE handle)
+size_t sslClient_print(const char* str)
 {
-    if (handle == NULL)
-    {
-        LogError("NULL handle.");
-    }
-    else
-    {
-        Client* sslClient = (Client*)handle;
-        sslClient->stop();
-    }
+    return sslClient.print(str);
 }
 
-size_t sslClient_write(SSLCLIENT_HANDLE handle, const uint8_t *buf, size_t size)
+int sslClient_read(uint8_t *buf, size_t size)
 {
-    size_t result;
-    if (handle == NULL)
-    {
-        LogError("NULL handle.");
-        result = (size_t)0;
-    }
-    else
-    {
-        Client* sslClient = (Client*)handle;
-        result = sslClient->write(buf, size);
-    }
-    return result;
+    return sslClient.read(buf, size);
 }
 
-int sslClient_read(SSLCLIENT_HANDLE handle, uint8_t *buf, size_t size)
+int sslClient_available(void)
 {
-    int result;
-    if (handle == NULL)
-    {
-        LogError("NULL handle.");
-        result = 0;
-    }
-    else
-    {
-        Client* sslClient = (Client*)handle;
-        result = sslClient->read(buf, size);
-    }
-    return result;
+    return sslClient.available();
 }
 
 uint8_t sslClient_hostByName(const char* hostName, uint32_t* ipAddress)
