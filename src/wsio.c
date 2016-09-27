@@ -801,6 +801,7 @@ int wsio_close(CONCRETE_IO_HANDLE ws_io, ON_IO_CLOSE_COMPLETE on_io_close_comple
 
             /* Codes_SRS_WSIO_01_041: [wsio_close shall close the websockets IO if an open action is either pending or has completed successfully (if the IO is open).] */
             /* Codes_SRS_WSIO_01_043: [wsio_close shall close the connection by calling lws_context_destroy.] */
+            wsio_instance->io_state = IO_STATE_CLOSING;
             lws_context_destroy(wsio_instance->ws_context);
             wsio_instance->io_state = IO_STATE_NOT_OPEN;
 
