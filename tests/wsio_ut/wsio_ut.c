@@ -924,7 +924,7 @@ TEST_FUNCTION(wsio_destroy_closes_the_underlying_lws_before_destroying_all_resou
 /* Tests_SRS_WSIO_01_091: [The extensions field shall be set to the internal extensions obtained by calling lws_get_internal_extensions.] */
 /* Tests_SRS_WSIO_01_092: [gid and uid shall be set to -1.] */
 /* Tests_SRS_WSIO_01_093: [The members iface, token_limits, ssl_cert_filepath, ssl_private_key_filepath, ssl_private_key_password, ssl_ca_filepath, ssl_cipher_list and provided_client_ssl_ctx shall be set to NULL.] */
-/* Tests_SRS_WSIO_01_094: [No proxy support shall be implemented, thus setting http_proxy_address to NULL.] */
+/* Tests_SRS_WSIO_01_172: [ If no proxy was configured, http_proxy_address shall be set to NULL. ] */
 /* Tests_SRS_WSIO_01_095: [The member options shall be set to 0.] */
 /* Tests_SRS_WSIO_01_096: [The member user shall be set to a user context that will be later passed by the libwebsockets callbacks.] */
 /* Tests_SRS_WSIO_01_097: [Keep alive shall not be supported, thus ka_time shall be set to 0.] */
@@ -991,6 +991,216 @@ TEST_FUNCTION(wsio_open_with_proper_arguments_succeeds)
     STRICT_EXPECTED_CALL(lws_get_internal_extensions());
     STRICT_EXPECTED_CALL(lws_create_context(&lws_context_info));
     STRICT_EXPECTED_CALL(lws_client_connect(TEST_LIBWEBSOCKET_CONTEXT, default_wsio_config.host, default_wsio_config.port, 0, default_wsio_config.relative_path, default_wsio_config.host, default_wsio_config.host, default_wsio_config.protocol_name, -1));
+
+    // act
+    int result = wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_169: [ If any proxy was configured by using the proxy data option, then http_proxy_address shall be set to the address, port, username and password specified in the proxy options, in the format {username}:{password}@{address}:{port}. ] */
+/* Tests_SRS_WSIO_01_171: [ If any proxy was configured by using the proxy data option, the http_proxy_port shall be set to the proxy port. ]*/
+TEST_FUNCTION(wsio_open_with_proxy_option_with_username_and_pwd_succeeds)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+    struct lws_context_creation_info lws_context_info;
+    struct lws_protocols protocols[2];
+
+    HTTP_PROXY_OPTIONS proxy_options;
+    proxy_options.host_address = "test_proxy";
+    proxy_options.port = 8080;
+    proxy_options.username = "user_name";
+    proxy_options.password = "secret";
+
+    (void)wsio_setoption(wsio, OPTION_HTTP_PROXY, &proxy_options);
+
+    umock_c_reset_all_calls();
+
+    protocols[0].name = default_wsio_config.protocol_name;
+    protocols[0].callback = NULL;
+    protocols[0].per_session_data_size = 0;
+    protocols[0].rx_buffer_size = 0;
+    protocols[0].id = 0;
+    protocols[0].user = NULL;
+    protocols[1].name = NULL;
+    protocols[1].callback = NULL;
+    protocols[1].per_session_data_size = 0;
+    protocols[1].rx_buffer_size = 0;
+    protocols[1].id = 0;
+    protocols[1].user = NULL;
+
+    lws_context_info.port = CONTEXT_PORT_NO_LISTEN;
+    lws_context_info.extensions = TEST_INTERNAL_EXTENSIONS;
+    lws_context_info.gid = -1;
+    lws_context_info.uid = -1;
+    lws_context_info.iface = NULL;
+    lws_context_info.token_limits = NULL;
+    lws_context_info.ssl_cert_filepath = NULL;
+    lws_context_info.ssl_private_key_filepath = NULL;
+    lws_context_info.ssl_private_key_password = NULL;
+    lws_context_info.ssl_ca_filepath = NULL;
+    lws_context_info.ssl_cipher_list = NULL;
+    lws_context_info.provided_client_ssl_ctx = NULL;
+    lws_context_info.http_proxy_address = "user_name:secret@test_proxy:8080";
+    lws_context_info.http_proxy_port = 8080;
+    lws_context_info.options = 0;
+    lws_context_info.ka_time = 0;
+    lws_context_info.ka_probes = 0;
+    lws_context_info.ka_interval = 0;
+
+    lws_context_info.protocols = protocols;
+
+    STRICT_EXPECTED_CALL(lws_get_internal_extensions());
+    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(lws_create_context(&lws_context_info));
+    STRICT_EXPECTED_CALL(lws_client_connect(TEST_LIBWEBSOCKET_CONTEXT, default_wsio_config.host, default_wsio_config.port, 0, default_wsio_config.relative_path, default_wsio_config.host, default_wsio_config.host, default_wsio_config.protocol_name, -1));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+
+    // act
+    int result = wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_169: [ If any proxy was configured by using the proxy data option, then http_proxy_address shall be set to the address, port, username and password specified in the proxy options, in the format {username}:{password}@{address}:{port}. ] */
+/* Tests_SRS_WSIO_01_171: [ If any proxy was configured by using the proxy data option, the http_proxy_port shall be set to the proxy port. ]*/
+TEST_FUNCTION(wsio_open_with_proxy_option_with_username_and_pwd_and_5digit_port_succeeds)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+    struct lws_context_creation_info lws_context_info;
+    struct lws_protocols protocols[2];
+
+    HTTP_PROXY_OPTIONS proxy_options;
+    proxy_options.host_address = "test_proxy";
+    proxy_options.port = 22222;
+    proxy_options.username = "user_name";
+    proxy_options.password = "secret";
+
+    (void)wsio_setoption(wsio, OPTION_HTTP_PROXY, &proxy_options);
+
+    umock_c_reset_all_calls();
+
+    protocols[0].name = default_wsio_config.protocol_name;
+    protocols[0].callback = NULL;
+    protocols[0].per_session_data_size = 0;
+    protocols[0].rx_buffer_size = 0;
+    protocols[0].id = 0;
+    protocols[0].user = NULL;
+    protocols[1].name = NULL;
+    protocols[1].callback = NULL;
+    protocols[1].per_session_data_size = 0;
+    protocols[1].rx_buffer_size = 0;
+    protocols[1].id = 0;
+    protocols[1].user = NULL;
+
+    lws_context_info.port = CONTEXT_PORT_NO_LISTEN;
+    lws_context_info.extensions = TEST_INTERNAL_EXTENSIONS;
+    lws_context_info.gid = -1;
+    lws_context_info.uid = -1;
+    lws_context_info.iface = NULL;
+    lws_context_info.token_limits = NULL;
+    lws_context_info.ssl_cert_filepath = NULL;
+    lws_context_info.ssl_private_key_filepath = NULL;
+    lws_context_info.ssl_private_key_password = NULL;
+    lws_context_info.ssl_ca_filepath = NULL;
+    lws_context_info.ssl_cipher_list = NULL;
+    lws_context_info.provided_client_ssl_ctx = NULL;
+    lws_context_info.http_proxy_address = "user_name:secret@test_proxy:22222";
+    lws_context_info.http_proxy_port = 22222;
+    lws_context_info.options = 0;
+    lws_context_info.ka_time = 0;
+    lws_context_info.ka_probes = 0;
+    lws_context_info.ka_interval = 0;
+
+    lws_context_info.protocols = protocols;
+
+    STRICT_EXPECTED_CALL(lws_get_internal_extensions());
+    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(lws_create_context(&lws_context_info));
+    STRICT_EXPECTED_CALL(lws_client_connect(TEST_LIBWEBSOCKET_CONTEXT, default_wsio_config.host, default_wsio_config.port, 0, default_wsio_config.relative_path, default_wsio_config.host, default_wsio_config.host, default_wsio_config.protocol_name, -1));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+
+    // act
+    int result = wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_169: [ If any proxy was configured by using the proxy data option, then http_proxy_address shall be set to the address, port, username and password specified in the proxy options, in the format {username}:{password}@{address}:{port}. ] */
+/* Tests_SRS_WSIO_01_170: [ If no username/password was specified for the proxy settings then http_proxy_address shall be set to the address and port specified in the proxy options, in the format {address}:{port}. ]*/
+TEST_FUNCTION(wsio_open_with_proxy_option_without_username_and_pwd_succeeds)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+    struct lws_context_creation_info lws_context_info;
+    struct lws_protocols protocols[2];
+
+    HTTP_PROXY_OPTIONS proxy_options;
+    proxy_options.host_address = "test_proxy";
+    proxy_options.port = 8080;
+    proxy_options.username = "user_name";
+    proxy_options.password = "secret";
+
+    (void)wsio_setoption(wsio, OPTION_HTTP_PROXY, &proxy_options);
+
+    umock_c_reset_all_calls();
+
+    protocols[0].name = default_wsio_config.protocol_name;
+    protocols[0].callback = NULL;
+    protocols[0].per_session_data_size = 0;
+    protocols[0].rx_buffer_size = 0;
+    protocols[0].id = 0;
+    protocols[0].user = NULL;
+    protocols[1].name = NULL;
+    protocols[1].callback = NULL;
+    protocols[1].per_session_data_size = 0;
+    protocols[1].rx_buffer_size = 0;
+    protocols[1].id = 0;
+    protocols[1].user = NULL;
+
+    lws_context_info.port = CONTEXT_PORT_NO_LISTEN;
+    lws_context_info.extensions = TEST_INTERNAL_EXTENSIONS;
+    lws_context_info.gid = -1;
+    lws_context_info.uid = -1;
+    lws_context_info.iface = NULL;
+    lws_context_info.token_limits = NULL;
+    lws_context_info.ssl_cert_filepath = NULL;
+    lws_context_info.ssl_private_key_filepath = NULL;
+    lws_context_info.ssl_private_key_password = NULL;
+    lws_context_info.ssl_ca_filepath = NULL;
+    lws_context_info.ssl_cipher_list = NULL;
+    lws_context_info.provided_client_ssl_ctx = NULL;
+    lws_context_info.http_proxy_address = "user_name:secret@test_proxy:8080";
+    lws_context_info.http_proxy_port = 8080;
+    lws_context_info.options = 0;
+    lws_context_info.ka_time = 0;
+    lws_context_info.ka_probes = 0;
+    lws_context_info.ka_interval = 0;
+
+    lws_context_info.protocols = protocols;
+
+    STRICT_EXPECTED_CALL(lws_get_internal_extensions());
+    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(lws_create_context(&lws_context_info));
+    STRICT_EXPECTED_CALL(lws_client_connect(TEST_LIBWEBSOCKET_CONTEXT, default_wsio_config.host, default_wsio_config.port, 0, default_wsio_config.relative_path, default_wsio_config.host, default_wsio_config.host, default_wsio_config.protocol_name, -1));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
     // act
     int result = wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
@@ -1076,17 +1286,9 @@ TEST_FUNCTION(wsio_open_with_different_config_succeeds)
     wsio_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_015: [name shall be set to protocol_name as passed to wsio_create] */
-/* Tests_SRS_WSIO_01_025: [address shall be the hostname passed to wsio_create] */
-/* Tests_SRS_WSIO_01_026: [port shall be the port passed to wsio_create] */
-/* Tests_SRS_WSIO_01_027: [if use_ssl passed in wsio_create is true, the use_ssl argument shall be 1] */
-/* Tests_SRS_WSIO_01_028: [path shall be the relative_path passed in wsio_create] */
-/* Tests_SRS_WSIO_01_029: [host shall be the host passed to wsio_create] */
-/* Tests_SRS_WSIO_01_030: [origin shall be the host passed to wsio_create] */
-/* Tests_SRS_WSIO_01_031: [protocol shall be the protocol_name passed to wsio_create] */
-/* Tests_SRS_WSIO_01_091: [The extensions field shall be set to the internal extensions obtained by calling lws_get_internal_extensions.] */
-/* Tests_SRS_WSIO_01_104: [On success, wsio_open shall return 0.] */
-TEST_FUNCTION(wsio_open_with_proxy_config_succeeds)
+/* Tests_SRS_WSIO_01_169: [ If any proxy was configured by using the proxy data option, then http_proxy_address shall be set to the address, port, username and password specified in the proxy options, in the format {username}:{password}@{address}:{port}. ] */
+/* Tests_SRS_WSIO_01_170: [ If no username/password was specified for the proxy settings then http_proxy_address shall be set to the address and port specified in the proxy options, in the format {address}:{port}. ]*/
+TEST_FUNCTION(wsio_open_with_proxy_config_with_username_NULL_and_non_NULL_password_succeeds)
 {
     // arrange
     CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
@@ -1094,11 +1296,11 @@ TEST_FUNCTION(wsio_open_with_proxy_config_succeeds)
     struct lws_protocols protocols[2];
 
     HTTP_PROXY_OPTIONS proxy_options;
-    proxy_options.host_address = TEST_HOST_ADDRESS;
+    proxy_options.host_address = "ha";
     proxy_options.port = 8080;
     proxy_options.username = NULL;
-    proxy_options.password = TEST_PASSWORD;
-    wsio_setoption(wsio, OPTION_HTTP_PROXY, &proxy_options);
+    proxy_options.password = "pwd";
+    (void)wsio_setoption(wsio, OPTION_HTTP_PROXY, &proxy_options);
 
     umock_c_reset_all_calls();
 
@@ -1127,16 +1329,17 @@ TEST_FUNCTION(wsio_open_with_proxy_config_succeeds)
     lws_context_info.ssl_ca_filepath = NULL;
     lws_context_info.ssl_cipher_list = NULL;
     lws_context_info.provided_client_ssl_ctx = NULL;
-    lws_context_info.http_proxy_address = NULL;
     lws_context_info.options = 0;
     lws_context_info.ka_time = 0;
-    lws_context_info.http_proxy_address = proxy_options.host_address;
-    lws_context_info.http_proxy_port = proxy_options.port;
+    lws_context_info.http_proxy_address = "ha:8080";
+    lws_context_info.http_proxy_port = 8080;
     lws_context_info.protocols = protocols;
 
     STRICT_EXPECTED_CALL(lws_get_internal_extensions());
-    STRICT_EXPECTED_CALL(lws_create_context(&lws_context_info)).IgnoreArgument(1);
+    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(lws_create_context(&lws_context_info));
     STRICT_EXPECTED_CALL(lws_client_connect(TEST_LIBWEBSOCKET_CONTEXT, default_wsio_config.host, default_wsio_config.port, 0, default_wsio_config.relative_path, default_wsio_config.host, default_wsio_config.host, default_wsio_config.protocol_name, -1));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
     // act
     int result = wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
@@ -3695,62 +3898,7 @@ TEST_FUNCTION(when_adding_the_cert_to_the_store_fails_in_LOAD_EXTRA_CLIENT_VERIF
     wsio_destroy(wsio);
 }
 
-/*Tests_SRS_WSIO_02_001: [ If parameter handle is NULL then wsio_retrieveoptions shall fail and return NULL. ]*/
-TEST_FUNCTION(wsio_retrieveoptions_with_NULL_handle_returns_NULL)
-{
-    ///arrange
-
-    ///act
-    OPTIONHANDLER_HANDLE h = wsio_get_interface_description()->concrete_io_retrieveoptions(NULL);
-
-    ///assert
-    ASSERT_IS_NULL(h);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-}
-
-/*Tests_SRS_WSIO_02_002: [** `wsio_retrieveoptions` shall produce an OPTIONHANDLER_HANDLE. ]*/
-TEST_FUNCTION(wsio_retrieveoptions_returns_non_NULL_empty)
-{
-    ///arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(OptionHandler_Create(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
-        .IgnoreAllArguments();
-
-    ///act
-    OPTIONHANDLER_HANDLE h = wsio_get_interface_description()->concrete_io_retrieveoptions(wsio);
-
-    ///assert
-    ASSERT_IS_NOT_NULL(h);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    ///cleanup
-    wsio_destroy(wsio);
-    free(h);
-}
-
-/*Tests_SRS_WSIO_02_003: [ If producing the OPTIONHANDLER_HANDLE fails then wsio_retrieveoptions shall fail and return NULL. ]*/
-TEST_FUNCTION(wsio_retrieveoptions_when_OptionHandler_Create_fails_it_fails)
-{
-    ///arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(OptionHandler_Create(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
-        .IgnoreAllArguments()
-        .SetReturn((OPTIONHANDLER_HANDLE)NULL);
-
-    ///act
-    OPTIONHANDLER_HANDLE h = wsio_get_interface_description()->concrete_io_retrieveoptions(wsio);
-
-    ///assert
-    ASSERT_IS_NULL(h);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    ///cleanup
-    wsio_destroy(wsio);
-}
+/* wsio_setoption */
 
 /* Tests_SRS_WSIO_01_136: [ If any of the arguments ws_io or option_name is NULL wsio_setoption shall return a non-zero value. ] ]*/
 TEST_FUNCTION(wsio_setoption_with_NULL_io_handle_fails)
@@ -3768,8 +3916,6 @@ TEST_FUNCTION(wsio_setoption_with_NULL_io_handle_fails)
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, option_result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
 }
 
 /* Tests_SRS_WSIO_01_136: [ If any of the arguments ws_io or option_name is NULL wsio_setoption shall return a non-zero value. ] ]*/
@@ -3885,7 +4031,10 @@ TEST_FUNCTION(wsio_setoption_with_trustedcerts_and_NULL_value_clears_the_Trusted
     wsio_destroy(wsio);
 }
 
-TEST_FUNCTION(wsio_setoption_succeed)
+/* Tests_SRS_WSIO_01_149: [  - "proxy_data" - a HTTP_PROXY_OPTIONS structure that defines the HTTP proxy to be used. ]*/
+/* Tests_SRS_WSIO_01_138: [ If the option was handled by wsio, then wsio_setoption shall return 0. ]*/
+/* Tests_SRS_WSIO_01_163: [ The fields hostname, username and password shall be copied for later use by using mallocAndStrcpy_s. ]*/
+TEST_FUNCTION(wsio_setoption_with_proxy_data_succeeds)
 {
     //arrange
     CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
@@ -3897,7 +4046,12 @@ TEST_FUNCTION(wsio_setoption_succeed)
     proxy_options.username = TEST_USERNAME;
     proxy_options.password = TEST_PASSWORD;
 
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_HOST_ADDRESS))
+        .IgnoreArgument_destination();
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_USERNAME))
+        .IgnoreArgument_destination();
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_PASSWORD))
+        .IgnoreArgument_destination();
 
     // act
     int option_result = wsio_setoption(wsio, OPTION_HTTP_PROXY, &proxy_options);
@@ -3910,7 +4064,32 @@ TEST_FUNCTION(wsio_setoption_succeed)
     wsio_destroy(wsio);
 }
 
-TEST_FUNCTION(wsio_setoption_no_username_password_succeed)
+/* Tests_SRS_WSIO_01_160: [ If the hostname field is NULL then wsio_setoption shall return a non-zero value. ]*/
+TEST_FUNCTION(wsio_setoption_with_proxy_data_with_NULL_hostname_fails)
+{
+    //arrange
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+    umock_c_reset_all_calls();
+
+    HTTP_PROXY_OPTIONS proxy_options;
+    proxy_options.host_address = NULL;
+    proxy_options.port = 8080;
+    proxy_options.username = TEST_USERNAME;
+    proxy_options.password = TEST_PASSWORD;
+
+    // act
+    int option_result = wsio_setoption(wsio, OPTION_HTTP_PROXY, &proxy_options);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, option_result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_150: [ The username and password fields are optional (can be NULL). ]*/
+TEST_FUNCTION(wsio_setoption_no_username_password_succeeds)
 {
     //arrange
     CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
@@ -3922,7 +4101,8 @@ TEST_FUNCTION(wsio_setoption_no_username_password_succeed)
     proxy_options.username = NULL;
     proxy_options.password = NULL;
 
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_HOST_ADDRESS))
+        .IgnoreArgument_destination();
 
     // act
     int option_result = wsio_setoption(wsio, OPTION_HTTP_PROXY, &proxy_options);
@@ -3935,6 +4115,7 @@ TEST_FUNCTION(wsio_setoption_no_username_password_succeed)
     wsio_destroy(wsio);
 }
 
+/* Tests_SRS_WSIO_01_150: [ The username and password fields are optional (can be NULL). ]*/
 TEST_FUNCTION(wsio_setoption_username_NULL_password_Valid_succeed)
 {
     //arrange
@@ -3947,7 +4128,10 @@ TEST_FUNCTION(wsio_setoption_username_NULL_password_Valid_succeed)
     proxy_options.username = NULL;
     proxy_options.password = TEST_PASSWORD;
 
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_HOST_ADDRESS))
+        .IgnoreArgument_destination();
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_PASSWORD))
+        .IgnoreArgument_destination();
 
     // act
     int option_result = wsio_setoption(wsio, OPTION_HTTP_PROXY, &proxy_options);
@@ -3960,6 +4144,7 @@ TEST_FUNCTION(wsio_setoption_username_NULL_password_Valid_succeed)
     wsio_destroy(wsio);
 }
 
+/* Tests_SRS_WSIO_01_159: [ If a username has been specified then a password shall also be specified. ]*/
 TEST_FUNCTION(wsio_setoption_username_valid_password_NULL_fail)
 {
     //arrange
@@ -3977,6 +4162,168 @@ TEST_FUNCTION(wsio_setoption_username_valid_password_NULL_fail)
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, option_result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_151: [ If copying of any of the fields host_address, username or password fails then wsio_setoption shall return a non-zero value. ]*/
+TEST_FUNCTION(when_copying_the_hostname_fails_wsio_setoption_with_proxy_data_fails)
+{
+    //arrange
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+    umock_c_reset_all_calls();
+
+    HTTP_PROXY_OPTIONS proxy_options;
+    proxy_options.host_address = TEST_HOST_ADDRESS;
+    proxy_options.port = 8080;
+    proxy_options.username = TEST_USERNAME;
+    proxy_options.password = TEST_PASSWORD;
+
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_HOST_ADDRESS))
+        .IgnoreArgument_destination()
+        .SetReturn(1);
+
+    // act
+    int option_result = wsio_setoption(wsio, OPTION_HTTP_PROXY, &proxy_options);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, option_result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_151: [ If copying of any of the fields host_address, username or password fails then wsio_setoption shall return a non-zero value. ]*/
+TEST_FUNCTION(when_copying_the_username_fails_wsio_setoption_with_proxy_data_fails)
+{
+    //arrange
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+    umock_c_reset_all_calls();
+
+    HTTP_PROXY_OPTIONS proxy_options;
+    proxy_options.host_address = TEST_HOST_ADDRESS;
+    proxy_options.port = 8080;
+    proxy_options.username = TEST_USERNAME;
+    proxy_options.password = TEST_PASSWORD;
+
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_HOST_ADDRESS))
+        .IgnoreArgument_destination();
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_USERNAME))
+        .IgnoreArgument_destination()
+        .SetReturn(1);
+
+    // act
+    int option_result = wsio_setoption(wsio, OPTION_HTTP_PROXY, &proxy_options);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, option_result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_151: [ If copying of any of the fields host_address, username or password fails then wsio_setoption shall return a non-zero value. ]*/
+TEST_FUNCTION(when_copying_the_password_fails_wsio_setoption_with_proxy_data_fails)
+{
+    //arrange
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+    umock_c_reset_all_calls();
+
+    HTTP_PROXY_OPTIONS proxy_options;
+    proxy_options.host_address = TEST_HOST_ADDRESS;
+    proxy_options.port = 8080;
+    proxy_options.username = TEST_USERNAME;
+    proxy_options.password = TEST_PASSWORD;
+
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_HOST_ADDRESS))
+        .IgnoreArgument_destination();
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_USERNAME))
+        .IgnoreArgument_destination();
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_PASSWORD))
+        .IgnoreArgument_destination()
+        .SetReturn(1);
+
+    // act
+    int option_result = wsio_setoption(wsio, OPTION_HTTP_PROXY, &proxy_options);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, option_result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_161: [ If a previous proxy_data option was saved, then the previous value shall be freed. ]*/
+TEST_FUNCTION(the_http_proxy_data_set_via_a_previous_wsio_setoption_shall_be_free_upon_a_new_setoption)
+{
+    //arrange
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+
+    HTTP_PROXY_OPTIONS proxy_options;
+    proxy_options.host_address = TEST_HOST_ADDRESS;
+    proxy_options.port = 8080;
+    proxy_options.username = TEST_USERNAME;
+    proxy_options.password = TEST_PASSWORD;
+
+    (void)wsio_setoption(wsio, OPTION_HTTP_PROXY, &proxy_options);
+    umock_c_reset_all_calls();
+
+    proxy_options.host_address = TEST_HOST_ADDRESS;
+    proxy_options.port = 8080;
+    proxy_options.username = NULL;
+    proxy_options.password = NULL;
+
+    EXPECTED_CALL(gballoc_free(IGNORED_NUM_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_NUM_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_HOST_ADDRESS))
+        .IgnoreArgument_destination();
+
+    // act
+    int option_result = wsio_setoption(wsio, OPTION_HTTP_PROXY, &proxy_options);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, option_result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_162: [ A NULL value shall be allowed for proxy_data, in which case the previously stored proxy_data option value shall be cleared. ]*/
+TEST_FUNCTION(wsio_setoption_with_http_proxy_data_with_NULL_clears_previous_proxy_data)
+{
+    //arrange
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+
+    HTTP_PROXY_OPTIONS proxy_options;
+    proxy_options.host_address = TEST_HOST_ADDRESS;
+    proxy_options.port = 8080;
+    proxy_options.username = TEST_USERNAME;
+    proxy_options.password = TEST_PASSWORD;
+
+    (void)wsio_setoption(wsio, OPTION_HTTP_PROXY, &proxy_options);
+    umock_c_reset_all_calls();
+
+    proxy_options.host_address = TEST_HOST_ADDRESS;
+    proxy_options.port = 8080;
+    proxy_options.username = NULL;
+    proxy_options.password = NULL;
+
+    EXPECTED_CALL(gballoc_free(IGNORED_NUM_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_NUM_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_NUM_ARG));
+
+    // act
+    int option_result = wsio_setoption(wsio, OPTION_HTTP_PROXY, NULL);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, option_result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
@@ -4030,49 +4377,6 @@ TEST_FUNCTION(wsio_cloneoption_value_NULL_fail)
     wsio_destroy(wsio);
 }
 
-TEST_FUNCTION(wsio_cloneoption_proxy_address_succeed)
-{
-    //arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-
-    umock_c_reset_all_calls();
-
-    EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
-
-    // act
-    void* option_result = wsio_clone_option(OPTION_PROXY_ADDRESS, TEST_HOST_ADDRESS);
-
-    // assert
-    ASSERT_IS_NOT_NULL(option_result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy_option(OPTION_PROXY_ADDRESS, option_result);
-    wsio_destroy(wsio);
-}
-
-TEST_FUNCTION(wsio_cloneoption_proxy_port_succeed)
-{
-    //arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-
-    umock_c_reset_all_calls();
-
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-
-    // act
-    int port = 8080;
-    void* option_result = wsio_clone_option(OPTION_PROXY_PORT, &port);
-
-    // assert
-    ASSERT_IS_NOT_NULL(option_result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy_option(OPTION_PROXY_PORT, option_result);
-    wsio_destroy(wsio);
-}
-
 /* Tests_SRS_WSIO_01_141: [ wsio_clone_option shall clone the option named `TrustedCerts` by calling mallocAndStrcpy_s. ]*/
 /* Tests_SRS_WSIO_01_143: [ On success it shall return a non-NULL pointer to the cloned option. ]*/
 TEST_FUNCTION(wsio_cloneoption_clones_TrustedCerts)
@@ -4120,6 +4424,198 @@ TEST_FUNCTION(when_cloning_the_TrustedCerts_option_fails_then_wsio_cloneoption_f
     wsio_destroy(wsio);
 }
 
+/* Tests_SRS_WSIO_01_152: [ wsio_clone_option shall clone the option named `proxy_data` by allocating a new HTTP_PROXY_OPTIONS structure. ]*/
+/* Tests_SRS_WSIO_01_154: [ Then each of the fields host_address, username and password shall be cloned by using mallocAndStrcpy_s. ]*/
+TEST_FUNCTION(wsio_cloneoption_clones_proxy_data)
+{
+    //arrange
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+    umock_c_reset_all_calls();
+
+    HTTP_PROXY_OPTIONS proxy_options;
+    proxy_options.host_address = TEST_HOST_ADDRESS;
+    proxy_options.port = 8080;
+    proxy_options.username = TEST_USERNAME;
+    proxy_options.password = TEST_PASSWORD;
+
+    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_HOST_ADDRESS))
+        .IgnoreArgument_destination();
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_USERNAME))
+        .IgnoreArgument_destination();
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_PASSWORD))
+        .IgnoreArgument_destination();
+
+    // act
+    void* option_result = wsio_clone_option("proxy_data", &proxy_options);
+
+    // assert
+    ASSERT_IS_NOT_NULL(option_result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_destroy_option("proxy_data", option_result);
+    wsio_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_152: [ wsio_clone_option shall clone the option named `proxy_data` by allocating a new HTTP_PROXY_OPTIONS structure. ]*/
+/* Tests_SRS_WSIO_01_154: [ Then each of the fields host_address, username and password shall be cloned by using mallocAndStrcpy_s. ]*/
+/* Tests_SRS_WSIO_01_165: [ If the field username in the structure pointed to by value is NULL nothing shall be copied to the cloned option. ]*/
+/* Tests_SRS_WSIO_01_166: [ If the field password in the structure pointed to by value is NULL nothing shall be copied to the cloned option. ]*/
+TEST_FUNCTION(wsio_cloneoption_with_proxy_data_without_username_and_password_succeeds)
+{
+    //arrange
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+    umock_c_reset_all_calls();
+
+    HTTP_PROXY_OPTIONS proxy_options;
+    proxy_options.host_address = TEST_HOST_ADDRESS;
+    proxy_options.port = 8080;
+    proxy_options.username = NULL;
+    proxy_options.password = NULL;
+
+    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_HOST_ADDRESS))
+        .IgnoreArgument_destination();
+
+    // act
+    void* option_result = wsio_clone_option("proxy_data", &proxy_options);
+
+    // assert
+    ASSERT_IS_NOT_NULL(option_result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_destroy_option("proxy_data", option_result);
+    wsio_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_153: [ If allocating memory for the structure fails fails, wsio_clone_option shall return NULL. ]*/
+TEST_FUNCTION(when_allocatng_memory_for_proxy_data_fails_then_wsio_cloneoption_with_proxy_data_fails)
+{
+    //arrange
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+    umock_c_reset_all_calls();
+
+    HTTP_PROXY_OPTIONS proxy_options;
+    proxy_options.host_address = TEST_HOST_ADDRESS;
+    proxy_options.port = 8080;
+    proxy_options.username = TEST_USERNAME;
+    proxy_options.password = TEST_PASSWORD;
+
+    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
+        .SetReturn(NULL);
+
+    // act
+    void* option_result = wsio_clone_option("proxy_data", &proxy_options);
+
+    // assert
+    ASSERT_IS_NULL(option_result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_155: [ If mallocAndStrcpy_s fails, wsio_clone_option shall return NULL. ]*/
+TEST_FUNCTION(when_copying_the_host_address_fails_then_wsio_cloneoption_with_proxy_data_fails)
+{
+    //arrange
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+    umock_c_reset_all_calls();
+
+    HTTP_PROXY_OPTIONS proxy_options;
+    proxy_options.host_address = TEST_HOST_ADDRESS;
+    proxy_options.port = 8080;
+    proxy_options.username = TEST_USERNAME;
+    proxy_options.password = TEST_PASSWORD;
+
+    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_HOST_ADDRESS))
+        .IgnoreArgument_destination()
+        .SetReturn(1);
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+
+    // act
+    void* option_result = wsio_clone_option("proxy_data", &proxy_options);
+
+    // assert
+    ASSERT_IS_NULL(option_result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_155: [ If mallocAndStrcpy_s fails, wsio_clone_option shall return NULL. ]*/
+TEST_FUNCTION(when_copying_the_username_fails_then_wsio_cloneoption_with_proxy_data_fails)
+{
+    //arrange
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+    umock_c_reset_all_calls();
+
+    HTTP_PROXY_OPTIONS proxy_options;
+    proxy_options.host_address = TEST_HOST_ADDRESS;
+    proxy_options.port = 8080;
+    proxy_options.username = TEST_USERNAME;
+    proxy_options.password = TEST_PASSWORD;
+
+    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_HOST_ADDRESS))
+        .IgnoreArgument_destination();
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_USERNAME))
+        .IgnoreArgument_destination()
+        .SetReturn(1);
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+
+    // act
+    void* option_result = wsio_clone_option("proxy_data", &proxy_options);
+
+    // assert
+    ASSERT_IS_NULL(option_result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_155: [ If mallocAndStrcpy_s fails, wsio_clone_option shall return NULL. ]*/
+TEST_FUNCTION(when_copying_the_password_fails_then_wsio_cloneoption_with_proxy_data_fails)
+{
+    //arrange
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+    umock_c_reset_all_calls();
+
+    HTTP_PROXY_OPTIONS proxy_options;
+    proxy_options.host_address = TEST_HOST_ADDRESS;
+    proxy_options.port = 8080;
+    proxy_options.username = TEST_USERNAME;
+    proxy_options.password = TEST_PASSWORD;
+
+    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_HOST_ADDRESS))
+        .IgnoreArgument_destination();
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_USERNAME))
+        .IgnoreArgument_destination();
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_PASSWORD))
+        .IgnoreArgument_destination()
+        .SetReturn(1);
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+
+    // act
+    void* option_result = wsio_clone_option("proxy_data", &proxy_options);
+
+    // assert
+    ASSERT_IS_NULL(option_result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_destroy(wsio);
+}
+
 /* wsio_destroy_option */
 
 /* Tests_SRS_WSIO_01_147: [ If any of the arguments is NULL, wsio_destroy_option shall do nothing. ]*/
@@ -4150,7 +4646,7 @@ TEST_FUNCTION(wsio_destroy_option_value_NULL_fail)
     umock_c_reset_all_calls();
 
     // act
-    wsio_destroy_option(OPTION_PROXY_PORT, NULL);
+    wsio_destroy_option(OPTION_HTTP_PROXY, NULL);
 
     // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -4160,11 +4656,10 @@ TEST_FUNCTION(wsio_destroy_option_value_NULL_fail)
 }
 
 /* Tests_SRS_WSIO_01_144: [ If the option name is `TrustedCerts`, wsio_destroy_option shall free the char\* option indicated by value. ]*/
-TEST_FUNCTION(wsio_destroy_TrustedCerts_option_succeeds)
+TEST_FUNCTION(wsio_destroy_option_with_TrustedCerts_frees_the_string)
 {
     //arrange
     CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_setoption(wsio, "TrustedCerts", "boohoo");
     void* option_result = wsio_clone_option("TrustedCerts", "boohoo");
     umock_c_reset_all_calls();
 
@@ -4180,10 +4675,72 @@ TEST_FUNCTION(wsio_destroy_TrustedCerts_option_succeeds)
     wsio_destroy(wsio);
 }
 
+/* Tests_SRS_WSIO_01_157: [ If the option name is `proxy_data`, wsio_destroy_option shall free the strings for the fields host_address, username and password. ]*/
+/* Tests_SRS_WSIO_01_156: [ Also the memory for the HTTP_PROXY_OPTIONS shall be freed. ]*/
+TEST_FUNCTION(wsio_destroy_option_with_proxy_data_frees_the_strings)
+{
+    //arrange
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+
+    HTTP_PROXY_OPTIONS proxy_options;
+    proxy_options.host_address = TEST_HOST_ADDRESS;
+    proxy_options.port = 8080;
+    proxy_options.username = TEST_USERNAME;
+    proxy_options.password = TEST_PASSWORD;
+
+    void* option_result = wsio_clone_option("proxy_data", &proxy_options);
+    umock_c_reset_all_calls();
+
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+
+    // act
+    wsio_destroy_option("proxy_data", option_result);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_157: [ If the option name is `proxy_data`, wsio_destroy_option shall free the strings for the fields host_address, username and password. ]*/
+/* Tests_SRS_WSIO_01_156: [ Also the memory for the HTTP_PROXY_OPTIONS shall be freed. ]*/
+/* Tests_SRS_WSIO_01_167: [ No free shal be done for a NULL username. ]*/
+/* Tests_SRS_WSIO_01_168: [ No free shal be done for a NULL password. ]*/
+TEST_FUNCTION(wsio_destroy_option_with_proxy_data_with_NULL_username_frees_the_hostname_and_structure)
+{
+    //arrange
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+
+    HTTP_PROXY_OPTIONS proxy_options;
+    proxy_options.host_address = TEST_HOST_ADDRESS;
+    proxy_options.port = 8080;
+    proxy_options.username = NULL;
+    proxy_options.password = NULL;
+
+    void* option_result = wsio_clone_option("proxy_data", &proxy_options);
+    umock_c_reset_all_calls();
+
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+
+    // act
+    wsio_destroy_option("proxy_data", option_result);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_destroy(wsio);
+}
+
 /* wsio_retrieveoptions */
 
 /*Tests_SRS_WSIO_02_001: [ If parameter handle is NULL then wsio_retrieveoptions shall fail and return NULL. */
-TEST_FUNCTION(wsio_retrieveoptions_handle_NULL_fail)
+TEST_FUNCTION(wsio_retrieveoptions_with_NULL_handle_returns_NULL)
 {
     //arrange
     CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
@@ -4201,24 +4758,74 @@ TEST_FUNCTION(wsio_retrieveoptions_handle_NULL_fail)
     wsio_destroy(wsio);
 }
 
+/*Tests_SRS_WSIO_02_002: [** `wsio_retrieveoptions` shall produce an OPTIONHANDLER_HANDLE. ]*/
+TEST_FUNCTION(wsio_retrieveoptions_returns_non_NULL_empty)
+{
+    ///arrange
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(OptionHandler_Create(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+        .IgnoreAllArguments();
+
+    ///act
+    OPTIONHANDLER_HANDLE h = wsio_get_interface_description()->concrete_io_retrieveoptions(wsio);
+
+    ///assert
+    ASSERT_IS_NOT_NULL(h);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///cleanup
+    wsio_destroy(wsio);
+    free(h);
+}
+
+/*Tests_SRS_WSIO_02_003: [ If producing the OPTIONHANDLER_HANDLE fails then wsio_retrieveoptions shall fail and return NULL. ]*/
+TEST_FUNCTION(wsio_retrieveoptions_when_OptionHandler_Create_fails_it_fails)
+{
+    ///arrange
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(OptionHandler_Create(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+        .IgnoreAllArguments()
+        .SetReturn((OPTIONHANDLER_HANDLE)NULL);
+
+    ///act
+    OPTIONHANDLER_HANDLE h = wsio_get_interface_description()->concrete_io_retrieveoptions(wsio);
+
+    ///assert
+    ASSERT_IS_NULL(h);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///cleanup
+    wsio_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_02_002: [ `wsio_retrieveoptions` shall produce an OPTIONHANDLER_HANDLE. ]*/
+/* Tests_SRS_WSIO_01_145: [ `wsio_retrieveoptions` shall add to it the options: ]*/
+/* Tests_SRS_WSIO_01_158: [ - proxy_data ]*/
 TEST_FUNCTION(wsio_retrieveoptions_returns_previously_set_proxy_options)
 {
     //arrange
     CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+    OPTIONHANDLER_HANDLE created_option_handle;
 
     HTTP_PROXY_OPTIONS proxy_options;
     proxy_options.host_address = TEST_HOST_ADDRESS;
     proxy_options.port = 8080;
-    proxy_options.username = NULL;
+    proxy_options.username = TEST_USERNAME;
     proxy_options.password = TEST_PASSWORD;
 
     (void)wsio_setoption(wsio, OPTION_HTTP_PROXY, &proxy_options);
 
     umock_c_reset_all_calls();
 
-    EXPECTED_CALL(OptionHandler_Create(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
-    EXPECTED_CALL(OptionHandler_AddOption(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
-    EXPECTED_CALL(OptionHandler_AddOption(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+    EXPECTED_CALL(OptionHandler_Create(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+        .CaptureReturn(&created_option_handle);
+    STRICT_EXPECTED_CALL(OptionHandler_AddOption(IGNORED_PTR_ARG, "proxy_data", IGNORED_PTR_ARG))
+        .ValidateArgumentValue_handle(&created_option_handle)
+        .IgnoreArgument_value();
 
     // act
     OPTIONHANDLER_HANDLE handle = wsio_retrieveoptions(wsio);

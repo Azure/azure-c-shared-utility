@@ -17,7 +17,6 @@ typedef struct WSIO_CONFIG_TAG
 	const char* trusted_ca;
 } WSIO_CONFIG;
 
-static wsio_retrieveoptions(CONCRETE_IO_HANDLE handle);
 extern CONCRETE_IO_HANDLE wsio_create(void* io_create_parameters);
 extern void wsio_destroy(CONCRETE_IO_HANDLE ws_io);
 extern int wsio_open(CONCRETE_IO_HANDLE ws_io, ON_IO_OPEN_COMPLETE on_io_open_complete, ON_BYTES_RECEIVED on_bytes_received, ON_IO_ERROR on_io_error, void* callback_context);
@@ -27,6 +26,7 @@ extern void wsio_dowork(CONCRETE_IO_HANDLE ws_io);
 extern int wsio_setoption(CONCRETE_IO_HANDLE ws_io, const char* optionName, const void* value);
 extern void* wsio_clone_option(const char* name, const void* value);
 extern void wsio_destroy_option(const char* name, const void* value);
+extern OPTIONHANDLER_HANDLE wsio_retrieveoptions(CONCRETE_IO_HANDLE handle);
 
 extern const IO_INTERFACE_DESCRIPTION* wsio_get_interface_description(void);
 ```
@@ -39,7 +39,7 @@ extern CONCRETE_IO_HANDLE wsio_create(void* io_create_parameters);
 
 **SRS_WSIO_01_001: \[**wsio_create shall create an instance of a wsio and return a non-NULL handle to it.**\]**
 **SRS_WSIO_01_002: \[**If the argument io_create_parameters is NULL then wsio_create shall return NULL.**\]**
-**SRS_WSIO_01_003: \[**io_create_parameters shall be used as a WSIO_CONFIG* .**\]**
+**SRS_WSIO_01_003: \[**io_create_parameters shall be used as a WSIO_CONFIG\* .**\]**
 **SRS_WSIO_01_004: \[**If any of the WSIO_CONFIG fields host, protocol_name or relative_path is NULL then wsio_create shall return NULL.**\]**
 **SRS_WSIO_01_005: \[**If allocating memory for the new wsio instance fails then wsio_create shall return NULL.**\]**
 **SRS_WSIO_01_006: \[**The members host, protocol_name, relative_path and trusted_ca shall be copied for later use (they are needed when the IO is opened).**\]** 
@@ -68,7 +68,10 @@ extern int wsio_open(CONCRETE_IO_HANDLE ws_io, ON_IO_OPEN_COMPLETE on_io_open_co
 **SRS_WSIO_01_091: \[**The extensions field shall be set to the internal extensions obtained by calling lws_get_internal_extensions.**\]**
 **SRS_WSIO_01_092: \[**gid and uid shall be set to -1.**\]**
 **SRS_WSIO_01_093: \[**The members iface, token_limits, ssl_cert_filepath, ssl_private_key_filepath, ssl_private_key_password, ssl_ca_filepath, ssl_cipher_list and provided_client_ssl_ctx shall be set to NULL.**\]**
-**SRS_WSIO_01_094: \[**No proxy support shall be implemented, thus setting http_proxy_address to NULL.**\]**
+**SRS_WSIO_01_169: \[** If any proxy was configured by using the proxy data option, then http_proxy_address shall be set to the address, port, username and password specified in the proxy options, in the format {username}:{password}@{address}:{port}. **\]**
+**SRS_WSIO_01_170: \[** If no username/password was specified for the proxy settings then http_proxy_address shall be set to the address and port specified in the proxy options, in the format {address}:{port}. **\]**
+**SRS_WSIO_01_171: \[** If any proxy was configured by using the proxy data option, the http_proxy_port shall be set to the proxy port. **\]**
+**SRS_WSIO_01_172: \[** If no proxy was configured, http_proxy_address shall be set to NULL. **\]**
 **SRS_WSIO_01_095: \[**The member options shall be set to 0.**\]**
 **SRS_WSIO_01_096: \[**The member user shall be set to a user context that will be later passed by the libwebsockets callbacks.**\]**
 **SRS_WSIO_01_097: \[**Keep alive shall not be supported, thus ka_time shall be set to 0.**\]**
@@ -158,15 +161,25 @@ extern void wsio_dowork(CONCRETE_IO_HANDLE ws_io);
 extern int wsio_setoption(CONCRETE_IO_HANDLE ws_io, const char* option_name, const void* value);
 ```
 
-**SRS_WSIO_01_136: [** If any of the arguments ws_io or option_name is NULL wsio_setoption shall return a non-zero value. **]**
-**SRS_WSIO_01_137: [** If the option_name argument indicates an option that is not handled by wsio, then wsio_setoption shall return a non-zero value. **]**
-**SRS_WSIO_01_138: [** If the option was handled by wsio, then wsio_setoption shall return 0. **]**
+**SRS_WSIO_01_136: \[** If any of the arguments ws_io or option_name is NULL wsio_setoption shall return a non-zero value. **\]**
+**SRS_WSIO_01_137: \[** If the option_name argument indicates an option that is not handled by wsio, then wsio_setoption shall return a non-zero value. **\]**
+**SRS_WSIO_01_138: \[** If the option was handled by wsio, then wsio_setoption shall return 0. **\]**
 
 Options that shall be handled by wsio:
-**SRS_WSIO_01_134: [** - "TrustedCerts" - a char\* that shall be saved by wsio as it shall be used to validate the server cert in the LWS_CALLBACK_OPENSSL_LOAD_EXTRA_CLIENT_VERIFY_CERTS callback. **]**
-**SRS_WSIO_01_135: [** If copying the char\* passed in value fails then wsio_setoption shall return a non-zero value. **]**
-**SRS_WSIO_01_139: [** If a previous TrustedCerts option was saved, then the previous value shall be freed. **]**
-**SRS_WSIO_01_148: [** A NULL value shall be allowed for TrustedCerts, in which case the previously stored TrustedCerts option value shall be cleared. **]**
+
+**SRS_WSIO_01_134: \[** - "TrustedCerts" - a char\* that shall be saved by wsio as it shall be used to validate the server cert in the LWS_CALLBACK_OPENSSL_LOAD_EXTRA_CLIENT_VERIFY_CERTS callback. **\]**
+**SRS_WSIO_01_135: \[** If copying the char\* passed in value fails then wsio_setoption shall return a non-zero value. **\]**
+**SRS_WSIO_01_139: \[** If a previous TrustedCerts option was saved, then the previous value shall be freed. **\]**
+**SRS_WSIO_01_148: \[** A NULL value shall be allowed for TrustedCerts, in which case the previously stored TrustedCerts option value shall be cleared. **\]**
+
+**SRS_WSIO_01_149: \[**  - "proxy_data" - a HTTP_PROXY_OPTIONS structure that defines the HTTP proxy to be used. **\]**
+**SRS_WSIO_01_160: \[** If the hostname field is NULL then wsio_setoption shall return a non-zero value. **\]**
+**SRS_WSIO_01_150: \[** The username and password fields are optional (can be NULL). **\]**
+**SRS_WSIO_01_159: \[** If a username has been specified then a password shall also be specified. **\]**
+**SRS_WSIO_01_163: \[** The fields hostname, username and password shall be copied for later use by using mallocAndStrcpy_s. **\]**
+**SRS_WSIO_01_151: \[** If copying of any of the fields host_address, username or password fails then wsio_setoption shall return a non-zero value. **\]** 
+**SRS_WSIO_01_161: \[** If a previous proxy_data option was saved, then the previous value shall be freed. **\]**
+**SRS_WSIO_01_162: \[** A NULL value shall be allowed for proxy_data, in which case the previously stored proxy_data option value shall be cleared. **\]**
 
 ### wsio_clone_option
 
@@ -174,9 +187,18 @@ Options that shall be handled by wsio:
 extern void* wsio_clone_option(const char* name, const void* value);
 ```
 
-**SRS_WSIO_01_140: [** If the name or value arguments are NULL, wsio_clone_option shall return NULL. **]**
-**SRS_WSIO_01_141: [** wsio_clone_option shall clone the option named `TrustedCerts` by calling mallocAndStrcpy_s. **]** **SRS_WSIO_01_143: [** On success it shall return a non-NULL pointer to the cloned option. **]**
-**SRS_WSIO_01_142: [** If mallocAndStrcpy_s for `TrustedCerts` fails, wsio_clone_option shall return NULL. **]**
+**SRS_WSIO_01_140: \[** If the name or value arguments are NULL, wsio_clone_option shall return NULL. **\]**
+
+**SRS_WSIO_01_141: \[** wsio_clone_option shall clone the option named `TrustedCerts` by calling mallocAndStrcpy_s. **]** **SRS_WSIO_01_143: [** On success it shall return a non-NULL pointer to the cloned option. **\]**
+**SRS_WSIO_01_142: \[** If mallocAndStrcpy_s for `TrustedCerts` fails, wsio_clone_option shall return NULL. **\]**
+
+**SRS_WSIO_01_152: \[** wsio_clone_option shall clone the option named `proxy_data` by allocating a new HTTP_PROXY_OPTIONS structure. **\]**
+**SRS_WSIO_01_153: \[** If allocating memory for the structure fails fails, wsio_clone_option shall return NULL. **\]**
+**SRS_WSIO_01_154: \[** Then each of the fields host_address, username and password shall be cloned by using mallocAndStrcpy_s. **\]**
+**SRS_WSIO_01_164: \[** If the field host_address in the structure pointed to by value is NULL, wsio_clone_option shall fail. **\]**
+**SRS_WSIO_01_165: \[** If the field username in the structure pointed to by value is NULL nothing shall be copied to the cloned option. **\]**
+**SRS_WSIO_01_166: \[** If the field password in the structure pointed to by value is NULL nothing shall be copied to the cloned option. **\]**
+**SRS_WSIO_01_155: \[** If mallocAndStrcpy_s fails, wsio_clone_option shall return NULL. **\]**
 
 ### wsio_destroy_option
 
@@ -184,8 +206,14 @@ extern void* wsio_clone_option(const char* name, const void* value);
 extern void wsio_destroy_option(const char* name, const void* value);
 ```
 
-**SRS_WSIO_01_147: [** If any of the arguments is NULL, wsio_destroy_option shall do nothing. **]** 
-**SRS_WSIO_01_144: [** If the option name is `TrustedCerts`, wsio_destroy_option shall free the char\* option indicated by value. **]**    
+**SRS_WSIO_01_147: \[** If any of the arguments is NULL, wsio_destroy_option shall do nothing. **\]**
+
+**SRS_WSIO_01_144: \[** If the option name is `TrustedCerts`, wsio_destroy_option shall free the char\* option indicated by value. **\]**
+
+**SRS_WSIO_01_157: \[** If the option name is `proxy_data`, wsio_destroy_option shall free the strings for the fields host_address, username and password. **\]**
+**SRS_WSIO_01_167: \[** No free shal be done for a NULL username. **\]**   
+**SRS_WSIO_01_168: \[** No free shal be done for a NULL password. **\]**
+**SRS_WSIO_01_156: \[** Also the memory for the HTTP_PROXY_OPTIONS shall be freed. **\]**
 
 ### wsio_retrieveoptions
 
@@ -195,11 +223,12 @@ OPTIONHANDLER_HANDLE wsio_retrieveoptions(CONCRETE_IO_HANDLE handle)
 
 wsio_retrieveoptions produces an OPTIONHANDLER_HANDLE. 
 
- **SRS_WSIO_02_001: [** If parameter handle is `NULL` then `wsio_retrieveoptions` shall fail and return NULL. **]**
- **SRS_WSIO_02_002: [** `wsio_retrieveoptions` shall produce an OPTIONHANDLER_HANDLE. **]**
- **SRS_WSIO_01_145: [** `wsio_retrieveoptions` shall add to it the options: **]**
- **SRS_WSIO_01_146: [** - TrustedCerts **]**
- **SRS_WSIO_02_003: [** If producing the OPTIONHANDLER_HANDLE fails then wsio_retrieveoptions shall fail and return NULL. **]** 
+ **SRS_WSIO_02_001: \[** If parameter handle is `NULL` then `wsio_retrieveoptions` shall fail and return NULL. **\]**
+ **SRS_WSIO_02_002: \[** `wsio_retrieveoptions` shall produce an OPTIONHANDLER_HANDLE. **\]**
+ **SRS_WSIO_01_145: \[** `wsio_retrieveoptions` shall add to it the options: **\]**
+ **SRS_WSIO_01_146: \[** - TrustedCerts **\]**
+ **SRS_WSIO_01_158: \[** - proxy_data **\]**
+ **SRS_WSIO_02_003: \[** If producing the OPTIONHANDLER_HANDLE fails then wsio_retrieveoptions shall fail and return NULL. **\]** 
 
 ### wsio_get_interface_description
 
