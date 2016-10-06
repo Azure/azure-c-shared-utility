@@ -11,7 +11,7 @@
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/wsio.h"
 #include "azure_c_shared_utility/xlogging.h"
-#include "azure_c_shared_utility/list.h"
+#include "azure_c_shared_utility/singlylinkedlist.h"
 #include "azure_c_shared_utility/optionhandler.h"
 #include "libwebsockets.h"
 #include "openssl/ssl.h"
@@ -34,7 +34,7 @@ typedef struct PENDING_SOCKET_IO_TAG
     size_t size;
     ON_SEND_COMPLETE on_send_complete;
     void* callback_context;
-    LIST_HANDLE pending_io_list;
+    SINGLYLINKEDLIST_HANDLE pending_io_list;
     bool is_partially_sent;
 } PENDING_SOCKET_IO;
 
@@ -47,7 +47,7 @@ typedef struct WSIO_INSTANCE_TAG
     ON_IO_ERROR on_io_error;
     void* on_io_error_context;
     IO_STATE io_state;
-    LIST_HANDLE pending_io_list;
+    SINGLYLINKEDLIST_HANDLE pending_io_list;
     struct lws_context* ws_context;
     struct lws* wsi;
     int port;
@@ -109,8 +109,8 @@ static int add_pending_io(WSIO_INSTANCE* ws_io_instance, const unsigned char* bu
             pending_socket_io->pending_io_list = ws_io_instance->pending_io_list;
             (void)memcpy(pending_socket_io->bytes, buffer, size);
 
-            /* Codes_SRS_WSIO_01_105: [The data and callback shall be queued by calling list_add on the list created in wsio_create.] */
-            if (list_add(ws_io_instance->pending_io_list, pending_socket_io) == NULL)
+            /* Codes_SRS_WSIO_01_105: [The data and callback shall be queued by calling singlylinkedlist_add on the list created in wsio_create.] */
+            if (singlylinkedlist_add(ws_io_instance->pending_io_list, pending_socket_io) == NULL)
             {
                 /* Codes_SRS_WSIO_01_055: [If queueing the data fails (i.e. due to insufficient memory), wsio_send shall fail and return a non-zero value.] */
                 free(pending_socket_io->bytes);
@@ -133,7 +133,7 @@ static int remove_pending_io(WSIO_INSTANCE* wsio_instance, LIST_ITEM_HANDLE item
 
     free(pending_socket_io->bytes);
     free(pending_socket_io);
-    if (list_remove(wsio_instance->pending_io_list, item_handle) != 0)
+    if (singlylinkedlist_remove(wsio_instance->pending_io_list, item_handle) != 0)
     {
         result = __LINE__;
     }
@@ -221,11 +221,11 @@ static int on_ws_callback(struct lws *wsi, enum lws_callback_reasons reason, voi
         case IO_STATE_OPEN:
             /* Codes_SRS_WSIO_01_120: [This event shall only be processed if the IO is open.] */
             /* Codes_SRS_WSIO_01_071: [If any pending IO chunks queued in wsio_send are to be sent, then the first one shall be retrieved from the queue.] */
-            first_pending_io = list_get_head_item(wsio_instance->pending_io_list);
+            first_pending_io = singlylinkedlist_get_head_item(wsio_instance->pending_io_list);
 
             if (first_pending_io != NULL)
             {
-                PENDING_SOCKET_IO* pending_socket_io = (PENDING_SOCKET_IO*)list_item_get_value(first_pending_io);
+                PENDING_SOCKET_IO* pending_socket_io = (PENDING_SOCKET_IO*)singlylinkedlist_item_get_value(first_pending_io);
                 if (pending_socket_io == NULL)
                 {
                     indicate_error(wsio_instance);
@@ -253,7 +253,7 @@ static int on_ws_callback(struct lws *wsi, enum lws_callback_reasons reason, voi
                         {
                             /* Codes_SRS_WSIO_01_081: [If any pending IOs are in the list, lws_callback_on_writable shall be called, while passing the websockets instance obtained in wsio_open as arguments if:] */
                             /* Codes_SRS_WSIO_01_116: [The send failed writing to lws or allocating memory for the data to be passed to lws and no partial data has been sent previously for the pending IO.] */
-                            if (list_get_head_item(wsio_instance->pending_io_list) != NULL)
+                            if (singlylinkedlist_get_head_item(wsio_instance->pending_io_list) != NULL)
                             {
                                 (void)lws_callback_on_writable(wsi);
                             }
@@ -294,7 +294,7 @@ static int on_ws_callback(struct lws *wsi, enum lws_callback_reasons reason, voi
                             {
                                 /* Codes_SRS_WSIO_01_081: [If any pending IOs are in the list, lws_callback_on_writable shall be called, while passing the websockets instance obtained in wsio_open as arguments if:] */
                                 /* Codes_SRS_WSIO_01_116: [The send failed writing to lws or allocating memory for the data to be passed to lws and no partial data has been sent previously for the pending IO.] */
-                                if (list_get_head_item(wsio_instance->pending_io_list) != NULL)
+                                if (singlylinkedlist_get_head_item(wsio_instance->pending_io_list) != NULL)
                                 {
                                     (void)lws_callback_on_writable(wsi);
                                 }
@@ -339,7 +339,7 @@ static int on_ws_callback(struct lws *wsi, enum lws_callback_reasons reason, voi
                                 {
                                     /* Codes_SRS_WSIO_01_081: [If any pending IOs are in the list, lws_callback_on_writable shall be called, while passing the websockets instance obtained in wsio_open as arguments if:] */
                                     /* Codes_SRS_WSIO_01_115: [The send over websockets was successful] */
-                                    if (list_get_head_item(wsio_instance->pending_io_list) != NULL)
+                                    if (singlylinkedlist_get_head_item(wsio_instance->pending_io_list) != NULL)
                                     {
                                         (void)lws_callback_on_writable(wsi);
                                     }
@@ -541,11 +541,11 @@ CONCRETE_IO_HANDLE wsio_create(void* io_create_parameters)
             result->http_proxy_password = NULL;
             result->http_proxy_username = NULL;
 
-            /* Codes_SRS_WSIO_01_098: [wsio_create shall create a pending IO list that is to be used when sending buffers over the libwebsockets IO by calling list_create.] */
-            result->pending_io_list = list_create();
+            /* Codes_SRS_WSIO_01_098: [wsio_create shall create a pending IO list that is to be used when sending buffers over the libwebsockets IO by calling singlylinkedlist_create.] */
+            result->pending_io_list = singlylinkedlist_create();
             if (result->pending_io_list == NULL)
             {
-                /* Codes_SRS_WSIO_01_099: [If list_create fails then wsio_create shall fail and return NULL.] */
+                /* Codes_SRS_WSIO_01_099: [If singlylinkedlist_create fails then wsio_create shall fail and return NULL.] */
                 free(result);
                 result = NULL;
             }
@@ -556,7 +556,7 @@ CONCRETE_IO_HANDLE wsio_create(void* io_create_parameters)
                 if (result->host == NULL)
                 {
                     /* Codes_SRS_WSIO_01_005: [If allocating memory for the new wsio instance fails then wsio_create shall return NULL.] */
-                    list_destroy(result->pending_io_list);
+                    singlylinkedlist_destroy(result->pending_io_list);
                     free(result);
                     result = NULL;
                 }
@@ -567,7 +567,7 @@ CONCRETE_IO_HANDLE wsio_create(void* io_create_parameters)
                     {
                         /* Codes_SRS_WSIO_01_005: [If allocating memory for the new wsio instance fails then wsio_create shall return NULL.] */
                         free(result->host);
-                        list_destroy(result->pending_io_list);
+                        singlylinkedlist_destroy(result->pending_io_list);
                         free(result);
                         result = NULL;
                     }
@@ -579,7 +579,7 @@ CONCRETE_IO_HANDLE wsio_create(void* io_create_parameters)
                             /* Codes_SRS_WSIO_01_005: [If allocating memory for the new wsio instance fails then wsio_create shall return NULL.] */
                             free(result->relative_path);
                             free(result->host);
-                            list_destroy(result->pending_io_list);
+                            singlylinkedlist_destroy(result->pending_io_list);
                             free(result);
                             result = NULL;
                         }
@@ -594,7 +594,7 @@ CONCRETE_IO_HANDLE wsio_create(void* io_create_parameters)
                                 free(result->relative_path);
                                 free(result->protocol_name);
                                 free(result->host);
-                                list_destroy(result->pending_io_list);
+                                singlylinkedlist_destroy(result->pending_io_list);
                                 free(result);
                                 result = NULL;
                             }
@@ -837,10 +837,10 @@ int wsio_close(CONCRETE_IO_HANDLE ws_io, ON_IO_CLOSE_COMPLETE on_io_close_comple
                 LIST_ITEM_HANDLE first_pending_io;
 
                 /* Codes_SRS_WSIO_01_108: [wsio_close shall obtain all the pending IO items by repetitively querying for the head of the pending IO list and freeing that head item.] */
-                /* Codes_SRS_WSIO_01_111: [Obtaining the head of the pending IO list shall be done by calling list_get_head_item.] */
-                while ((first_pending_io = list_get_head_item(wsio_instance->pending_io_list)) != NULL)
+                /* Codes_SRS_WSIO_01_111: [Obtaining the head of the pending IO list shall be done by calling singlylinkedlist_get_head_item.] */
+                while ((first_pending_io = singlylinkedlist_get_head_item(wsio_instance->pending_io_list)) != NULL)
                 {
-                    PENDING_SOCKET_IO* pending_socket_io = (PENDING_SOCKET_IO*)list_item_get_value(first_pending_io);
+                    PENDING_SOCKET_IO* pending_socket_io = (PENDING_SOCKET_IO*)singlylinkedlist_item_get_value(first_pending_io);
 
                     if (pending_socket_io != NULL)
                     {
@@ -860,7 +860,7 @@ int wsio_close(CONCRETE_IO_HANDLE ws_io, ON_IO_CLOSE_COMPLETE on_io_close_comple
                         }
                     }
 
-                    (void)list_remove(wsio_instance->pending_io_list, first_pending_io);
+                    (void)singlylinkedlist_remove(wsio_instance->pending_io_list, first_pending_io);
                 }
             }
 
@@ -907,7 +907,7 @@ void wsio_destroy(CONCRETE_IO_HANDLE ws_io)
             free(wsio_instance->http_proxy_host_address);
         }
 
-        list_destroy(wsio_instance->pending_io_list);
+        singlylinkedlist_destroy(wsio_instance->pending_io_list);
 
         free(ws_io);
     }

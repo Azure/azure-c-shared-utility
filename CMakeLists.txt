@@ -770,7 +770,7 @@ set(source_c_files
 ./src/hmac.c
 ./src/hmacsha256.c
 ./src/xio.c
-./src/list.c
+./src/singlylinkedlist.c
 ./src/map.c
 ./src/sastoken.c
 ./src/sha1.c
@@ -841,7 +841,7 @@ set(source_h_files
 ./inc/azure_c_shared_utility/gb_time.h
 ./inc/azure_c_shared_utility/hmac.h
 ./inc/azure_c_shared_utility/hmacsha256.h
-./inc/azure_c_shared_utility/list.h
+./inc/azure_c_shared_utility/singlylinkedlist.h
 ./inc/azure_c_shared_utility/lock.h
 ./inc/azure_c_shared_utility/macro_utils.h
 ./inc/azure_c_shared_utility/map.h

@@ -53,18 +53,18 @@ void my_gballoc_free(void* ptr)
 
 #include "umock_c.h"
 #include "umocktypes_charptr.h"
-#include "azure_c_shared_utility/list.h"
+#include "azure_c_shared_utility/singlylinkedlist.h"
 static bool g_addrinfo_call_fail;
 //static int g_socket_send_size_value;
 static int g_socket_recv_size_value;
 
-static const LIST_HANDLE TEST_LIST_HANDLE = (LIST_HANDLE)0x4242;
+static const SINGLYLINKEDLIST_HANDLE TEST_SINGLYLINKEDLIST_HANDLE = (SINGLYLINKEDLIST_HANDLE)0x4242;
 static const LIST_ITEM_HANDLE TEST_LIST_ITEM_HANDLE = (LIST_ITEM_HANDLE)0x11;
 static const void** list_items = NULL;
 static size_t list_item_count = 0;
 static SOCKET test_socket = (SOCKET)0x4243;
 static size_t list_head_count = 0;
-static bool list_add_called = false;
+static bool singlylinkedlist_add_called = false;
 static size_t callbackContext = 11;
 static const struct sockaddr test_sock_addr = { 0 };
 static ADDRINFO TEST_ADDR_INFO = { AI_PASSIVE, AF_INET, SOCK_STREAM, IPPROTO_TCP, 128, NULL, (struct sockaddr*)&test_sock_addr, NULL };
@@ -125,7 +125,7 @@ MOCK_FUNCTION_WITH_CODE(WSAAPI, int, WSAIoctl, SOCKET, s, DWORD, dwIoControlCode
 memcpy(&persisted_tcp_keepalive, lpvInBuffer, sizeof(struct tcp_keepalive));
 MOCK_FUNCTION_END(0)
 
-LIST_ITEM_HANDLE my_list_get_head_item(LIST_HANDLE list)
+LIST_ITEM_HANDLE my_singlylinkedlist_get_head_item(SINGLYLINKEDLIST_HANDLE list)
 {
     LIST_ITEM_HANDLE listHandle = NULL;
     (void)list;
@@ -137,7 +137,7 @@ LIST_ITEM_HANDLE my_list_get_head_item(LIST_HANDLE list)
     return listHandle;
 }
 
-LIST_ITEM_HANDLE my_list_add(LIST_HANDLE list, const void* item)
+LIST_ITEM_HANDLE my_singlylinkedlist_add(SINGLYLINKEDLIST_HANDLE list, const void* item)
 {
     const void** items = (const void**)realloc((void*)list_items, (list_item_count + 1) * sizeof(item));
     (void)list;
@@ -146,14 +146,14 @@ LIST_ITEM_HANDLE my_list_add(LIST_HANDLE list, const void* item)
         list_items = items;
         list_items[list_item_count++] = item;
     }
-    list_add_called = true;
+    singlylinkedlist_add_called = true;
     return (LIST_ITEM_HANDLE)list_item_count;
 }
 
-const void* my_list_item_get_value(LIST_ITEM_HANDLE item_handle)
+const void* my_singlylinkedlist_item_get_value(LIST_ITEM_HANDLE item_handle)
 {
     const void* resultPtr = NULL;
-    if (list_add_called)
+    if (singlylinkedlist_add_called)
     {
         resultPtr = item_handle;
     }
@@ -161,7 +161,7 @@ const void* my_list_item_get_value(LIST_ITEM_HANDLE item_handle)
     return (const void*)resultPtr;
 }
 
-LIST_ITEM_HANDLE my_list_find(LIST_HANDLE handle, LIST_MATCH_FUNCTION match_function, const void* match_context)
+LIST_ITEM_HANDLE my_singlylinkedlist_find(SINGLYLINKEDLIST_HANDLE handle, LIST_MATCH_FUNCTION match_function, const void* match_context)
 {
     size_t i;
     (void)handle;
@@ -178,7 +178,7 @@ LIST_ITEM_HANDLE my_list_find(LIST_HANDLE handle, LIST_MATCH_FUNCTION match_func
     return (LIST_ITEM_HANDLE)found_item;
 }
 
-void my_list_destroy(LIST_HANDLE handle)
+void my_singlylinkedlist_destroy(SINGLYLINKEDLIST_HANDLE handle)
 {
     (void)handle;
     free((void*)list_items);
@@ -357,7 +357,7 @@ TEST_SUITE_INITIALIZE(suite_init)
     ASSERT_ARE_EQUAL(int, 0, result);
 
     REGISTER_UMOCK_ALIAS_TYPE(CONCRETE_IO_HANDLE, void*);
-    REGISTER_UMOCK_ALIAS_TYPE(LIST_HANDLE, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(SINGLYLINKEDLIST_HANDLE, void*);
     REGISTER_UMOCK_ALIAS_TYPE(LIST_ITEM_HANDLE, void*);
     REGISTER_UMOCK_ALIAS_TYPE(SOCKET, void*);
     REGISTER_UMOCK_ALIAS_TYPE(PCSTR, char*);
@@ -369,15 +369,15 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_UMOCK_ALIAS_TYPE(LPWSAOVERLAPPED, void*);
     REGISTER_UMOCK_ALIAS_TYPE(LPWSAOVERLAPPED_COMPLETION_ROUTINE, void*);
 
-    REGISTER_GLOBAL_MOCK_RETURN(list_remove, 0);
-    REGISTER_GLOBAL_MOCK_RETURN(list_create, TEST_LIST_HANDLE);
+    REGISTER_GLOBAL_MOCK_RETURN(singlylinkedlist_remove, 0);
+    REGISTER_GLOBAL_MOCK_RETURN(singlylinkedlist_create, TEST_SINGLYLINKEDLIST_HANDLE);
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, my_gballoc_malloc);
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, my_gballoc_free);
-    REGISTER_GLOBAL_MOCK_HOOK(list_get_head_item, my_list_get_head_item);
-    REGISTER_GLOBAL_MOCK_HOOK(list_add, my_list_add);
-    REGISTER_GLOBAL_MOCK_HOOK(list_item_get_value, my_list_item_get_value);
-    REGISTER_GLOBAL_MOCK_HOOK(list_find, my_list_find);
-    REGISTER_GLOBAL_MOCK_HOOK(list_destroy, my_list_destroy);
+    REGISTER_GLOBAL_MOCK_HOOK(singlylinkedlist_get_head_item, my_singlylinkedlist_get_head_item);
+    REGISTER_GLOBAL_MOCK_HOOK(singlylinkedlist_add, my_singlylinkedlist_add);
+    REGISTER_GLOBAL_MOCK_HOOK(singlylinkedlist_item_get_value, my_singlylinkedlist_item_get_value);
+    REGISTER_GLOBAL_MOCK_HOOK(singlylinkedlist_find, my_singlylinkedlist_find);
+    REGISTER_GLOBAL_MOCK_HOOK(singlylinkedlist_destroy, my_singlylinkedlist_destroy);
 }
 
 TEST_SUITE_CLEANUP(suite_cleanup)
@@ -400,7 +400,7 @@ TEST_FUNCTION_INITIALIZE(method_init)
     currentmalloc_call = 0;
     whenShallmalloc_fail = 0;
     list_head_count = 0;
-    list_add_called = false;
+    singlylinkedlist_add_called = false;
     g_addrinfo_call_fail = false;
     //g_socket_send_size_value = -1;
     g_socket_recv_size_value = -1;
@@ -430,11 +430,11 @@ TEST_FUNCTION(socketio_create_io_create_parameters_NULL_fails)
     ASSERT_IS_NULL(ioHandle);
 }
 
-TEST_FUNCTION(socketio_create_list_create_fails)
+TEST_FUNCTION(socketio_create_singlylinkedlist_create_fails)
 {
     // arrange
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    EXPECTED_CALL(list_create()).SetReturn((LIST_HANDLE)NULL);
+    EXPECTED_CALL(singlylinkedlist_create()).SetReturn((SINGLYLINKEDLIST_HANDLE)NULL);
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
     SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
@@ -451,7 +451,7 @@ TEST_FUNCTION(socketio_create_succeeds)
 {
     // arrange
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    EXPECTED_CALL(list_create());
+    EXPECTED_CALL(singlylinkedlist_create());
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
 
     SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
@@ -486,7 +486,7 @@ TEST_FUNCTION(socketio_destroy_socket_succeeds)
     socketio_open(ioHandle, test_on_io_open_complete, &callbackContext, test_on_bytes_received, &callbackContext, test_on_io_error, &callbackContext);
 
     umock_c_reset_all_calls();
-    EXPECTED_CALL(list_get_head_item(IGNORED_PTR_ARG));
+    EXPECTED_CALL(singlylinkedlist_get_head_item(IGNORED_PTR_ARG));
     EXPECTED_CALL(send(IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_NUM_ARG))
         .SetReturn(0);
     EXPECTED_CALL(WSAGetLastError())
@@ -496,13 +496,13 @@ TEST_FUNCTION(socketio_destroy_socket_succeeds)
     umock_c_reset_all_calls();
 
     EXPECTED_CALL(closesocket(IGNORED_NUM_ARG));
-    EXPECTED_CALL(list_get_head_item(IGNORED_PTR_ARG));
-    EXPECTED_CALL(list_item_get_value(IGNORED_PTR_ARG));
+    EXPECTED_CALL(singlylinkedlist_get_head_item(IGNORED_PTR_ARG));
+    EXPECTED_CALL(singlylinkedlist_item_get_value(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(list_remove(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
-    EXPECTED_CALL(list_get_head_item(IGNORED_PTR_ARG));
-    EXPECTED_CALL(list_destroy(IGNORED_PTR_ARG));
+    EXPECTED_CALL(singlylinkedlist_remove(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+    EXPECTED_CALL(singlylinkedlist_get_head_item(IGNORED_PTR_ARG));
+    EXPECTED_CALL(singlylinkedlist_destroy(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
@@ -769,7 +769,7 @@ TEST_FUNCTION(socketio_send_succeeds)
 
     umock_c_reset_all_calls();
 
-    EXPECTED_CALL(list_get_head_item(IGNORED_PTR_ARG));
+    EXPECTED_CALL(singlylinkedlist_get_head_item(IGNORED_PTR_ARG));
     EXPECTED_CALL(send(IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_NUM_ARG));
 
     // act
@@ -794,12 +794,12 @@ TEST_FUNCTION(socketio_send_returns_1_succeeds)
 
     umock_c_reset_all_calls();
 
-    EXPECTED_CALL(list_get_head_item(IGNORED_PTR_ARG));
+    EXPECTED_CALL(singlylinkedlist_get_head_item(IGNORED_PTR_ARG));
     EXPECTED_CALL(send(IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_NUM_ARG)).SetReturn(1);
     EXPECTED_CALL(WSAGetLastError()).SetReturn(WSAEWOULDBLOCK);
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    EXPECTED_CALL(list_add(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+    EXPECTED_CALL(singlylinkedlist_add(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
 
     // act
     result = socketio_send(ioHandle, (const void*)TEST_BUFFER_VALUE, TEST_BUFFER_SIZE, OnSendComplete, (void*)TEST_CALLBACK_CONTEXT);
@@ -833,7 +833,7 @@ TEST_FUNCTION(socketio_dowork_succeeds)
 
     umock_c_reset_all_calls();
 
-    EXPECTED_CALL(list_get_head_item(IGNORED_PTR_ARG));
+    EXPECTED_CALL(singlylinkedlist_get_head_item(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
     EXPECTED_CALL(recv(IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_NUM_ARG));
     EXPECTED_CALL(WSAGetLastError());
@@ -858,7 +858,7 @@ TEST_FUNCTION(socketio_dowork_recv_bytes_succeeds)
 
     umock_c_reset_all_calls();
 
-    EXPECTED_CALL(list_get_head_item(IGNORED_PTR_ARG));
+    EXPECTED_CALL(singlylinkedlist_get_head_item(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
     EXPECTED_CALL(recv(IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_NUM_ARG))
         .CopyOutArgumentBuffer(2, "t", 1)

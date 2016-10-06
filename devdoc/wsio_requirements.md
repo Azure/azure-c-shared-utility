@@ -43,8 +43,8 @@ extern CONCRETE_IO_HANDLE wsio_create(void* io_create_parameters);
 **SRS_WSIO_01_004: \[**If any of the WSIO_CONFIG fields host, protocol_name or relative_path is NULL then wsio_create shall return NULL.**\]**
 **SRS_WSIO_01_005: \[**If allocating memory for the new wsio instance fails then wsio_create shall return NULL.**\]**
 **SRS_WSIO_01_006: \[**The members host, protocol_name, relative_path and trusted_ca shall be copied for later use (they are needed when the IO is opened).**\]** 
-**SRS_WSIO_01_098: \[**wsio_create shall create a pending IO list that is to be used when sending buffers over the libwebsockets IO by calling list_create.**\]** 
-**SRS_WSIO_01_099: \[**If list_create fails then wsio_create shall fail and return NULL.**\]** 
+**SRS_WSIO_01_098: \[**wsio_create shall create a pending IO list that is to be used when sending buffers over the libwebsockets IO by calling singlylinkedlist_create.**\]** 
+**SRS_WSIO_01_099: \[**If singlylinkedlist_create fails then wsio_create shall fail and return NULL.**\]** 
 
 ### wsio_destroy
 
@@ -121,7 +121,7 @@ extern int wsio_close(CONCRETE_IO_HANDLE ws_io, ON_IO_CLOSE_COMPLETE on_io_close
 **SRS_WSIO_01_048: \[**The callback_context argument shall be passed to on_io_close_complete as is.**\]** 
 **SRS_WSIO_01_049: \[**The argument on_io_close_complete shall be optional, if NULL is passed by the caller then no close complete callback shall be triggered.**\]** 
 **SRS_WSIO_01_108: \[**wsio_close shall obtain all the pending IO items by repetitively querying for the head of the pending IO list and freeing that head item.**\]**
-**SRS_WSIO_01_111: \[**Obtaining the head of the pending IO list shall be done by calling list_get_head_item.**\]**
+**SRS_WSIO_01_111: \[**Obtaining the head of the pending IO list shall be done by calling singlylinkedlist_get_head_item.**\]**
 **SRS_WSIO_01_109: \[**For each pending item the send complete callback shall be called with IO_SEND_CANCELLED.**\]**
 **SRS_WSIO_01_110: \[**The callback context passed to the on_send_complete callback shall be the context given to wsio_send.**\]** 
 
@@ -137,7 +137,7 @@ extern int wsio_send(CONCRETE_IO_HANDLE ws_io, const void* buffer, size_t size, 
 **SRS_WSIO_01_052: \[**If any of the arguments ws_io or buffer are NULL, wsio_send shall fail and return a non-zero value.**\]**
 **SRS_WSIO_01_053: \[**If size is zero then wsio_send shall fail and return a non-zero value.**\]**
 **SRS_WSIO_01_054: \[**wsio_send shall queue the buffer and size until the libwebsockets callback is invoked with the event LWS_CALLBACK_CLIENT_WRITEABLE.**\]**
-**SRS_WSIO_01_105: \[**The data and callback shall be queued by calling list_add on the list created in wsio_create.**\]**
+**SRS_WSIO_01_105: \[**The data and callback shall be queued by calling singlylinkedlist_add on the list created in wsio_create.**\]**
 **SRS_WSIO_01_055: \[**If queueing the data fails (i.e. due to insufficient memory), wsio_send shall fail and return a non-zero value.**\]**
 **SRS_WSIO_01_056: \[**After queueing the data, wsio_send shall call lws_callback_on_writable, while passing as arguments the websockets instance previously obtained in wsio_open from lws_client_connect.**\]**
 **SRS_WSIO_01_106: \[**If lws_callback_on_writable returns a negative value, wsio_send shall fail and return a non-zero value.**\]** 

@@ -5,14 +5,14 @@
 cmake_minimum_required(VERSION 2.8.11)
 
 compileAsC11()
-set(theseTestsName list_ut)
+set(theseTestsName singlylinkedlist_ut)
 
 set(${theseTestsName}_test_files
 ${theseTestsName}.c
 )
 
 set(${theseTestsName}_c_files
-../../src/list.c
+../../src/singlylinkedlist.c
 )
 
 set(${theseTestsName}_h_files

@@ -6,7 +6,7 @@
 
 #define ENABLE_MOCKS
 
-#include "azure_c_shared_utility/list.h"
+#include "azure_c_shared_utility/singlylinkedlist.h"
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/optionhandler.h"
 
@@ -242,7 +242,7 @@ TEST_FUNCTION(socketio_create_list_create_fails)
     socketio_mocks mocks;
 
     EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
-    EXPECTED_CALL(mocks, list_create()).SetReturn((LIST_HANDLE)NULL);
+    EXPECTED_CALL(mocks, singlylinkedlist_create()).SetReturn((SINGLYLINKEDLIST_HANDLE)NULL);
     EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
 
     SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
@@ -260,7 +260,7 @@ TEST_FUNCTION(socketio_create_succeeds)
     socketio_mocks mocks;
 
     EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
-    EXPECTED_CALL(mocks, list_create());
+    EXPECTED_CALL(mocks, singlylinkedlist_create());
     EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
 
     SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
@@ -298,11 +298,11 @@ TEST_FUNCTION(socketio_destroy_socket_succeeds)
     mocks.ResetAllCalls();
 
     EXPECTED_CALL(mocks, close(IGNORED_NUM_ARG));
-    EXPECTED_CALL(mocks, list_get_head_item(IGNORED_PTR_ARG))
+    EXPECTED_CALL(mocks, singlylinkedlist_get_head_item(IGNORED_PTR_ARG))
         .ExpectedAtLeastTimes(2);
-    EXPECTED_CALL(mocks, list_item_get_value(IGNORED_PTR_ARG));
-    EXPECTED_CALL(mocks, list_remove(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
-    EXPECTED_CALL(mocks, list_destroy(IGNORED_PTR_ARG));
+    EXPECTED_CALL(mocks, singlylinkedlist_item_get_value(IGNORED_PTR_ARG));
+    EXPECTED_CALL(mocks, singlylinkedlist_remove(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+    EXPECTED_CALL(mocks, singlylinkedlist_destroy(IGNORED_PTR_ARG));
     EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
 
@@ -551,7 +551,7 @@ TEST_FUNCTION(socketio_send_size_zero_fails)
 //
 //    mocks.ResetAllCalls();
 //
-//    EXPECTED_CALL(mocks, list_get_head_item(IGNORED_PTR_ARG));
+//    EXPECTED_CALL(mocks, singlylinkedlist_get_head_item(IGNORED_PTR_ARG));
 //    EXPECTED_CALL(mocks, send(IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_NUM_ARG));
 //
 //    // act
@@ -577,11 +577,11 @@ TEST_FUNCTION(socketio_send_size_zero_fails)
 //
 //    mocks.ResetAllCalls();
 //
-//    EXPECTED_CALL(mocks, list_get_head_item(IGNORED_PTR_ARG));
+//    EXPECTED_CALL(mocks, singlylinkedlist_get_head_item(IGNORED_PTR_ARG));
 //    EXPECTED_CALL(mocks, send(IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_NUM_ARG)).SetReturn(1);
 //    EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
 //    EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
-//    EXPECTED_CALL(mocks, list_add(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+//    EXPECTED_CALL(mocks, singlylinkedlist_add(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
 //
 //    // act
 //    result = socketio_send(ioHandle, (const void*)TEST_BUFFER_VALUE, TEST_BUFFER_SIZE, OnSendComplete, (void*)TEST_CALLBACK_CONTEXT);
@@ -616,7 +616,7 @@ TEST_FUNCTION(socketio_dowork_socket_io_NULL_fails)
 //
 //    mocks.ResetAllCalls();
 //
-//    EXPECTED_CALL(mocks, list_get_head_item(IGNORED_PTR_ARG));
+//    EXPECTED_CALL(mocks, singlylinkedlist_get_head_item(IGNORED_PTR_ARG));
 //    EXPECTED_CALL(mocks, recv(IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_NUM_ARG));
 //
 //    // act
@@ -640,7 +640,7 @@ TEST_FUNCTION(socketio_dowork_socket_io_NULL_fails)
 //
 //    mocks.ResetAllCalls();
 //
-//    EXPECTED_CALL(mocks, list_get_head_item(IGNORED_PTR_ARG));
+//    EXPECTED_CALL(mocks, singlylinkedlist_get_head_item(IGNORED_PTR_ARG));
 //    EXPECTED_CALL(mocks, recv(IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_NUM_ARG))
 //        .CopyOutArgumentBuffer(2, "t", 1)
 //        .SetReturn(1);

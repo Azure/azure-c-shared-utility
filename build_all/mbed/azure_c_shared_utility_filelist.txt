@@ -17,7 +17,7 @@ set(mbed_exported_project_files
 		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/httpapiex.h
 		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/httpapiexsas.h
 		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/httpheaders.h
-		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/list.h
+		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/singlylinkedlist.h
 		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/lock.h
 		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/macro_utils.h
 		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/map.h
@@ -59,7 +59,7 @@ set(mbed_project_files
 		${CMAKE_CURRENT_SOURCE_DIR}/../../src/httpapiex.c
 		${CMAKE_CURRENT_SOURCE_DIR}/../../src/httpapiexsas.c
 		${CMAKE_CURRENT_SOURCE_DIR}/../../src/httpheaders.c
-		${CMAKE_CURRENT_SOURCE_DIR}/../../src/list.c
+		${CMAKE_CURRENT_SOURCE_DIR}/../../src/singlylinkedlist.c
 		${CMAKE_CURRENT_SOURCE_DIR}/../../src/map.c
 		${CMAKE_CURRENT_SOURCE_DIR}/../../src/sastoken.c
 		${CMAKE_CURRENT_SOURCE_DIR}/../../src/sha1.c
