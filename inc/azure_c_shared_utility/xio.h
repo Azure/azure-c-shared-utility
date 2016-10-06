@@ -8,6 +8,7 @@
 
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/umock_c_prod.h"
+#include "azure_c_shared_utility/macro_utils.h"
 
 #ifdef __cplusplus
 #include <cstddef>
@@ -19,19 +20,19 @@ extern "C" {
 typedef struct XIO_INSTANCE_TAG* XIO_HANDLE;
 typedef void* CONCRETE_IO_HANDLE;
 
-typedef enum IO_SEND_RESULT_TAG
-{
-    IO_SEND_OK,
-    IO_SEND_ERROR,
+#define IO_SEND_RESULT_VALUES \
+    IO_SEND_OK, \
+    IO_SEND_ERROR, \
     IO_SEND_CANCELLED
-} IO_SEND_RESULT;
 
-typedef enum IO_OPEN_RESULT_TAG
-{
-    IO_OPEN_OK,
-    IO_OPEN_ERROR,
+DEFINE_ENUM(IO_SEND_RESULT, IO_SEND_RESULT_VALUES);
+
+#define IO_OPEN_RESULT_VALUES \
+    IO_OPEN_OK, \
+    IO_OPEN_ERROR, \
     IO_OPEN_CANCELLED
-} IO_OPEN_RESULT;
+
+DEFINE_ENUM(IO_OPEN_RESULT, IO_OPEN_RESULT_VALUES);
 
 typedef void(*ON_BYTES_RECEIVED)(void* context, const unsigned char* buffer, size_t size);
 typedef void(*ON_SEND_COMPLETE)(void* context, IO_SEND_RESULT send_result);

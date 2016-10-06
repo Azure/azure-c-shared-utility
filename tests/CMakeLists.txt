@@ -55,3 +55,7 @@ endif()
 #Add adapters tests
 add_subdirectory(tlsioarduino_ut)
 add_subdirectory(platformarduino_ut)
+if(use_cyclonessl AND WIN32)
+	add_subdirectory(tlsio_cyclonessl_ut)
+	add_subdirectory(tlsio_cyclonessl_socket_bsd_ut)
+endif()
