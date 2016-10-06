@@ -64,8 +64,9 @@
 
 #define _TRIGGER_PARENTHESIS_(...) ,
 
-#ifdef _MSC_VER
 #define LPAREN (
+
+#ifdef _MSC_VER
 #define COUNT_1_OR_MORE_ARG(...) THE_NTH_ARG LPAREN __VA_ARGS__, \
 <#for(var i=nMacroParameters-1;i>=1;i--){#><#=i.ToString()+((i>1)?", ":"")#><#}#>)
 #define MORE_THAN_1_ARG(...) THE_NTH_ARG LPAREN __VA_ARGS__, <#for(var i=nMacroParameters-2;i>=1;i--){#><#=1#>,<#}#>0)
@@ -79,10 +80,13 @@
 #define COUNT_ARG_1(...) 0
 #define COUNT_ARG_0(...) C1(COUNT_1_OR_MORE_ARG(__VA_ARGS__))
 
-#define ISEMPTY(...) C3(DISPTACH_EMPTY_, MORE_THAN_1_ARG(_TRIGGER_PARENTHESIS_ __VA_ARGS__ ()), MORE_THAN_1_ARG(__VA_ARGS__))
-#define DISPTACH_EMPTY_10 1
-#define DISPTACH_EMPTY_00 0
-#define DISPTACH_EMPTY_11 0
+#define ISEMPTY(...) C5(DISPTACH_EMPTY_, MORE_THAN_1_ARG(_TRIGGER_PARENTHESIS_ __VA_ARGS__ ()), MORE_THAN_1_ARG(__VA_ARGS__), MORE_THAN_1_ARG(__VA_ARGS__ ()), MORE_THAN_1_ARG(_TRIGGER_PARENTHESIS_ __VA_ARGS__))
+#define DISPTACH_EMPTY_1000 1
+#define DISPTACH_EMPTY_0000 0
+#define DISPTACH_EMPTY_1100 0
+#define DISPTACH_EMPTY_1111 0
+#define DISPTACH_EMPTY_1001 0
+#define DISPTACH_EMPTY_1010 0
 
 
 #define C2_(x,y) x##y
@@ -331,5 +335,8 @@ int C2(enumName, _FromString)(const char* enumAsString, enumName* destination)  
 #define STRING_TO_ENUM(stringValue, enumName, addressOfEnumVariable) C2(enumName, _FromString)(stringValue, addressOfEnumVariable)
 
 #define DEFINE_MICROMOCK_ENUM_TO_STRING(type, ...) MICROMOCK_ENUM_TO_STRING(type, FOR_EACH_1(DEFINE_ENUMERATION_CONSTANT_AS_WIDESTRING, __VA_ARGS__));
+
+#define EMPTY()
+#define DELAY(id) id EMPTY LPAREN )
 
 #endif /*MACRO_UTILS_H*/

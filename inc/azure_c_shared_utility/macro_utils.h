@@ -3292,8 +3292,9 @@
 
 #define _TRIGGER_PARENTHESIS_(...) ,
 
-#ifdef _MSC_VER
 #define LPAREN (
+
+#ifdef _MSC_VER
 #define COUNT_1_OR_MORE_ARG(...) THE_NTH_ARG LPAREN __VA_ARGS__, \
 123, 122, 121, 120, 119, 118, 117, 116, 115, 114, 113, 112, 111, 110, 109, 108, 107, 106, 105, 104, 103, 102, 101, 100, 99, 98, 97, 96, 95, 94, 93, 92, 91, 90, 89, 88, 87, 86, 85, 84, 83, 82, 81, 80, 79, 78, 77, 76, 75, 74, 73, 72, 71, 70, 69, 68, 67, 66, 65, 64, 63, 62, 61, 60, 59, 58, 57, 56, 55, 54, 53, 52, 51, 50, 49, 48, 47, 46, 45, 44, 43, 42, 41, 40, 39, 38, 37, 36, 35, 34, 33, 32, 31, 30, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1)
 #define MORE_THAN_1_ARG(...) THE_NTH_ARG LPAREN __VA_ARGS__, 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0)
@@ -3307,10 +3308,13 @@
 #define COUNT_ARG_1(...) 0
 #define COUNT_ARG_0(...) C1(COUNT_1_OR_MORE_ARG(__VA_ARGS__))
 
-#define ISEMPTY(...) C3(DISPTACH_EMPTY_, MORE_THAN_1_ARG(_TRIGGER_PARENTHESIS_ __VA_ARGS__ ()), MORE_THAN_1_ARG(__VA_ARGS__))
-#define DISPTACH_EMPTY_10 1
-#define DISPTACH_EMPTY_00 0
-#define DISPTACH_EMPTY_11 0
+#define ISEMPTY(...) C5(DISPTACH_EMPTY_, MORE_THAN_1_ARG(_TRIGGER_PARENTHESIS_ __VA_ARGS__ ()), MORE_THAN_1_ARG(__VA_ARGS__), MORE_THAN_1_ARG(__VA_ARGS__ ()), MORE_THAN_1_ARG(_TRIGGER_PARENTHESIS_ __VA_ARGS__))
+#define DISPTACH_EMPTY_1000 1
+#define DISPTACH_EMPTY_0000 0
+#define DISPTACH_EMPTY_1100 0
+#define DISPTACH_EMPTY_1111 0
+#define DISPTACH_EMPTY_1001 0
+#define DISPTACH_EMPTY_1010 0
 
 
 #define C2_(x,y) x##y
@@ -11320,5 +11324,8 @@ int C2(enumName, _FromString)(const char* enumAsString, enumName* destination)  
 #define STRING_TO_ENUM(stringValue, enumName, addressOfEnumVariable) C2(enumName, _FromString)(stringValue, addressOfEnumVariable)
 
 #define DEFINE_MICROMOCK_ENUM_TO_STRING(type, ...) MICROMOCK_ENUM_TO_STRING(type, FOR_EACH_1(DEFINE_ENUMERATION_CONSTANT_AS_WIDESTRING, __VA_ARGS__));
+
+#define EMPTY()
+#define DELAY(id) id EMPTY LPAREN )
 
 #endif /*MACRO_UTILS_H*/
