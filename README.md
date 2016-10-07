@@ -29,7 +29,7 @@ cmake ..
 ## Configuration options
 
 In order to turn on/off the tlsio implementations use the following CMAKE options:
-
+ 
 * `-Duse_schannel:bool={ON/OFF}` - turns on/off the SChannel support
 * `-Duse_openssl:bool={ON/OFF}` - turns on/off the OpenSSL support. If this option is use an environment variable name OpenSSLDir should be set to point to the OpenSSL folder.
 * `-Duse_wolfssl:bool={ON/OFF}` - turns on/off the WolfSSL support. If this option is use an environment variable name WolfSSLDir should be set to point to the WolfSSL folder.
