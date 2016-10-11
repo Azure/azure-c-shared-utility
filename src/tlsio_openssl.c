@@ -932,9 +932,11 @@ void tlsio_openssl_deinit(void)
 	CRYPTO_set_id_callback(NULL);
     ERR_free_strings();
 	EVP_cleanup();
-# ifndef OPENSSL_NO_DEPRECATED
+#ifndef OPENSSL_NO_DEPRECATED
 	ERR_remove_state(0);
+#if (OPENSSL_VERSION_NUMBER >= 0x10002000L) && (OPENSSL_VERSION_NUMBER < 0x10100000L)
 	SSL_COMP_free_compression_methods();
+#endif
 #endif
 	CRYPTO_cleanup_all_ex_data();
 }
