@@ -3,7 +3,7 @@ httpapi_compact
 
 ## Overview
 
-httpapi_compact implements a compact version of the HTTP (Hypertext Transfer Protocol).  
+httpapi_compact implements a compact version of the HTTP (Hypertext Transfer Protocol).
 
 ## References
 
@@ -11,14 +11,14 @@ httpapi_compact implements a compact version of the HTTP (Hypertext Transfer Pro
 
 ## Exposed API
 
-**SRS_HTTPAPI_COMPACT_21_001: [** The httpapi_compact shall implement the methods defined by the `httpapi.h`. 
+**SRS_HTTPAPI_COMPACT_21_001: [** The httpapi_compact shall implement the methods defined by the `httpapi.h`.
 ```c
 /**
  * @brief	Global initialization for the HTTP API component.
  *
  *			Platform specific implementations are expected to initialize
  *			the underlying HTTP API stacks.
- * 
+ *
  * @return	@c HTTPAPI_OK if initialization is successful or an error
  * 			code in case it fails.
  */
@@ -36,7 +36,7 @@ MOCKABLE_FUNCTION(, void, HTTPAPI_Deinit);
  *			This function returns a handle to the newly created connection.
  *			You can use the handle in subsequent calls to execute specific
  *			HTTP calls using ::HTTPAPI_ExecuteRequest.
- * 
+ *
  * @return	A @c HTTP_HANDLE to the newly created connection or @c NULL in
  * 			case an error occurs.
  */
@@ -46,7 +46,7 @@ MOCKABLE_FUNCTION(, HTTP_HANDLE, HTTPAPI_CreateConnection, const char*, hostName
  * @brief	Closes a connection created with ::HTTPAPI_CreateConnection.
  *
  * @param	handle	The handle to the HTTP connection created via ::HTTPAPI_CreateConnection.
- * 					
+ *
  * 			All resources allocated by ::HTTPAPI_CreateConnection should be
  * 			freed in ::HTTPAPI_CloseConnection.
  */
@@ -176,7 +176,7 @@ HTTPAPI_INSUFFICIENT_RESPONSE_BUFFER,        \
 HTTPAPI_SET_X509_FAILURE,                    \
 HTTPAPI_SET_TIMEOUTS_FAILED                  \
 
-/** @brief Enumeration specifying the possible return values for the APIs in  
+/** @brief Enumeration specifying the possible return values for the APIs in
  *		   this module.
  */
 DEFINE_ENUM(HTTPAPI_RESULT, HTTPAPI_RESULT_VALUES);
@@ -229,6 +229,10 @@ void HTTPAPI_CloseConnection(HTTP_HANDLE handle);
 
 **SRS_HTTPAPI_COMPACT_21_018: [** If there is a certificate associated to this connection, the HTTPAPI_CloseConnection shall free all allocated memory for the certificate. **]**
 
+**SRS_HTTPAPI_COMPACT_06_001: [** If there is a x509 client certificate associated to this connection, the HTTAPI_CloseConnection shall free all allocated memory for the certificate. **]**
+
+**SRS_HTTPAPI_COMPACT_06_002: [** If there is a x509 client private key associated to this connection, then HTTP_CloseConnection shall free all the allocated memory for the private key. **]**
+
 **SRS_HTTPAPI_COMPACT_21_019: [** If there is no previous connection, the HTTPAPI_CloseConnection shall not do anything. **]**
 
 **SRS_HTTPAPI_COMPACT_21_020: [** If the connection handle is NULL, the HTTPAPI_CloseConnection shall not do anything. **]**
@@ -248,6 +252,14 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
 
 **SRS_HTTPAPI_COMPACT_21_023: [** If the transport failed setting the Certificate, the HTTPAPI_ExecuteRequest shall not send any request and return HTTPAPI_SET_OPTION_FAILED. **]**
 
+**SRS_HTTPAPI_COMPACT_06_003: [** If the x509 client certificate is provided, the HTTPAPI_ExecuteRequest shall set this option on the transport layer. **]**
+
+**SRS_HTTPAPI_COMPACT_06_005: [** If the transport failed setting the client certificate, the HTTPAPI_ExecuteRequest shall not send any request and return HTTPAPI_SET_OPTION_FAILED. **]**
+
+**SRS_HTTPAPI_COMPACT_06_004: [** If the x509 client certificate private key is provided, the HTTPAPI_ExecuteRequest shall set this optionon the transport layer. **]**
+
+**SRS_HTTPAPI_COMPACT_06_006: [** If the transport failed setting the client certificate private key, the HTTPAPI_ExecuteRequest shall not send any request and return HTTPAPI_SET_OPTION_FAILED. **]**
+
 **SRS_HTTPAPI_COMPACT_21_024: [** The HTTPAPI_ExecuteRequest shall open the transport connection with the host to send the request. **]**
 
 **SRS_HTTPAPI_COMPACT_21_025: [** If the open process failed, the HTTPAPI_ExecuteRequest shall not send any request and return HTTPAPI_OPEN_REQUEST_FAILED. **]**
@@ -261,8 +273,6 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
 **SRS_HTTPAPI_COMPACT_21_029: [** If the HTTPAPI_ExecuteRequest cannot send the buffer with the request, it shall return HTTPAPI_SEND_REQUEST_FAILED. **]**
 
 **SRS_HTTPAPI_COMPACT_21_030: [** At the end of the transmission, the HTTPAPI_ExecuteRequest shall receive the response from the host. **]**
-
-**SRS_HTTPAPI_COMPACT_21_031: [** After receive the response, the HTTPAPI_ExecuteRequest shall close the transport connection with the host. **]**
 
 **SRS_HTTPAPI_COMPACT_21_032: [** If the HTTPAPI_ExecuteRequest cannot read the message with the request result, it shall return HTTPAPI_READ_DATA_FAILED. **]**
 
