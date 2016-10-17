@@ -2,8 +2,14 @@
 #Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #this is CMakeLists for testtools. It does nothing, except loads other folders
-add_subdirectory(ctest)
+
+include("../configs/azure_c_shared_utilityFunctions.cmake")
+
+if(NOT ${use_installed_dependencies})
+    add_subdirectory(ctest)
+    add_subdirectory(testrunner)
+    add_subdirectory(umock-c)
+endif()
+
 add_subdirectory(sal)
-add_subdirectory(testrunner)
 add_subdirectory(micromock)
-add_subdirectory(umock-c)
