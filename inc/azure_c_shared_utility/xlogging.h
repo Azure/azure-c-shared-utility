@@ -52,18 +52,29 @@ typedef void(*LOGGER_LOG)(LOG_CATEGORY log_category, const char* file, const cha
 #define xlogging_set_log_function(...)
 #define LogErrorWinHTTPWithGetLastErrorAsString(...)
 #define UNUSED(x) (void)(x)
+
+#elif defined(ESP8266_RTOS)
+#include "c_types.h"
+#define LogInfo(FORMAT, ...) do {    \
+        static const char flash_str[] ICACHE_RODATA_ATTR STORE_ATTR = FORMAT;  \
+        printf(flash_str, ##__VA_ARGS__);   \
+        printf("\n");\
+    } while(0)
+
+#define LogError LogInfo
+#define LOG(...)
+
+
 #elif defined(ARDUINO_ARCH_ESP8266)
 /*
 The ESP8266 compiler doesn't do a good job compiling this code; it doesn't understand that the 'format' is
 a 'const char*' and moves it to RAM as a global variable, increasing the .bss size. So we create a
 specific LogInfo that explicitly pins the 'format' on the PROGMEM (flash) using a _localFORMAT variable
 with the macro PSTR.
-
 #define ICACHE_FLASH_ATTR   __attribute__((section(".irom0.text")))
 #define PROGMEM     ICACHE_RODATA_ATTR
 #define PSTR(s) (__extension__({static const char __c[] PROGMEM = (s); &__c[0];}))
 const char* __localFORMAT = PSTR(FORMAT);
-
 On the other hand, vsprintf does not support the pinned 'format' and os_printf does not work with va_list,
 so we compacted the log in the macro LogInfo.
 */
