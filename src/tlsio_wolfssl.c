@@ -16,6 +16,8 @@
 #include "azure_c_shared_utility/socketio.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
 #include "azure_c_shared_utility/xlogging.h"
+#include "azure_c_shared_utility/shared_util_options.h"
+
 
 typedef enum TLSIO_STATE_ENUM_TAG
 {
@@ -46,6 +48,8 @@ typedef struct TLS_IO_INSTANCE_TAG
     ON_SEND_COMPLETE on_send_complete;
     void* on_send_complete_callback_context;
     char* certificate;
+    char* x509certificate;
+    char* x509privatekey;
     char* hostname;
     int port;
 } TLS_IO_INSTANCE;
@@ -54,10 +58,9 @@ typedef struct TLS_IO_INSTANCE_TAG
 static void* tlsio_wolfssl_CloneOption(const char* name, const void* value)
 {
     void* result;
-    if (
-        (name == NULL) || (value == NULL)
-        )
+    if ((name == NULL) || (value == NULL))
     {
+        LogError("invalid parameter detected: const char* name=%p, const void* value=%p", name, value);
         result = NULL;
     }
     else
@@ -66,6 +69,31 @@ static void* tlsio_wolfssl_CloneOption(const char* name, const void* value)
         {
             if (mallocAndStrcpy_s((char**)&result, value) != 0)
             {
+                LogError("unable to mallocAndStrcpy_s TrustedCerts value");
+                result = NULL;
+            }
+            else
+            {
+                /*return as is*/
+            }
+        }
+        else if (strcmp(name, SU_OPTION_X509_CERT) == 0)
+        {
+            if (mallocAndStrcpy_s((char**)&result, value) != 0)
+            {
+                LogError("unable to mallocAndStrcpy_s x509certificate value");
+                result = NULL;
+            }
+            else
+            {
+                /*return as is*/
+            }
+        }
+        else if (strcmp(name, SU_OPTION_X509_PRIVATE_KEY) == 0)
+        {
+            if (mallocAndStrcpy_s((char**)&result, value) != 0)
+            {
+                LogError("unable to mallocAndStrcpy_s x509privatekey value");
                 result = NULL;
             }
             else
@@ -75,7 +103,7 @@ static void* tlsio_wolfssl_CloneOption(const char* name, const void* value)
         }
         else
         {
-            /*option is not handled*/
+            LogError("not handled option : %s", name);
             result = NULL;
         }
     }
@@ -86,15 +114,21 @@ static void* tlsio_wolfssl_CloneOption(const char* name, const void* value)
 static void tlsio_wolfssl_DestroyOption(const char* name, const void* value)
 {
     /*since all options for this layer are actually string copies., disposing of one is just calling free*/
-    if ((name != NULL) && (value != NULL))
+    if ((name == NULL) || (value == NULL))
     {
-        if (strcmp(name, "TrustedCerts") == 0)
+        LogError("invalid parameter detected: const char* name=%p, const void* value=%p", name, value);
+    }
+    else
+    {
+        if ((strcmp(name, "TrustedCerts") == 0) ||
+            (strcmp(name, SU_OPTION_X509_CERT) == 0) ||
+            (strcmp(name, SU_OPTION_X509_PRIVATE_KEY) == 0))
         {
             free((void*)value);
         }
         else
         {
-            /*option is not handled*/
+            LogError("not handled option : %s", name);
         }
     }
 }
@@ -212,21 +246,21 @@ static void on_underlying_io_error(void* context)
 
     switch (tls_io_instance->tlsio_state)
     {
-        default:
-        case TLSIO_STATE_NOT_OPEN:
-        case TLSIO_STATE_ERROR:
-            break;
+    default:
+    case TLSIO_STATE_NOT_OPEN:
+    case TLSIO_STATE_ERROR:
+        break;
 
-        case TLSIO_STATE_OPENING_UNDERLYING_IO:
-        case TLSIO_STATE_IN_HANDSHAKE:
-            tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
-            indicate_open_complete(tls_io_instance, IO_OPEN_ERROR);
-            break;
+    case TLSIO_STATE_OPENING_UNDERLYING_IO:
+    case TLSIO_STATE_IN_HANDSHAKE:
+        tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
+        indicate_open_complete(tls_io_instance, IO_OPEN_ERROR);
+        break;
 
-        case TLSIO_STATE_OPEN:
-            tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
-            indicate_error(tls_io_instance);
-            break;
+    case TLSIO_STATE_OPEN:
+        tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
+        indicate_error(tls_io_instance);
+        break;
     }
 }
 
@@ -250,6 +284,7 @@ static int on_io_recv(WOLFSSL *ssl, char *buf, int sz, void *context)
     TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)context;
     unsigned char* new_socket_io_read_bytes;
 
+    (void)ssl;
     while (tls_io_instance->socket_io_read_byte_count == 0)
     {
         xio_dowork(tls_io_instance->socket_io);
@@ -302,6 +337,7 @@ static int on_io_send(WOLFSSL *ssl, char *buf, int sz, void *context)
     int result;
     TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)context;
 
+    (void)ssl;
     if (xio_send(tls_io_instance->socket_io, buf, sz, tls_io_instance->on_send_complete, tls_io_instance->on_send_complete_callback_context) != 0)
     {
         tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
@@ -319,6 +355,7 @@ static int on_io_send(WOLFSSL *ssl, char *buf, int sz, void *context)
 static int on_handshake_done(WOLFSSL* ssl, void* context)
 {
     TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)context;
+    (void)ssl;
     if (tls_io_instance->tlsio_state == TLSIO_STATE_IN_HANDSHAKE)
     {
         tls_io_instance->tlsio_state = TLSIO_STATE_OPEN;
@@ -333,7 +370,7 @@ static int add_certificate_to_store(TLS_IO_INSTANCE* tls_io_instance)
     int result;
     if (tls_io_instance->certificate != NULL)
     {
-        int res = wolfSSL_CTX_load_verify_buffer(tls_io_instance->ssl_context, (const unsigned char*)tls_io_instance->certificate, strlen(tls_io_instance->certificate)+1, SSL_FILETYPE_PEM);
+        int res = wolfSSL_CTX_load_verify_buffer(tls_io_instance->ssl_context, (const unsigned char*)tls_io_instance->certificate, strlen(tls_io_instance->certificate) + 1, SSL_FILETYPE_PEM);
         if (res != SSL_SUCCESS)
         {
             result = __LINE__;
@@ -348,6 +385,38 @@ static int add_certificate_to_store(TLS_IO_INSTANCE* tls_io_instance)
         result = 0;
     }
     return result;
+}
+
+static int x509_wolfssl_add_credentials(WOLFSSL* ssl, char* x509certificate, char* x509privatekey) {
+
+    int result;
+
+    if (wolfSSL_use_certificate_buffer(ssl, (unsigned char*)x509certificate, strlen(x509certificate) + 1, SSL_FILETYPE_PEM) != SSL_SUCCESS)
+    {
+        LogError("unable to load x509 client certificate");
+        result = __LINE__;
+    }
+    else if (wolfSSL_use_PrivateKey_buffer(ssl, (unsigned char*)x509privatekey, strlen(x509privatekey) + 1, SSL_FILETYPE_PEM) != SSL_SUCCESS)
+    {
+        LogError("unable to load x509 client private key");
+        result = __LINE__;
+    }
+#ifdef HAVE_SECURE_RENEGOTIATION
+    else if (wolfSSL_UseSecureRenegotiation(ssl) != SSL_SUCCESS) {
+        LogError("unable to enable secure renegotiation");
+        result = __LINE__;
+    }
+#endif 
+    else
+    {
+        result = 0;
+    }
+    return result;
+}
+
+static void destroy_wolfssl_instance(TLS_IO_INSTANCE* tls_io_instance)
+{
+    wolfSSL_free(tls_io_instance->ssl);
 }
 
 static int create_wolfssl_instance(TLS_IO_INSTANCE* tls_io_instance)
@@ -367,6 +436,19 @@ static int create_wolfssl_instance(TLS_IO_INSTANCE* tls_io_instance)
             wolfSSL_CTX_free(tls_io_instance->ssl_context);
             result = __LINE__;
         }
+        /*x509 authentication can only be build before underlying connection is realized*/
+        else if ((tls_io_instance->x509certificate != NULL) &&
+            (tls_io_instance->x509privatekey != NULL) &&
+            (x509_wolfssl_add_credentials(tls_io_instance->ssl, tls_io_instance->x509certificate, tls_io_instance->x509privatekey) != 0))
+        {
+            destroy_wolfssl_instance(tls_io_instance);
+            tls_io_instance->ssl = NULL;
+            wolfSSL_CTX_free(tls_io_instance->ssl_context);
+            tls_io_instance->ssl_context = NULL;
+            LogError("unable to use x509 authentication");
+            result = __LINE__;
+        }
+
         else
         {
             tls_io_instance->socket_io_read_bytes = NULL;
@@ -386,11 +468,6 @@ static int create_wolfssl_instance(TLS_IO_INSTANCE* tls_io_instance)
         }
     }
     return result;
-}
-
-static void destroy_wolfssl_instance(TLS_IO_INSTANCE* tls_io_instance)
-{
-    wolfSSL_free(tls_io_instance->ssl);
 }
 
 int tlsio_wolfssl_init(void)
@@ -430,6 +507,8 @@ CONCRETE_IO_HANDLE tlsio_wolfssl_create(void* io_create_parameters)
             result->ssl = NULL;
             result->ssl_context = NULL;
             result->certificate = NULL;
+            result->x509certificate = NULL;
+            result->x509privatekey = NULL;
 
             result->on_bytes_received = NULL;
             result->on_bytes_received_context = NULL;
@@ -500,6 +579,16 @@ void tlsio_wolfssl_destroy(CONCRETE_IO_HANDLE tls_io)
             free(tls_io_instance->certificate);
             tls_io_instance->certificate = NULL;
         }
+        if (tls_io_instance->x509certificate != NULL)
+        {
+            free(tls_io_instance->x509certificate);
+            tls_io_instance->x509certificate = NULL;
+        }
+        if (tls_io_instance->x509privatekey != NULL)
+        {
+            free(tls_io_instance->x509privatekey);
+            tls_io_instance->x509privatekey = NULL;
+        }
         wolfSSL_CTX_free(tls_io_instance->ssl_context);
         xio_destroy(tls_io_instance->socket_io);
         free(tls_io);
@@ -549,26 +638,14 @@ int tlsio_wolfssl_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_open
             else
             {
                 // The state can get changed in the on_underlying_io_open_complete
-                if (tls_io_instance->tlsio_state == TLSIO_STATE_ERROR)
+                if (tls_io_instance->tlsio_state != TLSIO_STATE_OPEN)
                 {
                     LogError("Failed to connect to server.  The certificates may not be correct.");
                     result = __LINE__;
                 }
                 else
                 {
-                    int res;
-                    tls_io_instance->tlsio_state = TLSIO_STATE_IN_HANDSHAKE;
-                    res = wolfSSL_connect(tls_io_instance->ssl);
-                    if (res != SSL_SUCCESS)
-                    {
-                        LogError("Failed to connect to server.");
-                        tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
-                        result = __LINE__;
-                    }
-                    else
-                    {
-                        result = 0;
-                    }
+                    result = 0;
                 }
             }
         }
@@ -637,7 +714,7 @@ int tlsio_wolfssl_send(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t siz
             tls_io_instance->on_send_complete_callback_context = callback_context;
 
             int res = wolfSSL_write(tls_io_instance->ssl, buffer, size);
-            if (res != size)
+            if ((res < 0) || ((size_t)res != size)) // Best way I can think of to safely compare an int to a size_t
             {
                 result = __LINE__;
             }
@@ -671,6 +748,26 @@ const IO_INTERFACE_DESCRIPTION* tlsio_wolfssl_get_interface_description(void)
     return &tlsio_wolfssl_interface_description;
 }
 
+static int process_option(char** destination, const char* name, const char* value)
+{
+    int result;
+    if (*destination != NULL)
+    {
+        free(*destination);
+        *destination = NULL;
+    }
+    if (mallocAndStrcpy_s(destination, value) != 0)
+    {
+        LogError("unable to process option %s",name);
+        result = __LINE__;
+    }
+    else
+    {
+        result = 0;
+    }
+    return result;
+
+}
 int tlsio_wolfssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, const void* value)
 {
     int result;
@@ -685,33 +782,26 @@ int tlsio_wolfssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
 
         if (strcmp("TrustedCerts", optionName) == 0)
         {
-            const char* cert = (const char*)value;
-            if (tls_io_instance->certificate != NULL)
-            {
-                // Free the memory if it has been previously allocated
-                free(tls_io_instance->certificate);
-            }
-
-            // Store the certificate
-            size_t len = strlen(cert);
-            tls_io_instance->certificate = (const char*)malloc(len+1);
-            if (tls_io_instance->certificate == NULL)
+            result  = process_option(&tls_io_instance->certificate, optionName, value);
+        }
+        else if (strcmp(SU_OPTION_X509_CERT, optionName) == 0)
+        {
+            result = process_option(&tls_io_instance->x509certificate, optionName, value);
+        }
+        else if (strcmp(SU_OPTION_X509_PRIVATE_KEY, optionName) == 0)
+        {
+            result = process_option(&tls_io_instance->x509privatekey, optionName, value);
+        }
+        else
+        {
+            if (tls_io_instance->socket_io == NULL)
             {
                 result = __LINE__;
             }
             else
             {
-                (void)strcpy(tls_io_instance->certificate, cert);
-                result = 0;
+                result = xio_setoption(tls_io_instance->socket_io, optionName, value);
             }
-        }
-        else if (tls_io_instance->socket_io == NULL)
-        {
-            result = __LINE__;
-        }
-        else
-        {
-            result = xio_setoption(tls_io_instance->socket_io, optionName, value);
         }
     }
 
