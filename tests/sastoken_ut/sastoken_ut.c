@@ -6,6 +6,17 @@
 #include <crtdbg.h>
 #endif
 
+static void* my_gballoc_malloc(size_t size)
+{
+    return malloc(size);
+}
+
+static void my_gballoc_free(void* ptr)
+{
+        free(ptr);
+}
+
+
 #include <stdio.h>
 #include <time.h>
 
@@ -15,17 +26,26 @@
 
 #define ENABLE_MOCKS
 
+#include "azure_c_shared_utility/gballoc.h"
+
 #include "azure_c_shared_utility/hmacsha256.h"
 #include "azure_c_shared_utility/strings.h"
 #include "azure_c_shared_utility/buffer_.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
 #include "azure_c_shared_utility/urlencode.h"
 #include "azure_c_shared_utility/base64.h"
+#include "azure_c_shared_utility/agenttime.h"
 
 #undef ENABLE_MOCKS
 
+
 TEST_DEFINE_ENUM_TYPE(HMACSHA256_RESULT, HMACSHA256_RESULT_VALUES);
 IMPLEMENT_UMOCK_C_ENUM_TYPE(HMACSHA256_RESULT, HMACSHA256_RESULT_VALUES);
+
+double my_get_difftime(time_t stopTime, time_t startTime)
+{
+    return (double)(stopTime - startTime);
+}
 
 STRING_HANDLE my_STRING_new(void)
 {
@@ -76,9 +96,12 @@ STRING_HANDLE my_URL_Encode(STRING_HANDLE input)
 #define TEST_PTR_TOBEHASHED (const char*)0x456
 #define TEST_LENGTH_TOBEHASHED (size_t)456
 #define TEST_EXPIRY ((size_t)7200)
+#define TEST_LATER_TIME (time_t) 11
+#define TEST_EARLY_TIME (time_t) 10
 
+static const char* TEST_STRING_VALUE = "Test string value";
+static const char* TEST_NULL_STRING_VALUE = 0x00;
 static char TEST_CHAR_ARRAY[10] = "ABCD";
-
 static unsigned char TEST_UNSIGNED_CHAR_ARRAY[] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09 };
 static char TEST_TOKEN_EXPIRATION_TIME[32] = "7200";
 
@@ -114,11 +137,19 @@ TEST_SUITE_INITIALIZE(TestClassInitialize)
 
     umock_c_init(on_umock_c_error);
 
+    REGISTER_UMOCK_ALIAS_TYPE(time_t, int);
+    REGISTER_UMOCK_ALIAS_TYPE(time_t*, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(size_t, unsigned int);
     REGISTER_UMOCK_ALIAS_TYPE(STRING_HANDLE, void*);
     REGISTER_UMOCK_ALIAS_TYPE(BUFFER_HANDLE, void*);
+
     result = umocktypes_charptr_register_types();
     ASSERT_ARE_EQUAL(int, 0, result);
     REGISTER_TYPE(HMACSHA256_RESULT, HMACSHA256_RESULT);
+
+    REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, my_gballoc_malloc);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(gballoc_malloc, NULL);
+    REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, my_gballoc_free);
 
     REGISTER_GLOBAL_MOCK_HOOK(STRING_new, my_STRING_new);
     REGISTER_GLOBAL_MOCK_RETURN(STRING_concat, 0);
@@ -136,6 +167,10 @@ TEST_SUITE_INITIALIZE(TestClassInitialize)
     REGISTER_GLOBAL_MOCK_HOOK(URL_Encode, my_URL_Encode);
     REGISTER_GLOBAL_MOCK_RETURN(HMACSHA256_ComputeHash, HMACSHA256_OK);
     REGISTER_GLOBAL_MOCK_RETURN(size_tToString, 0);
+
+    REGISTER_GLOBAL_MOCK_RETURN(get_time, TEST_TIME_T);
+    REGISTER_GLOBAL_MOCK_HOOK(get_difftime, my_get_difftime);
+
 }
 
 TEST_SUITE_CLEANUP(TestClassCleanup)
@@ -159,6 +194,631 @@ TEST_FUNCTION_INITIALIZE(TestMethodInitialize)
 TEST_FUNCTION_CLEANUP(TestMethodCleanup)
 {
     TEST_MUTEX_RELEASE(g_testByTest);
+}
+
+/*Tests_SRS_SASTOKEN_25_025: [**SASToken_Validate shall get the SASToken value by invoking STRING_c_str on the handle.**]***/
+TEST_FUNCTION(SASToken_validate_null_handle_fails)
+{
+    // arrange
+    STRING_HANDLE handle = NULL;
+    bool result;
+    STRICT_EXPECTED_CALL(STRING_c_str(TEST_NULL_STRING_HANDLE)).SetReturn(NULL);
+
+    // act
+    result = SASToken_Validate(handle);
+
+    // assert
+    ASSERT_IS_FALSE(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/*Tests_SRS_SASTOKEN_25_025: [**SASToken_Validate shall get the SASToken value by invoking STRING_c_str on the handle.**]***/
+TEST_FUNCTION(SASToken_validate_null_string_valid_handle_fails)
+{
+    // arrange
+    STRING_HANDLE handle = TEST_STRING_HANDLE;
+    bool result;
+    STRICT_EXPECTED_CALL(STRING_c_str(handle)).SetReturn(TEST_NULL_STRING_VALUE);
+
+    // act
+    result = SASToken_Validate(handle);
+
+    // assert
+    ASSERT_IS_FALSE(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/*Tests_SRS_SASTOKEN_25_025: [**SASToken_Validate shall get the SASToken value by invoking STRING_c_str on the handle.**]***/
+TEST_FUNCTION(SASToken_validate_se_improper_format_1_fails)
+{
+    // arrange
+    const char* TEST_INVALID_SE = "SharedAccessSignature=SharedAccessSignature sr=TESTSR&sig=TESTSIG&se0123456789";
+    size_t TEST_INVALID_SE_LENGTH = strlen(TEST_INVALID_SE);
+    STRING_HANDLE handle = TEST_STRING_HANDLE;
+    bool result;
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(STRING_c_str(handle)).SetReturn(TEST_INVALID_SE);
+    STRICT_EXPECTED_CALL(STRING_length(handle)).SetReturn(TEST_INVALID_SE_LENGTH);
+
+    // act
+    result = SASToken_Validate(handle);
+
+    // assert
+    ASSERT_IS_FALSE(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+/*Tests_SRS_SASTOKEN_25_027: [**If SASTOKEN does not obey the SASToken format then SASToken_Validate shall return false.**]*/
+TEST_FUNCTION(SASToken_validate_se_improper_format_2_fails)
+{
+    // arrange
+    const char* TEST_INVALID_SE = "SharedAccessSignature=SharedAccessSignature sr=TESTSR&sig=TESTSIG&se";
+    size_t TEST_INVALID_SE_LENGTH = strlen(TEST_INVALID_SE);
+    STRING_HANDLE handle = TEST_STRING_HANDLE;
+    bool result;
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(STRING_c_str(handle)).SetReturn(TEST_INVALID_SE);
+    STRICT_EXPECTED_CALL(STRING_length(handle)).SetReturn(TEST_INVALID_SE_LENGTH);
+
+    // act
+    result = SASToken_Validate(handle);
+
+    // assert
+    ASSERT_IS_FALSE(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+TEST_FUNCTION(SASToken_validate_se_improper_format_3_fails)
+{
+    // arrange
+    const char* TEST_INVALID_SE = "SharedAccessSignature=SharedAccessSignature sr=TESTSR&sig=TESTSIG&se=";
+    size_t TEST_INVALID_SE_LENGTH = strlen(TEST_INVALID_SE);
+    STRING_HANDLE handle = TEST_STRING_HANDLE;
+    bool result;
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(STRING_c_str(handle)).SetReturn(TEST_INVALID_SE);
+    STRICT_EXPECTED_CALL(STRING_length(handle)).SetReturn(TEST_INVALID_SE_LENGTH);
+
+    // act
+    result = SASToken_Validate(handle);
+
+    // assert
+    ASSERT_IS_FALSE(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+TEST_FUNCTION(SASToken_validate_se_improper_format_4_fails)
+{
+    // arrange
+    const char* TEST_INVALID_SE = "SharedAccessSignature=SharedAccessSignature sr=TESTSR&sig=TESTSIGse=0123456789";
+    size_t TEST_INVALID_SE_LENGTH = strlen(TEST_INVALID_SE);
+    STRING_HANDLE handle = TEST_STRING_HANDLE;
+    bool result;
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(STRING_c_str(handle)).SetReturn(TEST_INVALID_SE);
+    STRICT_EXPECTED_CALL(STRING_length(handle)).SetReturn(TEST_INVALID_SE_LENGTH);
+
+    // act
+    result = SASToken_Validate(handle);
+
+    // assert
+    ASSERT_IS_FALSE(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+TEST_FUNCTION(SASToken_validate_se_improper_format_5_fails)
+{
+    // arrange
+    const char* TEST_INVALID_SE = "SharedAccessSignature=SharedAccessSignature sr=TESTSR&se0123456789&sig=TESTSIG";
+    size_t TEST_INVALID_SE_LENGTH = strlen(TEST_INVALID_SE);
+    STRING_HANDLE handle = TEST_STRING_HANDLE;
+    bool result;
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(STRING_c_str(handle)).SetReturn(TEST_INVALID_SE);
+    STRICT_EXPECTED_CALL(STRING_length(handle)).SetReturn(TEST_INVALID_SE_LENGTH);
+
+    // act
+    result = SASToken_Validate(handle);
+
+    // assert
+    ASSERT_IS_FALSE(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/*Tests_SRS_SASTOKEN_25_028: [**SASToken_validate shall check for the presence of sr, se and sig from the token and return false if not found**]*/
+TEST_FUNCTION(SASToken_validate_improper_format_no_se_fails)
+{
+    // arrange
+    const char* TEST_INVALID_SE = "SharedAccessSignature=SharedAccessSignature sr=TESTSR&sig=TESTSIG";
+    size_t TEST_INVALID_SE_LENGTH = strlen(TEST_INVALID_SE);
+    STRING_HANDLE handle = TEST_STRING_HANDLE;
+    bool result;
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(STRING_c_str(handle)).SetReturn(TEST_INVALID_SE);
+    STRICT_EXPECTED_CALL(STRING_length(handle)).SetReturn(TEST_INVALID_SE_LENGTH);
+
+    // act
+    result = SASToken_Validate(handle);
+
+    // assert
+    ASSERT_IS_FALSE(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+TEST_FUNCTION(SASToken_validate_improper_format_no_sr_fails)
+{
+    // arrange
+    const char* TEST_INVALID_SE = "SharedAccessSignature=SharedAccessSignature se=0123456789&sig=TESTSIG";
+    size_t TEST_INVALID_SE_LENGTH = strlen(TEST_INVALID_SE);
+    STRING_HANDLE handle = TEST_STRING_HANDLE;
+    bool result;
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(STRING_c_str(handle)).SetReturn(TEST_INVALID_SE);
+    STRICT_EXPECTED_CALL(STRING_length(handle)).SetReturn(TEST_INVALID_SE_LENGTH);
+
+    // act
+    result = SASToken_Validate(handle);
+
+    // assert
+    ASSERT_IS_FALSE(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+TEST_FUNCTION(SASToken_validate_improper_format_no_sig_fails)
+{
+    // arrange
+    const char* TEST_INVALID_SE = "SharedAccessSignature=SharedAccessSignature se=0123456789&sr=TESTSR";
+    size_t TEST_INVALID_SE_LENGTH = strlen(TEST_INVALID_SE);
+    STRING_HANDLE handle = TEST_STRING_HANDLE;
+    bool result;
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(STRING_c_str(handle)).SetReturn(TEST_INVALID_SE);
+    STRICT_EXPECTED_CALL(STRING_length(handle)).SetReturn(TEST_INVALID_SE_LENGTH);
+
+    // act
+    result = SASToken_Validate(handle);
+
+    // assert
+    ASSERT_IS_FALSE(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+TEST_FUNCTION(SASToken_validate_sr_improper_format_1_fails)
+{
+    // arrange
+    const char* TEST_INVALID_SE = "SharedAccessSignature=SharedAccessSignature srTESTSR&sig=TESTSIG&se=0123456789";
+    size_t TEST_INVALID_SE_LENGTH = strlen(TEST_INVALID_SE);
+    STRING_HANDLE handle = TEST_STRING_HANDLE;
+    bool result;
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(STRING_c_str(handle)).SetReturn(TEST_INVALID_SE);
+    STRICT_EXPECTED_CALL(STRING_length(handle)).SetReturn(TEST_INVALID_SE_LENGTH);
+
+    // act
+    result = SASToken_Validate(handle);
+
+    // assert
+    ASSERT_IS_FALSE(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+TEST_FUNCTION(SASToken_validate_sr_improper_format_2_fails)
+{
+    // arrange
+    const char* TEST_INVALID_SE = "SharedAccessSignature=SharedAccessSignature sr&sig=TESTSIG&se=0123456789";
+    size_t TEST_INVALID_SE_LENGTH = strlen(TEST_INVALID_SE);
+    STRING_HANDLE handle = TEST_STRING_HANDLE;
+    bool result;
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(STRING_c_str(handle)).SetReturn(TEST_INVALID_SE);
+    STRICT_EXPECTED_CALL(STRING_length(handle)).SetReturn(TEST_INVALID_SE_LENGTH);
+
+    // act
+    result = SASToken_Validate(handle);
+
+    // assert
+    ASSERT_IS_FALSE(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+TEST_FUNCTION(SASToken_validate_sr_improper_format_3_fails)
+{
+    // arrange
+    const char* TEST_INVALID_SE = "SharedAccessSignature=SharedAccessSignature sr=&sig=TESTSIG&se=0123456789";
+    size_t TEST_INVALID_SE_LENGTH = strlen(TEST_INVALID_SE);
+    STRING_HANDLE handle = TEST_STRING_HANDLE;
+    bool result;
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(STRING_c_str(handle)).SetReturn(TEST_INVALID_SE);
+    STRICT_EXPECTED_CALL(STRING_length(handle)).SetReturn(TEST_INVALID_SE_LENGTH);
+
+    // act
+    result = SASToken_Validate(handle);
+
+    // assert
+    ASSERT_IS_FALSE(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+TEST_FUNCTION(SASToken_validate_sr_improper_format_4_fails)
+{
+    // arrange
+    const char* TEST_INVALID_SE = "SharedAccessSignature=SharedAccessSignaturesr=TESTSR&sig=TESTSIGse=0123456789";
+    size_t TEST_INVALID_SE_LENGTH = strlen(TEST_INVALID_SE);
+    STRING_HANDLE handle = TEST_STRING_HANDLE;
+    bool result;
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(STRING_c_str(handle)).SetReturn(TEST_INVALID_SE);
+    STRICT_EXPECTED_CALL(STRING_length(handle)).SetReturn(TEST_INVALID_SE_LENGTH);
+
+    // act
+    result = SASToken_Validate(handle);
+
+    // assert
+    ASSERT_IS_FALSE(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+TEST_FUNCTION(SASToken_validate_sr_improper_format_5_fails)
+{
+    // arrange
+    const char* TEST_INVALID_SE = "SharedAccessSignature=SharedAccessSignature srTESTSR&se=0123456789&sig=TESTSIG";
+    size_t TEST_INVALID_SE_LENGTH = strlen(TEST_INVALID_SE);
+    STRING_HANDLE handle = TEST_STRING_HANDLE;
+    bool result;
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(STRING_c_str(handle)).SetReturn(TEST_INVALID_SE);
+    STRICT_EXPECTED_CALL(STRING_length(handle)).SetReturn(TEST_INVALID_SE_LENGTH);
+
+    // act
+    result = SASToken_Validate(handle);
+
+    // assert
+    ASSERT_IS_FALSE(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+TEST_FUNCTION(SASToken_validate_sig_improper_format_1_fails)
+{
+    // arrange
+    const char* TEST_INVALID_SE = "SharedAccessSignature=SharedAccessSignature sr=TESTSR&sigTESTSIG&se=0123456789";
+    size_t TEST_INVALID_SE_LENGTH = strlen(TEST_INVALID_SE);
+    STRING_HANDLE handle = TEST_STRING_HANDLE;
+    bool result;
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(STRING_c_str(handle)).SetReturn(TEST_INVALID_SE);
+    STRICT_EXPECTED_CALL(STRING_length(handle)).SetReturn(TEST_INVALID_SE_LENGTH);
+
+    // act
+    result = SASToken_Validate(handle);
+
+    // assert
+    ASSERT_IS_FALSE(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+TEST_FUNCTION(SASToken_validate_sig_improper_format_2_fails)
+{
+    // arrange
+    const char* TEST_INVALID_SE = "SharedAccessSignature=SharedAccessSignature sr=TESTSR&sig&se=0123456789";
+    size_t TEST_INVALID_SE_LENGTH = strlen(TEST_INVALID_SE);
+    STRING_HANDLE handle = TEST_STRING_HANDLE;
+    bool result;
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(STRING_c_str(handle)).SetReturn(TEST_INVALID_SE);
+    STRICT_EXPECTED_CALL(STRING_length(handle)).SetReturn(TEST_INVALID_SE_LENGTH);
+
+    // act
+    result = SASToken_Validate(handle);
+
+    // assert
+    ASSERT_IS_FALSE(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+TEST_FUNCTION(SASToken_validate_sig_improper_format_3_fails)
+{
+    // arrange
+    const char* TEST_INVALID_SE = "SharedAccessSignature=SharedAccessSignature sr=TESTSR&sig=&se=0123456789";
+    size_t TEST_INVALID_SE_LENGTH = strlen(TEST_INVALID_SE);
+    STRING_HANDLE handle = TEST_STRING_HANDLE;
+    bool result;
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(STRING_c_str(handle)).SetReturn(TEST_INVALID_SE);
+    STRICT_EXPECTED_CALL(STRING_length(handle)).SetReturn(TEST_INVALID_SE_LENGTH);
+
+    // act
+    result = SASToken_Validate(handle);
+
+    // assert
+    ASSERT_IS_FALSE(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+TEST_FUNCTION(SASToken_validate_sig_improper_format_4_fails)
+{
+    // arrange
+    const char* TEST_INVALID_SE = "SharedAccessSignature=SharedAccessSignature sr=TESTSRsig=TESTSIGse=0123456789";
+    size_t TEST_INVALID_SE_LENGTH = strlen(TEST_INVALID_SE);
+    STRING_HANDLE handle = TEST_STRING_HANDLE;
+    bool result;
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(STRING_c_str(handle)).SetReturn(TEST_INVALID_SE);
+    STRICT_EXPECTED_CALL(STRING_length(handle)).SetReturn(TEST_INVALID_SE_LENGTH);
+
+    // act
+    result = SASToken_Validate(handle);
+
+    // assert
+    ASSERT_IS_FALSE(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+TEST_FUNCTION(SASToken_validate_sig_improper_format_5_fails)
+{
+    // arrange
+    const char* TEST_INVALID_SE = "SharedAccessSignature=SharedAccessSignature sr=TESTSR&se0123456789&sig=TESTSIG";
+    size_t TEST_INVALID_SE_LENGTH = strlen(TEST_INVALID_SE);
+    STRING_HANDLE handle = TEST_STRING_HANDLE;
+    bool result;
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(STRING_c_str(handle)).SetReturn(TEST_INVALID_SE);
+    STRICT_EXPECTED_CALL(STRING_length(handle)).SetReturn(TEST_INVALID_SE_LENGTH);
+
+    // act
+    result = SASToken_Validate(handle);
+
+    // assert
+    ASSERT_IS_FALSE(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/*Tests_SRS_SASTOKEN_25_030: [**SASToken_validate shall return true only if the format is obeyed and the token has not yet expired **]*/
+TEST_FUNCTION(SASToken_validate_proper_format_1_pass)
+{
+    // arrange
+    const char* TEST_INVALID_SE = "SharedAccessSignature=SharedAccessSignature se=0123456789&sr=TESTSR&sig=TESTSIG";
+    size_t TEST_INVALID_SE_LENGTH = strlen(TEST_INVALID_SE);
+    STRING_HANDLE handle = TEST_STRING_HANDLE;
+    bool result;
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(STRING_c_str(handle)).SetReturn(TEST_INVALID_SE);
+    STRICT_EXPECTED_CALL(STRING_length(handle)).SetReturn(TEST_INVALID_SE_LENGTH);
+    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(get_time(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(get_difftime(IGNORED_NUM_ARG, IGNORED_NUM_ARG)).IgnoreAllArguments().SetReturn(TEST_TIME_T);
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)).IgnoreAllArguments();
+
+    // act
+    result = SASToken_Validate(handle);
+
+    // assert
+    ASSERT_IS_TRUE(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+TEST_FUNCTION(SASToken_validate_proper_format_2_pass)
+{
+    // arrange
+    const char* TEST_INVALID_SE = "SharedAccessSignature=SharedAccessSignature sr=TESTSR&se=0123456789&sig=TESTSIG";
+    size_t TEST_INVALID_SE_LENGTH = strlen(TEST_INVALID_SE);
+    STRING_HANDLE handle = TEST_STRING_HANDLE;
+    bool result;
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(STRING_c_str(handle)).SetReturn(TEST_INVALID_SE);
+    STRICT_EXPECTED_CALL(STRING_length(handle)).SetReturn(TEST_INVALID_SE_LENGTH);
+    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(get_time(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(get_difftime(IGNORED_NUM_ARG, IGNORED_NUM_ARG)).IgnoreAllArguments().SetReturn(TEST_TIME_T);
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)).IgnoreAllArguments();
+
+    // act
+    result = SASToken_Validate(handle);
+
+    // assert
+    ASSERT_IS_TRUE(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+TEST_FUNCTION(SASToken_validate_proper_format_3_pass)
+{
+    // arrange
+    const char* TEST_INVALID_SE = "SharedAccessSignature=SharedAccessSignature sig=TESTSIG&sr=TESTSR&se=0123456789";
+    size_t TEST_INVALID_SE_LENGTH = strlen(TEST_INVALID_SE);
+    STRING_HANDLE handle = TEST_STRING_HANDLE;
+    bool result;
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(STRING_c_str(handle)).SetReturn(TEST_INVALID_SE);
+    STRICT_EXPECTED_CALL(STRING_length(handle)).SetReturn(TEST_INVALID_SE_LENGTH);
+    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(get_time(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(get_difftime(IGNORED_NUM_ARG, IGNORED_NUM_ARG)).IgnoreAllArguments().SetReturn(TEST_TIME_T);
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)).IgnoreAllArguments();
+
+    // act
+    result = SASToken_Validate(handle);
+
+    // assert
+    ASSERT_IS_TRUE(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+TEST_FUNCTION(SASToken_validate_not_expired_pass)
+{
+    // arrange
+    const char* TEST_INVALID_SE = "SharedAccessSignature=SharedAccessSignature sig=TESTSIG&sr=TESTSR&se=11";
+    size_t TEST_INVALID_SE_LENGTH = strlen(TEST_INVALID_SE);
+    STRING_HANDLE handle = TEST_STRING_HANDLE;
+    bool result;
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(STRING_c_str(handle)).SetReturn(TEST_INVALID_SE);
+    STRICT_EXPECTED_CALL(STRING_length(handle)).SetReturn(TEST_INVALID_SE_LENGTH);
+    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(get_time(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(get_difftime(IGNORED_NUM_ARG, IGNORED_NUM_ARG)).IgnoreAllArguments().SetReturn(TEST_EARLY_TIME);
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)).IgnoreAllArguments();
+
+    // act
+    result = SASToken_Validate(handle);
+
+    // assert
+    ASSERT_IS_TRUE(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/*Tests_SRS_SASTOKEN_25_029: [**SASToken_validate shall check for expiry time from token and if token has expired then would return false **]*/
+TEST_FUNCTION(SASToken_validate_expired_fail)
+{
+    // arrange
+    const char* TEST_INVALID_SE = "SharedAccessSignature=SharedAccessSignature sig=TESTSIG&sr=TESTSR&se=10";
+    size_t TEST_INVALID_SE_LENGTH = strlen(TEST_INVALID_SE);
+    STRING_HANDLE handle = TEST_STRING_HANDLE;
+    bool result;
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(STRING_c_str(handle)).SetReturn(TEST_INVALID_SE);
+    STRICT_EXPECTED_CALL(STRING_length(handle)).SetReturn(TEST_INVALID_SE_LENGTH);
+    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(get_time(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(get_difftime(TEST_TIME_T, IGNORED_NUM_ARG)).IgnoreAllArguments().SetReturn(TEST_LATER_TIME);
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)).IgnoreAllArguments();
+
+    // act
+    result = SASToken_Validate(handle);
+
+    // assert
+    ASSERT_IS_FALSE(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+TEST_FUNCTION(SASToken_validate_invalid_expiry_1_fail)
+{
+    // arrange
+    const char* TEST_INVALID_SE = "SharedAccessSignature=SharedAccessSignature sig=TESTSIG&sr=TESTSR&se=10A";
+    size_t TEST_INVALID_SE_LENGTH = strlen(TEST_INVALID_SE);
+    STRING_HANDLE handle = TEST_STRING_HANDLE;
+    bool result;
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(STRING_c_str(handle)).SetReturn(TEST_INVALID_SE);
+    STRICT_EXPECTED_CALL(STRING_length(handle)).SetReturn(TEST_INVALID_SE_LENGTH);
+    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)).IgnoreAllArguments();
+
+    // act
+    result = SASToken_Validate(handle);
+
+    // assert
+    ASSERT_IS_FALSE(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+TEST_FUNCTION(SASToken_validate_invalid_expiry_2_fail)
+{
+    // arrange
+    const char* TEST_INVALID_SE = "SharedAccessSignature=SharedAccessSignature sig=TESTSIG&sr=TESTSR&se=-10";
+    size_t TEST_INVALID_SE_LENGTH = strlen(TEST_INVALID_SE);
+    STRING_HANDLE handle = TEST_STRING_HANDLE;
+    bool result;
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(STRING_c_str(handle)).SetReturn(TEST_INVALID_SE);
+    STRICT_EXPECTED_CALL(STRING_length(handle)).SetReturn(TEST_INVALID_SE_LENGTH);
+    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)).IgnoreAllArguments();
+
+    // act
+    result = SASToken_Validate(handle);
+
+    // assert
+    ASSERT_IS_FALSE(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+TEST_FUNCTION(SASToken_validate_invalid_expiry_3_fail)
+{
+    // arrange
+    const char* TEST_INVALID_SE = "SharedAccessSignature=SharedAccessSignature sig=TESTSIG&sr=TESTSR&se=0";
+    size_t TEST_INVALID_SE_LENGTH = strlen(TEST_INVALID_SE);
+    STRING_HANDLE handle = TEST_STRING_HANDLE;
+    bool result;
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(STRING_c_str(handle)).SetReturn(TEST_INVALID_SE);
+    STRICT_EXPECTED_CALL(STRING_length(handle)).SetReturn(TEST_INVALID_SE_LENGTH);
+    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)).IgnoreAllArguments();
+
+    // act
+    result = SASToken_Validate(handle);
+
+    // assert
+    ASSERT_IS_FALSE(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+TEST_FUNCTION(SASToken_validate_invalid_expiry_4_fail)
+{
+    // arrange
+    const char* TEST_INVALID_SE = "SharedAccessSignature=SharedAccessSignature sig=TESTSIG&sr=TESTSR&se=A0";
+    size_t TEST_INVALID_SE_LENGTH = strlen(TEST_INVALID_SE);
+    STRING_HANDLE handle = TEST_STRING_HANDLE;
+    bool result;
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(STRING_c_str(handle)).SetReturn(TEST_INVALID_SE);
+    STRICT_EXPECTED_CALL(STRING_length(handle)).SetReturn(TEST_INVALID_SE_LENGTH);
+    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)).IgnoreAllArguments();
+
+    // act
+    result = SASToken_Validate(handle);
+
+    // assert
+    ASSERT_IS_FALSE(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+TEST_FUNCTION(SASToken_validate_invalid_expiry_5_fail)
+{
+    // arrange
+    const char* TEST_INVALID_SE = "SharedAccessSignature=SharedAccessSignature sig=TESTSIG&sr=TESTSR&se=1A0";
+    size_t TEST_INVALID_SE_LENGTH = strlen(TEST_INVALID_SE);
+    STRING_HANDLE handle = TEST_STRING_HANDLE;
+    bool result;
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(STRING_c_str(handle)).SetReturn(TEST_INVALID_SE);
+    STRICT_EXPECTED_CALL(STRING_length(handle)).SetReturn(TEST_INVALID_SE_LENGTH);
+    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)).IgnoreAllArguments();
+
+    // act
+    result = SASToken_Validate(handle);
+
+    // assert
+    ASSERT_IS_FALSE(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
 /*Tests_SRS_SASTOKEN_06_001: [If key is NULL then SASToken_Create shall return NULL.]*/

@@ -7,10 +7,13 @@ This function is used to create a SAS token.
 
 ##References
 [Keyed-Hashing for Message Authentication, RFC2104](https://www.ietf.org/rfc/rfc2104.txt)
+[SASToken format](https://azure.microsoft.com/en-us/documentation/articles/storage-dotnet-shared-access-signature-part-1/)
+
 
 ##Exposed API
 ```c
-extern STRING_HANDLE SASToken_Create(STRING_HANDLE key, STRING_HANDLE scope, STRING_HANDLE keyName, size_t expiry);
+    MOCKABLE_FUNCTION(, bool, SASToken_Validate, STRING_HANDLE, sasToken);
+    MOCKABLE_FUNCTION(, STRING_HANDLE, SASToken_Create, STRING_HANDLE, key, STRING_HANDLE, scope, STRING_HANDLE, keyName, size_t, expiry);
 ```
  
 ###SASToken_Create 
@@ -42,4 +45,19 @@ The expiry argument shall be converted to a char* by invoking size_tToString.
 **SRS_SASTOKEN_06_022: [**The string "&skn=" is appended to result.**]**
 **SRS_SASTOKEN_06_023: [**The argument keyName is appended to result.**]** 
 result is returned.
+
+###SASToken_Validate 
+```c
+extern bool SASToken_Validate(STRING_HANDLE handle);
+```
+
+**SRS_SASTOKEN_25_024: [**If handle is NULL then SASToken_Validate shall return false.**]**
+**SRS_SASTOKEN_25_025: [**SASToken_Validate shall get the SASToken value by invoking STRING_c_str on the handle.**]**
+**SRS_SASTOKEN_25_026: [**If STRING_c_str on handle return NULL then SASToken_Validate shall return false.**]**
+**SRS_SASTOKEN_25_027: [**If SASTOKEN does not obey the SASToken format then SASToken_Validate shall return false.**]**
+**SRS_SASTOKEN_25_028: [**SASToken_validate shall check for the presence of sr, se and sig from the token and return false if not found**]**
+**SRS_SASTOKEN_25_029: [**SASToken_validate shall check for expiry time from token and if token has expired then would return false **]**
+**SRS_SASTOKEN_25_030: [**SASToken_validate shall return true only if the format is obeyed and the token has not yet expired **]**
+**SRS_SASTOKEN_25_031: [**If malloc fails during validation then SASToken_Validate shall return false.**]**
+
 
