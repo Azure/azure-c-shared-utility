@@ -27,7 +27,7 @@ extern "C"
 
 #include "azure_c_shared_utility/macro_utils.h"
 
-#if defined(__STDC_VERSION__) && (__STDC_VERSION__ == 201112) && (__STDC_NO_ATOMICS__!=1)
+#if defined(__STDC_VERSION__) && (__STDC_VERSION__ == 201112) && (__STDC_NO_ATOMICS__!=1) && defined(ARDUINO_ARCH_SAMD)
 #define REFCOUNT_USE_STD_ATOMIC 1
 #endif
 
