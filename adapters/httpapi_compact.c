@@ -28,13 +28,16 @@
 #define MAX_HOSTNAME     64
 #define TEMP_BUFFER_SIZE 1024
 
-/*Codes_SRS_HTTPAPI_COMPACT_21_076: [ The HTTPAPI_ExecuteRequest shall try to read the message with the response up to 20 times. ]*/
-/*Codes_SRS_HTTPAPI_COMPACT_21_077: [ If the HTTPAPI_ExecuteRequest retries 20 times to receive the message without success, it shall fail and return HTTPAPI_READ_DATA_FAILED. ]*/
-#define MAX_RECEIVE_RETRY   70
-/*Codes_SRS_HTTPAPI_COMPACT_21_078: [ The HTTPAPI_ExecuteRequest shall wait, at least, 100 milliseconds between retries. ]*/
-#define RECEIVE_RETRY_INTERVAL_IN_MICROSECONDS  100
-#define OPEN_RETRY_INTERVAL_IN_MICROSECONDS  100
-
+/*Codes_SRS_HTTPAPI_COMPACT_21_077: [ The HTTPAPI_ExecuteRequest shall wait, at least, 10 seconds for the SSL open process. ]*/
+#define MAX_OPEN_RETRY   100
+/*Codes_SRS_HTTPAPI_COMPACT_21_084: [ The HTTPAPI_CloseConnection shall wait, at least, 10 seconds for the SSL close process. ]*/
+#define MAX_CLOSE_RETRY   100
+/*Codes_SRS_HTTPAPI_COMPACT_21_079: [ The HTTPAPI_ExecuteRequest shall wait, at least, 20 seconds to send a buffer using the SSL connection. ]*/
+#define MAX_SEND_RETRY   200
+/*Codes_SRS_HTTPAPI_COMPACT_21_081: [ The HTTPAPI_ExecuteRequest shall try to read the message with the response up to 20 seconds. ]*/
+#define MAX_RECEIVE_RETRY   200
+/*Codes_SRS_HTTPAPI_COMPACT_21_083: [ The HTTPAPI_ExecuteRequest shall wait, at least, 100 milliseconds between retries. ]*/
+#define RETRY_INTERVAL_IN_MICROSECONDS  100
 
 DEFINE_ENUM_STRINGS(HTTPAPI_RESULT, HTTPAPI_RESULT_VALUES)
 
@@ -48,6 +51,7 @@ typedef struct HTTP_HANDLE_DATA_TAG
     unsigned char*  received_bytes;
     unsigned int    is_io_error : 1;
     unsigned int    is_connected : 1;
+    unsigned int    send_completed : 1;
 } HTTP_HANDLE_DATA;
 
 /*the following function does the same as sscanf(pos2, "%d", &sec)*/
@@ -167,14 +171,14 @@ static int  ParseHttpResponse(const char* src, int* dst)
 
 HTTPAPI_RESULT HTTPAPI_Init(void)
 {
-    /*Codes_SRS_HTTPAPI_COMPACT_21_004: [ The HTTPAPI_Init shall allocate all memory to control the http protocol. ]*/
-    /*Codes_SRS_HTTPAPI_COMPACT_21_007: [ If there is not enough memory to control the http protocol, the HTTPAPI_Init shall return HTTPAPI_ALLOC_FAILED. ]*/
-    /**
-     * No memory is necessary.
-     */
+/*Codes_SRS_HTTPAPI_COMPACT_21_004: [ The HTTPAPI_Init shall allocate all memory to control the http protocol. ]*/
+/*Codes_SRS_HTTPAPI_COMPACT_21_007: [ If there is not enough memory to control the http protocol, the HTTPAPI_Init shall return HTTPAPI_ALLOC_FAILED. ]*/
+/**
+ * No memory is necessary.
+ */
 
-    /*Codes_SRS_HTTPAPI_COMPACT_21_006: [ If HTTPAPI_Init succeed allocating all the needed memory, it shall return HTTPAPI_OK. ]*/
-    return HTTPAPI_OK;
+ /*Codes_SRS_HTTPAPI_COMPACT_21_006: [ If HTTPAPI_Init succeed allocating all the needed memory, it shall return HTTPAPI_OK. ]*/
+return HTTPAPI_OK;
 }
 
 void HTTPAPI_Deinit(void)
@@ -242,6 +246,16 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
     return (HTTP_HANDLE)http_instance;
 }
 
+static void on_io_close_complete(void* context)
+{
+    HTTP_HANDLE_DATA* http_instance = (HTTP_HANDLE_DATA*)context;
+
+    if (http_instance != NULL)
+    {
+        http_instance->is_connected = 0;
+    }
+}
+
 void HTTPAPI_CloseConnection(HTTP_HANDLE handle)
 {
     HTTP_HANDLE_DATA* http_instance = (HTTP_HANDLE_DATA*)handle;
@@ -252,7 +266,41 @@ void HTTPAPI_CloseConnection(HTTP_HANDLE handle)
         /*Codes_SRS_HTTPAPI_COMPACT_21_019: [ If there is no previous connection, the HTTPAPI_CloseConnection shall not do anything. ]*/
         if (http_instance->xio_handle != NULL)
         {
-            /*Codes_SRS_HTTPAPI_COMPACT_21_017: [ The HTTPAPI_CloseConnection shall close the connection previously created in HTTPAPI_CreateConnection. ]*/
+            http_instance->is_io_error = 0;
+            /*Codes_SRS_HTTPAPI_COMPACT_21_017: [ The HTTPAPI_CloseConnection shall close the connection previously created in HTTPAPI_ExecuteRequest. ]*/
+            if (xio_close(http_instance->xio_handle, on_io_close_complete, http_instance) != 0)
+            {
+                LogError("The SSL got error closing the connection");
+                /*Codes_SRS_HTTPAPI_COMPACT_21_087: [ If the xio return anything different than 0, the HTTPAPI_CloseConnection shall destroy the connection anyway. ]*/
+                http_instance->is_connected = 0;
+            }
+            else
+            {
+                /*Codes_SRS_HTTPAPI_COMPACT_21_084: [ The HTTPAPI_CloseConnection shall wait, at least, 10 seconds for the SSL close process. ]*/
+                int countRetry = MAX_CLOSE_RETRY;
+                while (http_instance->is_connected == 1)
+                {
+                    xio_dowork(http_instance->xio_handle);
+                    if ((countRetry--) < 0)
+                    {
+                        /*Codes_SRS_HTTPAPI_COMPACT_21_085: [ If the HTTPAPI_CloseConnection retries 10 seconds to close the connection without success, it shall destroy the connection anyway. ]*/
+                        LogError("Close timeout. The SSL didn't close the connection");
+                        http_instance->is_connected = 0;
+                    }
+                    else if (http_instance->is_io_error == 1)
+                    {
+                        LogError("The SSL got error closing the connection");
+                        http_instance->is_connected = 0;
+                    }
+                    else if (http_instance->is_connected == 1)
+                    {
+                        LogInfo("Waiting for TLS close connection");
+                        /*Codes_SRS_HTTPAPI_COMPACT_21_086: [ The HTTPAPI_CloseConnection shall wait, at least, 100 milliseconds between retries. ]*/
+                        ThreadAPI_Sleep(RETRY_INTERVAL_IN_MICROSECONDS);
+                    }
+                }
+            }
+            /*Codes_SRS_HTTPAPI_COMPACT_21_076: [ After close the connection, The HTTPAPI_CloseConnection shall destroy the connection previously created in HTTPAPI_CreateConnection. ]*/
             xio_destroy(http_instance->xio_handle);
         }
 
@@ -286,6 +334,24 @@ static void on_io_open_complete(void* context, IO_OPEN_RESULT open_result)
         if (open_result == IO_OPEN_OK)
         {
             http_instance->is_connected = 1;
+            http_instance->is_io_error = 0;
+        }
+        else
+        {
+            http_instance->is_io_error = 1;
+        }
+    }
+}
+
+static void on_send_complete(void* context, IO_SEND_RESULT send_result)
+{
+    HTTP_HANDLE_DATA* http_instance = (HTTP_HANDLE_DATA*)context;
+
+    if (http_instance != NULL)
+    {
+        if (send_result == IO_SEND_OK)
+        {
+            http_instance->send_completed = 1;
             http_instance->is_io_error = 0;
         }
         else
@@ -415,7 +481,8 @@ static int conn_receive(HTTP_HANDLE_DATA* http_instance, char* buffer, int count
                 break;
             }
 
-            ThreadAPI_Sleep(RECEIVE_RETRY_INTERVAL_IN_MICROSECONDS);
+            /*Codes_SRS_HTTPAPI_COMPACT_21_083: [ The HTTPAPI_ExecuteRequest shall wait, at least, 100 milliseconds between retries. ]*/
+            ThreadAPI_Sleep(RETRY_INTERVAL_IN_MICROSECONDS);
         }
     }
 
@@ -447,7 +514,7 @@ static int readLine(HTTP_HANDLE_DATA* http_instance, char* buf, const size_t max
     else
     {
         char* destByte = buf;
-        /*Codes_SRS_HTTPAPI_COMPACT_21_076: [ The HTTPAPI_ExecuteRequest shall try to read the message with the response up to 20 times. ]*/
+        /*Codes_SRS_HTTPAPI_COMPACT_21_081: [ The HTTPAPI_ExecuteRequest shall try to read the message with the response up to 20 seconds. ]*/
         int countRetry = MAX_RECEIVE_RETRY;
         bool endOfSearch = false;
         resultLineSize = -1;
@@ -509,13 +576,13 @@ static int readLine(HTTP_HANDLE_DATA* http_instance, char* buf, const size_t max
             {
                 if ((countRetry--) > 0)
                 {
-                    /*Codes_SRS_HTTPAPI_COMPACT_21_078: [ The HTTPAPI_ExecuteRequest shall wait, at least, 100 milliseconds between retries. ]*/
-                    ThreadAPI_Sleep(RECEIVE_RETRY_INTERVAL_IN_MICROSECONDS);
+                    /*Codes_SRS_HTTPAPI_COMPACT_21_083: [ The HTTPAPI_ExecuteRequest shall wait, at least, 100 milliseconds between retries. ]*/
+                    ThreadAPI_Sleep(RETRY_INTERVAL_IN_MICROSECONDS);
                 }
                 else
                 {
-                    /*Codes_SRS_HTTPAPI_COMPACT_21_077: [ If the HTTPAPI_ExecuteRequest retries 20 times to receive the message without success, it shall fail and return HTTPAPI_READ_DATA_FAILED. ]*/
-                    LogError("Timeout. The HTTP request is incomplete");
+                    /*Codes_SRS_HTTPAPI_COMPACT_21_082: [ If the HTTPAPI_ExecuteRequest retries 20 seconds to receive the message without success, it shall fail and return HTTPAPI_READ_DATA_FAILED. ]*/
+                    LogError("Receive timeout. The HTTP request is incomplete");
                     endOfSearch = true;
                 }
             }
@@ -565,7 +632,7 @@ static int skipN(HTTP_HANDLE_DATA* http_instance, size_t n)
     }
     else
     {
-        /*Codes_SRS_HTTPAPI_COMPACT_21_076: [ The HTTPAPI_ExecuteRequest shall try to read the message with the response up to 20 times. ]*/
+        /*Codes_SRS_HTTPAPI_COMPACT_21_081: [ The HTTPAPI_ExecuteRequest shall try to read the message with the response up to 20 seconds. ]*/
         int countRetry = MAX_RECEIVE_RETRY;
         result = (int)n;
         while (n > 0)
@@ -597,13 +664,13 @@ static int skipN(HTTP_HANDLE_DATA* http_instance, size_t n)
                 {
                     if ((countRetry--) > 0)
                     {
-                        /*Codes_SRS_HTTPAPI_COMPACT_21_078: [ The HTTPAPI_ExecuteRequest shall wait, at least, 100 milliseconds between retries. ]*/
-                        ThreadAPI_Sleep(RECEIVE_RETRY_INTERVAL_IN_MICROSECONDS);
+                        /*Codes_SRS_HTTPAPI_COMPACT_21_083: [ The HTTPAPI_ExecuteRequest shall wait, at least, 100 milliseconds between retries. ]*/
+                        ThreadAPI_Sleep(RETRY_INTERVAL_IN_MICROSECONDS);
                     }
                     else
                     {
-                        /*Codes_SRS_HTTPAPI_COMPACT_21_077: [ If the HTTPAPI_ExecuteRequest retries 20 times to receive the message without success, it shall fail and return HTTPAPI_READ_DATA_FAILED. ]*/
-                        LogError("Timeout. The HTTP request is incomplete");
+                        /*Codes_SRS_HTTPAPI_COMPACT_21_082: [ If the HTTPAPI_ExecuteRequest retries 20 seconds to receive the message without success, it shall fail and return HTTPAPI_READ_DATA_FAILED. ]*/
+                        LogError("Receive timeout. The HTTP request is incomplete");
                         n = 0;
                         result = -1;
                     }
@@ -628,6 +695,8 @@ static HTTPAPI_RESULT OpenXIOConnection(HTTP_HANDLE_DATA* http_instance)
     }
     else
     {
+        http_instance->is_io_error = 0;
+
         /*Codes_SRS_HTTPAPI_COMPACT_21_022: [ If a Certificate was provided, the HTTPAPI_ExecuteRequest shall set this option on the transport layer. ]*/
         if ((http_instance->certificate != NULL) &&
             (xio_setoption(http_instance->xio_handle, "TrustedCerts", http_instance->certificate) != 0))
@@ -664,12 +733,25 @@ static HTTPAPI_RESULT OpenXIOConnection(HTTP_HANDLE_DATA* http_instance)
             {
                 /*Codes_SRS_HTTPAPI_COMPACT_21_033: [ If the whole process succeed, the HTTPAPI_ExecuteRequest shall retur HTTPAPI_OK. ]*/
                 result = HTTPAPI_OK;
+                /*Codes_SRS_HTTPAPI_COMPACT_21_077: [ The HTTPAPI_ExecuteRequest shall wait, at least, 10 seconds for the SSL open process. ]*/
+                int countRetry = MAX_OPEN_RETRY;
                 while ((http_instance->is_connected == 0) &&
                     (http_instance->is_io_error == 0))
                 {
                     xio_dowork(http_instance->xio_handle);
                     LogInfo("Waiting for TLS connection");
-                    ThreadAPI_Sleep(OPEN_RETRY_INTERVAL_IN_MICROSECONDS);
+                    if ((countRetry--) < 0)
+                    {
+                        /*Codes_SRS_HTTPAPI_COMPACT_21_078: [ If the HTTPAPI_ExecuteRequest cannot open the connection in 10 seconds, it shall fail and return HTTPAPI_OPEN_REQUEST_FAILED. ]*/
+                        LogError("Open timeout. The HTTP request is incomplete");
+                        result = HTTPAPI_OPEN_REQUEST_FAILED;
+                        break;
+                    }
+                    else
+                    {
+                        /*Codes_SRS_HTTPAPI_COMPACT_21_083: [ The HTTPAPI_ExecuteRequest shall wait, at least, 100 milliseconds between retries. ]*/
+                        ThreadAPI_Sleep(RETRY_INTERVAL_IN_MICROSECONDS);
+                    }
                 }
             }
         }
@@ -679,6 +761,49 @@ static HTTPAPI_RESULT OpenXIOConnection(HTTP_HANDLE_DATA* http_instance)
     {
         /*Codes_SRS_HTTPAPI_COMPACT_21_025: [ If the open process failed, the HTTPAPI_ExecuteRequest shall not send any request and return HTTPAPI_OPEN_REQUEST_FAILED. ]*/
         result = HTTPAPI_OPEN_REQUEST_FAILED;
+    }
+
+    return result;
+}
+
+static HTTPAPI_RESULT conn_send_all(HTTP_HANDLE_DATA* http_instance, const unsigned char* buf, size_t bufLen)
+{
+    HTTPAPI_RESULT result;
+
+    http_instance->send_completed = 0;
+    http_instance->is_io_error = 0;
+    if (xio_send(http_instance->xio_handle, buf, bufLen, on_send_complete, http_instance) != 0)
+    {
+        /*Codes_SRS_HTTPAPI_COMPACT_21_028: [ If the HTTPAPI_ExecuteRequest cannot send the request header, it shall return HTTPAPI_HTTP_HEADERS_FAILED. ]*/
+        result = HTTPAPI_SEND_REQUEST_FAILED;
+    }
+    else
+    {
+        /*Codes_SRS_HTTPAPI_COMPACT_21_079: [ The HTTPAPI_ExecuteRequest shall wait, at least, 20 seconds to send a buffer using the SSL connection. ]*/
+        int countRetry = MAX_SEND_RETRY;
+        /*Codes_SRS_HTTPAPI_COMPACT_21_033: [ If the whole process succeed, the HTTPAPI_ExecuteRequest shall retur HTTPAPI_OK. ]*/
+        result = HTTPAPI_OK;
+        while ((http_instance->send_completed == 0) && (result == HTTPAPI_OK))
+        {
+            xio_dowork(http_instance->xio_handle);
+            if (http_instance->is_io_error != 0)
+            {
+                /*Codes_SRS_HTTPAPI_COMPACT_21_028: [ If the HTTPAPI_ExecuteRequest cannot send the request header, it shall return HTTPAPI_HTTP_HEADERS_FAILED. ]*/
+                result = HTTPAPI_SEND_REQUEST_FAILED;
+            }
+            else if ((countRetry--) <= 0)
+            {
+                /*Codes_SRS_HTTPAPI_COMPACT_21_080: [ If the HTTPAPI_ExecuteRequest retries to send the message for 20 seconds without success, it shall fail and return HTTPAPI_SEND_REQUEST_FAILED. ]*/
+                LogError("Send timeout. The HTTP request is incomplete");
+                /*Codes_SRS_HTTPAPI_COMPACT_21_028: [ If the HTTPAPI_ExecuteRequest cannot send the request header, it shall return HTTPAPI_HTTP_HEADERS_FAILED. ]*/
+                result = HTTPAPI_SEND_REQUEST_FAILED;
+            }
+            else
+            {
+                /*Codes_SRS_HTTPAPI_COMPACT_21_083: [ The HTTPAPI_ExecuteRequest shall wait, at least, 100 milliseconds between retries. ]*/
+                ThreadAPI_Sleep(RETRY_INTERVAL_IN_MICROSECONDS);
+            }
+        }
     }
 
     return result;
@@ -707,16 +832,11 @@ static HTTPAPI_RESULT SendHeadsToXIO(HTTP_HANDLE_DATA* http_instance, HTTPAPI_RE
         /*Codes_SRS_HTTPAPI_COMPACT_21_027: [ If the HTTPAPI_ExecuteRequest cannot create a buffer to send the request, it shall not send any request and return HTTPAPI_STRING_PROCESSING_ERROR. ]*/
         result = HTTPAPI_STRING_PROCESSING_ERROR;
     }
-    else if (xio_send(http_instance->xio_handle, (const unsigned char*)buf, strlen(buf), NULL, NULL) != 0)
-    {
         /*Codes_SRS_HTTPAPI_COMPACT_21_028: [ If the HTTPAPI_ExecuteRequest cannot send the request header, it shall return HTTPAPI_HTTP_HEADERS_FAILED. ]*/
-        result = HTTPAPI_SEND_REQUEST_FAILED;
-    }
-    else
+    else if ((result = conn_send_all(http_instance, (const unsigned char*)buf, strlen(buf))) == HTTPAPI_OK)
     {
         //Send default headers
         /*Codes_SRS_HTTPAPI_COMPACT_21_033: [ If the whole process succeed, the HTTPAPI_ExecuteRequest shall retur HTTPAPI_OK. ]*/
-        result = HTTPAPI_OK;
         for (size_t i = 0; ((i < headersCount) && (result == HTTPAPI_OK)); i++)
         {
             char* header;
@@ -727,25 +847,18 @@ static HTTPAPI_RESULT SendHeadsToXIO(HTTP_HANDLE_DATA* http_instance, HTTPAPI_RE
             }
             else
             {
-                if (xio_send(http_instance->xio_handle, (const unsigned char*)header, strlen(header), NULL, NULL) != 0)
+                if ((result = conn_send_all(http_instance, (const unsigned char*)header, strlen(header))) == HTTPAPI_OK)
                 {
-                    /*Codes_SRS_HTTPAPI_COMPACT_21_028: [ If the HTTPAPI_ExecuteRequest cannot send the request header, it shall return HTTPAPI_HTTP_HEADERS_FAILED. ]*/
-                    result = HTTPAPI_SEND_REQUEST_FAILED;
-                }
-                if (xio_send(http_instance->xio_handle, (const unsigned char*)"\r\n", (size_t)2, NULL, NULL) != 0)
-                {
-                    /*Codes_SRS_HTTPAPI_COMPACT_21_028: [ If the HTTPAPI_ExecuteRequest cannot send the request header, it shall return HTTPAPI_HTTP_HEADERS_FAILED. ]*/
-                    result = HTTPAPI_SEND_REQUEST_FAILED;
+                    result = conn_send_all(http_instance, (const unsigned char*)"\r\n", (size_t)2);
                 }
                 free(header);
             }
         }
 
         //Close headers
-        if (xio_send(http_instance->xio_handle, (const unsigned char*)"\r\n", (size_t)2, NULL, NULL) != 0)
+        if (result == HTTPAPI_OK)
         {
-            /*Codes_SRS_HTTPAPI_COMPACT_21_028: [ If the HTTPAPI_ExecuteRequest cannot send the request header, it shall return HTTPAPI_HTTP_HEADERS_FAILED. ]*/
-            result = HTTPAPI_SEND_REQUEST_FAILED;
+            result = conn_send_all(http_instance, (const unsigned char*)"\r\n", (size_t)2);
         }
     }
     return result;
@@ -761,16 +874,7 @@ static HTTPAPI_RESULT SendContentToXIO(HTTP_HANDLE_DATA* http_instance, const un
     if (content && contentLength > 0)
     {
         /*Codes_SRS_HTTPAPI_COMPACT_21_044: [ If the content is not NULL, the number of bytes in the content shall be provided in contentLength parameter. ]*/
-        if (xio_send(http_instance->xio_handle, content, contentLength, NULL, NULL) != 0)
-        {
-            /*Codes_SRS_HTTPAPI_COMPACT_21_029: [ If the HTTPAPI_ExecuteRequest cannot send the buffer with the request, it shall return HTTPAPI_SEND_REQUEST_FAILED. ]*/
-            result = HTTPAPI_SEND_REQUEST_FAILED;
-        }
-        else
-        {
-            /*Codes_SRS_HTTPAPI_COMPACT_21_033: [ If the whole process succeed, the HTTPAPI_ExecuteRequest shall retur HTTPAPI_OK. ]*/
-            result = HTTPAPI_OK;
-        }
+        result = conn_send_all(http_instance, content, contentLength);
     }
     else
     {
@@ -788,11 +892,13 @@ static HTTPAPI_RESULT RecieveHeaderFromXIO(HTTP_HANDLE_DATA* http_instance, unsi
     char    buf[TEMP_BUFFER_SIZE];
     int     ret;
 
+    http_instance->is_io_error = 0;
+
     //Receive response
     if (readLine(http_instance, buf, TEMP_BUFFER_SIZE) < 0)
     {
         /*Codes_SRS_HTTPAPI_COMPACT_21_032: [ If the HTTPAPI_ExecuteRequest cannot read the message with the request result, it shall return HTTPAPI_READ_DATA_FAILED. ]*/
-        /*Codes_SRS_HTTPAPI_COMPACT_21_077: [ If the HTTPAPI_ExecuteRequest retries 20 times to receive the message without success, it shall fail and return HTTPAPI_READ_DATA_FAILED. ]*/
+        /*Codes_SRS_HTTPAPI_COMPACT_21_082: [ If the HTTPAPI_ExecuteRequest retries 20 seconds to receive the message without success, it shall fail and return HTTPAPI_READ_DATA_FAILED. ]*/
         result = HTTPAPI_READ_DATA_FAILED;
     }
     //Parse HTTP response
@@ -833,11 +939,13 @@ static HTTPAPI_RESULT RecieveContentInfoFromXIO(HTTP_HANDLE_DATA* http_instance,
     const char* Chunked = "chunked";
     const int ChunkedSize = 8;
 
+    http_instance->is_io_error = 0;
+
     //Read HTTP response headers
     if (readLine(http_instance, buf, sizeof(buf)) < 0)
     {
         /*Codes_SRS_HTTPAPI_COMPACT_21_032: [ If the HTTPAPI_ExecuteRequest cannot read the message with the request result, it shall return HTTPAPI_READ_DATA_FAILED. ]*/
-        /*Codes_SRS_HTTPAPI_COMPACT_21_077: [ If the HTTPAPI_ExecuteRequest retries 20 times to receive the message without success, it shall fail and return HTTPAPI_READ_DATA_FAILED. ]*/
+        /*Codes_SRS_HTTPAPI_COMPACT_21_082: [ If the HTTPAPI_ExecuteRequest retries 20 seconds to receive the message without success, it shall fail and return HTTPAPI_READ_DATA_FAILED. ]*/
         result = HTTPAPI_READ_DATA_FAILED;
     }
     else
@@ -885,7 +993,7 @@ static HTTPAPI_RESULT RecieveContentInfoFromXIO(HTTP_HANDLE_DATA* http_instance,
                 if (readLine(http_instance, buf, sizeof(buf)) < 0)
                 {
                     /*Codes_SRS_HTTPAPI_COMPACT_21_032: [ If the HTTPAPI_ExecuteRequest cannot read the message with the request result, it shall return HTTPAPI_READ_DATA_FAILED. ]*/
-                    /*Codes_SRS_HTTPAPI_COMPACT_21_077: [ If the HTTPAPI_ExecuteRequest retries 20 times to receive the message without success, it shall fail and return HTTPAPI_READ_DATA_FAILED. ]*/
+                    /*Codes_SRS_HTTPAPI_COMPACT_21_082: [ If the HTTPAPI_ExecuteRequest retries 20 seconds to receive the message without success, it shall fail and return HTTPAPI_READ_DATA_FAILED. ]*/
                     result = HTTPAPI_READ_DATA_FAILED;
                 }
             }
@@ -900,6 +1008,8 @@ static HTTPAPI_RESULT ReadHTTPResponseBodyFromXIO(HTTP_HANDLE_DATA* http_instanc
     HTTPAPI_RESULT result;
     char    buf[TEMP_BUFFER_SIZE];
     const unsigned char* receivedContent;
+
+    http_instance->is_io_error = 0;
 
     //Read HTTP response body
     if (!chunked)
@@ -936,7 +1046,7 @@ static HTTPAPI_RESULT ReadHTTPResponseBodyFromXIO(HTTP_HANDLE_DATA* http_instanc
                 /*Codes_SRS_HTTPAPI_COMPACT_21_051: [ If the responseContent is NULL, the HTTPAPI_ExecuteRequest shall ignore any content in the response. ]*/
                 if (skipN(http_instance, bodyLength) < 0)
                 {
-                    /*Codes_SRS_HTTPAPI_COMPACT_21_077: [ If the HTTPAPI_ExecuteRequest retries 20 times to receive the message without success, it shall fail and return HTTPAPI_READ_DATA_FAILED. ]*/
+                    /*Codes_SRS_HTTPAPI_COMPACT_21_082: [ If the HTTPAPI_ExecuteRequest retries 20 seconds to receive the message without success, it shall fail and return HTTPAPI_READ_DATA_FAILED. ]*/
                     result = HTTPAPI_READ_DATA_FAILED;
                 }
                 else
@@ -962,7 +1072,7 @@ static HTTPAPI_RESULT ReadHTTPResponseBodyFromXIO(HTTP_HANDLE_DATA* http_instanc
             if (readLine(http_instance, buf, sizeof(buf)) < 0)    // read [length in hex]/r/n
             {
                 /*Codes_SRS_HTTPAPI_COMPACT_21_032: [ If the HTTPAPI_ExecuteRequest cannot read the message with the request result, it shall return HTTPAPI_READ_DATA_FAILED. ]*/
-                /*Codes_SRS_HTTPAPI_COMPACT_21_077: [ If the HTTPAPI_ExecuteRequest retries 20 times to receive the message without success, it shall fail and return HTTPAPI_READ_DATA_FAILED. ]*/
+                /*Codes_SRS_HTTPAPI_COMPACT_21_082: [ If the HTTPAPI_ExecuteRequest retries 20 seconds to receive the message without success, it shall fail and return HTTPAPI_READ_DATA_FAILED. ]*/
                 result = HTTPAPI_READ_DATA_FAILED;
             }
             else if (ParseStringToHexadecimal(buf, &chunkSize) != 1)     // chunkSize is length of next line (/r/n is not counted)
@@ -1011,7 +1121,7 @@ static HTTPAPI_RESULT ReadHTTPResponseBodyFromXIO(HTTP_HANDLE_DATA* http_instanc
                     /*Codes_SRS_HTTPAPI_COMPACT_21_051: [ If the responseContent is NULL, the HTTPAPI_ExecuteRequest shall ignore any content in the response. ]*/
                     if (skipN(http_instance, chunkSize) < 0)
                     {
-                        /*Codes_SRS_HTTPAPI_COMPACT_21_077: [ If the HTTPAPI_ExecuteRequest retries 20 times to receive the message without success, it shall fail and return HTTPAPI_READ_DATA_FAILED. ]*/
+                        /*Codes_SRS_HTTPAPI_COMPACT_21_082: [ If the HTTPAPI_ExecuteRequest retries 20 seconds to receive the message without success, it shall fail and return HTTPAPI_READ_DATA_FAILED. ]*/
                         result = HTTPAPI_READ_DATA_FAILED;
                     }
                 }
@@ -1153,13 +1263,13 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
         http_instance->certificate = (char*)malloc((len + 1) * sizeof(char));
         if (http_instance->certificate == NULL)
         {
-            /*SRS_HTTPAPI_COMPACT_21_062: [ If any memory allocation get fail, the HTTPAPI_SetOption shall return HTTPAPI_ALLOC_FAILED. ]*/
+            /*Codes_SRS_HTTPAPI_COMPACT_21_062: [ If any memory allocation get fail, the HTTPAPI_SetOption shall return HTTPAPI_ALLOC_FAILED. ]*/
             result = HTTPAPI_ALLOC_FAILED;
             LogInfo("unable to allocate memory for the certificate in HTTPAPI_SetOption");
         }
         else
         {
-            /*SRS_HTTPAPI_COMPACT_21_064: [ If the HTTPAPI_SetOption get success setting the option, it shall return HTTPAPI_OK. ]*/
+            /*Codes_SRS_HTTPAPI_COMPACT_21_064: [ If the HTTPAPI_SetOption get success setting the option, it shall return HTTPAPI_OK. ]*/
             (void)strcpy(http_instance->certificate, (const char*)value);
             result = HTTPAPI_OK;
         }
@@ -1175,13 +1285,13 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
         http_instance->x509ClientCertificate = (char*)malloc((len + 1) * sizeof(char));
         if (http_instance->x509ClientCertificate == NULL)
         {
-            /*SRS_HTTPAPI_COMPACT_21_062: [ If any memory allocation get fail, the HTTPAPI_SetOption shall return HTTPAPI_ALLOC_FAILED. ]*/
+            /*Codes_SRS_HTTPAPI_COMPACT_21_062: [ If any memory allocation get fail, the HTTPAPI_SetOption shall return HTTPAPI_ALLOC_FAILED. ]*/
             result = HTTPAPI_ALLOC_FAILED;
             LogInfo("unable to allocate memory for the client certificate in HTTPAPI_SetOption");
         }
         else
         {
-            /*SRS_HTTPAPI_COMPACT_21_064: [ If the HTTPAPI_SetOption get success setting the option, it shall return HTTPAPI_OK. ]*/
+            /*Codes_SRS_HTTPAPI_COMPACT_21_064: [ If the HTTPAPI_SetOption get success setting the option, it shall return HTTPAPI_OK. ]*/
             (void)strcpy(http_instance->x509ClientCertificate, (const char*)value);
             result = HTTPAPI_OK;
         }
@@ -1197,13 +1307,13 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
         http_instance->x509ClientPrivateKey = (char*)malloc((len + 1) * sizeof(char));
         if (http_instance->x509ClientPrivateKey == NULL)
         {
-            /*SRS_HTTPAPI_COMPACT_21_062: [ If any memory allocation get fail, the HTTPAPI_SetOption shall return HTTPAPI_ALLOC_FAILED. ]*/
+            /*Codes_SRS_HTTPAPI_COMPACT_21_062: [ If any memory allocation get fail, the HTTPAPI_SetOption shall return HTTPAPI_ALLOC_FAILED. ]*/
             result = HTTPAPI_ALLOC_FAILED;
             LogInfo("unable to allocate memory for the client private key in HTTPAPI_SetOption");
         }
         else
         {
-            /*SRS_HTTPAPI_COMPACT_21_064: [ If the HTTPAPI_SetOption get success setting the option, it shall return HTTPAPI_OK. ]*/
+            /*Codes_SRS_HTTPAPI_COMPACT_21_064: [ If the HTTPAPI_SetOption get success setting the option, it shall return HTTPAPI_OK. ]*/
             (void)strcpy(http_instance->x509ClientPrivateKey, (const char*)value);
             result = HTTPAPI_OK;
         }
