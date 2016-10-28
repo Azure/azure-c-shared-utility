@@ -19,7 +19,8 @@
 static double getExpiryValue(const char* expiryASCII)
 {
     double value = 0;
-    for (size_t i = 0; expiryASCII[i] != '\0'; i++)
+    size_t i = 0;
+    for (i = 0; expiryASCII[i] != '\0'; i++)
     {
         if (expiryASCII[i] >= '0' && expiryASCII[i] <= '9')
         {
@@ -52,7 +53,8 @@ bool SASToken_Validate(STRING_HANDLE sasToken)
         int srStart = -1, srStop = -1;
         int sigStart = -1, sigStop = -1;
         int tokenLength = (int) STRING_length(sasToken);
-        for (int i = 0; i < tokenLength; i++)
+        int i ;
+        for (i = 0; i < tokenLength; i++)
         {
             if (sasTokenArray[i] == 's' && sasTokenArray[i + 1] == 'e' && sasTokenArray[i + 2] == '=') // Look for se=
             {
@@ -161,13 +163,14 @@ bool SASToken_Validate(STRING_HANDLE sasToken)
                 }
                 else
                 {
-                    for (int i = seStart; i < seStop; i++)
+                    double expiry;
+                    for (i = seStart; i < seStop; i++)
                     {
                         expiryASCII[i - seStart] = sasTokenArray[i];
                     }
                     expiryASCII[seStop - seStart] = '\0';
 
-                    double expiry = getExpiryValue(expiryASCII);
+                    expiry = getExpiryValue(expiryASCII);
                     /*Codes_SRS_SASTOKEN_25_029: [**SASToken_validate shall check for expiry time from token and if token has expired then would return false **]***/
                     if (expiry <= 0)
                     {
