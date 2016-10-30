@@ -41,6 +41,10 @@ TICK_COUNTER_HANDLE tickcounter_create(void)
             result->current_ms = 0;
         }
     }
+    else
+    {
+        LogError("tickcounter failed: result is NULL.");
+    }
     return result;
 }
 

@@ -233,21 +233,10 @@ static const IO_INTERFACE_DESCRIPTION tlsio_openssl_interface_description =
 
 static LOCK_HANDLE * openssl_locks = NULL;
 
-
-static void openssl_lock_unlock_helper(LOCK_HANDLE lock, int lock_mode, const char* file, int line)
-{
-
-}
-
 static struct CRYPTO_dynlock_value* openssl_dynamic_locks_create_cb(const char* file, int line)
 {
     struct CRYPTO_dynlock_value* result;
     return result;
-}
-
-static void openssl_dynamic_locks_lock_unlock_cb(int lock_mode, struct CRYPTO_dynlock_value* dynlock_value, const char* file, int line)
-{
-    openssl_lock_unlock_helper(dynlock_value->lock, lock_mode, file, line);
 }
 
 static void openssl_dynamic_locks_destroy_cb(struct CRYPTO_dynlock_value* dynlock_value, const char* file, int line)
@@ -291,18 +280,6 @@ static void openssl_static_locks_uninstall(void)
     }
 }
 
-static void indicate_error(TLS_IO_INSTANCE* tls_io_instance)
-{
-    if (tls_io_instance->on_io_error == NULL)
-    {
-        LogError("NULL on_io_error.");
-    }
-    else
-    {
-        tls_io_instance->on_io_error(tls_io_instance->on_io_error_context);
-    }
-}
-
 static void indicate_open_complete(TLS_IO_INSTANCE* tls_io_instance, IO_OPEN_RESULT open_result)
 {
     if (tls_io_instance->on_io_open_complete == NULL)
@@ -316,7 +293,7 @@ static void indicate_open_complete(TLS_IO_INSTANCE* tls_io_instance, IO_OPEN_RES
 }
 
 
-static int httpconn_net_errno(int fd)
+static int lwip_net_errno(int fd)
 {
     int sock_errno = 0;
     u32_t optlen = sizeof(sock_errno);
@@ -324,7 +301,7 @@ static int httpconn_net_errno(int fd)
     return sock_errno;
 }
 
-static void httpconn_set_non_block(int fd) 
+static void lwip_set_non_block(int fd) 
 {
   int flags = -1;
   int error = 0;
@@ -332,7 +309,7 @@ static void httpconn_set_non_block(int fd)
   while(1){
       flags = fcntl(fd, F_GETFL, 0);
       if (flags == -1){
-          error = httpconn_net_errno(fd);
+          error = lwip_net_errno(fd);
           if (error != EINTR){
               break;
           }
@@ -344,7 +321,7 @@ static void httpconn_set_non_block(int fd)
   while(1){
       flags = fcntl(fd, F_SETFL, flags | O_NONBLOCK);
       if (flags == -1) {
-          error = httpconn_net_errno(fd);
+          error = lwip_net_errno(fd);
           if (error != EINTR){
               break;
           }
@@ -371,59 +348,63 @@ LOCAL void openssl_thread_LWIP_CONNECTION(void *p)
 
     TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)p;
 
-    os_printf("OpenSSL thread start...\n");
+    LogInfo("OpenSSL thread start...\n");
 
     do {
         ret = netconn_gethostbyname(tls_io_instance->hostname, &target_ip);
     } while(ret);
-    os_printf("get target IP is %d.%d.%d.%d\n", (unsigned char)((target_ip.addr & 0x000000ff) >> 0),
+    LogInfo("get target IP is %d.%d.%d.%d\n", (unsigned char)((target_ip.addr & 0x000000ff) >> 0),
                                                 (unsigned char)((target_ip.addr & 0x0000ff00) >> 8),
                                                 (unsigned char)((target_ip.addr & 0x00ff0000) >> 16),
                                                 (unsigned char)((target_ip.addr & 0xff000000) >> 24));
 
-    os_printf("create socket ......");
+    LogInfo("create socket ......");
     socket = socket(AF_INET, SOCK_STREAM, 0);
     if (socket < 0) {
-        os_printf("failed\n");
-        goto failed3;
+        LogError("create socket failed\n");
+        return;
     }
-    os_printf("OK\n");
+    LogInfo("create socket OK\n");
 
-    os_printf("bind socket ......");
+    LogInfo("bind socket ......");
     memset(&sock_addr, 0, sizeof(sock_addr));
     sock_addr.sin_family = AF_INET;
     sock_addr.sin_addr.s_addr = 0;
     sock_addr.sin_port = htons(OPENSSL_LOCAL_TCP_PORT);
     ret = bind(socket, (struct sockaddr*)&sock_addr, sizeof(sock_addr));
     if (ret) {
-        os_printf("failed\n");
-        goto failed3;
+        LogError("bind socket failed\n");
+        return;
     }
-    os_printf("OK\n");
+    LogInfo("bind socket OK\n");
 
-    os_printf("socket connect to remote ......");
+    LogInfo("socket connect to remote ......");
     memset(&sock_addr, 0, sizeof(sock_addr));
     sock_addr.sin_family = AF_INET;
     sock_addr.sin_addr.s_addr = target_ip.addr;
     sock_addr.sin_port = htons(tls_io_instance->port);
 
-    httpconn_set_non_block(socket);
+    lwip_set_non_block(socket);
 
     ret = connect(socket, (struct sockaddr*)&sock_addr, sizeof(sock_addr));
     if (ret == -1) {
-        ret = httpconn_net_errno(socket);
+        ret = lwip_net_errno(socket);
         if (ret != EINPROGRESS){
-            os_printf("failed %s\n", tls_io_instance->hostname);
-            goto failed3;
+            LogError("socket connect failed %s\n", tls_io_instance->hostname);
+            return;
         } else{
-            os_printf("correct\n");
+            LogInfo("socket connect in progress\n");
         }
     }
-    os_printf("OK\n");
+    LogInfo("socket connect OK\n");
 
     char recv_buf[128];
-    int recv_bytes = sizeof(recv_buf);
-    for(;;){
+    int recv_bytes = (int)sizeof(recv_buf);
+    int retry = 0;
+
+    while (retry < 10){
+        LogInfo("lwip select retry #: %d\n", retry);
+
         FD_ZERO(&readset);
         FD_SET(socket, &readset);
     
@@ -444,28 +425,30 @@ LOCAL void openssl_thread_LWIP_CONNECTION(void *p)
                 break;
             }
         }else{
-            os_printf("lwip_select %d\n", ret);
+            LogInfo("lwip_select returned: %d\n", ret);
         }
+
+        retry++;
     }
 
     int s = socket;
     ctx = SSL_CTX_new(TLSv1_client_method());
     if (!ctx) {
-        os_printf("failed\n");
-
+        LogError("create new SSL CTX failed\n");
+        return;
     }
-    os_printf("OK\n");
+    LogInfo("create new SSL CTX OK\n");
     
-    os_printf("SSL set fragment\n");
+    LogInfo("SSL set fragment\n");
     ret = SSL_set_fragment(ctx, OPENSSL_FRAGMENT_SIZE);
 
-    os_printf("SSL new \n");
+    LogInfo("SSL new... \n");
     ssl = SSL_new(ctx);
 
-    os_printf("SSL set fd\n");
+    LogInfo("SSL set fd\n");
     SSL_set_fd(ssl, s);
 
-    os_printf("SSL select\n");
+    LogInfo("SSL connect... \n");
 
     while (-1 == SSL_connect(ssl))
     {  
@@ -479,24 +462,19 @@ LOCAL void openssl_thread_LWIP_CONNECTION(void *p)
         ret = lwip_select(s + 1, &readset, &writeset, &errset, NULL);
     }
 
-    printf("SSL ok\n");
+    LogInfo("SSL connect ok\n");
 
     tls_io_instance->ssl = ssl;
     tls_io_instance->ssl_context = ctx;
-
-    
-    failed3:
-        //close(socket);
-        return ;
 }
 
 static int send_handshake_bytes(TLS_IO_INSTANCE* tls_io_instance)
 {
-    system_print_meminfo();
-    LogError("free heap size %d", system_get_free_heap_size());
+    //system_print_meminfo(); // This is useful for debugging purpose.
+    //LogInfo("free heap size %d", system_get_free_heap_size()); // This is useful for debugging purpose.
     openssl_thread_LWIP_CONNECTION(tls_io_instance);
     tls_io_instance->tlsio_state = TLSIO_STATE_OPEN;
-    indicate_open_complete(tls_io_instance, IO_OPEN_OK);
+    indicate_open_complete(tls_io_instance, IO_OPEN_OK);    
     int result = 0;
 
     return result;
@@ -558,27 +536,6 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
     }
 }
 
-static void on_underlying_io_error(void* context)
-{
-    TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)context;
-
-    switch (tls_io_instance->tlsio_state)
-    {
-        default:
-            break;
-
-        case TLSIO_STATE_OPENING_UNDERLYING_IO:
-        case TLSIO_STATE_IN_HANDSHAKE:
-            tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
-            indicate_open_complete(tls_io_instance, IO_OPEN_ERROR);
-            break;
-
-        case TLSIO_STATE_OPEN:
-            indicate_error(tls_io_instance);
-            break;
-    }
-}
-
 static int decode_ssl_received_bytes(TLS_IO_INSTANCE* tls_io_instance)
 {
     int result = 0;
@@ -586,7 +543,7 @@ static int decode_ssl_received_bytes(TLS_IO_INSTANCE* tls_io_instance)
 
     int rcv_bytes = 1;
     rcv_bytes = SSL_read(tls_io_instance->ssl, buffer, sizeof(buffer));
-    os_printf("ssl recv bytes: %d\n", rcv_bytes);
+    LogInfo("decode ssl recv bytes: %d\n", rcv_bytes);
     if (rcv_bytes > 0)
     {
         if (tls_io_instance->on_bytes_received == NULL)
@@ -647,7 +604,7 @@ CONCRETE_IO_HANDLE tlsio_openssl_create(void* io_create_parameters)
     }
     else
     {
-        result = malloc(sizeof(TLS_IO_INSTANCE));
+        result = (TLS_IO_INSTANCE*) malloc(sizeof(TLS_IO_INSTANCE));
         if (result == NULL)
         {
             LogError("Failed allocating TLSIO instance.");
@@ -680,7 +637,7 @@ CONCRETE_IO_HANDLE tlsio_openssl_create(void* io_create_parameters)
         }
     }
 
-    return result;
+    return (CONCRETE_IO_HANDLE)result;
 }
 
 void tlsio_openssl_destroy(CONCRETE_IO_HANDLE tls_io)
@@ -697,9 +654,18 @@ void tlsio_openssl_destroy(CONCRETE_IO_HANDLE tls_io)
             free(tls_io_instance->certificate);
             tls_io_instance->certificate = NULL;
         }
-        free(tls_io_instance->hostname);
-        free((void*)tls_io_instance->x509certificate);
-        free((void*)tls_io_instance->x509privatekey);
+        if (tls_io_instance->hostname != NULL)
+        {
+            free(tls_io_instance->hostname);
+        }
+        if (tls_io_instance->x509certificate != NULL)
+        {
+            free((void*)tls_io_instance->x509certificate);
+        }
+        if (tls_io_instance->x509privatekey != NULL)
+        {
+            free((void*)tls_io_instance->x509privatekey);
+        }
         xio_destroy(tls_io_instance->underlying_io);
         free(tls_io);
     }
@@ -817,21 +783,31 @@ int tlsio_openssl_send(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t siz
         }
         else
         {
-
             int total_write = 0;
             int res = 0;
-            
-            while(size > 0){
+            int retry = 0;
+
+            while(size > 0 && retry < 500){
                 res = SSL_write(tls_io_instance->ssl, ((uint8*)buffer)+total_write, size);
-                LogError("SSL_write res: %d, size: %d", res, size);
+                LogInfo("SSL_write res: %d, size: %d, retry: %d", res, size, retry);
                 if(res > 0){
                     total_write += res;
                     size = size - res;
                 }
+                else
+                {
+                    retry++;
+                }
             }
 
-            result = 0;
-
+            if (retry >= 500)
+            {
+                result = 1;
+            }
+            else
+            {
+                result = 0;
+            }
         }
     }
 
@@ -847,7 +823,6 @@ void tlsio_openssl_dowork(CONCRETE_IO_HANDLE tls_io)
     else
     {
         TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tls_io;
-        LogError("dowork is called state: %d", (int)tls_io_instance->tlsio_state);
 
         decode_ssl_received_bytes(tls_io_instance);
     }
