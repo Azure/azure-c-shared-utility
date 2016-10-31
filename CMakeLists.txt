@@ -487,11 +487,11 @@ endfunction(build_test_artifacts)
 function(c_windows_unittests_add_dll whatIsBuilding folder)
     link_directories(${whatIsBuilding}_dll $ENV{VCInstallDir}UnitTest/lib)
 
+    add_library(${whatIsBuilding}_testsonly_lib STATIC
+        ${${whatIsBuilding}_test_files}
+    )
     SET(VAR 1)
     foreach(file ${${whatIsBuilding}_test_files})
-        add_library(${whatIsBuilding}_testsonly_lib STATIC
-            ${file}
-        )
         set_source_files_properties(${file} PROPERTIES COMPILE_FLAGS -DCPPUNITTEST_SYMBOL=some_symbol_for_cppunittest_${VAR})
         MATH(EXPR VAR "${VAR}+1")
     endforeach()
@@ -544,14 +544,15 @@ function(c_windows_unittests_add_dll whatIsBuilding folder)
 
     endforeach()
 
+    SET(SPACES " ")
     SET(VAR 1)
     foreach(file ${${whatIsBuilding}_test_files})
 
         # for x64 the underscore is not needed
         if (ARCHITECTURE STREQUAL "x86_64")
-            set_property(TARGET ${whatIsBuilding}_dll APPEND PROPERTY LINK_FLAGS /INCLUDE:"some_symbol_for_cppunittest_${VAR}")
+            set_property(TARGET ${whatIsBuilding}_dll APPEND_STRING  PROPERTY LINK_FLAGS ${SPACES}/INCLUDE:"some_symbol_for_cppunittest_${VAR}")
         else()
-            set_property(TARGET ${whatIsBuilding}_dll APPEND PROPERTY LINK_FLAGS /INCLUDE:"_some_symbol_for_cppunittest_${VAR}")
+            set_property(TARGET ${whatIsBuilding}_dll APPEND_STRING  PROPERTY LINK_FLAGS ${SPACES}/INCLUDE:"_some_symbol_for_cppunittest_${VAR}")
         endif()
         MATH(EXPR VAR "${VAR}+1")
     endforeach()
