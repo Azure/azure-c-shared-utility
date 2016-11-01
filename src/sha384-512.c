@@ -52,6 +52,7 @@
 #include "azure_c_shared_utility/sha-private.h"
 
 #ifdef USE_32BIT_ONLY
+#error IoTHubClient does not support USE_32BIT_ONLY flag
 /*
 * Define 64-bit arithmetic in terms of 32-bit arithmetic.
 * Each 64-bit number is represented in a 2-word array.
