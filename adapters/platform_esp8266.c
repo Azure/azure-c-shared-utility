@@ -21,7 +21,6 @@ int platform_init(void)
         ts = sntp_get_current_timestamp();
         printf("%s\n", sntp_get_real_time(ts));
     }
-    tlsio_openssl_init();
     return 0;
 }
 

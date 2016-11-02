@@ -29,7 +29,7 @@
 typedef enum TLSIO_STATE_TAG
 {
     TLSIO_STATE_NOT_OPEN,
-    TLSIO_STATE_OPENING_UNDERLYING_IO,
+    TLSIO_STATE_OPENING,
     TLSIO_STATE_IN_HANDSHAKE,
     TLSIO_STATE_OPEN,
     TLSIO_STATE_CLOSING,
@@ -38,7 +38,6 @@ typedef enum TLSIO_STATE_TAG
 
 typedef struct TLS_IO_INSTANCE_TAG
 {
-    XIO_HANDLE underlying_io;
     ON_BYTES_RECEIVED on_bytes_received;
     ON_IO_OPEN_COMPLETE on_io_open_complete;
     ON_IO_CLOSE_COMPLETE on_io_close_complete;
@@ -481,61 +480,6 @@ static int send_handshake_bytes(TLS_IO_INSTANCE* tls_io_instance)
 }
 
 
-
-static void on_underlying_io_close_complete(void* context)
-{
-    TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)context;   
-    switch (tls_io_instance->tlsio_state)
-    {
-        default:
-        case TLSIO_STATE_NOT_OPEN:
-        case TLSIO_STATE_OPEN:
-            break;
-
-        case TLSIO_STATE_OPENING_UNDERLYING_IO:
-        case TLSIO_STATE_IN_HANDSHAKE:
-            tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
-            indicate_open_complete(tls_io_instance, IO_OPEN_ERROR);
-            break;
-
-        case TLSIO_STATE_CLOSING:
-            tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
-
-            if (tls_io_instance->on_io_close_complete != NULL)
-            {
-                tls_io_instance->on_io_close_complete(tls_io_instance->on_io_close_complete_context);
-            }
-            break;
-    }
-}
-
-static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_result)
-{
-    TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)context;
-
-    if (tls_io_instance->tlsio_state == TLSIO_STATE_OPENING_UNDERLYING_IO)
-    {
-        if (open_result == IO_OPEN_OK)
-        {
-            tls_io_instance->tlsio_state = TLSIO_STATE_IN_HANDSHAKE;
-
-            if (send_handshake_bytes(tls_io_instance) != 0)
-            {
-                if (xio_close(tls_io_instance->underlying_io, on_underlying_io_close_complete, tls_io_instance) != 0)
-                {
-                    indicate_open_complete(tls_io_instance, IO_OPEN_ERROR);
-                    LogError("Error in xio_close.");
-                }
-            }
-        }
-        else
-        {
-            indicate_open_complete(tls_io_instance, IO_OPEN_ERROR);
-            LogError("Invalid tlsio_state. Expected state is TLSIO_STATE_OPENING_UNDERLYING_IO.");
-        }
-    }
-}
-
 static int decode_ssl_received_bytes(TLS_IO_INSTANCE* tls_io_instance)
 {
     int result = 0;
@@ -577,19 +521,6 @@ static int add_certificate_to_store(TLS_IO_INSTANCE* tls_io_instance, const char
 static int create_openssl_instance(TLS_IO_INSTANCE* tlsInstance)
 {
     return 0;
-}
-
-int tlsio_openssl_init(void)
-{
-    return 0;
-}
-
-void tlsio_openssl_deinit(void)
-{
-    openssl_dynamic_locks_uninstall();
-    openssl_static_locks_uninstall();
-
-    ERR_free_strings();
 }
 
 CONCRETE_IO_HANDLE tlsio_openssl_create(void* io_create_parameters)
@@ -666,7 +597,6 @@ void tlsio_openssl_destroy(CONCRETE_IO_HANDLE tls_io)
         {
             free((void*)tls_io_instance->x509privatekey);
         }
-        xio_destroy(tls_io_instance->underlying_io);
         free(tls_io);
     }
 }
@@ -702,7 +632,7 @@ int tlsio_openssl_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_open
             tls_io_instance->on_io_error = on_io_error;
             tls_io_instance->on_io_error_context = on_io_error_context;
 
-            tls_io_instance->tlsio_state = TLSIO_STATE_OPENING_UNDERLYING_IO;
+            tls_io_instance->tlsio_state = TLSIO_STATE_OPENING;
 
             if (create_openssl_instance(tls_io_instance) != 0)
             {
@@ -746,17 +676,8 @@ int tlsio_openssl_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_cl
             tls_io_instance->on_io_close_complete = on_io_close_complete;
             tls_io_instance->on_io_close_complete_context = callback_context;
 
-            if (xio_close(tls_io_instance->underlying_io, on_underlying_io_close_complete, tls_io_instance) != 0)
-            {
-                result = __LINE__;
-                tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
-                LogError("Error in xio_close.");
-            }
-            else
-            {
-                destroy_openssl_instance(tls_io_instance);
-                result = 0;
-            }
+            destroy_openssl_instance(tls_io_instance);
+            result = 0;
         }
     }
 
@@ -832,99 +753,6 @@ void tlsio_openssl_dowork(CONCRETE_IO_HANDLE tls_io)
 int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, const void* value)
 {
     int result;
-
-    if (tls_io == NULL || optionName == NULL)
-    {
-        result = __LINE__;
-    }
-    else
-    {
-        TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tls_io;
-
-        if (strcmp("TrustedCerts", optionName) == 0)
-        {
-            const char* cert = (const char*)value;
-
-            if (tls_io_instance->certificate != NULL)
-            {
-                // Free the memory if it has been previously allocated
-                free(tls_io_instance->certificate);
-            }
-
-            // Store the certificate
-            size_t len = strlen(cert);
-            tls_io_instance->certificate = malloc(len+1);
-            if (tls_io_instance->certificate == NULL)
-            {
-                result = __LINE__;
-            }
-            else
-            {
-                strcpy(tls_io_instance->certificate, cert);
-                result = 0;
-            }
-
-            // If we're previously connected then add the cert to the context
-            if (tls_io_instance->ssl_context != NULL)
-            {
-                result = add_certificate_to_store(tls_io_instance, cert);
-            }
-        }
-        else if (strcmp("x509certificate", optionName) == 0)
-        {
-            if (tls_io_instance->x509certificate != NULL)
-            {
-                LogError("unable to set x509 options more than once");
-                result = __LINE__;
-            }
-            else
-            {   
-                /*let's make a copy of this option*/
-                if (mallocAndStrcpy_s((char**)&tls_io_instance->x509certificate, value) != 0)
-                {
-                    LogError("unable to mallocAndStrcpy_s");
-                    result = __LINE__;
-                }
-                else
-                {
-                    result = 0;
-                }
-            }
-        }
-        else if (strcmp("x509privatekey", optionName) == 0)
-        {
-            if (tls_io_instance->x509privatekey != NULL)
-            {
-                LogError("unable to set more than once x509 options");
-                result = __LINE__;
-            }
-            else
-            {
-                /*let's make a copy of this option*/
-                if (mallocAndStrcpy_s((char**)&tls_io_instance->x509privatekey, value) != 0)
-                {
-                    LogError("unable to mallocAndStrcpy_s");
-                    result = __LINE__;
-                }
-                else
-                {
-                    result = 0;
-                }
-            }
-        }
-
-        else
-        {
-            if (tls_io_instance->underlying_io == NULL)
-            {
-                result = __LINE__;
-            }
-            else
-            {
-                result = xio_setoption(tls_io_instance->underlying_io, optionName, value);
-            }
-        }
-    }
 
     return result;
 }
