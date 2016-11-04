@@ -30,7 +30,8 @@ if (WINCE)
 ENDIF()
 
 #the following variables are project-wide and can be used with cmake-gui
-option(skip_unittests "set skip_unittests to ON to skip unittests (default is OFF)[if possible, they are always build]" OFF)
+option(skip_unittests "set skip_unittests to ON to skip unittests (default is OFF)[if possible, they are always built]" OFF)
+option(skip_samples "set skip_samples to ON to skip building samples (default is OFF)[if possible, they are always built]" OFF)
 option(use_http "set use_http to ON if http is to be used, set to OFF to not use http" ON)
 option(use_condition "set use_condition to ON if the condition module and its adapters should be enabled" ON)
 option(use_wsio "set use_wsio to ON to use libwebsockets for WebSocket support (default is OFF)" OFF)
@@ -53,65 +54,65 @@ option(compileOption_CXX "passes a string to the command line of the C++ compile
 
 if(${use_cyclonessl} AND WIN32)
     set(cyclonessl_c_files
-		$ENV{CycloneSSLDir}/cyclone_ssl/ssl_common.c
-		$ENV{CycloneSSLDir}/cyclone_ssl/tls.c
-		$ENV{CycloneSSLDir}/cyclone_ssl/tls_cache.c
-		$ENV{CycloneSSLDir}/cyclone_ssl/tls_cipher_suites.c
-		$ENV{CycloneSSLDir}/cyclone_ssl/tls_client.c
-		$ENV{CycloneSSLDir}/cyclone_ssl/tls_common.c
-		$ENV{CycloneSSLDir}/cyclone_ssl/tls_io.c
-		$ENV{CycloneSSLDir}/cyclone_ssl/tls_misc.c
-		$ENV{CycloneSSLDir}/cyclone_ssl/tls_record.c
-		$ENV{CycloneSSLDir}/cyclone_ssl/tls_server.c
-		$ENV{CycloneSSLDir}/common/date_time.c
-		$ENV{CycloneSSLDir}/common/debug.c
-		$ENV{CycloneSSLDir}/common/endian.c
-		$ENV{CycloneSSLDir}/common/os_port_windows.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/aes.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/aria.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/asn1.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/base64.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/camellia.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/chacha.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/chacha20_poly1305.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/cipher_mode_cbc.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/cipher_mode_ccm.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/cipher_mode_gcm.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/des.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/des3.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/dh.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/dsa.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/ec.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/ec_curves.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/ecdh.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/ecdsa.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/hmac.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/idea.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/md5.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/mpi.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/oid.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/pem.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/poly1305.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/rc4.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/rsa.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/seed.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/sha1.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/sha224.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/sha256.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/sha384.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/sha512.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/x509.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/yarrow.c
+        $ENV{CycloneSSLDir}/cyclone_ssl/ssl_common.c
+        $ENV{CycloneSSLDir}/cyclone_ssl/tls.c
+        $ENV{CycloneSSLDir}/cyclone_ssl/tls_cache.c
+        $ENV{CycloneSSLDir}/cyclone_ssl/tls_cipher_suites.c
+        $ENV{CycloneSSLDir}/cyclone_ssl/tls_client.c
+        $ENV{CycloneSSLDir}/cyclone_ssl/tls_common.c
+        $ENV{CycloneSSLDir}/cyclone_ssl/tls_io.c
+        $ENV{CycloneSSLDir}/cyclone_ssl/tls_misc.c
+        $ENV{CycloneSSLDir}/cyclone_ssl/tls_record.c
+        $ENV{CycloneSSLDir}/cyclone_ssl/tls_server.c
+        $ENV{CycloneSSLDir}/common/date_time.c
+        $ENV{CycloneSSLDir}/common/debug.c
+        $ENV{CycloneSSLDir}/common/endian.c
+        $ENV{CycloneSSLDir}/common/os_port_windows.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/aes.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/aria.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/asn1.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/base64.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/camellia.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/chacha.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/chacha20_poly1305.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/cipher_mode_cbc.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/cipher_mode_ccm.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/cipher_mode_gcm.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/des.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/des3.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/dh.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/dsa.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/ec.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/ec_curves.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/ecdh.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/ecdsa.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/hmac.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/idea.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/md5.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/mpi.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/oid.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/pem.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/poly1305.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/rc4.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/rsa.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/seed.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/sha1.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/sha224.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/sha256.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/sha384.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/sha512.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/x509.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/yarrow.c
     )
-	
-	include_directories($ENV{CycloneSSLDir}/common/)
-	include_directories($ENV{CycloneSSLDir}/cyclone_ssl/)
-	include_directories($ENV{CycloneSSLDir}/cyclone_crypto/)
+    
+    include_directories($ENV{CycloneSSLDir}/common/)
+    include_directories($ENV{CycloneSSLDir}/cyclone_ssl/)
+    include_directories($ENV{CycloneSSLDir}/cyclone_crypto/)
     include_directories($ENV{CycloneSSLDir}/demo/x86/ssl_client_demo/src/)
 
     set_source_files_properties(${cyclonessl_c_files} PROPERTIES COMPILE_FLAGS "/wd4200 /wd4201 /wd4244 /wd4100 /wd4267 /wd4701 /wd4703 /wd4389 /wd4005")
     set_source_files_properties(./src/tlsio_cyclonessl.c ./src/tlsio_cyclonessl_socket_bsd.c PROPERTIES COMPILE_FLAGS "/wd4200 /wd4201 /wd4244 /wd4100 /wd4267 /wd4701 /wd4703 /wd4389 /wd4005 /wd4996")
-	add_library(cyclonessl ${cyclonessl_c_files})
+    add_library(cyclonessl ${cyclonessl_c_files})
 
 endif()
 
@@ -133,14 +134,14 @@ if(MSVC)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4")
 
-		if(${use_openssl})
-			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_OPENSSL")
-			set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_OPENSSL")
-		endif()
-		if(${use_cyclonessl})
-			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_CYCLONESSL")
-			set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_CYCLONESSL")
-		endif()
+        if(${use_openssl})
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_OPENSSL")
+            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_OPENSSL")
+        endif()
+        if(${use_cyclonessl})
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_CYCLONESSL")
+            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_CYCLONESSL")
+        endif()
 
     endif()
 elseif(LINUX)
@@ -625,7 +626,7 @@ function(c_linux_unittests_add_exe whatIsBuilding folder)
     target_include_directories(${whatIsBuilding}_exe PUBLIC ${sharedutil_include_directories})
 
     #this part detects
-	#       - the additional libraries that might be needed.
+    #       - the additional libraries that might be needed.
     #     additional libraries are started by ADDITIONAL_LIBS parameter and ended by any other known parameter (or end of variable arguments)
     #   - a valgrind suppression file (VALGRIND_SUPPRESSIONS_FILE) for memcheck
     #     the file name follows immediately after
@@ -964,8 +965,8 @@ endif()
 
 if(${use_openssl})
     if (WIN32)
-		target_link_libraries(aziotsharedutil
-			$ENV{OpenSSLDir}/lib/ssleay32.lib $ENV{OpenSSLDir}/lib/libeay32.lib)
+        target_link_libraries(aziotsharedutil
+            $ENV{OpenSSLDir}/lib/ssleay32.lib $ENV{OpenSSLDir}/lib/libeay32.lib)
     else()
         target_link_libraries(aziotsharedutil ssl crypto)
     endif()
@@ -980,7 +981,7 @@ if(${use_cyclonessl} AND WIN32)
 endif()
 
 if(WIN32)
-	target_link_libraries(aziotsharedutil rpcrt4.lib)
+    target_link_libraries(aziotsharedutil rpcrt4.lib)
 endif()
 
 if(LINUX)
@@ -992,7 +993,10 @@ if (NOT ${skip_unittests})
     add_subdirectory(tests)
 endif()
 
-add_subdirectory(samples)
+if (NOT ${skip_samples})
+    add_subdirectory(samples)
+endif()
+
 
 # Set CMAKE_INSTALL_* if not defined
 include(GNUInstallDirs)
