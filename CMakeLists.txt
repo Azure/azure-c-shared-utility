@@ -520,8 +520,6 @@ if (NOT ${skip_samples})
     add_subdirectory(samples)
 endif()
 
-target_link_libraries(aziotsharedutil micromock_ctest)
-
 if(${use_installed_dependencies})
     # Set CMAKE_INSTALL_* if not defined
     include(GNUInstallDirs)
