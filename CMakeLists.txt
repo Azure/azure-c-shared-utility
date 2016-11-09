@@ -154,7 +154,7 @@ elseif(LINUX)
 endif()
 
 if(${use_wsio})
-    include("dependencies.cmake")
+    
     include_directories($ENV{OpenSSLDir}/include)
 
     if(WIN32)
@@ -172,6 +172,7 @@ if(${use_wsio})
         set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} /IGNORE:4006 /IGNORE:4221")
 
         remove_definitions(/WX)
+        include("dependencies.cmake")
         add_definitions(/WX)
         set(CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS_PREV})
         set(CMAKE_SHARED_LINKER_FLAGS ${CMAKE_SHARED_LINKER_FLAGS_PREV})
@@ -188,6 +189,9 @@ if(${use_wsio})
         if(NOT IN_OPENWRT)
             string(REPLACE "-D_POSIX_C_SOURCE=200112L" "" CMAKE_C_FLAGS ${CMAKE_C_FLAGS})
         endif()
+        
+        include("dependencies.cmake")
+        
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
         if(NOT IN_OPENWRT)
