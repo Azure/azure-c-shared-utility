@@ -26,6 +26,37 @@ azure-c-shared-utility uses cmake for configuring build files.
 cmake ..
 ```
 
+### Installation and Use
+Optionally, you may choose to install azure-c-shared-utility on your machine:
+
+1. Switch to the *cmake* folder and run
+    ```
+    cmake -Duse_installed_dependencies=ON ../
+    ```
+    ```
+    cmake --build . --target install
+    ```
+
+    or install using the follow commands for each platform:
+
+    On Linux:
+    ```
+    sudo make install
+    ```
+
+    On Windows:
+    ```
+    msbuild /m INSTALL.vcxproj
+    ```
+
+2. Use it in your project (if installed)
+    ```
+    find_package(azure_c_shared_utility REQUIRED CONFIG)
+    target_link_library(yourlib aziotsharedutil)
+    ```
+
+_If running tests, this requires that umock-c, azure-ctest, and azure-c-testrunnerswitcher are installed (through CMake) on your machine._
+
 ## Configuration options
 
 In order to turn on/off the tlsio implementations use the following CMAKE options:
@@ -34,3 +65,4 @@ In order to turn on/off the tlsio implementations use the following CMAKE option
 * `-Duse_openssl:bool={ON/OFF}` - turns on/off the OpenSSL support. If this option is use an environment variable name OpenSSLDir should be set to point to the OpenSSL folder.
 * `-Duse_wolfssl:bool={ON/OFF}` - turns on/off the WolfSSL support. If this option is use an environment variable name WolfSSLDir should be set to point to the WolfSSL folder.
 * `-Duse_http:bool={ON/OFF}` - turns on/off the HTTP API support. 
+* `-Duse_installed_dependencies:bool={ON/OFF}` - turns on/off building azure-c-shared-utility using installed dependencies. This package may only be installed if this flag is ON.

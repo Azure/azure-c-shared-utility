@@ -46,6 +46,7 @@ set(micromock_h_files
 )
 
 string(REPLACE "./inc/" ";./testtools/micromock/inc/" FILES_TO_INSTALL ${micromock_h_files})
+set(micromock_h_files_full_path "${FILES_TO_INSTALL}" CACHE INTERNAL "")
 add_files_to_install("${FILES_TO_INSTALL}")
 
 IF(WIN32)
@@ -55,7 +56,9 @@ IF(WIN32)
     #windows needs to be build 2 flavor of micromock, one for CTEST reporting, one for CPP_UNITTEST
     add_library(micromock_cpp_unittest ${micromock_cpp_files} ${micromock_h_files})
     target_compile_definitions(micromock_cpp_unittest PUBLIC CPP_UNITTEST)
-    target_include_directories(micromock_cpp_unittest PUBLIC $ENV{VCInstallDir}UnitTest/include)
+    #flip VCInstallDir path
+    file(TO_CMAKE_PATH $ENV{VCInstallDir} VCInstallDir)
+    target_include_directories(micromock_cpp_unittest PUBLIC ${VCInstallDir}/UnitTest/include)
 
     set_target_properties(micromock_cpp_unittest
        PROPERTIES
@@ -77,15 +80,18 @@ set_target_properties(micromock_ctest
 set(MICROMOCK_INC_FOLDER ${CMAKE_CURRENT_LIST_DIR}/inc CACHE INTERNAL "this is what needs to be included if using micromock lib" FORCE)
 
 include_directories(${TESTRUNNERSWITCHER_INC_FOLDER} ${CTEST_INC_FOLDER} ${SAL_INC_FOLDER} ${MICROMOCK_INC_FOLDER} )
+include_directories(${TESTRUNNERSWITCHER_INCLUDES} ${CTEST_INCLUDES} ${UMOCK_C_INCLUDES})
 
 if (NOT ${skip_unittests})
      add_subdirectory(unittests)
 endif()
 
-if(WIN32)
-else()
-    install (TARGETS micromock_ctest DESTINATION lib)
-endif (WIN32)
+if(${use_installed_dependencies})
+    if(WIN32)
+        install (TARGETS micromock_cpp_unittest EXPORT aziotsharedutilTargets DESTINATION lib)
+    endif()
+    install (TARGETS micromock_ctest EXPORT aziotsharedutilTargets DESTINATION lib)
+endif()
 
 if(WIN32)
     add_executable(micromock_generator ./tools/micromockgenerator/micromockgenerator.cpp)
