@@ -62,7 +62,7 @@ void my_gballoc_free(void* ptr)
 #define HUGE_RELATIVE_PATH_SIZE		10000
 
 #define TEST_CREATE_CONNECTION_HOST_NAME (const char*)"https://test.azure-devices.net"
-#define TEST_EXECUTE_REQUEST_RELATIVE_PATH (const char*)"/devices/Huzzah_w_DHT22/messages/events?api-version=2016-02-03"
+#define TEST_EXECUTE_REQUEST_RELATIVE_PATH (const char*)"/devices/Huzzah_w_DHT22/messages/events?api-version=2016-11-14"
 #define TEST_EXECUTE_REQUEST_CONTENT (const unsigned char*)"{\"ObjectType\":\"DeviceInfo\", \"Version\":\"1.0\", \"IsSimulatedDevice\":false, \"DeviceProperties\":{\"DeviceID\":\"Huzzah_w_DHT22\", \"HubEnabledState\":true}, \"Commands\":[{ \"Name\":\"SetHumidity\", \"Parameters\":[{\"Name\":\"humidity\",\"Type\":\"int\"}]},{ \"Name\":\"SetTemperature\", \"Parameters\":[{\"Name\":\"temperature\",\"Type\":\"int\"}]}]}"
 #define TEST_EXECUTE_REQUEST_CONTENT_LENGTH (size_t)320
 #define TEST_SETOPTIONS_CERTIFICATE	(const unsigned char*)"blah!blah!blah!"
