@@ -37,6 +37,7 @@ option(use_condition "set use_condition to ON if the condition module and its ad
 option(use_wsio "set use_wsio to ON to use libwebsockets for WebSocket support (default is OFF)" OFF)
 option(nuget_e2e_tests "set nuget_e2e_tests to ON to generate e2e tests to run with nuget packages (default is OFF)" OFF)
 option(use_installed_dependencies "set use_installed_dependencies to ON to use installed packages instead of building dependencies from submodules" OFF)
+option(use_default_uuid "set use_default_uuid to ON to use the out of the box UUID that comes with the SDK rather than platform specific implementations" OFF)
 
 if(WIN32)
     option(use_schannel "set use_schannel to ON if schannel is to be used, set to OFF to not use schannel" ON)
@@ -507,11 +508,16 @@ if(${use_cyclonessl} AND WIN32)
 endif()
 
 if(WIN32)
-    target_link_libraries(aziotsharedutil rpcrt4.lib)
+	if (NOT ${use_default_uuid})
+		target_link_libraries(aziotsharedutil rpcrt4.lib)
+	endif()
 endif()
 
 if(LINUX)
-    target_link_libraries(aziotsharedutil pthread uuid m)
+    target_link_libraries(aziotsharedutil pthread m)
+	if (NOT ${use_default_uuid})
+		target_link_libraries(aziotsharedutil uuid)
+	endif()
 endif()
 
 if (NOT ${skip_unittests})
