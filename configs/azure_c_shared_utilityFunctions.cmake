@@ -356,7 +356,7 @@ function(c_linux_unittests_add_exe whatIsBuilding folder)
     target_include_directories(${whatIsBuilding}_exe PUBLIC ${sharedutil_include_directories})
 
     #this part detects
-	#       - the additional libraries that might be needed.
+    #       - the additional libraries that might be needed.
     #     additional libraries are started by ADDITIONAL_LIBS parameter and ended by any other known parameter (or end of variable arguments)
     #   - a valgrind suppression file (VALGRIND_SUPPRESSIONS_FILE) for memcheck
     #     the file name follows immediately after
@@ -473,7 +473,11 @@ function(set_platform_files c_shared_dir)
             set(SOCKETIO_C_FILE ${c_shared_dir}/adapters/socketio_win32.c PARENT_SCOPE)
         endif()
         set(TICKCOUTER_C_FILE ${c_shared_dir}/adapters/tickcounter_win32.c PARENT_SCOPE)
-        set(UNIQUEID_C_FILE ${c_shared_dir}/adapters/uniqueid_win32.c PARENT_SCOPE)
+        if (${use_default_uuid})
+            set(UNIQUEID_C_FILE ${c_shared_dir}/adapters/uniqueid_stub.c PARENT_SCOPE)
+    else()
+            set(UNIQUEID_C_FILE ${c_shared_dir}/adapters/uniqueid_win32.c PARENT_SCOPE)
+    endif()
     else()
         if(${use_condition})
             set(CONDITION_C_FILE ${c_shared_dir}/adapters/condition_pthreads.c PARENT_SCOPE)
@@ -486,6 +490,10 @@ function(set_platform_files c_shared_dir)
         endif()
         set(THREAD_C_FILE ${c_shared_dir}/adapters/threadapi_pthreads.c PARENT_SCOPE)
         set(TICKCOUTER_C_FILE ${c_shared_dir}/adapters/tickcounter_linux.c PARENT_SCOPE)
-        set(UNIQUEID_C_FILE ${c_shared_dir}/adapters/uniqueid_linux.c PARENT_SCOPE)
+        if (${use_default_uuid})
+            set(UNIQUEID_C_FILE ${c_shared_dir}/adapters/uniqueid_stub.c PARENT_SCOPE)
+    else()
+            set(UNIQUEID_C_FILE ${c_shared_dir}/adapters/uniqueid_linux.c PARENT_SCOPE)
+    endif()
     endif()
 endfunction(set_platform_files)
