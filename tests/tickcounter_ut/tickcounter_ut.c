@@ -142,7 +142,7 @@ TEST_FUNCTION(tickcounter_destroy_succeed)
 TEST_FUNCTION(tickcounter_get_current_ms_tick_counter_NULL_fail)
 {
     ///arrange
-    uint64_t current_ms = 0;
+    tickcounter_ms_t current_ms = 0;
 
     ///act
     int result = tickcounter_get_current_ms(NULL, &current_ms);
@@ -174,7 +174,7 @@ TEST_FUNCTION(tickcounter_get_current_ms_succeed)
     TICK_COUNTER_HANDLE tickHandle = tickcounter_create();
     umock_c_reset_all_calls();
 
-    uint64_t current_ms = 0;
+    tickcounter_ms_t current_ms = 0;
 
     ///act
     int result = tickcounter_get_current_ms(tickHandle, &current_ms);
