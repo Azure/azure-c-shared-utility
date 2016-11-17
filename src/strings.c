@@ -125,6 +125,15 @@ STRING_HANDLE STRING_construct(const char* psz)
 STRING_HANDLE STRING_construct_sprintf(const char* format, ...)
 {
     STRING* result;
+    
+#ifdef ARDUINO_ARCH_ESP8266
+    size_t maxBufSize = 512;
+    char buf[512];
+#else
+    size_t maxBufSize = 0;
+    char* buf = NULL;
+#endif
+
     if (format != NULL)
     {
         va_list arg_list;
@@ -132,7 +141,7 @@ STRING_HANDLE STRING_construct_sprintf(const char* format, ...)
         va_start(arg_list, format);
 
         /* Codes_SRS_STRING_07_041: [STRING_construct_sprintf shall determine the size of the resulting string and allocate the necessary memory.] */
-        length = vsnprintf(NULL, 0, format, arg_list);
+        length = vsnprintf(buf, maxBufSize, format, arg_list);
         va_end(arg_list);
         if (length > 0)
         {
@@ -504,6 +513,15 @@ int STRING_copy_n(STRING_HANDLE handle, const char* s2, size_t n)
 int STRING_sprintf(STRING_HANDLE handle, const char* format, ...)
 {
     int result;
+    
+#ifdef ARDUINO_ARCH_ESP8266
+    size_t maxBufSize = 512;
+    char buf[512];
+#else
+    size_t maxBufSize = 0;
+    char* buf = NULL;
+#endif
+    
     if (handle == NULL || format == NULL)
     {
         /* Codes_SRS_STRING_07_042: [if the parameters s1 or format are NULL then STRING_sprintf shall return non zero value.] */
@@ -516,7 +534,7 @@ int STRING_sprintf(STRING_HANDLE handle, const char* format, ...)
 		int s2Length;
         va_start(arg_list, format);
 
-        s2Length = vsnprintf(NULL, 0, format, arg_list);
+        s2Length = vsnprintf(buf, maxBufSize, format, arg_list);
         va_end(arg_list);
         if (s2Length < 0)
         {

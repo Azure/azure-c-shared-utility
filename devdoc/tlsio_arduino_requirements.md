@@ -206,7 +206,9 @@ int tlsio_arduino_close(CONCRETE_IO_HANDLE tlsio_handle, ON_IO_CLOSE_COMPLETE on
 
 **SRS_TLSIO_ARDUINO_21_047: [** If tlsio_arduino_close get success to start the process to close the ssl connection, it shall set the tlsio state as TLSIO_ARDUINO_STATE_CLOSING, and return 0. **]**
 
-**SRS_TLSIO_ARDUINO_21_048: [** If the tlsio state is TLSIO_ARDUINO_STATE_ERROR, TLSIO_ARDUINO_STATE_OPENING, TLSIO_ARDUINO_STATE_CLOSING, or TLSIO_ARDUINO_STATE_CLOSED, the tlsio_arduino_close shall set the tlsio state as TLSIO_ARDUINO_STATE_ERROR, call the on_io_error, and return _LINE_. **]**
+**SRS_TLSIO_ARDUINO_21_048: [** If the tlsio state is TLSIO_ARDUINO_STATE_OPENING, or TLSIO_ARDUINO_STATE_CLOSING, the tlsio_arduino_close shall set the tlsio state as TLSIO_ARDUINO_STATE_ERROR, and return _LINE_. **]**
+
+**SRS_TLSIO_ARDUINO_21_079: [** If the tlsio state is TLSIO_ARDUINO_STATE_ERROR, or TLSIO_ARDUINO_STATE_CLOSED, the tlsio_arduino_close shall set the tlsio state as TLSIO_ARDUINO_STATE_CLOSE, and return 0. **]**
 
 **SRS_TLSIO_ARDUINO_21_049: [** If the tlsio_handle is NULL, the tlsio_arduino_close shall not do anything, and return _LINE_. **]**
 

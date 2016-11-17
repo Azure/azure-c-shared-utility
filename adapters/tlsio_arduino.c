@@ -309,13 +309,18 @@ int tlsio_arduino_close(CONCRETE_IO_HANDLE tlsio_handle, ON_IO_CLOSE_COMPLETE on
         /* Codes_SRS_TLSIO_ARDUINO_21_046: [ The tlsio_arduino_close shall store the provided on_io_close_complete_context handle. ]*/
         tlsio_instance->on_io_close_complete_context = on_io_close_complete_context;
 
-        if ((tlsio_instance->state == TLSIO_ARDUINO_STATE_CLOSED) || (tlsio_instance->state == TLSIO_ARDUINO_STATE_ERROR) || (tlsio_instance->state == TLSIO_ARDUINO_STATE_OPENING) || (tlsio_instance->state == TLSIO_ARDUINO_STATE_CLOSING))
+        if ((tlsio_instance->state == TLSIO_ARDUINO_STATE_CLOSED) || (tlsio_instance->state == TLSIO_ARDUINO_STATE_ERROR))
         {
-            /* Codes_SRS_TLSIO_ARDUINO_21_048: [ If the tlsio state is TLSIO_ARDUINO_STATE_ERROR, TLSIO_ARDUINO_STATE_OPENING, TLSIO_ARDUINO_STATE_CLOSING, or TLSIO_ARDUINO_STATE_CLOSED, the tlsio_arduino_close shall set the tlsio state as TLSIO_ARDUINO_STATE_ERROR, call the on_io_error, and return _LINE_. ]*/
+            /* Codes_SRS_TLSIO_ARDUINO_21_079: [ If the tlsio state is TLSIO_ARDUINO_STATE_ERROR, or TLSIO_ARDUINO_STATE_CLOSED, the tlsio_arduino_close shall set the tlsio state as TLSIO_ARDUINO_STATE_CLOSE, and return 0. ]*/
+            tlsio_instance->state = TLSIO_ARDUINO_STATE_CLOSED;
+            result = 0;
+        }
+        else if ((tlsio_instance->state == TLSIO_ARDUINO_STATE_OPENING) || (tlsio_instance->state == TLSIO_ARDUINO_STATE_CLOSING))
+        {
+            /* Codes_SRS_TLSIO_ARDUINO_21_048: [ If the tlsio state is TLSIO_ARDUINO_STATE_OPENING, or TLSIO_ARDUINO_STATE_CLOSING, the tlsio_arduino_close shall set the tlsio state as TLSIO_ARDUINO_STATE_CLOSE, and return _LINE_. ]*/
             LogError("Try to close the connection with an already closed TLS.");
             tlsio_instance->state = TLSIO_ARDUINO_STATE_ERROR;
             result = __LINE__;
-            CallErrorCallback();
         }
         else
         {

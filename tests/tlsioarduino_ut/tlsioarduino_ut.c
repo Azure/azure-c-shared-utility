@@ -225,6 +225,15 @@ static void on_io_error(void* context)
     on_io_error_context = context;
 }
 
+static void CleanCallbackCounters()
+{
+    on_bytes_received_count = 0;
+    on_send_complete_count = 0;
+    on_io_open_complete_count = 0;
+    on_io_close_complete_count = 0;
+    on_io_error_count = 0;
+}
+
 #define ASSERT_CALLBACK_COUNTERS(error, open, close, send, received) \
         ASSERT_ARE_EQUAL(int, error, on_io_error_count);\
         ASSERT_ARE_EQUAL(int, open, on_io_open_complete_count);\
@@ -302,11 +311,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         currentmalloc_call = 0;
         whenShallmalloc_fail = 0;
 
-        on_bytes_received_count = 0;
-        on_send_complete_count = 0;
-        on_io_open_complete_count = 0;
-        on_io_close_complete_count = 0;
-        on_io_error_count = 0;
+        CleanCallbackCounters();
 
         my_sslClient_connected_count = 0;
         my_sslClient_connect_count = 0;
@@ -406,6 +411,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
             on_io_error, CallbackContext);
         ASSERT_ARE_NOT_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_ERROR, (int)tlsio_arduino_get_state(tlsioHandle));
+        CleanCallbackCounters();
 
         ///act
         tlsioInterfaces->concrete_io_dowork(tlsioHandle);
@@ -413,7 +419,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_EQUAL(int, 1, currentmalloc_call);
-        ASSERT_CALLBACK_COUNTERS(1, 2, 0, 0, 0);
+        ASSERT_CALLBACK_COUNTERS(0, 0, 0, 0, 0);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_ERROR, (int)tlsio_arduino_get_state(tlsioHandle));
 
         ///cleanup
@@ -489,6 +495,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_CLOSED, (int)tlsio_arduino_get_state(tlsioHandle));
+        CleanCallbackCounters();
 
         ///act
         tlsioInterfaces->concrete_io_dowork(tlsioHandle);
@@ -496,7 +503,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_EQUAL(int, 1, currentmalloc_call);
-        ASSERT_CALLBACK_COUNTERS(1, 1, 1, 0, 0);
+        ASSERT_CALLBACK_COUNTERS(1, 0, 0, 0, 0);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_ERROR, (int)tlsio_arduino_get_state(tlsioHandle));
 
         ///cleanup
@@ -539,6 +546,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_CLOSED, (int)tlsio_arduino_get_state(tlsioHandle));
+        CleanCallbackCounters();
 
         ///act
         tlsioInterfaces->concrete_io_dowork(tlsioHandle);
@@ -546,7 +554,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_EQUAL(int, 1, currentmalloc_call);
-        ASSERT_CALLBACK_COUNTERS(0, 1, 1, 0, 0);
+        ASSERT_CALLBACK_COUNTERS(0, 0, 0, 0, 0);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_CLOSED, (int)tlsio_arduino_get_state(tlsioHandle));
 
         ///cleanup
@@ -593,6 +601,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         result = tlsioInterfaces->concrete_io_send(tlsioHandle, (const void*)SendBuffer, SendBufferSize, on_send_complete, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
+        CleanCallbackCounters();
 
         ///act
         tlsioInterfaces->concrete_io_dowork(tlsioHandle);
@@ -600,7 +609,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_EQUAL(int, 1, currentmalloc_call);
-        ASSERT_CALLBACK_COUNTERS(1, 1, 0, 1, 0);
+        ASSERT_CALLBACK_COUNTERS(1, 0, 0, 0, 0);
         ASSERT_ARE_EQUAL(int, (int)IO_SEND_OK, (int)on_send_complete_result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_ERROR, (int)tlsio_arduino_get_state(tlsioHandle));
 
@@ -653,6 +662,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         result = tlsioInterfaces->concrete_io_send(tlsioHandle, (const void*)SendBuffer, SendBufferSize, on_send_complete, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
+        CleanCallbackCounters();
 
         ///act
         tlsioInterfaces->concrete_io_dowork(tlsioHandle);
@@ -660,7 +670,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_EQUAL(int, 1, currentmalloc_call);
-        ASSERT_CALLBACK_COUNTERS(0, 0, 0, 1, 0);
+        ASSERT_CALLBACK_COUNTERS(0, 0, 0, 0, 0);
         ASSERT_ARE_EQUAL(int, (int)IO_SEND_OK, (int)on_send_complete_result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
 
@@ -716,6 +726,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         result = tlsioInterfaces->concrete_io_send(tlsioHandle, (const void*)SendBuffer, SendBufferSize, on_send_complete, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
+        CleanCallbackCounters();
 
         ///act
         tlsioInterfaces->concrete_io_dowork(tlsioHandle);
@@ -725,7 +736,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ASSERT_ARE_EQUAL(char_ptr, (const char*)my_sslClient_read_buffer, (const char*)on_bytes_received_buffer);
         ASSERT_ARE_EQUAL(size_t, 28, on_bytes_received_buffer_size);
         ASSERT_ARE_EQUAL(int, 1, currentmalloc_call);
-        ASSERT_CALLBACK_COUNTERS(0, 1, 0, 1, 1);
+        ASSERT_CALLBACK_COUNTERS(0, 0, 0, 0, 1);
         ASSERT_ARE_EQUAL(int, (int)IO_SEND_OK, (int)on_send_complete_result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
 
@@ -765,6 +776,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
             on_io_error, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
+        CleanCallbackCounters();
 
         ///act
         result = tlsioInterfaces->concrete_io_send(tlsioHandle, (const void*)SendBuffer, 0, on_send_complete, CallbackContext);
@@ -773,7 +785,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_NOT_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, 1, currentmalloc_call);
-        ASSERT_CALLBACK_COUNTERS(0, 1, 0, 0, 0);
+        ASSERT_CALLBACK_COUNTERS(0, 0, 0, 0, 0);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
 
         ///cleanup
@@ -811,6 +823,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
             on_io_error, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
+        CleanCallbackCounters();
 
         ///act
         result = tlsioInterfaces->concrete_io_send(tlsioHandle, (const void*)NULL, SendBufferSize, on_send_complete, CallbackContext);
@@ -819,7 +832,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_NOT_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, 1, currentmalloc_call);
-        ASSERT_CALLBACK_COUNTERS(0, 1, 0, 0, 0);
+        ASSERT_CALLBACK_COUNTERS(0, 0, 0, 0, 0);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
 
         ///cleanup
@@ -914,6 +927,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_CLOSED, (int)tlsio_arduino_get_state(tlsioHandle));
+        CleanCallbackCounters();
 
         ///act
         result = tlsioInterfaces->concrete_io_send(tlsioHandle, (const void*)SendBuffer, SendBufferSize, on_send_complete, CallbackContext);
@@ -922,7 +936,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_NOT_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, 1, currentmalloc_call);
-        ASSERT_CALLBACK_COUNTERS(0, 1, 1, 0, 0);
+        ASSERT_CALLBACK_COUNTERS(0, 0, 0, 0, 0);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_CLOSED, (int)tlsio_arduino_get_state(tlsioHandle));
 
         ///cleanup
@@ -964,6 +978,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_CLOSING, (int)tlsio_arduino_get_state(tlsioHandle));
+        CleanCallbackCounters();
 
         ///act
         result = tlsioInterfaces->concrete_io_send(tlsioHandle, (const void*)SendBuffer, SendBufferSize, on_send_complete, CallbackContext);
@@ -972,7 +987,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_NOT_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, 1, currentmalloc_call);
-        ASSERT_CALLBACK_COUNTERS(0, 1, 0, 0, 0);
+        ASSERT_CALLBACK_COUNTERS(0, 0, 0, 0, 0);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_CLOSING, (int)tlsio_arduino_get_state(tlsioHandle));
 
         ///cleanup
@@ -1058,6 +1073,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
             on_io_error, CallbackContext);
         ASSERT_ARE_NOT_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_ERROR, (int)tlsio_arduino_get_state(tlsioHandle));
+        CleanCallbackCounters();
 
         ///act
         result = tlsioInterfaces->concrete_io_send(tlsioHandle, (const void*)SendBuffer, SendBufferSize, on_send_complete, CallbackContext);
@@ -1066,7 +1082,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_NOT_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, 1, currentmalloc_call);
-        ASSERT_CALLBACK_COUNTERS(1, 2, 0, 0, 0);
+        ASSERT_CALLBACK_COUNTERS(0, 0, 0, 0, 0);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_ERROR, (int)tlsio_arduino_get_state(tlsioHandle));
 
         ///cleanup
@@ -1106,6 +1122,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
             on_io_error, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
+        CleanCallbackCounters();
 
         ///act
         result = tlsioInterfaces->concrete_io_send(tlsioHandle, (const void*)SendBuffer, SendBufferSize, on_send_complete, CallbackContext);
@@ -1114,7 +1131,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_NOT_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, 1, currentmalloc_call);
-        ASSERT_CALLBACK_COUNTERS(0, 1, 0, 1, 0);
+        ASSERT_CALLBACK_COUNTERS(0, 0, 0, 1, 0);
         ASSERT_ARE_EQUAL(int, (int)IO_SEND_ERROR, (int)on_send_complete_result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
 
@@ -1156,6 +1173,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
             on_io_error, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
+        CleanCallbackCounters();
 
         ///act
         result = tlsioInterfaces->concrete_io_send(tlsioHandle, (const void*)SendBuffer, SendBufferSize, on_send_complete, CallbackContext);
@@ -1164,7 +1182,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_NOT_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, 1, currentmalloc_call);
-        ASSERT_CALLBACK_COUNTERS(0, 1, 0, 1, 0);
+        ASSERT_CALLBACK_COUNTERS(0, 0, 0, 1, 0);
         ASSERT_ARE_EQUAL(int, (int)IO_SEND_ERROR, (int)on_send_complete_result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
 
@@ -1207,6 +1225,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
             on_io_error, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
+        CleanCallbackCounters();
 
         ///act
         result = tlsioInterfaces->concrete_io_send(tlsioHandle, (const void*)SendBuffer, SendBufferSize, on_send_complete, CallbackContext);
@@ -1215,7 +1234,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, 1, currentmalloc_call);
-        ASSERT_CALLBACK_COUNTERS(0, 1, 0, 1, 0);
+        ASSERT_CALLBACK_COUNTERS(0, 0, 0, 1, 0);
         ASSERT_ARE_EQUAL(int, (int)IO_SEND_OK, (int)on_send_complete_result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
 
@@ -1258,6 +1277,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
             on_io_error, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
+        CleanCallbackCounters();
 
         ///act
         result = tlsioInterfaces->concrete_io_send(tlsioHandle, (const void*)SendBuffer, SendBufferSize, NULL, NULL);
@@ -1266,7 +1286,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, 1, currentmalloc_call);
-        ASSERT_CALLBACK_COUNTERS(0, 1, 0, 0, 0);
+        ASSERT_CALLBACK_COUNTERS(0, 0, 0, 0, 0);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
 
         ///cleanup
@@ -1310,6 +1330,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
             on_io_error, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
+        CleanCallbackCounters();
 
         ///act
         result = tlsioInterfaces->concrete_io_send(tlsioHandle, (const void*)SendBuffer, SendBufferSize, on_send_complete, CallbackContext);
@@ -1318,7 +1339,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, 1, currentmalloc_call);
-        ASSERT_CALLBACK_COUNTERS(0, 1, 0, 1, 0);
+        ASSERT_CALLBACK_COUNTERS(0, 0, 0, 1, 0);
         ASSERT_ARE_EQUAL(int, (int)IO_SEND_OK, (int)on_send_complete_result);
         ASSERT_ARE_EQUAL(void_ptr, CallbackContext, on_send_complete_context);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
@@ -1384,6 +1405,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_CLOSING, (int)tlsio_arduino_get_state(tlsioHandle));
+        CleanCallbackCounters();
 
         ///act
         tlsioInterfaces->concrete_io_destroy(tlsioHandle);
@@ -1391,7 +1413,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_EQUAL(int, 0, currentmalloc_call);
-        ASSERT_CALLBACK_COUNTERS(0, 1, 0, 0, 0);
+        ASSERT_CALLBACK_COUNTERS(0, 0, 0, 0, 0);
 
         ///cleanup
     }
@@ -1432,6 +1454,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_CLOSING, (int)tlsio_arduino_get_state(tlsioHandle));
+        CleanCallbackCounters();
 
         ///act
         result = tlsioInterfaces->concrete_io_open(
@@ -1445,14 +1468,14 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ASSERT_ARE_NOT_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, 1, currentmalloc_call);
         ASSERT_ARE_EQUAL(int, (int)IO_OPEN_ERROR, (int)on_io_open_complete_result);
-        ASSERT_CALLBACK_COUNTERS(1, 2, 0, 0, 0);
+        ASSERT_CALLBACK_COUNTERS(1, 1, 0, 0, 0);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_ERROR, (int)tlsio_arduino_get_state(tlsioHandle));
 
         ///cleanup
         tlsioInterfaces->concrete_io_destroy(tlsioHandle);
     }
 
-    /* Tests_SRS_TLSIO_ARDUINO_21_048: [ If the tlsio state is TLSIO_ARDUINO_STATE_ERROR, TLSIO_ARDUINO_STATE_OPENING, TLSIO_ARDUINO_STATE_CLOSING, or TLSIO_ARDUINO_STATE_CLOSED, the tlsio_arduino_close shall set the tlsio state as TLSIO_ARDUINO_STATE_ERROR, call the on_io_error, and return _LINE_. ]*/
+    /* Tests_SRS_TLSIO_ARDUINO_21_079: [ If the tlsio state is TLSIO_ARDUINO_STATE_ERROR, or TLSIO_ARDUINO_STATE_CLOSED, the tlsio_arduino_close shall set the tlsio state as TLSIO_ARDUINO_STATE_CLOSE, and return 0. ]*/
     TEST_FUNCTION(tlsio_arduino_close__on_TLSIO_ARDUINO_STATE_ERROR_no_error_callback__failed)
     {
         ///arrange
@@ -1468,12 +1491,23 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(sslClient_setTimeout(10000));
         STRICT_EXPECTED_CALL(sslClient_hostByName(TEST_CREATE_CONNECTION_HOST_NAME, IGNORED_PTR_ARG)).IgnoreArgument(2);
+        STRICT_EXPECTED_CALL(sslClient_connected());
+        STRICT_EXPECTED_CALL(sslClient_connect(SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
+        STRICT_EXPECTED_CALL(sslClient_connected());
 
         tlsioHandle = tlsioInterfaces->concrete_io_create((void*)&tlsioConfig);
         ASSERT_IS_NOT_NULL(tlsioHandle);
-        ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_CLOSED, (int)tlsio_arduino_get_state(tlsioHandle));
-
-        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, CallbackContext);
+        result = tlsioInterfaces->concrete_io_open(
+            tlsioHandle,
+            on_io_open_complete, CallbackContext,
+            on_bytes_received, CallbackContext,
+            on_io_error, CallbackContext);
+        result = tlsioInterfaces->concrete_io_open(
+            tlsioHandle,
+            on_io_open_complete, CallbackContext,
+            on_bytes_received, CallbackContext,
+            on_io_error, CallbackContext);
+        CleanCallbackCounters();
         ASSERT_ARE_NOT_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_ERROR, (int)tlsio_arduino_get_state(tlsioHandle));
 
@@ -1482,16 +1516,16 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-        ASSERT_ARE_NOT_EQUAL(int, 0, result);
+        ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, 1, currentmalloc_call);
         ASSERT_CALLBACK_COUNTERS(0, 0, 0, 0, 0);
-        ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_ERROR, (int)tlsio_arduino_get_state(tlsioHandle));
+        ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_CLOSED, (int)tlsio_arduino_get_state(tlsioHandle));
 
         ///cleanup
         tlsioInterfaces->concrete_io_destroy(tlsioHandle);
     }
 
-    /* Tests_SRS_TLSIO_ARDUINO_21_048: [ If the tlsio state is TLSIO_ARDUINO_STATE_ERROR, TLSIO_ARDUINO_STATE_OPENING, TLSIO_ARDUINO_STATE_CLOSING, or TLSIO_ARDUINO_STATE_CLOSED, the tlsio_arduino_close shall set the tlsio state as TLSIO_ARDUINO_STATE_ERROR, call the on_io_error, and return _LINE_. ]*/
+    /* Tests_SRS_TLSIO_ARDUINO_21_048: [ If the tlsio state is TLSIO_ARDUINO_STATE_OPENING, or TLSIO_ARDUINO_STATE_CLOSING, the tlsio_arduino_close shall set the tlsio state as TLSIO_ARDUINO_STATE_ERROR, and return _LINE_. ]*/
     TEST_FUNCTION(tlsio_arduino_close__on_TLSIO_ARDUINO_STATE_OPENING__failed)
     {
         ///arrange
@@ -1529,14 +1563,14 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_NOT_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, 1, currentmalloc_call);
-        ASSERT_CALLBACK_COUNTERS(1, 0, 0, 0, 0);
+        ASSERT_CALLBACK_COUNTERS(0, 0, 0, 0, 0);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_ERROR, (int)tlsio_arduino_get_state(tlsioHandle));
 
         ///cleanup
         tlsioInterfaces->concrete_io_destroy(tlsioHandle);
     }
 
-    /* Tests_SRS_TLSIO_ARDUINO_21_048: [ If the tlsio state is TLSIO_ARDUINO_STATE_ERROR, TLSIO_ARDUINO_STATE_OPENING, TLSIO_ARDUINO_STATE_CLOSING, or TLSIO_ARDUINO_STATE_CLOSED, the tlsio_arduino_close shall set the tlsio state as TLSIO_ARDUINO_STATE_ERROR, call the on_io_error, and return _LINE_. ]*/
+    /* Tests_SRS_TLSIO_ARDUINO_21_048: [ If the tlsio state is TLSIO_ARDUINO_STATE_OPENING, or TLSIO_ARDUINO_STATE_CLOSING, the tlsio_arduino_close shall set the tlsio state as TLSIO_ARDUINO_STATE_ERROR, and return _LINE_. ]*/
     TEST_FUNCTION(tlsio_arduino_close__on_TLSIO_ARDUINO_STATE_CLOSING__failed)
     {
         ///arrange
@@ -1566,6 +1600,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
             on_io_open_complete, CallbackContext,
             on_bytes_received, CallbackContext,
             on_io_error, CallbackContext);
+        CleanCallbackCounters();
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
 
@@ -1580,14 +1615,14 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_NOT_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, 1, currentmalloc_call);
-        ASSERT_CALLBACK_COUNTERS(1, 1, 0, 0, 0);
+        ASSERT_CALLBACK_COUNTERS(0, 0, 0, 0, 0);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_ERROR, (int)tlsio_arduino_get_state(tlsioHandle));
 
         ///cleanup
         tlsioInterfaces->concrete_io_destroy(tlsioHandle);
     }
 
-    /* Tests_SRS_TLSIO_ARDUINO_21_048: [ If the tlsio state is TLSIO_ARDUINO_STATE_ERROR, TLSIO_ARDUINO_STATE_OPENING, TLSIO_ARDUINO_STATE_CLOSING, or TLSIO_ARDUINO_STATE_CLOSED, the tlsio_arduino_close shall set the tlsio state as TLSIO_ARDUINO_STATE_ERROR, call the on_io_error, and return _LINE_. ]*/
+    /* Tests_SRS_TLSIO_ARDUINO_21_079: [ If the tlsio state is TLSIO_ARDUINO_STATE_ERROR, or TLSIO_ARDUINO_STATE_CLOSED, the tlsio_arduino_close shall set the tlsio state as TLSIO_ARDUINO_STATE_CLOSE, and return 0. ]*/
     TEST_FUNCTION(tlsio_arduino_close__on_TLSIO_ARDUINO_STATE_CLOSED__failed)
     {
         ///arrange
@@ -1623,51 +1658,17 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_CLOSED, (int)tlsio_arduino_get_state(tlsioHandle));
+        CleanCallbackCounters();
 
         ///act
         result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, CallbackContext);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-        ASSERT_ARE_NOT_EQUAL(int, 0, result);
-        ASSERT_ARE_EQUAL(int, 1, currentmalloc_call);
-        ASSERT_CALLBACK_COUNTERS(1, 1, 1, 0, 0);
-        ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_ERROR, (int)tlsio_arduino_get_state(tlsioHandle));
-
-        ///cleanup
-        tlsioInterfaces->concrete_io_destroy(tlsioHandle);
-    }
-
-    /* Tests_SRS_TLSIO_ARDUINO_21_048: [ If the tlsio state is TLSIO_ARDUINO_STATE_ERROR, TLSIO_ARDUINO_STATE_OPENING, TLSIO_ARDUINO_STATE_CLOSING, or TLSIO_ARDUINO_STATE_CLOSED, the tlsio_arduino_close shall set the tlsio state as TLSIO_ARDUINO_STATE_ERROR, call the on_io_error, and return _LINE_. ]*/
-    TEST_FUNCTION(tlsio_arduino_close__on_TLSIO_ARDUINO_STATE_CLOSED_no_error_callback__failed)
-    {
-        ///arrange
-        CONCRETE_IO_HANDLE tlsioHandle;
-        int result;
-        const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
-        ASSERT_IS_NOT_NULL(tlsioInterfaces);
-
-        my_sslClient_hostByName_return = SSLCLIENT_IP_ADDRESS_SUCCEED;
-        my_sslClient_connected_return_list = (const bool*)ConnectedReturnList_ftf;
-        my_sslClient_connect_return_list = (const int*)ConnectReturnList_true;
-
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(sslClient_setTimeout(10000));
-        STRICT_EXPECTED_CALL(sslClient_hostByName(TEST_CREATE_CONNECTION_HOST_NAME, IGNORED_PTR_ARG)).IgnoreArgument(2);
-
-        tlsioHandle = tlsioInterfaces->concrete_io_create((void*)&tlsioConfig);
-        ASSERT_IS_NOT_NULL(tlsioHandle);
-        ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_CLOSED, (int)tlsio_arduino_get_state(tlsioHandle));
-
-        ///act
-        result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, CallbackContext);
-
-        ///assert
-        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-        ASSERT_ARE_NOT_EQUAL(int, 0, result);
+        ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, 1, currentmalloc_call);
         ASSERT_CALLBACK_COUNTERS(0, 0, 0, 0, 0);
-        ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_ERROR, (int)tlsio_arduino_get_state(tlsioHandle));
+        ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_CLOSED, (int)tlsio_arduino_get_state(tlsioHandle));
 
         ///cleanup
         tlsioInterfaces->concrete_io_destroy(tlsioHandle);
@@ -1771,6 +1772,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
 
         result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
+        CleanCallbackCounters();
 
         ///act
         for (size_t i = 0; i < 10; i++)
@@ -1783,7 +1785,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, 1, currentmalloc_call);
-        ASSERT_CALLBACK_COUNTERS(1, 1, 0, 0, 0);
+        ASSERT_CALLBACK_COUNTERS(1, 0, 0, 0, 0);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_ERROR, (int)tlsio_arduino_get_state(tlsioHandle));
 
         ///cleanup
@@ -1829,6 +1831,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
 
         result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
+        CleanCallbackCounters();
 
         ///act
         for (size_t i = 0; i < 10; i++)
@@ -1841,7 +1844,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, 1, currentmalloc_call);
-        ASSERT_CALLBACK_COUNTERS(0, 1, 1, 0, 0);
+        ASSERT_CALLBACK_COUNTERS(0, 0, 1, 0, 0);
         ASSERT_ARE_EQUAL(void_ptr, CallbackContext, on_io_close_complete_context);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_CLOSED, (int)tlsio_arduino_get_state(tlsioHandle));
 
@@ -1936,6 +1939,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
             on_io_error, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
+        CleanCallbackCounters();
 
         ///act
         result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, CallbackContext);
@@ -1944,7 +1948,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, 1, currentmalloc_call);
-        ASSERT_CALLBACK_COUNTERS(0, 1, 1, 0, 0);
+        ASSERT_CALLBACK_COUNTERS(0, 0, 1, 0, 0);
         ASSERT_ARE_EQUAL(void_ptr, CallbackContext, on_io_close_complete_context);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_CLOSED, (int)tlsio_arduino_get_state(tlsioHandle));
 
@@ -1985,6 +1989,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
             on_io_error, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
+        CleanCallbackCounters();
 
         ///act
         result = tlsioInterfaces->concrete_io_close(tlsioHandle, on_io_close_complete, CallbackContext);
@@ -1993,7 +1998,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, 1, currentmalloc_call);
-        ASSERT_CALLBACK_COUNTERS(0, 1, 0, 0, 0);
+        ASSERT_CALLBACK_COUNTERS(0, 0, 0, 0, 0);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_CLOSING, (int)tlsio_arduino_get_state(tlsioHandle));
 
         ///cleanup
@@ -2021,6 +2026,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
 
         tlsioHandle = tlsioInterfaces->concrete_io_create((void*)&tlsioConfig);
         ASSERT_IS_NOT_NULL(tlsioHandle);
+        CleanCallbackCounters();
 
         ///act
         result = tlsioInterfaces->concrete_io_open(
@@ -2061,6 +2067,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
 
         tlsioHandle = tlsioInterfaces->concrete_io_create((void*)&tlsioConfig);
         ASSERT_IS_NOT_NULL(tlsioHandle);
+        CleanCallbackCounters();
 
         ///act
         result = tlsioInterfaces->concrete_io_open(
@@ -2089,6 +2096,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
 
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
+        CleanCallbackCounters();
 
         ///act
         result = tlsioInterfaces->concrete_io_open(
@@ -2143,6 +2151,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
             on_io_error, CallbackContext);
         ASSERT_ARE_NOT_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_ERROR, (int)tlsio_arduino_get_state(tlsioHandle));
+        CleanCallbackCounters();
 
         ///act
         result = tlsioInterfaces->concrete_io_open(
@@ -2155,7 +2164,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_NOT_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, 1, currentmalloc_call);
-        ASSERT_CALLBACK_COUNTERS(2, 3, 0, 0, 0);
+        ASSERT_CALLBACK_COUNTERS(1, 1, 0, 0, 0);
         ASSERT_ARE_EQUAL(int, (int)IO_OPEN_ERROR, (int)on_io_open_complete_result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_ERROR, (int)tlsio_arduino_get_state(tlsioHandle));
 
@@ -2194,6 +2203,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
             on_io_error, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
+        CleanCallbackCounters();
 
         ///act
         result = tlsioInterfaces->concrete_io_open(
@@ -2206,7 +2216,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_NOT_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, 1, currentmalloc_call);
-        ASSERT_CALLBACK_COUNTERS(1, 2, 0, 0, 0);
+        ASSERT_CALLBACK_COUNTERS(1, 1, 0, 0, 0);
         ASSERT_ARE_EQUAL(int, (int)IO_OPEN_ERROR, (int)on_io_open_complete_result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_ERROR, (int)tlsio_arduino_get_state(tlsioHandle));
 
@@ -2246,6 +2256,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
             on_io_error, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPENING, (int)tlsio_arduino_get_state(tlsioHandle));
+        CleanCallbackCounters();
 
         ///act
         result = tlsioInterfaces->concrete_io_open(
@@ -2363,6 +2374,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
             on_bytes_received, CallbackContext,
             on_io_error, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
+        CleanCallbackCounters();
 
         ///act
         for (size_t i = 0; i < 10; i++)
@@ -2416,6 +2428,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
             on_bytes_received, CallbackContext,
             on_io_error, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
+        CleanCallbackCounters();
 
         ///act
         for (size_t i = 0; i < 10; i++)
@@ -2473,7 +2486,6 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, 1, currentmalloc_call);
         ASSERT_CALLBACK_COUNTERS(0, 0, 0, 0, 0);
-        ASSERT_ARE_EQUAL(int, (int)IO_OPEN_OK, (int)on_io_open_complete_result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
 
         ///cleanup
@@ -2506,6 +2518,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
 
         tlsioHandle = tlsioInterfaces->concrete_io_create((void*)&tlsioConfig);
         ASSERT_IS_NOT_NULL(tlsioHandle);
+        CleanCallbackCounters();
 
         ///act
         result = tlsioInterfaces->concrete_io_open(
@@ -2601,6 +2614,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
             on_io_error, CallbackContext);
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPEN, (int)tlsio_arduino_get_state(tlsioHandle));
+        CleanCallbackCounters();
 
         ///act
         tlsioInterfaces->concrete_io_destroy(tlsioHandle);
@@ -2608,7 +2622,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_EQUAL(int, 0, currentmalloc_call);
-        ASSERT_CALLBACK_COUNTERS(0, 1, 0, 0, 0);
+        ASSERT_CALLBACK_COUNTERS(0, 0, 0, 0, 0);
 
         ///cleanup
     }
