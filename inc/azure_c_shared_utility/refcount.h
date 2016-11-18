@@ -31,6 +31,10 @@ extern "C"
 #define REFCOUNT_USE_STD_ATOMIC 1
 #endif
 
+#if defined(ARDUINO_ARCH_SAMD)
+#undef  REFCOUNT_USE_STD_ATOMIC
+#endif
+
 #define REFCOUNT_TYPE(type) \
 struct C2(C2(REFCOUNT_, type), _TAG)
 

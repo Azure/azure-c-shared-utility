@@ -1,15 +1,9 @@
-<<<<<<< Updated upstream
-azure-c-shared-util (0.1.0-2) trusty; urgency=low
+azure-c-shared-util (0.1.0-4) trusty; urgency=low
 
   * Initial trusty repo
 
   * Avoid looping call to lws_context_destroy leading to segmentation fault
 
- -- AzureIoT User <aziotsdklinux@outlook.com>  Tue, 27 Sep 2016 11:00:00 +0000
-=======
-azure-c-shared-util (0.1.0-3) trusty; urgency=low
+  * Bug fixes.
 
-  * Initial trusty repo
-
- -- AzureIoT User <aziotsdklinux@outlook.com>  Thu, 29 Sep 2016 11:00:00 +0000
->>>>>>> Stashed changes
+ -- AzureIoT User <aziotsdklinux@outlook.com>  Tue, 27 Sep 2016 17:00:00 +0000

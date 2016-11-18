@@ -1,16 +1,11 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#include <stdlib.h>
 #ifdef _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
 #endif
+
 #include "azure_c_shared_utility/gballoc.h"
-
-#include <time.h>
-#include <stddef.h>
-
-#include "azure_c_shared_utility/crt_abstractions.h"
 #include "azure_c_shared_utility/sastoken.h"
 #include "azure_c_shared_utility/urlencode.h"
 #include "azure_c_shared_utility/hmacsha256.h"
@@ -19,6 +14,190 @@
 #include "azure_c_shared_utility/strings.h"
 #include "azure_c_shared_utility/buffer_.h"
 #include "azure_c_shared_utility/xlogging.h"
+#include "azure_c_shared_utility/crt_abstractions.h"
+
+static double getExpiryValue(const char* expiryASCII)
+{
+    double value = 0;
+    size_t i = 0;
+    for (i = 0; expiryASCII[i] != '\0'; i++)
+    {
+        if (expiryASCII[i] >= '0' && expiryASCII[i] <= '9')
+        {
+            value = value * 10 + (expiryASCII[i] - '0');
+        }
+        else
+        {
+            value = 0;
+            break;
+        }
+    }
+    return value;
+}
+
+bool SASToken_Validate(STRING_HANDLE sasToken)
+{
+    bool result;
+    /*Codes_SRS_SASTOKEN_25_025: [**SASToken_Validate shall get the SASToken value by invoking STRING_c_str on the handle.**]***/
+    const char* sasTokenArray = STRING_c_str(sasToken);
+
+    /***Codes_SRS_SASTOKEN_25_024: [**If handle is NULL then SASToken_Validate shall return false.**] ***/
+    /*Codes_SRS_SASTOKEN_25_026: [**If STRING_c_str on handle return NULL then SASToken_Validate shall return false.**]***/
+    if (sasToken == NULL || sasTokenArray == NULL)
+    {
+        result = false;
+    }
+    else
+    {
+        int seStart = -1, seStop = -1;
+        int srStart = -1, srStop = -1;
+        int sigStart = -1, sigStop = -1;
+        int tokenLength = (int) STRING_length(sasToken);
+        int i ;
+        for (i = 0; i < tokenLength; i++)
+        {
+            if (sasTokenArray[i] == 's' && sasTokenArray[i + 1] == 'e' && sasTokenArray[i + 2] == '=') // Look for se=
+            {
+                seStart = i + 3;
+                if (srStart > 0 && srStop < 0)
+                {
+                    if (sasTokenArray[i - 1] != '&' && sasTokenArray[i - 1] == ' ') // look for either & or space
+                        srStop = i - 1;
+                    else if (sasTokenArray[i - 1] == '&')
+                        srStop = i - 2;
+                    else
+                        seStart = -1; // as the format is not either "&se=" or " se="
+                }
+                else if (sigStart > 0 && sigStop < 0)
+                {
+                    if (sasTokenArray[i - 1] != '&' && sasTokenArray[i - 1] == ' ')
+                        sigStop = i - 1;
+                    else if (sasTokenArray[i - 1] == '&')
+                        sigStop = i - 2;
+                    else
+                        seStart = -1;
+                }
+                continue;
+            }
+            if (sasTokenArray[i] == 's' && sasTokenArray[i + 1] == 'r' && sasTokenArray[i + 2] == '=') // Look for sr=
+            {
+                srStart = i + 3;
+                if (seStart > 0 && seStop < 0)
+                {
+                    if (sasTokenArray[i - 1] != '&' && sasTokenArray[i - 1] == ' ')
+                        seStop = i - 1;
+                    else if (sasTokenArray[i - 1] == '&')
+                        seStop = i - 2;
+                    else
+                        srStart = -1;
+                }
+                else if (sigStart > 0 && sigStop < 0)
+                {
+                    if (sasTokenArray[i - 1] != '&' && sasTokenArray[i - 1] == ' ')
+                        sigStop = i - 1;
+                    else if (sasTokenArray[i - 1] == '&')
+                        sigStop = i - 2;
+                    else
+                        srStart = -1;
+                }
+                continue;
+            }
+            if (sasTokenArray[i] == 's' && sasTokenArray[i + 1] == 'i' && sasTokenArray[i + 2] == 'g' && sasTokenArray[i + 3] == '=') // Look for sig=
+            {
+                sigStart = i + 4;
+                if (srStart > 0 && srStop < 0)
+                {
+                    if (sasTokenArray[i - 1] != '&' && sasTokenArray[i - 1] == ' ')
+                        srStop = i - 1;
+                    else if (sasTokenArray[i - 1] == '&')
+                        srStop = i - 2;
+                    else
+                        sigStart = -1;
+                }
+                else if (seStart > 0 && seStop < 0)
+                {
+                    if (sasTokenArray[i - 1] != '&' && sasTokenArray[i - 1] == ' ')
+                        seStop = i - 1;
+                    else if (sasTokenArray[i - 1] == '&')
+                        seStop = i - 2;
+                    else
+                        sigStart = -1;
+                }
+                continue;
+            }
+        }
+        /*Codes_SRS_SASTOKEN_25_027: [**If SASTOKEN does not obey the SASToken format then SASToken_Validate shall return false.**]***/
+        /*Codes_SRS_SASTOKEN_25_028: [**SASToken_validate shall check for the presence of sr, se and sig from the token and return false if not found**]***/
+        if (seStart < 0 || srStart < 0 || sigStart < 0)
+        {
+            result = false;
+        }
+        else
+        {
+            if (seStop < 0)
+            {
+                seStop = tokenLength;
+            }
+            else if (srStop < 0)
+            {
+                srStop = tokenLength;
+            }
+            else if (sigStop < 0)
+            {
+                sigStop = tokenLength;
+            }
+
+            if ((seStop <= seStart) ||
+                (srStop <= srStart) ||
+                (sigStop <= sigStart))
+            {
+                result = false;
+            }
+            else
+            {
+                char* expiryASCII = malloc(seStop - seStart + 1);
+                /*Codes_SRS_SASTOKEN_25_031: [**If malloc fails during validation then SASToken_Validate shall return false.**]***/
+                if (expiryASCII == NULL)
+                {
+                    result = false;
+                }
+                else
+                {
+                    double expiry;
+                    for (i = seStart; i < seStop; i++)
+                    {
+                        expiryASCII[i - seStart] = sasTokenArray[i];
+                    }
+                    expiryASCII[seStop - seStart] = '\0';
+
+                    expiry = getExpiryValue(expiryASCII);
+                    /*Codes_SRS_SASTOKEN_25_029: [**SASToken_validate shall check for expiry time from token and if token has expired then would return false **]***/
+                    if (expiry <= 0)
+                    {
+                        result = false;
+                    }
+                    else
+                    {
+                        double secSinceEpoch = get_difftime(get_time(NULL), (time_t)0);
+                        if (expiry < secSinceEpoch)
+                        {
+                            /*Codes_SRS_SASTOKEN_25_029: [**SASToken_validate shall check for expiry time from token and if token has expired then would return false **]***/
+                            result = false;
+                        }
+                        else
+                        {
+                            /*Codes_SRS_SASTOKEN_25_030: [**SASToken_validate shall return true only if the format is obeyed and the token has not yet expired **]***/
+                            result = true;
+                        }
+                    }
+                    free(expiryASCII);
+                }
+            }
+        }
+    }
+
+    return result;
+}
 
 STRING_HANDLE SASToken_Create(STRING_HANDLE key, STRING_HANDLE scope, STRING_HANDLE keyName, size_t expiry)
 {

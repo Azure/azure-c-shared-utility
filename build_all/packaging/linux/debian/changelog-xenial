@@ -1,5 +1,7 @@
-azure-c-shared-util (0.1.0.0-1) xenial; urgency=low
+azure-c-shared-util (0.1.0.0-2) xenial; urgency=low
 
   * Initial xenial repo
+
+  * Bug fixes
 
  -- AzureIoT User <aziotsdklinux@outlook.com>  Thu, 29 Sep 2016 11:00:00 +0000

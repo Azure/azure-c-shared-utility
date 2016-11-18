@@ -30,11 +30,14 @@ if (WINCE)
 ENDIF()
 
 #the following variables are project-wide and can be used with cmake-gui
-option(skip_unittests "set skip_unittests to ON to skip unittests (default is OFF)[if possible, they are always build]" OFF)
+option(skip_unittests "set skip_unittests to ON to skip unittests (default is OFF)[if possible, they are always built]" OFF)
+option(skip_samples "set skip_samples to ON to skip building samples (default is OFF)[if possible, they are always built]" OFF)
 option(use_http "set use_http to ON if http is to be used, set to OFF to not use http" ON)
 option(use_condition "set use_condition to ON if the condition module and its adapters should be enabled" ON)
 option(use_wsio "set use_wsio to ON to use libwebsockets for WebSocket support (default is OFF)" OFF)
 option(nuget_e2e_tests "set nuget_e2e_tests to ON to generate e2e tests to run with nuget packages (default is OFF)" OFF)
+option(use_installed_dependencies "set use_installed_dependencies to ON to use installed packages instead of building dependencies from submodules" OFF)
+option(use_default_uuid "set use_default_uuid to ON to use the out of the box UUID that comes with the SDK rather than platform specific implementations" OFF)
 
 if(WIN32)
     option(use_schannel "set use_schannel to ON if schannel is to be used, set to OFF to not use schannel" ON)
@@ -53,65 +56,65 @@ option(compileOption_CXX "passes a string to the command line of the C++ compile
 
 if(${use_cyclonessl} AND WIN32)
     set(cyclonessl_c_files
-		$ENV{CycloneSSLDir}/cyclone_ssl/ssl_common.c
-		$ENV{CycloneSSLDir}/cyclone_ssl/tls.c
-		$ENV{CycloneSSLDir}/cyclone_ssl/tls_cache.c
-		$ENV{CycloneSSLDir}/cyclone_ssl/tls_cipher_suites.c
-		$ENV{CycloneSSLDir}/cyclone_ssl/tls_client.c
-		$ENV{CycloneSSLDir}/cyclone_ssl/tls_common.c
-		$ENV{CycloneSSLDir}/cyclone_ssl/tls_io.c
-		$ENV{CycloneSSLDir}/cyclone_ssl/tls_misc.c
-		$ENV{CycloneSSLDir}/cyclone_ssl/tls_record.c
-		$ENV{CycloneSSLDir}/cyclone_ssl/tls_server.c
-		$ENV{CycloneSSLDir}/common/date_time.c
-		$ENV{CycloneSSLDir}/common/debug.c
-		$ENV{CycloneSSLDir}/common/endian.c
-		$ENV{CycloneSSLDir}/common/os_port_windows.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/aes.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/aria.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/asn1.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/base64.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/camellia.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/chacha.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/chacha20_poly1305.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/cipher_mode_cbc.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/cipher_mode_ccm.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/cipher_mode_gcm.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/des.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/des3.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/dh.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/dsa.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/ec.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/ec_curves.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/ecdh.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/ecdsa.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/hmac.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/idea.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/md5.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/mpi.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/oid.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/pem.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/poly1305.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/rc4.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/rsa.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/seed.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/sha1.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/sha224.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/sha256.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/sha384.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/sha512.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/x509.c
-		$ENV{CycloneSSLDir}/cyclone_crypto/yarrow.c
+        $ENV{CycloneSSLDir}/cyclone_ssl/ssl_common.c
+        $ENV{CycloneSSLDir}/cyclone_ssl/tls.c
+        $ENV{CycloneSSLDir}/cyclone_ssl/tls_cache.c
+        $ENV{CycloneSSLDir}/cyclone_ssl/tls_cipher_suites.c
+        $ENV{CycloneSSLDir}/cyclone_ssl/tls_client.c
+        $ENV{CycloneSSLDir}/cyclone_ssl/tls_common.c
+        $ENV{CycloneSSLDir}/cyclone_ssl/tls_io.c
+        $ENV{CycloneSSLDir}/cyclone_ssl/tls_misc.c
+        $ENV{CycloneSSLDir}/cyclone_ssl/tls_record.c
+        $ENV{CycloneSSLDir}/cyclone_ssl/tls_server.c
+        $ENV{CycloneSSLDir}/common/date_time.c
+        $ENV{CycloneSSLDir}/common/debug.c
+        $ENV{CycloneSSLDir}/common/endian.c
+        $ENV{CycloneSSLDir}/common/os_port_windows.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/aes.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/aria.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/asn1.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/base64.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/camellia.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/chacha.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/chacha20_poly1305.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/cipher_mode_cbc.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/cipher_mode_ccm.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/cipher_mode_gcm.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/des.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/des3.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/dh.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/dsa.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/ec.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/ec_curves.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/ecdh.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/ecdsa.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/hmac.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/idea.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/md5.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/mpi.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/oid.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/pem.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/poly1305.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/rc4.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/rsa.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/seed.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/sha1.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/sha224.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/sha256.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/sha384.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/sha512.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/x509.c
+        $ENV{CycloneSSLDir}/cyclone_crypto/yarrow.c
     )
-	
-	include_directories($ENV{CycloneSSLDir}/common/)
-	include_directories($ENV{CycloneSSLDir}/cyclone_ssl/)
-	include_directories($ENV{CycloneSSLDir}/cyclone_crypto/)
+    
+    include_directories($ENV{CycloneSSLDir}/common/)
+    include_directories($ENV{CycloneSSLDir}/cyclone_ssl/)
+    include_directories($ENV{CycloneSSLDir}/cyclone_crypto/)
     include_directories($ENV{CycloneSSLDir}/demo/x86/ssl_client_demo/src/)
 
     set_source_files_properties(${cyclonessl_c_files} PROPERTIES COMPILE_FLAGS "/wd4200 /wd4201 /wd4244 /wd4100 /wd4267 /wd4701 /wd4703 /wd4389 /wd4005")
     set_source_files_properties(./src/tlsio_cyclonessl.c ./src/tlsio_cyclonessl_socket_bsd.c PROPERTIES COMPILE_FLAGS "/wd4200 /wd4201 /wd4244 /wd4100 /wd4267 /wd4701 /wd4703 /wd4389 /wd4005 /wd4996")
-	add_library(cyclonessl ${cyclonessl_c_files})
+    add_library(cyclonessl ${cyclonessl_c_files})
 
 endif()
 
@@ -133,28 +136,27 @@ if(MSVC)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4")
 
-		if(${use_openssl})
-			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_OPENSSL")
-			set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_OPENSSL")
-		endif()
-		if(${use_cyclonessl})
-			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_CYCLONESSL")
-			set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_CYCLONESSL")
-		endif()
+        if(${use_openssl})
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_OPENSSL")
+            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_OPENSSL")
+        endif()
+        if(${use_cyclonessl})
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_CYCLONESSL")
+            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_CYCLONESSL")
+        endif()
 
     endif()
 elseif(LINUX)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Werror")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -Werror")
     if(NOT IN_OPENWRT)
         set (CMAKE_C_FLAGS "-D_POSIX_C_SOURCE=200112L ${CMAKE_C_FLAGS}")
     endif()
 endif()
 
 if(${use_wsio})
+    
     include_directories($ENV{OpenSSLDir}/include)
-    include_directories(deps/libwebsockets/lib)
-    include_directories(${PROJECT_BINARY_DIR}/deps/libwebsockets)
 
     if(WIN32)
         string(REPLACE "/W4" "/W0" CMAKE_C_FLAGS ${CMAKE_C_FLAGS})
@@ -171,7 +173,7 @@ if(${use_wsio})
         set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} /IGNORE:4006 /IGNORE:4221")
 
         remove_definitions(/WX)
-        add_subdirectory(deps/libwebsockets)
+        include("dependencies.cmake")
         add_definitions(/WX)
         set(CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS_PREV})
         set(CMAKE_SHARED_LINKER_FLAGS ${CMAKE_SHARED_LINKER_FLAGS_PREV})
@@ -188,7 +190,9 @@ if(${use_wsio})
         if(NOT IN_OPENWRT)
             string(REPLACE "-D_POSIX_C_SOURCE=200112L" "" CMAKE_C_FLAGS ${CMAKE_C_FLAGS})
         endif()
-        add_subdirectory(deps/libwebsockets)
+        
+        include("dependencies.cmake")
+        
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
         if(NOT IN_OPENWRT)
@@ -274,482 +278,10 @@ function(add_files_to_install filesToBeInstalled)
     set(INSTALL_H_FILES ${INSTALL_H_FILES} ${filesToBeInstalled} CACHE INTERNAL "Files that will be installed on the system")
 endfunction()
 
-function(set_test_target_folder whatIsBuilding ext)
-    if("${whatIsBuilding}" MATCHES ".*e2e.*")
-        set_target_properties(${whatIsBuilding}_${ext}
-                   PROPERTIES
-                   FOLDER "tests/E2ETests")
-    else()
-        set_target_properties(${whatIsBuilding}_${ext}
-                   PROPERTIES
-                   FOLDER "tests/UnitTests")
-    endif()
-endfunction()
-
-function(windows_unittests_add_dll whatIsBuilding)
-    link_directories(${whatIsBuilding}_dll $ENV{VCInstallDir}UnitTest/lib)
-
-    add_library(${whatIsBuilding}_dll SHARED
-        ${${whatIsBuilding}_cpp_files}
-        ${${whatIsBuilding}_h_files}
-        ${${whatIsBuilding}_c_files}
-        ${sharedutil_include_directories}../../src/xlogging.c
-        ${sharedutil_include_directories}../../src/consolelogger.c
-    )
-
-    set_test_target_folder(${whatIsBuilding} "dll")
-
-    set(PARSING_ADDITIONAL_LIBS OFF)
-    set(PARSING_VALGRIND_SUPPRESSIONS_FILE OFF)
-    set(VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER)
-    foreach(f ${ARGN})
-        set(skip_to_next FALSE)
-        if(${f} STREQUAL "ADDITIONAL_LIBS")
-            SET(PARSING_ADDITIONAL_LIBS ON)
-            SET(PARSING_VALGRIND_SUPPRESSIONS_FILE OFF)
-            #also unset all the other states
-            set(skip_to_next TRUE)
-        elseif(${f} STREQUAL "VALGRIND_SUPPRESSIONS_FILE")
-            SET(PARSING_ADDITIONAL_LIBS OFF)
-            SET(PARSING_VALGRIND_SUPPRESSIONS_FILE ON)
-            set(skip_to_next TRUE)
-        endif()
-
-        if(NOT skip_to_next)
-            if(PARSING_ADDITIONAL_LIBS)
-                target_link_libraries(${whatIsBuilding}_dll ${f})
-            endif()
-        endif()
-
-    endforeach()
-
-    target_include_directories(${whatIsBuilding}_dll PUBLIC ${sharedutil_include_directories} $ENV{VCInstallDir}UnitTest/include)
-    target_compile_definitions(${whatIsBuilding}_dll PUBLIC -DCPP_UNITTEST)
-    target_link_libraries(${whatIsBuilding}_dll micromock_cpp_unittest umock_c ctest testrunnerswitcher)
-endfunction()
-
-function(windows_unittests_add_exe whatIsBuilding)
-    add_executable(${whatIsBuilding}_exe
-        ${${whatIsBuilding}_cpp_files}
-        ${${whatIsBuilding}_h_files}
-        ${${whatIsBuilding}_c_files}
-        ${CMAKE_CURRENT_LIST_DIR}/main.c
-        ${sharedutil_include_directories}../../src/xlogging.c
-        ${sharedutil_include_directories}../../src/consolelogger.c
-    )
-
-    set_test_target_folder(${whatIsBuilding} "exe")
-
-    set(PARSING_ADDITIONAL_LIBS OFF)
-    set(PARSING_VALGRIND_SUPPRESSIONS_FILE OFF)
-    set(VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER)
-    foreach(f ${ARGN})
-        set(skip_to_next FALSE)
-        if(${f} STREQUAL "ADDITIONAL_LIBS")
-            SET(PARSING_ADDITIONAL_LIBS ON)
-            SET(PARSING_VALGRIND_SUPPRESSIONS_FILE OFF)
-            #also unset all the other states
-            set(skip_to_next TRUE)
-        elseif(${f} STREQUAL "VALGRIND_SUPPRESSIONS_FILE")
-            SET(PARSING_ADDITIONAL_LIBS OFF)
-            SET(PARSING_VALGRIND_SUPPRESSIONS_FILE ON)
-            set(skip_to_next TRUE)
-        endif()
-
-        if(NOT skip_to_next)
-            if(PARSING_ADDITIONAL_LIBS)
-                target_link_libraries(${whatIsBuilding}_exe ${f})
-            endif()
-        endif()
-
-    endforeach()
-
-    target_compile_definitions(${whatIsBuilding}_exe PUBLIC -DUSE_CTEST)
-    target_include_directories(${whatIsBuilding}_exe PUBLIC ${sharedutil_include_directories})
-    target_link_libraries(${whatIsBuilding}_exe micromock_ctest umock_c ctest testrunnerswitcher)
-    add_test(NAME ${whatIsBuilding} COMMAND ${whatIsBuilding}_exe)
-endfunction()
-
-#this function takes more than the 1 mandatory argument (whatIsBuilding)
-#the parameters are separated by "known" separators
-#for example, ADDITIONAL_LIBS starts a list of needed libraries
-function(linux_unittests_add_exe whatIsBuilding)
-    add_executable(${whatIsBuilding}_exe
-        ${${whatIsBuilding}_cpp_files}
-        ${${whatIsBuilding}_h_files}
-        ${${whatIsBuilding}_c_files}
-        ${CMAKE_CURRENT_LIST_DIR}/main.c
-        ${sharedutil_include_directories}../../src/xlogging.c
-        ${sharedutil_include_directories}../../src/consolelogger.c
-    )
-
-    set_test_target_folder(${whatIsBuilding} "exe")
-
-    target_compile_definitions(${whatIsBuilding}_exe PUBLIC -DUSE_CTEST)
-    target_include_directories(${whatIsBuilding}_exe PUBLIC ${sharedutil_include_directories})
-
-    #this part detects
-    #   - the additional libraries that might be needed.
-    #     additional libraries are started by ADDITIONAL_LIBS parameter and ended by any other known parameter (or end of variable arguments)
-    #   - a valgrind suppression file (VALGRIND_SUPPRESSIONS_FILE) for memcheck
-    #     the file name follows immediately after
-
-    set(PARSING_ADDITIONAL_LIBS OFF)
-    set(PARSING_VALGRIND_SUPPRESSIONS_FILE OFF)
-    set(VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER)
-    foreach(f ${ARGN})
-        if(${f} STREQUAL "ADDITIONAL_LIBS")
-            SET(PARSING_ADDITIONAL_LIBS ON)
-            SET(PARSING_VALGRIND_SUPPRESSIONS_FILE OFF)
-            #also unset all the other states
-
-        elseif(${f} STREQUAL "VALGRIND_SUPPRESSIONS_FILE")
-            SET(PARSING_ADDITIONAL_LIBS OFF)
-            SET(PARSING_VALGRIND_SUPPRESSIONS_FILE ON)
-
-        else()
-
-            if(PARSING_ADDITIONAL_LIBS)
-                target_link_libraries(${whatIsBuilding}_exe ${f})
-            elseif(PARSING_VALGRIND_SUPPRESSIONS_FILE)
-                set(VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER "--suppressions=${f}")
-            endif()
-        endif()
-
-    endforeach()
-
-    target_link_libraries(${whatIsBuilding}_exe micromock_ctest umock_c ctest)
-
-    add_test(NAME ${whatIsBuilding} COMMAND $<TARGET_FILE:${whatIsBuilding}_exe>)
-
-    if(${run_valgrind})
-        find_program(VALGRIND_FOUND NAMES valgrind)
-        if(${VALGRIND_FOUND} STREQUAL VALGRIND_FOUND-NOTFOUND)
-            message(WARNING "run_valgrind was TRUE, but valgrind was not found - there will be no tests run under valgrind")
-        else()
-            add_test(NAME ${whatIsBuilding}_valgrind COMMAND valgrind                 --num-callers=100 --error-exitcode=1 --trace-children=yes --leak-check=full --track-origins=yes ${VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER} $<TARGET_FILE:${whatIsBuilding}_exe>)
-            add_test(NAME ${whatIsBuilding}_helgrind COMMAND valgrind --tool=helgrind --num-callers=100 --error-exitcode=1 ${VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER} $<TARGET_FILE:${whatIsBuilding}_exe>)
-            add_test(NAME ${whatIsBuilding}_drd      COMMAND valgrind --tool=drd      --num-callers=100 --error-exitcode=1 ${VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER} $<TARGET_FILE:${whatIsBuilding}_exe>)
-        endif()
-    endif()
-endfunction()
-
-function(build_test_artifacts whatIsBuilding use_gballoc)
-
-    #the first argument is what is building
-    #the second argument is whether the tests should be build with gballoc #defines or not
-    #the following arguments are a list of libraries to link with
-
-    if(${use_gballoc})
-        add_definitions(-DGB_MEASURE_MEMORY_FOR_THIS -DGB_DEBUG_ALLOC)
-    else()
-    endif()
-
-    #setting #defines
-    if(WIN32)
-        add_definitions(-D_CRT_SECURE_NO_WARNINGS)
-    else()
-    endif()
-
-    #setting includes
-    set(sharedutil_include_directories ${MICROMOCK_INC_FOLDER} ${TESTRUNNERSWITCHER_INC_FOLDER} ${CTEST_INC_FOLDER} ${SAL_INC_FOLDER} ${SHARED_UTIL_INC_FOLDER} ${SHARED_UTIL_SRC_FOLDER})
-    if(WIN32)
-    else()
-        include_directories(${sharedutil_include_directories})
-    endif()
-
-    #setting output type
-    if(WIN32)
-        if(
-            (("${whatIsBuilding}" MATCHES ".*ut.*") AND ${skip_unittests})
-        )
-        else()
-            if(
-                (("${whatIsBuilding}" MATCHES ".*e2e.*") AND ${nuget_e2e_tests})
-            )
-                windows_unittests_add_exe(${whatIsBuilding}_nuget ${ARGN})
-            else()
-                windows_unittests_add_exe(${whatIsBuilding} ${ARGN})
-                windows_unittests_add_dll(${whatIsBuilding} ${ARGN})
-            endif()
-        endif()
-    else()
-        if(
-            (("${whatIsBuilding}" MATCHES ".*ut.*") AND ${skip_unittests})
-        )
-        else()
-            linux_unittests_add_exe(${whatIsBuilding} ${ARGN})
-        endif()
-    endif()
-endfunction(build_test_artifacts)
-
-
-function(c_windows_unittests_add_dll whatIsBuilding folder)
-    link_directories(${whatIsBuilding}_dll $ENV{VCInstallDir}UnitTest/lib)
-
-    SET(VAR 1)
-    foreach(file ${${whatIsBuilding}_test_files})
-        add_library(${whatIsBuilding}_testsonly_lib STATIC
-            ${file}
-        )
-        set_source_files_properties(${file} PROPERTIES COMPILE_FLAGS -DCPPUNITTEST_SYMBOL=some_symbol_for_cppunittest_${VAR})
-        MATH(EXPR VAR "${VAR}+1")
-    endforeach()
-
-    set_target_properties(${whatIsBuilding}_testsonly_lib
-               PROPERTIES
-               FOLDER ${folder} )
-
-    target_include_directories(${whatIsBuilding}_testsonly_lib PUBLIC ${sharedutil_include_directories} $ENV{VCInstallDir}UnitTest/include)
-    target_compile_definitions(${whatIsBuilding}_testsonly_lib PUBLIC -DCPP_UNITTEST)
-    target_compile_options(${whatIsBuilding}_testsonly_lib PUBLIC /TP /EHsc)
-
-    add_library(${whatIsBuilding}_dll SHARED
-        ${${whatIsBuilding}_cpp_files}
-        ${${whatIsBuilding}_h_files}
-        ${${whatIsBuilding}_c_files}
-        ${sharedutil_include_directories}../../src/xlogging.c
-        ${sharedutil_include_directories}../../src/consolelogger.c
-    )
-
-    set_target_properties(${whatIsBuilding}_dll
-               PROPERTIES
-               FOLDER ${folder} )
-
-    target_include_directories(${whatIsBuilding}_dll PUBLIC ${sharedutil_include_directories} $ENV{VCInstallDir}UnitTest/include)
-    target_compile_definitions(${whatIsBuilding}_dll PUBLIC -DCPP_UNITTEST)
-    target_link_libraries(${whatIsBuilding}_dll micromock_cpp_unittest umock_c ctest testrunnerswitcher ${whatIsBuilding}_testsonly_lib )
-
-    set(PARSING_ADDITIONAL_LIBS OFF)
-    set(PARSING_VALGRIND_SUPPRESSIONS_FILE OFF)
-    set(VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER)
-    foreach(f ${ARGN})
-        set(skip_to_next FALSE)
-        if(${f} STREQUAL "ADDITIONAL_LIBS")
-            SET(PARSING_ADDITIONAL_LIBS ON)
-            SET(PARSING_VALGRIND_SUPPRESSIONS_FILE OFF)
-            #also unset all the other states
-            set(skip_to_next TRUE)
-        elseif(${f} STREQUAL "VALGRIND_SUPPRESSIONS_FILE")
-            SET(PARSING_ADDITIONAL_LIBS OFF)
-            SET(PARSING_VALGRIND_SUPPRESSIONS_FILE ON)
-            set(skip_to_next TRUE)
-        endif()
-
-        if(NOT skip_to_next)
-            if(PARSING_ADDITIONAL_LIBS)
-                target_link_libraries(${whatIsBuilding}_dll ${f})
-            endif()
-        endif()
-
-    endforeach()
-
-    SET(VAR 1)
-    foreach(file ${${whatIsBuilding}_test_files})
-
-        # for x64 the underscore is not needed
-        if (ARCHITECTURE STREQUAL "x86_64")
-            set_property(TARGET ${whatIsBuilding}_dll APPEND PROPERTY LINK_FLAGS /INCLUDE:"some_symbol_for_cppunittest_${VAR}")
-        else()
-            set_property(TARGET ${whatIsBuilding}_dll APPEND PROPERTY LINK_FLAGS /INCLUDE:"_some_symbol_for_cppunittest_${VAR}")
-        endif()
-        MATH(EXPR VAR "${VAR}+1")
-    endforeach()
-endfunction()
-
-function(c_windows_unittests_add_exe whatIsBuilding folder)
-    add_executable(${whatIsBuilding}_exe
-        ${${whatIsBuilding}_test_files}
-        ${${whatIsBuilding}_cpp_files}
-        ${${whatIsBuilding}_h_files}
-        ${${whatIsBuilding}_c_files}
-        ${CMAKE_CURRENT_LIST_DIR}/main.c
-        ${sharedutil_include_directories}../../src/xlogging.c
-        ${sharedutil_include_directories}../../src/consolelogger.c
-    )
-    set_target_properties(${whatIsBuilding}_exe
-               PROPERTIES
-               FOLDER ${folder})
-
-    target_compile_definitions(${whatIsBuilding}_exe PUBLIC -DUSE_CTEST)
-    target_include_directories(${whatIsBuilding}_exe PUBLIC ${sharedutil_include_directories})
-    target_link_libraries(${whatIsBuilding}_exe micromock_ctest umock_c ctest testrunnerswitcher)
-
-    set(PARSING_ADDITIONAL_LIBS OFF)
-    set(PARSING_VALGRIND_SUPPRESSIONS_FILE OFF)
-    set(VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER)
-    foreach(f ${ARGN})
-        set(skip_to_next FALSE)
-        if(${f} STREQUAL "ADDITIONAL_LIBS")
-            SET(PARSING_ADDITIONAL_LIBS ON)
-            SET(PARSING_VALGRIND_SUPPRESSIONS_FILE OFF)
-            #also unset all the other states
-            set(skip_to_next TRUE)
-        elseif(${f} STREQUAL "VALGRIND_SUPPRESSIONS_FILE")
-            SET(PARSING_ADDITIONAL_LIBS OFF)
-            SET(PARSING_VALGRIND_SUPPRESSIONS_FILE ON)
-            set(skip_to_next TRUE)
-        endif()
-
-        if(NOT skip_to_next)
-            if(PARSING_ADDITIONAL_LIBS)
-                target_link_libraries(${whatIsBuilding}_exe ${f})
-            endif()
-        endif()
-
-    endforeach()
-
-    add_test(NAME ${whatIsBuilding} COMMAND ${whatIsBuilding}_exe)
-endfunction()
-
-#this function takes more than the 1 mandatory argument (whatIsBuilding)
-#the parameters are separated by "known" separators
-#for example, ADDITIONAL_LIBS starts a list of needed libraries
-function(c_linux_unittests_add_exe whatIsBuilding folder)
-
-    add_executable(${whatIsBuilding}_exe
-        ${${whatIsBuilding}_test_files}
-        ${${whatIsBuilding}_cpp_files}
-        ${${whatIsBuilding}_h_files}
-        ${${whatIsBuilding}_c_files}
-        ${CMAKE_CURRENT_LIST_DIR}/main.c
-        ${sharedutil_include_directories}../../src/xlogging.c
-        ${sharedutil_include_directories}../../src/consolelogger.c
-    )
-    set_target_properties(${whatIsBuilding}_exe
-               PROPERTIES
-               FOLDER ${folder})
-
-    target_compile_definitions(${whatIsBuilding}_exe PUBLIC -DUSE_CTEST)
-    target_include_directories(${whatIsBuilding}_exe PUBLIC ${sharedutil_include_directories})
-
-    #this part detects
-	#       - the additional libraries that might be needed.
-    #     additional libraries are started by ADDITIONAL_LIBS parameter and ended by any other known parameter (or end of variable arguments)
-    #   - a valgrind suppression file (VALGRIND_SUPPRESSIONS_FILE) for memcheck
-    #     the file name follows immediately after
-
-    set(PARSING_ADDITIONAL_LIBS OFF)
-    set(PARSING_VALGRIND_SUPPRESSIONS_FILE OFF)
-    set(VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER)
-    foreach(f ${ARGN})
-        set(skip_to_next FALSE)
-        if(${f} STREQUAL "ADDITIONAL_LIBS")
-            SET(PARSING_ADDITIONAL_LIBS ON)
-            SET(PARSING_VALGRIND_SUPPRESSIONS_FILE OFF)
-            #also unset all the other states
-            set(skip_to_next TRUE)
-        elseif(${f} STREQUAL "VALGRIND_SUPPRESSIONS_FILE")
-            SET(PARSING_ADDITIONAL_LIBS OFF)
-            SET(PARSING_VALGRIND_SUPPRESSIONS_FILE ON)
-            set(skip_to_next TRUE)
-        endif()
-
-        if(NOT skip_to_next)
-            if(PARSING_ADDITIONAL_LIBS)
-                target_link_libraries(${whatIsBuilding}_exe ${f})
-            elseif(PARSING_VALGRIND_SUPPRESSIONS_FILE)
-                set(VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER "--suppressions=${f}")
-            endif()
-        endif()
-
-    endforeach()
-
-    target_link_libraries(${whatIsBuilding}_exe micromock_ctest umock_c ctest)
-
-    add_test(NAME ${whatIsBuilding} COMMAND $<TARGET_FILE:${whatIsBuilding}_exe>)
-
-    if(${run_valgrind})
-        find_program(VALGRIND_FOUND NAMES valgrind)
-        if(${VALGRIND_FOUND} STREQUAL VALGRIND_FOUND-NOTFOUND)
-            message(WARNING "run_valgrind was TRUE, but valgrind was not found - there will be no tests run under valgrind")
-        else()
-            add_test(NAME ${whatIsBuilding}_valgrind COMMAND valgrind                 --num-callers=100 --error-exitcode=1 --trace-children=yes --leak-check=full --track-origins=yes ${VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER} $<TARGET_FILE:${whatIsBuilding}_exe>)
-            add_test(NAME ${whatIsBuilding}_helgrind COMMAND valgrind --tool=helgrind --num-callers=100 --error-exitcode=1 ${VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER} $<TARGET_FILE:${whatIsBuilding}_exe>)
-            add_test(NAME ${whatIsBuilding}_drd      COMMAND valgrind --tool=drd      --num-callers=100 --error-exitcode=1 ${VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER} $<TARGET_FILE:${whatIsBuilding}_exe>)
-        endif()
-    endif()
-endfunction()
-
-function(build_c_test_artifacts whatIsBuilding use_gballoc folder)
-
-    #the first argument is what is building
-    #the second argument is whether the tests should be build with gballoc #defines or not
-    #the following arguments are a list of libraries to link with
-
-    if(${use_gballoc})
-        add_definitions(-DGB_MEASURE_MEMORY_FOR_THIS -DGB_DEBUG_ALLOC)
-    else()
-    endif()
-
-    #setting #defines
-    if(WIN32)
-        add_definitions(-D_CRT_SECURE_NO_WARNINGS)
-    else()
-    endif()
-
-    #setting includes
-    set(sharedutil_include_directories ${MICROMOCK_INC_FOLDER} ${UMOCK_C_INC_FOLDER} ${TESTRUNNERSWITCHER_INC_FOLDER} ${CTEST_INC_FOLDER} ${SAL_INC_FOLDER} ${SHARED_UTIL_INC_FOLDER} ${SHARED_UTIL_SRC_FOLDER})
-    if(WIN32)
-    else()
-        include_directories(${sharedutil_include_directories})
-    endif()
-
-    #setting output type
-    if(WIN32)
-        if(
-            (("${whatIsBuilding}" MATCHES ".*ut.*") AND ${skip_unittests})
-        )
-        else()
-            c_windows_unittests_add_dll(${whatIsBuilding} ${folder} ${ARGN})
-            c_windows_unittests_add_exe(${whatIsBuilding} ${folder} ${ARGN})
-        endif()
-    else()
-        if(
-            (("${whatIsBuilding}" MATCHES ".*ut.*") AND ${skip_unittests})
-        )
-        else()
-            c_linux_unittests_add_exe(${whatIsBuilding} ${folder} ${ARGN})
-        endif()
-    endif()
-endfunction()
-
-function(set_platform_files)
-    if(WIN32)
-        if(${use_condition})
-            set(CONDITION_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/condition_win32.c PARENT_SCOPE)
-        endif()
-        set(THREAD_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/threadapi_win32.c PARENT_SCOPE)
-        set(LOCK_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/lock_win32.c PARENT_SCOPE)
-        if (WINCE)
-            set(HTTP_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/httpapi_wince.c PARENT_SCOPE)
-        else()
-            set(HTTP_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/httpapi_winhttp.c PARENT_SCOPE)
-        endif()
-        set(PLATFORM_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/platform_win32.c PARENT_SCOPE)
-        if (${use_socketio})
-            set(SOCKETIO_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/socketio_win32.c PARENT_SCOPE)
-        endif()
-        set(TICKCOUTER_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/tickcounter_win32.c PARENT_SCOPE)
-        set(UNIQUEID_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/uniqueid_win32.c PARENT_SCOPE)
-    else()
-        if(${use_condition})
-            set(CONDITION_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/condition_pthreads.c PARENT_SCOPE)
-        endif()
-        set(HTTP_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/httpapi_curl.c PARENT_SCOPE)
-        set(LOCK_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/lock_pthreads.c PARENT_SCOPE)
-        set(PLATFORM_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/platform_linux.c PARENT_SCOPE)
-        if (${use_socketio})
-            set(SOCKETIO_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/socketio_berkeley.c PARENT_SCOPE)
-        endif()
-        set(THREAD_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/threadapi_pthreads.c PARENT_SCOPE)
-        set(TICKCOUTER_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/tickcounter_linux.c PARENT_SCOPE)
-        set(UNIQUEID_C_FILE ${CMAKE_CURRENT_LIST_DIR}/adapters/uniqueid_linux.c PARENT_SCOPE)
-    endif()
-endfunction(set_platform_files)
+include("${CMAKE_CURRENT_LIST_DIR}/configs/azure_c_shared_utilityFunctions.cmake")
 
 #Setup the platform files
-set_platform_files()
+set_platform_files(${CMAKE_CURRENT_LIST_DIR})
 
 include_directories(${UMOCK_C_INC_FOLDER})
 
@@ -916,11 +448,6 @@ if(${use_cyclonessl} AND WIN32)
         )
 endif()
 
-if(WIN32)
-else()
-    add_files_to_install("${source_h_files}")
-endif()
-
 IF(WIN32)
     #windows needs this define
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
@@ -963,8 +490,10 @@ endif()
 
 if(${use_openssl})
     if (WIN32)
-		target_link_libraries(aziotsharedutil
-			$ENV{OpenSSLDir}/lib/ssleay32.lib $ENV{OpenSSLDir}/lib/libeay32.lib)
+        target_link_libraries(aziotsharedutil
+			$ENV{OpenSSLDir}/lib/ssleay32.lib 
+            $ENV{OpenSSLDir}/lib/libeay32.lib
+            crypt32 ws2_32 secur32)
     else()
         target_link_libraries(aziotsharedutil ssl crypto)
     endif()
@@ -979,23 +508,67 @@ if(${use_cyclonessl} AND WIN32)
 endif()
 
 if(WIN32)
-	target_link_libraries(aziotsharedutil rpcrt4.lib)
+	if (NOT ${use_default_uuid})
+		target_link_libraries(aziotsharedutil rpcrt4.lib)
+	endif()
 endif()
 
 if(LINUX)
-    target_link_libraries(aziotsharedutil pthread uuid m)
+    target_link_libraries(aziotsharedutil pthread m)
+	if (NOT ${use_default_uuid})
+		target_link_libraries(aziotsharedutil uuid)
+	endif()
 endif()
 
 if (NOT ${skip_unittests})
+    include("dependencies-test.cmake")
     add_subdirectory(testtools)
     add_subdirectory(tests)
 endif()
 
-add_subdirectory(samples)
+if (NOT ${skip_samples})
+    add_subdirectory(samples)
+endif()
 
-# Set CMAKE_INSTALL_* if not defined
-include(GNUInstallDirs)
+if(${use_installed_dependencies})
+    # Set CMAKE_INSTALL_* if not defined
+    include(GNUInstallDirs)
 
-# Install Azure C Shared Utility
-install (TARGETS aziotsharedutil DESTINATION ${CMAKE_INSTALL_LIBDIR})
-install (FILES ${source_h_files} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azureiot/azure_c_shared_utility)
+    if(NOT DEFINED CMAKE_INSTALL_LIBDIR)
+        set(CMAKE_INSTALL_LIBDIR "lib")
+    endif()
+
+    # Install Azure C Shared Utility
+    set(package_location "cmake")
+
+    install (TARGETS aziotsharedutil EXPORT aziotsharedutilTargets
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR}/../bin
+        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azureiot
+    )
+    install (FILES ${source_h_files} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azureiot/azure_c_shared_utility)
+    install (FILES ${micromock_h_files_full_path} ${INSTALL_H_FILES} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azureiot)
+
+    include(CMakePackageConfigHelpers)
+
+    configure_file("configs/${PROJECT_NAME}Config.cmake"
+        "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}/${PROJECT_NAME}Config.cmake"
+        COPYONLY
+    )
+
+    install(EXPORT aziotsharedutilTargets
+        FILE
+            "${PROJECT_NAME}Targets.cmake"
+        DESTINATION
+            ${package_location}
+    )
+    install(
+        FILES
+            "configs/${PROJECT_NAME}Config.cmake"
+            "configs/${PROJECT_NAME}Functions.cmake"
+        DESTINATION
+            ${package_location}
+    )
+
+endif()

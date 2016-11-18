@@ -55,6 +55,12 @@ On the other hand, vsprintf do not support the pinned ‘format’ and os_printf do 
 so we compacted the log in the macro LogInfo.
 */
 #include "esp8266/azcpgmspace.h"
+#define LOG(log_category, log_options, FORMAT, ...) { \
+        const char* __localFORMAT = PSTR(FORMAT); \
+        os_printf(__localFORMAT, ##__VA_ARGS__); \
+        os_printf("\r\n"); \
+}
+
 #define LogInfo(FORMAT, ...) { \
         const char* __localFORMAT = PSTR(FORMAT); \
         os_printf(__localFORMAT, ##__VA_ARGS__); \

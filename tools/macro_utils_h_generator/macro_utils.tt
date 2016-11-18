@@ -204,6 +204,18 @@ FOR_EACH_2_<#=i-2#>(X, <#for(var j=3;j<=i;j++){#>P<#=j.ToString()+((j<i)?", ":""
 
 <#}#>
 
+#define FOR_EACH_2_REVERSE_0(...)
+
+#define FOR_EACH_2_REVERSE_2(X, P1, P2) \
+X(P1, P2)
+
+<#for(var i=4;i<=nMacroParameters;i+=2) {#>
+#define FOR_EACH_2_REVERSE_<#=i#>(X, <#for(var j=1;j<=i;j++){#>P<#=j.ToString()+((j<i)?", ":"")#><#}#>) \
+X(P<#=i-1#>, P<#=i#>) \
+FOR_EACH_2_REVERSE_<#=i-2#>(X, <#for(var j=1;j<=i-2;j++){#>P<#=j.ToString()+((j<i-2)?", ":"")#><#}#>)
+
+<#}#>
+
 #define FOR_EACH_1_COUNTED_0(...)
 
 #define FOR_EACH_1_COUNTED_1(X, P1) \
@@ -239,10 +251,15 @@ This macro exists because we need a "stop condition" in outputting COMMA... when
 */
 #define FOR_EACH_2_COUNTED(MACRO_TO_INVOKE, ...) C2(FOR_EACH_2_COUNTED_, C1(COUNT_ARG(__VA_ARGS__))) LPAREN MACRO_TO_INVOKE, __VA_ARGS__)
 #define FOR_EACH_1_COUNTED(MACRO_TO_INVOKE, ...) C2(FOR_EACH_1_COUNTED_, C1(COUNT_ARG(__VA_ARGS__))) LPAREN MACRO_TO_INVOKE, __VA_ARGS__)
+
+/*FOR_EACH_2_REVERSE acts just like FOR_EACH_2, but in reverse order. Example:
+FOR_EACH_2_REVERSE(X,a,b,c,d,e,f) => X(e,f) X(c,d) X (a, b) in this order */
+#define FOR_EACH_2_REVERSE(MACRO_TO_INVOKE, ...) C2(FOR_EACH_2_REVERSE_, C1(COUNT_ARG(__VA_ARGS__))) LPAREN MACRO_TO_INVOKE, __VA_ARGS__)
 #else
 #define FOR_EACH_2(MACRO_TO_INVOKE, ...) C2(FOR_EACH_2_, C1(COUNT_ARG(__VA_ARGS__))) ( MACRO_TO_INVOKE, __VA_ARGS__)
 #define FOR_EACH_2_COUNTED(MACRO_TO_INVOKE, ...) C2(FOR_EACH_2_COUNTED_, C1(COUNT_ARG(__VA_ARGS__))) ( MACRO_TO_INVOKE,  __VA_ARGS__)
 #define FOR_EACH_1_COUNTED(MACRO_TO_INVOKE, ...) C2(FOR_EACH_1_COUNTED_, C1(COUNT_ARG(__VA_ARGS__))) ( MACRO_TO_INVOKE,  __VA_ARGS__)
+#define FOR_EACH_2_REVERSE(MACRO_TO_INVOKE, ...) C2(FOR_EACH_2_REVERSE_, C1(COUNT_ARG(__VA_ARGS__))) ( MACRO_TO_INVOKE, __VA_ARGS__)
 #endif
 
 #ifdef _MSC_VER

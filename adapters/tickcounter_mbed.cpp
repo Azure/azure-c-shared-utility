@@ -16,7 +16,7 @@ class TICK_COUNTER_INSTANCE_TAG
 {
 public:
     clock_t last_clock_value;
-    uint64_t current_ms;
+    tickcounter_ms_t current_ms;
 };
 
 TICK_COUNTER_HANDLE tickcounter_create(void)
@@ -36,7 +36,7 @@ void tickcounter_destroy(TICK_COUNTER_HANDLE tick_counter)
     }
 }
 
-int tickcounter_get_current_ms(TICK_COUNTER_HANDLE tick_counter, uint64_t* current_ms)
+int tickcounter_get_current_ms(TICK_COUNTER_HANDLE tick_counter, tickcounter_ms_t * current_ms)
 {
     int result;
     if (tick_counter == NULL || current_ms == NULL)
