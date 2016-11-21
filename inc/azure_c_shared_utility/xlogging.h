@@ -133,4 +133,27 @@ extern LOGGER_LOG xlogging_get_log_function(void);
 
 #endif /* ARDUINO_ARCH_ESP8266 */
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
+    /**
+     * @brief   Print the memory content byte pre byte in hexadecimal and as a char it the byte correspond to any printable ASCII chars.
+     *
+     *    This function prints the ‘size’ bytes in the ‘buf’ to the log. It will print in portions of 16 bytes, 
+     *         and will print the byte as a hexadecimal value, and, it is a printable, this function will print 
+     *         the correspondent ASCII character.
+     *    Non printable characters will shows as a single ‘.’. 
+     *    For this function, printable characters are all characters between ‘ ‘ (0x20) and ‘~’ (0x7E).
+     *
+     * @param   buf  Pointer to the memory address with the buffer to print.
+     * @param   size Number of bytes to print.
+     */
+    extern void xlogging_dump_buffer(const void* buf, size_t size);
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
+
 #endif /* XLOGGING_H */
