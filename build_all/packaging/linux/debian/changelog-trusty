@@ -1,9 +1,5 @@
-azure-c-shared-util (0.1.0-4) trusty; urgency=low
+azure-c-shared-util (0.1.0-5) trusty; urgency=low
 
-  * Initial trusty repo
-
-  * Avoid looping call to lws_context_destroy leading to segmentation fault
-
-  * Bug fixes.
+  * See https://github.com/Azure/azure-iot-sdks/releases for details of the release
 
  -- AzureIoT User <aziotsdklinux@outlook.com>  Tue, 27 Sep 2016 17:00:00 +0000

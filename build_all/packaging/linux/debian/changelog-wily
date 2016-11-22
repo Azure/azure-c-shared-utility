@@ -1,45 +1,5 @@
-azure-c-shared-util (0.1.0.0-23) wily; urgency=low
+azure-c-shared-util (0.1.0.0-24) wily; urgency=low
 
-  * Initial release (Closes: #5069014)
-
-  * Updated project to build WinCE (#5210823)
-
-  * Update the control file to use libssl-dev (#5210833)
-
-  * Added xio socket information to handle communications (#5248333)
-
-  * Update TLS layer to handle windows and Linux changes (#51d2e3f)
-  
-  * Add the set options to the provided functions (#7a14fba)
-
-  * Change azure_c_shared_utility to have all namespaced includes (#d588c49)
-
-  * Update socket to recieve Data in bulk (#57b1ac6)
-
-  * Updated tlsio to to successfully use certificates (#975b971e)
-
-  * Fix tlsio_schannel bug (not all input bytes were being read) (#975b971e) 
-
-  * Adjusted the tls not to provide credentials by default (#6fd9b6dd)
-
-  * Fix bug in Base64_Decode not crash with invalid lengths (#4626bb4)
-
-  * Consolidate logging headers and introduce a global function pointer for logging
-
-  * Enable consolelogger to be the default logger
-
-  * Fix socketIO compile error for MBED
-
-  * Added support on winhttp to understand a x509 certificate
-
-  * Implemented code and unittests for x509 support using openssl
-
-  * Add sprintf implemenation for to string_handle
-
-  * Implement retrieveoptions for MBED
-
-  * Avoid looping call to lws_context_destroy leading to segmentation fault
-
-  * Bug fixes
+  * See https://github.com/Azure/azure-iot-sdks/releases for details of the release
 
  -- AzureIoT User <aziotsdklinux@outlook.com>  Thu, 29 Sep 2016 11:00:00 +0000
