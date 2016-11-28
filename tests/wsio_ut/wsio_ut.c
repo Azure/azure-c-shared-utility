@@ -872,7 +872,41 @@ TEST_FUNCTION(when_wsio_destroy_is_called_all_resources_are_freed)
     STRICT_EXPECTED_CALL(singlylinkedlist_destroy(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // instance
 
-    // act
+                                                  // act
+    wsio_destroy(wsio);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_WSIO_01_007: [wsio_destroy shall free all resources associated with the wsio instance.] */
+TEST_FUNCTION(when_wsio_destroy_is_called_all_resources_are_freed_including_proxy)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+
+    HTTP_PROXY_OPTIONS proxy_options;
+    proxy_options.host_address = "test_proxy";
+    proxy_options.port = 8080;
+    proxy_options.username = "user_name";
+    proxy_options.password = "secret";
+
+    (void)wsio_setoption(wsio, OPTION_HTTP_PROXY, &proxy_options);
+
+    umock_c_reset_all_calls();
+
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // host_name
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // proxy host address
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // proxy username
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // proxy secret
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // relative_path
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocol_name
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocols
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // trusted_ca
+    STRICT_EXPECTED_CALL(singlylinkedlist_destroy(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // instance
+
+                                                  // act
     wsio_destroy(wsio);
 
     // assert

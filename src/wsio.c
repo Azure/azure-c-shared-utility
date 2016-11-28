@@ -38,6 +38,14 @@ typedef struct PENDING_SOCKET_IO_TAG
     bool is_partially_sent;
 } PENDING_SOCKET_IO;
 
+typedef struct WSIO_HTTP_PROXY_OPTIONS_TAG
+{
+	char* host_address;
+	int port;
+	char* username;
+	char* password;
+} WSIO_HTTP_PROXY_OPTIONS;
+
 typedef struct WSIO_INSTANCE_TAG
 {
     ON_BYTES_RECEIVED on_bytes_received;
@@ -57,10 +65,7 @@ typedef struct WSIO_INSTANCE_TAG
     char* trusted_ca;
     struct lws_protocols* protocols;
     bool use_ssl;
-    char* http_proxy_host_address;
-    int http_proxy_port;
-    char* http_proxy_username;
-    char* http_proxy_password;
+    WSIO_HTTP_PROXY_OPTIONS wsio_http_proxy_option;
 } WSIO_INSTANCE;
 
 static void indicate_error(WSIO_INSTANCE* wsio_instance)
@@ -536,10 +541,10 @@ CONCRETE_IO_HANDLE wsio_create(void* io_create_parameters)
             result->on_io_error_context = NULL;
             result->wsi = NULL;
             result->ws_context = NULL;
-            result->http_proxy_host_address = NULL;
-            result->http_proxy_port = 0;
-            result->http_proxy_password = NULL;
-            result->http_proxy_username = NULL;
+            result->wsio_http_proxy_option.host_address = NULL;
+            result->wsio_http_proxy_option.port = 0;
+            result->wsio_http_proxy_option.password = NULL;
+            result->wsio_http_proxy_option.username = NULL;
 
             /* Codes_SRS_WSIO_01_098: [wsio_create shall create a pending IO list that is to be used when sending buffers over the libwebsockets IO by calling singlylinkedlist_create.] */
             result->pending_io_list = singlylinkedlist_create();
@@ -697,14 +702,14 @@ int wsio_open(CONCRETE_IO_HANDLE ws_io, ON_IO_OPEN_COMPLETE on_io_open_complete,
             /* Codes_SRS_WSIO_01_097: [Keep alive shall not be supported, thus ka_time shall be set to 0.] */
             info.ka_time = 0;
 
-            if (wsio_instance->http_proxy_host_address != NULL)
+            if (wsio_instance->wsio_http_proxy_option.host_address != NULL)
             {
-                size_t host_address_len = strlen(wsio_instance->http_proxy_host_address) + 1;
-                size_t username_len = (wsio_instance->http_proxy_username == NULL) ? 0 : strlen(wsio_instance->http_proxy_username);
-                size_t password_len = (wsio_instance->http_proxy_password == NULL) ? 0 : strlen(wsio_instance->http_proxy_password);
+                size_t host_address_len = strlen(wsio_instance->wsio_http_proxy_option.host_address) + 1;
+                size_t username_len = (wsio_instance->wsio_http_proxy_option.username == NULL) ? 0 : strlen(wsio_instance->wsio_http_proxy_option.username);
+                size_t password_len = (wsio_instance->wsio_http_proxy_option.password == NULL) ? 0 : strlen(wsio_instance->wsio_http_proxy_option.password);
                 /* add 5 for the port and 1 for the ':' */
                 size_t total_length = host_address_len + 5 + 1;
-
+				
                 if (username_len > 0)
                 {
                     /* add 2 for the ':' and '@' */
@@ -724,12 +729,12 @@ int wsio_open(CONCRETE_IO_HANDLE ws_io, ON_IO_OPEN_COMPLETE on_io_open_complete,
                     if (username_len > 0)
                     {
                         /* Codes_SRS_WSIO_01_169: [ If any proxy was configured by using the proxy data option, then http_proxy_address shall be set to the address, port, username and password specified in the proxy options, in the format {username}:{password}@{address}:{port}. ] */
-                        printf_result = sprintf(proxy_string, "%s:%s@%s:%d", wsio_instance->http_proxy_username, wsio_instance->http_proxy_password, wsio_instance->http_proxy_host_address, wsio_instance->http_proxy_port);
+                        printf_result = sprintf(proxy_string, "%s:%s@%s:%d", wsio_instance->wsio_http_proxy_option.username, wsio_instance->wsio_http_proxy_option.password, wsio_instance->wsio_http_proxy_option.host_address, wsio_instance->wsio_http_proxy_option.port);
                     }
                     else
                     {
                         /* Codes_SRS_WSIO_01_170: [ If no username/password was specified for the proxy settings then http_proxy_address shall be set to the address and port specified in the proxy options, in the format {address}:{port}. ]*/
-                        printf_result = sprintf(proxy_string, "%s:%d", wsio_instance->http_proxy_host_address, wsio_instance->http_proxy_port);
+                        printf_result = sprintf(proxy_string, "%s:%d", wsio_instance->wsio_http_proxy_option.host_address, wsio_instance->wsio_http_proxy_option.port);
                     }
 
                     if (printf_result < 0)
@@ -741,7 +746,7 @@ int wsio_open(CONCRETE_IO_HANDLE ws_io, ON_IO_OPEN_COMPLETE on_io_open_complete,
                         info.http_proxy_address = proxy_string;
 
                         /* Codes_SRS_WSIO_01_171: [ If any proxy was configured by using the proxy data option, the http_proxy_port shall be set to the proxy port. ]*/
-                        info.http_proxy_port = wsio_instance->http_proxy_port;
+                        info.http_proxy_port = wsio_instance->wsio_http_proxy_option.port;
                     }
                 }
             }
@@ -885,7 +890,26 @@ int wsio_close(CONCRETE_IO_HANDLE ws_io, ON_IO_CLOSE_COMPLETE on_io_close_comple
 
     return result;
 }
+static void free_http_proxy_data(WSIO_HTTP_PROXY_OPTIONS* wsio_http_proxy_option)
+{
+	if (wsio_http_proxy_option->host_address != NULL)
+	{
+		free((char*)wsio_http_proxy_option->host_address);
+		wsio_http_proxy_option->host_address = NULL;
+	}
 
+	if (wsio_http_proxy_option->username != NULL)
+	{
+		free((char*)wsio_http_proxy_option->username);
+		wsio_http_proxy_option->username = NULL;
+	}
+
+	if (wsio_http_proxy_option->password != NULL)
+	{
+		free((char*)wsio_http_proxy_option->password);
+		wsio_http_proxy_option->password = NULL;
+	}
+}
 void wsio_destroy(CONCRETE_IO_HANDLE ws_io)
 {
     /* Codes_SRS_WSIO_01_008: [If ws_io is NULL, wsio_destroy shall do nothing.] */
@@ -895,18 +919,15 @@ void wsio_destroy(CONCRETE_IO_HANDLE ws_io)
 
         /* Codes_SRS_WSIO_01_009: [wsio_destroy shall execute a close action if the IO has already been open or an open action is already pending.] */
         (void)wsio_close(wsio_instance, NULL, NULL);
-
+		
         /* Codes_SRS_WSIO_01_007: [wsio_destroy shall free all resources associated with the wsio instance.] */
         free(wsio_instance->protocols);
         free(wsio_instance->host);
         free(wsio_instance->protocol_name);
         free(wsio_instance->relative_path);
         free(wsio_instance->trusted_ca);
-        if (wsio_instance->http_proxy_host_address)
-        {
-            free(wsio_instance->http_proxy_host_address);
-        }
-
+		free_http_proxy_data(&wsio_instance->wsio_http_proxy_option);
+        
         singlylinkedlist_destroy(wsio_instance->pending_io_list);
 
         free(ws_io);
@@ -980,26 +1001,6 @@ void wsio_dowork(CONCRETE_IO_HANDLE ws_io)
     }
 }
 
-static void free_http_proxy_data(WSIO_INSTANCE* wsio_instance)
-{
-    if (wsio_instance->http_proxy_host_address != NULL)
-    {
-        free(wsio_instance->http_proxy_host_address);
-        wsio_instance->http_proxy_host_address = NULL;
-    }
-
-    if (wsio_instance->http_proxy_username != NULL)
-    {
-        free(wsio_instance->http_proxy_username);
-        wsio_instance->http_proxy_username = NULL;
-    }
-
-    if (wsio_instance->http_proxy_password != NULL)
-    {
-        free(wsio_instance->http_proxy_password);
-        wsio_instance->http_proxy_password = NULL;
-    }
-}
 
 int wsio_setoption(CONCRETE_IO_HANDLE ws_io, const char* optionName, const void* value)
 {
@@ -1017,7 +1018,7 @@ int wsio_setoption(CONCRETE_IO_HANDLE ws_io, const char* optionName, const void*
     {
         WSIO_INSTANCE* wsio_instance = (WSIO_INSTANCE*)ws_io;
 
-        /* Codes_SRS_WSIO_01_149: [  - "proxy_data" - a HTTP_PROXY_OPTIONS structure that defines the HTTP proxy to be used. ]*/
+        /* Codes_SRS_WSIO_01_149: [  - "proxy_data" - a WSIO_HTTP_PROXY_OPTIONS structure that defines the HTTP proxy to be used. ]*/
         if (strcmp(OPTION_HTTP_PROXY, optionName) == 0)
         {
             HTTP_PROXY_OPTIONS* proxy_data = (HTTP_PROXY_OPTIONS*)value;
@@ -1025,7 +1026,7 @@ int wsio_setoption(CONCRETE_IO_HANDLE ws_io, const char* optionName, const void*
             /* Codes_SRS_WSIO_01_162: [ A NULL value shall be allowed for proxy_data, in which case the previously stored proxy_data option value shall be cleared. ]*/
             if (value == NULL)
             {
-                free_http_proxy_data(wsio_instance);
+                free_http_proxy_data(&wsio_instance->wsio_http_proxy_option);
                 result = 0;
             }
             else
@@ -1043,10 +1044,10 @@ int wsio_setoption(CONCRETE_IO_HANDLE ws_io, const char* optionName, const void*
                 else
                 {
                     /* Codes_SRS_WSIO_01_161: [ If a previous proxy_data option was saved, then the previous value shall be freed. ]*/
-                    free_http_proxy_data(wsio_instance);
+					free_http_proxy_data(&wsio_instance->wsio_http_proxy_option);
 
                     /* Codes_SRS_WSIO_01_163: [ The fields hostname, username and password shall be copied for later use by using mallocAndStrcpy_s. ]*/
-                    if (mallocAndStrcpy_s(&wsio_instance->http_proxy_host_address, proxy_data->host_address) != 0)
+                    if (mallocAndStrcpy_s(&wsio_instance->wsio_http_proxy_option.host_address, proxy_data->host_address) != 0)
                     {
                         LogError("Cannot copy hostname_address for proxy_data option");
                         result = __LINE__;
@@ -1056,7 +1057,7 @@ int wsio_setoption(CONCRETE_IO_HANDLE ws_io, const char* optionName, const void*
                         /* Codes_SRS_WSIO_01_150: [ The username and password fields are optional (can be NULL). ]*/
                         if ((proxy_data->username != NULL) &&
                             /* Codes_SRS_WSIO_01_163: [ The fields hostname, username and password shall be copied for later use by using mallocAndStrcpy_s. ]*/
-                            (mallocAndStrcpy_s(&wsio_instance->http_proxy_username, proxy_data->username) != 0))
+                            (mallocAndStrcpy_s(&wsio_instance->wsio_http_proxy_option.username, proxy_data->username) != 0))
                         {
                             LogError("Cannot copy username for proxy_data option");
                             result = __LINE__;
@@ -1066,14 +1067,14 @@ int wsio_setoption(CONCRETE_IO_HANDLE ws_io, const char* optionName, const void*
                             /* Codes_SRS_WSIO_01_150: [ The username and password fields are optional (can be NULL). ]*/
                             if ((proxy_data->password != NULL) &&
                                 /* Codes_SRS_WSIO_01_163: [ The fields hostname, username and password shall be copied for later use by using mallocAndStrcpy_s. ]*/
-                                (mallocAndStrcpy_s(&wsio_instance->http_proxy_password, proxy_data->password) != 0))
+                                (mallocAndStrcpy_s(&wsio_instance->wsio_http_proxy_option.password, proxy_data->password) != 0))
                             {
                                 LogError("Cannot copy password for proxy_data option");
                                 result = __LINE__;
                             }
                             else
                             {
-                                wsio_instance->http_proxy_port = proxy_data->port;
+                                wsio_instance->wsio_http_proxy_option.port = proxy_data->port;
                                 result = 0;
                             }
                         }
@@ -1137,12 +1138,12 @@ void* wsio_clone_option(const char* name, const void* value)
     }
     else if (strcmp(OPTION_HTTP_PROXY, name) == 0)
     {
-        /* Codes_SRS_WSIO_01_152: [ wsio_clone_option shall clone the option named `proxy_data` by allocating a new HTTP_PROXY_OPTIONS structure. ]*/
+        /* Codes_SRS_WSIO_01_152: [ wsio_clone_option shall clone the option named `proxy_data` by allocating a new WSIO_HTTP_PROXY_OPTIONS structure. ]*/
         HTTP_PROXY_OPTIONS* http_proxy = (HTTP_PROXY_OPTIONS*)malloc(sizeof(HTTP_PROXY_OPTIONS));
         if (http_proxy == NULL)
         {
             /* Codes_SRS_WSIO_01_153: [ If allocating memory for the structure fails fails, wsio_clone_option shall return NULL. ]*/
-            LogError("unable to allocate memory for HTTP_PROXY_OPTIONS");
+            LogError("unable to allocate memory for WSIO_HTTP_PROXY_OPTIONS");
             result = NULL;
         }
         else
@@ -1257,8 +1258,8 @@ OPTIONHANDLER_HANDLE wsio_retrieveoptions(CONCRETE_IO_HANDLE handle)
             /* Codes_SRS_WSIO_01_145: [ `wsio_retrieveoptions` shall add to it the options: ]*/
             WSIO_INSTANCE* wsio_instance = (WSIO_INSTANCE*)handle;
             if (
-                (wsio_instance->http_proxy_host_address != NULL) && 
-                (OptionHandler_AddOption(result, OPTION_HTTP_PROXY, wsio_instance->http_proxy_host_address) != 0)
+                (wsio_instance->wsio_http_proxy_option.host_address != NULL) && 
+                (OptionHandler_AddOption(result, OPTION_HTTP_PROXY, &wsio_instance->wsio_http_proxy_option) != 0)
                )
             {
                 LogError("unable to save proxy_data option");
