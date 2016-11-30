@@ -1,1 +1,1 @@
-usr/lib/*/lib*.a /usr/lib
+/obj-*/lib*.a /usr/lib
