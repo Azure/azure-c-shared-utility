@@ -291,6 +291,7 @@ compileAsC99()
 set(source_c_files
 ./src/base64.c
 ./src/buffer.c
+./src/connection_string_parser.c
 ./src/constbuffer.c
 ./src/consolelogger.c
 ./src/crt_abstractions.c
@@ -363,6 +364,7 @@ set(source_h_files
 ./inc/azure_c_shared_utility/agenttime.h
 ./inc/azure_c_shared_utility/base64.h
 ./inc/azure_c_shared_utility/buffer_.h
+./inc/azure_c_shared_utility/connection_string_parser.h
 ./inc/azure_c_shared_utility/crt_abstractions.h
 ./inc/azure_c_shared_utility/constmap.h
 ./inc/azure_c_shared_utility/condition.h
