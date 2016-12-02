@@ -42,7 +42,7 @@ Additionally, there are two optional components (thread and lock) that are only 
 If any of the existing adapters works for your platform simply include the desired adapter in your build.
 If none of the existing tickcounter adapters work for your platform, you will have fill one in. Follow the below steps in this case:
 
-i) Copy the tickcounter_template.c file from [here](https://www.github.com/Azure/azure-c-shared-utility/blob/adapters/template/tickcounter_template.c) and fill in the code:
+i) Copy the tickcounter_template.c file from [here](https://www.github.com/Azure/azure-c-shared-utility/blob/master/adapters/template/tickcounter_template.c) and fill in the code:
 
 ii) In case your platform/OS has a function that can provide a global timer/tick counter value then call that function in the `tickcounter_get_current_ms` function and perform any necessary conversions to convert the value to milliseconds.
 
@@ -58,7 +58,7 @@ For most platforms/OSs, the functions in agenttime can simply call the C functio
 
 If the platform/OS does not support some of these functions, then a replacement needs to be provided based on the specific real time clock implementation available on the platform/OS.
 
-The template `agenttime` adapter can be found [here](https://www.github.com/Azure/azure-c-shared-utility/blob/adapters/template/agenttime_template.c).   
+The template `agenttime` adapter can be found [here](https://www.github.com/Azure/azure-c-shared-utility/blob/master/adapters/template/agenttime_template.c).   
 
 <a name="xio-adapter"/>
 ### xio adapter
@@ -102,9 +102,9 @@ then you should skip attempting to create an `xio` for the socket level, and sim
 
 2. If you implement a TLS IO that uses directly the platform socket functions (i.e. no socket IO implementation is needed), follow these steps:  
 
-   i) Copy the tlsio_template.h found [here](https://www.github.com/Azure/azure-c-shared-utility/blob/adapters/template/tlsio_template.h), rename it to reflect your TLS library name and make the necessary changes/renames in the header.
+   i) Copy the tlsio_template.h found [here](https://github.com/Azure/azure-c-shared-utility/blob/master/adapters/template/tlsio_template.h), rename it to reflect your TLS library name and make the necessary changes/renames in the header.
 
-   ii) Copy the tlsio_template.c found [here](https://www.github.com/Azure/azure-c-shared-utility/blob/adapters/template/tlsio_template.c), rename it to reflect your TLS library name and start filling in the code.
+   ii) Copy the tlsio_template.c found [here](https://github.com/Azure/azure-c-shared-utility/blob/master/adapters/template/tlsio_template.c), rename it to reflect your TLS library name and start filling in the code.
 
    iii) Replace the template name for all the functions with your own TLS library name (example: `tlsio_template_create` => `tlsio_wolfssl_create`).
 
@@ -158,7 +158,7 @@ typedef enum TLSIO_STATE_TAG
 Each platform has a platform_... .c file that performs one time initialization and deinitialization for the platform and also provides to the SDK the interface for the TLS IO.
 To port the platfor file follow these steps:
 
-i) Copy the platform_template.c found [here](https://www.github.com/Azure/azure-c-shared-utility/blob/adapters/template/platform_template.c) and start filling in the code.
+i) Copy the platform_template.c found [here](https://www.github.com/Azure/azure-c-shared-utility/blob/master/adapters/template/platform_template.c) and start filling in the code.
 
 ii) Fill in any one time platform initialization in `platform_init` (like starting the ethernet/TCP stack/timers, etc.).
 
