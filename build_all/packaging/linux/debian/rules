@@ -22,5 +22,5 @@ include /usr/share/dpkg/default.mk
 	dh $@ --buildsystem=cmake --DSYSINSTALL_BINDINGS=ON
 
 override_dh_auto_configure:
-	dh_auto_configure -- -Dskip_unittests=ON
+	dh_auto_configure -- 
 
