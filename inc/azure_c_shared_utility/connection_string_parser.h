@@ -4,6 +4,7 @@
 #ifndef CONNECTION_STRING_PARSER_H
 #define CONNECTION_STRING_PARSER_H
 
+#include "azure_c_shared_utility/umock_c_prod.h"
 #include "azure_c_shared_utility/map.h" 
 #include "azure_c_shared_utility/strings.h"
 
@@ -12,7 +13,7 @@ extern "C"
 {
 #endif
 
-    extern MAP_HANDLE connectionstringparser_parse(STRING_HANDLE connection_string);
+    MOCKABLE_FUNCTION(, MAP_HANDLE, connectionstringparser_parse, STRING_HANDLE, connection_string);
 
 #ifdef __cplusplus
 }
