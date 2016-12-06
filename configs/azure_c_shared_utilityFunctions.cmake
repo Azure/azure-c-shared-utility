@@ -195,7 +195,9 @@ function(build_test_artifacts whatIsBuilding use_gballoc)
     #setting output type
     if(WIN32)
         if(
-            (("${whatIsBuilding}" MATCHES ".*ut.*") AND ${run_unittests})
+            (("${whatIsBuilding}" MATCHES ".*ut.*") AND ${run_unittests}) OR
+            (("${whatIsBuilding}" MATCHES ".*e2e.*") AND ${run_e2e_tests}) OR
+            (("${whatIsBuilding}" MATCHES ".*int.*") AND ${run_e2e_tests})
         )
                 windows_unittests_add_exe(${whatIsBuilding} ${ARGN})
                 windows_unittests_add_dll(${whatIsBuilding} ${ARGN})
@@ -205,13 +207,14 @@ function(build_test_artifacts whatIsBuilding use_gballoc)
             )
                 windows_unittests_add_exe(${whatIsBuilding}_nuget ${ARGN})
             else()
-                windows_unittests_add_exe(${whatIsBuilding} ${ARGN})
-                windows_unittests_add_dll(${whatIsBuilding} ${ARGN})
+                #do nothing
             endif()
         endif()
     else()
         if(
-            (("${whatIsBuilding}" MATCHES ".*ut.*") AND ${run_unittests})
+            (("${whatIsBuilding}" MATCHES ".*ut.*") AND ${run_unittests}) OR
+            (("${whatIsBuilding}" MATCHES ".*e2e.*") AND ${run_e2e_tests}) OR
+            (("${whatIsBuilding}" MATCHES ".*int.*") AND ${run_e2e_tests})
         )
             linux_unittests_add_exe(${whatIsBuilding} ${ARGN})
         endif()
@@ -441,7 +444,9 @@ function(build_c_test_artifacts whatIsBuilding use_gballoc folder)
     #setting output type
     if(WIN32)
         if(
-            (("${whatIsBuilding}" MATCHES ".*ut.*") AND ${run_unittests})
+            (("${whatIsBuilding}" MATCHES ".*ut.*") AND ${run_unittests}) OR
+            (("${whatIsBuilding}" MATCHES ".*e2e.*") AND ${run_e2e_tests}) OR
+            (("${whatIsBuilding}" MATCHES ".*int.*") AND ${run_e2e_tests})
         )
             c_windows_unittests_add_dll(${whatIsBuilding} ${folder} ${ARGN})
             c_windows_unittests_add_exe(${whatIsBuilding} ${folder} ${ARGN})
@@ -451,13 +456,14 @@ function(build_c_test_artifacts whatIsBuilding use_gballoc folder)
             )
                 c_windows_unittests_add_exe(${whatIsBuilding}_nuget ${folder} ${ARGN})
             else()
-                c_windows_unittests_add_dll(${whatIsBuilding} ${folder} ${ARGN})
-                c_windows_unittests_add_exe(${whatIsBuilding} ${folder} ${ARGN})
+                #do nothing
             endif()
         endif()
     else()
         if(
-            (("${whatIsBuilding}" MATCHES ".*ut.*") AND ${run_unittests})
+            (("${whatIsBuilding}" MATCHES ".*ut.*") AND ${run_unittests}) OR
+            (("${whatIsBuilding}" MATCHES ".*e2e.*") AND ${run_e2e_tests}) OR
+            (("${whatIsBuilding}" MATCHES ".*int.*") AND ${run_e2e_tests})
         )
             c_linux_unittests_add_exe(${whatIsBuilding} ${folder} ${ARGN})
         endif()
