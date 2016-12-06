@@ -11,7 +11,7 @@ run_unit_tests=ON
 make_install=
 run_valgrind=0
 build_folder=$build_root"/cmake/shared-util_linux"
-skip_unittests=OFF
+run_unittests=OFF
 
 usage ()
 {
@@ -20,7 +20,7 @@ usage ()
     echo " -cl, --compileoption <value>  specify a compile option to be passed to gcc"
     echo "   Example: -cl -O1 -cl ..."
     echo "-rv, --run_valgrind will execute ctest with valgrind"
-    echo "--skip-unittests do not build or run unit tests"
+    echo "--run-unittests run the unit tests"
 
     exit 1
 }
@@ -42,7 +42,7 @@ process_args ()
               "-cl" | "--compileoption" ) save_next_arg=1;;
               "-i" | "--install" ) make_install=1;;
               "-rv" | "--run_valgrind" ) run_valgrind=1;;
-              "--skip-unittests" ) skip_unittests=ON;;
+              "--run-unittests" ) run_unittests=ON;;
               * ) usage;;
           esac
       fi
@@ -57,7 +57,7 @@ CORES=$(grep -c ^processor /proc/cpuinfo 2>/dev/null || sysctl -n hw.ncpu)
 rm -r -f $build_folder
 mkdir -p $build_folder
 pushd $build_folder
-cmake -DcompileOption_C:STRING="$extracloptions" -Drun_valgrind:BOOL=$run_valgrind $build_root -Dskip_unittests:BOOL=$skip_unittests
+cmake -DcompileOption_C:STRING="$extracloptions" -Drun_valgrind:BOOL=$run_valgrind $build_root -Drun_unittests:BOOL=$run_unittests
 make --jobs=$CORES
 if [[ $make_install == 1 ]] ;
 then

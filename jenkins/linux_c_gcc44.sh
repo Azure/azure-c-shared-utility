@@ -6,5 +6,5 @@ build_root=$(cd "$(dirname "$0")/.." && pwd)
 cd $build_root
 
 # -- C --
-./build_all/linux/build.sh --skip-unittests "$@"
+./build_all/linux/build.sh "$@"
 [ $? -eq 0 ] || exit $?
