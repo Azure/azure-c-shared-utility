@@ -493,7 +493,7 @@ endif()
 if(${use_openssl})
     if (WIN32)
         target_link_libraries(aziotsharedutil
-			$ENV{OpenSSLDir}/lib/ssleay32.lib 
+            $ENV{OpenSSLDir}/lib/ssleay32.lib 
             $ENV{OpenSSLDir}/lib/libeay32.lib
             crypt32 ws2_32 secur32)
     else()
@@ -510,16 +510,16 @@ if(${use_cyclonessl} AND WIN32)
 endif()
 
 if(WIN32)
-	if (NOT ${use_default_uuid})
-		target_link_libraries(aziotsharedutil rpcrt4.lib)
-	endif()
+    if (NOT ${use_default_uuid})
+        target_link_libraries(aziotsharedutil rpcrt4.lib)
+    endif()
 endif()
 
 if(LINUX)
     target_link_libraries(aziotsharedutil pthread m)
-	if (NOT ${use_default_uuid})
-		target_link_libraries(aziotsharedutil uuid)
-	endif()
+    if (NOT ${use_default_uuid})
+        target_link_libraries(aziotsharedutil uuid)
+    endif()
 endif()
 
 if (${run_unittests})
