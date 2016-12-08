@@ -39,6 +39,7 @@ option(nuget_e2e_tests "set nuget_e2e_tests to ON to generate e2e tests to run w
 option(use_installed_dependencies "set use_installed_dependencies to ON to use installed packages instead of building dependencies from submodules" OFF)
 option(use_default_uuid "set use_default_uuid to ON to use the out of the box UUID that comes with the SDK rather than platform specific implementations" OFF)
 option(run_e2e_tests "set run_e2e_tests to ON to run e2e tests (default is OFF). Chsare dutility does not have any e2e tests, but the option needs to exist to evaluate in IF statements" OFF)
+option(use_builtin_httpapi "set use_builtin_httpapi to ON to use the built-in httpapi_compact that comes with C shared utility (default is OFF)" OFF)
 
 if(WIN32)
     option(use_schannel "set use_schannel to ON if schannel is to be used, set to OFF to not use schannel" ON)
@@ -132,7 +133,12 @@ if(MSVC)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W3")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W3")
         # WEC 2013 uses older VS compiler. Build some files as C++ files to resolve C99 related compile issues
-        SET_SOURCE_FILES_PROPERTIES(src/consolelogger.c src/xlogging.c src/map.c adapters/uniqueid_win32.c adapters/httpapi_wince.c src/tlsio_schannel.c src/x509_schannel.c PROPERTIES LANGUAGE CXX)
+        SET_SOURCE_FILES_PROPERTIES(src/consolelogger.c src/xlogging.c src/map.c adapters/uniqueid_win32.c src/tlsio_schannel.c src/x509_schannel.c PROPERTIES LANGUAGE CXX)
+        if (${use_httpapi_compact})
+            SET_SOURCE_FILES_PROPERTIES(adapters/httpapi_compact.c PROPERTIES LANGUAGE CXX)
+        else()
+            SET_SOURCE_FILES_PROPERTIES(adapters/httpapi_wince.c PROPERTIES LANGUAGE CXX)
+        endif()
         add_definitions(-DWIN32) #WEC 2013
     ELSE()
 
