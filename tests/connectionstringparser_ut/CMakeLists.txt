@@ -6,21 +6,24 @@ cmake_minimum_required(VERSION 2.8.11)
 
 compileAsC99()
 set(theseTestsName connectionstringparser_ut)
-set(${theseTestsName}_cpp_files
-${theseTestsName}.cpp
+
+set(${theseTestsName}_test_files
+${theseTestsName}.c
 )
 
 set(${theseTestsName}_c_files
+real_map.c
+real_string_tokenizer.c
+real_strings.c
+${SHARED_UTIL_SRC_FOLDER}/crt_abstractions.c
 ${SHARED_UTIL_SRC_FOLDER}/connection_string_parser.c
-${SHARED_UTIL_SRC_FOLDER}/xlogging.c
-${SHARED_UTIL_SRC_FOLDER}/consolelogger.c
+${LOCK_C_FILE}
 )
 
 set(${theseTestsName}_h_files
+real_map.h
+real_string_tokenizer.h
+real_strings.h
 )
 
-build_test_artifacts(${theseTestsName} ON)
-
-if(WIN32)
-    target_link_libraries(${theseTestsName}_dll testrunnerswitcher)
-endif()
+build_c_test_artifacts(${theseTestsName} ON "tests/azure_c_shared_utility_tests")
