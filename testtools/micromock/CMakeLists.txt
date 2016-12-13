@@ -56,6 +56,8 @@ IF(WIN32)
     #windows needs to be build 2 flavor of micromock, one for CTEST reporting, one for CPP_UNITTEST
     add_library(micromock_cpp_unittest ${micromock_cpp_files} ${micromock_h_files})
     target_compile_definitions(micromock_cpp_unittest PUBLIC CPP_UNITTEST)
+    target_compile_options(micromock_cpp_unittest PUBLIC /EHsc)
+
     #flip VCInstallDir path
     file(TO_CMAKE_PATH $ENV{VCInstallDir} VCInstallDir)
     target_include_directories(micromock_cpp_unittest PUBLIC ${VCInstallDir}/UnitTest/include)
@@ -66,6 +68,7 @@ IF(WIN32)
     
     add_library(micromock_ctest ${micromock_cpp_files} ${micromock_h_files})
     target_compile_definitions(micromock_ctest PUBLIC USE_CTEST)
+	target_compile_options(micromock_ctest PUBLIC /EHsc)
 else()
     add_library(micromock_ctest ${micromock_cpp_files} ${micromock_h_files})
     target_compile_definitions(micromock_ctest PUBLIC USE_CTEST)
@@ -95,6 +98,8 @@ endif()
 
 if(WIN32)
     add_executable(micromock_generator ./tools/micromockgenerator/micromockgenerator.cpp)
+
+    target_compile_options(micromock_generator PUBLIC /EHsc)
 
     set_target_properties(micromock_generator
                PROPERTIES
