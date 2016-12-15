@@ -1,4 +1,4 @@
-azure-c-shared-util (0.1.0-5) trusty; urgency=low
+azure-c-shared-util (0.1.0-6) trusty; urgency=low
 
   * See https://github.com/Azure/azure-iot-sdks/releases for details of the release
 
