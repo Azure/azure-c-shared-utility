@@ -12,7 +12,7 @@
 /*instead edit macro_utils.tt */
 <#/*CHANGE BELOW 2 VARIABLES TO GET MORE / LESS */ #>
 <#int nArithmetic=1024;#>
-<#int nMacroParameters=124;/*127 parameters in one macro deﬁnition in C99 in chapter 5.2.4.1 Translation limits*/#>
+<#int nMacroParameters=124;/*127 parameters in one macro definition in C99 in chapter 5.2.4.1 Translation limits*/#>
 
 #ifndef MACRO_UTILS_H
 #define MACRO_UTILS_H

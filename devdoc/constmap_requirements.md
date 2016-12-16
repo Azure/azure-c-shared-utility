@@ -2,7 +2,6 @@
 ================
 
 
- 
 ## Overview
 
 Const Map is a module that implements a read-only dictionary of `const char*` key to `const char*` values.  It is intially populated by a Map.

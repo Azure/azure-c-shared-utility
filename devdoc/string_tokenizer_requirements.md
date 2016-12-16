@@ -29,11 +29,11 @@ extern STRING_TOKENIZER_HANDLE STRING_TOKENIZER_create_from_char(const char* inp
 extern int STRING_TOKENIZER_get_next_token(STRING_TOKENIZER_HANDLE t, STRING_HANDLE output,const char* delimiters); 
 **SRS_STRING_TOKENIZER_04_004: [**STRING_TOKENIZER_get_next_token shall return a nonzero value if any of the 3 parameters is NULL**]**   
 **SRS_STRING_TOKENIZER_04_005: [**STRING_TOKENIZER_get_next_token searches the string inside STRING_TOKENIZER_HANDLE for the first character that is NOT contained in the current delimiter**]**   
-**SRS_STRING_TOKENIZER_04_006: [**If no such character is found, then STRING_TOKENIZER_get_next_token shall return a nonzero Value (You’ve reach the end of the string or the string consists with only delimiterstokens).**]**   
+**SRS_STRING_TOKENIZER_04_006: [**If no such character is found, then STRING_TOKENIZER_get_next_token shall return a nonzero Value (You've reach the end of the string or the string consists with only delimiterstokens).**]**   
 **SRS_STRING_TOKENIZER_04_007: [**If such a character is found, STRING_TOKENIZER_get_next_token shall consider it as the start of a token.**]**   
 **SRS_STRING_TOKENIZER_04_008: [**STRING_TOKENIZER_get_next_token than searches from the start of a token for a character that is contained in the delimiters string.**]**   
 **SRS_STRING_TOKENIZER_04_009: [**If no such character is found, STRING_TOKENIZER_get_next_token extends the current token to the end of the string inside t, copies the token to output and returns 0.**]**   
-**SRS_STRING_TOKENIZER_04_010: [**If such a character is found, STRING_TOKENIZER_get_next_token shall consider it the end of the token and copy it’s content to output, updates the current position inside t to the next character and returns 0.**]**   
+**SRS_STRING_TOKENIZER_04_010: [**If such a character is found, STRING_TOKENIZER_get_next_token shall consider it the end of the token and copy its content to output, updates the current position inside t to the next character and returns 0.**]**   
 **SRS_STRING_TOKENIZER_04_011: [**Each subsequent call to STRING_TOKENIZER_get_next_token starts searching from the saved position on t and behaves as described above.**]**   
 **SRS_STRING_TOKENIZER_TOKENIZER_04_014: [**STRING_TOKENIZER_get_next_token shall return nonzero value if t contains an empty string.**]**   
 

@@ -121,7 +121,7 @@ extern int STRING_concat(STRING_HANDLE handle, const char* s2)
 ```c 
 extern int STRING_quote(STRING_HANDLE handle)
 ```
-**SRS_STRING_07_014: [**STRING_quote shall �quote� the supplied STRING_HANDLE and return 0 on success.**]** 
+**SRS_STRING_07_014: [**STRING_quote shall "quote" the supplied STRING_HANDLE and return 0 on success.**]** 
 **SRS_STRING_07_015: [**STRING_quote shall return a nonzero value if any of the supplied parameters are NULL.**]** 
 **SRS_STRING_07_029: [**STRING_quote shall return a nonzero value if any error is encountered.**]**
 
