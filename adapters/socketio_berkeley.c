@@ -13,7 +13,11 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/select.h>
+#ifdef TIZENRT
+#include <net/lwip/tcp.h>
+#else
 #include <netinet/tcp.h>
+#endif
 #include <errno.h>
 #include <netdb.h>
 #include <unistd.h>
