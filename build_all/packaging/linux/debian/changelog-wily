@@ -1,4 +1,4 @@
-azure-c-shared-util (0.1.0.0-24) wily; urgency=low
+azure-c-shared-util (0.1.0.0-25) wily; urgency=low
 
   * See https://github.com/Azure/azure-iot-sdks/releases for details of the release
 
