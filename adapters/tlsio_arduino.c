@@ -503,7 +503,7 @@ void tlsio_arduino_dowork(CONCRETE_IO_HANDLE tlsio_handle)
 int tlsio_arduino_setoption(CONCRETE_IO_HANDLE tlsio_handle, const char* optionName, const void* value)
 {
     /* Codes_SRS_TLSIO_ARDUINO_21_077: [ The tlsio_arduino_setoption shall not do anything, and return 0. ]*/
-    (void)(tlsio_handle, optionName, value);
+    (void)tlsio_handle, (void)optionName, (void)value;
 
     /* Not implementing any options */
     return 0;

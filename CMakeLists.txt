@@ -164,10 +164,10 @@ if(MSVC)
         endif()
 
     endif()
-elseif(LINUX)
+elseif(UNIX) #LINUX OR APPLE
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Werror")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -Werror")
-    if(NOT IN_OPENWRT)
+    if(NOT (IN_OPENWRT OR APPLE))
         set (CMAKE_C_FLAGS "-D_POSIX_C_SOURCE=200112L ${CMAKE_C_FLAGS}")
     endif()
 endif()

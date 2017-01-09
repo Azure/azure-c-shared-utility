@@ -6,14 +6,13 @@
 
 #include "azure_c_shared_utility/strings.h"
 #include "azure_c_shared_utility/umock_c_prod.h"
+#include "azure_c_shared_utility/string_tokenizer_types.h"
 
 #ifdef __cplusplus
 extern "C"
 {
 #else
 #endif
-
-typedef struct STRING_TOKEN_TAG* STRING_TOKENIZER_HANDLE;
 
 MOCKABLE_FUNCTION(, STRING_TOKENIZER_HANDLE, STRING_TOKENIZER_create, STRING_HANDLE, handle);
 MOCKABLE_FUNCTION(, STRING_TOKENIZER_HANDLE, STRING_TOKENIZER_create_from_char, const char*, input);
