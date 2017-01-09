@@ -93,22 +93,22 @@ Currently methods with up to 10 arguments are supported.
 A mock method without any arguments uses the MOCK_METHOD_0 macro. 
 ##MOCK_METHOD_x 
 ```c
-MOCK_METHOD_x(prefix, returnType, name, arg1Type, arg1Value, arg2Type, …)
+MOCK_METHOD_x(prefix, returnType, name, arg1Type, arg1Value, arg2Type, ...)
 ``` 
 declares a mock class member method. 
 ##MOCK_STATIC_METHOD_x 
 ```c
-MOCK_STATIC_METHOD_x(prefix, returnType, name, arg1Type, arg1Value, arg2Type, …)
+MOCK_STATIC_METHOD_x(prefix, returnType, name, arg1Type, arg1Value, arg2Type, ...)
 ``` 
 declares a mock class member static method. A static method can only be used in a CThreadSafeGlobalMock or CRuntimeMock mock class. 
 ##MOCK_HOOK_METHOD_x
 ```c 
-MOCK_HOOK_METHOD_x(prefix, returnType, name, arg1Type, arg1Value, arg2Type, …)
+MOCK_HOOK_METHOD_x(prefix, returnType, name, arg1Type, arg1Value, arg2Type, ...)
 ``` 
 declares a mock class member static method and declares that the global namespace function with the same name will be hooked/detoured to the declared mock method. A hook method can only be used in a CRuntimeMock mock class. 
 ##MOCK_HOOK_METHOD_EX_x
 ```c 
-MOCK_HOOK_METHOD_EX_x(prefix, returnType, name, arg1Type, arg1Value, arg2Type, …, functionToHook)
+MOCK_HOOK_METHOD_EX_x(prefix, returnType, name, arg1Type, arg1Value, arg2Type, ..., functionToHook)
 ``` 
 declares a hook mock method and additionally instructs the framework to hook a specific function (functionToHook) and redirect all calls to the mock method. 
 #Actual vs Expected call comparison 
@@ -120,8 +120,8 @@ Assert::AreEqual(tstring(_T("")), result,
         _T("Incorrect mock function call result")); 
 ```
 
-If a call was expected and no actual call was matched with it CompareActualAndExpectedCalls indicates the missing call in a format like “[Missing:timeSetEvent(42)]”. 
-If a call was not expected, but an actual call occurred (the code under test called a mock function when not expected), CompareActualAndExpectedCalls indicates the unexpected call in a format like “[Unexpected:timeSetEvent(42)]”. 
+If a call was expected and no actual call was matched with it CompareActualAndExpectedCalls indicates the missing call in a format like "[Missing:timeSetEvent(42)]". 
+If a call was not expected, but an actual call occurred (the code under test called a mock function when not expected), CompareActualAndExpectedCalls indicates the unexpected call in a format like "[Unexpected:timeSetEvent(42)]". 
 ##GetUnexpectedCalls/GetMissingCalls 
 In order to facilitate writing asserts in a natural way, the following syntax can also be used:
 ```c 
@@ -153,7 +153,7 @@ static bool operator==(_In_ SOCKADDR const& lhs, _In_ SOCKADDR const& rhs)
  
     if (lhs.sa_family == AF_INET) 
     { 
-        return … ; // more comparison of the structure members should be done here 
+        return ... ; // more comparison of the structure members should be done here 
     } 
  
     return (memcmp(lhs.sa_data, rhs.sa_data, sizeof(rhs.sa_data)) == 0); 
@@ -408,7 +408,7 @@ _T("Incorrect mock function call result"));
 Test result: 
 
 Assert failed.  
-To compare only the second byte of a 2 bytes out argument’s buffer, a call like below would be used, indicating to start the compare at offset 1: 
+To compare only the second byte of a 2 bytes out argument's buffer, a call like below would be used, indicating to start the compare at offset 1: 
 STRICT_EXPECTED_CALL(testMock, TestFunction(expectedBuffer)) 
 .ValidateArgumentBuffer(1, expectedBuffer, 1, 1); 
 ##CopyOutArgumentBuffer 
@@ -437,7 +437,7 @@ TEST_METHOD(MicroMock_CopyOutArgumentBuffer_Only_First_Byte_Out_Of_2_Bytes_Is_Co
 ``` 
 Test result: 
 Pass.  
-To compare only the second byte of a 2 bytes out argument’s buffer, a call like below would be used, indicating to start the data copy at offset 1:
+To compare only the second byte of a 2 bytes out argument's buffer, a call like below would be used, indicating to start the data copy at offset 1:
 ```c 
 STRICT_EXPECTED_CALL(testMock, TestFunction(NULL)) 
         .CopyOutArgumentBuffer(1, injectedOutBuffer, 1, 1);

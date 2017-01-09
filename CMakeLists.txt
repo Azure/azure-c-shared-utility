@@ -55,8 +55,7 @@ option(use_cyclonessl "set use_cyclonessl to ON if cyclonessl is to be used, set
 
 option(compileOption_C "passes a string to the command line of the C compiler" OFF)
 option(compileOption_CXX "passes a string to the command line of the C++ compiler" OFF)
-
-set(current_build_shared_state ${BUILD_SHARED_LIBS})
+option(build_as_dynamic "build the C Shared libaries as shared"  OFF)
 
 if(${use_cyclonessl} AND WIN32)
     set(cyclonessl_c_files
@@ -298,7 +297,6 @@ compileAsC99()
 
 #these are the C source files
 set(source_c_files
-./src/aziotsharedutil.def
 ./src/base64.c
 ./src/buffer.c
 ./src/connection_string_parser.c
@@ -476,7 +474,11 @@ ELSE()
 ENDIF(WIN32)
 
 #this is the product (a library)
-add_library(aziotsharedutil ${source_c_files} ${source_h_files})
+if(${build_as_dynamic})
+    add_library(aziotsharedutil SHARED ./src/aziotsharedutil.def ${source_c_files} ${source_h_files})
+else()
+    add_library(aziotsharedutil ${source_c_files} ${source_h_files})
+endif()
 
 if(${use_http})
     if(WIN32)
@@ -534,10 +536,8 @@ endif()
 
 if (${run_unittests})
     include("dependencies-test.cmake")
-    set(BUILD_SHARED_LIBS OFF)
     add_subdirectory(testtools)
     add_subdirectory(tests)
-    set(BUILD_SHARED_LIBS ${current_build_shared_state})
 endif()
 
 if (NOT ${skip_samples})

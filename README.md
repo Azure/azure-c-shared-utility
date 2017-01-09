@@ -17,9 +17,11 @@ azure-c-shared-utility uses cmake for configuring build files.
 
 ## Setup
 
-### Build
+1. Clone **azure-c-shared-utility** using the recursive option:
 
-1. Clone **azure-c-shared-utility**
+```
+git clone --recursive https://github.com/Azure/azure-c-shared-utility.git
+```
 
 2. Create a folder called *cmake* under *azure-c-shared-utility*
 

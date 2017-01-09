@@ -46,7 +46,7 @@ int nArithmetic=1024;
             #line hidden
             
             #line 15 "D:\repos\azure-iot-sdks-preview\c\c-utility\tools\macro_utils_h_generator\macro_utils.tt"
-int nMacroParameters=124;/*127 parameters in one macro deﬁnition in C99 in chapter 5.2.4.1 Translation limits*/
+int nMacroParameters=124;/*127 parameters in one macro definition in C99 in chapter 5.2.4.1 Translation limits*/
             
             #line default
             #line hidden

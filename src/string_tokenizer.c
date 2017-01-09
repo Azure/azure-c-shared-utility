@@ -13,6 +13,7 @@
 // PUT NO CLIENT LIBRARY INCLUDES BEFORE HERE
 //
 
+#include <stdlib.h>
 #include <stdbool.h>
 #include "azure_c_shared_utility/string_tokenizer.h"
 #include "azure_c_shared_utility/xlogging.h"
