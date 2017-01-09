@@ -971,6 +971,7 @@ TEST_FUNCTION(connectionstringparser_splitHostName_with_success)
     // cleanup
     STRING_delete(nameString);
     STRING_delete(suffixString);
+    STRING_delete(hostNameString);
 }
 
 /* Tests_SRS_CONNECTIONSTRINGPARSER_21_034: [If the hostNameString is NULL, connectionstringparser_splitHostName shall return __LINE__.]*/

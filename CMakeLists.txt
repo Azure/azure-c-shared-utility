@@ -121,6 +121,15 @@ if(${use_cyclonessl} AND WIN32)
 
 endif()
 
+if(${use_openssl})
+    if("${OPENSSL_ROOT_DIR}" STREQUAL "" AND NOT ("$ENV{OpenSSLDir}" STREQUAL ""))
+        set(OPENSSL_ROOT_DIR $ENV{OpenSSLDir} CACHE PATH "")
+    endif()
+
+    find_package(OpenSSL REQUIRED)
+    include_directories(${OPENSSL_INCLUDE_DIR})
+endif()
+
 # Start of variables used during install
 set (LIB_INSTALL_DIR lib CACHE PATH "Library object file directory")
 
@@ -163,8 +172,6 @@ elseif(LINUX)
 endif()
 
 if(${use_wsio})
-    
-    include_directories($ENV{OpenSSLDir}/include)
 
     if(WIN32)
         string(REPLACE "/W4" "/W0" CMAKE_C_FLAGS ${CMAKE_C_FLAGS})
@@ -191,20 +198,30 @@ if(${use_wsio})
         string(REPLACE "/W0" "/W4" CMAKE_C_FLAGS ${CMAKE_C_FLAGS})
         string(REPLACE "/W0" "/W4" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
 
-    elseif(LINUX)
-        #because libwebsockets? is sensible to -Werror, it shall be removed, and re-added after
-        string(REPLACE "-Werror" "" CMAKE_C_FLAGS ${CMAKE_C_FLAGS})
-        string(REPLACE "-Werror" "" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
-        if(NOT IN_OPENWRT)
-            string(REPLACE "-D_POSIX_C_SOURCE=200112L" "" CMAKE_C_FLAGS ${CMAKE_C_FLAGS})
+    elseif(UNIX) #LINUX AND APPLE
+        #because libwebsockets is sensitive to -Werror, it shall be removed, and re-added after
+        if(CMAKE_C_FLAGS)
+            set(RESTORE_CMAKE_C_FLAGS ON)
+            string(REPLACE "-Werror" "" CMAKE_C_FLAGS ${CMAKE_C_FLAGS})
+            if(NOT IN_OPENWRT)
+                string(REPLACE "-D_POSIX_C_SOURCE=200112L" "" CMAKE_C_FLAGS ${CMAKE_C_FLAGS})
+            endif()
+        endif()
+        if(CMAKE_CXX_FLAGS)
+            set(RESTORE_CMAKE_CXX_FLAGS ON)
+            string(REPLACE "-Werror" "" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
         endif()
         
         include("dependencies.cmake")
-        
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
-        if(NOT IN_OPENWRT)
-            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_POSIX_C_SOURCE=200112L")
+
+        if(RESTORE_CMAKE_C_FLAGS)
+            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
+            if(NOT IN_OPENWRT)
+                set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_POSIX_C_SOURCE=200112L")
+            endif()
+        endif()
+        if(RESTORE_CMAKE_CXX_FLAGS)
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
         endif()
 
     endif()
@@ -438,18 +455,15 @@ if(${use_wolfssl})
     set(source_h_files ${source_h_files}
         ./inc/azure_c_shared_utility/tlsio_wolfssl.h
     )
-if(WIN32)
-include_directories($ENV{WolfSSLDir})
-endif()
+    if(WIN32)
+        include_directories($ENV{WolfSSLDir})
+    endif()
 endif()
 if(${use_openssl})
     set(source_h_files ${source_h_files}
         ./inc/azure_c_shared_utility/tlsio_openssl.h
-    ./inc/azure_c_shared_utility/x509_openssl.h
-    )
-    if(WIN32 OR APPLE)
-        include_directories($ENV{OpenSSLDir}/include)
-    endif()
+        ./inc/azure_c_shared_utility/x509_openssl.h
+        )
 endif()
 if(${use_cyclonessl} AND WIN32)
     set(source_h_files ${source_h_files}
@@ -503,13 +517,9 @@ if(${use_schannel})
 endif()
 
 if(${use_openssl})
+    target_link_libraries(aziotsharedutil ${OPENSSL_LIBRARIES})
     if (WIN32)
-        target_link_libraries(aziotsharedutil
-            $ENV{OpenSSLDir}/lib/ssleay32.lib 
-            $ENV{OpenSSLDir}/lib/libeay32.lib
-            crypt32 ws2_32 secur32)
-    else()
-        target_link_libraries(aziotsharedutil ssl crypto)
+        target_link_libraries(aziotsharedutil crypt32 ws2_32 secur32)
     endif()
 endif()
 
@@ -540,7 +550,27 @@ if (${run_unittests})
     add_subdirectory(tests)
 endif()
 
+function(FindDllFromLib var libFile)
+    get_filename_component(_libName ${libFile} NAME_WE)
+    get_filename_component(_libDir ${libFile} DIRECTORY)
+
+    while(NOT ("${_libDir}" STREQUAL ""))
+        file(GLOB_RECURSE _dllList "${_libDir}/${_libName}.dll")
+        list(LENGTH _dllList _listLen)
+        if(${_listLen} GREATER 0)
+            list(GET _dllList 0 _dll)
+            set(${var} "${_dll}" PARENT_SCOPE)
+            break()
+        endif()
+        get_filename_component(_libDir ${_libDir} DIRECTORY)
+    endwhile()
+endfunction()
+
 if (NOT ${skip_samples})
+    if(${use_openssl} AND WIN32)
+        FindDllFromLib(SSL_DLL "${OPENSSL_SSL_LIBRARY}")
+        FindDllFromLib(CRYPTO_DLL "${OPENSSL_CRYPTO_LIBRARY}")
+    endif()
     add_subdirectory(samples)
 endif()
 
