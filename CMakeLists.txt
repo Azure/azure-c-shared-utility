@@ -57,12 +57,6 @@ option(compileOption_C "passes a string to the command line of the C compiler" O
 option(compileOption_CXX "passes a string to the command line of the C++ compiler" OFF)
 option(build_as_dynamic "build the C Shared libaries as shared"  OFF)
 
-if(${use_wsio} AND NOT ${use_openssl})
-    #libwebsockets uses OpenSSL by default (and we're currently always using the
-    #default), so force the use_openssl option to ON if the user didn't set it.
-    set(use_openssl ON CACHE BOOL "set use_openssl to ON if openssl is to be used, set to OFF to not use openssl" FORCE)
-endif()
-
 if(${use_cyclonessl} AND WIN32)
     set(cyclonessl_c_files
         $ENV{CycloneSSLDir}/cyclone_ssl/ssl_common.c
@@ -127,7 +121,8 @@ if(${use_cyclonessl} AND WIN32)
 
 endif()
 
-if(${use_openssl})
+if(${use_openssl} OR ${use_wsio})
+    # use_wsio pulls in libwebsockets, which uses OpenSSL
     if("${OPENSSL_ROOT_DIR}" STREQUAL "" AND NOT ("$ENV{OpenSSLDir}" STREQUAL ""))
         set(OPENSSL_ROOT_DIR $ENV{OpenSSLDir} CACHE PATH "")
     endif()

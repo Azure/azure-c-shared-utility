@@ -7,13 +7,13 @@ if(${use_installed_dependencies})
 else()
     include_directories(deps/libwebsockets/lib)
     include_directories(${PROJECT_BINARY_DIR}/deps/libwebsockets)
-    if(${use_openssl})
-        if(NOT OPENSSL_FOUND)
-            message(FATAL_ERROR "dependencies.cmake was included before find_package(OpenSSL REQUIRED) was called")
-        endif()
-        # we already found OpenSSL libs/includes; feed them to libwebsockets
-        set(LWS_OPENSSL_LIBRARIES ${OPENSSL_LIBRARIES} CACHE PATH "")
-        set(LWS_OPENSSL_INCLUDE_DIRS ${OPENSSL_INCLUDE_DIR} CACHE PATH "")
+
+    if(NOT OPENSSL_FOUND)
+        message(FATAL_ERROR "dependencies.cmake was included before find_package(OpenSSL REQUIRED) was called")
     endif()
+    # we already found OpenSSL libs/includes; feed them to libwebsockets
+    set(LWS_OPENSSL_LIBRARIES ${OPENSSL_LIBRARIES} CACHE PATH "")
+    set(LWS_OPENSSL_INCLUDE_DIRS ${OPENSSL_INCLUDE_DIR} CACHE PATH "")
+
     add_subdirectory(deps/libwebsockets)
 endif()
