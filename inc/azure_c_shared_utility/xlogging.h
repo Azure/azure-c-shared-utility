@@ -14,9 +14,9 @@
 
 typedef enum LOG_CATEGORY_TAG
 {
-    LOG_ERROR,
-    LOG_INFO,
-    LOG_TRACE
+    AZ_LOG_ERROR,
+    AZ_LOG_INFO,
+    AZ_LOG_TRACE
 } LOG_CATEGORY;
 
 #if defined _MSC_VER
@@ -77,13 +77,13 @@ so we compacted the log in the macro LogInfo.
 #endif
 
 #if defined _MSC_VER
-#define LogInfo(FORMAT, ...) do{LOG(LOG_INFO, LOG_LINE, FORMAT, __VA_ARGS__); }while(0)
+#define LogInfo(FORMAT, ...) do{LOG(AZ_LOG_INFO, LOG_LINE, FORMAT, __VA_ARGS__); }while(0)
 #else
-#define LogInfo(FORMAT, ...) do{LOG(LOG_INFO, LOG_LINE, FORMAT, ##__VA_ARGS__); }while(0)
+#define LogInfo(FORMAT, ...) do{LOG(AZ_LOG_INFO, LOG_LINE, FORMAT, ##__VA_ARGS__); }while(0)
 #endif
 
 #if defined _MSC_VER
-#define LogError(FORMAT, ...) do{ LOG(LOG_ERROR, LOG_LINE, FORMAT, __VA_ARGS__); }while(0)
+#define LogError(FORMAT, ...) do{ LOG(AZ_LOG_ERROR, LOG_LINE, FORMAT, __VA_ARGS__); }while(0)
 #define TEMP_BUFFER_SIZE 1024
 #define MESSAGE_BUFFER_SIZE 260
 #define LogErrorWinHTTPWithGetLastErrorAsString(FORMAT, ...) do { \
@@ -117,7 +117,7 @@ so we compacted the log in the macro LogInfo.
                 }\
             } while(0)
 #else
-#define LogError(FORMAT, ...) do{ LOG(LOG_ERROR, LOG_LINE, FORMAT, ##__VA_ARGS__); }while(0)
+#define LogError(FORMAT, ...) do{ LOG(AZ_LOG_ERROR, LOG_LINE, FORMAT, ##__VA_ARGS__); }while(0)
 #endif
 
 #ifdef __cplusplus
