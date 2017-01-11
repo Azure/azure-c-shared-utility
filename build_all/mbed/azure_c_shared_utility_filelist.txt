@@ -31,6 +31,7 @@ set(mbed_exported_project_files
 		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/socketio.h
 		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/string_tokenizer.h
 		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/strings.h
+		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/strings_types.h
 		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/threadapi.h
 		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/tickcounter.h
 		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/tlsio.h
