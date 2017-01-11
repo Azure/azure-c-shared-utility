@@ -18,10 +18,10 @@ void consolelogger_log(LOG_CATEGORY log_category, const char* file, const char* 
     
     switch (log_category)
     {
-    case LOG_INFO:
+    case AZ_LOG_INFO:
         (void)printf("Info: ");
         break;
-    case LOG_ERROR:
+    case AZ_LOG_ERROR:
         (void)printf("Error: Time:%.24s File:%s Func:%s Line:%d ", ctime(&t), file, func, line);
         break;
     default:
