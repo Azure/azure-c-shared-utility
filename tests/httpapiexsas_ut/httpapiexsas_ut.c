@@ -100,7 +100,7 @@ void my_STRING_delete(STRING_HANDLE handle)
 
 STRING_HANDLE my_SASToken_Create(STRING_HANDLE key, STRING_HANDLE scope, STRING_HANDLE keyName, size_t expiry)
 {
-    (void)key, scope, keyName, expiry;
+    (void)key, (void)scope, (void)keyName, (void)expiry;
     return (STRING_HANDLE)malloc(1);
 }
 
@@ -136,8 +136,8 @@ char* umocktypes_stringify_time_t(const time_t* value)
 {
     char temp_str[32];
     char* result;
-    size_t length = snprintf(temp_str, sizeof(temp_str), "%d", (int)(*value));
-    if (length < 0)
+    int length = snprintf(temp_str, sizeof(temp_str), "%d", (int)(*value));
+    if (length <= 0)
     {
         result = NULL;
     }

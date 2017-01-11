@@ -88,7 +88,7 @@ static int my_mallocAndStrcpy_s(char** destination, const char* source)
 
 static void* my_aCloneOption(const char* name, const void* value)
 {
-    (void)(name, value);
+    (void)name, (void)value;
     return my_gballoc_malloc(2);
 }
 

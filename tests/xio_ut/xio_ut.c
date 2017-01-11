@@ -122,7 +122,7 @@ static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 
 static OPTIONHANDLER_HANDLE my_OptionHandler_Create(pfCloneOption cloneOption, pfDestroyOption destroyOption, pfSetOption setOption)
 {
-    (void)(cloneOption, destroyOption, setOption);
+    (void)cloneOption, (void)destroyOption, (void)setOption;
     return (OPTIONHANDLER_HANDLE)my_gballoc_malloc(1);
 }
 
@@ -134,7 +134,7 @@ static OPTIONHANDLER_HANDLE my_test_xio_retrieveoptions(CONCRETE_IO_HANDLE handl
 
 static OPTIONHANDLER_RESULT my_OptionHandler_AddOption(OPTIONHANDLER_HANDLE handle, const char* name, const void* value)
 {
-    (void)(name, handle, value);
+    (void)name, (void)handle, (void)value;
     /*if an option is added here, it is because it was cloned (malloc'd) so safe to free it here*/
     my_gballoc_free((void*)value);
     return OPTIONHANDLER_OK;

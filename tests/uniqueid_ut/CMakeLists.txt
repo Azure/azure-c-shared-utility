@@ -24,14 +24,17 @@ ${UNIQUEID_C_FILE}
 set(${theseTestsName}_h_files
 )
 
+if(UNIX) #LINUX OR APPLE
+    find_package(PkgConfig REQUIRED)
+    pkg_search_module(UUID REQUIRED uuid)
+    link_directories(${UUID_LIBRARY_DIRS})
+endif()
+
 build_c_test_artifacts(${theseTestsName} ON "tests/azure_c_shared_utility_tests")
 
 if(WIN32)
     target_link_libraries(${theseTestsName}_exe rpcrt4.lib)
     target_link_libraries(${theseTestsName}_dll rpcrt4.lib)
-else()
-    find_package(PkgConfig REQUIRED)
-    pkg_search_module(UIDLINUX REQUIRED uuid)
-
-    target_link_libraries(${theseTestsName}_exe uuid)
+elseif(UNIX)
+    target_link_libraries(${theseTestsName}_exe ${UUID_LIBRARIES})
 endif()

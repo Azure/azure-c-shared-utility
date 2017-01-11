@@ -80,7 +80,7 @@ static BIO* my_BIO_new_mem_buf(const void * buf, int len)
 static BIO* my_BIO_new_mem_buf(void * buf, int len)
 #endif
 {
-    (void)(len,buf);
+    (void)len, (void)buf;
     return (BIO*)my_gballoc_malloc(sizeof(BIO));
 }
 
@@ -102,13 +102,13 @@ static void my_X509_free(X509 * a)
 
 static X509 * my_PEM_read_bio_X509(BIO * bp, X509 ** x, pem_password_cb * cb, void * u)
 {
-    (void)(u,cb, x, bp);
+    (void)u, (void)cb, (void)x, (void)bp;
     return (X509*)my_gballoc_malloc(sizeof(X509));
 }
 
 static RSA * my_PEM_read_bio_RSAPrivateKey(BIO * bp, RSA ** x, pem_password_cb * cb, void * u)
 {
-    (void)(u, cb, x, bp);
+    (void)u, (void)cb, (void)x, (void)bp;
     return (RSA*)my_gballoc_malloc(sizeof(RSA));
 }
 

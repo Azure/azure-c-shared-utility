@@ -10,7 +10,10 @@ The format of the connection string is:
 ##Exposed API
 
 ```c
+extern MAP_HANDLE connectionstringparser_parse_from_char(const char* connection_string);
 extern MAP_HANDLE connectionstringparser_parse(STRING_HANDLE connection_string);
+extern int connectionstringparser_splitHostName_from_char(const char* hostName, STRING_HANDLE nameString, STRING_HANDLE suffixString);
+extern int connectionstringparser_splitHostName(STRING_HANDLE hostNameString, STRING_HANDLE nameString, STRING_HANDLE suffixString);
 ```
 
 ###connectionstringparser_parse
@@ -38,3 +41,42 @@ extern MAP_HANDLE connectionstringparser_parse(STRING_HANDLE connection_string);
 **SRS_CONNECTIONSTRINGPARSER_01_012: [**If Map_Add fails connectionstringparser_parse shall fail and return NULL (freeing the allocated result map).**]**  
 **SRS_CONNECTIONSTRINGPARSER_01_013: [**If STRING_c_str fails then connectionstringparser_parse shall fail and return NULL (freeing the allocated result map).**]**  
 **SRS_CONNECTIONSTRINGPARSER_01_014: [**After the parsing is complete the previously allocated STRINGs and STRING tokenizer shall be freed by calling STRING_TOKENIZER_destroy.**]**  
+
+
+###connectionstringparser_parse_from_char
+
+```c
+extern MAP_HANDLE connectionstringparser_parse_from_char(const char* connection_string);
+```
+
+**SRS_CONNECTIONSTRINGPARSER_21_020: [**connectionstringparser_parse_from_char shall create a STRING_HANDLE from the connection_string passed in as argument and parse it using the connectionstringparser_parse.**]**  
+**SRS_CONNECTIONSTRINGPARSER_21_021: [**If connectionstringparser_parse_from_char get error creating a STRING_HANDLE, it shall return NULL.**]**  
+
+
+###connectionstringparser_splitHostName_from_char
+
+```c
+extern int connectionstringparser_splitHostName_from_char(const char* hostName, STRING_HANDLE nameString, STRING_HANDLE suffixString);
+```
+
+**SRS_CONNECTIONSTRINGPARSER_21_022: [**connectionstringparser_splitHostName_from_char shall split the provided hostName in name and suffix.**]**  
+**SRS_CONNECTIONSTRINGPARSER_21_023: [**connectionstringparser_splitHostName_from_char shall copy all characters, from the beginning of the hostName to the first `.` to the nameString.**]**  
+**SRS_CONNECTIONSTRINGPARSER_21_024: [**connectionstringparser_splitHostName_from_char shall copy all characters, from the first `.` to the end of the hostName, to the suffixString.**]**  
+**SRS_CONNECTIONSTRINGPARSER_21_025: [**If connectionstringparser_splitHostName_from_char get success splitting the hostName, it shall return 0.**]**  
+**SRS_CONNECTIONSTRINGPARSER_21_026: [**If the hostName is NULL, connectionstringparser_splitHostName_from_char shall return __LINE__.**]**  
+**SRS_CONNECTIONSTRINGPARSER_21_027: [**If the hostName is an empty string, connectionstringparser_splitHostName_from_char shall return __LINE__.**]**  
+**SRS_CONNECTIONSTRINGPARSER_21_028: [**If the nameString is NULL, connectionstringparser_splitHostName_from_char shall return __LINE__.**]**  
+**SRS_CONNECTIONSTRINGPARSER_21_029: [**If the suffixString is NULL, connectionstringparser_splitHostName_from_char shall return __LINE__.**]**  
+**SRS_CONNECTIONSTRINGPARSER_21_030: [**If the hostName is not a valid host name, connectionstringparser_splitHostName_from_char shall return __LINE__.**]**  
+**SRS_CONNECTIONSTRINGPARSER_21_031: [**If connectionstringparser_splitHostName_from_char get error copying the name to the nameString, it shall return __LINE__.**]**  
+**SRS_CONNECTIONSTRINGPARSER_21_032: [**If connectionstringparser_splitHostName_from_char get error copying the suffix to the suffixString, it shall return __LINE__.**]**  
+
+
+###connectionstringparser_splitHostName
+
+```c
+extern int connectionstringparser_splitHostName(STRING_HANDLE hostNameString, STRING_HANDLE nameString, STRING_HANDLE suffixString);
+```
+
+**SRS_CONNECTIONSTRINGPARSER_21_033: [**connectionstringparser_splitHostName shall convert the hostNameString to a connection_string passed in as argument, and call connectionstringparser_splitHostName_from_char.**]**  
+**SRS_CONNECTIONSTRINGPARSER_21_034: [**If the hostNameString is NULL, connectionstringparser_splitHostName shall return __LINE__.**]**  

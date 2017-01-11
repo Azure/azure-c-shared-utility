@@ -13,7 +13,10 @@ extern "C"
 {
 #endif
 
+    MOCKABLE_FUNCTION(, MAP_HANDLE, connectionstringparser_parse_from_char, const char*, connection_string);
     MOCKABLE_FUNCTION(, MAP_HANDLE, connectionstringparser_parse, STRING_HANDLE, connection_string);
+    MOCKABLE_FUNCTION(, int, connectionstringparser_splitHostName_from_char, const char*, hostName, STRING_HANDLE, nameString, STRING_HANDLE, suffixString);
+    MOCKABLE_FUNCTION(, int, connectionstringparser_splitHostName, STRING_HANDLE, hostNameString, STRING_HANDLE, nameString, STRING_HANDLE, suffixString);
 
 #ifdef __cplusplus
 }
