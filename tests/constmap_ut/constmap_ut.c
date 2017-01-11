@@ -93,7 +93,7 @@ MAP_HANDLE my_Map_Clone(MAP_HANDLE sourceMap)
 MAP_RESULT my_Map_ContainsKey(MAP_HANDLE handle, const char* key, bool* keyExists)
 {
     MAP_RESULT result = currentMapResult;
-    (void)handle, key;
+    (void)handle, (void)key;
     if (result == MAP_OK)
     {
         *keyExists = true;
@@ -104,7 +104,7 @@ MAP_RESULT my_Map_ContainsKey(MAP_HANDLE handle, const char* key, bool* keyExist
 MAP_RESULT my_Map_ContainsValue(MAP_HANDLE handle, const char* value, bool* valueExists)
 {
     MAP_RESULT result = currentMapResult;
-    (void)handle, value;
+    (void)handle, (void)value;
     if (result == MAP_OK)
     {
         *valueExists = true;
@@ -115,7 +115,7 @@ MAP_RESULT my_Map_ContainsValue(MAP_HANDLE handle, const char* value, bool* valu
 const char* my_Map_GetValueFromKey(MAP_HANDLE sourceMap, const char* key)
 {
     const char* result;
-    (void)key, sourceMap;
+    (void)key, (void)sourceMap;
     if (currentMapResult == MAP_OK)
     {
         result = VALID_VALUE;
