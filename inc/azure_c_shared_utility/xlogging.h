@@ -12,6 +12,10 @@
 
 #include "azure_c_shared_utility/agenttime.h"
 
+#ifdef TIZENRT
+#undef LOG_INFO
+#endif
+
 typedef enum LOG_CATEGORY_TAG
 {
     AZ_LOG_ERROR,
