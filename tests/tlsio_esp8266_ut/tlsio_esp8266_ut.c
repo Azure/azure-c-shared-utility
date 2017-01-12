@@ -456,8 +456,8 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ASSERT_ARE_NOT_EQUAL(int, 0, result);
 
         instance.tlsio_state = TLSIO_STATE_CLOSING;
-        result = tlsioInterfaces->concrete_io_close(&instance, NULL, NULL);
         ///act
+        result = tlsioInterfaces->concrete_io_close(&instance, NULL, NULL);
 
         ///assert
         ASSERT_ARE_NOT_EQUAL(int, 0, result);

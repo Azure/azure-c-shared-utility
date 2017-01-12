@@ -62,7 +62,11 @@ typedef void(*LOGGER_LOG)(LOG_CATEGORY log_category, const char* file, const cha
     } while(0)
 
 #define LogError LogInfo
-#define LOG(...)
+#define LOG(log_category, log_options, FORMAT, ...)  { \
+        const char* __localFORMAT = (FORMAT); \
+        printf(__localFORMAT, ##__VA_ARGS__); \
+        printf("\r\n"); \
+}
 
 
 #elif defined(ARDUINO_ARCH_ESP8266)
