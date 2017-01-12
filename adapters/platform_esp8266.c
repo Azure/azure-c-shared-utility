@@ -19,7 +19,7 @@ int platform_init(void)
     while(ts == 0){
         vTaskDelay(5000 / portTICK_RATE_MS);
         ts = sntp_get_current_timestamp();
-        printf("%s\n", sntp_get_real_time(ts));
+        LogInfo("%s", sntp_get_real_time(ts));
     }
     return 0;
 }

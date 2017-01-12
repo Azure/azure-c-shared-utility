@@ -404,7 +404,7 @@ static int create_openssl_instance(TLS_IO_INSTANCE* tlsInstance)
 /* Codes_SRS_TLSIO_SSL_ESP8266_99_005: [ The tlsio_openssl_create succeed. ]*/
 CONCRETE_IO_HANDLE tlsio_openssl_create(void* io_create_parameters)
 {
-    TLSIO_CONFIG* tls_io_config = io_create_parameters;
+    TLSIO_CONFIG* tls_io_config = (TLSIO_CONFIG*)io_create_parameters;
     TLS_IO_INSTANCE* result;
 
     /* Codes_SRS_TLSIO_SSL_ESP8266_99_003: [ The tlsio_openssl_create shall return NULL when io_create_parameters is NULL. ]*/
