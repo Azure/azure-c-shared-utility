@@ -414,7 +414,9 @@ set(source_h_files
 ./inc/azure_c_shared_utility/socketio.h
 ./inc/azure_c_shared_utility/stdint_ce6.h
 ./inc/azure_c_shared_utility/strings.h
+./inc/azure_c_shared_utility/strings_types.h
 ./inc/azure_c_shared_utility/string_tokenizer.h
+./inc/azure_c_shared_utility/string_tokenizer_types.h
 ./inc/azure_c_shared_utility/tickcounter.h
 ./inc/azure_c_shared_utility/threadapi.h
 ./inc/azure_c_shared_utility/xio.h
