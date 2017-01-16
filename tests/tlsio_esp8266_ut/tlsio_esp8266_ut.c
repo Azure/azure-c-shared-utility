@@ -53,6 +53,9 @@ void my_gballoc_free(void* ptr)
 
 
 static int g_ssl_write_success = 1;
+static int g_ssl_read_returns_data = 1;
+static int g_on_bytes_received_buffer_size = 0;
+
 
 typedef enum TLSIO_STATE_TAG
 {
@@ -110,7 +113,11 @@ void my_SSL_free(SSL *ssl){
 }
 
 int my_SSL_read(SSL *ssl, void *buffer, int len){
-    return len;
+    if (g_ssl_read_returns_data){
+        return len;
+    }else{
+        return 0;
+    }
 }
 
 int my_SSL_connect(SSL *ssl){
@@ -159,7 +166,7 @@ static void test_on_io_open_complete(void* context, IO_OPEN_RESULT open_result)
 
 static void on_bytes_received(void* context, const unsigned char* buffer, size_t size)
 {
-
+    g_on_bytes_received_buffer_size = size;
 }
 
 #define ENABLE_MOCKS
@@ -300,10 +307,11 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
     }
 
     /* Tests_SRS_TLSIO_SSL_ESP8266_99_019: [ The tlsio_openssl_dowrok succeed]*/
-    TEST_FUNCTION(tlsio_openssl_dowork__succeed)
+    TEST_FUNCTION(tlsio_openssl_dowork__succeed_with_data)
     {
         ///arrange
         int result = 0;
+        g_ssl_read_returns_data = 1;
         TLS_IO_INSTANCE instance;
         instance.on_bytes_received = on_bytes_received;
 
@@ -318,6 +326,32 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         
         ///assert
         ASSERT_ARE_EQUAL(int, result, 0);
+        ASSERT_ARE_EQUAL(int, g_on_bytes_received_buffer_size, 64);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+        ///cleanup
+    }
+
+    /* Tests_SRS_TLSIO_SSL_ESP8266_99_019: [ The tlsio_openssl_dowrok succeed]*/
+    TEST_FUNCTION(tlsio_openssl_dowork__succeed_without_data)
+    {
+        ///arrange
+        int result = 0;
+        g_ssl_read_returns_data = 0;
+        TLS_IO_INSTANCE instance;
+        instance.on_bytes_received = on_bytes_received;
+
+        const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
+        ASSERT_IS_NOT_NULL(tlsioInterfaces);
+
+        umock_c_reset_all_calls();
+        EXPECTED_CALL(SSL_read(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG));
+
+        ///act
+        tlsioInterfaces->concrete_io_dowork(&instance);
+        
+        ///assert
+        ASSERT_ARE_EQUAL(int, result, 0);
+        ASSERT_ARE_EQUAL(int, g_on_bytes_received_buffer_size, 0);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ///cleanup
     }
