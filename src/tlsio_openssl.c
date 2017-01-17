@@ -911,7 +911,9 @@ void tlsio_openssl_deinit(void)
 {
     openssl_dynamic_locks_uninstall();
     openssl_static_locks_uninstall();
+#if (OPENSSL_VERSION_NUMBER >= 0x00907000L) && (OPENSSL_VERSION_NUMBER < 0x20000000L)
     FIPS_mode_set(0);
+#endif
     CRYPTO_set_locking_callback(NULL);
     CRYPTO_set_id_callback(NULL);
     ERR_free_strings();
@@ -944,35 +946,37 @@ CONCRETE_IO_HANDLE tlsio_openssl_create(void* io_create_parameters)
         }
         else
         {
-            memset(result, 0, sizeof(TLS_IO_INSTANCE));
-            mallocAndStrcpy_s(&result->hostname, tls_io_config->hostname);
-            result->port = tls_io_config->port;
+            const IO_INTERFACE_DESCRIPTION* underlying_io_interface = socketio_get_interface_description();
+            if (underlying_io_interface == NULL)
+            {
+                free(result);
+                result = NULL;
+                LogError("Failed getting socket IO interface description.");
+            }
+            else
+            {
+                SOCKETIO_CONFIG socketio_config;
 
-            result->ssl_context = NULL;
-            result->ssl = NULL;
-            result->in_bio = NULL;
-            result->out_bio = NULL;
-            result->certificate = NULL;
+                memset(result, 0, sizeof(TLS_IO_INSTANCE));
+                mallocAndStrcpy_s(&result->hostname, tls_io_config->hostname);
+                result->port = tls_io_config->port;
 
-            result->on_bytes_received = NULL;
-            result->on_bytes_received_context = NULL;
+                socketio_config.hostname = result->hostname;
+                socketio_config.port = result->port;
+                socketio_config.accepted_socket = NULL;
 
-            result->on_io_open_complete = NULL;
-            result->on_io_open_complete_context = NULL;
-
-            result->on_io_close_complete = NULL;
-            result->on_io_close_complete_context = NULL;
-
-            result->on_io_error = NULL;
-            result->on_io_error_context = NULL;
-
-            result->tlsio_state = TLSIO_STATE_NOT_OPEN;
-
-            result->x509certificate = NULL;
-            result->x509privatekey = NULL;
-            result->tls_version = 0;
-            result->tls_validation_callback = NULL;
-            result->tls_validation_callback_data = NULL;
+                result->underlying_io = xio_create(underlying_io_interface, &socketio_config);
+                if (result->underlying_io == NULL)
+                {
+                    free(result);
+                    result = NULL;
+                    LogError("Failed xio_create.");
+                }
+                else
+                {
+                    result->tlsio_state = TLSIO_STATE_NOT_OPEN;
+                }
+            }
         }
     }
 
