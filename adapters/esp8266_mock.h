@@ -410,16 +410,19 @@ struct timeval {
 //err_t netconn_gethostbyname(const char *name, ip_addr_t *addr);
 MOCKABLE_FUNCTION(, err_t, netconn_gethostbyname, const char*, name, ip_addr_t*, addr);
 int socket(int domain, int type, int protocol);
-MOCKABLE_FUNCTION(, int, bind, int, s, const struct sockaddr*, name, socklen_t, namelen);
+
 //int bind(int s, const struct sockaddr* name, socklen_t namelen);
+MOCKABLE_FUNCTION(, int, bind, int, s, const struct sockaddr*, name, socklen_t, namelen);
+
 //int connect(int s, const struct sockaddr *name, socklen_t namelen);
 MOCKABLE_FUNCTION(, int, connect, int, s, const struct sockaddr*, name, socklen_t, namelen);
 
-
-MOCKABLE_FUNCTION(, int, lwip_select, int, maxfdp1, fd_set*, readset, fd_set*, writeset, fd_set*, exceptset, struct timeval*, timeout);
 //int lwip_select(int maxfdp1, fd_set *readset, fd_set *writeset, fd_set *exceptset,
 //                struct timeval *timeout);
+MOCKABLE_FUNCTION(, int, lwip_select, int, maxfdp1, fd_set*, readset, fd_set*, writeset, fd_set*, exceptset, struct timeval*, timeout);
 
+//os_delay_us(int us);
+MOCKABLE_FUNCTION(, void, os_delay_us, int, us);
 
 #define htons(x) (x)
 #define ntohs(x) (x)

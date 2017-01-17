@@ -565,18 +565,11 @@ int tlsio_openssl_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_cl
         TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tls_io;
 
         if ((tls_io_instance->tlsio_state == TLSIO_STATE_NOT_OPEN) ||
-        (tls_io_instance->tlsio_state == TLSIO_STATE_ERROR))
+            (tls_io_instance->tlsio_state == TLSIO_STATE_CLOSING) ||
+            (tls_io_instance->tlsio_state == TLSIO_STATE_OPENING) ||
+            (tls_io_instance->tlsio_state == TLSIO_STATE_ERROR))
         {
-            result = 0;
-            tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
-            LogInfo("Wrong tlsio_state. Expected state is TLSIO_STATE_OPEN.");
-        }
-        else if ((tls_io_instance->tlsio_state == TLSIO_STATE_OPENING) ||
-            (tls_io_instance->tlsio_state == TLSIO_STATE_CLOSING))
-        {
-            /* Codes_SRS_TLSIO_SSL_ESP8266_99_012: [ The tlsio_openssl_close wrong state.]*/
             result = __LINE__;
-            tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
             LogError("Invalid tlsio_state. Expected state is TLSIO_STATE_OPEN.");
         }
         else

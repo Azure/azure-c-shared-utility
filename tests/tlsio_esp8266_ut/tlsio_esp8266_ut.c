@@ -61,7 +61,6 @@ typedef enum TLSIO_STATE_TAG
 {
     TLSIO_STATE_NOT_OPEN,
     TLSIO_STATE_OPENING,
-    TLSIO_STATE_IN_HANDSHAKE,
     TLSIO_STATE_OPEN,
     TLSIO_STATE_CLOSING,
     TLSIO_STATE_ERROR
@@ -157,6 +156,9 @@ int my_connect(int s, const struct sockaddr *name, socklen_t namelen){
     return 0;
 }
 
+void my_os_delay_us(int us){
+    
+}
 
 static void test_on_io_open_complete(void* context, IO_OPEN_RESULT open_result)
 {
@@ -454,7 +456,14 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
     {
         ///arrange
         TLS_IO_INSTANCE instance;
+        SSL_CTX *ctx;
+        SSL *ssl;
+        ctx = SSL_CTX_new(TLSv1_client_method());
+        ssl = SSL_new(ctx);
+
         instance.tlsio_state = TLSIO_STATE_OPEN;
+        instance.ssl = ssl;
+        instance.ssl_context = ctx;
 
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
