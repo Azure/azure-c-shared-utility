@@ -597,6 +597,12 @@ int tlsio_openssl_send(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t siz
         result = __LINE__;
         LogError("NULL tls_io.");
     }
+    else if (buffer == NULL)
+    {
+        /* Codes_SRS_TLSIO_SSL_ESP8266_99_014: [ The tlsio_openssl_send NULL instance.]*/
+        result = __LINE__;
+        LogError("NULL buffer.");
+    }
     else
     {
         TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tls_io;

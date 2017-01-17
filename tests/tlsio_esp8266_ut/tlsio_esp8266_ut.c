@@ -308,8 +308,8 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         TEST_MUTEX_RELEASE(g_testByTest);
     }
 
-    /* Tests_SRS_TLSIO_SSL_ESP8266_99_019: [ The tlsio_openssl_dowrok succeed]*/
-    TEST_FUNCTION(tlsio_openssl_dowork__succeed_with_data)
+    /* Tests_SRS_TLSIO_SSL_ESP8266_99_019: [ The tlsio_openssl_dowork succeed]*/
+    TEST_FUNCTION(tlsio_openssl_dowork_withdata__succeed)
     {
         ///arrange
         int result = 0;
@@ -333,8 +333,8 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ///cleanup
     }
 
-    /* Tests_SRS_TLSIO_SSL_ESP8266_99_019: [ The tlsio_openssl_dowrok succeed]*/
-    TEST_FUNCTION(tlsio_openssl_dowork__succeed_without_data)
+    /* Tests_SRS_TLSIO_SSL_ESP8266_99_019: [ The tlsio_openssl_dowork succeed]*/
+    TEST_FUNCTION(tlsio_openssl_dowork_withoutdata__succeed)
     {
         ///arrange
         int result = 0;
@@ -375,7 +375,28 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
 
 
     /* Tests_SRS_TLSIO_SSL_ESP8266_99_017: [ The tlsio_openssl_send SSL_write succeed]*/
-    TEST_FUNCTION(tlsio_openssl_send__SSL_write_succeed)
+    TEST_FUNCTION(tlsio_openssl_send__SSL_write__succeed)
+    {
+        ///arrange
+        int result = 0;
+        TLS_IO_INSTANCE instance;
+        instance.tlsio_state = TLSIO_STATE_OPEN;
+        g_ssl_write_success = 1;
+        unsigned char test_buffer[] = { 0x42, 0x43 };
+
+        const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
+        ASSERT_IS_NOT_NULL(tlsioInterfaces);
+
+        ///act
+        result = tlsioInterfaces->concrete_io_send(&instance, test_buffer, 10, NULL, NULL);
+        
+        ///assert
+        ASSERT_ARE_EQUAL(int, result, 0);
+        ///cleanup
+     }
+
+     /* Tests_SRS_TLSIO_SSL_ESP8266_99_017: [ The tlsio_openssl_send SSL_write succeed]*/
+    TEST_FUNCTION(tlsio_openssl_send__SSL_write_null_buffer__failed)
     {
         ///arrange
         int result = 0;
@@ -390,12 +411,12 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         result = tlsioInterfaces->concrete_io_send(&instance, NULL, 10, NULL, NULL);
         
         ///assert
-        ASSERT_ARE_EQUAL(int, result, 0);
+        ASSERT_ARE_NOT_EQUAL(int, result, 0);
         ///cleanup
      }
 
     /* Tests_SRS_TLSIO_SSL_ESP8266_99_016: [ The tlsio_openssl_send SSL_write failed]*/
-    TEST_FUNCTION(tlsio_openssl_send__SSL_write_failed)
+    TEST_FUNCTION(tlsio_openssl_send__SSL_write__failed)
     {
         ///arrange
         int result = 0;
@@ -562,7 +583,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
     }
 
     /* Tests_SRS_TLSIO_SSL_ESP8266_99_008: [ The tlsio_openssl_open succeed ]*/
-    TEST_FUNCTION(tlsio_openssl_open_succeed)
+    TEST_FUNCTION(tlsio_openssl_open__succeed)
     {
         ///arrange
         TLS_IO_INSTANCE tls_io_instance;
@@ -682,7 +703,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
 
 
     /* Tests_SRS_TLSIO_SSL_ESP8266_99_005: [ The tlsio_openssl_create succeed. ]*/
-    TEST_FUNCTION(tlsio_openssl_create_succeed)
+    TEST_FUNCTION(tlsio_openssl_create__succeed)
     {
         ///arrange
         TLSIO_CONFIG tlsio_config;
