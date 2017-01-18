@@ -179,6 +179,8 @@ static void on_bytes_received(void* context, const unsigned char* buffer, size_t
 TEST_DEFINE_ENUM_TYPE(IO_SEND_RESULT, IO_SEND_RESULT_VALUES);
 IMPLEMENT_UMOCK_C_ENUM_TYPE(IO_SEND_RESULT, IO_SEND_RESULT_VALUES);
 
+MOCK_FUNCTION_WITH_CODE(, void, test_on_io_close_complete, void*, context)
+MOCK_FUNCTION_END();
 MOCK_FUNCTION_WITH_CODE(, void, test_on_send_complete, void*, context, IO_SEND_RESULT, send_result)
 MOCK_FUNCTION_END();
 #undef ENABLE_MOCKS
@@ -495,6 +497,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
     TEST_FUNCTION(tlsio_openssl_close__succeed)
     {
         ///arrange
+        int result;
         TLS_IO_INSTANCE instance;
         SSL_CTX *ctx;
         SSL *ssl;
@@ -511,12 +514,13 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         umock_c_reset_all_calls();
         STRICT_EXPECTED_CALL(SSL_free(IGNORED_PTR_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(SSL_CTX_free(IGNORED_PTR_ARG)).IgnoreArgument(1);
-
+        STRICT_EXPECTED_CALL(test_on_io_close_complete((void*)0x4242));
         ///act
-        tlsioInterfaces->concrete_io_close(&instance, NULL, NULL);
+        result = tlsioInterfaces->concrete_io_close(&instance, test_on_io_close_complete, (void*)0x4242);
         
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+        ASSERT_ARE_EQUAL(int, 0, result);
         ///cleanup
     }
 
