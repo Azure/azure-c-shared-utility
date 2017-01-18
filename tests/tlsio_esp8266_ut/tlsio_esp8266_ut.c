@@ -10,17 +10,17 @@
 
 void* my_gballoc_malloc(size_t size)
 {
-	return malloc(size);
+    return malloc(size);
 }
 
 void* my_gballoc_realloc(void* ptr, size_t size)
 {
-	return realloc(ptr, size);
+    return realloc(ptr, size);
 }
 
 void my_gballoc_free(void* ptr)
 {
-	free(ptr);
+    free(ptr);
 }
 
 /**
@@ -51,11 +51,11 @@ void my_gballoc_free(void* ptr)
 #include "azure_c_shared_utility/xio.h"
 #include "azure_c_shared_utility/tlsio.h"
 
-
 static int g_ssl_write_success = 1;
 static int g_ssl_read_returns_data = 1;
 static int g_on_bytes_received_buffer_size = 0;
 
+#define MAX_RETRY_WRITE 500
 
 typedef enum TLSIO_STATE_TAG
 {
@@ -157,7 +157,7 @@ int my_connect(int s, const struct sockaddr *name, socklen_t namelen){
 }
 
 void my_os_delay_us(int us){
-    
+
 }
 
 static void test_on_io_open_complete(void* context, IO_OPEN_RESULT open_result)
@@ -175,6 +175,12 @@ static void on_bytes_received(void* context, const unsigned char* buffer, size_t
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
 #include "azure_c_shared_utility/optionhandler.h"
+
+TEST_DEFINE_ENUM_TYPE(IO_SEND_RESULT, IO_SEND_RESULT_VALUES);
+IMPLEMENT_UMOCK_C_ENUM_TYPE(IO_SEND_RESULT, IO_SEND_RESULT_VALUES);
+
+MOCK_FUNCTION_WITH_CODE(, void, test_on_send_complete, void*, context, IO_SEND_RESULT, send_result)
+MOCK_FUNCTION_END();
 #undef ENABLE_MOCKS
 
  /**
@@ -224,7 +230,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         (void)umock_c_init(on_umock_c_error);
 
         result = umocktypes_charptr_register_types();
-		ASSERT_ARE_EQUAL(int, 0, result);
+        ASSERT_ARE_EQUAL(int, 0, result);
 
         /**
          * It is necessary to identify the types defined on your target. With it, the test system will 
@@ -262,6 +268,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         REGISTER_GLOBAL_MOCK_HOOK(TLSv1_client_method, my_TLSv1_client_method);
         REGISTER_GLOBAL_MOCK_HOOK(bind, my_bind);
         REGISTER_GLOBAL_MOCK_HOOK(connect, my_connect);
+        REGISTER_TYPE(IO_SEND_RESULT, IO_SEND_RESULT);
 
         /**
          * You can initialize other global variables here, for instance image that you have a standard void* that will be converted
@@ -308,11 +315,10 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         TEST_MUTEX_RELEASE(g_testByTest);
     }
 
-    /* Tests_SRS_TLSIO_SSL_ESP8266_99_019: [ The tlsio_openssl_dowork succeed]*/
+    /* Tests_SRS_TLSIO_SSL_ESP8266_99_020: [ The tlsio_openssl_dowork succeed]*/
     TEST_FUNCTION(tlsio_openssl_dowork_withdata__succeed)
     {
         ///arrange
-        int result = 0;
         g_ssl_read_returns_data = 1;
         TLS_IO_INSTANCE instance;
         instance.on_bytes_received = on_bytes_received;
@@ -327,7 +333,6 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         tlsioInterfaces->concrete_io_dowork(&instance);
         
         ///assert
-        ASSERT_ARE_EQUAL(int, result, 0);
         ASSERT_ARE_EQUAL(int, g_on_bytes_received_buffer_size, 64);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ///cleanup
@@ -337,7 +342,6 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
     TEST_FUNCTION(tlsio_openssl_dowork_withoutdata__succeed)
     {
         ///arrange
-        int result = 0;
         g_ssl_read_returns_data = 0;
         TLS_IO_INSTANCE instance;
         instance.on_bytes_received = on_bytes_received;
@@ -352,7 +356,6 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         tlsioInterfaces->concrete_io_dowork(&instance);
         
         ///assert
-        ASSERT_ARE_EQUAL(int, result, 0);
         ASSERT_ARE_EQUAL(int, g_on_bytes_received_buffer_size, 0);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ///cleanup
@@ -387,10 +390,15 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
+        umock_c_reset_all_calls();
+        EXPECTED_CALL(SSL_write(IGNORED_PTR_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(test_on_send_complete((void*)0x4242, IO_SEND_OK));
+
         ///act
-        result = tlsioInterfaces->concrete_io_send(&instance, test_buffer, 10, NULL, NULL);
+        result = tlsioInterfaces->concrete_io_send(&instance, test_buffer, sizeof(test_buffer), test_on_send_complete, (void*)0x4242);
         
         ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_EQUAL(int, result, 0);
         ///cleanup
      }
@@ -408,7 +416,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
         ///act
-        result = tlsioInterfaces->concrete_io_send(&instance, NULL, 10, NULL, NULL);
+        result = tlsioInterfaces->concrete_io_send(&instance, NULL, 0, NULL, NULL);
         
         ///assert
         ASSERT_ARE_NOT_EQUAL(int, result, 0);
@@ -423,14 +431,25 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         TLS_IO_INSTANCE instance;
         instance.tlsio_state = TLSIO_STATE_OPEN;
         g_ssl_write_success = 0;
+        unsigned char test_buffer[] = { 0x42, 0x43 };
 
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
+        umock_c_reset_all_calls();
+        int retry = 0;
+        while(retry < MAX_RETRY_WRITE){
+            EXPECTED_CALL(SSL_write(IGNORED_PTR_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG));
+            retry++;
+        }
+        
+        STRICT_EXPECTED_CALL(test_on_send_complete((void*)0x4242, IO_SEND_ERROR));
+
         ///act
-        result = tlsioInterfaces->concrete_io_send(&instance, NULL, 10, NULL, NULL);
+        result = tlsioInterfaces->concrete_io_send(&instance, test_buffer, sizeof(test_buffer), test_on_send_complete, (void*)0x4242);
         
         ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_NOT_EQUAL(int, result, 0);
         ///cleanup
     }
