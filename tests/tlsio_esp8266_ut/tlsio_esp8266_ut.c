@@ -54,8 +54,13 @@ void my_gballoc_free(void* ptr)
 static int g_ssl_write_success = 1;
 static int g_ssl_read_returns_data = 1;
 static int g_on_bytes_received_buffer_size = 0;
+static int g_ssl_set_fragment_success = 1;
+static int g_ssl_new_success = 1;
+static int g_ssl_set_fd_success = 1;
+static int g_ssl_connect_success = 1;
 
 #define MAX_RETRY_WRITE 500
+#define MAX_RETRY 10
 
 typedef enum TLSIO_STATE_TAG
 {
@@ -120,20 +125,36 @@ int my_SSL_read(SSL *ssl, void *buffer, int len){
 }
 
 int my_SSL_connect(SSL *ssl){
-    return 0;
+    if (g_ssl_connect_success == 1){
+        return 0;
+    }else{
+        return -1;
+    }
 }
 
 int my_SSL_set_fd(SSL *ssl, int fd){
-    return 0;
+    if (g_ssl_set_fd_success == 1){
+        return 1;
+    }else{
+        return 0;
+    }
 }
 
 SSL* my_SSL_new(SSL_CTX *ssl_ctx){
-    SSL* ssl = (SSL*)malloc(sizeof(SSL));
-    return ssl;
+    if (g_ssl_new_success == 1){
+         SSL* ssl = (SSL*)malloc(sizeof(SSL));
+        return ssl;
+    }else{
+        return NULL;
+    }  
 }
 
 int my_SSL_set_fragment(SSL_CTX *ssl_ctx, unsigned int frag_size){
-    return 0;
+    if (g_ssl_set_fragment_success == 1){
+        return 0;
+    }else{
+        return -1;
+    }
 }
 
 SSL_CTX* my_SSL_CTX_new(SSL_METHOD *method){
@@ -327,7 +348,9 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ///arrange
         g_ssl_read_returns_data = 1;
         TLS_IO_INSTANCE instance;
+        memset(&instance, 0, sizeof(TLS_IO_INSTANCE));
         instance.on_bytes_received = on_bytes_received;
+        instance.tlsio_state = TLSIO_STATE_OPEN;
 
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
@@ -350,7 +373,9 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ///arrange
         g_ssl_read_returns_data = 0;
         TLS_IO_INSTANCE instance;
+        memset(&instance, 0, sizeof(TLS_IO_INSTANCE));
         instance.on_bytes_received = on_bytes_received;
+        instance.tlsio_state = TLSIO_STATE_OPEN;
 
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
@@ -389,6 +414,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ///arrange
         int result = 0;
         TLS_IO_INSTANCE instance;
+        memset(&instance, 0, sizeof(TLS_IO_INSTANCE));
         instance.tlsio_state = TLSIO_STATE_OPEN;
         g_ssl_write_success = 1;
         unsigned char test_buffer[] = { 0x42, 0x43 };
@@ -415,6 +441,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ///arrange
         int result = 0;
         TLS_IO_INSTANCE instance;
+        memset(&instance, 0, sizeof(TLS_IO_INSTANCE));
         instance.tlsio_state = TLSIO_STATE_OPEN;
         g_ssl_write_success = 1;
 
@@ -435,6 +462,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ///arrange
         int result = 0;
         TLS_IO_INSTANCE instance;
+        memset(&instance, 0, sizeof(TLS_IO_INSTANCE));
         instance.tlsio_state = TLSIO_STATE_OPEN;
         g_ssl_write_success = 0;
         unsigned char test_buffer[] = { 0x42, 0x43 };
@@ -469,6 +497,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
         TLS_IO_INSTANCE instance;
+        memset(&instance, 0, sizeof(TLS_IO_INSTANCE));
         instance.tlsio_state = TLSIO_STATE_NOT_OPEN;
         ///act
         result = tlsioInterfaces->concrete_io_send(&instance, NULL, 0,  NULL, NULL);
@@ -503,6 +532,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ///arrange
         int result;
         TLS_IO_INSTANCE instance;
+        memset(&instance, 0, sizeof(TLS_IO_INSTANCE));
         SSL_CTX *ctx;
         SSL *ssl;
         ctx = SSL_CTX_new(TLSv1_client_method());
@@ -538,6 +568,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
         TLS_IO_INSTANCE instance;
+        memset(&instance, 0, sizeof(TLS_IO_INSTANCE));
         instance.tlsio_state = TLSIO_STATE_NOT_OPEN;
         ///act
         result = tlsioInterfaces->concrete_io_close(&instance, NULL, NULL);
@@ -578,7 +609,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
     {
         ///arrange
         TLS_IO_INSTANCE* instance = malloc(sizeof(TLS_IO_INSTANCE));
-        memset(instance, 0, sizeof(instance));
+        memset(instance, 0, sizeof(TLS_IO_INSTANCE));
 
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
@@ -614,9 +645,14 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
     {
         ///arrange
         TLS_IO_INSTANCE tls_io_instance;
+        memset(&tls_io_instance, 0, sizeof(TLS_IO_INSTANCE));
+
         tls_io_instance.tlsio_state = TLSIO_STATE_NOT_OPEN;
         ip_addr_t addr;
-
+        g_ssl_set_fragment_success = 1;
+        g_ssl_new_success = 1;
+        g_ssl_set_fd_success = 1;
+        g_ssl_connect_success = 1;
         int result;
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
@@ -654,11 +690,15 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
     TEST_FUNCTION(tlsio_openssl_open_invalid_state__failed)
     {
         ///arrange
+        TLS_IO_INSTANCE tls_io_instance;
+        memset(&tls_io_instance, 0, sizeof(TLS_IO_INSTANCE));
         int result;
+        g_ssl_set_fragment_success = 1;
+        g_ssl_new_success = 1;
+        g_ssl_set_fd_success = 1;
+        g_ssl_connect_success = 1;
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
-
-        TLS_IO_INSTANCE tls_io_instance;
         tls_io_instance.tlsio_state = TLSIO_STATE_OPENING;
 
         STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4242));
@@ -677,11 +717,173 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
     {
         ///arrange
         int result;
+        g_ssl_set_fragment_success = 1;
+        g_ssl_new_success = 1;
+        g_ssl_set_fd_success = 1;
+        g_ssl_connect_success = 1;
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
         ///act
         result = tlsioInterfaces->concrete_io_open(NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+
+        ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+        ASSERT_ARE_NOT_EQUAL(int, 0, result);
+
+        ///cleanup
+    }
+
+    /* Codes_SRS_TLSIO_SSL_ESP8266_99_006: [ The tlsio_openssl_open failed when tls_io is NULL. ]*/
+    TEST_FUNCTION(tlsio_openssl_open_sslsetfragment__failed)
+    {
+        ///arrange
+        TLS_IO_INSTANCE tls_io_instance;
+        memset(&tls_io_instance, 0, sizeof(TLS_IO_INSTANCE));
+        tls_io_instance.tlsio_state = TLSIO_STATE_NOT_OPEN;
+        int result;
+        const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
+        ASSERT_IS_NOT_NULL(tlsioInterfaces);
+        g_ssl_set_fragment_success = 0;
+        g_ssl_new_success = 1;
+        g_ssl_set_fd_success = 1;
+        g_ssl_connect_success = 1;
+        umock_c_reset_all_calls();
+        
+        STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);   
+        STRICT_EXPECTED_CALL(bind(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);   
+        STRICT_EXPECTED_CALL(connect(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
+        STRICT_EXPECTED_CALL(lwip_select(IGNORED_NUM_ARG, IGNORED_PTR_ARG, 
+              IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
+        STRICT_EXPECTED_CALL(TLSv1_client_method());
+        STRICT_EXPECTED_CALL(SSL_CTX_new(IGNORED_PTR_ARG)).IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(SSL_set_fragment(IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2);
+        STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4242));
+
+        ///act
+        result = tlsioInterfaces->concrete_io_open(&tls_io_instance, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
+
+        ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+        ASSERT_ARE_NOT_EQUAL(int, 0, result);
+
+        ///cleanup
+    }
+
+    /* Codes_SRS_TLSIO_SSL_ESP8266_99_006: [ The tlsio_openssl_open failed when tls_io is NULL. ]*/
+    TEST_FUNCTION(tlsio_openssl_open_sslnew__failed)
+    {
+        ///arrange
+        TLS_IO_INSTANCE tls_io_instance;
+        memset(&tls_io_instance, 0, sizeof(TLS_IO_INSTANCE));
+        tls_io_instance.tlsio_state = TLSIO_STATE_NOT_OPEN;
+        int result;
+        const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
+        ASSERT_IS_NOT_NULL(tlsioInterfaces);
+        g_ssl_set_fragment_success = 1;
+        g_ssl_new_success = 0;
+        g_ssl_set_fd_success = 1;
+        g_ssl_connect_success = 1;
+        umock_c_reset_all_calls();
+        
+        STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);   
+        STRICT_EXPECTED_CALL(bind(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);   
+        STRICT_EXPECTED_CALL(connect(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
+        STRICT_EXPECTED_CALL(lwip_select(IGNORED_NUM_ARG, IGNORED_PTR_ARG, 
+              IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
+        STRICT_EXPECTED_CALL(TLSv1_client_method());
+        STRICT_EXPECTED_CALL(SSL_CTX_new(IGNORED_PTR_ARG)).IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(SSL_set_fragment(IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2);
+        STRICT_EXPECTED_CALL(SSL_new(IGNORED_PTR_ARG)).IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4242));
+
+        ///act
+        result = tlsioInterfaces->concrete_io_open(&tls_io_instance, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
+
+        ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+        ASSERT_ARE_NOT_EQUAL(int, 0, result);
+
+        ///cleanup
+    }
+
+    /* Codes_SRS_TLSIO_SSL_ESP8266_99_006: [ The tlsio_openssl_open failed when tls_io is NULL. ]*/
+    TEST_FUNCTION(tlsio_openssl_open_sslsetfd__failed)
+    {
+        ///arrange
+        TLS_IO_INSTANCE tls_io_instance;
+        memset(&tls_io_instance, 0, sizeof(TLS_IO_INSTANCE));
+        tls_io_instance.tlsio_state = TLSIO_STATE_NOT_OPEN;
+        int result;
+        const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
+        ASSERT_IS_NOT_NULL(tlsioInterfaces);
+        g_ssl_set_fragment_success = 1;
+        g_ssl_new_success = 1;
+        g_ssl_set_fd_success = 0;
+        g_ssl_connect_success = 1;
+        umock_c_reset_all_calls();
+        
+        STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);   
+        STRICT_EXPECTED_CALL(bind(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);   
+        STRICT_EXPECTED_CALL(connect(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
+        STRICT_EXPECTED_CALL(lwip_select(IGNORED_NUM_ARG, IGNORED_PTR_ARG, 
+              IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
+        STRICT_EXPECTED_CALL(TLSv1_client_method());
+        STRICT_EXPECTED_CALL(SSL_CTX_new(IGNORED_PTR_ARG)).IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(SSL_set_fragment(IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2);
+        STRICT_EXPECTED_CALL(SSL_new(IGNORED_PTR_ARG)).IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(SSL_set_fd(IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2);
+        STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4242));
+
+        ///act
+        result = tlsioInterfaces->concrete_io_open(&tls_io_instance, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
+
+        ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+        ASSERT_ARE_NOT_EQUAL(int, 0, result);
+
+        ///cleanup
+    }
+
+    /* Codes_SRS_TLSIO_SSL_ESP8266_99_006: [ The tlsio_openssl_open failed when tls_io is NULL. ]*/
+    TEST_FUNCTION(tlsio_openssl_open_sslconnect__failed)
+    {
+        ///arrange
+        TLS_IO_INSTANCE tls_io_instance;
+        memset(&tls_io_instance, 0, sizeof(TLS_IO_INSTANCE));
+        tls_io_instance.tlsio_state = TLSIO_STATE_NOT_OPEN;
+        int result;
+        const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
+        ASSERT_IS_NOT_NULL(tlsioInterfaces);
+        g_ssl_set_fragment_success = 1;
+        g_ssl_new_success = 1;
+        g_ssl_set_fd_success = 1;
+        g_ssl_connect_success = 0;
+        umock_c_reset_all_calls();
+        
+        STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);   
+        STRICT_EXPECTED_CALL(bind(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);   
+        STRICT_EXPECTED_CALL(connect(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
+        STRICT_EXPECTED_CALL(lwip_select(IGNORED_NUM_ARG, IGNORED_PTR_ARG, 
+              IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
+        STRICT_EXPECTED_CALL(TLSv1_client_method());
+        STRICT_EXPECTED_CALL(SSL_CTX_new(IGNORED_PTR_ARG)).IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(SSL_set_fragment(IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2);
+        STRICT_EXPECTED_CALL(SSL_new(IGNORED_PTR_ARG)).IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(SSL_set_fd(IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2);
+        int retry = 0;
+        while(retry < MAX_RETRY){
+            STRICT_EXPECTED_CALL(SSL_connect(IGNORED_PTR_ARG)).IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(lwip_select(IGNORED_NUM_ARG, IGNORED_PTR_ARG, 
+              IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
+            STRICT_EXPECTED_CALL(os_delay_us(IGNORED_NUM_ARG)).IgnoreArgument(1);
+            retry++;
+        }
+        STRICT_EXPECTED_CALL(SSL_connect(IGNORED_PTR_ARG)).IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4242));
+
+        ///act
+        result = tlsioInterfaces->concrete_io_open(&tls_io_instance, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());

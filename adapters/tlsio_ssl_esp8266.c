@@ -193,8 +193,9 @@ static void lwip_set_non_block(int fd)
 }
 
 
-LOCAL void openssl_thread_LWIP_CONNECTION(TLS_IO_INSTANCE* p)
+LOCAL int openssl_thread_LWIP_CONNECTION(TLS_IO_INSTANCE* p)
 {
+    int result;
     int ret;
     int sock;
 
@@ -209,130 +210,154 @@ LOCAL void openssl_thread_LWIP_CONNECTION(TLS_IO_INSTANCE* p)
 
     TLS_IO_INSTANCE* tls_io_instance = p;
 
-    //LogInfo("OpenSSL thread start...");
+    // LogInfo("OpenSSL thread start...");
 
     int netconn_retry = 0;
     do {
         ret = netconn_gethostbyname(tls_io_instance->hostname, &target_ip);
     } while(ret && netconn_retry++ < MAX_RETRY);
-    // This is useful for debugging purpose.
-    // LogInfo("get target IP is %d.%d.%d.%d", (unsigned char)((target_ip.addr & 0x000000ff) >> 0),
-    //                                             (unsigned char)((target_ip.addr & 0x0000ff00) >> 8),
-    //                                             (unsigned char)((target_ip.addr & 0x00ff0000) >> 16),
-    //                                             (unsigned char)((target_ip.addr & 0xff000000) >> 24));
 
-    //LogInfo("create socket ......");
+    // LogInfo("create socket ......");
     sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock < 0) {
+        result = __LINE__;
         LogError("create socket failed");
-        return;
     }
-    // LogInfo("create socket OK");
+    else
+    {
+        // LogInfo("create socket OK");
+        // LogInfo("bind socket ......");
+        memset(&sock_addr, 0, sizeof(sock_addr));
+        sock_addr.sin_family = AF_INET;
+        sock_addr.sin_addr.s_addr = 0;
+        sock_addr.sin_port = htons(OPENSSL_LOCAL_TCP_PORT);
+        ret = bind(sock, (struct sockaddr*)&sock_addr, sizeof(sock_addr));
+        if (ret) {
+            result = __LINE__;
+            LogError("bind socket failed");
+        }
+        else
+        {
+            // LogInfo("bind socket OK");
+            // LogInfo("socket connect to remote ......");
+            memset(&sock_addr, 0, sizeof(sock_addr));
+            sock_addr.sin_family = AF_INET;
+            sock_addr.sin_addr.s_addr = target_ip.addr;
+            sock_addr.sin_port = htons(tls_io_instance->port);
 
-    // LogInfo("bind socket ......");
-    memset(&sock_addr, 0, sizeof(sock_addr));
-    sock_addr.sin_family = AF_INET;
-    sock_addr.sin_addr.s_addr = 0;
-    sock_addr.sin_port = htons(OPENSSL_LOCAL_TCP_PORT);
-    ret = bind(sock, (struct sockaddr*)&sock_addr, sizeof(sock_addr));
-    if (ret) {
-        LogError("bind socket failed");
-        return;
-    }
-    // LogInfo("bind socket OK");
+            lwip_set_non_block(sock);
 
-    // LogInfo("socket connect to remote ......");
-    memset(&sock_addr, 0, sizeof(sock_addr));
-    sock_addr.sin_family = AF_INET;
-    sock_addr.sin_addr.s_addr = target_ip.addr;
-    sock_addr.sin_port = htons(tls_io_instance->port);
+            ret = connect(sock, (struct sockaddr*)&sock_addr, sizeof(sock_addr));
+            if (ret == -1) {
+                ret = lwip_net_errno(sock);
+                if (ret != EINPROGRESS){
+                    result = __LINE__;
+                    ret = -1;
+                    LogError("socket connect failed %s", tls_io_instance->hostname);
+                }
+            }
 
-    lwip_set_non_block(sock);
+            if(ret != -1 || ret == EINPROGRESS)
+            {
+                // LogInfo("socket connect OK");
+                char recv_buf[128];
+                size_t recv_bytes = (size_t)sizeof(recv_buf);
+                int retry = 0;
 
-    ret = connect(sock, (struct sockaddr*)&sock_addr, sizeof(sock_addr));
-    if (ret == -1) {
-        ret = lwip_net_errno(sock);
-        if (ret != EINPROGRESS){
-            LogError("socket connect failed %s", tls_io_instance->hostname);
-            return;
-        } else{
-            LogInfo("socket connect in progress");
+                while (retry < MAX_RETRY){
+                    // LogInfo("lwip select retry #: %d", retry);
+                    FD_ZERO(&readset);
+                    FD_SET(sock, &readset);
+                
+                    FD_ZERO(&writeset);
+                    FD_SET(sock, &writeset);
+                
+                    FD_ZERO(&errset);
+                    FD_SET(sock, &errset);
+                
+                    ret = lwip_select(sock + 1, &readset, &writeset, &errset, NULL);
+                    if (ret > 0){
+                        if (FD_ISSET(sock, &writeset)){
+                          break;
+                        }
+                
+                        if (FD_ISSET(sock, &readset)){
+                            memset(recv_buf, 0, recv_bytes);
+                            break;
+                        }
+                    }else{
+                        // LogInfo("lwip_select returned: %d", ret);
+                    }
+
+                    retry++;
+                    os_delay_us(RETRY_DELAY);
+                }
+
+                ctx = SSL_CTX_new(TLSv1_client_method());
+                if (!ctx) {
+                    result = __LINE__;
+                    LogError("create new SSL CTX failed");
+                }
+                else
+                {
+                    // LogInfo("create new SSL CTX OK");
+                    // LogInfo("SSL set fragment");
+                    ret = SSL_set_fragment(ctx, OPENSSL_FRAGMENT_SIZE);
+                    if (ret != 0){
+                        result = __LINE__;
+                        LogError("SSL_set_fragment failed");
+                    }
+                    else
+                    {
+                        // LogInfo("SSL new... ");
+                        ssl = SSL_new(ctx);
+                        if (!ssl) {
+                            result = __LINE__;
+                            LogError("create ssl failed");
+                        }
+                        else
+                        {
+                            // LogInfo("SSL set fd");
+                            // returns 1 on success
+                            ret = SSL_set_fd(ssl, sock);
+                            if (ret != 1){
+                                result = __LINE__;
+                                LogError("SSL_set_fd failed");
+                            }
+                            else{
+                                // LogInfo("SSL connect... ");
+                                int retry = 0;
+                                while (SSL_connect(ssl) != 0 && retry < MAX_RETRY)
+                                {  
+                                    FD_ZERO(&readset);
+                                    FD_SET(sock, &readset);
+                                    FD_ZERO(&writeset);
+                                    FD_SET(sock, &writeset);
+                                    FD_ZERO(&errset);
+                                    FD_SET(sock, &errset);
+
+                                    lwip_select(sock + 1, &readset, &writeset, &errset, NULL);
+
+                                    retry++;
+                                    os_delay_us(RETRY_DELAY);
+                                }
+                                if (retry >= MAX_RETRY)
+                                {
+                                    result = __LINE__;
+                                }else{
+                                    // LogInfo("SSL connect ok");
+                                    tls_io_instance->ssl = ssl;
+                                    tls_io_instance->ssl_context = ctx;
+                                    result = 0;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
-    // LogInfo("socket connect OK");
-
-    char recv_buf[128];
-    size_t recv_bytes = (size_t)sizeof(recv_buf);
-    int retry = 0;
-
-    while (retry < MAX_RETRY){
-        // LogInfo("lwip select retry #: %d", retry);
-
-        FD_ZERO(&readset);
-        FD_SET(sock, &readset);
-    
-        FD_ZERO(&writeset);
-        FD_SET(sock, &writeset);
-    
-        FD_ZERO(&errset);
-        FD_SET(sock, &errset);
-    
-        ret = lwip_select(sock + 1, &readset, &writeset, &errset, NULL);
-        if (ret > 0){
-            if (FD_ISSET(sock, &writeset)){
-              break;
-            }
-    
-            if (FD_ISSET(sock, &readset)){
-                memset(recv_buf, 0, recv_bytes);
-                break;
-            }
-        }else{
-            LogInfo("lwip_select returned: %d", ret);
-        }
-
-        retry++;
-        os_delay_us(RETRY_DELAY);
-    }
-
-    ctx = SSL_CTX_new(TLSv1_client_method());
-    if (!ctx) {
-        LogError("create new SSL CTX failed");
-        return;
-    }
-    // LogInfo("create new SSL CTX OK");
-    
-    // LogInfo("SSL set fragment");
-    SSL_set_fragment(ctx, OPENSSL_FRAGMENT_SIZE);
-
-    // LogInfo("SSL new... ");
-    ssl = SSL_new(ctx);
-    if (!ssl) {
-        LogError("create ssl failed");
-        return;
-    }
-
-    // LogInfo("SSL set fd");
-    SSL_set_fd(ssl, sock);
-
-    // LogInfo("SSL connect... ");
-
-    while (-1 == SSL_connect(ssl))
-    {  
-        FD_ZERO(&readset);
-        FD_SET(sock, &readset);
-        FD_ZERO(&writeset);
-        FD_SET(sock, &writeset);
-        FD_ZERO(&errset);
-        FD_SET(sock, &errset);
-
-        lwip_select(sock + 1, &readset, &writeset, &errset, NULL);
-    }
-
-    // LogInfo("SSL connect ok");
-
-    tls_io_instance->ssl = ssl;
-    tls_io_instance->ssl_context = ctx;
+    return result;
 }
 
 static int send_handshake_bytes(TLS_IO_INSTANCE* tls_io_instance)
@@ -340,10 +365,13 @@ static int send_handshake_bytes(TLS_IO_INSTANCE* tls_io_instance)
     //system_print_meminfo(); // This is useful for debugging purpose.
     //LogInfo("free heap size %d", system_get_free_heap_size()); // This is useful for debugging purpose.
     int result;
-    openssl_thread_LWIP_CONNECTION(tls_io_instance);
-    tls_io_instance->tlsio_state = TLSIO_STATE_OPEN;
-    indicate_open_complete(tls_io_instance, IO_OPEN_OK);    
-    result = 0;
+    if (openssl_thread_LWIP_CONNECTION(tls_io_instance) != 0){
+        result = __LINE__;
+    }else{
+        tls_io_instance->tlsio_state = TLSIO_STATE_OPEN;
+        indicate_open_complete(tls_io_instance, IO_OPEN_OK);    
+        result = 0;
+    }
 
     return result;
 }
@@ -529,8 +557,18 @@ int tlsio_openssl_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_open
 
             tls_io_instance->tlsio_state = TLSIO_STATE_OPENING;
 
-            send_handshake_bytes(tls_io_instance);
-            result = 0;
+            if (send_handshake_bytes(tls_io_instance) != 0){
+                result = __LINE__;
+                tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
+                LogError("send_handshake_bytes failed.");
+                if (tls_io_instance->on_io_error != NULL)
+                {
+                    tls_io_instance->on_io_error(tls_io_instance->on_io_error_context);
+                }
+            }else{
+                result = 0;
+                tls_io_instance->tlsio_state = TLSIO_STATE_OPEN;
+            }
         }
     }
 
