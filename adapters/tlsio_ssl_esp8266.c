@@ -597,6 +597,7 @@ int tlsio_openssl_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_cl
             (tls_io_instance->tlsio_state == TLSIO_STATE_ERROR))
         {
             result = __LINE__;
+            tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
             LogError("Invalid tlsio_state. Expected state is TLSIO_STATE_OPEN.");
         }
         else

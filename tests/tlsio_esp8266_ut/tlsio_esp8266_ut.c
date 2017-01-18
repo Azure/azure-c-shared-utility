@@ -555,6 +555,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_EQUAL(int, 0, result);
+        ASSERT_ARE_EQUAL(int, (int)TLSIO_STATE_NOT_OPEN, instance.tlsio_state);
         ///cleanup
     }
 
@@ -583,6 +584,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
 
         ///assert
         ASSERT_ARE_NOT_EQUAL(int, 0, result);
+        ASSERT_ARE_EQUAL(int, (int)TLSIO_STATE_ERROR, instance.tlsio_state);
         ///cleanup
     }
 
@@ -600,7 +602,6 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_NOT_EQUAL(int, 0, result);
-
         ///cleanup
     }
 
