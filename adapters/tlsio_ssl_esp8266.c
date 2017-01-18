@@ -506,8 +506,15 @@ int tlsio_openssl_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_open
         if (tls_io_instance->tlsio_state != TLSIO_STATE_NOT_OPEN)
         {
             tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
+            tls_io_instance->on_io_error = on_io_error;
+            tls_io_instance->on_io_error_context = on_io_error_context;
+
             result = __LINE__;
             LogError("Invalid tlsio_state. Expected state is TLSIO_STATE_NOT_OPEN.");
+            if (tls_io_instance->on_io_error != NULL)
+            {
+                tls_io_instance->on_io_error(tls_io_instance->on_io_error_context);
+            }
         }
         else
         {
@@ -522,26 +529,8 @@ int tlsio_openssl_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_open
 
             tls_io_instance->tlsio_state = TLSIO_STATE_OPENING;
 
-            if (create_openssl_instance(tls_io_instance) != 0)
-            {
-
-                tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
-                result = __LINE__;
-                tls_io_instance->on_io_error(tls_io_instance->on_io_error_context);
-            }
-            else
-            {
-                if(send_handshake_bytes(tls_io_instance) != 0)
-                {
-                    tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
-                    result = __LINE__;
-                    tls_io_instance->on_io_error(tls_io_instance->on_io_error_context);
-                }
-                else
-                {
-                    result = 0;
-                }
-            }
+            send_handshake_bytes(tls_io_instance);
+            result = 0;
         }
     }
 

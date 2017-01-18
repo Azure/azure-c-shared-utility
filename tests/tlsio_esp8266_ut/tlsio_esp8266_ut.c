@@ -160,12 +160,6 @@ void my_os_delay_us(int us){
 
 }
 
-static void test_on_io_open_complete(void* context, IO_OPEN_RESULT open_result)
-{
-    (void)context;
-    (void)open_result;
-}
-
 static void on_bytes_received(void* context, const unsigned char* buffer, size_t size)
 {
     g_on_bytes_received_buffer_size = size;
@@ -176,9 +170,18 @@ static void on_bytes_received(void* context, const unsigned char* buffer, size_t
 #include "azure_c_shared_utility/crt_abstractions.h"
 #include "azure_c_shared_utility/optionhandler.h"
 
+TEST_DEFINE_ENUM_TYPE(IO_OPEN_RESULT, IO_OPEN_RESULT_VALUES);
+IMPLEMENT_UMOCK_C_ENUM_TYPE(IO_OPEN_RESULT, IO_OPEN_RESULT_VALUES);
 TEST_DEFINE_ENUM_TYPE(IO_SEND_RESULT, IO_SEND_RESULT_VALUES);
 IMPLEMENT_UMOCK_C_ENUM_TYPE(IO_SEND_RESULT, IO_SEND_RESULT_VALUES);
 
+
+MOCK_FUNCTION_WITH_CODE(, void, test_on_io_error, void*, context)
+MOCK_FUNCTION_END();
+MOCK_FUNCTION_WITH_CODE(, void, test_on_bytes_received, void*, context, const unsigned char*, buffer, size_t, size)
+MOCK_FUNCTION_END();
+MOCK_FUNCTION_WITH_CODE(, void, test_on_io_open_complete, void*, context, IO_OPEN_RESULT, open_result)
+MOCK_FUNCTION_END();
 MOCK_FUNCTION_WITH_CODE(, void, test_on_io_close_complete, void*, context)
 MOCK_FUNCTION_END();
 MOCK_FUNCTION_WITH_CODE(, void, test_on_send_complete, void*, context, IO_SEND_RESULT, send_result)
@@ -271,6 +274,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         REGISTER_GLOBAL_MOCK_HOOK(bind, my_bind);
         REGISTER_GLOBAL_MOCK_HOOK(connect, my_connect);
         REGISTER_TYPE(IO_SEND_RESULT, IO_SEND_RESULT);
+        REGISTER_TYPE(IO_OPEN_RESULT, IO_OPEN_RESULT);
 
         /**
          * You can initialize other global variables here, for instance image that you have a standard void* that will be converted
@@ -630,10 +634,10 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         STRICT_EXPECTED_CALL(SSL_new(IGNORED_PTR_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(SSL_set_fd(IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2);
         STRICT_EXPECTED_CALL(SSL_connect(IGNORED_PTR_ARG)).IgnoreArgument(1);
-        
+        STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_OK));
 
         ///act
-        result = tlsioInterfaces->concrete_io_open(&tls_io_instance, test_on_io_open_complete, NULL, NULL, NULL, NULL, NULL);
+        result = tlsioInterfaces->concrete_io_open(&tls_io_instance, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
 
         ///assert
         ASSERT_ARE_EQUAL(int, 0, result);
@@ -642,7 +646,6 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
          *    it will show the serialized strings with the differences in the log.
          */
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
         ///cleanup
     }
 
@@ -657,8 +660,10 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
 
         TLS_IO_INSTANCE tls_io_instance;
         tls_io_instance.tlsio_state = TLSIO_STATE_OPENING;
+
+        STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4242));
         ///act
-        result = tlsioInterfaces->concrete_io_open(&tls_io_instance, NULL, NULL, NULL, NULL, NULL, NULL);
+        result = tlsioInterfaces->concrete_io_open(&tls_io_instance, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
