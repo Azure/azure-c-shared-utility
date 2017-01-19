@@ -33,17 +33,16 @@ MOCKABLE_FUNCTION(, void, VECTOR_erase, VECTOR_HANDLE, handle, void*, elements, 
 MOCKABLE_FUNCTION(, void, VECTOR_clear, VECTOR_HANDLE, handle);
 
 /* access */
-MOCKABLE_FUNCTION(, void*, VECTOR_element, const VECTOR_HANDLE, handle, size_t, index);
-MOCKABLE_FUNCTION(, void*, VECTOR_front, const VECTOR_HANDLE, handle);
-MOCKABLE_FUNCTION(, void*, VECTOR_back, const VECTOR_HANDLE, handle);
-MOCKABLE_FUNCTION(, void*, VECTOR_find_if, const VECTOR_HANDLE, handle, PREDICATE_FUNCTION, pred, const void*, value);
+MOCKABLE_FUNCTION(, void*, VECTOR_element, VECTOR_HANDLE, handle, size_t, index);
+MOCKABLE_FUNCTION(, void*, VECTOR_front, VECTOR_HANDLE, handle);
+MOCKABLE_FUNCTION(, void*, VECTOR_back, VECTOR_HANDLE, handle);
+MOCKABLE_FUNCTION(, void*, VECTOR_find_if, VECTOR_HANDLE, handle, PREDICATE_FUNCTION, pred, const void*, value);
 
 /* capacity */
-MOCKABLE_FUNCTION(, size_t, VECTOR_size, const VECTOR_HANDLE, handle);
+MOCKABLE_FUNCTION(, size_t, VECTOR_size, VECTOR_HANDLE, handle);
 
 #ifdef __cplusplus
 }
-#else
 #endif
 
 #endif /* VECTOR_H */

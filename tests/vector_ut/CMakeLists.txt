@@ -13,8 +13,6 @@ ${theseTestsName}.c
 
 set(${theseTestsName}_c_files
 ../../src/vector.c
-
-../../src/gballoc.c
 ${LOCK_C_FILE}
 )
 
