@@ -119,19 +119,21 @@ void VECTOR_erase(VECTOR_HANDLE handle, void* elements, size_t numElements)
         }
         else
         {
-            unsigned char* src = (unsigned char*)elements + (handle->elementSize * numElements);
-            unsigned char* srcEnd = (unsigned char*)handle->storage + (handle->elementSize * handle->count);
-            if (src > srcEnd)
+            int diff = ((unsigned char*)elements) - ((unsigned char*)handle->storage);
+            if ((diff % handle->elementSize) != 0)
             {
-                /* Codes_SRS_VECTOR_10_040: [VECTOR_erase shall return if `elements` is out of bound.] */
-                LogError("invalid argument - numElements(%zd) is out of bound.", numElements);
+                /* Codes_SRS_VECTOR_10_041: [VECTOR_erase shall return if elements is misaligned.] */
+                LogError("invalid argument - elements(%p) is misaligned", elements);
             }
             else
             {
-                if (((srcEnd - src) % handle->elementSize) != 0)
+                /* Compute the arguments needed for memmove. */
+                unsigned char* src = (unsigned char*)elements + (handle->elementSize * numElements);
+                unsigned char* srcEnd = (unsigned char*)handle->storage + (handle->elementSize * handle->count);
+                if (src > srcEnd)
                 {
-                    /* Codes_SRS_VECTOR_10_041: [VECTOR_erase shall return if elements is misaligned.] */
-                    LogError("invalid argument - elements(%p) is misaligned", elements);
+                    /* Codes_SRS_VECTOR_10_040: [VECTOR_erase shall return if `elements` is out of bound.] */
+                    LogError("invalid argument - numElements(%zd) is out of bound.", numElements);
                 }
                 else
                 {

@@ -126,11 +126,11 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_create_returns_NULL_if_malloc_fails)
     {
         ///arrange
+
+        ///act
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument_size()
             .SetReturn(NULL);
-
-        ///act
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
 
         ///assert
@@ -220,7 +220,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     }
 
     /* Tests_SRS_VECTOR_10_013: [VECTOR_push_back shall append the given elements and return 0 indicating success.] */
-    TEST_FUNCTION(Vector_push_back_succeeds)
+    TEST_FUNCTION(VECTOR_push_back_succeeds)
     {
         ///arrange
         VECTOR_UNITTEST sItem = {1, 2};
@@ -671,7 +671,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     }
 
     /* Tests_SRS_VECTOR_10_014: [VECTOR_erase shall remove the `numElements` starting at `elements` and reduce its internal storage.] */
-    TEST_FUNCTION(VECTOR_erase_succeeds)
+    TEST_FUNCTION(VECTOR_erase_succeeds_case_1)
     {
         ///arrange
         VECTOR_UNITTEST sItem1 = {1, 2};
@@ -692,6 +692,68 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         ASSERT_ARE_EQUAL(size_t, 1, num);
         pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, PredicateFunction, &sItem1);
         ASSERT_IS_NULL(pfindItem);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        ///cleanup
+        VECTOR_destroy(handle);
+    }
+
+    /* Tests_SRS_VECTOR_10_014: [VECTOR_erase shall remove the `numElements` starting at `elements` and reduce its internal storage.] */
+    TEST_FUNCTION(VECTOR_erase_succeeds_case_2)
+    {
+        ///arrange
+        VECTOR_UNITTEST sItem1 = {1, 2};
+        VECTOR_UNITTEST sItem2 = {3, 4};
+        VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
+        (void)VECTOR_push_back(handle, &sItem1, 1);
+        (void)VECTOR_push_back(handle, &sItem2, 1);
+        VECTOR_UNITTEST* pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, PredicateFunction, &sItem1);
+        umock_c_reset_all_calls();
+
+        ///act
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
+            .IgnoreArgument_ptr();
+        VECTOR_erase(handle, pfindItem, 2);
+
+        ///assert
+        size_t num = VECTOR_size(handle);
+        ASSERT_ARE_EQUAL(size_t, 0, num);
+        pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, PredicateFunction, &sItem1);
+        ASSERT_IS_NULL(pfindItem);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        ///cleanup
+        VECTOR_destroy(handle);
+    }
+
+    /* Tests_SRS_VECTOR_10_014: [VECTOR_erase shall remove the `numElements` starting at `elements` and reduce its internal storage.] */
+    TEST_FUNCTION(VECTOR_erase_succeeds_case_3)
+    {
+        ///arrange
+        VECTOR_UNITTEST sItem1 = {1, 2};
+        VECTOR_UNITTEST sItem2 = {3, 4};
+        VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
+        (void)VECTOR_push_back(handle, &sItem1, 1);
+        (void)VECTOR_push_back(handle, &sItem2, 1);
+        VECTOR_UNITTEST* pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, PredicateFunction, &sItem1);
+        umock_c_reset_all_calls();
+
+        ///act
+        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, IGNORED_NUM_ARG))
+            .IgnoreArgument_ptr()
+            .IgnoreArgument_size()
+            .SetReturn(NULL);
+        VECTOR_erase(handle, pfindItem, 1);
+
+        ///assert
+        size_t num = VECTOR_size(handle);
+        ASSERT_ARE_EQUAL(size_t, 1, num);
+        pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, PredicateFunction, &sItem1);
+        ASSERT_IS_NULL(pfindItem);
+        pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, PredicateFunction, &sItem2);
+        ASSERT_IS_NOT_NULL(pfindItem);
+        ASSERT_ARE_EQUAL(size_t, sItem2.nValue1, pfindItem->nValue1);
+        ASSERT_ARE_EQUAL(long, sItem2.lValue2, pfindItem->lValue2);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
@@ -727,7 +789,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     }
 
     /* Tests_SRS_VECTOR_10_040: [VECTOR_erase shall return if `elements` is out of bound.] */
-    TEST_FUNCTION(VECTOR_erase_elements_out_of_bound)
+    TEST_FUNCTION(VECTOR_erase_elements_out_of_bound_case_1)
     {
         ///arrange
         VECTOR_UNITTEST sItem1 = {1, 2};
@@ -755,8 +817,8 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         VECTOR_destroy(handle);
     }
 
-    /* Tests_SRS_VECTOR_10_040: [VECTOR_erase shall return if `elements` is misaligned.] */
-    TEST_FUNCTION(VECTOR_erase_elements_misaligned)
+    /* Tests_SRS_VECTOR_10_040: [VECTOR_erase shall return if `elements` is out of bound.] */
+    TEST_FUNCTION(VECTOR_erase_elements_out_of_bound_case_2)
     {
         ///arrange
         VECTOR_UNITTEST sItem1 = {1, 2};
@@ -778,6 +840,39 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         ASSERT_IS_NOT_NULL(pfindItem);
         pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, PredicateFunction, &sItem2);
         ASSERT_IS_NOT_NULL(pfindItem);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        ///cleanup
+        VECTOR_destroy(handle);
+    }
+
+    /* Tests_SRS_VECTOR_10_041: [VECTOR_erase shall return if `elements` is misaligned.] */
+    TEST_FUNCTION(VECTOR_erase_elements_misaligned)
+    {
+        ///arrange
+        VECTOR_UNITTEST sItem1 = {1, 2};
+        VECTOR_UNITTEST sItem2 = {3, 4};
+        VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
+        (void)VECTOR_push_back(handle, &sItem1, 1);
+        (void)VECTOR_push_back(handle, &sItem2, 1);
+        void* pfindItem = VECTOR_find_if(handle, PredicateFunction, &sItem1);
+        pfindItem = (void*)(((int)pfindItem) + 0x1);
+        umock_c_reset_all_calls();
+
+        ///act
+        VECTOR_erase(handle, pfindItem, 1);
+
+        ///assert
+        size_t num = VECTOR_size(handle);
+        ASSERT_ARE_EQUAL(size_t, 2, num);
+        VECTOR_UNITTEST* pResult = (VECTOR_UNITTEST*)VECTOR_find_if(handle, PredicateFunction, &sItem1);
+        ASSERT_IS_NOT_NULL(pfindItem);
+        ASSERT_ARE_EQUAL(size_t, sItem1.nValue1, pResult->nValue1);
+        ASSERT_ARE_EQUAL(long, sItem1.lValue2, pResult->lValue2);
+        pResult = (VECTOR_UNITTEST*)VECTOR_find_if(handle, PredicateFunction, &sItem2);
+        ASSERT_IS_NOT_NULL(pResult);
+        ASSERT_ARE_EQUAL(size_t, sItem2.nValue1, pResult->nValue1);
+        ASSERT_ARE_EQUAL(long, sItem2.lValue2, pResult->lValue2);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
