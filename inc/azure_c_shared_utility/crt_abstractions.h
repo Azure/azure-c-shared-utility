@@ -93,8 +93,6 @@ typedef unsigned char bool;
 #define STRUNCATE       80
 #endif  /* !defined (STRUNCATE) */
 
-typedef int errno_t;
-
 extern int strcpy_s(char* dst, size_t dstSizeInBytes, const char* src);
 extern int strcat_s(char* dst, size_t dstSizeInBytes, const char* src);
 extern int strncpy_s(char* dst, size_t dstSizeInBytes, const char* src, size_t maxCount);
