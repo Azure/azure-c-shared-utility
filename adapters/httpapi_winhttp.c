@@ -2,16 +2,13 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include <stdlib.h>
-#ifdef _CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
-#endif
+#include <stddef.h>
+#include <string.h>
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
 
-#include <stddef.h>
 #include "windows.h"
 #include "winhttp.h"
-#include <string.h>
 #include "azure_c_shared_utility/httpapi.h"
 #include "azure_c_shared_utility/httpheaders.h"
 #include "azure_c_shared_utility/xlogging.h"

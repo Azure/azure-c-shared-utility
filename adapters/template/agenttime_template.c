@@ -5,12 +5,7 @@
 
 /* TODO: If all the below adapters call the standard C functions, please simply use the agentime.c that already exists. */
 
-#include <stdlib.h>
-#ifdef _CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
-#endif
 #include <time.h>
-#include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/agenttime.h"
 
 time_t get_time(time_t* p)

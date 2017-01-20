@@ -1,15 +1,10 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#include <stdlib.h>
-#ifdef _CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
-#endif
-#include "azure_c_shared_utility/gballoc.h"
-
+#include <stddef.h>
 #include "azure_c_shared_utility/hmacsha256.h"
 #include "azure_c_shared_utility/hmac.h"
-#include "azure_c_shared_utility/strings.h"
+#include "azure_c_shared_utility/buffer_.h"
 
 HMACSHA256_RESULT HMACSHA256_ComputeHash(const unsigned char* key, size_t keyLen, const unsigned char* payload, size_t payloadLen, BUFFER_HANDLE hash)
 {

@@ -2,12 +2,10 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include <stdlib.h>
-#ifdef _CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
-#endif
-
 #include <stdio.h>
 #include <ctype.h>
+#include <string.h>
+#include <limits.h>
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/httpheaders.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
@@ -17,8 +15,6 @@
 #include "azure_c_shared_utility/tlsio.h"
 #include "azure_c_shared_utility/threadapi.h"
 #include "azure_c_shared_utility/shared_util_options.h"
-#include <string.h>
-#include <limits.h>
 
 /*Codes_SRS_HTTPAPI_COMPACT_21_001: [ The httpapi_compact shall implement the methods defined by the `httpapi.h`. ]*/
 /*Codes_SRS_HTTPAPI_COMPACT_21_002: [ The httpapi_compact shall support the http requests. ]*/

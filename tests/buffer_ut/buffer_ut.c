@@ -5,10 +5,6 @@
 // PUT NO INCLUDES BEFORE HERE !!!!
 //
 #include <stdlib.h>
-#ifdef _CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
-#endif
-
 #include <stddef.h>
 #include "umock_c.h"
 #include "azure_c_shared_utility/buffer_.h"
