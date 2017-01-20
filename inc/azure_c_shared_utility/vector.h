@@ -23,6 +23,7 @@ typedef bool(*PREDICATE_FUNCTION)(const void* element, const void* value);
 
 /* creation */
 MOCKABLE_FUNCTION(, VECTOR_HANDLE, VECTOR_create, size_t, elementSize);
+MOCKABLE_FUNCTION(, VECTOR_HANDLE, VECTOR_move, VECTOR_HANDLE, handle);
 MOCKABLE_FUNCTION(, void, VECTOR_destroy, VECTOR_HANDLE, handle);
 
 /* insertion */

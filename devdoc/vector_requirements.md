@@ -14,6 +14,7 @@ typedef bool(*PREDICATE_FUNCTION)(const void* element, const void* value);
 
 /* creation */
 extern VECTOR_HANDLE VECTOR_create(size_t elementSize);
+extern VECTOR_HANDLE VECTOR_move(VECTOR_HANDLE handle);
 extern void VECTOR_destroy(VECTOR_HANDLE handle);
 
 /* insertion */
@@ -56,6 +57,15 @@ VECTOR_HANDLE VECTOR_create(size_t elementSize)
 **SRS_VECTOR_10_001: [**VECTOR_create shall allocate a VECTOR_HANDLE that will contain an empty vector. The size of each element is given in elementSize.**]**
 **SRS_VECTOR_10_002: [**VECTOR_create shall fail and return NULL if elementsize is equal to 0.**]**
 **SRS_VECTOR_10_033: [**VECTOR_create shall fail and return NULL if malloc fails.**]**
+
+###VECTOR_move
+```c
+VECTOR_HANDLE VECTOR_move(VECTOR_HANDLE handle)
+```
+
+**SRS_VECTOR_10_004: [**VECTOR_move shall allocate a VECTOR_HANLDE and move the data to it from the given handle.**]**
+**SRS_VECTOR_10_005: [**VECTOR_move shall fail and return NULL if the given handle is NULL.**]**
+**SRS_VECTOR_10_006: [**VECTOR_move shall fail and return NULL if malloc fails.**]**
 
 ### VECTOR_destroy
 ```c

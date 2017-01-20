@@ -58,6 +58,37 @@ void VECTOR_destroy(VECTOR_HANDLE handle)
     }
 }
 
+VECTOR_HANDLE VECTOR_move(VECTOR_HANDLE handle)
+{
+    VECTOR_HANDLE result;
+    if (handle == NULL)
+    {
+        /* Codes_SRS_VECTOR_10_005: [VECTOR_move shall fail and return NULL if the given handle is NULL.] */
+        LogError("invalid argument - handle(NULL).");
+        result = NULL;
+    }
+    else
+    {
+        result = (VECTOR*)malloc(sizeof(VECTOR));
+        if (result == NULL)
+        {
+            /* Codes_SRS_VECTOR_10_006: [VECTOR_move shall fail and return NULL if malloc fails.] */
+            LogError("malloc failed.");
+        }
+        else
+        {
+            /* Codes_SRS_VECTOR_10_004: [VECTOR_move shall allocate a VECTOR_HANDLE and move the data to it from the given handle.] */
+            result->count = handle->count;
+            result->elementSize = handle->elementSize;
+            result->storage = handle->storage;
+
+            handle->storage = NULL;
+            handle->count = 0;
+        }
+    }
+    return result;
+}
+
 /* insertion */
 
 int VECTOR_push_back(VECTOR_HANDLE handle, const void* elements, size_t numElements)

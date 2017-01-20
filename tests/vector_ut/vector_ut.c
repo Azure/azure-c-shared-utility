@@ -138,6 +138,81 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     }
 
+    /* Tests_SRS_VECTOR_10_004: [VECTOR_move shall allocate a VECTOR_HANDLE and move the data to it from the given handle.] */
+    TEST_FUNCTION(VECTOR_move_succeeds)
+    {
+        ///arrange
+        VECTOR_UNITTEST sItem1 = {1, 2};
+        VECTOR_UNITTEST sItem2 = {5, 6};
+        VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
+        (void)VECTOR_push_back(handle, &sItem1, 1);
+        (void)VECTOR_push_back(handle, &sItem2, 1);
+        umock_c_reset_all_calls();
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
+            .IgnoreArgument_size();
+
+        ///act
+        VECTOR_HANDLE test = VECTOR_move(handle);
+
+        ///assert
+        ASSERT_IS_NOT_NULL(test);
+        ASSERT_ARE_EQUAL(size_t, VECTOR_size(test), 2);
+        ASSERT_ARE_EQUAL(size_t, VECTOR_size(handle), 0);
+        VECTOR_UNITTEST* current = (VECTOR_UNITTEST *)VECTOR_element(test, 0);
+        ASSERT_ARE_EQUAL(int, sItem1.nValue1, current->nValue1);
+        ASSERT_ARE_EQUAL(long, sItem1.lValue2, current->lValue2);
+        current = (VECTOR_UNITTEST *)VECTOR_element(test, 1);
+        ASSERT_ARE_EQUAL(int, sItem2.nValue1, current->nValue1);
+        ASSERT_ARE_EQUAL(long, sItem2.lValue2, current->lValue2);
+
+        ///cleanup
+        VECTOR_destroy(handle);
+        VECTOR_destroy(test);
+    }
+
+    /* Tests_SRS_VECTOR_10_005: [VECTOR_move shall fail and return NULL if the given handle is NULL.] */
+    TEST_FUNCTION(VECTOR_move_returns_NULL_if_handle_is_NULL)
+    {
+        ///arrange
+
+        ///act
+        VECTOR_HANDLE test = VECTOR_move(NULL);
+
+        ///assert
+        ASSERT_IS_NULL(test);
+    }
+
+    /* Tests_SRS_VECTOR_10_006: [VECTOR_move shall fail and return NULL if malloc fails.] */
+    TEST_FUNCTION(VECTOR_move_returns_NULL_if_malloc_fails)
+    {
+        ///arrange
+        VECTOR_UNITTEST sItem1 = {1, 2};
+        VECTOR_UNITTEST sItem2 = {5, 6};
+        VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
+        (void)VECTOR_push_back(handle, &sItem1, 1);
+        (void)VECTOR_push_back(handle, &sItem2, 1);
+        umock_c_reset_all_calls();
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
+            .IgnoreArgument_size()
+            .SetReturn(NULL);
+
+        ///act
+        VECTOR_HANDLE test = VECTOR_move(handle);
+
+        ///assert
+        ASSERT_IS_NULL(test);
+        ASSERT_ARE_EQUAL(size_t, VECTOR_size(handle), 2);
+        VECTOR_UNITTEST* current = (VECTOR_UNITTEST *)VECTOR_element(handle, 0);
+        ASSERT_ARE_EQUAL(int, sItem1.nValue1, current->nValue1);
+        ASSERT_ARE_EQUAL(long, sItem1.lValue2, current->lValue2);
+        current = (VECTOR_UNITTEST *)VECTOR_element(handle, 1);
+        ASSERT_ARE_EQUAL(int, sItem2.nValue1, current->nValue1);
+        ASSERT_ARE_EQUAL(long, sItem2.lValue2, current->lValue2);
+
+        ///cleanup
+        VECTOR_destroy(handle);
+    }
+
     /* Tests_SRS_VECTOR_10_008: [VECTOR_destroy shall free the given handle and its internal storage.] */
     TEST_FUNCTION(VECTOR_destroy_succeeds)
     {
