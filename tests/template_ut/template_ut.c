@@ -3,9 +3,6 @@
 
 
 #include <stdlib.h>
-#ifdef _CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
-#endif
 
 /**
  * The gballoc.h will replace the malloc, free, and realloc by the my_gballoc functions, in this case,

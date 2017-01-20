@@ -6,11 +6,6 @@
 
 #pragma once
 
-#include <stdlib.h>
-#ifdef _CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
-#endif
-
 // Including SDKDDKVer.h defines the highest available Windows platform.
 
 // If you wish to build your application for a previous Windows platform, include WinSDKVer.h and

@@ -4,10 +4,6 @@
 //
 // PUT NO INCLUDES BEFORE HERE !!!!
 //
-#include <stdlib.h>
-#ifdef _CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
-#endif
 #include <stddef.h>
 //
 // PUT NO CLIENT LIBRARY INCLUDES BEFORE HERE !!!!
