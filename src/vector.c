@@ -119,7 +119,7 @@ void VECTOR_erase(VECTOR_HANDLE handle, void* elements, size_t numElements)
         }
         else
         {
-            int diff = ((unsigned char*)elements) - ((unsigned char*)handle->storage);
+            ptrdiff_t diff = ((unsigned char*)elements) - ((unsigned char*)handle->storage);
             if ((diff % handle->elementSize) != 0)
             {
                 /* Codes_SRS_VECTOR_10_041: [VECTOR_erase shall return if elements is misaligned.] */

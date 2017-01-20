@@ -144,11 +144,11 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         ///arrange
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
         umock_c_reset_all_calls();
-
-        ///act
         STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
             .IgnoreArgument_ptr();
         STRICT_EXPECTED_CALL(gballoc_free(handle));
+
+        ///act
         VECTOR_destroy(handle);
 
         ///assert
@@ -681,10 +681,10 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         (void)VECTOR_push_back(handle, &sItem2, 1);
         VECTOR_UNITTEST* pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, PredicateFunction, &sItem1);
         umock_c_reset_all_calls();
-
-        ///act
         STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, sizeof(VECTOR_UNITTEST)))
             .IgnoreArgument_ptr();
+
+        ///act
         VECTOR_erase(handle, pfindItem, 1);
 
         ///assert
@@ -709,10 +709,10 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         (void)VECTOR_push_back(handle, &sItem2, 1);
         VECTOR_UNITTEST* pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, PredicateFunction, &sItem1);
         umock_c_reset_all_calls();
-
-        ///act
         STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
             .IgnoreArgument_ptr();
+
+        ///act
         VECTOR_erase(handle, pfindItem, 2);
 
         ///assert
@@ -737,12 +737,12 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         (void)VECTOR_push_back(handle, &sItem2, 1);
         VECTOR_UNITTEST* pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, PredicateFunction, &sItem1);
         umock_c_reset_all_calls();
-
-        ///act
         STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, IGNORED_NUM_ARG))
             .IgnoreArgument_ptr()
             .IgnoreArgument_size()
             .SetReturn(NULL);
+
+        ///act
         VECTOR_erase(handle, pfindItem, 1);
 
         ///assert
@@ -752,8 +752,6 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         ASSERT_IS_NULL(pfindItem);
         pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, PredicateFunction, &sItem2);
         ASSERT_IS_NOT_NULL(pfindItem);
-        ASSERT_ARE_EQUAL(size_t, sItem2.nValue1, pfindItem->nValue1);
-        ASSERT_ARE_EQUAL(long, sItem2.lValue2, pfindItem->lValue2);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
@@ -797,8 +795,8 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
         (void)VECTOR_push_back(handle, &sItem1, 1);
         (void)VECTOR_push_back(handle, &sItem2, 1);
-        VECTOR_UNITTEST* pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, PredicateFunction, &sItem2);
-        pfindItem -= sizeof(VECTOR_UNITTEST);
+        VECTOR_UNITTEST* pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, PredicateFunction, &sItem1);
+        pfindItem -= 1;
         umock_c_reset_all_calls();
 
         ///act
@@ -827,7 +825,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         (void)VECTOR_push_back(handle, &sItem1, 1);
         (void)VECTOR_push_back(handle, &sItem2, 1);
         VECTOR_UNITTEST* pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, PredicateFunction, &sItem2);
-        pfindItem += 2 * sizeof(VECTOR_UNITTEST);
+        pfindItem += 2;
         umock_c_reset_all_calls();
 
         ///act
@@ -856,7 +854,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         (void)VECTOR_push_back(handle, &sItem1, 1);
         (void)VECTOR_push_back(handle, &sItem2, 1);
         void* pfindItem = VECTOR_find_if(handle, PredicateFunction, &sItem1);
-        pfindItem = (void*)(((int)pfindItem) + 0x1);
+        pfindItem = (void*)(((unsigned char*)pfindItem) + 0x1);
         umock_c_reset_all_calls();
 
         ///act
