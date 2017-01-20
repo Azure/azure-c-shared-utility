@@ -24,7 +24,7 @@ extern "C"
 #include <stdint.h>
 #endif
 
-
+#include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/macro_utils.h"
 
 #if defined(__STDC_VERSION__) && (__STDC_VERSION__ == 201112) && (__STDC_NO_ATOMICS__!=1)

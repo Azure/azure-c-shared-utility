@@ -8,13 +8,8 @@
 #error the file MicroMockCharStarArenullTerminatedStrings can only be #included after #include "micromock.h"
 #endif
 
-#include <stdlib.h>
-#ifdef _CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
-#endif
-
 /*for strcpy()*/
-#include "string.h" 
+#include <string.h>
 
 /*for malloc()*/
 #include <stdlib.h>

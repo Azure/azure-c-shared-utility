@@ -12,9 +12,6 @@
 #include "windows.h"
 
 #include <stdlib.h>
-#ifdef _CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
-#endif
 
 static void* my_gballoc_malloc(size_t size)
 {

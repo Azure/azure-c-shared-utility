@@ -4,9 +4,6 @@
 #ifdef USE_MBED_TLS
 
 #include <stdlib.h>
-#ifdef _CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
-#endif
 
 #ifdef TIZENRT
 #include "tls/config.h"

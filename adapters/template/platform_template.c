@@ -5,10 +5,6 @@
 
 /* Please go through all the TODO sections below and implement the needed code */
 
-#include <stdlib.h>
-#ifdef _CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
-#endif
 #include "azure_c_shared_utility/platform.h"
 
 int platform_init(void)

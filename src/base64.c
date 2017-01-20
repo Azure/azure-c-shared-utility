@@ -1,21 +1,10 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-//
-// PUT NO INCLUDES BEFORE HERE !!!!
-//
 #include <stdlib.h>
-#ifdef _CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
-#endif
 #include "azure_c_shared_utility/gballoc.h"
-
 #include <stddef.h>
-#include <string.h>
 #include <stdint.h>
-//
-// PUT NO CLIENT LIBRARY INCLUDES BEFORE HERE !!!!
-//
 #include "azure_c_shared_utility/base64.h"
 #include "azure_c_shared_utility/xlogging.h"
 

@@ -3,11 +3,6 @@
 
 #pragma once
 
-#include <cstdlib>
-#ifdef _CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
-#endif
-
 #include "targetver.h"
 
 #ifdef _MSC_VER

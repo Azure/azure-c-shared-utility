@@ -5,11 +5,8 @@
 // PUT NO INCLUDES BEFORE HERE
 //
 #include <stdlib.h>
-#ifdef _CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
-#endif
+#include <stddef.h>
 #include "azure_c_shared_utility/gballoc.h"
-
 #include "azure_c_shared_utility/constbuffer.h"
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/refcount.h"

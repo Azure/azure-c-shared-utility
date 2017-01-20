@@ -1,21 +1,10 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-//
-// PUT NO INCLUDES BEFORE HERE
-//
 #include <stdlib.h>
-#ifdef _CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
-#endif
-#include "azure_c_shared_utility/gballoc.h"
-
 #include <stddef.h>
 #include <string.h>
-//
-// PUT NO CLIENT LIBRARY INCLUDES BEFORE HERE
-//
-
+#include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/buffer_.h"
 #include "azure_c_shared_utility/xlogging.h"
 
@@ -90,7 +79,7 @@ BUFFER_HANDLE BUFFER_create(const unsigned char* source, size_t size)
             else
             {
                 /*Codes_SRS_BUFFER_02_004: [Otherwise, BUFFER_create shall return a non-NULL handle.] */
-                memcpy(result->buffer, source, size);
+                (void)memcpy(result->buffer, source, size);
             }
         }
     }
@@ -472,7 +461,7 @@ BUFFER_HANDLE BUFFER_clone(BUFFER_HANDLE handle)
             }
             else
             {
-                memcpy(b->buffer, suppliedBuff->buffer, suppliedBuff->size);
+                (void)memcpy(b->buffer, suppliedBuff->buffer, suppliedBuff->size);
                 b->size = suppliedBuff->size;
                 result = (BUFFER_HANDLE)b;
             }

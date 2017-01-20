@@ -3,9 +3,6 @@
 
 
 #include <stdlib.h>
-#ifdef _CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
-#endif
 
 static int currentmalloc_call = 0;
 static int whenShallmalloc_fail = 0;
