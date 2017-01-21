@@ -17,7 +17,7 @@ extern "C"
 #include <stdbool.h>
 #endif
 
-#include "vector_types.h"
+#include "azure_c_shared_utility/vector_types.h"
 
 /* creation */
 MOCKABLE_FUNCTION(, VECTOR_HANDLE, VECTOR_create, size_t, elementSize);
