@@ -6,13 +6,7 @@
 #include "azure_c_shared_utility/vector.h"
 #include "azure_c_shared_utility/xlogging.h"
 
-
-typedef struct VECTOR_TAG
-{
-    void* storage;
-    size_t count;
-    size_t elementSize;
-} VECTOR;
+#include "azure_c_shared_utility/vector_types_internal.h"
 
 VECTOR_HANDLE VECTOR_create(size_t elementSize)
 {

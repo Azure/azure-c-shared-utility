@@ -45,6 +45,7 @@ set(mbed_exported_project_files
 		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/umock_c_prod.h
         ${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/optionhandler.h
         ${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/vector_types.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/vector_types_internal.h
    )
 
 set(mbed_project_files
