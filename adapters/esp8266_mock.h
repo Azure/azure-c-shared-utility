@@ -150,7 +150,8 @@ int SSL_get_verify_result(SSL *ssl);
  *     result = 0 : successfully
  *     result < 0 : error, you may see the mbedtls error code
  */
-int SSL_shutdown(SSL *ssl);
+//int SSL_shutdown(SSL *ssl);
+MOCKABLE_FUNCTION(, int, SSL_shutdown, SSL*, ssl);
 
 /*
  * SSL_set_fd - set the socket file description to the SSL
@@ -338,6 +339,7 @@ int getsockopt (int s, int level, int optname, void *optval, socklen_t *optlen);
 #define SO_TYPE      0x1008    /* get socket type */
 #define SO_CONTIMEO  0x1009    /* Unimplemented: connect timeout */
 #define SO_NO_CHECK  0x100a    /* don't create UDP checksum */
+#define SO_REUSEADDR 1         /* Enable address reuse */
 
 #define AF_INET         2
 /* Socket protocol types (TCP/UDP/RAW) */
@@ -423,6 +425,13 @@ MOCKABLE_FUNCTION(, int, lwip_select, int, maxfdp1, fd_set*, readset, fd_set*, w
 
 //os_delay_us(int us);
 MOCKABLE_FUNCTION(, void, os_delay_us, int, us);
+
+//int setsockopt(int s, int level, int optname, const void *optval, socklen_t optlen);
+MOCKABLE_FUNCTION(, int, setsockopt, int, s, int, level, int, optname, const void*, optval, socklen_t, optlen);
+
+//int close(int s)
+MOCKABLE_FUNCTION(, int, close, int, s);
+
 
 #define htons(x) (x)
 #define ntohs(x) (x)
