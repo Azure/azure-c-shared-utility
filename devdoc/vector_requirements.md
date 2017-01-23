@@ -42,6 +42,9 @@ bool(*PREDICATE_FUNCTION)(const void* element, const void* value);
  *     VECTOR_find_if will iterate through each element of the object and call the given function
  *     with two parameters. Once a match is found, a pointer to the matched element will be returned.
  *     NULL will be returned if no match is found.
+ *     Care must be taken if one or both of the arguments are of type VECTOR_HANDLE. For example,
+ *     calling the `VECTOR_move` from inside a `PREDICATE_FUNCTION` is not supported and may cause undefined
+ *     behavior.
  *
  *     -  element: points to the member of the array being evaluated.
  *     -  value:   points to a variable whose contents will be used to find a matching element.
@@ -58,7 +61,7 @@ VECTOR_HANDLE VECTOR_create(size_t elementSize)
 **SRS_VECTOR_10_002: [**VECTOR_create shall fail and return NULL if elementsize is equal to 0.**]**
 **SRS_VECTOR_10_033: [**VECTOR_create shall fail and return NULL if malloc fails.**]**
 
-###VECTOR_move
+### VECTOR_move
 ```c
 VECTOR_HANDLE VECTOR_move(VECTOR_HANDLE handle)
 ```

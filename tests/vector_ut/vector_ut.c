@@ -45,10 +45,10 @@ typedef struct VECTOR_UNITTEST_TAG
     long lValue2;
 } VECTOR_UNITTEST;
 
-static bool PredicateFunction(const void* handle, const void* otherHandle)
+static bool VECTOR_UNITTEST_compare_two_elements(const void* left_hand_side, const void* right_hand_side)
 {
-    VECTOR_UNITTEST* rhs = (VECTOR_UNITTEST*)handle;
-    VECTOR_UNITTEST* lhs = (VECTOR_UNITTEST*)otherHandle;
+    VECTOR_UNITTEST* rhs = (VECTOR_UNITTEST*)left_hand_side;
+    VECTOR_UNITTEST* lhs = (VECTOR_UNITTEST*)right_hand_side;
 
     return (rhs->nValue1 == lhs->nValue1 && rhs->lValue2 == lhs->lValue2);
 }
@@ -393,7 +393,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         VECTOR_UNITTEST sItem = {1, 2};
 
         ///act
-        VECTOR_UNITTEST* pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(NULL, PredicateFunction, &sItem);
+        VECTOR_UNITTEST* pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(NULL, VECTOR_UNITTEST_compare_two_elements, &sItem);
 
         ///assert
         ASSERT_IS_NULL(pfindItem);
@@ -430,7 +430,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         umock_c_reset_all_calls();
 
         ///act
-        VECTOR_UNITTEST* pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, PredicateFunction, &sItem);
+        VECTOR_UNITTEST* pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, VECTOR_UNITTEST_compare_two_elements, &sItem);
 
         ///assert
         ASSERT_IS_NOT_NULL(pfindItem);
@@ -453,7 +453,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
 
         ///act
         VECTOR_UNITTEST sItem2 = {5, 8};
-        VECTOR_UNITTEST* pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, PredicateFunction, &sItem2);
+        VECTOR_UNITTEST* pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, VECTOR_UNITTEST_compare_two_elements, &sItem2);
 
         ///assert
         ASSERT_IS_NULL(pfindItem);
@@ -754,7 +754,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
         (void)VECTOR_push_back(handle, &sItem1, 1);
         (void)VECTOR_push_back(handle, &sItem2, 1);
-        VECTOR_UNITTEST* pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, PredicateFunction, &sItem1);
+        VECTOR_UNITTEST* pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, VECTOR_UNITTEST_compare_two_elements, &sItem1);
         umock_c_reset_all_calls();
         STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, sizeof(VECTOR_UNITTEST)))
             .IgnoreArgument_ptr();
@@ -765,7 +765,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         ///assert
         size_t num = VECTOR_size(handle);
         ASSERT_ARE_EQUAL(size_t, 1, num);
-        pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, PredicateFunction, &sItem1);
+        pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, VECTOR_UNITTEST_compare_two_elements, &sItem1);
         ASSERT_IS_NULL(pfindItem);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
@@ -782,7 +782,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
         (void)VECTOR_push_back(handle, &sItem1, 1);
         (void)VECTOR_push_back(handle, &sItem2, 1);
-        VECTOR_UNITTEST* pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, PredicateFunction, &sItem1);
+        VECTOR_UNITTEST* pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, VECTOR_UNITTEST_compare_two_elements, &sItem1);
         umock_c_reset_all_calls();
         STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
             .IgnoreArgument_ptr();
@@ -793,7 +793,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         ///assert
         size_t num = VECTOR_size(handle);
         ASSERT_ARE_EQUAL(size_t, 0, num);
-        pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, PredicateFunction, &sItem1);
+        pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, VECTOR_UNITTEST_compare_two_elements, &sItem1);
         ASSERT_IS_NULL(pfindItem);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
@@ -810,7 +810,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
         (void)VECTOR_push_back(handle, &sItem1, 1);
         (void)VECTOR_push_back(handle, &sItem2, 1);
-        VECTOR_UNITTEST* pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, PredicateFunction, &sItem1);
+        VECTOR_UNITTEST* pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, VECTOR_UNITTEST_compare_two_elements, &sItem1);
         umock_c_reset_all_calls();
         STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, IGNORED_NUM_ARG))
             .IgnoreArgument_ptr()
@@ -823,9 +823,9 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         ///assert
         size_t num = VECTOR_size(handle);
         ASSERT_ARE_EQUAL(size_t, 1, num);
-        pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, PredicateFunction, &sItem1);
+        pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, VECTOR_UNITTEST_compare_two_elements, &sItem1);
         ASSERT_IS_NULL(pfindItem);
-        pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, PredicateFunction, &sItem2);
+        pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, VECTOR_UNITTEST_compare_two_elements, &sItem2);
         ASSERT_IS_NOT_NULL(pfindItem);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
@@ -842,7 +842,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
         (void)VECTOR_push_back(handle, &sItem1, 1);
         (void)VECTOR_push_back(handle, &sItem2, 1);
-        VECTOR_UNITTEST* pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, PredicateFunction, &sItem2);
+        VECTOR_UNITTEST* pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, VECTOR_UNITTEST_compare_two_elements, &sItem2);
         umock_c_reset_all_calls();
 
         ///act
@@ -851,9 +851,9 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         ///assert
         size_t num = VECTOR_size(handle);
         ASSERT_ARE_EQUAL(size_t, 2, num);
-        pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, PredicateFunction, &sItem1);
+        pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, VECTOR_UNITTEST_compare_two_elements, &sItem1);
         ASSERT_IS_NOT_NULL(pfindItem);
-        pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, PredicateFunction, &sItem2);
+        pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, VECTOR_UNITTEST_compare_two_elements, &sItem2);
         ASSERT_IS_NOT_NULL(pfindItem);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
@@ -870,7 +870,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
         (void)VECTOR_push_back(handle, &sItem1, 1);
         (void)VECTOR_push_back(handle, &sItem2, 1);
-        VECTOR_UNITTEST* pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, PredicateFunction, &sItem1);
+        VECTOR_UNITTEST* pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, VECTOR_UNITTEST_compare_two_elements, &sItem1);
         pfindItem -= 1;
         umock_c_reset_all_calls();
 
@@ -880,9 +880,9 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         ///assert
         size_t num = VECTOR_size(handle);
         ASSERT_ARE_EQUAL(size_t, 2, num);
-        pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, PredicateFunction, &sItem1);
+        pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, VECTOR_UNITTEST_compare_two_elements, &sItem1);
         ASSERT_IS_NOT_NULL(pfindItem);
-        pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, PredicateFunction, &sItem2);
+        pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, VECTOR_UNITTEST_compare_two_elements, &sItem2);
         ASSERT_IS_NOT_NULL(pfindItem);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
@@ -899,7 +899,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
         (void)VECTOR_push_back(handle, &sItem1, 1);
         (void)VECTOR_push_back(handle, &sItem2, 1);
-        VECTOR_UNITTEST* pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, PredicateFunction, &sItem2);
+        VECTOR_UNITTEST* pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, VECTOR_UNITTEST_compare_two_elements, &sItem2);
         pfindItem += 2;
         umock_c_reset_all_calls();
 
@@ -909,9 +909,9 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         ///assert
         size_t num = VECTOR_size(handle);
         ASSERT_ARE_EQUAL(size_t, 2, num);
-        pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, PredicateFunction, &sItem1);
+        pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, VECTOR_UNITTEST_compare_two_elements, &sItem1);
         ASSERT_IS_NOT_NULL(pfindItem);
-        pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, PredicateFunction, &sItem2);
+        pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, VECTOR_UNITTEST_compare_two_elements, &sItem2);
         ASSERT_IS_NOT_NULL(pfindItem);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
@@ -928,7 +928,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
         (void)VECTOR_push_back(handle, &sItem1, 1);
         (void)VECTOR_push_back(handle, &sItem2, 1);
-        void* pfindItem = VECTOR_find_if(handle, PredicateFunction, &sItem1);
+        void* pfindItem = VECTOR_find_if(handle, VECTOR_UNITTEST_compare_two_elements, &sItem1);
         pfindItem = (void*)(((unsigned char*)pfindItem) + 0x1);
         umock_c_reset_all_calls();
 
@@ -938,11 +938,11 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         ///assert
         size_t num = VECTOR_size(handle);
         ASSERT_ARE_EQUAL(size_t, 2, num);
-        VECTOR_UNITTEST* pResult = (VECTOR_UNITTEST*)VECTOR_find_if(handle, PredicateFunction, &sItem1);
+        VECTOR_UNITTEST* pResult = (VECTOR_UNITTEST*)VECTOR_find_if(handle, VECTOR_UNITTEST_compare_two_elements, &sItem1);
         ASSERT_IS_NOT_NULL(pfindItem);
         ASSERT_ARE_EQUAL(size_t, sItem1.nValue1, pResult->nValue1);
         ASSERT_ARE_EQUAL(long, sItem1.lValue2, pResult->lValue2);
-        pResult = (VECTOR_UNITTEST*)VECTOR_find_if(handle, PredicateFunction, &sItem2);
+        pResult = (VECTOR_UNITTEST*)VECTOR_find_if(handle, VECTOR_UNITTEST_compare_two_elements, &sItem2);
         ASSERT_IS_NOT_NULL(pResult);
         ASSERT_ARE_EQUAL(size_t, sItem2.nValue1, pResult->nValue1);
         ASSERT_ARE_EQUAL(long, sItem2.lValue2, pResult->lValue2);
