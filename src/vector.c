@@ -80,7 +80,7 @@ int VECTOR_push_back(VECTOR_HANDLE handle, const void* elements, size_t numEleme
         else
         {
             /* Codes_SRS_VECTOR_10_013: [VECTOR_push_back shall append the given elements and return 0 indicating success.] */
-            memcpy((unsigned char*)temp + curSize, elements, appendSize);
+            (void)memcpy((unsigned char*)temp + curSize, elements, appendSize);
             handle->storage = temp;
             handle->count += numElements;
             result = 0;

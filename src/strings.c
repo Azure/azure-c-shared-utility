@@ -71,7 +71,7 @@ STRING_HANDLE STRING_clone(STRING_HANDLE handle)
             }
             else
             {
-                memcpy(result->s, source->s, sourceLen + 1);
+                (void)memcpy(result->s, source->s, sourceLen + 1);
             }
         }
         else
@@ -99,7 +99,7 @@ STRING_HANDLE STRING_construct(const char* psz)
             size_t nLen = strlen(psz) + 1;
             if ((str->s = (char*)malloc(nLen)) != NULL)
             {
-                memcpy(str->s, psz, nLen);
+                (void)memcpy(str->s, psz, nLen);
                 result = (STRING_HANDLE)str;
             }
             /* Codes_SRS_STRING_07_032: [STRING_construct encounters any error it shall return a NULL value.] */
@@ -228,7 +228,7 @@ STRING_HANDLE STRING_new_quoted(const char* source)
         if ((result->s = (char*)malloc(sourceLength + 3)) != NULL)
         {
             result->s[0] = '"';
-            memcpy(result->s + 1, source, sourceLength);
+            (void)memcpy(result->s + 1, source, sourceLength);
             result->s[sourceLength + 1] = '"';
             result->s[sourceLength + 2] = '\0';
         }
@@ -382,7 +382,7 @@ int STRING_concat(STRING_HANDLE handle, const char* s2)
         else
         {
             s1->s = temp;
-            memcpy(s1->s + s1Length, s2, s2Length + 1);
+            (void)memcpy(s1->s + s1Length, s2, s2Length + 1);
             result = 0;
         }
     }
@@ -418,7 +418,7 @@ int STRING_concat_with_STRING(STRING_HANDLE s1, STRING_HANDLE s2)
         {
             dest->s = temp;
             /* Codes_SRS_STRING_07_034: [String_Concat_with_STRING shall concatenate a given STRING_HANDLE variable with a source STRING_HANDLE.] */
-            memcpy(dest->s + s1Length, src->s, s2Length + 1);
+            (void)memcpy(dest->s + s1Length, src->s, s2Length + 1);
             result = 0;
         }
     }
@@ -497,7 +497,7 @@ int STRING_copy_n(STRING_HANDLE handle, const char* s2, size_t n)
         else
         {
             s1->s = temp;
-            memcpy(s1->s, s2, s2Length);
+            (void)memcpy(s1->s, s2, s2Length);
             s1->s[s2Length] = 0;
             result = 0;
         }
@@ -711,7 +711,7 @@ STRING_HANDLE STRING_construct_n(const char* psz, size_t n)
             {
                 if ((str->s = (char*)malloc(len + 1)) != NULL)
                 {
-                    memcpy(str->s, psz, n);
+                    (void)memcpy(str->s, psz, n);
                     str->s[n] = '\0';
                     result = (STRING_HANDLE)str;
                 }
@@ -793,7 +793,7 @@ STRING_HANDLE STRING_from_byte_array(const unsigned char* source, size_t size)
             }
             else
             {
-                memcpy(result->s, source, size);
+                (void)memcpy(result->s, source, size);
                 result->s[size] = '\0'; /*all is fine*/
             }
         }

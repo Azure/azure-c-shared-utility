@@ -78,7 +78,7 @@ static int my_mallocAndStrcpy_s(char** destination, const char* source)
 
     size_t l = strlen(source);
     char* temp = (char*)my_gballoc_malloc(l + 1);
-    memcpy(temp, source, l+1);
+    (void)memcpy(temp, source, l+1);
     *destination=temp;
     return 0;
 }

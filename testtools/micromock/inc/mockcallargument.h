@@ -166,7 +166,7 @@ public:
             argumentValidationData.m_Buffer = malloc(bytesToValidate);
             if (NULL != argumentValidationData.m_Buffer)
             {
-                memcpy(argumentValidationData.m_Buffer, expectedBuffer, bytesToValidate);
+                (void)memcpy(argumentValidationData.m_Buffer, expectedBuffer, bytesToValidate);
             }
 
             argumentValidationData.m_ByteCount = bytesToValidate;
@@ -191,7 +191,7 @@ public:
         outArgumentCopyData.m_Buffer = malloc(bytesToCopy);
         if (NULL != outArgumentCopyData.m_Buffer)
         {
-            memcpy(outArgumentCopyData.m_Buffer, injectedBuffer, bytesToCopy);
+            (void)memcpy(outArgumentCopyData.m_Buffer, injectedBuffer, bytesToCopy);
         }
         outArgumentCopyData.m_ByteCount = bytesToCopy;
         outArgumentCopyData.m_Offset = byteOffset;
@@ -299,7 +299,7 @@ private:
             {
                 for (size_t i = 0; i < m_BufferValidations.size(); i++)
                 {
-                    memcpy(result + m_BufferValidations[i].m_Offset,
+                    (void)memcpy(result + m_BufferValidations[i].m_Offset,
                         m_BufferValidations[i].m_Buffer, m_BufferValidations[i].m_ByteCount);
                 }
             }
