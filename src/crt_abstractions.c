@@ -197,7 +197,7 @@ int strcpy_s(char* dst, size_t dstSizeInBytes, const char* src)
         }
         else
         {
-            memcpy(dst, src, neededBuffer + 1);
+            (void)memcpy(dst, src, neededBuffer + 1);
             /*Codes_SRS_CRT_ABSTRACTIONS_99_011: [strcpy_s shall return Zero upon success]*/
             result = 0;
         }

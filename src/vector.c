@@ -6,13 +6,7 @@
 #include "azure_c_shared_utility/vector.h"
 #include "azure_c_shared_utility/xlogging.h"
 
-
-typedef struct VECTOR_TAG
-{
-    void* storage;
-    size_t count;
-    size_t elementSize;
-} VECTOR;
+#include "azure_c_shared_utility/vector_types_internal.h"
 
 VECTOR_HANDLE VECTOR_create(size_t elementSize)
 {
@@ -117,7 +111,7 @@ int VECTOR_push_back(VECTOR_HANDLE handle, const void* elements, size_t numEleme
         else
         {
             /* Codes_SRS_VECTOR_10_013: [VECTOR_push_back shall append the given elements and return 0 indicating success.] */
-            memcpy((unsigned char*)temp + curSize, elements, appendSize);
+            (void)memcpy((unsigned char*)temp + curSize, elements, appendSize);
             handle->storage = temp;
             handle->count += numElements;
             result = 0;

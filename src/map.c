@@ -427,7 +427,7 @@ MAP_RESULT Map_AddOrUpdate(MAP_HANDLE handle, const char* key, const char* value
                 }
                 else
                 {
-                    memcpy(newValue, value, valueLength + 1);
+                    (void)memcpy(newValue, value, valueLength + 1);
                     handleData->values[index] = newValue;
                     /*Codes_SRS_MAP_02_019: [Otherwise, Map_AddOrUpdate shall return MAP_OK.] */
                     result = MAP_OK;

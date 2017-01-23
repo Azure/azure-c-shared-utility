@@ -383,7 +383,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
 
     if (resize_receive_buffer(tls_io_instance, tls_io_instance->received_byte_count + size) == 0)
     {
-        memcpy(tls_io_instance->received_bytes + tls_io_instance->received_byte_count, buffer, size);
+        (void)memcpy(tls_io_instance->received_bytes + tls_io_instance->received_byte_count, buffer, size);
         tls_io_instance->received_byte_count += size;
 
         if (size > tls_io_instance->needed_bytes)
@@ -921,7 +921,7 @@ static int send_chunk(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t size
                 }
                 else
                 {
-                    memcpy(out_buffer + sizes.cbHeader, buffer, size);
+                    (void)memcpy(out_buffer + sizes.cbHeader, buffer, size);
 
                     security_buffers[0].BufferType = SECBUFFER_STREAM_HEADER;
                     security_buffers[0].cbBuffer = sizes.cbHeader;
