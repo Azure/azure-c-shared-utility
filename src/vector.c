@@ -167,8 +167,9 @@ void VECTOR_erase(VECTOR_HANDLE handle, void* elements, size_t numElements)
                     }
                     else
                     {
+                        void* tmp;
                         (void)memmove(elements, src, srcEnd - src);
-                        void* tmp = realloc(handle->storage, (handle->elementSize * handle->count));
+                        tmp = realloc(handle->storage, (handle->elementSize * handle->count));
                         if (tmp == NULL)
                         {
                             LogInfo("realloc failed. Keeping original internal storage pointer.");
