@@ -39,6 +39,7 @@ typedef void (*pfDestroyOption)(const char* name, const void* value);
 typedef int (*pfSetOption)(void* handle, const char* name, const void* value);
 
 MOCKABLE_FUNCTION(,OPTIONHANDLER_HANDLE, OptionHandler_Create, pfCloneOption, cloneOption, pfDestroyOption, destroyOption, pfSetOption setOption);
+MOCKABLE_FUNCTION(, OPTIONHANDLER_HANDLE, OptionHandler_Clone, OPTIONHANDLER_HANDLE, handler);
 MOCKABLE_FUNCTION(,OPTIONHANDLER_RESULT, OptionHandler_AddOption, OPTIONHANDLER_HANDLE, handle, const char*, name, void*, value);
 MOCKABLE_FUNCTION(,OPTIONHANDLER_RESULT, OptionHandler_FeedOptions, OPTIONHANDLER_HANDLE, handle, void*, destinationHandle);
 MOCKABLE_FUNCTION(,void, OptionHandler_Destroy, OPTIONHANDLER_HANDLE, handle);
@@ -56,6 +57,24 @@ OPTIONHANDLER_HANDLE OptionHandler_Create(pfCloneOption cloneOption, pfDestroyOp
 **SRS_OPTIONHANDLER_02_002: [** `OptionHandler_Create` shall create an empty VECTOR that will hold pairs of `const char*` and `void*`. **]**
 **SRS_OPTIONHANDLER_02_003: [** If all the operations succeed then `OptionHandler_Create` shall succeed and return a non-`NULL` handle. **]**
 **SRS_OPTIONHANDLER_02_004: [** Otherwise, `OptionHandler_Create` shall fail and return `NULL`. **]**
+
+### OptionHandler_Clone
+
+```c
+OPTIONHANDLER_HANDLE OptionHandler_Clone(OPTIONHANDLER_HANDLE handler);
+```
+
+**SRS_OPTIONHANDLER_01_001: [** `OptionHandler_Clone` shall clone an existing option handler instance. **]**
+**SRS_OPTIONHANDLER_01_002: [** On success it shall return a non-NULL handle. **]**
+**SRS_OPTIONHANDLER_01_010: [** If `handler` is NULL, OptionHandler_Clone shall fail and return NULL. **]**
+**SRS_OPTIONHANDLER_01_003: [** `OptionHandler_Clone` shall allocate memory for the new option handler instance. **]**
+**SRS_OPTIONHANDLER_01_004: [** If allocating memory fails, `OptionHandler_Clone` shall return NULL. **]**
+**SRS_OPTIONHANDLER_01_005: [** `OptionHandler_Clone` shall iterate through all the options stored by the option handler to be cloned by using VECTOR's iteration mechanism. **]**
+**SRS_OPTIONHANDLER_01_006: [** For each option the option name shall be cloned by calling `mallocAndStrcpy_s`. **]**
+**SRS_OPTIONHANDLER_01_007: [** For each option the value shall be cloned by using the cloning function associated with the source option handler `handler`. **]**
+**SRS_OPTIONHANDLER_01_008: [** If cloning one of the option names fails, `OptionHandler_Clone` shall return NULL. **]**
+**SRS_OPTIONHANDLER_01_009: [** If cloning one of the option values fails, `OptionHandler_Clone` shall return NULL. **]**
+**SRS_OPTIONHANDLER_01_011: [** When adding one of the newly cloned options to the option handler storage vector fails, `OptionHandler_Clone` shall return NULL. **]**
 
 ### OptionHandler_AddOption
 ```c
