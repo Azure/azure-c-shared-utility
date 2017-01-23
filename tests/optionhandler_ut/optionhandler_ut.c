@@ -25,6 +25,7 @@ static void my_gballoc_free(void* s)
 /*but real implementation of VECTOR is paramount here, because -> operator cannot be mocked*/
 #define GBALLOC_H
 #define VECTOR_create real_VECTOR_create
+#define VECTOR_move real_VECTOR_move
 #define VECTOR_destroy real_VECTOR_destroy
 #define VECTOR_push_back real_VECTOR_push_back 
 #define VECTOR_erase real_VECTOR_erase 
@@ -35,8 +36,9 @@ static void my_gballoc_free(void* s)
 #define VECTOR_find_if real_VECTOR_find_if 
 #define VECTOR_size real_VECTOR_size 
 #include "../src/vector.c"
-#undef VECTOR_create 
-#undef VECTOR_destroy 
+#undef VECTOR_create
+#undef VECTOR_move
+#undef VECTOR_destroy
 #undef VECTOR_push_back 
 #undef VECTOR_erase 
 #undef VECTOR_clear 

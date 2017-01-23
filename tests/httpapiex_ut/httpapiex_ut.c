@@ -235,6 +235,7 @@ extern "C"
 #endif
 
     VECTOR_HANDLE real_VECTOR_create(size_t elementSize);
+    VECTOR_HANDLE real_VECTOR_move(VECTOR_HANDLE handle);
     void real_VECTOR_destroy(VECTOR_HANDLE handle);
 
     /* insertion */
@@ -461,6 +462,7 @@ TEST_SUITE_INITIALIZE(TestClassInitialize)
     REGISTER_GLOBAL_MOCK_RETURN(HTTPAPI_SetOption, HTTPAPI_OK);
     REGISTER_GLOBAL_MOCK_HOOK(HTTPAPI_CloneOption, my_HTTPAPI_CloneOption);
     REGISTER_GLOBAL_MOCK_HOOK(VECTOR_create, real_VECTOR_create);
+    REGISTER_GLOBAL_MOCK_HOOK(VECTOR_move, real_VECTOR_move);
     REGISTER_GLOBAL_MOCK_HOOK(VECTOR_destroy, real_VECTOR_destroy);
     REGISTER_GLOBAL_MOCK_HOOK(VECTOR_push_back, real_VECTOR_push_back);
     REGISTER_GLOBAL_MOCK_HOOK(VECTOR_erase, real_VECTOR_erase);
