@@ -38,6 +38,7 @@ inc\urlencode.h
 inc\vector.h
 inc\xio.h
 inc\xlogging.h
+inc\vector_types.h
 src\base64.c
 src\buffer.c
 src\constbuffer.c

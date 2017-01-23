@@ -9,7 +9,7 @@ endif()
 
 project(azure_c_shared_utility)
 
-set(C_SHARED_VERSION 1.0.23)
+set(C_SHARED_VERSION 1.0.25)
 
 option(run_valgrind "set run_valgrind to ON if tests are to be run under valgrind/helgrind/drd. Default is OFF" OFF)
 
