@@ -1173,6 +1173,8 @@ void tlsio_openssl_dowork(CONCRETE_IO_HANDLE tls_io)
         if ((tls_io_instance->tlsio_state != TLSIO_STATE_NOT_OPEN) &&
             (tls_io_instance->tlsio_state != TLSIO_STATE_ERROR))
         {
+            /* this is needed in order to pump out bytes produces by OpenSSL for things like renegotiation */
+            write_outgoing_bytes(tls_io_instance, NULL, NULL);
             xio_dowork(tls_io_instance->underlying_io);
         }
     }
