@@ -11,13 +11,13 @@ utf8_checker is module that provides basic validation whether a string is a UTF-
 ## Exposed API
 
 ```c
-MOCKABLE_FUNCTION(, bool, utf8_checker_is_valid_utf8, const unsigned char*, str, size_t, length);
+MOCKABLE_FUNCTION(, bool, utf8_checker_is_valid_utf8, const unsigned char*, utf8_str, size_t, length);
 ```
 
 ### utf8_checker_is_valid_utf8
 
 ```c
-extern bool utf8_checker_is_valid_utf8(const unsigned char* str, size_t length);
+extern bool utf8_checker_is_valid_utf8(const unsigned char* utf8_str, size_t length);
 ```
 
 XX**SRS_UTF8_CHECKER_01_001: [** `utf8_checker_is_valid_utf8` shall verify that the sequence of chars pointed to by `utf8_str` represent UTF-8 encoded codepoints. **]**
