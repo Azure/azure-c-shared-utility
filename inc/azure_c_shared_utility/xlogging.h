@@ -60,11 +60,11 @@ typedef void(*LOGGER_LOG)(LOG_CATEGORY log_category, const char* file, const cha
         printf(flash_str, ##__VA_ARGS__);   \
         printf("\n");\
     } while(0)
-
+    
 #define LogError LogInfo
 #define LOG(log_category, log_options, FORMAT, ...)  { \
-        const char* __localFORMAT = (FORMAT); \
-        printf(__localFORMAT, ##__VA_ARGS__); \
+        static const char flash_str[] ICACHE_RODATA_ATTR STORE_ATTR = (FORMAT); \
+        printf(flash_str, ##__VA_ARGS__); \
         printf("\r\n"); \
 }
 

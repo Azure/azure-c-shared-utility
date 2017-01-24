@@ -217,7 +217,7 @@ LOCAL int openssl_thread_LWIP_CONNECTION(TLS_IO_INSTANCE* p)
     do {
         //(void*)printf("size before netconn_gethostbyname: %d \n", system_get_free_heap_size());
         ret = netconn_gethostbyname(tls_io_instance->hostname, &target_ip);
-    } while(ret && netconn_retry++ < MAX_RETRY);
+    } while((ret != 0) && netconn_retry++ < MAX_RETRY);
 
     // LogInfo("create socket ......");
     //(void*)printf("size before creating socket: %d \n", system_get_free_heap_size());
@@ -247,7 +247,7 @@ LOCAL int openssl_thread_LWIP_CONNECTION(TLS_IO_INSTANCE* p)
             ret = bind(sock, (struct sockaddr*)&sock_addr, sizeof(sock_addr));
             
         //(void*)printf("bind return: %d \n", ret);
-            if (ret) {
+            if (ret != 0) {
                 result = __LINE__;
                 LogError("bind socket failed");
             }
@@ -310,7 +310,7 @@ LOCAL int openssl_thread_LWIP_CONNECTION(TLS_IO_INSTANCE* p)
                     }
 
                     ctx = SSL_CTX_new(TLSv1_client_method());
-                    if (!ctx) {
+                    if (ctx == NULL) {
                         result = __LINE__;
                         LogError("create new SSL CTX failed");
                     }
@@ -329,7 +329,7 @@ LOCAL int openssl_thread_LWIP_CONNECTION(TLS_IO_INSTANCE* p)
                         // LogInfo("SSL new... ");
                             ssl = SSL_new(ctx);
                         //(void*)printf("after ssl new \n");
-                            if (!ssl) {
+                            if (ssl == NULL) {
                                 result = __LINE__;
                                 LogError("create ssl failed");
                             }
@@ -661,7 +661,7 @@ int tlsio_openssl_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_cl
 
 int tlsio_openssl_send(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t size, ON_SEND_COMPLETE on_send_complete, void* callback_context)
 {
-    (void*)printf("tlsio_openssl_send \n");
+    //(void*)printf("tlsio_openssl_send \n");
 
     int result;
 
@@ -698,7 +698,7 @@ int tlsio_openssl_send(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t siz
                 /* Codes_SRS_TLSIO_SSL_ESP8266_99_017: [ The tlsio_openssl_send SSL_write failure]*/
                 res = SSL_write(tls_io_instance->ssl, ((uint8*)buffer)+total_write, size);
                 //LogInfo("SSL_write res: %d, size: %d, retry: %d", res, size, retry);
-                if(res > 0){
+                if(res > 0 && res <= size){
                     total_write += res;
                     size = size - res;
                 }
@@ -726,7 +726,7 @@ int tlsio_openssl_send(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t siz
                 }
             }
 
-            (void*)printf("total write: %d \n", total_write);
+            //(void*)printf("total write: %d \n", total_write);
         }
     }
     return result;

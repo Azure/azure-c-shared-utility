@@ -59,6 +59,7 @@ static int g_ssl_new_success = 1;
 static int g_ssl_set_fd_success = 1;
 static int g_ssl_connect_success = 1;
 static int g_ssl_shutdown_success = 1;
+static int g_ssl_TLSv1clientmethod_success = 1;
 
 #define MAX_RETRY_WRITE 500
 #define MAX_RETRY 20
@@ -152,7 +153,7 @@ int my_SSL_set_fd(SSL *ssl, int fd){
 
 SSL* my_SSL_new(SSL_CTX *ssl_ctx){
     if (g_ssl_new_success == 1){
-         SSL* ssl = (SSL*)malloc(sizeof(SSL));
+         SSL* ssl = (SSL*)malloc(1);
         return ssl;
     }else{
         return NULL;
@@ -168,7 +169,12 @@ int my_SSL_set_fragment(SSL_CTX *ssl_ctx, unsigned int frag_size){
 }
 
 SSL_CTX* my_SSL_CTX_new(SSL_METHOD *method){
-    return (SSL_CTX*)malloc(sizeof(SSL_CTX));
+    if(method != NULL){
+        return (SSL_CTX*)malloc(1);
+    }else{
+        return NULL;
+    }
+    
 }
 
 err_t my_netconn_gethostbyname(const char *name, ip_addr_t *addr){
@@ -176,7 +182,11 @@ err_t my_netconn_gethostbyname(const char *name, ip_addr_t *addr){
 }
 
 SSL_METHOD* my_TLSv1_client_method(void){
-    return NULL;
+    if (g_ssl_TLSv1clientmethod_success == 1){
+        return (SSL_METHOD*)malloc(1);
+    }else{
+        return NULL;
+    }
 }
 
 int my_bind(int s, const struct sockaddr* name, socklen_t namelen){
@@ -557,7 +567,12 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         memset(&instance, 0, sizeof(TLS_IO_INSTANCE));
         SSL_CTX *ctx;
         SSL *ssl;
+        g_ssl_TLSv1clientmethod_success = 0;
         ctx = SSL_CTX_new(TLSv1_client_method());
+        ASSERT_IS_NULL(ctx);
+        g_ssl_TLSv1clientmethod_success = 1;
+        ctx = SSL_CTX_new(TLSv1_client_method());
+        ASSERT_IS_NOT_NULL(ctx);
         ssl = SSL_new(ctx);
 
         instance.tlsio_state = TLSIO_STATE_OPEN;
