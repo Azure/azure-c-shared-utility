@@ -755,7 +755,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
     }
 
 
-    /* Codes_SRS_TLSIO_SSL_ESP8266_99_006: [ The tlsio_openssl_open failed when tls_io is NULL. ]*/
+    /* Codes_SRS_TLSIO_SSL_ESP8266_99_006: [ The tlsio_openssl_open shall failed when tls_io is NULL. ]*/
     TEST_FUNCTION(tlsio_openssl_open__failed)
     {
         ///arrange
@@ -768,7 +768,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
         ///act
-        result = tlsioInterfaces->concrete_io_open(NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+        result = tlsioInterfaces->concrete_io_open(NULL, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
