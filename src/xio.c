@@ -11,7 +11,7 @@ static const char* CONCRETE_OPTIONS = "concreteOptions";
 typedef struct XIO_INSTANCE_TAG
 {
     const IO_INTERFACE_DESCRIPTION* io_interface_description;
-    XIO_HANDLE concrete_xio_handle;
+    CONCRETE_IO_HANDLE concrete_xio_handle;
 } XIO_INSTANCE;
 
 XIO_HANDLE xio_create(const IO_INTERFACE_DESCRIPTION* io_interface_description, const void* xio_create_parameters)
