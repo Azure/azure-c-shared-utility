@@ -328,6 +328,7 @@ set(source_c_files
 ./src/gballoc.c
 ./src/gb_stdio.c
 ./src/gb_time.c
+./src/gb_rand.c
 ./src/hmac.c
 ./src/hmacsha256.c
 ./src/xio.c
@@ -401,6 +402,7 @@ set(source_h_files
 ./inc/azure_c_shared_utility/gballoc.h
 ./inc/azure_c_shared_utility/gb_stdio.h
 ./inc/azure_c_shared_utility/gb_time.h
+./inc/azure_c_shared_utility/gb_rand.h
 ./inc/azure_c_shared_utility/hmac.h
 ./inc/azure_c_shared_utility/hmacsha256.h
 ./inc/azure_c_shared_utility/singlylinkedlist.h
