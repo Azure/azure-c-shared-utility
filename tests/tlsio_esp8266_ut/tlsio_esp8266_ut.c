@@ -373,7 +373,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         TEST_MUTEX_RELEASE(g_testByTest);
     }
 
-    /* Tests_SRS_TLSIO_SSL_ESP8266_99_020: [ The tlsio_openssl_dowork succeed]*/
+    /* Tests_SRS_TLSIO_SSL_ESP8266_99_019: [ The tlsio_openssl_dowork_withdata succeed shall read data from ssl connect. If with data, it shall call on_bytes_received. ]*/
     TEST_FUNCTION(tlsio_openssl_dowork_withdata__succeed)
     {
         ///arrange
@@ -398,7 +398,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ///cleanup
     }
 
-    /* Tests_SRS_TLSIO_SSL_ESP8266_99_019: [ The tlsio_openssl_dowork succeed]*/
+    /* Tests_SRS_TLSIO_SSL_ESP8266_99_019: [ The tlsio_openssl_dowork_withoutdata succeed shall read data from ssl connect. If no data, it shall do nothing. ]*/
     TEST_FUNCTION(tlsio_openssl_dowork_withoutdata__succeed)
     {
         ///arrange
@@ -424,7 +424,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
     }
 
 
-    /* Tests_SRS_TLSIO_SSL_ESP8266_99_018: [ The tlsio_openssl_dowork NULL parameter. No crash when passing NULL]*/
+    /* Tests_SRS_TLSIO_SSL_ESP8266_99_018: [ The tlsio_openssl_dowork failed when tls_io is NULL.]*/
     TEST_FUNCTION(tlsio_openssl_dowork__failed)
     {
         ///arrange
@@ -439,7 +439,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
     }
 
 
-    /* Tests_SRS_TLSIO_SSL_ESP8266_99_017: [ The tlsio_openssl_send SSL_write succeed]*/
+    /* Tests_SRS_TLSIO_SSL_ESP8266_99_017: [ The tlsio_openssl_send succeed shall send data to ssl connection and call on_send_complete if exists.]*/
     TEST_FUNCTION(tlsio_openssl_send__SSL_write__succeed)
     {
         ///arrange
@@ -466,7 +466,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ///cleanup
      }
 
-     /* Tests_SRS_TLSIO_SSL_ESP8266_99_017: [ The tlsio_openssl_send SSL_write succeed]*/
+     /* Tests_SRS_TLSIO_SSL_ESP8266_99_017: [ The tlsio_openssl_send failed when SSL_write_buffer is NULL.]*/
     TEST_FUNCTION(tlsio_openssl_send__SSL_write_null_buffer__failed)
     {
         ///arrange
@@ -480,14 +480,14 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
         ///act
-        result = tlsioInterfaces->concrete_io_send(&instance, NULL, 0, NULL, NULL);
+        result = tlsioInterfaces->concrete_io_send(&instance, NULL, 0, test_on_send_complete, (void*)0x4242);
         
         ///assert
         ASSERT_ARE_NOT_EQUAL(int, result, 0);
         ///cleanup
      }
 
-    /* Tests_SRS_TLSIO_SSL_ESP8266_99_016: [ The tlsio_openssl_send SSL_write failed]*/
+    /* Tests_SRS_TLSIO_SSL_ESP8266_99_016: [ The tlsio_openssl_send failed when SSL_write failed]*/
     TEST_FUNCTION(tlsio_openssl_send__SSL_write__failed)
     {
         ///arrange
@@ -520,7 +520,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ///cleanup
     }
 
-    /* Tests_SRS_TLSIO_SSL_ESP8266_99_015: [ The tlsio_openssl_send wrong state.]*/
+    /* Tests_SRS_TLSIO_SSL_ESP8266_99_015: [ The tlsio_openssl_send failed when the state is not TLSIO_STATE_OPEN.]*/
     TEST_FUNCTION(tlsio_openssl_send_wrong_state__failed)
     {
         ///arrange
@@ -541,7 +541,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
     }
 
 
-    /* Tests_SRS_TLSIO_SSL_ESP8266_99_014: [ The tlsio_openssl_send NULL instance.]*/
+    /* Tests_SRS_TLSIO_SSL_ESP8266_99_014: [ The tlsio_openssl_send failed when tls_io is NULL.]*/
     TEST_FUNCTION(tlsio_openssl_send__failed)
     {
         ///arrange
@@ -558,7 +558,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ///cleanup
     }
 
-    /* Tests_SRS_TLSIO_SSL_ESP8266_99_013: [ The tlsio_openssl_close succeed.]*/
+    /* Tests_SRS_TLSIO_SSL_ESP8266_99_013: [ The tlsio_openssl_close succeed shall set tls_io_instance->tlsio_state to TLSIO_STATE_NOT_OPEN and call on_io_close_complete if exists.]*/
     TEST_FUNCTION(tlsio_openssl_close__succeed)
     {
         ///arrange
@@ -599,7 +599,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
     }
 
 
-    /* Tests_SRS_TLSIO_SSL_ESP8266_99_012: [ The tlsio_openssl_close wrong state.]*/
+    /* Tests_SRS_TLSIO_SSL_ESP8266_99_012: [ The tlsio_openssl_close failed when state is not TLSIO_STATE_OPEN or TLSIO_STATE_ERROR..]*/
     TEST_FUNCTION(tlsio_openssl_close_wrong_state__failed)
     {
         ///arrange
@@ -611,7 +611,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         memset(&instance, 0, sizeof(TLS_IO_INSTANCE));
         instance.tlsio_state = TLSIO_STATE_NOT_OPEN;
         ///act
-        result = tlsioInterfaces->concrete_io_close(&instance, NULL, NULL);
+        result = tlsioInterfaces->concrete_io_close(&instance, test_on_io_close_complete, (void*)0x4242);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -627,7 +627,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ///cleanup
     }
 
-    /* Tests_SRS_TLSIO_SSL_ESP8266_99_011: [ The tlsio_openssl_close NULL parameter.]*/
+    /* Tests_SRS_TLSIO_SSL_ESP8266_99_011: [ The tlsio_openssl_close failed when tls_io is NULL.]*/
     TEST_FUNCTION(tlsio_openssl_close__failed)
     {
         ///arrange
@@ -636,7 +636,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
         ///act
-        result = tlsioInterfaces->concrete_io_close(NULL, NULL, NULL);
+        result = tlsioInterfaces->concrete_io_close(NULL, test_on_io_close_complete, (void*)0x4242);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -644,7 +644,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ///cleanup
     }
 
-    /* Tests_SRS_TLSIO_SSL_ESP8266_99_010: [ The tlsio_openssl_destroy succeed ]*/
+    /* Tests_SRS_TLSIO_SSL_ESP8266_99_010: [ The tlsio_openssl_destroy succeed shall free all resources. ]*/
     TEST_FUNCTION(tlsio_openssl_destroy__succeed)
     {
         ///arrange
@@ -665,7 +665,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ///cleanup
     }
 
-    /* Tests_SRS_TLSIO_SSL_ESP8266_99_009: [ The tlsio_openssl_destroy NULL parameter. make sure there is no crash ]*/
+    /* Tests_SRS_TLSIO_SSL_ESP8266_99_009: [ The tlsio_openssl_destroy shall fail when tls_io is NULL. ]*/
     TEST_FUNCTION(tlsio_openssl_destroy__failed)
     {
         ///arrange
@@ -680,7 +680,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ///cleanup
     }
 
-    /* Tests_SRS_TLSIO_SSL_ESP8266_99_008: [ The tlsio_openssl_open succeed ]*/
+    /* Tests_SRS_TLSIO_SSL_ESP8266_99_008: [ The tlsio_openssl_open succeed shall set tls_io_instance->tlsio_state to TLSIO_STATE_OPEN and call on_io_open_complete if exists.]*/
     TEST_FUNCTION(tlsio_openssl_open__succeed)
     {
         ///arrange
@@ -729,7 +729,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
     }
 
 
-    /* Codes_SRS_TLSIO_SSL_ESP8266_99_007: [ The tlsio_openssl_open invalid state. ]*/
+    /* Codes_SRS_TLSIO_SSL_ESP8266_99_007: [ The tlsio_openssl_open failed when state provided is not TLSIO_STATE_NOT_OPEN. ]*/
     TEST_FUNCTION(tlsio_openssl_open_invalid_state__failed)
     {
         ///arrange
@@ -777,7 +777,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ///cleanup
     }
 
-    /* Codes_SRS_TLSIO_SSL_ESP8266_99_006: [ The tlsio_openssl_open failed when tls_io is NULL. ]*/
+    /* Codes_SRS_TLSIO_SSL_ESP8266_99_006: [ The tlsio_openssl_open failed when SSL_set_fragment fails. ]*/
     TEST_FUNCTION(tlsio_openssl_open_sslsetfragment__failed)
     {
         ///arrange
@@ -815,7 +815,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ///cleanup
     }
 
-    /* Codes_SRS_TLSIO_SSL_ESP8266_99_006: [ The tlsio_openssl_open failed when tls_io is NULL. ]*/
+    /* Codes_SRS_TLSIO_SSL_ESP8266_99_006: [ The tlsio_openssl_open failed when SSL_new fails.]*/
     TEST_FUNCTION(tlsio_openssl_open_sslnew__failed)
     {
         ///arrange
@@ -854,7 +854,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ///cleanup
     }
 
-    /* Codes_SRS_TLSIO_SSL_ESP8266_99_006: [ The tlsio_openssl_open failed when tls_io is NULL. ]*/
+    /* Codes_SRS_TLSIO_SSL_ESP8266_99_006: [ The tlsio_openssl_open failed when SSL_set_fd fails.]*/
     TEST_FUNCTION(tlsio_openssl_open_sslsetfd__failed)
     {
         ///arrange
@@ -894,7 +894,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ///cleanup
     }
 
-    /* Codes_SRS_TLSIO_SSL_ESP8266_99_006: [ The tlsio_openssl_open failed when tls_io is NULL. ]*/
+    /* Codes_SRS_TLSIO_SSL_ESP8266_99_006: [ The tlsio_openssl_open failed when SSL_connect fails.]*/
     TEST_FUNCTION(tlsio_openssl_open_sslconnect__failed)
     {
         ///arrange
