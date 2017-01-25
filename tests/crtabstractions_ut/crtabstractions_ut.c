@@ -2,17 +2,13 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include <stdlib.h>
-#ifdef _CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
-#endif
-
 #include <limits.h>
 #include <float.h>
 #include <math.h>
 
 #include "testrunnerswitcher.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
-#include "errno.h"
+#include <errno.h>
 
 #if defined _MSC_VER
 #include "crtdbg.h"

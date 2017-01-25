@@ -2,9 +2,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include <stdlib.h>
-#ifdef _CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
-#endif
 #include <stddef.h>
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/xio.h"
@@ -14,7 +11,7 @@ static const char* CONCRETE_OPTIONS = "concreteOptions";
 typedef struct XIO_INSTANCE_TAG
 {
     const IO_INTERFACE_DESCRIPTION* io_interface_description;
-    XIO_HANDLE concrete_xio_handle;
+    CONCRETE_IO_HANDLE concrete_xio_handle;
 } XIO_INSTANCE;
 
 XIO_HANDLE xio_create(const IO_INTERFACE_DESCRIPTION* io_interface_description, const void* xio_create_parameters)

@@ -6,11 +6,6 @@
 
 #pragma once
 
-#include <stdlib.h>
-#ifdef _CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
-#endif
-
 #include "tchar.h"
 #include "string"
 #include "sstream"

@@ -10,10 +10,6 @@ Please refer to the porting guide for more details.
 Make sure that you replace tlsio_template everywhere in this file with your own TLS library name (like tlsio_mytls) */
 
 #include <stdlib.h>
-#ifdef _CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
-#endif
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>

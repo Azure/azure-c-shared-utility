@@ -2,9 +2,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include <stdlib.h>
-#ifdef _CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
-#endif
 
 static int currentmalloc_call = 0;
 static int whenShallmalloc_fail = 0;
@@ -292,7 +289,7 @@ int my_xio_send(XIO_HANDLE xio, const void* buffer, size_t size, ON_SEND_COMPLET
             xio_send_transmited_buffer_target--;
             if (xio_send_transmited_buffer_target == 0)
             {
-                memcpy(xio_send_transmited_buffer, buffer, size);
+                (void)memcpy(xio_send_transmited_buffer, buffer, size);
             }
         }
         result = xio_send_shallReturn[xio_send_shallReturn_counter];

@@ -122,7 +122,7 @@ MOCK_FUNCTION_END(0)
 MOCK_FUNCTION_WITH_CODE(WSAAPI, int, ioctlsocket, SOCKET, s, long, cmd, u_long FAR*, argp)
 MOCK_FUNCTION_END(0)
 MOCK_FUNCTION_WITH_CODE(WSAAPI, int, WSAIoctl, SOCKET, s, DWORD, dwIoControlCode, LPVOID, lpvInBuffer, DWORD, cbInBuffer, LPVOID, lpvOutBuffer, DWORD, cbOutBuffer, LPDWORD, lpcbBytesReturned, LPWSAOVERLAPPED, lpOverlapped, LPWSAOVERLAPPED_COMPLETION_ROUTINE, lpCompletionRoutine)
-memcpy(&persisted_tcp_keepalive, lpvInBuffer, sizeof(struct tcp_keepalive));
+(void)memcpy(&persisted_tcp_keepalive, lpvInBuffer, sizeof(struct tcp_keepalive));
 MOCK_FUNCTION_END(0)
 
 LIST_ITEM_HANDLE my_singlylinkedlist_get_head_item(SINGLYLINKEDLIST_HANDLE list)
@@ -314,7 +314,7 @@ int umocktypes_copy_const_struct_sockaddr_ptr(struct sockaddr** destination, con
     else
     {
         (*destination)->sa_family = (*source)->sa_family;
-        memcpy((*destination)->sa_data, (*source)->sa_data, sizeof((*source)->sa_data));
+        (void)memcpy((*destination)->sa_data, (*source)->sa_data, sizeof((*source)->sa_data));
 
         result = 0;
     }

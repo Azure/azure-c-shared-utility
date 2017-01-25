@@ -6,11 +6,6 @@
 
 #pragma once
 
-#include <stdlib.h>
-#ifdef _CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
-#endif
-
 #include "stdafx.h"
 #include "azure_c_shared_utility/macro_utils.h"
 

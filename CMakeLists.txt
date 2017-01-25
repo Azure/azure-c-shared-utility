@@ -9,6 +9,8 @@ endif()
 
 project(azure_c_shared_utility)
 
+set(C_SHARED_VERSION 1.0.25)
+
 option(run_valgrind "set run_valgrind to ON if tests are to be run under valgrind/helgrind/drd. Default is OFF" OFF)
 
 #making a nice global variable to know if we are on linux or not.
@@ -326,6 +328,7 @@ set(source_c_files
 ./src/gballoc.c
 ./src/gb_stdio.c
 ./src/gb_time.c
+./src/gb_rand.c
 ./src/hmac.c
 ./src/hmacsha256.c
 ./src/xio.c
@@ -399,6 +402,7 @@ set(source_h_files
 ./inc/azure_c_shared_utility/gballoc.h
 ./inc/azure_c_shared_utility/gb_stdio.h
 ./inc/azure_c_shared_utility/gb_time.h
+./inc/azure_c_shared_utility/gb_rand.h
 ./inc/azure_c_shared_utility/hmac.h
 ./inc/azure_c_shared_utility/hmacsha256.h
 ./inc/azure_c_shared_utility/singlylinkedlist.h
@@ -599,6 +603,12 @@ if(${use_installed_dependencies})
 
     include(CMakePackageConfigHelpers)
 
+    write_basic_package_version_file(
+        "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}/${PROJECT_NAME}ConfigVersion.cmake"
+        VERSION ${C_SHARED_VERSION}
+        COMPATIBILITY SameMajorVersion
+    )
+
     configure_file("configs/${PROJECT_NAME}Config.cmake"
         "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}/${PROJECT_NAME}Config.cmake"
         COPYONLY
@@ -614,6 +624,7 @@ if(${use_installed_dependencies})
         FILES
             "configs/${PROJECT_NAME}Config.cmake"
             "configs/${PROJECT_NAME}Functions.cmake"
+            "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}/${PROJECT_NAME}ConfigVersion.cmake"
         DESTINATION
             ${package_location}
     )

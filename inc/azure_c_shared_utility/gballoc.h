@@ -4,16 +4,12 @@
 #ifndef GBALLOC_H
 #define GBALLOC_H
 
-
 #ifdef __cplusplus
-#include <cstdlib>
+#include <cstddef>
 extern "C"
 {
 #else
-#include <stdlib.h>
-#endif
-#ifdef _CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
+#include <stddef.h>
 #endif
 
 #include "azure_c_shared_utility/umock_c_prod.h"
@@ -34,6 +30,8 @@ MOCKABLE_FUNCTION(, size_t, gballoc_getCurrentMemoryUsed);
 
 /* if GB_MEASURE_MEMORY_FOR_THIS is defined then we want to redirect memory allocation functions to gballoc_xxx functions */
 #ifdef GB_MEASURE_MEMORY_FOR_THIS
+/* Unfortunately this is still needed here for things to still compile when using _CRTDBG_MAP_ALLOC.
+That is because there is a rogue component (most likely CppUnitTest) including crtdbg. */
 #if defined(_CRTDBG_MAP_ALLOC) && defined(_DEBUG)
 #undef _malloc_dbg
 #undef _calloc_dbg

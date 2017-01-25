@@ -2,10 +2,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include <stdlib.h>
-#ifdef _CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
-#endif
-
 #include "openssl/ssl.h"
 #include "openssl/err.h"
 #include "openssl/crypto.h"
@@ -1162,6 +1158,8 @@ void tlsio_openssl_dowork(CONCRETE_IO_HANDLE tls_io)
         if ((tls_io_instance->tlsio_state != TLSIO_STATE_NOT_OPEN) &&
             (tls_io_instance->tlsio_state != TLSIO_STATE_ERROR))
         {
+            /* this is needed in order to pump out bytes produces by OpenSSL for things like renegotiation */
+            write_outgoing_bytes(tls_io_instance, NULL, NULL);
             xio_dowork(tls_io_instance->underlying_io);
         }
     }

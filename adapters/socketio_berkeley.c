@@ -2,10 +2,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include <stdlib.h>
-#ifdef _CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
-#endif
-
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
@@ -286,11 +282,6 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
 
             socket_io_instance->io_state = IO_STATE_OPEN;
 
-            if (on_io_open_complete != NULL)
-            {
-                on_io_open_complete(on_io_open_complete_context, IO_OPEN_OK);
-            }
-
             result = 0;
         }
         else
@@ -402,11 +393,6 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
 
                                 socket_io_instance->io_state = IO_STATE_OPEN;
 
-                                if (on_io_open_complete != NULL)
-                                {
-                                    on_io_open_complete(on_io_open_complete_context, IO_OPEN_OK);
-                                }
-
                                 result = 0;
                             }
                         }
@@ -415,6 +401,11 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
                 }
             }
         }
+    }
+
+    if (on_io_open_complete != NULL)
+    {
+        on_io_open_complete(on_io_open_complete_context, result == 0 ? IO_OPEN_OK : IO_OPEN_ERROR);
     }
 
     return result;

@@ -12,9 +12,6 @@
 #include "windows.h"
 
 #include <stdlib.h>
-#ifdef _CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
-#endif
 
 static void* my_gballoc_malloc(size_t size)
 {
@@ -126,7 +123,11 @@ static BOOL my_CryptStringToBinaryA(
     DWORD   *pdwFlags
 )
 {
-    (void)(pszString, cchString, dwFlags, pdwSkip, pdwFlags);
+    (void)pszString;
+    (void)cchString;
+    (void)dwFlags;
+    (void)pdwSkip;
+    (void)pdwFlags;
     *pcbBinary = 1; /*the binary form always has 1 byte*/
     if (pbBinary != NULL)
     {
@@ -146,7 +147,13 @@ static BOOL my_CryptDecodeObjectEx(
     DWORD             * pcbStructInfo
 )
 {
-    (void)(pDecodePara, dwFlags, cbEncoded, pbEncoded, pvStructInfo, lpszStructType, dwCertEncodingType);
+    (void)pDecodePara;
+    (void)dwFlags;
+    (void)cbEncoded;
+    (void)pbEncoded;
+    (void)pvStructInfo;
+    (void)lpszStructType;
+    (void)dwCertEncodingType;
     if (pcbStructInfo != NULL)
     {
         *pcbStructInfo = 2; /*assume the decoded size is 2*/
@@ -163,7 +170,10 @@ static BOOL my_CryptAcquireContextA(
     DWORD dwFlags
 )
 {
-    (void)(szContainer, szProvider, dwProvType, dwFlags);
+    (void)szContainer;
+    (void)szProvider;
+    (void)dwProvType;
+    (void)dwFlags;
     *phProv = (HCRYPTPROV)my_gballoc_malloc(3);
     return TRUE;
 }
@@ -177,7 +187,11 @@ static BOOL my_CryptImportKey(
     HCRYPTKEY   * phKey
 )
 {
-    (void)(hProv, pbData, dwDataLen, hPubKey, dwFlags);
+    (void)hProv;
+    (void)pbData;
+    (void)dwDataLen;
+    (void)hPubKey;
+    (void)dwFlags;
     *phKey = (HCRYPTKEY)my_gballoc_malloc(4);
     return TRUE;
 }
@@ -188,7 +202,9 @@ static PCCERT_CONTEXT  my_CertCreateCertificateContext(
     DWORD cbCertEncoded
 )
 {
-    (void)(dwCertEncodingType, pbCertEncoded, cbCertEncoded);
+    (void)dwCertEncodingType;
+    (void)pbCertEncoded;
+    (void)cbCertEncoded;
     return (PCCERT_CONTEXT)my_gballoc_malloc(5);
 }
 
@@ -225,7 +241,10 @@ static BOOL my_CertSetCertificateContextProperty(
     const void           * pvData
 )
 {
-    (void)(pCertContext, dwPropId, dwFlags, pvData);
+    (void)pCertContext;
+    (void)dwPropId;
+    (void)dwFlags;
+    (void)pvData;
     return TRUE;
 }
 
