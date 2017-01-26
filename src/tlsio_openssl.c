@@ -716,10 +716,21 @@ static void destroy_openssl_instance(TLS_IO_INSTANCE* tls_io_instance)
 {
     if (tls_io_instance != NULL)
     {
-        SSL_free(tls_io_instance->ssl);
-        tls_io_instance->ssl = NULL;
-        SSL_CTX_free(tls_io_instance->ssl_context);
-        tls_io_instance->ssl_context = NULL;
+        if (tls_io_instance->ssl != NULL)
+        {
+            SSL_free(tls_io_instance->ssl);
+            tls_io_instance->ssl = NULL;
+        }
+        if (tls_io_instance->ssl_context != NULL)
+        {
+            SSL_CTX_free(tls_io_instance->ssl_context);
+            tls_io_instance->ssl_context = NULL;
+        }
+        if (tls_io_instance->underlying_io != NULL)
+        {
+            xio_destroy(tls_io_instance->underlying_io);
+            tls_io_instance->underlying_io = NULL;
+        }
     }
 }
 
@@ -1011,7 +1022,7 @@ void tlsio_openssl_destroy(CONCRETE_IO_HANDLE tls_io)
         free(tls_io_instance->hostname);
         free((void*)tls_io_instance->x509certificate);
         free((void*)tls_io_instance->x509privatekey);
-        xio_destroy(tls_io_instance->underlying_io);
+        destroy_openssl_instance(tls_io_instance);
         free(tls_io);
     }
 }
