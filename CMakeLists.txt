@@ -11,6 +11,10 @@ project(azure_c_shared_utility)
 
 set(C_SHARED_VERSION 1.0.25)
 
+if(POLICY CMP0042)
+    cmake_policy(SET CMP0042 NEW)
+endif()
+
 option(run_valgrind "set run_valgrind to ON if tests are to be run under valgrind/helgrind/drd. Default is OFF" OFF)
 
 #making a nice global variable to know if we are on linux or not.
