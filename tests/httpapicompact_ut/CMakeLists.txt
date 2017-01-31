@@ -17,7 +17,6 @@ httpapicompact_ut.c
 
 set(${theseTestsName}_c_files
 ../../adapters/httpapi_compact.c
-${LOCK_C_FILE}
 )
 
 set(${theseTestsName}_h_files

@@ -7,6 +7,26 @@
 #include <math.h>
 
 #include "testrunnerswitcher.h"
+
+void* real_malloc(size_t size)
+{
+    return malloc(size);
+}
+
+void* real_realloc(void* ptr, size_t size)
+{
+    return realloc(ptr, size);
+}
+
+void real_free(void* ptr)
+{
+    free(ptr);
+}
+
+#define ENABLE_MOCKS
+#include "azure_c_shared_utility/gballoc.h"
+#undef ENABLE_MOCKS
+
 #include "azure_c_shared_utility/crt_abstractions.h"
 #include <errno.h>
 
@@ -107,11 +127,26 @@ static const size_t interestingSize_tNumbersToBeConverted[] =
 
 static TEST_MUTEX_HANDLE g_dllByDll;
 
+DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
+
+static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
+{
+    char temp_str[256];
+    (void)snprintf(temp_str, sizeof(temp_str), "umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
+    ASSERT_FAIL(temp_str);
+}
+
 BEGIN_TEST_SUITE(CRTAbstractions_UnitTests)
 
 TEST_SUITE_INITIALIZE(a)
 {
     TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
+
+    umock_c_init(on_umock_c_error);
+
+    REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, real_malloc);
+    REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, real_free);
+    REGISTER_GLOBAL_MOCK_HOOK(gballoc_realloc, real_realloc);
 }
 
 TEST_SUITE_CLEANUP(b)

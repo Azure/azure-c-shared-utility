@@ -17,7 +17,6 @@ real_string_tokenizer.c
 real_strings.c
 ${SHARED_UTIL_SRC_FOLDER}/crt_abstractions.c
 ${SHARED_UTIL_SRC_FOLDER}/connection_string_parser.c
-${LOCK_C_FILE}
 )
 
 set(${theseTestsName}_h_files

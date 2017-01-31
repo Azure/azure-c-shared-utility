@@ -18,9 +18,6 @@ set(${theseTestsName}_c_files
 ../../src/sha1.c
 ../../src/sha224.c
 ../../src/sha384-512.c
-
-../../src/gballoc.c
-${LOCK_C_FILE}
 ../../src/buffer.c
 )
 

@@ -1,10 +1,28 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+#include <stddef.h>
 #include "testrunnerswitcher.h"
-#define ENABLE_MOCKS
-#include "azure_c_shared_utility/strings.h"
+#include "umock_c.h"
 
+void* real_malloc(size_t size)
+{
+    return malloc(size);
+}
+
+void* real_realloc(void* ptr, size_t size)
+{
+    return realloc(ptr, size);
+}
+
+void real_free(void* ptr)
+{
+    free(ptr);
+}
+
+#define ENABLE_MOCKS
+#include "azure_c_shared_utility/gballoc.h"
+#include "azure_c_shared_utility/strings.h"
 #undef ENABLE_MOCKS
 #include "azure_c_shared_utility/hmacsha256.h"
 
@@ -35,6 +53,10 @@ TEST_SUITE_INITIALIZE(TestClassInitialize)
     ASSERT_IS_NOT_NULL(g_testByTest);
 
     umock_c_init(on_umock_c_error);
+
+    REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, real_malloc);
+    REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, real_free);
+    REGISTER_GLOBAL_MOCK_HOOK(gballoc_realloc, real_realloc);
 }
 
 TEST_SUITE_CLEANUP(TestClassCleanup)

@@ -14,8 +14,6 @@ ${theseTestsName}.c
 
 set(${theseTestsName}_c_files
 ../../src/doublylinkedlist.c
-../../src/gballoc.c
-${LOCK_C_FILE}
 )
 
 set(${theseTestsName}_h_files
