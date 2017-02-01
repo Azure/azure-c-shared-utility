@@ -98,9 +98,14 @@ extern int strcat_s(char* dst, size_t dstSizeInBytes, const char* src);
 extern int strncpy_s(char* dst, size_t dstSizeInBytes, const char* src, size_t maxCount);
 extern int sprintf_s(char* dst, size_t dstSizeInBytes, const char* format, ...);
 #endif
+
 extern unsigned long long strtoull_s(const char* nptr, char** endPtr, int base);
 extern float strtof_s(const char* nptr, char** endPtr);
 extern long double strtold_s(const char* nptr, char** endPtr);
+
+#ifdef _MSC_VER
+#define stricmp _stricmp
+#endif
 
 MOCKABLE_FUNCTION(, int, mallocAndStrcpy_s, char**, destination, const char*, source);
 MOCKABLE_FUNCTION(, int, unsignedIntToString, char*, destination, size_t, destinationSize, unsigned int, value);

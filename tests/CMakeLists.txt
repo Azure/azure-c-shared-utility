@@ -50,7 +50,8 @@ add_subdirectory(xio_ut)
 add_subdirectory(optionhandler_ut)
 
 if(use_wsio)
-    add_subdirectory(wsio_ut)
+    add_subdirectory(uws_client_ut)
+    add_subdirectory(uws_frame_encoder_ut)
 endif()
 
 #Add adapters tests
@@ -61,7 +62,6 @@ if(use_cyclonessl AND WIN32)
 	add_subdirectory(tlsio_cyclonessl_socket_bsd_ut)
 endif()
 add_subdirectory(utf8_checker_ut)
-add_subdirectory(uws_frame_encoder_ut)
 
 #Add template as reference for new tests
 add_subdirectory(template_ut)

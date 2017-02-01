@@ -428,6 +428,7 @@ set(source_h_files
 ./inc/azure_c_shared_utility/uniqueid.h
 ./inc/azure_c_shared_utility/urlencode.h
 ./inc/azure_c_shared_utility/vector.h
+./inc/azure_c_shared_utility/vector_types.h
 ./inc/azure_c_shared_utility/xlogging.h
 ./inc/azure_c_shared_utility/constbuffer.h
 ./inc/azure_c_shared_utility/tlsio.h
@@ -518,7 +519,7 @@ if(${use_schannel})
         if (WINCE)
             target_link_libraries(aziotsharedutil secur32)
         else()
-            target_link_libraries(aziotsharedutil crypt32 ws2_32 secur32)
+            target_link_libraries(aziotsharedutil crypt32 ws2_32 secur32 advapi32)
         endif()
     endif()
 endif()
