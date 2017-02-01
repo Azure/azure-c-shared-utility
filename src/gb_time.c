@@ -5,9 +5,9 @@
 
     a) if GB_TIME_INTERCEPT is NOT defined, then the file shall be empty (almost:)
     b) if GB_TIME_INTERCEPT is defined, then the file shall call to the 'real' time.h functions from their gb_* synonyms*/
-
+#ifdef _MSC_VER
 static const int avoid_a_warning_C4206 = 0; /* warning C4206: nonstandard extension used: translation unit is empty*/
-
+#endif
 #ifdef GB_TIME_INTERCEPT
 
 #ifdef __cplusplus

@@ -66,7 +66,7 @@ void xlogging_dump_buffer(const void* buf, size_t size)
 {
     char charBuf[LINE_SIZE + 1];
     char hexBuf[LINE_SIZE * 3 + 1];
-    char countbuf = 0;
+    size_t countbuf = 0;
     const unsigned char* bufAsChar = (const unsigned char*)buf;
     const unsigned char* startPos = bufAsChar;
     

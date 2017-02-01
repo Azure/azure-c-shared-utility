@@ -487,6 +487,7 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
                         if (errno == EAGAIN) /*send says "come back later" with EAGAIN - likely the socket buffer cannot accept more data*/
                         {
                             /*do nothing*/
+                            result = 0;
                         }
                         else
                         {
