@@ -123,7 +123,7 @@ CONCRETE_IO_HANDLE tlsio_openssl_create(void* io_create_parameters);
 ###  tlsio_openssl_destroy
 Implementation of `IO_DESTROY concrete_io_destroy`
 ```c
-void tlsio_openssl_destroy(CONCRETE_IO_HANDLE tlsio_handle);
+void tlsio_openssl_destroy(CONCRETE_IO_HANDLE tls_io);
 ```
 
 **SRS_TLSIO_SSL_ESP8266_99_021: [** The tlsio_openssl_destroy shall destroy a created instance of the tlsio for Arduino identified by the CONCRETE_IO_HANDLE. **]**
@@ -132,14 +132,14 @@ void tlsio_openssl_destroy(CONCRETE_IO_HANDLE tlsio_handle);
 
 **SRS_TLSIO_SSL_ESP8266_99_024: [** If the tlsio_handle is NULL, the tlsio_ssl_esp8266_destroy shall not do anything. **]**
 
-**SRS_TLSIO_SSL_ESP8266_99_025: [** If the tlsio state is tlsio_ssl_esp8266_STATE_OPENING, tlsio_ssl_esp8266_STATE_OPEN, or tlsio_ssl_esp8266_STATE_CLOSING, the tlsio_ssl_esp8266_destroy shall close destroy the tlsio, but log an error. **]**
+**SRS_TLSIO_SSL_ESP8266_99_025: [** If the tlsio state is TLSIO_STATE_OPENING, TLSIO_STATE_OPEN, or TLSIO_STATE_CLOSING, the tlsio_openssl_destroy shall destroy the tlsio, but log an error. **]**
 
 
-###  tlsio_ssl_esp8266_open
+###  tlsio_openssl_open
 Implementation of `IO_OPEN concrete_io_open`
 ```c
-int tlsio_ssl_esp8266_open(
-    CONCRETE_IO_HANDLE tlsio_handle, 
+int tlsio_openssl_open(
+    CONCRETE_IO_HANDLE tls_io, 
     ON_IO_OPEN_COMPLETE on_io_open_complete, 
     void* on_io_open_complete_context, 
     ON_BYTES_RECEIVED on_bytes_received, 
@@ -152,66 +152,60 @@ int tlsio_ssl_esp8266_open(
 
 **SRS_TLSIO_SSL_ESP8266_99_019: [** If the WiFi cannot find the IP for the hostName, the tlsio_openssl_open shall return __LINE__. **]**
 
-**SRS_TLSIO_SSL_ESP8266_99_026: [** The tlsio_ssl_esp8266_open shall star the process to open the ssl connection with the host provided in the tlsio_ssl_esp8266_create. **]**
+**SRS_TLSIO_SSL_ESP8266_99_026: [** The tlsio_openssl_open shall start the process to open the ssl connection with the host provided in the tlsio_openssl_create. **]**
 
-**SRS_TLSIO_SSL_ESP8266_99_027: [** The tlsio_ssl_esp8266_open shall set the tlsio to try to open the connection for 10 times before assuming that connection failed. **]**
+**SRS_TLSIO_SSL_ESP8266_99_027: [** The tlsio_openssl_open shall set the tlsio to try to open the connection for 20 times before assuming that connection failed. **]**
 
-**SRS_TLSIO_SSL_ESP8266_99_028: [** The tlsio_ssl_esp8266_open shall store the provided on_io_open_complete callback function address. **]**
+**SRS_TLSIO_SSL_ESP8266_99_028: [** The tlsio_openssl_open shall store the provided on_io_open_complete callback function address. **]**
 
-**SRS_TLSIO_SSL_ESP8266_99_029: [** The tlsio_ssl_esp8266_open shall store the provided on_io_open_complete_context handle. **]**
+**SRS_TLSIO_SSL_ESP8266_99_029: [** The tlsio_openssl_open shall store the provided on_io_open_complete_context handle. **]**
 
-**SRS_TLSIO_SSL_ESP8266_99_030: [** The tlsio_ssl_esp8266_open shall store the provided on_bytes_received callback function address. **]**
+**SRS_TLSIO_SSL_ESP8266_99_030: [** The tlsio_openssl_open shall store the provided on_bytes_received callback function address. **]**
 
-**SRS_TLSIO_SSL_ESP8266_99_031: [** The tlsio_ssl_esp8266_open shall store the provided on_bytes_received_context handle. **]**
+**SRS_TLSIO_SSL_ESP8266_99_031: [** The tlsio_openssl_open shall store the provided on_bytes_received_context handle. **]**
 
-**SRS_TLSIO_SSL_ESP8266_99_032: [** The tlsio_ssl_esp8266_open shall store the provided on_io_error callback function address. **]**
+**SRS_TLSIO_SSL_ESP8266_99_032: [** The tlsio_openssl_open shall store the provided on_io_error callback function address. **]**
 
-**SRS_TLSIO_SSL_ESP8266_99_033: [** The tlsio_ssl_esp8266_open shall store the provided on_io_error_context handle. **]**
+**SRS_TLSIO_SSL_ESP8266_99_033: [** The tlsio_openssl_open shall store the provided on_io_error_context handle. **]**
 
-**SRS_TLSIO_SSL_ESP8266_99_034: [** If tlsio_ssl_esp8266_open get success to start the process to open the ssl connection, it shall set the tlsio state as tlsio_ssl_esp8266_STATE_OPENING, and return 0. **]**
+**SRS_TLSIO_SSL_ESP8266_99_034: [** If tlsio_openssl_open get success to open the ssl connection, it shall set the tlsio state as TLSIO_STATE_OPEN, and return 0. **]**
 
-**SRS_TLSIO_SSL_ESP8266_99_035: [** If the tlsio state is tlsio_ssl_esp8266_STATE_ERROR, tlsio_ssl_esp8266_STATE_OPENING, tlsio_ssl_esp8266_STATE_OPEN, or tlsio_ssl_esp8266_STATE_CLOSING, the tlsio_ssl_esp8266_open shall set the tlsio state as tlsio_ssl_esp8266_STATE_ERROR, and return _LINE_. **]**
+**SRS_TLSIO_SSL_ESP8266_99_035: [** If the tlsio state is not TLSIO_STATE_NOT_OPEN, then tlsio_openssl_open shall set the tlsio state as TLSIO_STATE_ERROR, and return _LINE_. **]**
 
-**SRS_TLSIO_SSL_ESP8266_99_036: [** If the tlsio_handle is NULL, the tlsio_ssl_esp8266_open shall not do anything, and return _LINE_. **]**
+**SRS_TLSIO_SSL_ESP8266_99_036: [** If the tls_io handle is NULL, the tlsio_openssl_open shall not do anything, and return _LINE_. **]**
 
-**SRS_TLSIO_SSL_ESP8266_99_037: [** If the ssl client is connected, the tlsio_ssl_esp8266_open shall change the state to tlsio_ssl_esp8266_STATE_ERROR, log the error, and return _LINE_. **]**
+**SRS_TLSIO_SSL_ESP8266_99_037: [** If the ssl client is not connected, the tlsio_openssl_open shall change the state to TLSIO_STATE_ERROR, log the error, and return _LINE_. **]**
 
-**SRS_TLSIO_SSL_ESP8266_99_038: [** If tlsio_ssl_esp8266_open failed to start the process to open the ssl connection, it shall set the tlsio state as tlsio_ssl_esp8266_STATE_ERROR, and return _LINE_. **]**
+**SRS_TLSIO_SSL_ESP8266_99_039: [** If the tlsio_openssl_open failed to open the tls connection, and the on_io_open_complete callback was provided, it shall call the on_io_open_complete with IO_OPEN_ERROR. **]**
 
-**SRS_TLSIO_SSL_ESP8266_99_039: [** If the tlsio_ssl_esp8266_open failed to open the tls connection, and the on_io_open_complete callback was provided, it shall call the on_io_open_complete with IO_OPEN_ERROR. **]**
+**SRS_TLSIO_SSL_ESP8266_99_040: [** If the tlsio_openssl_open failed to open the tls connection, and the on_io_error callback was provided, it shall call the on_io_error. **]**
 
-**SRS_TLSIO_SSL_ESP8266_99_040: [** If the tlsio_ssl_esp8266_open failed to open the tls connection, and the on_io_error callback was provided, it shall call the on_io_error. **]**
-
-**SRS_TLSIO_SSL_ESP8266_99_041: [** If the tlsio_ssl_esp8266_open get success opening the tls connection, it shall call the tlsio_ssl_esp8266_dowork. **]**
-
-**SRS_TLSIO_SSL_ESP8266_99_042: [** If the tlsio_ssl_esp8266_open retry to open more than 10 times without success, it shall call the on_io_open_complete with IO_OPEN_CANCELED. **]**
+**SRS_TLSIO_SSL_ESP8266_99_042: [** If the tlsio_openssl_open retry to open more than 20 times without success, it shall return __LINE__. **]**
 
 
-###  tlsio_ssl_esp8266_close
+###  tlsio_openssl_close
 Implementation of `IO_CLOSE concrete_io_close`
 ```c
-int tlsio_ssl_esp8266_close(CONCRETE_IO_HANDLE tlsio_handle, ON_IO_CLOSE_COMPLETE on_io_close_complete, void* callback_context);
+int tlsio_openssl_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_close_complete, void* callback_context);
 ```
 
-**SRS_TLSIO_SSL_ESP8266_99_043: [** The tlsio_ssl_esp8266_close shall start the process to close the ssl connection. **]**
+**SRS_TLSIO_SSL_ESP8266_99_043: [** The tlsio_openssl_close shall start the process to close the ssl connection. **]**
 
-**SRS_TLSIO_SSL_ESP8266_99_044: [** The tlsio_ssl_esp8266_close shall set the tlsio to try to close the connection for 10 times before assuming that close connection failed. **]**
+**SRS_TLSIO_SSL_ESP8266_99_045: [** The tlsio_openssl_close shall store the provided on_io_close_complete callback function address. **]**
 
-**SRS_TLSIO_SSL_ESP8266_99_045: [** The tlsio_ssl_esp8266_close shall store the provided on_io_close_complete callback function address. **]**
+**SRS_TLSIO_SSL_ESP8266_99_046: [** The tlsio_openssl_close shall store the provided on_io_close_complete_context handle. **]**
 
-**SRS_TLSIO_SSL_ESP8266_99_046: [** The tlsio_ssl_esp8266_close shall store the provided on_io_close_complete_context handle. **]**
+**SRS_TLSIO_SSL_ESP8266_99_047: [** If tlsio_openssl_close get success to start the process to close the ssl connection, it shall set the tlsio state as tlsio_ssl_esp8266_STATE_CLOSING, and return 0. **]**
 
-**SRS_TLSIO_SSL_ESP8266_99_047: [** If tlsio_ssl_esp8266_close get success to start the process to close the ssl connection, it shall set the tlsio state as tlsio_ssl_esp8266_STATE_CLOSING, and return 0. **]**
+**SRS_TLSIO_SSL_ESP8266_99_048: [** If the tlsio state is tlsio_ssl_esp8266_STATE_OPENING, or tlsio_ssl_esp8266_STATE_CLOSING, the tlsio_openssl_close shall set the tlsio state as tlsio_ssl_esp8266_STATE_ERROR, and return _LINE_. **]**
 
-**SRS_TLSIO_SSL_ESP8266_99_048: [** If the tlsio state is tlsio_ssl_esp8266_STATE_OPENING, or tlsio_ssl_esp8266_STATE_CLOSING, the tlsio_ssl_esp8266_close shall set the tlsio state as tlsio_ssl_esp8266_STATE_ERROR, and return _LINE_. **]**
-
-**SRS_TLSIO_SSL_ESP8266_99_079: [** If the tlsio state is tlsio_ssl_esp8266_STATE_ERROR, or tlsio_ssl_esp8266_STATE_CLOSED, the tlsio_ssl_esp8266_close shall set the tlsio state as tlsio_ssl_esp8266_STATE_CLOSE, and return 0. **]**
+**SRS_TLSIO_SSL_ESP8266_99_079: [** If the tlsio state is tlsio_ssl_esp8266_STATE_ERROR, or tlsio_ssl_esp8266_STATE_CLOSED, the tlsio_openssl_close shall set the tlsio state as tlsio_ssl_esp8266_STATE_CLOSE, and return 0. **]**
 
 **SRS_TLSIO_SSL_ESP8266_99_049: [** If the tlsio_handle is NULL, the tlsio_ssl_esp8266_close shall not do anything, and return _LINE_. **]**
 
-**SRS_TLSIO_SSL_ESP8266_99_050: [** If the tlsio_ssl_esp8266_close get success closing the tls connection, it shall call the tlsio_ssl_esp8266_dowork. **]**
+**SRS_TLSIO_SSL_ESP8266_99_050: [** If the tlsio_openssl_close get success closing the tls connection, it shall call the tlsio_ssl_esp8266_dowork. **]**
 
-**SRS_TLSIO_SSL_ESP8266_99_051: [** If the tlsio_ssl_esp8266_close retry to close more than 10 times without success, it shall call the on_io_error. **]**
+**SRS_TLSIO_SSL_ESP8266_99_051: [** If the tlsio_openssl_close retry to close more than 10 times without success, it shall call the on_io_error. **]**
 
 
 ###  tlsio_ssl_esp8266_send
