@@ -2527,7 +2527,7 @@ TEST_FUNCTION(on_underlying_io_open_complete_with_OK_prepares_and_sends_the_WebS
     /* get the random 16 bytes */
     for (i = 0; i < 16; i++)
     {
-        EXPECTED_CALL(gb_rand()).SetReturn(i);
+        EXPECTED_CALL(gb_rand()).SetReturn((int)i);
         expected_nonce[i] = (unsigned char)i;
     }
 
@@ -2572,7 +2572,7 @@ TEST_FUNCTION(when_base64_encode_fails_on_underlying_io_open_complete_triggers_t
     /* get the random 16 bytes */
     for (i = 0; i < 16; i++)
     {
-        EXPECTED_CALL(gb_rand()).SetReturn(i);
+        EXPECTED_CALL(gb_rand()).SetReturn((int)i);
         expected_nonce[i] = (unsigned char)i;
     }
 
@@ -2610,7 +2610,7 @@ TEST_FUNCTION(when_allocating_memory_for_the_websocket_upgrade_request_fails_the
     /* get the random 16 bytes */
     for (i = 0; i < 16; i++)
     {
-        EXPECTED_CALL(gb_rand()).SetReturn(i);
+        EXPECTED_CALL(gb_rand()).SetReturn((int)i);
         expected_nonce[i] = (unsigned char)i;
     }
 
@@ -2653,7 +2653,7 @@ TEST_FUNCTION(uws_client_open_async_after_WS_OPEN_ERROR_NOT_ENOUGH_MEMORY_succee
     /* get the random 16 bytes */
     for (i = 0; i < 16; i++)
     {
-        EXPECTED_CALL(gb_rand()).SetReturn(i);
+        EXPECTED_CALL(gb_rand()).SetReturn((int)i);
         expected_nonce[i] = (unsigned char)i;
     }
 
@@ -2704,7 +2704,7 @@ TEST_FUNCTION(when_sending_the_upgrade_request_fails_the_error_WS_OPEN_ERROR_CAN
     /* get the random 16 bytes */
     for (i = 0; i < 16; i++)
     {
-        EXPECTED_CALL(gb_rand()).SetReturn(i);
+        EXPECTED_CALL(gb_rand()).SetReturn((int)i);
         expected_nonce[i] = (unsigned char)i;
     }
 
@@ -2753,7 +2753,7 @@ TEST_FUNCTION(uws_client_open_async_after_WS_OPEN_ERROR_CANNOT_SEND_UPGRADE_REQU
     /* get the random 16 bytes */
     for (i = 0; i < 16; i++)
     {
-        EXPECTED_CALL(gb_rand()).SetReturn(i);
+        EXPECTED_CALL(gb_rand()).SetReturn((int)i);
         expected_nonce[i] = (unsigned char)i;
     }
 
