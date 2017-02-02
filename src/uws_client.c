@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <ctype.h>
+#include <limits.h>
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/uws_client.h"
 #include "azure_c_shared_utility/xlogging.h"
