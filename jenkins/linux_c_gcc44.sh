@@ -5,6 +5,15 @@
 build_root=$(cd "$(dirname "$0")/.." && pwd)
 cd $build_root
 
-# -- C --
-./build_all/linux/build.sh "$@"
-[ $? -eq 0 ] || exit $?
+build_folder=$build_root"/cmake/shared-util_linux"
+
+# Set the default cores
+CORES=$(grep -c ^processor /proc/cpuinfo 2>/dev/null || sysctl -n hw.ncpu)
+
+rm -r -f $build_folder
+mkdir -p $build_folder
+pushd $build_folder
+cmake $build_root -Drun_unittests:bool=ON -Drun_valgrind:BOOL=ON
+make --jobs=$CORES
+
+popd
