@@ -109,7 +109,7 @@ if %MAKE_NUGET_PKG% == yes (
 	if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 ) else if %build-platform% == Win32 (
 	echo ***Running CMAKE for Win32***
-	cmake %build-root% -Drun_unittests:bool=ON
+	cmake %build-root% -Drun_unittests:bool=ON -Duse_wsio:bool=ON
 	if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 ) else if %build-platform% == ARM (
 	echo ***Running CMAKE for ARM***

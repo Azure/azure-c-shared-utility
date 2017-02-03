@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 #include <stdint.h>
+#include <limits.h>
 #include <ctype.h>
 #include <limits.h>
 #include "azure_c_shared_utility/gballoc.h"
@@ -665,7 +666,7 @@ static int ParseStringToDecimal(const char *src, int* dst)
     char* next;
 
     (*dst) = strtol(src, &next, 0);
-    if ((src == next) || ((((*dst) == LONG_MAX) || ((*dst) == LONG_MIN)) && (errno != 0)))
+    if ((src == next) || ((((*dst) == INT_MAX) || ((*dst) == INT_MIN)) && (errno != 0)))
     {
         result = __LINE__;
     }
@@ -1750,7 +1751,7 @@ OPTIONHANDLER_HANDLE uws_client_retrieve_options(UWS_CLIENT_HANDLE uws_client)
     else
     {
         /* Codes_SRS_UWS_CLIENT_01_445: [ `uws_client_retrieve_options` shall call `OptionHandler_Create` to produce an `OPTIONHANDLER_HANDLE` and on success return the new `OPTIONHANDLER_HANDLE` handle. ]*/
-        result = OptionHandler_Create(uws_client_clone_option, uws_client_destroy_option, uws_client_set_option);
+        result = OptionHandler_Create(uws_client_clone_option, uws_client_destroy_option, (pfSetOption)uws_client_set_option);
         if (result == NULL)
         {
             /* Codes_SRS_UWS_CLIENT_01_446: [ If `OptionHandler_Create` fails then `uws_client_retrieve_options` shall fail and return NULL. ]*/
