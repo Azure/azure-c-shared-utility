@@ -327,7 +327,6 @@ struct ip_addr {
 };
 typedef struct ip_addr ip_addr_t;
 
-int getsockopt (int s, int level, int optname, void *optval, socklen_t *optlen);
 #define  SOL_SOCKET  0xfff    /* options for socket level */
 #define SO_SNDBUF    0x1001    /* Unimplemented: send buffer size */
 #define SO_RCVBUF    0x1002    /* receive buffer size */
@@ -411,13 +410,18 @@ struct timeval {
 
 //err_t netconn_gethostbyname(const char *name, ip_addr_t *addr);
 MOCKABLE_FUNCTION(, err_t, netconn_gethostbyname, const char*, name, ip_addr_t*, addr);
-int socket(int domain, int type, int protocol);
+
+//int socket(int domain, int type, int protocol);
+MOCKABLE_FUNCTION(, int, socket, int, domain, int, type, int, protocol);
 
 //int bind(int s, const struct sockaddr* name, socklen_t namelen);
 MOCKABLE_FUNCTION(, int, bind, int, s, const struct sockaddr*, name, socklen_t, namelen);
 
 //int connect(int s, const struct sockaddr *name, socklen_t namelen);
 MOCKABLE_FUNCTION(, int, connect, int, s, const struct sockaddr*, name, socklen_t, namelen);
+
+//int lwip_getsockopt(int s, int level, int optname, void *optval, socklen_t *optlen)
+MOCKABLE_FUNCTION(, int, getsockopt, int, s, int, level, int, optname, void*, optval, socklen_t*, optlen);
 
 //int lwip_select(int maxfdp1, fd_set *readset, fd_set *writeset, fd_set *exceptset,
 //                struct timeval *timeout);

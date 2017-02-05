@@ -54,6 +54,15 @@ void my_gballoc_free(void* ptr)
 static int g_ssl_write_success = 1;
 static int g_ssl_read_returns_data = 1;
 static int g_on_bytes_received_buffer_size = 0;
+
+static int g_gethostbyname_success = 1;
+static int g_socket_success = 1;
+static int g_setsockopt_success = 1;
+static int g_bind_success = 1;
+static int g_getsockopt_success = 1;
+static int g_connect_success = 1;
+static int g_ssl_lwip_select_success = 1;
+static int g_ssl_ctx_new_success = 1;
 static int g_ssl_set_fragment_success = 1;
 static int g_ssl_new_success = 1;
 static int g_ssl_set_fd_success = 1;
@@ -63,6 +72,7 @@ static int g_ssl_TLSv1clientmethod_success = 1;
 
 #define MAX_RETRY_WRITE 500
 #define MAX_RETRY 20
+#define RECEIVE_BUFFER_SIZE 64
 
 typedef enum TLSIO_STATE_TAG
 {
@@ -100,7 +110,12 @@ const IO_INTERFACE_DESCRIPTION* tlsio_openssl_get_interface_description(void);
 
 int my_lwip_select(int maxfdp1, fd_set *readset, fd_set *writeset, fd_set *exceptset,
                struct timeval *timeout){
-    return 1;
+    if(g_ssl_lwip_select_success == 1)
+    {
+        return 1;
+    }else{
+        return 0;
+    }
 }
 
 int my_SSL_write(SSL *ssl, const void *buffer, int len){
@@ -143,6 +158,14 @@ int my_SSL_shutdown(SSL *ssl){
     }
 }
 
+int my_socket(int domain, int type, int protocol){
+    if (g_socket_success == 1){
+        return 0;
+    }else{
+        return -1;
+    }
+}
+
 int my_SSL_set_fd(SSL *ssl, int fd){
     if (g_ssl_set_fd_success == 1){
         return 1;
@@ -169,16 +192,26 @@ int my_SSL_set_fragment(SSL_CTX *ssl_ctx, unsigned int frag_size){
 }
 
 SSL_CTX* my_SSL_CTX_new(SSL_METHOD *method){
-    if(method != NULL){
-        return (SSL_CTX*)malloc(1);
+    if(g_ssl_ctx_new_success == 1)
+    {
+        if(method != NULL){
+            return (SSL_CTX*)malloc(1);
+        }
+        else
+        {
+            return NULL;
+        }
     }else{
         return NULL;
     }
-    
 }
 
-err_t my_netconn_gethostbyname(const char *name, ip_addr_t *addr){
-    return 0;
+err_t my_netconn_gethostbyname(const char *name, ip_addr_t *target_ip){
+    if (g_gethostbyname_success == 1){
+        return 0;
+    }else{
+        return -1;
+    }
 }
 
 SSL_METHOD* my_TLSv1_client_method(void){
@@ -190,11 +223,19 @@ SSL_METHOD* my_TLSv1_client_method(void){
 }
 
 int my_bind(int s, const struct sockaddr* name, socklen_t namelen){
-    return 0;
+    if (g_bind_success == 1){
+        return 0;
+    }else{
+        return -1;
+    }
 }
 
 int my_setsockopt(int s, int level, int optname, const void *optval, socklen_t optlen){
-    return 0;
+    if (g_setsockopt_success == 1){
+        return 0;
+    }else{
+        return -1;
+    }
 }
 
 int my_close(int s){
@@ -202,7 +243,19 @@ int my_close(int s){
 }
 
 int my_connect(int s, const struct sockaddr *name, socklen_t namelen){
-    return 0;
+    if (g_connect_success == 1){
+        return 0;
+    }else{
+        return -1;
+    }
+}
+#define  EINPROGRESS    115  /* Operation now in progress */
+int my_getsockopt(int s, int level, int optname, void *optval, socklen_t *optlen){
+    if (g_getsockopt_success == 1){
+        return EINPROGRESS;
+    }else{
+        return -1;
+    }
 }
 
 void my_os_delay_us(int us){
@@ -322,6 +375,8 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         REGISTER_GLOBAL_MOCK_HOOK(netconn_gethostbyname, my_netconn_gethostbyname);
         REGISTER_GLOBAL_MOCK_HOOK(TLSv1_client_method, my_TLSv1_client_method);
         REGISTER_GLOBAL_MOCK_HOOK(bind, my_bind);
+        REGISTER_GLOBAL_MOCK_HOOK(getsockopt, my_getsockopt);
+        REGISTER_GLOBAL_MOCK_HOOK(socket, my_socket);
         REGISTER_GLOBAL_MOCK_HOOK(setsockopt, my_setsockopt);
         REGISTER_GLOBAL_MOCK_HOOK(close, my_close);
         REGISTER_GLOBAL_MOCK_HOOK(connect, my_connect);
@@ -373,7 +428,11 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         TEST_MUTEX_RELEASE(g_testByTest);
     }
 
-    /* Tests_SRS_TLSIO_SSL_ESP8266_99_019: [ The tlsio_openssl_dowork_withdata succeed shall read data from ssl connect. If with data, it shall call on_bytes_received. ]*/
+    /* Tests_SRS_TLSIO_SSL_ESP8266_99_063: [ The tlsio_openssl_dowork shall execute the async jobs for the tlsio. ] */
+    /* Tests_SRS_TLSIO_SSL_ESP8266_99_069: [ If the tlsio state is TLSIO_STATE_OPEN, the tlsio_openssl_dowork shall read data from the ssl client. ] */
+    /* Tests_SRS_TLSIO_SSL_ESP8266_99_070: [ If there are received data in the ssl client, the tlsio_openssl_dowork shall read this data and call the on_bytes_received with the pointer to the buffer with the data. ] */
+    /* Tests_SRS_TLSIO_SSL_ESP8266_99_075: [ The tlsio_openssl_dowork shall create a buffer to store the data received from the ssl client. ] */
+    /* Tests_SRS_TLSIO_SSL_ESP8266_99_076: [ The tlsio_openssl_dowork shall delete the buffer to store the data received from the ssl client. ] */
     TEST_FUNCTION(tlsio_openssl_dowork_withdata__succeed)
     {
         ///arrange
@@ -393,12 +452,12 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         tlsioInterfaces->concrete_io_dowork(&instance);
         
         ///assert
-        ASSERT_ARE_EQUAL(int, g_on_bytes_received_buffer_size, 64);
+        ASSERT_ARE_EQUAL(int, g_on_bytes_received_buffer_size, RECEIVE_BUFFER_SIZE);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ///cleanup
     }
 
-    /* Tests_SRS_TLSIO_SSL_ESP8266_99_019: [ The tlsio_openssl_dowork_withoutdata succeed shall read data from ssl connect. If no data, it shall do nothing. ]*/
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_071: [** If there are no received data in the ssl client, the tlsio_openssl_dowork shall do nothing. ] */
     TEST_FUNCTION(tlsio_openssl_dowork_withoutdata__succeed)
     {
         ///arrange
@@ -424,7 +483,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
     }
 
 
-    /* Tests_SRS_TLSIO_SSL_ESP8266_99_018: [ The tlsio_openssl_dowork failed when tls_io is NULL.]*/
+    /* Tests_SRS_TLSIO_SSL_ESP8266_99_074: [ If the tlsio handle is NULL, the tlsio_openssl_dowork shall not do anything. ] */
     TEST_FUNCTION(tlsio_openssl_dowork__failed)
     {
         ///arrange
@@ -439,7 +498,10 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
     }
 
 
-    /* Tests_SRS_TLSIO_SSL_ESP8266_99_017: [ The tlsio_openssl_send succeed shall send data to ssl connection and call on_send_complete if exists.]*/
+    /* Tests_SRS_TLSIO_SSL_ESP8266_99_053: [ The tlsio_openssl_send shall send all bytes in a buffer to the ssl connection. ] */
+    /* Tests_SRS_TLSIO_SSL_ESP8266_99_054: [ The tlsio_openssl_send shall use the provided on_io_send_complete callback function address. ] */
+    /* Tests_SRS_TLSIO_SSL_ESP8266_99_055: [ The tlsio_openssl_send shall use the provided on_io_send_complete_context handle. ] */
+    /* Tests_SRS_TLSIO_SSL_ESP8266_99_058: [ If the ssl finish to send all bytes in the buffer, then tlsio_openssl_send shall call the on_send_complete with IO_SEND_OK, and return 0 ] */
     TEST_FUNCTION(tlsio_openssl_send__SSL_write__succeed)
     {
         ///arrange
@@ -466,7 +528,24 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ///cleanup
      }
 
-     /* Tests_SRS_TLSIO_SSL_ESP8266_99_017: [ The tlsio_openssl_send failed when SSL_write_buffer is NULL.]*/
+    /* Tests_SRS_TLSIO_SSL_ESP8266_99_060: [ If the tls_io handle is NULL, the tlsio_openssl_send shall not do anything, and return _LINE_. ] */
+    TEST_FUNCTION(tlsio_openssl_send_null_handle__failed)
+    {
+        ///arrange
+        int result;
+        const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
+        ASSERT_IS_NOT_NULL(tlsioInterfaces);
+
+        ///act
+        result = tlsioInterfaces->concrete_io_send(NULL, NULL, 0, NULL, NULL);
+
+        ///assert
+        ASSERT_ARE_NOT_EQUAL(int, 0, result);
+
+        ///cleanup
+    }
+
+    /* Tests_SRS_TLSIO_SSL_ESP8266_99_061: [ If the buffer is NULL, the tlsio_openssl_send shall not do anything, and return _LINE_. ] */
     TEST_FUNCTION(tlsio_openssl_send__SSL_write_null_buffer__failed)
     {
         ///arrange
@@ -487,7 +566,50 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ///cleanup
      }
 
-    /* Tests_SRS_TLSIO_SSL_ESP8266_99_016: [ The tlsio_openssl_send failed when SSL_write failed]*/
+    /* Tests_SRS_TLSIO_SSL_ESP8266_99_062: [ If the size is 0, the tlsio_openssl_send shall not do anything, and return _LINE_. ] */
+    TEST_FUNCTION(tlsio_openssl_send__SSL_write_size_zero__failed)
+    {
+        ///arrange
+        int result = 0;
+        TLS_IO_INSTANCE instance;
+        memset(&instance, 0, sizeof(TLS_IO_INSTANCE));
+        instance.tlsio_state = TLSIO_STATE_OPEN;
+        g_ssl_write_success = 1;
+        unsigned char test_buffer[] = {0x42};
+
+        const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
+        ASSERT_IS_NOT_NULL(tlsioInterfaces);
+
+        ///act
+        result = tlsioInterfaces->concrete_io_send(&instance, test_buffer, 0, test_on_send_complete, (void*)0x4242);
+        
+        ///assert
+        ASSERT_ARE_NOT_EQUAL(int, result, 0);
+        ///cleanup
+     }
+
+    /* Tests_SRS_TLSIO_SSL_ESP8266_99_059: [ If the tlsio state is not TLSIO_STATE_OPEN, the tlsio_openssl_send shall return _LINE_. ] */
+    TEST_FUNCTION(tlsio_openssl_send_wrong_state__failed)
+    {
+        ///arrange
+        int result;
+        const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
+        ASSERT_IS_NOT_NULL(tlsioInterfaces);
+
+        TLS_IO_INSTANCE instance;
+        memset(&instance, 0, sizeof(TLS_IO_INSTANCE));
+        instance.tlsio_state = TLSIO_STATE_NOT_OPEN;
+        ///act
+        result = tlsioInterfaces->concrete_io_send(&instance, NULL, 0,  NULL, NULL);
+
+        ///assert
+        ASSERT_ARE_NOT_EQUAL(int, 0, result);
+
+        ///cleanup
+    }
+
+    /* Tests_SRS_TLSIO_SSL_ESP8266_99_056: [ If the ssl was not able to send all data in the buffer, the tlsio_openssl_send shall call the ssl again to send the remaining bytes until MAX_RETRY_WRITE has been reached. ] */
+    /* Tests_SRS_TLSIO_SSL_ESP8266_99_057: [ If the ssl was not able to send all the bytes in the buffer, the tlsio_openssl_send shall call the on_send_complete with IO_SEND_ERROR, and return _LINE_. ] */
     TEST_FUNCTION(tlsio_openssl_send__SSL_write__failed)
     {
         ///arrange
@@ -520,45 +642,12 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ///cleanup
     }
 
-    /* Tests_SRS_TLSIO_SSL_ESP8266_99_015: [ The tlsio_openssl_send failed when the state is not TLSIO_STATE_OPEN.]*/
-    TEST_FUNCTION(tlsio_openssl_send_wrong_state__failed)
-    {
-        ///arrange
-        int result;
-        const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
-        ASSERT_IS_NOT_NULL(tlsioInterfaces);
-
-        TLS_IO_INSTANCE instance;
-        memset(&instance, 0, sizeof(TLS_IO_INSTANCE));
-        instance.tlsio_state = TLSIO_STATE_NOT_OPEN;
-        ///act
-        result = tlsioInterfaces->concrete_io_send(&instance, NULL, 0,  NULL, NULL);
-
-        ///assert
-        ASSERT_ARE_NOT_EQUAL(int, 0, result);
-
-        ///cleanup
-    }
-
-
-    /* Tests_SRS_TLSIO_SSL_ESP8266_99_014: [ The tlsio_openssl_send failed when tls_io is NULL.]*/
-    TEST_FUNCTION(tlsio_openssl_send__failed)
-    {
-        ///arrange
-        int result;
-        const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
-        ASSERT_IS_NOT_NULL(tlsioInterfaces);
-
-        ///act
-        result = tlsioInterfaces->concrete_io_send(NULL, NULL, 0, NULL, NULL);
-
-        ///assert
-        ASSERT_ARE_NOT_EQUAL(int, 0, result);
-
-        ///cleanup
-    }
-
-    /* Tests_SRS_TLSIO_SSL_ESP8266_99_013: [ The tlsio_openssl_close succeed shall set tls_io_instance->tlsio_state to TLSIO_STATE_NOT_OPEN and call on_io_close_complete if exists.]*/
+    /* Tests_SRS_TLSIO_SSL_ESP8266_99_043: [ The tlsio_openssl_close shall start the process to close the ssl connection. ] */
+    /* Tests_SRS_TLSIO_SSL_ESP8266_99_045: [ The tlsio_openssl_close shall store the provided on_io_close_complete callback function address. ] */
+    /* Tests_SRS_TLSIO_SSL_ESP8266_99_046: [ The tlsio_openssl_close shall store the provided on_io_close_complete_context handle. ] */
+    /* Tests_SRS_TLSIO_SSL_ESP8266_99_047: [ If tlsio_openssl_close get success to start the process to close the ssl connection, it shall set the tlsio state as TLSIO_STATE_CLOSING, and return 0. ] */
+    /* Tests_SRS_TLSIO_SSL_ESP8266_99_050: [ If tlsio_openssl_close successfully destroys the ssl connection, it shall set the tlsio state as TLSIO_STATE_NOT_OPEN, and return 0. ] */
+    /* Tests_SRS_TLSIO_SSL_ESP8266_99_051: [ If tlsio_openssl_close successfully destroys the ssl connection, it shall call on_io_close_complete. ] */
     TEST_FUNCTION(tlsio_openssl_close__succeed)
     {
         ///arrange
@@ -574,6 +663,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ctx = SSL_CTX_new(TLSv1_client_method());
         ASSERT_IS_NOT_NULL(ctx);
         ssl = SSL_new(ctx);
+        g_ssl_shutdown_success = 1;
 
         instance.tlsio_state = TLSIO_STATE_OPEN;
         instance.ssl = ssl;
@@ -599,7 +689,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
     }
 
 
-    /* Tests_SRS_TLSIO_SSL_ESP8266_99_012: [ The tlsio_openssl_close failed when state is not TLSIO_STATE_OPEN or TLSIO_STATE_ERROR..]*/
+    /* Tests_SRS_TLSIO_SSL_ESP8266_99_048: [ If the tlsio state is TLSIO_STATE_NOT_OPEN, TLSIO_STATE_OPENING, or TLSIO_STATE_CLOSING, the tlsio_openssl_close shall set the tlsio state as TLSIO_STATE_ERROR, and return _LINE_. ] */
     TEST_FUNCTION(tlsio_openssl_close_wrong_state__failed)
     {
         ///arrange
@@ -627,8 +717,8 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ///cleanup
     }
 
-    /* Tests_SRS_TLSIO_SSL_ESP8266_99_011: [ The tlsio_openssl_close failed when tls_io is NULL.]*/
-    TEST_FUNCTION(tlsio_openssl_close__failed)
+    /* Tests_SRS_TLSIO_SSL_ESP8266_99_049: [ If the tlsio_handle is NULL, the tlsio_openssl_close shall not do anything, and return _LINE_. ] */
+    TEST_FUNCTION(tlsio_openssl_close_null_handle__failed)
     {
         ///arrange
         int result;
@@ -644,16 +734,58 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ///cleanup
     }
 
-    /* Tests_SRS_TLSIO_SSL_ESP8266_99_010: [ The tlsio_openssl_destroy succeed shall free all resources. ]*/
+    /* Tests_SRS_TLSIO_SSL_ESP8266_99_052: [ If tlsio_openssl_close fails to shutdown the ssl connection, it shall set the tlsio state as TLSIO_STATE_ERROR, and return _LINE_, and call on_io_error. ] */
+    TEST_FUNCTION(tlsio_openssl_close_shutdown__failed)
+    {
+        ///arrange
+        int result;
+        TLS_IO_INSTANCE instance;
+        memset(&instance, 0, sizeof(TLS_IO_INSTANCE));
+        SSL_CTX *ctx;
+        SSL *ssl;
+        g_ssl_TLSv1clientmethod_success = 0;
+        ctx = SSL_CTX_new(TLSv1_client_method());
+        ASSERT_IS_NULL(ctx);
+        g_ssl_TLSv1clientmethod_success = 1;
+        ctx = SSL_CTX_new(TLSv1_client_method());
+        ASSERT_IS_NOT_NULL(ctx);
+        ssl = SSL_new(ctx);
+        g_ssl_shutdown_success = 0;
+
+        instance.tlsio_state = TLSIO_STATE_OPEN;
+        instance.ssl = ssl;
+        instance.ssl_context = ctx;
+        instance.on_io_error = test_on_io_error;
+
+        const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
+        ASSERT_IS_NOT_NULL(tlsioInterfaces);
+
+        umock_c_reset_all_calls();
+        STRICT_EXPECTED_CALL(SSL_shutdown(IGNORED_PTR_ARG)).IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(SSL_free(IGNORED_PTR_ARG)).IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(SSL_CTX_free(IGNORED_PTR_ARG)).IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(close(IGNORED_NUM_ARG)).IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(test_on_io_error(NULL));
+        ///act
+        result = tlsioInterfaces->concrete_io_close(&instance, test_on_io_close_complete, (void*)0x4242);
+
+        ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+        ASSERT_ARE_NOT_EQUAL(int, 0, result);
+        ASSERT_ARE_EQUAL(int, (int)TLSIO_STATE_ERROR, instance.tlsio_state);
+        ///cleanup
+    }
+
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_021: [ The tlsio_openssl_destroy shall destroy a created instance of the tlsio for ESP8266 identified by the CONCRETE_IO_HANDLE. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_022: [ The tlsio_openssl_destroy shall free the memory allocated for tlsio_instance. ] */
     TEST_FUNCTION(tlsio_openssl_destroy__succeed)
     {
         ///arrange
         TLS_IO_INSTANCE* instance = malloc(sizeof(TLS_IO_INSTANCE));
         memset(instance, 0, sizeof(TLS_IO_INSTANCE));
-
+        instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
-
         umock_c_reset_all_calls();
         STRICT_EXPECTED_CALL(free(instance));
 
@@ -665,8 +797,9 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ///cleanup
     }
 
-    /* Tests_SRS_TLSIO_SSL_ESP8266_99_009: [ The tlsio_openssl_destroy shall fail when tls_io is NULL. ]*/
-    TEST_FUNCTION(tlsio_openssl_destroy__failed)
+    
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_024: [ If the tlsio_handle is NULL, the tlsio_openssl_destroy shall not do anything. ] */
+    TEST_FUNCTION(tlsio_openssl_destroy_NULL_handle__failed)
     {
         ///arrange
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
@@ -680,7 +813,34 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ///cleanup
     }
 
-    /* Tests_SRS_TLSIO_SSL_ESP8266_99_008: [ The tlsio_openssl_open succeed shall set tls_io_instance->tlsio_state to TLSIO_STATE_OPEN and call on_io_open_complete if exists.]*/
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_025: [ If the tlsio state is TLSIO_STATE_OPENING, TLSIO_STATE_OPEN, or TLSIO_STATE_CLOSING, the tlsio_openssl_destroy shall destroy the tlsio, but log an error. ] */
+    TEST_FUNCTION(tlsio_openssl_destroy_wrong_state__failed)
+    {
+        ///arrange
+        TLS_IO_INSTANCE* instance = malloc(sizeof(TLS_IO_INSTANCE));
+        memset(instance, 0, sizeof(TLS_IO_INSTANCE));
+        instance->tlsio_state = TLSIO_STATE_OPENING;
+        const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
+        ASSERT_IS_NOT_NULL(tlsioInterfaces);
+
+        umock_c_reset_all_calls();
+
+        ///act
+        tlsioInterfaces->concrete_io_destroy(instance);
+
+        ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+        ///cleanup
+    }
+
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_018: [ The tlsio_openssl_open shall convert the provide hostName to an IP address. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_026: [ The tlsio_openssl_open shall start the process to open the ssl connection with the host provided in the tlsio_openssl_create. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_028: [ The tlsio_openssl_open shall store the provided on_io_open_complete callback function address. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_029: [ The tlsio_openssl_open shall store the provided on_io_open_complete_context handle. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_030: [ The tlsio_openssl_open shall store the provided on_bytes_received callback function address. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_031: [ The tlsio_openssl_open shall store the provided on_bytes_received_context handle. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_034: [ If tlsio_openssl_open get success to open the ssl connection, it shall set the tlsio state as TLSIO_STATE_OPEN, and return 0. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_041: [ If the tlsio_openssl_open get success to open the tls connection, and the on_io_open_complete callback was provided, it shall call the on_io_open_complete with IO_OPEN_OK. ] */
     TEST_FUNCTION(tlsio_openssl_open__succeed)
     {
         ///arrange
@@ -688,11 +848,19 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         memset(&tls_io_instance, 0, sizeof(TLS_IO_INSTANCE));
 
         tls_io_instance.tlsio_state = TLSIO_STATE_NOT_OPEN;
-        ip_addr_t addr;
+        
+        g_gethostbyname_success = 1;
+        g_socket_success = 1;
+        g_setsockopt_success = 1;
+        g_bind_success = 1;
+        g_connect_success = 1;
+        g_ssl_lwip_select_success = 1;
+        g_ssl_ctx_new_success = 1;
         g_ssl_set_fragment_success = 1;
         g_ssl_new_success = 1;
         g_ssl_set_fd_success = 1;
         g_ssl_connect_success = 1;
+
         int result;
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
@@ -700,6 +868,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         umock_c_reset_all_calls();
         
         STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);   
+        STRICT_EXPECTED_CALL(socket(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
         STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
         STRICT_EXPECTED_CALL(os_delay_us(IGNORED_NUM_ARG)).IgnoreArgument(1); 
         STRICT_EXPECTED_CALL(bind(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);   
@@ -725,17 +894,27 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
          *    it will show the serialized strings with the differences in the log.
          */
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+        ASSERT_ARE_EQUAL(int, (int)TLSIO_STATE_OPEN, tls_io_instance.tlsio_state);
         ///cleanup
     }
 
 
-    /* Codes_SRS_TLSIO_SSL_ESP8266_99_007: [ The tlsio_openssl_open failed when state provided is not TLSIO_STATE_NOT_OPEN. ]*/
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_035: [ If the tlsio state is not TLSIO_STATE_NOT_OPEN, then tlsio_openssl_open shall set the tlsio state as TLSIO_STATE_ERROR, and return _LINE_. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_032: [ The tlsio_openssl_open shall store the provided on_io_error callback function address. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_033: [ The tlsio_openssl_open shall store the provided on_io_error_context handle. ] */
     TEST_FUNCTION(tlsio_openssl_open_invalid_state__failed)
     {
         ///arrange
         TLS_IO_INSTANCE tls_io_instance;
         memset(&tls_io_instance, 0, sizeof(TLS_IO_INSTANCE));
         int result;
+        g_gethostbyname_success = 1;
+        g_socket_success = 1;
+        g_setsockopt_success = 1;
+        g_bind_success = 1;
+        g_connect_success = 1;
+        g_ssl_lwip_select_success = 1;
+        g_ssl_ctx_new_success = 1;
         g_ssl_set_fragment_success = 1;
         g_ssl_new_success = 1;
         g_ssl_set_fd_success = 1;
@@ -751,15 +930,23 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_NOT_EQUAL(int, 0, result);
+        ASSERT_ARE_EQUAL(int, (int)TLSIO_STATE_ERROR, tls_io_instance.tlsio_state);
         ///cleanup
     }
 
 
-    /* Codes_SRS_TLSIO_SSL_ESP8266_99_006: [ The tlsio_openssl_open shall failed when tls_io is NULL. ]*/
-    TEST_FUNCTION(tlsio_openssl_open__failed)
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_036: [ If the tls_io handle is NULL, the tlsio_openssl_open shall not do anything, and return _LINE_. ] */
+    TEST_FUNCTION(tlsio_openssl_open_NULL_handle__failed)
     {
         ///arrange
         int result;
+        g_gethostbyname_success = 1;
+        g_socket_success = 1;
+        g_setsockopt_success = 1;
+        g_bind_success = 1;
+        g_connect_success = 1;
+        g_ssl_lwip_select_success = 1;
+        g_ssl_ctx_new_success = 1;
         g_ssl_set_fragment_success = 1;
         g_ssl_new_success = 1;
         g_ssl_set_fd_success = 1;
@@ -777,8 +964,17 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ///cleanup
     }
 
-    /* Codes_SRS_TLSIO_SSL_ESP8266_99_006: [ The tlsio_openssl_open failed when SSL_set_fragment fails. ]*/
-    TEST_FUNCTION(tlsio_openssl_open_sslsetfragment__failed)
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_019: [ If the WiFi cannot find the IP for the hostName, the tlsio_openssl_open shall return __LINE__. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_027: [ The tlsio_openssl_open shall set the tlsio to try to open the connection for 20 times before assuming that connection failed. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_042: [ If the tlsio_openssl_open retry to open more than 20 times without success, it shall return __LINE__. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_032: [ The tlsio_openssl_open shall store the provided on_io_error callback function address. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_033: [ The tlsio_openssl_open shall store the provided on_io_error_context handle. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_028: [ The tlsio_openssl_open shall store the provided on_io_open_complete callback function address. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_029: [ The tlsio_openssl_open shall store the provided on_io_open_complete_context handle. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_037: [ If the ssl client is not connected, the tlsio_openssl_open shall change the state to TLSIO_STATE_ERROR, log the error, and return _LINE_. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_039: [ If the tlsio_openssl_open failed to open the tls connection, and the on_io_open_complete callback was provided, it shall call the on_io_open_complete with IO_OPEN_ERROR. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_040: [ If the tlsio_openssl_open failed to open the tls connection, and the on_io_error callback was provided, it shall call the on_io_error. ] */
+    TEST_FUNCTION(tlsio_openssl_open_gethostbyname__failed)
     {
         ///arrange
         TLS_IO_INSTANCE tls_io_instance;
@@ -787,22 +983,71 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         int result;
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
-        g_ssl_set_fragment_success = 0;
+        g_gethostbyname_success = 0;
+        g_socket_success = 1;
+        g_setsockopt_success = 1;
+        g_bind_success = 1;
+        g_connect_success = 1;
+        g_ssl_lwip_select_success = 1;
+        g_ssl_ctx_new_success = 1;
+        g_ssl_set_fragment_success = 1;
+        g_ssl_new_success = 1;
+        g_ssl_set_fd_success = 1;
+        g_ssl_connect_success = 1;
+
+        umock_c_reset_all_calls();
+        
+        int retry = 0;
+        do{
+            STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);  
+        }while(retry++ < MAX_RETRY);
+
+        STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_ERROR));
+        STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4242));
+        ///act
+        result = tlsioInterfaces->concrete_io_open(&tls_io_instance, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
+
+        ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+        ASSERT_ARE_NOT_EQUAL(int, 0, result);
+
+        ///cleanup
+    }
+
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_080: [ If socket failed, the tlsio_openssl_open shall return __LINE__. ]*/
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_032: [ The tlsio_openssl_open shall store the provided on_io_error callback function address. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_033: [ The tlsio_openssl_open shall store the provided on_io_error_context handle. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_028: [ The tlsio_openssl_open shall store the provided on_io_open_complete callback function address. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_029: [ The tlsio_openssl_open shall store the provided on_io_open_complete_context handle. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_037: [ If the ssl client is not connected, the tlsio_openssl_open shall change the state to TLSIO_STATE_ERROR, log the error, and return _LINE_. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_039: [ If the tlsio_openssl_open failed to open the tls connection, and the on_io_open_complete callback was provided, it shall call the on_io_open_complete with IO_OPEN_ERROR. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_040: [ If the tlsio_openssl_open failed to open the tls connection, and the on_io_error callback was provided, it shall call the on_io_error. ] */
+    TEST_FUNCTION(tlsio_openssl_open_socket__failed)
+    {
+        ///arrange
+        TLS_IO_INSTANCE tls_io_instance;
+        memset(&tls_io_instance, 0, sizeof(TLS_IO_INSTANCE));
+        tls_io_instance.tlsio_state = TLSIO_STATE_NOT_OPEN;
+        int result;
+        const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
+        ASSERT_IS_NOT_NULL(tlsioInterfaces);
+        g_gethostbyname_success = 1;
+        g_socket_success = 0;
+        g_setsockopt_success = 1;
+        g_bind_success = 1;
+        g_connect_success = 1;
+        g_ssl_lwip_select_success = 1;
+        g_ssl_ctx_new_success = 1;
+        g_ssl_set_fragment_success = 1;
         g_ssl_new_success = 1;
         g_ssl_set_fd_success = 1;
         g_ssl_connect_success = 1;
         umock_c_reset_all_calls();
         
         STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);  
-        STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
-        STRICT_EXPECTED_CALL(os_delay_us(IGNORED_NUM_ARG)).IgnoreArgument(1);   
-        STRICT_EXPECTED_CALL(bind(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);   
-        STRICT_EXPECTED_CALL(connect(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
-        STRICT_EXPECTED_CALL(lwip_select(IGNORED_NUM_ARG, IGNORED_PTR_ARG, 
-              IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
-        STRICT_EXPECTED_CALL(TLSv1_client_method());
-        STRICT_EXPECTED_CALL(SSL_CTX_new(IGNORED_PTR_ARG)).IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(SSL_set_fragment(IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2);
+        STRICT_EXPECTED_CALL(socket(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
+        
+        STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_ERROR));
         STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4242));
 
         ///act
@@ -815,7 +1060,326 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ///cleanup
     }
 
-    /* Codes_SRS_TLSIO_SSL_ESP8266_99_006: [ The tlsio_openssl_open failed when SSL_new fails.]*/
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_081: [ If setsockopt failed, the tlsio_openssl_open shall return __LINE__. ]*/
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_032: [ The tlsio_openssl_open shall store the provided on_io_error callback function address. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_033: [ The tlsio_openssl_open shall store the provided on_io_error_context handle. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_028: [ The tlsio_openssl_open shall store the provided on_io_open_complete callback function address. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_029: [ The tlsio_openssl_open shall store the provided on_io_open_complete_context handle. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_037: [ If the ssl client is not connected, the tlsio_openssl_open shall change the state to TLSIO_STATE_ERROR, log the error, and return _LINE_. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_039: [ If the tlsio_openssl_open failed to open the tls connection, and the on_io_open_complete callback was provided, it shall call the on_io_open_complete with IO_OPEN_ERROR. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_040: [ If the tlsio_openssl_open failed to open the tls connection, and the on_io_error callback was provided, it shall call the on_io_error. ] */
+    TEST_FUNCTION(tlsio_openssl_open_setsockopt__failed)
+    {
+        ///arrange
+        TLS_IO_INSTANCE tls_io_instance;
+        memset(&tls_io_instance, 0, sizeof(TLS_IO_INSTANCE));
+        tls_io_instance.tlsio_state = TLSIO_STATE_NOT_OPEN;
+        int result;
+        const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
+        ASSERT_IS_NOT_NULL(tlsioInterfaces);
+        g_gethostbyname_success = 1;
+        g_socket_success = 1;
+        g_setsockopt_success = 0;
+        g_bind_success = 1;
+        g_connect_success = 1;
+        g_ssl_lwip_select_success = 1;
+        g_ssl_ctx_new_success = 1;
+        g_ssl_set_fragment_success = 1;
+        g_ssl_new_success = 1;
+        g_ssl_set_fd_success = 1;
+        g_ssl_connect_success = 1;
+        umock_c_reset_all_calls();
+        
+        STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);  
+        STRICT_EXPECTED_CALL(socket(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
+        STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
+        
+        STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_ERROR));
+        STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4242));
+
+        ///act
+        result = tlsioInterfaces->concrete_io_open(&tls_io_instance, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
+
+        ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+        ASSERT_ARE_NOT_EQUAL(int, 0, result);
+
+        ///cleanup
+    }
+
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_082: [ If bind failed, the tlsio_openssl_open shall return __LINE__. ]*/
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_032: [ The tlsio_openssl_open shall store the provided on_io_error callback function address. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_033: [ The tlsio_openssl_open shall store the provided on_io_error_context handle. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_028: [ The tlsio_openssl_open shall store the provided on_io_open_complete callback function address. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_029: [ The tlsio_openssl_open shall store the provided on_io_open_complete_context handle. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_037: [ If the ssl client is not connected, the tlsio_openssl_open shall change the state to TLSIO_STATE_ERROR, log the error, and return _LINE_. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_039: [ If the tlsio_openssl_open failed to open the tls connection, and the on_io_open_complete callback was provided, it shall call the on_io_open_complete with IO_OPEN_ERROR. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_040: [ If the tlsio_openssl_open failed to open the tls connection, and the on_io_error callback was provided, it shall call the on_io_error. ] */
+    TEST_FUNCTION(tlsio_openssl_open_bind__failed)
+    {
+        ///arrange
+        TLS_IO_INSTANCE tls_io_instance;
+        memset(&tls_io_instance, 0, sizeof(TLS_IO_INSTANCE));
+        tls_io_instance.tlsio_state = TLSIO_STATE_NOT_OPEN;
+        int result;
+        const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
+        ASSERT_IS_NOT_NULL(tlsioInterfaces);
+        g_gethostbyname_success = 1;
+        g_socket_success = 1;
+        g_setsockopt_success = 1;
+        g_bind_success = 0;
+        g_connect_success = 1;
+        g_ssl_lwip_select_success = 1;
+        g_ssl_ctx_new_success = 1;
+        g_ssl_set_fragment_success = 1;
+        g_ssl_new_success = 1;
+        g_ssl_set_fd_success = 1;
+        g_ssl_connect_success = 1;
+        umock_c_reset_all_calls();
+        
+        STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);  
+        STRICT_EXPECTED_CALL(socket(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
+        STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
+        STRICT_EXPECTED_CALL(os_delay_us(IGNORED_NUM_ARG)).IgnoreArgument(1);   
+        STRICT_EXPECTED_CALL(bind(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);  
+        
+        STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_ERROR));
+        STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4242));
+
+        ///act
+        result = tlsioInterfaces->concrete_io_open(&tls_io_instance, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
+
+        ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+        ASSERT_ARE_NOT_EQUAL(int, 0, result);
+
+        ///cleanup
+    }
+
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_083: [ If connect and getsockopt failed, the tlsio_openssl_open shall return __LINE__. ]*/
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_032: [ The tlsio_openssl_open shall store the provided on_io_error callback function address. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_033: [ The tlsio_openssl_open shall store the provided on_io_error_context handle. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_028: [ The tlsio_openssl_open shall store the provided on_io_open_complete callback function address. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_029: [ The tlsio_openssl_open shall store the provided on_io_open_complete_context handle. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_037: [ If the ssl client is not connected, the tlsio_openssl_open shall change the state to TLSIO_STATE_ERROR, log the error, and return _LINE_. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_039: [ If the tlsio_openssl_open failed to open the tls connection, and the on_io_open_complete callback was provided, it shall call the on_io_open_complete with IO_OPEN_ERROR. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_040: [ If the tlsio_openssl_open failed to open the tls connection, and the on_io_error callback was provided, it shall call the on_io_error. ] */
+    TEST_FUNCTION(tlsio_openssl_open_connect_getsockopt__failed)
+    {
+        ///arrange
+        TLS_IO_INSTANCE tls_io_instance;
+        memset(&tls_io_instance, 0, sizeof(TLS_IO_INSTANCE));
+        tls_io_instance.tlsio_state = TLSIO_STATE_NOT_OPEN;
+        int result;
+        const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
+        ASSERT_IS_NOT_NULL(tlsioInterfaces);
+        g_gethostbyname_success = 1;
+        g_socket_success = 1;
+        g_setsockopt_success = 1;
+        g_bind_success = 1;
+        g_connect_success = 0;
+        g_getsockopt_success = 0;
+        g_ssl_lwip_select_success = 1;
+        g_ssl_ctx_new_success = 1;
+        g_ssl_set_fragment_success = 1;
+        g_ssl_new_success = 1;
+        g_ssl_set_fd_success = 1;
+        g_ssl_connect_success = 1;
+        umock_c_reset_all_calls();
+        
+        STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);  
+        STRICT_EXPECTED_CALL(socket(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
+        STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
+        STRICT_EXPECTED_CALL(os_delay_us(IGNORED_NUM_ARG)).IgnoreArgument(1);   
+        STRICT_EXPECTED_CALL(bind(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);   
+        STRICT_EXPECTED_CALL(connect(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
+        STRICT_EXPECTED_CALL(getsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);  
+        STRICT_EXPECTED_CALL(close(IGNORED_NUM_ARG)).IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_ERROR));
+        STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4242));
+
+        ///act
+        result = tlsioInterfaces->concrete_io_open(&tls_io_instance, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
+
+        ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+        ASSERT_ARE_NOT_EQUAL(int, 0, result);
+
+        ///cleanup
+    }
+
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_084: [ If lwip_select failed, the tlsio_openssl_open shall return __LINE__. ]*/
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_027: [ The tlsio_openssl_open shall set the tlsio to try to open the connection for 20 times before assuming that connection failed. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_032: [ The tlsio_openssl_open shall store the provided on_io_error callback function address. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_033: [ The tlsio_openssl_open shall store the provided on_io_error_context handle. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_028: [ The tlsio_openssl_open shall store the provided on_io_open_complete callback function address. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_029: [ The tlsio_openssl_open shall store the provided on_io_open_complete_context handle. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_037: [ If the ssl client is not connected, the tlsio_openssl_open shall change the state to TLSIO_STATE_ERROR, log the error, and return _LINE_. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_039: [ If the tlsio_openssl_open failed to open the tls connection, and the on_io_open_complete callback was provided, it shall call the on_io_open_complete with IO_OPEN_ERROR. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_040: [ If the tlsio_openssl_open failed to open the tls connection, and the on_io_error callback was provided, it shall call the on_io_error. ] */
+    TEST_FUNCTION(tlsio_openssl_open_lwip_select__failed)
+    {
+        ///arrange
+        TLS_IO_INSTANCE tls_io_instance;
+        memset(&tls_io_instance, 0, sizeof(TLS_IO_INSTANCE));
+        tls_io_instance.tlsio_state = TLSIO_STATE_NOT_OPEN;
+        int result;
+        const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
+        ASSERT_IS_NOT_NULL(tlsioInterfaces);
+        g_gethostbyname_success = 1;
+        g_socket_success = 1;
+        g_setsockopt_success = 1;
+        g_bind_success = 1;
+        g_connect_success = 1;
+        g_ssl_lwip_select_success = 0;
+        g_ssl_ctx_new_success = 1;
+        g_ssl_set_fragment_success = 1;
+        g_ssl_new_success = 1;
+        g_ssl_set_fd_success = 1;
+        g_ssl_connect_success = 1;
+        umock_c_reset_all_calls();
+        
+        STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);  
+        STRICT_EXPECTED_CALL(socket(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
+        STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
+        STRICT_EXPECTED_CALL(os_delay_us(IGNORED_NUM_ARG)).IgnoreArgument(1);   
+        STRICT_EXPECTED_CALL(bind(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);   
+        STRICT_EXPECTED_CALL(connect(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
+        int retry = 0;
+        while(retry < MAX_RETRY){
+            STRICT_EXPECTED_CALL(lwip_select(IGNORED_NUM_ARG, IGNORED_PTR_ARG, 
+                IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
+            retry++;
+            STRICT_EXPECTED_CALL(os_delay_us(IGNORED_NUM_ARG)).IgnoreArgument(1);   
+        }
+        STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_ERROR));
+        STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4242));
+
+        ///act
+        result = tlsioInterfaces->concrete_io_open(&tls_io_instance, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
+
+        ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+        ASSERT_ARE_NOT_EQUAL(int, 0, result);
+
+        ///cleanup
+    }
+
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_085: [ If SSL_CTX_new failed, the tlsio_openssl_open shall return __LINE__. ]*/
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_032: [ The tlsio_openssl_open shall store the provided on_io_error callback function address. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_033: [ The tlsio_openssl_open shall store the provided on_io_error_context handle. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_028: [ The tlsio_openssl_open shall store the provided on_io_open_complete callback function address. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_029: [ The tlsio_openssl_open shall store the provided on_io_open_complete_context handle. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_037: [ If the ssl client is not connected, the tlsio_openssl_open shall change the state to TLSIO_STATE_ERROR, log the error, and return _LINE_. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_039: [ If the tlsio_openssl_open failed to open the tls connection, and the on_io_open_complete callback was provided, it shall call the on_io_open_complete with IO_OPEN_ERROR. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_040: [ If the tlsio_openssl_open failed to open the tls connection, and the on_io_error callback was provided, it shall call the on_io_error. ] */
+    TEST_FUNCTION(tlsio_openssl_open_sslctxnew__failed)
+    {
+        ///arrange
+        TLS_IO_INSTANCE tls_io_instance;
+        memset(&tls_io_instance, 0, sizeof(TLS_IO_INSTANCE));
+        tls_io_instance.tlsio_state = TLSIO_STATE_NOT_OPEN;
+        int result;
+        const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
+        ASSERT_IS_NOT_NULL(tlsioInterfaces);
+        g_gethostbyname_success = 1;
+        g_socket_success = 1;
+        g_setsockopt_success = 1;
+        g_bind_success = 1;
+        g_connect_success = 1;
+        g_ssl_lwip_select_success = 1;
+        g_ssl_ctx_new_success = 0;
+        g_ssl_set_fragment_success = 1;
+        g_ssl_new_success = 1;
+        g_ssl_set_fd_success = 1;
+        g_ssl_connect_success = 1;
+        umock_c_reset_all_calls();
+        
+        STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);  
+        STRICT_EXPECTED_CALL(socket(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
+        STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
+        STRICT_EXPECTED_CALL(os_delay_us(IGNORED_NUM_ARG)).IgnoreArgument(1);   
+        STRICT_EXPECTED_CALL(bind(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);   
+        STRICT_EXPECTED_CALL(connect(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
+        STRICT_EXPECTED_CALL(lwip_select(IGNORED_NUM_ARG, IGNORED_PTR_ARG, 
+              IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
+        STRICT_EXPECTED_CALL(TLSv1_client_method());
+        STRICT_EXPECTED_CALL(SSL_CTX_new(IGNORED_PTR_ARG)).IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_ERROR));
+        STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4242));
+
+        ///act
+        result = tlsioInterfaces->concrete_io_open(&tls_io_instance, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
+
+        ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+        ASSERT_ARE_NOT_EQUAL(int, 0, result);
+
+        ///cleanup
+    }
+
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_086: [ If SSL_set_fragment failed, the tlsio_openssl_open shall return __LINE__. ]*/
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_032: [ The tlsio_openssl_open shall store the provided on_io_error callback function address. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_033: [ The tlsio_openssl_open shall store the provided on_io_error_context handle. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_028: [ The tlsio_openssl_open shall store the provided on_io_open_complete callback function address. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_029: [ The tlsio_openssl_open shall store the provided on_io_open_complete_context handle. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_037: [ If the ssl client is not connected, the tlsio_openssl_open shall change the state to TLSIO_STATE_ERROR, log the error, and return _LINE_. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_039: [ If the tlsio_openssl_open failed to open the tls connection, and the on_io_open_complete callback was provided, it shall call the on_io_open_complete with IO_OPEN_ERROR. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_040: [ If the tlsio_openssl_open failed to open the tls connection, and the on_io_error callback was provided, it shall call the on_io_error. ] */
+    TEST_FUNCTION(tlsio_openssl_open_sslsetfragment__failed)
+    {
+        ///arrange
+        TLS_IO_INSTANCE tls_io_instance;
+        memset(&tls_io_instance, 0, sizeof(TLS_IO_INSTANCE));
+        tls_io_instance.tlsio_state = TLSIO_STATE_NOT_OPEN;
+        int result;
+        const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
+        ASSERT_IS_NOT_NULL(tlsioInterfaces);
+        g_gethostbyname_success = 1;
+        g_socket_success = 1;
+        g_setsockopt_success = 1;
+        g_bind_success = 1;
+        g_connect_success = 1;
+        g_ssl_lwip_select_success = 1;
+        g_ssl_ctx_new_success = 1;
+        g_ssl_set_fragment_success = 0;
+        g_ssl_new_success = 1;
+        g_ssl_set_fd_success = 1;
+        g_ssl_connect_success = 1;
+        umock_c_reset_all_calls();
+        
+        STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);  
+        STRICT_EXPECTED_CALL(socket(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
+        STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
+        STRICT_EXPECTED_CALL(os_delay_us(IGNORED_NUM_ARG)).IgnoreArgument(1);   
+        STRICT_EXPECTED_CALL(bind(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);   
+        STRICT_EXPECTED_CALL(connect(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
+        STRICT_EXPECTED_CALL(lwip_select(IGNORED_NUM_ARG, IGNORED_PTR_ARG, 
+              IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
+        STRICT_EXPECTED_CALL(TLSv1_client_method());
+        STRICT_EXPECTED_CALL(SSL_CTX_new(IGNORED_PTR_ARG)).IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(SSL_set_fragment(IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2);
+        STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_ERROR));
+        STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4242));
+
+        ///act
+        result = tlsioInterfaces->concrete_io_open(&tls_io_instance, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
+
+        ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+        ASSERT_ARE_NOT_EQUAL(int, 0, result);
+
+        ///cleanup
+    }
+
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_087: [ If SSL_new failed, the tlsio_openssl_open shall return __LINE__. ]*/
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_032: [ The tlsio_openssl_open shall store the provided on_io_error callback function address. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_033: [ The tlsio_openssl_open shall store the provided on_io_error_context handle. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_028: [ The tlsio_openssl_open shall store the provided on_io_open_complete callback function address. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_029: [ The tlsio_openssl_open shall store the provided on_io_open_complete_context handle. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_037: [ If the ssl client is not connected, the tlsio_openssl_open shall change the state to TLSIO_STATE_ERROR, log the error, and return _LINE_. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_039: [ If the tlsio_openssl_open failed to open the tls connection, and the on_io_open_complete callback was provided, it shall call the on_io_open_complete with IO_OPEN_ERROR. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_040: [ If the tlsio_openssl_open failed to open the tls connection, and the on_io_error callback was provided, it shall call the on_io_error. ] */
     TEST_FUNCTION(tlsio_openssl_open_sslnew__failed)
     {
         ///arrange
@@ -825,6 +1389,13 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         int result;
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
+        g_gethostbyname_success = 1;
+        g_socket_success = 1;
+        g_setsockopt_success = 1;
+        g_bind_success = 1;
+        g_connect_success = 1;
+        g_ssl_lwip_select_success = 1;
+        g_ssl_ctx_new_success = 1;
         g_ssl_set_fragment_success = 1;
         g_ssl_new_success = 0;
         g_ssl_set_fd_success = 1;
@@ -832,6 +1403,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         umock_c_reset_all_calls();
         
         STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);   
+        STRICT_EXPECTED_CALL(socket(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
         STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
         STRICT_EXPECTED_CALL(os_delay_us(IGNORED_NUM_ARG)).IgnoreArgument(1);  
         STRICT_EXPECTED_CALL(bind(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);   
@@ -842,6 +1414,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         STRICT_EXPECTED_CALL(SSL_CTX_new(IGNORED_PTR_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(SSL_set_fragment(IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2);
         STRICT_EXPECTED_CALL(SSL_new(IGNORED_PTR_ARG)).IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_ERROR));
         STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4242));
 
         ///act
@@ -854,7 +1427,14 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ///cleanup
     }
 
-    /* Codes_SRS_TLSIO_SSL_ESP8266_99_006: [ The tlsio_openssl_open failed when SSL_set_fd fails.]*/
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_088: [ If SSL_set_fd failed, the tlsio_openssl_open shall return __LINE__. ]*/
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_032: [ The tlsio_openssl_open shall store the provided on_io_error callback function address. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_033: [ The tlsio_openssl_open shall store the provided on_io_error_context handle. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_028: [ The tlsio_openssl_open shall store the provided on_io_open_complete callback function address. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_029: [ The tlsio_openssl_open shall store the provided on_io_open_complete_context handle. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_037: [ If the ssl client is not connected, the tlsio_openssl_open shall change the state to TLSIO_STATE_ERROR, log the error, and return _LINE_. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_039: [ If the tlsio_openssl_open failed to open the tls connection, and the on_io_open_complete callback was provided, it shall call the on_io_open_complete with IO_OPEN_ERROR. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_040: [ If the tlsio_openssl_open failed to open the tls connection, and the on_io_error callback was provided, it shall call the on_io_error. ] */
     TEST_FUNCTION(tlsio_openssl_open_sslsetfd__failed)
     {
         ///arrange
@@ -864,6 +1444,13 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         int result;
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
+        g_gethostbyname_success = 1;
+        g_socket_success = 1;
+        g_setsockopt_success = 1;
+        g_bind_success = 1;
+        g_connect_success = 1;
+        g_ssl_lwip_select_success = 1;
+        g_ssl_ctx_new_success = 1;
         g_ssl_set_fragment_success = 1;
         g_ssl_new_success = 1;
         g_ssl_set_fd_success = 0;
@@ -871,6 +1458,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         umock_c_reset_all_calls();
         
         STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);   
+        STRICT_EXPECTED_CALL(socket(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
         STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
         STRICT_EXPECTED_CALL(os_delay_us(IGNORED_NUM_ARG)).IgnoreArgument(1);  
         STRICT_EXPECTED_CALL(bind(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);   
@@ -882,6 +1470,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         STRICT_EXPECTED_CALL(SSL_set_fragment(IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2);
         STRICT_EXPECTED_CALL(SSL_new(IGNORED_PTR_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(SSL_set_fd(IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2);
+        STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_ERROR));
         STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4242));
 
         ///act
@@ -894,7 +1483,15 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ///cleanup
     }
 
-    /* Codes_SRS_TLSIO_SSL_ESP8266_99_006: [ The tlsio_openssl_open failed when SSL_connect fails.]*/
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_089: [ If SSL_connect failed, the tlsio_openssl_open shall return __LINE__. ]*/
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_027: [ The tlsio_openssl_open shall set the tlsio to try to open the connection for 20 times before assuming that connection failed. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_032: [ The tlsio_openssl_open shall store the provided on_io_error callback function address. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_033: [ The tlsio_openssl_open shall store the provided on_io_error_context handle. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_028: [ The tlsio_openssl_open shall store the provided on_io_open_complete callback function address. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_029: [ The tlsio_openssl_open shall store the provided on_io_open_complete_context handle. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_037: [ If the ssl client is not connected, the tlsio_openssl_open shall change the state to TLSIO_STATE_ERROR, log the error, and return _LINE_. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_039: [ If the tlsio_openssl_open failed to open the tls connection, and the on_io_open_complete callback was provided, it shall call the on_io_open_complete with IO_OPEN_ERROR. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_040: [ If the tlsio_openssl_open failed to open the tls connection, and the on_io_error callback was provided, it shall call the on_io_error. ] */
     TEST_FUNCTION(tlsio_openssl_open_sslconnect__failed)
     {
         ///arrange
@@ -904,6 +1501,13 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         int result;
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
+        g_gethostbyname_success = 1;
+        g_socket_success = 1;
+        g_setsockopt_success = 1;
+        g_bind_success = 1;
+        g_connect_success = 1;
+        g_ssl_lwip_select_success = 1;
+        g_ssl_ctx_new_success = 1;
         g_ssl_set_fragment_success = 1;
         g_ssl_new_success = 1;
         g_ssl_set_fd_success = 1;
@@ -911,6 +1515,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         umock_c_reset_all_calls();
         
         STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);    
+        STRICT_EXPECTED_CALL(socket(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
         STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
         STRICT_EXPECTED_CALL(os_delay_us(IGNORED_NUM_ARG)).IgnoreArgument(1); 
         STRICT_EXPECTED_CALL(bind(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);   
@@ -931,6 +1536,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
             retry++;
         }
         STRICT_EXPECTED_CALL(SSL_connect(IGNORED_PTR_ARG)).IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_ERROR));
         STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4242));
 
         ///act
@@ -943,8 +1549,8 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ///cleanup
     }
 
-    /* Test_SRS_TLSIO_SSL_ESP8266_99_004: [ The tlsio_openssl_create shall return NULL when malloc fails. ]*/
-    TEST_FUNCTION(tlsio_openssl_create_unhappy_paths)
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_012: [ If there is not enough memory to create the tlsio, the tlsio_openssl_create shall return NULL as the handle. ] */
+    TEST_FUNCTION(tlsio_openssl_create_malloc__failed)
     {
         ///arrange
         int negativeTestsInitResult = umock_c_negative_tests_init();
@@ -967,15 +1573,11 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
             umock_c_negative_tests_fail_call(i);
 
             TLSIO_CONFIG tlsio_config;
-            char temp_str[128];
-            (void)sprintf(temp_str, "On failed call %zu", i);
-
-            printf("i is %d\n", (int)i);
             ///act
             result = tlsioInterfaces->concrete_io_create(&tlsio_config);
 
             ///assert
-            ASSERT_IS_NULL_WITH_MSG(result, temp_str);
+            ASSERT_IS_NULL(result);
         }
 
         ///cleanup
@@ -983,19 +1585,23 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
     }
 
 
-    /* Tests_SRS_TLSIO_SSL_ESP8266_99_005: [ The tlsio_openssl_create succeed. ]*/
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_009: [ The tlsio_openssl_create shall create a new instance of the tlsio for esp8266. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_010: [ The tlsio_openssl_create shall return a non-NULL handle on success. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_011: [ The tlsio_openssl_create shall allocate memory to control the tlsio instance. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_016: [ The tlsio_openssl_create shall initialize all callback pointers as NULL. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_017: [ The tlsio_openssl_create shall receive the connection configuration (TLSIO_CONFIG). ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_020: [ If tlsio_openssl_create get success to create the tlsio instance, it shall set the tlsio state as TLSIO_STATE_NOT_OPEN. ] */
     TEST_FUNCTION(tlsio_openssl_create__succeed)
     {
         ///arrange
         TLSIO_CONFIG tlsio_config;
 
-        OPTIONHANDLER_HANDLE result;
+        TLS_IO_INSTANCE* result;
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
         umock_c_reset_all_calls();
-        
-        //STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);    
+          
         STRICT_EXPECTED_CALL(gballoc_malloc(sizeof(TLS_IO_INSTANCE)));   
         STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);  
 
@@ -1004,18 +1610,15 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
 
         ///assert
         ASSERT_IS_NOT_NULL(result);
-        /**
-         * The follow assert will compare the expected calls with the actual calls. If it is different, 
-         *    it will show the serialized strings with the differences in the log.
-         */
+        ASSERT_IS_NULL(result->on_io_open_complete);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
+        ASSERT_ARE_EQUAL(int, (int)TLSIO_STATE_NOT_OPEN, result->tlsio_state);
         ///cleanup
     }
 
 
-    /* Tests_SRS_TLSIO_SSL_ESP8266_99_003: [ The tlsio_openssl_create shall return NULL when io_create_parameters is NULL. ]*/
-    TEST_FUNCTION(tlsio_openssl_create__failed)
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_013: [ The tlsio_openssl_create shall return NULL when io_create_parameters is NULL. ] */
+    TEST_FUNCTION(tlsio_openssl_create_NULL_parameters__failed)
     {
         ///arrange
         OPTIONHANDLER_HANDLE result;
@@ -1033,7 +1636,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
     }
 
 
-    /* Tests_SRS_TLSIO_SSL_ESP8266_99_001: [ The tlsio_openssl_retrieveoptions shall not do anything, and return NULL. ]*/
+    /* Tests_SRS_TLSIO_SSL_ESP8266_99_078: [ The tlsio_openssl_retrieveoptions shall not do anything, and return NULL. ]*/
     TEST_FUNCTION(tlsio_openssl_retrieveoptions__succeed)
     {
         ///arrange
@@ -1053,7 +1656,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ///cleanup
     }
 
-    /* Tests_SRS_TLSIO_SSL_ESP8266_99_002: [ The tlsio_openssl_setoption shall not do anything, and return 0. ]*/
+    /* Tests_SRS_TLSIO_SSL_ESP8266_99_077: [ he tlsio_openssl_setoption shall not do anything, and return 0. ]*/
     TEST_FUNCTION(tlsio_openssl_setoption__succeed)
     {
         ///arrange
@@ -1073,6 +1676,20 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ///cleanup
     }
 
+    /* Tests_SRS_TLSIO_SSL_ESP8266_99_008: [ The tlsio_openssl_get_interface_description shall return the VTable IO_INTERFACE_DESCRIPTION. ]*/
+    TEST_FUNCTION(tlsio_openssl_get_interface_description__succeed)
+    {
+        ///arrange
+        const IO_INTERFACE_DESCRIPTION* tlsioInterfaces;
+
+        ///act
+        tlsioInterfaces = tlsio_openssl_get_interface_description();
+
+        ///assert
+        ASSERT_IS_NOT_NULL(tlsioInterfaces);
+
+        ///cleanup
+    }
 
 
 END_TEST_SUITE(tlsio_esp8266_ut)
