@@ -3,6 +3,7 @@
 
 #include "testrunnerswitcher.h"
 #include "libwebsockets.h"
+
 #include "openssl/ssl.h"
 
 #include "umock_c.h"
@@ -27,15 +28,13 @@ static const LIST_ITEM_HANDLE TEST_LIST_ITEM_HANDLE = (LIST_ITEM_HANDLE)0x11;
 static struct lws_context* TEST_LIBWEBSOCKET_CONTEXT = (struct lws_context*)0x4243;
 static void* TEST_USER_CONTEXT = (void*)0x4244;
 static struct lws* TEST_LIBWEBSOCKET = (struct lws*)0x4245;
-static struct lws_extension extensions[] = { { NULL } };
-static struct lws_extension* TEST_INTERNAL_EXTENSIONS = extensions;
 static BIO* TEST_BIO = (BIO*)0x4247;
 static BIO_METHOD* TEST_BIO_METHOD = (BIO_METHOD*)0x4248;
 static X509_STORE* TEST_CERT_STORE = (X509_STORE*)0x4249;
 static X509* TEST_X509_CERT_1 = (X509*)0x424A;
 static X509* TEST_X509_CERT_2 = (X509*)0x424B;
 static const SSL_CTX* TEST_SSL_CONTEXT = (const SSL_CTX*)0x424C;
-static callback_function* saved_ws_callback;
+static lws_callback_function* saved_ws_callback;
 static void* saved_ws_callback_context;
 
 #define TEST_LOCK_HANDLE (LOCK_HANDLE)0x4443
@@ -64,29 +63,9 @@ IMPLEMENT_UMOCK_C_ENUM_TYPE(IO_SEND_RESULT, IO_SEND_RESULT_VALUES);
 TEST_DEFINE_ENUM_TYPE(OPTIONHANDLER_RESULT, OPTIONHANDLER_RESULT_VALUES);
 IMPLEMENT_UMOCK_C_ENUM_TYPE(OPTIONHANDLER_RESULT, OPTIONHANDLER_RESULT_VALUES);
 
-static size_t currentmalloc_call;
-static size_t whenShallmalloc_fail;
-
 static void* my_gballoc_malloc(size_t size)
 {
-    void* result;
-    currentmalloc_call++;
-    if (whenShallmalloc_fail > 0)
-    {
-        if (currentmalloc_call == whenShallmalloc_fail)
-        {
-            result = NULL;
-        }
-        else
-        {
-            result = malloc(size);
-        }
-    }
-    else
-    {
-        result = malloc(size);
-    }
-    return result;
+    return malloc(size);
 }
 
 static void my_gballoc_free(void* ptr)
@@ -154,8 +133,7 @@ static int umocktypes_are_equal_const_struct_lws_context_creation_info_ptr(const
             while ((*left)->extensions[extensions_count].name != NULL)
             {
                 result = result && ((*left)->extensions[extensions_count].callback == (*right)->extensions[extensions_count].callback);
-                result = result && ((*left)->extensions[extensions_count].per_context_private_data == (*right)->extensions[extensions_count].per_context_private_data);
-                result = result && ((*left)->extensions[extensions_count].per_session_data_size == (*right)->extensions[extensions_count].per_session_data_size);
+                result = result && (strcmp((*left)->extensions[extensions_count].client_offer, (*right)->extensions[extensions_count].client_offer) == 0);
                 result = result && (strcmp((*left)->extensions[extensions_count].name, (*right)->extensions[extensions_count].name) == 0);
                 extensions_count++;
             }
@@ -252,19 +230,28 @@ static int umocktypes_are_equal_const_struct_lws_context_creation_info_ptr(const
     return result;
 }
 
-static char* copy_string(const char* source)
+static int copy_string(char** destination, const char* source)
 {
-    char* result;
+    int result;
 
     if (source == NULL)
     {
-        result = NULL;
+        *destination = NULL;
+        result = 0;
     }
     else
     {
         size_t length = strlen(source);
-        result = (char*)malloc(length + 1);
-        (void)memcpy(result, source, length + 1);
+        *destination = (char*)malloc(length + 1);
+        if (*destination == NULL)
+        {
+            result = __LINE__;
+        }
+        else
+        {
+            (void)memcpy(*destination, source, length + 1);
+            result = 0;
+        }
     }
 
     return result;
@@ -281,6 +268,8 @@ static int umocktypes_copy_const_struct_lws_context_creation_info_ptr(struct lws
     }
     else
     {
+        bool is_error = false;
+
         if ((*source)->protocols == NULL)
         {
             (*destination)->protocols = NULL;
@@ -294,20 +283,31 @@ static int umocktypes_copy_const_struct_lws_context_creation_info_ptr(struct lws
             }
 
             (*destination)->protocols = (const struct lws_protocols*)malloc(sizeof(struct lws_protocols) * (protocols_count + 1));
-
-            protocols_count = 0;
-            while ((*source)->protocols[protocols_count].name != NULL)
+            if ((*destination)->protocols == NULL)
             {
-                ((struct lws_protocols*)(*destination)->protocols)[protocols_count].name = copy_string((*source)->protocols[protocols_count].name);
-                ((struct lws_protocols*)(*destination)->protocols)[protocols_count].callback = (*source)->protocols[protocols_count].callback;
-                ((struct lws_protocols*)(*destination)->protocols)[protocols_count].per_session_data_size = (*source)->protocols[protocols_count].per_session_data_size;
-                ((struct lws_protocols*)(*destination)->protocols)[protocols_count].rx_buffer_size = (*source)->protocols[protocols_count].rx_buffer_size;
-                ((struct lws_protocols*)(*destination)->protocols)[protocols_count].id = (*source)->protocols[protocols_count].id;
-                ((struct lws_protocols*)(*destination)->protocols)[protocols_count].user = (*source)->protocols[protocols_count].user;
-                protocols_count++;
+                is_error = true;
             }
+            else
+            {
+                protocols_count = 0;
+                while ((*source)->protocols[protocols_count].name != NULL)
+                {
+                    if (copy_string((char**)&((struct lws_protocols*)(*destination)->protocols)[protocols_count].name, (*source)->protocols[protocols_count].name) != 0)
+                    {
+                        is_error = true;
+                        break;
+                    }
 
-            ((struct lws_protocols*)(*destination)->protocols)[protocols_count].name = NULL;
+                    ((struct lws_protocols*)(*destination)->protocols)[protocols_count].callback = (*source)->protocols[protocols_count].callback;
+                    ((struct lws_protocols*)(*destination)->protocols)[protocols_count].per_session_data_size = (*source)->protocols[protocols_count].per_session_data_size;
+                    ((struct lws_protocols*)(*destination)->protocols)[protocols_count].rx_buffer_size = (*source)->protocols[protocols_count].rx_buffer_size;
+                    ((struct lws_protocols*)(*destination)->protocols)[protocols_count].id = (*source)->protocols[protocols_count].id;
+                    ((struct lws_protocols*)(*destination)->protocols)[protocols_count].user = (*source)->protocols[protocols_count].user;
+                    protocols_count++;
+                }
+
+                ((struct lws_protocols*)(*destination)->protocols)[protocols_count].name = NULL;
+            }
         }
 
         if ((*source)->extensions == NULL)
@@ -323,40 +323,63 @@ static int umocktypes_copy_const_struct_lws_context_creation_info_ptr(struct lws
             }
 
             (*destination)->extensions = (const struct lws_extension*)malloc(sizeof(struct lws_extension) * (extensions_count + 1));
-
-            extensions_count = 0;
-            while ((*source)->extensions[extensions_count].name != NULL)
+            if ((*destination)->extensions == NULL)
             {
-                ((struct lws_extension*)(*destination)->extensions)[extensions_count].name = copy_string((*source)->extensions[extensions_count].name);
-                ((struct lws_extension*)(*destination)->extensions)[extensions_count].callback = (*source)->extensions[extensions_count].callback;
-                ((struct lws_extension*)(*destination)->extensions)[extensions_count].per_session_data_size = (*source)->extensions[extensions_count].per_session_data_size;
-                ((struct lws_extension*)(*destination)->extensions)[extensions_count].per_context_private_data = (*source)->extensions[extensions_count].per_context_private_data;
-                extensions_count++;
+                is_error = true;
             }
+            else
+            {
+                extensions_count = 0;
+                while ((*source)->extensions[extensions_count].name != NULL)
+                {
+                    if ((copy_string((char**)&((struct lws_extension*)(*destination)->extensions)[extensions_count].name, (*source)->extensions[extensions_count].name) != 0) ||
+                        (copy_string((char**)&((struct lws_extension*)(*destination)->extensions)[extensions_count].client_offer, (*source)->extensions[extensions_count].client_offer) != 0))
+                    {
+                        is_error = true;
+                        break;
+                    }
 
-            ((struct lws_extension*)(*destination)->extensions)[extensions_count].name = NULL;
+                    ((struct lws_extension*)(*destination)->extensions)[extensions_count].callback = (*source)->extensions[extensions_count].callback;
+                    extensions_count++;
+                }
+
+                ((struct lws_extension*)(*destination)->extensions)[extensions_count].name = NULL;
+            }
         }
 
-        (*destination)->iface = copy_string((*source)->iface);
-        (*destination)->token_limits = (*source)->token_limits;
-        (*destination)->port = (*source)->port;
-        (*destination)->ssl_private_key_password = copy_string((*source)->ssl_private_key_password);
-        (*destination)->ssl_cert_filepath = copy_string((*source)->ssl_cert_filepath);
-        (*destination)->ssl_private_key_filepath = copy_string((*source)->ssl_private_key_filepath);
-        (*destination)->ssl_ca_filepath = copy_string((*source)->ssl_ca_filepath);
-        (*destination)->ssl_cipher_list = copy_string((*source)->ssl_cipher_list);
-        (*destination)->http_proxy_address = copy_string((*source)->http_proxy_address);
-        (*destination)->http_proxy_port = (*source)->http_proxy_port;
-        (*destination)->gid = (*source)->gid;
-        (*destination)->uid = (*source)->uid;
-        (*destination)->options = (*source)->options;
-        (*destination)->user = (*source)->user;
-        (*destination)->ka_time = (*source)->ka_time;
-        (*destination)->ka_probes = (*source)->ka_probes;
-        (*destination)->ka_interval = (*source)->ka_interval;
-        (*destination)->provided_client_ssl_ctx = (*source)->provided_client_ssl_ctx;
+        if (is_error)
+        {
+            result = __LINE__;
+        }
+        else
+        {
+            if ((copy_string((char**)&(*destination)->iface, (*source)->iface) != 0) ||
+                (copy_string((char**)&(*destination)->ssl_private_key_password, (*source)->ssl_private_key_password) != 0) ||
+                (copy_string((char**)&(*destination)->ssl_cert_filepath, (*source)->ssl_cert_filepath) != 0) ||
+                (copy_string((char**)&(*destination)->ssl_private_key_filepath, (*source)->ssl_private_key_filepath) != 0) ||
+                (copy_string((char**)&(*destination)->ssl_ca_filepath, (*source)->ssl_ca_filepath) != 0) ||
+                (copy_string((char**)&(*destination)->ssl_cipher_list, (*source)->ssl_cipher_list) != 0) ||
+                (copy_string((char**)&(*destination)->http_proxy_address, (*source)->http_proxy_address) != 0))
+            {
+                result = __LINE__;
+            }
+            else
+            {
+                (*destination)->token_limits = (*source)->token_limits;
+                (*destination)->port = (*source)->port;
+                (*destination)->http_proxy_port = (*source)->http_proxy_port;
+                (*destination)->gid = (*source)->gid;
+                (*destination)->uid = (*source)->uid;
+                (*destination)->options = (*source)->options;
+                (*destination)->user = (*source)->user;
+                (*destination)->ka_time = (*source)->ka_time;
+                (*destination)->ka_probes = (*source)->ka_probes;
+                (*destination)->ka_interval = (*source)->ka_interval;
+                (*destination)->provided_client_ssl_ctx = (*source)->provided_client_ssl_ctx;
 
-        result = 0;
+                result = 0;
+            }
+        }
     }
 
     return result;
@@ -383,6 +406,7 @@ static void umocktypes_free_const_struct_lws_context_creation_info_ptr(struct lw
         while ((*value)->extensions[extensions_count].name != NULL)
         {
             free((void*)(*value)->extensions[extensions_count].name);
+            free((void*)(*value)->extensions[extensions_count].client_offer);
             extensions_count++;
         }
         free((void*)(*value)->extensions);
@@ -397,10 +421,158 @@ static void umocktypes_free_const_struct_lws_context_creation_info_ptr(struct lw
     free(*value);
 }
 
+static char* umocktypes_stringify_const_struct_lws_client_connect_info_ptr(const struct lws_client_connect_info** value)
+{
+    char* result = NULL;
+    char temp_buffer[1024];
+    int length;
+    length = sprintf(temp_buffer, "{ context = %p, address = %s, port = %d, ssl_connection = %d, path = %s, host = %s, origin = %s, protocol = %s, ietf_version_or_minus_one = %d, userdata = %p, client_exts = %p, method = %s, parent_wsi = %p, uri_replace_from = %s, uri_replace_to = %s, vhost = %p, pwsi = %p }",
+        (*value)->context,
+        (*value)->address,
+        (*value)->port,
+        (*value)->ssl_connection,
+        (*value)->path,
+        (*value)->host,
+        (*value)->origin,
+        (*value)->protocol,
+        (*value)->ietf_version_or_minus_one,
+        (*value)->userdata,
+        (*value)->client_exts,
+        (*value)->method,
+        (*value)->parent_wsi,
+        (*value)->uri_replace_from,
+        (*value)->uri_replace_to,
+        (*value)->vhost,
+        (*value)->pwsi);
+
+    if (length > 0)
+    {
+        result = (char*)malloc(strlen(temp_buffer) + 1);
+        if (result != NULL)
+        {
+            (void)memcpy(result, temp_buffer, strlen(temp_buffer) + 1);
+        }
+    }
+
+    return result;
+}
+
+static int compare_strings(const char* left, const char* right)
+{
+    int result;
+
+    if (left == right)
+    {
+        result = 1;
+    }
+    else if ((left == NULL) || (right == NULL))
+    {
+        result = 0;
+    }
+    else
+    {
+        result = (strcmp(left, right) == 0) ? 1 : 0;
+    }
+
+    return result;
+}
+
+static int umocktypes_are_equal_const_struct_lws_client_connect_info_ptr(const struct lws_client_connect_info** left, const struct lws_client_connect_info** right)
+{
+    int result;
+
+    if ((left == NULL) ||
+        (right == NULL))
+    {
+        result = -1;
+    }
+    else
+    {
+        result = (*left)->context == (*right)->context;
+        result = result && (compare_strings((*left)->address, (*right)->address) > 0);
+        result = result && ((*left)->port == (*right)->port);
+        result = result && ((*left)->ssl_connection == (*right)->ssl_connection);
+        result = result && (compare_strings((*left)->path, (*right)->path) > 0);
+        result = result && (compare_strings((*left)->host, (*right)->host) > 0);
+        result = result && (compare_strings((*left)->origin, (*right)->origin) > 0);
+        result = result && (compare_strings((*left)->protocol, (*right)->protocol) > 0);
+        result = result && ((*left)->ietf_version_or_minus_one == (*right)->ietf_version_or_minus_one);
+        result = result && ((*left)->userdata == (*right)->userdata);
+        result = result && ((*left)->client_exts == (*right)->client_exts);
+        result = result && (compare_strings((*left)->method, (*right)->method) > 0);
+        result = result && ((*left)->parent_wsi == (*right)->parent_wsi);
+        result = result && (compare_strings((*left)->uri_replace_from, (*right)->uri_replace_from) > 0);
+        result = result && (compare_strings((*left)->uri_replace_to, (*right)->uri_replace_to) > 0);
+        result = result && ((*left)->vhost == (*right)->vhost);
+        result = result && ((*left)->pwsi == (*right)->pwsi);
+    }
+
+    return result;
+}
+
+static int umocktypes_copy_const_struct_lws_client_connect_info_ptr(struct lws_client_connect_info** destination, const struct lws_client_connect_info** source)
+{
+    int result;
+
+    *destination = (struct lws_client_connect_info*)malloc(sizeof(struct lws_client_connect_info));
+    if (*destination == NULL)
+    {
+        result = __LINE__;
+    }
+    else
+    {
+        if ((copy_string((char**)&(*destination)->address, (*source)->address) != 0) ||
+            (copy_string((char**)&(*destination)->path, (*source)->path) != 0) ||
+            (copy_string((char**)&(*destination)->host, (*source)->host) != 0) ||
+            (copy_string((char**)&(*destination)->origin, (*source)->origin) != 0) ||
+            (copy_string((char**)&(*destination)->protocol, (*source)->protocol) != 0) ||
+            (copy_string((char**)&(*destination)->method, (*source)->method) != 0) ||
+            (copy_string((char**)&(*destination)->uri_replace_from, (*source)->uri_replace_from) != 0) ||
+            (copy_string((char**)&(*destination)->uri_replace_to, (*source)->uri_replace_to) != 0))
+        {
+            result = __LINE__;
+        }
+        else
+        {
+            (*destination)->context = (*source)->context;
+            (*destination)->port = (*source)->port;
+            (*destination)->ssl_connection = (*source)->ssl_connection;
+            (*destination)->ietf_version_or_minus_one = (*source)->ietf_version_or_minus_one;
+            (*destination)->userdata = (*source)->userdata;
+            (*destination)->client_exts = (*source)->client_exts;
+            (*destination)->parent_wsi = (*source)->parent_wsi;
+            (*destination)->vhost = (*source)->vhost;
+            (*destination)->pwsi = (*source)->pwsi;
+
+            result = 0;
+        }
+    }
+
+    return result;
+}
+
+static void umocktypes_free_const_struct_lws_client_connect_info_ptr(struct lws_client_connect_info** value)
+{
+    /* free protocols, extensions, token_limits */
+    free((void*)(*value)->address);
+    free((void*)(*value)->path);
+    free((void*)(*value)->host);
+    free((void*)(*value)->origin);
+    free((void*)(*value)->protocol);
+    free((void*)(*value)->method);
+    free((void*)(*value)->uri_replace_from);
+    free((void*)(*value)->uri_replace_to);
+    free(*value);
+}
+
 static LIST_ITEM_HANDLE add_to_list(const void* item)
 {
     const void** items = (const void**)realloc((void*)list_items, (list_item_count + 1) * sizeof(item));
-    if (items != NULL)
+    if (items == NULL)
+    {
+        ASSERT_FAIL("Error allocating memort for list items");
+    }
+    else
     {
         list_items = items;
         list_items[list_item_count++] = item;
@@ -439,18 +611,18 @@ static LIST_ITEM_HANDLE my_singlylinkedlist_get_head_item(SINGLYLINKEDLIST_HANDL
     return list_item_handle;
 }
 
-LIST_ITEM_HANDLE my_singlylinkedlist_add(SINGLYLINKEDLIST_HANDLE list, const void* item)
+static LIST_ITEM_HANDLE my_singlylinkedlist_add(SINGLYLINKEDLIST_HANDLE list, const void* item)
 {
     (void)list;
     return add_to_list(item);
 }
 
-const void* my_singlylinkedlist_item_get_value(LIST_ITEM_HANDLE item_handle)
+static const void* my_singlylinkedlist_item_get_value(LIST_ITEM_HANDLE item_handle)
 {
     return (const void*)list_items[(size_t)item_handle - 1];
 }
 
-LIST_ITEM_HANDLE my_singlylinkedlist_find(SINGLYLINKEDLIST_HANDLE handle, LIST_MATCH_FUNCTION match_function, const void* match_context)
+static LIST_ITEM_HANDLE my_singlylinkedlist_find(SINGLYLINKEDLIST_HANDLE handle, LIST_MATCH_FUNCTION match_function, const void* match_context)
 {
     size_t i;
     const void* found_item = NULL;
@@ -466,18 +638,20 @@ LIST_ITEM_HANDLE my_singlylinkedlist_find(SINGLYLINKEDLIST_HANDLE handle, LIST_M
     return (LIST_ITEM_HANDLE)found_item;
 }
 
-OPTIONHANDLER_HANDLE my_OptionHandler_Create(pfCloneOption clone, pfDestroyOption destroy, pfSetOption setoption)
+static OPTIONHANDLER_HANDLE my_OptionHandler_Create(pfCloneOption clone, pfDestroyOption destroy, pfSetOption setoption)
 {
-    (void)clone, destroy, setoption;
+    (void)clone;
+    (void)destroy;
+    (void)setoption;
     return (OPTIONHANDLER_HANDLE)malloc(1);
 }
 
-void my_OptionHandler_Destroy(OPTIONHANDLER_HANDLE handle)
+static void my_OptionHandler_Destroy(OPTIONHANDLER_HANDLE handle)
 {
     free(handle);
 }
 
-int my_mallocAndStrcpy_s(char** destination, const char* source)
+static int my_mallocAndStrcpy_s(char** destination, const char* source)
 {
     *destination = (char*)malloc(strlen(source) + 1);
     (void)strcpy(*destination, source);
@@ -516,10 +690,8 @@ MOCK_FUNCTION_WITH_CODE(, int, lws_write, struct lws*, wsi, unsigned char*, buf,
 MOCK_FUNCTION_END(0)
 MOCK_FUNCTION_WITH_CODE(, int, lws_callback_on_writable, struct lws*, wsi)
 MOCK_FUNCTION_END(0)
-MOCK_FUNCTION_WITH_CODE(, struct lws*, lws_client_connect, struct lws_context*, clients, const char*, address, int, port, int, ssl_connection, const char*, path, const char*, host, const char*, origin, const char*, protocol, int, ietf_version_or_minus_one)
+MOCK_FUNCTION_WITH_CODE(, struct lws*, lws_client_connect_via_info, struct lws_client_connect_info*, i)
 MOCK_FUNCTION_END(TEST_LIBWEBSOCKET)
-MOCK_FUNCTION_WITH_CODE(, struct lws_extension*, lws_get_internal_extensions)
-MOCK_FUNCTION_END(TEST_INTERNAL_EXTENSIONS)
 
 // openssl mocks
 MOCK_FUNCTION_WITH_CODE(, BIO*, BIO_new, BIO_METHOD*, type)
@@ -594,6 +766,7 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_TYPE(OPTIONHANDLER_RESULT, OPTIONHANDLER_RESULT);
     REGISTER_TYPE(my_lws_write_protocol_enum, my_lws_write_protocol_enum);
     REGISTER_TYPE(const struct lws_context_creation_info*, const_struct_lws_context_creation_info_ptr);
+    REGISTER_TYPE(struct lws_client_connect_info*, const_struct_lws_client_connect_info_ptr);
 
     REGISTER_UMOCK_ALIAS_TYPE(struct lws_context_creation_info*, const struct lws_context_creation_info*);
     REGISTER_UMOCK_ALIAS_TYPE(SINGLYLINKEDLIST_HANDLE, void*);
@@ -623,8 +796,6 @@ TEST_FUNCTION_INITIALIZE(method_init)
 
     umock_c_reset_all_calls();
 
-    currentmalloc_call = 0;
-    whenShallmalloc_fail = 0;
     singlylinkedlist_remove_result = 0;
 }
 
@@ -955,11 +1126,11 @@ TEST_FUNCTION(wsio_destroy_closes_the_underlying_lws_before_destroying_all_resou
 
 /* Tests_SRS_WSIO_01_010: [wsio_open shall create a context for the libwebsockets connection by calling lws_create_context.] */
 /* Tests_SRS_WSIO_01_011: [The port member of the info argument shall be set to CONTEXT_PORT_NO_LISTEN.] */
-/* Tests_SRS_WSIO_01_091: [The extensions field shall be set to the internal extensions obtained by calling lws_get_internal_extensions.] */
+/* Tests_SRS_WSIO_01_091: [The extensions field shall be set to NULL.] */
 /* Tests_SRS_WSIO_01_092: [gid and uid shall be set to -1.] */
 /* Tests_SRS_WSIO_01_093: [The members iface, token_limits, ssl_cert_filepath, ssl_private_key_filepath, ssl_private_key_password, ssl_ca_filepath, ssl_cipher_list and provided_client_ssl_ctx shall be set to NULL.] */
 /* Tests_SRS_WSIO_01_172: [ If no proxy was configured, http_proxy_address shall be set to NULL. ] */
-/* Tests_SRS_WSIO_01_095: [The member options shall be set to 0.] */
+/* Tests_SRS_WSIO_01_095: [The member options shall be set to LWS_SERVER_OPTION_DO_SSL_GLOBAL_INIT to initialize the SSL stack.] */
 /* Tests_SRS_WSIO_01_096: [The member user shall be set to a user context that will be later passed by the libwebsockets callbacks.] */
 /* Tests_SRS_WSIO_01_097: [Keep alive shall not be supported, thus ka_time shall be set to 0.] */
 /* Tests_SRS_WSIO_01_012: [The protocols member shall be populated with 2 protocol entries, one containing the actual protocol to be used and one empty (fields shall be NULL or 0).] */
@@ -969,23 +1140,27 @@ TEST_FUNCTION(wsio_destroy_closes_the_underlying_lws_before_destroying_all_resou
 /* Tests_SRS_WSIO_01_016: [per_session_data_size shall be set to 0] */
 /* Tests_SRS_WSIO_01_017: [rx_buffer_size shall be set to 0, as there is no need for atomic frames] */
 /* Tests_SRS_WSIO_01_019: [user shall be set to NULL] */
-/* Tests_SRS_WSIO_01_023: [wsio_open shall trigger the lws connect by calling lws_client_connect and passing to it the following arguments] */
-/* Tests_SRS_WSIO_01_024: [clients shall be the context created earlier in wsio_open] */
+/* Tests_SRS_WSIO_01_023: [wsio_open shall trigger the lws connect by calling lws_client_connect_via_info and passing to it the following arguments] */
+/* Tests_SRS_WSIO_01_024: [context shall be the context created earlier in wsio_open] */
 /* Tests_SRS_WSIO_01_025: [address shall be the hostname passed to wsio_create] */
 /* Tests_SRS_WSIO_01_026: [port shall be the port passed to wsio_create] */
 /* Tests_SRS_WSIO_01_103: [otherwise it shall be 0.] */
 /* Tests_SRS_WSIO_01_028: [path shall be the relative_path passed in wsio_create] */
 /* Tests_SRS_WSIO_01_029: [host shall be the host passed to wsio_create] */
-/* Tests_SRS_WSIO_01_030: [origin shall be the host passed to wsio_create] */
+/* Tests_SRS_WSIO_01_030: [origin shall be NULL] */
 /* Tests_SRS_WSIO_01_031: [protocol shall be the protocol_name passed to wsio_create] */
 /* Tests_SRS_WSIO_01_032: [ietf_version_or_minus_one shall be -1] */
 /* Tests_SRS_WSIO_01_104: [On success, wsio_open shall return 0.] */
+/* Tests_SRS_WSIO_01_173: [ `userdata`, `client_exts`, `method`, `parent_wsi`, `uri_replace_from`, `uri_replace_to`, `vhost` and `pwsi` shall be NULL. ]*/
 TEST_FUNCTION(wsio_open_with_proper_arguments_succeeds)
 {
     // arrange
     CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
     struct lws_context_creation_info lws_context_info;
     struct lws_protocols protocols[2];
+    struct lws_client_connect_info client_connect_info;
+    int result;
+
     umock_c_reset_all_calls();
 
     protocols[0].name = default_wsio_config.protocol_name;
@@ -1002,7 +1177,7 @@ TEST_FUNCTION(wsio_open_with_proper_arguments_succeeds)
     protocols[1].user = NULL;
 
     lws_context_info.port = CONTEXT_PORT_NO_LISTEN;
-    lws_context_info.extensions = TEST_INTERNAL_EXTENSIONS;
+    lws_context_info.extensions = NULL;
     lws_context_info.gid = -1;
     lws_context_info.uid = -1;
     lws_context_info.iface = NULL;
@@ -1015,19 +1190,36 @@ TEST_FUNCTION(wsio_open_with_proper_arguments_succeeds)
     lws_context_info.provided_client_ssl_ctx = NULL;
     lws_context_info.http_proxy_address = NULL;
     lws_context_info.http_proxy_port = 0;
-    lws_context_info.options = 0;
+    lws_context_info.options = LWS_SERVER_OPTION_DO_SSL_GLOBAL_INIT;
     lws_context_info.ka_time = 0;
     lws_context_info.ka_probes = 0;
     lws_context_info.ka_interval = 0;
 
     lws_context_info.protocols = protocols;
 
-    STRICT_EXPECTED_CALL(lws_get_internal_extensions());
+    client_connect_info.context = TEST_LIBWEBSOCKET_CONTEXT;
+    client_connect_info.address = default_wsio_config.host;
+    client_connect_info.port = default_wsio_config.port;
+    client_connect_info.ssl_connection = 0;
+    client_connect_info.path = default_wsio_config.relative_path;
+    client_connect_info.host = default_wsio_config.host;
+    client_connect_info.origin = NULL;
+    client_connect_info.protocol = default_wsio_config.protocol_name;
+    client_connect_info.ietf_version_or_minus_one = -1;
+    client_connect_info.userdata = NULL;
+    client_connect_info.client_exts = NULL;
+    client_connect_info.method = NULL;
+    client_connect_info.parent_wsi = NULL;
+    client_connect_info.uri_replace_from = NULL;
+    client_connect_info.uri_replace_to = NULL;
+    client_connect_info.vhost = NULL;
+    client_connect_info.pwsi = NULL;
+
     STRICT_EXPECTED_CALL(lws_create_context(&lws_context_info));
-    STRICT_EXPECTED_CALL(lws_client_connect(TEST_LIBWEBSOCKET_CONTEXT, default_wsio_config.host, default_wsio_config.port, 0, default_wsio_config.relative_path, default_wsio_config.host, default_wsio_config.host, default_wsio_config.protocol_name, -1));
+    STRICT_EXPECTED_CALL(lws_client_connect_via_info(&client_connect_info));
 
     // act
-    int result = wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
+    result = wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
@@ -1045,8 +1237,10 @@ TEST_FUNCTION(wsio_open_with_proxy_option_with_username_and_pwd_succeeds)
     CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
     struct lws_context_creation_info lws_context_info;
     struct lws_protocols protocols[2];
-
+    struct lws_client_connect_info client_connect_info;
+    int result;
     HTTP_PROXY_OPTIONS proxy_options;
+
     proxy_options.host_address = "test_proxy";
     proxy_options.port = 8080;
     proxy_options.username = "user_name";
@@ -1070,7 +1264,7 @@ TEST_FUNCTION(wsio_open_with_proxy_option_with_username_and_pwd_succeeds)
     protocols[1].user = NULL;
 
     lws_context_info.port = CONTEXT_PORT_NO_LISTEN;
-    lws_context_info.extensions = TEST_INTERNAL_EXTENSIONS;
+    lws_context_info.extensions = NULL;
     lws_context_info.gid = -1;
     lws_context_info.uid = -1;
     lws_context_info.iface = NULL;
@@ -1083,21 +1277,38 @@ TEST_FUNCTION(wsio_open_with_proxy_option_with_username_and_pwd_succeeds)
     lws_context_info.provided_client_ssl_ctx = NULL;
     lws_context_info.http_proxy_address = "user_name:secret@test_proxy:8080";
     lws_context_info.http_proxy_port = 8080;
-    lws_context_info.options = 0;
+    lws_context_info.options = LWS_SERVER_OPTION_DO_SSL_GLOBAL_INIT;
     lws_context_info.ka_time = 0;
     lws_context_info.ka_probes = 0;
     lws_context_info.ka_interval = 0;
 
     lws_context_info.protocols = protocols;
 
-    STRICT_EXPECTED_CALL(lws_get_internal_extensions());
+    client_connect_info.context = TEST_LIBWEBSOCKET_CONTEXT;
+    client_connect_info.address = default_wsio_config.host;
+    client_connect_info.port = default_wsio_config.port;
+    client_connect_info.ssl_connection = 0;
+    client_connect_info.path = default_wsio_config.relative_path;
+    client_connect_info.host = default_wsio_config.host;
+    client_connect_info.origin = NULL;
+    client_connect_info.protocol = default_wsio_config.protocol_name;
+    client_connect_info.ietf_version_or_minus_one = -1;
+    client_connect_info.userdata = NULL;
+    client_connect_info.client_exts = NULL;
+    client_connect_info.method = NULL;
+    client_connect_info.parent_wsi = NULL;
+    client_connect_info.uri_replace_from = NULL;
+    client_connect_info.uri_replace_to = NULL;
+    client_connect_info.vhost = NULL;
+    client_connect_info.pwsi = NULL;
+
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
     STRICT_EXPECTED_CALL(lws_create_context(&lws_context_info));
-    STRICT_EXPECTED_CALL(lws_client_connect(TEST_LIBWEBSOCKET_CONTEXT, default_wsio_config.host, default_wsio_config.port, 0, default_wsio_config.relative_path, default_wsio_config.host, default_wsio_config.host, default_wsio_config.protocol_name, -1));
+    STRICT_EXPECTED_CALL(lws_client_connect_via_info(&client_connect_info));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
     // act
-    int result = wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
+    result = wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
@@ -1115,8 +1326,10 @@ TEST_FUNCTION(wsio_open_with_proxy_option_with_username_and_pwd_and_5digit_port_
     CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
     struct lws_context_creation_info lws_context_info;
     struct lws_protocols protocols[2];
-
+    struct lws_client_connect_info client_connect_info;
+    int result;
     HTTP_PROXY_OPTIONS proxy_options;
+
     proxy_options.host_address = "test_proxy";
     proxy_options.port = 22222;
     proxy_options.username = "user_name";
@@ -1140,7 +1353,7 @@ TEST_FUNCTION(wsio_open_with_proxy_option_with_username_and_pwd_and_5digit_port_
     protocols[1].user = NULL;
 
     lws_context_info.port = CONTEXT_PORT_NO_LISTEN;
-    lws_context_info.extensions = TEST_INTERNAL_EXTENSIONS;
+    lws_context_info.extensions = NULL;
     lws_context_info.gid = -1;
     lws_context_info.uid = -1;
     lws_context_info.iface = NULL;
@@ -1153,21 +1366,38 @@ TEST_FUNCTION(wsio_open_with_proxy_option_with_username_and_pwd_and_5digit_port_
     lws_context_info.provided_client_ssl_ctx = NULL;
     lws_context_info.http_proxy_address = "user_name:secret@test_proxy:22222";
     lws_context_info.http_proxy_port = 22222;
-    lws_context_info.options = 0;
+    lws_context_info.options = LWS_SERVER_OPTION_DO_SSL_GLOBAL_INIT;
     lws_context_info.ka_time = 0;
     lws_context_info.ka_probes = 0;
     lws_context_info.ka_interval = 0;
 
     lws_context_info.protocols = protocols;
 
-    STRICT_EXPECTED_CALL(lws_get_internal_extensions());
+    client_connect_info.context = TEST_LIBWEBSOCKET_CONTEXT;
+    client_connect_info.address = default_wsio_config.host;
+    client_connect_info.port = default_wsio_config.port;
+    client_connect_info.ssl_connection = 0;
+    client_connect_info.path = default_wsio_config.relative_path;
+    client_connect_info.host = default_wsio_config.host;
+    client_connect_info.origin = NULL;
+    client_connect_info.protocol = default_wsio_config.protocol_name;
+    client_connect_info.ietf_version_or_minus_one = -1;
+    client_connect_info.userdata = NULL;
+    client_connect_info.client_exts = NULL;
+    client_connect_info.method = NULL;
+    client_connect_info.parent_wsi = NULL;
+    client_connect_info.uri_replace_from = NULL;
+    client_connect_info.uri_replace_to = NULL;
+    client_connect_info.vhost = NULL;
+    client_connect_info.pwsi = NULL;
+
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
     STRICT_EXPECTED_CALL(lws_create_context(&lws_context_info));
-    STRICT_EXPECTED_CALL(lws_client_connect(TEST_LIBWEBSOCKET_CONTEXT, default_wsio_config.host, default_wsio_config.port, 0, default_wsio_config.relative_path, default_wsio_config.host, default_wsio_config.host, default_wsio_config.protocol_name, -1));
+    STRICT_EXPECTED_CALL(lws_client_connect_via_info(&client_connect_info));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
     // act
-    int result = wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
+    result = wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
@@ -1185,8 +1415,10 @@ TEST_FUNCTION(wsio_open_with_proxy_option_without_username_and_pwd_succeeds)
     CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
     struct lws_context_creation_info lws_context_info;
     struct lws_protocols protocols[2];
-
+    struct lws_client_connect_info client_connect_info;
+    int result;
     HTTP_PROXY_OPTIONS proxy_options;
+
     proxy_options.host_address = "test_proxy";
     proxy_options.port = 8080;
     proxy_options.username = "user_name";
@@ -1210,7 +1442,7 @@ TEST_FUNCTION(wsio_open_with_proxy_option_without_username_and_pwd_succeeds)
     protocols[1].user = NULL;
 
     lws_context_info.port = CONTEXT_PORT_NO_LISTEN;
-    lws_context_info.extensions = TEST_INTERNAL_EXTENSIONS;
+    lws_context_info.extensions = NULL;
     lws_context_info.gid = -1;
     lws_context_info.uid = -1;
     lws_context_info.iface = NULL;
@@ -1223,21 +1455,38 @@ TEST_FUNCTION(wsio_open_with_proxy_option_without_username_and_pwd_succeeds)
     lws_context_info.provided_client_ssl_ctx = NULL;
     lws_context_info.http_proxy_address = "user_name:secret@test_proxy:8080";
     lws_context_info.http_proxy_port = 8080;
-    lws_context_info.options = 0;
+    lws_context_info.options = LWS_SERVER_OPTION_DO_SSL_GLOBAL_INIT;
     lws_context_info.ka_time = 0;
     lws_context_info.ka_probes = 0;
     lws_context_info.ka_interval = 0;
 
     lws_context_info.protocols = protocols;
 
-    STRICT_EXPECTED_CALL(lws_get_internal_extensions());
+    client_connect_info.context = TEST_LIBWEBSOCKET_CONTEXT;
+    client_connect_info.address = default_wsio_config.host;
+    client_connect_info.port = default_wsio_config.port;
+    client_connect_info.ssl_connection = 0;
+    client_connect_info.path = default_wsio_config.relative_path;
+    client_connect_info.host = default_wsio_config.host;
+    client_connect_info.origin = NULL;
+    client_connect_info.protocol = default_wsio_config.protocol_name;
+    client_connect_info.ietf_version_or_minus_one = -1;
+    client_connect_info.userdata = NULL;
+    client_connect_info.client_exts = NULL;
+    client_connect_info.method = NULL;
+    client_connect_info.parent_wsi = NULL;
+    client_connect_info.uri_replace_from = NULL;
+    client_connect_info.uri_replace_to = NULL;
+    client_connect_info.vhost = NULL;
+    client_connect_info.pwsi = NULL;
+
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
     STRICT_EXPECTED_CALL(lws_create_context(&lws_context_info));
-    STRICT_EXPECTED_CALL(lws_client_connect(TEST_LIBWEBSOCKET_CONTEXT, default_wsio_config.host, default_wsio_config.port, 0, default_wsio_config.relative_path, default_wsio_config.host, default_wsio_config.host, default_wsio_config.protocol_name, -1));
+    STRICT_EXPECTED_CALL(lws_client_connect_via_info(&client_connect_info));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
     // act
-    int result = wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
+    result = wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
@@ -1250,12 +1499,12 @@ TEST_FUNCTION(wsio_open_with_proxy_option_without_username_and_pwd_succeeds)
 /* Tests_SRS_WSIO_01_015: [name shall be set to protocol_name as passed to wsio_create] */
 /* Tests_SRS_WSIO_01_025: [address shall be the hostname passed to wsio_create] */
 /* Tests_SRS_WSIO_01_026: [port shall be the port passed to wsio_create] */
-/* Tests_SRS_WSIO_01_027: [if use_ssl passed in wsio_create is true, the use_ssl argument shall be 1] */
+/* Tests_SRS_WSIO_01_027: [if use_ssl passed in wsio_create is true, ssl_connection shall be 1] */
 /* Tests_SRS_WSIO_01_028: [path shall be the relative_path passed in wsio_create] */
 /* Tests_SRS_WSIO_01_029: [host shall be the host passed to wsio_create] */
-/* Tests_SRS_WSIO_01_030: [origin shall be the host passed to wsio_create] */
+/* Tests_SRS_WSIO_01_030: [origin shall be NULL] */
 /* Tests_SRS_WSIO_01_031: [protocol shall be the protocol_name passed to wsio_create] */
-/* Tests_SRS_WSIO_01_091: [The extensions field shall be set to the internal extensions obtained by calling lws_get_internal_extensions.] */
+/* Tests_SRS_WSIO_01_091: [The extensions field shall be set to NULL.] */
 /* Tests_SRS_WSIO_01_104: [On success, wsio_open shall return 0.] */
 TEST_FUNCTION(wsio_open_with_different_config_succeeds)
 {
@@ -1271,6 +1520,9 @@ TEST_FUNCTION(wsio_open_with_different_config_succeeds)
     CONCRETE_IO_HANDLE wsio = wsio_create(&wsio_config);
     struct lws_context_creation_info lws_context_info;
     struct lws_protocols protocols[2];
+    struct lws_client_connect_info client_connect_info;
+    int result;
+
     umock_c_reset_all_calls();
 
     protocols[0].name = "another_proto";
@@ -1299,18 +1551,34 @@ TEST_FUNCTION(wsio_open_with_different_config_succeeds)
     lws_context_info.ssl_cipher_list = NULL;
     lws_context_info.provided_client_ssl_ctx = NULL;
     lws_context_info.http_proxy_address = NULL;
-    lws_context_info.options = 0;
+    lws_context_info.options = LWS_SERVER_OPTION_DO_SSL_GLOBAL_INIT;
     lws_context_info.ka_time = 0;
 
     lws_context_info.protocols = protocols;
 
-    STRICT_EXPECTED_CALL(lws_get_internal_extensions())
-        .SetReturn((struct lws_extension*)NULL);
+    client_connect_info.context = TEST_LIBWEBSOCKET_CONTEXT;
+    client_connect_info.address = wsio_config.host;
+    client_connect_info.port = wsio_config.port;
+    client_connect_info.ssl_connection = 1;
+    client_connect_info.path = wsio_config.relative_path;
+    client_connect_info.host = wsio_config.host;
+    client_connect_info.origin = NULL;
+    client_connect_info.protocol = wsio_config.protocol_name;
+    client_connect_info.ietf_version_or_minus_one = -1;
+    client_connect_info.userdata = NULL;
+    client_connect_info.client_exts = NULL;
+    client_connect_info.method = NULL;
+    client_connect_info.parent_wsi = NULL;
+    client_connect_info.uri_replace_from = NULL;
+    client_connect_info.uri_replace_to = NULL;
+    client_connect_info.vhost = NULL;
+    client_connect_info.pwsi = NULL;
+
     STRICT_EXPECTED_CALL(lws_create_context(&lws_context_info));
-    STRICT_EXPECTED_CALL(lws_client_connect(TEST_LIBWEBSOCKET_CONTEXT, wsio_config.host, wsio_config.port, 1, wsio_config.relative_path, wsio_config.host, wsio_config.host, wsio_config.protocol_name, -1));
+    STRICT_EXPECTED_CALL(lws_client_connect_via_info(&client_connect_info));
 
     // act
-    int result = wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
+    result = wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
@@ -1328,8 +1596,10 @@ TEST_FUNCTION(wsio_open_with_proxy_config_with_username_NULL_and_non_NULL_passwo
     CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
     struct lws_context_creation_info lws_context_info;
     struct lws_protocols protocols[2];
-
+    struct lws_client_connect_info client_connect_info;
+    int result;
     HTTP_PROXY_OPTIONS proxy_options;
+
     proxy_options.host_address = "ha";
     proxy_options.port = 8080;
     proxy_options.username = NULL;
@@ -1352,7 +1622,7 @@ TEST_FUNCTION(wsio_open_with_proxy_config_with_username_NULL_and_non_NULL_passwo
     protocols[1].user = NULL;
 
     lws_context_info.port = CONTEXT_PORT_NO_LISTEN;
-    lws_context_info.extensions = TEST_INTERNAL_EXTENSIONS;
+    lws_context_info.extensions = NULL;
     lws_context_info.gid = -1;
     lws_context_info.uid = -1;
     lws_context_info.iface = NULL;
@@ -1363,20 +1633,37 @@ TEST_FUNCTION(wsio_open_with_proxy_config_with_username_NULL_and_non_NULL_passwo
     lws_context_info.ssl_ca_filepath = NULL;
     lws_context_info.ssl_cipher_list = NULL;
     lws_context_info.provided_client_ssl_ctx = NULL;
-    lws_context_info.options = 0;
+    lws_context_info.options = LWS_SERVER_OPTION_DO_SSL_GLOBAL_INIT;
     lws_context_info.ka_time = 0;
     lws_context_info.http_proxy_address = "ha:8080";
     lws_context_info.http_proxy_port = 8080;
     lws_context_info.protocols = protocols;
 
-    STRICT_EXPECTED_CALL(lws_get_internal_extensions());
+    client_connect_info.context = TEST_LIBWEBSOCKET_CONTEXT;
+    client_connect_info.address = default_wsio_config.host;
+    client_connect_info.port = default_wsio_config.port;
+    client_connect_info.ssl_connection = 0;
+    client_connect_info.path = default_wsio_config.relative_path;
+    client_connect_info.host = default_wsio_config.host;
+    client_connect_info.origin = NULL;
+    client_connect_info.protocol = default_wsio_config.protocol_name;
+    client_connect_info.ietf_version_or_minus_one = -1;
+    client_connect_info.userdata = NULL;
+    client_connect_info.client_exts = NULL;
+    client_connect_info.method = NULL;
+    client_connect_info.parent_wsi = NULL;
+    client_connect_info.uri_replace_from = NULL;
+    client_connect_info.uri_replace_to = NULL;
+    client_connect_info.vhost = NULL;
+    client_connect_info.pwsi = NULL;
+
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
     STRICT_EXPECTED_CALL(lws_create_context(&lws_context_info));
-    STRICT_EXPECTED_CALL(lws_client_connect(TEST_LIBWEBSOCKET_CONTEXT, default_wsio_config.host, default_wsio_config.port, 0, default_wsio_config.relative_path, default_wsio_config.host, default_wsio_config.host, default_wsio_config.protocol_name, -1));
+    STRICT_EXPECTED_CALL(lws_client_connect_via_info(&client_connect_info));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
     // act
-    int result = wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
+    result = wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
@@ -1409,7 +1696,7 @@ TEST_FUNCTION(when_creating_the_libwebsockets_context_fails_then_wsio_open_fails
     protocols[1].user = NULL;
 
     lws_context_info.port = CONTEXT_PORT_NO_LISTEN;
-    lws_context_info.extensions = TEST_INTERNAL_EXTENSIONS;
+    lws_context_info.extensions = NULL;
     lws_context_info.gid = -1;
     lws_context_info.uid = -1;
     lws_context_info.iface = NULL;
@@ -1421,12 +1708,11 @@ TEST_FUNCTION(when_creating_the_libwebsockets_context_fails_then_wsio_open_fails
     lws_context_info.ssl_cipher_list = NULL;
     lws_context_info.provided_client_ssl_ctx = NULL;
     lws_context_info.http_proxy_address = NULL;
-    lws_context_info.options = 0;
+    lws_context_info.options = LWS_SERVER_OPTION_DO_SSL_GLOBAL_INIT;
     lws_context_info.ka_time = 0;
 
     lws_context_info.protocols = protocols;
 
-    STRICT_EXPECTED_CALL(lws_get_internal_extensions());
     STRICT_EXPECTED_CALL(lws_create_context(&lws_context_info))
         .SetReturn((struct lws_context*)NULL);
 
@@ -1441,13 +1727,16 @@ TEST_FUNCTION(when_creating_the_libwebsockets_context_fails_then_wsio_open_fails
     wsio_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_033: [If lws_client_connect fails then wsio_open shall fail and return a non-zero value.] */
+/* Tests_SRS_WSIO_01_033: [If lws_client_connect_via_info fails then wsio_open shall fail and return a non-zero value.] */
 TEST_FUNCTION(when_lws_client_connect_fails_then_wsio_open_fails)
 {
     // arrange
     CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
     struct lws_context_creation_info lws_context_info;
     struct lws_protocols protocols[2];
+    struct lws_client_connect_info client_connect_info;
+    int result;
+
     umock_c_reset_all_calls();
 
     protocols[0].name = default_wsio_config.protocol_name;
@@ -1464,7 +1753,7 @@ TEST_FUNCTION(when_lws_client_connect_fails_then_wsio_open_fails)
     protocols[1].user = NULL;
 
     lws_context_info.port = CONTEXT_PORT_NO_LISTEN;
-    lws_context_info.extensions = TEST_INTERNAL_EXTENSIONS;
+    lws_context_info.extensions = NULL;
     lws_context_info.gid = -1;
     lws_context_info.uid = -1;
     lws_context_info.iface = NULL;
@@ -1476,19 +1765,37 @@ TEST_FUNCTION(when_lws_client_connect_fails_then_wsio_open_fails)
     lws_context_info.ssl_cipher_list = NULL;
     lws_context_info.provided_client_ssl_ctx = NULL;
     lws_context_info.http_proxy_address = NULL;
-    lws_context_info.options = 0;
+    lws_context_info.options = LWS_SERVER_OPTION_DO_SSL_GLOBAL_INIT;
     lws_context_info.ka_time = 0;
 
     lws_context_info.protocols = protocols;
 
-    STRICT_EXPECTED_CALL(lws_get_internal_extensions());
+    client_connect_info.context = TEST_LIBWEBSOCKET_CONTEXT;
+    client_connect_info.address = default_wsio_config.host;
+    client_connect_info.port = default_wsio_config.port;
+    client_connect_info.ssl_connection = 0;
+    client_connect_info.path = default_wsio_config.relative_path;
+    client_connect_info.host = default_wsio_config.host;
+    client_connect_info.origin = NULL;
+    client_connect_info.protocol = default_wsio_config.protocol_name;
+    client_connect_info.ietf_version_or_minus_one = -1;
+    client_connect_info.userdata = NULL;
+    client_connect_info.client_exts = NULL;
+    client_connect_info.method = NULL;
+    client_connect_info.parent_wsi = NULL;
+    client_connect_info.uri_replace_from = NULL;
+    client_connect_info.uri_replace_to = NULL;
+    client_connect_info.vhost = NULL;
+    client_connect_info.pwsi = NULL;
+
     STRICT_EXPECTED_CALL(lws_create_context(&lws_context_info));
-    STRICT_EXPECTED_CALL(lws_client_connect(TEST_LIBWEBSOCKET_CONTEXT, default_wsio_config.host, default_wsio_config.port, 0, default_wsio_config.relative_path, default_wsio_config.host, default_wsio_config.host, default_wsio_config.protocol_name, -1))
+    STRICT_EXPECTED_CALL(lws_client_connect_via_info(&client_connect_info))
         .SetReturn((struct lws*)NULL);
+        
     STRICT_EXPECTED_CALL(lws_context_destroy(TEST_LIBWEBSOCKET_CONTEXT));
 
     // act
-    int result = wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
+    result = wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // assert
@@ -1815,7 +2122,7 @@ TEST_FUNCTION(wsio_close_when_already_closed_fails)
 /* Tests_SRS_WSIO_01_050: [wsio_send shall send the buffer bytes through the websockets connection.] */
 /* Tests_SRS_WSIO_01_054: [wsio_send shall queue the buffer and size until the libwebsockets callback is invoked with the event LWS_CALLBACK_CLIENT_WRITEABLE.] */
 /* Tests_SRS_WSIO_01_105: [The data and callback shall be queued by calling singlylinkedlist_add on the list created in wsio_create.] */
-/* Tests_SRS_WSIO_01_056: [After queueing the data, wsio_send shall call lws_callback_on_writable, while passing as arguments the websockets instance previously obtained in wsio_open from lws_client_connect.] */
+/* Tests_SRS_WSIO_01_056: [After queueing the data, wsio_send shall call lws_callback_on_writable, while passing as arguments the websockets instance previously obtained in wsio_open from lws_client_connect_via_info.] */
 /* Tests_SRS_WSIO_01_107: [On success, wsio_send shall return 0.] */
 TEST_FUNCTION(wsio_send_adds_the_bytes_to_the_list_and_triggers_on_writable_when_the_io_is_open)
 {

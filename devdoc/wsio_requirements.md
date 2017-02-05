@@ -72,7 +72,7 @@ extern int wsio_open(CONCRETE_IO_HANDLE ws_io, ON_IO_OPEN_COMPLETE on_io_open_co
 **SRS_WSIO_01_170: \[** If no username/password was specified for the proxy settings then http_proxy_address shall be set to the address and port specified in the proxy options, in the format {address}:{port}. **\]**
 **SRS_WSIO_01_171: \[** If any proxy was configured by using the proxy data option, the http_proxy_port shall be set to the proxy port. **\]**
 **SRS_WSIO_01_172: \[** If no proxy was configured, http_proxy_address shall be set to NULL. **\]**
-**SRS_WSIO_01_095: \[**The member options shall be set to 0.**\]**
+**SRS_WSIO_01_095: \[**The member options shall be set to LWS_SERVER_OPTION_DO_SSL_GLOBAL_INIT to initialize the SSL stack.**\]**
 **SRS_WSIO_01_096: \[**The member user shall be set to a user context that will be later passed by the libwebsockets callbacks.**\]**
 **SRS_WSIO_01_097: \[**Keep alive shall not be supported, thus ka_time shall be set to 0.**\]**
 **SRS_WSIO_01_012: \[**The protocols member shall be populated with 2 protocol entries, one containing the actual protocol to be used and one empty (fields shall be NULL or 0).**\]**
@@ -86,18 +86,19 @@ The first protocol entry shall have:
 -	**SRS_WSIO_01_019: \[**user shall be set to NULL**\]** 
 
 **SRS_WSIO_01_022: \[**If creating the context fails then wsio_open shall fail and return a non-zero value.**\]** 
-**SRS_WSIO_01_023: \[**wsio_open shall trigger the libwebsocket connect by calling lws_client_connect and passing to it the following arguments**\]**:
--	**SRS_WSIO_01_024: \[**clients shall be the context created earlier in wsio_open**\]** 
+**SRS_WSIO_01_023: \[**wsio_open shall trigger the libwebsocket connect by calling lws_client_connect_via_info and passing to it a lws_client_connect_info structure filled as follows:**\]**
+-	**SRS_WSIO_01_024: \[**context shall be the context created earlier in wsio_open**\]** 
 -	**SRS_WSIO_01_025: \[**address shall be the hostname passed to wsio_create**\]** 
 -	**SRS_WSIO_01_026: \[**port shall be the port passed to wsio_create**\]** 
--	**SRS_WSIO_01_027: \[**if use_ssl passed in wsio_create is true, the use_ssl argument shall be 1**\]**; **SRS_WSIO_01_103: \[**otherwise it shall be 0.**\]** 
+-	**SRS_WSIO_01_027: \[**if use_ssl passed in wsio_create is true, ssl_connection shall be 1**\]**; **SRS_WSIO_01_103: \[**otherwise it shall be 0.**\]** 
 -	**SRS_WSIO_01_028: \[**path shall be the relative_path passed in wsio_create**\]** 
 -	**SRS_WSIO_01_029: \[**host shall be the host passed to wsio_create**\]** 
--	**SRS_WSIO_01_030: \[**origin shall be the host passed to wsio_create**\]** 
+-	**SRS_WSIO_01_030: \[**origin shall be NULL**\]** 
 -	**SRS_WSIO_01_031: \[**protocol shall be the protocol_name passed to wsio_create**\]** 
 -	**SRS_WSIO_01_032: \[**ietf_version_or_minus_one shall be -1**\]** 
+-   **SRS_WSIO_01_173: [** `userdata`, `client_exts`, `method`, `parent_wsi`, `uri_replace_from`, `uri_replace_to`, `vhost` and `pwsi` shall be NULL. **]**
 
-**SRS_WSIO_01_033: \[**If lws_client_connect fails then wsio_open shall fail and return a non-zero value.**\]** 
+**SRS_WSIO_01_033: \[**If lws_client_connect_via_info fails then wsio_open shall fail and return a non-zero value.**\]** 
 **SRS_WSIO_01_034: \[**If another open is in progress or has completed successfully (the IO is open), wsio_open shall fail and return a non-zero value without performing any connection related activities.**\]**
 **SRS_WSIO_01_035: \[**If a close action is in progress, wsio_open shall fail and return a non-zero value without performing any connection related activities.**\]** 
 **SRS_WSIO_01_036: \[**The callback on_io_open_complete shall be called with io_open_result being set to IO_OPEN_OK when the open action is succesfull.**\]**
@@ -139,7 +140,7 @@ extern int wsio_send(CONCRETE_IO_HANDLE ws_io, const void* buffer, size_t size, 
 **SRS_WSIO_01_054: \[**wsio_send shall queue the buffer and size until the libwebsockets callback is invoked with the event LWS_CALLBACK_CLIENT_WRITEABLE.**\]**
 **SRS_WSIO_01_105: \[**The data and callback shall be queued by calling singlylinkedlist_add on the list created in wsio_create.**\]**
 **SRS_WSIO_01_055: \[**If queueing the data fails (i.e. due to insufficient memory), wsio_send shall fail and return a non-zero value.**\]**
-**SRS_WSIO_01_056: \[**After queueing the data, wsio_send shall call lws_callback_on_writable, while passing as arguments the websockets instance previously obtained in wsio_open from lws_client_connect.**\]**
+**SRS_WSIO_01_056: \[**After queueing the data, wsio_send shall call lws_callback_on_writable, while passing as arguments the websockets instance previously obtained in wsio_open from lws_client_connect_via_info.**\]**
 **SRS_WSIO_01_106: \[**If lws_callback_on_writable returns a negative value, wsio_send shall fail and return a non-zero value.**\]** 
 **SRS_WSIO_01_057: \[**The callback on_send_complete shall be called with SEND_RESULT_OK when the send is indicated as complete.**\]**
 **SRS_WSIO_01_059: \[**The callback_context argument shall be passed to on_send_complete as is.**\]** 

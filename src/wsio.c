@@ -662,7 +662,6 @@ int wsio_open(CONCRETE_IO_HANDLE ws_io, ON_IO_OPEN_COMPLETE on_io_open_complete,
         {
             unsigned char is_error = 0;
             char* proxy_string = NULL;
-            int ietf_version = -1; /* latest */
             struct lws_context_creation_info info;
 
             wsio_instance->on_bytes_received = on_bytes_received;
@@ -678,8 +677,8 @@ int wsio_open(CONCRETE_IO_HANDLE ws_io, ON_IO_OPEN_COMPLETE on_io_open_complete,
             info.port = CONTEXT_PORT_NO_LISTEN;
             /* Codes_SRS_WSIO_01_012: [The protocols member shall be populated with 2 protocol entries, one containing the actual protocol to be used and one empty (fields shall be NULL or 0).] */
             info.protocols = wsio_instance->protocols;
-            /* Codes_SRS_WSIO_01_091: [The extensions field shall be set to the internal extensions obtained by calling lws_get_internal_extensions.] */
-            info.extensions = lws_get_internal_extensions();
+            /* Codes_SRS_WSIO_01_091: [The extensions field shall be set to NULL.] */
+            info.extensions = NULL;
             /* Codes_SRS_WSIO_01_092: [gid and uid shall be set to -1.] */
             info.gid = -1;
             info.uid = -1;
@@ -694,8 +693,8 @@ int wsio_open(CONCRETE_IO_HANDLE ws_io, ON_IO_OPEN_COMPLETE on_io_open_complete,
             info.ssl_private_key_filepath = NULL;
             info.ssl_private_key_password = NULL;
             info.provided_client_ssl_ctx = NULL;
-            /* Codes_SRS_WSIO_01_095: [The member options shall be set to 0.] */
-            info.options = 0;
+            /* Codes_SRS_WSIO_01_095: [The member options shall be set to LWS_SERVER_OPTION_DO_SSL_GLOBAL_INIT to initialize the SSL stack.] */
+            info.options = LWS_SERVER_OPTION_DO_SSL_GLOBAL_INIT;
             /* Codes_SRS_WSIO_01_097: [Keep alive shall not be supported, thus ka_time shall be set to 0.] */
             info.ka_time = 0;
 
@@ -769,22 +768,44 @@ int wsio_open(CONCRETE_IO_HANDLE ws_io, ON_IO_OPEN_COMPLETE on_io_open_complete,
                 }
                 else
                 {
+                    struct lws_client_connect_info client_connect_info = { NULL };
+
+                    /* Codes_SRS_WSIO_01_024: [context shall be the context created earlier in wsio_open] */
+                    client_connect_info.context = wsio_instance->ws_context;
+                    /* Codes_SRS_WSIO_01_025: [address shall be the hostname passed to wsio_create] */
+                    client_connect_info.address = wsio_instance->host;
+                    /* Codes_SRS_WSIO_01_026: [port shall be the port passed to wsio_create] */
+                    client_connect_info.port = wsio_instance->port;
+                    /* Codes_SRS_WSIO_01_027: [if use_ssl passed in wsio_create is true, ssl_connection shall be 1]*/
+                    /* Codes_SRS_WSIO_01_103: [otherwise it shall be 0.] */
+                    client_connect_info.ssl_connection = wsio_instance->use_ssl ? 1 : 0;
+                    /* Codes_SRS_WSIO_01_028: [path shall be the relative_path passed in wsio_create] */
+                    client_connect_info.path = wsio_instance->relative_path;
+                    /* Codes_SRS_WSIO_01_029: [host shall be the host passed to wsio_create] */
+                    client_connect_info.host = wsio_instance->host;
+                    /* Codes_SRS_WSIO_01_030: [origin shall be NULL] */
+                    client_connect_info.origin = NULL;
+                    /* Codes_SRS_WSIO_01_031: [protocol shall be the protocol_name passed to wsio_create] */
+                    client_connect_info.protocol = wsio_instance->protocols[0].name;
+                    /* Codes_SRS_WSIO_01_032: [ietf_version_or_minus_one shall be -1] */
+                    client_connect_info.ietf_version_or_minus_one = -1;
+                    /* Codes_SRS_WSIO_01_173: [ `userdata`, `client_exts`, `method`, `parent_wsi`, `uri_replace_from`, `uri_replace_to`, `vhost` and `pwsi` shall be NULL. ]*/
+                    client_connect_info.userdata = NULL;
+                    client_connect_info.client_exts = NULL;
+                    client_connect_info.method = NULL;
+                    client_connect_info.parent_wsi = NULL;
+                    client_connect_info.uri_replace_from = NULL;
+                    client_connect_info.uri_replace_to = NULL;
+                    client_connect_info.vhost = NULL;
+                    client_connect_info.pwsi = NULL;
+
                     wsio_instance->io_state = IO_STATE_OPENING;
 
-                    /* Codes_SRS_WSIO_01_023: [wsio_open shall trigger the libwebsocket connect by calling lws_client_connect and passing to it the following arguments] */
-                    /* Codes_SRS_WSIO_01_024: [clients shall be the context created earlier in wsio_open] */
-                    /* Codes_SRS_WSIO_01_025: [address shall be the hostname passed to wsio_create] */
-                    /* Codes_SRS_WSIO_01_026: [port shall be the port passed to wsio_create] */
-                    /* Codes_SRS_WSIO_01_103: [otherwise it shall be 0.] */
-                    /* Codes_SRS_WSIO_01_028: [path shall be the relative_path passed in wsio_create] */
-                    /* Codes_SRS_WSIO_01_029: [host shall be the host passed to wsio_create] */
-                    /* Codes_SRS_WSIO_01_030: [origin shall be the host passed to wsio_create] */
-                    /* Codes_SRS_WSIO_01_031: [protocol shall be the protocol_name passed to wsio_create] */
-                    /* Codes_SRS_WSIO_01_032: [ietf_version_or_minus_one shall be -1] */
-                    wsio_instance->wsi = lws_client_connect(wsio_instance->ws_context, wsio_instance->host, wsio_instance->port, wsio_instance->use_ssl, wsio_instance->relative_path, wsio_instance->host, wsio_instance->host, wsio_instance->protocols[0].name, ietf_version);
+                    /* Codes_SRS_WSIO_01_023: [wsio_open shall trigger the libwebsocket connect by calling lws_client_connect_via_info and passing to it a lws_client_connect_info structure filled as follows:]*/
+                    wsio_instance->wsi = lws_client_connect_via_info(&client_connect_info);
                     if (wsio_instance->wsi == NULL)
                     {
-                        /* Codes_SRS_WSIO_01_033: [If lws_client_connect fails then wsio_open shall fail and return a non-zero value.] */
+                        /* Codes_SRS_WSIO_01_033: [If lws_client_connect_via_info fails then wsio_open shall fail and return a non-zero value.] */
                         lws_context_destroy(wsio_instance->ws_context);
                         wsio_instance->io_state = IO_STATE_NOT_OPEN;
                         result = __LINE__;
@@ -962,7 +983,7 @@ int wsio_send(CONCRETE_IO_HANDLE ws_io, const void* buffer, size_t size, ON_SEND
             }
             else
             {
-                /* Codes_SRS_WSIO_01_056: [After queueing the data, wsio_send shall call lws_callback_on_writable, while passing as arguments the websockets instance previously obtained in wsio_open from lws_client_connect.] */
+                /* Codes_SRS_WSIO_01_056: [After queueing the data, wsio_send shall call lws_callback_on_writable, while passing as arguments the websockets instance previously obtained in wsio_open from lws_client_connect_via_info.] */
                 if (lws_callback_on_writable(wsio_instance->wsi) < 0)
                 {
                     /* Codes_SRS_WSIO_01_106: [If lws_callback_on_writable returns a negative value, wsio_send shall fail and return a non-zero value.] */
