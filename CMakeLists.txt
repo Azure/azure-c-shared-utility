@@ -433,6 +433,7 @@ set(source_h_files
 ./inc/azure_c_shared_utility/urlencode.h
 ./inc/azure_c_shared_utility/vector.h
 ./inc/azure_c_shared_utility/vector_types.h
+./inc/azure_c_shared_utility/vector_types_internal.h
 ./inc/azure_c_shared_utility/xlogging.h
 ./inc/azure_c_shared_utility/constbuffer.h
 ./inc/azure_c_shared_utility/tlsio.h
