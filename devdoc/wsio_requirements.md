@@ -55,6 +55,7 @@ extern void wsio_destroy(CONCRETE_IO_HANDLE ws_io);
 **SRS_WSIO_01_007: \[**wsio_destroy shall free all resources associated with the wsio instance.**\]**
 **SRS_WSIO_01_008: \[**If ws_io is NULL, wsio_destroy shall do nothing.**\]** 
 **SRS_WSIO_01_009: \[**wsio_destroy shall execute a close action if the IO has already been open or an open action is already pending.**\]** 
+**SRS_WSIO_01_174: \[** `wsio_destroy` shall free any pending context, whose destruction has been deferred by the lws callback by calling `lws_context_destroy`. **\]**
 
 ### wsio_open
 
@@ -300,3 +301,5 @@ Loading the certificates in the certificate store shall be done by:
 -	**SRS_WSIO_01_128: \[**Freeing the BIO**\]** 
 **SRS_WSIO_01_129: \[**If any of the APIs fails and an open call is pending the on_open_complete callback shall be triggered with IO_OPEN_ERROR.**\]** 
 **SRS_WSIO_01_130: \[**If the event is received when the IO is already open the on_io_error callback shall be triggered.**\]** 
+
+**SRS_WSIO_01_175: [** When the on_open_complete callback is invoked, the libwebsockets context shall be saved for later destroy. **]**

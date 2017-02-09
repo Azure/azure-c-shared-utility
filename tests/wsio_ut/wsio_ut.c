@@ -1043,7 +1043,7 @@ TEST_FUNCTION(when_wsio_destroy_is_called_all_resources_are_freed)
     STRICT_EXPECTED_CALL(singlylinkedlist_destroy(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // instance
 
-                                                  // act
+    // act
     wsio_destroy(wsio);
 
     // assert
@@ -1861,7 +1861,6 @@ TEST_FUNCTION(when_ws_callback_indicates_a_connection_error_then_the_on_open_com
     STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
         .SetReturn(saved_ws_callback_context);
     STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_ERROR));
-    STRICT_EXPECTED_CALL(lws_context_destroy(TEST_LIBWEBSOCKET_CONTEXT));
 
     // act
     (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_CONNECTION_ERROR, NULL, NULL, 0);
@@ -1871,6 +1870,37 @@ TEST_FUNCTION(when_ws_callback_indicates_a_connection_error_then_the_on_open_com
 
     // cleanup
     wsio_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_175: [ When the on_open_complete callback is invoked, the libwebsockets context shall be saved for later destroy. ]*/
+/* Tests_SRS_WSIO_01_174: [ `wsio_destroy` shall free any pending context, whose destruction has been deferred by the lws callback by calling `lws_context_destroy`. ]*/
+TEST_FUNCTION(when_ws_callback_indicates_a_connection_error_the_context_destroy_is_deffered_to_wsio_destroy)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
+    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
+        .SetReturn(saved_ws_callback_context);
+    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_CONNECTION_ERROR, NULL, NULL, 0);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(lws_context_destroy(TEST_LIBWEBSOCKET_CONTEXT));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // host_name
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // relative_path
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocol_name
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocols
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // trusted_ca
+    STRICT_EXPECTED_CALL(singlylinkedlist_destroy(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // instance
+
+    // act
+    wsio_destroy(wsio);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
 /* Tests_SRS_WSIO_01_038: [If wsio_close is called while the open action is in progress, the callback on_io_open_complete shall be called with io_open_result being set to IO_OPEN_CANCELLED and then the wsio_close shall proceed to close the IO.] */
@@ -1907,7 +1937,6 @@ TEST_FUNCTION(when_ws_callback_indicates_a_connection_error_then_the_on_open_com
     STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
         .SetReturn(saved_ws_callback_context);
     STRICT_EXPECTED_CALL(test_on_io_open_complete(NULL, IO_OPEN_ERROR));
-    STRICT_EXPECTED_CALL(lws_context_destroy(TEST_LIBWEBSOCKET_CONTEXT));
 
     // act
     (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_CONNECTION_ERROR, NULL, NULL, 0);
@@ -1917,6 +1946,37 @@ TEST_FUNCTION(when_ws_callback_indicates_a_connection_error_then_the_on_open_com
 
     // cleanup
     wsio_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_175: [ When the on_open_complete callback is invoked, the libwebsockets context shall be saved for later destroy. ]*/
+/* Tests_SRS_WSIO_01_174: [ `wsio_destroy` shall free any pending context, whose destruction has been deferred by the lws callback by calling `lws_context_destroy`. ]*/
+TEST_FUNCTION(when_ws_callback_indicates_a_connection_error_and_NULL_callback_context_then_context_destroy_is_deferred_to_wsio_destroy)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+    (void)wsio_open(wsio, test_on_io_open_complete, NULL, test_on_bytes_received, NULL, test_on_io_error, NULL);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
+    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
+        .SetReturn(saved_ws_callback_context);
+    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_CONNECTION_ERROR, NULL, NULL, 0);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(lws_context_destroy(TEST_LIBWEBSOCKET_CONTEXT));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // host_name
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // relative_path
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocol_name
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocols
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // trusted_ca
+    STRICT_EXPECTED_CALL(singlylinkedlist_destroy(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // instance
+
+    // act
+    wsio_destroy(wsio);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
 /* Tests_SRS_WSIO_01_039: [The callback_context argument shall be passed to on_io_open_complete as is.] */
@@ -1975,7 +2035,6 @@ TEST_FUNCTION(when_ws_callback_indicates_a_connect_error_and_no_on_open_complete
     STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
     STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
         .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(lws_context_destroy(TEST_LIBWEBSOCKET_CONTEXT));
 
     // act
     (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_CONNECTION_ERROR, NULL, NULL, 0);
@@ -1985,6 +2044,37 @@ TEST_FUNCTION(when_ws_callback_indicates_a_connect_error_and_no_on_open_complete
 
     // cleanup
     wsio_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_175: [ When the on_open_complete callback is invoked, the libwebsockets context shall be saved for later destroy. ]*/
+/* Tests_SRS_WSIO_01_174: [ `wsio_destroy` shall free any pending context, whose destruction has been deferred by the lws callback by calling `lws_context_destroy`. ]*/
+TEST_FUNCTION(when_ws_callback_indicates_a_connect_error_and_no_on_open_complete_callback_destroy_is_deffered_to_wsio_destroy)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+    (void)wsio_open(wsio, NULL, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
+    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
+        .SetReturn(saved_ws_callback_context);
+    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_CONNECTION_ERROR, NULL, NULL, 0);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(lws_context_destroy(TEST_LIBWEBSOCKET_CONTEXT));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // host_name
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // relative_path
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocol_name
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocols
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // trusted_ca
+    STRICT_EXPECTED_CALL(singlylinkedlist_destroy(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // instance
+
+    // act
+    wsio_destroy(wsio);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
 /* wsio_close */
@@ -2746,7 +2836,6 @@ TEST_FUNCTION(CLIENT_CONNECTION_ERROR_when_opening_yields_open_complete_with_err
     STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
         .SetReturn(saved_ws_callback_context);
     STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_ERROR));
-    STRICT_EXPECTED_CALL(lws_context_destroy(TEST_LIBWEBSOCKET_CONTEXT));
 
     // act
     (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_CONNECTION_ERROR, saved_ws_callback_context, NULL, 0);
@@ -2756,6 +2845,37 @@ TEST_FUNCTION(CLIENT_CONNECTION_ERROR_when_opening_yields_open_complete_with_err
 
     // cleanup
     wsio_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_175: [ When the on_open_complete callback is invoked, the libwebsockets context shall be saved for later destroy. ]*/
+/* Tests_SRS_WSIO_01_174: [ `wsio_destroy` shall free any pending context, whose destruction has been deferred by the lws callback by calling `lws_context_destroy`. ]*/
+TEST_FUNCTION(CLIENT_CONNECTION_ERROR_when_opening_yields_open_complete_with_error_and_deferes_destroy_to_wsio_destroy)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
+    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
+        .SetReturn(saved_ws_callback_context);
+    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_CONNECTION_ERROR, saved_ws_callback_context, NULL, 0);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(lws_context_destroy(TEST_LIBWEBSOCKET_CONTEXT));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // host_name
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // relative_path
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocol_name
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocols
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // trusted_ca
+    STRICT_EXPECTED_CALL(singlylinkedlist_destroy(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // instance
+
+    // act
+    wsio_destroy(wsio);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
 /* Tests_SRS_WSIO_01_069: [If an open action is pending, the on_io_open_complete callback shall be triggered with IO_OPEN_ERROR.] */
@@ -2769,7 +2889,6 @@ TEST_FUNCTION(CLIENT_CONNECTION_ERROR_when_opening_with_NULL_open_complete_callb
     STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
     STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
         .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(lws_context_destroy(TEST_LIBWEBSOCKET_CONTEXT));
 
     // act
     (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_CONNECTION_ERROR, saved_ws_callback_context, NULL, 0);
@@ -2779,6 +2898,37 @@ TEST_FUNCTION(CLIENT_CONNECTION_ERROR_when_opening_with_NULL_open_complete_callb
 
     // cleanup
     wsio_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_175: [ When the on_open_complete callback is invoked, the libwebsockets context shall be saved for later destroy. ]*/
+/* Tests_SRS_WSIO_01_174: [ `wsio_destroy` shall free any pending context, whose destruction has been deferred by the lws callback by calling `lws_context_destroy`. ]*/
+TEST_FUNCTION(CLIENT_CONNECTION_ERROR_when_opening_with_NULL_open_complete_callback_still_frees_the_lws_context_and_defers_destroy_to_wsio_destroy)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+    (void)wsio_open(wsio, NULL, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
+    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
+        .SetReturn(saved_ws_callback_context);
+    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_CONNECTION_ERROR, saved_ws_callback_context, NULL, 0);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(lws_context_destroy(TEST_LIBWEBSOCKET_CONTEXT));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // host_name
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // relative_path
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocol_name
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocols
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // trusted_ca
+    STRICT_EXPECTED_CALL(singlylinkedlist_destroy(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // instance
+
+    // act
+    wsio_destroy(wsio);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
 /* Tests_SRS_WSIO_01_070: [If the IO is already open, the on_io_error callback shall be triggered.] */
@@ -2867,7 +3017,6 @@ TEST_FUNCTION(CLIENT_WRITABLE_when_opening_yields_an_open_complete_error)
     STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
         .SetReturn(saved_ws_callback_context);
     STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_ERROR));
-    STRICT_EXPECTED_CALL(lws_context_destroy(TEST_LIBWEBSOCKET_CONTEXT));
 
     // act
     (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_WRITEABLE, saved_ws_callback_context, NULL, 0);
@@ -2877,6 +3026,37 @@ TEST_FUNCTION(CLIENT_WRITABLE_when_opening_yields_an_open_complete_error)
 
     // cleanup
     wsio_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_175: [ When the on_open_complete callback is invoked, the libwebsockets context shall be saved for later destroy. ]*/
+/* Tests_SRS_WSIO_01_174: [ `wsio_destroy` shall free any pending context, whose destruction has been deferred by the lws callback by calling `lws_context_destroy`. ]*/
+TEST_FUNCTION(CLIENT_WRITABLE_when_opening_yields_an_open_complete_error_and_defers_the_context_destroy_to_wsio_destroy)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
+    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
+        .SetReturn(saved_ws_callback_context);
+    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_WRITEABLE, saved_ws_callback_context, NULL, 0);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(lws_context_destroy(TEST_LIBWEBSOCKET_CONTEXT));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // host_name
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // relative_path
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocol_name
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocols
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // trusted_ca
+    STRICT_EXPECTED_CALL(singlylinkedlist_destroy(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // instance
+
+    // act
+    wsio_destroy(wsio);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
 /* Tests_SRS_WSIO_01_071: [If any pending IO chunks queued in wsio_send are to be sent, then the first one shall be retrieved from the queue.] */
@@ -3761,7 +3941,6 @@ TEST_FUNCTION(CLIENT_RECEIVE_while_opening_triggers_an_open_complete_with_IO_OPE
     STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
         .SetReturn(saved_ws_callback_context);
     STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_ERROR));
-    STRICT_EXPECTED_CALL(lws_context_destroy(TEST_LIBWEBSOCKET_CONTEXT));
 
     // act
     (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_RECEIVE, saved_ws_callback_context, test_buffer, sizeof(test_buffer));
@@ -3771,6 +3950,38 @@ TEST_FUNCTION(CLIENT_RECEIVE_while_opening_triggers_an_open_complete_with_IO_OPE
 
     // cleanup
     wsio_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_175: [ When the on_open_complete callback is invoked, the libwebsockets context shall be saved for later destroy. ]*/
+/* Tests_SRS_WSIO_01_174: [ `wsio_destroy` shall free any pending context, whose destruction has been deferred by the lws callback by calling `lws_context_destroy`. ]*/
+TEST_FUNCTION(CLIENT_RECEIVE_while_opening_saves_the_context_to_be_freed_later)
+{
+    // arrange
+    unsigned char test_buffer[] = { 0x42 };
+    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
+    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
+        .SetReturn(saved_ws_callback_context);
+    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_RECEIVE, saved_ws_callback_context, test_buffer, sizeof(test_buffer));
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(lws_context_destroy(TEST_LIBWEBSOCKET_CONTEXT));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // host_name
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // relative_path
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocol_name
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocols
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // trusted_ca
+    STRICT_EXPECTED_CALL(singlylinkedlist_destroy(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // instance
+
+    // act
+    wsio_destroy(wsio);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
 /* Tests_SRS_WSIO_01_086: [The callback_context shall be set to the callback_context that was passed in wsio_open.] */

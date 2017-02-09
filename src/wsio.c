@@ -54,6 +54,7 @@ typedef struct WSIO_INSTANCE_TAG
     IO_STATE io_state;
     SINGLYLINKEDLIST_HANDLE pending_io_list;
     struct lws_context* ws_context;
+    struct lws_context* dead_context;
     struct lws* wsi;
     int port;
     char* host;
@@ -147,6 +148,26 @@ static int remove_pending_io(WSIO_INSTANCE* wsio_instance, LIST_ITEM_HANDLE item
     return result;
 }
 
+static void free_dead_context(WSIO_INSTANCE* wsio_instance)
+{
+    if (wsio_instance->dead_context != NULL)
+    {
+        lws_context_destroy(wsio_instance->dead_context);
+        wsio_instance->dead_context = NULL;
+    }
+}
+
+static void mark_context_as_dead(WSIO_INSTANCE* wsio_instance)
+{
+    if (wsio_instance->dead_context != wsio_instance->ws_context)
+    {
+        free_dead_context(wsio_instance);
+    }
+
+    wsio_instance->dead_context = wsio_instance->ws_context;
+    wsio_instance->ws_context = NULL;
+}
+
 static int on_ws_callback(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len)
 {
     struct lws_context* context;
@@ -193,9 +214,10 @@ static int on_ws_callback(struct lws *wsi, enum lws_callback_reasons reason, voi
         case IO_STATE_OPENING:
             /* Codes_SRS_WSIO_01_037: [If any error occurs while the open action is in progress, the callback on_io_open_complete shall be called with io_open_result being set to IO_OPEN_ERROR.] */
             /* Codes_SRS_WSIO_01_069: [If an open action is pending, the on_io_open_complete callback shall be triggered with IO_OPEN_ERROR.] */
-            indicate_open_complete(wsio_instance, IO_OPEN_ERROR);
-            lws_context_destroy(wsio_instance->ws_context);
             wsio_instance->io_state = IO_STATE_NOT_OPEN;
+            indicate_open_complete(wsio_instance, IO_OPEN_ERROR);
+            /* Codes_SRS_WSIO_01_175: [ When the on_open_complete callback is invoked, the libwebsockets context shall be saved for later destroy. ]*/
+            mark_context_as_dead(wsio_instance);
             break;
         }
 
@@ -215,9 +237,10 @@ static int on_ws_callback(struct lws *wsi, enum lws_callback_reasons reason, voi
 
         case IO_STATE_OPENING:
             /* Codes_SRS_WSIO_01_121: [If this event is received in while an open action is incomplete, the open_complete callback shall be called with IO_OPEN_ERROR.] */
-            indicate_open_complete(wsio_instance, IO_OPEN_ERROR);
-            lws_context_destroy(wsio_instance->ws_context);
             wsio_instance->io_state = IO_STATE_NOT_OPEN;
+            indicate_open_complete(wsio_instance, IO_OPEN_ERROR);
+            /* Codes_SRS_WSIO_01_175: [ When the on_open_complete callback is invoked, the libwebsockets context shall be saved for later destroy. ]*/
+            mark_context_as_dead(wsio_instance);
             break;
 
         case IO_STATE_OPEN:
@@ -370,9 +393,10 @@ static int on_ws_callback(struct lws *wsi, enum lws_callback_reasons reason, voi
 
         case IO_STATE_OPENING:
             /* Codes_SRS_WSIO_01_122: [If an open action is in progress then the on_open_complete callback shall be invoked with IO_OPEN_ERROR.] */
-            indicate_open_complete(wsio_instance, IO_OPEN_ERROR);
-            lws_context_destroy(wsio_instance->ws_context);
             wsio_instance->io_state = IO_STATE_NOT_OPEN;
+            indicate_open_complete(wsio_instance, IO_OPEN_ERROR);
+            /* Codes_SRS_WSIO_01_175: [ When the on_open_complete callback is invoked, the libwebsockets context shall be saved for later destroy. ]*/
+            mark_context_as_dead(wsio_instance);
             break;
 
         case IO_STATE_OPEN:
@@ -492,6 +516,7 @@ static int on_ws_callback(struct lws *wsi, enum lws_callback_reasons reason, voi
                     /* Codes_SRS_WSIO_01_129: [If any of the APIs fails and an open call is pending the on_open_complete callback shall be triggered with IO_OPEN_ERROR.] */
                     if (wsio_instance->io_state == IO_STATE_OPENING)
                     {
+                        wsio_instance->io_state = IO_STATE_NOT_OPEN;
                         indicate_open_complete(wsio_instance, IO_OPEN_ERROR);
                     }
                 }
@@ -542,6 +567,7 @@ CONCRETE_IO_HANDLE wsio_create(void* io_create_parameters)
             result->wsio_http_proxy_option.port = 0;
             result->wsio_http_proxy_option.password = NULL;
             result->wsio_http_proxy_option.username = NULL;
+            result->dead_context = NULL;
 
             /* Codes_SRS_WSIO_01_098: [wsio_create shall create a pending IO list that is to be used when sending buffers over the libwebsockets IO by calling singlylinkedlist_create.] */
             result->pending_io_list = singlylinkedlist_create();
@@ -852,6 +878,7 @@ int wsio_close(CONCRETE_IO_HANDLE ws_io, ON_IO_CLOSE_COMPLETE on_io_close_comple
             /* Codes_SRS_WSIO_01_038: [If wsio_close is called while the open action is in progress, the callback on_io_open_complete shall be called with io_open_result being set to IO_OPEN_CANCELLED and then the wsio_close shall proceed to close the IO.] */
             if (wsio_instance->io_state == IO_STATE_OPENING)
             {
+                wsio_instance->io_state = IO_STATE_NOT_OPEN;
                 indicate_open_complete(wsio_instance, IO_OPEN_CANCELLED);
             }
             else
@@ -908,6 +935,7 @@ int wsio_close(CONCRETE_IO_HANDLE ws_io, ON_IO_CLOSE_COMPLETE on_io_close_comple
 
     return result;
 }
+
 static void free_http_proxy_data(WSIO_HTTP_PROXY_OPTIONS* wsio_http_proxy_option)
 {
 	if (wsio_http_proxy_option->host_address != NULL)
@@ -928,6 +956,7 @@ static void free_http_proxy_data(WSIO_HTTP_PROXY_OPTIONS* wsio_http_proxy_option
 		wsio_http_proxy_option->password = NULL;
 	}
 }
+
 void wsio_destroy(CONCRETE_IO_HANDLE ws_io)
 {
     /* Codes_SRS_WSIO_01_008: [If ws_io is NULL, wsio_destroy shall do nothing.] */
@@ -937,7 +966,9 @@ void wsio_destroy(CONCRETE_IO_HANDLE ws_io)
 
         /* Codes_SRS_WSIO_01_009: [wsio_destroy shall execute a close action if the IO has already been open or an open action is already pending.] */
         (void)wsio_close(wsio_instance, NULL, NULL);
-		
+
+        free_dead_context(wsio_instance);
+
         /* Codes_SRS_WSIO_01_007: [wsio_destroy shall free all resources associated with the wsio instance.] */
         free(wsio_instance->protocols);
         free(wsio_instance->host);
