@@ -515,7 +515,20 @@ if(${use_http})
             target_link_libraries(aziotsharedutil crypt32 winhttp)
         endif()
     else()
-        find_package(CURL REQUIRED)
+        # try pkg-config first
+        find_package(PkgConfig)
+        if(PKG_CONFIG_FOUND)
+            pkg_check_modules(CURL libcurl)
+        endif()
+
+        # if that didn't work, try CMake find_package
+        if(NOT CURL_FOUND)
+            find_package(CURL)
+        endif()
+
+        set(CURL_FIND_REQUIRED 1)
+        find_package_handle_standard_args(CURL DEFAULT_MSG CURL_LIBRARIES)
+
         include_directories(${CURL_INCLUDE_DIRS})
         target_link_libraries(aziotsharedutil ${CURL_LIBRARIES})
     endif()
