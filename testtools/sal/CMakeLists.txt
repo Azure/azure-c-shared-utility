@@ -15,6 +15,6 @@ elseif(UNIX)
 	set(SAL_INC_FOLDER ${CMAKE_CURRENT_LIST_DIR}/inc CACHE INTERNAL "this is what needs to be included if using sal header" FORCE)
 endif()
 	
-if(LINUX)
+if(NOT WIN32)
 	add_files_to_install("./testtools/sal/inc/sal.h;./testtools/sal/inc/no_sal2.h")
 endif()
