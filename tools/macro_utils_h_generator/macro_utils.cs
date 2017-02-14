@@ -1101,7 +1101,7 @@ for(var i=1;i<=nArithmetic;i++){
                     ") const char* C2(enumName, StringStorage)[COUNT_ARG(__VA_ARGS__)] = {FOR_EACH_1(" +
                     "DEFINE_ENUMERATION_CONSTANT_AS_STRING, __VA_ARGS__)}; \\\r\nconst char* C2(enumName" +
                     ",Strings)(enumName value)                   \\\r\n{                                " +
-                    "                                  \\\r\n    if(value>=COUNT_ARG(__VA_ARGS__))      " +
+                    "                                  \\\r\n    if((int)value>=COUNT_ARG(__VA_ARGS__)) " +
                     "                        \\\r\n    {                                                " +
                     "              \\\r\n        /*this is an error case*/                              " +
                     "    \\\r\n        return NULL;                                               \\\r\n   " +
