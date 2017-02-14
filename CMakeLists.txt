@@ -413,6 +413,7 @@ set(source_h_files
 ./inc/azure_c_shared_utility/lock.h
 ./inc/azure_c_shared_utility/macro_utils.h
 ./inc/azure_c_shared_utility/map.h
+./inc/azure_c_shared_utility/optimize_size.h
 ./inc/azure_c_shared_utility/platform.h
 ./inc/azure_c_shared_utility/refcount.h
 ./inc/azure_c_shared_utility/sastoken.h

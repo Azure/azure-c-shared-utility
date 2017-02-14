@@ -22,6 +22,7 @@ set(mbed_exported_project_files
 		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/lock.h
 		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/macro_utils.h
 		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/map.h
+		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/optimize_size.h
 		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/platform.h
 		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/refcount.h
 		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/sastoken.h
@@ -32,7 +33,7 @@ set(mbed_exported_project_files
 		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/string_tokenizer.h
 		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/strings.h
 		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/strings_types.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/string_tokenizer_types.h
+		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/string_tokenizer_types.h
 		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/threadapi.h
 		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/tickcounter.h
 		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/tlsio.h
@@ -43,9 +44,9 @@ set(mbed_exported_project_files
 		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/xio.h
 		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/xlogging.h
 		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/umock_c_prod.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/optionhandler.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/vector_types.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/vector_types_internal.h
+		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/optionhandler.h
+		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/vector_types.h
+		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/vector_types_internal.h
    )
 
 set(mbed_project_files
