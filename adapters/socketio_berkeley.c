@@ -21,6 +21,7 @@
 #include <errno.h>
 #include "azure_c_shared_utility/singlylinkedlist.h"
 #include "azure_c_shared_utility/gballoc.h"
+#include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/xlogging.h"
 
 #define SOCKET_SUCCESS          0
@@ -118,7 +119,7 @@ static int add_pending_io(SOCKET_IO_INSTANCE* socket_io_instance, const unsigned
     PENDING_SOCKET_IO* pending_socket_io = (PENDING_SOCKET_IO*)malloc(sizeof(PENDING_SOCKET_IO));
     if (pending_socket_io == NULL)
     {
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     {
@@ -127,7 +128,7 @@ static int add_pending_io(SOCKET_IO_INSTANCE* socket_io_instance, const unsigned
         {
             LogError("Allocation Failure: Unable to allocate pending list.");
             free(pending_socket_io);
-            result = __LINE__;
+            result = __FAILURE__;
         }
         else
         {
@@ -142,7 +143,7 @@ static int add_pending_io(SOCKET_IO_INSTANCE* socket_io_instance, const unsigned
                 LogError("Failure: Unable to add socket to pending list.");
                 free(pending_socket_io->bytes);
                 free(pending_socket_io);
-                result = __LINE__;
+                result = __FAILURE__;
             }
             else
             {
@@ -263,14 +264,14 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
     if (socket_io == NULL)
     {
         LogError("Invalid argument: SOCKET_IO_INSTANCE is NULL");
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     {
         if (socket_io_instance->io_state != IO_STATE_CLOSED)
         {
             LogError("Failure: socket state is not closed.");
-            result = __LINE__;
+            result = __FAILURE__;
         }
         else if (socket_io_instance->socket != INVALID_SOCKET)
         {
@@ -293,7 +294,7 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
             if (socket_io_instance->socket < SOCKET_SUCCESS)
             {
                 LogError("Failure: socket create failure %d.", socket_io_instance->socket);
-                result = __LINE__;
+                result = __FAILURE__;
             }
             else
             {
@@ -309,7 +310,7 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
                     LogError("Failure: getaddrinfo failure %d.", err);
                     close(socket_io_instance->socket);
                     socket_io_instance->socket = INVALID_SOCKET;
-                    result = __LINE__;
+                    result = __FAILURE__;
                 }
                 else
                 {
@@ -320,7 +321,7 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
                         LogError("Failure: fcntl failure.");
                         close(socket_io_instance->socket);
                         socket_io_instance->socket = INVALID_SOCKET;
-                        result = __LINE__;
+                        result = __FAILURE__;
                     }
                     else
                     {
@@ -330,7 +331,7 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
                             LogError("Failure: connect failure %d.", errno);
                             close(socket_io_instance->socket);
                             socket_io_instance->socket = INVALID_SOCKET;
-                            result = __LINE__;
+                            result = __FAILURE__;
                         }
                         else
                         {
@@ -359,7 +360,7 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
                                     LogError("Failure: select failure.");
                                     close(socket_io_instance->socket);
                                     socket_io_instance->socket = INVALID_SOCKET;
-                                    result = __LINE__;
+                                    result = __FAILURE__;
                                 }
                                 else
                                 {
@@ -371,7 +372,7 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
                                         LogError("Failure: getsockopt failure %d.", errno);
                                         close(socket_io_instance->socket);
                                         socket_io_instance->socket = INVALID_SOCKET;
-                                        result = __LINE__;
+                                        result = __FAILURE__;
                                     }
                                     else if (so_error != 0)
                                     {
@@ -379,7 +380,7 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
                                         LogError("Failure: connect failure %d.", so_error);
                                         close(socket_io_instance->socket);
                                         socket_io_instance->socket = INVALID_SOCKET;
-                                        result = __LINE__;
+                                        result = __FAILURE__;
                                     }
                                 }
                             }
@@ -417,7 +418,7 @@ int socketio_close(CONCRETE_IO_HANDLE socket_io, ON_IO_CLOSE_COMPLETE on_io_clos
 
     if (socket_io == NULL)
     {
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     {
@@ -452,7 +453,7 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
     {
         /* Invalid arguments */
         LogError("Invalid argument: send given invalid parameter");
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     {
@@ -460,7 +461,7 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
         if (socket_io_instance->io_state != IO_STATE_OPEN)
         {
             LogError("Failure: socket state is not opened.");
-            result = __LINE__;
+            result = __FAILURE__;
         }
         else
         {
@@ -470,7 +471,7 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
                 if (add_pending_io(socket_io_instance, buffer, size, on_send_complete, callback_context) != 0)
                 {
                     LogError("Failure: add_pending_io failed.");
-                    result = __LINE__;
+                    result = __FAILURE__;
                 }
                 else
                 {
@@ -493,7 +494,7 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
                         {
                             indicate_error(socket_io_instance);
                             LogError("Failure: sending socket failed. errno=%d (%s).", errno, strerror(errno));
-                            result = __LINE__;
+                            result = __FAILURE__;
                         }
                     }
                     else
@@ -502,7 +503,7 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
                         if (add_pending_io(socket_io_instance, buffer + send_result, size - send_result, on_send_complete, callback_context) != 0)
                         {
                             LogError("Failure: add_pending_io failed.");
-                            result = __LINE__;
+                            result = __FAILURE__;
                         }
                         else
                         {
@@ -635,7 +636,7 @@ int socketio_setoption(CONCRETE_IO_HANDLE socket_io, const char* optionName, con
         optionName == NULL ||
         value == NULL)
     {
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     {
@@ -662,7 +663,7 @@ int socketio_setoption(CONCRETE_IO_HANDLE socket_io, const char* optionName, con
         }
         else
         {
-            result = __LINE__;
+            result = __FAILURE__;
         }
     }
 

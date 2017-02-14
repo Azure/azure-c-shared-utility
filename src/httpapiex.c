@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/httpapiex.h"
+#include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/strings.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
@@ -103,7 +104,7 @@ static int buildRequestHttpHeadersHandle(HTTPAPIEX_HANDLE_DATA *handleData, BUFF
 
     if (*toBeUsedRequestHttpHeadersHandle == NULL)
     {
-        result = __LINE__;
+        result = __FAILURE__;
         LogError("unable to HTTPHeaders_Alloc");
     }
     else
@@ -128,7 +129,7 @@ static int buildRequestHttpHeadersHandle(HTTPAPIEX_HANDLE_DATA *handleData, BUFF
                 HTTPHeaders_Free(*toBeUsedRequestHttpHeadersHandle);
             }
             *toBeUsedRequestHttpHeadersHandle = NULL;
-            result = __LINE__;
+            result = __FAILURE__;
         }
         else
         {
@@ -145,7 +146,7 @@ static int buildResponseHttpHeadersHandle(HTTP_HEADERS_HANDLE originalResponsetH
     {
         if ((*toBeUsedResponsetHttpHeadersHandle = HTTPHeaders_Alloc()) == NULL)
         {
-            result = __LINE__;
+            result = __FAILURE__;
         }
         else
         {
@@ -171,7 +172,7 @@ static int buildBufferIfNotExist(BUFFER_HANDLE originalRequestContent, bool* isO
         *toBeUsedRequestContent = BUFFER_new();
         if (*toBeUsedRequestContent == NULL)
         {
-            result = __LINE__;
+            result = __FAILURE__;
         }
         else
         {
@@ -207,20 +208,20 @@ static int buildAllRequests(HTTPAPIEX_HANDLE_DATA* handle, HTTPAPI_REQUEST_TYPE 
     /*Codes_SRS_HTTPAPIEX_02_014: [If requestContent is not NULL then its content and its size shall be used for parameters content and contentLength of HTTPAPI_ExecuteRequest.] */
     if (buildBufferIfNotExist(requestContent, isOriginalRequestContent, toBeUsedRequestContent) != 0)
     {
-        result = __LINE__;
         LogError("unable to build the request content");
+        result = __FAILURE__;
     }
     else
     {
         if (buildRequestHttpHeadersHandle(handle, *toBeUsedRequestContent, requestHttpHeadersHandle, isOriginalRequestHttpHeadersHandle, toBeUsedRequestHttpHeadersHandle) != 0)
         {
             /*Codes_SRS_HTTPAPIEX_02_010: [If any of the operations in SRS_HTTAPIEX_02_009 fails, then HTTPAPIEX_ExecuteRequest shall return HTTPAPIEX_ERROR.] */
-            result = __LINE__;
             if (*isOriginalRequestContent == false) 
             {
                 BUFFER_delete(*toBeUsedRequestContent);
             }
             LogError("unable to build the request http headers handle");
+            result = __FAILURE__;
         }
         else
         {
@@ -250,7 +251,6 @@ static int buildAllRequests(HTTPAPIEX_HANDLE_DATA* handle, HTTPAPI_REQUEST_TYPE 
             if (buildResponseHttpHeadersHandle(responseHttpHeadersHandle, isOriginalResponseHttpHeadersHandle, toBeUsedResponseHttpHeadersHandle) != 0)
             {
                 /*Codes_SRS_HTTPAPIEX_02_018: [If creating the temporary http headers in SRS_HTTPAPIEX_02_017 fails then HTTPAPIEX_ExecuteRequest shall return HTTPAPIEX_ERROR.] */
-                result = __LINE__;
                 if (*isOriginalRequestContent == false)
                 {
                     BUFFER_delete(*toBeUsedRequestContent);
@@ -260,6 +260,7 @@ static int buildAllRequests(HTTPAPIEX_HANDLE_DATA* handle, HTTPAPI_REQUEST_TYPE 
                     HTTPHeaders_Free(*toBeUsedRequestHttpHeadersHandle);
                 }
                 LogError("unable to build response content");
+                result = __FAILURE__;
             }
             else
             {
@@ -268,7 +269,6 @@ static int buildAllRequests(HTTPAPIEX_HANDLE_DATA* handle, HTTPAPI_REQUEST_TYPE 
                 if (buildBufferIfNotExist(responseContent, isOriginalResponseContent, toBeUsedResponseContent) != 0)
                 {
                     /*Codes_SRS_HTTPAPIEX_02_021: [If creating the BUFFER_HANDLE in SRS_HTTPAPIEX_02_020 fails, then HTTPAPIEX_ExecuteRequest shall return HTTPAPIEX_ERROR.] */
-                    result = __LINE__;
                     if (*isOriginalRequestContent == false)
                     {
                         BUFFER_delete(*toBeUsedRequestContent);
@@ -282,6 +282,7 @@ static int buildAllRequests(HTTPAPIEX_HANDLE_DATA* handle, HTTPAPI_REQUEST_TYPE 
                         HTTPHeaders_Free(*toBeUsedResponseHttpHeadersHandle);
                     }
                     LogError("unable to build response content");
+                    result = __FAILURE__;
                 }
                 else
                 {
@@ -556,7 +557,7 @@ static int createOrUpdateOption(HTTPAPIEX_HANDLE_DATA* handleData, const char* o
         if (mallocAndStrcpy_s((char**)&(newOption.optionName), optionName) != 0)
         {
             free((void*)value);
-            result = __LINE__;
+            result = __FAILURE__;
         }
         else
         {
@@ -566,7 +567,7 @@ static int createOrUpdateOption(HTTPAPIEX_HANDLE_DATA* handleData, const char* o
                 LogError("unable to VECTOR_push_back");
                 free((void*)newOption.optionName);
                 free((void*)value);
-                result = __LINE__;
+                result = __FAILURE__;
             }
             else
             {

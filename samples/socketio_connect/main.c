@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include "stdio.h"
+#include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/xio.h"
 #include "azure_c_shared_utility/socketio.h"
 #include "azure_c_shared_utility/platform.h"
@@ -50,7 +51,7 @@ int main(int argc, char** argv)
     if (platform_init() != 0)
     {
         (void)printf("Cannot initialize platform.");
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     {
@@ -58,7 +59,7 @@ int main(int argc, char** argv)
         if (socketio_interface == NULL)
         {
             (void)printf("Error getting socketio interface description.");
-            result = __LINE__;
+            result = __FAILURE__;
         }
         else
         {
@@ -71,14 +72,14 @@ int main(int argc, char** argv)
             if (socketio == NULL)
             {
                 (void)printf("Error creating socket IO.");
-                result = __LINE__;
+                result = __FAILURE__;
             }
             else
             {
                 if (xio_open(socketio, on_io_open_complete, socketio, on_io_bytes_received, socketio, on_io_error, socketio) != 0)
                 {
                     (void)printf("Error opening socket IO.");
-                    result = __LINE__;
+                    result = __FAILURE__;
                 }
                 else
                 {

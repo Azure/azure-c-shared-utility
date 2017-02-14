@@ -20,6 +20,7 @@ static void my_gballoc_free(void* s)
 #include "umocktypes_charptr.h"
 #include "umock_c_negative_tests.h"
 #include "azure_c_shared_utility/optionhandler.h"
+#include "azure_c_shared_utility/optimize_size.h"
 
 /*not very nice source level preprocessor mocking... */
 /*but real implementation of VECTOR is paramount here, because -> operator cannot be mocked*/
@@ -122,19 +123,19 @@ BEGIN_TEST_SUITE(optionhandler_unittests)
 
         REGISTER_GLOBAL_MOCK_HOOK(VECTOR_size, real_VECTOR_size);
         REGISTER_GLOBAL_MOCK_HOOK(VECTOR_push_back, real_VECTOR_push_back);
-        REGISTER_GLOBAL_MOCK_FAIL_RETURN(VECTOR_push_back, __LINE__);
+        REGISTER_GLOBAL_MOCK_FAIL_RETURN(VECTOR_push_back, __FAILURE__);
 
         REGISTER_GLOBAL_MOCK_HOOK(VECTOR_element, real_VECTOR_element);
 
         REGISTER_GLOBAL_MOCK_HOOK(VECTOR_destroy, real_VECTOR_destroy);
 
         REGISTER_GLOBAL_MOCK_HOOK(mallocAndStrcpy_s, my_mallocAndStrcpy_s);
-        REGISTER_GLOBAL_MOCK_FAIL_RETURN(mallocAndStrcpy_s, __LINE__);
+        REGISTER_GLOBAL_MOCK_FAIL_RETURN(mallocAndStrcpy_s, __FAILURE__);
 
         REGISTER_GLOBAL_MOCK_HOOK(aCloneOption, my_aCloneOption);
         REGISTER_GLOBAL_MOCK_FAIL_RETURN(aCloneOption, NULL);
 
-        REGISTER_GLOBAL_MOCK_FAIL_RETURN(aSetOption, __LINE__);
+        REGISTER_GLOBAL_MOCK_FAIL_RETURN(aSetOption, __FAILURE__);
 
         REGISTER_GLOBAL_MOCK_HOOK(aDestroyOption, my_aDestroyOption);
     }

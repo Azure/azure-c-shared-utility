@@ -6,6 +6,7 @@
 #include "azure_c_shared_utility/strings.h"
 #include "azure_c_shared_utility/string_tokenizer.h"
 #include <stdbool.h>
+#include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/xlogging.h"
 
 
@@ -162,12 +163,12 @@ int connectionstringparser_splitHostName_from_char(const char* hostName, STRING_
 
     if ((hostName == NULL) || ((*hostName) == '\0') || ((*hostName) == '.') || (nameString == NULL) || (suffixString == NULL))
     {
-        /* Codes_SRS_CONNECTIONSTRINGPARSER_21_026: [If the hostName is NULL, connectionstringparser_splitHostName_from_char shall return __LINE__.]*/
-        /* Codes_SRS_CONNECTIONSTRINGPARSER_21_027: [If the hostName is an empty string, connectionstringparser_splitHostName_from_char shall return __LINE__.]*/
-        /* Codes_SRS_CONNECTIONSTRINGPARSER_21_028: [If the nameString is NULL, connectionstringparser_splitHostName_from_char shall return __LINE__.]*/
-        /* Codes_SRS_CONNECTIONSTRINGPARSER_21_029: [If the suffixString is NULL, connectionstringparser_splitHostName_from_char shall return __LINE__.]*/
-        /* Codes_SRS_CONNECTIONSTRINGPARSER_21_030: [If the hostName is not a valid host name, connectionstringparser_splitHostName_from_char shall return __LINE__.]*/
-        result = __LINE__;
+        /* Codes_SRS_CONNECTIONSTRINGPARSER_21_026: [If the hostName is NULL, connectionstringparser_splitHostName_from_char shall return __FAILURE__.]*/
+        /* Codes_SRS_CONNECTIONSTRINGPARSER_21_027: [If the hostName is an empty string, connectionstringparser_splitHostName_from_char shall return __FAILURE__.]*/
+        /* Codes_SRS_CONNECTIONSTRINGPARSER_21_028: [If the nameString is NULL, connectionstringparser_splitHostName_from_char shall return __FAILURE__.]*/
+        /* Codes_SRS_CONNECTIONSTRINGPARSER_21_029: [If the suffixString is NULL, connectionstringparser_splitHostName_from_char shall return __FAILURE__.]*/
+        /* Codes_SRS_CONNECTIONSTRINGPARSER_21_030: [If the hostName is not a valid host name, connectionstringparser_splitHostName_from_char shall return __FAILURE__.]*/
+        result = __FAILURE__;
     }
     else
     {
@@ -185,22 +186,22 @@ int connectionstringparser_splitHostName_from_char(const char* hostName, STRING_
      
         if ((*runHostName) == '\0')
         {
-            /* Codes_SRS_CONNECTIONSTRINGPARSER_21_030: [If the hostName is not a valid host name, connectionstringparser_splitHostName_from_char shall return __LINE__.]*/
-            result = __LINE__;
+            /* Codes_SRS_CONNECTIONSTRINGPARSER_21_030: [If the hostName is not a valid host name, connectionstringparser_splitHostName_from_char shall return __FAILURE__.]*/
+            result = __FAILURE__;
         }
         else
         {
             /* Codes_SRS_CONNECTIONSTRINGPARSER_21_023: [connectionstringparser_splitHostName_from_char shall copy all characters, from the beginning of the hostName to the first `.` to the nameString.]*/
             if (STRING_copy_n(nameString, hostName, runHostName - hostName - 1) != 0)
             {
-                /* Codes_SRS_CONNECTIONSTRINGPARSER_21_031: [If connectionstringparser_splitHostName_from_char get error copying the name to the nameString, it shall return __LINE__.]*/
-                result = __LINE__;
+                /* Codes_SRS_CONNECTIONSTRINGPARSER_21_031: [If connectionstringparser_splitHostName_from_char get error copying the name to the nameString, it shall return __FAILURE__.]*/
+                result = __FAILURE__;
             }
             /* Codes_SRS_CONNECTIONSTRINGPARSER_21_024: [connectionstringparser_splitHostName_from_char shall copy all characters, from the first `.` to the end of the hostName, to the suffixString.]*/
             else if (STRING_copy(suffixString, runHostName) != 0)
             {
-                /* Codes_SRS_CONNECTIONSTRINGPARSER_21_032: [If connectionstringparser_splitHostName_from_char get error copying the suffix to the suffixString, it shall return __LINE__.]*/
-                result = __LINE__;
+                /* Codes_SRS_CONNECTIONSTRINGPARSER_21_032: [If connectionstringparser_splitHostName_from_char get error copying the suffix to the suffixString, it shall return __FAILURE__.]*/
+                result = __FAILURE__;
             }
             else
             {
@@ -220,8 +221,8 @@ int connectionstringparser_splitHostName(STRING_HANDLE hostNameString, STRING_HA
 
     if (hostNameString == NULL)
     {
-        /* Codes_SRS_CONNECTIONSTRINGPARSER_21_034: [If the hostNameString is NULL, connectionstringparser_splitHostName shall return __LINE__.]*/
-        result = __LINE__;
+        /* Codes_SRS_CONNECTIONSTRINGPARSER_21_034: [If the hostNameString is NULL, connectionstringparser_splitHostName shall return __FAILURE__.]*/
+        result = __FAILURE__;
     }
     else
     {

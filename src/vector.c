@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/vector.h"
+#include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/xlogging.h"
 
 #include "azure_c_shared_utility/vector_types_internal.h"
@@ -94,7 +95,7 @@ int VECTOR_push_back(VECTOR_HANDLE handle, const void* elements, size_t numEleme
        /* Codes_SRS_VECTOR_10_034: [VECTOR_push_back shall fail and return non-zero if `elements` is NULL.] */
        /* Codes_SRS_VECTOR_10_035: [VECTOR_push_back shall fail and return non-zero if `numElements` is 0.] */
         LogError("invalid argument - handle(%p), elements(%p), numElements(%zd).", handle, elements, numElements);
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     {
@@ -106,7 +107,7 @@ int VECTOR_push_back(VECTOR_HANDLE handle, const void* elements, size_t numEleme
         {
            /* Codes_SRS_VECTOR_10_012: [VECTOR_push_back shall fail and return non-zero if memory allocation fails.] */
             LogError("realloc failed.");
-            result = __LINE__;
+            result = __FAILURE__;
         }
         else
         {

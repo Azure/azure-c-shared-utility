@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include "azure_c_shared_utility/platform.h"
+#include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/xio.h"
 #include "winsock2.h"
 
@@ -20,7 +21,7 @@ int platform_init(void)
     WSADATA wsaData;
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
     {
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     {

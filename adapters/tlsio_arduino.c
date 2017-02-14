@@ -11,6 +11,7 @@
 #include "tlsio_arduino.h"
 #include "sslClient_arduino.h"
 #include "azure_c_shared_utility/socketio.h"
+#include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/platform.h"
 #include "azure_c_shared_utility/threadapi.h"
@@ -205,7 +206,7 @@ int tlsio_arduino_open(
     {
         /* Codes_SRS_TLSIO_ARDUINO_21_036: [ If the tlsio_handle is NULL, the tlsio_arduino_open shall not do anything, and return _LINE_. ]*/
         LogError("NULL TLS handle.");
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     {
@@ -235,7 +236,7 @@ int tlsio_arduino_open(
             /* Codes_SRS_TLSIO_ARDUINO_21_035: [ If the tlsio state is TLSIO_ARDUINO_STATE_ERROR, TLSIO_ARDUINO_STATE_OPENING, TLSIO_ARDUINO_STATE_OPEN, or TLSIO_ARDUINO_STATE_CLOSING, the tlsio_arduino_open shall set the tlsio state as TLSIO_ARDUINO_STATE_ERROR, and return _LINE_. ]*/
             LogError("Try to open a connection with an already opened TLS.");
             tlsio_instance->state = TLSIO_ARDUINO_STATE_ERROR;
-            result = __LINE__;
+            result = __FAILURE__;
         }
         else
         {
@@ -244,7 +245,7 @@ int tlsio_arduino_open(
                 /* Codes_SRS_TLSIO_ARDUINO_21_037: [ If the ssl client is connected, the tlsio_arduino_open shall change the state to TLSIO_ARDUINO_STATE_ERROR, log the error, and return _LINE_. ]*/
                 LogError("No SSL clients available.");
                 tlsio_instance->state = TLSIO_ARDUINO_STATE_ERROR;
-                result = __LINE__;
+                result = __FAILURE__;
             }
             /* Codes_SRS_TLSIO_ARDUINO_21_027: [ The tlsio_arduino_open shall set the tlsio to try to open the connection for 10 times before assuming that connection failed. ]*/
             else if (sslClient_connect(tlsio_instance->remote_addr, tlsio_instance->port))
@@ -259,7 +260,7 @@ int tlsio_arduino_open(
                 /* Codes_SRS_TLSIO_ARDUINO_21_038: [ If tlsio_arduino_open failed to start the process to open the ssl connection, it shall set the tlsio state as TLSIO_ARDUINO_STATE_ERROR, and return _LINE_. ]*/
                 LogError("TLS failed to start the connection process.");
                 tlsio_instance->state = TLSIO_ARDUINO_STATE_ERROR;
-                result = __LINE__;
+                result = __FAILURE__;
             }
         }
     }
@@ -296,7 +297,7 @@ int tlsio_arduino_close(CONCRETE_IO_HANDLE tlsio_handle, ON_IO_CLOSE_COMPLETE on
     {
         /* Codes_SRS_TLSIO_ARDUINO_21_049: [ If the tlsio_handle is NULL, the tlsio_arduino_close shall not do anything, and return _LINE_. ]*/
         LogError("NULL TLS handle.");
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     {
@@ -316,7 +317,7 @@ int tlsio_arduino_close(CONCRETE_IO_HANDLE tlsio_handle, ON_IO_CLOSE_COMPLETE on
             /* Codes_SRS_TLSIO_ARDUINO_21_048: [ If the tlsio state is TLSIO_ARDUINO_STATE_OPENING, or TLSIO_ARDUINO_STATE_CLOSING, the tlsio_arduino_close shall set the tlsio state as TLSIO_ARDUINO_STATE_CLOSE, and return _LINE_. ]*/
             LogError("Try to close the connection with an already closed TLS.");
             tlsio_instance->state = TLSIO_ARDUINO_STATE_ERROR;
-            result = __LINE__;
+            result = __FAILURE__;
         }
         else
         {
@@ -346,20 +347,20 @@ int tlsio_arduino_send(CONCRETE_IO_HANDLE tlsio_handle, const void* buffer, size
         /* Codes_SRS_TLSIO_ARDUINO_21_060: [ If the buffer is NULL, the tlsio_arduino_send shall not do anything, and return _LINE_. ]*/
         /* Codes_SRS_TLSIO_ARDUINO_21_061: [ If the size is 0, the tlsio_arduino_send shall not do anything, and return _LINE_. ]*/
         LogError("Invalid parameter");
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else if (tlsio_instance->state != TLSIO_ARDUINO_STATE_OPEN)
     {
         /* Codes_SRS_TLSIO_ARDUINO_21_058: [ If the tlsio state is TLSIO_ARDUINO_STATE_ERROR, TLSIO_ARDUINO_STATE_OPENING, TLSIO_ARDUINO_STATE_CLOSING, or TLSIO_ARDUINO_STATE_CLOSED, the tlsio_arduino_send shall call the on_send_complete with IO_SEND_ERROR, and return _LINE_. ]*/
         LogError("TLS is not ready to send data");
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     {
         size_t send_result;
         size_t send_size = size;
         const uint8_t* runBuffer = (const uint8_t *)buffer;
-        result = __LINE__;
+        result = __FAILURE__;
         /* Codes_SRS_TLSIO_ARDUINO_21_055: [ if the ssl was not able to send all data in the buffer, the tlsio_arduino_send shall call the ssl again to send the remaining bytes. ]*/
         while (send_size > 0)
         {

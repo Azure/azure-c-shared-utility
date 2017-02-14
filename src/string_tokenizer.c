@@ -5,6 +5,7 @@
 #include "azure_c_shared_utility/gballoc.h"
 #include <stdbool.h>
 #include "azure_c_shared_utility/string_tokenizer.h"
+#include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
 
@@ -71,7 +72,7 @@ int STRING_TOKENIZER_get_next_token(STRING_TOKENIZER_HANDLE tokenizer, STRING_HA
     /* Codes_SRS_STRING_04_004: [STRING_TOKENIZER_get_next_token shall return a nonzero value if any of the 3 parameters is NULL] */
     if (tokenizer == NULL || output == NULL || delimiters == NULL)
     {
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else 
     {
@@ -84,12 +85,12 @@ int STRING_TOKENIZER_get_next_token(STRING_TOKENIZER_HANDLE tokenizer, STRING_HA
         /* Codes_SRS_STRING_TOKENIZER_04_014: [STRING_TOKENIZER_get_next_token shall return nonzero value if t contains an empty string.] */
         if (remainingInputStringSize == 0)
         {
-            result = __LINE__;
+            result = __FAILURE__;
         }
         else if (delimitterSize == 0)
         {
             LogError("Empty delimiters parameter.");
-            result = __LINE__;
+            result = __FAILURE__;
         }
         else
         {
@@ -126,7 +127,7 @@ int STRING_TOKENIZER_get_next_token(STRING_TOKENIZER_HANDLE tokenizer, STRING_HA
             /* Codes_SRS_STRING_04_006: [If no such character is found, then STRING_TOKENIZER_get_next_token shall return a nonzero Value (You've reach the end of the string or the string consists with only delimiters).] */
             if (remainingInputStringSize == 0)
             {
-                result = __LINE__;
+                result = __FAILURE__;
             }
             else
             {
@@ -161,7 +162,7 @@ int STRING_TOKENIZER_get_next_token(STRING_TOKENIZER_HANDLE tokenizer, STRING_HA
                 if (STRING_copy_n(output, token->currentPos, amountOfCharactersToCopy) != 0)
                 {
                     LogError("Problem copying token to output String.");
-                    result = __LINE__;
+                    result = __FAILURE__;
                 }
                 else
                 {

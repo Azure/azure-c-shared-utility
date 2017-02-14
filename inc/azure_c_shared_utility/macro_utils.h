@@ -11542,7 +11542,7 @@ IF(X, "true", "false") => "true"
 #define DEFINE_ENUM_STRINGS(enumName, ...) const char* C2(enumName, StringStorage)[COUNT_ARG(__VA_ARGS__)] = {FOR_EACH_1(DEFINE_ENUMERATION_CONSTANT_AS_STRING, __VA_ARGS__)}; \
 const char* C2(enumName,Strings)(enumName value)                   \
 {                                                                  \
-    if((int)value>=COUNT_ARG(__VA_ARGS__))                         \
+    if(value>=COUNT_ARG(__VA_ARGS__))                              \
     {                                                              \
         /*this is an error case*/                                  \
         return NULL;                                               \
@@ -11558,7 +11558,7 @@ int C2(enumName, _FromString)(const char* enumAsString, enumName* destination)  
         (enumAsString==NULL) || (destination==NULL)                             \
     )                                                                           \
     {                                                                           \
-        return __LINE__;                                                        \
+        return __FAILURE__;                                                     \
     }                                                                           \
     else                                                                        \
     {                                                                           \
@@ -11571,7 +11571,7 @@ int C2(enumName, _FromString)(const char* enumAsString, enumName* destination)  
                 return 0;                                                       \
             }                                                                   \
         }                                                                       \
-        return __LINE__;                                                        \
+        return __FAILURE__;                                                     \
     }                                                                           \
 }                                                                               \
 

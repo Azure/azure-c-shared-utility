@@ -28,6 +28,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
+#include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/tlsio.h"
 #include "azure_c_shared_utility/tlsio_mbedtls.h"
 #include "azure_c_shared_utility/socketio.h"
@@ -456,7 +457,7 @@ int tlsio_mbedtls_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_open
     if (tls_io == NULL)
     {
         LogError("NULL tls_io");
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     {
@@ -465,7 +466,7 @@ int tlsio_mbedtls_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_open
         if (tls_io_instance->tlsio_state != TLSIO_STATE_NOT_OPEN)
         {
             LogError("IO should not be open: %d\n", tls_io_instance->tlsio_state);
-            result =  __LINE__;
+            result =  __FAILURE__;
         }
         else
         {
@@ -484,7 +485,7 @@ int tlsio_mbedtls_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_open
             {
                 LogError("Underlying IO open failed");
                 tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
-                result = __LINE__;
+                result = __FAILURE__;
             }
             else
             {
@@ -502,7 +503,7 @@ int tlsio_mbedtls_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_cl
 
     if (tls_io == NULL)
     {
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     {
@@ -511,7 +512,7 @@ int tlsio_mbedtls_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_cl
         if ((tls_io_instance->tlsio_state == TLSIO_STATE_NOT_OPEN) ||
             (tls_io_instance->tlsio_state == TLSIO_STATE_CLOSING))
         {
-            result = __LINE__;
+            result = __FAILURE__;
         }
         else
         {
@@ -521,7 +522,7 @@ int tlsio_mbedtls_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_cl
 
             if (xio_close(tls_io_instance->socket_io, on_underlying_io_close_complete, tls_io_instance) != 0)
             {
-                result = __LINE__;
+                result = __FAILURE__;
             }
             else
             {
@@ -539,7 +540,7 @@ int tlsio_mbedtls_send(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t siz
 
     if (tls_io == NULL)
     {
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     {
@@ -547,7 +548,7 @@ int tlsio_mbedtls_send(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t siz
 
         if (tls_io_instance->tlsio_state != TLSIO_STATE_OPEN)
         {
-            result = __LINE__;
+            result = __FAILURE__;
         }
         else
         {
@@ -557,7 +558,7 @@ int tlsio_mbedtls_send(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t siz
             int res = mbedtls_ssl_write(&tls_io_instance->ssl, buffer, size);
             if (res != size)
             {
-                result = __LINE__;
+                result = __FAILURE__;
             }
             else
             {
@@ -595,7 +596,7 @@ int tlsio_mbedtls_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
 
     if (tls_io == NULL || optionName == NULL)
     {
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     {
@@ -606,7 +607,7 @@ int tlsio_mbedtls_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
             result = mbedtls_x509_crt_parse(&tls_io_instance->cacert,(const unsigned char *)value,(int)(strlen(value)+1));
             if( result != 0 )
             {
-                result = __LINE__;
+                result = __FAILURE__;
             }
             else
             {
@@ -615,7 +616,7 @@ int tlsio_mbedtls_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
         }
         else if (tls_io_instance->socket_io == NULL)
         {
-            result = __LINE__;
+            result = __FAILURE__;
         }
         else
         {

@@ -46,6 +46,7 @@ void my_gballoc_free(void* ptr)
     free(ptr);
 }
 
+#include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/tlsio_cyclonessl_socket.h"
 
 #define ENABLE_MOCKS
@@ -73,7 +74,7 @@ MOCK_FUNCTION_WITH_CODE(WSAAPI, int, getaddrinfo, PCSTR, pNodeName, PCSTR, pServ
     else
     {
         *ppResult = NULL;
-        callFail = __LINE__;
+        callFail = __FAILURE__;
     }
 MOCK_FUNCTION_END(callFail)
 

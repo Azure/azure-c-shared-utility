@@ -11,6 +11,7 @@
 #include <math.h>
 #include <errno.h>
 #include "azure_c_shared_utility/gballoc.h"
+#include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
 
 
@@ -724,7 +725,7 @@ int unsignedIntToString(char* destination, size_t destinationSize, unsigned int 
         (destinationSize < 2) /*because the smallest number is '0\0' which requires 2 characters*/
         )
     {
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     {
@@ -753,7 +754,7 @@ int unsignedIntToString(char* destination, size_t destinationSize, unsigned int 
         else
         {
             /*Codes_SRS_CRT_ABSTRACTIONS_02_002: [If the conversion fails for any reason (for example, insufficient buffer space), a non-zero return value shall be supplied and unsignedIntToString shall fail.] */
-            result = __LINE__;
+            result = __FAILURE__;
         }
     }
     return result;
@@ -775,7 +776,7 @@ int size_tToString(char* destination, size_t destinationSize, size_t value)
         (destinationSize < 2) /*because the smallest number is '0\0' which requires 2 characters*/
         )
     {
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     {
@@ -804,7 +805,7 @@ int size_tToString(char* destination, size_t destinationSize, size_t value)
         else
         {
             /*Codes_SRS_CRT_ABSTRACTIONS_02_002: [If the conversion fails for any reason (for example, insufficient buffer space), a non-zero return value shall be supplied and unsignedIntToString shall fail.] */
-            result = __LINE__;
+            result = __FAILURE__;
         }
     }
     return result;

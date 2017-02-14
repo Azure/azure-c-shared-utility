@@ -331,7 +331,7 @@ int C2(enumName, _FromString)(const char* enumAsString, enumName* destination)  
         (enumAsString==NULL) || (destination==NULL)                             \
     )                                                                           \
     {                                                                           \
-        return __LINE__;                                                        \
+        return __FAILURE__;                                                     \
     }                                                                           \
     else                                                                        \
     {                                                                           \
@@ -340,11 +340,11 @@ int C2(enumName, _FromString)(const char* enumAsString, enumName* destination)  
         {                                                                       \
             if(strcmp(enumAsString, C2(enumName, StringStorage)[i])==0)         \
             {                                                                   \
-                *destination = (enumName)i;                                               \
+                *destination = (enumName)i;                                     \
                 return 0;                                                       \
             }                                                                   \
         }                                                                       \
-        return __LINE__;                                                        \
+        return __FAILURE__;                                                     \
     }                                                                           \
 }                                                                               \
 

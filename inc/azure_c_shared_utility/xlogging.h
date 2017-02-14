@@ -11,6 +11,7 @@
 #endif /* __cplusplus */
 
 #include "azure_c_shared_utility/agenttime.h"
+#include "azure_c_shared_utility/optimize_size.h"
 
 #ifdef TIZENRT
 #undef LOG_INFO
@@ -39,6 +40,14 @@ typedef void(*LOGGER_LOG)(LOG_CATEGORY log_category, const char* file, const cha
 #define LOG(...)
 #define LogInfo(...)
 #define LogError(...)
+#define xlogging_get_log_function() NULL
+#define xlogging_set_log_function(...)
+#define LogErrorWinHTTPWithGetLastErrorAsString(...)
+#define UNUSED(x) (void)(x)
+#elif (defined MINIMAL_LOGERROR)
+#define LOG(...)
+#define LogInfo(...)
+#define LogError(...) printf("error %s: line %d\n",__FILE__,__LINE__);
 #define xlogging_get_log_function() NULL
 #define xlogging_set_log_function(...)
 #define LogErrorWinHTTPWithGetLastErrorAsString(...)

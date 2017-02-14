@@ -4,6 +4,7 @@
 #include "azure_c_shared_utility/platform.h"
 #include "EthernetInterface.h"
 #include "NTPClient.h"
+#include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/xio.h"
 #include "azure_c_shared_utility/tlsio_wolfssl.h"
 
@@ -13,14 +14,14 @@ int setupRealTime(void)
 
     if (EthernetInterface::connect())
     {
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     {
         NTPClient ntp;
         if (ntp.setTime("0.pool.ntp.org") != 0)
         {
-            result = __LINE__;
+            result = __FAILURE__;
         }
         else
         {
@@ -38,15 +39,15 @@ int platform_init(void)
 
     if (EthernetInterface::init())
     {
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else if (setupRealTime() != 0)
     {
-        result = __LINE__;
+        result = __FAILURE__;
     } 
     else if (EthernetInterface::connect())
     {
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     {

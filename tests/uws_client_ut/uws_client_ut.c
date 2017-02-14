@@ -44,6 +44,7 @@ Tests_SRS_UWS_CLIENT_01_211: [ One implication of this is that in absence of ext
 
 #define ENABLE_MOCKS
 
+#include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/xio.h"
 #include "azure_c_shared_utility/shared_util_options.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
@@ -290,7 +291,7 @@ static int umocktypes_copy_const_SOCKETIO_CONFIG_ptr(SOCKETIO_CONFIG** destinati
     *destination = (SOCKETIO_CONFIG*)malloc(sizeof(SOCKETIO_CONFIG));
     if (*destination == NULL)
     {
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     {

@@ -47,6 +47,7 @@ void my_gballoc_free(void* ptr)
 #include "azure_c_shared_utility/optionhandler.h"
 #undef ENABLE_MOCKS
 
+#include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/socketio.h"
 
 #define ENABLE_MOCKS
@@ -108,7 +109,7 @@ if (!g_addrinfo_call_fail)
 else
 {
     *ppResult = NULL;
-    callFail = __LINE__;
+    callFail = __FAILURE__;
 }
 MOCK_FUNCTION_END(callFail)
 MOCK_FUNCTION_WITH_CODE(WSAAPI, void, freeaddrinfo, PADDRINFOA, pResult)
@@ -250,7 +251,7 @@ int umocktypes_copy_const_ADDRINFOA_ptr(ADDRINFOA** destination, const ADDRINFOA
     *destination = (ADDRINFOA*)malloc(sizeof(ADDRINFOA));
     if (*destination == NULL)
     {
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     {
@@ -309,7 +310,7 @@ int umocktypes_copy_const_struct_sockaddr_ptr(struct sockaddr** destination, con
     *destination = (struct sockaddr*)malloc(sizeof(struct sockaddr));
     if (*destination == NULL)
     {
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     {

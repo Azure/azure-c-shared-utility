@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include <stdlib.h>
+#include "azure_c_shared_utility/optimize_size.h"
 
 static size_t currentmalloc_call = 0;
 static size_t whenShallmalloc_fail = 0;
@@ -104,7 +105,7 @@ static int DontAllowCapitalsFilters(const char* mapProperty, const char* mapValu
     {
         if (*iterator >= 'A' && *iterator <= 'Z')
         {
-            result = __LINE__;
+            result = __FAILURE__;
             break;
         }
         iterator++;
@@ -117,7 +118,7 @@ static int DontAllowCapitalsFilters(const char* mapProperty, const char* mapValu
         {
             if (*iterator >= 'A' && *iterator <= 'Z')
             {
-                result = __LINE__;
+                result = __FAILURE__;
                 break;
             }
             iterator++;

@@ -11,6 +11,7 @@
 
 #define ENABLE_MOCKS
 
+#include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/xio.h"
 #include "azure_c_shared_utility/optionhandler.h"
 #include "azure_c_shared_utility/shared_util_options.h"
@@ -245,7 +246,7 @@ static int copy_string(char** destination, const char* source)
         *destination = (char*)malloc(length + 1);
         if (*destination == NULL)
         {
-            result = __LINE__;
+            result = __FAILURE__;
         }
         else
         {
@@ -264,7 +265,7 @@ static int umocktypes_copy_const_struct_lws_context_creation_info_ptr(struct lws
     *destination = (struct lws_context_creation_info*)malloc(sizeof(struct lws_context_creation_info));
     if (*destination == NULL)
     {
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     {
@@ -349,7 +350,7 @@ static int umocktypes_copy_const_struct_lws_context_creation_info_ptr(struct lws
 
         if (is_error)
         {
-            result = __LINE__;
+            result = __FAILURE__;
         }
         else
         {
@@ -361,7 +362,7 @@ static int umocktypes_copy_const_struct_lws_context_creation_info_ptr(struct lws
                 (copy_string((char**)&(*destination)->ssl_cipher_list, (*source)->ssl_cipher_list) != 0) ||
                 (copy_string((char**)&(*destination)->http_proxy_address, (*source)->http_proxy_address) != 0))
             {
-                result = __LINE__;
+                result = __FAILURE__;
             }
             else
             {
@@ -517,7 +518,7 @@ static int umocktypes_copy_const_struct_lws_client_connect_info_ptr(struct lws_c
     *destination = (struct lws_client_connect_info*)malloc(sizeof(struct lws_client_connect_info));
     if (*destination == NULL)
     {
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     {
@@ -530,7 +531,7 @@ static int umocktypes_copy_const_struct_lws_client_connect_info_ptr(struct lws_c
             (copy_string((char**)&(*destination)->uri_replace_from, (*source)->uri_replace_from) != 0) ||
             (copy_string((char**)&(*destination)->uri_replace_to, (*source)->uri_replace_to) != 0))
         {
-            result = __LINE__;
+            result = __FAILURE__;
         }
         else
         {

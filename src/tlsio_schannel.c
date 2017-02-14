@@ -23,6 +23,7 @@
 #include "windows.h"
 #include "sspi.h"
 #include "schannel.h"
+#include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/x509_schannel.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
@@ -209,10 +210,10 @@ static int resize_receive_buffer(TLS_IO_INSTANCE* tls_io_instance, size_t needed
 
     if (needed_buffer_size > tls_io_instance->buffer_size)
     {
-		unsigned char* new_buffer = (unsigned char*) realloc(tls_io_instance->received_bytes, needed_buffer_size);
+        unsigned char* new_buffer = (unsigned char*) realloc(tls_io_instance->received_bytes, needed_buffer_size);
         if (new_buffer == NULL)
         {
-            result = __LINE__;
+            result = __FAILURE__;
         }
         else
         {
@@ -364,7 +365,7 @@ static int set_receive_buffer(TLS_IO_INSTANCE* tls_io_instance, size_t buffer_si
 	unsigned char* new_buffer = (unsigned char*) realloc(tls_io_instance->received_bytes, buffer_size);
     if (new_buffer == NULL)
     {
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     {
@@ -809,7 +810,7 @@ int tlsio_schannel_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_ope
 
     if (tls_io == NULL)
     {
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     {
@@ -817,7 +818,7 @@ int tlsio_schannel_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_ope
 
         if (tls_io_instance->tlsio_state != TLSIO_STATE_NOT_OPEN)
         {
-            result = __LINE__;
+            result = __FAILURE__;
         }
         else
         {
@@ -834,8 +835,8 @@ int tlsio_schannel_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_ope
 
             if (xio_open(tls_io_instance->socket_io, on_underlying_io_open_complete, tls_io_instance, on_underlying_io_bytes_received, tls_io_instance, on_underlying_io_error, tls_io_instance) != 0)
             {
-                result = __LINE__;
                 tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
+                result = __FAILURE__;
             }
             else
             {
@@ -853,7 +854,7 @@ int tlsio_schannel_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_c
 
     if (tls_io == NULL)
     {
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     {
@@ -862,7 +863,7 @@ int tlsio_schannel_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_c
         if ((tls_io_instance->tlsio_state == TLSIO_STATE_NOT_OPEN) ||
             (tls_io_instance->tlsio_state == TLSIO_STATE_CLOSING))
         {
-            result = __LINE__;
+            result = __FAILURE__;
         }
         else
         {
@@ -871,7 +872,7 @@ int tlsio_schannel_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_c
             tls_io_instance->on_io_close_complete_context = callback_context;
             if (xio_close(tls_io_instance->socket_io, on_underlying_io_close_complete, tls_io_instance) != 0)
             {
-                result = __LINE__;
+                result = __FAILURE__;
             }
             else
             {
@@ -892,14 +893,14 @@ static int send_chunk(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t size
         (size == 0))
     {
         /* Invalid arguments */
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     {
         TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tls_io;
         if (tls_io_instance->tlsio_state != TLSIO_STATE_OPEN)
         {
-            result = __LINE__;
+            result = __FAILURE__;
         }
         else
         {
@@ -907,7 +908,7 @@ static int send_chunk(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t size
             SECURITY_STATUS status = QueryContextAttributes(&tls_io_instance->security_context, SECPKG_ATTR_STREAM_SIZES, &sizes);
             if (status != SEC_E_OK)
             {
-                result = __LINE__;
+                result = __FAILURE__;
             }
             else
             {
@@ -917,7 +918,7 @@ static int send_chunk(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t size
                 unsigned char* out_buffer = (unsigned char*)malloc(needed_buffer);
                 if (out_buffer == NULL)
                 {
-                    result = __LINE__;
+                    result = __FAILURE__;
                 }
                 else
                 {
@@ -943,13 +944,13 @@ static int send_chunk(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t size
                     status = EncryptMessage(&tls_io_instance->security_context, 0, &security_buffers_desc, 0);
                     if (FAILED(status))
                     {
-                        result = __LINE__;
+                        result = __FAILURE__;
                     }
                     else
                     {
                         if (xio_send(tls_io_instance->socket_io, out_buffer, security_buffers[0].cbBuffer + security_buffers[1].cbBuffer + security_buffers[2].cbBuffer, on_send_complete, callback_context) != 0)
                         {
-                            result = __LINE__;
+                            result = __FAILURE__;
                         }
                         else
                         {
@@ -989,7 +990,7 @@ int tlsio_schannel_send(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t si
 
     if (size > 0)
     {
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     {
@@ -1014,7 +1015,7 @@ int tlsio_schannel_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, 
 
     if (tls_io == NULL || optionName == NULL)
     {
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     {
@@ -1025,7 +1026,7 @@ int tlsio_schannel_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, 
             if (tls_io_instance->x509certificate != NULL)
             {
                 LogError("unable to set x509 options more than once");
-                result =__LINE__;
+                result = __FAILURE__;
             }
             else
             {
@@ -1036,7 +1037,7 @@ int tlsio_schannel_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, 
                     if (tls_io_instance->x509_schannel_handle == NULL)
                     {
                         LogError("x509_schannel_create failed");
-                        result = __LINE__;
+                        result = __FAILURE__;
                     }
                     else
                     {
@@ -1055,7 +1056,7 @@ int tlsio_schannel_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, 
             if (tls_io_instance->x509privatekey != NULL)
             {
                 LogError("unable to set more than once x509 options");
-                result = __LINE__;
+                result = __FAILURE__;
             }
             else
             {
@@ -1066,7 +1067,7 @@ int tlsio_schannel_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, 
                     if (tls_io_instance->x509_schannel_handle == NULL)
                     {
                         LogError("x509_schannel_create failed");
-                        result = __LINE__;
+                        result = __FAILURE__;
                     }
                     else
                     {
@@ -1082,7 +1083,7 @@ int tlsio_schannel_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, 
         }
         else if (tls_io_instance->socket_io == NULL)
         {
-            result = __LINE__;
+            result = __FAILURE__;
         }
         else
         {

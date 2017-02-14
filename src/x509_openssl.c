@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include "azure_c_shared_utility/x509_openssl.h"
+#include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/xlogging.h"
 #include "openssl/bio.h"
 #include "openssl/rsa.h"
@@ -36,7 +37,7 @@ int x509_openssl_add_credentials(SSL_CTX* ssl_ctx, const char* x509certificate, 
         )
     {
         LogError("invalid parameter detected: SSL_CTX* ssl_ctx=%p, const char* x509certificate=%p, const char* x509privatekey=%p", ssl_ctx, x509certificate, x509privatekey);
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     { 
@@ -45,7 +46,7 @@ int x509_openssl_add_credentials(SSL_CTX* ssl_ctx, const char* x509certificate, 
         if (bio_certificate == NULL)
         {
             LogError("cannot create  BIO *bio_certificate");
-            result = __LINE__;
+            result = __FAILURE__;
         }
         else
         {
@@ -53,7 +54,7 @@ int x509_openssl_add_credentials(SSL_CTX* ssl_ctx, const char* x509certificate, 
             if (cert == NULL)
             {
                 LogError("cannot create X509 *cert");
-                result = __LINE__;
+                result = __FAILURE__;
             }
             else
             {
@@ -62,7 +63,7 @@ int x509_openssl_add_credentials(SSL_CTX* ssl_ctx, const char* x509certificate, 
                 if (bio_privatekey == NULL)
                 {
                     LogError("cannot create BIO *bio_privatekey;");
-                    result = __LINE__;
+                    result = __FAILURE__;
                 }
                 else
                 {
@@ -70,7 +71,7 @@ int x509_openssl_add_credentials(SSL_CTX* ssl_ctx, const char* x509certificate, 
                     if (privatekey == NULL)
                     {
                         LogError("cannot create RSA* privatekey");
-                        result = __LINE__; 
+                        result = __FAILURE__; 
                     }
                     else
                     {
@@ -78,7 +79,7 @@ int x509_openssl_add_credentials(SSL_CTX* ssl_ctx, const char* x509certificate, 
                         {
                             LogError("cannot SSL_CTX_use_certificate");
                             print_OPENSSL_error_queue();
-                            result = __LINE__; 
+                            result = __FAILURE__; 
                         }
                         else
                         {
@@ -86,7 +87,7 @@ int x509_openssl_add_credentials(SSL_CTX* ssl_ctx, const char* x509certificate, 
                             {
                                 LogError("cannot SSL_CTX_use_RSAPrivateKey");
                                 print_OPENSSL_error_queue();
-                                result = __LINE__;
+                                result = __FAILURE__;
                             }
                             else
                             {

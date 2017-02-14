@@ -11,6 +11,7 @@
 #include "azure_c_shared_utility/socketio.h"
 #include "azure_c_shared_utility/singlylinkedlist.h"
 #include "azure_c_shared_utility/gballoc.h"
+#include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/xlogging.h"
 
 typedef enum IO_STATE_TAG
@@ -102,7 +103,7 @@ static int add_pending_io(SOCKET_IO_INSTANCE* socket_io_instance, const unsigned
     PENDING_SOCKET_IO* pending_socket_io = (PENDING_SOCKET_IO*)malloc(sizeof(PENDING_SOCKET_IO));
     if (pending_socket_io == NULL)
     {
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     {
@@ -111,7 +112,7 @@ static int add_pending_io(SOCKET_IO_INSTANCE* socket_io_instance, const unsigned
         {
             LogError("Allocation Failure: Unable to allocate pending list.");
             free(pending_socket_io);
-            result = __LINE__;
+            result = __FAILURE__;
         }
         else
         {
@@ -126,7 +127,7 @@ static int add_pending_io(SOCKET_IO_INSTANCE* socket_io_instance, const unsigned
                 LogError("Failure: Unable to add socket to pending list.");
                 free(pending_socket_io->bytes);
                 free(pending_socket_io);
-                result = __LINE__;
+                result = __FAILURE__;
             }
             else
             {
@@ -250,14 +251,14 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
     if (socket_io == NULL)
     {
         LogError("Invalid argument: SOCKET_IO_INSTANCE is NULL");
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     {
         if (socket_io_instance->io_state != IO_STATE_CLOSED)
         {
             LogError("Failure: socket state is not closed.");
-            result = __LINE__;
+            result = __FAILURE__;
         }
         else if (socket_io_instance->socket != INVALID_SOCKET)
         {
@@ -277,7 +278,7 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
             if (socket_io_instance->socket == INVALID_SOCKET)
             {
                 LogError("Failure: socket create failure %d.", WSAGetLastError());
-                result = __LINE__;
+                result = __FAILURE__;
             }
             else
             {
@@ -294,7 +295,7 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
                     LogError("Failure: getaddrinfo failure %d.", WSAGetLastError());
                     (void)closesocket(socket_io_instance->socket);
                     socket_io_instance->socket = INVALID_SOCKET;
-                    result = __LINE__;
+                    result = __FAILURE__;
                 }
                 else
                 {
@@ -305,14 +306,14 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
                         LogError("Failure: connect failure %d.", WSAGetLastError());
                         (void)closesocket(socket_io_instance->socket);
                         socket_io_instance->socket = INVALID_SOCKET;
-                        result = __LINE__;
+                        result = __FAILURE__;
                     }
                     else if (ioctlsocket(socket_io_instance->socket, FIONBIO, &iMode) != 0)
                     {
                         LogError("Failure: ioctlsocket failure %d.", WSAGetLastError());
                         (void)closesocket(socket_io_instance->socket);
                         socket_io_instance->socket = INVALID_SOCKET;
-                        result = __LINE__;
+                        result = __FAILURE__;
                     }
                     else
                     {
@@ -348,7 +349,7 @@ int socketio_close(CONCRETE_IO_HANDLE socket_io, ON_IO_CLOSE_COMPLETE on_io_clos
     if (socket_io == NULL)
     {
         LogError("Invalid argument: socket_io is NULL");
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     {
@@ -381,7 +382,7 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
     {
         /* Invalid arguments */
         LogError("Invalid argument: send given invalid parameter");
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     {
@@ -389,7 +390,7 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
         if (socket_io_instance->io_state != IO_STATE_OPEN)
         {
             LogError("Failure: socket state is not opened.");
-            result = __LINE__;
+            result = __FAILURE__;
         }
         else
         {
@@ -399,7 +400,7 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
                 if (add_pending_io(socket_io_instance, buffer, size, on_send_complete, callback_context) != 0)
                 {
                     LogError("Failure: add_pending_io failed.");
-                    result = __LINE__;
+                    result = __FAILURE__;
                 }
                 else
                 {
@@ -418,7 +419,7 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
                     {
                         indicate_error(socket_io_instance);
                         LogError("Failure: sending socket failed %d.", last_error);
-                        result = __LINE__;
+                        result = __FAILURE__;
                     }
                     else
                     {
@@ -426,7 +427,7 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
                         if (add_pending_io(socket_io_instance, buffer, size, on_send_complete, callback_context) != 0)
                         {
                             LogError("Failure: add_pending_io failed.");
-                            result = __LINE__;
+                            result = __FAILURE__;
                         }
                         else
                         {
@@ -552,7 +553,7 @@ static int set_keepalive(SOCKET_IO_INSTANCE* socket_io, struct tcp_keepalive* ke
     if (err != 0)
     {
         LogError("Failure: setting keep-alive on the socket: %d.\r\n", err == SOCKET_ERROR ? WSAGetLastError() : err);
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     {
@@ -571,7 +572,7 @@ int socketio_setoption(CONCRETE_IO_HANDLE socket_io, const char* optionName, con
         optionName == NULL ||
         value == NULL)
     {
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     {
@@ -602,7 +603,7 @@ int socketio_setoption(CONCRETE_IO_HANDLE socket_io, const char* optionName, con
         }
         else
         {
-            result = __LINE__;
+            result = __FAILURE__;
         }
     }
 

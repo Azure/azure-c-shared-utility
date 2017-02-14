@@ -12,6 +12,7 @@
 #include "azure_c_shared_utility/optionhandler.h"
 #include "libwebsockets.h"
 #include "openssl/ssl.h"
+#include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/xio.h"
 #include "azure_c_shared_utility/shared_util_options.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
@@ -92,7 +93,7 @@ static int add_pending_io(WSIO_INSTANCE* ws_io_instance, const unsigned char* bu
     if (pending_socket_io == NULL)
     {
         /* Codes_SRS_WSIO_01_055: [If queueing the data fails (i.e. due to insufficient memory), wsio_send shall fail and return a non-zero value.] */
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     {
@@ -101,7 +102,7 @@ static int add_pending_io(WSIO_INSTANCE* ws_io_instance, const unsigned char* bu
         {
             /* Codes_SRS_WSIO_01_055: [If queueing the data fails (i.e. due to insufficient memory), wsio_send shall fail and return a non-zero value.] */
             free(pending_socket_io);
-            result = __LINE__;
+            result = __FAILURE__;
         }
         else
         {
@@ -118,7 +119,7 @@ static int add_pending_io(WSIO_INSTANCE* ws_io_instance, const unsigned char* bu
                 /* Codes_SRS_WSIO_01_055: [If queueing the data fails (i.e. due to insufficient memory), wsio_send shall fail and return a non-zero value.] */
                 free(pending_socket_io->bytes);
                 free(pending_socket_io);
-                result = __LINE__;
+                result = __FAILURE__;
             }
             else
             {
@@ -138,7 +139,7 @@ static int remove_pending_io(WSIO_INSTANCE* wsio_instance, LIST_ITEM_HANDLE item
     free(pending_socket_io);
     if (singlylinkedlist_remove(wsio_instance->pending_io_list, item_handle) != 0)
     {
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     {
@@ -673,7 +674,7 @@ int wsio_open(CONCRETE_IO_HANDLE ws_io, ON_IO_OPEN_COMPLETE on_io_open_complete,
 
     if (ws_io == NULL)
     {
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     {
@@ -682,7 +683,7 @@ int wsio_open(CONCRETE_IO_HANDLE ws_io, ON_IO_OPEN_COMPLETE on_io_open_complete,
         /* Codes_SRS_WSIO_01_034: [If another open is in progress or has completed successfully (the IO is open), wsio_open shall fail and return a non-zero value without performing any connection related activities.] */
         if (wsio_instance->io_state != IO_STATE_NOT_OPEN)
         {
-            result = __LINE__;
+            result = __FAILURE__;
         }
         else
         {
@@ -742,7 +743,7 @@ int wsio_open(CONCRETE_IO_HANDLE ws_io, ON_IO_OPEN_COMPLETE on_io_open_complete,
                 if (proxy_string == NULL)
                 {
                     LogError("Could not allocate memory for libwebsockets proxy string");
-                    result = __LINE__;
+                    result = __FAILURE__;
                 }
                 else
                 {
@@ -781,7 +782,7 @@ int wsio_open(CONCRETE_IO_HANDLE ws_io, ON_IO_OPEN_COMPLETE on_io_open_complete,
             if (is_error != 0)
             {
                 LogError("Could not construct proxy string for libwebsockets");
-                result = __LINE__;
+                result = __FAILURE__;
             }
             else
             {
@@ -790,7 +791,7 @@ int wsio_open(CONCRETE_IO_HANDLE ws_io, ON_IO_OPEN_COMPLETE on_io_open_complete,
                 if (wsio_instance->ws_context == NULL)
                 {
                     /* Codes_SRS_WSIO_01_022: [If creating the context fails then wsio_open shall fail and return a non-zero value.] */
-                    result = __LINE__;
+                    result = __FAILURE__;
                 }
                 else
                 {
@@ -834,7 +835,7 @@ int wsio_open(CONCRETE_IO_HANDLE ws_io, ON_IO_OPEN_COMPLETE on_io_open_complete,
                         /* Codes_SRS_WSIO_01_033: [If lws_client_connect_via_info fails then wsio_open shall fail and return a non-zero value.] */
                         lws_context_destroy(wsio_instance->ws_context);
                         wsio_instance->io_state = IO_STATE_NOT_OPEN;
-                        result = __LINE__;
+                        result = __FAILURE__;
                     }
                     else
                     {
@@ -861,7 +862,7 @@ int wsio_close(CONCRETE_IO_HANDLE ws_io, ON_IO_CLOSE_COMPLETE on_io_close_comple
     if (ws_io == NULL)
     {
         /* Codes_SRS_WSIO_01_042: [if ws_io is NULL, wsio_close shall return a non-zero value.] */
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     {
@@ -871,7 +872,7 @@ int wsio_close(CONCRETE_IO_HANDLE ws_io, ON_IO_CLOSE_COMPLETE on_io_close_comple
         /* Codes_SRS_WSIO_01_046: [wsio_close after a wsio_close shall fail and return a non-zero value.] */
         if (wsio_instance->io_state == IO_STATE_NOT_OPEN)
         {
-            result = __LINE__;
+            result = __FAILURE__;
         }
         else
         {
@@ -994,7 +995,7 @@ int wsio_send(CONCRETE_IO_HANDLE ws_io, const void* buffer, size_t size, ON_SEND
         /* Codes_SRS_WSIO_01_053: [If size is zero then wsio_send shall fail and return a non-zero value.] */
         (size == 0))
     {
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     {
@@ -1003,14 +1004,14 @@ int wsio_send(CONCRETE_IO_HANDLE ws_io, const void* buffer, size_t size, ON_SEND
         /* Codes_SRS_WSIO_01_051: [If the wsio is not OPEN (open has not been called or is still in progress) then wsio_send shall fail and return a non-zero value.] */
         if (wsio_instance->io_state != IO_STATE_OPEN)
         {
-            result = __LINE__;
+            result = __FAILURE__;
         }
         else
         {
             /* Codes_SRS_WSIO_01_054: [wsio_send shall queue the buffer and size until the libwebsockets callback is invoked with the event LWS_CALLBACK_CLIENT_WRITEABLE.] */
             if (add_pending_io(wsio_instance, buffer, size, on_send_complete, callback_context) != 0)
             {
-                result = __LINE__;
+                result = __FAILURE__;
             }
             else
             {
@@ -1018,7 +1019,7 @@ int wsio_send(CONCRETE_IO_HANDLE ws_io, const void* buffer, size_t size, ON_SEND
                 if (lws_callback_on_writable(wsio_instance->wsi) < 0)
                 {
                     /* Codes_SRS_WSIO_01_106: [If lws_callback_on_writable returns a negative value, wsio_send shall fail and return a non-zero value.] */
-                    result = __LINE__;
+                    result = __FAILURE__;
                 }
                 else
                 {
@@ -1060,8 +1061,8 @@ int wsio_setoption(CONCRETE_IO_HANDLE ws_io, const char* optionName, const void*
         )
     {
         /* Codes_SRS_WSIO_01_136: [ If any of the arguments ws_io or option_name is NULL wsio_setoption shall return a non-zero value. ] ]*/
-        result = __LINE__;
         LogError("invalid parameter (NULL) passed to HTTPAPI_SetOption");
+        result = __FAILURE__;
     }
     else
     {
@@ -1088,18 +1089,18 @@ int wsio_setoption(CONCRETE_IO_HANDLE ws_io, const char* optionName, const void*
                 {
                     /* Codes_SRS_WSIO_01_160: [ If the hostname field is NULL then wsio_setoption shall return a non-zero value. ]*/
                     LogError("NULL hostname given in the proxy_data option");
-                    result = __LINE__;
+                    result = __FAILURE__;
                 }
                 else
                 {
                     /* Codes_SRS_WSIO_01_161: [ If a previous proxy_data option was saved, then the previous value shall be freed. ]*/
-					free_http_proxy_data(&wsio_instance->wsio_http_proxy_option);
+                    free_http_proxy_data(&wsio_instance->wsio_http_proxy_option);
 
                     /* Codes_SRS_WSIO_01_163: [ The fields hostname, username and password shall be copied for later use by using mallocAndStrcpy_s. ]*/
                     if (mallocAndStrcpy_s(&wsio_instance->wsio_http_proxy_option.host_address, proxy_data->host_address) != 0)
                     {
                         LogError("Cannot copy hostname_address for proxy_data option");
-                        result = __LINE__;
+                        result = __FAILURE__;
                     }
                     else
                     {
@@ -1109,7 +1110,7 @@ int wsio_setoption(CONCRETE_IO_HANDLE ws_io, const char* optionName, const void*
                             (mallocAndStrcpy_s(&wsio_instance->wsio_http_proxy_option.username, proxy_data->username) != 0))
                         {
                             LogError("Cannot copy username for proxy_data option");
-                            result = __LINE__;
+                            result = __FAILURE__;
                         }
                         else
                         {
@@ -1119,7 +1120,7 @@ int wsio_setoption(CONCRETE_IO_HANDLE ws_io, const char* optionName, const void*
                                 (mallocAndStrcpy_s(&wsio_instance->wsio_http_proxy_option.password, proxy_data->password) != 0))
                             {
                                 LogError("Cannot copy password for proxy_data option");
-                                result = __LINE__;
+                                result = __FAILURE__;
                             }
                             else
                             {
@@ -1155,7 +1156,7 @@ int wsio_setoption(CONCRETE_IO_HANDLE ws_io, const char* optionName, const void*
         else
         {
             /* Codes_SRS_WSIO_01_137: [ If the option_name argument indicates an option that is not handled by wsio, then wsio_setoption shall return a non-zero value. ]*/
-            result = __LINE__;
+            result = __FAILURE__;
         }
     }
 

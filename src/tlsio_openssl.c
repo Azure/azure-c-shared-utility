@@ -13,7 +13,7 @@
 #include "azure_c_shared_utility/tlsio.h"
 #include "azure_c_shared_utility/tlsio_openssl.h"
 #include "azure_c_shared_utility/socketio.h"
-#include "azure_c_shared_utility/xlogging.h"
+#include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
 #include "azure_c_shared_utility/x509_openssl.h"
@@ -399,7 +399,7 @@ static int openssl_static_locks_install(void)
     if (openssl_locks != NULL)
     {
         LogError("Locks already initialized");
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     {
@@ -407,7 +407,7 @@ static int openssl_static_locks_install(void)
         if(openssl_locks == NULL)
         {
             LogError("Failed to allocate locks");
-            result = __LINE__;
+            result = __FAILURE__;
         }
         else
         {
@@ -424,12 +424,11 @@ static int openssl_static_locks_install(void)
             
             if (i != CRYPTO_num_locks())
             {
-                result = __LINE__;
-                
                 for (int j = 0; j < i; j++)
                 {
                     Lock_Deinit(openssl_locks[j]);
                 }
+                result = __FAILURE__;
             }
             else
             {
@@ -480,22 +479,22 @@ static int write_outgoing_bytes(TLS_IO_INSTANCE* tls_io_instance, ON_SEND_COMPLE
         unsigned char* bytes_to_send = malloc(pending);
         if (bytes_to_send == NULL)
         {
-            result = __LINE__;
             LogError("NULL bytes_to_send.");
+            result = __FAILURE__;
         }
         else
         {
             if (BIO_read(tls_io_instance->out_bio, bytes_to_send, pending) != pending)
             {
-                result = __LINE__;
                 log_ERR_get_error("BIO_read not in pending state.");
+                result = __FAILURE__;
             }
             else
             {
                 if (xio_send(tls_io_instance->underlying_io, bytes_to_send, pending, on_send_complete, callback_context) != 0)
                 {
-                    result = __LINE__;
                     LogError("Error in xio_send.");
+                    result = __FAILURE__;
                 }
                 else
                 {
@@ -516,8 +515,8 @@ static int send_handshake_bytes(TLS_IO_INSTANCE* tls_io_instance)
 
     if (tls_io_instance->ssl == NULL)
     {
-        result = __LINE__;
         LogError("SSL channel closed in send_handshake_bytes.");
+        result = __FAILURE__;
         return result;
     }
 
@@ -540,8 +539,8 @@ static int send_handshake_bytes(TLS_IO_INSTANCE* tls_io_instance)
         {
             if (write_outgoing_bytes(tls_io_instance, NULL, NULL) != 0)
             {
-                result = __LINE__;
                 LogError("Error in write_outgoing_bytes.");
+                result = __FAILURE__;
             }
             else
             {
@@ -648,8 +647,8 @@ static int decode_ssl_received_bytes(TLS_IO_INSTANCE* tls_io_instance)
     {
         if (tls_io_instance->ssl == NULL)
         {
-            result = __LINE__;
             LogError("SSL channel closed in decode_ssl_received_bytes.");
+            result = __FAILURE__;
             return result;
         }
 
@@ -742,7 +741,7 @@ static int add_certificate_to_store(TLS_IO_INSTANCE* tls_io_instance, const char
         if (cert_store == NULL)
         {
             log_ERR_get_error("Failed calling SSL_CTX_get_cert_store.");
-            result = __LINE__;
+            result = __FAILURE__;
         }
         else
         {
@@ -750,7 +749,7 @@ static int add_certificate_to_store(TLS_IO_INSTANCE* tls_io_instance, const char
             if (cert_memory_bio == NULL)
             {
                 log_ERR_get_error("Failed calling BIO_new_mem_buf.");
-                result = __LINE__;
+                result = __FAILURE__;
             }
             else
             {
@@ -758,14 +757,14 @@ static int add_certificate_to_store(TLS_IO_INSTANCE* tls_io_instance, const char
                 if (xcert == NULL)
                 {
                     log_ERR_get_error("Failed calling PEM_read_bio_X509.");
-                    result = __LINE__;
+                    result = __FAILURE__;
                 }
                 else
                 {
                     if (X509_STORE_add_cert(cert_store, xcert) != 1)
                     {
                         log_ERR_get_error("Failed calling X509_STORE_add_cert.");
-                        result = __LINE__;
+                        result = __FAILURE__;
                     }
                     else
                     {
@@ -799,15 +798,15 @@ static int create_openssl_instance(TLS_IO_INSTANCE* tlsInstance)
     tlsInstance->ssl_context = SSL_CTX_new(method);
     if (tlsInstance->ssl_context == NULL)
     {
-        result = __LINE__;
         log_ERR_get_error("Failed allocating OpenSSL context.");
+        result = __FAILURE__;
     }
     else if (add_certificate_to_store(tlsInstance, tlsInstance->certificate) != 0)
     {
         SSL_CTX_free(tlsInstance->ssl_context);
         tlsInstance->ssl_context = NULL;
         log_ERR_get_error("unable to add_certificate_to_store.");
-        result = __LINE__;
+        result = __FAILURE__;
     }
     /*x509 authentication can only be build before underlying connection is realized*/
     else if(
@@ -819,7 +818,7 @@ static int create_openssl_instance(TLS_IO_INSTANCE* tlsInstance)
             SSL_CTX_free(tlsInstance->ssl_context);
             tlsInstance->ssl_context = NULL;
             log_ERR_get_error("unable to use x509 authentication");
-            result = __LINE__;
+            result = __FAILURE__;
         }
     else
     {
@@ -831,7 +830,7 @@ static int create_openssl_instance(TLS_IO_INSTANCE* tlsInstance)
             SSL_CTX_free(tlsInstance->ssl_context);
             tlsInstance->ssl_context = NULL;
             log_ERR_get_error("Failed BIO_new for in BIO.");
-            result = __LINE__;
+            result = __FAILURE__;
         }
         else
         {
@@ -841,8 +840,8 @@ static int create_openssl_instance(TLS_IO_INSTANCE* tlsInstance)
                 (void)BIO_free(tlsInstance->in_bio);
                 SSL_CTX_free(tlsInstance->ssl_context);
                 tlsInstance->ssl_context = NULL;
-                result = __LINE__;
                 log_ERR_get_error("Failed BIO_new for out BIO.");
+                result = __FAILURE__;
             }
             else
             {
@@ -853,8 +852,8 @@ static int create_openssl_instance(TLS_IO_INSTANCE* tlsInstance)
                     (void)BIO_free(tlsInstance->out_bio);
                     SSL_CTX_free(tlsInstance->ssl_context);
                     tlsInstance->ssl_context = NULL;
-                    result = __LINE__;
                     LogError("Failed BIO_set_mem_eof_return.");
+                    result = __FAILURE__;
                 }
                 else
                 {
@@ -874,8 +873,8 @@ static int create_openssl_instance(TLS_IO_INSTANCE* tlsInstance)
                         (void)BIO_free(tlsInstance->out_bio);
                         SSL_CTX_free(tlsInstance->ssl_context);
                         tlsInstance->ssl_context = NULL;
-                            log_ERR_get_error("Failed creating OpenSSL instance.");
-                            result = __LINE__;
+                        log_ERR_get_error("Failed creating OpenSSL instance.");
+                        result = __FAILURE__;
                     }
                     else
                     {
@@ -901,7 +900,7 @@ int tlsio_openssl_init(void)
     if (openssl_static_locks_install() != 0)
     {
         LogError("Failed to install static locks in OpenSSL!");
-        return __LINE__;
+        return __FAILURE__;
     }
 
     openssl_dynamic_locks_install();
@@ -1017,7 +1016,7 @@ int tlsio_openssl_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_open
 
     if (tls_io == NULL)
     {
-        result = __LINE__;
+        result = __FAILURE__;
         LogError("NULL tls_io.");
     }
     else
@@ -1026,8 +1025,8 @@ int tlsio_openssl_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_open
 
         if (tls_io_instance->tlsio_state != TLSIO_STATE_NOT_OPEN)
         {
-            result = __LINE__;
             LogError("Invalid tlsio_state. Expected state is TLSIO_STATE_NOT_OPEN.");
+            result = __FAILURE__;
         }
         else
         {
@@ -1045,12 +1044,12 @@ int tlsio_openssl_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_open
             if (create_openssl_instance(tls_io_instance) != 0)
             {
                 tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
-                result = __LINE__;
+                result = __FAILURE__;
             }
             else if (xio_open(tls_io_instance->underlying_io, on_underlying_io_open_complete, tls_io_instance, on_underlying_io_bytes_received, tls_io_instance, on_underlying_io_error, tls_io_instance) != 0)
             {
-                result = __LINE__;
                 tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
+                result = __FAILURE__;
             }
             else
             {
@@ -1068,8 +1067,8 @@ int tlsio_openssl_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_cl
 
     if (tls_io == NULL)
     {
-        result = __LINE__;
         LogError("NULL tls_io.");
+        result = __FAILURE__;
     }
     else
     {
@@ -1078,8 +1077,8 @@ int tlsio_openssl_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_cl
         if ((tls_io_instance->tlsio_state == TLSIO_STATE_NOT_OPEN) ||
             (tls_io_instance->tlsio_state == TLSIO_STATE_CLOSING))
         {
-            result = __LINE__;
             LogError("Invalid tlsio_state. Expected state is TLSIO_STATE_NOT_OPEN or TLSIO_STATE_CLOSING.");
+            result = __FAILURE__;
         }
         else
         {
@@ -1089,9 +1088,9 @@ int tlsio_openssl_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_cl
 
             if (xio_close(tls_io_instance->underlying_io, on_underlying_io_close_complete, tls_io_instance) != 0)
             {
-                result = __LINE__;
                 tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
                 LogError("Error in xio_close.");
+                result = __FAILURE__;
             }
             else
             {
@@ -1110,8 +1109,8 @@ int tlsio_openssl_send(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t siz
 
     if (tls_io == NULL)
     {
-        result = __LINE__;
         LogError("NULL tls_io.");
+        result = __FAILURE__;
     }
     else
     {
@@ -1119,30 +1118,30 @@ int tlsio_openssl_send(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t siz
 
         if (tls_io_instance->tlsio_state != TLSIO_STATE_OPEN)
         {
-            result = __LINE__;
             LogError("Invalid tlsio_state. Expected state is TLSIO_STATE_OPEN.");
+            result = __FAILURE__;
         }
         else
         {
             if (tls_io_instance->ssl == NULL)
             {
-                result = __LINE__;
                 LogError("SSL channel closed in tlsio_openssl_send.");
+                result = __FAILURE__;
                 return result;
             }
 
             int res = SSL_write(tls_io_instance->ssl, buffer, size);
             if (res != (int)size)
             {
-                result = __LINE__;
                 log_ERR_get_error("SSL_write error.");
+                result = __FAILURE__;
             }
             else
             {
                 if (write_outgoing_bytes(tls_io_instance, on_send_complete, callback_context) != 0)
                 {
-                    result = __LINE__;
                     LogError("Error in write_outgoing_bytes.");
+                    result = __FAILURE__;
                 }
                 else
                 {
@@ -1184,7 +1183,7 @@ int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
 
     if (tls_io == NULL || optionName == NULL)
     {
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     {
@@ -1205,7 +1204,7 @@ int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
             tls_io_instance->certificate = malloc(len+1);
             if (tls_io_instance->certificate == NULL)
             {
-                result = __LINE__;
+                result = __FAILURE__;
             }
             else
             {
@@ -1224,7 +1223,7 @@ int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
             if (tls_io_instance->x509certificate != NULL)
             {
                 LogError("unable to set x509 options more than once");
-                result = __LINE__;
+                result = __FAILURE__;
             }
             else
             {   
@@ -1232,7 +1231,7 @@ int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
                 if (mallocAndStrcpy_s((char**)&tls_io_instance->x509certificate, value) != 0)
                 {
                     LogError("unable to mallocAndStrcpy_s");
-                    result = __LINE__;
+                    result = __FAILURE__;
                 }
                 else
                 {
@@ -1245,7 +1244,7 @@ int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
             if (tls_io_instance->x509privatekey != NULL)
             {
                 LogError("unable to set more than once x509 options");
-                result = __LINE__;
+                result = __FAILURE__;
             }
             else
             {
@@ -1253,7 +1252,7 @@ int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
                 if (mallocAndStrcpy_s((char**)&tls_io_instance->x509privatekey, value) != 0)
                 {
                     LogError("unable to mallocAndStrcpy_s");
-                    result = __LINE__;
+                    result = __FAILURE__;
                 }
                 else
                 {
@@ -1295,7 +1294,7 @@ int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
         {
             if (tls_io_instance->underlying_io == NULL)
             {
-                result = __LINE__;
+                result = __FAILURE__;
             }
             else
             {

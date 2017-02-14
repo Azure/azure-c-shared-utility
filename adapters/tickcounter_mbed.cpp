@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include "mbed.h"
+#include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/tickcounter.h"
 
 class TICK_COUNTER_INSTANCE_TAG
@@ -33,7 +34,7 @@ int tickcounter_get_current_ms(TICK_COUNTER_HANDLE tick_counter, tickcounter_ms_
     int result;
     if (tick_counter == NULL || current_ms == NULL)
     {
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     {

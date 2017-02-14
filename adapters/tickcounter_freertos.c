@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <time.h>
 #include "azure_c_shared_utility/tickcounter.h"
+#include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/xlogging.h"
 
 #include "os_port.h"
@@ -41,7 +42,7 @@ int tickcounter_get_current_ms(TICK_COUNTER_HANDLE tick_counter, tickcounter_ms_
     if (tick_counter == NULL || current_ms == NULL)
     {
         LogError("tickcounter failed: Invalid Arguments.\r\n");
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     {

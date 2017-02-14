@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/map.h"
+#include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/strings.h"
 
@@ -164,7 +165,7 @@ static int Map_IncreaseStorageKeysValues(MAP_HANDLE_DATA* handleData)
     if (newKeys == NULL)
     {
         LogError("realloc error");
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     {
@@ -192,7 +193,7 @@ static int Map_IncreaseStorageKeysValues(MAP_HANDLE_DATA* handleData)
                     handleData->keys = undoneKeys;
                 }
             }
-            result = __LINE__;
+            result = __FAILURE__;
         }
         else
         {
@@ -295,7 +296,7 @@ static int insertNewKeyValue(MAP_HANDLE_DATA* handleData, const char* key, const
     int result;
     if (Map_IncreaseStorageKeysValues(handleData) != 0) /*this increases handleData->count*/
     {
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     {
@@ -303,7 +304,7 @@ static int insertNewKeyValue(MAP_HANDLE_DATA* handleData, const char* key, const
         {
             Map_DecreaseStorageKeysValues(handleData);
             LogError("unable to mallocAndStrcpy_s");
-            result = __LINE__;
+            result = __FAILURE__;
         }
         else
         {
@@ -312,7 +313,7 @@ static int insertNewKeyValue(MAP_HANDLE_DATA* handleData, const char* key, const
                 free(handleData->keys[handleData->count - 1]);
                 Map_DecreaseStorageKeysValues(handleData);
                 LogError("unable to mallocAndStrcpy_s");
-                result = __LINE__;
+                result = __FAILURE__;
             }
             else
             {

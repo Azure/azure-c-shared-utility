@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <time.h>
 #include "azure_c_shared_utility/tickcounter.h"
+#include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/xlogging.h"
 
 #define INVALID_TIME_VALUE      (time_t)(-1)
@@ -69,7 +70,7 @@ int tickcounter_get_current_ms(TICK_COUNTER_HANDLE tick_counter, tickcounter_ms_
     if (tick_counter == NULL || current_ms == NULL)
     {
         LogError("tickcounter failed: Invalid Arguments.");
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     {
@@ -81,7 +82,7 @@ int tickcounter_get_current_ms(TICK_COUNTER_HANDLE tick_counter, tickcounter_ms_
             if (!QueryPerformanceCounter(&curr_perf_item))
             {
                 LogError("tickcounter failed: QueryPerformanceCounter failed %d.", GetLastError() );
-                result = __LINE__;
+                result = __FAILURE__;
             }
             else
             {
@@ -104,7 +105,7 @@ int tickcounter_get_current_ms(TICK_COUNTER_HANDLE tick_counter, tickcounter_ms_
             time_t time_value = time(NULL);
             if (time_value == INVALID_TIME_VALUE)
             {
-                result = __LINE__;
+                result = __FAILURE__;
             }
             else
             {
