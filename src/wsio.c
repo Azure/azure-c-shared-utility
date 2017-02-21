@@ -175,7 +175,7 @@ static int on_ws_callback(struct lws *wsi, enum lws_callback_reasons reason, voi
     WSIO_INSTANCE* wsio_instance;
     switch (reason)
     {
-    case LWS_CALLBACK_CLIENT_ESTABLISHED:
+	case LWS_CALLBACK_CLIENT_ESTABLISHED:
         context = lws_get_context(wsi);
         wsio_instance = lws_context_user(context);
 
@@ -199,7 +199,8 @@ static int on_ws_callback(struct lws *wsi, enum lws_callback_reasons reason, voi
 
         break;
 
-    case LWS_CALLBACK_CLIENT_CONNECTION_ERROR:
+	case LWS_CALLBACK_CLOSED:
+	case LWS_CALLBACK_CLIENT_CONNECTION_ERROR:
         context = lws_get_context(wsi);
         wsio_instance = lws_context_user(context);
         switch (wsio_instance->io_state)
@@ -209,7 +210,8 @@ static int on_ws_callback(struct lws *wsi, enum lws_callback_reasons reason, voi
 
         case IO_STATE_OPEN:
             /* Codes_SRS_WSIO_01_070: [If the IO is already open, the on_io_error callback shall be triggered.] */
-            indicate_error(wsio_instance);
+			mark_context_as_dead(wsio_instance);
+			indicate_error(wsio_instance);
             break;
 
         case IO_STATE_OPENING:
