@@ -524,6 +524,10 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
         }
     }
 
+    if (on_send_complete != NULL && result != 0) {
+        on_send_complete(callback_context, IO_SEND_ERROR);
+    }
+
     return result;
 }
 
