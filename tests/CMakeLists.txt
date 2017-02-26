@@ -63,6 +63,7 @@ if(use_cyclonessl AND WIN32)
 	add_subdirectory(tlsio_cyclonessl_socket_bsd_ut)
 endif()
 add_subdirectory(utf8_checker_ut)
+add_subdirectory(http_proxy_io_ut)
 
 #Add template as reference for new tests
 add_subdirectory(template_ut)

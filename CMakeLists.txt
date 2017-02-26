@@ -335,6 +335,7 @@ set(source_c_files
 ./src/gb_rand.c
 ./src/hmac.c
 ./src/hmacsha256.c
+./src/http_proxy_io.c
 ./src/xio.c
 ./src/singlylinkedlist.c
 ./src/map.c
@@ -409,6 +410,7 @@ set(source_h_files
 ./inc/azure_c_shared_utility/gb_rand.h
 ./inc/azure_c_shared_utility/hmac.h
 ./inc/azure_c_shared_utility/hmacsha256.h
+./inc/azure_c_shared_utility/http_proxy_io.h
 ./inc/azure_c_shared_utility/singlylinkedlist.h
 ./inc/azure_c_shared_utility/lock.h
 ./inc/azure_c_shared_utility/macro_utils.h
