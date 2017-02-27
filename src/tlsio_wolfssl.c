@@ -584,7 +584,7 @@ CONCRETE_IO_HANDLE tlsio_wolfssl_create(void* io_create_parameters)
 
                 result->tlsio_state = TLSIO_STATE_NOT_OPEN;
 
-                result->ssl_context = wolfSSL_CTX_new(wolfTLSv1_client_method());
+                result->ssl_context = wolfSSL_CTX_new(wolfTLSv1_2_client_method());
                 if (result->ssl_context == NULL)
                 {
                     LogError("Cannot create the wolfSSL context");
