@@ -678,7 +678,6 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
                 /*if privatekey comes 1st and certificate is not set yet, then return OK and wait for the certificate to be set*/
                 result = HTTPAPI_OK;
             }
-            result = HTTPAPI_OK;
         }
         else if (strcmp(SU_OPTION_X509_CERT, optionName) == 0)
         {
@@ -708,7 +707,6 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
                 /*if certificate comes 1st and private key is not set yet, then return OK and wait for the private key to be set*/
                 result = HTTPAPI_OK;
             }
-            result = HTTPAPI_OK;
         }
         else if (strcmp(OPTION_HTTP_PROXY, optionName) == 0)
         {
