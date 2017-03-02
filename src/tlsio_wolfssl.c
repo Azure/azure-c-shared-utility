@@ -15,7 +15,6 @@
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/shared_util_options.h"
 
-
 typedef enum TLSIO_STATE_ENUM_TAG
 {
     TLSIO_STATE_NOT_OPEN,
@@ -47,8 +46,6 @@ typedef struct TLS_IO_INSTANCE_TAG
     char* certificate;
     char* x509certificate;
     char* x509privatekey;
-    char* hostname;
-    int port;
 } TLS_IO_INSTANCE;
 
 /*this function will clone an option given by name and value*/
@@ -548,76 +545,82 @@ CONCRETE_IO_HANDLE tlsio_wolfssl_create(void* io_create_parameters)
         TLSIO_CONFIG* tls_io_config = io_create_parameters;
 
         result = (TLS_IO_INSTANCE*)malloc(sizeof(TLS_IO_INSTANCE));
-        if (result != NULL)
+        if (result == NULL)
         {
-            memset(result, 0, sizeof(TLS_IO_INSTANCE));
-            if (mallocAndStrcpy_s(&result->hostname, tls_io_config->hostname) != 0)
+            LogError("Failed allocating memory for the TLS IO instance.");
+        }
+        else
+        {
+            (void)memset(result, 0, sizeof(TLS_IO_INSTANCE));
+
+            result->socket_io_read_bytes = 0;
+            result->socket_io_read_byte_count = 0;
+            result->socket_io = NULL;
+
+            result->ssl = NULL;
+            result->certificate = NULL;
+            result->x509certificate = NULL;
+            result->x509privatekey = NULL;
+
+            result->on_bytes_received = NULL;
+            result->on_bytes_received_context = NULL;
+
+            result->on_io_open_complete = NULL;
+            result->on_io_open_complete_context = NULL;
+
+            result->on_io_close_complete = NULL;
+            result->on_io_close_complete_context = NULL;
+
+            result->on_io_error = NULL;
+            result->on_io_error_context = NULL;
+
+            result->tlsio_state = TLSIO_STATE_NOT_OPEN;
+
+            result->ssl_context = wolfSSL_CTX_new(wolfTLSv1_2_client_method());
+            if (result->ssl_context == NULL)
             {
-                LogError("Cannot copy the hostname");
+                LogError("Cannot create the wolfSSL context");
                 free(result);
                 result = NULL;
             }
             else
             {
-                result->port = tls_io_config->port;
+                const IO_INTERFACE_DESCRIPTION* underlying_io_interface;
+                void* io_interface_parameters;
 
-                result->socket_io_read_bytes = 0;
-                result->socket_io_read_byte_count = 0;
-                result->socket_io = NULL;
-
-                result->ssl = NULL;
-                result->certificate = NULL;
-                result->x509certificate = NULL;
-                result->x509privatekey = NULL;
-
-                result->on_bytes_received = NULL;
-                result->on_bytes_received_context = NULL;
-
-                result->on_io_open_complete = NULL;
-                result->on_io_open_complete_context = NULL;
-
-                result->on_io_close_complete = NULL;
-                result->on_io_close_complete_context = NULL;
-
-                result->on_io_error = NULL;
-                result->on_io_error_context = NULL;
-
-                result->tlsio_state = TLSIO_STATE_NOT_OPEN;
-
-                result->ssl_context = wolfSSL_CTX_new(wolfTLSv1_2_client_method());
-                if (result->ssl_context == NULL)
+                if (tls_io_config->underlying_io_interface != NULL)
                 {
-                    LogError("Cannot create the wolfSSL context");
-                    free(result->hostname);
+                    underlying_io_interface = tls_io_config->underlying_io_interface;
+                    io_interface_parameters = tls_io_config->underlying_io_parameters;
+                }
+                else
+                {
+                    SOCKETIO_CONFIG socketio_config;
+
+                    socketio_config.hostname = tls_io_config->hostname;
+                    socketio_config.port = tls_io_config->port;
+                    socketio_config.accepted_socket = NULL;
+
+                    underlying_io_interface = socketio_get_interface_description();
+                    io_interface_parameters = &socketio_config;
+                }
+
+                if (underlying_io_interface == NULL)
+                {
+                    LogError("Failed getting socket IO interface description.");
+                    wolfSSL_CTX_free(result->ssl_context);
                     free(result);
                     result = NULL;
                 }
                 else
                 {
-                    const IO_INTERFACE_DESCRIPTION* socket_io_interface = socketio_get_interface_description();
-                    if (socket_io_interface == NULL)
+                    result->socket_io = xio_create(underlying_io_interface, io_interface_parameters);
+                    if (result->socket_io == NULL)
                     {
+                        LogError("Failure connecting to underlying socket_io");
                         wolfSSL_CTX_free(result->ssl_context);
-                        free(result->hostname);
                         free(result);
                         result = NULL;
-                    }
-                    else
-                    {
-                        SOCKETIO_CONFIG socketio_config;
-                        socketio_config.hostname = result->hostname;
-                        socketio_config.port = result->port;
-                        socketio_config.accepted_socket = NULL;
-
-                        result->socket_io = xio_create(socket_io_interface, &socketio_config);
-                        if (result->socket_io == NULL)
-                        {
-                            LogError("Failure connecting to underlying socket_io");
-                            wolfSSL_CTX_free(result->ssl_context);
-                            free(result->hostname);
-                            free(result);
-                            result = NULL;
-                        }
                     }
                 }
             }
@@ -648,10 +651,6 @@ void tlsio_wolfssl_destroy(CONCRETE_IO_HANDLE tls_io)
         if (tls_io_instance->x509privatekey != NULL)
         {
             free(tls_io_instance->x509privatekey);
-        }
-        if (tls_io_instance->hostname != NULL)
-        {
-            free(tls_io_instance->hostname);
         }
 
         wolfSSL_CTX_free(tls_io_instance->ssl_context);

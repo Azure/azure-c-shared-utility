@@ -198,6 +198,8 @@ UWS_CLIENT_HANDLE uws_client_create(const char* hostname, unsigned int port, con
                                     /* Codes_SRS_UWS_CLIENT_01_015: [ - `port` set to the `port` argument passed to `uws_client_create`. ]*/
                                     tlsio_config.hostname = hostname;
                                     tlsio_config.port = port;
+                                    tlsio_config.underlying_io_interface = NULL;
+                                    tlsio_config.underlying_io_parameters = NULL;
 
                                     result->underlying_io = xio_create(tlsio_interface, &tlsio_config);
                                     if (result->underlying_io == NULL)

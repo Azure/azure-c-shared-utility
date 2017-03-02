@@ -8,11 +8,14 @@
 extern "C" {
 #endif /* __cplusplus */
 
+#include "xio.h"
 
 typedef struct TLSIO_CONFIG_TAG
 {
-	const char* hostname;
-	int port;
+    const char* hostname;
+    int port;
+    const IO_INTERFACE_DESCRIPTION* underlying_io_interface;
+    void* underlying_io_parameters;
 } TLSIO_CONFIG;
 
 #ifdef __cplusplus

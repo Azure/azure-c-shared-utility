@@ -63,11 +63,9 @@ int main(int argc, char** argv)
         }
         else
         {
-            TLSIO_CONFIG tlsio_config;
+            TLSIO_CONFIG tlsio_config = { "www.google.com", 443 };
             XIO_HANDLE tlsio;
 
-            tlsio_config.hostname = "www.google.com";
-            tlsio_config.port = 443;
             tlsio = xio_create(tlsio_interface, &tlsio_config);
             if (tlsio == NULL)
             {

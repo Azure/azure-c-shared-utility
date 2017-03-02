@@ -46,8 +46,6 @@ typedef struct TLS_IO_INSTANCE_TAG
     BIO* in_bio;
     BIO* out_bio;
     TLSIO_STATE tlsio_state;
-    char* hostname;
-    int port;
     char* certificate;
     const char* x509certificate;
     const char* x509privatekey;
@@ -946,7 +944,26 @@ CONCRETE_IO_HANDLE tlsio_openssl_create(void* io_create_parameters)
         }
         else
         {
-            const IO_INTERFACE_DESCRIPTION* underlying_io_interface = socketio_get_interface_description();
+            const IO_INTERFACE_DESCRIPTION* underlying_io_interface;
+            void* io_interface_parameters;
+
+            if (tls_io_config->underlying_io_interface != NULL)
+            {
+                underlying_io_interface = tls_io_config->underlying_io_interface;
+                io_interface_parameters = tls_io_config->underlying_io_parameters;
+            }
+            else
+            {
+                SOCKETIO_CONFIG socketio_config;
+
+                socketio_config.hostname = tls_io_config->hostname;
+                socketio_config.port = tls_io_config->port;
+                socketio_config.accepted_socket = NULL;
+
+                underlying_io_interface = socketio_get_interface_description();
+                io_interface_parameters = &socketio_config;
+            }
+
             if (underlying_io_interface == NULL)
             {
                 free(result);
@@ -955,17 +972,26 @@ CONCRETE_IO_HANDLE tlsio_openssl_create(void* io_create_parameters)
             }
             else
             {
-                SOCKETIO_CONFIG socketio_config;
+                result->certificate = NULL;
+                result->in_bio = NULL;
+                result->out_bio = NULL;
+                result->on_bytes_received = NULL;
+                result->on_bytes_received_context = NULL;
+                result->on_io_open_complete = NULL;
+                result->on_io_open_complete_context = NULL;
+                result->on_io_close_complete = NULL;
+                result->on_io_close_complete_context = NULL;
+                result->on_io_error = NULL;
+                result->on_io_error_context = NULL;
+                result->ssl = NULL;
+                result->ssl_context = NULL;
+                result->tls_validation_callback = NULL;
+                result->tls_validation_callback_data = NULL;
+                result->x509certificate = NULL;
+                result->x509privatekey = NULL;
+                result->tls_version = 0;
 
-                memset(result, 0, sizeof(TLS_IO_INSTANCE));
-                mallocAndStrcpy_s(&result->hostname, tls_io_config->hostname);
-                result->port = tls_io_config->port;
-
-                socketio_config.hostname = result->hostname;
-                socketio_config.port = result->port;
-                socketio_config.accepted_socket = NULL;
-
-                result->underlying_io = xio_create(underlying_io_interface, &socketio_config);
+                result->underlying_io = xio_create(underlying_io_interface, io_interface_parameters);
                 if (result->underlying_io == NULL)
                 {
                     free(result);
@@ -997,7 +1023,6 @@ void tlsio_openssl_destroy(CONCRETE_IO_HANDLE tls_io)
             free(tls_io_instance->certificate);
             tls_io_instance->certificate = NULL;
         }
-        free(tls_io_instance->hostname);
         free((void*)tls_io_instance->x509certificate);
         free((void*)tls_io_instance->x509privatekey);
         close_openssl_instance(tls_io_instance);
