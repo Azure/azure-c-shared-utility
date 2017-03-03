@@ -135,14 +135,14 @@ static int remove_pending_io(WSIO_INSTANCE* wsio_instance, LIST_ITEM_HANDLE item
 {
     int result;
 
-    free(pending_socket_io->bytes);
-    free(pending_socket_io);
     if (singlylinkedlist_remove(wsio_instance->pending_io_list, item_handle) != 0)
     {
         result = __FAILURE__;
     }
     else
     {
+        free(pending_socket_io->bytes);
+        free(pending_socket_io);
         result = 0;
     }
 
@@ -672,7 +672,7 @@ CONCRETE_IO_HANDLE wsio_create(void* io_create_parameters)
 
 int wsio_open(CONCRETE_IO_HANDLE ws_io, ON_IO_OPEN_COMPLETE on_io_open_complete, void* on_io_open_complete_context, ON_BYTES_RECEIVED on_bytes_received, void* on_bytes_received_context, ON_IO_ERROR on_io_error, void* on_io_error_context)
 {
-    int result = 0;
+    int result;
 
     if (ws_io == NULL)
     {
@@ -835,8 +835,9 @@ int wsio_open(CONCRETE_IO_HANDLE ws_io, ON_IO_OPEN_COMPLETE on_io_open_complete,
                     if (wsio_instance->wsi == NULL)
                     {
                         /* Codes_SRS_WSIO_01_033: [If lws_client_connect_via_info fails then wsio_open shall fail and return a non-zero value.] */
-                        lws_context_destroy(wsio_instance->ws_context);
                         wsio_instance->io_state = IO_STATE_NOT_OPEN;
+                        lws_context_destroy(wsio_instance->ws_context);
+                        wsio_instance->ws_context = NULL;
                         result = __FAILURE__;
                     }
                     else
@@ -859,7 +860,7 @@ int wsio_open(CONCRETE_IO_HANDLE ws_io, ON_IO_OPEN_COMPLETE on_io_open_complete,
 
 int wsio_close(CONCRETE_IO_HANDLE ws_io, ON_IO_CLOSE_COMPLETE on_io_close_complete, void* on_io_close_complete_context)
 {
-    int result = 0;
+    int result;
 
     if (ws_io == NULL)
     {
@@ -919,9 +920,12 @@ int wsio_close(CONCRETE_IO_HANDLE ws_io, ON_IO_CLOSE_COMPLETE on_io_close_comple
 
             /* Codes_SRS_WSIO_01_041: [wsio_close shall close the websockets IO if an open action is either pending or has completed successfully (if the IO is open).] */
             /* Codes_SRS_WSIO_01_043: [wsio_close shall close the connection by calling lws_context_destroy.] */
-            wsio_instance->io_state = IO_STATE_CLOSING;
-            lws_context_destroy(wsio_instance->ws_context);
-            wsio_instance->io_state = IO_STATE_NOT_OPEN;
+            if (wsio_instance->io_state != IO_STATE_ERROR)
+            {
+                wsio_instance->io_state = IO_STATE_CLOSING;
+                mark_context_as_dead(wsio_instance);
+                wsio_instance->io_state = IO_STATE_NOT_OPEN;
+            }
 
             /* Codes_SRS_WSIO_01_049: [The argument on_io_close_complete shall be optional, if NULL is passed by the caller then no close complete callback shall be triggered.] */
             if (on_io_close_complete != NULL)

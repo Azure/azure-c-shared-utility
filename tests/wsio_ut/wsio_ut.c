@@ -1914,7 +1914,6 @@ TEST_FUNCTION(when_wsio_close_is_called_while_an_open_action_is_in_progress_the_
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_CANCELLED));
-    STRICT_EXPECTED_CALL(lws_context_destroy(TEST_LIBWEBSOCKET_CONTEXT));
 
     // act
     wsio_close(wsio, NULL, NULL);
@@ -2092,7 +2091,6 @@ TEST_FUNCTION(wsio_close_destroys_the_ws_context)
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_CANCELLED));
-    STRICT_EXPECTED_CALL(lws_context_destroy(TEST_LIBWEBSOCKET_CONTEXT));
 
     // act
     int result = wsio_close(wsio, NULL, NULL);
@@ -2115,7 +2113,6 @@ TEST_FUNCTION(wsio_close_destroys_the_ws_context_and_calls_the_io_close_complete
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_CANCELLED));
-    STRICT_EXPECTED_CALL(lws_context_destroy(TEST_LIBWEBSOCKET_CONTEXT));
     STRICT_EXPECTED_CALL(test_on_io_close_complete((void*)0x4243));
 
     // act
@@ -2144,7 +2141,6 @@ TEST_FUNCTION(wsio_close_after_ws_connected_calls_the_io_close_complete_callback
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
-    STRICT_EXPECTED_CALL(lws_context_destroy(TEST_LIBWEBSOCKET_CONTEXT));
     STRICT_EXPECTED_CALL(test_on_io_close_complete((void*)0x4243));
 
     // act
@@ -2383,9 +2379,9 @@ TEST_FUNCTION(when_lws_wants_to_send_bytes_they_are_pushed_to_lws)
         .ValidateArgumentBuffer(2, test_buffer, sizeof(test_buffer))
         .SetReturn((int)sizeof(test_buffer));
     STRICT_EXPECTED_CALL(test_on_send_complete((void*)0x4243, IO_SEND_OK));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(singlylinkedlist_remove(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
@@ -2421,9 +2417,9 @@ TEST_FUNCTION(when_lws_wants_to_send_bytes_they_are_pushed_to_lws_but_no_callbac
     STRICT_EXPECTED_CALL(lws_write(TEST_LIBWEBSOCKET, IGNORED_PTR_ARG, sizeof(test_buffer), LWS_WRITE_BINARY))
         .ValidateArgumentBuffer(2, test_buffer, sizeof(test_buffer))
         .SetReturn((int)sizeof(test_buffer));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(singlylinkedlist_remove(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
@@ -2567,7 +2563,6 @@ TEST_FUNCTION(wsio_close_with_a_pending_send_cancels_the_send)
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(singlylinkedlist_remove(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
-    STRICT_EXPECTED_CALL(lws_context_destroy(TEST_LIBWEBSOCKET_CONTEXT));
 
     // act
     (void)wsio_close(wsio, NULL, NULL);
@@ -2607,7 +2602,6 @@ TEST_FUNCTION(wsio_close_with_a_pending_send_cancels_the_send_and_passes_the_app
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(singlylinkedlist_remove(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
-    STRICT_EXPECTED_CALL(lws_context_destroy(TEST_LIBWEBSOCKET_CONTEXT));
 
     // act
     (void)wsio_close(wsio, NULL, NULL);
@@ -2638,7 +2632,6 @@ TEST_FUNCTION(wsio_close_with_a_pending_send_cancels_the_send_but_doen_not_call_
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(singlylinkedlist_remove(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
-    STRICT_EXPECTED_CALL(lws_context_destroy(TEST_LIBWEBSOCKET_CONTEXT));
 
     // act
     (void)wsio_close(wsio, NULL, NULL);
@@ -2990,9 +2983,9 @@ TEST_FUNCTION(CLIENT_WRITABLE_when_open_and_one_chunk_queued_sends_the_chunk)
     STRICT_EXPECTED_CALL(lws_write(TEST_LIBWEBSOCKET, IGNORED_PTR_ARG, sizeof(test_buffer), LWS_WRITE_BINARY))
         .ValidateArgumentBuffer(2, test_buffer, sizeof(test_buffer))
         .SetReturn((int)sizeof(test_buffer));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(singlylinkedlist_remove(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
@@ -3150,9 +3143,9 @@ TEST_FUNCTION(when_allocating_memory_for_lws_in_CLIENT_WRITABLE_fails_then_an_er
     STRICT_EXPECTED_CALL(test_on_send_complete((void*)0x4243, IO_SEND_ERROR));
     STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE))
         .SetReturn((LIST_ITEM_HANDLE)NULL);
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(singlylinkedlist_remove(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
     // act
     (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_WRITEABLE, saved_ws_callback_context, NULL, 0);
@@ -3191,9 +3184,9 @@ TEST_FUNCTION(when_lws_write_fails_in_CLIENT_WRITABLE_then_an_error_is_indicated
     STRICT_EXPECTED_CALL(test_on_send_complete((void*)0x4243, IO_SEND_ERROR));
     STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE))
         .SetReturn((LIST_ITEM_HANDLE)NULL);
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(singlylinkedlist_remove(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
     // act
@@ -3239,9 +3232,9 @@ TEST_FUNCTION(when_allocating_memory_for_the_lws_write_fails_in_CLIENT_WRITABLE_
         .SetReturn((void*)NULL);
     STRICT_EXPECTED_CALL(test_on_send_complete((void*)0x4243, IO_SEND_ERROR));
     STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4242));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(singlylinkedlist_remove(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
     // act
     (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_WRITEABLE, saved_ws_callback_context, NULL, 0);
@@ -3288,9 +3281,9 @@ TEST_FUNCTION(when_lws_write_fails_in_CLIENT_WRITABLE_for_a_pending_io_that_was_
         .SetReturn(-1);
     STRICT_EXPECTED_CALL(test_on_send_complete((void*)0x4243, IO_SEND_ERROR));
     STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4242));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(singlylinkedlist_remove(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
     // act
@@ -3330,8 +3323,6 @@ TEST_FUNCTION(when_removing_the_pending_IO_after_a_succesfull_write_lws_write_fa
         .ValidateArgumentBuffer(2, test_buffer, sizeof(test_buffer))
         .SetReturn(2);
     STRICT_EXPECTED_CALL(test_on_send_complete((void*)0x4243, IO_SEND_OK));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(singlylinkedlist_remove(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4242));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
@@ -3372,9 +3363,9 @@ TEST_FUNCTION(when_allocating_memory_for_lws_in_CLIENT_WRITABLE_and_another_pend
     STRICT_EXPECTED_CALL(test_on_send_complete((void*)0x4243, IO_SEND_ERROR));
     STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
     STRICT_EXPECTED_CALL(lws_callback_on_writable(TEST_LIBWEBSOCKET));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(singlylinkedlist_remove(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
     // act
     (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_WRITEABLE, saved_ws_callback_context, NULL, 0);
@@ -3413,9 +3404,9 @@ TEST_FUNCTION(when_lws_write_in_CLIENT_WRITABLE_fails_and_another_pending_IO_exi
     STRICT_EXPECTED_CALL(test_on_send_complete((void*)0x4243, IO_SEND_ERROR));
     STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
     STRICT_EXPECTED_CALL(lws_callback_on_writable(TEST_LIBWEBSOCKET));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(singlylinkedlist_remove(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
     // act
@@ -3461,9 +3452,9 @@ TEST_FUNCTION(when_allocating_memory_in_CLIENT_WRITABLE_fails_after_a_partial_wr
         .SetReturn((void*)NULL);
     STRICT_EXPECTED_CALL(test_on_send_complete((void*)0x4243, IO_SEND_ERROR));
     STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4242));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(singlylinkedlist_remove(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
     // act
     (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_WRITEABLE, saved_ws_callback_context, NULL, 0);
@@ -3510,9 +3501,9 @@ TEST_FUNCTION(when_lws_write_in_CLIENT_WRITABLE_fails_after_a_partial_write_and_
         .SetReturn(-1);
     STRICT_EXPECTED_CALL(test_on_send_complete((void*)0x4243, IO_SEND_ERROR));
     STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4242));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(singlylinkedlist_remove(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
     // act
@@ -3560,9 +3551,9 @@ TEST_FUNCTION(when_send_is_succesfull_and_there_is_another_pending_IO_in_CLIENT_
         .ValidateArgumentBuffer(2, test_buffer + 1, 1)
         .SetReturn(1);
     STRICT_EXPECTED_CALL(test_on_send_complete((void*)0x4243, IO_SEND_OK));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(singlylinkedlist_remove(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
     STRICT_EXPECTED_CALL(lws_callback_on_writable(TEST_LIBWEBSOCKET));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
@@ -3613,8 +3604,6 @@ TEST_FUNCTION(when_removing_the_pending_IO_due_to_lws_write_failing_in_CLIENT_WR
         .SetReturn(-1);
     STRICT_EXPECTED_CALL(test_on_send_complete((void*)0x4243, IO_SEND_ERROR));
     STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4242));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(singlylinkedlist_remove(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
@@ -3662,8 +3651,6 @@ TEST_FUNCTION(when_removing_the_pending_IO_due_to_allocating_memory_failing_in_C
         .SetReturn((void*)NULL);
     STRICT_EXPECTED_CALL(test_on_send_complete((void*)0x4243, IO_SEND_ERROR));
     STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4242));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(singlylinkedlist_remove(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
 
     // act
@@ -3709,9 +3696,9 @@ TEST_FUNCTION(sending_partial_content_leaves_the_bytes_for_the_next_writable_eve
         .ValidateArgumentBuffer(2, test_buffer + 1, 1)
         .SetReturn(1);
     STRICT_EXPECTED_CALL(test_on_send_complete((void*)0x4243, IO_SEND_OK));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(singlylinkedlist_remove(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
@@ -3758,9 +3745,9 @@ TEST_FUNCTION(sending_partial_content_of_2_bytes_works_and_leaves_the_bytes_for_
         .ValidateArgumentBuffer(2, test_buffer + 2, 1)
         .SetReturn(1);
     STRICT_EXPECTED_CALL(test_on_send_complete((void*)0x4243, IO_SEND_OK));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(singlylinkedlist_remove(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
@@ -3801,9 +3788,9 @@ TEST_FUNCTION(when_more_bytes_than_requested_are_indicated_by_lws_write_on_send_
     STRICT_EXPECTED_CALL(test_on_send_complete((void*)0x4243, IO_SEND_ERROR));
     STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE))
         .SetReturn((LIST_ITEM_HANDLE)NULL);
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(singlylinkedlist_remove(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
     // act
@@ -3851,9 +3838,9 @@ TEST_FUNCTION(when_more_bytes_than_requested_are_indicated_by_lws_write_and_a_pa
         .SetReturn(2);
     STRICT_EXPECTED_CALL(test_on_send_complete((void*)0x4243, IO_SEND_ERROR));
     STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4242));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(singlylinkedlist_remove(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
     // act
