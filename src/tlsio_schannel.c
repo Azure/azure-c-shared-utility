@@ -704,19 +704,18 @@ CONCRETE_IO_HANDLE tlsio_schannel_create(void* io_create_parameters)
 
     if (tls_io_config == NULL)
     {
+        LogError("NULL tls_io_config");
         result = NULL;
     }
     else
     {
 		result = (TLS_IO_INSTANCE *) malloc(sizeof(TLS_IO_INSTANCE));
-        if (result != NULL)
+        if (result == NULL)
         {
-            SOCKETIO_CONFIG socketio_config;
-
-            socketio_config.hostname = tls_io_config->hostname;
-            socketio_config.port = tls_io_config->port;
-            socketio_config.accepted_socket = NULL;
-
+            LogError("Failed allocating memory for TLS instance");
+        }
+        else
+        {
             result->on_bytes_received = NULL;
             result->on_io_open_complete = NULL;
             result->on_io_close_complete = NULL;
@@ -729,32 +728,53 @@ CONCRETE_IO_HANDLE tlsio_schannel_create(void* io_create_parameters)
             result->x509_schannel_handle = NULL;
 
 			result->host_name = (SEC_TCHAR*)malloc(sizeof(SEC_TCHAR) * (1 + strlen(tls_io_config->hostname)));
-			
             if (result->host_name == NULL)
             {
+                LogError("Failed allocating memory for hostname");
                 free(result);
                 result = NULL;
             }
             else
             {
-				#ifdef WINCE
+                const IO_INTERFACE_DESCRIPTION* underlying_io_interface;
+                void* io_interface_parameters;
+
+                #ifdef WINCE
 				(void) mbstowcs(result->host_name, tls_io_config->hostname, strlen(tls_io_config->hostname));
 				#else
 				(void)strcpy(result->host_name, tls_io_config->hostname);
 				#endif
-				
-                const IO_INTERFACE_DESCRIPTION* socket_io_interface = socketio_get_interface_description();
-                if (socket_io_interface == NULL)
+
+                if (tls_io_config->underlying_io_interface != NULL)
                 {
+                    underlying_io_interface = tls_io_config->underlying_io_interface;
+                    io_interface_parameters = tls_io_config->underlying_io_parameters;
+                }
+                else
+                {
+                    SOCKETIO_CONFIG socketio_config;
+
+                    socketio_config.hostname = tls_io_config->hostname;
+                    socketio_config.port = tls_io_config->port;
+                    socketio_config.accepted_socket = NULL;
+
+                    underlying_io_interface = socketio_get_interface_description();
+                    io_interface_parameters = &socketio_config;
+                }
+
+                if (underlying_io_interface == NULL)
+                {
+                    LogError("Failed getting socket IO interface description.");
                     free(result->host_name);
                     free(result);
                     result = NULL;
                 }
                 else
                 {
-                    result->socket_io = xio_create(socket_io_interface, &socketio_config);
+                    result->socket_io = xio_create(underlying_io_interface, io_interface_parameters);
                     if (result->socket_io == NULL)
                     {
+                        LogError("Failed creating underlying IO instance.");
                         free(result->host_name);
                         free(result);
                         result = NULL;

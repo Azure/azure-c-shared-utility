@@ -372,34 +372,47 @@ CONCRETE_IO_HANDLE tlsio_mbedtls_create(void* io_create_parameters)
         result = malloc(sizeof(TLS_IO_INSTANCE));
         if (result != NULL)
         {
-            SOCKETIO_CONFIG socketio_config;
+            const IO_INTERFACE_DESCRIPTION* underlying_io_interface;
+            void* io_interface_parameters;
 
-            socketio_config.hostname = tls_io_config->hostname;
-            socketio_config.port = tls_io_config->port;
-            socketio_config.accepted_socket = NULL;
-
-            result->on_bytes_received = NULL;
-            result->on_bytes_received_context = NULL;
-
-            result->on_io_open_complete = NULL;
-            result->on_io_open_complete_context = NULL;
-
-            result->on_io_close_complete = NULL;
-            result->on_io_close_complete_context = NULL;
-
-            result->on_io_error = NULL;
-            result->on_io_error_context = NULL;
-
-            const IO_INTERFACE_DESCRIPTION* socket_io_interface = socketio_get_interface_description();
-            if (socket_io_interface == NULL)
+            if (tls_io_config->underlying_io_interface != NULL)
             {
-                LogError("get socket io interface failed");
-                free(result);
-                result = NULL;
+                underlying_io_interface = tls_io_config->underlying_io_interface;
+                io_interface_parameters = tls_io_config->underlying_io_parameters;
             }
             else
             {
-                result->socket_io = xio_create(socket_io_interface, &socketio_config);
+                SOCKETIO_CONFIG socketio_config;
+
+                socketio_config.hostname = tls_io_config->hostname;
+                socketio_config.port = tls_io_config->port;
+                socketio_config.accepted_socket = NULL;
+
+                underlying_io_interface = socketio_get_interface_description();
+                io_interface_parameters = &socketio_config;
+            }
+
+            if (underlying_io_interface == NULL)
+            {
+                free(result);
+                result = NULL;
+                LogError("Failed getting socket IO interface description.");
+            }
+            else
+            {
+                result->on_bytes_received = NULL;
+                result->on_bytes_received_context = NULL;
+
+                result->on_io_open_complete = NULL;
+                result->on_io_open_complete_context = NULL;
+
+                result->on_io_close_complete = NULL;
+                result->on_io_close_complete_context = NULL;
+
+                result->on_io_error = NULL;
+                result->on_io_error_context = NULL;
+
+                result->socket_io = xio_create(underlying_io_interface, io_interface_parameters);
                 if (result->socket_io == NULL)
                 {
                     LogError("socket xio create failed");
@@ -416,7 +429,7 @@ CONCRETE_IO_HANDLE tlsio_mbedtls_create(void* io_create_parameters)
                     // mbeTLS initialize
                     mbedtls_init((void *)result,tls_io_config->hostname);
                     result->tlsio_state = TLSIO_STATE_NOT_OPEN;
-		g_created = 1;
+		            g_created = 1;
                 }
             }
         }

@@ -218,6 +218,8 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
         {
             tlsio_config.hostname = hostName;
             tlsio_config.port = 443;
+            tlsio_config.underlying_io_interface = NULL;
+            tlsio_config.underlying_io_parameters = NULL;
 
             http_instance->xio_handle = xio_create(platform_get_default_tlsio(), (void*)&tlsio_config);
 
