@@ -77,6 +77,7 @@ typedef struct WS_PROTOCOL_TAG
 } WS_PROTOCOL;
 
 MOCKABLE_FUNCTION(, UWS_CLIENT_HANDLE, uws_client_create, const char*, hostname, unsigned int, port, const char*, resource_name, bool, use_ssl, const WS_PROTOCOL*, protocols, size_t, protocol_count);
+MOCKABLE_FUNCTION(, UWS_CLIENT_HANDLE, uws_client_create_with_io, const IO_INTERFACE_DESCRIPTION*, io_interface, void*, io_create_parameters, const char*, hostname, unsigned int, port, const char*, resource_name, const WS_PROTOCOL*, protocols, size_t, protocol_count);
 MOCKABLE_FUNCTION(, void, uws_client_destroy, UWS_CLIENT_HANDLE, uws_client);
 MOCKABLE_FUNCTION(, int, uws_client_open_async, UWS_CLIENT_HANDLE, uws_client, ON_WS_OPEN_COMPLETE, on_ws_open_complete, void*, on_ws_open_complete_context, ON_WS_FRAME_RECEIVED, on_ws_frame_received, void*, on_ws_frame_received_context, ON_WS_PEER_CLOSED, on_ws_peer_closed, void*, on_ws_peer_closed_context, ON_WS_ERROR, on_ws_error, void*, on_ws_error_context);
 MOCKABLE_FUNCTION(, int, uws_client_close_async, UWS_CLIENT_HANDLE, uws_client, ON_WS_CLOSE_COMPLETE, on_ws_close_complete, void*, on_ws_close_complete_context);
@@ -122,6 +123,30 @@ XX**SRS_UWS_CLIENT_01_414: [** If allocating memory for the copied protocol info
 XX**SRS_UWS_CLIENT_01_405: [** If allocating memory for the copy of the `resource_name` argument fails, then `uws_client_create` shall return NULL. **]**
 XX**SRS_UWS_CLIENT_01_017: [** `uws_client_create` shall create a pending send IO list that is to be used to queue send packets by calling `singlylinkedlist_create`. **]**
 XX**SRS_UWS_CLIENT_01_018: [** If `singlylinkedlist_create` fails then `uws_client_create` shall fail and return NULL. **]**
+
+### uws_client_create_with_io
+
+```c
+UWS_CLIENT_HANDLE uws_client_create_with_io(const IO_INTERFACE_DESCRIPTION* io_interface, void* io_create_parameters, const char* hostname, unsigned int port, const char* resource_name, const WS_PROTOCOL* protocols, size_t protocol_count)
+```
+
+XX**SRS_UWS_CLIENT_01_515: [** `uws_client_create_with_io` shall create an instance of uws and return a non-NULL handle to it. **]**
+XX**SRS_UWS_CLIENT_01_516: [** If any of the arguments `io_interface`, `hostname` and `resource_name` is NULL then `uws_client_create_with_io` shall return NULL. **]**
+XX**SRS_UWS_CLIENT_01_517: [** If allocating memory for the new uws instance fails then `uws_client_create_with_io` shall return NULL. **]**
+XX**SRS_UWS_CLIENT_01_518: [** The argument `hostname` shall be copied for later use. **]**
+XX**SRS_UWS_CLIENT_01_519: [** If allocating memory for the copy of the `hostname` argument fails, then `uws_client_create` shall return NULL. **]**
+XX**SRS_UWS_CLIENT_01_520: [** The argument `port` shall be copied for later use. **]**
+XX**SRS_UWS_CLIENT_01_521: [** The underlying IO shall be created by calling `xio_create`, while passing as arguments the `io_interface` and `io_create_parameters` argument values. **]**
+XX**SRS_UWS_CLIENT_01_522: [** If `xio_create` fails, then `uws_client_create_with_io` shall fail and return NULL. **]**
+XX**SRS_UWS_CLIENT_01_523: [** The argument `resource_name` shall be copied for later use. **]**
+XX**SRS_UWS_CLIENT_01_529: [** If allocating memory for the copy of the `resource_name` argument fails, then `uws_client_create_with_io` shall return NULL. **]**
+XX**SRS_UWS_CLIENT_01_524: [** The `protocols` argument shall be allowed to be NULL, in which case no protocol is to be specified by the client in the upgrade request. **]**
+XX**SRS_UWS_CLIENT_01_525: [** If `protocol_count` is non zero and `protocols` is NULL then `uws_client_create_with_io` shall fail and return NULL. **]**
+XX**SRS_UWS_CLIENT_01_526: [** If the `protocol` member of any of the items in the `protocols` argument is NULL, then `uws_client_create_with_io` shall fail and return NULL. **]**
+XX**SRS_UWS_CLIENT_01_527: [** The protocol information indicated by `protocols` and `protocol_count` shall be copied for later use (for constructing the upgrade request). **]**
+XX**SRS_UWS_CLIENT_01_528: [** If allocating memory for the copied protocol information fails then `uws_client_create_with_io` shall fail and return NULL. **]**
+XX**SRS_UWS_CLIENT_01_530: [** `uws_client_create_with_io` shall create a pending send IO list that is to be used to queue send packets by calling `singlylinkedlist_create`. **]**
+XX**SRS_UWS_CLIENT_01_531: [** If `singlylinkedlist_create` fails then `uws_client_create_with_io` shall fail and return NULL. **]**
 
 ### uws_client_destroy
 

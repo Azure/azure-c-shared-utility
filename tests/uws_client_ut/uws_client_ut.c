@@ -10,6 +10,7 @@
 #include "umock_c.h"
 #include "umocktypes_charptr.h"
 #include "umocktypes_bool.h"
+#include "umock_c_negative_tests.h"
 
 /* Requirements not needed as they are optional:
 Tests_SRS_UWS_CLIENT_01_254: [ If an endpoint receives a Ping frame and has not yet sent Pong frame(s) in response to previous Ping frame(s), the endpoint MAY elect to send a Pong frame for only the most recently processed Ping frame. ]
@@ -524,6 +525,8 @@ TEST_FUNCTION_INITIALIZE(method_init)
 TEST_FUNCTION_CLEANUP(method_cleanup)
 {
     TEST_MUTEX_RELEASE(g_testByTest);
+
+    umock_c_negative_tests_deinit();
 }
 
 /* uws_client_create */
@@ -1010,9 +1013,16 @@ TEST_FUNCTION(uws_client_create_with_valid_args_ssl_succeeds)
     // arrange
     TLSIO_CONFIG tlsio_config;
     UWS_CLIENT_HANDLE uws_client;
+    SOCKETIO_CONFIG socketio_config;
+
+    socketio_config.accepted_socket = NULL;
+    socketio_config.hostname = "test_host";
+    socketio_config.port = 443;
 
     tlsio_config.hostname = "test_host";
     tlsio_config.port = 443;
+    tlsio_config.underlying_io_interface = TEST_SOCKET_IO_INTERFACE_DESCRIPTION;
+    tlsio_config.underlying_io_parameters = &socketio_config;
 
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
     STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, "test_host"))
@@ -1021,6 +1031,7 @@ TEST_FUNCTION(uws_client_create_with_valid_args_ssl_succeeds)
         .IgnoreArgument_destination();
     STRICT_EXPECTED_CALL(singlylinkedlist_create());
     STRICT_EXPECTED_CALL(platform_get_default_tlsio());
+    STRICT_EXPECTED_CALL(socketio_get_interface_description());
     STRICT_EXPECTED_CALL(xio_create(TEST_TLS_IO_INTERFACE_DESCRIPTION, &tlsio_config))
         .IgnoreArgument_io_create_parameters();
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
@@ -1047,9 +1058,16 @@ TEST_FUNCTION(uws_client_create_with_valid_args_ssl_port_different_than_443_succ
     // arrange
     TLSIO_CONFIG tlsio_config;
     UWS_CLIENT_HANDLE uws_client;
+    SOCKETIO_CONFIG socketio_config;
+
+    socketio_config.accepted_socket = NULL;
+    socketio_config.hostname = "test_host";
+    socketio_config.port = 444;
 
     tlsio_config.hostname = "test_host";
     tlsio_config.port = 444;
+    tlsio_config.underlying_io_interface = TEST_SOCKET_IO_INTERFACE_DESCRIPTION;
+    tlsio_config.underlying_io_parameters = &socketio_config;
 
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
     STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, "test_host"))
@@ -1058,6 +1076,7 @@ TEST_FUNCTION(uws_client_create_with_valid_args_ssl_port_different_than_443_succ
         .IgnoreArgument_destination();
     STRICT_EXPECTED_CALL(singlylinkedlist_create());
     STRICT_EXPECTED_CALL(platform_get_default_tlsio());
+    STRICT_EXPECTED_CALL(socketio_get_interface_description());
     STRICT_EXPECTED_CALL(xio_create(TEST_TLS_IO_INTERFACE_DESCRIPTION, &tlsio_config))
         .IgnoreArgument_io_create_parameters();
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
@@ -1100,6 +1119,256 @@ TEST_FUNCTION(when_getting_the_tlsio_interface_fails_then_uws_client_create_fail
 
     // act
     uws_client = uws_client_create("test_host", 444, "test_resource/23", true, protocols, sizeof(protocols) / sizeof(protocols[0]));
+
+    // assert
+    ASSERT_IS_NULL(uws_client);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/* uws_client_create_with_io */
+
+/* Tests_SRS_UWS_CLIENT_01_515: [ `uws_client_create_with_io` shall create an instance of uws and return a non-NULL handle to it. ]*/
+/* Tests_SRS_UWS_CLIENT_01_518: [ The argument `hostname` shall be copied for later use. ]*/
+/* Tests_SRS_UWS_CLIENT_01_520: [ The argument `port` shall be copied for later use. ]*/
+/* Tests_SRS_UWS_CLIENT_01_521: [ The underlying IO shall be created by calling `xio_create`, while passing as arguments the `io_interface` and `io_create_parameters` argument values. ]*/
+/* Tests_SRS_UWS_CLIENT_01_523: [ The argument `resource_name` shall be copied for later use. ]*/
+/* Tests_SRS_UWS_CLIENT_01_530: [ `uws_client_create_with_io` shall create a pending send IO list that is to be used to queue send packets by calling `singlylinkedlist_create`. ]*/
+/* Tests_SRS_UWS_CLIENT_01_527: [ The protocol information indicated by `protocols` and `protocol_count` shall be copied for later use (for constructing the upgrade request). ]*/
+TEST_FUNCTION(uws_client_create_with_io_valid_args_succeeds)
+{
+    // arrange
+    SOCKETIO_CONFIG socketio_config;
+    UWS_CLIENT_HANDLE uws_client;
+
+    socketio_config.accepted_socket = NULL;
+    socketio_config.hostname = "my_horrible_host";
+    socketio_config.port = 1122;
+
+    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, "test_host"))
+        .IgnoreArgument_destination();
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, "111"))
+        .IgnoreArgument_destination();
+    STRICT_EXPECTED_CALL(singlylinkedlist_create());
+    STRICT_EXPECTED_CALL(xio_create(TEST_SOCKET_IO_INTERFACE_DESCRIPTION, &socketio_config))
+        .IgnoreArgument_io_create_parameters();
+    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, "test_protocol"))
+        .IgnoreArgument_destination();
+
+    // act
+    uws_client = uws_client_create_with_io(TEST_SOCKET_IO_INTERFACE_DESCRIPTION, &socketio_config, "test_host", 80, "111", protocols, sizeof(protocols) / sizeof(protocols[0]));
+
+    // assert
+    ASSERT_IS_NOT_NULL(uws_client);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    uws_client_destroy(uws_client);
+}
+
+/* Tests_SRS_UWS_CLIENT_01_516: [ If any of the arguments `io_interface`, `hostname` and `resource_name` is NULL then `uws_client_create_with_io` shall return NULL. ]*/
+TEST_FUNCTION(uws_client_create_with_io_with_NULL_io_interface_description_fails)
+{
+    // arrange
+    SOCKETIO_CONFIG socketio_config;
+    UWS_CLIENT_HANDLE uws_client;
+
+    socketio_config.accepted_socket = NULL;
+    socketio_config.hostname = "my_horrible_host";
+    socketio_config.port = 1122;
+
+    // act
+    uws_client = uws_client_create_with_io(NULL, &socketio_config, "test_host", 80, "111", protocols, sizeof(protocols) / sizeof(protocols[0]));
+
+    // assert
+    ASSERT_IS_NULL(uws_client);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_UWS_CLIENT_01_516: [ If any of the arguments `io_interface`, `hostname` and `resource_name` is NULL then `uws_client_create_with_io` shall return NULL. ]*/
+TEST_FUNCTION(uws_client_create_with_io_with_NULL_hostname_fails)
+{
+    // arrange
+    SOCKETIO_CONFIG socketio_config;
+    UWS_CLIENT_HANDLE uws_client;
+
+    socketio_config.accepted_socket = NULL;
+    socketio_config.hostname = "my_horrible_host";
+    socketio_config.port = 1122;
+
+    // act
+    uws_client = uws_client_create_with_io(TEST_SOCKET_IO_INTERFACE_DESCRIPTION, &socketio_config, NULL, 80, "111", protocols, sizeof(protocols) / sizeof(protocols[0]));
+
+    // assert
+    ASSERT_IS_NULL(uws_client);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_UWS_CLIENT_01_516: [ If any of the arguments `io_interface`, `hostname` and `resource_name` is NULL then `uws_client_create_with_io` shall return NULL. ]*/
+TEST_FUNCTION(uws_client_create_with_io_with_NULL_resource_name_fails)
+{
+    // arrange
+    SOCKETIO_CONFIG socketio_config;
+    UWS_CLIENT_HANDLE uws_client;
+
+    socketio_config.accepted_socket = NULL;
+    socketio_config.hostname = "my_horrible_host";
+    socketio_config.port = 1122;
+
+    // act
+    uws_client = uws_client_create_with_io(TEST_SOCKET_IO_INTERFACE_DESCRIPTION, &socketio_config, "test_host", 80, NULL, protocols, sizeof(protocols) / sizeof(protocols[0]));
+
+    // assert
+    ASSERT_IS_NULL(uws_client);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_UWS_CLIENT_01_517: [ If allocating memory for the new uws instance fails then `uws_client_create_with_io` shall return NULL. ]*/
+/* Tests_SRS_UWS_CLIENT_01_519: [ If allocating memory for the copy of the `hostname` argument fails, then `uws_client_create` shall return NULL. ]*/
+/* Tests_SRS_UWS_CLIENT_01_522: [ If `xio_create` fails, then `uws_client_create_with_io` shall fail and return NULL. ]*/
+/* Tests_SRS_UWS_CLIENT_01_529: [ If allocating memory for the copy of the `resource_name` argument fails, then `uws_client_create_with_io` shall return NULL. ]*/
+/* Tests_SRS_UWS_CLIENT_01_531: [ If `singlylinkedlist_create` fails then `uws_client_create_with_io` shall fail and return NULL. ]*/
+/* Tests_SRS_UWS_CLIENT_01_528: [ If allocating memory for the copied protocol information fails then `uws_client_create_with_io` shall fail and return NULL. ]*/
+TEST_FUNCTION(when_any_call_fails_uws_client_create_with_io_fails)
+{
+    // arrange
+    SOCKETIO_CONFIG socketio_config;
+    UWS_CLIENT_HANDLE uws_client;
+    static const WS_PROTOCOL two_protocols[] = { { "test_protocol1" },{ "test_protocol2" } };
+
+    int negativeTestsInitResult = umock_c_negative_tests_init();
+    ASSERT_ARE_EQUAL(int, 0, negativeTestsInitResult);
+
+    socketio_config.accepted_socket = NULL;
+    socketio_config.hostname = "my_horrible_host";
+    socketio_config.port = 1122;
+
+    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
+        .SetFailReturn(NULL);
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, "test_host"))
+        .IgnoreArgument_destination()
+        .SetFailReturn(1);
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, "111"))
+        .IgnoreArgument_destination()
+        .SetFailReturn(1);
+    STRICT_EXPECTED_CALL(singlylinkedlist_create())
+        .SetFailReturn(NULL);
+    STRICT_EXPECTED_CALL(xio_create(TEST_SOCKET_IO_INTERFACE_DESCRIPTION, &socketio_config))
+        .IgnoreArgument_io_create_parameters()
+        .SetFailReturn(NULL);
+    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
+        .SetFailReturn(NULL);
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, "test_protocol1"))
+        .IgnoreArgument_destination()
+        .SetFailReturn(1);
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, "test_protocol2"))
+        .IgnoreArgument_destination()
+        .SetFailReturn(1);
+
+    umock_c_negative_tests_snapshot();
+
+    for (size_t i = 0; i < umock_c_negative_tests_call_count(); i++)
+    {
+        char temp_str[128];
+
+        umock_c_negative_tests_reset();
+        umock_c_negative_tests_fail_call(i);
+
+        (void)sprintf(temp_str, "On failed call %zu", i);
+
+        // act
+        uws_client = uws_client_create_with_io(TEST_SOCKET_IO_INTERFACE_DESCRIPTION, &socketio_config, "test_host", 80, "111", two_protocols, sizeof(two_protocols) / sizeof(two_protocols[0]));
+
+        // assert
+        ASSERT_IS_NULL_WITH_MSG(uws_client, temp_str);
+    }
+}
+
+/* Tests_SRS_UWS_CLIENT_01_524: [ The `protocols` argument shall be allowed to be NULL, in which case no protocol is to be specified by the client in the upgrade request. ]*/
+TEST_FUNCTION(uws_client_create_with_io_with_NULL_protocols_succeeds)
+{
+    // arrange
+    SOCKETIO_CONFIG socketio_config;
+    UWS_CLIENT_HANDLE uws_client;
+
+    socketio_config.accepted_socket = NULL;
+    socketio_config.hostname = "my_horrible_host";
+    socketio_config.port = 1122;
+
+    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, "test_host"))
+        .IgnoreArgument_destination();
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, "111"))
+        .IgnoreArgument_destination();
+    STRICT_EXPECTED_CALL(singlylinkedlist_create());
+    STRICT_EXPECTED_CALL(xio_create(TEST_SOCKET_IO_INTERFACE_DESCRIPTION, &socketio_config))
+        .IgnoreArgument_io_create_parameters();
+
+    // act
+    uws_client = uws_client_create_with_io(TEST_SOCKET_IO_INTERFACE_DESCRIPTION, &socketio_config, "test_host", 80, "111", NULL, 0);
+
+    // assert
+    ASSERT_IS_NOT_NULL(uws_client);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    uws_client_destroy(uws_client);
+}
+
+/* Tests_SRS_UWS_CLIENT_01_525: [ If `protocol_count` is non zero and `protocols` is NULL then `uws_client_create_with_io` shall fail and return NULL. ]*/
+TEST_FUNCTION(uws_client_create_with_io_with_NULL_protocols_and_non_zero_protocol_count_fails)
+{
+    // arrange
+    SOCKETIO_CONFIG socketio_config;
+    UWS_CLIENT_HANDLE uws_client;
+
+    socketio_config.accepted_socket = NULL;
+    socketio_config.hostname = "test_host";
+    socketio_config.port = 80;
+
+    // act
+    uws_client = uws_client_create_with_io(TEST_SOCKET_IO_INTERFACE_DESCRIPTION, &socketio_config, "test_host", 80, "111", NULL, 1);
+
+    // assert
+    ASSERT_IS_NULL(uws_client);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_UWS_CLIENT_01_526: [ If the `protocol` member of any of the items in the `protocols` argument is NULL, then `uws_client_create_with_io` shall fail and return NULL. ]*/
+TEST_FUNCTION(uws_client_create_with_io_with_a_NULL_protocol_name_for_first_protocol_fails)
+{
+    // arrange
+    UWS_CLIENT_HANDLE uws_client;
+    SOCKETIO_CONFIG socketio_config;
+    WS_PROTOCOL NULL_test_protocol[] = { { NULL } };
+
+    socketio_config.accepted_socket = NULL;
+    socketio_config.hostname = "test_host";
+    socketio_config.port = 444;
+
+    // act
+    uws_client = uws_client_create_with_io(TEST_SOCKET_IO_INTERFACE_DESCRIPTION, &socketio_config, "test_host", 80, "test_resource/23", NULL_test_protocol, sizeof(NULL_test_protocol) / sizeof(NULL_test_protocol[0]));
+
+    // assert
+    ASSERT_IS_NULL(uws_client);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_UWS_CLIENT_01_526: [ If the `protocol` member of any of the items in the `protocols` argument is NULL, then `uws_client_create_with_io` shall fail and return NULL. ]*/
+TEST_FUNCTION(uws_client_create_with_io_with_a_NULL_protocol_name_for_second_protocol_fails)
+{
+    // arrange
+    UWS_CLIENT_HANDLE uws_client;
+    SOCKETIO_CONFIG socketio_config;
+    WS_PROTOCOL NULL_test_protocol[] = { { "a" },  { NULL } };
+
+    socketio_config.accepted_socket = NULL;
+    socketio_config.hostname = "test_host";
+    socketio_config.port = 444;
+
+    // act
+    uws_client = uws_client_create_with_io(TEST_SOCKET_IO_INTERFACE_DESCRIPTION, &socketio_config, "test_host", 80, "test_resource/23", NULL_test_protocol, sizeof(NULL_test_protocol) / sizeof(NULL_test_protocol[0]));
 
     // assert
     ASSERT_IS_NULL(uws_client);
