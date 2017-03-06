@@ -3311,8 +3311,6 @@ TEST_FUNCTION(when_removing_the_pending_IO_after_a_succesfull_write_lws_write_fa
     (void)wsio_send(wsio, test_buffer, sizeof(test_buffer), test_on_send_complete, (void*)0x4243);
     umock_c_reset_all_calls();
 
-    singlylinkedlist_remove_result = 1;
-
     STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
     STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
         .SetReturn(saved_ws_callback_context);
@@ -3324,7 +3322,9 @@ TEST_FUNCTION(when_removing_the_pending_IO_after_a_succesfull_write_lws_write_fa
         .SetReturn(2);
     STRICT_EXPECTED_CALL(test_on_send_complete((void*)0x4243, IO_SEND_OK));
     EXPECTED_CALL(singlylinkedlist_remove(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4242));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
     // act
@@ -3591,8 +3591,6 @@ TEST_FUNCTION(when_removing_the_pending_IO_due_to_lws_write_failing_in_CLIENT_WR
     (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_WRITEABLE, saved_ws_callback_context, NULL, 0);
     umock_c_reset_all_calls();
 
-    singlylinkedlist_remove_result = 1;
-
     STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
     STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
         .SetReturn(saved_ws_callback_context);
@@ -3605,6 +3603,8 @@ TEST_FUNCTION(when_removing_the_pending_IO_due_to_lws_write_failing_in_CLIENT_WR
     STRICT_EXPECTED_CALL(test_on_send_complete((void*)0x4243, IO_SEND_ERROR));
     STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4242));
     EXPECTED_CALL(singlylinkedlist_remove(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
     // act
@@ -3640,8 +3640,6 @@ TEST_FUNCTION(when_removing_the_pending_IO_due_to_allocating_memory_failing_in_C
     (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_WRITEABLE, saved_ws_callback_context, NULL, 0);
     umock_c_reset_all_calls();
 
-    singlylinkedlist_remove_result = 1;
-
     STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
     STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
         .SetReturn(saved_ws_callback_context);
@@ -3652,6 +3650,8 @@ TEST_FUNCTION(when_removing_the_pending_IO_due_to_allocating_memory_failing_in_C
     STRICT_EXPECTED_CALL(test_on_send_complete((void*)0x4243, IO_SEND_ERROR));
     STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4242));
     EXPECTED_CALL(singlylinkedlist_remove(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)).IgnoreArgument_ptr();
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)).IgnoreArgument_ptr();
 
     // act
     (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_WRITEABLE, saved_ws_callback_context, NULL, 0);
