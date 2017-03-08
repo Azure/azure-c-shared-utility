@@ -732,46 +732,70 @@ static int add_certificate_to_store(TLS_IO_INSTANCE* tls_io_instance, const char
 
     if (certValue != NULL)
     {
-        BIO* cert_memory_bio;
-        X509* xcert;
-
         X509_STORE* cert_store = SSL_CTX_get_cert_store(tls_io_instance->ssl_context);
         if (cert_store == NULL)
         {
-            log_ERR_get_error("Failed calling SSL_CTX_get_cert_store.");
+            log_ERR_get_error("failure in SSL_CTX_get_cert_store.");
             result = __FAILURE__;
         }
         else
         {
-            cert_memory_bio = BIO_new_mem_buf((void*)certValue, -1);
-            if (cert_memory_bio == NULL)
+            BIO_METHOD* bio_method = BIO_s_mem();
+            if (bio_method == NULL)
             {
-                log_ERR_get_error("Failed calling BIO_new_mem_buf.");
+                log_ERR_get_error("failure in BIO_s_mem");
                 result = __FAILURE__;
             }
             else
             {
-                xcert = PEM_read_bio_X509(cert_memory_bio, NULL, NULL, NULL);
-                if (xcert == NULL)
+                BIO* cert_memory_bio = BIO_new(bio_method);
+
+                if (cert_memory_bio == NULL)
                 {
-                    log_ERR_get_error("Failed calling PEM_read_bio_X509.");
+                    log_ERR_get_error("failure in BIO_new");
                     result = __FAILURE__;
                 }
                 else
                 {
-                    if (X509_STORE_add_cert(cert_store, xcert) != 1)
+                    int puts_result = BIO_puts(cert_memory_bio, certValue);
+                    if (puts_result < 0)
                     {
-                        log_ERR_get_error("Failed calling X509_STORE_add_cert.");
+                        log_ERR_get_error("failure in BIO_puts");
                         result = __FAILURE__;
                     }
                     else
                     {
-                        result = 0;
+                        if ((size_t)puts_result != strlen(certValue))
+                        {
+                            log_ERR_get_error("mismatching legths");
+                            result = __FAILURE__;
+                        }
+                        else
+                        {
+                            X509* certificate;
+                            while ((certificate = PEM_read_bio_X509(cert_memory_bio, NULL, NULL, NULL)) != NULL)
+                            {
+                                if (!X509_STORE_add_cert(cert_store, certificate))
+                                {
+                                    X509_free(certificate);
+                                    log_ERR_get_error("failure in X509_STORE_add_cert");
+                                    break;
+                                }
+                                X509_free(certificate);
+                            }
+                            if (certificate == NULL)
+                            {
+                                result = 0;/*all is fine*/
+                            }
+                            else
+                            {
+                                /*previous while loop terminated unfortunately*/
+                                result = __FAILURE__;
+                            }
+                        }
                     }
-
-                    X509_free(xcert);
+                    BIO_free(cert_memory_bio);
                 }
-                BIO_free(cert_memory_bio);
             }
         }
     }

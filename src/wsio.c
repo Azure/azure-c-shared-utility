@@ -504,6 +504,7 @@ static int on_ws_callback(struct lws *wsi, enum lws_callback_reasons reason, voi
                                             X509_free(certificate);
                                             break;
                                         }
+                                        X509_free(certificate);
                                     }
                                 } while (certificate != NULL);
                             }
