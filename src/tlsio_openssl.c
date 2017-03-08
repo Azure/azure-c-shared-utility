@@ -1043,11 +1043,14 @@ int tlsio_openssl_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_open
 
             if (create_openssl_instance(tls_io_instance) != 0)
             {
+                LogError("Failed creating the OpenSSL instance.");
                 tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
                 result = __FAILURE__;
             }
             else if (xio_open(tls_io_instance->underlying_io, on_underlying_io_open_complete, tls_io_instance, on_underlying_io_bytes_received, tls_io_instance, on_underlying_io_error, tls_io_instance) != 0)
             {
+                LogError("Failed opening the underlying I/O.");
+                close_openssl_instance(tls_io_instance);
                 tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
                 result = __FAILURE__;
             }
