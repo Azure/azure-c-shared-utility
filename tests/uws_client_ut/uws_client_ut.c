@@ -6468,7 +6468,7 @@ TEST_FUNCTION(uws_set_option_with_NULL_option_name_fails)
     uws_client_destroy(uws_client);
 }
 
-/* Tests_SRS_UWS_CLIENT_01_510: [ If the option name is `uWSCLientOptions` then `uws_client_set_option` shall call `OptionHandler_FeedOptions` and pass to it the underlying IO handle and the `value` argument. ]*/
+/* Tests_SRS_UWS_CLIENT_01_510: [ If the option name is `uWSClientOptions` then `uws_client_set_option` shall call `OptionHandler_FeedOptions` and pass to it the underlying IO handle and the `value` argument. ]*/
 /* Tests_SRS_UWS_CLIENT_01_442: [ On success, `uws_client_set_option` shall return 0. ]*/
 TEST_FUNCTION(uws_set_option_with_uws_client_options_calls_OptionHandler_FeedOptions)
 {
@@ -6485,7 +6485,7 @@ TEST_FUNCTION(uws_set_option_with_uws_client_options_calls_OptionHandler_FeedOpt
     STRICT_EXPECTED_CALL(OptionHandler_FeedOptions((OPTIONHANDLER_HANDLE)0x4242, TEST_IO_HANDLE));
 
     // act
-    result = uws_client_set_option(uws_client, "uWSCLientOptions", (void*)0x4242);
+    result = uws_client_set_option(uws_client, "uWSClientOptions", (void*)0x4242);
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
@@ -6512,7 +6512,7 @@ TEST_FUNCTION(when_OptionHandler_FeedOptions_fails_then_uws_set_option_fails)
         .SetReturn(OPTIONHANDLER_ERROR);
 
     // act
-    result = uws_client_set_option(uws_client, "uWSCLientOptions", (void*)0x4242);
+    result = uws_client_set_option(uws_client, "uWSClientOptions", (void*)0x4242);
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
@@ -6593,7 +6593,7 @@ TEST_FUNCTION(uws_retrieve_options_with_NULL_handle_fails)
 }
 
 /* Tests_SRS_UWS_CLIENT_01_445: [ `uws_client_retrieve_options` shall call `OptionHandler_Create` to produce an `OPTIONHANDLER_HANDLE` and on success return the new `OPTIONHANDLER_HANDLE` handle. ]*/
-/* Tests_SRS_UWS_CLIENT_01_501: [ `uws_client_retrieve_options` shall add to the option handler one option, whose name shall be `uWSCLientOptions` and the value shall be queried by calling `xio_retrieveoptions`. ]*/
+/* Tests_SRS_UWS_CLIENT_01_501: [ `uws_client_retrieve_options` shall add to the option handler one option, whose name shall be `uWSClientOptions` and the value shall be queried by calling `xio_retrieveoptions`. ]*/
 /* Tests_SRS_UWS_CLIENT_01_502: [ When calling `xio_retrieveoptions` the underlying IO handle shall be passed to it. ]*/
 /* Tests_SRS_UWS_CLIENT_01_504: [ Adding the option shall be done by calling `OptionHandler_AddOption`. ]*/
 TEST_FUNCTION(uws_retrieve_options_calls_the_underlying_xio_retrieve_options_and_returns_the_a_new_option_handler_instance)
@@ -6610,7 +6610,7 @@ TEST_FUNCTION(uws_retrieve_options_calls_the_underlying_xio_retrieve_options_and
 
     EXPECTED_CALL(OptionHandler_Create(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(xio_retrieveoptions(TEST_IO_HANDLE));
-    STRICT_EXPECTED_CALL(OptionHandler_AddOption(TEST_OPTIONHANDLER_HANDLE, "uWSCLientOptions", TEST_IO_OPTIONHANDLER_HANDLE));
+    STRICT_EXPECTED_CALL(OptionHandler_AddOption(TEST_OPTIONHANDLER_HANDLE, "uWSClientOptions", TEST_IO_OPTIONHANDLER_HANDLE));
 
     // act
     result = uws_client_retrieve_options(uws_client);
@@ -6694,7 +6694,7 @@ TEST_FUNCTION(when_OptionHandler_AddOption_fails_then_uws_retrieve_options_fails
 
     EXPECTED_CALL(OptionHandler_Create(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(xio_retrieveoptions(TEST_IO_HANDLE));
-    STRICT_EXPECTED_CALL(OptionHandler_AddOption(TEST_OPTIONHANDLER_HANDLE, "uWSCLientOptions", TEST_IO_OPTIONHANDLER_HANDLE))
+    STRICT_EXPECTED_CALL(OptionHandler_AddOption(TEST_OPTIONHANDLER_HANDLE, "uWSClientOptions", TEST_IO_OPTIONHANDLER_HANDLE))
         .SetReturn(OPTIONHANDLER_ERROR);
     STRICT_EXPECTED_CALL(OptionHandler_Destroy(TEST_IO_OPTIONHANDLER_HANDLE));
     STRICT_EXPECTED_CALL(OptionHandler_Destroy(TEST_OPTIONHANDLER_HANDLE));
@@ -6712,7 +6712,7 @@ TEST_FUNCTION(when_OptionHandler_AddOption_fails_then_uws_retrieve_options_fails
 
 /* uws_client_clone_option */
 
-/* Tests_SRS_UWS_CLIENT_01_507: [ `uws_client_clone_option` called with `name` being `uWSCLientOptions` shall clone the options by calling `OptionHandler_Clone`. ]*/
+/* Tests_SRS_UWS_CLIENT_01_507: [ `uws_client_clone_option` called with `name` being `uWSClientOptions` shall return the same value. ]*/
 TEST_FUNCTION(uws_client_clone_option_calls_xio_cloneoption)
 {
     // arrange
@@ -6726,48 +6726,18 @@ TEST_FUNCTION(uws_client_clone_option_calls_xio_cloneoption)
     (void)uws_client_retrieve_options(uws_client);
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(OptionHandler_Clone((OPTIONHANDLER_HANDLE)0x4243));
-
     // act
-    result = g_clone_option("uWSCLientOptions", (void*)0x4243);
+    result = g_clone_option("uWSClientOptions", (void*)0x4243);
 
     // assert
-    ASSERT_ARE_EQUAL(void_ptr, TEST_OPTIONHANDLER_HANDLE, result);
+    ASSERT_ARE_EQUAL(void_ptr, (void*)0x4243, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
     uws_client_destroy(uws_client);
 }
 
-/* Tests_SRS_UWS_CLIENT_01_514: [ If `OptionHandler_Clone` fails, `uws_client_clone_option` shall fail and return NULL. ]*/
-TEST_FUNCTION(when_OptionHandler_Clone_fails_uws_client_clone_option_fails)
-{
-    // arrange
-    TLSIO_CONFIG tlsio_config;
-    UWS_CLIENT_HANDLE uws_client;
-    void* result;
-
-    tlsio_config.hostname = "test_host";
-    tlsio_config.port = 444;
-    uws_client = uws_client_create("test_host", 444, "/aaa", true, protocols, sizeof(protocols) / sizeof(protocols[0]));
-    (void)uws_client_retrieve_options(uws_client);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(OptionHandler_Clone((OPTIONHANDLER_HANDLE)0x4243))
-        .SetReturn(NULL);
-
-    // act
-    result = g_clone_option("uWSCLientOptions", (void*)0x4243);
-
-    // assert
-    ASSERT_IS_NULL(result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    uws_client_destroy(uws_client);
-}
-
-/* Tests_SRS_UWS_CLIENT_01_512: [ `uws_client_clone_option` called with any other option name than `uWSCLientOptions` shall return NULL. ]*/
+/* Tests_SRS_UWS_CLIENT_01_512: [ `uws_client_clone_option` called with any other option name than `uWSClientOptions` shall return NULL. ]*/
 TEST_FUNCTION(uws_client_clone_with_an_unknown_option_fails)
 {
     // arrange
@@ -6832,7 +6802,7 @@ TEST_FUNCTION(uws_client_clone_option_with_NULL_value_fails)
     umock_c_reset_all_calls();
 
     // act
-    result = g_clone_option("uWSCLientOptions", NULL);
+    result = g_clone_option("uWSClientOptions", NULL);
 
     // assert
     ASSERT_IS_NULL(result);
@@ -6881,7 +6851,7 @@ TEST_FUNCTION(uws_client_destroy_option_with_NULL_value_does_no_destroy)
     umock_c_reset_all_calls();
 
     // act
-    g_destroy_option("uWSCLientOptions", NULL);
+    g_destroy_option("uWSClientOptions", NULL);
 
     // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -6913,8 +6883,8 @@ TEST_FUNCTION(uws_client_destroy_option_with_an_unknown_option_does_no_destroy)
     uws_client_destroy(uws_client);
 }
 
-/* Tests_SRS_UWS_CLIENT_01_508: [ `uws_client_destroy_option` called with the option `name` being `uWSCLientOptions` shall destroy the value by calling `OptionHandler_Destroy`. ]*/
-TEST_FUNCTION(uws_client_destroy_option_with_uWSCLientOptions_calls_OptionHandler_Destroy)
+/* Tests_SRS_UWS_CLIENT_01_508: [ `uws_client_destroy_option` called with the option `name` being `uWSClientOptions` shall destroy the value by calling `OptionHandler_Destroy`. ]*/
+TEST_FUNCTION(uws_client_destroy_option_with_uWSClientOptions_calls_OptionHandler_Destroy)
 {
     // arrange
     TLSIO_CONFIG tlsio_config;
@@ -6929,7 +6899,7 @@ TEST_FUNCTION(uws_client_destroy_option_with_uWSCLientOptions_calls_OptionHandle
     STRICT_EXPECTED_CALL(OptionHandler_Destroy(TEST_OPTIONHANDLER_HANDLE));
 
     // act
-    g_destroy_option("uWSCLientOptions", TEST_OPTIONHANDLER_HANDLE);
+    g_destroy_option("uWSClientOptions", TEST_OPTIONHANDLER_HANDLE);
 
     // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());

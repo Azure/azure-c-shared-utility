@@ -7,72 +7,106 @@
 #include "azure_c_shared_utility/xlogging.h"
 
 #include "azure_c_shared_utility/macro_utils.h"
-DEFINE_ENUM_STRINGS(LOCK_RESULT, LOCK_RESULT_VALUES);
 
-
-/*SRS_LOCK_99_002:[ This API on success will return a valid lock handle which should be a non NULL value]*/
 LOCK_HANDLE Lock_Init(void)
 {
-    LPCRITICAL_SECTION lpCriticalSection = (LPCRITICAL_SECTION) malloc(sizeof(CRITICAL_SECTION));
-    if (!lpCriticalSection)
+    /* Codes_SRS_LOCK_10_002: [Lock_Init on success shall return a valid lock handle which should be a non NULL value] */
+    /* Codes_SRS_LOCK_10_003: [Lock_Init on error shall return NULL ] */
+    HANDLE result = CreateSemaphore(NULL, 1, 1, NULL);
+    if (result == NULL)
     {
-        LogError("Could not allocate memory for Critical Section");
+        LogError("CreateSemaphore failed.");
+    }
+
+    return (LOCK_HANDLE)result;
+}
+
+LOCK_RESULT Lock_Deinit(LOCK_HANDLE handle)
+{
+    LOCK_RESULT result;
+    if (handle == NULL)
+    {
+        /* Codes_SRS_LOCK_10_007: [Lock_Deinit on NULL handle passed returns LOCK_ERROR] */
+        LogError("Invalid argument; handle is NULL.");
+        result = LOCK_ERROR;
     }
     else
     {
-        //In low-memory situations, InitializeCriticalSection can raise a STATUS_NO_MEMORY exception.
-        InitializeCriticalSection( lpCriticalSection );
-    }    
-    return (LOCK_HANDLE) lpCriticalSection;
-}
+        /* Codes_SRS_LOCK_10_012: [Lock_Deinit frees the memory pointed by handle] */
+        CloseHandle((HANDLE)handle);
+        result = LOCK_OK;
+    }
 
+    return result;
+}
 
 LOCK_RESULT Lock(LOCK_HANDLE handle)
 {
-    LOCK_RESULT result = LOCK_OK;
+    LOCK_RESULT result;
     if (handle == NULL)
     {
-        /*SRS_LOCK_99_007:[ This API on NULL handle passed returns LOCK_ERROR]*/
+        /* Codes_SRS_LOCK_10_007: [Lock on NULL handle passed returns LOCK_ERROR] */
+        LogError("Invalid argument; handle is NULL.");
         result = LOCK_ERROR;
-        LogError("(result = %s)", ENUM_TO_STRING(LOCK_RESULT, result));
     }
     else 
     {
-        EnterCriticalSection( (LPCRITICAL_SECTION) handle );
+        DWORD rv = WaitForSingleObject((HANDLE)handle, INFINITE);
+        switch (rv)
+        {
+            case WAIT_OBJECT_0:
+                /* Codes_SRS_LOCK_10_005: [Lock on success shall return LOCK_OK] */
+                result = LOCK_OK;
+                break;
+            case WAIT_ABANDONED:
+                LogError("WaitForSingleObject returned 'abandoned'.");
+                /* Codes_SRS_LOCK_10_006: [Lock on error shall return LOCK_ERROR] */
+                result = LOCK_ERROR;
+                break;
+            case WAIT_TIMEOUT:
+                LogError("WaitForSingleObject timed out.");
+                /* Codes_SRS_LOCK_10_006: [Lock on error shall return LOCK_ERROR] */
+                result = LOCK_ERROR;
+                break;
+            case WAIT_FAILED:
+                LogError("WaitForSingleObject failed: %d", GetLastError());
+                /* Codes_SRS_LOCK_10_006: [Lock on error shall return LOCK_ERROR] */
+                result = LOCK_ERROR;
+                break;
+            default:
+                LogError("WaitForSingleObject returned an invalid value.");
+                /* Codes_SRS_LOCK_10_006: [Lock on error shall return LOCK_ERROR] */
+                result = LOCK_ERROR;
+                break;
+        }
     }    
+
     return result;
 }
 
 LOCK_RESULT Unlock(LOCK_HANDLE handle)
 {
-    LOCK_RESULT result = LOCK_OK;
+    LOCK_RESULT result;
     if (handle == NULL)
     {
-        /*SRS_LOCK_99_007:[ This API on NULL handle passed returns LOCK_ERROR]*/
+        /* Codes_SRS_LOCK_10_007: [Unlock on NULL handle passed returns LOCK_ERROR] */
+        LogError("Invalid argument; handle is NULL.");
         result = LOCK_ERROR;
-        LogError("(result = %s)", ENUM_TO_STRING(LOCK_RESULT, result));
     }
     else
     {
-        LeaveCriticalSection( (LPCRITICAL_SECTION) handle );
+        if (ReleaseSemaphore((HANDLE)handle, 1, NULL))
+        {
+            /* Codes_SRS_LOCK_10_009: [Unlock on success shall return LOCK_OK] */
+            result = LOCK_OK;
+        }
+        else
+        {
+            /* Codes_SRS_LOCK_10_010: [Unlock on error shall return LOCK_ERROR] */
+            LogError("ReleaseSemaphore failed: %d", GetLastError());
+            result = LOCK_ERROR;
+        }
     }
     
-    return result;
-}
-
-LOCK_RESULT Lock_Deinit(LOCK_HANDLE handle)
-{
-    LOCK_RESULT result = LOCK_OK;
-    if (handle == NULL)
-    {
-        /*SRS_LOCK_99_007:[ This API on NULL handle passed returns LOCK_ERROR]*/
-        result = LOCK_ERROR;
-        LogError("(result = %s)", ENUM_TO_STRING(LOCK_RESULT, result));
-    }
-    else
-    {
-        DeleteCriticalSection( (LPCRITICAL_SECTION) handle );
-        free( (LPCRITICAL_SECTION) handle );
-    }
     return result;
 }

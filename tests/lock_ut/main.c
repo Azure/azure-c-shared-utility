@@ -7,6 +7,6 @@ int main(void)
 {
     
     size_t failedTestCount = 0;
-    RUN_TEST_SUITE(Lock_UnitTests, failedTestCount);
+    RUN_TEST_SUITE(LOCK_UnitTests, failedTestCount);
     return failedTestCount;
 }

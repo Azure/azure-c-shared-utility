@@ -259,7 +259,7 @@ extern int uws_client_set_option(UWS_CLIENT_HANDLE uws, const char* option_name,
 ```
 
 XX**SRS_UWS_CLIENT_01_440: [** If any of the arguments `uws_client` or `option_name` is NULL `uws_client_set_option` shall return a non-zero value. **]**
-XX**SRS_UWS_CLIENT_01_510: [** If the option name is `uWSCLientOptions` then `uws_client_set_option` shall call `OptionHandler_FeedOptions` and pass to it the underlying IO handle and the `value` argument. **]**
+XX**SRS_UWS_CLIENT_01_510: [** If the option name is `uWSClientOptions` then `uws_client_set_option` shall call `OptionHandler_FeedOptions` and pass to it the underlying IO handle and the `value` argument. **]**
 XX**SRS_UWS_CLIENT_01_511: [** If `OptionHandler_FeedOptions` fails, `uws_client_set_option` shall fail and return a non-zero value. **]**
 XX**SRS_UWS_CLIENT_01_441: [** Otherwise all options shall be passed as they are to the underlying IO by calling `xio_setoption`. **]**
 XX**SRS_UWS_CLIENT_01_442: [** On success, `uws_client_set_option` shall return 0. **]**
@@ -274,7 +274,7 @@ OPTIONHANDLER_HANDLE uws_client_retrieve_options(UWS_CLIENT_HANDLE uws)
 XX**SRS_UWS_CLIENT_01_444: [** If parameter `uws_client` is `NULL` then `uws_client_retrieve_options` shall fail and return NULL. **]**
 XX**SRS_UWS_CLIENT_01_445: [** `uws_client_retrieve_options` shall call `OptionHandler_Create` to produce an `OPTIONHANDLER_HANDLE` and on success return the new `OPTIONHANDLER_HANDLE` handle. **]**
 XX**SRS_UWS_CLIENT_01_446: [** If `OptionHandler_Create` fails then `uws_client_retrieve_options` shall fail and return NULL. **]**
-XX**SRS_UWS_CLIENT_01_501: [** `uws_client_retrieve_options` shall add to the option handler one option, whose name shall be `uWSCLientOptions` and the value shall be queried by calling `xio_retrieveoptions`. **]**
+XX**SRS_UWS_CLIENT_01_501: [** `uws_client_retrieve_options` shall add to the option handler one option, whose name shall be `uWSClientOptions` and the value shall be queried by calling `xio_retrieveoptions`. **]**
 XX**SRS_UWS_CLIENT_01_502: [** When calling `xio_retrieveoptions` the underlying IO handle shall be passed to it. **]**
 XX**SRS_UWS_CLIENT_01_503: [** If `xio_retrieveoptions` fails, `uws_client_retrieve_options` shall fail and return NULL. **]**
 XX**SRS_UWS_CLIENT_01_504: [** Adding the option shall be done by calling `OptionHandler_AddOption`. **]**
@@ -288,9 +288,9 @@ XX**SRS_UWS_CLIENT_01_505: [** If `OptionHandler_AddOption` fails, `uws_client_r
 void* uws_client_clone_option(const char* name, const void* value)
 ```
 
-XX**SRS_UWS_CLIENT_01_507: [** `uws_client_clone_option` called with `name` being `uWSCLientOptions` shall clone the options by calling `OptionHandler_Clone`. **]**
+XX**SRS_UWS_CLIENT_01_507: [** `uws_client_clone_option` called with `name` being `uWSClientOptions` shall clone the options by calling `OptionHandler_Clone`. **]**
 XX**SRS_UWS_CLIENT_01_514: [** If `OptionHandler_Clone` fails, `uws_client_clone_option` shall fail and return NULL. **]**
-XX**SRS_UWS_CLIENT_01_512: [** `uws_client_clone_option` called with any other option name than `uWSCLientOptions` shall return NULL. **]**
+XX**SRS_UWS_CLIENT_01_512: [** `uws_client_clone_option` called with any other option name than `uWSClientOptions` shall return NULL. **]**
 XX**SRS_UWS_CLIENT_01_506: [** If `uws_client_clone_option` is called with NULL `name` or `value` it shall return NULL. **]**
 
 ### uws_client_destroy_option
@@ -301,7 +301,7 @@ XX**SRS_UWS_CLIENT_01_506: [** If `uws_client_clone_option` is called with NULL 
 void uws_client_destroy_option(const char* name, const void* value)
 ```
 
-XX**SRS_UWS_CLIENT_01_508: [** `uws_client_destroy_option` called with the option `name` being `uWSCLientOptions` shall destroy the value by calling `OptionHandler_Destroy`. **]**
+XX**SRS_UWS_CLIENT_01_508: [** `uws_client_destroy_option` called with the option `name` being `uWSClientOptions` shall destroy the value by calling `OptionHandler_Destroy`. **]**
 XX**SRS_UWS_CLIENT_01_513: [** If `uws_client_destroy_option` is called with any other `name` it shall do nothing. **]**
 XX**SRS_UWS_CLIENT_01_509: [** If `uws_client_destroy_option` is called with NULL `name` or `value` it shall do nothing. **]**
 
