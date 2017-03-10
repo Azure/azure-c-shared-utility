@@ -1,8 +1,11 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-
+#ifdef __cplusplus
+#include <cstdlib>
+#else
 #include <stdlib.h>
+#endif
 
 /**
  * The gballoc.h will replace the malloc, free, and realloc by the my_gballoc functions, in this case,
@@ -27,8 +30,13 @@ void my_gballoc_free(void* ptr)
 /**
  * Include the C standards here.
  */
+#ifdef __cplusplus
+#include <cstddef>
+#include <ctime>
+#else
 #include <stddef.h>
 #include <time.h>
+#endif
 
 /**
  * Include the test tools.

@@ -1,9 +1,16 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+#ifdef __cplusplus
+#include <cstdlib>
+#include <cstdio>
+#include <cstddef>
+#else
 #include <stdlib.h>
 #include <stdio.h>
 #include <stddef.h>
+#endif
+
 #include "testrunnerswitcher.h"
 #include "azure_c_shared_utility/strings.h"
 #include "azure_c_shared_utility/urlencode.h"

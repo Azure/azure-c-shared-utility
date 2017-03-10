@@ -1,12 +1,23 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+#ifdef __cplusplus
+#include <cstdlib>
+#else
 #include <stdlib.h>
+#endif
+
 #ifdef _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
 #endif
+
+#ifdef __cplusplus
+#include <cstddef>
+#include <cstdbool>
+#else
 #include <stddef.h>
 #include <stdbool.h>
+#endif
 
 #include "testrunnerswitcher.h"
 #include "azure_c_shared_utility/utf8_checker.h"

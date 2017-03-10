@@ -11,7 +11,11 @@
 
 #include "windows.h"
 
+#ifdef __cplusplus
+#include <cstdlib>
+#else
 #include <stdlib.h>
+#endif
 
 static void* my_gballoc_malloc(size_t size)
 {
@@ -25,7 +29,11 @@ static void my_gballoc_free(void* s)
 
 /*define this symbol so that CryptDecodeObjectEx is not linked with dll linkage*/
 
+#ifdef __cplusplus
+#include <cstddef>
+#else
 #include <stddef.h>
+#endif
 #include "testrunnerswitcher.h"
 #include "umock_c.h"
 

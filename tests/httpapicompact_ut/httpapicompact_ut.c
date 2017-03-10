@@ -1,7 +1,11 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+#ifdef __cplusplus
+#include <cstdlib>
+#else
 #include <stdlib.h>
+#endif
 
 static int currentmalloc_call = 0;
 static int whenShallmalloc_fail = 0;
@@ -47,8 +51,13 @@ void my_gballoc_free(void* ptr)
     free(ptr);
 }
 
+#ifdef __cplusplus
+#include <cstddef>
+#include <ctime>
+#else
 #include <stddef.h>
 #include <time.h>
+#endif
 
 #include "testrunnerswitcher.h"
 #include "umock_c.h"

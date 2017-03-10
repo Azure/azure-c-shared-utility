@@ -1,8 +1,13 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+#ifdef __cplusplus
+#include <cstdlib>
+#include <cstddef>
+#else
 #include <stdlib.h>
 #include <stddef.h>
+#endif
 
 static void* my_gballoc_malloc(size_t size)
 {

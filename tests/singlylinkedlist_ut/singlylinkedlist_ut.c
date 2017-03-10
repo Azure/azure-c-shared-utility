@@ -1,8 +1,14 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+#ifdef __cplusplus
+#include <cstdbool>
+#include <cstdlib>
+#else
 #include <stdbool.h>
 #include <stdlib.h>
+#endif
+
 #include "testrunnerswitcher.h"
 
 static size_t currentmalloc_call = 0;

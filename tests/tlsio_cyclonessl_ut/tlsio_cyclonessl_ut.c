@@ -1,14 +1,22 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+#ifdef __cplusplus
+#include <cstdlib>
+#else
 #include <stdlib.h>
+#endif
 
 #ifdef _MSC_VER
 /* CycloneSSL has a pretty big list of warnings which need to be ignored */
 #pragma warning(disable: 4200 4201 4244 4100 4267 4701 4703 4389 4005 4996)
 #endif
 
+#ifdef __cplusplus
+#include <cstddef>
+#else
 #include <stddef.h>
+#endif
 
 #include "testrunnerswitcher.h"
 #include "umock_c.h"

@@ -1,7 +1,11 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+#ifdef __cplusplus
+#include <cstdlib>
+#else
 #include <stdlib.h>
+#endif
 
 static void* my_gballoc_malloc(size_t size)
 {
@@ -13,9 +17,13 @@ static void my_gballoc_free(void* ptr)
         free(ptr);
 }
 
-
+#ifdef __cplusplus
+#include <cstdio>
+#include <ctime>
+#else
 #include <stdio.h>
 #include <time.h>
+#endif
 
 #include "testrunnerswitcher.h"
 #include "umock_c.h"

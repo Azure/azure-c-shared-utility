@@ -5,7 +5,11 @@
 #undef GB_MEASURE_MEMORY_FOR_THIS
 #endif
 
+#ifdef __cplusplus
+#include <cstdlib>
+#else
 #include <stdlib.h>
+#endif
 #include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/gballoc.h"
 #include "testrunnerswitcher.h"
