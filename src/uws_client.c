@@ -24,7 +24,7 @@
 #include "azure_c_shared_utility/base64.h"
 #include "azure_c_shared_utility/optionhandler.h"
 
-static const char* UWS_CLIENT_OPTIONS = "uWSCLientOptions";
+static const char* UWS_CLIENT_OPTIONS = "uWSClientOptions";
 
 /* Requirements not needed as they are optional:
 Codes_SRS_UWS_CLIENT_01_254: [ If an endpoint receives a Ping frame and has not yet sent Pong frame(s) in response to previous Ping frame(s), the endpoint MAY elect to send a Pong frame for only the most recently processed Ping frame. ]
@@ -1455,6 +1455,17 @@ int uws_client_open_async(UWS_CLIENT_HANDLE uws_client, ON_WS_OPEN_COMPLETE on_w
         {
             uws_client->uws_state = UWS_STATE_OPENING_UNDERLYING_IO;
 
+            uws_client->received_bytes_count = 0;
+
+            uws_client->on_ws_open_complete = on_ws_open_complete;
+            uws_client->on_ws_open_complete_context = on_ws_open_complete_context;
+            uws_client->on_ws_frame_received = on_ws_frame_received;
+            uws_client->on_ws_frame_received_context = on_ws_frame_received_context;
+            uws_client->on_ws_peer_closed = on_ws_peer_closed;
+            uws_client->on_ws_peer_closed_context = on_ws_peer_closed_context;
+            uws_client->on_ws_error = on_ws_error;
+            uws_client->on_ws_error_context = on_ws_error_context;
+
             /* Codes_SRS_UWS_CLIENT_01_025: [ `uws_client_open_async` shall open the underlying IO by calling `xio_open` and providing the IO handle created in `uws_client_create` as argument. ]*/
             /* Codes_SRS_UWS_CLIENT_01_367: [ The callbacks `on_underlying_io_open_complete`, `on_underlying_io_bytes_received` and `on_underlying_io_error` shall be passed as arguments to `xio_open`. ]*/
             /* Codes_SRS_UWS_CLIENT_01_061: [ To _Establish a WebSocket Connection_, a client opens a connection and sends a handshake as defined in this section. ]*/
@@ -1468,17 +1479,6 @@ int uws_client_open_async(UWS_CLIENT_HANDLE uws_client, ON_WS_OPEN_COMPLETE on_w
             }
             else
             {
-                uws_client->received_bytes_count = 0;
-
-                uws_client->on_ws_open_complete = on_ws_open_complete;
-                uws_client->on_ws_open_complete_context = on_ws_open_complete_context;
-                uws_client->on_ws_frame_received = on_ws_frame_received;
-                uws_client->on_ws_frame_received_context = on_ws_frame_received_context;
-                uws_client->on_ws_peer_closed = on_ws_peer_closed;
-                uws_client->on_ws_peer_closed_context = on_ws_peer_closed_context;
-                uws_client->on_ws_error = on_ws_error;
-                uws_client->on_ws_error_context = on_ws_error_context;
-
                 /* Codes_SRS_UWS_CLIENT_01_026: [ On success, `uws_client_open_async` shall return 0. ]*/
                 result = 0;
             }
@@ -1829,7 +1829,7 @@ int uws_client_set_option(UWS_CLIENT_HANDLE uws_client, const char* option_name,
     {
         if (strcmp(UWS_CLIENT_OPTIONS, option_name) == 0)
         {
-            /* Codes_SRS_UWS_CLIENT_01_510: [ If the option name is `uWSCLientOptions` then `uws_client_set_option` shall call `OptionHandler_FeedOptions` and pass to it the underlying IO handle and the `value` argument. ]*/
+            /* Codes_SRS_UWS_CLIENT_01_510: [ If the option name is `uWSClientOptions` then `uws_client_set_option` shall call `OptionHandler_FeedOptions` and pass to it the underlying IO handle and the `value` argument. ]*/
             if (OptionHandler_FeedOptions((OPTIONHANDLER_HANDLE)value, uws_client->underlying_io) != OPTIONHANDLER_OK)
             {
                 /* Codes_SRS_UWS_CLIENT_01_511: [ If `OptionHandler_FeedOptions` fails, `uws_client_set_option` shall fail and return a non-zero value. ]*/
@@ -1877,19 +1877,14 @@ static void* uws_client_clone_option(const char* name, const void* value)
     }
     else
     {
-        /* Codes_SRS_UWS_CLIENT_01_507: [ `uws_client_clone_option` called with `name` being `uWSCLientOptions` shall clone the options by calling `OptionHandler_Clone`. ]*/
         if (strcmp(name, UWS_CLIENT_OPTIONS) == 0)
         {
-            result = OptionHandler_Clone((OPTIONHANDLER_HANDLE)value);
-            if (result == NULL)
-            {
-                /* Codes_SRS_UWS_CLIENT_01_514: [ If `OptionHandler_Clone` fails, `uws_client_clone_option` shall fail and return NULL. ]*/
-                LogError("Cannot clone option");
-            }
+            /* Codes_SRS_UWS_CLIENT_01_507: [ `uws_client_clone_option` called with `name` being `uWSClientOptions` shall return the same value. ]*/
+            result = (void*)value;
         }
         else
         {
-            /* Codes_SRS_UWS_CLIENT_01_512: [ `uws_client_clone_option` called with any other option name than `uWSCLientOptions` shall return NULL. ]*/
+            /* Codes_SRS_UWS_CLIENT_01_512: [ `uws_client_clone_option` called with any other option name than `uWSClientOptions` shall return NULL. ]*/
             LogError("unknown option: %s", name);
             result = NULL;
         }
@@ -1912,7 +1907,7 @@ static void uws_client_destroy_option(const char* name, const void* value)
     {
         if (strcmp(name, UWS_CLIENT_OPTIONS) == 0)
         {
-            /* Codes_SRS_UWS_CLIENT_01_508: [ `uws_client_destroy_option` called with the option `name` being `uWSCLientOptions` shall destroy the value by calling `OptionHandler_Destroy`. ]*/
+            /* Codes_SRS_UWS_CLIENT_01_508: [ `uws_client_destroy_option` called with the option `name` being `uWSClientOptions` shall destroy the value by calling `OptionHandler_Destroy`. ]*/
             OptionHandler_Destroy((OPTIONHANDLER_HANDLE)value);
         }
         else
@@ -1955,7 +1950,7 @@ OPTIONHANDLER_HANDLE uws_client_retrieve_options(UWS_CLIENT_HANDLE uws_client)
             }
             else
             {
-                /* Codes_SRS_UWS_CLIENT_01_501: [ `uws_client_retrieve_options` shall add to the option handler one option, whose name shall be `uWSCLientOptions` and the value shall be queried by calling `xio_retrieveoptions`. ]*/
+                /* Codes_SRS_UWS_CLIENT_01_501: [ `uws_client_retrieve_options` shall add to the option handler one option, whose name shall be `uWSClientOptions` and the value shall be queried by calling `xio_retrieveoptions`. ]*/
                 /* Codes_SRS_UWS_CLIENT_01_504: [ Adding the option shall be done by calling `OptionHandler_AddOption`. ]*/
                 if (OptionHandler_AddOption(result, UWS_CLIENT_OPTIONS, underlying_io_options) != OPTIONHANDLER_OK)
                 {
