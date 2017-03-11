@@ -19,11 +19,12 @@ extern "C" {
 
 typedef struct WSIO_CONFIG_TAG
 {
-	const char* host;
-	int port;
-	const char* protocol_name;
-	const char* relative_path;
-	bool use_ssl;
+    const IO_INTERFACE_DESCRIPTION* underlying_io_interface;
+    void* underlying_io_parameters;
+    const char* hostname;
+    int port;
+    const char* resource_name;
+    const char* protocol;
 } WSIO_CONFIG;
 
 MOCKABLE_FUNCTION(, CONCRETE_IO_HANDLE, wsio_create, void*, io_create_parameters);
