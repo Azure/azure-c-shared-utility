@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+#include <signal.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -153,6 +154,11 @@ static int add_pending_io(SOCKET_IO_INSTANCE* socket_io_instance, const unsigned
     }
 
     return result;
+}
+
+static void signal_callback(int signum)
+{
+    LogError("Socket received signal %d.", signum);
 }
 
 CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters)
@@ -480,6 +486,8 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
             }
             else
             {
+                signal(SIGPIPE, signal_callback);
+
                 int send_result = send(socket_io_instance->socket, buffer, size, 0);
                 if (send_result != size)
                 {
