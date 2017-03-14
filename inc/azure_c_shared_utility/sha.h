@@ -6,6 +6,11 @@
 #ifndef _SHA_H_
 #define _SHA_H_
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 /*
  *  Description:
  *      This file implements the Secure Hash Signature Standard
@@ -262,6 +267,11 @@ extern int hmacFinalBits(HMACContext *ctx, const uint8_t bits,
                          unsigned int bitcount);
 extern int hmacResult(HMACContext *ctx,
                       uint8_t digest[USHAMaxHashSize]);
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _SHA_H_ */
 
