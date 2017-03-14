@@ -281,20 +281,24 @@ endif()
 #this function takes care of three things:
 #1. copying some shared libraries(.dll or .so) to the location of the output executable
 
+include(CheckCXXCompilerFlag)
+CHECK_CXX_COMPILER_FLAG("-std=c++11" CXX_FLAG_CXX11)
+
 macro(compileAsC99)
   if (CMAKE_VERSION VERSION_LESS "3.1")
     if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
       set (CMAKE_C_FLAGS "--std=c99 ${CMAKE_C_FLAGS}")
-      set (CMAKE_CXX_FLAGS "--std=c++11 ${CMAKE_CXX_FLAGS}")
+      if (CXX_FLAG_CXX11)
+        set (CMAKE_CXX_FLAGS "--std=c++11 ${CMAKE_CXX_FLAGS}")
+      else()
+        set (CMAKE_CXX_FLAGS "--std=c++0x ${CMAKE_CXX_FLAGS}")
+      endif()
     endif()
   else()
     set (CMAKE_C_STANDARD 99)
     set (CMAKE_CXX_STANDARD 11)
   endif()
 endmacro(compileAsC99)
-
-include(CheckCXXCompilerFlag)
-CHECK_CXX_COMPILER_FLAG("-std=c++11" CXX_FLAG_CXX11)
 
 macro(compileAsC11)
   if (CXX_FLAG_CXX11)
