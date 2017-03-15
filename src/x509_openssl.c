@@ -175,7 +175,7 @@ int x509_openssl_add_certificates(SSL_CTX* ssl_ctx, const char* certificates)
                 {
                     /*Codes_SRS_X509_OPENSSL_02_014: [ x509_openssl_add_certificates shall load certificates into the memory BIO by a call to BIO_puts. ]*/
                     int puts_result = BIO_puts(cert_memory_bio, certificates);
-                    if ((puts<0) || (puts_result != (int)strlen(certificates)))
+                    if ((puts_result<0) || (puts_result != (int)strlen(certificates)))
                     {
                         /*Codes_SRS_X509_OPENSSL_02_018: [ In case of any failure x509_openssl_add_certificates shall fail and return a non-zero value. ]*/
                         log_ERR_get_error("failure in BIO_puts");
