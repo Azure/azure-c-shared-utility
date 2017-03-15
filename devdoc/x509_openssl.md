@@ -55,9 +55,9 @@ int x509_openssl_add_certificates(SSL_CTX* ssl_ctx, const char* certificates);
 
 **SRS_X509_OPENSSL_02_012: [** `x509_openssl_add_certificates` shall get the memory BIO method function by calling `BIO_s_mem`. **]**
 
-**SRS_X509_OPENSSL_02_013: [** `x509_openssl_add_certificates` shall create a new memory BIO by calling `BIO_mem`. **]**
+**SRS_X509_OPENSSL_02_013: [** `x509_openssl_add_certificates` shall create a new memory BIO by calling `BIO_new`. **]**
 
-**SRS_X509_OPENSSL_02_014: [** `x509_openssl_add_certificates` shall load the certificates in the memory BIO by a call to `BIO_puts`. **]**
+**SRS_X509_OPENSSL_02_014: [** `x509_openssl_add_certificates` shall load `certificates` into the memory BIO by a call to `BIO_puts`. **]**
 
 **SRS_X509_OPENSSL_02_015: [** `x509_openssl_add_certificates` shall retrieve each certificate by a call to `PEM_read_bio_X509`. **]**
 

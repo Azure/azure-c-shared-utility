@@ -41,6 +41,10 @@ static void my_gballoc_free(void* s)
 
 /*from openssl/bio.h*/
 MOCKABLE_FUNCTION(,int, BIO_free, BIO *,a);
+MOCKABLE_FUNCTION(, BIO *, BIO_new, BIO_METHOD *, type);
+MOCKABLE_FUNCTION(, BIO *, BIO_mem, BIO_METHOD *, type);
+MOCKABLE_FUNCTION(, int, BIO_puts, BIO *, bp, const char *, buf);
+MOCKABLE_FUNCTION(, BIO_METHOD *, BIO_s_mem);
 
 /*the below function has different signatures on different versions of OPENSSL*/
 /*
@@ -71,10 +75,16 @@ MOCKABLE_FUNCTION(,RSA *,PEM_read_bio_RSAPrivateKey, BIO *,bp, RSA **,x, pem_pas
 /*from openssl/ssl.h*/
 MOCKABLE_FUNCTION(,int, SSL_CTX_use_RSAPrivateKey, SSL_CTX *,ctx, RSA *,rsa);
 MOCKABLE_FUNCTION(,int, SSL_CTX_use_certificate, SSL_CTX *,ctx, X509*, x);
+MOCKABLE_FUNCTION(, X509_STORE *, SSL_CTX_get_cert_store, const SSL_CTX *, ssl_ctx);
 
 /*from openssl/err.h*/
 MOCKABLE_FUNCTION(,unsigned long, ERR_get_error);
 MOCKABLE_FUNCTION(, char *,ERR_error_string, unsigned long, e, char *,buf);
+MOCKABLE_FUNCTION(, unsigned long, ERR_peek_error);
+
+/*from openssl/x509_vfy.h*/
+MOCKABLE_FUNCTION(,int, X509_STORE_add_cert, X509_STORE *, ctx, X509 *, x);
+
 
 #undef ENABLE_MOCKS
 
@@ -93,6 +103,12 @@ static int my_BIO_free(BIO * a)
 {
     my_gballoc_free(a);
     return 0;
+}
+
+static BIO *my_BIO_new(BIO_METHOD *type)
+{
+    (void)type;
+    return (BIO*)my_gballoc_malloc(sizeof(BIO));
 }
 
 static void my_RSA_free(RSA * rsa)
@@ -128,6 +144,10 @@ static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 
 
 #define TEST_SSL_CTX ((SSL_CTX*)(0x42))
+#define TEST_CERTIFICATE_1 "one certificate"
+#define TEST_X509_STORE (X509_STORE *)"le store"
+#define TEST_BIO_METHOD (BIO_METHOD*)"le method"
+#define TEST_BIO (BIO*)"le bio"
 
 BEGIN_TEST_SUITE(x509_openssl_unittests)
 
@@ -155,7 +175,15 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
         REGISTER_GLOBAL_MOCK_FAIL_RETURN(PEM_read_bio_X509, NULL);
         
         REGISTER_GLOBAL_MOCK_RETURNS(SSL_CTX_use_certificate, 1, 0);
+        REGISTER_GLOBAL_MOCK_RETURNS(BIO_s_mem, TEST_BIO_METHOD, NULL);
 
+        REGISTER_GLOBAL_MOCK_HOOK(BIO_new, my_BIO_new);
+        REGISTER_GLOBAL_MOCK_FAIL_RETURN(BIO_new, NULL);
+        REGISTER_GLOBAL_MOCK_RETURNS(BIO_puts, strlen(TEST_CERTIFICATE_1), strlen(TEST_CERTIFICATE_1)-1);
+        
+        REGISTER_GLOBAL_MOCK_RETURNS(SSL_CTX_get_cert_store, TEST_X509_STORE, NULL);
+        REGISTER_GLOBAL_MOCK_RETURNS(X509_STORE_add_cert, __LINE__, 0);
+        
         REGISTER_GLOBAL_MOCK_RETURNS(SSL_CTX_use_RSAPrivateKey, 1, 0);
 
         REGISTER_GLOBAL_MOCK_HOOK(BIO_free, my_BIO_free);
@@ -370,6 +398,131 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
         umock_c_negative_tests_deinit();
     }
 
+    /*Tests_SRS_X509_OPENSSL_02_010: [ If ssl_ctx is NULL then x509_openssl_add_certificates shall fail and return a non-zero value. ]*/
+    TEST_FUNCTION(x509_openssl_add_certificates_with_NULL_ssl_ctx_fails)
+    {
+        ///arrange
+
+        ///act
+        int result = x509_openssl_add_certificates(NULL, "a");
+
+        ///assert
+        ASSERT_ARE_NOT_EQUAL(int, 0, result);
+
+        ///clean
+    }
+
+    /*Tests_SRS_X509_OPENSSL_02_011: [ If certificates is NULL then x509_openssl_add_certificates shall fail and return a non-zero value. ]*/
+    TEST_FUNCTION(x509_openssl_add_certificates_with_NULL_certificates_fails)
+    {
+        ///arrange
+
+        ///act
+        int result = x509_openssl_add_certificates(TEST_SSL_CTX, NULL);
+
+        ///assert
+        ASSERT_ARE_NOT_EQUAL(int, 0, result);
+
+        ///clean
+    }
+
+    /*Tests_SRS_X509_OPENSSL_02_012: [ x509_openssl_add_certificates shall get the memory BIO method function by calling BIO_s_mem. ]*/
+    /*Tests_SRS_X509_OPENSSL_02_013: [ x509_openssl_add_certificates shall create a new memory BIO by calling BIO_new. ]*/
+    /*Tests_SRS_X509_OPENSSL_02_014: [ x509_openssl_add_certificates shall load certificates into the memory BIO by a call to BIO_puts. ]*/
+    /*Tests_SRS_X509_OPENSSL_02_015: [ x509_openssl_add_certificates shall retrieve each certificate by a call to PEM_read_bio_X509. ]*/
+    /*Tests_SRS_X509_OPENSSL_02_016: [ x509_openssl_add_certificates shall add the certificate to the store by a call to X509_STORE_add_cert. ]*/
+    /*Tests_SRS_X509_OPENSSL_02_019: [ Otherwise, x509_openssl_add_certificates shall succeed and return 0. ]*/
+    TEST_FUNCTION(x509_openssl_add_certificates_1_certificate_happy_path)
+    {
+        ///arrange
+
+        STRICT_EXPECTED_CALL(SSL_CTX_get_cert_store(TEST_SSL_CTX));
+        STRICT_EXPECTED_CALL(BIO_s_mem());
+        STRICT_EXPECTED_CALL(BIO_new(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(BIO_puts(IGNORED_PTR_ARG, TEST_CERTIFICATE_1));
+        STRICT_EXPECTED_CALL(PEM_read_bio_X509(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(X509_STORE_add_cert(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(X509_free(IGNORED_PTR_ARG));
+
+        STRICT_EXPECTED_CALL(PEM_read_bio_X509(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+            .SetReturn(NULL);
+
+        ///act
+        int result = x509_openssl_add_certificates(TEST_SSL_CTX, TEST_CERTIFICATE_1);
+
+        ///assert
+        ASSERT_ARE_EQUAL(int, 0, result);
+
+        ///clean
+    }
+
+    void x509_openssl_add_certificates_1_certificate_which_exists_inert_path(void)
+    {
+        STRICT_EXPECTED_CALL(SSL_CTX_get_cert_store(TEST_SSL_CTX));
+        STRICT_EXPECTED_CALL(BIO_s_mem());
+        STRICT_EXPECTED_CALL(BIO_new(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(BIO_puts(IGNORED_PTR_ARG, TEST_CERTIFICATE_1));
+        STRICT_EXPECTED_CALL(PEM_read_bio_X509(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(X509_STORE_add_cert(IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+            .SetReturn(0);
+        STRICT_EXPECTED_CALL(ERR_peek_error())
+            .SetReturn(X509_R_CERT_ALREADY_IN_HASH_TABLE);
+        STRICT_EXPECTED_CALL(X509_free(IGNORED_PTR_ARG));
+
+        STRICT_EXPECTED_CALL(PEM_read_bio_X509(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+            .SetReturn(NULL);
+    }
+
+    /*Tests_SRS_X509_OPENSSL_02_017: [ If X509_STORE_add_cert returns with error and that error is X509_R_CERT_ALREADY_IN_HASH_TABLE then x509_openssl_add_certificates shall ignore it as the certificate is already in the store. ]*/
+    TEST_FUNCTION(x509_openssl_add_certificates_1_certificate_which_exists_happy_path)
+    {
+        ///arrange
+
+        x509_openssl_add_certificates_1_certificate_which_exists_inert_path();
+
+        ///act
+        int result = x509_openssl_add_certificates(TEST_SSL_CTX, TEST_CERTIFICATE_1);
+
+        ///assert
+        ASSERT_ARE_EQUAL(int, 0, result);
+
+        ///clean
+    }
+
+    /*Tests_SRS_X509_OPENSSL_02_018: [ In case of any failure x509_openssl_add_certificates shall fail and return a non-zero value. ]*/
+    TEST_FUNCTION(x509_openssl_add_certificates_1_certificate_which_exists_unhappy_paths)
+    {
+        ///arrange
+
+        umock_c_negative_tests_init();
+        x509_openssl_add_certificates_1_certificate_which_exists_inert_path();
+        umock_c_negative_tests_snapshot();
+
+        for (size_t i = 0; i < umock_c_negative_tests_call_count(); i++)
+        {
+            if (
+                (i == 4) || /*PEM_read_bio_X509*/
+                (i == 5)|| /*X509_STORE_add_cert*/
+                (i == 7) || /*X509_free*/
+                (i == 8) /*PEM_read_bio_X509*/
+                )
+            {
+                continue; // these lines have functions that do not return anything (void).
+            }
+
+            umock_c_negative_tests_reset();
+            umock_c_negative_tests_fail_call(i);
+
+            ///act
+            int result = x509_openssl_add_certificates(TEST_SSL_CTX, TEST_CERTIFICATE_1);
+
+            ///assert
+            ASSERT_ARE_NOT_EQUAL(int, 0, result);
+        }
+
+        ///clean
+        umock_c_negative_tests_deinit();
+    }
 END_TEST_SUITE(x509_openssl_unittests)
 
 
