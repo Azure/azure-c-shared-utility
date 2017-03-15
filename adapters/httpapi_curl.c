@@ -36,6 +36,7 @@ typedef struct HTTP_HANDLE_DATA_TAG
     long verbose;
     const char* x509privatekey;
     const char* x509certificate;
+    const char* certificates; /*a list of CA certificates*/
 } HTTP_HANDLE_DATA;
 
 typedef struct HTTP_RESPONSE_CONTENT_BUFFER_TAG
@@ -229,9 +230,24 @@ static CURLcode ssl_ctx_callback(CURL *curl, void *ssl_ctx, void *userptr)
     else
     {
         HTTP_HANDLE_DATA *httpHandleData = (HTTP_HANDLE_DATA *)userptr;
-        if (x509_openssl_add_credentials(ssl_ctx, httpHandleData->x509certificate, httpHandleData->x509privatekey) != 0)
+
+        /*trying to set the x509 per device certificate*/
+        if (
+            (httpHandleData->x509certificate != NULL) &&
+            (httpHandleData->x509privatekey != NULL) &&
+            (x509_openssl_add_credentials(ssl_ctx, httpHandleData->x509certificate, httpHandleData->x509privatekey) != 0)
+            )
         {
             LogError("unable to x509_openssl_add_credentials");
+            result = CURLE_SSL_CERTPROBLEM;
+        }
+        /*trying to set CA certificates*/
+        else if (
+            (httpHandleData->certificates != NULL) &&
+            (x509_openssl_add_certificates(ssl_ctx, httpHandleData->certificates) != 0)
+            )
+        {
+            LogError("failure in x509_openssl_add_certificates");
             result = CURLE_SSL_CERTPROBLEM;
         }
         else
@@ -239,6 +255,7 @@ static CURLcode ssl_ctx_callback(CURL *curl, void *ssl_ctx, void *userptr)
             result = CURLE_OK;
         }
     }
+
     return result;
 }
 
@@ -768,12 +785,35 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
                 }
             }
         }
+        else if (strcmp("TrustedCerts", optionName) == 0)
+        {
+            /*TrustedCerts needs to trigger the CURLOPT_SSL_CTX_FUNCTION in curl so we can pass the CAs*/
+            if (curl_easy_setopt(httpHandleData->curl, CURLOPT_SSL_CTX_FUNCTION, ssl_ctx_callback) != CURLE_OK)
+            {
+                LogError("failure in curl_easy_setopt - CURLOPT_SSL_CTX_FUNCTION");
+                result = HTTPAPI_ERROR;
+            }
+            else
+            {
+                if (curl_easy_setopt(httpHandleData->curl, CURLOPT_SSL_CTX_DATA, httpHandleData) != CURLE_OK)
+                {
+                    LogError("failure in curl_easy_setopt - CURLOPT_SSL_CTX_DATA");
+                    result = HTTPAPI_ERROR;
+                }
+                else
+                {
+                    httpHandleData->certificates = (const char*)value;
+                    result = HTTPAPI_OK;
+                }
+            }
+        }
         else
         {
             result = HTTPAPI_INVALID_ARG;
             LogError("unknown option %s", optionName);
         }
     }
+
     return result;
 }
 
@@ -832,6 +872,19 @@ HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, co
             else
             {
                 /*return OK when the private key has been clones successfully*/
+                result = HTTPAPI_OK;
+            }
+        }
+        else if (strcmp("TrustedCerts", optionName) == 0)
+        {
+            if (mallocAndStrcpy_s((char**)savedValue, value) != 0)
+            {
+                LogError("unable to clone TrustedCerts");
+                result = HTTPAPI_ERROR;
+            }
+            else
+            {
+                /*return OK when the certificates have been clones successfully*/
                 result = HTTPAPI_OK;
             }
         }
