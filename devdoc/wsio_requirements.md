@@ -9,12 +9,12 @@ wsio is module that implements a concrete IO that transports data over WebSocket
 ```c
 typedef struct WSIO_CONFIG_TAG
 {
-	const char* host;
+    const IO_INTERFACE_DESCRIPTION* underlying_io_interface;
+    void* underlying_io_parameters;
+	const char* hostname;
 	int port;
-	const char* protocol_name;
-	const char* relative_path;
-	bool use_ssl;
-	const char* trusted_ca;
+	const char* protocol;
+	const char* resource_name;
 } WSIO_CONFIG;
 
 extern CONCRETE_IO_HANDLE wsio_create(void* io_create_parameters);
@@ -40,9 +40,9 @@ extern CONCRETE_IO_HANDLE wsio_create(void* io_create_parameters);
 **SRS_WSIO_01_001: \[**wsio_create shall create an instance of a wsio and return a non-NULL handle to it.**\]**
 **SRS_WSIO_01_002: \[**If the argument io_create_parameters is NULL then wsio_create shall return NULL.**\]**
 **SRS_WSIO_01_003: \[**io_create_parameters shall be used as a WSIO_CONFIG\* .**\]**
-**SRS_WSIO_01_004: \[**If any of the WSIO_CONFIG fields host, protocol_name or relative_path is NULL then wsio_create shall return NULL.**\]**
+**SRS_WSIO_01_004: \[**If any of the WSIO_CONFIG fields hostname, protocol or resource_name is NULL then wsio_create shall return NULL.**\]**
 **SRS_WSIO_01_005: \[**If allocating memory for the new wsio instance fails then wsio_create shall return NULL.**\]**
-**SRS_WSIO_01_006: \[**The members host, protocol_name, relative_path and trusted_ca shall be copied for later use (they are needed when the IO is opened).**\]** 
+**SRS_WSIO_01_006: \[**The members hostname, protocol, resource_path and trusted_ca shall be copied for later use (they are needed when the IO is opened).**\]** 
 **SRS_WSIO_01_098: \[**wsio_create shall create a pending IO list that is to be used when sending buffers over the libwebsockets IO by calling singlylinkedlist_create.**\]** 
 **SRS_WSIO_01_099: \[**If singlylinkedlist_create fails then wsio_create shall fail and return NULL.**\]** 
 
@@ -91,7 +91,7 @@ The first protocol entry shall have:
 -	**SRS_WSIO_01_024: \[**context shall be the context created earlier in wsio_open**\]** 
 -	**SRS_WSIO_01_025: \[**address shall be the hostname passed to wsio_create**\]** 
 -	**SRS_WSIO_01_026: \[**port shall be the port passed to wsio_create**\]** 
--	**SRS_WSIO_01_027: \[**if use_ssl passed in wsio_create is true, ssl_connection shall be 1**\]**; **SRS_WSIO_01_103: \[**otherwise it shall be 0.**\]** 
+-	**SRS_WSIO_01_027: \[**ssl_connection shall be 1**\]**
 -	**SRS_WSIO_01_028: \[**path shall be the relative_path passed in wsio_create**\]** 
 -	**SRS_WSIO_01_029: \[**host shall be the host passed to wsio_create**\]** 
 -	**SRS_WSIO_01_030: \[**origin shall be NULL**\]** 

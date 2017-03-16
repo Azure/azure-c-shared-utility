@@ -785,6 +785,10 @@ static int http_proxy_io_close(CONCRETE_IO_HANDLE http_proxy_io, ON_IO_CLOSE_COM
         }
         else
         {
+            HTTP_PROXY_IO_STATE previous_state = http_proxy_io_instance->http_proxy_io_state;
+
+            http_proxy_io_instance->http_proxy_io_state = HTTP_PROXY_IO_STATE_CLOSING;
+
             /* Codes_SRS_HTTP_PROXY_IO_01_026: [ The `on_io_close_complete` and `on_io_close_complete_context` arguments shall be saved for later use. ]*/
             http_proxy_io_instance->on_io_close_complete = on_io_close_complete;
             http_proxy_io_instance->on_io_close_complete_context = on_io_close_complete_context;
@@ -794,12 +798,11 @@ static int http_proxy_io_close(CONCRETE_IO_HANDLE http_proxy_io, ON_IO_CLOSE_COM
             {
                 /* Codes_SRS_HTTP_PROXY_IO_01_025: [ If `xio_close` fails, `http_proxy_io_close` shall fail and return a non-zero value. ]*/
                 result = __LINE__;
+                http_proxy_io_instance->http_proxy_io_state = previous_state;
                 LogError("Cannot close underlying IO.");
             }
             else
             {
-                http_proxy_io_instance->http_proxy_io_state = HTTP_PROXY_IO_STATE_CLOSING;
-
                 /* Codes_SRS_HTTP_PROXY_IO_01_022: [ `http_proxy_io_close` shall close the HTTP proxy IO and on success it shall return 0. ]*/
                 result = 0;
             }

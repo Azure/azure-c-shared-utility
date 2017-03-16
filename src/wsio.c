@@ -59,11 +59,10 @@ typedef struct WSIO_INSTANCE_TAG
     struct lws* wsi;
     int port;
     char* host;
-    char* relative_path;
-    char* protocol_name;
+    char* resource_name;
+    char* protocol;
     char* trusted_ca;
     struct lws_protocols* protocols;
-    bool use_ssl;
     WSIO_HTTP_PROXY_OPTIONS wsio_http_proxy_option;
 } WSIO_INSTANCE;
 
@@ -546,10 +545,10 @@ CONCRETE_IO_HANDLE wsio_create(void* io_create_parameters)
     WSIO_INSTANCE* result;
 
     if ((ws_io_config == NULL) ||
-        /* Codes_SRS_WSIO_01_004: [If any of the WSIO_CONFIG fields host, protocol_name or relative_path is NULL then wsio_create shall return NULL.] */
-        (ws_io_config->host == NULL) ||
-        (ws_io_config->protocol_name == NULL) ||
-        (ws_io_config->relative_path == NULL))
+        /* Codes_SRS_WSIO_01_004: [If any of the WSIO_CONFIG fields hostname, protocol or resource_name is NULL then wsio_create shall return NULL.] */
+        (ws_io_config->hostname == NULL) ||
+        (ws_io_config->protocol == NULL) ||
+        (ws_io_config->resource_name == NULL))
     {
         result = NULL;
     }
@@ -583,8 +582,8 @@ CONCRETE_IO_HANDLE wsio_create(void* io_create_parameters)
             }
             else
             {
-                /* Codes_SRS_WSIO_01_006: [The members host, protocol_name, relative_path and trusted_ca shall be copied for later use (they are needed when the IO is opened).] */
-                result->host = (char*)malloc(strlen(ws_io_config->host) + 1);
+                /* Codes_SRS_WSIO_01_006: [The members hostname, protocol and resource_path shall be copied for later use (they are needed when the IO is opened).]*/
+                result->host = (char*)malloc(strlen(ws_io_config->hostname) + 1);
                 if (result->host == NULL)
                 {
                     /* Codes_SRS_WSIO_01_005: [If allocating memory for the new wsio instance fails then wsio_create shall return NULL.] */
@@ -594,8 +593,8 @@ CONCRETE_IO_HANDLE wsio_create(void* io_create_parameters)
                 }
                 else
                 {
-                    result->relative_path = (char*)malloc(strlen(ws_io_config->relative_path) + 1);
-                    if (result->relative_path == NULL)
+                    result->resource_name = (char*)malloc(strlen(ws_io_config->resource_name) + 1);
+                    if (result->resource_name == NULL)
                     {
                         /* Codes_SRS_WSIO_01_005: [If allocating memory for the new wsio instance fails then wsio_create shall return NULL.] */
                         free(result->host);
@@ -605,11 +604,11 @@ CONCRETE_IO_HANDLE wsio_create(void* io_create_parameters)
                     }
                     else
                     {
-                        result->protocol_name = (char*)malloc(strlen(ws_io_config->protocol_name) + 1);
-                        if (result->protocol_name == NULL)
+                        result->protocol = (char*)malloc(strlen(ws_io_config->protocol) + 1);
+                        if (result->protocol == NULL)
                         {
                             /* Codes_SRS_WSIO_01_005: [If allocating memory for the new wsio instance fails then wsio_create shall return NULL.] */
-                            free(result->relative_path);
+                            free(result->resource_name);
                             free(result->host);
                             singlylinkedlist_destroy(result->pending_io_list);
                             free(result);
@@ -617,14 +616,14 @@ CONCRETE_IO_HANDLE wsio_create(void* io_create_parameters)
                         }
                         else
                         {
-                            (void)strcpy(result->protocol_name, ws_io_config->protocol_name);
+                            (void)strcpy(result->protocol, ws_io_config->protocol);
 
                             result->protocols = (struct lws_protocols*)malloc(sizeof(struct lws_protocols) * 2);
                             if (result->protocols == NULL)
                             {
                                 /* Codes_SRS_WSIO_01_005: [If allocating memory for the new wsio instance fails then wsio_create shall return NULL.] */
-                                free(result->relative_path);
-                                free(result->protocol_name);
+                                free(result->resource_name);
+                                free(result->protocol);
                                 free(result->host);
                                 singlylinkedlist_destroy(result->pending_io_list);
                                 free(result);
@@ -639,8 +638,8 @@ CONCRETE_IO_HANDLE wsio_create(void* io_create_parameters)
                                 result->protocols[0].callback = on_ws_callback;
                                 /* Codes_SRS_WSIO_01_014: [id shall be set to 0] */
                                 result->protocols[0].id = 0;
-                                /* Codes_SRS_WSIO_01_015: [name shall be set to protocol_name as passed to wsio_create] */
-                                result->protocols[0].name = result->protocol_name;
+                                /* Codes_SRS_WSIO_01_015: [name shall be set to protocol as passed to wsio_create] */
+                                result->protocols[0].name = result->protocol;
                                 /* Codes_SRS_WSIO_01_016: [per_session_data_size shall be set to 0] */
                                 result->protocols[0].per_session_data_size = 0;
                                 /* Codes_SRS_WSIO_01_017: [rx_buffer_size shall be set to 0, as there is no need for atomic frames] */
@@ -655,10 +654,9 @@ CONCRETE_IO_HANDLE wsio_create(void* io_create_parameters)
                                 result->protocols[1].rx_buffer_size = 0;
                                 result->protocols[1].user = NULL;
 
-                                (void)strcpy(result->host, ws_io_config->host);
-                                (void)strcpy(result->relative_path, ws_io_config->relative_path);
+                                (void)strcpy(result->host, ws_io_config->hostname);
+                                (void)strcpy(result->resource_name, ws_io_config->resource_name);
                                 result->port = ws_io_config->port;
-                                result->use_ssl = ws_io_config->use_ssl;
                                 result->io_state = IO_STATE_NOT_OPEN;
                             }
                         }
@@ -806,16 +804,15 @@ int wsio_open(CONCRETE_IO_HANDLE ws_io, ON_IO_OPEN_COMPLETE on_io_open_complete,
                     client_connect_info.address = wsio_instance->host;
                     /* Codes_SRS_WSIO_01_026: [port shall be the port passed to wsio_create] */
                     client_connect_info.port = wsio_instance->port;
-                    /* Codes_SRS_WSIO_01_027: [if use_ssl passed in wsio_create is true, ssl_connection shall be 1]*/
-                    /* Codes_SRS_WSIO_01_103: [otherwise it shall be 0.] */
-                    client_connect_info.ssl_connection = wsio_instance->use_ssl ? 1 : 0;
-                    /* Codes_SRS_WSIO_01_028: [path shall be the relative_path passed in wsio_create] */
-                    client_connect_info.path = wsio_instance->relative_path;
+                    /* Codes_SRS_WSIO_01_027: [ssl_connection shall be 1]*/
+                    client_connect_info.ssl_connection = 1;
+                    /* Codes_SRS_WSIO_01_028: [path shall be the resource_name passed in wsio_create] */
+                    client_connect_info.path = wsio_instance->resource_name;
                     /* Codes_SRS_WSIO_01_029: [host shall be the host passed to wsio_create] */
                     client_connect_info.host = wsio_instance->host;
                     /* Codes_SRS_WSIO_01_030: [origin shall be NULL] */
                     client_connect_info.origin = NULL;
-                    /* Codes_SRS_WSIO_01_031: [protocol shall be the protocol_name passed to wsio_create] */
+                    /* Codes_SRS_WSIO_01_031: [protocol shall be the protocol passed to wsio_create] */
                     client_connect_info.protocol = wsio_instance->protocols[0].name;
                     /* Codes_SRS_WSIO_01_032: [ietf_version_or_minus_one shall be -1] */
                     client_connect_info.ietf_version_or_minus_one = -1;
@@ -980,8 +977,8 @@ void wsio_destroy(CONCRETE_IO_HANDLE ws_io)
         /* Codes_SRS_WSIO_01_007: [wsio_destroy shall free all resources associated with the wsio instance.] */
         free(wsio_instance->protocols);
         free(wsio_instance->host);
-        free(wsio_instance->protocol_name);
-        free(wsio_instance->relative_path);
+        free(wsio_instance->protocol);
+        free(wsio_instance->resource_name);
         free(wsio_instance->trusted_ca);
 		free_http_proxy_data(&wsio_instance->wsio_http_proxy_option);
         

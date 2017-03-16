@@ -667,11 +667,12 @@ static int my_mallocAndStrcpy_s(char** destination, const char* source)
 
 static WSIO_CONFIG default_wsio_config =
 {
+    NULL,
+    NULL,
     "test_host",
     443,
-    "test_ws_protocol",
     "a/b/c",
-    false
+    "test_ws_protocol"
 };
 
 // libwebsockets mocks
@@ -810,7 +811,7 @@ TEST_FUNCTION_CLEANUP(method_cleanup)
 /* Tests_SRS_WSIO_01_001: [wsio_create shall create an instance of a wsio and return a non-NULL handle to it.] */
 /* Tests_SRS_WSIO_01_098: [wsio_create shall create a pending IO list that is to be used when sending buffers over the libwebsockets IO by calling singlylinkedlist_create.] */
 /* Tests_SRS_WSIO_01_003: [io_create_parameters shall be used as a WSIO_CONFIG*.] */
-/* Tests_SRS_WSIO_01_006: [The members host, protocol_name, relative_path and trusted_ca shall be copied for later use (they are needed when the IO is opened).] */
+/* Tests_SRS_WSIO_01_006: [The members hostname, protocol and resource_path shall be copied for later use (they are needed when the IO is opened).]*/
 TEST_FUNCTION(wsio_create_with_valid_args_succeeds)
 {
 	// arrange
@@ -845,17 +846,18 @@ TEST_FUNCTION(wsio_create_with_NULL_io_create_parameters_fails)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_WSIO_01_004: [If any of the WSIO_CONFIG fields host, protocol_name or relative_path is NULL then wsio_create shall return NULL.] */
+/* Tests_SRS_WSIO_01_004: [If any of the WSIO_CONFIG fields hostname, protocol or resource_name is NULL then wsio_create shall return NULL.] */
 TEST_FUNCTION(wsio_create_with_NULL_hostname_fails)
 {
     // arrange
     static WSIO_CONFIG test_wsio_config =
     {
         NULL,
+        NULL,
+        NULL,
         443,
-        "test_ws_protocol",
         "a/b/c",
-        false
+        "test_ws_protocol"
     };
 
     // act
@@ -866,17 +868,18 @@ TEST_FUNCTION(wsio_create_with_NULL_hostname_fails)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_WSIO_01_004: [If any of the WSIO_CONFIG fields host, protocol_name or relative_path is NULL then wsio_create shall return NULL.] */
+/* Tests_SRS_WSIO_01_004: [If any of the WSIO_CONFIG fields hostname, protocol or resource_name is NULL then wsio_create shall return NULL.] */
 TEST_FUNCTION(wsio_create_with_NULL_protocol_name_fails)
 {
     // arrange
     static WSIO_CONFIG test_wsio_config =
     {
+        NULL,
+        NULL,
         "testhost",
         443,
-        NULL,
         "a/b/c",
-        false
+        NULL
     };
 
     // act
@@ -887,17 +890,18 @@ TEST_FUNCTION(wsio_create_with_NULL_protocol_name_fails)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_WSIO_01_004: [If any of the WSIO_CONFIG fields host, protocol_name or relative_path is NULL then wsio_create shall return NULL.] */
+/* Tests_SRS_WSIO_01_004: [If any of the WSIO_CONFIG fields hostname, protocol or resource_name is NULL then wsio_create shall return NULL.] */
 TEST_FUNCTION(wsio_create_with_NULL_relative_path_fails)
 {
     // arrange
     static WSIO_CONFIG test_wsio_config =
     {
+        NULL,
+        NULL,
         "testhost",
         443,
-        "test_ws_protocol",
         NULL,
-        false
+        "test_ws_protocol"
     };
 
     // act
@@ -1037,8 +1041,8 @@ TEST_FUNCTION(when_wsio_destroy_is_called_all_resources_are_freed)
     umock_c_reset_all_calls();
 
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // host_name
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // relative_path
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocol_name
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // resource_name
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocol
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocols
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // trusted_ca
     STRICT_EXPECTED_CALL(singlylinkedlist_destroy(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
@@ -1071,8 +1075,8 @@ TEST_FUNCTION(when_wsio_destroy_is_called_all_resources_are_freed_including_prox
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // proxy host address
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // proxy username
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // proxy secret
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // relative_path
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocol_name
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // resource_name
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocol
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocols
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // trusted_ca
     STRICT_EXPECTED_CALL(singlylinkedlist_destroy(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
@@ -1109,8 +1113,8 @@ TEST_FUNCTION(wsio_destroy_closes_the_underlying_lws_before_destroying_all_resou
 
     STRICT_EXPECTED_CALL(lws_context_destroy(TEST_LIBWEBSOCKET_CONTEXT));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // host_name
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // relative_path
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocol_name
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // resource_name
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocol
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocols
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // trusted_ca
     STRICT_EXPECTED_CALL(singlylinkedlist_destroy(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
@@ -1137,7 +1141,7 @@ TEST_FUNCTION(wsio_destroy_closes_the_underlying_lws_before_destroying_all_resou
 /* Tests_SRS_WSIO_01_012: [The protocols member shall be populated with 2 protocol entries, one containing the actual protocol to be used and one empty (fields shall be NULL or 0).] */
 /* Tests_SRS_WSIO_01_013: [callback shall be set to a callback used by the wsio module to listen to libwebsockets events.] */
 /* Tests_SRS_WSIO_01_014: [id shall be set to 0] */
-/* Tests_SRS_WSIO_01_015: [name shall be set to protocol_name as passed to wsio_create] */
+/* Tests_SRS_WSIO_01_015: [name shall be set to protocol as passed to wsio_create] */
 /* Tests_SRS_WSIO_01_016: [per_session_data_size shall be set to 0] */
 /* Tests_SRS_WSIO_01_017: [rx_buffer_size shall be set to 0, as there is no need for atomic frames] */
 /* Tests_SRS_WSIO_01_019: [user shall be set to NULL] */
@@ -1145,11 +1149,10 @@ TEST_FUNCTION(wsio_destroy_closes_the_underlying_lws_before_destroying_all_resou
 /* Tests_SRS_WSIO_01_024: [context shall be the context created earlier in wsio_open] */
 /* Tests_SRS_WSIO_01_025: [address shall be the hostname passed to wsio_create] */
 /* Tests_SRS_WSIO_01_026: [port shall be the port passed to wsio_create] */
-/* Tests_SRS_WSIO_01_103: [otherwise it shall be 0.] */
-/* Tests_SRS_WSIO_01_028: [path shall be the relative_path passed in wsio_create] */
+/* Tests_SRS_WSIO_01_028: [path shall be the resource_name passed in wsio_create] */
 /* Tests_SRS_WSIO_01_029: [host shall be the host passed to wsio_create] */
 /* Tests_SRS_WSIO_01_030: [origin shall be NULL] */
-/* Tests_SRS_WSIO_01_031: [protocol shall be the protocol_name passed to wsio_create] */
+/* Tests_SRS_WSIO_01_031: [protocol shall be the protocol passed to wsio_create] */
 /* Tests_SRS_WSIO_01_032: [ietf_version_or_minus_one shall be -1] */
 /* Tests_SRS_WSIO_01_104: [On success, wsio_open shall return 0.] */
 /* Tests_SRS_WSIO_01_173: [ `userdata`, `client_exts`, `method`, `parent_wsi`, `uri_replace_from`, `uri_replace_to`, `vhost` and `pwsi` shall be NULL. ]*/
@@ -1164,7 +1167,7 @@ TEST_FUNCTION(wsio_open_with_proper_arguments_succeeds)
 
     umock_c_reset_all_calls();
 
-    protocols[0].name = default_wsio_config.protocol_name;
+    protocols[0].name = default_wsio_config.protocol;
     protocols[0].callback = NULL;
     protocols[0].per_session_data_size = 0;
     protocols[0].rx_buffer_size = 0;
@@ -1199,13 +1202,13 @@ TEST_FUNCTION(wsio_open_with_proper_arguments_succeeds)
     lws_context_info.protocols = protocols;
 
     client_connect_info.context = TEST_LIBWEBSOCKET_CONTEXT;
-    client_connect_info.address = default_wsio_config.host;
+    client_connect_info.address = default_wsio_config.hostname;
     client_connect_info.port = default_wsio_config.port;
-    client_connect_info.ssl_connection = 0;
-    client_connect_info.path = default_wsio_config.relative_path;
-    client_connect_info.host = default_wsio_config.host;
+    client_connect_info.ssl_connection = 1;
+    client_connect_info.path = default_wsio_config.resource_name;
+    client_connect_info.host = default_wsio_config.hostname;
     client_connect_info.origin = NULL;
-    client_connect_info.protocol = default_wsio_config.protocol_name;
+    client_connect_info.protocol = default_wsio_config.protocol;
     client_connect_info.ietf_version_or_minus_one = -1;
     client_connect_info.userdata = NULL;
     client_connect_info.client_exts = NULL;
@@ -1251,7 +1254,7 @@ TEST_FUNCTION(wsio_open_with_proxy_option_with_username_and_pwd_succeeds)
 
     umock_c_reset_all_calls();
 
-    protocols[0].name = default_wsio_config.protocol_name;
+    protocols[0].name = default_wsio_config.protocol;
     protocols[0].callback = NULL;
     protocols[0].per_session_data_size = 0;
     protocols[0].rx_buffer_size = 0;
@@ -1286,13 +1289,13 @@ TEST_FUNCTION(wsio_open_with_proxy_option_with_username_and_pwd_succeeds)
     lws_context_info.protocols = protocols;
 
     client_connect_info.context = TEST_LIBWEBSOCKET_CONTEXT;
-    client_connect_info.address = default_wsio_config.host;
+    client_connect_info.address = default_wsio_config.hostname;
     client_connect_info.port = default_wsio_config.port;
-    client_connect_info.ssl_connection = 0;
-    client_connect_info.path = default_wsio_config.relative_path;
-    client_connect_info.host = default_wsio_config.host;
+    client_connect_info.ssl_connection = 1;
+    client_connect_info.path = default_wsio_config.resource_name;
+    client_connect_info.host = default_wsio_config.hostname;
     client_connect_info.origin = NULL;
-    client_connect_info.protocol = default_wsio_config.protocol_name;
+    client_connect_info.protocol = default_wsio_config.protocol;
     client_connect_info.ietf_version_or_minus_one = -1;
     client_connect_info.userdata = NULL;
     client_connect_info.client_exts = NULL;
@@ -1340,7 +1343,7 @@ TEST_FUNCTION(wsio_open_with_proxy_option_with_username_and_pwd_and_5digit_port_
 
     umock_c_reset_all_calls();
 
-    protocols[0].name = default_wsio_config.protocol_name;
+    protocols[0].name = default_wsio_config.protocol;
     protocols[0].callback = NULL;
     protocols[0].per_session_data_size = 0;
     protocols[0].rx_buffer_size = 0;
@@ -1375,13 +1378,13 @@ TEST_FUNCTION(wsio_open_with_proxy_option_with_username_and_pwd_and_5digit_port_
     lws_context_info.protocols = protocols;
 
     client_connect_info.context = TEST_LIBWEBSOCKET_CONTEXT;
-    client_connect_info.address = default_wsio_config.host;
+    client_connect_info.address = default_wsio_config.hostname;
     client_connect_info.port = default_wsio_config.port;
-    client_connect_info.ssl_connection = 0;
-    client_connect_info.path = default_wsio_config.relative_path;
-    client_connect_info.host = default_wsio_config.host;
+    client_connect_info.ssl_connection = 1;
+    client_connect_info.path = default_wsio_config.resource_name;
+    client_connect_info.host = default_wsio_config.hostname;
     client_connect_info.origin = NULL;
-    client_connect_info.protocol = default_wsio_config.protocol_name;
+    client_connect_info.protocol = default_wsio_config.protocol;
     client_connect_info.ietf_version_or_minus_one = -1;
     client_connect_info.userdata = NULL;
     client_connect_info.client_exts = NULL;
@@ -1429,7 +1432,7 @@ TEST_FUNCTION(wsio_open_with_proxy_option_without_username_and_pwd_succeeds)
 
     umock_c_reset_all_calls();
 
-    protocols[0].name = default_wsio_config.protocol_name;
+    protocols[0].name = default_wsio_config.protocol;
     protocols[0].callback = NULL;
     protocols[0].per_session_data_size = 0;
     protocols[0].rx_buffer_size = 0;
@@ -1464,13 +1467,13 @@ TEST_FUNCTION(wsio_open_with_proxy_option_without_username_and_pwd_succeeds)
     lws_context_info.protocols = protocols;
 
     client_connect_info.context = TEST_LIBWEBSOCKET_CONTEXT;
-    client_connect_info.address = default_wsio_config.host;
+    client_connect_info.address = default_wsio_config.hostname;
     client_connect_info.port = default_wsio_config.port;
-    client_connect_info.ssl_connection = 0;
-    client_connect_info.path = default_wsio_config.relative_path;
-    client_connect_info.host = default_wsio_config.host;
+    client_connect_info.ssl_connection = 1;
+    client_connect_info.path = default_wsio_config.resource_name;
+    client_connect_info.host = default_wsio_config.hostname;
     client_connect_info.origin = NULL;
-    client_connect_info.protocol = default_wsio_config.protocol_name;
+    client_connect_info.protocol = default_wsio_config.protocol;
     client_connect_info.ietf_version_or_minus_one = -1;
     client_connect_info.userdata = NULL;
     client_connect_info.client_exts = NULL;
@@ -1497,14 +1500,14 @@ TEST_FUNCTION(wsio_open_with_proxy_option_without_username_and_pwd_succeeds)
     wsio_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_015: [name shall be set to protocol_name as passed to wsio_create] */
+/* Tests_SRS_WSIO_01_015: [name shall be set to protocol as passed to wsio_create] */
 /* Tests_SRS_WSIO_01_025: [address shall be the hostname passed to wsio_create] */
 /* Tests_SRS_WSIO_01_026: [port shall be the port passed to wsio_create] */
-/* Tests_SRS_WSIO_01_027: [if use_ssl passed in wsio_create is true, ssl_connection shall be 1] */
-/* Tests_SRS_WSIO_01_028: [path shall be the relative_path passed in wsio_create] */
+/* Tests_SRS_WSIO_01_027: [ssl_connection shall be 1] */
+/* Tests_SRS_WSIO_01_028: [path shall be the resource_name passed in wsio_create] */
 /* Tests_SRS_WSIO_01_029: [host shall be the host passed to wsio_create] */
 /* Tests_SRS_WSIO_01_030: [origin shall be NULL] */
-/* Tests_SRS_WSIO_01_031: [protocol shall be the protocol_name passed to wsio_create] */
+/* Tests_SRS_WSIO_01_031: [protocol shall be the protocol passed to wsio_create] */
 /* Tests_SRS_WSIO_01_091: [The extensions field shall be set to NULL.] */
 /* Tests_SRS_WSIO_01_104: [On success, wsio_open shall return 0.] */
 TEST_FUNCTION(wsio_open_with_different_config_succeeds)
@@ -1512,11 +1515,12 @@ TEST_FUNCTION(wsio_open_with_different_config_succeeds)
     // arrange
     static WSIO_CONFIG wsio_config =
     {
+        NULL,
+        NULL,
         "hagauaga",
         1234,
-        "another_proto",
         "d1/e2/f3",
-        true
+        "another_proto"
     };
     CONCRETE_IO_HANDLE wsio = wsio_create(&wsio_config);
     struct lws_context_creation_info lws_context_info;
@@ -1558,13 +1562,13 @@ TEST_FUNCTION(wsio_open_with_different_config_succeeds)
     lws_context_info.protocols = protocols;
 
     client_connect_info.context = TEST_LIBWEBSOCKET_CONTEXT;
-    client_connect_info.address = wsio_config.host;
+    client_connect_info.address = wsio_config.hostname;
     client_connect_info.port = wsio_config.port;
     client_connect_info.ssl_connection = 1;
-    client_connect_info.path = wsio_config.relative_path;
-    client_connect_info.host = wsio_config.host;
+    client_connect_info.path = wsio_config.resource_name;
+    client_connect_info.host = wsio_config.hostname;
     client_connect_info.origin = NULL;
-    client_connect_info.protocol = wsio_config.protocol_name;
+    client_connect_info.protocol = wsio_config.protocol;
     client_connect_info.ietf_version_or_minus_one = -1;
     client_connect_info.userdata = NULL;
     client_connect_info.client_exts = NULL;
@@ -1609,7 +1613,7 @@ TEST_FUNCTION(wsio_open_with_proxy_config_with_username_NULL_and_non_NULL_passwo
 
     umock_c_reset_all_calls();
 
-    protocols[0].name = default_wsio_config.protocol_name;
+    protocols[0].name = default_wsio_config.protocol;
     protocols[0].callback = NULL;
     protocols[0].per_session_data_size = 0;
     protocols[0].rx_buffer_size = 0;
@@ -1641,13 +1645,13 @@ TEST_FUNCTION(wsio_open_with_proxy_config_with_username_NULL_and_non_NULL_passwo
     lws_context_info.protocols = protocols;
 
     client_connect_info.context = TEST_LIBWEBSOCKET_CONTEXT;
-    client_connect_info.address = default_wsio_config.host;
+    client_connect_info.address = default_wsio_config.hostname;
     client_connect_info.port = default_wsio_config.port;
-    client_connect_info.ssl_connection = 0;
-    client_connect_info.path = default_wsio_config.relative_path;
-    client_connect_info.host = default_wsio_config.host;
+    client_connect_info.ssl_connection = 1;
+    client_connect_info.path = default_wsio_config.resource_name;
+    client_connect_info.host = default_wsio_config.hostname;
     client_connect_info.origin = NULL;
-    client_connect_info.protocol = default_wsio_config.protocol_name;
+    client_connect_info.protocol = default_wsio_config.protocol;
     client_connect_info.ietf_version_or_minus_one = -1;
     client_connect_info.userdata = NULL;
     client_connect_info.client_exts = NULL;
@@ -1683,7 +1687,7 @@ TEST_FUNCTION(when_creating_the_libwebsockets_context_fails_then_wsio_open_fails
     struct lws_protocols protocols[2];
     umock_c_reset_all_calls();
 
-    protocols[0].name = default_wsio_config.protocol_name;
+    protocols[0].name = default_wsio_config.protocol;
     protocols[0].callback = NULL;
     protocols[0].per_session_data_size = 0;
     protocols[0].rx_buffer_size = 0;
@@ -1740,7 +1744,7 @@ TEST_FUNCTION(when_lws_client_connect_fails_then_wsio_open_fails)
 
     umock_c_reset_all_calls();
 
-    protocols[0].name = default_wsio_config.protocol_name;
+    protocols[0].name = default_wsio_config.protocol;
     protocols[0].callback = NULL;
     protocols[0].per_session_data_size = 0;
     protocols[0].rx_buffer_size = 0;
@@ -1772,13 +1776,13 @@ TEST_FUNCTION(when_lws_client_connect_fails_then_wsio_open_fails)
     lws_context_info.protocols = protocols;
 
     client_connect_info.context = TEST_LIBWEBSOCKET_CONTEXT;
-    client_connect_info.address = default_wsio_config.host;
+    client_connect_info.address = default_wsio_config.hostname;
     client_connect_info.port = default_wsio_config.port;
-    client_connect_info.ssl_connection = 0;
-    client_connect_info.path = default_wsio_config.relative_path;
-    client_connect_info.host = default_wsio_config.host;
+    client_connect_info.ssl_connection = 1;
+    client_connect_info.path = default_wsio_config.resource_name;
+    client_connect_info.host = default_wsio_config.hostname;
     client_connect_info.origin = NULL;
-    client_connect_info.protocol = default_wsio_config.protocol_name;
+    client_connect_info.protocol = default_wsio_config.protocol;
     client_connect_info.ietf_version_or_minus_one = -1;
     client_connect_info.userdata = NULL;
     client_connect_info.client_exts = NULL;
@@ -1890,8 +1894,8 @@ TEST_FUNCTION(when_ws_callback_indicates_a_connection_error_the_context_destroy_
 
     STRICT_EXPECTED_CALL(lws_context_destroy(TEST_LIBWEBSOCKET_CONTEXT));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // host_name
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // relative_path
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocol_name
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // resource_name
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocol
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocols
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // trusted_ca
     STRICT_EXPECTED_CALL(singlylinkedlist_destroy(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
@@ -1965,8 +1969,8 @@ TEST_FUNCTION(when_ws_callback_indicates_a_connection_error_and_NULL_callback_co
 
     STRICT_EXPECTED_CALL(lws_context_destroy(TEST_LIBWEBSOCKET_CONTEXT));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // host_name
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // relative_path
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocol_name
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // resource_name
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocol
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocols
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // trusted_ca
     STRICT_EXPECTED_CALL(singlylinkedlist_destroy(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
@@ -2063,8 +2067,8 @@ TEST_FUNCTION(when_ws_callback_indicates_a_connect_error_and_no_on_open_complete
 
     STRICT_EXPECTED_CALL(lws_context_destroy(TEST_LIBWEBSOCKET_CONTEXT));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // host_name
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // relative_path
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocol_name
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // resource_name
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocol
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocols
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // trusted_ca
     STRICT_EXPECTED_CALL(singlylinkedlist_destroy(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
@@ -2858,8 +2862,8 @@ TEST_FUNCTION(CLIENT_CONNECTION_ERROR_when_opening_yields_open_complete_with_err
 
     STRICT_EXPECTED_CALL(lws_context_destroy(TEST_LIBWEBSOCKET_CONTEXT));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // host_name
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // relative_path
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocol_name
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // resource_name
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocol
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocols
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // trusted_ca
     STRICT_EXPECTED_CALL(singlylinkedlist_destroy(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
@@ -2911,8 +2915,8 @@ TEST_FUNCTION(CLIENT_CONNECTION_ERROR_when_opening_with_NULL_open_complete_callb
 
     STRICT_EXPECTED_CALL(lws_context_destroy(TEST_LIBWEBSOCKET_CONTEXT));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // host_name
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // relative_path
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocol_name
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // resource_name
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocol
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocols
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // trusted_ca
     STRICT_EXPECTED_CALL(singlylinkedlist_destroy(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
@@ -3039,8 +3043,8 @@ TEST_FUNCTION(CLIENT_WRITABLE_when_opening_yields_an_open_complete_error_and_def
 
     STRICT_EXPECTED_CALL(lws_context_destroy(TEST_LIBWEBSOCKET_CONTEXT));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // host_name
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // relative_path
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocol_name
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // resource_name
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocol
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocols
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // trusted_ca
     STRICT_EXPECTED_CALL(singlylinkedlist_destroy(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
@@ -3958,8 +3962,8 @@ TEST_FUNCTION(CLIENT_RECEIVE_while_opening_saves_the_context_to_be_freed_later)
 
     STRICT_EXPECTED_CALL(lws_context_destroy(TEST_LIBWEBSOCKET_CONTEXT));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // host_name
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // relative_path
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocol_name
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // resource_name
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocol
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocols
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // trusted_ca
     STRICT_EXPECTED_CALL(singlylinkedlist_destroy(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));

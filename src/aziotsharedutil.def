@@ -67,9 +67,6 @@ EXPORTS
     platform_init
     platform_deinit
     platform_get_default_tlsio
-    LOCK_RESULTStringStorage
-    LOCK_RESULTStrings
-    LOCK_RESULT_FromString
     Lock_Init
     Lock
     Unlock
