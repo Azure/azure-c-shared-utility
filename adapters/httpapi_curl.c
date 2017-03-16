@@ -131,6 +131,7 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
                         httpHandleData->verbose = 0;
                         httpHandleData->x509certificate = NULL;
                         httpHandleData->x509privatekey = NULL;
+                        httpHandleData->certificates = NULL;
                     }
                 }
                 else
