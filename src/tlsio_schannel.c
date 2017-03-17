@@ -707,7 +707,7 @@ CONCRETE_IO_HANDLE tlsio_schannel_create(void* io_create_parameters)
     }
     else
     {
-		result = (TLS_IO_INSTANCE *) malloc(sizeof(TLS_IO_INSTANCE));
+		result = (TLS_IO_INSTANCE*)malloc(sizeof(TLS_IO_INSTANCE));
         if (result == NULL)
         {
             LogError("malloc failed");
@@ -819,13 +819,11 @@ void tlsio_schannel_destroy(CONCRETE_IO_HANDLE tls_io)
         if (tls_io_instance->x509certificate != NULL)
         {
             free(tls_io_instance->x509certificate);
-            tls_io_instance->x509certificate = NULL;
         }
 
         if (tls_io_instance->x509privatekey != NULL)
         {
             free(tls_io_instance->x509privatekey);
-            tls_io_instance->x509privatekey = NULL;
         }
 
         xio_destroy(tls_io_instance->socket_io);
@@ -1031,7 +1029,7 @@ int tlsio_schannel_send(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t si
 
     if (size > 0)
     {
-        LogError("sned_chunk failed");
+        LogError("send_chunk failed");
         result = __FAILURE__;
     }
     else
@@ -1063,7 +1061,6 @@ int tlsio_schannel_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, 
     else
     {
         TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tls_io;
-        /*x509certificate and x509privatekey are "referenced" by this layer*/
         if (strcmp("x509certificate", optionName) == 0)
         {
             if (tls_io_instance->x509certificate != NULL)
