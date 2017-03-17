@@ -178,62 +178,6 @@ elseif(UNIX) #LINUX OR APPLE
     endif()
 endif()
 
-if(${use_wsio})
-
-    if(WIN32)
-        string(REPLACE "/W4" "/W0" CMAKE_C_FLAGS ${CMAKE_C_FLAGS})
-        string(REPLACE "/W4" "/W0" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
-
-        set(CMAKE_EXE_LINKER_FLAGS_PREV ${CMAKE_EXE_LINKER_FLAGS})
-        set(CMAKE_SHARED_LINKER_FLAGS_PREV ${CMAKE_SHARED_LINKER_FLAGS})
-        set(CMAKE_MODULE_LINKER_FLAGS_PREV ${CMAKE_MODULE_LINKER_FLAGS})
-        set(CMAKE_STATIC_LINKER_FLAGS_PREV ${CMAKE_MODULE_STATIC_FLAGS})
-
-        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /IGNORE:4006 /IGNORE:4221")
-        set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /IGNORE:4006 /IGNORE:4221")
-        set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} /IGNORE:4006 /IGNORE:4221")
-        set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} /IGNORE:4006 /IGNORE:4221")
-
-        remove_definitions(/WX)
-        include("dependencies.cmake")
-        add_definitions(/WX)
-        set(CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS_PREV})
-        set(CMAKE_SHARED_LINKER_FLAGS ${CMAKE_SHARED_LINKER_FLAGS_PREV})
-        set(CMAKE_MODULE_LINKER_FLAGS ${CMAKE_MODULE_LINKER_FLAGS_PREV})
-        set(CMAKE_STATIC_LINKER_FLAGS ${CMAKE_STATIC_LINKER_FLAGS_PREV})
-
-        string(REPLACE "/W0" "/W4" CMAKE_C_FLAGS ${CMAKE_C_FLAGS})
-        string(REPLACE "/W0" "/W4" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
-
-    elseif(UNIX) #LINUX AND APPLE
-        #because libwebsockets is sensitive to -Werror, it shall be removed, and re-added after
-        if(CMAKE_C_FLAGS)
-            set(RESTORE_CMAKE_C_FLAGS ON)
-            string(REPLACE "-Werror" "" CMAKE_C_FLAGS ${CMAKE_C_FLAGS})
-            if(NOT IN_OPENWRT)
-                string(REPLACE "-D_POSIX_C_SOURCE=200112L" "" CMAKE_C_FLAGS ${CMAKE_C_FLAGS})
-            endif()
-        endif()
-        if(CMAKE_CXX_FLAGS)
-            set(RESTORE_CMAKE_CXX_FLAGS ON)
-            string(REPLACE "-Werror" "" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
-        endif()
-        
-        include("dependencies.cmake")
-
-        if(RESTORE_CMAKE_C_FLAGS)
-            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
-            if(NOT IN_OPENWRT)
-                set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_POSIX_C_SOURCE=200112L")
-            endif()
-        endif()
-        if(RESTORE_CMAKE_CXX_FLAGS)
-            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
-        endif()
-
-    endif()
-endif()
-
 enable_testing()
 
 include(CheckSymbolExists)
@@ -463,9 +407,15 @@ set(source_h_files
 if(${use_wsio})
     set(source_h_files ${source_h_files}
         ./inc/azure_c_shared_utility/wsio.h
+        ./inc/azure_c_shared_utility/uws_client.h
+        ./inc/azure_c_shared_utility/uws_frame_encoder.h
+        ./inc/azure_c_shared_utility/utf8_checker.h
     )
     set(source_c_files ${source_c_files}
         ./src/wsio.c
+        ./src/uws_client.c
+        ./src/uws_frame_encoder.c
+        ./src/utf8_checker.c
     )
 endif()
 

@@ -24,18 +24,28 @@
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/x509_schannel.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
+#include "azure_c_shared_utility/singlylinkedlist.h"
 
 #define TLSIO_STATE_VALUES                        \
     TLSIO_STATE_NOT_OPEN,                         \
     TLSIO_STATE_OPENING_UNDERLYING_IO,            \
     TLSIO_STATE_HANDSHAKE_CLIENT_HELLO_SENT,      \
     TLSIO_STATE_HANDSHAKE_SERVER_HELLO_RECEIVED,  \
+    TLSIO_STATE_RENEGOTIATE,                      \
     TLSIO_STATE_OPEN,                             \
     TLSIO_STATE_CLOSING,                          \
     TLSIO_STATE_ERROR
 
 DEFINE_ENUM(TLSIO_STATE, TLSIO_STATE_VALUES);
 DEFINE_ENUM_STRINGS(TLSIO_STATE, TLSIO_STATE_VALUES);
+
+typedef struct PENDING_SEND_TAG
+{
+    unsigned char* bytes;
+    size_t length;
+    ON_SEND_COMPLETE on_send_complete;
+    void* on_send_complete_context;
+} PENDING_SEND;
 
 typedef struct TLS_IO_INSTANCE_TAG
 {
@@ -60,6 +70,7 @@ typedef struct TLS_IO_INSTANCE_TAG
     char* x509certificate;
     char* x509privatekey;
     X509_SCHANNEL_HANDLE x509_schannel_handle;
+    SINGLYLINKEDLIST_HANDLE pending_io_list;
 } TLS_IO_INSTANCE;
 
 /*this function will clone an option given by name and value*/
@@ -251,7 +262,87 @@ static void on_underlying_io_close_complete(void* context)
     }
 }
 
+static void send_client_hello(TLS_IO_INSTANCE* tls_io_instance)
+{
+    SecBuffer init_security_buffers[2];
+    ULONG context_attributes;
+    SECURITY_STATUS status;
+    SCHANNEL_CRED auth_data;
+    PCCERT_CONTEXT certContext;
+    auth_data.dwVersion = SCHANNEL_CRED_VERSION;
+    if (tls_io_instance->x509_schannel_handle != NULL)
+    {
+        certContext = x509_schannel_get_certificate_context(tls_io_instance->x509_schannel_handle);
+        auth_data.cCreds = 1;
+        auth_data.paCred = &certContext;
+    }
+    else
+    {
+        auth_data.cCreds = 0;
+        auth_data.paCred = NULL;
+    }
+    auth_data.hRootStore = NULL;
+    auth_data.cSupportedAlgs = 0;
+    auth_data.palgSupportedAlgs = NULL;
+    auth_data.grbitEnabledProtocols = 0;
+    auth_data.dwMinimumCipherStrength = 0;
+    auth_data.dwMaximumCipherStrength = 0;
+    auth_data.dwSessionLifespan = 0;
+    auth_data.dwFlags = SCH_USE_STRONG_CRYPTO | SCH_CRED_NO_DEFAULT_CREDS;
+    auth_data.dwCredFormat = 0;
 
+    status = AcquireCredentialsHandle(NULL, UNISP_NAME, SECPKG_CRED_OUTBOUND, NULL,
+        &auth_data, NULL, NULL, &tls_io_instance->credential_handle, NULL);
+    if (status != SEC_E_OK)
+    {
+        tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
+        indicate_error(tls_io_instance);
+    }
+    else
+    {
+        tls_io_instance->credential_handle_allocated = true;
+
+        init_security_buffers[0].cbBuffer = 0;
+        init_security_buffers[0].BufferType = SECBUFFER_TOKEN;
+        init_security_buffers[0].pvBuffer = NULL;
+        init_security_buffers[1].cbBuffer = 0;
+        init_security_buffers[1].BufferType = SECBUFFER_EMPTY;
+        init_security_buffers[1].pvBuffer = 0;
+
+        SecBufferDesc security_buffers_desc;
+        security_buffers_desc.cBuffers = 2;
+        security_buffers_desc.pBuffers = init_security_buffers;
+        security_buffers_desc.ulVersion = SECBUFFER_VERSION;
+
+        status = InitializeSecurityContext(&tls_io_instance->credential_handle,
+            NULL, tls_io_instance->host_name, ISC_REQ_EXTENDED_ERROR | ISC_REQ_STREAM | ISC_REQ_ALLOCATE_MEMORY | ISC_REQ_USE_SUPPLIED_CREDS, 0, 0, NULL, 0,
+            &tls_io_instance->security_context, &security_buffers_desc,
+            &context_attributes, NULL);
+        
+        if ((status == SEC_I_COMPLETE_NEEDED) || (status == SEC_I_CONTINUE_NEEDED) || (status == SEC_I_COMPLETE_AND_CONTINUE))
+        {
+            if (xio_send(tls_io_instance->socket_io, init_security_buffers[0].pvBuffer, init_security_buffers[0].cbBuffer, NULL, NULL) != 0)
+            {
+                tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
+                indicate_error(tls_io_instance);
+            }
+            else
+            {
+                /* set the needed bytes to 1, to get on the next byte how many we actually need */
+                tls_io_instance->needed_bytes = 1;
+                if (resize_receive_buffer(tls_io_instance, tls_io_instance->needed_bytes + tls_io_instance->received_byte_count) != 0)
+                {
+                    tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
+                    indicate_error(tls_io_instance);
+                }
+                else
+                {
+                    tls_io_instance->tlsio_state = TLSIO_STATE_HANDSHAKE_CLIENT_HELLO_SENT;
+                }
+            }
+        }
+    }
+}
 
 static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT io_open_result)
 {
@@ -274,84 +365,7 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT io_open
         }
         else
         {
-            SecBuffer init_security_buffers[2];
-            ULONG context_attributes;
-            SECURITY_STATUS status;
-            SCHANNEL_CRED auth_data;
-            PCCERT_CONTEXT certContext;
-            auth_data.dwVersion = SCHANNEL_CRED_VERSION;
-            if(tls_io_instance->x509_schannel_handle!=NULL)
-            {
-                certContext = x509_schannel_get_certificate_context(tls_io_instance->x509_schannel_handle);
-                auth_data.cCreds = 1;
-                auth_data.paCred = &certContext;
-            }
-            else
-            {
-                auth_data.cCreds = 0;
-                auth_data.paCred = NULL;
-            }
-            auth_data.hRootStore = NULL;
-            auth_data.cSupportedAlgs = 0;
-            auth_data.palgSupportedAlgs = NULL;
-            auth_data.grbitEnabledProtocols = 0;
-            auth_data.dwMinimumCipherStrength = 0;
-            auth_data.dwMaximumCipherStrength = 0;
-            auth_data.dwSessionLifespan = 0;
-            auth_data.dwFlags = SCH_USE_STRONG_CRYPTO | SCH_CRED_NO_DEFAULT_CREDS;
-            auth_data.dwCredFormat = 0;
-
-            status = AcquireCredentialsHandle(NULL, UNISP_NAME, SECPKG_CRED_OUTBOUND, NULL,
-                &auth_data, NULL, NULL, &tls_io_instance->credential_handle, NULL);
-            if (status != SEC_E_OK)
-            {
-                tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
-                indicate_error(tls_io_instance);
-            }
-            else
-            {
-                tls_io_instance->credential_handle_allocated = true;
-
-                init_security_buffers[0].cbBuffer = 0;
-                init_security_buffers[0].BufferType = SECBUFFER_TOKEN;
-                init_security_buffers[0].pvBuffer = NULL;
-                init_security_buffers[1].cbBuffer = 0;
-                init_security_buffers[1].BufferType = SECBUFFER_EMPTY;
-                init_security_buffers[1].pvBuffer = 0;
-
-                SecBufferDesc security_buffers_desc;
-                security_buffers_desc.cBuffers = 2;
-                security_buffers_desc.pBuffers = init_security_buffers;
-                security_buffers_desc.ulVersion = SECBUFFER_VERSION;
-
-               	status = InitializeSecurityContext(&tls_io_instance->credential_handle,
-					NULL, tls_io_instance->host_name, ISC_REQ_EXTENDED_ERROR | ISC_REQ_STREAM | ISC_REQ_ALLOCATE_MEMORY | ISC_REQ_USE_SUPPLIED_CREDS, 0, 0, NULL, 0,
-					&tls_io_instance->security_context, &security_buffers_desc,
-					&context_attributes, NULL);
-
-                if ((status == SEC_I_COMPLETE_NEEDED) || (status == SEC_I_CONTINUE_NEEDED) || (status == SEC_I_COMPLETE_AND_CONTINUE))
-                {
-                    if (xio_send(tls_io_instance->socket_io, init_security_buffers[0].pvBuffer, init_security_buffers[0].cbBuffer, NULL, NULL) != 0)
-                    {
-                        tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
-                        indicate_error(tls_io_instance);
-                    }
-                    else
-                    {
-                        /* set the needed bytes to 1, to get on the next byte how many we actually need */
-                        tls_io_instance->needed_bytes = 1;
-                        if (resize_receive_buffer(tls_io_instance, tls_io_instance->needed_bytes + tls_io_instance->received_byte_count) != 0)
-                        {
-                            tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
-                            indicate_error(tls_io_instance);
-                        }
-                        else
-                        {
-                            tls_io_instance->tlsio_state = TLSIO_STATE_HANDSHAKE_CLIENT_HELLO_SENT;
-                        }
-                    }
-                }
-            }
+            send_client_hello(tls_io_instance);
         }
     }
 }
@@ -370,6 +384,128 @@ static int set_receive_buffer(TLS_IO_INSTANCE* tls_io_instance, size_t buffer_si
     {
         tls_io_instance->received_bytes = new_buffer;
         tls_io_instance->buffer_size = buffer_size;
+        result = 0;
+    }
+
+    return result;
+}
+
+static int send_chunk(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t size, ON_SEND_COMPLETE on_send_complete, void* callback_context)
+{
+    int result;
+
+    if ((tls_io == NULL) ||
+        (buffer == NULL) ||
+        (size == 0))
+    {
+        LogError("invalid argument detected: CONCRETE_IO_HANDLE tls_io = %p, const void* buffer = %p, size_t size = %d", tls_io, buffer, size);
+        result = __FAILURE__;
+    }
+    else
+    {
+        TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tls_io;
+        if (tls_io_instance->tlsio_state != TLSIO_STATE_OPEN)
+        {
+            LogError("invalid tls_io_instance->tlsio_state: %s", ENUM_TO_STRING(TLSIO_STATE, tls_io_instance->tlsio_state));
+            result = __FAILURE__;
+        }
+        else
+        {
+            SecPkgContext_StreamSizes  sizes;
+            SECURITY_STATUS status = QueryContextAttributes(&tls_io_instance->security_context, SECPKG_ATTR_STREAM_SIZES, &sizes);
+            if (status != SEC_E_OK)
+            {
+                LogError("QueryContextAttributes failed: %x", status);
+                result = __FAILURE__;
+            }
+            else
+            {
+                SecBuffer security_buffers[4];
+                SecBufferDesc security_buffers_desc;
+                size_t needed_buffer = sizes.cbHeader + size + sizes.cbTrailer;
+                unsigned char* out_buffer = (unsigned char*)malloc(needed_buffer);
+                if (out_buffer == NULL)
+                {
+                    LogError("malloc failed");
+                    result = __FAILURE__;
+                }
+                else
+                {
+                    (void)memcpy(out_buffer + sizes.cbHeader, buffer, size);
+
+                    security_buffers[0].BufferType = SECBUFFER_STREAM_HEADER;
+                    security_buffers[0].cbBuffer = sizes.cbHeader;
+                    security_buffers[0].pvBuffer = out_buffer;
+                    security_buffers[1].BufferType = SECBUFFER_DATA;
+                    security_buffers[1].cbBuffer = (unsigned long)size;
+                    security_buffers[1].pvBuffer = out_buffer + sizes.cbHeader;
+                    security_buffers[2].BufferType = SECBUFFER_STREAM_TRAILER;
+                    security_buffers[2].cbBuffer = sizes.cbTrailer;
+                    security_buffers[2].pvBuffer = out_buffer + sizes.cbHeader + size;
+                    security_buffers[3].cbBuffer = 0;
+                    security_buffers[3].BufferType = SECBUFFER_EMPTY;
+                    security_buffers[3].pvBuffer = 0;
+
+                    security_buffers_desc.cBuffers = sizeof(security_buffers) / sizeof(security_buffers[0]);
+                    security_buffers_desc.pBuffers = security_buffers;
+                    security_buffers_desc.ulVersion = SECBUFFER_VERSION;
+
+                    status = EncryptMessage(&tls_io_instance->security_context, 0, &security_buffers_desc, 0);
+                    if (FAILED(status))
+                    {
+                        LogError("EncryptMessage failed: %x", status);
+                        result = __FAILURE__;
+                    }
+                    else
+                    {
+                        if (xio_send(tls_io_instance->socket_io, out_buffer, security_buffers[0].cbBuffer + security_buffers[1].cbBuffer + security_buffers[2].cbBuffer, on_send_complete, callback_context) != 0)
+                        {
+                            LogError("xio_send failed");
+                            result = __FAILURE__;
+                        }
+                        else
+                        {
+                            result = 0;
+                        }
+                    }
+
+                    free(out_buffer);
+                }
+            }
+        }
+    }
+
+    return result;
+}
+
+static int internal_send(TLS_IO_INSTANCE* tls_io_instance, const void* buffer, size_t size, ON_SEND_COMPLETE on_send_complete, void* callback_context)
+{
+    int result;
+
+    while (size > 0)
+    {
+        size_t to_send = 16 * 1024;
+        if (to_send > size)
+        {
+            to_send = size;
+        }
+
+        if (send_chunk(tls_io_instance, buffer, to_send, (to_send == size) ? on_send_complete : NULL, callback_context) != 0)
+        {
+            break;
+        }
+
+        size -= to_send;
+        buffer = ((const unsigned char*)buffer) + to_send;
+    }
+
+    if (size > 0)
+    {
+        LogError("send_chunk failed");
+        result = __FAILURE__;
+    }
+    else
+    {
         result = 0;
     }
 
@@ -398,7 +534,8 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
         /* Drain what we received */
         while (tls_io_instance->needed_bytes == 0)
         {
-            if (tls_io_instance->tlsio_state == TLSIO_STATE_HANDSHAKE_CLIENT_HELLO_SENT)
+            if ((tls_io_instance->tlsio_state == TLSIO_STATE_HANDSHAKE_CLIENT_HELLO_SENT) ||
+                (tls_io_instance->tlsio_state == TLSIO_STATE_RENEGOTIATE))
             {
                 SecBuffer input_buffers[2];
                 SecBuffer output_buffers[2];
@@ -429,13 +566,12 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                 output_buffers_desc.pBuffers = output_buffers;
                 output_buffers_desc.ulVersion = SECBUFFER_VERSION;
 
-				
                 unsigned long flags = ISC_REQ_EXTENDED_ERROR | ISC_REQ_STREAM | ISC_REQ_ALLOCATE_MEMORY | ISC_REQ_USE_SUPPLIED_CREDS;
                 SECURITY_STATUS status = InitializeSecurityContext(&tls_io_instance->credential_handle,
 					&tls_io_instance->security_context, tls_io_instance->host_name, flags, 0, 0, &input_buffers_desc, 0,
 					&tls_io_instance->security_context, &output_buffers_desc,
 					&context_attributes, NULL);
-
+                
                 switch (status)
                 {
                 case SEC_E_INCOMPLETE_MESSAGE:
@@ -482,10 +618,46 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                     }
                     else
                     {
-                        tls_io_instance->tlsio_state = TLSIO_STATE_OPEN;
-                        if (tls_io_instance->on_io_open_complete != NULL)
+                        if (tls_io_instance->tlsio_state == TLSIO_STATE_HANDSHAKE_CLIENT_HELLO_SENT)
                         {
-                            tls_io_instance->on_io_open_complete(tls_io_instance->on_io_open_complete_context, IO_OPEN_OK);
+                            tls_io_instance->tlsio_state = TLSIO_STATE_OPEN;
+
+                            if (tls_io_instance->on_io_open_complete != NULL)
+                            {
+                                tls_io_instance->on_io_open_complete(tls_io_instance->on_io_open_complete_context, IO_OPEN_OK);
+                            }
+                        }
+                        else
+                        {
+                            tls_io_instance->tlsio_state = TLSIO_STATE_OPEN;
+
+                            LIST_ITEM_HANDLE first_pending_io = singlylinkedlist_get_head_item(tls_io_instance->pending_io_list);
+                            while (first_pending_io != NULL)
+                            {
+                                PENDING_SEND* pending_send = (PENDING_SEND*)singlylinkedlist_item_get_value(first_pending_io);
+                                if (pending_send == NULL)
+                                {
+                                    LogError("Failure: retrieving pending IO from list");
+                                    indicate_error(tls_io_instance);
+                                    break;
+                                }
+                                else
+                                {
+                                    if (internal_send(tls_io_instance, pending_send->bytes, pending_send->length, pending_send->on_send_complete, pending_send->on_send_complete_context) != 0)
+                                    {
+                                        LogError("send failed");
+                                        indicate_error(tls_io_instance);
+                                    }
+                                    else
+                                    {
+                                        if (singlylinkedlist_remove(tls_io_instance->pending_io_list, first_pending_io) != 0)
+                                        {
+                                            LogError("Failure: removing pending IO from list");
+                                            indicate_error(tls_io_instance);
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                     break;
@@ -524,7 +696,10 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                         }
                         else
                         {
-                            tls_io_instance->tlsio_state = TLSIO_STATE_HANDSHAKE_CLIENT_HELLO_SENT;
+                            if (tls_io_instance->tlsio_state != TLSIO_STATE_RENEGOTIATE)
+                            {
+                                tls_io_instance->tlsio_state = TLSIO_STATE_HANDSHAKE_CLIENT_HELLO_SENT;
+                            }
                         }
                     }
                     break;
@@ -629,6 +804,70 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                         }
                     }
                     break;
+                case SEC_I_RENEGOTIATE:
+                {
+                    SecBuffer input_buffers[2];
+                    SecBuffer output_buffers[2];
+                    ULONG context_attributes;
+
+                    /* we need to try and perform the second (next) step of the init */
+                    input_buffers[0].cbBuffer = (unsigned long)tls_io_instance->received_byte_count;
+                    input_buffers[0].BufferType = SECBUFFER_TOKEN;
+                    input_buffers[0].pvBuffer = (void*)tls_io_instance->received_bytes;
+                    input_buffers[1].cbBuffer = 0;
+                    input_buffers[1].BufferType = SECBUFFER_EMPTY;
+                    input_buffers[1].pvBuffer = 0;
+
+                    SecBufferDesc input_buffers_desc;
+                    input_buffers_desc.cBuffers = 2;
+                    input_buffers_desc.pBuffers = input_buffers;
+                    input_buffers_desc.ulVersion = SECBUFFER_VERSION;
+
+                    output_buffers[0].cbBuffer = 0;
+                    output_buffers[0].BufferType = SECBUFFER_TOKEN;
+                    output_buffers[0].pvBuffer = NULL;
+                    output_buffers[1].cbBuffer = 0;
+                    output_buffers[1].BufferType = SECBUFFER_EMPTY;
+                    output_buffers[1].pvBuffer = 0;
+
+                    SecBufferDesc output_buffers_desc;
+                    output_buffers_desc.cBuffers = 2;
+                    output_buffers_desc.pBuffers = output_buffers;
+                    output_buffers_desc.ulVersion = SECBUFFER_VERSION;
+                    
+                    unsigned long flags = ISC_REQ_EXTENDED_ERROR | ISC_REQ_STREAM | ISC_REQ_ALLOCATE_MEMORY | ISC_REQ_USE_SUPPLIED_CREDS;
+                    status = InitializeSecurityContext(&tls_io_instance->credential_handle,
+                        &tls_io_instance->security_context, tls_io_instance->host_name, flags, 0, 0, &input_buffers_desc, 0,
+                        &tls_io_instance->security_context, &output_buffers_desc,
+                        &context_attributes, NULL);
+
+                    if ((status == SEC_I_COMPLETE_NEEDED) || (status == SEC_I_CONTINUE_NEEDED) || (status == SEC_I_COMPLETE_AND_CONTINUE))
+                    {
+                        /* This needs to account for EXTRA */
+                        tls_io_instance->received_byte_count = 0;
+
+                        if (xio_send(tls_io_instance->socket_io, output_buffers[0].pvBuffer, output_buffers[0].cbBuffer, NULL, NULL) != 0)
+                        {
+                            tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
+                            indicate_error(tls_io_instance);
+                        }
+                        else
+                        {
+                            tls_io_instance->needed_bytes = 1;
+                            if (resize_receive_buffer(tls_io_instance, tls_io_instance->needed_bytes + tls_io_instance->received_byte_count) != 0)
+                            {
+                                tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
+                                indicate_error(tls_io_instance);
+                            }
+                            else
+                            {
+                                tls_io_instance->tlsio_state = TLSIO_STATE_RENEGOTIATE;
+                            }
+                        }
+                    }
+                    break;
+                }
+
                 default:
                     {
                         LPVOID srcText = NULL;
@@ -665,33 +904,33 @@ static void on_underlying_io_error(void* context)
 
     switch (tls_io_instance->tlsio_state)
     {
-        default:
-        case TLSIO_STATE_NOT_OPEN:
-        case TLSIO_STATE_ERROR:
-            break;
+    default:
+    case TLSIO_STATE_NOT_OPEN:
+    case TLSIO_STATE_ERROR:
+        break;
 
-        case TLSIO_STATE_OPENING_UNDERLYING_IO:
-        case TLSIO_STATE_HANDSHAKE_CLIENT_HELLO_SENT:
-        case TLSIO_STATE_HANDSHAKE_SERVER_HELLO_RECEIVED:
-            tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
-            if (tls_io_instance->on_io_open_complete != NULL)
-            {
-                tls_io_instance->on_io_open_complete(tls_io_instance->on_io_open_complete_context, IO_OPEN_ERROR);
-            }
-            break;
+    case TLSIO_STATE_OPENING_UNDERLYING_IO:
+    case TLSIO_STATE_HANDSHAKE_CLIENT_HELLO_SENT:
+    case TLSIO_STATE_HANDSHAKE_SERVER_HELLO_RECEIVED:
+        tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
+        if (tls_io_instance->on_io_open_complete != NULL)
+        {
+            tls_io_instance->on_io_open_complete(tls_io_instance->on_io_open_complete_context, IO_OPEN_ERROR);
+        }
+        break;
 
-        case TLSIO_STATE_CLOSING:
-            tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
-            if (tls_io_instance->on_io_close_complete != NULL)
-            {
-                tls_io_instance->on_io_close_complete(tls_io_instance->on_io_close_complete_context);
-            }
-            break;
+    case TLSIO_STATE_CLOSING:
+        tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
+        if (tls_io_instance->on_io_close_complete != NULL)
+        {
+            tls_io_instance->on_io_close_complete(tls_io_instance->on_io_close_complete_context);
+        }
+        break;
 
-        case TLSIO_STATE_OPEN:
-            tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
-            indicate_error(tls_io_instance);
-            break;
+    case TLSIO_STATE_OPEN:
+        tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
+        indicate_error(tls_io_instance);
+        break;
     }
 }
 
@@ -779,13 +1018,25 @@ CONCRETE_IO_HANDLE tlsio_schannel_create(void* io_create_parameters)
                     }
                     else
                     {
-                        result->received_bytes = NULL;
-                        result->received_byte_count = 0;
-                        result->buffer_size = 0;
-                        result->tlsio_state = TLSIO_STATE_NOT_OPEN;
-                        result->x509certificate = NULL;
-                        result->x509privatekey = NULL;
-                        result->x509_schannel_handle = NULL;
+                        result->pending_io_list = singlylinkedlist_create();
+                        if (result->pending_io_list == NULL)
+                        {
+                            LogError("Failed creating pending IO list.");
+                            xio_destroy(result->socket_io);
+                            free(result->host_name);
+                            free(result);
+                            result = NULL;
+                        }
+                        else
+                        {
+                            result->received_bytes = NULL;
+                            result->received_byte_count = 0;
+                            result->buffer_size = 0;
+                            result->tlsio_state = TLSIO_STATE_NOT_OPEN;
+                            result->x509certificate = NULL;
+                            result->x509privatekey = NULL;
+                            result->x509_schannel_handle = NULL;
+                        }
                     }
                 }
             }
@@ -828,6 +1079,32 @@ void tlsio_schannel_destroy(CONCRETE_IO_HANDLE tls_io)
 
         xio_destroy(tls_io_instance->socket_io);
         free(tls_io_instance->host_name);
+
+        LIST_ITEM_HANDLE first_pending_io = singlylinkedlist_get_head_item(tls_io_instance->pending_io_list);
+        while (first_pending_io != NULL)
+        {
+            PENDING_SEND* pending_send = (PENDING_SEND*)singlylinkedlist_item_get_value(first_pending_io);
+            if (pending_send == NULL)
+            {
+                LogError("Failure: retrieving socket from list");
+                indicate_error(tls_io_instance);
+                break;
+            }
+            else
+            {
+                if (pending_send->on_send_complete != NULL)
+                {
+                    pending_send->on_send_complete(pending_send->on_send_complete_context, IO_SEND_CANCELLED);
+                }
+
+                if (singlylinkedlist_remove(tls_io_instance->pending_io_list, first_pending_io) != 0)
+                {
+                    LogError("Failure: removing pending IO from list");
+                }
+            }
+        }
+
+        singlylinkedlist_destroy(tls_io_instance->pending_io_list);
         free(tls_io);
     }
 }
@@ -918,123 +1195,58 @@ int tlsio_schannel_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_c
     return result;
 }
 
-static int send_chunk(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t size, ON_SEND_COMPLETE on_send_complete, void* callback_context)
+int tlsio_schannel_send(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t size, ON_SEND_COMPLETE on_send_complete, void* callback_context)
 {
     int result;
+    TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tls_io;
 
-    if ((tls_io == NULL) ||
-        (buffer == NULL) ||
-        (size == 0))
+    if (tls_io_instance->tlsio_state == TLSIO_STATE_RENEGOTIATE)
     {
-        LogError("invalid argument detected: CONCRETE_IO_HANDLE tls_io = %p, const void* buffer = %p, size_t size = %d", tls_io, buffer, size);
-        result = __FAILURE__;
-    }
-    else
-    {
-        TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tls_io;
-        if (tls_io_instance->tlsio_state != TLSIO_STATE_OPEN)
+        /* add to pending list */
+        PENDING_SEND* new_pending_send = (PENDING_SEND*)malloc(sizeof(PENDING_SEND));
+        if (new_pending_send == NULL)
         {
-            LogError("invalid tls_io_instance->tlsio_state: %s", ENUM_TO_STRING(TLSIO_STATE, tls_io_instance->tlsio_state));
+            LogError("Cannot allocate memory for pending IO");
             result = __FAILURE__;
         }
         else
         {
-            SecPkgContext_StreamSizes  sizes;
-            SECURITY_STATUS status = QueryContextAttributes(&tls_io_instance->security_context, SECPKG_ATTR_STREAM_SIZES, &sizes);
-            if (status != SEC_E_OK)
+            new_pending_send->bytes = (unsigned char*)malloc(size);
+            if (new_pending_send->bytes == NULL)
             {
-                LogError("QueryContextAttributes failed: %x", status);
+                LogError("Cannot allocate memory for pending IO payload");
                 result = __FAILURE__;
             }
             else
             {
-                SecBuffer security_buffers[4];
-                SecBufferDesc security_buffers_desc;
-                size_t needed_buffer = sizes.cbHeader + size + sizes.cbTrailer;
-                unsigned char* out_buffer = (unsigned char*)malloc(needed_buffer);
-                if (out_buffer == NULL)
+                (void)memcpy(new_pending_send->bytes, buffer, size);
+                new_pending_send->length = size;
+                new_pending_send->on_send_complete = on_send_complete;
+                new_pending_send->on_send_complete_context = callback_context;
+
+                if (singlylinkedlist_add(tls_io_instance->pending_io_list, new_pending_send) == NULL)
                 {
-                    LogError("malloc failed");
+                    LogError("Cannot add pending IO to list");
                     result = __FAILURE__;
                 }
                 else
                 {
-                    (void)memcpy(out_buffer + sizes.cbHeader, buffer, size);
-
-                    security_buffers[0].BufferType = SECBUFFER_STREAM_HEADER;
-                    security_buffers[0].cbBuffer = sizes.cbHeader;
-                    security_buffers[0].pvBuffer = out_buffer;
-                    security_buffers[1].BufferType = SECBUFFER_DATA;
-                    security_buffers[1].cbBuffer = (unsigned long)size;
-                    security_buffers[1].pvBuffer = out_buffer + sizes.cbHeader;
-                    security_buffers[2].BufferType = SECBUFFER_STREAM_TRAILER;
-                    security_buffers[2].cbBuffer = sizes.cbTrailer;
-                    security_buffers[2].pvBuffer = out_buffer + sizes.cbHeader + size;
-                    security_buffers[3].cbBuffer = 0;
-                    security_buffers[3].BufferType = SECBUFFER_EMPTY;
-                    security_buffers[3].pvBuffer = 0;
-
-                    security_buffers_desc.cBuffers = sizeof(security_buffers) / sizeof(security_buffers[0]);
-                    security_buffers_desc.pBuffers = security_buffers;
-                    security_buffers_desc.ulVersion = SECBUFFER_VERSION;
-
-                    status = EncryptMessage(&tls_io_instance->security_context, 0, &security_buffers_desc, 0);
-                    if (FAILED(status))
-                    {
-                        LogError("EncryptMessage failed: %x", status);
-                        result = __FAILURE__;
-                    }
-                    else
-                    {
-                        if (xio_send(tls_io_instance->socket_io, out_buffer, security_buffers[0].cbBuffer + security_buffers[1].cbBuffer + security_buffers[2].cbBuffer, on_send_complete, callback_context) != 0)
-                        {
-                            LogError("xio_send failed");
-                            result = __FAILURE__;
-                        }
-                        else
-                        {
-                            result = 0;
-                        }
-                    }
-
-                    free(out_buffer);
+                    result = 0;
                 }
             }
         }
     }
-
-    return result;
-}
-
-int tlsio_schannel_send(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t size, ON_SEND_COMPLETE on_send_complete, void* callback_context)
-{
-    int result;
-
-    while (size > 0)
-    {
-        size_t to_send = 16 * 1024;
-        if (to_send > size)
-        {
-            to_send = size;
-        }
-
-        if (send_chunk(tls_io, buffer, to_send, (to_send == size) ? on_send_complete : NULL, callback_context) != 0)
-        {
-            break;
-        }
-
-        size -= to_send;
-        buffer = ((const unsigned char*)buffer) + to_send;
-    }
-
-    if (size > 0)
-    {
-        LogError("send_chunk failed");
-        result = __FAILURE__;
-    }
     else
     {
-        result = 0;
+        if (internal_send((TLS_IO_INSTANCE*)tls_io, buffer, size, on_send_complete, callback_context) != 0)
+        {
+            LogError("send failed");
+            result = __FAILURE__;
+        }
+        else
+        {
+            result = 0;
+        }
     }
 
     return result;
@@ -1070,7 +1282,7 @@ int tlsio_schannel_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, 
             }
             else
             {
-				tls_io_instance->x509certificate = (char *)tlsio_schannel_CloneOption("x509certificate", value);
+                tls_io_instance->x509certificate = (char *)tlsio_schannel_CloneOption("x509certificate", value);
                 if (tls_io_instance->x509certificate == NULL)
                 {
                     LogError("tlsio_schannel_CloneOption failed");
@@ -1108,7 +1320,7 @@ int tlsio_schannel_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, 
             }
             else
             {
-				tls_io_instance->x509privatekey = (char *)tlsio_schannel_CloneOption("x509privatekey", value);
+                tls_io_instance->x509privatekey = (char *)tlsio_schannel_CloneOption("x509privatekey", value);
                 if (tls_io_instance->x509privatekey == NULL)
                 {
                     LogError("tlsio_schannel_CloneOption failed");
@@ -1132,7 +1344,7 @@ int tlsio_schannel_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, 
                     }
                     else
                     {
-                        result = 0; /*all is fine, maybe x509 privatekey will come and then x509 is set*/
+                        result = 0; /*all is fine, maybe x509 cert will come and then x509 is set*/
                     }
                 }
             }

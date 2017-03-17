@@ -1,72 +1,79 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+#ifdef __cplusplus
+#include <cstdlib>
+#include <cstdbool>
+#include <cstddef>
+#include <cstdint>
+#else
+#include <stdlib.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#endif
 #include "testrunnerswitcher.h"
-#include "libwebsockets.h"
-
-#include "openssl/ssl.h"
-
 #include "umock_c.h"
 #include "umocktypes_charptr.h"
+#include "umocktypes_bool.h"
 
 #define ENABLE_MOCKS
 
-#include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/xio.h"
-#include "azure_c_shared_utility/optionhandler.h"
-#include "azure_c_shared_utility/shared_util_options.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
 #include "azure_c_shared_utility/singlylinkedlist.h"
+#include "azure_c_shared_utility/optionhandler.h"
+#include "azure_c_shared_utility/uws_client.h"
 
 static const void** list_items = NULL;
 static size_t list_item_count = 0;
 static const char* TEST_HOST_ADDRESS = "host_address.com";
-static const char* TEST_USERNAME = "user_name";
-static const char* TEST_PASSWORD = "user_pwd";
+static const char* TEST_RESOURCE_NAME = "/test_resource";
+static const char* TEST_PROTOCOL = "test_proto";
 
 static const SINGLYLINKEDLIST_HANDLE TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE = (SINGLYLINKEDLIST_HANDLE)0x4242;
 static const LIST_ITEM_HANDLE TEST_LIST_ITEM_HANDLE = (LIST_ITEM_HANDLE)0x11;
-static struct lws_context* TEST_LIBWEBSOCKET_CONTEXT = (struct lws_context*)0x4243;
-static void* TEST_USER_CONTEXT = (void*)0x4244;
-static struct lws* TEST_LIBWEBSOCKET = (struct lws*)0x4245;
-static BIO* TEST_BIO = (BIO*)0x4247;
-static BIO_METHOD* TEST_BIO_METHOD = (BIO_METHOD*)0x4248;
-static X509_STORE* TEST_CERT_STORE = (X509_STORE*)0x4249;
-static X509* TEST_X509_CERT_1 = (X509*)0x424A;
-static X509* TEST_X509_CERT_2 = (X509*)0x424B;
-static const SSL_CTX* TEST_SSL_CONTEXT = (const SSL_CTX*)0x424C;
-static lws_callback_function* saved_ws_callback;
-static void* saved_ws_callback_context;
-
-#define TEST_LOCK_HANDLE (LOCK_HANDLE)0x4443
-
-#define lws_write_protocol_VALUES \
-    LWS_WRITE_TEXT, \
-    LWS_WRITE_BINARY, \
-    LWS_WRITE_CONTINUATION, \
-    LWS_WRITE_HTTP, \
-    LWS_WRITE_CLOSE, \
-    LWS_WRITE_PING, \
-    LWS_WRITE_PONG, \
-    LWS_WRITE_HTTP_FINAL, \
-    LWS_WRITE_HTTP_HEADERS, \
-    LWS_WRITE_NO_FIN, \
-    LWS_WRITE_CLIENT_IGNORE_XOR_MASK
-
-typedef enum lws_write_protocol my_lws_write_protocol_enum;
+static const UWS_CLIENT_HANDLE TEST_UWS_HANDLE = (UWS_CLIENT_HANDLE)0x4243;
+static const XIO_HANDLE TEST_UNDERLYING_IO_HANDLE = (XIO_HANDLE)0x4244;
+static const OPTIONHANDLER_HANDLE TEST_OPTIONHANDLER_HANDLE = (OPTIONHANDLER_HANDLE)0x4246;
+static const OPTIONHANDLER_HANDLE TEST_UWS_CLIENT_OPTIONHANDLER_HANDLE = (OPTIONHANDLER_HANDLE)0x4247;
+static void* TEST_UNDERLYING_IO_PARAMETERS = (void*)0x4248;
+static const IO_INTERFACE_DESCRIPTION* TEST_UNDERLYING_IO_INTERFACE = (const IO_INTERFACE_DESCRIPTION*)0x4249;
 
 TEST_DEFINE_ENUM_TYPE(IO_OPEN_RESULT, IO_OPEN_RESULT_VALUES);
 IMPLEMENT_UMOCK_C_ENUM_TYPE(IO_OPEN_RESULT, IO_OPEN_RESULT_VALUES);
-TEST_DEFINE_ENUM_TYPE(my_lws_write_protocol_enum, lws_write_protocol_VALUES);
-IMPLEMENT_UMOCK_C_ENUM_TYPE(my_lws_write_protocol_enum, lws_write_protocol_VALUES);
+TEST_DEFINE_ENUM_TYPE(WS_OPEN_RESULT, WS_OPEN_RESULT_VALUES);
+IMPLEMENT_UMOCK_C_ENUM_TYPE(WS_OPEN_RESULT, WS_OPEN_RESULT_VALUES);
 TEST_DEFINE_ENUM_TYPE(IO_SEND_RESULT, IO_SEND_RESULT_VALUES);
 IMPLEMENT_UMOCK_C_ENUM_TYPE(IO_SEND_RESULT, IO_SEND_RESULT_VALUES);
+TEST_DEFINE_ENUM_TYPE(WS_SEND_FRAME_RESULT, WS_SEND_FRAME_RESULT_VALUES);
+IMPLEMENT_UMOCK_C_ENUM_TYPE(WS_SEND_FRAME_RESULT, WS_SEND_FRAME_RESULT_VALUES);
 TEST_DEFINE_ENUM_TYPE(OPTIONHANDLER_RESULT, OPTIONHANDLER_RESULT_VALUES);
 IMPLEMENT_UMOCK_C_ENUM_TYPE(OPTIONHANDLER_RESULT, OPTIONHANDLER_RESULT_VALUES);
 
+static size_t currentmalloc_call;
+static size_t whenShallmalloc_fail;
+
 static void* my_gballoc_malloc(size_t size)
 {
-    return malloc(size);
+    void* result;
+    currentmalloc_call++;
+    if (whenShallmalloc_fail > 0)
+    {
+        if (currentmalloc_call == whenShallmalloc_fail)
+        {
+            result = NULL;
+        }
+        else
+        {
+            result = malloc(size);
+        }
+    }
+    else
+    {
+        result = malloc(size);
+    }
+    return result;
 }
 
 static void my_gballoc_free(void* ptr)
@@ -74,506 +81,10 @@ static void my_gballoc_free(void* ptr)
     free(ptr);
 }
 
-static char* umocktypes_stringify_const_struct_lws_context_creation_info_ptr(const struct lws_context_creation_info** value)
-{
-    char* result = NULL;
-    char temp_buffer[1024];
-    int length;
-    length = sprintf(temp_buffer, "{ port = %d, iface = %s, protocols = %p, extensions = %p, token_limits = %p, ssl_private_key_password = %s, ssl_cert_filepath = %s, ssl_private_key_filepath = %s, ssl_ca_filepath = %s, ssl_cipher_list = %s, http_proxy_address = %s, http_proxy_port = %u, gid = %d, uid = %d, options = %u, user = %p, ka_time = %d, ka_probes = %d, ka_interval = %d, provided_client_ssl_ctx = %p }",
-        (*value)->port,
-        (*value)->iface,
-        (*value)->protocols,
-        (*value)->extensions,
-        (*value)->token_limits,
-        (*value)->ssl_private_key_password,
-        (*value)->ssl_cert_filepath,
-        (*value)->ssl_private_key_filepath,
-        (*value)->ssl_ca_filepath,
-        (*value)->ssl_cipher_list,
-        (*value)->http_proxy_address,
-        (*value)->http_proxy_port,
-        (*value)->gid,
-        (*value)->uid,
-        (*value)->options,
-        (*value)->user,
-        (*value)->ka_time,
-        (*value)->ka_probes,
-        (*value)->ka_interval,
-        (*value)->provided_client_ssl_ctx);
-
-    if (length > 0)
-    {
-        result = (char*)malloc(strlen(temp_buffer) + 1);
-        if (result != NULL)
-        {
-            (void)memcpy(result, temp_buffer, strlen(temp_buffer) + 1);
-        }
-    }
-
-    return result;
-}
-
-static int umocktypes_are_equal_const_struct_lws_context_creation_info_ptr(const struct lws_context_creation_info** left, const struct lws_context_creation_info** right)
-{
-    int result;
-
-    size_t currentProtocol = 0;
-
-    if ((left == NULL) ||
-        (right == NULL))
-    {
-        result = -1;
-    }
-    else
-    {
-        size_t extensions_count = 0;
-        result = (*left)->gid == (*right)->gid;
-        if (((*left)->extensions != NULL) &&
-            ((*right)->extensions != NULL))
-        {
-            while ((*left)->extensions[extensions_count].name != NULL)
-            {
-                result = result && ((*left)->extensions[extensions_count].callback == (*right)->extensions[extensions_count].callback);
-                result = result && (strcmp((*left)->extensions[extensions_count].client_offer, (*right)->extensions[extensions_count].client_offer) == 0);
-                result = result && (strcmp((*left)->extensions[extensions_count].name, (*right)->extensions[extensions_count].name) == 0);
-                extensions_count++;
-            }
-        }
-        else
-        {
-            result = result && ((*left)->extensions == (*right)->extensions);
-        }
-        result = result && ((*left)->token_limits == (*right)->token_limits);
-        result = result && ((*left)->uid == (*right)->uid);
-        result = result && ((*left)->ka_time == (*right)->ka_time);
-        if ((*right)->ka_time != 0)
-        {
-            result = result && ((*left)->ka_interval == (*right)->ka_interval);
-            result = result && ((*left)->ka_probes == (*right)->ka_probes);
-        }
-
-        result = result && ((*left)->options == (*right)->options);
-        result = result && ((*left)->iface == (*right)->iface);
-        result = result && ((*left)->port == (*right)->port);
-        result = result && ((*left)->provided_client_ssl_ctx == (*right)->provided_client_ssl_ctx);
-        if ((*right)->http_proxy_address == NULL)
-        {
-            result = result && ((*left)->http_proxy_address == (*right)->http_proxy_address);
-        }
-        else
-        {
-            result = result && (strcmp((*left)->http_proxy_address, (*right)->http_proxy_address) == 0);
-            result = result && ((*left)->http_proxy_port == (*right)->http_proxy_port);
-        }
-
-        if ((*right)->ssl_ca_filepath == NULL)
-        {
-            result = result && ((*left)->ssl_ca_filepath == (*right)->ssl_ca_filepath);
-        }
-        else
-        {
-            result = result && (strcmp((*left)->ssl_ca_filepath, (*right)->ssl_ca_filepath) == 0);
-        }
-
-        if ((*right)->ssl_cert_filepath == NULL)
-        {
-            result = result && ((*left)->ssl_cert_filepath == (*right)->ssl_cert_filepath);
-        }
-        else
-        {
-            result = result && (strcmp((*left)->ssl_cert_filepath, (*right)->ssl_cert_filepath) == 0);
-        }
-
-        if ((*right)->ssl_cipher_list == NULL)
-        {
-            result = result && ((*left)->ssl_cipher_list == (*right)->ssl_cipher_list);
-        }
-        else
-        {
-            result = result && (strcmp((*left)->ssl_cipher_list, (*right)->ssl_cipher_list) == 0);
-        }
-
-        if ((*right)->ssl_private_key_filepath == NULL)
-        {
-            result = result && ((*left)->ssl_private_key_filepath == (*right)->ssl_private_key_filepath);
-        }
-        else
-        {
-            result = result && (strcmp((*left)->ssl_private_key_filepath, (*right)->ssl_private_key_filepath) == 0);
-        }
-
-        if ((*right)->ssl_private_key_password == NULL)
-        {
-            result = result && ((*left)->ssl_private_key_password == (*right)->ssl_private_key_password);
-        }
-        else
-        {
-            result = result && (strcmp((*left)->ssl_private_key_password, (*right)->ssl_private_key_password) == 0);
-        }
-
-        while ((*left)->protocols[currentProtocol].name != NULL)
-        {
-            result = result && ((*left)->protocols[currentProtocol].id == (*right)->protocols[currentProtocol].id);
-            result = result && (strcmp((*left)->protocols[currentProtocol].name, (*right)->protocols[currentProtocol].name) == 0);
-            result = result && ((*left)->protocols[currentProtocol].per_session_data_size == (*right)->protocols[currentProtocol].per_session_data_size);
-            result = result && ((*left)->protocols[currentProtocol].rx_buffer_size == (*right)->protocols[currentProtocol].rx_buffer_size);
-            result = result && ((*left)->protocols[currentProtocol].user == (*right)->protocols[currentProtocol].user);
-
-            currentProtocol++;
-        }
-
-        if ((*right)->protocols[currentProtocol].name != NULL)
-        {
-            result = 0;
-        }
-    }
-
-    return result;
-}
-
-static int copy_string(char** destination, const char* source)
-{
-    int result;
-
-    if (source == NULL)
-    {
-        *destination = NULL;
-        result = 0;
-    }
-    else
-    {
-        size_t length = strlen(source);
-        *destination = (char*)malloc(length + 1);
-        if (*destination == NULL)
-        {
-            result = __FAILURE__;
-        }
-        else
-        {
-            (void)memcpy(*destination, source, length + 1);
-            result = 0;
-        }
-    }
-
-    return result;
-}
-
-static int umocktypes_copy_const_struct_lws_context_creation_info_ptr(struct lws_context_creation_info** destination, const struct lws_context_creation_info** source)
-{
-    int result;
-
-    *destination = (struct lws_context_creation_info*)malloc(sizeof(struct lws_context_creation_info));
-    if (*destination == NULL)
-    {
-        result = __FAILURE__;
-    }
-    else
-    {
-        bool is_error = false;
-
-        if ((*source)->protocols == NULL)
-        {
-            (*destination)->protocols = NULL;
-        }
-        else
-        {
-            size_t protocols_count = 0;
-            while ((*source)->protocols[protocols_count].name != NULL)
-            {
-                protocols_count++;
-            }
-
-            (*destination)->protocols = (const struct lws_protocols*)malloc(sizeof(struct lws_protocols) * (protocols_count + 1));
-            if ((*destination)->protocols == NULL)
-            {
-                is_error = true;
-            }
-            else
-            {
-                protocols_count = 0;
-                while ((*source)->protocols[protocols_count].name != NULL)
-                {
-                    if (copy_string((char**)&((struct lws_protocols*)(*destination)->protocols)[protocols_count].name, (*source)->protocols[protocols_count].name) != 0)
-                    {
-                        is_error = true;
-                        break;
-                    }
-
-                    ((struct lws_protocols*)(*destination)->protocols)[protocols_count].callback = (*source)->protocols[protocols_count].callback;
-                    ((struct lws_protocols*)(*destination)->protocols)[protocols_count].per_session_data_size = (*source)->protocols[protocols_count].per_session_data_size;
-                    ((struct lws_protocols*)(*destination)->protocols)[protocols_count].rx_buffer_size = (*source)->protocols[protocols_count].rx_buffer_size;
-                    ((struct lws_protocols*)(*destination)->protocols)[protocols_count].id = (*source)->protocols[protocols_count].id;
-                    ((struct lws_protocols*)(*destination)->protocols)[protocols_count].user = (*source)->protocols[protocols_count].user;
-                    protocols_count++;
-                }
-
-                ((struct lws_protocols*)(*destination)->protocols)[protocols_count].name = NULL;
-            }
-        }
-
-        if ((*source)->extensions == NULL)
-        {
-            (*destination)->extensions = NULL;
-        }
-        else
-        {
-            size_t extensions_count = 0;
-            while ((*source)->extensions[extensions_count].name != NULL)
-            {
-                extensions_count++;
-            }
-
-            (*destination)->extensions = (const struct lws_extension*)malloc(sizeof(struct lws_extension) * (extensions_count + 1));
-            if ((*destination)->extensions == NULL)
-            {
-                is_error = true;
-            }
-            else
-            {
-                extensions_count = 0;
-                while ((*source)->extensions[extensions_count].name != NULL)
-                {
-                    if ((copy_string((char**)&((struct lws_extension*)(*destination)->extensions)[extensions_count].name, (*source)->extensions[extensions_count].name) != 0) ||
-                        (copy_string((char**)&((struct lws_extension*)(*destination)->extensions)[extensions_count].client_offer, (*source)->extensions[extensions_count].client_offer) != 0))
-                    {
-                        is_error = true;
-                        break;
-                    }
-
-                    ((struct lws_extension*)(*destination)->extensions)[extensions_count].callback = (*source)->extensions[extensions_count].callback;
-                    extensions_count++;
-                }
-
-                ((struct lws_extension*)(*destination)->extensions)[extensions_count].name = NULL;
-            }
-        }
-
-        if (is_error)
-        {
-            result = __FAILURE__;
-        }
-        else
-        {
-            if ((copy_string((char**)&(*destination)->iface, (*source)->iface) != 0) ||
-                (copy_string((char**)&(*destination)->ssl_private_key_password, (*source)->ssl_private_key_password) != 0) ||
-                (copy_string((char**)&(*destination)->ssl_cert_filepath, (*source)->ssl_cert_filepath) != 0) ||
-                (copy_string((char**)&(*destination)->ssl_private_key_filepath, (*source)->ssl_private_key_filepath) != 0) ||
-                (copy_string((char**)&(*destination)->ssl_ca_filepath, (*source)->ssl_ca_filepath) != 0) ||
-                (copy_string((char**)&(*destination)->ssl_cipher_list, (*source)->ssl_cipher_list) != 0) ||
-                (copy_string((char**)&(*destination)->http_proxy_address, (*source)->http_proxy_address) != 0))
-            {
-                result = __FAILURE__;
-            }
-            else
-            {
-                (*destination)->token_limits = (*source)->token_limits;
-                (*destination)->port = (*source)->port;
-                (*destination)->http_proxy_port = (*source)->http_proxy_port;
-                (*destination)->gid = (*source)->gid;
-                (*destination)->uid = (*source)->uid;
-                (*destination)->options = (*source)->options;
-                (*destination)->user = (*source)->user;
-                (*destination)->ka_time = (*source)->ka_time;
-                (*destination)->ka_probes = (*source)->ka_probes;
-                (*destination)->ka_interval = (*source)->ka_interval;
-                (*destination)->provided_client_ssl_ctx = (*source)->provided_client_ssl_ctx;
-
-                result = 0;
-            }
-        }
-    }
-
-    return result;
-}
-
-static void umocktypes_free_const_struct_lws_context_creation_info_ptr(struct lws_context_creation_info** value)
-{
-    /* free protocols, extensions, token_limits */
-    size_t protocols_count = 0;
-    size_t extensions_count = 0;
-
-    if ((*value)->protocols != NULL)
-    {
-        while ((*value)->protocols[protocols_count].name != NULL)
-        {
-            free((void*)(*value)->protocols[protocols_count].name);
-            protocols_count++;
-        }
-        free((void*)(*value)->protocols);
-    }
-
-    if ((*value)->extensions != NULL)
-    {
-        while ((*value)->extensions[extensions_count].name != NULL)
-        {
-            free((void*)(*value)->extensions[extensions_count].name);
-            free((void*)(*value)->extensions[extensions_count].client_offer);
-            extensions_count++;
-        }
-        free((void*)(*value)->extensions);
-    }
-
-    free((void*)(*value)->ssl_private_key_password);
-    free((void*)(*value)->ssl_cert_filepath);
-    free((void*)(*value)->ssl_private_key_filepath);
-    free((void*)(*value)->ssl_ca_filepath);
-    free((void*)(*value)->ssl_cipher_list);
-    free((void*)(*value)->http_proxy_address);
-    free(*value);
-}
-
-static char* umocktypes_stringify_const_struct_lws_client_connect_info_ptr(const struct lws_client_connect_info** value)
-{
-    char* result = NULL;
-    char temp_buffer[1024];
-    int length;
-    length = sprintf(temp_buffer, "{ context = %p, address = %s, port = %d, ssl_connection = %d, path = %s, host = %s, origin = %s, protocol = %s, ietf_version_or_minus_one = %d, userdata = %p, client_exts = %p, method = %s, parent_wsi = %p, uri_replace_from = %s, uri_replace_to = %s, vhost = %p, pwsi = %p }",
-        (*value)->context,
-        (*value)->address,
-        (*value)->port,
-        (*value)->ssl_connection,
-        (*value)->path,
-        (*value)->host,
-        (*value)->origin,
-        (*value)->protocol,
-        (*value)->ietf_version_or_minus_one,
-        (*value)->userdata,
-        (*value)->client_exts,
-        (*value)->method,
-        (*value)->parent_wsi,
-        (*value)->uri_replace_from,
-        (*value)->uri_replace_to,
-        (*value)->vhost,
-        (*value)->pwsi);
-
-    if (length > 0)
-    {
-        result = (char*)malloc(strlen(temp_buffer) + 1);
-        if (result != NULL)
-        {
-            (void)memcpy(result, temp_buffer, strlen(temp_buffer) + 1);
-        }
-    }
-
-    return result;
-}
-
-static int compare_strings(const char* left, const char* right)
-{
-    int result;
-
-    if (left == right)
-    {
-        result = 1;
-    }
-    else if ((left == NULL) || (right == NULL))
-    {
-        result = 0;
-    }
-    else
-    {
-        result = (strcmp(left, right) == 0) ? 1 : 0;
-    }
-
-    return result;
-}
-
-static int umocktypes_are_equal_const_struct_lws_client_connect_info_ptr(const struct lws_client_connect_info** left, const struct lws_client_connect_info** right)
-{
-    int result;
-
-    if ((left == NULL) ||
-        (right == NULL))
-    {
-        result = -1;
-    }
-    else
-    {
-        result = (*left)->context == (*right)->context;
-        result = result && (compare_strings((*left)->address, (*right)->address) > 0);
-        result = result && ((*left)->port == (*right)->port);
-        result = result && ((*left)->ssl_connection == (*right)->ssl_connection);
-        result = result && (compare_strings((*left)->path, (*right)->path) > 0);
-        result = result && (compare_strings((*left)->host, (*right)->host) > 0);
-        result = result && (compare_strings((*left)->origin, (*right)->origin) > 0);
-        result = result && (compare_strings((*left)->protocol, (*right)->protocol) > 0);
-        result = result && ((*left)->ietf_version_or_minus_one == (*right)->ietf_version_or_minus_one);
-        result = result && ((*left)->userdata == (*right)->userdata);
-        result = result && ((*left)->client_exts == (*right)->client_exts);
-        result = result && (compare_strings((*left)->method, (*right)->method) > 0);
-        result = result && ((*left)->parent_wsi == (*right)->parent_wsi);
-        result = result && (compare_strings((*left)->uri_replace_from, (*right)->uri_replace_from) > 0);
-        result = result && (compare_strings((*left)->uri_replace_to, (*right)->uri_replace_to) > 0);
-        result = result && ((*left)->vhost == (*right)->vhost);
-        result = result && ((*left)->pwsi == (*right)->pwsi);
-    }
-
-    return result;
-}
-
-static int umocktypes_copy_const_struct_lws_client_connect_info_ptr(struct lws_client_connect_info** destination, const struct lws_client_connect_info** source)
-{
-    int result;
-
-    *destination = (struct lws_client_connect_info*)malloc(sizeof(struct lws_client_connect_info));
-    if (*destination == NULL)
-    {
-        result = __FAILURE__;
-    }
-    else
-    {
-        if ((copy_string((char**)&(*destination)->address, (*source)->address) != 0) ||
-            (copy_string((char**)&(*destination)->path, (*source)->path) != 0) ||
-            (copy_string((char**)&(*destination)->host, (*source)->host) != 0) ||
-            (copy_string((char**)&(*destination)->origin, (*source)->origin) != 0) ||
-            (copy_string((char**)&(*destination)->protocol, (*source)->protocol) != 0) ||
-            (copy_string((char**)&(*destination)->method, (*source)->method) != 0) ||
-            (copy_string((char**)&(*destination)->uri_replace_from, (*source)->uri_replace_from) != 0) ||
-            (copy_string((char**)&(*destination)->uri_replace_to, (*source)->uri_replace_to) != 0))
-        {
-            result = __FAILURE__;
-        }
-        else
-        {
-            (*destination)->context = (*source)->context;
-            (*destination)->port = (*source)->port;
-            (*destination)->ssl_connection = (*source)->ssl_connection;
-            (*destination)->ietf_version_or_minus_one = (*source)->ietf_version_or_minus_one;
-            (*destination)->userdata = (*source)->userdata;
-            (*destination)->client_exts = (*source)->client_exts;
-            (*destination)->parent_wsi = (*source)->parent_wsi;
-            (*destination)->vhost = (*source)->vhost;
-            (*destination)->pwsi = (*source)->pwsi;
-
-            result = 0;
-        }
-    }
-
-    return result;
-}
-
-static void umocktypes_free_const_struct_lws_client_connect_info_ptr(struct lws_client_connect_info** value)
-{
-    /* free protocols, extensions, token_limits */
-    free((void*)(*value)->address);
-    free((void*)(*value)->path);
-    free((void*)(*value)->host);
-    free((void*)(*value)->origin);
-    free((void*)(*value)->protocol);
-    free((void*)(*value)->method);
-    free((void*)(*value)->uri_replace_from);
-    free((void*)(*value)->uri_replace_to);
-    free(*value);
-}
-
 static LIST_ITEM_HANDLE add_to_list(const void* item)
 {
     const void** items = (const void**)realloc((void*)list_items, (list_item_count + 1) * sizeof(item));
-    if (items == NULL)
-    {
-        ASSERT_FAIL("Error allocating memort for list items");
-    }
-    else
+    if (items != NULL)
     {
         list_items = items;
         list_items[list_item_count++] = item;
@@ -639,24 +150,24 @@ static LIST_ITEM_HANDLE my_singlylinkedlist_find(SINGLYLINKEDLIST_HANDLE handle,
     return (LIST_ITEM_HANDLE)found_item;
 }
 
-static OPTIONHANDLER_HANDLE my_OptionHandler_Create(pfCloneOption clone, pfDestroyOption destroy, pfSetOption setoption)
-{
-    (void)clone;
-    (void)destroy;
-    (void)setoption;
-    return (OPTIONHANDLER_HANDLE)malloc(1);
-}
-
-static void my_OptionHandler_Destroy(OPTIONHANDLER_HANDLE handle)
-{
-    free(handle);
-}
-
-static int my_mallocAndStrcpy_s(char** destination, const char* source)
+int my_mallocAndStrcpy_s(char** destination, const char* source)
 {
     *destination = (char*)malloc(strlen(source) + 1);
     (void)strcpy(*destination, source);
     return 0;
+}
+
+static pfCloneOption g_clone_option;
+static pfDestroyOption g_destroy_option;
+static pfSetOption g_set_option;
+
+static OPTIONHANDLER_HANDLE my_OptionHandler_Create(pfCloneOption cloneOption, pfDestroyOption destroyOption, pfSetOption setOption)
+{
+    g_clone_option = cloneOption;
+    g_destroy_option = destroyOption;
+    g_set_option = setOption;
+
+    return TEST_OPTIONHANDLER_HANDLE;
 }
 
 #include "azure_c_shared_utility/gballoc.h"
@@ -664,54 +175,6 @@ static int my_mallocAndStrcpy_s(char** destination, const char* source)
 #undef ENABLE_MOCKS
 
 #include "azure_c_shared_utility/wsio.h"
-
-static WSIO_CONFIG default_wsio_config =
-{
-    NULL,
-    NULL,
-    "test_host",
-    443,
-    "a/b/c",
-    "test_ws_protocol"
-};
-
-// libwebsockets mocks
-MOCK_FUNCTION_WITH_CODE(, struct lws_context*, lws_create_context, struct lws_context_creation_info*, info)
-    saved_ws_callback = info->protocols[0].callback;
-    saved_ws_callback_context = info->user;
-MOCK_FUNCTION_END(TEST_LIBWEBSOCKET_CONTEXT)
-MOCK_FUNCTION_WITH_CODE(, void, lws_context_destroy, struct lws_context*, context)
-MOCK_FUNCTION_END()
-MOCK_FUNCTION_WITH_CODE(, int, lws_service, struct lws_context*, context, int, timeout_ms)
-MOCK_FUNCTION_END(0)
-MOCK_FUNCTION_WITH_CODE(, struct lws_context*, lws_get_context, const struct lws*, wsi)
-MOCK_FUNCTION_END(TEST_LIBWEBSOCKET_CONTEXT)
-MOCK_FUNCTION_WITH_CODE(, void*, lws_context_user, struct lws_context*, context)
-MOCK_FUNCTION_END(TEST_USER_CONTEXT)
-MOCK_FUNCTION_WITH_CODE(, int, lws_write, struct lws*, wsi, unsigned char*, buf, size_t, len, enum lws_write_protocol, protocol)
-MOCK_FUNCTION_END(0)
-MOCK_FUNCTION_WITH_CODE(, int, lws_callback_on_writable, struct lws*, wsi)
-MOCK_FUNCTION_END(0)
-MOCK_FUNCTION_WITH_CODE(, struct lws*, lws_client_connect_via_info, struct lws_client_connect_info*, i)
-MOCK_FUNCTION_END(TEST_LIBWEBSOCKET)
-
-// openssl mocks
-MOCK_FUNCTION_WITH_CODE(, BIO*, BIO_new, BIO_METHOD*, type)
-MOCK_FUNCTION_END(TEST_BIO)
-MOCK_FUNCTION_WITH_CODE(, int, BIO_free, BIO*, a)
-MOCK_FUNCTION_END(0)
-MOCK_FUNCTION_WITH_CODE(, int, BIO_puts, BIO*, bp, const char*, buf)
-MOCK_FUNCTION_END(0)
-MOCK_FUNCTION_WITH_CODE(, BIO_METHOD*, BIO_s_mem);
-MOCK_FUNCTION_END(TEST_BIO_METHOD)
-MOCK_FUNCTION_WITH_CODE(, X509_STORE*, SSL_CTX_get_cert_store, const SSL_CTX*, ctx);
-MOCK_FUNCTION_END(TEST_CERT_STORE)
-MOCK_FUNCTION_WITH_CODE(, int, X509_STORE_add_cert, X509_STORE*, ctx, X509*, x);
-MOCK_FUNCTION_END(1)
-MOCK_FUNCTION_WITH_CODE(, X509*, PEM_read_bio_X509, BIO*, bp, X509**, x, pem_password_cb*, cb, void*, u);
-MOCK_FUNCTION_END(TEST_X509_CERT_1)
-MOCK_FUNCTION_WITH_CODE(, void, X509_free, X509*, a);
-MOCK_FUNCTION_END()
 
 // consumer mocks
 MOCK_FUNCTION_WITH_CODE(, void, test_on_io_open_complete, void*, context, IO_OPEN_RESULT, io_open_result);
@@ -724,6 +187,55 @@ MOCK_FUNCTION_WITH_CODE(, void, test_on_io_close_complete, void*, context);
 MOCK_FUNCTION_END()
 MOCK_FUNCTION_WITH_CODE(, void, test_on_send_complete, void*, context, IO_SEND_RESULT, send_result)
 MOCK_FUNCTION_END()
+
+static ON_WS_OPEN_COMPLETE g_on_ws_open_complete;
+static void* g_on_ws_open_complete_context;
+static ON_WS_SEND_FRAME_COMPLETE g_on_ws_send_frame_complete;
+static void* g_on_ws_send_frame_complete_context;
+static ON_WS_FRAME_RECEIVED g_on_ws_frame_received;
+static void* g_on_ws_frame_received_context;
+static ON_WS_PEER_CLOSED g_on_ws_peer_closed;
+static void* g_on_ws_peer_closed_context;
+static ON_WS_ERROR g_on_ws_error;
+static void* g_on_ws_error_context;
+static ON_WS_CLOSE_COMPLETE g_on_ws_close_complete;
+static void* g_on_ws_close_complete_context;
+
+static int my_uws_open_async(UWS_CLIENT_HANDLE uws, ON_WS_OPEN_COMPLETE on_ws_open_complete, void* on_ws_open_complete_context, ON_WS_FRAME_RECEIVED on_ws_frame_received, void* on_ws_frame_received_context, ON_WS_PEER_CLOSED on_ws_peer_closed, void* on_ws_peer_closed_context, ON_WS_ERROR on_ws_error, void* on_ws_error_context)
+{
+    (void)uws;
+    g_on_ws_open_complete = on_ws_open_complete;
+    g_on_ws_open_complete_context = on_ws_open_complete_context;
+    g_on_ws_frame_received = on_ws_frame_received;
+    g_on_ws_frame_received_context = on_ws_frame_received_context;
+    g_on_ws_peer_closed = on_ws_peer_closed;
+    g_on_ws_peer_closed_context = on_ws_peer_closed_context;
+    g_on_ws_error = on_ws_error;
+    g_on_ws_error_context = on_ws_error_context;
+    return 0;
+}
+
+static int my_uws_close_async(UWS_CLIENT_HANDLE uws, ON_WS_CLOSE_COMPLETE on_ws_close_complete, void* on_ws_close_complete_context)
+{
+    (void)uws;
+    g_on_ws_close_complete = on_ws_close_complete;
+    g_on_ws_close_complete_context = on_ws_close_complete_context;
+    return 0;
+}
+
+static int my_uws_send_frame_async(UWS_CLIENT_HANDLE uws, unsigned char frame_type, const unsigned char* buffer, size_t size, bool is_final, ON_WS_SEND_FRAME_COMPLETE on_ws_send_frame_complete, void* on_ws_send_frame_complete_context)
+{
+    (void)uws;
+    (void)buffer;
+    (void)size;
+    (void)is_final;
+    (void)frame_type;
+    g_on_ws_send_frame_complete = on_ws_send_frame_complete;
+    g_on_ws_send_frame_complete_context = on_ws_send_frame_complete_context;
+    return 0;
+}
+
+static WSIO_CONFIG default_wsio_config;
 
 static TEST_MUTEX_HANDLE g_testByTest;
 static TEST_MUTEX_HANDLE g_dllByDll;
@@ -751,6 +263,16 @@ TEST_SUITE_INITIALIZE(suite_init)
     result = umocktypes_charptr_register_types();
     ASSERT_ARE_EQUAL(int, 0, result);
 
+    result = umocktypes_bool_register_types();
+    ASSERT_ARE_EQUAL(int, 0, result);
+
+    default_wsio_config.hostname = TEST_HOST_ADDRESS;
+    default_wsio_config.port = 443;
+    default_wsio_config.resource_name = TEST_RESOURCE_NAME;
+    default_wsio_config.protocol = TEST_PROTOCOL;
+    default_wsio_config.underlying_io_interface = TEST_UNDERLYING_IO_INTERFACE;
+    default_wsio_config.underlying_io_parameters = TEST_UNDERLYING_IO_PARAMETERS;
+
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, my_gballoc_malloc);
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, my_gballoc_free);
     REGISTER_GLOBAL_MOCK_RETURN(singlylinkedlist_create, TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE);
@@ -760,25 +282,34 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_GLOBAL_MOCK_HOOK(singlylinkedlist_item_get_value, my_singlylinkedlist_item_get_value);
     REGISTER_GLOBAL_MOCK_HOOK(singlylinkedlist_find, my_singlylinkedlist_find);
     REGISTER_GLOBAL_MOCK_HOOK(mallocAndStrcpy_s, my_mallocAndStrcpy_s);
+    REGISTER_GLOBAL_MOCK_HOOK(uws_client_open_async, my_uws_open_async);
+    REGISTER_GLOBAL_MOCK_HOOK(uws_client_close_async, my_uws_close_async);
+    REGISTER_GLOBAL_MOCK_HOOK(uws_client_send_frame_async, my_uws_send_frame_async);
     REGISTER_GLOBAL_MOCK_HOOK(OptionHandler_Create, my_OptionHandler_Create);
-    REGISTER_GLOBAL_MOCK_HOOK(OptionHandler_Destroy, my_OptionHandler_Destroy);
+    REGISTER_GLOBAL_MOCK_RETURN(OptionHandler_FeedOptions, OPTIONHANDLER_OK);
     REGISTER_GLOBAL_MOCK_RETURN(OptionHandler_AddOption, OPTIONHANDLER_OK);
+    REGISTER_GLOBAL_MOCK_RETURN(OptionHandler_Clone, TEST_OPTIONHANDLER_HANDLE);
+    REGISTER_GLOBAL_MOCK_RETURN(uws_client_create_with_io, TEST_UWS_HANDLE);
+    REGISTER_GLOBAL_MOCK_RETURN(uws_client_retrieve_options, TEST_UWS_CLIENT_OPTIONHANDLER_HANDLE);
+    
     REGISTER_TYPE(IO_OPEN_RESULT, IO_OPEN_RESULT);
     REGISTER_TYPE(IO_SEND_RESULT, IO_SEND_RESULT);
     REGISTER_TYPE(OPTIONHANDLER_RESULT, OPTIONHANDLER_RESULT);
-    REGISTER_TYPE(my_lws_write_protocol_enum, my_lws_write_protocol_enum);
-    REGISTER_TYPE(const struct lws_context_creation_info*, const_struct_lws_context_creation_info_ptr);
-    REGISTER_TYPE(struct lws_client_connect_info*, const_struct_lws_client_connect_info_ptr);
 
-    REGISTER_UMOCK_ALIAS_TYPE(struct lws_context_creation_info*, const struct lws_context_creation_info*);
     REGISTER_UMOCK_ALIAS_TYPE(SINGLYLINKEDLIST_HANDLE, void*);
-    REGISTER_UMOCK_ALIAS_TYPE(pfCloneOption, void*);
-    REGISTER_UMOCK_ALIAS_TYPE(pfDestroyOption, void*);
-    REGISTER_UMOCK_ALIAS_TYPE(pfSetOption, void*);
-    REGISTER_UMOCK_ALIAS_TYPE(OPTIONHANDLER_HANDLE, void*);
     REGISTER_UMOCK_ALIAS_TYPE(LIST_ITEM_HANDLE, void*);
-    REGISTER_UMOCK_ALIAS_TYPE(enum lws_write_protocol, my_lws_write_protocol_enum);
-    REGISTER_UMOCK_ALIAS_TYPE(lws_write_protocol, my_lws_write_protocol_enum);
+    REGISTER_UMOCK_ALIAS_TYPE(XIO_HANDLE, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(UWS_CLIENT_HANDLE, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(ON_WS_OPEN_COMPLETE, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(ON_WS_FRAME_RECEIVED, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(ON_WS_ERROR, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(ON_WS_CLOSE_COMPLETE, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(ON_WS_SEND_FRAME_COMPLETE, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(OPTIONHANDLER_HANDLE, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(ON_WS_PEER_CLOSED, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(pfCloneOption, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(pfSetOption, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(pfDestroyOption, void*);
 }
 
 TEST_SUITE_CLEANUP(suite_cleanup)
@@ -798,6 +329,8 @@ TEST_FUNCTION_INITIALIZE(method_init)
 
     umock_c_reset_all_calls();
 
+    currentmalloc_call = 0;
+    whenShallmalloc_fail = 0;
     singlylinkedlist_remove_result = 0;
 }
 
@@ -808,320 +341,234 @@ TEST_FUNCTION_CLEANUP(method_cleanup)
 
 /* wsio_create */
 
-/* Tests_SRS_WSIO_01_001: [wsio_create shall create an instance of a wsio and return a non-NULL handle to it.] */
-/* Tests_SRS_WSIO_01_098: [wsio_create shall create a pending IO list that is to be used when sending buffers over the libwebsockets IO by calling singlylinkedlist_create.] */
-/* Tests_SRS_WSIO_01_003: [io_create_parameters shall be used as a WSIO_CONFIG*.] */
-/* Tests_SRS_WSIO_01_006: [The members hostname, protocol and resource_path shall be copied for later use (they are needed when the IO is opened).]*/
-TEST_FUNCTION(wsio_create_with_valid_args_succeeds)
+/* Tests_SRS_WSIO_01_001: [`wsio_create` shall create an instance of wsio and return a non-NULL handle to it.]*/
+/* Tests_SRS_WSIO_01_066: [ `io_create_parameters` shall be used as a `WSIO_CONFIG*` . ]*/
+/* Tests_SRS_WSIO_01_070: [ The underlying uws instance shall be created by calling `uws_client_create_with_io`. ]*/
+/* Tests_SRS_WSIO_01_071: [ The arguments for `uws_client_create_with_io` shall be: ]*/
+/* Tests_SRS_WSIO_01_185: [ - `underlying_io_interface` shall be set to the `underlying_io_interface` field in the `io_create_parameters` passed to `wsio_create`. ]*/
+/* Tests_SRS_WSIO_01_186: [ - `underlying_io_parameters` shall be set to the `underlying_io_parameters` field in the `io_create_parameters` passed to `wsio_create`. ]*/
+/* Tests_SRS_WSIO_01_072: [ - `hostname` set to the `hostname` field in the `io_create_parameters` passed to `wsio_create`. ]*/
+/* Tests_SRS_WSIO_01_130: [ - `port` set to the `port` field in the `io_create_parameters` passed to `wsio_create`. ]*/
+/* Tests_SRS_WSIO_01_128: [ - `resource_name` set to the `resource_name` field in the `io_create_parameters` passed to `wsio_create`. ]*/
+/* Tests_SRS_WSIO_01_129: [ - `protocols` shall be filled with only one structure, that shall have the `protocol` set to the value of the `protocol` field in the `io_create_parameters` passed to `wsio_create`. ]*/
+/* Tests_SRS_WSIO_01_076: [ `wsio_create` shall create a pending send IO list that is to be used to queue send packets by calling `singlylinkedlist_create`. ]*/
+TEST_FUNCTION(wsio_create_for_secure_connection_with_valid_args_succeeds)
 {
 	// arrange
-	EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    CONCRETE_IO_HANDLE wsio;
+    
+    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(uws_client_create_with_io(TEST_UNDERLYING_IO_INTERFACE, TEST_UNDERLYING_IO_PARAMETERS, TEST_HOST_ADDRESS, 443, TEST_RESOURCE_NAME, IGNORED_PTR_ARG, 1));
     STRICT_EXPECTED_CALL(singlylinkedlist_create());
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
 
 	// act
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
 
 	// assert
 	ASSERT_IS_NOT_NULL(wsio);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
-    wsio_destroy(wsio);
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_002: [If the argument io_create_parameters is NULL then wsio_create shall return NULL.] */
-TEST_FUNCTION(wsio_create_with_NULL_io_create_parameters_fails)
+/* Tests_SRS_WSIO_01_065: [ If the argument `io_create_parameters` is NULL then `wsio_create` shall return NULL. ]*/
+TEST_FUNCTION(wsio_create_with_NULL_create_arguments_fails)
 {
     // arrange
 
     // act
-    CONCRETE_IO_HANDLE wsio = wsio_create(NULL);
+    CONCRETE_IO_HANDLE wsio = wsio_get_interface_description()->concrete_io_create(NULL);
 
     // assert
     ASSERT_IS_NULL(wsio);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_WSIO_01_004: [If any of the WSIO_CONFIG fields hostname, protocol or resource_name is NULL then wsio_create shall return NULL.] */
-TEST_FUNCTION(wsio_create_with_NULL_hostname_fails)
+/* Tests_SRS_WSIO_01_067: [ If any of the members `hostname`, `resource_name` or `protocol` is NULL in `WSIO_CONFIG` then `wsio_create` shall return NULL. ]*/
+TEST_FUNCTION(wsio_create_with_NULL_hostname_field_fails)
 {
     // arrange
-    static WSIO_CONFIG test_wsio_config =
-    {
-        NULL,
-        NULL,
-        NULL,
-        443,
-        "a/b/c",
-        "test_ws_protocol"
-    };
+    WSIO_CONFIG wsio_config;
+    CONCRETE_IO_HANDLE wsio;
+
+    wsio_config.hostname = NULL;
+    wsio_config.port = 443;
+    wsio_config.resource_name = TEST_RESOURCE_NAME;
+    wsio_config.protocol = TEST_PROTOCOL;
+    wsio_config.underlying_io_interface = NULL;
+    wsio_config.underlying_io_parameters = NULL;
 
     // act
-    CONCRETE_IO_HANDLE wsio = wsio_create(&test_wsio_config);
+    wsio = wsio_get_interface_description()->concrete_io_create(&wsio_config);
 
     // assert
     ASSERT_IS_NULL(wsio);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_WSIO_01_004: [If any of the WSIO_CONFIG fields hostname, protocol or resource_name is NULL then wsio_create shall return NULL.] */
-TEST_FUNCTION(wsio_create_with_NULL_protocol_name_fails)
+/* Tests_SRS_WSIO_01_067: [ If any of the members `hostname`, `resource_name` or `protocol` is NULL in `WSIO_CONFIG` then `wsio_create` shall return NULL. ]*/
+TEST_FUNCTION(wsio_create_with_NULL_resource_name_field_fails)
 {
     // arrange
-    static WSIO_CONFIG test_wsio_config =
-    {
-        NULL,
-        NULL,
-        "testhost",
-        443,
-        "a/b/c",
-        NULL
-    };
+    WSIO_CONFIG wsio_config;
+    wsio_config.hostname = TEST_HOST_ADDRESS;
+    wsio_config.port = 443;
+    wsio_config.resource_name = NULL;
+    wsio_config.protocol = TEST_PROTOCOL;
+    wsio_config.underlying_io_interface = NULL;
+    wsio_config.underlying_io_parameters = NULL;
 
     // act
-    CONCRETE_IO_HANDLE wsio = wsio_create(&test_wsio_config);
+    CONCRETE_IO_HANDLE wsio = wsio_get_interface_description()->concrete_io_create(&wsio_config);
 
     // assert
     ASSERT_IS_NULL(wsio);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_WSIO_01_004: [If any of the WSIO_CONFIG fields hostname, protocol or resource_name is NULL then wsio_create shall return NULL.] */
-TEST_FUNCTION(wsio_create_with_NULL_relative_path_fails)
+/* Tests_SRS_WSIO_01_067: [ If any of the members `hostname`, `resource_name` or `protocol` is NULL in `WSIO_CONFIG` then `wsio_create` shall return NULL. ]*/
+TEST_FUNCTION(wsio_create_with_NULL_protocol_field_fails)
 {
     // arrange
-    static WSIO_CONFIG test_wsio_config =
-    {
-        NULL,
-        NULL,
-        "testhost",
-        443,
-        NULL,
-        "test_ws_protocol"
-    };
+    WSIO_CONFIG wsio_config;
+    CONCRETE_IO_HANDLE wsio;
+
+    wsio_config.hostname = TEST_HOST_ADDRESS;
+    wsio_config.port = 443;
+    wsio_config.resource_name = TEST_RESOURCE_NAME;
+    wsio_config.protocol = NULL;
+    wsio_config.underlying_io_interface = NULL;
+    wsio_config.underlying_io_parameters = NULL;
 
     // act
-    CONCRETE_IO_HANDLE wsio = wsio_create(&test_wsio_config);
+    wsio = wsio_get_interface_description()->concrete_io_create(&wsio_config);
 
     // assert
     ASSERT_IS_NULL(wsio);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_WSIO_01_005: [If allocating memory for the new wsio instance fails then wsio_create shall return NULL.] */
-TEST_FUNCTION(when_allocating_memory_for_the_instance_fails_wsio_create_fails)
+/* Tests_SRS_WSIO_01_068: [ If allocating memory for the new wsio instance fails then `wsio_create` shall return NULL. ]*/
+TEST_FUNCTION(when_allocating_memory_fails_wsio_create_fails)
 {
     // arrange
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
-        .SetReturn((void*)NULL);
+        .SetReturn(NULL);
 
     // act
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+    CONCRETE_IO_HANDLE wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
 
     // assert
     ASSERT_IS_NULL(wsio);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_WSIO_01_099: [If singlylinkedlist_create fails then wsio_create shall fail and return NULL.] */
-TEST_FUNCTION(when_creating_the_pending_io_list_fails_wsio_create_fails)
+/* Tests_SRS_WSIO_01_075: [ If `uws_client_create_with_io` fails, then `wsio_create` shall fail and return NULL. ]*/
+TEST_FUNCTION(when_uws_create_fails_then_wsio_create_fails)
 {
     // arrange
+    CONCRETE_IO_HANDLE wsio;
+
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(uws_client_create_with_io(TEST_UNDERLYING_IO_INTERFACE, TEST_UNDERLYING_IO_PARAMETERS, TEST_HOST_ADDRESS, 443, TEST_RESOURCE_NAME, IGNORED_PTR_ARG, 1))
+        .SetReturn(NULL);
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+
+    // act
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+
+    // assert
+    ASSERT_IS_NULL(wsio);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_WSIO_01_077: [ If `singlylinkedlist_create` fails then `wsio_create` shall fail and return NULL. ]*/
+TEST_FUNCTION(when_singlylinkedlist_create_fails_then_wsio_create_fails)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+
+    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(uws_client_create_with_io(TEST_UNDERLYING_IO_INTERFACE, TEST_UNDERLYING_IO_PARAMETERS, TEST_HOST_ADDRESS, 443, TEST_RESOURCE_NAME, IGNORED_PTR_ARG, 1));
     STRICT_EXPECTED_CALL(singlylinkedlist_create())
-        .SetReturn((SINGLYLINKEDLIST_HANDLE)NULL);
+        .SetReturn(NULL);
+    STRICT_EXPECTED_CALL(uws_client_destroy(TEST_UWS_HANDLE));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
     // act
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
 
     // assert
     ASSERT_IS_NULL(wsio);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_WSIO_01_005: [If allocating memory for the new wsio instance fails then wsio_create shall return NULL.] */
-TEST_FUNCTION(when_allocating_memory_for_the_host_name_fails_wsio_create_fails)
+/* Tests_SRS_WSIO_01_071: [ The arguments for `uws_client_create_with_io` shall be: ]*/
+/* Tests_SRS_WSIO_01_185: [ - `underlying_io_interface` shall be set to the `underlying_io_interface` field in the `io_create_parameters` passed to `wsio_create`. ]*/
+/* Tests_SRS_WSIO_01_186: [ - `underlying_io_parameters` shall be set to the `underlying_io_parameters` field in the `io_create_parameters` passed to `wsio_create`. ]*/
+/* Tests_SRS_WSIO_01_072: [ - `hostname` set to the `hostname` field in the `io_create_parameters` passed to `wsio_create`. ]*/
+/* Tests_SRS_WSIO_01_130: [ - `port` set to the `port` field in the `io_create_parameters` passed to `wsio_create`. ]*/
+/* Tests_SRS_WSIO_01_128: [ - `resource_name` set to the `resource_name` field in the `io_create_parameters` passed to `wsio_create`. ]*/
+/* Tests_SRS_WSIO_01_129: [ - `protocols` shall be filled with only one structure, that shall have the `protocol` set to the value of the `protocol` field in the `io_create_parameters` passed to `wsio_create`. ]*/
+TEST_FUNCTION(wsio_create_for_secure_connection_with_valid_args_succeeds_2)
 {
     // arrange
+    WSIO_CONFIG wsio_config;
+    CONCRETE_IO_HANDLE wsio;
+
+    wsio_config.hostname = "another.com";
+    wsio_config.port = 80;
+    wsio_config.resource_name = "haga";
+    wsio_config.protocol = "LeProtocol";
+    wsio_config.underlying_io_interface = TEST_UNDERLYING_IO_INTERFACE;
+    wsio_config.underlying_io_parameters = NULL;
+
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(uws_client_create_with_io(TEST_UNDERLYING_IO_INTERFACE, NULL, "another.com", 80, "haga", IGNORED_PTR_ARG, 1));
     STRICT_EXPECTED_CALL(singlylinkedlist_create());
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
-        .SetReturn((SINGLYLINKEDLIST_HANDLE)NULL);
-    STRICT_EXPECTED_CALL(singlylinkedlist_destroy(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
     // act
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+    wsio = wsio_get_interface_description()->concrete_io_create(&wsio_config);
 
     // assert
-    ASSERT_IS_NULL(wsio);
+    ASSERT_IS_NOT_NULL(wsio);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-}
 
-/* Tests_SRS_WSIO_01_005: [If allocating memory for the new wsio instance fails then wsio_create shall return NULL.] */
-TEST_FUNCTION(when_allocating_memory_for_the_protocol_name_fails_wsio_create_fails)
-{
-    // arrange
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(singlylinkedlist_create());
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
-        .SetReturn((SINGLYLINKEDLIST_HANDLE)NULL);
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(singlylinkedlist_destroy(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-
-    // act
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-
-    // assert
-    ASSERT_IS_NULL(wsio);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-}
-
-/* Tests_SRS_WSIO_01_005: [If allocating memory for the new wsio instance fails then wsio_create shall return NULL.] */
-TEST_FUNCTION(when_allocating_memory_for_the_relative_path_fails_wsio_create_fails)
-{
-    // arrange
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(singlylinkedlist_create());
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
-        .SetReturn((SINGLYLINKEDLIST_HANDLE)NULL);
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(singlylinkedlist_destroy(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-
-    // act
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-
-    // assert
-    ASSERT_IS_NULL(wsio);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-}
-
-/* Tests_SRS_WSIO_01_005: [If allocating memory for the new wsio instance fails then wsio_create shall return NULL.] */
-TEST_FUNCTION(when_allocating_memory_for_the_protocols_fails_wsio_create_fails)
-{
-    // arrange
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(singlylinkedlist_create());
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
-        .SetReturn((SINGLYLINKEDLIST_HANDLE)NULL);
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(singlylinkedlist_destroy(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-
-    // act
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-
-    // assert
-    ASSERT_IS_NULL(wsio);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    // cleanup
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
 /* wsio_destroy */
 
-/* Tests_SRS_WSIO_01_007: [wsio_destroy shall free all resources associated with the wsio instance.] */
-TEST_FUNCTION(when_wsio_destroy_is_called_all_resources_are_freed)
+/* Tests_SRS_WSIO_01_078: [ `wsio_destroy` shall free all resources associated with the wsio instance. ]*/
+/* Tests_SRS_WSIO_01_080: [ `wsio_destroy` shall destroy the uws instance created in `wsio_create` by calling `uws_client_destroy`. ]*/
+/* Tests_SRS_WSIO_01_081: [ `wsio_destroy` shall free the list used to track the pending send IOs by calling `singlylinkedlist_destroy`. ]*/
+TEST_FUNCTION(wsio_destroy_frees_all_resources)
 {
     // arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+    CONCRETE_IO_HANDLE wsio;
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
     umock_c_reset_all_calls();
 
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // host_name
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // resource_name
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocol
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocols
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // trusted_ca
+    STRICT_EXPECTED_CALL(uws_client_destroy(TEST_UWS_HANDLE));
     STRICT_EXPECTED_CALL(singlylinkedlist_destroy(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // instance
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
     // act
-    wsio_destroy(wsio);
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
 
     // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_WSIO_01_007: [wsio_destroy shall free all resources associated with the wsio instance.] */
-TEST_FUNCTION(when_wsio_destroy_is_called_all_resources_are_freed_including_proxy)
-{
-    // arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-
-    HTTP_PROXY_OPTIONS proxy_options;
-    proxy_options.host_address = "test_proxy";
-    proxy_options.port = 8080;
-    proxy_options.username = "user_name";
-    proxy_options.password = "secret";
-
-    (void)wsio_setoption(wsio, OPTION_HTTP_PROXY, &proxy_options);
-
-    umock_c_reset_all_calls();
-
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // host_name
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // proxy host address
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // proxy username
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // proxy secret
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // resource_name
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocol
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocols
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // trusted_ca
-    STRICT_EXPECTED_CALL(singlylinkedlist_destroy(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // instance
-
-                                                  // act
-    wsio_destroy(wsio);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-}
-
-/* Tests_SRS_WSIO_01_008: [If ws_io is NULL, wsio_destroy shall do nothing.] */
-TEST_FUNCTION(wsio_destroy_with_NULL_handle_does_nothing)
+/* Tests_SRS_WSIO_01_079: [ If `ws_io` is NULL, `wsio_destroy` shall do nothing.  ]*/
+TEST_FUNCTION(wsio_destroy_with_NULL_does_nothing)
 {
     // arrange
 
     // act
-    wsio_destroy(NULL);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-}
-
-/* Tests_SRS_WSIO_01_009: [wsio_destroy shall execute a close action if the IO has already been open or an open action is already pending.] */
-TEST_FUNCTION(wsio_destroy_closes_the_underlying_lws_before_destroying_all_resources)
-{
-    // arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_CANCELLED));
-
-    STRICT_EXPECTED_CALL(lws_context_destroy(TEST_LIBWEBSOCKET_CONTEXT));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // host_name
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // resource_name
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocol
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocols
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // trusted_ca
-    STRICT_EXPECTED_CALL(singlylinkedlist_destroy(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // instance
-
-    // act
-    wsio_destroy(wsio);
+    wsio_get_interface_description()->concrete_io_destroy(NULL);
 
     // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -1129,4320 +576,1959 @@ TEST_FUNCTION(wsio_destroy_closes_the_underlying_lws_before_destroying_all_resou
 
 /* wsio_open */
 
-/* Tests_SRS_WSIO_01_010: [wsio_open shall create a context for the libwebsockets connection by calling lws_create_context.] */
-/* Tests_SRS_WSIO_01_011: [The port member of the info argument shall be set to CONTEXT_PORT_NO_LISTEN.] */
-/* Tests_SRS_WSIO_01_091: [The extensions field shall be set to NULL.] */
-/* Tests_SRS_WSIO_01_092: [gid and uid shall be set to -1.] */
-/* Tests_SRS_WSIO_01_093: [The members iface, token_limits, ssl_cert_filepath, ssl_private_key_filepath, ssl_private_key_password, ssl_ca_filepath, ssl_cipher_list and provided_client_ssl_ctx shall be set to NULL.] */
-/* Tests_SRS_WSIO_01_172: [ If no proxy was configured, http_proxy_address shall be set to NULL. ] */
-/* Tests_SRS_WSIO_01_095: [The member options shall be set to LWS_SERVER_OPTION_DO_SSL_GLOBAL_INIT to initialize the SSL stack.] */
-/* Tests_SRS_WSIO_01_096: [The member user shall be set to a user context that will be later passed by the libwebsockets callbacks.] */
-/* Tests_SRS_WSIO_01_097: [Keep alive shall not be supported, thus ka_time shall be set to 0.] */
-/* Tests_SRS_WSIO_01_012: [The protocols member shall be populated with 2 protocol entries, one containing the actual protocol to be used and one empty (fields shall be NULL or 0).] */
-/* Tests_SRS_WSIO_01_013: [callback shall be set to a callback used by the wsio module to listen to libwebsockets events.] */
-/* Tests_SRS_WSIO_01_014: [id shall be set to 0] */
-/* Tests_SRS_WSIO_01_015: [name shall be set to protocol as passed to wsio_create] */
-/* Tests_SRS_WSIO_01_016: [per_session_data_size shall be set to 0] */
-/* Tests_SRS_WSIO_01_017: [rx_buffer_size shall be set to 0, as there is no need for atomic frames] */
-/* Tests_SRS_WSIO_01_019: [user shall be set to NULL] */
-/* Tests_SRS_WSIO_01_023: [wsio_open shall trigger the lws connect by calling lws_client_connect_via_info and passing to it the following arguments] */
-/* Tests_SRS_WSIO_01_024: [context shall be the context created earlier in wsio_open] */
-/* Tests_SRS_WSIO_01_025: [address shall be the hostname passed to wsio_create] */
-/* Tests_SRS_WSIO_01_026: [port shall be the port passed to wsio_create] */
-/* Tests_SRS_WSIO_01_028: [path shall be the resource_name passed in wsio_create] */
-/* Tests_SRS_WSIO_01_029: [host shall be the host passed to wsio_create] */
-/* Tests_SRS_WSIO_01_030: [origin shall be NULL] */
-/* Tests_SRS_WSIO_01_031: [protocol shall be the protocol passed to wsio_create] */
-/* Tests_SRS_WSIO_01_032: [ietf_version_or_minus_one shall be -1] */
-/* Tests_SRS_WSIO_01_104: [On success, wsio_open shall return 0.] */
-/* Tests_SRS_WSIO_01_173: [ `userdata`, `client_exts`, `method`, `parent_wsi`, `uri_replace_from`, `uri_replace_to`, `vhost` and `pwsi` shall be NULL. ]*/
-TEST_FUNCTION(wsio_open_with_proper_arguments_succeeds)
+/* Tests_SRS_WSIO_01_082: [ `wsio_open` shall open the underlying uws instance by calling `uws_client_open_async` and providing the uws handle created in `wsio_create` as argument. ]*/
+/* Tests_SRS_WSIO_01_083: [ On success, `wsio_open` shall return 0. ]*/
+TEST_FUNCTION(wsio_open_opens_the_underlying_uws_instance)
 {
     // arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    struct lws_context_creation_info lws_context_info;
-    struct lws_protocols protocols[2];
-    struct lws_client_connect_info client_connect_info;
+    CONCRETE_IO_HANDLE wsio;
     int result;
-
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
     umock_c_reset_all_calls();
 
-    protocols[0].name = default_wsio_config.protocol;
-    protocols[0].callback = NULL;
-    protocols[0].per_session_data_size = 0;
-    protocols[0].rx_buffer_size = 0;
-    protocols[0].id = 0;
-    protocols[0].user = NULL;
-    protocols[1].name = NULL;
-    protocols[1].callback = NULL;
-    protocols[1].per_session_data_size = 0;
-    protocols[1].rx_buffer_size = 0;
-    protocols[1].id = 0;
-    protocols[1].user = NULL;
-
-    lws_context_info.port = CONTEXT_PORT_NO_LISTEN;
-    lws_context_info.extensions = NULL;
-    lws_context_info.gid = -1;
-    lws_context_info.uid = -1;
-    lws_context_info.iface = NULL;
-    lws_context_info.token_limits = NULL;
-    lws_context_info.ssl_cert_filepath = NULL;
-    lws_context_info.ssl_private_key_filepath = NULL;
-    lws_context_info.ssl_private_key_password = NULL;
-    lws_context_info.ssl_ca_filepath = NULL;
-    lws_context_info.ssl_cipher_list = NULL;
-    lws_context_info.provided_client_ssl_ctx = NULL;
-    lws_context_info.http_proxy_address = NULL;
-    lws_context_info.http_proxy_port = 0;
-    lws_context_info.options = LWS_SERVER_OPTION_DO_SSL_GLOBAL_INIT;
-    lws_context_info.ka_time = 0;
-    lws_context_info.ka_probes = 0;
-    lws_context_info.ka_interval = 0;
-
-    lws_context_info.protocols = protocols;
-
-    client_connect_info.context = TEST_LIBWEBSOCKET_CONTEXT;
-    client_connect_info.address = default_wsio_config.hostname;
-    client_connect_info.port = default_wsio_config.port;
-    client_connect_info.ssl_connection = 1;
-    client_connect_info.path = default_wsio_config.resource_name;
-    client_connect_info.host = default_wsio_config.hostname;
-    client_connect_info.origin = NULL;
-    client_connect_info.protocol = default_wsio_config.protocol;
-    client_connect_info.ietf_version_or_minus_one = -1;
-    client_connect_info.userdata = NULL;
-    client_connect_info.client_exts = NULL;
-    client_connect_info.method = NULL;
-    client_connect_info.parent_wsi = NULL;
-    client_connect_info.uri_replace_from = NULL;
-    client_connect_info.uri_replace_to = NULL;
-    client_connect_info.vhost = NULL;
-    client_connect_info.pwsi = NULL;
-
-    STRICT_EXPECTED_CALL(lws_create_context(&lws_context_info));
-    STRICT_EXPECTED_CALL(lws_client_connect_via_info(&client_connect_info));
+    STRICT_EXPECTED_CALL(uws_client_open_async(TEST_UWS_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
 
     // act
-    result = wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
+    result = wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
-    wsio_destroy(wsio);
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_169: [ If any proxy was configured by using the proxy data option, then http_proxy_address shall be set to the address, port, username and password specified in the proxy options, in the format {username}:{password}@{address}:{port}. ] */
-/* Tests_SRS_WSIO_01_171: [ If any proxy was configured by using the proxy data option, the http_proxy_port shall be set to the proxy port. ]*/
-TEST_FUNCTION(wsio_open_with_proxy_option_with_username_and_pwd_succeeds)
+/* Tests_SRS_WSIO_01_084: [ If opening the underlying uws instance fails then `wsio_open` shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(when_opening_the_uws_instance_fails_wsio_open_fails)
 {
     // arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    struct lws_context_creation_info lws_context_info;
-    struct lws_protocols protocols[2];
-    struct lws_client_connect_info client_connect_info;
+    CONCRETE_IO_HANDLE wsio;
     int result;
-    HTTP_PROXY_OPTIONS proxy_options;
-
-    proxy_options.host_address = "test_proxy";
-    proxy_options.port = 8080;
-    proxy_options.username = "user_name";
-    proxy_options.password = "secret";
-
-    (void)wsio_setoption(wsio, OPTION_HTTP_PROXY, &proxy_options);
-
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
     umock_c_reset_all_calls();
 
-    protocols[0].name = default_wsio_config.protocol;
-    protocols[0].callback = NULL;
-    protocols[0].per_session_data_size = 0;
-    protocols[0].rx_buffer_size = 0;
-    protocols[0].id = 0;
-    protocols[0].user = NULL;
-    protocols[1].name = NULL;
-    protocols[1].callback = NULL;
-    protocols[1].per_session_data_size = 0;
-    protocols[1].rx_buffer_size = 0;
-    protocols[1].id = 0;
-    protocols[1].user = NULL;
-
-    lws_context_info.port = CONTEXT_PORT_NO_LISTEN;
-    lws_context_info.extensions = NULL;
-    lws_context_info.gid = -1;
-    lws_context_info.uid = -1;
-    lws_context_info.iface = NULL;
-    lws_context_info.token_limits = NULL;
-    lws_context_info.ssl_cert_filepath = NULL;
-    lws_context_info.ssl_private_key_filepath = NULL;
-    lws_context_info.ssl_private_key_password = NULL;
-    lws_context_info.ssl_ca_filepath = NULL;
-    lws_context_info.ssl_cipher_list = NULL;
-    lws_context_info.provided_client_ssl_ctx = NULL;
-    lws_context_info.http_proxy_address = "user_name:secret@test_proxy:8080";
-    lws_context_info.http_proxy_port = 8080;
-    lws_context_info.options = LWS_SERVER_OPTION_DO_SSL_GLOBAL_INIT;
-    lws_context_info.ka_time = 0;
-    lws_context_info.ka_probes = 0;
-    lws_context_info.ka_interval = 0;
-
-    lws_context_info.protocols = protocols;
-
-    client_connect_info.context = TEST_LIBWEBSOCKET_CONTEXT;
-    client_connect_info.address = default_wsio_config.hostname;
-    client_connect_info.port = default_wsio_config.port;
-    client_connect_info.ssl_connection = 1;
-    client_connect_info.path = default_wsio_config.resource_name;
-    client_connect_info.host = default_wsio_config.hostname;
-    client_connect_info.origin = NULL;
-    client_connect_info.protocol = default_wsio_config.protocol;
-    client_connect_info.ietf_version_or_minus_one = -1;
-    client_connect_info.userdata = NULL;
-    client_connect_info.client_exts = NULL;
-    client_connect_info.method = NULL;
-    client_connect_info.parent_wsi = NULL;
-    client_connect_info.uri_replace_from = NULL;
-    client_connect_info.uri_replace_to = NULL;
-    client_connect_info.vhost = NULL;
-    client_connect_info.pwsi = NULL;
-
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(lws_create_context(&lws_context_info));
-    STRICT_EXPECTED_CALL(lws_client_connect_via_info(&client_connect_info));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(uws_client_open_async(TEST_UWS_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+        .SetReturn(1);
 
     // act
-    result = wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-
-    // assert
-    ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_169: [ If any proxy was configured by using the proxy data option, then http_proxy_address shall be set to the address, port, username and password specified in the proxy options, in the format {username}:{password}@{address}:{port}. ] */
-/* Tests_SRS_WSIO_01_171: [ If any proxy was configured by using the proxy data option, the http_proxy_port shall be set to the proxy port. ]*/
-TEST_FUNCTION(wsio_open_with_proxy_option_with_username_and_pwd_and_5digit_port_succeeds)
-{
-    // arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    struct lws_context_creation_info lws_context_info;
-    struct lws_protocols protocols[2];
-    struct lws_client_connect_info client_connect_info;
-    int result;
-    HTTP_PROXY_OPTIONS proxy_options;
-
-    proxy_options.host_address = "test_proxy";
-    proxy_options.port = 22222;
-    proxy_options.username = "user_name";
-    proxy_options.password = "secret";
-
-    (void)wsio_setoption(wsio, OPTION_HTTP_PROXY, &proxy_options);
-
-    umock_c_reset_all_calls();
-
-    protocols[0].name = default_wsio_config.protocol;
-    protocols[0].callback = NULL;
-    protocols[0].per_session_data_size = 0;
-    protocols[0].rx_buffer_size = 0;
-    protocols[0].id = 0;
-    protocols[0].user = NULL;
-    protocols[1].name = NULL;
-    protocols[1].callback = NULL;
-    protocols[1].per_session_data_size = 0;
-    protocols[1].rx_buffer_size = 0;
-    protocols[1].id = 0;
-    protocols[1].user = NULL;
-
-    lws_context_info.port = CONTEXT_PORT_NO_LISTEN;
-    lws_context_info.extensions = NULL;
-    lws_context_info.gid = -1;
-    lws_context_info.uid = -1;
-    lws_context_info.iface = NULL;
-    lws_context_info.token_limits = NULL;
-    lws_context_info.ssl_cert_filepath = NULL;
-    lws_context_info.ssl_private_key_filepath = NULL;
-    lws_context_info.ssl_private_key_password = NULL;
-    lws_context_info.ssl_ca_filepath = NULL;
-    lws_context_info.ssl_cipher_list = NULL;
-    lws_context_info.provided_client_ssl_ctx = NULL;
-    lws_context_info.http_proxy_address = "user_name:secret@test_proxy:22222";
-    lws_context_info.http_proxy_port = 22222;
-    lws_context_info.options = LWS_SERVER_OPTION_DO_SSL_GLOBAL_INIT;
-    lws_context_info.ka_time = 0;
-    lws_context_info.ka_probes = 0;
-    lws_context_info.ka_interval = 0;
-
-    lws_context_info.protocols = protocols;
-
-    client_connect_info.context = TEST_LIBWEBSOCKET_CONTEXT;
-    client_connect_info.address = default_wsio_config.hostname;
-    client_connect_info.port = default_wsio_config.port;
-    client_connect_info.ssl_connection = 1;
-    client_connect_info.path = default_wsio_config.resource_name;
-    client_connect_info.host = default_wsio_config.hostname;
-    client_connect_info.origin = NULL;
-    client_connect_info.protocol = default_wsio_config.protocol;
-    client_connect_info.ietf_version_or_minus_one = -1;
-    client_connect_info.userdata = NULL;
-    client_connect_info.client_exts = NULL;
-    client_connect_info.method = NULL;
-    client_connect_info.parent_wsi = NULL;
-    client_connect_info.uri_replace_from = NULL;
-    client_connect_info.uri_replace_to = NULL;
-    client_connect_info.vhost = NULL;
-    client_connect_info.pwsi = NULL;
-
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(lws_create_context(&lws_context_info));
-    STRICT_EXPECTED_CALL(lws_client_connect_via_info(&client_connect_info));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-
-    // act
-    result = wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-
-    // assert
-    ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_169: [ If any proxy was configured by using the proxy data option, then http_proxy_address shall be set to the address, port, username and password specified in the proxy options, in the format {username}:{password}@{address}:{port}. ] */
-/* Tests_SRS_WSIO_01_170: [ If no username/password was specified for the proxy settings then http_proxy_address shall be set to the address and port specified in the proxy options, in the format {address}:{port}. ]*/
-TEST_FUNCTION(wsio_open_with_proxy_option_without_username_and_pwd_succeeds)
-{
-    // arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    struct lws_context_creation_info lws_context_info;
-    struct lws_protocols protocols[2];
-    struct lws_client_connect_info client_connect_info;
-    int result;
-    HTTP_PROXY_OPTIONS proxy_options;
-
-    proxy_options.host_address = "test_proxy";
-    proxy_options.port = 8080;
-    proxy_options.username = "user_name";
-    proxy_options.password = "secret";
-
-    (void)wsio_setoption(wsio, OPTION_HTTP_PROXY, &proxy_options);
-
-    umock_c_reset_all_calls();
-
-    protocols[0].name = default_wsio_config.protocol;
-    protocols[0].callback = NULL;
-    protocols[0].per_session_data_size = 0;
-    protocols[0].rx_buffer_size = 0;
-    protocols[0].id = 0;
-    protocols[0].user = NULL;
-    protocols[1].name = NULL;
-    protocols[1].callback = NULL;
-    protocols[1].per_session_data_size = 0;
-    protocols[1].rx_buffer_size = 0;
-    protocols[1].id = 0;
-    protocols[1].user = NULL;
-
-    lws_context_info.port = CONTEXT_PORT_NO_LISTEN;
-    lws_context_info.extensions = NULL;
-    lws_context_info.gid = -1;
-    lws_context_info.uid = -1;
-    lws_context_info.iface = NULL;
-    lws_context_info.token_limits = NULL;
-    lws_context_info.ssl_cert_filepath = NULL;
-    lws_context_info.ssl_private_key_filepath = NULL;
-    lws_context_info.ssl_private_key_password = NULL;
-    lws_context_info.ssl_ca_filepath = NULL;
-    lws_context_info.ssl_cipher_list = NULL;
-    lws_context_info.provided_client_ssl_ctx = NULL;
-    lws_context_info.http_proxy_address = "user_name:secret@test_proxy:8080";
-    lws_context_info.http_proxy_port = 8080;
-    lws_context_info.options = LWS_SERVER_OPTION_DO_SSL_GLOBAL_INIT;
-    lws_context_info.ka_time = 0;
-    lws_context_info.ka_probes = 0;
-    lws_context_info.ka_interval = 0;
-
-    lws_context_info.protocols = protocols;
-
-    client_connect_info.context = TEST_LIBWEBSOCKET_CONTEXT;
-    client_connect_info.address = default_wsio_config.hostname;
-    client_connect_info.port = default_wsio_config.port;
-    client_connect_info.ssl_connection = 1;
-    client_connect_info.path = default_wsio_config.resource_name;
-    client_connect_info.host = default_wsio_config.hostname;
-    client_connect_info.origin = NULL;
-    client_connect_info.protocol = default_wsio_config.protocol;
-    client_connect_info.ietf_version_or_minus_one = -1;
-    client_connect_info.userdata = NULL;
-    client_connect_info.client_exts = NULL;
-    client_connect_info.method = NULL;
-    client_connect_info.parent_wsi = NULL;
-    client_connect_info.uri_replace_from = NULL;
-    client_connect_info.uri_replace_to = NULL;
-    client_connect_info.vhost = NULL;
-    client_connect_info.pwsi = NULL;
-
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(lws_create_context(&lws_context_info));
-    STRICT_EXPECTED_CALL(lws_client_connect_via_info(&client_connect_info));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-
-    // act
-    result = wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-
-    // assert
-    ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_015: [name shall be set to protocol as passed to wsio_create] */
-/* Tests_SRS_WSIO_01_025: [address shall be the hostname passed to wsio_create] */
-/* Tests_SRS_WSIO_01_026: [port shall be the port passed to wsio_create] */
-/* Tests_SRS_WSIO_01_027: [ssl_connection shall be 1] */
-/* Tests_SRS_WSIO_01_028: [path shall be the resource_name passed in wsio_create] */
-/* Tests_SRS_WSIO_01_029: [host shall be the host passed to wsio_create] */
-/* Tests_SRS_WSIO_01_030: [origin shall be NULL] */
-/* Tests_SRS_WSIO_01_031: [protocol shall be the protocol passed to wsio_create] */
-/* Tests_SRS_WSIO_01_091: [The extensions field shall be set to NULL.] */
-/* Tests_SRS_WSIO_01_104: [On success, wsio_open shall return 0.] */
-TEST_FUNCTION(wsio_open_with_different_config_succeeds)
-{
-    // arrange
-    static WSIO_CONFIG wsio_config =
-    {
-        NULL,
-        NULL,
-        "hagauaga",
-        1234,
-        "d1/e2/f3",
-        "another_proto"
-    };
-    CONCRETE_IO_HANDLE wsio = wsio_create(&wsio_config);
-    struct lws_context_creation_info lws_context_info;
-    struct lws_protocols protocols[2];
-    struct lws_client_connect_info client_connect_info;
-    int result;
-
-    umock_c_reset_all_calls();
-
-    protocols[0].name = "another_proto";
-    protocols[0].callback = NULL;
-    protocols[0].per_session_data_size = 0;
-    protocols[0].rx_buffer_size = 0;
-    protocols[0].id = 0;
-    protocols[0].user = NULL;
-    protocols[1].name = NULL;
-    protocols[1].callback = NULL;
-    protocols[1].per_session_data_size = 0;
-    protocols[1].rx_buffer_size = 0;
-    protocols[1].id = 0;
-    protocols[1].user = NULL;
-
-    lws_context_info.port = CONTEXT_PORT_NO_LISTEN;
-    lws_context_info.extensions = (struct lws_extension*)NULL;
-    lws_context_info.gid = -1;
-    lws_context_info.uid = -1;
-    lws_context_info.iface = NULL;
-    lws_context_info.token_limits = NULL;
-    lws_context_info.ssl_cert_filepath = NULL;
-    lws_context_info.ssl_private_key_filepath = NULL;
-    lws_context_info.ssl_private_key_password = NULL;
-    lws_context_info.ssl_ca_filepath = NULL;
-    lws_context_info.ssl_cipher_list = NULL;
-    lws_context_info.provided_client_ssl_ctx = NULL;
-    lws_context_info.http_proxy_address = NULL;
-    lws_context_info.options = LWS_SERVER_OPTION_DO_SSL_GLOBAL_INIT;
-    lws_context_info.ka_time = 0;
-
-    lws_context_info.protocols = protocols;
-
-    client_connect_info.context = TEST_LIBWEBSOCKET_CONTEXT;
-    client_connect_info.address = wsio_config.hostname;
-    client_connect_info.port = wsio_config.port;
-    client_connect_info.ssl_connection = 1;
-    client_connect_info.path = wsio_config.resource_name;
-    client_connect_info.host = wsio_config.hostname;
-    client_connect_info.origin = NULL;
-    client_connect_info.protocol = wsio_config.protocol;
-    client_connect_info.ietf_version_or_minus_one = -1;
-    client_connect_info.userdata = NULL;
-    client_connect_info.client_exts = NULL;
-    client_connect_info.method = NULL;
-    client_connect_info.parent_wsi = NULL;
-    client_connect_info.uri_replace_from = NULL;
-    client_connect_info.uri_replace_to = NULL;
-    client_connect_info.vhost = NULL;
-    client_connect_info.pwsi = NULL;
-
-    STRICT_EXPECTED_CALL(lws_create_context(&lws_context_info));
-    STRICT_EXPECTED_CALL(lws_client_connect_via_info(&client_connect_info));
-
-    // act
-    result = wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-
-    // assert
-    ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_169: [ If any proxy was configured by using the proxy data option, then http_proxy_address shall be set to the address, port, username and password specified in the proxy options, in the format {username}:{password}@{address}:{port}. ] */
-/* Tests_SRS_WSIO_01_170: [ If no username/password was specified for the proxy settings then http_proxy_address shall be set to the address and port specified in the proxy options, in the format {address}:{port}. ]*/
-TEST_FUNCTION(wsio_open_with_proxy_config_with_username_NULL_and_non_NULL_password_succeeds)
-{
-    // arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    struct lws_context_creation_info lws_context_info;
-    struct lws_protocols protocols[2];
-    struct lws_client_connect_info client_connect_info;
-    int result;
-    HTTP_PROXY_OPTIONS proxy_options;
-
-    proxy_options.host_address = "ha";
-    proxy_options.port = 8080;
-    proxy_options.username = NULL;
-    proxy_options.password = "pwd";
-    (void)wsio_setoption(wsio, OPTION_HTTP_PROXY, &proxy_options);
-
-    umock_c_reset_all_calls();
-
-    protocols[0].name = default_wsio_config.protocol;
-    protocols[0].callback = NULL;
-    protocols[0].per_session_data_size = 0;
-    protocols[0].rx_buffer_size = 0;
-    protocols[0].id = 0;
-    protocols[0].user = NULL;
-    protocols[1].name = NULL;
-    protocols[1].callback = NULL;
-    protocols[1].per_session_data_size = 0;
-    protocols[1].rx_buffer_size = 0;
-    protocols[1].id = 0;
-    protocols[1].user = NULL;
-
-    lws_context_info.port = CONTEXT_PORT_NO_LISTEN;
-    lws_context_info.extensions = NULL;
-    lws_context_info.gid = -1;
-    lws_context_info.uid = -1;
-    lws_context_info.iface = NULL;
-    lws_context_info.token_limits = NULL;
-    lws_context_info.ssl_cert_filepath = NULL;
-    lws_context_info.ssl_private_key_filepath = NULL;
-    lws_context_info.ssl_private_key_password = NULL;
-    lws_context_info.ssl_ca_filepath = NULL;
-    lws_context_info.ssl_cipher_list = NULL;
-    lws_context_info.provided_client_ssl_ctx = NULL;
-    lws_context_info.options = LWS_SERVER_OPTION_DO_SSL_GLOBAL_INIT;
-    lws_context_info.ka_time = 0;
-    lws_context_info.http_proxy_address = "ha:8080";
-    lws_context_info.http_proxy_port = 8080;
-    lws_context_info.protocols = protocols;
-
-    client_connect_info.context = TEST_LIBWEBSOCKET_CONTEXT;
-    client_connect_info.address = default_wsio_config.hostname;
-    client_connect_info.port = default_wsio_config.port;
-    client_connect_info.ssl_connection = 1;
-    client_connect_info.path = default_wsio_config.resource_name;
-    client_connect_info.host = default_wsio_config.hostname;
-    client_connect_info.origin = NULL;
-    client_connect_info.protocol = default_wsio_config.protocol;
-    client_connect_info.ietf_version_or_minus_one = -1;
-    client_connect_info.userdata = NULL;
-    client_connect_info.client_exts = NULL;
-    client_connect_info.method = NULL;
-    client_connect_info.parent_wsi = NULL;
-    client_connect_info.uri_replace_from = NULL;
-    client_connect_info.uri_replace_to = NULL;
-    client_connect_info.vhost = NULL;
-    client_connect_info.pwsi = NULL;
-
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(lws_create_context(&lws_context_info));
-    STRICT_EXPECTED_CALL(lws_client_connect_via_info(&client_connect_info));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-
-    // act
-    result = wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-
-    // assert
-    ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_022: [If creating the context fails then wsio_open shall fail and return a non-zero value.] */
-TEST_FUNCTION(when_creating_the_libwebsockets_context_fails_then_wsio_open_fails)
-{
-    // arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    struct lws_context_creation_info lws_context_info;
-    struct lws_protocols protocols[2];
-    umock_c_reset_all_calls();
-
-    protocols[0].name = default_wsio_config.protocol;
-    protocols[0].callback = NULL;
-    protocols[0].per_session_data_size = 0;
-    protocols[0].rx_buffer_size = 0;
-    protocols[0].id = 0;
-    protocols[0].user = NULL;
-    protocols[1].name = NULL;
-    protocols[1].callback = NULL;
-    protocols[1].per_session_data_size = 0;
-    protocols[1].rx_buffer_size = 0;
-    protocols[1].id = 0;
-    protocols[1].user = NULL;
-
-    lws_context_info.port = CONTEXT_PORT_NO_LISTEN;
-    lws_context_info.extensions = NULL;
-    lws_context_info.gid = -1;
-    lws_context_info.uid = -1;
-    lws_context_info.iface = NULL;
-    lws_context_info.token_limits = NULL;
-    lws_context_info.ssl_cert_filepath = NULL;
-    lws_context_info.ssl_private_key_filepath = NULL;
-    lws_context_info.ssl_private_key_password = NULL;
-    lws_context_info.ssl_ca_filepath = NULL;
-    lws_context_info.ssl_cipher_list = NULL;
-    lws_context_info.provided_client_ssl_ctx = NULL;
-    lws_context_info.http_proxy_address = NULL;
-    lws_context_info.options = LWS_SERVER_OPTION_DO_SSL_GLOBAL_INIT;
-    lws_context_info.ka_time = 0;
-
-    lws_context_info.protocols = protocols;
-
-    STRICT_EXPECTED_CALL(lws_create_context(&lws_context_info))
-        .SetReturn((struct lws_context*)NULL);
-
-    // act
-    int result = wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-
-    // assert
-    ASSERT_ARE_NOT_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    ///cleanup 
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_033: [If lws_client_connect_via_info fails then wsio_open shall fail and return a non-zero value.] */
-TEST_FUNCTION(when_lws_client_connect_fails_then_wsio_open_fails)
-{
-    // arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    struct lws_context_creation_info lws_context_info;
-    struct lws_protocols protocols[2];
-    struct lws_client_connect_info client_connect_info;
-    int result;
-
-    umock_c_reset_all_calls();
-
-    protocols[0].name = default_wsio_config.protocol;
-    protocols[0].callback = NULL;
-    protocols[0].per_session_data_size = 0;
-    protocols[0].rx_buffer_size = 0;
-    protocols[0].id = 0;
-    protocols[0].user = NULL;
-    protocols[1].name = NULL;
-    protocols[1].callback = NULL;
-    protocols[1].per_session_data_size = 0;
-    protocols[1].rx_buffer_size = 0;
-    protocols[1].id = 0;
-    protocols[1].user = NULL;
-
-    lws_context_info.port = CONTEXT_PORT_NO_LISTEN;
-    lws_context_info.extensions = NULL;
-    lws_context_info.gid = -1;
-    lws_context_info.uid = -1;
-    lws_context_info.iface = NULL;
-    lws_context_info.token_limits = NULL;
-    lws_context_info.ssl_cert_filepath = NULL;
-    lws_context_info.ssl_private_key_filepath = NULL;
-    lws_context_info.ssl_private_key_password = NULL;
-    lws_context_info.ssl_ca_filepath = NULL;
-    lws_context_info.ssl_cipher_list = NULL;
-    lws_context_info.provided_client_ssl_ctx = NULL;
-    lws_context_info.http_proxy_address = NULL;
-    lws_context_info.options = LWS_SERVER_OPTION_DO_SSL_GLOBAL_INIT;
-    lws_context_info.ka_time = 0;
-
-    lws_context_info.protocols = protocols;
-
-    client_connect_info.context = TEST_LIBWEBSOCKET_CONTEXT;
-    client_connect_info.address = default_wsio_config.hostname;
-    client_connect_info.port = default_wsio_config.port;
-    client_connect_info.ssl_connection = 1;
-    client_connect_info.path = default_wsio_config.resource_name;
-    client_connect_info.host = default_wsio_config.hostname;
-    client_connect_info.origin = NULL;
-    client_connect_info.protocol = default_wsio_config.protocol;
-    client_connect_info.ietf_version_or_minus_one = -1;
-    client_connect_info.userdata = NULL;
-    client_connect_info.client_exts = NULL;
-    client_connect_info.method = NULL;
-    client_connect_info.parent_wsi = NULL;
-    client_connect_info.uri_replace_from = NULL;
-    client_connect_info.uri_replace_to = NULL;
-    client_connect_info.vhost = NULL;
-    client_connect_info.pwsi = NULL;
-
-    STRICT_EXPECTED_CALL(lws_create_context(&lws_context_info));
-    STRICT_EXPECTED_CALL(lws_client_connect_via_info(&client_connect_info))
-        .SetReturn((struct lws*)NULL);
-        
-    STRICT_EXPECTED_CALL(lws_context_destroy(TEST_LIBWEBSOCKET_CONTEXT));
-
-    // act
-    result = wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // assert
-    ASSERT_ARE_NOT_EQUAL(int, 0, result);
-
-    ///cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_034: [If another open is in progress or has completed successfully (the IO is open), wsio_open shall fail and return a non-zero value without performing any connection related activities.] */
-TEST_FUNCTION(a_second_wsio_open_while_opening_fails)
-{
-    // arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    umock_c_reset_all_calls();
-
-    // act
-    int result = wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
+    result = wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
-    wsio_destroy(wsio);
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_036: [The callback on_io_open_complete shall be called with io_open_result being set to IO_OPEN_OK when the open action is succesfull.] */
-/* Tests_SRS_WSIO_01_039: [The callback_context argument shall be passed to on_io_open_complete as is.] */
-TEST_FUNCTION(when_ws_callback_indicates_a_connect_complete_then_the_on_open_complete_callback_is_triggered)
+/* Tests_SRS_WSIO_01_131: [ `wsio_open` when already OPEN or OPENING shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(wsio_open_when_already_opening_fails)
 {
     // arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
+    CONCRETE_IO_HANDLE wsio;
+    int result;
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_OK));
-
     // act
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_ESTABLISHED, NULL, NULL, 0);
+    result = wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
 
     // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
-    wsio_destroy(wsio);
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_037: [If any error occurs while the open action is in progress, the callback on_io_open_complete shall be called with io_open_result being set to IO_OPEN_ERROR.] */
-/* Tests_SRS_WSIO_01_039: [The callback_context argument shall be passed to on_io_open_complete as is.] */
-TEST_FUNCTION(when_ws_callback_indicates_a_connection_error_then_the_on_open_complete_callback_is_triggered_with_error)
+/* Tests_SRS_WSIO_01_131: [ `wsio_open` when already OPEN or OPENING shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(wsio_open_when_already_open_fails)
 {
     // arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
+    CONCRETE_IO_HANDLE wsio;
+    int result;
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
+    g_on_ws_open_complete(g_on_ws_open_complete_context, WS_OPEN_OK);
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_ERROR));
-
     // act
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_CONNECTION_ERROR, NULL, NULL, 0);
+    result = wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
 
     // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
-    wsio_destroy(wsio);
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_175: [ When the on_open_complete callback is invoked, the libwebsockets context shall be saved for later destroy. ]*/
-/* Tests_SRS_WSIO_01_174: [ `wsio_destroy` shall free any pending context, whose destruction has been deferred by the lws callback by calling `lws_context_destroy`. ]*/
-TEST_FUNCTION(when_ws_callback_indicates_a_connection_error_the_context_destroy_is_deffered_to_wsio_destroy)
+/* Tests_SRS_WSIO_01_132: [ If any of the arguments `ws_io`, `on_io_open_complete`, `on_bytes_received`, `on_io_error` is NULL, `wsio_open` shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(wsio_open_with_NULL_handle_fails)
 {
     // arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_CONNECTION_ERROR, NULL, NULL, 0);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_context_destroy(TEST_LIBWEBSOCKET_CONTEXT));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // host_name
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // resource_name
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocol
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocols
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // trusted_ca
-    STRICT_EXPECTED_CALL(singlylinkedlist_destroy(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // instance
+    int result;
 
     // act
-    wsio_destroy(wsio);
+    result = wsio_get_interface_description()->concrete_io_open(NULL, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
 
     // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_WSIO_01_038: [If wsio_close is called while the open action is in progress, the callback on_io_open_complete shall be called with io_open_result being set to IO_OPEN_CANCELLED and then the wsio_close shall proceed to close the IO.] */
-/* Tests_SRS_WSIO_01_039: [The callback_context argument shall be passed to on_io_open_complete as is.] */
-TEST_FUNCTION(when_wsio_close_is_called_while_an_open_action_is_in_progress_the_on_io_open_complete_callback_is_triggered_with_cancelled)
+/* Tests_SRS_WSIO_01_132: [ If any of the arguments `ws_io`, `on_io_open_complete`, `on_bytes_received`, `on_io_error` is NULL, `wsio_open` shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(wsio_open_with_NULL_on_open_complete_callback_fails)
 {
     // arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
+    CONCRETE_IO_HANDLE wsio;
+    int result;
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_CANCELLED));
-
     // act
-    wsio_close(wsio, NULL, NULL);
+    result = wsio_get_interface_description()->concrete_io_open(wsio, NULL, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
 
     // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
-    wsio_destroy(wsio);
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_039: [The callback_context argument shall be passed to on_io_open_complete as is.] */
-TEST_FUNCTION(when_ws_callback_indicates_a_connection_error_then_the_on_open_complete_callback_is_triggered_with_error_and_NULL_callback_context)
+/* Tests_SRS_WSIO_01_132: [ If any of the arguments `ws_io`, `on_io_open_complete`, `on_bytes_received`, `on_io_error` is NULL, `wsio_open` shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(wsio_open_with_NULL_on_bytes_received_callback_fails)
 {
     // arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, NULL, test_on_bytes_received, NULL, test_on_io_error, NULL);
+    CONCRETE_IO_HANDLE wsio;
+    int result;
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(test_on_io_open_complete(NULL, IO_OPEN_ERROR));
-
     // act
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_CONNECTION_ERROR, NULL, NULL, 0);
+    result = wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, NULL, (void*)0x4243, test_on_io_error, (void*)0x4244);
 
     // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
-    wsio_destroy(wsio);
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_175: [ When the on_open_complete callback is invoked, the libwebsockets context shall be saved for later destroy. ]*/
-/* Tests_SRS_WSIO_01_174: [ `wsio_destroy` shall free any pending context, whose destruction has been deferred by the lws callback by calling `lws_context_destroy`. ]*/
-TEST_FUNCTION(when_ws_callback_indicates_a_connection_error_and_NULL_callback_context_then_context_destroy_is_deferred_to_wsio_destroy)
+/* Tests_SRS_WSIO_01_132: [ If any of the arguments `ws_io`, `on_io_open_complete`, `on_bytes_received`, `on_io_error` is NULL, `wsio_open` shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(wsio_open_with_NULL_on_io_error_callback_fails)
 {
     // arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, NULL, test_on_bytes_received, NULL, test_on_io_error, NULL);
+    CONCRETE_IO_HANDLE wsio;
+    int result;
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
     umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_CONNECTION_ERROR, NULL, NULL, 0);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_context_destroy(TEST_LIBWEBSOCKET_CONTEXT));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // host_name
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // resource_name
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocol
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocols
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // trusted_ca
-    STRICT_EXPECTED_CALL(singlylinkedlist_destroy(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // instance
 
     // act
-    wsio_destroy(wsio);
+    result = wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, NULL, (void*)0x4244);
 
     // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-}
-
-/* Tests_SRS_WSIO_01_039: [The callback_context argument shall be passed to on_io_open_complete as is.] */
-TEST_FUNCTION(when_ws_callback_indicates_a_connect_complete_then_the_on_open_complete_callback_is_triggered_with_NULL_callback_context)
-{
-    // arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, NULL, test_on_bytes_received, NULL, test_on_io_error, NULL);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(test_on_io_open_complete(NULL, IO_OPEN_OK));
-
-    // act
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_ESTABLISHED, NULL, NULL, 0);
-
-    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
-    wsio_destroy(wsio);
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_040: [The argument on_io_open_complete shall be optional, if NULL is passed by the caller then no open complete callback shall be triggered.] */
-TEST_FUNCTION(when_ws_callback_indicates_a_connect_complete_and_no_on_open_complete_callback_was_supplied_no_callback_is_triggered)
+/* Tests_SRS_WSIO_01_082: [ `wsio_open` shall open the underlying uws instance by calling `uws_client_open_async` and providing the uws handle created in `wsio_create` as argument. ]*/
+/* Tests_SRS_WSIO_01_083: [ On success, `wsio_open` shall return 0. ]*/
+TEST_FUNCTION(wsio_open_after_close_succeeds)
 {
     // arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, NULL, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
+    CONCRETE_IO_HANDLE wsio;
+    int result;
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
+    g_on_ws_open_complete(g_on_ws_open_complete_context, WS_OPEN_OK);
+    (void)wsio_get_interface_description()->concrete_io_close(wsio, test_on_io_close_complete, (void*)0x4245);
+    g_on_ws_close_complete(g_on_ws_close_complete_context);
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
+    STRICT_EXPECTED_CALL(uws_client_open_async(TEST_UWS_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
 
     // act
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_ESTABLISHED, NULL, NULL, 0);
+    result = wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
 
     // assert
+    ASSERT_ARE_EQUAL(int, 0, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
-    wsio_destroy(wsio);
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_040: [The argument on_io_open_complete shall be optional, if NULL is passed by the caller then no open complete callback shall be triggered.] */
-TEST_FUNCTION(when_ws_callback_indicates_a_connect_error_and_no_on_open_complete_callback_was_supplied_no_callback_is_triggered)
+/* Tests_SRS_WSIO_01_165: [ `wsio_open` when CLOSING shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(wsio_open_when_closing_fails)
 {
     // arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, NULL, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
+    CONCRETE_IO_HANDLE wsio;
+    int result;
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
+    g_on_ws_open_complete(g_on_ws_open_complete_context, WS_OPEN_OK);
+    (void)wsio_get_interface_description()->concrete_io_close(wsio, test_on_io_close_complete, (void*)0x4245);
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-
     // act
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_CONNECTION_ERROR, NULL, NULL, 0);
+    result = wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
 
     // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_175: [ When the on_open_complete callback is invoked, the libwebsockets context shall be saved for later destroy. ]*/
-/* Tests_SRS_WSIO_01_174: [ `wsio_destroy` shall free any pending context, whose destruction has been deferred by the lws callback by calling `lws_context_destroy`. ]*/
-TEST_FUNCTION(when_ws_callback_indicates_a_connect_error_and_no_on_open_complete_callback_destroy_is_deffered_to_wsio_destroy)
-{
-    // arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, NULL, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_CONNECTION_ERROR, NULL, NULL, 0);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_context_destroy(TEST_LIBWEBSOCKET_CONTEXT));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // host_name
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // resource_name
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocol
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocols
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // trusted_ca
-    STRICT_EXPECTED_CALL(singlylinkedlist_destroy(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // instance
-
-    // act
-    wsio_destroy(wsio);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
 /* wsio_close */
 
-/* Tests_SRS_WSIO_01_041: [wsio_close shall close the websockets IO if an open action is either pending or has completed successfully (if the IO is open).] */
-/* Tests_SRS_WSIO_01_049: [The argument on_io_close_complete shall be optional, if NULL is passed by the caller then no close complete callback shall be triggered.] */
-/* Tests_SRS_WSIO_01_043: [wsio_close shall close the connection by calling lws_context_destroy.] */
-/* Tests_SRS_WSIO_01_044: [On success wsio_close shall return 0.] */
-TEST_FUNCTION(wsio_close_destroys_the_ws_context)
+/* Tests_SRS_WSIO_01_085: [ `wsio_close` shall close the websockets IO if an open action is either pending or has completed successfully (if the IO is open).  ]*/
+/* Tests_SRS_WSIO_01_133: [ On success `wsio_close` shall return 0. ]*/
+/* Tests_SRS_WSIO_01_091: [ `wsio_close` shall obtain all the pending IO items by repetitively querying for the head of the pending IO list and freeing that head item. ]*/
+/* Tests_SRS_WSIO_01_087: [ `wsio_close` shall call `uws_client_close_async` while passing as argument the IO handle created in `wsio_create`.  ]*/
+/* Tests_SRS_WSIO_01_092: [ Obtaining the head of the pending IO list shall be done by calling `singlylinkedlist_get_head_item`. ]*/
+/* Tests_SRS_WSIO_01_094: [ The callback context passed to the `on_send_complete` callback shall be the context given to `wsio_send`.  ]*/
+TEST_FUNCTION(wsio_close_when_IO_is_open_closes_the_uws)
 {
     // arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
+    CONCRETE_IO_HANDLE wsio;
+    int result;
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
+    g_on_ws_open_complete(g_on_ws_open_complete_context, WS_OPEN_OK);
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_CANCELLED));
-
-    // act
-    int result = wsio_close(wsio, NULL, NULL);
-
-    // assert
-    ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_047: [The callback on_io_close_complete shall be called after the close action has been completed in the context of wsio_close (wsio_close is effectively blocking).] */
-/* Tests_SRS_WSIO_01_048: [The callback_context argument shall be passed to on_io_close_complete as is.] */
-TEST_FUNCTION(wsio_close_destroys_the_ws_context_and_calls_the_io_close_complete_callback)
-{
-    // arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_CANCELLED));
-    STRICT_EXPECTED_CALL(test_on_io_close_complete((void*)0x4243));
-
-    // act
-    int result = wsio_close(wsio, test_on_io_close_complete, (void*)0x4243);
-
-    // assert
-    ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_047: [The callback on_io_close_complete shall be called after the close action has been completed in the context of wsio_close (wsio_close is effectively blocking).] */
-/* Tests_SRS_WSIO_01_048: [The callback_context argument shall be passed to on_io_close_complete as is.] */
-/* Tests_SRS_WSIO_01_108: [wsio_close shall obtain all the pending IO items by repetitively querying for the head of the pending IO list and freeing that head item.] */
-/* Tests_SRS_WSIO_01_111: [Obtaining the head of the pending IO list shall be done by calling singlylinkedlist_get_head_item.] */
-TEST_FUNCTION(wsio_close_after_ws_connected_calls_the_io_close_complete_callback)
-{
-    // arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_ESTABLISHED, saved_ws_callback_context, NULL, 0);
-    umock_c_reset_all_calls();
-
+    STRICT_EXPECTED_CALL(uws_client_close_async(TEST_UWS_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
-    STRICT_EXPECTED_CALL(test_on_io_close_complete((void*)0x4243));
 
     // act
-    int result = wsio_close(wsio, test_on_io_close_complete, (void*)0x4243);
+    result = wsio_get_interface_description()->concrete_io_close(wsio, test_on_io_close_complete, (void*)0x4245);
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
-    wsio_destroy(wsio);
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_042: [if ws_io is NULL, wsio_close shall return a non-zero value.] */
+/* Tests_SRS_WSIO_01_086: [ if `ws_io` is NULL, `wsio_close` shall return a non-zero value.  ]*/
 TEST_FUNCTION(wsio_close_with_NULL_handle_fails)
 {
     // arrange
+    int result;
 
     // act
-    int result = wsio_close(NULL, test_on_io_close_complete, (void*)0x4242);
+    result = wsio_get_interface_description()->concrete_io_close(NULL, test_on_io_close_complete, (void*)0x4245);
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_WSIO_01_045: [wsio_close when no open action has been issued shall fail and return a non-zero value.] */
-TEST_FUNCTION(wsio_close_when_not_open_fails)
+/* Tests_SRS_WSIO_01_088: [ `wsio_close` when no open action has been issued shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(when_IO_is_not_open_wsio_close_fails)
 {
     // arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+    CONCRETE_IO_HANDLE wsio;
+    int result;
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
     umock_c_reset_all_calls();
 
     // act
-    int result = wsio_close(wsio, test_on_io_close_complete, (void*)0x4242);
+    result = wsio_get_interface_description()->concrete_io_close(wsio, test_on_io_close_complete, (void*)0x4245);
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
-    wsio_destroy(wsio);
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_046: [wsio_close after a wsio_close shall fail and return a non-zero value.]  */
-TEST_FUNCTION(wsio_close_when_already_closed_fails)
+/* Tests_SRS_WSIO_01_089: [ `wsio_close` after a `wsio_close` shall fail and return a non-zero value.  ]*/
+TEST_FUNCTION(wsio_close_after_wsio_close_completed_fails)
 {
     // arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    (void)wsio_close(wsio, test_on_io_close_complete, (void*)0x4242);
+    CONCRETE_IO_HANDLE wsio;
+    int result;
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
+    g_on_ws_open_complete(g_on_ws_open_complete_context, WS_OPEN_OK);
+    (void)wsio_get_interface_description()->concrete_io_close(wsio, test_on_io_close_complete, (void*)0x4245);
+    g_on_ws_close_complete(g_on_ws_close_complete_context);
     umock_c_reset_all_calls();
 
     // act
-    int result = wsio_close(wsio, test_on_io_close_complete, (void*)0x4242);
+    result = wsio_get_interface_description()->concrete_io_close(wsio, test_on_io_close_complete, (void*)0x4245);
 
     // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
-    wsio_destroy(wsio);
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_089: [ `wsio_close` after a `wsio_close` shall fail and return a non-zero value.  ]*/
+TEST_FUNCTION(wsio_close_after_wsio_close_and_in_closing_fails)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+    int result;
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
+    g_on_ws_open_complete(g_on_ws_open_complete_context, WS_OPEN_OK);
+    (void)wsio_get_interface_description()->concrete_io_close(wsio, test_on_io_close_complete, (void*)0x4245);
+    umock_c_reset_all_calls();
+
+    // act
+    result = wsio_get_interface_description()->concrete_io_close(wsio, test_on_io_close_complete, (void*)0x4245);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_164: [ When `uws_client_close` fails, `wsio_close` shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(when_uws_close_fails_then_wsio_close_fails)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+    int result;
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
+    g_on_ws_open_complete(g_on_ws_open_complete_context, WS_OPEN_OK);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(uws_client_close_async(TEST_UWS_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
+
+    // act
+    result = wsio_get_interface_description()->concrete_io_close(wsio, test_on_io_close_complete, (void*)0x4245);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_090: [ The argument `on_io_close_complete` shall be optional, if NULL is passed by the caller then no close complete callback shall be triggered.  ]*/
+TEST_FUNCTION(wsio_close_with_NULL_close_complete_callback_succeeds)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+    int result;
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
+    g_on_ws_open_complete(g_on_ws_open_complete_context, WS_OPEN_OK);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(uws_client_close_async(TEST_UWS_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
+
+    // act
+    result = wsio_get_interface_description()->concrete_io_close(wsio, NULL, NULL);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_093: [ For each pending item the send complete callback shall be called with `IO_SEND_CANCELLED`.]*/
+TEST_FUNCTION(wsio_close_indicates_a_pending_send_as_CANCELLED)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+    int result;
+    unsigned char test_buffer[] = { 0x42 };
+
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
+    g_on_ws_open_complete(g_on_ws_open_complete_context, WS_OPEN_OK);
+    (void)wsio_get_interface_description()->concrete_io_send(wsio, test_buffer, sizeof(test_buffer), test_on_send_complete, (void*)0x4343);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(uws_client_close_async(TEST_UWS_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
+    EXPECTED_CALL(singlylinkedlist_item_get_value(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(singlylinkedlist_remove(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(test_on_send_complete((void*)0x4343, IO_SEND_CANCELLED));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
+
+    // act
+    result = wsio_get_interface_description()->concrete_io_close(wsio, NULL, NULL);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_093: [ For each pending item the send complete callback shall be called with `IO_SEND_CANCELLED`.]*/
+TEST_FUNCTION(wsio_close_indicates_2_pending_sends_as_CANCELLED)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+    int result;
+    unsigned char test_buffer[] = { 0x42 };
+
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
+    g_on_ws_open_complete(g_on_ws_open_complete_context, WS_OPEN_OK);
+    (void)wsio_get_interface_description()->concrete_io_send(wsio, test_buffer, sizeof(test_buffer), test_on_send_complete, (void*)0x4343);
+    (void)wsio_get_interface_description()->concrete_io_send(wsio, test_buffer, sizeof(test_buffer), test_on_send_complete, (void*)0x4343);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(uws_client_close_async(TEST_UWS_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
+    EXPECTED_CALL(singlylinkedlist_item_get_value(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(singlylinkedlist_remove(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(test_on_send_complete((void*)0x4343, IO_SEND_CANCELLED));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
+    EXPECTED_CALL(singlylinkedlist_item_get_value(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(singlylinkedlist_remove(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(test_on_send_complete((void*)0x4343, IO_SEND_CANCELLED));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
+
+    // act
+    result = wsio_get_interface_description()->concrete_io_close(wsio, NULL, NULL);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
 /* wsio_send */
 
-/* Tests_SRS_WSIO_01_050: [wsio_send shall send the buffer bytes through the websockets connection.] */
-/* Tests_SRS_WSIO_01_054: [wsio_send shall queue the buffer and size until the libwebsockets callback is invoked with the event LWS_CALLBACK_CLIENT_WRITEABLE.] */
-/* Tests_SRS_WSIO_01_105: [The data and callback shall be queued by calling singlylinkedlist_add on the list created in wsio_create.] */
-/* Tests_SRS_WSIO_01_056: [After queueing the data, wsio_send shall call lws_callback_on_writable, while passing as arguments the websockets instance previously obtained in wsio_open from lws_client_connect_via_info.] */
-/* Tests_SRS_WSIO_01_107: [On success, wsio_send shall return 0.] */
-TEST_FUNCTION(wsio_send_adds_the_bytes_to_the_list_and_triggers_on_writable_when_the_io_is_open)
+/* Tests_SRS_WSIO_01_095: [ `wsio_send` shall call `uws_client_send_frame_async`, passing the `buffer` and `size` arguments as they are: ]*/
+/* Tests_SRS_WSIO_01_097: [ The `is_final` argument shall be set to true. ]*/
+/* Tests_SRS_WSIO_01_098: [ On success, `wsio_send` shall return 0. ]*/
+/* Tests_SRS_WSIO_01_102: [ An entry shall be queued in the singly linked list by calling `singlylinkedlist_add`. ]*/
+/* Tests_SRS_WSIO_01_103: [ The entry shall contain the `on_send_complete` callback and its context. ]*/
+/* Tests_SRS_WSIO_01_096: [ The frame type used shall be `WS_FRAME_TYPE_BINARY`. ]*/
+TEST_FUNCTION(wsio_send_with_1_byte_calls_uws_send_frame)
 {
     // arrange
-    unsigned char test_buffer[] = { 0x42 };
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_ESTABLISHED, saved_ws_callback_context, NULL, 0);
+    CONCRETE_IO_HANDLE wsio;
+    int result;
+    unsigned char test_buffer[] = { 42 };
+
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
+    g_on_ws_open_complete(g_on_ws_open_complete_context, WS_OPEN_OK);
     umock_c_reset_all_calls();
 
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(singlylinkedlist_add(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG))
-        .IgnoreArgument(2);
-    STRICT_EXPECTED_CALL(lws_callback_on_writable(TEST_LIBWEBSOCKET));
+    STRICT_EXPECTED_CALL(singlylinkedlist_add(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(uws_client_send_frame_async(TEST_UWS_HANDLE, WS_FRAME_TYPE_BINARY, IGNORED_PTR_ARG, sizeof(test_buffer), true, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+        .ValidateArgumentBuffer(3, test_buffer, sizeof(test_buffer));
 
     // act
-    int result = wsio_send(wsio, test_buffer, sizeof(test_buffer), test_on_send_complete, (void*)0x4243);
+    result = wsio_get_interface_description()->concrete_io_send(wsio, test_buffer, sizeof(test_buffer), test_on_send_complete, (void*)0x4343);
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
-    wsio_destroy(wsio);
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_055: [If queueing the data fails (i.e. due to insufficient memory), wsio_send shall fail and return a non-zero value.] */
-TEST_FUNCTION(when_allocating_memory_for_the_list_item_fails_wsio_send_fails)
+/* Tests_SRS_WSIO_01_099: [ If the wsio is not OPEN (open has not been called or is still in progress) then `wsio_send` shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(wsio_send_when_not_open_fails)
 {
     // arrange
-    unsigned char test_buffer[] = { 0x42 };
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_ESTABLISHED, saved_ws_callback_context, NULL, 0);
+    CONCRETE_IO_HANDLE wsio;
+    int result;
+    unsigned char test_buffer[] = { 42 };
+
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
     umock_c_reset_all_calls();
 
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
-        .SetReturn((void*)NULL);
-
     // act
-    int result = wsio_send(wsio, test_buffer, sizeof(test_buffer), test_on_send_complete, (void*)0x4243);
+    result = wsio_get_interface_description()->concrete_io_send(wsio, test_buffer, sizeof(test_buffer), test_on_send_complete, (void*)0x4343);
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
-    wsio_destroy(wsio);
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_055: [If queueing the data fails (i.e. due to insufficient memory), wsio_send shall fail and return a non-zero value.] */
-TEST_FUNCTION(when_allocating_memory_for_the_pending_bytes_fails_wsio_send_fails)
+/* Tests_SRS_WSIO_01_099: [ If the wsio is not OPEN (open has not been called or is still in progress) then `wsio_send` shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(wsio_send_when_opening_fails)
 {
     // arrange
-    unsigned char test_buffer[] = { 0x42 };
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_ESTABLISHED, saved_ws_callback_context, NULL, 0);
+    CONCRETE_IO_HANDLE wsio;
+    int result;
+    unsigned char test_buffer[] = { 42 };
+
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
     umock_c_reset_all_calls();
 
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
-        .SetReturn((void*)NULL);
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-
     // act
-    int result = wsio_send(wsio, test_buffer, sizeof(test_buffer), test_on_send_complete, (void*)0x4243);
+    result = wsio_get_interface_description()->concrete_io_send(wsio, test_buffer, sizeof(test_buffer), test_on_send_complete, (void*)0x4343);
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
-    wsio_destroy(wsio);
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_055: [If queueing the data fails (i.e. due to insufficient memory), wsio_send shall fail and return a non-zero value.] */
-TEST_FUNCTION(when_singlylinkedlist_add_fails_wsio_send_fails)
+/* Tests_SRS_WSIO_01_099: [ If the wsio is not OPEN (open has not been called or is still in progress) then `wsio_send` shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(wsio_send_after_io_is_closed_fails)
 {
     // arrange
-    unsigned char test_buffer[] = { 0x42 };
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_ESTABLISHED, saved_ws_callback_context, NULL, 0);
+    CONCRETE_IO_HANDLE wsio;
+    int result;
+    unsigned char test_buffer[] = { 42 };
+
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
+    g_on_ws_open_complete(g_on_ws_open_complete_context, WS_OPEN_OK);
+    (void)wsio_get_interface_description()->concrete_io_close(wsio, test_on_io_close_complete, (void*)0x4245);
     umock_c_reset_all_calls();
 
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(singlylinkedlist_add(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG))
-        .IgnoreArgument(2)
-        .SetReturn((LIST_ITEM_HANDLE)NULL);
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-
     // act
-    int result = wsio_send(wsio, test_buffer, sizeof(test_buffer), test_on_send_complete, (void*)0x4243);
+    result = wsio_get_interface_description()->concrete_io_send(wsio, test_buffer, sizeof(test_buffer), test_on_send_complete, (void*)0x4343);
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
-    wsio_destroy(wsio);
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_106: [If lws_callback_on_writable returns a negative value, wsio_send shall fail and return a non-zero value.] */
-TEST_FUNCTION(when_callback_on_writable_fails_then_wsio_send_fails)
+/* Tests_SRS_WSIO_01_100: [ If any of the arguments `ws_io` or `buffer` are NULL, `wsio_send` shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(wsio_send_with_NULL_wsio_fails)
 {
     // arrange
-    unsigned char test_buffer[] = { 0x42 };
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_ESTABLISHED, saved_ws_callback_context, NULL, 0);
-    umock_c_reset_all_calls();
-
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(singlylinkedlist_add(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG))
-        .IgnoreArgument(2);
-    STRICT_EXPECTED_CALL(lws_callback_on_writable(TEST_LIBWEBSOCKET))
-        .SetReturn(-1);
+    int result;
+    unsigned char test_buffer[] = { 42 };
 
     // act
-    int result = wsio_send(wsio, test_buffer, sizeof(test_buffer), test_on_send_complete, (void*)0x4243);
+    result = wsio_get_interface_description()->concrete_io_send(NULL, test_buffer, sizeof(test_buffer), test_on_send_complete, (void*)0x4343);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_WSIO_01_100: [ If any of the arguments `ws_io` or `buffer` are NULL, `wsio_send` shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(wsio_send_with_NULL_buffer_fails)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+    int result;
+
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
+    g_on_ws_open_complete(g_on_ws_open_complete_context, WS_OPEN_OK);
+    (void)wsio_get_interface_description()->concrete_io_close(wsio, test_on_io_close_complete, (void*)0x4245);
+    umock_c_reset_all_calls();
+
+    // act
+    result = wsio_get_interface_description()->concrete_io_send(wsio, NULL, 1, test_on_send_complete, (void*)0x4343);
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
-    wsio_destroy(wsio);
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_050: [wsio_send shall send the buffer bytes through the websockets connection.] */
-/* Tests_SRS_WSIO_01_054: [wsio_send shall queue the buffer and size until the libwebsockets callback is invoked with the event LWS_CALLBACK_CLIENT_WRITEABLE.] */
-/* Tests_SRS_WSIO_01_057: [The callback on_send_complete shall be called with SEND_RESULT_OK when the send is indicated as complete.] */
-TEST_FUNCTION(when_lws_wants_to_send_bytes_they_are_pushed_to_lws)
+/* Tests_SRS_WSIO_01_101: [ If `size` is zero then `wsio_send` shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(wsio_send_with_zero_size_fails)
 {
     // arrange
-    unsigned char test_buffer[] = { 0x42 };
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_ESTABLISHED, saved_ws_callback_context, NULL, 0);
-    (void)wsio_send(wsio, test_buffer, sizeof(test_buffer), test_on_send_complete, (void*)0x4243);
-    umock_c_reset_all_calls();
+    CONCRETE_IO_HANDLE wsio;
+    int result;
+    unsigned char test_buffer[] = { 42 };
 
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
-    EXPECTED_CALL(singlylinkedlist_item_get_value(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(lws_write(TEST_LIBWEBSOCKET, IGNORED_PTR_ARG, sizeof(test_buffer), LWS_WRITE_BINARY))
-        .ValidateArgumentBuffer(2, test_buffer, sizeof(test_buffer))
-        .SetReturn((int)sizeof(test_buffer));
-    STRICT_EXPECTED_CALL(test_on_send_complete((void*)0x4243, IO_SEND_OK));
-    EXPECTED_CALL(singlylinkedlist_remove(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-
-    // act
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_WRITEABLE, saved_ws_callback_context, NULL, 0);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_060: [The argument on_send_complete shall be optional, if NULL is passed by the caller then no send complete callback shall be triggered.] */
-TEST_FUNCTION(when_lws_wants_to_send_bytes_they_are_pushed_to_lws_but_no_callback_is_called_if_none_was_specified)
-{
-    // arrange
-    unsigned char test_buffer[] = { 0x42 };
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_ESTABLISHED, saved_ws_callback_context, NULL, 0);
-    (void)wsio_send(wsio, test_buffer, sizeof(test_buffer), NULL, (void*)0x4243);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
-    EXPECTED_CALL(singlylinkedlist_item_get_value(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(lws_write(TEST_LIBWEBSOCKET, IGNORED_PTR_ARG, sizeof(test_buffer), LWS_WRITE_BINARY))
-        .ValidateArgumentBuffer(2, test_buffer, sizeof(test_buffer))
-        .SetReturn((int)sizeof(test_buffer));
-    EXPECTED_CALL(singlylinkedlist_remove(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-
-    // act
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_WRITEABLE, saved_ws_callback_context, NULL, 0);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_051: [If the wsio is not OPEN (open has not been called or is still in progress) then wsio_send shall fail and return a non-zero value.] */
-TEST_FUNCTION(when_ws_io_is_not_opened_yet_wsio_send_fails)
-{
-    // arrange
-    unsigned char test_buffer[] = { 0x42 };
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
+    g_on_ws_open_complete(g_on_ws_open_complete_context, WS_OPEN_OK);
+    (void)wsio_get_interface_description()->concrete_io_close(wsio, test_on_io_close_complete, (void*)0x4245);
     umock_c_reset_all_calls();
 
     // act
-    int result = wsio_send(wsio, test_buffer, sizeof(test_buffer), test_on_send_complete, (void*)0x4243);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_NOT_EQUAL(int, 0, result);
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_051: [If the wsio is not OPEN (open has not been called or is still in progress) then wsio_send shall fail and return a non-zero value.] */
-TEST_FUNCTION(when_ws_io_is_opening_wsio_send_fails)
-{
-    // arrange
-    unsigned char test_buffer[] = { 0x42 };
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    umock_c_reset_all_calls();
-
-    // act
-    int result = wsio_send(wsio, test_buffer, sizeof(test_buffer), test_on_send_complete, (void*)0x4243);
+    result = wsio_get_interface_description()->concrete_io_send(wsio, test_buffer, 0, test_on_send_complete, (void*)0x4343);
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
-    wsio_destroy(wsio);
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_052: [If any of the arguments ws_io or buffer are NULL, wsio_send shall fail and return a non-zero value.] */
-TEST_FUNCTION(when_wsio_is_NULL_wsio_send_fails)
+/* Tests_SRS_WSIO_01_134: [ If allocating memory for the pending IO data fails, `wsio_send` shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(when_allocating_memory_for_the_pending_send_fails_wsio_send_fails)
 {
     // arrange
-    unsigned char test_buffer[] = { 0x42 };
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_ESTABLISHED, saved_ws_callback_context, NULL, 0);
-    umock_c_reset_all_calls();
-
-    // act
-    int result = wsio_send(NULL, test_buffer, sizeof(test_buffer), test_on_send_complete, (void*)0x4243);
-
-    // assert
-    ASSERT_ARE_NOT_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_052: [If any of the arguments ws_io or buffer are NULL, wsio_send shall fail and return a non-zero value.] */
-TEST_FUNCTION(when_buffer_is_NULL_wsio_send_fails)
-{
-    // arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_ESTABLISHED, saved_ws_callback_context, NULL, 0);
-    umock_c_reset_all_calls();
-
-    // act
-    int result = wsio_send(wsio, NULL, 1, test_on_send_complete, (void*)0x4243);
-
-    // assert
-    ASSERT_ARE_NOT_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_053: [If size is zero then wsio_send shall fail and return a non-zero value.] */
-TEST_FUNCTION(when_size_is_zero_wsio_send_fails)
-{
-    // arrange
-    unsigned char test_buffer[] = { 0x42 };
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_ESTABLISHED, saved_ws_callback_context, NULL, 0);
-    umock_c_reset_all_calls();
-
-    // act
-    int result = wsio_send(wsio, test_buffer, 0, test_on_send_complete, (void*)0x4243);
-
-    // assert
-    ASSERT_ARE_NOT_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_108: [wsio_close shall obtain all the pending IO items by repetitively querying for the head of the pending IO list and freeing that head item.] */
-/* Tests_SRS_WSIO_01_111: [Obtaining the head of the pending IO list shall be done by calling singlylinkedlist_get_head_item.] */
-/* Tests_SRS_WSIO_01_109: [For each pending item the send complete callback shall be called with IO_SEND_CANCELLED.] */
-/* Tests_SRS_WSIO_01_110: [The callback context passed to the on_send_complete callback shall be the context given to wsio_send.] */
-TEST_FUNCTION(wsio_close_with_a_pending_send_cancels_the_send)
-{
-    // arrange
-    unsigned char test_buffer[] = { 0x42 };
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_ESTABLISHED, saved_ws_callback_context, NULL, 0);
-    (void)wsio_send(wsio, test_buffer, sizeof(test_buffer), test_on_send_complete, (void*)0x4243);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
-    EXPECTED_CALL(singlylinkedlist_item_get_value(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(test_on_send_complete((void*)0x4243, IO_SEND_CANCELLED));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(singlylinkedlist_remove(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
-
-    // act
-    (void)wsio_close(wsio, NULL, NULL);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_110: [The callback context passed to the on_send_complete callback shall be the context given to wsio_send.] */
-/* Tests_SRS_WSIO_01_059: [The callback_context argument shall be passed to on_send_complete as is.] */
-TEST_FUNCTION(wsio_close_with_a_pending_send_cancels_the_send_and_passes_the_appropriate_callback_context)
-{
-    // arrange
-    unsigned char test_buffer[] = { 0x42 };
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_ESTABLISHED, saved_ws_callback_context, NULL, 0);
-    (void)wsio_send(wsio, test_buffer, sizeof(test_buffer), test_on_send_complete, (void*)0x4243);
-    (void)wsio_send(wsio, test_buffer, sizeof(test_buffer), test_on_send_complete, (void*)0x4244);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
-    EXPECTED_CALL(singlylinkedlist_item_get_value(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(test_on_send_complete((void*)0x4243, IO_SEND_CANCELLED));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(singlylinkedlist_remove(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
-    EXPECTED_CALL(singlylinkedlist_item_get_value(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(test_on_send_complete((void*)0x4244, IO_SEND_CANCELLED));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(singlylinkedlist_remove(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
-
-    // act
-    (void)wsio_close(wsio, NULL, NULL);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_060: [The argument on_send_complete shall be optional, if NULL is passed by the caller then no send complete callback shall be triggered.] */
-TEST_FUNCTION(wsio_close_with_a_pending_send_cancels_the_send_but_doen_not_call_calback_if_no_callback_was_specified)
-{
-    // arrange
-    unsigned char test_buffer[] = { 0x42 };
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_ESTABLISHED, saved_ws_callback_context, NULL, 0);
-    (void)wsio_send(wsio, test_buffer, sizeof(test_buffer), NULL, (void*)0x4243);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
-    EXPECTED_CALL(singlylinkedlist_item_get_value(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(singlylinkedlist_remove(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
-
-    // act
-    (void)wsio_close(wsio, NULL, NULL);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* wsio_dowork */
-
-/* Tests_SRS_WSIO_01_061: [wsio_dowork shall service the libwebsockets context by calling lws_service and passing as argument the context obtained in wsio_open.] */
-/* Tests_SRS_WSIO_01_112: [The timeout for lws_service shall be 0.] */
-/* Tests_SRS_WSIO_01_062: [This shall be done if the IO is not closed.] */
-TEST_FUNCTION(wsio_dowork_services_lws)
-{
-    // arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_ESTABLISHED, saved_ws_callback_context, NULL, 0);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_service(TEST_LIBWEBSOCKET_CONTEXT, 0));
-
-    // act
-    wsio_dowork(wsio);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_063: [If the ws_io argument is NULL, wsio_dowork shall do nothing.]  */
-TEST_FUNCTION(wsio_dowork_with_NULL_handles_does_not_call_lws_service)
-{
-    // arrange
-
-    // act
-    wsio_dowork(NULL);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-}
-
-/* Tests_SRS_WSIO_01_061: [wsio_dowork shall service the libwebsockets context by calling lws_service and passing as argument the context obtained in wsio_open.] */
-/* Tests_SRS_WSIO_01_112: [The timeout for lws_service shall be 0.] */
-/* Tests_SRS_WSIO_01_062: [This shall be done if the IO is not closed.] */
-TEST_FUNCTION(wsio_dowork_services_lws_when_still_opening)
-{
-    // arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_service(TEST_LIBWEBSOCKET_CONTEXT, 0));
-
-    // act
-    wsio_dowork(wsio);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_062: [This shall be done if the IO is not closed.] */
-TEST_FUNCTION(wsio_dowork_does_not_service_lws_when_not_yet_open)
-{
-    // arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    umock_c_reset_all_calls();
-
-    // act
-    wsio_dowork(wsio);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_062: [This shall be done if the IO is not closed.] */
-TEST_FUNCTION(wsio_dowork_does_not_service_lws_when_closed)
-{
-    // arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_ESTABLISHED, saved_ws_callback_context, NULL, 0);
-    wsio_close(wsio, NULL, NULL);
-    umock_c_reset_all_calls();
-
-    // act
-    wsio_dowork(wsio);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* wsio_get_interface_description */
-
-/* Tests_SRS_WSIO_01_064: [wsio_get_interface_description shall return a pointer to an IO_INTERFACE_DESCRIPTION structure that contains pointers to the functions: wsio_create, wsio_destroy, wsio_open, wsio_close, wsio_send and wsio_dowork.] */
-TEST_FUNCTION(wsio_get_interface_description_fills_the_interface_structure)
-{
-    // arrange
-
-    // act
-    const IO_INTERFACE_DESCRIPTION* if_description = wsio_get_interface_description();
-
-    // assert
-    ASSERT_IS_TRUE(wsio_create == if_description->concrete_io_create);
-    ASSERT_IS_TRUE(wsio_destroy == if_description->concrete_io_destroy);
-    ASSERT_IS_TRUE(wsio_open == if_description->concrete_io_open);
-    ASSERT_IS_TRUE(wsio_close == if_description->concrete_io_close);
-    ASSERT_IS_TRUE(wsio_send == if_description->concrete_io_send);
-    ASSERT_IS_TRUE(wsio_dowork == if_description->concrete_io_dowork);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-}
-
-/* on_ws_callback */
-
-/* Tests_SRS_WSIO_01_066: [If an open action is pending, the on_io_open_complete callback shall be triggered with IO_OPEN_OK and from now on it shall be possible to send/receive data.] */
-TEST_FUNCTION(CLIENT_CONNECTED_when_opening_triggers_an_open_complete_callback)
-{
-    // arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_OK));
-
-    // act
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_ESTABLISHED, saved_ws_callback_context, NULL, 0);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_068: [If the IO is already open, the on_io_error callback shall be triggered.] */
-TEST_FUNCTION(CLIENT_CONNECTED_when_already_open_triggers_an_error)
-{
-    // arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    umock_c_reset_all_calls();
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_ESTABLISHED, saved_ws_callback_context, NULL, 0);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4242));
-
-    // act
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_ESTABLISHED, saved_ws_callback_context, NULL, 0);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_069: [If an open action is pending, the on_io_open_complete callback shall be triggered with IO_OPEN_ERROR.] */
-TEST_FUNCTION(CLIENT_CONNECTION_ERROR_when_opening_yields_open_complete_with_error)
-{
-    // arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_ERROR));
-
-    // act
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_CONNECTION_ERROR, saved_ws_callback_context, NULL, 0);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_175: [ When the on_open_complete callback is invoked, the libwebsockets context shall be saved for later destroy. ]*/
-/* Tests_SRS_WSIO_01_174: [ `wsio_destroy` shall free any pending context, whose destruction has been deferred by the lws callback by calling `lws_context_destroy`. ]*/
-TEST_FUNCTION(CLIENT_CONNECTION_ERROR_when_opening_yields_open_complete_with_error_and_deferes_destroy_to_wsio_destroy)
-{
-    // arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_CONNECTION_ERROR, saved_ws_callback_context, NULL, 0);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_context_destroy(TEST_LIBWEBSOCKET_CONTEXT));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // host_name
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // resource_name
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocol
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocols
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // trusted_ca
-    STRICT_EXPECTED_CALL(singlylinkedlist_destroy(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // instance
-
-    // act
-    wsio_destroy(wsio);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-}
-
-/* Tests_SRS_WSIO_01_069: [If an open action is pending, the on_io_open_complete callback shall be triggered with IO_OPEN_ERROR.] */
-TEST_FUNCTION(CLIENT_CONNECTION_ERROR_when_opening_with_NULL_open_complete_callback_still_frees_the_lws_context)
-{
-    // arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, NULL, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-
-    // act
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_CONNECTION_ERROR, saved_ws_callback_context, NULL, 0);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_175: [ When the on_open_complete callback is invoked, the libwebsockets context shall be saved for later destroy. ]*/
-/* Tests_SRS_WSIO_01_174: [ `wsio_destroy` shall free any pending context, whose destruction has been deferred by the lws callback by calling `lws_context_destroy`. ]*/
-TEST_FUNCTION(CLIENT_CONNECTION_ERROR_when_opening_with_NULL_open_complete_callback_still_frees_the_lws_context_and_defers_destroy_to_wsio_destroy)
-{
-    // arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, NULL, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_CONNECTION_ERROR, saved_ws_callback_context, NULL, 0);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_context_destroy(TEST_LIBWEBSOCKET_CONTEXT));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // host_name
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // resource_name
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocol
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocols
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // trusted_ca
-    STRICT_EXPECTED_CALL(singlylinkedlist_destroy(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // instance
-
-    // act
-    wsio_destroy(wsio);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-}
-
-/* Tests_SRS_WSIO_01_070: [If the IO is already open, the on_io_error callback shall be triggered.] */
-TEST_FUNCTION(CLIENT_CONNECTION_ERROR_when_already_open_indicates_an_error_to_the_consumer)
-{
-    // arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    umock_c_reset_all_calls();
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_ESTABLISHED, saved_ws_callback_context, NULL, 0);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4242));
-
-    // act
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_CONNECTION_ERROR, saved_ws_callback_context, NULL, 0);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_071: [If any pending IO chunks queued in wsio_send are to be sent, then the first one shall be retrieved from the queue.] */
-/* Tests_SRS_WSIO_01_072: [Enough space to fit the data and LWS_SEND_BUFFER_PRE_PADDING and LWS_SEND_BUFFER_POST_PADDING shall be allocated.] */
-/* Tests_SRS_WSIO_01_074: [The payload queued in wsio_send shall be copied to the newly allocated buffer at the position LWS_SEND_BUFFER_PRE_PADDING.] */
-/* Tests_SRS_WSIO_01_075: [lws_write shall be called with the websockets interface obtained in wsio_open, the newly constructed padded buffer, the data size queued in wsio_send (actual payload) and the payload type should be set to LWS_WRITE_BINARY.] */
-/* Tests_SRS_WSIO_01_077: [If lws_write succeeds and the complete payload has been sent, the queued pending IO shall be removed from the pending list.] */
-/* Tests_SRS_WSIO_01_078: [If the pending IO had an associated on_send_complete, then the on_send_complete function shall be called with the callback_context and IO_SEND_OK as arguments.] */
-/* Tests_SRS_WSIO_01_120: [This event shall only be processed if the IO is open.] */
-TEST_FUNCTION(CLIENT_WRITABLE_when_open_and_one_chunk_queued_sends_the_chunk)
-{
-    // arrange
-    unsigned char test_buffer[] = { 0x42 };
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    umock_c_reset_all_calls();
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_ESTABLISHED, saved_ws_callback_context, NULL, 0);
-    (void)wsio_send(wsio, test_buffer, sizeof(test_buffer), NULL, (void*)0x4243);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
-    EXPECTED_CALL(singlylinkedlist_item_get_value(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(lws_write(TEST_LIBWEBSOCKET, IGNORED_PTR_ARG, sizeof(test_buffer), LWS_WRITE_BINARY))
-        .ValidateArgumentBuffer(2, test_buffer, sizeof(test_buffer))
-        .SetReturn((int)sizeof(test_buffer));
-    EXPECTED_CALL(singlylinkedlist_remove(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-
-    // act
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_WRITEABLE, saved_ws_callback_context, NULL, 0);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_121: [If this event is received in while an open action is incomplete, the open_complete callback shall be called with IO_OPEN_ERROR.] */
-TEST_FUNCTION(CLIENT_WRITABLE_when_opening_yields_an_open_complete_error)
-{
-    // arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_ERROR));
-
-    // act
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_WRITEABLE, saved_ws_callback_context, NULL, 0);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_175: [ When the on_open_complete callback is invoked, the libwebsockets context shall be saved for later destroy. ]*/
-/* Tests_SRS_WSIO_01_174: [ `wsio_destroy` shall free any pending context, whose destruction has been deferred by the lws callback by calling `lws_context_destroy`. ]*/
-TEST_FUNCTION(CLIENT_WRITABLE_when_opening_yields_an_open_complete_error_and_defers_the_context_destroy_to_wsio_destroy)
-{
-    // arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_WRITEABLE, saved_ws_callback_context, NULL, 0);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_context_destroy(TEST_LIBWEBSOCKET_CONTEXT));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // host_name
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // resource_name
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocol
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocols
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // trusted_ca
-    STRICT_EXPECTED_CALL(singlylinkedlist_destroy(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // instance
-
-    // act
-    wsio_destroy(wsio);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-}
-
-/* Tests_SRS_WSIO_01_071: [If any pending IO chunks queued in wsio_send are to be sent, then the first one shall be retrieved from the queue.] */
-TEST_FUNCTION(when_no_items_are_pending_in_CLIENT_WRITABLE_nothing_happens)
-{
-    // arrange
-    unsigned char test_buffer[] = { 0x42 };
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    umock_c_reset_all_calls();
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_ESTABLISHED, saved_ws_callback_context, NULL, 0);
-    (void)wsio_send(wsio, test_buffer, sizeof(test_buffer), NULL, (void*)0x4243);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE))
-        .SetReturn((LIST_ITEM_HANDLE)NULL);
-
-    // act
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_WRITEABLE, saved_ws_callback_context, NULL, 0);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_071: [If any pending IO chunks queued in wsio_send are to be sent, then the first one shall be retrieved from the queue.] */
-TEST_FUNCTION(when_getting_the_pending_io_data_in_CLIENT_WRITABLE_fails_then_an_error_is_indicated)
-{
-    // arrange
-    unsigned char test_buffer[] = { 0x42 };
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    umock_c_reset_all_calls();
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_ESTABLISHED, saved_ws_callback_context, NULL, 0);
-    (void)wsio_send(wsio, test_buffer, sizeof(test_buffer), NULL, (void*)0x4243);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
-    EXPECTED_CALL(singlylinkedlist_item_get_value(IGNORED_PTR_ARG))
-        .SetReturn((void*)NULL);
-    STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4242));
-
-    // act
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_WRITEABLE, saved_ws_callback_context, NULL, 0);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_073: [If allocating the memory fails then the send_result callback callback shall be triggered with IO_SEND_ERROR.] */
-/* Tests_SRS_WSIO_01_081: [If no errors prohibiting further processing of other pending IO chunks have happened, then lws_callback_on_writable shall be called, while passing the websockets context and interface obtained in wsio_open as arguments.] */
-TEST_FUNCTION(when_allocating_memory_for_lws_in_CLIENT_WRITABLE_fails_then_an_error_is_indicated)
-{
-    // arrange
-    unsigned char test_buffer[] = { 0x42 };
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    umock_c_reset_all_calls();
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_ESTABLISHED, saved_ws_callback_context, NULL, 0);
-    (void)wsio_send(wsio, test_buffer, sizeof(test_buffer), test_on_send_complete, (void*)0x4243);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
-    EXPECTED_CALL(singlylinkedlist_item_get_value(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
-        .SetReturn((void*)NULL);
-    STRICT_EXPECTED_CALL(test_on_send_complete((void*)0x4243, IO_SEND_ERROR));
-    STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE))
-        .SetReturn((LIST_ITEM_HANDLE)NULL);
-    EXPECTED_CALL(singlylinkedlist_remove(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-
-    // act
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_WRITEABLE, saved_ws_callback_context, NULL, 0);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_076: [If lws_write fails (result is less than 0) then the send_complete callback shall be triggered with IO_SEND_ERROR.] */
-TEST_FUNCTION(when_lws_write_fails_in_CLIENT_WRITABLE_then_an_error_is_indicated)
-{
-    // arrange
-    unsigned char test_buffer[] = { 0x42 };
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    umock_c_reset_all_calls();
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_ESTABLISHED, saved_ws_callback_context, NULL, 0);
-    (void)wsio_send(wsio, test_buffer, sizeof(test_buffer), test_on_send_complete, (void*)0x4243);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
-    EXPECTED_CALL(singlylinkedlist_item_get_value(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(lws_write(TEST_LIBWEBSOCKET, IGNORED_PTR_ARG, sizeof(test_buffer), LWS_WRITE_BINARY))
-        .ValidateArgumentBuffer(2, test_buffer, sizeof(test_buffer))
-        .SetReturn(-1);
-    STRICT_EXPECTED_CALL(test_on_send_complete((void*)0x4243, IO_SEND_ERROR));
-    STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE))
-        .SetReturn((LIST_ITEM_HANDLE)NULL);
-    EXPECTED_CALL(singlylinkedlist_remove(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-
-    // act
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_WRITEABLE, saved_ws_callback_context, NULL, 0);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_113: [If allocating the memory fails for a pending IO that has been partially sent already then the on_io_error callback shall also be triggered.] */
-TEST_FUNCTION(when_allocating_memory_for_the_lws_write_fails_in_CLIENT_WRITABLE_for_a_pending_io_that_was_partially_sent_an_error_is_indicated)
-{
-    // arrange
-    unsigned char test_buffer[] = { 0x42, 0x43 };
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    umock_c_reset_all_calls();
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_ESTABLISHED, saved_ws_callback_context, NULL, 0);
-    (void)wsio_send(wsio, test_buffer, sizeof(test_buffer), test_on_send_complete, (void*)0x4243);
-
-    umock_c_reset_all_calls();
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(lws_write(TEST_LIBWEBSOCKET, IGNORED_PTR_ARG, sizeof(test_buffer), LWS_WRITE_BINARY))
-        .ValidateArgumentBuffer(2, test_buffer, sizeof(test_buffer))
-        .SetReturn(1);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_WRITEABLE, saved_ws_callback_context, NULL, 0);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
-    EXPECTED_CALL(singlylinkedlist_item_get_value(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
-        .SetReturn((void*)NULL);
-    STRICT_EXPECTED_CALL(test_on_send_complete((void*)0x4243, IO_SEND_ERROR));
-    STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4242));
-    EXPECTED_CALL(singlylinkedlist_remove(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-
-    // act
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_WRITEABLE, saved_ws_callback_context, NULL, 0);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_114: [Additionally, if the failure is for a pending IO that has been partially sent already then the on_io_error callback shall also be triggered.] */
-TEST_FUNCTION(when_lws_write_fails_in_CLIENT_WRITABLE_for_a_pending_io_that_was_partially_sent_an_error_is_indicated)
-{
-    // arrange
-    unsigned char test_buffer[] = { 0x42, 0x43 };
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    umock_c_reset_all_calls();
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_ESTABLISHED, saved_ws_callback_context, NULL, 0);
-    (void)wsio_send(wsio, test_buffer, sizeof(test_buffer), test_on_send_complete, (void*)0x4243);
-
-    umock_c_reset_all_calls();
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(lws_write(TEST_LIBWEBSOCKET, IGNORED_PTR_ARG, sizeof(test_buffer), LWS_WRITE_BINARY))
-        .ValidateArgumentBuffer(2, test_buffer, sizeof(test_buffer))
-        .SetReturn(1);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_WRITEABLE, saved_ws_callback_context, NULL, 0);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
-    EXPECTED_CALL(singlylinkedlist_item_get_value(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(lws_write(TEST_LIBWEBSOCKET, IGNORED_PTR_ARG, 1, LWS_WRITE_BINARY))
-        .ValidateArgumentBuffer(2, test_buffer + 1, 1)
-        .SetReturn(-1);
-    STRICT_EXPECTED_CALL(test_on_send_complete((void*)0x4243, IO_SEND_ERROR));
-    STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4242));
-    EXPECTED_CALL(singlylinkedlist_remove(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-
-    // act
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_WRITEABLE, saved_ws_callback_context, NULL, 0);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_079: [If the send was successful and any error occurs during removing the pending IO from the list then the on_io_error callback shall be triggered.]  */
-TEST_FUNCTION(when_removing_the_pending_IO_after_a_succesfull_write_lws_write_fails_in_CLIENT_WRITABLE_then_an_error_is_indicated)
-{
-    // arrange
-    unsigned char test_buffer[] = { 0x42, 0x43 };
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    umock_c_reset_all_calls();
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_ESTABLISHED, saved_ws_callback_context, NULL, 0);
-    (void)wsio_send(wsio, test_buffer, sizeof(test_buffer), test_on_send_complete, (void*)0x4243);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
-    EXPECTED_CALL(singlylinkedlist_item_get_value(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(lws_write(TEST_LIBWEBSOCKET, IGNORED_PTR_ARG, sizeof(test_buffer), LWS_WRITE_BINARY))
-        .ValidateArgumentBuffer(2, test_buffer, sizeof(test_buffer))
-        .SetReturn(2);
-    STRICT_EXPECTED_CALL(test_on_send_complete((void*)0x4243, IO_SEND_OK));
-    EXPECTED_CALL(singlylinkedlist_remove(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-
-    // act
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_WRITEABLE, saved_ws_callback_context, NULL, 0);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_081: [If any pending IOs are in the list, lws_callback_on_writable shall be called, while passing the websockets instance obtained in wsio_open as arguments if:] */
-/* Tests_SRS_WSIO_01_116: [The send failed writing to lws or allocating memory for the data to be passed to lws and no partial data has been sent previously for the pending IO.] */
-TEST_FUNCTION(when_allocating_memory_for_lws_in_CLIENT_WRITABLE_and_another_pending_IO_exists_then_callback_on_writable_is_called)
-{
-    // arrange
-    unsigned char test_buffer[] = { 0x42 };
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    umock_c_reset_all_calls();
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_ESTABLISHED, saved_ws_callback_context, NULL, 0);
-    (void)wsio_send(wsio, test_buffer, sizeof(test_buffer), test_on_send_complete, (void*)0x4243);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
-    EXPECTED_CALL(singlylinkedlist_item_get_value(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
-        .SetReturn((void*)NULL);
-    STRICT_EXPECTED_CALL(test_on_send_complete((void*)0x4243, IO_SEND_ERROR));
-    STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
-    STRICT_EXPECTED_CALL(lws_callback_on_writable(TEST_LIBWEBSOCKET));
-    EXPECTED_CALL(singlylinkedlist_remove(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-
-    // act
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_WRITEABLE, saved_ws_callback_context, NULL, 0);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_081: [If any pending IOs are in the list, lws_callback_on_writable shall be called, while passing the websockets instance obtained in wsio_open as arguments if:] */
-/* Tests_SRS_WSIO_01_116: [The send failed writing to lws or allocating memory for the data to be passed to lws and no partial data has been sent previously for the pending IO.] */
-TEST_FUNCTION(when_lws_write_in_CLIENT_WRITABLE_fails_and_another_pending_IO_exists_then_callback_on_writable_is_called)
-{
-    // arrange
-    unsigned char test_buffer[] = { 0x42 };
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    umock_c_reset_all_calls();
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_ESTABLISHED, saved_ws_callback_context, NULL, 0);
-    (void)wsio_send(wsio, test_buffer, sizeof(test_buffer), test_on_send_complete, (void*)0x4243);
-    umock_c_reset_all_calls();
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
-    EXPECTED_CALL(singlylinkedlist_item_get_value(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(lws_write(TEST_LIBWEBSOCKET, IGNORED_PTR_ARG, sizeof(test_buffer), LWS_WRITE_BINARY))
-        .ValidateArgumentBuffer(2, test_buffer, sizeof(test_buffer))
-        .SetReturn(-1);
-    STRICT_EXPECTED_CALL(test_on_send_complete((void*)0x4243, IO_SEND_ERROR));
-    STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
-    STRICT_EXPECTED_CALL(lws_callback_on_writable(TEST_LIBWEBSOCKET));
-    EXPECTED_CALL(singlylinkedlist_remove(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-
-    // act
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_WRITEABLE, saved_ws_callback_context, NULL, 0);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_081: [If any pending IOs are in the list, lws_callback_on_writable shall be called, while passing the websockets instance obtained in wsio_open as arguments if:] */
-/* Tests_SRS_WSIO_01_116: [The send failed writing to lws or allocating memory for the data to be passed to lws and no partial data has been sent previously for the pending IO.] */
-TEST_FUNCTION(when_allocating_memory_in_CLIENT_WRITABLE_fails_after_a_partial_write_and_another_pending_IO_exists_then_callback_on_writable_is_not_called)
-{
-    // arrange
-    unsigned char test_buffer[] = { 0x42, 0x43 };
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    umock_c_reset_all_calls();
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_ESTABLISHED, saved_ws_callback_context, NULL, 0);
-    (void)wsio_send(wsio, test_buffer, sizeof(test_buffer), test_on_send_complete, (void*)0x4243);
-    umock_c_reset_all_calls();
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(lws_write(TEST_LIBWEBSOCKET, IGNORED_PTR_ARG, sizeof(test_buffer), LWS_WRITE_BINARY))
-        .ValidateArgumentBuffer(2, test_buffer, sizeof(test_buffer))
-        .SetReturn(1);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_WRITEABLE, saved_ws_callback_context, NULL, 0);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
-    EXPECTED_CALL(singlylinkedlist_item_get_value(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
-        .SetReturn((void*)NULL);
-    STRICT_EXPECTED_CALL(test_on_send_complete((void*)0x4243, IO_SEND_ERROR));
-    STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4242));
-    EXPECTED_CALL(singlylinkedlist_remove(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-
-    // act
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_WRITEABLE, saved_ws_callback_context, NULL, 0);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_081: [If any pending IOs are in the list, lws_callback_on_writable shall be called, while passing the websockets instance obtained in wsio_open as arguments if:] */
-/* Tests_SRS_WSIO_01_116: [The send failed writing to lws or allocating memory for the data to be passed to lws and no partial data has been sent previously for the pending IO.] */
-TEST_FUNCTION(when_lws_write_in_CLIENT_WRITABLE_fails_after_a_partial_write_and_another_pending_IO_exists_then_callback_on_writable_is_not_called)
-{
-    // arrange
-    unsigned char test_buffer[] = { 0x42, 0x43 };
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    umock_c_reset_all_calls();
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_ESTABLISHED, saved_ws_callback_context, NULL, 0);
-    (void)wsio_send(wsio, test_buffer, sizeof(test_buffer), test_on_send_complete, (void*)0x4243);
-    umock_c_reset_all_calls();
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(lws_write(TEST_LIBWEBSOCKET, IGNORED_PTR_ARG, sizeof(test_buffer), LWS_WRITE_BINARY))
-        .ValidateArgumentBuffer(2, test_buffer, sizeof(test_buffer))
-        .SetReturn(1);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_WRITEABLE, saved_ws_callback_context, NULL, 0);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
-    EXPECTED_CALL(singlylinkedlist_item_get_value(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(lws_write(TEST_LIBWEBSOCKET, IGNORED_PTR_ARG, 1, LWS_WRITE_BINARY))
-        .ValidateArgumentBuffer(2, test_buffer + 1, 1)
-        .SetReturn(-1);
-    STRICT_EXPECTED_CALL(test_on_send_complete((void*)0x4243, IO_SEND_ERROR));
-    STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4242));
-    EXPECTED_CALL(singlylinkedlist_remove(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-
-    // act
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_WRITEABLE, saved_ws_callback_context, NULL, 0);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_081: [If any pending IOs are in the list, lws_callback_on_writable shall be called, while passing the websockets instance obtained in wsio_open as arguments if:] */
-/* Tests_SRS_WSIO_01_115: [The send over websockets was successful] */
-TEST_FUNCTION(when_send_is_succesfull_and_there_is_another_pending_IO_in_CLIENT_WRITABLE_then_callback_on_writable_is_called)
-{
-    // arrange
-    unsigned char test_buffer[] = { 0x42, 0x43 };
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    umock_c_reset_all_calls();
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_ESTABLISHED, saved_ws_callback_context, NULL, 0);
-    (void)wsio_send(wsio, test_buffer, sizeof(test_buffer), test_on_send_complete, (void*)0x4243);
-    (void)wsio_send(wsio, test_buffer, sizeof(test_buffer), test_on_send_complete, (void*)0x4243);
-    umock_c_reset_all_calls();
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(lws_write(TEST_LIBWEBSOCKET, IGNORED_PTR_ARG, sizeof(test_buffer), LWS_WRITE_BINARY))
-        .ValidateArgumentBuffer(2, test_buffer, sizeof(test_buffer))
-        .SetReturn(1);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_WRITEABLE, saved_ws_callback_context, NULL, 0);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
-    EXPECTED_CALL(singlylinkedlist_item_get_value(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(lws_write(TEST_LIBWEBSOCKET, IGNORED_PTR_ARG, 1, LWS_WRITE_BINARY))
-        .ValidateArgumentBuffer(2, test_buffer + 1, 1)
-        .SetReturn(1);
-    STRICT_EXPECTED_CALL(test_on_send_complete((void*)0x4243, IO_SEND_OK));
-    EXPECTED_CALL(singlylinkedlist_remove(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
-    STRICT_EXPECTED_CALL(lws_callback_on_writable(TEST_LIBWEBSOCKET));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-
-    // act
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_WRITEABLE, saved_ws_callback_context, NULL, 0);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_117: [on_io_error should not be triggered twice when removing a pending IO that failed and a partial send for it has already been done.]  */
-TEST_FUNCTION(when_removing_the_pending_IO_due_to_lws_write_failing_in_CLIENT_WRITABLE_fails_then_on_io_error_is_called_only_once)
-{
-    // arrange
-    unsigned char test_buffer[] = { 0x42, 0x43 };
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    umock_c_reset_all_calls();
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_ESTABLISHED, saved_ws_callback_context, NULL, 0);
-    (void)wsio_send(wsio, test_buffer, sizeof(test_buffer), test_on_send_complete, (void*)0x4243);
-    umock_c_reset_all_calls();
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(lws_write(TEST_LIBWEBSOCKET, IGNORED_PTR_ARG, sizeof(test_buffer), LWS_WRITE_BINARY))
-        .ValidateArgumentBuffer(2, test_buffer, sizeof(test_buffer))
-        .SetReturn(1);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_WRITEABLE, saved_ws_callback_context, NULL, 0);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
-    EXPECTED_CALL(singlylinkedlist_item_get_value(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(lws_write(TEST_LIBWEBSOCKET, IGNORED_PTR_ARG, 1, LWS_WRITE_BINARY))
-        .ValidateArgumentBuffer(2, test_buffer + 1, 1)
-        .SetReturn(-1);
-    STRICT_EXPECTED_CALL(test_on_send_complete((void*)0x4243, IO_SEND_ERROR));
-    STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4242));
-    EXPECTED_CALL(singlylinkedlist_remove(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-
-    // act
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_WRITEABLE, saved_ws_callback_context, NULL, 0);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_117: [on_io_error should not be triggered twice when removing a pending IO that failed and a partial send for it has already been done.]  */
-TEST_FUNCTION(when_removing_the_pending_IO_due_to_allocating_memory_failing_in_CLIENT_WRITABLE_fails_then_on_io_error_is_called_only_once)
-{
-    // arrange
-    unsigned char test_buffer[] = { 0x42, 0x43 };
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    umock_c_reset_all_calls();
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_ESTABLISHED, saved_ws_callback_context, NULL, 0);
-    (void)wsio_send(wsio, test_buffer, sizeof(test_buffer), test_on_send_complete, (void*)0x4243);
-    umock_c_reset_all_calls();
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(lws_write(TEST_LIBWEBSOCKET, IGNORED_PTR_ARG, sizeof(test_buffer), LWS_WRITE_BINARY))
-        .ValidateArgumentBuffer(2, test_buffer, sizeof(test_buffer))
-        .SetReturn(1);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_WRITEABLE, saved_ws_callback_context, NULL, 0);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
-    EXPECTED_CALL(singlylinkedlist_item_get_value(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
-        .SetReturn((void*)NULL);
-    STRICT_EXPECTED_CALL(test_on_send_complete((void*)0x4243, IO_SEND_ERROR));
-    STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4242));
-    EXPECTED_CALL(singlylinkedlist_remove(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)).IgnoreArgument_ptr();
-    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)).IgnoreArgument_ptr();
-
-    // act
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_WRITEABLE, saved_ws_callback_context, NULL, 0);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_080: [If lws_write succeeds and less bytes than the complete payload have been sent, then the sent bytes shall be removed from the pending IO and only the leftover bytes shall be left as pending and sent upon subsequent events.] */
-TEST_FUNCTION(sending_partial_content_leaves_the_bytes_for_the_next_writable_event)
-{
-    // arrange
-    unsigned char test_buffer[] = { 0x42, 0x43 };
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    umock_c_reset_all_calls();
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_ESTABLISHED, saved_ws_callback_context, NULL, 0);
-    (void)wsio_send(wsio, test_buffer, sizeof(test_buffer), test_on_send_complete, (void*)0x4243);
-    umock_c_reset_all_calls();
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(lws_write(TEST_LIBWEBSOCKET, IGNORED_PTR_ARG, sizeof(test_buffer), LWS_WRITE_BINARY))
-        .ValidateArgumentBuffer(2, test_buffer, sizeof(test_buffer))
-        .SetReturn(1);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_WRITEABLE, saved_ws_callback_context, NULL, 0);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
-    EXPECTED_CALL(singlylinkedlist_item_get_value(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(lws_write(TEST_LIBWEBSOCKET, IGNORED_PTR_ARG, 1, LWS_WRITE_BINARY))
-        .ValidateArgumentBuffer(2, test_buffer + 1, 1)
-        .SetReturn(1);
-    STRICT_EXPECTED_CALL(test_on_send_complete((void*)0x4243, IO_SEND_OK));
-    EXPECTED_CALL(singlylinkedlist_remove(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-
-    // act
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_WRITEABLE, saved_ws_callback_context, NULL, 0);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_080: [If lws_write succeeds and less bytes than the complete payload have been sent, then the sent bytes shall be removed from the pending IO and only the leftover bytes shall be left as pending and sent upon subsequent events.] */
-TEST_FUNCTION(sending_partial_content_of_2_bytes_works_and_leaves_the_bytes_for_the_next_writable_event)
-{
-    // arrange
-    unsigned char test_buffer[] = { 0x42, 0x43, 0x44 };
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    umock_c_reset_all_calls();
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_ESTABLISHED, saved_ws_callback_context, NULL, 0);
-    (void)wsio_send(wsio, test_buffer, sizeof(test_buffer), test_on_send_complete, (void*)0x4243);
-    umock_c_reset_all_calls();
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(lws_write(TEST_LIBWEBSOCKET, IGNORED_PTR_ARG, sizeof(test_buffer), LWS_WRITE_BINARY))
-        .ValidateArgumentBuffer(2, test_buffer, sizeof(test_buffer))
-        .SetReturn(2);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_WRITEABLE, saved_ws_callback_context, NULL, 0);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
-    EXPECTED_CALL(singlylinkedlist_item_get_value(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(lws_write(TEST_LIBWEBSOCKET, IGNORED_PTR_ARG, 1, LWS_WRITE_BINARY))
-        .ValidateArgumentBuffer(2, test_buffer + 2, 1)
-        .SetReturn(1);
-    STRICT_EXPECTED_CALL(test_on_send_complete((void*)0x4243, IO_SEND_OK));
-    EXPECTED_CALL(singlylinkedlist_remove(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-
-    // act
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_WRITEABLE, saved_ws_callback_context, NULL, 0);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_118: [If lws_write indicates more bytes sent than were passed to it an error shall be indicated via on_io_error.] */
-TEST_FUNCTION(when_more_bytes_than_requested_are_indicated_by_lws_write_on_send_complete_indicates_an_error)
-{
-    // arrange
-    unsigned char test_buffer[] = { 0x42 };
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    umock_c_reset_all_calls();
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_ESTABLISHED, saved_ws_callback_context, NULL, 0);
-    (void)wsio_send(wsio, test_buffer, sizeof(test_buffer), test_on_send_complete, (void*)0x4243);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
-    EXPECTED_CALL(singlylinkedlist_item_get_value(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(lws_write(TEST_LIBWEBSOCKET, IGNORED_PTR_ARG, sizeof(test_buffer), LWS_WRITE_BINARY))
-        .ValidateArgumentBuffer(2, test_buffer, sizeof(test_buffer))
-        .SetReturn(2);
-    STRICT_EXPECTED_CALL(test_on_send_complete((void*)0x4243, IO_SEND_ERROR));
-    STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE))
-        .SetReturn((LIST_ITEM_HANDLE)NULL);
-    EXPECTED_CALL(singlylinkedlist_remove(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-
-    // act
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_WRITEABLE, saved_ws_callback_context, NULL, 0);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_119: [If this error happens after the pending IO being partially sent, the on_io_error shall also be indicated.] */
-TEST_FUNCTION(when_more_bytes_than_requested_are_indicated_by_lws_write_and_a_partial_send_has_been_done_then_on_io_error_is_triggered)
-{
-    // arrange
-    unsigned char test_buffer[] = { 0x42, 0x43 };
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    umock_c_reset_all_calls();
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_ESTABLISHED, saved_ws_callback_context, NULL, 0);
-    (void)wsio_send(wsio, test_buffer, sizeof(test_buffer), test_on_send_complete, (void*)0x4243);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(lws_write(TEST_LIBWEBSOCKET, IGNORED_PTR_ARG, sizeof(test_buffer), LWS_WRITE_BINARY))
-        .ValidateArgumentBuffer(2, test_buffer, sizeof(test_buffer))
-        .SetReturn(1);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_WRITEABLE, saved_ws_callback_context, NULL, 0);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(singlylinkedlist_get_head_item(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
-    EXPECTED_CALL(singlylinkedlist_item_get_value(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(lws_write(TEST_LIBWEBSOCKET, IGNORED_PTR_ARG, 1, LWS_WRITE_BINARY))
-        .ValidateArgumentBuffer(2, test_buffer + 1, 1)
-        .SetReturn(2);
-    STRICT_EXPECTED_CALL(test_on_send_complete((void*)0x4243, IO_SEND_ERROR));
-    STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4242));
-    EXPECTED_CALL(singlylinkedlist_remove(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-
-    // act
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_WRITEABLE, saved_ws_callback_context, NULL, 0);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* LWS_CALLBACK_CLIENT_RECEIVE */
-
-/* Tests_SRS_WSIO_01_082: [LWS_CALLBACK_CLIENT_RECEIVE shall only be processed when the IO is open.] */
-/* Tests_SRS_WSIO_01_083: [When LWS_CALLBACK_CLIENT_RECEIVE is triggered and the IO is open, the on_bytes_received callback passed in wsio_open shall be called.] */
-/* Tests_SRS_WSIO_01_084: [The bytes argument shall point to the received bytes as indicated by the LWS_CALLBACK_CLIENT_RECEIVE in argument.] */
-TEST_FUNCTION(CLIENT_RECEIVE_while_the_IO_is_open_indicates_the_byte_as_received)
-{
-    // arrange
-    unsigned char test_buffer[] = { 0x42 };
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_ESTABLISHED, saved_ws_callback_context, NULL, 0);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(test_on_bytes_received((void*)0x4242, IGNORED_PTR_ARG, sizeof(test_buffer)))
-        .ValidateArgumentBuffer(2, test_buffer, sizeof(test_buffer));
-
-    // act
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_RECEIVE, saved_ws_callback_context, test_buffer, sizeof(test_buffer));
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    CONCRETE_IO_HANDLE wsio;
+    int result;
+    unsigned char test_buffer[] = { 42 };
 
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_082: [LWS_CALLBACK_CLIENT_RECEIVE shall only be processed when the IO is open.] */
-/* Tests_SRS_WSIO_01_083: [When LWS_CALLBACK_CLIENT_RECEIVE is triggered and the IO is open, the on_bytes_received callback passed in wsio_open shall be called.] */
-/* Tests_SRS_WSIO_01_084: [The bytes argument shall point to the received bytes as indicated by the LWS_CALLBACK_CLIENT_RECEIVE in argument.] */
-/* Tests_SRS_WSIO_01_085: [The length argument shall be set to the number of received bytes as indicated by the LWS_CALLBACK_CLIENT_RECEIVE len argument.] */
-TEST_FUNCTION(CLIENT_RECEIVE_while_the_IO_is_open_indicates_the_2_bytes_as_received)
-{
-    // arrange
-    unsigned char test_buffer[] = { 0x42, 0x43 };
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_ESTABLISHED, saved_ws_callback_context, NULL, 0);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(test_on_bytes_received((void*)0x4242, IGNORED_PTR_ARG, sizeof(test_buffer)))
-        .ValidateArgumentBuffer(2, test_buffer, sizeof(test_buffer));
-
-    // act
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_RECEIVE, saved_ws_callback_context, test_buffer, sizeof(test_buffer));
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_122: [If an open action is in progress then the on_open_complete callback shall be invoked with IO_OPEN_ERROR.] */
-TEST_FUNCTION(CLIENT_RECEIVE_while_opening_triggers_an_open_complete_with_IO_OPEN_ERROR)
-{
-    // arrange
-    unsigned char test_buffer[] = { 0x42 };
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_ERROR));
-
-    // act
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_RECEIVE, saved_ws_callback_context, test_buffer, sizeof(test_buffer));
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_175: [ When the on_open_complete callback is invoked, the libwebsockets context shall be saved for later destroy. ]*/
-/* Tests_SRS_WSIO_01_174: [ `wsio_destroy` shall free any pending context, whose destruction has been deferred by the lws callback by calling `lws_context_destroy`. ]*/
-TEST_FUNCTION(CLIENT_RECEIVE_while_opening_saves_the_context_to_be_freed_later)
-{
-    // arrange
-    unsigned char test_buffer[] = { 0x42 };
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_RECEIVE, saved_ws_callback_context, test_buffer, sizeof(test_buffer));
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_context_destroy(TEST_LIBWEBSOCKET_CONTEXT));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // host_name
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // resource_name
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocol
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // protocols
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // trusted_ca
-    STRICT_EXPECTED_CALL(singlylinkedlist_destroy(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // instance
-
-    // act
-    wsio_destroy(wsio);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-}
-
-/* Tests_SRS_WSIO_01_086: [The callback_context shall be set to the callback_context that was passed in wsio_open.] */
-TEST_FUNCTION(CLIENT_RECEIVE_passes_the_proper_context_to_on_bytes_received)
-{
-    // arrange
-    unsigned char test_buffer[] = { 0x42, 0x43 };
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4546, test_on_bytes_received, (void*)0x4546, test_on_io_error, (void*)0x4546);
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_ESTABLISHED, saved_ws_callback_context, NULL, 0);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(test_on_bytes_received((void*)0x4546, IGNORED_PTR_ARG, sizeof(test_buffer)))
-        .ValidateArgumentBuffer(2, test_buffer, sizeof(test_buffer));
-
-    // act
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_RECEIVE, saved_ws_callback_context, test_buffer, sizeof(test_buffer));
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_087: [If the number of bytes is 0 then the on_io_error callback shall be called.] */
-TEST_FUNCTION(CLIENT_RECEIVE_with_0_bytes_yields_an_error)
-{
-    // arrange
-    unsigned char test_buffer[] = { 0x42, 0x43 };
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4546, test_on_bytes_received, (void*)0x4546, test_on_io_error, (void*)0x4546);
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_ESTABLISHED, saved_ws_callback_context, NULL, 0);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4546));
-
-    // act
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_RECEIVE, saved_ws_callback_context, test_buffer, 0);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_088: [If the number of bytes received is positive, but the buffer indicated by the in parameter is NULL, then the on_io_error callback shall be called.] */
-TEST_FUNCTION(CLIENT_RECEIVE_with_NULL_input_buffer_yields_an_error)
-{
-    // arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4546, test_on_bytes_received, (void*)0x4546, test_on_io_error, (void*)0x4546);
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_ESTABLISHED, saved_ws_callback_context, NULL, 0);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4546));
-
-    // act
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_RECEIVE, saved_ws_callback_context, NULL, 1);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_082: [LWS_CALLBACK_CLIENT_RECEIVE shall only be processed when the IO is open.] */
-/* Tests_SRS_WSIO_01_083: [When LWS_CALLBACK_CLIENT_RECEIVE is triggered and the IO is open, the on_bytes_received callback passed in wsio_open shall be called.] */
-/* Tests_SRS_WSIO_01_084: [The bytes argument shall point to the received bytes as indicated by the LWS_CALLBACK_CLIENT_RECEIVE in argument.] */
-/* Tests_SRS_WSIO_01_085: [The length argument shall be set to the number of received bytes as indicated by the LWS_CALLBACK_CLIENT_RECEIVE len argument.] */
-TEST_FUNCTION(CLIENT_RECEIVE_twice_indicates_2_receives)
-{
-    // arrange
-    unsigned char test_buffer1[] = { 0x42, 0x43 };
-    unsigned char test_buffer2[] = { 0x44 };
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_ESTABLISHED, saved_ws_callback_context, NULL, 0);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(test_on_bytes_received((void*)0x4242, IGNORED_PTR_ARG, sizeof(test_buffer1)))
-        .ValidateArgumentBuffer(2, test_buffer1, sizeof(test_buffer1));
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(test_on_bytes_received((void*)0x4242, IGNORED_PTR_ARG, sizeof(test_buffer2)))
-        .ValidateArgumentBuffer(2, test_buffer2, sizeof(test_buffer2));
-
-    // act
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_RECEIVE, saved_ws_callback_context, test_buffer1, sizeof(test_buffer1));
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_RECEIVE, saved_ws_callback_context, test_buffer2, sizeof(test_buffer2));
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* LWS_CALLBACK_OPENSSL_LOAD_EXTRA_CLIENT_VERIFY_CERTS */
-
-/* Tests_SRS_WSIO_01_089: [When LWS_CALLBACK_OPENSSL_LOAD_EXTRA_CLIENT_VERIFY_CERTS is triggered, the certificates passed in the trusted_ca member of WSIO_CONFIG passed in wsio_init shall be loaded in the certificate store.] */
-/* Tests_SRS_WSIO_01_090: [The OpenSSL certificate store is passed in the user argument.] */
-/* Tests_SRS_WSIO_01_131: [Get the certificate store for the OpenSSL context by calling SSL_CTX_get_cert_store] */
-/* Tests_SRS_WSIO_01_123: [Creating a new BIO by calling BIO_new.] */
-/* Tests_SRS_WSIO_01_124: [The BIO shall be a memory one (obtained by calling BIO_s_mem).] */
-/* Tests_SRS_WSIO_01_125: [Setting the certificates string as the input by using BIO_puts.] */
-/* Tests_SRS_WSIO_01_126: [Reading every certificate by calling PEM_read_bio_X509] */
-/* Tests_SRS_WSIO_01_132: [When PEM_read_bio_X509 returns NULL then no more certificates are available in the input string.] */
-/* Tests_SRS_WSIO_01_128: [Freeing the BIO] */
-TEST_FUNCTION(LOAD_EXTRA_CLIENT_VERIFY_CERTS_with_a_string_that_has_no_certs_add_no_certs_to_the_store)
-{
-    // arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    (void)wsio_setoption(wsio, "TrustedCerts", "boohoo");
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(SSL_CTX_get_cert_store(TEST_SSL_CONTEXT));
-    STRICT_EXPECTED_CALL(BIO_s_mem());
-    STRICT_EXPECTED_CALL(BIO_new(TEST_BIO_METHOD));
-    STRICT_EXPECTED_CALL(BIO_puts(TEST_BIO, "boohoo"))
-        .SetReturn((int)strlen("boohoo"));
-    STRICT_EXPECTED_CALL(PEM_read_bio_X509(TEST_BIO, NULL, NULL, NULL))
-        .SetReturn((X509*)NULL);
-    STRICT_EXPECTED_CALL(BIO_free(TEST_BIO));
-
-    // act
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_OPENSSL_LOAD_EXTRA_CLIENT_VERIFY_CERTS, (void*)TEST_SSL_CONTEXT, NULL, 0);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_126: [Reading every certificate by calling PEM_read_bio_X509] */
-/* Tests_SRS_WSIO_01_127: [Adding the read certificate to the store by calling X509_STORE_add_cert]  */
-TEST_FUNCTION(LOAD_EXTRA_CLIENT_VERIFY_CERTS_with_a_string_that_has_1_cert_loads_that_cert)
-{
-    // arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    (void)wsio_setoption(wsio, "TrustedCerts", "boohoo");
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(SSL_CTX_get_cert_store(TEST_SSL_CONTEXT));
-    STRICT_EXPECTED_CALL(BIO_s_mem());
-    STRICT_EXPECTED_CALL(BIO_new(TEST_BIO_METHOD));
-    STRICT_EXPECTED_CALL(BIO_puts(TEST_BIO, "boohoo"))
-        .SetReturn((int)strlen("boohoo"));
-    STRICT_EXPECTED_CALL(PEM_read_bio_X509(TEST_BIO, NULL, NULL, NULL))
-        .SetReturn(TEST_X509_CERT_1);
-    STRICT_EXPECTED_CALL(X509_STORE_add_cert(TEST_CERT_STORE, TEST_X509_CERT_1));
-    STRICT_EXPECTED_CALL(X509_free(TEST_X509_CERT_1));
-    STRICT_EXPECTED_CALL(PEM_read_bio_X509(TEST_BIO, NULL, NULL, NULL))
-        .SetReturn((X509*)NULL);
-    STRICT_EXPECTED_CALL(BIO_free(TEST_BIO));
-
-    // act
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_OPENSSL_LOAD_EXTRA_CLIENT_VERIFY_CERTS, (void*)TEST_SSL_CONTEXT, NULL, 0);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_126: [Reading every certificate by calling PEM_read_bio_X509] */
-/* Tests_SRS_WSIO_01_127: [Adding the read certificate to the store by calling X509_STORE_add_cert] */
-TEST_FUNCTION(LOAD_EXTRA_CLIENT_VERIFY_CERTS_with_a_string_that_has_2_certs_loads_that_certs)
-{
-    // arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    (void)wsio_setoption(wsio, "TrustedCerts", "boohoo");
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(SSL_CTX_get_cert_store(TEST_SSL_CONTEXT));
-    STRICT_EXPECTED_CALL(BIO_s_mem());
-    STRICT_EXPECTED_CALL(BIO_new(TEST_BIO_METHOD));
-    STRICT_EXPECTED_CALL(BIO_puts(TEST_BIO, "boohoo"))
-        .SetReturn((int)strlen("boohoo"));
-    STRICT_EXPECTED_CALL(PEM_read_bio_X509(TEST_BIO, NULL, NULL, NULL))
-        .SetReturn(TEST_X509_CERT_1);
-    STRICT_EXPECTED_CALL(X509_STORE_add_cert(TEST_CERT_STORE, TEST_X509_CERT_1));
-    STRICT_EXPECTED_CALL(X509_free(TEST_X509_CERT_1));
-    STRICT_EXPECTED_CALL(PEM_read_bio_X509(TEST_BIO, NULL, NULL, NULL))
-        .SetReturn(TEST_X509_CERT_2);
-    STRICT_EXPECTED_CALL(X509_STORE_add_cert(TEST_CERT_STORE, TEST_X509_CERT_2));
-    STRICT_EXPECTED_CALL(X509_free(TEST_X509_CERT_2));
-    STRICT_EXPECTED_CALL(PEM_read_bio_X509(TEST_BIO, NULL, NULL, NULL))
-        .SetReturn((X509*)NULL);
-    STRICT_EXPECTED_CALL(BIO_free(TEST_BIO));
-
-    // act
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_OPENSSL_LOAD_EXTRA_CLIENT_VERIFY_CERTS, (void*)TEST_SSL_CONTEXT, NULL, 0);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_130: [If the event is received when the IO is already open the on_io_error callback shall be triggered.] */
-TEST_FUNCTION(LOAD_EXTRA_CLIENT_VERIFY_CERTS_when_already_open_yields_an_error)
-{
-    // arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_CLIENT_ESTABLISHED, saved_ws_callback_context, NULL, 0);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4242));
-
-    // act
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_OPENSSL_LOAD_EXTRA_CLIENT_VERIFY_CERTS, (void*)TEST_SSL_CONTEXT, NULL, 0);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_129: [If any of the APIs fails and an open call is pending the on_open_complete callback shall be triggered with IO_OPEN_ERROR.] */
-TEST_FUNCTION(when_getting_the_cert_store_fails_in_LOAD_EXTRA_CLIENT_VERIFY_CERTS_an_on_open_complete_is_triggered_with_error)
-{
-    // arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    (void)wsio_setoption(wsio, "TrustedCerts", "boohoo");
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(SSL_CTX_get_cert_store(TEST_SSL_CONTEXT))
-        .SetReturn((X509_STORE*)NULL);
-    STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_ERROR));
-
-    // act
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_OPENSSL_LOAD_EXTRA_CLIENT_VERIFY_CERTS, (void*)TEST_SSL_CONTEXT, NULL, 0);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_129: [If any of the APIs fails and an open call is pending the on_open_complete callback shall be triggered with IO_OPEN_ERROR.] */
-TEST_FUNCTION(when_getting_the_memory_BIO_METHOD_fails_in_LOAD_EXTRA_CLIENT_VERIFY_CERTS_an_on_open_complete_is_triggered_with_error)
-{
-    // arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    (void)wsio_setoption(wsio, "TrustedCerts", "boohoo");
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(SSL_CTX_get_cert_store(TEST_SSL_CONTEXT));
-    STRICT_EXPECTED_CALL(BIO_s_mem())
-        .SetReturn((BIO_METHOD*)NULL);
-    STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_ERROR));
-
-    // act
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_OPENSSL_LOAD_EXTRA_CLIENT_VERIFY_CERTS, (void*)TEST_SSL_CONTEXT, NULL, 0);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_129: [If any of the APIs fails and an open call is pending the on_open_complete callback shall be triggered with IO_OPEN_ERROR.] */
-TEST_FUNCTION(when_creating_the_BIO_fails_in_LOAD_EXTRA_CLIENT_VERIFY_CERTS_an_on_open_complete_is_triggered_with_error)
-{
-    // arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    (void)wsio_setoption(wsio, "TrustedCerts", "boohoo");
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(SSL_CTX_get_cert_store(TEST_SSL_CONTEXT));
-    STRICT_EXPECTED_CALL(BIO_s_mem());
-    STRICT_EXPECTED_CALL(BIO_new(TEST_BIO_METHOD))
-        .SetReturn((BIO*)NULL);
-    STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_ERROR));
-
-    // act
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_OPENSSL_LOAD_EXTRA_CLIENT_VERIFY_CERTS, (void*)TEST_SSL_CONTEXT, NULL, 0);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_129: [If any of the APIs fails and an open call is pending the on_open_complete callback shall be triggered with IO_OPEN_ERROR.] */
-TEST_FUNCTION(when_setting_the_input_string_for_the_memory_BIO_fails_with_0_in_LOAD_EXTRA_CLIENT_VERIFY_CERTS_an_on_open_complete_is_triggered_with_error)
-{
-    // arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    (void)wsio_setoption(wsio, "TrustedCerts", "boohoo");
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(SSL_CTX_get_cert_store(TEST_SSL_CONTEXT));
-    STRICT_EXPECTED_CALL(BIO_s_mem());
-    STRICT_EXPECTED_CALL(BIO_new(TEST_BIO_METHOD));
-    STRICT_EXPECTED_CALL(BIO_puts(TEST_BIO, "boohoo"))
-        .SetReturn(0);
-    STRICT_EXPECTED_CALL(BIO_free(TEST_BIO));
-    STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_ERROR));
-
-    // act
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_OPENSSL_LOAD_EXTRA_CLIENT_VERIFY_CERTS, (void*)TEST_SSL_CONTEXT, NULL, 0);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_129: [If any of the APIs fails and an open call is pending the on_open_complete callback shall be triggered with IO_OPEN_ERROR.] */
-TEST_FUNCTION(when_setting_the_input_string_for_the_memory_BIO_fails_with_len_minus_1_in_LOAD_EXTRA_CLIENT_VERIFY_CERTS_an_on_open_complete_is_triggered_with_error)
-{
-    // arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    (void)wsio_setoption(wsio, "TrustedCerts", "boohoo");
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(SSL_CTX_get_cert_store(TEST_SSL_CONTEXT));
-    STRICT_EXPECTED_CALL(BIO_s_mem());
-    STRICT_EXPECTED_CALL(BIO_new(TEST_BIO_METHOD));
-    STRICT_EXPECTED_CALL(BIO_puts(TEST_BIO, "boohoo"))
-        .SetReturn((int)strlen("boohoo") - 1);
-    STRICT_EXPECTED_CALL(BIO_free(TEST_BIO));
-    STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_ERROR));
-
-    // act
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_OPENSSL_LOAD_EXTRA_CLIENT_VERIFY_CERTS, (void*)TEST_SSL_CONTEXT, NULL, 0);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_129: [If any of the APIs fails and an open call is pending the on_open_complete callback shall be triggered with IO_OPEN_ERROR.] */
-TEST_FUNCTION(when_setting_the_input_string_for_the_memory_BIO_fails_with_len_plus_1_in_LOAD_EXTRA_CLIENT_VERIFY_CERTS_an_on_open_complete_is_triggered_with_error)
-{
-    // arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    (void)wsio_setoption(wsio, "TrustedCerts", "boohoo");
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(SSL_CTX_get_cert_store(TEST_SSL_CONTEXT));
-    STRICT_EXPECTED_CALL(BIO_s_mem());
-    STRICT_EXPECTED_CALL(BIO_new(TEST_BIO_METHOD));
-    STRICT_EXPECTED_CALL(BIO_puts(TEST_BIO, "boohoo"))
-        .SetReturn((int)strlen("boohoo") + 1);
-    STRICT_EXPECTED_CALL(BIO_free(TEST_BIO));
-    STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_ERROR));
-
-    // act
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_OPENSSL_LOAD_EXTRA_CLIENT_VERIFY_CERTS, (void*)TEST_SSL_CONTEXT, NULL, 0);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_129: [If any of the APIs fails and an open call is pending the on_open_complete callback shall be triggered with IO_OPEN_ERROR.] */
-/* Tests_SRS_WSIO_01_133: [If X509_STORE_add_cert fails then the certificate obtained by calling PEM_read_bio_X509 shall be freed with X509_free.] */
-TEST_FUNCTION(when_adding_the_cert_to_the_store_fails_in_LOAD_EXTRA_CLIENT_VERIFY_CERTS_the_cert_is_freed_and_on_open_complete_is_triggered_with_error)
-{
-    // arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-    (void)wsio_setoption(wsio, "TrustedCerts", "boohoo");
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(lws_get_context(TEST_LIBWEBSOCKET));
-    STRICT_EXPECTED_CALL(lws_context_user(TEST_LIBWEBSOCKET_CONTEXT))
-        .SetReturn(saved_ws_callback_context);
-    STRICT_EXPECTED_CALL(SSL_CTX_get_cert_store(TEST_SSL_CONTEXT));
-    STRICT_EXPECTED_CALL(BIO_s_mem());
-    STRICT_EXPECTED_CALL(BIO_new(TEST_BIO_METHOD));
-    STRICT_EXPECTED_CALL(BIO_puts(TEST_BIO, "boohoo"))
-        .SetReturn((int)strlen("boohoo"));
-    STRICT_EXPECTED_CALL(PEM_read_bio_X509(TEST_BIO, NULL, NULL, NULL))
-        .SetReturn(TEST_X509_CERT_1);
-    STRICT_EXPECTED_CALL(X509_STORE_add_cert(TEST_CERT_STORE, TEST_X509_CERT_1))
-        .SetReturn(0);
-    STRICT_EXPECTED_CALL(X509_free(TEST_X509_CERT_1));
-    STRICT_EXPECTED_CALL(BIO_free(TEST_BIO));
-    STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_ERROR));
-
-    // act
-    (void)saved_ws_callback(TEST_LIBWEBSOCKET, LWS_CALLBACK_OPENSSL_LOAD_EXTRA_CLIENT_VERIFY_CERTS, (void*)TEST_SSL_CONTEXT, NULL, 0);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* wsio_setoption */
-
-/* Tests_SRS_WSIO_01_136: [ If any of the arguments ws_io or option_name is NULL wsio_setoption shall return a non-zero value. ] ]*/
-TEST_FUNCTION(wsio_setoption_with_NULL_io_handle_fails)
-{
-    //arrange
-    HTTP_PROXY_OPTIONS proxy_options;
-    proxy_options.host_address = NULL;
-    proxy_options.port = 8080;
-    proxy_options.username = NULL;
-    proxy_options.password = NULL;
-
-    // act
-    int option_result = wsio_setoption(NULL, OPTION_HTTP_PROXY, &proxy_options);
-
-    // assert
-    ASSERT_ARE_NOT_EQUAL(int, 0, option_result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-}
-
-/* Tests_SRS_WSIO_01_136: [ If any of the arguments ws_io or option_name is NULL wsio_setoption shall return a non-zero value. ] ]*/
-TEST_FUNCTION(wsio_setoption_with_NULL_option_name_fails)
-{
-    //arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    HTTP_PROXY_OPTIONS proxy_options;
-    proxy_options.host_address = NULL;
-    proxy_options.port = 8080;
-    proxy_options.username = NULL;
-    proxy_options.password = NULL;
-    umock_c_reset_all_calls();
-
-    // act
-    int option_result = wsio_setoption(wsio, NULL, &proxy_options);
-
-    // assert
-    ASSERT_ARE_NOT_EQUAL(int, 0, option_result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_137: [ If the option_name argument indicates an option that is not handled by wsio, then wsio_setoption shall return a non-zero value. ]*/
-TEST_FUNCTION(wsio_setoption_optionName_invalid_fails)
-{
-    //arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    umock_c_reset_all_calls();
-
-    HTTP_PROXY_OPTIONS proxy_options;
-    proxy_options.host_address = NULL;
-    proxy_options.port = 8080;
-    proxy_options.username = NULL;
-    proxy_options.password = NULL;
-
-    // act
-    int option_result = wsio_setoption(wsio, "Invalid_options", &proxy_options);
-
-    // assert
-    ASSERT_ARE_NOT_EQUAL(int, 0, option_result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_134: [ - "TrustedCerts" - a char\* that shall be saved by wsio as it shall be used to validate the server cert in the LWS_CALLBACK_OPENSSL_LOAD_EXTRA_CLIENT_VERIFY_CERTS callback. ]*/
-/* Tests_SRS_WSIO_01_138: [ If the option was handled by wsio, then wsio_setoption shall return 0. ]*/
-TEST_FUNCTION(wsio_setoption_with_trustedcerts_succeeds)
-{
-    //arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_NUM_ARG, "pupu"))
-        .IgnoreArgument_destination();
-
-    // act
-    int option_result = wsio_setoption(wsio, "TrustedCerts", "pupu");
-
-    // assert
-    ASSERT_ARE_EQUAL(int, 0, option_result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_139: [ If a previous TrustedCerts option was saved, then the previous value shall be freed. ]*/
-TEST_FUNCTION(wsio_setoption_with_a_previous_trustedcerts_frees_the_previous_string)
-{
-    //arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_setoption(wsio, "TrustedCerts", "boohoo");
-    umock_c_reset_all_calls();
-
-    EXPECTED_CALL(gballoc_free(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_NUM_ARG, "pupu"))
-        .IgnoreArgument_destination();
-
-    // act
-    int option_result = wsio_setoption(wsio, "TrustedCerts", "pupu");
-
-    // assert
-    ASSERT_ARE_EQUAL(int, 0, option_result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_148: [ A NULL value shall be allowed for TrustedCerts, in which case the previously stored TrustedCerts option value shall be cleared. ]*/
-TEST_FUNCTION(wsio_setoption_with_trustedcerts_and_NULL_value_clears_the_TrustedCerts_option)
-{
-    //arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_setoption(wsio, "TrustedCerts", "boohoo");
-    umock_c_reset_all_calls();
-
-    EXPECTED_CALL(gballoc_free(IGNORED_NUM_ARG));
-
-    // act
-    int option_result = wsio_setoption(wsio, "TrustedCerts", NULL);
-
-    // assert
-    ASSERT_ARE_EQUAL(int, 0, option_result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_149: [  - "proxy_data" - a HTTP_PROXY_OPTIONS structure that defines the HTTP proxy to be used. ]*/
-/* Tests_SRS_WSIO_01_138: [ If the option was handled by wsio, then wsio_setoption shall return 0. ]*/
-/* Tests_SRS_WSIO_01_163: [ The fields hostname, username and password shall be copied for later use by using mallocAndStrcpy_s. ]*/
-TEST_FUNCTION(wsio_setoption_with_proxy_data_succeeds)
-{
-    //arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    umock_c_reset_all_calls();
-
-    HTTP_PROXY_OPTIONS proxy_options;
-    proxy_options.host_address = TEST_HOST_ADDRESS;
-    proxy_options.port = 8080;
-    proxy_options.username = TEST_USERNAME;
-    proxy_options.password = TEST_PASSWORD;
-
-    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_HOST_ADDRESS))
-        .IgnoreArgument_destination();
-    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_USERNAME))
-        .IgnoreArgument_destination();
-    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_PASSWORD))
-        .IgnoreArgument_destination();
-
-    // act
-    int option_result = wsio_setoption(wsio, OPTION_HTTP_PROXY, &proxy_options);
-
-    // assert
-    ASSERT_ARE_EQUAL(int, 0, option_result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_160: [ If the hostname field is NULL then wsio_setoption shall return a non-zero value. ]*/
-TEST_FUNCTION(wsio_setoption_with_proxy_data_with_NULL_hostname_fails)
-{
-    //arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    umock_c_reset_all_calls();
-
-    HTTP_PROXY_OPTIONS proxy_options;
-    proxy_options.host_address = NULL;
-    proxy_options.port = 8080;
-    proxy_options.username = TEST_USERNAME;
-    proxy_options.password = TEST_PASSWORD;
-
-    // act
-    int option_result = wsio_setoption(wsio, OPTION_HTTP_PROXY, &proxy_options);
-
-    // assert
-    ASSERT_ARE_NOT_EQUAL(int, 0, option_result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_150: [ The username and password fields are optional (can be NULL). ]*/
-TEST_FUNCTION(wsio_setoption_no_username_password_succeeds)
-{
-    //arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    umock_c_reset_all_calls();
-
-    HTTP_PROXY_OPTIONS proxy_options;
-    proxy_options.host_address = TEST_HOST_ADDRESS;
-    proxy_options.port = 8080;
-    proxy_options.username = NULL;
-    proxy_options.password = NULL;
-
-    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_HOST_ADDRESS))
-        .IgnoreArgument_destination();
-
-    // act
-    int option_result = wsio_setoption(wsio, OPTION_HTTP_PROXY, &proxy_options);
-
-    // assert
-    ASSERT_ARE_EQUAL(int, 0, option_result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_150: [ The username and password fields are optional (can be NULL). ]*/
-TEST_FUNCTION(wsio_setoption_username_NULL_password_Valid_succeed)
-{
-    //arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    umock_c_reset_all_calls();
-
-    HTTP_PROXY_OPTIONS proxy_options;
-    proxy_options.host_address = TEST_HOST_ADDRESS;
-    proxy_options.port = 8080;
-    proxy_options.username = NULL;
-    proxy_options.password = TEST_PASSWORD;
-
-    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_HOST_ADDRESS))
-        .IgnoreArgument_destination();
-    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_PASSWORD))
-        .IgnoreArgument_destination();
-
-    // act
-    int option_result = wsio_setoption(wsio, OPTION_HTTP_PROXY, &proxy_options);
-
-    // assert
-    ASSERT_ARE_EQUAL(int, 0, option_result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_159: [ If a username has been specified then a password shall also be specified. ]*/
-TEST_FUNCTION(wsio_setoption_username_valid_password_NULL_fail)
-{
-    //arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    umock_c_reset_all_calls();
-
-    HTTP_PROXY_OPTIONS proxy_options;
-    proxy_options.host_address = TEST_HOST_ADDRESS;
-    proxy_options.port = 8080;
-    proxy_options.username = TEST_USERNAME;
-    proxy_options.password = NULL;
-
-    // act
-    int option_result = wsio_setoption(wsio, OPTION_HTTP_PROXY, &proxy_options);
-
-    // assert
-    ASSERT_ARE_NOT_EQUAL(int, 0, option_result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_151: [ If copying of any of the fields host_address, username or password fails then wsio_setoption shall return a non-zero value. ]*/
-TEST_FUNCTION(when_copying_the_hostname_fails_wsio_setoption_with_proxy_data_fails)
-{
-    //arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    umock_c_reset_all_calls();
-
-    HTTP_PROXY_OPTIONS proxy_options;
-    proxy_options.host_address = TEST_HOST_ADDRESS;
-    proxy_options.port = 8080;
-    proxy_options.username = TEST_USERNAME;
-    proxy_options.password = TEST_PASSWORD;
-
-    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_HOST_ADDRESS))
-        .IgnoreArgument_destination()
-        .SetReturn(1);
-
-    // act
-    int option_result = wsio_setoption(wsio, OPTION_HTTP_PROXY, &proxy_options);
-
-    // assert
-    ASSERT_ARE_NOT_EQUAL(int, 0, option_result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_151: [ If copying of any of the fields host_address, username or password fails then wsio_setoption shall return a non-zero value. ]*/
-TEST_FUNCTION(when_copying_the_username_fails_wsio_setoption_with_proxy_data_fails)
-{
-    //arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    umock_c_reset_all_calls();
-
-    HTTP_PROXY_OPTIONS proxy_options;
-    proxy_options.host_address = TEST_HOST_ADDRESS;
-    proxy_options.port = 8080;
-    proxy_options.username = TEST_USERNAME;
-    proxy_options.password = TEST_PASSWORD;
-
-    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_HOST_ADDRESS))
-        .IgnoreArgument_destination();
-    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_USERNAME))
-        .IgnoreArgument_destination()
-        .SetReturn(1);
-
-    // act
-    int option_result = wsio_setoption(wsio, OPTION_HTTP_PROXY, &proxy_options);
-
-    // assert
-    ASSERT_ARE_NOT_EQUAL(int, 0, option_result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_151: [ If copying of any of the fields host_address, username or password fails then wsio_setoption shall return a non-zero value. ]*/
-TEST_FUNCTION(when_copying_the_password_fails_wsio_setoption_with_proxy_data_fails)
-{
-    //arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    umock_c_reset_all_calls();
-
-    HTTP_PROXY_OPTIONS proxy_options;
-    proxy_options.host_address = TEST_HOST_ADDRESS;
-    proxy_options.port = 8080;
-    proxy_options.username = TEST_USERNAME;
-    proxy_options.password = TEST_PASSWORD;
-
-    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_HOST_ADDRESS))
-        .IgnoreArgument_destination();
-    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_USERNAME))
-        .IgnoreArgument_destination();
-    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_PASSWORD))
-        .IgnoreArgument_destination()
-        .SetReturn(1);
-
-    // act
-    int option_result = wsio_setoption(wsio, OPTION_HTTP_PROXY, &proxy_options);
-
-    // assert
-    ASSERT_ARE_NOT_EQUAL(int, 0, option_result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_161: [ If a previous proxy_data option was saved, then the previous value shall be freed. ]*/
-TEST_FUNCTION(the_http_proxy_data_set_via_a_previous_wsio_setoption_shall_be_free_upon_a_new_setoption)
-{
-    //arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-
-    HTTP_PROXY_OPTIONS proxy_options;
-    proxy_options.host_address = TEST_HOST_ADDRESS;
-    proxy_options.port = 8080;
-    proxy_options.username = TEST_USERNAME;
-    proxy_options.password = TEST_PASSWORD;
-
-    (void)wsio_setoption(wsio, OPTION_HTTP_PROXY, &proxy_options);
-    umock_c_reset_all_calls();
-
-    proxy_options.host_address = TEST_HOST_ADDRESS;
-    proxy_options.port = 8080;
-    proxy_options.username = NULL;
-    proxy_options.password = NULL;
-
-    EXPECTED_CALL(gballoc_free(IGNORED_NUM_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_NUM_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_HOST_ADDRESS))
-        .IgnoreArgument_destination();
-
-    // act
-    int option_result = wsio_setoption(wsio, OPTION_HTTP_PROXY, &proxy_options);
-
-    // assert
-    ASSERT_ARE_EQUAL(int, 0, option_result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_162: [ A NULL value shall be allowed for proxy_data, in which case the previously stored proxy_data option value shall be cleared. ]*/
-TEST_FUNCTION(wsio_setoption_with_http_proxy_data_with_NULL_clears_previous_proxy_data)
-{
-    //arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-
-    HTTP_PROXY_OPTIONS proxy_options;
-    proxy_options.host_address = TEST_HOST_ADDRESS;
-    proxy_options.port = 8080;
-    proxy_options.username = TEST_USERNAME;
-    proxy_options.password = TEST_PASSWORD;
-
-    (void)wsio_setoption(wsio, OPTION_HTTP_PROXY, &proxy_options);
-    umock_c_reset_all_calls();
-
-    proxy_options.host_address = TEST_HOST_ADDRESS;
-    proxy_options.port = 8080;
-    proxy_options.username = NULL;
-    proxy_options.password = NULL;
-
-    EXPECTED_CALL(gballoc_free(IGNORED_NUM_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_NUM_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_NUM_ARG));
-
-    // act
-    int option_result = wsio_setoption(wsio, OPTION_HTTP_PROXY, NULL);
-
-    // assert
-    ASSERT_ARE_EQUAL(int, 0, option_result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* wsio_clone_option */
-
-/* Tests_SRS_WSIO_01_140: [ If the name or value arguments are NULL, wsio_clone_option shall return NULL. ]*/
-TEST_FUNCTION(wsio_cloneoption_name_NULL_fail)
-{
-    //arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-
-    umock_c_reset_all_calls();
-
-    HTTP_PROXY_OPTIONS proxy_options;
-    proxy_options.host_address = TEST_HOST_ADDRESS;
-    proxy_options.port = 8080;
-    proxy_options.username = NULL;
-    proxy_options.password = TEST_PASSWORD;
-
-    // act
-    void* option_result = wsio_clone_option(NULL, &proxy_options);
-
-    // assert
-    ASSERT_IS_NULL(option_result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_140: [ If the name or value arguments are NULL, wsio_clone_option shall return NULL. ]*/
-TEST_FUNCTION(wsio_cloneoption_value_NULL_fail)
-{
-    //arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-
-    umock_c_reset_all_calls();
-
-    // act
-    void* option_result = wsio_clone_option(OPTION_HTTP_PROXY, NULL);
-
-    // assert
-    ASSERT_IS_NULL(option_result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy_option(OPTION_HTTP_PROXY, option_result);
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_141: [ wsio_clone_option shall clone the option named `TrustedCerts` by calling mallocAndStrcpy_s. ]*/
-/* Tests_SRS_WSIO_01_143: [ On success it shall return a non-NULL pointer to the cloned option. ]*/
-TEST_FUNCTION(wsio_cloneoption_clones_TrustedCerts)
-{
-    //arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_setoption(wsio, "TrustedCerts", "boohoo");
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_NUM_ARG, "boohoo"))
-        .IgnoreArgument_destination();
-
-    // act
-    void* option_result = wsio_clone_option("TrustedCerts", "boohoo");
-
-    // assert
-    ASSERT_IS_NOT_NULL(option_result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy_option("TrustedCerts", option_result);
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_142: [ If mallocAndStrcpy_s for `TrustedCerts` fails, wsio_clone_option shall return NULL. ]*/
-TEST_FUNCTION(when_cloning_the_TrustedCerts_option_fails_then_wsio_cloneoption_fails)
-{
-    //arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    (void)wsio_setoption(wsio, "TrustedCerts", "boohoo");
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_NUM_ARG, "boohoo"))
-        .IgnoreArgument_destination()
-        .SetReturn(1);
-
-    // act
-    void* option_result = wsio_clone_option("TrustedCerts", "boohoo");
-
-    // assert
-    ASSERT_IS_NULL(option_result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_152: [ wsio_clone_option shall clone the option named `proxy_data` by allocating a new HTTP_PROXY_OPTIONS structure. ]*/
-/* Tests_SRS_WSIO_01_154: [ Then each of the fields host_address, username and password shall be cloned by using mallocAndStrcpy_s. ]*/
-TEST_FUNCTION(wsio_cloneoption_clones_proxy_data)
-{
-    //arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    umock_c_reset_all_calls();
-
-    HTTP_PROXY_OPTIONS proxy_options;
-    proxy_options.host_address = TEST_HOST_ADDRESS;
-    proxy_options.port = 8080;
-    proxy_options.username = TEST_USERNAME;
-    proxy_options.password = TEST_PASSWORD;
-
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_HOST_ADDRESS))
-        .IgnoreArgument_destination();
-    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_USERNAME))
-        .IgnoreArgument_destination();
-    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_PASSWORD))
-        .IgnoreArgument_destination();
-
-    // act
-    void* option_result = wsio_clone_option("proxy_data", &proxy_options);
-
-    // assert
-    ASSERT_IS_NOT_NULL(option_result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy_option("proxy_data", option_result);
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_152: [ wsio_clone_option shall clone the option named `proxy_data` by allocating a new HTTP_PROXY_OPTIONS structure. ]*/
-/* Tests_SRS_WSIO_01_154: [ Then each of the fields host_address, username and password shall be cloned by using mallocAndStrcpy_s. ]*/
-/* Tests_SRS_WSIO_01_165: [ If the field username in the structure pointed to by value is NULL nothing shall be copied to the cloned option. ]*/
-/* Tests_SRS_WSIO_01_166: [ If the field password in the structure pointed to by value is NULL nothing shall be copied to the cloned option. ]*/
-TEST_FUNCTION(wsio_cloneoption_with_proxy_data_without_username_and_password_succeeds)
-{
-    //arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    umock_c_reset_all_calls();
-
-    HTTP_PROXY_OPTIONS proxy_options;
-    proxy_options.host_address = TEST_HOST_ADDRESS;
-    proxy_options.port = 8080;
-    proxy_options.username = NULL;
-    proxy_options.password = NULL;
-
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_HOST_ADDRESS))
-        .IgnoreArgument_destination();
-
-    // act
-    void* option_result = wsio_clone_option("proxy_data", &proxy_options);
-
-    // assert
-    ASSERT_IS_NOT_NULL(option_result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy_option("proxy_data", option_result);
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_153: [ If allocating memory for the structure fails fails, wsio_clone_option shall return NULL. ]*/
-TEST_FUNCTION(when_allocatng_memory_for_proxy_data_fails_then_wsio_cloneoption_with_proxy_data_fails)
-{
-    //arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
+    g_on_ws_open_complete(g_on_ws_open_complete_context, WS_OPEN_OK);
     umock_c_reset_all_calls();
-
-    HTTP_PROXY_OPTIONS proxy_options;
-    proxy_options.host_address = TEST_HOST_ADDRESS;
-    proxy_options.port = 8080;
-    proxy_options.username = TEST_USERNAME;
-    proxy_options.password = TEST_PASSWORD;
 
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
         .SetReturn(NULL);
 
     // act
-    void* option_result = wsio_clone_option("proxy_data", &proxy_options);
+    result = wsio_get_interface_description()->concrete_io_send(wsio, test_buffer, sizeof(test_buffer), test_on_send_complete, (void*)0x4343);
 
     // assert
-    ASSERT_IS_NULL(option_result);
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
-    wsio_destroy(wsio);
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_155: [ If mallocAndStrcpy_s fails, wsio_clone_option shall return NULL. ]*/
-TEST_FUNCTION(when_copying_the_host_address_fails_then_wsio_cloneoption_with_proxy_data_fails)
+/* Tests_SRS_WSIO_01_104: [ If `singlylinkedlist_add` fails, `wsio_send` shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(when_adding_the_pending_item_to_the_list_fails_wsio_send_fails)
 {
-    //arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    umock_c_reset_all_calls();
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+    int result;
+    unsigned char test_buffer[] = { 42 };
 
-    HTTP_PROXY_OPTIONS proxy_options;
-    proxy_options.host_address = TEST_HOST_ADDRESS;
-    proxy_options.port = 8080;
-    proxy_options.username = TEST_USERNAME;
-    proxy_options.password = TEST_PASSWORD;
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
+    g_on_ws_open_complete(g_on_ws_open_complete_context, WS_OPEN_OK);
+    umock_c_reset_all_calls();
 
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_HOST_ADDRESS))
-        .IgnoreArgument_destination()
-        .SetReturn(1);
+    STRICT_EXPECTED_CALL(singlylinkedlist_add(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG))
+        .SetReturn(NULL);
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
     // act
-    void* option_result = wsio_clone_option("proxy_data", &proxy_options);
+    result = wsio_get_interface_description()->concrete_io_send(wsio, test_buffer, sizeof(test_buffer), test_on_send_complete, (void*)0x4343);
 
     // assert
-    ASSERT_IS_NULL(option_result);
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
-    wsio_destroy(wsio);
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_155: [ If mallocAndStrcpy_s fails, wsio_clone_option shall return NULL. ]*/
-TEST_FUNCTION(when_copying_the_username_fails_then_wsio_cloneoption_with_proxy_data_fails)
+/* Tests_SRS_WSIO_01_105: [ The argument `on_send_complete` shall be optional, if NULL is passed by the caller then no send complete callback shall be triggered. ]*/
+TEST_FUNCTION(wsio_send_with_NULL_send_complete_callback_succeeds)
 {
-    //arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    umock_c_reset_all_calls();
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+    int result;
+    unsigned char test_buffer[] = { 42 };
 
-    HTTP_PROXY_OPTIONS proxy_options;
-    proxy_options.host_address = TEST_HOST_ADDRESS;
-    proxy_options.port = 8080;
-    proxy_options.username = TEST_USERNAME;
-    proxy_options.password = TEST_PASSWORD;
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
+    g_on_ws_open_complete(g_on_ws_open_complete_context, WS_OPEN_OK);
+    umock_c_reset_all_calls();
 
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_HOST_ADDRESS))
-        .IgnoreArgument_destination();
-    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_USERNAME))
-        .IgnoreArgument_destination()
+    STRICT_EXPECTED_CALL(singlylinkedlist_add(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(uws_client_send_frame_async(TEST_UWS_HANDLE, WS_FRAME_TYPE_BINARY, IGNORED_PTR_ARG, sizeof(test_buffer), true, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+        .ValidateArgumentBuffer(3, test_buffer, sizeof(test_buffer));
+
+    // act
+    result = wsio_get_interface_description()->concrete_io_send(wsio, test_buffer, sizeof(test_buffer), NULL, (void*)0x4343);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
+}
+
+/* wsio_dowork */
+
+/* Tests_SRS_WSIO_01_106: [ `wsio_dowork` shall call `uws_client_dowork` with the uws handle created in `wsio_create`. ]*/
+TEST_FUNCTION(wsio_dowork_calls_the_underlying_uws_dowork)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
+    g_on_ws_open_complete(g_on_ws_open_complete_context, WS_OPEN_OK);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(uws_client_dowork(TEST_UWS_HANDLE));
+
+    // act
+    wsio_get_interface_description()->concrete_io_dowork(wsio);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_107: [ If the `ws_io` argument is NULL, `wsio_dowork` shall do nothing. ]*/
+TEST_FUNCTION(wsio_dowork_with_NULL_handle_does_nothing)
+{
+    // arrange
+
+    // act
+    wsio_get_interface_description()->concrete_io_dowork(NULL);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_WSIO_01_108: [ If the IO is not yet open, `wsio_dowork` shall do nothing. ]*/
+TEST_FUNCTION(wsio_dowork_when_not_open_dows_nothing)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    umock_c_reset_all_calls();
+
+    // act
+    wsio_get_interface_description()->concrete_io_dowork(wsio);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_108: [ If the IO is not yet open, `wsio_dowork` shall do nothing. ]*/
+TEST_FUNCTION(wsio_dowork_when_opening_calls_uws_dowork)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(uws_client_dowork(TEST_UWS_HANDLE));
+
+    // act
+    wsio_get_interface_description()->concrete_io_dowork(wsio);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_108: [ If the IO is not yet open, `wsio_dowork` shall do nothing. ]*/
+TEST_FUNCTION(wsio_dowork_after_close_does_nothing)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
+    g_on_ws_open_complete(g_on_ws_open_complete_context, WS_OPEN_OK);
+    (void)wsio_get_interface_description()->concrete_io_close(wsio, test_on_io_close_complete, (void*)0x4245);
+    g_on_ws_close_complete(g_on_ws_close_complete_context);
+    umock_c_reset_all_calls();
+
+    // act
+    wsio_get_interface_description()->concrete_io_dowork(wsio);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_108: [ If the IO is not yet open, `wsio_dowork` shall do nothing. ]*/
+TEST_FUNCTION(wsio_dowork_in_closing_calls_uws_do_work)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
+    g_on_ws_open_complete(g_on_ws_open_complete_context, WS_OPEN_OK);
+    (void)wsio_get_interface_description()->concrete_io_close(wsio, test_on_io_close_complete, (void*)0x4245);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(uws_client_dowork(TEST_UWS_HANDLE));
+
+    // act
+    wsio_get_interface_description()->concrete_io_dowork(wsio);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
+}
+
+/* on_ws_error */
+
+/* Tests_SRS_WSIO_01_121: [ When `on_underlying_ws_error` is called while the IO is OPEN the wsio instance shall be set to ERROR and an error shall be indicated via the `on_io_error` callback passed to `wsio_open`. ]*/
+/* Tests_SRS_WSIO_01_123: [ When calling `on_io_error`, the `on_io_error_context` argument given in `wsio_open` shall be passed to the callback `on_io_error`. ]*/
+TEST_FUNCTION(when_on_underlying_ws_error_is_called_in_open_the_error_is_reported_up)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
+    g_on_ws_open_complete(g_on_ws_open_complete_context, WS_OPEN_OK);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4244));
+
+    // act
+    g_on_ws_error(g_on_ws_error_context, WS_ERROR_BAD_FRAME_RECEIVED);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_135: [ When `on_underlying_ws_error` is called with a NULL context, it shall do nothing. ]*/
+TEST_FUNCTION(when_on_underlying_ws_error_with_NULL_context_does_nothing)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
+    g_on_ws_open_complete(g_on_ws_open_complete_context, WS_OPEN_OK);
+    umock_c_reset_all_calls();
+
+    // act
+    g_on_ws_error(NULL, WS_ERROR_BAD_FRAME_RECEIVED);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_122: [ When `on_underlying_ws_error` is called while the IO is OPENING, the `on_io_open_complete` callback passed to `wsio_open` shall be called with `IO_OPEN_ERROR`. ]*/
+TEST_FUNCTION(when_on_underlying_ws_error_is_called_while_OPENING_calls_open_complete_with_ERROR)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_ERROR));
+
+    // act
+    g_on_ws_error(g_on_ws_error_context, WS_ERROR_BAD_FRAME_RECEIVED);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
+}
+
+/* on_underlying_ws_open_complete */
+
+/* Tests_SRS_WSIO_01_136: [ When `on_underlying_ws_open_complete` is called with `WS_OPEN_OK` while the IO is opening, the callback `on_io_open_complete` shall be called with `IO_OPEN_OK`. ]*/
+TEST_FUNCTION(when_on_underlying_ws_open_complete_is_called_with_OK_while_OPENING_the_io_open_complete_callback_is_called_with_OPEN_OK)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_OK));
+
+    // act
+    g_on_ws_open_complete(g_on_ws_open_complete_context, WS_OPEN_OK);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_149: [ When `on_underlying_ws_open_complete` is called with `WS_OPEN_CANCELLED` while the IO is opening, the callback `on_io_open_complete` shall be called with `IO_OPEN_CANCELLED`. ]*/
+TEST_FUNCTION(when_on_underlying_ws_open_complete_is_called_with_CANCELLED_while_OPENING_the_io_open_complete_callback_is_called_with_OPEN_CANCELLED)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_CANCELLED));
+
+    // act
+    g_on_ws_open_complete(g_on_ws_open_complete_context, WS_OPEN_CANCELLED);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_137: [ When `on_underlying_ws_open_complete` is called with any other error code while the IO is opening, the callback `on_io_open_complete` shall be called with `IO_OPEN_ERROR`. ]*/
+TEST_FUNCTION(when_on_underlying_ws_open_complete_is_called_with_an_error_while_OPENING_the_io_open_complete_callback_is_called_with_OPEN_ERROR)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_ERROR));
+
+    // act
+    g_on_ws_open_complete(g_on_ws_open_complete_context, WS_OPEN_ERROR_CANNOT_SEND_UPGRADE_REQUEST);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_138: [ When `on_underlying_ws_open_complete` is called with a NULL context, it shall do nothing. ]*/
+TEST_FUNCTION(on_underlying_ws_open_complete_with_NULL_context_does_nothing)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
+    umock_c_reset_all_calls();
+
+    // act
+    g_on_ws_open_complete(NULL, WS_OPEN_ERROR_CANNOT_SEND_UPGRADE_REQUEST);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_139: [ When `on_underlying_ws_open_complete` is called while in OPEN state it shall indicate an error by calling the `on_io_error` callback passed to `wsio_open` and switch to the ERROR state. ]*/
+/* Tests_SRS_WSIO_01_140: [ When calling `on_io_error`, the `on_io_error_context` argument given in `wsio_open` shall be passed to the callback `on_io_error`. ]*/
+TEST_FUNCTION(when_on_underlying_ws_open_complete_is_called_when_already_OPEN_an_error_is_indicated)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
+    g_on_ws_open_complete(g_on_ws_open_complete_context, WS_OPEN_OK);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4244));
+
+    // act
+    g_on_ws_open_complete(g_on_ws_open_complete_context, WS_OPEN_OK);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_141: [ When `on_underlying_ws_open_complete` is called while in the ERROR state it shall indicate an error by calling the `on_io_error` callback passed to `wsio_open`. ]*/
+/* Tests_SRS_WSIO_01_140: [ When calling `on_io_error`, the `on_io_error_context` argument given in `wsio_open` shall be passed to the callback `on_io_error`. ]*/
+TEST_FUNCTION(when_on_underlying_ws_open_complete_is_called_when_in_ERROR_an_error_is_indicated)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
+    g_on_ws_open_complete(g_on_ws_open_complete_context, WS_OPEN_OK);
+    g_on_ws_open_complete(g_on_ws_open_complete_context, WS_OPEN_OK);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4244));
+
+    // act
+    g_on_ws_open_complete(g_on_ws_open_complete_context, WS_OPEN_OK);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_142: [ When `on_underlying_ws_open_complete` is called while in the CLOSING state an error shall be indicated by calling the `on_io_error` callback passed to `wsio_open`. ]*/
+TEST_FUNCTION(when_on_underlying_ws_open_complete_is_called_when_CLOSING_it_does_nothing)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
+    g_on_ws_open_complete(g_on_ws_open_complete_context, WS_OPEN_OK);
+    wsio_get_interface_description()->concrete_io_close(wsio, test_on_io_close_complete, (void*)0x4245);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4244));
+
+    // act
+    g_on_ws_open_complete(g_on_ws_open_complete_context, WS_OPEN_OK);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
+}
+
+/* on_ws_frame_received */
+
+/* Tests_SRS_WSIO_01_124: [ When `on_underlying_ws_frame_received` is called the bytes in the frame shall be indicated by calling the `on_bytes_received` callback passed to `wsio_open`. ]*/
+/* Tests_SRS_WSIO_01_125: [ When calling `on_bytes_received`, the `on_bytes_received_context` argument given in `wsio_open` shall be passed to the callback `on_bytes_received`. ]*/
+TEST_FUNCTION(when_on_underlying_ws_frame_received_is_called_the_frame_content_is_indicated_up)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+    const unsigned char test_buffer[] = { 0x42 };
+
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
+    g_on_ws_open_complete(g_on_ws_open_complete_context, WS_OPEN_OK);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(test_on_bytes_received((void*)0x4243, IGNORED_PTR_ARG, sizeof(test_buffer)))
+        .ValidateArgumentBuffer(2, test_buffer, sizeof(test_buffer));
+
+    // act
+    g_on_ws_frame_received(g_on_ws_frame_received_context, WS_FRAME_TYPE_BINARY, test_buffer, sizeof(test_buffer));
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_125: [ When calling `on_bytes_received`, the `on_bytes_received_context` argument given in `wsio_open` shall be passed to the callback `on_bytes_received`. ]*/
+TEST_FUNCTION(when_on_underlying_ws_frame_received_is_called_the_frame_content_is_indicated_up_with_the_proper_context)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+    const unsigned char test_buffer[] = { 0x42 };
+
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, NULL, test_on_io_error, (void*)0x4244);
+    g_on_ws_open_complete(g_on_ws_open_complete_context, WS_OPEN_OK);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(test_on_bytes_received(NULL, IGNORED_PTR_ARG, sizeof(test_buffer)))
+        .ValidateArgumentBuffer(2, test_buffer, sizeof(test_buffer));
+
+    // act
+    g_on_ws_frame_received(g_on_ws_frame_received_context, WS_FRAME_TYPE_BINARY, test_buffer, sizeof(test_buffer));
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_126: [ If `on_underlying_ws_frame_received` is called while the IO is in any state other than OPEN, it shall do nothing. ]*/
+TEST_FUNCTION(when_on_underlying_ws_frame_received_is_called_while_opening_it_shall_do_nothing)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+    const unsigned char test_buffer[] = { 0x42 };
+
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, NULL, test_on_io_error, (void*)0x4244);
+    umock_c_reset_all_calls();
+
+    // act
+    g_on_ws_frame_received(g_on_ws_frame_received_context, WS_FRAME_TYPE_BINARY, test_buffer, sizeof(test_buffer));
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_126: [ If `on_underlying_ws_frame_received` is called while the IO is in any state other than OPEN, it shall do nothing. ]*/
+TEST_FUNCTION(when_on_underlying_ws_frame_received_is_called_while_closing_it_shall_do_nothing)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+    const unsigned char test_buffer[] = { 0x42 };
+
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, NULL, test_on_io_error, (void*)0x4244);
+    g_on_ws_open_complete(g_on_ws_open_complete_context, WS_OPEN_OK);
+    (void)wsio_get_interface_description()->concrete_io_close(wsio, test_on_io_close_complete, (void*)0x4245);
+    umock_c_reset_all_calls();
+
+    // act
+    g_on_ws_frame_received(g_on_ws_frame_received_context, WS_FRAME_TYPE_BINARY, test_buffer, sizeof(test_buffer));
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_150: [ If `on_underlying_ws_frame_received` is called with NULL context it shall do nothing. ]*/
+TEST_FUNCTION(when_on_underlying_ws_frame_received_with_NULL_context_does_nothing)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+    const unsigned char test_buffer[] = { 0x42 };
+
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, NULL, test_on_io_error, (void*)0x4244);
+    g_on_ws_open_complete(g_on_ws_open_complete_context, WS_OPEN_OK);
+    umock_c_reset_all_calls();
+
+    // act
+    g_on_ws_frame_received(NULL, WS_FRAME_TYPE_BINARY, test_buffer, sizeof(test_buffer));
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_151: [ If the WebSocket frame type is not binary then an error shall be indicated by calling the `on_io_error` callback passed to `wsio_open`. ]*/
+/* Tests_SRS_WSIO_01_152: [ When calling `on_io_error`, the `on_io_error_context` argument given in `wsio_open` shall be passed to the callback `on_io_error`. ]*/
+TEST_FUNCTION(when_on_underlying_ws_frame_received_is_called_with_a_text_frame_an_error_is_indicated)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+    const unsigned char test_buffer[] = { 0x42 };
+
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, NULL, test_on_io_error, (void*)0x4244);
+    g_on_ws_open_complete(g_on_ws_open_complete_context, WS_OPEN_OK);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4244));
+
+    // act
+    g_on_ws_frame_received(g_on_ws_frame_received_context, WS_FRAME_TYPE_TEXT, test_buffer, sizeof(test_buffer));
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_153: [ When `on_underlying_ws_frame_received` is called with zero `size`, no bytes shall be indicated up as received. ]*/
+TEST_FUNCTION(when_on_underlying_ws_frame_received_is_called_with_zero_bytes_no_bytes_are_reported_as_received)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+    const unsigned char test_buffer[] = { 0x42 };
+
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, NULL, test_on_io_error, (void*)0x4244);
+    g_on_ws_open_complete(g_on_ws_open_complete_context, WS_OPEN_OK);
+    umock_c_reset_all_calls();
+
+    // act
+    g_on_ws_frame_received(g_on_ws_frame_received_context, WS_FRAME_TYPE_BINARY, test_buffer, 0);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_154: [ When `on_underlying_ws_frame_received` is called with a positive `size` and a NULL `buffer`, an error shall be indicated by calling the `on_io_error` callback passed to `wsio_open`. ]*/
+TEST_FUNCTION(when_on_underlying_ws_frame_received_is_called_with_positive_size_and_NULL_buffer_an_error_is_indicated)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, NULL, test_on_io_error, (void*)0x4244);
+    g_on_ws_open_complete(g_on_ws_open_complete_context, WS_OPEN_OK);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4244));
+
+    // act
+    g_on_ws_frame_received(g_on_ws_frame_received_context, WS_FRAME_TYPE_BINARY, NULL, 1);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
+}
+
+/* on_underlying_ws_send_frame_complete */
+
+/* Tests_SRS_WSIO_01_143: [ When `on_underlying_ws_send_frame_complete` is called after sending a WebSocket frame, the pending IO shall be removed from the list. ]*/
+/* Tests_SRS_WSIO_01_145: [ Removing it from the list shall be done by calling `singlylinkedlist_remove`. ]*/
+/* Tests_SRS_WSIO_01_144: [ Also the pending IO data shall be freed. ]*/
+/* Tests_SRS_WSIO_01_146: [ When `on_underlying_ws_send_frame_complete` is called with `WS_SEND_OK`, the callback `on_send_complete` shall be called with `IO_SEND_OK`. ]*/
+TEST_FUNCTION(wsio_send_with_1_byte_completed_indicates_the_completion_up)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+    unsigned char test_buffer[] = { 42 };
+
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
+    g_on_ws_open_complete(g_on_ws_open_complete_context, WS_OPEN_OK);
+    (void)wsio_get_interface_description()->concrete_io_send(wsio, test_buffer, sizeof(test_buffer), test_on_send_complete, (void*)0x4343);
+    umock_c_reset_all_calls();
+
+    EXPECTED_CALL(singlylinkedlist_item_get_value(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(singlylinkedlist_remove(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(test_on_send_complete((void*)0x4343, IO_SEND_OK));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+
+    // act
+    g_on_ws_send_frame_complete(g_on_ws_send_frame_complete_context, WS_SEND_FRAME_OK);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_147: [ When `on_underlying_ws_send_frame_complete` is called with `WS_SEND_CANCELLED`, the callback `on_send_complete` shall be called with `IO_SEND_CANCELLED`. ]*/
+TEST_FUNCTION(wsio_send_with_1_byte_completed_with_CANCELLED_indicates_the_completion_up_as_CANCELLED)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+    unsigned char test_buffer[] = { 42 };
+
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
+    g_on_ws_open_complete(g_on_ws_open_complete_context, WS_OPEN_OK);
+    (void)wsio_get_interface_description()->concrete_io_send(wsio, test_buffer, sizeof(test_buffer), test_on_send_complete, (void*)0x4343);
+    umock_c_reset_all_calls();
+
+    EXPECTED_CALL(singlylinkedlist_item_get_value(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(singlylinkedlist_remove(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(test_on_send_complete((void*)0x4343, IO_SEND_CANCELLED));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+
+    // act
+    g_on_ws_send_frame_complete(g_on_ws_send_frame_complete_context, WS_SEND_FRAME_CANCELLED);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_148: [ When `on_underlying_ws_send_frame_complete` is called with any other error code, the callback `on_send_complete` shall be called with `IO_SEND_ERROR`. ]*/
+TEST_FUNCTION(wsio_send_with_1_byte_completed_with_ERROR_indicates_the_completion_up_as_ERROR)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+    unsigned char test_buffer[] = { 42 };
+
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
+    g_on_ws_open_complete(g_on_ws_open_complete_context, WS_OPEN_OK);
+    (void)wsio_get_interface_description()->concrete_io_send(wsio, test_buffer, sizeof(test_buffer), test_on_send_complete, (void*)0x4343);
+    umock_c_reset_all_calls();
+
+    EXPECTED_CALL(singlylinkedlist_item_get_value(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(singlylinkedlist_remove(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(test_on_send_complete((void*)0x4343, IO_SEND_ERROR));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+
+    // act
+    g_on_ws_send_frame_complete(g_on_ws_send_frame_complete_context, WS_SEND_FRAME_ERROR);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_155: [ When `on_underlying_ws_send_frame_complete` is called with a NULL context it shall do nothing. ]*/
+TEST_FUNCTION(on_underlying_ws_send_frame_complete_with_NULL_context_does_nothing)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+    unsigned char test_buffer[] = { 42 };
+
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
+    g_on_ws_open_complete(g_on_ws_open_complete_context, WS_OPEN_OK);
+    (void)wsio_get_interface_description()->concrete_io_send(wsio, test_buffer, sizeof(test_buffer), test_on_send_complete, (void*)0x4343);
+    umock_c_reset_all_calls();
+
+    // act
+    g_on_ws_send_frame_complete(NULL, WS_SEND_FRAME_OK);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
+}
+
+/* wsio_setoption */
+
+/* Tests_SRS_WSIO_01_109: [ If any of the arguments `ws_io` or `option_name` is NULL `wsio_setoption` shall return a non-zero value. ]*/
+TEST_FUNCTION(wsio_setoption_with_NULL_handle_fails)
+{
+    // arrange
+    int result;
+
+    // act
+    result = wsio_get_interface_description()->concrete_io_setoption(NULL, "option1", (void*)0x4242);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_WSIO_01_109: [ If any of the arguments `ws_io` or `option_name` is NULL `wsio_setoption` shall return a non-zero value. ]*/
+TEST_FUNCTION(wsio_setoption_with_NULL_option_fails)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+    int result;
+
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    umock_c_reset_all_calls();
+
+    // act
+    result = wsio_get_interface_description()->concrete_io_setoption(wsio, NULL, (void*)0x4242);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_183: [ If the option name is `WSIOOptions` then `wsio_setoption` shall call `OptionHandler_FeedOptions` and pass to it the underlying IO handle and the `value` argument. ]*/
+/* Tests_SRS_WSIO_01_158: [ On success, `wsio_setoption` shall return 0. ]*/
+TEST_FUNCTION(wsio_setoption_with_WSIOOptions_feeds_the_options_to_the_underlying_layer)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+    int result;
+
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(OptionHandler_FeedOptions(TEST_OPTIONHANDLER_HANDLE, TEST_UWS_HANDLE));
+
+    // act
+    result = wsio_get_interface_description()->concrete_io_setoption(wsio, "WSIOOptions", (void*)TEST_OPTIONHANDLER_HANDLE);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_184: [ If `OptionHandler_FeedOptions` fails, `wsio_setoption` shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(when_OptionHandler_FeedOptions_fails_then_wsio_setoption_fails)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+    int result;
+
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(OptionHandler_FeedOptions(TEST_OPTIONHANDLER_HANDLE, TEST_UWS_HANDLE))
+        .SetReturn(OPTIONHANDLER_ERROR);
+
+    // act
+    result = wsio_get_interface_description()->concrete_io_setoption(wsio, "WSIOOptions", (void*)TEST_OPTIONHANDLER_HANDLE);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_156: [ Otherwise all options shall be passed as they are to uws by calling `uws_client_set_option`. ]*/
+/* Tests_SRS_WSIO_01_158: [ On success, `wsio_setoption` shall return 0. ]*/
+TEST_FUNCTION(wsio_setoption_passes_the_option_dows_to_uws)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+    int result;
+
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(uws_client_set_option(TEST_UWS_HANDLE, "option1", (void*)0x4242));
+
+    // act
+    result = wsio_get_interface_description()->concrete_io_setoption(wsio, "option1", (void*)0x4242);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_157: [ If `uws_client_set_option` fails, `wsio_setoption` shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(when_uws_set_option_fails_wsio_setoption_fails)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+    int result;
+
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(uws_client_set_option(TEST_UWS_HANDLE, "option1", (void*)0x4242))
         .SetReturn(1);
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
     // act
-    void* option_result = wsio_clone_option("proxy_data", &proxy_options);
+    result = wsio_get_interface_description()->concrete_io_setoption(wsio, "option1", (void*)0x4242);
 
     // assert
-    ASSERT_IS_NULL(option_result);
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_155: [ If mallocAndStrcpy_s fails, wsio_clone_option shall return NULL. ]*/
-TEST_FUNCTION(when_copying_the_password_fails_then_wsio_cloneoption_with_proxy_data_fails)
-{
-    //arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    umock_c_reset_all_calls();
-
-    HTTP_PROXY_OPTIONS proxy_options;
-    proxy_options.host_address = TEST_HOST_ADDRESS;
-    proxy_options.port = 8080;
-    proxy_options.username = TEST_USERNAME;
-    proxy_options.password = TEST_PASSWORD;
-
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_HOST_ADDRESS))
-        .IgnoreArgument_destination();
-    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_USERNAME))
-        .IgnoreArgument_destination();
-    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_PASSWORD))
-        .IgnoreArgument_destination()
-        .SetReturn(1);
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-
-    // act
-    void* option_result = wsio_clone_option("proxy_data", &proxy_options);
-
-    // assert
-    ASSERT_IS_NULL(option_result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* wsio_destroy_option */
-
-/* Tests_SRS_WSIO_01_147: [ If any of the arguments is NULL, wsio_destroy_option shall do nothing. ]*/
-TEST_FUNCTION(wsio_destroy_option_name_NULL_fail)
-{
-    //arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-
-    umock_c_reset_all_calls();
-
-    // act
-    int port = 8080;
-    wsio_destroy_option(NULL, &port);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_147: [ If any of the arguments is NULL, wsio_destroy_option shall do nothing. ]*/
-TEST_FUNCTION(wsio_destroy_option_value_NULL_fail)
-{
-    //arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-
-    umock_c_reset_all_calls();
-
-    // act
-    wsio_destroy_option(OPTION_HTTP_PROXY, NULL);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_144: [ If the option name is `TrustedCerts`, wsio_destroy_option shall free the char\* option indicated by value. ]*/
-TEST_FUNCTION(wsio_destroy_option_with_TrustedCerts_frees_the_string)
-{
-    //arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    void* option_result = wsio_clone_option("TrustedCerts", "boohoo");
-    umock_c_reset_all_calls();
-
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-
-    // act
-    wsio_destroy_option("TrustedCerts", option_result);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_157: [ If the option name is `proxy_data`, wsio_destroy_option shall free the strings for the fields host_address, username and password. ]*/
-/* Tests_SRS_WSIO_01_156: [ Also the memory for the HTTP_PROXY_OPTIONS shall be freed. ]*/
-TEST_FUNCTION(wsio_destroy_option_with_proxy_data_frees_the_strings)
-{
-    //arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-
-    HTTP_PROXY_OPTIONS proxy_options;
-    proxy_options.host_address = TEST_HOST_ADDRESS;
-    proxy_options.port = 8080;
-    proxy_options.username = TEST_USERNAME;
-    proxy_options.password = TEST_PASSWORD;
-
-    void* option_result = wsio_clone_option("proxy_data", &proxy_options);
-    umock_c_reset_all_calls();
-
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-
-    // act
-    wsio_destroy_option("proxy_data", option_result);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_01_157: [ If the option name is `proxy_data`, wsio_destroy_option shall free the strings for the fields host_address, username and password. ]*/
-/* Tests_SRS_WSIO_01_156: [ Also the memory for the HTTP_PROXY_OPTIONS shall be freed. ]*/
-/* Tests_SRS_WSIO_01_167: [ No free shal be done for a NULL username. ]*/
-/* Tests_SRS_WSIO_01_168: [ No free shal be done for a NULL password. ]*/
-TEST_FUNCTION(wsio_destroy_option_with_proxy_data_with_NULL_username_frees_the_hostname_and_structure)
-{
-    //arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-
-    HTTP_PROXY_OPTIONS proxy_options;
-    proxy_options.host_address = TEST_HOST_ADDRESS;
-    proxy_options.port = 8080;
-    proxy_options.username = NULL;
-    proxy_options.password = NULL;
-
-    void* option_result = wsio_clone_option("proxy_data", &proxy_options);
-    umock_c_reset_all_calls();
-
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-
-    // act
-    wsio_destroy_option("proxy_data", option_result);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_destroy(wsio);
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
 /* wsio_retrieveoptions */
 
-/*Tests_SRS_WSIO_02_001: [ If parameter handle is NULL then wsio_retrieveoptions shall fail and return NULL. */
-TEST_FUNCTION(wsio_retrieveoptions_with_NULL_handle_returns_NULL)
+/* Tests_SRS_WSIO_01_118: [ If parameter `handle` is `NULL` then `wsio_retrieveoptions` shall fail and return NULL. ]*/
+TEST_FUNCTION(wsio_retrieveoptions_with_NULL_handle_fails)
 {
-    //arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-
-    umock_c_reset_all_calls();
+    // arrange
+    OPTIONHANDLER_HANDLE result;
 
     // act
-    OPTIONHANDLER_HANDLE handle = wsio_retrieveoptions(NULL);
+    result = wsio_get_interface_description()->concrete_io_retrieveoptions(NULL);
 
     // assert
-    ASSERT_IS_NULL(handle);
+    ASSERT_IS_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_WSIO_01_119: [ `wsio_retrieveoptions` shall call `OptionHandler_Create` to produce an `OPTIONHANDLER_HANDLE` and on success return the new `OPTIONHANDLER_HANDLE` handle. ]*/
+/* Tests_SRS_WSIO_01_179: [ When calling `uws_client_retrieve_options` the uws client handle shall be passed to it. ]*/
+/* Tests_SRS_WSIO_01_178: [ `uws_client_retrieve_options` shall add to the option handler one option, whose name shall be `uWSCLientOptions` and the value shall be queried by calling `uws_client_retrieve_options`. ]*/
+/* Tests_SRS_WSIO_01_181: [ Adding the option shall be done by calling `OptionHandler_AddOption`. ]*/
+TEST_FUNCTION(wsio_retrieveoptions_creates_an_option_handler_with_the_value_obtained_from_the_underlying_retrieve_options)
+{
+    // arrange
+    OPTIONHANDLER_HANDLE result;
+    CONCRETE_IO_HANDLE wsio;
+
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    umock_c_reset_all_calls();
+
+    EXPECTED_CALL(OptionHandler_Create(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(uws_client_retrieve_options(TEST_UWS_HANDLE));
+    STRICT_EXPECTED_CALL(OptionHandler_AddOption(TEST_OPTIONHANDLER_HANDLE, "WSIOOptions", TEST_UWS_CLIENT_OPTIONHANDLER_HANDLE));
+
+    // act
+    result = wsio_get_interface_description()->concrete_io_retrieveoptions(wsio);
+
+    // assert
+    ASSERT_IS_NOT_NULL(result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
-    wsio_destroy(wsio);
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/*Tests_SRS_WSIO_02_002: [** `wsio_retrieveoptions` shall produce an OPTIONHANDLER_HANDLE. ]*/
-TEST_FUNCTION(wsio_retrieveoptions_returns_non_NULL_empty)
+/* Tests_SRS_WSIO_01_120: [ If `OptionHandler_Create` fails then `wsio_retrieveoptions` shall fail and return NULL.  ]*/
+TEST_FUNCTION(when_OptionHandler_Create_fails_then_wsio_retrieveoptions_fails)
 {
-    ///arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    umock_c_reset_all_calls();
+    // arrange
+    OPTIONHANDLER_HANDLE result;
+    CONCRETE_IO_HANDLE wsio;
 
-    STRICT_EXPECTED_CALL(OptionHandler_Create(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
-        .IgnoreAllArguments();
-
-    ///act
-    OPTIONHANDLER_HANDLE h = wsio_get_interface_description()->concrete_io_retrieveoptions(wsio);
-
-    ///assert
-    ASSERT_IS_NOT_NULL(h);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    ///cleanup
-    wsio_destroy(wsio);
-    free(h);
-}
-
-/*Tests_SRS_WSIO_02_003: [ If producing the OPTIONHANDLER_HANDLE fails then wsio_retrieveoptions shall fail and return NULL. ]*/
-TEST_FUNCTION(wsio_retrieveoptions_when_OptionHandler_Create_fails_it_fails)
-{
-    ///arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(OptionHandler_Create(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
-        .IgnoreAllArguments()
-        .SetReturn((OPTIONHANDLER_HANDLE)NULL);
-
-    ///act
-    OPTIONHANDLER_HANDLE h = wsio_get_interface_description()->concrete_io_retrieveoptions(wsio);
-
-    ///assert
-    ASSERT_IS_NULL(h);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    ///cleanup
-    wsio_destroy(wsio);
-}
-
-/* Tests_SRS_WSIO_02_002: [ `wsio_retrieveoptions` shall produce an OPTIONHANDLER_HANDLE. ]*/
-/* Tests_SRS_WSIO_01_145: [ `wsio_retrieveoptions` shall add to it the options: ]*/
-/* Tests_SRS_WSIO_01_158: [ - proxy_data ]*/
-TEST_FUNCTION(wsio_retrieveoptions_returns_previously_set_proxy_options)
-{
-    //arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    OPTIONHANDLER_HANDLE created_option_handle;
-
-    HTTP_PROXY_OPTIONS proxy_options;
-    proxy_options.host_address = TEST_HOST_ADDRESS;
-    proxy_options.port = 8080;
-    proxy_options.username = TEST_USERNAME;
-    proxy_options.password = TEST_PASSWORD;
-
-    (void)wsio_setoption(wsio, OPTION_HTTP_PROXY, &proxy_options);
-
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
     umock_c_reset_all_calls();
 
     EXPECTED_CALL(OptionHandler_Create(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
-        .CaptureReturn(&created_option_handle);
-    STRICT_EXPECTED_CALL(OptionHandler_AddOption(IGNORED_PTR_ARG, "proxy_data", IGNORED_PTR_ARG))
-        .ValidateArgumentValue_handle(&created_option_handle)
-        .IgnoreArgument_value();
+        .SetReturn(NULL);
 
     // act
-    OPTIONHANDLER_HANDLE handle = wsio_retrieveoptions(wsio);
+    result = wsio_get_interface_description()->concrete_io_retrieveoptions(wsio);
 
     // assert
-    ASSERT_IS_NOT_NULL(handle);
+    ASSERT_IS_NULL(result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
-    OptionHandler_Destroy(handle);
-    wsio_destroy(wsio);
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_02_002: [ `wsio_retrieveoptions` shall produce an OPTIONHANDLER_HANDLE. ]*/
-/* Tests_SRS_WSIO_01_145: [ `wsio_retrieveoptions` shall add to it the options: ]*/
-/* Tests_SRS_WSIO_01_146: [ - TrustedCerts ]*/
-TEST_FUNCTION(wsio_retrieveoptions_returns_previously_set_trusted_certs_option)
+/* Tests_SRS_WSIO_01_180: [ If `uws_client_retrieve_options` fails, `uws_client_retrieve_options` shall fail and return NULL. ]*/
+TEST_FUNCTION(when_uws_client_retrieve_options_fails_then_wsio_retrieveoptions_fails)
 {
-    //arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    OPTIONHANDLER_HANDLE optionhandler_handle;
-    (void)wsio_setoption(wsio, "TrustedCerts", "boohoo");
+    // arrange
+    OPTIONHANDLER_HANDLE result;
+    CONCRETE_IO_HANDLE wsio;
 
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
     umock_c_reset_all_calls();
 
-    EXPECTED_CALL(OptionHandler_Create(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
-        .CaptureReturn(&optionhandler_handle);
-    STRICT_EXPECTED_CALL(OptionHandler_AddOption(IGNORED_PTR_ARG, "TrustedCerts", IGNORED_PTR_ARG))
-        .ValidateArgumentValue_handle(&optionhandler_handle)
-        .ValidateArgumentBuffer(3, "boohoo", sizeof("boohoo"));
+    EXPECTED_CALL(OptionHandler_Create(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(uws_client_retrieve_options(TEST_UWS_HANDLE))
+        .SetReturn(NULL);
+    STRICT_EXPECTED_CALL(OptionHandler_Destroy(TEST_OPTIONHANDLER_HANDLE));
 
     // act
-    OPTIONHANDLER_HANDLE handle = wsio_retrieveoptions(wsio);
+    result = wsio_get_interface_description()->concrete_io_retrieveoptions(wsio);
 
     // assert
-    ASSERT_IS_NOT_NULL(handle);
+    ASSERT_IS_NULL(result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
-    OptionHandler_Destroy(handle);
-    wsio_destroy(wsio);
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_02_003: [ If producing the OPTIONHANDLER_HANDLE fails then wsio_retrieveoptions shall fail and return NULL. ]*/
-TEST_FUNCTION(when_AddOption_fails_wsio_retrieveoptions_fails)
+/* Tests_SRS_WSIO_01_182: [ If `OptionHandler_AddOption` fails, `uws_client_retrieve_options` shall fail and return NULL. ]*/
+TEST_FUNCTION(when_OptionHandler_AddOption_fails_then_wsio_retrieveoptions_fails)
 {
-    //arrange
-    CONCRETE_IO_HANDLE wsio = wsio_create(&default_wsio_config);
-    OPTIONHANDLER_HANDLE optionhandler_handle;
-    (void)wsio_setoption(wsio, "TrustedCerts", "boohoo");
+    // arrange
+    OPTIONHANDLER_HANDLE result;
+    CONCRETE_IO_HANDLE wsio;
 
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
     umock_c_reset_all_calls();
 
-    EXPECTED_CALL(OptionHandler_Create(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
-        .CaptureReturn(&optionhandler_handle);
-    STRICT_EXPECTED_CALL(OptionHandler_AddOption(IGNORED_PTR_ARG, "TrustedCerts", IGNORED_PTR_ARG))
-        .IgnoreArgument_handle().IgnoreArgument_value()
+    EXPECTED_CALL(OptionHandler_Create(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(uws_client_retrieve_options(TEST_UWS_HANDLE));
+    STRICT_EXPECTED_CALL(OptionHandler_AddOption(TEST_OPTIONHANDLER_HANDLE, "WSIOOptions", TEST_UWS_CLIENT_OPTIONHANDLER_HANDLE))
         .SetReturn(OPTIONHANDLER_ERROR);
-    STRICT_EXPECTED_CALL(OptionHandler_Destroy(IGNORED_PTR_ARG))
-        .ValidateArgumentValue_handle(&optionhandler_handle);
+    STRICT_EXPECTED_CALL(OptionHandler_Destroy(TEST_UWS_CLIENT_OPTIONHANDLER_HANDLE));
+    STRICT_EXPECTED_CALL(OptionHandler_Destroy(TEST_OPTIONHANDLER_HANDLE));
 
     // act
-    OPTIONHANDLER_HANDLE handle = wsio_retrieveoptions(wsio);
+    result = wsio_get_interface_description()->concrete_io_retrieveoptions(wsio);
 
     // assert
-    ASSERT_IS_NULL(handle);
+    ASSERT_IS_NULL(result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
-    wsio_destroy(wsio);
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
+}
+
+/* wsio_clone_option */
+
+/* Tests_SRS_WSIO_01_174: [ If `wsio_clone_option` is called with NULL `name` or `value` it shall return NULL. ]*/
+TEST_FUNCTION(wsio_clone_option_with_NULL_name_fails)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+    void* result;
+
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_retrieveoptions(wsio);
+    umock_c_reset_all_calls();
+
+    // act
+    result = g_clone_option(NULL, (void*)0x4243);
+
+    // assert
+    ASSERT_IS_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_174: [ If `wsio_clone_option` is called with NULL `name` or `value` it shall return NULL. ]*/
+TEST_FUNCTION(wsio_clone_option_with_NULL_value_fails)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+    void* result;
+
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_retrieveoptions(wsio);
+    umock_c_reset_all_calls();
+
+    // act
+    result = g_clone_option("WSIOOptions", NULL);
+
+    // assert
+    ASSERT_IS_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_171: [** `wsio_clone_option` called with `name` being `WSIOOptions` shall return the same value. ]*/
+TEST_FUNCTION(wsio_clone_option_with_WSIOOptions_clones_the_option_handler)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+    void* result;
+
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_retrieveoptions(wsio);
+    umock_c_reset_all_calls();
+
+    // act
+    result = g_clone_option("WSIOOptions", (void*)0x4243);
+
+    // assert
+    ASSERT_ARE_EQUAL(void_ptr, (void*)0x4243, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_173: [ `wsio_clone_option` called with any other option name than `WSIOOptions` shall return NULL. ]*/
+TEST_FUNCTION(wsio_clone_option_with_an_unknown_option_name_fails)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+    void* result;
+
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_retrieveoptions(wsio);
+    umock_c_reset_all_calls();
+
+    // act
+    result = g_clone_option("Cucu", (void*)0x4243);
+
+    // assert
+    ASSERT_IS_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
+}
+
+/* wsio_destroy_option */
+
+/* Tests_SRS_WSIO_01_175: [ `wsio_destroy_option` called with the option `name` being `WSIOOptions` shall destroy the value by calling `OptionHandler_Destroy`. ]*/
+TEST_FUNCTION(wsio_destroy_option_with_WSIOOptions_destroys_the_handler)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_retrieveoptions(wsio);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(OptionHandler_Destroy(TEST_OPTIONHANDLER_HANDLE));
+
+    // act
+    g_destroy_option("WSIOOptions", TEST_OPTIONHANDLER_HANDLE);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_176: [ If `wsio_destroy_option` is called with any other `name` it shall do nothing. ]*/
+TEST_FUNCTION(wsio_destroy_option_with_an_unknown_option_does_no_destroy)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_retrieveoptions(wsio);
+    umock_c_reset_all_calls();
+
+    // act
+    g_destroy_option("cucu", TEST_OPTIONHANDLER_HANDLE);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_177: [ If `wsio_destroy_option` is called with NULL `name` or `value` it shall do nothing. ]*/
+TEST_FUNCTION(wsio_destroy_option_with_NULL_name_does_no_destroy)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_retrieveoptions(wsio);
+    umock_c_reset_all_calls();
+
+    // act
+    g_destroy_option(NULL, TEST_OPTIONHANDLER_HANDLE);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_177: [ If `wsio_destroy_option` is called with NULL `name` or `value` it shall do nothing. ]*/
+TEST_FUNCTION(wsio_destroy_option_with_NULL_value_does_no_destroy)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_retrieveoptions(wsio);
+    umock_c_reset_all_calls();
+
+    // act
+    g_destroy_option("WSIOOptions", NULL);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
+}
+
+/* on_underlying_ws_close_complete */
+
+/* Tests_SRS_WSIO_01_159: [ When `on_underlying_ws_close_complete` while the IO is closing (after `wsio_close`), the close shall be indicated up by calling the `on_io_close_complete` callback passed to `wsio_close`. ]*/
+/* Tests_SRS_WSIO_01_163: [ When `on_io_close_complete` is called, the context passed to `wsio_close` shall be passed as argument to `on_io_close_complete`. ]*/
+TEST_FUNCTION(on_underlying_ws_close_complete_while_closing_triggers_the_send_complete_callback)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
+    g_on_ws_open_complete(g_on_ws_open_complete_context, WS_OPEN_OK);
+    (void)wsio_get_interface_description()->concrete_io_close(wsio, test_on_io_close_complete, (void*)0x4245);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(test_on_io_close_complete((void*)0x4245));
+
+    // act
+    g_on_ws_close_complete(g_on_ws_close_complete_context);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_160: [ If NULL was passed to `wsio_close` no callback shall be called. ]*/
+TEST_FUNCTION(when_on_close_complete_was_NULL_on_underlying_ws_close_complete_does_not_trigger_any_callback)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
+    g_on_ws_open_complete(g_on_ws_open_complete_context, WS_OPEN_OK);
+    (void)wsio_get_interface_description()->concrete_io_close(wsio, NULL, (void*)0x4245);
+    umock_c_reset_all_calls();
+
+    // act
+    g_on_ws_close_complete(g_on_ws_close_complete_context);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_161: [ If the context passed to `on_underlying_ws_close_complete` is NULL, `on_underlying_ws_close_complete` shall do nothing. ]*/
+TEST_FUNCTION(on_underlying_ws_close_complete_with_NULL_context_does_nothing)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
+    g_on_ws_open_complete(g_on_ws_open_complete_context, WS_OPEN_OK);
+    (void)wsio_get_interface_description()->concrete_io_close(wsio, test_on_io_close_complete, (void*)0x4245);
+    umock_c_reset_all_calls();
+
+    // act
+    g_on_ws_close_complete(NULL);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
+}
+
+/* on_underlying_ws_peer_closed */
+
+/* Tests_SRS_WSIO_01_170: [ When `on_underlying_ws_peer_closed` and the state of the IO is OPENING an error shall be indicated by calling the `on_io_open_complete` callback passed to `wsio_open` with the error code `WS_OPEN_ERROR`. ]*/
+/* Tests_SRS_WSIO_01_168: [ The `close_code`, `extra_data` and `extra_data_length` arguments shall be ignored. ]*/
+TEST_FUNCTION(on_underlying_ws_peer_closed_when_OPENING_indicates_an_error)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_ERROR));
+
+    // act
+    g_on_ws_peer_closed(g_on_ws_peer_closed_context, NULL, NULL, 0);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_166: [ When `on_underlying_ws_peer_closed` and the state of the IO is OPEN an error shall be indicated by calling the `on_io_error` callback passed to `wsio_open`. ]*/
+/* Tests_SRS_WSIO_01_168: [ The `close_code`, `extra_data` and `extra_data_length` arguments shall be ignored. ]*/
+TEST_FUNCTION(on_underlying_ws_peer_closed_when_OPEN_indicates_an_error)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
+    g_on_ws_open_complete(g_on_ws_open_complete_context, WS_OPEN_OK);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4244));
+
+    // act
+    g_on_ws_peer_closed(g_on_ws_peer_closed_context, NULL, NULL, 0);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_166: [ When `on_underlying_ws_peer_closed` and the state of the IO is OPEN an error shall be indicated by calling the `on_io_error` callback passed to `wsio_open`. ]*/
+/* Tests_SRS_WSIO_01_168: [ The `close_code`, `extra_data` and `extra_data_length` arguments shall be ignored. ]*/
+TEST_FUNCTION(on_underlying_ws_peer_closed_when_CLOSING_indicates_an_error)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
+    g_on_ws_open_complete(g_on_ws_open_complete_context, WS_OPEN_OK);
+    (void)wsio_get_interface_description()->concrete_io_close(wsio, test_on_io_close_complete, (void*)0x4245);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4244));
+
+    // act
+    g_on_ws_peer_closed(g_on_ws_peer_closed_context, NULL, NULL, 0);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
+}
+
+/* Tests_SRS_WSIO_01_167: [ If `on_underlying_ws_peer_closed` is called with a NULL context it shall do nothing. ]*/
+TEST_FUNCTION(on_underlying_ws_peer_closed_with_NULL_context_does_nothing)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
+    g_on_ws_open_complete(g_on_ws_open_complete_context, WS_OPEN_OK);
+    (void)wsio_get_interface_description()->concrete_io_close(wsio, test_on_io_close_complete, (void*)0x4245);
+    umock_c_reset_all_calls();
+
+    // act
+    g_on_ws_peer_closed(NULL, NULL, NULL, 0);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
 END_TEST_SUITE(wsio_ut)
