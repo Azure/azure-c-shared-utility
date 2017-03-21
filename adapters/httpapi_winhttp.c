@@ -805,7 +805,7 @@ HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, co
         }
         else if (strcmp("TrustedCerts", optionName) == 0)
         {
-            *savedValue = malloc(1);
+            *savedValue = malloc(1); /*_CloneOption needs to return in *savedValue something that can be free()'d*/
             if (*savedValue == NULL)
             {
                 LogError("failure in malloc");
