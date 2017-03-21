@@ -731,6 +731,11 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
                 result = HTTPAPI_OK;
             }
         }
+        else if (strcmp("TrustedCerts", optionName) == 0)
+        {
+            /*winhttp accepts all certificates, because it actually relies on the system ones*/
+            result = HTTPAPI_OK;
+        }
         else
         {
             result = HTTPAPI_INVALID_ARG;
@@ -795,6 +800,19 @@ HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, co
             else
             {
                 /*return OK when the private key has been clones successfully*/
+                result = HTTPAPI_OK;
+            }
+        }
+        else if (strcmp("TrustedCerts", optionName) == 0)
+        {
+            *savedValue = malloc(1); /*_CloneOption needs to return in *savedValue something that can be free()'d*/
+            if (*savedValue == NULL)
+            {
+                LogError("failure in malloc");
+                result = HTTPAPI_ERROR;
+            }
+            else
+            {
                 result = HTTPAPI_OK;
             }
         }
