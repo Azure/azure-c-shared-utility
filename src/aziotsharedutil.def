@@ -101,6 +101,7 @@ EXPORTS
     VECTOR_back
     VECTOR_find_if
     VECTOR_size
+    VECTOR_move
     USHAReset
     USHAInput
     USHAFinalBits
@@ -156,6 +157,7 @@ EXPORTS
     SHA1Result
     SASToken_Validate
     SASToken_Create
+    SASToken_CreateString
     MAP_RESULTStringStorage
     MAP_RESULTStrings
     MAP_RESULT_FromString
