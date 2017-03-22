@@ -84,6 +84,7 @@ EXPORTS
     get_ctime
     get_difftime
     OptionHandler_Create
+    OptionHandler_Clone
     OptionHandler_AddOption
     OptionHandler_FeedOptions
     OptionHandler_Destroy
