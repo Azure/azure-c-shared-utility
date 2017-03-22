@@ -40,7 +40,7 @@ option(run_unittests "set run_unittests to ON to run unittests (default is OFF)"
 option(skip_samples "set skip_samples to ON to skip building samples (default is OFF)[if possible, they are always built]" OFF)
 option(use_http "set use_http to ON if http is to be used, set to OFF to not use http" ON)
 option(use_condition "set use_condition to ON if the condition module and its adapters should be enabled" ON)
-option(use_wsio "set use_wsio to ON to build WebSockets support (default is OFF)" OFF)
+option(use_wsio "set use_wsio to ON to build WebSockets support (default is ON)" ON)
 option(nuget_e2e_tests "set nuget_e2e_tests to ON to generate e2e tests to run with nuget packages (default is OFF)" OFF)
 option(use_installed_dependencies "set use_installed_dependencies to ON to use installed packages instead of building dependencies from submodules" OFF)
 option(use_default_uuid "set use_default_uuid to ON to use the out of the box UUID that comes with the SDK rather than platform specific implementations" OFF)
