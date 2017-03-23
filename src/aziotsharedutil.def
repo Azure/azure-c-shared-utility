@@ -201,6 +201,7 @@ EXPORTS
     hmacInput
     hmacReset
     hmacResult
+    http_proxy_io_get_interface_description
     mallocAndStrcpy_s
     platform_deinit
     platform_get_default_tlsio
