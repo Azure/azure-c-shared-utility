@@ -234,6 +234,7 @@ EXPORTS
     tlsio_schannel_send
     tlsio_schannel_setoption
     unsignedIntToString
+    wsio_get_interface_description
     x509_schannel_create
     x509_schannel_destroy
     x509_schannel_get_certificate_context
