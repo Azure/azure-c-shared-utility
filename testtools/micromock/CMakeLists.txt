@@ -58,9 +58,13 @@ IF(WIN32)
     target_compile_definitions(micromock_cpp_unittest PUBLIC CPP_UNITTEST)
     target_compile_options(micromock_cpp_unittest PUBLIC /EHsc)
 
-    #flip VCInstallDir path
-    file(TO_CMAKE_PATH $ENV{VCInstallDir} VCInstallDir)
-    target_include_directories(micromock_cpp_unittest PUBLIC ${VCInstallDir}/UnitTest/include)
+    if(EXISTS "$ENV{VCInstallDir}/UnitTest/include")
+        #flip VCInstallDir path
+        file(TO_CMAKE_PATH $ENV{VCInstallDir} VCInstallDir)
+        #pre-VS2017 build environment doesn't appear to include the path to unit
+        #test headers, so add it here
+        target_include_directories(micromock_cpp_unittest PUBLIC ${VCInstallDir}/UnitTest/include)
+    endif()
 
     set_target_properties(micromock_cpp_unittest
        PROPERTIES
