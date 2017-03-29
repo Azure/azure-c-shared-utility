@@ -11,7 +11,7 @@ and aimed at small devices because NTP's time setting function is taken care of 
 
 [lwIP](http://savannah.nongnu.org/projects/lwip/)
 
-###  Exposed API
+###   Exposed API
 
 **SRS_SNTP_LWIP_30_001: [** The ntp_lwip shall implement the methods defined in `sntp.h`.
 ```c
@@ -19,10 +19,10 @@ int SNTP_SetServerName(const char* serverName);
 int SNTP_Init();
 void SNTP_Deinit();
 ```
-**]**
+ **]**
 
 
-###  SNTP_SetServerName
+###   SNTP_SetServerName
  `SNTP_SetServerName` must be called before `SNTP_Init`. The character array pointed to by `serverName` parameter must persist between calls to `SNTP_SetServerName` and `SNTP_Deinit` because the char* is stored and no copy of the string is made.
 
  `SNTP_SetServerName` is a wrapper for the lwIP call `sntp_setservername` and defers parameter validation to the lwIP library.
@@ -33,13 +33,14 @@ void SNTP_Deinit();
 int SNTP_SetServerName(const char* serverName);
 ```
 
-**SRS_SNTP_LWIP_30_002: [** The `serverName` parameter shall be an NTP server URL which shall not be validated. (Validation is deferred to the underlying library.) **]**  
+**SRS_SNTP_LWIP_30_002: [** The `serverName` parameter shall be an NTP server URL which shall not be validated. (Validation is deferred to the underlying library.) **]**
+
 **SRS_SNTP_LWIP_30_003: [** The `SNTP_SetServerName` shall set the NTP server
 to be used by ntp_lwip and return 0 to indicate success. (lwIP has no failure path.) **]**  
 
 
 
-###  SNTP_Init
+###   SNTP_Init
 
 `SNTP_Init` initializes the SNTP client and begins the process of contacting the NTP server. It blocks until NTP time has been successfully received.
 
@@ -49,7 +50,7 @@ int SNTP_Init();
 **SRS_SNTP_LWIP_30_004: [** `SNTP_Init` shall initialize the SNTP client, contact the NTP server to set system time, then return 0 to indicate success (lwIP has no failure path). **]**
 
 
-###  SNTP_Denit
+###   SNTP_Denit
 
 `SNTP_Denit` deinitializes the SNTP client.
 

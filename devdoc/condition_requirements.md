@@ -54,7 +54,7 @@ extern COND_RESULT Condition_Wait(COND_HANDLE  handle, LOCK_HANDLE lock, int tim
 extern void Condition_Deinit(COND_HANDLE  handle);
 ```
 
-### Condition_Init
+###  Condition_Init
 ```C
 extern COND_HANDLE Condition_Init(void);
 ```
@@ -64,7 +64,7 @@ extern COND_HANDLE Condition_Init(void);
 **SRS_CONDITION_18_008: [** `Condition_Init` shall return `NULL` if it fails to allocate the `CONDITION_HANDLE` **]**
 
 
-### Condition_Post
+###  Condition_Post
 ```C
 extern COND_RESULT Condition_Post(COND_HANDLE  handle);
 ```
@@ -74,7 +74,7 @@ extern COND_RESULT Condition_Post(COND_HANDLE  handle);
 **SRS_CONDITION_18_001: [** `Condition_Post` shall return `COND_INVALID_ARG` if `handle` is `NULL` **]**
 
 
-### Condition_Wait
+###  Condition_Wait
 ```C
 extern COND_RESULT Condition_Wait(COND_HANDLE  handle, LOCK_HANDLE lock, int timeout_milliseconds);
 ```
@@ -94,7 +94,7 @@ extern COND_RESULT Condition_Wait(COND_HANDLE  handle, LOCK_HANDLE lock, int tim
 **SRS_CONDITION_18_013: [** `Condition_Wait` shall accept relative timeouts **]**
 
 
-### Condition_Deinit
+###  Condition_Deinit
 ```C
 extern void Condition_Deinit(COND_HANDLE  handle);
 ```

@@ -3,10 +3,10 @@ AgentTime
 
 ##Overview
 
-AgentTime exports platform independent time related functions. It is a platform abstration and it requires a specific implementation for each platform.
+AgentTime exports platform independent time related functions. It is a platform abstraction and it requires a specific implementation for each platform.
 Most of the times these functions can simply call the C standard time functions.
 
-**SRS_AGENT_TIME_99_001: [** AGENT_TIME shall have the following interface**]**
+**SRS_AGENT_TIME_99_001: [** AGENT_TIME shall have the following interface **]**
 ```c
 /* same functionality as time() of standard C function */
 time_t get_time(time_t* p);

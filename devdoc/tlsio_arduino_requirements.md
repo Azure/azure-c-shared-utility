@@ -40,7 +40,7 @@ typedef struct IO_INTERFACE_DESCRIPTION_TAG
     IO_SETOPTION concrete_io_setoption;
 } IO_INTERFACE_DESCRIPTION;
 ```
-**]**
+ **]**
 
 **SRS_TLSIO_ARDUINO_21_002: [** The tlsio_arduino shall report the open operation status using the IO_OPEN_RESULT enumerator defined in the `xio.h`:
 ```c
@@ -51,7 +51,7 @@ typedef enum IO_OPEN_RESULT_TAG
     IO_OPEN_CANCELLED
 } IO_OPEN_RESULT;
 ```
-**]**
+ **]**
 
 **SRS_TLSIO_ARDUINO_21_003: [** The tlsio_arduino shall report the send operation status using the IO_SEND_RESULT enumerator defined in the `xio.h`:
 ```c
@@ -62,7 +62,7 @@ typedef enum IO_SEND_RESULT_TAG
     IO_SEND_CANCELLED
 } IO_SEND_RESULT;
 ```
-**]**
+ **]**
 
 **SRS_TLSIO_ARDUINO_21_004: [** The tlsio_arduino shall call the callbacks functions defined in the `xio.h`:
 ```c
@@ -72,7 +72,7 @@ typedef void(*ON_IO_OPEN_COMPLETE)(void* context, IO_OPEN_RESULT open_result);
 typedef void(*ON_IO_CLOSE_COMPLETE)(void* context);
 typedef void(*ON_IO_ERROR)(void* context);
 ```
-**]**
+ **]**
 
 **SRS_TLSIO_ARDUINO_21_005: [** The tlsio_arduino shall received the connection information using the TLSIO_CONFIG structure defined in `tlsio.h`:
 ```c
@@ -82,7 +82,7 @@ typedef struct TLSIO_CONFIG_TAG
 	int port;
 } TLSIO_CONFIG;
 ```
-**]**
+ **]**
 
 
 ## Callbacks
@@ -92,7 +92,7 @@ typedef struct TLSIO_CONFIG_TAG
 **SRS_TLSIO_ARDUINO_21_007: [** If the callback function is set as NULL. The tlsio_arduino shall not call anything. **]**
 
 
-###  tlsio_arduino_get_interface_description
+###   tlsio_arduino_get_interface_description
 ```c
 const IO_INTERFACE_DESCRIPTION* tlsio_arduino_get_interface_description(void);
 ```
@@ -100,7 +100,7 @@ const IO_INTERFACE_DESCRIPTION* tlsio_arduino_get_interface_description(void);
 **SRS_TLSIO_ARDUINO_21_008: [** The tlsio_arduino_get_interface_description shall return the VTable IO_INTERFACE_DESCRIPTION. **]**
 
 
-###  tlsio_arduino_create
+###   tlsio_arduino_create
 Implementation of `IO_CREATE concrete_io_create`
 ```c
 CONCRETE_IO_HANDLE tlsio_arduino_create(void* io_create_parameters);
@@ -127,7 +127,7 @@ CONCRETE_IO_HANDLE tlsio_arduino_create(void* io_create_parameters);
 **SRS_TLSIO_ARDUINO_21_020: [** If tlsio_arduino_create get success to create the tlsio instance, it shall set the tlsio state as TLSIO_ARDUINO_STATE_CLOSED. **]**
 
 
-###  tlsio_arduino_destroy
+###   tlsio_arduino_destroy
 Implementation of `IO_DESTROY concrete_io_destroy`
 ```c
 void tlsio_arduino_destroy(CONCRETE_IO_HANDLE tlsio_handle);
@@ -142,7 +142,7 @@ void tlsio_arduino_destroy(CONCRETE_IO_HANDLE tlsio_handle);
 **SRS_TLSIO_ARDUINO_21_025: [** If the tlsio state is TLSIO_ARDUINO_STATE_OPENING, TLSIO_ARDUINO_STATE_OPEN, or TLSIO_ARDUINO_STATE_CLOSING, the tlsio_arduino_destroy shall close destroy the tlsio, but log an error. **]**
 
 
-###  tlsio_arduino_open
+###   tlsio_arduino_open
 Implementation of `IO_OPEN concrete_io_open`
 ```c
 int tlsio_arduino_open(
@@ -190,7 +190,7 @@ int tlsio_arduino_open(
 **SRS_TLSIO_ARDUINO_21_042: [** If the tlsio_arduino_open retry to open more than 10 times without success, it shall call the on_io_open_complete with IO_OPEN_CANCELED. **]**
 
 
-###  tlsio_arduino_close
+###   tlsio_arduino_close
 Implementation of `IO_CLOSE concrete_io_close`
 ```c
 int tlsio_arduino_close(CONCRETE_IO_HANDLE tlsio_handle, ON_IO_CLOSE_COMPLETE on_io_close_complete, void* callback_context);
@@ -217,7 +217,7 @@ int tlsio_arduino_close(CONCRETE_IO_HANDLE tlsio_handle, ON_IO_CLOSE_COMPLETE on
 **SRS_TLSIO_ARDUINO_21_051: [** If the tlsio_arduino_close retry to close more than 10 times without success, it shall call the on_io_error. **]**
 
 
-###  tlsio_arduino_send
+###   tlsio_arduino_send
 Implementation of `IO_SEND concrete_io_send`
 ```c
 int tlsio_arduino_send(CONCRETE_IO_HANDLE tlsio_handle, const void* buffer, size_t size, ON_SEND_COMPLETE on_send_complete, void* callback_context)
@@ -244,7 +244,7 @@ int tlsio_arduino_send(CONCRETE_IO_HANDLE tlsio_handle, const void* buffer, size
 **SRS_TLSIO_ARDUINO_21_061: [** If the size is 0, the tlsio_arduino_send shall not do anything, and return _LINE_. **]**
 
 
-###  tlsio_arduino_dowork
+###   tlsio_arduino_dowork
 Implementation of `IO_DOWORK concrete_io_dowork`
 ```c
 void tlsio_arduino_dowork(CONCRETE_IO_HANDLE tlsio_handle)
@@ -281,7 +281,7 @@ void tlsio_arduino_dowork(CONCRETE_IO_HANDLE tlsio_handle)
 **SRS_TLSIO_ARDUINO_21_076: [** The tlsio_arduino_dowork shall delete the buffer to store the data received from the ssl client. **]**
 
 
-###  tlsio_arduino_setoption
+###   tlsio_arduino_setoption
 Implementation of `IO_SETOPTION concrete_io_setoption`
 ```c
 int tlsio_arduino_setoption(CONCRETE_IO_HANDLE tlsio_handle, const char* optionName, const void* value)
@@ -290,7 +290,7 @@ int tlsio_arduino_setoption(CONCRETE_IO_HANDLE tlsio_handle, const char* optionN
 **SRS_TLSIO_ARDUINO_21_077: [** The tlsio_arduino_setoption shall not do anything, and return 0. **]**
 
 
-###  tlsio_arduino_retrieveoptions
+###   tlsio_arduino_retrieveoptions
 Implementation of `IO_RETRIEVEOPTIONS concrete_io_retrieveoptions`
 ```c
 OPTIONHANDLER_HANDLE tlsio_arduino_retrieveoptions(CONCRETE_IO_HANDLE tlsio_handle)

@@ -1,5 +1,5 @@
 # uws_frame_encoder requirements
- 
+
 ## Overview
 
 uws_frame_encoder is module that implements the WebSocket frame encoding rules.
@@ -38,25 +38,35 @@ DEFINE_ENUM(WS_FRAME_TYPE, WS_FRAME_TYPE_VALUES);
 extern int uws_frame_encoder_encode(BUFFER_HANDLE encode_buffer, WS_FRAME_TYPE opcode, const unsigned char* payload, size_t length, bool is_masked, bool is_final, unsigned char reserved);
 ```
 
-### uws_create
+###  uws_create
 
 ```c
 extern int uws_frame_encoder_encode(BUFFER_HANDLE encode_buffer, WS_FRAME_TYPE opcode, const unsigned char* payload, size_t length, bool is_masked, bool is_final, unsigned char reserved);
 ```
 
-**SRS_UWS_FRAME_ENCODER_01_001: [** `uws_frame_encoder_encode` shall encode the information given in `opcode`, `payload`, `length`, `is_masked`, `is_final` and `reserved` according to the RFC6455 into a new buffer.**]**
+**SRS_UWS_FRAME_ENCODER_01_001: [** `uws_frame_encoder_encode` shall encode the information given in `opcode`, `payload`, `length`, `is_masked`, `is_final` and `reserved` according to the RFC6455 into a new buffer. **]**
+
 **SRS_UWS_FRAME_ENCODER_01_044: [** On success `uws_frame_encoder_encode` shall return a non-NULL handle to the result buffer. **]**
+
 **SRS_UWS_FRAME_ENCODER_01_054: [** If `length` is greater than 0 and payload is NULL, then `uws_frame_encoder_encode` shall fail and return NULL. **]**
+
 **SRS_UWS_FRAME_ENCODER_01_048: [** The newly created buffer shall be created by calling `BUFFER_new`. **]**
+
 **SRS_UWS_FRAME_ENCODER_01_049: [** If `BUFFER_new` fails then `uws_frame_encoder_encode` shall fail and return NULL. **]**
+
 **SRS_UWS_FRAME_ENCODER_01_046: [** The result buffer shall be resized accordingly using `BUFFER_enlarge`. **]**
+
 **SRS_UWS_FRAME_ENCODER_01_047: [** If `BUFFER_enlarge` fails then `uws_frame_encoder_encode` shall fail and return NULL. **]**
+
 **SRS_UWS_FRAME_ENCODER_01_050: [** The allocated memory shall be accessed by calling `BUFFER_u_char`. **]**
+
 **SRS_UWS_FRAME_ENCODER_01_051: [** If `BUFFER_u_char` fails then `uws_frame_encoder_encode` shall fail and return a NULL. **]**
+
 **SRS_UWS_FRAME_ENCODER_01_052: [** If `reserved` has any bits set except the lowest 3 then `uws_frame_encoder_encode` shall fail and return NULL. **]**
+
 **SRS_UWS_FRAME_ENCODER_01_053: [** In order to obtain a 32 bit value for masking, `gb_rand` shall be used 4 times (for each byte). **]**
 
-### RFC6455 relevant parts
+###  RFC6455 relevant parts
 
 5.  Data Framing
 
@@ -260,16 +270,22 @@ extern int uws_frame_encoder_encode(BUFFER_HANDLE encode_buffer, WS_FRAME_TYPE o
    **SRS_UWS_FRAME_ENCODER_01_033: [** A masked frame MUST have the field frame-masked set to 1, as defined in Section 5.2. **]**
 
    **SRS_UWS_FRAME_ENCODER_01_034: [** The masking key is contained completely within the frame, as defined in Section 5.2 as frame-masking-key. **]**
+   
    **SRS_UWS_FRAME_ENCODER_01_035: [** It is used to mask the "Payload data" defined in the same section as frame-payload-data, which includes "Extension data" and "Application data". **]**
 
    **SRS_UWS_FRAME_ENCODER_01_036: [** The masking key is a 32-bit value chosen at random by the client. **]**
+
    **SRS_UWS_FRAME_ENCODER_01_037: [** When preparing a masked frame, the client MUST pick a fresh masking key from the set of allowed 32-bit values. **]**
+
    **SRS_UWS_FRAME_ENCODER_01_038: [** The masking key needs to be unpredictable; thus, the masking key MUST be derived from a strong source of entropy, and the masking key for a given frame MUST NOT make it simple for a server/proxy to predict the masking key for a subsequent frame. **]**
+
    The unpredictability of the masking key is essential to prevent authors of malicious applications from selecting the bytes that appear on the wire.
    RFC 4086 [RFC4086] discusses what entails a suitable source of entropy for security-sensitive applications.
 
    The masking does not affect the length of the "Payload data".
+
    **SRS_UWS_FRAME_ENCODER_01_039: [** To convert masked data into unmasked data, or vice versa, the following algorithm is applied. **]**
+
    **SRS_UWS_FRAME_ENCODER_01_040: [** The same algorithm applies regardless of the direction of the translation, e.g., the same steps are applied to mask the data as to unmask the data. **]**
 
    **SRS_UWS_FRAME_ENCODER_01_041: [** Octet i of the transformed data ("transformed-octet-i") is the XOR of octet i of the original data ("original-octet-i") with octet at index i modulo 4 of the masking key ("masking-key-octet-j"): **]**

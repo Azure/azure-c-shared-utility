@@ -16,7 +16,7 @@ int x509_openssl_add_credentials(SSL_CTX* ssl_ctx, const char* x509certificate, 
 int x509_openssl_add_certificates(SSL_CTX, ssl_ctx, const char* certificates);
 ```
 
-###  x509_openssl_add_credentials
+###   x509_openssl_add_credentials
 ```c
 int x509_openssl_add_credentials(SSL_CTX* ssl_ctx, const char* x509certificate, const char* x509privatekey);
 ```
@@ -42,7 +42,7 @@ x509_openssl_add_credentials loads a x509 certificate and a x509 private key int
 **SRS_X509_OPENSSL_02_009: [** Otherwise x509_openssl_add_credentials shall fail and return a non-zero number. **]**
 
 
-### x509_openssl_add_certificates
+###  x509_openssl_add_certificates
 ```c
 int x509_openssl_add_certificates(SSL_CTX* ssl_ctx, const char* certificates);
 ```

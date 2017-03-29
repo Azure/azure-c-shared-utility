@@ -8,7 +8,7 @@ platform_arduino implements a standart way for SDK to access dedicated Arduino i
 ## References
 
 
-###  Standard
+###   Standard
 
 **SRS_PLATFORM_ARDUINO_21_001: [** The platform_arduino shall implement the interface provided in the `platfom.h`.
 ```c
@@ -16,7 +16,7 @@ platform_arduino implements a standart way for SDK to access dedicated Arduino i
     MOCKABLE_FUNCTION(, void, platform_deinit);
     MOCKABLE_FUNCTION(, const IO_INTERFACE_DESCRIPTION*, platform_get_default_tlsio);
 ```
-**]**
+ **]**
 
 **SRS_PLATFORM_ARDUINO_21_002: [** The platform_arduino shall use the tlsio functions defined by the 'xio.h'.
 ```c
@@ -41,29 +41,31 @@ typedef struct IO_INTERFACE_DESCRIPTION_TAG
     IO_SETOPTION concrete_io_setoption; 
 } IO_INTERFACE_DESCRIPTION; 
 ```
-**]**
+ **]**
 
-###  platform_init
+###   platform_init
 
 ```c
 int platform_init(void)
 ```
 
 **SRS_PLATFORM_ARDUINO_21_003: [** The platform_init shall initialize the platform. **]**
+
 **SRS_PLATFORM_ARDUINO_21_004: [** The platform_init shall allocate any memory needed to control the platform. **]** 
 
 
-###  platform_deinit
+###   platform_deinit
 
 ```c
 int platform_deinit(void)
 ```
 
 **SRS_PLATFORM_ARDUINO_21_005: [** The platform_deinit shall deinitialize the platform. **]**
+
 **SRS_PLATFORM_ARDUINO_21_006: [** The platform_deinit shall free all allocate memory needed to control the platform. **]** 
 
 
-###  platform_get_default_tlsio
+###   platform_get_default_tlsio
 
 ```c
 const IO_INTERFACE_DESCRIPTION* platform_get_default_tlsio(void)

@@ -13,7 +13,7 @@ initialization and deinitialization using the interfaces in `azure-c-shared-util
 ## References
 [sntp.h](https://github.com/Azure/azure-c-shared-utility/tree/master/inc/azure_c_shared_utility/sntp.h)
 
-###  Standard
+###   Standard
 
 **SRS_PLATFORM_OPENSSL_COMPACT_30_001: [** The platform_openssl_compact shall implement the interface provided in the `platfom.h`.
 
@@ -23,7 +23,7 @@ initialization and deinitialization using the interfaces in `azure-c-shared-util
     void platform_deinit();
     const IO_INTERFACE_DESCRIPTION* platform_get_default_tlsio();
 ```
-**]**
+ **]**
 
 **SRS_PLATFORM_OPENSSL_COMPACT_30_002: [** The platform_openssl_compact shall use the tlsio functions defined in 'xio.h'.
 ```c
@@ -48,7 +48,7 @@ typedef struct IO_INTERFACE_DESCRIPTION_TAG
     IO_SETOPTION concrete_io_setoption;
 } IO_INTERFACE_DESCRIPTION;
 ```
-**]**
+ **]**
 
 **SRS_PLATFORM_OPENSSL_COMPACT_30_003: [** The platform_openssl_compact shall use the sntp functions defined in 'sntp.h'.
 ```c
@@ -56,9 +56,9 @@ int SNTP_SetServerName(const char*, serverName);
 int SNTP_Init();
 void SNTP_Deinit();
 ```
-**]**
+ **]**
 
-###  platform_init
+###   platform_init
 
 The `platform_init` call performs initialization for the compact (microcontroller) version of the OpenSSL tlsio adapter plus sntp client initialization.
 
@@ -67,10 +67,11 @@ int platform_init();
 ```
 
 **SRS_PLATFORM_OPENSSL_COMPACT_30_004: [** The platform_init shall initialize the tlsio adapter. **]**
+
 **SRS_PLATFORM_OPENSSL_COMPACT_30_005: [** The platform_init shall initialize the sntp client. **]**
 
 
-###  platform_deinit
+###   platform_deinit
 
 ```c
 int platform_deinit();
@@ -79,7 +80,7 @@ int platform_deinit();
 **SRS_PLATFORM_OPENSSL_COMPACT_30_006: [** The platform_deinit shall deinitialize the sntp client. (The OpenSSL micro tlsio adapter requires no deinitialization.) **]**
 
 
-###  platform_get_default_tlsio
+###   platform_get_default_tlsio
 
 ```c
 const IO_INTERFACE_DESCRIPTION* platform_get_default_tlsio(void);

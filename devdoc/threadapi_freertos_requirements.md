@@ -9,7 +9,7 @@ threadapi_freertos implements a wrapper function for the FreeRTOS `vTaskDelay` f
 
 [vTaskDelay](http://www.freertos.org/a00127.html)
 
-###  Exposed API
+###   Exposed API
 
 **SRS_THREADAPI_FREERTOS_30_001: [** The threadapi_freertos shall implement the method `ThreadAPI_Sleep` defined in `threadapi.h`.
 ```c
@@ -20,20 +20,21 @@ threadapi_freertos implements a wrapper function for the FreeRTOS `vTaskDelay` f
  */
 void ThreadAPI_Sleep(unsigned int milliseconds);
 ```
-**]**
+ **]**
 
 
-###  ThreadAPI_Sleep
+###   ThreadAPI_Sleep
 
 ```c
 void ThreadAPI_Sleep(unsigned int milliseconds);
 ```
 
-**SRS_THREADAPI_FREERTOS_30_002: [** The ThreadAPI_Sleep shall receive a time in milliseconds. **]**  
+**SRS_THREADAPI_FREERTOS_30_002: [** The ThreadAPI_Sleep shall receive a time in milliseconds. **]**
+
 **SRS_THREADAPI_FREERTOS_30_003: [** The ThreadAPI_Sleep shall stop the thread for the specified time. **]**  
 
 
-###  ThreadAPI_Create
+###   ThreadAPI_Create
 
 ```c
 THREADAPI_RESULT ThreadAPI_Create(THREAD_HANDLE* threadHandle,  THREAD_START_FUNC func, void* arg);
@@ -42,7 +43,7 @@ THREADAPI_RESULT ThreadAPI_Create(THREAD_HANDLE* threadHandle,  THREAD_START_FUN
 **SRS_THREADAPI_FREERTOS_30_004: [** FreeRTOS is not guaranteed to support threading, so ThreadAPI_Create shall return THREADAPI_ERROR. **]**
 
 
-###  ThreadAPI_Join
+###   ThreadAPI_Join
 
 ```c
 THREADAPI_RESULT ThreadAPI_Join(THREAD_HANDLE threadHandle, int* res);
@@ -51,7 +52,7 @@ THREADAPI_RESULT ThreadAPI_Join(THREAD_HANDLE threadHandle, int* res);
 **SRS_THREADAPI_FREERTOS_30_005: [** FreeRTOS is not guaranteed to support threading, so ThreadAPI_Join shall return THREADAPI_ERROR. **]**
 
 
-###  ThreadAPI_Exit
+###   ThreadAPI_Exit
 
 ```c
 void ThreadAPI_Exit(int res);
