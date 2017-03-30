@@ -14,9 +14,8 @@ The document does not cover the specifics of any particular platform.
 - [ThreadApi adapter](#threadapi-adapter)
 - [Lock adapter](#lock-adapter)
 
-<a name="Overview"/>
 ## Overview
-</a>
+
 
 The C shared utility library is written in C for the purpose of portability to most platforms.
 However, several components rely on platform-specific resources in order to achieve the functionality required.
@@ -35,9 +34,9 @@ There are several mandatory components for which an adapter must be provided:
 
 Additionally, there are two optional components (thread and lock) that are only required if it is desired that the SDK API should be thread safe and if the SDK should use a dedicated thread to schedule work done by the library.    
 
-<a name="tickcounter-adapter"/>
+
 ### tickcounter adapter (mandatory)
-</a>
+
 
 If any of the existing adapters works for your platform simply include the desired adapter in your build.
 If none of the existing tickcounter adapters work for your platform, you will have fill one in. Follow the below steps in this case:
@@ -48,9 +47,9 @@ ii) In case your platform/OS has a function that can provide a global timer/tick
 
 iii) In case that your platform requires specific initialization/deinitialization for each tick counter instance that is created (like starting a timer or storing intermediate values), add the corresponding code in the `tickcounter_create` and `tickcounter_destroy` functions.
 
-<a name="agenttime-adapter"/>
+
 ### agenttime adapter
-</a>
+
 
 Agenttime provides adapters for time functions.
 
@@ -60,9 +59,9 @@ If the platform/OS does not support some of these functions, then a replacement 
 
 The template `agenttime` adapter can be found [here](https://github.com/Azure/azure-c-shared-utility/blob/master/adapters/template/agenttime_template.c).   
 
-<a name="xio-adapter"/>
+
 ### xio adapter
-</a>
+
 
 `xio` is a simple bytes in/bytes out API, that allows plugging under it any implementation of a TLS library or a socket level library.
 
@@ -112,7 +111,7 @@ then you should skip attempting to create an `xio` for the socket level, and sim
 
    v) In the `tlsio_..._destroy` function free the TLS library context.
 
-   vi) Define the states for your TLS IO and fill them into the enum `TLSIO_STATE`. Typical states are: NOT_OPEN, IN_HANDSHAKE, OPEN, ERROR. However the implementation for your TLS library might require additional states that your adapter is in. 
+   vi) Define the states for your TLS IO and fill them into the enum `TLSIO_STATE`. Typical states are: NOT_OPEN, IN_HANDSHAKE, OPEN, ERROR. However the implementation for your TLS library might require additional states that your adapter is in.
 
 ```c
 typedef enum TLSIO_STATE_TAG
@@ -128,7 +127,7 @@ typedef enum TLSIO_STATE_TAG
        Some important consideration are:
        - Do check that the server certificate validation option is setup so that certificate validation takes place;
        - Load any root CA certificates that are required for the validation before kicking off the connect.
-       
+
        `tlsio_..._open` shall store the callbacks passed to it, so that they can be triggered later.
        When the hanshake started by `tlsio_..._open` is complete, the callback on_io_open_complete has to be called with either IO_OPEN_OK, IO_OPEN_ERROR or IO_OPEN_CANCELLED, depending on what actually happened during the handshake.
        IO_OPEN_OK should be used to indicate a succesfull handshake, notifying the consumer of the IO that from now on the IO can be used to send/receive bytes.
@@ -151,9 +150,9 @@ typedef enum TLSIO_STATE_TAG
       In `tlsio_..._clone_option` clone the option based on its data type (malloc + strcpy for a string, etc.).
       In `tlsio_..._destroy_option` destroy the option based on its data type (free fort a string, etc.).
 
-<a name="platform-file"/>
+
 ### platform file
-</a>
+
 
 Each platform has a platform_... .c file that performs one time initialization and deinitialization for the platform and also provides to the SDK the interface for the TLS IO.
 To port the platfor file follow these steps:
@@ -174,13 +173,13 @@ This is needed if an existing out of the box TLS adapter is used.
 
 To be filled in.
 
-<a name="threadapi-adapter"/>
+
 ### ThreadAPI adapter
-</a>
+
 
 For constrained devices it is recommended that this part of the PAL is not used and it is recommended that the application controls when the work is done by the SDK by using the _LL APIs and explictly calling the _LL_DoWork functions.
 
-The code for the following functions has to be implemented to realize a ThreadAPI adapter: 
+The code for the following functions has to be implemented to realize a ThreadAPI adapter:
 
 #### THREADAPI\_RESULT ThreadAPI\_Create(THREAD\_HANDLE\* threadHandle, THREAD\_START\_FUNC func, void\* arg)
 
@@ -212,9 +211,7 @@ Sleeps the current thread for a given number of milliseconds.
 
 -   *milliseconds* is the number of milliseconds to sleep.
 
-<a name="threadapi-adapter"/>
 ### Lock adapter
-</a>
 
 For constrained devices it is recommended that this part of the PAL is not used and it is recommended that the application controls when the work is done by the SDK by using the _LL APIs and explictly calling the _LL_DoWork functions.
 
