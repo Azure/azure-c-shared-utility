@@ -80,6 +80,7 @@ typedef struct TLSIO_CONFIG_TAG
     int port;
 } TLSIO_CONFIG;
 ```
+**]**
 
 
 ## Callbacks
@@ -128,7 +129,7 @@ void tlsio_openssl_destroy(CONCRETE_IO_HANDLE tls_io);
 
 **SRS_TLSIO_SSL_ESP8266_99_021: [** The tlsio_openssl_destroy shall destroy a created instance of the tlsio for ESP8266 identified by the CONCRETE_IO_HANDLE. **]**
 
-**SRS_TLSIO_SSL_ESP8266_99_022: [** The tlsio_openssl_destroy shall free the memory allocated for tlsio_instance. **]**
+**SRS_TLSIO_SSL_ESP8266_99_022: [** The tlsio_openssl_destroy shall free all memory allocated for tlsio_instance. **]**
 
 **SRS_TLSIO_SSL_ESP8266_99_024: [** If the tlsio_handle is NULL, the tlsio_openssl_destroy shall not do anything. **]**
 
@@ -154,7 +155,7 @@ int tlsio_openssl_open(
 
 **SRS_TLSIO_SSL_ESP8266_99_026: [** The tlsio_openssl_open shall start the process to open the ssl connection with the host provided in the tlsio_openssl_create. **]**
 
-**SRS_TLSIO_SSL_ESP8266_99_027: [** The tlsio_openssl_open shall set the tlsio to try to open the connection for 20 times before assuming that connection failed. **]**
+**SRS_TLSIO_SSL_ESP8266_99_027: [** The tlsio_openssl_open shall set the tlsio to try to open the connection for MAX_RETRY times before assuming that connection failed. **]**
 
 **SRS_TLSIO_SSL_ESP8266_99_028: [** The tlsio_openssl_open shall store the provided on_io_open_complete callback function address. **]**
 
@@ -170,7 +171,7 @@ int tlsio_openssl_open(
 
 **SRS_TLSIO_SSL_ESP8266_99_034: [** If tlsio_openssl_open get success to open the ssl connection, it shall set the tlsio state as TLSIO_STATE_OPEN, and return 0. **]**
 
-**SRS_TLSIO_SSL_ESP8266_99_035: [** If the tlsio state is not TLSIO_STATE_NOT_OPEN, then tlsio_openssl_open shall set the tlsio state as TLSIO_STATE_ERROR, and return _LINE_. **]**
+**SRS_TLSIO_SSL_ESP8266_99_035: [** If the tlsio state is not TLSIO_STATE_NOT_OPEN and not TLSIO_STATE_ERROR, then tlsio_openssl_open shall set the tlsio state as TLSIO_STATE_ERROR, and return _LINE_. **]**
 
 **SRS_TLSIO_SSL_ESP8266_99_036: [** If the tls_io handle is NULL, the tlsio_openssl_open shall not do anything, and return _LINE_. **]**
 
@@ -182,7 +183,7 @@ int tlsio_openssl_open(
 
 **SRS_TLSIO_SSL_ESP8266_99_041: [** If the tlsio_openssl_open get success to open the tls connection, and the on_io_open_complete callback was provided, it shall call the on_io_open_complete with IO_OPEN_OK. **]**
 
-**SRS_TLSIO_SSL_ESP8266_99_042: [** If the tlsio_openssl_open retry to open more than 20 times without success, it shall return __LINE__. **]**
+**SRS_TLSIO_SSL_ESP8266_99_042: [** If the tlsio_openssl_open retry SSL_connect to open more than MAX_RETRY times without success, it shall return __LINE__. **]**
 
 **SRS_TLSIO_SSL_ESP8266_99_080: [** If socket failed, the tlsio_openssl_open shall return __LINE__. **]**
 
@@ -195,8 +196,6 @@ int tlsio_openssl_open(
 **SRS_TLSIO_SSL_ESP8266_99_084: [** If lwip_select failed, the tlsio_openssl_open shall return __LINE__. **]**
 
 **SRS_TLSIO_SSL_ESP8266_99_085: [** If SSL_CTX_new failed, the tlsio_openssl_open shall return __LINE__. **]**
-
-**SRS_TLSIO_SSL_ESP8266_99_086: [** If SSL_set_fragment failed, the tlsio_openssl_open shall return __LINE__. **]**
 
 **SRS_TLSIO_SSL_ESP8266_99_087: [** If SSL_new failed, the tlsio_openssl_open shall return __LINE__. **]**
 
@@ -241,7 +240,7 @@ int tlsio_openssl_send(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t siz
 
 **SRS_TLSIO_SSL_ESP8266_99_055: [** The tlsio_openssl_send shall use the provided on_io_send_complete_context handle. **]**
 
-**SRS_TLSIO_SSL_ESP8266_99_056: [** If the ssl was not able to send all data in the buffer, the tlsio_openssl_send shall call the ssl again to send the remaining bytes until MAX_RETRY_WRITE has been reached. **]**
+**SRS_TLSIO_SSL_ESP8266_99_056: [** The ssl will continue to send all data in the buffer until all bytes have been sent. **]**
 
 **SRS_TLSIO_SSL_ESP8266_99_057: [** If the ssl was not able to send all the bytes in the buffer, the tlsio_openssl_send shall call the on_send_complete with IO_SEND_ERROR, and return _LINE_. **]**
 

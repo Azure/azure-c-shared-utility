@@ -63,16 +63,17 @@ static int g_getsockopt_success = 1;
 static int g_connect_success = 1;
 static int g_ssl_lwip_select_success = 1;
 static int g_ssl_ctx_new_success = 1;
-static int g_ssl_set_fragment_success = 1;
 static int g_ssl_new_success = 1;
 static int g_ssl_set_fd_success = 1;
 static int g_ssl_connect_success = 1;
 static int g_ssl_shutdown_success = 1;
 static int g_ssl_TLSv1clientmethod_success = 1;
+static int g_ssl_fd_isset = 0;
+static int g_ssl_get_error_success = 1;
+static int g_socket_close_success = 1;
 
-#define MAX_RETRY_WRITE 500
-#define MAX_RETRY 20
-#define RECEIVE_BUFFER_SIZE 64
+#define MAX_RETRY 20000
+#define RECEIVE_BUFFER_SIZE 1024
 
 typedef enum TLSIO_STATE_TAG
 {
@@ -102,11 +103,28 @@ typedef struct TLS_IO_INSTANCE_TAG
     const char* x509certificate;
     const char* x509privatekey;
     int sock;
+    ip_addr_t target_ip;
 } TLS_IO_INSTANCE;
 
 int real_mallocAndStrcpy_s(char** destination, const char* source);
 const IO_INTERFACE_DESCRIPTION* tlsio_openssl_get_interface_description(void);
 
+int my_SSL_get_error(const SSL *ssl, int ret_code){
+    if (g_ssl_get_error_success == 1){
+        return SSL_ERROR_WANT_READ;
+    }else{
+        return 0;
+    }
+    
+}
+int my_FD_ISSET(int n, void* p){
+    if(g_ssl_fd_isset == 0){
+        g_ssl_fd_isset++;
+        return 1;
+    }else{
+        return 0;
+    }
+}
 
 int my_lwip_select(int maxfdp1, fd_set *readset, fd_set *writeset, fd_set *exceptset,
                struct timeval *timeout){
@@ -144,7 +162,7 @@ int my_SSL_read(SSL *ssl, void *buffer, int len){
 
 int my_SSL_connect(SSL *ssl){
     if (g_ssl_connect_success == 1){
-        return 0;
+        return 1;
     }else{
         return -1;
     }
@@ -183,14 +201,6 @@ SSL* my_SSL_new(SSL_CTX *ssl_ctx){
     }  
 }
 
-int my_SSL_set_fragment(SSL_CTX *ssl_ctx, unsigned int frag_size){
-    if (g_ssl_set_fragment_success == 1){
-        return 0;
-    }else{
-        return -1;
-    }
-}
-
 SSL_CTX* my_SSL_CTX_new(SSL_METHOD *method){
     if(g_ssl_ctx_new_success == 1)
     {
@@ -206,6 +216,18 @@ SSL_CTX* my_SSL_CTX_new(SSL_METHOD *method){
     }
 }
 
+void my_SSL_CTX_set_default_read_buffer_len(SSL_CTX *ctx, size_t len)
+{
+
+}
+
+int my_fcntl(int s, int cmd, int val)
+{
+    (void)(s);
+    (void)(cmd);
+    (void)(val);
+    return 0;
+}
 err_t my_netconn_gethostbyname(const char *name, ip_addr_t *target_ip){
     if (g_gethostbyname_success == 1){
         return 0;
@@ -239,7 +261,11 @@ int my_setsockopt(int s, int level, int optname, const void *optval, socklen_t o
 }
 
 int my_close(int s){
-    return 0;
+    if (g_socket_close_success == 1){
+        return 0;
+    } else{
+        return 1;
+    }
 }
 
 int my_connect(int s, const struct sockaddr *name, socklen_t namelen){
@@ -249,6 +275,7 @@ int my_connect(int s, const struct sockaddr *name, socklen_t namelen){
         return -1;
     }
 }
+
 #define  EINPROGRESS    115  /* Operation now in progress */
 int my_getsockopt(int s, int level, int optname, void *optval, socklen_t *optlen){
     if (g_getsockopt_success == 1){
@@ -370,16 +397,19 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         REGISTER_GLOBAL_MOCK_HOOK(SSL_shutdown, my_SSL_shutdown);
         REGISTER_GLOBAL_MOCK_HOOK(SSL_set_fd, my_SSL_set_fd);
         REGISTER_GLOBAL_MOCK_HOOK(SSL_new, my_SSL_new);
-        REGISTER_GLOBAL_MOCK_HOOK(SSL_set_fragment, my_SSL_set_fragment);
         REGISTER_GLOBAL_MOCK_HOOK(SSL_CTX_new, my_SSL_CTX_new);
         REGISTER_GLOBAL_MOCK_HOOK(netconn_gethostbyname, my_netconn_gethostbyname);
         REGISTER_GLOBAL_MOCK_HOOK(TLSv1_client_method, my_TLSv1_client_method);
         REGISTER_GLOBAL_MOCK_HOOK(bind, my_bind);
         REGISTER_GLOBAL_MOCK_HOOK(getsockopt, my_getsockopt);
         REGISTER_GLOBAL_MOCK_HOOK(socket, my_socket);
+        REGISTER_GLOBAL_MOCK_HOOK(SSL_CTX_set_default_read_buffer_len, my_SSL_CTX_set_default_read_buffer_len);
         REGISTER_GLOBAL_MOCK_HOOK(setsockopt, my_setsockopt);
         REGISTER_GLOBAL_MOCK_HOOK(close, my_close);
         REGISTER_GLOBAL_MOCK_HOOK(connect, my_connect);
+        REGISTER_GLOBAL_MOCK_HOOK(FD_ISSET, my_FD_ISSET);
+        REGISTER_GLOBAL_MOCK_HOOK(SSL_get_error, my_SSL_get_error);
+        REGISTER_GLOBAL_MOCK_HOOK(fcntl, my_fcntl);
         REGISTER_TYPE(IO_SEND_RESULT, IO_SEND_RESULT);
         REGISTER_TYPE(IO_OPEN_RESULT, IO_OPEN_RESULT);
 
@@ -501,6 +531,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
     /* Tests_SRS_TLSIO_SSL_ESP8266_99_053: [ The tlsio_openssl_send shall send all bytes in a buffer to the ssl connection. ] */
     /* Tests_SRS_TLSIO_SSL_ESP8266_99_054: [ The tlsio_openssl_send shall use the provided on_io_send_complete callback function address. ] */
     /* Tests_SRS_TLSIO_SSL_ESP8266_99_055: [ The tlsio_openssl_send shall use the provided on_io_send_complete_context handle. ] */
+    /* Tests_SRS_TLSIO_SSL_ESP8266_99_056: [ The ssl will continue to send all data in the buffer until all bytes have been sent. ] */
     /* Tests_SRS_TLSIO_SSL_ESP8266_99_058: [ If the ssl finish to send all bytes in the buffer, then tlsio_openssl_send shall call the on_send_complete with IO_SEND_OK, and return 0 ] */
     TEST_FUNCTION(tlsio_openssl_send__SSL_write__succeed)
     {
@@ -516,6 +547,9 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
         umock_c_reset_all_calls();
+        STRICT_EXPECTED_CALL(lwip_select(IGNORED_NUM_ARG, IGNORED_PTR_ARG, 
+              IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
+        STRICT_EXPECTED_CALL(FD_ISSET(IGNORED_NUM_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);
         EXPECTED_CALL(SSL_write(IGNORED_PTR_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG));
         STRICT_EXPECTED_CALL(test_on_send_complete((void*)0x4242, IO_SEND_OK));
 
@@ -608,7 +642,6 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ///cleanup
     }
 
-    /* Tests_SRS_TLSIO_SSL_ESP8266_99_056: [ If the ssl was not able to send all data in the buffer, the tlsio_openssl_send shall call the ssl again to send the remaining bytes until MAX_RETRY_WRITE has been reached. ] */
     /* Tests_SRS_TLSIO_SSL_ESP8266_99_057: [ If the ssl was not able to send all the bytes in the buffer, the tlsio_openssl_send shall call the on_send_complete with IO_SEND_ERROR, and return _LINE_. ] */
     TEST_FUNCTION(tlsio_openssl_send__SSL_write__failed)
     {
@@ -624,12 +657,11 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
         umock_c_reset_all_calls();
-        int retry = 0;
-        while(retry < MAX_RETRY_WRITE){
-            EXPECTED_CALL(SSL_write(IGNORED_PTR_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG));
-            STRICT_EXPECTED_CALL(os_delay_us(IGNORED_NUM_ARG)).IgnoreArgument(1); 
-            retry++;
-        }
+        STRICT_EXPECTED_CALL(lwip_select(IGNORED_NUM_ARG, IGNORED_PTR_ARG, 
+              IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
+        STRICT_EXPECTED_CALL(FD_ISSET(IGNORED_NUM_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);
+        EXPECTED_CALL(SSL_write(IGNORED_PTR_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG));
+        EXPECTED_CALL(SSL_shutdown(IGNORED_PTR_ARG));
         
         STRICT_EXPECTED_CALL(test_on_send_complete((void*)0x4242, IO_SEND_ERROR));
 
@@ -664,6 +696,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ASSERT_IS_NOT_NULL(ctx);
         ssl = SSL_new(ctx);
         g_ssl_shutdown_success = 1;
+        g_socket_close_success = 1;
 
         instance.tlsio_state = TLSIO_STATE_OPEN;
         instance.ssl = ssl;
@@ -673,10 +706,9 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
         umock_c_reset_all_calls();
-        STRICT_EXPECTED_CALL(SSL_shutdown(IGNORED_PTR_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(SSL_free(IGNORED_PTR_ARG)).IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(SSL_CTX_free(IGNORED_PTR_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(close(IGNORED_NUM_ARG)).IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(SSL_CTX_free(IGNORED_PTR_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(test_on_io_close_complete((void*)0x4242));
         ///act
         result = tlsioInterfaces->concrete_io_close(&instance, test_on_io_close_complete, (void*)0x4242);
@@ -750,7 +782,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ctx = SSL_CTX_new(TLSv1_client_method());
         ASSERT_IS_NOT_NULL(ctx);
         ssl = SSL_new(ctx);
-        g_ssl_shutdown_success = 0;
+        g_socket_close_success = 0;
 
         instance.tlsio_state = TLSIO_STATE_OPEN;
         instance.ssl = ssl;
@@ -761,10 +793,9 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
         umock_c_reset_all_calls();
-        STRICT_EXPECTED_CALL(SSL_shutdown(IGNORED_PTR_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(SSL_free(IGNORED_PTR_ARG)).IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(SSL_CTX_free(IGNORED_PTR_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(close(IGNORED_NUM_ARG)).IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(SSL_CTX_free(IGNORED_PTR_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(test_on_io_error(NULL));
         ///act
         result = tlsioInterfaces->concrete_io_close(&instance, test_on_io_close_complete, (void*)0x4242);
@@ -777,7 +808,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
     }
 
     /* TESTS_SRS_TLSIO_SSL_ESP8266_99_021: [ The tlsio_openssl_destroy shall destroy a created instance of the tlsio for ESP8266 identified by the CONCRETE_IO_HANDLE. ] */
-    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_022: [ The tlsio_openssl_destroy shall free the memory allocated for tlsio_instance. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_022: [ The tlsio_openssl_destroy shall free all memory allocated for tlsio_instance. ] */
     TEST_FUNCTION(tlsio_openssl_destroy__succeed)
     {
         ///arrange
@@ -824,6 +855,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
         umock_c_reset_all_calls();
+        STRICT_EXPECTED_CALL(free(instance));
 
         ///act
         tlsioInterfaces->concrete_io_destroy(instance);
@@ -856,7 +888,6 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         g_connect_success = 1;
         g_ssl_lwip_select_success = 1;
         g_ssl_ctx_new_success = 1;
-        g_ssl_set_fragment_success = 1;
         g_ssl_new_success = 1;
         g_ssl_set_fd_success = 1;
         g_ssl_connect_success = 1;
@@ -865,24 +896,38 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
+        g_ssl_fd_isset = 0;
+        g_ssl_get_error_success = 1;
         umock_c_reset_all_calls();
         
-        STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);   
+        STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);    
+        STRICT_EXPECTED_CALL(TLSv1_client_method());
+        STRICT_EXPECTED_CALL(SSL_CTX_new(IGNORED_PTR_ARG)).IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(SSL_CTX_set_default_read_buffer_len(IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2);
         STRICT_EXPECTED_CALL(socket(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
         STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
-        STRICT_EXPECTED_CALL(os_delay_us(IGNORED_NUM_ARG)).IgnoreArgument(1); 
+        STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
+        STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
+        STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
+        STRICT_EXPECTED_CALL(fcntl(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3); 
+        STRICT_EXPECTED_CALL(fcntl(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3); 
         STRICT_EXPECTED_CALL(bind(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);   
         STRICT_EXPECTED_CALL(connect(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
         STRICT_EXPECTED_CALL(lwip_select(IGNORED_NUM_ARG, IGNORED_PTR_ARG, 
-             IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
-        STRICT_EXPECTED_CALL(TLSv1_client_method());
-        STRICT_EXPECTED_CALL(SSL_CTX_new(IGNORED_PTR_ARG)).IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(SSL_set_fragment(IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2);
+              IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
+        
+        STRICT_EXPECTED_CALL(FD_ISSET(IGNORED_NUM_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);
+        STRICT_EXPECTED_CALL(FD_ISSET(IGNORED_NUM_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);
         STRICT_EXPECTED_CALL(SSL_new(IGNORED_PTR_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(SSL_set_fd(IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2);
+        
+        STRICT_EXPECTED_CALL(lwip_select(IGNORED_NUM_ARG, IGNORED_PTR_ARG, 
+          IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
+        STRICT_EXPECTED_CALL(FD_ISSET(IGNORED_NUM_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);
         STRICT_EXPECTED_CALL(SSL_connect(IGNORED_PTR_ARG)).IgnoreArgument(1);
+            
         STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_OK));
-        STRICT_EXPECTED_CALL(os_delay_us(IGNORED_NUM_ARG)).IgnoreArgument(1); 
+        STRICT_EXPECTED_CALL(os_delay_us(IGNORED_NUM_ARG)).IgnoreArgument(1);
 
         ///act
         result = tlsioInterfaces->concrete_io_open(&tls_io_instance, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
@@ -899,7 +944,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
     }
 
 
-    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_035: [ If the tlsio state is not TLSIO_STATE_NOT_OPEN, then tlsio_openssl_open shall set the tlsio state as TLSIO_STATE_ERROR, and return _LINE_. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_035: [ If the tlsio state is not TLSIO_STATE_NOT_OPEN and not TLSIO_STATE_ERROR, then tlsio_openssl_open shall set the tlsio state as TLSIO_STATE_ERROR, and return _LINE_. ] */
     /* TESTS_SRS_TLSIO_SSL_ESP8266_99_032: [ The tlsio_openssl_open shall store the provided on_io_error callback function address. ] */
     /* TESTS_SRS_TLSIO_SSL_ESP8266_99_033: [ The tlsio_openssl_open shall store the provided on_io_error_context handle. ] */
     TEST_FUNCTION(tlsio_openssl_open_invalid_state__failed)
@@ -915,7 +960,6 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         g_connect_success = 1;
         g_ssl_lwip_select_success = 1;
         g_ssl_ctx_new_success = 1;
-        g_ssl_set_fragment_success = 1;
         g_ssl_new_success = 1;
         g_ssl_set_fd_success = 1;
         g_ssl_connect_success = 1;
@@ -947,7 +991,6 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         g_connect_success = 1;
         g_ssl_lwip_select_success = 1;
         g_ssl_ctx_new_success = 1;
-        g_ssl_set_fragment_success = 1;
         g_ssl_new_success = 1;
         g_ssl_set_fd_success = 1;
         g_ssl_connect_success = 1;
@@ -965,8 +1008,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
     }
 
     /* TESTS_SRS_TLSIO_SSL_ESP8266_99_019: [ If the WiFi cannot find the IP for the hostName, the tlsio_openssl_open shall return __LINE__. ] */
-    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_027: [ The tlsio_openssl_open shall set the tlsio to try to open the connection for 20 times before assuming that connection failed. ] */
-    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_042: [ If the tlsio_openssl_open retry to open more than 20 times without success, it shall return __LINE__. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_027: [ The tlsio_openssl_open shall set the tlsio to try to open the connection for MAX_RETRY times before assuming that connection failed. ] */
     /* TESTS_SRS_TLSIO_SSL_ESP8266_99_032: [ The tlsio_openssl_open shall store the provided on_io_error callback function address. ] */
     /* TESTS_SRS_TLSIO_SSL_ESP8266_99_033: [ The tlsio_openssl_open shall store the provided on_io_error_context handle. ] */
     /* TESTS_SRS_TLSIO_SSL_ESP8266_99_028: [ The tlsio_openssl_open shall store the provided on_io_open_complete callback function address. ] */
@@ -990,7 +1032,6 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         g_connect_success = 1;
         g_ssl_lwip_select_success = 1;
         g_ssl_ctx_new_success = 1;
-        g_ssl_set_fragment_success = 1;
         g_ssl_new_success = 1;
         g_ssl_set_fd_success = 1;
         g_ssl_connect_success = 1;
@@ -1038,15 +1079,18 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         g_connect_success = 1;
         g_ssl_lwip_select_success = 1;
         g_ssl_ctx_new_success = 1;
-        g_ssl_set_fragment_success = 1;
         g_ssl_new_success = 1;
         g_ssl_set_fd_success = 1;
         g_ssl_connect_success = 1;
+        g_ssl_fd_isset = 0;
+        g_ssl_get_error_success = 1;
         umock_c_reset_all_calls();
         
-        STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);  
+        STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);    
+        STRICT_EXPECTED_CALL(TLSv1_client_method());
+        STRICT_EXPECTED_CALL(SSL_CTX_new(IGNORED_PTR_ARG)).IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(SSL_CTX_set_default_read_buffer_len(IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2);
         STRICT_EXPECTED_CALL(socket(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
-        
         STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_ERROR));
         STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4242));
 
@@ -1084,16 +1128,19 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         g_connect_success = 1;
         g_ssl_lwip_select_success = 1;
         g_ssl_ctx_new_success = 1;
-        g_ssl_set_fragment_success = 1;
         g_ssl_new_success = 1;
         g_ssl_set_fd_success = 1;
         g_ssl_connect_success = 1;
+        g_ssl_fd_isset = 0;
+        g_ssl_get_error_success = 1;
         umock_c_reset_all_calls();
         
-        STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);  
+        STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);    
+        STRICT_EXPECTED_CALL(TLSv1_client_method());
+        STRICT_EXPECTED_CALL(SSL_CTX_new(IGNORED_PTR_ARG)).IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(SSL_CTX_set_default_read_buffer_len(IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2);
         STRICT_EXPECTED_CALL(socket(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
         STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
-        
         STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_ERROR));
         STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4242));
 
@@ -1131,18 +1178,25 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         g_connect_success = 1;
         g_ssl_lwip_select_success = 1;
         g_ssl_ctx_new_success = 1;
-        g_ssl_set_fragment_success = 1;
         g_ssl_new_success = 1;
         g_ssl_set_fd_success = 1;
         g_ssl_connect_success = 1;
+        g_ssl_fd_isset = 0;
+        g_ssl_get_error_success = 1;
         umock_c_reset_all_calls();
         
-        STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);  
+        STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);    
+        STRICT_EXPECTED_CALL(TLSv1_client_method());
+        STRICT_EXPECTED_CALL(SSL_CTX_new(IGNORED_PTR_ARG)).IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(SSL_CTX_set_default_read_buffer_len(IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2);
         STRICT_EXPECTED_CALL(socket(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
         STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
-        STRICT_EXPECTED_CALL(os_delay_us(IGNORED_NUM_ARG)).IgnoreArgument(1);   
-        STRICT_EXPECTED_CALL(bind(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);  
-        
+        STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
+        STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
+        STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
+        STRICT_EXPECTED_CALL(fcntl(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3); 
+        STRICT_EXPECTED_CALL(fcntl(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3); 
+        STRICT_EXPECTED_CALL(bind(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);   
         STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_ERROR));
         STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4242));
 
@@ -1181,20 +1235,27 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         g_getsockopt_success = 0;
         g_ssl_lwip_select_success = 1;
         g_ssl_ctx_new_success = 1;
-        g_ssl_set_fragment_success = 1;
         g_ssl_new_success = 1;
         g_ssl_set_fd_success = 1;
         g_ssl_connect_success = 1;
+        g_ssl_fd_isset = 0;
+        g_ssl_get_error_success = 1;
         umock_c_reset_all_calls();
         
-        STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);  
+        STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);    
+        STRICT_EXPECTED_CALL(TLSv1_client_method());
+        STRICT_EXPECTED_CALL(SSL_CTX_new(IGNORED_PTR_ARG)).IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(SSL_CTX_set_default_read_buffer_len(IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2);
         STRICT_EXPECTED_CALL(socket(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
         STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
-        STRICT_EXPECTED_CALL(os_delay_us(IGNORED_NUM_ARG)).IgnoreArgument(1);   
+        STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
+        STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
+        STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
+        STRICT_EXPECTED_CALL(fcntl(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3); 
+        STRICT_EXPECTED_CALL(fcntl(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3); 
         STRICT_EXPECTED_CALL(bind(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);   
         STRICT_EXPECTED_CALL(connect(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
         STRICT_EXPECTED_CALL(getsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);  
-        STRICT_EXPECTED_CALL(close(IGNORED_NUM_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_ERROR));
         STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4242));
 
@@ -1209,7 +1270,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
     }
 
     /* TESTS_SRS_TLSIO_SSL_ESP8266_99_084: [ If lwip_select failed, the tlsio_openssl_open shall return __LINE__. ]*/
-    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_027: [ The tlsio_openssl_open shall set the tlsio to try to open the connection for 20 times before assuming that connection failed. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_027: [ The tlsio_openssl_open shall set the tlsio to try to open the connection for MAX_RETRY times before assuming that connection failed. ] */
     /* TESTS_SRS_TLSIO_SSL_ESP8266_99_032: [ The tlsio_openssl_open shall store the provided on_io_error callback function address. ] */
     /* TESTS_SRS_TLSIO_SSL_ESP8266_99_033: [ The tlsio_openssl_open shall store the provided on_io_error_context handle. ] */
     /* TESTS_SRS_TLSIO_SSL_ESP8266_99_028: [ The tlsio_openssl_open shall store the provided on_io_open_complete callback function address. ] */
@@ -1233,25 +1294,29 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         g_connect_success = 1;
         g_ssl_lwip_select_success = 0;
         g_ssl_ctx_new_success = 1;
-        g_ssl_set_fragment_success = 1;
         g_ssl_new_success = 1;
         g_ssl_set_fd_success = 1;
         g_ssl_connect_success = 1;
+        g_ssl_fd_isset = 0;
+        g_ssl_get_error_success = 1;
         umock_c_reset_all_calls();
         
-        STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);  
+        STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);    
+        STRICT_EXPECTED_CALL(TLSv1_client_method());
+        STRICT_EXPECTED_CALL(SSL_CTX_new(IGNORED_PTR_ARG)).IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(SSL_CTX_set_default_read_buffer_len(IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2);
         STRICT_EXPECTED_CALL(socket(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
         STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
-        STRICT_EXPECTED_CALL(os_delay_us(IGNORED_NUM_ARG)).IgnoreArgument(1);   
+        STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
+        STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
+        STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
+        STRICT_EXPECTED_CALL(fcntl(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3); 
+        STRICT_EXPECTED_CALL(fcntl(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3); 
         STRICT_EXPECTED_CALL(bind(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);   
         STRICT_EXPECTED_CALL(connect(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
-        int retry = 0;
-        while(retry < MAX_RETRY){
-            STRICT_EXPECTED_CALL(lwip_select(IGNORED_NUM_ARG, IGNORED_PTR_ARG, 
-                IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
-            retry++;
-            STRICT_EXPECTED_CALL(os_delay_us(IGNORED_NUM_ARG)).IgnoreArgument(1);   
-        }
+        STRICT_EXPECTED_CALL(lwip_select(IGNORED_NUM_ARG, IGNORED_PTR_ARG, 
+              IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
+        STRICT_EXPECTED_CALL(getsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);  
         STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_ERROR));
         STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4242));
 
@@ -1289,76 +1354,16 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         g_connect_success = 1;
         g_ssl_lwip_select_success = 1;
         g_ssl_ctx_new_success = 0;
-        g_ssl_set_fragment_success = 1;
         g_ssl_new_success = 1;
         g_ssl_set_fd_success = 1;
         g_ssl_connect_success = 1;
+        g_ssl_fd_isset = 0;
+        g_ssl_get_error_success = 1;
         umock_c_reset_all_calls();
         
-        STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);  
-        STRICT_EXPECTED_CALL(socket(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
-        STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
-        STRICT_EXPECTED_CALL(os_delay_us(IGNORED_NUM_ARG)).IgnoreArgument(1);   
-        STRICT_EXPECTED_CALL(bind(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);   
-        STRICT_EXPECTED_CALL(connect(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
-        STRICT_EXPECTED_CALL(lwip_select(IGNORED_NUM_ARG, IGNORED_PTR_ARG, 
-              IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
+        STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);    
         STRICT_EXPECTED_CALL(TLSv1_client_method());
         STRICT_EXPECTED_CALL(SSL_CTX_new(IGNORED_PTR_ARG)).IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_ERROR));
-        STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4242));
-
-        ///act
-        result = tlsioInterfaces->concrete_io_open(&tls_io_instance, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4242, test_on_io_error, (void*)0x4242);
-
-        ///assert
-        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-        ASSERT_ARE_NOT_EQUAL(int, 0, result);
-
-        ///cleanup
-    }
-
-    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_086: [ If SSL_set_fragment failed, the tlsio_openssl_open shall return __LINE__. ]*/
-    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_032: [ The tlsio_openssl_open shall store the provided on_io_error callback function address. ] */
-    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_033: [ The tlsio_openssl_open shall store the provided on_io_error_context handle. ] */
-    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_028: [ The tlsio_openssl_open shall store the provided on_io_open_complete callback function address. ] */
-    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_029: [ The tlsio_openssl_open shall store the provided on_io_open_complete_context handle. ] */
-    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_037: [ If the ssl client is not connected, the tlsio_openssl_open shall change the state to TLSIO_STATE_ERROR, log the error, and return _LINE_. ] */
-    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_039: [ If the tlsio_openssl_open failed to open the tls connection, and the on_io_open_complete callback was provided, it shall call the on_io_open_complete with IO_OPEN_ERROR. ] */
-    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_040: [ If the tlsio_openssl_open failed to open the tls connection, and the on_io_error callback was provided, it shall call the on_io_error. ] */
-    TEST_FUNCTION(tlsio_openssl_open_sslsetfragment__failed)
-    {
-        ///arrange
-        TLS_IO_INSTANCE tls_io_instance;
-        memset(&tls_io_instance, 0, sizeof(TLS_IO_INSTANCE));
-        tls_io_instance.tlsio_state = TLSIO_STATE_NOT_OPEN;
-        int result;
-        const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
-        ASSERT_IS_NOT_NULL(tlsioInterfaces);
-        g_gethostbyname_success = 1;
-        g_socket_success = 1;
-        g_setsockopt_success = 1;
-        g_bind_success = 1;
-        g_connect_success = 1;
-        g_ssl_lwip_select_success = 1;
-        g_ssl_ctx_new_success = 1;
-        g_ssl_set_fragment_success = 0;
-        g_ssl_new_success = 1;
-        g_ssl_set_fd_success = 1;
-        g_ssl_connect_success = 1;
-        umock_c_reset_all_calls();
-        
-        STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);  
-        STRICT_EXPECTED_CALL(socket(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
-        STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
-        STRICT_EXPECTED_CALL(os_delay_us(IGNORED_NUM_ARG)).IgnoreArgument(1);   
-        STRICT_EXPECTED_CALL(bind(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);   
-        STRICT_EXPECTED_CALL(connect(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
-        STRICT_EXPECTED_CALL(lwip_select(IGNORED_NUM_ARG, IGNORED_PTR_ARG, 
-              IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
-        STRICT_EXPECTED_CALL(TLSv1_client_method());
-        STRICT_EXPECTED_CALL(SSL_CTX_new(IGNORED_PTR_ARG)).IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(SSL_set_fragment(IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2);
         STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_ERROR));
         STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4242));
 
@@ -1396,23 +1401,31 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         g_connect_success = 1;
         g_ssl_lwip_select_success = 1;
         g_ssl_ctx_new_success = 1;
-        g_ssl_set_fragment_success = 1;
         g_ssl_new_success = 0;
         g_ssl_set_fd_success = 1;
         g_ssl_connect_success = 1;
+        g_ssl_fd_isset = 0;
+        g_ssl_get_error_success = 1;
         umock_c_reset_all_calls();
         
-        STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);   
+        STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);    
+        STRICT_EXPECTED_CALL(TLSv1_client_method());
+        STRICT_EXPECTED_CALL(SSL_CTX_new(IGNORED_PTR_ARG)).IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(SSL_CTX_set_default_read_buffer_len(IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2);
         STRICT_EXPECTED_CALL(socket(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
         STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
-        STRICT_EXPECTED_CALL(os_delay_us(IGNORED_NUM_ARG)).IgnoreArgument(1);  
+        STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
+        STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
+        STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
+        STRICT_EXPECTED_CALL(fcntl(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3); 
+        STRICT_EXPECTED_CALL(fcntl(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3); 
         STRICT_EXPECTED_CALL(bind(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);   
         STRICT_EXPECTED_CALL(connect(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
         STRICT_EXPECTED_CALL(lwip_select(IGNORED_NUM_ARG, IGNORED_PTR_ARG, 
               IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
-        STRICT_EXPECTED_CALL(TLSv1_client_method());
-        STRICT_EXPECTED_CALL(SSL_CTX_new(IGNORED_PTR_ARG)).IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(SSL_set_fragment(IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2);
+        
+        STRICT_EXPECTED_CALL(FD_ISSET(IGNORED_NUM_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);
+        STRICT_EXPECTED_CALL(FD_ISSET(IGNORED_NUM_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);
         STRICT_EXPECTED_CALL(SSL_new(IGNORED_PTR_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_ERROR));
         STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4242));
@@ -1451,23 +1464,31 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         g_connect_success = 1;
         g_ssl_lwip_select_success = 1;
         g_ssl_ctx_new_success = 1;
-        g_ssl_set_fragment_success = 1;
         g_ssl_new_success = 1;
         g_ssl_set_fd_success = 0;
         g_ssl_connect_success = 1;
+        g_ssl_fd_isset = 0;
+        g_ssl_get_error_success = 1;
         umock_c_reset_all_calls();
         
-        STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);   
+        STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);    
+        STRICT_EXPECTED_CALL(TLSv1_client_method());
+        STRICT_EXPECTED_CALL(SSL_CTX_new(IGNORED_PTR_ARG)).IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(SSL_CTX_set_default_read_buffer_len(IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2);
         STRICT_EXPECTED_CALL(socket(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
         STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
-        STRICT_EXPECTED_CALL(os_delay_us(IGNORED_NUM_ARG)).IgnoreArgument(1);  
+        STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
+        STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
+        STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
+        STRICT_EXPECTED_CALL(fcntl(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3); 
+        STRICT_EXPECTED_CALL(fcntl(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3); 
         STRICT_EXPECTED_CALL(bind(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);   
         STRICT_EXPECTED_CALL(connect(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
         STRICT_EXPECTED_CALL(lwip_select(IGNORED_NUM_ARG, IGNORED_PTR_ARG, 
               IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
-        STRICT_EXPECTED_CALL(TLSv1_client_method());
-        STRICT_EXPECTED_CALL(SSL_CTX_new(IGNORED_PTR_ARG)).IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(SSL_set_fragment(IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2);
+        
+        STRICT_EXPECTED_CALL(FD_ISSET(IGNORED_NUM_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);
+        STRICT_EXPECTED_CALL(FD_ISSET(IGNORED_NUM_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);
         STRICT_EXPECTED_CALL(SSL_new(IGNORED_PTR_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(SSL_set_fd(IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2);
         STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_ERROR));
@@ -1484,7 +1505,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
     }
 
     /* TESTS_SRS_TLSIO_SSL_ESP8266_99_089: [ If SSL_connect failed, the tlsio_openssl_open shall return __LINE__. ]*/
-    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_027: [ The tlsio_openssl_open shall set the tlsio to try to open the connection for 20 times before assuming that connection failed. ] */
+    /* TESTS_SRS_TLSIO_SSL_ESP8266_99_042: [ If the tlsio_openssl_open retry SSL_connect to open more than MAX_RETRY times without success, it shall return __LINE__. ] */
     /* TESTS_SRS_TLSIO_SSL_ESP8266_99_032: [ The tlsio_openssl_open shall store the provided on_io_error callback function address. ] */
     /* TESTS_SRS_TLSIO_SSL_ESP8266_99_033: [ The tlsio_openssl_open shall store the provided on_io_error_context handle. ] */
     /* TESTS_SRS_TLSIO_SSL_ESP8266_99_028: [ The tlsio_openssl_open shall store the provided on_io_open_complete callback function address. ] */
@@ -1508,34 +1529,43 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         g_connect_success = 1;
         g_ssl_lwip_select_success = 1;
         g_ssl_ctx_new_success = 1;
-        g_ssl_set_fragment_success = 1;
         g_ssl_new_success = 1;
         g_ssl_set_fd_success = 1;
         g_ssl_connect_success = 0;
+        g_ssl_fd_isset = 0;
+        g_ssl_get_error_success = 1;
         umock_c_reset_all_calls();
         
         STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);    
+        STRICT_EXPECTED_CALL(TLSv1_client_method());
+        STRICT_EXPECTED_CALL(SSL_CTX_new(IGNORED_PTR_ARG)).IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(SSL_CTX_set_default_read_buffer_len(IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2);
         STRICT_EXPECTED_CALL(socket(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
         STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
-        STRICT_EXPECTED_CALL(os_delay_us(IGNORED_NUM_ARG)).IgnoreArgument(1); 
+        STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
+        STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
+        STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
+        STRICT_EXPECTED_CALL(fcntl(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3); 
+        STRICT_EXPECTED_CALL(fcntl(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3); 
         STRICT_EXPECTED_CALL(bind(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);   
         STRICT_EXPECTED_CALL(connect(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
         STRICT_EXPECTED_CALL(lwip_select(IGNORED_NUM_ARG, IGNORED_PTR_ARG, 
               IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
-        STRICT_EXPECTED_CALL(TLSv1_client_method());
-        STRICT_EXPECTED_CALL(SSL_CTX_new(IGNORED_PTR_ARG)).IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(SSL_set_fragment(IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2);
+        
+        STRICT_EXPECTED_CALL(FD_ISSET(IGNORED_NUM_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);
+        STRICT_EXPECTED_CALL(FD_ISSET(IGNORED_NUM_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);
         STRICT_EXPECTED_CALL(SSL_new(IGNORED_PTR_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(SSL_set_fd(IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2);
         int retry = 0;
         while(retry < MAX_RETRY){
-            STRICT_EXPECTED_CALL(SSL_connect(IGNORED_PTR_ARG)).IgnoreArgument(1);
             STRICT_EXPECTED_CALL(lwip_select(IGNORED_NUM_ARG, IGNORED_PTR_ARG, 
               IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
+            STRICT_EXPECTED_CALL(FD_ISSET(IGNORED_NUM_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);
+            STRICT_EXPECTED_CALL(SSL_connect(IGNORED_PTR_ARG)).IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(SSL_get_error(IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2);
             STRICT_EXPECTED_CALL(os_delay_us(IGNORED_NUM_ARG)).IgnoreArgument(1);
             retry++;
         }
-        STRICT_EXPECTED_CALL(SSL_connect(IGNORED_PTR_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_ERROR));
         STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4242));
 

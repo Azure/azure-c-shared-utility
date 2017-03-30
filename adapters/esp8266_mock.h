@@ -29,31 +29,6 @@ MOCKABLE_FUNCTION(, SSL_CTX*, SSL_CTX_new, SSL_METHOD*, method);
 //void SSL_CTX_free(SSL_CTX *ctx);
 MOCKABLE_FUNCTION(, void, SSL_CTX_free, SSL_CTX*, ctx);
 
-
-/*
- * SSL_CTX_set_option - set the option of the SSL context
- *
- * @param ctx - the SSL context
- *
- * @return the result of verifying
- *     result = 0 : successful
- *     result < 0 : error, you can see the mbedtls error code
- */
-int SSL_CTX_set_option(SSL_CTX *ctx, int opt);
-
-/*
- * SSL_set_fragment - set the global SSL fragment size
- *
- * @param ssl_ctx - the SSL context point
- * @param frag_size - fragment size
- *
- * @return the result of verifying
- *     result = 0 : successful
- *     result < 0 : error, you can see the mbedtls error code
- */
-//int SSL_set_fragment(SSL_CTX *ssl_ctx, unsigned int frag_size);
-MOCKABLE_FUNCTION(, int, SSL_set_fragment, SSL_CTX*, ssl_ctx, unsigned int, frag_size);
-
 /*
  * SSL_new - create a SSL
  *
@@ -89,17 +64,6 @@ MOCKABLE_FUNCTION(, void, SSL_free, SSL*, ssl);
 MOCKABLE_FUNCTION(, int, SSL_connect, SSL*, ssl);
 
 /*
- * SSL_accept - accept the remote connection
- *
- * @param ssl - the SSL point which has been "SSL_new"
- *
- * @return the result
- *     result = 0 : successfully
- *     result < 0 : error, you can see the mbedtls error code
- */
-int SSL_accept(SSL *ssl);
-
-/*
  * SSL_read - read data from remote
  *
  * @param ssl - the SSL point which has been connected
@@ -129,18 +93,6 @@ MOCKABLE_FUNCTION(, int, SSL_read, SSL*, ssl, void*, buffer, int, len);
 //int SSL_write(SSL *ssl, const void *buffer, int len);
 MOCKABLE_FUNCTION(, int, SSL_write, SSL*, ssl, const void*, buffer, int, len);
 
-
-/*
- * SSL_get_verify_result - get the verifying result of the SSL certification
- *
- * @param ssl - the SSL point
- *
- * @return the result of verifying
- *     result = 0 : successful
- *     result < 0 : error, you can see the mbedtls error code
- */
-int SSL_get_verify_result(SSL *ssl);
-
 /*
  * SSL_shutdown - shutdown the connection to the remote
  *
@@ -167,82 +119,6 @@ MOCKABLE_FUNCTION(, int, SSL_shutdown, SSL*, ssl);
 MOCKABLE_FUNCTION(, int, SSL_set_fd, SSL*, ssl, int, fd);
 
 /*
- * SSL_set_rfd - set the read only socket file description to the SSL
- *
- * @param mbed_ssl - the SSL point which has been "SSL_new"
- * @param fd  - socket file description
- *
- * @return the result
- *     result = 1  : successfully
- *     result <= 0 : error, SSL is NULL or socket file description is NULL
- */
-int SSL_set_rfd(SSL *ssl, int fd);
-
-/*
- * SSL_set_wfd - set the write only socket file description to the SSL
- *
- * @param mbed_ssl - the SSL point which has been "SSL_new"
- * @param fd  - socket file description
- *
- * @return the result
- *     result = 1  : successfully
- *     result <= 0 : error, SSL is NULL or socket file description is NULL
- */
-int SSL_set_wfd(SSL *ssl, int fd);
-
-/*
- * SSL_CTX_use_PrivateKey - set the private key
- *
- * @param ctx  - the SSL context
- * @param buf  - the data point
- * @param len  - the data length
- * @param type - the data type
- *     type is always 0;
- *
- * @return the result of verifying
- *     result = 0 : successful
- *     result < 0 : error, you can see the mbedtls error code
- */
-int SSL_CTX_use_PrivateKey(SSL_CTX *ctx, const char *buf, int len, int type);
-
-/*
- * SSL_CTX_use_certificate - set the client own key
- *
- * @param ctx  - the SSL context
- * @param buf  - the data point
- * @param len  - the data length
- * @param type - the data type
- *     type is always 0;
- *
- * @return the result of verifying
- *     result = 0 : successful
- *     result < 0 : error, you can see the mbedtls error code
- */
-int SSL_CTX_use_certificate(SSL_CTX *ctx, const char *buf, int len, int type);
-
-/*
- * SSL_CTX_use_verify_certificate - set the CA certificate
- *
- * @param ctx  - the SSL context
- * @param buf  - the data point
- * @param len  - the data length
- * @param type - the data type
- *     type is always 0;
- *
- * @return the result of verifying
- *     result = 0 : successful
- *     result < 0 : error, you can see the mbedtls error code
- */
-int SSL_CTX_use_verify_certificate(SSL_CTX *ctx, const char *buf, int len, int type);
-
-/*
- * SSLv23_client_method - create the target SSL context client method
- *
- * @return the SSLV2.3 version SSL context client method
- */
-SSL_METHOD* SSLv23_client_method(void);
-
-/*
  * TLSv1_client_method - create the target SSL context client method
  *
  * @return the TLSV1.0 version SSL context client method
@@ -250,84 +126,44 @@ SSL_METHOD* SSLv23_client_method(void);
 //SSL_METHOD* TLSv1_client_method(void);
 MOCKABLE_FUNCTION(, SSL_METHOD*, TLSv1_client_method);
 
-/*
- * SSLv3_client_method - create the target SSL context client method
+/**
+ * @brief set the SSL context read buffer length
  *
- * @return the SSLV1.0 version SSL context client method
- */
-SSL_METHOD* SSLv3_client_method(void);
-
-/*
- * TLSv1_1_client_method - create the target SSL context client method
+ * @param ctx - SSL context point
+ * @param len - read buffer length
  *
- * @return the TLSV1.1 version SSL context client method
+ * @return none
  */
-SSL_METHOD* TLSv1_1_client_method(void);
+//void SSL_CTX_set_default_read_buffer_len(SSL_CTX *ctx, size_t len);
+MOCKABLE_FUNCTION(, void, SSL_CTX_set_default_read_buffer_len, SSL_CTX*, ctx, size_t, len);
 
-/*
- * TLSv1_2_client_method- create the target SSL context client method
+/**
+ * @brief get SSL error code
  *
- * @return the TLSV1.2 version SSL context client method
- */
-SSL_METHOD* TLSv1_2_client_method(void);
-
-/*
- * SSLv23_server_method - create the target SSL context server method
+ * @param ssl       - SSL point
+ * @param ret_code  - SSL return code
  *
- * @return the SSLV2.3 version SSL context server method
+ * @return SSL error number
  */
-SSL_METHOD* SSLv23_server_method(void);
+//int SSL_get_error(const SSL *ssl, int ret_code);
+MOCKABLE_FUNCTION(, int, SSL_get_error, const SSL*, ssl, int, ret_code);
 
-/*
- * TLSv1_1_server_method - create the target SSL context server method
- *
- * @return the TLSV1.1 version SSL context server method
- */
-SSL_METHOD* TLSv1_1_server_method(void);
-
-/*
- * TLSv1_2_server_method - create the target SSL context server method
- *
- * @return the TLSV1.2 version SSL context server method
- */
-SSL_METHOD* TLSv1_2_server_method(void);
-
-/*
- * TLSv1_server_method - create the target SSL context server method
- *
- * @return the TLSV1.0 version SSL context server method
- */
-SSL_METHOD* TLSv1_server_method(void);
-
-/*
- * SSLv3_server_method - create the target SSL context server method
- *
- * @return the SSLV3.0 version SSL context server method
- */
-SSL_METHOD* SSLv3_server_method(void);
-
-#define ICACHE_FLASH_ATTR
 #define MEMP_NUM_NETCONN                10
 
 
-typedef uint32_t uint32;
 typedef uint32_t u32_t;
-//which types are registered if de?
-//Could not copy type, type socklen_t not registered.
-// typedef uint32_t socklen_t;
 #define socklen_t unsigned int
 typedef uint8_t u8_t;
 typedef uint8_t uint8;
 typedef uint16_t u16_t;
-typedef uint32_t err_t;
-
+typedef int32_t err_t;
 
 struct ip_addr {
   u32_t addr;
 };
 typedef struct ip_addr ip_addr_t;
 
-#define  SOL_SOCKET  0xfff    /* options for socket level */
+#define SOL_SOCKET   0xfff     /* options for socket level */
 #define SO_SNDBUF    0x1001    /* Unimplemented: send buffer size */
 #define SO_RCVBUF    0x1002    /* receive buffer size */
 #define SO_SNDLOWAT  0x1003    /* Unimplemented: send low-water mark */
@@ -340,6 +176,15 @@ typedef struct ip_addr ip_addr_t;
 #define SO_NO_CHECK  0x100a    /* don't create UDP checksum */
 #define SO_REUSEADDR 1         /* Enable address reuse */
 
+#define  SO_KEEPALIVE   0x0008 /* keep connections alive */
+#define IPPROTO_TCP     6
+#define TCP_KEEPALIVE  0x02    /* send KEEPALIVE probes when idle for pcb->keep_idle milliseconds */
+#define TCP_KEEPIDLE   0x03    /* set pcb->keep_idle  - Same as TCP_KEEPALIVE, but use seconds for get/setsockopt */
+#define TCP_KEEPINTVL  0x04    /* set pcb->keep_intvl - Use seconds for get/setsockopt */
+#define TCP_KEEPCNT    0x05    /* set pcb->keep_cnt   - Use number of probes sent for get/setsockopt */
+#define SSL_ERROR_WANT_READ             2
+#define SSL_ERROR_WANT_WRITE            3
+
 #define AF_INET         2
 /* Socket protocol types (TCP/UDP/RAW) */
 #define SOCK_STREAM     1
@@ -347,7 +192,6 @@ typedef struct ip_addr ip_addr_t;
 #define SOCK_RAW        3
 
 int ioctl(int s, long cmd, void *argp);
-int fcntl(int s, int cmd, int val);
 #define F_GETFL 3
 #define F_SETFL 4
 #define O_NONBLOCK  1 /* nonblocking I/O */
@@ -386,15 +230,16 @@ struct sockaddr {
 #endif /* LWIP_IPV6 */
 };
 
-
 /* FD_SET used for lwip_select */
+//int my_FD_ISSET(int n, void* p);
 #ifndef FD_SET
   #undef  FD_SETSIZE
   /* Make FD_SETSIZE match NUM_SOCKETS in socket.c */
   #define FD_SETSIZE    MEMP_NUM_NETCONN
   #define FD_SET(n, p)  ((p)->fd_bits[(n)/8] |=  (1 << ((n) & 7)))
   #define FD_CLR(n, p)  ((p)->fd_bits[(n)/8] &= ~(1 << ((n) & 7)))
-  #define FD_ISSET(n,p) ((p)->fd_bits[(n)/8] &   (1 << ((n) & 7)))
+  //#define FD_ISSET(n,p) my_FD_ISSET(n, p)
+  //((p)->fd_bits[(n)/8] &   (1 << ((n) & 7)))
   #define FD_ZERO(p)    memset((void*)(p),0,sizeof(*(p)))
 
   typedef struct fd_set {
@@ -435,6 +280,11 @@ MOCKABLE_FUNCTION(, int, setsockopt, int, s, int, level, int, optname, const voi
 
 //int close(int s)
 MOCKABLE_FUNCTION(, int, close, int, s);
+
+MOCKABLE_FUNCTION(, int, FD_ISSET, int, n, void*, p);
+
+//int fcntl(int s, int cmd, int val);
+MOCKABLE_FUNCTION(, int, fcntl, int, s, int, cmd, int, val);
 
 
 #define htons(x) (x)
