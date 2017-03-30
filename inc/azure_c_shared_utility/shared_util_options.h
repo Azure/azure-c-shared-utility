@@ -23,6 +23,9 @@ extern "C"
     static const char* SU_OPTION_X509_CERT = "x509certificate";
     static const char* SU_OPTION_X509_PRIVATE_KEY = "x509privatekey";
 
+    static const char* OPTION_X509_ECC_CERT = "x509EccCertificate";
+    static const char* OPTION_X509_ECC_KEY = "x509EccAliasKey";
+
     static const char* OPTION_CURL_LOW_SPEED_LIMIT = "CURLOPT_LOW_SPEED_LIMIT";
     static const char* OPTION_CURL_LOW_SPEED_TIME = "CURLOPT_LOW_SPEED_TIME";
     static const char* OPTION_CURL_FRESH_CONNECT = "CURLOPT_FRESH_CONNECT";

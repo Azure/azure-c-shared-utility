@@ -30,6 +30,10 @@ static void my_gballoc_free(void* s)
 #include "openssl/x509.h"
 #include "openssl/err.h"
 #include "openssl/opensslv.h"
+#include "openssl/pem.h"
+#include "openssl/bio.h"
+#include "openssl/rsa.h"
+
 #include "azure_c_shared_utility/x509_openssl.h"
 #include "umocktypes_charptr.h"
 #include "umock_c_negative_tests.h"
@@ -85,6 +89,15 @@ MOCKABLE_FUNCTION(, unsigned long, ERR_peek_error);
 /*from openssl/x509_vfy.h*/
 MOCKABLE_FUNCTION(,int, X509_STORE_add_cert, X509_STORE *, ctx, X509 *, x);
 
+typedef void (*x509_FREE_FUNC)(void*);
+MOCKABLE_FUNCTION(, void, sk_pop_free, _STACK*, st, x509_FREE_FUNC, free_func);
+MOCKABLE_FUNCTION(, void, EVP_PKEY_free, EVP_PKEY*, pkey);
+MOCKABLE_FUNCTION(, X509*, PEM_read_bio_X509_AUX, BIO*, bp, X509**, x, pem_password_cb*, cb, void*, u);
+MOCKABLE_FUNCTION(, EVP_PKEY*, PEM_read_bio_PrivateKey, BIO*, bp, EVP_PKEY**, x, pem_password_cb*, cb, void*, u);
+MOCKABLE_FUNCTION(, int, SSL_CTX_use_PrivateKey, SSL_CTX*, ctx, EVP_PKEY*, pkey);
+MOCKABLE_FUNCTION(, long, SSL_CTX_ctrl, SSL_CTX*, ctx, int, cmd, long, larg, void*, parg);
+MOCKABLE_FUNCTION(, unsigned long, ERR_peek_last_error);
+MOCKABLE_FUNCTION(, void, ERR_clear_error);
 
 #undef ENABLE_MOCKS
 
@@ -121,6 +134,21 @@ static void my_X509_free(X509 * a)
     my_gballoc_free(a);
 }
 
+static X509* my_PEM_read_bio_X509_AUX(BIO* bp, X509** x, pem_password_cb* cb, void* u)
+{
+    (void)u, (void)cb, (void)x, (void)bp;
+    return (X509*)my_gballoc_malloc(sizeof(X509));
+}
+
+static long my_SSL_CTX_ctrl(SSL_CTX* ctx, int cmd, long larg, void* parg)
+{
+    (void)ctx;
+    (void)cmd;
+    (void)larg;
+    my_gballoc_free(parg);
+    return 1;
+}
+
 static X509 * my_PEM_read_bio_X509(BIO * bp, X509 ** x, pem_password_cb * cb, void * u)
 {
     (void)u, (void)cb, (void)x, (void)bp;
@@ -148,6 +176,13 @@ static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 #define TEST_X509_STORE (X509_STORE *)"le store"
 #define TEST_BIO_METHOD (BIO_METHOD*)"le method"
 #define TEST_BIO (BIO*)"le bio"
+
+static const char* TEST_ECC_CERTIFICATE = "-----BEGIN CERTIFICATE-----";
+static const char* TEST_ECC_ALIAS_KEY = "-----BEGIN EC PRIVATE KEY-----";
+static EVP_PKEY* TEST_PKEY = (EVP_PKEY*)0x12;
+static BIO* TEST_BIO_CERT = (BIO*)0x11;
+static X509* TEST_X509 = (X509*)0x13;
+static SSL_CTX TEST_SSL_CTX_STRUCTURE;
 
 BEGIN_TEST_SUITE(x509_openssl_unittests)
 
@@ -189,6 +224,12 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
         REGISTER_GLOBAL_MOCK_HOOK(BIO_free, my_BIO_free);
         REGISTER_GLOBAL_MOCK_HOOK(RSA_free, my_RSA_free);
         REGISTER_GLOBAL_MOCK_HOOK(X509_free, my_X509_free);
+
+        REGISTER_GLOBAL_MOCK_RETURNS(PEM_read_bio_PrivateKey, TEST_PKEY, NULL);
+        REGISTER_GLOBAL_MOCK_RETURNS(BIO_new_mem_buf, TEST_BIO_CERT, NULL);
+        REGISTER_GLOBAL_MOCK_HOOK(PEM_read_bio_X509_AUX, my_PEM_read_bio_X509_AUX);
+        REGISTER_GLOBAL_MOCK_RETURNS(SSL_CTX_use_PrivateKey, 1, 0);
+        REGISTER_GLOBAL_MOCK_HOOK(SSL_CTX_ctrl, my_SSL_CTX_ctrl);
     }
 
     TEST_SUITE_CLEANUP(TestClassCleanup)
@@ -202,11 +243,36 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
     TEST_FUNCTION_INITIALIZE(initialize)
     {
         umock_c_reset_all_calls();
+
+        memset(&TEST_SSL_CTX_STRUCTURE, 0, sizeof(SSL_CTX) );
     }
 
     TEST_FUNCTION_CLEANUP(cleans)
     {
 
+    }
+
+    static void setup_load_alias_key_cert_mocks()
+    {
+        STRICT_EXPECTED_CALL(BIO_new_mem_buf((void*)TEST_ECC_ALIAS_KEY, -1));
+        STRICT_EXPECTED_CALL(PEM_read_bio_PrivateKey(IGNORED_PTR_ARG, NULL, NULL, NULL));
+        STRICT_EXPECTED_CALL(SSL_CTX_use_PrivateKey(&TEST_SSL_CTX_STRUCTURE, TEST_PKEY));
+        STRICT_EXPECTED_CALL(EVP_PKEY_free(TEST_PKEY) );
+        STRICT_EXPECTED_CALL(BIO_free(IGNORED_PTR_ARG) );
+    }
+
+    static void setup_load_certificate_chain_mocks()
+    {
+        STRICT_EXPECTED_CALL(BIO_new_mem_buf((void*)TEST_ECC_CERTIFICATE, -1));
+        STRICT_EXPECTED_CALL(PEM_read_bio_X509_AUX(IGNORED_PTR_ARG, NULL, NULL, NULL));
+        STRICT_EXPECTED_CALL(SSL_CTX_use_certificate(&TEST_SSL_CTX_STRUCTURE, IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(PEM_read_bio_X509(IGNORED_PTR_ARG, NULL, NULL, NULL));
+        STRICT_EXPECTED_CALL(SSL_CTX_ctrl(&TEST_SSL_CTX_STRUCTURE, SSL_CTRL_EXTRA_CHAIN_CERT, IGNORED_NUM_ARG, IGNORED_PTR_ARG))
+            .SetReturn(1);
+        STRICT_EXPECTED_CALL(PEM_read_bio_X509(IGNORED_PTR_ARG, NULL, NULL, NULL))
+            .SetReturn(NULL); // Needed because the x509 needs not to be free
+        STRICT_EXPECTED_CALL(X509_free(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(BIO_free(IGNORED_PTR_ARG));
     }
 
     /*Tests_SRS_X509_OPENSSL_02_001: [ If any argument is NULL then x509_openssl_add_credentials shall fail and return a non-zero value. ]*/
@@ -523,6 +589,69 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
         ///clean
         umock_c_negative_tests_deinit();
     }
+
+    /* Tests_SRS_X509_OPENSSL_07_001: [ If ssl_ctx, ecc_alias_cert, or ecc_alias_key are NULL, x509_openssl_add_ecc_credentials shall return a non-zero value. ] */
+    TEST_FUNCTION(x509_openssl_add_ecc_credentials_ssl_ctx_NULL_fail)
+    {
+        //arrange
+
+        //act
+        int result = x509_openssl_add_ecc_credentials(NULL, TEST_ECC_CERTIFICATE, TEST_ECC_ALIAS_KEY);
+
+        //assert
+        ASSERT_ARE_NOT_EQUAL(int, 0, result);
+
+        //clean
+    }
+
+    /* Tests_SRS_X509_OPENSSL_07_001: [ If ssl_ctx, ecc_alias_cert, or ecc_alias_key are NULL, x509_openssl_add_ecc_credentials shall return a non-zero value. ] */
+    TEST_FUNCTION(x509_openssl_add_ecc_credentials_cert_NULL_fail)
+    {
+        //arrange
+
+        //act
+        int result = x509_openssl_add_ecc_credentials(TEST_SSL_CTX, NULL, TEST_ECC_ALIAS_KEY);
+
+        //assert
+        ASSERT_ARE_NOT_EQUAL(int, 0, result);
+
+        //clean
+    }
+
+    /* Tests_SRS_X509_OPENSSL_07_001: [ If ssl_ctx, ecc_alias_cert, or ecc_alias_key are NULL, x509_openssl_add_ecc_credentials shall return a non-zero value. ] */
+    TEST_FUNCTION(x509_openssl_add_ecc_credentials_key_NULL_fail)
+    {
+        //arrange
+
+        //act
+        int result = x509_openssl_add_ecc_credentials(TEST_SSL_CTX, TEST_ECC_CERTIFICATE, NULL);
+
+        //assert
+        ASSERT_ARE_NOT_EQUAL(int, 0, result);
+
+        //clean
+    }
+
+    /*Tests_SRS_X509_OPENSSL_07_002: [ x509_openssl_add_ecc_credentials shall get the memory BIO method function. ] */
+    /*Tests_SRS_X509_OPENSSL_07_003: [ x509_openssl_add_ecc_credentials shall generate a EVP_PKEY by calling PEM_read_bio_PrivateKey. ] */
+    /*Tests_SRS_X509_OPENSSL_07_004: [ x509_openssl_add_ecc_credentials shall import the certification using by the EVP_PKEY. ] */
+    /*Tests_SRS_X509_OPENSSL_07_005: [ x509_openssl_add_ecc_credentials shall load the cert chain by calling PEM_read_bio_X509_AUX and SSL_CTX_use_certification. ] */
+    /*Tests_SRS_X509_OPENSSL_07_006: [ If successful x509_openssl_add_ecc_credentials shall to import each certificate in the cert chain. ] */
+    TEST_FUNCTION(x509_openssl_add_ecc_credentials_success)
+    {
+        //arrange
+        setup_load_alias_key_cert_mocks();
+        setup_load_certificate_chain_mocks();
+
+        //act
+        int result = x509_openssl_add_ecc_credentials(&TEST_SSL_CTX_STRUCTURE, TEST_ECC_CERTIFICATE, TEST_ECC_ALIAS_KEY);
+
+        //assert
+        ASSERT_ARE_EQUAL(int, 0, result);
+
+        //clean
+    }
+
 END_TEST_SUITE(x509_openssl_unittests)
 
 

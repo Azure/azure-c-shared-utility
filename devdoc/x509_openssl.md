@@ -14,6 +14,7 @@ x509_openssl provides several utility functions. These are:
 ```c
 int x509_openssl_add_credentials(SSL_CTX* ssl_ctx, const char* x509certificate, const char* x509privatekey);
 int x509_openssl_add_certificates(SSL_CTX, ssl_ctx, const char* certificates);
+int x509_openssl_add_ecc_credentials(SSL_CTX* ssl_ctx, const char* ecc_alias_cert, const char* ecc_alias_key);
 ```
 
 ###   x509_openssl_add_credentials
@@ -69,7 +70,23 @@ int x509_openssl_add_certificates(SSL_CTX* ssl_ctx, const char* certificates);
 
 **SRS_X509_OPENSSL_02_019: [** Otherwise, `x509_openssl_add_certificates` shall succeed and return 0. **]**
 
+###  x509_openssl_add_ecc_credentials
 
+```c
+int x509_openssl_add_ecc_credentials(SSL_CTX* ssl_ctx, const char* ecc_alias_cert, const char* ecc_alias_key);
+```
 
+**SRS_X509_OPENSSL_07_001: [** If `ssl_ctx`, `ecc_alias_cert`, or `ecc_alias_key` are NULL, `x509_openssl_add_ecc_credentials` shall return a non-zero value. **]**
 
+**SRS_X509_OPENSSL_07_002: [** `x509_openssl_add_ecc_credentials` shall get the memory BIO method function. **]**
+
+**SRS_X509_OPENSSL_07_003: [** `x509_openssl_add_ecc_credentials` shall generate a EVP_PKEY by calling `PEM_read_bio_PrivateKey`. **]**
+
+**SRS_X509_OPENSSL_07_004: [** `x509_openssl_add_ecc_credentials` shall import the certification using by the EVP_PKEY. **]**
+
+**SRS_X509_OPENSSL_07_005: [** `x509_openssl_add_ecc_credentials` shall load the cert chain by calling PEM_read_bio_X509_AUX and SSL_CTX_use_certification. **]**
+
+**SRS_X509_OPENSSL_07_006: [** If successful `x509_openssl_add_ecc_credentials` shall to import each certificate in the cert chain. **]**
+
+**SRS_X509_OPENSSL_07_007: [** If any failure is encountered `x509_openssl_add_ecc_credentials` shall return a non-zero value. **]**
 

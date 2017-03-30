@@ -10,8 +10,6 @@
 #include "openssl/pem.h"
 #include "openssl/err.h"
 
-
-
 void log_ERR_get_error(const char* message)
 {
     char buf[128];
@@ -31,12 +29,156 @@ void log_ERR_get_error(const char* message)
     }
 }
 
+static int load_certificate_chain(SSL_CTX* ssl_ctx, const char* ecc_cert)
+{
+    int result;
+    BIO* bio_cert;
+    X509* x509_value;
+
+    bio_cert = BIO_new_mem_buf((char*)ecc_cert, -1);
+    if (bio_cert == NULL)
+    {
+        log_ERR_get_error("cannot create BIO");
+        result = __FAILURE__;
+    }
+    else
+    {
+        /* Codes_SRS_X509_OPENSSL_07_005: [ x509_openssl_add_ecc_credentials shall load the cert chain by calling PEM_read_bio_X509_AUX and SSL_CTX_use_certification. ] */
+        x509_value = PEM_read_bio_X509_AUX(bio_cert, NULL, NULL, NULL);
+        if (x509_value == NULL)
+        {
+            log_ERR_get_error("Failure PEM_read_bio_X509_AUX");
+            result = __FAILURE__;
+        }
+        else
+        {
+            if (SSL_CTX_use_certificate(ssl_ctx, x509_value) != 1)
+            {
+                log_ERR_get_error("Failure PEM_read_bio_X509_AUX");
+                result = __FAILURE__;
+            }
+            else
+            {
+                result = 0;
+                // If we could set up our certificate, now proceed to the CA
+                // certificates.
+                
+                X509* ca_chain;
+
+                /* Codes_SRS_X509_OPENSSL_07_006: [ If successful x509_openssl_add_ecc_credentials shall to import each certificate in the cert chain. ] */
+                if (ssl_ctx->extra_certs != NULL)
+                {
+                    sk_X509_pop_free(ssl_ctx->extra_certs, X509_free); 
+                    ssl_ctx->extra_certs = NULL;
+                }
+                while ((ca_chain = PEM_read_bio_X509(bio_cert, NULL, NULL, NULL)) != NULL)
+                {
+                    if (SSL_CTX_add_extra_chain_cert(ssl_ctx, ca_chain) != 1)
+                    {
+                        X509_free(ca_chain);
+                        result = __FAILURE__;
+                        break;
+                    }
+                }
+                if (result != 0)
+                {
+                    // When the while loop ends, it's usually just EOF.
+                    unsigned long err_value = ERR_peek_last_error();
+                    if (ERR_GET_LIB(err_value) == ERR_LIB_PEM && ERR_GET_REASON(err_value) == PEM_R_NO_START_LINE)
+                    {
+                        ERR_clear_error();
+                        result = 0;
+                    }
+                    else
+                    {
+                        result = __FAILURE__;
+                    }
+                }
+            }
+            X509_free(x509_value);
+        }
+        BIO_free(bio_cert);
+    }
+    /* Codes_SRS_X509_OPENSSL_07_007: [ If any failure is encountered x509_openssl_add_ecc_credentials shall return a non-zero value. ] */
+    return result;
+}
+
+static int load_alias_key_cert(SSL_CTX* ssl_ctx, const char* ecc_alias_key)
+{
+    int result;
+    BIO* bio_certificate;
+    EVP_PKEY* pkey = NULL;
+    /* Codes_SRS_X509_OPENSSL_07_002: [ x509_openssl_add_ecc_credentials shall get the memory BIO method function. ] */
+    bio_certificate = BIO_new_mem_buf((char*)ecc_alias_key, -1); 
+    if (bio_certificate == NULL)
+    {
+        log_ERR_get_error("Failed BIO_new_mem_buf");
+        result = __FAILURE__;
+    }
+    else
+    {
+        /* Codes_SRS_X509_OPENSSL_07_003: [ x509_openssl_add_ecc_credentials shall generate a EVP_PKEY by calling PEM_read_bio_PrivateKey. ]*/
+        pkey = PEM_read_bio_PrivateKey(bio_certificate, NULL, NULL, NULL);
+        if (pkey == NULL)
+        {
+            log_ERR_get_error("Failed PEM_read_bio_PrivateKey");
+            result = __FAILURE__;
+        }
+        else
+        {
+            /* Codes_SRS_X509_OPENSSL_07_004: [ x509_openssl_add_ecc_credentials shall import the certification using by the EVP_PKEY. ] */
+            if (SSL_CTX_use_PrivateKey(ssl_ctx, pkey) != 1)
+            {
+                LogError("Failed SSL_CTX_use_PrivateKey");
+                result = __FAILURE__;
+            }
+            else
+            {
+                result = 0;
+            }
+            EVP_PKEY_free(pkey);
+        }
+        BIO_free(bio_certificate);
+    }
+    /* Codes_SRS_X509_OPENSSL_07_007: [ If any failure is encountered x509_openssl_add_ecc_credentials shall return a non-zero value. ] */
+    return result;
+}
+
+int x509_openssl_add_ecc_credentials(SSL_CTX* ssl_ctx, const char* ecc_alias_cert, const char* ecc_alias_key)
+{
+    int result;
+
+    /* Codes_SRS_X509_OPENSSL_07_001: [ If ssl_ctx, ecc_alias_cert, or ecc_alias_key are NULL, x509_openssl_add_ecc_credentials shall return a non-zero value. ] */
+    if (ssl_ctx == NULL || ecc_alias_key == NULL || ecc_alias_cert == NULL)
+    {
+        LogError("invalid parameter detected: SSL_CTX* ssl_ctx=%p, const char* ecc_alias_key=%p, const char* ecc_alias_cert=%p", ssl_ctx, ecc_alias_key, ecc_alias_cert);
+        result = __FAILURE__;
+    }
+    else
+    {
+        if (load_alias_key_cert(ssl_ctx, ecc_alias_key) != 0)
+        {
+            LogError("failure loading private key cert");
+            result = __FAILURE__;
+        }
+        else if (load_certificate_chain(ssl_ctx, ecc_alias_cert) != 0)
+        {
+            LogError("failure loading private key cert");
+            result = __FAILURE__;
+        }
+        else
+        {
+            result = 0;
+        }
+    }
+    /* Codes_SRS_X509_OPENSSL_07_007: [ If any failure is encountered x509_openssl_add_ecc_credentials shall return a non-zero value. ] */
+    return result;
+}
 
 /*return 0 if everything was ok, any other number to signal an error*/
 /*this function inserts a x509certificate+x509privatekey to a SSL_CTX (ssl context) in order to authenticate the device with the service*/
 int x509_openssl_add_credentials(SSL_CTX* ssl_ctx, const char* x509certificate, const char* x509privatekey)
 {
-    
     int result;
     /*Codes_SRS_X509_OPENSSL_02_001: [ If any argument is NULL then x509_openssl_add_credentials shall fail and return a non-zero value. ]*/
     if (
@@ -127,7 +269,6 @@ int x509_openssl_add_credentials(SSL_CTX* ssl_ctx, const char* x509certificate, 
     }
     return result;
 }
-
 
 int x509_openssl_add_certificates(SSL_CTX* ssl_ctx, const char* certificates)
 {
