@@ -265,8 +265,8 @@ BEGIN_TEST_SUITE(template_ut)
          */
         STRICT_EXPECTED_CALL(callee_open(SIZEOF_FOO_MEMORY));
         STRICT_EXPECTED_CALL(gballoc_malloc(SIZEOF_FOO_MEMORY));    //This is the malloc in the mock my_callee_open().
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);    //This is the malloc in the target_create().
-        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)).IgnoreArgument(1);      //This is the free in the target_create().
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));    //This is the malloc in the target_create().
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));      //This is the free in the target_create().
 
         ///act
         result = target_create(SIZEOF_FOO_MEMORY);
@@ -346,7 +346,7 @@ BEGIN_TEST_SUITE(template_ut)
         */
         STRICT_EXPECTED_CALL(callee_open(SIZEOF_FOO_MEMORY));
         STRICT_EXPECTED_CALL(gballoc_malloc(SIZEOF_FOO_MEMORY));
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
 
         umock_c_negative_tests_snapshot();
 
@@ -391,7 +391,7 @@ BEGIN_TEST_SUITE(template_ut)
         */
         STRICT_EXPECTED_CALL(callee_open(SIZEOF_FOO_MEMORY));
         STRICT_EXPECTED_CALL(gballoc_malloc(SIZEOF_FOO_MEMORY));
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
 
         bool runTest[] = { true, false, true };
 
