@@ -119,6 +119,9 @@ STRING_HANDLE STRING_construct(const char* psz)
     return result;
 }
 
+#if defined(__GNUC__)
+__attribute__ ((format (printf, 1, 2)))
+#endif
 STRING_HANDLE STRING_construct_sprintf(const char* format, ...)
 {
     STRING* result;
@@ -507,6 +510,9 @@ int STRING_copy_n(STRING_HANDLE handle, const char* s2, size_t n)
     return result;
 }
 
+#if defined(__GNUC__)
+__attribute__ ((format (printf, 2, 3)))
+#endif
 int STRING_sprintf(STRING_HANDLE handle, const char* format, ...)
 {
     int result;

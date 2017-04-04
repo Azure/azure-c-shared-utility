@@ -350,10 +350,10 @@ size_t gballoc_getMaximumMemoryUsed(void)
     }
     else
     {
-    /* Codes_SRS_GBALLOC_01_010: [gballoc_getMaximumMemoryUsed shall return the maximum amount of total memory used recorded since the module initialization.] */
+        /* Codes_SRS_GBALLOC_01_010: [gballoc_getMaximumMemoryUsed shall return the maximum amount of total memory used recorded since the module initialization.] */
         result = maxSize;
-        Unlock(gballocThreadSafeLock);
-}
+        (void)Unlock(gballocThreadSafeLock);
+    }
 
     return result;
 }
@@ -377,9 +377,9 @@ size_t gballoc_getCurrentMemoryUsed(void)
     }
     else
     {
-    /*Codes_SRS_GBALLOC_02_001: [gballoc_getCurrentMemoryUsed shall return the currently used memory size.] */
+        /*Codes_SRS_GBALLOC_02_001: [gballoc_getCurrentMemoryUsed shall return the currently used memory size.] */
         result = totalSize;
-        Unlock(gballocThreadSafeLock);
+        (void)Unlock(gballocThreadSafeLock);
     }
 
     return result;
