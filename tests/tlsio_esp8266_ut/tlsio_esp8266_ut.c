@@ -72,7 +72,7 @@ static int g_ssl_fd_isset = 0;
 static int g_ssl_get_error_success = 1;
 static int g_socket_close_success = 1;
 
-#define MAX_RETRY 20000
+#define MAX_RETRY 20
 #define RECEIVE_BUFFER_SIZE 1024
 
 typedef enum TLSIO_STATE_TAG
