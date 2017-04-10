@@ -53,7 +53,7 @@ void my_gballoc_free(void* ptr)
 
 static int g_ssl_write_success = 1;
 static int g_ssl_read_returns_data = 1;
-static int g_on_bytes_received_buffer_size = 0;
+static size_t g_on_bytes_received_buffer_size = 0;
 
 static int g_gethostbyname_success = 1;
 static int g_socket_success = 1;
@@ -110,6 +110,7 @@ int real_mallocAndStrcpy_s(char** destination, const char* source);
 const IO_INTERFACE_DESCRIPTION* tlsio_openssl_get_interface_description(void);
 
 int my_SSL_get_error(const SSL *ssl, int ret_code){
+    (void)(ret_code), (void)(ssl);
     if (g_ssl_get_error_success == 1){
         return SSL_ERROR_WANT_READ;
     }else{
@@ -118,6 +119,7 @@ int my_SSL_get_error(const SSL *ssl, int ret_code){
     
 }
 int my_FD_ISSET(int n, void* p){
+    (void)(n),(void)(p);
     if(g_ssl_fd_isset == 0){
         g_ssl_fd_isset++;
         return 1;
@@ -128,6 +130,8 @@ int my_FD_ISSET(int n, void* p){
 
 int my_lwip_select(int maxfdp1, fd_set *readset, fd_set *writeset, fd_set *exceptset,
                struct timeval *timeout){
+    (void)(maxfdp1),(void)(readset),(void)(writeset),(void)(exceptset),(void)(timeout);
+
     if(g_ssl_lwip_select_success == 1)
     {
         return 1;
@@ -137,6 +141,8 @@ int my_lwip_select(int maxfdp1, fd_set *readset, fd_set *writeset, fd_set *excep
 }
 
 int my_SSL_write(SSL *ssl, const void *buffer, int len){
+    (void)(ssl),(void)(buffer);
+
     if (g_ssl_write_success){
         return len;
     }else{
@@ -145,14 +151,15 @@ int my_SSL_write(SSL *ssl, const void *buffer, int len){
 }
 
 void my_SSL_CTX_free(SSL_CTX *ctx){
-
+    (void)(ctx);
 }
 
 void my_SSL_free(SSL *ssl){
-
+    (void)(ssl);
 }
 
 int my_SSL_read(SSL *ssl, void *buffer, int len){
+    (void)(ssl),(void)(buffer);
     if (g_ssl_read_returns_data){
         return len;
     }else{
@@ -161,6 +168,7 @@ int my_SSL_read(SSL *ssl, void *buffer, int len){
 }
 
 int my_SSL_connect(SSL *ssl){
+    (void)(ssl);
     if (g_ssl_connect_success == 1){
         return 1;
     }else{
@@ -169,6 +177,7 @@ int my_SSL_connect(SSL *ssl){
 }
 
 int my_SSL_shutdown(SSL *ssl){
+    (void)(ssl);
     if (g_ssl_shutdown_success == 1){
         return 0;
     }else{
@@ -177,6 +186,7 @@ int my_SSL_shutdown(SSL *ssl){
 }
 
 int my_socket(int domain, int type, int protocol){
+    (void)(domain),(void)(type), (void)(protocol);
     if (g_socket_success == 1){
         return 0;
     }else{
@@ -185,6 +195,7 @@ int my_socket(int domain, int type, int protocol){
 }
 
 int my_SSL_set_fd(SSL *ssl, int fd){
+    (void)(ssl),(void)(fd);
     if (g_ssl_set_fd_success == 1){
         return 1;
     }else{
@@ -193,6 +204,7 @@ int my_SSL_set_fd(SSL *ssl, int fd){
 }
 
 SSL* my_SSL_new(SSL_CTX *ssl_ctx){
+    (void)(ssl_ctx);
     if (g_ssl_new_success == 1){
          SSL* ssl = (SSL*)malloc(1);
         return ssl;
@@ -202,6 +214,7 @@ SSL* my_SSL_new(SSL_CTX *ssl_ctx){
 }
 
 SSL_CTX* my_SSL_CTX_new(SSL_METHOD *method){
+    (void)(method);
     if(g_ssl_ctx_new_success == 1)
     {
         if(method != NULL){
@@ -218,6 +231,7 @@ SSL_CTX* my_SSL_CTX_new(SSL_METHOD *method){
 
 void my_SSL_CTX_set_default_read_buffer_len(SSL_CTX *ctx, size_t len)
 {
+    (void)(ctx),(void)(len);
 
 }
 
@@ -229,6 +243,7 @@ int my_fcntl(int s, int cmd, int val)
     return 0;
 }
 err_t my_netconn_gethostbyname(const char *name, ip_addr_t *target_ip){
+    (void)(name),(void)(target_ip);
     if (g_gethostbyname_success == 1){
         return 0;
     }else{
@@ -245,6 +260,7 @@ SSL_METHOD* my_TLSv1_client_method(void){
 }
 
 int my_bind(int s, const struct sockaddr* name, socklen_t namelen){
+    (void)(s),(void)(name),(void)(namelen);
     if (g_bind_success == 1){
         return 0;
     }else{
@@ -253,6 +269,7 @@ int my_bind(int s, const struct sockaddr* name, socklen_t namelen){
 }
 
 int my_setsockopt(int s, int level, int optname, const void *optval, socklen_t optlen){
+    (void)(s),(void)(level),(void)(optname),(void)(optval),(void)(optlen);
     if (g_setsockopt_success == 1){
         return 0;
     }else{
@@ -261,6 +278,7 @@ int my_setsockopt(int s, int level, int optname, const void *optval, socklen_t o
 }
 
 int my_close(int s){
+    (void)(s);
     if (g_socket_close_success == 1){
         return 0;
     } else{
@@ -269,15 +287,17 @@ int my_close(int s){
 }
 
 int my_connect(int s, const struct sockaddr *name, socklen_t namelen){
+    (void)(s),(void)(name), (void)(namelen);
     if (g_connect_success == 1){
         return 0;
     }else{
         return -1;
     }
 }
-
+#undef   EINPROGRESS
 #define  EINPROGRESS    115  /* Operation now in progress */
 int my_getsockopt(int s, int level, int optname, void *optval, socklen_t *optlen){
+    (void)(s), (void)(level), (void)(optname), (void)(optval), (void)(optlen);
     if (g_getsockopt_success == 1){
         return EINPROGRESS;
     }else{
@@ -286,11 +306,12 @@ int my_getsockopt(int s, int level, int optname, void *optval, socklen_t *optlen
 }
 
 void my_os_delay_us(int us){
-
+    (void)(us);
 }
 
 static void on_bytes_received(void* context, const unsigned char* buffer, size_t size)
 {
+    (void)(context), (void)(buffer), (void)(size);
     g_on_bytes_received_buffer_size = size;
 }
 
@@ -482,7 +503,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         tlsioInterfaces->concrete_io_dowork(&instance);
         
         ///assert
-        ASSERT_ARE_EQUAL(int, g_on_bytes_received_buffer_size, RECEIVE_BUFFER_SIZE);
+        ASSERT_ARE_EQUAL(size_t, g_on_bytes_received_buffer_size, RECEIVE_BUFFER_SIZE);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ///cleanup
     }
@@ -507,7 +528,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         tlsioInterfaces->concrete_io_dowork(&instance);
         
         ///assert
-        ASSERT_ARE_EQUAL(int, g_on_bytes_received_buffer_size, 0);
+        ASSERT_ARE_EQUAL(size_t, g_on_bytes_received_buffer_size, 0);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ///cleanup
     }
@@ -1640,7 +1661,6 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
 
         ///assert
         ASSERT_IS_NOT_NULL(result);
-        ASSERT_IS_NULL(result->on_io_open_complete);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_EQUAL(int, (int)TLSIO_STATE_NOT_OPEN, result->tlsio_state);
         ///cleanup
