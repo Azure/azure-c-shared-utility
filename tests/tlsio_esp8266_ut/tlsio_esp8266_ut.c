@@ -812,7 +812,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
     TEST_FUNCTION(tlsio_openssl_destroy__succeed)
     {
         ///arrange
-        TLS_IO_INSTANCE* instance = malloc(sizeof(TLS_IO_INSTANCE));
+        TLS_IO_INSTANCE* instance = (TLS_IO_INSTANCE*)malloc(sizeof(TLS_IO_INSTANCE));
         memset(instance, 0, sizeof(TLS_IO_INSTANCE));
         instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
@@ -848,7 +848,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
     TEST_FUNCTION(tlsio_openssl_destroy_wrong_state__failed)
     {
         ///arrange
-        TLS_IO_INSTANCE* instance = malloc(sizeof(TLS_IO_INSTANCE));
+        TLS_IO_INSTANCE* instance = (TLS_IO_INSTANCE*)malloc(sizeof(TLS_IO_INSTANCE));
         memset(instance, 0, sizeof(TLS_IO_INSTANCE));
         instance->tlsio_state = TLSIO_STATE_OPENING;
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
@@ -1604,7 +1604,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
 
             TLSIO_CONFIG tlsio_config;
             ///act
-            result = tlsioInterfaces->concrete_io_create(&tlsio_config);
+            result = (OPTIONHANDLER_HANDLE)tlsioInterfaces->concrete_io_create(&tlsio_config);
 
             ///assert
             ASSERT_IS_NULL(result);
@@ -1636,7 +1636,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);  
 
         ///act
-        result = tlsioInterfaces->concrete_io_create(&tlsio_config);
+        result = (TLS_IO_INSTANCE*)tlsioInterfaces->concrete_io_create(&tlsio_config);
 
         ///assert
         ASSERT_IS_NOT_NULL(result);
@@ -1656,7 +1656,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
         ///act
-        result = tlsioInterfaces->concrete_io_create(NULL);
+        result = (OPTIONHANDLER_HANDLE)tlsioInterfaces->concrete_io_create(NULL);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
