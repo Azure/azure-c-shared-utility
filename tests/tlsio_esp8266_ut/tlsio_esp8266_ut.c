@@ -8,20 +8,6 @@
 #include <crtdbg.h>
 #endif
 
-void* my_gballoc_malloc(size_t size)
-{
-    return malloc(size);
-}
-
-void* my_gballoc_realloc(void* ptr, size_t size)
-{
-    return realloc(ptr, size);
-}
-
-void my_gballoc_free(void* ptr)
-{
-    free(ptr);
-}
 
 /**
  * Include the C standards here.
@@ -51,6 +37,11 @@ void my_gballoc_free(void* ptr)
 #include "azure_c_shared_utility/xio.h"
 #include "azure_c_shared_utility/tlsio.h"
 
+#define TEST_CREATE_CONNECTION_HOST_NAME (const char*)"https://test.azure-devices.net"
+#define TEST_CREATE_CONNECTION_PORT (int)443
+
+static const TLSIO_CONFIG tlsio_config = { TEST_CREATE_CONNECTION_HOST_NAME, TEST_CREATE_CONNECTION_PORT };
+
 static int g_ssl_write_success = 1;
 static int g_ssl_read_returns_data = 1;
 static size_t g_on_bytes_received_buffer_size = 0;
@@ -71,9 +62,29 @@ static int g_ssl_TLSv1clientmethod_success = 1;
 static int g_ssl_fd_isset = 0;
 static int g_ssl_get_error_success = 1;
 static int g_socket_close_success = 1;
+static SSL_CTX* g_ctx = NULL;
+static SSL* g_ssl = NULL;
+static SSL_METHOD* g_sslmethod = NULL;
+static void* g_mallocptr = NULL;
 
 #define MAX_RETRY 20
 #define RECEIVE_BUFFER_SIZE 1024
+
+void* my_gballoc_malloc(size_t size)
+{
+    g_mallocptr = malloc(size);
+    return g_mallocptr;
+}
+
+void* my_gballoc_realloc(void* ptr, size_t size)
+{
+    return realloc(ptr, size);
+}
+
+void my_gballoc_free(void* ptr)
+{
+    free(ptr);
+}
 
 typedef enum TLSIO_STATE_TAG
 {
@@ -202,23 +213,25 @@ int my_SSL_set_fd(SSL *ssl, int fd){
         return 0;
     }
 }
-
+//NOTE: malloc(1) is used here since SSL is defined as void in esp8266_mock.h
 SSL* my_SSL_new(SSL_CTX *ssl_ctx){
     (void)(ssl_ctx);
     if (g_ssl_new_success == 1){
-         SSL* ssl = (SSL*)malloc(1);
-        return ssl;
+         g_ssl = (SSL*)malloc(1);
+        return g_ssl;
     }else{
         return NULL;
     }  
 }
 
+//NOTE: malloc(1) is used here since SSL_CTX is defined as void in esp8266_mock.h
 SSL_CTX* my_SSL_CTX_new(SSL_METHOD *method){
     (void)(method);
     if(g_ssl_ctx_new_success == 1)
     {
         if(method != NULL){
-            return (SSL_CTX*)malloc(1);
+            g_ctx = (SSL_CTX*)malloc(1);
+            return g_ctx;
         }
         else
         {
@@ -251,9 +264,11 @@ err_t my_netconn_gethostbyname(const char *name, ip_addr_t *target_ip){
     }
 }
 
+//NOTE: malloc(1) is used here since SSL_METHOD is defined as void in esp8266_mock.h
 SSL_METHOD* my_TLSv1_client_method(void){
     if (g_ssl_TLSv1clientmethod_success == 1){
-        return (SSL_METHOD*)malloc(1);
+        g_sslmethod = (SSL_METHOD*)malloc(1);
+        return g_sslmethod;
     }else{
         return NULL;
     }
@@ -739,6 +754,15 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_STATE_NOT_OPEN, instance.tlsio_state);
         ///cleanup
+        if(g_ctx != NULL){
+            free(g_ctx);
+        }
+        if(g_ssl != NULL){
+            free(g_ssl);
+        }
+        if (g_sslmethod != NULL){
+            free(g_sslmethod);
+        }
     }
 
 
@@ -826,6 +850,15 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ASSERT_ARE_NOT_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(int, (int)TLSIO_STATE_ERROR, instance.tlsio_state);
         ///cleanup
+        if (g_sslmethod != NULL){
+            free(g_sslmethod);
+        }
+        if(g_ctx != NULL){
+            free(g_ctx);
+        }
+        if(g_ssl != NULL){
+            free(g_ssl);
+        }
     }
 
     /* TESTS_SRS_TLSIO_SSL_ESP8266_99_021: [ The tlsio_openssl_destroy shall destroy a created instance of the tlsio for ESP8266 identified by the CONCRETE_IO_HANDLE. ] */
@@ -961,7 +994,18 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
          */
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_EQUAL(int, (int)TLSIO_STATE_OPEN, tls_io_instance.tlsio_state);
+        
         ///cleanup
+        if(g_ctx != NULL){
+            free(g_ctx);
+        }
+        if(g_ssl != NULL){
+            free(g_ssl);
+        }
+        if (g_sslmethod != NULL){
+            free(g_sslmethod);
+        }
+
     }
 
 
@@ -1123,6 +1167,12 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ASSERT_ARE_NOT_EQUAL(int, 0, result);
 
         ///cleanup
+        if(g_ctx != NULL){
+            free(g_ctx);
+        }
+        if (g_sslmethod != NULL){
+            free(g_sslmethod);
+        }
     }
 
     /* TESTS_SRS_TLSIO_SSL_ESP8266_99_081: [ If setsockopt failed, the tlsio_openssl_open shall return __LINE__. ]*/
@@ -1173,6 +1223,12 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ASSERT_ARE_NOT_EQUAL(int, 0, result);
 
         ///cleanup
+        if(g_ctx != NULL){
+            free(g_ctx);
+        }
+        if (g_sslmethod != NULL){
+            free(g_sslmethod);
+        }
     }
 
     /* TESTS_SRS_TLSIO_SSL_ESP8266_99_082: [ If bind failed, the tlsio_openssl_open shall return __LINE__. ]*/
@@ -1229,6 +1285,12 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ASSERT_ARE_NOT_EQUAL(int, 0, result);
 
         ///cleanup
+        if(g_ctx != NULL){
+            free(g_ctx);
+        }
+        if (g_sslmethod != NULL){
+            free(g_sslmethod);
+        }
     }
 
     /* TESTS_SRS_TLSIO_SSL_ESP8266_99_083: [ If connect and getsockopt failed, the tlsio_openssl_open shall return __LINE__. ]*/
@@ -1288,6 +1350,12 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ASSERT_ARE_NOT_EQUAL(int, 0, result);
 
         ///cleanup
+        if(g_ctx != NULL){
+            free(g_ctx);
+        }
+        if (g_sslmethod != NULL){
+            free(g_sslmethod);
+        }
     }
 
     /* TESTS_SRS_TLSIO_SSL_ESP8266_99_084: [ If lwip_select failed, the tlsio_openssl_open shall return __LINE__. ]*/
@@ -1349,6 +1417,12 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ASSERT_ARE_NOT_EQUAL(int, 0, result);
 
         ///cleanup
+        if(g_ctx != NULL){
+            free(g_ctx);
+        }
+        if (g_sslmethod != NULL){
+            free(g_sslmethod);
+        }
     }
 
     /* TESTS_SRS_TLSIO_SSL_ESP8266_99_085: [ If SSL_CTX_new failed, the tlsio_openssl_open shall return __LINE__. ]*/
@@ -1396,6 +1470,9 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ASSERT_ARE_NOT_EQUAL(int, 0, result);
 
         ///cleanup
+        if (g_sslmethod != NULL){
+            free(g_sslmethod);
+        }
     }
 
     /* TESTS_SRS_TLSIO_SSL_ESP8266_99_087: [ If SSL_new failed, the tlsio_openssl_open shall return __LINE__. ]*/
@@ -1459,6 +1536,12 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ASSERT_ARE_NOT_EQUAL(int, 0, result);
 
         ///cleanup
+        if(g_ctx != NULL){
+            free(g_ctx);
+        }
+        if (g_sslmethod != NULL){
+            free(g_sslmethod);
+        }
     }
 
     /* TESTS_SRS_TLSIO_SSL_ESP8266_99_088: [ If SSL_set_fd failed, the tlsio_openssl_open shall return __LINE__. ]*/
@@ -1523,6 +1606,15 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ASSERT_ARE_NOT_EQUAL(int, 0, result);
 
         ///cleanup
+        if(g_ctx != NULL){
+            free(g_ctx);
+        }
+        if (g_ssl != NULL){
+            free(g_ssl);
+        }
+        if (g_sslmethod != NULL){
+            free(g_sslmethod);
+        }
     }
 
     /* TESTS_SRS_TLSIO_SSL_ESP8266_99_089: [ If SSL_connect failed, the tlsio_openssl_open shall return __LINE__. ]*/
@@ -1555,6 +1647,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         g_ssl_connect_success = 0;
         g_ssl_fd_isset = 0;
         g_ssl_get_error_success = 1;
+        
         umock_c_reset_all_calls();
         
         STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);    
@@ -1576,6 +1669,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         STRICT_EXPECTED_CALL(FD_ISSET(IGNORED_NUM_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);
         STRICT_EXPECTED_CALL(FD_ISSET(IGNORED_NUM_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);
         STRICT_EXPECTED_CALL(SSL_new(IGNORED_PTR_ARG)).IgnoreArgument(1);
+        
         STRICT_EXPECTED_CALL(SSL_set_fd(IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2);
         int retry = 0;
         while(retry < MAX_RETRY){
@@ -1598,6 +1692,15 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ASSERT_ARE_NOT_EQUAL(int, 0, result);
 
         ///cleanup
+        if(g_ctx != NULL){
+            free(g_ctx);
+        }
+        if (g_ssl != NULL){
+            free(g_ssl);
+        }
+        if (g_sslmethod != NULL){
+            free(g_sslmethod);
+        }
     }
 
     /* TESTS_SRS_TLSIO_SSL_ESP8266_99_012: [ If there is not enough memory to create the tlsio, the tlsio_openssl_create shall return NULL as the handle. ] */
@@ -1622,10 +1725,8 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         {
             umock_c_negative_tests_reset();
             umock_c_negative_tests_fail_call(i);
-
-            TLSIO_CONFIG tlsio_config;
             ///act
-            result = (OPTIONHANDLER_HANDLE)tlsioInterfaces->concrete_io_create(&tlsio_config);
+            result = (OPTIONHANDLER_HANDLE)tlsioInterfaces->concrete_io_create((void*)&tlsio_config);
 
             ///assert
             ASSERT_IS_NULL(result);
@@ -1644,9 +1745,6 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
     /* TESTS_SRS_TLSIO_SSL_ESP8266_99_020: [ If tlsio_openssl_create get success to create the tlsio instance, it shall set the tlsio state as TLSIO_STATE_NOT_OPEN. ] */
     TEST_FUNCTION(tlsio_openssl_create__succeed)
     {
-        ///arrange
-        TLSIO_CONFIG tlsio_config;
-
         TLS_IO_INSTANCE* result;
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
@@ -1657,13 +1755,16 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);  
 
         ///act
-        result = (TLS_IO_INSTANCE*)tlsioInterfaces->concrete_io_create(&tlsio_config);
+        result = (TLS_IO_INSTANCE*)tlsioInterfaces->concrete_io_create((void*)&tlsio_config);
 
         ///assert
         ASSERT_IS_NOT_NULL(result);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_EQUAL(int, (int)TLSIO_STATE_NOT_OPEN, result->tlsio_state);
         ///cleanup
+        if (g_mallocptr != NULL){
+            free(g_mallocptr);
+        }
     }
 
 

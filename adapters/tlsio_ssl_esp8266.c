@@ -170,7 +170,7 @@ LOCAL int openssl_thread_LWIP_CONNECTION(TLS_IO_INSTANCE* p)
     //LogInfo("openssl_thread_LWIP_CONNECTION begin: %d", system_get_free_heap_size());
     //system_show_malloc();
 
-    int result;
+    int result = 0;
     int ret = 0;
     int sock;
 
