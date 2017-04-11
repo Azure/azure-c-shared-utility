@@ -20,11 +20,11 @@ option(run_valgrind "set run_valgrind to ON if tests are to be run under valgrin
 #
 #making a global variable to know if we are on linux, windows, or macosx.
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-    set(BUILD_PLAT_WINDOWS TRUE)
+    set(WINDOWS TRUE)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     set(LINUX TRUE)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-    set(BUILD_PLAT_MACOSX TRUE)
+    set(MACOSX TRUE)
 endif()
 
 include (CTest)
