@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <time.h>
 #include "azure_c_shared_utility/xlogging.h"
+#include "azure_c_shared_utility/consolelogger.h"
 
 #if defined(__GNUC__)
 __attribute__ ((format (printf, 6, 7)))

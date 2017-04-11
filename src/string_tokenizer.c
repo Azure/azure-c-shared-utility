@@ -132,7 +132,7 @@ int STRING_TOKENIZER_get_next_token(STRING_TOKENIZER_HANDLE tokenizer, STRING_HA
             else
             {
                 bool foundDelimitter = false;
-                char* endOfTokenPosition=NULL;
+                const char* endOfTokenPosition=NULL;
                 size_t amountOfCharactersToCopy;
                 size_t j;
                 //At this point the Current Pos is pointing to a character that is point to a nonDelimiter. So, now search for a Delimiter, till the end of the String. 

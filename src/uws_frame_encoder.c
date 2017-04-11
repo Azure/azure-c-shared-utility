@@ -97,7 +97,7 @@ BUFFER_HANDLE uws_frame_encoder_encode(WS_FRAME_TYPE opcode, const unsigned char
                     /* Codes_SRS_UWS_FRAME_ENCODER_01_012: [ *  %x9 denotes a ping ]*/
                     /* Codes_SRS_UWS_FRAME_ENCODER_01_013: [ *  %xA denotes a pong ]*/
                     /* Codes_SRS_UWS_FRAME_ENCODER_01_014: [ *  %xB-F are reserved for further control frames ]*/
-                    buffer[0] = opcode;
+                    buffer[0] = (unsigned char)opcode;
 
                     /* Codes_SRS_UWS_FRAME_ENCODER_01_002: [ Indicates that this is the final fragment in a message. ]*/
                     /* Codes_SRS_UWS_FRAME_ENCODER_01_003: [ The first fragment MAY also be the final fragment. ]*/

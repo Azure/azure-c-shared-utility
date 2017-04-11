@@ -80,7 +80,7 @@ static const char* ConstructHeadersString(HTTP_HEADERS_HANDLE httpHeadersHandle)
         }
         else
         {
-            result = malloc(toAlloc*sizeof(char) + 1 );
+            result = (char*)malloc(toAlloc*sizeof(char) + 1 );
             
             if (result == NULL)
             {
@@ -200,7 +200,7 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
             }
             else
             {
-                hostNameTemp = malloc(sizeof(wchar_t)*hostNameTemp_size);
+                hostNameTemp = (wchar_t*)malloc(sizeof(wchar_t)*hostNameTemp_size);
                 if (hostNameTemp == NULL)
                 {
                     LogError("malloc failed");
@@ -334,7 +334,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
                 if (headers2 != NULL)
                 {
                     size_t requiredCharactersForRelativePath = MultiByteToWideChar(CP_ACP, 0, relativePath, -1, NULL, 0);
-                    wchar_t* relativePathTemp = malloc((requiredCharactersForRelativePath+1) * sizeof(wchar_t));
+                    wchar_t* relativePathTemp = (wchar_t*)malloc((requiredCharactersForRelativePath+1) * sizeof(wchar_t));
                     result = HTTPAPI_OK; /*legacy code*/
 
                     if (relativePathTemp == NULL)
@@ -353,7 +353,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
                         {
                             size_t requiredCharactersForHeaders = MultiByteToWideChar(CP_ACP, 0, headers2, -1, NULL, 0);
 
-                            wchar_t* headersTemp = malloc((requiredCharactersForHeaders +1) * sizeof(wchar_t) );
+                            wchar_t* headersTemp = (wchar_t*)malloc((requiredCharactersForHeaders +1) * sizeof(wchar_t) );
                             if (headersTemp == NULL)
                             {
                                 result = HTTPAPI_STRING_PROCESSING_ERROR;
@@ -594,7 +594,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
                                                                             }
                                                                             else
                                                                             {
-                                                                                tokenTemp = malloc(sizeof(char)*tokenTemp_size);
+                                                                                tokenTemp = (char*)malloc(sizeof(char)*tokenTemp_size);
                                                                                 if (tokenTemp == NULL)
                                                                                 {
                                                                                     LogError("malloc failed");
@@ -689,7 +689,7 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
         }
         else if (strcmp(SU_OPTION_X509_CERT, optionName) == 0)
         {
-            httpHandleData->x509certificate = value;
+            httpHandleData->x509certificate = (const char*)value;
             if (httpHandleData->x509privatekey != NULL)
             {
                 httpHandleData->x509SchannelHandle = x509_schannel_create(httpHandleData->x509certificate, httpHandleData->x509privatekey);
@@ -711,7 +711,7 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
         }
         else if (strcmp(SU_OPTION_X509_PRIVATE_KEY, optionName) == 0)
         {
-            httpHandleData->x509privatekey = value;
+            httpHandleData->x509privatekey = (const char*)value;
             if (httpHandleData->x509certificate != NULL)
             {
                 httpHandleData->x509SchannelHandle = x509_schannel_create(httpHandleData->x509certificate, httpHandleData->x509privatekey);
@@ -762,7 +762,7 @@ HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, co
         if (strcmp(OPTION_HTTP_TIMEOUT, optionName) == 0)
         {
             /*by convention value is pointing to an unsigned int */
-            unsigned int* temp = malloc(sizeof(unsigned int)); /*shall be freed by HTTPAPIEX*/
+            unsigned int* temp = (unsigned int*)malloc(sizeof(unsigned int)); /*shall be freed by HTTPAPIEX*/
             if (temp == NULL)
             {
                 result = HTTPAPI_ERROR;
@@ -778,7 +778,7 @@ HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, co
         else if (strcmp(SU_OPTION_X509_CERT, optionName) == 0)
         {
             /*this is getting the x509 certificate. In this case, value is a pointer to a const char* that contains the certificate as a null terminated string*/
-            if (mallocAndStrcpy_s((char**)savedValue, value) != 0)
+            if (mallocAndStrcpy_s((char**)savedValue, (const char*)value) != 0)
             {
                 LogError("unable to clone the x509 certificate content");
                 result = HTTPAPI_ERROR;
@@ -792,7 +792,7 @@ HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, co
         else if (strcmp(SU_OPTION_X509_PRIVATE_KEY, optionName) == 0)
         {
             /*this is getting the x509 private key. In this case, value is a pointer to a const char* that contains the private key as a null terminated string*/
-            if (mallocAndStrcpy_s((char**)savedValue, value) != 0)
+            if (mallocAndStrcpy_s((char**)savedValue, (const char*)value) != 0)
             {
                 LogError("unable to clone the x509 private key content");
                 result = HTTPAPI_ERROR;

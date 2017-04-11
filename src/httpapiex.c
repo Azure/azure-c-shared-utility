@@ -394,7 +394,7 @@ HTTPAPIEX_RESULT HTTPAPIEX_ExecuteRequest(HTTPAPIEX_HANDLE handle, HTTPAPI_REQUE
                                 {
                                     /*Codes_SRS_HTTPAPIEX_02_035: [HTTPAPIEX_ExecuteRequest shall pass all the saved options (see HTTPAPIEX_SetOption) to the newly create HTTPAPI_HANDLE in step 2 by calling HTTPAPI_SetOption.]*/
                                     /*Codes_SRS_HTTPAPIEX_02_036: [If setting the option fails, then the failure shall be ignored.] */
-                                    HTTPAPIEX_SAVED_OPTION* option = VECTOR_element(handleData->savedOptions, i);
+                                    HTTPAPIEX_SAVED_OPTION* option = (HTTPAPIEX_SAVED_OPTION*)VECTOR_element(handleData->savedOptions, i);
                                     if (HTTPAPI_SetOption(handleData->httpHandle, option->optionName, option->value) != HTTPAPI_OK)
                                     {
                                         LogError("HTTPAPI_SetOption failed when called for option %s", option->optionName);
@@ -517,7 +517,7 @@ void HTTPAPIEX_Destroy(HTTPAPIEX_HANDLE handle)
         vectorSize = VECTOR_size(handleData->savedOptions);
         for (i = 0; i < vectorSize; i++)
         {
-            HTTPAPIEX_SAVED_OPTION*savedOption = VECTOR_element(handleData->savedOptions, i);
+            HTTPAPIEX_SAVED_OPTION* savedOption = (HTTPAPIEX_SAVED_OPTION*)VECTOR_element(handleData->savedOptions, i);
             free((void*)savedOption->optionName);
             free((void*)savedOption->value);
         }
@@ -533,7 +533,7 @@ void HTTPAPIEX_Destroy(HTTPAPIEX_HANDLE handle)
 
 static bool sameName(const void* element, const void* value)
 {
-    return (strcmp(((HTTPAPIEX_SAVED_OPTION*)element)->optionName, value) == 0) ? true : false;
+    return (strcmp(((HTTPAPIEX_SAVED_OPTION*)element)->optionName, (const char*)value) == 0) ? true : false;
 }
 
 /*return 0 on success, any other value is error*/
@@ -544,7 +544,7 @@ static int createOrUpdateOption(HTTPAPIEX_HANDLE_DATA* handleData, const char* o
     int result;
     
     /*decide bwtween update or create*/
-    HTTPAPIEX_SAVED_OPTION* whereIsIt = VECTOR_find_if(handleData->savedOptions, sameName, optionName);
+    HTTPAPIEX_SAVED_OPTION* whereIsIt = (HTTPAPIEX_SAVED_OPTION*)VECTOR_find_if(handleData->savedOptions, sameName, optionName);
     if (whereIsIt != NULL)
     {
         free((void*)(whereIsIt->value));

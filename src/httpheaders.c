@@ -310,7 +310,7 @@ HTTP_HEADERS_HANDLE HTTPHeaders_Clone(HTTP_HEADERS_HANDLE handle)
     else
     {
         /*Codes_SRS_HTTP_HEADERS_02_004: [Otherwise HTTPHeaders_Clone shall clone the content of handle to a new handle.] */
-        result = malloc(sizeof(HTTP_HEADERS_HANDLE_DATA));
+        result = (HTTP_HEADERS_HANDLE_DATA*)malloc(sizeof(HTTP_HEADERS_HANDLE_DATA));
         if (result == NULL)
         {
             /*Codes_SRS_HTTP_HEADERS_02_005: [If cloning fails for any reason, then HTTPHeaders_Clone shall return NULL.] */

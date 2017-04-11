@@ -64,7 +64,7 @@ static void indicate_open_complete(WSIO_INSTANCE* ws_io_instance, IO_OPEN_RESULT
 static void complete_send_item(LIST_ITEM_HANDLE pending_io_list_item, IO_SEND_RESULT io_send_result)
 {
     PENDING_IO* pending_io = (PENDING_IO*)singlylinkedlist_item_get_value(pending_io_list_item);
-    WSIO_INSTANCE* wsio_instance = pending_io->wsio;
+    WSIO_INSTANCE* wsio_instance = (WSIO_INSTANCE*)pending_io->wsio;
 
     /* Codes_SRS_WSIO_01_145: [ Removing it from the list shall be done by calling `singlylinkedlist_remove`. ]*/
     if (singlylinkedlist_remove(wsio_instance->pending_io_list, pending_io_list_item) != 0)
@@ -91,7 +91,7 @@ static void on_underlying_ws_send_frame_complete(void* context, WS_SEND_FRAME_RE
     else
     {
         IO_SEND_RESULT io_send_result;
-        LIST_ITEM_HANDLE list_item_handle = context;
+        LIST_ITEM_HANDLE list_item_handle = (LIST_ITEM_HANDLE)context;
 
         /* Codes_SRS_WSIO_01_143: [ When `on_underlying_ws_send_frame_complete` is called after sending a WebSocket frame, the pending IO shall be removed from the list. ]*/
         switch (ws_send_frame_result)
@@ -205,7 +205,7 @@ static int internal_close(WSIO_INSTANCE* wsio_instance, ON_IO_CLOSE_COMPLETE on_
 CONCRETE_IO_HANDLE wsio_create(void* io_create_parameters)
 {
     /* Codes_SRS_WSIO_01_066: [ `io_create_parameters` shall be used as a `WSIO_CONFIG*` . ]*/
-    WSIO_CONFIG* ws_io_config = io_create_parameters;
+    WSIO_CONFIG* ws_io_config = (WSIO_CONFIG*)io_create_parameters;
     WSIO_INSTANCE* result;
 
     /* Codes_SRS_WSIO_01_065: [ If the argument `io_create_parameters` is NULL then `wsio_create` shall return NULL. ]*/
@@ -294,7 +294,7 @@ void wsio_destroy(CONCRETE_IO_HANDLE ws_io)
 
         if (wsio_instance->io_state != IO_STATE_NOT_OPEN)
         {
-            internal_close(ws_io, NULL, NULL);
+            internal_close(wsio_instance, NULL, NULL);
         }
 
         /* Codes_SRS_WSIO_01_078: [ `wsio_destroy` shall free all resources associated with the wsio instance. ]*/
@@ -604,7 +604,7 @@ int wsio_send(CONCRETE_IO_HANDLE ws_io, const void* buffer, size_t size, ON_SEND
                     /* Codes_SRS_WSIO_01_095: [ `wsio_send` shall call `uws_client_send_frame_async`, passing the `buffer` and `size` arguments as they are: ]*/
                     /* Codes_SRS_WSIO_01_097: [ The `is_final` argument shall be set to true. ]*/
                     /* Codes_SRS_WSIO_01_096: [ The frame type used shall be `WS_FRAME_TYPE_BINARY`. ]*/
-                    if (uws_client_send_frame_async(wsio_instance->uws, WS_FRAME_TYPE_BINARY, buffer, size, true, on_underlying_ws_send_frame_complete, new_item) != 0)
+                    if (uws_client_send_frame_async(wsio_instance->uws, WS_FRAME_TYPE_BINARY, (const unsigned char*)buffer, size, true, on_underlying_ws_send_frame_complete, new_item) != 0)
                     {
                         if (singlylinkedlist_remove(wsio_instance->pending_io_list, new_item) != 0)
                         {

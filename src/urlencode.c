@@ -139,7 +139,7 @@ STRING_HANDLE URL_Encode(STRING_HANDLE input)
             currentUnsignedChar = (unsigned char)(*currentInput++);
             lengthOfResult += URL_PrintableCharSize(currentUnsignedChar);
         } while (currentUnsignedChar != 0);
-        if ((encodedURL = malloc(lengthOfResult)) == NULL)
+        if ((encodedURL = (char*)malloc(lengthOfResult)) == NULL)
         {
             /*Codes_SRS_URL_ENCODE_06_002: [If an error occurs during the encoding of input then URL_Encode will return NULL.]*/
             result = NULL;

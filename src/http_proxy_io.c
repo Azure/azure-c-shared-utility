@@ -59,7 +59,7 @@ static CONCRETE_IO_HANDLE http_proxy_io_create(void* io_create_parameters)
     else
     {
         /* Codes_SRS_HTTP_PROXY_IO_01_003: [ `io_create_parameters` shall be used as an `HTTP_PROXY_IO_CONFIG*`. ]*/
-        HTTP_PROXY_IO_CONFIG* http_proxy_io_config = io_create_parameters;
+        HTTP_PROXY_IO_CONFIG* http_proxy_io_config = (HTTP_PROXY_IO_CONFIG*)io_create_parameters;
         if ((http_proxy_io_config->hostname == NULL) ||
             (http_proxy_io_config->proxy_hostname == NULL))
         {
@@ -79,7 +79,7 @@ static CONCRETE_IO_HANDLE http_proxy_io_create(void* io_create_parameters)
         else
         {
             /* Codes_SRS_HTTP_PROXY_IO_01_001: [ `http_proxy_io_create` shall create a new instance of the HTTP proxy IO. ]*/
-            result = malloc(sizeof(HTTP_PROXY_IO_INSTANCE));
+            result = (HTTP_PROXY_IO_INSTANCE*)malloc(sizeof(HTTP_PROXY_IO_INSTANCE));
             if (result == NULL)
             {
                 /* Codes_SRS_HTTP_PROXY_IO_01_051: [ If allocating memory for the new instance fails, `http_proxy_io_create` shall fail and return NULL. ]*/
@@ -619,7 +619,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
         case HTTP_PROXY_IO_STATE_WAITING_FOR_CONNECT_RESPONSE:
         {
             /* Codes_SRS_HTTP_PROXY_IO_01_065: [ When bytes are received and the response to the CONNECT request was not yet received, the bytes shall be accumulated until a double new-line is detected. ]*/
-            unsigned char* new_receive_buffer = realloc(http_proxy_io_instance->receive_buffer, http_proxy_io_instance->receive_buffer_size + size + 1);
+            unsigned char* new_receive_buffer = (unsigned char*)realloc(http_proxy_io_instance->receive_buffer, http_proxy_io_instance->receive_buffer_size + size + 1);
             if (new_receive_buffer == NULL)
             {
                 /* Codes_SRS_HTTP_PROXY_IO_01_067: [ If allocating memory for the buffered bytes fails, the `on_open_complete` callback shall be triggered with `IO_OPEN_ERROR`, passing also the `on_open_complete_context` argument as `context`. ]*/
@@ -635,7 +635,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
 
             if (http_proxy_io_instance->receive_buffer_size >= 4)
             {
-                char* request_end_ptr;
+                const char* request_end_ptr;
 
                 http_proxy_io_instance->receive_buffer[http_proxy_io_instance->receive_buffer_size] = 0;
 

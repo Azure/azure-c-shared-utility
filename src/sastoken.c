@@ -152,7 +152,7 @@ bool SASToken_Validate(STRING_HANDLE sasToken)
             }
             else
             {
-                char* expiryASCII = malloc(seStop - seStart + 1);
+                char* expiryASCII = (char*)malloc(seStop - seStart + 1);
                 /*Codes_SRS_SASTOKEN_25_031: [**If malloc fails during validation then SASToken_Validate shall return false.**]***/
                 if (expiryASCII == NULL)
                 {

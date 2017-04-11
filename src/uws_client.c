@@ -644,7 +644,7 @@ static void indicate_ws_error_and_close(UWS_CLIENT_INSTANCE* uws_client, WS_ERRO
 
 static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_result)
 {
-    UWS_CLIENT_HANDLE uws_client = context;
+    UWS_CLIENT_HANDLE uws_client = (UWS_CLIENT_HANDLE)context;
     /* Codes_SRS_UWS_CLIENT_01_401: [ If `on_underlying_io_open_complete` is called with a NULL context, `on_underlying_io_open_complete` shall do nothing. ]*/
     if (uws_client == NULL)
     {
@@ -800,7 +800,7 @@ static void on_underlying_io_close_complete(void* context)
     }
     else
     {
-        UWS_CLIENT_HANDLE uws_client = context;
+        UWS_CLIENT_HANDLE uws_client = (UWS_CLIENT_HANDLE)context;
         if (uws_client->uws_state == UWS_STATE_CLOSING_UNDERLYING_IO)
         {
             /* Codes_SRS_UWS_CLIENT_01_475: [ When `on_underlying_io_close_complete` is called while closing the underlying IO a subsequent `uws_client_open_async` shall succeed. ]*/
@@ -819,7 +819,7 @@ static void on_underlying_io_close_sent(void* context, IO_SEND_RESULT io_send_re
     }
     else
     {
-        UWS_CLIENT_INSTANCE* uws_client = context;
+        UWS_CLIENT_INSTANCE* uws_client = (UWS_CLIENT_HANDLE)context;
 
         switch (io_send_result)
         {
@@ -943,7 +943,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
     /* Codes_SRS_UWS_CLIENT_01_415: [ If called with a NULL `context` argument, `on_underlying_io_bytes_received` shall do nothing. ]*/
     if (context != NULL)
     {
-        UWS_CLIENT_HANDLE uws_client = context;
+        UWS_CLIENT_HANDLE uws_client = (UWS_CLIENT_HANDLE)context;
 
         if ((buffer == NULL) ||
             (size == 0))
@@ -1033,7 +1033,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
 
                 case UWS_STATE_WAITING_FOR_UPGRADE_RESPONSE:
                 {
-                    char* request_end_ptr;
+                    const char* request_end_ptr;
 
                     /* Make sure it is zero terminated */
                     uws_client->received_bytes[uws_client->received_bytes_count] = '\0';
@@ -1726,7 +1726,7 @@ int uws_client_send_frame_async(UWS_CLIENT_HANDLE uws_client, unsigned char fram
             /* Codes_SRS_UWS_CLIENT_01_270: [ An endpoint MUST encapsulate the /data/ in a WebSocket frame as defined in Section 5.2. ]*/
             /* Codes_SRS_UWS_CLIENT_01_272: [ The opcode (frame-opcode) of the first frame containing the data MUST be set to the appropriate value from Section 5.2 for data that is to be interpreted by the recipient as text or binary data. ]*/
             /* Codes_SRS_UWS_CLIENT_01_274: [ If the data is being sent by the client, the frame(s) MUST be masked as defined in Section 5.3. ]*/
-            non_control_frame_buffer = uws_frame_encoder_encode(frame_type, buffer, size, true, is_final, 0);
+            non_control_frame_buffer = uws_frame_encoder_encode((WS_FRAME_TYPE)frame_type, buffer, size, true, is_final, 0);
             if (non_control_frame_buffer == NULL)
             {
                 /* Codes_SRS_UWS_CLIENT_01_426: [ If `uws_frame_encoder_encode` fails, `uws_client_send_frame_async` shall fail and return a non-zero value. ]*/

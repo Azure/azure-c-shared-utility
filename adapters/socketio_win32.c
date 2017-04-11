@@ -141,7 +141,7 @@ static int add_pending_io(SOCKET_IO_INSTANCE* socket_io_instance, const unsigned
 
 CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters)
 {
-    SOCKETIO_CONFIG* socket_io_config = io_create_parameters;
+    SOCKETIO_CONFIG* socket_io_config = (SOCKETIO_CONFIG*)io_create_parameters;
     SOCKET_IO_INSTANCE* result;
 	struct tcp_keepalive tcp_keepalive = { 0, 0, 0 };
 	
@@ -152,7 +152,7 @@ CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters)
     }
     else
     {
-        result = malloc(sizeof(SOCKET_IO_INSTANCE));
+        result = (SOCKET_IO_INSTANCE*)malloc(sizeof(SOCKET_IO_INSTANCE));
         if (result != NULL)
         {
             result->pending_io_list = singlylinkedlist_create();
@@ -397,7 +397,7 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
             LIST_ITEM_HANDLE first_pending_io = singlylinkedlist_get_head_item(socket_io_instance->pending_io_list);
             if (first_pending_io != NULL)
             {
-                if (add_pending_io(socket_io_instance, buffer, size, on_send_complete, callback_context) != 0)
+                if (add_pending_io(socket_io_instance, (const unsigned char*)buffer, size, on_send_complete, callback_context) != 0)
                 {
                     LogError("Failure: add_pending_io failed.");
                     result = __FAILURE__;
@@ -411,7 +411,7 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
             {
                 /* TODO: we need to do more than a cast here to be 100% clean 
                 The following bug was filed: [WarnL4] socketio_win32 does not account for already sent bytes and there is a truncation of size from size_t to int */
-                int send_result = send(socket_io_instance->socket, buffer, (int)size, 0);
+                int send_result = send(socket_io_instance->socket, (const char*)buffer, (int)size, 0);
                 if (send_result != (int)size)
                 {
                     int last_error = WSAGetLastError();
@@ -424,7 +424,7 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
                     else
                     {
                         /* queue data */
-                        if (add_pending_io(socket_io_instance, buffer, size, on_send_complete, callback_context) != 0)
+                        if (add_pending_io(socket_io_instance, (const unsigned char*)buffer, size, on_send_complete, callback_context) != 0)
                         {
                             LogError("Failure: add_pending_io failed.");
                             result = __FAILURE__;
@@ -510,7 +510,7 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
 
             while (received > 0)
             {
-                unsigned char* recv_bytes = malloc(RECEIVE_BYTES_VALUE);
+                unsigned char* recv_bytes = (unsigned char*)malloc(RECEIVE_BYTES_VALUE);
                 if (recv_bytes == NULL)
                 {
                     LogError("Socketio_Failure: NULL allocating input buffer.");

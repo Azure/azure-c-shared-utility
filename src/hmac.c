@@ -218,7 +218,7 @@ int hmacResult(HMACContext *ctx, uint8_t *digest)
 
         /* perform outer SHA */
         /* init context for 2nd pass */
-        USHAReset(&ctx->shaContext, ctx->whichSha) ||
+        USHAReset(&ctx->shaContext, (SHAversion)ctx->whichSha) ||
 
         /* start with outer pad */
         USHAInput(&ctx->shaContext, ctx->k_opad, ctx->blockSize) ||
