@@ -17,9 +17,14 @@ endif()
 
 option(run_valgrind "set run_valgrind to ON if tests are to be run under valgrind/helgrind/drd. Default is OFF" OFF)
 
-#making a nice global variable to know if we are on linux or not.
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+#
+#making a global variable to know if we are on linux, windows, or macosx.
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    set(BUILD_PLAT_WINDOWS TRUE)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     set(LINUX TRUE)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    set(BUILD_PLAT_MACOSX TRUE)
 endif()
 
 include (CTest)
