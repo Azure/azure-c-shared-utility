@@ -254,7 +254,7 @@ LOCAL int openssl_thread_LWIP_CONNECTION(TLS_IO_INSTANCE* p)
                         memset(&sock_addr, 0, sizeof(sock_addr));
                         sock_addr.sin_family = AF_INET;
                         sock_addr.sin_addr.s_addr = tls_io_instance->target_ip.addr;
-                        sock_addr.sin_port = htons(tls_io_instance->port);
+                        sock_addr.sin_port = (in_port_t)htons(tls_io_instance->port);
 
                         ret = connect(sock, (struct sockaddr*)&sock_addr, sizeof(sock_addr));
                         //LogInfo("connect return: %d %s", ret, ip_ntoa(&tls_io_instance->target_ip));
@@ -339,8 +339,8 @@ LOCAL int openssl_thread_LWIP_CONNECTION(TLS_IO_INSTANCE* p)
                                                     if (FD_ISSET(sock, &errset)) {
                                                         result = __LINE__;
                                                         LogInfo("error return : %d", lwip_net_errno(sock));
-                                                        int len = (int) sizeof( int );
-                                                        if (0 != getsockopt (sock, SOL_SOCKET, SO_ERROR, &ret, &len));
+                                                        unsigned int len = (unsigned int) sizeof( int );
+                                                        if (0 != getsockopt (sock, SOL_SOCKET, SO_ERROR, &ret, &len))
                                                             LogInfo("SSL error ret : %d", ret);   // socket is in error state
                                                         break;
                                                     }
@@ -753,7 +753,7 @@ int tlsio_openssl_send(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t siz
         {
             int total_write = 0;
             int ret = 0;
-            int need_sent_bytes = size;
+            int need_sent_bytes = (int)size;
 
             fd_set writeset;
             fd_set errset;
@@ -775,7 +775,7 @@ int tlsio_openssl_send(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t siz
                     LogError("get error %d", lwip_net_errno(tls_io_instance->sock));
                     break;
                 }
-                ret = SSL_write(tls_io_instance->ssl, ((uint8*)buffer)+total_write, size);
+                ret = SSL_write(tls_io_instance->ssl, ((uint8*)buffer)+total_write, (int)size);
                 // LogInfo("SSL_write ret: %d", ret);
                 //LogInfo("SSL_write res: %d, size: %d, retry: %d", res, size, retry);
                 if(ret > 0){
@@ -794,7 +794,7 @@ int tlsio_openssl_send(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t siz
             {
                 LogInfo("ssl write failed, return [-0x%x]", -ret);
 
-                int ret = SSL_shutdown(tls_io_instance->ssl);
+                ret = SSL_shutdown(tls_io_instance->ssl);
                 LogInfo("SSL_shutdown ret: %d", ret);
 
                 /* Codes_SRS_TLSIO_SSL_ESP8266_99_054: [ The tlsio_openssl_send shall use the provided on_io_send_complete callback function address. ]*/
