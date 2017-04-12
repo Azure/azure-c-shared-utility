@@ -8,12 +8,14 @@
 extern "C" {
 #endif /* __cplusplus */
 
+#include "azure_c_shared_utility/strings.h"
 #include "azure_c_shared_utility/xio.h"
 #include "azure_c_shared_utility/umock_c_prod.h"
 
     MOCKABLE_FUNCTION(, int, platform_init);
     MOCKABLE_FUNCTION(, void, platform_deinit);
     MOCKABLE_FUNCTION(, const IO_INTERFACE_DESCRIPTION*, platform_get_default_tlsio);
+    MOCKABLE_FUNCTION(, STRING_HANDLE, platform_get_platform_info);
 
 #ifdef __cplusplus
 }

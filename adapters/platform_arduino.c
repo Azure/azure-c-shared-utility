@@ -16,7 +16,11 @@ int platform_init(void)
 /*Codes_SRS_PLATFORM_ARDUINO_21_006: [ The platform_deinit shall free all allocate memory needed to control the platform. ]*/
 void platform_deinit(void)
 {
+}
 
+STRING_HANDLE platform_get_platform_info(void)
+{
+    return STRING_construct("(arduino)");
 }
 
 /*Codes_SRS_PLATFORM_ARDUINO_21_002: [ The platform_arduino shall use the tlsio functions defined by the 'xio.h'.*/

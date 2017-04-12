@@ -15,6 +15,7 @@ platform_arduino implements a standart way for SDK to access dedicated Arduino i
     MOCKABLE_FUNCTION(, int, platform_init);
     MOCKABLE_FUNCTION(, void, platform_deinit);
     MOCKABLE_FUNCTION(, const IO_INTERFACE_DESCRIPTION*, platform_get_default_tlsio);
+    MOCKABLE_FUNCTION(, STRING_HANDLE, platform_get_system_info);
 ```
  **]**
 

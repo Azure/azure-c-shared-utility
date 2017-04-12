@@ -62,6 +62,11 @@ const IO_INTERFACE_DESCRIPTION* platform_get_default_tlsio(void)
     return tlsio_wolfssl_get_interface_description();
 }
 
+STRING_HANDLE platform_get_platform_info(void)
+{
+    return STRING_construct("(mbed)");
+}
+
 void platform_deinit(void)
 {
     EthernetInterface::disconnect();

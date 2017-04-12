@@ -27,6 +27,11 @@ const IO_INTERFACE_DESCRIPTION* platform_get_default_tlsio(void)
     return tlsio_openssl_get_interface_description();
 }
 
+STRING_HANDLE platform_get_platform_info(void)
+{
+    return STRING_construct("(openssl_compact)");
+}
+
 /* Codes_SRS_PLATFORM_OPENSSL_COMPACT_30_006: [ The platform_deinit shall deinitialize the sntp client. ] */
 /* Codes_SRS_PLATFORM_OPENSSL_COMPACT_30_007: [ The platform_deinit shall deinitialize the tlsio adapter. ] */
 void platform_deinit(void)

@@ -8,6 +8,16 @@ int platform_init(void)
 	return 0;
 }
 
+const IO_INTERFACE_DESCRIPTION* platform_get_default_tlsio(void)
+{
+    return NULL;
+}
+
+STRING_HANDLE platform_get_platform_info(void)
+{
+    return NULL;
+}
+
 void platform_deinit(void)
 {
 	return;

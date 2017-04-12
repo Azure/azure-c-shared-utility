@@ -24,6 +24,13 @@ const IO_INTERFACE_DESCRIPTION* platform_get_default_tlsio(void)
 	return tlsio_mytls_get_interface_description(); */
 }
 
+STRING_HANDLE platform_get_platform_info(void)
+{
+    /* TODO: Insert here a call interrogate the platform for its OS Name and Version,
+       also a call to get the board's architecture. return a string in the following form:
+       (OS Name OS Version; ARCH) - eg (Ubuntu 16.04.02 LTS; armv71) */
+}
+
 void platform_deinit(void)
 {
 	/* TODO: Insert here any platform specific one time de-initialization code like.

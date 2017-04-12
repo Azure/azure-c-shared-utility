@@ -12,6 +12,7 @@ ${theseTestsName}.c
 )
 
 set(${theseTestsName}_c_files
+../../src/strings.c
 ../../adapters/platform_arduino.c
 )
 
