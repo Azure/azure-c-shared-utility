@@ -7,6 +7,10 @@
 #include <stdint.h>
 #include "azure_c_shared_utility/umock_c_prod.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
 typedef void SSL;
 typedef void SSL_CTX;
 typedef void SSL_METHOD;
@@ -295,5 +299,8 @@ MOCKABLE_FUNCTION(, int, fcntl, int, s, int, cmd, int, val);
 #define htonl(x) (x)
 #define ntohl(x) (x)
 
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 #endif

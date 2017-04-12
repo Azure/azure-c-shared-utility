@@ -66,6 +66,7 @@ static SSL_CTX* g_ctx = NULL;
 static SSL* g_ssl = NULL;
 static SSL_METHOD* g_sslmethod = NULL;
 static void* g_mallocptr = NULL;
+static char* g_destination = NULL;
 
 #define MAX_RETRY 20
 #define RECEIVE_BUFFER_SIZE 1024
@@ -117,9 +118,21 @@ typedef struct TLS_IO_INSTANCE_TAG
     ip_addr_t target_ip;
 } TLS_IO_INSTANCE;
 
-int real_mallocAndStrcpy_s(char** destination, const char* source);
-const IO_INTERFACE_DESCRIPTION* tlsio_openssl_get_interface_description(void);
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+    const IO_INTERFACE_DESCRIPTION* tlsio_openssl_get_interface_description(void);
 
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
+
+int my_mallocAndStrcpy_s(char** destination, const char* source){
+    (void)(source);
+    *destination = (char*)malloc(1);
+    g_destination = *destination;
+    return 0;
+}
 int my_SSL_get_error(const SSL *ssl, int ret_code){
     (void)(ret_code), (void)(ssl);
     if (g_ssl_get_error_success == 1){
@@ -423,7 +436,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
 
 
         //REGISTER_GLOBAL_MOCK_HOOK(OptionHandler_Create, my_OptionHandler_Create);
-        REGISTER_GLOBAL_MOCK_HOOK(mallocAndStrcpy_s, real_mallocAndStrcpy_s);
+        REGISTER_GLOBAL_MOCK_HOOK(mallocAndStrcpy_s, my_mallocAndStrcpy_s);
         REGISTER_GLOBAL_MOCK_HOOK(lwip_select, my_lwip_select);
         REGISTER_GLOBAL_MOCK_HOOK(SSL_write, my_SSL_write);
         REGISTER_GLOBAL_MOCK_HOOK(SSL_CTX_free, my_SSL_CTX_free);
@@ -1752,7 +1765,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         umock_c_reset_all_calls();
           
         STRICT_EXPECTED_CALL(gballoc_malloc(sizeof(TLS_IO_INSTANCE)));   
-        STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);  
+        STRICT_EXPECTED_CALL(mallocAndStrcpy_s(&g_destination, IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);  
 
         ///act
         result = (TLS_IO_INSTANCE*)tlsioInterfaces->concrete_io_create((void*)&tlsio_config);
@@ -1764,6 +1777,9 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ///cleanup
         if (g_mallocptr != NULL){
             free(g_mallocptr);
+        }
+        if (g_destination != NULL){
+            free(g_destination);
         }
     }
 
