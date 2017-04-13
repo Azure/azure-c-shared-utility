@@ -495,6 +495,8 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
             ASSERT_FAIL("Could not acquire test serialization mutex.");
         }
 
+		g_ssl_fd_isset = 1;
+
         umock_c_reset_all_calls();
     }
 
