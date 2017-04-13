@@ -71,7 +71,8 @@ void xlogging_dump_buffer(const void* buf, size_t size)
     const unsigned char* startPos = bufAsChar;
     
     /* Print the whole buffer. */
-    for (size_t i = 0; i < size; i++)
+    size_t i = 0;
+    for (i = 0; i < size; i++)
     {
         /* Store the printable value of the char in the charBuf to print. */
         charBuf[countbuf] = PRINTABLE(*bufAsChar);
