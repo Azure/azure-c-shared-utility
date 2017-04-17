@@ -15,7 +15,7 @@ EXPORTS
     BUFFER_u_char
     BUFFER_unbuild
     Base64_Decoder
-    Base64_Encode
+    Base64_Encoder
     Base64_Encode_Bytes
     COND_RESULTStringStorage
     COND_RESULTStrings

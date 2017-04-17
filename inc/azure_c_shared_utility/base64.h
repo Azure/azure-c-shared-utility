@@ -27,17 +27,17 @@ extern "C" {
  *
  * @param	input	The buffer that needs to be base64 encoded.
  *
- * 			Base64_Encode takes as a parameter a pointer to a BUFFER. If @p input is @c NULL then
- * 			@c Base64_Encode returns @c NULL. The size of the BUFFER pointed to by @p input may
+ * 			Base64_Encoder takes as a parameter a pointer to a BUFFER. If @p input is @c NULL then
+ * 			@c Base64_Encoder returns @c NULL. The size of the BUFFER pointed to by @p input may
  * 			be zero. If when allocating memory to produce the encoding a failure occurs, then @c
- * 			Base64_Encode returns @c NULL. Otherwise
- * 			@c Base64_Encode returns a pointer to a STRING. That string contains the
+ * 			Base64_Encoder returns @c NULL. Otherwise
+ * 			@c Base64_Encoder returns a pointer to a STRING. That string contains the
  * 			base 64 encoding of the @p input. This encoding of @p input will not contain embedded
  * 			line feeds.
  *
  * @return	A @c STRING_HANDLE containing the base64 encoding of @p input.
  */
-MOCKABLE_FUNCTION(, STRING_HANDLE, Base64_Encode, BUFFER_HANDLE, input);
+MOCKABLE_FUNCTION(, STRING_HANDLE, Base64_Encoder, BUFFER_HANDLE, input);
 
 /**
  * @brief	Base64 encodes the buffer pointed to by @p source and returns the resulting string.

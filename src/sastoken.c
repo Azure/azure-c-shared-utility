@@ -265,7 +265,7 @@ static STRING_HANDLE construct_sas_token(const char* key, const char* scope, con
                     /*Codes_SRS_SASTOKEN_06_022: [The string "&skn=" is appended to result.]*/
                     /*Codes_SRS_SASTOKEN_06_023: [The argument keyName is appended to result.]*/
                     if ((HMACSHA256_ComputeHash(outBuf, outLen, inBuf, inLen, hash) != HMACSHA256_OK) ||
-                        ((base64Signature = Base64_Encode(hash)) == NULL) ||
+                        ((base64Signature = Base64_Encoder(hash)) == NULL) ||
                         ((urlEncodedSignature = URL_Encode(base64Signature)) == NULL) ||
                         (STRING_copy(result, "SharedAccessSignature sr=") != 0) ||
                         (STRING_concat(result, scope) != 0) ||

@@ -11,24 +11,24 @@ This module is used to encode a BUFFER using the standard base64 encoding stream
 ## Exposed API
 
 ```c
-extern STRING_HANDLE Base64_Encode(BUFFER_HANDLE input);
+extern STRING_HANDLE Base64_Encoder(BUFFER_HANDLE input);
 extern STRING_HANDLE Base64_Encode_Bytes(const unsigned char* source, size_t size);
 extern BUFFER_HANDLE Base64_Decoder(const char* source);
 ```
 
-### Base64_Encode
+### Base64_Encoder
 ```c
-extern STRING_HANDLE Base64_Encode(BUFFER_HANDLE input);
+extern STRING_HANDLE Base64_Encoder(BUFFER_HANDLE input);
 ```
 
-Base64_Encode takes as a parameter a pointer to BUFFER, input.
+Base64_Encoder takes as a parameter a pointer to BUFFER, input.
 
-**SRS_BASE64_06_001: [** If input is NULL then Base64_Encode shall return NULL. **]**
+**SRS_BASE64_06_001: [** If input is NULL then Base64_Encoder shall return NULL. **]**
 The size of the BUFFER pointed to by input MAY be zero.
 
-**SRS_BASE64_06_006: [** If when allocating memory to produce the encoding a failure occurs then Base64_Encode shall return NULL. **]**
+**SRS_BASE64_06_006: [** If when allocating memory to produce the encoding a failure occurs then Base64_Encoder shall return NULL. **]**
 
-**SRS_BASE64_06_007: [** Otherwise Base64_Encode shall return a pointer to STRING, that string contains the base 64 encoding of input. **]**
+**SRS_BASE64_06_007: [** Otherwise Base64_Encoder shall return a pointer to STRING, that string contains the base 64 encoding of input. **]**
 This encoding of input shall NOT contain embedded line feeds.
 
 ### Base64_Encode_Bytes

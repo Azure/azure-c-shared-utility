@@ -1463,20 +1463,20 @@ TEST_SUITE_CLEANUP(TestClassCleanup)
     TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
 }
 
-/*Tests_SRS_BASE64_06_001: [If input is NULL then Base64_Encode shall return NULL.]*/
+/*Tests_SRS_BASE64_06_001: [If input is NULL then Base64_Encoder shall return NULL.]*/
 TEST_FUNCTION(Base64_Encode_bad_input)
 {
     //arrange
     STRING_HANDLE result;
 
     //act
-    result = Base64_Encode(NULL);
+    result = Base64_Encoder(NULL);
     //assert
     ASSERT_IS_NULL( result);
 
 }
 
-/*Tests_SRS_BASE64_06_007: [Otherwise Base64_Encode shall return a pointer to STRING, that string contains the base 64 encoding of inpuit.]*/
+/*Tests_SRS_BASE64_06_007: [Otherwise Base64_Encoder shall return a pointer to STRING, that string contains the base 64 encoding of inpuit.]*/
 TEST_FUNCTION(Base64_Encode_simple_good)
 {
     //arrange
@@ -1484,7 +1484,7 @@ TEST_FUNCTION(Base64_Encode_simple_good)
     STRING_HANDLE result;
 
     //act
-    result = Base64_Encode(input);
+    result = Base64_Encoder(input);
 
     //assert
     ASSERT_ARE_NOT_EQUAL(void_ptr, NULL, result);
@@ -1504,7 +1504,7 @@ TEST_FUNCTION(Base64_Encode_one_char_encode)
     
     BUFFER_build(input, (unsigned char*)oneCharacter,strlen(oneCharacter));
     //act
-    result = Base64_Encode(input);
+    result = Base64_Encoder(input);
 
     //assert
     ASSERT_ARE_NOT_EQUAL(void_ptr, NULL, result);
@@ -1525,7 +1525,7 @@ TEST_FUNCTION(Base64_Encode_leviathan_succeeds)
 
     BUFFER_build(input, (unsigned char*)leviathan, strlen(leviathan));
     //act
-    result = Base64_Encode(input);
+    result = Base64_Encoder(input);
 
     //assert
     ASSERT_ARE_NOT_EQUAL(void_ptr, NULL, result);
@@ -1550,7 +1550,7 @@ TEST_FUNCTION(Base64_Encode_exhaustive_succeeds)
         ASSERT_ARE_EQUAL(int, 0, BUFFER_build(input, testVector_BINARY_with_equal_signs[i].inputData, testVector_BINARY_with_equal_signs[i].inputLength));
 
         ///act
-        result = Base64_Encode(input);
+        result = Base64_Encoder(input);
 
         ///assert
         ASSERT_ARE_NOT_EQUAL(void_ptr, NULL, result);
