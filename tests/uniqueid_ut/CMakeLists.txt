@@ -30,11 +30,8 @@ if(UNIX) #LINUX OR APPLE
     link_directories(${UUID_LIBRARY_DIRS})
 endif()
 
-build_c_test_artifacts(${theseTestsName} ON "tests/azure_c_shared_utility_tests")
-
 if(WIN32)
-    target_link_libraries(${theseTestsName}_exe rpcrt4.lib)
-    target_link_libraries(${theseTestsName}_dll rpcrt4.lib)
+    build_c_test_artifacts(${theseTestsName} ON "tests/azure_c_shared_utility_tests" ADDITIONAL_LIBS rpcrt4.lib)
 elseif(UNIX)
-    target_link_libraries(${theseTestsName}_exe ${UUID_LIBRARIES})
+    build_c_test_artifacts(${theseTestsName} ON "tests/azure_c_shared_utility_tests" ADDITIONAL_LIBS ${UUID_LIBRARIES})
 endif()
