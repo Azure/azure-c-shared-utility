@@ -514,8 +514,9 @@ static int write_outgoing_bytes(TLS_IO_INSTANCE* tls_io_instance, ON_SEND_COMPLE
 {
     int result;
 
-    int pending = BIO_ctrl_pending(tls_io_instance->out_bio);
-    if (pending <= 0)
+    size_t pending = BIO_ctrl_pending(tls_io_instance->out_bio);
+
+    if (pending == 0)
     {
         result = 0;
     }
@@ -529,7 +530,7 @@ static int write_outgoing_bytes(TLS_IO_INSTANCE* tls_io_instance, ON_SEND_COMPLE
         }
         else
         {
-            if (BIO_read(tls_io_instance->out_bio, bytes_to_send, pending) != pending)
+            if (BIO_read(tls_io_instance->out_bio, bytes_to_send, (int)pending) != pending)
             {
                 log_ERR_get_error("BIO_read not in pending state.");
                 result = __FAILURE__;
@@ -718,7 +719,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
 {
     TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)context;
 
-    int written = BIO_write(tls_io_instance->in_bio, buffer, size);
+    int written = BIO_write(tls_io_instance->in_bio, buffer, (int)size);
     if (written != (int)size)
     {
         tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
@@ -1245,7 +1246,7 @@ int tlsio_openssl_send(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t siz
                 return result;
             }
 
-            int res = SSL_write(tls_io_instance->ssl, buffer, size);
+            int res = SSL_write(tls_io_instance->ssl, buffer, (int)size);
             if (res != (int)size)
             {
                 log_ERR_get_error("SSL_write error.");
