@@ -52,23 +52,25 @@ add_files_to_install("${FILES_TO_INSTALL}")
 IF(WIN32)
     #windows needs this define
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
-    
-    #windows needs to be build 2 flavor of micromock, one for CTEST reporting, one for CPP_UNITTEST
-    add_library(micromock_cpp_unittest ${micromock_cpp_files} ${micromock_h_files})
-    target_compile_definitions(micromock_cpp_unittest PUBLIC CPP_UNITTEST)
-    target_compile_options(micromock_cpp_unittest PUBLIC /EHsc)
 
-    if(EXISTS "$ENV{VCInstallDir}/UnitTest/include")
-        #flip VCInstallDir path
-        file(TO_CMAKE_PATH $ENV{VCInstallDir} VCInstallDir)
-        #pre-VS2017 build environment doesn't appear to include the path to unit
-        #test headers, so add it here
-        target_include_directories(micromock_cpp_unittest PUBLIC ${VCInstallDir}/UnitTest/include)
+    if (${use_cppunittest})
+        #windows needs to be build 2 flavor of micromock, one for CTEST reporting, one for CPP_UNITTEST
+        add_library(micromock_cpp_unittest ${micromock_cpp_files} ${micromock_h_files})
+        target_compile_definitions(micromock_cpp_unittest PUBLIC CPP_UNITTEST)
+        target_compile_options(micromock_cpp_unittest PUBLIC /EHsc)
+
+        if(EXISTS "$ENV{VCInstallDir}/UnitTest/include")
+            #flip VCInstallDir path
+            file(TO_CMAKE_PATH $ENV{VCInstallDir} VCInstallDir)
+            #pre-VS2017 build environment doesn't appear to include the path to unit
+            #test headers, so add it here
+            target_include_directories(micromock_cpp_unittest PUBLIC ${VCInstallDir}/UnitTest/include)
+        endif()
+
+        set_target_properties(micromock_cpp_unittest
+           PROPERTIES
+           FOLDER "test_tools")
     endif()
-
-    set_target_properties(micromock_cpp_unittest
-       PROPERTIES
-       FOLDER "test_tools")
     
     add_library(micromock_ctest ${micromock_cpp_files} ${micromock_h_files})
     target_compile_definitions(micromock_ctest PUBLIC USE_CTEST)
