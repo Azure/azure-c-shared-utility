@@ -20,10 +20,10 @@ It is anticipated that socket_async.c will work for all non-Windows environments
 
     typedef struct
     {
-        bool keep_alive;    // true to enable keepalive, false by default
-        int keep_idle;      // seconds before first keepalive packet
-        int keep_interval;  // seconds between keepalive packets
-        int keep_count;     // number of times to try before declaring failure
+      int keep_alive;     // < 0 for system defaults, 0 to disable, > 0 to use supplied idle, interval, and count
+      int keep_idle;      // seconds before first keepalive packet (ignored if keep_alive <= 0)
+      int keep_interval;  // seconds between keepalive packets (ignored if keep_alive <= 0)
+      int keep_count;     // number of times to try before declaring failure (ignored if keep_alive <= 0)
     } SOCKET_ASYNC_OPTIONS;
     typedef SOCKET_ASYNC_OPTIONS* SOCKET_ASYNC_OPTIONS_HANDLE;
 
