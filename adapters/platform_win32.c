@@ -53,7 +53,41 @@ const IO_INTERFACE_DESCRIPTION* platform_get_default_tlsio(void)
 
 STRING_HANDLE platform_get_platform_info(void)
 {
-    STRING_HANDLE result = STRING_construct_sprintf("(Windows NT)");
+#ifndef WINCE
+    SYSTEM_INFO sys_info;
+    GetSystemInfo(&sys_info);
+
+    char *arch;
+    switch (sys_info.wProcessorArchitecture)
+    {
+        case PROCESSOR_ARCHITECTURE_AMD64:
+            arch = "x64";
+            break;
+
+        case PROCESSOR_ARCHITECTURE_ARM:
+            arch = "ARM";
+            break;
+
+        case PROCESSOR_ARCHITECTURE_IA64:
+            arch = "IA64";
+            break;
+
+        case PROCESSOR_ARCHITECTURE_INTEL:
+            arch = "x32";
+            break;
+
+        default:
+            arch = "UNKNOWN";
+            break;
+    }
+
+    #pragma warning(disable:4996)
+    DWORD dwVersion = GetVersion();
+    #pragma warning(default:4996)
+    STRING_HANDLE result = STRING_construct_sprintf("(Windows NT %d.%d; %s)", LOBYTE(LOWORD(dwVersion)), HIBYTE(LOWORD(dwVersion)), arch);
+#else
+    STRING_HANDLE result = STRING_construct("(Windows CE)");
+#endif
     if (result == NULL)
     {
         LogError("STRING_construct_sprintf failed");
