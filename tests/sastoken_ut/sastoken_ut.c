@@ -14,7 +14,7 @@ static void* my_gballoc_malloc(size_t size)
 
 static void my_gballoc_free(void* ptr)
 {
-        free(ptr);
+    free(ptr);
 }
 
 #ifdef __cplusplus
@@ -619,6 +619,56 @@ TEST_FUNCTION(SASToken_validate_proper_format_1_pass)
     ASSERT_IS_TRUE(result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
+
+/*Tests_SRS_SASTOKEN_25_030: [**SASToken_validate shall return true only if the format is obeyed and the token has not yet expired **]*/
+TEST_FUNCTION(SASToken_validate_proper_format_with_skn_1_pass)
+{
+    // arrange
+    const char* TEST_INVALID_SE = "SharedAccessSignature sr=devices.net/devices/tmp_device&sig=TESTSIG&se=0123456789&skn=";
+    size_t TEST_INVALID_SE_LENGTH = strlen(TEST_INVALID_SE);
+    STRING_HANDLE handle = TEST_STRING_HANDLE;
+    bool result;
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(STRING_c_str(handle)).SetReturn(TEST_INVALID_SE);
+    STRICT_EXPECTED_CALL(STRING_length(handle)).SetReturn(TEST_INVALID_SE_LENGTH);
+    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(get_time(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(get_difftime(IGNORED_NUM_ARG, IGNORED_NUM_ARG)).IgnoreAllArguments().SetReturn(TEST_TIME_T);
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)).IgnoreAllArguments();
+
+    // act
+    result = SASToken_Validate(handle);
+
+    // assert
+    ASSERT_IS_TRUE(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+TEST_FUNCTION(SASToken_validate_proper_format_with_skn_expired_se_fail)
+{
+    // arrange
+    const char* TEST_INVALID_SE = "SharedAccessSignature sr=devices.net/devices/tmp_device&sig=TESTSIG&se=011&skn=";
+    size_t TEST_INVALID_SE_LENGTH = strlen(TEST_INVALID_SE);
+    STRING_HANDLE handle = TEST_STRING_HANDLE;
+    bool result;
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(STRING_c_str(handle)).SetReturn(TEST_INVALID_SE);
+    STRICT_EXPECTED_CALL(STRING_length(handle)).SetReturn(TEST_INVALID_SE_LENGTH);
+    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(get_time(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(get_difftime(IGNORED_NUM_ARG, IGNORED_NUM_ARG)).IgnoreAllArguments().SetReturn(TEST_TIME_T);
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)).IgnoreAllArguments();
+
+    // act
+    result = SASToken_Validate(handle);
+
+    // assert
+    ASSERT_IS_FALSE(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
 TEST_FUNCTION(SASToken_validate_proper_format_2_pass)
 {
     // arrange
