@@ -292,10 +292,10 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
                     char* plain_auth_string_bytes;
 
                     /* Codes_SRS_HTTP_PROXY_IO_01_060: [ - The value of `Proxy-Authorization` shall be the constructed according to RFC 2617. ]*/
-                    int plain_auth_string_length = strlen(http_proxy_io_instance->username)+1;
+                    int plain_auth_string_length = (int)(strlen(http_proxy_io_instance->username)+1);
                     if (http_proxy_io_instance->password != NULL)
                     {
-                        plain_auth_string_length += strlen(http_proxy_io_instance->password);
+                        plain_auth_string_length += (int)strlen(http_proxy_io_instance->password);
                     }
 
                     if (plain_auth_string_length < 0)
@@ -368,10 +368,10 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
 
                     /* Codes_SRS_HTTP_PROXY_IO_01_059: [ - If `username` and `password` have been specified in the arguments passed to `http_proxy_io_create`, then the header `Proxy-Authorization` shall be added to the request. ]*/
 
-                    connect_request_length = strlen(request_format)+(strlen(http_proxy_io_instance->hostname)*2)+strlen(auth_string_payload)+10;
+                    connect_request_length = (int)(strlen(request_format)+(strlen(http_proxy_io_instance->hostname)*2)+strlen(auth_string_payload)+10);
                     if (http_proxy_io_instance->username != NULL)
                     {
-                        connect_request_length += strlen(proxy_basic);
+                        connect_request_length += (int)strlen(proxy_basic);
                     }
                     
                     if (connect_request_length < 0)
