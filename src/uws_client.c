@@ -722,12 +722,7 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
                         "\r\n";
                     const char* base64_nonce_chars = STRING_c_str(base64_nonce);
 
-                    upgrade_request_length = snprintf(NULL, 0, upgrade_request_format,
-                        uws_client->resource_name,
-                        uws_client->hostname,
-                        uws_client->port,
-                        base64_nonce_chars,
-                        uws_client->protocols[0].protocol);
+                    upgrade_request_length = strlen(upgrade_request_format) + strlen(uws_client->resource_name)+strlen(uws_client->hostname) + strlen(base64_nonce_chars) + strlen(uws_client->protocols[0].protocol)+5;
                     if (upgrade_request_length < 0)
                     {
                         /* Codes_SRS_UWS_CLIENT_01_408: [ If constructing of the WebSocket upgrade request fails, uws shall report that the open failed by calling the `on_ws_open_complete` callback passed to `uws_client_open_async` with `WS_OPEN_ERROR_CONSTRUCTING_UPGRADE_REQUEST`. ]*/
@@ -745,7 +740,8 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
                         }
                         else
                         {
-                            upgrade_request_length = snprintf(upgrade_request, upgrade_request_length + 1, upgrade_request_format,
+
+                            upgrade_request_length = sprintf(upgrade_request, upgrade_request_format,
                                 uws_client->resource_name,
                                 uws_client->hostname,
                                 uws_client->port,

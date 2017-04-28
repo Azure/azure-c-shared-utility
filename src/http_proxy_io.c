@@ -292,7 +292,11 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
                     char* plain_auth_string_bytes;
 
                     /* Codes_SRS_HTTP_PROXY_IO_01_060: [ - The value of `Proxy-Authorization` shall be the constructed according to RFC 2617. ]*/
-                    int plain_auth_string_length = snprintf(NULL, 0, "%s:%s", http_proxy_io_instance->username, (http_proxy_io_instance->password == NULL) ? "" : http_proxy_io_instance->password);
+                    int plain_auth_string_length = strlen(http_proxy_io_instance->username)+1;
+                    if (http_proxy_io_instance->password != NULL)
+                    {
+                        plain_auth_string_length += strlen(http_proxy_io_instance->password);
+                    }
 
                     if (plain_auth_string_length < 0)
                     {
@@ -314,7 +318,7 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
                             /* Codes_SRS_HTTP_PROXY_IO_01_091: [ To receive authorization, the client sends the userid and password, separated by a single colon (":") character, within a base64 [7] encoded string in the credentials. ]*/
                             /* Codes_SRS_HTTP_PROXY_IO_01_092: [ A client MAY preemptively send the corresponding Authorization header with requests for resources in that space without receipt of another challenge from the server. ]*/
                             /* Codes_SRS_HTTP_PROXY_IO_01_093: [ Userids might be case sensitive. ]*/
-                            if (snprintf(plain_auth_string_bytes, plain_auth_string_length + 1, "%s:%s", http_proxy_io_instance->username, (http_proxy_io_instance->password == NULL) ? "" : http_proxy_io_instance->password) < 0)
+                            if (sprintf(plain_auth_string_bytes, "%s:%s", http_proxy_io_instance->username, (http_proxy_io_instance->password == NULL) ? "" : http_proxy_io_instance->password) < 0)
                             {
                                 /* Codes_SRS_HTTP_PROXY_IO_01_062: [ If any failure is encountered while constructing the request, the `on_open_complete` callback shall be triggered with `IO_OPEN_ERROR`, passing also the `on_open_complete_context` argument as `context`. ]*/
                                 encoded_auth_string = NULL;
@@ -352,7 +356,7 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
                     const char* auth_string_payload;
                     /* Codes_SRS_HTTP_PROXY_IO_01_075: [ The Request-URI portion of the Request-Line is always an 'authority' as defined by URI Generic Syntax [2], which is to say the host name and port number destination of the requested connection separated by a colon: ]*/
                     const char request_format[] = "CONNECT %s:%d HTTP/1.1\r\nHost:%s:%d%s%s\r\n\r\n";
-
+                    const char proxy_basic[] = "\r\nProxy-authorization: Basic ";
                     if (http_proxy_io_instance->username != NULL)
                     {
                         auth_string_payload = STRING_c_str(encoded_auth_string);
@@ -363,14 +367,13 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
                     }
 
                     /* Codes_SRS_HTTP_PROXY_IO_01_059: [ - If `username` and `password` have been specified in the arguments passed to `http_proxy_io_create`, then the header `Proxy-Authorization` shall be added to the request. ]*/
-                    connect_request_length = snprintf(NULL, 0, request_format,
-                        http_proxy_io_instance->hostname,
-                        http_proxy_io_instance->port,
-                        http_proxy_io_instance->hostname,
-                        http_proxy_io_instance->port,
-                        (http_proxy_io_instance->username != NULL) ? "\r\nProxy-authorization: Basic " : "",
-                        auth_string_payload);
 
+                    connect_request_length = strlen(request_format)+(strlen(http_proxy_io_instance->hostname)*2)+strlen(auth_string_payload)+10;
+                    if (http_proxy_io_instance->username != NULL)
+                    {
+                        connect_request_length += strlen(proxy_basic);
+                    }
+                    
                     if (connect_request_length < 0)
                     {
                         /* Codes_SRS_HTTP_PROXY_IO_01_062: [ If any failure is encountered while constructing the request, the `on_open_complete` callback shall be triggered with `IO_OPEN_ERROR`, passing also the `on_open_complete_context` argument as `context`. ]*/
@@ -389,12 +392,12 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
                         else
                         {
                             /* Codes_SRS_HTTP_PROXY_IO_01_059: [ - If `username` and `password` have been specified in the arguments passed to `http_proxy_io_create`, then the header `Proxy-Authorization` shall be added to the request. ]*/
-                            connect_request_length = snprintf(connect_request, connect_request_length + 1, request_format,
+                            connect_request_length = sprintf(connect_request, request_format,
                                 http_proxy_io_instance->hostname,
                                 http_proxy_io_instance->port,
                                 http_proxy_io_instance->hostname,
                                 http_proxy_io_instance->port,
-                                (http_proxy_io_instance->username != NULL) ? "\r\nProxy-authorization: Basic " : "",
+                                (http_proxy_io_instance->username != NULL) ? proxy_basic : "",
                                 auth_string_payload);
 
                             if (connect_request_length < 0)

@@ -2,6 +2,8 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/sastoken.h"
 #include "azure_c_shared_utility/urlencode.h"
@@ -158,9 +160,9 @@ bool SASToken_Validate(STRING_HANDLE sasToken)
                 }
                 else
                 {
+                    double expiry;
                     // Add the Null terminator here
                     memset(expiryASCII, 0, seStop - seStart + 1);
-                    double expiry;
                     for (i = seStart; i < seStop; i++)
                     {
                         // The se contains the expiration values, if a & token is encountered then 

@@ -43,13 +43,10 @@ rem if you plan to use a different SDK you need to change SDKNAME to the name of
 set SDKNAME=TORADEX_CE800
 set PROCESSOR=arm
 
-cmake -DWINCE=TRUE -DCMAKE_SYSTEM_NAME=WindowsCE -DCMAKE_SYSTEM_VERSION=8.0 -DCMAKE_SYSTEM_PROCESSOR=%PROCESSOR% -DCMAKE_GENERATOR_TOOLSET=CE800 -DCMAKE_GENERATOR_PLATFORM=%SDKNAME% %build-root% -Drun_unittests:bool=ON
+cmake -DWINCE=TRUE -DCMAKE_SYSTEM_NAME=WindowsCE -DCMAKE_SYSTEM_VERSION=8.0 -DCMAKE_SYSTEM_PROCESSOR=%PROCESSOR% -DCMAKE_GENERATOR_TOOLSET=CE800 -DCMAKE_GENERATOR_PLATFORM=%SDKNAME% %build-root% -Drun_unittests:bool=OFF -Dskip_samples:BOOL=OFF
 
 if not %errorlevel%==0 exit /b %errorlevel%
 
 rem Currently, only building sample is supported
-rem msbuild "%USERPROFILE%\cmake_su_ce8\samples\shared_util_sample\shared_util_sample.vcxproj
-rem if not %errorlevel%==0 exit /b %errorlevel%
-
-
-
+msbuild "%USERPROFILE%\cmake_su_ce8\samples\iot_c_utility\iot_c_utility.vcxproj
+if not %errorlevel%==0 exit /b %errorlevel%
