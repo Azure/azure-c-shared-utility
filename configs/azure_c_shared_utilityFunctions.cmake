@@ -286,9 +286,8 @@ function(c_windows_unittests_add_dll whatIsBuilding folder)
     SET(SPACES " ")
     SET(VAR 1)
     foreach(file ${${whatIsBuilding}_test_files})
-
         # for x64 the underscore is not needed
-        if (ARCHITECTURE STREQUAL "x86_64")
+        if (ARCHITECTURE STREQUAL "x86_64" OR ARCHITECTURE STREQUAL "ARM")
             set_property(TARGET ${whatIsBuilding}_dll APPEND_STRING PROPERTY LINK_FLAGS ${SPACES}/INCLUDE:"some_symbol_for_cppunittest_${VAR}")
         else()
             set_property(TARGET ${whatIsBuilding}_dll APPEND_STRING PROPERTY LINK_FLAGS ${SPACES}/INCLUDE:"_some_symbol_for_cppunittest_${VAR}")
