@@ -4,6 +4,7 @@
 #include "azure_c_shared_utility/platform.h"
 #include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/xio.h"
+#include "azure_c_shared_utility/strings.h"
 #include "winsock2.h"
 
 #ifdef USE_OPENSSL
@@ -53,11 +54,13 @@ const IO_INTERFACE_DESCRIPTION* platform_get_default_tlsio(void)
 
 STRING_HANDLE platform_get_platform_info(void)
 {
+	STRING_HANDLE result;
 #ifndef WINCE
     SYSTEM_INFO sys_info;
+    char *arch;
+	DWORD dwVersion;
     GetSystemInfo(&sys_info);
 
-    char *arch;
     switch (sys_info.wProcessorArchitecture)
     {
         case PROCESSOR_ARCHITECTURE_AMD64:
@@ -82,11 +85,11 @@ STRING_HANDLE platform_get_platform_info(void)
     }
 
     #pragma warning(disable:4996)
-    DWORD dwVersion = GetVersion();
+    dwVersion = GetVersion();
     #pragma warning(default:4996)
-    STRING_HANDLE result = STRING_construct_sprintf("(Windows NT %d.%d; %s)", LOBYTE(LOWORD(dwVersion)), HIBYTE(LOWORD(dwVersion)), arch);
+    result = STRING_construct_sprintf("(Windows NT %d.%d; %s)", LOBYTE(LOWORD(dwVersion)), HIBYTE(LOWORD(dwVersion)), arch);
 #else
-    STRING_HANDLE result = STRING_construct("(Windows CE)");
+    result = STRING_construct("(Windows CE)");
 #endif
     if (result == NULL)
     {

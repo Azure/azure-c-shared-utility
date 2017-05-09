@@ -14,8 +14,20 @@
 #include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
 
+// VS 2008 does not have INFINITY and all the nice goodies...
+#if defined (TIZENRT) || defined (WINCE)
+#define DEFINE_INFINITY 1
+#else
 
-#if defined (WINCE) || defined (TIZENRT)
+#if defined _MSC_VER
+#if _MSC_VER <= 1500
+#define DEFINE_INFINITY 1
+#endif
+#endif
+#endif
+
+#if defined DEFINE_INFINITY
+
 #pragma warning(disable:4756) // warning C4756: overflow in constant arithmetic
 
 // These defines are missing in math.h for WEC2013 SDK
@@ -28,8 +40,6 @@
 #define HUGE_VALL  ((long double)INFINITY)
 #define NAN        ((float)(INFINITY * 0.0F))
 #endif
-
-
 
 #ifdef _MSC_VER
 #else

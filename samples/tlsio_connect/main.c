@@ -14,11 +14,11 @@ static void on_io_open_complete(void* context, IO_OPEN_RESULT open_result)
 
     if (open_result == IO_OPEN_OK)
     {
-        (void)printf("Sending bytes ...\r\n");
         XIO_HANDLE tlsio = (XIO_HANDLE)context;
         const char to_send[] = "GET / HTTP/1.1\r\n"
             "Host: www.google.com\r\n"
             "\r\n";
+        (void)printf("Sending bytes ...\r\n");
         if (xio_send(tlsio, to_send, sizeof(to_send), NULL, NULL) != 0)
         {
             (void)printf("Send failed\r\n");
@@ -81,7 +81,8 @@ int main(int argc, char** argv)
                 }
                 else
                 {
-                    while (1)
+					unsigned char done = 0;
+                    while (!done)
                     {
                         xio_dowork(tlsio);
                     }

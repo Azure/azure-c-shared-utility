@@ -137,9 +137,9 @@ MAP_HANDLE Map_Clone(MAP_HANDLE handle)
                 }
                 else if ((result->values = Map_CloneVector((const char* const*)handleData->values, handleData->count)) == NULL)
                 {
+                    size_t i;
                     /*Codes_SRS_MAP_02_047: [If during cloning, any operation fails, then Map_Clone shall return NULL.] */
                     LogError("unable to clone values");
-                    size_t i;
                     for (i = 0; i < result->count; i++)
                     {
                         free(result->keys[i]); 

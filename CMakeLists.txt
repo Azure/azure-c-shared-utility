@@ -27,7 +27,8 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     set(MACOSX TRUE)
 endif()
 
-include (CTest)
+include(CTest)
+include(CheckIncludeFiles)
 
 #these are the include folders
 #the following "set" statetement exports across the project a global variable called COMMON_INC_FOLDER that expands to whatever needs to included when using COMMON library
@@ -36,9 +37,13 @@ set(SHARED_UTIL_SRC_FOLDER ${CMAKE_CURRENT_LIST_DIR}/src CACHE INTERNAL "this is
 set(SHARED_UTIL_ADAPTER_FOLDER "${CMAKE_CURRENT_LIST_DIR}/adapters" CACHE INTERNAL "this is where the adapters live" FORCE)
 
 include_directories(${SHARED_UTIL_INC_FOLDER})
-if (WINCE)
-    include_directories(${SHARED_UTIL_INC_FOLDER}/azure_c_shared_utility/windowsce) #windowsce SDK doesn't have stdbool.h
-ENDIF()
+
+CHECK_INCLUDE_FILES(stdint.h HAVE_STDINT_H)
+CHECK_INCLUDE_FILES(stdbool.h HAVE_STDBOOL_H)
+
+if ((NOT HAVE_STDINT_H) OR (NOT HAVE_STDBOOL_H))
+    include_directories(${SHARED_UTIL_INC_FOLDER}/azure_c_shared_utility/windowsce)
+endif()
 
 #the following variables are project-wide and can be used with cmake-gui
 option(run_unittests "set run_unittests to ON to run unittests (default is OFF)" OFF)

@@ -10,6 +10,12 @@
 #include <stdio.h>
 #endif /* __cplusplus */
 
+#if defined _MSC_VER
+#if _MSC_VER <= 1500
+#pragma warning (disable : 4127)
+#endif
+#endif
+
 #include "azure_c_shared_utility/agenttime.h"
 #include "azure_c_shared_utility/optimize_size.h"
 
@@ -116,8 +122,8 @@ so we compacted the log in the macro LogInfo.
 #define MESSAGE_BUFFER_SIZE 260
 #define LogErrorWinHTTPWithGetLastErrorAsString(FORMAT, ...) do { \
                 DWORD errorMessageID = GetLastError(); \
+                char messageBuffer[MESSAGE_BUFFER_SIZE]; \
                 LogError(FORMAT, __VA_ARGS__); \
-                CHAR messageBuffer[MESSAGE_BUFFER_SIZE]; \
                 if (errorMessageID == 0) \
                 {\
                     LogError("GetLastError() returned 0. Make sure you are calling this right after the code that failed. "); \

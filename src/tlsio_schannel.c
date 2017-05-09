@@ -288,7 +288,11 @@ static void send_client_hello(TLS_IO_INSTANCE* tls_io_instance)
     auth_data.dwMinimumCipherStrength = 0;
     auth_data.dwMaximumCipherStrength = 0;
     auth_data.dwSessionLifespan = 0;
+#if defined(SCH_USE_STRONG_CRYPTO)
     auth_data.dwFlags = SCH_USE_STRONG_CRYPTO | SCH_CRED_NO_DEFAULT_CREDS;
+#else
+	auth_data.dwFlags = SCH_CRED_NO_DEFAULT_CREDS;
+#endif
     auth_data.dwCredFormat = 0;
 
     status = AcquireCredentialsHandle(NULL, UNISP_NAME, SECPKG_CRED_OUTBOUND, NULL,
@@ -300,6 +304,7 @@ static void send_client_hello(TLS_IO_INSTANCE* tls_io_instance)
     }
     else
     {
+        SecBufferDesc security_buffers_desc;
         tls_io_instance->credential_handle_allocated = true;
 
         init_security_buffers[0].cbBuffer = 0;
@@ -309,7 +314,6 @@ static void send_client_hello(TLS_IO_INSTANCE* tls_io_instance)
         init_security_buffers[1].BufferType = SECBUFFER_EMPTY;
         init_security_buffers[1].pvBuffer = 0;
 
-        SecBufferDesc security_buffers_desc;
         security_buffers_desc.cBuffers = 2;
         security_buffers_desc.pBuffers = init_security_buffers;
         security_buffers_desc.ulVersion = SECBUFFER_VERSION;
@@ -539,6 +543,10 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
             {
                 SecBuffer input_buffers[2];
                 SecBuffer output_buffers[2];
+                SecBufferDesc input_buffers_desc;
+                SecBufferDesc output_buffers_desc;
+				SECURITY_STATUS status;
+				unsigned long flags;
                 ULONG context_attributes;
 
                 /* we need to try and perform the second (next) step of the init */
@@ -549,7 +557,6 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                 input_buffers[1].BufferType = SECBUFFER_EMPTY;
                 input_buffers[1].pvBuffer = 0;
 
-                SecBufferDesc input_buffers_desc;
                 input_buffers_desc.cBuffers = 2;
                 input_buffers_desc.pBuffers = input_buffers;
                 input_buffers_desc.ulVersion = SECBUFFER_VERSION;
@@ -561,13 +568,12 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                 output_buffers[1].BufferType = SECBUFFER_EMPTY;
                 output_buffers[1].pvBuffer = 0;
 
-                SecBufferDesc output_buffers_desc;
                 output_buffers_desc.cBuffers = 2;
                 output_buffers_desc.pBuffers = output_buffers;
                 output_buffers_desc.ulVersion = SECBUFFER_VERSION;
 
-                unsigned long flags = ISC_REQ_EXTENDED_ERROR | ISC_REQ_STREAM | ISC_REQ_ALLOCATE_MEMORY | ISC_REQ_USE_SUPPLIED_CREDS;
-                SECURITY_STATUS status = InitializeSecurityContext(&tls_io_instance->credential_handle,
+                flags = ISC_REQ_EXTENDED_ERROR | ISC_REQ_STREAM | ISC_REQ_ALLOCATE_MEMORY | ISC_REQ_USE_SUPPLIED_CREDS;
+                status = InitializeSecurityContext(&tls_io_instance->credential_handle,
 					&tls_io_instance->security_context, tls_io_instance->host_name, flags, 0, 0, &input_buffers_desc, 0,
 					&tls_io_instance->security_context, &output_buffers_desc,
 					&context_attributes, NULL);
@@ -629,9 +635,10 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                         }
                         else
                         {
+							LIST_ITEM_HANDLE first_pending_io;
                             tls_io_instance->tlsio_state = TLSIO_STATE_OPEN;
 
-                            LIST_ITEM_HANDLE first_pending_io = singlylinkedlist_get_head_item(tls_io_instance->pending_io_list);
+                            first_pending_io = singlylinkedlist_get_head_item(tls_io_instance->pending_io_list);
                             while (first_pending_io != NULL)
                             {
                                 PENDING_SEND* pending_send = (PENDING_SEND*)singlylinkedlist_item_get_value(first_pending_io);
@@ -734,6 +741,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
             {
                 SecBuffer security_buffers[4];
                 SecBufferDesc security_buffers_desc;
+				SECURITY_STATUS status;
 
                 security_buffers[0].BufferType = SECBUFFER_DATA;
                 security_buffers[0].pvBuffer = tls_io_instance->received_bytes;
@@ -746,7 +754,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                 security_buffers_desc.pBuffers = security_buffers;
                 security_buffers_desc.ulVersion = SECBUFFER_VERSION;
 
-                SECURITY_STATUS status = DecryptMessage(&tls_io_instance->security_context, &security_buffers_desc, 0, NULL);
+                status = DecryptMessage(&tls_io_instance->security_context, &security_buffers_desc, 0, NULL);
                 switch (status)
                 {
                 case SEC_E_INCOMPLETE_MESSAGE:
@@ -774,6 +782,8 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                     }
                     else
                     {
+						size_t i;
+
                         /* notify of the received data */
                         if (tls_io_instance->on_bytes_received != NULL)
                         {
@@ -782,7 +792,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
 
                         consumed_bytes = tls_io_instance->received_byte_count;
 
-                        for (size_t i = 0; i < sizeof(security_buffers) / sizeof(security_buffers[0]); i++)
+                        for (i = 0; i < sizeof(security_buffers) / sizeof(security_buffers[0]); i++)
                         {
                             /* Any extra bytes left over or did we fully consume the receive buffer? */
                             if (security_buffers[i].BufferType == SECBUFFER_EXTRA)
@@ -808,6 +818,9 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                 {
                     SecBuffer input_buffers[2];
                     SecBuffer output_buffers[2];
+                    SecBufferDesc input_buffers_desc;
+                    SecBufferDesc output_buffers_desc;
+					unsigned long flags;
                     ULONG context_attributes;
 
                     /* we need to try and perform the second (next) step of the init */
@@ -818,7 +831,6 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                     input_buffers[1].BufferType = SECBUFFER_EMPTY;
                     input_buffers[1].pvBuffer = 0;
 
-                    SecBufferDesc input_buffers_desc;
                     input_buffers_desc.cBuffers = 2;
                     input_buffers_desc.pBuffers = input_buffers;
                     input_buffers_desc.ulVersion = SECBUFFER_VERSION;
@@ -830,12 +842,11 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                     output_buffers[1].BufferType = SECBUFFER_EMPTY;
                     output_buffers[1].pvBuffer = 0;
 
-                    SecBufferDesc output_buffers_desc;
                     output_buffers_desc.cBuffers = 2;
                     output_buffers_desc.pBuffers = output_buffers;
                     output_buffers_desc.ulVersion = SECBUFFER_VERSION;
                     
-                    unsigned long flags = ISC_REQ_EXTENDED_ERROR | ISC_REQ_STREAM | ISC_REQ_ALLOCATE_MEMORY | ISC_REQ_USE_SUPPLIED_CREDS;
+                    flags = ISC_REQ_EXTENDED_ERROR | ISC_REQ_STREAM | ISC_REQ_ALLOCATE_MEMORY | ISC_REQ_USE_SUPPLIED_CREDS;
                     status = InitializeSecurityContext(&tls_io_instance->credential_handle,
                         &tls_io_instance->security_context, tls_io_instance->host_name, flags, 0, 0, &input_buffers_desc, 0,
                         &tls_io_instance->security_context, &output_buffers_desc,
@@ -1051,6 +1062,8 @@ void tlsio_schannel_destroy(CONCRETE_IO_HANDLE tls_io)
     if (tls_io != NULL)
     {
         TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tls_io;
+		LIST_ITEM_HANDLE first_pending_io;
+
         if (tls_io_instance->credential_handle_allocated)
         {
             (void)FreeCredentialHandle(&tls_io_instance->credential_handle);
@@ -1080,7 +1093,7 @@ void tlsio_schannel_destroy(CONCRETE_IO_HANDLE tls_io)
         xio_destroy(tls_io_instance->socket_io);
         free(tls_io_instance->host_name);
 
-        LIST_ITEM_HANDLE first_pending_io = singlylinkedlist_get_head_item(tls_io_instance->pending_io_list);
+        first_pending_io = singlylinkedlist_get_head_item(tls_io_instance->pending_io_list);
         while (first_pending_io != NULL)
         {
             PENDING_SEND* pending_send = (PENDING_SEND*)singlylinkedlist_item_get_value(first_pending_io);
