@@ -1,6 +1,9 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+#define _DEFAULT_SOURCE
+#include <net/if.h>
+#undef _DEFAULT_SOURCE
 #include <signal.h>
 #include <stdlib.h>
 #include <stddef.h>
@@ -15,7 +18,6 @@
 #else
 #include <netinet/tcp.h>
 #endif
-#include <errno.h>
 #include <netdb.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -23,7 +25,11 @@
 #include "azure_c_shared_utility/singlylinkedlist.h"
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/optimize_size.h"
+#include "azure_c_shared_utility/optionhandler.h"
 #include "azure_c_shared_utility/xlogging.h"
+#include <sys/ioctl.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 #define SOCKET_SUCCESS          0
 #define INVALID_SOCKET          -1
@@ -58,39 +64,93 @@ typedef struct SOCKET_IO_INSTANCE_TAG
     void* on_io_error_context;
     char* hostname;
     int port;
+    char* target_mac_address;
     IO_STATE io_state;
     SINGLYLINKEDLIST_HANDLE pending_io_list;
 } SOCKET_IO_INSTANCE;
 
+typedef struct NETWORK_INTERFACE_DESCRIPTION_TAG
+{
+    char* name;
+    char* mac_address;
+    char* ip_address;
+    struct sockaddr_in* sockaddr;
+    struct NETWORK_INTERFACE_DESCRIPTION_TAG* next;
+} NETWORK_INTERFACE_DESCRIPTION;
+
 /*this function will clone an option given by name and value*/
 static void* socketio_CloneOption(const char* name, const void* value)
 {
-    (void)name;
-    (void)value;
-    return NULL;
+    void* result;
+
+    if (name != NULL)
+    {
+        result = NULL;
+
+        if (strcmp(name, "target_mac_address") == 0)
+        {
+            if (value != NULL)
+            {
+                if ((result = malloc(sizeof(char) * (strlen((char*)value) + 1))) == NULL)
+                {
+                    LogError("Failed cloning option %s (malloc failed)", name);
+                }
+                else if (strcpy((char*)result, (char*)value) == NULL)
+                {
+                    LogError("Failed cloning option %s (strcpy failed)", name);
+                    free(result);
+                    result = NULL;
+                }
+            }
+        }
+        else
+        {
+            LogError("Cannot clone option %s (not suppported)", name);
+        }
+    }
+
+    return result;
 }
 
 /*this function destroys an option previously created*/
 static void socketio_DestroyOption(const char* name, const void* value)
 {
-    (void)name;
-    (void)value;
+    if (name != NULL)
+    {
+        if (strcmp(name, "target_mac_address") == 0 && value != NULL)
+        {
+            free(value);
+        }
+    }
 }
 
 static OPTIONHANDLER_HANDLE socketio_retrieveoptions(CONCRETE_IO_HANDLE handle)
 {
     OPTIONHANDLER_HANDLE result;
-    (void)handle;
-    result = OptionHandler_Create(socketio_CloneOption, socketio_DestroyOption, socketio_setoption);
-    if (result == NULL)
+
+    if (handle == NULL)
     {
-        LogError("unable to OptionHandler_Create");
-        /*return as is*/
+        LogError("failed retrieving options (handle is NULL)");
+        result = NULL;
     }
     else
     {
-        /*insert here work to add the options to "result" handle*/
+        SOCKET_IO_INSTANCE* socket_io_instance = (SOCKET_IO_INSTANCE*)handle;
+
+        result = OptionHandler_Create(socketio_CloneOption, socketio_DestroyOption, socketio_setoption);
+        if (result == NULL)
+        {
+            LogError("unable to OptionHandler_Create");
+        }
+        else if (socket_io_instance->target_mac_address != NULL &&
+            OptionHandler_AddOption(result, "target_mac_address", socket_io_instance->target_mac_address) != OPTIONHANDLER_OK)
+        {
+            LogError("failed retrieving options (failed adding target_mac_address)");
+            OptionHandler_Destroy(result);
+            result = NULL;
+        }
     }
+
     return result;
 }
 
@@ -161,6 +221,233 @@ static void signal_callback(int signum)
     LogError("Socket received signal %d.", signum);
 }
 
+static NETWORK_INTERFACE_DESCRIPTION* create_network_interface_description(struct ifreq *ifr, NETWORK_INTERFACE_DESCRIPTION* previous_nid)
+{
+    NETWORK_INTERFACE_DESCRIPTION* result;
+    
+    if ((result = (NETWORK_INTERFACE_DESCRIPTION*)malloc(sizeof(NETWORK_INTERFACE_DESCRIPTION))) == NULL)
+    {
+        LogError("Failed allocating NETWORK_INTERFACE_DESCRIPTION");
+    }
+    else if ((result->name = (char*)malloc(sizeof(char) * (strlen(ifr->ifr_name) + 1))) == NULL)
+    {
+        LogError("failed setting interface description name (malloc failed)");
+        free(result);
+        result = NULL;
+    }
+    else if (strcpy(result->name, ifr->ifr_name) == NULL)
+    {
+        LogError("failed setting interface description name (strcpy failed)");
+        free(result->name);
+        free(result);
+        result = NULL;
+    }
+    else
+    {
+        char* ip_address;
+        unsigned char* mac = (unsigned char*)ifr->ifr_hwaddr.sa_data;
+
+        if ((result->mac_address = (char*)malloc(sizeof(char) * 18)) == NULL)
+        {
+            LogError("failed formatting mac address (malloc failed)");
+            free(result->name);
+            free(result);
+            result = NULL;
+        }
+        else if (sprintf(result->mac_address, "%02X:%02X:%02X:%02X:%02X:%02X", mac[0],mac[1],mac[2],mac[3],mac[4],mac[5]) <= 0)
+        {
+            LogError("failed formatting mac address (sprintf failed)");
+            free(result->mac_address);
+            free(result->name);
+            free(result);
+            result = NULL;
+        }
+        else if ((ip_address = inet_ntoa(((struct sockaddr_in*)&ifr->ifr_addr)->sin_addr)) == NULL)
+        {
+            LogError("failed setting the ip address (inet_ntoa failed)");
+            free(result->mac_address);
+            free(result->name);
+            free(result);
+            result = NULL;
+        }
+        else if ((result->ip_address = (char*)malloc(sizeof(char) * (strlen(ip_address) + 1))) == NULL)
+        {
+            LogError("failed setting the ip address (malloc failed)");
+            free(result->mac_address);
+            free(result->name);
+            free(result);
+            result = NULL;
+        }
+        else if (strcpy(result->ip_address, ip_address) == NULL)
+        {
+            LogError("failed setting the ip address (strcpy failed)");
+            free(result->mac_address);
+            free(result->name);
+            free(result);
+            result = NULL;
+        }
+        else
+        {
+            result->sockaddr = (struct sockaddr_in*)&ifr->ifr_addr;
+            result->mac_address[17] = '\0';
+            result->next = NULL;
+
+            if (previous_nid != NULL)
+            {
+                previous_nid->next = result;
+            }
+        }
+    }
+    
+    return result;
+}
+
+static void destroy_network_interface_descriptions(NETWORK_INTERFACE_DESCRIPTION* nid)
+{
+    if (nid != NULL)
+    {
+        if (nid->next != NULL)
+        {
+            destroy_network_interface_descriptions(nid->next);
+        }
+    
+        if (nid->name != NULL)
+        {
+            free(nid->name);
+        }
+
+        if (nid->mac_address != NULL)
+        {
+            free(nid->mac_address);
+        }
+        
+        if (nid->ip_address != NULL)
+        {
+            free(nid->ip_address);
+        }
+
+        free(nid);
+    }
+}
+
+static int get_network_interface_descriptions(int socket, NETWORK_INTERFACE_DESCRIPTION** nid)
+{
+    int result;
+
+    struct ifreq ifr;
+    struct ifconf ifc;
+    char buf[1024];
+
+    ifc.ifc_len = sizeof(buf);
+    ifc.ifc_buf = buf;
+
+    if (ioctl(socket, SIOCGIFCONF, &ifc) == -1)
+    {
+        LogError("ioctl failed querying socket (SIOCGIFCONF)");
+        result = __FAILURE__;
+    }
+    else 
+    {
+        NETWORK_INTERFACE_DESCRIPTION* root_nid = NULL;
+        NETWORK_INTERFACE_DESCRIPTION* new_nid = NULL;
+
+        struct ifreq* it = ifc.ifc_req;
+        const struct ifreq* const end = it + (ifc.ifc_len / sizeof(struct ifreq));
+        
+        result = 0;
+
+        for (; it != end; ++it)
+        {
+            strcpy(ifr.ifr_name, it->ifr_name);
+
+            if (ioctl(socket, SIOCGIFFLAGS, &ifr) != 0)
+            {
+                LogError("ioctl failed querying socket (SIOCGIFFLAGS)");
+                result = __FAILURE__;
+                break;
+            }
+            else if (ioctl(socket, SIOCGIFHWADDR, &ifr) != 0)
+            {
+                LogError("ioctl failed querying socket (SIOCGIFHWADDR)");
+                result = __FAILURE__;
+                break;
+            }
+            else if (ioctl(socket, SIOCGIFADDR, &ifr) != 0)
+            {
+                LogError("ioctl failed querying socket (SIOCGIFADDR)");
+                result = __FAILURE__;
+                break;
+            }
+            else if ((new_nid = create_network_interface_description(&ifr, new_nid)) == NULL)
+            {
+                LogError("Failed creating network interface description");
+                result = __FAILURE__;
+                break;    
+            }
+            else if (root_nid == NULL)
+            {
+                root_nid = new_nid;
+            }
+        }
+        
+        if (result == 0)
+        {
+            *nid = root_nid;
+        }
+        else
+        {
+            destroy_network_interface_descriptions(root_nid);
+        }
+    }
+
+    return result;
+}
+
+static int set_target_network_interface(int socket, char* mac_address)
+{
+    int result;
+    NETWORK_INTERFACE_DESCRIPTION* nid;
+
+    if (get_network_interface_descriptions(socket, &nid) != 0)
+    {
+        LogError("Failed getting network interface descriptions");
+        result = __FAILURE__;
+    }
+    else
+    {
+        NETWORK_INTERFACE_DESCRIPTION* current_nid = nid;
+    
+        while(current_nid != NULL)
+        {
+            if (strcmp(mac_address, current_nid->mac_address) == 0)
+            {
+                break;
+            }
+
+            current_nid = current_nid->next;
+        }
+
+        if (current_nid == NULL)
+        {
+            LogError("Did not find a network interface matching MAC ADDRESS");
+            result = __FAILURE__;
+        }
+        else if (setsockopt(socket, SOL_SOCKET, SO_BINDTODEVICE, current_nid->name, strlen(current_nid->name)) != 0)
+        {
+            LogError("setsockopt failed (%d)", errno);
+            result = __FAILURE__;
+        }
+        else
+        {
+            result = 0;
+        }
+        
+        destroy_network_interface_descriptions(nid);
+    }
+
+    return result;
+}
+
 CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters)
 {
     SOCKETIO_CONFIG* socket_io_config = io_create_parameters;
@@ -211,6 +498,7 @@ CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters)
                 else
                 {
                     result->port = socket_io_config->port;
+                    result->target_mac_address = NULL;
                     result->on_bytes_received = NULL;
                     result->on_io_error = NULL;
                     result->on_bytes_received_context = NULL;
@@ -256,6 +544,7 @@ void socketio_destroy(CONCRETE_IO_HANDLE socket_io)
 
         singlylinkedlist_destroy(socket_io_instance->pending_io_list);
         free(socket_io_instance->hostname);
+        free(socket_io_instance->target_mac_address);
         free(socket_io);
     }
 }
@@ -300,6 +589,14 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
             if (socket_io_instance->socket < SOCKET_SUCCESS)
             {
                 LogError("Failure: socket create failure %d.", socket_io_instance->socket);
+                result = __FAILURE__;
+            }
+            else if (socket_io_instance->target_mac_address != NULL &&
+                     set_target_network_interface(socket_io_instance->socket, socket_io_instance->target_mac_address) != 0)
+            {
+                LogError("Failure: failed selecting target network interface (MACADDR=%s).", socket_io_instance->target_mac_address);
+                close(socket_io_instance->socket);
+                socket_io_instance->socket = INVALID_SOCKET;
                 result = __FAILURE__;
             }
             else
@@ -636,6 +933,18 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
 #define SOL_TCP 6
 #endif
 
+static void strtoup(char* str)
+{
+	if (*str != '\0')
+	{
+		if (*str >= 'a' && *str <= 'z')
+		{
+			*str = *str - 'a' + 'A';
+		}
+		strtoup(str + 1);
+	}
+}
+
 int socketio_setoption(CONCRETE_IO_HANDLE socket_io, const char* optionName, const void* value)
 {
     int result;
@@ -668,6 +977,31 @@ int socketio_setoption(CONCRETE_IO_HANDLE socket_io, const char* optionName, con
         {
             result = setsockopt(socket_io_instance->socket, SOL_TCP, TCP_KEEPINTVL, value, sizeof(int));
             if (result == -1) result = errno;
+        }
+        else if (strcmp(optionName, "net_interface_mac_address") == 0)
+        {
+            if (strlen(value) == 0)
+            {
+                LogError("option value must be a valid mac address");
+                result = __FAILURE__;
+            }
+            else if ((socket_io_instance->target_mac_address = (char*)malloc(sizeof(char) * (strlen(value) + 1))) == NULL)
+            {
+                LogError("failed saving net_interface_mac_address option (malloc failed)");
+                result = __FAILURE__;
+            }
+            else if (strcpy(socket_io_instance->target_mac_address, value) == NULL)
+            {
+                LogError("failed saving net_interface_mac_address option (strcpy failed)");
+                free(socket_io_instance->target_mac_address);
+                socket_io_instance->target_mac_address = NULL;
+                result = __FAILURE__;
+            }
+            else
+            {
+                strtoup(socket_io_instance->target_mac_address);
+                result = 0;
+            }
         }
         else
         {
