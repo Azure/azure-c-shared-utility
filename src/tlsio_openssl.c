@@ -75,7 +75,11 @@ static void* tlsio_openssl_CloneOption(const char* name, const void* value)
     }
     else
     {
-        if (strcmp(name, "TrustedCerts") == 0)
+        if (strcmp(name, "underlying_io_options") == 0)
+        {
+            result = (void*)value;
+        }
+        else if (strcmp(name, "TrustedCerts") == 0)
         {
             if(mallocAndStrcpy_s((char**)&result, value) != 0)
             {
@@ -182,6 +186,10 @@ static void tlsio_openssl_DestroyOption(const char* name, const void* value)
         {
             // nothing to free.
         }
+        else if (strcmp(name, "underlying_io_options") == 0)
+        {
+            OptionHandler_Destroy((OPTIONHANDLER_HANDLE)value);
+        }
         else
         {
             LogError("not handled option : %s", name);
@@ -209,7 +217,18 @@ static OPTIONHANDLER_HANDLE tlsio_openssl_retrieveoptions(CONCRETE_IO_HANDLE han
         {
             /*this layer cares about the certificates and the x509 credentials*/
             TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)handle;
-            if(
+            OPTIONHANDLER_HANDLE underlying_io_options;
+
+            if (tls_io_instance->underlying_io != NULL &&
+                (underlying_io_options = xio_retrieveoptions(tls_io_instance->underlying_io)) == NULL ||
+                OptionHandler_AddOption(result, "underlying_io_options", underlying_io_options) != 0)
+            {
+                LogError("unable to save underlying_io options");
+                OptionHandler_Destroy(underlying_io_options);
+                OptionHandler_Destroy(result);
+                result = NULL;
+            }
+            else if(
                 (tls_io_instance->certificate != NULL) && 
                 (OptionHandler_AddOption(result, "TrustedCerts", tls_io_instance->certificate) != 0)
             )
@@ -1457,6 +1476,18 @@ int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
         {
             tls_io_instance->tls_version = (int)(intptr_t)value;
             result = 0;
+        }
+        else if (strcmp(optionName, "underlying_io_options") == 0)
+        {
+            if (OptionHandler_FeedOptions((OPTIONHANDLER_HANDLE)value, (void*)tls_io_instance->underlying_io) != OPTIONHANDLER_OK)
+            {
+                LogError("failed feeding options to underlying I/O instance");
+                result = __FAILURE__;
+            }
+            else
+            {
+                result = 0;
+            }
         }
         else
         {

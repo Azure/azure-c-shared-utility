@@ -87,7 +87,7 @@ static void* socketio_CloneOption(const char* name, const void* value)
     {
         result = NULL;
 
-        if (strcmp(name, "target_mac_address") == 0)
+        if (strcmp(name, "net_interface_mac_address") == 0)
         {
             if (value != NULL)
             {
@@ -117,9 +117,9 @@ static void socketio_DestroyOption(const char* name, const void* value)
 {
     if (name != NULL)
     {
-        if (strcmp(name, "target_mac_address") == 0 && value != NULL)
+        if (strcmp(name, "net_interface_mac_address") == 0 && value != NULL)
         {
-            free(value);
+            free((void*)value);
         }
     }
 }
@@ -143,9 +143,9 @@ static OPTIONHANDLER_HANDLE socketio_retrieveoptions(CONCRETE_IO_HANDLE handle)
             LogError("unable to OptionHandler_Create");
         }
         else if (socket_io_instance->target_mac_address != NULL &&
-            OptionHandler_AddOption(result, "target_mac_address", socket_io_instance->target_mac_address) != OPTIONHANDLER_OK)
+            OptionHandler_AddOption(result, "net_interface_mac_address", socket_io_instance->target_mac_address) != OPTIONHANDLER_OK)
         {
-            LogError("failed retrieving options (failed adding target_mac_address)");
+            LogError("failed retrieving options (failed adding net_interface_mac_address)");
             OptionHandler_Destroy(result);
             result = NULL;
         }
@@ -552,8 +552,8 @@ void socketio_destroy(CONCRETE_IO_HANDLE socket_io)
 int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_complete, void* on_io_open_complete_context, ON_BYTES_RECEIVED on_bytes_received, void* on_bytes_received_context, ON_IO_ERROR on_io_error, void* on_io_error_context)
 {
     int result;
-	int retval = -1;
-	int select_errno = 0;
+    int retval = -1;
+    int select_errno = 0;
 
     SOCKET_IO_INSTANCE* socket_io_instance = (SOCKET_IO_INSTANCE*)socket_io;
     if (socket_io == NULL)
@@ -648,16 +648,16 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
                                 tv.tv_sec = CONNECT_TIMEOUT;
                                 tv.tv_usec = 0;
 
-								do
-								{
-									retval = select(socket_io_instance->socket + 1, NULL, &fdset, NULL, &tv);
+                                do
+                                {
+                                    retval = select(socket_io_instance->socket + 1, NULL, &fdset, NULL, &tv);
 
-									if (retval < 0)
-									{
-										select_errno = errno;
-									}
-								} while (retval < 0 && select_errno == EINTR);
-								
+                                    if (retval < 0)
+                                    {
+                                        select_errno = errno;
+                                    }
+                                } while (retval < 0 && select_errno == EINTR);
+                                
                                 if (retval != 1)
                                 {
                                     LogError("Failure: select failure.");
@@ -987,12 +987,12 @@ int socketio_setoption(CONCRETE_IO_HANDLE socket_io, const char* optionName, con
             }
             else if ((socket_io_instance->target_mac_address = (char*)malloc(sizeof(char) * (strlen(value) + 1))) == NULL)
             {
-                LogError("failed saving net_interface_mac_address option (malloc failed)");
+                LogError("failed setting net_interface_mac_address option (malloc failed)");
                 result = __FAILURE__;
             }
             else if (strcpy(socket_io_instance->target_mac_address, value) == NULL)
             {
-                LogError("failed saving net_interface_mac_address option (strcpy failed)");
+                LogError("failed setting net_interface_mac_address option (strcpy failed)");
                 free(socket_io_instance->target_mac_address);
                 socket_io_instance->target_mac_address = NULL;
                 result = __FAILURE__;
