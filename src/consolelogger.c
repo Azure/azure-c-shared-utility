@@ -7,6 +7,187 @@
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/consolelogger.h"
 
+#ifdef _MSC_VER
+#include "windows.h"
+
+/*returns a string as if printed by vprintf*/
+static char* vprintf_alloc(const char* format, va_list va)
+{
+    char* result;
+    int neededSize = vsnprintf(NULL, 0, format, va);
+    if (neededSize <= 0)
+    {
+        result = NULL;
+    }
+    else
+    {
+        result = malloc(neededSize + 1);
+        if (result == NULL)
+        {
+            /*return as is*/
+        }
+        else
+        {
+            if (vsnprintf(result, neededSize + 1, format, va) != neededSize)
+            {
+                free(result);
+                result = NULL;
+            }
+        }
+    }
+    return result;
+}
+
+/*returns a string as if printed by printf*/
+static char* printf_alloc(const char* format, ...)
+{
+    char* result;
+    va_list va;
+    va_start(va, format);
+    result = vprintf_alloc(format, va);
+    va_end(va);
+    return result;
+}
+
+/*returns NULL if it fails*/
+static char* lastErrorToString(DWORD lastError)
+{
+    char* result;
+    if (lastError == 0)
+    {
+        result = printf_alloc(""); /*no error should appear*/
+        if (result == NULL)
+        {
+            (void)printf("failure in printf_alloc");
+        }
+        else
+        {
+            /*return as is*/
+        }
+    }
+    else
+    {
+        char temp[MESSAGE_BUFFER_SIZE];
+        if (FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, lastError, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), temp, MESSAGE_BUFFER_SIZE, NULL) == 0)
+        {
+            result = printf_alloc("GetLastError()=0X%08x", lastError);
+            if (result == NULL)
+            {
+                (void)printf("failure in printf_alloc\n");
+                /*return as is*/
+            }
+            else
+            {
+                /*return as is*/
+            }
+        }
+        else
+        {
+            /*eliminate the \r or \n from the string*/
+            /*one replace of each is enough*/
+            char* whereAreThey;
+            if ((whereAreThey = strchr(temp, '\r')) != NULL)
+            {
+                *whereAreThey = '\0';
+            }
+            if ((whereAreThey = strchr(temp, '\n')) != NULL)
+            {
+                *whereAreThey = '\0';
+            }
+
+            result = printf_alloc("GetLastError()==0X%08x (%s)", lastError, temp);
+
+            if (result == NULL)
+            {
+                (void)printf("failure in printf_alloc\n");
+                /*return as is*/
+            }
+            else
+            {
+                /*return as is*/
+            }
+        }
+    }
+    return result;
+}
+/*this function will use 1x printf (in the happy case) to print an LogError or LogInfo.*/
+/*more than 1x printf / function call can mean intermingled LogErrors in a multithreaded env*/
+/*the function will also attempt to produce some human readable strings for GetLastError*/
+void consolelogger_log(LOG_CATEGORY log_category, const char* file, const char* func, const int line, unsigned int options, const char* format, ...)
+{
+    va_list args;
+    va_start(args, format);
+
+    switch (log_category)
+    {
+    case AZ_LOG_INFO:
+    {
+        char* printed = vprintf_alloc(format, args);
+        if (printed == NULL)
+        {
+            (void)printf("failure in vprintf_alloc");
+        }
+        else
+        {
+            (void)printf("Info: %s %s", printed, (options & LOG_LINE) ? "\r\n" : "");
+            free(printed);
+        }
+        break;
+    }
+    case AZ_LOG_ERROR:
+    {
+        /*this is what this case will do:
+        1. snip the last error
+        2. create a string with what that last error means
+        3. printf the system message (__FILE__, __LINE__ etc) + the last error + whatever the user wanted
+        */
+        /*1. snip the last error*/
+        DWORD lastError = GetLastError();
+
+        /*2. create a string with what that last error means*/
+        char* lastErrorAsString = lastErrorToString(lastError);
+        if (lastErrorAsString == NULL)
+        {
+            (void)printf("failure in lastErrorToString");
+        }
+        else
+        {
+            time_t t = time(NULL);
+            char* systemMessage = printf_alloc("Error: Time:%.24s File:%s Func:%s Line:%d %s", ctime(&t), file, func, line, lastErrorAsString);
+            if (systemMessage == NULL)
+            {
+                (void)printf("failure in printf_alloc");
+            }
+            else
+            {
+                char* userMessage = vprintf_alloc(format, args);
+                if (userMessage == NULL)
+                {
+                    (void)printf("failure in vprintf_alloc");
+                }
+                else
+                {
+                    /*3. printf the system message(__FILE__, __LINE__ etc) + the last error + whatever the user wanted*/
+                    (void)printf("%s %s %s", systemMessage, userMessage, (options & LOG_LINE) ? "\r\n" : "");
+                    free(userMessage);
+                }
+
+                free(systemMessage);
+            }
+            free(lastErrorAsString);
+        }
+        break;
+    }
+    default:
+        break;
+    }
+
+    va_end(args);
+
+
+}
+#else
+
 #if defined(__GNUC__)
 __attribute__ ((format (printf, 6, 7)))
 #endif
@@ -39,3 +220,4 @@ void consolelogger_log(LOG_CATEGORY log_category, const char* file, const char* 
 		(void)printf("\r\n");
 	}
 }
+#endif
