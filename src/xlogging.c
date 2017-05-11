@@ -10,7 +10,7 @@
 #ifdef WINCE
 #include <stdarg.h>
 
-void consolelogger_log(LOG_CATEGORY log_category, const char* file, const char* func, const int line, unsigned int options, const char* format, ...)
+void consolelogger_log(LOG_CATEGORY log_category, const char* file, const char* func, int line, unsigned int options, const char* format, ...)
 {
 	va_list args;
 	va_start(args, format);
