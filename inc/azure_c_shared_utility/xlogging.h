@@ -118,8 +118,14 @@ so we compacted the log in the macro LogInfo.
 #endif
 
 #if defined _MSC_VER
+
+#if !defined(WINCE)
+extern void xlogging_set_log_function_GetLastError(LOGGER_LOG_GETLASTERROR log_function);
+extern LOGGER_LOG_GETLASTERROR xlogging_get_log_function_GetLastError(void);
+#define LogLastError(FORMAT, ...) do{ LOGGER_LOG_GETLASTERROR l = xlogging_get_log_function_GetLastError(); if(l!=NULL) l(__FILE__, FUNC_NAME, __LINE__, FORMAT, __VA_ARGS__); }while(0)
+#endif
+
 #define LogError(FORMAT, ...) do{ LOG(AZ_LOG_ERROR, LOG_LINE, FORMAT, __VA_ARGS__); }while(0)
-#define LogLastError(FORMAT, ...) do{ LOGGER_LOG_GETLASTERROR l = xlogging_set_log_function_GetLastError(); if(l!=NULL) l(__FILE__, __FUNC_NAME__, __LINE__, format, __VA_ARGS); }while(0)
 #define TEMP_BUFFER_SIZE 1024
 #define MESSAGE_BUFFER_SIZE 260
 #define LogErrorWinHTTPWithGetLastErrorAsString(FORMAT, ...) do { \
