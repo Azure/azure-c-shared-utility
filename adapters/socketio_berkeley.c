@@ -9,6 +9,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 #include "azure_c_shared_utility/socketio.h"
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -26,13 +27,19 @@
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/optionhandler.h"
+#include "azure_c_shared_utility/shared_util_options.h"
 #include "azure_c_shared_utility/xlogging.h"
 #include <sys/ioctl.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#define SOCKET_SUCCESS          0
-#define INVALID_SOCKET          -1
+#define SOCKET_SUCCESS                 0
+#define INVALID_SOCKET                 -1
+#define MAC_ADDRESS_STRING_LENGTH      18
+
+#ifndef IFREQ_BUFFER_SIZE
+#define IFREQ_BUFFER_SIZE              1024
+#endif
 
 // connect timeout in seconds
 #define CONNECT_TIMEOUT         10
@@ -74,7 +81,6 @@ typedef struct NETWORK_INTERFACE_DESCRIPTION_TAG
     char* name;
     char* mac_address;
     char* ip_address;
-    struct sockaddr_in* sockaddr;
     struct NETWORK_INTERFACE_DESCRIPTION_TAG* next;
 } NETWORK_INTERFACE_DESCRIPTION;
 
@@ -87,9 +93,13 @@ static void* socketio_CloneOption(const char* name, const void* value)
     {
         result = NULL;
 
-        if (strcmp(name, "net_interface_mac_address") == 0)
+        if (strcmp(name, OPTION_NET_INT_MAC_ADDRESS) == 0)
         {
-            if (value != NULL)
+            if (value == NULL)
+            {
+                LogError("Failed cloning option %s (value is NULL)", name);
+            }
+            else
             {
                 if ((result = malloc(sizeof(char) * (strlen((char*)value) + 1))) == NULL)
                 {
@@ -117,7 +127,7 @@ static void socketio_DestroyOption(const char* name, const void* value)
 {
     if (name != NULL)
     {
-        if (strcmp(name, "net_interface_mac_address") == 0 && value != NULL)
+        if (strcmp(name, OPTION_NET_INT_MAC_ADDRESS) == 0 && value != NULL)
         {
             free((void*)value);
         }
@@ -143,7 +153,7 @@ static OPTIONHANDLER_HANDLE socketio_retrieveoptions(CONCRETE_IO_HANDLE handle)
             LogError("unable to OptionHandler_Create");
         }
         else if (socket_io_instance->target_mac_address != NULL &&
-            OptionHandler_AddOption(result, "net_interface_mac_address", socket_io_instance->target_mac_address) != OPTIONHANDLER_OK)
+            OptionHandler_AddOption(result, OPTION_NET_INT_MAC_ADDRESS, socket_io_instance->target_mac_address) != OPTIONHANDLER_OK)
         {
             LogError("failed retrieving options (failed adding net_interface_mac_address)");
             OptionHandler_Destroy(result);
@@ -221,87 +231,6 @@ static void signal_callback(int signum)
     LogError("Socket received signal %d.", signum);
 }
 
-static NETWORK_INTERFACE_DESCRIPTION* create_network_interface_description(struct ifreq *ifr, NETWORK_INTERFACE_DESCRIPTION* previous_nid)
-{
-    NETWORK_INTERFACE_DESCRIPTION* result;
-    
-    if ((result = (NETWORK_INTERFACE_DESCRIPTION*)malloc(sizeof(NETWORK_INTERFACE_DESCRIPTION))) == NULL)
-    {
-        LogError("Failed allocating NETWORK_INTERFACE_DESCRIPTION");
-    }
-    else if ((result->name = (char*)malloc(sizeof(char) * (strlen(ifr->ifr_name) + 1))) == NULL)
-    {
-        LogError("failed setting interface description name (malloc failed)");
-        free(result);
-        result = NULL;
-    }
-    else if (strcpy(result->name, ifr->ifr_name) == NULL)
-    {
-        LogError("failed setting interface description name (strcpy failed)");
-        free(result->name);
-        free(result);
-        result = NULL;
-    }
-    else
-    {
-        char* ip_address;
-        unsigned char* mac = (unsigned char*)ifr->ifr_hwaddr.sa_data;
-
-        if ((result->mac_address = (char*)malloc(sizeof(char) * 18)) == NULL)
-        {
-            LogError("failed formatting mac address (malloc failed)");
-            free(result->name);
-            free(result);
-            result = NULL;
-        }
-        else if (sprintf(result->mac_address, "%02X:%02X:%02X:%02X:%02X:%02X", mac[0],mac[1],mac[2],mac[3],mac[4],mac[5]) <= 0)
-        {
-            LogError("failed formatting mac address (sprintf failed)");
-            free(result->mac_address);
-            free(result->name);
-            free(result);
-            result = NULL;
-        }
-        else if ((ip_address = inet_ntoa(((struct sockaddr_in*)&ifr->ifr_addr)->sin_addr)) == NULL)
-        {
-            LogError("failed setting the ip address (inet_ntoa failed)");
-            free(result->mac_address);
-            free(result->name);
-            free(result);
-            result = NULL;
-        }
-        else if ((result->ip_address = (char*)malloc(sizeof(char) * (strlen(ip_address) + 1))) == NULL)
-        {
-            LogError("failed setting the ip address (malloc failed)");
-            free(result->mac_address);
-            free(result->name);
-            free(result);
-            result = NULL;
-        }
-        else if (strcpy(result->ip_address, ip_address) == NULL)
-        {
-            LogError("failed setting the ip address (strcpy failed)");
-            free(result->mac_address);
-            free(result->name);
-            free(result);
-            result = NULL;
-        }
-        else
-        {
-            result->sockaddr = (struct sockaddr_in*)&ifr->ifr_addr;
-            result->mac_address[17] = '\0';
-            result->next = NULL;
-
-            if (previous_nid != NULL)
-            {
-                previous_nid->next = result;
-            }
-        }
-    }
-    
-    return result;
-}
-
 static void destroy_network_interface_descriptions(NETWORK_INTERFACE_DESCRIPTION* nid)
 {
     if (nid != NULL)
@@ -330,20 +259,89 @@ static void destroy_network_interface_descriptions(NETWORK_INTERFACE_DESCRIPTION
     }
 }
 
+static NETWORK_INTERFACE_DESCRIPTION* create_network_interface_description(struct ifreq *ifr, NETWORK_INTERFACE_DESCRIPTION* previous_nid)
+{
+    NETWORK_INTERFACE_DESCRIPTION* result;
+    
+    if ((result = (NETWORK_INTERFACE_DESCRIPTION*)malloc(sizeof(NETWORK_INTERFACE_DESCRIPTION))) == NULL)
+    {
+        LogError("Failed allocating NETWORK_INTERFACE_DESCRIPTION");
+    }
+    else if ((result->name = (char*)malloc(sizeof(char) * (strlen(ifr->ifr_name) + 1))) == NULL)
+    {
+        LogError("failed setting interface description name (malloc failed)");
+        destroy_network_interface_descriptions(result);
+        result = NULL;
+    }
+    else if (strcpy(result->name, ifr->ifr_name) == NULL)
+    {
+        LogError("failed setting interface description name (strcpy failed)");
+        destroy_network_interface_descriptions(result);
+        result = NULL;
+    }
+    else
+    {
+        char* ip_address;
+        unsigned char* mac = (unsigned char*)ifr->ifr_hwaddr.sa_data;
+
+        if ((result->mac_address = (char*)malloc(sizeof(char) * MAC_ADDRESS_STRING_LENGTH)) == NULL)
+        {
+            LogError("failed formatting mac address (malloc failed)");
+            destroy_network_interface_descriptions(result);
+            result = NULL;
+        }
+        else if (sprintf(result->mac_address, "%02X:%02X:%02X:%02X:%02X:%02X", mac[0],mac[1],mac[2],mac[3],mac[4],mac[5]) <= 0)
+        {
+            LogError("failed formatting mac address (sprintf failed)");
+            destroy_network_interface_descriptions(result);
+            result = NULL;
+        }
+        else if ((ip_address = inet_ntoa(((struct sockaddr_in*)&ifr->ifr_addr)->sin_addr)) == NULL)
+        {
+            LogError("failed setting the ip address (inet_ntoa failed)");
+            destroy_network_interface_descriptions(result);
+            result = NULL;
+        }
+        else if ((result->ip_address = (char*)malloc(sizeof(char) * (strlen(ip_address) + 1))) == NULL)
+        {
+            LogError("failed setting the ip address (malloc failed)");
+            destroy_network_interface_descriptions(result);
+            result = NULL;
+        }
+        else if (strcpy(result->ip_address, ip_address) == NULL)
+        {
+            LogError("failed setting the ip address (strcpy failed)");
+            destroy_network_interface_descriptions(result);
+            result = NULL;
+        }
+        else
+        {
+            result->next = NULL;
+
+            if (previous_nid != NULL)
+            {
+                previous_nid->next = result;
+            }
+        }
+    }
+    
+    return result;
+}
+
 static int get_network_interface_descriptions(int socket, NETWORK_INTERFACE_DESCRIPTION** nid)
 {
     int result;
 
     struct ifreq ifr;
     struct ifconf ifc;
-    char buf[1024];
+    char buf[IFREQ_BUFFER_SIZE];
 
     ifc.ifc_len = sizeof(buf);
     ifc.ifc_buf = buf;
 
     if (ioctl(socket, SIOCGIFCONF, &ifc) == -1)
     {
-        LogError("ioctl failed querying socket (SIOCGIFCONF)");
+        LogError("ioctl failed querying socket (SIOCGIFCONF, errno=%s)", errno);
         result = __FAILURE__;
     }
     else 
@@ -362,19 +360,19 @@ static int get_network_interface_descriptions(int socket, NETWORK_INTERFACE_DESC
 
             if (ioctl(socket, SIOCGIFFLAGS, &ifr) != 0)
             {
-                LogError("ioctl failed querying socket (SIOCGIFFLAGS)");
+                LogError("ioctl failed querying socket (SIOCGIFFLAGS, errno=%d)", errno);
                 result = __FAILURE__;
                 break;
             }
             else if (ioctl(socket, SIOCGIFHWADDR, &ifr) != 0)
             {
-                LogError("ioctl failed querying socket (SIOCGIFHWADDR)");
+                LogError("ioctl failed querying socket (SIOCGIFHWADDR, errno=%d)", errno);
                 result = __FAILURE__;
                 break;
             }
             else if (ioctl(socket, SIOCGIFADDR, &ifr) != 0)
             {
-                LogError("ioctl failed querying socket (SIOCGIFADDR)");
+                LogError("ioctl failed querying socket (SIOCGIFADDR, errno=%d)", errno);
                 result = __FAILURE__;
                 break;
             }
@@ -935,14 +933,17 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
 
 static void strtoup(char* str)
 {
-	if (*str != '\0')
-	{
-		if (*str >= 'a' && *str <= 'z')
-		{
-			*str = *str - 'a' + 'A';
-		}
-		strtoup(str + 1);
-	}
+    if (str != NULL)
+    {
+        while (*str != '\0')
+        {
+            if (isalpha((int)*str) && islower((int)*str))
+            {
+                *str = (char)toupper((int)*str);
+            }
+            str++;
+        }
+    }
 }
 
 int socketio_setoption(CONCRETE_IO_HANDLE socket_io, const char* optionName, const void* value)
@@ -978,7 +979,7 @@ int socketio_setoption(CONCRETE_IO_HANDLE socket_io, const char* optionName, con
             result = setsockopt(socket_io_instance->socket, SOL_TCP, TCP_KEEPINTVL, value, sizeof(int));
             if (result == -1) result = errno;
         }
-        else if (strcmp(optionName, "net_interface_mac_address") == 0)
+        else if (strcmp(optionName, OPTION_NET_INT_MAC_ADDRESS) == 0)
         {
             if (strlen(value) == 0)
             {

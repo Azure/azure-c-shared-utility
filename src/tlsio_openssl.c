@@ -62,6 +62,9 @@ struct CRYPTO_dynlock_value
     LOCK_HANDLE lock; 
 };
 
+#define OPTION_UNDERLYING_IO_OPTIONS        "underlying_io_options"
+
+
 /*this function will clone an option given by name and value*/
 static void* tlsio_openssl_CloneOption(const char* name, const void* value)
 {
@@ -75,7 +78,7 @@ static void* tlsio_openssl_CloneOption(const char* name, const void* value)
     }
     else
     {
-        if (strcmp(name, "underlying_io_options") == 0)
+        if (strcmp(name, OPTION_UNDERLYING_IO_OPTIONS) == 0)
         {
             result = (void*)value;
         }
@@ -186,7 +189,7 @@ static void tlsio_openssl_DestroyOption(const char* name, const void* value)
         {
             // nothing to free.
         }
-        else if (strcmp(name, "underlying_io_options") == 0)
+        else if (strcmp(name, OPTION_UNDERLYING_IO_OPTIONS) == 0)
         {
             OptionHandler_Destroy((OPTIONHANDLER_HANDLE)value);
         }
@@ -219,9 +222,8 @@ static OPTIONHANDLER_HANDLE tlsio_openssl_retrieveoptions(CONCRETE_IO_HANDLE han
             TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)handle;
             OPTIONHANDLER_HANDLE underlying_io_options;
 
-            if (tls_io_instance->underlying_io != NULL &&
-                (underlying_io_options = xio_retrieveoptions(tls_io_instance->underlying_io)) == NULL ||
-                OptionHandler_AddOption(result, "underlying_io_options", underlying_io_options) != 0)
+            if ((underlying_io_options = xio_retrieveoptions(tls_io_instance->underlying_io)) == NULL ||
+                OptionHandler_AddOption(result, OPTION_UNDERLYING_IO_OPTIONS, underlying_io_options) != OPTIONHANDLER_OK)
             {
                 LogError("unable to save underlying_io options");
                 OptionHandler_Destroy(underlying_io_options);
@@ -230,7 +232,7 @@ static OPTIONHANDLER_HANDLE tlsio_openssl_retrieveoptions(CONCRETE_IO_HANDLE han
             }
             else if(
                 (tls_io_instance->certificate != NULL) && 
-                (OptionHandler_AddOption(result, "TrustedCerts", tls_io_instance->certificate) != 0)
+                (OptionHandler_AddOption(result, "TrustedCerts", tls_io_instance->certificate) != OPTIONHANDLER_OK)
             )
             {
                 LogError("unable to save TrustedCerts option");
@@ -239,7 +241,7 @@ static OPTIONHANDLER_HANDLE tlsio_openssl_retrieveoptions(CONCRETE_IO_HANDLE han
             }
             else if (
                 (tls_io_instance->x509certificate != NULL) &&
-                (OptionHandler_AddOption(result, SU_OPTION_X509_CERT, tls_io_instance->x509certificate) != 0)
+                (OptionHandler_AddOption(result, SU_OPTION_X509_CERT, tls_io_instance->x509certificate) != OPTIONHANDLER_OK)
                 )
             {
                 LogError("unable to save x509certificate option");
@@ -248,7 +250,7 @@ static OPTIONHANDLER_HANDLE tlsio_openssl_retrieveoptions(CONCRETE_IO_HANDLE han
             }
             else if (
                 (tls_io_instance->x509privatekey != NULL) && 
-                (OptionHandler_AddOption(result, SU_OPTION_X509_PRIVATE_KEY, tls_io_instance->x509privatekey) != 0)
+                (OptionHandler_AddOption(result, SU_OPTION_X509_PRIVATE_KEY, tls_io_instance->x509privatekey) != OPTIONHANDLER_OK)
             )
             {
                 LogError("unable to save x509privatekey option");
@@ -257,7 +259,7 @@ static OPTIONHANDLER_HANDLE tlsio_openssl_retrieveoptions(CONCRETE_IO_HANDLE han
             }
             else if (
                 (tls_io_instance->x509_ecc_cert != NULL) &&
-                (OptionHandler_AddOption(result, OPTION_X509_ECC_CERT, tls_io_instance->x509_ecc_cert) != 0)
+                (OptionHandler_AddOption(result, OPTION_X509_ECC_CERT, tls_io_instance->x509_ecc_cert) != OPTIONHANDLER_OK)
                 )
             {
                 LogError("unable to save x509_ecc_cert option");
@@ -266,7 +268,7 @@ static OPTIONHANDLER_HANDLE tlsio_openssl_retrieveoptions(CONCRETE_IO_HANDLE han
             }
             else if (
                 (tls_io_instance->x509_ecc_aliaskey != NULL) &&
-                (OptionHandler_AddOption(result, OPTION_X509_ECC_KEY, tls_io_instance->x509_ecc_aliaskey) != 0)
+                (OptionHandler_AddOption(result, OPTION_X509_ECC_KEY, tls_io_instance->x509_ecc_aliaskey) != OPTIONHANDLER_OK)
                 )
             {
                 LogError("unable to save x509_ecc_aliaskey option");
@@ -275,7 +277,7 @@ static OPTIONHANDLER_HANDLE tlsio_openssl_retrieveoptions(CONCRETE_IO_HANDLE han
             }
             else if (tls_io_instance->tls_version != 0)
             {
-                if (OptionHandler_AddOption(result, "tls_version", (void*)(intptr_t)tls_io_instance->tls_version) != 0)
+                if (OptionHandler_AddOption(result, "tls_version", (void*)(intptr_t)tls_io_instance->tls_version) != OPTIONHANDLER_OK)
                 {
                     LogError("unable to save tls_version option");
                     OptionHandler_Destroy(result);
@@ -289,14 +291,14 @@ static OPTIONHANDLER_HANDLE tlsio_openssl_retrieveoptions(CONCRETE_IO_HANDLE han
                 void* ptr = tls_io_instance->tls_validation_callback;
                 #pragma warning(pop)
 
-                if (OptionHandler_AddOption(result, "tls_validation_callback", (const char*)ptr) != 0)
+                if (OptionHandler_AddOption(result, "tls_validation_callback", (const char*)ptr) != OPTIONHANDLER_OK)
                 {
                     LogError("unable to save tls_validation_callback option");
                     OptionHandler_Destroy(result);
                     result = NULL;
                 }
 
-                if (OptionHandler_AddOption(result, "tls_validation_callback_data", (const char*)tls_io_instance->tls_validation_callback_data) != 0)
+                if (OptionHandler_AddOption(result, "tls_validation_callback_data", (const char*)tls_io_instance->tls_validation_callback_data) != OPTIONHANDLER_OK)
                 {
                     LogError("unable to save tls_validation_callback_data option");
                     OptionHandler_Destroy(result);
@@ -1477,7 +1479,7 @@ int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
             tls_io_instance->tls_version = (int)(intptr_t)value;
             result = 0;
         }
-        else if (strcmp(optionName, "underlying_io_options") == 0)
+        else if (strcmp(optionName, OPTION_UNDERLYING_IO_OPTIONS) == 0)
         {
             if (OptionHandler_FeedOptions((OPTIONHANDLER_HANDLE)value, (void*)tls_io_instance->underlying_io) != OPTIONHANDLER_OK)
             {
