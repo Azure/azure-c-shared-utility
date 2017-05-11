@@ -21,7 +21,7 @@ static char* vprintf_alloc(const char* format, va_list va)
     }
     else
     {
-        result = malloc(neededSize + 1);
+        result = (char*)malloc(neededSize + 1);
         if (result == NULL)
         {
             /*return as is*/
