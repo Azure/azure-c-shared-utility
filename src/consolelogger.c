@@ -110,113 +110,84 @@ static char* lastErrorToString(DWORD lastError)
     }
     return result;
 }
-/*this function will use 1x printf (in the happy case) to print an LogError or LogInfo.*/
+/*this function will use 1x printf (in the happy case) .*/
 /*more than 1x printf / function call can mean intermingled LogErrors in a multithreaded env*/
 /*the function will also attempt to produce some human readable strings for GetLastError*/
-void consolelogger_log(LOG_CATEGORY log_category, const char* file, const char* func, int line, unsigned int options, const char* format, ...)
+void consolelogger_log_with_GetLastError(const char* file, const char* func, int line, const char* format, ...)
 {
     va_list args;
     va_start(args, format);
 
-    switch (log_category)
+    /*this is what this case will do:
+    1. snip the last error
+    2. create a string with what that last error means
+    3. printf the system message (__FILE__, __LINE__ etc) + the last error + whatever the user wanted
+    */
+    /*1. snip the last error*/
+    DWORD lastError = GetLastError();
+
+    /*2. create a string with what that last error means*/
+    char* lastErrorAsString = lastErrorToString(lastError);
+    int lastErrorAsString_should_be_freed;
+    if (lastErrorAsString == NULL)
     {
-    case AZ_LOG_INFO:
-    {
-        char* printed = vprintf_alloc(format, args);
-        if (printed == NULL)
-        {
-            (void)printf("Info: [FAILED] ");
-            (void)vprintf(format, args);
-            (void)printf("%s", (options & LOG_LINE) ? "\r\n" : "");
-        }
-        else
-        {
-            (void)printf("Info: %s %s", printed, (options & LOG_LINE) ? "\r\n" : "");
-            free(printed);
-        }
-        break;
+        (void)printf("failure in lastErrorToString");
+        lastErrorAsString = "";
+        lastErrorAsString_should_be_freed = 0;
     }
-    case AZ_LOG_ERROR:
+    else
     {
-        /*this is what this case will do:
-        1. snip the last error
-        2. create a string with what that last error means
-        3. printf the system message (__FILE__, __LINE__ etc) + the last error + whatever the user wanted
-        */
-        /*1. snip the last error*/
-        DWORD lastError = GetLastError();
-
-        /*2. create a string with what that last error means*/
-        char* lastErrorAsString = lastErrorToString(lastError);
-        int lastErrorAsString_should_be_freed;
-        if (lastErrorAsString == NULL)
-        {
-            (void)printf("failure in lastErrorToString");
-            lastErrorAsString = "";
-            lastErrorAsString_should_be_freed = 0;
-        }
-        else
-        {
-            lastErrorAsString_should_be_freed = 1;
-        }
-
-        time_t t = time(NULL);
-        int systemMessage_should_be_freed;
-        char* systemMessage = printf_alloc("Error: Time:%.24s File:%s Func:%s Line:%d %s", ctime(&t), file, func, line, lastErrorAsString);
-
-        if (systemMessage == NULL)
-        {
-            systemMessage = "";
-            (void)printf("Error: [FAILED] Time:%.24s File : %s Func : %s Line : %d %s", ctime(&t), file, func, line, lastErrorAsString);
-            systemMessage_should_be_freed = 0;
-        }
-        else
-        {
-            systemMessage_should_be_freed = 1;
-        }
-
-        int userMessage_should_be_freed;
-        char* userMessage = vprintf_alloc(format, args);
-        if (userMessage == NULL)
-        {
-            (void)printf("[FAILED] ");
-            (void)vprintf(format, args);
-            (void)printf("%s", (options & LOG_LINE) ? "\r\n" : "");
-            userMessage_should_be_freed = 0;
-        }
-        else
-        {
-            /*3. printf the system message(__FILE__, __LINE__ etc) + the last error + whatever the user wanted*/
-            (void)printf("%s %s %s", systemMessage, userMessage, (options & LOG_LINE) ? "\r\n" : "");
-            userMessage_should_be_freed = 1;
-        }
-    
-
-        if (userMessage_should_be_freed==1)
-        {
-            free(userMessage);
-        }
-
-        if (systemMessage_should_be_freed==1)
-        {
-            free(systemMessage);
-        }
-        
-        if (lastErrorAsString_should_be_freed==1)
-        {
-            free(lastErrorAsString);
-        }
-        break;
-    }
-    default:
-        break;
+        lastErrorAsString_should_be_freed = 1;
     }
 
+    time_t t = time(NULL);
+    int systemMessage_should_be_freed;
+    char* systemMessage = printf_alloc("Error: Time:%.24s File:%s Func:%s Line:%d %s", ctime(&t), file, func, line, lastErrorAsString);
+
+    if (systemMessage == NULL)
+    {
+        systemMessage = "";
+        (void)printf("Error: [FAILED] Time:%.24s File : %s Func : %s Line : %d %s", ctime(&t), file, func, line, lastErrorAsString);
+        systemMessage_should_be_freed = 0;
+    }
+    else
+    {
+        systemMessage_should_be_freed = 1;
+    }
+
+    int userMessage_should_be_freed;
+    char* userMessage = vprintf_alloc(format, args);
+    if (userMessage == NULL)
+    {
+        (void)printf("[FAILED] ");
+        (void)vprintf(format, args);
+        (void)printf("\n");
+        userMessage_should_be_freed = 0;
+    }
+    else
+    {
+        /*3. printf the system message(__FILE__, __LINE__ etc) + the last error + whatever the user wanted*/
+        (void)printf("%s %s\n", systemMessage, userMessage);
+        userMessage_should_be_freed = 1;
+    }
+
+    if (userMessage_should_be_freed == 1)
+    {
+        free(userMessage);
+    }
+
+    if (systemMessage_should_be_freed == 1)
+    {
+        free(systemMessage);
+    }
+
+    if (lastErrorAsString_should_be_freed == 1)
+    {
+        free(lastErrorAsString);
+    }
     va_end(args);
-
-
 }
-#else
+#endif
 
 #if defined(__GNUC__)
 __attribute__ ((format (printf, 6, 7)))
@@ -250,4 +221,4 @@ void consolelogger_log(LOG_CATEGORY log_category, const char* file, const char* 
         (void)printf("\r\n");
     }
 }
-#endif
+

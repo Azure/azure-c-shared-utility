@@ -12,6 +12,8 @@ extern "C" {
 
     extern void consolelogger_log(LOG_CATEGORY log_category, const char* file, const char* func, int line, unsigned int options, const char* format, ...);
 
+    extern void consolelogger_log_with_GetLastError(const char* file, const char* func, int line, const char* format, ...);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

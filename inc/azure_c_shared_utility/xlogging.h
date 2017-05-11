@@ -36,7 +36,8 @@ typedef enum LOG_CATEGORY_TAG
 #define FUNC_NAME __func__
 #endif
 
-typedef void(*LOGGER_LOG)(LOG_CATEGORY log_category, const char* file, const char* func, const int line, unsigned int options, const char* format, ...);
+typedef void(*LOGGER_LOG)(LOG_CATEGORY log_category, const char* file, const char* func, int line, unsigned int options, const char* format, ...);
+typedef void(*LOGGER_LOG_GETLASTERROR)(const char* file, const char* func, int line, const char* format, ...);
 
 #define LOG_NONE 0x00
 #define LOG_LINE 0x01
@@ -118,6 +119,7 @@ so we compacted the log in the macro LogInfo.
 
 #if defined _MSC_VER
 #define LogError(FORMAT, ...) do{ LOG(AZ_LOG_ERROR, LOG_LINE, FORMAT, __VA_ARGS__); }while(0)
+#define LogLastError(FORMAT, ...) do{ LOGGER_LOG_GETLASTERROR l = xlogging_set_log_function_GetLastError(); if(l!=NULL) l(__FILE__, __FUNC_NAME__, __LINE__, format, __VA_ARGS); }while(0)
 #define TEMP_BUFFER_SIZE 1024
 #define MESSAGE_BUFFER_SIZE 260
 #define LogErrorWinHTTPWithGetLastErrorAsString(FORMAT, ...) do { \
