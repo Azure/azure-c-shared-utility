@@ -412,6 +412,157 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         BUFFER_delete(g_hBuffer);
     }
 
+    /* Codes_SRS_BUFFER_07_029: [ BUFFER_append_build shall return nonzero if handle or source are NULL or if size is 0. ] */
+    TEST_FUNCTION(BUFFER_append_build_handle_NULL_fail)
+    {
+        ///arrange
+        BUFFER_HANDLE hBuffer;
+        hBuffer = BUFFER_new();
+        umock_c_reset_all_calls();
+
+        ///act
+        int nResult = BUFFER_append_build(NULL, BUFFER_Test1, BUFFER_TEST1_SIZE);
+
+        ///assert
+        ASSERT_ARE_NOT_EQUAL(int, nResult, 0);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        ///cleanup
+        BUFFER_delete(hBuffer);
+    }
+
+    /* Codes_SRS_BUFFER_07_029: [ BUFFER_append_build shall return nonzero if handle or source are NULL or if size is 0. ] */
+    TEST_FUNCTION(BUFFER_append_build_buffer_NULL_buffer_fail)
+    {
+        ///arrange
+        BUFFER_HANDLE hBuffer;
+        hBuffer = BUFFER_new();
+        umock_c_reset_all_calls();
+
+        ///act
+        int nResult = BUFFER_append_build(hBuffer, NULL, BUFFER_TEST1_SIZE);
+
+        ///assert
+        ASSERT_ARE_NOT_EQUAL(int, nResult, 0);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        ///cleanup
+        BUFFER_delete(hBuffer);
+    }
+
+    /* Codes_SRS_BUFFER_07_029: [ BUFFER_append_build shall return nonzero if handle or source are NULL or if size is 0. ] */
+    TEST_FUNCTION(BUFFER_append_build_Size_Zero_NULL_buffer_fail)
+    {
+        ///arrange
+        BUFFER_HANDLE hBuffer;
+        hBuffer = BUFFER_new();
+        umock_c_reset_all_calls();
+
+        ///act
+        int nResult = BUFFER_append_build(hBuffer, BUFFER_Test1, 0);
+
+        ///assert
+        ASSERT_ARE_NOT_EQUAL(int, nResult, 0);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        ///cleanup
+        BUFFER_delete(hBuffer);
+    }
+
+    /* Codes_SRS_BUFFER_07_030: [ if handle->buffer is NULL BUFFER_append_build shall allocate the a buffer of size bytes... ] */
+    /* Codes_SRS_BUFFER_07_031: [ ... and copy the contents of source to handle->buffer. ] */
+    /* Codes_SRS_BUFFER_07_034: [ On success BUFFER_append_build shall return 0 ] */
+    TEST_FUNCTION(BUFFER_append_build_buffer_NULL_succeed)
+    {
+        //arrange
+        BUFFER_HANDLE hBuffer;
+        hBuffer = BUFFER_new();
+        umock_c_reset_all_calls();
+
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+
+        //act
+        int nResult = BUFFER_append_build(hBuffer, BUFFER_Test1, BUFFER_TEST1_SIZE);
+
+        //assert
+        ASSERT_ARE_EQUAL(int, nResult, 0);
+        ASSERT_ARE_EQUAL(int, 0, memcmp(BUFFER_u_char(hBuffer), BUFFER_Test1, BUFFER_TEST1_SIZE));
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        //cleanup
+        BUFFER_delete(hBuffer);
+    }
+
+    /* Codes_SRS_BUFFER_07_035: [ If any error is encountered BUFFER_append_build shall return a non-null value. ] */
+    TEST_FUNCTION(BUFFER_append_build_buffer_NULL_fail)
+    {
+        //arrange
+        BUFFER_HANDLE hBuffer;
+        hBuffer = BUFFER_new();
+        umock_c_reset_all_calls();
+
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).SetReturn(NULL);
+
+        //act
+        int nResult = BUFFER_append_build(hBuffer, BUFFER_Test1, BUFFER_TEST1_SIZE);
+
+        //assert
+        ASSERT_ARE_NOT_EQUAL(int, nResult, 0);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        //cleanup
+        BUFFER_delete(hBuffer);
+    }
+
+    /* Codes_SRS_BUFFER_07_032: [ if handle->buffer is not NULL BUFFER_append_build shall realloc the buffer to be the handle->size + size ] */
+    /* Codes_SRS_BUFFER_07_033: [ ... and copy the contents of source to the end of the buffer. ] */
+    /* Codes_SRS_BUFFER_07_034: [ On success BUFFER_append_build shall return 0 ] */
+    TEST_FUNCTION(BUFFER_append_build_succeed)
+    {
+        //arrange
+        BUFFER_HANDLE hBuffer;
+        hBuffer = BUFFER_create(BUFFER_TEST_VALUE, ALLOCATION_SIZE);
+        
+        umock_c_reset_all_calls();
+
+        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, IGNORED_NUM_ARG));
+
+        //act
+        int nResult = BUFFER_append_build(hBuffer, ADDITIONAL_BUFFER, ALLOCATION_SIZE);
+
+        //assert
+        ASSERT_ARE_EQUAL(int, nResult, 0);
+        ASSERT_ARE_EQUAL(size_t, BUFFER_length(hBuffer), TOTAL_ALLOCATION_SIZE);
+
+        ASSERT_ARE_EQUAL(int, memcmp(BUFFER_u_char(hBuffer), TOTAL_BUFFER, TOTAL_ALLOCATION_SIZE), 0);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        //cleanup
+        BUFFER_delete(hBuffer);
+    }
+
+    /* Codes_SRS_BUFFER_07_035: [ If any error is encountered BUFFER_append_build shall return a non-null value. ] */
+    TEST_FUNCTION(BUFFER_append_build_fail)
+    {
+        //arrange
+        BUFFER_HANDLE hBuffer;
+        hBuffer = BUFFER_create(BUFFER_TEST_VALUE, ALLOCATION_SIZE);
+
+        umock_c_reset_all_calls();
+
+        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, IGNORED_NUM_ARG)).SetReturn(NULL);
+
+        //act
+        int nResult = BUFFER_append_build(hBuffer, ADDITIONAL_BUFFER, ALLOCATION_SIZE);
+
+        //assert
+        ASSERT_ARE_NOT_EQUAL(int, nResult, 0);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        //cleanup
+        BUFFER_delete(hBuffer);
+    }
+
     /* Tests_SRS_BUFFER_07_011: [BUFFER_build shall overwrite previous contents if the buffer has been previously allocated.] */
     TEST_FUNCTION(BUFFER_build_when_the_buffer_is_already_allocated_and_the_same_amount_of_bytes_is_needed_succeeds)
     {

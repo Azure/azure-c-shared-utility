@@ -6,13 +6,15 @@ cmake_minimum_required(VERSION 2.8.11)
 compileAsC99()
 set(theseTestsName uws_client_ut)
 
+include_directories(${SHARED_UTIL_REAL_TEST_FOLDER})
+
 set(${theseTestsName}_test_files
 ${theseTestsName}.c
 )
 
 set(${theseTestsName}_c_files
 ../../src/uws_client.c
-real_buffer.c
+../real_test_files/real_buffer.c
 )
 
 set(${theseTestsName}_h_files

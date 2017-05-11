@@ -6,13 +6,15 @@ cmake_minimum_required(VERSION 2.8.11)
 compileAsC11()
 set(theseTestsName http_proxy_io_ut)
 
+include_directories(${SHARED_UTIL_REAL_TEST_FOLDER})
+
 set(${theseTestsName}_test_files
 	${theseTestsName}.c
 )
 
 set(${theseTestsName}_c_files
 	../../src/http_proxy_io.c
-	real_crt_abstractions.c
+	../real_test_files/real_crt_abstractions.c
 )
 
 set(${theseTestsName}_h_files

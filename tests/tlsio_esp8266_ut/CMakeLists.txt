@@ -7,13 +7,15 @@ cmake_minimum_required(VERSION 2.8.11)
 compileAsC11()
 set(theseTestsName tlsio_esp8266_ut)
 
+include_directories(${SHARED_UTIL_REAL_TEST_FOLDER})
+
 set(${theseTestsName}_test_files
 ${theseTestsName}.c
 )
 
 set(${theseTestsName}_c_files
 ../../adapters/tlsio_ssl_esp8266.c
-real_crt_abstractions.c
+../real_test_files/real_crt_abstractions.c
 )
 
 set(${theseTestsName}_h_files

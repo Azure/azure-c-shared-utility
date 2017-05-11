@@ -71,6 +71,7 @@ int BUFFER_pre_build(BUFFER_HANDLE handle, size_t size)
 **SRS_BUFFER_07_013: [** BUFFER_pre_build shall return nonzero if any error is encountered. **]**
 
 ### BUFFER_build
+
 ```c
 int BUFFER_build(BUFFER_HANDLE handle, const unsigned char* source, size_t size)
 ```
@@ -89,10 +90,32 @@ int BUFFER_build(BUFFER_HANDLE handle, const unsigned char* source, size_t size)
 
 **SRS_BUFFER_07_011: [** BUFFER_build shall overwrite previous contents if the buffer has been previously allocated. **]**
 
+### BUFFER_append_build
+
+```c
+int BUFFER_append_build(BUFFER_HANDLE handle, const unsigned char* source, size_t size)
+```
+
+**SRS_BUFFER_07_029: [** `BUFFER_append_build` shall return nonzero if handle or source are NULL or if size is 0. **]**
+
+**SRS_BUFFER_07_030: [** if handle->buffer is NULL `BUFFER_append_build` shall allocate the a buffer of size bytes... **]**
+
+**SRS_BUFFER_07_031: [** ... and copy the contents of source to handle->buffer. **]**
+
+**SRS_BUFFER_07_032: [** if handle->buffer is not NULL `BUFFER_append_build` shall realloc the buffer to be the handle->size + size **]**
+
+**SRS_BUFFER_07_033: [** ... and copy the contents of source to the end of the buffer. **]**
+
+**SRS_BUFFER_07_034: [** On success `BUFFER_append_build` shall return 0 **]**
+
+**SRS_BUFFER_07_035: [** If any error is encountered `BUFFER_append_build` shall return a non-null value. **]**
+
 ### BUFFER_unbuild
+
 ```c
 int BUFFER_unbuild(BUFFER_HANDLE b)
 ```
+
 **SRS_BUFFER_07_012: [** BUFFER_unbuild shall clear the underlying unsigned char* data associated with the BUFFER_HANDLE this will return zero on success. **]**
 
 **SRS_BUFFER_07_014: [** BUFFER_unbuild shall return a nonzero value if BUFFER_HANDLE is NULL. **]**

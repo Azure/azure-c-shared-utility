@@ -40,6 +40,7 @@ static int BUFFER_safemalloc(BUFFER* handleptr, size_t size)
     if (handleptr->buffer == NULL)
     {
         /*Codes_SRS_BUFFER_02_003: [If allocating memory fails, then BUFFER_create shall return NULL.]*/
+        LogError("Failure allocating data");
         result = __FAILURE__;
     }
     else
@@ -57,6 +58,7 @@ BUFFER_HANDLE BUFFER_create(const unsigned char* source, size_t size)
     /*Codes_SRS_BUFFER_02_001: [If source is NULL then BUFFER_create shall return NULL.]*/
     if (source == NULL)
     {
+        LogError("invalid parameter source: %p", source);
         result = NULL;
     }
     else
@@ -67,6 +69,7 @@ BUFFER_HANDLE BUFFER_create(const unsigned char* source, size_t size)
         {
             /*Codes_SRS_BUFFER_02_003: [If allocating memory fails, then BUFFER_create shall return NULL.] */
             /*fallthrough*/
+            LogError("Failure allocating BUFFER structure");
         }
         else
         {
@@ -140,6 +143,7 @@ int BUFFER_build(BUFFER_HANDLE handle, const unsigned char* source, size_t size)
             if (newBuffer == NULL)
             {
                 /* Codes_SRS_BUFFER_07_010: [BUFFER_build shall return nonzero if any error is encountered.] */
+                LogError("Failure reallocating buffer");
                 result = __FAILURE__;
             }
             else
@@ -154,6 +158,59 @@ int BUFFER_build(BUFFER_HANDLE handle, const unsigned char* source, size_t size)
         }
     }
 
+    return result;
+}
+
+int BUFFER_append_build(BUFFER_HANDLE handle, const unsigned char* source, size_t size)
+{
+    int result;
+    if (handle == NULL || source == NULL || size == 0)
+    {
+        /* Codes_SRS_BUFFER_07_029: [ BUFFER_append_build shall return nonzero if handle or source are NULL or if size is 0. ] */
+        LogError("BUFFER_append_build failed invalid parameter handle: %p, source: %p, size: %uz", handle, source, size);
+        result = __FAILURE__;
+    }
+    else
+    {
+        if (handle->buffer == NULL)
+        {
+            /* Codes_SRS_BUFFER_07_030: [ if handle->buffer is NULL BUFFER_append_build shall allocate the a buffer of size bytes... ] */
+            if (BUFFER_safemalloc(handle, size) != 0)
+            {
+                /* Codes_SRS_BUFFER_07_035: [ If any error is encountered BUFFER_append_build shall return a non-null value. ] */
+                LogError("Failure with BUFFER_safemalloc");
+                result = __FAILURE__;
+            }
+            else
+            {
+                /* Codes_SRS_BUFFER_07_031: [ ... and copy the contents of source to handle->buffer. ] */
+                (void)memcpy(handle->buffer, source, size);
+                /* Codes_SRS_BUFFER_07_034: [ On success BUFFER_append_build shall return 0 ] */
+                result = 0;
+            }
+        }
+        else
+        {
+            /* Codes_SRS_BUFFER_07_032: [ if handle->buffer is not NULL BUFFER_append_build shall realloc the buffer to be the handle->size + size ] */
+            unsigned char* temp = (unsigned char*)realloc(handle->buffer, handle->size + size);
+            if (temp == NULL)
+            {
+                /* Codes_SRS_BUFFER_07_035: [ If any error is encountered BUFFER_append_build shall return a non-null value. ] */
+                LogError("Failure reallocating temporary buffer");
+                result = __FAILURE__;
+            }
+            else
+            {
+                /* Codes_SRS_BUFFER_07_033: [ ... and copy the contents of source to the end of the buffer. ] */
+                handle->buffer = temp;
+                // Append the BUFFER
+                (void)memcpy(&handle->buffer[handle->size], source, size);
+                handle->size += size;
+                /* Codes_SRS_BUFFER_07_034: [ On success BUFFER_append_build shall return 0 ] */
+                result = 0;
+            }
+        }
+    }
     return result;
 }
 
@@ -179,6 +236,7 @@ int BUFFER_pre_build(BUFFER_HANDLE handle, size_t size)
         if (b->buffer != NULL)
         {
             /* Codes_SRS_BUFFER_07_007: [BUFFER_pre_build shall return nonzero if the buffer has been previously allocated and is not NULL.] */
+            LogError("Failure buffer data is NULL");
             result = __FAILURE__;
         }
         else
@@ -186,6 +244,7 @@ int BUFFER_pre_build(BUFFER_HANDLE handle, size_t size)
             if ((b->buffer = (unsigned char*)malloc(size)) == NULL)
             {
                 /* Codes_SRS_BUFFER_07_013: [BUFFER_pre_build shall return nonzero if any error is encountered.] */
+                LogError("Failure allocating buffer");
                 result = __FAILURE__;
             }
             else
@@ -231,6 +290,7 @@ extern int BUFFER_unbuild(BUFFER_HANDLE handle)
         BUFFER* b = (BUFFER*)handle;
         if (b->buffer != NULL)
         {
+            LogError("Failure buffer data is NULL");
             free(b->buffer);
             b->buffer = NULL;
             b->size = 0;
