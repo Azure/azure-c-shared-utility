@@ -20,7 +20,7 @@ extern "C" {
 // socket_async exposes asynchronous socket operations while hiding OS-specifics. Committing to
 // asynchronous operation also simplifies the interface compared to generic sockets.
 
-#define SOCKET_ASYNC_NULL_SOCKET -1
+#define SOCKET_ASYNC_INVALID_SOCKET  -1
 
     typedef struct
     {
@@ -28,7 +28,7 @@ extern "C" {
         // is strongly recommended to use one of the higher level keepalive (ping) options rather
         // than the TCP level because the higher level options provide server connection status
         // in addition to keeping the connection open.
-        int keep_alive;     // < 0 for system defaults, 0 to disable, > 0 to use supplied idle, interval, and count 
+        int keep_alive;     // < 0 for system defaults, >= 0 to use supplied keep_alive, idle, interval, and count 
         int keep_idle;      // seconds before first keepalive packet (ignored if keep_alive <= 0)
         int keep_interval;  // seconds between keepalive packets (ignored if keep_alive <= 0)
         int keep_count;     // number of times to try before declaring failure (ignored if keep_alive <= 0)
@@ -54,12 +54,12 @@ extern "C" {
     *          for TCP connections only. May be NULL. Ignored for UDP sockets.
     *          Need only exist for the duration of the socket_async_create call.
     *
-    * @return   @c 0 if the API call is successful
-    *           or __FAILURE__ in case it fails. Error logging is
+    * @return   @c The created and configured SOCKET_ASYNC_HANDLE if the API call is successful
+    *           or SOCKET_ASYNC_INVALID_SOCKET in case it fails. Error logging is
     *           performed by the underlying concrete implementation, so no
     *           further error logging is necessary.
     */
-    MOCKABLE_FUNCTION(, int, socket_async_create, SOCKET_ASYNC_HANDLE*, sock, uint32_t, host_ipv4, uint16_t, port, bool, is_UDP, SOCKET_ASYNC_OPTIONS_HANDLE, options);
+    MOCKABLE_FUNCTION(, SOCKET_ASYNC_HANDLE, socket_async_create, uint32_t, host_ipv4, uint16_t, port, bool, is_UDP, SOCKET_ASYNC_OPTIONS_HANDLE, options);
 
     /**
     * @brief	Check whether a newly-created socket_async has completed its initial connection.
@@ -88,7 +88,7 @@ extern "C" {
     * @return   @c 0 if successful.
     *           __FAILURE__ means an unexpected error has occurred and the socket must be destroyed.
     */
-    MOCKABLE_FUNCTION(, int, socket_async_send, SOCKET_ASYNC_HANDLE, sock, void*, buffer, size_t, size, size_t*, sent_count);
+    MOCKABLE_FUNCTION(, int, socket_async_send, SOCKET_ASYNC_HANDLE, sock, const void*, buffer, size_t, size, size_t*, sent_count);
 
     /**
     * @brief	Receive a message on the specified socket.

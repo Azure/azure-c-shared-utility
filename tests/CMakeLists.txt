@@ -69,6 +69,7 @@ add_subdirectory(utf8_checker_ut)
 add_subdirectory(http_proxy_io_ut)
 if(NOT DEFINED MACOSX)
     add_subdirectory(tlsio_esp8266_ut)
+	add_subdirectory(socket_async_ut)
 endif()
 
 #Add template as reference for new tests
