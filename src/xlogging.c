@@ -52,7 +52,7 @@ LOGGER_LOG xlogging_get_log_function(void)
     return global_log_function;
 }
 
-#ifdef _MSC_VER
+#if (defined(_MSC_VER)) && (!(defined WINCE))
 
 LOGGER_LOG_GETLASTERROR global_log_function_GetLastError = consolelogger_log_with_GetLastError;
 
