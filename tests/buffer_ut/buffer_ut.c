@@ -78,11 +78,11 @@ void my_gballoc_free(void* ptr)
 #define BUFFER_TEST1_SIZE             5
 #define BUFFER_TEST2_SIZE             6
 
-unsigned char BUFFER_Test1[] = {0x01,0x02,0x03,0x04,0x05};
-unsigned char BUFFER_Test2[] = {0x06,0x07,0x08,0x09,0x10,0x11};
-unsigned char BUFFER_TEST_VALUE[] = {0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x10,0x11,0x12,0x13,0x14,0x15,0x16};
-unsigned char ADDITIONAL_BUFFER[] = {0x17,0x18,0x19,0x1a,0x1b,0x1c,0x1d,0x1e,0x1f,0x20,0x21,0x22,0x23,0x24,0x25,0x26};
-unsigned char TOTAL_BUFFER[] = {0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,0x18,0x19,0x1a,0x1b,0x1c,0x1d,0x1e,0x1f,0x20,0x21,0x22,0x23,0x24,0x25,0x26};
+static const unsigned char BUFFER_Test1[] = {0x01,0x02,0x03,0x04,0x05};
+static const unsigned char BUFFER_Test2[] = {0x06,0x07,0x08,0x09,0x10,0x11};
+static const unsigned char BUFFER_TEST_VALUE[] = {0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x10,0x11,0x12,0x13,0x14,0x15,0x16};
+static const unsigned char ADDITIONAL_BUFFER[] = {0x17,0x18,0x19,0x1a,0x1b,0x1c,0x1d,0x1e,0x1f,0x20,0x21,0x22,0x23,0x24,0x25,0x26};
+static const unsigned char TOTAL_BUFFER[] = {0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,0x18,0x19,0x1a,0x1b,0x1c,0x1d,0x1e,0x1f,0x20,0x21,0x22,0x23,0x24,0x25,0x26};
 
 static TEST_MUTEX_HANDLE g_testByTest;
 static TEST_MUTEX_HANDLE g_dllByDll;
@@ -412,7 +412,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         BUFFER_delete(g_hBuffer);
     }
 
-    /* Codes_SRS_BUFFER_07_029: [ BUFFER_append_build shall return nonzero if handle or source are NULL or if size is 0. ] */
+    /* Tests_SRS_BUFFER_07_029: [ BUFFER_append_build shall return nonzero if handle or source are NULL or if size is 0. ] */
     TEST_FUNCTION(BUFFER_append_build_handle_NULL_fail)
     {
         ///arrange
@@ -431,7 +431,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         BUFFER_delete(hBuffer);
     }
 
-    /* Codes_SRS_BUFFER_07_029: [ BUFFER_append_build shall return nonzero if handle or source are NULL or if size is 0. ] */
+    /* Tests_SRS_BUFFER_07_029: [ BUFFER_append_build shall return nonzero if handle or source are NULL or if size is 0. ] */
     TEST_FUNCTION(BUFFER_append_build_buffer_NULL_buffer_fail)
     {
         ///arrange
@@ -450,7 +450,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         BUFFER_delete(hBuffer);
     }
 
-    /* Codes_SRS_BUFFER_07_029: [ BUFFER_append_build shall return nonzero if handle or source are NULL or if size is 0. ] */
+    /* Tests_SRS_BUFFER_07_029: [ BUFFER_append_build shall return nonzero if handle or source are NULL or if size is 0. ] */
     TEST_FUNCTION(BUFFER_append_build_Size_Zero_NULL_buffer_fail)
     {
         ///arrange
@@ -469,9 +469,9 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         BUFFER_delete(hBuffer);
     }
 
-    /* Codes_SRS_BUFFER_07_030: [ if handle->buffer is NULL BUFFER_append_build shall allocate the a buffer of size bytes... ] */
-    /* Codes_SRS_BUFFER_07_031: [ ... and copy the contents of source to handle->buffer. ] */
-    /* Codes_SRS_BUFFER_07_034: [ On success BUFFER_append_build shall return 0 ] */
+    /* Tests_SRS_BUFFER_07_030: [ if handle->buffer is NULL BUFFER_append_build shall allocate the a buffer of size bytes... ] */
+    /* Tests_SRS_BUFFER_07_031: [ ... and copy the contents of source to handle->buffer. ] */
+    /* Tests_SRS_BUFFER_07_034: [ On success BUFFER_append_build shall return 0 ] */
     TEST_FUNCTION(BUFFER_append_build_buffer_NULL_succeed)
     {
         //arrange
@@ -493,7 +493,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         BUFFER_delete(hBuffer);
     }
 
-    /* Codes_SRS_BUFFER_07_035: [ If any error is encountered BUFFER_append_build shall return a non-null value. ] */
+    /* Tests_SRS_BUFFER_07_035: [ If any error is encountered BUFFER_append_build shall return a non-null value. ] */
     TEST_FUNCTION(BUFFER_append_build_buffer_NULL_fail)
     {
         //arrange
@@ -514,9 +514,9 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         BUFFER_delete(hBuffer);
     }
 
-    /* Codes_SRS_BUFFER_07_032: [ if handle->buffer is not NULL BUFFER_append_build shall realloc the buffer to be the handle->size + size ] */
-    /* Codes_SRS_BUFFER_07_033: [ ... and copy the contents of source to the end of the buffer. ] */
-    /* Codes_SRS_BUFFER_07_034: [ On success BUFFER_append_build shall return 0 ] */
+    /* Tests_SRS_BUFFER_07_032: [ if handle->buffer is not NULL BUFFER_append_build shall realloc the buffer to be the handle->size + size ] */
+    /* Tests_SRS_BUFFER_07_033: [ ... and copy the contents of source to the end of the buffer. ] */
+    /* Tests_SRS_BUFFER_07_034: [ On success BUFFER_append_build shall return 0 ] */
     TEST_FUNCTION(BUFFER_append_build_succeed)
     {
         //arrange
@@ -541,7 +541,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         BUFFER_delete(hBuffer);
     }
 
-    /* Codes_SRS_BUFFER_07_035: [ If any error is encountered BUFFER_append_build shall return a non-null value. ] */
+    /* Tests_SRS_BUFFER_07_035: [ If any error is encountered BUFFER_append_build shall return a non-null value. ] */
     TEST_FUNCTION(BUFFER_append_build_fail)
     {
         //arrange
@@ -728,6 +728,144 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_NOT_EQUAL(int, nResult, 0);
     }
+
+    /* Tests_SRS_BUFFER_07_036: [ if handle is NULL, BUFFER_shrink shall return a non-null value ]*/
+    TEST_FUNCTION(BUFFER_shrink_handle_NULL_fail)
+    {
+        //arrange
+        int result;
+        //act
+        result = BUFFER_shrink(NULL, ALLOCATION_SIZE, true);
+
+        //assert
+        ASSERT_ARE_NOT_EQUAL(int, result, 0);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        //cleanup
+    }
+
+    /* Tests_SRS_BUFFER_07_037: [ If decreaseSize is equal zero, BUFFER_shrink shall return a non-null value ] */
+    TEST_FUNCTION(BUFFER_shrink_decrease_size_0_fail)
+    {
+        //arrange
+        BUFFER_HANDLE hBuffer;
+        hBuffer = BUFFER_new();
+        int nResult = BUFFER_build(hBuffer, TOTAL_BUFFER, TOTAL_ALLOCATION_SIZE);
+        umock_c_reset_all_calls();
+
+        //act
+        nResult = BUFFER_shrink(hBuffer, 0, true);
+
+        //assert
+        ASSERT_ARE_NOT_EQUAL(int, nResult, 0);
+        ASSERT_ARE_EQUAL(int, 0, memcmp(BUFFER_u_char(hBuffer), TOTAL_BUFFER, TOTAL_ALLOCATION_SIZE));
+        ASSERT_ARE_EQUAL(size_t, BUFFER_length(hBuffer), TOTAL_ALLOCATION_SIZE);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        //cleanup
+        BUFFER_delete(hBuffer);
+    }
+
+    /* Tests_SRS_BUFFER_07_038: [ If decreaseSize is less than the size of the buffer, BUFFER_shrink shall return a non-null value ] */
+    TEST_FUNCTION(BUFFER_shrink_decrease_size_less_than_len_succeed)
+    {
+        //arrange
+        BUFFER_HANDLE hBuffer;
+        hBuffer = BUFFER_new();
+        int nResult = BUFFER_build(hBuffer, TOTAL_BUFFER, TOTAL_ALLOCATION_SIZE);
+        umock_c_reset_all_calls();
+
+        //act
+        nResult = BUFFER_shrink(hBuffer, TOTAL_ALLOCATION_SIZE, true);
+
+        //assert
+        ASSERT_ARE_NOT_EQUAL(int, nResult, 0);
+        ASSERT_ARE_EQUAL(int, 0, memcmp(BUFFER_u_char(hBuffer), TOTAL_BUFFER, TOTAL_ALLOCATION_SIZE));
+        ASSERT_ARE_EQUAL(size_t, BUFFER_length(hBuffer), TOTAL_ALLOCATION_SIZE);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        //cleanup
+        BUFFER_delete(hBuffer);
+    }
+
+    /* Tests_SRS_BUFFER_07_042: [ If a failure is encountered, BUFFER_shrink shall return a non-null value ] */
+    TEST_FUNCTION(BUFFER_shrink_malloc_fail)
+    {
+        //arrange
+        BUFFER_HANDLE hBuffer;
+        hBuffer = BUFFER_new();
+        int nResult = BUFFER_build(hBuffer, TOTAL_BUFFER, TOTAL_ALLOCATION_SIZE);
+        umock_c_reset_all_calls();
+
+        STRICT_EXPECTED_CALL(gballoc_malloc(TOTAL_ALLOCATION_SIZE - ALLOCATION_SIZE)).SetReturn(NULL);
+
+        //act
+        nResult = BUFFER_shrink(hBuffer, ALLOCATION_SIZE, true);
+
+        //assert
+        ASSERT_ARE_NOT_EQUAL(int, nResult, 0);
+        ASSERT_ARE_EQUAL(int, 0, memcmp(BUFFER_u_char(hBuffer), TOTAL_BUFFER, TOTAL_ALLOCATION_SIZE));
+        ASSERT_ARE_EQUAL(size_t, BUFFER_length(hBuffer), TOTAL_ALLOCATION_SIZE);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        //cleanup
+        BUFFER_delete(hBuffer);
+    }
+
+    /* Tests_SRS_BUFFER_07_039: [ BUFFER_shrink shall allocate a temporary buffer of existing buffer size minus decreaseSize. ] */
+    /* Tests_SRS_BUFFER_07_040: [ if the fromEnd variable is true, BUFFER_shrink shall remove the end of the buffer of size decreaseSize. ] */
+    TEST_FUNCTION(BUFFER_shrink_from_end_succeed)
+    {
+        //arrange
+        BUFFER_HANDLE hBuffer;
+        hBuffer = BUFFER_new();
+        int nResult = BUFFER_build(hBuffer, TOTAL_BUFFER, TOTAL_ALLOCATION_SIZE);
+        umock_c_reset_all_calls();
+
+        STRICT_EXPECTED_CALL(gballoc_malloc(TOTAL_ALLOCATION_SIZE-ALLOCATION_SIZE));
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+
+        //act
+        nResult = BUFFER_shrink(hBuffer, ALLOCATION_SIZE, true);
+
+        //assert
+        ASSERT_ARE_EQUAL(int, nResult, 0);
+        ASSERT_ARE_EQUAL(int, 0, memcmp(BUFFER_u_char(hBuffer), BUFFER_Test1, BUFFER_TEST1_SIZE));
+        ASSERT_ARE_EQUAL(size_t, BUFFER_length(hBuffer), ALLOCATION_SIZE);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        //cleanup
+        BUFFER_delete(hBuffer);
+    }
+
+    /* Tests_SRS_BUFFER_07_039: [ BUFFER_shrink shall allocate a temporary buffer of existing buffer size minus decreaseSize. ] */
+    /* Tests_SRS_BUFFER_07_041: [ if the fromEnd variable is false, BUFFER_shrink shall remove the beginning of the buffer of size decreaseSize. ] */
+    TEST_FUNCTION(BUFFER_shrink_from_beginning_succeed)
+    {
+        const unsigned char TEST_TOTAL_BUFFER[] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26 };
+
+        //arrange
+        BUFFER_HANDLE hBuffer;
+        hBuffer = BUFFER_new();
+        int nResult = BUFFER_build(hBuffer, TEST_TOTAL_BUFFER, TOTAL_ALLOCATION_SIZE);
+        umock_c_reset_all_calls();
+
+        STRICT_EXPECTED_CALL(gballoc_malloc(TOTAL_ALLOCATION_SIZE-ALLOCATION_SIZE));
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+
+        //act
+        nResult = BUFFER_shrink(hBuffer, ALLOCATION_SIZE, false);
+
+        //assert
+        ASSERT_ARE_EQUAL(int, nResult, 0);
+        ASSERT_ARE_EQUAL(int, 0, memcmp(BUFFER_u_char(hBuffer), ADDITIONAL_BUFFER, ALLOCATION_SIZE));
+        ASSERT_ARE_EQUAL(size_t, BUFFER_length(hBuffer), ALLOCATION_SIZE);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        //cleanup
+        BUFFER_delete(hBuffer);
+    }
+
 
     /* Tests_SRS_BUFFER_07_017: [BUFFER_enlarge shall return a nonzero result if any parameters are NULL or zero.] */
     /* Tests_SRS_BUFFER_07_018: [BUFFER_enlarge shall return a nonzero result if any error is encountered.] */

@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
+#include <stdbool.h>
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/buffer_.h"
 #include "azure_c_shared_utility/optimize_size.h"
@@ -13,7 +14,7 @@ typedef struct BUFFER_TAG
 {
     unsigned char* buffer;
     size_t size;
-}BUFFER;
+} BUFFER;
 
 /* Codes_SRS_BUFFER_07_001: [BUFFER_new shall allocate a BUFFER_HANDLE that will contain a NULL unsigned char*.] */
 BUFFER_HANDLE BUFFER_new(void)
@@ -312,11 +313,13 @@ int BUFFER_enlarge(BUFFER_HANDLE handle, size_t enlargeSize)
     if (handle == NULL)
     {
         /* Codes_SRS_BUFFER_07_017: [BUFFER_enlarge shall return a nonzero result if any parameters are NULL or zero.] */
+        LogError("Failure: handle is invalid.");
         result = __FAILURE__;
     }
     else if (enlargeSize == 0)
     {
         /* Codes_SRS_BUFFER_07_017: [BUFFER_enlarge shall return a nonzero result if any parameters are NULL or zero.] */
+        LogError("Failure: enlargeSize size is 0.");
         result = __FAILURE__;
     }
     else
@@ -326,6 +329,7 @@ int BUFFER_enlarge(BUFFER_HANDLE handle, size_t enlargeSize)
         if (temp == NULL)
         {
             /* Codes_SRS_BUFFER_07_018: [BUFFER_enlarge shall return a nonzero result if any error is encountered.] */
+            LogError("Failure: allocating temp buffer.");
             result = __FAILURE__;
         }
         else
@@ -333,6 +337,63 @@ int BUFFER_enlarge(BUFFER_HANDLE handle, size_t enlargeSize)
             b->buffer = temp;
             b->size += enlargeSize;
             result = 0;
+        }
+    }
+    return result;
+}
+
+int BUFFER_shrink(BUFFER_HANDLE handle, size_t decreaseSize, bool fromEnd)
+{
+    int result;
+    if (handle == NULL)
+    {
+        /* Codes_SRS_BUFFER_07_036: [ if handle is NULL, BUFFER_shrink shall return a non-null value ]*/
+        LogError("Failure: handle is invalid.");
+        result = __FAILURE__;
+    }
+    else if (decreaseSize == 0)
+    {
+        /* Codes_SRS_BUFFER_07_037: [ If decreaseSize is equal zero, BUFFER_shrink shall return a non-null value ] */
+        LogError("Failure: decrease size is 0.");
+        result = __FAILURE__;
+    }
+    else if (decreaseSize >= handle->size)
+    {
+        /* Codes_SRS_BUFFER_07_038: [ If decreaseSize is less than the size of the buffer, BUFFER_shrink shall return a non-null value ] */
+        LogError("Failure: decrease size is less than buffer size.");
+        result = __FAILURE__;
+    }
+    else
+    {
+        /* Codes_SRS_BUFFER_07_039: [ BUFFER_shrink shall allocate a temporary buffer of existing buffer size minus decreaseSize. ] */
+        size_t alloc_size = handle->size - decreaseSize;
+        unsigned char* tmp = malloc(alloc_size);
+        if (tmp == NULL)
+        {
+            /* Codes_SRS_BUFFER_07_042: [ If a failure is encountered, BUFFER_shrink shall return a non-null value ] */
+            LogError("Failure: allocating temp buffer.");
+            result = __FAILURE__;
+        }
+        else
+        {
+            if (fromEnd)
+            {
+                /* Codes_SRS_BUFFER_07_040: [ if the fromEnd variable is true, BUFFER_shrink shall remove the end of the buffer of size decreaseSize. ] */
+                memcpy(tmp, handle->buffer, alloc_size);
+                free(handle->buffer);
+                handle->buffer = tmp;
+                handle->size = alloc_size;
+                result = 0;
+            }
+            else
+            {
+                /* Codes_SRS_BUFFER_07_041: [ if the fromEnd variable is false, BUFFER_shrink shall remove the beginning of the buffer of size decreaseSize. ] */
+                memcpy(tmp, handle->buffer + decreaseSize, alloc_size);
+                free(handle->buffer);
+                handle->buffer = tmp;
+                handle->size = alloc_size;
+                result = 0;
+            }
         }
     }
     return result;
@@ -393,6 +454,7 @@ int BUFFER_append(BUFFER_HANDLE handle1, BUFFER_HANDLE handle2)
                 if (temp == NULL)
                 {
                     /* Codes_SRS_BUFFER_07_023: [BUFFER_append shall return a nonzero upon any error that is encountered.] */
+                    LogError("Failure: allocating temp buffer.");
                     result = __FAILURE__;
                 }
                 else
@@ -447,6 +509,7 @@ int BUFFER_prepend(BUFFER_HANDLE handle1, BUFFER_HANDLE handle2)
                 if (temp == NULL)
                 {
                     /* Codes_SRS_BUFFER_01_005: [ BUFFER_prepend shall return a non-zero upon value any error that is encountered. ]*/
+                    LogError("Failure: allocating temp buffer.");
                     result = __FAILURE__;
                 }
                 else
@@ -518,6 +581,7 @@ BUFFER_HANDLE BUFFER_clone(BUFFER_HANDLE handle)
         {
             if (BUFFER_safemalloc(b, suppliedBuff->size) != 0)
             {
+                LogError("Failure: allocating temp buffer.");
                 result = NULL;
             }
             else

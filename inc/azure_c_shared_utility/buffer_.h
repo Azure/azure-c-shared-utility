@@ -6,10 +6,12 @@
 
 #ifdef __cplusplus
 #include <cstddef>
+#include <cstdbool>
 extern "C"
 {
 #else
 #include <stddef.h>
+#include <stdbool.h>
 #endif
 
 #include "azure_c_shared_utility/umock_c_prod.h"
@@ -24,6 +26,7 @@ MOCKABLE_FUNCTION(, int, BUFFER_build, BUFFER_HANDLE, handle, const unsigned cha
 MOCKABLE_FUNCTION(, int, BUFFER_append_build, BUFFER_HANDLE, handle, const unsigned char*, source, size_t, size);
 MOCKABLE_FUNCTION(, int, BUFFER_unbuild, BUFFER_HANDLE, handle);
 MOCKABLE_FUNCTION(, int, BUFFER_enlarge, BUFFER_HANDLE, handle, size_t, enlargeSize);
+MOCKABLE_FUNCTION(, int, BUFFER_shrink, BUFFER_HANDLE, handle, size_t, decreaseSize, bool, fromEnd);
 MOCKABLE_FUNCTION(, int, BUFFER_content, BUFFER_HANDLE, handle, const unsigned char**, content);
 MOCKABLE_FUNCTION(, int, BUFFER_size, BUFFER_HANDLE, handle, size_t*, size);
 MOCKABLE_FUNCTION(, int, BUFFER_append, BUFFER_HANDLE, handle1, BUFFER_HANDLE, handle2);

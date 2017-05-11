@@ -123,6 +123,7 @@ int BUFFER_unbuild(BUFFER_HANDLE b)
 **SRS_BUFFER_07_015: [** BUFFER_unbuild shall return a nonzero value if the unsigned char* referenced by BUFFER_HANDLE is NULL. **]**
 
 ### BUFFER_enlarge
+
 ```c
 int BUFFER_enlarge(BUFFER_HANDLE handle, size_t enlargeSize)
 ```
@@ -133,7 +134,28 @@ int BUFFER_enlarge(BUFFER_HANDLE handle, size_t enlargeSize)
 
 **SRS_BUFFER_07_018: [** BUFFER_enlarge shall return a nonzero result if any error is encountered. **]**
 
+### BUFFER_shrink
+
+```c
+int BUFFER_shrink(BUFFER_HANDLE handle, size_t decreaseSize, bool fromEnd)
+```
+
+**SRS_BUFFER_07_036: [** if handle is NULL, `BUFFER_shrink` shall return a non-null value **]**
+
+**SRS_BUFFER_07_037: [** If decreaseSize is equal zero, `BUFFER_shrink` shall return a non-null value **]**
+
+**SRS_BUFFER_07_038: [** If decreaseSize is less than the size of the buffer, `BUFFER_shrink` shall return a non-null value **]**
+
+**SRS_BUFFER_07_039: [** `BUFFER_shrink` shall allocate a temporary buffer of existing buffer size minus decreaseSize. **]**
+
+**SRS_BUFFER_07_040: [** if the fromEnd variable is true, `BUFFER_shrink` shall remove the end of the buffer of size decreaseSize. **]**
+
+**SRS_BUFFER_07_041: [** if the fromEnd variable is false, `BUFFER_shrink` shall remove the beginning of the buffer of size decreaseSize. **]**
+
+**SRS_BUFFER_07_042: [** If a failure is encountered, `BUFFER_shrink` shall return a non-null value **]**
+
 ### BUFFER_content
+
 ```c
 int BUFFER_content(BUFFER_HANDLE handle, unsigned char** content)
 ```
