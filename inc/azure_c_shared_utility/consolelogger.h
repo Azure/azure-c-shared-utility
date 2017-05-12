@@ -10,7 +10,11 @@ extern "C" {
 
 #include "azure_c_shared_utility/xlogging.h"
 
-    extern void consolelogger_log(LOG_CATEGORY log_category, const char* file, const char* func, const int line, unsigned int options, const char* format, ...);
+    extern void consolelogger_log(LOG_CATEGORY log_category, const char* file, const char* func, int line, unsigned int options, const char* format, ...);
+
+#if (defined(_MSC_VER)) && (!(defined WINCE))
+    extern void consolelogger_log_with_GetLastError(const char* file, const char* func, int line, const char* format, ...);
+#endif
 
 #ifdef __cplusplus
 }
