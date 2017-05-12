@@ -154,6 +154,7 @@ int BUFFER_shrink(BUFFER_HANDLE handle, size_t decreaseSize, bool fromEnd)
 
 **SRS_BUFFER_07_042: [** If a failure is encountered, `BUFFER_shrink` shall return a non-null value **]**
 
+**SRS_BUFFER_07_043: [** If the decreaseSize is equal the buffer size , `BUFFER_shrink` shall deallocate the buffer and set the size to zero. **]**
 ### BUFFER_content
 
 ```c

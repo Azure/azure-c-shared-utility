@@ -776,7 +776,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         umock_c_reset_all_calls();
 
         //act
-        nResult = BUFFER_shrink(hBuffer, TOTAL_ALLOCATION_SIZE, true);
+        nResult = BUFFER_shrink(hBuffer, TOTAL_ALLOCATION_SIZE+1, true);
 
         //assert
         ASSERT_ARE_NOT_EQUAL(int, nResult, 0);
@@ -832,6 +832,32 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         ASSERT_ARE_EQUAL(int, nResult, 0);
         ASSERT_ARE_EQUAL(int, 0, memcmp(BUFFER_u_char(hBuffer), BUFFER_Test1, BUFFER_TEST1_SIZE));
         ASSERT_ARE_EQUAL(size_t, BUFFER_length(hBuffer), ALLOCATION_SIZE);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        //cleanup
+        BUFFER_delete(hBuffer);
+    }
+
+    /* Tests_SRS_BUFFER_07_039: [ BUFFER_shrink shall allocate a temporary buffer of existing buffer size minus decreaseSize. ] */
+    /* Tests_SRS_BUFFER_07_040: [ if the fromEnd variable is true, BUFFER_shrink shall remove the end of the buffer of size decreaseSize. ] */
+    /* Tests_SRS_BUFFER_07_043: [ If the decreaseSize is equal the buffer size , BUFFER_shrink shall deallocate the buffer and set the size to zero. ] */
+    TEST_FUNCTION(BUFFER_shrink_all_buffer_succeed)
+    {
+        //arrange
+        BUFFER_HANDLE hBuffer;
+        hBuffer = BUFFER_new();
+        int nResult = BUFFER_build(hBuffer, TOTAL_BUFFER, TOTAL_ALLOCATION_SIZE);
+        umock_c_reset_all_calls();
+
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+
+        //act
+        nResult = BUFFER_shrink(hBuffer, TOTAL_ALLOCATION_SIZE, true);
+
+        //assert
+        ASSERT_ARE_EQUAL(int, nResult, 0);
+        ASSERT_IS_NULL(BUFFER_u_char(hBuffer));
+        ASSERT_ARE_EQUAL(size_t, BUFFER_length(hBuffer), 0);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         //cleanup

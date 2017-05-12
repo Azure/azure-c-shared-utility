@@ -357,7 +357,7 @@ int BUFFER_shrink(BUFFER_HANDLE handle, size_t decreaseSize, bool fromEnd)
         LogError("Failure: decrease size is 0.");
         result = __FAILURE__;
     }
-    else if (decreaseSize >= handle->size)
+    else if (decreaseSize > handle->size)
     {
         /* Codes_SRS_BUFFER_07_038: [ If decreaseSize is less than the size of the buffer, BUFFER_shrink shall return a non-null value ] */
         LogError("Failure: decrease size is less than buffer size.");
@@ -367,32 +367,43 @@ int BUFFER_shrink(BUFFER_HANDLE handle, size_t decreaseSize, bool fromEnd)
     {
         /* Codes_SRS_BUFFER_07_039: [ BUFFER_shrink shall allocate a temporary buffer of existing buffer size minus decreaseSize. ] */
         size_t alloc_size = handle->size - decreaseSize;
-        unsigned char* tmp = malloc(alloc_size);
-        if (tmp == NULL)
+        if (alloc_size == 0)
         {
-            /* Codes_SRS_BUFFER_07_042: [ If a failure is encountered, BUFFER_shrink shall return a non-null value ] */
-            LogError("Failure: allocating temp buffer.");
-            result = __FAILURE__;
+            /* Codes_SRS_BUFFER_07_043: [ If the decreaseSize is equal the buffer size , BUFFER_shrink shall deallocate the buffer and set the size to zero. ] */
+            free(handle->buffer);
+            handle->buffer = NULL;
+            handle->size = 0;
+            result = 0;
         }
         else
         {
-            if (fromEnd)
+            unsigned char* tmp = malloc(alloc_size);
+            if (tmp == NULL)
             {
-                /* Codes_SRS_BUFFER_07_040: [ if the fromEnd variable is true, BUFFER_shrink shall remove the end of the buffer of size decreaseSize. ] */
-                memcpy(tmp, handle->buffer, alloc_size);
-                free(handle->buffer);
-                handle->buffer = tmp;
-                handle->size = alloc_size;
-                result = 0;
+                /* Codes_SRS_BUFFER_07_042: [ If a failure is encountered, BUFFER_shrink shall return a non-null value ] */
+                LogError("Failure: allocating temp buffer.");
+                result = __FAILURE__;
             }
             else
             {
-                /* Codes_SRS_BUFFER_07_041: [ if the fromEnd variable is false, BUFFER_shrink shall remove the beginning of the buffer of size decreaseSize. ] */
-                memcpy(tmp, handle->buffer + decreaseSize, alloc_size);
-                free(handle->buffer);
-                handle->buffer = tmp;
-                handle->size = alloc_size;
-                result = 0;
+                if (fromEnd)
+                {
+                    /* Codes_SRS_BUFFER_07_040: [ if the fromEnd variable is true, BUFFER_shrink shall remove the end of the buffer of size decreaseSize. ] */
+                    memcpy(tmp, handle->buffer, alloc_size);
+                    free(handle->buffer);
+                    handle->buffer = tmp;
+                    handle->size = alloc_size;
+                    result = 0;
+                }
+                else
+                {
+                    /* Codes_SRS_BUFFER_07_041: [ if the fromEnd variable is false, BUFFER_shrink shall remove the beginning of the buffer of size decreaseSize. ] */
+                    memcpy(tmp, handle->buffer + decreaseSize, alloc_size);
+                    free(handle->buffer);
+                    handle->buffer = tmp;
+                    handle->size = alloc_size;
+                    result = 0;
+                }
             }
         }
     }
