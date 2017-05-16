@@ -11,6 +11,7 @@
 #include "azure_c_shared_utility/uniqueid.h"
 
 static TEST_MUTEX_HANDLE g_testByTest;
+static TEST_MUTEX_HANDLE g_dllByDll;
 
 TEST_DEFINE_ENUM_TYPE(UNIQUEID_RESULT, UNIQUEID_RESULT_VALUES);
 
