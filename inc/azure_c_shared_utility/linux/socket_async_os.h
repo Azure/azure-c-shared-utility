@@ -13,4 +13,5 @@
 #include <sys/errno.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <netdb.h>
 
