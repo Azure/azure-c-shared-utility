@@ -170,8 +170,8 @@ const void* my_singlylinkedlist_item_get_value(LIST_ITEM_HANDLE item_handle)
 LIST_ITEM_HANDLE my_singlylinkedlist_find(SINGLYLINKEDLIST_HANDLE handle, LIST_MATCH_FUNCTION match_function, const void* match_context)
 {
     size_t i;
-    (void)handle;
     const void* found_item = NULL;
+    (void)handle;
     for (i = 0; i < list_item_count; i++)
     {
         if (match_function((LIST_ITEM_HANDLE)list_items[i], match_context))
@@ -439,14 +439,15 @@ TEST_FUNCTION(socketio_create_io_create_parameters_NULL_fails)
 TEST_FUNCTION(socketio_create_singlylinkedlist_create_fails)
 {
     // arrange
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
+	CONCRETE_IO_HANDLE ioHandle;
+
+	EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
     EXPECTED_CALL(singlylinkedlist_create()).SetReturn((SINGLYLINKEDLIST_HANDLE)NULL);
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
-    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
-
     // act
-    CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig);
+    ioHandle = socketio_create(&socketConfig);
 
     // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -456,14 +457,15 @@ TEST_FUNCTION(socketio_create_singlylinkedlist_create_fails)
 TEST_FUNCTION(socketio_create_succeeds)
 {
     // arrange
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
+	CONCRETE_IO_HANDLE ioHandle;
+
+	EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
     EXPECTED_CALL(singlylinkedlist_create());
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
 
-    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
-
     // act
-    CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig);
+    ioHandle = socketio_create(&socketConfig);
 
     // assert
     ASSERT_IS_NOT_NULL(ioHandle);
@@ -534,6 +536,7 @@ TEST_FUNCTION(socketio_open_socket_io_NULL_fails)
 TEST_FUNCTION(socketio_open_socket_fails)
 {
     // arrange
+	int result;
     SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
     CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig);
 
@@ -547,7 +550,7 @@ TEST_FUNCTION(socketio_open_socket_fails)
 #endif
 
     // act
-    int result = socketio_open(ioHandle, test_on_io_open_complete, &callbackContext, test_on_bytes_received, &callbackContext, test_on_io_error, &callbackContext);
+    result = socketio_open(ioHandle, test_on_io_open_complete, &callbackContext, test_on_bytes_received, &callbackContext, test_on_io_error, &callbackContext);
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
@@ -560,6 +563,7 @@ TEST_FUNCTION(socketio_open_socket_fails)
 TEST_FUNCTION(socketio_open_getaddrinfo_fails)
 {
     // arrange
+	int result;
     SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
     CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig);
 
@@ -576,7 +580,7 @@ TEST_FUNCTION(socketio_open_getaddrinfo_fails)
     EXPECTED_CALL(closesocket(IGNORED_NUM_ARG));
 
     // act
-    int result = socketio_open(ioHandle, test_on_io_open_complete, &callbackContext, test_on_bytes_received, &callbackContext, test_on_io_error, &callbackContext);
+    result = socketio_open(ioHandle, test_on_io_open_complete, &callbackContext, test_on_bytes_received, &callbackContext, test_on_io_error, &callbackContext);
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
@@ -589,6 +593,7 @@ TEST_FUNCTION(socketio_open_getaddrinfo_fails)
 TEST_FUNCTION(socketio_open_connect_fails)
 {
     // arrange
+	int result;
     SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
     CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig);
 
@@ -607,7 +612,7 @@ TEST_FUNCTION(socketio_open_connect_fails)
     EXPECTED_CALL(freeaddrinfo(&TEST_ADDR_INFO));
 
     // act
-    int result = socketio_open(ioHandle, test_on_io_open_complete, &callbackContext, test_on_bytes_received, &callbackContext, test_on_io_error, &callbackContext);
+    result = socketio_open(ioHandle, test_on_io_open_complete, &callbackContext, test_on_bytes_received, &callbackContext, test_on_io_error, &callbackContext);
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
@@ -620,6 +625,7 @@ TEST_FUNCTION(socketio_open_connect_fails)
 TEST_FUNCTION(socketio_open_ioctlsocket_fails)
 {
     // arrange
+	int result;
     SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
     CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig);
     static ADDRINFO addrInfo = { AI_PASSIVE, AF_INET, SOCK_STREAM, IPPROTO_TCP, 128, NULL, (struct sockaddr*)0x11, NULL };
@@ -640,7 +646,7 @@ TEST_FUNCTION(socketio_open_ioctlsocket_fails)
     EXPECTED_CALL(freeaddrinfo(&TEST_ADDR_INFO));
 
     // act
-    int result = socketio_open(ioHandle, test_on_io_open_complete, &callbackContext, test_on_bytes_received, &callbackContext, test_on_io_error, &callbackContext);
+    result = socketio_open(ioHandle, test_on_io_open_complete, &callbackContext, test_on_bytes_received, &callbackContext, test_on_io_error, &callbackContext);
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
@@ -653,6 +659,7 @@ TEST_FUNCTION(socketio_open_ioctlsocket_fails)
 TEST_FUNCTION(socketio_open_succeeds)
 {
     // arrange
+	int result;
     SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
     CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig);
 
@@ -665,7 +672,7 @@ TEST_FUNCTION(socketio_open_succeeds)
     EXPECTED_CALL(freeaddrinfo(&TEST_ADDR_INFO));
 
     // act
-    int result = socketio_open(ioHandle, test_on_io_open_complete, &callbackContext, test_on_bytes_received, &callbackContext, test_on_io_error, &callbackContext);
+    result = socketio_open(ioHandle, test_on_io_open_complete, &callbackContext, test_on_bytes_received, &callbackContext, test_on_io_error, &callbackContext);
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
@@ -934,13 +941,14 @@ TEST_FUNCTION(socketio_setoption_fails_when_option_name_is_null)
 {
     // arrange
     int irrelevant = 1;
+	int result;
 
     CONCRETE_IO_HANDLE ioHandle = setup_socket();
 
     umock_c_reset_all_calls();
 
     // act
-    int result = socketio_setoption(ioHandle, NULL, &irrelevant);
+    result = socketio_setoption(ioHandle, NULL, &irrelevant);
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
@@ -951,12 +959,13 @@ TEST_FUNCTION(socketio_setoption_fails_when_option_name_is_null)
 TEST_FUNCTION(socketio_setoption_fails_when_value_is_null)
 {
     // arrange
+	int result;
     CONCRETE_IO_HANDLE ioHandle = setup_socket();
 
     umock_c_reset_all_calls();
 
     // act
-    int result = socketio_setoption(ioHandle, "tcp_keepalive", NULL);
+    result = socketio_setoption(ioHandle, "tcp_keepalive", NULL);
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
@@ -968,13 +977,14 @@ TEST_FUNCTION(socketio_setoption_fails_when_it_receives_an_unsupported_option)
 {
     // arrange
     int irrelevant = 1;
+	int result;
 
     CONCRETE_IO_HANDLE ioHandle = setup_socket();
 
     umock_c_reset_all_calls();
 
     // act
-    int result = socketio_setoption(ioHandle, "unsupported_option_name", &irrelevant);
+    result = socketio_setoption(ioHandle, "unsupported_option_name", &irrelevant);
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
@@ -1091,6 +1101,7 @@ TEST_FUNCTION(socketio_setoption_does_not_persist_keepalive_values_if_WSAIoctl_f
 {
     // arrange
     int irrelevant = 1;
+	int result;
 
     CONCRETE_IO_HANDLE ioHandle = setup_socket();
 
@@ -1110,7 +1121,7 @@ TEST_FUNCTION(socketio_setoption_does_not_persist_keepalive_values_if_WSAIoctl_f
     memset(&persisted_tcp_keepalive, 0, sizeof(struct tcp_keepalive));
 
     // act
-    int result = socketio_setoption(ioHandle, "tcp_keepalive", &irrelevant);
+    result = socketio_setoption(ioHandle, "tcp_keepalive", &irrelevant);
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
 
     result = socketio_setoption(ioHandle, "tcp_keepalive_time", &irrelevant); // use different option for 2nd call so we don't overwrite the value from the 1st

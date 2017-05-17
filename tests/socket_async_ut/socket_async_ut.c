@@ -137,6 +137,9 @@ BEGIN_TEST_SUITE(socket_async_ut)
 TEST_SUITE_INITIALIZE(a)
 {
     int result;
+	size_t type_size;
+	ssize_t sr_error;
+
     TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
     g_testByTest = TEST_MUTEX_CREATE();
     ASSERT_IS_NOT_NULL(g_testByTest);
@@ -151,7 +154,7 @@ TEST_SUITE_INITIALIZE(a)
     ASSERT_ARE_EQUAL(int, 0, result);
 
     // Unnatural type_size variable exists to avoid "conditional expression is constant" warning
-    size_t type_size = sizeof(ssize_t);
+    type_size = sizeof(ssize_t);
     if (type_size == sizeof(int32_t))
     {
         REGISTER_UMOCK_ALIAS_TYPE(ssize_t, int32_t);
@@ -179,7 +182,7 @@ TEST_SUITE_INITIALIZE(a)
         ASSERT_FAIL("bad socklen_t");
     }
 
-    ssize_t sr_error = (ssize_t)(-1);
+    sr_error = (ssize_t)(-1);
     REGISTER_GLOBAL_MOCK_RETURNS(socket, test_socket, -1);
     REGISTER_GLOBAL_MOCK_RETURNS(bind, 0, -1);
     REGISTER_GLOBAL_MOCK_RETURNS(connect, 0, -1);
@@ -254,7 +257,7 @@ TEST_SUITE_INITIALIZE(a)
     {
         ///arrange
         // no calls expected
-
+		int i;
         size_t received_count_receptor = BAD_BUFFER_COUNT;
         send_receive_parameters_t parameters[3];
 
@@ -264,7 +267,7 @@ TEST_SUITE_INITIALIZE(a)
         populate_s_r_parameters(parameters + 2, test_msg,   0,                  &received_count_receptor,   "Unexpected receive_result success when size parameter is 0");
 
         // Cycle through each failing combo of parameters
-        for (int i = 0; i < sizeof(parameters) / sizeof(send_receive_parameters_t); i++)
+        for (i = 0; i < sizeof(parameters) / sizeof(send_receive_parameters_t); i++)
         {
             ///act
             int receive_result = socket_async_receive(test_socket, parameters[i].buffer, parameters[i].size, parameters[i].returned_count);
@@ -284,6 +287,7 @@ TEST_SUITE_INITIALIZE(a)
     {
         ///arrange
         char *buffer = test_msg;
+		int receive_result;
         size_t size = sizeof(test_msg);
         size_t received_count_receptor = BAD_BUFFER_COUNT;
         size_t *received_count = &received_count_receptor;
@@ -296,7 +300,7 @@ TEST_SUITE_INITIALIZE(a)
             .CopyOutArgumentBuffer_optval(&getsockopt_extended_error_return_value, sizeof_int);
 
         ///act
-        int receive_result = socket_async_receive(test_socket, buffer, size, received_count);
+        receive_result = socket_async_receive(test_socket, buffer, size, received_count);
 
         ///assert
         ASSERT_ARE_EQUAL_WITH_MSG(size_t, received_count_receptor, BAD_BUFFER_COUNT, "Unexpected received_count_receptor");
@@ -312,6 +316,7 @@ TEST_SUITE_INITIALIZE(a)
     {
         ///arrange
         char *buffer = test_msg;
+		int receive_result;
         size_t size = sizeof(test_msg);
         size_t received_count_receptor = BAD_BUFFER_COUNT;
         size_t *received_count = &received_count_receptor;
@@ -324,7 +329,7 @@ TEST_SUITE_INITIALIZE(a)
             .CopyOutArgumentBuffer_optval(&getsockopt_extended_error_return_value, sizeof_int);
 
         ///act
-        int receive_result = socket_async_receive(test_socket, buffer, size, received_count);
+        receive_result = socket_async_receive(test_socket, buffer, size, received_count);
 
         ///assert
         ASSERT_ARE_EQUAL_WITH_MSG(size_t, received_count_receptor, 0, "Unexpected received_count_receptor");
@@ -340,6 +345,7 @@ TEST_SUITE_INITIALIZE(a)
     {
         ///arrange
         char *buffer = test_msg;
+		int receive_result;
         size_t size = sizeof(test_msg);
         size_t received_count_receptor;
         size_t *received_count = &received_count_receptor;
@@ -347,7 +353,7 @@ TEST_SUITE_INITIALIZE(a)
         STRICT_EXPECTED_CALL(recv(test_socket, buffer, size, RECV_ZERO_FLAGS));
 
         ///act
-        int receive_result = socket_async_receive(test_socket, buffer, size, received_count);
+        receive_result = socket_async_receive(test_socket, buffer, size, received_count);
 
         ///assert
         ASSERT_ARE_EQUAL_WITH_MSG(size_t, received_count_receptor, sizeof(test_msg), "Unexpected received_count_receptor");
@@ -364,7 +370,7 @@ TEST_SUITE_INITIALIZE(a)
     {
         ///arrange
         // no calls expected
-
+		int i;
         size_t sent_count_receptor = BAD_BUFFER_COUNT;
         send_receive_parameters_t parameters[2];
         //                                     buffer       size            received_count              fail_msg
@@ -372,7 +378,7 @@ TEST_SUITE_INITIALIZE(a)
         populate_s_r_parameters(parameters + 1, test_msg, sizeof(test_msg), NULL,                 "Unexpected receive_result success when received_count is NULL");
 
         // Cycle through each failing combo of parameters
-        for (int i = 0; i < sizeof(parameters) / sizeof(send_receive_parameters_t); i++)
+        for (i = 0; i < sizeof(parameters) / sizeof(send_receive_parameters_t); i++)
         {
             ///act
             int send_result = socket_async_send(test_socket, parameters[i].buffer, parameters[i].size, parameters[i].returned_count);
@@ -389,7 +395,7 @@ TEST_SUITE_INITIALIZE(a)
     TEST_FUNCTION(socket_async_send__send_fail__fails)
     {
         ///arrange
-
+		int send_result;
         char *buffer = test_msg;
         size_t size = sizeof(test_msg);
         size_t sent_count_receptor = BAD_BUFFER_COUNT;
@@ -403,7 +409,7 @@ TEST_SUITE_INITIALIZE(a)
             .CopyOutArgumentBuffer_optval(&getsockopt_extended_error_return_value, sizeof_int);
 
         ///act
-        int send_result = socket_async_send(test_socket, buffer, size, sent_count);
+        send_result = socket_async_send(test_socket, buffer, size, sent_count);
 
         ///assert
         ASSERT_ARE_NOT_EQUAL_WITH_MSG(int, send_result, 0, "Unexpected send_result success");
@@ -417,6 +423,7 @@ TEST_SUITE_INITIALIZE(a)
     TEST_FUNCTION(socket_async_send__send_waiting__succeeds)
     {
         ///arrange
+		int send_result;
         char *buffer = test_msg;
         size_t size = sizeof(test_msg);
         size_t sent_count_receptor = BAD_BUFFER_COUNT;
@@ -430,7 +437,7 @@ TEST_SUITE_INITIALIZE(a)
             .CopyOutArgumentBuffer_optval(&getsockopt_extended_error_return_value, sizeof_int);
 
         ///act
-        int send_result = socket_async_send(test_socket, buffer, size, sent_count);
+        send_result = socket_async_send(test_socket, buffer, size, sent_count);
 
         ///assert
         ASSERT_ARE_EQUAL_WITH_MSG(size_t, sent_count_receptor, 0, "Unexpected sent_count_receptor");
@@ -467,6 +474,7 @@ TEST_SUITE_INITIALIZE(a)
     TEST_FUNCTION(socket_async_send__succeeds)
     {
         ///arrange
+		int send_result;
         char *buffer = test_msg;
         size_t size = sizeof(test_msg);
         size_t sent_count_receptor = BAD_BUFFER_COUNT;
@@ -475,7 +483,7 @@ TEST_SUITE_INITIALIZE(a)
         STRICT_EXPECTED_CALL(send(test_socket, buffer, size, SEND_ZERO_FLAGS));
 
         ///act
-        int send_result = socket_async_send(test_socket, buffer, size, sent_count);
+        send_result = socket_async_send(test_socket, buffer, size, sent_count);
 
         ///assert
         ASSERT_ARE_EQUAL_WITH_MSG(size_t, sent_count_receptor, sizeof(test_msg), "Unexpected sent_count_receptor");
@@ -506,6 +514,7 @@ TEST_SUITE_INITIALIZE(a)
     TEST_FUNCTION(socket_async_is_create_complete__select_fail__fails)
     {
         ///arrange
+		int create_complete_result;
         bool is_complete;
         bool* is_complete_param = &is_complete;
         // getsockopt is used to get the extended error information after a socket failure
@@ -517,7 +526,7 @@ TEST_SUITE_INITIALIZE(a)
             .CopyOutArgumentBuffer_optval(&getsockopt_extended_error_return_value, sizeof_int);
 
         ///act
-        int create_complete_result = socket_async_is_create_complete(test_socket, is_complete_param);
+        create_complete_result = socket_async_is_create_complete(test_socket, is_complete_param);
 
         ///assert
         ASSERT_ARE_NOT_EQUAL_WITH_MSG(int, create_complete_result, 0, "Unexpected create_complete_result success");
@@ -528,13 +537,15 @@ TEST_SUITE_INITIALIZE(a)
     TEST_FUNCTION(socket_async_is_create_complete__errset_set__fails)
     {
         ///arrange
+		int getsockopt_extended_error_return_value;
+		int create_complete_result;
         bool is_complete;
         bool* is_complete_param = &is_complete;
         // Define how the FD_ISSET etc. macros behave
         // Cause the FD_ISSET macro to detect a failure even though select() succeeded
         select_behavior = SELECT_TCP_IS_COMPLETE_ERRSET_FAIL;
         // getsockopt is used to get the extended error information after a socket failure
-        int getsockopt_extended_error_return_value = EXTENDED_ERROR_FAIL;
+        getsockopt_extended_error_return_value = EXTENDED_ERROR_FAIL;
 
         STRICT_EXPECTED_CALL(select(test_socket + 1, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
         // getsockopt is used to get the extended error information after a socket failure
@@ -542,7 +553,7 @@ TEST_SUITE_INITIALIZE(a)
             .CopyOutArgumentBuffer_optval(&getsockopt_extended_error_return_value, sizeof_int);
 
         ///act
-        int create_complete_result = socket_async_is_create_complete(test_socket, is_complete_param);
+        create_complete_result = socket_async_is_create_complete(test_socket, is_complete_param);
 
         ///assert
         ASSERT_ARE_NOT_EQUAL_WITH_MSG(int, create_complete_result, 0, "Unexpected create_complete_result success");
@@ -553,6 +564,7 @@ TEST_SUITE_INITIALIZE(a)
     TEST_FUNCTION(socket_async_is_create_complete__waiting__succeeds)
     {
         ///arrange
+		int create_complete_result;
         bool is_complete = true; // unexpected so change can be detected
         bool* is_complete_param = &is_complete;
         // Define how the FD_ISET etc. macros behave
@@ -561,7 +573,7 @@ TEST_SUITE_INITIALIZE(a)
         STRICT_EXPECTED_CALL(select(test_socket + 1, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
 
         ///act
-        int create_complete_result = socket_async_is_create_complete(test_socket, is_complete_param);
+        create_complete_result = socket_async_is_create_complete(test_socket, is_complete_param);
 
         ///assert
         ASSERT_IS_FALSE_WITH_MSG(is_complete, "Unexpected is_complete failure");
@@ -573,6 +585,7 @@ TEST_SUITE_INITIALIZE(a)
     TEST_FUNCTION(socket_async_is_create_complete__succeeds)
     {
         ///arrange
+		int create_complete_result;
         bool is_complete = false; // unexpected so change can be detected
         bool* is_complete_param = &is_complete;
         // Define how the FD_ISET etc. macros behave
@@ -581,7 +594,7 @@ TEST_SUITE_INITIALIZE(a)
         STRICT_EXPECTED_CALL(select(test_socket + 1, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
 
         ///act
-        int create_complete_result = socket_async_is_create_complete(test_socket, is_complete_param);
+        create_complete_result = socket_async_is_create_complete(test_socket, is_complete_param);
 
         ///assert
         ASSERT_IS_TRUE_WITH_MSG(is_complete, "Unexpected is_complete failure");
@@ -593,13 +606,14 @@ TEST_SUITE_INITIALIZE(a)
     TEST_FUNCTION(socket_async_create__create_fail__fails)
     {
         ///arrange
+		SOCKET_ASYNC_HANDLE create_result;
         SOCKET_ASYNC_OPTIONS* options = NULL;
         bool is_udp = false;
 
         STRICT_EXPECTED_CALL(socket(AF_INET, SOCK_STREAM /* the TCP value, doesn't matter */, 0)).SetReturn(SOCKET_FAIL_RETURN);
 
         ///act
-        SOCKET_ASYNC_HANDLE create_result = socket_async_create(test_ipv4, test_port, is_udp, options);
+        create_result = socket_async_create(test_ipv4, test_port, is_udp, options);
 
         ///assert
         ASSERT_ARE_EQUAL_WITH_MSG(int, create_result, SOCKET_ASYNC_INVALID_SOCKET, "Unexpected create_result success");
@@ -610,6 +624,7 @@ TEST_SUITE_INITIALIZE(a)
     TEST_FUNCTION(socket_async_create__opt_default_fail__fails)
     {
         ///arrange
+		SOCKET_ASYNC_HANDLE create_result;
         SOCKET_ASYNC_OPTIONS* options = NULL;
         bool is_udp = false;
 
@@ -618,7 +633,7 @@ TEST_SUITE_INITIALIZE(a)
         STRICT_EXPECTED_CALL(setsockopt(test_socket, IGNORED_NUM_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG)).SetReturn(SETSOCKOPT_FAIL_RETURN);
 
         ///act
-        SOCKET_ASYNC_HANDLE create_result = socket_async_create(test_ipv4, test_port, is_udp, options);
+        create_result = socket_async_create(test_ipv4, test_port, is_udp, options);
 
         ///assert
         ASSERT_ARE_EQUAL_WITH_MSG(int, create_result, SOCKET_ASYNC_INVALID_SOCKET, "Unexpected create_result success");
@@ -629,12 +644,13 @@ TEST_SUITE_INITIALIZE(a)
     TEST_FUNCTION(socket_async_create__set_all_options_fail__fails)
     {
         ///arrange
-        int negativeTestsInitResult = umock_c_negative_tests_init();
-        ASSERT_ARE_EQUAL(int, 0, negativeTestsInitResult);
-
         SOCKET_ASYNC_OPTIONS options_value = { test_keep_alive , test_keep_idle , test_keep_interval, test_keep_count };
         SOCKET_ASYNC_OPTIONS* options = &options_value;
         bool is_udp = false;
+        int negativeTestsInitResult = umock_c_negative_tests_init();
+		size_t i;
+
+        ASSERT_ARE_EQUAL(int, 0, negativeTestsInitResult);
 
         STRICT_EXPECTED_CALL(socket(AF_INET, SOCK_STREAM, 0));
         STRICT_EXPECTED_CALL(setsockopt(test_socket, IGNORED_NUM_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG));
@@ -643,13 +659,15 @@ TEST_SUITE_INITIALIZE(a)
         STRICT_EXPECTED_CALL(setsockopt(test_socket, IGNORED_NUM_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG));
         umock_c_negative_tests_snapshot();
 
-        for (unsigned int i = 1; i < umock_c_negative_tests_call_count(); i++)
+        for (i = 1; i < umock_c_negative_tests_call_count(); i++)
         {
-            umock_c_negative_tests_reset();
+			SOCKET_ASYNC_HANDLE create_result;
+
+			umock_c_negative_tests_reset();
             umock_c_negative_tests_fail_call(i);
 
             ///act
-            SOCKET_ASYNC_HANDLE create_result = socket_async_create(test_ipv4, test_port, is_udp, options);
+            create_result = socket_async_create(test_ipv4, test_port, is_udp, options);
 
             ///assert
             ASSERT_ARE_EQUAL_WITH_MSG(int, create_result, SOCKET_ASYNC_INVALID_SOCKET, "Unexpected create_result success");
@@ -668,7 +686,7 @@ TEST_SUITE_INITIALIZE(a)
         bool is_udp = false;
         // getsockopt is used to get the extended error information after a socket failure
         int getsockopt_extended_error_return_value = EXTENDED_ERROR_FAIL;
-
+		SOCKET_ASYNC_HANDLE create_result;
 
         STRICT_EXPECTED_CALL(socket(AF_INET, SOCK_STREAM, 0));
         STRICT_EXPECTED_CALL(setsockopt(test_socket, IGNORED_NUM_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG));
@@ -680,7 +698,7 @@ TEST_SUITE_INITIALIZE(a)
             .CopyOutArgumentBuffer_optval(&getsockopt_extended_error_return_value, sizeof_int);
 
         ///act
-        SOCKET_ASYNC_HANDLE create_result = socket_async_create(test_ipv4, test_port, is_udp, options);
+        create_result = socket_async_create(test_ipv4, test_port, is_udp, options);
 
         ///assert
         ASSERT_ARE_EQUAL_WITH_MSG(int, create_result, SOCKET_ASYNC_INVALID_SOCKET, "Unexpected create_result success");
@@ -694,6 +712,7 @@ TEST_SUITE_INITIALIZE(a)
         SOCKET_ASYNC_OPTIONS options_value = { test_keep_alive , test_keep_idle , test_keep_interval, test_keep_count };
         SOCKET_ASYNC_OPTIONS* options = &options_value;
         bool is_udp = false;
+		SOCKET_ASYNC_HANDLE create_result;
         // getsockopt is used to get the extended error information after a socket failure
         int getsockopt_extended_error_return_value = EXTENDED_ERROR_FAIL;
 
@@ -709,7 +728,7 @@ TEST_SUITE_INITIALIZE(a)
             .CopyOutArgumentBuffer_optval(&getsockopt_extended_error_return_value, sizeof_int);
 
         ///act
-        SOCKET_ASYNC_HANDLE create_result = socket_async_create(test_ipv4, test_port, is_udp, options);
+        create_result = socket_async_create(test_ipv4, test_port, is_udp, options);
 
         ///assert
         ASSERT_ARE_EQUAL_WITH_MSG(int, create_result, SOCKET_ASYNC_INVALID_SOCKET, "Unexpected create_result success");
@@ -722,13 +741,13 @@ TEST_SUITE_INITIALIZE(a)
     TEST_FUNCTION(socket_async_create__tcp_connect_waiting__succeeds)
     {
         ///arrange
-        init_keep_alive_values();
         SOCKET_ASYNC_OPTIONS options_value = { test_keep_alive , test_keep_idle , test_keep_interval, test_keep_count };
         SOCKET_ASYNC_OPTIONS* options = &options_value;
         bool is_udp = false;
+		SOCKET_ASYNC_HANDLE create_result;
         // getsockopt is used to get the extended error information after a socket failure
-        int getsockopt_extended_error_return_value = EXTENDED_ERROR_CONNECt_WAITING;
-
+        int getsockopt_extended_error_return_value = EXTENDED_ERROR_CONNECT_WAITING;
+        init_keep_alive_values();
 
         STRICT_EXPECTED_CALL(socket(AF_INET, SOCK_STREAM, 0));
         STRICT_EXPECTED_CALL(setsockopt(test_socket, IGNORED_NUM_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG));
@@ -741,7 +760,7 @@ TEST_SUITE_INITIALIZE(a)
             .CopyOutArgumentBuffer_optval(&getsockopt_extended_error_return_value, sizeof_int);
 
         ///act
-        SOCKET_ASYNC_HANDLE create_result = socket_async_create(test_ipv4, test_port, is_udp, options);
+        create_result = socket_async_create(test_ipv4, test_port, is_udp, options);
 
         ///assert
         ASSERT_KEEP_ALIVE_SET();
@@ -755,11 +774,11 @@ TEST_SUITE_INITIALIZE(a)
     TEST_FUNCTION(socket_async_create__tcp_succeeds)
     {
         ///arrange
-        init_keep_alive_values();
         SOCKET_ASYNC_OPTIONS options_value = { test_keep_alive , test_keep_idle , test_keep_interval, test_keep_count };
         SOCKET_ASYNC_OPTIONS* options = &options_value;
         bool is_udp = false;
-
+		SOCKET_ASYNC_HANDLE create_result;
+        init_keep_alive_values();
 
         STRICT_EXPECTED_CALL(socket(AF_INET, SOCK_STREAM /* the TCP value */, 0));
         STRICT_EXPECTED_CALL(setsockopt(test_socket, IGNORED_NUM_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG));
@@ -770,7 +789,7 @@ TEST_SUITE_INITIALIZE(a)
         STRICT_EXPECTED_CALL(connect(test_socket, IGNORED_PTR_ARG, IGNORED_NUM_ARG));
 
         ///act
-        SOCKET_ASYNC_HANDLE create_result = socket_async_create(test_ipv4, test_port, is_udp, options);
+        create_result = socket_async_create(test_ipv4, test_port, is_udp, options);
 
         ///assert
         ASSERT_KEEP_ALIVE_SET();
@@ -784,18 +803,18 @@ TEST_SUITE_INITIALIZE(a)
     TEST_FUNCTION(socket_async_create__tcp_default_sys_keep_alive__succeeds)
     {
         ///arrange
-        init_keep_alive_values();
         SOCKET_ASYNC_OPTIONS options_value = { test_keep_alive_sys_default , test_keep_idle , test_keep_interval, test_keep_count };
         SOCKET_ASYNC_OPTIONS* options = &options_value;
         bool is_udp = false;
-
+		SOCKET_ASYNC_HANDLE create_result;
+        init_keep_alive_values();
 
         STRICT_EXPECTED_CALL(socket(AF_INET, SOCK_STREAM /* the TCP value */, 0));
         STRICT_EXPECTED_CALL(bind(test_socket, IGNORED_PTR_ARG, IGNORED_NUM_ARG));
         STRICT_EXPECTED_CALL(connect(test_socket, IGNORED_PTR_ARG, IGNORED_NUM_ARG));
 
         ///act
-        SOCKET_ASYNC_HANDLE create_result = socket_async_create(test_ipv4, test_port, is_udp, options);
+        create_result = socket_async_create(test_ipv4, test_port, is_udp, options);
 
         ///assert
         ASSERT_KEEP_ALIVE_UNTOUCHED();
@@ -809,10 +828,10 @@ TEST_SUITE_INITIALIZE(a)
     TEST_FUNCTION(socket_async_create__tcp_keep_alive_off_by_default__succeeds)
     {
         ///arrange
-        init_keep_alive_values();
         SOCKET_ASYNC_OPTIONS* options = NULL;
         bool is_udp = false;
-
+		SOCKET_ASYNC_HANDLE create_result;
+        init_keep_alive_values();
 
         STRICT_EXPECTED_CALL(socket(AF_INET, SOCK_STREAM /* the TCP value */, 0));
         STRICT_EXPECTED_CALL(setsockopt(test_socket, IGNORED_NUM_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG));
@@ -820,7 +839,7 @@ TEST_SUITE_INITIALIZE(a)
         STRICT_EXPECTED_CALL(connect(test_socket, IGNORED_PTR_ARG, IGNORED_NUM_ARG));
 
         ///act
-        SOCKET_ASYNC_HANDLE create_result = socket_async_create(test_ipv4, test_port, is_udp, options);
+        create_result = socket_async_create(test_ipv4, test_port, is_udp, options);
 
         ///assert
         ASSERT_KEEP_ALIVE_FALSE();
@@ -834,18 +853,18 @@ TEST_SUITE_INITIALIZE(a)
     TEST_FUNCTION(socket_async_create__udp__succeeds)
     {
         ///arrange
-        init_keep_alive_values();
         SOCKET_ASYNC_OPTIONS options_value = { test_keep_alive_sys_default , test_keep_idle , test_keep_interval, test_keep_count };
         SOCKET_ASYNC_OPTIONS* options = &options_value;
         bool is_udp = true;
-
+		SOCKET_ASYNC_HANDLE create_result;
+        init_keep_alive_values();
 
         STRICT_EXPECTED_CALL(socket(AF_INET, SOCK_DGRAM /* the UDP value */, 0));
         STRICT_EXPECTED_CALL(bind(test_socket, IGNORED_PTR_ARG, IGNORED_NUM_ARG));
         STRICT_EXPECTED_CALL(connect(test_socket, IGNORED_PTR_ARG, IGNORED_NUM_ARG));
 
         ///act
-        SOCKET_ASYNC_HANDLE create_result = socket_async_create(test_ipv4, test_port, is_udp, options);
+        create_result = socket_async_create(test_ipv4, test_port, is_udp, options);
 
         ///assert
         ASSERT_KEEP_ALIVE_UNTOUCHED();

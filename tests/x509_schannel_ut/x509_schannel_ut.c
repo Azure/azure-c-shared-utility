@@ -7,6 +7,7 @@
 
 /*the following #defines will make "inconsistent dll linkage" warning go away (that is, it takes away declspec(dllexport) */
 #define WINCRYPT32API
+#define _ADVAPI32_
 #define WINADVAPI
 
 #include "windows.h"
@@ -365,6 +366,7 @@ BEGIN_TEST_SUITE(x509_schannel_unittests)
     TEST_FUNCTION(x509_schannel_create_succeeds)
     {
         ///arrange
+		X509_SCHANNEL_HANDLE h;
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)) /*this is creating the handle storage space*/
             .IgnoreArgument_size();
@@ -423,7 +425,7 @@ BEGIN_TEST_SUITE(x509_schannel_unittests)
             .IgnoreArgument_ptr();
 
         ///act
-        X509_SCHANNEL_HANDLE h = x509_schannel_create("certificate", "private key");
+        h = x509_schannel_create("certificate", "private key");
         
         ///assert
         ASSERT_IS_NOT_NULL(h);
@@ -437,9 +439,16 @@ BEGIN_TEST_SUITE(x509_schannel_unittests)
     TEST_FUNCTION(x509_schannel_negative_test_cases)
     {
         ///arrange
-
+		size_t i;
         int negativeTestsInitResult = umock_c_negative_tests_init();
-        ASSERT_ARE_EQUAL(int, 0, negativeTestsInitResult);
+        size_t calls_that_cannot_fail[] = {
+            14, /*gballoc_free*/
+            15, /*gballoc_free*/
+            16, /*gballoc_free*/
+            
+        };
+
+		ASSERT_ARE_EQUAL(int, 0, negativeTestsInitResult);
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)) /*this is creating the handle storage space*/
             .IgnoreArgument_size();
@@ -499,14 +508,7 @@ BEGIN_TEST_SUITE(x509_schannel_unittests)
 
         umock_c_negative_tests_snapshot();
 
-        size_t calls_that_cannot_fail[] = {
-            14, /*gballoc_free*/
-            15, /*gballoc_free*/
-            16, /*gballoc_free*/
-            
-        };
-        
-        for (size_t i = 0; i < umock_c_negative_tests_call_count(); i++)
+        for (i = 0; i < umock_c_negative_tests_call_count(); i++)
         {
             ///arrange
             size_t j;
@@ -519,13 +521,14 @@ BEGIN_TEST_SUITE(x509_schannel_unittests)
 
             if (j == sizeof(calls_that_cannot_fail) / sizeof(calls_that_cannot_fail[0]))
             {
+                char temp_str[128];
+				X509_SCHANNEL_HANDLE h;
 
                 umock_c_negative_tests_reset();
                 umock_c_negative_tests_fail_call(i);
                 ///act
-                char temp_str[128];
                 (void)sprintf(temp_str, "On failed call %zu", i);
-                X509_SCHANNEL_HANDLE h = x509_schannel_create("certificate", "private key");
+                h = x509_schannel_create("certificate", "private key");
 
                 ///assert
                 ASSERT_IS_NULL_WITH_MSG(h, temp_str);
@@ -593,11 +596,12 @@ BEGIN_TEST_SUITE(x509_schannel_unittests)
     TEST_FUNCTION(x509_schannel_get_certificate_context_succeeds)
     {
         ///arrange
+		PCCERT_CONTEXT p;
         X509_SCHANNEL_HANDLE h = x509_schannel_create("certificate", "private key");
         umock_c_reset_all_calls();
 
         ///act
-        PCCERT_CONTEXT p = x509_schannel_get_certificate_context(h);
+        p = x509_schannel_get_certificate_context(h);
        
         ///assert
         ASSERT_IS_NOT_NULL(p);

@@ -464,14 +464,12 @@ public:
         }
     }
 
-    _Must_inspect_result_
-        UINT32 getCurrentTick(void)
+    UINT32 getCurrentTick(void)
     {
             return m_currentTick;
     }
 
-    _Must_inspect_result_
-        UINT32 getAndIncOrder(_In_ UINT32 time)
+    UINT32 getAndIncOrder(_In_ UINT32 time)
     {
             if (time<MAXTICK)
             {

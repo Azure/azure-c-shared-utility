@@ -56,13 +56,15 @@ BEGIN_TEST_SUITE(platformarduino_ut)
 
     TEST_SUITE_INITIALIZE(a)
     {
+		int result;
+
         TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
         g_testByTest = TEST_MUTEX_CREATE();
         ASSERT_IS_NOT_NULL(g_testByTest);
 
         (void)umock_c_init(on_umock_c_error);
 
-        int result = umocktypes_charptr_register_types();
+        result = umocktypes_charptr_register_types();
 		ASSERT_ARE_EQUAL(int, 0, result);
 
 		REGISTER_UMOCK_ALIAS_TYPE(IO_INTERFACE_DESCRIPTION, void*);
@@ -128,8 +130,8 @@ BEGIN_TEST_SUITE(platformarduino_ut)
 	TEST_FUNCTION(platform_get_default_tlsio__valid_ptr_succeed)
 	{
 		///arrange
-		my_tlsio_arduino_get_interface_description_return = (IO_INTERFACE_DESCRIPTION*)malloc(sizeof(IO_INTERFACE_DESCRIPTION));
 		const IO_INTERFACE_DESCRIPTION* result;
+		my_tlsio_arduino_get_interface_description_return = (IO_INTERFACE_DESCRIPTION*)malloc(sizeof(IO_INTERFACE_DESCRIPTION));
 
         umock_c_reset_all_calls();
 
@@ -154,8 +156,8 @@ BEGIN_TEST_SUITE(platformarduino_ut)
 	TEST_FUNCTION(platform_get_default_tlsio__NULL_failed)
 	{
 		///arrange
-		my_tlsio_arduino_get_interface_description_return = NULL;
 		const IO_INTERFACE_DESCRIPTION* result;
+		my_tlsio_arduino_get_interface_description_return = NULL;
 
 		STRICT_EXPECTED_CALL(tlsio_arduino_get_interface_description());
 

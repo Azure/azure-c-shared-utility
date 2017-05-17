@@ -22,7 +22,6 @@ public:
         T::CMockCallRecorder::m_MockCallComparer->SetIgnoreUnexpectedCalls(false);
     }
 
-    _Must_inspect_result_
     virtual bool IsUnexpectedCall(_In_ const CMockMethodCallBase* actualCall)
     {
         if (T::CMockCallRecorder::m_MockCallComparer->GetIgnoreUnexpectedCalls())
@@ -35,7 +34,6 @@ public:
         }
     }
 
-    _Must_inspect_result_
     virtual bool IsMissingCall(_In_ const CMockMethodCallBase* expectedCall)
     {
         return ((!expectedCall->HasMatch()) &&
@@ -44,7 +42,6 @@ public:
                 (!expectedCall->m_OnlySpecifiesActions));
     }
 
-    _Must_inspect_result_
     virtual CMockMethodCallBase* MatchCall(std::vector<CMockMethodCallBase*>& expectedCalls,
         CMockMethodCallBase* actualCall)
      {

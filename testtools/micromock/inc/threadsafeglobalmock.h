@@ -38,8 +38,6 @@ public:
         }
     }
 
-    _Check_return_
-    _Post_satisfies_(return != NULL)
     static CThreadSafeGlobalMock<C>* GetSingleton()
     {
         if (NULL == m_GlobalMockInstance)

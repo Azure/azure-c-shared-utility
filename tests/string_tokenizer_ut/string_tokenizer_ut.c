@@ -136,12 +136,12 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
     TEST_FUNCTION(STRING_TOKENIZER_create_succeed)
     {
         ///arrange
+		STRING_TOKENIZER_HANDLE t;
         const char* inputString = "Pirlimpimpim";
 
         STRING_HANDLE input_string_handle = STRING_construct(inputString);
 
         umock_c_reset_all_calls();
-        ///act
 
         STRICT_EXPECTED_CALL(gballoc_malloc(0))  //Token Allocation.
             .IgnoreArgument(1);
@@ -149,8 +149,8 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
         STRICT_EXPECTED_CALL(gballoc_malloc(0))  //Token Content Allocation.
             .IgnoreArgument(1);
 
-
-        STRING_TOKENIZER_HANDLE t = STRING_TOKENIZER_create(input_string_handle);
+        ///act
+        t = STRING_TOKENIZER_create(input_string_handle);
 
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ///assert
@@ -181,9 +181,9 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
     {
         ///arrange
         const char* inputString = "Pirlimpimpim";
+		STRING_TOKENIZER_HANDLE t;
 
         umock_c_reset_all_calls();
-        ///act
 
         STRICT_EXPECTED_CALL(gballoc_malloc(0))  //Token Allocation.
             .IgnoreArgument(1);
@@ -191,8 +191,8 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
         STRICT_EXPECTED_CALL(gballoc_malloc(0))  //Token Content Allocation.
             .IgnoreArgument(1);
 
-
-        STRING_TOKENIZER_HANDLE t = STRING_TOKENIZER_create_from_char(inputString);
+        ///act
+        t = STRING_TOKENIZER_create_from_char(inputString);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -207,18 +207,19 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
     {
         ///arrange
         const char* inputString = "Pirlimpimpim";
+		STRING_TOKENIZER_HANDLE t;
 
         STRING_HANDLE input_string_handle = STRING_construct(inputString);
 
         umock_c_reset_all_calls();
-        ///act
 
         
         EXPECTED_CALL(gballoc_malloc(0));  //Token Allocation.
 
 
         whenShallmalloc_fail = currentmalloc_call + 1;
-        STRING_TOKENIZER_HANDLE t = STRING_TOKENIZER_create(input_string_handle);
+        ///act
+        t = STRING_TOKENIZER_create(input_string_handle);
 
         ///assert
         ASSERT_IS_NULL(t);
@@ -233,12 +234,13 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
     TEST_FUNCTION(STRING_TOKENIZER_get_next_token_handle_NULL_Fail)
     {
         ///arrange
+		int r;
         STRING_HANDLE output_string_handle = STRING_new();
 
         umock_c_reset_all_calls();
 
         ///act
-        int r = STRING_TOKENIZER_get_next_token(NULL, output_string_handle, "m");
+        r = STRING_TOKENIZER_get_next_token(NULL, output_string_handle, "m");
 
         ///assert
         ASSERT_ARE_NOT_EQUAL(int, r, 0);
@@ -251,12 +253,13 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
     TEST_FUNCTION(STRING_TOKENIZER_get_next_token_Delimiter_empty_Fail)
     {
         ///arrange
+		int r;
         STRING_HANDLE output_string_handle = STRING_new();
 
         umock_c_reset_all_calls();
 
         ///act
-        int r = STRING_TOKENIZER_get_next_token(NULL, output_string_handle, "");
+        r = STRING_TOKENIZER_get_next_token(NULL, output_string_handle, "");
 
         ///assert
         ASSERT_ARE_NOT_EQUAL(int, r, 0);
@@ -270,6 +273,7 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
     TEST_FUNCTION(STRING_TOKENIZER_get_next_token_output_NULL_Fail)
     {
         ///arrange
+		int r;
         const char* inputString = "Pirlimpimpim";
 
         STRING_HANDLE input_string_handle = STRING_construct(inputString);
@@ -279,7 +283,7 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
         umock_c_reset_all_calls();
 
         ///act
-        int r = STRING_TOKENIZER_get_next_token(t, NULL, "m");
+        r = STRING_TOKENIZER_get_next_token(t, NULL, "m");
 
         ///assert
         ASSERT_ARE_NOT_EQUAL(int, r, 0);
@@ -293,6 +297,7 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
     TEST_FUNCTION(STRING_TOKENIZER_get_next_token_delimiters_NULL_Fail)
     {
         ///arrange
+		int r;
         const char* inputString = "Pirlimpimpim";
 
         STRING_HANDLE input_string_handle = STRING_construct(inputString);
@@ -303,7 +308,7 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
         umock_c_reset_all_calls();
 
         ///act
-        int r = STRING_TOKENIZER_get_next_token(t, output_string_handle, NULL);
+        r = STRING_TOKENIZER_get_next_token(t, output_string_handle, NULL);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ///assert
         ASSERT_ARE_NOT_EQUAL(int, r, 0);
@@ -317,6 +322,7 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
     TEST_FUNCTION(STRING_TOKENIZER_get_next_token_PIRLI_Succeed)
     {
         ///arrange
+		int r;
         const char* inputString = "Pirlimpimpim";
 
         STRING_HANDLE input_string_handle = STRING_construct(inputString);
@@ -331,7 +337,7 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
             .IgnoreArgument(2);
 
         ///act
-        int r = STRING_TOKENIZER_get_next_token(t, output_string_handle, "m");
+        r = STRING_TOKENIZER_get_next_token(t, output_string_handle, "m");
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, "Pirli", STRING_c_str(output_string_handle));
@@ -347,6 +353,7 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
     TEST_FUNCTION(STRING_TOKENIZER_get_next_token_Start_With_Delimiter_Succeed)
     {
         ///arrange
+		int r;
         const char* inputString = "Pirlimpimpim";
 
         STRING_HANDLE input_string_handle = STRING_construct(inputString);
@@ -361,7 +368,7 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
             .IgnoreArgument(2);
 
         ///act
-        int r = STRING_TOKENIZER_get_next_token(t, output_string_handle, "P");
+        r = STRING_TOKENIZER_get_next_token(t, output_string_handle, "P");
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, "irlimpimpim", STRING_c_str(output_string_handle));
@@ -378,6 +385,7 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
     TEST_FUNCTION(STRING_TOKENIZER_get_next_token_Start_And_End_With_Delimiter_Succeed)
     {
         ///arrange
+		int r;
         const char* inputString = "PirlimP";
 
         STRING_HANDLE input_string_handle = STRING_construct(inputString);
@@ -392,7 +400,7 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
             .IgnoreArgument(2);
 
         ///act
-        int r = STRING_TOKENIZER_get_next_token(t, output_string_handle, "P");
+        r = STRING_TOKENIZER_get_next_token(t, output_string_handle, "P");
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, "irlim", STRING_c_str(output_string_handle));
@@ -408,6 +416,7 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
     TEST_FUNCTION(STRING_TOKENIZER_get_next_token_with_All_token_String_Fail)
     {
         ///arrange
+		int r;
         const char* inputString = "PPPPPP";
 
         STRING_HANDLE input_string_handle = STRING_construct(inputString);
@@ -418,7 +427,7 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
         umock_c_reset_all_calls();
 
         ///act
-        int r = STRING_TOKENIZER_get_next_token(t, output_string_handle, "P");
+        r = STRING_TOKENIZER_get_next_token(t, output_string_handle, "P");
 
         ///assert
         ASSERT_ARE_NOT_EQUAL(int, r, 0);
@@ -433,6 +442,7 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
     TEST_FUNCTION(STRING_TOKENIZER_get_next_token_2Times_With_Just_1Token_SecondCall_Fail)
     {
         ///arrange
+		int r;
         const char* inputString = "TestP";
 
         STRING_HANDLE input_string_handle = STRING_construct(inputString);
@@ -447,7 +457,7 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
             .IgnoreArgument(2);
 
         ///act1
-        int r = STRING_TOKENIZER_get_next_token(t, output_string_handle, "P");
+        r = STRING_TOKENIZER_get_next_token(t, output_string_handle, "P");
 
         ///Assert1
         ASSERT_ARE_EQUAL(char_ptr, "Test", STRING_c_str(output_string_handle));
@@ -470,6 +480,7 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
     TEST_FUNCTION(STRING_TOKENIZER_get_next_token_2charactersToken_at_begin_of_input_call_1_Time_Succeed)
     {
         ///arrange
+		int r;
         const char* inputString = "??This is a Test";
 
         STRING_HANDLE input_string_handle = STRING_construct(inputString);
@@ -483,8 +494,8 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
             .IgnoreArgument(1)
             .IgnoreArgument(2);
 
-        ///act1
-        int r = STRING_TOKENIZER_get_next_token(t, output_string_handle, "?");
+        ///act
+        r = STRING_TOKENIZER_get_next_token(t, output_string_handle, "?");
 
         ///Assert1
         ASSERT_ARE_EQUAL(char_ptr, "This is a Test", STRING_c_str(output_string_handle));
@@ -501,6 +512,7 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
     TEST_FUNCTION(STRING_TOKENIZER_get_next_token_stringWith3Tokens_Call3Times_Succeed)
     {
         ///arrange
+		int r;
         const char* inputString = "Test1PTest2PTest3";
 
         STRING_HANDLE input_string_handle = STRING_construct(inputString);
@@ -520,8 +532,8 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
             .IgnoreArgument(1)
             .IgnoreArgument(2);
 
-        ///act1
-        int r = STRING_TOKENIZER_get_next_token(t, output_string_handle, "P");
+        ///act
+        r = STRING_TOKENIZER_get_next_token(t, output_string_handle, "P");
         
         ///Assert1
         ASSERT_ARE_EQUAL(char_ptr, "Test1", STRING_c_str(output_string_handle));
@@ -551,6 +563,7 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
     TEST_FUNCTION(STRING_TOKENIZER_get_next_token_inputEmptyString_Fail)
     {
         ///arrange
+		int r;
         const char* inputString = "";
 
         STRING_HANDLE input_string_handle = STRING_construct(inputString);
@@ -561,7 +574,7 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
         umock_c_reset_all_calls();
 
         ///act
-        int r = STRING_TOKENIZER_get_next_token(t, output_string_handle, "P");
+        r = STRING_TOKENIZER_get_next_token(t, output_string_handle, "P");
 
         ///Assert
         ASSERT_ARE_NOT_EQUAL(int, r, 0);
@@ -577,6 +590,7 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
     TEST_FUNCTION(STRING_TOKENIZER_get_next_token_multipleCalls_DifferentToken_Succeed)
     {
         ///arrange
+		int r;
         const char* inputString = "?a???b,,,#c";
 
         STRING_HANDLE input_string_handle = STRING_construct(inputString);
@@ -592,7 +606,7 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
             .IgnoreArgument(2);
 
 
-        int r = STRING_TOKENIZER_get_next_token(t, output_string_handle, "?");
+        r = STRING_TOKENIZER_get_next_token(t, output_string_handle, "?");
 
         ///Assert1
         ASSERT_ARE_EQUAL(char_ptr,"a", STRING_c_str(output_string_handle));
@@ -638,6 +652,7 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
     TEST_FUNCTION(STRING_TOKENIZER_get_next_token_inputString_with_SingleCharacter_call2Times_succeed)
     {
         ///arrange
+		int r;
         const char* inputString = "c";
 
         STRING_HANDLE input_string_handle = STRING_construct(inputString);
@@ -653,7 +668,7 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
             .IgnoreArgument(2);
 
 
-        int r = STRING_TOKENIZER_get_next_token(t, output_string_handle, "?");
+        r = STRING_TOKENIZER_get_next_token(t, output_string_handle, "?");
 
         ///Assert1
         ASSERT_ARE_EQUAL(char_ptr,"c", STRING_c_str(output_string_handle));
@@ -676,6 +691,7 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
     TEST_FUNCTION(STRING_TOKENIZER_get_next_token_inputString_with_NULL_in_the_Middle_succeed)
     {
         ///arrange
+		int r;
         const char* inputString = "This is a Test \0 1234";
 
         STRING_HANDLE input_string_handle = STRING_construct(inputString);
@@ -691,7 +707,7 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
             .IgnoreArgument(2);
 
 
-        int r = STRING_TOKENIZER_get_next_token(t, output_string_handle, "1");
+        r = STRING_TOKENIZER_get_next_token(t, output_string_handle, "1");
 
         ///Assert1
         ASSERT_ARE_EQUAL(char_ptr,"This is a Test ", STRING_c_str(output_string_handle));
@@ -709,6 +725,7 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
     TEST_FUNCTION(STRING_TOKENIZER_get_next_token_inputString_with_specialCharacters_succeed)
     {
         ///arrange
+		int r;
         const char* inputString = "This is a Test \r\n 1234 \r\n\t 12345";
 
         STRING_HANDLE input_string_handle = STRING_construct(inputString);
@@ -724,7 +741,7 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
             .IgnoreArgument(2);
 
 
-        int r = STRING_TOKENIZER_get_next_token(t, output_string_handle, "\r\n");
+        r = STRING_TOKENIZER_get_next_token(t, output_string_handle, "\r\n");
 
         ///Assert1
         ASSERT_ARE_EQUAL(char_ptr,"This is a Test ", STRING_c_str(output_string_handle));

@@ -226,11 +226,12 @@ TEST_FUNCTION_CLEANUP(method_cleanup)
 TEST_FUNCTION(xio_create_with_all_args_except_interface_description_NULL_succeeds)
 {
     // arrange
+	XIO_HANDLE result;
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
     STRICT_EXPECTED_CALL(test_xio_create(NULL));
 
     // act
-    XIO_HANDLE result = xio_create(&test_io_description, NULL);
+    result = xio_create(&test_io_description, NULL);
 
     // assert
     ASSERT_IS_NOT_NULL(result);
@@ -244,11 +245,12 @@ TEST_FUNCTION(xio_create_with_all_args_except_interface_description_NULL_succeed
 TEST_FUNCTION(xio_create_passes_the_args_to_the_concrete_io_implementation)
 {
     // arrange
+	XIO_HANDLE result;
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
     STRICT_EXPECTED_CALL(test_xio_create((void*)0x4243));
 
     // act
-    XIO_HANDLE result = xio_create(&test_io_description, (void*)0x4243);
+    result = xio_create(&test_io_description, (void*)0x4243);
 
     // assert
     ASSERT_IS_NOT_NULL(result);
@@ -262,13 +264,14 @@ TEST_FUNCTION(xio_create_passes_the_args_to_the_concrete_io_implementation)
 TEST_FUNCTION(when_concrete_xio_create_fails_then_xio_create_fails)
 {
     // arrange
+	XIO_HANDLE result;
     STRICT_EXPECTED_CALL(test_xio_create(NULL))
         .SetReturn((CONCRETE_IO_HANDLE)NULL);
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
     // act
-    XIO_HANDLE result = xio_create(&test_io_description, NULL);
+    result = xio_create(&test_io_description, NULL);
 
     // assert
     ASSERT_IS_NULL(result);
@@ -483,13 +486,14 @@ TEST_FUNCTION(when_concrete_xio_setoption_is_NULL_then_xio_create_fails)
 TEST_FUNCTION(when_allocating_memory_Fails_then_xio_create_fails)
 {
     // arrange
+	XIO_HANDLE result;
     g_fail_alloc_calls = 1;
 
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
         .SetReturn((void*)NULL);
 
     // act
-    XIO_HANDLE result = xio_create(&test_io_description, NULL);
+    result = xio_create(&test_io_description, NULL);
 
     // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -535,13 +539,14 @@ TEST_FUNCTION(xio_destroy_with_null_handle_does_nothing)
 TEST_FUNCTION(xio_open_calls_the_underlying_concrete_xio_open_and_succeeds)
 {
     // arrange
+	int result;
     XIO_HANDLE handle = xio_create(&test_io_description, NULL);
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(test_xio_open(TEST_CONCRETE_IO_HANDLE, test_on_io_open_complete, (void*)1, test_on_bytes_received, (void*)2, test_on_io_error, (void*)3));
 
     // act
-    int result = xio_open(handle, test_on_io_open_complete, (void*)1, test_on_bytes_received, (void*)2, test_on_io_error, (void*)3);
+    result = xio_open(handle, test_on_io_open_complete, (void*)1, test_on_bytes_received, (void*)2, test_on_io_error, (void*)3);
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
@@ -568,6 +573,7 @@ TEST_FUNCTION(xio_open_with_NULL_handle_fails)
 TEST_FUNCTION(when_the_concrete_xio_open_fails_then_xio_open_fails)
 {
     // arrange
+	int result;
     XIO_HANDLE handle = xio_create(&test_io_description, NULL);
     umock_c_reset_all_calls();
 
@@ -575,7 +581,7 @@ TEST_FUNCTION(when_the_concrete_xio_open_fails_then_xio_open_fails)
         .SetReturn(1);
 
     // act
-    int result = xio_open(handle, test_on_io_open_complete, (void*)1, test_on_bytes_received, (void*)2, test_on_io_error, (void*)3);
+    result = xio_open(handle, test_on_io_open_complete, (void*)1, test_on_bytes_received, (void*)2, test_on_io_error, (void*)3);
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
@@ -592,13 +598,14 @@ TEST_FUNCTION(when_the_concrete_xio_open_fails_then_xio_open_fails)
 TEST_FUNCTION(xio_close_calls_the_underlying_concrete_xio_close_and_succeeds)
 {
     // arrange
+	int result;
     XIO_HANDLE handle = xio_create(&test_io_description, NULL);
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(test_xio_close(TEST_CONCRETE_IO_HANDLE, test_on_io_close_complete, (void*)0x4242));
 
     // act
-    int result = xio_close(handle, test_on_io_close_complete, (void*)0x4242);
+    result = xio_close(handle, test_on_io_close_complete, (void*)0x4242);
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
@@ -625,6 +632,7 @@ TEST_FUNCTION(xio_close_with_NULL_handle_fails)
 TEST_FUNCTION(when_the_concrete_xio_close_fails_then_xio_close_fails)
 {
     // arrange
+	int result;
     XIO_HANDLE handle = xio_create(&test_io_description, NULL);
     umock_c_reset_all_calls();
 
@@ -632,7 +640,7 @@ TEST_FUNCTION(when_the_concrete_xio_close_fails_then_xio_close_fails)
         .SetReturn(1);
 
     // act
-    int result = xio_close(handle, test_on_io_close_complete, (void*)0x4242);
+    result = xio_close(handle, test_on_io_close_complete, (void*)0x4242);
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
@@ -649,6 +657,7 @@ TEST_FUNCTION(when_the_concrete_xio_close_fails_then_xio_close_fails)
 TEST_FUNCTION(xio_send_calls_the_underlying_concrete_xio_send_and_succeeds)
 {
     // arrange
+	int result;
     unsigned char send_data[] = { 0x42, 43 };
     XIO_HANDLE handle = xio_create(&test_io_description, NULL);
     umock_c_reset_all_calls();
@@ -656,7 +665,7 @@ TEST_FUNCTION(xio_send_calls_the_underlying_concrete_xio_send_and_succeeds)
     STRICT_EXPECTED_CALL(test_xio_send(TEST_CONCRETE_IO_HANDLE, send_data, sizeof(send_data), test_on_send_complete, (void*)0x4242));
 
     // act
-    int result = xio_send(handle, send_data, sizeof(send_data), test_on_send_complete, (void*)0x4242);
+    result = xio_send(handle, send_data, sizeof(send_data), test_on_send_complete, (void*)0x4242);
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
@@ -670,11 +679,12 @@ TEST_FUNCTION(xio_send_calls_the_underlying_concrete_xio_send_and_succeeds)
 TEST_FUNCTION(xio_send_with_NULL_handle_fails)
 {
     // arrange
+	int result;
     unsigned char send_data[] = { 0x42, 43 };
     umock_c_reset_all_calls();
 
     // act
-    int result = xio_send(NULL, send_data, sizeof(send_data), test_on_send_complete, (void*)0x4242);
+    result = xio_send(NULL, send_data, sizeof(send_data), test_on_send_complete, (void*)0x4242);
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
@@ -684,6 +694,7 @@ TEST_FUNCTION(xio_send_with_NULL_handle_fails)
 TEST_FUNCTION(when_the_concrete_xio_send_fails_then_xio_send_fails)
 {
     // arrange
+	int result;
     unsigned char send_data[] = { 0x42, 43 };
     XIO_HANDLE handle = xio_create(&test_io_description, NULL);
     umock_c_reset_all_calls();
@@ -692,7 +703,7 @@ TEST_FUNCTION(when_the_concrete_xio_send_fails_then_xio_send_fails)
         .SetReturn(42);
 
     // act
-    int result = xio_send(handle, send_data, sizeof(send_data), test_on_send_complete, (void*)0x4242);
+    result = xio_send(handle, send_data, sizeof(send_data), test_on_send_complete, (void*)0x4242);
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
@@ -706,13 +717,14 @@ TEST_FUNCTION(when_the_concrete_xio_send_fails_then_xio_send_fails)
 TEST_FUNCTION(xio_send_with_NULL_buffer_and_nonzero_length_passes_the_args_down_and_succeeds)
 {
     // arrange
+	int result;
     XIO_HANDLE handle = xio_create(&test_io_description, NULL);
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(test_xio_send(TEST_CONCRETE_IO_HANDLE, NULL, 1, test_on_send_complete, (void*)0x4242));
 
     // act
-    int result = xio_send(handle, NULL, 1, test_on_send_complete, (void*)0x4242);
+    result = xio_send(handle, NULL, 1, test_on_send_complete, (void*)0x4242);
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
@@ -726,13 +738,14 @@ TEST_FUNCTION(xio_send_with_NULL_buffer_and_nonzero_length_passes_the_args_down_
 TEST_FUNCTION(xio_send_with_NULL_buffer_and_zero_length_passes_the_args_down_and_succeeds)
 {
     // arrange
+	int result;
     XIO_HANDLE handle = xio_create(&test_io_description, NULL);
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(test_xio_send(TEST_CONCRETE_IO_HANDLE, NULL, 0, test_on_send_complete, (void*)0x4242));
 
     // act
-    int result = xio_send(handle, NULL, 0, test_on_send_complete, (void*)0x4242);
+    result = xio_send(handle, NULL, 0, test_on_send_complete, (void*)0x4242);
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
@@ -746,6 +759,7 @@ TEST_FUNCTION(xio_send_with_NULL_buffer_and_zero_length_passes_the_args_down_and
 TEST_FUNCTION(xio_send_with_non_NULL_buffer_and_zero_length_passes_the_args_down_and_succeeds)
 {
     // arrange
+	int result;
     unsigned char send_data[] = { 0x42, 43 };
     XIO_HANDLE handle = xio_create(&test_io_description, NULL);
     umock_c_reset_all_calls();
@@ -753,7 +767,7 @@ TEST_FUNCTION(xio_send_with_non_NULL_buffer_and_zero_length_passes_the_args_down
     STRICT_EXPECTED_CALL(test_xio_send(TEST_CONCRETE_IO_HANDLE, send_data, 0, test_on_send_complete, (void*)0x4242));
 
     // act
-    int result = xio_send(handle, send_data, 0, test_on_send_complete, (void*)0x4242);
+    result = xio_send(handle, send_data, 0, test_on_send_complete, (void*)0x4242);
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
@@ -800,13 +814,14 @@ TEST_FUNCTION(xio_dowork_with_NULL_handle_does_nothing)
 TEST_FUNCTION(xio_setoption_with_NULL_handle_fails)
 {
     // arrange
+	int result;
     const char* optionName = "TheOptionName";
     const void* optionValue = (void*)1;
 
     umock_c_reset_all_calls();
 
     // act
-    int result = xio_setoption(NULL, optionName, optionValue);
+    result = xio_setoption(NULL, optionName, optionValue);
 
     // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -818,12 +833,13 @@ TEST_FUNCTION(xio_setoption_with_NULL_optionName_fails)
 {
     // arrange
     const void* optionValue = (void*)1;
+	int result;
     XIO_HANDLE handle = xio_create(&test_io_description, NULL);
 
     umock_c_reset_all_calls();
 
     // act
-    int result = xio_setoption(handle, NULL, optionValue);
+    result = xio_setoption(handle, NULL, optionValue);
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
@@ -838,6 +854,7 @@ TEST_FUNCTION(xio_setoption_with_NULL_optionName_fails)
 TEST_FUNCTION(xio_setoption_with_valid_args_passes_the_args_down_and_succeeds)
 {
     // arrange
+	int result;
     const char* optionName = "TheOptionName";
     const void* optionValue = (void*)1;
     XIO_HANDLE handle = xio_create(&test_io_description, NULL);
@@ -847,7 +864,7 @@ TEST_FUNCTION(xio_setoption_with_valid_args_passes_the_args_down_and_succeeds)
     STRICT_EXPECTED_CALL(test_xio_setoption(TEST_CONCRETE_IO_HANDLE, optionName, optionValue));
 
     // act
-    int result = xio_setoption(handle, optionName, optionValue);
+    result = xio_setoption(handle, optionName, optionValue);
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
@@ -861,6 +878,7 @@ TEST_FUNCTION(xio_setoption_with_valid_args_passes_the_args_down_and_succeeds)
 TEST_FUNCTION(xio_setoption_fails_when_concrete_xio_setoption_fails)
 {
     // arrange
+	int result;
     const char* optionName = "TheOptionName";
     const void* optionValue = (void*)1;
     XIO_HANDLE handle = xio_create(&test_io_description, NULL);
@@ -871,7 +889,7 @@ TEST_FUNCTION(xio_setoption_fails_when_concrete_xio_setoption_fails)
         .SetReturn(42);
 
     // act
-    int result = xio_setoption(handle, optionName, optionValue);
+    result = xio_setoption(handle, optionName, optionValue);
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
@@ -916,13 +934,14 @@ static void xio_retrieveoptions_inert_path(void)
 TEST_FUNCTION(xio_retrieveoptions_happypath)
 {
     ///arrange
+	OPTIONHANDLER_HANDLE h;
     XIO_HANDLE x = xio_create(&test_io_description, NULL);
     umock_c_reset_all_calls();
 
     xio_retrieveoptions_inert_path();
 
     ///act
-    OPTIONHANDLER_HANDLE h = xio_retrieveoptions(x);
+    h = xio_retrieveoptions(x);
 
     ///assert
     ASSERT_IS_NOT_NULL(h);
@@ -938,10 +957,12 @@ TEST_FUNCTION(xio_retrieveoptions_happypath)
 TEST_FUNCTION(xio_retrieveoptions_unhappypaths)
 {
     ///arrange
+	XIO_HANDLE x;
+	size_t i;
     int negativeTestsInitResult = umock_c_negative_tests_init();
     ASSERT_ARE_EQUAL(int, 0, negativeTestsInitResult);
 
-    XIO_HANDLE x = xio_create(&test_io_description, NULL);
+    x = xio_create(&test_io_description, NULL);
     umock_c_reset_all_calls();
 
     xio_retrieveoptions_inert_path();
@@ -949,18 +970,19 @@ TEST_FUNCTION(xio_retrieveoptions_unhappypaths)
     umock_c_negative_tests_snapshot();
 
     ///act
-    for (size_t i = 0; i < umock_c_negative_tests_call_count(); i++)
+    for (i = 0; i < umock_c_negative_tests_call_count(); i++)
     {
+        char temp_str[128];
+		OPTIONHANDLER_HANDLE h;
 
-        umock_c_negative_tests_reset();
+		umock_c_negative_tests_reset();
         umock_c_negative_tests_fail_call(i);
 
         ///act
-        char temp_str[128];
         (void)sprintf(temp_str, "On failed call %zu", i);
 
         ///act
-        OPTIONHANDLER_HANDLE h = xio_retrieveoptions(x);
+        h = xio_retrieveoptions(x);
 
         ///assert
         ASSERT_IS_NULL_WITH_MSG(h, temp_str);

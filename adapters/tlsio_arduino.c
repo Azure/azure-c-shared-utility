@@ -55,9 +55,9 @@ static const IO_INTERFACE_DESCRIPTION tlsio_handle_interface_description =
 #define MAX_TLS_CLOSING_RETRY  10
 #define RECEIVE_BUFFER_SIZE    128
 
-#define CallErrorCallback() do { if (tlsio_instance->on_io_error != NULL) (void)tlsio_instance->on_io_error(tlsio_instance->on_io_error_context); } while(0)
-#define CallOpenCallback(status) do { if (tlsio_instance->on_io_open_complete != NULL) (void)tlsio_instance->on_io_open_complete(tlsio_instance->on_io_open_complete_context, status); } while(0)
-#define CallCloseCallback() do { if (tlsio_instance->on_io_close_complete != NULL) (void)tlsio_instance->on_io_close_complete(tlsio_instance->on_io_close_complete_context); } while(0)
+#define CallErrorCallback() do { if (tlsio_instance->on_io_error != NULL) (void)tlsio_instance->on_io_error(tlsio_instance->on_io_error_context); } while((void)0,0)
+#define CallOpenCallback(status) do { if (tlsio_instance->on_io_open_complete != NULL) (void)tlsio_instance->on_io_open_complete(tlsio_instance->on_io_open_complete_context, status); } while((void)0,0)
+#define CallCloseCallback() do { if (tlsio_instance->on_io_close_complete != NULL) (void)tlsio_instance->on_io_close_complete(tlsio_instance->on_io_close_complete_context); } while((void)0,0)
 
 
 typedef struct ArduinoTLS_tag

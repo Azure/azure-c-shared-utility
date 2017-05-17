@@ -92,9 +92,9 @@ void my_gballoc_free(void* ptr)
 static bool current_xioCreate_must_fail = false;
 XIO_HANDLE my_xio_create(const IO_INTERFACE_DESCRIPTION* io_interface_description, const void* xio_create_parameters)
 {
+    XIO_HANDLE result;
     io_interface_description = io_interface_description;
     xio_create_parameters = xio_create_parameters;
-    XIO_HANDLE result;
     if (current_xioCreate_must_fail)
     {
         result = NULL;
@@ -546,6 +546,8 @@ static void setHttpx509ClientCertificateAndKey(HTTP_HANDLE httpHandle)
 
 static void setupAllCallBeforeOpenHTTPsequence(HTTP_HEADERS_HANDLE requestHttpHeaders, int numberOfDoWork, bool useClientCert)
 {
+	int i;
+
     STRICT_EXPECTED_CALL(HTTPHeaders_GetHeaderCount(requestHttpHeaders, IGNORED_PTR_ARG))
         .IgnoreArgument(2);
     STRICT_EXPECTED_CALL(xio_setoption(IGNORED_PTR_ARG, "TrustedCerts", TEST_SETOPTIONS_CERTIFICATE))
@@ -562,7 +564,7 @@ static void setupAllCallBeforeOpenHTTPsequence(HTTP_HEADERS_HANDLE requestHttpHe
     }
     STRICT_EXPECTED_CALL(xio_open(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
         .IgnoreAllArguments();
-    for (int i = 0; i < numberOfDoWork; i++)
+    for (i = 0; i < numberOfDoWork; i++)
     {
         STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
@@ -635,14 +637,16 @@ static const IO_SEND_RESULT* DoworkJobsSendResult_ReceiveHead = (const IO_SEND_R
 
 static void PrepareReceiveHead(HTTP_HEADERS_HANDLE requestHttpHeaders, size_t bufferSize[], int doworkReduction[], int countSizes)
 {
+	int countBuffer;
     DoworkJobsOpenResult = DoworkJobsOpenResult_ReceiveHead;
     DoworkJobsSendResult = DoworkJobsSendResult_ReceiveHead;
 
     setupAllCallBeforeOpenHTTPsequence(requestHttpHeaders, 1, false);
     setupAllCallBeforeSendHTTPsequenceWithSuccess(requestHttpHeaders);
 
-    for (int countBuffer = 0; countBuffer < countSizes; countBuffer++)
+    for (countBuffer = 0; countBuffer < countSizes; countBuffer++)
     {
+		int countChar;
         if (countBuffer > 0)
         {
             STRICT_EXPECTED_CALL(ThreadAPI_Sleep(100));
@@ -650,7 +654,7 @@ static void PrepareReceiveHead(HTTP_HEADERS_HANDLE requestHttpHeaders, size_t bu
         STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
         STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_NUM_ARG, bufferSize[countBuffer])).IgnoreArgument(1);
-        for (int countChar = 0; countChar < doworkReduction[countBuffer]; countChar++)
+        for (countChar = 0; countChar < doworkReduction[countBuffer]; countChar++)
         {
             STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
                 .IgnoreArgument(1);
@@ -1137,6 +1141,7 @@ TEST_FUNCTION(HTTPAPI_CloseConnection__close_on_dowork_succeed)
 TEST_FUNCTION(HTTPAPI_CloseConnection__close_on_dowork_retry_n_succeed)
 {
     /// arrange
+	int i;
     unsigned int statusCode;
     HTTPAPI_RESULT result;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
@@ -1165,7 +1170,7 @@ TEST_FUNCTION(HTTPAPI_CloseConnection__close_on_dowork_retry_n_succeed)
 
     STRICT_EXPECTED_CALL(xio_close(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
         .IgnoreAllArguments();
-    for (int i = 0; i < SkipDoworkJobsCloseResult; i++)
+    for (i = 0; i < SkipDoworkJobsCloseResult; i++)
     {
         STRICT_EXPECTED_CALL(xio_dowork(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
@@ -1210,6 +1215,7 @@ TEST_FUNCTION(HTTPAPI_CloseConnection__close_on_dowork_retry_n_succeed)
 TEST_FUNCTION(HTTPAPI_CloseConnection__close_on_dowork_retry_n_failed)
 {
     /// arrange
+	int i;
     unsigned int statusCode;
     HTTPAPI_RESULT result;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
@@ -1238,7 +1244,7 @@ TEST_FUNCTION(HTTPAPI_CloseConnection__close_on_dowork_retry_n_failed)
 
     STRICT_EXPECTED_CALL(xio_close(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
         .IgnoreAllArguments();
-    for (int i = 0; i < SkipDoworkJobsCloseResult + 1; i++)
+    for (i = 0; i < SkipDoworkJobsCloseResult + 1; i++)
     {
         STRICT_EXPECTED_CALL(xio_dowork(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
@@ -1283,6 +1289,7 @@ TEST_FUNCTION(HTTPAPI_CloseConnection__close_on_dowork_retry_n_failed)
 TEST_FUNCTION(HTTPAPI_CloseConnection__close_timeout_failed)
 {
     /// arrange
+	int i;
     unsigned int statusCode;
     HTTPAPI_RESULT result;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
@@ -1311,7 +1318,7 @@ TEST_FUNCTION(HTTPAPI_CloseConnection__close_timeout_failed)
 
     STRICT_EXPECTED_CALL(xio_close(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
         .IgnoreAllArguments();
-    for (int i = 0; i < SkipDoworkJobsCloseResult; i++)
+    for (i = 0; i < SkipDoworkJobsCloseResult; i++)
     {
         STRICT_EXPECTED_CALL(xio_dowork(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
@@ -1992,10 +1999,11 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_io_open_complete_with_error_on_openning
     HTTPAPI_RESULT result;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
-    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
-    HTTP_HANDLE httpHandle = createHttpConnection();
-    setHttpCertificate(httpHandle);
+	HTTP_HANDLE httpHandle;
     unsigned int statusCode;
+    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
+    httpHandle = createHttpConnection();
+    setHttpCertificate(httpHandle);
 
     DoworkJobs = (const xio_dowork_job*)doworkjob_oe;
     DoworkJobsOpenResult = (const IO_OPEN_RESULT*)openresult_error;
@@ -2439,6 +2447,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_send_header_complete_with_2_success_bef
 TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_send_header_complete_timeout_failed)
 {
     /// arrange
+	int i;
     unsigned int statusCode;
     HTTPAPI_RESULT result;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
@@ -2457,7 +2466,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_send_header_complete_timeout_failed)
     STRICT_EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
         .IgnoreAllArguments();
     SkipDoworkJobsSendResult = 200;
-    for (int i = 0; i < SkipDoworkJobsSendResult; i++)
+    for (i = 0; i < SkipDoworkJobsSendResult; i++)
     {
         STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
@@ -2496,6 +2505,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_send_header_complete_timeout_failed)
 TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_send_header_complete_retry_n_and_failed)
 {
     /// arrange
+	int i;
     unsigned int statusCode;
     HTTPAPI_RESULT result;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
@@ -2514,7 +2524,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_send_header_complete_retry_n_and_failed
     STRICT_EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
         .IgnoreAllArguments();
     SkipDoworkJobsSendResult = 10;
-    for (int i = 0; i < SkipDoworkJobsSendResult; i++)
+    for (i = 0; i < SkipDoworkJobsSendResult; i++)
     {
         STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
@@ -2777,13 +2787,13 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_read_wrong_URL_header_failed)
     HTTPAPI_RESULT result;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
+    int doworkReduction[1] = { 0 };
     HTTP_HANDLE httpHandle = createHttpConnection();
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     setHttpCertificate(httpHandle);
 
     DoworkJobsReceivedBuffer = (const unsigned char*)"HTTP/111222 433 555\r\n";
     DoworkJobsReceivedBuffer_size[0] = strlen((const char*)DoworkJobsReceivedBuffer);
-    int doworkReduction[1] = { 0 };
     DoworkJobsReceivedBuffer_counter = 0;
     PrepareReceiveHead(requestHttpHeaders, DoworkJobsReceivedBuffer_size, doworkReduction, 1);
     DoworkJobs = (const xio_dowork_job*)doworkjob_o_re;
@@ -2819,13 +2829,13 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_read_header_with_no_statusCode_failed)
     HTTPAPI_RESULT result;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
+    int doworkReduction[1] = { 0 };
     HTTP_HANDLE httpHandle = createHttpConnection();
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     setHttpCertificate(httpHandle);
 
     DoworkJobsReceivedBuffer = (const unsigned char*)"HTTP/111.222\r\n";
     DoworkJobsReceivedBuffer_size[0] = strlen((const char*)DoworkJobsReceivedBuffer);
-    int doworkReduction[1] = { 0 };
     DoworkJobsReceivedBuffer_counter = 0;
     PrepareReceiveHead(requestHttpHeaders, DoworkJobsReceivedBuffer_size, doworkReduction, 1);
     DoworkJobs = (const xio_dowork_job*)doworkjob_o_re;
@@ -2859,6 +2869,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_read_header_incomplete_failed)
     /// arrange
     unsigned int statusCode;
     HTTPAPI_RESULT result;
+    int doworkReduction[1] = { 0 };
     HTTP_HEADERS_HANDLE requestHttpHeaders;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     HTTP_HANDLE httpHandle = createHttpConnection();
@@ -2867,7 +2878,6 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_read_header_incomplete_failed)
 
     DoworkJobsReceivedBuffer = (const unsigned char*)"HTTP/111\r\n";
     DoworkJobsReceivedBuffer_size[0] = strlen((const char*)DoworkJobsReceivedBuffer);
-    int doworkReduction[1] = { 0 };
     DoworkJobsReceivedBuffer_counter = 0;
     PrepareReceiveHead(requestHttpHeaders, DoworkJobsReceivedBuffer_size, doworkReduction, 1);
     DoworkJobs = (const xio_dowork_job*)doworkjob_o_re;
@@ -2901,6 +2911,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_read_multi_header_with_size_0_and_error
     /// arrange
     unsigned int statusCode;
     HTTPAPI_RESULT result;
+    int doworkReduction[2] = { 0, 0 };
     HTTP_HEADERS_HANDLE requestHttpHeaders;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     HTTP_HANDLE httpHandle = createHttpConnection();
@@ -2910,7 +2921,6 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_read_multi_header_with_size_0_and_error
     DoworkJobsReceivedBuffer = (const unsigned char*)"HTTP/111\r\n";
     DoworkJobsReceivedBuffer_size[0] = 0;
     DoworkJobsReceivedBuffer_size[1] = strlen((const char*)DoworkJobsReceivedBuffer);
-    int doworkReduction[2] = { 0, 0 };
     DoworkJobsReceivedBuffer_counter = 0;
     PrepareReceiveHead(requestHttpHeaders, DoworkJobsReceivedBuffer_size, doworkReduction, 2);
     DoworkJobs = (const xio_dowork_job*)doworkjob_o_rre;
@@ -2942,8 +2952,10 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_read_multi_header_with_size_0_and_error
 TEST_FUNCTION(HTTPAPI_ExecuteRequest__read_huge_header_failed)
 {
     /// arrange
+	HTTP_HANDLE httpHandle;
     unsigned int statusCode;
     HTTPAPI_RESULT result;
+    int doworkReduction[1] = { 0 };
     HTTP_HEADERS_HANDLE requestHttpHeaders;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     size_t i;
@@ -2959,12 +2971,11 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__read_huge_header_failed)
     hugeBuffer[2998] = '\n';
     hugeBuffer[2999] = '\0';
 
-    HTTP_HANDLE httpHandle = createHttpConnection();
+    httpHandle = createHttpConnection();
     setHttpCertificate(httpHandle);
 
     DoworkJobsReceivedBuffer = (const unsigned char*)hugeBuffer;
     DoworkJobsReceivedBuffer_size[0] = strlen((const char*)DoworkJobsReceivedBuffer);
-    int doworkReduction[1] = { 0 };
     DoworkJobsReceivedBuffer_counter = 0;
     PrepareReceiveHead(requestHttpHeaders, DoworkJobsReceivedBuffer_size, doworkReduction, 1);
     DoworkJobs = (const xio_dowork_job*)doworkjob_o_re;
@@ -2998,6 +3009,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__content_length_without_value_failed)
     /// arrange
     unsigned int statusCode;
     HTTPAPI_RESULT result;
+    int doworkReduction[1] = { 1 };
     HTTP_HEADERS_HANDLE requestHttpHeaders;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
     HTTP_HANDLE httpHandle = createHttpConnection();
@@ -3006,7 +3018,6 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__content_length_without_value_failed)
 
     DoworkJobsReceivedBuffer = (const unsigned char*)"HTTP/111.222 433 555\r\ncontent-length:\r\n\r\n";
     DoworkJobsReceivedBuffer_size[0] = strlen((const char*)DoworkJobsReceivedBuffer);
-    int doworkReduction[1] = { 1 };
     PrepareReceiveHead(requestHttpHeaders, DoworkJobsReceivedBuffer_size, doworkReduction, 1);
     DoworkJobsReceivedBuffer_counter = 0;
     DoworkJobs = (const xio_dowork_job*)doworkjob_o_re;
@@ -3149,6 +3160,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__Execute_request_retry_send_succeed)
 {
     /// arrange
     unsigned int statusCode;
+	int i;
     HTTPAPI_RESULT result;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
@@ -3169,7 +3181,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__Execute_request_retry_send_succeed)
     STRICT_EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
         .IgnoreAllArguments();
     SkipDoworkJobsSendResult = 199;
-    for (int i = 0; i < SkipDoworkJobsSendResult+1; i++)
+    for (i = 0; i < SkipDoworkJobsSendResult+1; i++)
     {
         STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
@@ -3945,6 +3957,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__Execute_request_responseContent_NULL_succe
 TEST_FUNCTION(HTTPAPI_ExecuteRequest__Execute_request_with_truncated_content_failed)
 {
     /// arrange
+	int i;
     unsigned int statusCode;
     HTTPAPI_RESULT result;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
@@ -3980,7 +3993,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__Execute_request_with_truncated_content_fai
     STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
         .IgnoreArgument(1);
 
-    for (int i = 0; i < 200; i++)
+    for (i = 0; i < 200; i++)
     {
         STRICT_EXPECTED_CALL(ThreadAPI_Sleep(100));
         STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
@@ -4021,6 +4034,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__Execute_request_with_truncated_content_fai
 TEST_FUNCTION(HTTPAPI_ExecuteRequest__Execute_request_with_truncated_parameter_failed)
 {
     /// arrange
+	int i;
     unsigned int statusCode;
     HTTPAPI_RESULT result;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
@@ -4052,7 +4066,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__Execute_request_with_truncated_parameter_f
     STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
 
-    for (int i = 0; i < 200; i++)
+    for (i = 0; i < 200; i++)
     {
         STRICT_EXPECTED_CALL(ThreadAPI_Sleep(100));
         STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))
@@ -4091,6 +4105,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__Execute_request_with_truncated_parameter_f
 TEST_FUNCTION(HTTPAPI_ExecuteRequest__Execute_request_with_truncated_header_failed)
 {
     /// arrange
+	int i;
     unsigned int statusCode;
     HTTPAPI_RESULT result;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
@@ -4116,7 +4131,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__Execute_request_with_truncated_header_fail
     STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
         .IgnoreArgument(1);
 
-    for (int i = 0; i < 200; i++)
+    for (i = 0; i < 200; i++)
     {
         STRICT_EXPECTED_CALL(ThreadAPI_Sleep(100));
         STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG))

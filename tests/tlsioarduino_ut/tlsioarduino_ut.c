@@ -156,7 +156,8 @@ static int my_sslClient_read_count;
 int my_sslClient_read(uint8_t *buf, size_t size)
 {
     const char* readPtr = (const char*)my_sslClient_read_buffer;
-    for (int i = 0; i < my_sslClient_read_count; i++)
+	int i;
+    for (i = 0; i < my_sslClient_read_count; i++)
     {
         readPtr += my_sslClient_read_return_list[i];
     }
@@ -1683,6 +1684,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
     TEST_FUNCTION(tlsio_arduino_close__retry_without_success_and_without_callback__failed)
     {
         ///arrange
+		size_t i;
         CONCRETE_IO_HANDLE tlsioHandle;
         int result;
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
@@ -1699,7 +1701,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         STRICT_EXPECTED_CALL(sslClient_connect(SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
         STRICT_EXPECTED_CALL(sslClient_connected());
         STRICT_EXPECTED_CALL(sslClient_stop());
-        for (size_t i = 0; i < 11; i++)
+        for (i = 0; i < 11; i++)
         {
             STRICT_EXPECTED_CALL(sslClient_connected());
         }
@@ -1719,7 +1721,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ASSERT_ARE_EQUAL(int, 0, result);
 
         ///act
-        for (size_t i = 0; i < 10; i++)
+        for (i = 0; i < 10; i++)
         {
             ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_CLOSING, (int)tlsio_arduino_get_state(tlsioHandle));
             tlsioInterfaces->concrete_io_dowork(tlsioHandle);
@@ -1743,6 +1745,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
     TEST_FUNCTION(tlsio_arduino_close__retry_without_success__failed)
     {
         ///arrange
+		size_t i;
         CONCRETE_IO_HANDLE tlsioHandle;
         int result;
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
@@ -1759,7 +1762,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         STRICT_EXPECTED_CALL(sslClient_connect(SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
         STRICT_EXPECTED_CALL(sslClient_connected());
         STRICT_EXPECTED_CALL(sslClient_stop());
-        for (size_t i = 0; i < 11; i++)
+        for (i = 0; i < 11; i++)
         {
             STRICT_EXPECTED_CALL(sslClient_connected());
         }
@@ -1780,7 +1783,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         CleanCallbackCounters();
 
         ///act
-        for (size_t i = 0; i < 10; i++)
+        for (i = 0; i < 10; i++)
         {
             ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_CLOSING, (int)tlsio_arduino_get_state(tlsioHandle));
             tlsioInterfaces->concrete_io_dowork(tlsioHandle);
@@ -1802,6 +1805,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
     TEST_FUNCTION(tlsio_arduino_close__retry_10_times__succeed)
     {
         ///arrange
+		size_t i;
         CONCRETE_IO_HANDLE tlsioHandle;
         int result;
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
@@ -1818,7 +1822,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         STRICT_EXPECTED_CALL(sslClient_connect(SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
         STRICT_EXPECTED_CALL(sslClient_connected());
         STRICT_EXPECTED_CALL(sslClient_stop());
-        for (size_t i = 0; i < 11; i++)
+        for (i = 0; i < 11; i++)
         {
             STRICT_EXPECTED_CALL(sslClient_connected());
         }
@@ -1839,7 +1843,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         CleanCallbackCounters();
 
         ///act
-        for (size_t i = 0; i < 10; i++)
+        for (i = 0; i < 10; i++)
         {
             ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_CLOSING, (int)tlsio_arduino_get_state(tlsioHandle));
             tlsioInterfaces->concrete_io_dowork(tlsioHandle);
@@ -2290,6 +2294,8 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
     TEST_FUNCTION(tlsio_arduino_open__retry_without_success_without_callback__failed)
     {
         ///arrange
+		size_t i;
+		TLSIO_ARDUINO_STATE state;
         CONCRETE_IO_HANDLE tlsioHandle;
         int result;
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
@@ -2304,7 +2310,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         STRICT_EXPECTED_CALL(sslClient_hostByName(TEST_CREATE_CONNECTION_HOST_NAME, IGNORED_PTR_ARG)).IgnoreArgument(2);
         STRICT_EXPECTED_CALL(sslClient_connected());
         STRICT_EXPECTED_CALL(sslClient_connect(SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
-        for (size_t i = 0; i < 11; i++)
+        for (i = 0; i < 11; i++)
         {
             STRICT_EXPECTED_CALL(sslClient_connected());
         }
@@ -2320,11 +2326,11 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ASSERT_ARE_EQUAL(int, 0, result);
 
         ///act
-        for (size_t i = 0; i < 10; i++)
+        for (i = 0; i < 10; i++)
         {
             char temp[100];
             sprintf(temp, "on failed call %zu", i);
-            TLSIO_ARDUINO_STATE state = tlsio_arduino_get_state(tlsioHandle);
+            state = tlsio_arduino_get_state(tlsioHandle);
             ASSERT_ARE_EQUAL_WITH_MSG(TLSIO_ARDUINO_STATE, TLSIO_ARDUINO_STATE_OPENING, state, temp);
             tlsioInterfaces->concrete_io_dowork(tlsioHandle);
         }
@@ -2333,7 +2339,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_EQUAL(int, 1, currentmalloc_call);
         ASSERT_CALLBACK_COUNTERS(0, 0, 0, 0, 0);
-        TLSIO_ARDUINO_STATE state = tlsio_arduino_get_state(tlsioHandle);
+        state = tlsio_arduino_get_state(tlsioHandle);
         ASSERT_ARE_EQUAL(TLSIO_ARDUINO_STATE, TLSIO_ARDUINO_STATE_ERROR, state);
 
         ///cleanup
@@ -2351,6 +2357,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
     TEST_FUNCTION(tlsio_arduino_open__retry_without_success__failed)
     {
         ///arrange
+		size_t i;
         CONCRETE_IO_HANDLE tlsioHandle;
         int result;
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
@@ -2365,7 +2372,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         STRICT_EXPECTED_CALL(sslClient_hostByName(TEST_CREATE_CONNECTION_HOST_NAME, IGNORED_PTR_ARG)).IgnoreArgument(2);
         STRICT_EXPECTED_CALL(sslClient_connected());
         STRICT_EXPECTED_CALL(sslClient_connect(SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
-        for (size_t i = 0; i < 11; i++)
+        for (i = 0; i < 11; i++)
         {
             STRICT_EXPECTED_CALL(sslClient_connected());
         }
@@ -2382,7 +2389,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         CleanCallbackCounters();
 
         ///act
-        for (size_t i = 0; i < 10; i++)
+        for (i = 0; i < 10; i++)
         {
             ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPENING, (int)tlsio_arduino_get_state(tlsioHandle));
             tlsioInterfaces->concrete_io_dowork(tlsioHandle);
@@ -2405,6 +2412,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
     TEST_FUNCTION(tlsio_arduino_open__retry_10_times__succeed)
     {
         ///arrange
+		size_t i;
         CONCRETE_IO_HANDLE tlsioHandle;
         int result;
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
@@ -2419,7 +2427,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         STRICT_EXPECTED_CALL(sslClient_hostByName(TEST_CREATE_CONNECTION_HOST_NAME, IGNORED_PTR_ARG)).IgnoreArgument(2);
         STRICT_EXPECTED_CALL(sslClient_connected());
         STRICT_EXPECTED_CALL(sslClient_connect(SSLCLIENT_IP_ADDRESS, TEST_CREATE_CONNECTION_PORT));
-        for (size_t i = 0; i < 11; i++)
+        for (i = 0; i < 11; i++)
         {
             STRICT_EXPECTED_CALL(sslClient_connected());
         }
@@ -2436,7 +2444,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         CleanCallbackCounters();
 
         ///act
-        for (size_t i = 0; i < 10; i++)
+        for (i = 0; i < 10; i++)
         {
             ASSERT_ARE_EQUAL(int, (int)TLSIO_ARDUINO_STATE_OPENING, (int)tlsio_arduino_get_state(tlsioHandle));
             tlsioInterfaces->concrete_io_dowork(tlsioHandle);

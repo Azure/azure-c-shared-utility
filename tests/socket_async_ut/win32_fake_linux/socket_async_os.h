@@ -7,10 +7,26 @@
 
 #ifdef __cplusplus
 extern "C" {
+#include <cstdbool>
+#include <cstddef>
+#include <cstdint>
 #endif
 
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
+
+#ifndef EINPROGRESS
+#define  EINPROGRESS    112
+#endif
+
+#ifndef EAGAIN
+#define  EAGAIN			11
+#endif
+
+#ifndef EWOULDBLOCK
+#define  EWOULDBLOCK	140
+#endif
 
 #define	SOL_SOCKET	0xffff
 #define	SO_ERROR	0x1007

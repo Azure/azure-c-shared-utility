@@ -25,16 +25,14 @@ public:
     {
     }
 
-    virtual _Check_return_
-    std::tstring ToString() const
+    virtual std::tstring ToString() const
     {
         std::tostringstream strStream;
         strStream << m_Value;
         return strStream.str();
     }
 
-    virtual _Must_inspect_result_
-    bool EqualTo(_In_ const CMockValueBase* right)
+    virtual bool EqualTo(_In_ const CMockValueBase* right)
     {
         return (*this == *(reinterpret_cast<const CMockValue<T>*>(right)));
     }
@@ -45,7 +43,7 @@ public:
         m_OriginalValue = value;
     }
 
-    _Must_inspect_result_ const T& GetValue() const
+    const T& GetValue() const
     {
         return m_Value;
     }
@@ -68,16 +66,14 @@ public:
     {
     }
 
-    virtual _Check_return_
-        std::tstring ToString() const
+    virtual std::tstring ToString() const
     {
             std::tostringstream strStream;
             strStream << (unsigned int)m_Value;
             return strStream.str();
     }
 
-    virtual _Must_inspect_result_
-        bool EqualTo(_In_ const CMockValueBase* right)
+    virtual bool EqualTo(_In_ const CMockValueBase* right)
     {
             return (this->m_Value == (reinterpret_cast<const CMockValue<unsigned char>*>(right))->m_Value);
     }
@@ -88,7 +84,7 @@ public:
         m_OriginalValue = value;
     }
 
-    _Must_inspect_result_ const unsigned char& GetValue() const
+    const unsigned char& GetValue() const
     {
         return m_Value;
     }
@@ -111,16 +107,14 @@ public:
     {
     }
 
-    virtual _Check_return_
-        std::tstring ToString() const
+    virtual std::tstring ToString() const
     {
         std::tostringstream strStream;
         strStream << "void";
         return strStream.str();
     }
 
-    virtual _Must_inspect_result_
-        bool EqualTo(_In_ const CMockValueBase* right)
+    virtual bool EqualTo(_In_ const CMockValueBase* right)
     {
         (void)right;
         return true;
@@ -131,7 +125,7 @@ public:
 
     }
 
-    _Must_inspect_result_ void GetValue() const
+    void GetValue() const
     {
         return;
     }
@@ -164,8 +158,7 @@ public:
     {
     }
 
-    virtual _Check_return_
-        std::tstring ToString() const
+    virtual std::tstring ToString() const
     {
             std::string temp(m_Value.begin(), m_Value.end());
 
@@ -176,8 +169,7 @@ public:
 
     }
 
-    virtual _Must_inspect_result_
-        bool EqualTo(_In_ const CMockValueBase* right)
+    virtual bool EqualTo(_In_ const CMockValueBase* right)
     {
             return (this->m_Value == (reinterpret_cast<const CMockValue<wchar_t *>*>(right))->m_Value);
     }
@@ -196,7 +188,7 @@ public:
         }
     }
 
-    _Must_inspect_result_ const wchar_t* GetValue() const
+    const wchar_t* GetValue() const
     {
         return m_Value.c_str();
     }
@@ -229,8 +221,7 @@ public:
     {
     }
 
-    virtual _Check_return_
-        std::tstring ToString() const
+    virtual std::tstring ToString() const
     {
             std::string temp(m_Value.begin(), m_Value.end());
 
@@ -239,8 +230,7 @@ public:
             return strStream.str();
     }
 
-    virtual _Must_inspect_result_
-        bool EqualTo(_In_ const CMockValueBase* right)
+    virtual bool EqualTo(_In_ const CMockValueBase* right)
     {
             return (this->m_Value == (reinterpret_cast<const CMockValue<const wchar_t *>*>(right))->m_Value);
     }
@@ -259,7 +249,7 @@ public:
         }
     }
 
-    _Must_inspect_result_ const wchar_t* GetValue() const
+    const wchar_t* GetValue() const
     {
         return m_Value.c_str();
     }
@@ -284,8 +274,7 @@ public:
     {
     }
 
-    virtual _Check_return_
-    std::tstring ToString() const
+    virtual std::tstring ToString() const
     {
         std::tostringstream strStream;
         if (NULL == m_Value)
@@ -299,8 +288,7 @@ public:
         return strStream.str();
     }
 
-    virtual _Must_inspect_result_
-    bool EqualTo(_In_ const CMockValueBase* right)
+    virtual bool EqualTo(_In_ const CMockValueBase* right)
     {
         return (*this == *(reinterpret_cast<const CMockValue<T*>*>(right)));
     }
@@ -311,7 +299,7 @@ public:
         m_OriginalValue = value;
     }
 
-    _Must_inspect_result_ T* GetValue() const
+    T* GetValue() const
     {
         return m_Value;
     }
@@ -359,8 +347,7 @@ public:
         }
     }
 
-    virtual _Check_return_
-    std::tstring ToString() const
+    virtual std::tstring ToString() const
     {
         std::tostringstream strStream;
         if (m_Value.isNULL)
@@ -384,8 +371,7 @@ public:
         return strStream.str();
     }
 
-    virtual _Must_inspect_result_
-    bool EqualTo(_In_ const CMockValueBase* right)
+    virtual bool EqualTo(_In_ const CMockValueBase* right)
     {
         /*this will be interesting*/
         return (*this == *(reinterpret_cast<const CMockValue<T_Array_N>*>(right)));
@@ -437,7 +423,7 @@ public:
         }
     }
 
-    _Must_inspect_result_ const T* GetValue() const
+    const T* GetValue() const
     {
         if (m_Value.isNULL == true)
         {
@@ -492,8 +478,7 @@ public:
         }
     }
 
-    virtual _Check_return_
-        std::tstring ToString() const
+    virtual std::tstring ToString() const
     {
             std::tostringstream strStream;
             if (m_Value.isNULL)
@@ -517,8 +502,7 @@ public:
             return strStream.str();
     }
 
-    virtual _Must_inspect_result_
-        bool EqualTo(_In_ const CMockValueBase* right)
+    virtual bool EqualTo(_In_ const CMockValueBase* right)
     {
             /*this will be interesting*/
             return (*this == *(reinterpret_cast<const CMockValue<const T_Array_N>*>(right)));
@@ -570,7 +554,7 @@ public:
         }
     }
 
-    _Must_inspect_result_ const T* GetValue() const
+    const T* GetValue() const
     {
         if (m_Value.isNULL == true)
         {
@@ -589,14 +573,12 @@ protected:
 
 
 template<typename T>
-_Must_inspect_result_
 static bool operator==(_In_ const CMockValue<T>& lhs, _In_ const CMockValue<T>& rhs)
 {
     return lhs.GetValue() == rhs.GetValue();
 }
 
 template<typename T, size_t N>
-_Must_inspect_result_
 static bool operator==(_In_ const CMockValue<T[N]>& lhs, _In_ const CMockValue<T[N]>& rhs)
 {
     /*comparing two arrays needs to be handled differently than the build in == operator*/

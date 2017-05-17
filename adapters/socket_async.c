@@ -96,6 +96,8 @@ SOCKET_ASYNC_HANDLE socket_async_create(uint32_t serverIPv4, uint16_t port,
             // does simple bit flips which have no error path, so it is not necessary to
             // check for errors. (Source checked for linux and lwIP).
             int originalFlags = fcntl(sock, F_GETFL, 0);
+			int bind_ret;
+
             (void)fcntl(sock, F_SETFL, originalFlags | O_NONBLOCK);
 
             memset(&sock_addr, 0, sizeof(sock_addr));
@@ -103,7 +105,7 @@ SOCKET_ASYNC_HANDLE socket_async_create(uint32_t serverIPv4, uint16_t port,
             sock_addr.sin_addr.s_addr = 0;
             sock_addr.sin_port = 0; // random local port
 
-            int bind_ret = bind(sock, (const struct sockaddr*)&sock_addr, sizeof(sock_addr));
+            bind_ret = bind(sock, (const struct sockaddr*)&sock_addr, sizeof(sock_addr));
 
             if (bind_ret != 0)
             {
@@ -113,6 +115,7 @@ SOCKET_ASYNC_HANDLE socket_async_create(uint32_t serverIPv4, uint16_t port,
             }
             else
             {
+				int connect_ret;
 
                 memset(&sock_addr, 0, sizeof(sock_addr));
                 sock_addr.sin_family = AF_INET;
@@ -121,7 +124,7 @@ SOCKET_ASYNC_HANDLE socket_async_create(uint32_t serverIPv4, uint16_t port,
                 /* Codes_SRS_SOCKET_ASYNC_30_012: [ The port parameter shall be the port number for the target server. ]*/
                 sock_addr.sin_port = htons(port);
 
-                int connect_ret = connect(sock, (const struct sockaddr*)&sock_addr, sizeof(sock_addr));
+                connect_ret = connect(sock, (const struct sockaddr*)&sock_addr, sizeof(sock_addr));
                 if (connect_ret == -1)
                 {
                     int sockErr = get_socket_errno(sock);
@@ -165,7 +168,10 @@ int socket_async_is_create_complete(SOCKET_ASYNC_HANDLE sock, bool* is_complete)
     }
     else
     {
-        // Check if the socket is ready to perform a write.
+        struct timeval tv;
+		int select_ret;
+
+		// Check if the socket is ready to perform a write.
         fd_set writeset;
         fd_set errset;
         FD_ZERO(&writeset);
@@ -173,10 +179,9 @@ int socket_async_is_create_complete(SOCKET_ASYNC_HANDLE sock, bool* is_complete)
         FD_SET(sock, &writeset);
         FD_SET(sock, &errset);
 
-        struct timeval tv;
         tv.tv_sec = 0;
         tv.tv_sec = 0;
-        int select_ret = select(sock + 1, NULL, &writeset, &errset, &tv);
+        select_ret = select(sock + 1, NULL, &writeset, &errset, &tv);
         if (select_ret < 0)
         {
             /* Codes_SRS_SOCKET_ASYNC_30_028: [ On failure, the is_complete value shall be set to false and socket_async_create shall return FAILURE. ]*/

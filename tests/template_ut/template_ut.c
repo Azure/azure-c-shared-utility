@@ -322,6 +322,7 @@ BEGIN_TEST_SUITE(template_ut)
     {
         ///arrange
         TARGET_RESULT result;
+		size_t i;
         int negativeTestsInitResult = umock_c_negative_tests_init();
         ASSERT_ARE_EQUAL(int, 0, negativeTestsInitResult);
 
@@ -350,13 +351,13 @@ BEGIN_TEST_SUITE(template_ut)
 
         umock_c_negative_tests_snapshot();
 
-        for (size_t i = 0; i < umock_c_negative_tests_call_count(); i++)
+        for (i = 0; i < umock_c_negative_tests_call_count(); i++)
         {
+            char temp_str[128];
 
             umock_c_negative_tests_reset();
             umock_c_negative_tests_fail_call(i);
 
-            char temp_str[128];
             (void)sprintf(temp_str, "On failed call %zu", i);
 
             ///act
@@ -378,6 +379,9 @@ BEGIN_TEST_SUITE(template_ut)
         ///arrange
         TARGET_RESULT result;
         int negativeTestsInitResult = umock_c_negative_tests_init();
+        bool runTest[] = { true, false, true };
+		size_t i;
+
         ASSERT_ARE_EQUAL(int, 0, negativeTestsInitResult);
 
         /**
@@ -393,18 +397,17 @@ BEGIN_TEST_SUITE(template_ut)
         STRICT_EXPECTED_CALL(gballoc_malloc(SIZEOF_FOO_MEMORY));
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
 
-        bool runTest[] = { true, false, true };
-
         umock_c_negative_tests_snapshot();
 
-        for (size_t i = 0; i < umock_c_negative_tests_call_count(); i++)
+        for (i = 0; i < umock_c_negative_tests_call_count(); i++)
         {
             if (runTest[i])
             {
+                char temp_str[128];
+
                 umock_c_negative_tests_reset();
                 umock_c_negative_tests_fail_call(i);
 
-                char temp_str[128];
                 (void)sprintf(temp_str, "On failed call %zu", i);
 
                 ///act
@@ -426,6 +429,7 @@ BEGIN_TEST_SUITE(template_ut)
     {
         ///arrange
         TARGET_RESULT result;
+		size_t i;
         int negativeTestsInitResult = umock_c_negative_tests_init();
         ASSERT_ARE_EQUAL(int, 0, negativeTestsInitResult);
 
@@ -446,13 +450,13 @@ BEGIN_TEST_SUITE(template_ut)
         * Here we are demonstrating how to automatically test an unhappy path from a function that 
         *    we do not implement any mock to replace it.
         */
-        for (size_t i = 0; i < umock_c_negative_tests_call_count(); i++)
+        for (i = 0; i < umock_c_negative_tests_call_count(); i++)
         {
+            char temp_str[128];
 
             umock_c_negative_tests_reset();
             umock_c_negative_tests_fail_call(i);
 
-            char temp_str[128];
             (void)sprintf(temp_str, "On failed call %zu", i);
 
             ///act

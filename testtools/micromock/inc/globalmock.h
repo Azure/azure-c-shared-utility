@@ -26,8 +26,6 @@ public:
         m_GlobalMockInstance = NULL;
     }
 
-    _Check_return_
-    _Post_satisfies_(return != NULL)
     static CGlobalMock<C>* GetSingleton()
     {
         if (NULL == m_GlobalMockInstance)

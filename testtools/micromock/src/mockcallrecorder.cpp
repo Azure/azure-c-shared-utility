@@ -229,13 +229,11 @@ void CMockCallRecorder::SetPerformAutomaticCallComparison(AUTOMATIC_CALL_COMPARI
     m_PerformAutomaticCallComparison = performAutomaticCallComparison;
 }
 
-SAL_Acquires_lock_(m_MockCallRecorderCS)
 void CMockCallRecorder::Lock()
 {
     MicroMockEnterCriticalSection(&m_MockCallRecorderCS);
 }
 
-SAL_Releases_lock_(m_MockCallRecorderCS)
 void CMockCallRecorder::Unlock()
 {
     MicroMockLeaveCriticalSection(&m_MockCallRecorderCS);

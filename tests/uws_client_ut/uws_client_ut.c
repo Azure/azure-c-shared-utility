@@ -751,6 +751,7 @@ TEST_FUNCTION(when_allocating_memory_for_the_hostname_copy_fails_then_uws_client
 {
     // arrange
     SOCKETIO_CONFIG socketio_config;
+	UWS_CLIENT_HANDLE uws_client;
 
     socketio_config.accepted_socket = NULL;
     socketio_config.hostname = "test_host";
@@ -763,7 +764,7 @@ TEST_FUNCTION(when_allocating_memory_for_the_hostname_copy_fails_then_uws_client
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
     // act
-    UWS_CLIENT_HANDLE uws_client = uws_client_create("test_host", 80, "bbb", false, protocols, sizeof(protocols) / sizeof(protocols[0]));
+    uws_client = uws_client_create("test_host", 80, "bbb", false, protocols, sizeof(protocols) / sizeof(protocols[0]));
 
     // assert
     ASSERT_IS_NULL(uws_client);
@@ -775,6 +776,7 @@ TEST_FUNCTION(when_allocating_memory_for_the_resource_name_copy_fails_then_uws_c
 {
     // arrange
     SOCKETIO_CONFIG socketio_config;
+	UWS_CLIENT_HANDLE uws_client;
 
     socketio_config.accepted_socket = NULL;
     socketio_config.hostname = "test_host";
@@ -790,7 +792,7 @@ TEST_FUNCTION(when_allocating_memory_for_the_resource_name_copy_fails_then_uws_c
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
     // act
-    UWS_CLIENT_HANDLE uws_client = uws_client_create("test_host", 80, "test_resource/1", false, protocols, sizeof(protocols) / sizeof(protocols[0]));
+    uws_client = uws_client_create("test_host", 80, "test_resource/1", false, protocols, sizeof(protocols) / sizeof(protocols[0]));
 
     // assert
     ASSERT_IS_NULL(uws_client);
@@ -832,6 +834,7 @@ TEST_FUNCTION(when_getting_the_socket_interface_description_fails_then_uws_clien
 {
     // arrange
     SOCKETIO_CONFIG socketio_config;
+	UWS_CLIENT_HANDLE uws_client;
 
     socketio_config.accepted_socket = NULL;
     socketio_config.hostname = "test_host";
@@ -851,7 +854,7 @@ TEST_FUNCTION(when_getting_the_socket_interface_description_fails_then_uws_clien
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
     // act
-    UWS_CLIENT_HANDLE uws_client = uws_client_create("test_host", 80, "test_resource/1", false, protocols, sizeof(protocols) / sizeof(protocols[0]));
+    uws_client = uws_client_create("test_host", 80, "test_resource/1", false, protocols, sizeof(protocols) / sizeof(protocols[0]));
 
     // assert
     ASSERT_IS_NULL(uws_client);
@@ -1243,6 +1246,7 @@ TEST_FUNCTION(when_any_call_fails_uws_client_create_with_io_fails)
     // arrange
     SOCKETIO_CONFIG socketio_config;
     UWS_CLIENT_HANDLE uws_client;
+	size_t i;
     static const WS_PROTOCOL two_protocols[] = { { "test_protocol1" },{ "test_protocol2" } };
 
     int negativeTestsInitResult = umock_c_negative_tests_init();
@@ -1276,7 +1280,7 @@ TEST_FUNCTION(when_any_call_fails_uws_client_create_with_io_fails)
 
     umock_c_negative_tests_snapshot();
 
-    for (size_t i = 0; i < umock_c_negative_tests_call_count(); i++)
+    for (i = 0; i < umock_c_negative_tests_call_count(); i++)
     {
         char temp_str[128];
 
@@ -4054,11 +4058,11 @@ TEST_FUNCTION(when_a_65535_bytes_binary_frame_is_received_it_shall_be_indicated_
     UWS_CLIENT_HANDLE uws_client;
     const char test_upgrade_response[] = "HTTP/1.1 101 Switching Protocols\r\n\r\n";
     unsigned char* test_frame = (unsigned char*)malloc(65535 + 4);
+    size_t i;
     test_frame[0] = 0x82;
     test_frame[1] = 0x7E;
     test_frame[2] = 0xFF;
     test_frame[3] = 0xFF;
-    size_t i;
 
     for (i = 0; i < 65535; i++)
     {
@@ -4098,6 +4102,7 @@ TEST_FUNCTION(when_a_65536_bytes_binary_frame_is_received_it_shall_be_indicated_
     UWS_CLIENT_HANDLE uws_client;
     const char test_upgrade_response[] = "HTTP/1.1 101 Switching Protocols\r\n\r\n";
     unsigned char* test_frame = (unsigned char*)malloc(65536 + 10);
+    size_t i;
     test_frame[0] = 0x82;
     test_frame[1] = 0x7F;
     test_frame[2] = 0x00;
@@ -4108,7 +4113,6 @@ TEST_FUNCTION(when_a_65536_bytes_binary_frame_is_received_it_shall_be_indicated_
     test_frame[7] = 0x01;
     test_frame[8] = 0x00;
     test_frame[9] = 0x00;
-    size_t i;
 
     for (i = 0; i < 65536; i++)
     {
@@ -4148,6 +4152,7 @@ TEST_FUNCTION(when_a_65537_bytes_binary_frame_is_received_it_shall_be_indicated_
     UWS_CLIENT_HANDLE uws_client;
     const char test_upgrade_response[] = "HTTP/1.1 101 Switching Protocols\r\n\r\n";
     unsigned char* test_frame = (unsigned char*)malloc(65537 + 10);
+    size_t i;
     test_frame[0] = 0x82;
     test_frame[1] = 0x7F;
     test_frame[2] = 0x00;
@@ -4158,7 +4163,6 @@ TEST_FUNCTION(when_a_65537_bytes_binary_frame_is_received_it_shall_be_indicated_
     test_frame[7] = 0x01;
     test_frame[8] = 0x00;
     test_frame[9] = 0x01;
-    size_t i;
 
     for (i = 0; i < 65537; i++)
     {
@@ -4300,6 +4304,7 @@ TEST_FUNCTION(when_a_65535_byte_binary_frame_is_received_with_64_bit_length_an_e
     UWS_CLIENT_HANDLE uws_client;
     const char test_upgrade_response[] = "HTTP/1.1 101 Switching Protocols\r\n\r\n";
     unsigned char* test_frame = (unsigned char*)malloc(65535 + 10);
+    size_t i;
     test_frame[0] = 0x82;
     test_frame[1] = 0x7F;
     test_frame[2] = 0x00;
@@ -4310,7 +4315,6 @@ TEST_FUNCTION(when_a_65535_byte_binary_frame_is_received_with_64_bit_length_an_e
     test_frame[7] = 0x00;
     test_frame[8] = 0xFF;
     test_frame[9] = 0xFF;
-    size_t i;
 
     for (i = 0; i < 65535; i++)
     {
@@ -4413,6 +4417,7 @@ TEST_FUNCTION(when_the_highest_bit_is_set_in_a_64_bit_length_frame_an_error_is_i
     UWS_CLIENT_HANDLE uws_client;
     const char test_upgrade_response[] = "HTTP/1.1 101 Switching Protocols\r\n\r\n";
     unsigned char* test_frame = (unsigned char*)malloc(65536 + 10);
+    size_t i;
     test_frame[0] = 0x82;
     test_frame[1] = 0x7F;
     test_frame[2] = 0x80;
@@ -4423,7 +4428,6 @@ TEST_FUNCTION(when_the_highest_bit_is_set_in_a_64_bit_length_frame_an_error_is_i
     test_frame[7] = 0x01;
     test_frame[8] = 0x00;
     test_frame[9] = 0x00;
-    size_t i;
 
     for (i = 0; i < 65536; i++)
     {

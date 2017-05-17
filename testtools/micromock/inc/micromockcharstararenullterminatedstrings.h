@@ -49,8 +49,7 @@ public:
         }
     }
 
-    virtual _Check_return_
-    std::tstring ToString() const
+    virtual std::tstring ToString() const
     {
         std::tostringstream strStream;
         if (NULL == m_Value)
@@ -64,8 +63,7 @@ public:
         return strStream.str();
     }
 
-    virtual _Must_inspect_result_
-    bool EqualTo(_In_ const CMockValueBase* right)
+    virtual bool EqualTo(_In_ const CMockValueBase* right)
     {
         return (*this == *(reinterpret_cast<const CMockValue<char*>*>(right)));
         
@@ -99,7 +97,7 @@ public:
         };
     }
 
-    _Must_inspect_result_ char* GetValue() const
+    char* GetValue() const
     {
         return m_Value;
     }
@@ -137,8 +135,7 @@ public:
         }
     }
 
-    virtual _Check_return_
-    std::tstring ToString() const
+    virtual std::tstring ToString() const
     {
         std::tostringstream strStream;
         if (NULL == m_Value)
@@ -152,8 +149,7 @@ public:
         return strStream.str();
     }
 
-    virtual _Must_inspect_result_
-    bool EqualTo(_In_ const CMockValueBase* right)
+    virtual bool EqualTo(_In_ const CMockValueBase* right)
     {
         return (*this == *(reinterpret_cast<const CMockValue<const char*>*>(right)));
     }
@@ -186,7 +182,7 @@ public:
         };
     }
 
-    _Must_inspect_result_ const char* GetValue() const
+    const char* GetValue() const
     {
         return m_Value;
     }

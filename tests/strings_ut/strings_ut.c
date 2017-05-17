@@ -153,10 +153,11 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_new_fail)
     {
         //arrange
+        STRING_HANDLE str_handle;
+		size_t count;
+		size_t index;
         int negativeTestsInitResult = umock_c_negative_tests_init();
         ASSERT_ARE_EQUAL(int, 0, negativeTestsInitResult);
-
-        STRING_HANDLE str_handle;
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
@@ -165,15 +166,16 @@ BEGIN_TEST_SUITE(strings_unittests)
         umock_c_negative_tests_snapshot();
 
         //act
-        size_t count = umock_c_negative_tests_call_count();
-        for (size_t index = 0; index < count; index++)
+        count = umock_c_negative_tests_call_count();
+        for (index = 0; index < count; index++)
         {
-            umock_c_negative_tests_reset();
+            char tmp_msg[64];
+
+			umock_c_negative_tests_reset();
             umock_c_negative_tests_fail_call(index);
 
             str_handle = STRING_new();
 
-            char tmp_msg[64];
             sprintf(tmp_msg, "STRING_new failure in test %zu/%zu", index+1, count);
 
             //assert
@@ -247,10 +249,11 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_construct_Fail)
     {
         //arrange
+        STRING_HANDLE str_handle;
+		size_t count;
+		size_t index;
         int negativeTestsInitResult = umock_c_negative_tests_init();
         ASSERT_ARE_EQUAL(int, 0, negativeTestsInitResult);
-
-        STRING_HANDLE str_handle;
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
@@ -259,15 +262,16 @@ BEGIN_TEST_SUITE(strings_unittests)
         umock_c_negative_tests_snapshot();
 
         //act
-        size_t count = umock_c_negative_tests_call_count();
-        for (size_t index = 0; index < count; index++)
+        count = umock_c_negative_tests_call_count();
+        for (index = 0; index < count; index++)
         {
-            umock_c_negative_tests_reset();
+            char tmp_msg[64];
+
+			umock_c_negative_tests_reset();
             umock_c_negative_tests_fail_call(index);
 
             str_handle = STRING_construct(TEST_STRING_VALUE);
 
-            char tmp_msg[64];
             sprintf(tmp_msg, "STRING_construct failure in test %zu/%zu", index+1, count);
 
             //assert
@@ -390,10 +394,11 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_construct_sprintf_fail)
     {
         //arrange
+        STRING_HANDLE str_handle;
+		size_t count;
+		size_t index;
         int negativeTestsInitResult = umock_c_negative_tests_init();
         ASSERT_ARE_EQUAL(int, 0, negativeTestsInitResult);
-
-        STRING_HANDLE str_handle;
 
         EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
         EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
@@ -401,15 +406,16 @@ BEGIN_TEST_SUITE(strings_unittests)
         umock_c_negative_tests_snapshot();
 
         //act
-        size_t count = umock_c_negative_tests_call_count();
-        for (size_t index = 0; index < count; index++)
+        count = umock_c_negative_tests_call_count();
+        for (index = 0; index < count; index++)
         {
-            umock_c_negative_tests_reset();
+            char tmp_msg[64];
+
+			umock_c_negative_tests_reset();
             umock_c_negative_tests_fail_call(index);
 
             str_handle = STRING_construct_sprintf(FORMAT_STRING, TEST_STRING_VALUE);
 
-            char tmp_msg[64];
             sprintf(tmp_msg, "STRING_construct_sprintf failure in test %zu/%zu", index+1, count);
 
             //assert
@@ -424,6 +430,7 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_Concat_Succeed)
     {
         ///arrange
+		int nResult;
         STRING_HANDLE g_hString;
         g_hString = STRING_construct(INITIAL_STRING_VALUE);
         umock_c_reset_all_calls();
@@ -432,7 +439,7 @@ BEGIN_TEST_SUITE(strings_unittests)
             .IgnoreArgument(1);
 
         ///act
-        int nResult = STRING_concat(g_hString, TEST_STRING_VALUE);
+        nResult = STRING_concat(g_hString, TEST_STRING_VALUE);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, COMBINED_STRING_VALUE, STRING_c_str(g_hString) );
@@ -447,12 +454,13 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_Concat_HANDLE_NULL_Fail)
     {
         ///arrange
+		int nResult;
         STRING_HANDLE g_hString;
         g_hString = STRING_construct(INITIAL_STRING_VALUE);
         umock_c_reset_all_calls();
 
         ///act
-        int nResult = STRING_concat(NULL, TEST_STRING_VALUE);
+        nResult = STRING_concat(NULL, TEST_STRING_VALUE);
 
         ///assert
         ASSERT_ARE_NOT_EQUAL(int, nResult, 0);
@@ -467,12 +475,13 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_Concat_CharPtr_NULL_Fail)
     {
         ///arrange
+		int nResult;
         STRING_HANDLE g_hString;
         g_hString = STRING_construct(INITIAL_STRING_VALUE);
         umock_c_reset_all_calls();
 
         ///act
-        int nResult = STRING_concat(g_hString, NULL);
+        nResult = STRING_concat(g_hString, NULL);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -524,8 +533,8 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_Concat_With_STRING_SUCCEED)
     {
         ///arrange
-        STRING_HANDLE g_hString;
-        g_hString = STRING_construct(INITIAL_STRING_VALUE);
+		int nResult;
+        STRING_HANDLE g_hString = STRING_construct(INITIAL_STRING_VALUE);
         STRING_HANDLE hAppend = STRING_construct(TEST_STRING_VALUE);
         umock_c_reset_all_calls();
 
@@ -533,7 +542,7 @@ BEGIN_TEST_SUITE(strings_unittests)
             .IgnoreArgument(1);
 
         ///act
-        int nResult = STRING_concat_with_STRING(g_hString, hAppend);
+        nResult = STRING_concat_with_STRING(g_hString, hAppend);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, COMBINED_STRING_VALUE, STRING_c_str(g_hString) );
@@ -549,11 +558,12 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_Concat_With_STRING_HANDLE_NULL_Fail)
     {
         ///arrange
+		int nResult;
         STRING_HANDLE hAppend = STRING_construct(TEST_STRING_VALUE);
         umock_c_reset_all_calls();
 
         ///act
-        int nResult = STRING_concat_with_STRING(NULL, hAppend);
+        nResult = STRING_concat_with_STRING(NULL, hAppend);
 
         ///assert
         ASSERT_ARE_NOT_EQUAL(int, nResult, 0);
@@ -568,11 +578,12 @@ BEGIN_TEST_SUITE(strings_unittests)
     {
         ///arrange
         STRING_HANDLE g_hString;
+		int nResult;
         g_hString = STRING_construct(INITIAL_STRING_VALUE);
         umock_c_reset_all_calls();
 
         ///act
-        int nResult = STRING_concat_with_STRING(g_hString, NULL);
+        nResult = STRING_concat_with_STRING(g_hString, NULL);
 
         ///assert
         ASSERT_ARE_NOT_EQUAL(int, nResult, 0);
@@ -600,6 +611,7 @@ BEGIN_TEST_SUITE(strings_unittests)
     {
         ///arrange
         STRING_HANDLE g_hString;
+		int nResult;
         g_hString = STRING_construct(INITIAL_STRING_VALUE);
         umock_c_reset_all_calls();
 
@@ -607,7 +619,7 @@ BEGIN_TEST_SUITE(strings_unittests)
             .IgnoreArgument(1);
 
         ///act
-        int nResult = STRING_copy(g_hString, TEST_STRING_VALUE);
+        nResult = STRING_copy(g_hString, TEST_STRING_VALUE);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, TEST_STRING_VALUE, STRING_c_str(g_hString) );
@@ -622,12 +634,13 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_Copy_NULL_Fail)
     {
         ///arrange
+		int nResult;
         STRING_HANDLE g_hString;
         g_hString = STRING_construct(INITIAL_STRING_VALUE);
         umock_c_reset_all_calls();
 
         ///act
-        int nResult = STRING_copy(g_hString, NULL);
+        nResult = STRING_copy(g_hString, NULL);
 
         ///assert
         ASSERT_ARE_NOT_EQUAL(int, nResult, 0);
@@ -641,6 +654,7 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_Copy_n_Succeed)
     {
         ///arrange
+		int nResult;
         STRING_HANDLE g_hString;
         g_hString = STRING_construct(INITIAL_STRING_VALUE);
         umock_c_reset_all_calls();
@@ -649,7 +663,7 @@ BEGIN_TEST_SUITE(strings_unittests)
             .IgnoreArgument(1);
 
         ///act
-        int nResult = STRING_copy_n(g_hString, COMBINED_STRING_VALUE, NUMBER_OF_CHAR_TOCOPY);
+        nResult = STRING_copy_n(g_hString, COMBINED_STRING_VALUE, NUMBER_OF_CHAR_TOCOPY);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, INITIAL_STRING_VALUE, STRING_c_str(g_hString) );
@@ -677,12 +691,13 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_Copy_n_With_CONST_CHAR_NULL_Fail)
     {
         ///arrange
+		int nResult;
         STRING_HANDLE g_hString;
         g_hString = STRING_construct(INITIAL_STRING_VALUE);
         umock_c_reset_all_calls();
 
         ///act
-        int nResult = STRING_copy_n(g_hString, NULL, NUMBER_OF_CHAR_TOCOPY);
+        nResult = STRING_copy_n(g_hString, NULL, NUMBER_OF_CHAR_TOCOPY);
 
         ///assert
         ASSERT_ARE_NOT_EQUAL(int, nResult, 0);
@@ -696,6 +711,7 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_Copy_n_With_Size_0_Succeed)
     {
         ///arrange
+		int nResult;
         STRING_HANDLE g_hString;
         g_hString = STRING_construct(INITIAL_STRING_VALUE);
         umock_c_reset_all_calls();
@@ -704,7 +720,7 @@ BEGIN_TEST_SUITE(strings_unittests)
             .IgnoreArgument(1);
 
         ///act
-        int nResult = STRING_copy_n(g_hString, COMBINED_STRING_VALUE, 0);
+        nResult = STRING_copy_n(g_hString, COMBINED_STRING_VALUE, 0);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, EMPTY_STRING, STRING_c_str(g_hString) );
@@ -719,6 +735,7 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_quote_Succeed)
     {
         ///arrange
+		int nResult;
         STRING_HANDLE g_hString;
         g_hString = STRING_construct(TEST_STRING_VALUE);
         umock_c_reset_all_calls();
@@ -727,7 +744,7 @@ BEGIN_TEST_SUITE(strings_unittests)
             .IgnoreArgument(1);
 
         ///act
-        int nResult = STRING_quote(g_hString);
+        nResult = STRING_quote(g_hString);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, QUOTED_TEST_STRING_VALUE, STRING_c_str(g_hString) );
@@ -741,10 +758,13 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_quote_fail)
     {
         ///arrange
+		STRING_HANDLE str_handle;
+		size_t count;
+		size_t index;
         int negativeTestsInitResult = umock_c_negative_tests_init();
         ASSERT_ARE_EQUAL(int, 0, negativeTestsInitResult);
 
-        STRING_HANDLE str_handle = STRING_construct(TEST_STRING_VALUE);
+        str_handle = STRING_construct(TEST_STRING_VALUE);
         umock_c_reset_all_calls();
 
         STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, 2 + strlen(TEST_STRING_VALUE) + 1))
@@ -753,15 +773,17 @@ BEGIN_TEST_SUITE(strings_unittests)
         umock_c_negative_tests_snapshot();
 
         ///act
-        size_t count = umock_c_negative_tests_call_count();
-        for (size_t index = 0; index < count; index++)
+        count = umock_c_negative_tests_call_count();
+        for (index = 0; index < count; index++)
         {
-            umock_c_negative_tests_reset();
+            char tmp_msg[64];
+			int nResult;
+
+			umock_c_negative_tests_reset();
             umock_c_negative_tests_fail_call(index);
 
-            int nResult = STRING_quote(str_handle);
+            nResult = STRING_quote(str_handle);
 
-            char tmp_msg[64];
             sprintf(tmp_msg, "STRING_quote failure in test %zu/%zu", index+1, count);
 
             //assert
@@ -803,6 +825,7 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_c_str_Success)
     {
         ///arrange
+		const char* s;
         STRING_HANDLE g_hString;
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
@@ -811,7 +834,7 @@ BEGIN_TEST_SUITE(strings_unittests)
 
         ///act
         g_hString = STRING_construct(TEST_STRING_VALUE);
-        const char* s = STRING_c_str(g_hString);
+        s = STRING_c_str(g_hString);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, s, TEST_STRING_VALUE);
@@ -826,6 +849,7 @@ BEGIN_TEST_SUITE(strings_unittests)
     {
         ///arrange
         STRING_HANDLE g_hString;
+		int nResult;
         g_hString = STRING_construct(TEST_STRING_VALUE);
         umock_c_reset_all_calls();
 
@@ -833,7 +857,7 @@ BEGIN_TEST_SUITE(strings_unittests)
             .IgnoreArgument(1);
 
         ///act
-        int nResult = STRING_empty(g_hString);
+        nResult = STRING_empty(g_hString);
 
         ///assert
         ASSERT_ARE_EQUAL(int, nResult, 0);
@@ -893,11 +917,12 @@ BEGIN_TEST_SUITE(strings_unittests)
     {
         ///arrange
         STRING_HANDLE g_hString;
+		size_t nResult;
         g_hString = STRING_construct(TEST_STRING_VALUE);
         umock_c_reset_all_calls();
 
         ///act
-        size_t nResult = STRING_length(g_hString);
+        nResult = STRING_length(g_hString);
 
         ///assert
         ASSERT_ARE_EQUAL(size_t, nResult, strlen(TEST_STRING_VALUE) );
@@ -936,6 +961,7 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_clone_succeeds)
     {
         ///arrange
+		STRING_HANDLE result;
         STRING_HANDLE hSource = STRING_construct("aa");
         umock_c_reset_all_calls();
 
@@ -944,7 +970,7 @@ BEGIN_TEST_SUITE(strings_unittests)
         STRICT_EXPECTED_CALL(gballoc_malloc(sizeof("aa")));
 
         ///act
-        STRING_HANDLE result = STRING_clone(hSource);
+        result = STRING_clone(hSource);
 
         ///assert
         ASSERT_ARE_NOT_EQUAL(void_ptr, NULL, result);
@@ -961,10 +987,13 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_clone_fail)
     {
         //arrange
+		STRING_HANDLE str_handle;
+		size_t count;
+		size_t index;
         int negativeTestsInitResult = umock_c_negative_tests_init();
         ASSERT_ARE_EQUAL(int, 0, negativeTestsInitResult);
 
-        STRING_HANDLE str_handle = STRING_construct("aa");
+        str_handle = STRING_construct("aa");
         umock_c_reset_all_calls();
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
@@ -974,15 +1003,17 @@ BEGIN_TEST_SUITE(strings_unittests)
         umock_c_negative_tests_snapshot();
 
         //act
-        size_t count = umock_c_negative_tests_call_count();
-        for (size_t index = 0; index < count; index++)
+        count = umock_c_negative_tests_call_count();
+        for (index = 0; index < count; index++)
         {
-            umock_c_negative_tests_reset();
+			STRING_HANDLE str_result;
+            char tmp_msg[64];
+
+			umock_c_negative_tests_reset();
             umock_c_negative_tests_fail_call(index);
 
-            STRING_HANDLE str_result = STRING_clone(str_handle);
+            str_result = STRING_clone(str_handle);
 
-            char tmp_msg[64];
             sprintf(tmp_msg, "STRING_clone failure in test %zu/%zu", index+1, count);
 
             //assert
@@ -1024,13 +1055,15 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_construct_n_succeeds_with_2_char)
     {
         ///arrange
+		STRING_HANDLE result;
+
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
         STRICT_EXPECTED_CALL(gballoc_malloc(3))
             .IgnoreArgument(1);
 
         ///act
-        STRING_HANDLE result = STRING_construct_n("qq", 2);
+        result = STRING_construct_n("qq", 2);
 
         ///assert
         ASSERT_IS_NOT_NULL(result);
@@ -1045,13 +1078,14 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_construct_n_succeeds_with_3_char_out_of_five)
     {
         ///arrange
+		STRING_HANDLE result;
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
         STRICT_EXPECTED_CALL(gballoc_malloc(4))
             .IgnoreArgument(1);
 
         ///act
-        STRING_HANDLE result = STRING_construct_n("12345", 3);
+        result = STRING_construct_n("12345", 3);
 
         ///assert
         ASSERT_IS_NOT_NULL(result);
@@ -1065,6 +1099,8 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_construct_n_fail)
     {
         //arrange
+		size_t count;
+		size_t index;
         int negativeTestsInitResult = umock_c_negative_tests_init();
         ASSERT_ARE_EQUAL(int, 0, negativeTestsInitResult);
 
@@ -1076,15 +1112,17 @@ BEGIN_TEST_SUITE(strings_unittests)
         umock_c_negative_tests_snapshot();
 
         //act
-        size_t count = umock_c_negative_tests_call_count();
-        for (size_t index = 0; index < count; index++)
+        count = umock_c_negative_tests_call_count();
+        for (index = 0; index < count; index++)
         {
+			STRING_HANDLE result;
+            char tmp_msg[64];
+
             umock_c_negative_tests_reset();
             umock_c_negative_tests_fail_call(index);
 
-            STRING_HANDLE result = STRING_construct_n("qq", 2);
+            result = STRING_construct_n("qq", 2);
 
-            char tmp_msg[64];
             sprintf(tmp_msg, "STRING_construct_n failure in test %zu/%zu", index+1, count);
 
             //assert
@@ -1099,11 +1137,12 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_compare_s1_NULL)
     {
         ///arrange
+		int result;
         STRING_HANDLE h2 = STRING_construct("bb");
         umock_c_reset_all_calls();
 
         ///act
-        int result = STRING_compare(NULL, h2);
+        result = STRING_compare(NULL, h2);
 
         ///assert
         ASSERT_ARE_EQUAL(int, 1, result);
@@ -1117,11 +1156,12 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_compare_s2_NULL)
     {
         ///arrange
+		int result;
         STRING_HANDLE h1 = STRING_construct("aa");
         umock_c_reset_all_calls();
 
         ///act
-        int result = STRING_compare(h1, NULL);
+        result = STRING_compare(h1, NULL);
 
         ///assert
         ASSERT_ARE_EQUAL(int, -1, result);
@@ -1150,12 +1190,13 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_compare_s1_first_SUCCEED)
     {
         ///arrange
+		int result;
         STRING_HANDLE h1 = STRING_construct("aa");
         STRING_HANDLE h2 = STRING_construct("bb");
         umock_c_reset_all_calls();
 
         ///act
-        int result = STRING_compare(h1, h2);
+        result = STRING_compare(h1, h2);
 
         ///assert
         ASSERT_ARE_EQUAL(int, -1, result);
@@ -1170,12 +1211,13 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_compare_s2_first_SUCCEED)
     {
         ///arrange
+		int result;
         STRING_HANDLE h1 = STRING_construct("aa");
         STRING_HANDLE h2 = STRING_construct("bb");
         umock_c_reset_all_calls();
 
         ///act
-        int result = STRING_compare(h2, h1);
+        result = STRING_compare(h2, h1);
 
         ///assert
         ASSERT_ARE_EQUAL(int, 1, result);
@@ -1191,12 +1233,13 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_compare_Equal_SUCCEED)
     {
         ///arrange
+		int result;
         STRING_HANDLE h1 = STRING_construct("a1234");
         STRING_HANDLE h2 = STRING_construct("a1234");
         umock_c_reset_all_calls();
 
         ///act
-        int result = STRING_compare(h1, h2);
+        result = STRING_compare(h1, h2);
 
         ///assert
         ASSERT_ARE_EQUAL(int, 0, result);
@@ -1232,9 +1275,11 @@ BEGIN_TEST_SUITE(strings_unittests)
     /*Tests_SRS_STRING_02_020: [The string shall end with " (quote).] */
     TEST_FUNCTION(STRING_new_JSON_succeeds)
     {
-        for (size_t i = 0; i < sizeof(JSONtests) / sizeof(JSONtests[0]); i++)
+		size_t i;
+        for (i = 0; i < sizeof(JSONtests) / sizeof(JSONtests[0]); i++)
         {
             ///arrange
+			STRING_HANDLE result;
             umock_c_reset_all_calls();
 
             STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
@@ -1242,7 +1287,7 @@ BEGIN_TEST_SUITE(strings_unittests)
             STRICT_EXPECTED_CALL(gballoc_malloc(strlen(JSONtests[i].expectedJSON) + 1));
 
             ///act
-            STRING_HANDLE result = STRING_new_JSON(JSONtests[i].source);
+            result = STRING_new_JSON(JSONtests[i].source);
 
             ///assert
             ASSERT_ARE_EQUAL(char_ptr, JSONtests[i].expectedJSON, STRING_c_str(result));
@@ -1257,6 +1302,8 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_new_JSON_fails)
     {
         //arrange
+		size_t count;
+		size_t index;
         int negativeTestsInitResult = umock_c_negative_tests_init();
         ASSERT_ARE_EQUAL(int, 0, negativeTestsInitResult);
 
@@ -1266,15 +1313,17 @@ BEGIN_TEST_SUITE(strings_unittests)
         umock_c_negative_tests_snapshot();
 
         //act
-        size_t count = umock_c_negative_tests_call_count();
-        for (size_t index = 0; index < count; index++)
+        count = umock_c_negative_tests_call_count();
+        for (index = 0; index < count; index++)
         {
-            umock_c_negative_tests_reset();
+            char tmp_msg[64];
+			STRING_HANDLE result;
+
+			umock_c_negative_tests_reset();
             umock_c_negative_tests_fail_call(index);
 
-            STRING_HANDLE result = STRING_new_JSON("ab");
+            result = STRING_new_JSON("ab");
 
-            char tmp_msg[64];
             sprintf(tmp_msg, "STRING_new_JSON failure in test %zu/%zu", index+1, count);
 
             //assert
@@ -1319,14 +1368,14 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_from_byte_array_succeeds)
     {
         ///arrange
-
+		STRING_HANDLE result;
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument_size();
 
         STRICT_EXPECTED_CALL(gballoc_malloc(1 + 1));
 
         ///act
-        STRING_HANDLE result = STRING_from_byte_array((const unsigned char*)"a", 1);
+        result = STRING_from_byte_array((const unsigned char*)"a", 1);
 
         ///assert
         ASSERT_IS_NOT_NULL(result);
@@ -1341,14 +1390,14 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_from_byte_array_succeeds_2)
     {
         ///arrange
-
+		STRING_HANDLE result;
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument_size();
 
         STRICT_EXPECTED_CALL(gballoc_malloc(1 + 0));
 
         ///act
-        STRING_HANDLE result = STRING_from_byte_array(NULL, 0);
+        result = STRING_from_byte_array(NULL, 0);
 
         ///assert
         ASSERT_IS_NOT_NULL(result);
@@ -1363,7 +1412,7 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_from_byte_array_fails_1)
     {
         ///arrange
-
+		STRING_HANDLE result;
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument_size();
         
@@ -1374,7 +1423,7 @@ BEGIN_TEST_SUITE(strings_unittests)
             .IgnoreArgument_ptr();
 
         ///act
-        STRING_HANDLE result = STRING_from_byte_array((const unsigned char*)"a", 1);
+        result = STRING_from_byte_array((const unsigned char*)"a", 1);
 
         ///assert
         ASSERT_IS_NULL(result);
@@ -1387,13 +1436,13 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_from_byte_array_fails_2)
     {
         ///arrange
-
+		STRING_HANDLE result;
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument_size()
             .SetReturn(NULL);
 
         ///act
-        STRING_HANDLE result = STRING_from_byte_array((const unsigned char*)"a", 1);
+        result = STRING_from_byte_array((const unsigned char*)"a", 1);
 
         ///assert
         ASSERT_IS_NULL(result);
@@ -1420,13 +1469,14 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_sprintf_format_NULL_fail)
     {
         ///arrange
+		int str_result;
         STRING_HANDLE str_handle = STRING_new();
         ASSERT_IS_NOT_NULL(str_handle);
 
         umock_c_reset_all_calls();
 
         ///act
-        int str_result = STRING_sprintf(str_handle, NULL, TEST_STRING_VALUE);
+        str_result = STRING_sprintf(str_handle, NULL, TEST_STRING_VALUE);
 
         ///assert
         ASSERT_ARE_NOT_EQUAL(int, str_result, 0);
@@ -1439,6 +1489,7 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_sprintf_format_succeed)
     {
         ///arrange
+		int str_result;
         STRING_HANDLE str_handle = STRING_construct(INITIAL_STRING_VALUE);
         ASSERT_IS_NOT_NULL(str_handle);
 
@@ -1447,7 +1498,7 @@ BEGIN_TEST_SUITE(strings_unittests)
         EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, IGNORED_NUM_ARG));
 
         ///act
-        int str_result = STRING_sprintf(str_handle, FORMAT_STRING, TEST_STRING_VALUE);
+        str_result = STRING_sprintf(str_handle, FORMAT_STRING, TEST_STRING_VALUE);
 
         ///assert
         ASSERT_ARE_EQUAL(int, str_result, 0);
@@ -1462,13 +1513,14 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_sprintf_format_Empty_String_succeed)
     {
         ///arrange
+		int str_result;
         STRING_HANDLE str_handle = STRING_construct(INITIAL_STRING_VALUE);
         ASSERT_IS_NOT_NULL(str_handle);
 
         umock_c_reset_all_calls();
 
         ///act
-        int str_result = STRING_sprintf(str_handle, EMPTY_STRING);
+        str_result = STRING_sprintf(str_handle, EMPTY_STRING);
 
         ///assert
         ASSERT_ARE_EQUAL(int, str_result, 0);
@@ -1483,10 +1535,13 @@ BEGIN_TEST_SUITE(strings_unittests)
     TEST_FUNCTION(STRING_sprintf_format_fail)
     {
         ///arrange
+		size_t count;
+		size_t index;
         int negativeTestsInitResult = umock_c_negative_tests_init();
+		STRING_HANDLE str_handle;
         ASSERT_ARE_EQUAL(int, 0, negativeTestsInitResult);
 
-        STRING_HANDLE str_handle = STRING_construct(INITIAL_STRING_VALUE);
+        str_handle = STRING_construct(INITIAL_STRING_VALUE);
         ASSERT_IS_NOT_NULL(str_handle);
 
         umock_c_reset_all_calls();
@@ -1496,15 +1551,17 @@ BEGIN_TEST_SUITE(strings_unittests)
         umock_c_negative_tests_snapshot();
 
         //act
-        size_t count = umock_c_negative_tests_call_count();
-        for (size_t index = 0; index < count; index++)
+        count = umock_c_negative_tests_call_count();
+        for (index = 0; index < count; index++)
         {
-            umock_c_negative_tests_reset();
+            char tmp_msg[64];
+			int str_result;
+
+			umock_c_negative_tests_reset();
             umock_c_negative_tests_fail_call(index);
 
-            int str_result = STRING_sprintf(str_handle, FORMAT_STRING, TEST_STRING_VALUE);
+            str_result = STRING_sprintf(str_handle, FORMAT_STRING, TEST_STRING_VALUE);
 
-            char tmp_msg[64];
             sprintf(tmp_msg, "STRING_sprintf failure in test %zu/%zu", index+1, count);
 
             ///assert

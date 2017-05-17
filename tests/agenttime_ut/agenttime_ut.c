@@ -91,9 +91,9 @@ BEGIN_TEST_SUITE(agenttime_unittests)
         TEST_FUNCTION(get_difftime_success)
         {
             time_t now, sometimeAfterNow;
+            double diff;
             now = get_time(NULL);
             sometimeAfterNow = now + 42; /*whatever this is*/
-            double diff;
 
             ///act
             diff = get_difftime(sometimeAfterNow, now);

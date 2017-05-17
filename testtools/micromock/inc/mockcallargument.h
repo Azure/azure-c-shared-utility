@@ -46,8 +46,7 @@ public:
     }
 
     // TODO: this should be fixed to be const
-    _Must_inspect_result_
-        bool operator==(_In_ CMockCallArgument<T>& rhs)
+    bool operator==(_In_ CMockCallArgument<T>& rhs)
     {
         bool result = true;
 
@@ -88,8 +87,7 @@ public:
         return result;
     }
 
-    _Must_inspect_result_
-        bool ValidateArgumentBuffer(_In_ const std::vector<BUFFER_ARGUMENT_DATA>& bufferValidations) const
+    bool ValidateArgumentBuffer(_In_ const std::vector<BUFFER_ARGUMENT_DATA>& bufferValidations) const
     {
         bool result = true;
 
@@ -109,7 +107,7 @@ public:
         return result;
     }
 
-    virtual _Check_return_ std::tstring ToString() const
+    virtual std::tstring ToString() const
     {
         if (m_ArgumentAsString.length() > 0)
         {
@@ -139,13 +137,12 @@ public:
         }
     }
 
-    _Must_inspect_result_
-        virtual bool EqualTo(_In_ const CMockCallArgumentBase* right)
+    virtual bool EqualTo(_In_ const CMockCallArgumentBase* right)
     {
         return (*this == *(CMockCallArgument<T>*)(const CMockCallArgument<T>*)(right));
     }
 
-    void AddBufferValidation(_In_reads_bytes_(bytesToValidate) const void* expectedBuffer, _In_ size_t bytesToValidate, _In_ size_t byteOffset = 0)
+    void AddBufferValidation(const void* expectedBuffer, _In_ size_t bytesToValidate, _In_ size_t byteOffset = 0)
     {
         if ((NULL != expectedBuffer) &&
             (bytesToValidate > 0))
@@ -184,7 +181,7 @@ public:
         }
     }
 
-    virtual void AddCopyOutArgumentBuffer(_In_reads_bytes_(bytesToCopy) const void* injectedBuffer, _In_ size_t bytesToCopy, _In_ size_t byteOffset = 0)
+    virtual void AddCopyOutArgumentBuffer(const void* injectedBuffer, _In_ size_t bytesToCopy, _In_ size_t byteOffset = 0)
     {
         BUFFER_ARGUMENT_DATA outArgumentCopyData;
 
@@ -262,9 +259,7 @@ private:
         }
     }
 
-    _Must_inspect_result_
-        _Success_(return == true)
-        bool GetArgBufferValidationExpectedByte(_In_ size_t pos, _Out_writes_(1) UINT8* buffer) const
+    bool GetArgBufferValidationExpectedByte(_In_ size_t pos, UINT8* buffer) const
     {
         bool result = false;
 
@@ -281,9 +276,7 @@ private:
         return result;
     }
 
-    _Must_inspect_result_
-        _Success_(return != NULL)
-        UINT8* CreateBufferValidationMask()
+    UINT8* CreateBufferValidationMask()
     {
         UINT8* result = NULL;
 

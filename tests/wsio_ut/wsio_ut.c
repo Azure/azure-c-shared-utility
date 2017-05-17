@@ -411,6 +411,7 @@ TEST_FUNCTION(wsio_create_with_NULL_hostname_field_fails)
 TEST_FUNCTION(wsio_create_with_NULL_resource_name_field_fails)
 {
     // arrange
+	CONCRETE_IO_HANDLE wsio;
     WSIO_CONFIG wsio_config;
     wsio_config.hostname = TEST_HOST_ADDRESS;
     wsio_config.port = 443;
@@ -420,7 +421,7 @@ TEST_FUNCTION(wsio_create_with_NULL_resource_name_field_fails)
     wsio_config.underlying_io_parameters = NULL;
 
     // act
-    CONCRETE_IO_HANDLE wsio = wsio_get_interface_description()->concrete_io_create(&wsio_config);
+    wsio = wsio_get_interface_description()->concrete_io_create(&wsio_config);
 
     // assert
     ASSERT_IS_NULL(wsio);
@@ -453,11 +454,12 @@ TEST_FUNCTION(wsio_create_with_NULL_protocol_field_fails)
 TEST_FUNCTION(when_allocating_memory_fails_wsio_create_fails)
 {
     // arrange
+	CONCRETE_IO_HANDLE wsio;
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
         .SetReturn(NULL);
 
     // act
-    CONCRETE_IO_HANDLE wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
 
     // assert
     ASSERT_IS_NULL(wsio);

@@ -16,7 +16,6 @@ typedef struct BUFFER_ARGUMENT_DATA_TAG
     size_t  m_ByteCount;
     size_t  m_Offset;
 
-    _Must_inspect_result_
     bool operator<(_In_ const BUFFER_ARGUMENT_DATA_TAG& rhs) const
     {
         if (m_Offset < rhs.m_Offset)
@@ -49,10 +48,10 @@ public:
     virtual ~CMockCallArgumentBase() {};
 
     virtual void SetIgnored(_In_ bool ignored) = 0;
-    virtual _Check_return_ std::tstring ToString() const = 0;
+    virtual std::tstring ToString() const = 0;
     virtual bool EqualTo(_In_ const CMockCallArgumentBase* right) = 0;
-    virtual void AddCopyOutArgumentBuffer(_In_reads_bytes_(bytesToCopy) const void* injectedBuffer, _In_ size_t bytesToCopy, _In_ size_t byteOffset = 0) = 0;
-    virtual void AddBufferValidation(_In_reads_bytes_(bytesToValidate) const void* expectedBuffer, _In_ size_t bytesToValidate, _In_ size_t byteOffset = 0) = 0;
+    virtual void AddCopyOutArgumentBuffer(const void* injectedBuffer, _In_ size_t bytesToCopy, _In_ size_t byteOffset = 0) = 0;
+    virtual void AddBufferValidation(const void* expectedBuffer, _In_ size_t bytesToValidate, _In_ size_t byteOffset = 0) = 0;
     virtual void CopyOutArgumentDataFrom(_In_ const CMockCallArgumentBase* sourceMockCallArgument) = 0;
 };
 

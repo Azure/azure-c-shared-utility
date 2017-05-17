@@ -14,8 +14,8 @@ public:
     virtual ~CMockValueBase();
 
 public:
-    virtual _Check_return_ std::tstring ToString() const = 0;
-    virtual _Must_inspect_result_ bool EqualTo(_In_ const CMockValueBase* right) = 0;
+    virtual std::tstring ToString() const = 0;
+    virtual bool EqualTo(_In_ const CMockValueBase* right) = 0;
 };
 
 #endif // MOCKVALUEBASE_H

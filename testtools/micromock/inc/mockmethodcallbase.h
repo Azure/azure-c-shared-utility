@@ -36,7 +36,7 @@ public:
     { 
         return m_FailReturnValue; 
     }
-    _Must_inspect_result_ bool HasMatch() const { return (NULL != m_MatchedCall); }
+    bool HasMatch() const { return (NULL != m_MatchedCall); }
     void RollbackMatch();
 
 protected:

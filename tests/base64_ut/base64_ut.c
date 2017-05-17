@@ -1540,8 +1540,9 @@ TEST_FUNCTION(Base64_Encode_leviathan_succeeds)
 TEST_FUNCTION(Base64_Encode_exhaustive_succeeds)
 {
     ///arrange
+	size_t i;
 
-    for (size_t i = 0; i < sizeof(testVector_BINARY_with_equal_signs) / sizeof(testVector_BINARY_with_equal_signs[0]); i++)
+    for (i = 0; i < sizeof(testVector_BINARY_with_equal_signs) / sizeof(testVector_BINARY_with_equal_signs[0]); i++)
     {
         ///arrange
         BUFFER_HANDLE input = BUFFER_new();
@@ -1598,8 +1599,9 @@ TEST_FUNCTION(Base64_Encode_Bytes_with_zero_size_returns_empty_string)
 TEST_FUNCTION(Base64_Encode_Bytes_exhaustive_succeeds)
 {
     ///arrange
+	size_t i;
 
-    for (size_t i = 0; i < sizeof(testVector_BINARY_with_equal_signs) / sizeof(testVector_BINARY_with_equal_signs[0]); i++)
+    for (i = 0; i < sizeof(testVector_BINARY_with_equal_signs) / sizeof(testVector_BINARY_with_equal_signs[0]); i++)
     {
         ///arrange
         STRING_HANDLE result;
@@ -1618,7 +1620,8 @@ TEST_FUNCTION(Base64_Encode_Bytes_exhaustive_succeeds)
 
 TEST_FUNCTION(Base64_Decoder_exhaustive_succeeds)
 {
-    for (size_t i = 0; i < sizeof(testVector_BINARY_with_equal_signs) / sizeof(testVector_BINARY_with_equal_signs[0]); i++)
+	size_t i;
+    for (i = 0; i < sizeof(testVector_BINARY_with_equal_signs) / sizeof(testVector_BINARY_with_equal_signs[0]); i++)
     {
         ///Arrange
         BUFFER_HANDLE result;

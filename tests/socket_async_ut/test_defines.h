@@ -23,7 +23,7 @@ char test_msg[] = "Send this";
 #define BIND_FAIL_RETURN -1
 #define EXTENDED_ERROR_FAIL EACCES
 #define EXTENDED_ERROR_WAITING EAGAIN
-#define EXTENDED_ERROR_CONNECt_WAITING EINPROGRESS
+#define EXTENDED_ERROR_CONNECT_WAITING EINPROGRESS
 static size_t sizeof_int = sizeof(test_socket);
 
 typedef struct

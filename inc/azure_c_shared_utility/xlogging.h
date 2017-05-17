@@ -10,12 +10,6 @@
 #include <stdio.h>
 #endif /* __cplusplus */
 
-#if defined _MSC_VER
-#if _MSC_VER <= 1500
-#pragma warning (disable : 4127)
-#endif
-#endif
-
 #include "azure_c_shared_utility/agenttime.h"
 #include "azure_c_shared_utility/optimize_size.h"
 
@@ -66,7 +60,7 @@ typedef void(*LOGGER_LOG_GETLASTERROR)(const char* file, const char* func, int l
         static const char flash_str[] ICACHE_RODATA_ATTR STORE_ATTR = FORMAT;  \
         printf(flash_str, ##__VA_ARGS__);   \
         printf("\n");\
-    } while(0)
+    } while((void)0,0)
     
 #define LogError LogInfo
 #define LOG(log_category, log_options, FORMAT, ...)  { \
@@ -112,9 +106,9 @@ so we compacted the log in the macro LogInfo.
 #endif
 
 #if defined _MSC_VER
-#define LogInfo(FORMAT, ...) do{LOG(AZ_LOG_INFO, LOG_LINE, FORMAT, __VA_ARGS__); }while(0)
+#define LogInfo(FORMAT, ...) do{LOG(AZ_LOG_INFO, LOG_LINE, FORMAT, __VA_ARGS__); }while((void)0,0)
 #else
-#define LogInfo(FORMAT, ...) do{LOG(AZ_LOG_INFO, LOG_LINE, FORMAT, ##__VA_ARGS__); }while(0)
+#define LogInfo(FORMAT, ...) do{LOG(AZ_LOG_INFO, LOG_LINE, FORMAT, ##__VA_ARGS__); }while((void)0,0)
 #endif
 
 #if defined _MSC_VER
@@ -122,10 +116,10 @@ so we compacted the log in the macro LogInfo.
 #if !defined(WINCE)
 extern void xlogging_set_log_function_GetLastError(LOGGER_LOG_GETLASTERROR log_function);
 extern LOGGER_LOG_GETLASTERROR xlogging_get_log_function_GetLastError(void);
-#define LogLastError(FORMAT, ...) do{ LOGGER_LOG_GETLASTERROR l = xlogging_get_log_function_GetLastError(); if(l!=NULL) l(__FILE__, FUNC_NAME, __LINE__, FORMAT, __VA_ARGS__); }while(0)
+#define LogLastError(FORMAT, ...) do{ LOGGER_LOG_GETLASTERROR l = xlogging_get_log_function_GetLastError(); if(l!=NULL) l(__FILE__, FUNC_NAME, __LINE__, FORMAT, __VA_ARGS__); }while((void)0,0)
 #endif
 
-#define LogError(FORMAT, ...) do{ LOG(AZ_LOG_ERROR, LOG_LINE, FORMAT, __VA_ARGS__); }while(0)
+#define LogError(FORMAT, ...) do{ LOG(AZ_LOG_ERROR, LOG_LINE, FORMAT, __VA_ARGS__); }while((void)0,0)
 #define TEMP_BUFFER_SIZE 1024
 #define MESSAGE_BUFFER_SIZE 260
 #define LogErrorWinHTTPWithGetLastErrorAsString(FORMAT, ...) do { \
@@ -157,9 +151,9 @@ extern LOGGER_LOG_GETLASTERROR xlogging_get_log_function_GetLastError(void);
                         LogError("GetLastError: %s.", messageBuffer); \
                     }\
                 }\
-            } while(0)
+            } while((void)0,0)
 #else
-#define LogError(FORMAT, ...) do{ LOG(AZ_LOG_ERROR, LOG_LINE, FORMAT, ##__VA_ARGS__); }while(0)
+#define LogError(FORMAT, ...) do{ LOG(AZ_LOG_ERROR, LOG_LINE, FORMAT, ##__VA_ARGS__); }while((void)0,0)
 #endif
 
 #ifdef __cplusplus

@@ -115,6 +115,15 @@ static char* lastErrorToString(DWORD lastError)
 /*the function will also attempt to produce some human readable strings for GetLastError*/
 void consolelogger_log_with_GetLastError(const char* file, const char* func, int line, const char* format, ...)
 {
+	DWORD lastError;
+	char* lastErrorAsString;
+	int lastErrorAsString_should_be_freed;
+	time_t t;
+    int systemMessage_should_be_freed;
+	char* systemMessage;
+    int userMessage_should_be_freed;
+	char* userMessage;
+
     va_list args;
     va_start(args, format);
 
@@ -124,11 +133,10 @@ void consolelogger_log_with_GetLastError(const char* file, const char* func, int
     3. printf the system message (__FILE__, __LINE__ etc) + the last error + whatever the user wanted
     */
     /*1. snip the last error*/
-    DWORD lastError = GetLastError();
+    lastError = GetLastError();
 
     /*2. create a string with what that last error means*/
-    char* lastErrorAsString = lastErrorToString(lastError);
-    int lastErrorAsString_should_be_freed;
+    lastErrorAsString = lastErrorToString(lastError);
     if (lastErrorAsString == NULL)
     {
         (void)printf("failure in lastErrorToString");
@@ -140,9 +148,8 @@ void consolelogger_log_with_GetLastError(const char* file, const char* func, int
         lastErrorAsString_should_be_freed = 1;
     }
 
-    time_t t = time(NULL);
-    int systemMessage_should_be_freed;
-    char* systemMessage = printf_alloc("Error: Time:%.24s File:%s Func:%s Line:%d %s", ctime(&t), file, func, line, lastErrorAsString);
+    t = time(NULL);
+    systemMessage = printf_alloc("Error: Time:%.24s File:%s Func:%s Line:%d %s", ctime(&t), file, func, line, lastErrorAsString);
 
     if (systemMessage == NULL)
     {
@@ -155,8 +162,7 @@ void consolelogger_log_with_GetLastError(const char* file, const char* func, int
         systemMessage_should_be_freed = 1;
     }
 
-    int userMessage_should_be_freed;
-    char* userMessage = vprintf_alloc(format, args);
+    userMessage = vprintf_alloc(format, args);
     if (userMessage == NULL)
     {
         (void)printf("[FAILED] ");

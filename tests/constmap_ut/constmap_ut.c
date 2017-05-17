@@ -206,6 +206,8 @@ BEGIN_TEST_SUITE(constmap_unittests)
     TEST_FUNCTION(ConstMap_Create_Destroy_Success)
     {
         // Arrange
+		MAP_HANDLE sourceMap;
+		CONSTMAP_HANDLE aHandle;
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
         STRICT_EXPECTED_CALL(Map_Clone(VALID_MAP_HANDLE));
@@ -214,10 +216,10 @@ BEGIN_TEST_SUITE(constmap_unittests)
         STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
 
-        MAP_HANDLE sourceMap = VALID_MAP_HANDLE;
+        sourceMap = VALID_MAP_HANDLE;
 
         ///Act
-        CONSTMAP_HANDLE aHandle = ConstMap_Create(sourceMap);
+        aHandle = ConstMap_Create(sourceMap);
 
         ASSERT_IS_NOT_NULL(aHandle);
 
@@ -234,14 +236,16 @@ BEGIN_TEST_SUITE(constmap_unittests)
     TEST_FUNCTION(ConstMap_Create_Malloc_Failed)
     {
         // Arrange
+		MAP_HANDLE sourceMap;
+		CONSTMAP_HANDLE aHandle;
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
         whenShallmalloc_fail = 1;
 
-        MAP_HANDLE sourceMap = VALID_MAP_HANDLE;
+        sourceMap = VALID_MAP_HANDLE;
 
         ///Act
-        CONSTMAP_HANDLE aHandle = ConstMap_Create(sourceMap);
+        aHandle = ConstMap_Create(sourceMap);
 
         ///Assert
         ASSERT_IS_NULL(aHandle);
@@ -256,16 +260,18 @@ BEGIN_TEST_SUITE(constmap_unittests)
     TEST_FUNCTION(ConstMap_Clone_Map_Failed)
     {
         // Arrange
+		MAP_HANDLE sourceMap;
+		CONSTMAP_HANDLE aHandle;
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
         STRICT_EXPECTED_CALL(Map_Clone(INVALID_MAP_HANDLE));
         STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
 
-        MAP_HANDLE sourceMap = INVALID_MAP_HANDLE;
+        sourceMap = INVALID_MAP_HANDLE;
 
         ///Act
-        CONSTMAP_HANDLE aHandle = ConstMap_Create(sourceMap);
+        aHandle = ConstMap_Create(sourceMap);
 
         ///Assert
         ASSERT_IS_NULL(aHandle);
@@ -316,13 +322,14 @@ BEGIN_TEST_SUITE(constmap_unittests)
     TEST_FUNCTION(ConstMap_Clone_Success)
     {
         // Arrange
+		CONSTMAP_HANDLE aClone;
         MAP_HANDLE sourceMap = VALID_MAP_HANDLE;
         CONSTMAP_HANDLE aHandle = ConstMap_Create(sourceMap);
 
         umock_c_reset_all_calls();
 
         ///Act
-        CONSTMAP_HANDLE aClone = ConstMap_Clone(aHandle);
+        aClone = ConstMap_Clone(aHandle);
 
         ///Assert
         ASSERT_ARE_EQUAL(void_ptr, aHandle, aClone);
@@ -486,6 +493,15 @@ BEGIN_TEST_SUITE(constmap_unittests)
     TEST_FUNCTION(ConstMap_ContainsKey_Failures)
     {
         // Arrange
+        MAP_RESULT mapErrorList[] = {
+            MAP_ERROR,
+            MAP_INVALIDARG, 
+            MAP_KEYEXISTS, 
+            MAP_KEYNOTFOUND, 
+            MAP_FILTER_REJECT
+        };
+        size_t errors = sizeof(mapErrorList) / sizeof(MAP_RESULT);
+		size_t e;
         const char * key = "aKey";
         bool keyExists;
 
@@ -507,16 +523,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
 
 
         ///Act
-        MAP_RESULT mapErrorList[] = {
-            MAP_ERROR,
-            MAP_INVALIDARG, 
-            MAP_KEYEXISTS, 
-            MAP_KEYNOTFOUND, 
-            MAP_FILTER_REJECT
-        };
-        size_t errors = sizeof(mapErrorList) / sizeof(MAP_RESULT);
-
-        for (size_t e = 0; e < errors; e++)
+        for (e = 0; e < errors; e++)
         {
             currentMapResult = mapErrorList[e];
             keyExists = ConstMap_ContainsKey(aHandle, key);
@@ -594,6 +601,15 @@ BEGIN_TEST_SUITE(constmap_unittests)
     TEST_FUNCTION(ConstMap_ContainsValue_Failures)
     {
         // Arrange
+        MAP_RESULT mapErrorList[] = {
+            MAP_ERROR,
+            MAP_INVALIDARG,
+            MAP_KEYEXISTS,
+            MAP_KEYNOTFOUND,
+            MAP_FILTER_REJECT
+        };
+        size_t errors = sizeof(mapErrorList) / sizeof(MAP_RESULT);
+		size_t e;
         const char * value = "aValue";
         bool valueExists;
 
@@ -614,16 +630,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
             .IgnoreArgument(1).IgnoreArgument(3);
 
         ///Act
-        MAP_RESULT mapErrorList[] = {
-            MAP_ERROR,
-            MAP_INVALIDARG,
-            MAP_KEYEXISTS,
-            MAP_KEYNOTFOUND,
-            MAP_FILTER_REJECT
-        };
-        size_t errors = sizeof(mapErrorList) / sizeof(MAP_RESULT);
-
-        for (size_t e = 0; e < errors; e++)
+        for (e = 0; e < errors; e++)
         {
             currentMapResult = mapErrorList[e];
             valueExists = ConstMap_ContainsValue(aHandle, value);
@@ -700,6 +707,15 @@ BEGIN_TEST_SUITE(constmap_unittests)
     TEST_FUNCTION(ConstMap_GetValue_Failures)
     {
         // Arrange
+        MAP_RESULT mapErrorList[] = {
+            MAP_ERROR,
+            MAP_INVALIDARG,
+            MAP_KEYEXISTS,
+            MAP_KEYNOTFOUND,
+            MAP_FILTER_REJECT
+        };
+        size_t errors = sizeof(mapErrorList) / sizeof(MAP_RESULT);
+		size_t e;
         const char * key = "aKey";
         const char * value;
 
@@ -721,16 +737,8 @@ BEGIN_TEST_SUITE(constmap_unittests)
 
 
         ///Act
-        MAP_RESULT mapErrorList[] = {
-            MAP_ERROR,
-            MAP_INVALIDARG,
-            MAP_KEYEXISTS,
-            MAP_KEYNOTFOUND,
-            MAP_FILTER_REJECT
-        };
-        size_t errors = sizeof(mapErrorList) / sizeof(MAP_RESULT);
         // Errors from Map_GetValueFromKey
-        for (size_t e = 0; e < errors; e++)
+        for (e = 0; e < errors; e++)
         {
             currentMapResult = mapErrorList[e];
             value = ConstMap_GetValue(aHandle, key);
@@ -751,6 +759,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
     TEST_FUNCTION(ConstMap_GetInternals_Success)
     {
         // Arrange
+		CONSTMAP_RESULT result;
         const char*const* keys;
         const char*const* values;
         size_t count;
@@ -764,7 +773,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
             .IgnoreArgument(1);
 
         ///Act
-        CONSTMAP_RESULT result = ConstMap_GetInternals(aHandle, &keys, &values, &count);
+        result = ConstMap_GetInternals(aHandle, &keys, &values, &count);
 
         ///Assert
         ASSERT_ARE_EQUAL(CONSTMAP_RESULT, CONSTMAP_OK, result);
@@ -802,6 +811,22 @@ BEGIN_TEST_SUITE(constmap_unittests)
     TEST_FUNCTION(ConstMap_GetInternals_Failures)
     {
         // Arrange
+        MAP_RESULT mapErrorList[] = {
+            MAP_ERROR,
+            MAP_INVALIDARG,
+            MAP_KEYEXISTS,
+            MAP_KEYNOTFOUND,
+            MAP_FILTER_REJECT
+        };
+        size_t errors = sizeof(mapErrorList) / sizeof(MAP_RESULT);
+        CONSTMAP_RESULT constErrorList[] = {
+            CONSTMAP_ERROR,
+            CONSTMAP_INVALIDARG,
+            CONSTMAP_ERROR,
+            CONSTMAP_KEYNOTFOUND,
+            CONSTMAP_ERROR
+        };
+		size_t e;
         const char*const* keys;
         const char*const* values;
         size_t count;
@@ -824,31 +849,15 @@ BEGIN_TEST_SUITE(constmap_unittests)
             .IgnoreArgument(1);
 
         ///Act
-        MAP_RESULT mapErrorList[] = {
-            MAP_ERROR,
-            MAP_INVALIDARG,
-            MAP_KEYEXISTS,
-            MAP_KEYNOTFOUND,
-            MAP_FILTER_REJECT
-        };
-        size_t errors = sizeof(mapErrorList) / sizeof(MAP_RESULT);
-        CONSTMAP_RESULT constErrorList[] = {
-            CONSTMAP_ERROR,
-            CONSTMAP_INVALIDARG,
-            CONSTMAP_ERROR,
-            CONSTMAP_KEYNOTFOUND,
-            CONSTMAP_ERROR
-        };
-
-        for (size_t e = 0; e < errors; e++)
+        for (e = 0; e < errors; e++)
         {
+			CONSTMAP_RESULT result;
             currentMapResult = mapErrorList[e];
-            CONSTMAP_RESULT result = ConstMap_GetInternals(aHandle, &keys, &values, &count);
+            result = ConstMap_GetInternals(aHandle, &keys, &values, &count);
             ASSERT_ARE_EQUAL(CONSTMAP_RESULT, constErrorList[e], result);
         }
 
         ///Assert
-
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         //Ablution    

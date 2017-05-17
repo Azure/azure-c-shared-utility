@@ -35,8 +35,8 @@ public:
     void ResetExpectedCalls();
     void ResetActualCalls();
     void ResetAllCalls();
-    SAL_Acquires_lock_(m_MockCallRecorderCS) void Lock();
-    SAL_Releases_lock_(m_MockCallRecorderCS) void Unlock();
+    void Lock();
+    void Unlock();
     void SetPerformAutomaticCallComparison(AUTOMATIC_CALL_COMPARISON performAutomaticCallComparison);
     void SetMockCallComparer(CMockCallComparer* mockCallComparer) { m_MockCallComparer = mockCallComparer; };
 

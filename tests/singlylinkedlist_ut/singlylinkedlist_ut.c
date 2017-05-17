@@ -123,10 +123,11 @@ TEST_FUNCTION_CLEANUP(method_cleanup)
 TEST_FUNCTION(when_underlying_calls_succeed_singlylinkedlist_create_succeeds)
 {
     // arrange
+	SINGLYLINKEDLIST_HANDLE result;
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
 
     // act
-    SINGLYLINKEDLIST_HANDLE result = singlylinkedlist_create();
+    result = singlylinkedlist_create();
 
     // assert
     ASSERT_IS_NOT_NULL(result);
@@ -140,11 +141,12 @@ TEST_FUNCTION(when_underlying_calls_succeed_singlylinkedlist_create_succeeds)
 TEST_FUNCTION(when_underlying_malloc_fails_singlylinkedlist_create_fails)
 {
     // arrange
+	SINGLYLINKEDLIST_HANDLE result;
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
         .SetReturn((void*)NULL);
 
     // act
-    SINGLYLINKEDLIST_HANDLE result = singlylinkedlist_create();
+    result = singlylinkedlist_create();
 
     // assert
     ASSERT_IS_NULL(result);
@@ -201,11 +203,12 @@ TEST_FUNCTION(singlylinkedlist_add_with_NULL_handle_fails)
 TEST_FUNCTION(singlylinkedlist_add_with_NULL_item_fails)
 {
     // arrange
+	LIST_ITEM_HANDLE result;
     SINGLYLINKEDLIST_HANDLE list = singlylinkedlist_create();
     umock_c_reset_all_calls();
 
     // act
-	LIST_ITEM_HANDLE result = singlylinkedlist_add(list, NULL);
+	result = singlylinkedlist_add(list, NULL);
 
     // assert
     ASSERT_IS_NULL(result);
@@ -221,18 +224,20 @@ TEST_FUNCTION(singlylinkedlist_add_adds_the_item_and_returns_a_non_NULL_handle)
 {
     // arrange
     SINGLYLINKEDLIST_HANDLE list = singlylinkedlist_create();
-    umock_c_reset_all_calls();
     int x = 42;
+	LIST_ITEM_HANDLE result;
+	LIST_ITEM_HANDLE head;
+    umock_c_reset_all_calls();
 
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
 
     // act
-    LIST_ITEM_HANDLE result = singlylinkedlist_add(list, &x);
+    result = singlylinkedlist_add(list, &x);
 
     // assert
     ASSERT_IS_NOT_NULL(result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    LIST_ITEM_HANDLE head = singlylinkedlist_get_head_item(list);
+    head = singlylinkedlist_get_head_item(list);
     ASSERT_IS_NOT_NULL(head);
     ASSERT_ARE_EQUAL(int, x, *(const int*)singlylinkedlist_item_get_value(head));
 	ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -249,6 +254,8 @@ TEST_FUNCTION(singlylinkedlist_add_when_an_item_is_in_the_singlylinkedlist_adds_
     SINGLYLINKEDLIST_HANDLE list = singlylinkedlist_create();
     int x1 = 42;
     int x2 = 43;
+	LIST_ITEM_HANDLE result;
+	LIST_ITEM_HANDLE list_item;
 
     (void)singlylinkedlist_add(list, &x1);
     umock_c_reset_all_calls();
@@ -256,12 +263,12 @@ TEST_FUNCTION(singlylinkedlist_add_when_an_item_is_in_the_singlylinkedlist_adds_
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
 
     // act
-    LIST_ITEM_HANDLE result = singlylinkedlist_add(list, &x2);
+    result = singlylinkedlist_add(list, &x2);
 
     // assert
     ASSERT_IS_NOT_NULL(result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    LIST_ITEM_HANDLE list_item = singlylinkedlist_get_head_item(list);
+    list_item = singlylinkedlist_get_head_item(list);
     ASSERT_IS_NOT_NULL(list_item);
     ASSERT_ARE_EQUAL(int, x1, *(const int*)singlylinkedlist_item_get_value(list_item));
     list_item = singlylinkedlist_get_next_item(list_item);
@@ -279,13 +286,14 @@ TEST_FUNCTION(when_the_underlying_malloc_fails_singlylinkedlist_add_fails)
     // arrange
     SINGLYLINKEDLIST_HANDLE list = singlylinkedlist_create();
     int x = 42;
+	LIST_ITEM_HANDLE result;
     umock_c_reset_all_calls();
 
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
         .SetReturn((void*)NULL);
 
     // act
-    LIST_ITEM_HANDLE result = singlylinkedlist_add(list, &x);
+    result = singlylinkedlist_add(list, &x);
 
     // assert
     ASSERT_IS_NULL(result);
@@ -302,10 +310,11 @@ TEST_FUNCTION(when_the_list_is_empty_singlylinkedlist_get_head_item_yields_NULL)
 {
     // arrange
     SINGLYLINKEDLIST_HANDLE list = singlylinkedlist_create();
+	LIST_ITEM_HANDLE result;
     umock_c_reset_all_calls();
 
     // act
-    LIST_ITEM_HANDLE result = singlylinkedlist_get_head_item(list);
+    result = singlylinkedlist_get_head_item(list);
 
     // assert
     ASSERT_IS_NULL(result);
@@ -334,11 +343,12 @@ TEST_FUNCTION(singlylinkedlist_get_head_item_removes_the_item)
     // arrange
     SINGLYLINKEDLIST_HANDLE list = singlylinkedlist_create();
     int x = 42;
+	LIST_ITEM_HANDLE head;
     (void)singlylinkedlist_add(list, &x);
     umock_c_reset_all_calls();
 
     // act
-    LIST_ITEM_HANDLE head = singlylinkedlist_get_head_item(list);
+    head = singlylinkedlist_get_head_item(list);
 
     // assert
     ASSERT_IS_NOT_NULL(head);
@@ -358,10 +368,11 @@ TEST_FUNCTION(singlylinkedlist_get_next_item_gets_the_next_item)
     SINGLYLINKEDLIST_HANDLE list = singlylinkedlist_create();
     int x1 = 42;
     int x2 = 43;
+	LIST_ITEM_HANDLE item;
     (void)singlylinkedlist_add(list, &x1);
     (void)singlylinkedlist_add(list, &x2);
     umock_c_reset_all_calls();
-    LIST_ITEM_HANDLE item = singlylinkedlist_get_head_item(list);
+    item = singlylinkedlist_get_head_item(list);
 
     // act
     item = singlylinkedlist_get_next_item(item);
@@ -395,10 +406,11 @@ TEST_FUNCTION(singlylinkedlist_get_next_item_when_no_more_items_in_list_returns_
     SINGLYLINKEDLIST_HANDLE list = singlylinkedlist_create();
     int x1 = 42;
     int x2 = 43;
+	LIST_ITEM_HANDLE item;
     (void)singlylinkedlist_add(list, &x1);
     (void)singlylinkedlist_add(list, &x2);
     umock_c_reset_all_calls();
-    LIST_ITEM_HANDLE item = singlylinkedlist_get_head_item(list);
+    item = singlylinkedlist_get_head_item(list);
     item = singlylinkedlist_get_next_item(item);
 
     // act
@@ -420,12 +432,14 @@ TEST_FUNCTION(singlylinkedlist_item_get_value_returns_the_item_value)
     // arrange
     SINGLYLINKEDLIST_HANDLE list = singlylinkedlist_create();
     int x = 42;
+	LIST_ITEM_HANDLE item;
+	int result;
     (void)singlylinkedlist_add(list, &x);
     umock_c_reset_all_calls();
-    LIST_ITEM_HANDLE item = singlylinkedlist_get_head_item(list);
+    item = singlylinkedlist_get_head_item(list);
 
     // act
-    int result = *(const int*)singlylinkedlist_item_get_value(item);
+    result = *(const int*)singlylinkedlist_item_get_value(item);
 
     // assert
     ASSERT_ARE_EQUAL(int, x, result);
@@ -469,11 +483,12 @@ TEST_FUNCTION(singlylinkedlist_find_with_NULL_match_function_fails_with_NULL)
     // arrange
     SINGLYLINKEDLIST_HANDLE list = singlylinkedlist_create();
     int x = 42;
+	LIST_ITEM_HANDLE result;
     (void)singlylinkedlist_add(list, &x);
     umock_c_reset_all_calls();
 
     // act
-    LIST_ITEM_HANDLE result = singlylinkedlist_find(list, NULL, TEST_CONTEXT);
+    result = singlylinkedlist_find(list, NULL, TEST_CONTEXT);
 
     // assert
     ASSERT_IS_NULL(result);
@@ -492,6 +507,7 @@ TEST_FUNCTION(singlylinkedlist_find_on_a_list_with_1_matching_item_yields_that_i
     // arrange
     SINGLYLINKEDLIST_HANDLE list = singlylinkedlist_create();
     int x = 42;
+	LIST_ITEM_HANDLE result;
     (void)singlylinkedlist_add(list, &x);
     umock_c_reset_all_calls();
 
@@ -499,7 +515,7 @@ TEST_FUNCTION(singlylinkedlist_find_on_a_list_with_1_matching_item_yields_that_i
         .IgnoreArgument(1);
 
     // act
-    LIST_ITEM_HANDLE result = singlylinkedlist_find(list, test_match_function, TEST_CONTEXT);
+    result = singlylinkedlist_find(list, test_match_function, TEST_CONTEXT);
 
     // assert
     ASSERT_IS_NOT_NULL(result);
@@ -516,6 +532,7 @@ TEST_FUNCTION(singlylinkedlist_find_on_a_list_with_1_items_that_does_not_match_r
     // arrange
     SINGLYLINKEDLIST_HANDLE list = singlylinkedlist_create();
     int x = 42;
+	LIST_ITEM_HANDLE result;
     (void)singlylinkedlist_add(list, &x);
     umock_c_reset_all_calls();
 
@@ -523,7 +540,7 @@ TEST_FUNCTION(singlylinkedlist_find_on_a_list_with_1_items_that_does_not_match_r
         .IgnoreArgument(1).SetReturn(false);
 
     // act
-    LIST_ITEM_HANDLE result = singlylinkedlist_find(list, test_match_function, TEST_CONTEXT);
+    result = singlylinkedlist_find(list, test_match_function, TEST_CONTEXT);
 
     // assert
     ASSERT_IS_NULL(result);
@@ -543,6 +560,7 @@ TEST_FUNCTION(singlylinkedlist_find_on_a_list_with_2_items_where_the_first_match
     SINGLYLINKEDLIST_HANDLE list = singlylinkedlist_create();
     int x1 = 42;
     int x2 = 43;
+	LIST_ITEM_HANDLE result;
     (void)singlylinkedlist_add(list, &x1);
     (void)singlylinkedlist_add(list, &x2);
     umock_c_reset_all_calls();
@@ -551,7 +569,7 @@ TEST_FUNCTION(singlylinkedlist_find_on_a_list_with_2_items_where_the_first_match
         .IgnoreArgument(1);
 
     // act
-    LIST_ITEM_HANDLE result = singlylinkedlist_find(list, test_match_function, TEST_CONTEXT);
+    result = singlylinkedlist_find(list, test_match_function, TEST_CONTEXT);
 
     // assert
     ASSERT_IS_NOT_NULL(result);
@@ -573,6 +591,7 @@ TEST_FUNCTION(singlylinkedlist_find_on_a_list_with_2_items_where_the_second_matc
     SINGLYLINKEDLIST_HANDLE list = singlylinkedlist_create();
     int x1 = 42;
     int x2 = 43;
+	LIST_ITEM_HANDLE result;
     (void)singlylinkedlist_add(list, &x1);
     (void)singlylinkedlist_add(list, &x2);
     umock_c_reset_all_calls();
@@ -583,7 +602,7 @@ TEST_FUNCTION(singlylinkedlist_find_on_a_list_with_2_items_where_the_second_matc
         .IgnoreArgument(1);
 
     // act
-    LIST_ITEM_HANDLE result = singlylinkedlist_find(list, test_match_function, TEST_CONTEXT);
+    result = singlylinkedlist_find(list, test_match_function, TEST_CONTEXT);
 
     // assert
     ASSERT_IS_NOT_NULL(result);
@@ -601,6 +620,7 @@ TEST_FUNCTION(singlylinkedlist_find_on_a_list_with_2_items_both_matching_yields_
 	SINGLYLINKEDLIST_HANDLE list = singlylinkedlist_create();
 	int x1 = 42;
 	int x2 = 42;
+	LIST_ITEM_HANDLE result;
 	(void)singlylinkedlist_add(list, &x1);
 	(void)singlylinkedlist_add(list, &x2);
 	umock_c_reset_all_calls();
@@ -609,7 +629,7 @@ TEST_FUNCTION(singlylinkedlist_find_on_a_list_with_2_items_both_matching_yields_
 		.IgnoreArgument(1);
 
 	// act
-	LIST_ITEM_HANDLE result = singlylinkedlist_find(list, test_match_function, TEST_CONTEXT);
+	result = singlylinkedlist_find(list, test_match_function, TEST_CONTEXT);
 
 	// assert
 	ASSERT_IS_NOT_NULL(result);
@@ -627,6 +647,7 @@ TEST_FUNCTION(singlylinkedlist_find_on_a_list_with_2_items_where_none_matches_re
     SINGLYLINKEDLIST_HANDLE list = singlylinkedlist_create();
     int x1 = 42;
     int x2 = 43;
+	LIST_ITEM_HANDLE result;
     (void)singlylinkedlist_add(list, &x1);
     (void)singlylinkedlist_add(list, &x2);
     umock_c_reset_all_calls();
@@ -637,7 +658,7 @@ TEST_FUNCTION(singlylinkedlist_find_on_a_list_with_2_items_where_none_matches_re
         .IgnoreArgument(1).SetReturn(false);
 
     // act
-    LIST_ITEM_HANDLE result = singlylinkedlist_find(list, test_match_function, TEST_CONTEXT);
+    result = singlylinkedlist_find(list, test_match_function, TEST_CONTEXT);
 
     // assert
     ASSERT_IS_NULL(result);
@@ -652,10 +673,11 @@ TEST_FUNCTION(singlylinkedlist_find_on_a_list_with_no_items_yields_NULL)
 {
     // arrange
 	SINGLYLINKEDLIST_HANDLE list = singlylinkedlist_create();
+	LIST_ITEM_HANDLE result;
     umock_c_reset_all_calls();
 
     // act
-	LIST_ITEM_HANDLE result = singlylinkedlist_find(list, test_match_function, TEST_CONTEXT);
+	result = singlylinkedlist_find(list, test_match_function, TEST_CONTEXT);
 
     // assert
     ASSERT_IS_NULL(result);
@@ -673,14 +695,16 @@ TEST_FUNCTION(singlylinkedlist_remove_when_one_item_is_in_the_list_succeeds)
 	// arrange
 	int x1 = 0x42;
 	SINGLYLINKEDLIST_HANDLE list = singlylinkedlist_create();
+	LIST_ITEM_HANDLE item;
+	int result;
 	singlylinkedlist_add(list, &x1);
-	LIST_ITEM_HANDLE item = singlylinkedlist_find(list, test_match_function, TEST_CONTEXT);
+	item = singlylinkedlist_find(list, test_match_function, TEST_CONTEXT);
 	umock_c_reset_all_calls();
 
 	EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
 	// act
-	int result = singlylinkedlist_remove(list, item);
+	result = singlylinkedlist_remove(list, item);
 
 	// assert
 	ASSERT_ARE_EQUAL(int, 0, result);
@@ -695,12 +719,13 @@ TEST_FUNCTION(singlylinkedlist_remove_with_NULL_list_fails)
 {
 	// arrange
 	int x1 = 0x42;
+	int result;
 	SINGLYLINKEDLIST_HANDLE list = singlylinkedlist_create();
 	LIST_ITEM_HANDLE item = singlylinkedlist_add(list, &x1);
 	umock_c_reset_all_calls();
 
 	// act
-	int result = singlylinkedlist_remove(NULL, item);
+	result = singlylinkedlist_remove(NULL, item);
 
 	// assert
 	ASSERT_ARE_NOT_EQUAL(int, 0, result);
@@ -714,11 +739,12 @@ TEST_FUNCTION(singlylinkedlist_remove_with_NULL_list_fails)
 TEST_FUNCTION(singlylinkedlist_remove_with_NULL_item_fails)
 {
 	// arrange
+	int result;
 	SINGLYLINKEDLIST_HANDLE list = singlylinkedlist_create();
 	umock_c_reset_all_calls();
 
 	// act
-	int result = singlylinkedlist_remove(list, NULL);
+	result = singlylinkedlist_remove(list, NULL);
 
 	// assert
 	ASSERT_ARE_NOT_EQUAL(int, 0, result);
@@ -733,13 +759,14 @@ TEST_FUNCTION(singlylinkedlist_remove_with_an_item_that_has_already_been_removed
 {
 	// arrange
 	int x1 = 0x42;
+	int result;
 	SINGLYLINKEDLIST_HANDLE list = singlylinkedlist_create();
 	LIST_ITEM_HANDLE item = singlylinkedlist_add(list, &x1);
 	singlylinkedlist_remove(list, item);
 	umock_c_reset_all_calls();
 
 	// act
-	int result = singlylinkedlist_remove(list, item);
+	result = singlylinkedlist_remove(list, item);
 
 	// assert
 	ASSERT_ARE_NOT_EQUAL(int, 0, result);
@@ -754,6 +781,7 @@ TEST_FUNCTION(singlylinkedlist_remove_first_of_2_items_succeeds)
 {
 	// arrange
 	int x1 = 0x42;
+	int result;
 	SINGLYLINKEDLIST_HANDLE list = singlylinkedlist_create();
 	LIST_ITEM_HANDLE item1 = singlylinkedlist_add(list, &x1);
 	umock_c_reset_all_calls();
@@ -761,7 +789,7 @@ TEST_FUNCTION(singlylinkedlist_remove_first_of_2_items_succeeds)
 	EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
 	// act
-	int result = singlylinkedlist_remove(list, item1);
+	result = singlylinkedlist_remove(list, item1);
 
 	// assert
 	ASSERT_ARE_EQUAL(int, 0, result);
@@ -776,6 +804,7 @@ TEST_FUNCTION(singlylinkedlist_remove_second_of_2_items_succeeds)
 {
 	// arrange
 	int x2 = 0x43;
+	int result;
 	SINGLYLINKEDLIST_HANDLE list = singlylinkedlist_create();
 	LIST_ITEM_HANDLE item2 = singlylinkedlist_add(list, &x2);
 	umock_c_reset_all_calls();
@@ -783,7 +812,7 @@ TEST_FUNCTION(singlylinkedlist_remove_second_of_2_items_succeeds)
 	EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
 	// act
-	int result = singlylinkedlist_remove(list, item2);
+	result = singlylinkedlist_remove(list, item2);
 
 	// assert
 	ASSERT_ARE_EQUAL(int, 0, result);

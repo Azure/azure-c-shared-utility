@@ -517,13 +517,14 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
     TEST_FUNCTION(tlsio_openssl_dowork_withdata__succeed)
     {
         ///arrange
-        g_ssl_read_returns_data = 1;
         TLS_IO_INSTANCE instance;
+		const IO_INTERFACE_DESCRIPTION* tlsioInterfaces;
+        g_ssl_read_returns_data = 1;
         memset(&instance, 0, sizeof(TLS_IO_INSTANCE));
         instance.on_bytes_received = on_bytes_received;
         instance.tlsio_state = TLSIO_STATE_OPEN;
 
-        const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
+        tlsioInterfaces = tlsio_openssl_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
         umock_c_reset_all_calls();
@@ -542,13 +543,14 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
     TEST_FUNCTION(tlsio_openssl_dowork_withoutdata__succeed)
     {
         ///arrange
-        g_ssl_read_returns_data = 0;
         TLS_IO_INSTANCE instance;
+		const IO_INTERFACE_DESCRIPTION* tlsioInterfaces;
+        g_ssl_read_returns_data = 0;
         memset(&instance, 0, sizeof(TLS_IO_INSTANCE));
         instance.on_bytes_received = on_bytes_received;
         instance.tlsio_state = TLSIO_STATE_OPEN;
 
-        const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
+        tlsioInterfaces = tlsio_openssl_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
         umock_c_reset_all_calls();
@@ -589,12 +591,13 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ///arrange
         int result = 0;
         TLS_IO_INSTANCE instance;
+		const IO_INTERFACE_DESCRIPTION* tlsioInterfaces;
+        unsigned char test_buffer[] = { 0x42, 0x43 };
         memset(&instance, 0, sizeof(TLS_IO_INSTANCE));
         instance.tlsio_state = TLSIO_STATE_OPEN;
         g_ssl_write_success = 1;
-        unsigned char test_buffer[] = { 0x42, 0x43 };
 
-        const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
+        tlsioInterfaces = tlsio_openssl_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
         umock_c_reset_all_calls();
@@ -636,11 +639,12 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ///arrange
         int result = 0;
         TLS_IO_INSTANCE instance;
+		const IO_INTERFACE_DESCRIPTION* tlsioInterfaces;
         memset(&instance, 0, sizeof(TLS_IO_INSTANCE));
         instance.tlsio_state = TLSIO_STATE_OPEN;
         g_ssl_write_success = 1;
 
-        const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
+        tlsioInterfaces = tlsio_openssl_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
         ///act
@@ -657,12 +661,13 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ///arrange
         int result = 0;
         TLS_IO_INSTANCE instance;
+		const IO_INTERFACE_DESCRIPTION* tlsioInterfaces;
+        unsigned char test_buffer[] = {0x42};
         memset(&instance, 0, sizeof(TLS_IO_INSTANCE));
         instance.tlsio_state = TLSIO_STATE_OPEN;
         g_ssl_write_success = 1;
-        unsigned char test_buffer[] = {0x42};
 
-        const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
+        tlsioInterfaces = tlsio_openssl_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
         ///act
@@ -678,10 +683,10 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
     {
         ///arrange
         int result;
+        TLS_IO_INSTANCE instance;
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
-        TLS_IO_INSTANCE instance;
         memset(&instance, 0, sizeof(TLS_IO_INSTANCE));
         instance.tlsio_state = TLSIO_STATE_NOT_OPEN;
         ///act
@@ -699,12 +704,13 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ///arrange
         int result = 0;
         TLS_IO_INSTANCE instance;
+        unsigned char test_buffer[] = { 0x42, 0x43 };
+		const IO_INTERFACE_DESCRIPTION* tlsioInterfaces;
         memset(&instance, 0, sizeof(TLS_IO_INSTANCE));
         instance.tlsio_state = TLSIO_STATE_OPEN;
         g_ssl_write_success = 0;
-        unsigned char test_buffer[] = { 0x42, 0x43 };
 
-        const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
+        tlsioInterfaces = tlsio_openssl_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
         umock_c_reset_all_calls();
@@ -736,9 +742,10 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ///arrange
         int result;
         TLS_IO_INSTANCE instance;
-        memset(&instance, 0, sizeof(TLS_IO_INSTANCE));
         SSL_CTX *ctx;
         SSL *ssl;
+		const IO_INTERFACE_DESCRIPTION* tlsioInterfaces;
+        memset(&instance, 0, sizeof(TLS_IO_INSTANCE));
         g_ssl_TLSv1clientmethod_success = 0;
         ctx = SSL_CTX_new(TLSv1_client_method());
         ASSERT_IS_NULL(ctx);
@@ -753,7 +760,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         instance.ssl = ssl;
         instance.ssl_context = ctx;
 
-        const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
+        tlsioInterfaces = tlsio_openssl_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
         umock_c_reset_all_calls();
@@ -787,9 +794,9 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ///arrange
         int result;
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
+        TLS_IO_INSTANCE instance;
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
-        TLS_IO_INSTANCE instance;
         memset(&instance, 0, sizeof(TLS_IO_INSTANCE));
         instance.tlsio_state = TLSIO_STATE_NOT_OPEN;
         ///act
@@ -832,9 +839,10 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ///arrange
         int result;
         TLS_IO_INSTANCE instance;
-        memset(&instance, 0, sizeof(TLS_IO_INSTANCE));
         SSL_CTX *ctx;
         SSL *ssl;
+		const IO_INTERFACE_DESCRIPTION* tlsioInterfaces;
+        memset(&instance, 0, sizeof(TLS_IO_INSTANCE));
         g_ssl_TLSv1clientmethod_success = 0;
         ctx = SSL_CTX_new(TLSv1_client_method());
         ASSERT_IS_NULL(ctx);
@@ -849,7 +857,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         instance.ssl_context = ctx;
         instance.on_io_error = test_on_io_error;
 
-        const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
+        tlsioInterfaces = tlsio_openssl_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
         umock_c_reset_all_calls();
@@ -881,10 +889,11 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
     TEST_FUNCTION(tlsio_openssl_destroy__succeed)
     {
         ///arrange
+		const IO_INTERFACE_DESCRIPTION* tlsioInterfaces;
         TLS_IO_INSTANCE* instance = (TLS_IO_INSTANCE*)malloc(sizeof(TLS_IO_INSTANCE));
         memset(instance, 0, sizeof(TLS_IO_INSTANCE));
         instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
-        const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
+        tlsioInterfaces = tlsio_openssl_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
         umock_c_reset_all_calls();
         STRICT_EXPECTED_CALL(free(instance));
@@ -917,10 +926,11 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
     TEST_FUNCTION(tlsio_openssl_destroy_wrong_state__failed)
     {
         ///arrange
+		const IO_INTERFACE_DESCRIPTION* tlsioInterfaces;
         TLS_IO_INSTANCE* instance = (TLS_IO_INSTANCE*)malloc(sizeof(TLS_IO_INSTANCE));
         memset(instance, 0, sizeof(TLS_IO_INSTANCE));
         instance->tlsio_state = TLSIO_STATE_OPENING;
-        const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
+        tlsioInterfaces = tlsio_openssl_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
         umock_c_reset_all_calls();
@@ -946,6 +956,8 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
     {
         ///arrange
         TLS_IO_INSTANCE tls_io_instance;
+        int result;
+		const IO_INTERFACE_DESCRIPTION* tlsioInterfaces;
         memset(&tls_io_instance, 0, sizeof(TLS_IO_INSTANCE));
 
         tls_io_instance.tlsio_state = TLSIO_STATE_NOT_OPEN;
@@ -961,8 +973,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         g_ssl_set_fd_success = 1;
         g_ssl_connect_success = 1;
 
-        int result;
-        const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
+        tlsioInterfaces = tlsio_openssl_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
         g_ssl_fd_isset = 0;
@@ -1031,8 +1042,9 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
     {
         ///arrange
         TLS_IO_INSTANCE tls_io_instance;
-        memset(&tls_io_instance, 0, sizeof(TLS_IO_INSTANCE));
         int result;
+		const IO_INTERFACE_DESCRIPTION* tlsioInterfaces;
+        memset(&tls_io_instance, 0, sizeof(TLS_IO_INSTANCE));
         g_gethostbyname_success = 1;
         g_socket_success = 1;
         g_setsockopt_success = 1;
@@ -1043,7 +1055,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         g_ssl_new_success = 1;
         g_ssl_set_fd_success = 1;
         g_ssl_connect_success = 1;
-        const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
+        tlsioInterfaces = tlsio_openssl_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
         tls_io_instance.tlsio_state = TLSIO_STATE_OPENING;
 
@@ -1064,6 +1076,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
     {
         ///arrange
         int result;
+		const IO_INTERFACE_DESCRIPTION* tlsioInterfaces;
         g_gethostbyname_success = 1;
         g_socket_success = 1;
         g_setsockopt_success = 1;
@@ -1074,7 +1087,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         g_ssl_new_success = 1;
         g_ssl_set_fd_success = 1;
         g_ssl_connect_success = 1;
-        const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
+        tlsioInterfaces = tlsio_openssl_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
         ///act
@@ -1100,10 +1113,12 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
     {
         ///arrange
         TLS_IO_INSTANCE tls_io_instance;
+        int result;
+		const IO_INTERFACE_DESCRIPTION* tlsioInterfaces;
+        int retry = 0;
         memset(&tls_io_instance, 0, sizeof(TLS_IO_INSTANCE));
         tls_io_instance.tlsio_state = TLSIO_STATE_NOT_OPEN;
-        int result;
-        const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
+        tlsioInterfaces = tlsio_openssl_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
         g_gethostbyname_success = 0;
         g_socket_success = 1;
@@ -1118,7 +1133,6 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
 
         umock_c_reset_all_calls();
         
-        int retry = 0;
         do{
             STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);  
         }while(retry++ < MAX_RETRY);
@@ -1147,10 +1161,10 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
     {
         ///arrange
         TLS_IO_INSTANCE tls_io_instance;
-        memset(&tls_io_instance, 0, sizeof(TLS_IO_INSTANCE));
-        tls_io_instance.tlsio_state = TLSIO_STATE_NOT_OPEN;
         int result;
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
+        memset(&tls_io_instance, 0, sizeof(TLS_IO_INSTANCE));
+        tls_io_instance.tlsio_state = TLSIO_STATE_NOT_OPEN;
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
         g_gethostbyname_success = 1;
         g_socket_success = 0;
@@ -1202,10 +1216,10 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
     {
         ///arrange
         TLS_IO_INSTANCE tls_io_instance;
-        memset(&tls_io_instance, 0, sizeof(TLS_IO_INSTANCE));
-        tls_io_instance.tlsio_state = TLSIO_STATE_NOT_OPEN;
         int result;
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
+        memset(&tls_io_instance, 0, sizeof(TLS_IO_INSTANCE));
+        tls_io_instance.tlsio_state = TLSIO_STATE_NOT_OPEN;
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
         g_gethostbyname_success = 1;
         g_socket_success = 1;
@@ -1258,10 +1272,10 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
     {
         ///arrange
         TLS_IO_INSTANCE tls_io_instance;
-        memset(&tls_io_instance, 0, sizeof(TLS_IO_INSTANCE));
-        tls_io_instance.tlsio_state = TLSIO_STATE_NOT_OPEN;
         int result;
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
+        memset(&tls_io_instance, 0, sizeof(TLS_IO_INSTANCE));
+        tls_io_instance.tlsio_state = TLSIO_STATE_NOT_OPEN;
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
         g_gethostbyname_success = 1;
         g_socket_success = 1;
@@ -1320,10 +1334,10 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
     {
         ///arrange
         TLS_IO_INSTANCE tls_io_instance;
-        memset(&tls_io_instance, 0, sizeof(TLS_IO_INSTANCE));
-        tls_io_instance.tlsio_state = TLSIO_STATE_NOT_OPEN;
         int result;
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
+        memset(&tls_io_instance, 0, sizeof(TLS_IO_INSTANCE));
+        tls_io_instance.tlsio_state = TLSIO_STATE_NOT_OPEN;
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
         g_gethostbyname_success = 1;
         g_socket_success = 1;
@@ -1386,10 +1400,10 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
     {
         ///arrange
         TLS_IO_INSTANCE tls_io_instance;
-        memset(&tls_io_instance, 0, sizeof(TLS_IO_INSTANCE));
-        tls_io_instance.tlsio_state = TLSIO_STATE_NOT_OPEN;
         int result;
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
+        memset(&tls_io_instance, 0, sizeof(TLS_IO_INSTANCE));
+        tls_io_instance.tlsio_state = TLSIO_STATE_NOT_OPEN;
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
         g_gethostbyname_success = 1;
         g_socket_success = 1;
@@ -1452,10 +1466,10 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
     {
         ///arrange
         TLS_IO_INSTANCE tls_io_instance;
-        memset(&tls_io_instance, 0, sizeof(TLS_IO_INSTANCE));
-        tls_io_instance.tlsio_state = TLSIO_STATE_NOT_OPEN;
         int result;
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
+        memset(&tls_io_instance, 0, sizeof(TLS_IO_INSTANCE));
+        tls_io_instance.tlsio_state = TLSIO_STATE_NOT_OPEN;
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
         g_gethostbyname_success = 1;
         g_socket_success = 1;
@@ -1502,10 +1516,10 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
     {
         ///arrange
         TLS_IO_INSTANCE tls_io_instance;
-        memset(&tls_io_instance, 0, sizeof(TLS_IO_INSTANCE));
-        tls_io_instance.tlsio_state = TLSIO_STATE_NOT_OPEN;
         int result;
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
+        memset(&tls_io_instance, 0, sizeof(TLS_IO_INSTANCE));
+        tls_io_instance.tlsio_state = TLSIO_STATE_NOT_OPEN;
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
         g_gethostbyname_success = 1;
         g_socket_success = 1;
@@ -1571,10 +1585,10 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
     {
         ///arrange
         TLS_IO_INSTANCE tls_io_instance;
-        memset(&tls_io_instance, 0, sizeof(TLS_IO_INSTANCE));
-        tls_io_instance.tlsio_state = TLSIO_STATE_NOT_OPEN;
         int result;
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
+        memset(&tls_io_instance, 0, sizeof(TLS_IO_INSTANCE));
+        tls_io_instance.tlsio_state = TLSIO_STATE_NOT_OPEN;
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
         g_gethostbyname_success = 1;
         g_socket_success = 1;
@@ -1645,10 +1659,11 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
     {
         ///arrange
         TLS_IO_INSTANCE tls_io_instance;
-        memset(&tls_io_instance, 0, sizeof(TLS_IO_INSTANCE));
-        tls_io_instance.tlsio_state = TLSIO_STATE_NOT_OPEN;
         int result;
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
+        int retry = 0;
+        memset(&tls_io_instance, 0, sizeof(TLS_IO_INSTANCE));
+        tls_io_instance.tlsio_state = TLSIO_STATE_NOT_OPEN;
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
         g_gethostbyname_success = 1;
         g_socket_success = 1;
@@ -1686,7 +1701,6 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         STRICT_EXPECTED_CALL(SSL_new(IGNORED_PTR_ARG)).IgnoreArgument(1);
         
         STRICT_EXPECTED_CALL(SSL_set_fd(IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2);
-        int retry = 0;
         while(retry < MAX_RETRY){
             STRICT_EXPECTED_CALL(lwip_select(IGNORED_NUM_ARG, IGNORED_PTR_ARG, 
               IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
@@ -1722,11 +1736,14 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
     TEST_FUNCTION(tlsio_openssl_create_malloc__failed)
     {
         ///arrange
+        OPTIONHANDLER_HANDLE result;
+		const IO_INTERFACE_DESCRIPTION* tlsioInterfaces;
         int negativeTestsInitResult = umock_c_negative_tests_init();
+		size_t i;
+
         ASSERT_ARE_EQUAL(int, 0, negativeTestsInitResult);
 
-        OPTIONHANDLER_HANDLE result;
-        const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_openssl_get_interface_description();
+        tlsioInterfaces = tlsio_openssl_get_interface_description();
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
         umock_c_reset_all_calls();
@@ -1735,8 +1752,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         
         umock_c_negative_tests_snapshot();
 
-
-        for (size_t i = 0; i < umock_c_negative_tests_call_count(); i++)
+        for (i = 0; i < umock_c_negative_tests_call_count(); i++)
         {
             umock_c_negative_tests_reset();
             umock_c_negative_tests_fail_call(i);

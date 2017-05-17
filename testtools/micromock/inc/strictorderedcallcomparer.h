@@ -20,13 +20,11 @@ public:
         T::SetPerformAutomaticCallComparison(performAutomaticCallComparison);
     }
 
-    _Must_inspect_result_
     virtual bool IsUnexpectedCall(_In_ const CMockMethodCallBase* actualCall)
     {
         return !actualCall->HasMatch();
     }
 
-    _Must_inspect_result_
     virtual bool IsMissingCall(_In_ const CMockMethodCallBase* expectedCall)
     {
         return ((!expectedCall->HasMatch()) &&
@@ -35,7 +33,6 @@ public:
                 (!expectedCall->m_OnlySpecifiesActions));
     }
 
-    _Must_inspect_result_
     virtual CMockMethodCallBase* MatchCall(std::vector<CMockMethodCallBase*>& expectedCalls,
         CMockMethodCallBase* actualCall)
     {

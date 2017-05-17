@@ -28,7 +28,7 @@
 
 #if defined DEFINE_INFINITY
 
-#pragma warning(disable:4756) // warning C4756: overflow in constant arithmetic
+#pragma warning(disable:4756 4056) // warning C4756: overflow in constant arithmetic
 
 // These defines are missing in math.h for WEC2013 SDK
 #ifndef _HUGE_ENUF

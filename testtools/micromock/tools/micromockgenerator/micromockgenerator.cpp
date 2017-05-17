@@ -404,7 +404,7 @@ void GenerateTimeDiscreteMockCallMacros(_In_ size_t supportedArgCount)
     fout.close();
 }
 
-int __cdecl _tmain(_In_ const int argc, _In_reads_(argc) const _TCHAR* argv[])
+int __cdecl _tmain(const int argc, const _TCHAR* argv[])
 {
     UNREFERENCED_PARAMETER(argc);
     UNREFERENCED_PARAMETER(argv);

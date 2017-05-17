@@ -66,9 +66,10 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
 
     TEST_SUITE_INITIALIZE(a)
     {
+		int result;
         TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
 
-        int result = umock_c_init(on_umock_c_error);
+        result = umock_c_init(on_umock_c_error);
         ASSERT_ARE_EQUAL(int, 0, result);
 
         REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, my_gballoc_malloc);
@@ -100,11 +101,12 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_create_succeeds)
     {
         ///arrange
+		VECTOR_HANDLE handle;
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument_size();
 
         ///act
-        VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
+        handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
 
         ///assert
         ASSERT_IS_NOT_NULL(handle);
@@ -131,12 +133,14 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_create_returns_NULL_if_malloc_fails)
     {
         ///arrange
+		VECTOR_HANDLE handle;
 
-        ///act
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument_size()
             .SetReturn(NULL);
-        VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
+
+		///act
+		handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
 
         ///assert
         ASSERT_IS_NULL(handle);
@@ -147,6 +151,8 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_move_succeeds)
     {
         ///arrange
+		VECTOR_UNITTEST* current;
+		VECTOR_HANDLE test;
         VECTOR_UNITTEST sItem1 = {1, 2};
         VECTOR_UNITTEST sItem2 = {5, 6};
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
@@ -157,13 +163,13 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
             .IgnoreArgument_size();
 
         ///act
-        VECTOR_HANDLE test = VECTOR_move(handle);
+        test = VECTOR_move(handle);
 
         ///assert
         ASSERT_IS_NOT_NULL(test);
         ASSERT_ARE_EQUAL(size_t, VECTOR_size(test), 2);
         ASSERT_ARE_EQUAL(size_t, VECTOR_size(handle), 0);
-        VECTOR_UNITTEST* current = (VECTOR_UNITTEST *)VECTOR_element(test, 0);
+        current = (VECTOR_UNITTEST *)VECTOR_element(test, 0);
         ASSERT_ARE_EQUAL(int, sItem1.nValue1, current->nValue1);
         ASSERT_ARE_EQUAL(long, sItem1.lValue2, current->lValue2);
         current = (VECTOR_UNITTEST *)VECTOR_element(test, 1);
@@ -191,6 +197,8 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_move_returns_NULL_if_malloc_fails)
     {
         ///arrange
+		VECTOR_HANDLE test;
+		VECTOR_UNITTEST* current;
         VECTOR_UNITTEST sItem1 = {1, 2};
         VECTOR_UNITTEST sItem2 = {5, 6};
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
@@ -202,12 +210,12 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
             .SetReturn(NULL);
 
         ///act
-        VECTOR_HANDLE test = VECTOR_move(handle);
+        test = VECTOR_move(handle);
 
         ///assert
         ASSERT_IS_NULL(test);
         ASSERT_ARE_EQUAL(size_t, VECTOR_size(handle), 2);
-        VECTOR_UNITTEST* current = (VECTOR_UNITTEST *)VECTOR_element(handle, 0);
+        current = (VECTOR_UNITTEST *)VECTOR_element(handle, 0);
         ASSERT_ARE_EQUAL(int, sItem1.nValue1, current->nValue1);
         ASSERT_ARE_EQUAL(long, sItem1.lValue2, current->lValue2);
         current = (VECTOR_UNITTEST *)VECTOR_element(handle, 1);
@@ -266,11 +274,12 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_push_back_fails_if_elements_is_NULL)
     {
         ///arrange
+		int result;
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
         umock_c_reset_all_calls();
 
         ///act
-        int result = VECTOR_push_back(handle, NULL, 1);
+        result = VECTOR_push_back(handle, NULL, 1);
 
         ///assert
         ASSERT_ARE_NOT_EQUAL(int, 0, result);
@@ -284,12 +293,13 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_push_back_fails_if_numElements_is_zero)
     {
         ///arrange
+		int result;
         VECTOR_UNITTEST sItem = {1, 2};
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
         umock_c_reset_all_calls();
 
         ///act
-        int result = VECTOR_push_back(handle, &sItem, 0);
+        result = VECTOR_push_back(handle, &sItem, 0);
 
         ///assert
         ASSERT_ARE_NOT_EQUAL(int, 0, result);
@@ -303,13 +313,14 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_push_back_succeeds)
     {
         ///arrange
+		int result;
         VECTOR_UNITTEST sItem = {1, 2};
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
         umock_c_reset_all_calls();
 
         ///act
         STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(VECTOR_UNITTEST)));
-        int result = VECTOR_push_back(handle, &sItem, 1);
+        result = VECTOR_push_back(handle, &sItem, 1);
 
         ///assert
         ASSERT_ARE_EQUAL(int, 0, result);
@@ -323,6 +334,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_push_back_fails_if_realloc_fails)
     {
         ///arrange
+		int result;
         VECTOR_UNITTEST sItem = {1, 2};
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
         umock_c_reset_all_calls();
@@ -330,7 +342,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         ///act
         STRICT_EXPECTED_CALL(gballoc_realloc(NULL, sizeof(VECTOR_UNITTEST)))
             .SetReturn(NULL);
-        int result = VECTOR_push_back(handle, &sItem, 1);
+        result = VECTOR_push_back(handle, &sItem, 1);
 
         ///assert
         ASSERT_ARE_NOT_EQUAL(int, 0, result);
@@ -357,11 +369,12 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_size_succeeds_if_vector_is_empty)
     {
         ///arrange
+		size_t num;
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
         umock_c_reset_all_calls();
 
         ///act
-        size_t num = VECTOR_size(handle);
+        num = VECTOR_size(handle);
 
         ///assert
         ASSERT_ARE_EQUAL(size_t, 0, num);
@@ -375,13 +388,14 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_size_succeeds)
     {
         ///arrange
+		size_t num;
         VECTOR_UNITTEST sItem = {1, 2};
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
         (void)VECTOR_push_back(handle, &sItem, 1);
         umock_c_reset_all_calls();
 
         ///act
-        size_t num = VECTOR_size(handle);
+        num = VECTOR_size(handle);
 
         ///assert
         ASSERT_ARE_EQUAL(size_t, 1, num);
@@ -409,13 +423,14 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_find_fails_if_pred_is_NULL)
     {
         ///arrange
+		VECTOR_UNITTEST* pfindItem;
         VECTOR_UNITTEST sItem = {1, 2};
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
         (void)VECTOR_push_back(handle, &sItem, 1);
         umock_c_reset_all_calls();
 
         ///act
-        VECTOR_UNITTEST* pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, NULL, &sItem);
+        pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, NULL, &sItem);
 
         ///assert
         ASSERT_IS_NULL(pfindItem);
@@ -429,13 +444,14 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_find_if_succeeds)
     {
         ///arrange
+		VECTOR_UNITTEST* pfindItem;
         VECTOR_UNITTEST sItem = {1, 2};
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
         (void)VECTOR_push_back(handle, &sItem, 1);
         umock_c_reset_all_calls();
 
         ///act
-        VECTOR_UNITTEST* pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, VECTOR_UNITTEST_isEqual, &sItem);
+        pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, VECTOR_UNITTEST_isEqual, &sItem);
 
         ///assert
         ASSERT_IS_NOT_NULL(pfindItem);
@@ -451,14 +467,15 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_find_if_return_null_if_no_match)
     {
         ///arrange
+		VECTOR_UNITTEST* pfindItem;
         VECTOR_UNITTEST sItem1 = {1, 2};
+        VECTOR_UNITTEST sItem2 = {5, 8};
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
         (void)VECTOR_push_back(handle, &sItem1, 1);
         umock_c_reset_all_calls();
 
         ///act
-        VECTOR_UNITTEST sItem2 = {5, 8};
-        VECTOR_UNITTEST* pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, VECTOR_UNITTEST_isEqual, &sItem2);
+        pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, VECTOR_UNITTEST_isEqual, &sItem2);
 
         ///assert
         ASSERT_IS_NULL(pfindItem);
@@ -503,6 +520,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_clear_succeeds)
     {
         ///arrange
+		size_t num;
         VECTOR_UNITTEST sItem = {1, 2};
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
         (void)VECTOR_push_back(handle, &sItem, 1);
@@ -515,7 +533,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         VECTOR_clear(handle);
 
         ///assert
-        size_t num = VECTOR_size(handle);
+        num = VECTOR_size(handle);
         ASSERT_ARE_EQUAL(size_t, 0, num);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
@@ -527,6 +545,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_element_succeeds)
     {
         ///arrange
+		VECTOR_UNITTEST* pResult;
         VECTOR_UNITTEST sItem1 = {1, 2};
         VECTOR_UNITTEST sItem2 = {3, 4};
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
@@ -535,7 +554,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         umock_c_reset_all_calls();
 
         ///act
-        VECTOR_UNITTEST* pResult = (VECTOR_UNITTEST*)VECTOR_element(handle, 1);
+        pResult = (VECTOR_UNITTEST*)VECTOR_element(handle, 1);
 
         ///assert
         ASSERT_IS_NOT_NULL(pResult);
@@ -564,6 +583,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_element_fails_if_index_is_out_of_range)
     {
         ///arrange
+		VECTOR_UNITTEST* pResult;
         VECTOR_UNITTEST sItem = {1, 2};
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
         (void)VECTOR_push_back(handle, &sItem, 1);
@@ -571,7 +591,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         umock_c_reset_all_calls();
 
         ///act
-        VECTOR_UNITTEST* pResult = (VECTOR_UNITTEST*)VECTOR_element(handle, 2);
+        pResult = (VECTOR_UNITTEST*)VECTOR_element(handle, 2);
 
         ///assert
         ASSERT_IS_NULL(pResult);
@@ -598,6 +618,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_front_succeeds)
     {
         ///arrange
+		VECTOR_UNITTEST* pResult;
         VECTOR_UNITTEST sItem1 = {1, 2};
         VECTOR_UNITTEST sItem2 = {3, 4};
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
@@ -606,7 +627,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         umock_c_reset_all_calls();
 
         ///act
-        VECTOR_UNITTEST* pResult = (VECTOR_UNITTEST*)VECTOR_front(handle);
+        pResult = (VECTOR_UNITTEST*)VECTOR_front(handle);
 
         ///assert
         ASSERT_IS_NOT_NULL(pResult);
@@ -622,11 +643,12 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_front_return_null_if_vector_is_empty)
     {
         ///arrange
+		VECTOR_UNITTEST* pResult;
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
         umock_c_reset_all_calls();
 
         ///act
-        VECTOR_UNITTEST* pResult = (VECTOR_UNITTEST*)VECTOR_front(handle);
+        pResult = (VECTOR_UNITTEST*)VECTOR_front(handle);
 
         ///assert
         ASSERT_IS_NULL(pResult);
@@ -640,6 +662,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_back_succeeds)
     {
         ///arrange
+		VECTOR_UNITTEST* pResult;
         VECTOR_UNITTEST sItem1 = {1, 2};
         VECTOR_UNITTEST sItem2 = {3, 4};
         VECTOR_UNITTEST sItem3 = {5, 6};
@@ -650,7 +673,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         umock_c_reset_all_calls();
 
         ///act
-        VECTOR_UNITTEST* pResult = (VECTOR_UNITTEST*)VECTOR_back(handle);
+        pResult = (VECTOR_UNITTEST*)VECTOR_back(handle);
 
         ///assert
         ASSERT_IS_NOT_NULL(pResult);
@@ -679,11 +702,12 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_back_return_null_if_vector_is_empty)
     {
         ///arrange
+		VECTOR_UNITTEST* pResult;
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
         umock_c_reset_all_calls();
 
         ///act
-        VECTOR_UNITTEST* pResult = (VECTOR_UNITTEST*)VECTOR_back(handle);
+        pResult = (VECTOR_UNITTEST*)VECTOR_back(handle);
 
         ///assert
         ASSERT_IS_NULL(pResult);
@@ -729,12 +753,14 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_erase_if_numElements_is_zero)
     {
         ///arrange
+		VECTOR_UNITTEST* pfindItem;
+		size_t num;
         VECTOR_UNITTEST sItem1 = {1, 2};
         VECTOR_UNITTEST sItem2 = {3, 4};
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
         (void)VECTOR_push_back(handle, &sItem1, 1);
         (void)VECTOR_push_back(handle, &sItem2, 1);
-        VECTOR_UNITTEST* pfindItem = (VECTOR_UNITTEST*)VECTOR_back(handle);
+        pfindItem = (VECTOR_UNITTEST*)VECTOR_back(handle);
         umock_c_reset_all_calls();
 
         ///act
@@ -742,7 +768,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
 
         ///assert
         // Make sure this erase doesn't crash
-        size_t num = VECTOR_size(handle);
+        num = VECTOR_size(handle);
         ASSERT_ARE_EQUAL(size_t, 2, num);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
@@ -754,12 +780,14 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_erase_succeeds_case_1)
     {
         ///arrange
+		VECTOR_UNITTEST* pfindItem;
+		size_t num;
         VECTOR_UNITTEST sItem1 = {1, 2};
         VECTOR_UNITTEST sItem2 = {3, 4};
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
         (void)VECTOR_push_back(handle, &sItem1, 1);
         (void)VECTOR_push_back(handle, &sItem2, 1);
-        VECTOR_UNITTEST* pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, VECTOR_UNITTEST_isEqual, &sItem1);
+        pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, VECTOR_UNITTEST_isEqual, &sItem1);
         umock_c_reset_all_calls();
         STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, sizeof(VECTOR_UNITTEST)))
             .IgnoreArgument_ptr();
@@ -768,7 +796,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         VECTOR_erase(handle, pfindItem, 1);
 
         ///assert
-        size_t num = VECTOR_size(handle);
+        num = VECTOR_size(handle);
         ASSERT_ARE_EQUAL(size_t, 1, num);
         pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, VECTOR_UNITTEST_isEqual, &sItem1);
         ASSERT_IS_NULL(pfindItem);
@@ -782,12 +810,14 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_erase_succeeds_case_2)
     {
         ///arrange
+		VECTOR_UNITTEST* pfindItem;
+		size_t num;
         VECTOR_UNITTEST sItem1 = {1, 2};
         VECTOR_UNITTEST sItem2 = {3, 4};
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
         (void)VECTOR_push_back(handle, &sItem1, 1);
         (void)VECTOR_push_back(handle, &sItem2, 1);
-        VECTOR_UNITTEST* pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, VECTOR_UNITTEST_isEqual, &sItem1);
+        pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, VECTOR_UNITTEST_isEqual, &sItem1);
         umock_c_reset_all_calls();
         STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
             .IgnoreArgument_ptr();
@@ -796,7 +826,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         VECTOR_erase(handle, pfindItem, 2);
 
         ///assert
-        size_t num = VECTOR_size(handle);
+        num = VECTOR_size(handle);
         ASSERT_ARE_EQUAL(size_t, 0, num);
         pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, VECTOR_UNITTEST_isEqual, &sItem1);
         ASSERT_IS_NULL(pfindItem);
@@ -810,12 +840,14 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_erase_succeeds_case_3)
     {
         ///arrange
+		size_t num;
+		VECTOR_UNITTEST* pfindItem;
         VECTOR_UNITTEST sItem1 = {1, 2};
         VECTOR_UNITTEST sItem2 = {3, 4};
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
         (void)VECTOR_push_back(handle, &sItem1, 1);
         (void)VECTOR_push_back(handle, &sItem2, 1);
-        VECTOR_UNITTEST* pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, VECTOR_UNITTEST_isEqual, &sItem1);
+        pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, VECTOR_UNITTEST_isEqual, &sItem1);
         umock_c_reset_all_calls();
         STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, IGNORED_NUM_ARG))
             .IgnoreArgument_ptr()
@@ -826,7 +858,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         VECTOR_erase(handle, pfindItem, 1);
 
         ///assert
-        size_t num = VECTOR_size(handle);
+        num = VECTOR_size(handle);
         ASSERT_ARE_EQUAL(size_t, 1, num);
         pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, VECTOR_UNITTEST_isEqual, &sItem1);
         ASSERT_IS_NULL(pfindItem);
@@ -842,19 +874,21 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_erase_numElements_out_of_bound)
     {
         ///arrange
+		size_t num;
+		VECTOR_UNITTEST* pfindItem;
         VECTOR_UNITTEST sItem1 = {1, 2};
         VECTOR_UNITTEST sItem2 = {3, 4};
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
         (void)VECTOR_push_back(handle, &sItem1, 1);
         (void)VECTOR_push_back(handle, &sItem2, 1);
-        VECTOR_UNITTEST* pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, VECTOR_UNITTEST_isEqual, &sItem2);
+        pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, VECTOR_UNITTEST_isEqual, &sItem2);
         umock_c_reset_all_calls();
 
         ///act
         VECTOR_erase(handle, pfindItem, 2);
 
         ///assert
-        size_t num = VECTOR_size(handle);
+        num = VECTOR_size(handle);
         ASSERT_ARE_EQUAL(size_t, 2, num);
         pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, VECTOR_UNITTEST_isEqual, &sItem1);
         ASSERT_IS_NOT_NULL(pfindItem);
@@ -870,12 +904,14 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_erase_elements_out_of_bound_case_1)
     {
         ///arrange
+		VECTOR_UNITTEST* pfindItem;
+		size_t num;
         VECTOR_UNITTEST sItem1 = {1, 2};
         VECTOR_UNITTEST sItem2 = {3, 4};
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
         (void)VECTOR_push_back(handle, &sItem1, 1);
         (void)VECTOR_push_back(handle, &sItem2, 1);
-        VECTOR_UNITTEST* pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, VECTOR_UNITTEST_isEqual, &sItem1);
+        pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, VECTOR_UNITTEST_isEqual, &sItem1);
         pfindItem -= 1;
         umock_c_reset_all_calls();
 
@@ -883,7 +919,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         VECTOR_erase(handle, pfindItem, 1);
 
         ///assert
-        size_t num = VECTOR_size(handle);
+        num = VECTOR_size(handle);
         ASSERT_ARE_EQUAL(size_t, 2, num);
         pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, VECTOR_UNITTEST_isEqual, &sItem1);
         ASSERT_IS_NOT_NULL(pfindItem);
@@ -899,12 +935,14 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_erase_elements_out_of_bound_case_2)
     {
         ///arrange
+		size_t num;
+		VECTOR_UNITTEST* pfindItem;
         VECTOR_UNITTEST sItem1 = {1, 2};
         VECTOR_UNITTEST sItem2 = {3, 4};
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
         (void)VECTOR_push_back(handle, &sItem1, 1);
         (void)VECTOR_push_back(handle, &sItem2, 1);
-        VECTOR_UNITTEST* pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, VECTOR_UNITTEST_isEqual, &sItem2);
+        pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, VECTOR_UNITTEST_isEqual, &sItem2);
         pfindItem += 2;
         umock_c_reset_all_calls();
 
@@ -912,7 +950,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         VECTOR_erase(handle, pfindItem, 1);
 
         ///assert
-        size_t num = VECTOR_size(handle);
+        num = VECTOR_size(handle);
         ASSERT_ARE_EQUAL(size_t, 2, num);
         pfindItem = (VECTOR_UNITTEST*)VECTOR_find_if(handle, VECTOR_UNITTEST_isEqual, &sItem1);
         ASSERT_IS_NOT_NULL(pfindItem);
@@ -928,12 +966,15 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_erase_elements_misaligned)
     {
         ///arrange
+		VECTOR_UNITTEST* pResult;
+		void* pfindItem;
+		size_t num;
         VECTOR_UNITTEST sItem1 = {1, 2};
         VECTOR_UNITTEST sItem2 = {3, 4};
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
         (void)VECTOR_push_back(handle, &sItem1, 1);
         (void)VECTOR_push_back(handle, &sItem2, 1);
-        void* pfindItem = VECTOR_find_if(handle, VECTOR_UNITTEST_isEqual, &sItem1);
+        pfindItem = VECTOR_find_if(handle, VECTOR_UNITTEST_isEqual, &sItem1);
         pfindItem = (void*)(((unsigned char*)pfindItem) + 0x1);
         umock_c_reset_all_calls();
 
@@ -941,9 +982,9 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         VECTOR_erase(handle, pfindItem, 1);
 
         ///assert
-        size_t num = VECTOR_size(handle);
+        num = VECTOR_size(handle);
         ASSERT_ARE_EQUAL(size_t, 2, num);
-        VECTOR_UNITTEST* pResult = (VECTOR_UNITTEST*)VECTOR_find_if(handle, VECTOR_UNITTEST_isEqual, &sItem1);
+        pResult = (VECTOR_UNITTEST*)VECTOR_find_if(handle, VECTOR_UNITTEST_isEqual, &sItem1);
         ASSERT_IS_NOT_NULL(pfindItem);
         ASSERT_ARE_EQUAL(size_t, sItem1.nValue1, pResult->nValue1);
         ASSERT_ARE_EQUAL(long, sItem1.lValue2, pResult->lValue2);
@@ -959,19 +1000,21 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
 
     TEST_FUNCTION(VECTOR_push_back_multiple_elements_succeeds)
     {
-            ///arrange
+        ///arrange
+		size_t nIndex;
+		VECTOR_UNITTEST* pResult;
+        int result = 0;
         VECTOR_UNITTEST sItem1 = {1, 2};
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
         umock_c_reset_all_calls();
-        for (size_t nIndex = 0; nIndex < NUM_ITEM_PUSH_BACK; nIndex++)
+        for (nIndex = 0; nIndex < NUM_ITEM_PUSH_BACK; nIndex++)
         {
             STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, (nIndex + 1) * sizeof(VECTOR_UNITTEST)))
                 .IgnoreArgument_ptr();
         }
 
         ///act
-        int result = 0;
-        for (size_t nIndex = 0; (nIndex < NUM_ITEM_PUSH_BACK) && (result == 0); nIndex++)
+        for (nIndex = 0; (nIndex < NUM_ITEM_PUSH_BACK) && (result == 0); nIndex++)
         {
             sItem1.nValue1++;
             sItem1.lValue2++;
@@ -980,7 +1023,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
 
         ///assert
         ASSERT_ARE_EQUAL(int, 0, result);
-        VECTOR_UNITTEST* pResult = (VECTOR_UNITTEST*)VECTOR_back(handle);
+        pResult = (VECTOR_UNITTEST*)VECTOR_back(handle);
         ASSERT_IS_NOT_NULL(pResult);
         ASSERT_ARE_EQUAL(size_t, sItem1.nValue1, pResult->nValue1);
         ASSERT_ARE_EQUAL(long, sItem1.lValue2, pResult->lValue2);

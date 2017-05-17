@@ -18,11 +18,11 @@ public:
     }
 
     void SetIgnoreUnexpectedCalls(_In_ bool ignoreUnexpectedCalls) { m_IgnoreUnexpectedCalls = ignoreUnexpectedCalls; }
-    _Must_inspect_result_ bool GetIgnoreUnexpectedCalls(void) { return m_IgnoreUnexpectedCalls; }
+    bool GetIgnoreUnexpectedCalls(void) { return m_IgnoreUnexpectedCalls; }
 
-    virtual _Must_inspect_result_ bool IsUnexpectedCall(_In_ const CMockMethodCallBase* actualCall) = 0;
-    virtual _Must_inspect_result_ bool IsMissingCall(_In_ const CMockMethodCallBase* actualCall) = 0;
-    virtual _Must_inspect_result_ CMockMethodCallBase* MatchCall(std::vector<CMockMethodCallBase*>& expectedCalls,
+    virtual bool IsUnexpectedCall(_In_ const CMockMethodCallBase* actualCall) = 0;
+    virtual bool IsMissingCall(_In_ const CMockMethodCallBase* actualCall) = 0;
+    virtual CMockMethodCallBase* MatchCall(std::vector<CMockMethodCallBase*>& expectedCalls,
         CMockMethodCallBase* actualCall) = 0;
 
 protected:

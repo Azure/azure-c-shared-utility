@@ -16,7 +16,7 @@ template<typename returnType>
 class CMockMethodCall : public CMockMethodCallBase
 {
 public:
-    CMockMethodCall(_In_ std::tstring methodName, _In_ size_t argCount = 0, _In_reads_(argCount) CMockCallArgumentBase** arguments = NULL) :
+    CMockMethodCall(_In_ std::tstring methodName, _In_ size_t argCount = 0, CMockCallArgumentBase** arguments = NULL) :
         CMockMethodCallBase(methodName, argCount, arguments)
     {
     }
@@ -111,7 +111,7 @@ public:
     }
 
     CMockMethodCall<returnType>& ValidateArgumentBuffer(_In_ size_t argumentNo,
-        _In_reads_bytes_opt_(bytesToValidate) const void* expectedBuffer, _In_ size_t bytesToValidate, _In_ size_t byteOffset = 0)
+        const void* expectedBuffer, _In_ size_t bytesToValidate, _In_ size_t byteOffset = 0)
     {
         if ((argumentNo > 0) &&
             (argumentNo <= m_MockCallArguments.size()) &&
@@ -129,7 +129,7 @@ public:
         return *this;
     }
     CMockMethodCall<returnType>& CopyOutArgumentBuffer(_In_ size_t argumentNo,
-        _In_reads_bytes_opt_(bytesToCopy) const void* injectedBuffer, _In_ size_t bytesToCopy, _In_ size_t byteOffset = 0)
+        const void* injectedBuffer, _In_ size_t bytesToCopy, _In_ size_t byteOffset = 0)
     {
         if ((NULL == injectedBuffer) ||
             (bytesToCopy == 0))

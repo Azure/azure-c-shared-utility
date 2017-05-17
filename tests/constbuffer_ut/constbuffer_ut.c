@@ -172,6 +172,8 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
     TEST_FUNCTION(CONSTBUFFER_Create_succeeds)
     {
         ///arrange
+		CONSTBUFFER_HANDLE handle;
+		const CONSTBUFFER* content;
 
         ///act
         /*this is the handle*/
@@ -180,12 +182,12 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         /*this is the content*/
         STRICT_EXPECTED_CALL(gballoc_malloc(BUFFER1_length));
 
-        CONSTBUFFER_HANDLE handle = CONSTBUFFER_Create(BUFFER1_u_char, BUFFER1_length);
+        handle = CONSTBUFFER_Create(BUFFER1_u_char, BUFFER1_length);
 
         ///assert
         ASSERT_IS_NOT_NULL(handle);
         /*testing the "copy"*/
-        const CONSTBUFFER* content = CONSTBUFFER_GetContent(handle);
+        content = CONSTBUFFER_GetContent(handle);
         ASSERT_ARE_EQUAL(size_t, BUFFER1_length, content->size);
         ASSERT_ARE_EQUAL(int, 0, memcmp(BUFFER1_u_char, content->buffer, BUFFER1_length));
         /*testing that it is a copy and not a pointer assignment*/
@@ -201,9 +203,10 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
     TEST_FUNCTION(CONSTBUFFER_CreateFromBuffer_succeeds)
     {
         ///arrange
+		CONSTBUFFER_HANDLE handle;
+		const CONSTBUFFER* content;
 
         ///act
-
         STRICT_EXPECTED_CALL(BUFFER_length(BUFFER1_HANDLE));
         STRICT_EXPECTED_CALL(BUFFER_u_char(BUFFER1_HANDLE));
         /*this is the handle*/
@@ -212,12 +215,12 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         /*this is the content*/
         STRICT_EXPECTED_CALL(gballoc_malloc(BUFFER1_length));
 
-        CONSTBUFFER_HANDLE handle = CONSTBUFFER_CreateFromBuffer(BUFFER1_HANDLE);
+        handle = CONSTBUFFER_CreateFromBuffer(BUFFER1_HANDLE);
 
         ///assert
         ASSERT_IS_NOT_NULL(handle);
         /*testing the "copy"*/
-        const CONSTBUFFER* content = CONSTBUFFER_GetContent(handle);
+        content = CONSTBUFFER_GetContent(handle);
         ASSERT_ARE_EQUAL(size_t, BUFFER1_length, content->size);
         ASSERT_ARE_EQUAL(int, 0, memcmp(BUFFER1_u_char, content->buffer, BUFFER1_length));
         /*testing that it is a copy and not a pointer assignment*/
@@ -232,6 +235,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
     TEST_FUNCTION(CONSTBUFFER_CreateFromBuffer_fails_when_malloc_fails_1)
     {
         ///arrange
+		CONSTBUFFER_HANDLE handle;
 
         ///act
         STRICT_EXPECTED_CALL(BUFFER_length(BUFFER1_HANDLE));
@@ -248,7 +252,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
             .IgnoreArgument(1);
 
 
-        CONSTBUFFER_HANDLE handle = CONSTBUFFER_CreateFromBuffer(BUFFER1_HANDLE);
+        handle = CONSTBUFFER_CreateFromBuffer(BUFFER1_HANDLE);
 
         ///assert
         ASSERT_IS_NULL(handle);
@@ -262,6 +266,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
     TEST_FUNCTION(CONSTBUFFER_CreateFromBuffer_fails_when_malloc_fails_2)
     {
         ///arrange
+		CONSTBUFFER_HANDLE handle;
 
         ///act
         STRICT_EXPECTED_CALL(BUFFER_length(BUFFER1_HANDLE));
@@ -272,7 +277,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
 
-        CONSTBUFFER_HANDLE handle = CONSTBUFFER_CreateFromBuffer(BUFFER1_HANDLE);
+        handle = CONSTBUFFER_CreateFromBuffer(BUFFER1_HANDLE);
 
         ///assert
         ASSERT_IS_NULL(handle);
@@ -327,6 +332,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
     TEST_FUNCTION(CONSTBUFFER_Create_fails_when_malloc_fails_1)
     {
         ///arrange
+		CONSTBUFFER_HANDLE handle;
 
         ///act
         /*this is the handle*/
@@ -338,7 +344,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
             .IgnoreArgument(1);
 
-        CONSTBUFFER_HANDLE handle = CONSTBUFFER_Create(BUFFER1_u_char, BUFFER1_length);
+        handle = CONSTBUFFER_Create(BUFFER1_u_char, BUFFER1_length);
 
         ///assert
         ASSERT_IS_NULL(handle);
@@ -351,6 +357,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
     TEST_FUNCTION(CONSTBUFFER_Create_fails_when_malloc_fails_2)
     {
         ///arrange
+		CONSTBUFFER_HANDLE handle;
 
         ///act
         /*this is the handle*/
@@ -358,7 +365,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
 
-        CONSTBUFFER_HANDLE handle = CONSTBUFFER_Create(BUFFER1_u_char, BUFFER1_length);
+        handle = CONSTBUFFER_Create(BUFFER1_u_char, BUFFER1_length);
 
         ///assert
         ASSERT_IS_NULL(handle);
@@ -395,18 +402,20 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
     TEST_FUNCTION(CONSTBUFFER_Create_from_0_size_succeeds_1)
     {
         ///arrange
+		CONSTBUFFER_HANDLE handle;
+		const CONSTBUFFER* content;
 
         ///act
         /*this is the handle*/
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
 
-        CONSTBUFFER_HANDLE handle = CONSTBUFFER_Create(BUFFER2_u_char, BUFFER2_length);
+        handle = CONSTBUFFER_Create(BUFFER2_u_char, BUFFER2_length);
 
         ///assert
         ASSERT_IS_NOT_NULL(handle);
         /*testing the "copy"*/
-        const CONSTBUFFER* content = CONSTBUFFER_GetContent(handle);
+        content = CONSTBUFFER_GetContent(handle);
         ASSERT_ARE_EQUAL(size_t, BUFFER2_length, content->size);
         /*testing that it is a copy and not a pointer assignment*/
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -420,18 +429,20 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
     TEST_FUNCTION(CONSTBUFFER_Create_from_0_size_succeeds_2)
     {
         ///arrange
+		CONSTBUFFER_HANDLE handle;
+		const CONSTBUFFER* content;
 
         ///act
         /*this is the handle*/
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
 
-        CONSTBUFFER_HANDLE handle = CONSTBUFFER_Create(BUFFER3_u_char, BUFFER3_length);
+        handle = CONSTBUFFER_Create(BUFFER3_u_char, BUFFER3_length);
 
         ///assert
         ASSERT_IS_NOT_NULL(handle);
         /*testing the "copy"*/
-        const CONSTBUFFER* content = CONSTBUFFER_GetContent(handle);
+        content = CONSTBUFFER_GetContent(handle);
         ASSERT_ARE_EQUAL(size_t, BUFFER3_length, content->size);
         /*testing that it is a copy and not a pointer assignment*/
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -459,11 +470,14 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
     TEST_FUNCTION(CONSTBUFFER_GetContent_succeeds_1)
     {
         ///arrange
-        CONSTBUFFER_HANDLE handle = CONSTBUFFER_Create(BUFFER1_u_char, BUFFER1_length);
+		CONSTBUFFER_HANDLE handle;
+		const CONSTBUFFER* content;
+
+		handle = CONSTBUFFER_Create(BUFFER1_u_char, BUFFER1_length);
         umock_c_reset_all_calls();
 
         ///act
-        const CONSTBUFFER* content = CONSTBUFFER_GetContent(handle);
+        content = CONSTBUFFER_GetContent(handle);
 
         ///assert
         ASSERT_IS_NOT_NULL(content);
@@ -482,11 +496,13 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
     TEST_FUNCTION(CONSTBUFFER_GetContent_succeeds_2)
     {
         ///arrange
-        CONSTBUFFER_HANDLE handle = CONSTBUFFER_Create(NULL, 0);
+		CONSTBUFFER_HANDLE handle;
+		const CONSTBUFFER* content;
+        handle = CONSTBUFFER_Create(NULL, 0);
         umock_c_reset_all_calls();
 
         ///act
-        const CONSTBUFFER* content = CONSTBUFFER_GetContent(handle);
+        content = CONSTBUFFER_GetContent(handle);
 
         ///assert
         ASSERT_IS_NOT_NULL(content);
@@ -516,11 +532,12 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
     TEST_FUNCTION(CONSTBUFFER_Clone_increments_ref_count_1)
     {
         ///arrange
+		CONSTBUFFER_HANDLE clone;
         CONSTBUFFER_HANDLE handle = CONSTBUFFER_Create(BUFFER1_u_char, BUFFER1_length);
         umock_c_reset_all_calls();
 
         ///act
-        CONSTBUFFER_HANDLE clone = CONSTBUFFER_Clone(handle);
+        clone = CONSTBUFFER_Clone(handle);
 
         ///assert
         ASSERT_ARE_EQUAL(void_ptr, handle, clone);

@@ -127,11 +127,11 @@ TEST_FUNCTION(when_gballoc_is_not_initialized_gballoc_deinit_doesnot_free_lock)
 TEST_FUNCTION(when_gballoc_is_not_initialized_gballoc_malloc_calls_crt_malloc)
 {
     // arrange
-    
+    void* result;
     STRICT_EXPECTED_CALL(mock_malloc(1));
 
     //act
-    void* result = gballoc_malloc(1);
+    result = gballoc_malloc(1);
 
     //assert
     ASSERT_IS_NOT_NULL(result);
@@ -144,10 +144,11 @@ TEST_FUNCTION(when_gballoc_is_not_initialized_gballoc_malloc_calls_crt_malloc)
 TEST_FUNCTION(when_gballoc_is_not_initialized_then_gballoc_calloc_calls_crt_calloc)
 {
     // arrange
+	void* result;
     STRICT_EXPECTED_CALL(mock_calloc(1, 1));
 
     // act
-    void* result = gballoc_calloc(1, 1);
+    result = gballoc_calloc(1, 1);
 
     // assert
     ASSERT_IS_NOT_NULL(result);
@@ -160,10 +161,11 @@ TEST_FUNCTION(when_gballoc_is_not_initialized_then_gballoc_calloc_calls_crt_call
 TEST_FUNCTION(when_gballoc_is_not_initialized_then_gballoc_realloc_calls_crt_realloc)
 {
     // arrange
+	void* result;
     STRICT_EXPECTED_CALL(mock_realloc(NULL, 1));
 
     // act
-    void* result = gballoc_realloc(NULL, 1);
+    result = gballoc_realloc(NULL, 1);
 
     // assert
     ASSERT_IS_NOT_NULL(result);

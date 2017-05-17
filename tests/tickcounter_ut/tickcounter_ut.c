@@ -84,12 +84,13 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
 TEST_FUNCTION(tickcounter_create_fails)
 {
     ///arrange
+	TICK_COUNTER_HANDLE tickHandle;
     STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
         .IgnoreArgument(1)
         .SetReturn((void*)NULL);
 
     ///act
-    TICK_COUNTER_HANDLE tickHandle = tickcounter_create();
+    tickHandle = tickcounter_create();
 
     ///assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -99,11 +100,12 @@ TEST_FUNCTION(tickcounter_create_fails)
 TEST_FUNCTION(tickcounter_create_succeed)
 {
     ///arrange
+	TICK_COUNTER_HANDLE tickHandle;
     STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
         .IgnoreArgument(1);
 
     ///act
-    TICK_COUNTER_HANDLE tickHandle = tickcounter_create();
+    tickHandle = tickcounter_create();
 
     ///assert
     ASSERT_IS_NOT_NULL(tickHandle);
@@ -156,11 +158,12 @@ TEST_FUNCTION(tickcounter_get_current_ms_tick_counter_NULL_fail)
 TEST_FUNCTION(tickcounter_get_current_ms_current_ms_NULL_fail)
 {
     ///arrange
+	int result;
     TICK_COUNTER_HANDLE tickHandle = tickcounter_create();
     umock_c_reset_all_calls();
 
     ///act
-    int result = tickcounter_get_current_ms(tickHandle, NULL);
+    result = tickcounter_get_current_ms(tickHandle, NULL);
 
     ///assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
@@ -172,13 +175,15 @@ TEST_FUNCTION(tickcounter_get_current_ms_current_ms_NULL_fail)
 TEST_FUNCTION(tickcounter_get_current_ms_succeed)
 {
     ///arrange
+	int result;
+	tickcounter_ms_t current_ms;
     TICK_COUNTER_HANDLE tickHandle = tickcounter_create();
     umock_c_reset_all_calls();
 
-    tickcounter_ms_t current_ms = 0;
+    current_ms = 0;
 
     ///act
-    int result = tickcounter_get_current_ms(tickHandle, &current_ms);
+    result = tickcounter_get_current_ms(tickHandle, &current_ms);
 
     ///assert
     ASSERT_ARE_EQUAL(int, 0, result);

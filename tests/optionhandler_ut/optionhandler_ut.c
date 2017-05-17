@@ -223,11 +223,11 @@ BEGIN_TEST_SUITE(optionhandler_unittests)
     TEST_FUNCTION(OptionHandler_Create_happy_path)
     {
         ///arrange
-
+		OPTIONHANDLER_HANDLE h;
         OptionHandler_Create_inert_path(); /*in this case, it is happy*/
 
         ///act
-        OPTIONHANDLER_HANDLE h = OptionHandler_Create(aCloneOption, aDestroyOption, aSetOption);
+        h = OptionHandler_Create(aCloneOption, aDestroyOption, aSetOption);
 
         ///assert
         
@@ -242,6 +242,7 @@ BEGIN_TEST_SUITE(optionhandler_unittests)
     TEST_FUNCTION(OptionHandler_Create_unhappy_paths)
     {
         ///arrange
+		size_t i;
         int negativeTestsInitResult = umock_c_negative_tests_init();
         ASSERT_ARE_EQUAL(int, 0, negativeTestsInitResult);
 
@@ -249,18 +250,19 @@ BEGIN_TEST_SUITE(optionhandler_unittests)
 
         umock_c_negative_tests_snapshot();
 
-        for (size_t i = 0; i < umock_c_negative_tests_call_count(); i++)
+        for (i = 0; i < umock_c_negative_tests_call_count(); i++)
         {
+            char temp_str[128];
+			OPTIONHANDLER_HANDLE h;
            
             umock_c_negative_tests_reset();
             umock_c_negative_tests_fail_call(i);
             
             ///act
-            char temp_str[128];
             (void)sprintf(temp_str, "On failed call %zu", i);
             
             ///act
-            OPTIONHANDLER_HANDLE h = OptionHandler_Create(aCloneOption, aDestroyOption, aSetOption);
+            h = OptionHandler_Create(aCloneOption, aDestroyOption, aSetOption);
 
             ///assert
             ASSERT_IS_NULL_WITH_MSG(h, temp_str);
@@ -848,13 +850,14 @@ BEGIN_TEST_SUITE(optionhandler_unittests)
     TEST_FUNCTION(OptionHandler_AddOption_happy_path)
     {
         ///arrange
+		OPTIONHANDLER_RESULT result;
         OPTIONHANDLER_HANDLE handle = OptionHandler_Create(aCloneOption, aDestroyOption, aSetOption);
 
         void* value = "value";
         OptionHandler_AddOption_inert_path(value);
 
         ///act
-        OPTIONHANDLER_RESULT result = OptionHandler_AddOption(handle, "name", value);
+        result = OptionHandler_AddOption(handle, "name", value);
 
         ///assert
         ASSERT_ARE_EQUAL(OPTIONHANDLER_RESULT, OPTIONHANDLER_OK, result);
@@ -868,28 +871,32 @@ BEGIN_TEST_SUITE(optionhandler_unittests)
     TEST_FUNCTION(OptionHandler_AddOption_unhappy_path)
     {
         ///arrange
+        void* value = "value";
+		size_t i;
+		OPTIONHANDLER_HANDLE handle;
         int negativeTestsInitResult = umock_c_negative_tests_init();
         ASSERT_ARE_EQUAL(int, 0, negativeTestsInitResult);
         
-        OPTIONHANDLER_HANDLE handle = OptionHandler_Create(aCloneOption, aDestroyOption, aSetOption);
+        handle = OptionHandler_Create(aCloneOption, aDestroyOption, aSetOption);
         umock_c_reset_all_calls();
 
-        void* value = "value";
         OptionHandler_AddOption_inert_path(value);
 
         umock_c_negative_tests_snapshot();
 
-        for (size_t i = 0; i < umock_c_negative_tests_call_count(); i++)
+        for (i = 0; i < umock_c_negative_tests_call_count(); i++)
         {
-            umock_c_negative_tests_reset();
+            char temp_str[128];
+			OPTIONHANDLER_RESULT result;
+
+			umock_c_negative_tests_reset();
             umock_c_negative_tests_fail_call(i);
 
             ///act
-            char temp_str[128];
             (void)sprintf(temp_str, "On failed call %zu", i);
 
             ///act
-            OPTIONHANDLER_RESULT result = OptionHandler_AddOption(handle, "name", value);
+            result = OptionHandler_AddOption(handle, "name", value);
 
             ///assert
             ASSERT_ARE_EQUAL_WITH_MSG(OPTIONHANDLER_RESULT, OPTIONHANDLER_ERROR, result, temp_str);
@@ -938,6 +945,7 @@ BEGIN_TEST_SUITE(optionhandler_unittests)
     TEST_FUNCTION(OptionHandler_FeedOptions_with_0_saved_options_feeds_0_succeeds)
     {
         ///arrange
+		OPTIONHANDLER_RESULT result;
         OPTIONHANDLER_HANDLE handle = OptionHandler_Create(aCloneOption, aDestroyOption, aSetOption);
         umock_c_reset_all_calls();
 
@@ -945,7 +953,7 @@ BEGIN_TEST_SUITE(optionhandler_unittests)
             .IgnoreArgument_handle();
 
         ///act
-        OPTIONHANDLER_RESULT result = OptionHandler_FeedOptions(handle, (void*)42);
+        result = OptionHandler_FeedOptions(handle, (void*)42);
 
         ///assert
         ASSERT_ARE_EQUAL(OPTIONHANDLER_RESULT, OPTIONHANDLER_OK, result);
@@ -971,6 +979,7 @@ BEGIN_TEST_SUITE(optionhandler_unittests)
     TEST_FUNCTION(OptionHandler_FeedOptions_with_1_saved_options_feeds_1_happypath)
     {
         ///arrange
+		OPTIONHANDLER_RESULT result;
         OPTIONHANDLER_HANDLE handle = OptionHandler_Create(aCloneOption, aDestroyOption, aSetOption);
         (void)OptionHandler_AddOption(handle, "a", "b");
         umock_c_reset_all_calls();
@@ -978,7 +987,7 @@ BEGIN_TEST_SUITE(optionhandler_unittests)
         OptionHandler_FeedOptions_with_1_saved_options_feeds_1_inert_path();
 
         ///act
-        OPTIONHANDLER_RESULT result = OptionHandler_FeedOptions(handle, (void*)42);
+        result = OptionHandler_FeedOptions(handle, (void*)42);
 
         ///assert
         ASSERT_ARE_EQUAL(OPTIONHANDLER_RESULT, OPTIONHANDLER_OK, result);
@@ -991,12 +1000,19 @@ BEGIN_TEST_SUITE(optionhandler_unittests)
     /*Tests_SRS_OPTIONHANDLER_02_014: [ Otherwise, OptionHandler_FeedOptions shall fail and return OPTIONHANDLER_ERROR. ]*/
     TEST_FUNCTION(OptionHandler_FeedOptions_with_1_saved_options_feeds_1_unhappypaths)
     {
-
         ///arrange
+		size_t i;
+        size_t calls_that_cannot_fail[] =
+        {
+            0, 
+            1,
+        };
+		OPTIONHANDLER_HANDLE handle;
+
         int negativeTestsInitResult = umock_c_negative_tests_init();
         ASSERT_ARE_EQUAL(int, 0, negativeTestsInitResult);
 
-        OPTIONHANDLER_HANDLE handle = OptionHandler_Create(aCloneOption, aDestroyOption, aSetOption);
+        handle = OptionHandler_Create(aCloneOption, aDestroyOption, aSetOption);
         (void)OptionHandler_AddOption(handle, "a", "b");
         umock_c_reset_all_calls();
 
@@ -1004,15 +1020,12 @@ BEGIN_TEST_SUITE(optionhandler_unittests)
 
         umock_c_negative_tests_snapshot();
 
-        size_t calls_that_cannot_fail[] =
+        for (i = 0; i < umock_c_negative_tests_call_count(); i++)
         {
-            0, 
-            1,
-        };
+            char temp_str[128];
+			size_t j;
+			OPTIONHANDLER_RESULT result;
 
-        for (size_t i = 0; i < umock_c_negative_tests_call_count(); i++)
-        {
-            size_t j;
             for (j = 0;j < sizeof(calls_that_cannot_fail) / sizeof(calls_that_cannot_fail[0]);j++)
             {
                 if (calls_that_cannot_fail[j] == i)
@@ -1030,11 +1043,10 @@ BEGIN_TEST_SUITE(optionhandler_unittests)
             umock_c_negative_tests_fail_call(i);
 
             ///act
-            char temp_str[128];
             (void)sprintf(temp_str, "On failed call %zu", i);
 
             ///act
-            OPTIONHANDLER_RESULT result = OptionHandler_FeedOptions(handle, (void*)42);
+            result = OptionHandler_FeedOptions(handle, (void*)42);
 
             ///assert
             ASSERT_ARE_EQUAL_WITH_MSG(OPTIONHANDLER_RESULT, OPTIONHANDLER_ERROR, result, temp_str);
@@ -1068,6 +1080,8 @@ BEGIN_TEST_SUITE(optionhandler_unittests)
     {
         ///arrange
         OPTIONHANDLER_HANDLE handle = OptionHandler_Create(aCloneOption, aDestroyOption, aSetOption);
+		OPTIONHANDLER_RESULT result;
+
         (void)OptionHandler_AddOption(handle, "a", "b");
         (void)OptionHandler_AddOption(handle, "c", "b2");
         umock_c_reset_all_calls();
@@ -1075,7 +1089,7 @@ BEGIN_TEST_SUITE(optionhandler_unittests)
         OptionHandler_FeedOptions_with_2_saved_options_feeds_2_inert_path();
 
         ///act
-        OPTIONHANDLER_RESULT result = OptionHandler_FeedOptions(handle, (void*)42);
+        result = OptionHandler_FeedOptions(handle, (void*)42);
 
         ///assert
         ASSERT_ARE_EQUAL(OPTIONHANDLER_RESULT, OPTIONHANDLER_OK, result);
@@ -1088,12 +1102,19 @@ BEGIN_TEST_SUITE(optionhandler_unittests)
     /*Tests_SRS_OPTIONHANDLER_02_014: [ Otherwise, OptionHandler_FeedOptions shall fail and return OPTIONHANDLER_ERROR. ]*/
     TEST_FUNCTION(OptionHandler_FeedOptions_with_2_saved_options_feeds_2_unhappypaths)
     {
-
         ///arrange
+		OPTIONHANDLER_HANDLE handle;
+        size_t calls_that_cannot_fail[] =
+        {
+            0,
+            1,
+            3,
+        };
+		size_t i;
         int negativeTestsInitResult = umock_c_negative_tests_init();
         ASSERT_ARE_EQUAL(int, 0, negativeTestsInitResult);
 
-        OPTIONHANDLER_HANDLE handle = OptionHandler_Create(aCloneOption, aDestroyOption, aSetOption);
+        handle = OptionHandler_Create(aCloneOption, aDestroyOption, aSetOption);
         (void)OptionHandler_AddOption(handle, "a", "b");
         (void)OptionHandler_AddOption(handle, "c", "b2");
         umock_c_reset_all_calls();
@@ -1102,16 +1123,12 @@ BEGIN_TEST_SUITE(optionhandler_unittests)
 
         umock_c_negative_tests_snapshot();
 
-        size_t calls_that_cannot_fail[] =
+        for (i = 0; i < umock_c_negative_tests_call_count(); i++)
         {
-            0,
-            1,
-            3,
-        };
+            char temp_str[128];
+			size_t j;
+			OPTIONHANDLER_RESULT result;
 
-        for (size_t i = 0; i < umock_c_negative_tests_call_count(); i++)
-        {
-            size_t j;
             for (j = 0;j < sizeof(calls_that_cannot_fail) / sizeof(calls_that_cannot_fail[0]);j++)
             {
                 if (calls_that_cannot_fail[j] == i)
@@ -1129,11 +1146,10 @@ BEGIN_TEST_SUITE(optionhandler_unittests)
             umock_c_negative_tests_fail_call(i);
 
             ///act
-            char temp_str[128];
             (void)sprintf(temp_str, "On failed call %zu", i);
 
             ///act
-            OPTIONHANDLER_RESULT result = OptionHandler_FeedOptions(handle, (void*)42);
+            result = OptionHandler_FeedOptions(handle, (void*)42);
 
             ///assert
             ASSERT_ARE_EQUAL_WITH_MSG(OPTIONHANDLER_RESULT, OPTIONHANDLER_ERROR, result, temp_str);

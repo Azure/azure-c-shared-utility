@@ -324,13 +324,15 @@ TEST_FUNCTION(Condition_Wait_ok_on_trigger_and_zero_timeout)
 {
     // arrange
     LockAndCondition m;
+	THREAD_HANDLE th;
+	COND_RESULT result;
     m.condition = Condition_Init();
     m.lock = Lock_Init();
     
     // act
-    THREAD_HANDLE th = trigger_after_50_ms(&m);
+    th = trigger_after_50_ms(&m);
     Lock(m.lock);
-    COND_RESULT result = Condition_Wait(m.condition, m.lock, 0);
+    result = Condition_Wait(m.condition, m.lock, 0);
     ThreadAPI_Join(th, NULL);
     Unlock(m.lock);
 
@@ -346,12 +348,13 @@ TEST_FUNCTION(Condition_Wait_timeout_when_not_triggered)
 {
     // arrange
     LockAndCondition m; 
+	COND_RESULT result;
     m.condition = Condition_Init();
     m.lock = Lock_Init();
 
     // act
     Lock(m.lock);
-    COND_RESULT result = Condition_Wait(m.condition, m.lock, 150);
+    result = Condition_Wait(m.condition, m.lock, 150);
     Unlock(m.lock);
 
     // assert
@@ -366,13 +369,15 @@ TEST_FUNCTION(Condition_Wait_ok_on_trigger_with_timeout)
 {
     // arrange
     LockAndCondition m;
+	COND_RESULT result;
+	THREAD_HANDLE th;
     m.condition = Condition_Init();
     m.lock = Lock_Init();
 
     // act
-    THREAD_HANDLE th = trigger_after_50_ms(&m);
+    th = trigger_after_50_ms(&m);
     Lock(m.lock);
-    COND_RESULT result = Condition_Wait(m.condition, m.lock, 1000);
+    result = Condition_Wait(m.condition, m.lock, 1000);
     Unlock(m.lock);
     ThreadAPI_Join(th, NULL);
 

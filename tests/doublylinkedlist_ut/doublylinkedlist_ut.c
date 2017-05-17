@@ -381,9 +381,8 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
     {
         ///arrange
         DLIST_ENTRY listHead;
-        DList_InitializeListHead(&listHead);
-
         DLIST_ENTRY toBeInserted;
+        DList_InitializeListHead(&listHead);
 
         ///act
         DList_InsertHeadList(&listHead, &toBeInserted);
@@ -400,9 +399,9 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
     {
         ///arrange
         DLIST_ENTRY listHead;
-        DList_InitializeListHead(&listHead);
         DLIST_ENTRY existingInList;
         DLIST_ENTRY toBeInserted;
+        DList_InitializeListHead(&listHead);
         DList_InsertTailList(&listHead, &existingInList); /*would be same as insertHead when it is the first item... */
 
         ///act

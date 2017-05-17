@@ -15,6 +15,36 @@
 
 #include "testrunnerswitcher.h"
 
+// VS 2008 does not have INFINITY and all the nice goodies...
+#if defined (TIZENRT) || defined (WINCE)
+#define DEFINE_INFINITY 1
+#else
+
+#if defined _MSC_VER
+#if _MSC_VER <= 1500
+#define DEFINE_INFINITY 1
+#endif
+#endif
+#endif
+
+#if defined DEFINE_INFINITY
+
+#pragma warning(disable:4756 4056) // warning C4756: overflow in constant arithmetic
+
+// These defines are missing in math.h for WEC2013 SDK
+#ifndef _HUGE_ENUF
+#define _HUGE_ENUF  1e+300  // _HUGE_ENUF*_HUGE_ENUF must overflow
+#endif
+
+#define INFINITY   ((float)(_HUGE_ENUF * _HUGE_ENUF))
+#define HUGE_VALF  ((float)INFINITY)
+#define HUGE_VALL  ((long double)INFINITY)
+#define NAN        ((float)(INFINITY * 0.0F))
+
+#define isnan _isnan
+
+#endif
+
 void* real_malloc(size_t size)
 {
     return malloc(size);
@@ -255,11 +285,12 @@ TEST_SUITE_CLEANUP(b)
         TEST_FUNCTION(strcat_s_With_Unterminated_Destination_Fails)
         {
             // arrange
+			size_t i;
             char dstString[128];
             size_t dstSizeInBytes = sizeof(dstString);
             char srcString[] = "Source";
             int result;
-            for (size_t i = 0; i < dstSizeInBytes; i++)
+            for (i = 0; i < dstSizeInBytes; i++)
             {
                 dstString[i] = 'z';
             }
@@ -2072,6 +2103,7 @@ TEST_SUITE_CLEANUP(b)
             const char* subjectStr = "2.225073858507201e-308";
             char* endptr;
             long double result;
+			long double significant;
 
             long double maxExpectedSignificant = 2.225073858507202;
             long double minExpectedSignificant = 2.225073858507200;
@@ -2079,7 +2111,7 @@ TEST_SUITE_CLEANUP(b)
 
             // act
             result = strtold_s(subjectStr, &endptr);
-            long double significant = result*1e308;
+            significant = result*1e308;
 
             // assert
             ASSERT_ARE_EQUAL(int, 0, errno);
@@ -2095,6 +2127,7 @@ TEST_SUITE_CLEANUP(b)
             const char* subjectStr = "1.797693134862315e+308";
             char* endptr;
             long double result;
+			long double significant;
 
             long double maxExpectedSignificant = 1.797693134862316;
             long double minExpectedSignificant = 1.797693134862314;
@@ -2102,7 +2135,7 @@ TEST_SUITE_CLEANUP(b)
 
             // act
             result = strtold_s(subjectStr, &endptr);
-            long double significant = result*1e-308;
+            significant = result*1e-308;
 
             // assert
             ASSERT_ARE_EQUAL(int, 0, errno);
@@ -2118,6 +2151,7 @@ TEST_SUITE_CLEANUP(b)
             const char* subjectStr = "-1.797693134862315e+308";
             char* endptr;
             long double result;
+			long double significant;
 
             long double maxExpectedSignificant = -1.797693134862314;
             long double minExpectedSignificant = -1.797693134862316;
@@ -2125,7 +2159,7 @@ TEST_SUITE_CLEANUP(b)
 
             // act
             result = strtold_s(subjectStr, &endptr);
-            long double significant = result*1e-308;
+            significant = result*1e-308;
 
             // assert
             ASSERT_ARE_EQUAL(int, 0, errno);
@@ -2231,7 +2265,7 @@ TEST_SUITE_CLEANUP(b)
 
             // assert
             ASSERT_ARE_EQUAL(char_ptr, "NaN(1234)", subjectStr);
-            ASSERT_IS_TRUE(isnan(result));
+            ASSERT_IS_TRUE(isnan((double)result));
             ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
         }
 
@@ -2432,11 +2466,12 @@ TEST_SUITE_CLEANUP(b)
             while (toBeConverted <= (UINT_MAX / 10))
             {
                 ///arrange
+				int result;
                 destinationSize++;
                 toBeConverted *= 10;
 
                 ///act
-                int result = unsignedIntToString(destination, destinationSize, toBeConverted);
+                result = unsignedIntToString(destination, destinationSize, toBeConverted);
 
                 ///assert
                 ASSERT_ARE_NOT_EQUAL(int, 0, result);
@@ -2470,13 +2505,13 @@ TEST_SUITE_CLEANUP(b)
             for (i = 0; i<sizeof(interestingUnsignedIntNumbersToBeConverted) / sizeof(interestingUnsignedIntNumbersToBeConverted[0]); i++)
             {
                 ///act
+                unsigned int valueFromString = 0;
+                size_t pos = 0;
                 int result = unsignedIntToString(destination, 1000, interestingUnsignedIntNumbersToBeConverted[i]);
 
                 ///assert
                 ASSERT_ARE_EQUAL(int, 0, result);
                 
-                unsigned int valueFromString = 0;
-                size_t pos = 0;
                 while (destination[pos] != '\0')
                 {
                     if (valueFromString > (UINT_MAX / 10))
@@ -2508,17 +2543,18 @@ TEST_SUITE_CLEANUP(b)
             while (toBeConverted <= (UINT_MAX / 10))
             {
                 ///arrange
+				int result;
+                unsigned int valueFromString = 0;
+                size_t pos = 0;
                 destinationSize++;
                 toBeConverted *= 10;
 
                 ///act
-                int result = unsignedIntToString(destination, destinationSize, toBeConverted);
+                result = unsignedIntToString(destination, destinationSize, toBeConverted);
 
                 ///assert
                 ASSERT_ARE_EQUAL(int, 0, result);
 
-                unsigned int valueFromString = 0;
-                size_t pos = 0;
                 while (destination[pos] != '\0')
                 {
                     if (valueFromString > (UINT_MAX / 10))
@@ -2578,11 +2614,12 @@ TEST_SUITE_CLEANUP(b)
             while (toBeConverted <= (UINT_MAX / 10))
             {
                 ///arrange
+				int result;
                 destinationSize++;
                 toBeConverted *= 10;
 
                 ///act
-                int result = size_tToString(destination, destinationSize, toBeConverted);
+                result = size_tToString(destination, destinationSize, toBeConverted);
 
                 ///assert
                 ASSERT_ARE_NOT_EQUAL(int, 0, result);
@@ -2616,13 +2653,13 @@ TEST_SUITE_CLEANUP(b)
             for (i = 0; i<sizeof(interestingSize_tNumbersToBeConverted) / sizeof(interestingSize_tNumbersToBeConverted[0]); i++)
             {
                 ///act
+                size_t valueFromString = 0;
+                size_t pos = 0;
                 int result = size_tToString(destination, 1000, interestingSize_tNumbersToBeConverted[i]);
 
                 ///assert
                 ASSERT_ARE_EQUAL(int, 0, result);
 
-                size_t valueFromString = 0;
-                size_t pos = 0;
                 while (destination[pos] != '\0')
                 {
                     if (valueFromString > (SIZE_MAX / 10))
@@ -2654,17 +2691,18 @@ TEST_SUITE_CLEANUP(b)
             while (toBeConverted <= (SIZE_MAX / 10))
             {
                 ///arrange
+				int result;
+                size_t valueFromString = 0;
+                size_t pos = 0;
                 destinationSize++;
                 toBeConverted *= 10;
 
                 ///act
-                int result = size_tToString(destination, destinationSize, toBeConverted);
+                result = size_tToString(destination, destinationSize, toBeConverted);
 
                 ///assert
                 ASSERT_ARE_EQUAL(int, 0, result);
 
-                size_t valueFromString = 0;
-                size_t pos = 0;
                 while (destination[pos] != '\0')
                 {
                     if (valueFromString > (SIZE_MAX / 10))
