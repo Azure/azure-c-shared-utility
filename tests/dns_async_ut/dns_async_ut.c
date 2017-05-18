@@ -219,12 +219,13 @@ BEGIN_TEST_SUITE(dns_async_ut)
     TEST_FUNCTION(dns_async__is_complete_yes__succeeds)
     {
         ///arrange
+		bool result;
         DNS_ASYNC_HANDLE dns = dns_async_create("fake.com", NULL);
         umock_c_reset_all_calls();
         STRICT_EXPECTED_CALL(getaddrinfo(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
 
         ///act
-        bool result = dns_async_is_lookup_complete(dns);
+        result = dns_async_is_lookup_complete(dns);
 
         ///assert
         ASSERT_IS_TRUE_WITH_MSG(result, "Unexpected non-completion");
@@ -237,14 +238,16 @@ BEGIN_TEST_SUITE(dns_async_ut)
     TEST_FUNCTION(dns_async__dns_async_get_ipv4__succeeds)
     {
         ///arrange
+		bool result;
+		uint32_t ipv4;
         DNS_ASYNC_HANDLE dns = dns_async_create("fake.com", NULL);
         umock_c_reset_all_calls();
         STRICT_EXPECTED_CALL(getaddrinfo(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
-        bool result = dns_async_is_lookup_complete(dns);
+        result = dns_async_is_lookup_complete(dns);
         ASSERT_IS_TRUE_WITH_MSG(result, "Unexpected non-completion");
 
         ///act
-        uint32_t ipv4 = dns_async_get_ipv4(dns);
+        ipv4 = dns_async_get_ipv4(dns);
 
         ///assert
         ASSERT_ARE_EQUAL_WITH_MSG(uint32_t, FAKE_GOOD_IP_ADDR, ipv4, "Unexpected IP");
@@ -257,12 +260,13 @@ BEGIN_TEST_SUITE(dns_async_ut)
     TEST_FUNCTION(dns_async__is_complete_yes_after_failure__fails)
     {
         ///arrange
+		bool result;
         DNS_ASYNC_HANDLE dns = dns_async_create("fake.com", NULL);
         umock_c_reset_all_calls();
         STRICT_EXPECTED_CALL(getaddrinfo(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG)).SetReturn(GETADDRINFO_FAIL);
 
         ///act
-        bool result = dns_async_is_lookup_complete(dns);
+        result = dns_async_is_lookup_complete(dns);
 
         ///assert
         ASSERT_IS_TRUE_WITH_MSG(result, "Unexpected non-completion");
@@ -275,14 +279,16 @@ BEGIN_TEST_SUITE(dns_async_ut)
     TEST_FUNCTION(dns_async__async_get_ipv4__fails)
     {
         ///arrange
+		bool result;
+		uint32_t ipv4;
         DNS_ASYNC_HANDLE dns = dns_async_create("fake.com", NULL);
         umock_c_reset_all_calls();
         STRICT_EXPECTED_CALL(getaddrinfo(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG)).SetReturn(GETADDRINFO_FAIL);
-        bool result = dns_async_is_lookup_complete(dns);
+        result = dns_async_is_lookup_complete(dns);
         ASSERT_IS_TRUE_WITH_MSG(result, "Unexpected non-completion");
 
         ///act
-        uint32_t ipv4 = dns_async_get_ipv4(dns);
+        ipv4 = dns_async_get_ipv4(dns);
 
         ///assert
         ASSERT_ARE_EQUAL_WITH_MSG(uint32_t, 0, ipv4, "Unexpected non-zero IP");
@@ -366,11 +372,12 @@ BEGIN_TEST_SUITE(dns_async_ut)
     TEST_FUNCTION(dns_async__create__success)
     {
         ///arrange
+		DNS_ASYNC_HANDLE result;
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));  // copy hostname
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));  // instance 
 
         ///act
-        DNS_ASYNC_HANDLE result = dns_async_create("fake.com", NULL);
+        result = dns_async_create("fake.com", NULL);
 
         ///assert
         ASSERT_IS_NOT_NULL(result);
@@ -384,6 +391,7 @@ BEGIN_TEST_SUITE(dns_async_ut)
     TEST_FUNCTION(dns_async__create_unhappy_paths__fails)
     {
         ///arrange
+		unsigned int i;
         int negativeTestsInitResult = umock_c_negative_tests_init();
         ASSERT_ARE_EQUAL(int, 0, negativeTestsInitResult);
 
@@ -391,13 +399,15 @@ BEGIN_TEST_SUITE(dns_async_ut)
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));  // instance 
         umock_c_negative_tests_snapshot();
 
-        for (unsigned int i = 0; i < umock_c_negative_tests_call_count(); i++)
+        for (i = 0; i < umock_c_negative_tests_call_count(); i++)
         {
+			DNS_ASYNC_HANDLE result;
+
             umock_c_negative_tests_reset();
             umock_c_negative_tests_fail_call(i);
 
             ///act
-            DNS_ASYNC_HANDLE result = dns_async_create("fake.com", NULL);
+            result = dns_async_create("fake.com", NULL);
 
             ///assert
             ASSERT_IS_NULL(result);

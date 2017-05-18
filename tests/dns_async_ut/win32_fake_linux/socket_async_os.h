@@ -7,10 +7,14 @@
 
 #ifdef __cplusplus
 extern "C" {
+#include <cstdbool>
+#include <cstdint>
+#include <cstddef>
 #endif
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stddef.h>
 
 #define	AF_INET		2
 #define	SOCK_STREAM	1

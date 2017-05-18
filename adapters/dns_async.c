@@ -34,8 +34,8 @@ typedef struct
 DNS_ASYNC_HANDLE dns_async_create(const char* hostname, DNS_ASYNC_OPTIONS* options)
 {
     /* Codes_SRS_DNS_ASYNC_30_012: [ The optional options parameter shall be ignored. ]*/
-    (void)options;
     DNS_ASYNC_INSTANCE* result;
+    (void)options;
     if (hostname == NULL)
     {
         /* Codes_SRS_DNS_ASYNC_30_011: [ If the hostname parameter is NULL, dns_async_create shall log an error and return NULL. ]*/
@@ -53,11 +53,12 @@ DNS_ASYNC_HANDLE dns_async_create(const char* hostname, DNS_ASYNC_OPTIONS* optio
         }
         else
         {
+			int ms_result;
             result->is_complete = false;
             result->is_failed = false;
             result->ip_v4 = 0;
             /* Codes_SRS_DNS_ASYNC_30_010: [ dns_async_create shall make a copy of the hostname parameter to allow immediate deletion by the caller. ]*/
-            int ms_result = mallocAndStrcpy_s(&result->hostname, hostname);
+            ms_result = mallocAndStrcpy_s(&result->hostname, hostname);
             if (ms_result != 0)
             {
                 /* Codes_SRS_DNS_ASYNC_30_014: [ On any failure, dns_async_create shall log an error and return NULL. ]*/
@@ -90,14 +91,15 @@ bool dns_async_is_lookup_complete(DNS_ASYNC_HANDLE dns_in)
         }
         else
         {
-            /* Codes_SRS_DNS_ASYNC_30_021: [ dns_async_is_create_complete shall perform the asynchronous work of DNS lookup and log any errors. ]*/
-            // Only make one attempt at lookup for this
-            // synchronous implementation
-            dns->is_complete = true;
-
             struct addrinfo *addrInfo = NULL;
             struct addrinfo *ptr = NULL;
             struct addrinfo hints;
+			int getAddrResult;
+
+			/* Codes_SRS_DNS_ASYNC_30_021: [ dns_async_is_create_complete shall perform the asynchronous work of DNS lookup and log any errors. ]*/
+            // Only make one attempt at lookup for this
+            // synchronous implementation
+            dns->is_complete = true;
 
             //--------------------------------
             // Setup the hints address info structure
@@ -112,7 +114,7 @@ bool dns_async_is_lookup_complete(DNS_ASYNC_HANDLE dns_in)
             // the result variable will hold a linked list
             // of addrinfo structures containing response
             // information
-            int getAddrResult = getaddrinfo(dns->hostname, NULL, &hints, &addrInfo);
+            getAddrResult = getaddrinfo(dns->hostname, NULL, &hints, &addrInfo);
             if (getAddrResult == 0)
             {
                 // If we find the AF_INET address, use it as the return value
