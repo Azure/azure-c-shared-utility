@@ -231,6 +231,7 @@ static void signal_callback(int signum)
     LogError("Socket received signal %d.", signum);
 }
 
+#ifndef __APPLE__
 static void destroy_network_interface_descriptions(NETWORK_INTERFACE_DESCRIPTION* nid)
 {
     if (nid != NULL)
@@ -445,6 +446,7 @@ static int set_target_network_interface(int socket, char* mac_address)
 
     return result;
 }
+#endif //__APPLE__
 
 CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters)
 {
@@ -589,6 +591,7 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
                 LogError("Failure: socket create failure %d.", socket_io_instance->socket);
                 result = __FAILURE__;
             }
+#ifndef __APPLE__
             else if (socket_io_instance->target_mac_address != NULL &&
                      set_target_network_interface(socket_io_instance->socket, socket_io_instance->target_mac_address) != 0)
             {
@@ -597,6 +600,7 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
                 socket_io_instance->socket = INVALID_SOCKET;
                 result = __FAILURE__;
             }
+#endif //__APPLE__
             else
             {
                 struct addrinfo addrHint = { 0 };
@@ -981,6 +985,10 @@ int socketio_setoption(CONCRETE_IO_HANDLE socket_io, const char* optionName, con
         }
         else if (strcmp(optionName, OPTION_NET_INT_MAC_ADDRESS) == 0)
         {
+#ifdef __APPLE__
+            LogError("option not supported.");
+            result = __FAILURE__;
+#else
             if (strlen(value) == 0)
             {
                 LogError("option value must be a valid mac address");
@@ -1003,6 +1011,7 @@ int socketio_setoption(CONCRETE_IO_HANDLE socket_io, const char* optionName, con
                 strtoup(socket_io_instance->target_mac_address);
                 result = 0;
             }
+#endif
         }
         else
         {
