@@ -9,6 +9,10 @@
 #include "ESP8266WiFi.h"
 #include "WiFiClientSecure.h"
 static WiFiClientSecure sslClient; // for ESP8266
+#elif ARDUINO_ARCH_ESP32
+#include "WiFi.h"
+#include "WiFiClientSecure.h"
+static WiFiClientSecure sslClient; // for ESP32
 #elif ARDUINO_SAMD_FEATHER_M0
 #include "Adafruit_WINC1500.h"
 #include "Adafruit_WINC1500Client.h"
