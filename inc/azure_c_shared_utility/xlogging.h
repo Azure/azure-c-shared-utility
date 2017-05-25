@@ -6,6 +6,7 @@
 
 #ifdef __cplusplus
 #include <cstdio>
+extern "C" {
 #else
 #include <stdio.h>
 #endif /* __cplusplus */
@@ -155,10 +156,6 @@ extern LOGGER_LOG_GETLASTERROR xlogging_get_log_function_GetLastError(void);
 #else
 #define LogError(FORMAT, ...) do{ LOG(AZ_LOG_ERROR, LOG_LINE, FORMAT, ##__VA_ARGS__); }while((void)0,0)
 #endif
-
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
 
 extern void xlogging_set_log_function(LOGGER_LOG log_function);
 extern LOGGER_LOG xlogging_get_log_function(void);
