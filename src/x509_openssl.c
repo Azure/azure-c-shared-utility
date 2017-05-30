@@ -14,6 +14,7 @@ void log_ERR_get_error(const char* message)
 {
     char buf[128];
     unsigned long error;
+	int i;
 
     if (message != NULL)
     {
@@ -22,7 +23,7 @@ void log_ERR_get_error(const char* message)
 
     error = ERR_get_error();
 
-    for (int i = 0; 0 != error; i++)
+    for (i = 0; 0 != error; i++)
     {
         LogError("  [%d] %s", i, ERR_error_string(error, buf));
         error = ERR_get_error();
@@ -59,12 +60,12 @@ static int load_certificate_chain(SSL_CTX* ssl_ctx, const char* ecc_cert)
             }
             else
             {
-                result = 0;
+                X509* ca_chain;
+
+				result = 0;
                 // If we could set up our certificate, now proceed to the CA
                 // certificates.
                 
-                X509* ca_chain;
-
                 /* Codes_SRS_X509_OPENSSL_07_006: [ If successful x509_openssl_add_ecc_credentials shall to import each certificate in the cert chain. ] */
                 if (ssl_ctx->extra_certs != NULL)
                 {

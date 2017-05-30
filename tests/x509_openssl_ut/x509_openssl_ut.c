@@ -340,6 +340,7 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
         BIO* privatekey;
         X509* certificateAsX509;
         RSA* privatekeyasRSA;
+		int result;
         STRICT_EXPECTED_CALL(BIO_new_mem_buf(certificateText, -1))
             .CaptureReturn(&certificate);
         STRICT_EXPECTED_CALL(PEM_read_bio_X509(VALIDATED_PTR_ARG, NULL, 0, NULL))
@@ -370,7 +371,7 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
             .ValidateArgumentValue_a(&certificate);
 
         ///act
-        int result = x509_openssl_add_credentials(TEST_SSL_CTX, certificateText, privatekeyText);
+        result = x509_openssl_add_credentials(TEST_SSL_CTX, certificateText, privatekeyText);
 
         ///assert
         ASSERT_ARE_EQUAL(int, 0, result);
@@ -382,10 +383,7 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
     /*Tests_SRS_X509_OPENSSL_02_009: [ Otherwise x509_openssl_add_credentials shall fail and return a non-zero number. ]*/
     TEST_FUNCTION(x509_openssl_add_credentials_unhappy_paths)
     {
-
         ///arrange
-        (void)umock_c_negative_tests_init();
-
         size_t calls_that_cannot_fail[] =
         {
             6, /*RSA_free*/
@@ -393,14 +391,18 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
             8, /*X509_free*/
             9 /*BIO_free*/
         };
-
         char* certificateText = (char*)"certificate";
         char* privatekeyText = (char*)"privatekeyText";
+
         BIO* certificate;
         BIO* privatekey;
         X509* certificateAsX509;
         RSA* privatekeyasRSA;
-        STRICT_EXPECTED_CALL(BIO_new_mem_buf(certificateText, -1))
+		size_t i;
+
+        (void)umock_c_negative_tests_init();
+
+		STRICT_EXPECTED_CALL(BIO_new_mem_buf(certificateText, -1))
             .CaptureReturn(&certificate);
         STRICT_EXPECTED_CALL(PEM_read_bio_X509(VALIDATED_PTR_ARG, NULL, 0, NULL))
             .ValidateArgumentValue_bp(&certificate)
@@ -433,7 +435,7 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
 
         ///act
 
-        for (size_t i = 0; i < umock_c_negative_tests_call_count(); i++)
+        for (i = 0; i < umock_c_negative_tests_call_count(); i++)
         {
             size_t j;
             umock_c_negative_tests_reset();
@@ -447,12 +449,13 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
             if (j == sizeof(calls_that_cannot_fail) / sizeof(calls_that_cannot_fail[0]))
             {
 
-                umock_c_negative_tests_fail_call(i);
                 char temp_str[128];
+				int result;
+                umock_c_negative_tests_fail_call(i);
                 sprintf(temp_str, "On failed call %zu", i);
 
                 ///act
-                int result = x509_openssl_add_credentials(TEST_SSL_CTX, certificateText, privatekeyText);
+                result = x509_openssl_add_credentials(TEST_SSL_CTX, certificateText, privatekeyText);
 
                 ///assert
                 ASSERT_ARE_NOT_EQUAL_WITH_MSG(int, 0, result, temp_str);
@@ -500,6 +503,7 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
     TEST_FUNCTION(x509_openssl_add_certificates_1_certificate_happy_path)
     {
         ///arrange
+		int result;
 
         STRICT_EXPECTED_CALL(SSL_CTX_get_cert_store(TEST_SSL_CTX));
         STRICT_EXPECTED_CALL(BIO_s_mem());
@@ -513,7 +517,7 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
             .SetReturn(NULL);
 
         ///act
-        int result = x509_openssl_add_certificates(TEST_SSL_CTX, TEST_CERTIFICATE_1);
+        result = x509_openssl_add_certificates(TEST_SSL_CTX, TEST_CERTIFICATE_1);
 
         ///assert
         ASSERT_ARE_EQUAL(int, 0, result);
@@ -542,11 +546,12 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
     TEST_FUNCTION(x509_openssl_add_certificates_1_certificate_which_exists_happy_path)
     {
         ///arrange
+		int result;
 
         x509_openssl_add_certificates_1_certificate_which_exists_inert_path();
 
         ///act
-        int result = x509_openssl_add_certificates(TEST_SSL_CTX, TEST_CERTIFICATE_1);
+        result = x509_openssl_add_certificates(TEST_SSL_CTX, TEST_CERTIFICATE_1);
 
         ///assert
         ASSERT_ARE_EQUAL(int, 0, result);
@@ -558,13 +563,16 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
     TEST_FUNCTION(x509_openssl_add_certificates_1_certificate_which_exists_unhappy_paths)
     {
         ///arrange
+		size_t i;
 
         umock_c_negative_tests_init();
         x509_openssl_add_certificates_1_certificate_which_exists_inert_path();
         umock_c_negative_tests_snapshot();
 
-        for (size_t i = 0; i < umock_c_negative_tests_call_count(); i++)
+        for (i = 0; i < umock_c_negative_tests_call_count(); i++)
         {
+			int result;
+
             if (
                 (i == 4) || /*PEM_read_bio_X509*/
                 (i == 5)|| /*X509_STORE_add_cert*/
@@ -579,7 +587,7 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
             umock_c_negative_tests_fail_call(i);
 
             ///act
-            int result = x509_openssl_add_certificates(TEST_SSL_CTX, TEST_CERTIFICATE_1);
+            result = x509_openssl_add_certificates(TEST_SSL_CTX, TEST_CERTIFICATE_1);
 
             ///assert
             ASSERT_ARE_NOT_EQUAL(int, 0, result);
@@ -639,11 +647,13 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
     TEST_FUNCTION(x509_openssl_add_ecc_credentials_success)
     {
         //arrange
+		int result;
+
         setup_load_alias_key_cert_mocks();
         setup_load_certificate_chain_mocks();
 
         //act
-        int result = x509_openssl_add_ecc_credentials(&TEST_SSL_CTX_STRUCTURE, TEST_ECC_CERTIFICATE, TEST_ECC_ALIAS_KEY);
+        result = x509_openssl_add_ecc_credentials(&TEST_SSL_CTX_STRUCTURE, TEST_ECC_CERTIFICATE, TEST_ECC_ALIAS_KEY);
 
         //assert
         ASSERT_ARE_EQUAL(int, 0, result);

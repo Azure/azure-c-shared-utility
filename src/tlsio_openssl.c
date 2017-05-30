@@ -352,6 +352,7 @@ static void log_ERR_get_error(const char* message)
 {
     char buf[128];
     unsigned long error;
+	int i;
     
     if (message != NULL)
     {
@@ -360,7 +361,7 @@ static void log_ERR_get_error(const char* message)
     
     error = ERR_get_error();
     
-    for(int i = 0; 0 != error; i++)
+    for(i = 0; 0 != error; i++)
     {
         LogError("  [%d] %s", i, ERR_error_string(error, buf));
         error = ERR_get_error();
@@ -439,9 +440,10 @@ static void openssl_static_locks_uninstall(void)
 {
     if (openssl_locks != NULL)
     {
+		int i;
         CRYPTO_set_locking_callback(NULL);
         
-        for(int i = 0; i < CRYPTO_num_locks(); i++)
+        for(i = 0; i < CRYPTO_num_locks(); i++)
         {
             if (openssl_locks[i] != NULL)
             {
@@ -490,7 +492,8 @@ static int openssl_static_locks_install(void)
             
             if (i != CRYPTO_num_locks())
             {
-                for (int j = 0; j < i; j++)
+				int j;
+                for (j = 0; j < i; j++)
                 {
                     Lock_Deinit(openssl_locks[j]);
                 }
@@ -551,7 +554,7 @@ static int write_outgoing_bytes(TLS_IO_INSTANCE* tls_io_instance, ON_SEND_COMPLE
         }
         else
         {
-            if (BIO_read(tls_io_instance->out_bio, bytes_to_send, (int)pending) != pending)
+            if (BIO_read(tls_io_instance->out_bio, bytes_to_send, (int)pending) != (int)pending)
             {
                 log_ERR_get_error("BIO_read not in pending state.");
                 result = __FAILURE__;
@@ -1260,6 +1263,7 @@ int tlsio_openssl_send(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t siz
         }
         else
         {
+			int res;
             if (tls_io_instance->ssl == NULL)
             {
                 LogError("SSL channel closed in tlsio_openssl_send.");
@@ -1267,7 +1271,7 @@ int tlsio_openssl_send(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t siz
                 return result;
             }
 
-            int res = SSL_write(tls_io_instance->ssl, buffer, (int)size);
+            res = SSL_write(tls_io_instance->ssl, buffer, (int)size);
             if (res != (int)size)
             {
                 log_ERR_get_error("SSL_write error.");
@@ -1329,6 +1333,7 @@ int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
         if (strcmp("TrustedCerts", optionName) == 0)
         {
             const char* cert = (const char*)value;
+			size_t len;
 
             if (tls_io_instance->certificate != NULL)
             {
@@ -1337,7 +1342,7 @@ int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
             }
 
             // Store the certificate
-            size_t len = strlen(cert);
+            len = strlen(cert);
             tls_io_instance->certificate = malloc(len+1);
             if (tls_io_instance->certificate == NULL)
             {
