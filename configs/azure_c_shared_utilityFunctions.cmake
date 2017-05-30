@@ -392,7 +392,7 @@ function(c_linux_unittests_add_exe whatIsBuilding folder)
 
     endforeach()
 
-    target_link_libraries(${whatIsBuilding}_exe umock_c ctest)
+    target_link_libraries(${whatIsBuilding}_exe umock_c ctest m)
 
     add_test(NAME ${whatIsBuilding} COMMAND $<TARGET_FILE:${whatIsBuilding}_exe>)
 
