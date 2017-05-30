@@ -253,10 +253,16 @@ function(c_windows_unittests_add_dll whatIsBuilding folder)
 
     set_target_properties(${whatIsBuilding}_dll
                PROPERTIES
-               FOLDER ${folder} )
+               FOLDER ${folder})
 
-    target_include_directories(${whatIsBuilding}_dll PUBLIC ${sharedutil_include_directories} $ENV{VCInstallDir}UnitTest/include)
-    target_compile_definitions(${whatIsBuilding}_dll PUBLIC -DCPP_UNITTEST)
+    set_source_files_properties(${${whatIsBuilding}_c_files} ${logging_files}
+               PROPERTIES
+               COMPILE_FLAGS /TC)
+
+    set_source_files_properties(${${whatIsBuilding}_cpp_files}
+               PROPERTIES
+               COMPILE_FLAGS /TP)
+
     target_link_libraries(${whatIsBuilding}_dll umock_c ctest testrunnerswitcher ${whatIsBuilding}_testsonly_lib )
 
     set(PARSING_ADDITIONAL_LIBS OFF)
