@@ -892,7 +892,7 @@ static HTTPAPI_RESULT SendContentToXIO(HTTP_HANDLE_DATA* http_instance, const un
 }
 
 /*Codes_SRS_HTTPAPI_COMPACT_21_030: [ At the end of the transmission, the HTTPAPI_ExecuteRequest shall receive the response from the host. ]*/
-static HTTPAPI_RESULT RecieveHeaderFromXIO(HTTP_HANDLE_DATA* http_instance, unsigned int* statusCode)
+static HTTPAPI_RESULT ReceiveHeaderFromXIO(HTTP_HANDLE_DATA* http_instance, unsigned int* statusCode)
 {
     HTTPAPI_RESULT result;
     char    buf[TEMP_BUFFER_SIZE];
@@ -911,7 +911,7 @@ static HTTPAPI_RESULT RecieveHeaderFromXIO(HTTP_HANDLE_DATA* http_instance, unsi
     else if (ParseHttpResponse(buf, &ret) != 1)
     {
         //Cannot match string, error
-        /*Codes_SRS_HTTPAPI_COMPACT_21_055: [ If the HTTPAPI_ExecuteRequest cannot parser the recived message, it shall return HTTPAPI_RECEIVE_RESPONSE_FAILED. ]*/
+        /*Codes_SRS_HTTPAPI_COMPACT_21_055: [ If the HTTPAPI_ExecuteRequest cannot parser the received message, it shall return HTTPAPI_RECEIVE_RESPONSE_FAILED. ]*/
         LogInfo("Not a correct HTTP answer");
         result = HTTPAPI_RECEIVE_RESPONSE_FAILED;
     }
@@ -931,7 +931,7 @@ static HTTPAPI_RESULT RecieveHeaderFromXIO(HTTP_HANDLE_DATA* http_instance, unsi
     return result;
 }
 
-static HTTPAPI_RESULT RecieveContentInfoFromXIO(HTTP_HANDLE_DATA* http_instance, HTTP_HEADERS_HANDLE responseHeadersHandle, size_t* bodyLength, bool* chunked)
+static HTTPAPI_RESULT ReceiveContentInfoFromXIO(HTTP_HANDLE_DATA* http_instance, HTTP_HEADERS_HANDLE responseHeadersHandle, size_t* bodyLength, bool* chunked)
 {
     HTTPAPI_RESULT result;
     char    buf[TEMP_BUFFER_SIZE];
@@ -1084,7 +1084,7 @@ static HTTPAPI_RESULT ReadHTTPResponseBodyFromXIO(HTTP_HANDLE_DATA* http_instanc
             else if (ParseStringToHexadecimal(buf, &chunkSize) != 1)     // chunkSize is length of next line (/r/n is not counted)
             {
                 //Cannot match string, error
-                /*Codes_SRS_HTTPAPI_COMPACT_21_055: [ If the HTTPAPI_ExecuteRequest cannot parser the recived message, it shall return HTTPAPI_RECEIVE_RESPONSE_FAILED. ]*/
+                /*Codes_SRS_HTTPAPI_COMPACT_21_055: [ If the HTTPAPI_ExecuteRequest cannot parser the received message, it shall return HTTPAPI_RECEIVE_RESPONSE_FAILED. ]*/
                 result = HTTPAPI_RECEIVE_RESPONSE_FAILED;
             }
             else if (chunkSize == 0)
@@ -1217,17 +1217,17 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
         LogError("Send content to HTTP failed (result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
     }
     /*Codes_SRS_HTTPAPI_COMPACT_21_030: [ At the end of the transmission, the HTTPAPI_ExecuteRequest shall receive the response from the host. ]*/
-    /*Codes_SRS_HTTPAPI_COMPACT_21_073: [ The message recived by the HTTPAPI_ExecuteRequest shall starts with a valid header. ]*/
-    else if ((result = RecieveHeaderFromXIO(http_instance, statusCode)) != HTTPAPI_OK)
+    /*Codes_SRS_HTTPAPI_COMPACT_21_073: [ The message received by the HTTPAPI_ExecuteRequest shall starts with a valid header. ]*/
+    else if ((result = ReceiveHeaderFromXIO(http_instance, statusCode)) != HTTPAPI_OK)
     {
         LogError("Receive header from HTTP failed (result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
     }
-    /*Codes_SRS_HTTPAPI_COMPACT_21_074: [ After the header, the message recieved by the HTTPAPI_ExecuteRequest can contain addition information about the content. ]*/
-    else if ((result = RecieveContentInfoFromXIO(http_instance, responseHeadersHandle, &bodyLength, &chunked)) != HTTPAPI_OK)
+    /*Codes_SRS_HTTPAPI_COMPACT_21_074: [ After the header, the message received by the HTTPAPI_ExecuteRequest can contain addition information about the content. ]*/
+    else if ((result = ReceiveContentInfoFromXIO(http_instance, responseHeadersHandle, &bodyLength, &chunked)) != HTTPAPI_OK)
     {
         LogError("Receive content information from HTTP failed (result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
     }
-    /*Codes_SRS_HTTPAPI_COMPACT_21_075: [ The message recieved by the HTTPAPI_ExecuteRequest can contain a body with the message content. ]*/
+    /*Codes_SRS_HTTPAPI_COMPACT_21_075: [ The message received by the HTTPAPI_ExecuteRequest can contain a body with the message content. ]*/
     else if ((result = ReadHTTPResponseBodyFromXIO(http_instance, bodyLength, chunked, responseContent)) != HTTPAPI_OK)
     {
         LogError("Read HTTP response body from HTTP failed (result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
@@ -1240,8 +1240,8 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
 }
 
 /*Codes_SRS_HTTPAPI_COMPACT_21_056: [ The HTTPAPI_SetOption shall change the HTTP options. ]*/
-/*Codes_SRS_HTTPAPI_COMPACT_21_057: [ The HTTPAPI_SetOption shall recieve a handle that identiry the HTTP connection. ]*/
-/*Codes_SRS_HTTPAPI_COMPACT_21_058: [ The HTTPAPI_SetOption shall recieve the option as a pair optionName/value. ]*/
+/*Codes_SRS_HTTPAPI_COMPACT_21_057: [ The HTTPAPI_SetOption shall receive a handle that identiry the HTTP connection. ]*/
+/*Codes_SRS_HTTPAPI_COMPACT_21_058: [ The HTTPAPI_SetOption shall receive the option as a pair optionName/value. ]*/
 HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, const void* value)
 {
     HTTPAPI_RESULT result;
