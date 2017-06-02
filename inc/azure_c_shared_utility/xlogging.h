@@ -4,15 +4,23 @@
 #ifndef XLOGGING_H
 #define XLOGGING_H
 
+#include "azure_c_shared_utility/agenttime.h"
+#include "azure_c_shared_utility/optimize_size.h"
+
+#if defined(ESP8266_RTOS)
+#include "c_types.h"
+#endif
+
+#if defined(ARDUINO_ARCH_ESP8266)
+#include "esp8266/azcpgmspace.h"
+#endif
+
 #ifdef __cplusplus
 #include <cstdio>
 extern "C" {
 #else
 #include <stdio.h>
 #endif /* __cplusplus */
-
-#include "azure_c_shared_utility/agenttime.h"
-#include "azure_c_shared_utility/optimize_size.h"
 
 #ifdef TIZENRT
 #undef LOG_INFO
@@ -56,7 +64,6 @@ typedef void(*LOGGER_LOG_GETLASTERROR)(const char* file, const char* func, int l
 #define UNUSED(x) (void)(x)
 
 #elif defined(ESP8266_RTOS)
-#include "c_types.h"
 #define LogInfo(FORMAT, ...) do {    \
         static const char flash_str[] ICACHE_RODATA_ATTR STORE_ATTR = FORMAT;  \
         printf(flash_str, ##__VA_ARGS__);   \
@@ -84,7 +91,6 @@ const char* __localFORMAT = PSTR(FORMAT);
 On the other hand, vsprintf does not support the pinned 'format' and os_printf does not work with va_list,
 so we compacted the log in the macro LogInfo.
 */
-#include "esp8266/azcpgmspace.h"
 #define LOG(log_category, log_options, FORMAT, ...) { \
         const char* __localFORMAT = PSTR(FORMAT); \
         os_printf(__localFORMAT, ##__VA_ARGS__); \
@@ -160,16 +166,8 @@ extern LOGGER_LOG_GETLASTERROR xlogging_get_log_function_GetLastError(void);
 extern void xlogging_set_log_function(LOGGER_LOG log_function);
 extern LOGGER_LOG xlogging_get_log_function(void);
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
-
 #endif /* ARDUINO_ARCH_ESP8266 */
 
-
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
 
     /**
      * @brief   Print the memory content byte pre byte in hexadecimal and as a char it the byte correspond to any printable ASCII chars.
@@ -186,7 +184,7 @@ extern "C" {
     extern void xlogging_dump_buffer(const void* buf, size_t size);
 
 #ifdef __cplusplus
-}
+}   // extern "C"
 #endif /* __cplusplus */
 
 #endif /* XLOGGING_H */
