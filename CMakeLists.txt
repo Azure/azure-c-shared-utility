@@ -331,6 +331,12 @@ ${THREAD_C_FILE}
 ${UNIQUEID_C_FILE}
 )
 
+if(UNIX) #LINUX OR APPLE
+    set(source_c_files ${source_c_files}
+        ./adapters/linux_time.c
+    )
+endif()
+
 if(${use_http})
     set(source_c_files ${source_c_files}
         ./src/httpapiex.c
@@ -413,6 +419,12 @@ set(source_h_files
 ./inc/azure_c_shared_utility/tlsio.h
 ./inc/azure_c_shared_utility/optionhandler.h
 )
+
+if(UNIX) #LINUX OR APPLE
+    set(source_h_files ${source_h_files}
+        ./adapters/linux_time.h
+    )
+endif()
 
 if(${use_wsio})
     set(source_h_files ${source_h_files}

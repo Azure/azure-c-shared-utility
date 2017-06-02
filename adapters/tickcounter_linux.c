@@ -4,12 +4,12 @@
 #include <stdlib.h>
 #include "azure_c_shared_utility/gballoc.h"
 #include <stdint.h>
-#include <time.h>
 #include "azure_c_shared_utility/tickcounter.h"
 #include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/xlogging.h"
+#include "linux_time.h"
 
-#define INVALID_TIME_VALUE      (time_t)(-1)
+
 typedef struct TICK_COUNTER_INSTANCE_TAG
 {
     time_t init_time_value;
@@ -21,7 +21,9 @@ TICK_COUNTER_HANDLE tickcounter_create(void)
     TICK_COUNTER_INSTANCE* result = (TICK_COUNTER_INSTANCE*)malloc(sizeof(TICK_COUNTER_INSTANCE));
     if (result != NULL)
     {
-        result->init_time_value = time(NULL);
+        set_time_basis();
+
+        result->init_time_value = get_time_s();
         if (result->init_time_value == INVALID_TIME_VALUE)
         {
             LogError("tickcounter failed: time return INVALID_TIME.");
@@ -55,7 +57,7 @@ int tickcounter_get_current_ms(TICK_COUNTER_HANDLE tick_counter, tickcounter_ms_
     }
     else
     {
-        time_t time_value = time(NULL);
+        time_t time_value = get_time_s();
         if (time_value == INVALID_TIME_VALUE)
         {
             result = __FAILURE__;

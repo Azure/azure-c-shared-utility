@@ -14,8 +14,14 @@ set(${theseTestsName}_test_files
 set(${theseTestsName}_c_files
 	${CONDITION_C_FILE}
 	${LOCK_C_FILE}	
-    ${THREAD_C_FILE}
+	${THREAD_C_FILE}
 )
+
+if(UNIX) # linux & apple
+    set(${theseTestsName}_c_files ${${theseTestsName}_c_files}
+        ../../adapters/linux_time.c
+    )
+endif()
 
 set(${theseTestsName}_h_files
 )

@@ -8,40 +8,10 @@
 #include <errno.h>
 #include <pthread.h>
 #include "azure_c_shared_utility/gballoc.h"
-#include "pthread.h"
 #include "time.h"
-
-#ifdef __MACH__
-#include <mach/clock.h>
-#include <mach/mach.h>
-#endif
+#include "linux_time.h"
 
 DEFINE_ENUM_STRINGS(COND_RESULT, COND_RESULT_VALUES);
-
-#ifndef __MACH__
-clockid_t time_basis = -1;
-#endif
-
-void set_time_basis(void)
-{
-// The time basis depends on what clock is available. Prefer CLOCK_MONOTONIC,
-// then CLOCK_REALTIME, otherwise query the default pthread_condattr_t value 
-// and use that. Note the time basis stuff requires _POSIX_TIMERS [TMR] at a
-// minimum; querying pthread_condattr_t requires _POSIX_CLOCK_SELECTION [CS].
-// OSX has neither so we use a platform-specific clock.
-#ifndef __MACH__
-#if defined(CLOCK_MONOTONIC)
-    time_basis = CLOCK_MONOTONIC;
-#elif defined(CLOCK_REALTIME)
-    time_basis = CLOCK_REALTIME;
-#else
-    pthread_condattr_t cattr;
-    pthread_condattr_init(&cattr);
-    pthread_condattr_getclock(&cattr, &time_basis);
-    pthread_condattr_destroy(&cattr);
-#endif
-#endif
-}
 
 pthread_cond_t* create_cond(void)
 {
@@ -60,31 +30,6 @@ pthread_cond_t* create_cond(void)
     }
 
     return cond;
-}
-
-int get_time_ns(struct timespec* ts)
-{
-    int err;
-
-#ifdef __MACH__
-    clock_serv_t cclock;
-    mach_timespec_t mts;
-    err = host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &cclock);
-    if (!err)
-    {
-        err = clock_get_time(cclock, &mts);
-        mach_port_deallocate(mach_task_self(), cclock);
-
-        if (!err)
-        {
-            ts->tv_sec = mts.tv_sec;
-            ts->tv_nsec = mts.tv_nsec;
-        } 
-    }
-#else
-    err = clock_gettime(time_basis, ts);
-#endif
-    return err;
 }
 
 COND_HANDLE Condition_Init(void)
@@ -119,9 +64,6 @@ COND_RESULT Condition_Post(COND_HANDLE handle)
     return result;
 }
 
-#define NANOSECONDS_IN_1_SECOND 1000000000L
-#define MILLISECONDS_IN_1_SECOND 1000
-#define NANOSECONDS_IN_1_MILLISECOND 1000000L
 COND_RESULT Condition_Wait(COND_HANDLE handle, LOCK_HANDLE lock, int timeout_milliseconds)
 {
     COND_RESULT result;
