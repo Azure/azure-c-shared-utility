@@ -558,7 +558,7 @@ if(WIN32)
 endif()
 
 if(LINUX)
-    target_link_libraries(aziotsharedutil pthread m)
+    target_link_libraries(aziotsharedutil pthread m rt)
     if (NOT ${use_default_uuid})
         target_link_libraries(aziotsharedutil uuid)
     endif()
