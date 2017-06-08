@@ -331,13 +331,13 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
 
 **SRS_HTTPAPI_COMPACT_21_054: [** If Http header maker cannot provide the number of headers, the HTTPAPI_ExecuteRequest shall return HTTPAPI_INVALID_ARG. **]**
 
-**SRS_HTTPAPI_COMPACT_21_055: [** If the HTTPAPI_ExecuteRequest cannot parser the recieved message, it shall return HTTPAPI_RECEIVE_RESPONSE_FAILED. **]**
+**SRS_HTTPAPI_COMPACT_21_055: [** If the HTTPAPI_ExecuteRequest cannot parser the received message, it shall return HTTPAPI_RECEIVE_RESPONSE_FAILED. **]**
 
-**SRS_HTTPAPI_COMPACT_21_073: [** The message recieved by the HTTPAPI_ExecuteRequest shall starts with a valid header. **]**
+**SRS_HTTPAPI_COMPACT_21_073: [** The message received by the HTTPAPI_ExecuteRequest shall starts with a valid header. **]**
 
-**SRS_HTTPAPI_COMPACT_21_074: [** After the header, the message recieved by the HTTPAPI_ExecuteRequest can contain addition information about the content. **]**
+**SRS_HTTPAPI_COMPACT_21_074: [** After the header, the message received by the HTTPAPI_ExecuteRequest can contain addition information about the content. **]**
 
-**SRS_HTTPAPI_COMPACT_21_075: [** The message recieved by the HTTPAPI_ExecuteRequest can contain a body with the message content. **]**
+**SRS_HTTPAPI_COMPACT_21_075: [** The message received by the HTTPAPI_ExecuteRequest can contain a body with the message content. **]**
 
 **SRS_HTTPAPI_COMPACT_21_077: [** The HTTPAPI_ExecuteRequest shall wait, at least, 10 seconds for the SSL open process. **]**
 
