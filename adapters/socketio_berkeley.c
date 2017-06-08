@@ -1,9 +1,20 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+#ifndef _BSD_SOURCE
+#define _BSD_SOURCE
+#define SOCKETIO_BERKELEY_UNDEF_BSD_SOURCE
+#endif
+
 #define _DEFAULT_SOURCE
 #include <net/if.h>
 #undef _DEFAULT_SOURCE
+
+#ifdef SOCKETIO_BERKELEY_UNDEF_BSD_SOURCE
+#undef _BSD_SOURCE
+#undef SOCKETIO_BERKELEY_UNDEF_BSD_SOURCE
+#endif
+
 #include <signal.h>
 #include <stdlib.h>
 #include <stddef.h>
