@@ -166,7 +166,7 @@ static OPTIONHANDLER_HANDLE tlsio_wolfssl_retrieveoptions(CONCRETE_IO_HANDLE tls
                 result = NULL;
             }
             else if (
-                (tls_io_instance->x509privatekey != NULL) &&
+                (tls_io_instance->certificate != NULL) &&
                 (OptionHandler_AddOption(result, "TrustedCerts", tls_io_instance->certificate) != 0)
                 )
             {
