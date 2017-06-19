@@ -7,7 +7,7 @@
 #endif
 
 #define _DEFAULT_SOURCE
-#include <net/if.h>
+//#include <net/if.h>
 #undef _DEFAULT_SOURCE
 
 #ifdef SOCKETIO_BERKELEY_UNDEF_BSD_SOURCE
@@ -24,15 +24,26 @@
 #include "azure_c_shared_utility/socketio.h"
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <sys/select.h>
-#ifdef TIZENRT
+#ifdef TIZENRT_BLAH
 #include <net/lwip/tcp.h>
 #else
-#include <netinet/tcp.h>
+//#include <netinet/tcp.h>
 #endif
+
+
+#ifdef ROY_TESTING_MBED
+#include <sys/select.h>
 #include <netdb.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <sys/ioctl.h>
+#else
+#include "lwip/sockets.h"
+#include "lwip/netdb.h"
+#endif
+
+
+
 #include <errno.h>
 #include "azure_c_shared_utility/singlylinkedlist.h"
 #include "azure_c_shared_utility/gballoc.h"
@@ -40,7 +51,6 @@
 #include "azure_c_shared_utility/optionhandler.h"
 #include "azure_c_shared_utility/shared_util_options.h"
 #include "azure_c_shared_utility/xlogging.h"
-#include <sys/ioctl.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
@@ -98,7 +108,7 @@ typedef struct NETWORK_INTERFACE_DESCRIPTION_TAG
 /*this function will clone an option given by name and value*/
 static void* socketio_CloneOption(const char* name, const void* value)
 {
-    void* result;
+    void* result = 0;
 
     if (name != NULL)
     {
@@ -271,191 +281,9 @@ static void destroy_network_interface_descriptions(NETWORK_INTERFACE_DESCRIPTION
     }
 }
 
-static NETWORK_INTERFACE_DESCRIPTION* create_network_interface_description(struct ifreq *ifr, NETWORK_INTERFACE_DESCRIPTION* previous_nid)
-{
-    NETWORK_INTERFACE_DESCRIPTION* result;
-    
-    if ((result = (NETWORK_INTERFACE_DESCRIPTION*)malloc(sizeof(NETWORK_INTERFACE_DESCRIPTION))) == NULL)
-    {
-        LogError("Failed allocating NETWORK_INTERFACE_DESCRIPTION");
-    }
-    else if ((result->name = (char*)malloc(sizeof(char) * (strlen(ifr->ifr_name) + 1))) == NULL)
-    {
-        LogError("failed setting interface description name (malloc failed)");
-        destroy_network_interface_descriptions(result);
-        result = NULL;
-    }
-    else if (strcpy(result->name, ifr->ifr_name) == NULL)
-    {
-        LogError("failed setting interface description name (strcpy failed)");
-        destroy_network_interface_descriptions(result);
-        result = NULL;
-    }
-    else
-    {
-        char* ip_address;
-        unsigned char* mac = (unsigned char*)ifr->ifr_hwaddr.sa_data;
-
-        if ((result->mac_address = (char*)malloc(sizeof(char) * MAC_ADDRESS_STRING_LENGTH)) == NULL)
-        {
-            LogError("failed formatting mac address (malloc failed)");
-            destroy_network_interface_descriptions(result);
-            result = NULL;
-        }
-        else if (sprintf(result->mac_address, "%02X:%02X:%02X:%02X:%02X:%02X", mac[0],mac[1],mac[2],mac[3],mac[4],mac[5]) <= 0)
-        {
-            LogError("failed formatting mac address (sprintf failed)");
-            destroy_network_interface_descriptions(result);
-            result = NULL;
-        }
-        else if ((ip_address = inet_ntoa(((struct sockaddr_in*)&ifr->ifr_addr)->sin_addr)) == NULL)
-        {
-            LogError("failed setting the ip address (inet_ntoa failed)");
-            destroy_network_interface_descriptions(result);
-            result = NULL;
-        }
-        else if ((result->ip_address = (char*)malloc(sizeof(char) * (strlen(ip_address) + 1))) == NULL)
-        {
-            LogError("failed setting the ip address (malloc failed)");
-            destroy_network_interface_descriptions(result);
-            result = NULL;
-        }
-        else if (strcpy(result->ip_address, ip_address) == NULL)
-        {
-            LogError("failed setting the ip address (strcpy failed)");
-            destroy_network_interface_descriptions(result);
-            result = NULL;
-        }
-        else
-        {
-            result->next = NULL;
-
-            if (previous_nid != NULL)
-            {
-                previous_nid->next = result;
-            }
-        }
-    }
-    
-    return result;
-}
-
-static int get_network_interface_descriptions(int socket, NETWORK_INTERFACE_DESCRIPTION** nid)
-{
-    int result;
-
-    struct ifreq ifr;
-    struct ifconf ifc;
-    char buf[IFREQ_BUFFER_SIZE];
-
-    ifc.ifc_len = sizeof(buf);
-    ifc.ifc_buf = buf;
-
-    if (ioctl(socket, SIOCGIFCONF, &ifc) == -1)
-    {
-        LogError("ioctl failed querying socket (SIOCGIFCONF, errno=%s)", errno);
-        result = __FAILURE__;
-    }
-    else 
-    {
-        NETWORK_INTERFACE_DESCRIPTION* root_nid = NULL;
-        NETWORK_INTERFACE_DESCRIPTION* new_nid = NULL;
-
-        struct ifreq* it = ifc.ifc_req;
-        const struct ifreq* const end = it + (ifc.ifc_len / sizeof(struct ifreq));
-        
-        result = 0;
-
-        for (; it != end; ++it)
-        {
-            strcpy(ifr.ifr_name, it->ifr_name);
-
-            if (ioctl(socket, SIOCGIFFLAGS, &ifr) != 0)
-            {
-                LogError("ioctl failed querying socket (SIOCGIFFLAGS, errno=%d)", errno);
-                result = __FAILURE__;
-                break;
-            }
-            else if (ioctl(socket, SIOCGIFHWADDR, &ifr) != 0)
-            {
-                LogError("ioctl failed querying socket (SIOCGIFHWADDR, errno=%d)", errno);
-                result = __FAILURE__;
-                break;
-            }
-            else if (ioctl(socket, SIOCGIFADDR, &ifr) != 0)
-            {
-                LogError("ioctl failed querying socket (SIOCGIFADDR, errno=%d)", errno);
-                result = __FAILURE__;
-                break;
-            }
-            else if ((new_nid = create_network_interface_description(&ifr, new_nid)) == NULL)
-            {
-                LogError("Failed creating network interface description");
-                result = __FAILURE__;
-                break;    
-            }
-            else if (root_nid == NULL)
-            {
-                root_nid = new_nid;
-            }
-        }
-        
-        if (result == 0)
-        {
-            *nid = root_nid;
-        }
-        else
-        {
-            destroy_network_interface_descriptions(root_nid);
-        }
-    }
-
-    return result;
-}
-
 static int set_target_network_interface(int socket, char* mac_address)
 {
-    int result;
-    NETWORK_INTERFACE_DESCRIPTION* nid;
-
-    if (get_network_interface_descriptions(socket, &nid) != 0)
-    {
-        LogError("Failed getting network interface descriptions");
-        result = __FAILURE__;
-    }
-    else
-    {
-        NETWORK_INTERFACE_DESCRIPTION* current_nid = nid;
-    
-        while(current_nid != NULL)
-        {
-            if (strcmp(mac_address, current_nid->mac_address) == 0)
-            {
-                break;
-            }
-
-            current_nid = current_nid->next;
-        }
-
-        if (current_nid == NULL)
-        {
-            LogError("Did not find a network interface matching MAC ADDRESS");
-            result = __FAILURE__;
-        }
-        else if (setsockopt(socket, SOL_SOCKET, SO_BINDTODEVICE, current_nid->name, strlen(current_nid->name)) != 0)
-        {
-            LogError("setsockopt failed (%d)", errno);
-            result = __FAILURE__;
-        }
-        else
-        {
-            result = 0;
-        }
-        
-        destroy_network_interface_descriptions(nid);
-    }
-
-    return result;
+    return 0;
 }
 #endif //__APPLE__
 
@@ -562,11 +390,12 @@ void socketio_destroy(CONCRETE_IO_HANDLE socket_io)
 
 int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_complete, void* on_io_open_complete_context, ON_BYTES_RECEIVED on_bytes_received, void* on_bytes_received_context, ON_IO_ERROR on_io_error, void* on_io_error_context)
 {
-    int result;
+    int result = 0;
     int retval = -1;
     int select_errno = 0;
 
     SOCKET_IO_INSTANCE* socket_io_instance = (SOCKET_IO_INSTANCE*)socket_io;
+    LogInfo("socketio_open");
     if (socket_io == NULL)
     {
         LogError("Invalid argument: SOCKET_IO_INSTANCE is NULL");
@@ -709,6 +538,7 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
                                 socket_io_instance->on_io_error_context = on_io_error_context;
 
                                 socket_io_instance->io_state = IO_STATE_OPEN;
+                                LogInfo("Opened the socket okay");
 
                                 result = 0;
                             }
@@ -796,7 +626,7 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
             }
             else
             {
-                signal(SIGPIPE, signal_callback);
+                //signal(SIGPIPE, signal_callback);
 
                 int send_result = send(socket_io_instance->socket, buffer, size, 0);
                 if (send_result != size)

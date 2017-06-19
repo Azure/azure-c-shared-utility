@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#ifdef USE_MBED_TLS
 
 #include <stdlib.h>
 
@@ -91,6 +90,7 @@ void mbedtls_debug(void *ctx, int level,const char *file, int line, const char *
 
 static void indicate_error(TLS_IO_INSTANCE* tls_io_instance)
 {
+    LogInfo("indicate_error");
     if (tls_io_instance->on_io_error != NULL)
     {
         tls_io_instance->on_io_error(tls_io_instance->on_io_error_context);
@@ -99,6 +99,7 @@ static void indicate_error(TLS_IO_INSTANCE* tls_io_instance)
 
 static void indicate_open_complete(TLS_IO_INSTANCE* tls_io_instance, IO_OPEN_RESULT open_result)
 {
+    LogInfo("indicate_open_complete %d", open_result);
     if (tls_io_instance->on_io_open_complete != NULL)
     {
         tls_io_instance->on_io_open_complete(tls_io_instance->on_io_open_complete_context, open_result);
@@ -129,10 +130,12 @@ static int decode_ssl_received_bytes(TLS_IO_INSTANCE* tls_io_instance)
 static int on_handshake_done(mbedtls_ssl_context* ssl, void* context)
 {
     TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)context;
+    LogInfo("on_handshake_done");
 
     if (tls_io_instance->tlsio_state == TLSIO_STATE_IN_HANDSHAKE)
     {
         tls_io_instance->tlsio_state = TLSIO_STATE_OPEN;
+        LogInfo("TLSIO_STATE_OPEN");
         indicate_open_complete(tls_io_instance, IO_OPEN_OK);
     }
 
@@ -142,6 +145,7 @@ static int on_handshake_done(mbedtls_ssl_context* ssl, void* context)
 static int mbedtls_connect(void* context) {
     TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)context;
     int result = 0;
+    LogInfo("mbedtls_connect");
 
     do {
         result = mbedtls_ssl_handshake(&tls_io_instance->ssl);
@@ -160,10 +164,12 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
 {
     TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)context;
     int result = 0;
+    LogInfo("on_underlying_io_open_complete");
 
     if (open_result != IO_OPEN_OK)
     {
         tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
+        LogInfo("on_underlying_io_open_complete bad");
         indicate_open_complete(tls_io_instance, IO_OPEN_ERROR);
     }
     else
@@ -173,7 +179,12 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
         result = mbedtls_connect(tls_io_instance);
         if (result != 0)
         {
+            LogInfo("on_underlying_io_open_complete bad");
             indicate_open_complete(tls_io_instance, IO_OPEN_ERROR);
+        }
+        else
+        {
+            LogInfo("on_underlying_io_open_complete okay");
         }
     }
 }
@@ -183,6 +194,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
     TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)context;
 
     unsigned char* new_socket_io_read_bytes = (unsigned char*)realloc(tls_io_instance->socket_io_read_bytes, tls_io_instance->socket_io_read_byte_count + size);
+    LogInfo("on_underlying_io_bytes_received");
 
     if (new_socket_io_read_bytes == NULL)
     {
@@ -200,6 +212,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
 static void on_underlying_io_error(void* context)
 {
     TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)context;
+    LogInfo("on_underlying_io_error !!!!!!!!");
 
     switch (tls_io_instance->tlsio_state)
     {
@@ -226,6 +239,7 @@ int g_created = 0;
 static void on_underlying_io_close_complete(void* context)
 {
     TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)context;
+    LogInfo("on_underlying_io_close_complete");
 
     if (tls_io_instance->tlsio_state == TLSIO_STATE_CLOSING)
     {
@@ -243,6 +257,7 @@ static int on_io_recv(void *context,unsigned char *buf, size_t sz)
     int result;
     TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)context;
     unsigned char* new_socket_io_read_bytes;
+    LogInfo("on_io_recv");
 
     while (tls_io_instance->socket_io_read_byte_count == 0)
     {
@@ -292,6 +307,7 @@ static int on_io_send(void *context,const unsigned char *buf, size_t sz)
 {
     int result;
     TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)context;
+    LogInfo("on_io_send");
 
     if (xio_send(tls_io_instance->socket_io, buf, sz, tls_io_instance->on_send_complete, tls_io_instance->on_send_complete_callback_context) != 0)
     {
@@ -361,6 +377,7 @@ CONCRETE_IO_HANDLE tlsio_mbedtls_create(void* io_create_parameters)
 {
     TLSIO_CONFIG* tls_io_config = io_create_parameters;
     TLS_IO_INSTANCE* result;
+    LogInfo("tlsio_mbedtls_create");
 
     if (tls_io_config == NULL)
     {
@@ -440,6 +457,7 @@ CONCRETE_IO_HANDLE tlsio_mbedtls_create(void* io_create_parameters)
 
 void tlsio_mbedtls_destroy(CONCRETE_IO_HANDLE tls_io)
 {
+    LogInfo("tlsio_mbedtls_destroy");
     if (tls_io != NULL)
     {
         TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tls_io;
@@ -466,6 +484,7 @@ void tlsio_mbedtls_destroy(CONCRETE_IO_HANDLE tls_io)
 int tlsio_mbedtls_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_open_complete, void* on_io_open_complete_context, ON_BYTES_RECEIVED on_bytes_received, void* on_bytes_received_context, ON_IO_ERROR on_io_error, void* on_io_error_context)
 {
     int result = 0;
+    LogInfo("tlsio_mbedtls_open");
 
     if (tls_io == NULL)
     {
@@ -503,6 +522,7 @@ int tlsio_mbedtls_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_open
             else
             {
                 result = 0;
+                LogInfo("tlsio_open okay");
             }
         }
     }
@@ -532,6 +552,7 @@ int tlsio_mbedtls_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_cl
             tls_io_instance->tlsio_state = TLSIO_STATE_CLOSING;
             tls_io_instance->on_io_close_complete = on_io_close_complete;
             tls_io_instance->on_io_close_complete_context = callback_context;
+            LogInfo("tlsio_close");
 
             if (xio_close(tls_io_instance->socket_io, on_underlying_io_close_complete, tls_io_instance) != 0)
             {
@@ -640,4 +661,8 @@ int tlsio_mbedtls_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
     return result;
 }
 
-#endif // USE_MBED_TLS
+
+void mbedtls_debug_set_threshold(int threshold)
+{
+
+}

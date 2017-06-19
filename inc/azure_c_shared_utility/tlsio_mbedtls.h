@@ -6,7 +6,6 @@
 
 #include "azure_c_shared_utility/tls_config.h"
 
-#ifdef USE_MBED_TLS
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,6 +33,5 @@ extern const IO_INTERFACE_DESCRIPTION* tlsio_mbedtls_get_interface_description(v
 }
 #endif /* __cplusplus */
 
-#endif /* USE_MBED_TLS */
 
 #endif /* TLSIO_MBEDTLS_H */
