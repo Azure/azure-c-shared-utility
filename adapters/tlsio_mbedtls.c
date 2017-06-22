@@ -164,7 +164,7 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
 {
     TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)context;
     int result = 0;
-    LogInfo("on_underlying_io_open_complete");
+    LogInfo("entering on_underlying_io_open_complete");
 
     if (open_result != IO_OPEN_OK)
     {
@@ -257,7 +257,6 @@ static int on_io_recv(void *context,unsigned char *buf, size_t sz)
     int result;
     TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)context;
     unsigned char* new_socket_io_read_bytes;
-    LogInfo("on_io_recv");
 
     while (tls_io_instance->socket_io_read_byte_count == 0)
     {
@@ -353,7 +352,7 @@ static void mbedtls_init(void *instance,const char *host) {
     mbedtls_ctr_drbg_seed(&result->ctr_drbg,mbedtls_entropy_func,&result->entropy,(const unsigned char *)pers,strlen(pers));
     mbedtls_ssl_config_defaults(&result->config,MBEDTLS_SSL_IS_CLIENT,MBEDTLS_SSL_TRANSPORT_STREAM,MBEDTLS_SSL_PRESET_DEFAULT);
     mbedtls_ssl_conf_rng(&result->config,mbedtls_ctr_drbg_random,&result->ctr_drbg);
-    mbedtls_ssl_conf_authmode(&result->config,MBEDTLS_SSL_VERIFY_OPTIONAL);
+    mbedtls_ssl_conf_authmode(&result->config,MBEDTLS_SSL_VERIFY_NONE);
     mbedtls_ssl_conf_min_version(&result->config,MBEDTLS_SSL_MAJOR_VERSION_3,MBEDTLS_SSL_MINOR_VERSION_3);          // v1.2
     mbedtls_ssl_set_bio(&result->ssl,instance,on_io_send,on_io_recv,NULL);
     mbedtls_ssl_set_hostname(&result->ssl,host);

@@ -108,9 +108,14 @@ typedef struct NETWORK_INTERFACE_DESCRIPTION_TAG
 /*this function will clone an option given by name and value*/
 static void* socketio_CloneOption(const char* name, const void* value)
 {
-    void* result = 0;
+    void* result;
 
-    if (name != NULL)
+    if (name == NULL)
+    {
+        LogError("Invalid argument (name=%p, value=%p)", name, value);
+        result = NULL;
+    }
+    else
     {
         result = NULL;
 
@@ -390,12 +395,11 @@ void socketio_destroy(CONCRETE_IO_HANDLE socket_io)
 
 int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_complete, void* on_io_open_complete_context, ON_BYTES_RECEIVED on_bytes_received, void* on_bytes_received_context, ON_IO_ERROR on_io_error, void* on_io_error_context)
 {
-    int result = 0;
+    int result;
     int retval = -1;
     int select_errno = 0;
 
     SOCKET_IO_INSTANCE* socket_io_instance = (SOCKET_IO_INSTANCE*)socket_io;
-    LogInfo("socketio_open");
     if (socket_io == NULL)
     {
         LogError("Invalid argument: SOCKET_IO_INSTANCE is NULL");
@@ -433,7 +437,7 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
             }
 #ifndef __APPLE__
             else if (socket_io_instance->target_mac_address != NULL &&
-                     set_target_network_interface(socket_io_instance->socket, socket_io_instance->target_mac_address) != 0)
+                set_target_network_interface(socket_io_instance->socket, socket_io_instance->target_mac_address) != 0)
             {
                 LogError("Failure: failed selecting target network interface (MACADDR=%s).", socket_io_instance->target_mac_address);
                 close(socket_io_instance->socket);
@@ -499,7 +503,7 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
                                         select_errno = errno;
                                     }
                                 } while (retval < 0 && select_errno == EINTR);
-                                
+
                                 if (retval != 1)
                                 {
                                     LogError("Failure: select failure.");
@@ -527,7 +531,15 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
                                         socket_io_instance->socket = INVALID_SOCKET;
                                         result = __FAILURE__;
                                     }
+                                    else
+                                    {
+                                        result = 0; // Some compilers complain result was not set.
+                                    }
                                 }
+                            }
+                            else
+                            {
+                                result = 0;
                             }
                             if (err == 0)
                             {
@@ -538,7 +550,6 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
                                 socket_io_instance->on_io_error_context = on_io_error_context;
 
                                 socket_io_instance->io_state = IO_STATE_OPEN;
-                                LogInfo("Opened the socket okay");
 
                                 result = 0;
                             }
@@ -557,6 +568,7 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
 
     return result;
 }
+
 
 int socketio_close(CONCRETE_IO_HANDLE socket_io, ON_IO_CLOSE_COMPLETE on_io_close_complete, void* callback_context)
 {
