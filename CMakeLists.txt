@@ -596,9 +596,10 @@ if (NOT ${skip_samples})
     add_subdirectory(samples)
 endif()
 
+# Set CMAKE_INSTALL_* if not defined
+include(GNUInstallDirs)
+
 if(${use_installed_dependencies})
-    # Set CMAKE_INSTALL_* if not defined
-    include(GNUInstallDirs)
 
     if(NOT DEFINED CMAKE_INSTALL_LIBDIR)
         set(CMAKE_INSTALL_LIBDIR "lib")
@@ -643,5 +644,12 @@ if(${use_installed_dependencies})
         DESTINATION
             ${package_location}
     )
-
+else()
+	set(install_staticlibs
+		aziotsharedutil
+	)
+	install(FILES ${source_h_files}
+		DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azure_c_shared_utility) 
+	install(TARGETS ${install_staticlibs} 
+		ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
 endif()
