@@ -823,10 +823,12 @@ int STRING_replace(STRING_HANDLE handle, char target, char replace)
     }
     else
     {
+        size_t length;
+        size_t index;
         /* Codes_SRS_STRING_07_047: [ STRING_replace shall replace all instances of target with replace. ] */
         STRING* str_value = (STRING*)handle;
-        size_t length = strlen(str_value->s);
-        for (size_t index = 0; index < length; index++)
+        length = strlen(str_value->s);
+        for (index = 0; index < length; index++)
         {
             if (str_value->s[index] == target)
             {

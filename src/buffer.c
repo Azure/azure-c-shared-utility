@@ -552,9 +552,10 @@ int BUFFER_fill(BUFFER_HANDLE handle, unsigned char fill_char)
     }
     else
     {
+        size_t index;
         /* Codes_SRS_BUFFER_07_001: [ BUFFER_fill shall fill the supplied BUFFER_HANDLE with the supplied fill character. ] */
         BUFFER* buffer_data = (BUFFER*)handle;
-        for (size_t index = 0; index < buffer_data->size; index++)
+        for (index = 0; index < buffer_data->size; index++)
         {
             buffer_data->buffer[index] = fill_char;
         }
