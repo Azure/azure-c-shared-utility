@@ -33,6 +33,7 @@ MOCKABLE_FUNCTION(, const char*, STRING_c_str, STRING_HANDLE, handle);
 MOCKABLE_FUNCTION(, int, STRING_empty, STRING_HANDLE, handle);
 MOCKABLE_FUNCTION(, size_t, STRING_length, STRING_HANDLE, handle);
 MOCKABLE_FUNCTION(, int, STRING_compare, STRING_HANDLE, s1, STRING_HANDLE, s2);
+MOCKABLE_FUNCTION(, int, STRING_replace, STRING_HANDLE, handle, char, target, char, replace);
 
 extern STRING_HANDLE STRING_construct_sprintf(const char* format, ...);
 extern int STRING_sprintf(STRING_HANDLE s1, const char* format, ...);

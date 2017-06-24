@@ -541,6 +541,28 @@ int BUFFER_prepend(BUFFER_HANDLE handle1, BUFFER_HANDLE handle2)
     return result;
 }
 
+int BUFFER_fill(BUFFER_HANDLE handle, unsigned char fill_char)
+{
+    int result;
+    if (handle == NULL)
+    {
+        /* Codes_SRS_BUFFER_07_002: [ If handle is NULL BUFFER_fill shall return a non-zero value. ] */
+        LogError("Invalid parameter specified, handle == NULL.");
+        result = __FAILURE__;
+    }
+    else
+    {
+        /* Codes_SRS_BUFFER_07_001: [ BUFFER_fill shall fill the supplied BUFFER_HANDLE with the supplied fill character. ] */
+        BUFFER* buffer_data = (BUFFER*)handle;
+        for (size_t index = 0; index < buffer_data->size; index++)
+        {
+            buffer_data->buffer[index] = fill_char;
+        }
+        result = 0;
+    }
+    return result;
+}
+
 
 /* Codes_SRS_BUFFER_07_025: [BUFFER_u_char shall return a pointer to the underlying unsigned char*.] */
 unsigned char* BUFFER_u_char(BUFFER_HANDLE handle)

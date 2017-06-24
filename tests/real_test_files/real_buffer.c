@@ -17,6 +17,7 @@
 #define BUFFER_content real_BUFFER_content
 #define BUFFER_append_build real_BUFFER_append_build
 #define BUFFER_shrink real_BUFFER_shrink
+#define BUFFER_fill real_BUFFER_fill
 
 #define GBALLOC_H
 

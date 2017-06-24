@@ -24,7 +24,7 @@ static const char hexToASCII[16] = { '0', '1', '2', '3', '4', '5', '6', '7', '8'
 typedef struct STRING_TAG
 {
     char* s;
-}STRING;
+} STRING;
 
 /*this function will allocate a new string with just '\0' in it*/
 /*return NULL if it fails*/
@@ -137,7 +137,7 @@ STRING_HANDLE STRING_construct_sprintf(const char* format, ...)
     if (format != NULL)
     {
         va_list arg_list;
-		int length;
+        int length;
         va_start(arg_list, format);
 
         /* Codes_SRS_STRING_07_041: [STRING_construct_sprintf shall determine the size of the resulting string and allocate the necessary memory.] */
@@ -534,7 +534,7 @@ int STRING_sprintf(STRING_HANDLE handle, const char* format, ...)
     else
     {
         va_list arg_list;
-		int s2Length;
+        int s2Length;
         va_start(arg_list, format);
 
         s2Length = vsnprintf(buf, maxBufSize, format, arg_list);
@@ -553,7 +553,7 @@ int STRING_sprintf(STRING_HANDLE handle, const char* format, ...)
         else
         {
             STRING* s1 = (STRING*)handle;
-			char* temp;
+            char* temp;
             size_t s1Length = strlen(s1->s);
             temp = (char*)realloc(s1->s, s1Length + s2Length + 1);
             if (temp != NULL)
@@ -806,4 +806,35 @@ STRING_HANDLE STRING_from_byte_array(const unsigned char* source, size_t size)
         }
     }
     return (STRING_HANDLE)result;
+}
+
+int STRING_replace(STRING_HANDLE handle, char target, char replace)
+{
+    int result;
+    if (handle == NULL)
+    {
+        /* Codes_SRS_STRING_07_046: [ If handle is NULL STRING_replace shall return a non-zero value. ] */
+        result = __FAILURE__;
+    }
+    else if (target == replace)
+    {
+        /* Codes_SRS_STRING_07_048: [ If target and replace are equal STRING_replace, shall do nothing shall return zero. ] */
+        result = 0;
+    }
+    else
+    {
+        /* Codes_SRS_STRING_07_047: [ STRING_replace shall replace all instances of target with replace. ] */
+        STRING* str_value = (STRING*)handle;
+        size_t length = strlen(str_value->s);
+        for (size_t index = 0; index < length; index++)
+        {
+            if (str_value->s[index] == target)
+            {
+                str_value->s[index] = replace;
+            }
+        }
+        /* Codes_SRS_STRING_07_049: [ On success STRING_replace shall return zero. ] */
+        result = 0;
+    }
+    return result;
 }

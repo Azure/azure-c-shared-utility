@@ -144,7 +144,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_new_Succeed)
     {
         ///arrange
-		BUFFER_HANDLE g_hBuffer;
+        BUFFER_HANDLE g_hBuffer;
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
         
@@ -190,10 +190,8 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
         ///act
         BUFFER_delete(g_hBuffer);
@@ -222,7 +220,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_pre_build_Succeed)
     {
         ///arrange
-		int nResult;
+        int nResult;
         BUFFER_HANDLE g_hBuffer;
         g_hBuffer = BUFFER_new();
         umock_c_reset_all_calls();
@@ -262,7 +260,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_pre_Size_Zero_Fail)
     {
         ///arrange
-		int nResult;
+        int nResult;
         BUFFER_HANDLE g_hBuffer;
         g_hBuffer = BUFFER_new();
         umock_c_reset_all_calls();
@@ -297,7 +295,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     {
         ///arrange
         BUFFER_HANDLE g_hBuffer;
-		int nResult;
+        int nResult;
         g_hBuffer = BUFFER_new();
         nResult = BUFFER_pre_build(g_hBuffer, ALLOCATION_SIZE);
         umock_c_reset_all_calls();
@@ -317,7 +315,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_build_Succeed)
     {
         ///arrange
-		int nResult;
+        int nResult;
         BUFFER_HANDLE g_hBuffer;
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
@@ -358,7 +356,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_build_Content_NULL_Fail)
     {
         ///arrange
-		int nResult;
+        int nResult;
         BUFFER_HANDLE g_hBuffer;
         g_hBuffer = BUFFER_new();
         umock_c_reset_all_calls();
@@ -378,7 +376,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_build_Size_Zero_non_NULL_buffer_Succeeds)
     {
         ///arrange
-		int nResult;
+        int nResult;
         BUFFER_HANDLE g_hBuffer;
         g_hBuffer = BUFFER_new();
         umock_c_reset_all_calls();
@@ -401,7 +399,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_build_Size_Zero_NULL_buffer_Succeeds)
     {
         ///arrange
-		int nResult;
+        int nResult;
         BUFFER_HANDLE g_hBuffer;
         g_hBuffer = BUFFER_new();
         umock_c_reset_all_calls();
@@ -424,7 +422,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_append_build_handle_NULL_fail)
     {
         ///arrange
-		int nResult;
+        int nResult;
         BUFFER_HANDLE hBuffer;
         hBuffer = BUFFER_new();
         umock_c_reset_all_calls();
@@ -444,7 +442,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_append_build_buffer_NULL_buffer_fail)
     {
         ///arrange
-		int nResult;
+        int nResult;
         BUFFER_HANDLE hBuffer;
         hBuffer = BUFFER_new();
         umock_c_reset_all_calls();
@@ -464,7 +462,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_append_build_Size_Zero_NULL_buffer_fail)
     {
         ///arrange
-		int nResult;
+        int nResult;
         BUFFER_HANDLE hBuffer;
         hBuffer = BUFFER_new();
         umock_c_reset_all_calls();
@@ -486,7 +484,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_append_build_buffer_NULL_succeed)
     {
         //arrange
-		int nResult;
+        int nResult;
         BUFFER_HANDLE hBuffer;
         hBuffer = BUFFER_new();
         umock_c_reset_all_calls();
@@ -509,7 +507,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_append_build_buffer_NULL_fail)
     {
         //arrange
-		int nResult;
+        int nResult;
         BUFFER_HANDLE hBuffer;
         hBuffer = BUFFER_new();
         umock_c_reset_all_calls();
@@ -533,7 +531,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_append_build_succeed)
     {
         //arrange
-		int nResult;
+        int nResult;
         BUFFER_HANDLE hBuffer;
         hBuffer = BUFFER_create(BUFFER_TEST_VALUE, ALLOCATION_SIZE);
         
@@ -559,7 +557,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_append_build_fail)
     {
         //arrange
-		int nResult;
+        int nResult;
         BUFFER_HANDLE hBuffer;
         hBuffer = BUFFER_create(BUFFER_TEST_VALUE, ALLOCATION_SIZE);
 
@@ -582,7 +580,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_build_when_the_buffer_is_already_allocated_and_the_same_amount_of_bytes_is_needed_succeeds)
     {
         ///arrange
-		int nResult;
+        int nResult;
         BUFFER_HANDLE g_hBuffer;
         g_hBuffer = BUFFER_new();
         nResult = BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
@@ -606,7 +604,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_build_when_the_buffer_is_already_allocated_and_more_bytes_are_needed_succeeds)
     {
         ///arrange
-		int nResult;
+        int nResult;
         BUFFER_HANDLE g_hBuffer;
         g_hBuffer = BUFFER_new();
         nResult = BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE - 1);
@@ -630,7 +628,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_build_when_the_buffer_is_already_allocated_and_less_bytes_are_needed_succeeds)
     {
         ///arrange
-		int nResult;
+        int nResult;
         BUFFER_HANDLE g_hBuffer;
         g_hBuffer = BUFFER_new();
         nResult = BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
@@ -655,7 +653,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_unbuild_Succeed)
     {
         ///arrange
-		int nResult;
+        int nResult;
         BUFFER_HANDLE g_hBuffer;
         g_hBuffer = BUFFER_new();
         nResult = BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
@@ -692,7 +690,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_unbuild_Multiple_Alloc_Fail)
     {
         ///arrange
-		int nResult;
+        int nResult;
         BUFFER_HANDLE g_hBuffer;
         g_hBuffer = BUFFER_new();
         nResult = BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
@@ -715,7 +713,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_enlarge_Succeed)
     {
         ///arrange
-		int nResult;
+        int nResult;
         BUFFER_HANDLE g_hBuffer;
         g_hBuffer = BUFFER_new();
         nResult = BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
@@ -769,7 +767,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_shrink_decrease_size_0_fail)
     {
         //arrange
-		int nResult;
+        int nResult;
         BUFFER_HANDLE hBuffer;
         hBuffer = BUFFER_new();
         nResult = BUFFER_build(hBuffer, TOTAL_BUFFER, TOTAL_ALLOCATION_SIZE);
@@ -792,7 +790,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_shrink_decrease_size_less_than_len_succeed)
     {
         //arrange
-		int nResult;
+        int nResult;
         BUFFER_HANDLE hBuffer;
         hBuffer = BUFFER_new();
         nResult = BUFFER_build(hBuffer, TOTAL_BUFFER, TOTAL_ALLOCATION_SIZE);
@@ -815,7 +813,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_shrink_malloc_fail)
     {
         //arrange
-		int nResult;
+        int nResult;
         BUFFER_HANDLE hBuffer;
         hBuffer = BUFFER_new();
         nResult = BUFFER_build(hBuffer, TOTAL_BUFFER, TOTAL_ALLOCATION_SIZE);
@@ -841,7 +839,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_shrink_from_end_succeed)
     {
         //arrange
-		int nResult;
+        int nResult;
         BUFFER_HANDLE hBuffer;
         hBuffer = BUFFER_new();
         nResult = BUFFER_build(hBuffer, TOTAL_BUFFER, TOTAL_ALLOCATION_SIZE);
@@ -869,7 +867,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_shrink_all_buffer_succeed)
     {
         //arrange
-		int nResult;
+        int nResult;
         BUFFER_HANDLE hBuffer;
         hBuffer = BUFFER_new();
         nResult = BUFFER_build(hBuffer, TOTAL_BUFFER, TOTAL_ALLOCATION_SIZE);
@@ -897,7 +895,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         const unsigned char TEST_TOTAL_BUFFER[] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26 };
 
         //arrange
-		int nResult;
+        int nResult;
         BUFFER_HANDLE hBuffer;
         hBuffer = BUFFER_new();
         nResult = BUFFER_build(hBuffer, TEST_TOTAL_BUFFER, TOTAL_ALLOCATION_SIZE);
@@ -925,7 +923,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_enlarge_Size_Zero_Fail)
     {
         ///arrange
-		int nResult;
+        int nResult;
         BUFFER_HANDLE g_hBuffer;
         g_hBuffer = BUFFER_new();
         nResult = BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
@@ -947,8 +945,8 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_content_Succeed)
     {
         ///arrange
-		int nResult;
-		const unsigned char* content;
+        int nResult;
+        const unsigned char* content;
         BUFFER_HANDLE g_hBuffer;
         g_hBuffer = BUFFER_new();
         nResult = BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
@@ -989,7 +987,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_content_Char_NULL_Fail)
     {
         ///arrange
-		int nResult;
+        int nResult;
         BUFFER_HANDLE g_hBuffer;
         g_hBuffer = BUFFER_new();
         nResult = BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
@@ -1011,8 +1009,8 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_size_Succeed)
     {
         ///arrange
-		int nResult;
-		size_t size;
+        int nResult;
+        size_t size;
         BUFFER_HANDLE g_hBuffer;
         g_hBuffer = BUFFER_new();
         nResult = BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
@@ -1050,7 +1048,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_size_Size_t_NULL_Fail)
     {
         ///arrange
-		int nResult;
+        int nResult;
         BUFFER_HANDLE g_hBuffer;
         g_hBuffer = BUFFER_new();
         nResult = BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
@@ -1072,8 +1070,8 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_append_Succeed)
     {
         ///arrange
-		int nResult;
-		BUFFER_HANDLE hAppend;
+        int nResult;
+        BUFFER_HANDLE hAppend;
         BUFFER_HANDLE g_hBuffer;
         g_hBuffer = BUFFER_new();
         nResult = BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
@@ -1102,7 +1100,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_append_HANDLE_NULL_Fail)
     {
         ///arrange
-		int nResult;
+        int nResult;
         BUFFER_HANDLE hAppend = BUFFER_new();
         nResult = BUFFER_build(hAppend, ADDITIONAL_BUFFER, ALLOCATION_SIZE);
         umock_c_reset_all_calls();
@@ -1122,7 +1120,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_append_APPEND_HANDLE_NULL_Fail)
     {
         ///arrange
-		int nResult;
+        int nResult;
         BUFFER_HANDLE g_hBuffer;
         g_hBuffer = BUFFER_new();
         nResult = BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
@@ -1143,7 +1141,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_append_HANDLE2_SIZE_ZERO_SUCCEED)
     {
         ///arrange
-		int nResult;
+        int nResult;
         size_t howBig;
         BUFFER_HANDLE handle1 = BUFFER_create(BUFFER_Test1, BUFFER_TEST1_SIZE);
         BUFFER_HANDLE handle2 = BUFFER_create(BUFFER_Test2, 0);
@@ -1169,8 +1167,8 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_append_HANDLE1_SIZE_ZERO_SUCCEED)
     {
         ///arrange
-		int nResult;
-		size_t howBig;
+        int nResult;
+        size_t howBig;
         BUFFER_HANDLE handle1 = BUFFER_create(BUFFER_Test1, 0);
         BUFFER_HANDLE handle2 = BUFFER_create(BUFFER_Test2, BUFFER_TEST2_SIZE);
         // umock_c_reset_all_calls();
@@ -1195,8 +1193,8 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_prepend_HANDLE1_SIZE_ZERO_SUCCEED)
     {
         ///arrange
-		int nResult;
-		size_t howBig;
+        int nResult;
+        size_t howBig;
         BUFFER_HANDLE handle1 = BUFFER_create(BUFFER_Test1, 0);
         BUFFER_HANDLE handle2 = BUFFER_create(BUFFER_Test2, BUFFER_TEST2_SIZE);
         // umock_c_reset_all_calls();
@@ -1221,8 +1219,8 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_prepend_HANDLE2_SIZE_ZERO_SUCCEED)
     {
         ///arrange
-		int nResult;
-		size_t howBig;
+        int nResult;
+        size_t howBig;
         BUFFER_HANDLE handle1 = BUFFER_create(BUFFER_Test1, BUFFER_TEST1_SIZE);
         BUFFER_HANDLE handle2 = BUFFER_create(BUFFER_Test2, 0);
         // umock_c_reset_all_calls();
@@ -1248,7 +1246,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_prepend_APPEND_HANDLE1_NULL_Fail)
     {
         ///arrange
-		int nResult;
+        int nResult;
         BUFFER_HANDLE g_hBuffer;
         g_hBuffer = BUFFER_new();
         nResult = BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
@@ -1269,7 +1267,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_prepend_APPEND_HANDLE2_NULL_Fail)
     {
         ///arrange
-		int nResult;
+        int nResult;
         BUFFER_HANDLE hAppend = BUFFER_new();
         nResult = BUFFER_build(hAppend, ADDITIONAL_BUFFER, ALLOCATION_SIZE);
         umock_c_reset_all_calls();
@@ -1289,9 +1287,9 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_prepend_Succeed)
     {
         ///arrange
-		int nResult;
+        int nResult;
         BUFFER_HANDLE g_hBuffer;
-		BUFFER_HANDLE hAppend;
+        BUFFER_HANDLE hAppend;
         g_hBuffer = BUFFER_new();
         nResult = BUFFER_build(g_hBuffer, ADDITIONAL_BUFFER, ALLOCATION_SIZE);
         hAppend = BUFFER_new();
@@ -1324,7 +1322,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     {
         ///arrange
         BUFFER_HANDLE g_hBuffer;
-		unsigned char* u;
+        unsigned char* u;
         g_hBuffer = BUFFER_new();
         (void)BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
         umock_c_reset_all_calls();
@@ -1377,7 +1375,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     {
         ///arrange
         BUFFER_HANDLE g_hBuffer;
-		size_t l;
+        size_t l;
         g_hBuffer = BUFFER_new();
         (void)BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
         umock_c_reset_all_calls();
@@ -1410,7 +1408,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     {
         ///arrange
         BUFFER_HANDLE g_hBuffer;
-		BUFFER_HANDLE hclone;
+        BUFFER_HANDLE hclone;
         g_hBuffer = BUFFER_new();
         (void)BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
         umock_c_reset_all_calls();
@@ -1465,9 +1463,9 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_create_happy_path)
     {
         ///arrange
-		BUFFER_HANDLE res;
-		const unsigned char* data;
-		size_t howBig;
+        BUFFER_HANDLE res;
+        const unsigned char* data;
+        size_t howBig;
         char c = '3';
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
@@ -1496,9 +1494,9 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_create_ZERO_SIZE_SUCCEED)
     {
         ///arrange
-		size_t howBig;
-		BUFFER_HANDLE res;
-		const unsigned char* data;
+        size_t howBig;
+        BUFFER_HANDLE res;
+        const unsigned char* data;
         char c = '3';
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
@@ -1521,13 +1519,12 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         BUFFER_delete(res);
     }
 
-
     /*Tests_SRS_BUFFER_02_003: [If allocating memory fails, then BUFFER_create shall return NULL.] */
     TEST_FUNCTION(BUFFER_create_fails_when_gballoc_fails_1)
     {
         ///arrange
         char c = '3';
-		BUFFER_HANDLE res;
+        BUFFER_HANDLE res;
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
@@ -1553,7 +1550,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     {
         ///arrange
         char c = '3';
-		BUFFER_HANDLE res;
+        BUFFER_HANDLE res;
 
         whenShallmalloc_fail = 1;
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
@@ -1568,6 +1565,76 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
 
         ///cleanup
         BUFFER_delete(res);
+    }
+
+    /* BUFFER_fill */
+
+    /* Tests_SRS_BUFFER_07_001: [ BUFFER_fill shall fill the supplied BUFFER_HANDLE with the supplied fill character. ] */
+    TEST_FUNCTION(BUFFER_fill_succeed)
+    {
+        int result;
+
+        //arrange
+        BUFFER_HANDLE buffer = BUFFER_new();
+        (void)BUFFER_build(buffer, BUFFER_Test1, BUFFER_TEST1_SIZE);
+        const unsigned char RESULT_BUFFER[] = { '@', '@', '@', '@', '@' };
+
+        umock_c_reset_all_calls();
+
+        //act
+        result = BUFFER_fill(buffer, '@');
+
+        char* expected = umockc_stringify_buffer(RESULT_BUFFER, BUFFER_TEST1_SIZE);
+        char* actual = umockc_stringify_buffer(BUFFER_u_char(buffer), BUFFER_length(buffer));
+
+        //assert
+        ASSERT_ARE_EQUAL(int, 0, result);
+        ASSERT_ARE_EQUAL(char_ptr, expected, actual);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        //cleanup
+        BUFFER_delete(buffer);
+        my_gballoc_free(expected);
+        my_gballoc_free(actual);
+    }
+
+    /* Tests_SRS_BUFFER_07_002: [ If handle is NULL BUFFER_fill shall return a non-zero value. ] */
+    TEST_FUNCTION(BUFFER_fill_handle_NULL_fail)
+    {
+        int result;
+
+        //arrange
+        umock_c_reset_all_calls();
+
+        //act
+        result = BUFFER_fill(NULL, '@');
+
+        ///assert
+        ASSERT_ARE_NOT_EQUAL(int, 0, result);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        //cleanup
+    }
+
+    /* Tests_SRS_BUFFER_07_001: [ BUFFER_fill shall fill the supplied BUFFER_HANDLE with the supplied fill character. ] */
+    TEST_FUNCTION(BUFFER_fill_empty_buffer_succeed)
+    {
+        int result;
+
+        //arrange
+        BUFFER_HANDLE buffer = BUFFER_new();
+
+        umock_c_reset_all_calls();
+
+        //act
+        result = BUFFER_fill(buffer, '@');
+
+        ///assert
+        ASSERT_ARE_EQUAL(int, 0, result);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        //cleanup
+        BUFFER_delete(buffer);
     }
 
 END_TEST_SUITE(Buffer_UnitTests)

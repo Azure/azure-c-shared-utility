@@ -31,6 +31,7 @@ MOCKABLE_FUNCTION(, int, BUFFER_content, BUFFER_HANDLE, handle, const unsigned c
 MOCKABLE_FUNCTION(, int, BUFFER_size, BUFFER_HANDLE, handle, size_t*, size);
 MOCKABLE_FUNCTION(, int, BUFFER_append, BUFFER_HANDLE, handle1, BUFFER_HANDLE, handle2);
 MOCKABLE_FUNCTION(, int, BUFFER_prepend, BUFFER_HANDLE, handle1, BUFFER_HANDLE, handle2);
+MOCKABLE_FUNCTION(, int, BUFFER_fill, BUFFER_HANDLE, handle, unsigned char, fill_char);
 MOCKABLE_FUNCTION(, unsigned char*, BUFFER_u_char, BUFFER_HANDLE, handle);
 MOCKABLE_FUNCTION(, size_t, BUFFER_length, BUFFER_HANDLE, handle);
 MOCKABLE_FUNCTION(, BUFFER_HANDLE, BUFFER_clone, BUFFER_HANDLE, handle);

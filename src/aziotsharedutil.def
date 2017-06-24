@@ -148,6 +148,7 @@ EXPORTS
     STRING_new_with_memory
     STRING_quote
     STRING_sprintf
+    STRING_replace
     THREADAPI_RESULTStringStorage
     THREADAPI_RESULTStrings
     THREADAPI_RESULT_FromString
