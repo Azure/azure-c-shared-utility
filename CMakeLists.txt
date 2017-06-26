@@ -493,18 +493,24 @@ ELSE()
 ENDIF(WIN32)
 
 #this is the product (a library)
-if(${build_as_dynamic})
-    add_library(aziotsharedutil SHARED ./src/aziotsharedutil.def ${source_c_files} ${source_h_files})
-else()
-    add_library(aziotsharedutil ${source_c_files} ${source_h_files})
+add_library(aziotsharedutil ${source_c_files} ${source_h_files})
+
+#make sure we can link as dll/so
+add_library(aziotsharedutil_dll SHARED ./src/aziotsharedutil.def ${source_c_files} ${source_h_files})
+set_target_properties(aziotsharedutil_dll PROPERTIES OUTPUT_NAME "aziotsharedutil")
+
+if(WIN32)
+
 endif()
+
+set(aziotsharedutil_target_libs )
 
 if(${use_http})
     if(WIN32)
         if (WINCE)
-            target_link_libraries(aziotsharedutil crypt32 ws2 )
+            set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} crypt32 ws2)
         else()
-            target_link_libraries(aziotsharedutil crypt32 winhttp)
+            set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} crypt32 winhttp)
         endif()
     else()
         # try pkg-config first
@@ -522,47 +528,50 @@ if(${use_http})
         find_package_handle_standard_args(CURL DEFAULT_MSG CURL_LIBRARIES)
 
         include_directories(${CURL_INCLUDE_DIRS})
-        target_link_libraries(aziotsharedutil ${CURL_LIBRARIES})
+        set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} ${CURL_LIBRARIES})
     endif()
 endif()
 
 if(${use_schannel})
     if(WIN32)
         if (WINCE)
-            target_link_libraries(aziotsharedutil secur32)
+            set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} secur32)
         else()
-            target_link_libraries(aziotsharedutil crypt32 ws2_32 secur32 advapi32)
+            set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} crypt32 ws2_32 secur32 advapi32)
         endif()
     endif()
 endif()
 
 if(${use_openssl})
-    target_link_libraries(aziotsharedutil ${OPENSSL_LIBRARIES})
+    set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} ${OPENSSL_LIBRARIES})
     if (WIN32)
-        target_link_libraries(aziotsharedutil crypt32 ws2_32 secur32)
+        set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} crypt32 ws2_32 secur32)
     endif()
 endif()
 
 if(${use_wolfssl})
-    target_link_libraries(aziotsharedutil wolfssl)
+    set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} wolfssl)
 endif()
 
 if(${use_cyclonessl} AND WIN32)
-    target_link_libraries(aziotsharedutil cyclonessl)
+    set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} cyclonessl)
 endif()
 
 if(WIN32)
     if (NOT ${use_default_uuid})
-        target_link_libraries(aziotsharedutil rpcrt4.lib)
+        set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} rpcrt4.lib)
     endif()
 endif()
 
 if(LINUX)
-    target_link_libraries(aziotsharedutil pthread m rt)
+    set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} pthread m rt)
     if (NOT ${use_default_uuid})
-        target_link_libraries(aziotsharedutil uuid)
+        set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} uuid)
     endif()
 endif()
+
+target_link_libraries(aziotsharedutil ${aziotsharedutil_target_libs})
+target_link_libraries(aziotsharedutil_dll ${aziotsharedutil_target_libs})
 
 if (${run_unittests} OR ${run_e2e_tests})
     include("dependencies-test.cmake")
@@ -608,7 +617,7 @@ if(${use_installed_dependencies})
     # Install Azure C Shared Utility
     set(package_location "cmake")
 
-    install (TARGETS aziotsharedutil EXPORT aziotsharedutilTargets
+    install (TARGETS aziotsharedutil aziotsharedutil_dll EXPORT aziotsharedutilTargets
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
         RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR}/../bin
