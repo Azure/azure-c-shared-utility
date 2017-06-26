@@ -1413,11 +1413,8 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         (void)BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
-            .IgnoreArgument(1);
-
-        STRICT_EXPECTED_CALL(gballoc_malloc(ALLOCATION_SIZE))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(gballoc_malloc(ALLOCATION_SIZE));
 
         ///act
         hclone = BUFFER_clone(g_hBuffer);
@@ -1573,19 +1570,20 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     TEST_FUNCTION(BUFFER_fill_succeed)
     {
         int result;
+        char* expected;
+        char* actual;
 
         //arrange
         BUFFER_HANDLE buffer = BUFFER_new();
-        (void)BUFFER_build(buffer, BUFFER_Test1, BUFFER_TEST1_SIZE);
         const unsigned char RESULT_BUFFER[] = { '@', '@', '@', '@', '@' };
-
+        (void)BUFFER_build(buffer, BUFFER_Test1, BUFFER_TEST1_SIZE);
         umock_c_reset_all_calls();
 
         //act
         result = BUFFER_fill(buffer, '@');
 
-        char* expected = umockc_stringify_buffer(RESULT_BUFFER, BUFFER_TEST1_SIZE);
-        char* actual = umockc_stringify_buffer(BUFFER_u_char(buffer), BUFFER_length(buffer));
+        expected = umockc_stringify_buffer(RESULT_BUFFER, BUFFER_TEST1_SIZE);
+        actual = umockc_stringify_buffer(BUFFER_u_char(buffer), BUFFER_length(buffer));
 
         //assert
         ASSERT_ARE_EQUAL(int, 0, result);
