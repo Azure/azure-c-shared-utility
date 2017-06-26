@@ -22,7 +22,8 @@
     REGISTER_GLOBAL_MOCK_HOOK(STRING_c_str, real_STRING_c_str); \
     REGISTER_GLOBAL_MOCK_HOOK(STRING_empty, real_STRING_empty); \
     REGISTER_GLOBAL_MOCK_HOOK(STRING_length, real_STRING_length); \
-    REGISTER_GLOBAL_MOCK_HOOK(STRING_compare, real_STRING_compare);
+    REGISTER_GLOBAL_MOCK_HOOK(STRING_compare, real_STRING_compare); \
+    REGISTER_GLOBAL_MOCK_HOOK(STRING_replace, real_STRING_replace);
 
 #define STRING_new                      real_STRING_new 
 #define STRING_clone                    real_STRING_clone 
@@ -42,6 +43,7 @@
 #define STRING_empty                    real_STRING_empty 
 #define STRING_length                   real_STRING_length 
 #define STRING_compare                  real_STRING_compare 
+#define STRING_replace                  real_STRING_replace
 
 
 #undef STRINGS_H
@@ -67,7 +69,8 @@
 #undef STRING_empty                
 #undef STRING_length               
 #undef STRING_compare              
- 
+#undef STRING_replace              
+
 #endif
 
 #undef STRINGS_H

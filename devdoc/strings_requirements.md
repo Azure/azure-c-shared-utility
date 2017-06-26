@@ -160,6 +160,7 @@ extern int STRING_copy(STRING_HANDLE s1, const char* s2)
 **SRS_STRING_07_033: [** If overlapping pointer address is given to STRING_copy the behavior is undefined. **]**
 
 ### STRING_copy_n
+
 ```c
 extern int STRING_copy_n(STRING_HANDLE s1, const char* s2, size_t n)
 ```
@@ -171,6 +172,7 @@ extern int STRING_copy_n(STRING_HANDLE s1, const char* s2, size_t n)
 **SRS_STRING_07_028: [** STRING_copy_n shall return a nonzero value if any error is encountered. **]**
 
 ### STRING_c_str
+
 ```c
 extern const char* STRING_c_str(STRING_HANDLE handle)
 ```
@@ -180,9 +182,11 @@ extern const char* STRING_c_str(STRING_HANDLE handle)
 **SRS_STRING_07_021: [** STRING_c_str shall return NULL if the STRING_HANDLE is NULL. **]**
 
 ###  STRING_empty
+
 ```c
 extern int STRING_empty(STRING_HANDLE s1)
 ```
+
 **SRS_STRING_07_022: [** STRING_empty shall revert the STRING_HANDLE to an empty state. **]**
 
 **SRS_STRING_07_023: [** STRING_empty shall return a nonzero value if the STRING_HANDLE is NULL. **]**
@@ -190,14 +194,17 @@ extern int STRING_empty(STRING_HANDLE s1)
 **SRS_STRING_07_030: [** STRING_empty shall return a nonzero value if the STRING_HANDLE is NULL. **]**
 
 ### STRING_length
+
 ```c
 extern size_t STRING_length(STRING_HANDLE handle)
 ```
+
 **SRS_STRING_07_024: [** STRING_length shall return the length of the underlying char* for the given handle **]**
 
 **SRS_STRING_07_025: [** STRING_length shall return zero if the given handle is NULL. **]**
 
 ### STRING_construct_n
+
 ```c
 extern STRING_HANDLE STRING_construct_n(const char* psz, size_t n);
 ```
@@ -211,6 +218,7 @@ extern STRING_HANDLE STRING_construct_n(const char* psz, size_t n);
 **SRS_STRING_02_010: [** In all other error cases, STRING_construct_n shall return NULL. **]**
 
 ### STRING_compare
+
 ```c
 extern int STRING_compare(STRING_HANDLE h1, STRING_HANDLE h2);
 ```
@@ -225,7 +233,7 @@ extern int STRING_compare(STRING_HANDLE h1, STRING_HANDLE h2);
 
 **SRS_STRING_07_038: [** STRING_compare shall compare the char s variable using the strcmp function. **]**
 
-###  STRING_from_byte_array
+### STRING_from_byte_array
 
 ```c
 extern STRING_HANDLE STRING_from_byte_array(const unsigned char* source, size_t size)
@@ -253,7 +261,7 @@ STRING_construct_sprintf constructs the STRING_HANDLE from a printf formatting
 
 **SRS_STRING_07_041: [** STRING_construct_sprintf shall determine the size of the resulting string and allocate the necessary memory. **]**
 
-**SRS_STRING_07_045: [** STRING_construct_sprintf shall allocate a new string with the value of the specified printf formated const char. **]**  
+**SRS_STRING_07_045: [** STRING_construct_sprintf shall allocate a new string with the value of the specified printf formated const char. **]**
 
 ###  STRING_sprintf
 
@@ -267,4 +275,18 @@ STRING_sprintf shall append a printf format style string to the end of a STRING_
 
 **SRS_STRING_07_043: [** If any error is encountered STRING_sprintf shall return a non zero value. **]**
 
-**SRS_STRING_07_044: [** On success STRING_sprintf shall return 0. **]**  
+**SRS_STRING_07_044: [** On success STRING_sprintf shall return 0. **]**
+
+### STRING_replace
+
+```c
+int STRING_replace(STRING_HANDLE handle, char target, char replace)
+```
+
+**SRS_STRING_07_046: [** If handle is NULL `STRING_replace` shall return a non-zero value. **]**
+
+**SRS_STRING_07_047: [** `STRING_replace` shall replace all instances of target with replace. **]**
+
+**SRS_STRING_07_048: [** If target and replace are equal `STRING_replace`, shall do nothing shall return zero. **]**
+
+**SRS_STRING_07_049: [** On success `STRING_replace` shall return zero. **]**
