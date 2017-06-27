@@ -651,5 +651,6 @@ else()
 	install(FILES ${source_h_files}
 		DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azure_c_shared_utility) 
 	install(TARGETS ${install_staticlibs} 
+		LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 		ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
 endif()
