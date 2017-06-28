@@ -126,36 +126,6 @@ static int decode_ssl_received_bytes(TLS_IO_INSTANCE* tls_io_instance)
     return result;
 }
 
-static int on_handshake_done(mbedtls_ssl_context* ssl, void* context)
-{
-    TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)context;
-
-    if (tls_io_instance->tlsio_state == TLSIO_STATE_IN_HANDSHAKE)
-    {
-        tls_io_instance->tlsio_state = TLSIO_STATE_OPEN;
-        indicate_open_complete(tls_io_instance, IO_OPEN_OK);
-    }
-
-    return 0;
-}
- 
-static int mbedtls_connect(void* context) {
-    TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)context;
-    int result = 0;
-
-    do {
-        result = mbedtls_ssl_handshake(&tls_io_instance->ssl);
-    }
-    while( result == MBEDTLS_ERR_SSL_WANT_READ || result == MBEDTLS_ERR_SSL_WANT_WRITE );
-
-    if(result == 0)
-    {
-        on_handshake_done(&tls_io_instance->ssl,(void *)tls_io_instance);
-    }
-
-    return result;
-}
-
 static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_result)
 {
     TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)context;
@@ -163,16 +133,27 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
 
     if (open_result != IO_OPEN_OK)
     {
-        tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
+        xio_close(tls_io_instance->socket_io, NULL, NULL);
+        tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
         indicate_open_complete(tls_io_instance, IO_OPEN_ERROR);
     }
     else
     {
         tls_io_instance->tlsio_state = TLSIO_STATE_IN_HANDSHAKE;
 
-        result = mbedtls_connect(tls_io_instance);
-        if (result != 0)
+        do {
+            result = mbedtls_ssl_handshake(&tls_io_instance->ssl);
+        } while (result == MBEDTLS_ERR_SSL_WANT_READ || result == MBEDTLS_ERR_SSL_WANT_WRITE);
+
+        if (result == 0)
         {
+            tls_io_instance->tlsio_state = TLSIO_STATE_OPEN;
+            indicate_open_complete(tls_io_instance, IO_OPEN_OK);
+        }
+        else
+        {
+            xio_close(tls_io_instance->socket_io, NULL, NULL);
+            tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
             indicate_open_complete(tls_io_instance, IO_OPEN_ERROR);
         }
     }
@@ -210,7 +191,10 @@ static void on_underlying_io_error(void* context)
 
     case TLSIO_STATE_OPENING_UNDERLYING_IO:
     case TLSIO_STATE_IN_HANDSHAKE:
-        tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
+        // Existing socket impls are all synchronous close, and this 
+        // adapter does not yet support async close.
+        xio_close(tls_io_instance->socket_io, NULL, NULL);
+        tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
         indicate_open_complete(tls_io_instance, IO_OPEN_ERROR);
         break;
 
@@ -221,20 +205,15 @@ static void on_underlying_io_error(void* context)
     }
 }
 
-int g_created = 0;
-
-static void on_underlying_io_close_complete(void* context)
+static void on_underlying_io_close_complete_during_close(void* context)
 {
     TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)context;
 
-    if (tls_io_instance->tlsio_state == TLSIO_STATE_CLOSING)
+    tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
+
+    if (tls_io_instance->on_io_close_complete != NULL)
     {
-        if (tls_io_instance->on_io_close_complete != NULL)
-        {
-            tls_io_instance->on_io_close_complete(tls_io_instance->on_io_close_complete_context);
-        }
-//	if (g_created)
-//		tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
+        tls_io_instance->on_io_close_complete(tls_io_instance->on_io_close_complete_context);
     }
 }
 
@@ -429,7 +408,6 @@ CONCRETE_IO_HANDLE tlsio_mbedtls_create(void* io_create_parameters)
                     // mbeTLS initialize
                     mbedtls_init((void *)result,tls_io_config->hostname);
                     result->tlsio_state = TLSIO_STATE_NOT_OPEN;
-		            g_created = 1;
                 }
             }
         }
@@ -452,6 +430,8 @@ void tlsio_mbedtls_destroy(CONCRETE_IO_HANDLE tls_io)
         mbedtls_ctr_drbg_free(&tls_io_instance->ctr_drbg);
         mbedtls_entropy_free(&tls_io_instance->entropy);
 
+        xio_close(tls_io_instance->socket_io, NULL, NULL);
+
         if (tls_io_instance->socket_io_read_bytes != NULL)
         {
             free(tls_io_instance->socket_io_read_bytes);
@@ -460,7 +440,6 @@ void tlsio_mbedtls_destroy(CONCRETE_IO_HANDLE tls_io)
         xio_destroy(tls_io_instance->socket_io);
         free(tls_io);
     }
-    g_created = 0;
 }
 
 int tlsio_mbedtls_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_open_complete, void* on_io_open_complete_context, ON_BYTES_RECEIVED on_bytes_received, void* on_bytes_received_context, ON_IO_ERROR on_io_error, void* on_io_error_context)
@@ -533,7 +512,8 @@ int tlsio_mbedtls_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_cl
             tls_io_instance->on_io_close_complete = on_io_close_complete;
             tls_io_instance->on_io_close_complete_context = callback_context;
 
-            if (xio_close(tls_io_instance->socket_io, on_underlying_io_close_complete, tls_io_instance) != 0)
+            if (xio_close(tls_io_instance->socket_io, 
+                on_underlying_io_close_complete_during_close, tls_io_instance) != 0)
             {
                 result = __FAILURE__;
             }
