@@ -11,7 +11,7 @@ SinglyLinkedList is module that provides the functionality of a singly linked li
 typedef struct SINGLYLINKEDLIST_INSTANCE_TAG* SINGLYLINKEDLIST_HANDLE;
 typedef struct LIST_ITEM_INSTANCE_TAG* LIST_ITEM_HANDLE;
 typedef bool (*LIST_MATCH_FUNCTION)(LIST_ITEM_HANDLE list_item, const void* match_context);
-typedef void (*LIST_CONDITION_FUNCTION)(const void* item, const void* match_context, bool* remove_item, bool* continue_processing);
+typedef bool (*LIST_CONDITION_FUNCTION)(const void* item, const void* match_context, bool* continue_processing);
 typedef void (*LIST_ACTION_ACTION)(const void* item, const void* action_context, bool* continue_processing);
 
 extern SINGLYLINKEDLIST_HANDLE singlylinkedlist_create(void);
@@ -105,9 +105,9 @@ extern int singlylinkedlist_remove_if(SINGLYLINKEDLIST_HANDLE list, LIST_CONDITI
 
 **SRS_LIST_09_003: [** singlylinkedlist_remove_if shall determine whether an item satisfies the condition criteria by invoking the condition function for that item. **]**
 
-**SRS_LIST_09_004: [** If the condition function  remove_item as true, singlylinkedlist_find shall consider that item as to be removed. **]**
+**SRS_LIST_09_004: [** If the condition function returns true, singlylinkedlist_find shall consider that item as to be removed. **]**
 
-**SRS_LIST_09_005: [** If the condition function returns remove_item as false or unchanged, singlylinkedlist_find shall consider that item as not to be removed. **]**
+**SRS_LIST_09_005: [** If the condition function returns false, singlylinkedlist_find shall consider that item as not to be removed. **]**
 
 **SRS_LIST_09_006: [** If the condition function returns continue_processing as false, singlylinkedlist_remove_if shall stop iterating through the list and return. **]**
 

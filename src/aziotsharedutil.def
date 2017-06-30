@@ -214,6 +214,8 @@ EXPORTS
     singlylinkedlist_get_next_item
     singlylinkedlist_item_get_value
     singlylinkedlist_remove
+    singlylinkedlist_remove_if
+    singlylinkedlist_foreach
     size_tToString
     socketio_close
     socketio_create
