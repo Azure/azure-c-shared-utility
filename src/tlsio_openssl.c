@@ -63,6 +63,7 @@ struct CRYPTO_dynlock_value
 };
 
 #define OPTION_UNDERLYING_IO_OPTIONS        "underlying_io_options"
+#define SSL_DO_HANDSHAKE_SUCCESS 1
 
 
 /*this function will clone an option given by name and value*/
@@ -587,18 +588,10 @@ static int send_handshake_bytes(TLS_IO_INSTANCE* tls_io_instance)
     {
         LogError("SSL channel closed in send_handshake_bytes.");
         result = __FAILURE__;
-        return result;
-    }
-
-    if (SSL_is_init_finished(tls_io_instance->ssl))
-    {
-        tls_io_instance->tlsio_state = TLSIO_STATE_OPEN;
-        indicate_open_complete(tls_io_instance, IO_OPEN_OK);
-        result = 0;
     }
     else
     {
-        SSL_do_handshake(tls_io_instance->ssl);
+        // SSL_is_init_finished returns 1 if protected data can be transferred
         if (SSL_is_init_finished(tls_io_instance->ssl))
         {
             tls_io_instance->tlsio_state = TLSIO_STATE_OPEN;
@@ -607,20 +600,61 @@ static int send_handshake_bytes(TLS_IO_INSTANCE* tls_io_instance)
         }
         else
         {
-            if (write_outgoing_bytes(tls_io_instance, NULL, NULL) != 0)
+            // ERR_clear_error must be called before any call that might set an
+            // SSL_get_error result
+            int hsret;
+            ERR_clear_error();
+            hsret = SSL_do_handshake(tls_io_instance->ssl);
+            if (hsret != SSL_DO_HANDSHAKE_SUCCESS)
             {
-                LogError("Error in write_outgoing_bytes.");
-                result = __FAILURE__;
+                int ssl_err = SSL_get_error(tls_io_instance->ssl, hsret);
+                if (ssl_err != SSL_ERROR_WANT_READ && ssl_err != SSL_ERROR_WANT_WRITE)
+                {
+                    if (ssl_err == SSL_ERROR_SSL)
+                    {
+                        LogInfo(ERR_error_string(ERR_get_error(), NULL));
+                    }
+                    else
+                    {
+                        LogInfo("SSL handshake failed: %d", ssl_err);
+                    }
+                    tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
+                    indicate_open_complete(tls_io_instance, IO_OPEN_ERROR);
+                }
             }
-            else
+            if (tls_io_instance->tlsio_state == TLSIO_STATE_IN_HANDSHAKE)
             {
+                // SSL_is_init_finished returns 1 if protected data can be transferred
                 if (SSL_is_init_finished(tls_io_instance->ssl))
                 {
                     tls_io_instance->tlsio_state = TLSIO_STATE_OPEN;
                     indicate_open_complete(tls_io_instance, IO_OPEN_OK);
+                    result = 0;
                 }
+                else
+                {
+                    if (write_outgoing_bytes(tls_io_instance, NULL, NULL) != 0)
+                    {
+                        LogError("Error in write_outgoing_bytes.");
+                        result = __FAILURE__;
+                    }
+                    else
+                    {
+                        // SSL_is_init_finished returns 1 if protected data can be transferred
+                        if (SSL_is_init_finished(tls_io_instance->ssl))
+                        {
+                            tls_io_instance->tlsio_state = TLSIO_STATE_OPEN;
+                            indicate_open_complete(tls_io_instance, IO_OPEN_OK);
+                        }
 
-                result = 0;
+                        result = 0;
+                    }
+                }
+            }
+            else
+            {
+                // We got here because we set the state to TLSIO_STATE_ERROR a few lines up
+                result = __FAILURE__;
             }
         }
     }
