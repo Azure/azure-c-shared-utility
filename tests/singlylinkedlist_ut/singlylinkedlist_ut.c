@@ -822,4 +822,363 @@ TEST_FUNCTION(singlylinkedlist_remove_second_of_2_items_succeeds)
 	singlylinkedlist_destroy(list);
 }
 
+/* singlylinkedlist_foreach */
+static int foreach_count;
+static int foreach_stop;
+static void foreach_action_function(const void* item, const void* action_context, bool* continue_processing)
+{
+	int* item_value = (int*)item;
+	int* sum = (int*)action_context;
+
+	foreach_count++;
+
+	*sum += *item_value;
+	*continue_processing = foreach_count < foreach_stop;
+}
+
+/* Tests_SRS_LIST_09_008: [ If the list or the action_function argument is NULL, singlylinkedlist_foreach shall return non-zero value. ] */
+TEST_FUNCTION(singlylinkedlist_foreach_NULL_list_argument)
+{
+	// arrange
+	int sum = 0;
+	int result;
+
+	foreach_count = 0;
+	foreach_stop = 1000000;
+
+	umock_c_reset_all_calls();
+
+	// act
+	result = singlylinkedlist_foreach(NULL, foreach_action_function, &sum);
+
+	// assert
+	ASSERT_ARE_NOT_EQUAL(int, 0, result);
+	ASSERT_ARE_EQUAL(int, 0, foreach_count);
+	ASSERT_ARE_EQUAL(int, 0, sum);
+	ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+	// cleanup
+}
+
+/* Tests_SRS_LIST_09_008: [ If the list or the action_function argument is NULL, singlylinkedlist_foreach shall return non-zero value. ] */
+TEST_FUNCTION(singlylinkedlist_foreach_NULL_action_function)
+{
+	// arrange
+	int sum = 0;
+	int v1 = 115;
+	int result;
+	SINGLYLINKEDLIST_HANDLE list = singlylinkedlist_create();
+	(void)singlylinkedlist_add(list, &v1);
+
+	foreach_count = 0;
+	foreach_stop = 1000000;
+
+	umock_c_reset_all_calls();
+
+	// act
+	result = singlylinkedlist_foreach(list, NULL, &sum);
+
+	// assert
+	ASSERT_ARE_NOT_EQUAL(int, 0, result);
+	ASSERT_ARE_EQUAL(int, 0, foreach_count);
+	ASSERT_ARE_EQUAL(int, 0, sum);
+	ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+	// cleanup
+	singlylinkedlist_destroy(list);
+}
+
+/* Tests_SRS_LIST_09_009: [ singlylinkedlist_foreach shall iterate through all items in a list and invoke action_function for each one of them. ] */
+/* Tests_SRS_LIST_09_011: [ If no errors occur, singlylinkedlist_foreach shall return zero. ] */
+TEST_FUNCTION(singlylinkedlist_foreach_all_items_succeeds)
+{
+	// arrange
+	int sum = 0;
+	int v1 = 115;
+	int v2 = 10;
+	int v3 = 88;
+	int result;
+	SINGLYLINKEDLIST_HANDLE list = singlylinkedlist_create();
+	(void)singlylinkedlist_add(list, &v1);
+	(void)singlylinkedlist_add(list, &v2);
+	(void)singlylinkedlist_add(list, &v3);
+
+	foreach_count = 0;
+	foreach_stop = 1000000;
+
+	umock_c_reset_all_calls();
+
+	// act
+	result = singlylinkedlist_foreach(list, foreach_action_function, &sum);
+
+	// assert
+	ASSERT_ARE_EQUAL(int, 0, result);
+	ASSERT_ARE_EQUAL(int, 3, foreach_count);
+	ASSERT_ARE_EQUAL(int, (v1 + v2 + v3), sum);
+	ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+	// cleanup
+	singlylinkedlist_destroy(list);
+}
+
+/* Tests_SRS_LIST_09_010: [ If the condition function returns continue_processing as false, singlylinkedlist_foreach shall stop iterating through the list and return. ] */
+TEST_FUNCTION(singlylinkedlist_foreach_break_succeeds)
+{
+	// arrange
+	int sum = 0;
+	int v1 = 115;
+	int v2 = 10;
+	int v3 = 88;
+	int result;
+	SINGLYLINKEDLIST_HANDLE list = singlylinkedlist_create();
+	(void)singlylinkedlist_add(list, &v1);
+	(void)singlylinkedlist_add(list, &v2);
+	(void)singlylinkedlist_add(list, &v3);
+
+	foreach_count = 0;
+	foreach_stop = 2;
+
+	umock_c_reset_all_calls();
+
+	// act
+	result = singlylinkedlist_foreach(list, foreach_action_function, &sum);
+
+	// assert
+	ASSERT_ARE_EQUAL(int, 0, result);
+	ASSERT_ARE_EQUAL(int, 2, foreach_count);
+	ASSERT_ARE_EQUAL(int, (v1 + v2), sum);
+	ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+	// cleanup
+	singlylinkedlist_destroy(list);
+}
+
+/* singlylinkedlist_remove_if */
+
+typedef struct REMOVE_IF_PROFILE_TAG
+{
+	int count;
+	int items_to_remove[10];
+	int stop_at_item_value;
+} REMOVE_IF_PROFILE;
+
+static void removeif_condition_function(const void* item, const void* condition_context, bool* remove_item, bool* continue_processing)
+{
+	int* item_value = (int*)item;
+	REMOVE_IF_PROFILE* profile = (REMOVE_IF_PROFILE*)condition_context;
+	int i;
+
+	*remove_item = false;
+
+	for (i = 0; i < profile->count; i++)
+	{
+		if (*item_value == profile->items_to_remove[i])
+		{
+			*remove_item = true;
+			break;
+		}
+	}
+
+	*continue_processing = (*item_value != profile->stop_at_item_value);
+}
+
+
+/* Tests_SRS_LIST_09_001: [ If the list or the condition_function argument is NULL, singlylinkedlist_remove_if shall return non-zero value. ] */
+TEST_FUNCTION(singlylinkedlist_remove_if_NULL_condition_argument)
+{
+	// arrange
+	int result;
+
+	int values[5] = { 3, 5, 7, 11, 17 };
+
+	REMOVE_IF_PROFILE profile;
+	profile.count = 2;
+	profile.items_to_remove[0] = values[1];
+	profile.items_to_remove[1] = values[4];
+	profile.stop_at_item_value = values[3];
+
+	SINGLYLINKEDLIST_HANDLE list = singlylinkedlist_create();
+	(void)singlylinkedlist_add(list, &values[0]);
+	(void)singlylinkedlist_add(list, &values[1]);
+	(void)singlylinkedlist_add(list, &values[2]);
+	(void)singlylinkedlist_add(list, &values[3]);
+	(void)singlylinkedlist_add(list, &values[4]);
+
+	umock_c_reset_all_calls();
+
+	// act
+	result = singlylinkedlist_remove_if(list, NULL, &profile);
+
+	// assert
+	ASSERT_ARE_NOT_EQUAL(int, 0, result);
+	ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+	{
+		int sum = 0;
+		foreach_count = 0;
+		foreach_stop = 10000;
+		(void)singlylinkedlist_foreach(list, foreach_action_function, &sum);
+		ASSERT_ARE_EQUAL(int, (values[0] + values[1] + values[2] + values[3] + values[4]), sum);
+	}
+
+	// cleanup
+	singlylinkedlist_destroy(list);
+}
+
+/* Tests_SRS_LIST_09_001: [ If the list or the condition_function argument is NULL, singlylinkedlist_remove_if shall return non-zero value. ] */
+TEST_FUNCTION(singlylinkedlist_remove_if_NULL_list_argument)
+{
+	// arrange
+	int result;
+
+	REMOVE_IF_PROFILE profile;
+	profile.count = 0;
+
+	umock_c_reset_all_calls();
+
+	// act
+	result = singlylinkedlist_remove_if(NULL, removeif_condition_function, &profile);
+
+	// assert
+	ASSERT_ARE_NOT_EQUAL(int, 0, result);
+	ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+	// cleanup
+}
+
+/* Tests_SRS_LIST_09_002: [ singlylinkedlist_remove_if shall iterate through all items in a list and remove all that satisfies a certain condition function. ] */
+/* Tests_SRS_LIST_09_003: [ singlylinkedlist_remove_if shall determine whether an item satisfies the condition criteria by invoking the condition function for that item. ] */
+/* Tests_SRS_LIST_09_004: [ If the condition function  remove_item as true, singlylinkedlist_find shall consider that item as to be removed. ] */
+/* Tests_SRS_LIST_09_005: [ If the condition function returns remove_item as false or unchanged, singlylinkedlist_find shall consider that item as not to be removed. ] */
+/* Tests_SRS_LIST_09_007: [ If no errors occur, singlylinkedlist_remove_if shall return zero. ] */
+TEST_FUNCTION(singlylinkedlist_remove_if_all_items_succeeds)
+{
+	// arrange
+	int result;
+
+	int values[5] = { 3, 5, 7, 11, 17 };
+
+	REMOVE_IF_PROFILE profile;
+	profile.count = 2;
+	profile.items_to_remove[0] = values[1];
+	profile.items_to_remove[1] = values[3];
+	profile.stop_at_item_value = 1000000;
+
+	SINGLYLINKEDLIST_HANDLE list = singlylinkedlist_create();
+	(void)singlylinkedlist_add(list, &values[0]);
+	(void)singlylinkedlist_add(list, &values[1]);
+	(void)singlylinkedlist_add(list, &values[2]);
+	(void)singlylinkedlist_add(list, &values[3]);
+	(void)singlylinkedlist_add(list, &values[4]);
+
+	umock_c_reset_all_calls();
+	STRICT_EXPECTED_CALL(free(IGNORED_PTR_ARG));
+	STRICT_EXPECTED_CALL(free(IGNORED_PTR_ARG));
+
+	// act
+	result = singlylinkedlist_remove_if(list, removeif_condition_function, &profile);
+
+	// assert
+	ASSERT_ARE_EQUAL(int, 0, result);
+	ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+	{
+		int sum = 0;
+		foreach_count = 0;
+		foreach_stop = 10000;
+		(void)singlylinkedlist_foreach(list, foreach_action_function, &sum);
+		ASSERT_ARE_EQUAL(int, (values[0] + values[2] + values[4]), sum);
+	}
+
+	// cleanup
+	singlylinkedlist_destroy(list);
+}
+
+/* Tests_SRS_LIST_09_006: [ If the condition function returns continue_processing as false, singlylinkedlist_remove_if shall stop iterating through the list and return. ] */
+TEST_FUNCTION(singlylinkedlist_remove_if_break_succeeds)
+{
+	// arrange
+	int result;
+
+	int values[5] = { 3, 5, 7, 11, 17 };
+
+	REMOVE_IF_PROFILE profile;
+	profile.count = 2;
+	profile.items_to_remove[0] = values[1];
+	profile.items_to_remove[1] = values[4];
+	profile.stop_at_item_value = values[3];
+
+	SINGLYLINKEDLIST_HANDLE list = singlylinkedlist_create();
+	(void)singlylinkedlist_add(list, &values[0]);
+	(void)singlylinkedlist_add(list, &values[1]);
+	(void)singlylinkedlist_add(list, &values[2]);
+	(void)singlylinkedlist_add(list, &values[3]);
+	(void)singlylinkedlist_add(list, &values[4]);
+
+	umock_c_reset_all_calls();
+	STRICT_EXPECTED_CALL(free(IGNORED_PTR_ARG));
+
+	// act
+	result = singlylinkedlist_remove_if(list, removeif_condition_function, &profile);
+
+	// assert
+	ASSERT_ARE_EQUAL(int, 0, result);
+	ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+	{
+		int sum = 0;
+		foreach_count = 0;
+		foreach_stop = 10000;
+		(void)singlylinkedlist_foreach(list, foreach_action_function, &sum);
+		ASSERT_ARE_EQUAL(int, (values[0] + values[2] + values[3] + values[4]), sum);
+	}
+
+	// cleanup
+	singlylinkedlist_destroy(list);
+}
+
+/* Tests_SRS_LIST_09_006: [ If the condition function returns continue_processing as false, singlylinkedlist_remove_if shall stop iterating through the list and return. ] */
+TEST_FUNCTION(singlylinkedlist_remove_if_remove_and_break_succeeds)
+{
+	// arrange
+	int result;
+
+	int values[5] = { 3, 5, 7, 11, 17 };
+
+	REMOVE_IF_PROFILE profile;
+	profile.count = 2;
+	profile.items_to_remove[0] = values[0];
+	profile.items_to_remove[1] = values[3];
+	profile.stop_at_item_value = values[3];
+
+	SINGLYLINKEDLIST_HANDLE list = singlylinkedlist_create();
+	(void)singlylinkedlist_add(list, &values[0]);
+	(void)singlylinkedlist_add(list, &values[1]);
+	(void)singlylinkedlist_add(list, &values[2]);
+	(void)singlylinkedlist_add(list, &values[3]);
+	(void)singlylinkedlist_add(list, &values[4]);
+
+	umock_c_reset_all_calls();
+	STRICT_EXPECTED_CALL(free(IGNORED_PTR_ARG));
+	STRICT_EXPECTED_CALL(free(IGNORED_PTR_ARG));
+
+	// act
+	result = singlylinkedlist_remove_if(list, removeif_condition_function, &profile);
+
+	// assert
+	ASSERT_ARE_EQUAL(int, 0, result);
+	ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+	{
+		int sum = 0;
+		foreach_count = 0;
+		foreach_stop = 10000;
+		(void)singlylinkedlist_foreach(list, foreach_action_function, &sum);
+		ASSERT_ARE_EQUAL(int, (values[1] + values[2] + values[4]), sum);
+	}
+
+	// cleanup
+	singlylinkedlist_destroy(list);
+}
+
 END_TEST_SUITE(singlylinkedlist_unittests)
