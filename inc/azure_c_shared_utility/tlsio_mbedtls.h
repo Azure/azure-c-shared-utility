@@ -4,8 +4,10 @@
 #ifndef TLSIO_MBEDTLS_H
 #define TLSIO_MBEDTLS_H
 
+// DEPRECATED: tls_config will be removed from the tree.
 #include "azure_c_shared_utility/tls_config.h"
 
+// DEPRECATED: the USE_MBED_TLS #define is deprecated.
 #ifdef USE_MBED_TLS
 
 #ifdef __cplusplus
@@ -19,6 +21,7 @@ extern "C" {
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/optionhandler.h"
 
+// DEPRECATED: the functions below do not neet to be exposed.
 extern CONCRETE_IO_HANDLE tlsio_mbedtls_create(void* io_create_parameters);
 extern void tlsio_mbedtls_destroy(CONCRETE_IO_HANDLE tls_io);
 extern int tlsio_mbedtls_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_open_complete, void* on_io_open_complete_context, ON_BYTES_RECEIVED on_bytes_received, void* on_bytes_received_context, ON_IO_ERROR on_io_error, void* on_io_error_context);
@@ -27,6 +30,7 @@ extern int tlsio_mbedtls_send(CONCRETE_IO_HANDLE tls_io, const void* buffer, siz
 extern void tlsio_mbedtls_dowork(CONCRETE_IO_HANDLE tls_io);
 extern int tlsio_mbedtls_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, const void* value);
 extern OPTIONHANDLER_HANDLE tlsio_mbedtls_retrieveoptions(CONCRETE_IO_HANDLE handle);
+// DEPRECATED: the functions above do not neet to be exposed.
 
 extern const IO_INTERFACE_DESCRIPTION* tlsio_mbedtls_get_interface_description(void);
 
@@ -34,6 +38,7 @@ extern const IO_INTERFACE_DESCRIPTION* tlsio_mbedtls_get_interface_description(v
 }
 #endif /* __cplusplus */
 
+// DEPRECATED: the USE_MBED_TLS #define is deprecated.
 #endif /* USE_MBED_TLS */
 
 #endif /* TLSIO_MBEDTLS_H */
