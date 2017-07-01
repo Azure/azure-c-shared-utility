@@ -11,6 +11,8 @@ SinglyLinkedList is module that provides the functionality of a singly linked li
 typedef struct SINGLYLINKEDLIST_INSTANCE_TAG* SINGLYLINKEDLIST_HANDLE;
 typedef struct LIST_ITEM_INSTANCE_TAG* LIST_ITEM_HANDLE;
 typedef bool (*LIST_MATCH_FUNCTION)(LIST_ITEM_HANDLE list_item, const void* match_context);
+typedef bool (*LIST_CONDITION_FUNCTION)(const void* item, const void* match_context, bool* continue_processing);
+typedef void (*LIST_ACTION_ACTION)(const void* item, const void* action_context, bool* continue_processing);
 
 extern SINGLYLINKEDLIST_HANDLE singlylinkedlist_create(void);
 extern void singlylinkedlist_destroy(SINGLYLINKEDLIST_HANDLE list);
@@ -19,8 +21,8 @@ extern int singlylinkedlist_remove(SINGLYLINKEDLIST_HANDLE list, LIST_ITEM_HANDL
 extern LIST_ITEM_HANDLE singlylinkedlist_get_head_item(SINGLYLINKEDLIST_HANDLE list);
 extern LIST_ITEM_HANDLE singlylinkedlist_get_next_item(LIST_ITEM_HANDLE item_handle);
 extern LIST_ITEM_HANDLE singlylinkedlist_find(SINGLYLINKEDLIST_HANDLE list, LIST_MATCH_FUNCTION match_function, const void* match_context);
-extern int singlylinkedlist_remove_matching_item(SINGLYLINKEDLIST_HANDLE list, LIST_MATCH_FUNCTION match_function, const void* match_context);
-
+extern int singlylinkedlist_remove_if(SINGLYLINKEDLIST_HANDLE list, LIST_CONDITION_FUNCTION condition_function, const void* match_context);
+extern int singlylinkedlist_foreach(SINGLYLINKEDLIST_HANDLE list, LIST_ACTION_ACTION action_function, const void* action_context);
 extern const void* singlylinkedlist_item_get_value(LIST_ITEM_HANDLE item_handle);
 ```
 
@@ -91,6 +93,38 @@ extern const void* singlylinkedlist_find(SINGLYLINKEDLIST_HANDLE list, const voi
 **SRS_LIST_01_017: [** If the match function returns true, singlylinkedlist_find shall consider that item as matching. **]**
 
 **SRS_LIST_01_015: [** If the list is empty, singlylinkedlist_find shall return NULL. **]**
+
+### singlylinkedlist_remove_if
+```c
+extern int singlylinkedlist_remove_if(SINGLYLINKEDLIST_HANDLE list, LIST_CONDITION_FUNCTION condition_function, void* match_context);
+```
+
+**SRS_LIST_09_001: [** If the list or the condition_function argument is NULL, singlylinkedlist_remove_if shall return non-zero value. **]**
+
+**SRS_LIST_09_002: [** singlylinkedlist_remove_if shall iterate through all items in a list and remove all that satisfies a certain condition function. **]**
+
+**SRS_LIST_09_003: [** singlylinkedlist_remove_if shall determine whether an item satisfies the condition criteria by invoking the condition function for that item. **]**
+
+**SRS_LIST_09_004: [** If the condition function returns true, singlylinkedlist_find shall consider that item as to be removed. **]**
+
+**SRS_LIST_09_005: [** If the condition function returns false, singlylinkedlist_find shall consider that item as not to be removed. **]**
+
+**SRS_LIST_09_006: [** If the condition function returns continue_processing as false, singlylinkedlist_remove_if shall stop iterating through the list and return. **]**
+
+**SRS_LIST_09_007: [** If no errors occur, singlylinkedlist_remove_if shall return zero. **]**
+
+### singlylinkedlist_foreach
+```c
+extern int singlylinkedlist_foreach(SINGLYLINKEDLIST_HANDLE list, LIST_ACTION_ACTION action_function, void* action_context);
+```
+
+**SRS_LIST_09_008: [** If the list or the action_function argument is NULL, singlylinkedlist_foreach shall return non-zero value. **]**
+
+**SRS_LIST_09_009: [** singlylinkedlist_foreach shall iterate through all items in a list and invoke action_function for each one of them. **]**
+
+**SRS_LIST_09_010: [** If the condition function returns continue_processing as false, singlylinkedlist_foreach shall stop iterating through the list and return. **]**
+
+**SRS_LIST_09_011: [** If no errors occur, singlylinkedlist_foreach shall return zero. **]**
 
 ### singlylinkedlist_remove
 ```c
