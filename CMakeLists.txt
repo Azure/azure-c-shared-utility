@@ -495,15 +495,13 @@ ENDIF(WIN32)
 #this is the product (a library)
 add_library(aziotsharedutil ${source_c_files} ${source_h_files})
 
-#make sure we can link as dll/so
-add_library(aziotsharedutil_dll SHARED ./src/aziotsharedutil.def ${source_c_files} ${source_h_files})
-set_target_properties(aziotsharedutil_dll PROPERTIES OUTPUT_NAME "aziotsharedutil")
-
-if(WIN32)
-
+if(${build_as_dynamic})
+    #make sure we can link as dll/so
+    add_library(aziotsharedutil_dll SHARED ./src/aziotsharedutil.def ${source_c_files} ${source_h_files})
+    set_target_properties(aziotsharedutil_dll PROPERTIES OUTPUT_NAME "aziotsharedutil")
 endif()
 
-set(aziotsharedutil_target_libs )
+set(aziotsharedutil_target_libs)
 
 if(${use_http})
     if(WIN32)
@@ -571,7 +569,9 @@ if(LINUX)
 endif()
 
 target_link_libraries(aziotsharedutil ${aziotsharedutil_target_libs})
-target_link_libraries(aziotsharedutil_dll ${aziotsharedutil_target_libs})
+if(${build_as_dynamic})
+    target_link_libraries(aziotsharedutil_dll ${aziotsharedutil_target_libs})
+endif()
 
 if (${run_unittests} OR ${run_e2e_tests})
     include("dependencies-test.cmake")
@@ -605,10 +605,9 @@ if (NOT ${skip_samples})
     add_subdirectory(samples)
 endif()
 
-# Set CMAKE_INSTALL_* if not defined
-include(GNUInstallDirs)
-
 if(${use_installed_dependencies})
+    # Set CMAKE_INSTALL_* if not defined
+    include(GNUInstallDirs)
 
     if(NOT DEFINED CMAKE_INSTALL_LIBDIR)
         set(CMAKE_INSTALL_LIBDIR "lib")
@@ -654,11 +653,7 @@ if(${use_installed_dependencies})
             ${package_location}
     )
 else()
-	set(install_staticlibs
-		aziotsharedutil
-	)
-	install(FILES ${source_h_files}
-		DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azure_c_shared_utility) 
-	install(TARGETS ${install_staticlibs} 
-		ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
+    set(install_staticlibs aziotsharedutil )
+    install(FILES ${source_h_files} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azure_c_shared_utility) 
+    install(TARGETS ${install_staticlibs} ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
 endif()
