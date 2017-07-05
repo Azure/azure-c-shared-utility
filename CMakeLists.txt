@@ -653,6 +653,10 @@ if(${use_installed_dependencies})
             ${package_location}
     )
 else()
+    if (NOT DEFINED CMAKE_INSTALL_LIBDIR)
+        set(CMAKE_INSTALL_LIBDIR "lib")
+    endif()
+
     set(install_staticlibs aziotsharedutil )
     install(FILES ${source_h_files} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azure_c_shared_utility) 
     install(TARGETS ${install_staticlibs} ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
