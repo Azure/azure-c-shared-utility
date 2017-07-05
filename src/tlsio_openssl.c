@@ -24,10 +24,21 @@ typedef enum TLSIO_STATE_TAG
     TLSIO_STATE_NOT_OPEN,
     TLSIO_STATE_OPENING_UNDERLYING_IO,
     TLSIO_STATE_IN_HANDSHAKE,
+    // TLSIO_STATE_HANDSHAKE_FAILED is an ephemeral state signalling successful socket
+    // operation but with rejected handshake. The tlsio will never be in this state
+    // at the start of any of the API calls.
+    TLSIO_STATE_HANDSHAKE_FAILED,
     TLSIO_STATE_OPEN,
     TLSIO_STATE_CLOSING,
     TLSIO_STATE_ERROR
 } TLSIO_STATE;
+
+static bool is_an_opening_state(TLSIO_STATE state)
+{
+    // TLSIO_STATE_HANDSHAKE_FAILED is deliberately not one of these states. 
+    return state == TLSIO_STATE_OPENING_UNDERLYING_IO ||
+        state == TLSIO_STATE_IN_HANDSHAKE;
+}
 
 typedef int(*TLS_CERTIFICATE_VALIDATION_CALLBACK)(X509_STORE_CTX*, void*);
 
@@ -57,9 +68,9 @@ typedef struct TLS_IO_INSTANCE_TAG
     void* tls_validation_callback_data;
 } TLS_IO_INSTANCE;
 
-struct CRYPTO_dynlock_value 
+struct CRYPTO_dynlock_value
 {
-    LOCK_HANDLE lock; 
+    LOCK_HANDLE lock;
 };
 
 #define OPTION_UNDERLYING_IO_OPTIONS        "underlying_io_options"
@@ -70,9 +81,9 @@ struct CRYPTO_dynlock_value
 static void* tlsio_openssl_CloneOption(const char* name, const void* value)
 {
     void* result;
-    if(
+    if (
         (name == NULL) || (value == NULL)
-    )
+        )
     {
         LogError("invalid parameter detected: const char* name=%p, const void* value=%p", name, value);
         result = NULL;
@@ -85,7 +96,7 @@ static void* tlsio_openssl_CloneOption(const char* name, const void* value)
         }
         else if (strcmp(name, "TrustedCerts") == 0)
         {
-            if(mallocAndStrcpy_s((char**)&result, value) != 0)
+            if (mallocAndStrcpy_s((char**)&result, value) != 0)
             {
                 LogError("unable to mallocAndStrcpy_s TrustedCerts value");
                 result = NULL;
@@ -204,7 +215,7 @@ static void tlsio_openssl_DestroyOption(const char* name, const void* value)
 static OPTIONHANDLER_HANDLE tlsio_openssl_retrieveoptions(CONCRETE_IO_HANDLE handle)
 {
     OPTIONHANDLER_HANDLE result;
-    if(handle == NULL)
+    if (handle == NULL)
     {
         LogError("invalid parameter detected: CONCRETE_IO_HANDLE handle=%p", handle);
         result = NULL;
@@ -231,10 +242,10 @@ static OPTIONHANDLER_HANDLE tlsio_openssl_retrieveoptions(CONCRETE_IO_HANDLE han
                 OptionHandler_Destroy(result);
                 result = NULL;
             }
-            else if(
-                (tls_io_instance->certificate != NULL) && 
+            else if (
+                (tls_io_instance->certificate != NULL) &&
                 (OptionHandler_AddOption(result, "TrustedCerts", tls_io_instance->certificate) != OPTIONHANDLER_OK)
-            )
+                )
             {
                 LogError("unable to save TrustedCerts option");
                 OptionHandler_Destroy(result);
@@ -250,9 +261,9 @@ static OPTIONHANDLER_HANDLE tlsio_openssl_retrieveoptions(CONCRETE_IO_HANDLE han
                 result = NULL;
             }
             else if (
-                (tls_io_instance->x509privatekey != NULL) && 
+                (tls_io_instance->x509privatekey != NULL) &&
                 (OptionHandler_AddOption(result, SU_OPTION_X509_PRIVATE_KEY, tls_io_instance->x509privatekey) != OPTIONHANDLER_OK)
-            )
+                )
             {
                 LogError("unable to save x509privatekey option");
                 OptionHandler_Destroy(result);
@@ -287,10 +298,10 @@ static OPTIONHANDLER_HANDLE tlsio_openssl_retrieveoptions(CONCRETE_IO_HANDLE han
             }
             else if (tls_io_instance->tls_validation_callback != NULL)
             {
-                #pragma warning(push)
-                #pragma warning(disable:4152)
+#pragma warning(push)
+#pragma warning(disable:4152)
                 void* ptr = tls_io_instance->tls_validation_callback;
-                #pragma warning(pop)
+#pragma warning(pop)
 
                 if (OptionHandler_AddOption(result, "tls_validation_callback", (const char*)ptr) != OPTIONHANDLER_OK)
                 {
@@ -353,16 +364,16 @@ static void log_ERR_get_error(const char* message)
 {
     char buf[128];
     unsigned long error;
-	int i;
-    
+    int i;
+
     if (message != NULL)
     {
         LogError("%s", message);
     }
-    
+
     error = ERR_get_error();
-    
-    for(i = 0; 0 != error; i++)
+
+    for (i = 0; 0 != error; i++)
     {
         LogError("  [%d] %s", i, ERR_error_string(error, buf));
         error = ERR_get_error();
@@ -372,9 +383,9 @@ static void log_ERR_get_error(const char* message)
 static struct CRYPTO_dynlock_value* openssl_dynamic_locks_create_cb(const char* file, int line)
 {
     struct CRYPTO_dynlock_value* result;
-    
+
     result = malloc(sizeof(struct CRYPTO_dynlock_value));
-    
+
     if (result == NULL)
     {
         LogError("Failed to allocate lock!  Out of memory (%s:%d).", file, line);
@@ -385,12 +396,12 @@ static struct CRYPTO_dynlock_value* openssl_dynamic_locks_create_cb(const char* 
         if (result->lock == NULL)
         {
             LogError("Failed to create lock for dynamic lock (%s:%d).", file, line);
-            
+
             free(result);
             result = NULL;
         }
     }
-    
+
     return result;
 }
 
@@ -441,17 +452,17 @@ static void openssl_static_locks_uninstall(void)
 {
     if (openssl_locks != NULL)
     {
-		int i;
+        int i;
         CRYPTO_set_locking_callback(NULL);
-        
-        for(i = 0; i < CRYPTO_num_locks(); i++)
+
+        for (i = 0; i < CRYPTO_num_locks(); i++)
         {
             if (openssl_locks[i] != NULL)
             {
                 Lock_Deinit(openssl_locks[i]);
             }
         }
-        
+
         free(openssl_locks);
         openssl_locks = NULL;
     }
@@ -464,7 +475,7 @@ static void openssl_static_locks_uninstall(void)
 static int openssl_static_locks_install(void)
 {
     int result;
-    
+
     if (openssl_locks != NULL)
     {
         LogError("Locks already initialized");
@@ -473,7 +484,7 @@ static int openssl_static_locks_install(void)
     else
     {
         openssl_locks = malloc(CRYPTO_num_locks() * sizeof(LOCK_HANDLE));
-        if(openssl_locks == NULL)
+        if (openssl_locks == NULL)
         {
             LogError("Failed to allocate locks");
             result = __FAILURE__;
@@ -481,7 +492,7 @@ static int openssl_static_locks_install(void)
         else
         {
             int i;
-            for(i = 0; i < CRYPTO_num_locks(); i++)
+            for (i = 0; i < CRYPTO_num_locks(); i++)
             {
                 openssl_locks[i] = Lock_Init();
                 if (openssl_locks[i] == NULL)
@@ -490,10 +501,10 @@ static int openssl_static_locks_install(void)
                     break;
                 }
             }
-            
+
             if (i != CRYPTO_num_locks())
             {
-				int j;
+                int j;
                 for (j = 0; j < i; j++)
                 {
                     Lock_Deinit(openssl_locks[j]);
@@ -503,7 +514,7 @@ static int openssl_static_locks_install(void)
             else
             {
                 CRYPTO_set_locking_callback(openssl_static_locks_lock_unlock_cb);
-                
+
                 result = 0;
             }
         }
@@ -580,86 +591,44 @@ static int write_outgoing_bytes(TLS_IO_INSTANCE* tls_io_instance, ON_SEND_COMPLE
     return result;
 }
 
-static int send_handshake_bytes(TLS_IO_INSTANCE* tls_io_instance)
+// Non-NULL tls_io_instance is guaranteed by callers. 
+// We are in TLSIO_STATE_IN_HANDSHAKE when entering this method.
+static void send_handshake_bytes(TLS_IO_INSTANCE* tls_io_instance)
 {
-    int result;
-
-    if (tls_io_instance->ssl == NULL)
+    int hsret;
+    // ERR_clear_error must be called before any call that might set an
+    // SSL_get_error result
+    ERR_clear_error();
+    hsret = SSL_do_handshake(tls_io_instance->ssl);
+    if (hsret != SSL_DO_HANDSHAKE_SUCCESS)
     {
-        LogError("SSL channel closed in send_handshake_bytes.");
-        result = __FAILURE__;
-    }
-    else
-    {
-        // SSL_is_init_finished returns 1 if protected data can be transferred
-        if (SSL_is_init_finished(tls_io_instance->ssl))
+        int ssl_err = SSL_get_error(tls_io_instance->ssl, hsret);
+        if (ssl_err != SSL_ERROR_WANT_READ && ssl_err != SSL_ERROR_WANT_WRITE)
         {
-            tls_io_instance->tlsio_state = TLSIO_STATE_OPEN;
-            indicate_open_complete(tls_io_instance, IO_OPEN_OK);
-            result = 0;
-        }
-        else
-        {
-            // ERR_clear_error must be called before any call that might set an
-            // SSL_get_error result
-            int hsret;
-            ERR_clear_error();
-            hsret = SSL_do_handshake(tls_io_instance->ssl);
-            if (hsret != SSL_DO_HANDSHAKE_SUCCESS)
+            if (ssl_err == SSL_ERROR_SSL)
             {
-                int ssl_err = SSL_get_error(tls_io_instance->ssl, hsret);
-                if (ssl_err != SSL_ERROR_WANT_READ && ssl_err != SSL_ERROR_WANT_WRITE)
-                {
-                    if (ssl_err == SSL_ERROR_SSL)
-                    {
-                        LogInfo(ERR_error_string(ERR_get_error(), NULL));
-                    }
-                    else
-                    {
-                        LogInfo("SSL handshake failed: %d", ssl_err);
-                    }
-                    tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
-                    indicate_open_complete(tls_io_instance, IO_OPEN_ERROR);
-                }
-            }
-            if (tls_io_instance->tlsio_state == TLSIO_STATE_IN_HANDSHAKE)
-            {
-                // SSL_is_init_finished returns 1 if protected data can be transferred
-                if (SSL_is_init_finished(tls_io_instance->ssl))
-                {
-                    tls_io_instance->tlsio_state = TLSIO_STATE_OPEN;
-                    indicate_open_complete(tls_io_instance, IO_OPEN_OK);
-                    result = 0;
-                }
-                else
-                {
-                    if (write_outgoing_bytes(tls_io_instance, NULL, NULL) != 0)
-                    {
-                        LogError("Error in write_outgoing_bytes.");
-                        result = __FAILURE__;
-                    }
-                    else
-                    {
-                        // SSL_is_init_finished returns 1 if protected data can be transferred
-                        if (SSL_is_init_finished(tls_io_instance->ssl))
-                        {
-                            tls_io_instance->tlsio_state = TLSIO_STATE_OPEN;
-                            indicate_open_complete(tls_io_instance, IO_OPEN_OK);
-                        }
-
-                        result = 0;
-                    }
-                }
+                LogInfo(ERR_error_string(ERR_get_error(), NULL));
             }
             else
             {
-                // We got here because we set the state to TLSIO_STATE_ERROR a few lines up
-                result = __FAILURE__;
+                LogInfo("SSL handshake failed: %d", ssl_err);
+            }
+            tls_io_instance->tlsio_state = TLSIO_STATE_HANDSHAKE_FAILED;
+        }
+        else
+        {
+            if (write_outgoing_bytes(tls_io_instance, NULL, NULL) != 0)
+            {
+                LogError("Error in write_outgoing_bytes.");
+                tls_io_instance->tlsio_state = TLSIO_STATE_HANDSHAKE_FAILED;
             }
         }
     }
-
-    return result;
+    else
+    {
+        tls_io_instance->tlsio_state = TLSIO_STATE_OPEN;
+        indicate_open_complete(tls_io_instance, IO_OPEN_OK);
+    }
 }
 
 static void on_underlying_io_close_complete(void* context)
@@ -668,25 +637,27 @@ static void on_underlying_io_close_complete(void* context)
 
     switch (tls_io_instance->tlsio_state)
     {
-        default:
-        case TLSIO_STATE_NOT_OPEN:
-        case TLSIO_STATE_OPEN:
-            break;
+    default:
+    case TLSIO_STATE_NOT_OPEN:
+    case TLSIO_STATE_OPEN:
+    case TLSIO_STATE_IN_HANDSHAKE:
+    case TLSIO_STATE_HANDSHAKE_FAILED:
+    case TLSIO_STATE_ERROR:
+        break;
 
-        case TLSIO_STATE_OPENING_UNDERLYING_IO:
-        case TLSIO_STATE_IN_HANDSHAKE:
-            tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
-            indicate_open_complete(tls_io_instance, IO_OPEN_ERROR);
-            break;
+    case TLSIO_STATE_OPENING_UNDERLYING_IO:
+        tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
+        indicate_open_complete(tls_io_instance, IO_OPEN_ERROR);
+        break;
 
-        case TLSIO_STATE_CLOSING:
-            tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
+    case TLSIO_STATE_CLOSING:
+        tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
 
-            if (tls_io_instance->on_io_close_complete != NULL)
-            {
-                tls_io_instance->on_io_close_complete(tls_io_instance->on_io_close_complete_context);
-            }
-            break;
+        if (tls_io_instance->on_io_close_complete != NULL)
+        {
+            tls_io_instance->on_io_close_complete(tls_io_instance->on_io_close_complete_context);
+        }
+        break;
     }
 }
 
@@ -700,15 +671,8 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
         {
             tls_io_instance->tlsio_state = TLSIO_STATE_IN_HANDSHAKE;
 
-            if (send_handshake_bytes(tls_io_instance) != 0)
-            {
-                if (xio_close(tls_io_instance->underlying_io, on_underlying_io_close_complete, tls_io_instance) != 0)
-                {
-                    tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
-                    indicate_open_complete(tls_io_instance, IO_OPEN_ERROR);
-                    LogError("Error in xio_close.");
-                }
-            }
+            // Begin the handshake process here. It continues in on_underlying_io_bytes_received
+            send_handshake_bytes(tls_io_instance);
         }
         else
         {
@@ -725,18 +689,18 @@ static void on_underlying_io_error(void* context)
 
     switch (tls_io_instance->tlsio_state)
     {
-        default:
-            break;
+    default:
+        break;
 
-        case TLSIO_STATE_OPENING_UNDERLYING_IO:
-        case TLSIO_STATE_IN_HANDSHAKE:
-            tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
-            indicate_open_complete(tls_io_instance, IO_OPEN_ERROR);
-            break;
+    case TLSIO_STATE_OPENING_UNDERLYING_IO:
+    case TLSIO_STATE_IN_HANDSHAKE:
+        tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
+        indicate_open_complete(tls_io_instance, IO_OPEN_ERROR);
+        break;
 
-        case TLSIO_STATE_OPEN:
-            indicate_error(tls_io_instance);
-            break;
+    case TLSIO_STATE_OPEN:
+        indicate_error(tls_io_instance);
+        break;
     }
 }
 
@@ -788,47 +752,36 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
     {
         switch (tls_io_instance->tlsio_state)
         {
-            default:
-                break;
+        default:
+            break;
 
-            case TLSIO_STATE_IN_HANDSHAKE:
-                if (send_handshake_bytes(tls_io_instance) != 0)
-                {
-                    if (xio_close(tls_io_instance->underlying_io, on_underlying_io_close_complete, tls_io_instance) != 0)
-                    {
-                        tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
-                        indicate_open_complete(tls_io_instance, IO_OPEN_ERROR);
-                        LogError("Error in xio_close.");
-                    }
-                }
-                break;
+        case TLSIO_STATE_IN_HANDSHAKE:
+            send_handshake_bytes(tls_io_instance);
+            break;
 
-            case TLSIO_STATE_OPEN:
-                if (decode_ssl_received_bytes(tls_io_instance) != 0)
-                {
-                    tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
-                    indicate_error(tls_io_instance);
-                    LogError("Error in decode_ssl_received_bytes.");
-                }
-                break;
+        case TLSIO_STATE_OPEN:
+            if (decode_ssl_received_bytes(tls_io_instance) != 0)
+            {
+                tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
+                indicate_error(tls_io_instance);
+                LogError("Error in decode_ssl_received_bytes.");
+            }
+            break;
         }
     }
 }
 
 static void close_openssl_instance(TLS_IO_INSTANCE* tls_io_instance)
 {
-    if (tls_io_instance != NULL)
+    if (tls_io_instance->ssl != NULL)
     {
-        if (tls_io_instance->ssl != NULL)
-        {
-            SSL_free(tls_io_instance->ssl);
-            tls_io_instance->ssl = NULL;
-        }
-        if (tls_io_instance->ssl_context != NULL)
-        {
-            SSL_CTX_free(tls_io_instance->ssl_context);
-            tls_io_instance->ssl_context = NULL;
-        }
+        SSL_free(tls_io_instance->ssl);
+        tls_io_instance->ssl = NULL;
+    }
+    if (tls_io_instance->ssl_context != NULL)
+    {
+        SSL_CTX_free(tls_io_instance->ssl_context);
+        tls_io_instance->ssl_context = NULL;
     }
 }
 
@@ -937,10 +890,10 @@ static int create_openssl_instance(TLS_IO_INSTANCE* tlsInstance)
         result = __FAILURE__;
     }
     /*x509 authentication can only be build before underlying connection is realized*/
-    else if(
-            (tlsInstance->x509certificate != NULL) &&
-            (tlsInstance->x509privatekey != NULL) &&
-            (x509_openssl_add_credentials(tlsInstance->ssl_context, tlsInstance->x509certificate, tlsInstance->x509privatekey) != 0)
+    else if (
+        (tlsInstance->x509certificate != NULL) &&
+        (tlsInstance->x509privatekey != NULL) &&
+        (x509_openssl_add_credentials(tlsInstance->ssl_context, tlsInstance->x509certificate, tlsInstance->x509privatekey) != 0)
         )
     {
         SSL_CTX_free(tlsInstance->ssl_context);
@@ -949,8 +902,8 @@ static int create_openssl_instance(TLS_IO_INSTANCE* tlsInstance)
         result = __FAILURE__;
     }
     else if (
-        (tlsInstance->x509_ecc_cert != NULL) && 
-        (tlsInstance->x509_ecc_aliaskey != NULL) && 
+        (tlsInstance->x509_ecc_cert != NULL) &&
+        (tlsInstance->x509_ecc_aliaskey != NULL) &&
         (x509_openssl_add_ecc_credentials(tlsInstance->ssl_context, tlsInstance->x509_ecc_cert, tlsInstance->x509_ecc_aliaskey) != 0)
         )
     {
@@ -1148,7 +1101,7 @@ CONCRETE_IO_HANDLE tlsio_openssl_create(void* io_create_parameters)
                 }
             }
         }
-    }
+}
 
     return result;
 }
@@ -1218,7 +1171,8 @@ int tlsio_openssl_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_open
                 tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
                 result = __FAILURE__;
             }
-            else if (xio_open(tls_io_instance->underlying_io, on_underlying_io_open_complete, tls_io_instance, on_underlying_io_bytes_received, tls_io_instance, on_underlying_io_error, tls_io_instance) != 0)
+            else if (xio_open(tls_io_instance->underlying_io, on_underlying_io_open_complete, tls_io_instance,
+                on_underlying_io_bytes_received, tls_io_instance, on_underlying_io_error, tls_io_instance) != 0)
             {
                 LogError("Failed opening the underlying I/O.");
                 close_openssl_instance(tls_io_instance);
@@ -1235,10 +1189,14 @@ int tlsio_openssl_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_open
     return result;
 }
 
+/* Codes_SRS_TLSIO_30_009: [ The phrase "enter TLSIO_STATE_EXT_CLOSING" means the adapter shall iterate through any unsent messages in the queue and shall delete each message after calling its on_send_complete with the associated callback_context and IO_SEND_CANCELLED. ]*/
+/* Codes_SRS_TLSIO_30_006: [ The phrase "enter TLSIO_STATE_EXT_CLOSED" means the adapter shall forcibly close any existing connections then call the on_io_close_complete function and pass the on_io_close_complete_context that was supplied in tlsio_close_async. ]*/
+/* Codes_SRS_TLSIO_30_051: [ On success, if the underlying TLS does not support asynchronous closing, then the adapter shall enter TLSIO_STATE_EXT_CLOSED immediately after entering TLSIO_STATE_EX_CLOSING. ]*/
 int tlsio_openssl_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_close_complete, void* callback_context)
 {
-    int result = 0;
+    int result;
 
+    /* Codes_SRS_TLSIO_30_050: [ If the tlsio_handle parameter is NULL, tlsio_close_async shall log an error and return _FAILURE_. ]*/
     if (tls_io == NULL)
     {
         LogError("NULL tls_io.");
@@ -1248,31 +1206,44 @@ int tlsio_openssl_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_cl
     {
         TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tls_io;
 
-        if ((tls_io_instance->tlsio_state == TLSIO_STATE_NOT_OPEN) ||
-            (tls_io_instance->tlsio_state == TLSIO_STATE_CLOSING))
+        if (tls_io_instance->tlsio_state != TLSIO_STATE_ERROR && tls_io_instance->tlsio_state != TLSIO_STATE_OPEN)
         {
-            LogError("Invalid tlsio_state. Expected state is TLSIO_STATE_NOT_OPEN or TLSIO_STATE_CLOSING.");
-            result = __FAILURE__;
+            /* Codes_RS_TLSIO_30_053: [ If the adapter is in any state other than TLSIO_STATE_EXT_OPEN or TLSIO_STATE_EXT_ERROR then tlsio_close_async shall log that tlsio_close_async has been called and then continue normally. ]*/
+            // LogInfo rather than LogError because this is an unusual but not erroneous situation
+            LogInfo("Closing tlsio from a state other than TLSIO_STATE_EXT_OPEN or TLSIO_STATE_EXT_ERROR");
         }
-        else
+
+        if (is_an_opening_state(tls_io_instance->tlsio_state))
         {
+            /* Codes_SRS_TLSIO_30_057: [ On success, if the adapter is in TLSIO_STATE_EXT_OPENING, it shall call on_io_open_complete with the on_io_open_complete_context supplied in tlsio_open_async and IO_OPEN_CANCELLED. This callback shall be made before changing the internal state of the adapter. ]*/
+            tls_io_instance->on_io_open_complete(tls_io_instance->on_io_open_complete_context, IO_OPEN_CANCELLED);
+        }
+
+        if (tls_io_instance->tlsio_state == TLSIO_STATE_OPEN)
+        {
+            // Attempt a graceful shutdown
+            /* Codes_SRS_TLSIO_30_056: [ On success the adapter shall enter TLSIO_STATE_EX_CLOSING. ]*/
             tls_io_instance->tlsio_state = TLSIO_STATE_CLOSING;
             tls_io_instance->on_io_close_complete = on_io_close_complete;
             tls_io_instance->on_io_close_complete_context = callback_context;
-
-            if (xio_close(tls_io_instance->underlying_io, on_underlying_io_close_complete, tls_io_instance) != 0)
-            {
-                tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
-                LogError("Error in xio_close.");
-                result = __FAILURE__;
-            }
-            else
-            {
-                close_openssl_instance(tls_io_instance);
-                result = 0;
-            }
+            // xio_close is guaranteed to succeed from the open state, and the callback completes the 
+            // transition into TLSIO_STATE_NOT_OPEN
+            (void)xio_close(tls_io_instance->underlying_io, on_underlying_io_close_complete, tls_io_instance);
         }
+        else
+        {
+            // Just force the shutdown
+            /* Codes_SRS_TLSIO_30_056: [ On success the adapter shall enter TLSIO_STATE_EX_CLOSING. ]*/
+            /* Codes_SRS_TLSIO_30_051: [ On success, if the underlying TLS does not support asynchronous closing or if the adapter is not in TLSIO_STATE_EXT_OPEN, then the adapter shall enter TLSIO_STATE_EXT_CLOSED immediately after entering TLSIO_STATE_EXT_CLOSING. ]*/
+            // Current implementations of xio_close will fail if not in the open state, but we don't care
+            (void)xio_close(tls_io_instance->underlying_io, NULL, NULL);
+            close_openssl_instance(tls_io_instance);
+            tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
+        }
+
+        result = 0;
     }
+    /* Codes_SRS_TLSIO_30_054: [ On failure, the adapter shall not call on_io_close_complete. ]*/
 
     return result;
 }
@@ -1297,7 +1268,7 @@ int tlsio_openssl_send(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t siz
         }
         else
         {
-			int res;
+            int res;
             if (tls_io_instance->ssl == NULL)
             {
                 LogError("SSL channel closed in tlsio_openssl_send.");
@@ -1339,16 +1310,43 @@ void tlsio_openssl_dowork(CONCRETE_IO_HANDLE tls_io)
     {
         TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tls_io;
 
-        if ((tls_io_instance->tlsio_state != TLSIO_STATE_CLOSING) &&
-            (tls_io_instance->tlsio_state != TLSIO_STATE_NOT_OPEN) &&
-            (tls_io_instance->tlsio_state != TLSIO_STATE_ERROR))
+        switch (tls_io_instance->tlsio_state)
         {
+        case TLSIO_STATE_OPENING_UNDERLYING_IO:
+        case TLSIO_STATE_IN_HANDSHAKE:
+        case TLSIO_STATE_OPEN:
             /* this is needed in order to pump out bytes produces by OpenSSL for things like renegotiation */
             write_outgoing_bytes(tls_io_instance, NULL, NULL);
+            break;
+        case TLSIO_STATE_NOT_OPEN:
+        case TLSIO_STATE_HANDSHAKE_FAILED:
+        case TLSIO_STATE_CLOSING:
+        case TLSIO_STATE_ERROR:
+        default:
+            break;
         }
 
-        /* Same behavior as schannel */
-        xio_dowork(tls_io_instance->underlying_io);
+        if (tls_io_instance->tlsio_state != TLSIO_STATE_NOT_OPEN)
+        {
+            /* Same behavior as schannel */
+            xio_dowork(tls_io_instance->underlying_io);
+
+            if (tls_io_instance->tlsio_state == TLSIO_STATE_HANDSHAKE_FAILED)
+            {
+                // The handshake failed so we need to close. The tlsio becomes aware of the
+                // handshake failure during an on_bytes_received while the underlying 
+                // xio_dowork is pumping data out of the socket in a while loop. The tlsio can't
+                // close down during the callback because that would mean the xio_dowork would
+                // be trying to read from a closed socket. So instead, the tlsio sets its state
+                // to TLSIO_STATE_HANDSHAKE_FAILED during the on_bytes_received callback, 
+                // can then gracefully shut things down here.
+                // 
+                // Set the state to TLSIO_STATE_ERROR so close won't gripe about the state
+                tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
+                tlsio_openssl_close(tls_io_instance, NULL, NULL);
+                indicate_open_complete(tls_io_instance, IO_OPEN_ERROR);
+            }
+        }
     }
 }
 
@@ -1367,7 +1365,7 @@ int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
         if (strcmp("TrustedCerts", optionName) == 0)
         {
             const char* cert = (const char*)value;
-			size_t len;
+            size_t len;
 
             if (tls_io_instance->certificate != NULL)
             {
@@ -1377,7 +1375,7 @@ int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
 
             // Store the certificate
             len = strlen(cert);
-            tls_io_instance->certificate = malloc(len+1);
+            tls_io_instance->certificate = malloc(len + 1);
             if (tls_io_instance->certificate == NULL)
             {
                 result = __FAILURE__;
@@ -1402,7 +1400,7 @@ int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
                 result = __FAILURE__;
             }
             else
-            {   
+            {
                 /*let's make a copy of this option*/
                 if (mallocAndStrcpy_s((char**)&tls_io_instance->x509certificate, value) != 0)
                 {
@@ -1490,10 +1488,10 @@ int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
         }
         else if (strcmp("tls_validation_callback", optionName) == 0)
         {
-            #pragma warning(push)
-            #pragma warning(disable:4055)
+#pragma warning(push)
+#pragma warning(disable:4055)
             tls_io_instance->tls_validation_callback = (TLS_CERTIFICATE_VALIDATION_CALLBACK)value;
-            #pragma warning(pop)
+#pragma warning(pop)
 
             if (tls_io_instance->ssl_context != NULL)
             {
