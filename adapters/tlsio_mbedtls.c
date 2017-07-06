@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #define USE_MBED_TLS
+// DEPRECATED: the USE_MBED_TLS #define is deprecated.
 #ifdef USE_MBED_TLS
 
 #include <stdlib.h>
@@ -37,6 +38,7 @@
 
 #define OPTION_UNDERLYING_IO_OPTIONS        "underlying_io_options"
 
+// DEPRECATED: debug functions do not belong in the tree.
 #define MBED_TLS_DEBUG_ENABLE
 
 typedef enum TLSIO_STATE_ENUM_TAG
@@ -86,6 +88,7 @@ static const IO_INTERFACE_DESCRIPTION tlsio_mbedtls_interface_description =
     tlsio_mbedtls_setoption
 };
 
+// DEPRECATED: debug functions do not belong in the tree.
 #if defined (MBED_TLS_DEBUG_ENABLE)
 void mbedtls_debug(void *ctx, int level, const char *file, int line, const char *str)
 {
@@ -326,6 +329,12 @@ static void mbedtls_init(void *instance, const char *host) {
     mbedtls_ssl_set_bio(&result->ssl, instance, on_io_send, on_io_recv, NULL);
     mbedtls_ssl_set_hostname(&result->ssl, host);
     mbedtls_ssl_set_session(&result->ssl, &result->ssn);
+
+    // DEPRECATED: debug functions do not belong in the tree.
+#if defined (MBED_TLS_DEBUG_ENABLE)
+    mbedtls_ssl_conf_dbg(&result->config, mbedtls_debug, stdout);
+    mbedtls_debug_set_threshold(1);
+#endif
 
     mbedtls_ssl_setup(&result->ssl, &result->config);
 }
@@ -743,4 +752,5 @@ int tlsio_mbedtls_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
     return result;
 }
 
+// DEPRECATED: the USE_MBED_TLS #define is deprecated.
 #endif // USE_MBED_TLS
