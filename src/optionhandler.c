@@ -213,6 +213,24 @@ OPTIONHANDLER_RESULT OptionHandler_AddOption(OPTIONHANDLER_HANDLE handle, const 
     return result;
 }
 
+void DumpOptions(OPTIONHANDLER_HANDLE handle)
+{
+    OPTION* option = (OPTION*)VECTOR_element(handle->storage, 0);
+    OPTIONHANDLER_HANDLE concrete = (OPTIONHANDLER_HANDLE)option->storage;
+    (void)concrete;
+    size_t nOptions = VECTOR_size(concrete->storage), i;
+    for (i = 0; i < nOptions; i++)
+    {
+        OPTION* option2 = (OPTION*)VECTOR_element(concrete->storage, i);
+        LogInfo("Option name: %s", option2->name);
+        if (strcmp("TrustedCerts", option2->name) == 0)
+        {
+            LogInfo((const char*)option2->storage);
+        }
+    }
+    LogInfo("hello");
+}
+
 OPTIONHANDLER_RESULT OptionHandler_FeedOptions(OPTIONHANDLER_HANDLE handle, void* destinationHandle)
 {
     OPTIONHANDLER_RESULT result;
