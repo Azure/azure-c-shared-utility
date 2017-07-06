@@ -178,6 +178,10 @@ if(MSVC)
             set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_CYCLONESSL")
             set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_CYCLONESSL")
         endif()
+        if(${use_wolfssl})
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_WOLFSSL")
+            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_WOLFSSL")
+        endif()
 
     endif()
 elseif(UNIX) #LINUX OR APPLE
@@ -185,6 +189,19 @@ elseif(UNIX) #LINUX OR APPLE
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -Werror")
     if(NOT (IN_OPENWRT OR APPLE))
         set (CMAKE_C_FLAGS "-D_POSIX_C_SOURCE=200112L ${CMAKE_C_FLAGS}")
+    endif()
+
+    if(${use_openssl})
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_OPENSSL")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_OPENSSL")
+    endif()
+    if(${use_cyclonessl})
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_CYCLONESSL")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_CYCLONESSL")
+    endif()
+    if(${use_wolfssl})
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_WOLFSSL")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_WOLFSSL")
     endif()
 endif()
 
@@ -481,8 +498,8 @@ IF(WIN32)
     #windows needs this define
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
     IF(WINCE)
-    # Don't treat warning as errors for WEC 2013. WEC 2013 uses older compiler version
-    add_definitions(/WX-)
+        # Don't treat warning as errors for WEC 2013. WEC 2013 uses older compiler version
+        add_definitions(/WX-)
     ELSE()
     # Make warning as error
     add_definitions(/WX)
