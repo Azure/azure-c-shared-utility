@@ -799,7 +799,7 @@ static int add_certificate_to_store(TLS_IO_INSTANCE* tls_io_instance, const char
         }
         else
         {
-#if (OPENSSL_VERSION_NUMBER >= 0x10001000L)
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L)
             const BIO_METHOD* bio_method;
 #else
             BIO_METHOD* bio_method;
@@ -872,7 +872,7 @@ static int create_openssl_instance(TLS_IO_INSTANCE* tlsInstance)
 
     const SSL_METHOD* method = NULL;
 
-#if (OPENSSL_VERSION_NUMBER < 0x10001000L)
+#if (OPENSSL_VERSION_NUMBER < 0x10100000L)
     if (tlsInstance->tls_version == 12)
     {
         method = TLSv1_2_method();
@@ -886,7 +886,9 @@ static int create_openssl_instance(TLS_IO_INSTANCE* tlsInstance)
         method = TLSv1_method();
     }
 #else
+    {
         method = TLS_method();
+    }
 #endif
 
     tlsInstance->ssl_context = SSL_CTX_new(method);
@@ -1016,7 +1018,7 @@ void tlsio_openssl_deinit(void)
 {
     openssl_dynamic_locks_uninstall();
     openssl_static_locks_uninstall();
-#if (OPENSSL_VERSION_NUMBER >= 0x00907000L) && (OPENSSL_VERSION_NUMBER < 0x20000000L)
+#if  (OPENSSL_VERSION_NUMBER >= 0x00907000L) && (OPENSSL_VERSION_NUMBER < 0x20000000L)
     FIPS_mode_set(0);
 #endif
     CRYPTO_set_locking_callback(NULL);
@@ -1024,12 +1026,12 @@ void tlsio_openssl_deinit(void)
     ERR_free_strings();
     EVP_cleanup();
 
-#if (OPENSSL_VERSION_NUMBER < 0x10000000L)
+#if   (OPENSSL_VERSION_NUMBER < 0x10000000L)
     ERR_remove_state(0);
-#elif (OPENSSL_VERSION_NUMBER < 0x10001000L)
+#elif (OPENSSL_VERSION_NUMBER < 0x10100000L)
     ERR_remove_thread_state(NULL);
 #endif
-#if (OPENSSL_VERSION_NUMBER >= 0x10002000L) && (OPENSSL_VERSION_NUMBER < 0x10100000L)
+#if  (OPENSSL_VERSION_NUMBER >= 0x10002000L) && (OPENSSL_VERSION_NUMBER < 0x10010000L)
     SSL_COMP_free_compression_methods();
 #endif
     CRYPTO_cleanup_all_ex_data();
