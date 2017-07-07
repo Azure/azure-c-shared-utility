@@ -62,6 +62,7 @@ if(WIN32)
     option(use_schannel "set use_schannel to ON if schannel is to be used, set to OFF to not use schannel" ON)
     option(use_openssl "set use_openssl to ON if openssl is to be used, set to OFF to not use openssl" OFF)
     option(use_wolfssl "set use_wolfssl to ON if wolfssl is to be used, set to OFF to not use wolfssl" OFF)
+    option(use_etw "set use_etw to ON if ETW logging is to be used. Default is OFF" OFF)
 else()
     option(use_schannel "set use_schannel to ON if schannel is to be used, set to OFF to not use schannel" OFF)
     option(use_openssl "set use_openssl to ON if openssl is to be used, set to OFF to not use openssl" ON)
@@ -153,12 +154,16 @@ set (LIB_INSTALL_DIR lib CACHE PATH "Library object file directory")
 #Use solution folders.
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
+#Setup the platform files
+include("${CMAKE_CURRENT_LIST_DIR}/configs/azure_c_shared_utilityFunctions.cmake")
+set_platform_files(${CMAKE_CURRENT_LIST_DIR})
+
 if(MSVC)
     if (WINCE) # Be lax with WEC 2013 compiler
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W3")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W3")
         # WEC 2013 uses older VS compiler. Build some files as C++ files to resolve C99 related compile issues
-        SET_SOURCE_FILES_PROPERTIES(src/consolelogger.c src/xlogging.c src/map.c adapters/uniqueid_win32.c src/tlsio_schannel.c src/x509_schannel.c PROPERTIES LANGUAGE CXX)
+        SET_SOURCE_FILES_PROPERTIES(${LOGGING_C_FILE} ${XLOGGING_C_FILE} src/map.c adapters/uniqueid_win32.c src/tlsio_schannel.c src/x509_schannel.c PROPERTIES LANGUAGE CXX)
         if (${use_httpapi_compact})
             SET_SOURCE_FILES_PROPERTIES(adapters/httpapi_compact.c PROPERTIES LANGUAGE CXX)
         else()
@@ -298,11 +303,6 @@ function(add_files_to_install filesToBeInstalled)
     set(INSTALL_H_FILES ${INSTALL_H_FILES} ${filesToBeInstalled} CACHE INTERNAL "Files that will be installed on the system")
 endfunction()
 
-include("${CMAKE_CURRENT_LIST_DIR}/configs/azure_c_shared_utilityFunctions.cmake")
-
-#Setup the platform files
-set_platform_files(${CMAKE_CURRENT_LIST_DIR})
-
 include_directories(${UMOCK_C_INC_FOLDER})
 
 compileAsC99()
@@ -313,7 +313,7 @@ set(source_c_files
 ./src/buffer.c
 ./src/connection_string_parser.c
 ./src/constbuffer.c
-./src/consolelogger.c
+${LOGGING_C_FILE}
 ./src/crt_abstractions.c
 ./src/constmap.c
 ./src/doublylinkedlist.c
@@ -336,7 +336,7 @@ set(source_c_files
 ./src/urlencode.c
 ./src/usha.c
 ./src/vector.c
-./src/xlogging.c
+${XLOGGING_C_FILE}
 ./src/optionhandler.c
 ./adapters/agenttime.c
 ${CONDITION_C_FILE}
@@ -396,7 +396,7 @@ set(source_h_files
 ./inc/azure_c_shared_utility/crt_abstractions.h
 ./inc/azure_c_shared_utility/constmap.h
 ./inc/azure_c_shared_utility/condition.h
-./inc/azure_c_shared_utility/consolelogger.h
+${LOGGING_H_FILE}
 ./inc/azure_c_shared_utility/doublylinkedlist.h
 ./inc/azure_c_shared_utility/gballoc.h
 ./inc/azure_c_shared_utility/gb_stdio.h
