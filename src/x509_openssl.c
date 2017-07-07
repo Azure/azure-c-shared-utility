@@ -70,10 +70,10 @@ static int load_certificate_chain(SSL_CTX* ssl_ctx, const char* ecc_cert)
 #if (OPENSSL_VERSION_NUMBER >= 0x10100000L) 
                 SSL_CTX_clear_extra_chain_certs(ssl_ctx);
 #else 
-                if (ctx->extra_certs != NULL)
+                if (ssl_ctx->extra_certs != NULL)
                 {
-                    sk_X509_pop_free(ctx->extra_certs, X509_free); 
-                    ctx->extra_certs = NULL; 
+                    sk_X509_pop_free(ssl_ctx->extra_certs, X509_free); 
+                    ssl_ctx->extra_certs = NULL; 
                 }
 #endif 
                 while ((ca_chain = PEM_read_bio_X509(bio_cert, NULL, NULL, NULL)) != NULL)
