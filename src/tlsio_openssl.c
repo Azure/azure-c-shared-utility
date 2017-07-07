@@ -799,7 +799,12 @@ static int add_certificate_to_store(TLS_IO_INSTANCE* tls_io_instance, const char
         }
         else
         {
-            BIO_METHOD* bio_method = BIO_s_mem();
+#if (OPENSSL_VERSION_NUMBER >= 0x10001000L)
+            const BIO_METHOD* bio_method;
+#else
+            BIO_METHOD* bio_method;
+#endif
+            bio_method = BIO_s_mem();
             if (bio_method == NULL)
             {
                 log_ERR_get_error("failure in BIO_s_mem");
@@ -865,8 +870,9 @@ static int create_openssl_instance(TLS_IO_INSTANCE* tlsInstance)
 {
     int result;
 
-    const SSL_METHOD* method = TLSv1_method();
+    const SSL_METHOD* method = NULL;
 
+#if (OPENSSL_VERSION_NUMBER < 0x10001000L)
     if (tlsInstance->tls_version == 12)
     {
         method = TLSv1_2_method();
@@ -875,6 +881,13 @@ static int create_openssl_instance(TLS_IO_INSTANCE* tlsInstance)
     {
         method = TLSv1_1_method();
     }
+    else
+    {
+        method = TLSv1_method();
+    }
+#else
+        method = TLS_method();
+#endif
 
     tlsInstance->ssl_context = SSL_CTX_new(method);
     if (tlsInstance->ssl_context == NULL)
@@ -1010,11 +1023,14 @@ void tlsio_openssl_deinit(void)
     CRYPTO_set_id_callback(NULL);
     ERR_free_strings();
     EVP_cleanup();
-#ifndef OPENSSL_NO_DEPRECATED
+
+#if (OPENSSL_VERSION_NUMBER < 0x10000000L)
     ERR_remove_state(0);
+#elif (OPENSSL_VERSION_NUMBER < 0x10001000L)
+    ERR_remove_thread_state(NULL);
+#endif
 #if (OPENSSL_VERSION_NUMBER >= 0x10002000L) && (OPENSSL_VERSION_NUMBER < 0x10100000L)
     SSL_COMP_free_compression_methods();
-#endif
 #endif
     CRYPTO_cleanup_all_ex_data();
 }
