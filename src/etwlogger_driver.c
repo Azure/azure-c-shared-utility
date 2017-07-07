@@ -111,25 +111,41 @@ static char* lastErrorToString(DWORD lastError)
     }
     return result;
 }
+
+
+static int isETWLoggerInit = 0;
+
+static void lazyRegisterEventProvider(void)
+{
+    /*lazily init the logger*/
+    if (isETWLoggerInit == 0)
+    {
+        if (EventRegisterMicrosoft_ServiceBus() != ERROR_SUCCESS)
+        {
+            /*go back to printf, maybe somebody notices*/
+            (void)printf("failure in EventRegisterMicrosoft_ServiceBus");
+        }
+        else
+        {
+            /*should check if the provider is registered with the system... maybe at a later time*/
+            isETWLoggerInit = 1; /*and stays 1 until the process exits*/ /*sorry, no graceful exit with EventUnregisterMicrosoft_ServiceBus*/
+            LogInfo("EventRegisterMicrosoft_ServiceBus success"); /*selflogging that the log service has started*/
+        }
+    }
+}
+
 /*the function will also attempt to produce some human readable strings for GetLastError*/
 void etwlogger_log_with_GetLastError(const char* file, const char* func, int line, const char* format, ...)
 {
     DWORD lastError;
     char* lastErrorAsString;
 
+    lastError = GetLastError(); /*needs to be done before lazRegistedEventProvider*/
+    lazyRegisterEventProvider();
 
     va_list args;
     va_start(args, format);
 
-    /*this is what this case will do:
-    1. snip the last error
-    2. create a string with what that last error means
-    3. printf the system message (__FILE__, __LINE__ etc) + the last error + whatever the user wanted
-    */
-    /*1. snip the last error*/
-    lastError = GetLastError();
-
-    /*2. create a string with what that last error means*/
     SYSTEMTIME t;
     GetSystemTime(&t);
 
@@ -179,28 +195,14 @@ void etwlogger_log_with_GetLastError(const char* file, const char* func, int lin
 }
 
 
-static int isETWLoggerInit = 0;
+
 
 void etwlogger_log(LOG_CATEGORY log_category, const char* file, const char* func, int line, unsigned int options, const char* format, ...)
 {
     (void)options;
-    /*lazily init the logger*/
-    if (isETWLoggerInit == 0)
-    {
-        if (EventRegisterMicrosoft_ServiceBus() != ERROR_SUCCESS)
-        {
-            /*go back to printf, maybe somebody notices*/
-            printf("failure in EventRegisterMicrosoft_ServiceBus");
-        }
-        else
-        {
-            /*should check if the provider is registered with the system... maybe at a later time*/
-            isETWLoggerInit = 1; /*and stays 1 until the process exits*/ /*sorry, no graceful exit with EventUnregisterMicrosoft_ServiceBus*/
-            LogInfo("EventRegisterMicrosoft_ServiceBus success"); /*selflogging that the log service has started*/
-        }
-    }
     
-    
+    lazyRegisterEventProvider();
+
     va_list args;
     va_start(args, format);
     char* text = vprintf_alloc(format, args);
