@@ -73,8 +73,7 @@ option(use_cyclonessl "set use_cyclonessl to ON if cyclonessl is to be used, set
 
 if(${use_etw}) 
     #create res folder
-    execute_process(COMMAND mkdir res 
-    WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR})
+    file(MAKE_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/res)
     
     #populate res folder with the ETW resources
     execute_process(COMMAND  ${CMAKE_CURRENT_LIST_DIR}/src/etw_provider_generate.cmd 
