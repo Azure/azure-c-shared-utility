@@ -177,8 +177,8 @@ static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 #define TEST_BIO_METHOD (BIO_METHOD*)"le method"
 #define TEST_BIO (BIO*)"le bio"
 
-static const char* TEST_ECC_CERTIFICATE = "-----BEGIN CERTIFICATE-----";
-static const char* TEST_ECC_ALIAS_KEY = "-----BEGIN EC PRIVATE KEY-----";
+static const char* TEST_PUBLIC_CERTIFICATE = "PUBLIC CERTIFICATE";
+static const char* TEST_PRIVATE_CERTIFICATE = "PRIVATE KEY";
 static EVP_PKEY* TEST_PKEY = (EVP_PKEY*)0x12;
 static BIO* TEST_BIO_CERT = (BIO*)0x11;
 static X509* TEST_X509 = (X509*)0x13;
@@ -252,18 +252,27 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
 
     }
 
-    static void setup_load_alias_key_cert_mocks()
+    static void setup_load_alias_key_cert_mocks(bool rsaCerts)
     {
-        STRICT_EXPECTED_CALL(BIO_new_mem_buf((void*)TEST_ECC_ALIAS_KEY, -1));
-        STRICT_EXPECTED_CALL(PEM_read_bio_PrivateKey(IGNORED_PTR_ARG, NULL, NULL, NULL));
-        STRICT_EXPECTED_CALL(SSL_CTX_use_PrivateKey(&TEST_SSL_CTX_STRUCTURE, TEST_PKEY));
-        STRICT_EXPECTED_CALL(EVP_PKEY_free(TEST_PKEY) );
+        STRICT_EXPECTED_CALL(BIO_new_mem_buf((void*)TEST_PRIVATE_CERTIFICATE, -1));
+        if (rsaCerts)
+        {
+            STRICT_EXPECTED_CALL(PEM_read_bio_RSAPrivateKey(IGNORED_PTR_ARG, NULL, NULL, NULL));
+            STRICT_EXPECTED_CALL(SSL_CTX_use_RSAPrivateKey(&TEST_SSL_CTX_STRUCTURE, IGNORED_PTR_ARG));
+            STRICT_EXPECTED_CALL(RSA_free(IGNORED_PTR_ARG) );
+        }
+        else
+        {
+            STRICT_EXPECTED_CALL(PEM_read_bio_PrivateKey(IGNORED_PTR_ARG, NULL, NULL, NULL));
+            STRICT_EXPECTED_CALL(SSL_CTX_use_PrivateKey(&TEST_SSL_CTX_STRUCTURE, TEST_PKEY));
+            STRICT_EXPECTED_CALL(EVP_PKEY_free(TEST_PKEY) );
+        }
         STRICT_EXPECTED_CALL(BIO_free(IGNORED_PTR_ARG) );
     }
 
     static void setup_load_certificate_chain_mocks()
     {
-        STRICT_EXPECTED_CALL(BIO_new_mem_buf((void*)TEST_ECC_CERTIFICATE, -1));
+        STRICT_EXPECTED_CALL(BIO_new_mem_buf((void*)TEST_PUBLIC_CERTIFICATE, -1));
         STRICT_EXPECTED_CALL(PEM_read_bio_X509_AUX(IGNORED_PTR_ARG, NULL, NULL, NULL));
         STRICT_EXPECTED_CALL(SSL_CTX_use_certificate(&TEST_SSL_CTX_STRUCTURE, IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(PEM_read_bio_X509(IGNORED_PTR_ARG, NULL, NULL, NULL));
@@ -332,46 +341,11 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
     /*Tests_SRS_X509_OPENSSL_02_008: [ If no error occurs, then x509_openssl_add_credentials shall succeed and return 0. ] */
     TEST_FUNCTION(x509_openssl_add_credentials_happy_path)
     {
-        
-        ///arrange
-        char* certificateText = (char*)"certificate";
-        char* privatekeyText = (char*)"privatekeyText";
-        BIO* certificate;
-        BIO* privatekey;
-        X509* certificateAsX509;
-        RSA* privatekeyasRSA;
-		int result;
-        STRICT_EXPECTED_CALL(BIO_new_mem_buf(certificateText, -1))
-            .CaptureReturn(&certificate);
-        STRICT_EXPECTED_CALL(PEM_read_bio_X509(VALIDATED_PTR_ARG, NULL, 0, NULL))
-            .ValidateArgumentValue_bp(&certificate)
-            .CaptureReturn(&certificateAsX509)
-            ;
-        STRICT_EXPECTED_CALL(BIO_new_mem_buf(privatekeyText, -1))
-            .CaptureReturn(&privatekey);
-        STRICT_EXPECTED_CALL(PEM_read_bio_RSAPrivateKey(VALIDATED_PTR_ARG, NULL, 0, NULL))
-            .ValidateArgumentValue_bp(&privatekey)
-            .CaptureReturn(&privatekeyasRSA);
-
-        STRICT_EXPECTED_CALL(SSL_CTX_use_certificate(TEST_SSL_CTX, VALIDATED_PTR_ARG))
-            .ValidateArgumentValue_x(&certificateAsX509);
-        STRICT_EXPECTED_CALL(SSL_CTX_use_RSAPrivateKey(TEST_SSL_CTX, VALIDATED_PTR_ARG))
-            .ValidateArgumentValue_rsa(&privatekeyasRSA);
-
-        STRICT_EXPECTED_CALL(RSA_free(VALIDATED_PTR_ARG))
-            .ValidateArgumentValue_rsa(&privatekeyasRSA);
-
-        STRICT_EXPECTED_CALL(BIO_free(VALIDATED_PTR_ARG))
-            .ValidateArgumentValue_a(&privatekey);
-
-        STRICT_EXPECTED_CALL(X509_free(VALIDATED_PTR_ARG))
-            .ValidateArgumentValue_a(&certificateAsX509);
-
-        STRICT_EXPECTED_CALL(BIO_free(VALIDATED_PTR_ARG))
-            .ValidateArgumentValue_a(&certificate);
+        setup_load_alias_key_cert_mocks(true);
+        setup_load_certificate_chain_mocks();
 
         ///act
-        result = x509_openssl_add_credentials(TEST_SSL_CTX, certificateText, privatekeyText);
+        int result = x509_openssl_add_credentials(&TEST_SSL_CTX_STRUCTURE, TEST_PUBLIC_CERTIFICATE, TEST_PRIVATE_CERTIFICATE);
 
         ///assert
         ASSERT_ARE_EQUAL(int, 0, result);
@@ -386,50 +360,20 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
         ///arrange
         size_t calls_that_cannot_fail[] =
         {
-            6, /*RSA_free*/
-            7, /*BIO_free*/
-            8, /*X509_free*/
-            9 /*BIO_free*/
+            3,  // RSA_free
+            4,  // BIO_free
+            8,  // PEM_read_bio_X509
+            10,  // PEM_read_bio_X509
+            11, // X509_free
+            12, // BIO_free
         };
-        char* certificateText = (char*)"certificate";
-        char* privatekeyText = (char*)"privatekeyText";
 
-        BIO* certificate;
-        BIO* privatekey;
-        X509* certificateAsX509;
-        RSA* privatekeyasRSA;
-		size_t i;
+        size_t i;
 
         (void)umock_c_negative_tests_init();
 
-		STRICT_EXPECTED_CALL(BIO_new_mem_buf(certificateText, -1))
-            .CaptureReturn(&certificate);
-        STRICT_EXPECTED_CALL(PEM_read_bio_X509(VALIDATED_PTR_ARG, NULL, 0, NULL))
-            .ValidateArgumentValue_bp(&certificate)
-            .CaptureReturn(&certificateAsX509)
-            ;
-        STRICT_EXPECTED_CALL(BIO_new_mem_buf(privatekeyText, -1))
-            .CaptureReturn(&privatekey);
-        STRICT_EXPECTED_CALL(PEM_read_bio_RSAPrivateKey(VALIDATED_PTR_ARG, NULL, 0, NULL))
-            .ValidateArgumentValue_bp(&privatekey)
-            .CaptureReturn(&privatekeyasRSA);
-
-        STRICT_EXPECTED_CALL(SSL_CTX_use_certificate(TEST_SSL_CTX, VALIDATED_PTR_ARG))
-            .ValidateArgumentValue_x(&certificateAsX509);
-        STRICT_EXPECTED_CALL(SSL_CTX_use_RSAPrivateKey(TEST_SSL_CTX, VALIDATED_PTR_ARG))
-            .ValidateArgumentValue_rsa(&privatekeyasRSA);
-
-        STRICT_EXPECTED_CALL(RSA_free(VALIDATED_PTR_ARG))
-            .ValidateArgumentValue_rsa(&privatekeyasRSA);
-
-        STRICT_EXPECTED_CALL(BIO_free(VALIDATED_PTR_ARG))
-            .ValidateArgumentValue_a(&privatekey);
-
-        STRICT_EXPECTED_CALL(X509_free(VALIDATED_PTR_ARG))
-            .ValidateArgumentValue_a(&certificateAsX509);
-
-        STRICT_EXPECTED_CALL(BIO_free(VALIDATED_PTR_ARG))
-            .ValidateArgumentValue_a(&certificate);
+        setup_load_alias_key_cert_mocks(true);
+        setup_load_certificate_chain_mocks();
 
         umock_c_negative_tests_snapshot();
 
@@ -450,12 +394,14 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
             {
 
                 char temp_str[128];
-				int result;
+                int result;
                 umock_c_negative_tests_fail_call(i);
                 sprintf(temp_str, "On failed call %zu", i);
 
+                TEST_SSL_CTX_STRUCTURE.extra_certs = NULL;
+
                 ///act
-                result = x509_openssl_add_credentials(TEST_SSL_CTX, certificateText, privatekeyText);
+                result = x509_openssl_add_credentials(&TEST_SSL_CTX_STRUCTURE, TEST_PUBLIC_CERTIFICATE, TEST_PRIVATE_CERTIFICATE);
 
                 ///assert
                 ASSERT_ARE_NOT_EQUAL_WITH_MSG(int, 0, result, temp_str);
@@ -503,7 +449,7 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
     TEST_FUNCTION(x509_openssl_add_certificates_1_certificate_happy_path)
     {
         ///arrange
-		int result;
+        int result;
 
         STRICT_EXPECTED_CALL(SSL_CTX_get_cert_store(TEST_SSL_CTX));
         STRICT_EXPECTED_CALL(BIO_s_mem());
@@ -546,7 +492,7 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
     TEST_FUNCTION(x509_openssl_add_certificates_1_certificate_which_exists_happy_path)
     {
         ///arrange
-		int result;
+        int result;
 
         x509_openssl_add_certificates_1_certificate_which_exists_inert_path();
 
@@ -563,7 +509,7 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
     TEST_FUNCTION(x509_openssl_add_certificates_1_certificate_which_exists_unhappy_paths)
     {
         ///arrange
-		size_t i;
+        size_t i;
 
         umock_c_negative_tests_init();
         x509_openssl_add_certificates_1_certificate_which_exists_inert_path();
@@ -571,7 +517,7 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
 
         for (i = 0; i < umock_c_negative_tests_call_count(); i++)
         {
-			int result;
+            int result;
 
             if (
                 (i == 4) || /*PEM_read_bio_X509*/
@@ -603,7 +549,7 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
         //arrange
 
         //act
-        int result = x509_openssl_add_ecc_credentials(NULL, TEST_ECC_CERTIFICATE, TEST_ECC_ALIAS_KEY);
+        int result = x509_openssl_add_ecc_credentials(NULL, TEST_PUBLIC_CERTIFICATE, TEST_PRIVATE_CERTIFICATE);
 
         //assert
         ASSERT_ARE_NOT_EQUAL(int, 0, result);
@@ -617,7 +563,7 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
         //arrange
 
         //act
-        int result = x509_openssl_add_ecc_credentials(TEST_SSL_CTX, NULL, TEST_ECC_ALIAS_KEY);
+        int result = x509_openssl_add_ecc_credentials(TEST_SSL_CTX, NULL, TEST_PRIVATE_CERTIFICATE);
 
         //assert
         ASSERT_ARE_NOT_EQUAL(int, 0, result);
@@ -631,7 +577,7 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
         //arrange
 
         //act
-        int result = x509_openssl_add_ecc_credentials(TEST_SSL_CTX, TEST_ECC_CERTIFICATE, NULL);
+        int result = x509_openssl_add_ecc_credentials(TEST_SSL_CTX, TEST_PUBLIC_CERTIFICATE, NULL);
 
         //assert
         ASSERT_ARE_NOT_EQUAL(int, 0, result);
@@ -647,13 +593,13 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
     TEST_FUNCTION(x509_openssl_add_ecc_credentials_success)
     {
         //arrange
-		int result;
+        int result;
 
-        setup_load_alias_key_cert_mocks();
+        setup_load_alias_key_cert_mocks(false);
         setup_load_certificate_chain_mocks();
 
         //act
-        result = x509_openssl_add_ecc_credentials(&TEST_SSL_CTX_STRUCTURE, TEST_ECC_CERTIFICATE, TEST_ECC_ALIAS_KEY);
+        result = x509_openssl_add_ecc_credentials(&TEST_SSL_CTX_STRUCTURE, TEST_PUBLIC_CERTIFICATE, TEST_PRIVATE_CERTIFICATE);
 
         //assert
         ASSERT_ARE_EQUAL(int, 0, result);
