@@ -632,9 +632,10 @@ if (NOT ${skip_samples})
     add_subdirectory(samples)
 endif()
 
+# Set CMAKE_INSTALL_* if not defined
+include(GNUInstallDirs)
+
 if(${use_installed_dependencies})
-    # Set CMAKE_INSTALL_* if not defined
-    include(GNUInstallDirs)
 
     if(NOT DEFINED CMAKE_INSTALL_LIBDIR)
         set(CMAKE_INSTALL_LIBDIR "lib")
