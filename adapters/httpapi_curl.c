@@ -732,59 +732,71 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
             char* proxy_auth;
 
             HTTP_PROXY_OPTIONS* proxy_data = (HTTP_PROXY_OPTIONS*)value;
-
-            if (sprintf_s(proxy, MAX_HOSTNAME_LEN, "%s:%d", proxy_data->host_address, proxy_data->port) <= 0)
-            {
-                LogError("failure constructing proxy address");
-                result = HTTPAPI_ERROR;
-            }
-            else
-            {
-                if (curl_easy_setopt(httpHandleData->curl, CURLOPT_PROXY, proxy) != CURLE_OK)
-                {
-                    LogError("failure setting curl proxy address");
-                    result = HTTPAPI_ERROR;
-                }
-                else
-                {
-                    if (proxy_data->username != NULL && proxy_data->password != NULL)
-                    {
-                        size_t authLen = strlen(proxy_data->username)+strlen(proxy_data->password)+1;
-                        proxy_auth = malloc(authLen+1);
-                        if (proxy_auth == NULL)
-                        {
-                            LogError("failure allocating proxy authentication");
-                            result = HTTPAPI_ERROR;
-                        }
-                        else
-                        {
-                            // From curl website 'Pass a char * as parameter, which should be [user name]:[password]'
-                            if (sprintf_s(proxy_auth, MAX_HOSTNAME_LEN, "%s:%s", proxy_data->username, proxy_data->password) <= 0)
-                            {
-                                LogError("failure constructing proxy authentication");
-                                result = HTTPAPI_ERROR;
-                            }
-                            else
-                            {
-                                if (curl_easy_setopt(httpHandleData->curl, CURLOPT_PROXYUSERPWD, proxy_auth) != CURLE_OK)
-                                {
-                                    LogError("failure setting curl proxy authentication");
-                                    result = HTTPAPI_ERROR;
-                                }
-                                else
-                                {
-                                    result = HTTPAPI_OK;
-                                }
-                            }
-                            free(proxy_auth);
-                        }
-                    }
-                    else
-                    {
-                        result = HTTPAPI_OK;
-                    }
-                }
-            }
+			char *index = proxy;
+			index[0] = '\0';
+			
+			if (proxy_data->protocol != NULL && strcpy_s(proxy, MAX_HOSTNAME_LEN, proxy_data->protocol) != 0)
+			{
+				LogError("failure copying proxy protocol");
+				result = HTTPAPI_ERROR;
+			}
+			else
+			{
+				index += strlen(proxy);
+				
+				if (sprintf_s(index, MAX_HOSTNAME_LEN - (index - proxy), "%s:%d", proxy_data->host_address, proxy_data->port) <= 0)
+				{
+					LogError("failure constructing proxy address");
+					result = HTTPAPI_ERROR;
+				}
+				else
+				{
+					if (curl_easy_setopt(httpHandleData->curl, CURLOPT_PROXY, proxy) != CURLE_OK)
+					{
+						LogError("failure setting curl proxy address");
+						result = HTTPAPI_ERROR;
+					}
+					else
+					{
+						if (proxy_data->username != NULL && proxy_data->password != NULL)
+						{
+							size_t authLen = strlen(proxy_data->username)+strlen(proxy_data->password)+1;
+							proxy_auth = malloc(authLen+1);
+							if (proxy_auth == NULL)
+							{
+								LogError("failure allocating proxy authentication");
+								result = HTTPAPI_ERROR;
+							}
+							else
+							{
+								// From curl website 'Pass a char * as parameter, which should be [user name]:[password]'
+								if (sprintf_s(proxy_auth, MAX_HOSTNAME_LEN, "%s:%s", proxy_data->username, proxy_data->password) <= 0)
+								{
+									LogError("failure constructing proxy authentication");
+									result = HTTPAPI_ERROR;
+								}
+								else
+								{
+									if (curl_easy_setopt(httpHandleData->curl, CURLOPT_PROXYUSERPWD, proxy_auth) != CURLE_OK)
+									{
+										LogError("failure setting curl proxy authentication");
+										result = HTTPAPI_ERROR;
+									}
+									else
+									{
+										result = HTTPAPI_OK;
+									}
+								}
+								free(proxy_auth);
+							}
+						}
+						else
+						{
+							result = HTTPAPI_OK;
+						}
+					}
+				}
+			}
         }
         else if (strcmp("TrustedCerts", optionName) == 0)
         {
