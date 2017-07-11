@@ -13,6 +13,10 @@
 #if USE_CYCLONESSL
 #include "azure_c_shared_utility/tlsio_cyclonessl.h"
 #endif
+#if USE_WOLFSSL
+#include "azure_c_shared_utility/tlsio_wolfssl.h"
+#endif
+
 #include "azure_c_shared_utility/tlsio_schannel.h"
 
 int platform_init(void)
@@ -30,35 +34,37 @@ int platform_init(void)
     }
 
 #ifdef USE_OPENSSL
-	tlsio_openssl_init();
+    tlsio_openssl_init();
 #endif
-	
-	return result;
+    
+    return result;
 }
 
 const IO_INTERFACE_DESCRIPTION* platform_get_default_tlsio(void)
 {
 #ifdef USE_OPENSSL
-	return tlsio_openssl_get_interface_description();
+    return tlsio_openssl_get_interface_description();
 #elif USE_CYCLONESSL
-	return tlsio_cyclonessl_get_interface_description();
+    return tlsio_cyclonessl_get_interface_description();
+#elif USE_WOLFSSL
+    return tlsio_wolfssl_get_interface_description();
 #else
 #ifndef WINCE
     return tlsio_schannel_get_interface_description();
 #else
-	LogError("TLS IO interface currently not supported on WEC 2013");
-	return (IO_INTERFACE_DESCRIPTION*)NULL;
+    LogError("TLS IO interface currently not supported on WEC 2013");
+    return (IO_INTERFACE_DESCRIPTION*)NULL;
 #endif
 #endif
 }
 
 STRING_HANDLE platform_get_platform_info(void)
 {
-	STRING_HANDLE result;
+    STRING_HANDLE result;
 #ifndef WINCE
     SYSTEM_INFO sys_info;
     char *arch;
-	DWORD dwVersion;
+    DWORD dwVersion;
     GetSystemInfo(&sys_info);
 
     switch (sys_info.wProcessorArchitecture)
@@ -104,6 +110,6 @@ void platform_deinit(void)
     (void)WSACleanup();
 
 #ifdef USE_OPENSSL
-	tlsio_openssl_deinit();
+    tlsio_openssl_deinit();
 #endif
 }

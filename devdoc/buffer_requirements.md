@@ -24,6 +24,7 @@ extern int BUFFER_prepend(BUFFER_HANDLE handle1, BUFFER_HANDLE handle2);
 extern unsigned char* BUFFER_u_char(BUFFER_HANDLE handle);
 extern size_t BUFFER_length(BUFFER_HANDLE handle);
 extern BUFFER_HANDLE BUFFER_clone(BUFFER_HANDLE handle);
+extern int BUFFER_fill(BUFFER_HANDLE handle, unsigned char fill_char);
 ```
 
 ### BUFFER_new
@@ -192,7 +193,18 @@ int BUFFER_prepend(BUFFER_HANDLE handle1, BUFFER_HANDLE handle2)
 
 **SRS_BUFFER_01_005: [** BUFFER_prepend shall return a non-zero upon value any error that is encountered. **]**
 
+### BUFFER_fill
+
+```c
+extern int BUFFER_fill(BUFFER_HANDLE handle, unsigned char fill_char);
+```
+
+**SRS_BUFFER_07_001: [** `BUFFER_fill` shall fill the supplied `BUFFER_HANDLE` with the supplied fill character. **]**
+
+**SRS_BUFFER_07_002: [** If `handle` is NULL `BUFFER_fill` shall return a non-zero value. **]**
+
 ### BUFFER_u_char
+
 ```c
 unsigned char* BUFFER_u_char(BUFFER_HANDLE handle)
 ```
@@ -202,6 +214,7 @@ unsigned char* BUFFER_u_char(BUFFER_HANDLE handle)
 **SRS_BUFFER_07_026: [** BUFFER_u_char shall return NULL for any error that is encountered. **]**
 
 ### BUFFER_length
+
 ```c
 size_t BUFFER_length(BUFFER_HANDLE handle)
 ```

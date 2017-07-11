@@ -3,7 +3,15 @@
 
 #include "azure_c_shared_utility/platform.h"
 #include "azure_c_shared_utility/xio.h"
+#ifdef USE_OPENSSL
 #include "azure_c_shared_utility/tlsio_openssl.h"
+#endif
+#if USE_CYCLONESSL
+#include "azure_c_shared_utility/tlsio_cyclonessl.h"
+#endif
+#if USE_WOLFSSL
+#include "azure_c_shared_utility/tlsio_wolfssl.h"
+#endif
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -11,12 +19,24 @@
 
 int platform_init(void)
 {
-    return tlsio_openssl_init();
+    int result;
+#ifdef USE_OPENSSL
+    result = tlsio_openssl_init();
+#else
+    result = 0;
+#endif
+    return result;
 }
 
 const IO_INTERFACE_DESCRIPTION* platform_get_default_tlsio(void)
 {
+#if USE_CYCLONESSL
+    return tlsio_cyclonessl_get_interface_description();
+#elif USE_WOLFSSL
+    return tlsio_wolfssl_get_interface_description();
+#else
     return tlsio_openssl_get_interface_description();
+#endif
 }
 
 STRING_HANDLE platform_get_platform_info(void)
@@ -39,5 +59,7 @@ STRING_HANDLE platform_get_platform_info(void)
 
 void platform_deinit(void)
 {
-	tlsio_openssl_deinit();
+#ifdef USE_OPENSSL
+    tlsio_openssl_deinit();
+#endif
 }

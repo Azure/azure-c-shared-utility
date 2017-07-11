@@ -62,6 +62,7 @@ if(WIN32)
     option(use_schannel "set use_schannel to ON if schannel is to be used, set to OFF to not use schannel" ON)
     option(use_openssl "set use_openssl to ON if openssl is to be used, set to OFF to not use openssl" OFF)
     option(use_wolfssl "set use_wolfssl to ON if wolfssl is to be used, set to OFF to not use wolfssl" OFF)
+    option(use_etw "set use_etw to ON if ETW logging is to be used. Default is OFF" OFF)
 else()
     option(use_schannel "set use_schannel to ON if schannel is to be used, set to OFF to not use schannel" OFF)
     option(use_openssl "set use_openssl to ON if openssl is to be used, set to OFF to not use openssl" ON)
@@ -69,6 +70,16 @@ else()
 endif()
 option(use_socketio "set use_socketio to ON if socketio is to be included in the library, set to OFF if a different implementation will be provided" ON)
 option(use_cyclonessl "set use_cyclonessl to ON if cyclonessl is to be used, set to OFF to not use cyclonessl" OFF)
+
+if(${use_etw}) 
+    #create res folder
+    file(MAKE_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/res)
+    
+    #populate res folder with the ETW resources
+    execute_process(COMMAND  ${CMAKE_CURRENT_LIST_DIR}/src/etw_provider_generate.cmd 
+        WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/src
+    )
+endif()
 
 option(compileOption_C "passes a string to the command line of the C compiler" OFF)
 option(compileOption_CXX "passes a string to the command line of the C++ compiler" OFF)
@@ -153,12 +164,16 @@ set (LIB_INSTALL_DIR lib CACHE PATH "Library object file directory")
 #Use solution folders.
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
+#Setup the platform files
+include("${CMAKE_CURRENT_LIST_DIR}/configs/azure_c_shared_utilityFunctions.cmake")
+set_platform_files(${CMAKE_CURRENT_LIST_DIR})
+
 if(MSVC)
     if (WINCE) # Be lax with WEC 2013 compiler
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W3")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W3")
         # WEC 2013 uses older VS compiler. Build some files as C++ files to resolve C99 related compile issues
-        SET_SOURCE_FILES_PROPERTIES(src/consolelogger.c src/xlogging.c src/map.c adapters/uniqueid_win32.c src/tlsio_schannel.c src/x509_schannel.c PROPERTIES LANGUAGE CXX)
+        SET_SOURCE_FILES_PROPERTIES(${LOGGING_C_FILE} ${XLOGGING_C_FILE} src/map.c adapters/uniqueid_win32.c src/tlsio_schannel.c src/x509_schannel.c PROPERTIES LANGUAGE CXX)
         if (${use_httpapi_compact})
             SET_SOURCE_FILES_PROPERTIES(adapters/httpapi_compact.c PROPERTIES LANGUAGE CXX)
         else()
@@ -178,6 +193,10 @@ if(MSVC)
             set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_CYCLONESSL")
             set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_CYCLONESSL")
         endif()
+        if(${use_wolfssl})
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_WOLFSSL")
+            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_WOLFSSL")
+        endif()
 
     endif()
 elseif(UNIX) #LINUX OR APPLE
@@ -185,6 +204,19 @@ elseif(UNIX) #LINUX OR APPLE
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -Werror")
     if(NOT (IN_OPENWRT OR APPLE))
         set (CMAKE_C_FLAGS "-D_POSIX_C_SOURCE=200112L ${CMAKE_C_FLAGS}")
+    endif()
+
+    if(${use_openssl})
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_OPENSSL")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_OPENSSL")
+    endif()
+    if(${use_cyclonessl})
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_CYCLONESSL")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_CYCLONESSL")
+    endif()
+    if(${use_wolfssl})
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_WOLFSSL")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_WOLFSSL")
     endif()
 endif()
 
@@ -281,11 +313,6 @@ function(add_files_to_install filesToBeInstalled)
     set(INSTALL_H_FILES ${INSTALL_H_FILES} ${filesToBeInstalled} CACHE INTERNAL "Files that will be installed on the system")
 endfunction()
 
-include("${CMAKE_CURRENT_LIST_DIR}/configs/azure_c_shared_utilityFunctions.cmake")
-
-#Setup the platform files
-set_platform_files(${CMAKE_CURRENT_LIST_DIR})
-
 include_directories(${UMOCK_C_INC_FOLDER})
 
 compileAsC99()
@@ -296,7 +323,7 @@ set(source_c_files
 ./src/buffer.c
 ./src/connection_string_parser.c
 ./src/constbuffer.c
-./src/consolelogger.c
+${LOGGING_C_FILE}
 ./src/crt_abstractions.c
 ./src/constmap.c
 ./src/doublylinkedlist.c
@@ -319,7 +346,7 @@ set(source_c_files
 ./src/urlencode.c
 ./src/usha.c
 ./src/vector.c
-./src/xlogging.c
+${XLOGGING_C_FILE}
 ./src/optionhandler.c
 ./adapters/agenttime.c
 ${CONDITION_C_FILE}
@@ -379,7 +406,7 @@ set(source_h_files
 ./inc/azure_c_shared_utility/crt_abstractions.h
 ./inc/azure_c_shared_utility/constmap.h
 ./inc/azure_c_shared_utility/condition.h
-./inc/azure_c_shared_utility/consolelogger.h
+${LOGGING_H_FILE}
 ./inc/azure_c_shared_utility/doublylinkedlist.h
 ./inc/azure_c_shared_utility/gballoc.h
 ./inc/azure_c_shared_utility/gb_stdio.h
@@ -481,8 +508,8 @@ IF(WIN32)
     #windows needs this define
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
     IF(WINCE)
-    # Don't treat warning as errors for WEC 2013. WEC 2013 uses older compiler version
-    add_definitions(/WX-)
+        # Don't treat warning as errors for WEC 2013. WEC 2013 uses older compiler version
+        add_definitions(/WX-)
     ELSE()
     # Make warning as error
     add_definitions(/WX)
@@ -493,18 +520,22 @@ ELSE()
 ENDIF(WIN32)
 
 #this is the product (a library)
+add_library(aziotsharedutil ${source_c_files} ${source_h_files})
+
 if(${build_as_dynamic})
-    add_library(aziotsharedutil SHARED ./src/aziotsharedutil.def ${source_c_files} ${source_h_files})
-else()
-    add_library(aziotsharedutil ${source_c_files} ${source_h_files})
+    #make sure we can link as dll/so
+    add_library(aziotsharedutil_dll SHARED ./src/aziotsharedutil.def ${source_c_files} ${source_h_files})
+    set_target_properties(aziotsharedutil_dll PROPERTIES OUTPUT_NAME "aziotsharedutil")
 endif()
+
+set(aziotsharedutil_target_libs)
 
 if(${use_http})
     if(WIN32)
         if (WINCE)
-            target_link_libraries(aziotsharedutil crypt32 ws2 )
+            set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} crypt32 ws2)
         else()
-            target_link_libraries(aziotsharedutil crypt32 winhttp)
+            set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} crypt32 winhttp)
         endif()
     else()
         # try pkg-config first
@@ -522,46 +553,51 @@ if(${use_http})
         find_package_handle_standard_args(CURL DEFAULT_MSG CURL_LIBRARIES)
 
         include_directories(${CURL_INCLUDE_DIRS})
-        target_link_libraries(aziotsharedutil ${CURL_LIBRARIES})
+        set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} ${CURL_LIBRARIES})
     endif()
 endif()
 
 if(${use_schannel})
     if(WIN32)
         if (WINCE)
-            target_link_libraries(aziotsharedutil secur32)
+            set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} secur32)
         else()
-            target_link_libraries(aziotsharedutil crypt32 ws2_32 secur32 advapi32)
+            set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} crypt32 ws2_32 secur32 advapi32)
         endif()
     endif()
 endif()
 
 if(${use_openssl})
-    target_link_libraries(aziotsharedutil ${OPENSSL_LIBRARIES})
+    set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} ${OPENSSL_LIBRARIES})
     if (WIN32)
-        target_link_libraries(aziotsharedutil crypt32 ws2_32 secur32)
+        set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} crypt32 ws2_32 secur32)
     endif()
 endif()
 
 if(${use_wolfssl})
-    target_link_libraries(aziotsharedutil wolfssl)
+    set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} wolfssl)
 endif()
 
 if(${use_cyclonessl} AND WIN32)
-    target_link_libraries(aziotsharedutil cyclonessl)
+    set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} cyclonessl)
 endif()
 
 if(WIN32)
     if (NOT ${use_default_uuid})
-        target_link_libraries(aziotsharedutil rpcrt4.lib)
+        set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} rpcrt4.lib)
     endif()
 endif()
 
 if(LINUX)
-    target_link_libraries(aziotsharedutil pthread m rt)
+    set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} pthread m rt)
     if (NOT ${use_default_uuid})
-        target_link_libraries(aziotsharedutil uuid)
+        set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} uuid)
     endif()
+endif()
+
+target_link_libraries(aziotsharedutil ${aziotsharedutil_target_libs})
+if(${build_as_dynamic})
+    target_link_libraries(aziotsharedutil_dll ${aziotsharedutil_target_libs})
 endif()
 
 if (${run_unittests} OR ${run_e2e_tests})
@@ -596,10 +632,9 @@ if (NOT ${skip_samples})
     add_subdirectory(samples)
 endif()
 
-# Set CMAKE_INSTALL_* if not defined
-include(GNUInstallDirs)
-
 if(${use_installed_dependencies})
+    # Set CMAKE_INSTALL_* if not defined
+    include(GNUInstallDirs)
 
     if(NOT DEFINED CMAKE_INSTALL_LIBDIR)
         set(CMAKE_INSTALL_LIBDIR "lib")
@@ -608,7 +643,7 @@ if(${use_installed_dependencies})
     # Install Azure C Shared Utility
     set(package_location "cmake")
 
-    install (TARGETS aziotsharedutil EXPORT aziotsharedutilTargets
+    install (TARGETS aziotsharedutil aziotsharedutil_dll EXPORT aziotsharedutilTargets
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
         RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR}/../bin
