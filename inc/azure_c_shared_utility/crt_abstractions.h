@@ -12,11 +12,11 @@
 #include <cerrno>
 #include <cmath>
 extern "C" {
-#else
+#else // __cplusplus
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
-#endif
+#endif // __cplusplus
 
 #ifdef _MSC_VER
 
@@ -27,7 +27,7 @@ typedef bool _Bool;
 #else
 /*galileo apparently has _Bool and bool as built in types*/
 #endif
-#endif
+#endif // QUARKGALILEO
 
 #ifndef _WIN32_WCE
 #define HAS_STDBOOL
@@ -35,10 +35,10 @@ typedef bool _Bool;
 #include <cstdbool>
 /*because C++ doesn't do anything about _Bool... */
 #define _Bool bool
-#else
+#else // __cplusplus
 #include <stdbool.h>
-#endif
-#else 
+#endif // __cplusplus
+#else // _WIN32_WCE
 /* WINCE does not support bool as C datatype */
 #define __bool_true_false_are_defined	1
 
@@ -48,40 +48,42 @@ typedef bool _Bool;
 
 #ifdef __cplusplus
 #define _CSTDBOOL_
-#else
+#else // __cplusplus
 typedef unsigned char bool;
 
 #define false	0
 #define true	1
-#endif
-#endif
-#else
+#endif // __cplusplus
+#endif // _WIN32_WCE
+
+#else //  _MSC_VER
+
 #if defined __STDC_VERSION__
 #if ((__STDC_VERSION__  == 199901L) || (__STDC_VERSION__ == 201000L) || (__STDC_VERSION__ == 201112L))
 /*C99 compiler or C11*/
 #define HAS_STDBOOL
 #include <stdbool.h>
-#endif
-#endif
-#endif
+#endif //  ((__STDC_VERSION__  == 199901L) || (__STDC_VERSION__ == 201000L) || (__STDC_VERSION__ == 201112L))
+#endif // __STDC_VERSION__
+#endif //  _MSC_VER
 
 #ifndef HAS_STDBOOL
 #ifdef __cplusplus
 #define _Bool bool
-#else
+#else // __cplusplus
 typedef unsigned char _Bool;
 typedef unsigned char bool;
 #define false 0
 #define true 1
-#endif
-#endif
+#endif // __cplusplus
+#endif // HAS_STDBOOL
 
 
 /* Codes_SRS_CRT_ABSTRACTIONS_99_001:[The module shall not redefine the secure functions implemented by Microsoft CRT.] */
 /* Codes_SRS_CRT_ABSTRACTIONS_99_040 : [The module shall still compile when building on a Microsoft platform.] */
 /* Codes_SRS_CRT_ABSTRACTIONS_99_002: [CRTAbstractions module shall expose the following API]*/
 #ifdef _MSC_VER
-#else
+#else // _MSC_VER
 #include "inttypes.h"
 
 /* Adding definitions from errno.h & crtdefs.h */
@@ -97,7 +99,7 @@ extern int strcpy_s(char* dst, size_t dstSizeInBytes, const char* src);
 extern int strcat_s(char* dst, size_t dstSizeInBytes, const char* src);
 extern int strncpy_s(char* dst, size_t dstSizeInBytes, const char* src, size_t maxCount);
 extern int sprintf_s(char* dst, size_t dstSizeInBytes, const char* format, ...);
-#endif
+#endif // _MSC_VER
 
 extern unsigned long long strtoull_s(const char* nptr, char** endPtr, int base);
 extern float strtof_s(const char* nptr, char** endPtr);
@@ -105,7 +107,7 @@ extern long double strtold_s(const char* nptr, char** endPtr);
 
 #ifdef _MSC_VER
 #define stricmp _stricmp
-#endif
+#endif // _MSC_VER
 
 MOCKABLE_FUNCTION(, int, mallocAndStrcpy_s, char**, destination, const char*, source);
 MOCKABLE_FUNCTION(, int, unsignedIntToString, char*, destination, size_t, destinationSize, unsigned int, value);
@@ -122,26 +124,26 @@ MOCKABLE_FUNCTION(, int, size_tToString, char*, destination, size_t, destination
 
 #ifdef _MSC_VER
 #define ISNAN _isnan
-#else
+#else // _MSC_VER
 #if defined __STDC_VERSION__
 #if ((__STDC_VERSION__  == 199901L) || (__STDC_VERSION__ == 201000L) || (__STDC_VERSION__ == 201112L))
 /*C99 compiler or C11*/
 #define ISNAN isnan
-#else
+#else //  ((__STDC_VERSION__  == 199901L) || (__STDC_VERSION__ == 201000L) || (__STDC_VERSION__ == 201112L))
 #error update this file to contain the latest C standard.
-#endif
-#else
+#endif // ((__STDC_VERSION__  == 199901L) || (__STDC_VERSION__ == 201000L) || (__STDC_VERSION__ == 201112L))
+#else // __STDC_VERSION__
 #ifdef __cplusplus
 /*C++ defines isnan... in C11*/
 extern "C++" {
 #define ISNAN std::isnan
 }
-#else
+#else // __cplusplus
 #error unknown (or C89) compiler, provide ISNAN with the same meaning as isnan in C99 standard  
-#endif
+#endif // __cplusplus
 
-#endif
-#endif
+#endif // __STDC_VERSION__
+#endif // _MSC_VER
 
 #ifdef _MSC_VER
 #define INT64_PRINTF "%I64d"
@@ -150,20 +152,20 @@ extern "C++" {
 #if ((__STDC_VERSION__  == 199901L) || (__STDC_VERSION__ == 201000L) || (__STDC_VERSION__ == 201112L))
 /*C99 compiler or C11*/
 #define INT64_PRINTF "%" PRId64 ""
-#else
+#else // ((__STDC_VERSION__  == 199901L) || (__STDC_VERSION__ == 201000L) || (__STDC_VERSION__ == 201112L))
 #error update this file to contain the latest C standard.
-#endif
-#else
+#endif // ((__STDC_VERSION__  == 199901L) || (__STDC_VERSION__ == 201000L) || (__STDC_VERSION__ == 201112L))
+#else // __STDC_VERSION__
 #ifdef __cplusplus 
 #define INT64_PRINTF "%" PRId64 ""
-#else
+#else // __cplusplus
 #error unknown (or C89) compiler, provide INT64_PRINTF with the same meaning as PRIdN in C99 standard
-#endif
-#endif
-#endif
+#endif // __cplusplus
+#endif // __STDC_VERSION__
+#endif // _MSC_VER
 
 #ifdef __cplusplus
 }
-#endif
+#endif // __cplusplus
 
 #endif /* CRT_ABSTRACTIONS_H */
