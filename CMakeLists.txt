@@ -575,7 +575,15 @@ if(${use_openssl})
 endif()
 
 if(${use_wolfssl})
-    set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} wolfssl)
+    if (WIN32)
+        if (CMAKE_BUILD_TYPE EQUAL "DEBUG")
+            target_link_libraries(aziotsharedutil_target_libs $ENV{WolfSSLDir}/Debug/wolfssl.lib)
+        else()
+            target_link_libraries(aziotsharedutil_target_libs $ENV{WolfSSLDir}/Release/wolfssl.lib)
+        endif()
+    else()
+        target_link_libraries(aziotsharedutil_target_libs wolfssl)
+    endif()
 endif()
 
 if(${use_cyclonessl} AND WIN32)
@@ -681,12 +689,12 @@ if(${use_installed_dependencies})
             ${package_location}
     )
 else()
-	set(install_staticlibs
-		aziotsharedutil
-	)
-	install(FILES ${source_h_files}
-		DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azure_c_shared_utility) 
-	install(TARGETS ${install_staticlibs} 
-		LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-		ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
+    set(install_staticlibs
+        aziotsharedutil
+    )
+    install(FILES ${source_h_files}
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azure_c_shared_utility) 
+    install(TARGETS ${install_staticlibs} 
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
 endif()
