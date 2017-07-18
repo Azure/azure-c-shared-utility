@@ -4,6 +4,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 // This file is OS-specific, and is identified by setting include directories
 // in the project
