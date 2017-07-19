@@ -8,5 +8,10 @@
 // Tested with:
 // ESP32
 
+#ifndef SOCKET_ASYNC_OS_H
+#define SOCKET_ASYNC_OS_H
+
 #include "lwip/sockets.h"
 #include "lwip/netdb.h"
+
+#endif // SOCKET_ASYNC_OS_H
