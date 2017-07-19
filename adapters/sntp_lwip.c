@@ -7,7 +7,7 @@
 #include "azure_c_shared_utility/sntp.h"
 #include "azure_c_shared_utility/threadapi.h"
 #include "azure_c_shared_utility/agenttime.h"
-#include "apps/sntp/sntp.h"
+#include "sntp_os.h"
 
 
 /*Codes_SRS_SNTP_LWIP_30_002: [ The serverName parameter shall be an NTP server URL which shall not be validated. ]*/
