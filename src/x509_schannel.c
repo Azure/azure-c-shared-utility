@@ -9,7 +9,7 @@
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/x509_schannel.h"
 #include "azure_c_shared_utility/xlogging.h"
-#if _MSC_VER > 1500
+#if _MSC_VER > 1500 && !defined(WINCE)
 #include <ncrypt.h>
 #endif
 
@@ -79,7 +79,7 @@ static unsigned char* decode_crypt_object(unsigned char* private_key, DWORD key_
     /*Codes_SRS_X509_SCHANNEL_02_004: [ x509_schannel_create shall decode the private key by calling CryptDecodeObjectEx. ]*/
     if (!CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, key_type, private_key, key_length, 0, NULL, NULL, &private_key_blob_size))
     {
-#if _MSC_VER > 1500
+#if _MSC_VER > 1500 && !defined(WINCE)
         key_type = X509_ECC_PRIVATE_KEY;
         if (!CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, key_type, private_key, key_length, 0, NULL, NULL, &private_key_blob_size))
         {
@@ -135,7 +135,7 @@ static unsigned char* decode_crypt_object(unsigned char* private_key, DWORD key_
 static int set_ecc_certificate_info(X509_SCHANNEL_HANDLE_DATA* x509_handle, unsigned char* x509privatekeyBlob)
 {
     int result;
-#if _MSC_VER > 1500
+#if _MSC_VER > 1500 && !defined(WINCE)
     SECURITY_STATUS status;
     CRYPT_BIT_BLOB* pPubKeyBlob = &x509_handle->x509certificate_context->pCertInfo->SubjectPublicKeyInfo.PublicKey;
     CRYPT_ECC_PRIVATE_KEY_INFO* pPrivKeyInfo = (CRYPT_ECC_PRIVATE_KEY_INFO*)x509privatekeyBlob;
@@ -420,7 +420,7 @@ void x509_schannel_destroy(X509_SCHANNEL_HANDLE x509_schannel_handle)
         }
         else
         {
-#if _MSC_VER > 1500
+#if _MSC_VER > 1500 && !defined(WINCE)
             if (x509crypto->x509hcryptkey != 0)
             {
                 (void)NCryptFreeObject(x509crypto->x509hcryptkey);
