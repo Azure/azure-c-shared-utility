@@ -34,6 +34,8 @@ x509_schannel_create creates a handle wrapping a PCCERT_CONTEXT and other inform
 
 **SRS_X509_SCHANNEL_02_004: [** `x509_schannel_create` shall decode the private key by calling `CryptDecodeObjectEx`. **]**
 
+**SRS_X509_SCHANNEL_07_001: [** `x509_schannel_create` shall determine whether the certificate is of type RSA or ECC. **]** 
+
 **SRS_X509_SCHANNEL_02_005: [** `x509_schannel_create` shall call `CryptAcquireContext`. **]**
 
 **SRS_X509_SCHANNEL_02_006: [** `x509_schannel_create` shall import the private key by calling `CryptImportKey`. **]**

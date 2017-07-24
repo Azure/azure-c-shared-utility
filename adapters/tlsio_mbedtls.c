@@ -354,6 +354,7 @@ CONCRETE_IO_HANDLE tlsio_mbedtls_create(void* io_create_parameters)
         result = malloc(sizeof(TLS_IO_INSTANCE));
         if (result != NULL)
         {
+            SOCKETIO_CONFIG socketio_config;
             const IO_INTERFACE_DESCRIPTION* underlying_io_interface;
             void* io_interface_parameters;
 
@@ -364,8 +365,6 @@ CONCRETE_IO_HANDLE tlsio_mbedtls_create(void* io_create_parameters)
             }
             else
             {
-                SOCKETIO_CONFIG socketio_config;
-
                 socketio_config.hostname = tls_io_config->hostname;
                 socketio_config.port = tls_io_config->port;
                 socketio_config.accepted_socket = NULL;
