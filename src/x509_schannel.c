@@ -86,7 +86,6 @@ static unsigned char* decode_crypt_object(unsigned char* private_key, DWORD key_
             /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
             LogErrorWinHTTPWithGetLastErrorAsString("Failed to CryptDecodeObjectEx x509 private key");
             *cert_type = x509_TYPE_UNKNOWN;
-            result = NULL;
         }
         else
         {
@@ -96,7 +95,6 @@ static unsigned char* decode_crypt_object(unsigned char* private_key, DWORD key_
         /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
         LogErrorWinHTTPWithGetLastErrorAsString("Failed to CryptDecodeObjectEx x509 private key");
         *cert_type = x509_TYPE_UNKNOWN;
-        result = NULL;
 #endif
     }
     else
@@ -129,6 +127,11 @@ static unsigned char* decode_crypt_object(unsigned char* private_key, DWORD key_
             }
         }
     }
+    else
+    {
+        result = NULL;
+    }
+            
     return result;
 }
 
