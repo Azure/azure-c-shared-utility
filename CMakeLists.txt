@@ -149,6 +149,10 @@ if(${use_cyclonessl} AND WIN32)
 
 endif()
 
+if(${memory_trace})
+    add_definitions(-DGB_MEASURE_MEMORY_FOR_THIS -DGB_DEBUG_ALLOC)
+endif()
+
 if(${use_openssl})
     if("${OPENSSL_ROOT_DIR}" STREQUAL "" AND NOT ("$ENV{OpenSSLDir}" STREQUAL ""))
         set(OPENSSL_ROOT_DIR $ENV{OpenSSLDir} CACHE PATH "")
