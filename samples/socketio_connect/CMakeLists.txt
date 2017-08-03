@@ -19,7 +19,7 @@ target_link_libraries(socketio_connect
     aziotsharedutil
 )
 
-if(${use_openssl} AND WIN32)
+if(${use_openssl} AND WIN32 AND NOT IOTHUB_USE_OPENSSL_TARGETS)
 	file(COPY ${SSL_DLL} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 	file(COPY ${CRYPTO_DLL} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 endif()
