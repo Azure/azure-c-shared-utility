@@ -234,6 +234,7 @@ XX**SRS_UWS_CLIENT_01_055: [** - the `size` argument shall indicate the websocke
 XX**SRS_UWS_CLIENT_01_056: [** - the `send_complete` callback shall be the `on_underlying_io_send_complete` function. **]**  
 XX**SRS_UWS_CLIENT_01_057: [** - the `send_complete_context` argument shall identify the pending send. **]**  
 XX**SRS_UWS_CLIENT_01_058: [** If `xio_send` fails, `uws_client_send_frame_async` shall fail and return a non-zero value. **]**
+XX**SRS_UWS_CLIENT_09_001: [** If `xio_send` fails and the message is still queued, it shall be de-queued and destroyed. **]**
 XX**SRS_UWS_CLIENT_01_043: [** If the uws instance is not OPEN (open has not been called or is still in progress) then `uws_client_send_frame_async` shall fail and return a non-zero value. **]**  
 XX**SRS_UWS_CLIENT_01_044: [** If the argument `uws_client` is NULL, `uws_client_send_frame_async` shall fail and return a non-zero value. **]**  
 XX**SRS_UWS_CLIENT_01_045: [** If `size` is non-zero and `buffer` is NULL then `uws_client_send_frame_async` shall fail and return a non-zero value. **]**  
