@@ -11,11 +11,31 @@
 #include <string.h>
 #endif
 
+#include "testrunnerswitcher.h"
+#include "umock_c.h"
+
+static void* my_gballoc_malloc(size_t size)
+{
+    return malloc(size);
+}
+
+static void* my_gballoc_realloc(void* ptr, size_t size)
+{
+    return realloc(ptr, size);
+}
+
+static void my_gballoc_free(void* ptr)
+{
+    free(ptr);
+}
+
+#define ENABLE_MOCKS
+#include "azure_c_shared_utility/gballoc.h"
+#undef ENABLE_MOCKS
+
 #include "azure_c_shared_utility/base64.h"
 #include "azure_c_shared_utility/strings.h"
 #include "azure_c_shared_utility/buffer_.h"
-
-#include "testrunnerswitcher.h"
 
 static const struct
 {
@@ -1449,18 +1469,54 @@ static const struct
 
     };
 
-static TEST_MUTEX_HANDLE g_dllByDll;
+    static TEST_MUTEX_HANDLE g_testByTest;
+    static TEST_MUTEX_HANDLE g_dllByDll;
+
+DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
+
+static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
+{
+    char temp_str[256];
+    (void)snprintf(temp_str, sizeof(temp_str), "umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
+    ASSERT_FAIL(temp_str);
+}
 
 BEGIN_TEST_SUITE(base64_unittests)
 
 TEST_SUITE_INITIALIZE(TestSuiteInitialize)
 {
     TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
+
+    g_testByTest = TEST_MUTEX_CREATE();
+    ASSERT_IS_NOT_NULL(g_testByTest);
+
+    umock_c_init(on_umock_c_error);
+
+    REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, my_gballoc_malloc);
+    REGISTER_GLOBAL_MOCK_HOOK(gballoc_realloc, my_gballoc_realloc);
+    REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, my_gballoc_free);
 }
 
 TEST_SUITE_CLEANUP(TestClassCleanup)
 {
+    umock_c_deinit();
+
+    TEST_MUTEX_DESTROY(g_testByTest);
     TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
+}
+
+TEST_FUNCTION_INITIALIZE(f)
+{
+    if (TEST_MUTEX_ACQUIRE(g_testByTest))
+    {
+        ASSERT_FAIL("our mutex is ABANDONED. Failure in test framework");
+    }
+    umock_c_reset_all_calls();
+}
+
+TEST_FUNCTION_CLEANUP(cleans)
+{
+    TEST_MUTEX_RELEASE(g_testByTest);
 }
 
 /*Tests_SRS_BASE64_06_001: [If input is NULL then Base64_Encoder shall return NULL.]*/
@@ -1540,7 +1596,7 @@ TEST_FUNCTION(Base64_Encode_leviathan_succeeds)
 TEST_FUNCTION(Base64_Encode_exhaustive_succeeds)
 {
     ///arrange
-	size_t i;
+    size_t i;
 
     for (i = 0; i < sizeof(testVector_BINARY_with_equal_signs) / sizeof(testVector_BINARY_with_equal_signs[0]); i++)
     {
@@ -1599,7 +1655,7 @@ TEST_FUNCTION(Base64_Encode_Bytes_with_zero_size_returns_empty_string)
 TEST_FUNCTION(Base64_Encode_Bytes_exhaustive_succeeds)
 {
     ///arrange
-	size_t i;
+    size_t i;
 
     for (i = 0; i < sizeof(testVector_BINARY_with_equal_signs) / sizeof(testVector_BINARY_with_equal_signs[0]); i++)
     {
@@ -1620,7 +1676,7 @@ TEST_FUNCTION(Base64_Encode_Bytes_exhaustive_succeeds)
 
 TEST_FUNCTION(Base64_Decoder_exhaustive_succeeds)
 {
-	size_t i;
+    size_t i;
     for (i = 0; i < sizeof(testVector_BINARY_with_equal_signs) / sizeof(testVector_BINARY_with_equal_signs[0]); i++)
     {
         ///Arrange
