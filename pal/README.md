@@ -8,4 +8,7 @@ abstracts all of the various hardware platforms and SSL implemnentations that th
 The Physical Abstraction Layer replaces adapters written using the [older porting guide](https://github.com/Azure/azure-c-shared-utility/blob/master/doc/porting_guide.md), and is designed to
 
 * Simplify the writing of TLS adapters by providing a reusable state machine.
-* Simplify re-use of existing code by providing a one-stop [PAL Example Finder]()
+* Simplify re-use of existing code by providing a one-stop [PAL Example Finder](https://github.com/Azure/azure-c-shared-utility/blob/pal/pal/example_finder.md) to help implementors find existing solutions.
+* Aid development and assure quality by providing 
+
+
