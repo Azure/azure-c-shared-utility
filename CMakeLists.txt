@@ -48,6 +48,7 @@ endif()
 #the following variables are project-wide and can be used with cmake-gui
 option(run_unittests "set run_unittests to ON to run unittests (default is OFF)" OFF)
 option(skip_samples "set skip_samples to ON to skip building samples (default is OFF)[if possible, they are always built]" OFF)
+
 option(use_http "set use_http to ON if http is to be used, set to OFF to not use http" ON)
 option(use_condition "set use_condition to ON if the condition module and its adapters should be enabled" ON)
 option(use_wsio "set use_wsio to ON to build WebSockets support (default is ON)" ON)
@@ -200,8 +201,10 @@ if(MSVC)
 
     endif()
 elseif(UNIX) #LINUX OR APPLE
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Werror")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -Werror")
+	if (NOT IOS)
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Werror")
+		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -Werror")
+	endif (NOT IOS)
     if(NOT (IN_OPENWRT OR APPLE))
         set (CMAKE_C_FLAGS "-D_POSIX_C_SOURCE=200112L ${CMAKE_C_FLAGS}")
     endif()
@@ -516,7 +519,9 @@ IF(WIN32)
     ENDIF()
 ELSE()
     # Make warning as error
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
+	if (NOT IOS)
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
+	endif (NOT IOS)
 ENDIF(WIN32)
 
 #this is the product (a library)
