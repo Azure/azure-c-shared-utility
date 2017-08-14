@@ -9,17 +9,289 @@
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/x509_schannel.h"
 #include "azure_c_shared_utility/xlogging.h"
+#if _MSC_VER > 1500 && !defined(WINCE)
+#include <ncrypt.h>
+#endif
+
+#define KEY_NAME L"AzureAliasKey"
+#define ECC_256_MAGIC_NUMBER        0x20
+#define ECC_384_MAGIC_NUMBER        0x30
+
+typedef enum x509_CERT_TYPE_TAG
+{
+    x509_TYPE_RSA,
+    x509_TYPE_ECC,
+    x509_TYPE_UNKNOWN,
+} x509_CERT_TYPE;
 
 typedef struct X509_SCHANNEL_HANDLE_DATA_TAG
 {
     HCRYPTPROV hProv;
     HCRYPTKEY x509hcryptkey;
     PCCERT_CONTEXT x509certificate_context;
-}X509_SCHANNEL_HANDLE_DATA;
+    x509_CERT_TYPE cert_type;
+} X509_SCHANNEL_HANDLE_DATA;
+
+static unsigned char* convert_cert_to_binary(const char* crypt_value, DWORD* crypt_length)
+{
+    unsigned char* result;
+    DWORD result_length;
+    if (!CryptStringToBinaryA(crypt_value, 0, CRYPT_STRING_ANY, NULL, &result_length, NULL, NULL))
+    {
+        /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
+        LogErrorWinHTTPWithGetLastErrorAsString("Failed determine crypt value size");
+        result = NULL;
+    }
+    else
+    {
+        if ((result = (unsigned char*)malloc(result_length)) == NULL)
+        {
+            /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
+            LogError("unable to allocate memory for crypt value");
+        }
+        else
+        {
+            if (!CryptStringToBinaryA(crypt_value, 0, CRYPT_STRING_ANY, result, &result_length, NULL, NULL))
+            {
+                /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
+                LogErrorWinHTTPWithGetLastErrorAsString("Failed convert crypt value to binary");
+                free(result);
+                result = NULL;
+            }
+            else
+            {
+                if (crypt_length != NULL)
+                {
+                    *crypt_length = result_length;
+                }
+            }
+        }
+    }
+    return result;
+}
+
+static unsigned char* decode_crypt_object(unsigned char* private_key, DWORD key_length, DWORD* blob_size, x509_CERT_TYPE* cert_type)
+{
+    unsigned char* result;
+    LPCSTR key_type = PKCS_RSA_PRIVATE_KEY;
+    DWORD private_key_blob_size = 0;
+
+    /*Codes_SRS_X509_SCHANNEL_02_004: [ x509_schannel_create shall decode the private key by calling CryptDecodeObjectEx. ]*/
+    if (!CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, key_type, private_key, key_length, 0, NULL, NULL, &private_key_blob_size))
+    {
+#if _MSC_VER > 1500 && !defined(WINCE)
+        key_type = X509_ECC_PRIVATE_KEY;
+        if (!CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, key_type, private_key, key_length, 0, NULL, NULL, &private_key_blob_size))
+        {
+            /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
+            LogErrorWinHTTPWithGetLastErrorAsString("Failed to CryptDecodeObjectEx x509 private key");
+            *cert_type = x509_TYPE_UNKNOWN;
+        }
+        else
+        {
+            *cert_type = x509_TYPE_ECC;
+        }
+#else
+        /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
+        LogErrorWinHTTPWithGetLastErrorAsString("Failed to CryptDecodeObjectEx x509 private key");
+        *cert_type = x509_TYPE_UNKNOWN;
+#endif
+    }
+    else
+    {
+        *cert_type = x509_TYPE_RSA;
+    }
+
+    if (*cert_type != x509_TYPE_UNKNOWN)
+    {
+        if ((result = (unsigned char*)malloc(private_key_blob_size)) == NULL)
+        {
+            /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
+            LogError("unable to malloc for x509 private key blob");
+        }
+        else
+        {
+            if (!CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, key_type, private_key, key_length, 0, NULL, result, &private_key_blob_size))
+            {
+                /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
+                LogErrorWinHTTPWithGetLastErrorAsString("Failed to CryptDecodeObjectEx x509 private key");
+                free(result);
+                result = NULL;
+            }
+            else
+            {
+                if (blob_size != NULL)
+                {
+                    *blob_size = private_key_blob_size;
+                }
+            }
+        }
+    }
+    else
+    {
+        result = NULL;
+    }
+            
+    return result;
+}
+
+static int set_ecc_certificate_info(X509_SCHANNEL_HANDLE_DATA* x509_handle, unsigned char* x509privatekeyBlob)
+{
+    int result;
+#if _MSC_VER > 1500 && !defined(WINCE)
+    SECURITY_STATUS status;
+    CRYPT_BIT_BLOB* pPubKeyBlob = &x509_handle->x509certificate_context->pCertInfo->SubjectPublicKeyInfo.PublicKey;
+    CRYPT_ECC_PRIVATE_KEY_INFO* pPrivKeyInfo = (CRYPT_ECC_PRIVATE_KEY_INFO*)x509privatekeyBlob;
+    DWORD pubSize = pPubKeyBlob->cbData - 1;
+    DWORD privSize = pPrivKeyInfo->PrivateKey.cbData;
+    DWORD keyBlobSize = sizeof(BCRYPT_ECCKEY_BLOB) + pubSize + privSize;
+    BYTE* pubKeyBuf = pPubKeyBlob->pbData + 1;
+    BYTE* privKeyBuf = pPrivKeyInfo->PrivateKey.pbData;
+    BCRYPT_ECCKEY_BLOB* pKeyBlob = (BCRYPT_ECCKEY_BLOB*)malloc(keyBlobSize);
+    if (pKeyBlob == NULL)
+    {
+        /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
+        LogError("Failed to malloc NCrypt private key blob");
+        result = __FAILURE__;
+    }
+    else
+    {
+        pKeyBlob->dwMagic = privSize == ECC_256_MAGIC_NUMBER ? BCRYPT_ECDSA_PRIVATE_P256_MAGIC
+            : privSize == ECC_384_MAGIC_NUMBER ? BCRYPT_ECDSA_PRIVATE_P384_MAGIC
+            : BCRYPT_ECDSA_PRIVATE_P521_MAGIC;
+        pKeyBlob->cbKey = privSize;
+        memcpy((BYTE*)(pKeyBlob + 1), pubKeyBuf, pubSize);
+        memcpy((BYTE*)(pKeyBlob + 1) + pubSize, privKeyBuf, privSize);
+
+        /* Codes_SRS_X509_SCHANNEL_02_005: [ x509_schannel_create shall call CryptAcquireContext. ] */
+        /* at this moment, both the private key and the certificate are decoded for further usage */
+        /* NOTE: As no WinCrypt key storage provider supports ECC keys, NCrypt is used instead */
+        status = NCryptOpenStorageProvider(&x509_handle->hProv, MS_KEY_STORAGE_PROVIDER, 0);
+        if (status != ERROR_SUCCESS)
+        {
+            /* Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
+            LogError("NCryptOpenStorageProvider failed with error 0x%08X", status);
+            result = __FAILURE__;
+        }
+        else
+        {
+            SECURITY_STATUS status2;
+            NCryptBuffer ncBuf = { sizeof(KEY_NAME), NCRYPTBUFFER_PKCS_KEY_NAME, KEY_NAME };
+            NCryptBufferDesc ncBufDesc;
+            ncBufDesc.ulVersion = 0;
+            ncBufDesc.cBuffers = 1;
+            ncBufDesc.pBuffers = &ncBuf;
+
+            CRYPT_KEY_PROV_INFO keyProvInfo = { KEY_NAME, MS_KEY_STORAGE_PROVIDER, 0, 0, 0, NULL, 0 };
+
+            /*Codes_SRS_X509_SCHANNEL_02_006: [ x509_schannel_create shall import the private key by calling CryptImportKey. ] */
+            /*NOTE: As no WinCrypt key storage provider supports ECC keys, NCrypt is used instead*/
+            status = NCryptImportKey(x509_handle->hProv, 0, BCRYPT_ECCPRIVATE_BLOB, &ncBufDesc, &x509_handle->x509hcryptkey, (BYTE*)pKeyBlob, keyBlobSize, NCRYPT_OVERWRITE_KEY_FLAG);
+            if (status == ERROR_SUCCESS)
+            {
+                status2 = NCryptFreeObject(x509_handle->x509hcryptkey);
+                if (status2 != ERROR_SUCCESS)
+                {
+                    LogError("NCryptFreeObject for key handle failed with error 0x%08X", status2);
+                }
+                else
+                {
+                    x509_handle->x509hcryptkey = 0;
+                }
+            }
+
+            status2 = NCryptFreeObject(x509_handle->hProv);
+            if (status2 != ERROR_SUCCESS)
+            {
+                LogError("NCryptFreeObject for provider handle failed with error 0x%08X", status2);
+            }
+            else
+            {
+                x509_handle->hProv = 0;
+            }
+
+            if (status != ERROR_SUCCESS)
+            {
+                /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
+                LogError("NCryptImportKey failed with error 0x%08X", status);
+                result = __FAILURE__;
+            }
+            else if (!CertSetCertificateContextProperty(x509_handle->x509certificate_context, CERT_KEY_PROV_INFO_PROP_ID, 0, &keyProvInfo))
+            {
+                /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
+                LogErrorWinHTTPWithGetLastErrorAsString("CertSetCertificateContextProperty failed to set NCrypt key handle property");
+                result = __FAILURE__;
+            }
+            else
+            {
+                result = 0;
+            }
+        }
+        free(pKeyBlob);
+    }
+#else
+    (void)x509_handle;
+    (void)x509privatekeyBlob;
+    LogError("SChannel ECC is not supported in this compliation");
+    result = __FAILURE__;
+#endif
+    return result;
+}
+
+static int set_rsa_certificate_info(X509_SCHANNEL_HANDLE_DATA* x509_handle, unsigned char* x509privatekeyBlob, DWORD x509privatekeyBlobSize)
+{
+    int result;
+    /*Codes_SRS_X509_SCHANNEL_02_005: [ x509_schannel_create shall call CryptAcquireContext. ]*/
+    /*at this moment, both the private key and the certificate are decoded for further usage*/
+    if (!CryptAcquireContext(&(x509_handle->hProv), NULL, MS_ENH_RSA_AES_PROV, PROV_RSA_AES, CRYPT_VERIFYCONTEXT))
+    {
+        /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
+        LogErrorWinHTTPWithGetLastErrorAsString("CryptAcquireContext failed");
+        result = __FAILURE__;
+    }
+    else
+    {
+        /*Codes_SRS_X509_SCHANNEL_02_006: [ x509_schannel_create shall import the private key by calling CryptImportKey. ] */
+        if (!CryptImportKey(x509_handle->hProv, x509privatekeyBlob, x509privatekeyBlobSize, (HCRYPTKEY)NULL, 0, &(x509_handle->x509hcryptkey)))
+        {
+            /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
+            LogErrorWinHTTPWithGetLastErrorAsString("CryptImportKey for private key failed");
+            if (!CryptReleaseContext(x509_handle->hProv, 0))
+            {
+                LogErrorWinHTTPWithGetLastErrorAsString("unable to CryptReleaseContext");
+            }
+            result = __FAILURE__;
+        }
+        else
+        {
+            /*Codes_SRS_X509_SCHANNEL_02_008: [ x509_schannel_create shall call set the certificate private key by calling CertSetCertificateContextProperty. ]*/
+            if (!CertSetCertificateContextProperty(x509_handle->x509certificate_context, CERT_KEY_PROV_HANDLE_PROP_ID, 0, (void*)x509_handle->hProv))
+            {
+                /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
+                LogErrorWinHTTPWithGetLastErrorAsString("unable to CertSetCertificateContextProperty");
+
+                if (!CryptDestroyKey(x509_handle->x509hcryptkey))
+                {
+                    LogErrorWinHTTPWithGetLastErrorAsString("unable to CryptDestroyKey");
+                }
+                if (!CryptReleaseContext(x509_handle->hProv, 0))
+                {
+                    LogErrorWinHTTPWithGetLastErrorAsString("unable to CryptReleaseContext");
+                }
+                result = __FAILURE__;
+            }
+            else
+            {
+                result = 0;
+            }
+        }
+    }
+    return result;
+}
 
 X509_SCHANNEL_HANDLE x509_schannel_create(const char* x509certificate, const char* x509privatekey)
 {
-    X509_SCHANNEL_HANDLE_DATA *result;
+    X509_SCHANNEL_HANDLE_DATA* result;
     /*this is what happens with the x509 certificate and the x509 private key in this function*/
     /*
     step 1: they are converted to binary form.
@@ -46,6 +318,13 @@ X509_SCHANNEL_HANDLE x509_schannel_create(const char* x509certificate, const cha
     }
     else
     {
+        unsigned char* binaryx509Certificate;
+        unsigned char* binaryx509privatekey;
+        unsigned char* x509privatekeyBlob;
+        DWORD binaryx509certificateSize;
+        DWORD binaryx509privatekeySize;
+        DWORD x509privatekeyBlobSize;
+
         result = (X509_SCHANNEL_HANDLE_DATA*)malloc(sizeof(X509_SCHANNEL_HANDLE_DATA));
         if (result == NULL)
         {
@@ -56,185 +335,67 @@ X509_SCHANNEL_HANDLE x509_schannel_create(const char* x509certificate, const cha
         }
         else
         {
+            memset(result, 0, sizeof(X509_SCHANNEL_HANDLE_DATA));
             /*Codes_SRS_X509_SCHANNEL_02_002: [ x509_schannel_create shall convert the certificate to binary form by calling CryptStringToBinaryA. ]*/
-            DWORD binaryx509certificateSize;
-            if (!CryptStringToBinaryA(x509certificate, 0, CRYPT_STRING_ANY, NULL, &binaryx509certificateSize, NULL, NULL))
+            if ((binaryx509Certificate = convert_cert_to_binary(x509certificate, &binaryx509certificateSize)) == NULL)
             {
-                /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
-                LogErrorWinHTTPWithGetLastErrorAsString("Failed convert x509 certificate");
+                LogError("Failure converting x509 certificate");
+                free(result);
+                result = NULL;
+            }
+            /*Codes_SRS_X509_SCHANNEL_02_003: [ x509_schannel_create shall convert the private key to binary form by calling CryptStringToBinaryA. ]*/
+            /*at this moment x509 certificate is ready to be used in CertCreateCertificateContext*/
+            else if ((binaryx509privatekey = convert_cert_to_binary(x509privatekey, &binaryx509privatekeySize)) == NULL)
+            {
+                LogError("Failure converting x509 certificate");
+                free(binaryx509Certificate);
+                free(result);
+                result = NULL;
+            }
+            else if ((x509privatekeyBlob = decode_crypt_object(binaryx509privatekey, binaryx509privatekeySize, &x509privatekeyBlobSize, &result->cert_type)) == NULL)
+            {
+                LogError("Failure decoding x509 private key");
+                free(binaryx509Certificate);
+                free(binaryx509privatekey);
                 free(result);
                 result = NULL;
             }
             else
             {
-                unsigned char* binaryx509Certificate = (unsigned char*)malloc(binaryx509certificateSize);
-                if (binaryx509Certificate == NULL)
+                /*Codes_SRS_X509_SCHANNEL_02_007: [ x509_schannel_create shall create a cerficate context by calling CertCreateCertificateContext. ]*/
+                PCCERT_CONTEXT cert_ctx = CertCreateCertificateContext(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, binaryx509Certificate, binaryx509certificateSize);
+                if ((result->x509certificate_context = cert_ctx) == NULL)
                 {
                     /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
-                    LogError("unable to allocate memory for x509 certificate");
+                    LogErrorWinHTTPWithGetLastErrorAsString("unable to CertCreateCertificateContext");
                     free(result);
                     result = NULL;
                 }
                 else
                 {
-                    if (!CryptStringToBinaryA(x509certificate, 0, CRYPT_STRING_ANY, binaryx509Certificate, &binaryx509certificateSize, NULL, NULL))
+                    /* Codes_SRS_X509_SCHANNEL_07_001: [ x509_schannel_create shall determine whether the certificate is of type RSA or ECC. ] */
+                    if (result->cert_type == x509_TYPE_RSA)
                     {
-                        /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
-                        LogErrorWinHTTPWithGetLastErrorAsString("Failed convert x509 certificate");
-                        free(result);
-                        result = NULL;
-                    }
-                    else
-                    {
-                        /*Codes_SRS_X509_SCHANNEL_02_003: [ x509_schannel_create shall convert the private key to binary form by calling CryptStringToBinaryA. ]*/
-                        /*at this moment x509 certificate is ready to be used in CertCreateCertificateContext*/
-                        DWORD binaryx509privatekeySize;
-                        if (!CryptStringToBinaryA(x509privatekey, 0, CRYPT_STRING_ANY, NULL, &binaryx509privatekeySize, NULL, NULL))
+                        if (set_rsa_certificate_info(result, x509privatekeyBlob, x509privatekeyBlobSize) != 0)
                         {
-                            /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
-                            LogErrorWinHTTPWithGetLastErrorAsString("Failed convert x509 private key");
+                            (void)CertFreeCertificateContext(result->x509certificate_context);
                             free(result);
                             result = NULL;
                         }
-                        else
+                    }
+                    else
+                    {
+                        if (set_ecc_certificate_info(result, x509privatekeyBlob) != 0)
                         {
-                            unsigned char* binaryx509privatekey = (unsigned char*)malloc(binaryx509privatekeySize);
-                            if (binaryx509privatekey == NULL)
-                            {
-                                /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
-                                LogError("unable to malloc for binaryx509privatekey");
-                                free(result);
-                                result = NULL;
-                            }
-                            else
-                            {
-                                if (!CryptStringToBinaryA(x509privatekey, 0, CRYPT_STRING_ANY, binaryx509privatekey, &binaryx509privatekeySize, NULL, NULL))
-                                {
-                                    /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
-                                    LogErrorWinHTTPWithGetLastErrorAsString("Failed convert x509 private key");
-                                    free(result);
-                                    result = NULL;
-                                }
-                                else
-                                {
-                                    /*Codes_SRS_X509_SCHANNEL_02_004: [ x509_schannel_create shall decode the private key by calling CryptDecodeObjectEx. ]*/
-                                    DWORD x509privatekeyBlobSize;
-                                    if (!CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, PKCS_RSA_PRIVATE_KEY, binaryx509privatekey, binaryx509privatekeySize, 0, NULL, NULL, &x509privatekeyBlobSize))
-                                    {
-                                        /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
-                                        LogErrorWinHTTPWithGetLastErrorAsString("Failed to CryptDecodeObjectEx x509 private key");
-                                        free(result);
-                                        result = NULL;
-                                    }
-                                    else
-                                    {
-                                        unsigned char* x509privatekeyBlob = (unsigned char*)malloc(x509privatekeyBlobSize);
-                                        if (x509privatekeyBlob == NULL)
-                                        {
-                                            /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
-                                            LogError("unable to malloc for x509 private key blob");
-                                            free(result);
-                                            result = NULL;
-                                        }
-                                        else
-                                        {
-                                            if (!CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, PKCS_RSA_PRIVATE_KEY, binaryx509privatekey, binaryx509privatekeySize, 0, NULL, x509privatekeyBlob, &x509privatekeyBlobSize))
-                                            {
-                                                /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
-                                                LogErrorWinHTTPWithGetLastErrorAsString("Failed to CryptDecodeObjectEx x509 private key");
-                                                free(result);
-                                                result = NULL;
-                                            }
-                                            else
-                                            {
-                                                /*Codes_SRS_X509_SCHANNEL_02_005: [ x509_schannel_create shall call CryptAcquireContext. ]*/
-                                                /*at this moment, both the private key and the certificate are decoded for further usage*/
-                                                if (!CryptAcquireContext(&(result->hProv), NULL, MS_ENH_RSA_AES_PROV, PROV_RSA_AES, CRYPT_VERIFYCONTEXT))
-                                                {
-                                                    /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
-                                                    LogErrorWinHTTPWithGetLastErrorAsString("CryptAcquireContext failed");
-                                                    free(result);
-                                                    result = NULL;
-                                                }
-                                                else
-                                                {
-                                                    /*Codes_SRS_X509_SCHANNEL_02_006: [ x509_schannel_create shall import the private key by calling CryptImportKey. ] */
-                                                    if (!CryptImportKey(result->hProv, x509privatekeyBlob, x509privatekeyBlobSize, (HCRYPTKEY)NULL, 0, &(result->x509hcryptkey)))
-                                                    {
-                                                        /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
-                                                        if (!CryptReleaseContext(result->hProv, 0))
-                                                        {
-                                                            LogErrorWinHTTPWithGetLastErrorAsString("unable to CryptReleaseContext");
-                                                        }
-                                                        LogErrorWinHTTPWithGetLastErrorAsString("CryptImportKey for private key failed");
-                                                        free(result);
-                                                        result = NULL;
-                                                    }
-                                                    else
-                                                    {
-                                                        /*Codes_SRS_X509_SCHANNEL_02_007: [ x509_schannel_create shall create a cerficate context by calling CertCreateCertificateContext. ]*/
-                                                        result->x509certificate_context = CertCreateCertificateContext(
-                                                            X509_ASN_ENCODING | PKCS_7_ASN_ENCODING,
-                                                            binaryx509Certificate,
-                                                            binaryx509certificateSize
-                                                        );
-                                                        if (result->x509certificate_context == NULL)
-                                                        {
-                                                            /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
-                                                            LogErrorWinHTTPWithGetLastErrorAsString("unable to CertCreateCertificateContext");
-                                                            if (!CryptDestroyKey(result->x509hcryptkey))
-                                                            {
-                                                                LogErrorWinHTTPWithGetLastErrorAsString("unable to CryptDestroyKey");
-                                                            }
-                                                            if (!CryptReleaseContext(result->hProv, 0))
-                                                            {
-                                                                LogErrorWinHTTPWithGetLastErrorAsString("unable to CryptReleaseContext");
-                                                            }
-                                                            free(result);
-                                                            result = NULL;
-                                                        }
-                                                        else
-                                                        {
-                                                            /*Codes_SRS_X509_SCHANNEL_02_008: [ x509_schannel_create shall call set the certificate private key by calling CertSetCertificateContextProperty. ]*/
-                                                            if (!CertSetCertificateContextProperty(result->x509certificate_context, CERT_KEY_PROV_HANDLE_PROP_ID, 0, (void*)result->hProv))
-                                                            {
-                                                                /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
-                                                                LogErrorWinHTTPWithGetLastErrorAsString("unable to CertSetCertificateContextProperty");
-
-                                                                if (!CryptDestroyKey(result->x509hcryptkey))
-                                                                {
-                                                                    LogErrorWinHTTPWithGetLastErrorAsString("unable to CryptDestroyKey");
-                                                                }
-                                                                if (!CryptReleaseContext(result->hProv, 0))
-                                                                {
-                                                                    LogErrorWinHTTPWithGetLastErrorAsString("unable to CryptReleaseContext");
-                                                                }
-                                                                if (!CertFreeCertificateContext(result->x509certificate_context))
-                                                                {
-                                                                    LogErrorWinHTTPWithGetLastErrorAsString("unable to CertFreeCertificateContext");
-                                                                }
-                                                                free(result);
-                                                                result = NULL;
-                                                            }
-                                                            else
-                                                            {
-                                                                /*Codes_SRS_X509_SCHANNEL_02_009: [ If all the operations above succeed, then x509_schannel_create shall succeeds and return a non-NULL X509_SCHANNEL_HANDLE. ]*/
-                                                                /*return as is, all is fine*/
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                            free(x509privatekeyBlob);
-                                        }
-                                    }
-                                }
-                                free(binaryx509privatekey);
-                            }
+                            (void)CertFreeCertificateContext(result->x509certificate_context);
+                            free(result);
+                            result = NULL;
                         }
                     }
-                    free(binaryx509Certificate);
                 }
+                free(x509privatekeyBlob);
+                free(binaryx509privatekey);
+                free(binaryx509Certificate);
             }
         }
     }
@@ -249,21 +410,34 @@ void x509_schannel_destroy(X509_SCHANNEL_HANDLE x509_schannel_handle)
         /*Codes_SRS_X509_SCHANNEL_02_012: [ Otherwise, x509_schannel_destroy shall free all used resources. ]*/
         X509_SCHANNEL_HANDLE_DATA* x509crypto = (X509_SCHANNEL_HANDLE_DATA*)x509_schannel_handle;
 
-        if (!CryptDestroyKey(x509crypto->x509hcryptkey))
+        if (x509crypto->cert_type == x509_TYPE_RSA)
         {
-            LogErrorWinHTTPWithGetLastErrorAsString("unable to CryptDestroyKey");
+            if (!CryptDestroyKey(x509crypto->x509hcryptkey))
+            {
+                LogErrorWinHTTPWithGetLastErrorAsString("unable to CryptDestroyKey");
+            }
+            if (!CryptReleaseContext(x509crypto->hProv, 0))
+            {
+                LogErrorWinHTTPWithGetLastErrorAsString("unable to CryptReleaseContext");
+            }
         }
-
-        if (!CryptReleaseContext(x509crypto->hProv, 0))
+        else
         {
-            LogErrorWinHTTPWithGetLastErrorAsString("unable to CryptReleaseContext");
+#if _MSC_VER > 1500 && !defined(WINCE)
+            if (x509crypto->x509hcryptkey != 0)
+            {
+                (void)NCryptFreeObject(x509crypto->x509hcryptkey);
+            }
+            if (x509crypto->hProv != 0)
+            {
+                (void)NCryptFreeObject(x509crypto->hProv);
+            }
+#endif
         }
-
         if (!CertFreeCertificateContext(x509crypto->x509certificate_context))
         {
             LogErrorWinHTTPWithGetLastErrorAsString("unable to CertFreeCertificateContext");
         }
-
         free(x509crypto);
     }
 }

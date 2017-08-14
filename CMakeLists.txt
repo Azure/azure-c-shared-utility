@@ -9,7 +9,7 @@ endif()
 
 project(azure_c_shared_utility)
 
-set(C_SHARED_VERSION 1.0.39)
+set(C_SHARED_VERSION 1.0.41)
 
 if(POLICY CMP0042)
     cmake_policy(SET CMP0042 NEW)
@@ -148,6 +148,10 @@ if(${use_cyclonessl} AND WIN32)
     set_source_files_properties(./src/tlsio_cyclonessl.c ./src/tlsio_cyclonessl_socket_bsd.c PROPERTIES COMPILE_FLAGS "/wd4200 /wd4201 /wd4244 /wd4100 /wd4267 /wd4701 /wd4703 /wd4389 /wd4005 /wd4996")
     add_library(cyclonessl ${cyclonessl_c_files})
 
+endif()
+
+if(${memory_trace})
+    add_definitions(-DGB_MEASURE_MEMORY_FOR_THIS -DGB_DEBUG_ALLOC)
 endif()
 
 if(${use_openssl})
@@ -567,7 +571,7 @@ if(${use_schannel})
         if (WINCE)
             set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} secur32)
         else()
-            set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} crypt32 ws2_32 secur32 advapi32)
+            set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} crypt32 ws2_32 secur32 advapi32 ncrypt)
         endif()
     endif()
 endif()

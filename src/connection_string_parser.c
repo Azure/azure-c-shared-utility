@@ -25,11 +25,11 @@ MAP_HANDLE connectionstringparser_parse_from_char(const char* connection_string)
     else
     {
         result = connectionstringparser_parse(connString);
+        STRING_delete(connString);
     }
 
     return result;
 }
-
 
 /* Codes_SRS_CONNECTIONSTRINGPARSER_01_001: [connectionstringparser_parse shall parse all key value pairs from the connection_string passed in as argument and return a new map that holds the key/value pairs.] */
 MAP_HANDLE connectionstringparser_parse(STRING_HANDLE connection_string)

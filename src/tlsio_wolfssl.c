@@ -420,7 +420,7 @@ static int add_certificate_to_store(TLS_IO_INSTANCE* tls_io_instance)
     int result;
     if (tls_io_instance->certificate != NULL)
     {
-        int res = wolfSSL_CTX_load_verify_buffer(tls_io_instance->ssl_context, (const unsigned char*)tls_io_instance->certificate, strlen(tls_io_instance->certificate) + 1, SSL_FILETYPE_PEM);
+        int res = wolfSSL_CTX_load_verify_buffer(tls_io_instance->ssl_context, (const unsigned char*)tls_io_instance->certificate, strlen(tls_io_instance->certificate), SSL_FILETYPE_PEM);
         if (res != SSL_SUCCESS)
         {
             LogError("wolfSSL_CTX_load_verify_buffer failed");
@@ -442,12 +442,12 @@ static int x509_wolfssl_add_credentials(WOLFSSL* ssl, char* x509certificate, cha
 
     int result;
 
-    if (wolfSSL_use_certificate_buffer(ssl, (unsigned char*)x509certificate, strlen(x509certificate) + 1, SSL_FILETYPE_PEM) != SSL_SUCCESS)
+    if (wolfSSL_use_certificate_chain_buffer(ssl, (unsigned char*)x509certificate, strlen(x509certificate)) != SSL_SUCCESS)
     {
         LogError("unable to load x509 client certificate");
         result = __FAILURE__;
     }
-    else if (wolfSSL_use_PrivateKey_buffer(ssl, (unsigned char*)x509privatekey, strlen(x509privatekey) + 1, SSL_FILETYPE_PEM) != SSL_SUCCESS)
+    else if (wolfSSL_use_PrivateKey_buffer(ssl, (unsigned char*)x509privatekey, strlen(x509privatekey), SSL_FILETYPE_PEM) != SSL_SUCCESS)
     {
         LogError("unable to load x509 client private key");
         result = __FAILURE__;
@@ -530,7 +530,7 @@ int tlsio_wolfssl_init(void)
 void tlsio_wolfssl_deinit(void)
 {
 }
-
+ 
 CONCRETE_IO_HANDLE tlsio_wolfssl_create(void* io_create_parameters)
 {
     TLS_IO_INSTANCE* result;

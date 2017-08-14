@@ -33,6 +33,13 @@ typedef enum TLSIO_STATE_TAG
     TLSIO_STATE_ERROR
 } TLSIO_STATE;
 
+typedef enum TLSIO_VERSION_TAG
+{
+    VERSION_1_0,
+    VERSION_1_1,
+    VERSION_1_2,
+} TLSIO_VERSION;
+
 static bool is_an_opening_state(TLSIO_STATE state)
 {
     // TLSIO_STATE_HANDSHAKE_FAILED is deliberately not one of these states. 
@@ -63,7 +70,7 @@ typedef struct TLS_IO_INSTANCE_TAG
     const char* x509privatekey;
     const char* x509_ecc_cert;
     const char* x509_ecc_aliaskey;
-    int tls_version;
+    TLSIO_VERSION tls_version;
     TLS_CERTIFICATE_VALIDATION_CALLBACK tls_validation_callback;
     void* tls_validation_callback_data;
 } TLS_IO_INSTANCE;
@@ -873,11 +880,11 @@ static int create_openssl_instance(TLS_IO_INSTANCE* tlsInstance)
     const SSL_METHOD* method = NULL;
 
 #if (OPENSSL_VERSION_NUMBER < 0x10100000L) || (OPENSSL_VERSION_NUMBER >= 0x20000000L)
-    if (tlsInstance->tls_version == 12)
+    if (tlsInstance->tls_version == VERSION_1_2)
     {
         method = TLSv1_2_method();
     }
-    else if (tlsInstance->tls_version == 11)
+    else if (tlsInstance->tls_version == VERSION_1_1)
     {
         method = TLSv1_1_method();
     }
@@ -1104,7 +1111,7 @@ CONCRETE_IO_HANDLE tlsio_openssl_create(void* io_create_parameters)
                 result->x509_ecc_cert = NULL;
                 result->x509_ecc_aliaskey = NULL;
 
-                result->tls_version = 0;
+                result->tls_version = VERSION_1_0;
 
                 result->underlying_io = xio_create(underlying_io_interface, io_interface_parameters);
                 if (result->underlying_io == NULL)
@@ -1531,8 +1538,33 @@ int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
         }
         else if (strcmp("tls_version", optionName) == 0)
         {
-            tls_io_instance->tls_version = (int)(intptr_t)value;
-            result = 0;
+            if (tls_io_instance->ssl_context != NULL)
+            {
+                LogError("Unable to set the tls version after the tls connection is established");
+                result = __FAILURE__;
+            }
+            else
+            {
+                const int* version_option = value;
+                if ((int)(intptr_t)*version_option == 0 || (int)(intptr_t)*version_option == 10)
+                {
+                    tls_io_instance->tls_version = VERSION_1_0;
+                }
+                else if ((int)(intptr_t)*version_option == 11)
+                {
+                    tls_io_instance->tls_version = VERSION_1_1;
+                }
+                else if ((int)(intptr_t)*version_option == 12)
+                {
+                    tls_io_instance->tls_version = VERSION_1_2;
+                }
+                else
+                {
+                    LogInfo("Value of TLS version option %d is not found shall default to version 1.2", (int)(intptr_t)*version_option);
+                    tls_io_instance->tls_version = VERSION_1_2;
+                }
+                result = 0;
+            }
         }
         else if (strcmp(optionName, OPTION_UNDERLYING_IO_OPTIONS) == 0)
         {
@@ -1545,6 +1577,10 @@ int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
             {
                 result = 0;
             }
+        }
+        else if (strcmp("ignore_server_name_check", optionName) == 0)
+        {
+            result = 0;
         }
         else
         {

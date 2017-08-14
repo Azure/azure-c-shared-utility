@@ -344,6 +344,7 @@ static ON_IO_OPEN_COMPLETE g_on_io_open_complete;
 static void* g_on_io_open_complete_context;
 static ON_SEND_COMPLETE g_on_io_send_complete;
 static void* g_on_io_send_complete_context;
+static int g_xio_send_result;
 static ON_BYTES_RECEIVED g_on_bytes_received;
 static void* g_on_bytes_received_context;
 static ON_IO_ERROR g_on_io_error;
@@ -378,7 +379,7 @@ static int my_xio_send(XIO_HANDLE xio, const void* buffer, size_t size, ON_SEND_
     (void)size;
     g_on_io_send_complete = on_send_complete;
     g_on_io_send_complete_context = callback_context;
-    return 0;
+    return g_xio_send_result;
 }
 
 static pfCloneOption g_clone_option;
@@ -488,7 +489,8 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_TYPE(const SOCKETIO_CONFIG*, const_SOCKETIO_CONFIG_ptr);
 
     REGISTER_UMOCK_ALIAS_TYPE(SINGLYLINKEDLIST_HANDLE, void*);
-    REGISTER_UMOCK_ALIAS_TYPE(LIST_ITEM_HANDLE, void*);
+	REGISTER_UMOCK_ALIAS_TYPE(LIST_ITEM_HANDLE, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(LIST_MATCH_FUNCTION, void*);
     REGISTER_UMOCK_ALIAS_TYPE(UWS_CLIENT_HANDLE, void*);
     REGISTER_UMOCK_ALIAS_TYPE(XIO_HANDLE, void*);
     REGISTER_UMOCK_ALIAS_TYPE(ON_IO_OPEN_COMPLETE, void*);
@@ -528,6 +530,7 @@ TEST_FUNCTION_INITIALIZE(method_init)
     currentrealloc_call = 0;
     whenShallrealloc_fail = 0;
     singlylinkedlist_remove_result = 0;
+    g_xio_send_result = 0;
 }
 
 TEST_FUNCTION_CLEANUP(method_cleanup)
@@ -5438,6 +5441,7 @@ TEST_FUNCTION(when_encoding_the_frame_fails_uws_client_send_frame_async_fails)
 }
 
 /* Tests_SRS_UWS_CLIENT_01_058: [ If `xio_send` fails, `uws_client_send_frame_async` shall fail and return a non-zero value. ]*/
+/* Tests_SRS_UWS_CLIENT_09_001: [ If `xio_send` fails and the message is still queued, it shall be de-queued and destroyed. ] */
 TEST_FUNCTION(when_xio_send_fails_uws_client_send_frame_async_fails)
 {
     // arrange
@@ -5480,6 +5484,8 @@ TEST_FUNCTION(when_xio_send_fails_uws_client_send_frame_async_fails)
         .IgnoreArgument_callback_context()
         .ValidateArgumentBuffer(2, encoded_frame, sizeof(encoded_frame))
         .SetReturn(1);
+    STRICT_EXPECTED_CALL(singlylinkedlist_find(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+        .SetReturn((LIST_ITEM_HANDLE)0x1234);
     STRICT_EXPECTED_CALL(singlylinkedlist_remove(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG))
         .ValidateArgumentValue_item_handle(&new_item_handle);
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
@@ -5488,6 +5494,72 @@ TEST_FUNCTION(when_xio_send_fails_uws_client_send_frame_async_fails)
 
     // act
     result = uws_client_send_frame_async(uws_client, WS_FRAME_TYPE_BINARY, test_payload, sizeof(test_payload), true, test_on_ws_send_frame_complete, (void*)0x4248);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    uws_client_destroy(uws_client);
+}
+
+/* Tests_SRS_UWS_CLIENT_09_001: [ If `xio_send` fails and the message is still queued, it shall be de-queued and destroyed. ] */
+TEST_FUNCTION(when_xio_send_fails_uws_client_send_frame_async_fails_message_removed_by_xio_send)
+{
+    // arrange
+    TLSIO_CONFIG tlsio_config;
+    UWS_CLIENT_HANDLE uws_client;
+    const char test_upgrade_response[] = "HTTP/1.1 101 Switching Protocols\r\n\r\n";
+    unsigned char test_payload[] = { 0x42 };
+    unsigned char encoded_frame[] = { 0x82, 0x01, 0x00, 0x00, 0x00, 0x00, 0x42 };
+    int result;
+    BUFFER_HANDLE buffer_handle;
+    LIST_ITEM_HANDLE new_item_handle;
+
+    tlsio_config.hostname = "test_host";
+    tlsio_config.port = 444;
+
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(BUFFER_new())
+        .CaptureReturn(&buffer_handle);
+
+    uws_client = uws_client_create("test_host", 444, "/aaa", true, protocols, sizeof(protocols) / sizeof(protocols[0]));
+    (void)uws_client_open_async(uws_client, test_on_ws_open_complete, (void*)0x4242, test_on_ws_frame_received, (void*)0x4243, test_on_ws_peer_closed, (void*)0x4301, test_on_ws_error, (void*)0x4244);
+    g_on_io_open_complete(g_on_io_open_complete_context, IO_OPEN_OK);
+    g_on_bytes_received(g_on_bytes_received_context, (const unsigned char*)test_upgrade_response, sizeof(test_upgrade_response));
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(uws_frame_encoder_encode(WS_BINARY_FRAME, test_payload, sizeof(test_payload), true, true, 0))
+        .CaptureReturn(&buffer_handle);
+    STRICT_EXPECTED_CALL(BUFFER_u_char(IGNORED_PTR_ARG))
+        .ValidateArgumentValue_handle(&buffer_handle)
+        .SetReturn(encoded_frame);
+    STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
+        .ValidateArgumentValue_handle(&buffer_handle)
+        .SetReturn(sizeof(encoded_frame));
+    STRICT_EXPECTED_CALL(singlylinkedlist_add(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG))
+        .IgnoreArgument_item()
+        .CaptureReturn(&new_item_handle);
+    STRICT_EXPECTED_CALL(xio_send(TEST_IO_HANDLE, IGNORED_PTR_ARG, sizeof(encoded_frame), IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+        .IgnoreArgument_on_send_complete()
+        .IgnoreArgument_callback_context()
+        .ValidateArgumentBuffer(2, encoded_frame, sizeof(encoded_frame));
+    STRICT_EXPECTED_CALL(singlylinkedlist_find(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+        .SetReturn(NULL);
+    STRICT_EXPECTED_CALL(BUFFER_delete(IGNORED_PTR_ARG))
+        .ValidateArgumentValue_handle(&buffer_handle);
+
+    // section for on_io_send_complete()
+    g_xio_send_result = 1;
+    STRICT_EXPECTED_CALL(singlylinkedlist_item_get_value(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(singlylinkedlist_remove(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE, IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(test_on_ws_send_frame_complete(IGNORED_PTR_ARG, WS_SEND_FRAME_ERROR));
+    STRICT_EXPECTED_CALL(free(IGNORED_PTR_ARG));
+
+    // act
+    result = uws_client_send_frame_async(uws_client, WS_FRAME_TYPE_BINARY, test_payload, sizeof(test_payload), true, test_on_ws_send_frame_complete, (void*)0x4248);
+    g_on_io_send_complete(g_on_io_send_complete_context, IO_SEND_ERROR);
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);

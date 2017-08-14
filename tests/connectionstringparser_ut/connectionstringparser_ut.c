@@ -151,7 +151,7 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
 TEST_FUNCTION(connectionstringparser_parse_with_an_empty_string_yields_an_empty_map)
 {
     // arrange
-	MAP_HANDLE result;
+    MAP_HANDLE result;
     STRING_HANDLE connectionString = STRING_new();
     STRING_HANDLE key = STRING_new();
     STRING_HANDLE value = STRING_new();
@@ -195,7 +195,7 @@ TEST_FUNCTION(connectionstringparser_parse_with_NULL_connection_string_fails)
 TEST_FUNCTION(when_creating_the_string_tokenizer_fails_then_connectionstringparser_fails)
 {
     // arrange
-	MAP_HANDLE result;
+    MAP_HANDLE result;
     STRICT_EXPECTED_CALL(STRING_TOKENIZER_create(TEST_STRING_HANDLE_PAIR))
         .SetReturn((STRING_TOKENIZER_HANDLE)NULL);
 
@@ -212,7 +212,7 @@ TEST_FUNCTION(when_creating_the_string_tokenizer_fails_then_connectionstringpars
 TEST_FUNCTION(when_allocating_the_key_token_string_fails_then_connectionstringparser_fails)
 {
     // arrange
-	MAP_HANDLE result;
+    MAP_HANDLE result;
     STRING_TOKENIZER_HANDLE tokens = STRING_TOKENIZER_create(TEST_STRING_HANDLE_PAIR);
 
     umock_c_reset_all_calls();
@@ -234,7 +234,7 @@ TEST_FUNCTION(when_allocating_the_key_token_string_fails_then_connectionstringpa
 TEST_FUNCTION(when_allocating_the_value_token_string_fails_then_connectionstringparser_fails)
 {
     // arrange
-	MAP_HANDLE result;
+    MAP_HANDLE result;
     STRING_HANDLE key = STRING_new();
     STRING_TOKENIZER_HANDLE tokens = STRING_TOKENIZER_create(TEST_STRING_HANDLE_PAIR);
 
@@ -259,7 +259,7 @@ TEST_FUNCTION(when_allocating_the_value_token_string_fails_then_connectionstring
 TEST_FUNCTION(when_allocating_the_result_map_fails_then_connectionstringparser_fails)
 {
     // arrange
-	MAP_HANDLE result;
+    MAP_HANDLE result;
     STRING_HANDLE key = STRING_new();
     STRING_HANDLE value = STRING_new();
     STRING_TOKENIZER_HANDLE tokens = STRING_TOKENIZER_create(TEST_STRING_HANDLE_PAIR);
@@ -297,7 +297,7 @@ TEST_FUNCTION(when_allocating_the_result_map_fails_then_connectionstringparser_f
 TEST_FUNCTION(connectionstringparser_parse_with_a_key_value_pair_adds_it_to_the_result_map)
 {
     // arrange
-	MAP_HANDLE result;
+    MAP_HANDLE result;
     STRING_HANDLE key = STRING_new();
     STRING_HANDLE value = STRING_new();
     STRING_TOKENIZER_HANDLE tokens = STRING_TOKENIZER_create(TEST_STRING_HANDLE_PAIR);
@@ -339,7 +339,7 @@ TEST_FUNCTION(connectionstringparser_parse_with_a_key_value_pair_adds_it_to_the_
 TEST_FUNCTION(when_getting_the_value_token_fails_then_connectionstringparser_parse_fails)
 {
     // arrange
-	MAP_HANDLE result;
+    MAP_HANDLE result;
     STRING_HANDLE key = STRING_new();
     STRING_HANDLE value = STRING_new();
     MAP_HANDLE map = Map_Create(NULL);
@@ -372,7 +372,7 @@ TEST_FUNCTION(when_getting_the_value_token_fails_then_connectionstringparser_par
 TEST_FUNCTION(when_the_key_is_zero_length_then_connectionstringparser_parse_fails)
 {
     // arrange
-	MAP_HANDLE result;
+    MAP_HANDLE result;
     STRING_HANDLE key = STRING_new();
     STRING_HANDLE value = STRING_new();
     MAP_HANDLE map = Map_Create(NULL);
@@ -406,7 +406,7 @@ TEST_FUNCTION(when_the_key_is_zero_length_then_connectionstringparser_parse_fail
 TEST_FUNCTION(when_adding_the_key_value_pair_to_the_map_fails_then_connectionstringparser_parse_fails)
 {
     // arrange
-	MAP_HANDLE result;
+    MAP_HANDLE result;
     STRING_HANDLE key = STRING_new();
     STRING_HANDLE value = STRING_new();
     MAP_HANDLE map = Map_Create(NULL);
@@ -443,7 +443,7 @@ TEST_FUNCTION(when_adding_the_key_value_pair_to_the_map_fails_then_connectionstr
 TEST_FUNCTION(when_getting_the_C_string_for_the_key_fails_then_connectionstringparser_parse_fails)
 {
     // arrange
-	MAP_HANDLE result;
+    MAP_HANDLE result;
     STRING_HANDLE key = STRING_new();
     STRING_HANDLE value = STRING_new();
     MAP_HANDLE map = Map_Create(NULL);
@@ -477,7 +477,7 @@ TEST_FUNCTION(when_getting_the_C_string_for_the_key_fails_then_connectionstringp
 TEST_FUNCTION(when_getting_the_C_string_for_the_value_fails_then_connectionstringparser_parse_fails)
 {
     // arrange
-	MAP_HANDLE result;
+    MAP_HANDLE result;
     STRING_HANDLE key = STRING_new();
     STRING_HANDLE value = STRING_new();
     MAP_HANDLE map = Map_Create(NULL);
@@ -523,7 +523,7 @@ TEST_FUNCTION(when_getting_the_C_string_for_the_value_fails_then_connectionstrin
 TEST_FUNCTION(connectionstringparser_parse_with_2_key_value_pairs_adds_them_to_the_result_map)
 {
     // arrange
-	MAP_HANDLE result;
+    MAP_HANDLE result;
     STRING_HANDLE key = STRING_new();
     STRING_HANDLE value = STRING_new();
     MAP_HANDLE map = Map_Create(NULL);
@@ -592,7 +592,7 @@ TEST_FUNCTION(connectionstringparser_parse_with_2_key_value_pairs_adds_them_to_t
 TEST_FUNCTION(connectionstringparser_parse_with_2_key_value_pairs_ended_with_semicolon_adds_them_to_the_result_map)
 {
     // arrange
-	MAP_HANDLE result;
+    MAP_HANDLE result;
     STRING_HANDLE key = STRING_new();
     STRING_HANDLE value = STRING_new();
     MAP_HANDLE map = Map_Create(NULL);
@@ -650,15 +650,16 @@ TEST_FUNCTION(connectionstringparser_parse_with_2_key_value_pairs_ended_with_sem
 TEST_FUNCTION(connectionstringparser_parse_from_char_with_2_key_value_pairs_ended_with_semicolon_adds_them_to_the_result_map)
 {
     // arrange
-	MAP_HANDLE result;
+    MAP_HANDLE result;
     STRING_HANDLE key = STRING_new();
     STRING_HANDLE value = STRING_new();
     MAP_HANDLE map = Map_Create(NULL);
     STRING_TOKENIZER_HANDLE tokens = STRING_TOKENIZER_create(TEST_STRING_HANDLE_2_PAIR_SEMICOLON);
+    STRING_HANDLE test_string_val = STRING_construct(TEST_STRING_2_PAIR_SEMICOLON);
 
     umock_c_reset_all_calls();
-    STRICT_EXPECTED_CALL(STRING_construct(TEST_STRING_2_PAIR_SEMICOLON)).SetReturn(TEST_STRING_HANDLE_2_PAIR_SEMICOLON);
-    STRICT_EXPECTED_CALL(STRING_TOKENIZER_create(TEST_STRING_HANDLE_2_PAIR_SEMICOLON)).SetReturn(tokens);
+    STRICT_EXPECTED_CALL(STRING_construct(TEST_STRING_2_PAIR_SEMICOLON)).SetReturn(test_string_val);
+    STRICT_EXPECTED_CALL(STRING_TOKENIZER_create(IGNORED_PTR_ARG)).SetReturn(tokens);
     STRICT_EXPECTED_CALL(STRING_new())
         .SetReturn(key);
     STRICT_EXPECTED_CALL(STRING_new())
@@ -666,31 +667,32 @@ TEST_FUNCTION(connectionstringparser_parse_from_char_with_2_key_value_pairs_ende
     STRICT_EXPECTED_CALL(Map_Create(NULL)).SetReturn(map);
 
     // 1st kvp
-    STRICT_EXPECTED_CALL(STRING_TOKENIZER_get_next_token(tokens, key, "="));
-    STRICT_EXPECTED_CALL(STRING_copy_n(key, TEST_STRING_2_PAIR_SEMICOLON, 4));
-    STRICT_EXPECTED_CALL(STRING_TOKENIZER_get_next_token(tokens, value, ";"));
-    STRICT_EXPECTED_CALL(STRING_copy_n(value, (TEST_STRING_2_PAIR_SEMICOLON + 5), 6));
-    STRICT_EXPECTED_CALL(STRING_c_str(key));
-    STRICT_EXPECTED_CALL(STRING_c_str(value));
-    STRICT_EXPECTED_CALL(Map_Add(map, "key1", "value1"));
+    STRICT_EXPECTED_CALL(STRING_TOKENIZER_get_next_token(IGNORED_PTR_ARG, IGNORED_PTR_ARG, "="));
+    STRICT_EXPECTED_CALL(STRING_copy_n(IGNORED_PTR_ARG, TEST_STRING_2_PAIR_SEMICOLON, 4));
+    STRICT_EXPECTED_CALL(STRING_TOKENIZER_get_next_token(IGNORED_PTR_ARG, IGNORED_PTR_ARG, ";"));
+    STRICT_EXPECTED_CALL(STRING_copy_n(IGNORED_PTR_ARG, (TEST_STRING_2_PAIR_SEMICOLON + 5), 6));
+    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(Map_Add(IGNORED_PTR_ARG, "key1", "value1"));
     STRICT_EXPECTED_CALL(gballoc_malloc(5));
     STRICT_EXPECTED_CALL(gballoc_malloc(7));
 
     // 2st kvp
-    STRICT_EXPECTED_CALL(STRING_TOKENIZER_get_next_token(tokens, key, "="));
-    STRICT_EXPECTED_CALL(STRING_copy_n(key, (TEST_STRING_2_PAIR_SEMICOLON + 12), 4));
-    STRICT_EXPECTED_CALL(STRING_TOKENIZER_get_next_token(tokens, value, ";"));
-    STRICT_EXPECTED_CALL(STRING_copy_n(value, (TEST_STRING_2_PAIR_SEMICOLON + 17), 6));
-    STRICT_EXPECTED_CALL(STRING_c_str(key));
-    STRICT_EXPECTED_CALL(STRING_c_str(value));
-    STRICT_EXPECTED_CALL(Map_Add(map, "key2", "value2"));
+    STRICT_EXPECTED_CALL(STRING_TOKENIZER_get_next_token(IGNORED_PTR_ARG, IGNORED_PTR_ARG, "="));
+    STRICT_EXPECTED_CALL(STRING_copy_n(IGNORED_PTR_ARG, (TEST_STRING_2_PAIR_SEMICOLON + 12), 4));
+    STRICT_EXPECTED_CALL(STRING_TOKENIZER_get_next_token(IGNORED_PTR_ARG, IGNORED_PTR_ARG, ";"));
+    STRICT_EXPECTED_CALL(STRING_copy_n(IGNORED_PTR_ARG, (TEST_STRING_2_PAIR_SEMICOLON + 17), 6));
+    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(Map_Add(IGNORED_PTR_ARG, "key2", "value2"));
     STRICT_EXPECTED_CALL(gballoc_malloc(5));
     STRICT_EXPECTED_CALL(gballoc_malloc(7));
 
-    STRICT_EXPECTED_CALL(STRING_TOKENIZER_get_next_token(tokens, key, "="));
-    STRICT_EXPECTED_CALL(STRING_delete(value));
-    STRICT_EXPECTED_CALL(STRING_delete(key));
-    STRICT_EXPECTED_CALL(STRING_TOKENIZER_destroy(tokens));
+    STRICT_EXPECTED_CALL(STRING_TOKENIZER_get_next_token(IGNORED_PTR_ARG, IGNORED_PTR_ARG, "="));
+    STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(STRING_TOKENIZER_destroy(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG));
 
     // act
     result = connectionstringparser_parse_from_char(TEST_STRING_2_PAIR_SEMICOLON);
@@ -724,7 +726,7 @@ TEST_FUNCTION(connectionstringparser_parse_from_char_with_NULL_connection_string
 TEST_FUNCTION(connectionstringparser_splitHostName_from_char_with_success)
 {
     // arrange
-	int result;
+    int result;
     const char* hostName = "abc.bcd.efg";
     const char* startSuffix = hostName + 4;
     STRING_HANDLE nameString = STRING_new();
@@ -754,7 +756,7 @@ TEST_FUNCTION(connectionstringparser_splitHostName_from_char_with_success)
 TEST_FUNCTION(connectionstringparser_splitHostName_from_char_with_NULL_hostName_failed)
 {
     // arrange
-	int result;
+    int result;
     STRING_HANDLE nameString = STRING_new();
     STRING_HANDLE suffixString = STRING_new();
     ASSERT_ARE_NOT_EQUAL(void_ptr, NULL, nameString);
@@ -780,7 +782,7 @@ TEST_FUNCTION(connectionstringparser_splitHostName_from_char_with_NULL_hostName_
 TEST_FUNCTION(connectionstringparser_splitHostName_from_char_with_empty_hostName_failed)
 {
     // arrange
-	int result;
+    int result;
     const char* hostName = "";
     STRING_HANDLE nameString = STRING_new();
     STRING_HANDLE suffixString = STRING_new();
@@ -807,7 +809,7 @@ TEST_FUNCTION(connectionstringparser_splitHostName_from_char_with_empty_hostName
 TEST_FUNCTION(connectionstringparser_splitHostName_from_char_with_NULL_nameString_failed)
 {
     // arrange
-	int result;
+    int result;
     const char* hostName = "abc.bcd.efg";
     STRING_HANDLE suffixString = STRING_new();
     ASSERT_ARE_NOT_EQUAL(void_ptr, NULL, suffixString);
@@ -830,7 +832,7 @@ TEST_FUNCTION(connectionstringparser_splitHostName_from_char_with_NULL_nameStrin
 TEST_FUNCTION(connectionstringparser_splitHostName_from_char_with_NULL_suffixString_failed)
 {
     // arrange
-	int result;
+    int result;
     const char* hostName = "abc.bcd.efg";
     STRING_HANDLE nameString = STRING_new();
     ASSERT_ARE_NOT_EQUAL(void_ptr, NULL, nameString);
@@ -853,7 +855,7 @@ TEST_FUNCTION(connectionstringparser_splitHostName_from_char_with_NULL_suffixStr
 TEST_FUNCTION(connectionstringparser_splitHostName_from_char_with_empty_name_failed)
 {
     // arrange
-	int result;
+    int result;
     const char* hostName = ".bcd.efg";
     STRING_HANDLE nameString = STRING_new();
     STRING_HANDLE suffixString = STRING_new();
@@ -880,7 +882,7 @@ TEST_FUNCTION(connectionstringparser_splitHostName_from_char_with_empty_name_fai
 TEST_FUNCTION(connectionstringparser_splitHostName_from_char_with_empty_suffix_failed)
 {
     // arrange
-	int result;
+    int result;
     const char* hostName = "abc.";
     STRING_HANDLE nameString = STRING_new();
     STRING_HANDLE suffixString = STRING_new();
@@ -907,7 +909,7 @@ TEST_FUNCTION(connectionstringparser_splitHostName_from_char_with_empty_suffix_f
 TEST_FUNCTION(connectionstringparser_splitHostName_from_char_error_on_nameString_copy_failed)
 {
     // arrange
-	int result;
+    int result;
     const char* hostName = "abc.bcd.efg";
     STRING_HANDLE nameString = STRING_new();
     STRING_HANDLE suffixString = STRING_new();
@@ -935,7 +937,7 @@ TEST_FUNCTION(connectionstringparser_splitHostName_from_char_error_on_nameString
 TEST_FUNCTION(connectionstringparser_splitHostName_from_char_error_on_suffixString_copy_failed)
 {
     // arrange
-	int result;
+    int result;
     const char* hostName = "abc.bcd.efg";
     const char* startSuffix = hostName + 4;
     STRING_HANDLE nameString = STRING_new();
@@ -965,9 +967,9 @@ TEST_FUNCTION(connectionstringparser_splitHostName_from_char_error_on_suffixStri
 TEST_FUNCTION(connectionstringparser_splitHostName_with_success)
 {
     // arrange
-	int result;
-	const char* hostName;
-	const char* startSuffix;
+    int result;
+    const char* hostName;
+    const char* startSuffix;
     STRING_HANDLE nameString = STRING_new();
     STRING_HANDLE suffixString = STRING_new();
     STRING_HANDLE hostNameString = STRING_construct("abc.bcd.efg");
@@ -1001,7 +1003,7 @@ TEST_FUNCTION(connectionstringparser_splitHostName_with_success)
 TEST_FUNCTION(connectionstringparser_splitHostName_with_NULL_hostName_failed)
 {
     // arrange
-	int result;
+    int result;
     STRING_HANDLE nameString = STRING_new();
     STRING_HANDLE suffixString = STRING_new();
     ASSERT_ARE_NOT_EQUAL(void_ptr, NULL, nameString);

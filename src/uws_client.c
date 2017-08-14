@@ -1680,6 +1680,11 @@ static void on_underlying_io_send_complete(void* context, IO_SEND_RESULT send_re
     }
 }
 
+static bool find_list_node(LIST_ITEM_HANDLE list_item, const void* match_context)
+{
+    return list_item == (LIST_ITEM_HANDLE)match_context;
+}
+
 int uws_client_send_frame_async(UWS_CLIENT_HANDLE uws_client, unsigned char frame_type, const unsigned char* buffer, size_t size, bool is_final, ON_WS_SEND_FRAME_COMPLETE on_ws_send_frame_complete, void* on_ws_send_frame_complete_context)
 {
     int result;
@@ -1771,9 +1776,16 @@ int uws_client_send_frame_async(UWS_CLIENT_HANDLE uws_client, unsigned char fram
                     {
                         /* Codes_SRS_UWS_CLIENT_01_058: [ If `xio_send` fails, `uws_client_send_frame_async` shall fail and return a non-zero value. ]*/
                         LogError("Could not send bytes through the underlying IO");
-                        (void)singlylinkedlist_remove(uws_client->pending_sends, new_pending_send_list_item);
-                        free(ws_pending_send);
-                        result = __FAILURE__;
+                        
+                        /* Codes_SRS_UWS_CLIENT_09_001: [ If `xio_send` fails and the message is still queued, it shall be de-queued and destroyed. ] */
+                        if (singlylinkedlist_find(uws_client->pending_sends, find_list_node, new_pending_send_list_item) != NULL)
+                        {    
+                            // Guards against double free in case the underlying I/O invoked 'on_underlying_io_send_complete' within xio_send.
+                            (void)singlylinkedlist_remove(uws_client->pending_sends, new_pending_send_list_item);
+                            free(ws_pending_send);
+                        }
+
+			            result = __FAILURE__;
                     }
                     else
                     {
