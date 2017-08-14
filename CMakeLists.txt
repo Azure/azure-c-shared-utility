@@ -41,7 +41,7 @@ include_directories(${SHARED_UTIL_INC_FOLDER})
 CHECK_INCLUDE_FILES(stdint.h HAVE_STDINT_H)
 CHECK_INCLUDE_FILES(stdbool.h HAVE_STDBOOL_H)
 
-if ((NOT HAVE_STDINT_H) OR (NOT HAVE_STDBOOL_H))
+if (NOT IOS AND (NOT HAVE_STDINT_H OR NOT HAVE_STDBOOL_H))
     include_directories(${SHARED_UTIL_INC_FOLDER}/azure_c_shared_utility/windowsce)
 endif()
 
