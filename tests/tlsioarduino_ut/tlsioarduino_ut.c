@@ -12,43 +12,43 @@ static int whenShallmalloc_fail = 0;
 
 void* my_gballoc_malloc(size_t size)
 {
-	void* result;
-	currentmalloc_call++;
-	if (whenShallmalloc_fail > 0)
-	{
-		if (currentmalloc_call >= whenShallmalloc_fail)
-		{
-			currentmalloc_call--;
-			result = NULL;
-		}
-		else
-		{
-			result = malloc(size);
-		}
-	}
-	else
-	{
-		result = malloc(size);
-	}
-	return result;
+    void* result;
+    currentmalloc_call++;
+    if (whenShallmalloc_fail > 0)
+    {
+        if (currentmalloc_call >= whenShallmalloc_fail)
+        {
+            currentmalloc_call--;
+            result = NULL;
+        }
+        else
+        {
+            result = malloc(size);
+        }
+    }
+    else
+    {
+        result = malloc(size);
+    }
+    return result;
 }
 
 void* my_gballoc_realloc(void* ptr, size_t size)
 {
-	void* newptr = realloc(ptr, size);
+    void* newptr = realloc(ptr, size);
 
-	if (ptr == NULL)
-	{
-		currentmalloc_call++;
-	}
+    if (ptr == NULL)
+    {
+        currentmalloc_call++;
+    }
 
-	return newptr;
+    return newptr;
 }
 
 void my_gballoc_free(void* ptr)
 {
-	currentmalloc_call--;
-	free(ptr);
+    currentmalloc_call--;
+    free(ptr);
 }
 
 #ifdef __cplusplus
@@ -123,7 +123,7 @@ static const bool* my_sslClient_connected_return_list;
 static int my_sslClient_connected_count;
 uint8_t my_sslClient_connected(void)
 {
-	return (uint8_t)my_sslClient_connected_return_list[my_sslClient_connected_count++];
+    return (uint8_t)my_sslClient_connected_return_list[my_sslClient_connected_count++];
 }
 
 static const int* my_sslClient_connect_return_list;
@@ -133,7 +133,7 @@ int my_sslClient_connect(uint32_t ipAddress, uint16_t port)
     (void)(ipAddress);
     (void)(port);
 
-	return my_sslClient_connect_return_list[my_sslClient_connect_count++];
+    return my_sslClient_connect_return_list[my_sslClient_connect_count++];
 }
 
 void my_sslClient_stop(void)
@@ -147,7 +147,7 @@ size_t my_sslClient_write(const uint8_t *buf, size_t size)
 {
     (void)(buf);
     (void)(size);
-	return my_sslClient_send_return_list[my_sslClient_send_count++];
+    return my_sslClient_send_return_list[my_sslClient_send_count++];
 }
 
 static const int* my_sslClient_read_return_list;
@@ -156,20 +156,20 @@ static int my_sslClient_read_count;
 int my_sslClient_read(uint8_t *buf, size_t size)
 {
     const char* readPtr = (const char*)my_sslClient_read_buffer;
-	int i;
-	size_t len;
-	
+    int i;
+    size_t len;
+    
     for (i = 0; i < my_sslClient_read_count; i++)
     {
         readPtr += my_sslClient_read_return_list[i];
     }
-	
-	len = my_sslClient_read_return_list[i] > size? size : my_sslClient_read_return_list[i];
-	
-	if (len > 0)
-		strncpy((char*)buf, readPtr, len);
-	
-	return my_sslClient_read_return_list[my_sslClient_read_count++];
+    
+    len = (size_t)(my_sslClient_read_return_list[i] > (const int)size? size : my_sslClient_read_return_list[i]);
+    
+    if (len > 0)
+        strncpy((char*)buf, readPtr, len);
+    
+    return my_sslClient_read_return_list[my_sslClient_read_count++];
 }
 
 #define SSLCLIENT_IP_ADDRESS (uint32_t)0x11223344
@@ -277,7 +277,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         (void)umock_c_init(on_umock_c_error);
 
         result = umocktypes_charptr_register_types();
-		ASSERT_ARE_EQUAL(int, 0, result);
+        ASSERT_ARE_EQUAL(int, 0, result);
 
         REGISTER_UMOCK_ALIAS_TYPE(CONCRETE_IO_HANDLE, void*);
         REGISTER_UMOCK_ALIAS_TYPE(OPTIONHANDLER_HANDLE, void*);
@@ -289,16 +289,16 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         
         
 
-		REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, my_gballoc_malloc);
-		REGISTER_GLOBAL_MOCK_HOOK(gballoc_realloc, my_gballoc_realloc);
-		REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, my_gballoc_free);
+        REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, my_gballoc_malloc);
+        REGISTER_GLOBAL_MOCK_HOOK(gballoc_realloc, my_gballoc_realloc);
+        REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, my_gballoc_free);
 
-		REGISTER_GLOBAL_MOCK_HOOK(sslClient_setTimeout, my_sslClient_setTimeout);
-		REGISTER_GLOBAL_MOCK_HOOK(sslClient_connected, my_sslClient_connected);
+        REGISTER_GLOBAL_MOCK_HOOK(sslClient_setTimeout, my_sslClient_setTimeout);
+        REGISTER_GLOBAL_MOCK_HOOK(sslClient_connected, my_sslClient_connected);
         REGISTER_GLOBAL_MOCK_HOOK(sslClient_connect, my_sslClient_connect);
         REGISTER_GLOBAL_MOCK_HOOK(sslClient_stop, my_sslClient_stop);
-		REGISTER_GLOBAL_MOCK_HOOK(sslClient_write, my_sslClient_write);
-		REGISTER_GLOBAL_MOCK_HOOK(sslClient_read, my_sslClient_read);
+        REGISTER_GLOBAL_MOCK_HOOK(sslClient_write, my_sslClient_write);
+        REGISTER_GLOBAL_MOCK_HOOK(sslClient_read, my_sslClient_read);
         REGISTER_GLOBAL_MOCK_HOOK(sslClient_hostByName, my_sslClient_hostByName);
 
         CallbackContext = malloc(1);
@@ -1693,7 +1693,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
     TEST_FUNCTION(tlsio_arduino_close__retry_without_success_and_without_callback__failed)
     {
         ///arrange
-		size_t i;
+        size_t i;
         CONCRETE_IO_HANDLE tlsioHandle;
         int result;
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
@@ -1754,7 +1754,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
     TEST_FUNCTION(tlsio_arduino_close__retry_without_success__failed)
     {
         ///arrange
-		size_t i;
+        size_t i;
         CONCRETE_IO_HANDLE tlsioHandle;
         int result;
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
@@ -1814,7 +1814,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
     TEST_FUNCTION(tlsio_arduino_close__retry_10_times__succeed)
     {
         ///arrange
-		size_t i;
+        size_t i;
         CONCRETE_IO_HANDLE tlsioHandle;
         int result;
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
@@ -2303,8 +2303,8 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
     TEST_FUNCTION(tlsio_arduino_open__retry_without_success_without_callback__failed)
     {
         ///arrange
-		size_t i;
-		TLSIO_ARDUINO_STATE state;
+        size_t i;
+        TLSIO_ARDUINO_STATE state;
         CONCRETE_IO_HANDLE tlsioHandle;
         int result;
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
@@ -2366,7 +2366,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
     TEST_FUNCTION(tlsio_arduino_open__retry_without_success__failed)
     {
         ///arrange
-		size_t i;
+        size_t i;
         CONCRETE_IO_HANDLE tlsioHandle;
         int result;
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
@@ -2421,7 +2421,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
     TEST_FUNCTION(tlsio_arduino_open__retry_10_times__succeed)
     {
         ///arrange
-		size_t i;
+        size_t i;
         CONCRETE_IO_HANDLE tlsioHandle;
         int result;
         const IO_INTERFACE_DESCRIPTION* tlsioInterfaces = tlsio_arduino_get_interface_description();
@@ -2834,7 +2834,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
     TEST_FUNCTION(tlsio_arduino_get_interface_description__succeed)
     {
         ///arrange
-		const IO_INTERFACE_DESCRIPTION* tlsioInterfaces;
+        const IO_INTERFACE_DESCRIPTION* tlsioInterfaces;
 
         ///act
         tlsioInterfaces = tlsio_arduino_get_interface_description();
