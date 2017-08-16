@@ -101,7 +101,7 @@ static const size_t SendReturnList_twice[2] = { (const size_t)10, (const size_t)
 static const size_t SendReturnList_twice_zero[2] = { (const size_t)10, (const size_t)0 };
 
 static const char* ReceivedBuffer = (const char*)"This is the received buffer";
-static const int ReceivedReturnList[1] = { (const int)28 };
+static const int ReceivedReturnList[2] = { (const int)28, (const int)0 };
 
 static void* CallbackContext;
 
@@ -161,7 +161,10 @@ int my_sslClient_read(uint8_t *buf, size_t size)
     {
         readPtr += my_sslClient_read_return_list[i];
     }
-    strncpy((char*)buf, readPtr, size);
+	
+	if (my_sslClient_read_return_list[i] > 0)
+		strncpy((char*)buf, readPtr, my_sslClient_read_return_list[i]);
+	
 	return my_sslClient_read_return_list[my_sslClient_read_count++];
 }
 
@@ -653,6 +656,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         STRICT_EXPECTED_CALL(sslClient_write((uint8_t*)SendBuffer + SendReturnList_twice[0], SendBufferSize - SendReturnList_twice[0]));
         STRICT_EXPECTED_CALL(sslClient_connected());
         STRICT_EXPECTED_CALL(sslClient_read(IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreAllArguments();
+        STRICT_EXPECTED_CALL(sslClient_read(IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreAllArguments();
 
         tlsioHandle = tlsioInterfaces->concrete_io_create((void*)&tlsioConfig);
         ASSERT_IS_NOT_NULL(tlsioHandle);
@@ -716,6 +720,7 @@ BEGIN_TEST_SUITE(tlsioarduino_ut)
         STRICT_EXPECTED_CALL(sslClient_write((uint8_t*)SendBuffer, SendBufferSize));
         STRICT_EXPECTED_CALL(sslClient_write((uint8_t*)SendBuffer + SendReturnList_twice[0], SendBufferSize - SendReturnList_twice[0]));
         STRICT_EXPECTED_CALL(sslClient_connected());
+        STRICT_EXPECTED_CALL(sslClient_read(IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreAllArguments();
         STRICT_EXPECTED_CALL(sslClient_read(IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreAllArguments();
 
         tlsioHandle = tlsioInterfaces->concrete_io_create((void*)&tlsioConfig);
