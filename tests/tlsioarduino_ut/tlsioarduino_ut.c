@@ -157,13 +157,17 @@ int my_sslClient_read(uint8_t *buf, size_t size)
 {
     const char* readPtr = (const char*)my_sslClient_read_buffer;
 	int i;
+	size_t len;
+	
     for (i = 0; i < my_sslClient_read_count; i++)
     {
         readPtr += my_sslClient_read_return_list[i];
     }
 	
-	if (my_sslClient_read_return_list[i] > 0)
-		strncpy((char*)buf, readPtr, my_sslClient_read_return_list[i]);
+	len = my_sslClient_read_return_list[i] > size? size : my_sslClient_read_return_list[i];
+	
+	if (len > 0)
+		strncpy((char*)buf, readPtr, len);
 	
 	return my_sslClient_read_return_list[my_sslClient_read_count++];
 }
