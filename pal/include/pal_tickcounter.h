@@ -4,12 +4,13 @@
 #ifndef PAL_TICKCOUNTER_H
 #define PAL_TICKCOUNTER_H
 
-
 #ifdef __cplusplus
 extern "C" {
 #include <cstdint>
+#include <cstdbool>
 #else
 #include <stdint.h>
+#include <stdbool.h>
 #endif /* __cplusplus */
 
     // Values are typedef'd as uint32_t instead of uint_fast32_t so that native
@@ -22,7 +23,10 @@ extern "C" {
     int pal_tickcounter_init();
     void pal_tickcounter_deinit();
 
-    // Return the current value of the free-running counter
+    // Returns true if pal_tickcounter_init succeeded in starting the counter
+    bool pal_tickcounter_started_ok();
+
+    // Return the current value of the free-running counter. Returns 0 if the counter could not be started.
     tickcounter_count_ms_t pal_tickcounter_get_count_ms();
 
     // Return the interval from previous_count until now

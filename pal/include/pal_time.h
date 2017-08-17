@@ -7,14 +7,19 @@
 #include <time.h>
 
 #ifdef __cplusplus
+#include <cstdbool>
 extern "C" {
+#include <stdbool.h>
 #endif /* __cplusplus */
 
-    // Initialize NTP, and block until the time has been set
-    int pal_time_init();
+    // Initialize NTP, and optionally block until the time has been set
+    int pal_time_init(bool blocking);
     void pal_time_deinit();
 
-    // Return the time that the Azure IoT SDK should use for reporting times
+    // Return true if system time is at least approximately good
+    bool pal_time_is_reliable();
+
+    // Return the time that the Azure IoT SDK should use for reporting times and checking cert validity
     time_t pal_get_time(time_t* p);
 
 #ifdef __cplusplus
