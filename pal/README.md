@@ -14,7 +14,7 @@ The Physical Abstraction Layer replaces adapters written using the [older portin
 * Provide CMAKE-based tools to help vendors consume the SDK within vendor build systems (such as Arduino) that may have inflexible constraints on file arrangement.
 * Add explicit handling of common constrained-device initialization functions such as pin assignment, WiFi setup, and NTP service setup. This will allow the writing of samples for constrained devices which have no device-dependent code, thus eliminating redundant, conflicting, and easily broken initialization code in the SDK samples.
 * Simplify code sharing and re-use by breaking device-specific initialization code into discrete modules.
-* Simplify re-use of existing code by providing a one-stop [PAL Example Finder](https://github.com/Azure/azure-c-shared-utility/blob/pal/pal/example_finder.md) to help implementors find existing solutions.
+* Simplify re-use of existing code by providing a one-stop [PAL Example Finder](https://github.com/Azure/azure-c-shared-utility/blob/pal/pal/docs/example_finder.md) to help implementors find existing solutions.
 * Encourage aggressive memory conservation. The nature of the IoT business will exert continual price pressure on the high-volume devices that are Azure IoT's most desirable design wins, so the PAL API will be designed to help PAL implementations fit into the smallest possible memory footprint.
 
 ### Non-goals
