@@ -36,6 +36,7 @@ sdk/c-utility/src/hmacsha256.o	\
 sdk/c-utility/src/httpapiex.o	\
 sdk/c-utility/src/httpapiexsas.o	\
 sdk/c-utility/src/httpheaders.o	\
+sdk/c-utility/src/http_proxy_io.o	\
 sdk/c-utility/src/map.o	\
 sdk/c-utility/src/optionhandler.o	\
 sdk/c-utility/src/sastoken.o	\
