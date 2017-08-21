@@ -10,6 +10,9 @@
 extern "C" {
 #endif /* __cplusplus */
 
+    /////////////////////////////////////////////////////////////////
+    // ****** UNDER CONSTRUCTION -- NOT READY FOR COMMENT ********
+    /////////////////////////////////////////////////////////////////
 
     typedef enum PAL_TLS_CERTIFICATE_TYPE_TAG
     {
