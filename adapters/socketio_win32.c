@@ -532,7 +532,7 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                         int last_error = WSAGetLastError();
                         if (last_error != WSAEWOULDBLOCK && last_error != ERROR_SUCCESS)
                         {
-                            LogError("Socketio_Failure: Recieving data from endpoint: %d.", last_error);
+                            LogError("Socketio_Failure: Receiving data from endpoint: %d.", last_error);
                             indicate_error(socket_io_instance);
                         }
                     }

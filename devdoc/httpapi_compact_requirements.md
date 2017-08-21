@@ -361,9 +361,9 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
 
 **SRS_HTTPAPI_COMPACT_21_056: [** The HTTPAPI_SetOption shall change the HTTP options. **]**
 
-**SRS_HTTPAPI_COMPACT_21_057: [** The HTTPAPI_SetOption shall recieve a handle that identiry the HTTP connection. **]**
+**SRS_HTTPAPI_COMPACT_21_057: [** The HTTPAPI_SetOption shall receive a handle that identiry the HTTP connection. **]**
 
-**SRS_HTTPAPI_COMPACT_21_058: [** The HTTPAPI_SetOption shall recieve the option as a pair optionName/value. **]**
+**SRS_HTTPAPI_COMPACT_21_058: [** The HTTPAPI_SetOption shall receive the option as a pair optionName/value. **]**
 
 **SRS_HTTPAPI_COMPACT_21_059: [** If the handle is NULL, the HTTPAPI_SetOption shall return HTTPAPI_INVALID_ARG. **]**
 
