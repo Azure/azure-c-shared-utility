@@ -4,13 +4,6 @@
 #ifndef TICKCOUNTER_H
 #define TICKCOUNTER_H
 
-#ifdef __cplusplus
-extern "C" {
-#include <cstdint>
-#else
-#include <stdint.h>
-#endif /* __cplusplus */
-
 #include "azure_c_shared_utility/umock_c_prod.h"
 
     typedef uint_fast32_t tickcounter_ms_t;
