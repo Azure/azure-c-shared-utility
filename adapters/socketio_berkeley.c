@@ -887,7 +887,6 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                     // The socket can be closed in indicate_error().
                     if(socket_io_instance->io_state != IO_STATE_OPEN)
                     {
-                        // No point in continuing...
                         break;
                     }
                 }
