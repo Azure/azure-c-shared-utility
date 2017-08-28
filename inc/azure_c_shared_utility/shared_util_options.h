@@ -15,6 +15,7 @@ extern "C"
         int port;
         const char* username;
         const char* password;
+		const char* protocol;
     } HTTP_PROXY_OPTIONS;
 
     static const char* OPTION_HTTP_PROXY = "proxy_data";
