@@ -4,13 +4,13 @@
 #ifndef PLATFORM_H
 #define PLATFORM_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
-
 #include "azure_c_shared_utility/strings.h"
 #include "azure_c_shared_utility/xio.h"
 #include "azure_c_shared_utility/umock_c_prod.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
 
     MOCKABLE_FUNCTION(, int, platform_init);
     MOCKABLE_FUNCTION(, void, platform_deinit);

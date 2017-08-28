@@ -8,14 +8,15 @@
 #ifndef AZURE_SOCKET_ASYNC_H
 #define AZURE_SOCKET_ASYNC_H
 
+#include "azure_c_shared_utility/macro_utils.h"
+#include "azure_c_shared_utility/umock_c_prod.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #include <stdbool.h>
 #include <stdint.h>
-#include "azure_c_shared_utility/macro_utils.h"
-#include "azure_c_shared_utility/umock_c_prod.h"
 
 // socket_async exposes asynchronous socket operations while hiding OS-specifics. Committing to
 // asynchronous operation also simplifies the interface compared to generic sockets.

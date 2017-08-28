@@ -10,16 +10,16 @@
 // DEPRECATED: the USE_MBED_TLS #define is deprecated.
 #ifdef USE_MBED_TLS
 
+#include "azure_c_shared_utility/xio.h"
+#include "azure_c_shared_utility/xlogging.h"
+#include "azure_c_shared_utility/optionhandler.h"
+
 #ifdef __cplusplus
 extern "C" {
 #include <cstddef>
 #else
 #include <stddef.h>
 #endif /* __cplusplus */
-
-#include "azure_c_shared_utility/xio.h"
-#include "azure_c_shared_utility/xlogging.h"
-#include "azure_c_shared_utility/optionhandler.h"
 
 // DEPRECATED: the functions below do not neet to be exposed.
 extern CONCRETE_IO_HANDLE tlsio_mbedtls_create(void* io_create_parameters);
