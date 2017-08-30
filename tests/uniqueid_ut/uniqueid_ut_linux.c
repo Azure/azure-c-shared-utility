@@ -16,6 +16,9 @@ static TEST_MUTEX_HANDLE g_dllByDll;
 TEST_DEFINE_ENUM_TYPE(UNIQUEID_RESULT, UNIQUEID_RESULT_VALUES);
 
 #define BUFFER_SIZE         37
+#define DEFAULT_UUID_N_OF_OCTECTS   (BUFFER_SIZE - 4)/2
+
+static unsigned char uid_octects[DEFAULT_UUID_N_OF_OCTECTS] = { 222,193,74,152,197,252,67,14,180,227,51,193,196,52,220,175 };
 
 static char* uidBuffer = NULL;
 static char* uidBuffer2 = NULL;
@@ -96,5 +99,64 @@ TEST_FUNCTION(UniqueId_Generate_Succeed)
     ASSERT_ARE_EQUAL(UNIQUEID_RESULT, UNIQUEID_OK, result);
     ASSERT_ARE_EQUAL(size_t, 36, strlen(uid) );
 }
+
+
+// Tests_SRS_UNIQUEID_09_001: [ If `uid` or `output_string` are NULL, UniqueId_GetStringFromBytes shall return UNIQUEID_INVALID_ARG ]
+TEST_FUNCTION(UniqueId_GetStringFromBytes_NULL_uid)
+{
+    //Arrange
+    char uid_as_string[BUFFER_SIZE];
+
+    //Act
+    UNIQUEID_RESULT result = UniqueId_GetStringFromBytes(NULL, DEFAULT_UUID_N_OF_OCTECTS, uid_as_string);
+
+    //Assert
+    ASSERT_ARE_EQUAL(UNIQUEID_RESULT, UNIQUEID_INVALID_ARG, result);
+}
+
+// Tests_SRS_UNIQUEID_09_001: [ If `uid` or `output_string` are NULL, UniqueId_GetStringFromBytes shall return UNIQUEID_INVALID_ARG ]
+TEST_FUNCTION(UniqueId_GetStringFromBytes_NULL_output_string)
+{
+    //Arrange
+
+    //Act
+    UNIQUEID_RESULT result = UniqueId_GetStringFromBytes(uid_octects, DEFAULT_UUID_N_OF_OCTECTS, NULL);
+
+    //Assert
+    ASSERT_ARE_EQUAL(UNIQUEID_RESULT, UNIQUEID_INVALID_ARG, result);
+}
+
+
+// Tests_SRS_UNIQUEID_09_002: [ If `uid_size` is zero or not a multiple of two, UniqueId_GetStringFromBytes shall return UNIQUEID_INVALID_ARG ]
+TEST_FUNCTION(UniqueId_GetStringFromBytes_Invalid_uid_size)
+{
+    //Arrange
+    char uid_as_string[BUFFER_SIZE];
+
+    memset(uid_as_string, 0, BUFFER_SIZE);
+
+    //Act
+    UNIQUEID_RESULT result = UniqueId_GetStringFromBytes(uid_octects, DEFAULT_UUID_N_OF_OCTECTS - 1, uid_as_string);
+
+    //Assert
+    ASSERT_ARE_EQUAL(UNIQUEID_RESULT, UNIQUEID_INVALID_ARG, result);
+    ASSERT_ARE_EQUAL(char_ptr, "\0", uid_as_string);
+}
+
+// Tests_SRS_UNIQUEID_09_003: [ `output_string` shall be filled according to RFC4122 using the byte sequence in `uid` ]
+// Tests_SRS_UNIQUEID_09_004: [ If no failures occur, UniqueId_Generate shall return UNIQUEID_OK ]  
+TEST_FUNCTION(UniqueId_GetStringFromBytes_Succeed)
+{
+    //Arrange
+    char uid_as_string[BUFFER_SIZE];
+
+    //Act
+    UNIQUEID_RESULT result = UniqueId_GetStringFromBytes(uid_octects, DEFAULT_UUID_N_OF_OCTECTS, uid_as_string);
+
+    //Assert
+    ASSERT_ARE_EQUAL(UNIQUEID_RESULT, UNIQUEID_OK, result);
+    ASSERT_ARE_EQUAL(char_ptr, "dec14a98-c5fc-430e-b4e3-33c1c434dcaf", uid_as_string);
+}
+
 
 END_TEST_SUITE(uniqueid_unittests)
