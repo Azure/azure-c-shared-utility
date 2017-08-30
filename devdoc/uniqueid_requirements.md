@@ -35,7 +35,7 @@ extern UNIQUEID_RESULT UniqueId_GetStringFromBytes(unsigned char* uid, size_t uu
 ```
 **SRS_UNIQUEID_09_001: [** If `uid` or `output_string` are NULL, UniqueId_GetStringFromBytes shall return UNIQUEID_INVALID_ARG **]**
 
-**SRS_UNIQUEID_09_002: [** If `uid_size` is zero or not a multiple of two, UniqueId_GetStringFromBytes shall return UNIQUEID_INVALID_ARG **]**
+**SRS_UNIQUEID_09_002: [** If `uid_size` is different than 16, UniqueId_GetStringFromBytes shall return UNIQUEID_INVALID_ARG **]**
 
 **SRS_UNIQUEID_09_003: [** `output_string` shall be filled according to RFC4122 using the byte sequence in `uid` **]**
 
