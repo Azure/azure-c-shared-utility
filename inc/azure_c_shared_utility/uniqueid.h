@@ -24,6 +24,15 @@ extern "C" {
 
         MOCKABLE_FUNCTION(, UNIQUEID_RESULT, UniqueId_Generate, char*, uid, size_t, bufferSize);
 
+        /*
+        *   @brief                  Gets the string representation of the UUID bytes.
+        *   @param uid_bytes        Sequence of bytes representing an UUID.
+        *   @param uid_size         Number of bytes representing the UUID (default is 16).
+        *   @param output_string    Pre-allocated buffer where the UUID will be stored as string (e.g., "7f907d75-5e13-44cf-a1a3-19a01a2b4528").
+        *   @returns                UNIQUEID_OK if no errors occur, UNIQUEID_INVALID_ARG otherwise.
+        */
+        MOCKABLE_FUNCTION(, UNIQUEID_RESULT, UniqueId_GetStringFromBytes, unsigned char*, uid, size_t, uid_size, char*, output_string);
+
 #ifdef __cplusplus
 }
 #endif
