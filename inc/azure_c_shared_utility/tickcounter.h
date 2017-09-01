@@ -8,6 +8,8 @@
 extern "C" {
 #endif /* __cplusplus */
 
+#include <stdint.h>
+
 #include "azure_c_shared_utility/umock_c_prod.h"
 
     typedef uint_fast32_t tickcounter_ms_t;
