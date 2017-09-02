@@ -347,6 +347,7 @@ ${LOGGING_C_FILE}
 ./src/sha384-512.c
 ./src/strings.c
 ./src/string_tokenizer.c
+./src/uuid.c
 ./src/urlencode.c
 ./src/usha.c
 ./src/vector.c
@@ -441,6 +442,7 @@ ${LOGGING_H_FILE}
 ./inc/azure_c_shared_utility/xio.h
 ./inc/azure_c_shared_utility/umock_c_prod.h
 ./inc/azure_c_shared_utility/uniqueid.h
+./inc/azure_c_shared_utility/uuid.h
 ./inc/azure_c_shared_utility/urlencode.h
 ./inc/azure_c_shared_utility/vector.h
 ./inc/azure_c_shared_utility/vector_types.h
