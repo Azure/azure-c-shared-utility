@@ -118,17 +118,16 @@ TEST_FUNCTION(UniqueId_GetStringFromBytes_NULL_output_string)
 }
 
 
-// Tests_SRS_UNIQUEID_09_002: [ If `uid_size` is different than 16, UniqueId_GetStringFromBytes shall return UNIQUEID_INVALID_ARG ]
+// Tests_SRS_UNIQUEID_09_002: [ If `uid_size` is zero or not a multiple of two, UniqueId_GetStringFromBytes shall return UNIQUEID_INVALID_ARG ]
 TEST_FUNCTION(UniqueId_GetStringFromBytes_Invalid_uid_size)
 {
     //Arrange
     char uid_as_string[BUFFER_SIZE];
-    UNIQUEID_RESULT result;
 
     memset(uid_as_string, 0, BUFFER_SIZE);
 
     //Act
-    result = UniqueId_GetStringFromBytes(uid_octects, DEFAULT_UUID_N_OF_OCTECTS - 1, uid_as_string);
+    UNIQUEID_RESULT result = UniqueId_GetStringFromBytes(uid_octects, DEFAULT_UUID_N_OF_OCTECTS - 1, uid_as_string);
 
     //Assert
     ASSERT_ARE_EQUAL(UNIQUEID_RESULT, UNIQUEID_INVALID_ARG, result);
@@ -141,10 +140,9 @@ TEST_FUNCTION(UniqueId_GetStringFromBytes_Succeed)
 {
     //Arrange
     char uid_as_string[BUFFER_SIZE];
-    UNIQUEID_RESULT result;
 
     //Act
-    result = UniqueId_GetStringFromBytes(uid_octects, DEFAULT_UUID_N_OF_OCTECTS, uid_as_string);
+    UNIQUEID_RESULT result = UniqueId_GetStringFromBytes(uid_octects, DEFAULT_UUID_N_OF_OCTECTS, uid_as_string);
 
     //Assert
     ASSERT_ARE_EQUAL(UNIQUEID_RESULT, UNIQUEID_OK, result);
