@@ -38,7 +38,7 @@ extern int uuid_from_string(char* uuid_string, UUID* uuid);
 
 **SRS_UUID_09_008: [** Each pair of digits in `uuid_string`, excluding dashes, shall be read as a single HEX value and saved on the respective position in `uuid` **]**  
 
-**SRS_UUID_09_009: [** If `uuid_string` fails to be generated, uuid_from_string shall return a non-zero value **]**
+**SRS_UUID_09_009: [** If `uuid` fails to be generated, uuid_from_string shall return a non-zero value **]**
 
 **SRS_UUID_09_010: [** If no failures occur, uuid_from_string shall return zero **]**
 

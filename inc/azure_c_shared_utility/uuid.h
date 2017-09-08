@@ -29,7 +29,7 @@ MOCKABLE_FUNCTION(, int, uuid_generate, UUID*, uuid);
 *  @param uuid          Sequence of bytes representing an UUID.
 *  @returns             Zero if no failures occur, non-zero otherwise.
 */
-MOCKABLE_FUNCTION(, int, uuid_from_string, char*, uuid_string, UUID*, uuid);
+MOCKABLE_FUNCTION(, int, uuid_from_string, const char*, uuid_string, UUID*, uuid);
 
 /* @brief               Gets the string representation of the UUID value.
 *  @param uuid          Sequence of bytes representing an UUID.

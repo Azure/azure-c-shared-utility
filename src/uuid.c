@@ -2,21 +2,19 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include <stdlib.h>
+#include <stdio.h>
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/uuid.h"
 #include "azure_c_shared_utility/uniqueid.h"
 #include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/xlogging.h"
 
-#define HEX_VALUE_LENGTH            2
-#define UUID_OCTET_COUNT            16
 #define UUID_STRING_LENGTH          36
 #define UUID_STRING_SIZE            (UUID_STRING_LENGTH + 1)
 #define __SUCCESS__                 0
 #define UUID_FORMAT_STRING          "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x"
-#define UUID_INPUT_FORMAT_STRING    "%02hhx"
 
-int uuid_from_string(char* uuid_string, UUID* uuid)
+int uuid_from_string(const char* uuid_string, UUID* uuid)
 {
     int result;
 
@@ -55,11 +53,11 @@ int uuid_from_string(char* uuid_string, UUID* uuid)
                 {
                     char double_hex_digit[3] = { 0, 0, 0 };
 
-                    memcpy(double_hex_digit, uuid_string + i, 2);
+                    (void)memcpy(double_hex_digit, uuid_string + i, 2);
 
-                    if (sscanf(double_hex_digit, UUID_INPUT_FORMAT_STRING, uuid_bytes + j) != 1)
+                    if (sscanf(double_hex_digit, "%02hhx", uuid_bytes + j) != 1)
                     {
-                        // Codes_SRS_UUID_09_009: [ If `uuid_string` fails to be generated, uuid_from_string shall return a non-zero value ]
+                        // Codes_SRS_UUID_09_009: [ If `uuid` fails to be generated, uuid_from_string shall return a non-zero value ]
                         LogError("Failed decoding UUID string (%d)", i);
                         result = __FAILURE__;
                         break;
@@ -117,7 +115,7 @@ char* uuid_to_string(UUID* uuid)
         }
     }
 
-    // Codes_SRS_UUID_09_016: [ If no failures occur, uuid_to_string shall return `uuid_string` ]  
+    // Codes_SRS_UUID_09_016: [ If no failures occur, uuid_to_string shall return `uuid_string` ]
     return result;
 }
 
@@ -143,7 +141,7 @@ int uuid_generate(UUID* uuid)
         }
         else
         {
-            memset(uuid_string, 0, sizeof(uuid_string));
+            memset(uuid_string, 0, sizeof(char) * UUID_STRING_SIZE);
 
             // Codes_SRS_UUID_09_002: [ uuid_generate shall obtain an UUID string from UniqueId_Generate ]
             if (UniqueId_Generate(uuid_string, UUID_STRING_SIZE) != UNIQUEID_OK)

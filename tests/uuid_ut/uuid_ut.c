@@ -215,10 +215,11 @@ TEST_FUNCTION(uuid_to_string_succeed)
 {
     //Arrange
     char* result;
+    char buffer[UUID_STRING_SIZE];
 
     umock_c_reset_all_calls();
     STRICT_EXPECTED_CALL(malloc(UUID_STRING_SIZE * sizeof(char)))
-        .SetReturn(TEST_UUID_STRING);
+        .SetReturn(buffer);
 
     //Act
     result = uuid_to_string(&TEST_UUID);
@@ -234,13 +235,14 @@ TEST_FUNCTION(uuid_to_string_failure_checks)
 {
     //Arrange
     char* result;
+    char buffer[UUID_STRING_SIZE];
     size_t i;
 
     ASSERT_ARE_EQUAL(int, 0, umock_c_negative_tests_init());
 
     umock_c_reset_all_calls();
     STRICT_EXPECTED_CALL(malloc(UUID_STRING_SIZE * sizeof(char)))
-        .SetReturn(TEST_UUID_STRING);
+        .SetReturn(buffer);
 
     umock_c_negative_tests_snapshot();
 
@@ -265,7 +267,37 @@ TEST_FUNCTION(uuid_to_string_failure_checks)
 }
 
 // Tests_SRS_UUID_09_007: [ If `uuid_string` or `uuid` are NULL, uuid_from_string shall return a non-zero value ]
+TEST_FUNCTION(uuid_from_string_NULL_uuid_string)
+{
+    //Arrange
+    int result;
+    UUID uuid;
 
+    umock_c_reset_all_calls();
+
+    //Act
+    result = uuid_from_string(NULL, &uuid);
+
+    //Assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+}
+
+// Tests_SRS_UUID_09_007: [ If `uuid_string` or `uuid` are NULL, uuid_from_string shall return a non-zero value ]
+TEST_FUNCTION(uuid_from_string_NULL_uuid)
+{
+    //Arrange
+    int result;
+
+    umock_c_reset_all_calls();
+
+    //Act
+    result = uuid_from_string(TEST_UUID_STRING, NULL);
+
+    //Assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+}
 
 // Tests_SRS_UUID_09_008: [ Each pair of digits in `uuid_string`, excluding dashes, shall be read as a single HEX value and saved on the respective position in `uuid` ]  
 // Tests_SRS_UUID_09_010: [ If no failures occur, uuid_from_string shall return zero ]
@@ -293,7 +325,7 @@ TEST_FUNCTION(uuid_from_string_succeed)
     }
 }
 
-// Tests_SRS_UUID_09_009: [ If `uuid_string` fails to be generated, uuid_from_string shall return a non-zero value ]
+// Tests_SRS_UUID_09_009: [ If `uuid` fails to be generated, uuid_from_string shall return a non-zero value ]
 // To be implemented once sscanf mock is implemented.
 
 END_TEST_SUITE(uuid_unittests)
