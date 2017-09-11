@@ -205,10 +205,10 @@ if(MSVC)
 
     endif()
 elseif(UNIX) #LINUX OR APPLE
-	if (NOT IOS)
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Werror")
-		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -Werror")
-	endif (NOT IOS)
+    if (NOT IOS)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Werror")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -Werror")
+    endif (NOT IOS)
     if(NOT (IN_OPENWRT OR APPLE))
         set (CMAKE_C_FLAGS "-D_POSIX_C_SOURCE=200112L ${CMAKE_C_FLAGS}")
     endif()
@@ -481,14 +481,14 @@ if(${use_http})
         ./inc/azure_c_shared_utility/httpapiex.h
         ./inc/azure_c_shared_utility/httpapiexsas.h
         ./inc/azure_c_shared_utility/httpheaders.h
-    )
+        )
 endif()
 
 if(${use_schannel})
     set(source_h_files ${source_h_files}
-        ./inc/azure_c_shared_utility/tlsio_schannel.h
-        ./inc/azure_c_shared_utility/x509_schannel.h
-        )
+    ./inc/azure_c_shared_utility/tlsio_schannel.h
+    ./inc/azure_c_shared_utility/x509_schannel.h
+    )
 endif()
 if(${use_wolfssl})
     set(source_h_files ${source_h_files}
@@ -508,7 +508,7 @@ if(${use_cyclonessl} AND WIN32)
     set(source_h_files ${source_h_files}
         ./inc/azure_c_shared_utility/tlsio_cyclonessl.h
         ./inc/azure_c_shared_utility/tlsio_cyclonessl_socket.h
-        )
+    )
 endif()
 
 IF(WIN32)
@@ -523,9 +523,9 @@ IF(WIN32)
     ENDIF()
 ELSE()
     # Make warning as error
-	if (NOT IOS)
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
-	endif (NOT IOS)
+    if (NOT IOS)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
+    endif (NOT IOS)
 ENDIF(WIN32)
 
 #this is the product (a library)
