@@ -526,7 +526,7 @@ function(set_platform_files c_shared_dir)
 
         set(HTTP_C_FILE ${c_shared_dir}/adapters/httpapi_curl.c PARENT_SCOPE)
         set(LOCK_C_FILE ${c_shared_dir}/adapters/lock_pthreads.c PARENT_SCOPE)
-        set(PLATFORM_C_FILE ${c_shared_dir}/adapters/platform_appleios.c PARENT_SCOPE)
+        set(PLATFORM_C_FILE ${c_shared_dir}/adapters/platform_linux.c PARENT_SCOPE)
         if (${use_socketio})
             set(SOCKETIO_C_FILE ${c_shared_dir}/adapters/socketio_appleios.c PARENT_SCOPE)
         endif()
