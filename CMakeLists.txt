@@ -368,7 +368,12 @@ ${UNIQUEID_C_FILE}
 if(UNIX) #LINUX OR APPLE
     set(source_c_files ${source_c_files}
         ./adapters/linux_time.c
-    )
+	)
+	if(IOS)
+		set(source_c_files ${source_c_files}
+			./adapters/tlsio_appleios.c
+		)
+	endif(IOS)
 endif()
 
 if(${use_http})

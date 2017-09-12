@@ -14,7 +14,7 @@ int platform_init(void)
 
 const IO_INTERFACE_DESCRIPTION* platform_get_default_tlsio(void)
 {
-    return NULL;
+    return tlsio_appleios_get_interface_description();
 }
 
 STRING_HANDLE platform_get_platform_info(void)
