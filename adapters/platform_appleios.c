@@ -7,6 +7,8 @@
 #include <unistd.h>
 #include <sys/utsname.h>
 
+#include "azure_c_shared_utility/tlsio_appleios.h"
+
 int platform_init(void)
 {
     return 0;
