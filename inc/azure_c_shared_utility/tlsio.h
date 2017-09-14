@@ -4,11 +4,11 @@
 #ifndef TLSIO_H
 #define TLSIO_H
 
+#include "xio.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
-
-#include "xio.h"
 
 typedef struct TLSIO_CONFIG_TAG
 {

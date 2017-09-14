@@ -14,6 +14,9 @@ will interact with deallocated memory / resources resulting in an undefined beha
 #ifndef REFCOUNT_H
 #define REFCOUNT_H
 
+#include "azure_c_shared_utility/gballoc.h"
+#include "azure_c_shared_utility/macro_utils.h"
+
 #ifdef __cplusplus
 #include <cstdlib>
 #include <cstdint>
@@ -23,9 +26,6 @@ extern "C"
 #include <stdlib.h>
 #include <stdint.h>
 #endif
-
-#include "azure_c_shared_utility/gballoc.h"
-#include "azure_c_shared_utility/macro_utils.h"
 
 #if defined(__STDC_VERSION__) && (__STDC_VERSION__ == 201112) && (__STDC_NO_ATOMICS__!=1)
 #define REFCOUNT_USE_STD_ATOMIC 1

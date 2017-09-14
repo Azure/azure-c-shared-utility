@@ -4,6 +4,10 @@
 #ifndef UWS_CLIENT_H
 #define UWS_CLIENT_H
 
+#include "xio.h"
+#include "azure_c_shared_utility/umock_c_prod.h"
+#include "azure_c_shared_utility/optionhandler.h"
+
 #ifdef __cplusplus
 #include <cstdbool>
 #include <cstddef>
@@ -14,10 +18,6 @@ extern "C" {
 #include <stddef.h>
 #include <stdint.h>
 #endif
-
-#include "xio.h"
-#include "azure_c_shared_utility/umock_c_prod.h"
-#include "azure_c_shared_utility/optionhandler.h"
 
 typedef struct UWS_CLIENT_INSTANCE_TAG* UWS_CLIENT_HANDLE;
 
