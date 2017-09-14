@@ -49,3 +49,5 @@ TLSIO_APPLEIOS_STATE tlsio_arduino_get_state(CONCRETE_IO_HANDLE tlsio_handle);
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
+
+#endif /* TLSIO_APPLEIOS_H */

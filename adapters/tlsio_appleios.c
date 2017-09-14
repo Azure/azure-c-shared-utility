@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "azure_c_shared_utility/gballoc.h"
-#include "tlsio_appleios.h"
+#include "azure_c_shared_utility/tlsio_appleios.h"
 //#include "sslClient_arduino.h"
 #include "azure_c_shared_utility/socketio.h"
 #include "azure_c_shared_utility/optimize_size.h"
@@ -85,7 +85,7 @@ typedef struct AppleiosTLS_tag
 	
     TLSIO_APPLEIOS_STATE state;
     int countTry;
-} ApplesiosTLS;
+} AppleiosTLS;
 
 /* Codes_SRS_TLSIO_ARDUINO_21_008: [ The tlsio_arduino_get_interface_description shall return the VTable IO_INTERFACE_DESCRIPTION. ]*/
 const IO_INTERFACE_DESCRIPTION* tlsio_appleios_get_interface_description(void)
@@ -156,6 +156,8 @@ CONCRETE_IO_HANDLE tlsio_appleios_create(void* io_create_parameters)
 			            
 			tlsio_instance->remote_host = CFStringCreateWithCString(NULL, tlsio_config->hostname, kCFStringEncodingUTF8);
             tlsio_instance->port = (uint16_t)tlsio_config->port;
+			tlsio_instance->sockRead = NULL;
+			tlsio_instance->sockWrite = NULL;
         }
     }
 
@@ -184,6 +186,9 @@ void tlsio_appleios_destroy(CONCRETE_IO_HANDLE tlsio_handle)
         }
 
         /* Codes_SRS_TLSIO_ARDUINO_21_022: [ The tlsio_arduino_destroy shall free the memory allocated for tlsio_instance. ]*/
+		CFRelease(tlsio_instance->remote_host);
+		CFRelease(tlsio_instance->sockRead);
+		CFRelease(tlsio_instance->sockWrite);
         free(tlsio_instance);
     }
 }
@@ -198,7 +203,7 @@ int tlsio_appleios_open(
     ON_IO_ERROR on_io_error,
     void* on_io_error_context)
 {
-    int result;
+    long result = 0;
     AppleiosTLS* tlsio_instance = (AppleiosTLS*)tlsio_handle;
 
     if (tlsio_handle == NULL)
@@ -239,9 +244,11 @@ int tlsio_appleios_open(
         }
         else
         {
-		    CFStreamStatus status = CFReadStreamGetStatus(tlsio_instance->sockRead);
+		    CFStreamStatus status;
 			
-			if (status != kCFStreamStatusNotOpen)
+			status = (tlsio_instance->sockRead == NULL)? kCFStreamStatusClosed : CFReadStreamGetStatus(tlsio_instance->sockRead);
+			
+			if (status != kCFStreamStatusClosed)
             {
                 /* Codes_SRS_TLSIO_ARDUINO_21_037: [ If the ssl client is connected, the tlsio_arduino_open shall change the state to TLSIO_ARDUINO_STATE_ERROR, log the error, and return _LINE_. ]*/
                 LogError("SSL stream is not closed.");
@@ -250,29 +257,27 @@ int tlsio_appleios_open(
             }
 			else
 			{
-	            CFStreamCreatePairWithSocketToHost(NULL, host, socket_io_instance->port, &socket_io_instance->sockRead, &socket_io_instance->sockWrite);
+	            CFStreamCreatePairWithSocketToHost(NULL, tlsio_instance->remote_host, tlsio_instance->port, &tlsio_instance->sockRead, &tlsio_instance->sockWrite);
 				
 				if (!CFReadStreamSetProperty(tlsio_instance->sockRead, kCFStreamPropertySSLSettings, kCFStreamSocketSecurityLevelTLSv1))
 				{
-					LogError("Unable to start SSL on socket.")
+					LogError("Unable to start SSL on socket.");
 					tlsio_instance->state = TLSIO_APPLEIOS_STATE_ERROR;
 					result = __FAILURE__;
 				}
-	            else if (!CFReadStreamOpen(socket_io_instance->sockRead) || !CFWriteStreamOpen(socket_io_instance->sockWrite))
+	            else if (!CFReadStreamOpen(tlsio_instance->sockRead) || !CFWriteStreamOpen(tlsio_instance->sockWrite))
 				{
 					LogError("Failure: connect failure");
-					CFReadStreamClose(socket_io_instance->sockRead);
-					CFWriteStreamClose(socket_io_instance->sockWrite);
-					socket_io_instance->sockRead = NULL;
-					socket_io_instance->sockWrite = NULL;
+					CFReadStreamClose(tlsio_instance->sockRead);
+					CFWriteStreamClose(tlsio_instance->sockWrite);
+					tlsio_instance->sockRead = NULL;
+					tlsio_instance->sockWrite = NULL;
 					result = __FAILURE__;
 				}
 				else
 				{
-					/* Codes_SRS_TLSIO_ARDUINO_21_038: [ If tlsio_arduino_open failed to start the process to open the ssl connection, it shall set the tlsio state as TLSIO_ARDUINO_STATE_ERROR, and return _LINE_. ]*/
-					LogError("TLS failed to start the connection process.");
-					tlsio_instance->state = TLSIO_APPLEIOS_STATE_ERROR;
-					result = __FAILURE__;
+					tlsio_instance->countTry = 10;
+					tlsio_instance->state = TLSIO_APPLEIOS_STATE_OPENING;
 				}
 			}
 		}
@@ -298,7 +303,7 @@ int tlsio_appleios_open(
         tlsio_appleios_dowork(tlsio_handle);
     }
 	
-    return result;
+    return (int)result;
 }
 
 /* Codes_SRS_TLSIO_ARDUINO_21_043: [ The tlsio_arduino_close shall start the process to close the ssl connection. ]*/
@@ -335,8 +340,8 @@ int tlsio_appleios_close(CONCRETE_IO_HANDLE tlsio_handle, ON_IO_CLOSE_COMPLETE o
         }
         else
         {
-            CFReadStreamClose(socket_io_instance->sockRead);
-            CFWriteStreamClose(socket_io_instance->sockWrite);
+            CFReadStreamClose(tlsio_instance->sockRead);
+            CFWriteStreamClose(tlsio_instance->sockWrite);
             /* Codes_SRS_TLSIO_ARDUINO_21_047: [ If tlsio_arduino_close get success to start the process to close the ssl connection, it shall set the tlsio state as TLSIO_ARDUINO_STATE_CLOSING, and return 0. ]*/
             tlsio_instance->state = TLSIO_APPLEIOS_STATE_CLOSING;
             result = 0;
@@ -372,14 +377,14 @@ int tlsio_appleios_send(CONCRETE_IO_HANDLE tlsio_handle, const void* buffer, siz
     }
     else
     {
-        size_t send_result;
+        CFIndex send_result;
         size_t send_size = size;
         const uint8_t* runBuffer = (const uint8_t *)buffer;
         result = __FAILURE__;
         /* Codes_SRS_TLSIO_ARDUINO_21_055: [ if the ssl was not able to send all data in the buffer, the tlsio_arduino_send shall call the ssl again to send the remaining bytes. ]*/
         while (send_size > 0)
         {
-			CFIndex send_result = CFWriteStreamWrite(tlsio_instance->sockWrite, buffer, size);
+			send_result = CFWriteStreamWrite(tlsio_instance->sockWrite, buffer, size);
 			
 			if (send_result == -1)
             {
@@ -427,14 +432,14 @@ void tlsio_appleios_dowork(CONCRETE_IO_HANDLE tlsio_handle)
     }
     else
     {
-        int received;
+        long received;
         AppleiosTLS* tlsio_instance = (AppleiosTLS*)tlsio_handle;
         /* Codes_SRS_TLSIO_ARDUINO_21_075: [ The tlsio_arduino_dowork shall create a buffer to store the data received from the ssl client. ]*/
         /* Codes_SRS_TLSIO_ARDUINO_21_076: [ The tlsio_arduino_dowork shall delete the buffer to store the data received from the ssl client. ]*/
         uint8_t RecvBuffer[RECEIVE_BUFFER_SIZE];
 		
 	    CFStreamStatus statusRead = CFReadStreamGetStatus(tlsio_instance->sockRead);
-	    CFStreamStatus statusWrite = CFWriteStreamGetStatus(tlsio_instance->sockWrite);
+	    //CFStreamStatus statusWrite = CFWriteStreamGetStatus(tlsio_instance->sockWrite);
 
 
         switch (tlsio_instance->state)
@@ -486,7 +491,7 @@ void tlsio_appleios_dowork(CONCRETE_IO_HANDLE tlsio_handle)
             }
             break;
         case TLSIO_APPLEIOS_STATE_CLOSING:
-            if (statusRead = kCFStreamStatusClosed)
+            if (statusRead == kCFStreamStatusClosed)
             {
                 /* Codes_SRS_TLSIO_ARDUINO_21_066: [ If the tlsio state is TLSIO_ARDUINO_STATE_CLOSING, and ssl client is not connected, the tlsio_arduino_dowork shall change the tlsio state to TLSIO_ARDUINO_STATE_CLOSE, and call the on_io_close_complete. ]*/
                 tlsio_instance->state = TLSIO_APPLEIOS_STATE_CLOSED;
