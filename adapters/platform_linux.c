@@ -3,6 +3,7 @@
 
 #include "azure_c_shared_utility/platform.h"
 #include "azure_c_shared_utility/xio.h"
+#include "azure_c_shared_utility/xlogging.h"
 #ifdef USE_OPENSSL
 #include "azure_c_shared_utility/tlsio_openssl.h"
 #endif

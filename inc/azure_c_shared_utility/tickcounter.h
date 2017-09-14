@@ -6,10 +6,9 @@
 
 #ifdef __cplusplus
 extern "C" {
-#include <cstdint>
-#else
-#include <stdint.h>
 #endif /* __cplusplus */
+
+#include <stdint.h>
 
 #include "azure_c_shared_utility/umock_c_prod.h"
 

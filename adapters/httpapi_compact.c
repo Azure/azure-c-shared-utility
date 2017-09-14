@@ -1240,8 +1240,8 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
 }
 
 /*Codes_SRS_HTTPAPI_COMPACT_21_056: [ The HTTPAPI_SetOption shall change the HTTP options. ]*/
-/*Codes_SRS_HTTPAPI_COMPACT_21_057: [ The HTTPAPI_SetOption shall recieve a handle that identiry the HTTP connection. ]*/
-/*Codes_SRS_HTTPAPI_COMPACT_21_058: [ The HTTPAPI_SetOption shall recieve the option as a pair optionName/value. ]*/
+/*Codes_SRS_HTTPAPI_COMPACT_21_057: [ The HTTPAPI_SetOption shall receive a handle that identiry the HTTP connection. ]*/
+/*Codes_SRS_HTTPAPI_COMPACT_21_058: [ The HTTPAPI_SetOption shall receive the option as a pair optionName/value. ]*/
 HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, const void* value)
 {
     HTTPAPI_RESULT result;

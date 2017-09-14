@@ -6,7 +6,6 @@
 
 #include "azure_c_shared_utility/optionhandler.h"
 
-#include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/umock_c_prod.h"
 #include "azure_c_shared_utility/macro_utils.h"
 

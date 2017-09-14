@@ -526,8 +526,8 @@ static void setHttpCertificate(HTTP_HANDLE httpHandle)
     STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
         .IgnoreArgument(1);
     /*Tests_SRS_HTTPAPI_COMPACT_21_056: [ The HTTPAPI_SetOption shall change the HTTP options. ]*/
-    /*Tests_SRS_HTTPAPI_COMPACT_21_057: [ The HTTPAPI_SetOption shall recieve a handle that identiry the HTTP connection. ]*/
-    /*Tests_SRS_HTTPAPI_COMPACT_21_058: [ The HTTPAPI_SetOption shall recieve the option as a pair optionName/value. ]*/
+    /*Tests_SRS_HTTPAPI_COMPACT_21_057: [ The HTTPAPI_SetOption shall receive a handle that identiry the HTTP connection. ]*/
+    /*Tests_SRS_HTTPAPI_COMPACT_21_058: [ The HTTPAPI_SetOption shall receive the option as a pair optionName/value. ]*/
     HTTPAPI_SetOption(httpHandle, "TrustedCerts", TEST_SETOPTIONS_CERTIFICATE);				/* currentmalloc_call += 1 */
 }
 
@@ -538,8 +538,8 @@ static void setHttpx509ClientCertificateAndKey(HTTP_HANDLE httpHandle)
     STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
         .IgnoreArgument(1);
     /*Tests_SRS_HTTPAPI_COMPACT_21_056: [ The HTTPAPI_SetOption shall change the HTTP options. ]*/
-    /*Tests_SRS_HTTPAPI_COMPACT_21_057: [ The HTTPAPI_SetOption shall recieve a handle that identiry the HTTP connection. ]*/
-    /*Tests_SRS_HTTPAPI_COMPACT_21_058: [ The HTTPAPI_SetOption shall recieve the option as a pair optionName/value. ]*/
+    /*Tests_SRS_HTTPAPI_COMPACT_21_057: [ The HTTPAPI_SetOption shall receive a handle that identiry the HTTP connection. ]*/
+    /*Tests_SRS_HTTPAPI_COMPACT_21_058: [ The HTTPAPI_SetOption shall receive the option as a pair optionName/value. ]*/
     HTTPAPI_SetOption(httpHandle, SU_OPTION_X509_CERT, TEST_SETOPTIONS_X509CLIENTCERT);				/* currentmalloc_call += 1 */
     HTTPAPI_SetOption(httpHandle, SU_OPTION_X509_PRIVATE_KEY, TEST_SETOPTIONS_X509PRIVATEKEY);				/* currentmalloc_call += 1 */
 }
@@ -2726,7 +2726,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_read_NULL_header_failed)
     HTTPAPI_Deinit();
 }
 
-/*Tests_SRS_HTTPAPI_COMPACT_21_055: [ If the HTTPAPI_ExecuteRequest cannot parser the recieved message, it shall return HTTPAPI_RECEIVE_RESPONSE_FAILED. ]*/
+/*Tests_SRS_HTTPAPI_COMPACT_21_055: [ If the HTTPAPI_ExecuteRequest cannot parser the received message, it shall return HTTPAPI_RECEIVE_RESPONSE_FAILED. ]*/
 TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_read_not_HTTP_header_failed)
 {
     /// arrange
@@ -2779,7 +2779,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_read_not_HTTP_header_failed)
     HTTPAPI_Deinit();
 }
 
-/*Tests_SRS_HTTPAPI_COMPACT_21_055: [ If the HTTPAPI_ExecuteRequest cannot parser the recieved message, it shall return HTTPAPI_RECEIVE_RESPONSE_FAILED. ]*/
+/*Tests_SRS_HTTPAPI_COMPACT_21_055: [ If the HTTPAPI_ExecuteRequest cannot parser the received message, it shall return HTTPAPI_RECEIVE_RESPONSE_FAILED. ]*/
 TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_read_wrong_URL_header_failed)
 {
     /// arrange
@@ -2821,7 +2821,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_read_wrong_URL_header_failed)
     HTTPAPI_Deinit();
 }
 
-/*Tests_SRS_HTTPAPI_COMPACT_21_055: [ If the HTTPAPI_ExecuteRequest cannot parser the recieved message, it shall return HTTPAPI_RECEIVE_RESPONSE_FAILED. ]*/
+/*Tests_SRS_HTTPAPI_COMPACT_21_055: [ If the HTTPAPI_ExecuteRequest cannot parser the received message, it shall return HTTPAPI_RECEIVE_RESPONSE_FAILED. ]*/
 TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_read_header_with_no_statusCode_failed)
 {
     /// arrange
@@ -2863,7 +2863,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_read_header_with_no_statusCode_failed)
     HTTPAPI_Deinit();
 }
 
-/*Tests_SRS_HTTPAPI_COMPACT_21_055: [ If the HTTPAPI_ExecuteRequest cannot parser the recieved message, it shall return HTTPAPI_RECEIVE_RESPONSE_FAILED. ]*/
+/*Tests_SRS_HTTPAPI_COMPACT_21_055: [ If the HTTPAPI_ExecuteRequest cannot parser the received message, it shall return HTTPAPI_RECEIVE_RESPONSE_FAILED. ]*/
 TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_read_header_incomplete_failed)
 {
     /// arrange
@@ -2905,7 +2905,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_read_header_incomplete_failed)
     HTTPAPI_Deinit();
 }
 
-/*Tests_SRS_HTTPAPI_COMPACT_21_055: [ If the HTTPAPI_ExecuteRequest cannot parser the recieved message, it shall return HTTPAPI_RECEIVE_RESPONSE_FAILED. ]*/
+/*Tests_SRS_HTTPAPI_COMPACT_21_055: [ If the HTTPAPI_ExecuteRequest cannot parser the received message, it shall return HTTPAPI_RECEIVE_RESPONSE_FAILED. ]*/
 TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_read_multi_header_with_size_0_and_error_failed)
 {
     /// arrange
@@ -3053,8 +3053,8 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__content_length_without_value_failed)
 /*Tests_SRS_HTTPAPI_COMPACT_21_046: [ The HTTPAPI_ExecuteRequest shall return the http status reported by the host in the received response. ]*/
 /*Tests_SRS_HTTPAPI_COMPACT_21_047: [ The HTTPAPI_ExecuteRequest shall report the status in the statusCode parameter. ]*/
 /*Tests_SRS_HTTPAPI_COMPACT_21_050: [ If there is a content in the response, the HTTPAPI_ExecuteRequest shall copy it in the responseContent buffer. ]*/
-/*Tests_SRS_HTTPAPI_COMPACT_21_073: [ The message recieved by the HTTPAPI_ExecuteRequest shall starts with a valid header. ]*/
-/*Tests_SRS_HTTPAPI_COMPACT_21_074: [ After the header, the message recieved by the HTTPAPI_ExecuteRequest can contain addition information about the content. ]*/
+/*Tests_SRS_HTTPAPI_COMPACT_21_073: [ The message received by the HTTPAPI_ExecuteRequest shall starts with a valid header. ]*/
+/*Tests_SRS_HTTPAPI_COMPACT_21_074: [ After the header, the message received by the HTTPAPI_ExecuteRequest can contain addition information about the content. ]*/
 /*Tests_SRS_HTTPAPI_COMPACT_21_053: [ The HTTPAPI_ExecuteRequest shall produce a set of http header to send to the host. ]*/
 TEST_FUNCTION(HTTPAPI_ExecuteRequest__Execute_request_succeed)
 {
@@ -3572,7 +3572,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_relative_path_succeed)
 
 /*Tests_SRS_HTTPAPI_COMPACT_21_043: [ If the content is NULL, the HTTPAPI_ExecuteRequest shall send the request without content. ]*/
 /*Tests_SRS_HTTPAPI_COMPACT_21_044: [ If the content is not NULL, the number of bytes in the content shall be provided in contentLength parameter. ]*/
-/*Tests_SRS_HTTPAPI_COMPACT_21_075: [ The message recieved by the HTTPAPI_ExecuteRequest can contain a body with the message content. ]*/
+/*Tests_SRS_HTTPAPI_COMPACT_21_075: [ The message received by the HTTPAPI_ExecuteRequest can contain a body with the message content. ]*/
 TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_with_content_succeed)
 {
     /// arrange

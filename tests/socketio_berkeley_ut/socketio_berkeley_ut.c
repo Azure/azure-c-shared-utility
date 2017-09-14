@@ -209,7 +209,7 @@ TEST_FUNCTION_CLEANUP(method_cleanup)
     }
 }
 
-static void OnBytesRecieved(void* context, const unsigned char* buffer, size_t size)
+static void OnBytesReceived(void* context, const unsigned char* buffer, size_t size)
 {
     (void)context;
     (void)buffer;
@@ -329,7 +329,7 @@ TEST_FUNCTION(socketio_open_socket_io_NULL_fails)
     mocks.ResetAllCalls();
 
     // act
-    int result = socketio_open(NULL, OnBytesRecieved, OnIoStateChanged, &callbackContext);
+    int result = socketio_open(NULL, OnBytesReceived, OnIoStateChanged, &callbackContext);
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
@@ -349,7 +349,7 @@ TEST_FUNCTION(socketio_open_socket_fails)
         .SetReturn(-1);
 
     // act
-    int result = socketio_open(ioHandle, OnBytesRecieved, OnIoStateChanged, &callbackContext);
+    int result = socketio_open(ioHandle, OnBytesReceived, OnIoStateChanged, &callbackContext);
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
@@ -375,7 +375,7 @@ TEST_FUNCTION(socketio_open_getaddrinfo_fails)
     EXPECTED_CALL(mocks, close(IGNORED_NUM_ARG));
 
     // act
-    int result = socketio_open(ioHandle, OnBytesRecieved, OnIoStateChanged, &callbackContext);
+    int result = socketio_open(ioHandle, OnBytesReceived, OnIoStateChanged, &callbackContext);
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
@@ -402,7 +402,7 @@ TEST_FUNCTION(socketio_open_connect_fails)
     EXPECTED_CALL(mocks, freeaddrinfo(IGNORED_PTR_ARG));
 
     // act
-    int result = socketio_open(ioHandle, OnBytesRecieved, OnIoStateChanged, &callbackContext);
+    int result = socketio_open(ioHandle, OnBytesReceived, OnIoStateChanged, &callbackContext);
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
@@ -430,7 +430,7 @@ TEST_FUNCTION(socketio_open_ioctlsocket_fails)
     EXPECTED_CALL(mocks, close(IGNORED_NUM_ARG));
 
     // act
-    int result = socketio_open(ioHandle, OnBytesRecieved, OnIoStateChanged, &callbackContext);
+    int result = socketio_open(ioHandle, OnBytesReceived, OnIoStateChanged, &callbackContext);
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
@@ -455,7 +455,7 @@ TEST_FUNCTION(socketio_open_ioctlsocket_fails)
 //    EXPECTED_CALL(mocks, freeaddrinfo(IGNORED_PTR_ARG));
 //
 //    // act
-//    int result = socketio_open(ioHandle, OnBytesRecieved, OnIoStateChanged, &callbackContext);
+//    int result = socketio_open(ioHandle, OnBytesReceived, OnIoStateChanged, &callbackContext);
 //
 //    // assert
 //    ASSERT_ARE_EQUAL(int, 0, result);
@@ -483,7 +483,7 @@ TEST_FUNCTION(socketio_close_Succeeds)
     SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
     CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
 
-    int result = socketio_open(ioHandle, OnBytesRecieved, OnIoStateChanged, &callbackContext);
+    int result = socketio_open(ioHandle, OnBytesReceived, OnIoStateChanged, &callbackContext);
 
     mocks.ResetAllCalls();
 
@@ -515,7 +515,7 @@ TEST_FUNCTION(socketio_send_buffer_NULL_fails)
     SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
     CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
 
-    int result = socketio_open(ioHandle, OnBytesRecieved, OnIoStateChanged, &callbackContext);
+    int result = socketio_open(ioHandle, OnBytesReceived, OnIoStateChanged, &callbackContext);
 
     mocks.ResetAllCalls();
 
@@ -533,7 +533,7 @@ TEST_FUNCTION(socketio_send_size_zero_fails)
     SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
     CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
 
-    int result = socketio_open(ioHandle, OnBytesRecieved, OnIoStateChanged, &callbackContext);
+    int result = socketio_open(ioHandle, OnBytesReceived, OnIoStateChanged, &callbackContext);
 
     mocks.ResetAllCalls();
 
@@ -552,7 +552,7 @@ TEST_FUNCTION(socketio_send_size_zero_fails)
 //    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
 //    CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
 //
-//    int result = socketio_open(ioHandle, OnBytesRecieved, OnIoStateChanged, &callbackContext);
+//    int result = socketio_open(ioHandle, OnBytesReceived, OnIoStateChanged, &callbackContext);
 //
 //    mocks.ResetAllCalls();
 //
@@ -577,7 +577,7 @@ TEST_FUNCTION(socketio_send_size_zero_fails)
 //    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
 //    CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
 //
-//    int result = socketio_open(ioHandle, OnBytesRecieved, OnIoStateChanged, &callbackContext);
+//    int result = socketio_open(ioHandle, OnBytesReceived, OnIoStateChanged, &callbackContext);
 //    ASSERT_ARE_EQUAL(int, 0, result);
 //
 //    mocks.ResetAllCalls();
@@ -617,7 +617,7 @@ TEST_FUNCTION(socketio_dowork_socket_io_NULL_fails)
 //    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
 //    CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
 //
-//    int result = socketio_open(ioHandle, OnBytesRecieved, OnIoStateChanged, &callbackContext);
+//    int result = socketio_open(ioHandle, OnBytesReceived, OnIoStateChanged, &callbackContext);
 //
 //    mocks.ResetAllCalls();
 //
@@ -641,7 +641,7 @@ TEST_FUNCTION(socketio_dowork_socket_io_NULL_fails)
 //    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
 //    CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
 //
-//    int result = socketio_open(ioHandle, OnBytesRecieved, OnIoStateChanged, &callbackContext);
+//    int result = socketio_open(ioHandle, OnBytesReceived, OnIoStateChanged, &callbackContext);
 //
 //    mocks.ResetAllCalls();
 //

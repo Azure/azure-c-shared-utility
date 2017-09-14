@@ -39,6 +39,7 @@ set(mbed_exported_project_files
         ${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/tlsio.h
         ${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/tlsio_wolfssl.h
         ${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/uniqueid.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/uuid.h
         ${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/urlencode.h
         ${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/vector.h
         ${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/xio.h
