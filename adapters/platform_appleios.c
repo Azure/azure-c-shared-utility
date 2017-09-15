@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+#include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/platform.h"
 
 #include <stdlib.h>
@@ -27,6 +28,11 @@ STRING_HANDLE platform_get_platform_info(void)
     if (uname(&nnn) == 0)
     {
         result = STRING_construct_sprintf("(%s; %s)", nnn.sysname, nnn.machine);
+        
+        if (result == NULL)
+        {
+            LogInfo("ERROR: Failed to create machine info string");
+        }
     }
     else
     {
