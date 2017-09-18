@@ -38,10 +38,16 @@ set(SHARED_UTIL_ADAPTER_FOLDER "${CMAKE_CURRENT_LIST_DIR}/adapters" CACHE INTERN
 
 include_directories(${SHARED_UTIL_INC_FOLDER})
 
-CHECK_INCLUDE_FILES(stdint.h HAVE_STDINT_H)
-CHECK_INCLUDE_FILES(stdbool.h HAVE_STDBOOL_H)
+# CHECK_INCLUDE_FILES will always fail if the compiler check fails which it will for iOS
+if (!IOS)
+    CHECK_INCLUDE_FILES(stdint.h HAVE_STDINT_H)
+    CHECK_INCLUDE_FILES(stdbool.h HAVE_STDBOOL_H)
+else()
+	set(HAVE_STDINT_H 1)
+	set(HAVE_STDBOOL_H 1)
+endif()
 
-if (NOT IOS AND (NOT HAVE_STDINT_H OR NOT HAVE_STDBOOL_H))
+if (NOT HAVE_STDINT_H OR NOT HAVE_STDBOOL_H)
     include_directories(${SHARED_UTIL_INC_FOLDER}/azure_c_shared_utility/windowsce)
 endif()
 
@@ -324,6 +330,11 @@ include_directories(${UMOCK_C_INC_FOLDER})
 
 compileAsC99()
 
+set (${UUID_C_FILE} "")
+if (${use_default_uuid})
+    set (${UUID_C_FILE} ./src/uuid.c)
+endif()
+
 #these are the C source files
 set(source_c_files
 ./src/base64.c
@@ -350,7 +361,7 @@ ${LOGGING_C_FILE}
 ./src/sha384-512.c
 ./src/strings.c
 ./src/string_tokenizer.c
-./src/uuid.c
+${UUID_C_FILE}
 ./src/urlencode.c
 ./src/usha.c
 ./src/vector.c
@@ -553,7 +564,7 @@ if(${use_http})
         else()
             set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} crypt32 winhttp)
         endif()
-    else()
+    elseif(!IOS)
         # try pkg-config first
         find_package(PkgConfig)
         if(PKG_CONFIG_FOUND)

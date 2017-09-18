@@ -53,9 +53,9 @@ static const IO_INTERFACE_DESCRIPTION tlsio_handle_interface_description =
     tlsio_appleios_retrieve_options,
     tlsio_appleios_create,
     tlsio_appleios_destroy,
-    tlsio_appleios_open,
+    tlsio_appleios_open_async,
     tlsio_appleios_close,
-    tlsio_appleios_send,
+    tlsio_appleios_send_async,
     tlsio_appleios_dowork,
     tlsio_appleios_setoption
 };
@@ -258,7 +258,7 @@ int tlsio_appleios_open_async(
 				
 				if (tlsio_instance->sockRead == NULL || tlsio_instance->sockWrite == NULL)
 				{
-					LogError("Unable to create socket streams.")
+					LogError("Unable to create socket streams.");
 					tlsio_instance->state = TLSIO_APPLEIOS_STATE_ERROR;
 					result = __FAILURE__;
 				}
@@ -377,7 +377,7 @@ int tlsio_appleios_send_async(CONCRETE_IO_HANDLE tlsio_handle, const void* buffe
                 /* Codes_SRS_TLSIO_APPLEIOS_32_056: [ if the ssl was not able to send any byte in the buffer, the tlsio_appleios_send shall call the on_send_complete with IO_SEND_ERROR, and return _LINE_. ]*/
                 LogError("TLS failed sending data");
                 send_size = 0;
-                result = _FAILURE_;
+                result = __FAILURE__;
             }
             else if (send_result >= send_size) /* Transmit it all. */
             {
