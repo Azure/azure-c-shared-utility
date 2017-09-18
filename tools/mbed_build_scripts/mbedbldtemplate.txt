@@ -76,7 +76,7 @@ endfunction(verifyRequiredTools)
 
 
 function(cloneMBEDRepository)
-    set(mbed_repo_address https://$ENV{MBED_USER}:$ENV{MBED_PWD}@developer.mbed.org/users/$ENV{MBED_USER}/code/${mbed_repo_name}/)
+    set(mbed_repo_address https://$ENV{MBED_USER}:$ENV{MBED_PWD}@os.mbed.com/users/$ENV{MBED_USER}/code/${mbed_repo_name}/)
 
     message(STATUS "Trying to delete " ${local_repo_path})
     message(STATUS "Trying to delete " ${local_sublib_dir})
@@ -220,7 +220,7 @@ function(updateMBEDLibraries)
                 # Our compile sandboxes are actually private.  So we need to pass the username and password to do the clone.
                 # So we actually form the address all over again.  Sigh.
                 #
-                set(subLibraryCloningUri https://$ENV{MBED_USER}:$ENV{MBED_PWD}@developer.mbed.org/users/$ENV{MBED_USER}/code/${libraryName}/)
+                set(subLibraryCloningUri https://$ENV{MBED_USER}:$ENV{MBED_PWD}@os.mbed.com/users/$ENV{MBED_USER}/code/${libraryName}/)
 
                 #
                 # We got the parts we need.  Clone the lib and then go get the sha.
@@ -247,7 +247,7 @@ endfunction(updateMBEDLibraries)
 
 function(pushMBEDRepository)
 
-    set(mbed_repo_address https://$ENV{MBED_USER}:$ENV{MBED_PWD}@developer.mbed.org/users/$ENV{MBED_USER}/code/${mbed_repo_name}/)
+    set(mbed_repo_address https://$ENV{MBED_USER}:$ENV{MBED_PWD}@os.mbed.com/users/$ENV{MBED_USER}/code/${mbed_repo_name}/)
 
     message(STATUS "Commiting changes to local repository.")
 
@@ -272,7 +272,7 @@ endfunction(pushMBEDRepository)
 
 
 function(compileMBEDProject)
-    set(mbed_repo_address http://developer.mbed.org/users/$ENV{MBED_USER}/code/${mbed_repo_name}/)
+    set(mbed_repo_address http://os.mbed.com/users/$ENV{MBED_USER}/code/${mbed_repo_name}/)
 
     file(GLOB expanded_compile_mbed_tool ${compile_mbed_tool})
     if (DEFINED mbed_output_bin_path AND NOT ${mbed_output_bin_path} EQUAL "")
@@ -320,10 +320,10 @@ include (${mbed_project_base}_filelist.txt)
 ### Main
 if(WIN32)
     if (${release_the_project})
-	    releaseMBEDRepository()
-	else ()
+        releaseMBEDRepository()
+    else ()
             compileMBEDRepository()
-	endif()
+    endif()
 else()
-	message(FATAL_ERROR "Apologies, but the only currently supported platform is Microsoft Windows.")
+    message(FATAL_ERROR "Apologies, but the only currently supported platform is Microsoft Windows.")
 endif()
