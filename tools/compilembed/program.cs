@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace compilembed
 {
     // Reference:
-    // https://developer.mbed.org/handbook/Compile-API
+    // https://os.mbed.com/handbook/Compile-API
 
     class Program
     {
