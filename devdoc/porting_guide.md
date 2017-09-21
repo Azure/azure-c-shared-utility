@@ -9,6 +9,7 @@ The document does not cover the specifics of any particular platform.
 
 ###### Specifications
 - [tickcounter adapter specification](https://github.com/Azure/azure-c-shared-utility/blob/master/devdoc/tickcounter.md)<br/>
+- [agenttime adapter specification](https://github.com/Azure/azure-c-shared-utility/blob/master/devdoc/agenttime_requirements.md)<br/>
 - [threadapi and sleep adapter specification](https://github.com/Azure/azure-c-shared-utility/blob/master/devdoc/threadapi_and_sleep_requirements.md)<br/>
 - [platform adapter specification](https://github.com/Azure/azure-c-shared-utility/blob/master/devdoc/platform_requirements.md)<br/>
 - [tlsio specification](https://github.com/Azure/azure-c-shared-utility/blob/master/devdoc/tlsio_requirements.md)<br/>
@@ -91,7 +92,9 @@ If memory size is an issue, the
 
 ### agenttime adapter
 
-The agenttime adapter provides platform-independent time functions.
+The agenttime adapter is specified in
+[agenttime adapter specification](https://github.com/Azure/azure-c-shared-utility/blob/master/devdoc/agenttime_requirements.md)
+and provides platform-independent time functions.
 
 For most platforms/OSs you can include the standard [agenttime.c](https://github.com/Azure/azure-c-shared-utility/blob/master/pal/agenttime.c)
 file in your build. This adapter simply calls the C functions `time`, `difftime`, `ctime`, etc.
@@ -99,7 +102,8 @@ file in your build. This adapter simply calls the C functions `time`, `difftime`
 If this file does not work for your implementation, make a copy of it and modify it appropriately.
 
 The Azure IoT SDK only requires the `get_time` and `get_difftime` functions. The other functions
-in this adapter -- `get_gmtime`, `get_mktime`, and `get_ctime` -- may be omitted or left non-functional.
+in this adapter -- `get_gmtime`, `get_mktime`, and `get_ctime` -- are deprecated and 
+may be omitted or left non-functional.
 
 ### sleep adapter
 
