@@ -12,7 +12,7 @@
 
 typedef struct TICK_COUNTER_INSTANCE_TAG
 {
-	int dummy : 1;
+	uint32_t create_time;
 } TICK_COUNTER_INSTANCE;
 
 TICK_COUNTER_HANDLE tickcounter_create(void)
@@ -21,6 +21,8 @@ TICK_COUNTER_HANDLE tickcounter_create(void)
     if (result == NULL)
     {
 		/* add any per instance initialization (starting a timer for example) here if needed (most platforms will not need this) */
+
+		result->create_time = /*  Save the initial tick value at tickcounter_create time */
 		
 		LogError("Cannot create tick counter");
     }
@@ -51,7 +53,7 @@ int tickcounter_get_current_ms(TICK_COUNTER_HANDLE tick_counter, uint64_t* curre
     {
 		/* call here any platform/OS specific function to get the millisecond tick and perform any conversions */
 		
-		*current_ms = /* converted value in milliseconds */;
+		*current_ms = /* return the difference in milliseconds between the time at tickcounter_create and now */;
     }
 	
     return result;
