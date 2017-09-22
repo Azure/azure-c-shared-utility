@@ -84,6 +84,7 @@ set(mbed_project_files
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/xio.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/optionhandler.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/xlogging.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/uuid.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../adapters/agenttime_mbed.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../adapters/condition_rtx_mbed.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/../../adapters/httpapi_compact.c
