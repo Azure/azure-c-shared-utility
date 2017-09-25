@@ -25,4 +25,4 @@ extern double get_difftime(time_t stopTime, time_t startTime);
 
 **SRS_AGENT_TIME_30_002: [** The `time_t` values in this interface shall be seconds since 00:00 hours, Jan 1, 1970 UTC. **]**
 
-**SRS_AGENT_TIME_30_003: [** The `get_gmtime`,  `get_gmtime`, and  `get_gmtime` functions in are deprecated and shall not be used. **]**
+**SRS_AGENT_TIME_30_003: [** The `get_gmtime`,  `get_mktime`, and  `get_ctime` functions in are deprecated and shall not be used. **]**
