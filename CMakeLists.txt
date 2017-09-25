@@ -9,7 +9,7 @@ endif()
 
 project(azure_c_shared_utility)
 
-set(C_SHARED_VERSION 1.0.43)
+set(C_SHARED_VERSION 1.0.44)
 
 if(POLICY CMP0042)
     cmake_policy(SET CMP0042 NEW)
