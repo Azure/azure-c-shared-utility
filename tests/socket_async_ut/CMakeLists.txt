@@ -11,10 +11,11 @@ ${theseTestsName}.c
 )
 
 set(${theseTestsName}_c_files
-../../adapters/socket_async.c
+../../pal/socket_async.c
 )
 
 include_directories(.)
+include_directories(../../pal/inc)
 
 # Windows will eventually be built with a socket_async_win32.c because
 # the function signatures don't match Linux. That file will need
