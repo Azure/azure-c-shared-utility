@@ -106,6 +106,9 @@ if(NOT "${compileOption_CXX}" STREQUAL "OFF")
 endif()
 
 
+include(CheckCXXCompilerFlag)
+CHECK_CXX_COMPILER_FLAG("-std=c++11" CXX_FLAG_CXX11)
+
 macro(compileAsC99)
   if (CMAKE_VERSION VERSION_LESS "3.1")
     if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
