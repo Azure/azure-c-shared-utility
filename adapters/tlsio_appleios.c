@@ -285,12 +285,6 @@ int tlsio_appleios_open_async(
 		}
     }
 
-    if (result == 0)
-    {
-        /* Codes_SRS_TLSIO_APPLEIOS_32_041: [ If the tlsio_appleios_open get success opening the tls connection, it shall call the tlsio_appleios_dowork. ]*/
-        tlsio_appleios_dowork(tlsio_handle);
-    }
-	
     return result;
 }
 
@@ -332,8 +326,6 @@ int tlsio_appleios_close(CONCRETE_IO_HANDLE tlsio_handle, ON_IO_CLOSE_COMPLETE o
             CFWriteStreamClose(tlsio_instance->sockWrite);
             /* Codes_SRS_TLSIO_APPLEIOS_32_047: [ If tlsio_appleios_close get success to start the process to close the ssl connection, it shall set the tlsio state as TLSIO_APPLEIOS_STATE_CLOSING, and return 0. ]*/
             tlsio_instance->state = TLSIO_APPLEIOS_STATE_CLOSING;
-            /* Codes_SRS_TLSIO_APPLEIOS_32_050: [ If the tlsio_appleios_close get success closing the tls connection, it shall call the tlsio_appleios_dowork. ]*/
-            tlsio_appleios_dowork(tlsio_handle);
             result = 0;
         }
     }

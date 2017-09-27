@@ -528,7 +528,7 @@ static FLOAT_STRING_TYPE splitFloatString(const char* nptr, char** endptr, int *
         if (((**endptr) == 'e') || ((**endptr) == 'E'))
         {
             startptr = (*endptr) + 1;
-            (*exponential) = strtol(startptr, endptr, 10);
+            (*exponential) = (int)strtol(startptr, endptr, 10);
             if (((*exponential) < (DBL_MAX_10_EXP * (-1))) || ((*exponential) > DBL_MAX_10_EXP))
             {
                 result = FST_OVERFLOW;

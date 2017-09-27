@@ -507,7 +507,7 @@ static int ParseStringToDecimal(const char *src, int* dst)
     int result;
     char* next;
 
-    (*dst) = strtol(src, &next, 0);
+    (*dst) = (int)strtol(src, &next, 0);
     if ((src == next) || ((((*dst) == INT_MAX) || ((*dst) == INT_MIN)) && (errno != 0)))
     {
         result = __LINE__;
