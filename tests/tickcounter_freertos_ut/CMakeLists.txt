@@ -12,7 +12,7 @@ ${theseTestsName}.c
 )
 
 set(${theseTestsName}_c_files
-../../pal/free_rtos/tickcounter.c
+../../pal/freertos/tickcounter.c
 )
 
 set(${theseTestsName}_h_files
