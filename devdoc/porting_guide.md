@@ -230,27 +230,27 @@ directories and linking library files.
 
 #### Existing _direct_ tlsio implementations
 There are two existing _direct_ adapter implementations:
-- [tlsio_openssl_compact for ESP32](https://github.com/Azure/azure-c-shared-utility/blob/master/adapters/tlsio_openssl_compact.c)
+- [tlsio_openssl_compact for ESP32](https://github.com/Azure/azure-iot-pal-esp32/pal/src/tlsio_openssl_compact.c)
 - [tlsio_arduino for Arduino](https://github.com/Azure/azure-c-shared-utility/blob/master/adapters/tlsio_arduino.c)
 
 Of these two, the
-[tlsio_openssl_compact for ESP32](https://github.com/Azure/azure-c-shared-utility/blob/master/adapters/tlsio_arduino.c)
+[tlsio_openssl_compact for ESP32](https://github.com/Azure/azure-iot-pal-esp32/pal/src/tlsio_openssl_compact.c)
 is probably the better candidate for copying for re-use because it is more likely to resemble newer devices, 
 and it was written in tandem with the
 [tlsio specification](https://github.com/Azure/azure-c-shared-utility/blob/master/devdoc/tlsio_requirements.md).
 
 The 
-[tlsio_openssl_compact for ESP32](https://github.com/Azure/azure-c-shared-utility/blob/master/adapters/tlsio_arduino.c)
+[tlsio_openssl_compact for ESP32](https://github.com/Azure/azure-iot-pal-esp32/pal/src/tlsio_openssl_compact.c)
 abstracts its operating system dependencies using these two files:
-- [socket_async.c](https://github.com/Azure/azure-c-shared-utility/blob/master/adapters/socket_async.c)
-- [dns_async.c](https://github.com/Azure/azure-c-shared-utility/blob/master/adapters/dns_async.c)
+- [socket_async.c](https://github.com/Azure/azure-c-shared-utility/blob/master/pal/socket_async.c)
+- [dns_async.c](https://github.com/Azure/azure-c-shared-utility/blob/master/pal/dns_async.c)
 
 It is recommended that all _direct_ tlsio implementatons follow this pattern.
 
 The
-[socket_async.c](https://github.com/Azure/azure-c-shared-utility/blob/master/adapters/socket_async.c)
+[socket_async.c](https://github.com/Azure/azure-c-shared-utility/blob/master/pal/socket_async.c)
 and
-[dns_async.c](https://github.com/Azure/azure-c-shared-utility/blob/master/adapters/dns_async.c)
+[dns_async.c](https://github.com/Azure/azure-c-shared-utility/blob/master/pal/dns_async.c)
 files can be re-used without change for most socket implementations by merely changing the content of 
 the included "socket_async_os.h" file, which contains os-specific headers.
 
@@ -274,6 +274,11 @@ lists should be purged during socketio_close instead.
 - [socketio_mbed for mbed](https://github.com/Azure/azure-c-shared-utility/blob/master/adapters/socketio_mbed.c)
 - [tlsio_cyclonessl_socket for use with cyclonessl](https://github.com/Azure/azure-c-shared-utility/blob/master/src/tlsio_cyclonessl_socket.c)
 
+### Adding device support repositories
+
+Newly supported devices are likely to use a wide variety of possible build systems, so no single standard source 
+tree can be prescribed. The [support repository for ESP32](https://github.com/Azure/azure-iot-pal-esp32) is the
+one we recommend considering as a model for creating a new device support repository.
 
 ##### Last step: profit!
 
