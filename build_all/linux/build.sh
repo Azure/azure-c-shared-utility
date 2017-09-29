@@ -36,6 +36,7 @@ process_args ()
         extracloptions="$arg $extracloptions"
         save_next_arg=0
       elif [ $save_next_arg == 2 ]
+	  then
         build-root="$arg"
         save_next_arg=0
       else
