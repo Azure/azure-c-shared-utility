@@ -25,7 +25,7 @@ include_directories(../../pal/inc)
 if(WIN32)
 	include_directories(./win32_fake_linux)
 else()
-	include_directories(../../inc/azure_c_shared_utility/linux)
+	include_directories(../../pal/linux)
 endif()
 
 set(${theseTestsName}_h_files
