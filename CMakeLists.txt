@@ -50,8 +50,6 @@ if(${use_etw})
     )
 endif()
 
-option(compileOption_C "passes a string to the command line of the C compiler" OFF)
-option(compileOption_CXX "passes a string to the command line of the C++ compiler" OFF)
 option(build_as_dynamic "build the C Shared libaries as shared"  OFF)
 
 if(${use_cyclonessl} AND WIN32)
@@ -133,9 +131,6 @@ endif()
 
 # Start of variables used during install
 set (LIB_INSTALL_DIR lib CACHE PATH "Library object file directory")
-
-#Use solution folders.
-set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 #Setup the platform files
 include("${CMAKE_CURRENT_LIST_DIR}/configs/azure_c_shared_utilityFunctions.cmake")
