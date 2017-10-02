@@ -85,3 +85,9 @@ In order to turn on/off the tlsio implementations use the following CMAKE option
 * `-Duse_http:bool={ON/OFF}` - turns on/off the HTTP API support. 
 * `-Duse_installed_dependencies:bool={ON/OFF}` - turns on/off building azure-c-shared-utility using installed dependencies. This package may only be installed if this flag is ON.
 * `-Drun_unittests:bool={ON/OFF}` - enables building of unit tests. Default is OFF.
+
+
+## Porting to new devices
+
+Instructions for porting the Azure IoT C SDK to new devices are located
+[here](https://github.com/Azure/azure-c-shared-utility/blob/pal-porting/devdoc/porting_guide.md).
