@@ -22,7 +22,7 @@
 #include <time.h>
 #endif
 
-#include "azure_c_shared_utility/dns_async.h"
+#include "dns_async.h"
 
 /**
  * The gballoc.h will replace the malloc, free, and realloc by the my_gballoc functions, in this case,

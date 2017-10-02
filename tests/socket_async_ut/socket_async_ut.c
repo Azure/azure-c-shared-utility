@@ -22,7 +22,7 @@
 
 #endif
 
-#include "azure_c_shared_utility/socket_async.h"
+#include "socket_async.h"
 
 // This file is OS-specific, and is identified by setting include directories
 // in the project
