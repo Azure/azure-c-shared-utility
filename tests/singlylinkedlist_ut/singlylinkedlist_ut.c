@@ -807,8 +807,9 @@ TEST_FUNCTION(singlylinkedlist_remove_second_of_2_items_succeeds)
     int x2 = 0x43;
     int result;
     SINGLYLINKEDLIST_HANDLE list = singlylinkedlist_create();
+    LIST_ITEM_HANDLE item2;
     (void)singlylinkedlist_add(list, &x1);
-    LIST_ITEM_HANDLE item2 = singlylinkedlist_add(list, &x2);
+    item2 = singlylinkedlist_add(list, &x2);
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
