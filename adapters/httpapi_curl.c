@@ -36,6 +36,7 @@ typedef struct HTTP_HANDLE_DATA_TAG
     long verbose;
     const char* x509privatekey;
     const char* x509certificate;
+    bool isECC;
     const char* certificates; /*a list of CA certificates*/
 } HTTP_HANDLE_DATA;
 
@@ -218,7 +219,7 @@ static size_t ContentWriteFunction(void *ptr, size_t size, size_t nmemb, void *u
 static CURLcode ssl_ctx_callback(CURL *curl, void *ssl_ctx, void *userptr)
 {
     CURLcode result;
-    
+
     if (
         (curl == NULL) ||
         (ssl_ctx == NULL) ||
@@ -236,7 +237,10 @@ static CURLcode ssl_ctx_callback(CURL *curl, void *ssl_ctx, void *userptr)
         if (
             (httpHandleData->x509certificate != NULL) &&
             (httpHandleData->x509privatekey != NULL) &&
-            (x509_openssl_add_credentials(ssl_ctx, httpHandleData->x509certificate, httpHandleData->x509privatekey) != 0)
+            (
+             ((httpHandleData->isECC == false) && (x509_openssl_add_credentials(ssl_ctx, httpHandleData->x509certificate, httpHandleData->x509privatekey) != 0)) ||
+             ((httpHandleData->isECC == true) && (x509_openssl_add_ecc_credentials(ssl_ctx, httpHandleData->x509certificate, httpHandleData->x509privatekey) != 0))
+             )
             )
         {
             LogError("unable to x509_openssl_add_credentials");
@@ -650,7 +654,7 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
         }
         else if (strcmp(OPTION_CURL_LOW_SPEED_TIME, optionName) == 0)
         {
-            httpHandleData->lowSpeedTime = *(const long*)value; 
+            httpHandleData->lowSpeedTime = *(const long*)value;
             result = HTTPAPI_OK;
         }
         else if (strcmp(OPTION_CURL_FRESH_CONNECT, optionName) == 0)
@@ -668,8 +672,9 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
             httpHandleData->verbose = *(const long*)value;
             result = HTTPAPI_OK;
         }
-        else if (strcmp(SU_OPTION_X509_PRIVATE_KEY, optionName) == 0)
+        else if (strcmp(SU_OPTION_X509_PRIVATE_KEY, optionName) == 0 || strcmp(OPTION_X509_ECC_KEY, optionName) == 0)
         {
+            httpHandleData->isECC = (strcmp(OPTION_X509_ECC_KEY, optionName) == 0);
             httpHandleData->x509privatekey = value;
             if (httpHandleData->x509certificate != NULL)
             {
@@ -697,8 +702,9 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
                 result = HTTPAPI_OK;
             }
         }
-        else if (strcmp(SU_OPTION_X509_CERT, optionName) == 0)
+        else if (strcmp(SU_OPTION_X509_CERT, optionName) == 0 || strcmp(OPTION_X509_ECC_CERT, optionName) == 0)
         {
+            httpHandleData->isECC = (strcmp(OPTION_X509_ECC_CERT, optionName) == 0);
             httpHandleData->x509certificate = value;
             if (httpHandleData->x509privatekey != NULL)
             {
