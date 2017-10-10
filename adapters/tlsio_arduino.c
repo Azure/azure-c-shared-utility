@@ -451,8 +451,8 @@ void tlsio_arduino_dowork(CONCRETE_IO_HANDLE tlsio_handle)
             else
             {
                 /* Codes_SRS_TLSIO_ARDUINO_21_069: [ If the tlsio state is TLSIO_ARDUINO_STATE_OPEN, the tlsio_arduino_dowork shall read data from the ssl client. ]*/
-                while(0 != (received = sslClient_read((uint8_t*)RecvBuffer, RECEIVE_BUFFER_SIZE)))
-                {
+				while ((received = sslClient_read((uint8_t*)RecvBuffer, RECEIVE_BUFFER_SIZE)) > 0)
+				{
                     /* Codes_SRS_TLSIO_ARDUINO_21_070: [ If the tlsio state is TLSIO_ARDUINO_STATE_OPEN, and there are received data in the ssl client, the tlsio_arduino_dowork shall read this data and call the on_bytes_received with the pointer to the buffer with the data. ]*/
                     if (tlsio_instance->on_bytes_received != NULL)
                     {
