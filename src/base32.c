@@ -205,8 +205,9 @@ static BUFFER_HANDLE base32_decode_impl(const char* source)
             dest_buff = temp_buffer;
             while (*iterator != '\0')
             {
+                size_t index = 0;
                 /* Codes_SRS_BASE32_07_024: [ base32_decode_impl shall loop through and collect 8 characters from the source variable. ] */
-                for (size_t index = 0; index < BASE32_INPUT_SIZE; index++)
+                for (index = 0; index < BASE32_INPUT_SIZE; index++)
                 {
                     input[index] = *iterator;
                     iterator++;
