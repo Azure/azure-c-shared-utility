@@ -505,8 +505,14 @@ if(${use_installed_dependencies})
 
     # Install Azure C Shared Utility
     set(package_location "cmake")
-
-    install (TARGETS aziotsharedutil aziotsharedutil_dll EXPORT aziotsharedutilTargets
+    
+    if(${build_as_dynamic})
+        set(targets aziotsharedutil aziotsharedutil_dll)
+    else(${build_as_dynamic})
+        set(targets aziotsharedutil)
+    endif(${build_as_dynamic})
+    
+    install (TARGETS ${targets} EXPORT aziotsharedutilTargets
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
         RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR}/../bin
