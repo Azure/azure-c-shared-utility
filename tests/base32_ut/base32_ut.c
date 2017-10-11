@@ -206,7 +206,8 @@ BEGIN_TEST_SUITE(base32_ut)
     static int should_skip_index(size_t current_index, const size_t skip_array[], size_t length)
     {
         int result = 0;
-        for (size_t index = 0; index < length; index++)
+        size_t index;
+        for (index = 0; index < length; index++)
         {
             if (current_index == skip_array[index])
             {
@@ -259,12 +260,13 @@ BEGIN_TEST_SUITE(base32_ut)
     TEST_FUNCTION(Base32_Encode_Bytes_success)
     {
         char* result;
+        size_t index;
         size_t num_elements = sizeof(test_val_len)/sizeof(test_val_len[0]);
 
         //arrange
 
         //act
-        for (size_t index = 0; index < num_elements; index++)
+        for (index = 0; index < num_elements; index++)
         {
             char tmp_msg[64];
             sprintf(tmp_msg, "Base32_Encode_Bytes failure in test %zu", index);
@@ -319,17 +321,19 @@ BEGIN_TEST_SUITE(base32_ut)
     TEST_FUNCTION(Base32_Encode_success)
     {
         STRING_HANDLE result;
+        size_t index;
         size_t num_elements = sizeof(test_val_len) / sizeof(test_val_len[0]);
 
         //arrange
 
         //act
-        for (size_t index = 0; index < num_elements; index++)
+        for (index = 0; index < num_elements; index++)
         {
+            BUFFER_HANDLE input_buff;
             char tmp_msg[64];
             sprintf(tmp_msg, "Base32_Encode failure in test %zu", index);
 
-            BUFFER_HANDLE input_buff = (BUFFER_HANDLE)&test_val_len[index];
+            input_buff = (BUFFER_HANDLE)&test_val_len[index];
             result = Base32_Encode(input_buff);
 
             //assert
@@ -409,14 +413,16 @@ BEGIN_TEST_SUITE(base32_ut)
     {
         //arrange
         BUFFER_HANDLE result;
+        size_t index;
         size_t num_elements = sizeof(test_val_len) / sizeof(test_val_len[0]);
 
         //act
-        for (size_t index = 0; index < num_elements; index++)
+        for (index = 0; index < num_elements; index++)
         {
+            char tmp_msg[64];
+
             result = Base32_Decode_String(test_val_len[index].base32_data);
 
-            char tmp_msg[64];
             sprintf(tmp_msg, "Base32_Decode failure in test %zu", index);
 
             //assert
