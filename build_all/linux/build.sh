@@ -37,7 +37,7 @@ process_args ()
         save_next_arg=0
       elif [ $save_next_arg == 2 ]
 	  then
-        build-root="$arg"
+        build_root="$arg"
         save_next_arg=0
       else
           case "$arg" in
