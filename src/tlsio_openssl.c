@@ -1172,7 +1172,7 @@ int tlsio_openssl_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_open
     {
         TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tls_io;
 
-        if ((tls_io_instance->tlsio_state != TLSIO_STATE_NOT_OPEN) && (tls_io_instance->tlsio_state != TLSIO_STATE_ERROR))
+        if (tls_io_instance->tlsio_state != TLSIO_STATE_NOT_OPEN)
         {
             LogError("Invalid tlsio_state. Expected state is TLSIO_STATE_NOT_OPEN.");
             result = __FAILURE__;
