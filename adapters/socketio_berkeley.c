@@ -85,6 +85,7 @@ typedef struct SOCKET_IO_INSTANCE_TAG
     char* target_mac_address;
     IO_STATE io_state;
     SINGLYLINKEDLIST_HANDLE pending_io_list;
+    unsigned char recv_bytes[RECEIVE_BYTES_VALUE];
 } SOCKET_IO_INSTANCE;
 
 typedef struct NETWORK_INTERFACE_DESCRIPTION_TAG
@@ -850,93 +851,88 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
     if (socket_io != NULL)
     {
         SOCKET_IO_INSTANCE* socket_io_instance = (SOCKET_IO_INSTANCE*)socket_io;
-        if (socket_io_instance->io_state == IO_STATE_OPEN)
+        LIST_ITEM_HANDLE first_pending_io = singlylinkedlist_get_head_item(socket_io_instance->pending_io_list);
+        while (first_pending_io != NULL)
         {
-            int received = 1;
-
-            LIST_ITEM_HANDLE first_pending_io = singlylinkedlist_get_head_item(socket_io_instance->pending_io_list);
-            while (first_pending_io != NULL)
+            PENDING_SOCKET_IO* pending_socket_io = (PENDING_SOCKET_IO*)singlylinkedlist_item_get_value(first_pending_io);
+            if (pending_socket_io == NULL)
             {
-                PENDING_SOCKET_IO* pending_socket_io = (PENDING_SOCKET_IO*)singlylinkedlist_item_get_value(first_pending_io);
-                if (pending_socket_io == NULL)
-                {
-                    socket_io_instance->io_state = IO_STATE_ERROR;
-                    indicate_error(socket_io_instance);
-                    LogError("Failure: retrieving socket from list");
-                    break;
-                }
+                socket_io_instance->io_state = IO_STATE_ERROR;
+                indicate_error(socket_io_instance);
+                LogError("Failure: retrieving socket from list");
+                break;
+            }
 
-                int send_result = send(socket_io_instance->socket, pending_socket_io->bytes, pending_socket_io->size, 0);
-                if (send_result != pending_socket_io->size)
+            int send_result = send(socket_io_instance->socket, pending_socket_io->bytes, pending_socket_io->size, 0);
+            if (send_result != pending_socket_io->size)
+            {
+                if (send_result == INVALID_SOCKET)
                 {
-                    if (send_result == INVALID_SOCKET)
+                    if (errno == EAGAIN) /*send says "come back later" with EAGAIN - likely the socket buffer cannot accept more data*/
                     {
-                        if (errno == EAGAIN) /*send says "come back later" with EAGAIN - likely the socket buffer cannot accept more data*/
-                        {
-                            /*do nothing until next dowork */
-                            break;
-                        }
-                        else
-                        {
-                            free(pending_socket_io->bytes);
-                            free(pending_socket_io);
-                            (void)singlylinkedlist_remove(socket_io_instance->pending_io_list, first_pending_io);
-
-                            LogError("Failure: sending Socket information. errno=%d (%s).", errno, strerror(errno));
-                            socket_io_instance->io_state = IO_STATE_ERROR;
-                            indicate_error(socket_io_instance);
-                        }
+                        /*do nothing until next dowork */
+                        break;
                     }
                     else
                     {
-                        /* simply wait until next dowork */
-                        (void)memmove(pending_socket_io->bytes, pending_socket_io->bytes + send_result, pending_socket_io->size - send_result);
-                        pending_socket_io->size -= send_result;
-                        break;
-                    }
-                }
-                else
-                {
-                    if (pending_socket_io->on_send_complete != NULL)
-                    {
-                        pending_socket_io->on_send_complete(pending_socket_io->callback_context, IO_SEND_OK);
-                    }
+                        free(pending_socket_io->bytes);
+                        free(pending_socket_io);
+                        (void)singlylinkedlist_remove(socket_io_instance->pending_io_list, first_pending_io);
 
-                    free(pending_socket_io->bytes);
-                    free(pending_socket_io);
-                    if (singlylinkedlist_remove(socket_io_instance->pending_io_list, first_pending_io) != 0)
-                    {
+                        LogError("Failure: sending Socket information. errno=%d (%s).", errno, strerror(errno));
                         socket_io_instance->io_state = IO_STATE_ERROR;
                         indicate_error(socket_io_instance);
-                        LogError("Failure: unable to remove socket from list");
                     }
-                }
-
-                first_pending_io = singlylinkedlist_get_head_item(socket_io_instance->pending_io_list);
-            }
-
-            while (received > 0)
-            {
-                unsigned char* recv_bytes = malloc(RECEIVE_BYTES_VALUE);
-                if (recv_bytes == NULL)
-                {
-                    LogError("Socketio_Failure: NULL allocating input buffer.");
-                    indicate_error(socket_io_instance);
                 }
                 else
                 {
-                    received = recv(socket_io_instance->socket, recv_bytes, RECEIVE_BYTES_VALUE, 0);
-                    if (received > 0)
-                    {
-                        if (socket_io_instance->on_bytes_received != NULL)
-                        {
-                            /* explictly ignoring here the result of the callback */
-                            (void)socket_io_instance->on_bytes_received(socket_io_instance->on_bytes_received_context, recv_bytes, received);
-                        }
-                    }
-                    free(recv_bytes);
+                    /* simply wait until next dowork */
+                    (void)memmove(pending_socket_io->bytes, pending_socket_io->bytes + send_result, pending_socket_io->size - send_result);
+                    pending_socket_io->size -= send_result;
+                    break;
                 }
             }
+            else
+            {
+                if (pending_socket_io->on_send_complete != NULL)
+                {
+                    pending_socket_io->on_send_complete(pending_socket_io->callback_context, IO_SEND_OK);
+                }
+
+                free(pending_socket_io->bytes);
+                free(pending_socket_io);
+                if (singlylinkedlist_remove(socket_io_instance->pending_io_list, first_pending_io) != 0)
+                {
+                    socket_io_instance->io_state = IO_STATE_ERROR;
+                    indicate_error(socket_io_instance);
+                    LogError("Failure: unable to remove socket from list");
+                }
+            }
+
+            first_pending_io = singlylinkedlist_get_head_item(socket_io_instance->pending_io_list);
+        }
+
+        if (socket_io_instance->io_state == IO_STATE_OPEN)
+        {
+            int received = 0;
+            do
+            {
+                received = recv(socket_io_instance->socket, socket_io_instance->recv_bytes, RECEIVE_BYTES_VALUE, 0);
+                if (received > 0)
+                {
+                    if (socket_io_instance->on_bytes_received != NULL)
+                    {
+                        /* Explicitly ignoring here the result of the callback */
+                        (void)socket_io_instance->on_bytes_received(socket_io_instance->on_bytes_received_context, socket_io_instance->recv_bytes, received);
+                    }
+                }
+                else if (received < 0 && errno != EAGAIN)
+                {
+                    LogError("Socketio_Failure: Receiving data from endpoint: errno=%d.", errno);
+                    indicate_error(socket_io_instance);
+                }
+
+            } while (received > 0 && socket_io_instance->io_state == IO_STATE_OPEN);
         }
     }
 }

@@ -43,6 +43,7 @@ typedef struct SOCKET_IO_INSTANCE_TAG
     IO_STATE io_state;
     SINGLYLINKEDLIST_HANDLE pending_io_list;
     struct tcp_keepalive keep_alive;
+    unsigned char recv_bytes[RECEIVE_BYTES_VALUE];
 } SOCKET_IO_INSTANCE;
 
 /*this function will clone an option given by name and value*/
@@ -143,8 +144,8 @@ CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters)
 {
     SOCKETIO_CONFIG* socket_io_config = (SOCKETIO_CONFIG*)io_create_parameters;
     SOCKET_IO_INSTANCE* result;
-	struct tcp_keepalive tcp_keepalive = { 0, 0, 0 };
-	
+    struct tcp_keepalive tcp_keepalive = { 0, 0, 0 };
+    
     if (socket_io_config == NULL)
     {
         LogError("Invalid argument: socket_io_config is NULL");
@@ -195,8 +196,8 @@ CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters)
                     result->on_bytes_received_context = NULL;
                     result->on_io_error_context = NULL;
                     result->io_state = IO_STATE_CLOSED;
-					result->keep_alive = tcp_keepalive;
-					
+                    result->keep_alive = tcp_keepalive;
+                    
                 }
             }
         }
@@ -211,9 +212,9 @@ CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters)
 
 void socketio_destroy(CONCRETE_IO_HANDLE socket_io)
 {
-	LIST_ITEM_HANDLE first_pending_io;
+    LIST_ITEM_HANDLE first_pending_io;
 
-	if (socket_io != NULL)
+    if (socket_io != NULL)
     {
         SOCKET_IO_INSTANCE* socket_io_instance = (SOCKET_IO_INSTANCE*)socket_io;
         /* we cannot do much if the close fails, so just ignore the result */
@@ -453,14 +454,12 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
 
 void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
 {
-	int send_result;
-	if (socket_io != NULL)
+    int send_result;
+    if (socket_io != NULL)
     {
         SOCKET_IO_INSTANCE* socket_io_instance = (SOCKET_IO_INSTANCE*)socket_io;
         if (socket_io_instance->io_state == IO_STATE_OPEN)
         {
-            int received = 1;
-
             LIST_ITEM_HANDLE first_pending_io = singlylinkedlist_get_head_item(socket_io_instance->pending_io_list);
             while (first_pending_io != NULL)
             {
@@ -508,23 +507,18 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                 first_pending_io = singlylinkedlist_get_head_item(socket_io_instance->pending_io_list);
             }
 
-            while (received > 0)
+            if (socket_io_instance->io_state == IO_STATE_OPEN)
             {
-                unsigned char* recv_bytes = (unsigned char*)malloc(RECEIVE_BYTES_VALUE);
-                if (recv_bytes == NULL)
+                int received = 0;
+                do
                 {
-                    LogError("Socketio_Failure: NULL allocating input buffer.");
-                    indicate_error(socket_io_instance);
-                }
-                else
-                {
-                    received = recv(socket_io_instance->socket, (char*)recv_bytes, RECEIVE_BYTES_VALUE, 0);
-                    if (received > 0)
+                    received = recv(socket_io_instance->socket, (char*)socket_io_instance->recv_bytes, RECEIVE_BYTES_VALUE, 0);
+                    if ((received > 0))
                     {
                         if (socket_io_instance->on_bytes_received != NULL)
                         {
-                            /* explictly ignoring here the result of the callback */
-                            (void)socket_io_instance->on_bytes_received(socket_io_instance->on_bytes_received_context, recv_bytes, received);
+                            /* Explicitly ignoring here the result of the callback */
+                            (void)socket_io_instance->on_bytes_received(socket_io_instance->on_bytes_received_context, socket_io_instance->recv_bytes, received);
                         }
                     }
                     else
@@ -536,8 +530,7 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                             indicate_error(socket_io_instance);
                         }
                     }
-                    free(recv_bytes);
-                }
+                } while (received > 0 && socket_io_instance->io_state == IO_STATE_OPEN);
             }
         }
     }

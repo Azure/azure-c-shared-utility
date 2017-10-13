@@ -440,9 +440,9 @@ TEST_FUNCTION(socketio_create_singlylinkedlist_create_fails)
 {
     // arrange
     SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
-	CONCRETE_IO_HANDLE ioHandle;
+    CONCRETE_IO_HANDLE ioHandle;
 
-	EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
     EXPECTED_CALL(singlylinkedlist_create()).SetReturn((SINGLYLINKEDLIST_HANDLE)NULL);
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
@@ -458,9 +458,9 @@ TEST_FUNCTION(socketio_create_succeeds)
 {
     // arrange
     SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
-	CONCRETE_IO_HANDLE ioHandle;
+    CONCRETE_IO_HANDLE ioHandle;
 
-	EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
     EXPECTED_CALL(singlylinkedlist_create());
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
 
@@ -536,7 +536,7 @@ TEST_FUNCTION(socketio_open_socket_io_NULL_fails)
 TEST_FUNCTION(socketio_open_socket_fails)
 {
     // arrange
-	int result;
+    int result;
     SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
     CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig);
 
@@ -563,7 +563,7 @@ TEST_FUNCTION(socketio_open_socket_fails)
 TEST_FUNCTION(socketio_open_getaddrinfo_fails)
 {
     // arrange
-	int result;
+    int result;
     SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
     CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig);
 
@@ -593,7 +593,7 @@ TEST_FUNCTION(socketio_open_getaddrinfo_fails)
 TEST_FUNCTION(socketio_open_connect_fails)
 {
     // arrange
-	int result;
+    int result;
     SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
     CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig);
 
@@ -625,7 +625,7 @@ TEST_FUNCTION(socketio_open_connect_fails)
 TEST_FUNCTION(socketio_open_ioctlsocket_fails)
 {
     // arrange
-	int result;
+    int result;
     SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
     CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig);
     static ADDRINFO addrInfo = { AI_PASSIVE, AF_INET, SOCK_STREAM, IPPROTO_TCP, 128, NULL, (struct sockaddr*)0x11, NULL };
@@ -659,7 +659,7 @@ TEST_FUNCTION(socketio_open_ioctlsocket_fails)
 TEST_FUNCTION(socketio_open_succeeds)
 {
     // arrange
-	int result;
+    int result;
     SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
     CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig);
 
@@ -847,10 +847,8 @@ TEST_FUNCTION(socketio_dowork_succeeds)
     umock_c_reset_all_calls();
 
     EXPECTED_CALL(singlylinkedlist_get_head_item(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
     EXPECTED_CALL(recv(IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_NUM_ARG));
     EXPECTED_CALL(WSAGetLastError());
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
     // act
     socketio_dowork(ioHandle);
@@ -872,15 +870,11 @@ TEST_FUNCTION(socketio_dowork_recv_bytes_succeeds)
     umock_c_reset_all_calls();
 
     EXPECTED_CALL(singlylinkedlist_get_head_item(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
     EXPECTED_CALL(recv(IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_NUM_ARG))
         .CopyOutArgumentBuffer(2, "t", 1)
         .SetReturn(1);
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
     EXPECTED_CALL(recv(IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_NUM_ARG));
     EXPECTED_CALL(WSAGetLastError());
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
     // act
     socketio_dowork(ioHandle);
@@ -941,7 +935,7 @@ TEST_FUNCTION(socketio_setoption_fails_when_option_name_is_null)
 {
     // arrange
     int irrelevant = 1;
-	int result;
+    int result;
 
     CONCRETE_IO_HANDLE ioHandle = setup_socket();
 
@@ -959,7 +953,7 @@ TEST_FUNCTION(socketio_setoption_fails_when_option_name_is_null)
 TEST_FUNCTION(socketio_setoption_fails_when_value_is_null)
 {
     // arrange
-	int result;
+    int result;
     CONCRETE_IO_HANDLE ioHandle = setup_socket();
 
     umock_c_reset_all_calls();
@@ -977,7 +971,7 @@ TEST_FUNCTION(socketio_setoption_fails_when_it_receives_an_unsupported_option)
 {
     // arrange
     int irrelevant = 1;
-	int result;
+    int result;
 
     CONCRETE_IO_HANDLE ioHandle = setup_socket();
 
@@ -1101,7 +1095,7 @@ TEST_FUNCTION(socketio_setoption_does_not_persist_keepalive_values_if_WSAIoctl_f
 {
     // arrange
     int irrelevant = 1;
-	int result;
+    int result;
 
     CONCRETE_IO_HANDLE ioHandle = setup_socket();
 
