@@ -49,6 +49,8 @@ string(REPLACE "./inc/" ";./testtools/micromock/inc/" FILES_TO_INSTALL ${micromo
 set(micromock_h_files_full_path "${FILES_TO_INSTALL}" CACHE INTERNAL "")
 add_files_to_install("${FILES_TO_INSTALL}")
 
+include_directories(${SHARED_UTIL_INC_FOLDER})
+
 IF(WIN32)
     #windows needs this define
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
@@ -74,7 +76,7 @@ IF(WIN32)
     
     add_library(micromock_ctest ${micromock_cpp_files} ${micromock_h_files})
     target_compile_definitions(micromock_ctest PUBLIC USE_CTEST)
-	target_compile_options(micromock_ctest PUBLIC /EHsc)
+    target_compile_options(micromock_ctest PUBLIC /EHsc)
 else()
     add_library(micromock_ctest ${micromock_cpp_files} ${micromock_h_files})
     target_compile_definitions(micromock_ctest PUBLIC USE_CTEST)
