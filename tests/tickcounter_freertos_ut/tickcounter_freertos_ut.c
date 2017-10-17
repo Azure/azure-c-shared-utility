@@ -66,6 +66,7 @@ TEST_SUITE_INITIALIZE(suite_init)
 
     REGISTER_UMOCK_ALIAS_TYPE(TICK_COUNTER_HANDLE, void*);
 	REGISTER_UMOCK_ALIAS_TYPE(uint32_t, unsigned int);
+	REGISTER_UMOCK_ALIAS_TYPE(tickcounter_ms_t, unsigned int);
 
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, my_gballoc_malloc);
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, my_gballoc_free);
@@ -217,7 +218,7 @@ TEST_FUNCTION(tickcounter_freertos_get_current_ms_succeed)
 
 	///assert
 	ASSERT_ARE_EQUAL(int, 0, result);
-	ASSERT_ARE_EQUAL(uint32_t, FAKE_TICK_SCALED_INTERVAL, current_ms);
+	ASSERT_ARE_EQUAL(tickcounter_ms_t, FAKE_TICK_SCALED_INTERVAL, current_ms);
 	ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
 	/// clean
@@ -246,7 +247,7 @@ TEST_FUNCTION(tickcounter_freertos_get_current_ms_succeed_despite_overflow)
 
 	///assert
 	ASSERT_ARE_EQUAL(int, 0, result);
-	ASSERT_ARE_EQUAL(uint32_t, FAKE_TICK_SCALED_INTERVAL, current_ms);
+	ASSERT_ARE_EQUAL(tickcounter_ms_t, FAKE_TICK_SCALED_INTERVAL, current_ms);
 	ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
 	/// clean
