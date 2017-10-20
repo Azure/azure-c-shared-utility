@@ -9,7 +9,7 @@ endif()
 
 project(azure_c_shared_utility)
 
-set(C_SHARED_VERSION 1.0.45)
+set(C_SHARED_VERSION 1.0.46)
 
 # Include the common build rules for the C SDK
 include(configs/azure_iot_build_rules.cmake)
