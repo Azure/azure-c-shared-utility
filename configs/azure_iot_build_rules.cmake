@@ -156,7 +156,7 @@ endmacro(compileAsC11)
 
 compileAsC99()
 
-IF(WIN32)
+IF((WIN32) AND (NOT(MINGW)))
     #windows needs this define
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
     IF(WINCE)
@@ -170,7 +170,7 @@ ELSE()
     # Make warning as error
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
-ENDIF(WIN32)
+ENDIF()
 
 
 function(add_files_to_install filesToBeInstalled)
