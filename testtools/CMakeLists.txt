@@ -5,6 +5,8 @@
 
 include("../configs/azure_c_shared_utilityFunctions.cmake")
 
+compileAsC11()
+
 if(NOT ${use_installed_dependencies})
     add_subdirectory(ctest)
     add_subdirectory(testrunner)
