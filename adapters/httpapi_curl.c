@@ -854,7 +854,7 @@ HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, co
                 result = HTTPAPI_OK;
             }
         }
-        else if (strcmp(SU_OPTION_X509_CERT, optionName) == 0)
+        else if (strcmp(SU_OPTION_X509_CERT, optionName) == 0 || strcmp(OPTION_X509_ECC_CERT, optionName) == 0)
         {
             /*this is getting the x509 certificate. In this case, value is a pointer to a const char* that contains the certificate as a null terminated string*/
             if (mallocAndStrcpy_s((char**)savedValue, value) != 0)
@@ -868,7 +868,7 @@ HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, co
                 result = HTTPAPI_OK;
             }
         }
-        else if (strcmp(SU_OPTION_X509_PRIVATE_KEY, optionName) == 0)
+        else if (strcmp(SU_OPTION_X509_PRIVATE_KEY, optionName) == 0 || strcmp(OPTION_X509_ECC_KEY, optionName) == 0)
         {
             /*this is getting the x509 private key. In this case, value is a pointer to a const char* that contains the private key as a null terminated string*/
             if (mallocAndStrcpy_s((char**)savedValue, value) != 0)
