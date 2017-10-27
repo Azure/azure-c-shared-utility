@@ -4,7 +4,6 @@
 #ifdef __cplusplus
 #include <cstdlib>
 #include <cstddef>
-#include <cstdbool>
 #include <cstdint>
 #else
 #include <stdlib.h>
@@ -489,7 +488,7 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_TYPE(const SOCKETIO_CONFIG*, const_SOCKETIO_CONFIG_ptr);
 
     REGISTER_UMOCK_ALIAS_TYPE(SINGLYLINKEDLIST_HANDLE, void*);
-	REGISTER_UMOCK_ALIAS_TYPE(LIST_ITEM_HANDLE, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(LIST_ITEM_HANDLE, void*);
     REGISTER_UMOCK_ALIAS_TYPE(LIST_MATCH_FUNCTION, void*);
     REGISTER_UMOCK_ALIAS_TYPE(UWS_CLIENT_HANDLE, void*);
     REGISTER_UMOCK_ALIAS_TYPE(XIO_HANDLE, void*);
@@ -558,7 +557,7 @@ TEST_FUNCTION_CLEANUP(method_cleanup)
 /* Tests_SRS_UWS_CLIENT_01_076: [ If /secure/ is true, the client MUST perform a TLS handshake over the connection after opening the connection and before sending the handshake data [RFC2818]. ]*/
 TEST_FUNCTION(uws_client_create_with_valid_args_no_ssl_succeeds)
 {
-	// arrange
+    // arrange
     SOCKETIO_CONFIG socketio_config;
     UWS_CLIENT_HANDLE uws_client;
 
@@ -566,7 +565,7 @@ TEST_FUNCTION(uws_client_create_with_valid_args_no_ssl_succeeds)
     socketio_config.hostname = "test_host";
     socketio_config.port = 80;
 
-	EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
     STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, "test_host"))
         .IgnoreArgument_destination();
     STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, "111"))
@@ -579,11 +578,11 @@ TEST_FUNCTION(uws_client_create_with_valid_args_no_ssl_succeeds)
     STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, "test_protocol"))
         .IgnoreArgument_destination();
 
-	// act
+    // act
     uws_client = uws_client_create("test_host", 80, "111", false, protocols, sizeof(protocols) / sizeof(protocols[0]));
 
-	// assert
-	ASSERT_IS_NOT_NULL(uws_client);
+    // assert
+    ASSERT_IS_NOT_NULL(uws_client);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
@@ -754,7 +753,7 @@ TEST_FUNCTION(when_allocating_memory_for_the_hostname_copy_fails_then_uws_client
 {
     // arrange
     SOCKETIO_CONFIG socketio_config;
-	UWS_CLIENT_HANDLE uws_client;
+    UWS_CLIENT_HANDLE uws_client;
 
     socketio_config.accepted_socket = NULL;
     socketio_config.hostname = "test_host";
@@ -779,7 +778,7 @@ TEST_FUNCTION(when_allocating_memory_for_the_resource_name_copy_fails_then_uws_c
 {
     // arrange
     SOCKETIO_CONFIG socketio_config;
-	UWS_CLIENT_HANDLE uws_client;
+    UWS_CLIENT_HANDLE uws_client;
 
     socketio_config.accepted_socket = NULL;
     socketio_config.hostname = "test_host";
@@ -837,7 +836,7 @@ TEST_FUNCTION(when_getting_the_socket_interface_description_fails_then_uws_clien
 {
     // arrange
     SOCKETIO_CONFIG socketio_config;
-	UWS_CLIENT_HANDLE uws_client;
+    UWS_CLIENT_HANDLE uws_client;
 
     socketio_config.accepted_socket = NULL;
     socketio_config.hostname = "test_host";
@@ -1249,7 +1248,7 @@ TEST_FUNCTION(when_any_call_fails_uws_client_create_with_io_fails)
     // arrange
     SOCKETIO_CONFIG socketio_config;
     UWS_CLIENT_HANDLE uws_client;
-	size_t i;
+    size_t i;
     static const WS_PROTOCOL two_protocols[] = { { "test_protocol1" },{ "test_protocol2" } };
 
     int negativeTestsInitResult = umock_c_negative_tests_init();

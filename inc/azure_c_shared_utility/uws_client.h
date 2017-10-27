@@ -9,7 +9,6 @@
 #include "azure_c_shared_utility/optionhandler.h"
 
 #ifdef __cplusplus
-#include <cstdbool>
 #include <cstddef>
 #include <cstdint>
 extern "C" {

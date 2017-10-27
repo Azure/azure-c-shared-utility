@@ -5,7 +5,6 @@
 #define VECTOR_TYPES_H
 
 #ifdef __cplusplus
-#include <cstdbool>
 extern "C"
 {
 #else

@@ -31,7 +31,6 @@
 
 #ifdef __cplusplus
 #include <cstddef>
-#include <cstdbool>
 #else
 #include <stddef.h>
 #include <stdbool.h>
