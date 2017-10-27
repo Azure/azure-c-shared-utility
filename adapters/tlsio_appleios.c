@@ -24,8 +24,7 @@
     TLSIO_APPLEIOS_STATE_OPENING,    \
     TLSIO_APPLEIOS_STATE_OPEN,       \
     TLSIO_APPLEIOS_STATE_CLOSING,    \
-    TLSIO_APPLEIOS_STATE_ERROR,      \
-    TLSIO_APPLEIOS_STATE_NULL
+    TLSIO_APPLEIOS_STATE_ERROR
 DEFINE_ENUM(TLSIO_APPLEIOS_STATE, TLSIO_APPLEIOS_STATE_VALUES);
 
 /* Codes_SRS_TLSIO_APPLEIOS_32_001: [ The tlsio_appleios shall implement and export all the Concrete functions in the VTable IO_INTERFACE_DESCRIPTION defined in the `xio.h`. ]*/
@@ -174,6 +173,18 @@ void tlsio_appleios_destroy(CONCRETE_IO_HANDLE tlsio_handle)
     }
     else
     {
+		if (tlsio_instance->state == TLSIO_APPLEIOS_STATE_CLOSING)
+		{
+			int i = 10;
+			
+			while (i--)
+			{
+				tlsio_appleios_dowork(tlsio_handle);
+				
+				if (tlsio_instance->state == TLSIO_APPLEIOS_STATE_CLOSED)
+					break;
+			}
+		}
         if ((tlsio_instance->state == TLSIO_APPLEIOS_STATE_OPENING) ||
             (tlsio_instance->state == TLSIO_APPLEIOS_STATE_OPEN) ||
             (tlsio_instance->state == TLSIO_APPLEIOS_STATE_CLOSING))
@@ -200,7 +211,7 @@ int tlsio_appleios_open_async(
     ON_IO_ERROR on_io_error,
     void* on_io_error_context)
 {
-    int result = 0;
+    int result;
     TLS_IO_INSTANCE* tlsio_instance = (TLS_IO_INSTANCE*)tlsio_handle;
 
     if (tlsio_handle == NULL)
@@ -209,6 +220,21 @@ int tlsio_appleios_open_async(
         LogError("NULL TLS handle.");
         result = __FAILURE__;
     }
+	else if (on_io_open_complete == NULL)
+	{
+		LogError("NULL open complete function");
+		result = __FAILURE__;
+	}
+	else if (on_bytes_received == NULL)
+	{
+		LogError("NULL byte received function");
+		result = __FAILURE__;
+	}
+	else if (on_io_error == NULL)
+	{
+		LogError("NULL error function");
+		result = __FAILURE__;
+	}
     else
     {
         /* Codes_SRS_TLSIO_APPLEIOS_32_004: [ The tlsio_appleios shall call the callbacks functions defined in the `xio.h`. ]*/
@@ -235,8 +261,7 @@ int tlsio_appleios_open_async(
             (tlsio_instance->state == TLSIO_APPLEIOS_STATE_CLOSING))
         {
             /* Codes_SRS_TLSIO_APPLEIOS_32_035: [ If the tlsio state is TLSIO_APPLEIOS_STATE_ERROR, TLSIO_APPLEIOS_STATE_OPENING, TLSIO_APPLEIOS_STATE_OPEN, or TLSIO_APPLEIOS_STATE_CLOSING, the tlsio_appleios_open shall set the tlsio state as TLSIO_APPLEIOS_STATE_ERROR, and return _LINE_. ]*/
-            LogError("Try to open a connection with an already opened TLS.");
-            tlsio_instance->state = TLSIO_APPLEIOS_STATE_ERROR;
+            LogError("Try to open a connection with an already opened or broken TLS.");
             result = __FAILURE__;
         }
         else
@@ -280,6 +305,7 @@ int tlsio_appleios_open_async(
 				else
 				{
 					tlsio_instance->state = TLSIO_APPLEIOS_STATE_OPENING;
+					result = 0;
 				}
 			}
 		}
