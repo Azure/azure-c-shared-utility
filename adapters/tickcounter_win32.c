@@ -92,7 +92,7 @@ int tickcounter_get_current_ms(TICK_COUNTER_HANDLE tick_counter, tickcounter_ms_
                 perf_in_ms.QuadPart = (curr_perf_item.QuadPart - tick_counter_instance->last_perf_counter.QuadPart) * 1000000;
                 remainder = (perf_in_ms.QuadPart % tick_counter_instance->perf_freqency.QuadPart) / 1000000;
                 perf_in_ms.QuadPart /= tick_counter_instance->perf_freqency.QuadPart;
-                tick_counter_instance->current_ms += (tickcounter_ms_t)perf_in_ms.QuadPart;
+                tick_counter_instance->current_ms += perf_in_ms.QuadPart;
                 tick_counter_instance->last_perf_counter = curr_perf_item;
                 tick_counter_instance->last_perf_counter.QuadPart -= remainder;
 

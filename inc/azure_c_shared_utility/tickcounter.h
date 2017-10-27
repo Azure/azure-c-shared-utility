@@ -12,7 +12,12 @@ extern "C" {
 
 #include "azure_c_shared_utility/umock_c_prod.h"
 
+#if _WIN32
+    typedef uint_fast64_t tickcounter_ms_t; // Use 64-bit because of QueryPerformanceCounter call
+#else
     typedef uint_fast32_t tickcounter_ms_t;
+#endif
+
     typedef struct TICK_COUNTER_INSTANCE_TAG* TICK_COUNTER_HANDLE;
 
     MOCKABLE_FUNCTION(, TICK_COUNTER_HANDLE, tickcounter_create);

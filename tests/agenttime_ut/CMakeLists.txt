@@ -13,7 +13,7 @@ ${theseTestsName}.c
 )
 
 set(${theseTestsName}_c_files
-../../adapters/agenttime.c
+../../pal/agenttime.c
 )
 
 set(${theseTestsName}_h_files

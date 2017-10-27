@@ -11,8 +11,6 @@ interface and provide communication to remote systems over a TLS-conformant secu
 
 [TLS Protocol (generic information)](https://en.wikipedia.org/wiki/Transport_Layer_Security)
 
-[tlsio base specification](https://github.com/Azure/azure-c-shared-utility/blob/master/devdoc/tlsio.md)
-
 [xio.h](https://github.com/Azure/azure-c-shared-utility/blob/master/inc/azure_c_shared_utility/xio.h)
 
 
@@ -74,8 +72,10 @@ typedef void(*ON_IO_ERROR)(void* context);
 
 typedef struct TLSIO_CONFIG_TAG
 {
-const char* hostname;
-int port;
+    const char* hostname;
+    int port;
+    const IO_INTERFACE_DESCRIPTION* underlying_io_interface;
+    void* underlying_io_parameters;
 } TLSIO_CONFIG;
 ```
 
@@ -238,10 +238,34 @@ const IO_INTERFACE_DESCRIPTION* tlsio_get_interface_description(void);
 
 
 ###   tlsio_create
-Implementation of `concrete_io_create`
+Implementation of `concrete_io_create`. 
 ```c
 CONCRETE_IO_HANDLE tlsio_create(void* io_create_parameters);
 ```
+
+##### _Direct_ versus _chained_ tlsio adapters
+
+Tlsio adapters have two different styles of implementation: _direct_, and _chained_. A _direct_
+tlsio adapter communicates directly with the remote host using a TCP port that the tlsio adapter
+owns. A _chained_ tlsio adapter does not own a TCP port, and instead owns another xio adapter --
+typically a `socketio` as explained 
+[here](https://github.com/Azure/azure-c-shared-utility/blob/master/devdoc/porting_guide.md#socketio-adapter-overview)
+which it uses to communicate with the remote host.
+
+For the purposes of this spec, an _owned xio resource_ is an xio adapter created by the tlsio
+adapter to communicate with the remote host, and whose lifetime is managed by the tlsio 
+adapter according to standard programming practices. Its lifetime management is covered by the
+"all necessary resources" clauses of the `tlsio_create` and `tlsio_destroy` requirements.
+
+For _chained_ tlsio adapters, the _owned xio resource_ type may be specifed in the
+`underlying_io_interface` member of `io_create_parameters`. If it is not, then it is
+understood that the tlsio adapter will need to create a `socketio` 
+using the supplied `hostname` and `port` via the global
+`socketio_get_interface_description` function defined in 
+[socketio.h](https://github.com/Azure/azure-c-shared-utility/blob/master/inc/azure_c_shared_utility/socketio.h).
+This practical necessity is not specified in this document as a requirement because it is 
+considered an internal implementation detail.
+
 
 **SRS_TLSIO_30_010: [** The `tlsio_create` shall allocate and initialize all necessary resources and return an instance of the `tlsio` in TLSIO_STATE_EXT_CLOSED. **]**
 
@@ -255,7 +279,13 @@ CONCRETE_IO_HANDLE tlsio_create(void* io_create_parameters);
 
 **SRS_TLSIO_30_015: [** If the `port` member of `io_create_parameters` value is less than 0 or greater than 0xffff, `tlsio_create` shall log an error and return NULL. **]**
 
-**SRS_TLSIO_30_016: [** `tlsio_create` shall make a copy of the `hostname` member of `io_create_parameters` to allow deletion of `hostname` immediately after the call. **]**
+**SRS_TLSIO_30_016: [** `tlsio_create` shall make a copy of the `hostname` member of `io_create_parameters` to allow deletion of `hostname` immediately after the call. This copy may be delegated to an underlying `xio`. **]**
+
+**SRS_TLSIO_30_017: [** For _direct_ designs, if either the `underlying_io_interface` or `underlying_io_parameters` of `io_create_parameters` is non-NULL, `tlsio_create` shall log an error and return NULL. **]**
+
+**SRS_TLSIO_30_018: [** For _chained_ designs, if the `underlying_io_interface` member of `io_create_parameters` is non-NULL, `tlsio_create` shall use `underlying_io_interface` to create an _owned xio resource_ for remote host communication. **]**
+
+**SRS_TLSIO_30_019: [** For _chained_ designs with a non-NULL `underlying_io_interface` parameter, `tlsio_create` shall pass the `underlying_io_parameters` to `underlying_io_interface->xio_create` when creating the _owned xio resource_. **]**
 
 
 ###   tlsio_destroy

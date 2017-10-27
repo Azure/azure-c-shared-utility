@@ -8,14 +8,14 @@ The tlsio_openssl_compact adapter implements a tlsio adapter for compact OpenSSL
 
 ## References
 
-[tlsio base specification](https://github.com/Azure/azure-c-shared-utility/blob/master/devdoc/tlsio.md)
+[tlsio base specification](https://github.com/Azure/azure-c-shared-utility/blob/master/devdoc/tlsio_requirements.md)
 
 [OpenSSL](https://www.openssl.org/)
 
 ## Base Specification
 
 The tlsio_openssl_compact adapter conforms to the
-[tlsio base specification](https://github.com/Azure/azure-c-shared-utility/blob/master/devdoc/tlsio.md) and 
+[tlsio base specification](https://github.com/Azure/azure-c-shared-utility/blob/master/devdoc/tlsio_requirements.md) and 
 additionally implements the additional requirements below.
 
 

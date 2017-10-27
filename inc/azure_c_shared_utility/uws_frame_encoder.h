@@ -4,6 +4,10 @@
 #ifndef UWS_FRAME_ENCODER_H
 #define UWS_FRAME_ENCODER_H
 
+#include "azure_c_shared_utility/buffer_.h"
+#include "azure_c_shared_utility/umock_c_prod.h"
+#include "azure_c_shared_utility/macro_utils.h"
+
 #ifdef __cplusplus
 #include <cstdbool>
 #include <cstddef>
@@ -12,10 +16,6 @@ extern "C" {
 #include <stdbool.h>
 #include <stddef.h>
 #endif
-
-#include "azure_c_shared_utility/buffer_.h"
-#include "azure_c_shared_utility/umock_c_prod.h"
-#include "azure_c_shared_utility/macro_utils.h"
 
 #define RESERVED_1  0x04
 #define RESERVED_2  0x02

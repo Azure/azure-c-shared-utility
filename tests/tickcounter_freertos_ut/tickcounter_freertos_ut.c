@@ -26,16 +26,15 @@ static TEST_MUTEX_HANDLE g_dllByDll;
 #define FAKE_TICK_AFTER_OVERFLOW (FAKE_TICK_INTERVAL - FAKE_TICK_OVERFLOW_OFFSET - 1)
 
 
-void* my_gballoc_malloc(size_t size)
+static void* my_gballoc_malloc(size_t size)
 {
     return malloc(size);
 }
 
-void my_gballoc_free(void* ptr)
+static void my_gballoc_free(void* ptr)
 {
     free(ptr);
 }
-
 
 #include "azure_c_shared_utility/tickcounter.h"
 
@@ -46,6 +45,16 @@ void my_gballoc_free(void* ptr)
 #include "azure_c_shared_utility/gballoc.h"
 
 DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
+
+static int tickcounter_ms_t_Compare(tickcounter_ms_t left, tickcounter_ms_t right)
+{
+    return left != right;
+}
+
+static void tickcounter_ms_t_ToString(char* string, size_t bufferSize, tickcounter_ms_t val)
+{
+    (void)snprintf(string, bufferSize, "%llu", (unsigned long long)val);
+}
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
@@ -65,7 +74,8 @@ TEST_SUITE_INITIALIZE(suite_init)
     umock_c_init(on_umock_c_error);
 
     REGISTER_UMOCK_ALIAS_TYPE(TICK_COUNTER_HANDLE, void*);
-	REGISTER_UMOCK_ALIAS_TYPE(uint32_t, unsigned int);
+    REGISTER_UMOCK_ALIAS_TYPE(uint32_t, unsigned int);
+    REGISTER_UMOCK_ALIAS_TYPE(tickcounter_ms_t, unsigned long long);
 
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, my_gballoc_malloc);
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, my_gballoc_free);
@@ -98,7 +108,7 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
 TEST_FUNCTION(tickcounter_freertos_create_fails)
 {
     ///arrange
-	TICK_COUNTER_HANDLE tickHandle;
+    TICK_COUNTER_HANDLE tickHandle;
     STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
         .IgnoreArgument(1)
         .SetReturn((void*)NULL);
@@ -117,11 +127,11 @@ TEST_FUNCTION(tickcounter_freertos_create_fails)
 TEST_FUNCTION(tickcounter_freertos_create_succeed)
 {
     ///arrange
-	TICK_COUNTER_HANDLE tickHandle;
+    TICK_COUNTER_HANDLE tickHandle;
     STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
         .IgnoreArgument(1);
-	STRICT_EXPECTED_CALL(xTaskGetTickCount())
-		.SetReturn(FAKE_TICK_NO_OVERFLOW);
+    STRICT_EXPECTED_CALL(xTaskGetTickCount())
+        .SetReturn(FAKE_TICK_NO_OVERFLOW);
 
     ///act
     tickHandle = tickcounter_create();
@@ -130,8 +140,8 @@ TEST_FUNCTION(tickcounter_freertos_create_succeed)
     ASSERT_IS_NOT_NULL(tickHandle);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
-	/// cleanup 
-	tickcounter_destroy(tickHandle);
+    /// cleanup 
+    tickcounter_destroy(tickHandle);
 }
 
 /* Tests_SRS_TICKCOUNTER_FREERTOS_30_006: [ If the tick_counter parameter is NULL, tickcounter_destroy shall do nothing. ] */
@@ -182,7 +192,7 @@ TEST_FUNCTION(tickcounter_freertos_get_current_ms_tick_counter_NULL_fail)
 TEST_FUNCTION(tickcounter_freertos_get_current_ms_current_ms_NULL_fail)
 {
     ///arrange
-	int result;
+    int result;
     TICK_COUNTER_HANDLE tickHandle = tickcounter_create();
     umock_c_reset_all_calls();
 
@@ -193,64 +203,64 @@ TEST_FUNCTION(tickcounter_freertos_get_current_ms_current_ms_NULL_fail)
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
-	/// cleanup 
-	tickcounter_destroy(tickHandle);
+    /// cleanup 
+    tickcounter_destroy(tickHandle);
 }
 
 /* Tests_SRS_TICKCOUNTER_FREERTOS_30_009: [ tickcounter_get_current_ms shall set *current_ms to the number of milliseconds elapsed since the tickcounter_create call for the specified tick_counter and return 0 to indicate success (In FreeRTOS this call has no failure case.) ] */
 TEST_FUNCTION(tickcounter_freertos_get_current_ms_succeed)
 {
-	///arrange
-	tickcounter_ms_t current_ms = 0;
-	int result;
-	TICK_COUNTER_HANDLE tickHandle;
-	STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
-		.IgnoreArgument(1);
-	STRICT_EXPECTED_CALL(xTaskGetTickCount())
-		.SetReturn(FAKE_TICK_NO_OVERFLOW);
-	STRICT_EXPECTED_CALL(xTaskGetTickCount())
-		.SetReturn((FAKE_TICK_NO_OVERFLOW + FAKE_TICK_INTERVAL));
+    ///arrange
+    tickcounter_ms_t current_ms = 0;
+    int result;
+    TICK_COUNTER_HANDLE tickHandle;
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(xTaskGetTickCount())
+        .SetReturn(FAKE_TICK_NO_OVERFLOW);
+    STRICT_EXPECTED_CALL(xTaskGetTickCount())
+        .SetReturn((FAKE_TICK_NO_OVERFLOW + FAKE_TICK_INTERVAL));
 
-	///act
-	tickHandle = tickcounter_create();
-	result = tickcounter_get_current_ms(tickHandle, &current_ms);
+    ///act
+    tickHandle = tickcounter_create();
+    result = tickcounter_get_current_ms(tickHandle, &current_ms);
 
-	///assert
-	ASSERT_ARE_EQUAL(int, 0, result);
-	ASSERT_ARE_EQUAL(uint32_t, FAKE_TICK_SCALED_INTERVAL, current_ms);
-	ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ///assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(tickcounter_ms_t, FAKE_TICK_SCALED_INTERVAL, current_ms);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
-	/// clean
-	tickcounter_destroy(tickHandle);
+    /// clean
+    tickcounter_destroy(tickHandle);
 }
 
 /* Tests_SRS_TICKCOUNTER_FREERTOS_30_010: [ If the FreeRTOS call xTaskGetTickCount experiences a single overflow between the calls to tickcounter_create and tickcounter_get_current_ms, the tickcounter_get_current_ms call shall still return the correct interval. ] */
 TEST_FUNCTION(tickcounter_freertos_get_current_ms_succeed_despite_overflow)
 {
-	///arrange
-	TICK_COUNTER_HANDLE tickHandle;
-	tickcounter_ms_t current_ms = 0;
-	int result;
+    ///arrange
+    TICK_COUNTER_HANDLE tickHandle;
+    tickcounter_ms_t current_ms = 0;
+    int result;
 
-	STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
-		.IgnoreArgument(1);
-	STRICT_EXPECTED_CALL(xTaskGetTickCount())
-		.SetReturn(FAKE_TICK_BEFORE_OVERFLOW);
-	STRICT_EXPECTED_CALL(xTaskGetTickCount())
-		.SetReturn((FAKE_TICK_AFTER_OVERFLOW));
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(xTaskGetTickCount())
+        .SetReturn(FAKE_TICK_BEFORE_OVERFLOW);
+    STRICT_EXPECTED_CALL(xTaskGetTickCount())
+        .SetReturn((FAKE_TICK_AFTER_OVERFLOW));
 
-	tickHandle = tickcounter_create();
+    tickHandle = tickcounter_create();
 
-	///act
-	result = tickcounter_get_current_ms(tickHandle, &current_ms);
+    ///act
+    result = tickcounter_get_current_ms(tickHandle, &current_ms);
 
-	///assert
-	ASSERT_ARE_EQUAL(int, 0, result);
-	ASSERT_ARE_EQUAL(uint32_t, FAKE_TICK_SCALED_INTERVAL, current_ms);
-	ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ///assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(tickcounter_ms_t, FAKE_TICK_SCALED_INTERVAL, current_ms);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
-	/// clean
-	tickcounter_destroy(tickHandle);
+    /// clean
+    tickcounter_destroy(tickHandle);
 }
 
 END_TEST_SUITE(tickcounter_freertos_unittests)

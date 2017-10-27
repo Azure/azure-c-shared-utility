@@ -1,4 +1,4 @@
-gballoc requirements
+# gballoc requirements
 ================
 
 ## Overview
@@ -7,9 +7,11 @@ gballoc is a module that is a pass through for the malloc, realloc and free memo
 The pass through has the purpose of tracking memory allocations in order to compute the maximal memory usage of an application using the memory management functions.
 
 ## References
+
 [ISO/IEC 9899:TC3]
 
 ## Exposed API
+
 ```c
 extern int gballoc_init(void);
 extern void gballoc_deinit(void);
@@ -22,9 +24,12 @@ extern void gballoc_free(void* ptr);
 extern int gballoc_resetCounters(void);
 extern size_t gballoc_getMaximumMemoryUsed(void);
 extern size_t gballoc_getCurrentMemoryUsed(void);
+extern size_t gballoc_getAllocationCount(void));
+extern void gballoc_resetMetrics(void);
 ```
 
 ### gballoc_init
+
 ```c
 extern int gballoc_init(void);
 ```
@@ -40,6 +45,7 @@ extern int gballoc_init(void);
 **SRS_GBALLOC_01_002: [** Upon initialization the total memory used and maximum total memory used tracked by the module shall be set to 0. **]**
 
 ### gballoc_deinit
+
 ```c
 extern void gballoc_deinit(void);
 ```
@@ -49,6 +55,7 @@ extern void gballoc_deinit(void);
 **SRS_GBALLOC_01_029: [** if gballoc is not initialized gballoc_deinit shall do nothing. **]**
 
 ### gballoc_malloc
+
 ```c
 extern void* gballoc_malloc(size_t size);
 ```
@@ -68,6 +75,7 @@ extern void* gballoc_malloc(size_t size);
 **SRS_GBALLOC_01_048: [** If acquiring the lock fails, gballoc_malloc shall return NULL. **]**
 
 ### gballoc_calloc
+
 ```c
 extern void* gballoc_calloc(size_t nmemb, size_t size);
 ```
@@ -87,6 +95,7 @@ extern void* gballoc_calloc(size_t nmemb, size_t size);
 **SRS_GBALLOC_01_046: [** If acquiring the lock fails, gballoc_calloc shall return NULL. **]**
 
 ### gballoc_realloc
+
 ```c
 extern void* gballoc_realloc(void* ptr, size_t size);
 ```
@@ -112,6 +121,7 @@ extern void* gballoc_realloc(void* ptr, size_t size);
 **SRS_GBALLOC_01_047: [** If acquiring the lock fails, gballoc_realloc shall return NULL. **]**
 
 ### gballoc_free
+
 ```c
 extern void gballoc_free(void* ptr);
 ```
@@ -129,6 +139,7 @@ extern void gballoc_free(void* ptr);
 **SRS_GBALLOC_01_049: [** If acquiring the lock fails, gballoc_free shall do nothing. **]**
 
 ### gballoc_getMaximumMemoryUsed
+
 ```c
 extern size_t gballoc_getMaximumMemoryUsed(void);
 ```
@@ -144,6 +155,7 @@ extern size_t gballoc_getMaximumMemoryUsed(void);
 **SRS_GBALLOC_01_050: [** If the lock cannot be acquired, gballoc_getMaximumMemoryUsed shall return SIZE_MAX. **]**
 
 ### gballoc_getCurrentMemoryUsed
+
 ```c
 extern size_t gballoc_getCurrentMemoryUsed(void);
 ```
@@ -155,3 +167,31 @@ extern size_t gballoc_getCurrentMemoryUsed(void);
 **SRS_GBALLOC_01_044: [** If gballoc was not initialized gballoc_getCurrentMemoryUsed shall return SIZE_MAX. **]**
 
 **SRS_GBALLOC_01_051: [** If the lock cannot be acquired, gballoc_getCurrentMemoryUsed shall return SIZE_MAX. **]**
+
+### gballoc_getAllocationCount
+
+```c
+extern size_t gballoc_getAllocationCount(void));
+```
+
+**SRS_GBALLOC_07_001: [** If `gballoc` was not initialized `gballoc_getAllocationCount` shall return `0`. **]**
+
+**SRS_GBALLOC_07_002: [** `gballoc_getAllocationCount` shall ensure thread safety by using the lock created by `gballoc_Init` **]**
+
+**SRS_GBALLOC_07_003: [** If the lock cannot be acquired, `gballoc_getAllocationCount` shall return `0`. **]**
+
+**SRS_GBALLOC_07_004: [** `gballoc_getAllocationCount` shall return the currently number of allocations. **]**
+
+### gballoc_resetMetrics
+
+```c
+extern void gballoc_resetMetrics(void);
+```
+
+**SRS_GBALLOC_07_005: [** If `gballoc` was not initialized `gballoc_reset Metrics` shall do nothing.**]**
+
+**SRS_GBALLOC_07_006: [** `gballoc_resetMetrics` shall ensure thread safety by using the lock created by `gballoc_Init` **]**
+
+**SRS_GBALLOC_07_007: [** If the lock cannot be acquired, `gballoc_reset Metrics` shall do nothing.**]**
+
+**SRS_GBALLOC_07_008: [** `gballoc_resetMetrics` shall reset the total allocation size, max allocation size and number of allocation to zero. **]**

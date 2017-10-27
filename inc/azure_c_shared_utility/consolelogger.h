@@ -4,11 +4,11 @@
 #ifndef CONSOLELOGGER_H
 #define CONSOLELOGGER_H
 
+#include "azure_c_shared_utility/xlogging.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
-
-#include "azure_c_shared_utility/xlogging.h"
 
     extern void consolelogger_log(LOG_CATEGORY log_category, const char* file, const char* func, int line, unsigned int options, const char* format, ...);
 

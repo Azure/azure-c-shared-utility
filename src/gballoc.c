@@ -28,6 +28,7 @@ typedef enum GBALLOC_STATE_TAG
 static ALLOCATION* head = NULL;
 static size_t totalSize = 0;
 static size_t maxSize = 0;
+static size_t g_allocations = 0;
 static GBALLOC_STATE gballocState = GBALLOC_STATE_NOT_INIT;
 
 static LOCK_HANDLE gballocThreadSafeLock = NULL;
@@ -54,6 +55,7 @@ int gballoc_init(void)
         /* Codes_ SRS_GBALLOC_01_002: [Upon initialization the total memory used and maximum total memory used tracked by the module shall be set to 0.] */
         totalSize = 0;
         maxSize = 0;
+        g_allocations = 0;
 
         /* Codes_SRS_GBALLOC_01_024: [gballoc_init shall initialize the gballoc module and return 0 upon success.] */
         result = 0;
@@ -113,6 +115,7 @@ void* gballoc_malloc(size_t size)
             allocation->next = head;
             head = allocation;
 
+            g_allocations++;
             totalSize += size;
             /* Codes_SRS_GBALLOC_01_011: [The maximum total memory used shall be the maximum of the total memory used at any point.] */
             if (maxSize < totalSize)
@@ -167,6 +170,7 @@ void* gballoc_calloc(size_t nmemb, size_t size)
             allocation->size = nmemb * size;
             allocation->next = head;
             head = allocation;
+            g_allocations++;
 
             totalSize += allocation->size;
             /* Codes_SRS_GBALLOC_01_011: [The maximum total memory used shall be the maximum of the total memory used at any point.] */
@@ -262,6 +266,7 @@ void* gballoc_realloc(void* ptr, size_t size)
 
             /* Codes_SRS_GBALLOC_01_007: [If realloc is successful, gballoc_realloc shall also increment the total memory used value tracked by this module.] */
             totalSize += size;
+            g_allocations++;
 
             /* Codes_SRS_GBALLOC_01_011: [The maximum total memory used shall be the maximum of the total memory used at any point.] */
             if (maxSize < totalSize)
@@ -383,4 +388,54 @@ size_t gballoc_getCurrentMemoryUsed(void)
     }
 
     return result;
+}
+
+size_t gballoc_getAllocationCount(void)
+{
+    size_t result;
+
+    /* Codes_SRS_GBALLOC_07_001: [ If gballoc was not initialized gballoc_getAllocationCount shall return 0. ] */
+    if (gballocState != GBALLOC_STATE_INIT)
+    {
+        LogError("gballoc is not initialized.");
+        result = 0;
+    }
+    /* Codes_SRS_GBALLOC_07_002: [ gballoc_getAllocationCount shall ensure thread safety by using the lock created by gballoc_Init ] */
+    else if (LOCK_OK != Lock(gballocThreadSafeLock))
+    {
+        /* Codes_SRS_GBALLOC_07_003: [ If the lock cannot be acquired, gballoc_getAllocationCount shall return 0. ] */
+        LogError("Failed to get the Lock.");
+        result = 0;
+    }
+    else
+    {
+        /* Codes_SRS_GBALLOC_07_004: [ gballoc_getAllocationCount shall return the currently number of allocations. ] */
+        result = g_allocations;
+        (void)Unlock(gballocThreadSafeLock);
+    }
+
+    return result;
+}
+
+void gballoc_resetMetrics()
+{
+    /* Codes_SRS_GBALLOC_07_005: [ If gballoc was not initialized gballoc_reset Metrics shall do nothing.] */
+    if (gballocState != GBALLOC_STATE_INIT)
+    {
+        LogError("gballoc is not initialized.");
+    }
+    /* Codes_SRS_GBALLOC_07_006: [ gballoc_resetMetrics shall ensure thread safety by using the lock created by gballoc_Init ]*/
+    else if (LOCK_OK != Lock(gballocThreadSafeLock))
+    {
+        /* Codes_SRS_GBALLOC_07_007: [ If the lock cannot be acquired, gballoc_reset Metrics shall do nothing.] */
+        LogError("Failed to get the Lock.");
+    }
+    else
+    {
+        /* Codes_SRS_GBALLOC_07_008: [ gballoc_resetMetrics shall reset the total allocation size, max allocation size and number of allocation to zero. ] */
+        totalSize = 0;
+        maxSize = 0;
+        g_allocations = 0;
+        (void)Unlock(gballocThreadSafeLock);
+    }
 }

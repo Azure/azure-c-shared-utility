@@ -6,11 +6,9 @@ set -e
 
 script_dir=$(cd "$(dirname "$0")" && pwd)
 build_root=$(cd "${script_dir}/../.." && pwd)
-log_dir=$build_root
 run_unit_tests=ON
 make_install=
 run_valgrind=0
-build_folder=$build_root"/cmake/shared-util_linux"
 run_unittests=OFF
 
 usage ()
@@ -37,12 +35,17 @@ process_args ()
         # save arg to pass to gcc
         extracloptions="$arg $extracloptions"
         save_next_arg=0
+      elif [ $save_next_arg == 2 ]
+	  then
+        build_root="$arg"
+        save_next_arg=0
       else
           case "$arg" in
               "-cl" | "--compileoption" ) save_next_arg=1;;
               "-i" | "--install" ) make_install=1;;
               "-rv" | "--run_valgrind" ) run_valgrind=1;;
               "--run-unittests" ) run_unittests=ON;;
+              "--build-root" ) save_next_arg=2;;
               * ) usage;;
           esac
       fi
@@ -50,6 +53,8 @@ process_args ()
 }
 
 process_args $*
+log_dir=$build_root
+build_folder=$build_root"/cmake/shared-util_linux"
 
 # Set the default cores
 CORES=$(grep -c ^processor /proc/cpuinfo 2>/dev/null || sysctl -n hw.ncpu)

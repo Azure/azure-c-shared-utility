@@ -9,12 +9,12 @@
 #ifndef THREADAPI_H
 #define THREADAPI_H
 
+#include "azure_c_shared_utility/macro_utils.h"
+#include "azure_c_shared_utility/umock_c_prod.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "azure_c_shared_utility/macro_utils.h"
-#include "azure_c_shared_utility/umock_c_prod.h"
     
 typedef int(*THREAD_START_FUNC)(void *);
 

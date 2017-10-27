@@ -4,15 +4,17 @@
 #ifndef GBALLOC_H
 #define GBALLOC_H
 
+#include "azure_c_shared_utility/umock_c_prod.h"
+
 #ifdef __cplusplus
 #include <cstddef>
+#include <cstdlib>
 extern "C"
 {
 #else
 #include <stddef.h>
+#include <stdlib.h>
 #endif
-
-#include "azure_c_shared_utility/umock_c_prod.h"
 
 /* all translation units that need memory measurement need to have GB_MEASURE_MEMORY_FOR_THIS defined */
 /* GB_DEBUG_ALLOC is the switch that turns the measurement on/off, so that it is not on always */
@@ -27,6 +29,8 @@ MOCKABLE_FUNCTION(, void, gballoc_free, void*, ptr);
 
 MOCKABLE_FUNCTION(, size_t, gballoc_getMaximumMemoryUsed);
 MOCKABLE_FUNCTION(, size_t, gballoc_getCurrentMemoryUsed);
+MOCKABLE_FUNCTION(, size_t, gballoc_getAllocationCount);
+MOCKABLE_FUNCTION(, void, gballoc_resetMetrics);
 
 /* if GB_MEASURE_MEMORY_FOR_THIS is defined then we want to redirect memory allocation functions to gballoc_xxx functions */
 #ifdef GB_MEASURE_MEMORY_FOR_THIS
@@ -56,6 +60,8 @@ That is because there is a rogue component (most likely CppUnitTest) including c
 
 #define gballoc_getMaximumMemoryUsed() SIZE_MAX
 #define gballoc_getCurrentMemoryUsed() SIZE_MAX
+#define gballoc_getAllocationCount() SIZE_MAX
+#define gballoc_resetMetrics() ((void)0)
 
 #endif /* GB_DEBUG_ALLOC */
 

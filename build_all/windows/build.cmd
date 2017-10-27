@@ -6,6 +6,7 @@
 
 set CMAKE_DIR=shared-util_Win32
 set MAKE_NUGET_PKG=no
+set SOLUTION_NAME=azure_c_shared_utility
 
 set current-path=%~dp0
 rem // remove trailing slash
@@ -31,6 +32,8 @@ if "%1" equ "--clean" goto arg-build-clean
 if "%1" equ "--config" goto arg-build-config
 if "%1" equ "--platform" goto arg-build-platform
 if "%1" equ "--make_nuget" goto arg-build-nuget
+if "%1" equ "--build-root" goto arg-build-root
+if "%1" equ "--solution-name" goto arg-solution-name
 call :usage && exit /b 1
 
 :arg-build-clean
@@ -58,6 +61,18 @@ goto args-continue
 shift
 if "%1" equ "" call :usage && exit /b 1
 set MAKE_NUGET_PKG=%1
+goto args-continue
+
+:arg-build-root
+shift
+if "%1" equ "" call :usage && exit /b 1
+set build-root=%1
+goto args-continue
+
+:arg-solution-name
+shift
+if "%1" equ "" call :usage && exit /b 1
+set SOLUTION_NAME=%1
 goto args-continue
 
 :args-continue
@@ -124,26 +139,26 @@ if %MAKE_NUGET_PKG% == yes (
 if %MAKE_NUGET_PKG% == yes (
 		echo running Win32 Shared Util
 		echo ***Building all configurations***
-		msbuild /m %build-root%\cmake\shared-util_Win32\azure_c_shared_utility.sln /p:Configuration=Release
-		msbuild /m %build-root%\cmake\shared-util_Win32\azure_c_shared_utility.sln /p:Configuration=Debug
+		msbuild /m %build-root%\cmake\shared-util_Win32\%SOLUTION_NAME%.sln /p:Configuration=Release
+		msbuild /m %build-root%\cmake\shared-util_Win32\%SOLUTION_NAME%.sln /p:Configuration=Debug
 		if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 
-		msbuild /m %build-root%\cmake\shared-util_x64\azure_c_shared_utility.sln /p:Configuration=Release
-		msbuild /m %build-root%\cmake\shared-util_x64\azure_c_shared_utility.sln /p:Configuration=Debug
+		msbuild /m %build-root%\cmake\shared-util_x64\%SOLUTION_NAME%.sln /p:Configuration=Release
+		msbuild /m %build-root%\cmake\shared-util_x64\%SOLUTION_NAME%.sln /p:Configuration=Debug
 		if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 
-		msbuild /m %build-root%\cmake\shared-util_arm\azure_c_shared_utility.sln /p:Configuration=Release
-		msbuild /m %build-root%\cmake\shared-util_arm\azure_c_shared_utility.sln /p:Configuration=Debug
+		msbuild /m %build-root%\cmake\shared-util_arm\%SOLUTION_NAME%.sln /p:Configuration=Release
+		msbuild /m %build-root%\cmake\shared-util_arm\%SOLUTION_NAME%.sln /p:Configuration=Debug
 		if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 ) else (
 	if not defined build-config (
 		echo ***Building both configurations***
-		msbuild /m azure_c_shared_utility.sln /p:Configuration=Release
-		msbuild /m azure_c_shared_utility.sln /p:Configuration=Debug
+		msbuild /m %SOLUTION_NAME%.sln /p:Configuration=Release
+		msbuild /m %SOLUTION_NAME%.sln /p:Configuration=Debug
 		if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 	) else (
 		echo ***Building %build-config% only***
-		msbuild /m azure_c_shared_utility.sln /p:Configuration=%build-config%
+		msbuild /m %SOLUTION_NAME%.sln /p:Configuration=%build-config%
 		if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 	)
 

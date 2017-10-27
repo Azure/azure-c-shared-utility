@@ -64,7 +64,7 @@ namespace compilembed
             {
                 try
                 {
-                    WebRequest request = WebRequest.Create("https://developer.mbed.org/api/v2/tasks/compiler/start/");
+                    WebRequest request = WebRequest.Create("https://os.mbed.com/api/v2/tasks/compiler/start/");
                     request.Headers["Authorization"] = "Basic " + authInfo;
                     request.Method = "POST";
                     request.ContentType = "application/x-www-form-urlencoded";
@@ -101,7 +101,7 @@ namespace compilembed
 
         public bool PollStatus(ICollection<string> messages, out bool failed)
         {
-            string requestURL = string.Format("https://developer.mbed.org/api/v2/tasks/compiler/output/{0}", HttpUtility.UrlEncode(taskId));
+            string requestURL = string.Format("https://os.mbed.com/api/v2/tasks/compiler/output/{0}", HttpUtility.UrlEncode(taskId));
             bool complete = false;
             failed = true;
             CompileStartResponse compileResponse;
@@ -187,7 +187,7 @@ namespace compilembed
             }
 
             string requestQuery = string.Format("binary={0}&program={1}&repomode={2}&task_id={3}", lastResponse.result.data.binary, lastResponse.result.data.program, "True", taskId);
-            string requestUrl = String.Format("{0}?{1}", "https://developer.mbed.org/api/v2/tasks/compiler/bin/", requestQuery);
+            string requestUrl = String.Format("{0}?{1}", "https://os.mbed.com/api/v2/tasks/compiler/bin/", requestQuery);
 
             int retryCount = 5;
             while (true)

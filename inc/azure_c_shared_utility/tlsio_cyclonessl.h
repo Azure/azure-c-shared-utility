@@ -4,15 +4,15 @@
 #ifndef TLSIO_CYCLONESSL_H
 #define TLSIO_CYCLONESSL_H
 
+#include "azure_c_shared_utility/xio.h"
+#include "azure_c_shared_utility/umock_c_prod.h"
+
 #ifdef __cplusplus
 extern "C" {
 #include <cstddef>
 #else
 #include <stddef.h>
 #endif /* __cplusplus */
-
-#include "azure_c_shared_utility/xio.h"
-#include "azure_c_shared_utility/umock_c_prod.h"
 
 MOCKABLE_FUNCTION(, const IO_INTERFACE_DESCRIPTION*, tlsio_cyclonessl_get_interface_description);
 

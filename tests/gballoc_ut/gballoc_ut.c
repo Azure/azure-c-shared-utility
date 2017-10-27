@@ -121,7 +121,7 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
 TEST_FUNCTION(gballoc_init_resets_memory_used)
 {
     //arrange
-	void* allocation;
+    void* allocation;
     gballoc_init();
     allocation = malloc(OVERHEAD_SIZE);
 
@@ -147,7 +147,7 @@ TEST_FUNCTION(gballoc_init_resets_memory_used)
 TEST_FUNCTION(when_gballoc_init_calls_lock_init_and_it_succeeds_then_gballoc_init_succeeds)
 {
     // arrange
-	int result;
+    int result;
     STRICT_EXPECTED_CALL(Lock_Init());
 
     // act
@@ -162,7 +162,7 @@ TEST_FUNCTION(when_gballoc_init_calls_lock_init_and_it_succeeds_then_gballoc_ini
 TEST_FUNCTION(when_lock_init_fails_gballoc_init_fails)
 {
     // arrange
-	int result;
+    int result;
     STRICT_EXPECTED_CALL(Lock_Init())
         .SetReturn((LOCK_HANDLE)NULL);
 
@@ -178,7 +178,7 @@ TEST_FUNCTION(when_lock_init_fails_gballoc_init_fails)
 TEST_FUNCTION(gballoc_init_after_gballoc_init_fails)
 {
     // arrange
-	int result;
+    int result;
     STRICT_EXPECTED_CALL(Lock_Init());
     gballoc_init();
 
@@ -226,7 +226,7 @@ TEST_FUNCTION(gballoc_deinit_after_gballoc_deinit_doesnot_free_lock)
 TEST_FUNCTION(when_acquiring_the_lock_fails_gballoc_malloc_fails)
 {
     // arrange
-	void* result;
+    void* result;
     gballoc_init();
     umock_c_reset_all_calls();
 
@@ -247,8 +247,8 @@ TEST_FUNCTION(when_acquiring_the_lock_fails_gballoc_malloc_fails)
 TEST_FUNCTION(gballoc_malloc_with_0_Size_Calls_Underlying_malloc)
 {
     // arrange
-	void* result;
-	void* allocation;
+    void* result;
+    void* allocation;
     gballoc_init();
     umock_c_reset_all_calls();
     allocation = malloc(OVERHEAD_SIZE);
@@ -280,8 +280,8 @@ TEST_FUNCTION(gballoc_malloc_with_0_Size_Calls_Underlying_malloc)
 TEST_FUNCTION(gballoc_malloc_with_1_Size_Calls_Underlying_malloc_And_Increases_Max_Used)
 {
     // arrange
-	void* result;
-	void* allocation;
+    void* result;
+    void* allocation;
     gballoc_init();
     umock_c_reset_all_calls();
     allocation = malloc(OVERHEAD_SIZE);
@@ -311,8 +311,8 @@ TEST_FUNCTION(gballoc_malloc_with_1_Size_Calls_Underlying_malloc_And_Increases_M
 TEST_FUNCTION(When_malloc_Fails_Then_gballoc_malloc_fails_too)
 {
     // arrange
-	void* result;
-	void* allocation;
+    void* result;
+    void* allocation;
     gballoc_init();
     umock_c_reset_all_calls();
     allocation = malloc(OVERHEAD_SIZE);
@@ -343,7 +343,7 @@ TEST_FUNCTION(When_malloc_Fails_Then_gballoc_malloc_fails_too)
 TEST_FUNCTION(When_allocating_memory_for_tracking_information_fails_Then_gballoc_malloc_fails_too)
 {
     // arrange
-	void* result;
+    void* result;
     gballoc_init();
     umock_c_reset_all_calls();
 
@@ -366,7 +366,7 @@ TEST_FUNCTION(When_allocating_memory_for_tracking_information_fails_Then_gballoc
 TEST_FUNCTION(gballoc_malloc_after_deinit_calls_crt_malloc)
 {
     // arrange
-	void* result;
+    void* result;
     STRICT_EXPECTED_CALL(mock_malloc(1));
 
     //act
@@ -383,7 +383,7 @@ TEST_FUNCTION(gballoc_malloc_after_deinit_calls_crt_malloc)
 TEST_FUNCTION(when_acquiring_the_lock_fails_gballoc_calloc_fails)
 {
     // arrange
-	void* result;
+    void* result;
     gballoc_init();
     umock_c_reset_all_calls();
 
@@ -404,8 +404,8 @@ TEST_FUNCTION(when_acquiring_the_lock_fails_gballoc_calloc_fails)
 TEST_FUNCTION(gballoc_calloc_with_0_Size_And_ItemCount_Calls_Underlying_calloc)
 {
     // arrange
-	void* result;
-	void* allocation;
+    void* result;
+    void* allocation;
     gballoc_init();
     umock_c_reset_all_calls();
     allocation = malloc(OVERHEAD_SIZE);
@@ -436,8 +436,8 @@ TEST_FUNCTION(gballoc_calloc_with_0_Size_And_ItemCount_Calls_Underlying_calloc)
 TEST_FUNCTION(gballoc_calloc_with_1_Item_Of_1_Size_Calls_Underlying_malloc_And_Increases_Max_Used)
 {
     // arrange
-	void* result;
-	void* allocation;
+    void* result;
+    void* allocation;
     gballoc_init();
     umock_c_reset_all_calls();
     allocation = malloc(OVERHEAD_SIZE);
@@ -468,8 +468,8 @@ TEST_FUNCTION(gballoc_calloc_with_1_Item_Of_1_Size_Calls_Underlying_malloc_And_I
 TEST_FUNCTION(gballoc_calloc_with_1_Item_Of_0_Size_Calls_Underlying_malloc_And_Does_Not_Increase_Max_Used)
 {
     // arrange
-	void* result;
-	void* allocation;
+    void* result;
+    void* allocation;
     gballoc_init();
     umock_c_reset_all_calls();
     allocation = malloc(OVERHEAD_SIZE);
@@ -500,8 +500,8 @@ TEST_FUNCTION(gballoc_calloc_with_1_Item_Of_0_Size_Calls_Underlying_malloc_And_D
 TEST_FUNCTION(gballoc_calloc_with_0_Items_Of_1_Size_Calls_Underlying_malloc_And_Does_Not_Increase_Max_Used)
 {
     // arrange
-	void* result;
-	void* allocation;
+    void* result;
+    void* allocation;
     gballoc_init();
     umock_c_reset_all_calls();
     allocation = malloc(OVERHEAD_SIZE);
@@ -532,8 +532,8 @@ TEST_FUNCTION(gballoc_calloc_with_0_Items_Of_1_Size_Calls_Underlying_malloc_And_
 TEST_FUNCTION(gballoc_calloc_with_42_Items_Of_2_Size_Calls_Underlying_malloc_And_Increases_Max_Size)
 {
     // arrange
-	void* result;
-	void* allocation;
+    void* result;
+    void* allocation;
     gballoc_init();
     umock_c_reset_all_calls();
     allocation = malloc(OVERHEAD_SIZE);
@@ -563,8 +563,8 @@ TEST_FUNCTION(gballoc_calloc_with_42_Items_Of_2_Size_Calls_Underlying_malloc_And
 TEST_FUNCTION(When_calloc_Fails_Then_gballoc_calloc_fails_too)
 {
     // arrange
-	void* result;
-	void* allocation;
+    void* result;
+    void* allocation;
     gballoc_init();
     umock_c_reset_all_calls();
     allocation = malloc(OVERHEAD_SIZE);
@@ -595,7 +595,7 @@ TEST_FUNCTION(When_calloc_Fails_Then_gballoc_calloc_fails_too)
 TEST_FUNCTION(When_allocating_memory_for_tracking_information_fails_Then_gballoc_calloc_fails_too)
 {
     // arrange
-	void* result;
+    void* result;
     gballoc_init();
     umock_c_reset_all_calls();
 
@@ -618,7 +618,7 @@ TEST_FUNCTION(When_allocating_memory_for_tracking_information_fails_Then_gballoc
 TEST_FUNCTION(gballoc_calloc_after_deinit_calls_crt_calloc)
 {
     // arrange
-	void* result;
+    void* result;
     STRICT_EXPECTED_CALL(mock_calloc(1, 1));
 
     // act
@@ -636,7 +636,7 @@ TEST_FUNCTION(gballoc_calloc_after_deinit_calls_crt_calloc)
 TEST_FUNCTION(when_acquiring_the_lock_fails_gballoc_realloc_fails)
 {
     // arrange
-	void* result;
+    void* result;
     gballoc_init();
     umock_c_reset_all_calls();
 
@@ -655,7 +655,7 @@ TEST_FUNCTION(when_acquiring_the_lock_fails_gballoc_realloc_fails)
 TEST_FUNCTION(gballoc_realloc_after_deinit_fails)
 {
     // arrange
-	void* result;
+    void* result;
     STRICT_EXPECTED_CALL(mock_realloc(NULL, 1));
 
     // act
@@ -672,8 +672,8 @@ TEST_FUNCTION(gballoc_realloc_after_deinit_fails)
 TEST_FUNCTION(gballoc_realloc_with_NULL_Arg_And_0_Size_Calls_Underlying_realloc)
 {
     // arrange
-	void* result;
-	void* allocation;
+    void* result;
+    void* allocation;
     gballoc_init();
     umock_c_reset_all_calls();
     allocation = malloc(OVERHEAD_SIZE);
@@ -704,8 +704,8 @@ TEST_FUNCTION(gballoc_realloc_with_NULL_Arg_And_0_Size_Calls_Underlying_realloc)
 TEST_FUNCTION(gballoc_realloc_with_NULL_Arg_And_1_Size_Calls_Underlying_realloc)
 {
     // arrange
-	void* result;
-	void* allocation;
+    void* result;
+    void* allocation;
     gballoc_init();
     umock_c_reset_all_calls();
     allocation = malloc(OVERHEAD_SIZE);
@@ -736,8 +736,8 @@ TEST_FUNCTION(gballoc_realloc_with_NULL_Arg_And_1_Size_Calls_Underlying_realloc)
 TEST_FUNCTION(gballoc_realloc_with_Previous_1_Byte_Block_Ptr_And_2_Size_Calls_Underlying_realloc_And_Increases_Max_Used_Memory)
 {
     // arrange
-	void* result;
-	void* allocation;
+    void* result;
+    void* allocation;
     gballoc_init();
     umock_c_reset_all_calls();
     allocation = malloc(OVERHEAD_SIZE);
@@ -773,8 +773,8 @@ TEST_FUNCTION(gballoc_realloc_with_Previous_1_Byte_Block_Ptr_And_2_Size_Calls_Un
 TEST_FUNCTION(When_realloc_fails_then_gballoc_realloc_Fails_Too_And_No_Change_Is_Made_To_Memory_Counters)
 {
     // arrange
-	void* result;
-	void* allocation;
+    void* result;
+    void* allocation;
     gballoc_init();
     umock_c_reset_all_calls();
     allocation = malloc(OVERHEAD_SIZE);
@@ -810,7 +810,7 @@ TEST_FUNCTION(When_realloc_fails_then_gballoc_realloc_Fails_Too_And_No_Change_Is
 TEST_FUNCTION(When_Allocating_Memory_For_tracking_fails_gballoc_realloc_fails)
 {
     // arrange
-	void* result;
+    void* result;
     gballoc_init();
     umock_c_reset_all_calls();
 
@@ -833,9 +833,9 @@ TEST_FUNCTION(When_Allocating_Memory_For_tracking_fails_gballoc_realloc_fails)
 TEST_FUNCTION(When_The_Pointer_Is_Not_Tracked_gballoc_realloc_Returns_NULL)
 {
     // arrange
-	void* result1;
-	void* result2;
-	void* allocation;
+    void* result1;
+    void* result2;
+    void* allocation;
     gballoc_init();
     umock_c_reset_all_calls();
     allocation = malloc(OVERHEAD_SIZE);
@@ -869,8 +869,8 @@ TEST_FUNCTION(When_The_Pointer_Is_Not_Tracked_gballoc_realloc_Returns_NULL)
 TEST_FUNCTION(When_ptr_is_null_and_the_underlying_realloc_fails_then_the_memory_used_for_tracking_is_freed)
 {
     // arrange
-	void* result;
-	void* allocation;
+    void* result;
+    void* allocation;
     gballoc_init();
     umock_c_reset_all_calls();
     allocation = malloc(OVERHEAD_SIZE);
@@ -916,8 +916,8 @@ TEST_FUNCTION(gballoc_free_after_deinit_calls_crt_free)
 TEST_FUNCTION(when_acquiring_the_lock_fails_then_gballoc_free_does_nothing)
 {
     // arrange
-	void* block;
-	void* allocation;
+    void* block;
+    void* allocation;
     gballoc_init();
     umock_c_reset_all_calls();
     allocation = malloc(OVERHEAD_SIZE);
@@ -952,8 +952,8 @@ TEST_FUNCTION(when_acquiring_the_lock_fails_then_gballoc_free_does_nothing)
 TEST_FUNCTION(gballoc_free_calls_the_underlying_free)
 {
     // arrange
-	void* block;
-	void* allocation;
+    void* block;
+    void* allocation;
     gballoc_init();
     umock_c_reset_all_calls();
     allocation = malloc(OVERHEAD_SIZE);
@@ -990,8 +990,8 @@ TEST_FUNCTION(gballoc_free_calls_the_underlying_free)
 TEST_FUNCTION(gballoc_malloc_free_2_times_with_1_byte_yields_1_byte_as_max)
 {
     // arrange
-	void* block;
-	void* allocation;
+    void* block;
+    void* allocation;
     gballoc_init();
     umock_c_reset_all_calls();
     allocation = malloc(OVERHEAD_SIZE);
@@ -1030,7 +1030,7 @@ TEST_FUNCTION(gballoc_malloc_free_2_times_with_1_byte_yields_1_byte_as_max)
 TEST_FUNCTION(gballoc_free_with_an_untracked_pointer_does_not_alter_total_memory_used)
 {
     // arrange
-	void* allocation;
+    void* allocation;
     gballoc_init();
     umock_c_reset_all_calls();
     allocation = malloc(OVERHEAD_SIZE);
@@ -1082,7 +1082,7 @@ TEST_FUNCTION(when_gballoc_getMaximumMemoryUsed_called_It_Shall_Lock_And_Unlock)
 TEST_FUNCTION(when_acquiring_the_lock_fails_then_gballoc_getMaximumMemoryUsed_fails)
 {
     // arrange
-	size_t result;
+    size_t result;
     gballoc_init();
     umock_c_reset_all_calls();
 
@@ -1116,9 +1116,9 @@ TEST_FUNCTION(gballoc_getMaximumMemoryUsed_after_deinit_fails)
 TEST_FUNCTION(gballoc_getCurrentMemoryUsed_after_1_byte_malloc_returns_1)
 {
     // arrange
-	void* allocation;
-	void* toBeFreed;
-	size_t result;
+    void* allocation;
+    void* toBeFreed;
+    size_t result;
     gballoc_init();
     umock_c_reset_all_calls();
 
@@ -1150,9 +1150,9 @@ TEST_FUNCTION(gballoc_getCurrentMemoryUsed_after_1_byte_malloc_returns_1)
 TEST_FUNCTION(gballoc_getCurrentMemoryUsed_after_2x3_byte_calloc_returns_6)
 {
     // arrange
-	void* allocation;
-	void* toBeFreed;
-	size_t result;
+    void* allocation;
+    void* toBeFreed;
+    size_t result;
     gballoc_init();
     umock_c_reset_all_calls();
     allocation = malloc(OVERHEAD_SIZE);
@@ -1182,9 +1182,9 @@ TEST_FUNCTION(gballoc_getCurrentMemoryUsed_after_2x3_byte_calloc_returns_6)
 TEST_FUNCTION(gballoc_getCurrentMemoryUsed_after_1_byte_malloc_and_3_bytes_realloc_returns_3)
 {
     // arrange
-	void* allocation;
-	void* toBeFreed;
-	size_t result;
+    void* allocation;
+    void* toBeFreed;
+    size_t result;
     gballoc_init();
     umock_c_reset_all_calls();
     allocation = malloc(OVERHEAD_SIZE);
@@ -1218,9 +1218,9 @@ TEST_FUNCTION(gballoc_getCurrentMemoryUsed_after_1_byte_malloc_and_3_bytes_reall
 TEST_FUNCTION(gballoc_getCurrentMemoryUsed_after_1_byte_malloc_and_free_returns_0)
 {
     // arrange
-	void* allocation;
-	void* toBeFreed;
-	size_t result;
+    void* allocation;
+    void* toBeFreed;
+    size_t result;
     gballoc_init();
     umock_c_reset_all_calls();
     allocation = malloc(OVERHEAD_SIZE);
@@ -1253,9 +1253,9 @@ TEST_FUNCTION(gballoc_getCurrentMemoryUsed_after_1_byte_malloc_and_free_returns_
 TEST_FUNCTION(gballoc_getCurrentMemoryUsed_after_2x3_byte_calloc_and_free_returns_0)
 {
     // arrange
-	void* allocation;
-	void* toBeFreed;
-	size_t result;
+    void* allocation;
+    void* toBeFreed;
+    size_t result;
     gballoc_init();
     umock_c_reset_all_calls();
     allocation = malloc(OVERHEAD_SIZE);
@@ -1287,9 +1287,9 @@ TEST_FUNCTION(gballoc_getCurrentMemoryUsed_after_2x3_byte_calloc_and_free_return
 TEST_FUNCTION(gballoc_getCurrentMemoryUsed_after_realloc_and_free_returns_0)
 {
     // arrange
-	void* allocation;
-	void* toBeFreed;
-	size_t result;
+    void* allocation;
+    void* toBeFreed;
+    size_t result;
     gballoc_init();
     umock_c_reset_all_calls();
     allocation = malloc(OVERHEAD_SIZE);
@@ -1323,11 +1323,11 @@ TEST_FUNCTION(gballoc_getCurrentMemoryUsed_after_realloc_and_free_returns_0)
 TEST_FUNCTION(gballoc_getCurrentMemoryUsed_after_1_byte_malloc_and_1_byte_malloc_returns_2)
 {
     // arrange
-	void* allocation1;
-	void* allocation2;
-	void* toBeFreed1;
-	void* toBeFreed2;
-	size_t result;
+    void* allocation1;
+    void* allocation2;
+    void* toBeFreed1;
+    void* toBeFreed2;
+    size_t result;
     gballoc_init();
     umock_c_reset_all_calls();
 
@@ -1370,11 +1370,11 @@ TEST_FUNCTION(gballoc_getCurrentMemoryUsed_after_1_byte_malloc_and_1_byte_malloc
 TEST_FUNCTION(gballoc_getCurrentMemoryUsed_after_1_byte_malloc_and_1_byte_malloc_and_3_realloc_returns_4)
 {
     // arrange
-	void* allocation1;
-	void* allocation2;
-	void* toBeFreed1;
-	void* toBeFreed2;
-	size_t result;
+    void* allocation1;
+    void* allocation2;
+    void* toBeFreed1;
+    void* toBeFreed2;
+    size_t result;
     gballoc_init();
     umock_c_reset_all_calls();
 
@@ -1418,11 +1418,11 @@ TEST_FUNCTION(gballoc_getCurrentMemoryUsed_after_1_byte_malloc_and_1_byte_malloc
 TEST_FUNCTION(gballoc_getCurrentMemoryUsed_after_1_byte_malloc_and_6_byte_calloc_returns_7)
 {
     // arrange
-	void* allocation1;
-	void* allocation2;
-	void* toBeFreed1;
-	void* toBeFreed2;
-	size_t result;
+    void* allocation1;
+    void* allocation2;
+    void* toBeFreed1;
+    void* toBeFreed2;
+    size_t result;
     gballoc_init();
     umock_c_reset_all_calls();
 
@@ -1465,11 +1465,11 @@ TEST_FUNCTION(gballoc_getCurrentMemoryUsed_after_1_byte_malloc_and_6_byte_calloc
 TEST_FUNCTION(gballoc_getCurrentMemoryUsed_after_1_byte_malloc_and_6_byte_calloc_and_free_returns_6)
 {
     // arrange
-	void* allocation1;
-	void* allocation2;
-	void* toBeFreed1;
-	void* toBeFreed2;
-	size_t result;
+    void* allocation1;
+    void* allocation2;
+    void* toBeFreed1;
+    void* toBeFreed2;
+    size_t result;
     gballoc_init();
     umock_c_reset_all_calls();
     allocation1 = malloc(OVERHEAD_SIZE);
@@ -1513,11 +1513,11 @@ TEST_FUNCTION(gballoc_getCurrentMemoryUsed_after_1_byte_malloc_and_6_byte_calloc
 TEST_FUNCTION(gballoc_getCurrentMemoryUsed_after_1_byte_malloc_and_1_byte_malloc_and_3_realloc_and_free_returns_3)
 {
     // arrange
-	void* allocation1;
-	void* allocation2;
-	void* toBeFreed1;
-	void* toBeFreed2;
-	size_t result;
+    void* allocation1;
+    void* allocation2;
+    void* toBeFreed1;
+    void* toBeFreed2;
+    size_t result;
     gballoc_init();
     umock_c_reset_all_calls();
     allocation1 = malloc(OVERHEAD_SIZE);
@@ -1563,7 +1563,7 @@ TEST_FUNCTION(gballoc_getCurrentMemoryUsed_after_1_byte_malloc_and_1_byte_malloc
 TEST_FUNCTION(gballoc_getCurrentMemoryUsed_locks_and_unlocks)
 {
     // assert
-	size_t result;
+    size_t result;
     gballoc_init();
     umock_c_reset_all_calls();
 
@@ -1595,7 +1595,7 @@ TEST_FUNCTION(gballoc_getCurrentMemoryUsed_after_deinit_fails)
 TEST_FUNCTION(when_acquiring_the_lock_fails_gballoc_getCurrentMemoryUsed_fails)
 {
     // arrange
-	size_t result;
+    size_t result;
     gballoc_init();
     umock_c_reset_all_calls();
 
@@ -1608,6 +1608,150 @@ TEST_FUNCTION(when_acquiring_the_lock_fails_gballoc_getCurrentMemoryUsed_fails)
     // assert
     ASSERT_ARE_EQUAL(size_t, SIZE_MAX, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_GBALLOC_07_001: [ If gballoc was not initialized gballoc_getAllocationCount shall return SIZE_MAX. ] */
+TEST_FUNCTION(gballoc_getAllocationCount_without_init_fail)
+{
+    // arrange
+    size_t result;
+
+    // act
+    result = gballoc_getAllocationCount();
+
+    // assert
+    ASSERT_ARE_EQUAL(size_t, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_GBALLOC_07_003: [ If the lock cannot be acquired, gballoc_getAllocationCount shall return SIZE_MAX. ] */
+TEST_FUNCTION(gballoc_getAllocationCount_lock_fail)
+{
+    // arrange
+    size_t result;
+    gballoc_init();
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE))
+        .SetReturn(LOCK_ERROR);
+
+    // act
+    result = gballoc_getAllocationCount();
+
+    // assert
+    ASSERT_ARE_EQUAL(size_t, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_GBALLOC_07_004: [ gballoc_getAllocationCount shall return the currently number of allocations. ] */
+/* Tests_SRS_GBALLOC_07_002: [ gballoc_getAllocationCount shall ensure thread safety by using the lock created by gballoc_Init ] */
+TEST_FUNCTION(gballoc_getAllocationCount_success)
+{
+    // arrange
+    void* allocation;
+    void* toBeFreed;
+    size_t result;
+    gballoc_init();
+    umock_c_reset_all_calls();
+
+    allocation = malloc(OVERHEAD_SIZE);
+
+    STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
+    EXPECTED_CALL(mock_malloc(0))
+        .SetReturn(allocation);
+    STRICT_EXPECTED_CALL(mock_malloc(1));
+    toBeFreed = gballoc_malloc(1);
+    umock_c_reset_all_calls();
+    STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
+    STRICT_EXPECTED_CALL(Unlock(TEST_LOCK_HANDLE));
+
+    // act
+    result = gballoc_getAllocationCount();
+
+    // assert
+    ASSERT_ARE_EQUAL(size_t, 1, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // Cleanup
+    gballoc_free(toBeFreed);
+    free(allocation);
+}
+
+TEST_FUNCTION(gballoc_resetMetrics_without_init_fail)
+{
+    // arrange
+
+    // act
+    gballoc_resetMetrics();
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_GBALLOC_07_003: [ If the lock cannot be acquired, gballoc_getAllocationCount shall return SIZE_MAX. ] */
+TEST_FUNCTION(gballoc_resetMetrics_lock_fail)
+{
+    // arrange
+    gballoc_init();
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE))
+        .SetReturn(LOCK_ERROR);
+
+    // act
+    gballoc_resetMetrics();
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_GBALLOC_07_004: [ gballoc_getAllocationCount shall return the currently number of allocations. ] */
+/* Tests_SRS_GBALLOC_07_002: [ gballoc_getAllocationCount shall ensure thread safety by using the lock created by gballoc_Init ] */
+TEST_FUNCTION(gballoc_resetMetrics_success)
+{
+    // arrange
+    void* allocation;
+    void* toBeFreed;
+    size_t mem_used;
+    size_t alloc_count;
+    gballoc_init();
+    umock_c_reset_all_calls();
+
+    allocation = malloc(OVERHEAD_SIZE);
+
+    STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
+    EXPECTED_CALL(mock_malloc(0))
+        .SetReturn(allocation);
+    STRICT_EXPECTED_CALL(mock_malloc(1));
+    toBeFreed = gballoc_malloc(1);
+    umock_c_reset_all_calls();
+    STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
+    STRICT_EXPECTED_CALL(Unlock(TEST_LOCK_HANDLE));
+
+    alloc_count = gballoc_getAllocationCount();
+    ASSERT_ARE_EQUAL(size_t, 1, alloc_count);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
+    STRICT_EXPECTED_CALL(Unlock(TEST_LOCK_HANDLE));
+    STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
+    STRICT_EXPECTED_CALL(Unlock(TEST_LOCK_HANDLE));
+    STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
+    STRICT_EXPECTED_CALL(Unlock(TEST_LOCK_HANDLE));
+
+    // act
+    gballoc_resetMetrics();
+    mem_used = gballoc_getCurrentMemoryUsed();
+    alloc_count = gballoc_getAllocationCount();
+
+    // assert
+    ASSERT_ARE_EQUAL(size_t, 0, mem_used);
+    ASSERT_ARE_EQUAL(size_t, 0, alloc_count);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // Cleanup
+    gballoc_free(toBeFreed);
+    free(allocation);
 }
 
 END_TEST_SUITE(GBAlloc_UnitTests)
