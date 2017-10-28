@@ -210,7 +210,7 @@ ${LOGGING_C_FILE}
 ./src/sha384-512.c
 ./src/strings.c
 ./src/string_tokenizer.c
-${UUID_C_FILE}
+./src/uuid.c
 ./src/urlencode.c
 ./src/usha.c
 ./src/vector.c
@@ -412,18 +412,18 @@ if(${use_http})
             if(PKG_CONFIG_FOUND)
                 pkg_check_modules(CURL libcurl)
             endif()
+
+            # if that didn't work, try CMake find_package
+            if(NOT CURL_FOUND)
+                find_package(CURL)
+            endif()
+
+            set(CURL_FIND_REQUIRED 1)
+            find_package_handle_standard_args(CURL DEFAULT_MSG CURL_LIBRARIES)
+
+            include_directories(${CURL_INCLUDE_DIRS})
+            set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} ${CURL_LIBRARIES})
         endif()
-
-        # if that didn't work, try CMake find_package
-        if(NOT CURL_FOUND)
-            find_package(CURL)
-        endif()
-
-        set(CURL_FIND_REQUIRED 1)
-        find_package_handle_standard_args(CURL DEFAULT_MSG CURL_LIBRARIES)
-
-        include_directories(${CURL_INCLUDE_DIRS})
-        set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} ${CURL_LIBRARIES})
     endif()
 endif()
 
