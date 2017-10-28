@@ -162,10 +162,6 @@ if(MSVC)
 
     endif()
 elseif(UNIX) #LINUX OR APPLE
-    # if (NOT IOS)
-        # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Werror")
-        # set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -Werror")
-    # endif (NOT IOS)
     if(${use_openssl})
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_OPENSSL")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_OPENSSL")
@@ -397,10 +393,6 @@ if(${use_http})
         else()
             set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} crypt32 winhttp)
         endif()
-#    elseif(!IOS)
-        # try pkg-config first
-#        find_package(PkgConfig)
-#        if(PKG_CONFIG_FOUND)
     else()
         if (CMAKE_CROSSCOMPILING)
             # As mentioned at https://cmake.org/Wiki/CMake_Cross_Compiling the
