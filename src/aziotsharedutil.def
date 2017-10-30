@@ -283,7 +283,6 @@ EXPORTS
     xio_retrieveoptions
     xio_send
     xio_setoption
-    xlogging_dump_buffer
     xlogging_get_log_function
     xlogging_get_log_function_GetLastError
     xlogging_set_log_function

@@ -77,34 +77,7 @@ typedef void(*LOGGER_LOG_GETLASTERROR)(const char* file, const char* func, int l
         printf("\r\n"); \
 }
 
-
-#elif defined(ARDUINO_ARCH_ESP8266)
-/*
-The ESP8266 compiler doesn't do a good job compiling this code; it doesn't understand that the 'format' is
-a 'const char*' and moves it to RAM as a global variable, increasing the .bss size. So we create a
-specific LogInfo that explicitly pins the 'format' on the PROGMEM (flash) using a _localFORMAT variable
-with the macro PSTR.
-#define ICACHE_FLASH_ATTR   __attribute__((section(".irom0.text")))
-#define PROGMEM     ICACHE_RODATA_ATTR
-#define PSTR(s) (__extension__({static const char __c[] PROGMEM = (s); &__c[0];}))
-const char* __localFORMAT = PSTR(FORMAT);
-On the other hand, vsprintf does not support the pinned 'format' and os_printf does not work with va_list,
-so we compacted the log in the macro LogInfo.
-*/
-#define LOG(log_category, log_options, FORMAT, ...) { \
-        const char* __localFORMAT = PSTR(FORMAT); \
-        os_printf(__localFORMAT, ##__VA_ARGS__); \
-        os_printf("\r\n"); \
-}
-
-#define LogInfo(FORMAT, ...) { \
-        const char* __localFORMAT = PSTR(FORMAT); \
-        os_printf(__localFORMAT, ##__VA_ARGS__); \
-        os_printf("\r\n"); \
-}
-#define LogError LogInfo
-
-#else /* !ARDUINO_ARCH_ESP8266 */
+#else /* NOT ESP8266_RTOS */
 
 #if defined _MSC_VER
 #define LOG(log_category, log_options, format, ...) { LOGGER_LOG l = xlogging_get_log_function(); if (l != NULL) l(log_category, __FILE__, FUNC_NAME, __LINE__, log_options, format, __VA_ARGS__); }
@@ -166,22 +139,7 @@ extern LOGGER_LOG_GETLASTERROR xlogging_get_log_function_GetLastError(void);
 extern void xlogging_set_log_function(LOGGER_LOG log_function);
 extern LOGGER_LOG xlogging_get_log_function(void);
 
-#endif /* ARDUINO_ARCH_ESP8266 */
-
-
-    /**
-     * @brief   Print the memory content byte pre byte in hexadecimal and as a char it the byte correspond to any printable ASCII chars.
-     *
-     *    This function prints the 'size' bytes in the 'buf' to the log. It will print in portions of 16 bytes, 
-     *         and will print the byte as a hexadecimal value, and, it is a printable, this function will print 
-     *         the correspondent ASCII character.
-     *    Non printable characters will shows as a single '.'. 
-     *    For this function, printable characters are all characters between ' ' (0x20) and '~' (0x7E).
-     *
-     * @param   buf  Pointer to the memory address with the buffer to print.
-     * @param   size Number of bytes to print.
-     */
-    extern void xlogging_dump_buffer(const void* buf, size_t size);
+#endif /* NOT ESP8266_RTOS */
 
 #ifdef __cplusplus
 }   // extern "C"

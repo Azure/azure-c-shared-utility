@@ -126,9 +126,9 @@ STRING_HANDLE STRING_construct_sprintf(const char* format, ...)
 {
     STRING* result;
     
-#ifdef ARDUINO_ARCH_ESP8266
-    size_t maxBufSize = 512;
-    char buf[512];
+#ifdef STRINGS_C_SPRINTF_BUFFER_SIZE
+    size_t maxBufSize = STRINGS_C_SPRINTF_BUFFER_SIZE;
+    char buf[STRINGS_C_SPRINTF_BUFFER_SIZE];
 #else
     size_t maxBufSize = 0;
     char* buf = NULL;
@@ -517,9 +517,9 @@ int STRING_sprintf(STRING_HANDLE handle, const char* format, ...)
 {
     int result;
     
-#ifdef ARDUINO_ARCH_ESP8266
-    size_t maxBufSize = 512;
-    char buf[512];
+#ifdef STRINGS_C_SPRINTF_BUFFER_SIZE
+    size_t maxBufSize = STRINGS_C_SPRINTF_BUFFER_SIZE;
+    char buf[STRINGS_C_SPRINTF_BUFFER_SIZE];
 #else
     size_t maxBufSize = 0;
     char* buf = NULL;
