@@ -37,7 +37,7 @@ extern HTTPAPIEX_SAS_HANDLE HTTPAPIEX_SAS_Create(STRING_HANDLE key, STRING_HANDL
 
 **SRS_HTTPAPIEXSAS_06_002: [** If the parameter uriResource is NULL then HTTPAPIEX_SAS_Create shall return NULL. **]**
 
-**SRS_HTTPAPIEXSAS_06_003: [** If the parameter keyName is NULL then HTTPAPIEX_SAS_Create shall return NULL. **]**
+**SRS_HTTPAPIEXSAS_06_003: [** The parameter keyName for HTTPAPIEX_SAS_Create is optional and can be NULL. **]**
 
 **SRS_HTTPAPIEXSAS_06_004: [** If there are any other errors in the instantiation of this handle then HTTPAPIEX_SAS_Create shall return NULL. **]**
 

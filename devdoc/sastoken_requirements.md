@@ -25,7 +25,7 @@ extern STRING_HANDLE SASToken_Create(STRING_HANDLE key, STRING_HANDLE scope, STR
 
 **SRS_SASTOKEN_06_003: [** If scope is NULL then SASToken_Create shall return NULL. **]**
 
-**SRS_SASTOKEN_06_007: [** If keyName is NULL then SASToken_Create shall return NULL. **]**
+**SRS_SASTOKEN_06_007: [** keyName is optional and can be set to NULL. **]**
 
 **SRS_SASTOKEN_06_029: [** The key parameter is decoded from base64. **]**
 
@@ -62,9 +62,9 @@ The expiry argument shall be converted to a char* by invoking size_tToString.
 
 **SRS_SASTOKEN_06_021: [** tokenExpirationTime is appended to result. **]**
 
-**SRS_SASTOKEN_06_022: [** The string "&skn=" is appended to result. **]**
+**SRS_SASTOKEN_06_022: [** If keyName is non-NULL, the string "&skn=" is appended to result. **]**
 
-**SRS_SASTOKEN_06_023: [** The argument keyName is appended to result. **]**
+**SRS_SASTOKEN_06_023: [** If keyName is non-NULL, the argument keyName is appended to result. **]**
 result is returned.
 
 ### SASToken_Validate
