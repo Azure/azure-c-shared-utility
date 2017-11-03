@@ -797,7 +797,7 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
             }
             else
             {
-                signal(SIGPIPE, signal_callback);
+                signal(SIGPIPE, SIG_IGN);
 
                 int send_result = send(socket_io_instance->socket, buffer, size, 0);
                 if (send_result != size)
@@ -811,7 +811,6 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
                         }
                         else
                         {
-                            indicate_error(socket_io_instance);
                             LogError("Failure: sending socket failed. errno=%d (%s).", errno, strerror(errno));
                             result = __FAILURE__;
                         }
@@ -862,6 +861,8 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                 LogError("Failure: retrieving socket from list");
                 break;
             }
+
+            signal(SIGPIPE, SIG_IGN);
 
             int send_result = send(socket_io_instance->socket, pending_socket_io->bytes, pending_socket_io->size, 0);
             if (send_result != pending_socket_io->size)

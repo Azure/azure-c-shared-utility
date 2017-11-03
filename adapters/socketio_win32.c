@@ -418,7 +418,6 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
                     int last_error = WSAGetLastError();
                     if (last_error != WSAEWOULDBLOCK)
                     {
-                        indicate_error(socket_io_instance);
                         LogError("Failure: sending socket failed %d.", last_error);
                         result = __FAILURE__;
                     }
