@@ -165,32 +165,43 @@ static void* tlsio_openssl_CloneOption(const char* name, const void* value)
         }
         else if (strcmp(name, OPTION_TLS_VERSION) == 0)
         {
-            int* value_clone;
-            if ((value_clone = (int*)malloc(sizeof(int))) == NULL)
+            int int_value;
+            
+            if (*(TLSIO_VERSION*)value == VERSION_1_0)
             {
-                LogError("Failed clonning tls_version option");
+                int_value = 10;
+            }
+            else if (*(TLSIO_VERSION*)value == VERSION_1_1)
+            {
+                int_value = 11;
+            }
+            else if (*(TLSIO_VERSION*)value == VERSION_1_2)
+            {
+                int_value = 12;
+            }
+            else
+            {
+                LogError("Unexpected TLS version value (%d)", *(int*)value);
+                int_value = -1;
+            }
+            
+            if (int_value < 0)
+            {
                 result = NULL;
             }
             else
             {
-                if (*(TLSIO_VERSION*)value == VERSION_1_0)
+                int* value_clone;
+
+                if ((value_clone = (int*)malloc(sizeof(int))) == NULL)
                 {
-                    *value_clone = 10;
-                }
-                else if (*(TLSIO_VERSION*)value == VERSION_1_1)
-                {
-                    *value_clone = 11;
-                }
-                else if (*(TLSIO_VERSION*)value == VERSION_1_2)
-                {
-                    *value_clone = 12;
+                    LogError("Failed clonning tls_version option");
                 }
                 else
                 {
-                    LogError("Unexpected TLS version value (%d)", *(int*)value);
-                    *value_clone = 12;
+                    *value_clone = int_value;
                 }
-
+                
                 result = value_clone;
             }
         }
@@ -1577,7 +1588,7 @@ int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
             }
             else
             {
-                int version_option = *(int*)value;
+                const int version_option = *(const int*)value;
                 if (version_option == 0 || version_option == 10)
                 {
                     tls_io_instance->tls_version = VERSION_1_0;
