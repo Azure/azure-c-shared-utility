@@ -19,6 +19,8 @@
 #include "azure_c_shared_utility/x509_openssl.h"
 #include "azure_c_shared_utility/shared_util_options.h"
 
+static const char* OPTION_TLS_VERSION = "tls_version";
+
 typedef enum TLSIO_STATE_TAG
 {
     TLSIO_STATE_NOT_OPEN,
@@ -161,8 +163,49 @@ static void* tlsio_openssl_CloneOption(const char* name, const void* value)
                 /*return as is*/
             }
         }
+        else if (strcmp(name, OPTION_TLS_VERSION) == 0)
+        {
+            int int_value;
+            
+            if (*(TLSIO_VERSION*)value == VERSION_1_0)
+            {
+                int_value = 10;
+            }
+            else if (*(TLSIO_VERSION*)value == VERSION_1_1)
+            {
+                int_value = 11;
+            }
+            else if (*(TLSIO_VERSION*)value == VERSION_1_2)
+            {
+                int_value = 12;
+            }
+            else
+            {
+                LogError("Unexpected TLS version value (%d)", *(int*)value);
+                int_value = -1;
+            }
+            
+            if (int_value < 0)
+            {
+                result = NULL;
+            }
+            else
+            {
+                int* value_clone;
+
+                if ((value_clone = (int*)malloc(sizeof(int))) == NULL)
+                {
+                    LogError("Failed clonning tls_version option");
+                }
+                else
+                {
+                    *value_clone = int_value;
+                }
+                
+                result = value_clone;
+            }
+        }
         else if (
-            (strcmp(name, "tls_version") == 0) ||
             (strcmp(name, "tls_validation_callback") == 0) ||
             (strcmp(name, "tls_validation_callback_data") == 0)
             )
@@ -195,13 +238,13 @@ static void tlsio_openssl_DestroyOption(const char* name, const void* value)
             (strcmp(name, SU_OPTION_X509_CERT) == 0) ||
             (strcmp(name, SU_OPTION_X509_PRIVATE_KEY) == 0) ||
             (strcmp(name, OPTION_X509_ECC_CERT) == 0) ||
-            (strcmp(name, OPTION_X509_ECC_KEY) == 0)
+            (strcmp(name, OPTION_X509_ECC_KEY) == 0) ||
+            (strcmp(name, OPTION_TLS_VERSION) == 0)
             )
         {
             free((void*)value);
         }
         else if (
-            (strcmp(name, "tls_version") == 0) ||
             (strcmp(name, "tls_validation_callback") == 0) ||
             (strcmp(name, "tls_validation_callback_data") == 0)
             )
@@ -296,7 +339,7 @@ static OPTIONHANDLER_HANDLE tlsio_openssl_retrieveoptions(CONCRETE_IO_HANDLE han
             }
             else if (tls_io_instance->tls_version != 0)
             {
-                if (OptionHandler_AddOption(result, "tls_version", (void*)(intptr_t)tls_io_instance->tls_version) != OPTIONHANDLER_OK)
+                if (OptionHandler_AddOption(result, OPTION_TLS_VERSION, &tls_io_instance->tls_version) != OPTIONHANDLER_OK)
                 {
                     LogError("unable to save tls_version option");
                     OptionHandler_Destroy(result);
@@ -1536,7 +1579,7 @@ int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
 
             result = 0;
         }
-        else if (strcmp("tls_version", optionName) == 0)
+        else if (strcmp(OPTION_TLS_VERSION, optionName) == 0)
         {
             if (tls_io_instance->ssl_context != NULL)
             {
@@ -1545,22 +1588,22 @@ int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
             }
             else
             {
-                const int* version_option = value;
-                if ((int)(intptr_t)*version_option == 0 || (int)(intptr_t)*version_option == 10)
+                const int version_option = *(const int*)value;
+                if (version_option == 0 || version_option == 10)
                 {
                     tls_io_instance->tls_version = VERSION_1_0;
                 }
-                else if ((int)(intptr_t)*version_option == 11)
+                else if (version_option == 11)
                 {
                     tls_io_instance->tls_version = VERSION_1_1;
                 }
-                else if ((int)(intptr_t)*version_option == 12)
+                else if (version_option == 12)
                 {
                     tls_io_instance->tls_version = VERSION_1_2;
                 }
                 else
                 {
-                    LogInfo("Value of TLS version option %d is not found shall default to version 1.2", (int)(intptr_t)*version_option);
+                    LogInfo("Value of TLS version option %d is not found shall default to version 1.2", version_option);
                     tls_io_instance->tls_version = VERSION_1_2;
                 }
                 result = 0;
