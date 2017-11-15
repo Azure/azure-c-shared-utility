@@ -230,17 +230,17 @@ directories and linking library files.
 
 #### Existing _direct_ tlsio implementations
 There are two existing _direct_ adapter implementations:
-- [tlsio_openssl_compact for ESP32](https://github.com/Azure/azure-iot-pal-esp32/pal/src/tlsio_openssl_compact.c)
+- [tlsio_openssl_compact for ESP32](https://github.com/Azure/azure-iot-pal-esp32/blob/master/pal/src/tlsio_openssl_compact.c)
 - [tlsio_arduino for Arduino](https://github.com/Azure/azure-c-shared-utility/blob/master/adapters/tlsio_arduino.c)
 
 Of these two, the
-[tlsio_openssl_compact for ESP32](https://github.com/Azure/azure-iot-pal-esp32/pal/src/tlsio_openssl_compact.c)
+[tlsio_openssl_compact for ESP32](https://github.com/Azure/azure-iot-pal-esp32/blob/master/pal/src/tlsio_openssl_compact.c)
 is probably the better candidate for copying for re-use because it is more likely to resemble newer devices, 
 and it was written in tandem with the
 [tlsio specification](https://github.com/Azure/azure-c-shared-utility/blob/master/devdoc/tlsio_requirements.md).
 
 The 
-[tlsio_openssl_compact for ESP32](https://github.com/Azure/azure-iot-pal-esp32/pal/src/tlsio_openssl_compact.c)
+[tlsio_openssl_compact for ESP32](https://github.com/Azure/azure-iot-pal-esp32/blob/master/pal/src/tlsio_openssl_compact.c)
 abstracts its operating system dependencies using these two files:
 - [socket_async.c](https://github.com/Azure/azure-c-shared-utility/blob/master/pal/socket_async.c)
 - [dns_async.c](https://github.com/Azure/azure-c-shared-utility/blob/master/pal/dns_async.c)

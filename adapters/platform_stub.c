@@ -15,7 +15,7 @@ const IO_INTERFACE_DESCRIPTION* platform_get_default_tlsio(void)
 
 STRING_HANDLE platform_get_platform_info(void)
 {
-    return NULL;
+    return STRING_construct("(undefined)");
 }
 
 void platform_deinit(void)
