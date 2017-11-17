@@ -50,7 +50,7 @@ xdcargs = java.lang.System.getenv("XDCARGS").split(" ");
 var slIncs = "";
 var ndkIncs = "";
 var wolfsslIncs = "";
-var commonIncs = "-I../../inc -I../../inc/azure_c_shared_utility ";
+var commonIncs = "-I../../inc -I../../inc/azure_c_shared_utility  -I../../pal/linux ";
 var pthreadIncs = "";
 
 /* Parse out the XDCARGS options for the library source paths */
@@ -121,7 +121,7 @@ for (var i = 0; i < Build.targets.length; i++) {
 
     if (slIncs != "") {
         Pkg.addLibrary("lib/common_sl", target, { profile: profile,
-            defs: "-DNET_SL -DREFCOUNT_ATOMIC_DONTCARE " + extraOpts, incs: slIncs
+            defs: "-DNET_SL -DREFCOUNT_SINGLE_THREAD_ONLY " + extraOpts, incs: slIncs
         }).addObjects(SRCS);
     }
 

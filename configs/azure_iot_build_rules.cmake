@@ -44,6 +44,13 @@ include(CTest)
 
 include_directories(${SHARED_UTIL_INC_FOLDER})
 
+# OS-specific header files for ref counting
+if(MSVC)
+    include_directories(${SHARED_UTIL_PAL_FOLDER}/windows)
+else()
+    include_directories(${SHARED_UTIL_PAL_FOLDER}/linux)
+endif()
+
 include(CheckIncludeFiles)
 CHECK_INCLUDE_FILES(stdint.h HAVE_STDINT_H)
 CHECK_INCLUDE_FILES(stdbool.h HAVE_STDBOOL_H)
