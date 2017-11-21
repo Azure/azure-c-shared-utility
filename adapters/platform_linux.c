@@ -42,17 +42,19 @@ const IO_INTERFACE_DESCRIPTION* platform_get_default_tlsio(void)
 
 STRING_HANDLE platform_get_platform_info(void)
 {
+    // Expected format: "(<runtime name>; <operating system name>; <platform>)"
+
     STRING_HANDLE result;
     struct utsname nnn;
 
     if (uname(&nnn) == 0)
     {
-        result = STRING_construct_sprintf("(%s; %s)", nnn.sysname, nnn.machine);
+        result = STRING_construct_sprintf("(native; %s; %s)", nnn.sysname, nnn.machine);
     }
     else
     {
         LogInfo("WARNING: failed to find machine info.");
-        result = STRING_construct("Linux");
+        result = STRING_construct("(native; Linux; undefined)");
     }
 
     return result;

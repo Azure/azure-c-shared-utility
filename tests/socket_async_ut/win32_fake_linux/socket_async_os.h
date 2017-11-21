@@ -7,7 +7,6 @@
 
 #ifdef __cplusplus
 extern "C" {
-#include <cstdbool>
 #include <cstddef>
 #include <cstdint>
 #endif

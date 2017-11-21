@@ -5,7 +5,6 @@
 #define UTF8_CHECKER_H
 
 #ifdef __cplusplus
-#include <cstdbool>
 #include <cstddef>
 extern "C" {
 #else

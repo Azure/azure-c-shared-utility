@@ -32,7 +32,6 @@ typedef bool _Bool;
 #ifndef _WIN32_WCE
 #define HAS_STDBOOL
 #ifdef __cplusplus
-#include <cstdbool>
 /*because C++ doesn't do anything about _Bool... */
 #define _Bool bool
 #else // __cplusplus

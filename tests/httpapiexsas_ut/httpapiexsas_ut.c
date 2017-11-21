@@ -106,12 +106,16 @@ STRING_HANDLE my_SASToken_Create(STRING_HANDLE key, STRING_HANDLE scope, STRING_
     return (STRING_HANDLE)malloc(1);
 }
 
-static void setupSAS_Create_happy_path(void)
+static void setupSAS_Create_happy_path(bool allocateKeyName)
 {
+    // HTTPAPIEX_SAS_Create
     STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
     STRICT_EXPECTED_CALL(STRING_clone(TEST_KEY_HANDLE)).SetReturn(TEST_CLONED_KEY_HANDLE);
     STRICT_EXPECTED_CALL(STRING_clone(TEST_URIRESOURCE_HANDLE)).SetReturn(TEST_CLONED_URIRESOURCE_HANDLE);
-    STRICT_EXPECTED_CALL(STRING_clone(TEST_KEYNAME_HANDLE)).SetReturn(TEST_CLONED_KEYNAME_HANDLE);
+    if (allocateKeyName)
+    {
+        STRICT_EXPECTED_CALL(STRING_clone(TEST_KEYNAME_HANDLE)).SetReturn(TEST_CLONED_KEYNAME_HANDLE);
+    }
 }
 
 DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
@@ -253,7 +257,7 @@ TEST_FUNCTION(HTTPAPIEX_SAS_Create_Succeeds)
     // arrange
     HTTPAPIEX_SAS_HANDLE handle;
 
-    setupSAS_Create_happy_path();
+    setupSAS_Create_happy_path(true);
 
     // act
     handle = HTTPAPIEX_SAS_Create(TEST_KEY_HANDLE, TEST_URIRESOURCE_HANDLE, TEST_KEYNAME_HANDLE);
@@ -294,18 +298,23 @@ TEST_FUNCTION(HTTPAPIEX_SAS_Create_null_uriResource_fails)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/*Tests_SRS_HTTPAPIEXSAS_06_003: [If the parameter keyName is NULL then HTTPAPIEX_SAS_Create shall return NULL.]*/
-TEST_FUNCTION(HTTPAPIEX_SAS_Create_null_keyName_fails)
+/*Tests_SRS_HTTPAPIEXSAS_06_003: [The parameter keyName for HTTPAPIEX_SAS_Create is optional and can be NULL.]*/
+TEST_FUNCTION(HTTPAPIEX_SAS_Create_null_keyName_succeeds)
 {
     // arrange
     HTTPAPIEX_SAS_HANDLE handle;
 
+    setupSAS_Create_happy_path(true);
+
     // act
-    handle = HTTPAPIEX_SAS_Create(TEST_STRING_HANDLE, TEST_STRING_HANDLE, TEST_NULL_STRING_HANDLE);
+    handle = HTTPAPIEX_SAS_Create(TEST_KEY_HANDLE, TEST_URIRESOURCE_HANDLE, TEST_KEYNAME_HANDLE);
 
     // assert
-    ASSERT_IS_NULL(handle);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_IS_NOT_NULL(handle);
+
+    // Cleanup
+    HTTPAPIEX_SAS_Destroy(handle);
 }
 
 /*Tests_SRS_HTTPAPIEXSAS_06_004: [If there are any other errors in the instantiation of this handle then HTTPAPIEX_SAS_Create shall return NULL.]*/
@@ -392,7 +401,7 @@ TEST_FUNCTION(HTTPAPIEX_SAS_Destroy_frees_underlying_strings)
     // arrange
     HTTPAPIEX_SAS_HANDLE handle;
 
-    setupSAS_Create_happy_path();
+    setupSAS_Create_happy_path(true);
     handle = HTTPAPIEX_SAS_Create(TEST_KEY_HANDLE, TEST_URIRESOURCE_HANDLE, TEST_KEYNAME_HANDLE);
     umock_c_reset_all_calls();
 
@@ -443,7 +452,7 @@ TEST_FUNCTION(HTTPAPIEX_SAS_invoke_executerequest_with_null_request_http_headers
     HTTPAPIEX_SAS_HANDLE sasHandle;
 
     // arrange
-    setupSAS_Create_happy_path();
+    setupSAS_Create_happy_path(true);
     sasHandle = HTTPAPIEX_SAS_Create(TEST_KEY_HANDLE, TEST_URIRESOURCE_HANDLE, TEST_KEYNAME_HANDLE);
     umock_c_reset_all_calls();
 
@@ -470,7 +479,7 @@ TEST_FUNCTION(HTTPAPIEX_SAS_invoke_executerequest_findheadervalues_returns_null_
     HTTPAPIEX_SAS_HANDLE sasHandle;
 
     // arrange
-    setupSAS_Create_happy_path();
+    setupSAS_Create_happy_path(true);
     sasHandle = HTTPAPIEX_SAS_Create(TEST_KEY_HANDLE, TEST_URIRESOURCE_HANDLE, TEST_KEYNAME_HANDLE);
     umock_c_reset_all_calls();
 
@@ -498,7 +507,7 @@ TEST_FUNCTION(HTTPAPIEX_SAS_invoke_executerequest_get_time_fails)
     HTTPAPIEX_SAS_HANDLE sasHandle;
 
     // arrange
-    setupSAS_Create_happy_path();
+    setupSAS_Create_happy_path(true);
     sasHandle = HTTPAPIEX_SAS_Create(TEST_KEY_HANDLE, TEST_URIRESOURCE_HANDLE, TEST_KEYNAME_HANDLE);
     umock_c_reset_all_calls();
 
@@ -527,7 +536,7 @@ TEST_FUNCTION(HTTPAPIEX_SAS_invoke_executerequest_sastoken_create_returns_null_s
     HTTPAPIEX_SAS_HANDLE sasHandle;
 
     // arrange
-    setupSAS_Create_happy_path();
+    setupSAS_Create_happy_path(true);
     sasHandle = HTTPAPIEX_SAS_Create(TEST_KEY_HANDLE, TEST_URIRESOURCE_HANDLE, TEST_KEYNAME_HANDLE);
     umock_c_reset_all_calls();
 
@@ -558,7 +567,7 @@ TEST_FUNCTION(HTTPAPIEX_SAS_invoke_executerequest_replace_header_name_value_pair
     HTTPAPIEX_SAS_HANDLE sasHandle;
 
     // arrange
-    setupSAS_Create_happy_path();
+    setupSAS_Create_happy_path(true);
     sasHandle = HTTPAPIEX_SAS_Create(TEST_KEY_HANDLE, TEST_URIRESOURCE_HANDLE, TEST_KEYNAME_HANDLE);
     umock_c_reset_all_calls();
 
@@ -590,7 +599,7 @@ TEST_FUNCTION(HTTPAPIEX_SAS_invoke_executerequest_replace_header_name_value_pair
     HTTPAPIEX_SAS_HANDLE sasHandle;
 
     // arrange
-    setupSAS_Create_happy_path();
+    setupSAS_Create_happy_path(true);
     sasHandle = HTTPAPIEX_SAS_Create(TEST_KEY_HANDLE, TEST_URIRESOURCE_HANDLE, TEST_KEYNAME_HANDLE);
     umock_c_reset_all_calls();
 

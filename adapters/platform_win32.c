@@ -61,6 +61,8 @@ const IO_INTERFACE_DESCRIPTION* platform_get_default_tlsio(void)
 
 STRING_HANDLE platform_get_platform_info(void)
 {
+    // Expected format: "(<runtime name>; <operating system name>; <platform>)"
+
     STRING_HANDLE result;
 #ifndef WINCE
     SYSTEM_INFO sys_info;
@@ -94,9 +96,9 @@ STRING_HANDLE platform_get_platform_info(void)
     #pragma warning(disable:4996)
     dwVersion = GetVersion();
     #pragma warning(default:4996)
-    result = STRING_construct_sprintf("(Windows NT %d.%d; %s)", LOBYTE(LOWORD(dwVersion)), HIBYTE(LOWORD(dwVersion)), arch);
+    result = STRING_construct_sprintf("(native; Windows NT %d.%d; %s)", LOBYTE(LOWORD(dwVersion)), HIBYTE(LOWORD(dwVersion)), arch);
 #else
-    result = STRING_construct("(Windows CE)");
+    result = STRING_construct("(native; Windows CE; undefined)");
 #endif
     if (result == NULL)
     {

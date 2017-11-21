@@ -3,7 +3,6 @@
 
 #ifdef __cplusplus
 #include <cstdlib>
-#include <cstdbool>
 #include <cstddef>
 #include <cstdint>
 #else
@@ -354,18 +353,18 @@ TEST_FUNCTION_CLEANUP(method_cleanup)
 /* Tests_SRS_WSIO_01_076: [ `wsio_create` shall create a pending send IO list that is to be used to queue send packets by calling `singlylinkedlist_create`. ]*/
 TEST_FUNCTION(wsio_create_for_secure_connection_with_valid_args_succeeds)
 {
-	// arrange
+    // arrange
     CONCRETE_IO_HANDLE wsio;
     
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
     STRICT_EXPECTED_CALL(uws_client_create_with_io(TEST_UNDERLYING_IO_INTERFACE, TEST_UNDERLYING_IO_PARAMETERS, TEST_HOST_ADDRESS, 443, TEST_RESOURCE_NAME, IGNORED_PTR_ARG, 1));
     STRICT_EXPECTED_CALL(singlylinkedlist_create());
 
-	// act
+    // act
     wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
 
-	// assert
-	ASSERT_IS_NOT_NULL(wsio);
+    // assert
+    ASSERT_IS_NOT_NULL(wsio);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
@@ -411,7 +410,7 @@ TEST_FUNCTION(wsio_create_with_NULL_hostname_field_fails)
 TEST_FUNCTION(wsio_create_with_NULL_resource_name_field_fails)
 {
     // arrange
-	CONCRETE_IO_HANDLE wsio;
+    CONCRETE_IO_HANDLE wsio;
     WSIO_CONFIG wsio_config;
     wsio_config.hostname = TEST_HOST_ADDRESS;
     wsio_config.port = 443;
@@ -454,7 +453,7 @@ TEST_FUNCTION(wsio_create_with_NULL_protocol_field_fails)
 TEST_FUNCTION(when_allocating_memory_fails_wsio_create_fails)
 {
     // arrange
-	CONCRETE_IO_HANDLE wsio;
+    CONCRETE_IO_HANDLE wsio;
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
         .SetReturn(NULL);
 

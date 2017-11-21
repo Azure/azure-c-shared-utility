@@ -35,16 +35,11 @@ HTTPAPIEX_SAS_HANDLE HTTPAPIEX_SAS_Create(STRING_HANDLE key, STRING_HANDLE uriRe
         /*Codes_SRS_HTTPAPIEXSAS_06_002: [If the parameter uriResource is NULL then HTTPAPIEX_SAS_Create shall return NULL.]*/
         LogError("No uri resource passed to HTTPAPIEX_SAS_Create.");
     }
-    else if (keyName == NULL)
-    {
-        /*Codes_SRS_HTTPAPIEXSAS_06_003: [If the parameter keyName is NULL then HTTPAPIEX_SAS_Create shall return NULL.]*/
-        LogError("No key name passed to HTTPAPIEX_SAS_Create.");
-    }
     else
     {
         /*Codes_SRS_HTTPAPIEXSAS_01_001: [ HTTPAPIEX_SAS_Create shall create a new instance of HTTPAPIEX_SAS and return a non-NULL handle to it. ]*/
         HTTPAPIEX_SAS_STATE* state = (HTTPAPIEX_SAS_STATE*)malloc(sizeof(HTTPAPIEX_SAS_STATE));
-        /*Codes_SRS_HTTPAPIEXSAS_06_004: [If there are any other errors in the instantiation of this handle then HTTPAPIEX_SAS_Create shall return NULL.]*/
+        /*Codes_SRS_HTTPAPIEXSAS_06_003: [The parameter keyName for HTTPAPIEX_SAS_Create is optional and can be NULL.]*/
         if (state != NULL)
         {
             state->key = NULL;
@@ -52,7 +47,7 @@ HTTPAPIEX_SAS_HANDLE HTTPAPIEX_SAS_Create(STRING_HANDLE key, STRING_HANDLE uriRe
             state->keyName = NULL;
             if (((state->key = STRING_clone(key)) == NULL) ||
                 ((state->uriResource = STRING_clone(uriResource)) == NULL) ||
-                ((state->keyName = STRING_clone(keyName)) == NULL))
+                ((keyName != NULL) && ((state->keyName = STRING_clone(keyName)) == NULL)))
             {
                 /*Codes_SRS_HTTPAPIEXSAS_06_004: [If there are any other errors in the instantiation of this handle then HTTPAPIEX_SAS_Create shall return NULL.]*/
                 LogError("Unable to clone the arguments.");

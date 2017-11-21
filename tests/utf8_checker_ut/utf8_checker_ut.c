@@ -13,7 +13,6 @@
 
 #ifdef __cplusplus
 #include <cstddef>
-#include <cstdbool>
 #else
 #include <stddef.h>
 #include <stdbool.h>
@@ -58,13 +57,13 @@ TEST_FUNCTION_CLEANUP(method_cleanup)
 /* Tests_SRS_UTF8_CHECKER_01_002: [ If `utf8_checker_is_valid_utf8` is called with NULL `utf8_str` it shall return false. ]*/
 TEST_FUNCTION(utf8_checker_is_valid_utf8_with_NULL_string_fails)
 {
-	// arrange
+    // arrange
     bool result;
 
-	// act
+    // act
     result = utf8_checker_is_valid_utf8(NULL, 1);
 
-	// assert
+    // assert
     ASSERT_IS_FALSE(result);
 }
 

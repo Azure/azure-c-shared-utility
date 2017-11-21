@@ -9,7 +9,6 @@
 #include "azure_c_shared_utility/macro_utils.h"
 
 #ifdef __cplusplus
-#include <cstdbool>
 #include <cstddef>
 extern "C" {
 #else

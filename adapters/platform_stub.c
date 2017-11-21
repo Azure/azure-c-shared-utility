@@ -15,7 +15,9 @@ const IO_INTERFACE_DESCRIPTION* platform_get_default_tlsio(void)
 
 STRING_HANDLE platform_get_platform_info(void)
 {
-    return NULL;
+    // Expected format: "(<runtime name>; <operating system name>; <platform>)"
+
+    return STRING_construct("(native; undefined; undefined)");
 }
 
 void platform_deinit(void)
