@@ -378,6 +378,21 @@ endif()
 #this is the product (a library)
 add_library(aziotsharedutil ${source_c_files} ${source_h_files})
 
+
+target_include_directories(aziotsharedutil PUBLIC ${SHARED_UTIL_INC_FOLDER})
+if(MSVC)
+    set(source_h_files ${source_h_files}
+        ./pal/windows/refcount_os.h
+    )
+    target_include_directories(aziotsharedutil PUBLIC ${SHARED_UTIL_FOLDER}/pal/windows)
+else()
+    set(source_h_files ${source_h_files}
+        ./pal/linux/refcount_os.h
+    )
+    target_include_directories(aziotsharedutil PUBLIC ${SHARED_UTIL_FOLDER}/pal/linux)
+endif()
+
+
 if(${build_as_dynamic})
     #make sure we can link as dll/so
     add_library(aziotsharedutil_dll SHARED ./src/aziotsharedutil.def ${source_c_files} ${source_h_files})
@@ -566,3 +581,4 @@ else()
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
 endif()
+

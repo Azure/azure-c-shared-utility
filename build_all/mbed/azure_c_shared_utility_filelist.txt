@@ -49,6 +49,7 @@ set(mbed_exported_project_files
         ${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/tcpsocketconnection_c.h
         ${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/vector_types.h
         ${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/vector_types_internal.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../pal/linux/refcount_os.h
    )
 
 set(mbed_project_files

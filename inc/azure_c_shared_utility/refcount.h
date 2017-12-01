@@ -27,19 +27,8 @@ extern "C"
 #include <stdint.h>
 #endif
 
-#if defined(__STDC_VERSION__) && (__STDC_VERSION__ == 201112) && (__STDC_NO_ATOMICS__!=1)
-#define REFCOUNT_USE_STD_ATOMIC 1
-#endif
-
-#if defined(ARDUINO_ARCH_SAMD)
-#undef  REFCOUNT_USE_STD_ATOMIC
-#endif
-
-#if defined(FREERTOS_ARCH_ESP8266)
-#undef  REFCOUNT_USE_STD_ATOMIC  
-#define REFCOUNT_ATOMIC_DONTCARE 1
-#undef __GNUC__    
-#endif
+// Include the platform-specific file that defines COUNT_TYPE
+#include "refcount_os.h"
 
 #define REFCOUNT_TYPE(type) \
 struct C2(C2(REFCOUNT_, type), _TAG)
@@ -54,14 +43,6 @@ C2(REFCOUNT_, type)
 /*and an initializer for that new type that also sets the ref count to 1. The type must not have a flexible array*/
 /*the newly allocated memory shall be free'd by free()*/
 /*and the ref counting is handled internally by the type in the _Create/ _Clone /_Destroy functions */
-
-#if defined(REFCOUNT_USE_STD_ATOMIC)
-#define COUNT_TYPE _Atomic uint32_t
-#elif defined(WIN32)
-#define COUNT_TYPE LONG
-#else
-#define COUNT_TYPE uint32_t
-#endif
 
 #define DEFINE_REFCOUNT_TYPE(type)                                                                   \
 REFCOUNT_TYPE(type)                                                                                  \
@@ -79,58 +60,19 @@ static type* REFCOUNT_TYPE_DECLARE_CREATE(type) (void)                          
     return (type*)result;                                                                            \
 }                                                                                                    \
 
-/*the following macros increment/decrement a ref count in an atomic way, depending on the platform*/
-/*The following mechanisms are considered in this order
-C11 
-    - will result in #include <stdatomic.h> 
-    - will use atomic_fetch_add/sub; 
-    - about the return value: "Atomically, the value pointed to by object immediately before the effects"
-windows 
-    - will result in #include "windows.h"
-    - will use InterlockedIncrement/InterlockedDecrement; 
-    - about the return value: https://msdn.microsoft.com/en-us/library/windows/desktop/ms683580(v=vs.85).aspx "The function returns the resulting decremented value"
-gcc
-    - will result in no include (for gcc these are intrinsics build in)
-    - will use __sync_fetch_and_add/sub
-    - about the return value: "... returns the value that had previously been in memory." (https://gcc.gnu.org/onlinedocs/gcc-4.4.3/gcc/Atomic-Builtins.html#Atomic-Builtins)
-other cases
-    - if REFCOUNT_ATOMIC_DONTCARE is defined, then 
-        will result in ++/-- used for increment/decrement.
-    - if it is not defined, then error out
-       
-It seems windows is "one off" because it returns the value "after" the decrement, as opposed to C11 standard and gcc that return the value "before". 
-The macro DEC_RETURN_ZERO will be "0" on windows, and "1" on the other cases.
-*/
+// The second phase of this platform-specific file defines DEC_RETURN_ZERO, INC_REF, and DEC_REF
+#define REFCOUNT_OS_H__PHASE_TWO
+#include "refcount_os.h"
 
-/*if macro DEC_REF returns DEC_RETURN_ZERO that means the ref count has reached zero.*/
-#if defined(REFCOUNT_USE_STD_ATOMIC)
-#include <stdatomic.h>
-#define DEC_RETURN_ZERO (1)
-#define INC_REF(type, var) atomic_fetch_add((&((REFCOUNT_TYPE(type)*)var)->count), 1)
-#define DEC_REF(type, var) atomic_fetch_sub((&((REFCOUNT_TYPE(type)*)var)->count), 1)
-
-#elif defined(WIN32)
-#include "windows.h"
-#define DEC_RETURN_ZERO (0)
-#define INC_REF(type, var) InterlockedIncrement(&(((REFCOUNT_TYPE(type)*)var)->count))
-#define DEC_REF(type, var) InterlockedDecrement(&(((REFCOUNT_TYPE(type)*)var)->count))
-
-#elif defined(__GNUC__)
-#define DEC_RETURN_ZERO (0)
-#define INC_REF(type, var) __sync_add_and_fetch((&((REFCOUNT_TYPE(type)*)var)->count), 1)
-#define DEC_REF(type, var) __sync_sub_and_fetch((&((REFCOUNT_TYPE(type)*)var)->count), 1)
-
-#else
-#if defined(REFCOUNT_ATOMIC_DONTCARE)
-#define DEC_RETURN_ZERO (0)
-#define INC_REF(type, var) ++((((REFCOUNT_TYPE(type)*)var)->count))
-#define DEC_REF(type, var) --((((REFCOUNT_TYPE(type)*)var)->count))
-#else
-#error do not know how to atomically increment and decrement a uint32_t :(. Platform support needs to be extended to your platform.
-#endif /*defined(REFCOUNT_ATOMIC_DONTCARE)*/
-#endif
-
-
+#ifndef DEC_RETURN_ZERO
+#error refcount_os.h does not define DEC_RETURN_ZERO
+#endif // !DEC_RETURN_ZERO
+#ifndef INC_REF
+#error refcount_os.h does not define INC_REF
+#endif // !INC_REF
+#ifndef DEC_REF
+#error refcount_os.h does not define DEC_REF
+#endif // !DEC_REF
 
 #ifdef __cplusplus
 }
