@@ -12,6 +12,8 @@ extern "C" {
 #endif /* __cplusplus */
 
 #include "azure_c_shared_utility/xio.h"
+#include "azure_c_shared_utility/tlsio.h"
+#include "azure_c_shared_utility/umock_c_prod.h"
 
 /** @brief	Return the tlsio table of functions.
 *
@@ -19,7 +21,7 @@ extern "C" {
 *
 * @return	The tlsio interface (IO_INTERFACE_DESCRIPTION).
 */
-extern const IO_INTERFACE_DESCRIPTION* tlsio_appleios_get_interface_description(void);
+MOCKABLE_FUNCTION(, const IO_INTERFACE_DESCRIPTION*, tlsio_appleios_get_interface_description);
 
 #ifdef __cplusplus
 }
