@@ -691,7 +691,7 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
             httpHandleData->timeout = timeout;
             result = HTTPAPI_OK;
         }
-        else if (strcmp(SU_OPTION_X509_CERT, optionName) == 0)
+        else if (strcmp(SU_OPTION_X509_CERT, optionName) == 0 || strcmp(OPTION_X509_ECC_CERT, optionName) == 0)
         {
             httpHandleData->x509certificate = (const char*)value;
             if (httpHandleData->x509privatekey != NULL)
@@ -713,7 +713,7 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
                 result = HTTPAPI_OK;
             }
         }
-        else if (strcmp(SU_OPTION_X509_PRIVATE_KEY, optionName) == 0)
+        else if (strcmp(SU_OPTION_X509_PRIVATE_KEY, optionName) == 0 || strcmp(OPTION_X509_ECC_KEY, optionName) == 0)
         {
             httpHandleData->x509privatekey = (const char*)value;
             if (httpHandleData->x509certificate != NULL)
@@ -779,7 +779,7 @@ HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, co
                 result = HTTPAPI_OK;
             }
         }
-        else if (strcmp(SU_OPTION_X509_CERT, optionName) == 0)
+        else if (strcmp(SU_OPTION_X509_CERT, optionName) == 0 || strcmp(OPTION_X509_ECC_CERT, optionName) == 0)
         {
             /*this is getting the x509 certificate. In this case, value is a pointer to a const char* that contains the certificate as a null terminated string*/
             if (mallocAndStrcpy_s((char**)savedValue, (const char*)value) != 0)
@@ -793,7 +793,7 @@ HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, co
                 result = HTTPAPI_OK;
             }
         }
-        else if (strcmp(SU_OPTION_X509_PRIVATE_KEY, optionName) == 0)
+        else if (strcmp(SU_OPTION_X509_PRIVATE_KEY, optionName) == 0 || strcmp(OPTION_X509_ECC_KEY, optionName) == 0)
         {
             /*this is getting the x509 private key. In this case, value is a pointer to a const char* that contains the private key as a null terminated string*/
             if (mallocAndStrcpy_s((char**)savedValue, (const char*)value) != 0)
