@@ -38,6 +38,11 @@ STRING_HANDLE platform_get_platform_info(void)
     {
         LogInfo("WARNING: failed to find machine info.");
         result = STRING_construct("iOS");
+
+		if (result == NULL)
+		{
+			LogInfo("ERROR: Failed to create machine info string");
+		}
     }
 
     return result;
