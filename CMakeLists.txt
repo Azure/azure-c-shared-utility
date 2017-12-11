@@ -26,6 +26,7 @@ option(use_default_uuid "set use_default_uuid to ON to use the out of the box UU
 option(run_e2e_tests "set run_e2e_tests to ON to run e2e tests (default is OFF). Chsare dutility does not have any e2e tests, but the option needs to exist to evaluate in IF statements" OFF)
 option(use_builtin_httpapi "set use_builtin_httpapi to ON to use the built-in httpapi_compact that comes with C shared utility (default is OFF)" OFF)
 option(use_cppunittest "set use_cppunittest to ON to build CppUnitTest tests on Windows (default is ON)" ON)
+option(suppress_header_searches "do not try to find headers - used when compiler check will fail" OFF)
 
 if(WIN32)
     option(use_schannel "set use_schannel to ON if schannel is to be used, set to OFF to not use schannel" ON)
@@ -225,6 +226,11 @@ if(UNIX) #LINUX OR APPLE
     set(source_c_files ${source_c_files}
         ./adapters/linux_time.c
     )
+    if(IOS)
+        set(source_c_files ${source_c_files}
+            ./adapters/tlsio_appleios.c
+        )
+    endif(IOS)
 endif()
 
 if(${use_http})
@@ -339,14 +345,14 @@ if(${use_http})
         ./inc/azure_c_shared_utility/httpapiex.h
         ./inc/azure_c_shared_utility/httpapiexsas.h
         ./inc/azure_c_shared_utility/httpheaders.h
-    )
+        )
 endif()
 
 if(${use_schannel})
     set(source_h_files ${source_h_files}
-        ./inc/azure_c_shared_utility/tlsio_schannel.h
-        ./inc/azure_c_shared_utility/x509_schannel.h
-        )
+    ./inc/azure_c_shared_utility/tlsio_schannel.h
+    ./inc/azure_c_shared_utility/x509_schannel.h
+    )
 endif()
 if(${use_wolfssl})
     set(source_h_files ${source_h_files}
@@ -366,7 +372,7 @@ if(${use_cyclonessl} AND WIN32)
     set(source_h_files ${source_h_files}
         ./inc/azure_c_shared_utility/tlsio_cyclonessl.h
         ./inc/azure_c_shared_utility/tlsio_cyclonessl_socket.h
-        )
+    )
 endif()
 
 #this is the product (a library)
@@ -404,27 +410,27 @@ if(${use_http})
         endif()
     else()
         if (CMAKE_CROSSCOMPILING)
-          # As mentioned at https://cmake.org/Wiki/CMake_Cross_Compiling the
-          # pkg-config tool can not be used by cmake while cross compiling.
-          message(STATUS "Cross compiling not using pkg-config")
+            # As mentioned at https://cmake.org/Wiki/CMake_Cross_Compiling the
+            # pkg-config tool can not be used by cmake while cross compiling.
+            message(STATUS "Cross compiling not using pkg-config")
         else()
-          # try pkg-config first
-          find_package(PkgConfig)
-          if(PKG_CONFIG_FOUND)
-            pkg_check_modules(CURL libcurl)
-          endif()
+            # try pkg-config first
+            find_package(PkgConfig)
+            if(PKG_CONFIG_FOUND)
+                pkg_check_modules(CURL libcurl)
+            endif()
+
+            # if that didn't work, try CMake find_package
+            if(NOT CURL_FOUND)
+                find_package(CURL)
+            endif()
+
+            set(CURL_FIND_REQUIRED 1)
+            find_package_handle_standard_args(CURL DEFAULT_MSG CURL_LIBRARIES)
+
+            include_directories(${CURL_INCLUDE_DIRS})
+            set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} ${CURL_LIBRARIES})
         endif()
-
-        # if that didn't work, try CMake find_package
-        if(NOT CURL_FOUND)
-            find_package(CURL)
-        endif()
-
-        set(CURL_FIND_REQUIRED 1)
-        find_package_handle_standard_args(CURL DEFAULT_MSG CURL_LIBRARIES)
-
-        include_directories(${CURL_INCLUDE_DIRS})
-        set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} ${CURL_LIBRARIES})
     endif()
 endif()
 
