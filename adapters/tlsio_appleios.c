@@ -51,8 +51,6 @@ bool is_an_opening_state(TLSIO_STATE state)
         state == TLSIO_STATE_OPENING_WAITING_SSL;
 }
 
-// This structure definition is mirrored in the unit tests, so if you change
-// this struct, keep it in sync with the one in tlsio_openssl_compact_ut.c
 typedef struct TLS_IO_INSTANCE_TAG
 {
     ON_BYTES_RECEIVED on_bytes_received;
@@ -159,7 +157,7 @@ static void internal_close(TLS_IO_INSTANCE* tls_io_instance)
     tls_io_instance->on_open_complete_context = NULL;
 }
 
-static void tlsio_openssl_destroy(CONCRETE_IO_HANDLE tls_io)
+static void tlsio_appleios_destroy(CONCRETE_IO_HANDLE tls_io)
 {
     if (tls_io == NULL)
     {
@@ -172,7 +170,7 @@ static void tlsio_openssl_destroy(CONCRETE_IO_HANDLE tls_io)
         if (tls_io_instance->tlsio_state != TLSIO_STATE_CLOSED)
         {
             /* Codes_SRS_TLSIO_30_022: [ If the adapter is in any state other than TLSIO_STATE_EX_CLOSED when tlsio_destroy is called, the adapter shall enter TLSIO_STATE_EX_CLOSING and then enter TLSIO_STATE_EX_CLOSED before completing the destroy process. ]*/
-            LogError("tlsio_openssl_destroy called while not in TLSIO_STATE_CLOSED.");
+            LogError("tlsio_appleios_destroy called while not in TLSIO_STATE_CLOSED.");
             internal_close(tls_io_instance);
         }
         /* Codes_SRS_TLSIO_30_021: [ The tlsio_destroy shall release all allocated resources and then release tlsio_handle. ]*/
@@ -191,8 +189,8 @@ static void tlsio_openssl_destroy(CONCRETE_IO_HANDLE tls_io)
     }
 }
 
-/* Codes_SRS_TLSIO_30_010: [ The tlsio_create shall allocate and initialize all necessary resources and return an instance of the tlsio_openssl_compact. ]*/
-static CONCRETE_IO_HANDLE tlsio_openssl_create(void* io_create_parameters)
+/* Codes_SRS_TLSIO_30_010: [ The tlsio_create shall allocate and initialize all necessary resources and return an instance of the tlsio_appleios_compact. ]*/
+static CONCRETE_IO_HANDLE tlsio_appleios_create(void* io_create_parameters)
 {
     TLS_IO_INSTANCE* result;
 
@@ -239,11 +237,11 @@ static CONCRETE_IO_HANDLE tlsio_openssl_create(void* io_create_parameters)
                     result->hostname = NULL;
                     result->pending_transmission_list = NULL;
                     /* Codes_SRS_TLSIO_30_016: [ tlsio_create shall make a copy of the hostname member of io_create_parameters to allow deletion of hostname immediately after the call. ]*/
-                    if (NULL == CFStringCreateWithCString(NULL, tls_io_config->hostname, kCFStringEncodingUTF8))
+                    if (NULL == (result->hostname = CFStringCreateWithCString(NULL, tls_io_config->hostname, kCFStringEncodingUTF8)))
                     {
                         /* Codes_SRS_TLSIO_30_011: [ If any resource allocation fails, tlsio_create shall return NULL. ]*/
                         LogError("CFStringCreateWithCString failed");
-                        tlsio_openssl_destroy(result);
+                        tlsio_appleios_destroy(result);
                         result = NULL;
                     }
                     else
@@ -254,7 +252,7 @@ static CONCRETE_IO_HANDLE tlsio_openssl_create(void* io_create_parameters)
                         {
                             /* Codes_SRS_TLSIO_30_011: [ If any resource allocation fails, tlsio_create shall return NULL. ]*/
                             LogError("Failed singlylinkedlist_create");
-                            tlsio_openssl_destroy(result);
+                            tlsio_appleios_destroy(result);
                             result = NULL;
                         }
                     }
@@ -267,7 +265,7 @@ static CONCRETE_IO_HANDLE tlsio_openssl_create(void* io_create_parameters)
 }
 
 
-static int tlsio_openssl_open_async(CONCRETE_IO_HANDLE tls_io,
+static int tlsio_appleios_open_async(CONCRETE_IO_HANDLE tls_io,
     ON_IO_OPEN_COMPLETE on_io_open_complete, void* on_io_open_complete_context,
     ON_BYTES_RECEIVED on_bytes_received, void* on_bytes_received_context,
     ON_IO_ERROR on_io_error, void* on_io_error_context)
@@ -341,13 +339,13 @@ static int tlsio_openssl_open_async(CONCRETE_IO_HANDLE tls_io,
 }
 
 // This implementation does not have asynchronous close, but uses the _async name for consistencty with the spec
-static int tlsio_openssl_close_async(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_close_complete, void* callback_context)
+static int tlsio_appleios_close_async(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_close_complete, void* callback_context)
 {
     int result;
 
     if (tls_io == NULL)
     {
-        /* Codes_SRS_TLSIO_30_050: [ If the tlsio_handle parameter is NULL, tlsio_openssl_close_async shall log an error and return FAILURE. ]*/
+        /* Codes_SRS_TLSIO_30_050: [ If the tlsio_handle parameter is NULL, tlsio_appleios_close_async shall log an error and return FAILURE. ]*/
         LogError("NULL tlsio");
         result = __FAILURE__;
     }
@@ -355,7 +353,7 @@ static int tlsio_openssl_close_async(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMP
     {
         if (on_io_close_complete == NULL)
         {
-            /* Codes_SRS_TLSIO_30_055: [ If the on_io_close_complete parameter is NULL, tlsio_openssl_close_async shall log an error and return FAILURE. ]*/
+            /* Codes_SRS_TLSIO_30_055: [ If the on_io_close_complete parameter is NULL, tlsio_appleios_close_async shall log an error and return FAILURE. ]*/
             LogError("NULL on_io_close_complete");
             result = __FAILURE__;
         }
@@ -368,7 +366,7 @@ static int tlsio_openssl_close_async(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMP
             {
                 /* Codes_SRS_TLSIO_30_053: [ If the adapter is in any state other than TLSIO_STATE_EXT_OPEN or TLSIO_STATE_EXT_ERROR then tlsio_close_async shall log that tlsio_close_async has been called and then continue normally. ]*/
                 // LogInfo rather than LogError because this is an unusual but not erroneous situation
-                LogInfo("tlsio_openssl_close has been called when in neither TLSIO_STATE_OPEN nor TLSIO_STATE_ERROR.");
+                LogInfo("tlsio_appleios_close has been called when in neither TLSIO_STATE_OPEN nor TLSIO_STATE_ERROR.");
             }
 
             if (is_an_opening_state(tls_io_instance->tlsio_state))
@@ -390,12 +388,12 @@ static int tlsio_openssl_close_async(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMP
     return result;
 }
 
-static int tlsio_openssl_send_async(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t size, ON_SEND_COMPLETE on_send_complete, void* callback_context)
+static int tlsio_appleios_send_async(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t size, ON_SEND_COMPLETE on_send_complete, void* callback_context)
 {
     int result;
     if (on_send_complete == NULL)
     {
-        /* Codes_SRS_TLSIO_30_062: [ If the on_send_complete is NULL, tlsio_openssl_compact_send shall log the error and return FAILURE. ]*/
+        /* Codes_SRS_TLSIO_30_062: [ If the on_send_complete is NULL, tlsio_appleios_compact_send shall log the error and return FAILURE. ]*/
         result = __FAILURE__;
         LogError("NULL on_send_complete");
     }
@@ -403,7 +401,7 @@ static int tlsio_openssl_send_async(CONCRETE_IO_HANDLE tls_io, const void* buffe
     {
         if (tls_io == NULL)
         {
-            /* Codes_SRS_TLSIO_30_060: [ If the tlsio_handle parameter is NULL, tlsio_openssl_compact_send shall log an error and return FAILURE. ]*/
+            /* Codes_SRS_TLSIO_30_060: [ If the tlsio_handle parameter is NULL, tlsio_appleios_compact_send shall log an error and return FAILURE. ]*/
             result = __FAILURE__;
             LogError("NULL tlsio");
         }
@@ -411,7 +409,7 @@ static int tlsio_openssl_send_async(CONCRETE_IO_HANDLE tls_io, const void* buffe
         {
             if (buffer == NULL)
             {
-                /* Codes_SRS_TLSIO_30_061: [ If the buffer is NULL, tlsio_openssl_compact_send shall log the error and return FAILURE. ]*/
+                /* Codes_SRS_TLSIO_30_061: [ If the buffer is NULL, tlsio_appleios_compact_send shall log the error and return FAILURE. ]*/
                 result = __FAILURE__;
                 LogError("NULL buffer");
             }
@@ -428,27 +426,27 @@ static int tlsio_openssl_send_async(CONCRETE_IO_HANDLE tls_io, const void* buffe
                     TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tls_io;
                     if (tls_io_instance->tlsio_state != TLSIO_STATE_OPEN)
                     {
-                        /* Codes_SRS_TLSIO_30_065: [ If tlsio_openssl_compact_open has not been called or the opening process has not been completed, tlsio_openssl_compact_send shall log an error and return FAILURE. ]*/
+                        /* Codes_SRS_TLSIO_30_065: [ If tlsio_appleios_compact_open has not been called or the opening process has not been completed, tlsio_appleios_compact_send shall log an error and return FAILURE. ]*/
                         result = __FAILURE__;
-                        LogError("tlsio_openssl_send_async without a prior successful open");
+                        LogError("tlsio_appleios_send_async without a prior successful open");
                     }
                     else
                     {
                         PENDING_TRANSMISSION* pending_transmission = (PENDING_TRANSMISSION*)malloc(sizeof(PENDING_TRANSMISSION));
                         if (pending_transmission == NULL)
                         {
-                            /* Codes_SRS_TLSIO_30_064: [ If the supplied message cannot be enqueued for transmission, tlsio_openssl_compact_send shall log an error and return FAILURE. ]*/
+                            /* Codes_SRS_TLSIO_30_064: [ If the supplied message cannot be enqueued for transmission, tlsio_appleios_compact_send shall log an error and return FAILURE. ]*/
                             result = __FAILURE__;
                             LogError("malloc failed");
                         }
                         else
                         {
-                            /* Codes_SRS_TLSIO_30_063: [ The tlsio_openssl_compact_send shall enqueue for transmission the on_send_complete, the callback_context, the size, and the contents of buffer. ]*/
+                            /* Codes_SRS_TLSIO_30_063: [ The tlsio_appleios_compact_send shall enqueue for transmission the on_send_complete, the callback_context, the size, and the contents of buffer. ]*/
                             pending_transmission->bytes = (unsigned char*)malloc(size);
 
                             if (pending_transmission->bytes == NULL)
                             {
-                                /* Codes_SRS_TLSIO_30_064: [ If the supplied message cannot be enqueued for transmission, tlsio_openssl_compact_send shall log an error and return FAILURE. ]*/
+                                /* Codes_SRS_TLSIO_30_064: [ If the supplied message cannot be enqueued for transmission, tlsio_appleios_compact_send shall log an error and return FAILURE. ]*/
                                 LogError("malloc failed");
                                 free(pending_transmission);
                                 result = __FAILURE__;
@@ -463,7 +461,7 @@ static int tlsio_openssl_send_async(CONCRETE_IO_HANDLE tls_io, const void* buffe
 
                                 if (singlylinkedlist_add(tls_io_instance->pending_transmission_list, pending_transmission) == NULL)
                                 {
-                                    /* Codes_SRS_TLSIO_30_064: [ If the supplied message cannot be enqueued for transmission, tlsio_openssl_compact_send shall log an error and return FAILURE. ]*/
+                                    /* Codes_SRS_TLSIO_30_064: [ If the supplied message cannot be enqueued for transmission, tlsio_appleios_compact_send shall log an error and return FAILURE. ]*/
                                     LogError("Unable to add socket to pending list.");
                                     free(pending_transmission->bytes);
                                     free(pending_transmission);
@@ -504,7 +502,7 @@ static void dowork_read(TLS_IO_INSTANCE* tls_io_instance)
 			if (rcv_bytes > 0)
 			{
 				// tls_io_instance->on_bytes_received was already checked for NULL
-				// in the call to tlsio_openssl_open_async
+				// in the call to tlsio_appleios_open_async
 				/* Codes_SRS_TLSIO_30_100: [ As long as the TLS connection is able to provide received data, tlsio_dowork shall repeatedly read this data and call on_bytes_received with the pointer to the buffer containing the data, the number of bytes received, and the on_bytes_received_context. ]*/
 				tls_io_instance->on_bytes_received(tls_io_instance->on_bytes_received_context, buffer, rcv_bytes);
 			}
@@ -528,7 +526,7 @@ static void dowork_send(TLS_IO_INSTANCE* tls_io_instance)
             pending_message->unsent_size -= write_result;
             if (pending_message->unsent_size == 0)
             {
-                /* Codes_SRS_TLSIO_30_091: [ If tlsio_openssl_compact_dowork is able to send all the bytes in an enqueued message, it shall call the messages's on_send_complete along with its associated callback_context and IO_SEND_OK. ]*/
+                /* Codes_SRS_TLSIO_30_091: [ If tlsio_appleios_compact_dowork is able to send all the bytes in an enqueued message, it shall call the messages's on_send_complete along with its associated callback_context and IO_SEND_OK. ]*/
                 // The whole message has been sent successfully
                 process_and_destroy_head_message(tls_io_instance, IO_SEND_OK);
             }
@@ -552,7 +550,7 @@ static void dowork_send(TLS_IO_INSTANCE* tls_io_instance)
     }
     else
     {
-        /* Codes_SRS_TLSIO_30_096: [ If there are no enqueued messages available, tlsio_openssl_compact_dowork shall do nothing. ]*/
+        /* Codes_SRS_TLSIO_30_096: [ If there are no enqueued messages available, tlsio_appleios_compact_dowork shall do nothing. ]*/
     }
 }
 
@@ -606,7 +604,7 @@ static void dowork_poll_open_ssl(TLS_IO_INSTANCE* tls_io_instance)
     }
 }
 
-static void tlsio_openssl_dowork(CONCRETE_IO_HANDLE tls_io)
+static void tlsio_appleios_dowork(CONCRETE_IO_HANDLE tls_io)
 {
     if (tls_io == NULL)
     {
@@ -651,10 +649,10 @@ static void tlsio_openssl_dowork(CONCRETE_IO_HANDLE tls_io)
     }
 }
 
-static int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, const void* value)
+static int tlsio_appleios_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, const void* value)
 {
     TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tls_io;
-    /* Codes_SRS_TLSIO_30_120: [ If the tlsio_handle parameter is NULL, tlsio_openssl_compact_setoption shall do nothing except log an error and return FAILURE. ]*/
+    /* Codes_SRS_TLSIO_30_120: [ If the tlsio_handle parameter is NULL, tlsio_appleios_compact_setoption shall do nothing except log an error and return FAILURE. ]*/
     int result;
     if (tls_io_instance == NULL)
     {
@@ -663,7 +661,7 @@ static int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* option
     }
     else
     {
-        /* Codes_SRS_TLSIO_30_121: [ If the optionName parameter is NULL, tlsio_openssl_compact_setoption shall do nothing except log an error and return FAILURE. ]*/
+        /* Codes_SRS_TLSIO_30_121: [ If the optionName parameter is NULL, tlsio_appleios_compact_setoption shall do nothing except log an error and return FAILURE. ]*/
         if (optionName == NULL)
         {
             LogError("Required optionName parameter is NULL");
@@ -671,7 +669,7 @@ static int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* option
         }
         else
         {
-            /* Codes_SRS_TLSIO_30_122: [ If the value parameter is NULL, tlsio_openssl_compact_setoption shall do nothing except log an error and return FAILURE. ]*/
+            /* Codes_SRS_TLSIO_30_122: [ If the value parameter is NULL, tlsio_appleios_compact_setoption shall do nothing except log an error and return FAILURE. ]*/
             if (value == NULL)
             {
                 LogError("Required value parameter is NULL");
@@ -679,7 +677,7 @@ static int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* option
             }
             else
             {
-                /* Codes_SRS_TLSIO_OPENSSL_COMPACT_30_520 [ The tlsio_setoption shall do nothing and return 0. ]*/
+                /* Codes_SRS_TLSIO_APPLEIOS_COMPACT_30_520 [ The tlsio_setoption shall do nothing and return 0. ]*/
                 result = 0;
             }
         }
@@ -687,11 +685,11 @@ static int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* option
     return result;
 }
 
-/* Codes_SRS_TLSIO_OPENSSL_COMPACT_30_560: [ The  tlsio_retrieveoptions  shall do nothing and return NULL. ]*/
-static OPTIONHANDLER_HANDLE tlsio_openssl_retrieveoptions(CONCRETE_IO_HANDLE tls_io)
+/* Codes_SRS_TLSIO_APPLEIOS_COMPACT_30_560: [ The  tlsio_retrieveoptions  shall do nothing and return NULL. ]*/
+static OPTIONHANDLER_HANDLE tlsio_appleios_retrieveoptions(CONCRETE_IO_HANDLE tls_io)
 {
     TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tls_io;
-    /* Codes_SRS_TLSIO_30_160: [ If the tlsio_handle parameter is NULL, tlsio_openssl_compact_retrieveoptions shall do nothing except log an error and return FAILURE. ]*/
+    /* Codes_SRS_TLSIO_30_160: [ If the tlsio_handle parameter is NULL, tlsio_appleios_compact_retrieveoptions shall do nothing except log an error and return FAILURE. ]*/
     OPTIONHANDLER_HANDLE result;
     if (tls_io_instance == NULL)
     {
@@ -706,20 +704,20 @@ static OPTIONHANDLER_HANDLE tlsio_openssl_retrieveoptions(CONCRETE_IO_HANDLE tls
 }
 
 /* Codes_SRS_TLSIO_30_008: [ The tlsio_get_interface_description shall return the VTable IO_INTERFACE_DESCRIPTION. ]*/
-static const IO_INTERFACE_DESCRIPTION tlsio_openssl_interface_description =
+static const IO_INTERFACE_DESCRIPTION tlsio_appleios_interface_description =
 {
-    tlsio_openssl_retrieveoptions,
-    tlsio_openssl_create,
-    tlsio_openssl_destroy,
-    tlsio_openssl_open_async,
-    tlsio_openssl_close_async,
-    tlsio_openssl_send_async,
-    tlsio_openssl_dowork,
-    tlsio_openssl_setoption
+    tlsio_appleios_retrieveoptions,
+    tlsio_appleios_create,
+    tlsio_appleios_destroy,
+    tlsio_appleios_open_async,
+    tlsio_appleios_close_async,
+    tlsio_appleios_send_async,
+    tlsio_appleios_dowork,
+    tlsio_appleios_setoption
 };
 
-/* Codes_SRS_TLSIO_30_001: [ The tlsio_openssl_compact shall implement and export all the Concrete functions in the VTable IO_INTERFACE_DESCRIPTION defined in the xio.h. ]*/
-const IO_INTERFACE_DESCRIPTION* tlsio_pal_get_interface_description(void)
+/* Codes_SRS_TLSIO_30_001: [ The tlsio_appleios_compact shall implement and export all the Concrete functions in the VTable IO_INTERFACE_DESCRIPTION defined in the xio.h. ]*/
+const IO_INTERFACE_DESCRIPTION* tlsio_appleios_get_interface_description(void)
 {
-    return &tlsio_openssl_interface_description;
+    return &tlsio_appleios_interface_description;
 }
