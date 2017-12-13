@@ -2,13 +2,13 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 // This file gets included into refcount.h as a means of extending the behavior of
-// atomic increment, decrement, and test. It gets included in two separate phases
-// in order to make the macro definitions work properly.
+// atomic increment, decrement, and test.
 #ifndef REFCOUNT_OS_H__LINUX
 #define REFCOUNT_OS_H__LINUX
 
+
 // This Linux-specific header offers 3 strategies: 
-//   REFCOUNT_SINGLE_THREAD_ONLY  -- no atomicity guarantee
+//   REFCOUNT_ATOMIC_DONTCARE     -- no atomicity guarantee
 //   REFCOUNT_USE_STD_ATOMIC      -- C11 atomicity
 //   REFCOUNT_USE_GNU_C_ATOMIC    -- GNU-specific atomicity
 
@@ -18,34 +18,30 @@
 
 #if defined(__STDC_VERSION__) && (__STDC_VERSION__ == 201112)
 #define REFCOUNT_USE_STD_ATOMIC 1
+#undef REFCOUNT_USE_GNU_C_ATOMIC
 #endif
 
-// This FREERTOS_ARCH_ESP8266 behavior is deprecated, and belongs in a PAL repo.
-// FREERTOS_ARCH_ESP8266 and the TI CC3200 are the only clients of
-// REFCOUNT_SINGLE_THREAD_ONLY, and after they have been removed from the SDK
-// the REFCOUNT_SINGLE_THREAD_ONLY option should be deleted as well.
+// This FREERTOS_ARCH_ESP8266 behavior is deprecated. Microcontrollers
+// using the Azure IoT C SDK should include the c-utility file
+// pal/generic/refcount_os.h instead of this one.
 #if defined(FREERTOS_ARCH_ESP8266)
-#define REFCOUNT_SINGLE_THREAD_ONLY 1
+#define REFCOUNT_ATOMIC_DONTCARE 1
+#undef REFCOUNT_USE_STD_ATOMIC
+#undef REFCOUNT_USE_GNU_C_ATOMIC
 #endif
 
-#if defined(REFCOUNT_SINGLE_THREAD_ONLY)
+#if defined(REFCOUNT_ATOMIC_DONTCARE)
 #define COUNT_TYPE uint32_t
 #elif defined(REFCOUNT_USE_STD_ATOMIC)
 #define COUNT_TYPE _Atomic uint32_t
 #else  // REFCOUNT_USE_GNU_C_ATOMIC
 #define COUNT_TYPE uint32_t
-#endif // defined(REFCOUNT_SINGLE_THREAD_ONLY)
+#endif // defined(REFCOUNT_ATOMIC_DONTCARE)
 
-#endif // REFCOUNT_OS_H__LINUX
 
-// This is the second phase inclusion
-#ifdef REFCOUNT_OS_H__PHASE_TWO
-#undef REFCOUNT_OS_H__PHASE_TWO
-#ifndef REFCOUNT_OS_H__PHASE_TWO__IMPL
-#define REFCOUNT_OS_H__PHASE_TWO__IMPL
 /*the following macros increment/decrement a ref count in an atomic way, depending on the platform*/
 /*The following mechanisms are considered in this order
-REFCOUNT_SINGLE_THREAD_ONLY does not use atomic operations
+REFCOUNT_ATOMIC_DONTCARE does not use atomic operations
 - will result in ++/-- used for increment/decrement.
 C11
 - will result in #include <stdatomic.h>
@@ -59,7 +55,7 @@ gcc
 
 
 /*if macro DEC_REF returns DEC_RETURN_ZERO that means the ref count has reached zero.*/
-#if defined(REFCOUNT_SINGLE_THREAD_ONLY)
+#if defined(REFCOUNT_ATOMIC_DONTCARE)
 #define DEC_RETURN_ZERO (0)
 #define INC_REF(type, var) ++((((REFCOUNT_TYPE(type)*)var)->count))
 #define DEC_REF(type, var) --((((REFCOUNT_TYPE(type)*)var)->count))
@@ -77,5 +73,4 @@ gcc
 
 #endif /*defined(REFCOUNT_USE_GNU_C_ATOMIC)*/
 
-#endif // REFCOUNT_OS_H__PHASE_TWO__IMPL
-#endif // REFCOUNT_OS_H__PHASE_TWO
+#endif // REFCOUNT_OS_H__LINUX
