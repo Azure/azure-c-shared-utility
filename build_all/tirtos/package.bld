@@ -121,7 +121,7 @@ for (var i = 0; i < Build.targets.length; i++) {
 
     if (slIncs != "") {
         Pkg.addLibrary("lib/common_sl", target, { profile: profile,
-            defs: "-DNET_SL -DREFCOUNT_SINGLE_THREAD_ONLY " + extraOpts, incs: slIncs
+            defs: "-DNET_SL -DREFCOUNT_ATOMIC_DONTCARE " + extraOpts, incs: slIncs
         }).addObjects(SRCS);
     }
 

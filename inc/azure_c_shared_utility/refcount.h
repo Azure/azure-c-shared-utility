@@ -27,7 +27,7 @@ extern "C"
 #include <stdint.h>
 #endif
 
-// Include the platform-specific file that defines COUNT_TYPE
+// Include the platform-specific file that defines atomic functionality
 #include "refcount_os.h"
 
 #define REFCOUNT_TYPE(type) \
@@ -59,10 +59,6 @@ static type* REFCOUNT_TYPE_DECLARE_CREATE(type) (void)                          
     }                                                                                                \
     return (type*)result;                                                                            \
 }                                                                                                    \
-
-// The second phase of this platform-specific file defines DEC_RETURN_ZERO, INC_REF, and DEC_REF
-#define REFCOUNT_OS_H__PHASE_TWO
-#include "refcount_os.h"
 
 #ifndef DEC_RETURN_ZERO
 #error refcount_os.h does not define DEC_RETURN_ZERO
