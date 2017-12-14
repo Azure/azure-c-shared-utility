@@ -915,9 +915,31 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
 
         if (socket_io_instance->io_state == IO_STATE_OPEN)
         {
+            static int  lastReceived = 44;
+            static int lastErrno = 22;
+            
             int received = 0;
             do
             {
+                /*
+                fd_set errorSet;
+                FD_ZERO(&errorSet);
+                FD_SET(socket_io_instance->socket, &errorSet);
+                struct timeval tv;
+                
+                tv.tv_sec = 0;
+                tv.tv_usec = 0;
+                
+                int result = select(1, NULL, NULL, &errorSet, &tv);
+                if (result <= -1) { printf("result = %d, errno=%d\n", result, errno); }
+                
+                if (result == 1) {
+                    printf("result = 1\n");
+                }
+                //else if (result == 0) { printf("result = 0\n"); }
+                */
+                
+                errno = 1234;
                 received = recv(socket_io_instance->socket, socket_io_instance->recv_bytes, RECEIVE_BYTES_VALUE, 0);
                 if (received > 0)
                 {
@@ -926,9 +948,27 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                         /* Explicitly ignoring here the result of the callback */
                         (void)socket_io_instance->on_bytes_received(socket_io_instance->on_bytes_received_context, socket_io_instance->recv_bytes, received);
                     }
+                    // lastReceived = received;
+                }
+                else if (received == 0) 
+                {
+                    int store_errno = errno;
+                    if ((received != lastReceived) || (errno != lastErrno))
+                    {
+                        // Hack to minimize amount of output.
+                        lastReceived = 0;
+                        lastErrno = errno;
+                        LogInfo("***** SocketIO received 0 bytes: errno=%d.", store_errno);
+                    }
+                    //if ((store_errno != EAGAIN) && (store_errno != 0))
+                    {
+                        printf("Signaling errno = %d to upper layer\n", store_errno);
+                        indicate_error(socket_io_instance);
+                    }
                 }
                 else if (received < 0 && errno != EAGAIN)
                 {
+                    // lastReceived = received;
                     LogError("Socketio_Failure: Receiving data from endpoint: errno=%d.", errno);
                     indicate_error(socket_io_instance);
                 }
