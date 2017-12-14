@@ -419,6 +419,7 @@ if(${use_http})
             if(PKG_CONFIG_FOUND)
                 pkg_check_modules(CURL libcurl)
             endif()
+        endif()
 
             # if that didn't work, try CMake find_package
             if(NOT CURL_FOUND)
@@ -430,7 +431,6 @@ if(${use_http})
 
             include_directories(${CURL_INCLUDE_DIRS})
             set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} ${CURL_LIBRARIES})
-        endif()
     endif()
 endif()
 
