@@ -138,7 +138,7 @@ All transitions into TLSIO_STATE_EXT_CLOSED are understood to pass through TLSIO
   <tr>From state <b>TLSIO_STATE_EXT_OPEN</b></tr>
   <tr>
     <td>tlsio_destroy</td>
-    <td>log error, force immediate close, destroy (destroyed)</td>
+    <td>(a possible normal SDK behavior) force immediate close, destroy (destroyed)</td>
   </tr>
   <tr>
     <td>tlsio_open_async</td>
@@ -416,7 +416,10 @@ Transitioning from TLSIO_STATE_EXT_OPENING to TLSIO_STATE_EXT_OPEN may require m
 
 #### Data transmission behaviors
 
-**SRS_TLSIO_30_091: [** If `tlsio_dowork` is able to send all the bytes in an enqueued message, it shall call the messages's `on_send_complete` along with its associated `callback_context` and `IO_SEND_OK`. **]**
+
+**SRS_TLSIO_30_091: [** If `tlsio_dowork` is able to send all the bytes in an enqueued message, it shall first dequeue the message then call the messages's `on_send_complete` along with its associated `callback_context` and `IO_SEND_OK`. **]**<br/>
+The message needs to be dequeued before calling the callback because the callback may trigger a re-entrant
+`tlsio_close` call which will need a consistent message queue.
 
 **SRS_TLSIO_30_093: [** If the TLS connection was not able to send an entire enqueued message at once, subsequent calls to `tlsio_dowork` shall continue to send the remaining bytes. **]**
 
