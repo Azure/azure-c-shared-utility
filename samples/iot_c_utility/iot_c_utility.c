@@ -12,22 +12,36 @@
 #include "azure_c_shared_utility/strings.h"
 #include "azure_c_shared_utility/urlencode.h"
 #include "azure_c_shared_utility/xlogging.h"
+#include "azure_c_shared_utility/httpapiex.h"
 
-void test_http_proxy_io()
+static void test_http_proxy_io()
 {
     const IO_INTERFACE_DESCRIPTION* interface_desc = http_proxy_io_get_interface_description();
     if (interface_desc == NULL)
     {
-        (void)printf("Failed to create interface_desc.\n");
+        LogError("Failed to create interface_desc.\n");
     }
 }
 
-void show_sastoken_example()
+static void http_examples()
+{
+    HTTPAPIEX_HANDLE handle = HTTPAPIEX_Create("www.bing.com");
+    if (handle == NULL)
+    {
+        LogError("Failed creating httpApiEx handle");
+    }
+    else
+    {
+        HTTPAPIEX_Destroy(handle);
+    }
+}
+
+static void show_sastoken_example()
 {
     STRING_HANDLE sas_token = SASToken_CreateString("key", "scope", "name", 987654321);
     if (sas_token == NULL)
     {
-        (void)printf("Failed to create SAS Token.\n");
+        LogError("Failed to create SAS Token.\n");
     }
     else
     {
@@ -41,13 +55,14 @@ int main(int argc, char** argv)
 
     if (platform_init() != 0)
     {
-        (void)printf("Cannot initialize platform.\n");
+        LogError("Cannot initialize platform.\n");
     }
     else
     {
         show_sastoken_example();
         test_http_proxy_io();
         platform_deinit();
+        http_examples();
     }
     return 0;
 }
