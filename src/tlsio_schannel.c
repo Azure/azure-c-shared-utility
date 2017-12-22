@@ -26,6 +26,7 @@
 #include "azure_c_shared_utility/crt_abstractions.h"
 #include "azure_c_shared_utility/singlylinkedlist.h"
 #include "azure_c_shared_utility/shared_util_options.h"
+#include "azure_c_shared_utility/gballoc.h"
 
 #define TLSIO_STATE_VALUES                        \
     TLSIO_STATE_NOT_OPEN,                         \

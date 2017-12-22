@@ -93,37 +93,37 @@ void* gballoc_malloc(size_t size)
     }
     else
     {
-    ALLOCATION* allocation = (ALLOCATION*)malloc(sizeof(ALLOCATION));
-    if (allocation == NULL)
-    {
-        result = NULL;
-    }
-    else
-    {
-        /* Codes_SRS_GBALLOC_01_003: [gb_malloc shall call the C99 malloc function and return its result.] */
-        result = malloc(size);
-        if (result == NULL)
+        ALLOCATION* allocation = (ALLOCATION*)malloc(sizeof(ALLOCATION));
+        if (allocation == NULL)
         {
-            /* Codes_SRS_GBALLOC_01_012: [When the underlying malloc call fails, gballoc_malloc shall return NULL and size should not be counted towards total memory used.] */
-            free(allocation);
+            result = NULL;
         }
         else
         {
-            /* Codes_SRS_GBALLOC_01_004: [If the underlying malloc call is successful, gb_malloc shall increment the total memory used with the amount indicated by size.] */
-            allocation->ptr = result;
-            allocation->size = size;
-            allocation->next = head;
-            head = allocation;
-
-            g_allocations++;
-            totalSize += size;
-            /* Codes_SRS_GBALLOC_01_011: [The maximum total memory used shall be the maximum of the total memory used at any point.] */
-            if (maxSize < totalSize)
+            /* Codes_SRS_GBALLOC_01_003: [gb_malloc shall call the C99 malloc function and return its result.] */
+            result = malloc(size);
+            if (result == NULL)
             {
-                maxSize = totalSize;
+                /* Codes_SRS_GBALLOC_01_012: [When the underlying malloc call fails, gballoc_malloc shall return NULL and size should not be counted towards total memory used.] */
+                free(allocation);
+            }
+            else
+            {
+                /* Codes_SRS_GBALLOC_01_004: [If the underlying malloc call is successful, gb_malloc shall increment the total memory used with the amount indicated by size.] */
+                allocation->ptr = result;
+                allocation->size = size;
+                allocation->next = head;
+                head = allocation;
+
+                g_allocations++;
+                totalSize += size;
+                /* Codes_SRS_GBALLOC_01_011: [The maximum total memory used shall be the maximum of the total memory used at any point.] */
+                if (maxSize < totalSize)
+                {
+                    maxSize = totalSize;
+                }
             }
         }
-    }
 
         (void)Unlock(gballocThreadSafeLock);
     }
@@ -149,36 +149,36 @@ void* gballoc_calloc(size_t nmemb, size_t size)
     }
     else
     {
-    ALLOCATION* allocation = (ALLOCATION*)malloc(sizeof(ALLOCATION));
-    if (allocation == NULL)
-    {
-        result = NULL;
-    }
-    else
-    {
-        /* Codes_SRS_GBALLOC_01_020: [gballoc_calloc shall call the C99 calloc function and return its result.] */
-        result = calloc(nmemb, size);
-        if (result == NULL)
+        ALLOCATION* allocation = (ALLOCATION*)malloc(sizeof(ALLOCATION));
+        if (allocation == NULL)
         {
-            /* Codes_SRS_GBALLOC_01_022: [When the underlying calloc call fails, gballoc_calloc shall return NULL and size should not be counted towards total memory used.] */
-            free(allocation);
+            result = NULL;
         }
         else
         {
-            /* Codes_SRS_GBALLOC_01_021: [If the underlying calloc call is successful, gballoc_calloc shall increment the total memory used with nmemb*size.] */
-            allocation->ptr = result;
-            allocation->size = nmemb * size;
-            allocation->next = head;
-            head = allocation;
-            g_allocations++;
-
-            totalSize += allocation->size;
-            /* Codes_SRS_GBALLOC_01_011: [The maximum total memory used shall be the maximum of the total memory used at any point.] */
-            if (maxSize < totalSize)
+            /* Codes_SRS_GBALLOC_01_020: [gballoc_calloc shall call the C99 calloc function and return its result.] */
+            result = calloc(nmemb, size);
+            if (result == NULL)
             {
-                maxSize = totalSize;
+                /* Codes_SRS_GBALLOC_01_022: [When the underlying calloc call fails, gballoc_calloc shall return NULL and size should not be counted towards total memory used.] */
+                free(allocation);
             }
-        }
+            else
+            {
+                /* Codes_SRS_GBALLOC_01_021: [If the underlying calloc call is successful, gballoc_calloc shall increment the total memory used with nmemb*size.] */
+                allocation->ptr = result;
+                allocation->size = nmemb * size;
+                allocation->next = head;
+                head = allocation;
+                g_allocations++;
+
+                totalSize += allocation->size;
+                /* Codes_SRS_GBALLOC_01_011: [The maximum total memory used shall be the maximum of the total memory used at any point.] */
+                if (maxSize < totalSize)
+                {
+                    maxSize = totalSize;
+                }
+            }
         }
 
         (void)Unlock(gballocThreadSafeLock);
@@ -207,73 +207,73 @@ void* gballoc_realloc(void* ptr, size_t size)
     }
     else
     {
-    if (ptr == NULL)
-    {
-        /* Codes_SRS_GBALLOC_01_017: [When ptr is NULL, gballoc_realloc shall call the underlying realloc with ptr being NULL and the realloc result shall be tracked by gballoc.] */
-        allocation = (ALLOCATION*)malloc(sizeof(ALLOCATION));
-    }
-    else
-    {
-        curr = head;
-        while (curr != NULL)
+        if (ptr == NULL)
         {
-            if (curr->ptr == ptr)
-            {
-                allocation = curr;
-                break;
-            }
-            else
-            {
-                curr = (ALLOCATION*)curr->next;
-            }
-        }
-    }
-
-    if (allocation == NULL)
-    {
-        /* Codes_SRS_GBALLOC_01_015: [When allocating memory used for tracking by gballoc_realloc fails, gballoc_realloc shall return NULL and no change should be made to the counted total memory usage.] */
-        /* Codes_SRS_GBALLOC_01_016: [When the ptr pointer cannot be found in the pointers tracked by gballoc, gballoc_realloc shall return NULL and the underlying realloc shall not be called.] */
-        result = NULL;
-    }
-    else
-    {
-        result = realloc(ptr, size);
-        if (result == NULL)
-        {
-            /* Codes_SRS_GBALLOC_01_014: [When the underlying realloc call fails, gballoc_realloc shall return NULL and no change should be made to the counted total memory usage.] */
-            if (ptr == NULL)
-            {
-                free(allocation);
-            }
+            /* Codes_SRS_GBALLOC_01_017: [When ptr is NULL, gballoc_realloc shall call the underlying realloc with ptr being NULL and the realloc result shall be tracked by gballoc.] */
+            allocation = (ALLOCATION*)malloc(sizeof(ALLOCATION));
         }
         else
         {
-            if (ptr != NULL)
+            curr = head;
+            while (curr != NULL)
             {
-                /* Codes_SRS_GBALLOC_01_006: [If the underlying realloc call is successful, gballoc_realloc shall look up the size associated with the pointer ptr and decrease the total memory used with that size.] */
-                allocation->ptr = result;
-                totalSize -= allocation->size;
-                allocation->size = size;
+                if (curr->ptr == ptr)
+                {
+                    allocation = curr;
+                    break;
+                }
+                else
+                {
+                    curr = (ALLOCATION*)curr->next;
+                }
+            }
+        }
+
+        if (allocation == NULL)
+        {
+            /* Codes_SRS_GBALLOC_01_015: [When allocating memory used for tracking by gballoc_realloc fails, gballoc_realloc shall return NULL and no change should be made to the counted total memory usage.] */
+            /* Codes_SRS_GBALLOC_01_016: [When the ptr pointer cannot be found in the pointers tracked by gballoc, gballoc_realloc shall return NULL and the underlying realloc shall not be called.] */
+            result = NULL;
+        }
+        else
+        {
+            result = realloc(ptr, size);
+            if (result == NULL)
+            {
+                /* Codes_SRS_GBALLOC_01_014: [When the underlying realloc call fails, gballoc_realloc shall return NULL and no change should be made to the counted total memory usage.] */
+                if (ptr == NULL)
+                {
+                    free(allocation);
+                }
             }
             else
             {
-                /* add block */
-                allocation->ptr = result;
-                allocation->size = size;
-                allocation->next = head;
-                head = allocation;
-            }
+                if (ptr != NULL)
+                {
+                    /* Codes_SRS_GBALLOC_01_006: [If the underlying realloc call is successful, gballoc_realloc shall look up the size associated with the pointer ptr and decrease the total memory used with that size.] */
+                    allocation->ptr = result;
+                    totalSize -= allocation->size;
+                    allocation->size = size;
+                }
+                else
+                {
+                    /* add block */
+                    allocation->ptr = result;
+                    allocation->size = size;
+                    allocation->next = head;
+                    head = allocation;
+                }
 
-            /* Codes_SRS_GBALLOC_01_007: [If realloc is successful, gballoc_realloc shall also increment the total memory used value tracked by this module.] */
-            totalSize += size;
-            g_allocations++;
+                /* Codes_SRS_GBALLOC_01_007: [If realloc is successful, gballoc_realloc shall also increment the total memory used value tracked by this module.] */
+                totalSize += size;
+                g_allocations++;
 
-            /* Codes_SRS_GBALLOC_01_011: [The maximum total memory used shall be the maximum of the total memory used at any point.] */
-            if (maxSize < totalSize)
-            {
-                maxSize = totalSize;
+                /* Codes_SRS_GBALLOC_01_011: [The maximum total memory used shall be the maximum of the total memory used at any point.] */
+                if (maxSize < totalSize)
+                {
+                    maxSize = totalSize;
+                }
             }
-        }
         }
 
         (void)Unlock(gballocThreadSafeLock);
@@ -300,38 +300,38 @@ void gballoc_free(void* ptr)
     }
     else
     {
-    /* Codes_SRS_GBALLOC_01_009: [gballoc_free shall also look up the size associated with the ptr pointer and decrease the total memory used with the associated size amount.] */
-    while (curr != NULL)
-    {
-        if (curr->ptr == ptr)
+        /* Codes_SRS_GBALLOC_01_009: [gballoc_free shall also look up the size associated with the ptr pointer and decrease the total memory used with the associated size amount.] */
+        while (curr != NULL)
         {
-            /* Codes_SRS_GBALLOC_01_008: [gballoc_free shall call the C99 free function.] */
-            free(ptr);
-            totalSize -= curr->size;
-            if (prev != NULL)
+            if (curr->ptr == ptr)
             {
-                prev->next = curr->next;
-            }
-            else
-            {
-                head = (ALLOCATION*)curr->next;
+                /* Codes_SRS_GBALLOC_01_008: [gballoc_free shall call the C99 free function.] */
+                free(ptr);
+                totalSize -= curr->size;
+                if (prev != NULL)
+                {
+                    prev->next = curr->next;
+                }
+                else
+                {
+                    head = (ALLOCATION*)curr->next;
+                }
+
+                free(curr);
+                break;
             }
 
-            free(curr);
-            break;
+            prev = curr;
+            curr = (ALLOCATION*)curr->next;
         }
 
-        prev = curr;
-        curr = (ALLOCATION*)curr->next;
-    }
-
         if ((curr == NULL) && (ptr != NULL))
-    {
-        /* Codes_SRS_GBALLOC_01_019: [When the ptr pointer cannot be found in the pointers tracked by gballoc, gballoc_free shall not free any memory.] */
+        {
+            /* Codes_SRS_GBALLOC_01_019: [When the ptr pointer cannot be found in the pointers tracked by gballoc, gballoc_free shall not free any memory.] */
 
-        /* could not find the allocation */
-        LogError("Could not free allocation for address %p (not found)", ptr);
-    }
+            /* could not find the allocation */
+            LogError("Could not free allocation for address %p (not found)", ptr);
+        }
         (void)Unlock(gballocThreadSafeLock);
     }
 }

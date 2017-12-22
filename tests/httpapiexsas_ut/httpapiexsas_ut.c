@@ -11,32 +11,12 @@
 #include <time.h>
 #endif
 
-static size_t currentmalloc_call = 0;
-static size_t whenShallmalloc_fail = 0;
-
-void* my_gballoc_malloc(size_t size)
+static void* my_gballoc_malloc(size_t size)
 {
-    void* result;
-    currentmalloc_call++;
-    if (whenShallmalloc_fail > 0)
-    {
-        if (currentmalloc_call == whenShallmalloc_fail)
-        {
-            result = NULL;
-        }
-        else
-        {
-            result = malloc(size);
-        }
-    }
-    else
-    {
-        result = malloc(size);
-    }
-    return result;
+    return malloc(size);
 }
 
-void my_gballoc_free(void* ptr)
+static void my_gballoc_free(void* ptr)
 {
     free(ptr);
 }
@@ -44,16 +24,18 @@ void my_gballoc_free(void* ptr)
 #include "testrunnerswitcher.h"
 #include "umock_c.h"
 #include "umocktypes_charptr.h"
+#include "umock_c_negative_tests.h"
+#include "azure_c_shared_utility/macro_utils.h"
 
 #define ENABLE_MOCKS
-
+#include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/agenttime.h"
 #include "azure_c_shared_utility/strings.h"
 #include "azure_c_shared_utility/buffer_.h"
 #include "azure_c_shared_utility/sastoken.h"
 #include "azure_c_shared_utility/httpheaders.h"
 #include "azure_c_shared_utility/httpapiex.h"
-#include "azure_c_shared_utility/gballoc.h"
+#include "azure_c_shared_utility/crt_abstractions.h"
 
 #undef ENABLE_MOCKS
 
@@ -84,37 +66,66 @@ IMPLEMENT_UMOCK_C_ENUM_TYPE(HTTP_HEADERS_RESULT, HTTP_HEADERS_RESULT_VALUES);
 #define TEST_EXPIRY ((size_t)7200)
 #define TEST_TIME_T ((time_t)-1)
 
+static const char* TEST_KEY = "key";
+static const char* TEST_URI_RESOURCE = "test_uri";
+static const char* TEST_KEY_NAME = "key_name";
+
 static const char TEST_CHAR_ARRAY[10] = "ABCD";
 
 static TEST_MUTEX_HANDLE g_testByTest;
 static TEST_MUTEX_HANDLE g_dllByDll;
 
-STRING_HANDLE my_STRING_clone(STRING_HANDLE handle)
+static int my_mallocAndStrcpy_s(char** destination, const char* source)
+{
+    size_t len = strlen(source);
+    *destination = (char*)my_gballoc_malloc(len+1);
+    (void)strcpy(*destination, source);
+    return 0;
+}
+
+static STRING_HANDLE my_STRING_clone(STRING_HANDLE handle)
 {
     (void)handle;
-    return (STRING_HANDLE)malloc(1);
+    return (STRING_HANDLE)my_gballoc_malloc(1);
 }
 
-void my_STRING_delete(STRING_HANDLE handle)
+static void my_STRING_delete(STRING_HANDLE handle)
 {
-    free(handle);
+    my_gballoc_free(handle);
 }
 
-STRING_HANDLE my_SASToken_Create(STRING_HANDLE key, STRING_HANDLE scope, STRING_HANDLE keyName, size_t expiry)
+static STRING_HANDLE my_SASToken_CreateString(const char* key, const char* scope, const char* keyName, size_t expiry)
 {
     (void)key, (void)scope, (void)keyName, (void)expiry;
-    return (STRING_HANDLE)malloc(1);
+    return (STRING_HANDLE)my_gballoc_malloc(1);
+}
+
+static void setupSASString_Create_happy_path(bool allocateKeyName)
+{
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+    if (allocateKeyName)
+    {
+        STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+    }
 }
 
 static void setupSAS_Create_happy_path(bool allocateKeyName)
 {
     // HTTPAPIEX_SAS_Create
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(STRING_clone(TEST_KEY_HANDLE)).SetReturn(TEST_CLONED_KEY_HANDLE);
-    STRICT_EXPECTED_CALL(STRING_clone(TEST_URIRESOURCE_HANDLE)).SetReturn(TEST_CLONED_URIRESOURCE_HANDLE);
+    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG)).SetReturn(TEST_KEY);
+    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG)).SetReturn(TEST_URI_RESOURCE);
     if (allocateKeyName)
     {
-        STRICT_EXPECTED_CALL(STRING_clone(TEST_KEYNAME_HANDLE)).SetReturn(TEST_CLONED_KEYNAME_HANDLE);
+        STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG)).SetReturn(TEST_KEY_NAME);
+    }
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+    if (allocateKeyName)
+    {
+        STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
     }
 }
 
@@ -200,12 +211,14 @@ TEST_SUITE_INITIALIZE(TestClassInitialize)
 
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, my_gballoc_malloc);
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, my_gballoc_free);
-    REGISTER_GLOBAL_MOCK_HOOK(SASToken_Create, my_SASToken_Create);
+    REGISTER_GLOBAL_MOCK_HOOK(SASToken_CreateString, my_SASToken_CreateString);
+    REGISTER_GLOBAL_MOCK_HOOK(mallocAndStrcpy_s, my_mallocAndStrcpy_s);
 
     REGISTER_GLOBAL_MOCK_RETURN(STRING_c_str, TEST_CONST_CHAR_STAR_NULL);
     REGISTER_GLOBAL_MOCK_RETURN(STRING_length, 0);
+    REGISTER_GLOBAL_MOCK_HOOK(STRING_delete, my_STRING_delete);
 
-    REGISTER_GLOBAL_MOCK_RETURN(HTTPAPIEX_ExecuteRequest, HTTPAPIEX_ERROR);
+    REGISTER_GLOBAL_MOCK_RETURN(HTTPAPIEX_ExecuteRequest, HTTPAPIEX_OK);
     REGISTER_GLOBAL_MOCK_RETURN(HTTPHeaders_FindHeaderValue, TEST_CONST_CHAR_STAR_NULL);
     REGISTER_GLOBAL_MOCK_RETURN(HTTPHeaders_ReplaceHeaderNameValuePair, HTTP_HEADERS_ERROR);
     REGISTER_GLOBAL_MOCK_RETURN(get_time, TEST_TIME_T);
@@ -232,9 +245,6 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
     TEST_MUTEX_RELEASE(g_testByTest);
 
     umock_c_reset_all_calls();
-
-    currentmalloc_call = 0;
-    whenShallmalloc_fail = 0;
 }
 
 TEST_FUNCTION(HTTPAPIEX_SAS_is_zero_the_epoch)
@@ -248,7 +258,6 @@ TEST_FUNCTION(HTTPAPIEX_SAS_is_zero_the_epoch)
     ASSERT_ARE_EQUAL(int, broken_down_time.tm_year, 70);
     ASSERT_ARE_EQUAL(int, broken_down_time.tm_mon, 0);
     ASSERT_ARE_EQUAL(int, broken_down_time.tm_mday, 1);
-
 }
 
 /*Tests_SRS_HTTPAPIEXSAS_01_001: [ HTTPAPIEX_SAS_Create shall create a new instance of HTTPAPIEX_SAS and return a non-NULL handle to it. ]*/
@@ -277,7 +286,7 @@ TEST_FUNCTION(HTTPAPIEX_SAS_Create_null_key_fails)
     HTTPAPIEX_SAS_HANDLE handle;
 
     // act
-    handle = HTTPAPIEX_SAS_Create(TEST_NULL_STRING_HANDLE, TEST_STRING_HANDLE, TEST_STRING_HANDLE);
+    handle = HTTPAPIEX_SAS_Create(NULL, TEST_STRING_HANDLE, TEST_STRING_HANDLE);
 
     // assert
     ASSERT_IS_NULL(handle);
@@ -291,7 +300,7 @@ TEST_FUNCTION(HTTPAPIEX_SAS_Create_null_uriResource_fails)
     HTTPAPIEX_SAS_HANDLE handle;
 
     // act
-    handle = HTTPAPIEX_SAS_Create(TEST_STRING_HANDLE, TEST_NULL_STRING_HANDLE, TEST_STRING_HANDLE);
+    handle = HTTPAPIEX_SAS_Create(TEST_STRING_HANDLE, NULL, TEST_STRING_HANDLE);
 
     // assert
     ASSERT_IS_NULL(handle);
@@ -317,33 +326,82 @@ TEST_FUNCTION(HTTPAPIEX_SAS_Create_null_keyName_succeeds)
     HTTPAPIEX_SAS_Destroy(handle);
 }
 
+/*Tests_SRS_HTTPAPIEXSAS_01_001: [ HTTPAPIEX_SAS_Create shall create a new instance of HTTPAPIEX_SAS and return a non-NULL handle to it. ]*/
+TEST_FUNCTION(HTTPAPIEX_SAS_Create_From_String_Succeeds)
+{
+    // arrange
+    HTTPAPIEX_SAS_HANDLE handle;
+
+    setupSASString_Create_happy_path(true);
+
+    // act
+    handle = HTTPAPIEX_SAS_Create_From_String(TEST_KEY, TEST_URI_RESOURCE, TEST_KEY_NAME);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_IS_NOT_NULL(handle);
+
+    // Cleanup
+    HTTPAPIEX_SAS_Destroy(handle);
+}
+
+/* Tests_SRS_HTTPAPIEXSAS_07_001: [ If the parameter key or uriResource is NULL then HTTPAPIEX_SAS_Create_From_String shall return NULL. ] */
+TEST_FUNCTION(HTTPAPIEX_SAS_Create_From_String_null_key_fails)
+{
+    // arrange
+    HTTPAPIEX_SAS_HANDLE handle;
+
+    // act
+    handle = HTTPAPIEX_SAS_Create_From_String(NULL, TEST_URI_RESOURCE, TEST_KEY_NAME);
+
+    // assert
+    ASSERT_IS_NULL(handle);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_HTTPAPIEXSAS_07_001: [ If the parameter key or uriResource is NULL then HTTPAPIEX_SAS_Create_From_String shall return NULL. ] */
+TEST_FUNCTION(HTTPAPIEX_SAS_Create_From_String_null_uriResource_fails)
+{
+    // arrange
+    HTTPAPIEX_SAS_HANDLE handle;
+
+    // act
+    handle = HTTPAPIEX_SAS_Create_From_String(TEST_KEY, NULL, TEST_KEY_NAME);
+
+    // assert
+    ASSERT_IS_NULL(handle);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/*Tests_SRS_HTTPAPIEXSAS_06_003: [The parameter keyName for HTTPAPIEX_SAS_Create is optional and can be NULL.]*/
+TEST_FUNCTION(HTTPAPIEX_SAS_Create_From_String_null_keyName_succeeds)
+{
+    // arrange
+    HTTPAPIEX_SAS_HANDLE handle;
+
+    setupSASString_Create_happy_path(false);
+
+    // act
+    handle = HTTPAPIEX_SAS_Create_From_String(TEST_KEY, TEST_URI_RESOURCE, NULL);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_IS_NOT_NULL(handle);
+
+    // Cleanup
+    HTTPAPIEX_SAS_Destroy(handle);
+}
+
 /*Tests_SRS_HTTPAPIEXSAS_06_004: [If there are any other errors in the instantiation of this handle then HTTPAPIEX_SAS_Create shall return NULL.]*/
 TEST_FUNCTION(HTTPAPIEX_SAS_Create_malloc_state_fails)
 {
     // arrange
     HTTPAPIEX_SAS_HANDLE handle;
 
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
-
-    whenShallmalloc_fail = 1;
-
-    // act
-    handle = HTTPAPIEX_SAS_Create(TEST_STRING_HANDLE, TEST_STRING_HANDLE, TEST_KEYNAME_HANDLE);
-
-    // assert
-    ASSERT_IS_NULL(handle);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-}
-
-/*Tests_SRS_HTTPAPIEXSAS_06_004: [If there are any other errors in the instantiation of this handle then HTTPAPIEX_SAS_Create shall return NULL.]*/
-TEST_FUNCTION(HTTPAPIEX_SAS_Create_first_string_clone_fails)
-{
-    // arrange
-    HTTPAPIEX_SAS_HANDLE handle;
-
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(STRING_clone(TEST_KEY_HANDLE)).SetReturn(TEST_NULL_STRING_HANDLE);
-    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)).IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG)).SetReturn(TEST_KEY);
+    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG)).SetReturn(TEST_URI_RESOURCE);
+    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG)).SetReturn(TEST_KEY_NAME);
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).SetReturn(NULL);
 
     // act
     handle = HTTPAPIEX_SAS_Create(TEST_KEY_HANDLE, TEST_URIRESOURCE_HANDLE, TEST_KEYNAME_HANDLE);
@@ -354,19 +412,18 @@ TEST_FUNCTION(HTTPAPIEX_SAS_Create_first_string_clone_fails)
 }
 
 /*Tests_SRS_HTTPAPIEXSAS_06_004: [If there are any other errors in the instantiation of this handle then HTTPAPIEX_SAS_Create shall return NULL.]*/
-TEST_FUNCTION(HTTPAPIEX_SAS_Create_second_string_clone_fails)
+
+TEST_FUNCTION(HTTPAPIEX_SAS_Create_first_string_copy_fails)
 {
     // arrange
     HTTPAPIEX_SAS_HANDLE handle;
 
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(STRING_clone(TEST_KEY_HANDLE)).SetReturn(TEST_CLONED_KEY_HANDLE);
-    STRICT_EXPECTED_CALL(STRING_clone(TEST_URIRESOURCE_HANDLE)).SetReturn(TEST_NULL_STRING_HANDLE);
-    STRICT_EXPECTED_CALL(STRING_delete(TEST_CLONED_KEY_HANDLE));
-    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)).IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, IGNORED_PTR_ARG)).SetReturn(__LINE__);
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
     // act
-    handle = HTTPAPIEX_SAS_Create(TEST_KEY_HANDLE, TEST_URIRESOURCE_HANDLE, TEST_KEYNAME_HANDLE);
+    handle = HTTPAPIEX_SAS_Create_From_String(TEST_KEY, TEST_URI_RESOURCE, TEST_KEY_NAME);
 
     // assert
     ASSERT_IS_NULL(handle);
@@ -374,21 +431,41 @@ TEST_FUNCTION(HTTPAPIEX_SAS_Create_second_string_clone_fails)
 }
 
 /*Tests_SRS_HTTPAPIEXSAS_06_004: [If there are any other errors in the instantiation of this handle then HTTPAPIEX_SAS_Create shall return NULL.]*/
-TEST_FUNCTION(HTTPAPIEX_SAS_Create_third_string_clone_fails)
+TEST_FUNCTION(HTTPAPIEX_SAS_Create_second_string_copy_fails)
 {
     // arrange
     HTTPAPIEX_SAS_HANDLE handle;
 
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(STRING_clone(TEST_KEY_HANDLE)).SetReturn(TEST_CLONED_KEY_HANDLE);
-    STRICT_EXPECTED_CALL(STRING_clone(TEST_URIRESOURCE_HANDLE)).SetReturn(TEST_CLONED_URIRESOURCE_HANDLE);
-    STRICT_EXPECTED_CALL(STRING_clone(TEST_KEYNAME_HANDLE)).SetReturn(TEST_NULL_STRING_HANDLE);
-    STRICT_EXPECTED_CALL(STRING_delete(TEST_CLONED_KEY_HANDLE));
-    STRICT_EXPECTED_CALL(STRING_delete(TEST_CLONED_URIRESOURCE_HANDLE));
-    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)).IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, IGNORED_PTR_ARG)).SetReturn(__LINE__);
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
     // act
-    handle = HTTPAPIEX_SAS_Create(TEST_KEY_HANDLE, TEST_URIRESOURCE_HANDLE, TEST_KEYNAME_HANDLE);
+    handle = HTTPAPIEX_SAS_Create_From_String(TEST_KEY, TEST_URI_RESOURCE, TEST_KEY_NAME);
+
+    // assert
+    ASSERT_IS_NULL(handle);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/*Tests_SRS_HTTPAPIEXSAS_06_004: [If there are any other errors in the instantiation of this handle then HTTPAPIEX_SAS_Create shall return NULL.]*/
+TEST_FUNCTION(HTTPAPIEX_SAS_Create_third_string_copy_fails)
+{
+    // arrange
+    HTTPAPIEX_SAS_HANDLE handle;
+
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, IGNORED_PTR_ARG)).SetReturn(__LINE__);
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+
+    // act
+    handle = HTTPAPIEX_SAS_Create_From_String(TEST_KEY, TEST_URI_RESOURCE, TEST_KEY_NAME);
 
     // assert
     ASSERT_IS_NULL(handle);
@@ -405,10 +482,10 @@ TEST_FUNCTION(HTTPAPIEX_SAS_Destroy_frees_underlying_strings)
     handle = HTTPAPIEX_SAS_Create(TEST_KEY_HANDLE, TEST_URIRESOURCE_HANDLE, TEST_KEYNAME_HANDLE);
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(STRING_delete(TEST_CLONED_KEY_HANDLE));
-    STRICT_EXPECTED_CALL(STRING_delete(TEST_CLONED_URIRESOURCE_HANDLE));
-    STRICT_EXPECTED_CALL(STRING_delete(TEST_CLONED_KEYNAME_HANDLE));
-    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)).IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
     // act
     HTTPAPIEX_SAS_Destroy(handle);
@@ -542,7 +619,7 @@ TEST_FUNCTION(HTTPAPIEX_SAS_invoke_executerequest_sastoken_create_returns_null_s
 
     STRICT_EXPECTED_CALL(HTTPHeaders_FindHeaderValue(TEST_REQUEST_HTTP_HEADERS_HANDLE, "Authorization")).SetReturn(TEST_CHAR_ARRAY);
     STRICT_EXPECTED_CALL(get_time(NULL)).SetReturn(3600);
-    STRICT_EXPECTED_CALL(SASToken_Create(TEST_CLONED_KEY_HANDLE, TEST_CLONED_URIRESOURCE_HANDLE, TEST_CLONED_KEYNAME_HANDLE, TEST_EXPIRY)).SetReturn(TEST_NULL_STRING_HANDLE);
+    STRICT_EXPECTED_CALL(SASToken_CreateString(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, TEST_EXPIRY)).SetReturn(NULL);
     STRICT_EXPECTED_CALL(HTTPAPIEX_ExecuteRequest(TEST_HTTPAPIEX_HANDLE, TEST_HTTPAPI_REQUEST_TYPE, TEST_CHAR_ARRAY, TEST_REQUEST_HTTP_HEADERS_HANDLE, TEST_REQUEST_CONTENT, &statusCode, TEST_RESPONSE_HTTP_HEADERS_HANDLE, TEST_RESPONSE_CONTENT)).SetReturn(HTTPAPIEX_OK);
 
     // act
@@ -573,10 +650,10 @@ TEST_FUNCTION(HTTPAPIEX_SAS_invoke_executerequest_replace_header_name_value_pair
 
     STRICT_EXPECTED_CALL(HTTPHeaders_FindHeaderValue(TEST_REQUEST_HTTP_HEADERS_HANDLE, "Authorization")).SetReturn(TEST_CHAR_ARRAY);
     STRICT_EXPECTED_CALL(get_time(NULL)).SetReturn(3600);
-    STRICT_EXPECTED_CALL(SASToken_Create(TEST_CLONED_KEY_HANDLE, TEST_CLONED_URIRESOURCE_HANDLE, TEST_CLONED_KEYNAME_HANDLE, TEST_EXPIRY)).SetReturn(TEST_SASTOKEN_HANDLE);
-    STRICT_EXPECTED_CALL(STRING_c_str(TEST_SASTOKEN_HANDLE)).SetReturn(TEST_CHAR_ARRAY);
-    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(TEST_REQUEST_HTTP_HEADERS_HANDLE, "Authorization", TEST_CHAR_ARRAY)).SetReturn(HTTP_HEADERS_ERROR);
-    STRICT_EXPECTED_CALL(STRING_delete(TEST_SASTOKEN_HANDLE));
+    STRICT_EXPECTED_CALL(SASToken_CreateString(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, TEST_EXPIRY));
+    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG)).SetReturn(TEST_CHAR_ARRAY);
+    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(TEST_REQUEST_HTTP_HEADERS_HANDLE, "Authorization", IGNORED_PTR_ARG)).SetReturn(HTTP_HEADERS_ERROR);
+    STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(HTTPAPIEX_ExecuteRequest(TEST_HTTPAPIEX_HANDLE, TEST_HTTPAPI_REQUEST_TYPE, TEST_CHAR_ARRAY, TEST_REQUEST_HTTP_HEADERS_HANDLE, TEST_REQUEST_CONTENT, &statusCode, TEST_RESPONSE_HTTP_HEADERS_HANDLE, TEST_RESPONSE_CONTENT)).SetReturn(HTTPAPIEX_OK);
 
     // act
@@ -605,11 +682,11 @@ TEST_FUNCTION(HTTPAPIEX_SAS_invoke_executerequest_replace_header_name_value_pair
 
     STRICT_EXPECTED_CALL(HTTPHeaders_FindHeaderValue(TEST_REQUEST_HTTP_HEADERS_HANDLE, "Authorization")).SetReturn(TEST_CHAR_ARRAY);
     STRICT_EXPECTED_CALL(get_time(NULL)).SetReturn((time_t)3600);
-    STRICT_EXPECTED_CALL(SASToken_Create(TEST_CLONED_KEY_HANDLE, TEST_CLONED_URIRESOURCE_HANDLE, TEST_CLONED_KEYNAME_HANDLE, TEST_EXPIRY)).SetReturn(TEST_SASTOKEN_HANDLE);
-    STRICT_EXPECTED_CALL(STRING_c_str(TEST_SASTOKEN_HANDLE)).SetReturn(TEST_CHAR_ARRAY);
+    STRICT_EXPECTED_CALL(SASToken_CreateString(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, TEST_EXPIRY));
+    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG)).SetReturn(TEST_CHAR_ARRAY);
     STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(TEST_REQUEST_HTTP_HEADERS_HANDLE, "Authorization", TEST_CHAR_ARRAY)).SetReturn(HTTP_HEADERS_OK);
-    STRICT_EXPECTED_CALL(STRING_delete(TEST_SASTOKEN_HANDLE));
-    STRICT_EXPECTED_CALL(HTTPAPIEX_ExecuteRequest(TEST_HTTPAPIEX_HANDLE, TEST_HTTPAPI_REQUEST_TYPE, TEST_CHAR_ARRAY, TEST_REQUEST_HTTP_HEADERS_HANDLE, TEST_REQUEST_CONTENT, &statusCode, TEST_RESPONSE_HTTP_HEADERS_HANDLE, TEST_RESPONSE_CONTENT)).SetReturn(HTTPAPIEX_OK);
+    STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(HTTPAPIEX_ExecuteRequest(TEST_HTTPAPIEX_HANDLE, TEST_HTTPAPI_REQUEST_TYPE, TEST_CHAR_ARRAY, TEST_REQUEST_HTTP_HEADERS_HANDLE, TEST_REQUEST_CONTENT, &statusCode, TEST_RESPONSE_HTTP_HEADERS_HANDLE, TEST_RESPONSE_CONTENT));
 
     // act
     result = HTTPAPIEX_SAS_ExecuteRequest(sasHandle, TEST_HTTPAPIEX_HANDLE, TEST_HTTPAPI_REQUEST_TYPE, TEST_CHAR_ARRAY, TEST_REQUEST_HTTP_HEADERS_HANDLE, TEST_REQUEST_CONTENT, &statusCode, TEST_RESPONSE_HTTP_HEADERS_HANDLE, TEST_RESPONSE_CONTENT);

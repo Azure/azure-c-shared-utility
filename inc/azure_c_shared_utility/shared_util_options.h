@@ -35,6 +35,9 @@ extern "C"
     static const char* OPTION_CURL_VERBOSE = "CURLOPT_VERBOSE";
 
     static const char* OPTION_NET_INT_MAC_ADDRESS = "net_interface_mac_address";
+
+    static const char* OPTION_TLS_VERSION = "tls_version";
+
 #ifdef __cplusplus
 }
 #endif

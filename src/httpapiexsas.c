@@ -13,14 +13,69 @@
 #include "azure_c_shared_utility/httpapiex.h"
 #include "azure_c_shared_utility/httpapiexsas.h"
 #include "azure_c_shared_utility/xlogging.h"
+#include "azure_c_shared_utility/crt_abstractions.h"
 
 typedef struct HTTPAPIEX_SAS_STATE_TAG
 {
-    STRING_HANDLE key;
-    STRING_HANDLE uriResource;
-    STRING_HANDLE keyName;
-}HTTPAPIEX_SAS_STATE;
+    char* key;
+    char* uriResource;
+    char* keyName;
+} HTTPAPIEX_SAS_STATE;
 
+static HTTPAPIEX_SAS_STATE* construct_httpex_sas(const char* key, const char* uriResource, const char* keyName)
+{
+    HTTPAPIEX_SAS_STATE* result;
+
+    result = (HTTPAPIEX_SAS_STATE*)malloc(sizeof(HTTPAPIEX_SAS_STATE));
+    if (result == NULL)
+    {
+        LogError("Failure allocating HTTPAPIEX_SAS_Create.");
+    }
+    else
+    {
+        (void)memset(result, 0, sizeof(HTTPAPIEX_SAS_STATE));
+        if (mallocAndStrcpy_s(&result->key, key) != 0)
+        {
+            /*Codes_SRS_HTTPAPIEXSAS_06_004: [If there are any other errors in the instantiation of this handle then HTTPAPIEX_SAS_Create shall return NULL.]*/
+            LogError("Failure allocating sas key.");
+            HTTPAPIEX_SAS_Destroy(result);
+            result = NULL;
+        }
+        else if (mallocAndStrcpy_s(&result->uriResource, uriResource) != 0)
+        {
+            /*Codes_SRS_HTTPAPIEXSAS_06_004: [If there are any other errors in the instantiation of this handle then HTTPAPIEX_SAS_Create shall return NULL.]*/
+            LogError("Failure allocating sas uriResource.");
+            HTTPAPIEX_SAS_Destroy(result);
+            result = NULL;
+        }
+        else if (keyName != NULL && mallocAndStrcpy_s(&result->keyName, keyName) != 0)
+        {
+            /*Codes_SRS_HTTPAPIEXSAS_06_004: [If there are any other errors in the instantiation of this handle then HTTPAPIEX_SAS_Create shall return NULL.]*/
+            LogError("Failure allocating sas keyName.");
+            HTTPAPIEX_SAS_Destroy(result);
+            result = NULL;
+        }
+    }
+    return result;
+}
+
+HTTPAPIEX_SAS_HANDLE HTTPAPIEX_SAS_Create_From_String(const char* key, const char* uriResource, const char* keyName)
+{
+    HTTPAPIEX_SAS_HANDLE result = NULL;
+    if (key == NULL || uriResource == NULL)
+    {
+        /* Codes_SRS_HTTPAPIEXSAS_07_001: [ If the parameter key or uriResource is NULL then HTTPAPIEX_SAS_Create_From_String shall return NULL. ] */
+        LogError("Invalid parameter key: %p, uriResource: %p", key, uriResource);
+        result = NULL;
+    }
+    else
+    {
+        /* Codes_SRS_HTTPAPIEXSAS_07_002: [ If there are any other errors in the instantiation of this handle then HTTPAPIEX_SAS_Create_From_String shall return NULL. ] */
+        result = construct_httpex_sas(key, uriResource, keyName);
+    }
+    /* Codes_SRS_HTTPAPIEXSAS_07_003: [ HTTPAPIEX_SAS_Create_From_String shall create a new instance of HTTPAPIEX_SAS and return a non-NULL handle to it ] */
+    return result;
+}
 
 HTTPAPIEX_SAS_HANDLE HTTPAPIEX_SAS_Create(STRING_HANDLE key, STRING_HANDLE uriResource, STRING_HANDLE keyName)
 {
@@ -37,27 +92,9 @@ HTTPAPIEX_SAS_HANDLE HTTPAPIEX_SAS_Create(STRING_HANDLE key, STRING_HANDLE uriRe
     }
     else
     {
-        /*Codes_SRS_HTTPAPIEXSAS_01_001: [ HTTPAPIEX_SAS_Create shall create a new instance of HTTPAPIEX_SAS and return a non-NULL handle to it. ]*/
-        HTTPAPIEX_SAS_STATE* state = (HTTPAPIEX_SAS_STATE*)malloc(sizeof(HTTPAPIEX_SAS_STATE));
         /*Codes_SRS_HTTPAPIEXSAS_06_003: [The parameter keyName for HTTPAPIEX_SAS_Create is optional and can be NULL.]*/
-        if (state != NULL)
-        {
-            state->key = NULL;
-            state->uriResource = NULL;
-            state->keyName = NULL;
-            if (((state->key = STRING_clone(key)) == NULL) ||
-                ((state->uriResource = STRING_clone(uriResource)) == NULL) ||
-                ((keyName != NULL) && ((state->keyName = STRING_clone(keyName)) == NULL)))
-            {
-                /*Codes_SRS_HTTPAPIEXSAS_06_004: [If there are any other errors in the instantiation of this handle then HTTPAPIEX_SAS_Create shall return NULL.]*/
-                LogError("Unable to clone the arguments.");
-                HTTPAPIEX_SAS_Destroy(state);
-            }
-            else
-            {
-                result = state;
-            }
-        }
+        /*Codes_SRS_HTTPAPIEXSAS_01_001: [ HTTPAPIEX_SAS_Create shall create a new instance of HTTPAPIEX_SAS and return a non-NULL handle to it. ]*/
+        result = construct_httpex_sas(STRING_c_str(key), STRING_c_str(uriResource), STRING_c_str(keyName) );
     }
     return result;
 }
@@ -71,15 +108,15 @@ void HTTPAPIEX_SAS_Destroy(HTTPAPIEX_SAS_HANDLE handle)
         /*Codes_SRS_HTTPAPIEXSAS_06_006: [HTTAPIEX_SAS_Destroy shall deallocate any structures denoted by the parameter handle.]*/
         if (state->key)
         {
-            STRING_delete(state->key);
+            free(state->key);
         }
         if (state->uriResource)
         {
-            STRING_delete(state->uriResource);
+            free(state->uriResource);
         }
         if (state->keyName)
         {
-            STRING_delete(state->keyName);
+            free(state->keyName);
         }
         free(state);
     }
@@ -110,7 +147,7 @@ HTTPAPIEX_RESULT HTTPAPIEX_SAS_ExecuteRequest(HTTPAPIEX_SAS_HANDLE sasHandle, HT
                     /*Codes_SRS_HTTPAPIEXSAS_06_011: [SASToken_Create shall be invoked.]*/
                     /*Codes_SRS_HTTPAPIEXSAS_06_012: [If the return result of SASToken_Create is NULL then fallthrough.]*/
                     size_t expiry = (size_t)(difftime(currentTime, 0) + 3600);
-                    STRING_HANDLE newSASToken = SASToken_Create(state->key, state->uriResource, state->keyName, expiry);
+                    STRING_HANDLE newSASToken = SASToken_CreateString(state->key, state->uriResource, state->keyName, expiry);
                     if (newSASToken != NULL)
                     {
                         /*Codes_SRS_HTTPAPIEXSAS_06_013: [HTTPHeaders_ReplaceHeaderNameValuePair shall be invoked with "Authorization" as its second argument and STRING_c_str (newSASToken) as its third argument.]*/

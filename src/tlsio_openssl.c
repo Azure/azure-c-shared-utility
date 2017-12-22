@@ -18,8 +18,7 @@
 #include "azure_c_shared_utility/crt_abstractions.h"
 #include "azure_c_shared_utility/x509_openssl.h"
 #include "azure_c_shared_utility/shared_util_options.h"
-
-static const char* OPTION_TLS_VERSION = "tls_version";
+#include "azure_c_shared_utility/gballoc.h"
 
 typedef enum TLSIO_STATE_TAG
 {
@@ -103,7 +102,7 @@ static void* tlsio_openssl_CloneOption(const char* name, const void* value)
         {
             result = (void*)value;
         }
-        else if (strcmp(name, "TrustedCerts") == 0)
+        else if (strcmp(name, OPTION_TRUSTED_CERT) == 0)
         {
             if (mallocAndStrcpy_s((char**)&result, value) != 0)
             {
@@ -234,7 +233,7 @@ static void tlsio_openssl_DestroyOption(const char* name, const void* value)
     else
     {
         if (
-            (strcmp(name, "TrustedCerts") == 0) ||
+            (strcmp(name, OPTION_TRUSTED_CERT) == 0) ||
             (strcmp(name, SU_OPTION_X509_CERT) == 0) ||
             (strcmp(name, SU_OPTION_X509_PRIVATE_KEY) == 0) ||
             (strcmp(name, OPTION_X509_ECC_CERT) == 0) ||
@@ -294,7 +293,7 @@ static OPTIONHANDLER_HANDLE tlsio_openssl_retrieveoptions(CONCRETE_IO_HANDLE han
             }
             else if (
                 (tls_io_instance->certificate != NULL) &&
-                (OptionHandler_AddOption(result, "TrustedCerts", tls_io_instance->certificate) != OPTIONHANDLER_OK)
+                (OptionHandler_AddOption(result, OPTION_TRUSTED_CERT, tls_io_instance->certificate) != OPTIONHANDLER_OK)
                 )
             {
                 LogError("unable to save TrustedCerts option");
@@ -1430,7 +1429,7 @@ int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
     {
         TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tls_io;
 
-        if (strcmp("TrustedCerts", optionName) == 0)
+        if (strcmp(OPTION_TRUSTED_CERT, optionName) == 0)
         {
             const char* cert = (const char*)value;
             size_t len;

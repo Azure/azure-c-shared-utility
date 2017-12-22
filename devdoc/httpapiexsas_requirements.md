@@ -1,4 +1,5 @@
-HTTPAPIEX SAS Requirements
+# HTTPAPIEX SAS Requirements
+
 ================
 
 ## Overview
@@ -9,6 +10,7 @@ Retransmission is very expensive. Additionally this module does not try to enfor
 For instance, if there is no "Authorization" header, this module will make no attempt to error out.  It will still try to invoke the HTTPAPIEX_ExecuteRequest.
 
 ## References
+
 [SAS Token Create requirements]
 
 [HTTPAPIEX requirements]
@@ -16,10 +18,13 @@ For instance, if there is no "Authorization" header, this module will make no at
 [HTTP headers requirements]
 
 ## Exposed API
+
 ```c
 typedef void* HTTPAPIEX_SAS_HANDLE;
 
 extern HTTPAPIEX_SAS_HANDLE HTTPAPIEX_SAS_Create(STRING_HANDLE key, STRING_HANDLE uriResource, STRING_HANDLE keyName);
+
+extern HTTPAPIEX_SAS_HANDLE HTTPAPIEX_SAS_Create_From_String(const char* key, const char* uriResource, const char* keyName);
 
 extern void HTTPAPIEX_SAS_Destroy(HTTPAPIEX_SAS_HANDLE handle);
 
@@ -27,9 +32,10 @@ extern HTTPAPIEX_RESULT HTTPAPIEX_SAS_ExecuteRequest(HTTPAPIEX_SAS_HANDLE sasHan
 ```
 
 ### HTTPAPIEX_SAS_Create
+
 ```c
 extern HTTPAPIEX_SAS_HANDLE HTTPAPIEX_SAS_Create(STRING_HANDLE key, STRING_HANDLE uriResource, STRING_HANDLE keyName);
-```  
+```
 
 **SRS_HTTPAPIEXSAS_01_001: [** HTTPAPIEX_SAS_Create shall create a new instance of HTTPAPIEX_SAS and return a non-NULL handle to it. **]**
 
@@ -41,7 +47,20 @@ extern HTTPAPIEX_SAS_HANDLE HTTPAPIEX_SAS_Create(STRING_HANDLE key, STRING_HANDL
 
 **SRS_HTTPAPIEXSAS_06_004: [** If there are any other errors in the instantiation of this handle then HTTPAPIEX_SAS_Create shall return NULL. **]**
 
+### HTTPAPIEX_SAS_Create_From_String
+
+```c
+extern HTTPAPIEX_SAS_HANDLE HTTPAPIEX_SAS_Create_From_String(const char* key, const char* uriResource, const char* keyName);
+```
+
+**SRS_HTTPAPIEXSAS_07_001: [** If the parameter `key` or `uriResource` is NULL then `HTTPAPIEX_SAS_Create_From_String` shall return NULL. **]**
+
+**SRS_HTTPAPIEXSAS_07_002: [** If there are any other errors in the instantiation of this handle then `HTTPAPIEX_SAS_Create_From_String` shall return NULL. **]**
+
+**SRS_HTTPAPIEXSAS_07_003: [** `HTTPAPIEX_SAS_Create_From_String` shall create a new instance of `HTTPAPIEX_SAS` and return a non-NULL handle to it **]**
+
 ### HTTPAPIEX_SAS_Destroy
+
 ```c
 extern void HTTPAPIEX_SAS_Destroy(HTTPAPIEX_SAS_HANDLE handle);
 ```
@@ -51,6 +70,7 @@ extern void HTTPAPIEX_SAS_Destroy(HTTPAPIEX_SAS_HANDLE handle);
 Otherwise, **SRS_HTTPAPIEXSAS_06_006: [** HTTAPIEX_SAS_Destroy shall deallocate any structures denoted by the parameter handle. **]**
 
 ### HTTPAPIEX_SAS_ExecuteRequest
+
 ```c
 extern HTTPAPIEX_RESULT HTTPAPIEX_SAS_ExecuteRequest(HTTPAPIEX_SAS_HANDLE sasHandle, HTTPAPIEX_HANDLE handle, HTTPAPI_REQUEST_TYPE requestType, const char* relativePath, HTTP_HEADERS_HANDLE requestHttpHeadersHandle, BUFFER_HANDLE requestContent, unsigned int* statusCode, HTTP_HEADERS_HANDLE responseHeadersHandle, BUFFER_HANDLE responseContent);
 ```
@@ -82,7 +102,7 @@ The result of the SASToken_Create shall be known as newSASToken.
 
 **SRS_HTTPAPIEXSAS_06_015: [** STRING_delete(newSASToken) will be invoked. **]**
 
-**SRS_HTTPAPIEXSAS_06_014: [** If the result of the invocation of HTTPHeaders_ReplaceHeaderNameValuePair is NOT HTTP_HEADERS_OK then fallthrough. **]**   
+**SRS_HTTPAPIEXSAS_06_014: [** If the result of the invocation of HTTPHeaders_ReplaceHeaderNameValuePair is NOT HTTP_HEADERS_OK then fallthrough. **]**
 Note that an error will be logged that the "Authorization" header could not be replaced.
 
 Finally, **SRS_HTTPAPIEXSAS_06_016: [** HTTPAPIEX_ExecuteRequest with the remaining parameters (following sasHandle) as its arguments will be invoked and the result of that call is the result of HTTPAPIEX_SAS_ExecuteRequest. **]**
