@@ -40,6 +40,7 @@ else()
 endif()
 option(use_socketio "set use_socketio to ON if socketio is to be included in the library, set to OFF if a different implementation will be provided" ON)
 option(use_cyclonessl "set use_cyclonessl to ON if cyclonessl is to be used, set to OFF to not use cyclonessl" OFF)
+option(no_logging "disable logging (default is OFF)" OFF)
 
 if(${use_etw}) 
     #create res folder
@@ -130,6 +131,9 @@ if(${use_openssl})
     include_directories(${OPENSSL_INCLUDE_DIR})
 endif()
 
+if(${no_logging})
+    add_definitions(-DNO_LOGGING)
+endif()
 # Start of variables used during install
 set (LIB_INSTALL_DIR lib CACHE PATH "Library object file directory")
 
