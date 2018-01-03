@@ -96,7 +96,7 @@ MOCK_FUNCTION_WITH_CODE(WSAAPI, int, recv, SOCKET, s, char*, buf, int, len, int,
     {
         len = g_socket_recv_size_value;
     }
-MOCK_FUNCTION_END(0)
+MOCK_FUNCTION_END(-1)
 MOCK_FUNCTION_WITH_CODE(WSAAPI, int, send, SOCKET, s, const char*, buf, int, len, int, flags)
 /*if (g_socket_send_size_value >= 0)
 {
