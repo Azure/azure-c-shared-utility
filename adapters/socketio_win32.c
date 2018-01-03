@@ -520,6 +520,10 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                             (void)socket_io_instance->on_bytes_received(socket_io_instance->on_bytes_received_context, socket_io_instance->recv_bytes, received);
                         }
                     }
+                    else if (received == 0)
+                    {
+                        indicate_error(socket_io_instance);
+                    }
                     else
                     {
                         int last_error = WSAGetLastError();

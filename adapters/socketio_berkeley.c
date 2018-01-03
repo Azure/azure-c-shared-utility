@@ -927,6 +927,11 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                         (void)socket_io_instance->on_bytes_received(socket_io_instance->on_bytes_received_context, socket_io_instance->recv_bytes, received);
                     }
                 }
+                else if (received == 0)
+                {
+                    // Do not log error here due to this is probably the socket being closed on the other end
+                    indicate_error(socket_io_instance);
+                }
                 else if (received < 0 && errno != EAGAIN)
                 {
                     LogError("Socketio_Failure: Receiving data from endpoint: errno=%d.", errno);

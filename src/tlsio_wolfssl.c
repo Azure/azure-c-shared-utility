@@ -858,15 +858,15 @@ int tlsio_wolfssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
     {
         TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tls_io;
 
-        if (strcmp("TrustedCerts", optionName) == 0)
+        if (strcmp(OPTION_TRUSTED_CERT, optionName) == 0)
         {
             result  = process_option(&tls_io_instance->certificate, optionName, value);
         }
-        else if (strcmp(SU_OPTION_X509_CERT, optionName) == 0)
+        else if (strcmp(SU_OPTION_X509_CERT, optionName) == 0 || strcmp(OPTION_X509_ECC_CERT, optionName) == 0)
         {
             result = process_option(&tls_io_instance->x509certificate, optionName, value);
         }
-        else if (strcmp(SU_OPTION_X509_PRIVATE_KEY, optionName) == 0)
+        else if (strcmp(SU_OPTION_X509_PRIVATE_KEY, optionName) == 0 | strcmp(OPTION_X509_ECC_KEY, optionName) == 0)
         {
             result = process_option(&tls_io_instance->x509privatekey, optionName, value);
         }
