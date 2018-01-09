@@ -1785,7 +1785,7 @@ int uws_client_send_frame_async(UWS_CLIENT_HANDLE uws_client, unsigned char fram
                             free(ws_pending_send);
                         }
 
-			            result = __FAILURE__;
+                        result = __FAILURE__;
                     }
                     else
                     {

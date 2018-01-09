@@ -1,5 +1,5 @@
 # wsio requirements
- 
+
 ## Overview
 
 `wsio` is module that implements a concrete IO that implements the WebSockets protocol by using the uws library.
@@ -23,7 +23,7 @@ typedef struct WSIO_CONFIG_TAG
 extern const IO_INTERFACE_DESCRIPTION* wsio_get_interface_description(void);
 ```
 
-###  wsio_create
+### wsio_create
 
 ```c
 CONCRETE_IO_HANDLE wsio_create(void* io_create_parameters);
@@ -63,7 +63,7 @@ CONCRETE_IO_HANDLE wsio_create(void* io_create_parameters);
 
 **SRS_WSIO_01_077: [** If `singlylinkedlist_create` fails then `wsio_create` shall fail and return NULL. **]**
 
-###  wsio_destroy
+### wsio_destroy
 
 ```c
 void wsio_destroy(CONCRETE_IO_HANDLE ws_io);
@@ -79,7 +79,7 @@ void wsio_destroy(CONCRETE_IO_HANDLE ws_io);
 
 **SRS_WSIO_01_081: [** `wsio_destroy` shall free the list used to track the pending send IOs by calling `singlylinkedlist_destroy`. **]**
 
-###  wsio_open
+### wsio_open
 
 ```c
 int wsio_open(CONCRETE_IO_HANDLE ws_io, ON_IO_OPEN_COMPLETE on_io_open_complete, void* on_io_open_complete_context, ON_BYTES_RECEIVED on_bytes_received, void* on_bytes_received_context, ON_IO_ERROR on_io_error, void* on_io_error_context);
@@ -99,7 +99,7 @@ int wsio_open(CONCRETE_IO_HANDLE ws_io, ON_IO_OPEN_COMPLETE on_io_open_complete,
 
 **SRS_WSIO_01_131: [** `wsio_open` when already OPEN or OPENING shall fail and return a non-zero value. **]**
 
-###  wsio_close
+### wsio_close
 
 ```c
 int wsio_close(CONCRETE_IO_HANDLE ws_io, ON_IO_CLOSE_COMPLETE on_io_close_complete, void* callback_context);
@@ -115,7 +115,7 @@ int wsio_close(CONCRETE_IO_HANDLE ws_io, ON_IO_CLOSE_COMPLETE on_io_close_comple
 
 **SRS_WSIO_01_087: [** `wsio_close` shall call `uws_client_close_async` while passing as argument the IO handle created in `wsio_create`.  **]**
 
-**SRS_WSIO_01_164: [** When `uws_client_close` fails, `wsio_close` shall fail and return a non-zero value. **]**
+**SRS_WSIO_01_164: [** When `uws_client_close_async` fails, `wsio_close` shall call the `on_io_close_complete` callback and continue. **]**
 
 **SRS_WSIO_01_088: [** `wsio_close` when no open action has been issued shall fail and return a non-zero value. **]**
 

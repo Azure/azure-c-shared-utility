@@ -167,6 +167,8 @@ static int internal_close(WSIO_INSTANCE* wsio_instance, ON_IO_CLOSE_COMPLETE on_
         }
         else
         {
+            LIST_ITEM_HANDLE first_pending_io;
+
             saved_state = wsio_instance->io_state;
             wsio_instance->io_state = IO_STATE_CLOSING;
 
@@ -176,29 +178,26 @@ static int internal_close(WSIO_INSTANCE* wsio_instance, ON_IO_CLOSE_COMPLETE on_
             /* Codes_SRS_WSIO_01_087: [ `wsio_close` shall call `uws_client_close_async` while passing as argument the IO handle created in `wsio_create`.  ]*/
             if (uws_client_close_async(wsio_instance->uws, on_underlying_ws_close_complete, wsio_instance) != 0)
             {
-                /* Codes_SRS_WSIO_01_164: [ When `uws_client_close` fails, `wsio_close` shall fail and return a non-zero value. ]*/
-                LogError("uws_client_close failed");
-                wsio_instance->io_state = saved_state;
-                result = __FAILURE__;
-            }
-            else
-            {
-                /* Codes_SRS_WSIO_01_085: [ `wsio_close` shall close the websockets IO if an open action is either pending or has completed successfully (if the IO is open).  ]*/
-                LIST_ITEM_HANDLE first_pending_io;
-
-                /* Codes_SRS_WSIO_01_091: [ `wsio_close` shall obtain all the pending IO items by repetitively querying for the head of the pending IO list and freeing that head item. ]*/
-                /* Codes_SRS_WSIO_01_092: [ Obtaining the head of the pending IO list shall be done by calling `singlylinkedlist_get_head_item`. ]*/
-                while ((first_pending_io = singlylinkedlist_get_head_item(wsio_instance->pending_io_list)) != NULL)
+                /* Codes_SRS_WSIO_01_164: [ When uws_client_close_async fails, wsio_close shall call the on_io_close_complete callback and continue. ] */
+                if (wsio_instance->on_io_close_complete != NULL)
                 {
-                    complete_send_item(first_pending_io, IO_SEND_CANCELLED);
+                    wsio_instance->on_io_close_complete(wsio_instance->on_io_close_complete_context);
                 }
-
-                /* Codes_SRS_WSIO_01_133: [ On success `wsio_close` shall return 0. ]*/
-                result = 0;
             }
+
+            /* Codes_SRS_WSIO_01_085: [ `wsio_close` shall close the websockets IO if an open action is either pending or has completed successfully (if the IO is open).  ]*/
+            /* Codes_SRS_WSIO_01_091: [ `wsio_close` shall obtain all the pending IO items by repetitively querying for the head of the pending IO list and freeing that head item. ]*/
+            /* Codes_SRS_WSIO_01_092: [ Obtaining the head of the pending IO list shall be done by calling `singlylinkedlist_get_head_item`. ]*/
+            while ((first_pending_io = singlylinkedlist_get_head_item(wsio_instance->pending_io_list)) != NULL)
+            {
+                complete_send_item(first_pending_io, IO_SEND_CANCELLED);
+            }
+
+            /* Codes_SRS_WSIO_01_133: [ On success `wsio_close` shall return 0. ]*/
+            result = 0;
+            wsio_instance->io_state = IO_STATE_NOT_OPEN;
         }
     }
-
     return result;
 }
 

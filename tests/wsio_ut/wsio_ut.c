@@ -767,29 +767,6 @@ TEST_FUNCTION(wsio_open_after_close_succeeds)
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_165: [ `wsio_open` when CLOSING shall fail and return a non-zero value. ]*/
-TEST_FUNCTION(wsio_open_when_closing_fails)
-{
-    // arrange
-    CONCRETE_IO_HANDLE wsio;
-    int result;
-    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
-    (void)wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
-    g_on_ws_open_complete(g_on_ws_open_complete_context, WS_OPEN_OK);
-    (void)wsio_get_interface_description()->concrete_io_close(wsio, test_on_io_close_complete, (void*)0x4245);
-    umock_c_reset_all_calls();
-
-    // act
-    result = wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
-
-    // assert
-    ASSERT_ARE_NOT_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    wsio_get_interface_description()->concrete_io_destroy(wsio);
-}
-
 /* wsio_close */
 
 /* Tests_SRS_WSIO_01_085: [ `wsio_close` shall close the websockets IO if an open action is either pending or has completed successfully (if the IO is open).  ]*/
@@ -1392,8 +1369,6 @@ TEST_FUNCTION(wsio_dowork_in_closing_calls_uws_do_work)
     g_on_ws_open_complete(g_on_ws_open_complete_context, WS_OPEN_OK);
     (void)wsio_get_interface_description()->concrete_io_close(wsio, test_on_io_close_complete, (void*)0x4245);
     umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(uws_client_dowork(TEST_UWS_HANDLE));
 
     // act
     wsio_get_interface_description()->concrete_io_dowork(wsio);

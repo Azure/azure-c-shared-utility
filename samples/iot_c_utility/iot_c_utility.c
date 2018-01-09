@@ -14,6 +14,7 @@
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/httpapiex.h"
 
+#ifdef USE_HTTP
 static void test_http_proxy_io()
 {
     const IO_INTERFACE_DESCRIPTION* interface_desc = http_proxy_io_get_interface_description();
@@ -35,6 +36,7 @@ static void http_examples()
         HTTPAPIEX_Destroy(handle);
     }
 }
+#endif
 
 static void show_sastoken_example()
 {
@@ -60,9 +62,11 @@ int main(int argc, char** argv)
     else
     {
         show_sastoken_example();
-        test_http_proxy_io();
         platform_deinit();
+#ifdef USE_HTTP
         http_examples();
+        test_http_proxy_io();
+#endif
     }
     return 0;
 }
