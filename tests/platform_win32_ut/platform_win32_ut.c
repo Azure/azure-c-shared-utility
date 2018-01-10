@@ -31,9 +31,6 @@ void my_gballoc_free(void* ptr)
 #include "umock_c_negative_tests.h"
 #include "azure_c_shared_utility/macro_utils.h"
 
-static TEST_MUTEX_HANDLE g_testByTest;
-static TEST_MUTEX_HANDLE g_dllByDll;
-
 #define ENABLE_MOCKS
 
 #include "azure_c_shared_utility/gballoc.h"
@@ -65,16 +62,19 @@ extern "C"
 
     STRING_HANDLE STRING_construct_sprintf(const char* format, ...)
     {
-        (void)format;
         const char* psz = "STRING_construct_sprintf variable";
         char* temp = (char*)my_gballoc_malloc(strlen(psz) + 1);
         ASSERT_IS_NOT_NULL(temp);
+        (void)format;
         (void)memcpy(temp, psz, strlen(psz) + 1);
         return (STRING_HANDLE)temp;
     }
 #ifdef __cplusplus
 }
 #endif
+
+static TEST_MUTEX_HANDLE g_testByTest;
+static TEST_MUTEX_HANDLE g_dllByDll;
 
 DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
@@ -175,6 +175,8 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
 
 TEST_FUNCTION(platform_init_success)
 {
+    int result;
+
     //arrange
     STRICT_EXPECTED_CALL(WSAStartup(IGNORED_NUM_ARG, IGNORED_PTR_ARG));
 #ifdef USE_OPENSSL
@@ -182,7 +184,7 @@ TEST_FUNCTION(platform_init_success)
 #endif
 
     //act
-    int result = platform_init();
+    result = platform_init();
 
     //assert
     ASSERT_ARE_EQUAL(int, 0, result);
@@ -193,11 +195,13 @@ TEST_FUNCTION(platform_init_success)
 
 TEST_FUNCTION(platform_init_WSAStartup_0_fail)
 {
+    int result;
+
     //arrange
     STRICT_EXPECTED_CALL(WSAStartup(IGNORED_NUM_ARG, IGNORED_PTR_ARG)).SetReturn(1);
 
     //act
-    int result = platform_init();
+    result = platform_init();
 
     //assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
@@ -208,6 +212,8 @@ TEST_FUNCTION(platform_init_WSAStartup_0_fail)
 
 TEST_FUNCTION(platform_get_default_tlsio_success)
 {
+    const IO_INTERFACE_DESCRIPTION* io_desc;
+
     //arrange
 #ifdef USE_OPENSSL
     STRICT_EXPECTED_CALL(tlsio_openssl_get_interface_description());
@@ -216,7 +222,7 @@ TEST_FUNCTION(platform_get_default_tlsio_success)
 #endif
 
     //act
-    const IO_INTERFACE_DESCRIPTION* io_desc = platform_get_default_tlsio();
+    io_desc = platform_get_default_tlsio();
 
     //assert
     ASSERT_IS_NOT_NULL(io_desc);
