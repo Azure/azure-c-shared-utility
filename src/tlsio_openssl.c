@@ -680,6 +680,20 @@ static void send_handshake_bytes(TLS_IO_INSTANCE* tls_io_instance)
     }
 }
 
+static void close_openssl_instance(TLS_IO_INSTANCE* tls_io_instance)
+{
+    if (tls_io_instance->ssl != NULL)
+    {
+        SSL_free(tls_io_instance->ssl);
+        tls_io_instance->ssl = NULL;
+    }
+    if (tls_io_instance->ssl_context != NULL)
+    {
+        SSL_CTX_free(tls_io_instance->ssl_context);
+        tls_io_instance->ssl_context = NULL;
+    }
+}
+
 static void on_underlying_io_close_complete(void* context)
 {
     TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)context;
@@ -708,6 +722,8 @@ static void on_underlying_io_close_complete(void* context)
         }
         break;
     }
+
+    close_openssl_instance(tls_io_instance);
 }
 
 static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_result)
@@ -817,20 +833,6 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
             }
             break;
         }
-    }
-}
-
-static void close_openssl_instance(TLS_IO_INSTANCE* tls_io_instance)
-{
-    if (tls_io_instance->ssl != NULL)
-    {
-        SSL_free(tls_io_instance->ssl);
-        tls_io_instance->ssl = NULL;
-    }
-    if (tls_io_instance->ssl_context != NULL)
-    {
-        SSL_CTX_free(tls_io_instance->ssl_context);
-        tls_io_instance->ssl_context = NULL;
     }
 }
 
@@ -1295,7 +1297,11 @@ int tlsio_openssl_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_cl
             tls_io_instance->on_io_close_complete_context = callback_context;
             // xio_close is guaranteed to succeed from the open state, and the callback completes the 
             // transition into TLSIO_STATE_NOT_OPEN
-            (void)xio_close(tls_io_instance->underlying_io, on_underlying_io_close_complete, tls_io_instance);
+            if (xio_close(tls_io_instance->underlying_io, on_underlying_io_close_complete, tls_io_instance) != 0)
+            {
+                close_openssl_instance(tls_io_instance);
+                tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
+            }
         }
         else
         {
