@@ -51,6 +51,16 @@ static void show_sastoken_example()
     }
 }
 
+static void show_platform_info()
+{
+    STRING_HANDLE platform_info = platform_get_platform_info();
+    if (platform_info != NULL)
+    {
+        (void)printf("%s\r\n", STRING_c_str(platform_info));
+        STRING_delete(platform_info);
+    }
+}
+
 int main(int argc, char** argv)
 {
     (void)argc, (void)argv;
@@ -61,12 +71,13 @@ int main(int argc, char** argv)
     }
     else
     {
+        show_platform_info();
         show_sastoken_example();
-        platform_deinit();
 #ifdef USE_HTTP
         http_examples();
         test_http_proxy_io();
 #endif
+        platform_deinit();
     }
     return 0;
 }

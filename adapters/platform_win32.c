@@ -31,13 +31,11 @@ int platform_init(void)
     }
     else
     {
+#ifdef USE_OPENSSL
+        tlsio_openssl_init();
+#endif
         result = 0;
     }
-
-#ifdef USE_OPENSSL
-    tlsio_openssl_init();
-#endif
-    
     return result;
 }
 
@@ -66,8 +64,8 @@ STRING_HANDLE platform_get_platform_info(void)
     STRING_HANDLE result;
 #ifndef WINCE
     SYSTEM_INFO sys_info;
+    OSVERSIONINFO osvi;
     char *arch;
-    DWORD dwVersion;
     GetSystemInfo(&sys_info);
 
     switch (sys_info.wProcessorArchitecture)
@@ -93,10 +91,26 @@ STRING_HANDLE platform_get_platform_info(void)
             break;
     }
 
-    #pragma warning(disable:4996)
-    dwVersion = GetVersion();
-    #pragma warning(default:4996)
-    result = STRING_construct_sprintf("(native; Windows NT %d.%d; %s)", LOBYTE(LOWORD(dwVersion)), HIBYTE(LOWORD(dwVersion)), arch);
+    result = NULL;
+    memset(&osvi, 0, sizeof(osvi));
+    osvi.dwOSVersionInfoSize = sizeof(osvi);
+#pragma warning(disable:4996)
+    if (GetVersionEx(&osvi))
+    {
+        DWORD product_type;
+        if (GetProductInfo(osvi.dwMajorVersion, osvi.dwMinorVersion, 0, 0, &product_type))
+        {
+            result = STRING_construct_sprintf("(native; WindowsProduct:0x%08x %d.%d; %s)", product_type, osvi.dwMajorVersion, osvi.dwMinorVersion, arch);
+        }
+    }
+
+    if (result == NULL)
+    {
+        DWORD dwVersion = GetVersion();
+        result = STRING_construct_sprintf("(native; WindowsProduct:Windows NT %d.%d; %s)", LOBYTE(LOWORD(dwVersion)), HIBYTE(LOWORD(dwVersion)), arch);
+    }
+#pragma warning(default:4996)
+
 #else
     result = STRING_construct("(native; Windows CE; undefined)");
 #endif
@@ -104,7 +118,6 @@ STRING_HANDLE platform_get_platform_info(void)
     {
         LogError("STRING_construct_sprintf failed");
     }
-
     return result;
 }
 
