@@ -7,7 +7,7 @@
 @REM  %1 Local path to the project to be released.
 
 set project_path=%1
-set hg_commit_message="1.1.29"
+set hg_commit_message="1.1.30"
 set project_name_override=""
 
 if  NOT "%2" equ "" (
