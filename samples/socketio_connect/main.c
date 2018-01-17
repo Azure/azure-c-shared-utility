@@ -7,6 +7,13 @@
 #include "azure_c_shared_utility/socketio.h"
 #include "azure_c_shared_utility/platform.h"
 
+// A simple sample callback.
+static void on_send_complete(void* context, IO_SEND_RESULT send_result)
+{
+    (void)context;
+    (void)send_result;
+}
+
 static void on_io_open_complete(void* context, IO_OPEN_RESULT open_result)
 {
     (void)context, (void)open_result;
@@ -19,7 +26,7 @@ static void on_io_open_complete(void* context, IO_OPEN_RESULT open_result)
             "Host: www.google.com\r\n"
             "\r\n";
         (void)printf("Sending bytes ...\r\n");
-        if (xio_send(socketio, to_send, sizeof(to_send), NULL, NULL) != 0)
+        if (xio_send(socketio, to_send, sizeof(to_send), on_send_complete, NULL) != 0)
         {
             (void)printf("Send failed\r\n");
         }

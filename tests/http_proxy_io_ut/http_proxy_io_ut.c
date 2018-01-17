@@ -1671,7 +1671,7 @@ TEST_FUNCTION(when_the_underlying_io_open_complete_is_called_the_CONNECT_request
     umock_c_reset_all_calls();
 
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(xio_send(TEST_IO_HANDLE, IGNORED_PTR_ARG, sizeof(connect_request) - 1, NULL, NULL))
+    STRICT_EXPECTED_CALL(xio_send(TEST_IO_HANDLE, IGNORED_PTR_ARG, sizeof(connect_request) - 1, IGNORED_PTR_ARG, NULL))
         .ValidateArgumentBuffer(2, connect_request, sizeof(connect_request) - 1);
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
@@ -1697,7 +1697,7 @@ TEST_FUNCTION(when_xio_send_fails_on_open_complete_is_triggered_with_IO_OPEN_ERR
     umock_c_reset_all_calls();
 
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(xio_send(TEST_IO_HANDLE, IGNORED_PTR_ARG, sizeof(connect_request) - 1, NULL, NULL))
+    STRICT_EXPECTED_CALL(xio_send(TEST_IO_HANDLE, IGNORED_PTR_ARG, sizeof(connect_request) - 1, IGNORED_PTR_ARG, NULL))
         .ValidateArgumentBuffer(2, connect_request, sizeof(connect_request) - 1)
         .SetReturn(1);
     STRICT_EXPECTED_CALL(xio_close(TEST_IO_HANDLE, NULL, NULL));
@@ -1727,7 +1727,7 @@ TEST_FUNCTION(http_proxy_io_open_after_CONNECT_request_send_error_succeeds)
     umock_c_reset_all_calls();
 
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(xio_send(TEST_IO_HANDLE, IGNORED_PTR_ARG, sizeof(connect_request) - 1, NULL, NULL))
+    STRICT_EXPECTED_CALL(xio_send(TEST_IO_HANDLE, IGNORED_PTR_ARG, sizeof(connect_request) - 1, IGNORED_PTR_ARG, NULL))
         .ValidateArgumentBuffer(2, connect_request, sizeof(connect_request) - 1)
         .SetReturn(1);
     STRICT_EXPECTED_CALL(xio_close(TEST_IO_HANDLE, NULL, NULL));
@@ -1842,7 +1842,7 @@ TEST_FUNCTION(when_the_underlying_io_open_complete_is_called_the_CONNECT_request
     STRICT_EXPECTED_CALL(STRING_c_str(TEST_STRING_HANDLE))
         .SetReturn(base64encoded);
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(xio_send(TEST_IO_HANDLE, IGNORED_PTR_ARG, sizeof(connect_request) - 1, NULL, NULL))
+    STRICT_EXPECTED_CALL(xio_send(TEST_IO_HANDLE, IGNORED_PTR_ARG, sizeof(connect_request) - 1, IGNORED_PTR_ARG, NULL))
         .ValidateArgumentBuffer(2, connect_request, sizeof(connect_request) - 1);
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(STRING_delete(TEST_STRING_HANDLE));
@@ -1882,7 +1882,7 @@ TEST_FUNCTION(when_the_underlying_io_open_complete_is_called_the_CONNECT_request
     STRICT_EXPECTED_CALL(STRING_c_str(TEST_STRING_HANDLE))
         .SetReturn(base64encoded);
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(xio_send(TEST_IO_HANDLE, IGNORED_PTR_ARG, sizeof(connect_request) - 1, NULL, NULL))
+    STRICT_EXPECTED_CALL(xio_send(TEST_IO_HANDLE, IGNORED_PTR_ARG, sizeof(connect_request) - 1, IGNORED_PTR_ARG, NULL))
         .ValidateArgumentBuffer(2, connect_request, sizeof(connect_request) - 1);
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(STRING_delete(TEST_STRING_HANDLE));

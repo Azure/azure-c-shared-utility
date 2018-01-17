@@ -234,6 +234,14 @@ static void indicate_open_complete_error_and_close(HTTP_PROXY_IO_INSTANCE* http_
     http_proxy_io_instance->on_io_open_complete(http_proxy_io_instance->on_io_open_complete_context, IO_OPEN_ERROR);
 }
 
+// This callback usage needs to be either verified and commented or integrated into 
+// the state machine.
+static void unchecked_on_send_complete(void* context, IO_SEND_RESULT send_result)
+{
+    (void)context;
+    (void)send_result;
+}
+
 static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_result)
 {
     if (context == NULL)
@@ -409,7 +417,7 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
                             else
                             {
                                 /* Codes_SRS_HTTP_PROXY_IO_01_063: [ The request shall be sent by calling `xio_send` and passing NULL as `on_send_complete` callback. ]*/
-                                if (xio_send(http_proxy_io_instance->underlying_io, connect_request, connect_request_length, NULL, NULL) != 0)
+                                if (xio_send(http_proxy_io_instance->underlying_io, connect_request, connect_request_length, unchecked_on_send_complete, NULL) != 0)
                                 {
                                     /* Codes_SRS_HTTP_PROXY_IO_01_064: [ If `xio_send` fails, the `on_open_complete` callback shall be triggered with `IO_OPEN_ERROR`, passing also the `on_open_complete_context` argument as `context`. ]*/
                                     LogError("Could not send CONNECT request");

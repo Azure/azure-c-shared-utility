@@ -593,6 +593,14 @@ static void indicate_ws_close_complete(UWS_CLIENT_INSTANCE* uws_client)
     }
 }
 
+// This callback usage needs to be either verified and commented or integrated into 
+// the state machine.
+static void unchecked_on_send_complete(void* context, IO_SEND_RESULT send_result)
+{
+    (void)context;
+    (void)send_result;
+}
+
 static int send_close_frame(UWS_CLIENT_INSTANCE* uws_client, unsigned int close_error_code)
 {
     unsigned char* close_frame;
@@ -617,7 +625,7 @@ static int send_close_frame(UWS_CLIENT_INSTANCE* uws_client, unsigned int close_
         close_frame_length = BUFFER_length(close_frame_buffer);
 
         /* Codes_SRS_UWS_CLIENT_01_471: [ The callback `on_underlying_io_close_sent` shall be passed as argument to `xio_send`. ]*/
-        if (xio_send(uws_client->underlying_io, close_frame, close_frame_length, NULL, NULL) != 0)
+        if (xio_send(uws_client->underlying_io, close_frame, close_frame_length, unchecked_on_send_complete, NULL) != 0)
         {
             LogError("Sending CLOSE frame failed.");
             result = __FAILURE__;
@@ -751,7 +759,7 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
                             /* No need to have any send complete here, as we are monitoring the received bytes */
                             /* Codes_SRS_UWS_CLIENT_01_372: [ Once prepared the WebSocket upgrade request shall be sent by calling `xio_send`. ]*/
                             /* Codes_SRS_UWS_CLIENT_01_080: [ Once a connection to the server has been established (including a connection via a proxy or over a TLS-encrypted tunnel), the client MUST send an opening handshake to the server. ]*/
-                            if (xio_send(uws_client->underlying_io, upgrade_request, upgrade_request_length, NULL, NULL) != 0)
+                            if (xio_send(uws_client->underlying_io, upgrade_request, upgrade_request_length, unchecked_on_send_complete, NULL) != 0)
                             {
                                 /* Codes_SRS_UWS_CLIENT_01_373: [ If `xio_send` fails then uws shall report that the open failed by calling the `on_ws_open_complete` callback passed to `uws_client_open_async` with `WS_OPEN_ERROR_CANNOT_SEND_UPGRADE_REQUEST`. ]*/
                                 LogError("Cannot send upgrade request");
@@ -1359,7 +1367,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                                     /* Codes_SRS_UWS_CLIENT_01_248: [ A Ping frame MAY include "Application data". ]*/
                                     pong_frame = BUFFER_u_char(pong_frame_buffer);
                                     pong_frame_length = BUFFER_length(pong_frame_buffer);
-                                    if (xio_send(uws_client->underlying_io, pong_frame, pong_frame_length, NULL, NULL) != 0)
+                                    if (xio_send(uws_client->underlying_io, pong_frame, pong_frame_length, unchecked_on_send_complete, NULL) != 0)
                                     {
                                         LogError("Sending CLOSE frame failed.");
                                     }

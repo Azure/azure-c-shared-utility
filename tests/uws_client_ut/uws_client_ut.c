@@ -2337,7 +2337,7 @@ TEST_FUNCTION(uws_client_close_handshake_async_sends_the_close_frame)
     STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
         .ValidateArgumentValue_handle(&buffer_handle)
         .SetReturn(sizeof(close_frame));
-    STRICT_EXPECTED_CALL(xio_send(TEST_IO_HANDLE, close_frame, sizeof(close_frame), NULL, NULL))
+    STRICT_EXPECTED_CALL(xio_send(TEST_IO_HANDLE, close_frame, sizeof(close_frame), IGNORED_PTR_ARG, NULL))
         .ValidateArgumentBuffer(2, close_frame, sizeof(close_frame));
     STRICT_EXPECTED_CALL(BUFFER_delete(IGNORED_PTR_ARG))
         .ValidateArgumentValue_handle(&buffer_handle);
@@ -2398,7 +2398,7 @@ TEST_FUNCTION(uws_client_close_handshake_async_with_NULL_close_complete_callback
     STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
         .ValidateArgumentValue_handle(&buffer_handle)
         .SetReturn(sizeof(close_frame));
-    STRICT_EXPECTED_CALL(xio_send(TEST_IO_HANDLE, close_frame, sizeof(close_frame), NULL, NULL))
+    STRICT_EXPECTED_CALL(xio_send(TEST_IO_HANDLE, close_frame, sizeof(close_frame), IGNORED_PTR_ARG, NULL))
         .ValidateArgumentBuffer(2, close_frame, sizeof(close_frame));
     STRICT_EXPECTED_CALL(BUFFER_delete(IGNORED_PTR_ARG))
         .ValidateArgumentValue_handle(&buffer_handle);
@@ -2445,7 +2445,7 @@ TEST_FUNCTION(uws_client_close_handshake_async_with_NULL_context_is_allowed)
     STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
         .ValidateArgumentValue_handle(&buffer_handle)
         .SetReturn(sizeof(close_frame));
-    STRICT_EXPECTED_CALL(xio_send(TEST_IO_HANDLE, close_frame, sizeof(close_frame), NULL, NULL))
+    STRICT_EXPECTED_CALL(xio_send(TEST_IO_HANDLE, close_frame, sizeof(close_frame), IGNORED_PTR_ARG, NULL))
         .ValidateArgumentBuffer(2, close_frame, sizeof(close_frame));
     STRICT_EXPECTED_CALL(BUFFER_delete(IGNORED_PTR_ARG))
         .ValidateArgumentValue_handle(&buffer_handle);
@@ -2492,7 +2492,7 @@ TEST_FUNCTION(when_xio_send_fails_uws_client_close_handshake_async_fails)
     STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
         .ValidateArgumentValue_handle(&buffer_handle)
         .SetReturn(sizeof(close_frame));
-    STRICT_EXPECTED_CALL(xio_send(TEST_IO_HANDLE, close_frame, sizeof(close_frame), NULL, NULL))
+    STRICT_EXPECTED_CALL(xio_send(TEST_IO_HANDLE, close_frame, sizeof(close_frame), IGNORED_PTR_ARG, NULL))
         .ValidateArgumentBuffer(2, close_frame, sizeof(close_frame))
         .SetReturn(1);
     STRICT_EXPECTED_CALL(BUFFER_delete(IGNORED_PTR_ARG))
@@ -4683,7 +4683,7 @@ TEST_FUNCTION(when_a_masked_frame_is_received_an_error_is_indicated_and_connecti
     STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
         .ValidateArgumentValue_handle(&buffer_handle)
         .SetReturn(sizeof(close_frame));
-    STRICT_EXPECTED_CALL(xio_send(TEST_IO_HANDLE, close_frame, sizeof(close_frame), NULL, NULL))
+    STRICT_EXPECTED_CALL(xio_send(TEST_IO_HANDLE, close_frame, sizeof(close_frame), IGNORED_PTR_ARG, NULL))
         .ValidateArgumentBuffer(2, close_frame, sizeof(close_frame));
     STRICT_EXPECTED_CALL(BUFFER_delete(IGNORED_PTR_ARG))
         .ValidateArgumentValue_handle(&buffer_handle);
@@ -4775,7 +4775,7 @@ TEST_FUNCTION(when_a_masked_frame_is_received_and_sending_the_encoded_CLOSE_fram
     STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
         .ValidateArgumentValue_handle(&buffer_handle)
         .SetReturn(sizeof(close_frame));
-    STRICT_EXPECTED_CALL(xio_send(TEST_IO_HANDLE, close_frame, sizeof(close_frame), NULL, NULL))
+    STRICT_EXPECTED_CALL(xio_send(TEST_IO_HANDLE, close_frame, sizeof(close_frame), IGNORED_PTR_ARG, NULL))
         .ValidateArgumentBuffer(2, close_frame, sizeof(close_frame))
         .SetReturn(1);
     STRICT_EXPECTED_CALL(BUFFER_delete(IGNORED_PTR_ARG))
@@ -6390,7 +6390,7 @@ TEST_FUNCTION(when_a_PING_frame_was_received_a_PONG_frame_is_sent)
     STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
         .ValidateArgumentValue_handle(&buffer_handle)
         .SetReturn(sizeof(pong_frame));
-    STRICT_EXPECTED_CALL(xio_send(TEST_IO_HANDLE, pong_frame, sizeof(pong_frame), NULL, NULL))
+    STRICT_EXPECTED_CALL(xio_send(TEST_IO_HANDLE, pong_frame, sizeof(pong_frame), IGNORED_PTR_ARG, NULL))
         .ValidateArgumentBuffer(2, pong_frame, sizeof(pong_frame));
     STRICT_EXPECTED_CALL(BUFFER_delete(IGNORED_PTR_ARG))
         .ValidateArgumentValue_handle(&buffer_handle);
@@ -6441,7 +6441,7 @@ TEST_FUNCTION(when_a_PING_frame_was_received_with_some_payload_a_PONG_frame_is_s
     STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
         .ValidateArgumentValue_handle(&buffer_handle)
         .SetReturn(sizeof(pong_frame));
-    STRICT_EXPECTED_CALL(xio_send(TEST_IO_HANDLE, pong_frame, sizeof(pong_frame), NULL, NULL))
+    STRICT_EXPECTED_CALL(xio_send(TEST_IO_HANDLE, pong_frame, sizeof(pong_frame), IGNORED_PTR_ARG, NULL))
         .ValidateArgumentBuffer(2, pong_frame, sizeof(pong_frame));
     STRICT_EXPECTED_CALL(BUFFER_delete(IGNORED_PTR_ARG))
         .ValidateArgumentValue_handle(&buffer_handle);
