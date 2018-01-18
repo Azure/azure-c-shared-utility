@@ -15,6 +15,9 @@
 #include "azure_c_shared_utility/xlogging.h"
 #ifdef USE_OPENSSL
 #include "azure_c_shared_utility/x509_openssl.h"
+#elif USE_WOLFSSL
+#include "wolfssl/ssl.h"
+#include "wolfssl/error-ssl.h"
 #endif
 #include "azure_c_shared_utility/shared_util_options.h"
 
