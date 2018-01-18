@@ -12,12 +12,10 @@
 #include "azure_c_shared_utility/httpheaders.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
 #include "curl/curl.h"
-#include <openssl/x509_vfy.h>
-#include <openssl/pem.h>
-#include <openssl/ssl.h>
-#include <openssl/bio.h>
 #include "azure_c_shared_utility/xlogging.h"
+#ifdef USE_OPENSSL
 #include "azure_c_shared_utility/x509_openssl.h"
+#endif
 #include "azure_c_shared_utility/shared_util_options.h"
 
 #define TEMP_BUFFER_SIZE 1024
@@ -232,7 +230,7 @@ static CURLcode ssl_ctx_callback(CURL *curl, void *ssl_ctx, void *userptr)
     else
     {
         HTTP_HANDLE_DATA *httpHandleData = (HTTP_HANDLE_DATA *)userptr;
-
+#ifdef USE_OPENSSL
         /*trying to set the x509 per device certificate*/
         if (
             (httpHandleData->x509certificate != NULL) &&
@@ -255,6 +253,34 @@ static CURLcode ssl_ctx_callback(CURL *curl, void *ssl_ctx, void *userptr)
             LogError("failure in x509_openssl_add_certificates");
             result = CURLE_SSL_CERTPROBLEM;
         }
+#elif USE_WOLFSSL
+        if (
+            (httpHandleData->x509certificate != NULL) &&
+            (httpHandleData->x509privatekey != NULL) &&
+            (
+             ((wolfSSL_use_certificate_chain_buffer(ssl_ctx, (unsigned char*)httpHandleData->x509certificate, strlen(httpHandleData->x509certificate)) != SSL_SUCCESS)) ||
+             ((wolfSSL_use_PrivateKey_buffer(ssl_ctx, (unsigned char*)httpHandleData->x509privatekey, strlen(httpHandleData->x509privatekey), SSL_FILETYPE_PEM) != SSL_SUCCESS))
+            )
+            )
+        {
+            LogError("unable to add x509 certs to wolfssl");
+            result = CURLE_SSL_CERTPROBLEM;
+        }
+        else if (
+            (httpHandleData->certificates != NULL) && 
+            (wolfSSL_CTX_load_verify_buffer(ssl_ctx, (const unsigned char*)httpHandleData->certificates, strlen(httpHandleData->certificates), SSL_FILETYPE_PEM) != SSL_SUCCESS)
+            )
+        {
+            LogError("failure in adding trusted certificate to client");
+            result = CURLE_SSL_CERTPROBLEM;
+        }
+#else
+        if (httpHandleData->x509certificate != NULL || httpHandleData->x509privatekey != NULL)
+        {
+            LogError("Failure no platform is enabled to handle certificates");
+            result = CURLE_SSL_CERTPROBLEM;
+        }
+#endif
         else
         {
             result = CURLE_OK;
