@@ -372,11 +372,11 @@ endif()
 #this is the product (a library)
 add_library(aziotsharedutil ${source_c_files} ${source_h_files})
 
-if(${build_as_dynamic})
+#if(${build_as_dynamic})
     #make sure we can link as dll/so
-    add_library(aziotsharedutil_dll SHARED ./src/aziotsharedutil.def ${source_c_files} ${source_h_files})
-    set_target_properties(aziotsharedutil_dll PROPERTIES OUTPUT_NAME "aziotsharedutil")
-endif()
+    #add_library(aziotsharedutil_dll SHARED ./src/aziotsharedutil.def ${source_c_files} ${source_h_files})
+    #set_target_properties(aziotsharedutil_dll PROPERTIES OUTPUT_NAME "aziotsharedutil")
+#endif()
 
 set(aziotsharedutil_target_libs)
 
@@ -460,9 +460,9 @@ if(LINUX)
 endif()
 
 target_link_libraries(aziotsharedutil ${aziotsharedutil_target_libs})
-if(${build_as_dynamic})
-    target_link_libraries(aziotsharedutil_dll ${aziotsharedutil_target_libs})
-endif()
+#if(${build_as_dynamic})
+    #target_link_libraries(aziotsharedutil_dll ${aziotsharedutil_target_libs})
+#endif()
 
 if (${run_unittests} OR ${run_e2e_tests})
     include("dependencies-test.cmake")
@@ -508,11 +508,11 @@ if(${use_installed_dependencies})
     # Install Azure C Shared Utility
     set(package_location "cmake")
     
-    if(${build_as_dynamic})
-        set(targets aziotsharedutil aziotsharedutil_dll)
-    else(${build_as_dynamic})
+    #if(${build_as_dynamic})
+        #set(targets aziotsharedutil aziotsharedutil_dll)
+    #else(${build_as_dynamic})
         set(targets aziotsharedutil)
-    endif(${build_as_dynamic})
+    #endif(${build_as_dynamic})
     
     install (TARGETS ${targets} EXPORT aziotsharedutilTargets
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
