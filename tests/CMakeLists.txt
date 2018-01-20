@@ -55,6 +55,10 @@ add_subdirectory(vector_ut)
 add_subdirectory(xio_ut)
 add_subdirectory(optionhandler_ut)
 
+if(use_wolfssl)
+    add_subdirectory(tlsio_wolfssl_ut)
+endif()
+
 if(use_wsio)
     add_subdirectory(uws_client_ut)
     add_subdirectory(uws_frame_encoder_ut)

@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
+#include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/tlsio.h"
 #include "azure_c_shared_utility/tlsio_wolfssl.h"
 #include "azure_c_shared_utility/socketio.h"
@@ -369,7 +370,7 @@ static int on_io_recv(WOLFSSL *ssl, char *buf, int sz, void *context)
     {
         result = WOLFSSL_CBIO_ERR_WANT_READ;
     }
-    else if ((result == 0) && tls_io_instance->tlsio_state == TLSIO_STATE_CLOSING)
+    else if ((result == 0) && (tls_io_instance->tlsio_state == TLSIO_STATE_CLOSING || tls_io_instance->tlsio_state == TLSIO_STATE_NOT_OPEN))
     {
         result = WOLFSSL_CBIO_ERR_CONN_CLOSE;
     }
@@ -469,6 +470,7 @@ static int x509_wolfssl_add_credentials(WOLFSSL* ssl, char* x509certificate, cha
 static void destroy_wolfssl_instance(TLS_IO_INSTANCE* tls_io_instance)
 {
     wolfSSL_free(tls_io_instance->ssl);
+    tls_io_instance->ssl = NULL;
 }
 
 static int create_wolfssl_instance(TLS_IO_INSTANCE* tls_io_instance)
@@ -638,22 +640,27 @@ void tlsio_wolfssl_destroy(CONCRETE_IO_HANDLE tls_io)
         if (tls_io_instance->socket_io_read_bytes != NULL)
         {
             free(tls_io_instance->socket_io_read_bytes);
+            tls_io_instance->socket_io_read_bytes = NULL;
         }
-
         if (tls_io_instance->certificate != NULL)
         {
             free(tls_io_instance->certificate);
+            tls_io_instance->certificate = NULL;
         }
         if (tls_io_instance->x509certificate != NULL)
         {
             free(tls_io_instance->x509certificate);
+            tls_io_instance->x509certificate = NULL;
         }
         if (tls_io_instance->x509privatekey != NULL)
         {
             free(tls_io_instance->x509privatekey);
+            tls_io_instance->x509privatekey = NULL;
         }
 
         wolfSSL_CTX_free(tls_io_instance->ssl_context);
+        tls_io_instance->ssl_context = NULL;
+
         xio_destroy(tls_io_instance->socket_io);
         free(tls_io);
     }

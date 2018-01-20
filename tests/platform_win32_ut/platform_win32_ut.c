@@ -40,6 +40,9 @@ void my_gballoc_free(void* ptr)
 #ifdef USE_OPENSSL
 #include "azure_c_shared_utility/tlsio_openssl.h"
 #endif
+#if USE_WOLFSSL
+#include "azure_c_shared_utility/tlsio_wolfssl.h"
+#endif
 #undef ENABLE_MOCKS
 
 #include "azure_c_shared_utility/platform.h"

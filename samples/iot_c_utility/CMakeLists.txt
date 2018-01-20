@@ -13,7 +13,6 @@ if (WIN32)
     add_definitions(-DGB_MEASURE_MEMORY_FOR_THIS -DGB_DEBUG_ALLOC)
 ENDIF(WIN32)
 
-message(STATUS "is http on ${use_http}")
 if (${use_http})
     add_definitions(-DUSE_HTTP)
 endif()
