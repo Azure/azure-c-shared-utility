@@ -383,17 +383,17 @@ endif()
 add_library(aziotsharedutil ${source_c_files} ${source_h_files})
 
 
-target_include_directories(aziotsharedutil PUBLIC ${SHARED_UTIL_INC_FOLDER})
+target_include_directories(aziotsharedutil PRIVATE ${SHARED_UTIL_INC_FOLDER})
 if(MSVC)
     set(source_h_files ${source_h_files}
         ./pal/windows/refcount_os.h
     )
-    target_include_directories(aziotsharedutil PUBLIC ${SHARED_UTIL_FOLDER}/pal/windows)
+    target_include_directories(aziotsharedutil PRIVATE ${SHARED_UTIL_FOLDER}/pal/windows)
 else()
     set(source_h_files ${source_h_files}
         ./pal/linux/refcount_os.h
     )
-    target_include_directories(aziotsharedutil PUBLIC ${SHARED_UTIL_FOLDER}/pal/linux)
+    target_include_directories(aziotsharedutil PRIVATE ${SHARED_UTIL_FOLDER}/pal/linux)
 endif()
 
 
