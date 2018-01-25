@@ -2,6 +2,8 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include <stdlib.h>
+#define WOLFSSL_OPTIONS_IGNORE_SYS
+#include "wolfssl/options.h"
 #include "wolfssl/ssl.h"
 #include "wolfssl/error-ssl.h"
 #include <stdio.h>
@@ -773,9 +775,9 @@ int tlsio_wolfssl_send(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t siz
 {
     int result;
 
-    if (tls_io == NULL)
+    if (tls_io == NULL || buffer == NULL || size == 0)
     {
-        LogError("NULL tls_io handle");
+        LogError("Invalid parameter specified tls_io: %p, buffer: %p, size: %d", tls_io, buffer, size);
         result = __FAILURE__;
     }
     else

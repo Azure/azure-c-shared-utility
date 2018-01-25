@@ -16,6 +16,8 @@
 #ifdef USE_OPENSSL
 #include "azure_c_shared_utility/x509_openssl.h"
 #elif USE_WOLFSSL
+#define WOLFSSL_OPTIONS_IGNORE_SYS
+#include "wolfssl/options.h"
 #include "wolfssl/ssl.h"
 #include "wolfssl/error-ssl.h"
 #endif
