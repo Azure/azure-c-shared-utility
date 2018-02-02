@@ -443,6 +443,7 @@ static void on_underlying_ws_peer_closed(void* context, uint16_t* close_code, co
 
 static void on_underlying_ws_error(void* context, WS_ERROR ws_error)
 {
+    (void)ws_error;
     /* Don't have much to do with the error here */
     LogError("on_underlying_ws_error called with error code %d", (int)ws_error);
 
