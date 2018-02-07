@@ -347,11 +347,14 @@ static OPTIONHANDLER_HANDLE tlsio_openssl_retrieveoptions(CONCRETE_IO_HANDLE han
             }
             else if (tls_io_instance->tls_validation_callback != NULL)
             {
+#ifdef WIN32
 #pragma warning(push)
 #pragma warning(disable:4152)
+#endif
                 void* ptr = tls_io_instance->tls_validation_callback;
+#ifdef WIN32
 #pragma warning(pop)
-
+#endif
                 if (OptionHandler_AddOption(result, "tls_validation_callback", (const char*)ptr) != OPTIONHANDLER_OK)
                 {
                     LogError("unable to save tls_validation_callback option");
@@ -1561,10 +1564,14 @@ int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
         }
         else if (strcmp("tls_validation_callback", optionName) == 0)
         {
+#ifdef WIN32
 #pragma warning(push)
 #pragma warning(disable:4055)
+#endif // WIN32
             tls_io_instance->tls_validation_callback = (TLS_CERTIFICATE_VALIDATION_CALLBACK)value;
+#ifdef WIN32
 #pragma warning(pop)
+#endif // WIN32
 
             if (tls_io_instance->ssl_context != NULL)
             {

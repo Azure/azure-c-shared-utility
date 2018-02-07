@@ -33,25 +33,6 @@ static size_t base32_decoding_length(size_t src_len)
     return ((src_len*TARGET_BLOCK_SIZE) / 8);
 }
 
-static size_t get_char_position(char pos_char)
-{
-    size_t result;
-    // Validate characters
-    if (pos_char >= '2' && pos_char <= '7')
-    {
-        result = 25+(pos_char - '2');
-    }
-    else if (pos_char >= 'a' && pos_char <= 'z')
-    {
-        result = (pos_char - 'a');
-    }
-    else
-    {
-        result = INVALID_CHAR_POS;
-    }
-    return result;
-}
-
 static unsigned char convert_value_to_base32_char(unsigned char value)
 {
     unsigned char result;

@@ -40,6 +40,7 @@
 #include "azure_c_shared_utility/optionhandler.h"
 #include "azure_c_shared_utility/shared_util_options.h"
 #include "azure_c_shared_utility/xlogging.h"
+#include "azure_c_shared_utility/const_defines.h"
 #include <sys/ioctl.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -130,7 +131,10 @@ static void* socketio_CloneOption(const char* name, const void* value)
             LogError("Cannot clone option %s (not suppported)", name);
         }
     }
-
+    else
+    {
+        result = NULL;
+    }
     return result;
 }
 
@@ -234,12 +238,12 @@ static int add_pending_io(SOCKET_IO_INSTANCE* socket_io_instance, const unsigned
             }
         }
     }
-
     return result;
 }
 
-static void signal_callback(int signum)
+static STATIC_VAR_UNUSED void signal_callback(int signum)
 {
+    UNREFERENCED_PARAMETER(signum);
     LogError("Socket received signal %d.", signum);
 }
 
