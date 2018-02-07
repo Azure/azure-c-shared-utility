@@ -4,6 +4,7 @@
 #include "azure_c_shared_utility/x509_openssl.h"
 #include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/xlogging.h"
+#include "azure_c_shared_utility/const_defines.h"
 #include "openssl/bio.h"
 #include "openssl/rsa.h"
 #include "openssl/x509.h"
@@ -13,6 +14,7 @@
 void log_ERR_get_error(const char* message)
 {
     char buf[128];
+    UNREFERENCED_PARAMETER(buf);
     unsigned long error;
     int i;
 

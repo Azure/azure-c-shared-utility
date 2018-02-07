@@ -19,6 +19,7 @@
 #include "azure_c_shared_utility/x509_openssl.h"
 #include "azure_c_shared_utility/shared_util_options.h"
 #include "azure_c_shared_utility/gballoc.h"
+#include "azure_c_shared_utility/const_defines.h"
 
 typedef enum TLSIO_STATE_TAG
 {
@@ -415,6 +416,7 @@ static void openssl_lock_unlock_helper(LOCK_HANDLE lock, int lock_mode, const ch
 static void log_ERR_get_error(const char* message)
 {
     char buf[128];
+    UNREFERENCED_PARAMETER(buf);
     unsigned long error;
     int i;
 
