@@ -36,12 +36,12 @@ STRING_HANDLE STRING_new(void)
     {
         if ((result->s = (char*)malloc(1)) != NULL)
         {
-            LogError("Failure allocating value.");
             result->s[0] = '\0';
         }
         else
         {
             /* Codes_SRS_STRING_07_002: [STRING_new shall return an NULL STRING_HANDLE on any error that is encountered.] */
+            LogError("Failure allocating in STRING_new.");
             free(result);
             result = NULL;
         }
