@@ -152,8 +152,6 @@ static int internal_close(WSIO_INSTANCE* wsio_instance, ON_IO_CLOSE_COMPLETE on_
     }
     else
     {
-        IO_STATE saved_state;
-
         if (wsio_instance->io_state == IO_STATE_OPENING)
         {
             wsio_instance->io_state = IO_STATE_NOT_OPEN;
@@ -169,7 +167,6 @@ static int internal_close(WSIO_INSTANCE* wsio_instance, ON_IO_CLOSE_COMPLETE on_
         {
             LIST_ITEM_HANDLE first_pending_io;
 
-            saved_state = wsio_instance->io_state;
             wsio_instance->io_state = IO_STATE_CLOSING;
 
             wsio_instance->on_io_close_complete = on_io_close_complete;
@@ -443,6 +440,7 @@ static void on_underlying_ws_peer_closed(void* context, uint16_t* close_code, co
 
 static void on_underlying_ws_error(void* context, WS_ERROR ws_error)
 {
+    (void)ws_error;
     /* Don't have much to do with the error here */
     LogError("on_underlying_ws_error called with error code %d", (int)ws_error);
 

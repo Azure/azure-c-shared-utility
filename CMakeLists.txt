@@ -294,6 +294,7 @@ set(source_h_files
 ./inc/azure_c_shared_utility/crt_abstractions.h
 ./inc/azure_c_shared_utility/constmap.h
 ./inc/azure_c_shared_utility/condition.h
+./inc/azure_c_shared_utility/const_defines.h
 ${LOGGING_H_FILE}
 ./inc/azure_c_shared_utility/doublylinkedlist.h
 ./inc/azure_c_shared_utility/gballoc.h

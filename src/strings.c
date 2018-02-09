@@ -41,6 +41,7 @@ STRING_HANDLE STRING_new(void)
         else
         {
             /* Codes_SRS_STRING_07_002: [STRING_new shall return an NULL STRING_HANDLE on any error that is encountered.] */
+            LogError("Failure allocating in STRING_new.");
             free(result);
             result = NULL;
         }
@@ -67,6 +68,7 @@ STRING_HANDLE STRING_clone(STRING_HANDLE handle)
             size_t sourceLen = strlen(source->s);
             if ((result->s = (char*)malloc(sourceLen + 1)) == NULL)
             {
+                LogError("Failure allocating clone value.");
                 free(result);
                 result = NULL;
             }
@@ -106,6 +108,7 @@ STRING_HANDLE STRING_construct(const char* psz)
             /* Codes_SRS_STRING_07_032: [STRING_construct encounters any error it shall return a NULL value.] */
             else
             {
+                LogError("Failure allocating constructed value.");
                 free(str);
                 result = NULL;
             }
@@ -113,6 +116,7 @@ STRING_HANDLE STRING_construct(const char* psz)
         else
         {
             /* Codes_SRS_STRING_07_032: [STRING_construct encounters any error it shall return a NULL value.] */
+            LogError("Failure allocating value.");
             result = NULL;
         }
     }
@@ -167,7 +171,7 @@ STRING_HANDLE STRING_construct_sprintf(const char* format, ...)
                     /* Codes_SRS_STRING_07_040: [If any error is encountered STRING_construct_sprintf shall return NULL.] */
                     free(result);
                     result = NULL;
-                    LogError("Failure: allocation failed.");
+                    LogError("Failure: allocation sprintf value failed.");
                 }
             }
             else
@@ -213,6 +217,10 @@ STRING_HANDLE STRING_new_with_memory(const char* memory)
         {
             result->s = (char*)memory;
         }
+        else
+        {
+            LogError("Failure: allocating memory string");
+        }
     }
     return (STRING_HANDLE)result;
 }
@@ -239,6 +247,7 @@ STRING_HANDLE STRING_new_quoted(const char* source)
         else
         {
             /* Codes_SRS_STRING_07_031: [STRING_new_quoted shall return a NULL STRING_HANDLE if any error is encountered.] */
+            LogError("Failure allocating quoted string value.");
             free(result);
             result = NULL;
         }
@@ -299,7 +308,7 @@ STRING_HANDLE STRING_new_JSON(const char* source)
             if ((result = (STRING*)malloc(sizeof(STRING))) == NULL)
             {
                 /*Codes_SRS_STRING_02_021: [If the complete JSON representation cannot be produced, then STRING_new_JSON shall fail and return NULL.] */
-                LogError("malloc failure");
+                LogError("malloc json failure");
             }
             else if ((result->s = (char*)malloc(vlen + 5 * nControlCharacters + nEscapeCharacters + 3)) == NULL)
             {
@@ -381,6 +390,7 @@ int STRING_concat(STRING_HANDLE handle, const char* s2)
         if (temp == NULL)
         {
             /* Codes_SRS_STRING_07_013: [STRING_concat shall return a nonzero number if an error is encountered.] */
+            LogError("Failure reallocating value.");
             result = __FAILURE__;
         }
         else
@@ -403,6 +413,7 @@ int STRING_concat_with_STRING(STRING_HANDLE s1, STRING_HANDLE s2)
     if ((s1 == NULL) || (s2 == NULL))
     {
         /* Codes_SRS_STRING_07_035: [String_Concat_with_STRING shall return a nonzero number if an error is encountered.] */
+        LogError("Invalid argument specified");
         result = __FAILURE__;
     }
     else
@@ -416,6 +427,7 @@ int STRING_concat_with_STRING(STRING_HANDLE s1, STRING_HANDLE s2)
         if (temp == NULL)
         {
             /* Codes_SRS_STRING_07_035: [String_Concat_with_STRING shall return a nonzero number if an error is encountered.] */
+            LogError("Failure reallocating value");
             result = __FAILURE__;
         }
         else
@@ -451,6 +463,7 @@ int STRING_copy(STRING_HANDLE handle, const char* s2)
             char* temp = (char*)realloc(s1->s, s2Length + 1);
             if (temp == NULL)
             {
+                LogError("Failure reallocating value.");
                 /* Codes_SRS_STRING_07_027: [STRING_copy shall return a nonzero value if any error is encountered.] */
                 result = __FAILURE__;
             }
@@ -495,6 +508,7 @@ int STRING_copy_n(STRING_HANDLE handle, const char* s2, size_t n)
         temp = (char*)realloc(s1->s, s2Length + 1);
         if (temp == NULL)
         {
+            LogError("Failure reallocating value.");
             /* Codes_SRS_STRING_07_028: [STRING_copy_n shall return a nonzero value if any error is encountered.] */
             result = __FAILURE__;
         }
@@ -604,6 +618,7 @@ int STRING_quote(STRING_HANDLE handle)
         char* temp = (char*)realloc(s1->s, s1Length + 2 + 1);/*2 because 2 quotes, 1 because '\0'*/
         if (temp == NULL)
         {
+            LogError("Failure reallocating value.");
             /* Codes_SRS_STRING_07_029: [STRING_quote shall return a nonzero value if any error is encountered.] */
             result = __FAILURE__;
         }
@@ -636,6 +651,7 @@ int STRING_empty(STRING_HANDLE handle)
         char* temp = (char*)realloc(s1->s, 1);
         if (temp == NULL)
         {
+            LogError("Failure reallocating value.");
             /* Codes_SRS_STRING_07_030: [STRING_empty shall return a nonzero value if the STRING_HANDLE is NULL.] */
             result = __FAILURE__;
         }
@@ -725,6 +741,7 @@ STRING_HANDLE STRING_construct_n(const char* psz, size_t n)
                 /* Codes_SRS_STRING_02_010: [In all other error cases, STRING_construct_n shall return NULL.]  */
                 else
                 {
+                    LogError("Failure allocating value.");
                     free(str);
                     result = NULL;
                 }

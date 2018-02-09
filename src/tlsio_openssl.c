@@ -19,6 +19,7 @@
 #include "azure_c_shared_utility/x509_openssl.h"
 #include "azure_c_shared_utility/shared_util_options.h"
 #include "azure_c_shared_utility/gballoc.h"
+#include "azure_c_shared_utility/const_defines.h"
 
 typedef enum TLSIO_STATE_TAG
 {
@@ -347,11 +348,14 @@ static OPTIONHANDLER_HANDLE tlsio_openssl_retrieveoptions(CONCRETE_IO_HANDLE han
             }
             else if (tls_io_instance->tls_validation_callback != NULL)
             {
+#ifdef WIN32
 #pragma warning(push)
 #pragma warning(disable:4152)
+#endif
                 void* ptr = tls_io_instance->tls_validation_callback;
+#ifdef WIN32
 #pragma warning(pop)
-
+#endif
                 if (OptionHandler_AddOption(result, "tls_validation_callback", (const char*)ptr) != OPTIONHANDLER_OK)
                 {
                     LogError("unable to save tls_validation_callback option");
@@ -412,6 +416,7 @@ static void openssl_lock_unlock_helper(LOCK_HANDLE lock, int lock_mode, const ch
 static void log_ERR_get_error(const char* message)
 {
     char buf[128];
+    UNREFERENCED_PARAMETER(buf);
     unsigned long error;
     int i;
 
@@ -1561,10 +1566,14 @@ int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
         }
         else if (strcmp("tls_validation_callback", optionName) == 0)
         {
+#ifdef WIN32
 #pragma warning(push)
 #pragma warning(disable:4055)
+#endif // WIN32
             tls_io_instance->tls_validation_callback = (TLS_CERTIFICATE_VALIDATION_CALLBACK)value;
+#ifdef WIN32
 #pragma warning(pop)
+#endif // WIN32
 
             if (tls_io_instance->ssl_context != NULL)
             {

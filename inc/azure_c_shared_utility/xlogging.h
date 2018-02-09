@@ -42,6 +42,9 @@ typedef enum LOG_CATEGORY_TAG
 typedef void(*LOGGER_LOG)(LOG_CATEGORY log_category, const char* file, const char* func, int line, unsigned int options, const char* format, ...);
 typedef void(*LOGGER_LOG_GETLASTERROR)(const char* file, const char* func, int line, const char* format, ...);
 
+#define TEMP_BUFFER_SIZE 1024
+#define MESSAGE_BUFFER_SIZE 260
+
 #define LOG_NONE 0x00
 #define LOG_LINE 0x01
 
@@ -100,8 +103,6 @@ extern LOGGER_LOG_GETLASTERROR xlogging_get_log_function_GetLastError(void);
 #endif
 
 #define LogError(FORMAT, ...) do{ LOG(AZ_LOG_ERROR, LOG_LINE, FORMAT, __VA_ARGS__); }while((void)0,0)
-#define TEMP_BUFFER_SIZE 1024
-#define MESSAGE_BUFFER_SIZE 260
 #define LogErrorWinHTTPWithGetLastErrorAsString(FORMAT, ...) do { \
                 DWORD errorMessageID = GetLastError(); \
                 char messageBuffer[MESSAGE_BUFFER_SIZE]; \
