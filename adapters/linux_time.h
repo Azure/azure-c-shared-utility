@@ -13,7 +13,7 @@ extern clockid_t time_basis;
 
 extern void set_time_basis(void);
 extern int get_time_ns(struct timespec* ts);
-extern time_t get_time_s();
+extern time_t get_time_s(void);
 
 #define INVALID_TIME_VALUE      (time_t)(-1)
 

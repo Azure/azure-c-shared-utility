@@ -1117,7 +1117,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                             if (uws_client->received_bytes_count >= needed_bytes)
                             {
                                 /* Codes_SRS_UWS_CLIENT_01_167: [ Multibyte length quantities are expressed in network byte order. ]*/
-                                length = ((uint64_t)(uws_client->received_bytes[2]) << 8) + uws_client->received_bytes[3];
+                                length = (size_t)(((uint64_t)(uws_client->received_bytes[2]) << 8) + uws_client->received_bytes[3]);
 
                                 if (length < 126)
                                 {

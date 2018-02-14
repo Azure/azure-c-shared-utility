@@ -12,7 +12,6 @@
 
 #include "azure_c_shared_utility/base32.h"
 
-static const unsigned char BASE32_MAX_VALUE = 31;
 static const unsigned char BASE32_EQUAL_SIGN = 32;
 
 static const char BASE32_VALUES[] = "abcdefghijklmnopqrstuvwxyz234567=";
