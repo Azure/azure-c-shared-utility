@@ -756,8 +756,8 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
         else if (strcmp(OPTION_HTTP_PROXY, optionName) == 0)
         {
             /*Can't set proxy if using automatic*/
-	    if (g_ProxyAutomatic == 0)
-	    {
+            if (g_ProxyAutomatic == 0)
+            {
                 char proxy_address[MAX_HOSTNAME_LEN];
                 wchar_t wproxy_address[MAX_HOSTNAME_LEN];
 
@@ -768,9 +768,9 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
                     LogError("failure constructing proxy address");
                     result = HTTPAPI_ERROR;
                 }
-		else
-		{
-                    MultiByteToWideChar( CP_UTF8 , 0 , proxy_address , -1, wproxy_address , MAX_HOSTNAME_LEN);
+                else
+                {
+                    MultiByteToWideChar(CP_UTF8, 0, proxy_address, -1, wproxy_address, MAX_HOSTNAME_LEN);
 
                     WINHTTP_PROXY_INFO proxy = { 0 };
                     proxy.dwAccessType = WINHTTP_ACCESS_TYPE_NAMED_PROXY;
@@ -782,13 +782,13 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
                         result = HTTPAPI_ERROR;
                     }
                     else
-                      result = HTTPAPI_OK;
-		}
-	    }
-	    else
-	    {
-              result = HTTPAPI_OK;
-	    }
+                        result = HTTPAPI_OK;
+                }
+            }
+            else
+            {
+                result = HTTPAPI_OK;
+            }
         }
         else
         {
