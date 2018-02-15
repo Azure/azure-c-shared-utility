@@ -36,6 +36,7 @@ typedef struct HTTP_HANDLE_DATA_TAG
 } HTTP_HANDLE_DATA;
 
 static HTTPAPI_STATE g_HTTPAPIState = HTTPAPI_NOT_INITIALIZED;
+static int g_ProxyAutomatic = 1;
 
 /*There's a global SessionHandle for all the connections*/
 static HINTERNET g_SessionHandle;
@@ -128,25 +129,36 @@ HTTPAPI_RESULT HTTPAPI_Init(void)
 
     if (nUsersOfHTTPAPI == 0)
     {
-        if ((g_SessionHandle = WinHttpOpen(
-            NULL,
-#if defined _MSC_VER && _MSC_VER < 1600
-            WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
-#else
-            WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY,
+        g_SessionHandle = NULL;
+#ifdef WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY
+        g_SessionHandle = WinHttpOpen(
+          NULL,
+          WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY,
+          WINHTTP_NO_PROXY_NAME,
+          WINHTTP_NO_PROXY_BYPASS,
+          0);
 #endif
-            WINHTTP_NO_PROXY_NAME,
-            WINHTTP_NO_PROXY_BYPASS,
-            0)) == NULL)
+        if (g_SessionHandle == NULL)
         {
-            LogErrorWinHTTPWithGetLastErrorAsString("WinHttpOpen failed.");
-            result = HTTPAPI_INIT_FAILED;
+	    g_ProxyAutomatic = 0;
+            /*Automatic option is not supported on Windows 7 or earlier so try older option*/
+            g_SessionHandle = WinHttpOpen(
+                NULL,
+                WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
+                WINHTTP_NO_PROXY_NAME,
+                WINHTTP_NO_PROXY_BYPASS,
+                0);
         }
-        else
+        if (g_SessionHandle)
         {
             nUsersOfHTTPAPI++;
             g_HTTPAPIState = HTTPAPI_INITIALIZED;
             result = HTTPAPI_OK;
+        }
+        else
+        {
+            result = HTTPAPI_INIT_FAILED;
+            LogErrorWinHTTPWithGetLastErrorAsString("WinHttpOpen failed.");
         }
     }
     else
@@ -170,6 +182,7 @@ void HTTPAPI_Deinit(void)
                 (void)WinHttpCloseHandle(g_SessionHandle);
                 g_SessionHandle = NULL;
                 g_HTTPAPIState = HTTPAPI_NOT_INITIALIZED;
+		g_ProxyAutomatic = 1;
             }
         }
     }
@@ -740,6 +753,43 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
             /*winhttp accepts all certificates, because it actually relies on the system ones*/
             result = HTTPAPI_OK;
         }
+        else if (strcmp(OPTION_HTTP_PROXY, optionName) == 0)
+        {
+            /*Can't set proxy if using automatic*/
+            if (g_ProxyAutomatic == 0)
+            {
+                char proxy_address[MAX_HOSTNAME_LEN];
+                wchar_t wproxy_address[MAX_HOSTNAME_LEN];
+
+                HTTP_PROXY_OPTIONS* proxy_data = (HTTP_PROXY_OPTIONS*)value;
+
+                if (sprintf_s(proxy_address, MAX_HOSTNAME_LEN, "%s:%d", proxy_data->host_address, proxy_data->port) <= 0)
+                {
+                    LogError("failure constructing proxy address");
+                    result = HTTPAPI_ERROR;
+                }
+                else
+                {
+                    MultiByteToWideChar(CP_UTF8, 0, proxy_address, -1, wproxy_address, MAX_HOSTNAME_LEN);
+
+                    WINHTTP_PROXY_INFO proxy = { 0 };
+                    proxy.dwAccessType = WINHTTP_ACCESS_TYPE_NAMED_PROXY;
+                    proxy.lpszProxy = wproxy_address;
+
+                    if (!WinHttpSetOption(g_SessionHandle, WINHTTP_OPTION_PROXY, &proxy, sizeof(proxy)))
+                    {
+                        LogError("failure setting WinHttpSetOption");
+                        result = HTTPAPI_ERROR;
+                    }
+                    else
+                        result = HTTPAPI_OK;
+                }
+            }
+            else
+            {
+                result = HTTPAPI_OK;
+            }
+        }
         else
         {
             result = HTTPAPI_INVALID_ARG;
@@ -820,6 +870,26 @@ HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, co
                 result = HTTPAPI_OK;
             }
         }
+        else if (strcmp(OPTION_HTTP_PROXY, optionName) == 0)
+	{
+            HTTP_PROXY_OPTIONS* proxy_data = (HTTP_PROXY_OPTIONS*)value;
+
+            HTTP_PROXY_OPTIONS* new_proxy_info = malloc(sizeof(HTTP_PROXY_OPTIONS));
+            if (new_proxy_info == NULL)
+            {
+                LogError("unable to allocate proxy option information");
+                result = HTTPAPI_ERROR;
+            }
+            else
+            {
+                new_proxy_info->host_address = proxy_data->host_address;
+                new_proxy_info->port = proxy_data->port;
+                new_proxy_info->password = proxy_data->password;
+                new_proxy_info->username = proxy_data->username;
+                *savedValue = new_proxy_info;
+                result = HTTPAPI_OK;
+            }
+	}
         else
         {
             result = HTTPAPI_INVALID_ARG;
