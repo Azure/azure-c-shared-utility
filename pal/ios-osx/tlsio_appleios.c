@@ -427,7 +427,8 @@ static void dowork_read(TLS_IO_INSTANCE* tls_io_instance)
             }
             else if (rcv_bytes < 0)
             {
-                LogInfo("read error!!");
+                LogInfo("Communications error while reading");
+                enter_tlsio_error_state(tls_io_instance);
             }
         }
         /* Codes_SRS_TLSIO_30_102: [ If the TLS connection receives no data then tlsio_dowork shall not call the on_bytes_received callback. ]*/
@@ -477,6 +478,7 @@ static void dowork_send(TLS_IO_INSTANCE* tls_io_instance)
                 }
                 else
                 {
+                    // The errSSLWouldBlock is defined as a recoverable error and should just be retried
                     LogInfo("errSSLWouldBlock on write");
                 }
             }
@@ -485,7 +487,7 @@ static void dowork_send(TLS_IO_INSTANCE* tls_io_instance)
         {
             CFIndex write_status = CFWriteStreamGetStatus(tls_io_instance->sockWrite);
             CFIndex read_status = CFReadStreamGetStatus(tls_io_instance->sockRead);
-            LogInfo("Cannot accept bytes, write status: %d, read status %d", write_status, read_status);
+            LogError("Cannot accept bytes, write status: %d, read status %d", write_status, read_status);
         }
     }
     else
@@ -513,13 +515,13 @@ static void dowork_poll_socket(TLS_IO_INSTANCE* tls_io_instance)
         }
         else
         {
-            LogInfo("Failed to set socket properties");
+            LogError("Failed to set socket properties");
             enter_open_error_state(tls_io_instance);
         }
     }
     else
     {
-        LogInfo("Unable to create socket pair");
+        LogError("Unable to create socket pair");
         enter_open_error_state(tls_io_instance);
     }
 }
@@ -564,15 +566,12 @@ static void tlsio_appleios_dowork(CONCRETE_IO_HANDLE tls_io)
             // Waiting to be opened, nothing to do
             break;
         case TLSIO_STATE_OPENING_WAITING_DNS:
-            //LogInfo("dowork_poll_dns");
             dowork_poll_dns(tls_io_instance);
             break;
         case TLSIO_STATE_OPENING_WAITING_SOCKET:
-            //LogInfo("dowork_poll_socket");
             dowork_poll_socket(tls_io_instance);
             break;
         case TLSIO_STATE_OPENING_WAITING_SSL:
-            //LogInfo("dowork_poll_ssl");
             dowork_poll_open_ssl(tls_io_instance);
             break;
         case TLSIO_STATE_OPEN:
@@ -593,7 +592,7 @@ static void tlsio_appleios_dowork(CONCRETE_IO_HANDLE tls_io)
 static int tlsio_appleios_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, const void* value)
 {
     TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tls_io;
-    /* Codes_SRS_TLSIO_30_120: [ If the tlsio_handle parameter is NULL, tlsio_openssl_compact_setoption shall do nothing except log an error and return FAILURE. ]*/
+    /* Codes_SRS_TLSIO_30_120: [ If the tlsio_handle parameter is NULL, tlsio_appleios_setoption shall do nothing except log an error and return FAILURE. ]*/
     int result;
     if (tls_io_instance == NULL)
     {
@@ -602,8 +601,8 @@ static int tlsio_appleios_setoption(CONCRETE_IO_HANDLE tls_io, const char* optio
     }
     else
     {
-        /* Codes_SRS_TLSIO_30_121: [ If the optionName parameter is NULL, tlsio_openssl_compact_setoption shall do nothing except log an error and return FAILURE. ]*/
-        /* Codes_SRS_TLSIO_30_122: [ If the value parameter is NULL, tlsio_openssl_compact_setoption shall do nothing except log an error and return FAILURE. ]*/
+        /* Codes_SRS_TLSIO_30_121: [ If the optionName parameter is NULL, tlsio_appleios_setoption shall do nothing except log an error and return FAILURE. ]*/
+        /* Codes_SRS_TLSIO_30_122: [ If the value parameter is NULL, tlsio_appleios_setoption shall do nothing except log an error and return FAILURE. ]*/
         /* Codes_SRS_TLSIO_OPENSSL_COMPACT_30_520 [ The tlsio_setoption shall do nothing and return FAILURE. ]*/
         TLSIO_OPTIONS_RESULT options_result = tlsio_options_set(&tls_io_instance->options, optionName, value);
         if (options_result != TLSIO_OPTIONS_RESULT_SUCCESS)
@@ -686,8 +685,6 @@ static int tlsio_appleios_send_async(CONCRETE_IO_HANDLE tls_io, const void* buff
                                     size += WEBSOCKET_HEADER_NO_CERT_PARAM_SIZE;
                                 }
                             }
-                            //const char* WEBSOCKET_HEADER_START = "GET /$iothub/websocket";
-                            //const char* WEBSOCKET_HEADER_NO_CERT_PARAM = "?iothub-no-client-cert=true";
 
                             /* Codes_SRS_TLSIO_30_063: [ The tlsio_appleios_compact_send shall enqueue for transmission the on_send_complete, the callback_context, the size, and the contents of buffer. ]*/
                             pending_transmission->bytes = (unsigned char*)malloc(size);
@@ -746,7 +743,7 @@ static int tlsio_appleios_send_async(CONCRETE_IO_HANDLE tls_io, const void* buff
 static OPTIONHANDLER_HANDLE tlsio_appleios_retrieveoptions(CONCRETE_IO_HANDLE tls_io)
 {
     TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tls_io;
-    /* Codes_SRS_TLSIO_30_160: [ If the tlsio_handle parameter is NULL, tlsio_openssl_compact_retrieveoptions shall do nothing except log an error and return FAILURE. ]*/
+    /* Codes_SRS_TLSIO_30_160: [ If the tlsio_handle parameter is NULL, tlsio_appleios_retrieveoptions shall do nothing except log an error and return FAILURE. ]*/
     OPTIONHANDLER_HANDLE result;
     if (tls_io_instance == NULL)
     {
