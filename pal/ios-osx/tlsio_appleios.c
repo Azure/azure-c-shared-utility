@@ -7,7 +7,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <time.h>
-#include "azure_c_shared_utility/tlsio_appleios.h"
+#include "tlsio_appleios.h"
 #include "azure_c_shared_utility/xio.h"
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/xlogging.h"
