@@ -479,6 +479,48 @@ function(build_c_test_artifacts whatIsBuilding use_gballoc folder)
     endif()
 endfunction()
 
+function(build_c_test_longhaul_test test_name test_c_files test_h_files)
+    set(test_c_files
+        ${CMAKE_CURRENT_LIST_DIR}/../common_longhaul/iothub_client_statistics.c
+        ${CMAKE_CURRENT_LIST_DIR}/../common_longhaul/iothub_client_common_longhaul.c
+        ${test_c_files}
+    )
+
+    set(test_h_files
+        ${CMAKE_CURRENT_LIST_DIR}/../common_longhaul/iothub_client_statistics.h
+        ${CMAKE_CURRENT_LIST_DIR}/../common_longhaul/iothub_client_common_longhaul.h
+        ${test_h_files}
+    )
+
+    IF(WIN32)
+        #windows needs this define
+        add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+        add_definitions(-DGB_MEASURE_MEMORY_FOR_THIS -DGB_DEBUG_ALLOC)
+    ENDIF(WIN32)
+
+    #Conditionally use the SDK trusted certs in the samples
+    if(${set_trusted_cert_in_samples})
+        add_definitions(-DSET_TRUSTED_CERT_IN_SAMPLES)
+        include_directories(${PROJECT_SOURCE_DIR}/certs)
+        set(samples_cert_file ${PROJECT_SOURCE_DIR}/certs/certs.c)
+    endif()
+
+    include_directories(${IOTHUB_TEST_INC_FOLDER})
+    include_directories(${IOTHUB_SERVICE_CLIENT_INC_FOLDER})
+    include_directories(.)
+
+    add_executable(${test_name} ${test_c_files} ${test_h_files} ${samples_cert_file})
+
+    add_test(NAME ${test_name} COMMAND $<TARGET_FILE:${test_name}>)
+    set_tests_properties(${test_name} PROPERTIES TIMEOUT 1296000)
+
+    target_link_libraries(${test_name}
+            iothub_test
+            iothub_client)
+
+    set_target_properties(${test_name} PROPERTIES FOLDER "tests/LongHaul")
+endfunction()
+
 # This function focuses on setting files which are unique to a given hardware platform.
 # The choice of tlsio is not unique per-platform, and is set in the main CMakeLists.txt
 function(set_platform_files c_shared_dir)
