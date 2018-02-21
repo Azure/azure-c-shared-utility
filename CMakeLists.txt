@@ -33,14 +33,33 @@ if(WIN32)
     option(use_openssl "set use_openssl to ON if openssl is to be used, set to OFF to not use openssl" OFF)
     option(use_wolfssl "set use_wolfssl to ON if wolfssl is to be used, set to OFF to not use wolfssl" OFF)
     option(use_etw "set use_etw to ON if ETW logging is to be used. Default is OFF" OFF)
+    option(use_socketio "set use_socketio to ON if socketio is to be included in the library, set to OFF if a different implementation will be provided" ON)
 else()
     option(use_schannel "set use_schannel to ON if schannel is to be used, set to OFF to not use schannel" OFF)
-    option(use_openssl "set use_openssl to ON if openssl is to be used, set to OFF to not use openssl" ON)
+    if(MACOSX)
+        option(use_openssl "set use_openssl to ON if openssl is to be used, set to OFF to not use openssl" OFF)
+        option(use_socketio "set use_socketio to ON if socketio is to be included in the library, set to OFF if a different implementation will be provided" OFF)
+    else()
+        option(use_openssl "set use_openssl to ON if openssl is to be used, set to OFF to not use openssl" ON)
+        option(use_socketio "set use_socketio to ON if socketio is to be included in the library, set to OFF if a different implementation will be provided" ON)
+    endif()    
     option(use_wolfssl "set use_wolfssl to ON if wolfssl is to be used, set to OFF to not use wolfssl" OFF)
 endif()
-option(use_socketio "set use_socketio to ON if socketio is to be included in the library, set to OFF if a different implementation will be provided" ON)
+
 option(use_cyclonessl "set use_cyclonessl to ON if cyclonessl is to be used, set to OFF to not use cyclonessl" OFF)
 option(no_logging "disable logging (default is OFF)" OFF)
+
+# The options setting for use_socketio is not reliable. If openssl is used, make sure it's on,
+# and if apple tls is used then use_socketio must be off.
+if (MACOSX)
+    if (${use_openssl})
+        set(use_socketio ON)
+    else()
+        # MACOSX only has native tls and open ssl, so this must be the native apple tls
+        set(use_applessl ON)
+        set(use_socketio OFF)
+    endif()
+endif()
 
 if(${use_etw}) 
     #create res folder
@@ -129,6 +148,12 @@ if(${use_openssl})
 
     find_package(OpenSSL REQUIRED)
     include_directories(${OPENSSL_INCLUDE_DIR})
+endif()
+
+if(${use_applessl})
+    # MACOSX only has native tls and open ssl, so use the native apple tls
+    find_library(cf_foundation Foundation)
+    find_library(cf_network CFNetwork)
 endif()
 
 if(${no_logging})
@@ -230,11 +255,6 @@ if(UNIX) #LINUX OR APPLE
     set(source_c_files ${source_c_files}
         ./adapters/linux_time.c
     )
-    if(IOS)
-        set(source_c_files ${source_c_files}
-            ./adapters/tlsio_appleios.c
-        )
-    endif(IOS)
 endif()
 
 if(${use_http})
@@ -268,6 +288,13 @@ if(${use_cyclonessl} AND WIN32)
         ./src/tlsio_cyclonessl.c
         ./src/tlsio_cyclonessl_socket_bsd.c
         )
+endif()
+if(${use_applessl})
+    set(source_c_files ${source_c_files}
+        ./pal/ios-osx/tlsio_appleios.c
+        ./pal/tlsio_options.c
+    )
+    include_directories(./pal/ios-osx/)
 endif()
 
 #these are the C headers
@@ -380,6 +407,12 @@ if(${use_cyclonessl} AND WIN32)
         ./inc/azure_c_shared_utility/tlsio_cyclonessl_socket.h
     )
 endif()
+if(${use_applessl})
+    set(source_h_files ${source_h_files}
+        ./pal/ios-osx/tlsio_appleios.h
+    )
+    include_directories(./pal/ios-osx/)
+endif()
 
 #this is the product (a library)
 add_library(aziotsharedutil ${source_c_files} ${source_h_files})
@@ -415,17 +448,18 @@ if(${use_http})
             set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} crypt32 winhttp)
         endif()
     else()
-        if (CMAKE_CROSSCOMPILING)
-            # As mentioned at https://cmake.org/Wiki/CMake_Cross_Compiling the
-            # pkg-config tool can not be used by cmake while cross compiling.
-            message(STATUS "Cross compiling not using pkg-config")
-        else()
-            # try pkg-config first
-            find_package(PkgConfig)
-            if(PKG_CONFIG_FOUND)
-                pkg_check_modules(CURL libcurl)
+        if (NOT use_builtin_httpapi)
+            if (CMAKE_CROSSCOMPILING)
+                # As mentioned at https://cmake.org/Wiki/CMake_Cross_Compiling the
+                # pkg-config tool can not be used by cmake while cross compiling.
+                message(STATUS "Cross compiling not using pkg-config")
+            else()
+                # try pkg-config first
+                find_package(PkgConfig)
+                if(PKG_CONFIG_FOUND)
+                    pkg_check_modules(CURL libcurl)
+                endif()
             endif()
-        endif()
 
             # if that didn't work, try CMake find_package
             if(NOT CURL_FOUND)
@@ -437,8 +471,9 @@ if(${use_http})
 
             include_directories(${CURL_INCLUDE_DIRS})
             set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} ${CURL_LIBRARIES})
+        endif(NOT use_builtin_httpapi)
     endif()
-endif()
+endif(${use_http})
 
 if(${use_schannel})
     if(WIN32)
@@ -471,6 +506,10 @@ endif()
 
 if(${use_cyclonessl} AND WIN32)
     set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} cyclonessl)
+endif()
+
+if(${use_applessl})
+    set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} ${cf_foundation} ${cf_network})
 endif()
 
 if(WIN32)
