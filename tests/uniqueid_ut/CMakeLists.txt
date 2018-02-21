@@ -27,11 +27,14 @@ set(${theseTestsName}_h_files
 if(UNIX) #LINUX OR APPLE
     find_package(PkgConfig REQUIRED)
     pkg_search_module(UUID REQUIRED uuid)
-    link_directories(${UUID_LIBRARY_DIRS})
 endif()
 
 if(WIN32)
     build_c_test_artifacts(${theseTestsName} ON "tests/azure_c_shared_utility_tests" ADDITIONAL_LIBS rpcrt4.lib)
 elseif(UNIX)
-    build_c_test_artifacts(${theseTestsName} ON "tests/azure_c_shared_utility_tests" ADDITIONAL_LIBS ${UUID_LIBRARIES})
+    if(APPLE)
+        build_c_test_artifacts(${theseTestsName} ON "tests/azure_c_shared_utility_tests" ADDITIONAL_LIBS -L${UUID_LIBRARY_DIRS} ${UUID_LIBRARIES})
+    else()
+        build_c_test_artifacts(${theseTestsName} ON "tests/azure_c_shared_utility_tests" ADDITIONAL_LIBS ${UUID_LIBRARIES})
+    endif()
 endif()

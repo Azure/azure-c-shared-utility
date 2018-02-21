@@ -93,8 +93,8 @@ static bool current_xioCreate_must_fail = false;
 XIO_HANDLE my_xio_create(const IO_INTERFACE_DESCRIPTION* io_interface_description, const void* xio_create_parameters)
 {
     XIO_HANDLE result;
-    io_interface_description = io_interface_description;
-    xio_create_parameters = xio_create_parameters;
+    (void)io_interface_description;
+    (void)xio_create_parameters;
     if (current_xioCreate_must_fail)
     {
         result = NULL;
