@@ -139,6 +139,7 @@ endif()
 
 if(${memory_trace})
     add_definitions(-DGB_MEASURE_MEMORY_FOR_THIS -DGB_DEBUG_ALLOC)
+    add_definitions(-DGB_MEASURE_NETWORK_FOR_THIS -DGB_DEBUG_NETWORK)
 endif()
 
 if(${use_openssl})
@@ -220,6 +221,7 @@ ${LOGGING_C_FILE}
 ./src/constmap.c
 ./src/doublylinkedlist.c
 ./src/gballoc.c
+./src/gbnetwork.c
 ./src/gb_stdio.c
 ./src/gb_time.c
 ./src/gb_rand.c
@@ -311,6 +313,7 @@ set(source_h_files
 ${LOGGING_H_FILE}
 ./inc/azure_c_shared_utility/doublylinkedlist.h
 ./inc/azure_c_shared_utility/gballoc.h
+./inc/azure_c_shared_utility/gbnetwork.h
 ./inc/azure_c_shared_utility/gb_stdio.h
 ./inc/azure_c_shared_utility/gb_time.h
 ./inc/azure_c_shared_utility/gb_rand.h

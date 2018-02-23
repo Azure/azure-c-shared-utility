@@ -36,6 +36,7 @@
 #include <errno.h>
 #include "azure_c_shared_utility/singlylinkedlist.h"
 #include "azure_c_shared_utility/gballoc.h"
+#include "azure_c_shared_utility/gbnetwork.h"
 #include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/optionhandler.h"
 #include "azure_c_shared_utility/shared_util_options.h"
