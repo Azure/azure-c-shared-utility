@@ -203,6 +203,8 @@ EXPORTS
     gballoc_init
     gballoc_malloc
     gballoc_realloc
+    gbnetwork_init
+	gbnetwork_deinit
     get_ctime
     get_difftime
     get_gmtime
