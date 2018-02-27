@@ -953,6 +953,7 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
 #define SOL_TCP 6
 #endif
 
+#ifndef __APPLE__
 static void strtoup(char* str)
 {
     if (str != NULL)
@@ -967,6 +968,7 @@ static void strtoup(char* str)
         }
     }
 }
+#endif // __APPLE__
 
 int socketio_setoption(CONCRETE_IO_HANDLE socket_io, const char* optionName, const void* value)
 {
