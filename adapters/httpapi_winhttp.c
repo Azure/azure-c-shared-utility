@@ -989,7 +989,7 @@ HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, co
             {
                 HTTP_PROXY_OPTIONS *savedOption = (HTTP_PROXY_OPTIONS*) *savedValue;
                 HTTP_PROXY_OPTIONS *option = (HTTP_PROXY_OPTIONS*) value;
-                memset(savedValue, 0, sizeof(HTTP_PROXY_OPTIONS));
+                memset((void*)*savedValue, 0, sizeof(HTTP_PROXY_OPTIONS));
                 if (mallocAndStrcpy_s((char**)&(savedOption->host_address),
                                       (const char*)option->host_address) != 0)
                 {
