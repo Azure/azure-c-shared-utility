@@ -33,6 +33,9 @@ typedef struct HTTP_HANDLE_DATA_TAG
     unsigned int timeout;
     const char* x509certificate;
     const char* x509privatekey;
+    const char* proxy_host;
+    const char* proxy_username;
+    const char* proxy_password;
 } HTTP_HANDLE_DATA;
 
 static HTTPAPI_STATE g_HTTPAPIState = HTTPAPI_NOT_INITIALIZED;
@@ -130,11 +133,7 @@ HTTPAPI_RESULT HTTPAPI_Init(void)
     {
         if ((g_SessionHandle = WinHttpOpen(
             NULL,
-#if defined _MSC_VER && _MSC_VER < 1600
             WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
-#else
-            WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY,
-#endif
             WINHTTP_NO_PROXY_NAME,
             WINHTTP_NO_PROXY_BYPASS,
             0)) == NULL)
@@ -239,6 +238,9 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
                             result->x509certificate = NULL;
                             result->x509privatekey = NULL;
                             result->x509SchannelHandle = NULL;
+                            result->proxy_host = NULL;
+                            result->proxy_username = NULL;
+                            result->proxy_password = NULL;
                         }
                     }
                     free(hostNameTemp);
@@ -267,6 +269,18 @@ void HTTPAPI_CloseConnection(HTTP_HANDLE handle)
                 (void)WinHttpCloseHandle(handleData->ConnectionHandle);
                 /*no x509 free because the options are owned by httpapiex.*/
                 handleData->ConnectionHandle = NULL;
+            }
+            if (handleData->proxy_host != NULL)
+            {
+                free((void*)handleData->proxy_host);
+            }
+            if (handleData->proxy_username != NULL)
+            {
+                free((void*)handleData->proxy_username);
+            }
+            if (handleData->proxy_password != NULL)
+            {
+                free((void*)handleData->proxy_password);
             }
             x509_schannel_destroy(handleData->x509SchannelHandle);
             free(handleData);
@@ -400,123 +414,173 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
                                         }
                                         else
                                         {
-                                            if (WinHttpSetTimeouts(requestHandle,
-                                                0,                      /*_In_  int dwResolveTimeout - The initial value is zero, meaning no time-out (infinite). */
-                                                60000,                  /*_In_  int dwConnectTimeout, -  The initial value is 60,000 (60 seconds).*/
-                                                handleData->timeout,    /*_In_  int dwSendTimeout, -  The initial value is 30,000 (30 seconds).*/
-                                                handleData->timeout     /* int dwReceiveTimeout The initial value is 30,000 (30 seconds).*/
-                                            ) == FALSE)
+                                            // Set proxy host if needed
+                                            if (handleData->proxy_host != NULL)
                                             {
-                                                result = HTTPAPI_SET_TIMEOUTS_FAILED;
-                                                LogErrorWinHTTPWithGetLastErrorAsString("WinHttpOpenRequest failed (result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
-                                            }
-                                            else
-                                            {
-                                                DWORD dwSecurityFlags = 0;
-
-                                                if (!WinHttpSetOption(
-                                                    requestHandle,
-                                                    WINHTTP_OPTION_SECURITY_FLAGS,
-                                                    &dwSecurityFlags,
-                                                    sizeof(dwSecurityFlags)))
+                                                WINHTTP_PROXY_INFO winhttp_proxy;
+                                                wchar_t wproxy[MAX_HOSTNAME_LEN];
+                                                size_t  numberOfArrayElementsModified;
+                                                winhttp_proxy.dwAccessType = WINHTTP_ACCESS_TYPE_NAMED_PROXY;
+                                                numberOfArrayElementsModified = mbstowcs(wproxy, handleData->proxy_host, strlen(handleData->proxy_host)+1);//Plus null
+                                                if (numberOfArrayElementsModified == (size_t)(-1))
                                                 {
-                                                    result = HTTPAPI_SET_OPTION_FAILED;
-                                                    LogErrorWinHTTPWithGetLastErrorAsString("WinHttpSetOption failed (result = %s).", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                                                  LogError("invalid multibyte character encountered in proxy adress");
+                                                  result = HTTPAPI_ERROR;
                                                 }
                                                 else
                                                 {
-                                                    if (!WinHttpSendRequest(
-                                                        requestHandle,
-                                                        headersTemp,
-                                                        (DWORD)-1L, /*An unsigned long integer value that contains the length, in characters, of the additional headers. If this parameter is -1L ... */
-                                                        (void*)content,
-                                                        (DWORD)contentLength,
-                                                        (DWORD)contentLength,
-                                                        0))
+                                                    winhttp_proxy.lpszProxy = wproxy;
+                                                    winhttp_proxy.lpszProxyBypass = NULL;
+                                                    if (WinHttpSetOption(requestHandle,
+                                                        WINHTTP_OPTION_PROXY,
+                                                        &winhttp_proxy,
+                                                        (DWORD)sizeof(WINHTTP_PROXY_INFO)) != TRUE)
                                                     {
-                                                        result = HTTPAPI_SEND_REQUEST_FAILED;
-                                                        LogErrorWinHTTPWithGetLastErrorAsString("WinHttpSendRequest: (result = %s).", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                                                        LogError("failure setting proxy address (%i)", GetLastError());
+                                                        result = HTTPAPI_ERROR;
                                                     }
                                                     else
                                                     {
-                                                        if (!WinHttpReceiveResponse(
-                                                            requestHandle,
-                                                            0))
+                                                        //Set username and password if needed
+                                                        if (handleData->proxy_username != NULL && handleData->proxy_password != NULL)
                                                         {
-                                                            result = HTTPAPI_RECEIVE_RESPONSE_FAILED;
-                                                            LogErrorWinHTTPWithGetLastErrorAsString("WinHttpReceiveResponse: (result = %s).", ENUM_TO_STRING(HTTPAPI_RESULT, result));
-                                                        }
-                                                        else
-                                                        {
-                                                            DWORD dwStatusCode = 0;
-                                                            DWORD dwBufferLength = sizeof(DWORD);
-                                                            DWORD responseBytesAvailable;
-
-                                                            if (!WinHttpQueryHeaders(
-                                                                requestHandle,
-                                                                WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
-                                                                WINHTTP_HEADER_NAME_BY_INDEX,
-                                                                &dwStatusCode,
-                                                                &dwBufferLength,
-                                                                WINHTTP_NO_HEADER_INDEX))
+                                                            if (WinHttpSetOption(requestHandle,
+                                                                WINHTTP_OPTION_PROXY_USERNAME,
+                                                                (char*)handleData->proxy_username,
+                                                                (DWORD)strlen(handleData->proxy_username)) != TRUE)
                                                             {
-                                                                result = HTTPAPI_QUERY_HEADERS_FAILED;
-                                                                LogErrorWinHTTPWithGetLastErrorAsString("WinHttpQueryHeaders failed (result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                                                                LogError("failure setting proxy username");
+                                                                result = HTTPAPI_ERROR;
                                                             }
                                                             else
                                                             {
-                                                                BUFFER_HANDLE useToReadAllResponse = (responseContent != NULL) ? responseContent : BUFFER_new();
-
-                                                                if (statusCode != NULL)
+                                                                if (WinHttpSetOption(requestHandle,
+                                                                    WINHTTP_OPTION_PROXY_PASSWORD,
+                                                                    (char*)handleData->proxy_password,
+                                                                    (DWORD)strlen(handleData->proxy_password)) != TRUE)
                                                                 {
-                                                                    *statusCode = dwStatusCode;
-                                                                }
-
-                                                                if (useToReadAllResponse == NULL)
-                                                                {
-                                                                    result = HTTPAPI_ERROR;
-                                                                    LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                                                                  LogError("failure setting proxy password");
+                                                                  result = HTTPAPI_ERROR;
                                                                 }
                                                                 else
                                                                 {
+                                                                    result = HTTPAPI_OK;
+                                                                }
+                                                            }
+                                                        }
+                                                        else
+                                                        {
+                                                            result = HTTPAPI_OK;
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            else
+                                            {
+                                                result = HTTPAPI_OK;
+                                            }
+                                            // verify if no error when set proxy
+                                            if (result == HTTPAPI_OK)
+                                            {
+                                                if (WinHttpSetTimeouts(requestHandle,
+                                                    0,                      /*_In_  int dwResolveTimeout - The initial value is zero, meaning no time-out (infinite). */
+                                                    60000,                  /*_In_  int dwConnectTimeout, -  The initial value is 60,000 (60 seconds).*/
+                                                    handleData->timeout,    /*_In_  int dwSendTimeout, -  The initial value is 30,000 (30 seconds).*/
+                                                    handleData->timeout     /* int dwReceiveTimeout The initial value is 30,000 (30 seconds).*/
+                                                ) == FALSE)
+                                                {
+                                                    result = HTTPAPI_SET_TIMEOUTS_FAILED;
+                                                    LogErrorWinHTTPWithGetLastErrorAsString("WinHttpOpenRequest failed (result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                                                }
+                                                else
+                                                {
+                                                    DWORD dwSecurityFlags = 0;
 
-                                                                    int goOnAndReadEverything = 1;
-                                                                    do
+                                                    if (!WinHttpSetOption(
+                                                        requestHandle,
+                                                        WINHTTP_OPTION_SECURITY_FLAGS,
+                                                        &dwSecurityFlags,
+                                                        sizeof(dwSecurityFlags)))
+                                                    {
+                                                        result = HTTPAPI_SET_OPTION_FAILED;
+                                                        LogErrorWinHTTPWithGetLastErrorAsString("WinHttpSetOption failed (result = %s).", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                                                    }
+                                                    else
+                                                    {
+                                                        if (!WinHttpSendRequest(
+                                                            requestHandle,
+                                                            headersTemp,
+                                                            (DWORD)-1L, /*An unsigned long integer value that contains the length, in characters, of the additional headers. If this parameter is -1L ... */
+                                                            (void*)content,
+                                                            (DWORD)contentLength,
+                                                            (DWORD)contentLength,
+                                                            0))
+                                                        {
+                                                            result = HTTPAPI_SEND_REQUEST_FAILED;
+                                                            LogErrorWinHTTPWithGetLastErrorAsString("WinHttpSendRequest: (result = %s).", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                                                        }
+                                                        else
+                                                        {
+                                                            if (!WinHttpReceiveResponse(
+                                                                requestHandle,
+                                                                0))
+                                                            {
+                                                                result = HTTPAPI_RECEIVE_RESPONSE_FAILED;
+                                                                LogErrorWinHTTPWithGetLastErrorAsString("WinHttpReceiveResponse: (result = %s).", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                                                            }
+                                                            else
+                                                            {
+                                                                DWORD dwStatusCode = 0;
+                                                                DWORD dwBufferLength = sizeof(DWORD);
+                                                                DWORD responseBytesAvailable;
+
+                                                                if (!WinHttpQueryHeaders(
+                                                                    requestHandle,
+                                                                    WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
+                                                                    WINHTTP_HEADER_NAME_BY_INDEX,
+                                                                    &dwStatusCode,
+                                                                    &dwBufferLength,
+                                                                    WINHTTP_NO_HEADER_INDEX))
+                                                                {
+                                                                    result = HTTPAPI_QUERY_HEADERS_FAILED;
+                                                                    LogErrorWinHTTPWithGetLastErrorAsString("WinHttpQueryHeaders failed (result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                                                                }
+                                                                else
+                                                                {
+                                                                    BUFFER_HANDLE useToReadAllResponse = (responseContent != NULL) ? responseContent : BUFFER_new();
+
+                                                                    if (statusCode != NULL)
                                                                     {
-                                                                        /*from MSDN: If no data is available and the end of the file has not been reached, one of two things happens. If the session is synchronous, the request waits until data becomes available.*/
-                                                                        if (!WinHttpQueryDataAvailable(requestHandle, &responseBytesAvailable))
+                                                                        *statusCode = dwStatusCode;
+                                                                    }
+
+                                                                    if (useToReadAllResponse == NULL)
+                                                                    {
+                                                                        result = HTTPAPI_ERROR;
+                                                                        LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                                                                    }
+                                                                    else
+                                                                    {
+
+                                                                        int goOnAndReadEverything = 1;
+                                                                        do
                                                                         {
-                                                                            result = HTTPAPI_QUERY_DATA_AVAILABLE_FAILED;
-                                                                            LogErrorWinHTTPWithGetLastErrorAsString("WinHttpQueryDataAvailable failed (result = %s).", ENUM_TO_STRING(HTTPAPI_RESULT, result));
-                                                                            goOnAndReadEverything = 0;
-                                                                        }
-                                                                        else if (responseBytesAvailable == 0)
-                                                                        {
-                                                                            /*end of the stream, go out*/
-                                                                            result = HTTPAPI_OK;
-                                                                            goOnAndReadEverything = 0;
-                                                                        }
-                                                                        else
-                                                                        {
-                                                                            if (BUFFER_enlarge(useToReadAllResponse, responseBytesAvailable) != 0)
+                                                                            /*from MSDN: If no data is available and the end of the file has not been reached, one of two things happens. If the session is synchronous, the request waits until data becomes available.*/
+                                                                            if (!WinHttpQueryDataAvailable(requestHandle, &responseBytesAvailable))
                                                                             {
-                                                                                result = HTTPAPI_ERROR;
-                                                                                LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                                                                                result = HTTPAPI_QUERY_DATA_AVAILABLE_FAILED;
+                                                                                LogErrorWinHTTPWithGetLastErrorAsString("WinHttpQueryDataAvailable failed (result = %s).", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                                                                                goOnAndReadEverything = 0;
+                                                                            }
+                                                                            else if (responseBytesAvailable == 0)
+                                                                            {
+                                                                                /*end of the stream, go out*/
+                                                                                result = HTTPAPI_OK;
                                                                                 goOnAndReadEverything = 0;
                                                                             }
                                                                             else
                                                                             {
-                                                                                /*Add the read bytes to the response buffer*/
-                                                                                size_t bufferSize;
-                                                                                const unsigned char* bufferContent;
-
-                                                                                if (BUFFER_content(useToReadAllResponse, &bufferContent) != 0)
-                                                                                {
-                                                                                    result = HTTPAPI_ERROR;
-                                                                                    LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
-                                                                                    goOnAndReadEverything = 0;
-                                                                                }
-                                                                                else if (BUFFER_size(useToReadAllResponse, &bufferSize) != 0)
+                                                                                if (BUFFER_enlarge(useToReadAllResponse, responseBytesAvailable) != 0)
                                                                                 {
                                                                                     result = HTTPAPI_ERROR;
                                                                                     LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
@@ -524,123 +588,142 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
                                                                                 }
                                                                                 else
                                                                                 {
-                                                                                    DWORD bytesReceived;
-                                                                                    if (!WinHttpReadData(requestHandle, (LPVOID)(bufferContent + bufferSize - responseBytesAvailable), responseBytesAvailable, &bytesReceived))
+                                                                                    /*Add the read bytes to the response buffer*/
+                                                                                    size_t bufferSize;
+                                                                                    const unsigned char* bufferContent;
+
+                                                                                    if (BUFFER_content(useToReadAllResponse, &bufferContent) != 0)
                                                                                     {
-                                                                                        result = HTTPAPI_READ_DATA_FAILED;
-                                                                                        LogErrorWinHTTPWithGetLastErrorAsString("WinHttpReadData failed (result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                                                                                        result = HTTPAPI_ERROR;
+                                                                                        LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                                                                                        goOnAndReadEverything = 0;
+                                                                                    }
+                                                                                    else if (BUFFER_size(useToReadAllResponse, &bufferSize) != 0)
+                                                                                    {
+                                                                                        result = HTTPAPI_ERROR;
+                                                                                        LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
                                                                                         goOnAndReadEverything = 0;
                                                                                     }
                                                                                     else
                                                                                     {
-                                                                                        /*if for some reason bytesReceived is zero If you are using WinHttpReadData synchronously, and the return value is TRUE and the number of bytes read is zero, the transfer has been completed and there are no more bytes to read on the handle.*/
-                                                                                        if (bytesReceived == 0)
+                                                                                        DWORD bytesReceived;
+                                                                                        if (!WinHttpReadData(requestHandle, (LPVOID)(bufferContent + bufferSize - responseBytesAvailable), responseBytesAvailable, &bytesReceived))
                                                                                         {
-                                                                                            /*end of everything, but this looks like an error still, or a non-conformance between WinHttpQueryDataAvailable and WinHttpReadData*/
                                                                                             result = HTTPAPI_READ_DATA_FAILED;
-                                                                                            LogError("bytesReceived was unexpectedly zero (result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                                                                                            LogErrorWinHTTPWithGetLastErrorAsString("WinHttpReadData failed (result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
                                                                                             goOnAndReadEverything = 0;
                                                                                         }
                                                                                         else
                                                                                         {
-                                                                                            /*all is fine, keep going*/
-                                                                                        }
-                                                                                    }
-                                                                                }
-                                                                            }
-                                                                        }
-
-                                                                    } while (goOnAndReadEverything != 0);
-                                                                }
-                                                            }
-
-                                                            if (result == HTTPAPI_OK && responseHeadersHandle != NULL)
-                                                            {
-                                                                wchar_t* responseHeadersTemp;
-                                                                DWORD responseHeadersTempLength = sizeof(responseHeadersTemp);
-
-                                                                (void)WinHttpQueryHeaders(
-                                                                    requestHandle,
-                                                                    WINHTTP_QUERY_RAW_HEADERS_CRLF,
-                                                                    WINHTTP_HEADER_NAME_BY_INDEX,
-                                                                    WINHTTP_NO_OUTPUT_BUFFER,
-                                                                    &responseHeadersTempLength,
-                                                                    WINHTTP_NO_HEADER_INDEX);
-
-                                                                responseHeadersTemp = (wchar_t*)malloc(responseHeadersTempLength + 2);
-                                                                if (responseHeadersTemp == NULL)
-                                                                {
-                                                                    result = HTTPAPI_ALLOC_FAILED;
-                                                                    LogError("malloc failed: (result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
-                                                                }
-                                                                else
-                                                                {
-                                                                    if (WinHttpQueryHeaders(
-                                                                        requestHandle,
-                                                                        WINHTTP_QUERY_RAW_HEADERS_CRLF,
-                                                                        WINHTTP_HEADER_NAME_BY_INDEX,
-                                                                        responseHeadersTemp,
-                                                                        &responseHeadersTempLength,
-                                                                        WINHTTP_NO_HEADER_INDEX))
-                                                                    {
-                                                                        wchar_t *next_token;
-                                                                        wchar_t* token = wcstok_s(responseHeadersTemp, L"\r\n", &next_token);
-                                                                        while ((token != NULL) &&
-                                                                            (token[0] != L'\0'))
-                                                                        {
-                                                                            char* tokenTemp;
-                                                                            size_t tokenTemp_size;
-
-                                                                            tokenTemp_size = WideCharToMultiByte(CP_ACP, 0, token, -1, NULL, 0, NULL, NULL);
-                                                                            if (tokenTemp_size == 0)
-                                                                            {
-                                                                                LogError("WideCharToMultiByte failed");
-                                                                            }
-                                                                            else
-                                                                            {
-                                                                                tokenTemp = (char*)malloc(sizeof(char)*tokenTemp_size);
-                                                                                if (tokenTemp == NULL)
-                                                                                {
-                                                                                    LogError("malloc failed");
-                                                                                }
-                                                                                else
-                                                                                {
-                                                                                    if (WideCharToMultiByte(CP_ACP, 0, token, -1, tokenTemp, (int)tokenTemp_size, NULL, NULL) > 0)
-                                                                                    {
-                                                                                        /*breaking the token in 2 parts: everything before the first ":" and everything after the first ":"*/
-                                                                                        /* if there is no such character, then skip it*/
-                                                                                        /*if there is a : then replace is by a '\0' and so it breaks the original string in name and value*/
-
-                                                                                        char* whereIsColon = strchr(tokenTemp, ':');
-                                                                                        if (whereIsColon != NULL)
-                                                                                        {
-                                                                                            *whereIsColon = '\0';
-                                                                                            if (HTTPHeaders_AddHeaderNameValuePair(responseHeadersHandle, tokenTemp, whereIsColon + 1) != HTTP_HEADERS_OK)
+                                                                                            /*if for some reason bytesReceived is zero If you are using WinHttpReadData synchronously, and the return value is TRUE and the number of bytes read is zero, the transfer has been completed and there are no more bytes to read on the handle.*/
+                                                                                            if (bytesReceived == 0)
                                                                                             {
-                                                                                                LogError("HTTPHeaders_AddHeaderNameValuePair failed");
-                                                                                                result = HTTPAPI_HTTP_HEADERS_FAILED;
-                                                                                                break;
+                                                                                                /*end of everything, but this looks like an error still, or a non-conformance between WinHttpQueryDataAvailable and WinHttpReadData*/
+                                                                                                result = HTTPAPI_READ_DATA_FAILED;
+                                                                                                LogError("bytesReceived was unexpectedly zero (result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                                                                                                goOnAndReadEverything = 0;
+                                                                                            }
+                                                                                            else
+                                                                                            {
+                                                                                                /*all is fine, keep going*/
                                                                                             }
                                                                                         }
                                                                                     }
-                                                                                    else
-                                                                                    {
-                                                                                        LogError("WideCharToMultiByte failed");
-                                                                                    }
-                                                                                    free(tokenTemp);
                                                                                 }
                                                                             }
 
+                                                                        } while (goOnAndReadEverything != 0);
+                                                                    }
+                                                                }
 
-                                                                            token = wcstok_s(NULL, L"\r\n", &next_token);
-                                                                        }
+                                                                if (result == HTTPAPI_OK && responseHeadersHandle != NULL)
+                                                                {
+                                                                    wchar_t* responseHeadersTemp;
+                                                                    DWORD responseHeadersTempLength = sizeof(responseHeadersTemp);
+
+                                                                    (void)WinHttpQueryHeaders(
+                                                                        requestHandle,
+                                                                        WINHTTP_QUERY_RAW_HEADERS_CRLF,
+                                                                        WINHTTP_HEADER_NAME_BY_INDEX,
+                                                                        WINHTTP_NO_OUTPUT_BUFFER,
+                                                                        &responseHeadersTempLength,
+                                                                        WINHTTP_NO_HEADER_INDEX);
+
+                                                                    responseHeadersTemp = (wchar_t*)malloc(responseHeadersTempLength + 2);
+                                                                    if (responseHeadersTemp == NULL)
+                                                                    {
+                                                                        result = HTTPAPI_ALLOC_FAILED;
+                                                                        LogError("malloc failed: (result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
                                                                     }
                                                                     else
                                                                     {
-                                                                        LogError("WinHttpQueryHeaders failed");
-                                                                    }
+                                                                        if (WinHttpQueryHeaders(
+                                                                            requestHandle,
+                                                                            WINHTTP_QUERY_RAW_HEADERS_CRLF,
+                                                                            WINHTTP_HEADER_NAME_BY_INDEX,
+                                                                            responseHeadersTemp,
+                                                                            &responseHeadersTempLength,
+                                                                            WINHTTP_NO_HEADER_INDEX))
+                                                                        {
+                                                                            wchar_t *next_token;
+                                                                            wchar_t* token = wcstok_s(responseHeadersTemp, L"\r\n", &next_token);
+                                                                            while ((token != NULL) &&
+                                                                                (token[0] != L'\0'))
+                                                                            {
+                                                                                char* tokenTemp;
+                                                                                size_t tokenTemp_size;
 
-                                                                    free(responseHeadersTemp);
+                                                                                tokenTemp_size = WideCharToMultiByte(CP_ACP, 0, token, -1, NULL, 0, NULL, NULL);
+                                                                                if (tokenTemp_size == 0)
+                                                                                {
+                                                                                    LogError("WideCharToMultiByte failed");
+                                                                                }
+                                                                                else
+                                                                                {
+                                                                                    tokenTemp = (char*)malloc(sizeof(char)*tokenTemp_size);
+                                                                                    if (tokenTemp == NULL)
+                                                                                    {
+                                                                                        LogError("malloc failed");
+                                                                                    }
+                                                                                    else
+                                                                                    {
+                                                                                        if (WideCharToMultiByte(CP_ACP, 0, token, -1, tokenTemp, (int)tokenTemp_size, NULL, NULL) > 0)
+                                                                                        {
+                                                                                            /*breaking the token in 2 parts: everything before the first ":" and everything after the first ":"*/
+                                                                                            /* if there is no such character, then skip it*/
+                                                                                            /*if there is a : then replace is by a '\0' and so it breaks the original string in name and value*/
+
+                                                                                            char* whereIsColon = strchr(tokenTemp, ':');
+                                                                                            if (whereIsColon != NULL)
+                                                                                            {
+                                                                                                *whereIsColon = '\0';
+                                                                                                if (HTTPHeaders_AddHeaderNameValuePair(responseHeadersHandle, tokenTemp, whereIsColon + 1) != HTTP_HEADERS_OK)
+                                                                                                {
+                                                                                                    LogError("HTTPHeaders_AddHeaderNameValuePair failed");
+                                                                                                    result = HTTPAPI_HTTP_HEADERS_FAILED;
+                                                                                                    break;
+                                                                                                }
+                                                                                            }
+                                                                                        }
+                                                                                        else
+                                                                                        {
+                                                                                            LogError("WideCharToMultiByte failed");
+                                                                                        }
+                                                                                        free(tokenTemp);
+                                                                                    }
+                                                                                }
+
+
+                                                                                token = wcstok_s(NULL, L"\r\n", &next_token);
+                                                                            }
+                                                                        }
+                                                                        else
+                                                                        {
+                                                                            LogError("WinHttpQueryHeaders failed");
+                                                                        }
+
+                                                                        free(responseHeadersTemp);
+                                                                    }
                                                                 }
                                                             }
                                                         }
@@ -740,6 +823,80 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
             /*winhttp accepts all certificates, because it actually relies on the system ones*/
             result = HTTPAPI_OK;
         }
+        else if (strcmp(OPTION_HTTP_PROXY, optionName) == 0)
+        {
+            char proxyAddressAndPort[MAX_HOSTNAME_LEN];
+            HTTP_PROXY_OPTIONS* proxy_data = (HTTP_PROXY_OPTIONS*)value;
+            if (proxy_data->host_address == NULL || proxy_data->port <= 0)
+            {
+              LogError("invalid proxy_data values ( host_address = %p, port = %d)", proxy_data->host_address, proxy_data->port);
+              result = HTTPAPI_ERROR;
+            }
+            else
+            {
+                if (sprintf_s(proxyAddressAndPort, MAX_HOSTNAME_LEN, "%s:%d", proxy_data->host_address, proxy_data->port) <= 0)
+                {
+                    LogError("failure constructing proxy address");
+                    result = HTTPAPI_ERROR;
+                }
+                else
+                {
+                    if(httpHandleData->proxy_host != NULL)
+                    {
+                      free((void*)httpHandleData->proxy_host);
+                      httpHandleData->proxy_host = NULL;
+                    }
+                    if(mallocAndStrcpy_s((char**)&(httpHandleData->proxy_host), (const char*)proxyAddressAndPort) != 0)
+                    {
+                        LogError("failure allocate proxy host");
+                        result = HTTPAPI_ERROR;
+                    }
+                    else
+                    {
+                        if (proxy_data->username != NULL && proxy_data->password != NULL)
+                        {
+                            if(httpHandleData->proxy_username != NULL)
+                            {
+                              free((void*)httpHandleData->proxy_username);
+                              httpHandleData->proxy_username = NULL;
+                            }
+                            if(mallocAndStrcpy_s((char**)&(httpHandleData->proxy_username), (const char*)proxy_data->username) != 0)
+                            {
+                                LogError("failure allocate proxy username");
+                                free((void*)httpHandleData->proxy_host);
+                                httpHandleData->proxy_host = NULL;
+                                result = HTTPAPI_ERROR;
+                            }
+                            else
+                            {
+                                if(httpHandleData->proxy_password != NULL)
+                                {
+                                  free((void*)httpHandleData->proxy_password);
+                                  httpHandleData->proxy_password = NULL;
+                                }
+                                if(mallocAndStrcpy_s((char**)&(httpHandleData->proxy_password), (const char*)proxy_data->password) != 0)
+                                {
+                                    LogError("failure allocate proxy password");
+                                    free((void*)httpHandleData->proxy_host);
+                                    httpHandleData->proxy_host = NULL;
+                                    free((void*)httpHandleData->proxy_username);
+                                    httpHandleData->proxy_username = NULL;
+                                    result = HTTPAPI_ERROR;
+                                }
+                                else
+                                {
+                                  result = HTTPAPI_OK;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            result = HTTPAPI_OK;
+                        }
+                    }
+                }
+            }
+        }
         else
         {
             result = HTTPAPI_INVALID_ARG;
@@ -818,6 +975,62 @@ HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, co
             else
             {
                 result = HTTPAPI_OK;
+            }
+        }
+        else if (strcmp(OPTION_HTTP_PROXY, optionName) == 0)
+        {
+            *savedValue = malloc(sizeof(HTTP_PROXY_OPTIONS));
+            if (*savedValue == NULL)
+            {
+                LogError("failure in malloc");
+                result = HTTPAPI_ERROR;
+            }
+            else
+            {
+                HTTP_PROXY_OPTIONS *savedOption = (HTTP_PROXY_OPTIONS*) *savedValue;
+                HTTP_PROXY_OPTIONS *option = (HTTP_PROXY_OPTIONS*) value;
+                memset(savedValue, 0, sizeof(HTTP_PROXY_OPTIONS));
+                if (mallocAndStrcpy_s((char**)&(savedOption->host_address),
+                                      (const char*)option->host_address) != 0)
+                {
+                  LogError("unable to clone the proxy host adress content");
+                  free((void*)*savedValue);
+                  *savedValue = NULL;
+                  result = HTTPAPI_ERROR;
+                }
+                else
+                {
+                    savedOption->port = option->port;
+                    if (option->username != NULL && mallocAndStrcpy_s((char**)&(savedOption->username),
+                                                                      (const char*)option->username) != 0)
+                    {
+                      LogError("unable to clone the proxy username content");
+                      free((void*)savedOption->host_address);
+                      savedOption->host_address = NULL;
+                      free((void*)*savedValue);
+                      *savedValue = NULL;
+                      result = HTTPAPI_ERROR;
+                    }
+                    else
+                    {
+                        if (option->password != NULL && mallocAndStrcpy_s((char**)&(savedOption->password),
+                                                                          (const char*)option->password) != 0)
+                        {
+                          LogError("unable to clone the proxy password content");
+                          free((void*)savedOption->host_address);
+                          savedOption->host_address = NULL;
+                          free((void*)savedOption->username);
+                          savedOption->username = NULL;
+                          free((void*)*savedValue);
+                          *savedValue = NULL;
+                          result = HTTPAPI_ERROR;
+                        }
+                        else
+                        {
+                            result = HTTPAPI_OK;
+                        }
+                    }
+                }
             }
         }
         else
