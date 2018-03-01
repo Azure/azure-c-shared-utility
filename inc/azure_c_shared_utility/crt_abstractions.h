@@ -50,8 +50,8 @@ typedef bool _Bool;
 #else // __cplusplus
 typedef unsigned char bool;
 
-#define false	0
-#define true	1
+#define false   0
+#define true    1
 #endif // __cplusplus
 #endif // _WIN32_WCE
 
@@ -83,7 +83,6 @@ typedef unsigned char bool;
 /* Codes_SRS_CRT_ABSTRACTIONS_99_002: [CRTAbstractions module shall expose the following API]*/
 #ifdef _MSC_VER
 #else // _MSC_VER
-#include "inttypes.h"
 
 /* Adding definitions from errno.h & crtdefs.h */
 #if !defined (_TRUNCATE)
@@ -141,25 +140,6 @@ extern "C++" {
 #error unknown (or C89) compiler, provide ISNAN with the same meaning as isnan in C99 standard  
 #endif // __cplusplus
 
-#endif // __STDC_VERSION__
-#endif // _MSC_VER
-
-#ifdef _MSC_VER
-#define INT64_PRINTF "%I64d"
-#else
-#if defined __STDC_VERSION__
-#if ((__STDC_VERSION__  == 199901L) || (__STDC_VERSION__ == 201000L) || (__STDC_VERSION__ == 201112L))
-/*C99 compiler or C11*/
-#define INT64_PRINTF "%" PRId64 ""
-#else // ((__STDC_VERSION__  == 199901L) || (__STDC_VERSION__ == 201000L) || (__STDC_VERSION__ == 201112L))
-#error update this file to contain the latest C standard.
-#endif // ((__STDC_VERSION__  == 199901L) || (__STDC_VERSION__ == 201000L) || (__STDC_VERSION__ == 201112L))
-#else // __STDC_VERSION__
-#ifdef __cplusplus 
-#define INT64_PRINTF "%" PRId64 ""
-#else // __cplusplus
-#error unknown (or C89) compiler, provide INT64_PRINTF with the same meaning as PRIdN in C99 standard
-#endif // __cplusplus
 #endif // __STDC_VERSION__
 #endif // _MSC_VER
 

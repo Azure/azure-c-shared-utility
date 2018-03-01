@@ -12631,6 +12631,6 @@ static const char* C2(enumName,Strings)(enumName value)                   \
 #define DEFINE_MICROMOCK_ENUM_TO_STRING(type, ...) MICROMOCK_ENUM_TO_STRING(type, FOR_EACH_1(DEFINE_ENUMERATION_CONSTANT_AS_WIDESTRING, __VA_ARGS__));
 
 #define EMPTY()
-#define DELAY(id) id EMPTY LPAREN )
+#define MACRO_UTILS_DELAY(id) id EMPTY LPAREN )
 
 #endif /*MACRO_UTILS_H*/
