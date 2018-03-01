@@ -50,8 +50,8 @@ typedef bool _Bool;
 #else // __cplusplus
 typedef unsigned char bool;
 
-#define false	0
-#define true	1
+#define false   0
+#define true    1
 #endif // __cplusplus
 #endif // _WIN32_WCE
 
@@ -83,7 +83,9 @@ typedef unsigned char bool;
 /* Codes_SRS_CRT_ABSTRACTIONS_99_002: [CRTAbstractions module shall expose the following API]*/
 #ifdef _MSC_VER
 #else // _MSC_VER
+#ifndef __APPLE__
 #include "inttypes.h"
+#endif // __APPLE__
 
 /* Adding definitions from errno.h & crtdefs.h */
 #if !defined (_TRUNCATE)
