@@ -14,7 +14,7 @@
 void log_ERR_get_error(const char* message)
 {
     char buf[128];
-    UNREFERENCED_PARAMETER(buf);
+    AZURE_UNREFERENCED_PARAMETER(buf);
     unsigned long error;
     int i;
 
@@ -265,7 +265,6 @@ int x509_openssl_add_credentials(SSL_CTX* ssl_ctx, const char* x509certificate, 
 
 int x509_openssl_add_certificates(SSL_CTX* ssl_ctx, const char* certificates)
 {
-
     int result;
 
     /*Codes_SRS_X509_OPENSSL_02_010: [ If ssl_ctx is NULL then x509_openssl_add_certificates shall fail and return a non-zero value. ]*/

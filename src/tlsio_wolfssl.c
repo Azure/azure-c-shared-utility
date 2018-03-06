@@ -6,6 +6,7 @@
 #include "wolfssl/options.h"
 #include "wolfssl/ssl.h"
 #include "wolfssl/error-ssl.h"
+#include "wolfssl/wolfcrypt/types.h"
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
@@ -49,7 +50,10 @@ typedef struct TLS_IO_INSTANCE_TAG
     char* certificate;
     char* x509certificate;
     char* x509privatekey;
+    int wolfssl_device_id;
 } TLS_IO_INSTANCE;
+
+STATIC_VAR_UNUSED const char* const OPTION_WOLFSSL_SET_DEVICE_ID = "SetDeviceId";
 
 /*this function will clone an option given by name and value*/
 static void* tlsio_wolfssl_CloneOption(const char* name, const void* value)
@@ -348,7 +352,7 @@ static int on_io_recv(WOLFSSL *ssl, char *buf, int sz, void *context)
         TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)context;
         unsigned char* new_socket_io_read_bytes;
 
-        (void)ssl;
+        AZURE_UNREFERENCED_PARAMETER(ssl);
         while (tls_io_instance->socket_io_read_byte_count == 0)
         {
             xio_dowork(tls_io_instance->socket_io);
@@ -403,9 +407,10 @@ static int on_io_recv(WOLFSSL *ssl, char *buf, int sz, void *context)
 static int on_io_send(WOLFSSL *ssl, char *buf, int sz, void *context)
 {
     int result;
+    AZURE_UNREFERENCED_PARAMETER(ssl);
+
     TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)context;
 
-    (void)ssl;
     if (xio_send(tls_io_instance->socket_io, buf, sz, tls_io_instance->on_send_complete, tls_io_instance->on_send_complete_callback_context) != 0)
     {
         LogError("Failed sending bytes through underlying IO");
@@ -423,8 +428,8 @@ static int on_io_send(WOLFSSL *ssl, char *buf, int sz, void *context)
 
 static int on_handshake_done(WOLFSSL* ssl, void* context)
 {
+    AZURE_UNREFERENCED_PARAMETER(ssl);
     TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)context;
-    (void)ssl;
     if (tls_io_instance->tlsio_state != TLSIO_STATE_IN_HANDSHAKE)
     {
         LogInfo("on_handshake_done called when not in IN_HANDSHAKE state");
@@ -511,6 +516,7 @@ static int create_wolfssl_instance(TLS_IO_INSTANCE* tls_io_instance)
         tls_io_instance->socket_io_read_byte_count = 0;
         tls_io_instance->on_send_complete = NULL;
         tls_io_instance->on_send_complete_callback_context = NULL;
+        tls_io_instance->wolfssl_device_id = INVALID_DEVID;
 
         wolfSSL_set_using_nonblock(tls_io_instance->ssl, 1);
         wolfSSL_SetIOSend(tls_io_instance->ssl_context, on_io_send);
@@ -540,6 +546,11 @@ static int prepare_wolfssl_open(TLS_IO_INSTANCE* tls_io_instance)
     {
         destroy_wolfssl_instance(tls_io_instance);
         LogError("unable to use x509 authentication");
+        result = __FAILURE__;
+    }
+    else if (tls_io_instance->wolfssl_device_id != INVALID_DEVID && wolfSSL_SetDevId(tls_io_instance->ssl, tls_io_instance->wolfssl_device_id) != WOLFSSL_SUCCESS)
+    {
+        LogError("Failure setting device id");
         result = __FAILURE__;
     }
     else
@@ -889,6 +900,29 @@ int tlsio_wolfssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
         else if (strcmp(SU_OPTION_X509_PRIVATE_KEY, optionName) == 0 || strcmp(OPTION_X509_ECC_KEY, optionName) == 0)
         {
             result = process_option(&tls_io_instance->x509privatekey, optionName, value);
+        }
+        // Define will be implemented after
+        else if (strcmp(OPTION_WOLFSSL_SET_DEVICE_ID, optionName) == 0)
+        {
+            int device_id = *((int *)value);
+            if (tls_io_instance->ssl != NULL)
+            {
+                if (tls_io_instance->ssl != NULL && wolfSSL_SetDevId(tls_io_instance->ssl, device_id) != WOLFSSL_SUCCESS)
+                {
+                    LogError("Failure setting device id on ssl");
+                    result = __FAILURE__;
+                }
+                else
+                {
+                    result = 0;
+                }
+            }
+            else
+            {
+                // Save the id till we create the ssl object
+                tls_io_instance->wolfssl_device_id = device_id;
+                result = 0;
+            }
         }
         else
         {

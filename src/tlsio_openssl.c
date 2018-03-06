@@ -416,7 +416,7 @@ static void openssl_lock_unlock_helper(LOCK_HANDLE lock, int lock_mode, const ch
 static void log_ERR_get_error(const char* message)
 {
     char buf[128];
-    UNREFERENCED_PARAMETER(buf);
+    AZURE_UNREFERENCED_PARAMETER(buf);
     unsigned long error;
     int i;
 

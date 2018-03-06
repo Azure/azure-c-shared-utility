@@ -11,8 +11,8 @@
     #define STATIC_VAR_UNUSED
 #endif
 
-#ifndef UNREFERENCED_PARAMETER
-#define UNREFERENCED_PARAMETER(param)   (void)(param)
+#ifndef AZURE_UNREFERENCED_PARAMETER
+#define AZURE_UNREFERENCED_PARAMETER(param)   (void)(param)
 #endif
 
 #endif // CONST_DEFINES

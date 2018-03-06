@@ -244,7 +244,7 @@ static int add_pending_io(SOCKET_IO_INSTANCE* socket_io_instance, const unsigned
 
 static STATIC_VAR_UNUSED void signal_callback(int signum)
 {
-    UNREFERENCED_PARAMETER(signum);
+    AZURE_UNREFERENCED_PARAMETER(signum);
     LogError("Socket received signal %d.", signum);
 }
 
