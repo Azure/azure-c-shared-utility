@@ -4,7 +4,11 @@
 /*THIS FILE IS GENERATED*/
 /*DO NOT EDIT BY HAND!!!*/
 /*instead edit macro_utils.tt here: http://www.github.com/azure/azure-macro-utils-c.git */
-/*and then copy the generated file overwriting this one*/
+/*and then propagate the generated file to all the repos*/
+/* !!! CAUTION!!! This file is copied to multiple places */
+/* in https://github.com/Azure/azure-c-shared-utility.git, */
+/* and all of these copies must be located and replaced. */
+
 
 
 #ifndef MACRO_UTILS_H
@@ -12577,7 +12581,7 @@ IF(X, "true", "false") => "true"
 #define DEFINE_ENUM_STRINGS(enumName, ...) const char* C2(enumName, StringStorage)[COUNT_ARG(__VA_ARGS__)] = {FOR_EACH_1(DEFINE_ENUMERATION_CONSTANT_AS_STRING, __VA_ARGS__)}; \
 const char* C2(enumName,Strings)(enumName value)                   \
 {                                                                  \
-    if((int)value<0 || (int)value>=COUNT_ARG(__VA_ARGS__))                         \
+    if((int)value>=COUNT_ARG(__VA_ARGS__))                         \
     {                                                              \
         /*this is an error case*/                                  \
         return NULL;                                               \
@@ -12609,21 +12613,6 @@ int C2(enumName, _FromString)(const char* enumAsString, enumName* destination)  
         return __FAILURE__;                                                     \
     }                                                                           \
 }                                                                               \
-
-#define DEFINE_LOCAL_ENUM(enumName, ...) typedef enum C2(enumName, _TAG) { FOR_EACH_1(DEFINE_ENUMERATION_CONSTANT, __VA_ARGS__)} enumName; \
-static const char* C2(enumName, StringStorage)[COUNT_ARG(__VA_ARGS__)] = {FOR_EACH_1(DEFINE_ENUMERATION_CONSTANT_AS_STRING, __VA_ARGS__)}; \
-static const char* C2(enumName,Strings)(enumName value)                   \
-{                                                                  \
-    if((int)value<0 || (int)value>=COUNT_ARG(__VA_ARGS__))                         \
-    {                                                              \
-        /*this is an error case*/                                  \
-        return NULL;                                               \
-    }                                                              \
-    else                                                           \
-    {                                                              \
-        return C2(enumName, StringStorage)[value];                 \
-    }                                                              \
-}
 
 #define ENUM_TO_STRING(enumName, enumValue) C2(enumName, Strings)(enumValue)
 #define STRING_TO_ENUM(stringValue, enumName, addressOfEnumVariable) C2(enumName, _FromString)(stringValue, addressOfEnumVariable)
