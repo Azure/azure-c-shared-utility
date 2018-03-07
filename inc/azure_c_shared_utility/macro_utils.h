@@ -12581,7 +12581,7 @@ IF(X, "true", "false") => "true"
 #define DEFINE_ENUM_STRINGS(enumName, ...) const char* C2(enumName, StringStorage)[COUNT_ARG(__VA_ARGS__)] = {FOR_EACH_1(DEFINE_ENUMERATION_CONSTANT_AS_STRING, __VA_ARGS__)}; \
 const char* C2(enumName,Strings)(enumName value)                   \
 {                                                                  \
-    if((int)value>=COUNT_ARG(__VA_ARGS__))                         \
+    if((int)value<0 || (int)value>=COUNT_ARG(__VA_ARGS__))         \
     {                                                              \
         /*this is an error case*/                                  \
         return NULL;                                               \
@@ -12613,6 +12613,22 @@ int C2(enumName, _FromString)(const char* enumAsString, enumName* destination)  
         return __FAILURE__;                                                     \
     }                                                                           \
 }                                                                               \
+
+#define DEFINE_LOCAL_ENUM(enumName, ...) typedef enum C2(enumName, _TAG) { FOR_EACH_1(DEFINE_ENUMERATION_CONSTANT, __VA_ARGS__)} enumName; \
+static const char* C2(enumName, StringStorage)[COUNT_ARG(__VA_ARGS__)] = {FOR_EACH_1(DEFINE_ENUMERATION_CONSTANT_AS_STRING, __VA_ARGS__)}; \
+static const char* C2(enumName,Strings)(enumName value)            \
+{                                                                  \
+    if((int)value<0 || (int)value>=COUNT_ARG(__VA_ARGS__))         \
+    {                                                              \
+        /*this is an error case*/                                  \
+        return NULL;                                               \
+    }                                                              \
+    else                                                           \
+    {                                                              \
+        return C2(enumName, StringStorage)[value];                 \
+    }                                                              \
+}
+
 
 #define ENUM_TO_STRING(enumName, enumValue) C2(enumName, Strings)(enumValue)
 #define STRING_TO_ENUM(stringValue, enumName, addressOfEnumVariable) C2(enumName, _FromString)(stringValue, addressOfEnumVariable)
