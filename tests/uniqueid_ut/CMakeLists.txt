@@ -24,7 +24,7 @@ ${UNIQUEID_C_FILE}
 set(${theseTestsName}_h_files
 )
 
-if(UNIX) #LINUX OR APPLE
+if(APPLE)
     find_package(PkgConfig REQUIRED)
     pkg_search_module(UUID REQUIRED uuid)
 endif()
@@ -35,6 +35,6 @@ elseif(UNIX)
     if(APPLE)
         build_c_test_artifacts(${theseTestsName} ON "tests/azure_c_shared_utility_tests" ADDITIONAL_LIBS -L${UUID_LIBRARY_DIRS} ${UUID_LIBRARIES})
     else()
-        build_c_test_artifacts(${theseTestsName} ON "tests/azure_c_shared_utility_tests" ADDITIONAL_LIBS ${UUID_LIBRARIES})
+        build_c_test_artifacts(${theseTestsName} ON "tests/azure_c_shared_utility_tests" ADDITIONAL_LIBS uuid)
     endif()
 endif()
