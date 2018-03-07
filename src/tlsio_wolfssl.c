@@ -548,11 +548,13 @@ static int prepare_wolfssl_open(TLS_IO_INSTANCE* tls_io_instance)
         LogError("unable to use x509 authentication");
         result = __FAILURE__;
     }
+#ifdef INVALID_DEVID
     else if (tls_io_instance->wolfssl_device_id != INVALID_DEVID && wolfSSL_SetDevId(tls_io_instance->ssl, tls_io_instance->wolfssl_device_id) != WOLFSSL_SUCCESS)
     {
         LogError("Failure setting device id");
         result = __FAILURE__;
     }
+#endif
     else
     {
         result = 0;
@@ -901,7 +903,7 @@ int tlsio_wolfssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
         {
             result = process_option(&tls_io_instance->x509privatekey, optionName, value);
         }
-        // Define will be implemented after
+#ifdef INVALID_DEVID
         else if (strcmp(OPTION_WOLFSSL_SET_DEVICE_ID, optionName) == 0)
         {
             int device_id = *((int *)value);
@@ -924,6 +926,7 @@ int tlsio_wolfssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
                 result = 0;
             }
         }
+#endif
         else
         {
             if (tls_io_instance->socket_io == NULL)
