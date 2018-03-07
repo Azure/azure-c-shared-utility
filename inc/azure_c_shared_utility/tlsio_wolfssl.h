@@ -7,6 +7,7 @@
 #include "azure_c_shared_utility/xio.h"
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/umock_c_prod.h"
+#include "azure_c_shared_utility/const_defines.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -14,6 +15,8 @@ extern "C" {
 #else
 #include <stddef.h>
 #endif /* __cplusplus */
+
+extern const char* const OPTION_WOLFSSL_SET_DEVICE_ID;
 
 MOCKABLE_FUNCTION(, CONCRETE_IO_HANDLE, tlsio_wolfssl_create, void*, io_create_parameters);
 MOCKABLE_FUNCTION(, void, tlsio_wolfssl_destroy, CONCRETE_IO_HANDLE, tls_io);

@@ -97,7 +97,7 @@ ssize_t gbnetwork_send(int sock, const void* buf, size_t len, int flags)
 {
     if (gbnetworkState != GBNETWORK_STATE_INIT)
     {
-        LogError("gbnetwork is not initialized.");
+        // Don't log here by design
     }
     else if (LOCK_OK != Lock(gbnetworkThreadSafeLock))
     {
@@ -110,6 +110,34 @@ ssize_t gbnetwork_send(int sock, const void* buf, size_t len, int flags)
         (void)Unlock(gbnetworkThreadSafeLock);
     }
     return send(sock, buf, len, flags);
+}
+
+#ifdef WIN32
+int gbnetwork_recv(SOCKET sock, char* buf, int len, int flags)
+#else
+ssize_t gbnetwork_recv(int sock, void* buf, size_t len, int flags)
+#endif
+{
+    int result = recv(sock, buf, len, flags);
+
+    if (gbnetworkState != GBNETWORK_STATE_INIT)
+    {
+        // Don't log here by design
+    }
+    else if (LOCK_OK != Lock(gbnetworkThreadSafeLock))
+    {
+        LogError("Failed to get the Lock.");
+    }
+    else
+    {
+        if (result > 0)
+        {
+            g_recv_bytes += result;
+            g_recv_number++;
+        }
+        (void)Unlock(gbnetworkThreadSafeLock);
+    }
+    return result;
 }
 
 uint64_t gbnetwork_getBytesSent(void)
@@ -151,6 +179,50 @@ uint64_t gbnetwork_getNumSends(void)
     else
     {
         result = g_send_number;
+        (void)Unlock(gbnetworkThreadSafeLock);
+    }
+    return result;
+}
+
+uint64_t gbnetwork_getBytesRecv()
+{
+    uint64_t result;
+
+    if (gbnetworkState != GBNETWORK_STATE_INIT)
+    {
+        LogError("gbnetwork is not initialized.");
+        result = 0;
+    }
+    else if (LOCK_OK != Lock(gbnetworkThreadSafeLock))
+    {
+        LogError("Failed to get the Lock.");
+        result = 0;
+    }
+    else
+    {
+        result = g_recv_bytes;
+        (void)Unlock(gbnetworkThreadSafeLock);
+    }
+    return result;
+}
+
+uint64_t gbnetwork_getNumRecv()
+{
+    uint64_t result;
+
+    if (gbnetworkState != GBNETWORK_STATE_INIT)
+    {
+        LogError("gbnetwork is not initialized.");
+        result = 0;
+    }
+    else if (LOCK_OK != Lock(gbnetworkThreadSafeLock))
+    {
+        LogError("Failed to get the Lock.");
+        result = 0;
+    }
+    else
+    {
+        result = g_recv_number;
         (void)Unlock(gbnetworkThreadSafeLock);
     }
     return result;

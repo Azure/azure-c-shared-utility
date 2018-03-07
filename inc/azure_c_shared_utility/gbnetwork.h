@@ -37,12 +37,22 @@ MOCKABLE_FUNCTION(, int, gbnetwork_send, SOCKET, sock, const char*, buf, int, le
 MOCKABLE_FUNCTION(, ssize_t, gbnetwork_send, int, sock, const void*, buf, size_t, len, int, flags);
 #endif
 
+#ifdef WIN32
+MOCKABLE_FUNCTION(, int, gbnetwork_recv, SOCKET, sock, char*, buf, int, len, int, flags);
+#else
+MOCKABLE_FUNCTION(, ssize_t, gbnetwork_recv, int, sock, void*, buf, size_t, len, int, flags);
+#endif
+
 MOCKABLE_FUNCTION(, uint64_t, gbnetwork_getBytesSent);
 MOCKABLE_FUNCTION(, uint64_t, gbnetwork_getNumSends);
+MOCKABLE_FUNCTION(, uint64_t, gbnetwork_getBytesRecv);
+MOCKABLE_FUNCTION(, uint64_t, gbnetwork_getNumRecv);
+MOCKABLE_FUNCTION(, void, gbnetwork_resetMetrics);
 
 /* if GB_MEASURE_NETWORK_FOR_THIS is defined then we want to redirect network send functions to gbnetwork_xxx functions */
 #ifdef GB_MEASURE_NETWORK_FOR_THIS
 #define send gbnetwork_send
+#define recv gbnetwork_recv
 #endif
 
 #else /* GB_DEBUG_NETWORK */
@@ -51,6 +61,9 @@ MOCKABLE_FUNCTION(, uint64_t, gbnetwork_getNumSends);
 #define gbnetwork_deinit() ((void)0)
 #define gbnetwork_getBytesSent() 0
 #define gbnetwork_getNumSends() 0
+
+#define gbnetwork_getBytesRecv() 0
+#define gbnetwork_getNumRecv() 0
 
 #endif /* GB_DEBUG_NETWORK */
 
