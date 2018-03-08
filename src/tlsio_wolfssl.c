@@ -516,7 +516,9 @@ static int create_wolfssl_instance(TLS_IO_INSTANCE* tls_io_instance)
         tls_io_instance->socket_io_read_byte_count = 0;
         tls_io_instance->on_send_complete = NULL;
         tls_io_instance->on_send_complete_callback_context = NULL;
+#ifdef INVALID_DEVID
         tls_io_instance->wolfssl_device_id = INVALID_DEVID;
+#endif
 
         wolfSSL_set_using_nonblock(tls_io_instance->ssl, 1);
         wolfSSL_SetIOSend(tls_io_instance->ssl_context, on_io_send);
