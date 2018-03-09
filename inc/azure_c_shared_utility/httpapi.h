@@ -68,6 +68,8 @@ DEFINE_ENUM(HTTPAPI_RESULT, HTTPAPI_RESULT_VALUES);
 DEFINE_ENUM(HTTPAPI_REQUEST_TYPE, HTTPAPI_REQUEST_TYPE_VALUES);
 
 #define MAX_HOSTNAME_LEN        65
+#define MAX_USERNAME_LEN        65
+#define MAX_PASSWORD_LEN        65
 
 /**
  * @brief	Global initialization for the HTTP API component.
