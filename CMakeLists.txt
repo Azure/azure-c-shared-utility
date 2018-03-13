@@ -11,6 +11,20 @@ project(azure_c_shared_utility)
 
 set(C_SHARED_VERSION 1.0.52)
 
+set(CMAKE_MATCH_3 "")
+string(REGEX MATCH "([0-9]+)[.]([0-9]+)[.]([0-9]+)" temp "${C_SHARED_VERSION}")
+
+if (CMAKE_MATCH_3)
+    set (C_SHARED_VERSION_MAJOR "${CMAKE_MATCH_1}")
+    set (C_SHARED_VERSION_MINOR "${CMAKE_MATCH_2}")
+    set (C_SHARED_VERSION_FIX "${CMAKE_MATCH_3}")
+
+    message(STATUS "C SHARED VERSION = ${C_SHARED_VERSION_MAJOR}.${C_SHARED_VERSION_MINOR}.${C_SHARED_VERSION_FIX}")
+else (CMAKE_MATCH_3)
+    message(FATAL_ERROR "Unable to find version in ${C_SHARED_VERSION}")
+endif(CMAKE_MATCH_3)
+
+
 # Include the common build rules for the C SDK
 include(configs/azure_iot_build_rules.cmake)
 
@@ -380,13 +394,13 @@ if(${use_http})
         ./inc/azure_c_shared_utility/httpapiex.h
         ./inc/azure_c_shared_utility/httpapiexsas.h
         ./inc/azure_c_shared_utility/httpheaders.h
-        )
+    )
 endif()
 
 if(${use_schannel})
     set(source_h_files ${source_h_files}
-    ./inc/azure_c_shared_utility/tlsio_schannel.h
-    ./inc/azure_c_shared_utility/x509_schannel.h
+        ./inc/azure_c_shared_utility/tlsio_schannel.h
+        ./inc/azure_c_shared_utility/x509_schannel.h
     )
 endif()
 
@@ -417,8 +431,13 @@ if(${use_applessl})
     include_directories(./pal/ios-osx/)
 endif()
 
+add_library(aziotsharedutil_obj OBJECT
+    ${source_c_files}
+    ${source_h_files}
+)
+
 #this is the product (a library)
-add_library(aziotsharedutil ${source_c_files} ${source_h_files})
+add_library(aziotsharedutil $<TARGET_OBJECTS:aziotsharedutil_obj>)
 
 target_include_directories(aziotsharedutil PUBLIC $<BUILD_INTERFACE:${SHARED_UTIL_INC_FOLDER}>)
 
@@ -437,8 +456,15 @@ endif()
 
 if(${build_as_dynamic})
     #make sure we can link as dll/so
-    add_library(aziotsharedutil_dll SHARED ./src/aziotsharedutil.def ${source_c_files} ${source_h_files})
-    set_target_properties(aziotsharedutil_dll PROPERTIES OUTPUT_NAME "aziotsharedutil")
+    add_library(aziotsharedutil_dll SHARED $<TARGET_OBJECTS:aziotsharedutil_obj>)
+    set_target_properties(aziotsharedutil_dll PROPERTIES 
+        OUTPUT_NAME "aziotsharedutil"
+        ARCHIVE_OUTPUT_NAME "aziotshardutil_dll_import"
+        ENABLE_EXPORTS YES
+        WINDOWS_EXPORT_ALL_SYMBOLS YES
+        VERSION ${C_SHARED_VERSION}
+        SOVERSION ${C_SHARED_VERSION_MAJOR}
+    )
 endif()
 
 set(aziotsharedutil_target_libs)
@@ -536,6 +562,7 @@ if(LINUX)
 endif()
 
 target_link_libraries(aziotsharedutil ${aziotsharedutil_target_libs})
+
 if(${build_as_dynamic})
     target_link_libraries(aziotsharedutil_dll ${aziotsharedutil_target_libs})
 endif()
@@ -627,12 +654,17 @@ if(${use_installed_dependencies})
             ${package_location}
     )
 else()
-    set(install_staticlibs
+    set(install_libs
         aziotsharedutil
     )
+
+    if (${build_as_dynamic})
+        set(install_libs ${install_libs} aziotsharedutil_dll)
+    endif()
+
     install(FILES ${source_h_files}
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azure_c_shared_utility) 
-    install(TARGETS ${install_staticlibs} 
+    install(TARGETS ${install_libs} 
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
 endif()
