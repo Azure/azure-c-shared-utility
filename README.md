@@ -78,7 +78,7 @@ cmake .. -Drun_unittests:bool=ON
 ## Configuration options
 
 In order to turn on/off the tlsio implementations use the following CMAKE options:
- 
+
 * `-Duse_schannel:bool={ON/OFF}` - turns on/off the SChannel support
 * `-Duse_openssl:bool={ON/OFF}` - turns on/off the OpenSSL support. If this option is use an environment variable name OpenSSLDir should be set to point to the OpenSSL folder.
 * `-Duse_wolfssl:bool={ON/OFF}` - turns on/off the WolfSSL support. If this option is use an environment variable name WolfSSLDir should be set to point to the WolfSSL folder.
@@ -90,4 +90,4 @@ In order to turn on/off the tlsio implementations use the following CMAKE option
 ## Porting to new devices
 
 Instructions for porting the Azure IoT C SDK to new devices are located
-[here](https://github.com/Azure/azure-c-shared-utility/blob/pal-porting/devdoc/porting_guide.md).
+[here](https://github.com/Azure/azure-c-shared-utility/blob/master/devdoc/porting_guide.md).
