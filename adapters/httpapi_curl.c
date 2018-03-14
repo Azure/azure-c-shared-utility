@@ -607,7 +607,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
                                                 {
                                                     if (statusCode != NULL)
                                                     {
-                                                        *statusCode = httpCode;
+                                                        *statusCode = (unsigned int)httpCode;
                                                     }
 
                                                     /* fill response content length */
