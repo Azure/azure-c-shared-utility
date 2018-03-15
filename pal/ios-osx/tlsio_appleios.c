@@ -629,6 +629,7 @@ static int tlsio_appleios_send_async(CONCRETE_IO_HANDLE tls_io, const void* buff
         TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tls_io;
         if (tls_io_instance->tlsio_state != TLSIO_STATE_OPEN)
         {
+            /* Codes_SRS_TLSIO_30_060: [ If the tlsio_handle parameter is NULL, tlsio_appleios_compact_send shall log an error and return FAILURE. ]*/
             /* Codes_SRS_TLSIO_30_065: [ If tlsio_appleios_compact_open has not been called or the opening process has not been completed, tlsio_appleios_compact_send shall log an error and return FAILURE. ]*/
             result = __FAILURE__;
             LogError("tlsio_appleios_send_async without a prior successful open");
