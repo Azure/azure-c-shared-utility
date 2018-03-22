@@ -58,7 +58,7 @@ static const char* ConstructHeadersString(HTTP_HEADERS_HANDLE httpHeadersHandle)
     else
     {
         size_t i;
-        
+
         /*the total size of all the headers is given by sumof(lengthof(everyheader)+2)*/
         size_t toAlloc = 0;
         for (i = 0; i < headersCount; i++)
@@ -84,7 +84,7 @@ static const char* ConstructHeadersString(HTTP_HEADERS_HANDLE httpHeadersHandle)
         else
         {
             result = (char*)malloc(toAlloc*sizeof(char) + 1 );
-            
+
             if (result == NULL)
             {
                 LogError("unable to malloc");
@@ -173,7 +173,7 @@ void HTTPAPI_Deinit(void)
         }
     }
 
-    
+
 }
 
 HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
@@ -401,7 +401,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
                                     }
                                     else
                                     {
-                                        if ((handleData->x509SchannelHandle!=NULL) && 
+                                        if ((handleData->x509SchannelHandle!=NULL) &&
                                             !WinHttpSetOption(
                                                 requestHandle,
                                                 WINHTTP_OPTION_CLIENT_CERT_CONTEXT,
@@ -419,13 +419,11 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
                                             {
                                                 WINHTTP_PROXY_INFO winhttp_proxy;
                                                 wchar_t wproxy[MAX_HOSTNAME_LEN];
-                                                size_t  numberOfArrayElementsModified;
                                                 winhttp_proxy.dwAccessType = WINHTTP_ACCESS_TYPE_NAMED_PROXY;
-                                                numberOfArrayElementsModified = mbstowcs(wproxy, handleData->proxy_host, strlen(handleData->proxy_host)+1);//Plus null
-                                                if (numberOfArrayElementsModified == (size_t)(-1))
+                                                if (mbstowcs_s(NULL, wproxy, MAX_HOSTNAME_LEN, handleData->proxy_host, MAX_HOSTNAME_LEN-1) != 0)
                                                 {
-                                                  LogError("invalid multibyte character encountered in proxy adress");
-                                                  result = HTTPAPI_ERROR;
+                                                    LogError("Error during proxy host conversion");
+                                                    result = HTTPAPI_ERROR;
                                                 }
                                                 else
                                                 {
@@ -444,27 +442,36 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
                                                         //Set username and password if needed
                                                         if (handleData->proxy_username != NULL && handleData->proxy_password != NULL)
                                                         {
-                                                            if (WinHttpSetOption(requestHandle,
-                                                                WINHTTP_OPTION_PROXY_USERNAME,
-                                                                (char*)handleData->proxy_username,
-                                                                (DWORD)strlen(handleData->proxy_username)) != TRUE)
+                                                            wchar_t wusername[MAX_USERNAME_LEN];
+                                                            if (mbstowcs_s(NULL, wusername, MAX_USERNAME_LEN, handleData->proxy_username, MAX_USERNAME_LEN-1) != 0)
                                                             {
-                                                                LogError("failure setting proxy username");
+                                                                LogError("Error during proxy username conversion");
                                                                 result = HTTPAPI_ERROR;
                                                             }
                                                             else
                                                             {
-                                                                if (WinHttpSetOption(requestHandle,
-                                                                    WINHTTP_OPTION_PROXY_PASSWORD,
-                                                                    (char*)handleData->proxy_password,
-                                                                    (DWORD)strlen(handleData->proxy_password)) != TRUE)
+                                                                wchar_t wpassword[MAX_PASSWORD_LEN];
+                                                                if (mbstowcs_s(NULL, wpassword, MAX_PASSWORD_LEN, handleData->proxy_password, MAX_PASSWORD_LEN-1) != 0)
                                                                 {
-                                                                  LogError("failure setting proxy password");
-                                                                  result = HTTPAPI_ERROR;
+                                                                    LogError("Error during proxy password conversion");
+                                                                    result = HTTPAPI_ERROR;
                                                                 }
                                                                 else
                                                                 {
-                                                                    result = HTTPAPI_OK;
+                                                                    if (WinHttpSetCredentials(requestHandle,
+                                                                        WINHTTP_AUTH_TARGET_PROXY,
+                                                                        WINHTTP_AUTH_SCHEME_BASIC,
+                                                                        wusername,
+                                                                        wpassword,
+                                                                        NULL) != TRUE)
+                                                                    {
+                                                                        LogErrorWinHTTPWithGetLastErrorAsString("Failure setting proxy credentials");
+                                                                        result = HTTPAPI_ERROR;
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        result = HTTPAPI_OK;
+                                                                    }
                                                                 }
                                                             }
                                                         }
