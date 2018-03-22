@@ -202,6 +202,8 @@ UWS_CLIENT_HANDLE uws_client_create(const char* hostname, unsigned int port, con
                                     socketio_config.port = port;
                                     socketio_config.accepted_socket = NULL;
 
+                                    tlsio_config.hostname = hostname;
+                                    tlsio_config.port = port;
                                     tlsio_config.underlying_io_interface = socketio_get_interface_description();
                                     tlsio_config.underlying_io_parameters = &socketio_config;
 

@@ -9,7 +9,7 @@ endif()
 
 project(azure_c_shared_utility)
 
-set(C_SHARED_VERSION 1.0.52)
+FILE(READ ${CMAKE_CURRENT_LIST_DIR}/version.txt C_SHARED_VERSION)
 
 # Include the common build rules for the C SDK
 include(configs/azure_iot_build_rules.cmake)
@@ -419,6 +419,7 @@ endif()
 
 #this is the product (a library)
 add_library(aziotsharedutil ${source_c_files} ${source_h_files})
+setTargetBuildProperties(aziotsharedutil)
 
 target_include_directories(aziotsharedutil PUBLIC $<BUILD_INTERFACE:${SHARED_UTIL_INC_FOLDER}>)
 
@@ -543,6 +544,9 @@ endif()
 if (${run_unittests} OR ${run_e2e_tests})
     include("dependencies-test.cmake")
     add_subdirectory(testtools)
+    setTargetBuildProperties(ctest)
+    setTargetBuildProperties(testrunnerswitcher)
+    setTargetBuildProperties(umock_c)
     if (${run_unittests})
         add_subdirectory(tests)
     endif()

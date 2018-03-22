@@ -118,7 +118,13 @@ int gbnetwork_recv(SOCKET sock, char* buf, int len, int flags)
 ssize_t gbnetwork_recv(int sock, void* buf, size_t len, int flags)
 #endif
 {
-    int result = recv(sock, buf, len, flags);
+#ifdef WIN32
+    int result;
+#else
+    ssize_t result;
+#endif
+
+    result = recv(sock, buf, len, flags);
 
     if (gbnetworkState != GBNETWORK_STATE_INIT)
     {
