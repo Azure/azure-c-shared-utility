@@ -19,6 +19,10 @@ EXPORTS
     Base64_Decoder
     Base64_Encoder
     Base64_Encode_Bytes
+	Base32_Decode
+	Base32_Decode_String
+	Base32_Encode
+	Base32_Encode_Bytes
     COND_RESULTStringStorage
     COND_RESULTStrings
     COND_RESULT_FromString
