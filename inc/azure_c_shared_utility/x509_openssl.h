@@ -14,7 +14,6 @@ extern "C" {
 
 MOCKABLE_FUNCTION(,int, x509_openssl_add_certificates, SSL_CTX*, ssl_ctx, const char*, certificates);
 MOCKABLE_FUNCTION(,int, x509_openssl_add_credentials, SSL_CTX*, ssl_ctx, const char*, x509certificate, const char*, x509privatekey);
-MOCKABLE_FUNCTION(,int, x509_openssl_add_ecc_credentials, SSL_CTX*, ssl_ctx, const char*, ecc_alias_cert, const char*, ecc_alias_key);
 
 #ifdef __cplusplus
 }

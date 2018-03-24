@@ -11,7 +11,7 @@
 #include "openssl/pem.h"
 #include "openssl/err.h"
 
-void log_ERR_get_error(const char* message)
+static void log_ERR_get_error(const char* message)
 {
     char buf[128];
     AZURE_UNREFERENCED_PARAMETER(buf);
@@ -32,14 +32,13 @@ void log_ERR_get_error(const char* message)
     }
 }
 
-static int load_certificate_chain(SSL_CTX* ssl_ctx, const char* ecc_cert)
+static int load_certificate_chain(SSL_CTX* ssl_ctx, const char* certificate)
 {
     int result;
     BIO* bio_cert;
     X509* x509_value;
 
-    bio_cert = BIO_new_mem_buf((char*)ecc_cert, -1);
-    if (bio_cert == NULL)
+    if ((bio_cert = BIO_new_mem_buf((char*)certificate, -1)) == NULL)
     {
         log_ERR_get_error("cannot create BIO");
         result = __FAILURE__;
@@ -47,8 +46,7 @@ static int load_certificate_chain(SSL_CTX* ssl_ctx, const char* ecc_cert)
     else
     {
         /* Codes_SRS_X509_OPENSSL_07_005: [ x509_openssl_add_ecc_credentials shall load the cert chain by calling PEM_read_bio_X509_AUX and SSL_CTX_use_certification. ] */
-        x509_value = PEM_read_bio_X509_AUX(bio_cert, NULL, NULL, NULL);
-        if (x509_value == NULL)
+        if ((x509_value = PEM_read_bio_X509_AUX(bio_cert, NULL, NULL, NULL)) == NULL)
         {
             log_ERR_get_error("Failure PEM_read_bio_X509_AUX");
             result = __FAILURE__;
@@ -110,159 +108,130 @@ static int load_certificate_chain(SSL_CTX* ssl_ctx, const char* ecc_cert)
     return result;
 }
 
-static int load_alias_key_cert(SSL_CTX* ssl_ctx, const char* ecc_alias_key)
+static int load_ecc_key(SSL_CTX* ssl_ctx, EVP_PKEY* evp_key)
 {
     int result;
-    BIO* bio_certificate;
-    EVP_PKEY* pkey = NULL;
-    /* Codes_SRS_X509_OPENSSL_07_002: [ x509_openssl_add_ecc_credentials shall get the memory BIO method function. ] */
-    bio_certificate = BIO_new_mem_buf((char*)ecc_alias_key, -1); 
-    if (bio_certificate == NULL)
+    /* Codes_SRS_X509_OPENSSL_07_004: [ x509_openssl_add_ecc_credentials shall import the certification using by the EVP_PKEY. ] */
+    if (SSL_CTX_use_PrivateKey(ssl_ctx, evp_key) != 1)
     {
-        log_ERR_get_error("Failed BIO_new_mem_buf");
+        LogError("Failed SSL_CTX_use_PrivateKey");
         result = __FAILURE__;
     }
     else
     {
-        /* Codes_SRS_X509_OPENSSL_07_003: [ x509_openssl_add_ecc_credentials shall generate a EVP_PKEY by calling PEM_read_bio_PrivateKey. ]*/
-        pkey = PEM_read_bio_PrivateKey(bio_certificate, NULL, NULL, NULL);
-        if (pkey == NULL)
-        {
-            log_ERR_get_error("Failed PEM_read_bio_PrivateKey");
-            result = __FAILURE__;
-        }
-        else
-        {
-            /* Codes_SRS_X509_OPENSSL_07_004: [ x509_openssl_add_ecc_credentials shall import the certification using by the EVP_PKEY. ] */
-            if (SSL_CTX_use_PrivateKey(ssl_ctx, pkey) != 1)
-            {
-                LogError("Failed SSL_CTX_use_PrivateKey");
-                result = __FAILURE__;
-            }
-            else
-            {
-                result = 0;
-            }
-            EVP_PKEY_free(pkey);
-        }
-        BIO_free(bio_certificate);
+        result = 0;
     }
     /* Codes_SRS_X509_OPENSSL_07_007: [ If any failure is encountered x509_openssl_add_ecc_credentials shall return a non-zero value. ] */
     return result;
 }
 
-
-static int load_private_key_RSA(SSL_CTX* ssl_ctx, const char* x509privatekey)
+static int load_key_RSA(SSL_CTX* ssl_ctx, EVP_PKEY* evp_key)
 {
     int result;
-    BIO *bio_privatekey;
-    /*Codes_SRS_X509_OPENSSL_02_004: [ x509_openssl_add_credentials shall use BIO_new_mem_buf to create a memory BIO from the x509 privatekey. ]*/
-    bio_privatekey = BIO_new_mem_buf((char*)x509privatekey, -1); /*taking off the const from the pointer is needed on older versions of OPENSSL*/
-    if (bio_privatekey == NULL)
+    /*Codes_SRS_X509_OPENSSL_02_005: [ x509_openssl_add_credentials shall use PEM_read_bio_RSAPrivateKey to read the x509 private key. ]*/
+    RSA* privatekey = EVP_PKEY_get1_RSA(evp_key);
+    if (privatekey == NULL)
     {
         /*Codes_SRS_X509_OPENSSL_02_009: [ Otherwise x509_openssl_add_credentials shall fail and return a non-zero number. ]*/
-        log_ERR_get_error("cannot create BIO *bio_privatekey;");
+        log_ERR_get_error("Failure reading RSA private key");
         result = __FAILURE__;
     }
     else
     {
-        /*Codes_SRS_X509_OPENSSL_02_005: [ x509_openssl_add_credentials shall use PEM_read_bio_RSAPrivateKey to read the x509 private key. ]*/
-        RSA* privatekey = PEM_read_bio_RSAPrivateKey(bio_privatekey, NULL, 0, NULL);
-        if (privatekey == NULL)
+        /*Codes_SRS_X509_OPENSSL_02_007: [ x509_openssl_add_credentials shall use SSL_CTX_use_RSAPrivateKey to load the private key into the SSL context. ]*/
+        if (SSL_CTX_use_RSAPrivateKey(ssl_ctx, privatekey) != 1)
         {
             /*Codes_SRS_X509_OPENSSL_02_009: [ Otherwise x509_openssl_add_credentials shall fail and return a non-zero number. ]*/
-            log_ERR_get_error("cannot create RSA* privatekey");
-            result = __FAILURE__; 
+            log_ERR_get_error("Failure calling SSL_CTX_use_RSAPrivateKey");
+            result = __FAILURE__;
         }
         else
         {
-            /*Codes_SRS_X509_OPENSSL_02_007: [ x509_openssl_add_credentials shall use SSL_CTX_use_RSAPrivateKey to load the private key into the SSL context. ]*/
-            if (SSL_CTX_use_RSAPrivateKey(ssl_ctx, privatekey) != 1)
-            {
-                /*Codes_SRS_X509_OPENSSL_02_009: [ Otherwise x509_openssl_add_credentials shall fail and return a non-zero number. ]*/
-                log_ERR_get_error("cannot SSL_CTX_use_RSAPrivateKey");
-                result = __FAILURE__;
-            }
-            else
-            {
-                /*all is fine*/
-                /*Codes_SRS_X509_OPENSSL_02_008: [ If no error occurs, then x509_openssl_add_credentials shall succeed and return 0. ]*/
-                result = 0;
-            }
-            RSA_free(privatekey);
+            /*all is fine*/
+            /*Codes_SRS_X509_OPENSSL_02_008: [ If no error occurs, then x509_openssl_add_credentials shall succeed and return 0. ]*/
+            result = 0;
         }
-        BIO_free(bio_privatekey);
+        RSA_free(privatekey);
     }
     return result;
 }
 
-int x509_openssl_add_ecc_credentials(SSL_CTX* ssl_ctx, const char* ecc_alias_cert, const char* ecc_alias_key)
+int x509_openssl_add_credentials(SSL_CTX* ssl_ctx, const char* x509certificate, const char* x509privatekey)
 {
     int result;
-
-    /* Codes_SRS_X509_OPENSSL_07_001: [ If ssl_ctx, ecc_alias_cert, or ecc_alias_key are NULL, x509_openssl_add_ecc_credentials shall return a non-zero value. ] */
-    if (ssl_ctx == NULL || ecc_alias_key == NULL || ecc_alias_cert == NULL)
+    if (ssl_ctx == NULL || x509certificate == NULL || x509privatekey == NULL)
     {
-        LogError("invalid parameter detected: SSL_CTX* ssl_ctx=%p, const char* ecc_alias_key=%p, const char* ecc_alias_cert=%p", ssl_ctx, ecc_alias_key, ecc_alias_cert);
+        /*Codes_SRS_X509_OPENSSL_02_009: [ Otherwise x509_openssl_add_credentials shall fail and return a non-zero number. ]*/
+        LogError("invalid parameter detected: ssl_ctx=%p, x509certificate=%p, x509privatekey=%p", ssl_ctx, x509certificate, x509privatekey);
         result = __FAILURE__;
     }
     else
     {
-        if (load_alias_key_cert(ssl_ctx, ecc_alias_key) != 0)
+        BIO* bio_key = BIO_new_mem_buf((char*)x509privatekey, -1); /*taking off the const from the pointer is needed on older versions of OPENSSL*/
+        if (bio_key == NULL)
         {
-            LogError("failure loading private key cert");
-            result = __FAILURE__;
-        }
-        else if (load_certificate_chain(ssl_ctx, ecc_alias_cert) != 0)
-        {
-            LogError("failure loading private key cert");
+            log_ERR_get_error("cannot create private key BIO");
             result = __FAILURE__;
         }
         else
         {
-            result = 0;
+            // Get the Private Key type
+            EVP_PKEY* evp_key = PEM_read_bio_PrivateKey(bio_key, NULL, NULL, NULL);
+            if (evp_key == NULL)
+            {
+                log_ERR_get_error("Failure creating private key evp_key");
+                result = __FAILURE__;
+            }
+            else
+            {
+                if (evp_key->type == EVP_PKEY_RSA || evp_key->type == EVP_PKEY_RSA2)
+                {
+                    if (load_key_RSA(ssl_ctx, evp_key) != 0)
+                    {
+                        LogError("failure loading RSA private key cert");
+                        result = __FAILURE__;
+                    }
+                    else
+                    {
+                        result = 0;
+                    }
+                }
+                else
+                {
+                    if (load_ecc_key(ssl_ctx, evp_key) != 0)
+                    {
+                        LogError("failure loading ECC private key cert");
+                        result = __FAILURE__;
+                    }
+                    else
+                    {
+                        result = 0;
+                    }
+                }
+
+                if (result == 0)
+                {
+                    // Load the certificate chain
+                    if (load_certificate_chain(ssl_ctx, x509certificate) != 0)
+                    {
+                        LogError("failure loading private key cert");
+                        result = __FAILURE__;
+                    }
+                    else
+                    {
+                        result = 0;
+                    }
+                }
+                EVP_PKEY_free(evp_key);
+            }
+            BIO_free(bio_key);
         }
     }
-    /* Codes_SRS_X509_OPENSSL_07_007: [ If any failure is encountered x509_openssl_add_ecc_credentials shall return a non-zero value. ] */
     return result;
 }
 
 /*return 0 if everything was ok, any other number to signal an error*/
 /*this function inserts a x509certificate+x509privatekey to a SSL_CTX (ssl context) in order to authenticate the device with the service*/
-int x509_openssl_add_credentials(SSL_CTX* ssl_ctx, const char* x509certificate, const char* x509privatekey)
-{
-    int result;
-    /*Codes_SRS_X509_OPENSSL_02_001: [ If any argument is NULL then x509_openssl_add_credentials shall fail and return a non-zero value. ]*/
-    if (
-        (ssl_ctx == NULL) ||
-        (x509certificate == NULL) ||
-        (x509privatekey == NULL)
-        )
-    {
-        /*Codes_SRS_X509_OPENSSL_02_009: [ Otherwise x509_openssl_add_credentials shall fail and return a non-zero number. ]*/
-        LogError("invalid parameter detected: SSL_CTX* ssl_ctx=%p, const char* x509certificate=%p, const char* x509privatekey=%p", ssl_ctx, x509certificate, x509privatekey);
-        result = __FAILURE__;
-    }
-    else
-    { 
-        if (load_private_key_RSA(ssl_ctx, x509privatekey) != 0)
-        {
-            LogError("failure loading private key cert");
-            result = __FAILURE__;
-        }
-        else if (load_certificate_chain(ssl_ctx, x509certificate) != 0)
-        {
-            LogError("failure loading private key cert");
-            result = __FAILURE__;
-        }
-        else
-        {
-            result = 0;
-        }
-    }
-    return result;
-}
-
 int x509_openssl_add_certificates(SSL_CTX* ssl_ctx, const char* certificates)
 {
     int result;

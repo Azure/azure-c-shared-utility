@@ -149,7 +149,6 @@ TEST_SUITE_INITIALIZE(suite_init)
 #ifdef USE_OPENSSL
     REGISTER_GLOBAL_MOCK_RETURN(tlsio_openssl_get_interface_description, TEST_IO_INTERFACE_DESCRIPTION);
     REGISTER_GLOBAL_MOCK_RETURN(tlsio_openssl_init, 0);
-    REGISTER_GLOBAL_MOCK_RETURN(tlsio_openssl_deinit, 0);
 #endif
 }
 
