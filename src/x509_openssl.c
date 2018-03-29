@@ -11,6 +11,10 @@
 #include "openssl/pem.h"
 #include "openssl/err.h"
 
+#ifndef EVP_PKEY_id
+#define EVP_PKEY_id(evp_key) evp_key->type
+#endif // EVP_PKEY_id
+
 static void log_ERR_get_error(const char* message)
 {
     char buf[128];
@@ -184,7 +188,9 @@ int x509_openssl_add_credentials(SSL_CTX* ssl_ctx, const char* x509certificate, 
             }
             else
             {
-                if (evp_key->type == EVP_PKEY_RSA || evp_key->type == EVP_PKEY_RSA2)
+                // Check the type for the EVP key
+                int evp_type = EVP_PKEY_id(evp_key);
+                if (evp_type == EVP_PKEY_RSA || evp_type == EVP_PKEY_RSA2)
                 {
                     if (load_key_RSA(ssl_ctx, evp_key) != 0)
                     {

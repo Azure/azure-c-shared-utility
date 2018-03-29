@@ -429,6 +429,12 @@ static void on_underlying_ws_peer_closed(void* context, uint16_t* close_code, co
             indicate_error(wsio_instance);
             break;
 
+        case IO_STATE_NOT_OPEN:
+            // Codes_SRS_WSIO_07_001: [When `on_underlying_ws_peer_closed` and the state of the IO is NOT_OPEN an error will be raised and the io_state will remain as NOT_OPEN]
+            indicate_error(wsio_instance);
+            wsio_instance->io_state = IO_STATE_NOT_OPEN;
+            break;
+
         case IO_STATE_OPENING:
             /* Codes_SRS_WSIO_01_170: [ When `on_underlying_ws_peer_closed` and the state of the IO is OPENING an error shall be indicated by calling the `on_io_open_complete` callback passed to `wsio_open` with the error code `IO_OPEN_ERROR`. ]*/
             wsio_instance->io_state = IO_STATE_NOT_OPEN;
@@ -489,7 +495,7 @@ int wsio_open(CONCRETE_IO_HANDLE ws_io, ON_IO_OPEN_COMPLETE on_io_open_complete,
         {
             /* Codes_SRS_WSIO_01_165: [ `wsio_open` when CLOSING shall fail and return a non-zero value. ]*/
             /* Codes_SRS_WSIO_01_131: [ `wsio_open` when already OPEN or OPENING shall fail and return a non-zero value. ]*/
-            LogError("wsio has already been opened.");
+            LogError("wsio has already been opened current state: %d", wsio_instance->io_state);
             result = __FAILURE__;
         }
         else
