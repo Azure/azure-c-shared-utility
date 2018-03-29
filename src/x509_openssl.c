@@ -11,9 +11,11 @@
 #include "openssl/pem.h"
 #include "openssl/err.h"
 
-#ifndef EVP_PKEY_id
-#define EVP_PKEY_id(evp_key) evp_key->type
-#endif // EVP_PKEY_id
+#ifdef __APPLE__
+    #ifndef EVP_PKEY_id
+        #define EVP_PKEY_id(evp_key) evp_key->type
+    #endif // EVP_PKEY_id
+#endif // __APPLE__
 
 static void log_ERR_get_error(const char* message)
 {
