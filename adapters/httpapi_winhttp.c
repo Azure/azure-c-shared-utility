@@ -234,7 +234,7 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
                         }
                         else
                         {
-                            result->timeout = 30000; /*default from MSDN (  https://msdn.microsoft.com/en-us/library/windows/desktop/aa384116(v=vs.85).aspx  )*/
+                            result->timeout = 60000;
                             result->x509certificate = NULL;
                             result->x509privatekey = NULL;
                             result->x509SchannelHandle = NULL;
