@@ -5,9 +5,9 @@
 #define UUID_H
 
 #ifdef __cplusplus
-extern "C" {
 #include <cstddef>
 #include <cstdint>
+extern "C" {
 #else
 #include <stddef.h>
 #include <stdint.h>
