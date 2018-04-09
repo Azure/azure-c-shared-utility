@@ -1066,7 +1066,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                         {
                             /* Codes_SRS_UWS_CLIENT_01_382: [ If a negative status is decoded from the WebSocket upgrade request, an error shall be indicated by calling the `on_ws_open_complete` callback passed to `uws_client_open_async` with `WS_OPEN_ERROR_BAD_RESPONSE_STATUS`. ]*/
                             LogError("Bad status (%d) received in WebSocket Upgrade response", status_code);
-                            indicate_ws_open_complete_error_and_close(uws_client, WS_OPEN_ERROR_BAD_RESPONSE_STATUS);
+                            indicate_ws_open_complete_error_and_close(uws_client, WS_OPEN_ERROR_BAD_RESPONSE_STATUS+status_code);
                         }
                         else
                         {
