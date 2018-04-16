@@ -46,7 +46,6 @@ else()
     option(use_wolfssl "set use_wolfssl to ON if wolfssl is to be used, set to OFF to not use wolfssl" OFF)
 endif()
 
-option(use_cyclonessl "set use_cyclonessl to ON if cyclonessl is to be used, set to OFF to not use cyclonessl" OFF)
 option(no_logging "disable logging (default is OFF)" OFF)
 
 # The options setting for use_socketio is not reliable. If openssl is used, make sure it's on,
@@ -72,70 +71,6 @@ if(${use_etw})
 endif()
 
 option(build_as_dynamic "build the C Shared libaries as shared"  OFF)
-
-if(${use_cyclonessl} AND WIN32)
-    set(cyclonessl_c_files
-        $ENV{CycloneSSLDir}/cyclone_ssl/ssl_common.c
-        $ENV{CycloneSSLDir}/cyclone_ssl/tls.c
-        $ENV{CycloneSSLDir}/cyclone_ssl/tls_cache.c
-        $ENV{CycloneSSLDir}/cyclone_ssl/tls_cipher_suites.c
-        $ENV{CycloneSSLDir}/cyclone_ssl/tls_client.c
-        $ENV{CycloneSSLDir}/cyclone_ssl/tls_common.c
-        $ENV{CycloneSSLDir}/cyclone_ssl/tls_io.c
-        $ENV{CycloneSSLDir}/cyclone_ssl/tls_misc.c
-        $ENV{CycloneSSLDir}/cyclone_ssl/tls_record.c
-        $ENV{CycloneSSLDir}/cyclone_ssl/tls_server.c
-        $ENV{CycloneSSLDir}/common/date_time.c
-        $ENV{CycloneSSLDir}/common/debug.c
-        $ENV{CycloneSSLDir}/common/endian.c
-        $ENV{CycloneSSLDir}/common/os_port_windows.c
-        $ENV{CycloneSSLDir}/cyclone_crypto/aes.c
-        $ENV{CycloneSSLDir}/cyclone_crypto/aria.c
-        $ENV{CycloneSSLDir}/cyclone_crypto/asn1.c
-        $ENV{CycloneSSLDir}/cyclone_crypto/base64.c
-        $ENV{CycloneSSLDir}/cyclone_crypto/camellia.c
-        $ENV{CycloneSSLDir}/cyclone_crypto/chacha.c
-        $ENV{CycloneSSLDir}/cyclone_crypto/chacha20_poly1305.c
-        $ENV{CycloneSSLDir}/cyclone_crypto/cipher_mode_cbc.c
-        $ENV{CycloneSSLDir}/cyclone_crypto/cipher_mode_ccm.c
-        $ENV{CycloneSSLDir}/cyclone_crypto/cipher_mode_gcm.c
-        $ENV{CycloneSSLDir}/cyclone_crypto/des.c
-        $ENV{CycloneSSLDir}/cyclone_crypto/des3.c
-        $ENV{CycloneSSLDir}/cyclone_crypto/dh.c
-        $ENV{CycloneSSLDir}/cyclone_crypto/dsa.c
-        $ENV{CycloneSSLDir}/cyclone_crypto/ec.c
-        $ENV{CycloneSSLDir}/cyclone_crypto/ec_curves.c
-        $ENV{CycloneSSLDir}/cyclone_crypto/ecdh.c
-        $ENV{CycloneSSLDir}/cyclone_crypto/ecdsa.c
-        $ENV{CycloneSSLDir}/cyclone_crypto/hmac.c
-        $ENV{CycloneSSLDir}/cyclone_crypto/idea.c
-        $ENV{CycloneSSLDir}/cyclone_crypto/md5.c
-        $ENV{CycloneSSLDir}/cyclone_crypto/mpi.c
-        $ENV{CycloneSSLDir}/cyclone_crypto/oid.c
-        $ENV{CycloneSSLDir}/cyclone_crypto/pem.c
-        $ENV{CycloneSSLDir}/cyclone_crypto/poly1305.c
-        $ENV{CycloneSSLDir}/cyclone_crypto/rc4.c
-        $ENV{CycloneSSLDir}/cyclone_crypto/rsa.c
-        $ENV{CycloneSSLDir}/cyclone_crypto/seed.c
-        $ENV{CycloneSSLDir}/cyclone_crypto/sha1.c
-        $ENV{CycloneSSLDir}/cyclone_crypto/sha224.c
-        $ENV{CycloneSSLDir}/cyclone_crypto/sha256.c
-        $ENV{CycloneSSLDir}/cyclone_crypto/sha384.c
-        $ENV{CycloneSSLDir}/cyclone_crypto/sha512.c
-        $ENV{CycloneSSLDir}/cyclone_crypto/x509.c
-        $ENV{CycloneSSLDir}/cyclone_crypto/yarrow.c
-    )
-    
-    include_directories($ENV{CycloneSSLDir}/common/)
-    include_directories($ENV{CycloneSSLDir}/cyclone_ssl/)
-    include_directories($ENV{CycloneSSLDir}/cyclone_crypto/)
-    include_directories($ENV{CycloneSSLDir}/demo/x86/ssl_client_demo/src/)
-
-    set_source_files_properties(${cyclonessl_c_files} PROPERTIES COMPILE_FLAGS "/wd4200 /wd4201 /wd4244 /wd4100 /wd4267 /wd4701 /wd4703 /wd4389 /wd4005")
-    set_source_files_properties(./src/tlsio_cyclonessl.c ./src/tlsio_cyclonessl_socket_bsd.c PROPERTIES COMPILE_FLAGS "/wd4200 /wd4201 /wd4244 /wd4100 /wd4267 /wd4701 /wd4703 /wd4389 /wd4005 /wd4996")
-    add_library(cyclonessl ${cyclonessl_c_files})
-
-endif()
 
 if(${memory_trace})
     add_definitions(-DGB_MEASURE_MEMORY_FOR_THIS -DGB_DEBUG_ALLOC)
@@ -181,10 +116,6 @@ if(MSVC)
             set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_OPENSSL")
             set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_OPENSSL")
         endif()
-        if(${use_cyclonessl})
-            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_CYCLONESSL")
-            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_CYCLONESSL")
-        endif()
         if(${use_wolfssl})
             set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_WOLFSSL")
             set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_WOLFSSL")
@@ -195,10 +126,6 @@ elseif(UNIX) #LINUX OR APPLE
     if(${use_openssl})
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_OPENSSL")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_OPENSSL")
-    endif()
-    if(${use_cyclonessl})
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_CYCLONESSL")
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_CYCLONESSL")
     endif()
     if(${use_wolfssl})
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_WOLFSSL")
@@ -284,12 +211,6 @@ if(${use_openssl})
         ./src/tlsio_openssl.c
         ./src/x509_openssl.c
     )
-endif()
-if(${use_cyclonessl} AND WIN32)
-    set(source_c_files ${source_c_files}
-        ./src/tlsio_cyclonessl.c
-        ./src/tlsio_cyclonessl_socket_bsd.c
-        )
 endif()
 if(${use_applessl})
     set(source_c_files ${source_c_files}
@@ -404,12 +325,6 @@ if(${use_openssl})
         ./inc/azure_c_shared_utility/x509_openssl.h
         )
 endif()
-if(${use_cyclonessl} AND WIN32)
-    set(source_h_files ${source_h_files}
-        ./inc/azure_c_shared_utility/tlsio_cyclonessl.h
-        ./inc/azure_c_shared_utility/tlsio_cyclonessl_socket.h
-    )
-endif()
 if(${use_applessl})
     set(source_h_files ${source_h_files}
         ./pal/ios-osx/tlsio_appleios.h
@@ -506,10 +421,6 @@ if(${use_wolfssl})
     else()
         set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} wolfssl)
     endif()
-endif()
-
-if(${use_cyclonessl} AND WIN32)
-    set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} cyclonessl)
 endif()
 
 if(${use_applessl})

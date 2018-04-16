@@ -1,6 +1,11 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+#error  CycloneSSL is NOT supported for the Azure C shared utilities.  
+#error  The code here is provided for reference purposes.
+#error  
+#error  A security audit is required if you attempt to bring this code back.
+
 #include <stdlib.h>
 
 #if _WIN32
