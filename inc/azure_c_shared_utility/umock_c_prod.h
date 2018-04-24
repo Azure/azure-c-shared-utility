@@ -10,6 +10,12 @@
     by adjusting the include paths).
 */
 
+#if defined(_DLL) && (defined(_WIN32) || defined(_WIN64))
+#define DLLEXPORT __declspec(dllexport)
+#else
+#define DLLEXPORT
+#endif
+
 #ifdef ENABLE_MOCKS
 
 /* Codes_SRS_UMOCK_C_LIB_01_001: [MOCKABLE_FUNCTION shall be used to wrap function definition allowing the user to declare a function that can be mocked.]*/
@@ -28,6 +34,6 @@
 /* Codes_SRS_UMOCK_C_LIB_01_005: [**If ENABLE_MOCKS is not defined, MOCKABLE_FUNCTION shall only generate a declaration for the function.] */
 /* Codes_SRS_UMOCK_C_LIB_01_001: [MOCKABLE_FUNCTION shall be used to wrap function definition allowing the user to declare a function that can be mocked.]*/
 #define MOCKABLE_FUNCTION(modifiers, result, function, ...) \
-    result modifiers function(IF(COUNT_ARG(__VA_ARGS__),,void) FOR_EACH_2_COUNTED(UMOCK_C_PROD_ARG_IN_SIGNATURE, __VA_ARGS__));
+	result modifiers function(IF(COUNT_ARG(__VA_ARGS__), , void) FOR_EACH_2_COUNTED(UMOCK_C_PROD_ARG_IN_SIGNATURE, __VA_ARGS__));
 
 #endif

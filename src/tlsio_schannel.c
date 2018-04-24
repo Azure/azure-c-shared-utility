@@ -28,17 +28,6 @@
 #include "azure_c_shared_utility/shared_util_options.h"
 #include "azure_c_shared_utility/gballoc.h"
 
-#define TLSIO_STATE_VALUES                        \
-    TLSIO_STATE_NOT_OPEN,                         \
-    TLSIO_STATE_OPENING_UNDERLYING_IO,            \
-    TLSIO_STATE_HANDSHAKE_CLIENT_HELLO_SENT,      \
-    TLSIO_STATE_HANDSHAKE_SERVER_HELLO_RECEIVED,  \
-    TLSIO_STATE_RENEGOTIATE,                      \
-    TLSIO_STATE_OPEN,                             \
-    TLSIO_STATE_CLOSING,                          \
-    TLSIO_STATE_ERROR
-
-DEFINE_ENUM(TLSIO_STATE, TLSIO_STATE_VALUES);
 DEFINE_ENUM_STRINGS(TLSIO_STATE, TLSIO_STATE_VALUES);
 
 typedef struct PENDING_SEND_TAG

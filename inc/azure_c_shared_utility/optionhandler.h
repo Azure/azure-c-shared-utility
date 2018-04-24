@@ -35,11 +35,11 @@ typedef void (*pfDestroyOption)(const char* name, const void* value);
 /*returns 0 if _SetOption succeeded, any other value is error, if the option is not intended for that module, returns 0*/
 typedef int (*pfSetOption)(void* handle, const char* name, const void* value);
 
-MOCKABLE_FUNCTION(, OPTIONHANDLER_HANDLE, OptionHandler_Create, pfCloneOption, cloneOption, pfDestroyOption, destroyOption, pfSetOption, setOption);
-MOCKABLE_FUNCTION(, OPTIONHANDLER_HANDLE, OptionHandler_Clone, OPTIONHANDLER_HANDLE, handler);
-MOCKABLE_FUNCTION(, OPTIONHANDLER_RESULT, OptionHandler_AddOption, OPTIONHANDLER_HANDLE, handle, const char*, name, const void*, value);
-MOCKABLE_FUNCTION(, OPTIONHANDLER_RESULT, OptionHandler_FeedOptions, OPTIONHANDLER_HANDLE, handle, void*, destinationHandle);
-MOCKABLE_FUNCTION(, void, OptionHandler_Destroy, OPTIONHANDLER_HANDLE, handle);
+DLLEXPORT MOCKABLE_FUNCTION(, OPTIONHANDLER_HANDLE, OptionHandler_Create, pfCloneOption, cloneOption, pfDestroyOption, destroyOption, pfSetOption, setOption);
+DLLEXPORT MOCKABLE_FUNCTION(, OPTIONHANDLER_HANDLE, OptionHandler_Clone, OPTIONHANDLER_HANDLE, handler);
+DLLEXPORT MOCKABLE_FUNCTION(, OPTIONHANDLER_RESULT, OptionHandler_AddOption, OPTIONHANDLER_HANDLE, handle, const char*, name, const void*, value);
+DLLEXPORT MOCKABLE_FUNCTION(, OPTIONHANDLER_RESULT, OptionHandler_FeedOptions, OPTIONHANDLER_HANDLE, handle, void*, destinationHandle);
+DLLEXPORT MOCKABLE_FUNCTION(, void, OptionHandler_Destroy, OPTIONHANDLER_HANDLE, handle);
 
 #ifdef __cplusplus
 }

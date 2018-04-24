@@ -12,10 +12,10 @@
 extern "C" {
 #endif /* __cplusplus */
 
-    MOCKABLE_FUNCTION(, int, platform_init);
-    MOCKABLE_FUNCTION(, void, platform_deinit);
-    MOCKABLE_FUNCTION(, const IO_INTERFACE_DESCRIPTION*, platform_get_default_tlsio);
-    MOCKABLE_FUNCTION(, STRING_HANDLE, platform_get_platform_info);
+    DLLEXPORT MOCKABLE_FUNCTION(, int, platform_init);
+    DLLEXPORT MOCKABLE_FUNCTION(, void, platform_deinit);
+	DLLEXPORT MOCKABLE_FUNCTION(, const IO_INTERFACE_DESCRIPTION*, platform_get_default_tlsio);
+    DLLEXPORT MOCKABLE_FUNCTION(, STRING_HANDLE, platform_get_platform_info);
 
 #ifdef __cplusplus
 }

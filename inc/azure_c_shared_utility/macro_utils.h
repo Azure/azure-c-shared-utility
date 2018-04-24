@@ -12566,13 +12566,19 @@ IF(X, "true", "false") => "true"
 #define IF0(trueBranch, falseBranch) falseBranch
 #define IF1(trueBranch, falseBranch) trueBranch
 
-
+#ifndef DLLEXPORT
+#if defined(_DLL) && (defined(_WIN32) || defined(_WIN64))
+#define DLLEXPORT __declspec(dllexport)
+#else
+#define DLLEXPORT
+#endif
+#endif
 
 #define DEFINE_ENUMERATION_CONSTANT(x) x,
 /*DEFINE_ENUM goes to header*/
 #define DEFINE_ENUM(enumName, ...) typedef enum C2(enumName, _TAG) { FOR_EACH_1(DEFINE_ENUMERATION_CONSTANT, __VA_ARGS__)} enumName; \
-    extern const char* C2(enumName,Strings)(enumName value); \
-    extern int C2(enumName, _FromString)(const char* enumAsString, enumName* destination);
+    DLLEXPORT const char* C2(enumName,Strings)(enumName value); \
+    DLLEXPORT int C2(enumName, _FromString)(const char* enumAsString, enumName* destination);
 
 
 #define DEFINE_ENUMERATION_CONSTANT_AS_WIDESTRING(x) C2(L, TOSTRING(x)) , 

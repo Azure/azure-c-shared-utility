@@ -40,7 +40,7 @@ extern "C" {
 
 DEFINE_ENUM(WS_FRAME_TYPE, WS_FRAME_TYPE_VALUES);
 
-MOCKABLE_FUNCTION(, BUFFER_HANDLE, uws_frame_encoder_encode, WS_FRAME_TYPE, opcode, const unsigned char*, payload, size_t, length, bool, is_masked, bool, is_final, unsigned char, reserved);
+DLLEXPORT MOCKABLE_FUNCTION(, BUFFER_HANDLE, uws_frame_encoder_encode, WS_FRAME_TYPE, opcode, const unsigned char*, payload, size_t, length, bool, is_masked, bool, is_final, unsigned char, reserved);
 
 #ifdef __cplusplus
 }

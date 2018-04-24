@@ -52,14 +52,14 @@ typedef struct HTTP_HEADERS_HANDLE_DATA_TAG* HTTP_HEADERS_HANDLE;
  *
  * @return	A HTTP_HEADERS_HANDLE representing the newly created collection of HTTP headers.
  */
-MOCKABLE_FUNCTION(, HTTP_HEADERS_HANDLE, HTTPHeaders_Alloc);
+DLLEXPORT MOCKABLE_FUNCTION(, HTTP_HEADERS_HANDLE, HTTPHeaders_Alloc);
 
 /**
  * @brief	De-allocates the data structures allocated by previous API calls to the same handle.
  *
  * @param	httpHeadersHandle	A valid @c HTTP_HEADERS_HANDLE value.
  */
-MOCKABLE_FUNCTION(, void, HTTPHeaders_Free, HTTP_HEADERS_HANDLE, httpHeadersHandle);
+DLLEXPORT MOCKABLE_FUNCTION(, void, HTTPHeaders_Free, HTTP_HEADERS_HANDLE, httpHeadersHandle);
 
 /**
  * @brief	Adds a header record from the @p name and @p value parameters.
@@ -80,7 +80,7 @@ MOCKABLE_FUNCTION(, void, HTTPHeaders_Free, HTTP_HEADERS_HANDLE, httpHeadersHand
  * @return	Returns @c HTTP_HEADERS_OK when execution is successful or an error code from
  * 			the ::HTTPAPIEX_RESULT enum.
  */
-MOCKABLE_FUNCTION(, HTTP_HEADERS_RESULT, HTTPHeaders_AddHeaderNameValuePair, HTTP_HEADERS_HANDLE, httpHeadersHandle, const char*, name, const char*, value);
+DLLEXPORT MOCKABLE_FUNCTION(, HTTP_HEADERS_RESULT, HTTPHeaders_AddHeaderNameValuePair, HTTP_HEADERS_HANDLE, httpHeadersHandle, const char*, name, const char*, value);
 
 /**
  * @brief	This API performs exactly the same as ::HTTPHeaders_AddHeaderNameValuePair
@@ -96,7 +96,7 @@ MOCKABLE_FUNCTION(, HTTP_HEADERS_RESULT, HTTPHeaders_AddHeaderNameValuePair, HTT
  * @return	Returns @c HTTP_HEADERS_OK when execution is successful or an error code from
  * 			the ::HTTPAPIEX_RESULT enum.
  */
-MOCKABLE_FUNCTION(, HTTP_HEADERS_RESULT, HTTPHeaders_ReplaceHeaderNameValuePair, HTTP_HEADERS_HANDLE, httpHeadersHandle, const char*, name, const char*, value);
+DLLEXPORT MOCKABLE_FUNCTION(, HTTP_HEADERS_RESULT, HTTPHeaders_ReplaceHeaderNameValuePair, HTTP_HEADERS_HANDLE, httpHeadersHandle, const char*, name, const char*, value);
 
 /**
  * @brief	Retrieves the value for a previously stored name.
@@ -107,7 +107,7 @@ MOCKABLE_FUNCTION(, HTTP_HEADERS_RESULT, HTTPHeaders_ReplaceHeaderNameValuePair,
  * @return	The return value points to a string that shall be @c strcmp equal
  * 			to the original stored string.
  */
-MOCKABLE_FUNCTION(, const char*, HTTPHeaders_FindHeaderValue, HTTP_HEADERS_HANDLE, httpHeadersHandle, const char*, name);
+DLLEXPORT MOCKABLE_FUNCTION(, const char*, HTTPHeaders_FindHeaderValue, HTTP_HEADERS_HANDLE, httpHeadersHandle, const char*, name);
 
 /**
  * @brief	This API retrieves the number of stored headers.
@@ -119,7 +119,7 @@ MOCKABLE_FUNCTION(, const char*, HTTPHeaders_FindHeaderValue, HTTP_HEADERS_HANDL
  * @return	Returns @c HTTP_HEADERS_OK when execution is successful or
  * 			@c HTTP_HEADERS_ERROR when an error occurs.
  */
-MOCKABLE_FUNCTION(, HTTP_HEADERS_RESULT, HTTPHeaders_GetHeaderCount, HTTP_HEADERS_HANDLE, httpHeadersHandle, size_t*, headersCount);
+DLLEXPORT MOCKABLE_FUNCTION(, HTTP_HEADERS_RESULT, HTTPHeaders_GetHeaderCount, HTTP_HEADERS_HANDLE, httpHeadersHandle, size_t*, headersCount);
 
 /**
  * @brief	This API retrieves the string name+": "+value for the header
@@ -136,7 +136,7 @@ MOCKABLE_FUNCTION(, HTTP_HEADERS_RESULT, HTTPHeaders_GetHeaderCount, HTTP_HEADER
  * @return	Returns @c HTTP_HEADERS_OK when execution is successful or
  * 			@c HTTP_HEADERS_ERROR when an error occurs.
  */
-MOCKABLE_FUNCTION(, HTTP_HEADERS_RESULT, HTTPHeaders_GetHeader, HTTP_HEADERS_HANDLE, handle, size_t, index, char**, destination);
+DLLEXPORT MOCKABLE_FUNCTION(, HTTP_HEADERS_RESULT, HTTPHeaders_GetHeader, HTTP_HEADERS_HANDLE, handle, size_t, index, char**, destination);
 
 /**
  * @brief	This API produces a clone of the @p handle parameter.
@@ -149,7 +149,7 @@ MOCKABLE_FUNCTION(, HTTP_HEADERS_RESULT, HTTPHeaders_GetHeader, HTTP_HEADERS_HAN
  * @return	A @c HTTP_HEADERS_HANDLE containing a cloned copy of the
  * 			contents of @p handle.
  */
-MOCKABLE_FUNCTION(, HTTP_HEADERS_HANDLE, HTTPHeaders_Clone, HTTP_HEADERS_HANDLE, handle);
+DLLEXPORT MOCKABLE_FUNCTION(, HTTP_HEADERS_HANDLE, HTTPHeaders_Clone, HTTP_HEADERS_HANDLE, handle);
 
 #ifdef __cplusplus
 }

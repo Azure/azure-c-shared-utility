@@ -37,7 +37,7 @@ extern "C" {
  *
  * @return	A @c STRING_HANDLE containing the base64 encoding of @p input.
  */
-MOCKABLE_FUNCTION(, STRING_HANDLE, Base64_Encoder, BUFFER_HANDLE, input);
+DLLEXPORT MOCKABLE_FUNCTION(, STRING_HANDLE, Base64_Encoder, BUFFER_HANDLE, input);
 
 /**
  * @brief	Base64 encodes the buffer pointed to by @p source and returns the resulting string.
@@ -57,7 +57,7 @@ MOCKABLE_FUNCTION(, STRING_HANDLE, Base64_Encoder, BUFFER_HANDLE, input);
  * 			of @p input.
  *
  */
-MOCKABLE_FUNCTION(, STRING_HANDLE, Base64_Encode_Bytes, const unsigned char*, source, size_t, size);
+DLLEXPORT MOCKABLE_FUNCTION(, STRING_HANDLE, Base64_Encode_Bytes, const unsigned char*, source, size_t, size);
 
 /**
  * @brief	Base64 decodes the buffer pointed to by @p source and returns the resulting buffer.
@@ -74,7 +74,7 @@ MOCKABLE_FUNCTION(, STRING_HANDLE, Base64_Encode_Bytes, const unsigned char*, so
  * @return	A @c BUFFER_HANDLE pointing to a buffer containing the result of base64 decoding @p
  * 			source.
  */
-MOCKABLE_FUNCTION(, BUFFER_HANDLE, Base64_Decoder, const char*, source);
+DLLEXPORT MOCKABLE_FUNCTION(, BUFFER_HANDLE, Base64_Decoder, const char*, source);
 
 #ifdef __cplusplus
 }

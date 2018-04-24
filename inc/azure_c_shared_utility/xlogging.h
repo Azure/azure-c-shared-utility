@@ -142,7 +142,7 @@ extern LOGGER_LOG_GETLASTERROR xlogging_get_log_function_GetLastError(void);
 extern void LogBinary(const char* comment, const void* data, size_t size);
 
 extern void xlogging_set_log_function(LOGGER_LOG log_function);
-extern LOGGER_LOG xlogging_get_log_function(void);
+extern DLLEXPORT LOGGER_LOG xlogging_get_log_function(void);
 
 #endif /* NOT ESP8266_RTOS */
 

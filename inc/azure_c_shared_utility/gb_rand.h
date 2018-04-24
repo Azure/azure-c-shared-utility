@@ -10,7 +10,7 @@
 extern "C" {
 #endif
 
-MOCKABLE_FUNCTION(, int, gb_rand);
+DLLEXPORT MOCKABLE_FUNCTION(, int, gb_rand);
 
 #ifdef __cplusplus
 }

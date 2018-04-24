@@ -11,6 +11,18 @@ project(azure_c_shared_utility)
 
 FILE(READ ${CMAKE_CURRENT_LIST_DIR}/version.txt C_SHARED_VERSION)
 
+set(CMAKE_MATCH_3 "")
+
+string(REGEX MATCH "^([0-9]+)[\\.]([0-9]+)[\\.]([0-9]+)" temp "${C_SHARED_VERSION}")
+
+if (NOT CMAKE_MATCH_3 STREQUAL "")
+	set (C_SHARED_VERSION_MAJOR "${CMAKE_MATCH_1}")
+    set (C_SHARED_VERSION_MINOR "${CMAKE_MATCH_2}")
+    set (C_SHARED_VERSION_FIX "${CMAKE_MATCH_3}")
+else ()
+    message(FATAL_ERROR "Unable to find version in ${C_SHARED_VERSION}")
+endif()
+
 # Include the common build rules for the C SDK
 include(configs/azure_iot_build_rules.cmake)
 
@@ -353,8 +365,12 @@ endif()
 
 if(${build_as_dynamic})
     #make sure we can link as dll/so
-    add_library(aziotsharedutil_dll SHARED ./src/aziotsharedutil.def ${source_c_files} ${source_h_files})
-    set_target_properties(aziotsharedutil_dll PROPERTIES OUTPUT_NAME "aziotsharedutil")
+    add_library(aziotsharedutil_dll SHARED ${source_c_files} ${source_h_files})
+    set_target_properties(aziotsharedutil_dll PROPERTIES 
+		ARCHIVE_OUTPUT_NAME "aziotsharedutil_dll_import"
+		VERSION ${C_SHARED_VERSION}
+		SOVERSION ${C_SHARED_VERSION_MAJOR}
+		OUTPUT_NAME "aziotsharedutil")
 endif()
 
 set(aziotsharedutil_target_libs)
@@ -490,6 +506,13 @@ endif()
 # Set CMAKE_INSTALL_* if not defined
 include(GNUInstallDirs)
 
+    
+if(${build_as_dynamic})
+    set(targets aziotsharedutil aziotsharedutil_dll)
+else(${build_as_dynamic})
+    set(targets aziotsharedutil)
+endif(${build_as_dynamic})
+    
 if(${use_installed_dependencies})
 
     if(NOT DEFINED CMAKE_INSTALL_LIBDIR)
@@ -498,13 +521,7 @@ if(${use_installed_dependencies})
 
     # Install Azure C Shared Utility
     set(package_location "cmake")
-    
-    if(${build_as_dynamic})
-        set(targets aziotsharedutil aziotsharedutil_dll)
-    else(${build_as_dynamic})
-        set(targets aziotsharedutil)
-    endif(${build_as_dynamic})
-    
+
     install (TARGETS ${targets} EXPORT aziotsharedutilTargets
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
@@ -542,12 +559,9 @@ if(${use_installed_dependencies})
             ${package_location}
     )
 else()
-    set(install_staticlibs
-        aziotsharedutil
-    )
     install(FILES ${source_h_files}
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azure_c_shared_utility) 
-    install(TARGETS ${install_staticlibs} 
+    install(TARGETS ${targets} 
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
 endif()
