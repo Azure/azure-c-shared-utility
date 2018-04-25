@@ -10,12 +10,6 @@
     by adjusting the include paths).
 */
 
-#if defined(_DLL) && (defined(_WIN32) || defined(_WIN64))
-#define DLLEXPORT __declspec(dllexport)
-#else
-#define DLLEXPORT
-#endif
-
 #ifdef ENABLE_MOCKS
 
 /* Codes_SRS_UMOCK_C_LIB_01_001: [MOCKABLE_FUNCTION shall be used to wrap function definition allowing the user to declare a function that can be mocked.]*/
