@@ -368,6 +368,7 @@ if(${build_as_dynamic})
     add_library(aziotsharedutil_dll SHARED ${source_c_files} ${source_h_files})
     set_target_properties(aziotsharedutil_dll PROPERTIES 
 		ARCHIVE_OUTPUT_NAME "aziotsharedutil_dll_import"
+        PDB_NAME "aziotsharedutil_dll"
 		VERSION ${C_SHARED_VERSION}
 		SOVERSION ${C_SHARED_VERSION_MAJOR}
 		OUTPUT_NAME "aziotsharedutil")
