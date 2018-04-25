@@ -11,7 +11,7 @@
 extern "C" {
 #endif
 
-    MOCKABLE_FUNCTION(, int, hmac, SHAversion, whichSha, const unsigned char *, text, int, text_len,
+    DLLEXPORT MOCKABLE_FUNCTION(, int, hmac, SHAversion, whichSha, const unsigned char *, text, int, text_len,
     const unsigned char *, key, int, key_len,
     uint8_t, digest[USHAMaxHashSize]);
 
