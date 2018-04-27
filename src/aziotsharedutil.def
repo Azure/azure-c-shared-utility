@@ -19,10 +19,10 @@ EXPORTS
     Base64_Decoder
     Base64_Encoder
     Base64_Encode_Bytes
-	Base32_Decode
-	Base32_Decode_String
-	Base32_Encode
-	Base32_Encode_Bytes
+    Base32_Decode
+    Base32_Decode_String
+    Base32_Encode
+    Base32_Encode_Bytes
     COND_RESULTStringStorage
     COND_RESULTStrings
     COND_RESULT_FromString
@@ -169,6 +169,8 @@ EXPORTS
     UNIQUEID_RESULT_FromString
     URL_Encode
     URL_EncodeString
+    URL_Decode
+    URL_DecodeString
     USHABlockSize
     USHAFinalBits
     USHAHashSize
@@ -208,7 +210,7 @@ EXPORTS
     gballoc_malloc
     gballoc_realloc
     gbnetwork_init
-	gbnetwork_deinit
+    gbnetwork_deinit
     get_ctime
     get_difftime
     get_gmtime
