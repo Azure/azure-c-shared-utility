@@ -23,7 +23,7 @@ extern "C" {
 *
 * @return   A base32 encoded STRING_HANDLE that will need to be deallocated
 */
-MOCKABLE_FUNCTION(, STRING_HANDLE, Base32_Encode, BUFFER_HANDLE, input);
+DLLEXPORT MOCKABLE_FUNCTION(, STRING_HANDLE, Base32_Encode, BUFFER_HANDLE, input);
 
 /**
 * @brief    Encodes the BUFFER_HANDLE to a base 32 char*
@@ -33,7 +33,7 @@ MOCKABLE_FUNCTION(, STRING_HANDLE, Base32_Encode, BUFFER_HANDLE, input);
 *
 * @return   A base32 encoded string that will need to be deallocated
 */
-MOCKABLE_FUNCTION(, char*, Base32_Encode_Bytes, const unsigned char*, source, size_t, size);
+DLLEXPORT MOCKABLE_FUNCTION(, char*, Base32_Encode_Bytes, const unsigned char*, source, size_t, size);
 
 /**
 * @brief    Decodes a base32 encoded STRING_HANDLE to a BUFFER_HANDLE
@@ -42,7 +42,7 @@ MOCKABLE_FUNCTION(, char*, Base32_Encode_Bytes, const unsigned char*, source, si
 *
 * @return   A BUFFER_HANDLE of the result of decoding the handle
 */
-MOCKABLE_FUNCTION(, BUFFER_HANDLE, Base32_Decode, STRING_HANDLE, handle);
+DLLEXPORT MOCKABLE_FUNCTION(, BUFFER_HANDLE, Base32_Decode, STRING_HANDLE, handle);
 
 /**
 * @brief    Decodes a base32 encoded char* to a BUFFER_HANDLE
@@ -51,7 +51,7 @@ MOCKABLE_FUNCTION(, BUFFER_HANDLE, Base32_Decode, STRING_HANDLE, handle);
 *
 * @return   A BUFFER_HANDLE of the result of decoding the source
 */
-MOCKABLE_FUNCTION(, BUFFER_HANDLE, Base32_Decode_String, const char*, source);
+DLLEXPORT MOCKABLE_FUNCTION(, BUFFER_HANDLE, Base32_Decode_String, const char*, source);
 
 #ifdef __cplusplus
 }

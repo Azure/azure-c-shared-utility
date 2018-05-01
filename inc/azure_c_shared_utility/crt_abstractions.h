@@ -107,9 +107,9 @@ extern long double strtold_s(const char* nptr, char** endPtr);
 #define stricmp _stricmp
 #endif // _MSC_VER
 
-MOCKABLE_FUNCTION(, int, mallocAndStrcpy_s, char**, destination, const char*, source);
-MOCKABLE_FUNCTION(, int, unsignedIntToString, char*, destination, size_t, destinationSize, unsigned int, value);
-MOCKABLE_FUNCTION(, int, size_tToString, char*, destination, size_t, destinationSize, size_t, value);
+DLLEXPORT MOCKABLE_FUNCTION(, int, mallocAndStrcpy_s, char**, destination, const char*, source);
+DLLEXPORT MOCKABLE_FUNCTION(, int, unsignedIntToString, char*, destination, size_t, destinationSize, unsigned int, value);
+DLLEXPORT MOCKABLE_FUNCTION(, int, size_tToString, char*, destination, size_t, destinationSize, size_t, value);
 
 /*following logic shall define the TOUPPER and ISDIGIT, we do that because the SDK is not happy with some Arduino implementation of it.*/
 #define TOUPPER(c)      ((((c)>='a') && ((c)<='z'))?(c)-'a'+'A':c)

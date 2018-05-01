@@ -53,14 +53,14 @@ typedef int (*MAP_FILTER_CALLBACK)(const char* mapProperty, const char* mapValue
  *
  * @return  A valid @c MAP_HANDLE or @c NULL in case an error occurs.
  */
-MOCKABLE_FUNCTION(, MAP_HANDLE, Map_Create, MAP_FILTER_CALLBACK, mapFilterFunc);
+DLLEXPORT MOCKABLE_FUNCTION(, MAP_HANDLE, Map_Create, MAP_FILTER_CALLBACK, mapFilterFunc);
 
 /**
  * @brief   Release all resources associated with the map.
  *
  * @param   handle  The handle to an existing map.
  */
-MOCKABLE_FUNCTION(, void, Map_Destroy, MAP_HANDLE, handle);
+DLLEXPORT MOCKABLE_FUNCTION(, void, Map_Destroy, MAP_HANDLE, handle);
 
 /**
  * @brief   Creates a copy of the map indicated by @p handle and returns a
@@ -71,7 +71,7 @@ MOCKABLE_FUNCTION(, void, Map_Destroy, MAP_HANDLE, handle);
  * @return  A valid @c MAP_HANDLE to the cloned copy of the map or @c NULL
  *          in case an error occurs.
  */
-MOCKABLE_FUNCTION(, MAP_HANDLE, Map_Clone, MAP_HANDLE, handle);
+DLLEXPORT MOCKABLE_FUNCTION(, MAP_HANDLE, Map_Clone, MAP_HANDLE, handle);
 
 /**
  * @brief   Adds a key/value pair to the map.
@@ -95,7 +95,7 @@ MOCKABLE_FUNCTION(, MAP_HANDLE, Map_Clone, MAP_HANDLE, handle);
  *          the new key is added to the map the function returns @c MAP_ERROR.
  *          If everything goes well then @c MAP_OK is returned.
  */
-MOCKABLE_FUNCTION(, MAP_RESULT, Map_Add, MAP_HANDLE, handle, const char*, key, const char*, value);
+DLLEXPORT MOCKABLE_FUNCTION(, MAP_RESULT, Map_Add, MAP_HANDLE, handle, const char*, key, const char*, value);
 
 /**
  * @brief   Adds/updates a key/value pair to the map.
@@ -120,7 +120,7 @@ MOCKABLE_FUNCTION(, MAP_RESULT, Map_Add, MAP_HANDLE, handle, const char*, key, c
  *          added/updated in the map the function returns @c MAP_ERROR. If
  *          everything goes well then @c MAP_OK is returned.
  */
-MOCKABLE_FUNCTION(, MAP_RESULT, Map_AddOrUpdate, MAP_HANDLE, handle, const char*, key, const char*, value);
+DLLEXPORT MOCKABLE_FUNCTION(, MAP_RESULT, Map_AddOrUpdate, MAP_HANDLE, handle, const char*, key, const char*, value);
 
 /**
  * @brief   Removes a key and its associated value from the map.
@@ -131,7 +131,7 @@ MOCKABLE_FUNCTION(, MAP_RESULT, Map_AddOrUpdate, MAP_HANDLE, handle, const char*
  * @return  Returns @c MAP_OK if the key was deleted successfully or an
  *          error code otherwise.
  */
-MOCKABLE_FUNCTION(, MAP_RESULT, Map_Delete, MAP_HANDLE, handle, const char*, key);
+DLLEXPORT MOCKABLE_FUNCTION(, MAP_RESULT, Map_Delete, MAP_HANDLE, handle, const char*, key);
 
 /**
  * @brief   This function returns a boolean value in @p keyExists if the map
@@ -146,7 +146,7 @@ MOCKABLE_FUNCTION(, MAP_RESULT, Map_Delete, MAP_HANDLE, handle, const char*, key
  * @return  Returns @c MAP_OK if the check was performed successfully or an
  *          error code otherwise.
  */
-MOCKABLE_FUNCTION(, MAP_RESULT, Map_ContainsKey, MAP_HANDLE, handle, const char*, key, bool*, keyExists);
+DLLEXPORT MOCKABLE_FUNCTION(, MAP_RESULT, Map_ContainsKey, MAP_HANDLE, handle, const char*, key, bool*, keyExists);
 
 /**
  * @brief   This function returns @c true in @p valueExists if at
@@ -162,7 +162,7 @@ MOCKABLE_FUNCTION(, MAP_RESULT, Map_ContainsKey, MAP_HANDLE, handle, const char*
  * @return  Returns @c MAP_OK if the check was performed successfully or an
  *          error code otherwise.
  */
-MOCKABLE_FUNCTION(, MAP_RESULT, Map_ContainsValue, MAP_HANDLE, handle, const char*, value, bool*, valueExists);
+DLLEXPORT MOCKABLE_FUNCTION(, MAP_RESULT, Map_ContainsValue, MAP_HANDLE, handle, const char*, value, bool*, valueExists);
 
 /**
  * @brief   Retrieves the value of a stored key.
@@ -174,7 +174,7 @@ MOCKABLE_FUNCTION(, MAP_RESULT, Map_ContainsValue, MAP_HANDLE, handle, const cha
  *          requested key is not found in the map. Returns a pointer to the
  *          key's value otherwise.
  */
-MOCKABLE_FUNCTION(, const char*, Map_GetValueFromKey, MAP_HANDLE, handle, const char*, key);
+DLLEXPORT MOCKABLE_FUNCTION(, const char*, Map_GetValueFromKey, MAP_HANDLE, handle, const char*, key);
 
 /**
  * @brief   Retrieves the complete list of keys and values from the map
@@ -190,10 +190,10 @@ MOCKABLE_FUNCTION(, const char*, Map_GetValueFromKey, MAP_HANDLE, handle, const 
  * @return  Returns @c MAP_OK if the keys and values are retrieved and written
  *          successfully or an error code otherwise.
  */
-MOCKABLE_FUNCTION(, MAP_RESULT, Map_GetInternals, MAP_HANDLE, handle, const char*const**, keys, const char*const**, values, size_t*, count);
+DLLEXPORT MOCKABLE_FUNCTION(, MAP_RESULT, Map_GetInternals, MAP_HANDLE, handle, const char*const**, keys, const char*const**, values, size_t*, count);
 
 /*this API creates a JSON object from the content of the map*/
-MOCKABLE_FUNCTION(, STRING_HANDLE, Map_ToJSON, MAP_HANDLE, handle);
+DLLEXPORT MOCKABLE_FUNCTION(, STRING_HANDLE, Map_ToJSON, MAP_HANDLE, handle);
 
 #ifdef __cplusplus
 }

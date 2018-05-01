@@ -15,9 +15,9 @@ extern "C" {
 
 typedef struct X509_SCHANNEL_HANDLE_DATA_TAG* X509_SCHANNEL_HANDLE;
 
-MOCKABLE_FUNCTION(, X509_SCHANNEL_HANDLE, x509_schannel_create, const char*, x509certificate, const char*, x509privatekey);
-MOCKABLE_FUNCTION(, void, x509_schannel_destroy, X509_SCHANNEL_HANDLE, x509_schannel_handle);
-MOCKABLE_FUNCTION(, PCCERT_CONTEXT, x509_schannel_get_certificate_context, X509_SCHANNEL_HANDLE, x509_schannel_handle);
+DLLEXPORT MOCKABLE_FUNCTION(, X509_SCHANNEL_HANDLE, x509_schannel_create, const char*, x509certificate, const char*, x509privatekey);
+DLLEXPORT MOCKABLE_FUNCTION(, void, x509_schannel_destroy, X509_SCHANNEL_HANDLE, x509_schannel_handle);
+DLLEXPORT MOCKABLE_FUNCTION(, PCCERT_CONTEXT, x509_schannel_get_certificate_context, X509_SCHANNEL_HANDLE, x509_schannel_handle);
 
 #ifdef __cplusplus
 }

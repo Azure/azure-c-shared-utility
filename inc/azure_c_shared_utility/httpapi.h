@@ -80,10 +80,10 @@ DEFINE_ENUM(HTTPAPI_REQUEST_TYPE, HTTPAPI_REQUEST_TYPE_VALUES);
  * @return	@c HTTPAPI_OK if initialization is successful or an error
  * 			code in case it fails.
  */
-MOCKABLE_FUNCTION(, HTTPAPI_RESULT, HTTPAPI_Init);
+DLLEXPORT MOCKABLE_FUNCTION(, HTTPAPI_RESULT, HTTPAPI_Init);
 
 /** @brief	Free resources allocated in ::HTTPAPI_Init. */
-MOCKABLE_FUNCTION(, void, HTTPAPI_Deinit);
+DLLEXPORT MOCKABLE_FUNCTION(, void, HTTPAPI_Deinit);
 
 /**
  * @brief	Creates an HTTPS connection to the host specified by the @p
@@ -98,7 +98,7 @@ MOCKABLE_FUNCTION(, void, HTTPAPI_Deinit);
  * @return	A @c HTTP_HANDLE to the newly created connection or @c NULL in
  * 			case an error occurs.
  */
-MOCKABLE_FUNCTION(, HTTP_HANDLE, HTTPAPI_CreateConnection, const char*, hostName);
+DLLEXPORT MOCKABLE_FUNCTION(, HTTP_HANDLE, HTTPAPI_CreateConnection, const char*, hostName);
 
 /**
  * @brief	Closes a connection created with ::HTTPAPI_CreateConnection.
@@ -108,7 +108,7 @@ MOCKABLE_FUNCTION(, HTTP_HANDLE, HTTPAPI_CreateConnection, const char*, hostName
  * 			All resources allocated by ::HTTPAPI_CreateConnection should be
  * 			freed in ::HTTPAPI_CloseConnection.
  */
-MOCKABLE_FUNCTION(, void, HTTPAPI_CloseConnection, HTTP_HANDLE, handle);
+DLLEXPORT MOCKABLE_FUNCTION(, void, HTTPAPI_CloseConnection, HTTP_HANDLE, handle);
 
 /**
  * @brief	Sends the HTTP request to the host and handles the response for
@@ -158,7 +158,7 @@ MOCKABLE_FUNCTION(, void, HTTPAPI_CloseConnection, HTTP_HANDLE, handle);
  * @return	@c HTTPAPI_OK if the API call is successful or an error
  * 			code in case it fails.
  */
-MOCKABLE_FUNCTION(, HTTPAPI_RESULT, HTTPAPI_ExecuteRequest, HTTP_HANDLE, handle, HTTPAPI_REQUEST_TYPE, requestType, const char*, relativePath,
+DLLEXPORT MOCKABLE_FUNCTION(, HTTPAPI_RESULT, HTTPAPI_ExecuteRequest, HTTP_HANDLE, handle, HTTPAPI_REQUEST_TYPE, requestType, const char*, relativePath,
                                              HTTP_HEADERS_HANDLE, httpHeadersHandle, const unsigned char*, content,
                                              size_t, contentLength, unsigned int*, statusCode,
                                              HTTP_HEADERS_HANDLE, responseHeadersHandle, BUFFER_HANDLE, responseContent);
@@ -176,7 +176,7 @@ MOCKABLE_FUNCTION(, HTTPAPI_RESULT, HTTPAPI_ExecuteRequest, HTTP_HANDLE, handle,
  * @return	@c HTTPAPI_OK if initialization is successful or an error
  * 			code in case it fails.
  */
-MOCKABLE_FUNCTION(, HTTPAPI_RESULT, HTTPAPI_SetOption, HTTP_HANDLE, handle, const char*, optionName, const void*, value);
+DLLEXPORT MOCKABLE_FUNCTION(, HTTPAPI_RESULT, HTTPAPI_SetOption, HTTP_HANDLE, handle, const char*, optionName, const void*, value);
 
 /**
  * @brief	Clones the option named @p optionName bearing the value @p value
@@ -191,7 +191,7 @@ MOCKABLE_FUNCTION(, HTTPAPI_RESULT, HTTPAPI_SetOption, HTTP_HANDLE, handle, cons
  * @return	@c HTTPAPI_OK if initialization is successful or an error
  * 			code in case it fails.
  */
-MOCKABLE_FUNCTION(, HTTPAPI_RESULT, HTTPAPI_CloneOption, const char*, optionName, const void*, value, const void**, savedValue);
+DLLEXPORT MOCKABLE_FUNCTION(, HTTPAPI_RESULT, HTTPAPI_CloneOption, const char*, optionName, const void*, value, const void**, savedValue);
 
 #ifdef __cplusplus
 }

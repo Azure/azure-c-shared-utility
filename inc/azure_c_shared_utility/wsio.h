@@ -26,7 +26,7 @@ typedef struct WSIO_CONFIG_TAG
     const char* protocol;
 } WSIO_CONFIG;
 
-MOCKABLE_FUNCTION(, const IO_INTERFACE_DESCRIPTION*, wsio_get_interface_description);
+DLLEXPORT MOCKABLE_FUNCTION(, const IO_INTERFACE_DESCRIPTION*, wsio_get_interface_description);
 
 #ifdef __cplusplus
 }

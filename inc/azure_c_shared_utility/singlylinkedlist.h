@@ -38,16 +38,16 @@ typedef bool (*LIST_CONDITION_FUNCTION)(const void* item, const void* match_cont
 */
 typedef void (*LIST_ACTION_FUNCTION)(const void* item, const void* action_context, bool* continue_processing);
 
-MOCKABLE_FUNCTION(, SINGLYLINKEDLIST_HANDLE, singlylinkedlist_create);
-MOCKABLE_FUNCTION(, void, singlylinkedlist_destroy, SINGLYLINKEDLIST_HANDLE, list);
-MOCKABLE_FUNCTION(, LIST_ITEM_HANDLE, singlylinkedlist_add, SINGLYLINKEDLIST_HANDLE, list, const void*, item);
-MOCKABLE_FUNCTION(, int, singlylinkedlist_remove, SINGLYLINKEDLIST_HANDLE, list, LIST_ITEM_HANDLE, item_handle);
-MOCKABLE_FUNCTION(, LIST_ITEM_HANDLE, singlylinkedlist_get_head_item, SINGLYLINKEDLIST_HANDLE, list);
-MOCKABLE_FUNCTION(, LIST_ITEM_HANDLE, singlylinkedlist_get_next_item, LIST_ITEM_HANDLE, item_handle);
-MOCKABLE_FUNCTION(, LIST_ITEM_HANDLE, singlylinkedlist_find, SINGLYLINKEDLIST_HANDLE, list, LIST_MATCH_FUNCTION, match_function, const void*, match_context);
-MOCKABLE_FUNCTION(, const void*, singlylinkedlist_item_get_value, LIST_ITEM_HANDLE, item_handle);
-MOCKABLE_FUNCTION(, int, singlylinkedlist_remove_if, SINGLYLINKEDLIST_HANDLE, list, LIST_CONDITION_FUNCTION, condition_function, const void*, match_context);
-MOCKABLE_FUNCTION(, int, singlylinkedlist_foreach, SINGLYLINKEDLIST_HANDLE, list, LIST_ACTION_FUNCTION, action_function, const void*, action_context);
+DLLEXPORT MOCKABLE_FUNCTION(, SINGLYLINKEDLIST_HANDLE, singlylinkedlist_create);
+DLLEXPORT MOCKABLE_FUNCTION(, void, singlylinkedlist_destroy, SINGLYLINKEDLIST_HANDLE, list);
+DLLEXPORT MOCKABLE_FUNCTION(, LIST_ITEM_HANDLE, singlylinkedlist_add, SINGLYLINKEDLIST_HANDLE, list, const void*, item);
+DLLEXPORT MOCKABLE_FUNCTION(, int, singlylinkedlist_remove, SINGLYLINKEDLIST_HANDLE, list, LIST_ITEM_HANDLE, item_handle);
+DLLEXPORT MOCKABLE_FUNCTION(, LIST_ITEM_HANDLE, singlylinkedlist_get_head_item, SINGLYLINKEDLIST_HANDLE, list);
+DLLEXPORT MOCKABLE_FUNCTION(, LIST_ITEM_HANDLE, singlylinkedlist_get_next_item, LIST_ITEM_HANDLE, item_handle);
+DLLEXPORT MOCKABLE_FUNCTION(, LIST_ITEM_HANDLE, singlylinkedlist_find, SINGLYLINKEDLIST_HANDLE, list, LIST_MATCH_FUNCTION, match_function, const void*, match_context);
+DLLEXPORT MOCKABLE_FUNCTION(, const void*, singlylinkedlist_item_get_value, LIST_ITEM_HANDLE, item_handle);
+DLLEXPORT MOCKABLE_FUNCTION(, int, singlylinkedlist_remove_if, SINGLYLINKEDLIST_HANDLE, list, LIST_CONDITION_FUNCTION, condition_function, const void*, match_context);
+DLLEXPORT MOCKABLE_FUNCTION(, int, singlylinkedlist_foreach, SINGLYLINKEDLIST_HANDLE, list, LIST_ACTION_FUNCTION, action_function, const void*, action_context);
 
 #ifdef __cplusplus
 }

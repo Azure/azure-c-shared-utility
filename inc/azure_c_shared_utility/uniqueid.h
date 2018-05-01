@@ -22,7 +22,7 @@ extern "C" {
 
     DEFINE_ENUM(UNIQUEID_RESULT, UNIQUEID_RESULT_VALUES)
 
-        MOCKABLE_FUNCTION(, UNIQUEID_RESULT, UniqueId_Generate, char*, uid, size_t, bufferSize);
+        DLLEXPORT MOCKABLE_FUNCTION(, UNIQUEID_RESULT, UniqueId_Generate, char*, uid, size_t, bufferSize);
 
 #ifdef __cplusplus
 }

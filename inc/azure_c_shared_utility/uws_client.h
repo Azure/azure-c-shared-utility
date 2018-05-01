@@ -98,17 +98,17 @@ typedef struct WS_PROTOCOL_TAG
     const char* protocol;
 } WS_PROTOCOL;
 
-MOCKABLE_FUNCTION(, UWS_CLIENT_HANDLE, uws_client_create, const char*, hostname, unsigned int, port, const char*, resource_name, bool, use_ssl, const WS_PROTOCOL*, protocols, size_t, protocol_count);
-MOCKABLE_FUNCTION(, UWS_CLIENT_HANDLE, uws_client_create_with_io, const IO_INTERFACE_DESCRIPTION*, io_interface, void*, io_create_parameters, const char*, hostname, unsigned int, port, const char*, resource_name, const WS_PROTOCOL*, protocols, size_t, protocol_count)
-MOCKABLE_FUNCTION(, void, uws_client_destroy, UWS_CLIENT_HANDLE, uws_client);
-MOCKABLE_FUNCTION(, int, uws_client_open_async, UWS_CLIENT_HANDLE, uws_client, ON_WS_OPEN_COMPLETE, on_ws_open_complete, void*, on_ws_open_complete_context, ON_WS_FRAME_RECEIVED, on_ws_frame_received, void*, on_ws_frame_received_context, ON_WS_PEER_CLOSED, on_ws_peer_closed, void*, on_ws_peer_closed_context, ON_WS_ERROR, on_ws_error, void*, on_ws_error_context);
-MOCKABLE_FUNCTION(, int, uws_client_close_async, UWS_CLIENT_HANDLE, uws_client, ON_WS_CLOSE_COMPLETE, on_ws_close_complete, void*, on_ws_close_complete_context);
-MOCKABLE_FUNCTION(, int, uws_client_close_handshake_async, UWS_CLIENT_HANDLE, uws_client, uint16_t, close_code, const char*, close_reason, ON_WS_CLOSE_COMPLETE, on_ws_close_complete, void*, on_ws_close_complete_context);
-MOCKABLE_FUNCTION(, int, uws_client_send_frame_async, UWS_CLIENT_HANDLE, uws_client, unsigned char, frame_type, const unsigned char*, buffer, size_t, size, bool, is_final, ON_WS_SEND_FRAME_COMPLETE, on_ws_send_frame_complete, void*, callback_context);
-MOCKABLE_FUNCTION(, void, uws_client_dowork, UWS_CLIENT_HANDLE, uws_client);
+DLLEXPORT MOCKABLE_FUNCTION(, UWS_CLIENT_HANDLE, uws_client_create, const char*, hostname, unsigned int, port, const char*, resource_name, bool, use_ssl, const WS_PROTOCOL*, protocols, size_t, protocol_count);
+DLLEXPORT MOCKABLE_FUNCTION(, UWS_CLIENT_HANDLE, uws_client_create_with_io, const IO_INTERFACE_DESCRIPTION*, io_interface, void*, io_create_parameters, const char*, hostname, unsigned int, port, const char*, resource_name, const WS_PROTOCOL*, protocols, size_t, protocol_count)
+DLLEXPORT MOCKABLE_FUNCTION(, void, uws_client_destroy, UWS_CLIENT_HANDLE, uws_client);
+DLLEXPORT MOCKABLE_FUNCTION(, int, uws_client_open_async, UWS_CLIENT_HANDLE, uws_client, ON_WS_OPEN_COMPLETE, on_ws_open_complete, void*, on_ws_open_complete_context, ON_WS_FRAME_RECEIVED, on_ws_frame_received, void*, on_ws_frame_received_context, ON_WS_PEER_CLOSED, on_ws_peer_closed, void*, on_ws_peer_closed_context, ON_WS_ERROR, on_ws_error, void*, on_ws_error_context);
+DLLEXPORT MOCKABLE_FUNCTION(, int, uws_client_close_async, UWS_CLIENT_HANDLE, uws_client, ON_WS_CLOSE_COMPLETE, on_ws_close_complete, void*, on_ws_close_complete_context);
+DLLEXPORT MOCKABLE_FUNCTION(, int, uws_client_close_handshake_async, UWS_CLIENT_HANDLE, uws_client, uint16_t, close_code, const char*, close_reason, ON_WS_CLOSE_COMPLETE, on_ws_close_complete, void*, on_ws_close_complete_context);
+DLLEXPORT MOCKABLE_FUNCTION(, int, uws_client_send_frame_async, UWS_CLIENT_HANDLE, uws_client, unsigned char, frame_type, const unsigned char*, buffer, size_t, size, bool, is_final, ON_WS_SEND_FRAME_COMPLETE, on_ws_send_frame_complete, void*, callback_context);
+DLLEXPORT MOCKABLE_FUNCTION(, void, uws_client_dowork, UWS_CLIENT_HANDLE, uws_client);
 
-MOCKABLE_FUNCTION(, int, uws_client_set_option, UWS_CLIENT_HANDLE, uws_client, const char*, option_name, const void*, value);
-MOCKABLE_FUNCTION(, OPTIONHANDLER_HANDLE, uws_client_retrieve_options, UWS_CLIENT_HANDLE, uws_client);
+DLLEXPORT MOCKABLE_FUNCTION(, int, uws_client_set_option, UWS_CLIENT_HANDLE, uws_client, const char*, option_name, const void*, value);
+DLLEXPORT MOCKABLE_FUNCTION(, OPTIONHANDLER_HANDLE, uws_client_retrieve_options, UWS_CLIENT_HANDLE, uws_client);
 
 #ifdef __cplusplus
 }

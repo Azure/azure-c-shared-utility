@@ -22,8 +22,8 @@ extern "C" {
     *
     * @return   Returns a STRING_HANDLE with the encoded string, or NULL on failure.
     */
-    MOCKABLE_FUNCTION(, STRING_HANDLE, URL_Encode, STRING_HANDLE, input);
-    MOCKABLE_FUNCTION(, STRING_HANDLE, URL_EncodeString, const char*, textEncode);
+    DLLEXPORT MOCKABLE_FUNCTION(, STRING_HANDLE, URL_Encode, STRING_HANDLE, input);
+    DLLEXPORT MOCKABLE_FUNCTION(, STRING_HANDLE, URL_EncodeString, const char*, textEncode);
 
     /* @brief   URL Decode (aka percent decode) a string.
     * Please note that the URL decoder only supports decoding characters that fall within the
@@ -34,8 +34,8 @@ extern "C" {
     *
     * @return   Returns a STRING_HANDLE with the decoded string, or NULL on failure.
     */
-    MOCKABLE_FUNCTION(, STRING_HANDLE, URL_Decode, STRING_HANDLE, input);
-    MOCKABLE_FUNCTION(, STRING_HANDLE, URL_DecodeString, const char*, textDecode);
+    DLLEXPORT MOCKABLE_FUNCTION(, STRING_HANDLE, URL_Decode, STRING_HANDLE, input);
+    DLLEXPORT MOCKABLE_FUNCTION(, STRING_HANDLE, URL_DecodeString, const char*, textDecode);
 
 #ifdef __cplusplus
 }
