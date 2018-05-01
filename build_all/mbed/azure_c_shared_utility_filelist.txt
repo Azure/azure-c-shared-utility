@@ -6,7 +6,7 @@ set(mbed_exported_project_files
         ${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/condition.h
         ${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/constbuffer.h
         ${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/consolelogger.h
-		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/const_defines.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/const_defines.h
         ${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/constmap.h
         ${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/crt_abstractions.h
         ${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/doublylinkedlist.h
@@ -79,7 +79,6 @@ set(mbed_project_files
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/string_tokenizer.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/strings.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/tickcounter.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/tlsio_wolfssl.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/urlencode.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/usha.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/vector.c
@@ -96,5 +95,6 @@ set(mbed_project_files
         ${CMAKE_CURRENT_SOURCE_DIR}/../../adapters/tcpsocketconnection_c.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/../../adapters/threadapi_rtx_mbed.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/../../adapters/tickcounter_mbed.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../adapters/tlsio_wolfssl.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../adapters/uniqueid_stub.c
         )
