@@ -12,7 +12,7 @@ ${theseTestsName}.c
 )
 
 set(${theseTestsName}_c_files
-../../src/x509_openssl.c
+../../adapters/x509_openssl.c
 )
 
 set(${theseTestsName}_h_files

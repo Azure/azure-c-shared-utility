@@ -197,19 +197,19 @@ endif()
 
 if(${use_schannel})
     set(source_c_files ${source_c_files}
-        ./src/tlsio_schannel.c
-        ./src/x509_schannel.c
+        ./adapters/tlsio_schannel.c
+        ./adapters/x509_schannel.c
     )
 endif()
 if(${use_wolfssl})
     set(source_c_files ${source_c_files}
-        ./src/tlsio_wolfssl.c
+        ./adapters/tlsio_wolfssl.c
     )
 endif()
 if(${use_openssl})
     set(source_c_files ${source_c_files}
-        ./src/tlsio_openssl.c
-        ./src/x509_openssl.c
+        ./adapters/tlsio_openssl.c
+        ./adapters/x509_openssl.c
     )
 endif()
 if(${use_applessl})
