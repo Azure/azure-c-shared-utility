@@ -147,6 +147,7 @@ ${LOGGING_C_FILE}
 ./src/crt_abstractions.c
 ./src/constmap.c
 ./src/doublylinkedlist.c
+./src/env_variable.c
 ./src/gballoc.c
 ./src/gbnetwork.c
 ./src/gb_stdio.c
