@@ -981,16 +981,7 @@ CONCRETE_IO_HANDLE tlsio_schannel_create(void* io_create_parameters)
         }
         else
         {
-            result->on_bytes_received = NULL;
-            result->on_io_open_complete = NULL;
-            result->on_io_close_complete = NULL;
-            result->on_io_error = NULL;
-            result->on_io_open_complete_context = NULL;
-            result->on_io_close_complete_context = NULL;
-            result->on_bytes_received_context = NULL;
-            result->on_io_error_context = NULL;
-            result->credential_handle_allocated = false;
-            result->x509_schannel_handle = NULL;
+            (void)memset(result, 0, sizeof(TLS_IO_INSTANCE));
 
             result->host_name = (SEC_TCHAR*)malloc(sizeof(SEC_TCHAR) * (1 + strlen(tls_io_config->hostname)));
             if (result->host_name == NULL)
