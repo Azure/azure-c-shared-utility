@@ -18,5 +18,8 @@ extern "C" {
 
 MOCKABLE_FUNCTION(, const char*, environment_get_variable, const char*, variable_name);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ENV_VARIABLE_H */
