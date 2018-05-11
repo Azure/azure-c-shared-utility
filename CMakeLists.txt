@@ -27,6 +27,11 @@ option(run_e2e_tests "set run_e2e_tests to ON to run e2e tests (default is OFF).
 option(use_builtin_httpapi "set use_builtin_httpapi to ON to use the built-in httpapi_compact that comes with C shared utility (default is OFF)" OFF)
 option(use_cppunittest "set use_cppunittest to ON to build CppUnitTest tests on Windows (default is ON)" ON)
 option(suppress_header_searches "do not try to find headers - used when compiler check will fail" OFF)
+option(use_custom_heap "use externally defined heap functions instead of the malloc family" OFF)
+
+if(${use_custom_heap})
+    add_definitions(-DGB_USE_CUSTOM_HEAP)
+endif()
 
 if(WIN32)
     option(use_schannel "set use_schannel to ON if schannel is to be used, set to OFF to not use schannel" ON)
