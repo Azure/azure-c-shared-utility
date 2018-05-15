@@ -55,14 +55,6 @@ typedef enum UWS_STATE_TAG
     UWS_STATE_ERROR
 } UWS_STATE;
 
-typedef enum UWS_FRAME_DECODER_STATE_TAG
-{
-    UWS_FRAME_DECODER_STATE_HEADER_AND_LENGTH,
-    UWS_FRAME_DECODER_STATE_EXTENDED_LENGTH_16,
-    UWS_FRAME_DECODER_STATE_EXTENDED_LENGTH_64,
-    UWS_FRAME_DECODER_STATE_PAYLOAD_BYTES
-} UWS_FRAME_DECODER_STATE;
-
 typedef struct WS_INSTANCE_PROTOCOL_TAG
 {
     char* protocol;
@@ -95,9 +87,11 @@ typedef struct UWS_CLIENT_INSTANCE_TAG
     void* on_ws_error_context;
     ON_WS_CLOSE_COMPLETE on_ws_close_complete;
     void* on_ws_close_complete_context;
-    unsigned char* received_bytes;
-    size_t received_bytes_count;
-    UWS_FRAME_DECODER_STATE frame_decoder_state;
+    unsigned char* stream_buffer;
+    size_t stream_buffer_count;
+    unsigned char* fragment_buffer;
+    size_t fragment_buffer_count;
+    unsigned char fragmented_frame_type;
 } UWS_CLIENT_INSTANCE;
 
 /* Codes_SRS_UWS_CLIENT_01_360: [ Connection confidentiality and integrity is provided by running the WebSocket Protocol over TLS (wss URIs). ]*/
@@ -267,8 +261,10 @@ UWS_CLIENT_HANDLE uws_client_create(const char* hostname, unsigned int port, con
                                 result->on_ws_error_context = NULL;
                                 result->on_ws_close_complete = NULL;
                                 result->on_ws_close_complete_context = NULL;
-                                result->received_bytes = NULL;
-                                result->received_bytes_count = 0;
+                                result->stream_buffer = NULL;
+                                result->stream_buffer_count = 0;
+                                result->fragment_buffer = NULL;
+                                result->fragment_buffer_count = 0;
 
                                 result->protocol_count = protocol_count;
 
@@ -441,8 +437,10 @@ UWS_CLIENT_HANDLE uws_client_create_with_io(const IO_INTERFACE_DESCRIPTION* io_i
                                 result->on_ws_error_context = NULL;
                                 result->on_ws_close_complete = NULL;
                                 result->on_ws_close_complete_context = NULL;
-                                result->received_bytes = NULL;
-                                result->received_bytes_count = 0;
+                                result->stream_buffer = NULL;
+                                result->stream_buffer_count = 0;
+                                result->fragment_buffer = NULL;
+                                result->fragment_buffer_count = 0;
 
                                 result->protocol_count = protocol_count;
 
@@ -521,7 +519,8 @@ void uws_client_destroy(UWS_CLIENT_HANDLE uws_client)
     }
     else
     {
-        free(uws_client->received_bytes);
+        free(uws_client->stream_buffer);
+        free(uws_client->fragment_buffer);
 
         /* Codes_SRS_UWS_CLIENT_01_021: [ `uws_client_destroy` shall perform a close action if the uws instance has already been open. ]*/
         switch (uws_client->uws_state)
@@ -787,14 +786,14 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
     }
 }
 
-static void consume_received_bytes(UWS_CLIENT_INSTANCE* uws_client, size_t consumed_bytes)
+static void consume_stream_buffer_bytes(UWS_CLIENT_INSTANCE* uws_client, size_t consumed_bytes)
 {
-    if (consumed_bytes < uws_client->received_bytes_count)
+    if (consumed_bytes < uws_client->stream_buffer_count)
     {
-        (void)memmove(uws_client->received_bytes, uws_client->received_bytes + consumed_bytes, uws_client->received_bytes_count - consumed_bytes);
+        (void)memmove(uws_client->stream_buffer, uws_client->stream_buffer + consumed_bytes, uws_client->stream_buffer_count - consumed_bytes);
     }
 
-    uws_client->received_bytes_count -= consumed_bytes;
+    uws_client->stream_buffer_count -= consumed_bytes;
 }
 
 static void on_underlying_io_close_complete(void* context)
@@ -960,7 +959,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
         else
         {
             unsigned char decode_stream = 1;
-
+            
             switch (uws_client->uws_state)
             {
             default:
@@ -977,7 +976,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
             case UWS_STATE_WAITING_FOR_UPGRADE_RESPONSE:
             {
                 /* Codes_SRS_UWS_CLIENT_01_378: [ When `on_underlying_io_bytes_received` is called while the uws is OPENING, the received bytes shall be accumulated in order to attempt parsing the WebSocket Upgrade response. ]*/
-                unsigned char* new_received_bytes = (unsigned char*)realloc(uws_client->received_bytes, uws_client->received_bytes_count + size + 1);
+                unsigned char* new_received_bytes = (unsigned char*)realloc(uws_client->stream_buffer, uws_client->stream_buffer_count + size + 1);
                 if (new_received_bytes == NULL)
                 {
                     /* Codes_SRS_UWS_CLIENT_01_379: [ If allocating memory for accumulating the bytes fails, uws shall report that the open failed by calling the `on_ws_open_complete` callback passed to `uws_client_open_async` with `WS_OPEN_ERROR_NOT_ENOUGH_MEMORY`. ]*/
@@ -986,9 +985,9 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                 }
                 else
                 {
-                    uws_client->received_bytes = new_received_bytes;
-                    (void)memcpy(uws_client->received_bytes + uws_client->received_bytes_count, buffer, size);
-                    uws_client->received_bytes_count += size;
+                    uws_client->stream_buffer = new_received_bytes;
+                    (void)memcpy(uws_client->stream_buffer + uws_client->stream_buffer_count, buffer, size);
+                    uws_client->stream_buffer_count += size;
 
                     decode_stream = 1;
                 }
@@ -1000,7 +999,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
             case UWS_STATE_CLOSING_WAITING_FOR_CLOSE:
             {
                 /* Codes_SRS_UWS_CLIENT_01_385: [ If the state of the uws instance is OPEN, the received bytes shall be used for decoding WebSocket frames. ]*/
-                unsigned char* new_received_bytes = (unsigned char*)realloc(uws_client->received_bytes, uws_client->received_bytes_count + size + 1);
+                unsigned char* new_received_bytes = (unsigned char*)realloc(uws_client->stream_buffer, uws_client->stream_buffer_count + size + 1);
                 if (new_received_bytes == NULL)
                 {
                     /* Codes_SRS_UWS_CLIENT_01_418: [ If allocating memory for the bytes accumulated for decoding WebSocket frames fails, an error shall be indicated by calling the `on_ws_error` callback with `WS_ERROR_NOT_ENOUGH_MEMORY`. ]*/
@@ -1011,9 +1010,9 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                 }
                 else
                 {
-                    uws_client->received_bytes = new_received_bytes;
-                    (void)memcpy(uws_client->received_bytes + uws_client->received_bytes_count, buffer, size);
-                    uws_client->received_bytes_count += size;
+                    uws_client->stream_buffer = new_received_bytes;
+                    (void)memcpy(uws_client->stream_buffer + uws_client->stream_buffer_count, buffer, size);
+                    uws_client->stream_buffer_count += size;
                 
                     decode_stream = 1;
                 }
@@ -1042,12 +1041,12 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                     const char* request_end_ptr;
 
                     /* Make sure it is zero terminated */
-                    uws_client->received_bytes[uws_client->received_bytes_count] = '\0';
+                    uws_client->stream_buffer[uws_client->stream_buffer_count] = '\0';
 
                     /* Codes_SRS_UWS_CLIENT_01_380: [ If an WebSocket Upgrade request can be parsed from the accumulated bytes, the status shall be read from the WebSocket upgrade response. ]*/
                     /* Codes_SRS_UWS_CLIENT_01_381: [ If the status is 101, uws shall be considered OPEN and this shall be indicated by calling the `on_ws_open_complete` callback passed to `uws_client_open_async` with `IO_OPEN_OK`. ]*/
-                    if ((uws_client->received_bytes_count >= 4) &&
-                        ((request_end_ptr = strstr((const char*)uws_client->received_bytes, "\r\n\r\n")) != NULL))
+                    if ((uws_client->stream_buffer_count >= 4) &&
+                        ((request_end_ptr = strstr((const char*)uws_client->stream_buffer, "\r\n\r\n")) != NULL))
                     {
                         int status_code;
 
@@ -1056,7 +1055,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
 
                         /* Codes_SRS_UWS_CLIENT_01_382: [ If a negative status is decoded from the WebSocket upgrade request, an error shall be indicated by calling the `on_ws_open_complete` callback passed to `uws_client_open_async` with `WS_OPEN_ERROR_BAD_RESPONSE_STATUS`. ]*/
                         /* Codes_SRS_UWS_CLIENT_01_478: [ A Status-Line with a 101 response code as per RFC 2616 [RFC2616]. ]*/
-                        if (ParseHttpResponse((const char*)uws_client->received_bytes, &status_code) != 0)
+                        if (ParseHttpResponse((const char*)uws_client->stream_buffer, &status_code) != 0)
                         {
                             /* Codes_SRS_UWS_CLIENT_01_383: [ If the WebSocket upgrade request cannot be decoded an error shall be indicated by calling the `on_ws_open_complete` callback passed to `uws_client_open_async` with `WS_OPEN_ERROR_BAD_UPGRADE_RESPONSE`. ]*/
                             LogError("Cannot decode HTTP response");
@@ -1071,7 +1070,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                         else
                         {
                             /* Codes_SRS_UWS_CLIENT_01_384: [ Any extra bytes that are left unconsumed after decoding a succesfull WebSocket upgrade response shall be used for decoding WebSocket frames ]*/
-                            consume_received_bytes(uws_client, request_end_ptr - (char*)uws_client->received_bytes + 4);
+                            consume_stream_buffer_bytes(uws_client, request_end_ptr - (char*)uws_client->stream_buffer + 4);
 
                             /* Codes_SRS_UWS_CLIENT_01_381: [ If the status is 101, uws shall be considered OPEN and this shall be indicated by calling the `on_ws_open_complete` callback passed to `uws_client_open_async` with `IO_OPEN_OK`. ]*/
                             uws_client->uws_state = UWS_STATE_OPEN;
@@ -1095,12 +1094,12 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
 
                     /* Codes_SRS_UWS_CLIENT_01_277: [ To receive WebSocket data, an endpoint listens on the underlying network connection. ]*/
                     /* Codes_SRS_UWS_CLIENT_01_278: [ Incoming data MUST be parsed as WebSocket frames as defined in Section 5.2. ]*/
-                    if (uws_client->received_bytes_count >= needed_bytes)
+                    if (uws_client->stream_buffer_count >= needed_bytes)
                     {
                         unsigned char has_error = 0;
 
                         /* Codes_SRS_UWS_CLIENT_01_160: [ Defines whether the "Payload data" is masked. ]*/
-                        if ((uws_client->received_bytes[1] & 0x80) != 0)
+                        if ((uws_client->stream_buffer[1] & 0x80) != 0)
                         {
                             /* Codes_SRS_UWS_CLIENT_01_144: [ A client MUST close a connection if it detects a masked frame. ]*/
                             /* Codes_SRS_UWS_CLIENT_01_145: [ In this case, it MAY use the status code 1002 (protocol error) as defined in Section 7.4.1. (These rules might be relaxed in a future specification.) ]*/
@@ -1110,16 +1109,16 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
 
                         /* Codes_SRS_UWS_CLIENT_01_163: [ The length of the "Payload data", in bytes: ]*/
                         /* Codes_SRS_UWS_CLIENT_01_164: [ if 0-125, that is the payload length. ]*/
-                        length = uws_client->received_bytes[1];
+                        length = uws_client->stream_buffer[1];
 
                         if (length == 126)
                         {
                             /* Codes_SRS_UWS_CLIENT_01_165: [ If 126, the following 2 bytes interpreted as a 16-bit unsigned integer are the payload length. ]*/
                             needed_bytes += 2;
-                            if (uws_client->received_bytes_count >= needed_bytes)
+                            if (uws_client->stream_buffer_count >= needed_bytes)
                             {
                                 /* Codes_SRS_UWS_CLIENT_01_167: [ Multibyte length quantities are expressed in network byte order. ]*/
-                                length = ((size_t)(uws_client->received_bytes[2]) << 8) + (size_t)uws_client->received_bytes[3];
+                                length = ((size_t)(uws_client->stream_buffer[2]) << 8) + (size_t)uws_client->stream_buffer[3];
 
                                 if (length < 126)
                                 {
@@ -1140,9 +1139,9 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                         {
                             /* Codes_SRS_UWS_CLIENT_01_166: [ If 127, the following 8 bytes interpreted as a 64-bit unsigned integer (the most significant bit MUST be 0) are the payload length. ]*/
                             needed_bytes += 8;
-                            if (uws_client->received_bytes_count >= needed_bytes)
+                            if (uws_client->stream_buffer_count >= needed_bytes)
                             {
-                                if ((uws_client->received_bytes[2] & 0x80) != 0)
+                                if ((uws_client->stream_buffer[2] & 0x80) != 0)
                                 {
                                     LogError("Bad frame: received a 64 bit length frame with the highest bit set");
 
@@ -1153,14 +1152,14 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                                 else
                                 {
                                     /* Codes_SRS_UWS_CLIENT_01_167: [ Multibyte length quantities are expressed in network byte order. ]*/
-                                    length = (size_t)(((uint64_t)(uws_client->received_bytes[2]) << 56) +
-                                        (((uint64_t)uws_client->received_bytes[3]) << 48) +
-                                        (((uint64_t)uws_client->received_bytes[4]) << 40) +
-                                        (((uint64_t)uws_client->received_bytes[5]) << 32) +
-                                        (((uint64_t)uws_client->received_bytes[6]) << 24) +
-                                        (((uint64_t)uws_client->received_bytes[7]) << 16) +
-                                        (((uint64_t)uws_client->received_bytes[8]) << 8) +
-                                        (uint64_t)(uws_client->received_bytes[9]));
+                                    length = (size_t)(((uint64_t)(uws_client->stream_buffer[2]) << 56) +
+                                        (((uint64_t)uws_client->stream_buffer[3]) << 48) +
+                                        (((uint64_t)uws_client->stream_buffer[4]) << 40) +
+                                        (((uint64_t)uws_client->stream_buffer[5]) << 32) +
+                                        (((uint64_t)uws_client->stream_buffer[6]) << 24) +
+                                        (((uint64_t)uws_client->stream_buffer[7]) << 16) +
+                                        (((uint64_t)uws_client->stream_buffer[8]) << 8) +
+                                        (uint64_t)(uws_client->stream_buffer[9]));
 
                                     if (length < 65536)
                                     {
@@ -1184,13 +1183,38 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                         }
 
                         if ((has_error == 0) &&
-                            (uws_client->received_bytes_count >= needed_bytes))
+                            (uws_client->stream_buffer_count >= needed_bytes))
                         {
-                            unsigned char opcode = uws_client->received_bytes[0] & 0xF;
+                            unsigned char opcode = uws_client->stream_buffer[0] & 0xF;
+                            bool is_final = (uws_client->stream_buffer[0] & 0x80) != 0;
+                            if (!is_final || opcode == WS_CONTINUATION_FRAME)
+                            {
+                                unsigned char *new_fragment_bytes = (unsigned char *)realloc(uws_client->fragment_buffer, uws_client->fragment_buffer_count + length);
+                                if (new_fragment_bytes == NULL)
+                                {
+                                    /* Codes_SRS_UWS_CLIENT_01_379: [ If allocating memory for accumulating the bytes fails, uws shall report that the open failed by calling the `on_ws_open_complete` callback passed to `uws_client_open_async` with `WS_OPEN_ERROR_NOT_ENOUGH_MEMORY`. ]*/
+                                    indicate_ws_open_complete_error_and_close(uws_client, WS_OPEN_ERROR_NOT_ENOUGH_MEMORY);
+                                }
+                                else
+                                {
+                                    uws_client->fragment_buffer = new_fragment_bytes;
+                                    (void)memcpy(uws_client->fragment_buffer + uws_client->fragment_buffer_count, uws_client->stream_buffer + needed_bytes - length, length);
+                                    uws_client->fragment_buffer_count += length;
+                                }
+                            }
 
                             switch (opcode)
                             {
                             default:
+                                break;
+
+                            case (unsigned char)WS_CONTINUATION_FRAME:
+                                if (is_final)
+                                {
+                                    uws_client->on_ws_frame_received(uws_client->on_ws_frame_received_context, uws_client->fragmented_frame_type, uws_client->fragment_buffer, uws_client->fragment_buffer_count);
+                                    uws_client->fragment_buffer_count = 0;                        
+                                }
+                                decode_stream = 1;
                                 break;
 
                                 /* Codes_SRS_UWS_CLIENT_01_153: [ *  %x1 denotes a text frame ]*/
@@ -1202,7 +1226,14 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                                 /* Codes_SRS_UWS_CLIENT_01_280: [ Upon receiving a data frame (Section 5.6), the endpoint MUST note the /type/ of the data as defined by the opcode (frame-opcode) from Section 5.2. ]*/
                                 /* Codes_SRS_UWS_CLIENT_01_281: [ The "Application data" from this frame is defined as the /data/ of the message. ]*/
                                 /* Codes_SRS_UWS_CLIENT_01_282: [ If the frame comprises an unfragmented message (Section 5.4), it is said that _A WebSocket Message Has Been Received_ with type /type/ and data /data/. ]*/
-                                uws_client->on_ws_frame_received(uws_client->on_ws_frame_received_context, WS_FRAME_TYPE_TEXT, uws_client->received_bytes + needed_bytes - length, length);
+                                if (is_final)
+                                {
+                                    uws_client->on_ws_frame_received(uws_client->on_ws_frame_received_context, WS_FRAME_TYPE_TEXT, uws_client->stream_buffer + needed_bytes - length, length);
+                                }
+                                else
+                                {
+                                    uws_client->fragmented_frame_type = WS_FRAME_TYPE_TEXT;
+                                }
                                 decode_stream = 1;
                                 break;
 
@@ -1215,7 +1246,14 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                                 /* Codes_SRS_UWS_CLIENT_01_280: [ Upon receiving a data frame (Section 5.6), the endpoint MUST note the /type/ of the data as defined by the opcode (frame-opcode) from Section 5.2. ]*/
                                 /* Codes_SRS_UWS_CLIENT_01_281: [ The "Application data" from this frame is defined as the /data/ of the message. ]*/
                                 /* Codes_SRS_UWS_CLIENT_01_282: [ If the frame comprises an unfragmented message (Section 5.4), it is said that _A WebSocket Message Has Been Received_ with type /type/ and data /data/. ]*/
-                                uws_client->on_ws_frame_received(uws_client->on_ws_frame_received_context, WS_FRAME_TYPE_BINARY, uws_client->received_bytes + needed_bytes - length, length);
+                                if (is_final)
+                                {
+                                    uws_client->on_ws_frame_received(uws_client->on_ws_frame_received_context, WS_FRAME_TYPE_BINARY, uws_client->stream_buffer + needed_bytes - length, length);
+                                }
+                                else
+                                {
+                                    uws_client->fragmented_frame_type = WS_FRAME_TYPE_BINARY;
+                                }
                                 decode_stream = 1;
                                 break;
 
@@ -1225,7 +1263,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                             {
                                 uint16_t close_code;
                                 uint16_t* close_code_ptr;
-                                const unsigned char* data_ptr = uws_client->received_bytes + needed_bytes - length;
+                                const unsigned char* data_ptr = uws_client->stream_buffer + needed_bytes - length;
                                 const unsigned char* extra_data_ptr;
                                 size_t extra_data_length;
                                 unsigned char* close_frame_bytes;
@@ -1359,7 +1397,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                                 uws_client->uws_state = UWS_STATE_ERROR;
 
                                 /* Codes_SRS_UWS_CLIENT_01_140: [ To avoid confusing network intermediaries (such as intercepting proxies) and for security reasons that are further discussed in Section 10.3, a client MUST mask all frames that it sends to the server (see Section 5.3 for further details). ]*/
-                                pong_frame_buffer = uws_frame_encoder_encode(WS_PONG_FRAME, uws_client->received_bytes + needed_bytes - length, length, true, true, 0);
+                                pong_frame_buffer = uws_frame_encoder_encode(WS_PONG_FRAME, uws_client->stream_buffer + needed_bytes - length, length, true, true, 0);
                                 if (pong_frame_buffer == NULL)
                                 {
                                     LogError("Encoding of PONG failed.");
@@ -1384,7 +1422,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                                 break;
                             }
 
-                            consume_received_bytes(uws_client, needed_bytes);
+                            consume_stream_buffer_bytes(uws_client, needed_bytes);
                         }
                     }
 
@@ -1461,7 +1499,8 @@ int uws_client_open_async(UWS_CLIENT_HANDLE uws_client, ON_WS_OPEN_COMPLETE on_w
         {
             uws_client->uws_state = UWS_STATE_OPENING_UNDERLYING_IO;
 
-            uws_client->received_bytes_count = 0;
+            uws_client->stream_buffer_count = 0;
+            uws_client->fragment_buffer_count = 0;
 
             uws_client->on_ws_open_complete = on_ws_open_complete;
             uws_client->on_ws_open_complete_context = on_ws_open_complete_context;
