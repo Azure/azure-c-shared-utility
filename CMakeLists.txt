@@ -147,7 +147,6 @@ ${LOGGING_C_FILE}
 ./src/crt_abstractions.c
 ./src/constmap.c
 ./src/doublylinkedlist.c
-./src/env_variable.c
 ./src/gballoc.c
 ./src/gbnetwork.c
 ./src/gb_stdio.c
@@ -179,6 +178,7 @@ ${SOCKETIO_C_FILE}
 ${TICKCOUTER_C_FILE}
 ${THREAD_C_FILE}
 ${UNIQUEID_C_FILE}
+${ENVIRONMENT_VARIABLE_C_FILE}
 )
 
 if(UNIX) #LINUX OR APPLE
