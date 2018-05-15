@@ -590,4 +590,8 @@ function(set_platform_files c_shared_dir)
             set(UNIQUEID_C_FILE ${c_shared_dir}/adapters/uniqueid_linux.c PARENT_SCOPE)
         endif()
     endif()
+    
+    if(WIN32 OR MACOSX OR LINUX)
+        set (ENVIRONMENT_VARIABLE_C_FILE ${c_shared_dir}/adapters/envvariable.c PARENT_SCOPE)
+    endif()
 endfunction(set_platform_files)
