@@ -4,7 +4,7 @@
 #include <stdlib.h>  
 #include <stdio.h>  
 
-#include "azure_c_shared_utility/agenttime.h"
+#include "azure_c_shared_utility/envvariable.h"
 
 const char* environment_get_variable(const char *variable_name)
 {
