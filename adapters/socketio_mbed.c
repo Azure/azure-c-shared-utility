@@ -48,14 +48,16 @@ typedef struct SOCKET_IO_INSTANCE_TAG
 /*this function will clone an option given by name and value*/
 static void* socketio_CloneOption(const char* name, const void* value)
 {
-    (void)(name, value);
+    (void)name;
+    (void)value;
     return NULL;
 }
 
 /*this function destroys an option previously created*/
 static void socketio_DestroyOption(const char* name, const void* value)
 {
-    (void)(name, value);
+    (void)name;
+    (void)value;
 }
 
 static OPTIONHANDLER_HANDLE socketio_retrieveoptions(CONCRETE_IO_HANDLE socket_io)
@@ -456,4 +458,3 @@ const IO_INTERFACE_DESCRIPTION* socketio_get_interface_description(void)
 {
     return &socket_io_interface_description;
 }
-

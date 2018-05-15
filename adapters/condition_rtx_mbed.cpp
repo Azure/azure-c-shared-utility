@@ -13,7 +13,6 @@ COND_HANDLE Condition_Init(void)
 
 COND_RESULT Condition_Post(COND_HANDLE handle)
 {
-    COND_RESULT result;
     if (handle == NULL)
     {
         result = COND_INVALID_ARG;
