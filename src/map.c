@@ -44,7 +44,7 @@ void Map_Destroy(MAP_HANDLE handle)
         /*Codes_SRS_MAP_02_004: [Map_Destroy shall release all resources associated with the map.] */
         MAP_HANDLE_DATA* handleData = (MAP_HANDLE_DATA*)handle;
         size_t i;
-      
+
         for (i = 0; i < handleData->count; i++)
         {
             free(handleData->keys[i]);
@@ -117,7 +117,7 @@ MAP_HANDLE Map_Clone(MAP_HANDLE handle)
         }
         else
         {
-            if (handleData->count == 0)  
+            if (handleData->count == 0)
             {
                 result->count = 0;
                 result->keys = NULL;
@@ -142,7 +142,7 @@ MAP_HANDLE Map_Clone(MAP_HANDLE handle)
                     LogError("unable to clone values");
                     for (i = 0; i < result->count; i++)
                     {
-                        free(result->keys[i]); 
+                        free(result->keys[i]);
                     }
                     free(result->keys);
                     free(result);
@@ -221,7 +221,7 @@ static void Map_DecreaseStorageKeysValues(MAP_HANDLE_DATA* handleData)
     {
         /*certainly > 1...*/
         char** undoneValues;
-        char** undoneKeys = (char**)realloc(handleData->keys, sizeof(char*)* (handleData->count - 1)); 
+        char** undoneKeys = (char**)realloc(handleData->keys, sizeof(char*)* (handleData->count - 1));
         if (undoneKeys == NULL)
         {
             LogError("CATASTROPHIC error, unable to undo through realloc to a smaller size");
@@ -321,7 +321,7 @@ static int insertNewKeyValue(MAP_HANDLE_DATA* handleData, const char* key, const
             }
         }
     }
-    return result; 
+    return result;
 }
 
 MAP_RESULT Map_Add(MAP_HANDLE handle, const char* key, const char* value)
@@ -337,7 +337,7 @@ MAP_RESULT Map_Add(MAP_HANDLE handle, const char* key, const char* value)
         )
     {
         result = MAP_INVALIDARG;
-        LOG_MAP_ERROR; 
+        LOG_MAP_ERROR;
     }
     else
     {
@@ -652,7 +652,7 @@ STRING_HANDLE Map_ToJSON(MAP_HANDLE handle)
                     STRING_delete(key);
                 }
             }
-                
+
             if (breakFor)
             {
                 LogError("error happened during JSON string builder");
