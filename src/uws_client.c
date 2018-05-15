@@ -265,6 +265,7 @@ UWS_CLIENT_HANDLE uws_client_create(const char* hostname, unsigned int port, con
                                 result->stream_buffer_count = 0;
                                 result->fragment_buffer = NULL;
                                 result->fragment_buffer_count = 0;
+                                result->fragmented_frame_type = WS_FRAME_TYPE_UNKNOWN;
 
                                 result->protocol_count = protocol_count;
 
@@ -441,6 +442,7 @@ UWS_CLIENT_HANDLE uws_client_create_with_io(const IO_INTERFACE_DESCRIPTION* io_i
                                 result->stream_buffer_count = 0;
                                 result->fragment_buffer = NULL;
                                 result->fragment_buffer_count = 0;
+                                result->fragmented_frame_type = WS_FRAME_TYPE_UNKNOWN;
 
                                 result->protocol_count = protocol_count;
 
@@ -1186,14 +1188,27 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                             (uws_client->stream_buffer_count >= needed_bytes))
                         {
                             unsigned char opcode = uws_client->stream_buffer[0] & 0xF;
+
+                            /* Codes_SRS_UWS_CLIENT_01_147: [ Indicates that this is the final fragment in a message. ]*/
                             bool is_final = (uws_client->stream_buffer[0] & 0x80) != 0;
-                            if (!is_final || opcode == WS_CONTINUATION_FRAME)
+
+                            switch (opcode)
                             {
+                            default:
+                                break;
+                                /* Codes_SRS_UWS_CLIENT_01_152: [* *  %x0 denotes a continuation frame *]*/
+                            case (unsigned char)WS_CONTINUATION_FRAME:
+                            {
+                                /* Codes_SRS_UWS_CLIENT_01_213: [ A fragmented message consists of a single frame with the FIN bit clear and an opcode other than 0, followed by zero or more frames with the FIN bit clear and the opcode set to 0, and terminated by a single frame with the FIN bit set and an opcode of 0. ]*/
+                                /* Codes_SRS_UWS_CLIENT_01_216: [ Message fragments MUST be delivered to the recipient in the order sent by the sender. ]*/
+                                /* Codes_SRS_UWS_CLIENT_01_219: [ A sender MAY create fragments of any size for non-control messages. ]*/
                                 unsigned char *new_fragment_bytes = (unsigned char *)realloc(uws_client->fragment_buffer, uws_client->fragment_buffer_count + length);
                                 if (new_fragment_bytes == NULL)
                                 {
                                     /* Codes_SRS_UWS_CLIENT_01_379: [ If allocating memory for accumulating the bytes fails, uws shall report that the open failed by calling the `on_ws_open_complete` callback passed to `uws_client_open_async` with `WS_OPEN_ERROR_NOT_ENOUGH_MEMORY`. ]*/
-                                    indicate_ws_open_complete_error_and_close(uws_client, WS_OPEN_ERROR_NOT_ENOUGH_MEMORY);
+                                    LogError("Cannot allocate memory for received data");
+                                    indicate_ws_error(uws_client, WS_ERROR_NOT_ENOUGH_MEMORY);
+                                    break;
                                 }
                                 else
                                 {
@@ -1201,25 +1216,28 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                                     (void)memcpy(uws_client->fragment_buffer + uws_client->fragment_buffer_count, uws_client->stream_buffer + needed_bytes - length, length);
                                     uws_client->fragment_buffer_count += length;
                                 }
-                            }
 
-                            switch (opcode)
-                            {
-                            default:
-                                break;
-
-                            case (unsigned char)WS_CONTINUATION_FRAME:
                                 if (is_final)
                                 {
+                                    /* Codes_SRS_UWS_CLIENT_01_225: [ As a consequence of these rules, all fragments of a message are of the same type, as set by the first fragment's opcode. ]*/
+                                    if (uws_client->fragmented_frame_type == WS_FRAME_TYPE_UNKNOWN)
+                                    {
+                                        LogError("Continuation fragment received without initial fragment specifying frame data type");
+                                        indicate_ws_error(uws_client, WS_ERROR_BAD_FRAME_RECEIVED);
+                                        decode_stream = 1;
+                                        break;
+                                    }
                                     uws_client->on_ws_frame_received(uws_client->on_ws_frame_received_context, uws_client->fragmented_frame_type, uws_client->fragment_buffer, uws_client->fragment_buffer_count);
-                                    uws_client->fragment_buffer_count = 0;                        
+                                    uws_client->fragment_buffer_count = 0;
+                                    uws_client->fragmented_frame_type = WS_FRAME_TYPE_UNKNOWN;
                                 }
                                 decode_stream = 1;
                                 break;
-
+                            }
                                 /* Codes_SRS_UWS_CLIENT_01_153: [ *  %x1 denotes a text frame ]*/
                                 /* Codes_SRS_UWS_CLIENT_01_258: [** Currently defined opcodes for data frames include 0x1 (Text), 0x2 (Binary). ]*/
                             case (unsigned char)WS_TEXT_FRAME:
+                            {
                                 /* Codes_SRS_UWS_CLIENT_01_386: [ When a WebSocket data frame is decoded succesfully it shall be indicated via the callback `on_ws_frame_received`. ]*/
                                 /* Codes_SRS_UWS_CLIENT_01_169: [ The payload length is the length of the "Extension data" + the length of the "Application data". ]*/
                                 /* Codes_SRS_UWS_CLIENT_01_173: [ The "Payload data" is defined as "Extension data" concatenated with "Application data". ]*/
@@ -1232,13 +1250,41 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                                 }
                                 else
                                 {
+                                    /* Codes_SRS_UWS_CLIENT_01_217: [ The fragments of one message MUST NOT be interleaved between the fragments of another message unless an extension has been negotiated that can interpret the interleaving. ]*/
+                                    if (uws_client->fragmented_frame_type != WS_FRAME_TYPE_UNKNOWN)
+                                    {
+                                        LogError("Fragmented frame received interleaved between the fragments of another message");
+                                        indicate_ws_error(uws_client, WS_ERROR_BAD_FRAME_RECEIVED);
+                                        decode_stream = 1;
+                                        break;
+                                    }
+                                    /* Codes_SRS_UWS_CLIENT_01_213: [ A fragmented message consists of a single frame with the FIN bit clear and an opcode other than 0, followed by zero or more frames with the FIN bit clear and the opcode set to 0, and terminated by a single frame with the FIN bit set and an opcode of 0. ]*/
+                                    /* Codes_SRS_UWS_CLIENT_01_216: [ Message fragments MUST be delivered to the recipient in the order sent by the sender. ]*/
+                                    /* Codes_SRS_UWS_CLIENT_01_219: [ A sender MAY create fragments of any size for non-control messages. ]*/
+                                    unsigned char *new_fragment_bytes = (unsigned char *)realloc(uws_client->fragment_buffer, uws_client->fragment_buffer_count + length);
+                                    if (new_fragment_bytes == NULL)
+                                    {
+                                        /* Codes_SRS_UWS_CLIENT_01_379: [ If allocating memory for accumulating the bytes fails, uws shall report that the open failed by calling the `on_ws_open_complete` callback passed to `uws_client_open_async` with `WS_OPEN_ERROR_NOT_ENOUGH_MEMORY`. ]*/
+                                        LogError("Cannot allocate memory for received data");
+                                        indicate_ws_error(uws_client, WS_ERROR_NOT_ENOUGH_MEMORY);
+                                    }
+                                    else
+                                    {
+                                        uws_client->fragment_buffer = new_fragment_bytes;
+                                        (void)memcpy(uws_client->fragment_buffer + uws_client->fragment_buffer_count, uws_client->stream_buffer + needed_bytes - length, length);
+                                        uws_client->fragment_buffer_count = length;
+                                    }
+                                    /* Codes_SRS_UWS_CLIENT_01_225: [ As a consequence of these rules, all fragments of a message are of the same type, as set by the first fragment's opcode. ]*/
+                                    /* Codes_SRS_UWS_CLIENT_01_226: [ Since control frames cannot be fragmented, the type for all fragments in a message MUST be either text, binary, or one of the reserved opcodes. ]*/
                                     uws_client->fragmented_frame_type = WS_FRAME_TYPE_TEXT;
                                 }
                                 decode_stream = 1;
                                 break;
+                            }
 
                                 /* Codes_SRS_UWS_CLIENT_01_154: [ *  %x2 denotes a binary frame ]*/
                             case (unsigned char)WS_BINARY_FRAME:
+                            {
                                 /* Codes_SRS_UWS_CLIENT_01_386: [ When a WebSocket data frame is decoded succesfully it shall be indicated via the callback `on_ws_frame_received`. ]*/
                                 /* Codes_SRS_UWS_CLIENT_01_169: [ The payload length is the length of the "Extension data" + the length of the "Application data". ]*/
                                 /* Codes_SRS_UWS_CLIENT_01_173: [ The "Payload data" is defined as "Extension data" concatenated with "Application data". ]*/
@@ -1252,13 +1298,41 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                                 }
                                 else
                                 {
+                                    /* Codes_SRS_UWS_CLIENT_01_217: [ The fragments of one message MUST NOT be interleaved between the fragments of another message unless an extension has been negotiated that can interpret the interleaving. ]*/
+                                    if (uws_client->fragmented_frame_type != WS_FRAME_TYPE_UNKNOWN)
+                                    {
+                                        LogError("Fragmented frame received interleaved between the fragments of another message");
+                                        indicate_ws_error(uws_client, WS_ERROR_BAD_FRAME_RECEIVED);
+                                        decode_stream = 1;
+                                        break;
+                                    }
+                                    /* Codes_SRS_UWS_CLIENT_01_213: [ A fragmented message consists of a single frame with the FIN bit clear and an opcode other than 0, followed by zero or more frames with the FIN bit clear and the opcode set to 0, and terminated by a single frame with the FIN bit set and an opcode of 0. ]*/
+                                    /* Codes_SRS_UWS_CLIENT_01_216: [ Message fragments MUST be delivered to the recipient in the order sent by the sender. ]*/
+                                    /* Codes_SRS_UWS_CLIENT_01_219: [ A sender MAY create fragments of any size for non-control messages. ]*/
+                                    unsigned char *new_fragment_bytes = (unsigned char *)realloc(uws_client->fragment_buffer, uws_client->fragment_buffer_count + length);
+                                    if (new_fragment_bytes == NULL)
+                                    {
+                                        /* Codes_SRS_UWS_CLIENT_01_379: [ If allocating memory for accumulating the bytes fails, uws shall report that the open failed by calling the `on_ws_open_complete` callback passed to `uws_client_open_async` with `WS_OPEN_ERROR_NOT_ENOUGH_MEMORY`. ]*/
+                                        LogError("Cannot allocate memory for received data");
+                                        indicate_ws_error(uws_client, WS_ERROR_NOT_ENOUGH_MEMORY);
+                                    }
+                                    else
+                                    {
+                                        uws_client->fragment_buffer = new_fragment_bytes;
+                                        (void)memcpy(uws_client->fragment_buffer + uws_client->fragment_buffer_count, uws_client->stream_buffer + needed_bytes - length, length);
+                                        uws_client->fragment_buffer_count = length;
+                                    }
+                                    /* Codes_SRS_UWS_CLIENT_01_225: [ As a consequence of these rules, all fragments of a message are of the same type, as set by the first fragment's opcode. ]*/
+                                    /* Codes_SRS_UWS_CLIENT_01_226: [ Since control frames cannot be fragmented, the type for all fragments in a message MUST be either text, binary, or one of the reserved opcodes. ]*/  
                                     uws_client->fragmented_frame_type = WS_FRAME_TYPE_BINARY;
                                 }
                                 decode_stream = 1;
                                 break;
+                            }
 
                                 /* Codes_SRS_UWS_CLIENT_01_156: [ *  %x8 denotes a connection close ]*/
                                 /* Codes_SRS_UWS_CLIENT_01_234: [ The Close frame contains an opcode of 0x8. ]*/
+                                /* Codes_SRS_UWS_CLIENT_01_214: [ Control frames (see Section 5.5) MAY be injected in the middle of a fragmented message. ]*/  
                             case (unsigned char)WS_CLOSE_FRAME:
                             {
                                 uint16_t close_code;
@@ -1269,6 +1343,14 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                                 unsigned char* close_frame_bytes;
                                 size_t close_frame_length;
                                 bool utf8_error = false;
+
+                                /* Codes_SRS_UWS_CLIENT_01_215: [ Control frames themselves MUST NOT be fragmented. ]*/
+                                if (!is_final)
+                                {
+                                    LogError("Fragmented control frame received.");
+                                    indicate_ws_error(uws_client, WS_ERROR_BAD_FRAME_RECEIVED);
+                                    break;
+                                }
 
                                 /* Codes_SRS_UWS_CLIENT_01_235: [ The Close frame MAY contain a body (the "Application data" portion of the frame) that indicates a reason for closing, such as an endpoint shutting down, an endpoint having received a frame too large, or an endpoint having received a frame that does not conform to the format expected by the endpoint. ]*/
                                 if (length >= 2)
@@ -1386,6 +1468,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                                 /* Codes_SRS_UWS_CLIENT_01_157: [ *  %x9 denotes a ping ]*/
                                 /* Codes_SRS_UWS_CLIENT_01_247: [ The Ping frame contains an opcode of 0x9. ]*/
                                 /* Codes_SRS_UWS_CLIENT_01_251: [ An endpoint MAY send a Ping frame any time after the connection is established and before the connection is closed. ]*/
+                                /* Codes_SRS_UWS_CLIENT_01_214: [ Control frames (see Section 5.5) MAY be injected in the middle of a fragmented message. ]*/
                             case (unsigned char)WS_PING_FRAME:
                             {
                                 /* Codes_SRS_UWS_CLIENT_01_249: [ Upon receipt of a Ping frame, an endpoint MUST send a Pong frame in response ]*/
@@ -1394,7 +1477,13 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                                 size_t pong_frame_length;
                                 BUFFER_HANDLE pong_frame_buffer;
 
-                                uws_client->uws_state = UWS_STATE_ERROR;
+                                /* Codes_SRS_UWS_CLIENT_01_215: [ Control frames themselves MUST NOT be fragmented. ]*/
+                                if (!is_final)
+                                {
+                                    LogError("Fragmented control frame received.");
+                                    indicate_ws_error(uws_client, WS_ERROR_BAD_FRAME_RECEIVED);
+                                    break;
+                                }
 
                                 /* Codes_SRS_UWS_CLIENT_01_140: [ To avoid confusing network intermediaries (such as intercepting proxies) and for security reasons that are further discussed in Section 10.3, a client MUST mask all frames that it sends to the server (see Section 5.3 for further details). ]*/
                                 pong_frame_buffer = uws_frame_encoder_encode(WS_PONG_FRAME, uws_client->stream_buffer + needed_bytes - length, length, true, true, 0);
@@ -1409,7 +1498,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                                     pong_frame_length = BUFFER_length(pong_frame_buffer);
                                     if (xio_send(uws_client->underlying_io, pong_frame, pong_frame_length, unchecked_on_send_complete, NULL) != 0)
                                     {
-                                        LogError("Sending CLOSE frame failed.");
+                                        LogError("Sending PONG frame failed.");
                                     }
 
                                     BUFFER_delete(pong_frame_buffer);
@@ -1501,6 +1590,7 @@ int uws_client_open_async(UWS_CLIENT_HANDLE uws_client, ON_WS_OPEN_COMPLETE on_w
 
             uws_client->stream_buffer_count = 0;
             uws_client->fragment_buffer_count = 0;
+            uws_client->fragmented_frame_type = WS_FRAME_TYPE_UNKNOWN;
 
             uws_client->on_ws_open_complete = on_ws_open_complete;
             uws_client->on_ws_open_complete_context = on_ws_open_complete_context;
