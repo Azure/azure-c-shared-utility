@@ -592,6 +592,6 @@ function(set_platform_files c_shared_dir)
     endif()
     
     if(WIN32 OR MACOSX OR LINUX)
-        set (ENVIRONMENT_VARIABLE_C_FILE ${c_shared_dir}/adapters/envvariable.c)
+        set (ENVIRONMENT_VARIABLE_C_FILE ${c_shared_dir}/adapters/envvariable.c PARENT_SCOPE)
     endif()
 endfunction(set_platform_files)
