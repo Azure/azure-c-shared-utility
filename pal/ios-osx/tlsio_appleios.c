@@ -416,23 +416,34 @@ static void dowork_read(TLS_IO_INSTANCE* tls_io_instance)
     uint8_t buffer[TLSIO_RECEIVE_BUFFER_SIZE];
     CFIndex rcv_bytes;
 
-    while (tls_io_instance->tlsio_state == TLSIO_STATE_OPEN && CFReadStreamHasBytesAvailable(tls_io_instance->sockRead))
+    if (tls_io_instance->tlsio_state == TLSIO_STATE_OPEN)
     {
-        rcv_bytes = CFReadStreamRead(tls_io_instance->sockRead, buffer, (CFIndex)(sizeof(buffer)));
-        
-        if (rcv_bytes > 0)
+        CFStreamStatus read_status = CFReadStreamGetStatus(tls_io_instance->sockRead);
+        if (read_status == kCFStreamStatusAtEnd)
         {
-            // tls_io_instance->on_bytes_received was already checked for NULL
-            // in the call to tlsio_appleios_open_async
-            /* Codes_SRS_TLSIO_30_100: [ As long as the TLS connection is able to provide received data, tlsio_dowork shall repeatedly read this data and call on_bytes_received with the pointer to the buffer containing the data, the number of bytes received, and the on_bytes_received_context. ]*/
-            tls_io_instance->on_bytes_received(tls_io_instance->on_bytes_received_context, buffer, rcv_bytes);
-        }
-        else if (rcv_bytes < 0)
-        {
-            LogInfo("Communications error while reading");
             enter_tlsio_error_state(tls_io_instance);
         }
-        /* Codes_SRS_TLSIO_30_102: [ If the TLS connection receives no data then tlsio_dowork shall not call the on_bytes_received callback. ]*/
+        else
+        {
+            while (tls_io_instance->tlsio_state == TLSIO_STATE_OPEN && CFReadStreamHasBytesAvailable(tls_io_instance->sockRead))
+            {
+                rcv_bytes = CFReadStreamRead(tls_io_instance->sockRead, buffer, (CFIndex)(sizeof(buffer)));
+                
+                if (rcv_bytes > 0)
+                {
+                    // tls_io_instance->on_bytes_received was already checked for NULL
+                    // in the call to tlsio_appleios_open_async
+                    /* Codes_SRS_TLSIO_30_100: [ As long as the TLS connection is able to provide received data, tlsio_dowork shall repeatedly read this data and call on_bytes_received with the pointer to the buffer containing the data, the number of bytes received, and the on_bytes_received_context. ]*/
+                    tls_io_instance->on_bytes_received(tls_io_instance->on_bytes_received_context, buffer, rcv_bytes);
+                }
+                else if (rcv_bytes < 0)
+                {
+                    LogError("Communications error while reading");
+                    enter_tlsio_error_state(tls_io_instance);
+                }
+                /* Codes_SRS_TLSIO_30_102: [ If the TLS connection receives no data then tlsio_dowork shall not call the on_bytes_received callback. ]*/
+            }
+        }
     }
 }
 
