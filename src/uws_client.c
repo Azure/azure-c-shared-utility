@@ -945,6 +945,28 @@ static int ParseHttpResponse(const char* src, int* dst)
     return result;
 }
 
+static int process_frame_fragment(UWS_CLIENT_INSTANCE *uws_client, size_t length, size_t needed_bytes)
+{
+    int result;
+    unsigned char *new_fragment_bytes = (unsigned char *)realloc(uws_client->fragment_buffer, uws_client->fragment_buffer_count + length);
+    if (new_fragment_bytes == NULL)
+    {
+        /* Codes_SRS_UWS_CLIENT_01_379: [ If allocating memory for accumulating the bytes fails, uws shall report that the open failed by calling the `on_ws_open_complete` callback passed to `uws_client_open_async` with `WS_OPEN_ERROR_NOT_ENOUGH_MEMORY`. ]*/
+        LogError("Cannot allocate memory for received data");
+        indicate_ws_error(uws_client, WS_ERROR_NOT_ENOUGH_MEMORY);
+        result = __FAILURE__;
+    }
+    else
+    {
+        uws_client->fragment_buffer = new_fragment_bytes;
+        (void)memcpy(uws_client->fragment_buffer + uws_client->fragment_buffer_count, uws_client->stream_buffer + needed_bytes - length, length);
+        uws_client->fragment_buffer_count += length;
+        result = 0;
+    }
+
+    return result;
+}
+
 static void on_underlying_io_bytes_received(void* context, const unsigned char* buffer, size_t size)
 {
     /* Codes_SRS_UWS_CLIENT_01_415: [ If called with a NULL `context` argument, `on_underlying_io_bytes_received` shall do nothing. ]*/
@@ -1202,19 +1224,9 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                                 /* Codes_SRS_UWS_CLIENT_01_213: [ A fragmented message consists of a single frame with the FIN bit clear and an opcode other than 0, followed by zero or more frames with the FIN bit clear and the opcode set to 0, and terminated by a single frame with the FIN bit set and an opcode of 0. ]*/
                                 /* Codes_SRS_UWS_CLIENT_01_216: [ Message fragments MUST be delivered to the recipient in the order sent by the sender. ]*/
                                 /* Codes_SRS_UWS_CLIENT_01_219: [ A sender MAY create fragments of any size for non-control messages. ]*/
-                                unsigned char *new_fragment_bytes = (unsigned char *)realloc(uws_client->fragment_buffer, uws_client->fragment_buffer_count + length);
-                                if (new_fragment_bytes == NULL)
+                                if (process_frame_fragment(uws_client, length, needed_bytes) != 0)
                                 {
-                                    /* Codes_SRS_UWS_CLIENT_01_379: [ If allocating memory for accumulating the bytes fails, uws shall report that the open failed by calling the `on_ws_open_complete` callback passed to `uws_client_open_async` with `WS_OPEN_ERROR_NOT_ENOUGH_MEMORY`. ]*/
-                                    LogError("Cannot allocate memory for received data");
-                                    indicate_ws_error(uws_client, WS_ERROR_NOT_ENOUGH_MEMORY);
                                     break;
-                                }
-                                else
-                                {
-                                    uws_client->fragment_buffer = new_fragment_bytes;
-                                    (void)memcpy(uws_client->fragment_buffer + uws_client->fragment_buffer_count, uws_client->stream_buffer + needed_bytes - length, length);
-                                    uws_client->fragment_buffer_count += length;
                                 }
 
                                 if (is_final)
@@ -1261,19 +1273,11 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                                     /* Codes_SRS_UWS_CLIENT_01_213: [ A fragmented message consists of a single frame with the FIN bit clear and an opcode other than 0, followed by zero or more frames with the FIN bit clear and the opcode set to 0, and terminated by a single frame with the FIN bit set and an opcode of 0. ]*/
                                     /* Codes_SRS_UWS_CLIENT_01_216: [ Message fragments MUST be delivered to the recipient in the order sent by the sender. ]*/
                                     /* Codes_SRS_UWS_CLIENT_01_219: [ A sender MAY create fragments of any size for non-control messages. ]*/
-                                    unsigned char *new_fragment_bytes = (unsigned char *)realloc(uws_client->fragment_buffer, uws_client->fragment_buffer_count + length);
-                                    if (new_fragment_bytes == NULL)
+                                    if (process_frame_fragment(uws_client, length, needed_bytes) != 0)
                                     {
-                                        /* Codes_SRS_UWS_CLIENT_01_379: [ If allocating memory for accumulating the bytes fails, uws shall report that the open failed by calling the `on_ws_open_complete` callback passed to `uws_client_open_async` with `WS_OPEN_ERROR_NOT_ENOUGH_MEMORY`. ]*/
-                                        LogError("Cannot allocate memory for received data");
-                                        indicate_ws_error(uws_client, WS_ERROR_NOT_ENOUGH_MEMORY);
+                                        break;
                                     }
-                                    else
-                                    {
-                                        uws_client->fragment_buffer = new_fragment_bytes;
-                                        (void)memcpy(uws_client->fragment_buffer + uws_client->fragment_buffer_count, uws_client->stream_buffer + needed_bytes - length, length);
-                                        uws_client->fragment_buffer_count = length;
-                                    }
+
                                     /* Codes_SRS_UWS_CLIENT_01_225: [ As a consequence of these rules, all fragments of a message are of the same type, as set by the first fragment's opcode. ]*/
                                     /* Codes_SRS_UWS_CLIENT_01_226: [ Since control frames cannot be fragmented, the type for all fragments in a message MUST be either text, binary, or one of the reserved opcodes. ]*/
                                     uws_client->fragmented_frame_type = WS_FRAME_TYPE_TEXT;
@@ -1309,19 +1313,11 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                                     /* Codes_SRS_UWS_CLIENT_01_213: [ A fragmented message consists of a single frame with the FIN bit clear and an opcode other than 0, followed by zero or more frames with the FIN bit clear and the opcode set to 0, and terminated by a single frame with the FIN bit set and an opcode of 0. ]*/
                                     /* Codes_SRS_UWS_CLIENT_01_216: [ Message fragments MUST be delivered to the recipient in the order sent by the sender. ]*/
                                     /* Codes_SRS_UWS_CLIENT_01_219: [ A sender MAY create fragments of any size for non-control messages. ]*/
-                                    unsigned char *new_fragment_bytes = (unsigned char *)realloc(uws_client->fragment_buffer, uws_client->fragment_buffer_count + length);
-                                    if (new_fragment_bytes == NULL)
+                                    if (process_frame_fragment(uws_client, length, needed_bytes) != 0)
                                     {
-                                        /* Codes_SRS_UWS_CLIENT_01_379: [ If allocating memory for accumulating the bytes fails, uws shall report that the open failed by calling the `on_ws_open_complete` callback passed to `uws_client_open_async` with `WS_OPEN_ERROR_NOT_ENOUGH_MEMORY`. ]*/
-                                        LogError("Cannot allocate memory for received data");
-                                        indicate_ws_error(uws_client, WS_ERROR_NOT_ENOUGH_MEMORY);
+                                        break;
                                     }
-                                    else
-                                    {
-                                        uws_client->fragment_buffer = new_fragment_bytes;
-                                        (void)memcpy(uws_client->fragment_buffer + uws_client->fragment_buffer_count, uws_client->stream_buffer + needed_bytes - length, length);
-                                        uws_client->fragment_buffer_count = length;
-                                    }
+
                                     /* Codes_SRS_UWS_CLIENT_01_225: [ As a consequence of these rules, all fragments of a message are of the same type, as set by the first fragment's opcode. ]*/
                                     /* Codes_SRS_UWS_CLIENT_01_226: [ Since control frames cannot be fragmented, the type for all fragments in a message MUST be either text, binary, or one of the reserved opcodes. ]*/  
                                     uws_client->fragmented_frame_type = WS_FRAME_TYPE_BINARY;

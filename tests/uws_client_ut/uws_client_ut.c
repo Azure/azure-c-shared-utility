@@ -3937,12 +3937,12 @@ TEST_FUNCTION(when_a_0_bytes_text_frame_is_received_it_shall_be_indicated_to_the
     uws_client_destroy(uws_client);
 }
 
-/* Codes_SRS_UWS_CLIENT_01_213: [ A fragmented message consists of a single frame with the FIN bit clear and an opcode other than 0, followed by zero or more frames with the FIN bit clear and the opcode set to 0, and terminated by a single frame with the FIN bit set and an opcode of 0. ]*/
-/* Codes_SRS_UWS_CLIENT_01_147: [ Indicates that this is the final fragment in a message. ]*/
-/* Codes_SRS_UWS_CLIENT_01_152: [* *  %x0 denotes a continuation frame *]*/
-/* Codes_SRS_UWS_CLIENT_01_216: [ Message fragments MUST be delivered to the recipient in the order sent by the sender. ]*/
-/* Codes_SRS_UWS_CLIENT_01_219: [ A sender MAY create fragments of any size for non-control messages. ]*/
-/* Codes_SRS_UWS_CLIENT_01_225: [ As a consequence of these rules, all fragments of a message are of the same type, as set by the first fragment's opcode. ]*/
+/* Tests_SRS_UWS_CLIENT_01_213: [ A fragmented message consists of a single frame with the FIN bit clear and an opcode other than 0, followed by zero or more frames with the FIN bit clear and the opcode set to 0, and terminated by a single frame with the FIN bit set and an opcode of 0. ]*/
+/* Tests_SRS_UWS_CLIENT_01_147: [ Indicates that this is the final fragment in a message. ]*/
+/* Tests_SRS_UWS_CLIENT_01_152: [* *  %x0 denotes a continuation frame *]*/
+/* Tests_SRS_UWS_CLIENT_01_216: [ Message fragments MUST be delivered to the recipient in the order sent by the sender. ]*/
+/* Tests_SRS_UWS_CLIENT_01_219: [ A sender MAY create fragments of any size for non-control messages. ]*/
+/* Tests_SRS_UWS_CLIENT_01_225: [ As a consequence of these rules, all fragments of a message are of the same type, as set by the first fragment's opcode. ]*/
 TEST_FUNCTION(when_a_fragmented_text_frame_is_received_it_shall_be_indicated_to_the_user_once_fully_received)
 {
     // arrange
@@ -3999,12 +3999,12 @@ TEST_FUNCTION(when_a_fragmented_text_frame_is_received_it_shall_be_indicated_to_
     uws_client_destroy(uws_client);
 }
 
-/* Codes_SRS_UWS_CLIENT_01_213: [ A fragmented message consists of a single frame with the FIN bit clear and an opcode other than 0, followed by zero or more frames with the FIN bit clear and the opcode set to 0, and terminated by a single frame with the FIN bit set and an opcode of 0. ]*/
-/* Codes_SRS_UWS_CLIENT_01_147: [ Indicates that this is the final fragment in a message. ]*/
-/* Codes_SRS_UWS_CLIENT_01_152: [* *  %x0 denotes a continuation frame *]*/
-/* Codes_SRS_UWS_CLIENT_01_216: [ Message fragments MUST be delivered to the recipient in the order sent by the sender. ]*/
-/* Codes_SRS_UWS_CLIENT_01_219: [ A sender MAY create fragments of any size for non-control messages. ]*/
-/* Codes_SRS_UWS_CLIENT_01_225: [ As a consequence of these rules, all fragments of a message are of the same type, as set by the first fragment's opcode. ]*/
+/* Tests_SRS_UWS_CLIENT_01_213: [ A fragmented message consists of a single frame with the FIN bit clear and an opcode other than 0, followed by zero or more frames with the FIN bit clear and the opcode set to 0, and terminated by a single frame with the FIN bit set and an opcode of 0. ]*/
+/* Tests_SRS_UWS_CLIENT_01_147: [ Indicates that this is the final fragment in a message. ]*/
+/* Tests_SRS_UWS_CLIENT_01_152: [* *  %x0 denotes a continuation frame *]*/
+/* Tests_SRS_UWS_CLIENT_01_216: [ Message fragments MUST be delivered to the recipient in the order sent by the sender. ]*/
+/* Tests_SRS_UWS_CLIENT_01_219: [ A sender MAY create fragments of any size for non-control messages. ]*/
+/* Tests_SRS_UWS_CLIENT_01_225: [ As a consequence of these rules, all fragments of a message are of the same type, as set by the first fragment's opcode. ]*/
 TEST_FUNCTION(when_a_fragmented_binary_frame_is_received_it_shall_be_indicated_to_the_user_once_fully_received)
 {
     // arrange
@@ -4061,7 +4061,7 @@ TEST_FUNCTION(when_a_fragmented_binary_frame_is_received_it_shall_be_indicated_t
     uws_client_destroy(uws_client);
 }
 
-/* Codes_SRS_UWS_CLIENT_01_217: [ The fragments of one message MUST NOT be interleaved between the fragments of another message unless an extension has been negotiated that can interpret the interleaving. ]*/
+/* Tests_SRS_UWS_CLIENT_01_217: [ The fragments of one message MUST NOT be interleaved between the fragments of another message unless an extension has been negotiated that can interpret the interleaving. ]*/
 TEST_FUNCTION(when_a_fragmented_frame_is_interleaved_within_another_fragmented_frame_there_is_an_error)
 {
     // arrange
@@ -4096,12 +4096,12 @@ TEST_FUNCTION(when_a_fragmented_frame_is_interleaved_within_another_fragmented_f
     uws_client_destroy(uws_client);
 }
 
-/* Codes_SRS_UWS_CLIENT_01_213: [ A fragmented message consists of a single frame with the FIN bit clear and an opcode other than 0, followed by zero or more frames with the FIN bit clear and the opcode set to 0, and terminated by a single frame with the FIN bit set and an opcode of 0. ]*/
-/* Codes_SRS_UWS_CLIENT_01_147: [ Indicates that this is the final fragment in a message. ]*/
-/* Codes_SRS_UWS_CLIENT_01_152: [* *  %x0 denotes a continuation frame *]*/
-/* Codes_SRS_UWS_CLIENT_01_216: [ Message fragments MUST be delivered to the recipient in the order sent by the sender. ]*/
-/* Codes_SRS_UWS_CLIENT_01_219: [ A sender MAY create fragments of any size for non-control messages. ]*/
-/* Codes_SRS_UWS_CLIENT_01_225: [ As a consequence of these rules, all fragments of a message are of the same type, as set by the first fragment's opcode. ]*/
+/* Tests_SRS_UWS_CLIENT_01_213: [ A fragmented message consists of a single frame with the FIN bit clear and an opcode other than 0, followed by zero or more frames with the FIN bit clear and the opcode set to 0, and terminated by a single frame with the FIN bit set and an opcode of 0. ]*/
+/* Tests_SRS_UWS_CLIENT_01_147: [ Indicates that this is the final fragment in a message. ]*/
+/* Tests_SRS_UWS_CLIENT_01_152: [* *  %x0 denotes a continuation frame *]*/
+/* Tests_SRS_UWS_CLIENT_01_216: [ Message fragments MUST be delivered to the recipient in the order sent by the sender. ]*/
+/* Tests_SRS_UWS_CLIENT_01_219: [ A sender MAY create fragments of any size for non-control messages. ]*/
+/* Tests_SRS_UWS_CLIENT_01_225: [ As a consequence of these rules, all fragments of a message are of the same type, as set by the first fragment's opcode. ]*/
 TEST_FUNCTION(when_a_fragmented_frame_is_received_all_at_once_the_frame_is_indicated_to_the_user)
 {
     // arrange
@@ -4135,13 +4135,13 @@ TEST_FUNCTION(when_a_fragmented_frame_is_received_all_at_once_the_frame_is_indic
     uws_client_destroy(uws_client);
 }
 
-/* Codes_SRS_UWS_CLIENT_01_213: [ A fragmented message consists of a single frame with the FIN bit clear and an opcode other than 0, followed by zero or more frames with the FIN bit clear and the opcode set to 0, and terminated by a single frame with the FIN bit set and an opcode of 0. ]*/
-/* Codes_SRS_UWS_CLIENT_01_147: [ Indicates that this is the final fragment in a message. ]*/
-/* Codes_SRS_UWS_CLIENT_01_152: [* *  %x0 denotes a continuation frame *]*/
-/* Codes_SRS_UWS_CLIENT_01_216: [ Message fragments MUST be delivered to the recipient in the order sent by the sender. ]*/
-/* Codes_SRS_UWS_CLIENT_01_219: [ A sender MAY create fragments of any size for non-control messages. ]*/
-/* Codes_SRS_UWS_CLIENT_01_225: [ As a consequence of these rules, all fragments of a message are of the same type, as set by the first fragment's opcode. ]*/
-/* Codes_SRS_UWS_CLIENT_01_214: [ Control frames (see Section 5.5) MAY be injected in the middle of a fragmented message. ]*/  
+/* Tests_SRS_UWS_CLIENT_01_213: [ A fragmented message consists of a single frame with the FIN bit clear and an opcode other than 0, followed by zero or more frames with the FIN bit clear and the opcode set to 0, and terminated by a single frame with the FIN bit set and an opcode of 0. ]*/
+/* Tests_SRS_UWS_CLIENT_01_147: [ Indicates that this is the final fragment in a message. ]*/
+/* Tests_SRS_UWS_CLIENT_01_152: [* *  %x0 denotes a continuation frame *]*/
+/* Tests_SRS_UWS_CLIENT_01_216: [ Message fragments MUST be delivered to the recipient in the order sent by the sender. ]*/
+/* Tests_SRS_UWS_CLIENT_01_219: [ A sender MAY create fragments of any size for non-control messages. ]*/
+/* Tests_SRS_UWS_CLIENT_01_225: [ As a consequence of these rules, all fragments of a message are of the same type, as set by the first fragment's opcode. ]*/
+/* Tests_SRS_UWS_CLIENT_01_214: [ Control frames (see Section 5.5) MAY be injected in the middle of a fragmented message. ]*/  
 TEST_FUNCTION(pong_frame_can_be_injected_in_middle_of_fragmented_message)
 {
     // arrange
@@ -4219,7 +4219,7 @@ TEST_FUNCTION(pong_frame_can_be_injected_in_middle_of_fragmented_message)
     uws_client_destroy(uws_client);
 }
 
-/* Codes_SRS_UWS_CLIENT_01_215: [ Control frames themselves MUST NOT be fragmented. ]*/
+/* Tests_SRS_UWS_CLIENT_01_215: [ Control frames themselves MUST NOT be fragmented. ]*/
 TEST_FUNCTION(when_a_fragmented_control_frame_is_received_there_is_an_error)
 {
     // arrange
