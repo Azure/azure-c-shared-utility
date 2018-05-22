@@ -1356,7 +1356,6 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                                 size_t pong_frame_length;
                                 BUFFER_HANDLE pong_frame_buffer;
 
-                                UWS_STATE state = uws_client->uws_state;
                                 uws_client->uws_state = UWS_STATE_ERROR;
 
                                 /* Codes_SRS_UWS_CLIENT_01_140: [ To avoid confusing network intermediaries (such as intercepting proxies) and for security reasons that are further discussed in Section 10.3, a client MUST mask all frames that it sends to the server (see Section 5.3 for further details). ]*/
@@ -1373,10 +1372,6 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                                     if (xio_send(uws_client->underlying_io, pong_frame, pong_frame_length, unchecked_on_send_complete, NULL) != 0)
                                     {
                                         LogError("Sending CLOSE frame failed.");
-                                    }
-                                    else 
-                                    {
-                                        uws_client->uws_state = state;
                                     }
 
                                     BUFFER_delete(pong_frame_buffer);
