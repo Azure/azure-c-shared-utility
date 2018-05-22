@@ -18,7 +18,7 @@ struct tm* get_gmtime(time_t* currentTime)
 
 time_t get_mktime(struct tm* cal_time)
 {
-	return mktime(cal_time);
+    return mktime(cal_time);
 }
 
 char* get_ctime(time_t* timeToGet)

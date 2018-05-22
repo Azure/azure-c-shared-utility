@@ -635,11 +635,11 @@ static void send_handshake_bytes(TLS_IO_INSTANCE* tls_io_instance)
         {
             if (ssl_err == SSL_ERROR_SSL)
             {
-                LogInfo(ERR_error_string(ERR_get_error(), NULL));
+                LogError(ERR_error_string(ERR_get_error(), NULL));
             }
             else
             {
-                LogInfo("SSL handshake failed: %d", ssl_err);
+                LogError("SSL handshake failed: %d", ssl_err);
             }
             tls_io_instance->tlsio_state = TLSIO_STATE_HANDSHAKE_FAILED;
         }

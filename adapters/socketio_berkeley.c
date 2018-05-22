@@ -704,8 +704,17 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
                                         socket_io_instance->socket = INVALID_SOCKET;
                                         result = __FAILURE__;
                                     }
+                                    else
+                                    {
+                                        result = 0;
+                                    }
                                 }
                             }
+                            else
+                            {
+                                result = 0;
+                            }
+
                             if (err == 0)
                             {
                                 socket_io_instance->on_bytes_received = on_bytes_received;
@@ -804,7 +813,7 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
             {
                 signal(SIGPIPE, SIG_IGN);
 
-                int send_result = send(socket_io_instance->socket, buffer, size, 0);
+                ssize_t send_result = send(socket_io_instance->socket, buffer, size, 0);
                 if (send_result != size)
                 {
                     if (send_result == INVALID_SOCKET)
@@ -869,7 +878,7 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
 
             signal(SIGPIPE, SIG_IGN);
 
-            int send_result = send(socket_io_instance->socket, pending_socket_io->bytes, pending_socket_io->size, 0);
+            ssize_t send_result = send(socket_io_instance->socket, pending_socket_io->bytes, pending_socket_io->size, 0);
             if (send_result != pending_socket_io->size)
             {
                 if (send_result == INVALID_SOCKET)
@@ -920,7 +929,7 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
 
         if (socket_io_instance->io_state == IO_STATE_OPEN)
         {
-            int received = 0;
+            ssize_t received = 0;
             do
             {
                 received = recv(socket_io_instance->socket, socket_io_instance->recv_bytes, RECEIVE_BYTES_VALUE, 0);
