@@ -814,7 +814,7 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
                 signal(SIGPIPE, SIG_IGN);
 
                 ssize_t send_result = send(socket_io_instance->socket, buffer, size, 0);
-                if (send_result != size)
+                if ((send_result < 0) || ((size_t)send_result != size))
                 {
                     if (send_result == INVALID_SOCKET)
                     {
@@ -879,7 +879,7 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
             signal(SIGPIPE, SIG_IGN);
 
             ssize_t send_result = send(socket_io_instance->socket, pending_socket_io->bytes, pending_socket_io->size, 0);
-            if (send_result != pending_socket_io->size)
+            if ((send_result < 0) || ((size_t)send_result != pending_socket_io->size))
             {
                 if (send_result == INVALID_SOCKET)
                 {

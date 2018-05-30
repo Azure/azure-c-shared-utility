@@ -256,7 +256,7 @@ TEST_SUITE_INITIALIZE(a)
     {
         ///arrange
         // no calls expected
-        int i;
+        size_t i;
         size_t received_count_receptor = BAD_BUFFER_COUNT;
         send_receive_parameters_t parameters[3];
 
@@ -369,7 +369,7 @@ TEST_SUITE_INITIALIZE(a)
     {
         ///arrange
         // no calls expected
-        int i;
+        size_t i;
         size_t sent_count_receptor = BAD_BUFFER_COUNT;
         send_receive_parameters_t parameters[2];
         //                                     buffer       size            received_count              fail_msg

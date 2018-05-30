@@ -40,7 +40,7 @@
 #define TEST_CREATE_CONNECTION_HOST_NAME (const char*)"https://test.azure-devices.net"
 #define TEST_CREATE_CONNECTION_PORT (int)443
 
-static const TLSIO_CONFIG tlsio_config = { TEST_CREATE_CONNECTION_HOST_NAME, TEST_CREATE_CONNECTION_PORT };
+static const TLSIO_CONFIG tlsio_config = { TEST_CREATE_CONNECTION_HOST_NAME, TEST_CREATE_CONNECTION_PORT, NULL, NULL };
 
 static int g_ssl_write_success = 1;
 static int g_ssl_read_returns_data = 1;

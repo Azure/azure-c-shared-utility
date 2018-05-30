@@ -74,14 +74,11 @@ public:
         return theValue;
     }
 
-#pragma warning (push)
-#pragma warning (disable : 4100) /*'size' : unreferenced formal parameter*/
     void setArraySize(_In_ size_t size)
     {
         UNREFERENCED_PARAMETER(size);
         ASSERT_FAIL("Setting an array size for something that is not a pointer is CATASTROPHIC failure");
     }
-#pragma warning (pop)
 };
 
 /*template template parameter partial specialization, or something*/

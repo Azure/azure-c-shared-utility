@@ -191,12 +191,12 @@ function(add_files_to_install filesToBeInstalled)
     set(INSTALL_H_FILES ${INSTALL_H_FILES} ${filesToBeInstalled} CACHE INTERNAL "Files that will be installed on the system")
 endfunction()
 
-# XCode warns about unused variables and unused static functions,
-# both of which are produced by serializer
+# XCode and stricter warning levels such as -Wall and -Wextra warn about unused
+# variables and unused static functions, both of which are produced by serializer
 function(usePermissiveRulesForSamplesAndTests)
-    if(XCODE)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-variable  -Wno-unused-function -Wno-missing-braces"  PARENT_SCOPE)
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-variable  -Wno-unused-function -Wno-missing-braces" PARENT_SCOPE)
+    if(NOT MSVC)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-variable  -Wno-unused-function -Wno-unused-but-set-variable -Wno-missing-braces "  PARENT_SCOPE)
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-variable  -Wno-unused-function -Wno-unused-but-set-variable -Wno-missing-braces " PARENT_SCOPE)
     endif()
 endfunction()
 
