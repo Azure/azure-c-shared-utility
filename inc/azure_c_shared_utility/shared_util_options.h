@@ -40,6 +40,10 @@ extern "C"
 
     static STATIC_VAR_UNUSED const char* const OPTION_TLS_VERSION = "tls_version";
 
+    static STATIC_VAR_UNUSED const char* const OPTION_ADDRESS_TYPE = "ADDRESS_TYPE";
+    static STATIC_VAR_UNUSED const char* const OPTION_ADDRESS_TYPE_DOMAIN_SOCKET = "DOMAIN_SOCKET";
+    static STATIC_VAR_UNUSED const char* const OPTION_ADDRESS_TYPE_IP_SOCKET = "IP_SOCKET";
+
 #ifdef __cplusplus
 }
 #endif
