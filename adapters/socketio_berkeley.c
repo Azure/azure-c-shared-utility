@@ -290,22 +290,22 @@ static int lookup_address_and_initiate_socket_connection(SOCKET_IO_INSTANCE* soc
 	}
 	else
 	{
-		if (strlen(socket_io_config->hostname) + 1 > sizeof(addrInfoUn.sun_path))
+		if (strlen(socket_io_instance->hostname) + 1 > sizeof(addrInfoUn.sun_path))
 		{
-		    LogError("Hostname %s is too long for a unix socket (max len = %d)", socket_io_config->hostname, sizeof(addrInfoUn.sun_path));
+		    LogError("Hostname %s is too long for a unix socket (max len = %d)", socket_io_instance->hostname, sizeof(addrInfoUn.sun_path));
 			result = __FAILURE__;
 		}
 		else
 		{
 			addrInfoUn.sun_family = AF_UNIX;
-			strncpy(addr.sun_path, socket_io_config->hostname, sizeof(addrInfoUn.sun_path)-1);
+			strncpy(addrInfoUn.sun_path, socket_io_instance->hostname, sizeof(addrInfoUn.sun_path)-1);
 			
-			connect_addr = (sockaddr*) addrInfoUn;
+			connect_addr = (struct sockaddr*)&addrInfoUn;
 			connect_addr_len = sizeof(addrInfoUn);
 		}
 	}
 	
-	if (result != 0)
+	if (result == 0)
 	{
 		int flags;
 
@@ -1122,7 +1122,7 @@ int socketio_setoption(CONCRETE_IO_HANDLE socket_io, const char* optionName, con
         }
         else if (strcmp(optionName, OPTION_ADDRESS_TYPE) == 0)
         {
-            result = socketio_setaddresstype_option(socket_io_instance, (const char*)optionValue);
+            result = socketio_setaddresstype_option(socket_io_instance, (const char*)value);
         }
         else
         {
