@@ -471,15 +471,27 @@ if(${build_as_dynamic})
     target_link_libraries(aziotsharedutil_dll ${aziotsharedutil_target_libs})
 endif()
 
+# do not add or build any tests of the dependencies
+set(original_run_e2e_tests ${run_e2e_tests})
+set(original_run_unittests ${run_unittests})
+
+set(run_e2e_tests OFF)
+set(run_unittests OFF)
+
+include("dependencies-test.cmake")
+add_subdirectory(testtools)
+
 if (${run_unittests} OR ${run_e2e_tests})
-    include("dependencies-test.cmake")
-    add_subdirectory(testtools)
     setTargetBuildProperties(ctest)
     setTargetBuildProperties(testrunnerswitcher)
     setTargetBuildProperties(umock_c)
-    if (${run_unittests})
-        add_subdirectory(tests)
-    endif()
+endif()
+
+set(run_e2e_tests ${original_run_e2e_tests})
+set(run_unittests ${original_run_unittests})
+
+if (${run_unittests})
+    add_subdirectory(tests)
 endif()
 
 function(FindDllFromLib var libFile)
