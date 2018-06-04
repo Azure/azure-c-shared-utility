@@ -144,8 +144,14 @@ static void internal_close(TLS_IO_INSTANCE* tls_io_instance)
     /* Codes_SRS_TLSIO_30_051: [ On success, if the underlying TLS does not support asynchronous closing, then the adapter shall enter TLSIO_STATE_EXT_CLOSED immediately after entering TLSIO_STATE_EX_CLOSING. ]*/
     if (tls_io_instance->tlsio_state == TLSIO_STATE_OPEN)
     {
-        CFReadStreamClose(tls_io_instance->sockRead);
-        CFWriteStreamClose(tls_io_instance->sockWrite);
+        if (tls_io_instance->sockRead != NULL)
+        {
+            CFReadStreamClose(tls_io_instance->sockRead);
+        }
+        if (tls_io_instance->sockWrite != NULL)
+        {
+            CFWriteStreamClose(tls_io_instance->sockWrite);
+        }
     }
     
     if (tls_io_instance->sockRead != NULL)
