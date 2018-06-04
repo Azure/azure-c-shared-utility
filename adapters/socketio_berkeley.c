@@ -620,7 +620,8 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
 #endif //__APPLE__
             else
             {
-                struct addrinfo addrHint = { 0 };
+                struct addrinfo addrHint;
+                memset(&addrHint, 0, sizeof(struct addrinfo) );
                 addrHint.ai_family = AF_INET;
                 addrHint.ai_socktype = SOCK_STREAM;
                 addrHint.ai_protocol = 0;
