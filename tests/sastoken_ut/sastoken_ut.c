@@ -43,8 +43,6 @@ static void my_gballoc_free(void* ptr)
 
 #undef ENABLE_MOCKS
 
-
-TEST_DEFINE_ENUM_TYPE(HMACSHA256_RESULT, HMACSHA256_RESULT_VALUES);
 IMPLEMENT_UMOCK_C_ENUM_TYPE(HMACSHA256_RESULT, HMACSHA256_RESULT_VALUES);
 
 double my_get_difftime(time_t stopTime, time_t startTime)

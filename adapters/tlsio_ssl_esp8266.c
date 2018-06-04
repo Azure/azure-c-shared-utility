@@ -105,7 +105,8 @@ static void tlsio_openssl_DestroyOption(const char* name, const void* value)
 static OPTIONHANDLER_HANDLE tlsio_openssl_retrieveoptions(CONCRETE_IO_HANDLE tlsio_handle)
 {
     (void)(tlsio_handle);
-        
+
+    (void)tlsio_openssl_DestroyOption;
     /* Not implementing any options */
     return NULL;
 }
@@ -213,7 +214,7 @@ LOCAL int openssl_thread_LWIP_CONNECTION(TLS_IO_INSTANCE* p)
                 int keepInterval = 2; //2s
                 int keepCount = 3; //retry # of times
 
-				tls_io_instance->sock = sock;
+                tls_io_instance->sock = sock;
                 LogInfo("sock: %d", sock);
                 LogInfo("create socket OK");
 
@@ -339,7 +340,7 @@ LOCAL int openssl_thread_LWIP_CONNECTION(TLS_IO_INSTANCE* p)
                                                         break;
                                                     }
                                                     if (FD_ISSET(sock, &errset)) {
-														unsigned int len;
+                                                        unsigned int len;
                                                         result = __LINE__;
                                                         LogInfo("error return : %d", lwip_net_errno(sock));
                                                         len = (unsigned int) sizeof( int );
@@ -612,7 +613,7 @@ int tlsio_openssl_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_open
             int netconn_retry = 0;
             int ret;
 
-			/* Codes_SRS_TLSIO_SSL_ESP8266_99_004: [ The tlsio_ssl_esp8266 shall call the callbacks functions defined in the `xio.h`. ]*/
+            /* Codes_SRS_TLSIO_SSL_ESP8266_99_004: [ The tlsio_ssl_esp8266 shall call the callbacks functions defined in the `xio.h`. ]*/
             /* Codes_SRS_TLSIO_SSL_ESP8266_99_006: [ The tlsio_ssl_esp8266 shall return the status of all async operations using the callbacks. ]*/
             /* Codes_SRS_TLSIO_SSL_ESP8266_99_007: [ If the callback function is set as NULL. The tlsio_ssl_esp8266 shall not call anything. ]*/
             /* Codes_SRS_TLSIO_SSL_ESP8266_99_028: [ The tlsio_openssl_open shall store the provided on_io_open_complete callback function address. ]*/
@@ -671,7 +672,7 @@ int tlsio_openssl_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_cl
 {
     int result;
 
-	//LogInfo("tlsio_openssl_close begin: %d", system_get_free_heap_size());
+    //LogInfo("tlsio_openssl_close begin: %d", system_get_free_heap_size());
     LogInfo("tlsio_openssl_close");
 
     if (tls_io == NULL)
@@ -694,7 +695,7 @@ int tlsio_openssl_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_cl
         }
         else
         {
-			int ret;
+            int ret;
 
             /* Codes_SRS_TLSIO_SSL_ESP8266_99_045: [ The tlsio_openssl_close shall store the provided on_io_close_complete callback function address. ]*/
             tls_io_instance->on_io_close_complete = on_io_close_complete;

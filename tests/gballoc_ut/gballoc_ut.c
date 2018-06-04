@@ -21,8 +21,6 @@
 
 static TEST_MUTEX_HANDLE g_testByTest;
 
-TEST_DEFINE_ENUM_TYPE(LOCK_RESULT, LOCK_RESULT_VALUES);
-
 static void* TEST_ALLOC_PTR1 = (void*)0x4242;
 static void* TEST_ALLOC_PTR2 = (void*)0x4243;
 static void* TEST_REALLOC_PTR = (void*)0x4245;
