@@ -301,7 +301,11 @@ BEGIN_TEST_SUITE(base32_ut)
         STRING_HANDLE result;
 
         //arrange
-        TEST_BASE32_VALUE zero_length = { 0 };
+        TEST_BASE32_VALUE zero_length;
+        zero_length.base32_data = NULL;
+        zero_length.input_len = 0;
+        zero_length.input_data = NULL;
+
         BUFFER_HANDLE input_buff = (BUFFER_HANDLE)&zero_length;
 
         //act

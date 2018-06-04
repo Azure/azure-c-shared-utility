@@ -106,17 +106,21 @@ static char* base32_encode_impl(const unsigned char* source, size_t src_size)
             case 5:
                 pos8 = (iterator[4] & 0x1f);
                 pos7 = ((iterator[4] & 0xe0) >> 5);
+                // fall through
             case 4:
                 pos7 |= ((iterator[3] & 0x03) << 3);
                 pos6 = ((iterator[3] & 0x7c) >> 2);
                 pos5 = ((iterator[3] & 0x80) >> 7);
+                // fall through
             case 3:
                 pos5 |= ((iterator[2] & 0x0f) << 1);
                 pos4 = ((iterator[2] & 0xf0) >> 4);
+                // fall through
             case 2:
                 pos4 |= ((iterator[1] & 0x01) << 4);
                 pos3 = ((iterator[1] & 0x3e) >> 1);
                 pos2 = ((iterator[1] & 0xc0) >> 6);
+                // fall through
             case 1:
                 pos2 |= ((iterator[0] & 0x07) << 2);
                 pos1 = ((iterator[0] & 0xf8) >> 3);
@@ -130,10 +134,10 @@ static char* base32_encode_impl(const unsigned char* source, size_t src_size)
             /* Codes_SRS_BASE32_07_012: [ If the src_size is not divisible by 8, base32_encode_impl shall pad the remaining places with =. ] */
             switch (block_len)
             {
-                case 1: pos3 = pos4 = 32;
-                case 2: pos5 = 32;
-                case 3: pos6 = pos7 = 32;
-                case 4: pos8 = 32;
+                case 1: pos3 = pos4 = 32; // fall through
+                case 2: pos5 = 32; // fall through
+                case 3: pos6 = pos7 = 32; // fall through
+                case 4: pos8 = 32; // fall through
                 case 5:
                     break;
             }
