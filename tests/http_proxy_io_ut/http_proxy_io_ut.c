@@ -1614,13 +1614,13 @@ TEST_FUNCTION(http_proxy_io_get_interface_description_returns_a_structure_with_n
 
     // assert
     ASSERT_IS_NOT_NULL(io_interface);
-    ASSERT_IS_NOT_NULL(io_interface->concrete_io_create);
-    ASSERT_IS_NOT_NULL(io_interface->concrete_io_destroy);
-    ASSERT_IS_NOT_NULL(io_interface->concrete_io_open);
-    ASSERT_IS_NOT_NULL(io_interface->concrete_io_close);
-    ASSERT_IS_NOT_NULL(io_interface->concrete_io_send);
-    ASSERT_IS_NOT_NULL(io_interface->concrete_io_setoption);
-    ASSERT_IS_NOT_NULL(io_interface->concrete_io_retrieveoptions);
+    ASSERT_IS_NOT_NULL((void*)io_interface->concrete_io_create);
+    ASSERT_IS_NOT_NULL((void*)io_interface->concrete_io_destroy);
+    ASSERT_IS_NOT_NULL((void*)io_interface->concrete_io_open);
+    ASSERT_IS_NOT_NULL((void*)io_interface->concrete_io_close);
+    ASSERT_IS_NOT_NULL((void*)io_interface->concrete_io_send);
+    ASSERT_IS_NOT_NULL((void*)io_interface->concrete_io_setoption);
+    ASSERT_IS_NOT_NULL((void*)io_interface->concrete_io_retrieveoptions);
 }
 
 /* on_underlying_io_open_complete */
