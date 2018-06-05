@@ -284,6 +284,7 @@ BEGIN_TEST_SUITE(base32_ut)
     TEST_FUNCTION(Base32_Encode_source_len_0_failed)
     {
         STRING_HANDLE result;
+        BUFFER_HANDLE input_buff;
 
         //arrange
         TEST_BASE32_VALUE zero_length;
@@ -291,7 +292,7 @@ BEGIN_TEST_SUITE(base32_ut)
         zero_length.input_len = 0;
         zero_length.input_data = NULL;
 
-        BUFFER_HANDLE input_buff = (BUFFER_HANDLE)&zero_length;
+        input_buff = (BUFFER_HANDLE)&zero_length;
 
         //act
         result = Base32_Encode(input_buff);
