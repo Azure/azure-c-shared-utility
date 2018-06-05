@@ -258,87 +258,90 @@ static STATIC_VAR_UNUSED void signal_callback(int signum)
 
 static int lookup_address_and_initiate_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance) 
 {
-	int result = 0;
+    int result;
     int err;
 
-	struct addrinfo addrInfoHintIp = { 0 };
-	struct sockaddr_un addrInfoUn = { 0 };
-	struct sockaddr* connect_addr;
-	socklen_t connect_addr_len;
+    struct addrinfo addrInfoHintIp;
+    struct sockaddr_un addrInfoUn;
+    struct sockaddr* connect_addr;
+    socklen_t connect_addr_len;
     struct addrinfo* addrInfoIp = NULL;
 
-	if (socket_io_instance->address_type == ADDRESS_TYPE_IP)
-	{
-    	char portString[16];
+    if (socket_io_instance->address_type == ADDRESS_TYPE_IP)
+    {
+        char portString[16];
 
-		addrInfoHintIp.ai_family = AF_INET;
-		addrInfoHintIp.ai_socktype = SOCK_STREAM;
-		addrInfoHintIp.ai_protocol = 0;
+        memset(&addrInfoHintIp, 0, sizeof(addrInfoHintIp));
+        addrInfoHintIp.ai_family = AF_INET;
+        addrInfoHintIp.ai_socktype = SOCK_STREAM;
 
-		sprintf(portString, "%u", socket_io_instance->port);
-		err = getaddrinfo(socket_io_instance->hostname, portString, &addrInfoHintIp, &addrInfoIp);
-		if (err != 0)
-		{
-			LogError("Failure: getaddrinfo failure %d.", err);
-			result = __FAILURE__;
-		}
-		else
-		{
-			connect_addr = addrInfoIp->ai_addr;
-			connect_addr_len = sizeof(*addrInfoIp->ai_addr);
-		}
-	}
-	else
-	{
-		if (strlen(socket_io_instance->hostname) + 1 > sizeof(addrInfoUn.sun_path))
-		{
-		    LogError("Hostname %s is too long for a unix socket (max len = %d)", socket_io_instance->hostname, sizeof(addrInfoUn.sun_path));
-			result = __FAILURE__;
-		}
-		else
-		{
-			addrInfoUn.sun_family = AF_UNIX;
-			strncpy(addrInfoUn.sun_path, socket_io_instance->hostname, sizeof(addrInfoUn.sun_path) - 1);
-			
-			connect_addr = (struct sockaddr*)&addrInfoUn;
-			connect_addr_len = sizeof(addrInfoUn);
-		}
-	}
-	
-	if (result == 0)
-	{
-		int flags;
+        sprintf(portString, "%u", socket_io_instance->port);
+        err = getaddrinfo(socket_io_instance->hostname, portString, &addrInfoHintIp, &addrInfoIp);
+        if (err != 0)
+        {
+            LogError("Failure: getaddrinfo failure %d.", err);
+            result = __FAILURE__;
+        }
+        else
+        {
+            connect_addr = addrInfoIp->ai_addr;
+            connect_addr_len = sizeof(*addrInfoIp->ai_addr);
+            result = 0;
+        }
+    }
+    else
+    {
+        if (strlen(socket_io_instance->hostname) + 1 > sizeof(addrInfoUn.sun_path))
+        {
+            LogError("Hostname %s is too long for a unix socket (max len = %d)", socket_io_instance->hostname, sizeof(addrInfoUn.sun_path));
+            result = __FAILURE__;
+        }
+        else
+        {
+            memset(&addrInfoUn, 0, sizeof(addrInfoUn));
+            addrInfoUn.sun_family = AF_UNIX;
+            strncpy(addrInfoUn.sun_path, socket_io_instance->hostname, sizeof(addrInfoUn.sun_path) - 1);
+            
+            connect_addr = (struct sockaddr*)&addrInfoUn;
+            connect_addr_len = sizeof(addrInfoUn);
+            result = 0;
+        }
+    }
+    
+    if (result == 0)
+    {
+        int flags;
 
-		if ((-1 == (flags = fcntl(socket_io_instance->socket, F_GETFL, 0))) ||
-			(fcntl(socket_io_instance->socket, F_SETFL, flags | O_NONBLOCK) == -1))
-		{
-			LogError("Failure: fcntl failure.");
-			result = __FAILURE__;
-		}
-		else
-		{
-			err = connect(socket_io_instance->socket, connect_addr, connect_addr_len);
-			if ((err != 0) && (errno != EINPROGRESS))
-			{
-				LogError("Failure: connect failure %d.", errno);
-				result = __FAILURE__;
-			}
-		}	
-	}
+        if ((-1 == (flags = fcntl(socket_io_instance->socket, F_GETFL, 0))) ||
+            (fcntl(socket_io_instance->socket, F_SETFL, flags | O_NONBLOCK) == -1))
+        {
+            LogError("Failure: fcntl failure.");
+            result = __FAILURE__;
+        }
+        else
+        {
+            err = connect(socket_io_instance->socket, connect_addr, connect_addr_len);
+            if ((err != 0) && (errno != EINPROGRESS))
+            {
+                LogError("Failure: connect failure %d.", errno);
+                result = __FAILURE__;
+            }
+        }    
+    }
 
     if (addrInfoIp != NULL)
     {
         freeaddrinfo(addrInfoIp);
     }
-	
-	return result;
+    
+    return result;
 }
 
 static int wait_for_connection(SOCKET_IO_INSTANCE* socket_io_instance)
 {
     int result;
     int err;
-    int retval = -1;
+    int retval;
     int select_errno = 0;
 
     fd_set fdset;
