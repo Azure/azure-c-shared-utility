@@ -128,8 +128,8 @@ if(MSVC)
 
     endif()
 elseif(LINUX) #LINUX OR APPLE
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wformat=2 -Wformat-security -Wno-unused-variable")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wformat=2 -Wformat-security -Wno-unused-variable")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wformat=2 -Wformat-security")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wformat=2 -Wformat-security")
     if(${use_openssl})
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_OPENSSL")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_OPENSSL")
@@ -138,6 +138,9 @@ elseif(LINUX) #LINUX OR APPLE
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_WOLFSSL")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_WOLFSSL")
     endif()
+    # Turn off warning that can not be fixed right now
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-variable -Wno-missing-braces -Wno-missing-field-initializers")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-variable -Wno-missing-braces -Wno-missing-field-initializers")
 elseif(APPLE)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wformat-security")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wformat-security")
@@ -478,8 +481,10 @@ set(original_run_unittests ${run_unittests})
 set(run_e2e_tests OFF)
 set(run_unittests OFF)
 
-include("dependencies-test.cmake")
-add_subdirectory(testtools)
+if (${original_run_unittests})
+    include("dependencies-test.cmake")
+    add_subdirectory(testtools)
+endif()
 
 if (${run_unittests} OR ${run_e2e_tests})
     setTargetBuildProperties(ctest)
