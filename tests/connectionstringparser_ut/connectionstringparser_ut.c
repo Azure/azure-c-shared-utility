@@ -46,7 +46,6 @@ void* my_gballoc_realloc(void* ptr, size_t size)
 #include "real_string_tokenizer.h"
 #include "real_strings.h"
 
-TEST_DEFINE_ENUM_TYPE(MAP_RESULT, MAP_RESULT_VALUES);
 IMPLEMENT_UMOCK_C_ENUM_TYPE(MAP_RESULT, MAP_RESULT_VALUES);
 
 static TEST_MUTEX_HANDLE g_testByTest;

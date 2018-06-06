@@ -70,7 +70,7 @@ int main(int argc, char** argv)
         }
         else
         {
-            TLSIO_CONFIG tlsio_config = { "www.google.com", 443 };
+            TLSIO_CONFIG tlsio_config = { "www.google.com", 443, NULL, NULL};
             XIO_HANDLE tlsio;
 
             tlsio = xio_create(tlsio_interface, &tlsio_config);

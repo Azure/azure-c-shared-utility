@@ -30,7 +30,7 @@ static const LOCK_HANDLE TEST_LOCK_HANDLE = (LOCK_HANDLE)0x4244;
 #include "umock_c.h"
 #include "umock_c_prod.h"
 
-TEST_DEFINE_ENUM_TYPE(LOCK_RESULT, LOCK_RESULT_VALUES);
+//TEST_DEFINE_ENUM_TYPE(LOCK_RESULT, LOCK_RESULT_VALUES);
 IMPLEMENT_UMOCK_C_ENUM_TYPE(LOCK_RESULT, LOCK_RESULT_VALUES);
 
 #ifdef __cplusplus
@@ -144,7 +144,7 @@ TEST_FUNCTION(when_gballoc_is_not_initialized_gballoc_malloc_calls_crt_malloc)
 TEST_FUNCTION(when_gballoc_is_not_initialized_then_gballoc_calloc_calls_crt_calloc)
 {
     // arrange
-	void* result;
+    void* result;
     STRICT_EXPECTED_CALL(mock_calloc(1, 1));
 
     // act
@@ -161,7 +161,7 @@ TEST_FUNCTION(when_gballoc_is_not_initialized_then_gballoc_calloc_calls_crt_call
 TEST_FUNCTION(when_gballoc_is_not_initialized_then_gballoc_realloc_calls_crt_realloc)
 {
     // arrange
-	void* result;
+    void* result;
     STRICT_EXPECTED_CALL(mock_realloc(NULL, 1));
 
     // act

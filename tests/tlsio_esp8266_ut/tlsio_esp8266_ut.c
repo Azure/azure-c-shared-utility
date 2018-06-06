@@ -40,7 +40,7 @@
 #define TEST_CREATE_CONNECTION_HOST_NAME (const char*)"https://test.azure-devices.net"
 #define TEST_CREATE_CONNECTION_PORT (int)443
 
-static const TLSIO_CONFIG tlsio_config = { TEST_CREATE_CONNECTION_HOST_NAME, TEST_CREATE_CONNECTION_PORT };
+static const TLSIO_CONFIG tlsio_config = { TEST_CREATE_CONNECTION_HOST_NAME, TEST_CREATE_CONNECTION_PORT, NULL, NULL };
 
 static int g_ssl_write_success = 1;
 static int g_ssl_read_returns_data = 1;
@@ -348,9 +348,7 @@ static void on_bytes_received(void* context, const unsigned char* buffer, size_t
 #include "azure_c_shared_utility/crt_abstractions.h"
 #include "azure_c_shared_utility/optionhandler.h"
 
-TEST_DEFINE_ENUM_TYPE(IO_OPEN_RESULT, IO_OPEN_RESULT_VALUES);
 IMPLEMENT_UMOCK_C_ENUM_TYPE(IO_OPEN_RESULT, IO_OPEN_RESULT_VALUES);
-TEST_DEFINE_ENUM_TYPE(IO_SEND_RESULT, IO_SEND_RESULT_VALUES);
 IMPLEMENT_UMOCK_C_ENUM_TYPE(IO_SEND_RESULT, IO_SEND_RESULT_VALUES);
 
 
@@ -495,7 +493,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
             ASSERT_FAIL("Could not acquire test serialization mutex.");
         }
 
-		g_ssl_fd_isset = 1;
+        g_ssl_fd_isset = 1;
 
         umock_c_reset_all_calls();
     }
@@ -518,7 +516,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
     {
         ///arrange
         TLS_IO_INSTANCE instance;
-		const IO_INTERFACE_DESCRIPTION* tlsioInterfaces;
+        const IO_INTERFACE_DESCRIPTION* tlsioInterfaces;
         g_ssl_read_returns_data = 1;
         memset(&instance, 0, sizeof(TLS_IO_INSTANCE));
         instance.on_bytes_received = on_bytes_received;
@@ -544,7 +542,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
     {
         ///arrange
         TLS_IO_INSTANCE instance;
-		const IO_INTERFACE_DESCRIPTION* tlsioInterfaces;
+        const IO_INTERFACE_DESCRIPTION* tlsioInterfaces;
         g_ssl_read_returns_data = 0;
         memset(&instance, 0, sizeof(TLS_IO_INSTANCE));
         instance.on_bytes_received = on_bytes_received;
@@ -591,7 +589,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ///arrange
         int result = 0;
         TLS_IO_INSTANCE instance;
-		const IO_INTERFACE_DESCRIPTION* tlsioInterfaces;
+        const IO_INTERFACE_DESCRIPTION* tlsioInterfaces;
         unsigned char test_buffer[] = { 0x42, 0x43 };
         memset(&instance, 0, sizeof(TLS_IO_INSTANCE));
         instance.tlsio_state = TLSIO_STATE_OPEN;
@@ -639,7 +637,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ///arrange
         int result = 0;
         TLS_IO_INSTANCE instance;
-		const IO_INTERFACE_DESCRIPTION* tlsioInterfaces;
+        const IO_INTERFACE_DESCRIPTION* tlsioInterfaces;
         memset(&instance, 0, sizeof(TLS_IO_INSTANCE));
         instance.tlsio_state = TLSIO_STATE_OPEN;
         g_ssl_write_success = 1;
@@ -661,7 +659,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ///arrange
         int result = 0;
         TLS_IO_INSTANCE instance;
-		const IO_INTERFACE_DESCRIPTION* tlsioInterfaces;
+        const IO_INTERFACE_DESCRIPTION* tlsioInterfaces;
         unsigned char test_buffer[] = {0x42};
         memset(&instance, 0, sizeof(TLS_IO_INSTANCE));
         instance.tlsio_state = TLSIO_STATE_OPEN;
@@ -705,7 +703,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         int result = 0;
         TLS_IO_INSTANCE instance;
         unsigned char test_buffer[] = { 0x42, 0x43 };
-		const IO_INTERFACE_DESCRIPTION* tlsioInterfaces;
+        const IO_INTERFACE_DESCRIPTION* tlsioInterfaces;
         memset(&instance, 0, sizeof(TLS_IO_INSTANCE));
         instance.tlsio_state = TLSIO_STATE_OPEN;
         g_ssl_write_success = 0;
@@ -744,7 +742,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         TLS_IO_INSTANCE instance;
         SSL_CTX *ctx;
         SSL *ssl;
-		const IO_INTERFACE_DESCRIPTION* tlsioInterfaces;
+        const IO_INTERFACE_DESCRIPTION* tlsioInterfaces;
         memset(&instance, 0, sizeof(TLS_IO_INSTANCE));
         g_ssl_TLSv1clientmethod_success = 0;
         ctx = SSL_CTX_new(TLSv1_client_method());
@@ -841,7 +839,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         TLS_IO_INSTANCE instance;
         SSL_CTX *ctx;
         SSL *ssl;
-		const IO_INTERFACE_DESCRIPTION* tlsioInterfaces;
+        const IO_INTERFACE_DESCRIPTION* tlsioInterfaces;
         memset(&instance, 0, sizeof(TLS_IO_INSTANCE));
         g_ssl_TLSv1clientmethod_success = 0;
         ctx = SSL_CTX_new(TLSv1_client_method());
@@ -889,7 +887,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
     TEST_FUNCTION(tlsio_openssl_destroy__succeed)
     {
         ///arrange
-		const IO_INTERFACE_DESCRIPTION* tlsioInterfaces;
+        const IO_INTERFACE_DESCRIPTION* tlsioInterfaces;
         TLS_IO_INSTANCE* instance = (TLS_IO_INSTANCE*)malloc(sizeof(TLS_IO_INSTANCE));
         memset(instance, 0, sizeof(TLS_IO_INSTANCE));
         instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
@@ -926,7 +924,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
     TEST_FUNCTION(tlsio_openssl_destroy_wrong_state__failed)
     {
         ///arrange
-		const IO_INTERFACE_DESCRIPTION* tlsioInterfaces;
+        const IO_INTERFACE_DESCRIPTION* tlsioInterfaces;
         TLS_IO_INSTANCE* instance = (TLS_IO_INSTANCE*)malloc(sizeof(TLS_IO_INSTANCE));
         memset(instance, 0, sizeof(TLS_IO_INSTANCE));
         instance->tlsio_state = TLSIO_STATE_OPENING;
@@ -957,7 +955,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ///arrange
         TLS_IO_INSTANCE tls_io_instance;
         int result;
-		const IO_INTERFACE_DESCRIPTION* tlsioInterfaces;
+        const IO_INTERFACE_DESCRIPTION* tlsioInterfaces;
         memset(&tls_io_instance, 0, sizeof(TLS_IO_INSTANCE));
 
         tls_io_instance.tlsio_state = TLSIO_STATE_NOT_OPEN;
@@ -1043,7 +1041,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ///arrange
         TLS_IO_INSTANCE tls_io_instance;
         int result;
-		const IO_INTERFACE_DESCRIPTION* tlsioInterfaces;
+        const IO_INTERFACE_DESCRIPTION* tlsioInterfaces;
         memset(&tls_io_instance, 0, sizeof(TLS_IO_INSTANCE));
         g_gethostbyname_success = 1;
         g_socket_success = 1;
@@ -1076,7 +1074,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
     {
         ///arrange
         int result;
-		const IO_INTERFACE_DESCRIPTION* tlsioInterfaces;
+        const IO_INTERFACE_DESCRIPTION* tlsioInterfaces;
         g_gethostbyname_success = 1;
         g_socket_success = 1;
         g_setsockopt_success = 1;
@@ -1114,7 +1112,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ///arrange
         TLS_IO_INSTANCE tls_io_instance;
         int result;
-		const IO_INTERFACE_DESCRIPTION* tlsioInterfaces;
+        const IO_INTERFACE_DESCRIPTION* tlsioInterfaces;
         int retry = 0;
         memset(&tls_io_instance, 0, sizeof(TLS_IO_INSTANCE));
         tls_io_instance.tlsio_state = TLSIO_STATE_NOT_OPEN;
@@ -1737,9 +1735,9 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
     {
         ///arrange
         OPTIONHANDLER_HANDLE result;
-		const IO_INTERFACE_DESCRIPTION* tlsioInterfaces;
+        const IO_INTERFACE_DESCRIPTION* tlsioInterfaces;
         int negativeTestsInitResult = umock_c_negative_tests_init();
-		size_t i;
+        size_t i;
 
         ASSERT_ARE_EQUAL(int, 0, negativeTestsInitResult);
 
