@@ -114,7 +114,7 @@ static void* tlsio_openssl_CloneOption(const char* name, const void* value)
                 /*return as is*/
             }
         }
-        else if (strcmp(name, OPTION_CIPHER_SUITE) == 0)
+        else if (strcmp(name, OPTION_OPENSSL_CIPHER_SUITE) == 0)
         {
             if (mallocAndStrcpy_s((char**)&result, value) != 0)
             {
@@ -246,7 +246,7 @@ static void tlsio_openssl_DestroyOption(const char* name, const void* value)
     {
         if (
             (strcmp(name, OPTION_TRUSTED_CERT) == 0) ||
-            (strcmp(name, OPTION_CIPHER_SUITE) == 0) ||
+            (strcmp(name, OPTION_OPENSSL_CIPHER_SUITE) == 0) ||
             (strcmp(name, SU_OPTION_X509_CERT) == 0) ||
             (strcmp(name, SU_OPTION_X509_PRIVATE_KEY) == 0) ||
             (strcmp(name, OPTION_X509_ECC_CERT) == 0) ||
@@ -315,7 +315,7 @@ static OPTIONHANDLER_HANDLE tlsio_openssl_retrieveoptions(CONCRETE_IO_HANDLE han
             }
             else if (
                 (tls_io_instance->cipher_list != NULL) &&
-                (OptionHandler_AddOption(result, OPTION_CIPHER_SUITE, tls_io_instance->cipher_list) != OPTIONHANDLER_OK)
+                (OptionHandler_AddOption(result, OPTION_OPENSSL_CIPHER_SUITE, tls_io_instance->cipher_list) != OPTIONHANDLER_OK)
                 )
             {
                 LogError("unable to save CipherSuite option");
@@ -1465,7 +1465,7 @@ int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
                 result = add_certificate_to_store(tls_io_instance, cert);
             }
         }
-        else if (strcmp(OPTION_CIPHER_SUITE, optionName) == 0)
+        else if (strcmp(OPTION_OPENSSL_CIPHER_SUITE, optionName) == 0)
         {
             const char* cipherList = (const char*)value;
             size_t len;
