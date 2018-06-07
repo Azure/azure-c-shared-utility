@@ -68,6 +68,7 @@ typedef struct TLS_IO_INSTANCE_TAG
     BIO* out_bio;
     TLSIO_STATE tlsio_state;
     char* certificate;
+    char* cipher_list;
     const char* x509_certificate;
     const char* x509_private_key;
     TLSIO_VERSION tls_version;
@@ -106,6 +107,18 @@ static void* tlsio_openssl_CloneOption(const char* name, const void* value)
             if (mallocAndStrcpy_s((char**)&result, value) != 0)
             {
                 LogError("unable to mallocAndStrcpy_s TrustedCerts value");
+                result = NULL;
+            }
+            else
+            {
+                /*return as is*/
+            }
+        }
+        else if (strcmp(name, OPTION_CIPHER_SUITE) == 0)
+        {
+            if (mallocAndStrcpy_s((char**)&result, value) != 0)
+            {
+                LogError("unable to mallocAndStrcpy_s CipherSuite value");
                 result = NULL;
             }
             else
@@ -233,6 +246,7 @@ static void tlsio_openssl_DestroyOption(const char* name, const void* value)
     {
         if (
             (strcmp(name, OPTION_TRUSTED_CERT) == 0) ||
+            (strcmp(name, OPTION_CIPHER_SUITE) == 0) ||
             (strcmp(name, SU_OPTION_X509_CERT) == 0) ||
             (strcmp(name, SU_OPTION_X509_PRIVATE_KEY) == 0) ||
             (strcmp(name, OPTION_X509_ECC_CERT) == 0) ||
@@ -296,6 +310,15 @@ static OPTIONHANDLER_HANDLE tlsio_openssl_retrieveoptions(CONCRETE_IO_HANDLE han
                 )
             {
                 LogError("unable to save TrustedCerts option");
+                OptionHandler_Destroy(result);
+                result = NULL;
+            }
+            else if (
+                (tls_io_instance->cipher_list != NULL) &&
+                (OptionHandler_AddOption(result, OPTION_CIPHER_SUITE, tls_io_instance->cipher_list) != OPTIONHANDLER_OK)
+                )
+            {
+                LogError("unable to save CipherSuite option");
                 OptionHandler_Destroy(result);
                 result = NULL;
             }
@@ -927,6 +950,14 @@ static int create_openssl_instance(TLS_IO_INSTANCE* tlsInstance)
         log_ERR_get_error("Failed allocating OpenSSL context.");
         result = __FAILURE__;
     }
+    else if ((tlsInstance->cipher_list != NULL) &&
+             (SSL_CTX_set_cipher_list(tlsInstance->ssl_context, tlsInstance->cipher_list)) != 1)
+    {
+        SSL_CTX_free(tlsInstance->ssl_context);
+        tlsInstance->ssl_context = NULL;
+        log_ERR_get_error("unable to set cipher list.");
+        result = __FAILURE__;
+    }
     else if (add_certificate_to_store(tlsInstance, tlsInstance->certificate) != 0)
     {
         SSL_CTX_free(tlsInstance->ssl_context);
@@ -1103,6 +1134,7 @@ CONCRETE_IO_HANDLE tlsio_openssl_create(void* io_create_parameters)
             else
             {
                 result->certificate = NULL;
+                result->cipher_list = NULL;
                 result->in_bio = NULL;
                 result->out_bio = NULL;
                 result->on_bytes_received = NULL;
@@ -1153,6 +1185,11 @@ void tlsio_openssl_destroy(CONCRETE_IO_HANDLE tls_io)
         {
             free(tls_io_instance->certificate);
             tls_io_instance->certificate = NULL;
+        }
+        if (tls_io_instance->cipher_list != NULL)
+        {
+            free(tls_io_instance->cipher_list);
+            tls_io_instance->cipher_list = NULL;
         }
         free((void*)tls_io_instance->x509_certificate);
         free((void*)tls_io_instance->x509_private_key);
@@ -1426,6 +1463,32 @@ int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
             if (tls_io_instance->ssl_context != NULL)
             {
                 result = add_certificate_to_store(tls_io_instance, cert);
+            }
+        }
+        else if (strcmp(OPTION_CIPHER_SUITE, optionName) == 0)
+        {
+            const char* cipherList = (const char*)value;
+            size_t len;
+
+            if (tls_io_instance->cipher_list != NULL)
+            {
+                // Free the memory if it has been previously allocated
+                free(tls_io_instance->cipher_list);
+                tls_io_instance->cipher_list = NULL;
+            }
+
+            // Store the cipher suites
+            len = strlen(cipherList);
+            tls_io_instance->cipher_list = malloc(len + 1);
+            if (tls_io_instance->cipher_list == NULL)
+            {
+                printf("tls_io_instance->cipher_list == NULL\n");
+                result = __FAILURE__;
+            }
+            else
+            {
+                strcpy(tls_io_instance->cipher_list, cipherList);
+                result = 0;
             }
         }
         else if (strcmp(SU_OPTION_X509_CERT, optionName) == 0 || strcmp(OPTION_X509_ECC_CERT, optionName) == 0)
