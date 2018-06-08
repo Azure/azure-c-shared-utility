@@ -24,6 +24,10 @@ extern "C"
 
     static STATIC_VAR_UNUSED const char* const OPTION_TRUSTED_CERT = "TrustedCerts";
 
+    // Clients should not use OPTION_OPENSSL_CIPHER_SUITE except for very specialized scenarios.
+    // They instead should rely on the underlying client TLS stack and service to negotiate an appropriate cipher.
+    static STATIC_VAR_UNUSED const char* const OPTION_OPENSSL_CIPHER_SUITE = "CipherSuite";
+
     static STATIC_VAR_UNUSED const char* const SU_OPTION_X509_CERT = "x509certificate";
     static STATIC_VAR_UNUSED const char* const SU_OPTION_X509_PRIVATE_KEY = "x509privatekey";
 
