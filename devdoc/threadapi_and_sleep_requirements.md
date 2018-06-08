@@ -14,7 +14,7 @@ correct SDK operation, while the _threadapi_ adapter is optional.
 
 ## References
 
-[Azure IoT porting guide](https://github.com/Azure/azure-c-shared-utility/blob/master/doc/porting_guide.md)<br/>
+[Azure IoT porting guide](https://github.com/Azure/azure-c-shared-utility/blob/master/devdoc/porting_guide.md)<br/>
 [threadapi.h](https://github.com/Azure/azure-c-shared-utility/blob/master/inc/azure_c_shared_utility/threadapi.h)
 
 ## Exposed API
