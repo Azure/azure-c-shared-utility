@@ -1467,9 +1467,6 @@ int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
         }
         else if (strcmp(OPTION_OPENSSL_CIPHER_SUITE, optionName) == 0)
         {
-            const char* cipherList = (const char*)value;
-            size_t len;
-
             if (tls_io_instance->cipher_list != NULL)
             {
                 // Free the memory if it has been previously allocated
@@ -1478,16 +1475,13 @@ int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
             }
 
             // Store the cipher suites
-            len = strlen(cipherList);
-            tls_io_instance->cipher_list = malloc(len + 1);
-            if (tls_io_instance->cipher_list == NULL)
+            if (mallocAndStrcpy_s((char**)&tls_io_instance->cipher_list, value) != 0)
             {
-                printf("tls_io_instance->cipher_list == NULL\n");
+                LogError("unable to mallocAndStrcpy_s %s", optionName);
                 result = __FAILURE__;
             }
             else
             {
-                strcpy(tls_io_instance->cipher_list, cipherList);
                 result = 0;
             }
         }
@@ -1503,7 +1497,7 @@ int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
                 /*let's make a copy of this option*/
                 if (mallocAndStrcpy_s((char**)&tls_io_instance->x509_certificate, value) != 0)
                 {
-                    LogError("unable to mallocAndStrcpy_s");
+                    LogError("unable to mallocAndStrcpy_s %s", optionName);
                     result = __FAILURE__;
                 }
                 else
@@ -1524,7 +1518,7 @@ int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
                 /*let's make a copy of this option*/
                 if (mallocAndStrcpy_s((char**)&tls_io_instance->x509_private_key, value) != 0)
                 {
-                    LogError("unable to mallocAndStrcpy_s");
+                    LogError("unable to mallocAndStrcpy_s %s", optionName);
                     result = __FAILURE__;
                 }
                 else
