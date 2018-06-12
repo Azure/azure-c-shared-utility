@@ -338,3 +338,5 @@ const IO_INTERFACE_DESCRIPTION* wsio_get_interface_description(void);
 **SRS_WSIO_01_168: [** The `close_code`, `extra_data` and `extra_data_length` arguments shall be ignored. **]**
 
 **SRS_WSIO_01_167: [** If `on_underlying_ws_peer_closed` is called with a NULL context it shall do nothing. **]**
+
+**SRS_WSIO_07_001: [** When `on_underlying_ws_peer_closed` and the state of the IO is NOT_OPEN an error will be raised and the io_state will remain as NOT_OPEN **]**

@@ -10,11 +10,11 @@ typedef struct simpleItem_tag
     DLIST_ENTRY link;
 } simpleItem,*pSimpleItem;
 
-static simpleItem simp1 = { 1 };
-static simpleItem simp2 = { 2 };
-static simpleItem simp3 = { 3 };
-static simpleItem simp4 = { 4 };
-static simpleItem simp5 = { 5 };
+static simpleItem simp1 = { 1, { NULL, NULL } };
+static simpleItem simp2 = { 2, { NULL, NULL } };
+static simpleItem simp3 = { 3, { NULL, NULL } };
+static simpleItem simp4 = { 4, { NULL, NULL } };
+static simpleItem simp5 = { 5, { NULL, NULL } };
 
 static TEST_MUTEX_HANDLE g_dllByDll;
 static TEST_MUTEX_HANDLE g_testByTest;

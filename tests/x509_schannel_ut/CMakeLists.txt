@@ -12,7 +12,7 @@ ${theseTestsName}.c
 )
 
 set(${theseTestsName}_c_files
-../../src/x509_schannel.c
+../../adapters/x509_schannel.c
 )
 
 set(${theseTestsName}_h_files

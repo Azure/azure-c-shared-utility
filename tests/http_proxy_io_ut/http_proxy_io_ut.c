@@ -16,6 +16,10 @@
 static TEST_MUTEX_HANDLE g_testByTest;
 static TEST_MUTEX_HANDLE g_dllByDll;
 
+#if defined _MSC_VER
+#pragma warning(disable: 4054) /* MSC incorrectly fires this */
+#endif
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -51,9 +55,7 @@ extern "C"
 #include "azure_c_shared_utility/strings.h"
 #include "azure_c_shared_utility/base64.h"
 
-TEST_DEFINE_ENUM_TYPE(IO_OPEN_RESULT, IO_OPEN_RESULT_VALUES);
 IMPLEMENT_UMOCK_C_ENUM_TYPE(IO_OPEN_RESULT, IO_OPEN_RESULT_VALUES);
-TEST_DEFINE_ENUM_TYPE(IO_SEND_RESULT, IO_SEND_RESULT_VALUES);
 IMPLEMENT_UMOCK_C_ENUM_TYPE(IO_SEND_RESULT, IO_SEND_RESULT_VALUES);
 
 #define TEST_OPTION_HANDLER                     (OPTIONHANDLER_HANDLE)0x4244
@@ -229,16 +231,6 @@ static int my_xio_close(XIO_HANDLE xio, ON_IO_CLOSE_COMPLETE on_io_close_complet
     (void)xio;
     g_on_io_close_complete = on_io_close_complete;
     g_on_io_close_complete_context = callback_context;
-    return 0;
-}
-
-static int my_xio_send(XIO_HANDLE xio, const void* buffer, size_t size, ON_SEND_COMPLETE on_send_complete, void* callback_context)
-{
-    (void)xio;
-    (void)buffer;
-    (void)size;
-    g_on_io_send_complete = on_send_complete;
-    g_on_io_send_complete_context = callback_context;
     return 0;
 }
 
@@ -560,7 +552,7 @@ TEST_FUNCTION(http_proxy_io_create_with_NULL_proxy_hostname_fails)
 TEST_FUNCTION(when_a_call_made_by_http_proxy_io_create_fails_then_http_proxy_io_create_fails)
 {
     // arrange
-	size_t i;
+    size_t i;
     int negativeTestsInitResult = umock_c_negative_tests_init();
     ASSERT_ARE_EQUAL(int, 0, negativeTestsInitResult);
 

@@ -39,15 +39,10 @@ static const OPTIONHANDLER_HANDLE TEST_UWS_CLIENT_OPTIONHANDLER_HANDLE = (OPTION
 static void* TEST_UNDERLYING_IO_PARAMETERS = (void*)0x4248;
 static const IO_INTERFACE_DESCRIPTION* TEST_UNDERLYING_IO_INTERFACE = (const IO_INTERFACE_DESCRIPTION*)0x4249;
 
-TEST_DEFINE_ENUM_TYPE(IO_OPEN_RESULT, IO_OPEN_RESULT_VALUES);
 IMPLEMENT_UMOCK_C_ENUM_TYPE(IO_OPEN_RESULT, IO_OPEN_RESULT_VALUES);
-TEST_DEFINE_ENUM_TYPE(WS_OPEN_RESULT, WS_OPEN_RESULT_VALUES);
 IMPLEMENT_UMOCK_C_ENUM_TYPE(WS_OPEN_RESULT, WS_OPEN_RESULT_VALUES);
-TEST_DEFINE_ENUM_TYPE(IO_SEND_RESULT, IO_SEND_RESULT_VALUES);
 IMPLEMENT_UMOCK_C_ENUM_TYPE(IO_SEND_RESULT, IO_SEND_RESULT_VALUES);
-TEST_DEFINE_ENUM_TYPE(WS_SEND_FRAME_RESULT, WS_SEND_FRAME_RESULT_VALUES);
 IMPLEMENT_UMOCK_C_ENUM_TYPE(WS_SEND_FRAME_RESULT, WS_SEND_FRAME_RESULT_VALUES);
-TEST_DEFINE_ENUM_TYPE(OPTIONHANDLER_RESULT, OPTIONHANDLER_RESULT_VALUES);
 IMPLEMENT_UMOCK_C_ENUM_TYPE(OPTIONHANDLER_RESULT, OPTIONHANDLER_RESULT_VALUES);
 
 static size_t currentmalloc_call;
@@ -2463,6 +2458,30 @@ TEST_FUNCTION(on_underlying_ws_peer_closed_when_OPEN_indicates_an_error)
 /* Tests_SRS_WSIO_01_166: [ When `on_underlying_ws_peer_closed` and the state of the IO is OPEN an error shall be indicated by calling the `on_io_error` callback passed to `wsio_open`. ]*/
 /* Tests_SRS_WSIO_01_168: [ The `close_code`, `extra_data` and `extra_data_length` arguments shall be ignored. ]*/
 TEST_FUNCTION(on_underlying_ws_peer_closed_when_CLOSING_indicates_an_error)
+{
+    // arrange
+    CONCRETE_IO_HANDLE wsio;
+
+    wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
+    (void)wsio_get_interface_description()->concrete_io_open(wsio, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
+    g_on_ws_open_complete(g_on_ws_open_complete_context, WS_OPEN_OK);
+    (void)wsio_get_interface_description()->concrete_io_close(wsio, test_on_io_close_complete, (void*)0x4245);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4244));
+
+    // act
+    g_on_ws_peer_closed(g_on_ws_peer_closed_context, NULL, NULL, 0);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    wsio_get_interface_description()->concrete_io_destroy(wsio);
+}
+
+// Tests_SRS_WSIO_07_001: [When `on_underlying_ws_peer_closed` and the state of the IO is NOT_OPEN an error will be raised and the io_state will remain as NOT_OPEN]
+TEST_FUNCTION(on_underlying_ws_peer_closed_when_NOT_OPEN_indicates_an_error)
 {
     // arrange
     CONCRETE_IO_HANDLE wsio;

@@ -15,7 +15,7 @@ CORES=$(grep -c ^processor /proc/cpuinfo 2>/dev/null || sysctl -n hw.ncpu)
 rm -r -f $build_folder
 mkdir -p $build_folder
 pushd $build_folder
-cmake $build_root -Drun_unittests:bool=ON -Drun_valgrind:BOOL=ON
+cmake $build_root -Drun_unittests:bool=ON
 make --jobs=$CORES
 
 popd

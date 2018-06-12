@@ -143,8 +143,14 @@ static void internal_close(TLS_IO_INSTANCE* tls_io_instance)
     /* Codes_SRS_TLSIO_30_051: [ On success, if the underlying TLS does not support asynchronous closing, then the adapter shall enter TLSIO_STATE_EXT_CLOSED immediately after entering TLSIO_STATE_EX_CLOSING. ]*/
     if (tls_io_instance->tlsio_state == TLSIO_STATE_OPEN)
     {
-        CFReadStreamClose(tls_io_instance->sockRead);
-        CFWriteStreamClose(tls_io_instance->sockWrite);
+        if (tls_io_instance->sockRead != NULL)
+        {
+            CFReadStreamClose(tls_io_instance->sockRead);
+        }
+        if (tls_io_instance->sockWrite != NULL)
+        {
+            CFWriteStreamClose(tls_io_instance->sockWrite);
+        }
     }
     
     if (tls_io_instance->sockRead != NULL)
@@ -418,24 +424,32 @@ static void dowork_read(TLS_IO_INSTANCE* tls_io_instance)
 
     if (tls_io_instance->tlsio_state == TLSIO_STATE_OPEN)
     {
-        while (CFReadStreamHasBytesAvailable(tls_io_instance->sockRead))
+        CFStreamStatus read_status = CFReadStreamGetStatus(tls_io_instance->sockRead);
+        if (read_status == kCFStreamStatusAtEnd)
         {
-            rcv_bytes = CFReadStreamRead(tls_io_instance->sockRead, buffer, (CFIndex)(sizeof(buffer)));
-            
-            if (rcv_bytes > 0)
+            enter_tlsio_error_state(tls_io_instance);
+        }
+        else
+        {
+            while (tls_io_instance->tlsio_state == TLSIO_STATE_OPEN && CFReadStreamHasBytesAvailable(tls_io_instance->sockRead))
             {
-                // tls_io_instance->on_bytes_received was already checked for NULL
-                // in the call to tlsio_appleios_open_async
-                /* Codes_SRS_TLSIO_30_100: [ As long as the TLS connection is able to provide received data, tlsio_dowork shall repeatedly read this data and call on_bytes_received with the pointer to the buffer containing the data, the number of bytes received, and the on_bytes_received_context. ]*/
-                tls_io_instance->on_bytes_received(tls_io_instance->on_bytes_received_context, buffer, rcv_bytes);
-            }
-            else if (rcv_bytes < 0)
-            {
-                LogInfo("Communications error while reading");
-                enter_tlsio_error_state(tls_io_instance);
+                rcv_bytes = CFReadStreamRead(tls_io_instance->sockRead, buffer, (CFIndex)(sizeof(buffer)));
+                
+                if (rcv_bytes > 0)
+                {
+                    // tls_io_instance->on_bytes_received was already checked for NULL
+                    // in the call to tlsio_appleios_open_async
+                    /* Codes_SRS_TLSIO_30_100: [ As long as the TLS connection is able to provide received data, tlsio_dowork shall repeatedly read this data and call on_bytes_received with the pointer to the buffer containing the data, the number of bytes received, and the on_bytes_received_context. ]*/
+                    tls_io_instance->on_bytes_received(tls_io_instance->on_bytes_received_context, buffer, rcv_bytes);
+                }
+                else if (rcv_bytes < 0)
+                {
+                    LogError("Communications error while reading");
+                    enter_tlsio_error_state(tls_io_instance);
+                }
+                /* Codes_SRS_TLSIO_30_102: [ If the TLS connection receives no data then tlsio_dowork shall not call the on_bytes_received callback. ]*/
             }
         }
-        /* Codes_SRS_TLSIO_30_102: [ If the TLS connection receives no data then tlsio_dowork shall not call the on_bytes_received callback. ]*/
     }
 }
 
@@ -451,7 +465,7 @@ static void dowork_send(TLS_IO_INSTANCE* tls_io_instance)
         if (CFWriteStreamCanAcceptBytes(tls_io_instance->sockWrite))
         {
             CFIndex write_result = CFWriteStreamWrite(tls_io_instance->sockWrite, buffer, pending_message->unsent_size);
-            if (write_result > 0)
+            if (write_result >= 0)
             {
                 pending_message->unsent_size -= write_result;
                 if (pending_message->unsent_size == 0)
@@ -471,7 +485,7 @@ static void dowork_send(TLS_IO_INSTANCE* tls_io_instance)
             {
                 // The write returned non-success. It may be busy, or it may be broken
                 CFErrorRef write_error = CFWriteStreamCopyError(tls_io_instance->sockWrite);
-                if (CFErrorGetCode(write_error) != errSSLWouldBlock)
+                if (write_error != NULL && CFErrorGetCode(write_error) != errSSLWouldBlock)
                 {
                     /* Codes_SRS_TLSIO_30_002: [ The phrase "destroy the failed message" means that the adapter shall remove the message from the queue and destroy it after calling the message's on_send_complete along with its associated callback_context and IO_SEND_ERROR. ]*/
                     /* Codes_SRS_TLSIO_30_005: [ When the adapter enters TLSIO_STATE_EXT_ERROR it shall call the  on_io_error function and pass the on_io_error_context that were supplied in  tlsio_open . ]*/

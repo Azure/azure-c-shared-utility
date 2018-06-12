@@ -203,21 +203,6 @@ BEGIN_TEST_SUITE(base32_ut)
         TEST_MUTEX_RELEASE(g_testByTest);
     }
 
-    static int should_skip_index(size_t current_index, const size_t skip_array[], size_t length)
-    {
-        int result = 0;
-        size_t index;
-        for (index = 0; index < length; index++)
-        {
-            if (current_index == skip_array[index])
-            {
-                result = __LINE__;
-                break;
-            }
-        }
-        return result;
-    }
-
     /* Tests_SRS_BASE32_07_004: [ If source is NULL Base32_Encode shall return NULL. ] */
     TEST_FUNCTION(Base32_Encode_Bytes_source_NULL)
     {
@@ -299,10 +284,15 @@ BEGIN_TEST_SUITE(base32_ut)
     TEST_FUNCTION(Base32_Encode_source_len_0_failed)
     {
         STRING_HANDLE result;
+        BUFFER_HANDLE input_buff;
 
         //arrange
-        TEST_BASE32_VALUE zero_length = { 0 };
-        BUFFER_HANDLE input_buff = (BUFFER_HANDLE)&zero_length;
+        TEST_BASE32_VALUE zero_length;
+        zero_length.base32_data = NULL;
+        zero_length.input_len = 0;
+        zero_length.input_data = NULL;
+
+        input_buff = (BUFFER_HANDLE)&zero_length;
 
         //act
         result = Base32_Encode(input_buff);

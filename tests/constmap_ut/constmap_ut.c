@@ -66,8 +66,6 @@ TEST_DEFINE_ENUM_TYPE(CONSTMAP_RESULT, CONSTMAP_RESULT_VALUES);
 
 static MAP_RESULT currentMapResult;
 
-TEST_DEFINE_ENUM_TYPE(MAP_RESULT, MAP_RESULT_VALUES);
-
 MAP_HANDLE my_Map_Clone(MAP_HANDLE sourceMap)
 {
     MAP_HANDLE result;
@@ -206,8 +204,8 @@ BEGIN_TEST_SUITE(constmap_unittests)
     TEST_FUNCTION(ConstMap_Create_Destroy_Success)
     {
         // Arrange
-		MAP_HANDLE sourceMap;
-		CONSTMAP_HANDLE aHandle;
+        MAP_HANDLE sourceMap;
+        CONSTMAP_HANDLE aHandle;
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
         STRICT_EXPECTED_CALL(Map_Clone(VALID_MAP_HANDLE));
@@ -236,8 +234,8 @@ BEGIN_TEST_SUITE(constmap_unittests)
     TEST_FUNCTION(ConstMap_Create_Malloc_Failed)
     {
         // Arrange
-		MAP_HANDLE sourceMap;
-		CONSTMAP_HANDLE aHandle;
+        MAP_HANDLE sourceMap;
+        CONSTMAP_HANDLE aHandle;
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
         whenShallmalloc_fail = 1;
@@ -260,8 +258,8 @@ BEGIN_TEST_SUITE(constmap_unittests)
     TEST_FUNCTION(ConstMap_Clone_Map_Failed)
     {
         // Arrange
-		MAP_HANDLE sourceMap;
-		CONSTMAP_HANDLE aHandle;
+        MAP_HANDLE sourceMap;
+        CONSTMAP_HANDLE aHandle;
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
         STRICT_EXPECTED_CALL(Map_Clone(INVALID_MAP_HANDLE));
@@ -322,7 +320,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
     TEST_FUNCTION(ConstMap_Clone_Success)
     {
         // Arrange
-		CONSTMAP_HANDLE aClone;
+        CONSTMAP_HANDLE aClone;
         MAP_HANDLE sourceMap = VALID_MAP_HANDLE;
         CONSTMAP_HANDLE aHandle = ConstMap_Create(sourceMap);
 
@@ -501,7 +499,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
             MAP_FILTER_REJECT
         };
         size_t errors = sizeof(mapErrorList) / sizeof(MAP_RESULT);
-		size_t e;
+        size_t e;
         const char * key = "aKey";
         bool keyExists;
 
@@ -609,7 +607,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
             MAP_FILTER_REJECT
         };
         size_t errors = sizeof(mapErrorList) / sizeof(MAP_RESULT);
-		size_t e;
+        size_t e;
         const char * value = "aValue";
         bool valueExists;
 
@@ -715,7 +713,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
             MAP_FILTER_REJECT
         };
         size_t errors = sizeof(mapErrorList) / sizeof(MAP_RESULT);
-		size_t e;
+        size_t e;
         const char * key = "aKey";
         const char * value;
 
@@ -759,7 +757,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
     TEST_FUNCTION(ConstMap_GetInternals_Success)
     {
         // Arrange
-		CONSTMAP_RESULT result;
+        CONSTMAP_RESULT result;
         const char*const* keys;
         const char*const* values;
         size_t count;
@@ -826,7 +824,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
             CONSTMAP_KEYNOTFOUND,
             CONSTMAP_ERROR
         };
-		size_t e;
+        size_t e;
         const char*const* keys;
         const char*const* values;
         size_t count;
@@ -851,7 +849,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
         ///Act
         for (e = 0; e < errors; e++)
         {
-			CONSTMAP_RESULT result;
+            CONSTMAP_RESULT result;
             currentMapResult = mapErrorList[e];
             result = ConstMap_GetInternals(aHandle, &keys, &values, &count);
             ASSERT_ARE_EQUAL(CONSTMAP_RESULT, constErrorList[e], result);

@@ -115,14 +115,14 @@ static char* lastErrorToString(DWORD lastError)
 /*the function will also attempt to produce some human readable strings for GetLastError*/
 void consolelogger_log_with_GetLastError(const char* file, const char* func, int line, const char* format, ...)
 {
-	DWORD lastError;
-	char* lastErrorAsString;
-	int lastErrorAsString_should_be_freed;
-	time_t t;
+    DWORD lastError;
+    char* lastErrorAsString;
+    int lastErrorAsString_should_be_freed;
+    time_t t;
     int systemMessage_should_be_freed;
-	char* systemMessage;
+    char* systemMessage;
     int userMessage_should_be_freed;
-	char* userMessage;
+    char* userMessage;
 
     va_list args;
     va_start(args, format);

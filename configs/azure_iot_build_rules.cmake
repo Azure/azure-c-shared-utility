@@ -53,13 +53,13 @@ endif()
 
 # if the compiler check fails (such as for iOS) header search will also fail - this allows it to be suppressed
 if(NOT suppress_header_searches)
-	include(CheckIncludeFiles)
-	CHECK_INCLUDE_FILES(stdint.h HAVE_STDINT_H)
-	CHECK_INCLUDE_FILES(stdbool.h HAVE_STDBOOL_H)
+    include(CheckIncludeFiles)
+    CHECK_INCLUDE_FILES(stdint.h HAVE_STDINT_H)
+    CHECK_INCLUDE_FILES(stdbool.h HAVE_STDBOOL_H)
 else()
-	message(STATUS "Bypassing header search")
-	set(HAVE_STDINT_H TRUE)
-	set(HAVE_STDBOOL_H TRUE)
+    message(STATUS "Bypassing header search")
+    set(HAVE_STDINT_H TRUE)
+    set(HAVE_STDBOOL_H TRUE)
 endif()
 
 if ((NOT HAVE_STDINT_H) OR (NOT HAVE_STDBOOL_H))
@@ -191,12 +191,16 @@ function(add_files_to_install filesToBeInstalled)
     set(INSTALL_H_FILES ${INSTALL_H_FILES} ${filesToBeInstalled} CACHE INTERNAL "Files that will be installed on the system")
 endfunction()
 
-# XCode warns about unused variables and unused static functions,
-# both of which are produced by serializer
+# XCode and stricter warning levels such as -Wall and -Wextra warn about unused
+# variables and unused static functions, both of which are produced by serializer
 function(usePermissiveRulesForSamplesAndTests)
-    if(XCODE)
+    if (NOT MSVC)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-variable  -Wno-unused-function -Wno-missing-braces"  PARENT_SCOPE)
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-variable  -Wno-unused-function -Wno-missing-braces" PARENT_SCOPE)
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-variable  -Wno-unused-function -Wno-missing-braces" PARENT_SCOPE)    
+        if(NOT APPLE AND NOT "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-but-set-variable"  PARENT_SCOPE)
+            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-but-set-variable" PARENT_SCOPE)
+        endif()
     endif()
 endfunction()
 

@@ -1,12 +1,15 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+
 #include <stdlib.h>
 #include <stdint.h>
 #include <stddef.h>
 #include "azure_c_shared_utility/lock.h"
 #include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/xlogging.h"
+
+#ifndef GB_USE_CUSTOM_HEAP
 
 #ifndef SIZE_MAX
 #define SIZE_MAX ((size_t)~(size_t)0)
@@ -439,3 +442,5 @@ void gballoc_resetMetrics()
         (void)Unlock(gballocThreadSafeLock);
     }
 }
+
+#endif // GB_USE_CUSTOM_HEAP

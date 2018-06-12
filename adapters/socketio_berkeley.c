@@ -45,6 +45,7 @@
 #include <sys/ioctl.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <sys/un.h>
 
 #define SOCKET_SUCCESS                 0
 #define INVALID_SOCKET                 -1
@@ -66,6 +67,12 @@ typedef enum IO_STATE_TAG
     IO_STATE_ERROR
 } IO_STATE;
 
+typedef enum ADDRESS_TYPE_TAG
+{
+    ADDRESS_TYPE_IP,
+    ADDRESS_TYPE_DOMAIN_SOCKET
+} ADDRESS_TYPE;
+
 typedef struct PENDING_SOCKET_IO_TAG
 {
     unsigned char* bytes;
@@ -78,6 +85,7 @@ typedef struct PENDING_SOCKET_IO_TAG
 typedef struct SOCKET_IO_INSTANCE_TAG
 {
     int socket;
+    ADDRESS_TYPE address_type;
     ON_BYTES_RECEIVED on_bytes_received;
     ON_IO_ERROR on_io_error;
     void* on_bytes_received_context;
@@ -247,6 +255,144 @@ static STATIC_VAR_UNUSED void signal_callback(int signum)
     AZURE_UNREFERENCED_PARAMETER(signum);
     LogError("Socket received signal %d.", signum);
 }
+
+static int lookup_address_and_initiate_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance) 
+{
+    int result;
+    int err;
+
+    struct addrinfo addrInfoHintIp;
+    struct sockaddr_un addrInfoUn;
+    struct sockaddr* connect_addr;
+    socklen_t connect_addr_len;
+    struct addrinfo* addrInfoIp = NULL;
+
+    if (socket_io_instance->address_type == ADDRESS_TYPE_IP)
+    {
+        char portString[16];
+
+        memset(&addrInfoHintIp, 0, sizeof(addrInfoHintIp));
+        addrInfoHintIp.ai_family = AF_INET;
+        addrInfoHintIp.ai_socktype = SOCK_STREAM;
+
+        sprintf(portString, "%u", socket_io_instance->port);
+        err = getaddrinfo(socket_io_instance->hostname, portString, &addrInfoHintIp, &addrInfoIp);
+        if (err != 0)
+        {
+            LogError("Failure: getaddrinfo failure %d.", err);
+            result = __FAILURE__;
+        }
+        else
+        {
+            connect_addr = addrInfoIp->ai_addr;
+            connect_addr_len = sizeof(*addrInfoIp->ai_addr);
+            result = 0;
+        }
+    }
+    else
+    {
+        if (strlen(socket_io_instance->hostname) + 1 > sizeof(addrInfoUn.sun_path))
+        {
+            LogError("Hostname %s is too long for a unix socket (max len = %d)", socket_io_instance->hostname, sizeof(addrInfoUn.sun_path));
+            result = __FAILURE__;
+        }
+        else
+        {
+            memset(&addrInfoUn, 0, sizeof(addrInfoUn));
+            addrInfoUn.sun_family = AF_UNIX;
+            strncpy(addrInfoUn.sun_path, socket_io_instance->hostname, sizeof(addrInfoUn.sun_path) - 1);
+            
+            connect_addr = (struct sockaddr*)&addrInfoUn;
+            connect_addr_len = sizeof(addrInfoUn);
+            result = 0;
+        }
+    }
+    
+    if (result == 0)
+    {
+        int flags;
+
+        if ((-1 == (flags = fcntl(socket_io_instance->socket, F_GETFL, 0))) ||
+            (fcntl(socket_io_instance->socket, F_SETFL, flags | O_NONBLOCK) == -1))
+        {
+            LogError("Failure: fcntl failure.");
+            result = __FAILURE__;
+        }
+        else
+        {
+            err = connect(socket_io_instance->socket, connect_addr, connect_addr_len);
+            if ((err != 0) && (errno != EINPROGRESS))
+            {
+                LogError("Failure: connect failure %d.", errno);
+                result = __FAILURE__;
+            }
+        }    
+    }
+
+    if (addrInfoIp != NULL)
+    {
+        freeaddrinfo(addrInfoIp);
+    }
+    
+    return result;
+}
+
+static int wait_for_connection(SOCKET_IO_INSTANCE* socket_io_instance)
+{
+    int result;
+    int err;
+    int retval;
+    int select_errno = 0;
+
+    fd_set fdset;
+    struct timeval tv;
+    
+    FD_ZERO(&fdset);
+    FD_SET(socket_io_instance->socket, &fdset);
+    tv.tv_sec = CONNECT_TIMEOUT;
+    tv.tv_usec = 0;
+    
+    do
+    {
+        retval = select(socket_io_instance->socket + 1, NULL, &fdset, NULL, &tv);
+    
+        if (retval < 0)
+        {
+            select_errno = errno;
+        }
+    } while (retval < 0 && select_errno == EINTR);
+    
+    if (retval != 1)
+    {
+        LogError("Failure: select failure.");
+        result = __FAILURE__;
+    }
+    else
+    {
+        int so_error = 0;
+        socklen_t len = sizeof(so_error);
+        err = getsockopt(socket_io_instance->socket, SOL_SOCKET, SO_ERROR, &so_error, &len);
+        if (err != 0)
+        {
+            LogError("Failure: getsockopt failure %d.", errno);
+            result = __FAILURE__;
+        }
+        else if (so_error != 0)
+        {
+            err = so_error;
+            LogError("Failure: connect failure %d.", so_error);
+            result = __FAILURE__;
+        }
+        else
+        {
+            result = 0;
+        }
+    }
+
+    return result;
+}
+
+
 
 #ifndef __APPLE__
 static void destroy_network_interface_descriptions(NETWORK_INTERFACE_DESCRIPTION* nid)
@@ -480,6 +626,7 @@ CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters)
         result = malloc(sizeof(SOCKET_IO_INSTANCE));
         if (result != NULL)
         {
+            result->address_type = ADDRESS_TYPE_IP;
             result->pending_io_list = singlylinkedlist_create();
             if (result->pending_io_list == NULL)
             {
@@ -569,8 +716,6 @@ void socketio_destroy(CONCRETE_IO_HANDLE socket_io)
 int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_complete, void* on_io_open_complete_context, ON_BYTES_RECEIVED on_bytes_received, void* on_bytes_received_context, ON_IO_ERROR on_io_error, void* on_io_error_context)
 {
     int result;
-    int retval = -1;
-    int select_errno = 0;
 
     SOCKET_IO_INSTANCE* socket_io_instance = (SOCKET_IO_INSTANCE*)socket_io;
     if (socket_io == NULL)
@@ -599,10 +744,7 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
         }
         else
         {
-            struct addrinfo* addrInfo;
-            char portString[16];
-
-            socket_io_instance->socket = socket(AF_INET, SOCK_STREAM, 0);
+            socket_io_instance->socket = socket (socket_io_instance->address_type == ADDRESS_TYPE_IP ? AF_INET : AF_UNIX, SOCK_STREAM, 0);
             if (socket_io_instance->socket < SOCKET_SUCCESS)
             {
                 LogError("Failure: socket create failure %d.", socket_io_instance->socket);
@@ -613,115 +755,35 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
                      set_target_network_interface(socket_io_instance->socket, socket_io_instance->target_mac_address) != 0)
             {
                 LogError("Failure: failed selecting target network interface (MACADDR=%s).", socket_io_instance->target_mac_address);
-                close(socket_io_instance->socket);
-                socket_io_instance->socket = INVALID_SOCKET;
                 result = __FAILURE__;
             }
 #endif //__APPLE__
+            else if ((result = lookup_address_and_initiate_socket_connection(socket_io_instance)) != 0)
+            {
+                LogError("lookup_address_and_connect_socket failed");
+            }
+            else if ((result = wait_for_connection(socket_io_instance)) != 0)
+            {
+                LogError("wait_for_connection failed");
+            }
+
+            if (result == 0)
+            {
+                socket_io_instance->on_bytes_received = on_bytes_received;
+                socket_io_instance->on_bytes_received_context = on_bytes_received_context;
+
+                socket_io_instance->on_io_error = on_io_error;
+                socket_io_instance->on_io_error_context = on_io_error_context;
+
+                socket_io_instance->io_state = IO_STATE_OPEN;
+            }
             else
             {
-                struct addrinfo addrHint = { 0 };
-                addrHint.ai_family = AF_INET;
-                addrHint.ai_socktype = SOCK_STREAM;
-                addrHint.ai_protocol = 0;
-
-                sprintf(portString, "%u", socket_io_instance->port);
-                int err = getaddrinfo(socket_io_instance->hostname, portString, &addrHint, &addrInfo);
-                if (err != 0)
+                if (socket_io_instance->socket >= SOCKET_SUCCESS)
                 {
-                    LogError("Failure: getaddrinfo failure %d.", err);
                     close(socket_io_instance->socket);
-                    socket_io_instance->socket = INVALID_SOCKET;
-                    result = __FAILURE__;
                 }
-                else
-                {
-                    int flags;
-                    if ((-1 == (flags = fcntl(socket_io_instance->socket, F_GETFL, 0))) ||
-                        (fcntl(socket_io_instance->socket, F_SETFL, flags | O_NONBLOCK) == -1))
-                    {
-                        LogError("Failure: fcntl failure.");
-                        close(socket_io_instance->socket);
-                        socket_io_instance->socket = INVALID_SOCKET;
-                        result = __FAILURE__;
-                    }
-                    else
-                    {
-                        err = connect(socket_io_instance->socket, addrInfo->ai_addr, sizeof(*addrInfo->ai_addr));
-                        if ((err != 0) && (errno != EINPROGRESS))
-                        {
-                            LogError("Failure: connect failure %d.", errno);
-                            close(socket_io_instance->socket);
-                            socket_io_instance->socket = INVALID_SOCKET;
-                            result = __FAILURE__;
-                        }
-                        else
-                        {
-                            if (err != 0)
-                            {
-                                fd_set fdset;
-                                struct timeval tv;
-
-                                FD_ZERO(&fdset);
-                                FD_SET(socket_io_instance->socket, &fdset);
-                                tv.tv_sec = CONNECT_TIMEOUT;
-                                tv.tv_usec = 0;
-
-                                do
-                                {
-                                    retval = select(socket_io_instance->socket + 1, NULL, &fdset, NULL, &tv);
-
-                                    if (retval < 0)
-                                    {
-                                        select_errno = errno;
-                                    }
-                                } while (retval < 0 && select_errno == EINTR);
-                                
-                                if (retval != 1)
-                                {
-                                    LogError("Failure: select failure.");
-                                    close(socket_io_instance->socket);
-                                    socket_io_instance->socket = INVALID_SOCKET;
-                                    result = __FAILURE__;
-                                }
-                                else
-                                {
-                                    int so_error = 0;
-                                    socklen_t len = sizeof(so_error);
-                                    err = getsockopt(socket_io_instance->socket, SOL_SOCKET, SO_ERROR, &so_error, &len);
-                                    if (err != 0)
-                                    {
-                                        LogError("Failure: getsockopt failure %d.", errno);
-                                        close(socket_io_instance->socket);
-                                        socket_io_instance->socket = INVALID_SOCKET;
-                                        result = __FAILURE__;
-                                    }
-                                    else if (so_error != 0)
-                                    {
-                                        err = so_error;
-                                        LogError("Failure: connect failure %d.", so_error);
-                                        close(socket_io_instance->socket);
-                                        socket_io_instance->socket = INVALID_SOCKET;
-                                        result = __FAILURE__;
-                                    }
-                                }
-                            }
-                            if (err == 0)
-                            {
-                                socket_io_instance->on_bytes_received = on_bytes_received;
-                                socket_io_instance->on_bytes_received_context = on_bytes_received_context;
-
-                                socket_io_instance->on_io_error = on_io_error;
-                                socket_io_instance->on_io_error_context = on_io_error_context;
-
-                                socket_io_instance->io_state = IO_STATE_OPEN;
-
-                                result = 0;
-                            }
-                        }
-                    }
-                    freeaddrinfo(addrInfo);
-                }
+                socket_io_instance->socket = INVALID_SOCKET;
             }
         }
     }
@@ -804,8 +866,8 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
             {
                 signal(SIGPIPE, SIG_IGN);
 
-                int send_result = send(socket_io_instance->socket, buffer, size, 0);
-                if (send_result != size)
+                ssize_t send_result = send(socket_io_instance->socket, buffer, size, 0);
+                if ((send_result < 0) || ((size_t)send_result != size))
                 {
                     if (send_result == INVALID_SOCKET)
                     {
@@ -869,8 +931,8 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
 
             signal(SIGPIPE, SIG_IGN);
 
-            int send_result = send(socket_io_instance->socket, pending_socket_io->bytes, pending_socket_io->size, 0);
-            if (send_result != pending_socket_io->size)
+            ssize_t send_result = send(socket_io_instance->socket, pending_socket_io->bytes, pending_socket_io->size, 0);
+            if ((send_result < 0) || ((size_t)send_result != pending_socket_io->size))
             {
                 if (send_result == INVALID_SOCKET)
                 {
@@ -920,7 +982,7 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
 
         if (socket_io_instance->io_state == IO_STATE_OPEN)
         {
-            int received = 0;
+            ssize_t received = 0;
             do
             {
                 received = recv(socket_io_instance->socket, socket_io_instance->recv_bytes, RECEIVE_BYTES_VALUE, 0);
@@ -969,6 +1031,34 @@ static void strtoup(char* str)
     }
 }
 #endif // __APPLE__
+
+static int socketio_setaddresstype_option(SOCKET_IO_INSTANCE* socket_io_instance, const char* addressType)
+{
+    int result;
+
+    if (socket_io_instance->io_state != IO_STATE_CLOSED)
+    {
+        LogError("Socket's type can only be changed when in state 'IO_STATE_CLOSED'.  Current state=%d", socket_io_instance->io_state);
+        result = __FAILURE__;
+    }
+    else if (strcmp(addressType, OPTION_ADDRESS_TYPE_DOMAIN_SOCKET) == 0)
+    {
+        socket_io_instance->address_type = ADDRESS_TYPE_DOMAIN_SOCKET;
+        result = 0;
+    }
+    else if (strcmp(addressType, OPTION_ADDRESS_TYPE_IP_SOCKET) == 0)
+    {
+        socket_io_instance->address_type = ADDRESS_TYPE_IP;
+        result = 0;
+    }
+    else
+    {
+        LogError("Address type %s is not supported", addressType);
+        result = __FAILURE__;
+    }
+
+    return result;
+}
 
 int socketio_setoption(CONCRETE_IO_HANDLE socket_io, const char* optionName, const void* value)
 {
@@ -1032,6 +1122,10 @@ int socketio_setoption(CONCRETE_IO_HANDLE socket_io, const char* optionName, con
                 result = 0;
             }
 #endif
+        }
+        else if (strcmp(optionName, OPTION_ADDRESS_TYPE) == 0)
+        {
+            result = socketio_setaddresstype_option(socket_io_instance, (const char*)value);
         }
         else
         {

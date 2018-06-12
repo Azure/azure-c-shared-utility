@@ -515,12 +515,6 @@ static HTTP_HANDLE createHttpConnection(void)
     return HTTPAPI_CreateConnection(TEST_CREATE_CONNECTION_HOST_NAME);	/* currentmalloc_call += 2 */
 }
 
-static void destroyHttpConnection(HTTP_HANDLE httpHandle)
-{
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
-    HTTPAPI_Deinit();
-}
-
 static void setHttpCertificate(HTTP_HANDLE httpHandle)
 {
     STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
@@ -546,7 +540,7 @@ static void setHttpx509ClientCertificateAndKey(HTTP_HANDLE httpHandle)
 
 static void setupAllCallBeforeOpenHTTPsequence(HTTP_HEADERS_HANDLE requestHttpHeaders, int numberOfDoWork, bool useClientCert)
 {
-	int i;
+    int i;
 
     STRICT_EXPECTED_CALL(HTTPHeaders_GetHeaderCount(requestHttpHeaders, IGNORED_PTR_ARG))
         .IgnoreArgument(2);
@@ -637,7 +631,7 @@ static const IO_SEND_RESULT* DoworkJobsSendResult_ReceiveHead = (const IO_SEND_R
 
 static void PrepareReceiveHead(HTTP_HEADERS_HANDLE requestHttpHeaders, size_t bufferSize[], int doworkReduction[], int countSizes)
 {
-	int countBuffer;
+    int countBuffer;
     DoworkJobsOpenResult = DoworkJobsOpenResult_ReceiveHead;
     DoworkJobsSendResult = DoworkJobsSendResult_ReceiveHead;
 
@@ -646,7 +640,7 @@ static void PrepareReceiveHead(HTTP_HEADERS_HANDLE requestHttpHeaders, size_t bu
 
     for (countBuffer = 0; countBuffer < countSizes; countBuffer++)
     {
-		int countChar;
+        int countChar;
         if (countBuffer > 0)
         {
             STRICT_EXPECTED_CALL(ThreadAPI_Sleep(100));
@@ -666,10 +660,7 @@ static void PrepareReceiveHead(HTTP_HEADERS_HANDLE requestHttpHeaders, size_t bu
     HTTPHeaders_GetHeader_shallReturn = HTTP_HEADERS_OK;
 }
 
-
-TEST_DEFINE_ENUM_TYPE(HTTP_HEADERS_RESULT, HTTP_HEADERS_RESULT_VALUES);
 IMPLEMENT_UMOCK_C_ENUM_TYPE(HTTP_HEADERS_RESULT, HTTP_HEADERS_RESULT_VALUES);
-
 
 static TEST_MUTEX_HANDLE g_testByTest;
 static TEST_MUTEX_HANDLE g_dllByDll;
@@ -1141,7 +1132,7 @@ TEST_FUNCTION(HTTPAPI_CloseConnection__close_on_dowork_succeed)
 TEST_FUNCTION(HTTPAPI_CloseConnection__close_on_dowork_retry_n_succeed)
 {
     /// arrange
-	int i;
+    int i;
     unsigned int statusCode;
     HTTPAPI_RESULT result;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
@@ -1215,7 +1206,7 @@ TEST_FUNCTION(HTTPAPI_CloseConnection__close_on_dowork_retry_n_succeed)
 TEST_FUNCTION(HTTPAPI_CloseConnection__close_on_dowork_retry_n_failed)
 {
     /// arrange
-	int i;
+    int i;
     unsigned int statusCode;
     HTTPAPI_RESULT result;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
@@ -1289,7 +1280,7 @@ TEST_FUNCTION(HTTPAPI_CloseConnection__close_on_dowork_retry_n_failed)
 TEST_FUNCTION(HTTPAPI_CloseConnection__close_timeout_failed)
 {
     /// arrange
-	int i;
+    int i;
     unsigned int statusCode;
     HTTPAPI_RESULT result;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
@@ -1999,7 +1990,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_io_open_complete_with_error_on_openning
     HTTPAPI_RESULT result;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
-	HTTP_HANDLE httpHandle;
+    HTTP_HANDLE httpHandle;
     unsigned int statusCode;
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     httpHandle = createHttpConnection();
@@ -2447,7 +2438,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_send_header_complete_with_2_success_bef
 TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_send_header_complete_timeout_failed)
 {
     /// arrange
-	int i;
+    int i;
     unsigned int statusCode;
     HTTPAPI_RESULT result;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
@@ -2505,7 +2496,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_send_header_complete_timeout_failed)
 TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_send_header_complete_retry_n_and_failed)
 {
     /// arrange
-	int i;
+    int i;
     unsigned int statusCode;
     HTTPAPI_RESULT result;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
@@ -2952,7 +2943,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_read_multi_header_with_size_0_and_error
 TEST_FUNCTION(HTTPAPI_ExecuteRequest__read_huge_header_failed)
 {
     /// arrange
-	HTTP_HANDLE httpHandle;
+    HTTP_HANDLE httpHandle;
     unsigned int statusCode;
     HTTPAPI_RESULT result;
     int doworkReduction[1] = { 0 };
@@ -3160,7 +3151,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__Execute_request_retry_send_succeed)
 {
     /// arrange
     unsigned int statusCode;
-	int i;
+    int i;
     HTTPAPI_RESULT result;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
     HTTP_HEADERS_HANDLE responseHttpHeaders;
@@ -3957,7 +3948,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__Execute_request_responseContent_NULL_succe
 TEST_FUNCTION(HTTPAPI_ExecuteRequest__Execute_request_with_truncated_content_failed)
 {
     /// arrange
-	int i;
+    int i;
     unsigned int statusCode;
     HTTPAPI_RESULT result;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
@@ -4034,7 +4025,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__Execute_request_with_truncated_content_fai
 TEST_FUNCTION(HTTPAPI_ExecuteRequest__Execute_request_with_truncated_parameter_failed)
 {
     /// arrange
-	int i;
+    int i;
     unsigned int statusCode;
     HTTPAPI_RESULT result;
     HTTP_HEADERS_HANDLE requestHttpHeaders;
@@ -4105,7 +4096,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__Execute_request_with_truncated_parameter_f
 TEST_FUNCTION(HTTPAPI_ExecuteRequest__Execute_request_with_truncated_header_failed)
 {
     /// arrange
-	int i;
+    int i;
     unsigned int statusCode;
     HTTPAPI_RESULT result;
     HTTP_HEADERS_HANDLE requestHttpHeaders;

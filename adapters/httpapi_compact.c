@@ -832,7 +832,7 @@ static HTTPAPI_RESULT SendHeadsToXIO(HTTP_HANDLE_DATA* http_instance, HTTPAPI_RE
     /*Codes_SRS_HTTPAPI_COMPACT_21_038: [ The HTTPAPI_ExecuteRequest shall execute the resquest for the path in relativePath parameter. ]*/
     /*Codes_SRS_HTTPAPI_COMPACT_21_036: [ The request type shall be provided in the parameter requestType. ]*/
     if (((ret = snprintf(buf, sizeof(buf), "%s %s HTTP/1.1\r\n", get_request_type(requestType), relativePath)) < 0) ||
-        (ret >= sizeof(buf)))
+        ((size_t)ret >= sizeof(buf)))
     {
         /*Codes_SRS_HTTPAPI_COMPACT_21_027: [ If the HTTPAPI_ExecuteRequest cannot create a buffer to send the request, it shall not send any request and return HTTPAPI_STRING_PROCESSING_ERROR. ]*/
         result = HTTPAPI_STRING_PROCESSING_ERROR;

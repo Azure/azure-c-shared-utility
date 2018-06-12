@@ -55,8 +55,9 @@ DEFINE_ENUM(WS_OPEN_RESULT, WS_OPEN_RESULT_VALUES);
 
 DEFINE_ENUM(WS_ERROR, WS_ERROR_VALUES);
 
-#define WS_FRAME_TYPE_TEXT      0x01
-#define WS_FRAME_TYPE_BINARY    0x02
+#define WS_FRAME_TYPE_UNKNOWN       0x00
+#define WS_FRAME_TYPE_TEXT          0x01
+#define WS_FRAME_TYPE_BINARY        0x02
 
 /* Codes_SRS_UWS_CLIENT_01_324: [ 1000 indicates a normal closure, meaning that the purpose for which the connection was established has been fulfilled. ]*/
 /* Codes_SRS_UWS_CLIENT_01_325: [ 1001 indicates that an endpoint is "going away", such as a server going down or a browser having navigated away from a page. ]*/

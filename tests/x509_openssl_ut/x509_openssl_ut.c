@@ -110,6 +110,10 @@ MOCKABLE_FUNCTION(, long, SSL_CTX_ctrl, SSL_CTX*, ctx, int, cmd, long, larg, voi
 MOCKABLE_FUNCTION(, unsigned long, ERR_peek_last_error);
 MOCKABLE_FUNCTION(, void, ERR_clear_error);
 
+#ifndef __APPLE__
+MOCKABLE_FUNCTION(, int, EVP_PKEY_id, const EVP_PKEY*, pkey);
+#endif
+
 #undef ENABLE_MOCKS
 
 /*the below function has different signatures on different versions of OPENSSL*/
@@ -319,6 +323,9 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
     {
         STRICT_EXPECTED_CALL(BIO_new_mem_buf((char*)TEST_PRIVATE_CERTIFICATE, -1));
         STRICT_EXPECTED_CALL(PEM_read_bio_PrivateKey(IGNORED_PTR_ARG, NULL, NULL, NULL));
+#ifndef __APPLE__
+        STRICT_EXPECTED_CALL(EVP_PKEY_id(IGNORED_PTR_ARG)).SetReturn(is_rsa_cert ? EVP_PKEY_RSA : EVP_PKEY_EC);
+#endif
         setup_load_alias_key_cert_mocks(is_rsa_cert);
         setup_load_certificate_chain_mocks();
         STRICT_EXPECTED_CALL(EVP_PKEY_free(&g_evp_pkey));
@@ -415,8 +422,11 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
 
         umock_c_negative_tests_snapshot();
 
+#ifdef __APPLE__
         size_t calls_cannot_fail[] = { 4, 8, 9, 10, 11, 12, 13, 14 };
-
+#else
+        size_t calls_cannot_fail[] = { 2, 5, 9, 10, 11, 12, 13, 14, 15 };
+#endif
         //act
         int result;
         size_t count = umock_c_negative_tests_call_count();

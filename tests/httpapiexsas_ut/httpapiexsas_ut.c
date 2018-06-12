@@ -44,7 +44,6 @@ static void my_gballoc_free(void* ptr)
 TEST_DEFINE_ENUM_TYPE(HTTPAPIEX_RESULT, HTTPAPIEX_RESULT_VALUES);
 IMPLEMENT_UMOCK_C_ENUM_TYPE(HTTPAPIEX_RESULT, HTTPAPIEX_RESULT_VALUES);
 
-TEST_DEFINE_ENUM_TYPE(HTTP_HEADERS_RESULT, HTTP_HEADERS_RESULT_VALUES);
 IMPLEMENT_UMOCK_C_ENUM_TYPE(HTTP_HEADERS_RESULT, HTTP_HEADERS_RESULT_VALUES);
 
 #define TEST_STRING_HANDLE (STRING_HANDLE)0x46
@@ -81,12 +80,6 @@ static int my_mallocAndStrcpy_s(char** destination, const char* source)
     *destination = (char*)my_gballoc_malloc(len+1);
     (void)strcpy(*destination, source);
     return 0;
-}
-
-static STRING_HANDLE my_STRING_clone(STRING_HANDLE handle)
-{
-    (void)handle;
-    return (STRING_HANDLE)my_gballoc_malloc(1);
 }
 
 static void my_STRING_delete(STRING_HANDLE handle)
@@ -182,7 +175,6 @@ int umocktypes_are_equal_time_t(time_t* left, time_t* right)
     return result;
 }
 
-TEST_DEFINE_ENUM_TYPE(HTTPAPI_REQUEST_TYPE, HTTPAPI_REQUEST_TYPE_VALUES)
 IMPLEMENT_UMOCK_C_ENUM_TYPE(HTTPAPI_REQUEST_TYPE, HTTPAPI_REQUEST_TYPE_VALUES);
 
 BEGIN_TEST_SUITE(httpapiexsas_unittests)
