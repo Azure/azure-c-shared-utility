@@ -431,7 +431,7 @@ static void log_ERR_get_error(const char* message)
     }
 }
 
-static struct CRYPTO_dynlock_value* openssl_dynamic_locks_create_cb(const char* file, int line)
+static STATIC_VAR_UNUSED struct CRYPTO_dynlock_value* openssl_dynamic_locks_create_cb(const char* file, int line)
 {
     struct CRYPTO_dynlock_value* result;
 
@@ -456,12 +456,12 @@ static struct CRYPTO_dynlock_value* openssl_dynamic_locks_create_cb(const char* 
     return result;
 }
 
-static void openssl_dynamic_locks_lock_unlock_cb(int lock_mode, struct CRYPTO_dynlock_value* dynlock_value, const char* file, int line)
+static STATIC_VAR_UNUSED void openssl_dynamic_locks_lock_unlock_cb(int lock_mode, struct CRYPTO_dynlock_value* dynlock_value, const char* file, int line)
 {
     openssl_lock_unlock_helper(dynlock_value->lock, lock_mode, file, line);
 }
 
-static void openssl_dynamic_locks_destroy_cb(struct CRYPTO_dynlock_value* dynlock_value, const char* file, int line)
+static STATIC_VAR_UNUSED void openssl_dynamic_locks_destroy_cb(struct CRYPTO_dynlock_value* dynlock_value, const char* file, int line)
 {
     (void)file;
     (void)line;
@@ -487,7 +487,7 @@ static void openssl_dynamic_locks_install(void)
 #endif
 }
 
-static void openssl_static_locks_lock_unlock_cb(int lock_mode, int lock_index, const char * file, int line)
+static void STATIC_VAR_UNUSED openssl_static_locks_lock_unlock_cb(int lock_mode, int lock_index, const char * file, int line)
 {
     if (lock_index < 0 || lock_index >= CRYPTO_num_locks())
     {
