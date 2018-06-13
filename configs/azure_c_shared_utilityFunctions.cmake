@@ -284,6 +284,7 @@ function(c_windows_unittests_add_dll whatIsBuilding folder)
         if(NOT skip_to_next)
             if(PARSING_ADDITIONAL_LIBS)
                 target_link_libraries(${whatIsBuilding}_dll ${f})
+                target_link_libraries(${whatIsBuilding}_testsonly_lib ${f})
             endif()
         endif()
 
