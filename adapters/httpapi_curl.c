@@ -37,6 +37,7 @@ typedef struct HTTP_HANDLE_DATA_TAG
     long forbidReuse;
     long freshConnect;
     long verbose;
+    long ssl_verifypeer;
     const char* x509privatekey;
     const char* x509certificate;
     const char* certificates; /*a list of CA certificates*/
@@ -132,6 +133,7 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
                         httpHandleData->forbidReuse = 0;
                         httpHandleData->freshConnect = 0;
                         httpHandleData->verbose = 0;
+                        httpHandleData->ssl_verifypeer = 1;
                         httpHandleData->x509certificate = NULL;
                         httpHandleData->x509privatekey = NULL;
                         httpHandleData->certificates = NULL;
@@ -330,6 +332,11 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
             {
                 result = HTTPAPI_SET_OPTION_FAILED;
                 LogError("failed to set CURLOPT_VERBOSE (result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+            }
+            else if (curl_easy_setopt(httpHandleData->curl, CURLOPT_SSL_VERIFYPEER, httpHandleData->ssl_verifypeer) != CURLE_OK)
+            {
+                result = HTTPAPI_SET_OPTION_FAILED;
+                LogError("failed to set CURLOPT_SSL_VERIFYPEER (result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
             }
             else if ((strcpy_s(tempHostURL, tempHostURL_size, httpHandleData->hostURL) != 0) ||
                 (strcat_s(tempHostURL, tempHostURL_size, relativePath) != 0))
@@ -698,6 +705,11 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
             httpHandleData->verbose = *(const long*)value;
             result = HTTPAPI_OK;
         }
+        else if (strcmp(OPTION_SSL_VERIFYPEER, optionName) == 0)
+        {
+            httpHandleData->ssl_verifypeer = *(const long*)value;
+            result = HTTPAPI_OK;
+        }
         else if (strcmp(SU_OPTION_X509_PRIVATE_KEY, optionName) == 0 || strcmp(OPTION_X509_ECC_KEY, optionName) == 0)
         {
             httpHandleData->x509privatekey = value;
@@ -945,7 +957,8 @@ HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, co
             (strcmp(OPTION_CURL_LOW_SPEED_TIME, optionName) == 0) ||
             (strcmp(OPTION_CURL_FRESH_CONNECT, optionName) == 0) ||
             (strcmp(OPTION_CURL_FORBID_REUSE, optionName) == 0) ||
-            (strcmp(OPTION_CURL_VERBOSE, optionName) == 0)
+            (strcmp(OPTION_CURL_VERBOSE, optionName) == 0) ||
+            (strcmp(OPTION_SSL_VERIFYPEER, optionName) == 0)
             )
         {
             /*by convention value is pointing to an long */
