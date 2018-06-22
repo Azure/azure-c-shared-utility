@@ -33,7 +33,7 @@ void tlsio_options_initialize(TLSIO_OPTIONS* options, int supported_options)
 int tlsio_options_check_set_value_consistency(TLSIO_OPTIONS* options)
 {
     int result;
-    if (options != NULL)
+    if (options == NULL)
     {
         LogError("null options");
         result = __FAILURE__;
