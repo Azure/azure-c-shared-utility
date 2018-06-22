@@ -57,6 +57,10 @@ extern "C" {
     // This should be called in the tlsio destructor
     void tlsio_options_release_resources(TLSIO_OPTIONS* options);
 
+    // Called to ensure that the set values are consistent with each other
+    // and with the supported_options member. Returns 0 for success.
+    int tlsio_options_check_set_value_consistency(TLSIO_OPTIONS* options);
+
     // xio requires the implementation of four functions: xio_setoption, xio_retrieveoptions,
     // an anonymous clone_option, and an anonymous destroy_option.
 

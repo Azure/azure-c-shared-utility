@@ -10,10 +10,14 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#include <cstddef>
+#include <cstdint>
+#else
+#include <stddef.h>
+#include <stdint.h>
+#endif /* __cplusplus */
 
 #include <stdbool.h>
-#include <stdint.h>
 #include "azure_c_shared_utility/macro_utils.h"
 #include "azure_c_shared_utility/umock_c_prod.h"
 
@@ -38,6 +42,25 @@ typedef struct
 typedef SOCKET_ASYNC_OPTIONS* SOCKET_ASYNC_OPTIONS_HANDLE;
 
 typedef int SOCKET_ASYNC_HANDLE;
+
+/**
+* @brief    Return a bit-or of TLSIO_OPTION_BIT values to specify which
+*           options the socket_async implementation supports. For
+*           microcontrollers this will usually just be TLSIO_OPTION_BIT_NONE.
+*
+* @return   @c An int option_caps value.
+*/
+MOCKABLE_FUNCTION(, int, socket_async_get_option_caps);
+
+/**
+* @brief    Return the IPv4 of a completed lookup process. This call is synchronous
+*           due to the underlying getaddrinfo.
+*
+* @param   hostname  The fully qualified domain name of the host.
+*
+* @return   @c A uint32_t IPv4 address. 0 indicates failure.
+*/
+MOCKABLE_FUNCTION(, uint32_t, socket_async_get_ipv4, const char*, hostname);
 
 /**
 * @brief	Create a non-blocking socket that is correctly configured for asynchronous use.

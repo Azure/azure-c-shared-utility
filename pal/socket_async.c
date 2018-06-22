@@ -4,12 +4,19 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#undef NO_LOGGING
+
 // This file is OS-specific, and is identified by setting include directories
 // in the project
 #include "socket_async_os.h"
 
 #include "socket_async.h"
 #include "azure_c_shared_utility/xlogging.h"
+#include "azure_c_shared_utility/tlsio_options.h"
+
+// EXTRACT_IPV4 pulls the uint32_t IPv4 address out of an addrinfo struct
+// This default definition handles lwIP.
+#define EXTRACT_IPV4(ptr) ((struct sockaddr_in *) ptr->ai_addr)->sin_addr.s_addr
 
 
 static int get_socket_errno(int file_descriptor)
@@ -18,6 +25,65 @@ static int get_socket_errno(int file_descriptor)
     socklen_t optlen = sizeof(sock_errno);
     getsockopt(file_descriptor, SOL_SOCKET, SO_ERROR, &sock_errno, &optlen);
     return sock_errno;
+}
+
+int socket_async_get_option_caps()
+{
+    return TLSIO_OPTION_BIT_NONE;
+}
+
+// TODO: Add spec for this call
+// This call is synchronous.
+uint32_t socket_async_get_ipv4(const char* hostname)
+{
+    struct addrinfo *addrInfo = NULL;
+    struct addrinfo *ptr = NULL;
+    struct addrinfo hints;
+    int getAddrInfoResult;
+
+    // This result is defaulted to zero because success only occurs
+    // as finding an item while walking a list.
+    uint32_t result = 0;
+
+    //--------------------------------
+    // Setup the hints address info structure
+    // which is passed to the getaddrinfo() function
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_protocol = IPPROTO_TCP;
+
+    //--------------------------------
+    // Call getaddrinfo(). If the call succeeds,
+    // the result variable will hold a linked list
+    // of addrinfo structures containing response
+    // information
+    getAddrInfoResult = getaddrinfo(hostname, NULL, &hints, &addrInfo);
+    if (getAddrInfoResult == 0)
+    {
+        // If we find the AF_INET address, use it as the return value
+        for (ptr = addrInfo; ptr != NULL; ptr = ptr->ai_next)
+        {
+            switch (ptr->ai_family)
+            {
+            case AF_INET:
+                result = EXTRACT_IPV4(ptr);
+                break;
+            }
+        }
+        freeaddrinfo(addrInfo);
+        if (result == 0)
+        {
+            LogInfo("Could not locate DNS entry for %s", hostname);
+        }
+    }
+    else
+    {
+        // Not treated as an error because the common case is loss of network connectivity
+        LogInfo("Failed getaddrinfo for %s: %d", hostname, getAddrInfoResult);
+    }
+
+    return result;
 }
 
 SOCKET_ASYNC_HANDLE socket_async_create(uint32_t serverIPv4, uint16_t port,
@@ -128,7 +194,9 @@ SOCKET_ASYNC_HANDLE socket_async_create(uint32_t serverIPv4, uint16_t port,
                 if (connect_ret == -1)
                 {
                     int sockErr = get_socket_errno(sock);
-                    if (sockErr != EINPROGRESS)
+                    // The underlying  lwip 2.0.3 getsockopt code swallows EINPROGRESS and returns
+                    // conn->last_err instead, which is zero if connect succeeded
+                    if (sockErr != EINPROGRESS && sockErr != 0)
                     {
                         /* Codes_SRS_SOCKET_ASYNC_30_022: [ If socket connection fails, socket_async_create shall log an error and return SOCKET_ASYNC_INVALID_SOCKET. ]*/
                         LogError("Socket connect failed, not EINPROGRESS: %d", sockErr);
@@ -218,57 +286,50 @@ int socket_async_is_create_complete(SOCKET_ASYNC_HANDLE sock, bool* is_complete)
 int socket_async_send(SOCKET_ASYNC_HANDLE sock, const void* buffer, size_t size, size_t* sent_count)
 {
     int result;
-    if (buffer == NULL)
+    if (buffer == NULL || sent_count == NULL)
     {
         /* Codes_SRS_SOCKET_ASYNC_30_033: [ If the buffer parameter is NULL, socket_async_send shall log the error return FAILURE. ]*/
-        LogError("buffer is NULL");
+        /* Codes_SRS_SOCKET_ASYNC_30_034: [ If the sent_count parameter is NULL, socket_async_send shall log the error return FAILURE. ]*/
+        LogError("bad parameter");
         result = __FAILURE__;
+    }
+    else if (size == 0)
+    {
+        /* Codes_SRS_SOCKET_ASYNC_30_073: [ If the size parameter is 0, socket_async_send shall set sent_count to 0 and return 0. ]*/
+        // This behavior is not always defined by the underlying API, so we make it predictable here
+        *sent_count = 0;
+        result = 0;
     }
     else
     {
-        if (sent_count == NULL)
+        ssize_t send_result = send(sock, buffer, size, 0);
+        if (send_result < 0)
         {
-            /* Codes_SRS_SOCKET_ASYNC_30_034: [ If the sent_count parameter is NULL, socket_async_send shall log the error return FAILURE. ]*/
-            LogError("sent_count is NULL");
-            result = __FAILURE__;
-        }
-        else
-            if (size == 0)
+            // On some systems it may be necessary to redefine "errno" in socket_async_os.h
+            // to get proper behavior here.
+            int sock_err = errno;
+            if (sock_err == EAGAIN || sock_err == EWOULDBLOCK)
             {
-                /* Codes_SRS_SOCKET_ASYNC_30_073: [ If the size parameter is 0, socket_async_send shall set sent_count to 0 and return 0. ]*/
-                // This behavior is not always defined by the underlying API, so we make it predictable here
+                /* Codes_SRS_SOCKET_ASYNC_30_036: [ If the underlying socket is unable to accept any bytes for transmission because its buffer is full, socket_async_send shall return 0 and the sent_count parameter shall receive the value 0. ]*/
+                // Nothing sent, try again later
                 *sent_count = 0;
                 result = 0;
             }
             else
             {
-                ssize_t send_result = send(sock, buffer, size, 0);
-                if (send_result < 0)
-                {
-                    int sock_err = get_socket_errno(sock);
-                    if (sock_err == EAGAIN || sock_err == EWOULDBLOCK)
-                    {
-                        /* Codes_SRS_SOCKET_ASYNC_30_036: [ If the underlying socket is unable to accept any bytes for transmission because its buffer is full, socket_async_send shall return 0 and the sent_count parameter shall receive the value 0. ]*/
-                        // Nothing sent, try again later
-                        *sent_count = 0;
-                        result = 0;
-                    }
-                    else
-                    {
-                        /* Codes_SRS_SOCKET_ASYNC_30_037: [ If socket_async_send fails unexpectedly, socket_async_send shall log the error return FAILURE. ]*/
-                        // Something bad happened
-                        LogError("Unexpected send error: %d", sock_err);
-                        result = __FAILURE__;
-                    }
-                }
-                else
-                {
-                    /* Codes_SRS_SOCKET_ASYNC_30_035: [ If the underlying socket accepts one or more bytes for transmission, socket_async_send shall return 0 and the sent_count parameter shall receive the number of bytes accepted for transmission. ]*/
-                    // Sent at least part of the message
-                    result = 0;
-                    *sent_count = (size_t)send_result;
-                }
+                /* Codes_SRS_SOCKET_ASYNC_30_037: [ If socket_async_send fails unexpectedly, socket_async_send shall log the error return FAILURE. ]*/
+                // Something bad happened
+                LogError("Unexpected send error: %d", sock_err);
+                result = __FAILURE__;
             }
+        }
+        else
+        {
+            /* Codes_SRS_SOCKET_ASYNC_30_035: [ If the underlying socket accepts one or more bytes for transmission, socket_async_send shall return 0 and the sent_count parameter shall receive the number of bytes accepted for transmission. ]*/
+            // Sent at least part of the message
+            result = 0;
+            *sent_count = (size_t)send_result;
+        }
     }
     return result;
 }
@@ -276,56 +337,44 @@ int socket_async_send(SOCKET_ASYNC_HANDLE sock, const void* buffer, size_t size,
 int socket_async_receive(SOCKET_ASYNC_HANDLE sock, void* buffer, size_t size, size_t* received_count)
 {
     int result;
-    if (buffer == NULL)
+    if (buffer == NULL || received_count == NULL || size == 0)
     {
         /* Codes_SRS_SOCKET_ASYNC_30_052: [ If the buffer parameter is NULL, socket_async_receive shall log the error and return FAILURE. ]*/
-        LogError("buffer is NULL");
+        /* Codes_SRS_SOCKET_ASYNC_30_053: [ If the received_count parameter is NULL, socket_async_receive shall log the error and return FAILURE. ]*/
+        /* Codes_SRS_SOCKET_ASYNC_30_072: [ If the size parameter is 0, socket_async_receive shall log an error and return FAILURE. ]*/
+        LogError("bad parameter");
         result = __FAILURE__;
     }
     else
     {
-        if (received_count == NULL)
+        ssize_t recv_result = recv(sock, buffer, size, 0);
+        if (recv_result < 0)
         {
-            /* Codes_SRS_SOCKET_ASYNC_30_053: [ If the received_count parameter is NULL, socket_async_receive shall log the error and return FAILURE. ]*/
-            LogError("received_count is NULL");
-            result = __FAILURE__;
-        }
-        else
-            if (size == 0)
+            // On some systems it may be necessary to redefine "errno" in socket_async_os.h
+            // to get proper behavior here.
+            int sock_err = errno;
+            if (sock_err == EAGAIN || sock_err == EWOULDBLOCK)
             {
-                /* Codes_SRS_SOCKET_ASYNC_30_072: [ If the size parameter is 0, socket_async_receive shall log an error and return FAILURE. ]*/
-                LogError("size is 0");
-                result = __FAILURE__;
+                /* Codes_SRS_SOCKET_ASYNC_30_055: [ If the underlying socket has no received bytes available, socket_async_receive shall return 0 and the received_count parameter shall receive the value 0. ]*/
+                // Nothing received, try again later
+                *received_count = 0;
+                result = 0;
             }
             else
             {
-                ssize_t recv_result = recv(sock, buffer, size, 0);
-                if (recv_result < 0)
-                {
-                    int sock_err = get_socket_errno(sock);
-                    if (sock_err == EAGAIN || sock_err == EWOULDBLOCK)
-                    {
-                        /* Codes_SRS_SOCKET_ASYNC_30_055: [ If the underlying socket has no received bytes available, socket_async_receive shall return 0 and the received_count parameter shall receive the value 0. ]*/
-                        // Nothing received, try again later
-                        *received_count = 0;
-                        result = 0;
-                    }
-                    else
-                    {
-                        /* Codes_SRS_SOCKET_ASYNC_30_056: [ If the underlying socket fails unexpectedly, socket_async_receive shall log the error and return FAILURE. ]*/
-                        // Something bad happened
-                        LogError("Unexpected recv error: %d", sock_err);
-                        result = __FAILURE__;
-                    }
-                }
-                else
-                {
-                    /* Codes_SRS_SOCKET_ASYNC_30_054: [ On success, the underlying socket shall set one or more received bytes into buffer, socket_async_receive shall return 0, and the received_count parameter shall receive the number of bytes received into buffer. ]*/
-                    // Received some stuff
-                    *received_count = (size_t)recv_result;
-                    result = 0;
-                }
+                /* Codes_SRS_SOCKET_ASYNC_30_056: [ If the underlying socket fails unexpectedly, socket_async_receive shall log the error and return FAILURE. ]*/
+                // Something bad happened
+                LogError("Unexpected recv error: %d", sock_err);
+                result = __FAILURE__;
             }
+        }
+        else
+        {
+            /* Codes_SRS_SOCKET_ASYNC_30_054: [ On success, the underlying socket shall set one or more received bytes into buffer, socket_async_receive shall return 0, and the received_count parameter shall receive the number of bytes received into buffer. ]*/
+            // Received some stuff
+            *received_count = (size_t)recv_result;
+            result = 0;
+        }
     }
     return result;
 }

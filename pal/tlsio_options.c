@@ -9,6 +9,9 @@
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
 
+// Certs are typically large, and there is rarely if ever any need to make
+// copies of them. If there is some need to make a copy, then
+// set set COPY_ALL_CERT_STRINGS as a preprocessor define.
 
 // Initialize the TLSIO_OPTIONS struct
 void tlsio_options_initialize(TLSIO_OPTIONS* options, int supported_options)
@@ -24,6 +27,35 @@ void tlsio_options_initialize(TLSIO_OPTIONS* options, int supported_options)
     options->x509_cert = NULL;
     options->x509_key = NULL;
 }
+
+// Called to ensure that the set values are consistent with each other
+// and with the supported_options member. Returns 0 for success.
+int tlsio_options_check_set_value_consistency(TLSIO_OPTIONS* options)
+{
+    int result;
+    if (options != NULL)
+    {
+        LogError("null options");
+        result = __FAILURE__;
+    }
+    else if ((options->supported_options & TLSIO_OPTION_BIT_TRUSTED_CERTS) != 0
+            && options->trusted_certs == NULL)
+    {
+        LogError("Required Trusted Certs option has not been set");
+        result = __FAILURE__;
+    }
+    else if (options->x509_type != TLSIO_OPTIONS_x509_TYPE_UNSPECIFIED
+            && (options->x509_cert == NULL || options->x509_key == NULL))
+    {
+        LogError("x509 requires both a cert option and a key option");
+        result = __FAILURE__;
+    }
+    else
+    {
+        result = 0;
+    }
+}
+
 
 static int set_and_validate_x509_type(TLSIO_OPTIONS* options, TLSIO_OPTIONS_x509_TYPE x509_type)
 {
@@ -58,9 +90,11 @@ void tlsio_options_release_resources(TLSIO_OPTIONS* options)
 {
     if (options != NULL)
     {
+#ifdef COPY_ALL_CERT_STRINGS
         free((void*)options->trusted_certs);
         free((void*)options->x509_cert);
         free((void*)options->x509_key);
+#endif // COPY_ALL_CERT_STRINGS
     }
     else
     {
@@ -72,7 +106,6 @@ static bool is_supported_string_option(const char* name)
 {
     return 
         (strcmp(name, OPTION_TRUSTED_CERT) == 0) ||
-        (strcmp(name, OPTION_OPENSSL_CIPHER_SUITE) == 0) ||
         (strcmp(name, SU_OPTION_X509_CERT) == 0) ||
         (strcmp(name, SU_OPTION_X509_PRIVATE_KEY) == 0) ||
         (strcmp(name, OPTION_X509_ECC_CERT) == 0) ||
@@ -89,7 +122,9 @@ TLSIO_OPTIONS_RESULT tlsio_options_destroy_option(const char* name, const void* 
     }
     else if (is_supported_string_option(name))
     {
+#ifdef COPY_ALL_CERT_STRINGS
         free((void*)value);
+#endif // COPY_ALL_CERT_STRINGS
         result = TLSIO_OPTIONS_RESULT_SUCCESS;
     }
     else
@@ -111,6 +146,7 @@ TLSIO_OPTIONS_RESULT tlsio_options_clone_option(const char* name, const void* va
     }
     else if (is_supported_string_option(name))
     {
+#ifdef COPY_ALL_CERT_STRINGS
         *out_value = NULL;
         if (mallocAndStrcpy_s((char**)out_value, value) != 0)
         {
@@ -121,6 +157,9 @@ TLSIO_OPTIONS_RESULT tlsio_options_clone_option(const char* name, const void* va
         {
             result = TLSIO_OPTIONS_RESULT_SUCCESS;
         }
+#else
+        *out_value = (void*)value;
+#endif // COPY_ALL_CERT_STRINGS
     }
     else
     {
@@ -145,11 +184,19 @@ TLSIO_OPTIONS_RESULT tlsio_options_set(TLSIO_OPTIONS* options,
     {
         result = TLSIO_OPTIONS_RESULT_NOT_HANDLED;
     }
+#ifdef COPY_ALL_CERT_STRINGS
+
     else if(mallocAndStrcpy_s(&copied_value, value) != 0)
     {
         LogError("unable to mallocAndStrcpy_s option value");
         result = TLSIO_OPTIONS_RESULT_ERROR;
     }
+#else
+    else if ((copied_value = (char*)value) == NULL)
+    {
+        // Can't fail here
+    }
+#endif // COPY_ALL_CERT_STRINGS
     else if (strcmp(OPTION_TRUSTED_CERT, optionName) == 0)
     {
         if ((options->supported_options & TLSIO_OPTION_BIT_TRUSTED_CERTS) == 0)
@@ -212,10 +259,12 @@ TLSIO_OPTIONS_RESULT tlsio_options_set(TLSIO_OPTIONS* options,
         result = TLSIO_OPTIONS_RESULT_ERROR;
     }
 
+#ifdef COPY_ALL_CERT_STRINGS
     if (result != TLSIO_OPTIONS_RESULT_SUCCESS)
     {
         free(copied_value);
     }
+#endif // COPY_ALL_CERT_STRINGS
 
     return result;
 }

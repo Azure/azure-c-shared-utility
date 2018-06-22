@@ -55,6 +55,7 @@ add_subdirectory(uuid_ut)
 add_subdirectory(urlencode_ut)
 add_subdirectory(vector_ut)
 add_subdirectory(xio_ut)
+add_subdirectory(xio_state_ut)
 add_subdirectory(optionhandler_ut)
 
 if(use_wolfssl)
