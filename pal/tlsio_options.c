@@ -54,6 +54,7 @@ int tlsio_options_check_set_value_consistency(TLSIO_OPTIONS* options)
     {
         result = 0;
     }
+    return result;
 }
 
 
