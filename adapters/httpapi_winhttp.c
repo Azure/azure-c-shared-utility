@@ -323,6 +323,10 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
                 requestTypeString = L"GET";
                 break;
 
+            case HTTPAPI_REQUEST_HEAD:
+                requestTypeString = L"HEAD";
+                break;
+
             case HTTPAPI_REQUEST_POST:
                 requestTypeString = L"POST";
                 break;
