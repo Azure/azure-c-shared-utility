@@ -53,6 +53,7 @@ EXPORTS
     DList_IsListEmpty
     DList_RemoveEntryList
     DList_RemoveHeadList
+    environment_get_variable
     HMACSHA256_ComputeHash
     HTTPAPIEX_Create
     HTTPAPIEX_Destroy
