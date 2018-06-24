@@ -53,12 +53,6 @@ static void my_gballoc_free(void* s)
 #endif
 
 /*from openssl/bio.h*/
-MOCKABLE_FUNCTION(,int, BIO_free, BIO *,a);
-MOCKABLE_FUNCTION(, BIO *, BIO_new, BIO_METHOD *, type);
-MOCKABLE_FUNCTION(, BIO *, BIO_mem, BIO_METHOD *, type);
-MOCKABLE_FUNCTION(, int, BIO_puts, BIO *, bp, const char *, buf);
-MOCKABLE_FUNCTION(, BIO_METHOD *, BIO_s_mem);
-
 /*the below function has different signatures on different versions of OPENSSL*/
 /*
 |openssl version (number) | openssl string                   | BIO_new_mem_buf prototype                         | Observations                    |
@@ -66,8 +60,20 @@ MOCKABLE_FUNCTION(, BIO_METHOD *, BIO_s_mem);
 | 0x1000106fL             | OpenSSL 1.0.1f 6 Jan 2014        | BIO *BIO_new_mem_buf(void *buf, int len);         | Ubuntu 14.04                    |
 | 0x1000204fL             | OpenSSL 1.0.2d 9 Jul 2015        | BIO *BIO_new_mem_buf(void *buf, int len);         | Ubuntu 15.10                    |
 | 0x1000207fL             | OpenSSL 1.0.2g-fips  1 Mar 2016  | BIO *BIO_new_mem_buf(const void *buf, int len);   | Ubuntu 16.10                    |
-
+| 0x1010007fL             | OpenSSL 1.0.2g-fips  1 Mar 2016  | BIO *BIO_new(const BIO_METHOD *type);             | Ubuntu 18.04                    |
 */
+
+MOCKABLE_FUNCTION(,int, BIO_free, BIO *,a);
+#if OPENSSL_VERSION_NUMBER >= 0x1010007fL
+MOCKABLE_FUNCTION(, BIO *, BIO_new, const BIO_METHOD *, type);
+MOCKABLE_FUNCTION(, const BIO_METHOD *, BIO_s_mem);
+#else
+MOCKABLE_FUNCTION(, BIO *, BIO_new, BIO_METHOD *, type);
+MOCKABLE_FUNCTION(, BIO_METHOD *, BIO_s_mem);
+#endif
+
+MOCKABLE_FUNCTION(, BIO *, BIO_mem, BIO_METHOD *, type);
+MOCKABLE_FUNCTION(, int, BIO_puts, BIO *, bp, const char *, buf);
 
 #if OPENSSL_VERSION_NUMBER >= 0x1000207fL
 MOCKABLE_FUNCTION(,BIO *,BIO_new_mem_buf, const void *,buf, int, len);
@@ -124,7 +130,7 @@ static BIO* my_BIO_new_mem_buf(void * buf, int len)
 #endif
 {
     (void)len, (void)buf;
-    return (BIO*)my_gballoc_malloc(sizeof(BIO));
+    return (BIO*)my_gballoc_malloc(1);
 }
 
 static int my_BIO_free(BIO * a)
@@ -133,10 +139,14 @@ static int my_BIO_free(BIO * a)
     return 0;
 }
 
+#if OPENSSL_VERSION_NUMBER >= 0x1010007fL
+static BIO *my_BIO_new(const BIO_METHOD *type)
+#else
 static BIO *my_BIO_new(BIO_METHOD *type)
+#endif
 {
     (void)type;
-    return (BIO*)my_gballoc_malloc(sizeof(BIO));
+    return (BIO*)my_gballoc_malloc(1);
 }
 
 static void my_RSA_free(RSA * rsa)
@@ -152,7 +162,7 @@ static void my_X509_free(X509 * a)
 static X509* my_PEM_read_bio_X509_AUX(BIO* bp, X509** x, pem_password_cb* cb, void* u)
 {
     (void)u, (void)cb, (void)x, (void)bp;
-    return (X509*)my_gballoc_malloc(sizeof(X509));
+    return (X509*)my_gballoc_malloc(1);
 }
 
 static long my_SSL_CTX_ctrl(SSL_CTX* ctx, int cmd, long larg, void* parg)
@@ -167,24 +177,23 @@ static long my_SSL_CTX_ctrl(SSL_CTX* ctx, int cmd, long larg, void* parg)
 static RSA* my_EVP_PKEY_get1_RSA(EVP_PKEY* pkey)
 {
     (void)pkey;
-    return (RSA*)my_gballoc_malloc(sizeof(RSA));
+    return (RSA*)my_gballoc_malloc(1);
 }
 
 static X509 * my_PEM_read_bio_X509(BIO * bp, X509 ** x, pem_password_cb * cb, void * u)
 {
     (void)u, (void)cb, (void)x, (void)bp;
-    return (X509*)my_gballoc_malloc(sizeof(X509));
+    return (X509*)my_gballoc_malloc(1);
 }
 
 static RSA * my_PEM_read_bio_RSAPrivateKey(BIO * bp, RSA ** x, pem_password_cb * cb, void * u)
 {
     (void)u, (void)cb, (void)x, (void)bp;
-    return (RSA*)my_gballoc_malloc(sizeof(RSA));
+    return (RSA*)my_gballoc_malloc(1);
 }
 
 static TEST_MUTEX_HANDLE g_testByTest;
 static TEST_MUTEX_HANDLE g_dllByDll;
-static EVP_PKEY g_evp_pkey;
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
@@ -192,6 +201,15 @@ static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
     ASSERT_FAIL("umock_c reported error");
 }
 
+typedef struct SSL_TEST_CTX_tag
+{
+    void* extra_certs;
+} SSL_TEST_CTX;
+
+typedef struct replace_evp_pkey_st_tag
+{
+    int type;
+} replace_evp_pkey_st;
 
 #define TEST_SSL_CTX ((SSL_CTX*)(0x42))
 #define TEST_CERTIFICATE_1 "one certificate"
@@ -203,12 +221,17 @@ static const char* TEST_PUBLIC_CERTIFICATE = "PUBLIC CERTIFICATE";
 static const char* TEST_PRIVATE_CERTIFICATE = "PRIVATE KEY";
 static BIO* TEST_BIO_CERT = (BIO*)0x11;
 static X509* TEST_X509 = (X509*)0x13;
-static SSL_CTX TEST_SSL_CTX_STRUCTURE;
+static SSL_CTX* TEST_SSL_CTX_STRUCTURE;
+static SSL_TEST_CTX g_replace_ctx;
+static EVP_PKEY* g_evp_pkey;
+static replace_evp_pkey_st g_replace_evp_key;
 
 BEGIN_TEST_SUITE(x509_openssl_unittests)
 
     TEST_SUITE_INITIALIZE(a)
     {
+        g_evp_pkey = (EVP_PKEY*)&g_replace_evp_key;
+
         TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
         g_testByTest = TEST_MUTEX_CREATE();
         ASSERT_IS_NOT_NULL(g_testByTest);
@@ -248,7 +271,7 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
         REGISTER_GLOBAL_MOCK_HOOK(EVP_PKEY_get1_RSA, my_EVP_PKEY_get1_RSA);
         REGISTER_GLOBAL_MOCK_FAIL_RETURN(EVP_PKEY_get1_RSA, NULL);
 
-        REGISTER_GLOBAL_MOCK_RETURNS(PEM_read_bio_PrivateKey, &g_evp_pkey, NULL);
+        REGISTER_GLOBAL_MOCK_RETURNS(PEM_read_bio_PrivateKey, g_evp_pkey, NULL);
 
         REGISTER_GLOBAL_MOCK_RETURNS(BIO_new_mem_buf, TEST_BIO_CERT, NULL);
         REGISTER_GLOBAL_MOCK_HOOK(PEM_read_bio_X509_AUX, my_PEM_read_bio_X509_AUX);
@@ -268,8 +291,11 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
     {
         umock_c_reset_all_calls();
 
-        memset(&TEST_SSL_CTX_STRUCTURE, 0, sizeof(SSL_CTX) );
-        memset(&g_evp_pkey, 0, sizeof(EVP_PKEY));
+        memset(&g_replace_ctx, 0, sizeof(SSL_TEST_CTX) );
+        TEST_SSL_CTX_STRUCTURE = (SSL_CTX*)&g_replace_ctx;
+
+        memset(&g_replace_evp_key, 0, sizeof(replace_evp_pkey_st));
+        g_evp_pkey = (EVP_PKEY*)&g_replace_evp_key;
     }
 
     TEST_FUNCTION_CLEANUP(cleans)
@@ -294,15 +320,15 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
     {
         if (is_rsa_cert)
         {
-            g_evp_pkey.type = EVP_PKEY_RSA;
-            STRICT_EXPECTED_CALL(EVP_PKEY_get1_RSA(&g_evp_pkey));
-            STRICT_EXPECTED_CALL(SSL_CTX_use_RSAPrivateKey(&TEST_SSL_CTX_STRUCTURE, IGNORED_PTR_ARG));
+            g_replace_evp_key.type = EVP_PKEY_RSA;
+            STRICT_EXPECTED_CALL(EVP_PKEY_get1_RSA(g_evp_pkey));
+            STRICT_EXPECTED_CALL(SSL_CTX_use_RSAPrivateKey(TEST_SSL_CTX_STRUCTURE, IGNORED_PTR_ARG));
             STRICT_EXPECTED_CALL(RSA_free(IGNORED_PTR_ARG) );
         }
         else
         {
-            g_evp_pkey.type = EVP_PKEY_EC;
-            STRICT_EXPECTED_CALL(SSL_CTX_use_PrivateKey(&TEST_SSL_CTX_STRUCTURE, &g_evp_pkey));
+            g_replace_evp_key.type = EVP_PKEY_EC;
+            STRICT_EXPECTED_CALL(SSL_CTX_use_PrivateKey(TEST_SSL_CTX_STRUCTURE, g_evp_pkey));
         }
     }
 
@@ -310,9 +336,13 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
     {
         STRICT_EXPECTED_CALL(BIO_new_mem_buf((void*)TEST_PUBLIC_CERTIFICATE, -1));
         STRICT_EXPECTED_CALL(PEM_read_bio_X509_AUX(IGNORED_PTR_ARG, NULL, NULL, NULL));
-        STRICT_EXPECTED_CALL(SSL_CTX_use_certificate(&TEST_SSL_CTX_STRUCTURE, IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(SSL_CTX_use_certificate(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && (OPENSSL_VERSION_NUMBER < 0x20000000L)
+        //STRICT_EXPECTED_CALL(SSL_CTX_clear_extra_chain_certs(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(SSL_CTX_ctrl(TEST_SSL_CTX_STRUCTURE, SSL_CTRL_CLEAR_EXTRA_CHAIN_CERTS, 0, NULL));
+#endif         
         STRICT_EXPECTED_CALL(PEM_read_bio_X509(IGNORED_PTR_ARG, NULL, NULL, NULL));
-        STRICT_EXPECTED_CALL(SSL_CTX_ctrl(&TEST_SSL_CTX_STRUCTURE, SSL_CTRL_EXTRA_CHAIN_CERT, IGNORED_NUM_ARG, IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(SSL_CTX_ctrl(TEST_SSL_CTX_STRUCTURE, SSL_CTRL_EXTRA_CHAIN_CERT, IGNORED_NUM_ARG, IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(PEM_read_bio_X509(IGNORED_PTR_ARG, NULL, NULL, NULL))
             .SetReturn(NULL); // Needed because the x509 needs not to be free
         STRICT_EXPECTED_CALL(X509_free(IGNORED_PTR_ARG));
@@ -328,7 +358,7 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
 #endif
         setup_load_alias_key_cert_mocks(is_rsa_cert);
         setup_load_certificate_chain_mocks();
-        STRICT_EXPECTED_CALL(EVP_PKEY_free(&g_evp_pkey));
+        STRICT_EXPECTED_CALL(EVP_PKEY_free(g_evp_pkey));
         STRICT_EXPECTED_CALL(BIO_free(IGNORED_PTR_ARG));
     }
 
@@ -386,7 +416,7 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
         setup_add_credentials(true);
 
         //act
-        int result = x509_openssl_add_credentials(&TEST_SSL_CTX_STRUCTURE, TEST_PUBLIC_CERTIFICATE, TEST_PRIVATE_CERTIFICATE);
+        int result = x509_openssl_add_credentials(TEST_SSL_CTX_STRUCTURE, TEST_PUBLIC_CERTIFICATE, TEST_PRIVATE_CERTIFICATE);
 
         //assert
         ASSERT_ARE_EQUAL(int, 0, result);
@@ -400,7 +430,7 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
         setup_add_credentials(false);
 
         //act
-        int result = x509_openssl_add_credentials(&TEST_SSL_CTX_STRUCTURE, TEST_PUBLIC_CERTIFICATE, TEST_PRIVATE_CERTIFICATE);
+        int result = x509_openssl_add_credentials(TEST_SSL_CTX_STRUCTURE, TEST_PUBLIC_CERTIFICATE, TEST_PRIVATE_CERTIFICATE);
 
         //assert
         ASSERT_ARE_EQUAL(int, 0, result);
@@ -422,10 +452,18 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
 
         umock_c_negative_tests_snapshot();
 
-#ifdef __APPLE__
-        size_t calls_cannot_fail[] = { 4, 8, 9, 10, 11, 12, 13, 14 };
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && (OPENSSL_VERSION_NUMBER < 0x20000000L)
+    #ifdef __APPLE__
+            size_t calls_cannot_fail[] = { 4, 8, 9, 10, 11, 12, 13, 14, 15 };
+    #else
+            size_t calls_cannot_fail[] = { 2, 5, 9, 10, 11, 12, 13, 14, 15, 16 };
+    #endif
 #else
-        size_t calls_cannot_fail[] = { 2, 5, 9, 10, 11, 12, 13, 14, 15 };
+    #ifdef __APPLE__
+            size_t calls_cannot_fail[] = { 4, 8, 9, 10, 11, 12, 13, 14 };
+    #else
+            size_t calls_cannot_fail[] = { 2, 5, 9, 10, 11, 12, 13, 14, 15 };
+    #endif
 #endif
         //act
         int result;
@@ -443,9 +481,9 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
             char tmp_msg[128];
             sprintf(tmp_msg, "x509_openssl_add_credentials failure in test %zu/%zu", index, count);
 
-            TEST_SSL_CTX_STRUCTURE.extra_certs = NULL;
+            g_replace_ctx.extra_certs = NULL;
 
-            result = x509_openssl_add_credentials(&TEST_SSL_CTX_STRUCTURE, TEST_PUBLIC_CERTIFICATE, TEST_PRIVATE_CERTIFICATE);
+            result = x509_openssl_add_credentials(TEST_SSL_CTX_STRUCTURE, TEST_PUBLIC_CERTIFICATE, TEST_PRIVATE_CERTIFICATE);
 
             //assert
             ASSERT_ARE_NOT_EQUAL_WITH_MSG(int, 0, result, tmp_msg);
@@ -589,5 +627,3 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
     }
 
 END_TEST_SUITE(x509_openssl_unittests)
-
-

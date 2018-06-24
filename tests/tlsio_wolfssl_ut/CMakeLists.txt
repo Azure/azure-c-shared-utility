@@ -11,7 +11,7 @@ set(${theseTestsName}_test_files
 )
 
 set(${theseTestsName}_c_files
-    ../../src/tlsio_wolfssl.c
+    ../../adapters/tlsio_wolfssl.c
 )
 
 set(${theseTestsName}_h_files

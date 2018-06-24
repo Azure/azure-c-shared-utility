@@ -503,7 +503,6 @@ static void destroy_wolfssl_instance(TLS_IO_INSTANCE* tls_io_instance)
 static int create_wolfssl_instance(TLS_IO_INSTANCE* tls_io_instance)
 {
     int result;
-
     tls_io_instance->ssl = wolfSSL_new(tls_io_instance->ssl_context);
     if (tls_io_instance->ssl == NULL)
     {
@@ -521,8 +520,6 @@ static int create_wolfssl_instance(TLS_IO_INSTANCE* tls_io_instance)
 #endif
 
         wolfSSL_set_using_nonblock(tls_io_instance->ssl, 1);
-        wolfSSL_SetIOSend(tls_io_instance->ssl_context, on_io_send);
-        wolfSSL_SetIORecv(tls_io_instance->ssl_context, on_io_recv);
         wolfSSL_SetHsDoneCb(tls_io_instance->ssl, on_handshake_done, tls_io_instance);
         wolfSSL_SetIOWriteCtx(tls_io_instance->ssl, tls_io_instance);
         wolfSSL_SetIOReadCtx(tls_io_instance->ssl, tls_io_instance);
@@ -608,6 +605,10 @@ CONCRETE_IO_HANDLE tlsio_wolfssl_create(void* io_create_parameters)
             }
             else
             {
+                // Set the recv and send function on the wolfssl context object
+                wolfSSL_SetIOSend(result->ssl_context, on_io_send);
+                wolfSSL_SetIORecv(result->ssl_context, on_io_recv);
+
                 SOCKETIO_CONFIG socketio_config;
                 const IO_INTERFACE_DESCRIPTION* underlying_io_interface;
                 void* io_interface_parameters;
