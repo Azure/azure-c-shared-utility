@@ -134,4 +134,4 @@ while the "with_sockets" variety passes in a configured and open `socket_async`.
 
 ### Writing a tls_adapter
 For more information on how to write your own `tls_adapter`, see
-the [tls_adapter implementer's guide](tls_adapter_implementers_guide).
+the [tls_adapter implementer's guide](tls_adapter_implementers_guide.md).
