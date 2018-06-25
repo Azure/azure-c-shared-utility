@@ -226,7 +226,7 @@ calls, and will continue to do so until there is a communiction failure or an ap
 `tls_adapter_common_close_and_destroy` then try to reconnect later.
 * If **`XIO_ASYNC_RESULT_WAITING`** is returned, the SDK will understand that the 
 `tls_adapter_common_open` call is waiting for something (typically a response
-from the IoT Hub server), and will retry the `tls_adapter_common_open` call in
+from the IoT Hub server), and will repeat the `tls_adapter_common_open` call again in
 a few milliseconds.
 
 The kind of work done within the `tls_adapter_common_open` call varies depending
