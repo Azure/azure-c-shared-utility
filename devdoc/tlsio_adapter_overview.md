@@ -60,7 +60,7 @@ two files: `tlsio_adapter_basic.c`, and the shared file `tlsio_adapter_common.c`
 These files encapsulate the final `xio` callback, error handling, option handling, platform
 adapter functions, read buffering, and validation of `xio_create` parameters.
 * The **tlsio_adapter_with_sockets** does all the same work as `tlsio_adapter_basic`, 
-and in addition it gives the low-level `tls_adapter` a 
+and in addition it supplies the low-level `tls_adapter` with a 
 pre-configured socket wrapped in a 
 platform-independent `socket_async` component. The `tlsio_adapter_with_sockets`
 does all the work of maintaining the socket, including creation, deletion, configuration,
