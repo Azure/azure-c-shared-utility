@@ -306,17 +306,17 @@ When the `tls_adapter` receives the close and destroy call,
 ```c
 void tls_adapter_common_close_and_destroy(TLS_ADAPTER_INSTANCE_HANDLE adapter);
 ```
-it will behave a little bit differently depending on whether the `tls_adapter` was
+it must behave a little bit differently depending on whether the `tls_adapter` was
 created with `tls_adapter_with_sockets_create` or 
 `tls_adapter_basic_create`.
 
-* If it was created with `tls_adapter_basic_create`, then the 
+* If the `tls_adapter` was created with `tls_adapter_basic_create`, then the 
 `tls_adapter_common_close_and_destroy` function must close the connection
-to the IoT Hub and release any resources it has acquired, and free the supplied
+to the IoT Hub, release any resources it has acquired, and free the supplied
 `TLS_ADAPTER_INSTANCE_HANDLE`.
 
-* If it was created with `tls_adapter_with_sockets_create`, the `socket_async`
-connection to the IoT Hub will be closed by the SDK, so the `tls_adapter`
+* If the `tls_adapter` was created with `tls_adapter_with_sockets_create`, 
+the `socket_async` connection to the IoT Hub will be closed by the SDK, so the `tls_adapter`
 need do nothing with the supplied `socket_async`. All it needs to do is 
 release any acquired resources and free the supplied
 `TLS_ADAPTER_INSTANCE_HANDLE`.
