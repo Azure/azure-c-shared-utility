@@ -65,7 +65,8 @@ pre-configured socket wrapped in a
 platform-independent `socket_async` component. The `tlsio_adapter_with_sockets`
 does all the work of maintaining the socket, including creation, deletion, configuration,
 opening, and closing, so the low-level `tls_adapter` can simply use the `socket_async`
-as provided. It consists of two files: `tlsio_adapter_with_sockets.c` and 
+as provided. The `tlsio_adapter_with_sockets` consists of two files: 
+`tlsio_adapter_with_sockets.c` and 
 the shared file `tlsio_adapter_common.c`.
 
 ## The low-level tls_adapter
