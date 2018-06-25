@@ -158,7 +158,7 @@ int tls_adapter_common_get_option_caps()
 If the "TrustedCerts" option is enabled and set, a PEM format CA cert chain will
 be passed into the create functions as part of the create call's `tlsio_options`
 parameter. An example of using a trusted cert can be seen in the
-[tls_adapter_with_sockets example](#A-simple-tls_adapter_with_sockets-example).
+[tls_adapter_with_sockets example](#a-simple-tls_adapter_with_sockets-example).
 
 If the `tls_adapter_common_get_option_caps` reports that it is capable 
 of accepting the "TrustedCerts" 
@@ -229,8 +229,8 @@ a few milliseconds.
 
 The kind of work done within the `tls_adapter_common_open` call varies depending
 on the nature of the TLS library. See 
-[tls_adapter_basic example](#A-simple-tls_adapter_basic-example) and
-[tls_adapter_with_sockets example](#A-simple-tls_adapter_with_sockets-example).
+[tls_adapter_basic example](#a-simple-tls_adapter_basic-example) and
+[tls_adapter_with_sockets example](#a-simple-tls_adapter_with_sockets-example).
 
 ## The read function
 
@@ -264,8 +264,8 @@ but that no data is available, and it will try again later.
 available data is consumed.
 
 Examples of the read function can be found in
-[tls_adapter_basic example](#A-simple-tls_adapter_basic-example) and
-[tls_adapter_with_sockets example](#A-simple-tls_adapter_with_sockets-example).
+[tls_adapter_basic example](#a-simple-tls_adapter_basic-example) and
+[tls_adapter_with_sockets example](#a-simple-tls_adapter_with_sockets-example).
 
 ## The write function
 
@@ -295,8 +295,8 @@ but currently unable to accept more data, and it will try again later.
 of bytes have been successfully sent.
 
 Examples of the write function can be found in
-[tls_adapter_basic example](#A-simple-tls_adapter_basic-example) and
-[tls_adapter_with_sockets example](#A-simple-tls_adapter_with_sockets-example).
+[tls_adapter_basic example](#a-simple-tls_adapter_basic-example) and
+[tls_adapter_with_sockets example](#a-simple-tls_adapter_with_sockets-example).
 
 ## The close and destroy function
 
@@ -320,8 +320,8 @@ release any acquired resources and free the supplied
 `TLS_ADAPTER_INSTANCE_HANDLE`.
 
 Examples of the close and destroy function can be found in
-[tls_adapter_basic example](#A-simple-tls_adapter_basic-example) and
-[tls_adapter_with_sockets example](#A-simple-tls_adapter_with_sockets-example).
+[tls_adapter_basic example](#a-simple-tls_adapter_basic-example) and
+[tls_adapter_with_sockets example](#a-simple-tls_adapter_with_sockets-example).
 
 ## A simple tls_adapter_basic example
 
