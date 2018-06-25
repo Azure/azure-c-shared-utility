@@ -11,7 +11,7 @@
 
 // Certs are typically large, and there is rarely if ever any need to make
 // copies of them. If there is some need to make a copy, then
-// set set COPY_ALL_CERT_STRINGS as a preprocessor define.
+// set COPY_ALL_CERT_STRINGS as a preprocessor define.
 
 // Initialize the TLSIO_OPTIONS struct
 void tlsio_options_initialize(TLSIO_OPTIONS* options, int supported_options)
