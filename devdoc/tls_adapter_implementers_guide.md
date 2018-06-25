@@ -242,7 +242,7 @@ int tls_adapter_common_read(TLS_ADAPTER_INSTANCE_HANDLE adapter,
         uint8_t* buffer, size_t size);
 ```
 it should try to read `size` bytes from the remote host and copy them into
-`buffer'. If it succeeds in reading one or more bytes, it returns the 
+`buffer'. If it succeeds in reading one or more bytes, it must return the 
 number of bytes successfully read.
 
 The `size` parameter is guaranteed to be smaller (in practice far smaller) 
@@ -258,7 +258,7 @@ closed by the host, and the SDK must be notified of this as an error.
 The return values cause the SDK to behave as follows:
 * If **`XIO_ASYNC_RESULT_FAILURE`** is returned, the SDK will call 
 `tls_adapter_common_close_and_destroy` then try to reconnect later.
-* If **`XIO_ASYNC_RESULT_WAITING`** is returned, the SDK will understand 
+* If **`0`** is returned, the SDK will understand 
 that the connection is still good
 but that no data is available, and it will try again later.
 * If a positive value is returned, the SDK will digest the data returned in
@@ -276,8 +276,8 @@ When the `tls_adapter` receives the write call,
 int tls_adapter_common_write(TLS_ADAPTER_INSTANCE_HANDLE adapter,
         const uint8_t* buffer, size_t size);
 ```
-it should try to write `size` bytes from `buffer` to the remote host.
-If it succeeds in writing one or more bytes, it returns the number of bytes
+it must try to write `size` bytes from `buffer` to the remote host.
+If it succeeds in writing one or more bytes, it must return the number of bytes
 successfully written. It is considered normal for the return value to be
 smaller than the `size` parameter; the SDK knows how to handle this,
 and will repeat the call later with the unsent portion of the message. The
@@ -290,7 +290,7 @@ than MAXINT, so the type mismatch between the supplied
 The return values cause the SDK to behave as follows:
 * If **`XIO_ASYNC_RESULT_FAILURE`** is returned, the SDK will call 
 `tls_adapter_common_close_and_destroy` then try to reconnect later.
-* If **`XIO_ASYNC_RESULT_WAITING`** is returned, the SDK will understand 
+* If **`0`** is returned, the SDK will understand 
 that the connection is still good
 but currently unable to accept more data, and it will try again later.
 * If a positive value is returned, the SDK will understand that this number
