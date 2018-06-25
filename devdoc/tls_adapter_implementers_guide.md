@@ -157,7 +157,7 @@ int tls_adapter_common_get_option_caps()
 ```
 If the "TrustedCerts" option is enabled and set, a PEM format CA cert chain will
 be passed into the create functions as part of the create call's `tlsio_options`
-parameter. An example of setting a trusted cert can be seen in the
+parameter. An example of using a trusted cert can be seen in the
 [tls_adapter_with_sockets example](#A-fanciful-tls_adapter_with_sockets-example).
 
 If the `tls_adapter_common_get_option_caps` reports that it is capable 
