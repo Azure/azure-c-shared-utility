@@ -6,10 +6,10 @@ hardware to work with the Azure IoT C SDK.
 The [Azure IoT Porting Guide](porting_guide.md) shows several components called "adapters" which must 
 be present to connect 
 an unsupported hardware device to the Azure IoT SDK, and all of these are simple to write with the exception 
-of the "tlsio adapter" [(specification)](tlsio_requirements.md), which is complex to implement, difficult to verify, and can take 
+of the "tlsio" [(specification)](tlsio_requirements.md), which is complex to implement, difficult to verify, and can take 
 many weeks of work by even very experienced developers.
 
-The use of `tlsio_adapter` supercedes the older "tlsio adapter" 
+The use of use of this new `tlsio_adapter` component supercedes the older tlsio adapter design 
 [(specification)](tlsio_requirements.md) 
 and speeds the process of developing a tlsio adapter by at least an order of magnitude
 via reusable components. 
@@ -24,29 +24,29 @@ via reusable components.
 [xio_state.h](/inc/azure_c_shared_utility/xio_state.h)</br>
 
 
-## The major pieces
+## The three layers
 
 The `tlsio_adapter` design splits what the porting guide calls 
-the "tlsio adapter" into three layers. The first two layers are 
+the "tlsio" into three layers. The first two layers are 
 reusable code that is part of the SDK. Only the final layer (at most) needs to be implemented
 for new devices. 
-* **xio_state** The `xio_state` layer encapsulates the state handling, error handling,
-message queuing, and most of the callbacks that are required for an `xio` component. This 
+* **xio_state** The `xio_state` top layer encapsulates the state handling, error handling,
+message queuing, and all but one of the callbacks that are required for an `xio` component. This 
 layer is a general solution for `xio` component code reuse; it is not specialized for 
 `tlsio` components. The `xio_state` layer is implemented entirely in a single 
 file: `xio_state.c`.
-*  **tlsio_adapter** The `tlsio_adapter` layer encapsulates the remaining `xio` callbacks,
-error handling,
+*  **tlsio_adapter** The `tlsio_adapter` middle layer encapsulates the remaining 
+`xio` callback, error handling,
 option handling, platform adapter functions, read buffering, and the validation of 
 `xio` creation parameters. The `tlsio_adapter` layer in combination with the `xio_state`
 layer forms a standard `xio` component as required by the SDK.
 * **tls_adapter** The upper two layers hide all of the `xio` complexity from the `tls_adapter`
-layer, so the low-level `tls_adapter` layer is simple to implement.
+layer, so the bottom-layer `tls_adapter` layer is simple to implement.
  
 ## Two flavors of tlsio_adapter
 
-A few TLS libraries have their TLS handling integrated with their TCP/IP 
-libraries. Examples include Arduino, Apple OSX, and Apple iOS.
+A few TLS libraries have TLS handling integrated with TCP/IP 
+functionality. Examples include Arduino, Apple OSX, and Apple iOS.
 
 More commonly, TLS libraries are designed to work with Berkeley sockets
 either directly or by wrapping socket functionality 
@@ -56,22 +56,23 @@ Mbed TLS, OpenSSL, and CycloneSSL.
 There are two flavors of the `tlsio_adapter` middle layer to handle these two different cases.
 * The **tlsio_adapter_basic** is for TLS implementations that don't use sockets. It consists of
 two files: `tlsio_adapter_basic.c`, and the shared file `tlsio_adapter_common.c`.
-These files encapsulate the final `xio` callbacks, error handling, option handling, platform
+These files encapsulate the final `xio` callback, error handling, option handling, platform
 adapter functions, read buffering, and validation of `xio_create` parameters.
 * The **tlsio_adapter_with_sockets** does all the same work as `tlsio_adapter_basic`, 
-and in addition it provides the low-level `tls_adapter` with a socket wrapped in a 
+and in addition it gives the low-level `tls_adapter` a 
+pre-configured socket wrapped in a 
 platform-independent `socket_async` component. The `tlsio_adapter_with_sockets`
 does all the work of maintaining the socket, including creation, deletion, configuration,
 opening, and closing, so the low-level `tls_adapter` can simply use the `socket_async`
- as-provided. It consists of two files: `tlsio_adapter_with_sockets.c` and 
+as provided. It consists of two files: `tlsio_adapter_with_sockets.c` and 
 the shared file `tlsio_adapter_common.c`.
 
 ## The low-level tls_adapter
 
 ### Common functions
 Low-level `tls_adapter` components all implement the functions declared in
-`tls_adapter_common.h`. This file declares all of the `tls_adapter` functions except
-for object creation:
+`tls_adapter_common.h`. This header file declares all of the `tls_adapter` 
+functions except for object creation:
 
 ```c
 typedef struct TLS_ADAPTER_INSTANCE_TAG* TLS_ADAPTER_INSTANCE_HANDLE;

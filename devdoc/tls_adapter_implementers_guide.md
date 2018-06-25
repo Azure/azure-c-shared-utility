@@ -1,6 +1,6 @@
 # tls_adapter implementer's guide
 
-This document details how to implement a `tls_adapter`.
+This document describes how to implement a `tls_adapter`.
 
 A `tls_adapter` is a component designed to work with the Azure IoT C SDK to implement
 secure communication via TLS to an Azure IoT Hub. The `tls_adapter` is the lowest level
@@ -10,7 +10,7 @@ For more information, see the [tlsio_adapter overview](tlsio_adapter_overview.md
 
 ### Can your TLS library work with a socket?
 
-##### Libraries that like sockets
+##### Libraries that work with sockets
 TLS libraries are often written to eliminate any dependency on the specific mechanism
 of TCP/IP communication. The usual technique is for the user of the library to 
 pass in a set of "bio" functions, which are very simple functions, written by the
@@ -30,32 +30,32 @@ these functions in terms of the read and write functions provided in
 cast the provided `socket_async` object to a socket handle; nothing else
 is required.
 
-If you are using a library that likes to work with sockets, you will:
+If your TLS library can work with sockets, you will:
 * write a `socket_async_os.h` that #includes your system's socket-related headers 
 as needed to allow `socket_async.c` to compile.
 * include `xio_state.c` in your project
 * include `socket_async.c` in your project
 * include `tlsio_adapter_with_sockets.c` in your project
 * make sure you exclude `tlsio_adapter_basic.c` from your project 
-* create a `tls_adapter_xxxxx.c` file that implements the functions in
+* create a `tls_adapter_my_lib_name.c` file that implements the functions in
   * `tls_adapter_common.h`, and
   * `tls_adapter_with_sockets.h`
 
 That's it! You have completed writing your tlsio adapter. (See 
 below for more details.)
 
-##### Libraries that don't like sockets
+##### Libraries that don't work with sockets
 
 Other TLS libraries have no use for sockets because they already have TCP/IP
 functionality integrated. Examples include Arduino, Apple OSX, and Apple iOS.
 
-For these libraries the SDK will not bother creating an unneeded `socket_async`.
+For these libraries the SDK will not create an unneeded `socket_async`.
 
-If you are using a library that doesn't like sockets, you will:
+If you are using a library that doesn't use sockets, you will:
 * include `xio_state.c` in your project
 * include `tlsio_adapter_basic.c` in your project
 * make sure you exclude `tlsio_adapter_with_sockets.c` from your project 
-* create a `tls_adapter_xxxxx.c` file that implements the functions in
+* create a `tls_adapter_my_lib_name.c` file that implements the functions in
   * `tls_adapter_common.h`, and
   * `tls_adapter_basic.h`
   
@@ -118,13 +118,13 @@ called. Most implementations will leave this function empty.
 
 The `tlsio_adapter` framework currently is capable of supporting two kinds
 of settable options for how the TLS layer should verify the identity of the
-IoT Hub server and how the TLS layer should convince the IoT Hub server of
-the device's identity. These options are set at high levels in the SDK and 
+IoT Hub server and how the TLS layer should present the device's identity
+to the IoT Hub server. These options are set at high levels in the SDK and 
 passed into the `tls_adapter_with_sockets_create` and 
-`tls_adapter_basic_create` calls using the `tlsio_options` parameter.
+`tls_adapter_basic_create` calls in the `tlsio_options` parameter.
 
 Before calling `tls_adapter_with_sockets_create` or 
-`tls_adapter_basic_create`, the SDK will call this `tls_adapter` function:
+`tls_adapter_basic_create`, the middle layer will call this `tls_adapter` function:
 ```c
 int tls_adapter_common_get_option_caps(void);
 ```
@@ -140,7 +140,7 @@ The `tlsio_adapter` must return a bit-or combination of this enum:
 ```
 This will tell the SDK what options the `tls_adapter` is able to understand. If a
 higher-level SDK call tries to set an option that the `tls_adapter` has not claimed
-to support in the `tls_adapter_common_get_option_caps` call, the SDK will
+to support in the `tls_adapter_common_get_option_caps` call, the middle layer will
 return an error and refuse to set the option.
 
 #### Trusted Certs option
@@ -155,14 +155,16 @@ int tls_adapter_common_get_option_caps()
     return TLSIO_OPTION_BIT_TRUSTED_CERTS;
 }
 ```
-With the "TrustedCerts" option enabled and set, a PEM format CA cert chain will
+If the "TrustedCerts" option is enabled and set, a PEM format CA cert chain will
 be passed into the create functions as part of the create call's `tlsio_options`
-parameter. An example of setting a trusted cert can be found in the
+parameter. An example of setting a trusted cert can be seen in the
 [tls_adapter_with_sockets example](#A-fanciful-tls_adapter_with_sockets-example).
 
-If the `tls_adapter` reports that it is capable of accepting the "TrustedCerts" 
-option, then the SDK will not call either of the creation functions if the 
-"Trusted Certs" option has not been set.
+If the `tls_adapter_common_get_option_caps` reports that it is capable 
+of accepting the "TrustedCerts" 
+option, then the SDK will only call the creation functions 
+(`tls_adapter_with_sockets_create` or `tls_adapter_basic_create`) if the 
+"Trusted Certs" option has been set.
 
 ##### x509 RSA option
 
@@ -177,7 +179,7 @@ This is for future expansion only.
 
 ## Creation functions
 
-Depending on whether your TLS library likes sockets or not, you will create
+Depending on whether your TLS library uses sockets or not, you will create
 your `tls_adapter` with either this call:
 ```c
 // All of the parameters of this call have permanent existence, and need not be deep-copied
@@ -199,8 +201,8 @@ remaining function calls.
 
 ## The open function
 
-After the SDK has gotten a successful return from `tls_adapter_with_sockets_create` or 
-`tls_adapter_basic_create` it will call start making repeated calls to 
+After the SDK has successfully created a `tls_adapter` with `tls_adapter_with_sockets_create` or 
+`tls_adapter_basic_create`, it will call start making repeated calls to 
 `tls_adapter_common_open`:
 ```c
 XIO_ASYNC_RESULT tls_adapter_common_open(TLS_ADAPTER_INSTANCE_HANDLE adapter);
@@ -217,7 +219,7 @@ typedef enum
 The return values cause the SDk to behave as follows:
 * If **`XIO_ASYNC_RESULT_SUCCESS`** is returned the SDK will start communicating with 
 the IoT Hub using the `tls_adapter_common_read` and `tls_adapter_common_write`
-calls, and will continue to do so until there is a failure or app shutdown.
+calls, and will continue to do so until there is a communiction failure or an app shutdown.
 * If **`XIO_ASYNC_RESULT_FAILURE`** is returned, the SDK will call 
 `tls_adapter_common_close_and_destroy` then try to reconnect later.
 * If **`XIO_ASYNC_RESULT_WAITING`** is returned, the SDK will understand that the 
@@ -249,7 +251,7 @@ than MAXINT, so the type mismatch between the supplied
 is still good when it is called. If sockets or something similar are used,
 the "end of file" condition in particular must be checked because "end of file"
 is not usually considered an error, but it means the connection has been
-closed by the host, so the SDK must be notified of this as an error.
+closed by the host, and the SDK must be notified of this as an error.
 
 The return values cause the SDK to behave as follows:
 * If **`XIO_ASYNC_RESULT_FAILURE`** is returned, the SDK will call 
@@ -277,7 +279,7 @@ If it succeeds in writing one or more bytes, it returns the number of bytes
 successfully written. It is considered normal for the return value to be
 smaller than the `size` parameter; the SDK knows how to handle this,
 and will repeat the call later with the unsent portion of the message. The
-`tls_adapter` layer can safely ignore the issue.
+low-level `tls_adapter` can safely ignore the issue.
 
 The `size` parameter is guaranteed to be smaller (in practice far smaller) 
 than MAXINT, so the type mismatch between the supplied 
@@ -321,7 +323,7 @@ Examples of the close and destroy function can be found in
 [tls_adapter_basic example](#A-fanciful-tls_adapter_basic-example) and
 [tls_adapter_with_sockets example](#A-fanciful-tls_adapter_with_sockets-example).
 
-## A fanciful tls_adapter_basic example
+## A simple tls_adapter_basic example
 
 Here is a non-working example of a `tls_adapter_basic` from Contoso Corporation:
 ```c
@@ -383,8 +385,8 @@ void tls_adapter_common_close_and_destroy(TLS_ADAPTER_INSTANCE_HANDLE tls_adapte
 XIO_ASYNC_RESULT tls_adapter_basic_open(TLS_ADAPTER_INSTANCE_HANDLE tls_adapter)
 {
     XIO_ASYNC_RESULT result;
-    // A very simple open sequence. Non-zero ipAddress implies an earlier 
-    // contosoTls_connect succeeded
+    // A very simple open sequence. Non-zero ipAddress tells us that an earlier 
+    // contosoTls_connect call succeeded
     if (tls_adapter->ipAddress == 0)
     {
         if (!contosoTls_hostByName(tls_adapter->hostname, &(tls_adapter->ipAddress)))
@@ -406,6 +408,8 @@ XIO_ASYNC_RESULT tls_adapter_basic_open(TLS_ADAPTER_INSTANCE_HANDLE tls_adapter)
     }
     else
     {
+        // Timeouts are handled by upper levels of the Azure IoT SDK,
+        // so we don't need a timeout here
         if (contosoTls_connected() != 0)
         {
             result = XIO_ASYNC_RESULT_SUCCESS;
@@ -458,7 +462,7 @@ int tls_adapter_common_write(TLS_ADAPTER_INSTANCE_HANDLE tls_adapter,
     return result;
 }
 ```
-## A fanciful tls_adapter_with_sockets example
+## A simple tls_adapter_with_sockets example
 
 Here is a non-working example of a `tls_adapter_with_sockets` from Contoso Corporation:
 ```c
@@ -492,7 +496,7 @@ typedef struct TLS_ADAPTER_INSTANCE_TAG
 } TLS_ADAPTER_INSTANCE;
 
 // Here is the "bio" send function that allows the Contoso library to
-// send using the supplied socket_async. We'll pass it to the library during
+// send data using the supplied socket_async. We'll pass it to the library during
 // the tls_adapter_with_sockets_create call.
 static int contosoTls_ssl_send( void *ctx, const unsigned char *buffer, size_t len )
 {
@@ -518,7 +522,7 @@ static int contosoTls_ssl_send( void *ctx, const unsigned char *buffer, size_t l
 }
 
 // Here is the "bio" receive function that allows the Contoso library to
-// receive using the supplied socket_async. We'll pass it to the library during
+// receive data using the supplied socket_async. We'll pass it to the library during
 // the tls_adapter_with_sockets_create call.
 static int contosoTls_ssl_recv( void *ctx, unsigned char *buffer, size_t len )
 {
@@ -627,6 +631,10 @@ TLS_ADAPTER_INSTANCE_HANDLE tls_adapter_with_sockets_create(
             }
         }
     }
+    else
+    {
+        result = XIO_ASYNC_RESULT_FAILURE;
+    }
     if (result != 0)
     {
         tls_adapter_common_close_and_destroy(tls_adapter);
@@ -683,7 +691,7 @@ int tls_adapter_common_read(TLS_ADAPTER_INSTANCE_HANDLE tls_adapter,
     else if (rcv_bytes == CONTOSOTLS_ERR_SSL_WANT_READ || 
         rcv_bytes == CONTOSOTLS_ERR_SSL_WANT_WRITE)
     {
-        result = XIO_ASYNC_RESULT_WAITING;
+        result = 0;
     }
     else
     {
@@ -704,7 +712,7 @@ int tls_adapter_common_write(TLS_ADAPTER_INSTANCE_HANDLE tls_adapter,
     else if (result == CONTOSOTLS_ERR_SSL_WANT_READ || 
         result == CONTOSOTLS_ERR_SSL_WANT_WRITE)
     {
-        result = XIO_ASYNC_RESULT_WAITING;
+        result = 0;
     }
     else
     {
