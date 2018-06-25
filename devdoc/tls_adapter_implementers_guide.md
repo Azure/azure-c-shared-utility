@@ -21,7 +21,7 @@ Windows Schannel, WolfSSL, Mbed TLS, OpenSSL, and CycloneSSL. At least one
 TLS library, the OpenSSL implementation used in Espressif's 
 ESP32, can even use a socket directly.
 
-The Azure IoT SDK helps libraries that work with sockets by performing the 
+The Azure IoT SDK helps users of libraries that work with sockets by performing the 
 work of socket maintenance, and it provides an abstracted socket called
 `socket_async` to the `tls_adapter` during initialization. This socket is already
 open and ready for use. Libraries that use "bio" functions should implement
