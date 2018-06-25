@@ -183,16 +183,17 @@ This is for future expansion only.
 Depending on whether your TLS library uses sockets or not, you will create
 your `tls_adapter` with either this call:
 ```c
-// All of the parameters of this call have permanent existence, and need not be deep-copied
 TLS_ADAPTER_INSTANCE_HANDLE tls_adapter_with_sockets_create(TLSIO_OPTIONS* tlsio_options,
         const char* hostname, SOCKET_ASYNC_HANDLE socket_async);
 ```
 or this one:
 ```c
-// All of the parameters of this call have permanent existence, and need not be deep-copied
 TLS_ADAPTER_INSTANCE_HANDLE tls_adapter_basic_create(TLSIO_OPTIONS* tlsio_options,
         const char* hostname, uint16_t port);
 ```
+The parameters of these functions all have permanent existence relative to the `tls_adapter`,
+so they need not be deep-copied.
+
 Very little work takes place in the creation functions. The typical usage is to `malloc` a
 struct where you can store the supplied parameters plus any other data you may need
 during the lifetime of your object, fill in that struct with the 
