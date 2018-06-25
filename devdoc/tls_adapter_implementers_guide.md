@@ -162,7 +162,7 @@ parameter. An example of using a trusted cert can be seen in the
 
 If the `tls_adapter_common_get_option_caps` function reports that the
 `tls_adapter` is capable 
-of accepting the "TrustedCerts", then the "TrustedCerts" option is considered mandatory,
+of accepting the "TrustedCerts" option, then the "TrustedCerts" option is considered mandatory,
 and the SDK will refuse to create a `tls_adapter` 
 (via `tls_adapter_with_sockets_create` or `tls_adapter_basic_create`) unless the 
 "Trusted Certs" option has been set.
