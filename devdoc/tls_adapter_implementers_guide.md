@@ -5,7 +5,7 @@ This document describes how to implement a `tls_adapter`.
 A `tls_adapter` is a component designed to work with the Azure IoT C SDK to implement
 secure communication via TLS to an Azure IoT Hub. The `tls_adapter` is the lowest level
 in a stack of components that compose what the Azure IoT C SDK documentation
-refers to as a "tlsio adapter".
+refers to as a "tlsio".
 For more information, see the [tlsio_adapter overview](tlsio_adapter_overview.md).
 
 ### Can your TLS library work with a socket?
