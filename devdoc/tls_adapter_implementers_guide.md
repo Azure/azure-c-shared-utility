@@ -209,7 +209,7 @@ After the SDK has successfully created a `tls_adapter` with `tls_adapter_with_so
 ```c
 XIO_ASYNC_RESULT tls_adapter_common_open(TLS_ADAPTER_INSTANCE_HANDLE adapter);
 ```
-This call returns a value from the `XIO_ASYNC_RESULT` enum:
+This call must return a value from the `XIO_ASYNC_RESULT` enum:
 ```c
 typedef enum
 {
