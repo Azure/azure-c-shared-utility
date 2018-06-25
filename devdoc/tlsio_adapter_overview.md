@@ -12,7 +12,8 @@ many weeks of work by even very experienced developers.
 The use of use of this new `tlsio_adapter` component supercedes the older tlsio adapter design 
 [(specification)](tlsio_requirements.md) 
 and speeds the process of developing a tlsio adapter by at least an order of magnitude
-via reusable components. 
+via reusable components. This `tlsio_adapter` component also implements the required
+"platform adapter", so the platform adapter need not be implemented separately.
 
 ## References
 [xio_requirements](xio_requirements.md)</br>
