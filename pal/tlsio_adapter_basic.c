@@ -70,11 +70,11 @@ static XIO_ASYNC_RESULT tlsio_adapter_basic_open(XIO_ADAPTER_INSTANCE_HANDLE xio
         if (tlsio_options_check_set_value_consistency(&context->tlsio_adapter_common.options) != 0)
         {
             // The tlsio_options_check_set_value_consistency logged the error
-            context->opening_step == OPENING_STEP_VALIDATION_FAILED;
+            context->opening_step = OPENING_STEP_VALIDATION_FAILED;
         }
         else
         {
-            context->opening_step == OPENING_STEP_INIT_TLS;
+            context->opening_step = OPENING_STEP_INIT_TLS;
         }
     }
 
