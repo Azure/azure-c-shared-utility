@@ -4,8 +4,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#undef NO_LOGGING
-
 // This file is OS-specific, and is identified by setting include directories
 // in the project
 #include "socket_async_os.h"
