@@ -313,15 +313,15 @@ int xio_state_close_async(CONCRETE_IO_HANDLE xio_state_in, ON_IO_CLOSE_COMPLETE 
     if (xio_state_in == NULL || on_io_close_complete == NULL)
     {
         /* Codes_SRS_XIO_STATE_30_050: [ If the xio_state_handle or on_close_complete parameter is NULL,
-        xio_state_close_async shall log an error and return _FAILURE_. ]*/
+        xio_state_close_async shall log an error and return XIO_ASYNC_RESULT_FAILURE. ]*/
         LogError("bad parameters");
-        result = __FAILURE__;
+        result = XIO_ASYNC_RESULT_FAILURE;
     }
     else if (xio_state->xio_state_state == XIO_STATE_INITIAL)
     {
-        /* Codes_SRS_XIO_STATE_30_053: [ If xio_state is in XIO_STATE_INITIAL it shall log an error and return _FAILURE_. ]*/
+        /* Codes_SRS_XIO_STATE_30_053: [ If xio_state is in XIO_STATE_INITIAL it shall log an error and return XIO_ASYNC_RESULT_FAILURE. ]*/
         LogError("bad state");
-        result = __FAILURE__;
+        result = XIO_ASYNC_RESULT_FAILURE;
     }
     else if (xio_state->xio_state_state == XIO_STATE_CLOSED ||
         xio_state->xio_state_state == XIO_STATE_CLOSING)
@@ -539,7 +539,7 @@ int xio_state_setoption(CONCRETE_IO_HANDLE xio_state_in, const char* optionName,
 
 int xio_state_send_async(CONCRETE_IO_HANDLE xio_state_in, const void* buffer, size_t size, ON_SEND_COMPLETE on_send_complete, void* callback_context)
 {
-    XIO_ASYNC_RESULT result;
+    int result;
     XIO_STATE* xio_state = (XIO_STATE*)xio_state_in;
 
     if (on_send_complete == NULL || xio_state_in == NULL || buffer == NULL || size == 0 || size >= INT_MAX || on_send_complete == NULL)
@@ -602,7 +602,7 @@ int xio_state_send_async(CONCRETE_IO_HANDLE xio_state_in, const void* buffer, si
                 /* Codes_SRS_XIO_STATE_30_063: [ On success,  xio_state_send_async  shall enqueue
                 for transmission the on_send_complete, the callback_context, the size,
                 and the contents of  buffer  and then return 0. ]*/
-                result = XIO_ASYNC_RESULT_SUCCESS;
+                result = 0;
                 /* Codes_SRS_XIO_STATE_30_061: [ On success, after enqueuing the message, 
                 xio_state_send_async shall invoke the Data Transmission behavior of xio_state_dowork. ]*/
                 dowork_send(xio_state);

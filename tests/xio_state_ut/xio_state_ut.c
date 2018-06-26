@@ -252,7 +252,7 @@ BEGIN_TEST_SUITE(xio_state_unittests)
                     send_result = xio_state_send_async(result, get_message_doomed(), g_message_doomed_size,
                         on_io_send_complete, IO_SEND_COMPLETE_CONTEXT);
                     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-                    ASSERT_ARE_EQUAL(int, send_result, XIO_ASYNC_RESULT_SUCCESS);
+                    ASSERT_ARE_EQUAL(int, send_result, 0);
                     ASSERT_IO_SEND_CALLBACK(false, IO_OPEN_OK);
                 }
 
@@ -268,13 +268,13 @@ BEGIN_TEST_SUITE(xio_state_unittests)
                     send_result = xio_state_send_async(result, get_message_1(), g_message_1_size,
                         on_io_send_complete, IO_SEND_COMPLETE_CONTEXT);
                     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-                    ASSERT_ARE_EQUAL(int, send_result, XIO_ASYNC_RESULT_SUCCESS);
+                    ASSERT_ARE_EQUAL(int, send_result, 0);
                     EXPECT_MESSAGE_CREATION();
                     STRICT_EXPECTED_CALL(xio_adapter_write(&adapter_instance, IGNORED_PTR_ARG, unsent_message_size)).SetReturn(0);
                     send_result = xio_state_send_async(result, get_message_2(), g_message_2_size,
                         on_io_send_complete, IO_SEND_COMPLETE_CONTEXT);
                     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-                    ASSERT_ARE_EQUAL(int, send_result, XIO_ASYNC_RESULT_SUCCESS);
+                    ASSERT_ARE_EQUAL(int, send_result, 0);
                     ASSERT_IO_SEND_CALLBACK(false, IO_OPEN_OK);
                 }
                 
@@ -314,7 +314,7 @@ BEGIN_TEST_SUITE(xio_state_unittests)
 
 
     /* Tests_SRS_XIO_STATE_30_050: [ If the xio_state_handle or on_close_complete parameter is NULL, 
-    xio_state_close_async shall log an error and return _FAILURE_. ]*/
+    xio_state_close_async shall log an error and return XIO_ASYNC_RESULT_FAILURE. ]*/
     /* Tests_SRS_XIO_STATE_30_054: [ On failure, the adapter shall not call on_io_close_complete. ]*/
     TEST_FUNCTION(xio_state__close_parameter_validation__fails)
     {
@@ -345,7 +345,7 @@ BEGIN_TEST_SUITE(xio_state_unittests)
             close_result = xio_state_close_async(p0[i] ? xio_state : NULL, p1[i], IO_CLOSE_COMPLETE_CONTEXT);
 
             ///assert
-            ASSERT_ARE_NOT_EQUAL_WITH_MSG(int, 0, close_result, fm[i]);
+            ASSERT_ARE_EQUAL_WITH_MSG(int, XIO_ASYNC_RESULT_FAILURE, close_result, fm[i]);
             ASSERT_IO_CLOSE_CALLBACK(false);
         }
 
@@ -532,7 +532,7 @@ BEGIN_TEST_SUITE(xio_state_unittests)
     }
 
     /* Tests_SRS_XIO_STATE_30_053: [ If xio_state is in XIO_STATE_INITIAL 
-    xio_state_close_async shall log an error and return _FAILURE_. ]*/
+    xio_state_close_async shall log an error and return XIO_ASYNC_RESULT_FAILURE. ]*/
     TEST_FUNCTION(xio_state__close_from_XIO_STATE_INITIAL__fails)
     {
         int close_result;
@@ -543,7 +543,7 @@ BEGIN_TEST_SUITE(xio_state_unittests)
         close_result = xio_state_close_async(xio_state, on_io_close_complete, IO_CLOSE_COMPLETE_CONTEXT);
 
         ///assert
-        ASSERT_ARE_NOT_EQUAL(int, 0, close_result);
+        ASSERT_ARE_EQUAL(int, XIO_ASYNC_RESULT_FAILURE, close_result);
         ASSERT_IO_CLOSE_CALLBACK(false);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
@@ -588,7 +588,7 @@ BEGIN_TEST_SUITE(xio_state_unittests)
             g_message_1_size, on_io_send_complete, IO_SEND_COMPLETE_CONTEXT);
 
         ///assert
-        ASSERT_ARE_EQUAL_WITH_MSG(int, send_result, XIO_ASYNC_RESULT_SUCCESS, "Unexpected send failure");
+        ASSERT_ARE_EQUAL_WITH_MSG(int, send_result, 0, "Unexpected send failure");
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_MESSAGE_1_SENT_BY_COPY();
         ASSERT_IO_SEND_CALLBACK(true, IO_SEND_OK);
@@ -744,7 +744,7 @@ BEGIN_TEST_SUITE(xio_state_unittests)
         STRICT_EXPECTED_CALL(xio_adapter_write(&adapter_instance, IGNORED_PTR_ARG, SSL_SHORT_SENT_MESSAGE_SIZE)).SetReturn(0);
         send_result = xio_state_send_async(xio_state, SSL_send_buffer,
             SSL_SHORT_SENT_MESSAGE_SIZE, on_io_send_complete, IO_SEND_COMPLETE_CONTEXT);
-        ASSERT_ARE_EQUAL(int, send_result, XIO_ASYNC_RESULT_SUCCESS);
+        ASSERT_ARE_EQUAL(int, send_result, 0);
 
         reset_test_context_records();
         umock_c_reset_all_calls();
@@ -783,7 +783,7 @@ BEGIN_TEST_SUITE(xio_state_unittests)
 
         send_result = xio_state_send_async(xio_state, SSL_send_buffer,
             SSL_TEST_MESSAGE_SIZE, on_io_send_complete, IO_SEND_COMPLETE_CONTEXT);
-        ASSERT_ARE_EQUAL(int, send_result, XIO_ASYNC_RESULT_SUCCESS);
+        ASSERT_ARE_EQUAL(int, send_result, 0);
         ASSERT_IO_ERROR_CALLBACK(false);
 
         reset_test_context_records();
@@ -832,7 +832,7 @@ BEGIN_TEST_SUITE(xio_state_unittests)
 
         send_result = xio_state_send_async(xio_state, SSL_send_buffer,
             SSL_SHORT_SENT_MESSAGE_SIZE, on_io_send_complete, IO_SEND_COMPLETE_CONTEXT);
-        ASSERT_ARE_EQUAL(int, send_result, XIO_ASYNC_RESULT_SUCCESS);
+        ASSERT_ARE_EQUAL(int, send_result, 0);
         ASSERT_IO_ERROR_CALLBACK(false);
 
         reset_test_context_records();

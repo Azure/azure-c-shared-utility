@@ -381,7 +381,7 @@ and return `_FAILURE_`. **]**
 [enter XIO_STATE_OPENING](#enter-XIO_STATE_OPENING "`xio_state` will continute calling `xio_adapter_open` 
 during subsequent `xio_state_dowork` calls, but no other externally visible action is 
 being specified.")
-and return 0.. **]**
+and return 0. **]**
 
 **SRS_XIO_STATE_30_039: [** On failure, `xio_state_open_async` shall not call `on_open_complete`. **]**
 
@@ -396,13 +396,13 @@ int xio_state_close_async(CONCRETE_IO_HANDLE xio_state_handle,
 ```
 
 **SRS_XIO_STATE_30_050: [** If the `xio_state_handle` or `on_close_complete` 
-parameter is NULL, `xio_state_close_async` shall log an error and return `_FAILURE_`. **]**
+parameter is NULL, `xio_state_close_async` shall log an error and return `XIO_ASYNC_RESULT_FAILURE`. **]**
 
 **SRS_XIO_STATE_30_054: [** On failure, `xio_state_close_async` shall not 
 call `on_close_complete`. **]**
 
 **SRS_XIO_STATE_30_053: [** If `xio_state` is in XIO_STATE_INITIAL `xio_state_close_async` 
-shall log an error and return `_FAILURE_`. **]**
+shall log an error and return `XIO_ASYNC_RESULT_FAILURE`. **]**
 
 **SRS_XIO_STATE_30_055: [** If `xio_state` is in XIO_STATE_CLOSING then 
 `xio_state_close_async` shall do nothing and return 0. **]**
@@ -465,7 +465,7 @@ error and return `XIO_ASYNC_RESULT_FAILURE`. **]**
 **SRS_XIO_STATE_30_063: [** On success, `xio_state_send_async` shall enqueue for 
 transmission the `on_send_complete`, the `callback_context`, the `size`, and the 
 `buffer` per [Message Processing Requirements](#message-processing-requirements)
-and then return `XIO_ASYNC_RESULT_SUCCESS`. **]**
+and then return 0. **]**
 
 **SRS_XIO_STATE_30_061: [** On success, after enqueuing the message, `xio_state_send_async` 
 shall invoke the Data Transmission behavior of `xio_state_dowork`. **]**
