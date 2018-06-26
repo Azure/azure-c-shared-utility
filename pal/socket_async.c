@@ -27,10 +27,15 @@ static int get_socket_errno(int file_descriptor)
 
 int socket_async_get_option_caps()
 {
+    /* Codes_SRS_SOCKET_ASYNC_30_004: [ The  socket_async_get_option_caps  shall 
+    return a bit-or of  TLSIO_OPTION_BIT  values to specify the implementation's 
+    supported options. ]*/
     return TLSIO_OPTION_BIT_NONE;
 }
 
-// TODO: Add spec for this call
+/* Codes_SRS_SOCKET_ASYNC_30_006: [ The  socket_async_get_ipv4  shall 
+return the IP V4 address of the supplied  hostname . ]*/
+// Error handling is defered to the underlying getaddrinfo
 // This call is synchronous.
 uint32_t socket_async_get_ipv4(const char* hostname)
 {

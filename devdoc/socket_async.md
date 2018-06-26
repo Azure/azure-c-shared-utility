@@ -9,7 +9,8 @@ a system of header includes and #defines will adapt the code for each particular
 It is anticipated that socket_async.c will work for all non-Windows environments, and a socket_async_win32.c will be needed for Windows.
 ## References
 
-[socket_async.h](https://github.com/Azure/azure-c-shared-utility/blob/master/inc/azure_c_shared_utility/socket_async.h)  
+[socket_async.h](/pal/inc/socket_async.h)</br>
+[tlsio_options.h](/inc/azure_c_shared_utility/tlsio_options.h)</br>
 [sys/socket.h, a typical linux socket implementation](http://pubs.opengroup.org/onlinepubs/7908799/xns/syssocket.h.html)
 
 ###   Exposed API
@@ -33,19 +34,45 @@ It is anticipated that socket_async.c will work for all non-Windows environments
 
 **SRS_SOCKET_ASYNC_30_002: [** The socket_async shall implement the methods defined in `socket_async.h`.
 ```c
-SOCKET_ASYNC_HANDLE socket_async_create(uint32_t host_ipv4, uint16_t port, bool is_UDP, SOCKET_ASYNC_OPTIONS_HANDLE options);
+int socket_async_get_option_caps(void);
+uint32_t socket_async_get_ipv4(const char* hostname);
+SOCKET_ASYNC_HANDLE socket_async_create(uint32_t host_ipv4, 
+    uint16_t port, bool is_UDP, SOCKET_ASYNC_OPTIONS_HANDLE options);
 int socket_async_is_create_complete(SOCKET_ASYNC_HANDLE sock, bool* is_complete);
 int socket_async_send(SOCKET_ASYNC_HANDLE sock, void* buffer, size_t size, size_t* sent_count);
-int socket_async_receive(SOCKET_ASYNC_HANDLE sock, void* buffer, size_t size, size_t* received_count);
+int socket_async_receive(SOCKET_ASYNC_HANDLE sock, void* buffer, 
+    size_t size, size_t* received_count);
 void socket_async_destroy(SOCKET_ASYNC_HANDLE sock);
 ```
  **]**
 
+### socket_async_get_option_caps
+`socket_async_get_option_caps` returns a bit-or
+of TLSIO_OPTION_BIT values to specify which
+options the socket_async implementation supports. 
+Current implemenatations currently just return TLSIO_OPTION_BIT_NONE.
+```c
+int socket_async_get_option_caps(void);
+```
+**SRS_SOCKET_ASYNC_30_004: [** The `socket_async_get_option_caps` 
+shall return a bit-or of `TLSIO_OPTION_BIT` values to specify the implementation's supported options. **]**
 
-###   socket_async_create
+
+### socket_async_get_ipv4
+`socket_async_get_ipv4` returns the IPV4 address of the supplied `hostname`. This function is
+a thin wrapper around the underlying getaddrinfo, and defers error handling to that call.
+```c
+socket_async_get_ipv4(const char* hostname);
+```
+**SRS_SOCKET_ASYNC_30_006: [** The `socket_async_get_ipv4` 
+shall return the IP V4 address of the supplied `hostname`. **]**
+
+
+### socket_async_create
 `socket_async_create` creates a socket and sets its configuration, including setting the socket to non-blocking. It then binds the socket to the supplied `host_ipv4` and `port`, and begins the process of connecting the socket to the bound address.
 ```c
-SOCKET_ASYNC_HANDLE socket_async_create(uint32_t host_ipv4, uint16_t port, bool is_UDP, SOCKET_ASYNC_OPTIONS_HANDLE options);
+SOCKET_ASYNC_HANDLE socket_async_create(uint32_t host_ipv4, uint16_t port, 
+    bool is_UDP, SOCKET_ASYNC_OPTIONS_HANDLE options);
 ```
 
 **SRS_SOCKET_ASYNC_30_011: [** The `host_ipv4` parameter shall be the 32-bit IP V4 of the target server. **]**
