@@ -558,7 +558,7 @@ static int tlsio_entropy_poll(void *v, unsigned char *output,
         // Never use the C rand function because it would make your
         // "secure" communication with the IoT Hub as easy to crack
         // as a pistachio.
-        output[i] = (unsigned char)(contosoHardwareGetRandomByte());
+        output[i] = contosoHardwareGetRandomByte();
     }
     *olen = len;
     return(0);
