@@ -40,6 +40,4 @@ char* get_ctime(time_t* timeToGet)
 {
     return ctime(timeToGet);
 }
-
-
 ```

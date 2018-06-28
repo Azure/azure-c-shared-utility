@@ -41,6 +41,11 @@ as needed to allow `socket_async.c` to compile.
   * `tls_adapter_common.h`, and
   * `tls_adapter_with_sockets.h`
 
+In rare cases you may want to implement your own IP stack from bare metal.
+In these situations you may find it convenient to expose your IP stack via the
+`socket_async.h` interface and use the extra functionality of 
+`tlsio_adapter_with_sockets.c` 
+
 That's it! You have completed writing your tlsio adapter. (See 
 below for more details.)
 
