@@ -18,6 +18,7 @@
 #include "azure_c_shared_utility/xio_adapter.h"
 #include "azure_c_shared_utility/xio_state.h"
 #include "tlsio_adapter_common.h"
+#include "tls_adapter_common.h"
 #include "tls_adapter_basic.h"
 
 // Opening steps are really only needed for operations that might take a while
@@ -93,7 +94,7 @@ static XIO_ASYNC_RESULT tlsio_adapter_basic_open(XIO_ADAPTER_INSTANCE_HANDLE xio
         }
         break;
     case OPENING_STEP_OPEN_TLS:
-        result = tls_adapter_basic_open(context->tlsio_adapter_common.tls_adapter);
+        result = tls_adapter_common_open(context->tlsio_adapter_common.tls_adapter);
         break;
     case OPENING_STEP_VALIDATION_FAILED:
         // The error is already logged
@@ -107,7 +108,7 @@ static XIO_ASYNC_RESULT tlsio_adapter_basic_open(XIO_ADAPTER_INSTANCE_HANDLE xio
 
     if (result == XIO_ASYNC_RESULT_FAILURE)
     {
-        (void)tlsio_adapter_basic_close(xio_adapter_in);
+        (void)tlsio_adapter_common_close(xio_adapter_in);
     }
 
     return result;
