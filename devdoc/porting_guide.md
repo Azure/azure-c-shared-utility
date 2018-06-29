@@ -27,9 +27,11 @@ The following sections describe each step in detail.
 
 ### Step 1 &ndash; Include common porting files and headers
 
-The common porting source files are found in the `pal` directory. Include these two files:
+The common porting source files are found in the C shared utility library's 
+`pal` directory. Include these three files:
 * `tlsio_adapter_common.c`
 * `tlsio_options.c`
+* `tickcounter.c`
 
 The headers for the common porting files are found in the `pal` directory. Add these two
 paths to your project header include directories:
