@@ -1,12 +1,19 @@
 # How to Port the Azure IoT C SDK  to Other Platforms
 
-This document shows how to port the C Shared utility library to 
-platforms not supported out of the box.
-The C shared utility library is used by C SDKs like IoTHub client SDK and EventHub client SDK.  
+This document shows how to port the C Shared Utility library to 
+platforms that are not already supported.
+
+The C Shared Utility library is used by C SDKs like IoTHub client SDK and EventHub client SDK.
+
+This document does not provide specific guidance for how to compile the Azure IoT
+libraries on any specific system. Most newly targeted systems will not support CMake, which
+is the SDK's preferred build system, so it is likely that newly targeted systems
+will need to have a makefile or the equivalent created by hand.
 
 ## References
 
-###### Specifications
+- [TLS adapter architecture overview](tlsio_adapter_overview.md).
+- [TLS adapter implementers guide](tls_adapter_implementers_guide.md).
 - [threadapi and sleep adapter specification](threadapi_and_sleep_requirements.md)<br/>
 - [lock adapter specification](lock_requirements.md)<br/>
 
@@ -28,15 +35,14 @@ The following sections describe each step in detail.
 ### Step 1 &ndash; Include common porting files and headers
 
 The common porting source files are found in the C shared utility library's 
-`pal` directory. Include these three files:
+`pal` directory. Include these three files in your project:
 * `tlsio_adapter_common.c`
 * `tlsio_options.c`
 * `tickcounter.c`
 
-The headers for the common porting files are found in the `pal` directory. Add these two
-paths to your project header include directories:
+The headers for the common porting files are found in the `pal` directory. Add this
+path to your project header include directories:
 * `pal/inc`
-* `pal/generic`
 
 
 ### Step 2 &ndash; Implement the required platform functions
@@ -118,8 +124,8 @@ that you can modify for this purpose.
 The Azure IoT Hub requires secure communication over TLS. The Azure IoT SDK uses
 a layered architecture that makes it simple to implement TLS for new devices.
 
-If you're curious about the layered architecture, it is discussed 
-[in this overview](tlsio_adapter_overview.md).
+If you're curious about the layered architecture, it is discussed in 
+[this overview](tlsio_adapter_overview.md).
 
 Details of how to implement TLS communication are in 
 [this implementers guide](tls_adapter_implementers_guide.md).
