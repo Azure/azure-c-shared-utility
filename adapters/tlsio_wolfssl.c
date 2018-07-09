@@ -54,6 +54,7 @@ typedef struct TLS_IO_INSTANCE_TAG
 } TLS_IO_INSTANCE;
 
 STATIC_VAR_UNUSED const char* const OPTION_WOLFSSL_SET_DEVICE_ID = "SetDeviceId";
+static const size_t SOCKET_READ_LIMIT = 5;
 
 /*this function will clone an option given by name and value*/
 static void* tlsio_wolfssl_CloneOption(const char* name, const void* value)
@@ -225,8 +226,8 @@ static int decode_ssl_received_bytes(TLS_IO_INSTANCE* tls_io_instance)
     int result = 0;
     unsigned char buffer[64];
 
-    int rcv_bytes = 1;
-    while (rcv_bytes > 0)
+    int rcv_bytes = 0;
+    do
     {
         rcv_bytes = wolfSSL_read(tls_io_instance->ssl, buffer, sizeof(buffer));
         if (rcv_bytes > 0)
@@ -236,8 +237,7 @@ static int decode_ssl_received_bytes(TLS_IO_INSTANCE* tls_io_instance)
                 tls_io_instance->on_bytes_received(tls_io_instance->on_bytes_received_context, buffer, rcv_bytes);
             }
         }
-    }
-
+    } while (rcv_bytes > 0);
     return result;
 }
 
@@ -351,15 +351,17 @@ static int on_io_recv(WOLFSSL *ssl, char *buf, int sz, void *context)
     {
         TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)context;
         unsigned char* new_socket_io_read_bytes;
+        size_t socket_reads = 0;
 
         AZURE_UNREFERENCED_PARAMETER(ssl);
-        while (tls_io_instance->socket_io_read_byte_count == 0)
+        while (tls_io_instance->socket_io_read_byte_count == 0 && socket_reads < SOCKET_READ_LIMIT)
         {
             xio_dowork(tls_io_instance->socket_io);
             if (tls_io_instance->tlsio_state != TLSIO_STATE_IN_HANDSHAKE)
             {
                 break;
             }
+            socket_reads++;
         }
 
         result = tls_io_instance->socket_io_read_byte_count;

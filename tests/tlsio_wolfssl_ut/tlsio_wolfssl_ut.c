@@ -45,6 +45,11 @@ static void my_gballoc_free(void* ptr)
 #include "azure_c_shared_utility/shared_util_options.h"
 #include "azure_c_shared_utility/platform.h"
 #include "azure_c_shared_utility/xio.h"
+
+MOCKABLE_FUNCTION(, void, on_bytes_recv, void*, context, const unsigned char*, buffer, size_t, size);
+MOCKABLE_FUNCTION(, void, on_error, void*, context);
+MOCKABLE_FUNCTION(, void, on_close_complete, void*, context);
+
 #undef ENABLE_MOCKS
 
 #include "azure_c_shared_utility/tlsio_wolfssl.h"
@@ -52,8 +57,9 @@ static void my_gballoc_free(void* ptr)
 static TEST_MUTEX_HANDLE g_testByTest;
 static TEST_MUTEX_HANDLE g_dllByDll;
 
-#define BUFFER_LEN      10
-#define TEST_DEVICE_ID  11
+#define BUFFER_LEN          10
+#define TEST_DEVICE_ID      11
+#define WOLFSSL_READ_LIMIT  5
 
 static WOLFSSL_METHOD* TEST_WOLFSSL_CLIENT_METHOD = (WOLFSSL_METHOD*)0x0011;
 static WOLFSSL_CTX* TEST_WOLFSSL_CTX = (WOLFSSL_CTX*)0x0012;
@@ -119,9 +125,12 @@ MOCK_FUNCTION_END(0)
 #ifdef HAVE_SECURE_RENEGOTIATION
 MOCK_FUNCTION_WITH_CODE(WOLFSSL_API, int, wolfSSL_UseSecureRenegotiation, WOLFSSL*, ssl)
 MOCK_FUNCTION_END(SSL_SUCCESS)
+#endif 
+#ifdef INVALID_DEVID
 MOCK_FUNCTION_WITH_CODE(WOLFSSL_API, int, wolfSSL_SetDevId, WOLFSSL*, ssl, int, devId)
 MOCK_FUNCTION_END(WOLFSSL_SUCCESS)
 #endif 
+
 
 DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
@@ -146,23 +155,6 @@ static void on_io_open_complete(void* context, IO_OPEN_RESULT open_result)
 {
     (void)context;
     (void)open_result;
-}
-
-static void on_bytes_recv(void* context, const unsigned char* buffer, size_t size)
-{
-    (void)context;
-    (void)buffer;
-    (void)size;
-}
-
-static void on_error(void* context)
-{
-    (void)context;
-}
-
-static void on_close_complete(void* context)
-{
-    (void)context;
 }
 
 static void on_send_complete(void* context, IO_SEND_RESULT send_result)
@@ -601,6 +593,62 @@ TEST_FUNCTION(tlsio_wolfssl_send_write_returns_zero_fail)
     tlsio_wolfssl_destroy(io_handle);
 }
 
+TEST_FUNCTION(tlsio_wolfssl_dowork_handle_NULL_succeeds)
+{
+    //arrange
+
+    //act
+    tlsio_wolfssl_dowork(NULL);
+
+    //assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    //clean
+}
+
+TEST_FUNCTION(tlsio_wolfssl_dowork_NOT_OPEN_succeeds)
+{
+    //arrange
+    TLSIO_CONFIG tls_io_config;
+    memset(&tls_io_config, 0, sizeof(tls_io_config));
+    CONCRETE_IO_HANDLE io_handle = tlsio_wolfssl_create(&tls_io_config);
+    umock_c_reset_all_calls();
+
+    //act
+    tlsio_wolfssl_dowork(NULL);
+
+    //assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    //clean
+    tlsio_wolfssl_destroy(io_handle);
+}
+
+TEST_FUNCTION(tlsio_wolfssl_dowork_succeeds)
+{
+    //arrange
+    TLSIO_CONFIG tls_io_config;
+    memset(&tls_io_config, 0, sizeof(tls_io_config));
+    CONCRETE_IO_HANDLE io_handle = tlsio_wolfssl_create(&tls_io_config);
+    (void)tlsio_wolfssl_open(io_handle, on_io_open_complete, NULL, on_bytes_recv, NULL, on_error, NULL);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(wolfSSL_read(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG)).CopyOutArgumentBuffer_buff(&TEST_BUFFER, BUFFER_LEN).SetReturn(BUFFER_LEN);
+    STRICT_EXPECTED_CALL(on_bytes_recv(NULL, IGNORED_PTR_ARG, BUFFER_LEN));
+    STRICT_EXPECTED_CALL(wolfSSL_read(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_PTR_ARG));
+
+    //act
+    tlsio_wolfssl_dowork(io_handle);
+
+    //assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    //clean
+    (void)tlsio_wolfssl_close(io_handle, on_close_complete, NULL);
+    tlsio_wolfssl_destroy(io_handle);
+}
+
 TEST_FUNCTION(tlsio_wolfssl_get_interface_description_succeed)
 {
     //arrange
@@ -620,6 +668,38 @@ TEST_FUNCTION(tlsio_wolfssl_get_interface_description_succeed)
     ASSERT_IS_NOT_NULL(interface_desc->concrete_io_setoption);
 
     //clean
+}
+
+TEST_FUNCTION(tlsio_wolfssl_setoption_tls_io_NULL_Fail)
+{
+    //arrange
+    umock_c_reset_all_calls();
+
+    //act
+    int test_result = tlsio_wolfssl_setoption(NULL, OPTION_TRUSTED_CERT, TEST_TRUSTED_CERT);
+
+    //assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, test_result);
+
+    //clean
+}
+
+TEST_FUNCTION(tlsio_wolfssl_setoption_option_name_NULL_Fail)
+{
+    //arrange
+    TLSIO_CONFIG tls_io_config;
+    memset(&tls_io_config, 0, sizeof(tls_io_config));
+    CONCRETE_IO_HANDLE io_handle = tlsio_wolfssl_create(&tls_io_config);
+    umock_c_reset_all_calls();
+
+    //act
+    int test_result = tlsio_wolfssl_setoption(io_handle, NULL, TEST_TRUSTED_CERT);
+
+    //assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, test_result);
+
+    //clean
+    tlsio_wolfssl_destroy(io_handle);
 }
 
 TEST_FUNCTION(tlsio_wolfssl_setoption_trusted_cert_succeed)
@@ -661,6 +741,7 @@ TEST_FUNCTION(tlsio_wolfssl_setoption_trusted_cert_twice_succeed)
     tlsio_wolfssl_destroy(io_handle);
 }
 
+#ifdef INVALID_DEVID
 TEST_FUNCTION(tlsio_wolfssl_setoption_device_id_succeed)
 {
     //arrange
@@ -700,6 +781,7 @@ TEST_FUNCTION(tlsio_wolfssl_setoption_device_id_fail)
     //clean
     tlsio_wolfssl_destroy(io_handle);
 }
+#endif
 
 TEST_FUNCTION(tlsio_wolfssl_on_underlying_io_bytes_received_ctx_NULL_succeess)
 {
@@ -815,6 +897,34 @@ TEST_FUNCTION(tlsio_wolfssl_on_io_recv_on_open_success)
 
     //assert
     ASSERT_ARE_EQUAL(int, WOLFSSL_CBIO_ERR_WANT_READ, test_result);
+
+    //clean
+    (void)tlsio_wolfssl_close(io_handle, on_close_complete, NULL);
+    tlsio_wolfssl_destroy(io_handle);
+}
+
+TEST_FUNCTION(tlsio_wolfssl_on_io_recv_timeout_success)
+{
+    //arrange
+    char recv_buff[BUFFER_LEN];
+    TLSIO_CONFIG tls_io_config;
+    memset(&tls_io_config, 0, sizeof(tls_io_config));
+    CONCRETE_IO_HANDLE io_handle = tlsio_wolfssl_create(&tls_io_config);
+    // ensure we stay in the handshake mode
+    g_handshake_done_cb = NULL;
+    (void)tlsio_wolfssl_open(io_handle, on_io_open_complete, NULL, on_bytes_recv, NULL, on_error, NULL);
+    umock_c_reset_all_calls();
+
+    for (size_t index = 0; index < WOLFSSL_READ_LIMIT; index++)
+    {
+        STRICT_EXPECTED_CALL(xio_dowork(IGNORED_PTR_ARG));
+    }
+
+    //act
+    int test_result = g_wolfssl_cb_rcv(TEST_WOLFSSL, recv_buff, BUFFER_LEN, g_wolfssl_rcv_ctx);
+
+    //assert
+    ASSERT_ARE_EQUAL(int, 0, test_result);
 
     //clean
     (void)tlsio_wolfssl_close(io_handle, on_close_complete, NULL);
