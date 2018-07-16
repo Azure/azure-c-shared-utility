@@ -21,6 +21,7 @@ extern "C"
 
     static STATIC_VAR_UNUSED const char* const OPTION_HTTP_PROXY = "proxy_data";
     static STATIC_VAR_UNUSED const char* const OPTION_HTTP_TIMEOUT = "timeout";
+    static STATIC_VAR_UNUSED const char* const OPTION_SSL_VERIFYPEER = "ssl_verifypeer";
 
     static STATIC_VAR_UNUSED const char* const OPTION_TRUSTED_CERT = "TrustedCerts";
 

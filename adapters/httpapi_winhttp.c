@@ -31,6 +31,7 @@ typedef struct HTTP_HANDLE_DATA_TAG
     X509_SCHANNEL_HANDLE x509SchannelHandle;
     /*options*/
     unsigned int timeout;
+    unsigned int ssl_verifypeer;
     const char* x509certificate;
     const char* x509privatekey;
     const char* proxy_host;
@@ -235,6 +236,7 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
                         else
                         {
                             result->timeout = 60000;
+                            result->ssl_verifypeer = 1;
                             result->x509certificate = NULL;
                             result->x509privatekey = NULL;
                             result->x509SchannelHandle = NULL;
@@ -502,6 +504,14 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
                                                 else
                                                 {
                                                     DWORD dwSecurityFlags = 0;
+
+                                                    if  (handleData->ssl_verifypeer == 0)
+                                                    {
+                                                        dwSecurityFlags = SECURITY_FLAG_IGNORE_UNKNOWN_CA |
+                                                                          SECURITY_FLAG_IGNORE_CERT_WRONG_USAGE |
+                                                                          SECURITY_FLAG_IGNORE_CERT_CN_INVALID |
+                                                                          SECURITY_FLAG_IGNORE_CERT_DATE_INVALID;
+                                                    }
 
                                                     if (!WinHttpSetOption(
                                                         requestHandle,
@@ -781,6 +791,12 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
             httpHandleData->timeout = timeout;
             result = HTTPAPI_OK;
         }
+        else if (strcmp(OPTION_SSL_VERIFYPEER, optionName) == 0)
+        {
+            long ssl_verifypeer = (long)(*(unsigned int*)value);
+            httpHandleData->ssl_verifypeer = ssl_verifypeer;
+            result = HTTPAPI_OK;
+        }
         else if (strcmp(SU_OPTION_X509_CERT, optionName) == 0 || strcmp(OPTION_X509_ECC_CERT, optionName) == 0)
         {
             httpHandleData->x509certificate = (const char*)value;
@@ -927,7 +943,8 @@ HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, co
     }
     else
     {
-        if (strcmp(OPTION_HTTP_TIMEOUT, optionName) == 0)
+        if (strcmp(OPTION_HTTP_TIMEOUT, optionName) == 0 ||
+            strcmp(OPTION_SSL_VERIFYPEER, optionName) == 0)
         {
             /*by convention value is pointing to an unsigned int */
             unsigned int* temp = (unsigned int*)malloc(sizeof(unsigned int)); /*shall be freed by HTTPAPIEX*/
