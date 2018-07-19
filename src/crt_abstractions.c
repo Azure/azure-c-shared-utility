@@ -41,7 +41,7 @@
 #define NAN        ((float)(INFINITY * 0.0F))
 #endif
 
-#ifdef _MSC_VER
+#if defined (_MSC_VER) || defined (MINGW_HAS_SECURE_API)
 #else
 
 /*Codes_SRS_CRT_ABSTRACTIONS_99_008: [strcat_s shall append the src to dst and terminates the resulting string with a null character.]*/
@@ -274,7 +274,7 @@ int sprintf_s(char* dst, size_t dstSizeInBytes, const char* format, ...)
     }
     return result;
 }
-#endif /* _MSC_VER */
+#endif /* _MSC_VER || MINGW_HAS_SECURE_API */
 
 /*Codes_SRS_CRT_ABSTRACTIONS_21_006: [The strtoull_s must use the letters from a(or A) through z(or Z) to represent the numbers between 10 to 35.]*/
 /* returns the integer value that correspond to the character 'c'. If the character is invalid, it returns -1. */
