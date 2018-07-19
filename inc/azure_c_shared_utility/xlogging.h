@@ -74,7 +74,7 @@ typedef void(*LOGGER_LOG_GETLASTERROR)(const char* file, const char* func, int l
         printf(flash_str, ##__VA_ARGS__);   \
         printf("\n");\
     } while((void)0,0)
-    
+
 #define LogError LogInfo
 #define LOG(log_category, log_options, FORMAT, ...)  { \
         static const char flash_str[] ICACHE_RODATA_ATTR STORE_ATTR = (FORMAT); \
@@ -87,7 +87,7 @@ typedef void(*LOGGER_LOG_GETLASTERROR)(const char* file, const char* func, int l
 #if defined _MSC_VER
 #define LOG(log_category, log_options, format, ...) { LOGGER_LOG l = xlogging_get_log_function(); if (l != NULL) l(log_category, __FILE__, FUNC_NAME, __LINE__, log_options, format, __VA_ARGS__); }
 #else
-#define LOG(log_category, log_options, format, ...) { LOGGER_LOG l = xlogging_get_log_function(); if (l != NULL) l(log_category, __FILE__, FUNC_NAME, __LINE__, log_options, format, ##__VA_ARGS__); } 
+#define LOG(log_category, log_options, format, ...) { LOGGER_LOG l = xlogging_get_log_function(); if (l != NULL) l(log_category, __FILE__, FUNC_NAME, __LINE__, log_options, format, ##__VA_ARGS__); }
 #endif
 
 #if defined _MSC_VER
