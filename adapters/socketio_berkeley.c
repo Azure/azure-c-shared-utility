@@ -572,18 +572,20 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
     int retval = -1;
     int select_errno = 0;
 
+    IO_OPEN_RESULT_DETAILED open_result_detailed = { IO_OPEN_OK, 0 };
+
     SOCKET_IO_INSTANCE* socket_io_instance = (SOCKET_IO_INSTANCE*)socket_io;
     if (socket_io == NULL)
     {
         LogError("Invalid argument: SOCKET_IO_INSTANCE is NULL");
-        result = __FAILURE__;
+        result = open_result_detailed.code = __FAILURE__;
     }
     else
     {
         if (socket_io_instance->io_state != IO_STATE_CLOSED)
         {
             LogError("Failure: socket state is not closed.");
-            result = __FAILURE__;
+            result = open_result_detailed.code = __FAILURE__;
         }
         else if (socket_io_instance->socket != INVALID_SOCKET)
         {
@@ -606,6 +608,7 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
             if (socket_io_instance->socket < SOCKET_SUCCESS)
             {
                 LogError("Failure: socket create failure %d.", socket_io_instance->socket);
+                open_result_detailed.code = socket_io_instance->socket;
                 result = __FAILURE__;
             }
 #ifndef __APPLE__
@@ -615,7 +618,7 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
                 LogError("Failure: failed selecting target network interface (MACADDR=%s).", socket_io_instance->target_mac_address);
                 close(socket_io_instance->socket);
                 socket_io_instance->socket = INVALID_SOCKET;
-                result = __FAILURE__;
+                result = open_result_detailed.code = __FAILURE__;
             }
 #endif //__APPLE__
             else
@@ -630,6 +633,7 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
                 if (err != 0)
                 {
                     LogError("Failure: getaddrinfo failure %d.", err);
+                    open_result_detailed.code = err;
                     close(socket_io_instance->socket);
                     socket_io_instance->socket = INVALID_SOCKET;
                     result = __FAILURE__;
@@ -640,7 +644,8 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
                     if ((-1 == (flags = fcntl(socket_io_instance->socket, F_GETFL, 0))) ||
                         (fcntl(socket_io_instance->socket, F_SETFL, flags | O_NONBLOCK) == -1))
                     {
-                        LogError("Failure: fcntl failure.");
+                        LogError("Failure: fcntl failure %d.", errno);
+                        open_result_detailed.code = errno;
                         close(socket_io_instance->socket);
                         socket_io_instance->socket = INVALID_SOCKET;
                         result = __FAILURE__;
@@ -651,6 +656,7 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
                         if ((err != 0) && (errno != EINPROGRESS))
                         {
                             LogError("Failure: connect failure %d.", errno);
+                            open_result_detailed.code = errno;
                             close(socket_io_instance->socket);
                             socket_io_instance->socket = INVALID_SOCKET;
                             result = __FAILURE__;
@@ -679,7 +685,13 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
                                 
                                 if (retval != 1)
                                 {
-                                    LogError("Failure: select failure.");
+                                    LogError("Failure: select failure, retval %d, errno %d.", retval, select_errno);
+                                    if (retval == 0) {
+                                        // timeout
+                                        open_result_detailed.code = 9999;
+                                    } else {
+                                        open_result_detailed.code = select_errno;
+                                    }
                                     close(socket_io_instance->socket);
                                     socket_io_instance->socket = INVALID_SOCKET;
                                     result = __FAILURE__;
@@ -692,6 +704,7 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
                                     if (err != 0)
                                     {
                                         LogError("Failure: getsockopt failure %d.", errno);
+                                        open_result_detailed.code = errno;
                                         close(socket_io_instance->socket);
                                         socket_io_instance->socket = INVALID_SOCKET;
                                         result = __FAILURE__;
@@ -700,6 +713,7 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
                                     {
                                         err = so_error;
                                         LogError("Failure: connect failure %d.", so_error);
+                                        open_result_detailed.code = so_error;
                                         close(socket_io_instance->socket);
                                         socket_io_instance->socket = INVALID_SOCKET;
                                         result = __FAILURE__;
@@ -737,7 +751,8 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
 
     if (on_io_open_complete != NULL)
     {
-        on_io_open_complete(on_io_open_complete_context, result == 0 ? IO_OPEN_OK : IO_OPEN_ERROR);
+        open_result_detailed.result = result == 0 ? IO_OPEN_OK : IO_OPEN_ERROR;
+        on_io_open_complete(on_io_open_complete_context, open_result_detailed);
     }
 
     return result;

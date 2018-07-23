@@ -330,9 +330,10 @@ void HTTPAPI_CloseConnection(HTTP_HANDLE handle)
     }
 }
 
-static void on_io_open_complete(void* context, IO_OPEN_RESULT open_result)
+static void on_io_open_complete(void* context, IO_OPEN_RESULT_DETAILED open_result_detailed)
 {
     HTTP_HANDLE_DATA* http_instance = (HTTP_HANDLE_DATA*)context;
+    IO_OPEN_RESULT open_result = open_result_detailed.result;
 
     if (http_instance != NULL)
     {

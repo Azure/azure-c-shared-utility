@@ -365,9 +365,10 @@ static void send_client_hello(TLS_IO_INSTANCE* tls_io_instance)
     }
 }
 
-static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT io_open_result)
+static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT_DETAILED io_open_result_detailed)
 {
     TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)context;
+    IO_OPEN_RESULT io_open_result = io_open_result_detailed.result;
 
     if (tls_io_instance->tlsio_state != TLSIO_STATE_OPENING_UNDERLYING_IO)
     {
@@ -381,7 +382,7 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT io_open
             tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
             if (tls_io_instance->on_io_open_complete != NULL)
             {
-                tls_io_instance->on_io_open_complete(tls_io_instance->on_io_open_complete_context, IO_OPEN_ERROR);
+                tls_io_instance->on_io_open_complete(tls_io_instance->on_io_open_complete_context, io_open_result_detailed);
             }
         }
         else
@@ -537,6 +538,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
 {
     TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)context;
     size_t consumed_bytes;
+    IO_OPEN_RESULT_DETAILED io_open_error_result = { IO_OPEN_ERROR };
 
     if (resize_receive_buffer(tls_io_instance, tls_io_instance->received_byte_count + size) == 0)
     {
@@ -613,7 +615,8 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                         tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
                         if (tls_io_instance->on_io_open_complete != NULL)
                         {
-                            tls_io_instance->on_io_open_complete(tls_io_instance->on_io_open_complete_context, IO_OPEN_ERROR);
+                            io_open_error_result.code = __FAILURE__;
+                            tls_io_instance->on_io_open_complete(tls_io_instance->on_io_open_complete_context, io_open_error_result);
                         }
                     }
 
@@ -636,7 +639,8 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                         tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
                         if (tls_io_instance->on_io_open_complete != NULL)
                         {
-                            tls_io_instance->on_io_open_complete(tls_io_instance->on_io_open_complete_context, IO_OPEN_ERROR);
+                            io_open_error_result.code = __FAILURE__;
+                            tls_io_instance->on_io_open_complete(tls_io_instance->on_io_open_complete_context, io_open_error_result);
                         }
                     }
                     else
@@ -647,7 +651,8 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
 
                             if (tls_io_instance->on_io_open_complete != NULL)
                             {
-                                tls_io_instance->on_io_open_complete(tls_io_instance->on_io_open_complete_context, IO_OPEN_OK);
+                                IO_OPEN_RESULT_DETAILED ok_result = { IO_OPEN_OK };
+                                tls_io_instance->on_io_open_complete(tls_io_instance->on_io_open_complete_context, ok_result);
                             }
                         }
                         else
@@ -693,7 +698,8 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                         tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
                         if (tls_io_instance->on_io_open_complete != NULL)
                         {
-                            tls_io_instance->on_io_open_complete(tls_io_instance->on_io_open_complete_context, IO_OPEN_ERROR);
+                            io_open_error_result.code = __FAILURE__;
+                            tls_io_instance->on_io_open_complete(tls_io_instance->on_io_open_complete_context, io_open_error_result);
                         }
                     }
                     else
@@ -715,7 +721,8 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                             tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
                             if (tls_io_instance->on_io_open_complete != NULL)
                             {
-                                tls_io_instance->on_io_open_complete(tls_io_instance->on_io_open_complete_context, IO_OPEN_ERROR);
+                                io_open_error_result.code = __FAILURE__;
+                                tls_io_instance->on_io_open_complete(tls_io_instance->on_io_open_complete_context, io_open_error_result);
                             }
                         }
                         else
@@ -727,11 +734,12 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                         }
                     }
                     break;
-                case SEC_E_UNTRUSTED_ROOT:
+                case SEC_E_UNTRUSTED_ROOT: // 0x80090325
                     tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
                     if (tls_io_instance->on_io_open_complete != NULL)
                     {
-                        tls_io_instance->on_io_open_complete(tls_io_instance->on_io_open_complete_context, IO_OPEN_ERROR);
+                        io_open_error_result.code = status;
+                        tls_io_instance->on_io_open_complete(tls_io_instance->on_io_open_complete_context, io_open_error_result);
                     }
                     break;
                 default:
@@ -943,7 +951,8 @@ static void on_underlying_io_error(void* context)
         tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
         if (tls_io_instance->on_io_open_complete != NULL)
         {
-            tls_io_instance->on_io_open_complete(tls_io_instance->on_io_open_complete_context, IO_OPEN_ERROR);
+            IO_OPEN_RESULT_DETAILED error_result = { IO_OPEN_ERROR, __FAILURE__ };
+            tls_io_instance->on_io_open_complete(tls_io_instance->on_io_open_complete_context, error_result);
         }
         break;
 

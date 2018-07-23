@@ -227,11 +227,12 @@ static void http_proxy_io_destroy(CONCRETE_IO_HANDLE http_proxy_io)
     }
 }
 
-static void indicate_open_complete_error_and_close(HTTP_PROXY_IO_INSTANCE* http_proxy_io_instance)
+static void indicate_open_complete_error_and_close(HTTP_PROXY_IO_INSTANCE* http_proxy_io_instance, IO_OPEN_RESULT_DETAILED open_result_detailed)
 {
+    open_result_detailed.result = IO_OPEN_ERROR;
     http_proxy_io_instance->http_proxy_io_state = HTTP_PROXY_IO_STATE_CLOSED;
     (void)xio_close(http_proxy_io_instance->underlying_io, NULL, NULL);
-    http_proxy_io_instance->on_io_open_complete(http_proxy_io_instance->on_io_open_complete_context, IO_OPEN_ERROR);
+    http_proxy_io_instance->on_io_open_complete(http_proxy_io_instance->on_io_open_complete_context, open_result_detailed);
 }
 
 // This callback usage needs to be either verified and commented or integrated into 
@@ -242,8 +243,9 @@ static void unchecked_on_send_complete(void* context, IO_SEND_RESULT send_result
     (void)send_result;
 }
 
-static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_result)
+static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT_DETAILED open_result_detailed)
 {
+    IO_OPEN_RESULT open_result = open_result_detailed.result;
     if (context == NULL)
     {
         /* Codes_SRS_HTTP_PROXY_IO_01_081: [ `on_underlying_io_open_complete` called with NULL context shall do nothing. ]*/
@@ -267,7 +269,8 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
         case HTTP_PROXY_IO_STATE_WAITING_FOR_CONNECT_RESPONSE:
             /* Codes_SRS_HTTP_PROXY_IO_01_076: [ When `on_underlying_io_open_complete` is called while waiting for the CONNECT reply, the `on_open_complete` callback shall be triggered with `IO_OPEN_ERROR`, passing also the `on_open_complete_context` argument as `context`. ]*/
             LogError("Open complete called again by underlying IO.");
-            indicate_open_complete_error_and_close(http_proxy_io_instance);
+            open_result_detailed.code = __FAILURE__;
+            indicate_open_complete_error_and_close(http_proxy_io_instance, open_result_detailed);
             break;
 
         case HTTP_PROXY_IO_STATE_OPENING_UNDERLYING_IO:
@@ -277,7 +280,7 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
             case IO_OPEN_ERROR:
                 /* Codes_SRS_HTTP_PROXY_IO_01_078: [ When `on_underlying_io_open_complete` is called with `IO_OPEN_ERROR`, the `on_open_complete` callback shall be triggered with `IO_OPEN_ERROR`, passing also the `on_open_complete_context` argument as `context`. ]*/
                 LogError("Underlying IO open failed");
-                indicate_open_complete_error_and_close(http_proxy_io_instance);
+                indicate_open_complete_error_and_close(http_proxy_io_instance, open_result_detailed);
                 break;
 
             case IO_OPEN_CANCELLED:
@@ -285,7 +288,7 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
                 LogError("Underlying IO open failed");
                 http_proxy_io_instance->http_proxy_io_state = HTTP_PROXY_IO_STATE_CLOSED;
                 (void)xio_close(http_proxy_io_instance->underlying_io, NULL, NULL);
-                http_proxy_io_instance->on_io_open_complete(http_proxy_io_instance->on_io_open_complete_context, IO_OPEN_CANCELLED);
+                http_proxy_io_instance->on_io_open_complete(http_proxy_io_instance->on_io_open_complete_context, open_result_detailed);
                 break;
 
             case IO_OPEN_OK:
@@ -310,7 +313,8 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
                     {
                         /* Codes_SRS_HTTP_PROXY_IO_01_062: [ If any failure is encountered while constructing the request, the `on_open_complete` callback shall be triggered with `IO_OPEN_ERROR`, passing also the `on_open_complete_context` argument as `context`. ]*/
                         encoded_auth_string = NULL;
-                        indicate_open_complete_error_and_close(http_proxy_io_instance);
+                        open_result_detailed.code = __FAILURE__;
+                        indicate_open_complete_error_and_close(http_proxy_io_instance, open_result_detailed);
                     }
                     else
                     {
@@ -319,7 +323,8 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
                         {
                             /* Codes_SRS_HTTP_PROXY_IO_01_062: [ If any failure is encountered while constructing the request, the `on_open_complete` callback shall be triggered with `IO_OPEN_ERROR`, passing also the `on_open_complete_context` argument as `context`. ]*/
                             encoded_auth_string = NULL;
-                            indicate_open_complete_error_and_close(http_proxy_io_instance);
+                            open_result_detailed.code = __FAILURE__;
+                            indicate_open_complete_error_and_close(http_proxy_io_instance, open_result_detailed);
                         }
                         else
                         {
@@ -330,7 +335,8 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
                             {
                                 /* Codes_SRS_HTTP_PROXY_IO_01_062: [ If any failure is encountered while constructing the request, the `on_open_complete` callback shall be triggered with `IO_OPEN_ERROR`, passing also the `on_open_complete_context` argument as `context`. ]*/
                                 encoded_auth_string = NULL;
-                                indicate_open_complete_error_and_close(http_proxy_io_instance);
+                                open_result_detailed.code = __FAILURE__;
+                                indicate_open_complete_error_and_close(http_proxy_io_instance, open_result_detailed);
                             }
                             else
                             {
@@ -340,7 +346,8 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
                                 {
                                     /* Codes_SRS_HTTP_PROXY_IO_01_062: [ If any failure is encountered while constructing the request, the `on_open_complete` callback shall be triggered with `IO_OPEN_ERROR`, passing also the `on_open_complete_context` argument as `context`. ]*/
                                     LogError("Cannot Base64 encode auth string");
-                                    indicate_open_complete_error_and_close(http_proxy_io_instance);
+                                    open_result_detailed.code = __FAILURE__;
+                                    indicate_open_complete_error_and_close(http_proxy_io_instance, open_result_detailed);
                                 }
                             }
 
@@ -386,7 +393,8 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
                     {
                         /* Codes_SRS_HTTP_PROXY_IO_01_062: [ If any failure is encountered while constructing the request, the `on_open_complete` callback shall be triggered with `IO_OPEN_ERROR`, passing also the `on_open_complete_context` argument as `context`. ]*/
                         LogError("Cannot encode the CONNECT request");
-                        indicate_open_complete_error_and_close(http_proxy_io_instance);
+                        open_result_detailed.code = __FAILURE__;
+                        indicate_open_complete_error_and_close(http_proxy_io_instance, open_result_detailed);
                     }
                     else
                     {
@@ -395,7 +403,8 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
                         {
                             /* Codes_SRS_HTTP_PROXY_IO_01_062: [ If any failure is encountered while constructing the request, the `on_open_complete` callback shall be triggered with `IO_OPEN_ERROR`, passing also the `on_open_complete_context` argument as `context`. ]*/
                             LogError("Cannot allocate memory for CONNECT request");
-                            indicate_open_complete_error_and_close(http_proxy_io_instance);
+                            open_result_detailed.code = __FAILURE__;
+                            indicate_open_complete_error_and_close(http_proxy_io_instance, open_result_detailed);
                         }
                         else
                         {
@@ -412,7 +421,8 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
                             {
                                 /* Codes_SRS_HTTP_PROXY_IO_01_062: [ If any failure is encountered while constructing the request, the `on_open_complete` callback shall be triggered with `IO_OPEN_ERROR`, passing also the `on_open_complete_context` argument as `context`. ]*/
                                 LogError("Cannot encode the CONNECT request");
-                                indicate_open_complete_error_and_close(http_proxy_io_instance);
+                                open_result_detailed.code = __FAILURE__;
+                                indicate_open_complete_error_and_close(http_proxy_io_instance, open_result_detailed);
                             }
                             else
                             {
@@ -421,7 +431,8 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
                                 {
                                     /* Codes_SRS_HTTP_PROXY_IO_01_064: [ If `xio_send` fails, the `on_open_complete` callback shall be triggered with `IO_OPEN_ERROR`, passing also the `on_open_complete_context` argument as `context`. ]*/
                                     LogError("Could not send CONNECT request");
-                                    indicate_open_complete_error_and_close(http_proxy_io_instance);
+                                    open_result_detailed.code = __FAILURE__;
+                                    indicate_open_complete_error_and_close(http_proxy_io_instance, open_result_detailed);
                                 }
                             }
 
@@ -463,9 +474,12 @@ static void on_underlying_io_error(void* context)
 
         case HTTP_PROXY_IO_STATE_OPENING_UNDERLYING_IO:
         case HTTP_PROXY_IO_STATE_WAITING_FOR_CONNECT_RESPONSE:
+        {
             /* Codes_SRS_HTTP_PROXY_IO_01_087: [ If the `on_underlying_io_error` callback is called while OPENING, the `on_open_complete` callback shall be triggered with `IO_OPEN_ERROR`, passing also the `on_open_complete_context` argument as `context`. ]*/
-            indicate_open_complete_error_and_close(http_proxy_io_instance);
+            IO_OPEN_RESULT_DETAILED error_result = { IO_OPEN_ERROR, __FAILURE__ };
+            indicate_open_complete_error_and_close(http_proxy_io_instance, error_result);
             break;
+        }
 
         case HTTP_PROXY_IO_STATE_OPEN:
             /* Codes_SRS_HTTP_PROXY_IO_01_089: [ If the `on_underlying_io_error` callback is called while the IO is OPEN, the `on_io_error` callback shall be called with the `on_io_error_context` argument as `context`. ]*/
@@ -605,6 +619,7 @@ static int ParseHttpResponse(const char* src, int* dst)
 
 static void on_underlying_io_bytes_received(void* context, const unsigned char* buffer, size_t size)
 {
+    IO_OPEN_RESULT_DETAILED open_result_detailed;
     if (context == NULL)
     {
         /* Codes_SRS_HTTP_PROXY_IO_01_082: [ `on_underlying_io_bytes_received` called with NULL context shall do nothing. ]*/
@@ -622,10 +637,13 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
             break;
 
         case HTTP_PROXY_IO_STATE_OPENING_UNDERLYING_IO:
+        {
             /* Codes_SRS_HTTP_PROXY_IO_01_080: [ If `on_underlying_io_bytes_received` is called while the underlying IO is being opened, the `on_open_complete` callback shall be triggered with `IO_OPEN_ERROR`, passing also the `on_open_complete_context` argument as `context`. ]*/
             LogError("Bytes received while opening underlying IO");
-            indicate_open_complete_error_and_close(http_proxy_io_instance);
+            open_result_detailed.code = __FAILURE__;
+            indicate_open_complete_error_and_close(http_proxy_io_instance, open_result_detailed);
             break;
+        }
 
         case HTTP_PROXY_IO_STATE_WAITING_FOR_CONNECT_RESPONSE:
         {
@@ -635,7 +653,8 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
             {
                 /* Codes_SRS_HTTP_PROXY_IO_01_067: [ If allocating memory for the buffered bytes fails, the `on_open_complete` callback shall be triggered with `IO_OPEN_ERROR`, passing also the `on_open_complete_context` argument as `context`. ]*/
                 LogError("Cannot allocate memory for received data");
-                indicate_open_complete_error_and_close(http_proxy_io_instance);
+                open_result_detailed.code = __FAILURE__;
+                indicate_open_complete_error_and_close(http_proxy_io_instance, open_result_detailed);
             }
             else
             {
@@ -663,7 +682,8 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                     {
                         /* Codes_SRS_HTTP_PROXY_IO_01_068: [ If parsing the CONNECT response fails, the `on_open_complete` callback shall be triggered with `IO_OPEN_ERROR`, passing also the `on_open_complete_context` argument as `context`. ]*/
                         LogError("Cannot decode HTTP response");
-                        indicate_open_complete_error_and_close(http_proxy_io_instance);
+                        open_result_detailed.code = __FAILURE__;
+                        indicate_open_complete_error_and_close(http_proxy_io_instance, open_result_detailed);
                     }
                     /* Codes_SRS_HTTP_PROXY_IO_01_069: [ Any successful (2xx) response to a CONNECT request indicates that the proxy has established a connection to the requested host and port, and has switched to tunneling the current connection to that server connection. ]*/
                     /* Codes_SRS_HTTP_PROXY_IO_01_090: [ Any successful (2xx) response to a CONNECT request indicates that the proxy has established a connection to the requested host and port, and has switched to tunneling the current connection to that server connection. ]*/
@@ -671,16 +691,18 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                     {
                         /* Codes_SRS_HTTP_PROXY_IO_01_071: [ If the status code is not successful, the `on_open_complete` callback shall be triggered with `IO_OPEN_ERROR`, passing also the `on_open_complete_context` argument as `context`. ]*/
                         LogError("Bad status (%d) received in CONNECT response", status_code);
-                        indicate_open_complete_error_and_close(http_proxy_io_instance);
+                        open_result_detailed.code = __FAILURE__;
+                        indicate_open_complete_error_and_close(http_proxy_io_instance, open_result_detailed);
                     }
                     else
                     {
                         size_t length_remaining = http_proxy_io_instance->receive_buffer + http_proxy_io_instance->receive_buffer_size - ((const unsigned char *)request_end_ptr + 4);
+                        IO_OPEN_RESULT_DETAILED ok_result = { IO_OPEN_OK, 0 };
 
                         /* Codes_SRS_HTTP_PROXY_IO_01_073: [ Once a success status code was parsed, the IO shall be OPEN. ]*/
                         http_proxy_io_instance->http_proxy_io_state = HTTP_PROXY_IO_STATE_OPEN;
                         /* Codes_SRS_HTTP_PROXY_IO_01_070: [ When a success status code is parsed, the `on_open_complete` callback shall be triggered with `IO_OPEN_OK`, passing also the `on_open_complete_context` argument as `context`. ]*/
-                        http_proxy_io_instance->on_io_open_complete(http_proxy_io_instance->on_io_open_complete_context, IO_OPEN_OK);
+                        http_proxy_io_instance->on_io_open_complete(http_proxy_io_instance->on_io_open_complete_context, ok_result);
 
                         if (length_remaining > 0)
                         {
@@ -787,9 +809,10 @@ static int http_proxy_io_close(CONCRETE_IO_HANDLE http_proxy_io, ON_IO_CLOSE_COM
             (http_proxy_io_instance->http_proxy_io_state == HTTP_PROXY_IO_STATE_WAITING_FOR_CONNECT_RESPONSE))
         {
             /* Codes_SRS_HTTP_PROXY_IO_01_053: [ `http_proxy_io_close` while OPENING shall trigger the `on_io_open_complete` callback with `IO_OPEN_CANCELLED`. ]*/
+            IO_OPEN_RESULT_DETAILED cancelled_result = { IO_OPEN_CANCELLED, __FAILURE__ };
             http_proxy_io_instance->http_proxy_io_state = HTTP_PROXY_IO_STATE_CLOSED;
             (void)xio_close(http_proxy_io_instance->underlying_io, NULL, NULL);
-            http_proxy_io_instance->on_io_open_complete(http_proxy_io_instance->on_io_open_complete_context, IO_OPEN_CANCELLED);
+            http_proxy_io_instance->on_io_open_complete(http_proxy_io_instance->on_io_open_complete_context, cancelled_result);
 
             /* Codes_SRS_HTTP_PROXY_IO_01_022: [ `http_proxy_io_close` shall close the HTTP proxy IO and on success it shall return 0. ]*/
             result = 0;

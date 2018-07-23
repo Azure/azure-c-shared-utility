@@ -46,6 +46,11 @@ DEFINE_ENUM(WS_SEND_FRAME_RESULT, WS_SEND_FRAME_RESULT_VALUES);
 
 DEFINE_ENUM(WS_OPEN_RESULT, WS_OPEN_RESULT_VALUES);
 
+typedef struct _WS_OPEN_RESULT_DETAILED {
+    WS_OPEN_RESULT result;
+    int code;
+} WS_OPEN_RESULT_DETAILED;
+
 #define WS_ERROR_VALUES \
     WS_ERROR_NOT_ENOUGH_MEMORY, \
     WS_ERROR_BAD_FRAME_RECEIVED, \
@@ -89,7 +94,7 @@ DEFINE_ENUM(WS_ERROR, WS_ERROR_VALUES);
 
 typedef void(*ON_WS_FRAME_RECEIVED)(void* context, unsigned char frame_type, const unsigned char* buffer, size_t size);
 typedef void(*ON_WS_SEND_FRAME_COMPLETE)(void* context, WS_SEND_FRAME_RESULT ws_send_frame_result);
-typedef void(*ON_WS_OPEN_COMPLETE)(void* context, WS_OPEN_RESULT ws_open_result);
+typedef void(*ON_WS_OPEN_COMPLETE)(void* context, WS_OPEN_RESULT_DETAILED ws_open_result);
 typedef void(*ON_WS_CLOSE_COMPLETE)(void* context);
 typedef void(*ON_WS_PEER_CLOSED)(void* context, uint16_t* close_code, const unsigned char* extra_data, size_t extra_data_length);
 typedef void(*ON_WS_ERROR)(void* context, WS_ERROR error_code);

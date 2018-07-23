@@ -568,7 +568,7 @@ static void indicate_error(TLS_IO_INSTANCE* tls_io_instance)
     }
 }
 
-static void indicate_open_complete(TLS_IO_INSTANCE* tls_io_instance, IO_OPEN_RESULT open_result)
+static void indicate_open_complete(TLS_IO_INSTANCE* tls_io_instance, IO_OPEN_RESULT_DETAILED open_result_detailed)
 {
     if (tls_io_instance->on_io_open_complete == NULL)
     {
@@ -576,7 +576,7 @@ static void indicate_open_complete(TLS_IO_INSTANCE* tls_io_instance, IO_OPEN_RES
     }
     else
     {
-        tls_io_instance->on_io_open_complete(tls_io_instance->on_io_open_complete_context, open_result);
+        tls_io_instance->on_io_open_complete(tls_io_instance->on_io_open_complete_context, open_result_detailed);
     }
 }
 
@@ -661,7 +661,8 @@ static void send_handshake_bytes(TLS_IO_INSTANCE* tls_io_instance)
     else
     {
         tls_io_instance->tlsio_state = TLSIO_STATE_OPEN;
-        indicate_open_complete(tls_io_instance, IO_OPEN_OK);
+        IO_OPEN_RESULT_DETAILED ok_result = { IO_OPEN_OK, 0 };
+        indicate_open_complete(tls_io_instance, ok_result);
     }
 }
 
@@ -695,7 +696,8 @@ static void on_underlying_io_close_complete(void* context)
 
     case TLSIO_STATE_OPENING_UNDERLYING_IO:
         tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
-        indicate_open_complete(tls_io_instance, IO_OPEN_ERROR);
+        IO_OPEN_RESULT_DETAILED error_result = { IO_OPEN_ERROR, __FAILURE__ };
+        indicate_open_complete(tls_io_instance, error_result);
         break;
 
     case TLSIO_STATE_CLOSING:
@@ -711,9 +713,10 @@ static void on_underlying_io_close_complete(void* context)
     close_openssl_instance(tls_io_instance);
 }
 
-static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_result)
+static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT_DETAILED open_result_detailed)
 {
     TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)context;
+    IO_OPEN_RESULT open_result = open_result_detailed.result;
 
     if (tls_io_instance->tlsio_state == TLSIO_STATE_OPENING_UNDERLYING_IO)
     {
@@ -727,8 +730,9 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
         else
         {
             tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
-            indicate_open_complete(tls_io_instance, IO_OPEN_ERROR);
+            open_result_detailed.result = IO_OPEN_ERROR;
             LogError("Invalid tlsio_state. Expected state is TLSIO_STATE_OPENING_UNDERLYING_IO.");
+            indicate_open_complete(tls_io_instance, open_result_detailed);
         }
     }
 }
@@ -745,7 +749,8 @@ static void on_underlying_io_error(void* context)
     case TLSIO_STATE_OPENING_UNDERLYING_IO:
     case TLSIO_STATE_IN_HANDSHAKE:
         tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
-        indicate_open_complete(tls_io_instance, IO_OPEN_ERROR);
+        IO_OPEN_RESULT_DETAILED error_result = { IO_OPEN_ERROR, __FAILURE__ };
+        indicate_open_complete(tls_io_instance, error_result);
         break;
 
     case TLSIO_STATE_OPEN:
@@ -1326,7 +1331,7 @@ int tlsio_openssl_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_cl
 
         if (tls_io_instance->tlsio_state != TLSIO_STATE_ERROR && tls_io_instance->tlsio_state != TLSIO_STATE_OPEN)
         {
-            /* Codes_RS_TLSIO_30_053: [ If the adapter is in any state other than TLSIO_STATE_EXT_OPEN or TLSIO_STATE_EXT_ERROR then tlsio_close_async shall log that tlsio_close_async has been called and then continue normally. ]*/
+            /* Codes_SRS_TLSIO_30_053: [ If the adapter is in any state other than TLSIO_STATE_EXT_OPEN or TLSIO_STATE_EXT_ERROR then tlsio_close_async shall log that tlsio_close_async has been called and then continue normally. ]*/
             // LogInfo rather than LogError because this is an unusual but not erroneous situation
             LogInfo("Closing tlsio from a state other than TLSIO_STATE_EXT_OPEN or TLSIO_STATE_EXT_ERROR");
         }
@@ -1334,7 +1339,8 @@ int tlsio_openssl_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_cl
         if (is_an_opening_state(tls_io_instance->tlsio_state))
         {
             /* Codes_SRS_TLSIO_30_057: [ On success, if the adapter is in TLSIO_STATE_EXT_OPENING, it shall call on_io_open_complete with the on_io_open_complete_context supplied in tlsio_open_async and IO_OPEN_CANCELLED. This callback shall be made before changing the internal state of the adapter. ]*/
-            tls_io_instance->on_io_open_complete(tls_io_instance->on_io_open_complete_context, IO_OPEN_CANCELLED);
+            IO_OPEN_RESULT_DETAILED error_result = { IO_OPEN_CANCELLED, 0 };
+            tls_io_instance->on_io_open_complete(tls_io_instance->on_io_open_complete_context, error_result);
         }
 
         if (tls_io_instance->tlsio_state == TLSIO_STATE_OPEN)
@@ -1466,7 +1472,8 @@ void tlsio_openssl_dowork(CONCRETE_IO_HANDLE tls_io)
                 // Set the state to TLSIO_STATE_ERROR so close won't gripe about the state
                 tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
                 tlsio_openssl_close(tls_io_instance, NULL, NULL);
-                indicate_open_complete(tls_io_instance, IO_OPEN_ERROR);
+                IO_OPEN_RESULT_DETAILED error_result = { IO_OPEN_ERROR, __FAILURE__ };
+                indicate_open_complete(tls_io_instance, error_result);
             }
         }
     }

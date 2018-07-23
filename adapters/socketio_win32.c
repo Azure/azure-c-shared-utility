@@ -249,18 +249,20 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
 {
     int result;
 
+    IO_OPEN_RESULT_DETAILED open_result_detailed = { IO_OPEN_OK, 0 };
+
     SOCKET_IO_INSTANCE* socket_io_instance = (SOCKET_IO_INSTANCE*)socket_io;
     if (socket_io == NULL)
     {
         LogError("Invalid argument: SOCKET_IO_INSTANCE is NULL");
-        result = __FAILURE__;
+        result = open_result_detailed.code = __FAILURE__;
     }
     else
     {
         if (socket_io_instance->io_state != IO_STATE_CLOSED)
         {
             LogError("Failure: socket state is not closed.");
-            result = __FAILURE__;
+            result = open_result_detailed.code = __FAILURE__;
         }
         else if (socket_io_instance->socket != INVALID_SOCKET)
         {
@@ -279,7 +281,8 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
             socket_io_instance->socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
             if (socket_io_instance->socket == INVALID_SOCKET)
             {
-                LogError("Failure: socket create failure %d.", WSAGetLastError());
+                open_result_detailed.code = WSAGetLastError();
+                LogError("Failure: socket create failure %d.", open_result_detailed.code);
                 result = __FAILURE__;
             }
             else
@@ -294,7 +297,8 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
                 sprintf(portString, "%u", socket_io_instance->port);
                 if (getaddrinfo(socket_io_instance->hostname, portString, &addrHint, &addrInfo) != 0)
                 {
-                    LogError("Failure: getaddrinfo failure %d.", WSAGetLastError());
+                    open_result_detailed.code = WSAGetLastError();
+                    LogError("Failure: getaddrinfo failure %d.", open_result_detailed.code);
                     (void)closesocket(socket_io_instance->socket);
                     socket_io_instance->socket = INVALID_SOCKET;
                     result = __FAILURE__;
@@ -305,14 +309,16 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
 
                     if (connect(socket_io_instance->socket, addrInfo->ai_addr, (int)addrInfo->ai_addrlen) != 0)
                     {
-                        LogError("Failure: connect failure %d.", WSAGetLastError());
+                        open_result_detailed.code = WSAGetLastError();
+                        LogError("Failure: connect failure %d.", open_result_detailed.code);
                         (void)closesocket(socket_io_instance->socket);
                         socket_io_instance->socket = INVALID_SOCKET;
                         result = __FAILURE__;
                     }
                     else if (ioctlsocket(socket_io_instance->socket, FIONBIO, &iMode) != 0)
                     {
-                        LogError("Failure: ioctlsocket failure %d.", WSAGetLastError());
+                        open_result_detailed.code = WSAGetLastError();
+                        LogError("Failure: ioctlsocket failure %d.", open_result_detailed.code);
                         (void)closesocket(socket_io_instance->socket);
                         socket_io_instance->socket = INVALID_SOCKET;
                         result = __FAILURE__;
@@ -338,7 +344,11 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
 
     if (on_io_open_complete != NULL)
     {
-        on_io_open_complete(on_io_open_complete_context, result == 0 ? IO_OPEN_OK : IO_OPEN_ERROR);
+        if (result != 0)
+        {
+            open_result_detailed.result = IO_OPEN_ERROR;
+        }
+        on_io_open_complete(on_io_open_complete_context, open_result_detailed);
     }
 
     return result;

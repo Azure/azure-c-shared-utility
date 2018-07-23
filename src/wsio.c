@@ -56,9 +56,9 @@ static void indicate_error(WSIO_INSTANCE* wsio_instance)
     wsio_instance->on_io_error(wsio_instance->on_io_error_context);
 }
 
-static void indicate_open_complete(WSIO_INSTANCE* ws_io_instance, IO_OPEN_RESULT open_result)
+static void indicate_open_complete(WSIO_INSTANCE* ws_io_instance, IO_OPEN_RESULT_DETAILED open_result_detailed)
 {
-    ws_io_instance->on_io_open_complete(ws_io_instance->on_io_open_complete_context, open_result);
+    ws_io_instance->on_io_open_complete(ws_io_instance->on_io_open_complete_context, open_result_detailed);
 }
 
 static void complete_send_item(LIST_ITEM_HANDLE pending_io_list_item, IO_SEND_RESULT io_send_result)
@@ -142,6 +142,7 @@ static void on_underlying_ws_close_complete(void* context)
 static int internal_close(WSIO_INSTANCE* wsio_instance, ON_IO_CLOSE_COMPLETE on_io_close_complete, void* on_io_close_complete_context)
 {
     int result;
+    IO_OPEN_RESULT_DETAILED open_result = { IO_OPEN_OK, 0 };
 
     /* Codes_SRS_WSIO_01_089: [ `wsio_close` after a `wsio_close` shall fail and return a non-zero value.  ]*/
     /* Codes_SRS_WSIO_01_088: [ `wsio_close` when no open action has been issued shall fail and return a non-zero value. ]*/
@@ -155,7 +156,9 @@ static int internal_close(WSIO_INSTANCE* wsio_instance, ON_IO_CLOSE_COMPLETE on_
         if (wsio_instance->io_state == IO_STATE_OPENING)
         {
             wsio_instance->io_state = IO_STATE_NOT_OPEN;
-            indicate_open_complete(wsio_instance, IO_OPEN_CANCELLED);
+            open_result.result = IO_OPEN_CANCELLED;
+            open_result.code = __FAILURE__;
+            indicate_open_complete(wsio_instance, open_result);
             result = 0;
         }
         else if (wsio_instance->io_state == IO_STATE_CLOSING)
@@ -302,8 +305,11 @@ void wsio_destroy(CONCRETE_IO_HANDLE ws_io)
     }
 }
 
-static void on_underlying_ws_open_complete(void* context, WS_OPEN_RESULT open_result)
+static void on_underlying_ws_open_complete(void* context, WS_OPEN_RESULT_DETAILED ws_open_result_detailed)
 {
+    WS_OPEN_RESULT open_result = ws_open_result_detailed.result;
+    IO_OPEN_RESULT_DETAILED io_open_result_detailed = { IO_OPEN_OK, 0 };
+
     if (context == NULL)
     {
         /* Codes_SRS_WSIO_01_138: [ When `on_underlying_ws_open_complete` is called with a NULL context, it shall do nothing. ]*/
@@ -334,19 +340,23 @@ static void on_underlying_ws_open_complete(void* context, WS_OPEN_RESULT open_re
             default:
                 /* Codes_SRS_WSIO_01_137: [ When `on_underlying_ws_open_complete` is called with any other error code while the IO is opening, the callback `on_io_open_complete` shall be called with `IO_OPEN_ERROR`. ]*/
                 wsio_instance->io_state = IO_STATE_NOT_OPEN;
-                indicate_open_complete(wsio_instance, IO_OPEN_ERROR);
+                io_open_result_detailed.result = IO_OPEN_ERROR;
+                io_open_result_detailed.code = open_result;
+                indicate_open_complete(wsio_instance, io_open_result_detailed);
                 break;
 
             case WS_OPEN_CANCELLED:
                 /* Codes_SRS_WSIO_01_149: [ When `on_underlying_ws_open_complete` is called with `WS_OPEN_CANCELLED` while the IO is opening, the callback `on_io_open_complete` shall be called with `IO_OPEN_CANCELLED`. ]*/
                 wsio_instance->io_state = IO_STATE_NOT_OPEN;
-                indicate_open_complete(wsio_instance, IO_OPEN_CANCELLED);
+                io_open_result_detailed.result = IO_OPEN_CANCELLED;
+                io_open_result_detailed.code = open_result;
+                indicate_open_complete(wsio_instance, io_open_result_detailed);
                 break;
 
             case WS_OPEN_OK:
                 /* Codes_SRS_WSIO_01_136: [ When `on_underlying_ws_open_complete` is called with `WS_OPEN_OK` while the IO is opening, the callback `on_io_open_complete` shall be called with `IO_OPEN_OK`. ]*/
                 wsio_instance->io_state = IO_STATE_OPEN;
-                indicate_open_complete(wsio_instance, IO_OPEN_OK);
+                indicate_open_complete(wsio_instance, io_open_result_detailed);
                 break;
             }
 
@@ -436,10 +446,13 @@ static void on_underlying_ws_peer_closed(void* context, uint16_t* close_code, co
             break;
 
         case IO_STATE_OPENING:
+        {
             /* Codes_SRS_WSIO_01_170: [ When `on_underlying_ws_peer_closed` and the state of the IO is OPENING an error shall be indicated by calling the `on_io_open_complete` callback passed to `wsio_open` with the error code `IO_OPEN_ERROR`. ]*/
             wsio_instance->io_state = IO_STATE_NOT_OPEN;
-            indicate_open_complete(wsio_instance, IO_OPEN_ERROR);
+            IO_OPEN_RESULT_DETAILED open_error = { IO_OPEN_ERROR, __FAILURE__ };
+            indicate_open_complete(wsio_instance, open_error);
             break;
+        }
         }
     }
 }
@@ -462,7 +475,8 @@ static void on_underlying_ws_error(void* context, WS_ERROR ws_error)
         if (wsio_instance->io_state == IO_STATE_OPENING)
         {
             /* Codes_SRS_WSIO_01_123: [ When calling `on_io_error`, the `on_io_error_context` argument given in `wsio_open` shall be passed to the callback `on_io_error`. ]*/
-            wsio_instance->on_io_open_complete(wsio_instance->on_io_open_complete_context, IO_OPEN_ERROR);
+            IO_OPEN_RESULT_DETAILED open_error = { IO_OPEN_ERROR, 0 };
+            wsio_instance->on_io_open_complete(wsio_instance->on_io_open_complete_context, open_error);
             wsio_instance->io_state = IO_STATE_NOT_OPEN;
         }
         else

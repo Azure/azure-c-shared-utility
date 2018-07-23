@@ -95,7 +95,8 @@ static void enter_open_error_state(TLS_IO_INSTANCE* tls_io_instance)
     ON_IO_OPEN_COMPLETE on_open_complete = tls_io_instance->on_open_complete;
     void* on_open_complete_context = tls_io_instance->on_open_complete_context;
     enter_tlsio_error_state(tls_io_instance);   
-    on_open_complete(on_open_complete_context, IO_OPEN_ERROR);
+    IO_OPEN_RESULT_DETAILED error_result = { IO_OPEN_ERROR, __FAILURE__ };
+    on_open_complete(on_open_complete_context, error_result);
 }
 
 // Return true if a message was available to remove
@@ -390,7 +391,9 @@ static int tlsio_appleios_close_async(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COM
             if (is_an_opening_state(tls_io_instance->tlsio_state))
             {
                 /* Codes_SRS_TLSIO_30_057: [ On success, if the adapter is in TLSIO_STATE_EXT_OPENING, it shall call on_io_open_complete with the on_io_open_complete_context supplied in tlsio_open_async and IO_OPEN_CANCELLED. This callback shall be made before changing the internal state of the adapter. ]*/
-                tls_io_instance->on_open_complete(tls_io_instance->on_open_complete_context, IO_OPEN_CANCELLED);
+
+                IO_OPEN_RESULT_DETAILED error_result = { IO_OPEN_CANCELLED, __FAILURE__ };
+                tls_io_instance->on_open_complete(tls_io_instance->on_open_complete_context, error_result);
             }
             // This adapter does not support asynchronous closing
             /* Codes_SRS_TLSIO_30_056: [ On success the adapter shall enter TLSIO_STATE_EX_CLOSING. ]*/
@@ -540,7 +543,8 @@ static void dowork_poll_open_ssl(TLS_IO_INSTANCE* tls_io_instance)
         tls_io_instance->tlsio_state = TLSIO_STATE_OPEN;
         /* Codes_SRS_TLSIO_30_007: [ The phrase "enter TLSIO_STATE_EXT_OPEN" means the adapter shall call the on_io_open_complete function and pass IO_OPEN_OK and the on_io_open_complete_context that was supplied in tlsio_open . ]*/
         /* Codes_SRS_TLSIO_30_083: [ If tlsio_dowork successfully opens the TLS connection it shall enter TLSIO_STATE_EX_OPEN. ]*/
-        tls_io_instance->on_open_complete(tls_io_instance->on_open_complete_context, IO_OPEN_OK);
+        IO_OPEN_RESULT_DETAILED ok_result = { IO_OPEN_OK, 0 };
+        tls_io_instance->on_open_complete(tls_io_instance->on_open_complete_context, ok_result);
     }
     else
     {

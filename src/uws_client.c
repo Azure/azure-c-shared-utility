@@ -67,6 +67,7 @@ typedef struct WS_PENDING_SEND_TAG
     UWS_CLIENT_HANDLE uws_client;
 } WS_PENDING_SEND;
 
+
 typedef struct UWS_CLIENT_INSTANCE_TAG
 {
     SINGLYLINKEDLIST_HANDLE pending_sends;
@@ -565,17 +566,17 @@ void uws_client_destroy(UWS_CLIENT_HANDLE uws_client)
     }
 }
 
-static void indicate_ws_open_complete_error(UWS_CLIENT_INSTANCE* uws_client, WS_OPEN_RESULT ws_open_result)
+static void indicate_ws_open_complete_error(UWS_CLIENT_INSTANCE* uws_client, WS_OPEN_RESULT_DETAILED ws_open_result_detailed)
 {
     /* Codes_SRS_UWS_CLIENT_01_409: [ After any error is indicated by `on_ws_open_complete`, a subsequent `uws_client_open_async` shall be possible. ]*/
     uws_client->uws_state = UWS_STATE_CLOSED;
-    uws_client->on_ws_open_complete(uws_client->on_ws_open_complete_context, ws_open_result);
+    uws_client->on_ws_open_complete(uws_client->on_ws_open_complete_context, ws_open_result_detailed);
 }
 
-static void indicate_ws_open_complete_error_and_close(UWS_CLIENT_INSTANCE* uws_client, WS_OPEN_RESULT ws_open_result)
+static void indicate_ws_open_complete_error_and_close(UWS_CLIENT_INSTANCE* uws_client, WS_OPEN_RESULT_DETAILED ws_open_result_detailed)
 {
     (void)xio_close(uws_client->underlying_io, NULL, NULL);
-    indicate_ws_open_complete_error(uws_client, ws_open_result);
+    indicate_ws_open_complete_error(uws_client, ws_open_result_detailed);
 }
 
 static void indicate_ws_error(UWS_CLIENT_INSTANCE* uws_client, WS_ERROR error_code)
@@ -653,9 +654,12 @@ static void indicate_ws_error_and_close(UWS_CLIENT_INSTANCE* uws_client, WS_ERRO
     uws_client->on_ws_error(uws_client->on_ws_error_context, error_code);
 }
 
-static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_result)
+static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT_DETAILED io_open_result_detailed)
 {
     UWS_CLIENT_HANDLE uws_client = (UWS_CLIENT_HANDLE)context;
+    WS_OPEN_RESULT_DETAILED ws_open_result = { WS_OPEN_OK, 0 };
+    IO_OPEN_RESULT open_result = io_open_result_detailed.result;
+
     /* Codes_SRS_UWS_CLIENT_01_401: [ If `on_underlying_io_open_complete` is called with a NULL context, `on_underlying_io_open_complete` shall do nothing. ]*/
     if (uws_client == NULL)
     {
@@ -669,7 +673,8 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
         case UWS_STATE_WAITING_FOR_UPGRADE_RESPONSE:
             /* Codes_SRS_UWS_CLIENT_01_407: [ When `on_underlying_io_open_complete` is called when the uws instance has send the upgrade request but it is waiting for the response, an error shall be reported to the user by calling the `on_ws_open_complete` with `WS_OPEN_ERROR_MULTIPLE_UNDERLYING_IO_OPEN_EVENTS`. ]*/
             LogError("underlying on_io_open_complete was called again after upgrade request was sent.");
-            indicate_ws_open_complete_error_and_close(uws_client, WS_OPEN_ERROR_MULTIPLE_UNDERLYING_IO_OPEN_EVENTS);
+            ws_open_result.result = WS_OPEN_ERROR_MULTIPLE_UNDERLYING_IO_OPEN_EVENTS;
+            indicate_ws_open_complete_error_and_close(uws_client, ws_open_result);
             break;
         case UWS_STATE_OPENING_UNDERLYING_IO:
             switch (open_result)
@@ -677,12 +682,16 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
             default:
             case IO_OPEN_ERROR:
                 /* Codes_SRS_UWS_CLIENT_01_369: [ When `on_underlying_io_open_complete` is called with `IO_OPEN_ERROR` while uws is OPENING (`uws_client_open_async` was called), uws shall report that the open failed by calling the `on_ws_open_complete` callback passed to `uws_client_open_async` with `WS_OPEN_ERROR_UNDERLYING_IO_OPEN_FAILED`. ]*/
-                indicate_ws_open_complete_error(uws_client, WS_OPEN_ERROR_UNDERLYING_IO_OPEN_FAILED);
+                ws_open_result.result = WS_OPEN_ERROR_UNDERLYING_IO_OPEN_FAILED;
+                ws_open_result.code = io_open_result_detailed.code;
+                indicate_ws_open_complete_error(uws_client, ws_open_result);
                 break;
 
             case IO_OPEN_CANCELLED:
                 /* Codes_SRS_UWS_CLIENT_01_402: [ When `on_underlying_io_open_complete` is called with `IO_OPEN_CANCELLED` while uws is OPENING (`uws_client_open_async` was called), uws shall report that the open failed by calling the `on_ws_open_complete` callback passed to `uws_client_open_async` with `WS_OPEN_ERROR_UNDERLYING_IO_OPEN_CANCELLED`. ]*/
-                indicate_ws_open_complete_error(uws_client, WS_OPEN_ERROR_UNDERLYING_IO_OPEN_CANCELLED);
+                ws_open_result.result = WS_OPEN_ERROR_UNDERLYING_IO_OPEN_CANCELLED;
+                ws_open_result.code = io_open_result_detailed.code;
+                indicate_ws_open_complete_error_and_close(uws_client, ws_open_result);
                 break;
 
             case IO_OPEN_OK:
@@ -706,7 +715,8 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
                 {
                     /* Codes_SRS_UWS_CLIENT_01_498: [ If Base64 encoding the nonce for the upgrade request fails, then the uws client shall report that the open failed by calling the `on_ws_open_complete` callback passed to `uws_client_open_async` with `WS_OPEN_ERROR_BASE64_ENCODE_FAILED`. ]*/
                     LogError("Cannot construct the WebSocket upgrade request");
-                    indicate_ws_open_complete_error(uws_client, WS_OPEN_ERROR_BASE64_ENCODE_FAILED);
+                    ws_open_result.result = WS_OPEN_ERROR_BASE64_ENCODE_FAILED;
+                    indicate_ws_open_complete_error_and_close(uws_client, ws_open_result);
                 }
                 else
                 {
@@ -738,7 +748,8 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
                     {
                         /* Codes_SRS_UWS_CLIENT_01_408: [ If constructing of the WebSocket upgrade request fails, uws shall report that the open failed by calling the `on_ws_open_complete` callback passed to `uws_client_open_async` with `WS_OPEN_ERROR_CONSTRUCTING_UPGRADE_REQUEST`. ]*/
                         LogError("Cannot construct the WebSocket upgrade request");
-                        indicate_ws_open_complete_error_and_close(uws_client, WS_OPEN_ERROR_CONSTRUCTING_UPGRADE_REQUEST);
+                        ws_open_result.result = WS_OPEN_ERROR_CONSTRUCTING_UPGRADE_REQUEST;
+                        indicate_ws_open_complete_error_and_close(uws_client, ws_open_result);
                     }
                     else
                     {
@@ -747,7 +758,8 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
                         {
                             /* Codes_SRS_UWS_CLIENT_01_406: [ If not enough memory can be allocated to construct the WebSocket upgrade request, uws shall report that the open failed by calling the `on_ws_open_complete` callback passed to `uws_client_open_async` with `WS_OPEN_ERROR_NOT_ENOUGH_MEMORY`. ]*/
                             LogError("Cannot allocate memory for the WebSocket upgrade request");
-                            indicate_ws_open_complete_error_and_close(uws_client, WS_OPEN_ERROR_NOT_ENOUGH_MEMORY);
+                            ws_open_result.result = WS_OPEN_ERROR_NOT_ENOUGH_MEMORY;
+                            indicate_ws_open_complete_error_and_close(uws_client, ws_open_result);
                         }
                         else
                         {
@@ -766,7 +778,8 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
                             {
                                 /* Codes_SRS_UWS_CLIENT_01_373: [ If `xio_send` fails then uws shall report that the open failed by calling the `on_ws_open_complete` callback passed to `uws_client_open_async` with `WS_OPEN_ERROR_CANNOT_SEND_UPGRADE_REQUEST`. ]*/
                                 LogError("Cannot send upgrade request");
-                                indicate_ws_open_complete_error_and_close(uws_client, WS_OPEN_ERROR_CANNOT_SEND_UPGRADE_REQUEST);
+                                ws_open_result.result = WS_OPEN_ERROR_CANNOT_SEND_UPGRADE_REQUEST;
+                                indicate_ws_open_complete_error_and_close(uws_client, ws_open_result);
                             }
                             else
                             {
@@ -952,6 +965,7 @@ static int process_frame_fragment(UWS_CLIENT_INSTANCE *uws_client, size_t length
     if (new_fragment_bytes == NULL)
     {
         /* Codes_SRS_UWS_CLIENT_01_379: [ If allocating memory for accumulating the bytes fails, uws shall report that the open failed by calling the `on_ws_open_complete` callback passed to `uws_client_open_async` with `WS_OPEN_ERROR_NOT_ENOUGH_MEMORY`. ]*/
+        // TODO error in comment?
         LogError("Cannot allocate memory for received data");
         indicate_ws_error(uws_client, WS_ERROR_NOT_ENOUGH_MEMORY);
         result = __FAILURE__;
@@ -969,6 +983,8 @@ static int process_frame_fragment(UWS_CLIENT_INSTANCE *uws_client, size_t length
 
 static void on_underlying_io_bytes_received(void* context, const unsigned char* buffer, size_t size)
 {
+    WS_OPEN_RESULT_DETAILED ws_open_result_detailed = { WS_OPEN_OK, 0 };
+
     /* Codes_SRS_UWS_CLIENT_01_415: [ If called with a NULL `context` argument, `on_underlying_io_bytes_received` shall do nothing. ]*/
     if (context != NULL)
     {
@@ -978,7 +994,9 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
             (size == 0))
         {
             /* Codes_SRS_UWS_CLIENT_01_416: [ If called with NULL `buffer` or zero `size` and the state of the iws is OPENING, uws shall report that the open failed by calling the `on_ws_open_complete` callback passed to `uws_client_open_async` with `WS_OPEN_ERROR_INVALID_BYTES_RECEIVED_ARGUMENTS`. ]*/
-            indicate_ws_open_complete_error_and_close(uws_client, WS_OPEN_ERROR_INVALID_BYTES_RECEIVED_ARGUMENTS);
+            ws_open_result_detailed.result = WS_OPEN_ERROR_INVALID_BYTES_RECEIVED_ARGUMENTS;
+            ws_open_result_detailed.code = __FAILURE__;
+            indicate_ws_open_complete_error_and_close(uws_client, ws_open_result_detailed);
         }
         else
         {
@@ -993,7 +1011,9 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
 
             case UWS_STATE_OPENING_UNDERLYING_IO:
                 /* Codes_SRS_UWS_CLIENT_01_417: [ When `on_underlying_io_bytes_received` is called while OPENING but before the `on_underlying_io_open_complete` has been called, uws shall report that the open failed by calling the `on_ws_open_complete` callback passed to `uws_client_open_async` with `WS_OPEN_ERROR_BYTES_RECEIVED_BEFORE_UNDERLYING_OPEN`. ]*/
-                indicate_ws_open_complete_error_and_close(uws_client, WS_OPEN_ERROR_BYTES_RECEIVED_BEFORE_UNDERLYING_OPEN);
+                ws_open_result_detailed.result = WS_OPEN_ERROR_BYTES_RECEIVED_BEFORE_UNDERLYING_OPEN;
+                ws_open_result_detailed.code = __FAILURE__;
+                indicate_ws_open_complete_error_and_close(uws_client, ws_open_result_detailed);
                 decode_stream = 0;
                 break;
 
@@ -1004,7 +1024,9 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                 if (new_received_bytes == NULL)
                 {
                     /* Codes_SRS_UWS_CLIENT_01_379: [ If allocating memory for accumulating the bytes fails, uws shall report that the open failed by calling the `on_ws_open_complete` callback passed to `uws_client_open_async` with `WS_OPEN_ERROR_NOT_ENOUGH_MEMORY`. ]*/
-                    indicate_ws_open_complete_error_and_close(uws_client, WS_OPEN_ERROR_NOT_ENOUGH_MEMORY);
+                    ws_open_result_detailed.result = WS_OPEN_ERROR_NOT_ENOUGH_MEMORY;
+                    ws_open_result_detailed.code = __FAILURE__;
+                    indicate_ws_open_complete_error_and_close(uws_client, ws_open_result_detailed);
                     decode_stream = 0;
                 }
                 else
@@ -1057,7 +1079,9 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
 
                 case UWS_STATE_OPENING_UNDERLYING_IO:
                     /* Codes_SRS_UWS_CLIENT_01_417: [ When `on_underlying_io_bytes_received` is called while OPENING but before the `on_underlying_io_open_complete` has been called, uws shall report that the open failed by calling the `on_ws_open_complete` callback passed to `uws_client_open_async` with `WS_OPEN_ERROR_BYTES_RECEIVED_BEFORE_UNDERLYING_OPEN`. ]*/
-                    indicate_ws_open_complete_error_and_close(uws_client, WS_OPEN_ERROR_BYTES_RECEIVED_BEFORE_UNDERLYING_OPEN);
+                    ws_open_result_detailed.result = WS_OPEN_ERROR_BYTES_RECEIVED_BEFORE_UNDERLYING_OPEN;
+                    ws_open_result_detailed.code = __FAILURE__;
+                    indicate_ws_open_complete_error_and_close(uws_client, ws_open_result_detailed);
                     break;
 
                 case UWS_STATE_WAITING_FOR_UPGRADE_RESPONSE:
@@ -1068,7 +1092,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                     uws_client->stream_buffer[uws_client->stream_buffer_count] = '\0';
 
                     /* Codes_SRS_UWS_CLIENT_01_380: [ If an WebSocket Upgrade request can be parsed from the accumulated bytes, the status shall be read from the WebSocket upgrade response. ]*/
-                    /* Codes_SRS_UWS_CLIENT_01_381: [ If the status is 101, uws shall be considered OPEN and this shall be indicated by calling the `on_ws_open_complete` callback passed to `uws_client_open_async` with `IO_OPEN_OK`. ]*/
+                    /* Codes_SRS_UWS_CLIENT_01_381: [ If the status is 101, uws shall be considered OPEN and this shall be indicated by calling the `on_ws_open_complete` callback passed to `uws_client_open_async` with `WS_OPEN_OK`. ]*/
                     if ((uws_client->stream_buffer_count >= 4) &&
                         ((request_end_ptr = strstr((const char*)uws_client->stream_buffer, "\r\n\r\n")) != NULL))
                     {
@@ -1083,13 +1107,17 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                         {
                             /* Codes_SRS_UWS_CLIENT_01_383: [ If the WebSocket upgrade request cannot be decoded an error shall be indicated by calling the `on_ws_open_complete` callback passed to `uws_client_open_async` with `WS_OPEN_ERROR_BAD_UPGRADE_RESPONSE`. ]*/
                             LogError("Cannot decode HTTP response");
-                            indicate_ws_open_complete_error_and_close(uws_client, WS_OPEN_ERROR_BAD_UPGRADE_RESPONSE);
+                            ws_open_result_detailed.result = WS_OPEN_ERROR_BAD_UPGRADE_RESPONSE;
+                            ws_open_result_detailed.code = __FAILURE__;
+                            indicate_ws_open_complete_error_and_close(uws_client, ws_open_result_detailed);
                         }
                         else if (status_code != 101)
                         {
                             /* Codes_SRS_UWS_CLIENT_01_382: [ If a negative status is decoded from the WebSocket upgrade request, an error shall be indicated by calling the `on_ws_open_complete` callback passed to `uws_client_open_async` with `WS_OPEN_ERROR_BAD_RESPONSE_STATUS`. ]*/
                             LogError("Bad status (%d) received in WebSocket Upgrade response", status_code);
-                            indicate_ws_open_complete_error_and_close(uws_client, WS_OPEN_ERROR_BAD_RESPONSE_STATUS+status_code);
+                            ws_open_result_detailed.result = WS_OPEN_ERROR_BAD_RESPONSE_STATUS;
+                            ws_open_result_detailed.code = status_code;
+                            indicate_ws_open_complete_error_and_close(uws_client, ws_open_result_detailed);
                         }
                         else
                         {
@@ -1101,7 +1129,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
 
                             /* Codes_SRS_UWS_CLIENT_01_065: [ When the client is to _Establish a WebSocket Connection_ given a set of (/host/, /port/, /resource name/, and /secure/ flag), along with a list of /protocols/ and /extensions/ to be used, and an /origin/ in the case of web browsers, it MUST open a connection, send an opening handshake, and read the server's handshake in response. ]*/
                             /* Codes_SRS_UWS_CLIENT_01_115: [ If the server's response is validated as provided for above, it is said that _The WebSocket Connection is Established_ and that the WebSocket Connection is in the OPEN state. ]*/
-                            uws_client->on_ws_open_complete(uws_client->on_ws_open_complete_context, WS_OPEN_OK);
+                            uws_client->on_ws_open_complete(uws_client->on_ws_open_complete_context, ws_open_result_detailed);
 
                             decode_stream = 1;
                         }
@@ -1541,10 +1569,13 @@ static void on_underlying_io_error(void* context)
 
     case UWS_STATE_OPENING_UNDERLYING_IO:
     case UWS_STATE_WAITING_FOR_UPGRADE_RESPONSE:
+    {
         /* Codes_SRS_UWS_CLIENT_01_375: [ When `on_underlying_io_error` is called while uws is OPENING, uws shall report that the open failed by calling the `on_ws_open_complete` callback passed to `uws_client_open_async` with `WS_OPEN_ERROR_UNDERLYING_IO_ERROR`. ]*/
         /* Codes_SRS_UWS_CLIENT_01_077: [ If this fails (e.g., the server's certificate could not be verified), then the client MUST _Fail the WebSocket Connection_ and abort the connection. ]*/
-        indicate_ws_open_complete_error_and_close(uws_client, WS_OPEN_ERROR_UNDERLYING_IO_ERROR);
+        WS_OPEN_RESULT_DETAILED error_result = { WS_OPEN_ERROR_UNDERLYING_IO_ERROR };
+        indicate_ws_open_complete_error_and_close(uws_client, error_result);
         break;
+    }
 
     case UWS_STATE_OPEN:
         /* Codes_SRS_UWS_CLIENT_01_376: [ When `on_underlying_io_error` is called while the uws instance is OPEN, an error shall be reported to the user by calling the `on_ws_error` callback that was passed to `uws_client_open_async` with the argument `WS_ERROR_UNDERLYING_IO_ERROR`. ]*/
@@ -1600,7 +1631,7 @@ int uws_client_open_async(UWS_CLIENT_HANDLE uws_client, ON_WS_OPEN_COMPLETE on_w
             /* Codes_SRS_UWS_CLIENT_01_025: [ `uws_client_open_async` shall open the underlying IO by calling `xio_open` and providing the IO handle created in `uws_client_create` as argument. ]*/
             /* Codes_SRS_UWS_CLIENT_01_367: [ The callbacks `on_underlying_io_open_complete`, `on_underlying_io_bytes_received` and `on_underlying_io_error` shall be passed as arguments to `xio_open`. ]*/
             /* Codes_SRS_UWS_CLIENT_01_061: [ To _Establish a WebSocket Connection_, a client opens a connection and sends a handshake as defined in this section. ]*/
-            if (xio_open(uws_client->underlying_io, on_underlying_io_open_complete, uws_client, on_underlying_io_bytes_received, uws_client, on_underlying_io_error, uws_client) != 0)
+            if (xio_open(uws_client->underlying_io, on_underlying_io_open_complete, uws_client, on_underlying_io_bytes_received, uws_client, on_underlying_io_error, uws_client) != 0) // TODO here
             {
                 /* Codes_SRS_UWS_CLIENT_01_028: [ If opening the underlying IO fails then `uws_client_open_async` shall fail and return a non-zero value. ]*/
                 /* Codes_SRS_UWS_CLIENT_01_075: [ If the connection could not be opened, either because a direct connection failed or because any proxy used returned an error, then the client MUST _Fail the WebSocket Connection_ and abort the connection attempt. ]*/
