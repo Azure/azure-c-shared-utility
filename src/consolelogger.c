@@ -4,19 +4,19 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <time.h>
-#include <tchar.h>
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/consolelogger.h"
 
 #if (defined(_MSC_VER)) && (!(defined WINCE))
 #include "windows.h"
+#include "tchar.h"
 
 wchar_t *  to_wchar(const char * strA)
 {
     wchar_t*  resultW;
     if (strA == NULL)
     {
-        return NULL;
+        return NULL; 
     }
     DWORD dwNum = MultiByteToWideChar(CP_ACP, 0, strA, -1, NULL, 0);
     resultW = (wchar_t*)malloc(dwNum * sizeof(wchar_t));

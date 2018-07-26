@@ -20,6 +20,7 @@
 #include "azure_c_shared_utility/shared_util_options.h"
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/const_defines.h"
+#include "azure_c_shared_utility//xlogging.h"
 
 typedef enum TLSIO_STATE_TAG
 {
@@ -371,6 +372,9 @@ static LOCK_HANDLE * openssl_locks = NULL;
 
 static void openssl_lock_unlock_helper(LOCK_HANDLE lock, int lock_mode, const char* file, int line)
 {
+    UNUSED(file);
+    UNUSED(line);
+
     if (lock_mode & CRYPTO_LOCK)
     {
         if (Lock(lock) != 0)
@@ -411,6 +415,9 @@ static void log_ERR_get_error(const char* message)
 static struct CRYPTO_dynlock_value* openssl_dynamic_locks_create_cb(const char* file, int line)
 {
     struct CRYPTO_dynlock_value* result;
+
+    UNUSED(file);
+    UNUSED(line);
 
     result = malloc(sizeof(struct CRYPTO_dynlock_value));
 
