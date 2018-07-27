@@ -11,6 +11,7 @@
 #include "windows.h"
 #include "tchar.h"
 
+
 wchar_t *  to_wchar(const char * strA)
 {
     wchar_t*  resultW;
@@ -30,24 +31,24 @@ wchar_t *  to_wchar(const char * strA)
 }
 
 /*returns a string as if printed by vprintf*/
-static TCHAR* vprintf_alloc(const TCHAR* format, va_list va)
+static wchar_t* vprintf_alloc(const wchar_t* format, va_list va)
 {
-    TCHAR* result;
-    int neededSize = _vsntprintf(NULL, 0, format, va);
+    wchar_t* result;
+    int neededSize = _vsnwprintf(NULL, 0, format, va);
     if (neededSize < 0)
     {
         result = NULL;
     }
     else
     {
-        result = (TCHAR*)malloc(neededSize + 1);
+        result = (wchar_t*)malloc(neededSize + 1);
         if (result == NULL)
         {
             /*return as is*/
         }
         else
         {
-            if (_vsntprintf(result, neededSize + 1, format, va) != neededSize)
+            if (_vsnwprintf(result, neededSize + 1, format, va) != neededSize)
             {
                 free(result);
                 result = NULL;
@@ -58,9 +59,9 @@ static TCHAR* vprintf_alloc(const TCHAR* format, va_list va)
 }
 
 /*returns a string as if printed by printf*/
-static TCHAR* printf_alloc(const TCHAR* format, ...)
+static wchar_t* printf_alloc(const wchar_t* format, ...)
 {
-    TCHAR* result;
+    wchar_t* result = NULL;
     va_list va;
     va_start(va, format);
     result = vprintf_alloc(format, va);
@@ -69,15 +70,15 @@ static TCHAR* printf_alloc(const TCHAR* format, ...)
 }
 
 /*returns NULL if it fails*/
-static TCHAR* lastErrorToString(DWORD lastError)
+static wchar_t* lastErrorToString(DWORD lastError)
 {
-    TCHAR* result;
+    wchar_t* result;
     if (lastError == 0)
     {
-        result = printf_alloc(_T("")); /*no error should appear*/
+        result = printf_alloc(L""); /*no error should appear*/
         if (result == NULL)
         {
-            (void)_tprintf(_T("failure in printf_alloc"));
+            (void)wprintf(L"failure in printf_alloc");
         }
         else
         {
@@ -86,13 +87,13 @@ static TCHAR* lastErrorToString(DWORD lastError)
     }
     else
     {
-        TCHAR temp[MESSAGE_BUFFER_SIZE];
-        if (FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, lastError, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), temp, MESSAGE_BUFFER_SIZE, NULL) == 0)
+        wchar_t temp[MESSAGE_BUFFER_SIZE];
+        if (FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, lastError, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), temp, MESSAGE_BUFFER_SIZE, NULL) == 0)
         {
-            result = printf_alloc(_T("GetLastError()=0X%x"), lastError);
+            result = printf_alloc(L"GetLastError()=0X%x", lastError);
             if (result == NULL)
             {
-                (void)_tprintf(_T("failure in printf_alloc\n"));
+                (void)wprintf(L"failure in printf_alloc\n");
                 /*return as is*/
             }
             else
@@ -104,21 +105,21 @@ static TCHAR* lastErrorToString(DWORD lastError)
         {
             /*eliminate the \r or \n from the string*/
             /*one replace of each is enough*/
-            TCHAR* whereAreThey;
-            if ((whereAreThey = _tcschr(temp, '\r')) != NULL)
+            wchar_t* whereAreThey;
+            if ((whereAreThey = wcschr(temp, '\r')) != NULL)
             {
                 *whereAreThey = '\0';
             }
-            if ((whereAreThey = _tcschr(temp, '\n')) != NULL)
+            if ((whereAreThey = wcschr(temp, '\n')) != NULL)
             {
                 *whereAreThey = '\0';
             }
 
-            result = printf_alloc(_T("GetLastError()==0X%x (%s)"), lastError, temp);
+            result = printf_alloc(L"GetLastError()==0X%x (%s)", lastError, temp);
 
             if (result == NULL)
             {
-                (void)_tprintf(_T("failure in printf_alloc\n"));
+                (void)wprintf(L"failure in printf_alloc\n");
                 /*return as is*/
             }
             else
@@ -135,13 +136,13 @@ static TCHAR* lastErrorToString(DWORD lastError)
 void consolelogger_log_with_GetLastError(const char* file, const char* func, int line, const char* format, ...)
 {
 	DWORD lastError;
-	TCHAR* lastErrorAsString;
+	wchar_t* lastErrorAsString;
 	int lastErrorAsString_should_be_freed;
 	time_t t;
     int systemMessage_should_be_freed;
-	TCHAR* systemMessage;
+	wchar_t* systemMessage;
     int userMessage_should_be_freed;
-	TCHAR* userMessage;
+    wchar_t* userMessage;
 
     va_list args;
     wchar_t * formatw = to_wchar(format);
@@ -159,8 +160,8 @@ void consolelogger_log_with_GetLastError(const char* file, const char* func, int
     lastErrorAsString = lastErrorToString(lastError);
     if (lastErrorAsString == NULL)
     {
-        (void)_tprintf(_T("failure in lastErrorToString"));
-        lastErrorAsString = _T("");
+        (void)wprintf(L"failure in lastErrorToString");
+        lastErrorAsString = L"";
         lastErrorAsString_should_be_freed = 0;
     }
     else
@@ -169,12 +170,12 @@ void consolelogger_log_with_GetLastError(const char* file, const char* func, int
     }
 
     _tctime(&t);
-    systemMessage = printf_alloc(_T("Error: Time:%.24s File:%S Func:%S Line:%d %s"), _tctime(&t), file, func, line, lastErrorAsString);
+    systemMessage = printf_alloc(L"Error: Time:%.24s File:%S Func:%S Line:%d %s", _wctime(&t), file, func, line, lastErrorAsString);
 
     if (systemMessage == NULL)
     {
-        systemMessage = _T("");
-        (void)_tprintf(_T("Error: [FAILED] Time:%.24s File : %S Func : %S Line : %d %s"), _tctime(&t), file, func, line, lastErrorAsString);
+        systemMessage = L"";
+        (void)wprintf(L"Error: [FAILED] Time:%.24s File : %S Func : %S Line : %d %s", _wctime(&t), file, func, line, lastErrorAsString);
         systemMessage_should_be_freed = 0;
     }
     else
@@ -185,15 +186,15 @@ void consolelogger_log_with_GetLastError(const char* file, const char* func, int
     userMessage = vprintf_alloc(formatw, args);
     if (userMessage == NULL)
     {
-        (void)_tprintf(_T("[FAILED] "));
-        (void)_vtprintf(formatw, args);
-        (void)_tprintf(_T("\n"));
+        (void)wprintf(L"[FAILED] ");
+        (void)vwprintf(formatw, args);
+        (void)wprintf(L"\n");
         userMessage_should_be_freed = 0;
     }
     else
     {
         /*3. printf the system message(__FILE__, __LINE__ etc) + the last error + whatever the user wanted*/
-        (void)_tprintf(_T("%s %s\n"), systemMessage, userMessage);
+        (void)wprintf(L"%s %s\n", systemMessage, userMessage);
         userMessage_should_be_freed = 1;
     }
 
@@ -236,22 +237,22 @@ void consolelogger_log(LOG_CATEGORY log_category, const char* file, const char* 
     switch (log_category)
     {
     case AZ_LOG_INFO:
-        (void)_tprintf(_T("Info: "));
+        (void)wprintf(L"Info: ");
         break;
     case AZ_LOG_ERROR:
-        (void)_tprintf(_T("Error: Time:%.24s File:%S Func:%S Line:%d "), _tctime(&t), file, func, line);
+        (void)wprintf(L"Error: Time:%.24s File:%S Func:%S Line:%d ", _wctime(&t), file, func, line);
         break;
     default:
         break;
     }
 
-    (void)_vtprintf(formatw, args);
+    (void)vwprintf(formatw, args);
     va_end(args);
 
     (void)log_category;
     if (options & LOG_LINE)
     {
-        (void)_tprintf(_T("\r\n"));
+        (void)wprintf(L"\r\n");
     }
 
     if (formatw)
