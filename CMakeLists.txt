@@ -47,7 +47,7 @@ else()
     else()
         option(use_openssl "set use_openssl to ON if openssl is to be used, set to OFF to not use openssl" ON)
         option(use_socketio "set use_socketio to ON if socketio is to be included in the library, set to OFF if a different implementation will be provided" ON)
-    endif()    
+    endif()
     option(use_wolfssl "set use_wolfssl to ON if wolfssl is to be used, set to OFF to not use wolfssl" OFF)
 endif()
 
@@ -374,8 +374,16 @@ endif()
 
 
 if(${build_as_dynamic})
+    set(def_files ./src/aziotsharedutil.def)
+    if(${use_http})
+        set(def_files ${def_files} ./src/aziotsharedutil_http.def)
+    endif()
+    if(${use_wsio})
+        set(def_files ${def_files} ./src/aziotsharedutil_wsio.def)
+    endif()
+
     #make sure we can link as dll/so
-    add_library(aziotsharedutil_dll SHARED ./src/aziotsharedutil.def ${source_c_files} ${source_h_files})
+    add_library(aziotsharedutil_dll SHARED ${def_files} ${source_c_files} ${source_h_files})
     set_target_properties(aziotsharedutil_dll PROPERTIES OUTPUT_NAME "aziotsharedutil")
 endif()
 

@@ -55,37 +55,6 @@ EXPORTS
     DList_RemoveHeadList
     environment_get_variable
     HMACSHA256_ComputeHash
-    HTTPAPIEX_Create
-    HTTPAPIEX_Destroy
-    HTTPAPIEX_ExecuteRequest
-    HTTPAPIEX_RESULTStringStorage
-    HTTPAPIEX_RESULTStrings
-    HTTPAPIEX_RESULT_FromString
-    HTTPAPIEX_SAS_Create
-    HTTPAPIEX_SAS_Destroy
-    HTTPAPIEX_SAS_ExecuteRequest
-    HTTPAPIEX_SetOption
-    HTTPAPI_CloneOption
-    HTTPAPI_CloseConnection
-    HTTPAPI_CreateConnection
-    HTTPAPI_Deinit
-    HTTPAPI_ExecuteRequest
-    HTTPAPI_Init
-    HTTPAPI_RESULTStringStorage
-    HTTPAPI_RESULTStrings
-    HTTPAPI_RESULT_FromString
-    HTTPAPI_SetOption
-    HTTPHeaders_AddHeaderNameValuePair
-    HTTPHeaders_Alloc
-    HTTPHeaders_Clone
-    HTTPHeaders_FindHeaderValue
-    HTTPHeaders_Free
-    HTTPHeaders_GetHeader
-    HTTPHeaders_GetHeaderCount
-    HTTPHeaders_ReplaceHeaderNameValuePair
-    HTTP_HEADERS_RESULTStringStorage
-    HTTP_HEADERS_RESULTStrings
-    HTTP_HEADERS_RESULT_FromString
     Lock
     Lock_Deinit
     Lock_Init
@@ -260,27 +229,6 @@ EXPORTS
     tlsio_schannel_send
     tlsio_schannel_setoption
     unsignedIntToString
-    utf8_checker_is_valid_utf8
-    uws_client_close_async
-    uws_client_close_handshake_async
-    uws_client_create
-    uws_client_create_with_io
-    uws_client_destroy
-    uws_client_dowork
-    uws_client_open_async
-    uws_client_retrieve_options
-    uws_client_send_frame_async
-    uws_client_set_option
-    uws_frame_encoder_encode
-    wsio_close
-    wsio_create
-    wsio_destroy
-    wsio_dowork
-    wsio_get_interface_description
-    wsio_open
-    wsio_retrieveoptions
-    wsio_send
-    wsio_setoption
     x509_schannel_create
     x509_schannel_destroy
     x509_schannel_get_certificate_context
