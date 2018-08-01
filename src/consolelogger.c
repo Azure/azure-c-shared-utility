@@ -14,18 +14,22 @@
 
 wchar_t *  to_wchar(const char * strA)
 {
-    wchar_t*  resultW;
+    wchar_t*  resultW = NULL;
     if (strA == NULL)
     {
-        return NULL; 
+        return NULL;
     }
-    DWORD dwNum = MultiByteToWideChar(CP_ACP, 0, strA, -1, NULL, 0);
+    DWORD dwNum = MultiByteToWideChar(CP_UTF8, 0, strA, -1, NULL, 0);    
     resultW = (wchar_t*)malloc(dwNum * sizeof(wchar_t));
     if (resultW == NULL)
     {
         return NULL;
     }
-    MultiByteToWideChar(CP_ACP, 0, strA, -1, resultW, dwNum);
+    if (MultiByteToWideChar(CP_UTF8, 0, strA, -1, resultW, dwNum) == 0)
+    {
+        free(resultW);
+        return NULL;
+    }
 
     return resultW;
 }

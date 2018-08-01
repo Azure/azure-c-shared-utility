@@ -3,7 +3,7 @@
 
 #ifndef CONSOLELOGGER_H
 #define CONSOLELOGGER_H
-#include <tchar.h>
+
 #include "azure_c_shared_utility/xlogging.h"
 
 #ifdef __cplusplus

@@ -441,7 +441,7 @@ int BUFFER_append(BUFFER_HANDLE handle1, BUFFER_HANDLE handle2)
     {
         BUFFER* b1 = (BUFFER*)handle1;
         BUFFER* b2 = (BUFFER*)handle2;
-        if (b1->buffer == NULL)
+        if (b1->buffer == NULL) 
         {
             /* Codes_SRS_BUFFER_07_023: [BUFFER_append shall return a nonzero upon any error that is encountered.] */
             result = __FAILURE__;
