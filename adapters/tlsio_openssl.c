@@ -372,8 +372,8 @@ static LOCK_HANDLE * openssl_locks = NULL;
 
 static void openssl_lock_unlock_helper(LOCK_HANDLE lock, int lock_mode, const char* file, int line)
 {
-    UNUSED(file);
-    UNUSED(line);
+    (void)(file);
+    (void)(line);
 
     if (lock_mode & CRYPTO_LOCK)
     {
@@ -416,8 +416,8 @@ static struct CRYPTO_dynlock_value* openssl_dynamic_locks_create_cb(const char* 
 {
     struct CRYPTO_dynlock_value* result;
 
-    UNUSED(file);
-    UNUSED(line);
+    (void)(file);
+    (void)(line);
 
     result = malloc(sizeof(struct CRYPTO_dynlock_value));
 
