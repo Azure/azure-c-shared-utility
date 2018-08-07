@@ -70,6 +70,8 @@ time_t get_time_s()
         return INVALID_TIME_VALUE;
     }
 
+    LogError("!!!! get_time_s => ts.tv_sec = %d !!!!", ts.tv_sec);
+
     return (time_t)ts.tv_sec;
 }
 
