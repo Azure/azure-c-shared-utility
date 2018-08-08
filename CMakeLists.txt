@@ -124,6 +124,10 @@ if(MSVC)
         if(${use_wolfssl})
             set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_WOLFSSL")
             set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_WOLFSSL")
+    
+            # Disables error if a bit-field is used on non-integer variable
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4 /wd4214")
+            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4 /wd4214")
         endif()
 
     endif()
