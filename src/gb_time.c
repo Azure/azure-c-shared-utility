@@ -6,7 +6,9 @@
     a) if GB_TIME_INTERCEPT is NOT defined, then the file shall be empty (almost:)
     b) if GB_TIME_INTERCEPT is defined, then the file shall call to the 'real' time.h functions from their gb_* synonyms*/
 #ifdef _MSC_VER
-static const int avoid_a_warning_C4206 = 0; /* warning C4206: nonstandard extension used: translation unit is empty*/
+/* compiler warning C4206: nonstandard extension used: translation unit is empty */
+/* linker warning 4221: This object file does not define any previously undefined public symbols, so it will not be used by any link operation that consumes this library */
+const int avoid_warnings_0CA668EF_F2C4_49A8_A30D_7257C67173A4 = 0;
 #endif
 #ifdef GB_TIME_INTERCEPT
 

@@ -6,7 +6,9 @@
     a) if GB_STDIO_INTERCEPT is NOT defined, then the file shall be empty (almost:)
     b) if GB_STDIO_INTERCEPT is defined, then the file shall call to the 'real' stdio.h functions from their gb_* synonyms*/
 #ifdef _MSC_VER
-static const int avoid_a_warning_C4206 = 0; /* warning C4206: nonstandard extension used: translation unit is empty*/
+/* compiler warning C4206: nonstandard extension used: translation unit is empty */
+/* linker warning 4221: This object file does not define any previously undefined public symbols, so it will not be used by any link operation that consumes this library */
+const int avoid_warnings_B9EB480E_6AE7_43B3_9249_47993776BA7B = 0;
 #endif
 #ifdef GB_STDIO_INTERCEPT
 
