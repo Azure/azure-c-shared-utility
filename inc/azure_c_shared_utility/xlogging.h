@@ -97,7 +97,6 @@ typedef void(*LOGGER_LOG_GETLASTERROR)(const char* file, const char* func, int l
 #endif
 
 #if defined _MSC_VER
-#define UNUSED(x) (void)(x)
 #if !defined(WINCE)
 extern void xlogging_set_log_function_GetLastError(LOGGER_LOG_GETLASTERROR log_function);
 extern LOGGER_LOG_GETLASTERROR xlogging_get_log_function_GetLastError(void);
