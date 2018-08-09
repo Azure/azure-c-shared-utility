@@ -1,4 +1,4 @@
-LIBRARY aziotsharedutil
+LIBRARY aziotsharedutil_dll
 EXPORTS
     BUFFER_append
     BUFFER_append_build
@@ -16,6 +16,7 @@ EXPORTS
     BUFFER_size
     BUFFER_u_char
     BUFFER_unbuild
+
     Base64_Decoder
     Base64_Encoder
     Base64_Encode_Bytes
@@ -23,6 +24,7 @@ EXPORTS
     Base32_Decode_String
     Base32_Encode
     Base32_Encode_Bytes
+
     COND_RESULTStringStorage
     COND_RESULTStrings
     COND_RESULT_FromString
@@ -46,6 +48,7 @@ EXPORTS
     ConstMap_Destroy
     ConstMap_GetInternals
     ConstMap_GetValue
+
     DList_AppendTailList
     DList_InitializeListHead
     DList_InsertHeadList
@@ -53,6 +56,7 @@ EXPORTS
     DList_IsListEmpty
     DList_RemoveEntryList
     DList_RemoveHeadList
+
     environment_get_variable
     HMACSHA256_ComputeHash
     Lock
@@ -217,9 +221,11 @@ EXPORTS
     socketio_open
     socketio_send
     socketio_setoption
+
     tickcounter_create
     tickcounter_destroy
     tickcounter_get_current_ms
+
     tlsio_schannel_close
     tlsio_schannel_create
     tlsio_schannel_destroy
@@ -229,9 +235,11 @@ EXPORTS
     tlsio_schannel_send
     tlsio_schannel_setoption
     unsignedIntToString
+
     x509_schannel_create
     x509_schannel_destroy
     x509_schannel_get_certificate_context
+
     xio_close
     xio_create
     xio_destroy
@@ -240,6 +248,7 @@ EXPORTS
     xio_retrieveoptions
     xio_send
     xio_setoption
+
     xlogging_get_log_function
     xlogging_get_log_function_GetLastError
     xlogging_set_log_function

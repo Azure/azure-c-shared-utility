@@ -1,5 +1,3 @@
-LIBRARY aziotsharedutil
-EXPORTS
     utf8_checker_is_valid_utf8
     uws_client_close_async
     uws_client_close_handshake_async

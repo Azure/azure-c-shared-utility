@@ -378,16 +378,24 @@ endif()
 
 
 if(${build_as_dynamic})
-    set(def_files ./src/aziotsharedutil.def)
-    if(${use_http})
-        set(def_files ${def_files} ./src/aziotsharedutil_http.def)
-    endif()
-    if(${use_wsio})
-        set(def_files ${def_files} ./src/aziotsharedutil_wsio.def)
-    endif()
+
+    # need to create a def file from existing def files due to cmake
+    # not letting us build more than one file
+    file(READ ./src/aziotsharedutil.def DEF_FILE_CONTENT)
+    file(WRITE "${CMAKE_BINARY_DIR}/shared_util.def" ${DEF_FILE_CONTENT})
+    file(READ ./src/aziotsharedutil_http.def DEF_FILE_CONTENT)
+    file(APPEND "${CMAKE_BINARY_DIR}/shared_util.def" ${DEF_FILE_CONTENT})
+    file(READ ./src/aziotsharedutil_wsio.def DEF_FILE_CONTENT)
+    file(APPEND "${CMAKE_BINARY_DIR}/shared_util.def" ${DEF_FILE_CONTENT})
+
+    set(def_files "${CMAKE_BINARY_DIR}/shared_util.def")
 
     #make sure we can link as dll/so
-    add_library(aziotsharedutil_dll SHARED ${def_files} ${source_c_files} ${source_h_files})
+    add_library(aziotsharedutil_dll SHARED
+        ${source_c_files}
+        ${source_h_files}
+        ${def_files}
+    )
     set_target_properties(aziotsharedutil_dll PROPERTIES OUTPUT_NAME "aziotsharedutil")
 endif()
 
