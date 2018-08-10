@@ -135,9 +135,43 @@ extern LOGGER_LOG_GETLASTERROR xlogging_get_log_function_GetLastError(void);
                     }\
                 }\
             } while((void)0,0)
-#else
+#else // _MSC_VER
 #define LogError(FORMAT, ...) do{ LOG(AZ_LOG_ERROR, LOG_LINE, FORMAT, ##__VA_ARGS__); }while((void)0,0)
-#endif
+
+#ifdef WIN32
+#define LogErrorWinHTTPWithGetLastErrorAsString(FORMAT, ...) do { \
+                DWORD errorMessageID = GetLastError(); \
+                char messageBuffer[MESSAGE_BUFFER_SIZE]; \
+                LogError(FORMAT, ##__VA_ARGS__); \
+                if (errorMessageID == 0) \
+                {\
+                    LogError("GetLastError() returned 0. Make sure you are calling this right after the code that failed. "); \
+                } \
+                else\
+                {\
+                    int size = FormatMessage(FORMAT_MESSAGE_FROM_HMODULE | FORMAT_MESSAGE_IGNORE_INSERTS, \
+                        GetModuleHandle("WinHttp"), errorMessageID, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), messageBuffer, MESSAGE_BUFFER_SIZE, NULL); \
+                    if (size == 0)\
+                    {\
+                        size = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, errorMessageID, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), messageBuffer, MESSAGE_BUFFER_SIZE, NULL); \
+                        if (size == 0)\
+                        {\
+                            LogError("GetLastError Code: %d. ", errorMessageID); \
+                        }\
+                        else\
+                        {\
+                            LogError("GetLastError: %s.", messageBuffer); \
+                        }\
+                    }\
+                    else\
+                    {\
+                        LogError("GetLastError: %s.", messageBuffer); \
+                    }\
+                }\
+            } while((void)0,0)
+#endif // WIN32
+
+#endif // _MSC_VER
 
 extern void LogBinary(const char* comment, const void* data, size_t size);
 
