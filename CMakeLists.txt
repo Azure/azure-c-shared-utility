@@ -259,6 +259,7 @@ set(source_h_files
 ./inc/azure_c_shared_utility/const_defines.h
 ${LOGGING_H_FILE}
 ./inc/azure_c_shared_utility/doublylinkedlist.h
+./inc/azure_c_shared_utility/envvariable.h
 ./inc/azure_c_shared_utility/gballoc.h
 ./inc/azure_c_shared_utility/gbnetwork.h
 ./inc/azure_c_shared_utility/gb_stdio.h
@@ -284,6 +285,7 @@ ${LOGGING_H_FILE}
 ./inc/azure_c_shared_utility/strings_types.h
 ./inc/azure_c_shared_utility/string_tokenizer.h
 ./inc/azure_c_shared_utility/string_tokenizer_types.h
+./inc/azure_c_shared_utility/tlsio_options.h
 ./inc/azure_c_shared_utility/tickcounter.h
 ./inc/azure_c_shared_utility/threadapi.h
 ./inc/azure_c_shared_utility/xio.h
