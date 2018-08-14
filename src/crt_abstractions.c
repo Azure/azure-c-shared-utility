@@ -146,7 +146,7 @@ int strncpy_s(char* dst, size_t dstSizeInBytes, const char* src, size_t maxCount
             }
             else
             {
-                (void)strncpy(dst, src, srcLength);
+                (void)memcpy(dst, src, srcLength);
                 dst[srcLength] = '\0';
                 /*Codes_SRS_CRT_ABSTRACTIONS_99_018: [strncpy_s shall return Zero upon success]*/
                 result = 0;
@@ -160,7 +160,7 @@ int strncpy_s(char* dst, size_t dstSizeInBytes, const char* src, size_t maxCount
                 srcLength = dstSizeInBytes - 1;
                 truncationFlag = 1;
             }
-            (void)strncpy(dst, src, srcLength);
+            (void)memcpy(dst, src, srcLength);
             dst[srcLength] = '\0';
             result = 0;
         }
