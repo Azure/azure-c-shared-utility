@@ -81,8 +81,8 @@ typedef unsigned char bool;
 /* Codes_SRS_CRT_ABSTRACTIONS_99_001:[The module shall not redefine the secure functions implemented by Microsoft CRT.] */
 /* Codes_SRS_CRT_ABSTRACTIONS_99_040 : [The module shall still compile when building on a Microsoft platform.] */
 /* Codes_SRS_CRT_ABSTRACTIONS_99_002: [CRTAbstractions module shall expose the following API]*/
-#ifdef _MSC_VER
-#else // _MSC_VER
+#if defined (_MSC_VER) || defined (MINGW_HAS_SECURE_API)
+#else // _MSC_VER || MINGW_HAS_SECURE_API
 
 /* Adding definitions from errno.h & crtdefs.h */
 #if !defined (_TRUNCATE)
@@ -97,7 +97,7 @@ extern int strcpy_s(char* dst, size_t dstSizeInBytes, const char* src);
 extern int strcat_s(char* dst, size_t dstSizeInBytes, const char* src);
 extern int strncpy_s(char* dst, size_t dstSizeInBytes, const char* src, size_t maxCount);
 extern int sprintf_s(char* dst, size_t dstSizeInBytes, const char* format, ...);
-#endif // _MSC_VER
+#endif // _MSC_VER || MINGW_HAS_SECURE_API
 
 extern unsigned long long strtoull_s(const char* nptr, char** endPtr, int base);
 extern float strtof_s(const char* nptr, char** endPtr);
