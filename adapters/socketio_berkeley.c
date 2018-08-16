@@ -263,7 +263,7 @@ static int lookup_address_and_initiate_socket_connection(SOCKET_IO_INSTANCE* soc
 
     struct addrinfo addrInfoHintIp;
     struct sockaddr_un addrInfoUn;
-    struct sockaddr* connect_addr;
+    struct sockaddr* connect_addr = NULL;
     socklen_t connect_addr_len;
     struct addrinfo* addrInfoIp = NULL;
 
