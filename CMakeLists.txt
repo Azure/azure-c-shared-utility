@@ -47,7 +47,7 @@ else()
     else()
         option(use_openssl "set use_openssl to ON if openssl is to be used, set to OFF to not use openssl" ON)
         option(use_socketio "set use_socketio to ON if socketio is to be included in the library, set to OFF if a different implementation will be provided" ON)
-    endif()    
+    endif()
     option(use_wolfssl "set use_wolfssl to ON if wolfssl is to be used, set to OFF to not use wolfssl" OFF)
 endif()
 
@@ -124,6 +124,10 @@ if(MSVC)
         if(${use_wolfssl})
             set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_WOLFSSL")
             set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_WOLFSSL")
+    
+            # Disables error if a bit-field is used on non-integer variable
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4 /wd4214")
+            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4 /wd4214")
         endif()
 
     endif()
@@ -374,8 +378,24 @@ endif()
 
 
 if(${build_as_dynamic})
+
+    # need to create a def file from existing def files due to cmake
+    # not letting us build more than one file
+    file(READ ./src/aziotsharedutil.def DEF_FILE_CONTENT)
+    file(WRITE "${CMAKE_BINARY_DIR}/shared_util.def" ${DEF_FILE_CONTENT})
+    file(READ ./src/aziotsharedutil_http.def DEF_FILE_CONTENT)
+    file(APPEND "${CMAKE_BINARY_DIR}/shared_util.def" ${DEF_FILE_CONTENT})
+    file(READ ./src/aziotsharedutil_wsio.def DEF_FILE_CONTENT)
+    file(APPEND "${CMAKE_BINARY_DIR}/shared_util.def" ${DEF_FILE_CONTENT})
+
+    set(def_files "${CMAKE_BINARY_DIR}/shared_util.def")
+
     #make sure we can link as dll/so
-    add_library(aziotsharedutil_dll SHARED ./src/aziotsharedutil.def ${source_c_files} ${source_h_files})
+    add_library(aziotsharedutil_dll SHARED
+        ${source_c_files}
+        ${source_h_files}
+        ${def_files}
+    )
     set_target_properties(aziotsharedutil_dll PROPERTIES OUTPUT_NAME "aziotsharedutil")
 endif()
 
