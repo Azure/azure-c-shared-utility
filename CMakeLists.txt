@@ -396,7 +396,7 @@ if(${build_as_dynamic})
         ${source_h_files}
         ${def_files}
     )
-    set_target_properties(aziotsharedutil_dll PROPERTIES OUTPUT_NAME "aziotsharedutil")
+    set_target_properties(aziotsharedutil_dll PROPERTIES OUTPUT_NAME "aziotsharedutil_dll")
 endif()
 
 set(aziotsharedutil_target_libs)
