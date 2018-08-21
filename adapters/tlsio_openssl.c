@@ -820,6 +820,79 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
         }
     }
 }
+#ifdef WIN32
+static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
+{
+    PCCERT_CONTEXT pContext = NULL;
+    X509_STORE * store = NULL;
+
+    if (tls_io_instance && tls_io_instance->ssl_context)
+    {
+       store = SSL_CTX_get_cert_store(tls_io_instance->ssl_context);
+    }
+    else
+    {
+        LogError("Can't access the ssl_context.");
+        return -1;
+    }
+    // open the system store of the current user
+    HCERTSTORE hSysStore = CertOpenStore(
+        CERT_STORE_PROV_SYSTEM,          // The store provider type
+        0,                               // The encoding type is not needed
+        (ULONG_PTR)NULL,                 // Use the default HCRYPTPROV
+        CERT_SYSTEM_STORE_CURRENT_USER,
+        L"ROOT");
+    if(hSysStore)
+    {
+        LogInfo("The system store was opened successfully.");
+    }
+    else
+    {
+        LogInfo("An error occurred during opening of the system store!");
+        return -1;
+    }
+    // load all the certificates into the openSSL cert store
+    while (1)
+    {
+        /*
+        To free a context obtained by a find or enumerate function, either pass it in as the previous context parameter to a subsequent invocation of the function,
+        or call the appropriate free function. --from MSDN
+        */
+        pContext = CertEnumCertificatesInStore(hSysStore, pContext);
+        if (!pContext)
+        {
+            break;
+        }
+
+        const unsigned char *encoded_cert = pContext->pbCertEncoded;
+
+        X509 * x509 = NULL;
+        x509 = d2i_X509(NULL, &encoded_cert, pContext->cbCertEncoded);
+        if (x509)
+        {
+            int i = X509_STORE_add_cert(store, x509);
+            if (i != 1)
+            {
+                LogError("certificate adding failed.");
+            }
+            X509_free(x509);
+        }
+    }    
+    if(hSysStore)
+    {
+        CertCloseStore(hSysStore, 0);
+    }
+
+    return 0;
+}
+#else
+static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
+{
+    (void)(tls_io_instance);
+    LogInfo("load_system_store is not implemented on non-windows platforms");
+    return 0;
+}
+#endif
 
 static int add_certificate_to_store(TLS_IO_INSTANCE* tls_io_instance, const char* certValue)
 {
@@ -933,7 +1006,14 @@ static int create_openssl_instance(TLS_IO_INSTANCE* tlsInstance)
         log_ERR_get_error("Failed allocating OpenSSL context.");
         result = __FAILURE__;
     }
-    else if (add_certificate_to_store(tlsInstance, tlsInstance->certificate) != 0)
+    else if (load_system_store(tlsInstance) != 0)
+    {
+        log_ERR_get_error("unable to load_system_store.");
+        result = __FAILURE__;
+    }
+    else if (
+        (tlsInstance->certificate != NULL) &&
+        add_certificate_to_store(tlsInstance, tlsInstance->certificate) != 0)
     {
         SSL_CTX_free(tlsInstance->ssl_context);
         tlsInstance->ssl_context = NULL;
