@@ -97,7 +97,7 @@ typedef void(*LOGGER_LOG_GETLASTERROR)(const char* file, const char* func, int l
 #endif
 
 #ifdef WIN32
-extern void xlogging_LogErrorWinHTTPWithGetLastErrorAsStringFormatter();
+extern void xlogging_LogErrorWinHTTPWithGetLastErrorAsStringFormatter(int errorMessageID);
 #endif
 
 #if defined _MSC_VER
@@ -110,8 +110,9 @@ extern LOGGER_LOG_GETLASTERROR xlogging_get_log_function_GetLastError(void);
 
 #define LogError(FORMAT, ...) do{ LOG(AZ_LOG_ERROR, LOG_LINE, FORMAT, __VA_ARGS__); }while((void)0,0)
 #define LogErrorWinHTTPWithGetLastErrorAsString(FORMAT, ...) do { \
+                int errorMessageID = GetLastError(); \
                 LogError(FORMAT, __VA_ARGS__); \
-                xlogging_LogErrorWinHTTPWithGetLastErrorAsStringFormatter(); \
+                xlogging_LogErrorWinHTTPWithGetLastErrorAsStringFormatter(errorMessageID); \
             } while((void)0,0)
 #else // _MSC_VER
 #define LogError(FORMAT, ...) do{ LOG(AZ_LOG_ERROR, LOG_LINE, FORMAT, ##__VA_ARGS__); }while((void)0,0)
@@ -119,8 +120,9 @@ extern LOGGER_LOG_GETLASTERROR xlogging_get_log_function_GetLastError(void);
 #ifdef WIN32
 // Included when compiling on Windows but not with MSVC, e.g. with MinGW.
 #define LogErrorWinHTTPWithGetLastErrorAsString(FORMAT, ...) do { \
+                int errorMessageID = GetLastError(); \
                 LogError(FORMAT, ##__VA_ARGS__); \
-                xlogging_LogErrorWinHTTPWithGetLastErrorAsStringFormatter(); \
+                xlogging_LogErrorWinHTTPWithGetLastErrorAsStringFormatter(errorMessageID); \
             } while((void)0,0)
 #endif // WIN32
 

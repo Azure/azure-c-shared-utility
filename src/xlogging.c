@@ -141,14 +141,13 @@ void LogBinary(const char* comment, const void* data, size_t size)
 #ifdef WIN32
 
 #ifdef WINCE
-void xlogging_LogErrorWinHTTPWithGetLastErrorAsStringFormatter() 
+void xlogging_LogErrorWinHTTPWithGetLastErrorAsStringFormatter(int errorMessageID) 
 {
-    ;
+    (void)errorMessageID;
 }
 #else // WINCE
-void xlogging_LogErrorWinHTTPWithGetLastErrorAsStringFormatter()
+void xlogging_LogErrorWinHTTPWithGetLastErrorAsStringFormatter(int errorMessageID)
 {
-    DWORD errorMessageID = GetLastError(); 
     char messageBuffer[MESSAGE_BUFFER_SIZE]; 
     if (errorMessageID == 0) 
     {
