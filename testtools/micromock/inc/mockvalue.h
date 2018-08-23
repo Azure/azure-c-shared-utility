@@ -160,13 +160,18 @@ public:
 
     virtual std::tstring ToString() const
     {
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4244)
+#endif // _MSC_VER
             std::string temp(m_Value.begin(), m_Value.end());
 
             std::tostringstream strStream;
             strStream << temp.c_str();
             return strStream.str();
-
-
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif // _MSC_VER
     }
 
     virtual bool EqualTo(_In_ const CMockValueBase* right)
@@ -223,11 +228,18 @@ public:
 
     virtual std::tstring ToString() const
     {
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4244)
+#endif // _MSC_VER
             std::string temp(m_Value.begin(), m_Value.end());
 
             std::tostringstream strStream;
             strStream << temp.c_str();
             return strStream.str();
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif // _MSC_VER
     }
 
     virtual bool EqualTo(_In_ const CMockValueBase* right)
