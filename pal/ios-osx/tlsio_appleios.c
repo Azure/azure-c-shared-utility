@@ -493,6 +493,7 @@ static void dowork_send(TLS_IO_INSTANCE* tls_io_instance)
                     // This is an unexpected error, and we need to bail out. Probably lost internet connection.
                     LogInfo("Hard error from CFWriteStreamWrite: %d", CFErrorGetCode(write_error));
                     process_and_destroy_head_message(tls_io_instance, IO_SEND_ERROR);
+                    CFRelease(write_error);
                 }
                 else
                 {
@@ -551,9 +552,20 @@ static void dowork_poll_open_ssl(TLS_IO_INSTANCE* tls_io_instance)
     else
     {
         CFErrorRef readError = CFReadStreamCopyError(tls_io_instance->sockRead);
-        CFErrorRef writeError = CFWriteStreamCopyError(tls_io_instance->sockWrite);
-        
-        LogInfo("Error opening streams - read error=%d;write error=%d", CFErrorGetCode(readError), CFErrorGetCode(writeError));
+        if (readError != NULL)
+        {
+            CFErrorRef writeError = CFWriteStreamCopyError(tls_io_instance->sockWrite);
+            if (writeError != NULL)
+            {
+                LogInfo("Error opening streams - read error=%d;write error=%d", CFErrorGetCode(readError), CFErrorGetCode(writeError));
+                CFRelease(writeError);
+            }
+            else
+            {
+                LogInfo("Error opening streams - read error=%d", CFErrorGetCode(readError));
+            }
+            CFRelease(readError);
+        }
         enter_open_error_state(tls_io_instance);
     }
 }

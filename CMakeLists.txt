@@ -87,7 +87,11 @@ if(${use_openssl})
         set(OPENSSL_ROOT_DIR $ENV{OpenSSLDir} CACHE PATH "")
     endif()
 
-    find_package(OpenSSL REQUIRED)
+    # If OpenSSL::SSL OR OpenSSL::Crypto are not set then you need to run
+    # the find package for openssl
+    if (NOT TARGET OpenSSL::SSL OR NOT TARGET OpenSSL::Crypto OR NOT ${OPENSSL_INCLUDE_DIR})
+        find_package(OpenSSL REQUIRED)
+    endif()
     include_directories(${OPENSSL_INCLUDE_DIR})
 endif()
 
