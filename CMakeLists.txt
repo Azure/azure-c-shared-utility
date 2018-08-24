@@ -340,6 +340,11 @@ endif()
 
 #this is the product (a library)
 add_library(aziotsharedutil ${source_c_files} ${source_h_files})
+
+if(WIN32 AND SPECTRE_MITIGATION)
+    set_property(TARGET aziotsharedutil PROPERTY VS_GLOBAL_SpectreMitigation "Spectre")
+endif()
+
 setTargetBuildProperties(aziotsharedutil)
 
 target_include_directories(aziotsharedutil PUBLIC $<BUILD_INTERFACE:${SHARED_UTIL_INC_FOLDER}>)
