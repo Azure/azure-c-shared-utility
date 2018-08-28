@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdarg.h>
+#include <string.h>
 #include <limits.h>
 #include <float.h>
 #include <math.h>
@@ -70,6 +71,7 @@ int strcat_s(char* dst, size_t dstSizeInBytes, const char* src)
         else
         {
             size_t dstStrLen = 0;
+            size_t src_len = strlen(src);
 #ifdef __STDC_LIB_EXT1__
             dstStrLen = strnlen_s(dst, dstSizeInBytes);
 #else
@@ -84,12 +86,19 @@ int strcat_s(char* dst, size_t dstSizeInBytes, const char* src)
             {
                 result = EINVAL;
             }
+            else if ((src_len + dstStrLen) >= dstSizeInBytes)
+            {
+                dst[0] = '\0';
+                result = ERANGE;
+            }
             else
             {
                 /*Codes_SRS_CRT_ABSTRACTIONS_99_009: [The initial character of src shall overwrite the terminating null character of dst.]*/
-                (void)strncpy(&dst[dstStrLen], src, dstSizeInBytes - dstStrLen);
+                //memset(&dst[dstStrLen], 0, dstSizeInBytes - dstStrLen);
+                if (memcpy(&dst[dstStrLen], src, dstSizeInBytes - dstStrLen) == NULL)
+                //(void)strncpy(&dst[dstStrLen], src, dstSizeInBytes - dstStrLen);
                 /*Codes_SRS_CRT_ABSTRACTIONS_99_006: [If the dstSizeInBytes is 0 or smaller than the required size for dst & src, the error code returned shall be ERANGE & dst[0] set to 0.]*/
-                if (dst[dstSizeInBytes-1] != '\0')
+                //if (dst[dstSizeInBytes-1] != '\0')
                 {
                     dst[0] = '\0';
                     result = ERANGE;
@@ -293,7 +302,7 @@ unsigned long long strtoull_s(const char* nptr, char** endptr, int base)
     bool validStr = true;
     char* runner = (char*)nptr;
     bool isNegative = false;
-	int digitVal;
+    int digitVal;
 
     /*Codes_SRS_CRT_ABSTRACTIONS_21_005: [The strtoull_s must convert number using base 2 to 36.]*/
     /*Codes_SRS_CRT_ABSTRACTIONS_21_012: [If the subject sequence is empty or does not have the expected form, the strtoull_s must not perform any conversion; the value of nptr is stored in the object pointed to by endptr, provided that endptr is not a NULL pointer.]*/
@@ -465,7 +474,7 @@ static FLOAT_STRING_TYPE splitFloatString(const char* nptr, char** endptr, int *
     unsigned long long ullFraction = 0;
     int integerSize = 0;
     int fractionSize = 0;
-	char* startptr;
+    char* startptr;
 
     (*endptr) = (char*)nptr;
 
@@ -681,7 +690,7 @@ long double strtold_s(const char* nptr, char** endptr)
 int mallocAndStrcpy_s(char** destination, const char* source)
 {
     int result;
-	int copied_result;
+    int copied_result;
     /*Codes_SRS_CRT_ABSTRACTIONS_99_036: [destination parameter or source parameter is NULL, the error code returned shall be EINVAL and destination shall not be modified.]*/
     if ((destination == NULL) || (source == NULL))
     {

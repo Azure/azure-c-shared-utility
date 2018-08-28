@@ -291,7 +291,8 @@ static int lookup_address_and_initiate_socket_connection(SOCKET_IO_INSTANCE* soc
     }
     else
     {
-        if (strlen(socket_io_instance->hostname) + 1 > sizeof(addrInfoUn.sun_path))
+        size_t hostname_len = strlen(socket_io_instance->hostname);
+        if (hostname_len + 1 > sizeof(addrInfoUn.sun_path))
         {
             LogError("Hostname %s is too long for a unix socket (max len = %d)", socket_io_instance->hostname, sizeof(addrInfoUn.sun_path));
             result = __FAILURE__;
@@ -300,8 +301,9 @@ static int lookup_address_and_initiate_socket_connection(SOCKET_IO_INSTANCE* soc
         {
             memset(&addrInfoUn, 0, sizeof(addrInfoUn));
             addrInfoUn.sun_family = AF_UNIX;
-            strncpy(addrInfoUn.sun_path, socket_io_instance->hostname, sizeof(addrInfoUn.sun_path) - 1);
-            
+            // No need to add NULL terminator due to the above memset
+            (void)memcpy(addrInfoUn.sun_path, socket_io_instance->hostname, hostname_len);
+
             connect_addr = (struct sockaddr*)&addrInfoUn;
             connect_addr_len = sizeof(addrInfoUn);
             result = 0;
