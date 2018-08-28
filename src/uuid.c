@@ -14,7 +14,7 @@
 #define __SUCCESS__                 0
 #define UUID_FORMAT_STRING          "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x"
 
-int UUID_from_string(const char* uuid_string, UUID* uuid)
+int UUID_from_string(const char* uuid_string, UUID_T* uuid)
 {
     int result;
 
@@ -75,7 +75,7 @@ int UUID_from_string(const char* uuid_string, UUID* uuid)
     return result;
 }
 
-char* UUID_to_string(UUID* uuid)
+char* UUID_to_string(UUID_T* uuid)
 {
     char* result;
 
@@ -119,7 +119,7 @@ char* UUID_to_string(UUID* uuid)
     return result;
 }
 
-int UUID_generate(UUID* uuid)
+int UUID_generate(UUID_T* uuid)
 {
     int result;
 
@@ -141,7 +141,7 @@ int UUID_generate(UUID* uuid)
         }
         else
         {
-            memset(uuid_string, 0, sizeof(char) * UUID_STRING_SIZE);
+            (void)memset(uuid_string, 0, sizeof(char) * UUID_STRING_SIZE);
 
             // Codes_SRS_UUID_09_002: [ UUID_generate shall obtain an UUID string from UniqueId_Generate ]
             if (UniqueId_Generate(uuid_string, UUID_STRING_SIZE) != UNIQUEID_OK)
@@ -150,7 +150,7 @@ int UUID_generate(UUID* uuid)
                 LogError("Failed generating UUID");
                 result = __FAILURE__;
             }
-            // Codes_SRS_UUID_09_004: [ The UUID string shall be parsed into an UUID type (16 unsigned char array) and filled in `uuid` ]  
+            // Codes_SRS_UUID_09_004: [ The UUID string shall be parsed into an UUID_T type (16 unsigned char array) and filled in `uuid` ]  
             else if (UUID_from_string(uuid_string, uuid) != 0)
             {
                 // Codes_SRS_UUID_09_005: [ If `uuid` fails to be set, UUID_generate shall fail and return a non-zero value ]
