@@ -57,11 +57,12 @@ DEFINE_ENUM(HTTPAPI_RESULT, HTTPAPI_RESULT_VALUES);
 
 #define HTTPAPI_REQUEST_TYPE_VALUES\
     HTTPAPI_REQUEST_GET,            \
-    HTTPAPI_REQUEST_HEAD,           \
     HTTPAPI_REQUEST_POST,           \
     HTTPAPI_REQUEST_PUT,            \
     HTTPAPI_REQUEST_DELETE,         \
-    HTTPAPI_REQUEST_PATCH           \
+    HTTPAPI_REQUEST_PATCH,          \
+    HTTPAPI_REQUEST_HEAD            \
+
 
 /** @brief Enumeration specifying the HTTP request verbs accepted by
  *	the HTTPAPI module.
