@@ -37,7 +37,7 @@ static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 #define UUID_STRING_LENGTH  36
 #define UUID_STRING_SIZE    (UUID_STRING_LENGTH + 1)
 
-static UUID TEST_UUID = { 222, 193, 74, 152, 197, 252, 67, 14, 180, 227, 51, 193, 196, 52, 220, 175 };
+static UUID_T TEST_UUID = { 222, 193, 74, 152, 197, 252, 67, 14, 180, 227, 51, 193, 196, 52, 220, 175 };
 static char* TEST_UUID_STRING = "dec14a98-c5fc-430e-b4e3-33c1c434dcaf";
 
 static UNIQUEID_RESULT mock_UniqueId_Generate_result;
@@ -124,12 +124,12 @@ TEST_FUNCTION(UUID_generate_NULL_uuid)
 }
 
 // Tests_SRS_UUID_09_002: [ UUID_generate shall obtain an UUID string from UniqueId_Generate ]
-// Tests_SRS_UUID_09_004: [ The UUID string shall be parsed into an UUID type (16 unsigned char array) and filled in `uuid` ]  
+// Tests_SRS_UUID_09_004: [ The UUID string shall be parsed into an UUID_T type (16 unsigned char array) and filled in `uuid` ]  
 // Tests_SRS_UUID_09_006: [ If no failures occur, UUID_generate shall return zero ]
 TEST_FUNCTION(UUID_generate_succeed)
 {
     //Arrange
-    UUID uuid;
+    UUID_T uuid;
     int result;
     char uuid_string[UUID_STRING_SIZE];
 
@@ -160,7 +160,7 @@ TEST_FUNCTION(UUID_generate_succeed)
 TEST_FUNCTION(UUID_generate_failure_checks)
 {
     //Arrange
-    UUID uuid;
+    UUID_T uuid;
     int result;
     size_t i;
     char uuid_string[UUID_STRING_SIZE];
@@ -271,7 +271,7 @@ TEST_FUNCTION(UUID_from_string_NULL_uuid_string)
 {
     //Arrange
     int result;
-    UUID uuid;
+    UUID_T uuid;
 
     umock_c_reset_all_calls();
 
@@ -305,7 +305,7 @@ TEST_FUNCTION(UUID_from_string_succeed)
 {
     //Arrange
     int result;
-    UUID uuid;
+    UUID_T uuid;
 
     umock_c_reset_all_calls();
 

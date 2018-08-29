@@ -1784,33 +1784,40 @@ static void on_underlying_io_send_complete(void* context, IO_SEND_RESULT send_re
     {
         LIST_ITEM_HANDLE ws_pending_send_list_item = (LIST_ITEM_HANDLE)context;
         WS_PENDING_SEND* ws_pending_send = (WS_PENDING_SEND*)singlylinkedlist_item_get_value(ws_pending_send_list_item);
-        UWS_CLIENT_HANDLE uws_client = ws_pending_send->uws_client;
-        WS_SEND_FRAME_RESULT ws_send_frame_result;
-
-        switch (send_result)
+        if (ws_pending_send != NULL)
         {
-        /* Codes_SRS_UWS_CLIENT_01_436: [ When `on_underlying_io_send_complete` is called with any other error code, the send shall be indicated to the uws user by calling `on_ws_send_frame_complete` with `WS_SEND_FRAME_ERROR`. ]*/
-        default:
-        case IO_SEND_ERROR:
-            /* Codes_SRS_UWS_CLIENT_01_390: [ When `on_underlying_io_send_complete` is called with `IO_SEND_ERROR` as a result of sending a WebSocket frame to the underlying IO, the send shall be indicated to the uws user by calling `on_ws_send_frame_complete` with `WS_SEND_FRAME_ERROR`. ]*/
-            ws_send_frame_result = WS_SEND_FRAME_ERROR;
-            break;
+            UWS_CLIENT_HANDLE uws_client = ws_pending_send->uws_client;
+            WS_SEND_FRAME_RESULT ws_send_frame_result;
 
-        case IO_SEND_OK:
-            /* Codes_SRS_UWS_CLIENT_01_389: [ When `on_underlying_io_send_complete` is called with `IO_SEND_OK` as a result of sending a WebSocket frame to the underlying IO, the send shall be indicated to the uws user by calling `on_ws_send_frame_complete` with `WS_SEND_FRAME_OK`. ]*/
-            ws_send_frame_result = WS_SEND_FRAME_OK;
-            break;
+            switch (send_result)
+            {
+                /* Codes_SRS_UWS_CLIENT_01_436: [ When `on_underlying_io_send_complete` is called with any other error code, the send shall be indicated to the uws user by calling `on_ws_send_frame_complete` with `WS_SEND_FRAME_ERROR`. ]*/
+            default:
+            case IO_SEND_ERROR:
+                /* Codes_SRS_UWS_CLIENT_01_390: [ When `on_underlying_io_send_complete` is called with `IO_SEND_ERROR` as a result of sending a WebSocket frame to the underlying IO, the send shall be indicated to the uws user by calling `on_ws_send_frame_complete` with `WS_SEND_FRAME_ERROR`. ]*/
+                ws_send_frame_result = WS_SEND_FRAME_ERROR;
+                break;
 
-        case IO_SEND_CANCELLED:
-            /* Codes_SRS_UWS_CLIENT_01_391: [ When `on_underlying_io_send_complete` is called with `IO_SEND_CANCELLED` as a result of sending a WebSocket frame to the underlying IO, the send shall be indicated to the uws user by calling `on_ws_send_frame_complete` with `WS_SEND_FRAME_CANCELLED`. ]*/
-            ws_send_frame_result = WS_SEND_FRAME_CANCELLED;
-            break;
+            case IO_SEND_OK:
+                /* Codes_SRS_UWS_CLIENT_01_389: [ When `on_underlying_io_send_complete` is called with `IO_SEND_OK` as a result of sending a WebSocket frame to the underlying IO, the send shall be indicated to the uws user by calling `on_ws_send_frame_complete` with `WS_SEND_FRAME_OK`. ]*/
+                ws_send_frame_result = WS_SEND_FRAME_OK;
+                break;
+
+            case IO_SEND_CANCELLED:
+                /* Codes_SRS_UWS_CLIENT_01_391: [ When `on_underlying_io_send_complete` is called with `IO_SEND_CANCELLED` as a result of sending a WebSocket frame to the underlying IO, the send shall be indicated to the uws user by calling `on_ws_send_frame_complete` with `WS_SEND_FRAME_CANCELLED`. ]*/
+                ws_send_frame_result = WS_SEND_FRAME_CANCELLED;
+                break;
+            }
+
+            if (complete_send_frame(ws_pending_send, ws_pending_send_list_item, ws_send_frame_result) != 0)
+            {
+                /* Codes_SRS_UWS_CLIENT_01_433: [ If `singlylinkedlist_remove` fails an error shall be indicated by calling the `on_ws_error` callback with `WS_ERROR_CANNOT_REMOVE_SENT_ITEM_FROM_LIST`. ]*/
+                indicate_ws_error(uws_client, WS_ERROR_CANNOT_REMOVE_SENT_ITEM_FROM_LIST);
+            }
         }
-
-        if (complete_send_frame(ws_pending_send, ws_pending_send_list_item, ws_send_frame_result) != 0)
+        else
         {
-            /* Codes_SRS_UWS_CLIENT_01_433: [ If `singlylinkedlist_remove` fails an error shall be indicated by calling the `on_ws_error` callback with `WS_ERROR_CANNOT_REMOVE_SENT_ITEM_FROM_LIST`. ]*/
-            indicate_ws_error(uws_client, WS_ERROR_CANNOT_REMOVE_SENT_ITEM_FROM_LIST);
+            LogError("Failing getting singlylinkedlist_item_get_value on_underlying_io_send_complete");
         }
     }
 }

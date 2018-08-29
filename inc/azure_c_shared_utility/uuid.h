@@ -16,26 +16,26 @@ extern "C" {
 
 #include "azure_c_shared_utility/umock_c_prod.h"
 
-typedef unsigned char UUID[16];
+typedef unsigned char UUID_T[16];
 
 /* @brief               Generates a true UUID
 *  @param uuid          A pre-allocated buffer for the bytes of the generated UUID
 *  @returns             Zero if no failures occur, non-zero otherwise.
 */
-MOCKABLE_FUNCTION(, int, UUID_generate, UUID*, uuid);
+MOCKABLE_FUNCTION(, int, UUID_generate, UUID_T*, uuid);
 
 /* @brief               Gets the UUID value (byte sequence) of an well-formed UUID string.
 *  @param uuid_string   A null-terminated well-formed UUID string (e.g., "7f907d75-5e13-44cf-a1a3-19a01a2b4528").
 *  @param uuid          Sequence of bytes representing an UUID.
 *  @returns             Zero if no failures occur, non-zero otherwise.
 */
-MOCKABLE_FUNCTION(, int, UUID_from_string, const char*, uuid_string, UUID*, uuid);
+MOCKABLE_FUNCTION(, int, UUID_from_string, const char*, uuid_string, UUID_T*, uuid);
 
 /* @brief               Gets the string representation of the UUID value.
 *  @param uuid          Sequence of bytes representing an UUID.
 *  @returns             A null-terminated string representation of the UUID value provided (e.g., "7f907d75-5e13-44cf-a1a3-19a01a2b4528").
 */
-MOCKABLE_FUNCTION(, char*, UUID_to_string, UUID*, uuid);
+MOCKABLE_FUNCTION(, char*, UUID_to_string, UUID_T*, uuid);
 
 #ifdef __cplusplus
 }

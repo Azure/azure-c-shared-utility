@@ -615,6 +615,7 @@ BUFFER_HANDLE BUFFER_clone(BUFFER_HANDLE handle)
         {
             if (BUFFER_safemalloc(b, suppliedBuff->size) != 0)
             {
+                free(b);
                 LogError("Failure: allocating temp buffer.");
                 result = NULL;
             }
