@@ -46,6 +46,8 @@ typedef struct HTTP_HANDLE_DATA_TAG
     char*           certificate;
     char*           x509ClientCertificate;
     char*           x509ClientPrivateKey;
+    char*           tlsIoVersion;
+
     XIO_HANDLE      xio_handle;
     size_t          received_bytes_count;
     unsigned char*  received_bytes;
@@ -243,6 +245,7 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
                 http_instance->certificate = NULL;
                 http_instance->x509ClientCertificate = NULL;
                 http_instance->x509ClientPrivateKey = NULL;
+                http_instance->tlsIoVersion = NULL;
             }
         }
     }
@@ -325,6 +328,10 @@ void HTTPAPI_CloseConnection(HTTP_HANDLE handle)
         if (http_instance->x509ClientPrivateKey)
         {
             free(http_instance->x509ClientPrivateKey);
+        }
+        if (http_instance->tlsIoVersion)
+        {
+            free(http_instance->tlsIoVersion);
         }
         free(http_instance);
     }
@@ -702,9 +709,16 @@ static HTTPAPI_RESULT OpenXIOConnection(HTTP_HANDLE_DATA* http_instance)
     {
         http_instance->is_io_error = 0;
 
+        if ((http_instance->tlsIoVersion != NULL) &&
+            (xio_setoption(http_instance->xio_handle, OPTION_TLS_VERSION, http_instance->tlsIoVersion) != 0))
+        {
+            result = HTTPAPI_SET_OPTION_FAILED;
+            LogInfo("Could not set TLS IO version");
+        }
+
         /*Codes_SRS_HTTPAPI_COMPACT_21_022: [ If a Certificate was provided, the HTTPAPI_ExecuteRequest shall set this option on the transport layer. ]*/
         if ((http_instance->certificate != NULL) &&
-            (xio_setoption(http_instance->xio_handle, "TrustedCerts", http_instance->certificate) != 0))
+            (xio_setoption(http_instance->xio_handle, OPTION_TRUSTED_CERT, http_instance->certificate) != 0))
         {
             /*Codes_SRS_HTTPAPI_COMPACT_21_023: [ If the transport failed setting the Certificate, the HTTPAPI_ExecuteRequest shall not send any request and return HTTPAPI_SET_OPTION_FAILED. ]*/
             result = HTTPAPI_SET_OPTION_FAILED;
@@ -1280,6 +1294,26 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
         {
             /*Codes_SRS_HTTPAPI_COMPACT_21_064: [ If the HTTPAPI_SetOption get success setting the option, it shall return HTTPAPI_OK. ]*/
             (void)strcpy(http_instance->certificate, (const char*)value);
+            result = HTTPAPI_OK;
+        }
+    }
+    else if (strcmp(OPTION_TLS_VERSION, optionName) == 0)
+    {
+        if (http_instance->tlsIoVersion)
+        {
+            free(http_instance->tlsIoVersion);
+        }
+        int len;
+        len = (int)strlen((char*)value);
+        http_instance->tlsIoVersion = (char*)malloc((len + 1) * sizeof(char));
+        if (http_instance->tlsIoVersion == NULL)
+        {
+            result = HTTPAPI_ALLOC_FAILED;
+            LogInfo("unable to allocate memory for the TLS IO version in HTTPAPI_SetOption");
+        }
+        else
+        {
+            (void)strcpy(http_instance->tlsIoVersion, (const char*)value);
             result = HTTPAPI_OK;
         }
     }

@@ -38,13 +38,6 @@ typedef enum TLSIO_STATE_TAG
     TLSIO_STATE_ERROR
 } TLSIO_STATE;
 
-typedef enum TLSIO_VERSION_TAG
-{
-    VERSION_1_0,
-    VERSION_1_1,
-    VERSION_1_2,
-} TLSIO_VERSION;
-
 static bool is_an_opening_state(TLSIO_STATE state)
 {
     // TLSIO_STATE_HANDSHAKE_FAILED is deliberately not one of these states.
@@ -168,15 +161,15 @@ static void* tlsio_openssl_CloneOption(const char* name, const void* value)
         {
             int int_value;
 
-            if (*(TLSIO_VERSION*)value == VERSION_1_0)
+            if (*(TLSIO_VERSION*)value == OPTION_TLS_VERSION_1_0)
             {
                 int_value = 10;
             }
-            else if (*(TLSIO_VERSION*)value == VERSION_1_1)
+            else if (*(TLSIO_VERSION*)value == OPTION_TLS_VERSION_1_1)
             {
                 int_value = 11;
             }
-            else if (*(TLSIO_VERSION*)value == VERSION_1_2)
+            else if (*(TLSIO_VERSION*)value == OPTION_TLS_VERSION_1_2)
             {
                 int_value = 12;
             }
@@ -1056,11 +1049,11 @@ static int create_openssl_instance(TLS_IO_INSTANCE* tlsInstance)
     const SSL_METHOD* method = NULL;
 
 #if (OPENSSL_VERSION_NUMBER < 0x10100000L) || (OPENSSL_VERSION_NUMBER >= 0x20000000L)
-    if (tlsInstance->tls_version == VERSION_1_2)
+    if (tlsInstance->tls_version == OPTION_TLS_VERSION_1_2)
     {
         method = TLSv1_2_method();
     }
-    else if (tlsInstance->tls_version == VERSION_1_1)
+    else if (tlsInstance->tls_version == OPTION_TLS_VERSION_1_1)
     {
         method = TLSv1_1_method();
     }
@@ -1280,7 +1273,7 @@ CONCRETE_IO_HANDLE tlsio_openssl_create(void* io_create_parameters)
                 result->x509_certificate = NULL;
                 result->x509_private_key = NULL;
 
-                result->tls_version = VERSION_1_0;
+                result->tls_version = OPTION_TLS_VERSION_1_0;
 
                 result->underlying_io = xio_create(underlying_io_interface, io_interface_parameters);
                 if (result->underlying_io == NULL)
@@ -1673,20 +1666,20 @@ int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
                 const int version_option = *(const int*)value;
                 if (version_option == 0 || version_option == 10)
                 {
-                    tls_io_instance->tls_version = VERSION_1_0;
+                    tls_io_instance->tls_version = OPTION_TLS_VERSION_1_0;
                 }
                 else if (version_option == 11)
                 {
-                    tls_io_instance->tls_version = VERSION_1_1;
+                    tls_io_instance->tls_version = OPTION_TLS_VERSION_1_1;
                 }
                 else if (version_option == 12)
                 {
-                    tls_io_instance->tls_version = VERSION_1_2;
+                    tls_io_instance->tls_version = OPTION_TLS_VERSION_1_2;
                 }
                 else
                 {
                     LogInfo("Value of TLS version option %d is not found shall default to version 1.2", version_option);
-                    tls_io_instance->tls_version = VERSION_1_2;
+                    tls_io_instance->tls_version = OPTION_TLS_VERSION_1_2;
                 }
                 result = 0;
             }

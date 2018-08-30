@@ -40,6 +40,13 @@ extern "C"
 
     static STATIC_VAR_UNUSED const char* const OPTION_TLS_VERSION = "tls_version";
 
+    typedef enum TLSIO_VERSION_TAG
+    {
+        OPTION_TLS_VERSION_1_0 = 1,
+        OPTION_TLS_VERSION_1_1,
+        OPTION_TLS_VERSION_1_2,
+    } TLSIO_VERSION;
+
 #ifdef __cplusplus
 }
 #endif
