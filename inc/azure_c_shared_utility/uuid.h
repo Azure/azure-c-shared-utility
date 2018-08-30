@@ -18,6 +18,14 @@ extern "C" {
 
 typedef unsigned char UUID_T[16];
 
+/* These 2 strings can be conveniently used directly in printf statements
+  Notice that PRI_UUID has to be used like any other print format specifier, meaning it
+  has to be preceded with % */
+#define PRI_UUID        "02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x"
+#define UUID_FORMAT_VALUES(uuid) \
+    (uuid)[0], (uuid)[1], (uuid)[2], (uuid)[3], (uuid)[4], (uuid)[5], (uuid)[6], (uuid)[7], \
+    (uuid)[8], (uuid)[9], (uuid)[10], (uuid)[11], (uuid)[12], (uuid)[13], (uuid)[14], (uuid)[15] \
+
 /* @brief               Generates a true UUID
 *  @param uuid          A pre-allocated buffer for the bytes of the generated UUID
 *  @returns             Zero if no failures occur, non-zero otherwise.

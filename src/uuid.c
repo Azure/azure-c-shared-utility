@@ -12,7 +12,6 @@
 #define UUID_STRING_LENGTH          36
 #define UUID_STRING_SIZE            (UUID_STRING_LENGTH + 1)
 #define __SUCCESS__                 0
-#define UUID_FORMAT_STRING          "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x"
 
 int UUID_from_string(const char* uuid_string, UUID_T* uuid)
 {
@@ -99,12 +98,8 @@ char* UUID_to_string(UUID_T* uuid)
         uuid_bytes = (unsigned char*)uuid;
 
         // Codes_SRS_UUID_09_014: [ Each character in `uuid` shall be written in the respective positions of `uuid_string` as a 2-digit HEX value ]  
-        number_of_chars_written = sprintf(result, UUID_FORMAT_STRING,
-            uuid_bytes[0], uuid_bytes[1], uuid_bytes[2], uuid_bytes[3],
-            uuid_bytes[4], uuid_bytes[5],
-            uuid_bytes[6], uuid_bytes[7],
-            uuid_bytes[8], uuid_bytes[9],
-            uuid_bytes[10], uuid_bytes[11], uuid_bytes[12], uuid_bytes[13], uuid_bytes[14], uuid_bytes[15]);
+        number_of_chars_written = sprintf(result, "%" PRI_UUID,
+            UUID_FORMAT_VALUES(uuid_bytes));
 
         if (number_of_chars_written != UUID_STRING_LENGTH)
         {
