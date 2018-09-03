@@ -89,7 +89,7 @@ void LogBinary(const char* comment, const void* data, size_t size)
     const unsigned char* bufAsChar = (const unsigned char*)data;
     const unsigned char* startPos = bufAsChar;
 
-    LOG(AZ_LOG_TRACE, LOG_LINE, "%s     %zu bytes", comment, size);
+    LOG(AZ_LOG_TRACE, LOG_LINE, "%s     %lu bytes", comment, size);
 
     /* Print the whole buffer. */
     for (i = 0; i < size; i++)

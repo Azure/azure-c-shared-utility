@@ -178,7 +178,7 @@ BEGIN_TEST_SUITE(strings_unittests)
 
             str_handle = STRING_new();
 
-            sprintf(tmp_msg, "STRING_new failure in test %zu/%zu", index+1, count);
+            sprintf(tmp_msg, "STRING_new failure in test %lu/%lu", index+1, count);
 
             //assert
             ASSERT_IS_NULL_WITH_MSG(str_handle, tmp_msg);
@@ -274,7 +274,7 @@ BEGIN_TEST_SUITE(strings_unittests)
 
             str_handle = STRING_construct(TEST_STRING_VALUE);
 
-            sprintf(tmp_msg, "STRING_construct failure in test %zu/%zu", index+1, count);
+            sprintf(tmp_msg, "STRING_construct failure in test %lu/%lu", index+1, count);
 
             //assert
             ASSERT_IS_NULL_WITH_MSG(str_handle, tmp_msg);
@@ -418,7 +418,7 @@ BEGIN_TEST_SUITE(strings_unittests)
 
             str_handle = STRING_construct_sprintf(FORMAT_STRING, TEST_STRING_VALUE);
 
-            sprintf(tmp_msg, "STRING_construct_sprintf failure in test %zu/%zu", index+1, count);
+            sprintf(tmp_msg, "STRING_construct_sprintf failure in test %lu/%lu", index+1, count);
 
             //assert
             ASSERT_IS_NULL_WITH_MSG(str_handle, tmp_msg);
@@ -786,7 +786,7 @@ BEGIN_TEST_SUITE(strings_unittests)
 
             nResult = STRING_quote(str_handle);
 
-            sprintf(tmp_msg, "STRING_quote failure in test %zu/%zu", index+1, count);
+            sprintf(tmp_msg, "STRING_quote failure in test %lu/%lu", index+1, count);
 
             //assert
             ASSERT_ARE_NOT_EQUAL_WITH_MSG(int, 0, nResult, tmp_msg);
@@ -1016,7 +1016,7 @@ BEGIN_TEST_SUITE(strings_unittests)
 
             str_result = STRING_clone(str_handle);
 
-            sprintf(tmp_msg, "STRING_clone failure in test %zu/%zu", index+1, count);
+            sprintf(tmp_msg, "STRING_clone failure in test %lu/%lu", index+1, count);
 
             //assert
             ASSERT_IS_NULL_WITH_MSG(str_result, tmp_msg);
@@ -1125,7 +1125,7 @@ BEGIN_TEST_SUITE(strings_unittests)
 
             result = STRING_construct_n("qq", 2);
 
-            sprintf(tmp_msg, "STRING_construct_n failure in test %zu/%zu", index+1, count);
+            sprintf(tmp_msg, "STRING_construct_n failure in test %lu/%lu", index+1, count);
 
             //assert
             ASSERT_IS_NULL_WITH_MSG(result, tmp_msg);
@@ -1326,7 +1326,7 @@ BEGIN_TEST_SUITE(strings_unittests)
 
             result = STRING_new_JSON("ab");
 
-            sprintf(tmp_msg, "STRING_new_JSON failure in test %zu/%zu", index+1, count);
+            sprintf(tmp_msg, "STRING_new_JSON failure in test %lu/%lu", index+1, count);
 
             //assert
             ASSERT_IS_NULL_WITH_MSG(result, tmp_msg);
@@ -1564,7 +1564,7 @@ BEGIN_TEST_SUITE(strings_unittests)
 
             str_result = STRING_sprintf(str_handle, FORMAT_STRING, TEST_STRING_VALUE);
 
-            sprintf(tmp_msg, "STRING_sprintf failure in test %zu/%zu", index+1, count);
+            sprintf(tmp_msg, "STRING_sprintf failure in test %lu/%lu", index+1, count);
 
             ///assert
             ASSERT_ARE_NOT_EQUAL(int, str_result, 0);

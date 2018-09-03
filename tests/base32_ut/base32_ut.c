@@ -254,7 +254,7 @@ BEGIN_TEST_SUITE(base32_ut)
         for (index = 0; index < num_elements; index++)
         {
             char tmp_msg[64];
-            sprintf(tmp_msg, "Base32_Encode_Bytes failure in test %zu", index);
+            sprintf(tmp_msg, "Base32_Encode_Bytes failure in test %lu", index);
 
             result = Base32_Encode_Bytes(test_val_len[index].input_data, test_val_len[index].input_len);
 
@@ -321,7 +321,7 @@ BEGIN_TEST_SUITE(base32_ut)
         {
             BUFFER_HANDLE input_buff;
             char tmp_msg[64];
-            sprintf(tmp_msg, "Base32_Encode failure in test %zu", index);
+            sprintf(tmp_msg, "Base32_Encode failure in test %lu", index);
 
             input_buff = (BUFFER_HANDLE)&test_val_len[index];
             result = Base32_Encode(input_buff);
@@ -413,7 +413,7 @@ BEGIN_TEST_SUITE(base32_ut)
 
             result = Base32_Decode_String(test_val_len[index].base32_data);
 
-            sprintf(tmp_msg, "Base32_Decode failure in test %zu", index);
+            sprintf(tmp_msg, "Base32_Decode failure in test %lu", index);
 
             //assert
             ASSERT_IS_NOT_NULL(result);
