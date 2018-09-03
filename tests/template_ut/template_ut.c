@@ -358,7 +358,7 @@ BEGIN_TEST_SUITE(template_ut)
             umock_c_negative_tests_reset();
             umock_c_negative_tests_fail_call(i);
 
-            (void)sprintf(temp_str, "On failed call %zu", i);
+            (void)sprintf(temp_str, "On failed call %lu", i);
 
             ///act
             result = target_create(SIZEOF_FOO_MEMORY);
@@ -408,7 +408,7 @@ BEGIN_TEST_SUITE(template_ut)
                 umock_c_negative_tests_reset();
                 umock_c_negative_tests_fail_call(i);
 
-                (void)sprintf(temp_str, "On failed call %zu", i);
+                (void)sprintf(temp_str, "On failed call %lu", i);
 
                 ///act
                 result = target_create(SIZEOF_FOO_MEMORY);
@@ -457,7 +457,7 @@ BEGIN_TEST_SUITE(template_ut)
             umock_c_negative_tests_reset();
             umock_c_negative_tests_fail_call(i);
 
-            (void)sprintf(temp_str, "On failed call %zu", i);
+            (void)sprintf(temp_str, "On failed call %lu", i);
 
             ///act
             result = target_foo();

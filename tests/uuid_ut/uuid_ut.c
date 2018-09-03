@@ -183,7 +183,7 @@ TEST_FUNCTION(UUID_generate_failure_checks)
         umock_c_negative_tests_reset();
         umock_c_negative_tests_fail_call(i);
 
-        (void)sprintf(temp_str, "On failed call %zu", i);
+        (void)sprintf(temp_str, "On failed call %lu", i);
 
         // act
         result = UUID_generate(&uuid);
@@ -253,7 +253,7 @@ TEST_FUNCTION(UUID_to_string_failure_checks)
         umock_c_negative_tests_reset();
         umock_c_negative_tests_fail_call(i);
 
-        (void)sprintf(temp_str, "On failed call %zu", i);
+        (void)sprintf(temp_str, "On failed call %lu", i);
 
         // act
         result = UUID_to_string(&TEST_UUID);

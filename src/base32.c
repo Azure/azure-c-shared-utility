@@ -164,7 +164,7 @@ static BUFFER_HANDLE base32_decode_impl(const char* source)
     if (src_length % BASE32_INPUT_SIZE != 0)
     {
         /* Codes_SRS_BASE32_07_021: [ If the source length is not evenly divisible by 8, base32_decode_impl shall return NULL. ] */
-        LogError("Failure invalid input length %zu", src_length);
+        LogError("Failure invalid input length %lu", src_length);
         result = NULL;
     }
     else

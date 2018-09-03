@@ -1282,7 +1282,7 @@ TEST_FUNCTION(when_any_call_fails_uws_client_create_with_io_fails)
         umock_c_negative_tests_reset();
         umock_c_negative_tests_fail_call(i);
 
-        (void)sprintf(temp_str, "On failed call %zu", i);
+        (void)sprintf(temp_str, "On failed call %lu", i);
 
         // act
         uws_client = uws_client_create_with_io(TEST_SOCKET_IO_INTERFACE_DESCRIPTION, &socketio_config, "test_host", 80, "111", two_protocols, sizeof(two_protocols) / sizeof(two_protocols[0]));

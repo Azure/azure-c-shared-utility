@@ -979,7 +979,7 @@ TEST_FUNCTION(xio_retrieveoptions_unhappypaths)
         umock_c_negative_tests_fail_call(i);
 
         ///act
-        (void)sprintf(temp_str, "On failed call %zu", i);
+        (void)sprintf(temp_str, "On failed call %lu", i);
 
         ///act
         h = xio_retrieveoptions(x);
