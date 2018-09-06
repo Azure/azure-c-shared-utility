@@ -7,6 +7,7 @@
 #include "openssl/crypto.h"
 #include "openssl/opensslv.h"
 #include <stdio.h>
+#include <dirent.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include "azure_c_shared_utility/lock.h"
@@ -825,6 +826,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
         }
     }
 }
+
 #ifdef WIN32
 static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
 {
@@ -886,6 +888,70 @@ static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
     if(hSysStore)
     {
         CertCloseStore(hSysStore, 0);
+    }
+
+    return 0;
+}
+#elif defined(ANDROID) || defined(__ANDROID__)
+static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
+{
+    X509_STORE * store = NULL;
+
+    if (tls_io_instance && tls_io_instance->ssl_context)
+    {
+        store = SSL_CTX_get_cert_store(tls_io_instance->ssl_context);
+    }
+    else
+    {
+        LogError("Can't access the ssl_context.");
+        return -1;
+    }
+
+    // load all the certificates into the openSSL cert store
+    const char *certs_path = "/system/etc/security/cacerts";
+    DIR *directory = opendir(certs_path);
+    if (directory != NULL)
+    {
+        struct dirent *direntry;
+        while ((direntry = readdir(directory)) != NULL)
+        {
+            char fname[1024];
+            sprintf(fname, "%s/%s", certs_path, direntry->d_name);
+            LogError(fname);
+
+            if (direntry->d_type == DT_REG)
+            {
+                LogError("processing file.");
+
+                FILE *fp = fopen(fname, "r");
+
+                if (fp)
+                {
+                    X509 *x509 = PEM_read_X509(fp, NULL /*X509 **x*/, NULL /*pem_password_cb *cb*/, NULL /*void *u*/);
+                    if (x509 != NULL)
+                    {
+                        int i = X509_STORE_add_cert(store, x509);
+                        if (i != 1)
+                        {
+                            LogError("certificate adding failed.");
+                        }
+                        X509_free(x509);
+                    }
+                    else
+                    {
+                        LogError("Can't access the certificate file %s.", direntry->d_name);
+                    }
+
+                    fclose(fp);
+                }
+            }
+        }
+
+        closedir(directory);
+    }
+    else
+    {
+        LogInfo("An error occurred during opening global certificate storage under '%s'!", certs_path);
     }
 
     return 0;
