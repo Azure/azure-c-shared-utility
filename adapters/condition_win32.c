@@ -96,7 +96,7 @@ COND_RESULT Condition_Wait(COND_HANDLE handle, LOCK_HANDLE lock, int timeout_mil
 
         /* Increment the waiting thread count, unlock the lock and wait */
         (void)InterlockedIncrement(&cond->waiting_thread_count);
-        
+
         // Codes_SRS_CONDITION_18_013: [ Condition_Wait shall accept relative timeouts ]
         wait_result = WaitForSingleObject(cond->event_handle, timeout_milliseconds == 0 ? INFINITE : timeout_milliseconds);
 
@@ -141,7 +141,7 @@ COND_RESULT Condition_Wait(COND_HANDLE handle, LOCK_HANDLE lock, int timeout_mil
 void Condition_Deinit(COND_HANDLE handle)
 {
     // Codes_SRS_CONDITION_18_007: [ Condition_Deinit will not fail if handle is NULL ]
-    // Codes_SRS_CONDITION_18_009: [ Condition_Deinit will deallocate handle if it is not NULL 
+    // Codes_SRS_CONDITION_18_009: [ Condition_Deinit will deallocate handle if it is not NULL
     if (handle != NULL)
     {
         CONDITION* cond = (CONDITION*)handle;

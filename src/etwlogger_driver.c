@@ -190,7 +190,7 @@ void etwlogger_log_with_GetLastError(const char* file, const char* func, int lin
         free(lastErrorAsString);
     }
 
-    
+
     va_end(args);
 }
 
@@ -200,7 +200,7 @@ void etwlogger_log_with_GetLastError(const char* file, const char* func, int lin
 void etwlogger_log(LOG_CATEGORY log_category, const char* file, const char* func, int line, unsigned int options, const char* format, ...)
 {
     (void)options;
-    
+
     lazyRegisterEventProvider();
 
     va_list args;
@@ -233,7 +233,7 @@ void etwlogger_log(LOG_CATEGORY log_category, const char* file, const char* func
         }
     }
     else
-    { 
+    {
         switch (log_category)
         {
         case AZ_LOG_INFO:

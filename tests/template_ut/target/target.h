@@ -20,33 +20,33 @@ extern "C" {
 DEFINE_ENUM(TARGET_RESULT, TARGET_RESULT_VALUES);
 
 
-/** 
-*  @brief	target_create is the function that your unit test intend to test. For example,
+/**
+*  @brief    target_create is the function that your unit test intend to test. For example,
 *               it will create the target instance.
 *
-* @param	size_t.
+* @param    size_t.
 *
-* @return	TARGET_RESULT
+* @return    TARGET_RESULT
 */
 MOCKABLE_FUNCTION(, TARGET_RESULT, target_create, size_t, size);
 
 /**
-*  @brief	target_create is the function that your unit test intend to test. For example,
+*  @brief    target_create is the function that your unit test intend to test. For example,
 *               it will destroy the target instance.
 *
-* @param	void
+* @param    void
 *
-* @return	void
+* @return    void
 */
 MOCKABLE_FUNCTION(, void, target_destroy);
 
 
-/** @brief	target_foo is the function that your unit test intend to test. For example,
+/** @brief    target_foo is the function that your unit test intend to test. For example,
 *               it will do foo stuffs for the target.
 *
-* @param	
+* @param
 *
-* @return	TARGET_RESULT
+* @return    TARGET_RESULT
 */
 MOCKABLE_FUNCTION(, TARGET_RESULT, target_foo);
 

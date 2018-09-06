@@ -97,7 +97,7 @@ BEGIN_TEST_SUITE(agenttime_unittests)
 
             ///act
             diff = get_difftime(sometimeAfterNow, now);
-            
+
             ///assert
             ASSERT_ARE_EQUAL(double, difftime(sometimeAfterNow, now), diff);
         }

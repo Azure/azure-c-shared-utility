@@ -129,7 +129,7 @@ __attribute__ ((format (printf, 1, 2)))
 STRING_HANDLE STRING_construct_sprintf(const char* format, ...)
 {
     STRING* result;
-    
+
 #ifdef STRINGS_C_SPRINTF_BUFFER_SIZE
     size_t maxBufSize = STRINGS_C_SPRINTF_BUFFER_SIZE;
     char buf[STRINGS_C_SPRINTF_BUFFER_SIZE];
@@ -530,7 +530,7 @@ __attribute__ ((format (printf, 2, 3)))
 int STRING_sprintf(STRING_HANDLE handle, const char* format, ...)
 {
     int result;
-    
+
 #ifdef STRINGS_C_SPRINTF_BUFFER_SIZE
     size_t maxBufSize = STRINGS_C_SPRINTF_BUFFER_SIZE;
     char buf[STRINGS_C_SPRINTF_BUFFER_SIZE];
@@ -538,7 +538,7 @@ int STRING_sprintf(STRING_HANDLE handle, const char* format, ...)
     size_t maxBufSize = 0;
     char* buf = NULL;
 #endif
-    
+
     if (handle == NULL || format == NULL)
     {
         /* Codes_SRS_STRING_07_042: [if the parameters s1 or format are NULL then STRING_sprintf shall return non zero value.] */

@@ -14,17 +14,17 @@
  */
 void* my_gballoc_malloc(size_t size)
 {
-	return malloc(size);
+    return malloc(size);
 }
 
 void* my_gballoc_realloc(void* ptr, size_t size)
 {
-	return realloc(ptr, size);
+    return realloc(ptr, size);
 }
 
 void my_gballoc_free(void* ptr)
 {
-	free(ptr);
+    free(ptr);
 }
 
 /**
@@ -51,7 +51,7 @@ void my_gballoc_free(void* ptr)
  * Include the mockable headers here.
  * These are the headers that contains the functions that you will replace to execute the test.
  *
- * For instance, if you will test a target_create() function in the target.c that calls a callee_open() function 
+ * For instance, if you will test a target_create() function in the target.c that calls a callee_open() function
  *   in the callee.c, you must define callee_open() as a mockable function in the callee.h.
  *
  * Observe that we will replace the functions in callee.h here, so we don't care about its real implementation,
@@ -87,7 +87,7 @@ void my_gballoc_free(void* ptr)
 static void* g_GenericPointer;
 
  /**
-  * Umock error will helps you to identify errors in the test suite or in the way that you are 
+  * Umock error will helps you to identify errors in the test suite or in the way that you are
   *    using it, just keep it as is.
   */
 DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
@@ -101,15 +101,15 @@ static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 
 
 /**
- * Create the mock function that will replace your callee functions. 
- * For this example, we will replace the functions open and close of the callee. So we 
+ * Create the mock function that will replace your callee functions.
+ * For this example, we will replace the functions open and close of the callee. So we
  *    need to create the mock functions my_callee_open(), and my_callee_close().
  */
 bool my_callee_open_must_succeed;   //This bool will manually determine the happy and unhappy paths.
 CALLEE_HANDLE my_callee_open(size_t a)
 {
     void* result;
-    
+
     if(my_callee_open_must_succeed)
     {
         // Do something like when callee_open succeed...
@@ -120,7 +120,7 @@ CALLEE_HANDLE my_callee_open(size_t a)
         // Do something like when callee_open failed...
         result = NULL;
     }
-    
+
     return result;
 }
 
@@ -136,17 +136,17 @@ static TEST_MUTEX_HANDLE g_testByTest;
 static TEST_MUTEX_HANDLE g_dllByDll;
 
 /**
- * Tests begin here. Give a name for your test, for instance template_ut, use the same 
- *   name to close the test suite on END_TEST_SUITE(template_ut), and to identify the  
- *   test suit in the main() function 
- *   
+ * Tests begin here. Give a name for your test, for instance template_ut, use the same
+ *   name to close the test suite on END_TEST_SUITE(template_ut), and to identify the
+ *   test suit in the main() function
+ *
  *   RUN_TEST_SUITE(template_ut, failedTestCount);
  *
  */
 BEGIN_TEST_SUITE(template_ut)
 
     /**
-     * This is the place where we initialize the test system. Replace the test name to associate the test 
+     * This is the place where we initialize the test system. Replace the test name to associate the test
      *   suite with your test cases.
      * It is called once, before start the tests.
      */
@@ -160,11 +160,11 @@ BEGIN_TEST_SUITE(template_ut)
         (void)umock_c_init(on_umock_c_error);
 
         result = umocktypes_charptr_register_types();
-		ASSERT_ARE_EQUAL(int, 0, result);
+        ASSERT_ARE_EQUAL(int, 0, result);
 
         /**
-         * It is necessary to identify the types defined on your target. With it, the test system will 
-         *    know how to use it. 
+         * It is necessary to identify the types defined on your target. With it, the test system will
+         *    know how to use it.
          *
          * On the target.h example, there is the type TARGET_HANDLE that is a void*
          */
@@ -174,12 +174,12 @@ BEGIN_TEST_SUITE(template_ut)
          * It is necessary to replace all mockable functions by the mock functions that you created here.
          * It will tell the test suite to call my_callee_open besides to call the real callee_open.
          */
-		REGISTER_GLOBAL_MOCK_HOOK(callee_open, my_callee_open);
+        REGISTER_GLOBAL_MOCK_HOOK(callee_open, my_callee_open);
         REGISTER_GLOBAL_MOCK_HOOK(callee_close, my_callee_close);
 
         /**
-         * If you don't care about what there is inside of the function in anyway, and you just need 
-         *   to control the function return you can use the REGISTER_GLOBAL_MOCK_RETURN and 
+         * If you don't care about what there is inside of the function in anyway, and you just need
+         *   to control the function return you can use the REGISTER_GLOBAL_MOCK_RETURN and
          *   REGISTER_GLOBAL_MOCK_FAIL_RETURN.
          *
          * In the follow example, callee_bar_1 will always return CALLEE_RESULT_OK, so, we don't need to
@@ -234,7 +234,7 @@ BEGIN_TEST_SUITE(template_ut)
         }
 
         umock_c_reset_all_calls();
-        
+
         my_callee_open_must_succeed = true; //As default, callee_open will return a valid pointer.
     }
 
@@ -253,9 +253,9 @@ BEGIN_TEST_SUITE(template_ut)
     {
         ///arrange
         TARGET_RESULT result;
-        
+
         /**
-         * The STRICT_EXPECTED_CALL creates a list of functions that we expect that the target calls. 
+         * The STRICT_EXPECTED_CALL creates a list of functions that we expect that the target calls.
          * The function umock_c_get_expected_calls() returns this list as a serialized string.
          * You can determine all parameters, with the expected value, or define that the argument must
          *    be ignored by the test suite.
@@ -274,7 +274,7 @@ BEGIN_TEST_SUITE(template_ut)
         ///assert
         ASSERT_ARE_EQUAL(int, TARGET_RESULT_OK, result);
         /**
-         * The follow assert will compare the expected calls with the actual calls. If it is different, 
+         * The follow assert will compare the expected calls with the actual calls. If it is different,
          *    it will show the serialized strings with the differences in the log.
          */
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -322,7 +322,7 @@ BEGIN_TEST_SUITE(template_ut)
     {
         ///arrange
         TARGET_RESULT result;
-		size_t i;
+        size_t i;
         int negativeTestsInitResult = umock_c_negative_tests_init();
         ASSERT_ARE_EQUAL(int, 0, negativeTestsInitResult);
 
@@ -331,17 +331,17 @@ BEGIN_TEST_SUITE(template_ut)
         * The umock_c_negative_tests_ functions will return all possible unhappy cases,
         *    this list is created based on the STRICT_EXPECTED_CALL below.
         *
-        * For each follow STRICT_EXPECTED_CALL, the code inside of the for loop will call the 
-        *    target function, and the function in the list will return the values specified 
+        * For each follow STRICT_EXPECTED_CALL, the code inside of the for loop will call the
+        *    target function, and the function in the list will return the values specified
         *    on REGISTER_GLOBAL_MOCK_FAIL_RETURN.
         *
-        * In this example, there are tree STRICT_EXPECTED_CALL (unhappy path). So, 
+        * In this example, there are tree STRICT_EXPECTED_CALL (unhappy path). So,
         *    umock_c_negative_tests_call_count() will returns 3.
         * In the first interaction of the loop, callee_open() will return NULL.
         * In the second, the malloc in the mock my_callee_open() will return NULL.
         * In the third, the malloc in the target_create() will return NULL.
         *
-        * Observe that the second test do not make sense, because it is testing the mock 
+        * Observe that the second test do not make sense, because it is testing the mock
         *    function, not the target. In the next example we will reexecute this test
         *    avoiding the second test.
         */
@@ -380,7 +380,7 @@ BEGIN_TEST_SUITE(template_ut)
         TARGET_RESULT result;
         int negativeTestsInitResult = umock_c_negative_tests_init();
         bool runTest[] = { true, false, true };
-		size_t i;
+        size_t i;
 
         ASSERT_ARE_EQUAL(int, 0, negativeTestsInitResult);
 
@@ -429,7 +429,7 @@ BEGIN_TEST_SUITE(template_ut)
     {
         ///arrange
         TARGET_RESULT result;
-		size_t i;
+        size_t i;
         int negativeTestsInitResult = umock_c_negative_tests_init();
         ASSERT_ARE_EQUAL(int, 0, negativeTestsInitResult);
 
@@ -437,7 +437,7 @@ BEGIN_TEST_SUITE(template_ut)
         ASSERT_ARE_EQUAL(int, TARGET_RESULT_OK, result);
 
         /**
-         * Clear the function call list, to remove the ones created by the target_create(), so, 
+         * Clear the function call list, to remove the ones created by the target_create(), so,
          *    now we can concentrate on the functions in target_foo().
          */
         umock_c_reset_all_calls();
@@ -447,7 +447,7 @@ BEGIN_TEST_SUITE(template_ut)
         umock_c_negative_tests_snapshot();
 
         /**
-        * Here we are demonstrating how to automatically test an unhappy path from a function that 
+        * Here we are demonstrating how to automatically test an unhappy path from a function that
         *    we do not implement any mock to replace it.
         */
         for (i = 0; i < umock_c_negative_tests_call_count(); i++)

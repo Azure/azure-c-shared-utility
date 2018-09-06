@@ -4,9 +4,9 @@
 #undef MOCKABLE_FUNCTION
 
 /* This header is meant to be included by production code headers, so that the MOCKABLE_FUNCTION gets enabled. */
-/* 
+/*
     If you are porting to a new platform and do not want to build the tests, but only the production code,
-    simply make sure that this file is in the include path (either by copying it to your inc folder or 
+    simply make sure that this file is in the include path (either by copying it to your inc folder or
     by adjusting the include paths).
 */
 

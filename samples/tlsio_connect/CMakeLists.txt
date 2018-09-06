@@ -15,7 +15,7 @@ ENDIF(WIN32)
 
 add_executable(tlsio_connect ${tlsio_connect_c_files})
 
-target_link_libraries(tlsio_connect 
+target_link_libraries(tlsio_connect
     aziotsharedutil
 )
 

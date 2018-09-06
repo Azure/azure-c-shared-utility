@@ -355,7 +355,7 @@ static void setupAllCallForHTTPsequence(const char* relativePath, HTTP_HEADERS_H
         HTTPAPI_REQUEST_PATCH,
         relativePath,
         requestHttpHeaders,
-        requestHttpBodyContent, 
+        requestHttpBodyContent,
         requestHttpBodyLength,
         IGNORED_PTR_ARG,
         responseHttpHeaders,
@@ -508,7 +508,7 @@ TEST_FUNCTION_INITIALIZE(TestMethodInitialize)
 
     currentBUFFER_size_call = 0;
     whenShallBUFFER_size_fail = 0;
-    
+
     HTTPAPI_Init_calls = 0;
 
     currentHTTPAPI_CreateConnection_call = 0;
@@ -582,7 +582,7 @@ TEST_FUNCTION(HTTPAPIEX_Destroy_frees_resources_1) /*this is destroy after creat
 
     /// act
     HTTPAPIEX_Destroy(handle);
-    
+
     /// assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
@@ -642,7 +642,7 @@ TEST_FUNCTION(HTTPAPIEX_Destroy_frees_resources_3) /*this is destroy after havin
     STRICT_EXPECTED_CALL(HTTPAPI_CloseConnection(IGNORED_PTR_ARG)) /*closing the conenction*/
         .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(HTTPAPI_Deinit()); /*deinit */
-        
+
     STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG)) /*this is hostname*/
         .IgnoreArgument(1);
 
@@ -663,7 +663,7 @@ TEST_FUNCTION(HTTPAPIEX_Destroy_frees_resources_3) /*this is destroy after havin
 
     ///destroy
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
-    
+
 }
 
 /*Tests_SRS_HTTPAPIEX_02_005: [If creating the handle fails for any reason, then HTTAPIEX_Create shall return NULL.] */
@@ -835,7 +835,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_relativePath_uses_empty)
 
 /*Tests_SRS_HTTPAPIEX_02_009: [If parameter requestHttpHeadersHandle is NULL then HTTPAPIEX_ExecuteRequest shall allocate a temporary internal instance of HTTPHEADERS, shall add to that instance the following headers
     Host:{hostname} - as it was indicated by the call to HTTPAPIEX_Create API call
-    Content-Length:the size of the requestContent parameter, and use this instance to all the subsequent calls to HTTPAPI_ExecuteRequest as parameter httpHeadersHandle.] 
+    Content-Length:the size of the requestContent parameter, and use this instance to all the subsequent calls to HTTPAPI_ExecuteRequest as parameter httpHeadersHandle.]
 */
 /*Tests_SRS_HTTPAPIEX_02_013: [If requestContent is NULL then HTTPAPIEX_ExecuteRequest shall behave as if a buffer of zero size would have been used, that is, it shall call HTTPAPI_ExecuteRequest with parameter content = NULL and contentLength = 0.]*/
 TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_request_headers_and_NULL_requestBody_succeeds)
@@ -2381,7 +2381,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F2) /*refer to httpapiex_retry_m
     }
 
     /*this is post final fail - sequence is reset to a clean start*/
-    {        
+    {
         STRICT_EXPECTED_CALL(HTTPAPI_Deinit());
     }
 
@@ -2619,7 +2619,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F5) /*refer to httpapiex_retry_m
 
     {
         STRICT_EXPECTED_CALL(HTTPAPI_CloseConnection(IGNORED_PTR_ARG))
-            .IgnoreArgument(1); 
+            .IgnoreArgument(1);
         STRICT_EXPECTED_CALL(HTTPAPI_Deinit());
         STRICT_EXPECTED_CALL(HTTPAPI_Init());
     }
@@ -2688,7 +2688,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F6) /*refer to httpapiex_retry_m
             HTTPAPI_REQUEST_PATCH,
             TEST_RELATIVE_PATH,
             requestHttpHeaders,
-            IGNORED_PTR_ARG, 
+            IGNORED_PTR_ARG,
             TEST_BUFFER_SIZE,
             IGNORED_PTR_ARG,
             responseHttpHeaders,
@@ -2766,7 +2766,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_TestCase_F6) /*refer to httpapiex_retry_m
 TEST_FUNCTION(HTTPAPIEX_SetOption_fails_with_NULL_handle)
 {
     /// arrange
-    
+
     /// act
     HTTPAPIEX_RESULT result = HTTPAPIEX_SetOption(NULL, "someOption", (void*)42);
 
@@ -3122,7 +3122,7 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_fails_when_HTTPAPI_SaveOption_fails_3)
     HTTPAPIEX_RESULT result;
     HTTPAPIEX_HANDLE httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
     umock_c_reset_all_calls();
-    
+
     whenShallHTTPAPI_SaveOption_fail = currentHTTPAPI_SaveOption_call + 1;
     EXPECTED_CALL(HTTPAPI_CloneOption("someOption2", (void*)"33", IGNORED_PTR_ARG))  /*this asks lower HTTPAPI to create a clone of the option*/
         .SetReturn(HTTPAPI_ALREADY_INIT); /*some random error code*/
@@ -3285,7 +3285,7 @@ TEST_FUNCTION(HTTPAPIEX_SetOption_passes_saved_options_to_existing_httpapi_handl
 
     /// act
     result = HTTPAPIEX_SetOption(httpapiexhandle, "someOption", "3");
-    
+
     ///assert
     ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_ERROR, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());

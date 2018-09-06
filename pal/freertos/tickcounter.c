@@ -32,7 +32,7 @@ TICK_COUNTER_HANDLE tickcounter_create(void)
     else
     {
         // The FreeRTOS call xTaskGetTickCount has no failure path
-        // Store the initial tick count in order to meet these two requirements: 
+        // Store the initial tick count in order to meet these two requirements:
         /* Codes_SRS_TICKCOUNTER_FREERTOS_30_009: [ tickcounter_get_current_ms shall set *current_ms to the number of milliseconds elapsed since the tickcounter_create call for the specified tick_counter and return 0 to indicate success in situations where the FreeRTOS call xTaskGetTickCount has not experienced overflow between the calls to tickcounter_create and tickcounter_get_current_ms. (In FreeRTOS this call has no failure case.) ] */
         /* Codes_SRS_TICKCOUNTER_FREERTOS_30_010: [ tickcounter_get_current_ms shall set *current_ms to the number of milliseconds elapsed since the tickcounter_create call for the specified tick_counter and return 0 to indicate success in situations where the FreeRTOS call xTaskGetTickCount has experienced overflow between the calls to tickcounter_create and tickcounter_get_current_ms. (In FreeRTOS this call has no failure case.) ] */
         result->original_tick_count = xTaskGetTickCount();

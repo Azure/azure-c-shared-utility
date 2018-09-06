@@ -28,7 +28,7 @@ STRING_HANDLE platform_get_platform_info(void)
     if (uname(&nnn) == 0)
     {
         result = STRING_construct_sprintf("(%s; %s)", nnn.sysname, nnn.machine);
-        
+
         if (result == NULL)
         {
             LogInfo("ERROR: Failed to create machine info string");
@@ -39,10 +39,10 @@ STRING_HANDLE platform_get_platform_info(void)
         LogInfo("WARNING: failed to find machine info.");
         result = STRING_construct("iOS");
 
-		if (result == NULL)
-		{
-			LogInfo("ERROR: Failed to create machine info string");
-		}
+        if (result == NULL)
+        {
+            LogInfo("ERROR: Failed to create machine info string");
+        }
     }
 
     return result;

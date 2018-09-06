@@ -66,7 +66,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
 
     TEST_SUITE_INITIALIZE(a)
     {
-		int result;
+        int result;
         TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
 
         result = umock_c_init(on_umock_c_error);
@@ -101,7 +101,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_create_succeeds)
     {
         ///arrange
-		VECTOR_HANDLE handle;
+        VECTOR_HANDLE handle;
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument_size();
 
@@ -133,14 +133,14 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_create_returns_NULL_if_malloc_fails)
     {
         ///arrange
-		VECTOR_HANDLE handle;
+        VECTOR_HANDLE handle;
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument_size()
             .SetReturn(NULL);
 
-		///act
-		handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
+        ///act
+        handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
 
         ///assert
         ASSERT_IS_NULL(handle);
@@ -151,8 +151,8 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_move_succeeds)
     {
         ///arrange
-		VECTOR_UNITTEST* current;
-		VECTOR_HANDLE test;
+        VECTOR_UNITTEST* current;
+        VECTOR_HANDLE test;
         VECTOR_UNITTEST sItem1 = {1, 2};
         VECTOR_UNITTEST sItem2 = {5, 6};
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
@@ -197,8 +197,8 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_move_returns_NULL_if_malloc_fails)
     {
         ///arrange
-		VECTOR_HANDLE test;
-		VECTOR_UNITTEST* current;
+        VECTOR_HANDLE test;
+        VECTOR_UNITTEST* current;
         VECTOR_UNITTEST sItem1 = {1, 2};
         VECTOR_UNITTEST sItem2 = {5, 6};
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
@@ -274,7 +274,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_push_back_fails_if_elements_is_NULL)
     {
         ///arrange
-		int result;
+        int result;
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
         umock_c_reset_all_calls();
 
@@ -293,7 +293,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_push_back_fails_if_numElements_is_zero)
     {
         ///arrange
-		int result;
+        int result;
         VECTOR_UNITTEST sItem = {1, 2};
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
         umock_c_reset_all_calls();
@@ -313,7 +313,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_push_back_succeeds)
     {
         ///arrange
-		int result;
+        int result;
         VECTOR_UNITTEST sItem = {1, 2};
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
         umock_c_reset_all_calls();
@@ -334,7 +334,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_push_back_fails_if_realloc_fails)
     {
         ///arrange
-		int result;
+        int result;
         VECTOR_UNITTEST sItem = {1, 2};
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
         umock_c_reset_all_calls();
@@ -369,7 +369,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_size_succeeds_if_vector_is_empty)
     {
         ///arrange
-		size_t num;
+        size_t num;
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
         umock_c_reset_all_calls();
 
@@ -388,7 +388,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_size_succeeds)
     {
         ///arrange
-		size_t num;
+        size_t num;
         VECTOR_UNITTEST sItem = {1, 2};
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
         (void)VECTOR_push_back(handle, &sItem, 1);
@@ -423,7 +423,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_find_fails_if_pred_is_NULL)
     {
         ///arrange
-		VECTOR_UNITTEST* pfindItem;
+        VECTOR_UNITTEST* pfindItem;
         VECTOR_UNITTEST sItem = {1, 2};
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
         (void)VECTOR_push_back(handle, &sItem, 1);
@@ -444,7 +444,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_find_if_succeeds)
     {
         ///arrange
-		VECTOR_UNITTEST* pfindItem;
+        VECTOR_UNITTEST* pfindItem;
         VECTOR_UNITTEST sItem = {1, 2};
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
         (void)VECTOR_push_back(handle, &sItem, 1);
@@ -467,7 +467,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_find_if_return_null_if_no_match)
     {
         ///arrange
-		VECTOR_UNITTEST* pfindItem;
+        VECTOR_UNITTEST* pfindItem;
         VECTOR_UNITTEST sItem1 = {1, 2};
         VECTOR_UNITTEST sItem2 = {5, 8};
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
@@ -520,7 +520,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_clear_succeeds)
     {
         ///arrange
-		size_t num;
+        size_t num;
         VECTOR_UNITTEST sItem = {1, 2};
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
         (void)VECTOR_push_back(handle, &sItem, 1);
@@ -545,7 +545,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_element_succeeds)
     {
         ///arrange
-		VECTOR_UNITTEST* pResult;
+        VECTOR_UNITTEST* pResult;
         VECTOR_UNITTEST sItem1 = {1, 2};
         VECTOR_UNITTEST sItem2 = {3, 4};
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
@@ -583,7 +583,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_element_fails_if_index_is_out_of_range)
     {
         ///arrange
-		VECTOR_UNITTEST* pResult;
+        VECTOR_UNITTEST* pResult;
         VECTOR_UNITTEST sItem = {1, 2};
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
         (void)VECTOR_push_back(handle, &sItem, 1);
@@ -618,7 +618,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_front_succeeds)
     {
         ///arrange
-		VECTOR_UNITTEST* pResult;
+        VECTOR_UNITTEST* pResult;
         VECTOR_UNITTEST sItem1 = {1, 2};
         VECTOR_UNITTEST sItem2 = {3, 4};
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
@@ -643,7 +643,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_front_return_null_if_vector_is_empty)
     {
         ///arrange
-		VECTOR_UNITTEST* pResult;
+        VECTOR_UNITTEST* pResult;
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
         umock_c_reset_all_calls();
 
@@ -662,7 +662,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_back_succeeds)
     {
         ///arrange
-		VECTOR_UNITTEST* pResult;
+        VECTOR_UNITTEST* pResult;
         VECTOR_UNITTEST sItem1 = {1, 2};
         VECTOR_UNITTEST sItem2 = {3, 4};
         VECTOR_UNITTEST sItem3 = {5, 6};
@@ -702,7 +702,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_back_return_null_if_vector_is_empty)
     {
         ///arrange
-		VECTOR_UNITTEST* pResult;
+        VECTOR_UNITTEST* pResult;
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
         umock_c_reset_all_calls();
 
@@ -753,8 +753,8 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_erase_if_numElements_is_zero)
     {
         ///arrange
-		VECTOR_UNITTEST* pfindItem;
-		size_t num;
+        VECTOR_UNITTEST* pfindItem;
+        size_t num;
         VECTOR_UNITTEST sItem1 = {1, 2};
         VECTOR_UNITTEST sItem2 = {3, 4};
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
@@ -780,8 +780,8 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_erase_succeeds_case_1)
     {
         ///arrange
-		VECTOR_UNITTEST* pfindItem;
-		size_t num;
+        VECTOR_UNITTEST* pfindItem;
+        size_t num;
         VECTOR_UNITTEST sItem1 = {1, 2};
         VECTOR_UNITTEST sItem2 = {3, 4};
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
@@ -810,8 +810,8 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_erase_succeeds_case_2)
     {
         ///arrange
-		VECTOR_UNITTEST* pfindItem;
-		size_t num;
+        VECTOR_UNITTEST* pfindItem;
+        size_t num;
         VECTOR_UNITTEST sItem1 = {1, 2};
         VECTOR_UNITTEST sItem2 = {3, 4};
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
@@ -840,8 +840,8 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_erase_succeeds_case_3)
     {
         ///arrange
-		size_t num;
-		VECTOR_UNITTEST* pfindItem;
+        size_t num;
+        VECTOR_UNITTEST* pfindItem;
         VECTOR_UNITTEST sItem1 = {1, 2};
         VECTOR_UNITTEST sItem2 = {3, 4};
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
@@ -874,8 +874,8 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_erase_numElements_out_of_bound)
     {
         ///arrange
-		size_t num;
-		VECTOR_UNITTEST* pfindItem;
+        size_t num;
+        VECTOR_UNITTEST* pfindItem;
         VECTOR_UNITTEST sItem1 = {1, 2};
         VECTOR_UNITTEST sItem2 = {3, 4};
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
@@ -904,8 +904,8 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_erase_elements_out_of_bound_case_1)
     {
         ///arrange
-		VECTOR_UNITTEST* pfindItem;
-		size_t num;
+        VECTOR_UNITTEST* pfindItem;
+        size_t num;
         VECTOR_UNITTEST sItem1 = {1, 2};
         VECTOR_UNITTEST sItem2 = {3, 4};
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
@@ -935,8 +935,8 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_erase_elements_out_of_bound_case_2)
     {
         ///arrange
-		size_t num;
-		VECTOR_UNITTEST* pfindItem;
+        size_t num;
+        VECTOR_UNITTEST* pfindItem;
         VECTOR_UNITTEST sItem1 = {1, 2};
         VECTOR_UNITTEST sItem2 = {3, 4};
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
@@ -966,9 +966,9 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_erase_elements_misaligned)
     {
         ///arrange
-		VECTOR_UNITTEST* pResult;
-		void* pfindItem;
-		size_t num;
+        VECTOR_UNITTEST* pResult;
+        void* pfindItem;
+        size_t num;
         VECTOR_UNITTEST sItem1 = {1, 2};
         VECTOR_UNITTEST sItem2 = {3, 4};
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));
@@ -1001,8 +1001,8 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_push_back_multiple_elements_succeeds)
     {
         ///arrange
-		size_t nIndex;
-		VECTOR_UNITTEST* pResult;
+        size_t nIndex;
+        VECTOR_UNITTEST* pResult;
         int result = 0;
         VECTOR_UNITTEST sItem1 = {1, 2};
         VECTOR_HANDLE handle = VECTOR_create(sizeof(VECTOR_UNITTEST));

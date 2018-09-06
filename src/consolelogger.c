@@ -204,8 +204,8 @@ void consolelogger_log(LOG_CATEGORY log_category, const char* file, const char* 
     va_list args;
     va_start(args, format);
 
-    t = time(NULL); 
-    
+    t = time(NULL);
+
     switch (log_category)
     {
     case AZ_LOG_INFO:

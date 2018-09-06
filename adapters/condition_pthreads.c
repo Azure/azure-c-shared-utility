@@ -130,7 +130,7 @@ void Condition_Deinit(COND_HANDLE handle)
 // Codes_SRS_CONDITION_18_007: [ Condition_Deinit will not fail if handle is NULL ]
     if (handle != NULL)
     {
-        // Codes_SRS_CONDITION_18_009: [ Condition_Deinit will deallocate handle if it is not NULL 
+        // Codes_SRS_CONDITION_18_009: [ Condition_Deinit will deallocate handle if it is not NULL
         pthread_cond_t* cond = (pthread_cond_t*)handle;
         pthread_cond_destroy(cond);
         free(cond);

@@ -15,7 +15,7 @@ ENDIF(WIN32)
 
 add_executable(socketio_connect ${socketio_connect_c_files})
 
-target_link_libraries(socketio_connect 
+target_link_libraries(socketio_connect
     aziotsharedutil
 )
 

@@ -4,7 +4,7 @@
 #include "azure_c_shared_utility/agenttime.h"
 
 // mbed version of gmtime() returns NULL.
-// system RTC should be set to UTC as its localtime 
+// system RTC should be set to UTC as its localtime
 
 time_t get_time(time_t* currentTime)
 {

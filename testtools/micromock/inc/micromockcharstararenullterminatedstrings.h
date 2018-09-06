@@ -66,7 +66,7 @@ public:
     virtual bool EqualTo(_In_ const CMockValueBase* right)
     {
         return (*this == *(reinterpret_cast<const CMockValue<char*>*>(right)));
-        
+
     }
 
     void SetValue(_In_ char* value)
@@ -80,7 +80,7 @@ public:
             }
             else
             {
-                
+
             }
         }
         else
@@ -165,7 +165,7 @@ public:
             }
             else
             {
-                
+
             }
         }
         else
@@ -188,7 +188,7 @@ public:
     }
 };
 
-bool operator==(_In_ const CMockValue<char*>& lhs, _In_ const CMockValue<char*>& rhs); 
+bool operator==(_In_ const CMockValue<char*>& lhs, _In_ const CMockValue<char*>& rhs);
 bool operator==(_In_ const CMockValue<const char*>& lhs, _In_ const CMockValue<const char*>& rhs);
 
 #endif

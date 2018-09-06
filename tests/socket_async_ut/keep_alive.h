@@ -2,24 +2,24 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 // This file is made an integral part of socket_async_ut.c with a #include. It
-// is broken out for readability. 
+// is broken out for readability.
 
 
-static int keep_alive;     // < 0 for system defaults, 0 to disable, > 0 to use supplied idle, interval, and count 
+static int keep_alive;     // < 0 for system defaults, 0 to disable, > 0 to use supplied idle, interval, and count
 static int keep_idle;      // seconds before first keepalive packet (ignored if keep_alive <= 0)
 static int keep_interval;  // seconds between keepalive packets (ignored if keep_alive <= 0)
 static int keep_count;     // number of times to try before declaring failure (ignored if keep_alive <= 0)
 #define test_keep_alive 1
 #define test_keep_alive_sys_default -1
 #define test_keep_idle 22
-#define test_keep_interval 33 
+#define test_keep_interval 33
 #define test_keep_count 66
 #define KEEP_ALIVE_UNDEFINED -1
 #define KEEP_ALIVE_FALSE 0
 
 static int my_setsockopt(int sockfd, int level, int optname, const void *optval, socklen_t optlen)
 {
-	int value;
+    int value;
     (void)optlen;
     // All options are integers
     ASSERT_ARE_EQUAL(int, sockfd, test_socket);

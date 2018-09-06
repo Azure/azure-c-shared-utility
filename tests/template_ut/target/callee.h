@@ -22,7 +22,7 @@ typedef void* CALLEE_HANDLE;
 DEFINE_ENUM(CALLEE_RESULT, CALLEE_RESULT_VALUES);
 
 
-/** 
+/**
  * This is the set of mockable functions that template_ut.c will replace
  */
 MOCKABLE_FUNCTION(, CALLEE_HANDLE, callee_open, size_t, parameter);

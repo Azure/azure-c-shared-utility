@@ -688,7 +688,7 @@ TEST_FUNCTION(URL_EncodeString_full_url)
 {
     // arrange
     const char* fullUrl = "https://one.two.three.four-five.com/six/Seven('EightNine1234567890.Ten_Eleven')?twelve-thirteen=2015-11-31 HTTP/1.1";
-    
+
     // act
     STRING_HANDLE encodedFullUrl = URL_EncodeString(fullUrl);
 
@@ -746,7 +746,7 @@ TEST_FUNCTION(URL_new_should_yield_zeroLengthString)
 TEST_FUNCTION(URL_is_hello_world)
 {
     // arrange
-	STRING_HANDLE encodedURL;
+    STRING_HANDLE encodedURL;
     STRING_HANDLE hello = STRING_new();
 
     ASSERT_ARE_EQUAL(int, STRING_concat(hello, "hello world"),0);
@@ -765,7 +765,7 @@ TEST_FUNCTION(URL_is_hello_world)
 TEST_FUNCTION(URL_unreserved_mapping)
 {
     // arrange
-	STRING_HANDLE encodedUnreservedURL;
+    STRING_HANDLE encodedUnreservedURL;
     STRING_HANDLE unreserved = STRING_new();
 
     ASSERT_ARE_EQUAL(int, STRING_concat(unreserved, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._"), 0);
@@ -784,7 +784,7 @@ TEST_FUNCTION(URL_unreserved_mapping)
 TEST_FUNCTION(URL_path_with_device)
 {
     // arrange
-	STRING_HANDLE encodedPathWithDevice;
+    STRING_HANDLE encodedPathWithDevice;
     STRING_HANDLE pathWithDevice = STRING_new();
 
     ASSERT_ARE_EQUAL(int, STRING_concat(pathWithDevice, "/getalarm('Le Pichet')"), 0);
@@ -803,7 +803,7 @@ TEST_FUNCTION(URL_path_with_device)
 TEST_FUNCTION(URL_a_few_bogus_characters)
 {
     // arrange
-	STRING_HANDLE encodedBogusCharacters;
+    STRING_HANDLE encodedBogusCharacters;
     STRING_HANDLE bogusCharacters = STRING_new();
 
     ASSERT_ARE_EQUAL(int, STRING_concat(bogusCharacters, "{}%"), 0);
@@ -822,9 +822,9 @@ TEST_FUNCTION(URL_a_few_bogus_characters)
 TEST_FUNCTION(URL_full_IOT_url)
 {
     // arrange
-	STRING_HANDLE encodedFullUrl;
+    STRING_HANDLE encodedFullUrl;
     STRING_HANDLE fullUrl = STRING_new();
-    
+
     ASSERT_ARE_EQUAL(int, STRING_concat(fullUrl, "https://one.two.three.four-five.com/six/Seven('EightNine1234567890.Ten_Eleven')?twelve-thirteen=2015-11-31 HTTP/1.1"), 0);
 
     // act
@@ -844,7 +844,7 @@ TEST_FUNCTION(URL_Exhaustive_chars)
     for (i = 0; i < numberOfTests; i++)
     {
         //arrange
-		STRING_HANDLE encodedOriginal;
+        STRING_HANDLE encodedOriginal;
         STRING_HANDLE original = STRING_new();
         ASSERT_ARE_EQUAL(int, STRING_concat(original, testVector[i].inputData), 0);
 
@@ -869,7 +869,7 @@ TEST_FUNCTION(URL_DecodeString_null_input)
 
     //assert
     ASSERT_IS_NULL(decodedURL);
-    
+
     //cleanup
 }
 

@@ -199,7 +199,7 @@ static void on_underlying_io_error(void* context)
 
     case TLSIO_STATE_OPENING_UNDERLYING_IO:
     case TLSIO_STATE_IN_HANDSHAKE:
-        // Existing socket impls are all synchronous close, and this 
+        // Existing socket impls are all synchronous close, and this
         // adapter does not yet support async close.
         xio_close(tls_io_instance->socket_io, NULL, NULL);
         tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;

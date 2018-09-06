@@ -140,7 +140,7 @@ int my_SSL_get_error(const SSL *ssl, int ret_code){
     }else{
         return 0;
     }
-    
+
 }
 int my_FD_ISSET(int n, void* p){
     (void)(n),(void)(p);
@@ -234,7 +234,7 @@ SSL* my_SSL_new(SSL_CTX *ssl_ctx){
         return g_ssl;
     }else{
         return NULL;
-    }  
+    }
 }
 
 //NOTE: malloc(1) is used here since SSL_CTX is defined as void in esp8266_mock.h
@@ -370,7 +370,7 @@ MOCK_FUNCTION_END();
 static void* g_GenericPointer;
 
 /**
-  * Umock error will helps you to identify errors in the test suite or in the way that you are 
+  * Umock error will helps you to identify errors in the test suite or in the way that you are
   *    using it, just keep it as is.
   */
 DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
@@ -389,15 +389,15 @@ static TEST_MUTEX_HANDLE g_testByTest;
 static TEST_MUTEX_HANDLE g_dllByDll;
 
 /**
- * Tests begin here. 
- *   
+ * Tests begin here.
+ *
  *   RUN_TEST_SUITE(tlsio_esp8266_ut, failedTestCount);
  *
  */
 BEGIN_TEST_SUITE(tlsio_esp8266_ut)
 
     /**
-     * This is the place where we initialize the test system. Replace the test name to associate the test 
+     * This is the place where we initialize the test system. Replace the test name to associate the test
      *   suite with your test cases.
      * It is called once, before start the tests.
      */
@@ -414,8 +414,8 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ASSERT_ARE_EQUAL(int, 0, result);
 
         /**
-         * It is necessary to identify the types defined on your target. With it, the test system will 
-         *    know how to use it. 
+         * It is necessary to identify the types defined on your target. With it, the test system will
+         *    know how to use it.
          *
          * On the target.h example, there is the type TARGET_HANDLE that is a void*
          */
@@ -530,7 +530,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
 
         ///act
         tlsioInterfaces->concrete_io_dowork(&instance);
-        
+
         ///assert
         ASSERT_ARE_EQUAL(size_t, g_on_bytes_received_buffer_size, RECEIVE_BUFFER_SIZE);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -556,7 +556,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
 
         ///act
         tlsioInterfaces->concrete_io_dowork(&instance);
-        
+
         ///assert
         ASSERT_ARE_EQUAL(size_t, g_on_bytes_received_buffer_size, 0);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -599,7 +599,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
         umock_c_reset_all_calls();
-        STRICT_EXPECTED_CALL(lwip_select(IGNORED_NUM_ARG, IGNORED_PTR_ARG, 
+        STRICT_EXPECTED_CALL(lwip_select(IGNORED_NUM_ARG, IGNORED_PTR_ARG,
               IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
         STRICT_EXPECTED_CALL(FD_ISSET(IGNORED_NUM_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);
         EXPECTED_CALL(SSL_write(IGNORED_PTR_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG));
@@ -607,7 +607,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
 
         ///act
         result = tlsioInterfaces->concrete_io_send(&instance, test_buffer, sizeof(test_buffer), test_on_send_complete, (void*)0x4242);
-        
+
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_EQUAL(int, result, 0);
@@ -647,7 +647,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
 
         ///act
         result = tlsioInterfaces->concrete_io_send(&instance, NULL, 0, test_on_send_complete, (void*)0x4242);
-        
+
         ///assert
         ASSERT_ARE_NOT_EQUAL(int, result, 0);
         ///cleanup
@@ -670,7 +670,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
 
         ///act
         result = tlsioInterfaces->concrete_io_send(&instance, test_buffer, 0, test_on_send_complete, (void*)0x4242);
-        
+
         ///assert
         ASSERT_ARE_NOT_EQUAL(int, result, 0);
         ///cleanup
@@ -712,17 +712,17 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
         umock_c_reset_all_calls();
-        STRICT_EXPECTED_CALL(lwip_select(IGNORED_NUM_ARG, IGNORED_PTR_ARG, 
+        STRICT_EXPECTED_CALL(lwip_select(IGNORED_NUM_ARG, IGNORED_PTR_ARG,
               IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
         STRICT_EXPECTED_CALL(FD_ISSET(IGNORED_NUM_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);
         EXPECTED_CALL(SSL_write(IGNORED_PTR_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG));
         EXPECTED_CALL(SSL_shutdown(IGNORED_PTR_ARG));
-        
+
         STRICT_EXPECTED_CALL(test_on_send_complete((void*)0x4242, IO_SEND_ERROR));
 
         ///act
         result = tlsioInterfaces->concrete_io_send(&instance, test_buffer, sizeof(test_buffer), test_on_send_complete, (void*)0x4242);
-        
+
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_NOT_EQUAL(int, result, 0);
@@ -768,7 +768,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         STRICT_EXPECTED_CALL(test_on_io_close_complete((void*)0x4242));
         ///act
         result = tlsioInterfaces->concrete_io_close(&instance, test_on_io_close_complete, (void*)0x4242);
-        
+
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_EQUAL(int, 0, result);
@@ -898,13 +898,13 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
 
         ///act
         tlsioInterfaces->concrete_io_destroy(instance);
-        
+
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ///cleanup
     }
 
-    
+
     /* TESTS_SRS_TLSIO_SSL_ESP8266_99_024: [ If the tlsio_handle is NULL, the tlsio_openssl_destroy shall not do anything. ] */
     TEST_FUNCTION(tlsio_openssl_destroy_NULL_handle__failed)
     {
@@ -959,7 +959,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         memset(&tls_io_instance, 0, sizeof(TLS_IO_INSTANCE));
 
         tls_io_instance.tlsio_state = TLSIO_STATE_NOT_OPEN;
-        
+
         g_gethostbyname_success = 1;
         g_socket_success = 1;
         g_setsockopt_success = 1;
@@ -977,8 +977,8 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         g_ssl_fd_isset = 0;
         g_ssl_get_error_success = 1;
         umock_c_reset_all_calls();
-        
-        STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);    
+
+        STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);
         STRICT_EXPECTED_CALL(TLSv1_client_method());
         STRICT_EXPECTED_CALL(SSL_CTX_new(IGNORED_PTR_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(SSL_CTX_set_default_read_buffer_len(IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2);
@@ -987,23 +987,23 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
         STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
         STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
-        STRICT_EXPECTED_CALL(fcntl(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3); 
-        STRICT_EXPECTED_CALL(fcntl(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3); 
-        STRICT_EXPECTED_CALL(bind(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);   
+        STRICT_EXPECTED_CALL(fcntl(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
+        STRICT_EXPECTED_CALL(fcntl(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
+        STRICT_EXPECTED_CALL(bind(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
         STRICT_EXPECTED_CALL(connect(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
-        STRICT_EXPECTED_CALL(lwip_select(IGNORED_NUM_ARG, IGNORED_PTR_ARG, 
+        STRICT_EXPECTED_CALL(lwip_select(IGNORED_NUM_ARG, IGNORED_PTR_ARG,
               IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
-        
+
         STRICT_EXPECTED_CALL(FD_ISSET(IGNORED_NUM_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);
         STRICT_EXPECTED_CALL(FD_ISSET(IGNORED_NUM_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);
         STRICT_EXPECTED_CALL(SSL_new(IGNORED_PTR_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(SSL_set_fd(IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2);
-        
-        STRICT_EXPECTED_CALL(lwip_select(IGNORED_NUM_ARG, IGNORED_PTR_ARG, 
+
+        STRICT_EXPECTED_CALL(lwip_select(IGNORED_NUM_ARG, IGNORED_PTR_ARG,
           IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
         STRICT_EXPECTED_CALL(FD_ISSET(IGNORED_NUM_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);
         STRICT_EXPECTED_CALL(SSL_connect(IGNORED_PTR_ARG)).IgnoreArgument(1);
-            
+
         STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_OK));
         STRICT_EXPECTED_CALL(os_delay_us(IGNORED_NUM_ARG)).IgnoreArgument(1);
 
@@ -1013,12 +1013,12 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ///assert
         ASSERT_ARE_EQUAL(int, 0, result);
         /**
-         * The follow assert will compare the expected calls with the actual calls. If it is different, 
+         * The follow assert will compare the expected calls with the actual calls. If it is different,
          *    it will show the serialized strings with the differences in the log.
          */
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_EQUAL(int, (int)TLSIO_STATE_OPEN, tls_io_instance.tlsio_state);
-        
+
         ///cleanup
         if(g_ctx != NULL){
             free(g_ctx);
@@ -1130,9 +1130,9 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         g_ssl_connect_success = 1;
 
         umock_c_reset_all_calls();
-        
+
         do{
-            STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);  
+            STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);
         }while(retry++ < MAX_RETRY);
 
         STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_ERROR));
@@ -1177,8 +1177,8 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         g_ssl_fd_isset = 0;
         g_ssl_get_error_success = 1;
         umock_c_reset_all_calls();
-        
-        STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);    
+
+        STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);
         STRICT_EXPECTED_CALL(TLSv1_client_method());
         STRICT_EXPECTED_CALL(SSL_CTX_new(IGNORED_PTR_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(SSL_CTX_set_default_read_buffer_len(IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2);
@@ -1232,8 +1232,8 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         g_ssl_fd_isset = 0;
         g_ssl_get_error_success = 1;
         umock_c_reset_all_calls();
-        
-        STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);    
+
+        STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);
         STRICT_EXPECTED_CALL(TLSv1_client_method());
         STRICT_EXPECTED_CALL(SSL_CTX_new(IGNORED_PTR_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(SSL_CTX_set_default_read_buffer_len(IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2);
@@ -1288,8 +1288,8 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         g_ssl_fd_isset = 0;
         g_ssl_get_error_success = 1;
         umock_c_reset_all_calls();
-        
-        STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);    
+
+        STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);
         STRICT_EXPECTED_CALL(TLSv1_client_method());
         STRICT_EXPECTED_CALL(SSL_CTX_new(IGNORED_PTR_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(SSL_CTX_set_default_read_buffer_len(IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2);
@@ -1298,9 +1298,9 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
         STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
         STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
-        STRICT_EXPECTED_CALL(fcntl(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3); 
-        STRICT_EXPECTED_CALL(fcntl(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3); 
-        STRICT_EXPECTED_CALL(bind(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);   
+        STRICT_EXPECTED_CALL(fcntl(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
+        STRICT_EXPECTED_CALL(fcntl(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
+        STRICT_EXPECTED_CALL(bind(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
         STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_ERROR));
         STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4242));
 
@@ -1351,8 +1351,8 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         g_ssl_fd_isset = 0;
         g_ssl_get_error_success = 1;
         umock_c_reset_all_calls();
-        
-        STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);    
+
+        STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);
         STRICT_EXPECTED_CALL(TLSv1_client_method());
         STRICT_EXPECTED_CALL(SSL_CTX_new(IGNORED_PTR_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(SSL_CTX_set_default_read_buffer_len(IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2);
@@ -1361,11 +1361,11 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
         STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
         STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
-        STRICT_EXPECTED_CALL(fcntl(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3); 
-        STRICT_EXPECTED_CALL(fcntl(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3); 
-        STRICT_EXPECTED_CALL(bind(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);   
+        STRICT_EXPECTED_CALL(fcntl(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
+        STRICT_EXPECTED_CALL(fcntl(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
+        STRICT_EXPECTED_CALL(bind(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
         STRICT_EXPECTED_CALL(connect(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
-        STRICT_EXPECTED_CALL(getsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);  
+        STRICT_EXPECTED_CALL(getsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
         STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_ERROR));
         STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4242));
 
@@ -1416,8 +1416,8 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         g_ssl_fd_isset = 0;
         g_ssl_get_error_success = 1;
         umock_c_reset_all_calls();
-        
-        STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);    
+
+        STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);
         STRICT_EXPECTED_CALL(TLSv1_client_method());
         STRICT_EXPECTED_CALL(SSL_CTX_new(IGNORED_PTR_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(SSL_CTX_set_default_read_buffer_len(IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2);
@@ -1426,13 +1426,13 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
         STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
         STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
-        STRICT_EXPECTED_CALL(fcntl(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3); 
-        STRICT_EXPECTED_CALL(fcntl(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3); 
-        STRICT_EXPECTED_CALL(bind(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);   
+        STRICT_EXPECTED_CALL(fcntl(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
+        STRICT_EXPECTED_CALL(fcntl(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
+        STRICT_EXPECTED_CALL(bind(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
         STRICT_EXPECTED_CALL(connect(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
-        STRICT_EXPECTED_CALL(lwip_select(IGNORED_NUM_ARG, IGNORED_PTR_ARG, 
+        STRICT_EXPECTED_CALL(lwip_select(IGNORED_NUM_ARG, IGNORED_PTR_ARG,
               IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
-        STRICT_EXPECTED_CALL(getsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);  
+        STRICT_EXPECTED_CALL(getsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
         STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_ERROR));
         STRICT_EXPECTED_CALL(test_on_io_error((void*)0x4242));
 
@@ -1482,8 +1482,8 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         g_ssl_fd_isset = 0;
         g_ssl_get_error_success = 1;
         umock_c_reset_all_calls();
-        
-        STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);    
+
+        STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);
         STRICT_EXPECTED_CALL(TLSv1_client_method());
         STRICT_EXPECTED_CALL(SSL_CTX_new(IGNORED_PTR_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_ERROR));
@@ -1532,8 +1532,8 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         g_ssl_fd_isset = 0;
         g_ssl_get_error_success = 1;
         umock_c_reset_all_calls();
-        
-        STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);    
+
+        STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);
         STRICT_EXPECTED_CALL(TLSv1_client_method());
         STRICT_EXPECTED_CALL(SSL_CTX_new(IGNORED_PTR_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(SSL_CTX_set_default_read_buffer_len(IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2);
@@ -1542,13 +1542,13 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
         STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
         STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
-        STRICT_EXPECTED_CALL(fcntl(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3); 
-        STRICT_EXPECTED_CALL(fcntl(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3); 
-        STRICT_EXPECTED_CALL(bind(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);   
+        STRICT_EXPECTED_CALL(fcntl(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
+        STRICT_EXPECTED_CALL(fcntl(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
+        STRICT_EXPECTED_CALL(bind(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
         STRICT_EXPECTED_CALL(connect(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
-        STRICT_EXPECTED_CALL(lwip_select(IGNORED_NUM_ARG, IGNORED_PTR_ARG, 
+        STRICT_EXPECTED_CALL(lwip_select(IGNORED_NUM_ARG, IGNORED_PTR_ARG,
               IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
-        
+
         STRICT_EXPECTED_CALL(FD_ISSET(IGNORED_NUM_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);
         STRICT_EXPECTED_CALL(FD_ISSET(IGNORED_NUM_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);
         STRICT_EXPECTED_CALL(SSL_new(IGNORED_PTR_ARG)).IgnoreArgument(1);
@@ -1601,8 +1601,8 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         g_ssl_fd_isset = 0;
         g_ssl_get_error_success = 1;
         umock_c_reset_all_calls();
-        
-        STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);    
+
+        STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);
         STRICT_EXPECTED_CALL(TLSv1_client_method());
         STRICT_EXPECTED_CALL(SSL_CTX_new(IGNORED_PTR_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(SSL_CTX_set_default_read_buffer_len(IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2);
@@ -1611,13 +1611,13 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
         STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
         STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
-        STRICT_EXPECTED_CALL(fcntl(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3); 
-        STRICT_EXPECTED_CALL(fcntl(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3); 
-        STRICT_EXPECTED_CALL(bind(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);   
+        STRICT_EXPECTED_CALL(fcntl(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
+        STRICT_EXPECTED_CALL(fcntl(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
+        STRICT_EXPECTED_CALL(bind(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
         STRICT_EXPECTED_CALL(connect(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
-        STRICT_EXPECTED_CALL(lwip_select(IGNORED_NUM_ARG, IGNORED_PTR_ARG, 
+        STRICT_EXPECTED_CALL(lwip_select(IGNORED_NUM_ARG, IGNORED_PTR_ARG,
               IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
-        
+
         STRICT_EXPECTED_CALL(FD_ISSET(IGNORED_NUM_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);
         STRICT_EXPECTED_CALL(FD_ISSET(IGNORED_NUM_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);
         STRICT_EXPECTED_CALL(SSL_new(IGNORED_PTR_ARG)).IgnoreArgument(1);
@@ -1675,10 +1675,10 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         g_ssl_connect_success = 0;
         g_ssl_fd_isset = 0;
         g_ssl_get_error_success = 1;
-        
+
         umock_c_reset_all_calls();
-        
-        STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);    
+
+        STRICT_EXPECTED_CALL(netconn_gethostbyname(IGNORED_PTR_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);
         STRICT_EXPECTED_CALL(TLSv1_client_method());
         STRICT_EXPECTED_CALL(SSL_CTX_new(IGNORED_PTR_ARG)).IgnoreArgument(1);
         STRICT_EXPECTED_CALL(SSL_CTX_set_default_read_buffer_len(IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2);
@@ -1687,20 +1687,20 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
         STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
         STRICT_EXPECTED_CALL(setsockopt(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_PTR_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
-        STRICT_EXPECTED_CALL(fcntl(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3); 
-        STRICT_EXPECTED_CALL(fcntl(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3); 
-        STRICT_EXPECTED_CALL(bind(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);   
+        STRICT_EXPECTED_CALL(fcntl(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
+        STRICT_EXPECTED_CALL(fcntl(IGNORED_NUM_ARG,IGNORED_NUM_ARG,IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
+        STRICT_EXPECTED_CALL(bind(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
         STRICT_EXPECTED_CALL(connect(IGNORED_NUM_ARG,IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3);
-        STRICT_EXPECTED_CALL(lwip_select(IGNORED_NUM_ARG, IGNORED_PTR_ARG, 
+        STRICT_EXPECTED_CALL(lwip_select(IGNORED_NUM_ARG, IGNORED_PTR_ARG,
               IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
-        
+
         STRICT_EXPECTED_CALL(FD_ISSET(IGNORED_NUM_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);
         STRICT_EXPECTED_CALL(FD_ISSET(IGNORED_NUM_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);
         STRICT_EXPECTED_CALL(SSL_new(IGNORED_PTR_ARG)).IgnoreArgument(1);
-        
+
         STRICT_EXPECTED_CALL(SSL_set_fd(IGNORED_PTR_ARG, IGNORED_NUM_ARG)).IgnoreArgument(1).IgnoreArgument(2);
         while(retry < MAX_RETRY){
-            STRICT_EXPECTED_CALL(lwip_select(IGNORED_NUM_ARG, IGNORED_PTR_ARG, 
+            STRICT_EXPECTED_CALL(lwip_select(IGNORED_NUM_ARG, IGNORED_PTR_ARG,
               IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2).IgnoreArgument(3).IgnoreArgument(4).IgnoreArgument(5);
             STRICT_EXPECTED_CALL(FD_ISSET(IGNORED_NUM_ARG,IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);
             STRICT_EXPECTED_CALL(SSL_connect(IGNORED_PTR_ARG)).IgnoreArgument(1);
@@ -1747,7 +1747,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         umock_c_reset_all_calls();
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
-        
+
         umock_c_negative_tests_snapshot();
 
         for (i = 0; i < umock_c_negative_tests_call_count(); i++)
@@ -1762,7 +1762,7 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         }
 
         ///cleanup
-        umock_c_negative_tests_deinit();   
+        umock_c_negative_tests_deinit();
     }
 
 
@@ -1779,9 +1779,9 @@ BEGIN_TEST_SUITE(tlsio_esp8266_ut)
         ASSERT_IS_NOT_NULL(tlsioInterfaces);
 
         umock_c_reset_all_calls();
-          
-        STRICT_EXPECTED_CALL(gballoc_malloc(sizeof(TLS_IO_INSTANCE)));   
-        STRICT_EXPECTED_CALL(mallocAndStrcpy_s(&g_destination, IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);  
+
+        STRICT_EXPECTED_CALL(gballoc_malloc(sizeof(TLS_IO_INSTANCE)));
+        STRICT_EXPECTED_CALL(mallocAndStrcpy_s(&g_destination, IGNORED_PTR_ARG)).IgnoreArgument(1).IgnoreArgument(2);
 
         ///act
         result = (TLS_IO_INSTANCE*)tlsioInterfaces->concrete_io_create((void*)&tlsio_config);

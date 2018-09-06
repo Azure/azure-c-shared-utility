@@ -27,10 +27,10 @@ static_ resultType prefix name() \
         if((result!=NULL)&&(failed)) return dynamic_cast<CMockValue<resultType>*>(result)->GetValue();
 
 #define MOCK_METHOD_0(prefix, resultType, name) \
-MOCK_ANY_METHOD_0(,,prefix, resultType, name) 
+MOCK_ANY_METHOD_0(,,prefix, resultType, name)
 
 #define MOCK_STATIC_METHOD_0(prefix, resultType, name) \
-MOCK_ANY_METHOD_0(static, STATIC_, prefix, resultType, name) 
+MOCK_ANY_METHOD_0(static, STATIC_, prefix, resultType, name)
 
 #define DECLARE_GLOBAL_MOCK_METHOD_0(mockClass, prefix, resultType, name) \
 prefix resultType name() \
@@ -59,10 +59,10 @@ static_ resultType prefix name(arg1Type arg1Value) \
         if((result!=NULL)&&(failed)) return dynamic_cast<CMockValue<resultType>*>(result)->GetValue();
 
 #define MOCK_METHOD_1(prefix, resultType, name, arg1Type, arg1Value) \
-MOCK_ANY_METHOD_1(,,prefix, resultType, name, arg1Type, arg1Value) 
+MOCK_ANY_METHOD_1(,,prefix, resultType, name, arg1Type, arg1Value)
 
 #define MOCK_STATIC_METHOD_1(prefix, resultType, name, arg1Type, arg1Value) \
-MOCK_ANY_METHOD_1(static, STATIC_, prefix, resultType, name, arg1Type, arg1Value) 
+MOCK_ANY_METHOD_1(static, STATIC_, prefix, resultType, name, arg1Type, arg1Value)
 
 #define DECLARE_GLOBAL_MOCK_METHOD_1(mockClass, prefix, resultType, name, arg1Type, arg1Value) \
 prefix resultType name(arg1Type arg1Value) \
@@ -93,10 +93,10 @@ static_ resultType prefix name(arg1Type arg1Value, arg2Type arg2Value) \
         if((result!=NULL)&&(failed)) return dynamic_cast<CMockValue<resultType>*>(result)->GetValue();
 
 #define MOCK_METHOD_2(prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value) \
-MOCK_ANY_METHOD_2(,,prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value) 
+MOCK_ANY_METHOD_2(,,prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value)
 
 #define MOCK_STATIC_METHOD_2(prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value) \
-MOCK_ANY_METHOD_2(static, STATIC_, prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value) 
+MOCK_ANY_METHOD_2(static, STATIC_, prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value)
 
 #define DECLARE_GLOBAL_MOCK_METHOD_2(mockClass, prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value) \
 prefix resultType name(arg1Type arg1Value, arg2Type arg2Value) \
@@ -129,10 +129,10 @@ static_ resultType prefix name(arg1Type arg1Value, arg2Type arg2Value, arg3Type 
         if((result!=NULL)&&(failed)) return dynamic_cast<CMockValue<resultType>*>(result)->GetValue();
 
 #define MOCK_METHOD_3(prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value) \
-MOCK_ANY_METHOD_3(,,prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value) 
+MOCK_ANY_METHOD_3(,,prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value)
 
 #define MOCK_STATIC_METHOD_3(prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value) \
-MOCK_ANY_METHOD_3(static, STATIC_, prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value) 
+MOCK_ANY_METHOD_3(static, STATIC_, prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value)
 
 #define DECLARE_GLOBAL_MOCK_METHOD_3(mockClass, prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value) \
 prefix resultType name(arg1Type arg1Value, arg2Type arg2Value, arg3Type arg3Value) \
@@ -167,10 +167,10 @@ static_ resultType prefix name(arg1Type arg1Value, arg2Type arg2Value, arg3Type 
         if((result!=NULL)&&(failed)) return dynamic_cast<CMockValue<resultType>*>(result)->GetValue();
 
 #define MOCK_METHOD_4(prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value) \
-MOCK_ANY_METHOD_4(,,prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value) 
+MOCK_ANY_METHOD_4(,,prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value)
 
 #define MOCK_STATIC_METHOD_4(prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value) \
-MOCK_ANY_METHOD_4(static, STATIC_, prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value) 
+MOCK_ANY_METHOD_4(static, STATIC_, prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value)
 
 #define DECLARE_GLOBAL_MOCK_METHOD_4(mockClass, prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value) \
 prefix resultType name(arg1Type arg1Value, arg2Type arg2Value, arg3Type arg3Value, arg4Type arg4Value) \
@@ -207,10 +207,10 @@ static_ resultType prefix name(arg1Type arg1Value, arg2Type arg2Value, arg3Type 
         if((result!=NULL)&&(failed)) return dynamic_cast<CMockValue<resultType>*>(result)->GetValue();
 
 #define MOCK_METHOD_5(prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value) \
-MOCK_ANY_METHOD_5(,,prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value) 
+MOCK_ANY_METHOD_5(,,prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value)
 
 #define MOCK_STATIC_METHOD_5(prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value) \
-MOCK_ANY_METHOD_5(static, STATIC_, prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value) 
+MOCK_ANY_METHOD_5(static, STATIC_, prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value)
 
 #define DECLARE_GLOBAL_MOCK_METHOD_5(mockClass, prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value) \
 prefix resultType name(arg1Type arg1Value, arg2Type arg2Value, arg3Type arg3Value, arg4Type arg4Value, arg5Type arg5Value) \
@@ -249,10 +249,10 @@ static_ resultType prefix name(arg1Type arg1Value, arg2Type arg2Value, arg3Type 
         if((result!=NULL)&&(failed)) return dynamic_cast<CMockValue<resultType>*>(result)->GetValue();
 
 #define MOCK_METHOD_6(prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value) \
-MOCK_ANY_METHOD_6(,,prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value) 
+MOCK_ANY_METHOD_6(,,prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value)
 
 #define MOCK_STATIC_METHOD_6(prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value) \
-MOCK_ANY_METHOD_6(static, STATIC_, prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value) 
+MOCK_ANY_METHOD_6(static, STATIC_, prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value)
 
 #define DECLARE_GLOBAL_MOCK_METHOD_6(mockClass, prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value) \
 prefix resultType name(arg1Type arg1Value, arg2Type arg2Value, arg3Type arg3Value, arg4Type arg4Value, arg5Type arg5Value, arg6Type arg6Value) \
@@ -293,10 +293,10 @@ static_ resultType prefix name(arg1Type arg1Value, arg2Type arg2Value, arg3Type 
         if((result!=NULL)&&(failed)) return dynamic_cast<CMockValue<resultType>*>(result)->GetValue();
 
 #define MOCK_METHOD_7(prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value) \
-MOCK_ANY_METHOD_7(,,prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value) 
+MOCK_ANY_METHOD_7(,,prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value)
 
 #define MOCK_STATIC_METHOD_7(prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value) \
-MOCK_ANY_METHOD_7(static, STATIC_, prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value) 
+MOCK_ANY_METHOD_7(static, STATIC_, prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value)
 
 #define DECLARE_GLOBAL_MOCK_METHOD_7(mockClass, prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value) \
 prefix resultType name(arg1Type arg1Value, arg2Type arg2Value, arg3Type arg3Value, arg4Type arg4Value, arg5Type arg5Value, arg6Type arg6Value, arg7Type arg7Value) \
@@ -339,10 +339,10 @@ static_ resultType prefix name(arg1Type arg1Value, arg2Type arg2Value, arg3Type 
         if((result!=NULL)&&(failed)) return dynamic_cast<CMockValue<resultType>*>(result)->GetValue();
 
 #define MOCK_METHOD_8(prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value) \
-MOCK_ANY_METHOD_8(,,prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value) 
+MOCK_ANY_METHOD_8(,,prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value)
 
 #define MOCK_STATIC_METHOD_8(prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value) \
-MOCK_ANY_METHOD_8(static, STATIC_, prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value) 
+MOCK_ANY_METHOD_8(static, STATIC_, prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value)
 
 #define DECLARE_GLOBAL_MOCK_METHOD_8(mockClass, prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value) \
 prefix resultType name(arg1Type arg1Value, arg2Type arg2Value, arg3Type arg3Value, arg4Type arg4Value, arg5Type arg5Value, arg6Type arg6Value, arg7Type arg7Value, arg8Type arg8Value) \
@@ -387,10 +387,10 @@ static_ resultType prefix name(arg1Type arg1Value, arg2Type arg2Value, arg3Type 
         if((result!=NULL)&&(failed)) return dynamic_cast<CMockValue<resultType>*>(result)->GetValue();
 
 #define MOCK_METHOD_9(prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value) \
-MOCK_ANY_METHOD_9(,,prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value) 
+MOCK_ANY_METHOD_9(,,prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value)
 
 #define MOCK_STATIC_METHOD_9(prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value) \
-MOCK_ANY_METHOD_9(static, STATIC_, prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value) 
+MOCK_ANY_METHOD_9(static, STATIC_, prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value)
 
 #define DECLARE_GLOBAL_MOCK_METHOD_9(mockClass, prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value) \
 prefix resultType name(arg1Type arg1Value, arg2Type arg2Value, arg3Type arg3Value, arg4Type arg4Value, arg5Type arg5Value, arg6Type arg6Value, arg7Type arg7Value, arg8Type arg8Value, arg9Type arg9Value) \
@@ -437,10 +437,10 @@ static_ resultType prefix name(arg1Type arg1Value, arg2Type arg2Value, arg3Type 
         if((result!=NULL)&&(failed)) return dynamic_cast<CMockValue<resultType>*>(result)->GetValue();
 
 #define MOCK_METHOD_10(prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value) \
-MOCK_ANY_METHOD_10(,,prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value) 
+MOCK_ANY_METHOD_10(,,prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value)
 
 #define MOCK_STATIC_METHOD_10(prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value) \
-MOCK_ANY_METHOD_10(static, STATIC_, prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value) 
+MOCK_ANY_METHOD_10(static, STATIC_, prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value)
 
 #define DECLARE_GLOBAL_MOCK_METHOD_10(mockClass, prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value) \
 prefix resultType name(arg1Type arg1Value, arg2Type arg2Value, arg3Type arg3Value, arg4Type arg4Value, arg5Type arg5Value, arg6Type arg6Value, arg7Type arg7Value, arg8Type arg8Value, arg9Type arg9Value, arg10Type arg10Value) \
@@ -489,10 +489,10 @@ static_ resultType prefix name(arg1Type arg1Value, arg2Type arg2Value, arg3Type 
         if((result!=NULL)&&(failed)) return dynamic_cast<CMockValue<resultType>*>(result)->GetValue();
 
 #define MOCK_METHOD_11(prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value, arg11Type, arg11Value) \
-MOCK_ANY_METHOD_11(,,prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value, arg11Type, arg11Value) 
+MOCK_ANY_METHOD_11(,,prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value, arg11Type, arg11Value)
 
 #define MOCK_STATIC_METHOD_11(prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value, arg11Type, arg11Value) \
-MOCK_ANY_METHOD_11(static, STATIC_, prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value, arg11Type, arg11Value) 
+MOCK_ANY_METHOD_11(static, STATIC_, prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value, arg11Type, arg11Value)
 
 #define DECLARE_GLOBAL_MOCK_METHOD_11(mockClass, prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value, arg11Type, arg11Value) \
 prefix resultType name(arg1Type arg1Value, arg2Type arg2Value, arg3Type arg3Value, arg4Type arg4Value, arg5Type arg5Value, arg6Type arg6Value, arg7Type arg7Value, arg8Type arg8Value, arg9Type arg9Value, arg10Type arg10Value, arg11Type arg11Value) \
@@ -543,10 +543,10 @@ static_ resultType prefix name(arg1Type arg1Value, arg2Type arg2Value, arg3Type 
         if((result!=NULL)&&(failed)) return dynamic_cast<CMockValue<resultType>*>(result)->GetValue();
 
 #define MOCK_METHOD_12(prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value, arg11Type, arg11Value, arg12Type, arg12Value) \
-MOCK_ANY_METHOD_12(,,prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value, arg11Type, arg11Value, arg12Type, arg12Value) 
+MOCK_ANY_METHOD_12(,,prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value, arg11Type, arg11Value, arg12Type, arg12Value)
 
 #define MOCK_STATIC_METHOD_12(prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value, arg11Type, arg11Value, arg12Type, arg12Value) \
-MOCK_ANY_METHOD_12(static, STATIC_, prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value, arg11Type, arg11Value, arg12Type, arg12Value) 
+MOCK_ANY_METHOD_12(static, STATIC_, prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value, arg11Type, arg11Value, arg12Type, arg12Value)
 
 #define DECLARE_GLOBAL_MOCK_METHOD_12(mockClass, prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value, arg11Type, arg11Value, arg12Type, arg12Value) \
 prefix resultType name(arg1Type arg1Value, arg2Type arg2Value, arg3Type arg3Value, arg4Type arg4Value, arg5Type arg5Value, arg6Type arg6Value, arg7Type arg7Value, arg8Type arg8Value, arg9Type arg9Value, arg10Type arg10Value, arg11Type arg11Value, arg12Type arg12Value) \
@@ -599,10 +599,10 @@ static_ resultType prefix name(arg1Type arg1Value, arg2Type arg2Value, arg3Type 
         if((result!=NULL)&&(failed)) return dynamic_cast<CMockValue<resultType>*>(result)->GetValue();
 
 #define MOCK_METHOD_13(prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value, arg11Type, arg11Value, arg12Type, arg12Value, arg13Type, arg13Value) \
-MOCK_ANY_METHOD_13(,,prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value, arg11Type, arg11Value, arg12Type, arg12Value, arg13Type, arg13Value) 
+MOCK_ANY_METHOD_13(,,prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value, arg11Type, arg11Value, arg12Type, arg12Value, arg13Type, arg13Value)
 
 #define MOCK_STATIC_METHOD_13(prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value, arg11Type, arg11Value, arg12Type, arg12Value, arg13Type, arg13Value) \
-MOCK_ANY_METHOD_13(static, STATIC_, prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value, arg11Type, arg11Value, arg12Type, arg12Value, arg13Type, arg13Value) 
+MOCK_ANY_METHOD_13(static, STATIC_, prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value, arg11Type, arg11Value, arg12Type, arg12Value, arg13Type, arg13Value)
 
 #define DECLARE_GLOBAL_MOCK_METHOD_13(mockClass, prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value, arg11Type, arg11Value, arg12Type, arg12Value, arg13Type, arg13Value) \
 prefix resultType name(arg1Type arg1Value, arg2Type arg2Value, arg3Type arg3Value, arg4Type arg4Value, arg5Type arg5Value, arg6Type arg6Value, arg7Type arg7Value, arg8Type arg8Value, arg9Type arg9Value, arg10Type arg10Value, arg11Type arg11Value, arg12Type arg12Value, arg13Type arg13Value) \
@@ -657,10 +657,10 @@ static_ resultType prefix name(arg1Type arg1Value, arg2Type arg2Value, arg3Type 
         if((result!=NULL)&&(failed)) return dynamic_cast<CMockValue<resultType>*>(result)->GetValue();
 
 #define MOCK_METHOD_14(prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value, arg11Type, arg11Value, arg12Type, arg12Value, arg13Type, arg13Value, arg14Type, arg14Value) \
-MOCK_ANY_METHOD_14(,,prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value, arg11Type, arg11Value, arg12Type, arg12Value, arg13Type, arg13Value, arg14Type, arg14Value) 
+MOCK_ANY_METHOD_14(,,prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value, arg11Type, arg11Value, arg12Type, arg12Value, arg13Type, arg13Value, arg14Type, arg14Value)
 
 #define MOCK_STATIC_METHOD_14(prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value, arg11Type, arg11Value, arg12Type, arg12Value, arg13Type, arg13Value, arg14Type, arg14Value) \
-MOCK_ANY_METHOD_14(static, STATIC_, prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value, arg11Type, arg11Value, arg12Type, arg12Value, arg13Type, arg13Value, arg14Type, arg14Value) 
+MOCK_ANY_METHOD_14(static, STATIC_, prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value, arg11Type, arg11Value, arg12Type, arg12Value, arg13Type, arg13Value, arg14Type, arg14Value)
 
 #define DECLARE_GLOBAL_MOCK_METHOD_14(mockClass, prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value, arg11Type, arg11Value, arg12Type, arg12Value, arg13Type, arg13Value, arg14Type, arg14Value) \
 prefix resultType name(arg1Type arg1Value, arg2Type arg2Value, arg3Type arg3Value, arg4Type arg4Value, arg5Type arg5Value, arg6Type arg6Value, arg7Type arg7Value, arg8Type arg8Value, arg9Type arg9Value, arg10Type arg10Value, arg11Type arg11Value, arg12Type arg12Value, arg13Type arg13Value, arg14Type arg14Value) \
@@ -717,10 +717,10 @@ static_ resultType prefix name(arg1Type arg1Value, arg2Type arg2Value, arg3Type 
         if((result!=NULL)&&(failed)) return dynamic_cast<CMockValue<resultType>*>(result)->GetValue();
 
 #define MOCK_METHOD_15(prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value, arg11Type, arg11Value, arg12Type, arg12Value, arg13Type, arg13Value, arg14Type, arg14Value, arg15Type, arg15Value) \
-MOCK_ANY_METHOD_15(,,prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value, arg11Type, arg11Value, arg12Type, arg12Value, arg13Type, arg13Value, arg14Type, arg14Value, arg15Type, arg15Value) 
+MOCK_ANY_METHOD_15(,,prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value, arg11Type, arg11Value, arg12Type, arg12Value, arg13Type, arg13Value, arg14Type, arg14Value, arg15Type, arg15Value)
 
 #define MOCK_STATIC_METHOD_15(prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value, arg11Type, arg11Value, arg12Type, arg12Value, arg13Type, arg13Value, arg14Type, arg14Value, arg15Type, arg15Value) \
-MOCK_ANY_METHOD_15(static, STATIC_, prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value, arg11Type, arg11Value, arg12Type, arg12Value, arg13Type, arg13Value, arg14Type, arg14Value, arg15Type, arg15Value) 
+MOCK_ANY_METHOD_15(static, STATIC_, prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value, arg11Type, arg11Value, arg12Type, arg12Value, arg13Type, arg13Value, arg14Type, arg14Value, arg15Type, arg15Value)
 
 #define DECLARE_GLOBAL_MOCK_METHOD_15(mockClass, prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value, arg11Type, arg11Value, arg12Type, arg12Value, arg13Type, arg13Value, arg14Type, arg14Value, arg15Type, arg15Value) \
 prefix resultType name(arg1Type arg1Value, arg2Type arg2Value, arg3Type arg3Value, arg4Type arg4Value, arg5Type arg5Value, arg6Type arg6Value, arg7Type arg7Value, arg8Type arg8Value, arg9Type arg9Value, arg10Type arg10Value, arg11Type arg11Value, arg12Type arg12Value, arg13Type arg13Value, arg14Type arg14Value, arg15Type arg15Value) \
@@ -779,10 +779,10 @@ static_ resultType prefix name(arg1Type arg1Value, arg2Type arg2Value, arg3Type 
         if((result!=NULL)&&(failed)) return dynamic_cast<CMockValue<resultType>*>(result)->GetValue();
 
 #define MOCK_METHOD_16(prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value, arg11Type, arg11Value, arg12Type, arg12Value, arg13Type, arg13Value, arg14Type, arg14Value, arg15Type, arg15Value, arg16Type, arg16Value) \
-MOCK_ANY_METHOD_16(,,prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value, arg11Type, arg11Value, arg12Type, arg12Value, arg13Type, arg13Value, arg14Type, arg14Value, arg15Type, arg15Value, arg16Type, arg16Value) 
+MOCK_ANY_METHOD_16(,,prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value, arg11Type, arg11Value, arg12Type, arg12Value, arg13Type, arg13Value, arg14Type, arg14Value, arg15Type, arg15Value, arg16Type, arg16Value)
 
 #define MOCK_STATIC_METHOD_16(prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value, arg11Type, arg11Value, arg12Type, arg12Value, arg13Type, arg13Value, arg14Type, arg14Value, arg15Type, arg15Value, arg16Type, arg16Value) \
-MOCK_ANY_METHOD_16(static, STATIC_, prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value, arg11Type, arg11Value, arg12Type, arg12Value, arg13Type, arg13Value, arg14Type, arg14Value, arg15Type, arg15Value, arg16Type, arg16Value) 
+MOCK_ANY_METHOD_16(static, STATIC_, prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value, arg11Type, arg11Value, arg12Type, arg12Value, arg13Type, arg13Value, arg14Type, arg14Value, arg15Type, arg15Value, arg16Type, arg16Value)
 
 #define DECLARE_GLOBAL_MOCK_METHOD_16(mockClass, prefix, resultType, name, arg1Type, arg1Value, arg2Type, arg2Value, arg3Type, arg3Value, arg4Type, arg4Value, arg5Type, arg5Value, arg6Type, arg6Value, arg7Type, arg7Value, arg8Type, arg8Value, arg9Type, arg9Value, arg10Type, arg10Value, arg11Type, arg11Value, arg12Type, arg12Value, arg13Type, arg13Value, arg14Type, arg14Value, arg15Type, arg15Value, arg16Type, arg16Value) \
 prefix resultType name(arg1Type arg1Value, arg2Type arg2Value, arg3Type arg3Value, arg4Type arg4Value, arg5Type arg5Value, arg6Type arg6Value, arg7Type arg7Value, arg8Type arg8Value, arg9Type arg9Value, arg10Type arg10Value, arg11Type arg11Value, arg12Type arg12Value, arg13Type arg13Value, arg14Type arg14Value, arg15Type arg15Value, arg16Type arg16Value) \

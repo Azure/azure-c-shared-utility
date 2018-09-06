@@ -2,7 +2,7 @@
 #ifndef TEST_SOCKET_H
 #define TEST_SOCKET_H
 
-// This file enables testing of these Linux-oriented unit tests under Windows. It is not 
+// This file enables testing of these Linux-oriented unit tests under Windows. It is not
 // strictly necessary, but is convenient to have.
 
 #ifdef __cplusplus
@@ -15,8 +15,8 @@ extern "C" {
 #include <stdint.h>
 #include <stddef.h>
 
-#define	AF_INET		2
-#define	SOCK_STREAM	1
+#define    AF_INET        2
+#define    SOCK_STREAM    1
 #define IPPROTO_TCP     6
 
 

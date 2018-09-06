@@ -1519,7 +1519,7 @@ TEST_FUNCTION(uws_client_destroy_also_performs_a_close)
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    
+
     // act
     uws_client_destroy(uws_client);
 
@@ -4134,7 +4134,7 @@ TEST_FUNCTION(when_a_fragmented_frame_is_received_all_at_once_the_frame_is_indic
 /* Tests_SRS_UWS_CLIENT_01_216: [ Message fragments MUST be delivered to the recipient in the order sent by the sender. ]*/
 /* Tests_SRS_UWS_CLIENT_01_219: [ A sender MAY create fragments of any size for non-control messages. ]*/
 /* Tests_SRS_UWS_CLIENT_01_225: [ As a consequence of these rules, all fragments of a message are of the same type, as set by the first fragment's opcode. ]*/
-/* Tests_SRS_UWS_CLIENT_01_214: [ Control frames (see Section 5.5) MAY be injected in the middle of a fragmented message. ]*/  
+/* Tests_SRS_UWS_CLIENT_01_214: [ Control frames (see Section 5.5) MAY be injected in the middle of a fragmented message. ]*/
 TEST_FUNCTION(pong_frame_can_be_injected_in_middle_of_fragmented_message)
 {
     // arrange

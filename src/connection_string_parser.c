@@ -183,7 +183,7 @@ int connectionstringparser_splitHostName_from_char(const char* hostName, STRING_
             }
             runHostName++;
         }
-     
+
         if ((*runHostName) == '\0')
         {
             /* Codes_SRS_CONNECTIONSTRINGPARSER_21_030: [If the hostName is not a valid host name, connectionstringparser_splitHostName_from_char shall return __FAILURE__.]*/

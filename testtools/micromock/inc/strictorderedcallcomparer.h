@@ -50,7 +50,7 @@ public:
         {
             CMockMethodCallBase* expectedCall = expectedCalls[m_ExpectedCallIndex];
 
-            // if the expected call says all calls of this type should be ignored, 
+            // if the expected call says all calls of this type should be ignored,
             // then match
             if ((expectedCall->m_IgnoreAllCalls) &&
                 (*expectedCall == *actualCall))

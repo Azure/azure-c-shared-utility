@@ -492,7 +492,7 @@ static int x509_wolfssl_add_credentials(WOLFSSL* ssl, char* x509certificate, cha
         LogError("unable to enable secure renegotiation");
         result = __FAILURE__;
     }
-#endif 
+#endif
     else
     {
         result = 0;
@@ -578,7 +578,7 @@ int tlsio_wolfssl_init(void)
 void tlsio_wolfssl_deinit(void)
 {
 }
- 
+
 CONCRETE_IO_HANDLE tlsio_wolfssl_create(void* io_create_parameters)
 {
     TLS_IO_INSTANCE* result;

@@ -49,7 +49,7 @@ LOCK_RESULT Lock(LOCK_HANDLE handle)
         LogError("Invalid argument; handle is NULL.");
         result = LOCK_ERROR;
     }
-    else 
+    else
     {
         DWORD rv = WaitForSingleObject((HANDLE)handle, INFINITE);
         switch (rv)
@@ -79,7 +79,7 @@ LOCK_RESULT Lock(LOCK_HANDLE handle)
                 result = LOCK_ERROR;
                 break;
         }
-    }    
+    }
 
     return result;
 }
@@ -107,6 +107,6 @@ LOCK_RESULT Unlock(LOCK_HANDLE handle)
             result = LOCK_ERROR;
         }
     }
-    
+
     return result;
 }

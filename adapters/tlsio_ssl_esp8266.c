@@ -145,7 +145,7 @@ static int lwip_net_errno(int fd)
     return sock_errno;
 }
 
-static void lwip_set_non_block(int fd) 
+static void lwip_set_non_block(int fd)
 {
   int flags = -1;
   int error = 0;
@@ -225,7 +225,7 @@ LOCAL int openssl_thread_LWIP_CONNECTION(TLS_IO_INSTANCE* p)
                 ret = ret || setsockopt(sock, IPPROTO_TCP, TCP_KEEPIDLE, (void *)&keepIdle, sizeof(keepIdle));
                 ret = ret || setsockopt(sock, IPPROTO_TCP, TCP_KEEPINTVL, (void *)&keepInterval, sizeof(keepInterval));
                 ret = ret || setsockopt(sock, IPPROTO_TCP, TCP_KEEPCNT, (void *)&keepCount, sizeof(keepCount));
-                
+
                 if (ret != 0){
                     result = __LINE__;
                     LogError("set socket keep-alive failed, ret = %d ", ret);
@@ -243,7 +243,7 @@ LOCAL int openssl_thread_LWIP_CONNECTION(TLS_IO_INSTANCE* p)
                     sock_addr.sin_port = 0; // random local port
                     /* Codes_SRS_TLSIO_SSL_ESP8266_99_082: [ If bind failed, the tlsio_openssl_open shall return __LINE__. ] */
                     ret = bind(sock, (struct sockaddr*)&sock_addr, sizeof(sock_addr));
-                    
+
                     // LogInfo("bind return: %d", ret);
                     if (ret != 0) {
                         result = __LINE__;
@@ -286,7 +286,7 @@ LOCAL int openssl_thread_LWIP_CONNECTION(TLS_IO_INSTANCE* p)
                             if (ret <= 0) {
                                 result = __LINE__;
                                 LogError("select failed: %d", lwip_net_errno(sock));
-                            } else 
+                            } else
                             {
                                 if (!FD_ISSET(sock, &writeset) || FD_ISSET(sock, &errset)) {
                                     result = __LINE__;
@@ -389,7 +389,7 @@ LOCAL int openssl_thread_LWIP_CONNECTION(TLS_IO_INSTANCE* p)
                                             }
                                         }
                                     }
-                                    
+
                                 }
                             }
                         }
@@ -397,7 +397,7 @@ LOCAL int openssl_thread_LWIP_CONNECTION(TLS_IO_INSTANCE* p)
 
                 }
             }
-        
+
         }
     }
     //LogInfo("openssl_thread_LWIP_CONNECTION end: %d", system_get_free_heap_size());
@@ -435,7 +435,7 @@ static int decode_ssl_received_bytes(TLS_IO_INSTANCE* tls_io_instance)
     else{
         result = __LINE__;
     }
-    
+
     return result;
 }
 
@@ -466,7 +466,7 @@ static int destroy_openssl_instance(TLS_IO_INSTANCE* tls_io_instance)
             tls_io_instance->ssl_context = NULL;
             LogInfo("SSL_ctx_free");
         }
-        
+
         //LogInfo("destroy end: %d", system_get_free_heap_size());
     }
 
@@ -639,12 +639,12 @@ int tlsio_openssl_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_open
                 ret = netconn_gethostbyname(tls_io_instance->hostname, &tls_io_instance->target_ip);
                 /* Codes_SRS_TLSIO_SSL_ESP8266_99_027: [ The tlsio_openssl_open shall set the tlsio to try to open the connection for MAX_RETRY times before assuming that connection failed. ]*/
             } while((ret != 0) && netconn_retry++ < MAX_RETRY);
-            
+
             /* Codes_SRS_TLSIO_SSL_ESP8266_99_019: [ If the WiFi cannot find the IP for the hostName, the tlsio_openssl_open shall return __LINE__. ]*/
             if (ret != 0 || openssl_thread_LWIP_CONNECTION(tls_io_instance) != 0){
                 tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
                 /* Codes_SRS_TLSIO_SSL_ESP8266_99_039: [ If the tlsio_openssl_open failed to open the tls connection, and the on_io_open_complete callback was provided, it shall call the on_io_open_complete with IO_OPEN_ERROR. ]*/
-                indicate_open_complete(tls_io_instance, IO_OPEN_ERROR); 
+                indicate_open_complete(tls_io_instance, IO_OPEN_ERROR);
                 /* Codes_SRS_TLSIO_SSL_ESP8266_99_037: [ If the ssl client is not connected, the tlsio_openssl_open shall change the state to TLSIO_STATE_ERROR, log the error, and return _LINE_. ]*/
                 result = __LINE__;
                 LogError("openssl_thread_LWIP_CONNECTION failed.");
@@ -657,7 +657,7 @@ int tlsio_openssl_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_open
                 /* Codes_SRS_TLSIO_SSL_ESP8266_99_034: [ If tlsio_openssl_open get success to open the ssl connection, it shall set the tlsio state as TLSIO_STATE_OPEN, and return 0. ]*/
                 tls_io_instance->tlsio_state = TLSIO_STATE_OPEN;
                 /* Codes_SRS_TLSIO_SSL_ESP8266_99_041: [ If the tlsio_openssl_open get success to open the tls connection, and the on_io_open_complete callback was provided, it shall call the on_io_open_complete with IO_OPEN_OK. ]*/
-                indicate_open_complete(tls_io_instance, IO_OPEN_OK);    
+                indicate_open_complete(tls_io_instance, IO_OPEN_OK);
                 result = 0;
                 os_delay_us(5000000); //delay added to give reconnect time to send last message
                 //LogInfo("tlsio_openssl_open end: %d", system_get_free_heap_size());
@@ -717,7 +717,7 @@ int tlsio_openssl_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_cl
             }
             else
             {
-                
+
                 /* Codes_SRS_TLSIO_SSL_ESP8266_99_050: [ If tlsio_openssl_close successfully destroys the ssl connection, it shall set the tlsio state as TLSIO_STATE_NOT_OPEN, and return 0. ]*/
                 tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
                 result = 0;
@@ -725,7 +725,7 @@ int tlsio_openssl_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_cl
                 {
                     /* Codes_SRS_TLSIO_SSL_ESP8266_99_051: [ If tlsio_openssl_close successfully destroys the ssl connection, it shall call on_io_close_complete. ]*/
                     tls_io_instance->on_io_close_complete(tls_io_instance->on_io_close_complete_context);
-                }   
+                }
             }
         }
     }
@@ -855,7 +855,7 @@ void tlsio_openssl_dowork(CONCRETE_IO_HANDLE tls_io)
                 ret = SSL_shutdown(tls_io_instance->ssl);
                 //LogInfo("SSL_shutdown ret: %d", ret);
             }
-        } 
+        }
         else
         {
             //LogError("Invalid tlsio_state for dowork. Expected state is TLSIO_STATE_OPEN.");

@@ -136,7 +136,7 @@ int strncpy_s(char* dst, size_t dstSizeInBytes, const char* src, size_t maxCount
     {
         result = EINVAL;
     }
-    else 
+    else
     {
         size_t srcLength = strlen(src);
         if (maxCount != _TRUNCATE)
@@ -242,7 +242,7 @@ int sprintf_s(char* dst, size_t dstSizeInBytes, const char* format, ...)
     {
         /*Codes_SRS_CRT_ABSTRACTIONS_99_033: [sprintf_s shall check the format string for valid formatting characters.  If the check fails, the function returns -1.]*/
 
-#if defined _MSC_VER 
+#if defined _MSC_VER
 #error crt_abstractions is not provided for Microsoft Compilers
 #else
         /*not Microsoft compiler... */
@@ -347,7 +347,7 @@ unsigned long long strtoull_s(const char* nptr, char** endptr, int base)
                 runner++;
             }
         }
-        
+
         if(base == 0)
         {
             /*Codes_SRS_CRT_ABSTRACTIONS_21_007: [If the base is 0 and no special chars precedes the number, strtoull_s must convert to a decimal (base 10).]*/
@@ -533,7 +533,7 @@ static FLOAT_STRING_TYPE splitFloatString(const char* nptr, char** endptr, int *
                 result = FST_OVERFLOW;
             }
         }
-        
+
         if (((**endptr) == 'e') || ((**endptr) == 'E'))
         {
             startptr = (*endptr) + 1;
@@ -701,7 +701,7 @@ int mallocAndStrcpy_s(char** destination, const char* source)
     {
         size_t l = strlen(source);
         char* temp = (char*)malloc(l + 1);
-        
+
         /*Codes_SRS_CRT_ABSTRACTIONS_99_037: [Upon failure to allocate memory for the destination, the function will return ENOMEM.]*/
         if (temp == NULL)
         {

@@ -2,7 +2,7 @@
 #ifndef TEST_SOCKET_H
 #define TEST_SOCKET_H
 
-// This file enables testing of these Linux-oriented unit tests under Windows. It is not 
+// This file enables testing of these Linux-oriented unit tests under Windows. It is not
 // strictly necessary, but is convenient to have.
 
 #ifdef __cplusplus
@@ -20,19 +20,19 @@ extern "C" {
 #endif
 
 #ifndef EAGAIN
-#define  EAGAIN			11
+#define  EAGAIN            11
 #endif
 
 #ifndef EWOULDBLOCK
-#define  EWOULDBLOCK	140
+#define  EWOULDBLOCK    140
 #endif
 
-#define	SOL_SOCKET	0xffff
-#define	SO_ERROR	0x1007
-#define	AF_INET		2
-#define	SOCK_STREAM	1
-#define	SOCK_DGRAM	2
-#define	SO_KEEPALIVE	0x0008
+#define    SOL_SOCKET    0xffff
+#define    SO_ERROR    0x1007
+#define    AF_INET        2
+#define    SOCK_STREAM    1
+#define    SOCK_DGRAM    2
+#define    SO_KEEPALIVE    0x0008
 #define IPPROTO_TCP     6
 #define TCP_KEEPIDLE   0x03
 #define TCP_KEEPINTVL  0x04
@@ -40,7 +40,7 @@ extern "C" {
 #define F_GETFL 3
 #define F_SETFL 4
 #define O_NONBLOCK  1
-#define	EACCES		13
+#define    EACCES        13
 
 #define FD_SET(n, p) *(p) = 1
 #define FD_CLR(n, p) *(p) = 0
@@ -86,7 +86,7 @@ extern "C" {
     int bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
 
     int getsockopt(int sockfd, int level, int optname, void *optval, socklen_t *optlen);
-    
+
     int setsockopt(int sockfd, int level, int optname, const void *optval, socklen_t optlen);
 
     int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen);

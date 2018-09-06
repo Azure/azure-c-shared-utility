@@ -1,9 +1,9 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#error  CycloneSSL is NOT supported for the Azure C shared utilities.  
+#error  CycloneSSL is NOT supported for the Azure C shared utilities.
 #error  The code here is provided for reference purposes.
-#error  
+#error
 #error  A security audit is required if you attempt to bring this code back.
 
 #include <stdlib.h>
@@ -106,12 +106,12 @@ static void tlsio_cyclonessl_destroy_option(const char* name, const void* value)
     {
         LogError("invalid parameter detected: const char* name=%p, const void* value=%p", name, value);
     }
-	else
-	{
-		if (strcmp(name, "TrustedCerts") == 0)
-		{
-			free((void*)value);
-		}
+    else
+    {
+        if (strcmp(name, "TrustedCerts") == 0)
+        {
+            free((void*)value);
+        }
         else
         {
             LogError("not handled option : %s", name);

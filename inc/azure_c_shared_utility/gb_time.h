@@ -9,7 +9,7 @@
     a) some of the time.h symbols shall be redefined, for example: time => gb_time
     b) all "code" using the time will actually (because of the preprocessor) call to gb_time
     c) gb_time shall blindly call into time, thus realizing a passthrough
-    
+
     reason is: unittesting. time comes with the C Run Time and cannot be mocked (that is, in the global namespace cannot exist a function called time
 
 2) if GB_TIME_INTERCEPT is not defined then

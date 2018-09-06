@@ -140,7 +140,7 @@ TEST_FUNCTION(tickcounter_freertos_create_succeed)
     ASSERT_IS_NOT_NULL(tickHandle);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
-    /// cleanup 
+    /// cleanup
     tickcounter_destroy(tickHandle);
 }
 
@@ -203,7 +203,7 @@ TEST_FUNCTION(tickcounter_freertos_get_current_ms_current_ms_NULL_fail)
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
-    /// cleanup 
+    /// cleanup
     tickcounter_destroy(tickHandle);
 }
 

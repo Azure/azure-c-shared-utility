@@ -2,7 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 // This file is made an integral part of a unit test implementation with a #include. It
-// is broken out for reuse and readability. 
+// is broken out for reuse and readability.
 
 #ifndef GBALLOC_UT_IMPL_1_H
 #define GBALLOC_UT_IMPL_1_H
@@ -19,24 +19,24 @@ static void remove_gballoc_memory_block(void* block);
 */
 static void* my_gballoc_malloc(size_t size)
 {
-	void* result = malloc(size);
-	add_gballoc_memory_block(result);
-	return result;
+    void* result = malloc(size);
+    add_gballoc_memory_block(result);
+    return result;
 }
 
 static void* my_gballoc_realloc(void* ptr, size_t size)
 {
     void* result;
-	remove_gballoc_memory_block(ptr);
-	result = realloc(ptr, size);
-	add_gballoc_memory_block(result);
-	return result;
+    remove_gballoc_memory_block(ptr);
+    result = realloc(ptr, size);
+    add_gballoc_memory_block(result);
+    return result;
 }
 
 static void my_gballoc_free(void* ptr)
 {
-	remove_gballoc_memory_block(ptr);
-	free(ptr);
+    remove_gballoc_memory_block(ptr);
+    free(ptr);
 }
 
 #endif // GBALLOC_UT_IMPL_1_H

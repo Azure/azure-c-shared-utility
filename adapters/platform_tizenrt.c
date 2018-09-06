@@ -7,12 +7,12 @@
 
 int platform_init(void)
 {
-	return 0;
+    return 0;
 }
 
 const IO_INTERFACE_DESCRIPTION* platform_get_default_tlsio(void)
 {
-	return tlsio_mbedtls_get_interface_description();
+    return tlsio_mbedtls_get_interface_description();
 }
 
 STRING_HANDLE platform_get_platform_info(void)
@@ -24,5 +24,5 @@ STRING_HANDLE platform_get_platform_info(void)
 
 void platform_deinit(void)
 {
-	return;
+    return;
 }

@@ -46,7 +46,7 @@ THREADAPI_RESULT ThreadAPI_Join(THREAD_HANDLE threadHandle, int *res)
     else
     {
         DWORD returnCode = WaitForSingleObject(threadHandle, INFINITE);
-        
+
         if( returnCode != WAIT_OBJECT_0)
         {
             result = THREADAPI_ERROR;

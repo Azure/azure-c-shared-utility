@@ -7,9 +7,9 @@ int main(void)
 {
     size_t failedTestCount = 0;
     /**
-     * Identify the test suite to run here. 
+     * Identify the test suite to run here.
      */
     RUN_TEST_SUITE(template_ut, failedTestCount);
-    
+
     return failedTestCount;
 }

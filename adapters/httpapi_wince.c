@@ -30,11 +30,11 @@ public:
 int CALLBACK SSLValidateCertHook(DWORD  dwType, LPVOID pvArg,
     DWORD  dwChainLen, LPBLOB pCertChain, DWORD dwFlags)
 {
-	DWORD dwRetValue = SSL_ERR_OKAY; // SSL_ERR_OKAY : The certificate is acceptable
-	if (dwFlags)
-		dwRetValue = SSL_ERR_CERT_UNKNOWN; // Issuer is unknown
+    DWORD dwRetValue = SSL_ERR_OKAY; // SSL_ERR_OKAY : The certificate is acceptable
+    if (dwFlags)
+        dwRetValue = SSL_ERR_CERT_UNKNOWN; // Issuer is unknown
 
-	return dwRetValue;
+    return dwRetValue;
 
 }
 
@@ -45,8 +45,8 @@ int SSLInit(SOCKET s)
     SSLVALIDATECERTHOOK hook;
     SSLPROTOCOLS protocolsToUse;
     int ret;
-	
-    
+
+
     if (setsockopt(s, SOL_SOCKET, SO_SECURE, (LPSTR)&optval, sizeof(optval)) ==
         SOCKET_ERROR)
     {
@@ -242,7 +242,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
 
     HTTPAPI_RESULT result;
     size_t  headersCount;
-	char    buf[TEMPORARY_BUFFER_SIZE];
+    char    buf[TEMPORARY_BUFFER_SIZE];
     int     ret;
     size_t  bodyLength = 0;
     bool    chunked = false;

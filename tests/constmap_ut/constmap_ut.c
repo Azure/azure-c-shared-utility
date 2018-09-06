@@ -61,8 +61,8 @@ TEST_DEFINE_ENUM_TYPE(CONSTMAP_RESULT, CONSTMAP_RESULT_VALUES);
 #define VALID_MAP_CLONE2     (MAP_HANDLE)0xDEDD
 #define INVALID_MAP_HANDLE  (MAP_HANDLE)0xDEAD
 #define INVALID_CLONE_HANDLE  (MAP_HANDLE)0xDEAE
-#define VALID_KV_COUNT		(size_t)100
-#define VALID_VALUE			"value"
+#define VALID_KV_COUNT        (size_t)100
+#define VALID_VALUE            "value"
 
 static MAP_RESULT currentMapResult;
 
@@ -156,7 +156,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
         ASSERT_IS_NOT_NULL(g_testByTest);
 
         umock_c_init(on_umock_c_error);
-    
+
         REGISTER_UMOCK_ALIAS_TYPE(CONSTMAP_HANDLE, void*);
         REGISTER_UMOCK_ALIAS_TYPE(MAP_HANDLE, void*);
         result = umocktypes_charptr_register_types();
@@ -226,7 +226,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
         ///Assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
-        //Ablution                
+        //Ablution
 
     }
 
@@ -250,7 +250,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
 
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
-        //Ablution                
+        //Ablution
 
     }
 
@@ -276,7 +276,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
 
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
-        //Ablution                
+        //Ablution
 
     }
 
@@ -296,7 +296,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
         ///Assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
-        //Ablution    
+        //Ablution
         ConstMap_Destroy(aHandle);
 
     }
@@ -334,7 +334,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
 
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
-        //Ablution    
+        //Ablution
         ConstMap_Destroy(aClone);
         ConstMap_Destroy(aHandle);
 
@@ -353,7 +353,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
         ASSERT_IS_NULL(aClone);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
-        //Ablution       
+        //Ablution
     }
 
     /*Tests_SRS_CONSTMAP_17_052: [ConstMap_CloneWriteable shall create a new, writeable map, populated by the key, value pairs in the parameter defined by handle.]*/
@@ -369,7 +369,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
 
         STRICT_EXPECTED_CALL(Map_Clone(VALID_MAP_CLONE1)).IgnoreArgument(1);
 
-        //Act 
+        //Act
         newMap = ConstMap_CloneWriteable(aHandle);
 
         //Assert
@@ -395,7 +395,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
 
         STRICT_EXPECTED_CALL(Map_Clone(INVALID_MAP_HANDLE)).IgnoreArgument(1);
 
-        //Act 
+        //Act
         newMap = ConstMap_CloneWriteable(aHandle);
 
         //Assert
@@ -414,7 +414,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
         // Arrange
         MAP_HANDLE newMap = NULL;
 
-        //Act 
+        //Act
         newMap = ConstMap_CloneWriteable(NULL);
 
         //Assert
@@ -451,7 +451,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
 
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
-        //Ablution    
+        //Ablution
         ConstMap_Destroy(aHandle);
     }
 
@@ -482,7 +482,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
         ASSERT_IS_FALSE(keyExists2);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
-        //Ablution    
+        //Ablution
         ConstMap_Destroy(aHandle2);
 
     }
@@ -493,9 +493,9 @@ BEGIN_TEST_SUITE(constmap_unittests)
         // Arrange
         MAP_RESULT mapErrorList[] = {
             MAP_ERROR,
-            MAP_INVALIDARG, 
-            MAP_KEYEXISTS, 
-            MAP_KEYNOTFOUND, 
+            MAP_INVALIDARG,
+            MAP_KEYEXISTS,
+            MAP_KEYNOTFOUND,
             MAP_FILTER_REJECT
         };
         size_t errors = sizeof(mapErrorList) / sizeof(MAP_RESULT);
@@ -532,7 +532,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
 
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
-        //Ablution    
+        //Ablution
         ConstMap_Destroy(aHandle);
     }
 
@@ -560,7 +560,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
 
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
-        //Ablution    
+        //Ablution
         ConstMap_Destroy(aHandle);
     }
 
@@ -591,7 +591,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
 
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
-        //Ablution   
+        //Ablution
         ConstMap_Destroy(aHandle2);
     }
 
@@ -639,7 +639,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
 
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
-        //Ablution    
+        //Ablution
         ConstMap_Destroy(aHandle);
     }
 
@@ -667,7 +667,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
 
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
-        //Ablution    
+        //Ablution
         ConstMap_Destroy(aHandle);
 
     }
@@ -695,7 +695,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
 
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
-        //Ablution   
+        //Ablution
         ConstMap_Destroy(aHandle2);
 
     }
@@ -747,7 +747,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
 
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
-        //Ablution    
+        //Ablution
         ConstMap_Destroy(aHandle);
     }
 
@@ -781,7 +781,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
 
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
-        //Ablution    
+        //Ablution
         ConstMap_Destroy(aHandle);
     }
 
@@ -803,7 +803,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
 
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
-        //Ablution    
+        //Ablution
     }
 
     TEST_FUNCTION(ConstMap_GetInternals_Failures)
@@ -858,7 +858,7 @@ BEGIN_TEST_SUITE(constmap_unittests)
         ///Assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
-        //Ablution    
+        //Ablution
         ConstMap_Destroy(aHandle);
     }
 

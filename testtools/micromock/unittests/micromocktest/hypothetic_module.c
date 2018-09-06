@@ -13,8 +13,8 @@ typedef struct data_tag
     int wasZeroCalled;
 
     int wasizeroCalled;
-    
-    int wasoneCalled;  
+
+    int wasoneCalled;
     int ioneiShadow;
 
     int wastwoCalled;
@@ -26,20 +26,20 @@ typedef struct data_tag
     char threesShadow[SHADOW_BUFFER_SIZE];
     int threeiShadow;
 
-    int wasfourCalled; 
+    int wasfourCalled;
     unsigned short int foursiShadow;
     char fourcShadow;
     char foursShadow[SHADOW_BUFFER_SIZE];
     int fouriShadow;
 
-    int wasfiveCalled; 
+    int wasfiveCalled;
     pVoidFunction fivepVoidShadow;
     unsigned short int fivesiShadow;
     char fivecShadow;
     char fivesShadow[SHADOW_BUFFER_SIZE];
     int fiveiShadow;
 
-    int wassixCalled;  
+    int wassixCalled;
     char sixc1Shadow ,sixc2Shadow ,sixc3Shadow ,sixc4Shadow ,sixc5Shadow ,sixc6Shadow;
 }data;
 /*static variables*/

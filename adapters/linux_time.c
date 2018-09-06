@@ -18,7 +18,7 @@ clockid_t time_basis = -1;
 void set_time_basis(void)
 {
 // The time basis depends on what clock is available. Prefer CLOCK_MONOTONIC,
-// then CLOCK_REALTIME, otherwise query the default pthread_condattr_t value 
+// then CLOCK_REALTIME, otherwise query the default pthread_condattr_t value
 // and use that. Note the time basis stuff requires _POSIX_TIMERS [TMR] at a
 // minimum; querying pthread_condattr_t requires _POSIX_CLOCK_SELECTION [CS].
 // OSX has neither so we use a platform-specific clock.
@@ -53,7 +53,7 @@ int get_time_ns(struct timespec* ts)
         {
             ts->tv_sec = mts.tv_sec;
             ts->tv_nsec = mts.tv_nsec;
-        } 
+        }
     }
 #else
     err = clock_gettime(time_basis, ts);
@@ -62,7 +62,7 @@ int get_time_ns(struct timespec* ts)
 }
 
 time_t get_time_s()
-{   
+{
     struct timespec ts;
     if (get_time_ns(&ts) != 0)
     {

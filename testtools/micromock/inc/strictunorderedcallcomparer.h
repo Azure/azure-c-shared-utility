@@ -52,7 +52,7 @@ public:
         {
             CMockMethodCallBase* expectedCall = expectedCalls[i];
 
-            // if the expected call says all calls of this type should be ignored, 
+            // if the expected call says all calls of this type should be ignored,
             // then match
             if ((expectedCall->m_IgnoreAllCalls) &&
                 (*expectedCall == *actualCall))
@@ -64,7 +64,7 @@ public:
             else
             {
                 // if the expected call has not yet been matched
-                if ((!expectedCall->HasMatch() || expectedCall->m_ExactExpectedTimes) && 
+                if ((!expectedCall->HasMatch() || expectedCall->m_ExactExpectedTimes) &&
                     (!expectedCall->m_OnlySpecifiesActions) &&
                     // and it matches the actual call
                     (*expectedCall == *actualCall))

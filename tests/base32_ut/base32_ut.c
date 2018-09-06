@@ -164,7 +164,7 @@ BEGIN_TEST_SUITE(base32_ut)
 
         REGISTER_UMOCK_ALIAS_TYPE(STRING_HANDLE, void*);
         REGISTER_UMOCK_ALIAS_TYPE(BUFFER_HANDLE, void*);
-        
+
         REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, my_gballoc_malloc);
         REGISTER_GLOBAL_MOCK_FAIL_RETURN(gballoc_malloc, NULL);
         REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, my_gballoc_free);

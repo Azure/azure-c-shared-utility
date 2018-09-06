@@ -130,7 +130,7 @@ void* gballoc_malloc(size_t size)
 
         (void)Unlock(gballocThreadSafeLock);
     }
-    
+
     return result;
 }
 

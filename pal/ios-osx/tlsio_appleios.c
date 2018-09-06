@@ -94,7 +94,7 @@ static void enter_open_error_state(TLS_IO_INSTANCE* tls_io_instance)
     // save instance variables in case the framework destroys this object before we exit
     ON_IO_OPEN_COMPLETE on_open_complete = tls_io_instance->on_open_complete;
     void* on_open_complete_context = tls_io_instance->on_open_complete_context;
-    enter_tlsio_error_state(tls_io_instance);   
+    enter_tlsio_error_state(tls_io_instance);
     on_open_complete(on_open_complete_context, IO_OPEN_ERROR);
 }
 
@@ -152,13 +152,13 @@ static void internal_close(TLS_IO_INSTANCE* tls_io_instance)
             CFWriteStreamClose(tls_io_instance->sockWrite);
         }
     }
-    
+
     if (tls_io_instance->sockRead != NULL)
     {
         CFRelease(tls_io_instance->sockRead);
         tls_io_instance->sockRead = NULL;
     }
-    
+
     // If the reader is NULL then the writer should be too but let's be thorough
     if (tls_io_instance->sockWrite != NULL)
     {
@@ -434,7 +434,7 @@ static void dowork_read(TLS_IO_INSTANCE* tls_io_instance)
             while (tls_io_instance->tlsio_state == TLSIO_STATE_OPEN && CFReadStreamHasBytesAvailable(tls_io_instance->sockRead))
             {
                 rcv_bytes = CFReadStreamRead(tls_io_instance->sockRead, buffer, (CFIndex)(sizeof(buffer)));
-                
+
                 if (rcv_bytes > 0)
                 {
                     // tls_io_instance->on_bytes_received was already checked for NULL
@@ -541,7 +541,7 @@ static void dowork_poll_socket(TLS_IO_INSTANCE* tls_io_instance)
 static void dowork_poll_open_ssl(TLS_IO_INSTANCE* tls_io_instance)
 {
     if (CFReadStreamOpen(tls_io_instance->sockRead) && CFWriteStreamOpen(tls_io_instance->sockWrite))
-    {   
+    {
         /* Codes_SRS_TLSIO_30_080: [ The tlsio_dowork shall establish a TLS connection using the hostName and port provided during tlsio_open. ]*/
         // Connect succeeded
         tls_io_instance->tlsio_state = TLSIO_STATE_OPEN;

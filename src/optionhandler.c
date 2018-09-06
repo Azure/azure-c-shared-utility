@@ -239,7 +239,7 @@ OPTIONHANDLER_RESULT OptionHandler_FeedOptions(OPTIONHANDLER_HANDLE handle, void
                 break;
             }
         }
-            
+
         if (i == nOptions)
         {
             /*Codes_SRS_OPTIONHANDLER_02_014: [ Otherwise, OptionHandler_FeedOptions shall fail and return OPTIONHANDLER_ERROR. ]*/
@@ -255,7 +255,7 @@ OPTIONHANDLER_RESULT OptionHandler_FeedOptions(OPTIONHANDLER_HANDLE handle, void
 }
 
 void OptionHandler_Destroy(OPTIONHANDLER_HANDLE handle)
-{   
+{
     /*Codes_SRS_OPTIONHANDLER_02_015: [ OptionHandler_Destroy shall do nothing if parameter handle is NULL. ]*/
     if (handle == NULL)
     {

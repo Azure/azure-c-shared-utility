@@ -596,7 +596,7 @@ static void indicate_ws_close_complete(UWS_CLIENT_INSTANCE* uws_client)
     }
 }
 
-// This callback usage needs to be either verified and commented or integrated into 
+// This callback usage needs to be either verified and commented or integrated into
 // the state machine.
 static void unchecked_on_send_complete(void* context, IO_SEND_RESULT send_result)
 {
@@ -983,7 +983,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
         else
         {
             unsigned char decode_stream = 1;
-            
+
             switch (uws_client->uws_state)
             {
             default:
@@ -1037,7 +1037,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                     uws_client->stream_buffer = new_received_bytes;
                     (void)memcpy(uws_client->stream_buffer + uws_client->stream_buffer_count, buffer, size);
                     uws_client->stream_buffer_count += size;
-                
+
                     decode_stream = 1;
                 }
 
@@ -1319,7 +1319,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                                     }
 
                                     /* Codes_SRS_UWS_CLIENT_01_225: [ As a consequence of these rules, all fragments of a message are of the same type, as set by the first fragment's opcode. ]*/
-                                    /* Codes_SRS_UWS_CLIENT_01_226: [ Since control frames cannot be fragmented, the type for all fragments in a message MUST be either text, binary, or one of the reserved opcodes. ]*/  
+                                    /* Codes_SRS_UWS_CLIENT_01_226: [ Since control frames cannot be fragmented, the type for all fragments in a message MUST be either text, binary, or one of the reserved opcodes. ]*/
                                     uws_client->fragmented_frame_type = WS_FRAME_TYPE_BINARY;
                                 }
                                 decode_stream = 1;
@@ -1328,7 +1328,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
 
                                 /* Codes_SRS_UWS_CLIENT_01_156: [ *  %x8 denotes a connection close ]*/
                                 /* Codes_SRS_UWS_CLIENT_01_234: [ The Close frame contains an opcode of 0x8. ]*/
-                                /* Codes_SRS_UWS_CLIENT_01_214: [ Control frames (see Section 5.5) MAY be injected in the middle of a fragmented message. ]*/  
+                                /* Codes_SRS_UWS_CLIENT_01_214: [ Control frames (see Section 5.5) MAY be injected in the middle of a fragmented message. ]*/
                             case (unsigned char)WS_CLOSE_FRAME:
                             {
                                 uint16_t close_code;
@@ -1918,10 +1918,10 @@ int uws_client_send_frame_async(UWS_CLIENT_HANDLE uws_client, unsigned char fram
                     {
                         /* Codes_SRS_UWS_CLIENT_01_058: [ If `xio_send` fails, `uws_client_send_frame_async` shall fail and return a non-zero value. ]*/
                         LogError("Could not send bytes through the underlying IO");
-                        
+
                         /* Codes_SRS_UWS_CLIENT_09_001: [ If `xio_send` fails and the message is still queued, it shall be de-queued and destroyed. ] */
                         if (singlylinkedlist_find(uws_client->pending_sends, find_list_node, new_pending_send_list_item) != NULL)
-                        {    
+                        {
                             // Guards against double free in case the underlying I/O invoked 'on_underlying_io_send_complete' within xio_send.
                             (void)singlylinkedlist_remove(uws_client->pending_sends, new_pending_send_list_item);
                             free(ws_pending_send);
@@ -2112,7 +2112,7 @@ OPTIONHANDLER_HANDLE uws_client_retrieve_options(UWS_CLIENT_HANDLE uws_client)
                 }
             }
         }
-       
+
     }
 
     return result;

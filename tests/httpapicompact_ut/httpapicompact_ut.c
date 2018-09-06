@@ -65,15 +65,15 @@ void my_gballoc_free(void* ptr)
 #include "azure_c_shared_utility/macro_utils.h"
 
 #define MAX_RECEIVE_BUFFER_SIZES    3
-#define HUGE_RELATIVE_PATH_SIZE		10000
+#define HUGE_RELATIVE_PATH_SIZE        10000
 
 #define TEST_CREATE_CONNECTION_HOST_NAME (const char*)"https://test.azure-devices.net"
 #define TEST_EXECUTE_REQUEST_RELATIVE_PATH (const char*)"/devices/Huzzah_w_DHT22/messages/events?api-version=2016-11-14"
 #define TEST_EXECUTE_REQUEST_CONTENT (const unsigned char*)"{\"ObjectType\":\"DeviceInfo\", \"Version\":\"1.0\", \"IsSimulatedDevice\":false, \"DeviceProperties\":{\"DeviceID\":\"Huzzah_w_DHT22\", \"HubEnabledState\":true}, \"Commands\":[{ \"Name\":\"SetHumidity\", \"Parameters\":[{\"Name\":\"humidity\",\"Type\":\"int\"}]},{ \"Name\":\"SetTemperature\", \"Parameters\":[{\"Name\":\"temperature\",\"Type\":\"int\"}]}]}"
 #define TEST_EXECUTE_REQUEST_CONTENT_LENGTH (size_t)320
-#define TEST_SETOPTIONS_CERTIFICATE	(const unsigned char*)"blah!blah!blah!"
-#define TEST_SETOPTIONS_X509CLIENTCERT	(const unsigned char*)"ADMITONE"
-#define TEST_SETOPTIONS_X509PRIVATEKEY	(const unsigned char*)"SPEAKFRIENDANDENTER"
+#define TEST_SETOPTIONS_CERTIFICATE    (const unsigned char*)"blah!blah!blah!"
+#define TEST_SETOPTIONS_X509CLIENTCERT    (const unsigned char*)"ADMITONE"
+#define TEST_SETOPTIONS_X509PRIVATEKEY    (const unsigned char*)"SPEAKFRIENDANDENTER"
 #define TEST_GET_HEADER_HEAD_COUNT (size_t)2
 
 
@@ -165,7 +165,7 @@ static const xio_dowork_job doworkjob_o_re[3] = { XIO_DOWORK_JOB_OPEN, XIO_DOWOR
 static const xio_dowork_job doworkjob_o_rce[8] = { XIO_DOWORK_JOB_OPEN, XIO_DOWORK_JOB_RECEIVED, XIO_DOWORK_JOB_RECEIVED, XIO_DOWORK_JOB_RECEIVED, XIO_DOWORK_JOB_RECEIVED, XIO_DOWORK_JOB_RECEIVED, XIO_DOWORK_JOB_CLOSE, XIO_DOWORK_JOB_END };
 static const xio_dowork_job doworkjob_o_rc_error[9] = { XIO_DOWORK_JOB_OPEN, XIO_DOWORK_JOB_RECEIVED, XIO_DOWORK_JOB_RECEIVED, XIO_DOWORK_JOB_RECEIVED, XIO_DOWORK_JOB_RECEIVED, XIO_DOWORK_JOB_RECEIVED, XIO_DOWORK_JOB_CLOSE, XIO_DOWORK_JOB_ERROR, XIO_DOWORK_JOB_END };
 static const xio_dowork_job doworkjob_o_rre[4] = { XIO_DOWORK_JOB_OPEN, XIO_DOWORK_JOB_RECEIVED, XIO_DOWORK_JOB_RECEIVED, XIO_DOWORK_JOB_END };
-static const xio_dowork_job doworkjob_o_sre[15] = { XIO_DOWORK_JOB_OPEN, 
+static const xio_dowork_job doworkjob_o_sre[15] = { XIO_DOWORK_JOB_OPEN,
     XIO_DOWORK_JOB_SEND, XIO_DOWORK_JOB_SEND, XIO_DOWORK_JOB_SEND, XIO_DOWORK_JOB_SEND, XIO_DOWORK_JOB_SEND, XIO_DOWORK_JOB_SEND, XIO_DOWORK_JOB_SEND,
     XIO_DOWORK_JOB_RECEIVED, XIO_DOWORK_JOB_RECEIVED, XIO_DOWORK_JOB_RECEIVED, XIO_DOWORK_JOB_RECEIVED, XIO_DOWORK_JOB_RECEIVED, XIO_DOWORK_JOB_CLOSE, XIO_DOWORK_JOB_END };
 
@@ -512,7 +512,7 @@ static HTTP_HANDLE createHttpConnection(void)
     STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
 
     HTTPAPI_Init();
-    return HTTPAPI_CreateConnection(TEST_CREATE_CONNECTION_HOST_NAME);	/* currentmalloc_call += 2 */
+    return HTTPAPI_CreateConnection(TEST_CREATE_CONNECTION_HOST_NAME);    /* currentmalloc_call += 2 */
 }
 
 static void setHttpCertificate(HTTP_HANDLE httpHandle)
@@ -522,7 +522,7 @@ static void setHttpCertificate(HTTP_HANDLE httpHandle)
     /*Tests_SRS_HTTPAPI_COMPACT_21_056: [ The HTTPAPI_SetOption shall change the HTTP options. ]*/
     /*Tests_SRS_HTTPAPI_COMPACT_21_057: [ The HTTPAPI_SetOption shall receive a handle that identiry the HTTP connection. ]*/
     /*Tests_SRS_HTTPAPI_COMPACT_21_058: [ The HTTPAPI_SetOption shall receive the option as a pair optionName/value. ]*/
-    HTTPAPI_SetOption(httpHandle, "TrustedCerts", TEST_SETOPTIONS_CERTIFICATE);				/* currentmalloc_call += 1 */
+    HTTPAPI_SetOption(httpHandle, "TrustedCerts", TEST_SETOPTIONS_CERTIFICATE);                /* currentmalloc_call += 1 */
 }
 
 static void setHttpx509ClientCertificateAndKey(HTTP_HANDLE httpHandle)
@@ -534,8 +534,8 @@ static void setHttpx509ClientCertificateAndKey(HTTP_HANDLE httpHandle)
     /*Tests_SRS_HTTPAPI_COMPACT_21_056: [ The HTTPAPI_SetOption shall change the HTTP options. ]*/
     /*Tests_SRS_HTTPAPI_COMPACT_21_057: [ The HTTPAPI_SetOption shall receive a handle that identiry the HTTP connection. ]*/
     /*Tests_SRS_HTTPAPI_COMPACT_21_058: [ The HTTPAPI_SetOption shall receive the option as a pair optionName/value. ]*/
-    HTTPAPI_SetOption(httpHandle, SU_OPTION_X509_CERT, TEST_SETOPTIONS_X509CLIENTCERT);				/* currentmalloc_call += 1 */
-    HTTPAPI_SetOption(httpHandle, SU_OPTION_X509_PRIVATE_KEY, TEST_SETOPTIONS_X509PRIVATEKEY);				/* currentmalloc_call += 1 */
+    HTTPAPI_SetOption(httpHandle, SU_OPTION_X509_CERT, TEST_SETOPTIONS_X509CLIENTCERT);                /* currentmalloc_call += 1 */
+    HTTPAPI_SetOption(httpHandle, SU_OPTION_X509_PRIVATE_KEY, TEST_SETOPTIONS_X509PRIVATEKEY);                /* currentmalloc_call += 1 */
 }
 
 static void setupAllCallBeforeOpenHTTPsequence(HTTP_HEADERS_HANDLE requestHttpHeaders, int numberOfDoWork, bool useClientCert)
@@ -819,7 +819,7 @@ TEST_FUNCTION(HTTPAPI_CreateConnection__hostName_NULL_Failed)
     current_xioCreate_must_fail = false;
 
     /// act
-    httpHandle = HTTPAPI_CreateConnection(NULL);	/* currentmalloc_call += 0 */
+    httpHandle = HTTPAPI_CreateConnection(NULL);    /* currentmalloc_call += 0 */
 
     /// assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -840,7 +840,7 @@ TEST_FUNCTION(HTTPAPI_CreateConnection__empty_hostName_Failed)
     current_xioCreate_must_fail = false;
 
     /// act
-    httpHandle = HTTPAPI_CreateConnection(hostName);	/* currentmalloc_call += 0 */
+    httpHandle = HTTPAPI_CreateConnection(hostName);    /* currentmalloc_call += 0 */
 
     /// assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -865,7 +865,7 @@ TEST_FUNCTION(HTTPAPI_CreateConnection__valid_hostName_Succeed)
     STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
 
     /// act
-    httpHandle = HTTPAPI_CreateConnection(TEST_CREATE_CONNECTION_HOST_NAME);	/* currentmalloc_call += 2 */
+    httpHandle = HTTPAPI_CreateConnection(TEST_CREATE_CONNECTION_HOST_NAME);    /* currentmalloc_call += 2 */
 
     /// assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -873,7 +873,7 @@ TEST_FUNCTION(HTTPAPI_CreateConnection__valid_hostName_Succeed)
     ASSERT_IS_NOT_NULL(httpHandle);
 
     /// cleanup
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 2 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 2 */
     HTTPAPI_Deinit();
 }
 
@@ -888,7 +888,7 @@ TEST_FUNCTION(HTTPAPI_CreateConnection__no_enough_memory_failed)
     STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).IgnoreArgument(1);
 
     /// act
-    httpHandle = HTTPAPI_CreateConnection(TEST_CREATE_CONNECTION_HOST_NAME);	/* currentmalloc_call += 2 */
+    httpHandle = HTTPAPI_CreateConnection(TEST_CREATE_CONNECTION_HOST_NAME);    /* currentmalloc_call += 2 */
 
     /// assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -913,7 +913,7 @@ TEST_FUNCTION(HTTPAPI_CreateConnection__create_xio_connection_failed)
     STRICT_EXPECTED_CALL(gballoc_free(IGNORED_NUM_ARG)).IgnoreArgument(1);
 
     /// act
-    httpHandle = HTTPAPI_CreateConnection(TEST_CREATE_CONNECTION_HOST_NAME);	/* currentmalloc_call += 2 */
+    httpHandle = HTTPAPI_CreateConnection(TEST_CREATE_CONNECTION_HOST_NAME);    /* currentmalloc_call += 2 */
 
     /// assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -942,7 +942,7 @@ TEST_FUNCTION(HTTPAPI_CloseConnection__valid_hostName_Succeed)
         .IgnoreArgument(1);
 
     /// act
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 2 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 2 */
 
     /// assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -960,7 +960,7 @@ TEST_FUNCTION(HTTPAPI_CloseConnection__handle_NULL_Succeed)
     HTTPAPI_Init();
 
     /// act
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 0 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 0 */
 
     /// assert
     ASSERT_ARE_EQUAL(int, 0, currentmalloc_call);
@@ -987,7 +987,7 @@ TEST_FUNCTION(HTTPAPI_CloseConnection__free_certificate_memory_succeed)
         .IgnoreArgument(1);
 
     /// act
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 3 */
 
     /// assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -1019,7 +1019,7 @@ TEST_FUNCTION(HTTPAPI_CloseConnection__free_x509client_memory_succeed)
         .IgnoreArgument(1);
 
     /// act
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 3 */
 
     /// assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -1034,12 +1034,12 @@ TEST_FUNCTION(HTTPAPI_CloseConnection__return_LINE_failed)
 {
     /// arrange
     HTTP_HANDLE httpHandle = createHttpConnection();
-    
+
     xio_close_shallReturn = __FAILURE__;
     DoworkJobsCloseSuccess = true;
     SkipDoworkJobsCloseResult = 0;
     call_on_io_close_complete_in_xio_close = true;
-    
+
     STRICT_EXPECTED_CALL(xio_close(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
         .IgnoreAllArguments();
     STRICT_EXPECTED_CALL(xio_destroy(IGNORED_PTR_ARG))
@@ -1050,7 +1050,7 @@ TEST_FUNCTION(HTTPAPI_CloseConnection__return_LINE_failed)
         .IgnoreArgument(1);
 
     /// act
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 2 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 2 */
 
                                             /// assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -1117,7 +1117,7 @@ TEST_FUNCTION(HTTPAPI_CloseConnection__close_on_dowork_succeed)
     ASSERT_ARE_EQUAL(int, HTTPAPI_OK, result);
 
     /// act
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 3 */
 
     /// assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -1191,7 +1191,7 @@ TEST_FUNCTION(HTTPAPI_CloseConnection__close_on_dowork_retry_n_succeed)
     ASSERT_ARE_EQUAL(int, HTTPAPI_OK, result);
 
     /// act
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 3 */
 
                                             /// assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -1265,7 +1265,7 @@ TEST_FUNCTION(HTTPAPI_CloseConnection__close_on_dowork_retry_n_failed)
     ASSERT_ARE_EQUAL(int, HTTPAPI_OK, result);
 
     /// act
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 3 */
 
                                             /// assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -1339,7 +1339,7 @@ TEST_FUNCTION(HTTPAPI_CloseConnection__close_timeout_failed)
     ASSERT_ARE_EQUAL(int, HTTPAPI_OK, result);
 
     /// act
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 3 */
 
                                             /// assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -1414,7 +1414,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__invalid_request_type_failed)
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 2 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 2 */
     HTTPAPI_Deinit();
 }
 
@@ -1448,7 +1448,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__NULL_relative_path_failed)
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 2 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 2 */
     HTTPAPI_Deinit();
 }
 
@@ -1482,7 +1482,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__NULL_http_headers_handle_failed)
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 2 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 2 */
     HTTPAPI_Deinit();
 }
 
@@ -1520,7 +1520,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__invalid_http_headers_handle_failed)
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 2 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 2 */
     HTTPAPI_Deinit();
 }
 
@@ -1558,7 +1558,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__http_headers_handle_failed)
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 2 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 2 */
     HTTPAPI_Deinit();
 }
 
@@ -1601,7 +1601,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__certificate_failed)
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 3 */
     HTTPAPI_Deinit();
 }
 
@@ -1618,7 +1618,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__x509client_certificate_failed)
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
         .IgnoreArgument(1);
-    HTTPAPI_SetOption(httpHandle, SU_OPTION_X509_CERT, TEST_SETOPTIONS_X509CLIENTCERT);				/* currentmalloc_call += 1 */
+    HTTPAPI_SetOption(httpHandle, SU_OPTION_X509_CERT, TEST_SETOPTIONS_X509CLIENTCERT);                /* currentmalloc_call += 1 */
 
     xio_setoption_shallReturn = __FAILURE__;
 
@@ -1647,7 +1647,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__x509client_certificate_failed)
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 3 */
     HTTPAPI_Deinit();
 }
 
@@ -1664,7 +1664,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__x509client_privatekey_failed)
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
         .IgnoreArgument(1);
-    HTTPAPI_SetOption(httpHandle, SU_OPTION_X509_PRIVATE_KEY, TEST_SETOPTIONS_X509PRIVATEKEY);				/* currentmalloc_call += 1 */
+    HTTPAPI_SetOption(httpHandle, SU_OPTION_X509_PRIVATE_KEY, TEST_SETOPTIONS_X509PRIVATEKEY);                /* currentmalloc_call += 1 */
 
     xio_setoption_shallReturn = __FAILURE__;
 
@@ -1693,7 +1693,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__x509client_privatekey_failed)
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 3 */
     HTTPAPI_Deinit();
 }
 
@@ -1719,7 +1719,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__certificate_out_of_memory_failed)
     ASSERT_ARE_EQUAL(int, 2, currentmalloc_call);
 
     /// cleanup
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 2 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 2 */
     HTTPAPI_Deinit();
 }
 
@@ -1743,7 +1743,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__certificate_succeed)
     ASSERT_ARE_EQUAL(int, 3, currentmalloc_call);
 
     /// cleanup
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 3 */
     HTTPAPI_Deinit();
 }
 
@@ -1781,7 +1781,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__certificate_NULL_optionName_failed)
     ASSERT_ARE_EQUAL(int, 2, currentmalloc_call);
 
     /// cleanup
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 2 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 2 */
     HTTPAPI_Deinit();
 }
 
@@ -1802,7 +1802,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__certificate_invalid_optionName_failed)
     ASSERT_ARE_EQUAL(int, 2, currentmalloc_call);
 
     /// cleanup
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 2 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 2 */
     HTTPAPI_Deinit();
 }
 
@@ -1823,7 +1823,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__certificate_NULL_value_failed)
     ASSERT_ARE_EQUAL(int, 2, currentmalloc_call);
 
     /// cleanup
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 2 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 2 */
     HTTPAPI_Deinit();
 }
 
@@ -1979,7 +1979,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__xoi_open_returns_LINE_failed)
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 3 */
     HTTPAPI_Deinit();
 }
 
@@ -2020,7 +2020,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_io_open_complete_with_error_on_openning
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 3 */
     HTTPAPI_Deinit();
 }
 
@@ -2060,7 +2060,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_io_open_complete_with_error_on_working_
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 3 */
     HTTPAPI_Deinit();
 }
 
@@ -2102,7 +2102,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_io_open_complete_with_error_after_n_ret
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 3 */
     HTTPAPI_Deinit();
 }
 
@@ -2146,7 +2146,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_io_open_complete_with_timeout_failed)
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 3 */
     HTTPAPI_Deinit();
 }
 
@@ -2185,7 +2185,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_io_error_on_openning_failed)
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 3 */
     HTTPAPI_Deinit();
 }
 
@@ -2223,8 +2223,8 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_io_error_on_working_failed)
     ASSERT_ARE_EQUAL(int, 5, currentmalloc_call);
 
     /// cleanup
-    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders);	/* currentmalloc_call -= 2 */
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
+    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders);    /* currentmalloc_call -= 2 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 3 */
     HTTPAPI_Deinit();
 }
 
@@ -2272,7 +2272,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__huge_relative_path_failed)
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 3 */
     HTTPAPI_Deinit();
 }
 
@@ -2321,7 +2321,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__io_send_header_return_error_failed)
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 3 */
     HTTPAPI_Deinit();
 }
 
@@ -2374,7 +2374,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_send_header_complete_with_success_befor
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 3 */
     HTTPAPI_Deinit();
 }
 
@@ -2429,7 +2429,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_send_header_complete_with_2_success_bef
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 3 */
     HTTPAPI_Deinit();
 }
 
@@ -2487,7 +2487,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_send_header_complete_timeout_failed)
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 3 */
     HTTPAPI_Deinit();
 }
 
@@ -2545,7 +2545,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_send_header_complete_retry_n_and_failed
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 3 */
     HTTPAPI_Deinit();
 }
 
@@ -2615,7 +2615,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_send_buffer_complete_with_error_failed)
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 3 */
     HTTPAPI_Deinit();
 }
 
@@ -2663,7 +2663,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_read_header_failed_failed)
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 3 */
     HTTPAPI_Deinit();
 }
 
@@ -2713,7 +2713,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_read_NULL_header_failed)
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 3 */
     HTTPAPI_Deinit();
 }
 
@@ -2766,7 +2766,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_read_not_HTTP_header_failed)
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 3 */
     HTTPAPI_Deinit();
 }
 
@@ -2808,7 +2808,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_read_wrong_URL_header_failed)
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 3 */
     HTTPAPI_Deinit();
 }
 
@@ -2850,7 +2850,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_read_header_with_no_statusCode_failed)
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 3 */
     HTTPAPI_Deinit();
 }
 
@@ -2892,7 +2892,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_read_header_incomplete_failed)
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 3 */
     HTTPAPI_Deinit();
 }
 
@@ -2935,7 +2935,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__on_read_multi_header_with_size_0_and_error
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 3 */
     HTTPAPI_Deinit();
 }
 
@@ -2990,7 +2990,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__read_huge_header_failed)
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 3 */
     HTTPAPI_Deinit();
 }
 
@@ -3032,7 +3032,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__content_length_without_value_failed)
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 3 */
     HTTPAPI_Deinit();
 }
 
@@ -3091,7 +3091,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__Execute_request_succeed)
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 3 */
     HTTPAPI_Deinit();
 }
 
@@ -3142,7 +3142,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__Execute_request_retry_open_succeed)
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 3 */
     HTTPAPI_Deinit();
 }
 
@@ -3244,7 +3244,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__Execute_request_retry_send_succeed)
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 3 */
     HTTPAPI_Deinit();
 }
 
@@ -3297,7 +3297,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_get_succeed)
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 3 */
     HTTPAPI_Deinit();
 }
 
@@ -3349,7 +3349,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_post_succeed)
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 3 */
     HTTPAPI_Deinit();
 }
 
@@ -3401,7 +3401,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_put_succeed)
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 3 */
     HTTPAPI_Deinit();
 }
 
@@ -3453,7 +3453,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_delete_succeed)
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 3 */
     HTTPAPI_Deinit();
 }
 
@@ -3505,7 +3505,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_patch_succeed)
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 3 */
     HTTPAPI_Deinit();
 }
 
@@ -3557,7 +3557,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_relative_path_succeed)
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 3 */
     HTTPAPI_Deinit();
 }
 
@@ -3610,7 +3610,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_with_content_succeed)
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 3 */
     HTTPAPI_Deinit();
 }
 
@@ -3682,7 +3682,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_NULL_content_succeed)
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 3 */
     HTTPAPI_Deinit();
 }
 
@@ -3755,7 +3755,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_content_size_0_succeed)
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 3 */
     HTTPAPI_Deinit();
 }
 
@@ -3802,7 +3802,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__Execute_request_no_statusCode_succeed)
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 3 */
     HTTPAPI_Deinit();
 }
 
@@ -3889,7 +3889,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__Execute_request_no_responseHeadersHandle_s
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 3 */
     HTTPAPI_Deinit();
 }
 
@@ -3938,7 +3938,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__Execute_request_responseContent_NULL_succe
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 3 */
     HTTPAPI_Deinit();
 }
 
@@ -4015,7 +4015,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__Execute_request_with_truncated_content_fai
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 3 */
     HTTPAPI_Deinit();
 }
 
@@ -4086,7 +4086,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__Execute_request_with_truncated_parameter_f
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 3 */
     HTTPAPI_Deinit();
 }
 
@@ -4151,7 +4151,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__Execute_request_with_truncated_header_fail
 
     /// cleanup
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
-    HTTPAPI_CloseConnection(httpHandle);	/* currentmalloc_call -= 3 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 3 */
     HTTPAPI_Deinit();
 }
 

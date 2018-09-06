@@ -7,7 +7,7 @@
 #define REFCOUNT_OS_H__LINUX
 
 
-// This Linux-specific header offers 3 strategies: 
+// This Linux-specific header offers 3 strategies:
 //   REFCOUNT_ATOMIC_DONTCARE     -- no atomicity guarantee
 //   REFCOUNT_USE_STD_ATOMIC      -- C11 atomicity
 //   REFCOUNT_USE_GNU_C_ATOMIC    -- GNU-specific atomicity

@@ -280,7 +280,7 @@ TEST_FUNCTION(socketio_create_succeeds)
     socketio_destroy(ioHandle);
 }
 
-// socketio_win32_destroy 
+// socketio_win32_destroy
 TEST_FUNCTION(socketio_destroy_socket_io_NULL_succeeds)
 {
     // arrange

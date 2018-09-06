@@ -63,7 +63,7 @@ TEST_FUNCTION(LOCK_Init_Lock_succeeds)
 TEST_FUNCTION(LOCK_Init_Lock_Unlock_succeeds)
 {
     //arrange
-	LOCK_RESULT result;
+    LOCK_RESULT result;
     LOCK_HANDLE handle = Lock_Init();
     (void)Lock(handle);
 
@@ -144,7 +144,7 @@ TEST_FUNCTION(LOCK_Init_Unlock_fails)
 TEST_FUNCTION(LOCK_Init_Lock_Unlock_Unlock_fails)
 {
     //arrange
-	LOCK_RESULT result;
+    LOCK_RESULT result;
     LOCK_HANDLE handle = Lock_Init();
     (void)Lock(handle);
     (void)Unlock(handle);

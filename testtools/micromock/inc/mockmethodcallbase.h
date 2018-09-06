@@ -32,9 +32,9 @@ public:
     size_t m_MatchedTimes;
     bool m_ExactExpectedTimes;
     virtual CMockValueBase* GetReturnValue() { return m_ReturnValue; }
-    virtual CMockValueBase* GetFailReturnValue() 
-    { 
-        return m_FailReturnValue; 
+    virtual CMockValueBase* GetFailReturnValue()
+    {
+        return m_FailReturnValue;
     }
     bool HasMatch() const { return (NULL != m_MatchedCall); }
     void RollbackMatch();

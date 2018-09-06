@@ -197,7 +197,7 @@ pfDestroyOption tlsio_cyclonessl_destroy_option;
 OPTIONHANDLER_HANDLE my_OptionHandler_Create(pfCloneOption cloneOption, pfDestroyOption destroyOption, pfSetOption setOption)
 {
     (void)setOption;
-    
+
     tlsio_cyclonessl_clone_option = cloneOption;
     tlsio_cyclonessl_destroy_option = destroyOption;
     return TEST_OPTION_HANDLER;

@@ -5,7 +5,7 @@
 #include <cstdlib>
 #else
 #include <stdlib.h>
-#endif 
+#endif
 
 static void* my_gballoc_malloc(size_t size)
 {
@@ -102,7 +102,7 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_STRING_GLOBAL_MOCK_HOOK;
     REGISTER_STRING_TOKENIZER_GLOBAL_MOCK_HOOK;
     REGISTER_MAP_GLOBAL_MOCK_HOOK;
-    
+
     TEST_STRING_HANDLE_PAIR = STRING_construct(TEST_STRING_PAIR);
     TEST_STRING_HANDLE_KEY = STRING_construct(TEST_STRING_KEY);
     TEST_STRING_HANDLE_2_PAIR = STRING_construct(TEST_STRING_2_PAIR);

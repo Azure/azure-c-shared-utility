@@ -182,7 +182,7 @@ bool ConstMap_ContainsValue(CONSTMAP_HANDLE handle, const char* value)
 const char* ConstMap_GetValue(CONSTMAP_HANDLE handle, const char* key)
 {
     const char* value = NULL;
-    
+
     if (handle == NULL)
     {
         /*Codes_SRS_CONSTMAP_17_040: [If parameter handle or key is NULL then ConstMap_GetValue returns NULL.]*/
@@ -216,8 +216,8 @@ CONSTMAP_RESULT ConstMap_GetInternals(CONSTMAP_HANDLE handle, const char*const**
     }
     else
     {
-        /*Codes_SRS_CONSTMAP_17_043: [ConstMap_GetInternals shall produce in *keys a pointer to an array of const char* having all the keys stored so far by the map.] 
-         *Codes_SRS_CONSTMAP_17_044: [ConstMap_GetInternals shall produce in *values a pointer to an array of const char* having all the values stored so far by the map.] 
+        /*Codes_SRS_CONSTMAP_17_043: [ConstMap_GetInternals shall produce in *keys a pointer to an array of const char* having all the keys stored so far by the map.]
+         *Codes_SRS_CONSTMAP_17_044: [ConstMap_GetInternals shall produce in *values a pointer to an array of const char* having all the values stored so far by the map.]
          *Codes_SRS_CONSTMAP_17_045: [ ConstMap_GetInternals shall produce in *count the number of stored keys and values.]
          */
         MAP_RESULT mapResult = Map_GetInternals(((CONSTMAP_HANDLE_DATA *)handle)->map, keys, values, count);

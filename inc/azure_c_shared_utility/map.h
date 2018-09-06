@@ -2,7 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 /** @file       map.h
-*	@brief		Map is a module that implements a dictionary of @c STRING_HANDLE
+*    @brief        Map is a module that implements a dictionary of @c STRING_HANDLE
 *               keys to @c STRING_HANDLE values.
 */
 
@@ -30,7 +30,7 @@ extern "C"
     MAP_KEYNOTFOUND, \
     MAP_FILTER_REJECT
 
-/** @brief Enumeration specifying the status of calls to various APIs in this  
+/** @brief Enumeration specifying the status of calls to various APIs in this
  *  module.
  */
 DEFINE_ENUM(MAP_RESULT, MAP_RESULT_VALUES);
@@ -86,7 +86,7 @@ MOCKABLE_FUNCTION(, MAP_HANDLE, Map_Clone, MAP_HANDLE, handle);
  *          added and if the callback returns a non-zero value then
  *          the function cancels the add operation and returns
  *          @c MAP_FILTER_REJECT.
- * 
+ *
  * @return  If any of the input parameters are @c NULL then this function
  *          returns @c MAP_INVALID_ARG. If the key already exists in the
  *          map then @c MAP_KEYEXISTS is returned. If the filter function
@@ -112,7 +112,7 @@ MOCKABLE_FUNCTION(, MAP_RESULT, Map_Add, MAP_HANDLE, handle, const char*, key, c
  *          entry is added or when an existing entry is updated and if the
  *          callback returns a non-zero value then the function cancels the
  *          add/update operation and returns @c MAP_FILTER_REJECT.
- * 
+ *
  * @return  If any of the input parameters are @c NULL then this function
  *          returns @c MAP_INVALID_ARG. If the filter function associated
  *          with the map rejects the entry then @c MAP_FILTER_REJECT is

@@ -131,7 +131,7 @@ static unsigned char* decode_crypt_object(unsigned char* private_key, DWORD key_
     {
         result = NULL;
     }
-            
+
     return result;
 }
 

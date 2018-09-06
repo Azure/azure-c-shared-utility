@@ -165,7 +165,7 @@ bool SASToken_Validate(STRING_HANDLE sasToken)
                     memset(expiryASCII, 0, seStop - seStart + 1);
                     for (i = seStart; i < seStop; i++)
                     {
-                        // The se contains the expiration values, if a & token is encountered then 
+                        // The se contains the expiration values, if a & token is encountered then
                         // the se field is complete.
                         if (sasTokenArray[i] == '&')
                         {

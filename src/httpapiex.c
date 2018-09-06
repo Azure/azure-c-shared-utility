@@ -125,7 +125,7 @@ static int buildRequestHttpHeadersHandle(HTTPAPIEX_HANDLE_DATA *handleData, BUFF
             ))
         {
             if (! *isOriginalRequestHttpHeadersHandle)
-            { 
+            {
                 HTTPHeaders_Free(*toBeUsedRequestHttpHeadersHandle);
             }
             *toBeUsedRequestHttpHeadersHandle = NULL;
@@ -195,7 +195,7 @@ static int buildAllRequests(HTTPAPIEX_HANDLE_DATA* handle, HTTPAPI_REQUEST_TYPE 
     HTTP_HEADERS_HANDLE requestHttpHeadersHandle, BUFFER_HANDLE requestContent, unsigned int* statusCode,
     HTTP_HEADERS_HANDLE responseHttpHeadersHandle, BUFFER_HANDLE responseContent,
 
-    const char** toBeUsedRelativePath, 
+    const char** toBeUsedRelativePath,
     HTTP_HEADERS_HANDLE *toBeUsedRequestHttpHeadersHandle, bool *isOriginalRequestHttpHeadersHandle,
     BUFFER_HANDLE *toBeUsedRequestContent, bool *isOriginalRequestContent,
     unsigned int** toBeUsedStatusCode,
@@ -216,7 +216,7 @@ static int buildAllRequests(HTTPAPIEX_HANDLE_DATA* handle, HTTPAPI_REQUEST_TYPE 
         if (buildRequestHttpHeadersHandle(handle, *toBeUsedRequestContent, requestHttpHeadersHandle, isOriginalRequestHttpHeadersHandle, toBeUsedRequestHttpHeadersHandle) != 0)
         {
             /*Codes_SRS_HTTPAPIEX_02_010: [If any of the operations in SRS_HTTAPIEX_02_009 fails, then HTTPAPIEX_ExecuteRequest shall return HTTPAPIEX_ERROR.] */
-            if (*isOriginalRequestContent == false) 
+            if (*isOriginalRequestContent == false)
             {
                 BUFFER_delete(*toBeUsedRequestContent);
             }
@@ -506,7 +506,7 @@ void HTTPAPIEX_Destroy(HTTPAPIEX_HANDLE handle)
         size_t i;
         size_t vectorSize;
         HTTPAPIEX_HANDLE_DATA* handleData = (HTTPAPIEX_HANDLE_DATA*)handle;
-        
+
         if (handleData->k == 2)
         {
             HTTPAPI_CloseConnection(handleData->httpHandle);
@@ -542,7 +542,7 @@ static int createOrUpdateOption(HTTPAPIEX_HANDLE_DATA* handleData, const char* o
 {
     /*this function is called after the option value has been saved (cloned)*/
     int result;
-    
+
     /*decide bwtween update or create*/
     HTTPAPIEX_SAVED_OPTION* whereIsIt = (HTTPAPIEX_SAVED_OPTION*)VECTOR_find_if(handleData->savedOptions, sameName, optionName);
     if (whereIsIt != NULL)
@@ -575,7 +575,7 @@ static int createOrUpdateOption(HTTPAPIEX_HANDLE_DATA* handleData, const char* o
             }
         }
     }
-    
+
     return result;
 }
 
@@ -623,7 +623,7 @@ HTTPAPIEX_RESULT HTTPAPIEX_SetOption(HTTPAPIEX_HANDLE handle, const char* option
                 /*Codes_SRS_HTTPAPIEX_02_041: [If creating or updating the pair optionName/value fails then shall return HTTPAPIEX_ERROR.] */
                 result = HTTPAPIEX_ERROR;
                 LOG_HTTAPIEX_ERROR();
-                
+
             }
             else
             {

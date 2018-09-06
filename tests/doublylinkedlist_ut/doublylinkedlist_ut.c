@@ -266,7 +266,7 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
         ASSERT_ARE_EQUAL(void_ptr, simp3.link.Blink, &(simp2.link));
         ASSERT_ARE_EQUAL(void_ptr, simp2.link.Blink, &(listHead));
     }
-    
+
     /* Tests_SRS_DLIST_06_008: [DList_RemoveEntryList shall remove a listEntry from whatever list it is properly part of.] */
     /* Tests_SRS_DLIST_06_009: [The remaining list is properly formed.] */
     /* Tests_SRS_DLIST_06_010: [DList_RemoveEntryList shall return non-zero if the remaining list is empty.] */
@@ -417,5 +417,5 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
 
     }
 
-    
+
 END_TEST_SUITE(doublylinkedlist_unittests)

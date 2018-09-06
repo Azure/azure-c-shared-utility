@@ -159,7 +159,7 @@ int singlylinkedlist_remove(SINGLYLINKEDLIST_HANDLE list, LIST_ITEM_HANDLE item)
 LIST_ITEM_HANDLE singlylinkedlist_get_head_item(SINGLYLINKEDLIST_HANDLE list)
 {
     LIST_ITEM_HANDLE result;
-    
+
     if (list == NULL)
     {
         /* Codes_SRS_LIST_01_009: [If the list argument is NULL, singlylinkedlist_get_head_item shall return NULL.] */

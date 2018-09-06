@@ -46,7 +46,7 @@ UNIQUEID_RESULT UniqueId_Generate(char* uid, size_t len)
         result = UNIQUEID_INVALID_ARG;
         LogError("Buffer Size is Null or length is less then 37 bytes");
     }
-    else 
+    else
     {
         size_t arrayIndex;
         size_t shiftCount;

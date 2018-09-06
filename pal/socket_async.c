@@ -76,15 +76,15 @@ SOCKET_ASYNC_HANDLE socket_async_create(uint32_t serverIPv4, uint16_t port,
             setopt_return = 0;
         }
 
-        // NB: On full-sized (multi-process) systems it would be necessary to use the SO_REUSEADDR option to 
-        // grab the socket from any earlier (dying) invocations of the process and then deal with any 
+        // NB: On full-sized (multi-process) systems it would be necessary to use the SO_REUSEADDR option to
+        // grab the socket from any earlier (dying) invocations of the process and then deal with any
         // residual junk in the connection stream. This doesn't happen with embedded, so it doesn't need
         // to be defended against.
 
         if (!setopt_ok)
         {
             /* Codes_SRS_SOCKET_ASYNC_30_020: [ If socket option setting fails, socket_async_create shall log an error and return SOCKET_ASYNC_INVALID_SOCKET. ]*/
-            // setsockopt has no real possibility of failing due to the way it's being used here, so there's no need 
+            // setsockopt has no real possibility of failing due to the way it's being used here, so there's no need
             // to spend memory trying to log the not-really-possible errno.
             LogError("setsockopt failed: %d", setopt_return);
             result = SOCKET_ASYNC_INVALID_SOCKET;

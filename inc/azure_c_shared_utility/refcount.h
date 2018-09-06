@@ -2,7 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 
-/*this header contains macros for ref_counting a variable. 
+/*this header contains macros for ref_counting a variable.
 
 There are no upper bound checks related to uint32_t overflow because we expect that bigger issues are in
 the system when more than 4 billion references exist to the same variable. In the case when such an overflow
@@ -20,7 +20,7 @@ will interact with deallocated memory / resources resulting in an undefined beha
 #ifdef __cplusplus
 #include <cstdlib>
 #include <cstdint>
-extern "C" 
+extern "C"
 {
 #else
 #include <stdlib.h>

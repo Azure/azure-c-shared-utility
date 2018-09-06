@@ -192,7 +192,7 @@ int xio_setoption(XIO_HANDLE xio, const char* optionName, const void* value)
                 result = 0;
             }
         }
-        else /*passthrough*/ 
+        else /*passthrough*/
         {
             /* Codes_SRS_XIO_003_028: [xio_setoption shall pass the optionName and value to the concrete IO implementation specified in xio_create by invoking the concrete_xio_setoption function.] */
             /* Codes_SRS_XIO_03_029: [xio_setoption shall return 0 upon success.] */

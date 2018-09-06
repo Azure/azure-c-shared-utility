@@ -35,26 +35,26 @@ static void my_gballoc_free(void* s)
 #define VECTOR_create real_VECTOR_create
 #define VECTOR_move real_VECTOR_move
 #define VECTOR_destroy real_VECTOR_destroy
-#define VECTOR_push_back real_VECTOR_push_back 
-#define VECTOR_erase real_VECTOR_erase 
-#define VECTOR_clear real_VECTOR_clear 
-#define VECTOR_element real_VECTOR_element 
-#define VECTOR_front real_VECTOR_front 
-#define VECTOR_back real_VECTOR_back 
-#define VECTOR_find_if real_VECTOR_find_if 
-#define VECTOR_size real_VECTOR_size 
+#define VECTOR_push_back real_VECTOR_push_back
+#define VECTOR_erase real_VECTOR_erase
+#define VECTOR_clear real_VECTOR_clear
+#define VECTOR_element real_VECTOR_element
+#define VECTOR_front real_VECTOR_front
+#define VECTOR_back real_VECTOR_back
+#define VECTOR_find_if real_VECTOR_find_if
+#define VECTOR_size real_VECTOR_size
 #include "../src/vector.c"
 #undef VECTOR_create
 #undef VECTOR_move
 #undef VECTOR_destroy
-#undef VECTOR_push_back 
-#undef VECTOR_erase 
-#undef VECTOR_clear 
-#undef VECTOR_element 
-#undef VECTOR_front 
-#undef VECTOR_back 
-#undef VECTOR_find_if 
-#undef VECTOR_size 
+#undef VECTOR_push_back
+#undef VECTOR_erase
+#undef VECTOR_clear
+#undef VECTOR_element
+#undef VECTOR_front
+#undef VECTOR_back
+#undef VECTOR_find_if
+#undef VECTOR_size
 #undef VECTOR_H
 #undef GBALLOC_H
 #undef CRT_ABSTRACTIONS_H
@@ -120,7 +120,7 @@ BEGIN_TEST_SUITE(optionhandler_unittests)
 
         REGISTER_UMOCK_ALIAS_TYPE(const VECTOR_HANDLE, void*);
         REGISTER_UMOCK_ALIAS_TYPE(VECTOR_HANDLE, void*);
-        
+
         REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, my_gballoc_malloc);
         REGISTER_GLOBAL_MOCK_FAIL_RETURN(gballoc_malloc, NULL);
         REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, my_gballoc_free);
@@ -223,14 +223,14 @@ BEGIN_TEST_SUITE(optionhandler_unittests)
     TEST_FUNCTION(OptionHandler_Create_happy_path)
     {
         ///arrange
-		OPTIONHANDLER_HANDLE h;
+        OPTIONHANDLER_HANDLE h;
         OptionHandler_Create_inert_path(); /*in this case, it is happy*/
 
         ///act
         h = OptionHandler_Create(aCloneOption, aDestroyOption, aSetOption);
 
         ///assert
-        
+
         ASSERT_IS_NOT_NULL(h);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
@@ -242,7 +242,7 @@ BEGIN_TEST_SUITE(optionhandler_unittests)
     TEST_FUNCTION(OptionHandler_Create_unhappy_paths)
     {
         ///arrange
-		size_t i;
+        size_t i;
         int negativeTestsInitResult = umock_c_negative_tests_init();
         ASSERT_ARE_EQUAL(int, 0, negativeTestsInitResult);
 
@@ -253,21 +253,21 @@ BEGIN_TEST_SUITE(optionhandler_unittests)
         for (i = 0; i < umock_c_negative_tests_call_count(); i++)
         {
             char temp_str[128];
-			OPTIONHANDLER_HANDLE h;
-           
+            OPTIONHANDLER_HANDLE h;
+
             umock_c_negative_tests_reset();
             umock_c_negative_tests_fail_call(i);
-            
+
             ///act
             (void)sprintf(temp_str, "On failed call %zu", i);
-            
+
             ///act
             h = OptionHandler_Create(aCloneOption, aDestroyOption, aSetOption);
 
             ///assert
             ASSERT_IS_NULL_WITH_MSG(h, temp_str);
         }
-        
+
         ///cleanup
         umock_c_negative_tests_deinit();
     }
@@ -850,7 +850,7 @@ BEGIN_TEST_SUITE(optionhandler_unittests)
     TEST_FUNCTION(OptionHandler_AddOption_happy_path)
     {
         ///arrange
-		OPTIONHANDLER_RESULT result;
+        OPTIONHANDLER_RESULT result;
         OPTIONHANDLER_HANDLE handle = OptionHandler_Create(aCloneOption, aDestroyOption, aSetOption);
 
         void* value = "value";
@@ -872,11 +872,11 @@ BEGIN_TEST_SUITE(optionhandler_unittests)
     {
         ///arrange
         void* value = "value";
-		size_t i;
-		OPTIONHANDLER_HANDLE handle;
+        size_t i;
+        OPTIONHANDLER_HANDLE handle;
         int negativeTestsInitResult = umock_c_negative_tests_init();
         ASSERT_ARE_EQUAL(int, 0, negativeTestsInitResult);
-        
+
         handle = OptionHandler_Create(aCloneOption, aDestroyOption, aSetOption);
         umock_c_reset_all_calls();
 
@@ -887,9 +887,9 @@ BEGIN_TEST_SUITE(optionhandler_unittests)
         for (i = 0; i < umock_c_negative_tests_call_count(); i++)
         {
             char temp_str[128];
-			OPTIONHANDLER_RESULT result;
+            OPTIONHANDLER_RESULT result;
 
-			umock_c_negative_tests_reset();
+            umock_c_negative_tests_reset();
             umock_c_negative_tests_fail_call(i);
 
             ///act
@@ -945,7 +945,7 @@ BEGIN_TEST_SUITE(optionhandler_unittests)
     TEST_FUNCTION(OptionHandler_FeedOptions_with_0_saved_options_feeds_0_succeeds)
     {
         ///arrange
-		OPTIONHANDLER_RESULT result;
+        OPTIONHANDLER_RESULT result;
         OPTIONHANDLER_HANDLE handle = OptionHandler_Create(aCloneOption, aDestroyOption, aSetOption);
         umock_c_reset_all_calls();
 
@@ -979,7 +979,7 @@ BEGIN_TEST_SUITE(optionhandler_unittests)
     TEST_FUNCTION(OptionHandler_FeedOptions_with_1_saved_options_feeds_1_happypath)
     {
         ///arrange
-		OPTIONHANDLER_RESULT result;
+        OPTIONHANDLER_RESULT result;
         OPTIONHANDLER_HANDLE handle = OptionHandler_Create(aCloneOption, aDestroyOption, aSetOption);
         (void)OptionHandler_AddOption(handle, "a", "b");
         umock_c_reset_all_calls();
@@ -1001,13 +1001,13 @@ BEGIN_TEST_SUITE(optionhandler_unittests)
     TEST_FUNCTION(OptionHandler_FeedOptions_with_1_saved_options_feeds_1_unhappypaths)
     {
         ///arrange
-		size_t i;
+        size_t i;
         size_t calls_that_cannot_fail[] =
         {
-            0, 
+            0,
             1,
         };
-		OPTIONHANDLER_HANDLE handle;
+        OPTIONHANDLER_HANDLE handle;
 
         int negativeTestsInitResult = umock_c_negative_tests_init();
         ASSERT_ARE_EQUAL(int, 0, negativeTestsInitResult);
@@ -1023,8 +1023,8 @@ BEGIN_TEST_SUITE(optionhandler_unittests)
         for (i = 0; i < umock_c_negative_tests_call_count(); i++)
         {
             char temp_str[128];
-			size_t j;
-			OPTIONHANDLER_RESULT result;
+            size_t j;
+            OPTIONHANDLER_RESULT result;
 
             for (j = 0;j < sizeof(calls_that_cannot_fail) / sizeof(calls_that_cannot_fail[0]);j++)
             {
@@ -1050,7 +1050,7 @@ BEGIN_TEST_SUITE(optionhandler_unittests)
 
             ///assert
             ASSERT_ARE_EQUAL_WITH_MSG(OPTIONHANDLER_RESULT, OPTIONHANDLER_ERROR, result, temp_str);
-            
+
         }
 
         ///cleanup
@@ -1080,7 +1080,7 @@ BEGIN_TEST_SUITE(optionhandler_unittests)
     {
         ///arrange
         OPTIONHANDLER_HANDLE handle = OptionHandler_Create(aCloneOption, aDestroyOption, aSetOption);
-		OPTIONHANDLER_RESULT result;
+        OPTIONHANDLER_RESULT result;
 
         (void)OptionHandler_AddOption(handle, "a", "b");
         (void)OptionHandler_AddOption(handle, "c", "b2");
@@ -1103,14 +1103,14 @@ BEGIN_TEST_SUITE(optionhandler_unittests)
     TEST_FUNCTION(OptionHandler_FeedOptions_with_2_saved_options_feeds_2_unhappypaths)
     {
         ///arrange
-		OPTIONHANDLER_HANDLE handle;
+        OPTIONHANDLER_HANDLE handle;
         size_t calls_that_cannot_fail[] =
         {
             0,
             1,
             3,
         };
-		size_t i;
+        size_t i;
         int negativeTestsInitResult = umock_c_negative_tests_init();
         ASSERT_ARE_EQUAL(int, 0, negativeTestsInitResult);
 
@@ -1126,8 +1126,8 @@ BEGIN_TEST_SUITE(optionhandler_unittests)
         for (i = 0; i < umock_c_negative_tests_call_count(); i++)
         {
             char temp_str[128];
-			size_t j;
-			OPTIONHANDLER_RESULT result;
+            size_t j;
+            OPTIONHANDLER_RESULT result;
 
             for (j = 0;j < sizeof(calls_that_cannot_fail) / sizeof(calls_that_cannot_fail[0]);j++)
             {

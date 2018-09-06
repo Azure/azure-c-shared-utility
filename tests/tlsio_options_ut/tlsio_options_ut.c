@@ -601,7 +601,7 @@ TEST_FUNCTION(tlsio_options__clone_parameter_validation__fails)
     p0[k] = NULL; /*          */ p1[k] = fake_x509_key; p2[k] = &out_result; fm[k] = "Unexpected clone_option success when name is NULL"; /* */  k++;
     p0[k] = OPTION_TRUSTED_CERT; p1[k] = NULL; /*    */ p2[k] = &out_result; fm[k] = "Unexpected clone_option success when option value is NULL"; k++;
     p0[k] = OPTION_TRUSTED_CERT; p1[k] = fake_x509_key; p2[k] = NULL; /*  */ fm[k] = "Unexpected clone_option success when out_status is NULL"; k++;
-    
+
     // Cycle through each failing combo of parameters
     for (i = 0; i < SET_PV_COUNT; i++)
     {

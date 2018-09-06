@@ -147,7 +147,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         BUFFER_HANDLE g_hBuffer;
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
-        
+
         ///act
         g_hBuffer = BUFFER_new();
 
@@ -534,7 +534,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         int nResult;
         BUFFER_HANDLE hBuffer;
         hBuffer = BUFFER_create(BUFFER_TEST_VALUE, ALLOCATION_SIZE);
-        
+
         umock_c_reset_all_calls();
 
         STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, IGNORED_NUM_ARG));
@@ -1240,7 +1240,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         BUFFER_delete(handle1);
         BUFFER_delete(handle2);
     }
-    
+
 
     /* Tests_SRS_BUFFER_01_005: [ BUFFER_prepend shall return a non-zero upon value any error that is encountered. ]*/
     TEST_FUNCTION(BUFFER_prepend_APPEND_HANDLE1_NULL_Fail)
@@ -1326,7 +1326,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         g_hBuffer = BUFFER_new();
         (void)BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
         umock_c_reset_all_calls();
-        
+
         ///act
         u = BUFFER_u_char(g_hBuffer);
 

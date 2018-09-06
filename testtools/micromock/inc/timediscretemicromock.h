@@ -18,21 +18,21 @@ typedef CTimeDiscreteMicroMock<Typed_##className> className; \
 TYPED_MOCK_CLASS(Typed_##className, CThreadSafeGlobalMock)
 
 // A strict expected call implies that all arguments are checked
-#define STRICT_EXPECTED_CALL_AT(ClassName, time, ...)						\
+#define STRICT_EXPECTED_CALL_AT(ClassName, time, ...)                        \
     STRICT_EXPECTED_CALL(ClassName, __VA_ARGS__)                            \
-    .AddExtraCallArgument(new CMockCallArgument<UINT32>(time, false))				
+    .AddExtraCallArgument(new CMockCallArgument<UINT32>(time, false))
 
-   
+
 
 // By using the below macro, none of the arguments are checked by default
-// To specify checking the argument values, use the ValidateArgument 
+// To specify checking the argument values, use the ValidateArgument
 // expected call modifier method
 #define EXPECTED_CALL_AT(ClassName, time, ...)               \
 STRICT_EXPECTED_CALL_AT(ClassName, time, __VA_ARGS__)        \
     .IgnoreAllArguments()
 
 /*this macro takes a mock name, looks it up in the repository, and gets the time provider for that mock*/
-#define MOCK_TIMEPROVIDER(mockName)																									\
+#define MOCK_TIMEPROVIDER(mockName)                                                                                                    \
     (dynamic_cast<CTimeDiscreteMicroMockBase*>(GetSingleton())->getCurrentTick())
 
 
@@ -86,9 +86,9 @@ template <typename T> class valueHolder <T*>
 {
 private:
     bool wasNULL;
-    
+
     T theValue;
-    
+
     T* originalPointer;
     T* copyArray;
     size_t arraySize;
@@ -151,7 +151,7 @@ public:
     {
         SetValue(t);
     }
-    
+
     operator T*(void)
     {
         if(wasNULL)
@@ -174,7 +174,7 @@ public:
     /*or could be an array of user specififed length*/
     void setArraySize(_In_ size_t size)
     {
-        if(size==0) 
+        if(size==0)
         {
             ASSERT_FAIL("size cannot ever be 0 for an array");
         }
@@ -202,9 +202,9 @@ template <typename T> class valueHolder <const T*>
 {
 private:
     bool wasNULL;
-    
+
     T theValue;
-    
+
     const T* originalPointer;
     T* copyArray;
     size_t arraySize;
@@ -267,7 +267,7 @@ public:
     {
         SetValue(t);
     }
-    
+
     operator T*(void)
     {
         if(wasNULL)
@@ -290,7 +290,7 @@ public:
     /*or could be an array of user specified length*/
     void setArraySize(_In_ size_t size)
     {
-        if(size==0) 
+        if(size==0)
         {
             ASSERT_FAIL("size cannot ever be 0 for an array");
         }
@@ -323,12 +323,12 @@ public:
     {
         theValue = t;
     }
-    
+
     void operator=(_In_z_ char* t)
     {
         theValue = t;
     }
-    
+
     operator char*(void)
     {
         return (char*)(theValue.c_str());
@@ -350,7 +350,7 @@ public:
     {
         theValue = t;
     }
-    
+
     operator wchar_t*(void)
     {
         return (wchar_t*)theValue.c_str();
@@ -378,13 +378,13 @@ class stims_base
     template<typename resultType, typename arg1Type, typename arg2Type, typename arg3Type, typename arg4Type, typename arg5Type, typename arg6Type, typename arg7Type, typename arg8Type, typename arg9Type, typename arg10Type, typename arg11Type, typename arg12Type, typename arg13Type, class C> friend class call13Arg;
     template<typename resultType, typename arg1Type, typename arg2Type, typename arg3Type, typename arg4Type, typename arg5Type, typename arg6Type, typename arg7Type, typename arg8Type, typename arg9Type, typename arg10Type, typename arg11Type, typename arg12Type, typename arg13Type, typename arg14Type, class C> friend class call14Arg;
     template<typename resultType, typename arg1Type, typename arg2Type, typename arg3Type, typename arg4Type, typename arg5Type, typename arg6Type, typename arg7Type, typename arg8Type, typename arg9Type, typename arg10Type, typename arg11Type, typename arg12Type, typename arg13Type, typename arg14Type, typename arg15Type, class C> friend class call15Arg;
-    
+
 private:
     static std::vector<canPlay *> allPlayers;
 
-    static void registerCallXArg(canPlay* someStim)								
-    {																													
-        allPlayers.push_back(someStim);																					
+    static void registerCallXArg(canPlay* someStim)
+    {
+        allPlayers.push_back(someStim);
     }
 
 public:
@@ -392,7 +392,7 @@ public:
     {
         allPlayers.clear();
     }
-    
+
     void static PlayTick(_In_ UINT32 tick, _In_ UINT32 order)
     {
         for(UINT32 i=0;i<allPlayers.size();i++)

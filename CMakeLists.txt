@@ -65,12 +65,12 @@ if (MACOSX)
     endif()
 endif()
 
-if(${use_etw}) 
+if(${use_etw})
     #create res folder
     file(MAKE_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/res)
-    
+
     #populate res folder with the ETW resources
-    execute_process(COMMAND  ${CMAKE_CURRENT_LIST_DIR}/src/etw_provider_generate.cmd 
+    execute_process(COMMAND  ${CMAKE_CURRENT_LIST_DIR}/src/etw_provider_generate.cmd
         WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/src
     )
 endif()
@@ -128,7 +128,7 @@ if(MSVC)
         if(${use_wolfssl})
             set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_WOLFSSL")
             set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_WOLFSSL")
-    
+
             # Disables error if a bit-field is used on non-integer variable
             set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4 /wd4214")
             set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4 /wd4214")
@@ -560,13 +560,13 @@ if(${use_installed_dependencies})
 
     # Install Azure C Shared Utility
     set(package_location "cmake")
-    
+
     if(${build_as_dynamic})
         set(targets aziotsharedutil aziotsharedutil_dll)
     else(${build_as_dynamic})
         set(targets aziotsharedutil)
     endif(${build_as_dynamic})
-    
+
     install (TARGETS ${targets} EXPORT aziotsharedutilTargets
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
@@ -608,8 +608,8 @@ else()
         aziotsharedutil
     )
     install(FILES ${source_h_files}
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azure_c_shared_utility) 
-    install(TARGETS ${install_staticlibs} 
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azure_c_shared_utility)
+    install(TARGETS ${install_staticlibs}
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
 endif()

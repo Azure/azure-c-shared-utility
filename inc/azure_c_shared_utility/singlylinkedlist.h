@@ -16,25 +16,25 @@ typedef struct SINGLYLINKEDLIST_INSTANCE_TAG* SINGLYLINKEDLIST_HANDLE;
 typedef struct LIST_ITEM_INSTANCE_TAG* LIST_ITEM_HANDLE;
 
 /**
-* @brief						Function passed to singlylinkedlist_find, which returns whichever first list item that matches it.
-* @param list_item				Current list node being evaluated.
-* @param match_context			Context passed to singlylinkedlist_find.
-* @returns						True to indicate that the current list node is the one to be returned, or false to continue traversing the list.
+* @brief                        Function passed to singlylinkedlist_find, which returns whichever first list item that matches it.
+* @param list_item                Current list node being evaluated.
+* @param match_context            Context passed to singlylinkedlist_find.
+* @returns                        True to indicate that the current list node is the one to be returned, or false to continue traversing the list.
 */
 typedef bool (*LIST_MATCH_FUNCTION)(LIST_ITEM_HANDLE list_item, const void* match_context);
 /**
-* @brief						Function passed to singlylinkedlist_remove_if, which is used to define if an item of the list should be removed or not.
-* @param item					Value of the current list node being evaluated for removal.
-* @param match_context			Context passed to singlylinkedlist_remove_if.
-* @param continue_processing	Indicates if singlylinkedlist_remove_if shall continue iterating through the next nodes of the list or stop.
-* @returns						True to indicate that the current list node shall be removed, or false to not to.
+* @brief                        Function passed to singlylinkedlist_remove_if, which is used to define if an item of the list should be removed or not.
+* @param item                    Value of the current list node being evaluated for removal.
+* @param match_context            Context passed to singlylinkedlist_remove_if.
+* @param continue_processing    Indicates if singlylinkedlist_remove_if shall continue iterating through the next nodes of the list or stop.
+* @returns                        True to indicate that the current list node shall be removed, or false to not to.
 */
 typedef bool (*LIST_CONDITION_FUNCTION)(const void* item, const void* match_context, bool* continue_processing);
 /**
-* @brief						Function passed to singlylinkedlist_foreach, which is called for the value of each node of the list.
-* @param item					Value of the current list node being processed.
-* @param action_context			Context passed to singlylinkedlist_foreach.
-* @param continue_processing	Indicates if singlylinkedlist_foreach shall continue iterating through the next nodes of the list or stop.
+* @brief                        Function passed to singlylinkedlist_foreach, which is called for the value of each node of the list.
+* @param item                    Value of the current list node being processed.
+* @param action_context            Context passed to singlylinkedlist_foreach.
+* @param continue_processing    Indicates if singlylinkedlist_foreach shall continue iterating through the next nodes of the list or stop.
 */
 typedef void (*LIST_ACTION_FUNCTION)(const void* item, const void* action_context, bool* continue_processing);
 

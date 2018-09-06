@@ -1557,7 +1557,7 @@ TEST_FUNCTION(Base64_Encode_one_char_encode)
     BUFFER_HANDLE input = BUFFER_new();
     STRING_HANDLE result;
     const char* oneCharacter = "a";
-    
+
     BUFFER_build(input, (unsigned char*)oneCharacter,strlen(oneCharacter));
     //act
     result = Base64_Encoder(input);

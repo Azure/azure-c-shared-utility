@@ -21,6 +21,6 @@ MOCKABLE_FUNCTION(, PCCERT_CONTEXT, x509_schannel_get_certificate_context, X509_
 
 #ifdef __cplusplus
 }
-#endif 
+#endif
 
 #endif

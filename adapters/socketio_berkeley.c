@@ -189,7 +189,7 @@ static OPTIONHANDLER_HANDLE socketio_retrieveoptions(CONCRETE_IO_HANDLE handle)
     return result;
 }
 
-static const IO_INTERFACE_DESCRIPTION socket_io_interface_description = 
+static const IO_INTERFACE_DESCRIPTION socket_io_interface_description =
 {
     socketio_retrieveoptions,
     socketio_create,
@@ -256,7 +256,7 @@ static STATIC_VAR_UNUSED void signal_callback(int signum)
     LogError("Socket received signal %d.", signum);
 }
 
-static int lookup_address_and_initiate_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance) 
+static int lookup_address_and_initiate_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
 {
     int result;
     int err;
@@ -309,7 +309,7 @@ static int lookup_address_and_initiate_socket_connection(SOCKET_IO_INSTANCE* soc
             result = 0;
         }
     }
-    
+
     if (result == 0)
     {
         int flags;
@@ -328,14 +328,14 @@ static int lookup_address_and_initiate_socket_connection(SOCKET_IO_INSTANCE* soc
                 LogError("Failure: connect failure %d.", errno);
                 result = __FAILURE__;
             }
-        }    
+        }
     }
 
     if (addrInfoIp != NULL)
     {
         freeaddrinfo(addrInfoIp);
     }
-    
+
     return result;
 }
 
@@ -348,22 +348,22 @@ static int wait_for_connection(SOCKET_IO_INSTANCE* socket_io_instance)
 
     fd_set fdset;
     struct timeval tv;
-    
+
     FD_ZERO(&fdset);
     FD_SET(socket_io_instance->socket, &fdset);
     tv.tv_sec = CONNECT_TIMEOUT;
     tv.tv_usec = 0;
-    
+
     do
     {
         retval = select(socket_io_instance->socket + 1, NULL, &fdset, NULL, &tv);
-    
+
         if (retval < 0)
         {
             select_errno = errno;
         }
     } while (retval < 0 && select_errno == EINTR);
-    
+
     if (retval != 1)
     {
         LogError("Failure: select failure.");
@@ -405,7 +405,7 @@ static void destroy_network_interface_descriptions(NETWORK_INTERFACE_DESCRIPTION
         {
             destroy_network_interface_descriptions(nid->next);
         }
-    
+
         if (nid->name != NULL)
         {
             free(nid->name);
@@ -415,7 +415,7 @@ static void destroy_network_interface_descriptions(NETWORK_INTERFACE_DESCRIPTION
         {
             free(nid->mac_address);
         }
-        
+
         if (nid->ip_address != NULL)
         {
             free(nid->ip_address);
@@ -428,7 +428,7 @@ static void destroy_network_interface_descriptions(NETWORK_INTERFACE_DESCRIPTION
 static NETWORK_INTERFACE_DESCRIPTION* create_network_interface_description(struct ifreq *ifr, NETWORK_INTERFACE_DESCRIPTION* previous_nid)
 {
     NETWORK_INTERFACE_DESCRIPTION* result;
-    
+
     if ((result = (NETWORK_INTERFACE_DESCRIPTION*)malloc(sizeof(NETWORK_INTERFACE_DESCRIPTION))) == NULL)
     {
         LogError("Failed allocating NETWORK_INTERFACE_DESCRIPTION");
@@ -490,7 +490,7 @@ static NETWORK_INTERFACE_DESCRIPTION* create_network_interface_description(struc
             }
         }
     }
-    
+
     return result;
 }
 
@@ -510,14 +510,14 @@ static int get_network_interface_descriptions(int socket, NETWORK_INTERFACE_DESC
         LogError("ioctl failed querying socket (SIOCGIFCONF, errno=%s)", errno);
         result = __FAILURE__;
     }
-    else 
+    else
     {
         NETWORK_INTERFACE_DESCRIPTION* root_nid = NULL;
         NETWORK_INTERFACE_DESCRIPTION* new_nid = NULL;
 
         struct ifreq* it = ifc.ifc_req;
         const struct ifreq* const end = it + (ifc.ifc_len / sizeof(struct ifreq));
-        
+
         result = 0;
 
         for (; it != end; ++it)
@@ -546,14 +546,14 @@ static int get_network_interface_descriptions(int socket, NETWORK_INTERFACE_DESC
             {
                 LogError("Failed creating network interface description");
                 result = __FAILURE__;
-                break;    
+                break;
             }
             else if (root_nid == NULL)
             {
                 root_nid = new_nid;
             }
         }
-        
+
         if (result == 0)
         {
             *nid = root_nid;
@@ -580,7 +580,7 @@ static int set_target_network_interface(int socket, char* mac_address)
     else
     {
         NETWORK_INTERFACE_DESCRIPTION* current_nid = nid;
-    
+
         while(current_nid != NULL)
         {
             if (strcmp(mac_address, current_nid->mac_address) == 0)
@@ -605,7 +605,7 @@ static int set_target_network_interface(int socket, char* mac_address)
         {
             result = 0;
         }
-        
+
         destroy_network_interface_descriptions(nid);
     }
 

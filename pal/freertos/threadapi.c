@@ -19,9 +19,9 @@ void ThreadAPI_Sleep(unsigned int milliseconds)
 /*Codes_SRS_THREADAPI_FREERTOS_30_004: [ FreeRTOS is not guaranteed to support threading, so ThreadAPI_Create shall return THREADAPI_ERROR. ]*/
 THREADAPI_RESULT ThreadAPI_Create(THREAD_HANDLE* threadHandle, THREAD_START_FUNC func, void* arg)
 {
-	(void)threadHandle;
-	(void)func;
-	(void)arg;
+    (void)threadHandle;
+    (void)func;
+    (void)arg;
     LogError("FreeRTOS does not support multi-threading.");
     return THREADAPI_ERROR;
 }
@@ -29,8 +29,8 @@ THREADAPI_RESULT ThreadAPI_Create(THREAD_HANDLE* threadHandle, THREAD_START_FUNC
 /*Codes_SRS_THREADAPI_FREERTOS_30_005: [ FreeRTOS is not guaranteed to support threading, so ThreadAPI_Join shall return THREADAPI_ERROR. ]*/
 THREADAPI_RESULT ThreadAPI_Join(THREAD_HANDLE threadHandle, int* res)
 {
-	(void)threadHandle;
-	(void)res;
+    (void)threadHandle;
+    (void)res;
     LogError("FreeRTOS does not support multi-threading.");
     return THREADAPI_ERROR;
 }
@@ -38,6 +38,6 @@ THREADAPI_RESULT ThreadAPI_Join(THREAD_HANDLE threadHandle, int* res)
 /*Codes_SRS_THREADAPI_FREERTOS_30_006: [ FreeRTOS is not guaranteed to support threading, so ThreadAPI_Exit shall do nothing. ]*/
 void ThreadAPI_Exit(int res)
 {
-	(void)res;
+    (void)res;
     LogError("FreeRTOS does not support multi-threading.");
 }

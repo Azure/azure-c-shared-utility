@@ -12,6 +12,7 @@
 #define UUID_STRING_LENGTH          36
 #define UUID_STRING_SIZE            (UUID_STRING_LENGTH + 1)
 #define __SUCCESS__                 0
+#define UUID_FORMAT_STRING          "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x"
 
 int UUID_from_string(const char* uuid_string, UUID_T* uuid)
 {
@@ -78,16 +79,16 @@ char* UUID_to_string(UUID_T* uuid)
 {
     char* result;
 
-    // Codes_SRS_UUID_09_011: [ If `uuid` is NULL, UUID_to_string shall return a non-zero value ]  
+    // Codes_SRS_UUID_09_011: [ If `uuid` is NULL, UUID_to_string shall return a non-zero value ]
     if (uuid == NULL)
     {
         LogError("Invalid argument (uuid is NULL)");
         result = NULL;
     }
-    // Codes_SRS_UUID_09_012: [ UUID_to_string shall allocate a valid UUID string (`uuid_string`) as per RFC 4122 ]  
+    // Codes_SRS_UUID_09_012: [ UUID_to_string shall allocate a valid UUID string (`uuid_string`) as per RFC 4122 ]
     else if ((result = (char*)malloc(sizeof(char) * UUID_STRING_SIZE)) == NULL)
     {
-        // Codes_SRS_UUID_09_013: [ If `uuid_string` fails to be allocated, UUID_to_string shall return NULL ]  
+        // Codes_SRS_UUID_09_013: [ If `uuid_string` fails to be allocated, UUID_to_string shall return NULL ]
         LogError("Failed allocating UUID string");
     }
     else
@@ -103,7 +104,7 @@ char* UUID_to_string(UUID_T* uuid)
 
         if (number_of_chars_written != UUID_STRING_LENGTH)
         {
-            // Tests_SRS_UUID_09_015: [ If `uuid_string` fails to be set, UUID_to_string shall return NULL ] 
+            // Tests_SRS_UUID_09_015: [ If `uuid_string` fails to be set, UUID_to_string shall return NULL ]
             LogError("Failed encoding UUID string");
             free(result);
             result = NULL;
@@ -145,7 +146,7 @@ int UUID_generate(UUID_T* uuid)
                 LogError("Failed generating UUID");
                 result = __FAILURE__;
             }
-            // Codes_SRS_UUID_09_004: [ The UUID string shall be parsed into an UUID_T type (16 unsigned char array) and filled in `uuid` ]  
+            // Codes_SRS_UUID_09_004: [ The UUID string shall be parsed into an UUID_T type (16 unsigned char array) and filled in `uuid` ]
             else if (UUID_from_string(uuid_string, uuid) != 0)
             {
                 // Codes_SRS_UUID_09_005: [ If `uuid` fails to be set, UUID_generate shall fail and return a non-zero value ]

@@ -15,11 +15,11 @@ extern "C" {
 #include "azure_c_shared_utility/tlsio.h"
 #include "azure_c_shared_utility/umock_c_prod.h"
 
-/** @brief	Return the tlsio table of functions.
+/** @brief    Return the tlsio table of functions.
 *
-* @param	void.
+* @param    void.
 *
-* @return	The tlsio interface (IO_INTERFACE_DESCRIPTION).
+* @return    The tlsio interface (IO_INTERFACE_DESCRIPTION).
 */
 MOCKABLE_FUNCTION(, const IO_INTERFACE_DESCRIPTION*, tlsio_appleios_get_interface_description);
 

@@ -2,7 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 /** @file socket_async.h
- *	@brief	 Abstracts non-blocking sockets.
+ *    @brief     Abstracts non-blocking sockets.
  */
 
 #ifndef AZURE_SOCKET_ASYNC_H
@@ -28,7 +28,7 @@ typedef struct
     // is strongly recommended to use one of the higher level keepalive (ping) options rather
     // than the TCP level because the higher level options provide server connection status
     // in addition to keeping the connection open.
-    int keep_alive;     // < 0 for system defaults, >= 0 to use supplied keep_alive, idle, interval, and count 
+    int keep_alive;     // < 0 for system defaults, >= 0 to use supplied keep_alive, idle, interval, and count
     int keep_idle;      // seconds before first keepalive packet (ignored if keep_alive <= 0)
     int keep_interval;  // seconds between keepalive packets (ignored if keep_alive <= 0)
     int keep_count;     // number of times to try before declaring failure (ignored if keep_alive <= 0)
@@ -40,13 +40,13 @@ typedef SOCKET_ASYNC_OPTIONS* SOCKET_ASYNC_OPTIONS_HANDLE;
 typedef int SOCKET_ASYNC_HANDLE;
 
 /**
-* @brief	Create a non-blocking socket that is correctly configured for asynchronous use.
+* @brief    Create a non-blocking socket that is correctly configured for asynchronous use.
 *
-* @param   sock	Receives the created SOCKET_ASYNC_HANDLE.
+* @param   sock    Receives the created SOCKET_ASYNC_HANDLE.
 *
-* @param   host_ipv4	The IPv4 of the SSL server to be contacted.
+* @param   host_ipv4    The IPv4 of the SSL server to be contacted.
 *
-* @param   port	The port of the SSL server to use.
+* @param   port    The port of the SSL server to use.
 *
 * @param   is_UDP True for UDP, false for TCP.
 *
@@ -62,19 +62,19 @@ typedef int SOCKET_ASYNC_HANDLE;
 MOCKABLE_FUNCTION(, SOCKET_ASYNC_HANDLE, socket_async_create, uint32_t, host_ipv4, uint16_t, port, bool, is_UDP, SOCKET_ASYNC_OPTIONS_HANDLE, options);
 
 /**
-* @brief	Check whether a newly-created socket_async has completed its initial connection.
+* @brief    Check whether a newly-created socket_async has completed its initial connection.
 *
-* @param   sock	The created SOCKET_ASYNC_HANDLE to check for connection completion.
+* @param   sock    The created SOCKET_ASYNC_HANDLE to check for connection completion.
 *
-* @param   is_created	Receives the completion state if successful, set to false on failure.
+* @param   is_created    Receives the completion state if successful, set to false on failure.
 *
 * @return   @c 0 if the API call is successful.
 *           __FAILURE__ means an unexpected error has occurred and the socket must be destroyed.
 */
 MOCKABLE_FUNCTION(, int, socket_async_is_create_complete, SOCKET_ASYNC_HANDLE, sock, bool*, is_complete);
 
-/** 
-* @brief	Send a message on the specified socket.
+/**
+* @brief    Send a message on the specified socket.
 *
 * @param    sock The socket to be used.
 *
@@ -91,7 +91,7 @@ MOCKABLE_FUNCTION(, int, socket_async_is_create_complete, SOCKET_ASYNC_HANDLE, s
 MOCKABLE_FUNCTION(, int, socket_async_send, SOCKET_ASYNC_HANDLE, sock, const void*, buffer, size_t, size, size_t*, sent_count);
 
 /**
-* @brief	Receive a message on the specified socket.
+* @brief    Receive a message on the specified socket.
 *
 * @param    sock The socket to be used.
 *
@@ -108,7 +108,7 @@ MOCKABLE_FUNCTION(, int, socket_async_receive, SOCKET_ASYNC_HANDLE, sock, void*,
 
 
 /**
-* @brief	Close the socket returned by socket_async_create.
+* @brief    Close the socket returned by socket_async_create.
 *
 * @param   sock     The socket to be destroyed (closed, in standard socket terms).
 */

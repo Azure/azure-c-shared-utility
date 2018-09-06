@@ -17,6 +17,6 @@ MOCKABLE_FUNCTION(,int, x509_openssl_add_credentials, SSL_CTX*, ssl_ctx, const c
 
 #ifdef __cplusplus
 }
-#endif 
+#endif
 
 #endif

@@ -402,7 +402,7 @@ BEGIN_TEST_SUITE(HTTPHeaders_UnitTests)
         HTTPHeaders_Free(httpHandle);
     }
 
-        
+
 
     /*Tests_SRS_HTTP_HEADERS_99_014:[ The function shall return when the handle is not valid or when name parameter is NULL or when value parameter is NULL.]*/
     TEST_FUNCTION(HTTPHeaders_AddHeaderNameValuePair_with_NULL_handle_fails)
@@ -600,7 +600,7 @@ BEGIN_TEST_SUITE(HTTPHeaders_UnitTests)
             .SetReturn((const char*)NULL); /*this key does not exist, the line below is adding it*/
         (void)HTTPHeaders_AddHeaderNameValuePair(httpHandle, "ab", VALUE1);
         umock_c_reset_all_calls();
-            
+
         STRICT_EXPECTED_CALL(Map_GetValueFromKey(IGNORED_PTR_ARG, "a"))
             .IgnoreArgument(1)
             .SetReturn((const char*)NULL); /*this key does not exist, the line below is adding it*/
@@ -913,9 +913,9 @@ BEGIN_TEST_SUITE(HTTPHeaders_UnitTests)
         ///arrange
         HTTP_HEADERS_HANDLE httpHandle = HTTPHeaders_Alloc();
         size_t nHeaders;
-        const char* keys[] = { "NAME1" }; 
-        const char* values[] = { "VALUE1" }; 
-        const char* const ** pKeys = (const char* const **)&keys; 
+        const char* keys[] = { "NAME1" };
+        const char* values[] = { "VALUE1" };
+        const char* const ** pKeys = (const char* const **)&keys;
         const char* const ** pValues = (const char* const **)&values;
         const size_t one = 1;
         HTTP_HEADERS_RESULT res;
@@ -934,7 +934,7 @@ BEGIN_TEST_SUITE(HTTPHeaders_UnitTests)
 
         ///act
         res = HTTPHeaders_GetHeaderCount(httpHandle, &nHeaders);
-            
+
         ///assert
         ASSERT_ARE_EQUAL(HTTP_HEADERS_RESULT, HTTP_HEADERS_OK, res);
         ASSERT_ARE_EQUAL(size_t, (size_t)1, nHeaders);
@@ -1006,7 +1006,7 @@ BEGIN_TEST_SUITE(HTTPHeaders_UnitTests)
         ///assert
         ASSERT_ARE_EQUAL(HTTP_HEADERS_RESULT, HTTP_HEADERS_OK, res);
         ASSERT_ARE_EQUAL(size_t, 2, nHeaders);
-        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls()); 
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
         HTTPHeaders_Free(httpHandle);
@@ -1298,7 +1298,7 @@ BEGIN_TEST_SUITE(HTTPHeaders_UnitTests)
         HTTP_HEADERS_HANDLE httpHandle = HTTPHeaders_Alloc();
         char unacceptableString[2]={'\0', '\0'};
         int c;
-            
+
         for(c=SCHAR_MIN;c <=SCHAR_MAX; c++)
         {
             if(c=='\0') continue;

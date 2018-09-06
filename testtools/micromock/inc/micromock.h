@@ -57,7 +57,7 @@ static bool operator==<T*>(_In_ const CMockValue<T*>& lhs,          \
     C2(ClassName.Expected_, __VA_ARGS__)
 
 // By using the below macro, none of the arguments are checked by default
-// To specify checking the argument values, use the ValidateArgument 
+// To specify checking the argument values, use the ValidateArgument
 // expected call modifier method
 #define EXPECTED_CALL(ClassName, ...)               \
 STRICT_EXPECTED_CALL(ClassName, __VA_ARGS__)        \

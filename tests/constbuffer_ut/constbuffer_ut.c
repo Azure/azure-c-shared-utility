@@ -157,7 +157,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
     TEST_FUNCTION(CONSTBUFFER_Create_with_invalid_args_fails)
     {
         ///arrange
-        
+
         ///act
         CONSTBUFFER_HANDLE handle = CONSTBUFFER_Create(NULL, 1);
 
@@ -172,8 +172,8 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
     TEST_FUNCTION(CONSTBUFFER_Create_succeeds)
     {
         ///arrange
-		CONSTBUFFER_HANDLE handle;
-		const CONSTBUFFER* content;
+        CONSTBUFFER_HANDLE handle;
+        const CONSTBUFFER* content;
 
         ///act
         /*this is the handle*/
@@ -203,8 +203,8 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
     TEST_FUNCTION(CONSTBUFFER_CreateFromBuffer_succeeds)
     {
         ///arrange
-		CONSTBUFFER_HANDLE handle;
-		const CONSTBUFFER* content;
+        CONSTBUFFER_HANDLE handle;
+        const CONSTBUFFER* content;
 
         ///act
         STRICT_EXPECTED_CALL(BUFFER_length(BUFFER1_HANDLE));
@@ -235,7 +235,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
     TEST_FUNCTION(CONSTBUFFER_CreateFromBuffer_fails_when_malloc_fails_1)
     {
         ///arrange
-		CONSTBUFFER_HANDLE handle;
+        CONSTBUFFER_HANDLE handle;
 
         ///act
         STRICT_EXPECTED_CALL(BUFFER_length(BUFFER1_HANDLE));
@@ -266,7 +266,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
     TEST_FUNCTION(CONSTBUFFER_CreateFromBuffer_fails_when_malloc_fails_2)
     {
         ///arrange
-		CONSTBUFFER_HANDLE handle;
+        CONSTBUFFER_HANDLE handle;
 
         ///act
         STRICT_EXPECTED_CALL(BUFFER_length(BUFFER1_HANDLE));
@@ -332,7 +332,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
     TEST_FUNCTION(CONSTBUFFER_Create_fails_when_malloc_fails_1)
     {
         ///arrange
-		CONSTBUFFER_HANDLE handle;
+        CONSTBUFFER_HANDLE handle;
 
         ///act
         /*this is the handle*/
@@ -357,7 +357,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
     TEST_FUNCTION(CONSTBUFFER_Create_fails_when_malloc_fails_2)
     {
         ///arrange
-		CONSTBUFFER_HANDLE handle;
+        CONSTBUFFER_HANDLE handle;
 
         ///act
         /*this is the handle*/
@@ -402,8 +402,8 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
     TEST_FUNCTION(CONSTBUFFER_Create_from_0_size_succeeds_1)
     {
         ///arrange
-		CONSTBUFFER_HANDLE handle;
-		const CONSTBUFFER* content;
+        CONSTBUFFER_HANDLE handle;
+        const CONSTBUFFER* content;
 
         ///act
         /*this is the handle*/
@@ -429,8 +429,8 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
     TEST_FUNCTION(CONSTBUFFER_Create_from_0_size_succeeds_2)
     {
         ///arrange
-		CONSTBUFFER_HANDLE handle;
-		const CONSTBUFFER* content;
+        CONSTBUFFER_HANDLE handle;
+        const CONSTBUFFER* content;
 
         ///act
         /*this is the handle*/
@@ -470,10 +470,10 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
     TEST_FUNCTION(CONSTBUFFER_GetContent_succeeds_1)
     {
         ///arrange
-		CONSTBUFFER_HANDLE handle;
-		const CONSTBUFFER* content;
+        CONSTBUFFER_HANDLE handle;
+        const CONSTBUFFER* content;
 
-		handle = CONSTBUFFER_Create(BUFFER1_u_char, BUFFER1_length);
+        handle = CONSTBUFFER_Create(BUFFER1_u_char, BUFFER1_length);
         umock_c_reset_all_calls();
 
         ///act
@@ -496,8 +496,8 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
     TEST_FUNCTION(CONSTBUFFER_GetContent_succeeds_2)
     {
         ///arrange
-		CONSTBUFFER_HANDLE handle;
-		const CONSTBUFFER* content;
+        CONSTBUFFER_HANDLE handle;
+        const CONSTBUFFER* content;
         handle = CONSTBUFFER_Create(NULL, 0);
         umock_c_reset_all_calls();
 
@@ -532,7 +532,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
     TEST_FUNCTION(CONSTBUFFER_Clone_increments_ref_count_1)
     {
         ///arrange
-		CONSTBUFFER_HANDLE clone;
+        CONSTBUFFER_HANDLE clone;
         CONSTBUFFER_HANDLE handle = CONSTBUFFER_Create(BUFFER1_u_char, BUFFER1_length);
         umock_c_reset_all_calls();
 
@@ -598,7 +598,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
     TEST_FUNCTION(CONSTBUFFER_Destroy_with_NULL_argument_does_nothing)
     {
         ///arrange
-        
+
         ///act
         CONSTBUFFER_Destroy(NULL);
 

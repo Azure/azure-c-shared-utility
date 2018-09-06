@@ -25,7 +25,7 @@ static void* TEST_ALLOC_PTR1 = (void*)0x4242;
 static void* TEST_ALLOC_PTR2 = (void*)0x4243;
 static void* TEST_REALLOC_PTR = (void*)0x4245;
 
-#define OVERHEAD_SIZE	4096
+#define OVERHEAD_SIZE    4096
 static const LOCK_HANDLE TEST_LOCK_HANDLE = (LOCK_HANDLE)0x4244;
 
 #define ENABLE_MOCKS
@@ -126,7 +126,7 @@ TEST_FUNCTION(gballoc_init_resets_memory_used)
     EXPECTED_CALL(mock_malloc(0))
         .SetReturn(allocation);
     gballoc_free(gballoc_malloc(1));
-    
+
     gballoc_deinit();
 
     // act

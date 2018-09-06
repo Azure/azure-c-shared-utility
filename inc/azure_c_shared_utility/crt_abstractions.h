@@ -39,7 +39,7 @@ typedef bool _Bool;
 #endif // __cplusplus
 #else // _WIN32_WCE
 /* WINCE does not support bool as C datatype */
-#define __bool_true_false_are_defined	1
+#define __bool_true_false_are_defined    1
 
 #define HAS_STDBOOL
 
@@ -137,7 +137,7 @@ extern "C++" {
 #define ISNAN std::isnan
 }
 #else // __cplusplus
-#error unknown (or C89) compiler, provide ISNAN with the same meaning as isnan in C99 standard  
+#error unknown (or C89) compiler, provide ISNAN with the same meaning as isnan in C99 standard
 #endif // __cplusplus
 
 #endif // __STDC_VERSION__

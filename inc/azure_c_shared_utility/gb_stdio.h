@@ -9,7 +9,7 @@
     a) some of the stdio.h symbols shall be redefined, for example: fopen => gb_fopen
     b) all "code" using the fopen will actually (because of the preprocessor) call to gb_fopen
     c) gb_fopen shall blindly call into fopen, thus realizing a passthrough
-    
+
     reason is: unittesting. fopen is comes with the C Run Time and cannot be mocked (that is, in the global namespace cannot exist a function called fopen
 
 2) if GB_STDIO_INTERCEPT is not defined then

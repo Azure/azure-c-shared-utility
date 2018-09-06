@@ -105,7 +105,7 @@ static size_t Base64decode_len(const char *encodedString)
 {
     size_t result;
     size_t sourceLength = strlen(encodedString);
-    
+
     if (sourceLength == 0)
     {
         result = 0;

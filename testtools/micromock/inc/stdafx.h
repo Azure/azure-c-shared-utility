@@ -47,7 +47,7 @@ typedef int MICROMOCK_CRITICAL_SECTION;
 
 #ifdef _MSC_VER
 /*'function' : unreferenced local function has been removed*/
-#pragma warning( disable: 4505 ) 
+#pragma warning( disable: 4505 )
 
 /*unreferenced inline function has been removed*/
 #pragma warning( disable: 4514)

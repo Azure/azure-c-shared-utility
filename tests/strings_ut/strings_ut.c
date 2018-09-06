@@ -61,7 +61,7 @@ static TEST_MUTEX_HANDLE g_testByTest;
 static const struct JSONEncoding {
     const char* source;
     const char* expectedJSON;
-} JSONtests[]= 
+} JSONtests[]=
     {
         { "", "\"\"" }, /*empty string*/
         { "a", "\"a\"" }, /*a => "a"*/
@@ -71,7 +71,7 @@ static const struct JSONEncoding {
         { "\x1F", "\"\\u001F\"" },
         { "\"", "\"\\\"\""},
         { "\\", "\"\\\\\"" },
-        { "\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1A\x1B\x1C\x1D\x1E\x1F some text\"\\a/a", 
+        { "\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1A\x1B\x1C\x1D\x1E\x1F some text\"\\a/a",
           "\"\\u0001\\u0002\\u0003\\u0004\\u0005\\u0006\\u0007\\u0008\\u0009\\u000A\\u000B\\u000C\\u000D\\u000E\\u000F\\u0010\\u0011\\u0012\\u0013\\u0014\\u0015\\u0016\\u0017\\u0018\\u0019\\u001A\\u001B\\u001C\\u001D\\u001E\\u001F some text\\\"\\\\a\\/a\"" },
 
     };
@@ -211,7 +211,7 @@ BEGIN_TEST_SUITE(strings_unittests)
         char* szTestString = (char*)malloc(nLen);
         strncpy(szTestString, TEST_STRING_VALUE, nLen);
         umock_c_reset_all_calls();
-        
+
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument(1);
 
@@ -498,7 +498,7 @@ BEGIN_TEST_SUITE(strings_unittests)
     {
         ///arrange
         ///act
-        
+
         int nResult = STRING_concat(NULL, TEST_STRING_VALUE);
 
         ///assert
@@ -660,7 +660,7 @@ BEGIN_TEST_SUITE(strings_unittests)
         STRING_HANDLE g_hString;
         g_hString = STRING_construct(INITIAL_STRING_VALUE);
         umock_c_reset_all_calls();
-        
+
         STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, NUMBER_OF_CHAR_TOCOPY + 1))
             .IgnoreArgument(1);
 
@@ -910,7 +910,7 @@ BEGIN_TEST_SUITE(strings_unittests)
 
         ///act
         STRING_delete(g_hString);
-        
+
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     }
@@ -1259,7 +1259,7 @@ BEGIN_TEST_SUITE(strings_unittests)
 
         ///act
         STRING_HANDLE result = STRING_new_JSON(NULL);
-        
+
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_IS_NULL(result);
@@ -1417,7 +1417,7 @@ BEGIN_TEST_SUITE(strings_unittests)
         STRING_HANDLE result;
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
             .IgnoreArgument_size();
-        
+
         STRICT_EXPECTED_CALL(gballoc_malloc(1 + 1))
             .SetReturn(NULL);
 

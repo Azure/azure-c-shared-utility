@@ -15,97 +15,97 @@ LOCK_HANDLE Lock_Init(void)
         LogError("malloc failed.");
     }
     else
-	{
-		if (pthread_mutex_init(result, NULL) != 0)
-		{
+    {
+        if (pthread_mutex_init(result, NULL) != 0)
+        {
             /* Codes_SRS_LOCK_10_003: [Lock_Init on error shall return NULL ] */
-			LogError("pthread_mutex_init failed.");
+            LogError("pthread_mutex_init failed.");
             free(result);
             result = NULL;
-		}
-	}
-	
-	return (LOCK_HANDLE)result;
+        }
+    }
+
+    return (LOCK_HANDLE)result;
 }
 
 LOCK_RESULT Lock(LOCK_HANDLE handle)
 {
-	LOCK_RESULT result;
-	if (handle == NULL)
-	{
+    LOCK_RESULT result;
+    if (handle == NULL)
+    {
         /* Codes_SRS_LOCK_10_007: [Lock on NULL handle passed returns LOCK_ERROR] */
         LogError("Invalid argument; handle is NULL.");
         result = LOCK_ERROR;
     }
-	else
-	{
-		if (pthread_mutex_lock((pthread_mutex_t*)handle) == 0)
-		{
+    else
+    {
+        if (pthread_mutex_lock((pthread_mutex_t*)handle) == 0)
+        {
             /* Codes_SRS_LOCK_10_005: [Lock on success shall return LOCK_OK] */
             result = LOCK_OK;
-		}
-		else
-		{
+        }
+        else
+        {
             /* Codes_SRS_LOCK_10_006: [Lock on error shall return LOCK_ERROR] */
             LogError("pthread_mutex_lock failed.");
             result = LOCK_ERROR;
-		}
-	}
+        }
+    }
 
-	return result;
+    return result;
 }
 
 LOCK_RESULT Unlock(LOCK_HANDLE handle)
 {
-	LOCK_RESULT result;
-	if (handle == NULL)
-	{
+    LOCK_RESULT result;
+    if (handle == NULL)
+    {
         /* Codes_SRS_LOCK_10_007: [Unlock on NULL handle passed returns LOCK_ERROR] */
         LogError("Invalid argument; handle is NULL.");
         result = LOCK_ERROR;
     }
-	else
-	{
-		if (pthread_mutex_unlock((pthread_mutex_t*)handle) == 0)
-		{
+    else
+    {
+        if (pthread_mutex_unlock((pthread_mutex_t*)handle) == 0)
+        {
             /* Codes_SRS_LOCK_10_009: [Unlock on success shall return LOCK_OK] */
             result = LOCK_OK;
-		}
-		else
-		{
+        }
+        else
+        {
             /* Codes_SRS_LOCK_10_010: [Unlock on error shall return LOCK_ERROR] */
             LogError("pthread_mutex_unlock failed.");
             result = LOCK_ERROR;
-		}
-	}
+        }
+    }
 
-	return result;
+    return result;
 }
 
 LOCK_RESULT Lock_Deinit(LOCK_HANDLE handle)
 {
-	LOCK_RESULT result;
-	if (NULL == handle)
-	{
+    LOCK_RESULT result;
+    if (NULL == handle)
+    {
         /* Codes_SRS_LOCK_10_007: [Lock_Deinit on NULL handle passed returns LOCK_ERROR] */
         LogError("Invalid argument; handle is NULL.");
         result = LOCK_ERROR;
     }
-	else
-	{
+    else
+    {
         /* Codes_SRS_LOCK_10_012: [Lock_Deinit frees the memory pointed by handle] */
         if(pthread_mutex_destroy((pthread_mutex_t*)handle) == 0)
-		{
-			free(handle);
-			handle = NULL;
+        {
+            free(handle);
+            handle = NULL;
             result = LOCK_OK;
         }
-		else
-		{
+        else
+        {
             LogError("pthread_mutex_destroy failed;");
-			result = LOCK_ERROR;
-		}
-	}
-	
-	return result;
+            result = LOCK_ERROR;
+        }
+    }
+
+    return result;
 }

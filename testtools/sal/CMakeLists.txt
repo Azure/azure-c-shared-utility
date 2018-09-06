@@ -1,7 +1,7 @@
 #Copyright (c) Microsoft. All rights reserved.
 #Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#this is CMakeLists for sal. It only defines a global include 
+#this is CMakeLists for sal. It only defines a global include
 cmake_minimum_required(VERSION 2.8.11)
 
 compileAsC99()
@@ -14,7 +14,7 @@ if(WIN32)
 elseif(UNIX)
 	set(SAL_INC_FOLDER ${CMAKE_CURRENT_LIST_DIR}/inc CACHE INTERNAL "this is what needs to be included if using sal header" FORCE)
 endif()
-	
+
 if(NOT WIN32)
 	add_files_to_install("./testtools/sal/inc/sal.h;./testtools/sal/inc/no_sal2.h")
 endif()

@@ -650,7 +650,7 @@ TEST_FUNCTION(x509_schannel_get_certificate_context_succeeds)
     ASSERT_IS_NOT_NULL(p);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
-    ///cleanup 
+    ///cleanup
     x509_schannel_destroy(h);
 }
 

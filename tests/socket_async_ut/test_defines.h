@@ -2,7 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 // This file is made an integral part of socket_async_ut.c with a #include. It
-// is broken out for readability. 
+// is broken out for readability.
 
 
 // These definitions provide parameters and pass / fail values for unit testing

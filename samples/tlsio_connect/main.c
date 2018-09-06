@@ -88,7 +88,7 @@ int main(int argc, char** argv)
                 }
                 else
                 {
-					unsigned char done = 0;
+                    unsigned char done = 0;
                     while (!done)
                     {
                         xio_dowork(tlsio);

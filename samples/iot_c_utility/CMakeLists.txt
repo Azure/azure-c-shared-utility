@@ -19,6 +19,6 @@ endif()
 
 add_executable(iot_c_utility ${iot_c_utility_c_files})
 
-target_link_libraries(iot_c_utility 
+target_link_libraries(iot_c_utility
     aziotsharedutil
 )

@@ -30,17 +30,17 @@
  */
 void* my_gballoc_malloc(size_t size)
 {
-	return malloc(size);
+    return malloc(size);
 }
 
 void* my_gballoc_realloc(void* ptr, size_t size)
 {
-	return realloc(ptr, size);
+    return realloc(ptr, size);
 }
 
 void my_gballoc_free(void* ptr)
 {
-	free(ptr);
+    free(ptr);
 }
 
 #define ENABLE_MOCKS
@@ -117,7 +117,7 @@ static TEST_MUTEX_HANDLE g_dllByDll;
 BEGIN_TEST_SUITE(dns_async_ut)
 
     /**
-     * This is the place where we initialize the test system. Replace the test name to associate the test 
+     * This is the place where we initialize the test system. Replace the test name to associate the test
      *   suite with your test cases.
      * It is called once, before start the tests.
      */
@@ -218,7 +218,7 @@ BEGIN_TEST_SUITE(dns_async_ut)
     TEST_FUNCTION(dns_async__is_complete_yes__succeeds)
     {
         ///arrange
-		bool result;
+        bool result;
         DNS_ASYNC_HANDLE dns = dns_async_create("fake.com", NULL);
         umock_c_reset_all_calls();
         STRICT_EXPECTED_CALL(getaddrinfo(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
@@ -237,8 +237,8 @@ BEGIN_TEST_SUITE(dns_async_ut)
     TEST_FUNCTION(dns_async__dns_async_get_ipv4__succeeds)
     {
         ///arrange
-		bool result;
-		uint32_t ipv4;
+        bool result;
+        uint32_t ipv4;
         DNS_ASYNC_HANDLE dns = dns_async_create("fake.com", NULL);
         umock_c_reset_all_calls();
         STRICT_EXPECTED_CALL(getaddrinfo(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
@@ -259,7 +259,7 @@ BEGIN_TEST_SUITE(dns_async_ut)
     TEST_FUNCTION(dns_async__is_complete_yes_after_failure__fails)
     {
         ///arrange
-		bool result;
+        bool result;
         DNS_ASYNC_HANDLE dns = dns_async_create("fake.com", NULL);
         umock_c_reset_all_calls();
         STRICT_EXPECTED_CALL(getaddrinfo(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG)).SetReturn(GETADDRINFO_FAIL);
@@ -278,8 +278,8 @@ BEGIN_TEST_SUITE(dns_async_ut)
     TEST_FUNCTION(dns_async__async_get_ipv4__fails)
     {
         ///arrange
-		bool result;
-		uint32_t ipv4;
+        bool result;
+        uint32_t ipv4;
         DNS_ASYNC_HANDLE dns = dns_async_create("fake.com", NULL);
         umock_c_reset_all_calls();
         STRICT_EXPECTED_CALL(getaddrinfo(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG)).SetReturn(GETADDRINFO_FAIL);
@@ -358,7 +358,7 @@ BEGIN_TEST_SUITE(dns_async_ut)
         umock_c_reset_all_calls();
 
         STRICT_EXPECTED_CALL(gballoc_free(IGNORED_NUM_ARG));  // copy hostname
-        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_NUM_ARG));  // instance 
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_NUM_ARG));  // instance
 
         ///act
         dns_async_destroy(result);
@@ -371,9 +371,9 @@ BEGIN_TEST_SUITE(dns_async_ut)
     TEST_FUNCTION(dns_async__create__success)
     {
         ///arrange
-		DNS_ASYNC_HANDLE result;
+        DNS_ASYNC_HANDLE result;
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));  // copy hostname
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));  // instance 
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));  // instance
 
         ///act
         result = dns_async_create("fake.com", NULL);
@@ -390,17 +390,17 @@ BEGIN_TEST_SUITE(dns_async_ut)
     TEST_FUNCTION(dns_async__create_unhappy_paths__fails)
     {
         ///arrange
-		unsigned int i;
+        unsigned int i;
         int negativeTestsInitResult = umock_c_negative_tests_init();
         ASSERT_ARE_EQUAL(int, 0, negativeTestsInitResult);
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));  // copy hostname
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));  // instance 
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));  // instance
         umock_c_negative_tests_snapshot();
 
         for (i = 0; i < umock_c_negative_tests_call_count(); i++)
         {
-			DNS_ASYNC_HANDLE result;
+            DNS_ASYNC_HANDLE result;
 
             umock_c_negative_tests_reset();
             umock_c_negative_tests_fail_call(i);

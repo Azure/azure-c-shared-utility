@@ -121,7 +121,7 @@ static const unsigned int interestingUnsignedIntNumbersToBeConverted[] =
     1234,
     12341,
     UINT_MAX / 2,
-    UINT_MAX -1, 
+    UINT_MAX -1,
     UINT_MAX,
     42,
     0x42
@@ -156,7 +156,7 @@ static const size_t interestingSize_tNumbersToBeConverted[] =
     1234,
     12341,
     SIZE_MAX / 2,
-    SIZE_MAX -1, 
+    SIZE_MAX -1,
     SIZE_MAX,
     42,
     0x42
@@ -310,7 +310,7 @@ TEST_FUNCTION(strcat_s_With_Unterminated_Destination_Fails)
 #endif
     ASSERT_ARE_EQUAL(int, EINVAL, result);
 }
-        
+
 // Tests_SRS_CRT_ABSTRACTIONS_99_005: [If src is NULL, the error code returned shall be EINVAL and dst[0] shall be set to 0.]
 TEST_FUNCTION(strcat_s_With_NULL_Source_Fails)
 {
@@ -1397,7 +1397,7 @@ TEST_FUNCTION(strtoull_s_base_out_of_the_range_underflow_fail)
 
     // act
     result = strtoull_s(subjectStr, &endptr, base);
- 
+
     // assert
     ASSERT_ARE_EQUAL(uint64_t, expectedResult, result);
     ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
@@ -2454,7 +2454,7 @@ TEST_FUNCTION(unsignedIntToString_fails_when_destination_is_not_sufficient_for_1
 
     ///assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
-            
+
 }
 
 /*Tests_SRS_CRT_ABSTRACTIONS_02_002: [If the conversion fails for any reason (for example, insufficient buffer space), a non-zero return value shall be supplied and unsignedIntToString shall fail.] */
@@ -2512,7 +2512,7 @@ TEST_FUNCTION(unsignedIntToString_succeeds_for_interesting_numbers)
 
         ///assert
         ASSERT_ARE_EQUAL(int, 0, result);
-                
+
         while (destination[pos] != '\0')
         {
             if (valueFromString > (UINT_MAX / 10))

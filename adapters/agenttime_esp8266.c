@@ -12,7 +12,7 @@ time_t get_time(time_t* currentTime)
 }
 
 double get_difftime(time_t stopTime, time_t startTime)
-{	
+{
     return (double)stopTime - (double)startTime;
 }
 

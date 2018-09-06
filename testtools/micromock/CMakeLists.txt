@@ -35,7 +35,7 @@ set(micromock_h_files
 ./inc/mockvalue.h
 ./inc/mockvaluebase.h
 ./inc/nicecallcomparer.h
-./inc/runtimemock.h 
+./inc/runtimemock.h
 ./inc/stdafx.h
 ./inc/strictorderedcallcomparer.h
 ./inc/strictunorderedcallcomparer.h
@@ -73,7 +73,7 @@ IF(WIN32)
            PROPERTIES
            FOLDER "test_tools")
     endif()
-    
+
     add_library(micromock_ctest ${micromock_cpp_files} ${micromock_h_files})
     target_compile_definitions(micromock_ctest PUBLIC USE_CTEST)
     target_compile_options(micromock_ctest PUBLIC /EHsc)
@@ -111,5 +111,5 @@ if(WIN32)
 
     set_target_properties(micromock_generator
                PROPERTIES
-               FOLDER "test_tools") 
+               FOLDER "test_tools")
 endif()

@@ -54,7 +54,7 @@ DNS_ASYNC_HANDLE dns_async_create(const char* hostname, DNS_ASYNC_OPTIONS* optio
         }
         else
         {
-			int ms_result;
+            int ms_result;
             result->is_complete = false;
             result->is_failed = false;
             result->ip_v4 = 0;
@@ -95,9 +95,9 @@ bool dns_async_is_lookup_complete(DNS_ASYNC_HANDLE dns_in)
             struct addrinfo *addrInfo = NULL;
             struct addrinfo *ptr = NULL;
             struct addrinfo hints;
-			int getAddrResult;
+            int getAddrResult;
 
-			/* Codes_SRS_DNS_ASYNC_30_021: [ dns_async_is_create_complete shall perform the asynchronous work of DNS lookup and log any errors. ]*/
+            /* Codes_SRS_DNS_ASYNC_30_021: [ dns_async_is_create_complete shall perform the asynchronous work of DNS lookup and log any errors. ]*/
             // Only make one attempt at lookup for this
             // synchronous implementation
             dns->is_complete = true;

@@ -82,8 +82,8 @@ int my_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, st
     (void)nfds;
     (void)readfds;
     // TP_TCP_IS_COMPLETE_ERRSET_FAIL,     // a non-empty error set
-    // TP_TCP_IS_COMPLETE_READY_OK,        // 
-    // TTP_TCP_IS_COMPLETE_NOT_READY_OK,    // 
+    // TP_TCP_IS_COMPLETE_READY_OK,        //
+    // TTP_TCP_IS_COMPLETE_NOT_READY_OK,    //
 
     // This arguably odd sequence of FD_SET, etc. was necessary
     // to make the linux_c-ubuntu-clang build succeed. FD_CLR
@@ -638,7 +638,7 @@ TEST_SUITE_INITIALIZE(a)
         ASSERT_ARE_EQUAL_WITH_MSG(int, create_result, SOCKET_ASYNC_INVALID_SOCKET, "Unexpected create_result success");
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     }
-    
+
     /* Tests_SRS_SOCKET_ASYNC_30_020: [ If socket option setting fails, the sock value shall be set to SOCKET_ASYNC_INVALID_SOCKET and socket_async_create shall log an error and return FAILURE. ]*/
     TEST_FUNCTION(socket_async_create__set_all_options_fail__fails)
     {

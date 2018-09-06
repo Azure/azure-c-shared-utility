@@ -10,7 +10,7 @@ DEFINE_ENUM_STRINGS(THREADAPI_RESULT, THREADAPI_RESULT_VALUES);
 
 THREADAPI_RESULT ThreadAPI_Create(THREAD_HANDLE* threadHandle, THREAD_START_FUNC func, void* arg)
 {
-	LogError("ESP8266 RTOS does not support multi-thread function.");
+    LogError("ESP8266 RTOS does not support multi-thread function.");
     return THREADAPI_ERROR;
 }
 
@@ -22,10 +22,10 @@ THREADAPI_RESULT ThreadAPI_Join(THREAD_HANDLE threadHandle, int* res)
 
 void ThreadAPI_Exit(int res)
 {
-	vTaskDelete(NULL);
+    vTaskDelete(NULL);
 }
 
 void ThreadAPI_Sleep(unsigned int milliseconds)
 {
-	vTaskDelay(milliseconds);
+    vTaskDelay(milliseconds);
 }

@@ -20,7 +20,7 @@ UNIQUEID_RESULT UniqueId_Generate(char* uid, size_t len)
         result = UNIQUEID_INVALID_ARG;
         LogError("Buffer Size is Null or length is less then 37 bytes");
     }
-    else 
+    else
     {
         UUID uuidVal;
         RPC_STATUS status = UuidCreate(&uuidVal);
@@ -40,7 +40,7 @@ UNIQUEID_RESULT UniqueId_Generate(char* uid, size_t len)
             }
             else
             {
-				size_t cpyLen;
+                size_t cpyLen;
                 /* Codes_SRS_UNIQUEID_07_001: [UniqueId_Generate shall create a unique Id 36 character long string.] */
                 memset(uid, 0, len);
                 cpyLen = strlen((char*)randomResult);

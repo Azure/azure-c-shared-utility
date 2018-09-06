@@ -44,7 +44,7 @@ typedef enum TLSIO_VERSION_TAG
 
 static bool is_an_opening_state(TLSIO_STATE state)
 {
-    // TLSIO_STATE_HANDSHAKE_FAILED is deliberately not one of these states. 
+    // TLSIO_STATE_HANDSHAKE_FAILED is deliberately not one of these states.
     return state == TLSIO_STATE_OPENING_UNDERLYING_IO ||
         state == TLSIO_STATE_IN_HANDSHAKE;
 }
@@ -177,7 +177,7 @@ static void* tlsio_openssl_CloneOption(const char* name, const void* value)
         else if (strcmp(name, OPTION_TLS_VERSION) == 0)
         {
             int int_value;
-            
+
             if (*(TLSIO_VERSION*)value == VERSION_1_0)
             {
                 int_value = 10;
@@ -195,7 +195,7 @@ static void* tlsio_openssl_CloneOption(const char* name, const void* value)
                 LogError("Unexpected TLS version value (%d)", *(int*)value);
                 int_value = -1;
             }
-            
+
             if (int_value < 0)
             {
                 result = NULL;
@@ -212,7 +212,7 @@ static void* tlsio_openssl_CloneOption(const char* name, const void* value)
                 {
                     *value_clone = int_value;
                 }
-                
+
                 result = value_clone;
             }
         }
@@ -654,7 +654,7 @@ static int write_outgoing_bytes(TLS_IO_INSTANCE* tls_io_instance, ON_SEND_COMPLE
     return result;
 }
 
-// Non-NULL tls_io_instance is guaranteed by callers. 
+// Non-NULL tls_io_instance is guaranteed by callers.
 // We are in TLSIO_STATE_IN_HANDSHAKE when entering this method.
 static void send_handshake_bytes(TLS_IO_INSTANCE* tls_io_instance)
 {
@@ -1307,7 +1307,7 @@ int tlsio_openssl_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_cl
             tls_io_instance->tlsio_state = TLSIO_STATE_CLOSING;
             tls_io_instance->on_io_close_complete = on_io_close_complete;
             tls_io_instance->on_io_close_complete_context = callback_context;
-            // xio_close is guaranteed to succeed from the open state, and the callback completes the 
+            // xio_close is guaranteed to succeed from the open state, and the callback completes the
             // transition into TLSIO_STATE_NOT_OPEN
             if (xio_close(tls_io_instance->underlying_io, on_underlying_io_close_complete, tls_io_instance) != 0)
             {
@@ -1419,13 +1419,13 @@ void tlsio_openssl_dowork(CONCRETE_IO_HANDLE tls_io)
             if (tls_io_instance->tlsio_state == TLSIO_STATE_HANDSHAKE_FAILED)
             {
                 // The handshake failed so we need to close. The tlsio becomes aware of the
-                // handshake failure during an on_bytes_received while the underlying 
+                // handshake failure during an on_bytes_received while the underlying
                 // xio_dowork is pumping data out of the socket in a while loop. The tlsio can't
                 // close down during the callback because that would mean the xio_dowork would
                 // be trying to read from a closed socket. So instead, the tlsio sets its state
-                // to TLSIO_STATE_HANDSHAKE_FAILED during the on_bytes_received callback, 
+                // to TLSIO_STATE_HANDSHAKE_FAILED during the on_bytes_received callback,
                 // can then gracefully shut things down here.
-                // 
+                //
                 // Set the state to TLSIO_STATE_ERROR so close won't gripe about the state
                 tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
                 tlsio_openssl_close(tls_io_instance, NULL, NULL);

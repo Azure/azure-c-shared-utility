@@ -23,7 +23,7 @@ POS_HANDLE Pos_Create(int x)
 
 POS_HANDLE Pos_Clone(POS_HANDLE posHandle)
 {
-    
+
     if (posHandle != NULL)
     {
         pos* p = posHandle;
