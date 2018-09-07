@@ -86,6 +86,8 @@ int strcat_s(char* dst, size_t dstSizeInBytes, const char* src)
             {
                 result = EINVAL;
             }
+            // If we are instructed to write too much data to the buffer
+            // return ERANGE
             else if ((src_len + dstStrLen) >= dstSizeInBytes)
             {
                 dst[0] = '\0';
@@ -93,12 +95,17 @@ int strcat_s(char* dst, size_t dstSizeInBytes, const char* src)
             }
             else
             {
+                // memcpy should at most copy the result of strlen(src) or there may be
+                // some issues with copying unwanted memory
+                size_t bytes_to_cpy = dstSizeInBytes - dstStrLen;
+                if (bytes_to_cpy > src_len)
+                {
+                    bytes_to_cpy = src_len;
+                }
+
                 /*Codes_SRS_CRT_ABSTRACTIONS_99_009: [The initial character of src shall overwrite the terminating null character of dst.]*/
-                //memset(&dst[dstStrLen], 0, dstSizeInBytes - dstStrLen);
-                if (memcpy(&dst[dstStrLen], src, dstSizeInBytes - dstStrLen) == NULL)
-                //(void)strncpy(&dst[dstStrLen], src, dstSizeInBytes - dstStrLen);
+                if (memcpy(&dst[dstStrLen], src, bytes_to_cpy) == NULL)
                 /*Codes_SRS_CRT_ABSTRACTIONS_99_006: [If the dstSizeInBytes is 0 or smaller than the required size for dst & src, the error code returned shall be ERANGE & dst[0] set to 0.]*/
-                //if (dst[dstSizeInBytes-1] != '\0')
                 {
                     dst[0] = '\0';
                     result = ERANGE;
