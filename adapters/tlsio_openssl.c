@@ -7,7 +7,9 @@
 #include "openssl/crypto.h"
 #include "openssl/opensslv.h"
 #include <stdio.h>
+#if defined(ANDROID) || defined(__ANDROID__)
 #include <dirent.h>
+#endif
 #include <stdbool.h>
 #include <stdint.h>
 #include "azure_c_shared_utility/lock.h"
