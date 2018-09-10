@@ -98,9 +98,9 @@ int strcat_s(char* dst, size_t dstSizeInBytes, const char* src)
                 // memcpy should at most copy the result of strlen(src) or there may be
                 // some issues with copying unwanted memory
                 size_t bytes_to_cpy = dstSizeInBytes - dstStrLen;
-                if (bytes_to_cpy > src_len+1)
+                if (bytes_to_cpy > src_len)
                 {
-                    bytes_to_cpy = src_len+1;
+                    bytes_to_cpy = src_len;
                 }
 
                 /*Codes_SRS_CRT_ABSTRACTIONS_99_009: [The initial character of src shall overwrite the terminating null character of dst.]*/
