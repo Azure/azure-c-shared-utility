@@ -919,12 +919,9 @@ static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
         {
             char fname[1024];
             sprintf(fname, "%s/%s", certs_path, direntry->d_name);
-            LogError(fname);
 
             if (direntry->d_type == DT_REG)
             {
-                LogError("processing file.");
-
                 FILE *fp = fopen(fname, "r");
 
                 if (fp)
@@ -935,16 +932,20 @@ static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
                         int i = X509_STORE_add_cert(store, x509);
                         if (i != 1)
                         {
-                            LogError("certificate adding failed.");
+                            LogError("Can't add certificate to store loaded from file %s.", fname);
                         }
                         X509_free(x509);
                     }
                     else
                     {
-                        LogError("Can't access the certificate file %s.", direntry->d_name);
+                        LogError("Can't load x509 from the certificate file %s.", fname);
                     }
 
                     fclose(fp);
+                }
+                else
+                {
+                    LogError("Can't open the certificate file %s.", fname);
                 }
             }
         }
