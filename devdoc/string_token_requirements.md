@@ -7,7 +7,7 @@ The STRING TOKENIZER provides the functionality of splitting a STRING into multi
 ## Exposed API
 ```C
 extern STRING_TOKEN_HANDLE StringToken_GetFirst(const char* source, size_t length, const char** delimiters, size_t n_delims);
-extern STRING_TOKEN_HANDLE StringToken_GetNext(STRING_TOKEN_HANDLE token, const char** delimiters, size_t n_delims);
+extern bool StringToken_GetNext(STRING_TOKEN_HANDLE token, const char** delimiters, size_t n_delims);
 extern const char* StringToken_GetValue(STRING_TOKEN_HANDLE token);
 extern size_t StringToken_GetLength(STRING_TOKEN_HANDLE token);
 extern const char* StringToken_GetDelimiter(STRING_TOKEN_HANDLE token);
@@ -36,18 +36,18 @@ extern STRING_TOKEN_HANDLE StringToken_GetFirst(const char* source, size_t lengt
 
 ###  StringToken_GetNext
 ```c
-extern STRING_TOKEN_HANDLE StringToken_GetNext(STRING_TOKEN_HANDLE token, const char** delimiters, size_t n_delims);
+extern bool StringToken_GetNext(STRING_TOKEN_HANDLE token, const char** delimiters, size_t n_delims);
 ```
 
-**SRS_STRING_TOKENIZER_09_008: [** If `token` or `delimiters` are NULL, or `n_delims` is zero, the function shall return NULL **]**
+**SRS_STRING_TOKENIZER_09_008: [** If `token` or `delimiters` are NULL, or `n_delims` is zero, the function shall return false **]**
 
-**SRS_STRING_TOKENIZER_09_009: [** If the previous token already extended to the end of `source`, the function shall delete `token` and return NULL **]**
+**SRS_STRING_TOKENIZER_09_009: [** If the previous token already extended to the end of `source`, the function shall return false **]**
 
 **SRS_STRING_TOKENIZER_09_010: [** The next token shall be selected starting from the position in `source` right after the previous delimiter up to occurrence of any one of `demiliters`, whichever occurs first in the order provided **]**
 
 **SRS_STRING_TOKENIZER_09_011: [** If the source string, starting right after the position of the last delimiter found, does not have any of the `demiliters`, the resulting token shall be the entire remaining of the `source` string **]**
 
-**SRS_STRING_TOKENIZER_09_012: [** If any failure occurs, the memory allocated for STRING_TOKEN shall be released **]**
+**SRS_STRING_TOKENIZER_09_012: [** If a token was identified, the function shall return true **]**
 
 
 ###  StringToken_GetValue

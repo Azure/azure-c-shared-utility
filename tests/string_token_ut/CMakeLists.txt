@@ -13,9 +13,6 @@ ${theseTestsName}.c
 
 set(${theseTestsName}_c_files
 ../../src/string_token.c
-
-../../src/strings.c
-../../src/crt_abstractions.c
 )
 
 set(${theseTestsName}_h_files

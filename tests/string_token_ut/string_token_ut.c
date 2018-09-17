@@ -73,21 +73,10 @@ static void TEST_free(void* ptr)
     real_free(ptr);
 }
 
-static void register_umock_alias_types()
-{
-    //REGISTER_UMOCK_ALIAS_TYPE(OPTIONHANDLER_HANDLE, void*);
-}
-
 static void register_global_mock_hooks()
 {
     REGISTER_GLOBAL_MOCK_HOOK(malloc, TEST_malloc);
     REGISTER_GLOBAL_MOCK_HOOK(free, TEST_free);
-}
-
-static void register_global_mock_returns()
-{
-    //REGISTER_GLOBAL_MOCK_RETURN(OptionHandler_Create, TEST_OPTIONHANDLER_HANDLE);
-    //REGISTER_GLOBAL_MOCK_FAIL_RETURN(OptionHandler_Create, NULL);
 }
 
 // Set Expected Call Helpers
@@ -124,8 +113,6 @@ BEGIN_TEST_SUITE(string_token_ut)
         result = umocktypes_charptr_register_types();
         ASSERT_ARE_EQUAL(int, 0, result);
 
-        register_umock_alias_types();
-        register_global_mock_returns();
         register_global_mock_hooks();
     }
 
@@ -157,14 +144,15 @@ BEGIN_TEST_SUITE(string_token_ut)
     {
         ///arrange
         size_t length = 10;
+        STRING_TOKEN_HANDLE handle;
+        const char* delimiters[1];
 
-        char* delimiters[1];
         delimiters[0] = "?";
 
         umock_c_reset_all_calls();
 
         // act
-        STRING_TOKEN_HANDLE handle = StringToken_GetFirst(NULL, length, delimiters, 1);
+        handle = StringToken_GetFirst(NULL, length, delimiters, 1);
 
         // assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -178,12 +166,15 @@ BEGIN_TEST_SUITE(string_token_ut)
     {
         ///arrange
         char* string = "https://some.site.com/path/morepath/?prop1=site.com&prop2=/prop2/abc";
-        size_t length = strlen(string);
+        size_t length;
+        STRING_TOKEN_HANDLE handle;
+
+        length = strlen(string);
 
         umock_c_reset_all_calls();
 
         // act
-        STRING_TOKEN_HANDLE handle = StringToken_GetFirst(string, length, NULL, 4);
+        handle = StringToken_GetFirst(string, length, NULL, 4);
 
         // assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -197,15 +188,17 @@ BEGIN_TEST_SUITE(string_token_ut)
     {
         ///arrange
         char* string = "https://some.site.com/path/morepath/?prop1=site.com&prop2=/prop2/abc";
-        size_t length = strlen(string);
-
-        char* delimiters[1];
+        size_t length;
+        const char* delimiters[1];
+        STRING_TOKEN_HANDLE handle;
+        
+        length = strlen(string);
         delimiters[0] = "?";
 
         umock_c_reset_all_calls();
 
         // act
-        STRING_TOKEN_HANDLE handle = StringToken_GetFirst(string, length, delimiters, 0);
+        handle = StringToken_GetFirst(string, length, delimiters, 0);
 
         // assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -219,10 +212,11 @@ BEGIN_TEST_SUITE(string_token_ut)
     TEST_FUNCTION(StringToken_GetFirst_NULL_delimiter)
     {
         ///arrange
+        STRING_TOKEN_HANDLE handle;
+        const char* delimiters[4];
         char* string = "https://some.site.com/path/morepath/?prop1=site.com&prop2=/prop2/abc";
         size_t length = strlen(string);
 
-        char* delimiters[4];
         delimiters[0] = "http://";
         delimiters[1] = NULL;
         delimiters[2] = "/";
@@ -235,7 +229,7 @@ BEGIN_TEST_SUITE(string_token_ut)
         STRICT_EXPECTED_CALL(free(IGNORED_PTR_ARG));
 
         // act
-        STRING_TOKEN_HANDLE handle = StringToken_GetFirst(string, length, delimiters, 4);
+        handle = StringToken_GetFirst(string, length, delimiters, 4);
 
         // assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -248,12 +242,13 @@ BEGIN_TEST_SUITE(string_token_ut)
     TEST_FUNCTION(StringToken_GetFirst_negative_tests)
     {
         ///arrange
-        ASSERT_ARE_EQUAL(int, 0, umock_c_negative_tests_init());
-
+        size_t i;
+        const char* delimiters[1];
         char* string = "https://some.site.com/path/morepath/?prop1=site.com&prop2=/prop2/abc";
         size_t length = strlen(string);
 
-        char* delimiters[1];
+        ASSERT_ARE_EQUAL(int, 0, umock_c_negative_tests_init());
+
         delimiters[0] = "?";
 
         umock_c_reset_all_calls();
@@ -262,17 +257,17 @@ BEGIN_TEST_SUITE(string_token_ut)
         umock_c_negative_tests_snapshot();
 
         // act
-        size_t i;
         for (i = 0; i < umock_c_negative_tests_call_count(); i++)
         {
             // arrange
             char error_msg[64];
+            STRING_TOKEN_HANDLE handle;
 
             umock_c_negative_tests_reset();
             umock_c_negative_tests_fail_call(i);
 
             // act
-            STRING_TOKEN_HANDLE handle = StringToken_GetFirst(string, length, delimiters, 1);
+            handle = StringToken_GetFirst(string, length, delimiters, 1);
 
             sprintf(error_msg, "On failed call %zu", i);
             ASSERT_IS_NULL_WITH_MSG(handle, error_msg);
@@ -287,10 +282,11 @@ BEGIN_TEST_SUITE(string_token_ut)
     TEST_FUNCTION(StringToken_GetFirst_Success)
     {
         ///arrange
+        STRING_TOKEN_HANDLE handle;
+        const char* delimiters[1];
         char* string = "https://some.site.com/path/morepath/?prop1=site.com&prop2=/prop2/abc";
         size_t length = strlen(string);
         
-        char* delimiters[1];
         delimiters[0] = "?";
 
         umock_c_reset_all_calls();
@@ -299,7 +295,7 @@ BEGIN_TEST_SUITE(string_token_ut)
         STRICT_EXPECTED_CALL(free(IGNORED_PTR_ARG));
 
         // act
-        STRING_TOKEN_HANDLE handle = StringToken_GetFirst(string, length, delimiters, 1);
+        handle = StringToken_GetFirst(string, length, delimiters, 1);
 
         // assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -313,10 +309,11 @@ BEGIN_TEST_SUITE(string_token_ut)
     TEST_FUNCTION(StringToken_GetFirst_delimiter_not_found)
     {
         ///arrange
+        STRING_TOKEN_HANDLE handle;
+        const char* delimiters[1];
         char* string = "https://some.site.com/path/morepath/?prop1=site.com&prop2=/prop2/abc";
         size_t length = strlen(string);
 
-        char* delimiters[1];
         delimiters[0] = "#";
 
         umock_c_reset_all_calls();
@@ -325,7 +322,7 @@ BEGIN_TEST_SUITE(string_token_ut)
         STRICT_EXPECTED_CALL(free(IGNORED_PTR_ARG)); // delimiters lengths
 
         // act
-        STRING_TOKEN_HANDLE handle = StringToken_GetFirst(string, length, delimiters, 1);
+        handle = StringToken_GetFirst(string, length, delimiters, 1);
 
         // assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -337,79 +334,85 @@ BEGIN_TEST_SUITE(string_token_ut)
         StringToken_Destroy(handle);
     }
 
-    // Tests_SRS_STRING_TOKENIZER_09_008: [ If `token` or `delimiters` are NULL, or `n_delims` is zero, the function shall return NULL ]
+    // Tests_SRS_STRING_TOKENIZER_09_008: [ If `token` or `delimiters` are NULL, or `n_delims` is zero, the function shall return false ]
     TEST_FUNCTION(StringToken_GetNext_NULL_token)
     {
         ///arrange
-        char* delimiters[2];
+        bool result;
+        const char* delimiters[2];
+
         delimiters[0] = "https://";
         delimiters[1] = "/path";
 
         umock_c_reset_all_calls();
 
         // act
-        STRING_TOKEN_HANDLE handle = StringToken_GetNext(NULL, delimiters, 2);
+        result = StringToken_GetNext(NULL, delimiters, 2);
 
         // assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-        ASSERT_IS_NULL(handle);
+        ASSERT_IS_FALSE(result);
 
         // cleanup
     }
 
-    // Tests_SRS_STRING_TOKENIZER_09_008: [ If `token` or `delimiters` are NULL, or `n_delims` is zero, the function shall return NULL ]
+    // Tests_SRS_STRING_TOKENIZER_09_008: [ If `token` or `delimiters` are NULL, or `n_delims` is zero, the function shall return false ]
     TEST_FUNCTION(StringToken_GetNext_NULL_delimiters)
     {
         ///arrange
+        const char* delimiters[2];
+        STRING_TOKEN_HANDLE handle;
+        bool result;
         char* string = "https://some.site.com/path/morepath/?prop1=site.com&prop2=/prop2/abc";
         size_t length = strlen(string);
 
-        char* delimiters[2];
         delimiters[0] = "https://";
         delimiters[1] = "/path";
 
         umock_c_reset_all_calls();
         set_expected_calls_for_StringToken_GetFirst();
 
-        STRING_TOKEN_HANDLE handle = StringToken_GetFirst(string, length, delimiters, 2);
+        handle = StringToken_GetFirst(string, length, delimiters, 2);
 
         umock_c_reset_all_calls();
 
         // act
-        STRING_TOKEN_HANDLE handle2 = StringToken_GetNext(handle, NULL, 2);
+        result = StringToken_GetNext(handle, NULL, 2);
 
         // assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-        ASSERT_IS_NULL(handle2);
+        ASSERT_IS_FALSE(result);
 
         // cleanup
         StringToken_Destroy(handle);
     }
 
-    // Tests_SRS_STRING_TOKENIZER_09_008: [ If `token` or `delimiters` are NULL, or `n_delims` is zero, the function shall return NULL ]
+    // Tests_SRS_STRING_TOKENIZER_09_008: [ If `token` or `delimiters` are NULL, or `n_delims` is zero, the function shall return false ]
     TEST_FUNCTION(StringToken_GetNext_zero_delimiters)
     {
         ///arrange
+        bool result;
+        STRING_TOKEN_HANDLE handle;
+        const char* delimiters[2];
         char* string = "https://some.site.com/path/morepath/?prop1=site.com&prop2=/prop2/abc";
         size_t length = strlen(string);
 
-        char* delimiters[2];
         delimiters[0] = "https://";
         delimiters[1] = "/path";
 
         umock_c_reset_all_calls();
         set_expected_calls_for_StringToken_GetFirst();
 
-        STRING_TOKEN_HANDLE handle = StringToken_GetFirst(string, length, delimiters, 2);
+        handle = StringToken_GetFirst(string, length, delimiters, 2);
 
         umock_c_reset_all_calls();
 
         // act
-        STRING_TOKEN_HANDLE handle2 = StringToken_GetNext(handle, delimiters, 0);
+        result = StringToken_GetNext(handle, delimiters, 0);
 
         // assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-        ASSERT_IS_NULL(handle2);
+        ASSERT_IS_FALSE(result);
 
         // cleanup
         StringToken_Destroy(handle);
@@ -419,160 +422,136 @@ BEGIN_TEST_SUITE(string_token_ut)
     TEST_FUNCTION(StringToken_GetNext_Success)
     {
         ///arrange
+        int result;
+        STRING_TOKEN_HANDLE handle;
+        const char* delimiters[2];
         char* string = "https://some.site.com/path/morepath/?prop1=site.com&prop2=/prop2/abc";
         size_t length = strlen(string);
 
-        char* delimiters[2];
+
         delimiters[0] = "https://";
         delimiters[1] = "/path";
 
         umock_c_reset_all_calls();
         set_expected_calls_for_StringToken_GetFirst();
 
-        STRING_TOKEN_HANDLE handle = StringToken_GetFirst(string, length, delimiters, 2);
+        handle = StringToken_GetFirst(string, length, delimiters, 2);
         
         umock_c_reset_all_calls();
         set_expected_calls_for_get_delimiters_lengths();
         STRICT_EXPECTED_CALL(free(IGNORED_PTR_ARG)); // delimiters lengths
 
         // act
-        handle = StringToken_GetNext(handle, delimiters, 2);
+        result = StringToken_GetNext(handle, delimiters, 2);
 
         // assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-        ASSERT_IS_NOT_NULL(handle);
+        ASSERT_ARE_EQUAL(int, 1, result);
         ASSERT_ARE_EQUAL(int, 0, strncmp(StringToken_GetValue(handle), "some.site.com", StringToken_GetLength(handle)));
 
         // cleanup
         StringToken_Destroy(handle);
     }
 
-    // Tests_SRS_STRING_TOKENIZER_09_012: [ If any failure occurs, the memory allocated for STRING_TOKEN shall be released ]
-    TEST_FUNCTION(StringToken_GetNext_NULL_delimiter)
-    {
-        ///arrange
-        char* string = "https://some.site.com/path/morepath/?prop1=site.com&prop2=/prop2/abc";
-        size_t length = strlen(string);
-
-        char* delimiters[2];
-        delimiters[0] = "https://";
-        delimiters[1] = "/path"; // this causes the failure
-
-        umock_c_reset_all_calls();
-        set_expected_calls_for_StringToken_GetFirst();
-
-        STRING_TOKEN_HANDLE handle = StringToken_GetFirst(string, length, delimiters, 2);
-
-        umock_c_reset_all_calls();
-        set_expected_calls_for_get_delimiters_lengths();
-        STRICT_EXPECTED_CALL(free(IGNORED_PTR_ARG)); // delimiters lengths
-        STRICT_EXPECTED_CALL(free(IGNORED_PTR_ARG)); // STRING_TOKEN
-
-        delimiters[1] = NULL; // this causes the failure
-
-        // act
-        handle = StringToken_GetNext(handle, delimiters, 2);
-
-        // assert
-        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-        ASSERT_IS_NULL(handle);
-
-        // cleanup
-    }
-
-    // Tests_SRS_STRING_TOKENIZER_09_012: [ If any failure occurs, the memory allocated for STRING_TOKEN shall be released ]
+    // Tests_SRS_STRING_TOKENIZER_09_012: [ If a token was identified, the function shall return true ]
     TEST_FUNCTION(StringToken_GetNext_malloc_fails)
     {
         ///arrange
-        ASSERT_ARE_EQUAL(int, 0, umock_c_negative_tests_init());
-
+        bool result;
+        STRING_TOKEN_HANDLE handle;
+        const char* delimiters[2];
         char* string = "https://some.site.com/path/morepath/?prop1=site.com&prop2=/prop2/abc";
         size_t length = strlen(string);
+        
+        ASSERT_ARE_EQUAL(int, 0, umock_c_negative_tests_init());
 
-        char* delimiters[2];
         delimiters[0] = "https://";
         delimiters[1] = "/path"; // this causes the failure
 
         umock_c_reset_all_calls();
         set_expected_calls_for_StringToken_GetFirst();
 
-        STRING_TOKEN_HANDLE handle = StringToken_GetFirst(string, length, delimiters, 2);
+        handle = StringToken_GetFirst(string, length, delimiters, 2);
 
         umock_c_reset_all_calls();
         STRICT_EXPECTED_CALL(malloc(IGNORED_NUM_ARG)); // delimiters lengths
-        STRICT_EXPECTED_CALL(free(IGNORED_PTR_ARG)); // STRING_TOKEN
         umock_c_negative_tests_snapshot();
 
         umock_c_negative_tests_reset();
         umock_c_negative_tests_fail_call(0);
 
         // act
-        handle = StringToken_GetNext(handle, delimiters, 2);
+        result = StringToken_GetNext(handle, delimiters, 2);
 
         // assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-        ASSERT_IS_NULL(handle);
+        ASSERT_IS_FALSE(result);
 
         // cleanup
         umock_c_negative_tests_deinit();
+        StringToken_Destroy(handle);
     }
 
-    // Tests_SRS_STRING_TOKENIZER_09_009: [ If the previous token already extended to the end of `source`, the function shall delete `token` and return NULL ]
+    // Tests_SRS_STRING_TOKENIZER_09_009: [ If the previous token already extended to the end of `source`, the function shall return false ]
     TEST_FUNCTION(StringToken_GetNext_no_more_tokens)
     {
         ///arrange
+        const char* delimiters[1];
+        bool result;
+        STRING_TOKEN_HANDLE handle;
         char* string = "https://some.site.com/path/morepath/?prop1=site.com&prop2=/prop2/abc";
         size_t length = strlen(string);
 
-        char* delimiters[1];
         delimiters[0] = "?";
 
         umock_c_reset_all_calls();
         set_expected_calls_for_StringToken_GetFirst();
-        STRING_TOKEN_HANDLE handle = StringToken_GetFirst(string, length, delimiters, 1);
+        handle = StringToken_GetFirst(string, length, delimiters, 1);
         ASSERT_IS_NOT_NULL(handle);
 
         set_expected_calls_for_StringToken_GetNext();
-        handle = StringToken_GetNext(handle, delimiters, 1);
-        ASSERT_IS_NOT_NULL(handle);
+        result = StringToken_GetNext(handle, delimiters, 1);
+        ASSERT_IS_TRUE(result);
 
         umock_c_reset_all_calls();
-        STRICT_EXPECTED_CALL(free(IGNORED_PTR_ARG)); // STRING_TOKEN
 
         // act
-        handle = StringToken_GetNext(handle, delimiters, 1);
+        result = StringToken_GetNext(handle, delimiters, 1);
 
         // assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-        ASSERT_IS_NULL(handle);
+        ASSERT_IS_FALSE(result);
 
         // cleanup
+        StringToken_Destroy(handle);
     }
 
     // Tests_SRS_STRING_TOKENIZER_09_011: [ If the source string, starting right after the position of the last delimiter found, does not have any of the `demiliters`, the resulting token shall be the entire remaining of the `source` string ]
     TEST_FUNCTION(StringToken_GetNext_delimiter_not_found)
     {
         ///arrange
+        bool result;
+        const char* delimiters[1];
+        STRING_TOKEN_HANDLE handle;
         char* string = "https://some.site.com/path/morepath/?prop1=site.com&prop2=/prop2/abc";
         size_t length = strlen(string);
 
-        char* delimiters[1];
         delimiters[0] = "?";
 
         umock_c_reset_all_calls();
         set_expected_calls_for_StringToken_GetFirst();
-        STRING_TOKEN_HANDLE handle = StringToken_GetFirst(string, length, delimiters, 1);
+        handle = StringToken_GetFirst(string, length, delimiters, 1);
 
         umock_c_reset_all_calls();
         set_expected_calls_for_get_delimiters_lengths();
         STRICT_EXPECTED_CALL(free(IGNORED_PTR_ARG)); // delimiters lengths
 
         // act
-        handle = StringToken_GetNext(handle, delimiters, 1);
+        result = StringToken_GetNext(handle, delimiters, 1);
 
         // assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-        ASSERT_IS_NOT_NULL(handle);
+        ASSERT_IS_TRUE(result);
         ASSERT_ARE_EQUAL(int, 0, strncmp(StringToken_GetValue(handle), "prop1=site.com&prop2=/prop2/abc", StringToken_GetLength(handle)));
 
         // cleanup
@@ -583,10 +562,12 @@ BEGIN_TEST_SUITE(string_token_ut)
     TEST_FUNCTION(StringToken_GetValue_NULL_handle)
     {
         ///arrange
+        const char* value;
+
         umock_c_reset_all_calls();
 
         // act
-        const char* value = StringToken_GetValue(NULL);
+        value = StringToken_GetValue(NULL);
 
         // assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -599,10 +580,12 @@ BEGIN_TEST_SUITE(string_token_ut)
     TEST_FUNCTION(StringToken_GetLength_NULL_handle)
     {
         ///arrange
+        size_t length;
+
         umock_c_reset_all_calls();
 
         // act
-        size_t length = StringToken_GetLength(NULL);
+        length = StringToken_GetLength(NULL);
 
         // assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -615,10 +598,12 @@ BEGIN_TEST_SUITE(string_token_ut)
     TEST_FUNCTION(StringToken_GetDelimiter_NULL_handle)
     {
         ///arrange
+        const char* value;
+
         umock_c_reset_all_calls();
 
         // act
-        const char* value = StringToken_GetDelimiter(NULL);
+        value = StringToken_GetDelimiter(NULL);
 
         // assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -646,15 +631,17 @@ BEGIN_TEST_SUITE(string_token_ut)
     TEST_FUNCTION(StringToken_Destroy_success)
     {
         ///arrange
+        STRING_TOKEN_HANDLE handle;
+        const char* delimiters[1];
         char* string = "https://some.site.com/path/morepath/?prop1=site.com&prop2=/prop2/abc";
         size_t length = strlen(string);
 
-        char* delimiters[1];
+        
         delimiters[0] = "?";
 
         umock_c_reset_all_calls();
         set_expected_calls_for_StringToken_GetFirst();
-        STRING_TOKEN_HANDLE handle = StringToken_GetFirst(string, length, delimiters, 1);
+        handle = StringToken_GetFirst(string, length, delimiters, 1);
 
         umock_c_reset_all_calls();
         STRICT_EXPECTED_CALL(free(IGNORED_PTR_ARG)); // STRING_TOKEN
@@ -675,78 +662,83 @@ BEGIN_TEST_SUITE(string_token_ut)
     TEST_FUNCTION(StringToken_tokenize_HTTP_URL)
     {
         ///arrange
+        STRING_TOKEN_HANDLE handle;
+        bool result;
         char* host = "some.site.com";
         char* relative_path = "path/morepath/";
         char* property1 = "prop1=site.com";
         char* property2 = "prop2=/prop2/abc";
         char* string = "https://some.site.com/path/morepath/?prop1=site.com&prop2=/prop2/abc";
 
-        char* delimiters1[4];
+        const char* delimiters1[4];
+        const char* delimiters2[1];
+
         delimiters1[0] = "?";
         delimiters1[1] = "http://";
         delimiters1[2] = "https://";
         delimiters1[3] = "/";
 
-        char* delimiters2[1];
         delimiters2[0] = "&";
 
         // act
         // assert
         umock_c_reset_all_calls();
         set_expected_calls_for_StringToken_GetFirst();
-        STRING_TOKEN_HANDLE handle = StringToken_GetFirst(string, strlen(string), delimiters1, 4);
+        handle = StringToken_GetFirst(string, strlen(string), delimiters1, 4);
         ASSERT_IS_NOT_NULL(handle);
         ASSERT_ARE_EQUAL(void_ptr, (void*)delimiters1[2], (void*)StringToken_GetDelimiter(handle));
         ASSERT_IS_NULL(StringToken_GetValue(handle));
         ASSERT_ARE_EQUAL(int, 0, StringToken_GetLength(handle));
 
         set_expected_calls_for_StringToken_GetNext();
-        handle = StringToken_GetNext(handle, delimiters1, 4);
-        ASSERT_IS_NOT_NULL(handle);
+        result = StringToken_GetNext(handle, delimiters1, 4);
+        ASSERT_IS_TRUE(result);
         ASSERT_ARE_EQUAL(void_ptr, (void*)delimiters1[3], (void*)StringToken_GetDelimiter(handle));
         ASSERT_IS_TRUE(strncmp(host, StringToken_GetValue(handle), StringToken_GetLength(handle)) == 0);
 
         set_expected_calls_for_StringToken_GetNext();
-        handle = StringToken_GetNext(handle, delimiters1, 1); // intentionally restricting to "?" only
-        ASSERT_IS_NOT_NULL(handle);
+        result = StringToken_GetNext(handle, delimiters1, 1); // intentionally restricting to "?" only
+        ASSERT_IS_TRUE(result);
         ASSERT_ARE_EQUAL(void_ptr, (void*)delimiters1[0], (void*)StringToken_GetDelimiter(handle));
         ASSERT_IS_TRUE(strncmp(relative_path, StringToken_GetValue(handle), StringToken_GetLength(handle)) == 0);
 
         set_expected_calls_for_StringToken_GetNext();
-        handle = StringToken_GetNext(handle, delimiters2, 1);
-        ASSERT_IS_NOT_NULL(handle);
+        result = StringToken_GetNext(handle, delimiters2, 1);
+        ASSERT_IS_TRUE(result);
         ASSERT_ARE_EQUAL(void_ptr, (void*)delimiters2[0], (void*)StringToken_GetDelimiter(handle));
         ASSERT_IS_TRUE(strncmp(property1, StringToken_GetValue(handle), StringToken_GetLength(handle)) == 0);
 
         set_expected_calls_for_StringToken_GetNext();
-        handle = StringToken_GetNext(handle, delimiters2, 1);
-        ASSERT_IS_NOT_NULL(handle);
+        result = StringToken_GetNext(handle, delimiters2, 1);
+        ASSERT_IS_TRUE(result);
         // SRS_STRING_TOKENIZER_09_019:
         ASSERT_IS_NULL(StringToken_GetDelimiter(handle));
         ASSERT_IS_TRUE(strncmp(property2, StringToken_GetValue(handle), StringToken_GetLength(handle)) == 0);
 
-        STRICT_EXPECTED_CALL(free(IGNORED_PTR_ARG)); // STRING_TOKEN
-        handle = StringToken_GetNext(handle, delimiters2, 1);
-        ASSERT_IS_NULL(handle);
+        result = StringToken_GetNext(handle, delimiters2, 1);
+        ASSERT_IS_FALSE(result);
 
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         // cleanup
+        StringToken_Destroy(handle);
     }
 
     TEST_FUNCTION(StringToken_string_ends_with_delimiter)
     {
         ///arrange
+        bool result;
+        const char* delimiters[1];
+        STRING_TOKEN_HANDLE handle;
         char* string = "abcde";
 
-        char* delimiters[1];
         delimiters[0] = "de";
 
         umock_c_reset_all_calls();
         set_expected_calls_for_StringToken_GetFirst();
 
         // act
-        STRING_TOKEN_HANDLE handle = StringToken_GetFirst(string, strlen(string), delimiters, 1);
+        handle = StringToken_GetFirst(string, strlen(string), delimiters, 1);
 
         // assert
         ASSERT_IS_NOT_NULL(handle);
@@ -758,26 +750,25 @@ BEGIN_TEST_SUITE(string_token_ut)
         set_expected_calls_for_StringToken_GetNext();
 
         // act
-        handle = StringToken_GetNext(handle, delimiters, 1);
+        result = StringToken_GetNext(handle, delimiters, 1);
 
         // assert
-        ASSERT_IS_NOT_NULL(handle);
+        ASSERT_IS_TRUE(result);
         ASSERT_IS_NULL(StringToken_GetDelimiter(handle));
         ASSERT_IS_NULL(StringToken_GetValue(handle));
         ASSERT_ARE_EQUAL(int, 0, StringToken_GetLength(handle));
 
         ///arrange
-        STRICT_EXPECTED_CALL(free(IGNORED_PTR_ARG)); // STRING_TOKEN
-
         // act
-        handle = StringToken_GetNext(handle, delimiters, 1);
+        result = StringToken_GetNext(handle, delimiters, 1);
 
         // assert
-        ASSERT_IS_NULL(handle);
+        ASSERT_IS_FALSE(result);
 
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         // cleanup
+        StringToken_Destroy(handle);
     }
 
 END_TEST_SUITE(string_token_ut)
