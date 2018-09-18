@@ -41,9 +41,8 @@ else()
 endif()
 
 #normally, with proper include paths, the below tests can be run under windows too.
-#however, because of the setup involved, they are restricted to Linux
 if(${use_openssl})
-add_subdirectory(x509_openssl_ut)
+    add_subdirectory(x509_openssl_ut)
 endif()
 
 add_subdirectory(string_tokenizer_ut)
@@ -74,6 +73,11 @@ if(use_cyclonessl AND WIN32)
     add_subdirectory(tlsio_cyclonessl_ut)
     add_subdirectory(tlsio_cyclonessl_socket_bsd_ut)
 endif()
+
+if(use_mbedtls)
+    add_subdirectory(tlsio_mbedtls_ut)
+endif()
+
 add_subdirectory(utf8_checker_ut)
 add_subdirectory(http_proxy_io_ut)
 if(NOT DEFINED MACOSX)
