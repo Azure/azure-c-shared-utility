@@ -703,7 +703,7 @@ static HTTPAPI_RESULT OpenXIOConnection(HTTP_HANDLE_DATA* http_instance)
 
         /*Codes_SRS_HTTPAPI_COMPACT_21_022: [ If a Certificate was provided, the HTTPAPI_ExecuteRequest shall set this option on the transport layer. ]*/
         if ((http_instance->certificate != NULL) &&
-            (xio_setoption(http_instance->xio_handle, "TrustedCerts", http_instance->certificate) != 0))
+            (xio_setoption(http_instance->xio_handle, OPTION_TRUSTED_CERT, http_instance->certificate) != 0))
         {
             /*Codes_SRS_HTTPAPI_COMPACT_21_023: [ If the transport failed setting the Certificate, the HTTPAPI_ExecuteRequest shall not send any request and return HTTPAPI_SET_OPTION_FAILED. ]*/
             result = HTTPAPI_SET_OPTION_FAILED;
@@ -814,8 +814,8 @@ static HTTPAPI_RESULT conn_send_all(HTTP_HANDLE_DATA* http_instance, const unsig
     return result;
 }
 
-/*Codes_SRS_HTTPAPI_COMPACT_21_035: [ The HTTPAPI_ExecuteRequest shall execute resquest for types `GET`, `POST`, `PUT`, `DELETE`, `PATCH`. ]*/
-const char httpapiRequestString[5][7] = { "GET", "POST", "PUT", "DELETE", "PATCH" };
+/*Codes_SRS_HTTPAPI_COMPACT_21_035: [ The HTTPAPI_ExecuteRequest shall execute resquest for types `GET`, `POST`, `PUT`, `DELETE`, `PATCH`, `HEAD`. ]*/
+const char httpapiRequestString[6][7] = { "GET", "POST", "PUT", "DELETE", "PATCH", "HEAD" };
 const char* get_request_type(HTTPAPI_REQUEST_TYPE requestType)
 {
     return (const char*)httpapiRequestString[requestType];
@@ -1158,7 +1158,8 @@ static bool validRequestType(HTTPAPI_REQUEST_TYPE requestType)
         (requestType == HTTPAPI_REQUEST_POST) ||
         (requestType == HTTPAPI_REQUEST_PUT) ||
         (requestType == HTTPAPI_REQUEST_DELETE) ||
-        (requestType == HTTPAPI_REQUEST_PATCH))
+        (requestType == HTTPAPI_REQUEST_PATCH) ||
+        (requestType == HTTPAPI_REQUEST_HEAD))
     {
         result = true;
     }
@@ -1227,14 +1228,17 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
     {
         LogError("Receive content information from HTTP failed (result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
     }
-    /*Codes_SRS_HTTPAPI_COMPACT_21_075: [ The message received by the HTTPAPI_ExecuteRequest can contain a body with the message content. ]*/
-    else if ((result = ReadHTTPResponseBodyFromXIO(http_instance, bodyLength, chunked, responseContent)) != HTTPAPI_OK)
+    /*Codes_SRS_HTTPAPI_COMPACT_42_084: [ The message received by the HTTPAPI_ExecuteRequest should not contain http body. ]*/
+    else if (requestType != HTTPAPI_REQUEST_HEAD)
     {
-        LogError("Read HTTP response body from HTTP failed (result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+        /*Codes_SRS_HTTPAPI_COMPACT_21_075: [ The message received by the HTTPAPI_ExecuteRequest can contain a body with the message content. ]*/
+        if ((result = ReadHTTPResponseBodyFromXIO(http_instance, bodyLength, chunked, responseContent)) != HTTPAPI_OK)
+        {
+            LogError("Read HTTP response body from HTTP failed (result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+        }
     }
 
     conn_receive_discard_buffer(http_instance);
-
 
     return result;
 }
@@ -1258,8 +1262,11 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
         /*Codes_SRS_HTTPAPI_COMPACT_21_061: [ If the value is NULL, the HTTPAPI_SetOption shall return HTTPAPI_INVALID_ARG. ]*/
         result = HTTPAPI_INVALID_ARG;
     }
-    else if (strcmp("TrustedCerts", optionName) == 0)
+    else if (strcmp(OPTION_TRUSTED_CERT, optionName) == 0)
     {
+#ifdef DO_NOT_COPY_TRUSTED_CERTS_STRING
+        result = HTTPAPI_OK;
+#else
         int len;
 
         if (http_instance->certificate)
@@ -1281,6 +1288,7 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
             (void)strcpy(http_instance->certificate, (const char*)value);
             result = HTTPAPI_OK;
         }
+#endif // DO_NOT_COPY_TRUSTED_CERTS_STRING
     }
     else if (strcmp(SU_OPTION_X509_CERT, optionName) == 0)
     {
@@ -1356,8 +1364,12 @@ HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, co
         /*Codes_SRS_HTTPAPI_COMPACT_21_069: [ If the savedValue is NULL, the HTTPAPI_CloneOption shall return HTTPAPI_INVALID_ARG. ]*/
         result = HTTPAPI_INVALID_ARG;
     }
-    else if (strcmp("TrustedCerts", optionName) == 0)
+    else if (strcmp(OPTION_TRUSTED_CERT, optionName) == 0)
     {
+#ifdef DO_NOT_COPY_TRUSTED_CERTS_STRING
+        *savedValue = (const void*)value;
+        result = HTTPAPI_OK;
+#else
         certLen = strlen((const char*)value);
         tempCert = (char*)malloc((certLen + 1) * sizeof(char));
         if (tempCert == NULL)
@@ -1372,6 +1384,7 @@ HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, co
             *savedValue = tempCert;
             result = HTTPAPI_OK;
         }
+#endif // DO_NOT_COPY_TRUSTED_CERTS_STRING
     }
     else if (strcmp(SU_OPTION_X509_CERT, optionName) == 0)
     {
