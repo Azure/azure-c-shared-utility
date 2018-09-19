@@ -60,6 +60,7 @@ Tests_SRS_UWS_CLIENT_01_211: [ One implication of this is that in absence of ext
 #include "azure_c_shared_utility/uws_frame_encoder.h"
 #include "azure_c_shared_utility/gb_rand.h"
 #include "azure_c_shared_utility/base64.h"
+#include "azure_c_shared_utility/map.h"
 
 TEST_DEFINE_ENUM_TYPE(IO_OPEN_RESULT, IO_OPEN_RESULT_VALUES);
 IMPLEMENT_UMOCK_C_ENUM_TYPE(IO_OPEN_RESULT, IO_OPEN_RESULT_VALUES);
@@ -78,6 +79,7 @@ static const XIO_HANDLE TEST_IO_HANDLE = (XIO_HANDLE)0x4244;
 static const OPTIONHANDLER_HANDLE TEST_IO_OPTIONHANDLER_HANDLE = (OPTIONHANDLER_HANDLE)0x4446;
 static const OPTIONHANDLER_HANDLE TEST_OPTIONHANDLER_HANDLE = (OPTIONHANDLER_HANDLE)0x4447;
 static const STRING_HANDLE BASE64_ENCODED_STRING = (STRING_HANDLE)0x4447;
+static const MAP_HANDLE TEST_REQUEST_HEADERS_MAP = (MAP_HANDLE)0x4448;
 
 static size_t currentmalloc_call;
 static size_t whenShallmalloc_fail;
@@ -208,6 +210,20 @@ static LIST_ITEM_HANDLE my_singlylinkedlist_find(SINGLYLINKEDLIST_HANDLE handle,
     }
     return (LIST_ITEM_HANDLE)found_item;
 }
+
+static MAP_RESULT my_Map_GetInternals_return;
+static char* my_Map_GetInternals_keys[10];
+static char* my_Map_GetInternals_values[10];
+static size_t my_Map_GetInternals_count;
+static MAP_RESULT my_Map_GetInternals(MAP_HANDLE handle, const char*const** keys, const char*const** values, size_t* count)
+{
+    (void)handle;
+    *keys = (const char*const*)my_Map_GetInternals_keys;
+    *values = (const char*const*)my_Map_GetInternals_values;
+    *count = my_Map_GetInternals_count;
+    return my_Map_GetInternals_return;
+}
+
 
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/socketio.h"
@@ -477,7 +493,14 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_GLOBAL_MOCK_HOOK(BUFFER_u_char, real_BUFFER_u_char);
     REGISTER_GLOBAL_MOCK_HOOK(BUFFER_length, real_BUFFER_length);
     REGISTER_GLOBAL_MOCK_HOOK(uws_frame_encoder_encode, my_uws_frame_encoder_encode);
+    REGISTER_GLOBAL_MOCK_HOOK(Map_GetInternals, my_Map_GetInternals);
     REGISTER_GLOBAL_MOCK_RETURN(STRING_c_str, "test_str");
+    REGISTER_GLOBAL_MOCK_RETURN(Map_Create, TEST_REQUEST_HEADERS_MAP);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(Map_Create, NULL);
+    REGISTER_GLOBAL_MOCK_RETURN(Map_AddOrUpdate, MAP_OK);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(Map_AddOrUpdate, MAP_ERROR);
+    REGISTER_GLOBAL_MOCK_RETURN(Map_GetInternals, MAP_OK);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(Map_GetInternals, MAP_ERROR);
     REGISTER_TYPE(IO_OPEN_RESULT, IO_OPEN_RESULT);
     REGISTER_TYPE(IO_SEND_RESULT, IO_SEND_RESULT);
     REGISTER_TYPE(WS_OPEN_RESULT, WS_OPEN_RESULT);
@@ -505,6 +528,8 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_UMOCK_ALIAS_TYPE(pfCloneOption, void*);
     REGISTER_UMOCK_ALIAS_TYPE(pfSetOption, void*);
     REGISTER_UMOCK_ALIAS_TYPE(pfDestroyOption, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(MAP_FILTER_CALLBACK, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(MAP_HANDLE, void*);
 }
 
 TEST_SUITE_CLEANUP(suite_cleanup)
@@ -530,6 +555,10 @@ TEST_FUNCTION_INITIALIZE(method_init)
     whenShallrealloc_fail = 0;
     singlylinkedlist_remove_result = 0;
     g_xio_send_result = 0;
+
+    memset(my_Map_GetInternals_keys, 0, sizeof(my_Map_GetInternals_keys));
+    memset(my_Map_GetInternals_values, 0, sizeof(my_Map_GetInternals_values));
+    my_Map_GetInternals_count = 0;
 }
 
 TEST_FUNCTION_CLEANUP(method_cleanup)
@@ -570,6 +599,7 @@ TEST_FUNCTION(uws_client_create_with_valid_args_no_ssl_succeeds)
         .IgnoreArgument_destination();
     STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, "111"))
         .IgnoreArgument_destination();
+    STRICT_EXPECTED_CALL(Map_Create(NULL));
     STRICT_EXPECTED_CALL(singlylinkedlist_create());
     STRICT_EXPECTED_CALL(socketio_get_interface_description());
     STRICT_EXPECTED_CALL(xio_create(TEST_SOCKET_IO_INTERFACE_DESCRIPTION, &socketio_config))
@@ -631,6 +661,7 @@ TEST_FUNCTION(uws_client_create_with_valid_args_no_ssl_port_different_than_80_su
         .IgnoreArgument_destination();
     STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, "333"))
         .IgnoreArgument_destination();
+    STRICT_EXPECTED_CALL(Map_Create(NULL));
     STRICT_EXPECTED_CALL(singlylinkedlist_create());
     STRICT_EXPECTED_CALL(socketio_get_interface_description());
     STRICT_EXPECTED_CALL(xio_create(TEST_SOCKET_IO_INTERFACE_DESCRIPTION, &socketio_config))
@@ -666,6 +697,7 @@ TEST_FUNCTION(uws_client_create_with_NULL_protocols_succeeds)
         .IgnoreArgument_destination();
     STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, "333"))
         .IgnoreArgument_destination();
+    STRICT_EXPECTED_CALL(Map_Create(NULL));
     STRICT_EXPECTED_CALL(singlylinkedlist_create());
     STRICT_EXPECTED_CALL(socketio_get_interface_description());
     STRICT_EXPECTED_CALL(xio_create(TEST_SOCKET_IO_INTERFACE_DESCRIPTION, &socketio_config))
@@ -817,8 +849,10 @@ TEST_FUNCTION(when_creating_the_pending_sends_list_fails_then_uws_client_create_
         .IgnoreArgument_destination();
     STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, "test_resource/1"))
         .IgnoreArgument_destination();
+    STRICT_EXPECTED_CALL(Map_Create(NULL));
     STRICT_EXPECTED_CALL(singlylinkedlist_create())
         .SetReturn(NULL);
+    EXPECTED_CALL(Map_Destroy(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
@@ -827,8 +861,8 @@ TEST_FUNCTION(when_creating_the_pending_sends_list_fails_then_uws_client_create_
     uws_client = uws_client_create("test_host", 80, "test_resource/1", false, protocols, sizeof(protocols) / sizeof(protocols[0]));
 
     // assert
-    ASSERT_IS_NULL(uws_client);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_IS_NULL(uws_client);
 }
 
 /* Tests_SRS_UWS_CLIENT_01_007: [ If obtaining the underlying IO interface fails, then `uws_client_create` shall fail and return NULL. ]*/
@@ -847,10 +881,12 @@ TEST_FUNCTION(when_getting_the_socket_interface_description_fails_then_uws_clien
         .IgnoreArgument_destination();
     STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, "test_resource/1"))
         .IgnoreArgument_destination();
+    STRICT_EXPECTED_CALL(Map_Create(NULL));
     STRICT_EXPECTED_CALL(singlylinkedlist_create());
     STRICT_EXPECTED_CALL(socketio_get_interface_description())
         .SetReturn(NULL);
     STRICT_EXPECTED_CALL(singlylinkedlist_destroy(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
+    EXPECTED_CALL(Map_Destroy(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
@@ -859,8 +895,8 @@ TEST_FUNCTION(when_getting_the_socket_interface_description_fails_then_uws_clien
     uws_client = uws_client_create("test_host", 80, "test_resource/1", false, protocols, sizeof(protocols) / sizeof(protocols[0]));
 
     // assert
-    ASSERT_IS_NULL(uws_client);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_IS_NULL(uws_client);
 }
 
 /* Tests_SRS_UWS_CLIENT_01_016: [ If `xio_create` fails, then `uws_client_create` shall fail and return NULL. ]*/
@@ -879,12 +915,14 @@ TEST_FUNCTION(when_creating_the_io_handle_fails_then_uws_client_create_fails)
         .IgnoreArgument_destination();
     STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, "test_resource/1"))
         .IgnoreArgument_destination();
+    STRICT_EXPECTED_CALL(Map_Create(NULL));
     STRICT_EXPECTED_CALL(singlylinkedlist_create());
     STRICT_EXPECTED_CALL(socketio_get_interface_description());
     STRICT_EXPECTED_CALL(xio_create(TEST_SOCKET_IO_INTERFACE_DESCRIPTION, &socketio_config))
         .IgnoreArgument_io_create_parameters()
         .SetReturn(NULL);
     STRICT_EXPECTED_CALL(singlylinkedlist_destroy(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
+    EXPECTED_CALL(Map_Destroy(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
@@ -893,8 +931,8 @@ TEST_FUNCTION(when_creating_the_io_handle_fails_then_uws_client_create_fails)
     uws_client = uws_client_create("test_host", 80, "test_resource/1", false, protocols, sizeof(protocols) / sizeof(protocols[0]));
 
     // assert
-    ASSERT_IS_NULL(uws_client);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_IS_NULL(uws_client);
 }
 
 /* Tests_SRS_UWS_CLIENT_01_414: [ If allocating memory for the copied protocol information fails then `uws_client_create` shall fail and return NULL. ]*/
@@ -913,6 +951,7 @@ TEST_FUNCTION(when_allocating_memory_for_the_protocols_array_fails_then_uws_clie
         .IgnoreArgument_destination();
     STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, "test_resource/1"))
         .IgnoreArgument_destination();
+    STRICT_EXPECTED_CALL(Map_Create(NULL));
     STRICT_EXPECTED_CALL(singlylinkedlist_create());
     STRICT_EXPECTED_CALL(socketio_get_interface_description());
     STRICT_EXPECTED_CALL(xio_create(TEST_SOCKET_IO_INTERFACE_DESCRIPTION, &socketio_config))
@@ -921,6 +960,7 @@ TEST_FUNCTION(when_allocating_memory_for_the_protocols_array_fails_then_uws_clie
         .SetReturn(NULL);
     STRICT_EXPECTED_CALL(xio_destroy(TEST_IO_HANDLE));
     STRICT_EXPECTED_CALL(singlylinkedlist_destroy(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
+    EXPECTED_CALL(Map_Destroy(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
@@ -929,8 +969,8 @@ TEST_FUNCTION(when_allocating_memory_for_the_protocols_array_fails_then_uws_clie
     uws_client = uws_client_create("test_host", 80, "test_resource/1", false, protocols, sizeof(protocols) / sizeof(protocols[0]));
 
     // assert
-    ASSERT_IS_NULL(uws_client);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_IS_NULL(uws_client);
 }
 
 /* Tests_SRS_UWS_CLIENT_01_414: [ If allocating memory for the copied protocol information fails then `uws_client_create` shall fail and return NULL. ]*/
@@ -949,6 +989,7 @@ TEST_FUNCTION(when_allocating_memory_for_the_first_proitocol_name_fails_then_uws
         .IgnoreArgument_destination();
     STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, "test_resource/1"))
         .IgnoreArgument_destination();
+    STRICT_EXPECTED_CALL(Map_Create(NULL));
     STRICT_EXPECTED_CALL(singlylinkedlist_create());
     STRICT_EXPECTED_CALL(socketio_get_interface_description());
     STRICT_EXPECTED_CALL(xio_create(TEST_SOCKET_IO_INTERFACE_DESCRIPTION, &socketio_config))
@@ -960,6 +1001,7 @@ TEST_FUNCTION(when_allocating_memory_for_the_first_proitocol_name_fails_then_uws
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(xio_destroy(TEST_IO_HANDLE));
     STRICT_EXPECTED_CALL(singlylinkedlist_destroy(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
+    EXPECTED_CALL(Map_Destroy(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
@@ -968,8 +1010,8 @@ TEST_FUNCTION(when_allocating_memory_for_the_first_proitocol_name_fails_then_uws
     uws_client = uws_client_create("test_host", 80, "test_resource/1", false, protocols, sizeof(protocols) / sizeof(protocols[0]));
 
     // assert
-    ASSERT_IS_NULL(uws_client);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_IS_NULL(uws_client);
 }
 
 /* Tests_SRS_UWS_CLIENT_01_414: [ If allocating memory for the copied protocol information fails then `uws_client_create` shall fail and return NULL. ]*/
@@ -989,6 +1031,7 @@ TEST_FUNCTION(when_allocating_memory_for_the_second_protocol_name_fails_then_uws
         .IgnoreArgument_destination();
     STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, "test_resource/1"))
         .IgnoreArgument_destination();
+    STRICT_EXPECTED_CALL(Map_Create(NULL));
     STRICT_EXPECTED_CALL(singlylinkedlist_create());
     STRICT_EXPECTED_CALL(socketio_get_interface_description());
     STRICT_EXPECTED_CALL(xio_create(TEST_SOCKET_IO_INTERFACE_DESCRIPTION, &socketio_config))
@@ -1003,6 +1046,7 @@ TEST_FUNCTION(when_allocating_memory_for_the_second_protocol_name_fails_then_uws
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(xio_destroy(TEST_IO_HANDLE));
     STRICT_EXPECTED_CALL(singlylinkedlist_destroy(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
+    EXPECTED_CALL(Map_Destroy(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
@@ -1042,6 +1086,7 @@ TEST_FUNCTION(uws_client_create_with_valid_args_ssl_succeeds)
         .IgnoreArgument_destination();
     STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, "test_resource/23"))
         .IgnoreArgument_destination();
+    STRICT_EXPECTED_CALL(Map_Create(NULL));
     STRICT_EXPECTED_CALL(singlylinkedlist_create());
     STRICT_EXPECTED_CALL(platform_get_default_tlsio());
     STRICT_EXPECTED_CALL(socketio_get_interface_description());
@@ -1087,6 +1132,7 @@ TEST_FUNCTION(uws_client_create_with_valid_args_ssl_port_different_than_443_succ
         .IgnoreArgument_destination();
     STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, "test_resource/23"))
         .IgnoreArgument_destination();
+    STRICT_EXPECTED_CALL(Map_Create(NULL));
     STRICT_EXPECTED_CALL(singlylinkedlist_create());
     STRICT_EXPECTED_CALL(platform_get_default_tlsio());
     STRICT_EXPECTED_CALL(socketio_get_interface_description());
@@ -1122,10 +1168,12 @@ TEST_FUNCTION(when_getting_the_tlsio_interface_fails_then_uws_client_create_fail
         .IgnoreArgument_destination();
     STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, "test_resource/23"))
         .IgnoreArgument_destination();
+    STRICT_EXPECTED_CALL(Map_Create(NULL));
     STRICT_EXPECTED_CALL(singlylinkedlist_create());
     STRICT_EXPECTED_CALL(platform_get_default_tlsio())
         .SetReturn(NULL);
     STRICT_EXPECTED_CALL(singlylinkedlist_destroy(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
+    EXPECTED_CALL(Map_Destroy(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
@@ -1162,6 +1210,7 @@ TEST_FUNCTION(uws_client_create_with_io_valid_args_succeeds)
         .IgnoreArgument_destination();
     STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, "111"))
         .IgnoreArgument_destination();
+    STRICT_EXPECTED_CALL(Map_Create(NULL));
     STRICT_EXPECTED_CALL(singlylinkedlist_create());
     STRICT_EXPECTED_CALL(xio_create(TEST_SOCKET_IO_INTERFACE_DESCRIPTION, &socketio_config))
         .IgnoreArgument_io_create_parameters();
@@ -1266,6 +1315,7 @@ TEST_FUNCTION(when_any_call_fails_uws_client_create_with_io_fails)
     STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, "111"))
         .IgnoreArgument_destination()
         .SetFailReturn(1);
+    STRICT_EXPECTED_CALL(Map_Create(NULL));
     STRICT_EXPECTED_CALL(singlylinkedlist_create())
         .SetFailReturn(NULL);
     STRICT_EXPECTED_CALL(xio_create(TEST_SOCKET_IO_INTERFACE_DESCRIPTION, &socketio_config))
@@ -1315,6 +1365,7 @@ TEST_FUNCTION(uws_client_create_with_io_with_NULL_protocols_succeeds)
         .IgnoreArgument_destination();
     STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, "111"))
         .IgnoreArgument_destination();
+    STRICT_EXPECTED_CALL(Map_Create(NULL));
     STRICT_EXPECTED_CALL(singlylinkedlist_create());
     STRICT_EXPECTED_CALL(xio_create(TEST_SOCKET_IO_INTERFACE_DESCRIPTION, &socketio_config))
         .IgnoreArgument_io_create_parameters();
@@ -1416,6 +1467,7 @@ TEST_FUNCTION(uws_client_destroy_fress_the_resources)
     STRICT_EXPECTED_CALL(singlylinkedlist_destroy(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+    EXPECTED_CALL(Map_Destroy(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
     // act
@@ -1448,6 +1500,7 @@ TEST_FUNCTION(uws_client_destroy_with_2_protocols_fress_both_protocols)
     STRICT_EXPECTED_CALL(singlylinkedlist_destroy(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+    EXPECTED_CALL(Map_Destroy(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
     // act
@@ -1476,6 +1529,7 @@ TEST_FUNCTION(uws_client_destroy_with_no_protocols_frees_all_other_resources)
     STRICT_EXPECTED_CALL(singlylinkedlist_destroy(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+    EXPECTED_CALL(Map_Destroy(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
     // act
@@ -1525,6 +1579,7 @@ TEST_FUNCTION(uws_client_destroy_also_performs_a_close)
     STRICT_EXPECTED_CALL(singlylinkedlist_destroy(TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+    EXPECTED_CALL(Map_Destroy(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     
     // act
@@ -2794,6 +2849,7 @@ TEST_FUNCTION(uws_client_open_async_after_WS_OPEN_ERROR_UNDERLYING_IO_OPEN_CANCE
 /* Tests_SRS_UWS_CLIENT_01_095: [ The value of this header field MUST be 13. ]*/
 /* Tests_SRS_UWS_CLIENT_01_096: [ The request MAY include a header field with the name |Sec-WebSocket-Protocol|. ]*/
 /* Tests_SRS_UWS_CLIENT_01_100: [ The request MAY include a header field with the name |Sec-WebSocket-Extensions|. ]*/
+/* Tests_SRS_UWS_CLIENT_01_101: [ The request MAY include any other header fields, for example, cookies [RFC6265] and/or authentication-related header fields such as the |Authorization| header field [RFC2616], which are processed according to documents that define them. ] */
 /* Tests_SRS_UWS_CLIENT_01_089: [ The value of this header field MUST be a nonce consisting of a randomly selected 16-byte value that has been base64-encoded (see Section 4 of [RFC4648]). ]*/
 /* Tests_SRS_UWS_CLIENT_01_090: [ The nonce MUST be selected randomly for each connection. ]*/
 /* Tests_SRS_UWS_CLIENT_01_497: [ The nonce needed for the upgrade request shall be Base64 encoded with `Base64_Encode_Bytes`. ]*/
@@ -2804,12 +2860,23 @@ TEST_FUNCTION(on_underlying_io_open_complete_with_OK_prepares_and_sends_the_WebS
     UWS_CLIENT_HANDLE uws_client;
     size_t i;
     unsigned char expected_nonce[16];
+    char* req_header1_key = "Authorization";
+    char* req_header1_value = "Bearer 23420939909809283488230949";
 
     tlsio_config.hostname = "test_host";
     tlsio_config.port = 444;
 
+    my_Map_GetInternals_keys[0] = req_header1_key;
+    my_Map_GetInternals_values[0] = req_header1_value;
+    my_Map_GetInternals_count = 1;
+
     uws_client = uws_client_create("test_host", 444, "/aaa", true, protocols, sizeof(protocols) / sizeof(protocols[0]));
     (void)uws_client_open_async(uws_client, test_on_ws_open_complete, (void*)0x4242, test_on_ws_frame_received, (void*)0x4243, test_on_ws_peer_closed, (void*)0x4301, test_on_ws_error, (void*)0x4244);
+
+    umock_c_reset_all_calls();
+    STRICT_EXPECTED_CALL(Map_AddOrUpdate(TEST_REQUEST_HEADERS_MAP, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+    (void)uws_client_set_request_header(uws_client, req_header1_key, req_header1_value);
+    
     umock_c_reset_all_calls();
 
     /* get the random 16 bytes */
@@ -2821,6 +2888,10 @@ TEST_FUNCTION(on_underlying_io_open_complete_with_OK_prepares_and_sends_the_WebS
 
     STRICT_EXPECTED_CALL(Base64_Encode_Bytes(IGNORED_PTR_ARG, 16))
         .ValidateArgumentBuffer(1, expected_nonce, 16);
+    // get_request_headers()
+    STRICT_EXPECTED_CALL(Map_GetInternals(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(malloc(strlen(req_header1_key)+strlen(req_header1_value)+2+2+1));
+
     STRICT_EXPECTED_CALL(STRING_c_str(BASE64_ENCODED_STRING)).SetReturn("ZWRuYW1vZGU6bm9jYXBlcyE=");
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
     STRICT_EXPECTED_CALL(xio_send(TEST_IO_HANDLE, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
@@ -2830,6 +2901,7 @@ TEST_FUNCTION(on_underlying_io_open_complete_with_OK_prepares_and_sends_the_WebS
         .IgnoreArgument_size();
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(STRING_delete(BASE64_ENCODED_STRING));
+    EXPECTED_CALL(free(IGNORED_PTR_ARG)); // request headers
 
     // act
     g_on_io_open_complete(g_on_io_open_complete_context, IO_OPEN_OK);
@@ -2904,12 +2976,17 @@ TEST_FUNCTION(when_allocating_memory_for_the_websocket_upgrade_request_fails_the
 
     STRICT_EXPECTED_CALL(Base64_Encode_Bytes(IGNORED_PTR_ARG, 16))
         .ValidateArgumentBuffer(1, expected_nonce, 16);
+    // get_request_headers()
+    STRICT_EXPECTED_CALL(Map_GetInternals(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(malloc(IGNORED_NUM_ARG));
+
     STRICT_EXPECTED_CALL(STRING_c_str(BASE64_ENCODED_STRING)).SetReturn("ZWRuYW1vZGU6bm9jYXBlcyE=");
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
         .SetReturn(NULL);
     STRICT_EXPECTED_CALL(xio_close(TEST_IO_HANDLE, NULL, NULL));
     STRICT_EXPECTED_CALL(test_on_ws_open_complete((void*)0x4242, WS_OPEN_ERROR_NOT_ENOUGH_MEMORY));
     STRICT_EXPECTED_CALL(STRING_delete(BASE64_ENCODED_STRING));
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // empty request headers
 
     // act
     g_on_io_open_complete(g_on_io_open_complete_context, IO_OPEN_OK);
@@ -2998,6 +3075,8 @@ TEST_FUNCTION(when_sending_the_upgrade_request_fails_the_error_WS_OPEN_ERROR_CAN
 
     STRICT_EXPECTED_CALL(Base64_Encode_Bytes(IGNORED_PTR_ARG, 16))
         .ValidateArgumentBuffer(1, expected_nonce, 16);
+    STRICT_EXPECTED_CALL(Map_GetInternals(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(malloc(IGNORED_NUM_ARG)); // get_request_headers(), no headers
     STRICT_EXPECTED_CALL(STRING_c_str(BASE64_ENCODED_STRING)).SetReturn("ZWRuYW1vZGU6bm9jYXBlcyE=");
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
     STRICT_EXPECTED_CALL(xio_send(TEST_IO_HANDLE, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
@@ -3010,6 +3089,7 @@ TEST_FUNCTION(when_sending_the_upgrade_request_fails_the_error_WS_OPEN_ERROR_CAN
     STRICT_EXPECTED_CALL(test_on_ws_open_complete((void*)0x4242, WS_OPEN_ERROR_CANNOT_SEND_UPGRADE_REQUEST));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(STRING_delete(BASE64_ENCODED_STRING));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
     // act
     g_on_io_open_complete(g_on_io_open_complete_context, IO_OPEN_OK);
@@ -3047,6 +3127,10 @@ TEST_FUNCTION(uws_client_open_async_after_WS_OPEN_ERROR_CANNOT_SEND_UPGRADE_REQU
 
     STRICT_EXPECTED_CALL(Base64_Encode_Bytes(IGNORED_PTR_ARG, 16))
         .ValidateArgumentBuffer(1, expected_nonce, 16);
+    // get_request_headers()
+    STRICT_EXPECTED_CALL(Map_GetInternals(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(malloc(IGNORED_NUM_ARG));
+        
     STRICT_EXPECTED_CALL(STRING_c_str(BASE64_ENCODED_STRING)).SetReturn("ZWRuYW1vZGU6bm9jYXBlcyE=");
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
     STRICT_EXPECTED_CALL(xio_send(TEST_IO_HANDLE, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
@@ -3071,8 +3155,8 @@ TEST_FUNCTION(uws_client_open_async_after_WS_OPEN_ERROR_CANNOT_SEND_UPGRADE_REQU
     result = uws_client_open_async(uws_client, test_on_ws_open_complete, (void*)0x4242, test_on_ws_frame_received, (void*)0x4243, test_on_ws_peer_closed, (void*)0x4301, test_on_ws_error, (void*)0x4244);;
 
     // assert
-    ASSERT_ARE_EQUAL(int, 0, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_ARE_EQUAL(int, 0, result);
 
     // cleanup
     uws_client_destroy(uws_client);
@@ -7502,6 +7586,138 @@ TEST_FUNCTION(when_close_complete_is_called_and_the_user_callback_is_NULL_no_cal
 
     // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    uws_client_destroy(uws_client);
+}
+
+// Tests_SRS_UWS_CLIENT_09_002: [ If any of the arguments `uws_client` or `name` or `value` is NULL `uws_client_set_request_header` shall fail and return a non-zero value. ]  
+TEST_FUNCTION(uws_client_set_request_header_NULL_handle)
+{
+    // arrange
+    int result;
+    char* req_header1_key = "Authorization";
+    char* req_header1_value = "Bearer 23420939909809283488230949";
+
+    umock_c_reset_all_calls();
+
+    // act
+    result = uws_client_set_request_header(NULL, req_header1_key, req_header1_value);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+
+    // cleanup
+}
+
+// Tests_SRS_UWS_CLIENT_09_002: [ If any of the arguments `uws_client` or `name` or `value` is NULL `uws_client_set_request_header` shall fail and return a non-zero value. ]  
+TEST_FUNCTION(uws_client_set_request_header_NULL_name)
+{
+    // arrange
+    UWS_CLIENT_HANDLE uws_client;
+    int result;
+    char* req_header1_key = NULL;
+    char* req_header1_value = "Bearer 23420939909809283488230949";
+
+    uws_client = uws_client_create("test_host", 444, "/aaa", true, protocols, sizeof(protocols) / sizeof(protocols[0]));
+
+    umock_c_reset_all_calls();
+
+    // act
+    result = uws_client_set_request_header(uws_client, req_header1_key, req_header1_value);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+
+    // cleanup
+    uws_client_destroy(uws_client);
+}
+
+// Tests_SRS_UWS_CLIENT_09_002: [ If any of the arguments `uws_client` or `name` or `value` is NULL `uws_client_set_request_header` shall fail and return a non-zero value. ]  
+TEST_FUNCTION(uws_client_set_request_header_NULL_value)
+{
+    // arrange
+    UWS_CLIENT_HANDLE uws_client;
+    int result;
+    char* req_header1_key = "Authorization";
+    char* req_header1_value = NULL;
+
+    uws_client = uws_client_create("test_host", 444, "/aaa", true, protocols, sizeof(protocols) / sizeof(protocols[0]));
+
+    umock_c_reset_all_calls();
+
+    // act
+    result = uws_client_set_request_header(uws_client, req_header1_key, req_header1_value);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+
+    // cleanup
+    uws_client_destroy(uws_client);
+}
+
+// Tests_SRS_UWS_CLIENT_09_004: [ If `name` or `value` fail to be stored the function shall fail and return a non-zero value. ]  
+TEST_FUNCTION(uws_client_set_request_header_negative_tests)
+{
+    // arrange
+    UWS_CLIENT_HANDLE uws_client;
+    char* req_header1_key = "Authorization";
+    char* req_header1_value = "Bearer 23420939909809283488230949";
+    size_t i;
+
+    ASSERT_ARE_EQUAL(int, 0, umock_c_negative_tests_init());
+
+    uws_client = uws_client_create("test_host", 444, "/aaa", true, protocols, sizeof(protocols) / sizeof(protocols[0]));
+
+    umock_c_reset_all_calls();
+    STRICT_EXPECTED_CALL(Map_AddOrUpdate(TEST_REQUEST_HEADERS_MAP, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+    umock_c_negative_tests_snapshot();
+
+    for (i = 0; i < umock_c_negative_tests_call_count(); i++)
+    {
+        // arrange
+        char error_msg[64];
+        int result;
+
+        umock_c_negative_tests_reset();
+        umock_c_negative_tests_fail_call(i);
+
+        // act
+        result = uws_client_set_request_header(uws_client, req_header1_key, req_header1_value);
+
+        sprintf(error_msg, "On failed call %zu", i);
+        ASSERT_ARE_NOT_EQUAL_WITH_MSG(int, 0, result, error_msg);
+    }
+
+    // cleanup
+    uws_client_destroy(uws_client);
+    umock_c_negative_tests_deinit();
+}
+
+// Tests_SRS_UWS_CLIENT_09_003: [ A copy of `name` and `value` shall be stored for later sending in the request message. ]  
+// Tests_SRS_UWS_CLIENT_09_005: [ If no failures occur the function shall return zero. ]  
+TEST_FUNCTION(uws_client_set_request_header_success)
+{
+    // arrange
+    UWS_CLIENT_HANDLE uws_client;
+    int result;
+    char* req_header1_key = "Authorization";
+    char* req_header1_value = "Bearer 23420939909809283488230949";
+
+    uws_client = uws_client_create("test_host", 444, "/aaa", true, protocols, sizeof(protocols) / sizeof(protocols[0]));
+
+    umock_c_reset_all_calls();
+    STRICT_EXPECTED_CALL(Map_AddOrUpdate(TEST_REQUEST_HEADERS_MAP, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+
+    // act
+    result = uws_client_set_request_header(uws_client, req_header1_key, req_header1_value);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_ARE_EQUAL(int, 0, result);
 
     // cleanup
     uws_client_destroy(uws_client);
