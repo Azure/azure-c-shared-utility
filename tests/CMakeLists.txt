@@ -65,6 +65,7 @@ if(use_wsio)
     add_subdirectory(uws_client_ut)
     add_subdirectory(uws_frame_encoder_ut)
     add_subdirectory(wsio_ut)
+    add_subdirectory(ws_url_ut)
 endif()
 
 #Add adapters tests

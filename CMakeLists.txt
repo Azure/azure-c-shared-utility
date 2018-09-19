@@ -320,12 +320,14 @@ if(${use_wsio})
         ./inc/azure_c_shared_utility/uws_client.h
         ./inc/azure_c_shared_utility/uws_frame_encoder.h
         ./inc/azure_c_shared_utility/utf8_checker.h
+        ./inc/azure_c_shared_utility/ws_url.h
     )
     set(source_c_files ${source_c_files}
         ./src/wsio.c
         ./src/uws_client.c
         ./src/uws_frame_encoder.c
         ./src/utf8_checker.c
+        ./src/ws_url.c
     )
 endif()
 
