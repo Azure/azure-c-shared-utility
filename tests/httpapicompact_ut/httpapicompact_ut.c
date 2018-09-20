@@ -4228,7 +4228,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__Execute_request_with_truncated_header_fail
     HTTPAPI_Deinit();
 }
 
-/*Tests_SRS_HTTPAPI_COMPACT_42_084: [ The message received by the HTTPAPI_ExecuteRequest should not contain http body. ]*/
+/*Tests_SRS_HTTPAPI_COMPACT_42_088: [ The message received by the HTTPAPI_ExecuteRequest should not contain http body. ]*/
 TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_with_no_content_succeed)
 {
     /// arrange
