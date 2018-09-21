@@ -182,7 +182,6 @@ STRING_TOKEN_HANDLE StringToken_GetFirst(const char* source, size_t length, cons
     return result;
 }
 
-
 bool StringToken_GetNext(STRING_TOKEN_HANDLE token, const char** delimiters, size_t n_delims)
 {
     bool result;
@@ -217,7 +216,13 @@ const char* StringToken_GetValue(STRING_TOKEN_HANDLE token)
         LogError("Invalig argument (token is NULL)");
         result = NULL;
     }
+    // Beyond the length of the source string.
     else if (token->token_start == (token->source + token->length))
+    {
+        result = NULL;
+    }
+    // Two delimiters side by side (empty token).
+    else if (token->token_start == token->delimiter_start)
     {
         result = NULL;
     }
@@ -271,6 +276,95 @@ const char* StringToken_GetDelimiter(STRING_TOKEN_HANDLE token)
     {
         // Codes_SRS_STRING_TOKENIZER_09_018: [ The function shall return a pointer to the delimiter that defined the current token, as passed to the previous call to `StringToken_GetNext()` or `StringToken_GetFirst()` ]
         result = token->delimiter;
+    }
+
+    return result;
+}
+
+int StringToken_Split(const char* source, size_t length, const char** delimiters, size_t n_delims, bool include_empty, char*** tokens, size_t* token_count)
+{
+    int result;
+
+    // Codes_SRS_STRING_TOKENIZER_09_022: [ If `source`, `delimiters`, `token` or `token_count` are NULL, or `length` or `n_delims` are zero the function shall return a non-zero value ]
+    if (source == NULL || length == 0 || delimiters == NULL || n_delims == 0 || tokens == NULL || token_count == NULL)
+    {
+        LogError("Invalid argument (source=%p, length=%lu, delimiters=%p, n_delims=%lu, tokens=%p, token_count=%p)", source, (unsigned long)length, delimiters, (unsigned long)n_delims, tokens, token_count);
+        result = __FAILURE__;
+    }
+    else
+    {
+        STRING_TOKEN_HANDLE tokenizer;
+
+        // Codes_SRS_STRING_TOKENIZER_09_023: [ `source` (up to `length`) shall be split into individual tokens separated by any of `delimiters` ]
+        tokenizer = StringToken_GetFirst(source, length, delimiters, n_delims);
+
+        *token_count = 0;
+        *tokens = NULL;
+        // Codes_SRS_STRING_TOKENIZER_09_027: [ If no failures occur the function shall return zero ]
+        result = 0;
+
+        if (tokenizer != NULL)
+        {
+            do
+            {
+                const char* tokenValue;
+                size_t tokenLength;
+
+                tokenValue = StringToken_GetValue(tokenizer);
+                tokenLength = StringToken_GetLength(tokenizer);
+
+                if (tokenValue != NULL && tokenLength == 0 || tokenValue == NULL && tokenLength > 0)
+                {
+                    LogError("Unexpected token value (%p) or length (%lu)", tokenValue, (unsigned long)tokenLength);
+                    result = __FAILURE__;
+                    break;
+                }
+                // Codes_SRS_STRING_TOKENIZER_09_024: [ All NULL tokens shall be ommited if `include_empty` is not TRUE ]
+                else if (tokenValue != NULL || include_empty)
+                {
+                    // Codes_SRS_STRING_TOKENIZER_09_025: [ The tokens shall be stored in `tokens`, and their count stored in `token_count` ]
+                    *token_count = (*token_count) + 1;
+
+                    if ((*tokens = (char**)realloc(*tokens, sizeof(char*) * (*token_count))) == NULL)
+                    {
+                        // Codes_SRS_STRING_TOKENIZER_09_026: [ If any failures splitting or storing the tokens occur the function shall return a non-zero value ]
+                        LogError("Failed re-allocating the token array");
+                        *token_count = 0;
+                        result = __FAILURE__;
+                        break;
+                    }
+                    else if (tokenLength == 0)
+                    {
+                        (*tokens)[(*token_count) - 1] = NULL;
+                    }
+                    else if (((*tokens)[(*token_count) - 1] = (char*)malloc(sizeof(char) * (tokenLength + 1))) == NULL)
+                    {
+                        // Codes_SRS_STRING_TOKENIZER_09_026: [ If any failures splitting or storing the tokens occur the function shall return a non-zero value ]
+                        LogError("Failed copying token into array");
+                        *token_count = (*token_count) - 1;
+                        result = __FAILURE__;
+                        break;
+                    }
+                    else
+                    {
+                        (void)memcpy((*tokens)[(*token_count) - 1], tokenValue, tokenLength);
+                        (*tokens)[(*token_count) - 1][tokenLength] = '\0';
+                    }
+                }
+            } while (StringToken_GetNext(tokenizer, delimiters, n_delims));
+
+            StringToken_Destroy(tokenizer);
+
+            if (result != 0)
+            {
+                while ((*token_count) > 0)
+                {
+                    *token_count = (*token_count) - 1;
+                    free((*tokens)[*token_count]);
+                }
+                free(*tokens);
+            }
+        }
     }
 
     return result;

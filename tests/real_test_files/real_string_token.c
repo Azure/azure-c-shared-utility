@@ -6,6 +6,7 @@
 #define StringToken_GetValue real_StringToken_GetValue
 #define StringToken_GetLength real_StringToken_GetLength
 #define StringToken_GetDelimiter real_StringToken_GetDelimiter
+#define StringToken_Split real_StringToken_Split
 #define StringToken_Destroy real_StringToken_Destroy
 
 #define GBALLOC_H

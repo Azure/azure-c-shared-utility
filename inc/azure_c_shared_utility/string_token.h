@@ -22,6 +22,7 @@ MOCKABLE_FUNCTION(, bool, StringToken_GetNext, STRING_TOKEN_HANDLE, token, const
 MOCKABLE_FUNCTION(, const char*, StringToken_GetValue, STRING_TOKEN_HANDLE, token);
 MOCKABLE_FUNCTION(, size_t, StringToken_GetLength, STRING_TOKEN_HANDLE, token);
 MOCKABLE_FUNCTION(, const char*, StringToken_GetDelimiter, STRING_TOKEN_HANDLE, token);
+MOCKABLE_FUNCTION(, int, StringToken_Split, const char*, source, size_t, length, const char**, delimiters, size_t, n_delims, bool, include_empty, char***, tokens, size_t*, token_count);
 MOCKABLE_FUNCTION(, void, StringToken_Destroy, STRING_TOKEN_HANDLE, token);
 
 #ifdef __cplusplus

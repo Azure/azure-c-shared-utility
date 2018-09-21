@@ -14,6 +14,11 @@ void* real_malloc(size_t size)
     return malloc(size);
 }
 
+void* real_realloc(void* block, size_t size)
+{
+    return realloc(block, size);
+}
+
 void real_free(void* ptr)
 {
     free(ptr);
@@ -76,6 +81,7 @@ static void TEST_free(void* ptr)
 static void register_global_mock_hooks()
 {
     REGISTER_GLOBAL_MOCK_HOOK(malloc, TEST_malloc);
+    REGISTER_GLOBAL_MOCK_HOOK(realloc, real_realloc);
     REGISTER_GLOBAL_MOCK_HOOK(free, TEST_free);
 }
 
@@ -769,6 +775,297 @@ BEGIN_TEST_SUITE(string_token_ut)
 
         // cleanup
         StringToken_Destroy(handle);
+    }
+
+    // Tests_SRS_STRING_TOKENIZER_09_022: [ If `source`, `delimiters`, `token` or `token_count` are NULL, or `length` or `n_delims` are zero the function shall return a non-zero value ]
+    TEST_FUNCTION(StringToken_Split_NULL_source)
+    {
+        ///arrange
+        int result;
+
+        umock_c_reset_all_calls();
+
+        result = StringToken_Split(NULL, 30, (const char**)0x4444, 2, false, (char***)0x4445, (size_t*)0x4446);
+
+        // assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+        ASSERT_ARE_NOT_EQUAL(int, 0, result);
+
+        // cleanup
+    }
+
+    // Tests_SRS_STRING_TOKENIZER_09_022: [ If `source`, `delimiters`, `token` or `token_count` are NULL, or `length` or `n_delims` are zero the function shall return a non-zero value ]
+    TEST_FUNCTION(StringToken_Split_NULL_delimiters)
+    {
+        ///arrange
+        int result;
+
+        umock_c_reset_all_calls();
+
+        result = StringToken_Split((char*)0x4443, 30, (const char**)NULL, 2, false, (char***)0x4445, (size_t*)0x4446);
+
+        // assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+        ASSERT_ARE_NOT_EQUAL(int, 0, result);
+
+        // cleanup
+    }
+
+    // Tests_SRS_STRING_TOKENIZER_09_022: [ If `source`, `delimiters`, `token` or `token_count` are NULL, or `length` or `n_delims` are zero the function shall return a non-zero value ]
+    TEST_FUNCTION(StringToken_Split_NULL_token)
+    {
+        ///arrange
+        int result;
+
+        umock_c_reset_all_calls();
+
+        result = StringToken_Split((char*)0x4443, 30, (const char**)0x4444, 2, false, (char***)NULL, (size_t*)0x4446);
+
+        // assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+        ASSERT_ARE_NOT_EQUAL(int, 0, result);
+
+        // cleanup
+    }
+
+    // Tests_SRS_STRING_TOKENIZER_09_022: [ If `source`, `delimiters`, `token` or `token_count` are NULL, or `length` or `n_delims` are zero the function shall return a non-zero value ]
+    TEST_FUNCTION(StringToken_Split_NULL_token_count)
+    {
+        ///arrange
+        int result;
+
+        umock_c_reset_all_calls();
+
+        result = StringToken_Split((char*)0x4443, 30, (const char**)0x4444, 2, false, (char***)0x4445, (size_t*)NULL);
+
+        // assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+        ASSERT_ARE_NOT_EQUAL(int, 0, result);
+
+        // cleanup
+    }
+
+    // Tests_SRS_STRING_TOKENIZER_09_022: [ If `source`, `delimiters`, `token` or `token_count` are NULL, or `length` or `n_delims` are zero the function shall return a non-zero value ]
+    TEST_FUNCTION(StringToken_Split_zero_length)
+    {
+        ///arrange
+        int result;
+
+        umock_c_reset_all_calls();
+
+        result = StringToken_Split((char*)0x4443, 0, (const char**)0x4444, 2, false, (char***)0x4445, (size_t*)0x4446);
+
+        // assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+        ASSERT_ARE_NOT_EQUAL(int, 0, result);
+
+        // cleanup
+    }
+
+    // Tests_SRS_STRING_TOKENIZER_09_022: [ If `source`, `delimiters`, `token` or `token_count` are NULL, or `length` or `n_delims` are zero the function shall return a non-zero value ]
+    TEST_FUNCTION(StringToken_Split_zero_n_delims)
+    {
+        ///arrange
+        int result;
+
+        umock_c_reset_all_calls();
+
+        result = StringToken_Split((char*)0x4443, 30, (const char**)0x4444, 0, false, (char***)0x4445, (size_t*)0x4446);
+
+        // assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+        ASSERT_ARE_NOT_EQUAL(int, 0, result);
+
+        // cleanup
+    }
+
+    // Tests_SRS_STRING_TOKENIZER_09_023: [ `source` (up to `length`) shall be split into individual tokens separated by any of `delimiters` ]
+    // Tests_SRS_STRING_TOKENIZER_09_024: [ All NULL tokens shall be ommited if `include_empty` is not TRUE ]
+    // Tests_SRS_STRING_TOKENIZER_09_025: [ The tokens shall be stored in `tokens`, and their count stored in `token_count` ]
+    // Tests_SRS_STRING_TOKENIZER_09_027: [ If no failures occur the function shall return zero ]
+    TEST_FUNCTION(StringToken_Split_Success)
+    {
+        ///arrange
+        int result;
+        const char* delimiters[2];
+        char* string = "abc/def&ghi/jkl";
+        char** tokens;
+        size_t token_count;
+        size_t length = strlen(string);
+
+        delimiters[0] = "/";
+        delimiters[1] = "&";
+
+        umock_c_reset_all_calls();
+        set_expected_calls_for_StringToken_GetFirst();
+        STRICT_EXPECTED_CALL(realloc(IGNORED_PTR_ARG, IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(malloc(IGNORED_NUM_ARG));
+
+        set_expected_calls_for_StringToken_GetNext();
+        STRICT_EXPECTED_CALL(realloc(IGNORED_PTR_ARG, IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(malloc(IGNORED_NUM_ARG));
+        
+        set_expected_calls_for_StringToken_GetNext();
+        STRICT_EXPECTED_CALL(realloc(IGNORED_PTR_ARG, IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(malloc(IGNORED_NUM_ARG));
+        
+        set_expected_calls_for_StringToken_GetNext();
+        STRICT_EXPECTED_CALL(realloc(IGNORED_PTR_ARG, IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(malloc(IGNORED_NUM_ARG));
+        
+        STRICT_EXPECTED_CALL(free(IGNORED_PTR_ARG));
+
+        // act
+        result = StringToken_Split(string, length, delimiters, 2, false, &tokens, &token_count);
+
+        // assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+        ASSERT_ARE_EQUAL(int, 0, result);
+        ASSERT_ARE_EQUAL(size_t, 4, token_count);
+        ASSERT_ARE_EQUAL(int, 0, strcmp("abc", tokens[0]));
+        ASSERT_ARE_EQUAL(int, 0, strcmp("def", tokens[1]));
+        ASSERT_ARE_EQUAL(int, 0, strcmp("ghi", tokens[2]));
+        ASSERT_ARE_EQUAL(int, 0, strcmp("jkl", tokens[3]));
+
+        // cleanup
+        while (token_count > 0)
+        {
+            free(tokens[--token_count]);
+        }
+        free(tokens);
+    }
+
+    // Tests_SRS_STRING_TOKENIZER_09_024: [ All NULL tokens shall be ommited if `include_empty` is not TRUE ]
+    TEST_FUNCTION(StringToken_Split_include_NULL_Success)
+    {
+        ///arrange
+        int result;
+        const char* delimiters[2];
+        char* string = "&abc/&def&ghi/jkl//";
+        char** tokens;
+        size_t token_count;
+        size_t length = strlen(string);
+
+        delimiters[0] = "/";
+        delimiters[1] = "&";
+
+        umock_c_reset_all_calls();
+        set_expected_calls_for_StringToken_GetFirst();
+        STRICT_EXPECTED_CALL(realloc(IGNORED_PTR_ARG, IGNORED_NUM_ARG));
+
+        set_expected_calls_for_StringToken_GetNext();
+        STRICT_EXPECTED_CALL(realloc(IGNORED_PTR_ARG, IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(malloc(IGNORED_NUM_ARG));
+
+        set_expected_calls_for_StringToken_GetNext();
+        STRICT_EXPECTED_CALL(realloc(IGNORED_PTR_ARG, IGNORED_NUM_ARG));
+
+        set_expected_calls_for_StringToken_GetNext();
+        STRICT_EXPECTED_CALL(realloc(IGNORED_PTR_ARG, IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(malloc(IGNORED_NUM_ARG));
+
+        set_expected_calls_for_StringToken_GetNext();
+        STRICT_EXPECTED_CALL(realloc(IGNORED_PTR_ARG, IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(malloc(IGNORED_NUM_ARG));
+
+        set_expected_calls_for_StringToken_GetNext();
+        STRICT_EXPECTED_CALL(realloc(IGNORED_PTR_ARG, IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(malloc(IGNORED_NUM_ARG));
+
+        set_expected_calls_for_StringToken_GetNext();
+        STRICT_EXPECTED_CALL(realloc(IGNORED_PTR_ARG, IGNORED_NUM_ARG));
+
+        set_expected_calls_for_StringToken_GetNext();
+        STRICT_EXPECTED_CALL(realloc(IGNORED_PTR_ARG, IGNORED_NUM_ARG));
+
+        STRICT_EXPECTED_CALL(free(IGNORED_PTR_ARG));
+
+        // act
+        result = StringToken_Split(string, length, delimiters, 2, true, &tokens, &token_count);
+
+        // assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+        ASSERT_ARE_EQUAL(int, 0, result);
+        ASSERT_ARE_EQUAL(size_t, 8, token_count);
+        ASSERT_IS_NULL(tokens[0]);
+        ASSERT_ARE_EQUAL(int, 0, strcmp("abc", tokens[1]));
+        ASSERT_IS_NULL(tokens[2]);
+        ASSERT_ARE_EQUAL(int, 0, strcmp("def", tokens[3]));
+        ASSERT_ARE_EQUAL(int, 0, strcmp("ghi", tokens[4]));
+        ASSERT_ARE_EQUAL(int, 0, strcmp("jkl", tokens[5]));
+        ASSERT_IS_NULL(tokens[6]);
+        ASSERT_IS_NULL(tokens[7]);
+
+        // cleanup
+        while (token_count > 0)
+        {
+            if (tokens[--token_count] != NULL)
+            {
+                free(tokens[token_count]);
+            }
+        }
+        free(tokens);
+    }
+
+    // Tests_SRS_STRING_TOKENIZER_09_026: [ If any failures splitting or storing the tokens occur the function shall return a non-zero value ]
+    TEST_FUNCTION(StringToken_Split_negative_tests)
+    {
+        ///arrange
+        const char* delimiters[2];
+        char* string = "abc/def&ghi/jkl";
+        char** tokens;
+        size_t token_count;
+        size_t i;
+        size_t length = strlen(string);
+
+        ASSERT_ARE_EQUAL(int, 0, umock_c_negative_tests_init());
+
+        delimiters[0] = "/";
+        delimiters[1] = "&";
+
+        umock_c_reset_all_calls();
+        set_expected_calls_for_StringToken_GetFirst(); // 0, 1, 2
+        STRICT_EXPECTED_CALL(realloc(IGNORED_PTR_ARG, IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(malloc(IGNORED_NUM_ARG));
+
+        set_expected_calls_for_StringToken_GetNext(); // 5, 6
+        STRICT_EXPECTED_CALL(realloc(IGNORED_PTR_ARG, IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(malloc(IGNORED_NUM_ARG));
+
+        set_expected_calls_for_StringToken_GetNext(); // 9, 10
+        STRICT_EXPECTED_CALL(realloc(IGNORED_PTR_ARG, IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(malloc(IGNORED_NUM_ARG));
+
+        set_expected_calls_for_StringToken_GetNext(); // 13, 14
+        STRICT_EXPECTED_CALL(realloc(IGNORED_PTR_ARG, IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(malloc(IGNORED_NUM_ARG));
+
+        STRICT_EXPECTED_CALL(free(IGNORED_PTR_ARG)); // 17
+        umock_c_negative_tests_snapshot();
+
+        for (i = 0; i < umock_c_negative_tests_call_count(); i++)
+        {
+            // arrange
+            char error_msg[64];
+            int result;
+
+            if (i == 0 || i == 1 || i == 2 || i == 5 || i == 6 || i == 9 || i == 10 || i == 13 || i == 14 || i == 17)
+            {
+                continue;
+            }
+
+            umock_c_negative_tests_reset();
+            umock_c_negative_tests_fail_call(i);
+
+            // act
+            result = StringToken_Split(string, length, delimiters, 2, false, &tokens, &token_count);
+
+            sprintf(error_msg, "On failed call %zu", i);
+            ASSERT_ARE_NOT_EQUAL_WITH_MSG(int, 0, result, error_msg);
+        }
+
+        // cleanup
+        umock_c_negative_tests_deinit();
     }
 
 END_TEST_SUITE(string_token_ut)

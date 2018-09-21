@@ -11,6 +11,7 @@ extern bool StringToken_GetNext(STRING_TOKEN_HANDLE token, const char** delimite
 extern const char* StringToken_GetValue(STRING_TOKEN_HANDLE token);
 extern size_t StringToken_GetLength(STRING_TOKEN_HANDLE token);
 extern const char* StringToken_GetDelimiter(STRING_TOKEN_HANDLE token);
+extern int StringToken_Split(const char* source, size_t length, const char** delimiters, size_t n_delims, bool include_empty, char*** tokens, size_t* token_count);
 extern void StringToken_Destroy(STRING_TOKEN_HANDLE token);
 ```
 
@@ -90,3 +91,22 @@ extern void StringToken_Destroy(STRING_TOKEN_HANDLE token);
 **SRS_STRING_TOKENIZER_09_020: [** If `token` is NULL the function shall return **]**
 
 **SRS_STRING_TOKENIZER_09_021: [** Otherwise the memory allocated for STRING_TOKEN shall be released **]**
+
+
+### StringToken_Split
+```c
+extern int StringToken_Split(const char* source, size_t length, const char** delimiters, size_t n_delims, bool include_empty, char*** tokens, size_t* token_count);
+```
+
+**SRS_STRING_TOKENIZER_09_022: [** If `source`, `delimiters`, `token` or `token_count` are NULL, or `length` or `n_delims` are zero the function shall return a non-zero value **]**
+
+**SRS_STRING_TOKENIZER_09_023: [** `source` (up to `length`) shall be split into individual tokens separated by any of `delimiters` **]**
+
+**SRS_STRING_TOKENIZER_09_024: [** All NULL tokens shall be ommited if `include_empty` is not TRUE **]**
+
+**SRS_STRING_TOKENIZER_09_025: [** The tokens shall be stored in `tokens`, and their count stored in `token_count` **]**
+
+**SRS_STRING_TOKENIZER_09_026: [** If any failures splitting or storing the tokens occur the function shall return a non-zero value **]**
+
+**SRS_STRING_TOKENIZER_09_027: [** If no failures occur the function shall return zero **]**
+
