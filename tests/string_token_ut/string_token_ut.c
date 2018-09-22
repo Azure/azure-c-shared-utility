@@ -63,6 +63,16 @@ static void* TEST_malloc(size_t size)
     return saved_malloc_returns[saved_malloc_returns_count++];
 }
 
+static int saved_realloc_returns_count = 0;
+static void* saved_realloc_returns[20];
+
+static void* TEST_realloc(void* block, size_t size)
+{
+    saved_realloc_returns[saved_realloc_returns_count] = real_realloc(block, size);
+
+    return saved_realloc_returns[saved_realloc_returns_count++];
+}
+
 static void TEST_free(void* ptr)
 {
     int i, j;
@@ -81,7 +91,7 @@ static void TEST_free(void* ptr)
 static void register_global_mock_hooks()
 {
     REGISTER_GLOBAL_MOCK_HOOK(malloc, TEST_malloc);
-    REGISTER_GLOBAL_MOCK_HOOK(realloc, real_realloc);
+    REGISTER_GLOBAL_MOCK_HOOK(realloc, TEST_realloc);
     REGISTER_GLOBAL_MOCK_HOOK(free, TEST_free);
 }
 
@@ -138,6 +148,8 @@ BEGIN_TEST_SUITE(string_token_ut)
         }
 
         umock_c_reset_all_calls();
+
+        saved_realloc_returns_count = 0;
     }
 
     TEST_FUNCTION_CLEANUP(string_token_ut_test_function_cleanup)
@@ -145,7 +157,7 @@ BEGIN_TEST_SUITE(string_token_ut)
         TEST_MUTEX_RELEASE(g_testByTest);
     }
 
-    // Tests_SRS_STRING_TOKENIZER_09_001: [ If `source` or `delimiters` are NULL, or `length` or `n_delims` are zero, the function shall return NULL ]
+    // Tests_SRS_STRING_TOKENIZER_09_001: [ If `source` or `delimiters` are NULL, or `n_delims` is zero, the function shall return NULL ]
     TEST_FUNCTION(StringToken_GetFirst_NULL_source)
     {
         ///arrange
@@ -167,7 +179,7 @@ BEGIN_TEST_SUITE(string_token_ut)
         // cleanup
     }
 
-    // Tests_SRS_STRING_TOKENIZER_09_001: [ If `source` or `delimiters` are NULL, or `length` or `n_delims` are zero, the function shall return NULL ]
+    // Tests_SRS_STRING_TOKENIZER_09_001: [ If `source` or `delimiters` are NULL, or `n_delims` is zero, the function shall return NULL ]
     TEST_FUNCTION(StringToken_GetFirst_NULL_delimiters)
     {
         ///arrange
@@ -189,7 +201,7 @@ BEGIN_TEST_SUITE(string_token_ut)
         // cleanup
     }
 
-    // Tests_SRS_STRING_TOKENIZER_09_001: [ If `source` or `delimiters` are NULL, or `length` or `n_delims` are zero, the function shall return NULL ]
+    // Tests_SRS_STRING_TOKENIZER_09_001: [ If `source` or `delimiters` are NULL, or `n_delims` is zero, the function shall return NULL ]
     TEST_FUNCTION(StringToken_GetFirst_ZERO_delimiters)
     {
         ///arrange
@@ -306,6 +318,36 @@ BEGIN_TEST_SUITE(string_token_ut)
         // assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_IS_NOT_NULL(handle);
+
+        // cleanup
+        StringToken_Destroy(handle);
+    }
+
+    TEST_FUNCTION(StringToken_GetFirst_Empty_String_Success)
+    {
+        ///arrange
+        STRING_TOKEN_HANDLE handle;
+        const char* delimiters[1];
+        char* string = "";
+        size_t length = 0;
+
+        delimiters[0] = "?";
+
+        umock_c_reset_all_calls();
+        STRICT_EXPECTED_CALL(malloc(IGNORED_NUM_ARG));
+        set_expected_calls_for_get_delimiters_lengths();
+        STRICT_EXPECTED_CALL(free(IGNORED_PTR_ARG));
+
+        // act
+        handle = StringToken_GetFirst(string, length, delimiters, 1);
+
+        // assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+        ASSERT_IS_NOT_NULL(handle);
+        ASSERT_IS_NULL(StringToken_GetValue(handle));
+        ASSERT_ARE_EQUAL(size_t, 0, StringToken_GetLength(handle));
+        ASSERT_IS_NULL(StringToken_GetDelimiter(handle));
+        ASSERT_IS_FALSE(StringToken_GetNext(handle, delimiters, 1));
 
         // cleanup
         StringToken_Destroy(handle);
@@ -777,7 +819,7 @@ BEGIN_TEST_SUITE(string_token_ut)
         StringToken_Destroy(handle);
     }
 
-    // Tests_SRS_STRING_TOKENIZER_09_022: [ If `source`, `delimiters`, `token` or `token_count` are NULL, or `length` or `n_delims` are zero the function shall return a non-zero value ]
+    // Tests_SRS_STRING_TOKENIZER_09_022: [ If `source`, `delimiters`, `token` or `token_count` are NULL, or `n_delims` is zero the function shall return a non-zero value ]
     TEST_FUNCTION(StringToken_Split_NULL_source)
     {
         ///arrange
@@ -794,7 +836,7 @@ BEGIN_TEST_SUITE(string_token_ut)
         // cleanup
     }
 
-    // Tests_SRS_STRING_TOKENIZER_09_022: [ If `source`, `delimiters`, `token` or `token_count` are NULL, or `length` or `n_delims` are zero the function shall return a non-zero value ]
+    // Tests_SRS_STRING_TOKENIZER_09_022: [ If `source`, `delimiters`, `token` or `token_count` are NULL, or `n_delims` is zero the function shall return a non-zero value ]
     TEST_FUNCTION(StringToken_Split_NULL_delimiters)
     {
         ///arrange
@@ -811,7 +853,7 @@ BEGIN_TEST_SUITE(string_token_ut)
         // cleanup
     }
 
-    // Tests_SRS_STRING_TOKENIZER_09_022: [ If `source`, `delimiters`, `token` or `token_count` are NULL, or `length` or `n_delims` are zero the function shall return a non-zero value ]
+    // Tests_SRS_STRING_TOKENIZER_09_022: [ If `source`, `delimiters`, `token` or `token_count` are NULL, or `n_delims` is zero the function shall return a non-zero value ]
     TEST_FUNCTION(StringToken_Split_NULL_token)
     {
         ///arrange
@@ -828,7 +870,7 @@ BEGIN_TEST_SUITE(string_token_ut)
         // cleanup
     }
 
-    // Tests_SRS_STRING_TOKENIZER_09_022: [ If `source`, `delimiters`, `token` or `token_count` are NULL, or `length` or `n_delims` are zero the function shall return a non-zero value ]
+    // Tests_SRS_STRING_TOKENIZER_09_022: [ If `source`, `delimiters`, `token` or `token_count` are NULL, or `n_delims` is zero the function shall return a non-zero value ]
     TEST_FUNCTION(StringToken_Split_NULL_token_count)
     {
         ///arrange
@@ -845,24 +887,7 @@ BEGIN_TEST_SUITE(string_token_ut)
         // cleanup
     }
 
-    // Tests_SRS_STRING_TOKENIZER_09_022: [ If `source`, `delimiters`, `token` or `token_count` are NULL, or `length` or `n_delims` are zero the function shall return a non-zero value ]
-    TEST_FUNCTION(StringToken_Split_zero_length)
-    {
-        ///arrange
-        int result;
-
-        umock_c_reset_all_calls();
-
-        result = StringToken_Split((char*)0x4443, 0, (const char**)0x4444, 2, false, (char***)0x4445, (size_t*)0x4446);
-
-        // assert
-        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-        ASSERT_ARE_NOT_EQUAL(int, 0, result);
-
-        // cleanup
-    }
-
-    // Tests_SRS_STRING_TOKENIZER_09_022: [ If `source`, `delimiters`, `token` or `token_count` are NULL, or `length` or `n_delims` are zero the function shall return a non-zero value ]
+    // Tests_SRS_STRING_TOKENIZER_09_022: [ If `source`, `delimiters`, `token` or `token_count` are NULL, or `n_delims` is zero the function shall return a non-zero value ]
     TEST_FUNCTION(StringToken_Split_zero_n_delims)
     {
         ///arrange
@@ -932,6 +957,36 @@ BEGIN_TEST_SUITE(string_token_ut)
         {
             free(tokens[--token_count]);
         }
+        free(tokens);
+    }
+
+    TEST_FUNCTION(StringToken_Split_Zero_Length_Success)
+    {
+        ///arrange
+        int result;
+        const char* delimiters[2];
+        char* string = "";
+        size_t length = 0;
+        char** tokens = NULL;
+        size_t token_count;
+
+        delimiters[0] = "/";
+        delimiters[1] = "&";
+
+        umock_c_reset_all_calls();
+        set_expected_calls_for_StringToken_GetFirst();
+        STRICT_EXPECTED_CALL(free(IGNORED_PTR_ARG));
+
+        // act
+        result = StringToken_Split(string, length, delimiters, 2, false, &tokens, &token_count);
+
+        // assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+        ASSERT_ARE_EQUAL(int, 0, result);
+        ASSERT_ARE_EQUAL(size_t, 0, token_count);
+        ASSERT_IS_NULL(tokens);
+
+        // cleanup
         free(tokens);
     }
 
@@ -1059,6 +1114,18 @@ BEGIN_TEST_SUITE(string_token_ut)
 
             // act
             result = StringToken_Split(string, length, delimiters, 2, false, &tokens, &token_count);
+
+            if (i == 7 || i == 11 || i == 15)
+            {
+                int j = sizeof(saved_realloc_returns[saved_realloc_returns_count - 1]) / sizeof(char*);
+                
+                while (j > 0)
+                {
+                    free(((char**)saved_realloc_returns[saved_realloc_returns_count - 1])[--j]);
+                }
+                
+                free(saved_realloc_returns[saved_realloc_returns_count - 1]);
+            }
 
             sprintf(error_msg, "On failed call %zu", i);
             ASSERT_ARE_NOT_EQUAL_WITH_MSG(int, 0, result, error_msg);

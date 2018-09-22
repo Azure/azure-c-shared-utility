@@ -20,7 +20,7 @@ extern void StringToken_Destroy(STRING_TOKEN_HANDLE token);
 extern STRING_TOKEN_HANDLE StringToken_GetFirst(const char* source, size_t length, const char** delimiters, size_t n_delims);
 ```
 
-**SRS_STRING_TOKENIZER_09_001: [** If `source` or `delimiters` are NULL, or `length` or `n_delims` are zero, the function shall return NULL **]**
+**SRS_STRING_TOKENIZER_09_001: [** If `source` or `delimiters` are NULL, or `n_delims` is zero, the function shall return NULL **]**
 
 **SRS_STRING_TOKENIZER_09_002: [** If any of the strings in `delimiters` are NULL, the function shall return NULL **]**
 
@@ -98,7 +98,7 @@ extern void StringToken_Destroy(STRING_TOKEN_HANDLE token);
 extern int StringToken_Split(const char* source, size_t length, const char** delimiters, size_t n_delims, bool include_empty, char*** tokens, size_t* token_count);
 ```
 
-**SRS_STRING_TOKENIZER_09_022: [** If `source`, `delimiters`, `token` or `token_count` are NULL, or `length` or `n_delims` are zero the function shall return a non-zero value **]**
+**SRS_STRING_TOKENIZER_09_022: [** If `source`, `delimiters`, `token` or `token_count` are NULL, or `n_delims` is zero the function shall return a non-zero value **]**
 
 **SRS_STRING_TOKENIZER_09_023: [** `source` (up to `length`) shall be split into individual tokens separated by any of `delimiters` **]**
 

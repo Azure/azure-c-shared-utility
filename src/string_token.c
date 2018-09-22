@@ -149,10 +149,10 @@ STRING_TOKEN_HANDLE StringToken_GetFirst(const char* source, size_t length, cons
 {
     STRING_TOKEN* result;
 
-    // Codes_SRS_STRING_TOKENIZER_09_001: [ If `source` or `delimiters` are NULL, or `length` or `n_delims` are zero, the function shall return NULL ]
-    if (source == NULL || length == 0 || delimiters == NULL || n_delims == 0)
+    // Codes_SRS_STRING_TOKENIZER_09_001: [ If `source` or `delimiters` are NULL, or `n_delims` is zero, the function shall return NULL ]
+    if (source == NULL || delimiters == NULL || n_delims == 0)
     {
-        LogError("Invalid argument (source=%p, length=%lu, delimiters=%p, n_delims=%lu)", source, (unsigned long)length, delimiters, (unsigned long)n_delims);
+        LogError("Invalid argument (source=%p, delimiters=%p, n_delims=%lu)", source, delimiters, (unsigned long)n_delims);
         result = NULL;
     }
     else
@@ -285,10 +285,10 @@ int StringToken_Split(const char* source, size_t length, const char** delimiters
 {
     int result;
 
-    // Codes_SRS_STRING_TOKENIZER_09_022: [ If `source`, `delimiters`, `token` or `token_count` are NULL, or `length` or `n_delims` are zero the function shall return a non-zero value ]
-    if (source == NULL || length == 0 || delimiters == NULL || n_delims == 0 || tokens == NULL || token_count == NULL)
+    // Codes_SRS_STRING_TOKENIZER_09_022: [ If `source`, `delimiters`, `token` or `token_count` are NULL, or `n_delims` is zero the function shall return a non-zero value ]
+    if (source == NULL || delimiters == NULL || n_delims == 0 || tokens == NULL || token_count == NULL)
     {
-        LogError("Invalid argument (source=%p, length=%lu, delimiters=%p, n_delims=%lu, tokens=%p, token_count=%p)", source, (unsigned long)length, delimiters, (unsigned long)n_delims, tokens, token_count);
+        LogError("Invalid argument (source=%p, delimiters=%p, n_delims=%lu, tokens=%p, token_count=%p)", source, delimiters, (unsigned long)n_delims, tokens, token_count);
         result = __FAILURE__;
     }
     else
@@ -313,7 +313,7 @@ int StringToken_Split(const char* source, size_t length, const char** delimiters
                 tokenValue = StringToken_GetValue(tokenizer);
                 tokenLength = StringToken_GetLength(tokenizer);
 
-                if (tokenValue != NULL && tokenLength == 0 || tokenValue == NULL && tokenLength > 0)
+                if ((tokenValue != NULL && tokenLength == 0) || (tokenValue == NULL && tokenLength > 0))
                 {
                     LogError("Unexpected token value (%p) or length (%lu)", tokenValue, (unsigned long)tokenLength);
                     result = __FAILURE__;
