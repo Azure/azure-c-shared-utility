@@ -55,7 +55,6 @@ static const char* MODIFIED_STRING_VALUE2 = "*nitial_";
 #define NUMBER_OF_CHAR_TOCOPY           8
 #define TEST_INTEGER_VALUE              1234
 
-static TEST_MUTEX_HANDLE g_dllByDll;
 static TEST_MUTEX_HANDLE g_testByTest;
 
 static const struct JSONEncoding {
@@ -89,7 +88,6 @@ BEGIN_TEST_SUITE(strings_unittests)
 
     TEST_SUITE_INITIALIZE(setsBufferTempSize)
     {
-        TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
         g_testByTest = TEST_MUTEX_CREATE();
         ASSERT_IS_NOT_NULL(g_testByTest);
 
@@ -112,7 +110,6 @@ BEGIN_TEST_SUITE(strings_unittests)
         umock_c_deinit();
 
         TEST_MUTEX_DESTROY(g_testByTest);
-        TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
     }
 
     TEST_FUNCTION_INITIALIZE(a)

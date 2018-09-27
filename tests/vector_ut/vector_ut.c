@@ -60,14 +60,11 @@ static bool VECTOR_UNITTEST_isEqual(const void* left_hand_side, const void* righ
 
 #define NUM_ITEM_PUSH_BACK      128
 
-static TEST_MUTEX_HANDLE g_dllByDll;
-
 BEGIN_TEST_SUITE(Vector_UnitTests)
 
     TEST_SUITE_INITIALIZE(a)
     {
         int result;
-        TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
 
         result = umock_c_init(on_umock_c_error);
         ASSERT_ARE_EQUAL(int, 0, result);
@@ -82,8 +79,6 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_SUITE_CLEANUP(TestClassCleanup)
     {
         umock_c_deinit();
-
-        TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
     }
 
     TEST_FUNCTION_INITIALIZE(initialize)

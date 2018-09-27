@@ -162,8 +162,6 @@ static const size_t interestingSize_tNumbersToBeConverted[] =
     0x42
 };
 
-static TEST_MUTEX_HANDLE g_dllByDll;
-
 DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
@@ -177,8 +175,6 @@ BEGIN_TEST_SUITE(CRTAbstractions_UnitTests)
 
 TEST_SUITE_INITIALIZE(a)
 {
-    TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
-
     umock_c_init(on_umock_c_error);
 
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, real_malloc);
@@ -189,7 +185,6 @@ TEST_SUITE_INITIALIZE(a)
 TEST_SUITE_CLEANUP(b)
 {
     umock_c_deinit();
-    TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
 }
 
 /* strcat_s */

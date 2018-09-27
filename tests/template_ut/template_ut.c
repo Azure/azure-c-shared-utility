@@ -133,7 +133,6 @@ void my_callee_close(CALLEE_HANDLE handle)
  * This is necessary for the test suite, just keep as is.
  */
 static TEST_MUTEX_HANDLE g_testByTest;
-static TEST_MUTEX_HANDLE g_dllByDll;
 
 /**
  * Tests begin here. Give a name for your test, for instance template_ut, use the same
@@ -153,7 +152,6 @@ BEGIN_TEST_SUITE(template_ut)
     TEST_SUITE_INITIALIZE(a)
     {
         int result;
-        TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
         g_testByTest = TEST_MUTEX_CREATE();
         ASSERT_IS_NOT_NULL(g_testByTest);
 
@@ -219,7 +217,6 @@ BEGIN_TEST_SUITE(template_ut)
         umock_c_deinit();
 
         TEST_MUTEX_DESTROY(g_testByTest);
-        TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
     }
 
     /**

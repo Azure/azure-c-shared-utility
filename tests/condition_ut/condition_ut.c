@@ -43,7 +43,6 @@ void real_gballoc_free(void* ptr);
 #define CONDITION_WAIT_MS   2000
 
 static TEST_MUTEX_HANDLE g_testByTest;
-static TEST_MUTEX_HANDLE g_dllByDll;
 
 static bool malloc_will_fail = false;
 
@@ -96,7 +95,6 @@ BEGIN_TEST_SUITE(Condition_UnitTests)
 
 TEST_SUITE_INITIALIZE(a)
 {
-    TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
     g_testByTest = TEST_MUTEX_CREATE();
     ASSERT_IS_NOT_NULL(g_testByTest);
 
@@ -111,7 +109,6 @@ TEST_SUITE_CLEANUP(b)
     umock_c_deinit();
 
     TEST_MUTEX_DESTROY(g_testByTest);
-    TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
 }
 
 TEST_FUNCTION_INITIALIZE(f)

@@ -121,7 +121,6 @@ MOCKABLE_FUNCTION(WINAPI, SECURITY_STATUS, NCryptImportKey, NCRYPT_PROV_HANDLE, 
 #undef ENABLE_MOCKS
 
 static TEST_MUTEX_HANDLE g_testByTest;
-static TEST_MUTEX_HANDLE g_dllByDll;
 
 static const unsigned char TEST_DATA_INFO[] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x10 };
 #define TEST_KEY_SIZE       10
@@ -314,7 +313,6 @@ BEGIN_TEST_SUITE(x509_schannel_unittests)
 
 TEST_SUITE_INITIALIZE(a)
 {
-    TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
     g_testByTest = TEST_MUTEX_CREATE();
     ASSERT_IS_NOT_NULL(g_testByTest);
 
@@ -386,7 +384,6 @@ TEST_SUITE_CLEANUP(TestClassCleanup)
     umock_c_deinit();
 
     TEST_MUTEX_DESTROY(g_testByTest);
-    TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
 }
 
 TEST_FUNCTION_INITIALIZE(initialize)

@@ -51,7 +51,6 @@ void my_gballoc_free(void* ptr)
 #include "azure_c_shared_utility/constmap.h"
 
 static TEST_MUTEX_HANDLE g_testByTest;
-static TEST_MUTEX_HANDLE g_dllByDll;
 
 TEST_DEFINE_ENUM_TYPE(CONSTMAP_RESULT, CONSTMAP_RESULT_VALUES);
 
@@ -151,7 +150,6 @@ BEGIN_TEST_SUITE(constmap_unittests)
     TEST_SUITE_INITIALIZE(TestClassInitialize)
     {
         int result;
-        TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
         g_testByTest = TEST_MUTEX_CREATE();
         ASSERT_IS_NOT_NULL(g_testByTest);
 
@@ -176,7 +174,6 @@ BEGIN_TEST_SUITE(constmap_unittests)
         umock_c_deinit();
 
         TEST_MUTEX_DESTROY(g_testByTest);
-        TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
     }
 
     TEST_FUNCTION_INITIALIZE(TestMethodInitialize)
