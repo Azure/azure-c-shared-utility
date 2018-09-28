@@ -16,7 +16,7 @@ namespace compilembed
         public string severity { get; set; }
         public string type { get; set; }
         public double percent { get; set; }
-        public string file { get; set; }
+        //public string file { get; set; }
         public string line { get; set; }
         public string text { get; set; }
         public string message { get; set; }
@@ -120,6 +120,8 @@ namespace compilembed
                     WebResponse response = request.GetResponse();
                     string jsonResponse = new StreamReader(response.GetResponseStream()).ReadToEnd();
 
+                    Console.WriteLine($"PollStatus response: {jsonResponse}");
+
                     compileResponse = new JavaScriptSerializer().Deserialize<CompileStartResponse>(jsonResponse);
                     lastResponse = compileResponse;
 
@@ -127,12 +129,12 @@ namespace compilembed
                     {
                         if (msg.type == "cc")
                         {
-                            messages.Add(string.Format("{0}: {1}: {2}: {3}", msg.severity, msg.file, msg.line, msg.message));
+                            messages.Add(string.Format("{0}: {1}: {2}: {3}", msg.severity, null /*msg.file*/, msg.line, msg.message));
                             messages.Add(string.Format("{0}", msg.text));
                         }
                         else if (msg.type == "progress")
                         {
-                            messages.Add(string.Format("{0}: {1} ({2:F} %)", msg.action, msg.file, msg.percent));
+                            messages.Add(string.Format("{0}: {1} ({2:F} %)", msg.action, null /*msg.file*/, msg.percent));
                         }
                         else if (msg.type == "tool_error")
                         {
