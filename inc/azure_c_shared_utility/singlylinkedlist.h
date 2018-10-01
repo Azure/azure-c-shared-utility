@@ -41,6 +41,7 @@ typedef void (*LIST_ACTION_FUNCTION)(const void* item, const void* action_contex
 MOCKABLE_FUNCTION(, SINGLYLINKEDLIST_HANDLE, singlylinkedlist_create);
 MOCKABLE_FUNCTION(, void, singlylinkedlist_destroy, SINGLYLINKEDLIST_HANDLE, list);
 MOCKABLE_FUNCTION(, LIST_ITEM_HANDLE, singlylinkedlist_add, SINGLYLINKEDLIST_HANDLE, list, const void*, item);
+MOCKABLE_FUNCTION(, LIST_ITEM_HANDLE, singlylinkedlist_add_head, SINGLYLINKEDLIST_HANDLE, list, const void*, item);
 MOCKABLE_FUNCTION(, int, singlylinkedlist_remove, SINGLYLINKEDLIST_HANDLE, list, LIST_ITEM_HANDLE, item_handle);
 MOCKABLE_FUNCTION(, LIST_ITEM_HANDLE, singlylinkedlist_get_head_item, SINGLYLINKEDLIST_HANDLE, list);
 MOCKABLE_FUNCTION(, LIST_ITEM_HANDLE, singlylinkedlist_get_next_item, LIST_ITEM_HANDLE, item_handle);

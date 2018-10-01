@@ -1228,4 +1228,124 @@ TEST_FUNCTION(singlylinkedlist_remove_if_removes_the_only_item_in_the_list)
     singlylinkedlist_destroy(list);
 }
 
+/*Tests_SRS_LIST_02_001: [ If list is NULL then singlylinkedlist_add_head shall fail and return NULL. ]*/
+TEST_FUNCTION(singlylinkedlist_add_head_with_list_NULL_fails)
+{
+    ///arrange
+
+    ///act
+    LIST_ITEM_HANDLE listItemHandle = singlylinkedlist_add_head(NULL, (void*)0x42);
+
+    ///assert
+    ASSERT_IS_NULL(listItemHandle);
+}
+
+/*Tests_SRS_LIST_02_002: [ singlylinkedlist_add_head shall insert item at head, succeed and return a non-NULL value. ]*/
+/*Tests_SRS_LIST_02_003: [ If there are any failures then singlylinkedlist_add_head shall fail and return NULL. ]*/
+TEST_FUNCTION(singlylinkedlist_add_head_succeeds)
+{
+    // arrange
+    SINGLYLINKEDLIST_HANDLE list = singlylinkedlist_create();
+    int x = 42;
+    LIST_ITEM_HANDLE result;
+    LIST_ITEM_HANDLE head;
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+
+    // act
+    result = singlylinkedlist_add_head(list, &x);
+
+    // assert
+    ASSERT_IS_NOT_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    head = singlylinkedlist_get_head_item(list);
+    ASSERT_IS_NOT_NULL(head);
+    ASSERT_ARE_EQUAL(int, x, *(const int*)singlylinkedlist_item_get_value(head));
+
+    // cleanup
+    singlylinkedlist_destroy(list);
+}
+
+/*Tests_SRS_LIST_02_002: [ singlylinkedlist_add_head shall insert item at head, succeed and return a non-NULL value. ]*/
+TEST_FUNCTION(singlylinkedlist_add_head_succeeds_two_times)
+{
+    // arrange
+    SINGLYLINKEDLIST_HANDLE list = singlylinkedlist_create();
+    int x1 = 42;
+    int x2 = 43;
+    LIST_ITEM_HANDLE head;
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+
+    // act
+    LIST_ITEM_HANDLE result1 = singlylinkedlist_add_head(list, &x1);
+    LIST_ITEM_HANDLE result2 = singlylinkedlist_add_head(list, &x2);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(void_ptr, result1, result2);
+
+    ASSERT_IS_NOT_NULL(result1);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    head = singlylinkedlist_get_head_item(list);
+    ASSERT_IS_NOT_NULL(head);
+    ASSERT_ARE_EQUAL(int, x2, *(const int*)singlylinkedlist_item_get_value(head));
+
+    // cleanup
+    singlylinkedlist_destroy(list);
+}
+
+/*Tests_SRS_LIST_02_002: [ singlylinkedlist_add_head shall insert item at head, succeed and return a non-NULL value. ]*/
+TEST_FUNCTION(singlylinkedlist_add_2_heads_and_remove_front_produces_first_item_succeds)
+{
+    // arrange
+    SINGLYLINKEDLIST_HANDLE list = singlylinkedlist_create();
+    int x1 = 42;
+    int x2 = 43;
+    LIST_ITEM_HANDLE head;
+    (void)singlylinkedlist_add_head(list, &x1);
+    LIST_ITEM_HANDLE result2 = singlylinkedlist_add_head(list, &x2);
+    (int)singlylinkedlist_remove(list, result2);
+    umock_c_reset_all_calls();
+
+    // act
+    head = singlylinkedlist_get_head_item(list);
+
+    ///assert
+    ASSERT_IS_NOT_NULL(head);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_ARE_EQUAL(int, x1, *(const int*)singlylinkedlist_item_get_value(head));
+
+    // cleanup
+    singlylinkedlist_destroy(list);
+}
+
+/*Tests_SRS_LIST_02_003: [ If there are any failures then singlylinkedlist_add_head shall fail and return NULL. ]*/
+TEST_FUNCTION(singlylinkedlist_add_head_fails_when_malloc_fails)
+{
+    // arrange
+    SINGLYLINKEDLIST_HANDLE list = singlylinkedlist_create();
+    int x = 42;
+    LIST_ITEM_HANDLE result;
+    LIST_ITEM_HANDLE head;
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
+        .SetReturn(NULL);
+
+    // act
+    result = singlylinkedlist_add_head(list, &x);
+
+    // assert
+    ASSERT_IS_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    head = singlylinkedlist_get_head_item(list);
+    ASSERT_IS_NULL(head);
+
+    // cleanup
+    singlylinkedlist_destroy(list);
+}
+
 END_TEST_SUITE(singlylinkedlist_unittests)

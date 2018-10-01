@@ -17,6 +17,7 @@ typedef void (*LIST_ACTION_ACTION)(const void* item, const void* action_context,
 extern SINGLYLINKEDLIST_HANDLE singlylinkedlist_create(void);
 extern void singlylinkedlist_destroy(SINGLYLINKEDLIST_HANDLE list);
 extern LIST_ITEM_HANDLE singlylinkedlist_add(SINGLYLINKEDLIST_HANDLE list, const void* item);
+extern LIST_ITEM_HANDLE singlylinkedlist_add_head(SINGLYLINKEDLIST_HANDLE list, const void* item);
 extern int singlylinkedlist_remove(SINGLYLINKEDLIST_HANDLE list, LIST_ITEM_HANDLE item_handle);
 extern LIST_ITEM_HANDLE singlylinkedlist_get_head_item(SINGLYLINKEDLIST_HANDLE list);
 extern LIST_ITEM_HANDLE singlylinkedlist_get_next_item(LIST_ITEM_HANDLE item_handle);
@@ -145,3 +146,16 @@ extern const void* singlylinkedlist_item_get_value(LIST_ITEM_HANDLE item_handle)
 **SRS_LIST_01_020: [** singlylinkedlist_item_get_value shall return the value associated with the list item identified by the item_handle argument. **]**
 
 **SRS_LIST_01_021: [** If item_handle is NULL, singlylinkedlist_item_get_value shall return NULL. **]**
+
+### singlylinkedlist_add_head
+```
+extern LIST_ITEM_HANDLE singlylinkedlist_add_head(SINGLYLINKEDLIST_HANDLE list, const void* item);
+```
+
+`singlylinkedlist_add` inserts `item` at the head of `list`.
+
+**SRS_LIST_02_001: [** If `list` is `NULL` then `singlylinkedlist_add_head` shall fail and return `NULL`. **]**
+
+**SRS_LIST_02_002: [** `singlylinkedlist_add_head` shall insert `item` at head, succeed and return a non-`NULL` value. **]**
+
+**SRS_LIST_02_003: [** If there are any failures then `singlylinkedlist_add_head` shall fail and return `NULL`. **]**
