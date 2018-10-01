@@ -36,7 +36,7 @@ static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 #define UUID_STRING_LENGTH  36
 #define UUID_STRING_SIZE    (UUID_STRING_LENGTH + 1)
 
-static UUID_T TEST_UUID = { 222, 193, 74, 152, 197, 252, 67, 14, 180, 227, 51, 193, 196, 52, 220, 175 };
+static const UUID_T TEST_UUID = { 222, 193, 74, 152, 197, 252, 67, 14, 180, 227, 51, 193, 196, 52, 220, 175 };
 static char* TEST_UUID_STRING = "dec14a98-c5fc-430e-b4e3-33c1c434dcaf";
 
 static UNIQUEID_RESULT mock_UniqueId_Generate_result;

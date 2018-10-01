@@ -43,7 +43,7 @@ MOCKABLE_FUNCTION(, int, UUID_from_string, const char*, uuid_string, UUID_T*, uu
 *  @param uuid          Sequence of bytes representing an UUID.
 *  @returns             A null-terminated string representation of the UUID value provided (e.g., "7f907d75-5e13-44cf-a1a3-19a01a2b4528").
 */
-MOCKABLE_FUNCTION(, char*, UUID_to_string, UUID_T*, uuid);
+MOCKABLE_FUNCTION(, char*, UUID_to_string, const UUID_T*, uuid);
 
 #ifdef __cplusplus
 }

@@ -75,7 +75,7 @@ int UUID_from_string(const char* uuid_string, UUID_T* uuid)
     return result;
 }
 
-char* UUID_to_string(UUID_T* uuid)
+char* UUID_to_string(const UUID_T* uuid)
 {
     char* result;
 
