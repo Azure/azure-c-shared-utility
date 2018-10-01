@@ -73,7 +73,7 @@ LIST_ITEM_HANDLE singlylinkedlist_add(SINGLYLINKEDLIST_HANDLE list, const void* 
         if (result == NULL)
         {
             /* Codes_SRS_LIST_01_007: [If allocating the new list node fails, singlylinkedlist_add shall return NULL.] */
-            result = NULL;
+            /*return as is*/
         }
         else
         {
@@ -361,6 +361,48 @@ int singlylinkedlist_foreach(SINGLYLINKEDLIST_HANDLE list, LIST_ACTION_FUNCTION 
 
         /* Codes_SRS_LIST_09_011: [ If no errors occur, singlylinkedlist_foreach shall return zero. ] */
         result = 0;
+    }
+
+    return result;
+}
+
+LIST_ITEM_HANDLE singlylinkedlist_add_head(SINGLYLINKEDLIST_HANDLE list, const void* item)
+{
+    LIST_ITEM_HANDLE result;
+
+    /* Codes_SRS_LIST_02_001: [ If list is NULL then singlylinkedlist_add_head shall fail and return NULL. ]*/
+    if (list == NULL)
+    {
+        LogError("Invalid argument SINGLYLINKEDLIST_HANDLE list=%p", list);
+        result = NULL;
+    }
+    else
+    {
+        result = malloc(sizeof(LIST_ITEM_INSTANCE));
+
+        if (result == NULL)
+        {
+            /*Codes_SRS_LIST_02_003: [ If there are any failures then singlylinkedlist_add_head shall fail and return NULL. ]*/
+            LogError("failure in malloc");
+            /*return as is*/
+        }
+        else
+        {
+            /*Codes_SRS_LIST_02_002: [ singlylinkedlist_add_head shall insert item at head, succeed and return a non-NULL value. ]*/
+            result->item = item;
+            if (list->head == NULL)
+            {
+                result->next = NULL;
+                list->head = result;
+                list->tail = result;
+                
+            }
+            else
+            {
+                result->next = list->head;
+                list->head = result;
+            }
+        }
     }
 
     return result;
