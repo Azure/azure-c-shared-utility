@@ -373,7 +373,7 @@ LIST_ITEM_HANDLE singlylinkedlist_add_head(SINGLYLINKEDLIST_HANDLE list, const v
     /* Codes_SRS_LIST_02_001: [ If list is NULL then singlylinkedlist_add_head shall fail and return NULL. ]*/
     if (list == NULL)
     {
-        LogError("Invalid argument SINGLYLINKEDLIST_HANDLE list=%p, const void* item=%p", list, item);
+        LogError("Invalid argument SINGLYLINKEDLIST_HANDLE list=%p", list);
         result = NULL;
     }
     else
@@ -383,6 +383,7 @@ LIST_ITEM_HANDLE singlylinkedlist_add_head(SINGLYLINKEDLIST_HANDLE list, const v
         if (result == NULL)
         {
             /*Codes_SRS_LIST_02_003: [ If there are any failures then singlylinkedlist_add_head shall fail and return NULL. ]*/
+            LogError("failure in malloc");
             /*return as is*/
         }
         else
