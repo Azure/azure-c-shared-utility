@@ -1307,7 +1307,7 @@ TEST_FUNCTION(singlylinkedlist_add_2_heads_and_remove_front_produces_first_item_
     LIST_ITEM_HANDLE head;
     (void)singlylinkedlist_add_head(list, &x1);
     LIST_ITEM_HANDLE result2 = singlylinkedlist_add_head(list, &x2);
-    (int)singlylinkedlist_remove(list, result2);
+    (void)singlylinkedlist_remove(list, result2);
     umock_c_reset_all_calls();
 
     // act
