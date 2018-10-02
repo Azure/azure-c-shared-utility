@@ -309,11 +309,13 @@ void HTTPAPI_CloseConnection(HTTP_HANDLE handle)
             xio_destroy(http_instance->xio_handle);
         }
 
+#ifndef DO_NOT_COPY_TRUSTED_CERTS_STRING
         /*Codes_SRS_HTTPAPI_COMPACT_21_018: [ If there is a certificate associated to this connection, the HTTPAPI_CloseConnection shall free all allocated memory for the certificate. ]*/
         if (http_instance->certificate)
         {
             free(http_instance->certificate);
         }
+#endif
 
         /*Codes_SRS_HTTPAPI_COMPACT_06_001: [ If there is a x509 client certificate associated to this connection, the HTTAPI_CloseConnection shall free all allocated memory for the certificate. ]*/
         if (http_instance->x509ClientCertificate)
@@ -1266,6 +1268,7 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
     {
 #ifdef DO_NOT_COPY_TRUSTED_CERTS_STRING
         result = HTTPAPI_OK;
+        http_instance->certificate = (char*)value;
 #else
         int len;
 
