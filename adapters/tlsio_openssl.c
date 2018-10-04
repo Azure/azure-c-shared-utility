@@ -9,6 +9,7 @@
 #include <stdio.h>
 #if defined(ANDROID) || defined(__ANDROID__)
 #include <dirent.h>
+#include <unistd.h>
 #include "openssl/x509v3.h"
 #include "openssl/ocsp.h"
 #include <openssl/err.h>
@@ -924,65 +925,88 @@ static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
     return 0;
 }
 
-#elif defined(ANDROID) || defined(__ANDROID__)
-BIO *bio_err = NULL;
-
-
-int load_cert_crl_http(const char *url, BIO *err,
-    X509 **pcert, X509_CRL **pcrl)
+#elif defined(ANDROID) || defined(__ANDROID__) || 1 // TODO FIXME REMOVE || 1
+int load_cert_crl_http(
+    const char *url,
+    BIO *err,
+    X509 **pcert,
+    X509_CRL **pcrl)
 {
     char *host = NULL, *port = NULL, *path = NULL;
     BIO *bio = NULL;
     OCSP_REQ_CTX *rctx = NULL;
     int use_ssl, rv = 0;
     if (!OCSP_parse_url(url, &host, &port, &path, &use_ssl))
-        goto err;
-    if (use_ssl) {
-        if (err)
-            BIO_puts(err, "https not supported\n");
-        goto err;
+    {
+        goto error;
     }
+
+    if (use_ssl)
+    {
+        if (err)
+        {
+            BIO_puts(err, "https not supported\n");
+        }
+        goto error;
+    }
+
     bio = BIO_new_connect(host);
     if (!bio || !BIO_set_conn_port(bio, port))
-        goto err;
+    {
+        goto error;
+    }
+
     rctx = OCSP_REQ_CTX_new(bio, 1024);
     if (!rctx)
-        goto err;
+    {
+        goto error;
+    }
+
     if (!OCSP_REQ_CTX_http(rctx, "GET", path))
-        goto err;
+    {
+        goto error;
+    }
+
     if (!OCSP_REQ_CTX_add1_header(rctx, "Host", host))
-        goto err;
-    if (pcert) {
-        do {
+    {
+        goto error;
+    }
+
+    if (pcert)
+    {
+        do
+        {
             rv = X509_http_nbio(rctx, pcert);
         } while (rv == -1);
     }
-    else {
-        do {
+    else
+    {
+        do
+        {
             rv = X509_CRL_http_nbio(rctx, pcrl);
         } while (rv == -1);
     }
 
-err:
-    if (host)
-        OPENSSL_free(host);
-    if (path)
-        OPENSSL_free(path);
-    if (port)
-        OPENSSL_free(port);
-    if (bio)
-        BIO_free_all(bio);
-    if (rctx)
-        OCSP_REQ_CTX_free(rctx);
-    if (rv != 1) {
+error:
+    if (host)   OPENSSL_free(host);
+    if (path)   OPENSSL_free(path);
+    if (port)   OPENSSL_free(port);
+    if (bio)    BIO_free_all(bio);
+    if (rctx)   OCSP_REQ_CTX_free(rctx);
+
+    if (rv != 1)
+    {
         if (bio && err)
-            BIO_printf(bio_err, "Error loading %s from %s\n",
+        {
+            BIO_printf(err, "Error loading %s from %s\n",
                 pcert ? "certificate" : "CRL", url);
-        ERR_print_errors(bio_err);
+        }
+        ERR_print_errors(err);
     }
     return rv;
 }
 
+BIO *bio_err = NULL;
 #define FORMAT_HTTP     1
 #define FORMAT_ASN1     2
 #define FORMAT_PEM      3
@@ -1044,6 +1068,65 @@ end:
     return (x);
 }
 
+int save_crl(const char *infile, X509_CRL *crl, int format)
+{
+    int ret = 1;
+    BIO *in = NULL;
+
+    in = BIO_new(BIO_s_file());
+    if (in == NULL)
+    {
+        ERR_print_errors(bio_err);
+        goto end;
+    }
+
+    // null pointer?!
+    if (!infile || !*infile)
+    {
+        ret = 0;
+        goto end;
+    }
+
+    // file exists, don't overwrite
+    if (access(infile, F_OK) != -1)
+    {
+        ret = 0;
+        goto end;
+    }
+
+    // if cannot open, end
+    if (BIO_write_filename(in, (char*)infile) <= 0)
+    {
+        perror(infile);
+        goto end;
+    }
+
+    if (format == FORMAT_ASN1)
+    {
+        ret = i2d_X509_CRL_bio(in, crl);
+    }
+    else if (format == FORMAT_PEM)
+    {
+        ret = PEM_write_bio_X509_CRL(in, crl);
+    }
+    else
+    {
+        BIO_printf(bio_err, "bad format specified for crl\n");
+        goto end;
+    }
+
+    if (0 == ret)
+    {
+        BIO_printf(bio_err, "unable to save CRL\n");
+        ERR_print_errors(bio_err);
+        goto end;
+    }
+
+end:
+    BIO_free(in);
+    return ret;
+}
+
 static const char *get_dp_url(DIST_POINT *dp)
 {
     GENERAL_NAMES *gens;
@@ -1076,36 +1159,132 @@ static const char *get_dp_url(DIST_POINT *dp)
     return NULL;
 }
 
-static X509_CRL *load_crl_crldp(STACK_OF(DIST_POINT) *crldp)
+static time_t crl_invalid_after(X509_CRL *crl)
+{
+    int j;
+
+    ASN1_TIME *at = (ASN1_TIME *)X509_CRL_get_ext_d2i(crl, NID_invalidity_date, &j, NULL);
+
+    if (j == -1) {
+        return 0;
+    }
+
+    ASN1_GENERALIZEDTIME *gt = ASN1_TIME_to_generalizedtime(at, NULL);
+    if (!gt)
+    {
+        return 0;
+    }
+
+    // "Tue, 19 Feb 2008 20:47:53 +0530"
+    struct tm tm = { 0, };
+    const char * success = strptime((char*)gt->data, "%a, %d %b %Y %H:%M:%S %z", &tm);
+    ASN1_GENERALIZEDTIME_free(gt);
+
+    if (!success)
+    {
+        return 0;
+    }
+
+    // calculates the time since epoch
+    return mktime(&tm);
+}
+
+static X509_CRL *load_crl_crldp(X509 *cert, const char* suffix, STACK_OF(DIST_POINT) *crldp)
 {
     int i;
-    const char *urlptr = NULL;
-    for (i = 0; i < sk_DIST_POINT_num(crldp); i++) {
-        DIST_POINT *dp = sk_DIST_POINT_value(crldp, i);
-        urlptr = get_dp_url(dp);
-        if (urlptr)
-            return load_crl(urlptr, FORMAT_HTTP);
+    X509_CRL *crl = NULL;
+    char buf[256];
+    time_t now = time(NULL);
+
+    // we need the issuer hash to find the file on disk
+    X509_NAME *issuer_cert = X509_get_issuer_name(cert);
+    unsigned long hash = X509_NAME_hash(issuer_cert);
+
+    // try to read from file
+    for (i = 0; i < 10; i++)
+    {
+        sprintf(buf, "%08lx.%s.%d", hash, suffix, i);
+
+        // try to read from disk, exit loop, if
+        // none found
+        crl = load_crl(buf, FORMAT_PEM);
+        if (!crl)
+        {
+            continue;
+        }
+
+        // names don't match up. probably a hash collision
+        // so lets test if there is another crl on disk.
+        X509_NAME *issuer_crl = X509_CRL_get_issuer(crl);
+        if (0 != X509_NAME_cmp(issuer_crl, issuer_cert))
+        {
+            X509_CRL_free(crl);
+            continue;
+        }
+
+        if (crl_invalid_after(crl) <= now)
+        {
+            // TODO FIXME: DELETE THE FILE
+            //unlink(buf);
+
+            X509_CRL_free(crl);
+            continue;
+        }
+
+        // TODO: validate expiration date, delete
+        // file and clear clr if expired.
+        return crl;
     }
-    return NULL;
+
+    // file was not found on disk cache,
+    // so, now loading from web.
+    for (i = 0; i < sk_DIST_POINT_num(crldp); i++)
+    {
+        DIST_POINT *dp = sk_DIST_POINT_value(crldp, i);
+
+        const char *urlptr = get_dp_url(dp);
+        if (urlptr)
+        {
+            // try to load from web, exit loop if
+            // successfully downloaded
+            crl = load_crl(urlptr, FORMAT_HTTP);
+            if (crl) break;
+        }
+    }
+
+    // try to update file in cache
+    for (i = 0; crl && i < 10; i++)
+    {
+        sprintf(buf, "%08lx.%s.%d", hash, suffix, i);
+
+        // try to write to disk, exit loop, if
+        // written (note: no file will be overwritten).
+        if (save_crl(buf, crl, FORMAT_PEM))
+        {
+            // written to disk.
+            break;
+        }
+    }
+
+    return crl;
 }
 
 static STACK_OF(X509_CRL) *crls_http_cb(X509_STORE_CTX *ctx, X509_NAME *nm)
 {
-    X509 *x;
-    STACK_OF(X509_CRL) *crls = NULL;
     X509_CRL *crl;
     STACK_OF(DIST_POINT) *crldp;
 
-    crls = sk_X509_CRL_new_null();
+    STACK_OF(X509_CRL) *crls = sk_X509_CRL_new_null();
     if (!crls)
     {
         return NULL;
     }
 
-    x = X509_STORE_CTX_get_current_cert(ctx);
-    crldp = X509_get_ext_d2i(x, NID_crl_distribution_points, NULL, NULL);
+    X509 *x = X509_STORE_CTX_get_current_cert(ctx);
 
-    crl = load_crl_crldp(crldp);
+    /* Try to download CRL */
+    crldp = X509_get_ext_d2i(x, NID_crl_distribution_points, NULL, NULL);
+    crl = load_crl_crldp(x, "crl", crldp);
 
     sk_DIST_POINT_pop_free(crldp, DIST_POINT_free);
     if (!crl)
@@ -1118,7 +1297,7 @@ static STACK_OF(X509_CRL) *crls_http_cb(X509_STORE_CTX *ctx, X509_NAME *nm)
 
     /* Try to download delta CRL */
     crldp = X509_get_ext_d2i(x, NID_freshest_crl, NULL, NULL);
-    crl = load_crl_crldp(crldp);
+    crl = load_crl_crldp(x, "crld", crldp);
 
     sk_DIST_POINT_pop_free(crldp, DIST_POINT_free);
     if (crl)
