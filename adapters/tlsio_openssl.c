@@ -9,6 +9,9 @@
 #include <stdio.h>
 #if defined(ANDROID) || defined(__ANDROID__)
 #include <dirent.h>
+#include "openssl/x509v3.h"
+#include "openssl/ocsp.h"
+#include <openssl/err.h>
 #endif
 #include <stdbool.h>
 #include <stdint.h>
@@ -822,10 +825,9 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
     }
 }
 
-#ifdef WIN32
+#if defined(WIN32)
 static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
 {
-    PCCERT_CONTEXT pContext = NULL;
     X509_STORE * store = NULL;
 
     if (tls_io_instance && tls_io_instance->ssl_context)
@@ -844,6 +846,7 @@ static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
         (ULONG_PTR)NULL,                 // Use the default HCRYPTPROV
         CERT_SYSTEM_STORE_CURRENT_USER,
         L"ROOT");
+
     if(hSysStore)
     {
         LogInfo("The system store was opened successfully.");
@@ -853,12 +856,15 @@ static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
         LogInfo("An error occurred during opening of the system store!");
         return -1;
     }
+
     // load all the certificates into the openSSL cert store
+    PCCERT_CONTEXT pContext = NULL;
     while (1)
     {
-        /*
-        To free a context obtained by a find or enumerate function, either pass it in as the previous context parameter to a subsequent invocation of the function,
-        or call the appropriate free function. --from MSDN
+        /* To free a context obtained by a find or enumerate function,
+         * either pass it in as the previous context parameter to a
+         * subsequent invocation of the function, or call the appropriate
+         * free function. --from MSDN
         */
         pContext = CertEnumCertificatesInStore(hSysStore, pContext);
         if (!pContext)
@@ -880,6 +886,36 @@ static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
             X509_free(x509);
         }
     }    
+
+    // load all the revocation lists into the openSSL crl store
+    CRL_CONTEXT *pCRLContext = NULL;
+    while (1)
+    {
+        /* To free a context obtained by a find or enumerate function,
+         * either pass it in as the previous context parameter to a
+         * subsequent invocation of the function, or call the appropriate
+         * free function. --from MSDN
+        */
+        pCRLContext = CertEnumCRLsInStore(hSysStore, pCRLContext);
+        if (!pCRLContext)
+        {
+            break;
+        }
+
+        const unsigned char *encoded_crl = pCRLContext->pbCrlEncoded;
+
+        X509_CRL *x509_crl = d2i_X509_CRL(NULL, &encoded_crl, pCRLContext->cbCrlEncoded);
+        if (x509_crl)
+        {
+            int i = X509_STORE_add_crl(store, x509_crl);
+            if (i != 1)
+            {
+                LogError("revocation list adding failed.");
+            }
+            X509_CRL_free(x509_crl);
+        }
+    }
+
     if(hSysStore)
     {
         CertCloseStore(hSysStore, 0);
@@ -887,7 +923,212 @@ static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
 
     return 0;
 }
-#elif defined(ANDROID) || defined(__ANDROID__)
+
+#elif defined(ANDROID) || defined(__ANDROID__) || 1
+BIO *bio_err = NULL;
+
+
+int load_cert_crl_http(const char *url, BIO *err,
+    X509 **pcert, X509_CRL **pcrl)
+{
+    char *host = NULL, *port = NULL, *path = NULL;
+    BIO *bio = NULL;
+    OCSP_REQ_CTX *rctx = NULL;
+    int use_ssl, rv = 0;
+    if (!OCSP_parse_url(url, &host, &port, &path, &use_ssl))
+        goto err;
+    if (use_ssl) {
+        if (err)
+            BIO_puts(err, "https not supported\n");
+        goto err;
+    }
+    bio = BIO_new_connect(host);
+    if (!bio || !BIO_set_conn_port(bio, port))
+        goto err;
+    rctx = OCSP_REQ_CTX_new(bio, 1024);
+    if (!rctx)
+        goto err;
+    if (!OCSP_REQ_CTX_http(rctx, "GET", path))
+        goto err;
+    if (!OCSP_REQ_CTX_add1_header(rctx, "Host", host))
+        goto err;
+    if (pcert) {
+        do {
+            rv = X509_http_nbio(rctx, pcert);
+        } while (rv == -1);
+    }
+    else {
+        do {
+            rv = X509_CRL_http_nbio(rctx, pcrl);
+        } while (rv == -1);
+    }
+
+err:
+    if (host)
+        OPENSSL_free(host);
+    if (path)
+        OPENSSL_free(path);
+    if (port)
+        OPENSSL_free(port);
+    if (bio)
+        BIO_free_all(bio);
+    if (rctx)
+        OCSP_REQ_CTX_free(rctx);
+    if (rv != 1) {
+        if (bio && err)
+            BIO_printf(bio_err, "Error loading %s from %s\n",
+                pcert ? "certificate" : "CRL", url);
+        ERR_print_errors(bio_err);
+    }
+    return rv;
+}
+
+#define FORMAT_HTTP     1
+#define FORMAT_ASN1     2
+#define FORMAT_PEM      3
+
+X509_CRL *load_crl(const char *infile, int format)
+{
+    X509_CRL *x = NULL;
+    BIO *in = NULL;
+
+    if (format == FORMAT_HTTP)
+    {
+        load_cert_crl_http(infile, bio_err, NULL, &x);
+        return x;
+    }
+
+    in = BIO_new(BIO_s_file());
+    if (in == NULL)
+    {
+        ERR_print_errors(bio_err);
+        goto end;
+    }
+
+    if (infile == NULL)
+    {
+        BIO_set_fp(in, stdin, BIO_NOCLOSE);
+    }
+    else
+    {
+        if (BIO_read_filename(in, infile) <= 0)
+        {
+            perror(infile);
+            goto end;
+        }
+    }
+
+    if (format == FORMAT_ASN1)
+    {
+        x = d2i_X509_CRL_bio(in, NULL);
+    }
+    else if (format == FORMAT_PEM)
+    {
+        x = PEM_read_bio_X509_CRL(in, NULL, NULL, NULL);
+    }
+    else
+    {
+        BIO_printf(bio_err, "bad input format specified for input crl\n");
+        goto end;
+    }
+
+    if (x == NULL)
+    {
+        BIO_printf(bio_err, "unable to load CRL\n");
+        ERR_print_errors(bio_err);
+        goto end;
+    }
+
+end:
+    BIO_free(in);
+    return (x);
+}
+
+static const char *get_dp_url(DIST_POINT *dp)
+{
+    GENERAL_NAMES *gens;
+    GENERAL_NAME *gen;
+    int i, gtype;
+    ASN1_STRING *uri;
+
+    if (!dp->distpoint || dp->distpoint->type != 0)
+    {
+        return NULL;
+    }
+
+    gens = dp->distpoint->name.fullname;
+
+    for (i = 0; i < sk_GENERAL_NAME_num(gens); i++)
+    {
+        gen = sk_GENERAL_NAME_value(gens, i);
+        uri = GENERAL_NAME_get0_value(gen, &gtype);
+
+        if (gtype == GEN_URI && ASN1_STRING_length(uri) > 6)
+        {
+            char *uptr = (char *)ASN1_STRING_get0_data(uri);
+            if (!strncmp(uptr, "http://", 7))
+            {
+                return uptr;
+            }
+        }
+    }
+
+    return NULL;
+}
+
+static X509_CRL *load_crl_crldp(STACK_OF(DIST_POINT) *crldp)
+{
+    int i;
+    const char *urlptr = NULL;
+    for (i = 0; i < sk_DIST_POINT_num(crldp); i++) {
+        DIST_POINT *dp = sk_DIST_POINT_value(crldp, i);
+        urlptr = get_dp_url(dp);
+        if (urlptr)
+            return load_crl(urlptr, FORMAT_HTTP);
+    }
+    return NULL;
+}
+
+static STACK_OF(X509_CRL) *crls_http_cb(X509_STORE_CTX *ctx, X509_NAME *nm)
+{
+    X509 *x;
+    STACK_OF(X509_CRL) *crls = NULL;
+    X509_CRL *crl;
+    STACK_OF(DIST_POINT) *crldp;
+
+    crls = sk_X509_CRL_new_null();
+    if (!crls)
+    {
+        return NULL;
+    }
+
+    x = X509_STORE_CTX_get_current_cert(ctx);
+    crldp = X509_get_ext_d2i(x, NID_crl_distribution_points, NULL, NULL);
+
+    crl = load_crl_crldp(crldp);
+
+    sk_DIST_POINT_pop_free(crldp, DIST_POINT_free);
+    if (!crl)
+    {
+        sk_X509_CRL_free(crls);
+        return NULL;
+    }
+
+    sk_X509_CRL_push(crls, crl);
+
+    /* Try to download delta CRL */
+    crldp = X509_get_ext_d2i(x, NID_freshest_crl, NULL, NULL);
+    crl = load_crl_crldp(crldp);
+
+    sk_DIST_POINT_pop_free(crldp, DIST_POINT_free);
+    if (crl)
+    {
+        sk_X509_CRL_push(crls, crl);
+    }
+
+    return crls;
+}
+
 static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
 {
     X509_STORE * store = NULL;
@@ -915,6 +1156,7 @@ static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
 
             if (direntry->d_type == DT_REG)
             {
+				// try to load CERT
                 FILE *fp = fopen(fname, "r");
 
                 if (fp)
@@ -950,9 +1192,16 @@ static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
         LogInfo("An error occurred during opening global certificate storage under '%s'!", certs_path);
     }
 
+    // setup CRL checking
+    bio_err = tls_io_instance->out_bio;
+    X509_STORE_set_flags(store, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
+    X509_STORE_set_lookup_crls_cb(store, crls_http_cb);
+
     return 0;
 }
-#else
+
+#else // not windows, not android
+
 static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
 {
     (void)(tls_io_instance);
