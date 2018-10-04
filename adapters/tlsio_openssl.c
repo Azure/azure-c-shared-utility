@@ -924,7 +924,7 @@ static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
     return 0;
 }
 
-#elif defined(ANDROID) || defined(__ANDROID__) || 1
+#elif defined(ANDROID) || defined(__ANDROID__)
 BIO *bio_err = NULL;
 
 
