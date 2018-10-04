@@ -1164,7 +1164,7 @@ CONCRETE_IO_HANDLE tlsio_openssl_create(void* io_create_parameters)
                 result->x509_certificate = NULL;
                 result->x509_private_key = NULL;
 
-                result->tls_version = VERSION_1_0;
+                result->tls_version = VERSION_1_2;
 
                 result->underlying_io = xio_create(underlying_io_interface, io_interface_parameters);
                 if (result->underlying_io == NULL)
