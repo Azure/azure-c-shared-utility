@@ -63,15 +63,19 @@ static type* REFCOUNT_TYPE_DECLARE_CREATE(type) (void)                          
 #ifndef DEC_RETURN_ZERO
 #error refcount_os.h does not define DEC_RETURN_ZERO
 #endif // !DEC_RETURN_ZERO
-#ifndef INC_REF
-#error refcount_os.h does not define INC_REF
+#ifndef INC_REF_VAR
+#error refcount_os.h does not define INC_REF_VAR
 #endif // !INC_REF
-#ifndef DEC_REF
-#error refcount_os.h does not define DEC_REF
+#ifndef DEC_REF_VAR
+#error refcount_os.h does not define DEC_REF_VAR
 #endif // !DEC_REF
-#ifndef INIT_REF
-#error refcount_os.h does not define INIT_REF
+#ifndef INIT_REF_VAR
+#error refcount_os.h does not define INIT_REF_VAR
 #endif // !INIT_REF
+
+#define INC_REF(type, var) INC_REF_VAR(((REFCOUNT_TYPE(type)*)var)->count)
+#define DEC_REF(type, var) DEC_REF_VAR(((REFCOUNT_TYPE(type)*)var)->count)
+#define INIT_REF(type, var) INIT_REF_VAR(((REFCOUNT_TYPE(type)*)var)->count)
 
 #ifdef __cplusplus
 }

@@ -9,32 +9,11 @@
 #include <stddef.h>
 #endif
 
-
 #include "testrunnerswitcher.h"
-
-static size_t currentmalloc_call = 0;
-static size_t whenShallmalloc_fail = 0;
 
 void* my_gballoc_malloc(size_t size)
 {
-    void* result;
-    currentmalloc_call++;
-    if (whenShallmalloc_fail > 0)
-    {
-        if (currentmalloc_call == whenShallmalloc_fail)
-        {
-            result = NULL;
-        }
-        else
-        {
-            result = malloc(size);
-        }
-    }
-    else
-    {
-        result = malloc(size);
-    }
-    return result;
+    return malloc(size);
 }
 
 void my_gballoc_free(void* ptr)
@@ -139,10 +118,6 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         }
 
         umock_c_reset_all_calls();
-
-        currentmalloc_call = 0;
-        whenShallmalloc_fail = 0;
-
     }
 
     TEST_FUNCTION_CLEANUP(cleans)
@@ -173,11 +148,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         const CONSTBUFFER* content;
 
         ///act
-        /*this is the handle*/
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
-            .IgnoreArgument(1);
-        /*this is the content*/
-        STRICT_EXPECTED_CALL(gballoc_malloc(BUFFER1_length));
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
 
         handle = CONSTBUFFER_Create(BUFFER1_u_char, BUFFER1_length);
 
@@ -206,11 +177,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         ///act
         STRICT_EXPECTED_CALL(BUFFER_length(BUFFER1_HANDLE));
         STRICT_EXPECTED_CALL(BUFFER_u_char(BUFFER1_HANDLE));
-        /*this is the handle*/
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
-            .IgnoreArgument(1);
-        /*this is the content*/
-        STRICT_EXPECTED_CALL(gballoc_malloc(BUFFER1_length));
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
 
         handle = CONSTBUFFER_CreateFromBuffer(BUFFER1_HANDLE);
 
@@ -229,7 +196,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
     }
 
     /*Tests_SRS_CONSTBUFFER_02_008: [If copying the content fails, then CONSTBUFFER_CreateFromBuffer shall fail and return NULL.]*/
-    TEST_FUNCTION(CONSTBUFFER_CreateFromBuffer_fails_when_malloc_fails_1)
+    TEST_FUNCTION(CONSTBUFFER_CreateFromBuffer_fails_when_malloc_fails)
     {
         ///arrange
         CONSTBUFFER_HANDLE handle;
@@ -238,41 +205,9 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         STRICT_EXPECTED_CALL(BUFFER_length(BUFFER1_HANDLE));
         STRICT_EXPECTED_CALL(BUFFER_u_char(BUFFER1_HANDLE));
 
-        /*this is the handle*/
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
-            .IgnoreArgument(1);
+            .SetReturn(NULL);
 
-        /*this is the content*/
-        whenShallmalloc_fail = 2;
-        STRICT_EXPECTED_CALL(gballoc_malloc(BUFFER1_length));
-        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
-            .IgnoreArgument(1);
-
-
-        handle = CONSTBUFFER_CreateFromBuffer(BUFFER1_HANDLE);
-
-        ///assert
-        ASSERT_IS_NULL(handle);
-        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-        ///cleanup
-        CONSTBUFFER_Destroy(handle);
-    }
-
-    /*Tests_SRS_CONSTBUFFER_02_008: [If copying the content fails, then CONSTBUFFER_CreateFromBuffer shall fail and return NULL.]*/
-    TEST_FUNCTION(CONSTBUFFER_CreateFromBuffer_fails_when_malloc_fails_2)
-    {
-        ///arrange
-        CONSTBUFFER_HANDLE handle;
-
-        ///act
-        STRICT_EXPECTED_CALL(BUFFER_length(BUFFER1_HANDLE));
-        STRICT_EXPECTED_CALL(BUFFER_u_char(BUFFER1_HANDLE));
-
-        /*this is the handle*/
-        whenShallmalloc_fail = 1;
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
-            .IgnoreArgument(1);
 
         handle = CONSTBUFFER_CreateFromBuffer(BUFFER1_HANDLE);
 
@@ -310,12 +245,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         umock_c_reset_all_calls();
         ///act
 
-        /*this is the content*/
-        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
-            .IgnoreArgument(1);
-        /*this is the handle*/
-        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
         CONSTBUFFER_Destroy(handle);
 
@@ -326,41 +256,14 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
     }
 
     /*Tests_SRS_CONSTBUFFER_02_003: [If creating the copy fails then CONSTBUFFER_Create shall return NULL.]*/
-    TEST_FUNCTION(CONSTBUFFER_Create_fails_when_malloc_fails_1)
+    TEST_FUNCTION(CONSTBUFFER_Create_fails_when_malloc_fails)
     {
         ///arrange
         CONSTBUFFER_HANDLE handle;
 
         ///act
-        /*this is the handle*/
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
-            .IgnoreArgument(1);
-        /*this is the content*/
-        whenShallmalloc_fail = 2;
-        STRICT_EXPECTED_CALL(gballoc_malloc(BUFFER1_length));
-        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
-            .IgnoreArgument(1);
-
-        handle = CONSTBUFFER_Create(BUFFER1_u_char, BUFFER1_length);
-
-        ///assert
-        ASSERT_IS_NULL(handle);
-        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-        ///cleanup
-    }
-
-    /*Tests_SRS_CONSTBUFFER_02_003: [If creating the copy fails then CONSTBUFFER_Create shall return NULL.]*/
-    TEST_FUNCTION(CONSTBUFFER_Create_fails_when_malloc_fails_2)
-    {
-        ///arrange
-        CONSTBUFFER_HANDLE handle;
-
-        ///act
-        /*this is the handle*/
-        whenShallmalloc_fail = 1;
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
-            .IgnoreArgument(1);
+            .SetReturn(NULL);
 
         handle = CONSTBUFFER_Create(BUFFER1_u_char, BUFFER1_length);
 
@@ -380,12 +283,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         umock_c_reset_all_calls();
         ///act
 
-        /*this is the content*/
-        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
-            .IgnoreArgument(1);
-        /*this is the handle*/
-        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
         CONSTBUFFER_Destroy(handle);
 
@@ -403,9 +301,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         const CONSTBUFFER* content;
 
         ///act
-        /*this is the handle*/
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
 
         handle = CONSTBUFFER_Create(BUFFER2_u_char, BUFFER2_length);
 
@@ -430,9 +326,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         const CONSTBUFFER* content;
 
         ///act
-        /*this is the handle*/
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
 
         handle = CONSTBUFFER_Create(BUFFER3_u_char, BUFFER3_length);
 
@@ -577,12 +471,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         umock_c_reset_all_calls();
 
         ///act
-        /*this is the content*/
-        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
-            .IgnoreArgument(1);
-        /*this is the handle*/
-        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
         CONSTBUFFER_Destroy(clone);
 
         ///assert
