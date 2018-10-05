@@ -925,7 +925,7 @@ static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
     return 0;
 }
 
-#elif defined(ANDROID) || defined(__ANDROID__) || 1 // TODO FIXME REMOVE || 1
+#elif defined(ANDROID) || defined(__ANDROID__)
 int load_cert_crl_http(
     const char *url,
     BIO *err,
@@ -964,8 +964,6 @@ int load_cert_crl_http(
 
     OCSP_set_max_response_length(rctx, 1024*1024);
 
-    //rctx->max_resp_len = 1024 * 1024;
-
     if (!OCSP_REQ_CTX_http(rctx, "GET", path))
     {
         goto error;
@@ -992,21 +990,21 @@ int load_cert_crl_http(
     }
 
 error:
-    if (host)   OPENSSL_free(host);
-    if (path)   OPENSSL_free(path);
-    if (port)   OPENSSL_free(port);
-    if (bio)    BIO_free_all(bio);
-    if (rctx)   OCSP_REQ_CTX_free(rctx);
+    if (host) OPENSSL_free(host);
+    if (path) OPENSSL_free(path);
+    if (port) OPENSSL_free(port);
+    if (bio)  BIO_free_all(bio);
+    if (rctx) OCSP_REQ_CTX_free(rctx);
 
     if (rv != 1)
     {
         if (bio && err)
         {
-            BIO_printf(err, "Error loading %s from %s\n",
-                pcert ? "certificate" : "CRL", url);
+            BIO_printf(err, "Error loading %s from %s\n", pcert ? "Cert" : "CRL", url);
         }
         ERR_print_errors(err);
     }
+
     return rv;
 }
 
