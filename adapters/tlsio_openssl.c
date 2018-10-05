@@ -889,7 +889,7 @@ static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
     }    
 
     // load all the revocation lists into the openSSL crl store
-    CRL_CONTEXT *pCRLContext = NULL;
+    PCCRL_CONTEXT pCRLContext = NULL;
     while (1)
     {
         /* To free a context obtained by a find or enumerate function,
