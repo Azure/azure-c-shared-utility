@@ -1195,11 +1195,16 @@ static time_t crl_invalid_after(X509_CRL *crl)
 
 static X509_CRL *load_crl_crldp(X509 *cert, const char* suffix, STACK_OF(DIST_POINT) *crldp)
 {
-    const static char* prefix = "/data/local/tmp";
+    char* prefix = getenv("TMPDIR"); // "/data/local/tmp";
     int i;
     X509_CRL *crl = NULL;
     char buf[256];
     time_t now = time(NULL);
+
+    if (!prefix)
+    {
+        prefix = ".";
+    }
 
     // we need the issuer hash to find the file on disk
     X509_NAME *issuer_cert = X509_get_issuer_name(cert);
