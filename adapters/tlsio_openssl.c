@@ -918,7 +918,9 @@ static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
     }
 
     // setup CRL checking
-    X509_STORE_set_flags(store, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
+    //bio_err = tls_io_instance->out_bio;
+    //X509_STORE_set_flags(store, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
+    //X509_STORE_set_lookup_crls_cb(store, crls_http_cb);
 
     if(hSysStore)
     {
