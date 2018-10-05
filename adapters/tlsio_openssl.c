@@ -917,6 +917,9 @@ static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
         }
     }
 
+    // setup CRL checking
+    X509_STORE_set_flags(store, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
+
     if(hSysStore)
     {
         CertCloseStore(hSysStore, 0);
@@ -1232,8 +1235,13 @@ static X509_CRL *load_crl_crldp(X509 *cert, const char* suffix, STACK_OF(DIST_PO
             continue;
         }
 
+        // Important: At this point, we will DELETE
+        //      a file holding a Crl from disk in case
+        //      the invalid-after date is less than the
+        //      current time.
+        //      This will trigger the re-loading of the
+        //      Crl from the download store, if available.
         time_t crlend = crl_invalid_after(crl);
-
         if (crlend <= now)
         {
             // fprintf(stderr, "crl %ld, %ld DELETE %s\n", crlend, now, buf);
@@ -1243,8 +1251,7 @@ static X509_CRL *load_crl_crldp(X509 *cert, const char* suffix, STACK_OF(DIST_PO
             continue;
         }
 
-        // TODO: validate expiration date, delete
-        // file and clear clr if expired.
+        // at this point, we got a valid crl
         return crl;
     }
 
@@ -1294,7 +1301,7 @@ static STACK_OF(X509_CRL) *crls_http_cb(X509_STORE_CTX *ctx, X509_NAME *nm)
 
     X509 *x = X509_STORE_CTX_get_current_cert(ctx);
 
-    /* Try to download CRL */
+    // try to download Crl
     crldp = X509_get_ext_d2i(x, NID_crl_distribution_points, NULL, NULL);
     crl = load_crl_crldp(x, "crl", crldp);
 
@@ -1307,7 +1314,7 @@ static STACK_OF(X509_CRL) *crls_http_cb(X509_STORE_CTX *ctx, X509_NAME *nm)
 
     sk_X509_CRL_push(crls, crl);
 
-    /* Try to download delta CRL */
+    // try to download delta Crl
     crldp = X509_get_ext_d2i(x, NID_freshest_crl, NULL, NULL);
     crl = load_crl_crldp(x, "crld", crldp);
 
@@ -1347,7 +1354,7 @@ static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
 
             if (direntry->d_type == DT_REG)
             {
-				// try to load CERT
+                // try to load CERT
                 FILE *fp = fopen(fname, "r");
 
                 if (fp)
