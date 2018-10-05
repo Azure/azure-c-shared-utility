@@ -956,11 +956,15 @@ int load_cert_crl_http(
         goto error;
     }
 
-    rctx = OCSP_REQ_CTX_new(bio, 1024);
+    rctx = OCSP_REQ_CTX_new(bio, 1024*1024);
     if (!rctx)
     {
         goto error;
     }
+
+    OCSP_set_max_response_length(rctx, 1024*1024);
+
+    //rctx->max_resp_len = 1024 * 1024;
 
     if (!OCSP_REQ_CTX_http(rctx, "GET", path))
     {
@@ -1163,7 +1167,7 @@ static time_t crl_invalid_after(X509_CRL *crl)
 {
     int j;
 
-    ASN1_TIME *at = (ASN1_TIME *)X509_CRL_get_ext_d2i(crl, NID_invalidity_date, &j, NULL);
+    const ASN1_TIME *at = X509_CRL_get0_nextUpdate(crl);
 
     if (j == -1) {
         return 0;
@@ -1172,16 +1176,18 @@ static time_t crl_invalid_after(X509_CRL *crl)
     ASN1_GENERALIZEDTIME *gt = ASN1_TIME_to_generalizedtime(at, NULL);
     if (!gt)
     {
+        // fprintf(stderr, "crl could not find field\n");
         return 0;
     }
+    // fprintf(stderr, "crl data %s\n", (char*)gt->data);
 
-    // "Tue, 19 Feb 2008 20:47:53 +0530"
+    // "20181011181119Z"
     struct tm tm = { 0, };
-    const char * success = strptime((char*)gt->data, "%a, %d %b %Y %H:%M:%S %z", &tm);
+    const char * success = strptime((char*)gt->data, "%Y%m%d%H%M%S", &tm);
     ASN1_GENERALIZEDTIME_free(gt);
-
     if (!success)
     {
+        // fprintf(stderr, "crl could generalize\n");
         return 0;
     }
 
@@ -1191,6 +1197,7 @@ static time_t crl_invalid_after(X509_CRL *crl)
 
 static X509_CRL *load_crl_crldp(X509 *cert, const char* suffix, STACK_OF(DIST_POINT) *crldp)
 {
+    const static char* prefix = "/data/local/tmp";
     int i;
     X509_CRL *crl = NULL;
     char buf[256];
@@ -1203,7 +1210,7 @@ static X509_CRL *load_crl_crldp(X509 *cert, const char* suffix, STACK_OF(DIST_PO
     // try to read from file
     for (i = 0; i < 10; i++)
     {
-        sprintf(buf, "%08lx.%s.%d", hash, suffix, i);
+        sprintf(buf, "%s/%08lx.%s.%d", prefix, hash, suffix, i);
 
         // try to read from disk, exit loop, if
         // none found
@@ -1222,10 +1229,12 @@ static X509_CRL *load_crl_crldp(X509 *cert, const char* suffix, STACK_OF(DIST_PO
             continue;
         }
 
-        if (crl_invalid_after(crl) <= now)
+        time_t crlend = crl_invalid_after(crl);
+
+        if (crlend <= now)
         {
-            // TODO FIXME: DELETE THE FILE
-            //unlink(buf);
+            // fprintf(stderr, "crl %ld, %ld DELETE %s\n", crlend, now, buf);
+            unlink(buf);
 
             X509_CRL_free(crl);
             continue;
@@ -1255,7 +1264,7 @@ static X509_CRL *load_crl_crldp(X509 *cert, const char* suffix, STACK_OF(DIST_PO
     // try to update file in cache
     for (i = 0; crl && i < 10; i++)
     {
-        sprintf(buf, "%08lx.%s.%d", hash, suffix, i);
+        sprintf(buf, "%s/%08lx.%s.%d", prefix, hash, suffix, i);
 
         // try to write to disk, exit loop, if
         // written (note: no file will be overwritten).
