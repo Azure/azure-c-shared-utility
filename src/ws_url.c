@@ -266,7 +266,7 @@ int ws_url_is_secure(WS_URL_HANDLE url, bool* is_secure)
     // Codes_SRS_WS_URL_09_026: [ If `url` is NULL, the function shall return a non-zero value (failure) ]
     if (url == NULL || is_secure == NULL)
     {
-        LogError("Invalid argument (url=%, is_secure=%p)", url, is_secure);
+        LogError("Invalid argument (url=%p, is_secure=%p)", url, is_secure);
         result = __FAILURE__;
     }
     else
@@ -311,7 +311,7 @@ int ws_url_get_port(WS_URL_HANDLE url, size_t* port)
     // Codes_SRS_WS_URL_09_038: [ If `url` or `port` are NULL, the function shall return a non-zero value (failure) ]
     if (url == NULL || port == NULL)
     {
-        LogError("Invalid argument (url=%, port=%p)", url, port);
+        LogError("Invalid argument (url=%p, port=%p)", url, port);
         result = __FAILURE__;
     }
     else

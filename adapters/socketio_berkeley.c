@@ -294,7 +294,7 @@ static int lookup_address_and_initiate_socket_connection(SOCKET_IO_INSTANCE* soc
         size_t hostname_len = strlen(socket_io_instance->hostname);
         if (hostname_len + 1 > sizeof(addrInfoUn.sun_path))
         {
-            LogError("Hostname %s is too long for a unix socket (max len = %d)", socket_io_instance->hostname, sizeof(addrInfoUn.sun_path));
+            LogError("Hostname %s is too long for a unix socket (max len = %zu)", socket_io_instance->hostname, sizeof(addrInfoUn.sun_path));
             result = __FAILURE__;
         }
         else
@@ -507,7 +507,7 @@ static int get_network_interface_descriptions(int socket, NETWORK_INTERFACE_DESC
 
     if (ioctl(socket, SIOCGIFCONF, &ifc) == -1)
     {
-        LogError("ioctl failed querying socket (SIOCGIFCONF, errno=%s)", errno);
+        LogError("ioctl failed querying socket (SIOCGIFCONF, errno=%d)", errno);
         result = __FAILURE__;
     }
     else

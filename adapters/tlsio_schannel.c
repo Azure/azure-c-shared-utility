@@ -419,7 +419,7 @@ static int send_chunk(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t size
         (buffer == NULL) ||
         (size == 0))
     {
-        LogError("invalid argument detected: CONCRETE_IO_HANDLE tls_io = %p, const void* buffer = %p, size_t size = %d", tls_io, buffer, size);
+        LogError("invalid argument detected: CONCRETE_IO_HANDLE tls_io = %p, const void* buffer = %p, size_t size = %lu", tls_io, buffer, (unsigned long)size);
         result = __FAILURE__;
     }
     else

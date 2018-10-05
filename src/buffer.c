@@ -168,7 +168,7 @@ int BUFFER_append_build(BUFFER_HANDLE handle, const unsigned char* source, size_
     if (handle == NULL || source == NULL || size == 0)
     {
         /* Codes_SRS_BUFFER_07_029: [ BUFFER_append_build shall return nonzero if handle or source are NULL or if size is 0. ] */
-        LogError("BUFFER_append_build failed invalid parameter handle: %p, source: %p, size: %uz", handle, source, size);
+        LogError("BUFFER_append_build failed invalid parameter handle: %p, source: %p, size: %lu", handle, source, (unsigned long)size);
         result = __FAILURE__;
     }
     else

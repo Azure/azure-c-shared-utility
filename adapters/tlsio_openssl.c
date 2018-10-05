@@ -670,7 +670,7 @@ static void send_handshake_bytes(TLS_IO_INSTANCE* tls_io_instance)
         {
             if (ssl_err == SSL_ERROR_SSL)
             {
-                LogError(ERR_error_string(ERR_get_error(), NULL));
+                LogError("%s", ERR_error_string(ERR_get_error(), NULL));
             }
             else
             {

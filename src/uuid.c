@@ -30,7 +30,7 @@ int UUID_from_string(const char* uuid_string, UUID_T* uuid)
 
         if (uuid_string_length != UUID_STRING_LENGTH)
         {
-            LogError("Unexpected size for an UUID string (%d)", uuid_string_length);
+            LogError("Unexpected size for an UUID string (%lu)", (unsigned long)uuid_string_length);
             result = __FAILURE__;
         }
         else
@@ -58,7 +58,7 @@ int UUID_from_string(const char* uuid_string, UUID_T* uuid)
                     if (sscanf(double_hex_digit, "%02hhx", uuid_bytes + j) != 1)
                     {
                         // Codes_SRS_UUID_09_009: [ If `uuid` fails to be generated, UUID_from_string shall return a non-zero value ]
-                        LogError("Failed decoding UUID string (%d)", i);
+                        LogError("Failed decoding UUID string (%lu)", (unsigned long)i);
                         result = __FAILURE__;
                         break;
                     }

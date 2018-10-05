@@ -36,7 +36,7 @@ static size_t* get_delimiters_lengths(const char** delimiters, size_t n_delims)
             if (delimiters[i] == NULL)
             {
                 // Codes_SRS_STRING_TOKENIZER_09_002: [ If any of the strings in `delimiters` are NULL, the function shall return NULL ]
-                LogError("Invalid argument (delimiter %d is NULL)", i);
+                LogError("Invalid argument (delimiter %lu is NULL)", (unsigned long)i);
                 free(result);
                 result = NULL;
                 break;
