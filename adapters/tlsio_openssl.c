@@ -10,7 +10,7 @@
 #if defined(ANDROID) || defined(__ANDROID__)
 #include <dirent.h>
 #include <unistd.h>
-#else
+#elif defined(WIN32)
 #include <io.h>
 #endif
 #undef OCSP_REQUEST
