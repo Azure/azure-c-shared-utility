@@ -914,7 +914,7 @@ static X509_CRL *load_crl(const char *infile, int format)
     in = BIO_new(BIO_s_file());
     if (in == NULL)
     {
-        LogError("could not open file %s", infile);
+        LogError("could not find file %s", infile);
         goto end;
     }
 
@@ -926,7 +926,7 @@ static X509_CRL *load_crl(const char *infile, int format)
     {
         if (BIO_read_filename(in, infile) <= 0)
         {
-            perror(infile);
+            LogError("could not read file %s", infile);
             goto end;
         }
     }
@@ -989,7 +989,7 @@ int save_crl(const char *infile, X509_CRL *crl, int format)
     // if cannot open, end
     if (BIO_write_filename(in, (char*)infile) <= 0)
     {
-        perror(infile);
+        LogError("could not write file %s", infile);
         goto end;
     }
 
