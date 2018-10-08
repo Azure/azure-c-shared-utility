@@ -1040,19 +1040,19 @@ static time_t crl_invalid_after(X509_CRL *crl);
 static const char *get_dp_url(DIST_POINT *dp);
 static X509_CRL *load_crl_crldp(BIO* bio_err, X509 *cert, const char* suffix, STACK_OF(DIST_POINT) *crldp)
 {
-    char* prefix = getenv("TMP"); // "/data/local/tmp";
     int i;
     X509_CRL *crl = NULL;
     char buf[256];
     time_t now = time(NULL);
 
+    char* prefix = getenv("TMP");
     if (!prefix)
     {
-        prefix = getenv("TMPDIR"); // "/data/local/tmp";
-    }
-    if (!prefix)
-    {
-        prefix = ".";
+        prefix = getenv("TMPDIR");
+        if (!prefix)
+        {
+            prefix = ".";
+        }
     }
 
     // we need the issuer hash to find the file on disk
