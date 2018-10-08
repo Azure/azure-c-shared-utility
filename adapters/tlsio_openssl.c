@@ -1179,6 +1179,20 @@ static STACK_OF(X509_CRL) *crls_http_cb2(BIO* bio_err, X509_STORE_CTX *ctx, X509
     return crls;
 }
 
+static int atoin(const char *str, int start, int len)
+{
+    int result = 0;
+
+    for (; len > 0; len--, start++)
+    {
+        if (str[start] < '0' || str[start] > '9')
+            return -1;
+
+        result = (result * 10) + (str[start] - '0');
+    }
+
+    return result;
+}
 
 #if defined(WIN32)
 static const char *get_dp_url(DIST_POINT *dp)
@@ -1213,21 +1227,6 @@ static const char *get_dp_url(DIST_POINT *dp)
     return NULL;
 }
 
-static int atoin(const char *str, int start, int len)
-{
-    int result = 0;
-
-    for (; len > 0; len--, start++)
-    {
-        if (str[start] < '0' || str[start] > '9')
-            return -1;
-
-        result = (result * 10) + (str[start] - '0');
-    }
-
-    return result;
-}
-
 static time_t crl_invalid_after(X509_CRL *crl)
 {
     ASN1_TIME *at = crl->crl->nextUpdate;
@@ -1235,10 +1234,8 @@ static time_t crl_invalid_after(X509_CRL *crl)
     ASN1_GENERALIZEDTIME *gt = ASN1_TIME_to_generalizedtime(at, NULL);
     if (!gt)
     {
-        // fprintf(stderr, "crl could not find field\n");
         return 0;
     }
-    // fprintf(stderr, "crl data %s\n", (char*)gt->data);
 
     // "20181011181119Z"
     int success = gt->length >= 14 ? 1 : 0;
@@ -1260,7 +1257,6 @@ static time_t crl_invalid_after(X509_CRL *crl)
     ASN1_GENERALIZEDTIME_free(gt);
     if (!success)
     {
-        // fprintf(stderr, "crl could generalize\n");
         return 0;
     }
 
@@ -1365,9 +1361,13 @@ static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
     }
 
     // setup CRL checking
-    //bio_err = tls_io_instance->out_bio;
-    X509_STORE_set_flags(store, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
-    X509_STORE_set_lookup_crls_cb(store, crls_http_cb);
+    int flags = X509_VERIFY_PARAM_get_flags(store->param);
+    if (!(flags & X509_V_FLAG_CRL_CHECK))
+    {
+        bio_err = tls_io_instance->out_bio;
+        X509_STORE_set_flags(store, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
+        X509_STORE_set_lookup_crls_cb(store, crls_http_cb);
+    }
 
     if(hSysStore)
     {
@@ -1377,7 +1377,7 @@ static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
     return 0;
 }
 
-#elif defined(ANDROID) || defined(__ANDROID__) || 1
+#elif defined(ANDROID) || defined(__ANDROID__)
 static const char *get_dp_url(DIST_POINT *dp)
 {
     GENERAL_NAMES *gens;
@@ -1506,19 +1506,109 @@ static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
     }
 
     // setup CRL checking
-    bio_err = tls_io_instance->out_bio;
-    X509_STORE_set_flags(store, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
-    X509_STORE_set_lookup_crls_cb(store, crls_http_cb);
+    int flags = X509_VERIFY_PARAM_get_flags(store->param);
+    if (!(flags & X509_V_FLAG_CRL_CHECK))
+    {
+        bio_err = tls_io_instance->out_bio;
+        X509_STORE_set_flags(store, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
+        X509_STORE_set_lookup_crls_cb(store, crls_http_cb);
+    }
 
     return 0;
 }
 
 #else // not windows, not android
 
+static const char *get_dp_url(DIST_POINT *dp)
+{
+    GENERAL_NAMES *gens;
+    GENERAL_NAME *gen;
+    int i, gtype;
+    ASN1_STRING *uri;
+
+    if (!dp->distpoint || dp->distpoint->type != 0)
+    {
+        return NULL;
+    }
+
+    gens = dp->distpoint->name.fullname;
+
+    for (i = 0; i < sk_GENERAL_NAME_num(gens); i++)
+    {
+        gen = sk_GENERAL_NAME_value(gens, i);
+        uri = GENERAL_NAME_get0_value(gen, &gtype);
+
+        if (gtype == GEN_URI && ASN1_STRING_length(uri) > 6)
+        {
+            char *uptr = (char *)ASN1_STRING_data(uri);
+            if (!strncmp(uptr, "http://", 7))
+            {
+                return uptr;
+            }
+        }
+    }
+
+    return NULL;
+}
+
+static time_t crl_invalid_after(X509_CRL *crl)
+{
+    ASN1_TIME *at = crl->crl->nextUpdate;
+
+    ASN1_GENERALIZEDTIME *gt = ASN1_TIME_to_generalizedtime(at, NULL);
+    if (!gt)
+    {
+        return 0;
+    }
+
+    // "20181011181119Z"
+    int success = gt->length >= 14 ? 1 : 0;
+    struct tm tm = { 0, };
+
+    if (success)
+    {
+        tm.tm_year = atoin((char*)gt->data, 0, 4) - 1900;
+        tm.tm_mon = atoin((char*)gt->data, 4, 2) - 1;
+        tm.tm_mday = atoin((char*)gt->data, 6, 2);
+        tm.tm_hour = atoin((char*)gt->data, 8, 2);
+        tm.tm_min = atoin((char*)gt->data, 10, 2);
+        tm.tm_sec = atoin((char*)gt->data, 12, 2);
+
+        success = (tm.tm_year > 100 && tm.tm_mon >= 0 && tm.tm_mday > 0 &&
+            tm.tm_hour >= 0 && tm.tm_min >= 0 && tm.tm_sec >= 0);
+    }
+
+    ASN1_GENERALIZEDTIME_free(gt);
+    if (!success)
+    {
+        return 0;
+    }
+
+    // calculates the time since epoch
+    return mktime(&tm);
+}
+
+BIO *bio_err = NULL;
+static STACK_OF(X509_CRL) *crls_http_cb(X509_STORE_CTX *ctx, X509_NAME *nm)
+{
+    return crls_http_cb2(bio_err, ctx, nm);
+}
+
+
 static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
 {
     (void)(tls_io_instance);
     LogInfo("load_system_store is not implemented on non-windows platforms");
+
+    // setup CRL checking
+    int flags = X509_VERIFY_PARAM_get_flags(store->param);
+    if (!(flags & X509_V_FLAG_CRL_CHECK))
+    {
+        bio_err = tls_io_instance->out_bio;
+        X509_STORE_set_flags(store, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
+        X509_STORE_set_lookup_crls_cb(store, crls_http_cb);
+    }
+
     return 0;
 }
 #endif
