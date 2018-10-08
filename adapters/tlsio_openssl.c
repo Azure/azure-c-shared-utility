@@ -1036,8 +1036,100 @@ end:
     return ret;
 }
 
-static time_t crl_invalid_after(X509_CRL *crl);
-static const char *get_dp_url(DIST_POINT *dp);
+static int atoin(const char *str, int start, int len)
+{
+    int result = 0;
+
+    for (; len > 0; len--, start++)
+    {
+        if (str[start] < '0' || str[start] > '9')
+            return -1;
+
+        result = (result * 10) + (str[start] - '0');
+    }
+
+    return result;
+}
+
+static time_t crl_invalid_after(X509_CRL *crl)
+{
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && (OPENSSL_VERSION_NUMBER < 0x20000000L)
+    const ASN1_TIME *at = X509_CRL_get0_nextUpdate(crl);
+#else
+    ASN1_TIME *at = crl->crl->nextUpdate;
+#endif
+
+    ASN1_GENERALIZEDTIME *gt = ASN1_TIME_to_generalizedtime(at, NULL);
+    if (!gt)
+    {
+        // fprintf(stderr, "crl could not find field\n");
+        return 0;
+    }
+    // fprintf(stderr, "crl data %s\n", (char*)gt->data);
+
+    // "20181011181119Z"
+    int success = gt->length >= 14 ? 1 : 0;
+    struct tm tm = { 0, };
+
+    if (success)
+    {
+        tm.tm_year = atoin((char*)gt->data, 0, 4) - 1900;
+        tm.tm_mon = atoin((char*)gt->data, 4, 2) - 1;
+        tm.tm_mday = atoin((char*)gt->data, 6, 2);
+        tm.tm_hour = atoin((char*)gt->data, 8, 2);
+        tm.tm_min = atoin((char*)gt->data, 10, 2);
+        tm.tm_sec = atoin((char*)gt->data, 12, 2);
+
+        success = (tm.tm_year > 100 && tm.tm_mon >= 0 && tm.tm_mday > 0 &&
+            tm.tm_hour >= 0 && tm.tm_min >= 0 && tm.tm_sec >= 0);
+    }
+
+    ASN1_GENERALIZEDTIME_free(gt);
+    if (!success)
+    {
+        return 0;
+    }
+
+    // calculates the time since epoch
+    return mktime(&tm);
+}
+
+static const char *get_dp_url(DIST_POINT *dp)
+{
+    GENERAL_NAMES *gens;
+    GENERAL_NAME *gen;
+    int i, gtype;
+    ASN1_STRING *uri;
+
+    if (!dp->distpoint || dp->distpoint->type != 0)
+    {
+        return NULL;
+    }
+
+    gens = dp->distpoint->name.fullname;
+
+    for (i = 0; i < sk_GENERAL_NAME_num(gens); i++)
+    {
+        gen = sk_GENERAL_NAME_value(gens, i);
+        uri = GENERAL_NAME_get0_value(gen, &gtype);
+
+        if (gtype == GEN_URI && ASN1_STRING_length(uri) > 6)
+        {
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && (OPENSSL_VERSION_NUMBER < 0x20000000L)
+            char *uptr = (char *)ASN1_STRING_get0_data(uri);
+#else
+            char *uptr = (char *)ASN1_STRING_data(uri);
+#endif
+            if (!strncmp(uptr, "http://", 7))
+            {
+                return uptr;
+            }
+        }
+    }
+
+    return NULL;
+}
+
 static X509_CRL *load_crl_crldp(BIO* bio_err, X509 *cert, const char* suffix, STACK_OF(DIST_POINT) *crldp)
 {
     int i;
@@ -1179,91 +1271,7 @@ static STACK_OF(X509_CRL) *crls_http_cb2(BIO* bio_err, X509_STORE_CTX *ctx, X509
     return crls;
 }
 
-static int atoin(const char *str, int start, int len)
-{
-    int result = 0;
-
-    for (; len > 0; len--, start++)
-    {
-        if (str[start] < '0' || str[start] > '9')
-            return -1;
-
-        result = (result * 10) + (str[start] - '0');
-    }
-
-    return result;
-}
-
 #if defined(WIN32)
-static const char *get_dp_url(DIST_POINT *dp)
-{
-    GENERAL_NAMES *gens;
-    GENERAL_NAME *gen;
-    int i, gtype;
-    ASN1_STRING *uri;
-
-    if (!dp->distpoint || dp->distpoint->type != 0)
-    {
-        return NULL;
-    }
-
-    gens = dp->distpoint->name.fullname;
-
-    for (i = 0; i < sk_GENERAL_NAME_num(gens); i++)
-    {
-        gen = sk_GENERAL_NAME_value(gens, i);
-        uri = GENERAL_NAME_get0_value(gen, &gtype);
-
-        if (gtype == GEN_URI && ASN1_STRING_length(uri) > 6)
-        {
-            char *uptr = (char *)ASN1_STRING_data(uri);
-            if (!strncmp(uptr, "http://", 7))
-            {
-                return uptr;
-            }
-        }
-    }
-
-    return NULL;
-}
-
-static time_t crl_invalid_after(X509_CRL *crl)
-{
-    ASN1_TIME *at = crl->crl->nextUpdate;
-
-    ASN1_GENERALIZEDTIME *gt = ASN1_TIME_to_generalizedtime(at, NULL);
-    if (!gt)
-    {
-        return 0;
-    }
-
-    // "20181011181119Z"
-    int success = gt->length >= 14 ? 1 : 0;
-    struct tm tm = { 0, };
-
-    if (success)
-    {
-        tm.tm_year = atoin((char*)gt->data, 0, 4) - 1900;
-        tm.tm_mon = atoin((char*)gt->data, 4, 2) - 1;
-        tm.tm_mday = atoin((char*)gt->data, 6, 2);
-        tm.tm_hour = atoin((char*)gt->data, 8, 2);
-        tm.tm_min = atoin((char*)gt->data, 10, 2);
-        tm.tm_sec = atoin((char*)gt->data, 12, 2);
-
-        success = (tm.tm_year > 100 && tm.tm_mon >= 0 && tm.tm_mday > 0 &&
-                   tm.tm_hour >= 0 && tm.tm_min >= 0 && tm.tm_sec >= 0);
-    }
-
-    ASN1_GENERALIZEDTIME_free(gt);
-    if (!success)
-    {
-        return 0;
-    }
-
-    // calculates the time since epoch
-    return mktime(&tm);
-}
-
 BIO *bio_err = NULL;
 static STACK_OF(X509_CRL) *crls_http_cb(X509_STORE_CTX *ctx, X509_NAME *nm)
 {
@@ -1378,64 +1386,6 @@ static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
 }
 
 #elif defined(ANDROID) || defined(__ANDROID__)
-static const char *get_dp_url(DIST_POINT *dp)
-{
-    GENERAL_NAMES *gens;
-    GENERAL_NAME *gen;
-    int i, gtype;
-    ASN1_STRING *uri;
-
-    if (!dp->distpoint || dp->distpoint->type != 0)
-    {
-        return NULL;
-    }
-
-    gens = dp->distpoint->name.fullname;
-
-    for (i = 0; i < sk_GENERAL_NAME_num(gens); i++)
-    {
-        gen = sk_GENERAL_NAME_value(gens, i);
-        uri = GENERAL_NAME_get0_value(gen, &gtype);
-
-        if (gtype == GEN_URI && ASN1_STRING_length(uri) > 6)
-        {
-            char *uptr = (char *)ASN1_STRING_get0_data(uri);
-            if (!strncmp(uptr, "http://", 7))
-            {
-                return uptr;
-            }
-        }
-    }
-
-    return NULL;
-}
-
-static time_t crl_invalid_after(X509_CRL *crl)
-{
-    const ASN1_TIME *at = X509_CRL_get0_nextUpdate(crl);
-
-    ASN1_GENERALIZEDTIME *gt = ASN1_TIME_to_generalizedtime(at, NULL);
-    if (!gt)
-    {
-        // fprintf(stderr, "crl could not find field\n");
-        return 0;
-    }
-    // fprintf(stderr, "crl data %s\n", (char*)gt->data);
-
-    // "20181011181119Z"
-    struct tm tm = { 0, };
-    const char * success = strptime((char*)gt->data, "%Y%m%d%H%M%S", &tm);
-    ASN1_GENERALIZEDTIME_free(gt);
-    if (!success)
-    {
-        // fprintf(stderr, "crl could generalize\n");
-        return 0;
-    }
-
-    // calculates the time since epoch
-    return mktime(&tm);
-}
-
 BIO *bio_err = NULL;
 static STACK_OF(X509_CRL) *crls_http_cb(X509_STORE_CTX *ctx, X509_NAME *nm)
 {
@@ -1514,82 +1464,11 @@ static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
 }
 
 #else // not windows, not android
-
-static const char *get_dp_url(DIST_POINT *dp)
-{
-    GENERAL_NAMES *gens;
-    GENERAL_NAME *gen;
-    int i, gtype;
-    ASN1_STRING *uri;
-
-    if (!dp->distpoint || dp->distpoint->type != 0)
-    {
-        return NULL;
-    }
-
-    gens = dp->distpoint->name.fullname;
-
-    for (i = 0; i < sk_GENERAL_NAME_num(gens); i++)
-    {
-        gen = sk_GENERAL_NAME_value(gens, i);
-        uri = GENERAL_NAME_get0_value(gen, &gtype);
-
-        if (gtype == GEN_URI && ASN1_STRING_length(uri) > 6)
-        {
-            char *uptr = (char *)ASN1_STRING_data(uri);
-            if (!strncmp(uptr, "http://", 7))
-            {
-                return uptr;
-            }
-        }
-    }
-
-    return NULL;
-}
-
-static time_t crl_invalid_after(X509_CRL *crl)
-{
-    ASN1_TIME *at = crl->crl->nextUpdate;
-
-    ASN1_GENERALIZEDTIME *gt = ASN1_TIME_to_generalizedtime(at, NULL);
-    if (!gt)
-    {
-        return 0;
-    }
-
-    // "20181011181119Z"
-    int success = gt->length >= 14 ? 1 : 0;
-    struct tm tm = { 0, };
-
-    if (success)
-    {
-        tm.tm_year = atoin((char*)gt->data, 0, 4) - 1900;
-        tm.tm_mon = atoin((char*)gt->data, 4, 2) - 1;
-        tm.tm_mday = atoin((char*)gt->data, 6, 2);
-        tm.tm_hour = atoin((char*)gt->data, 8, 2);
-        tm.tm_min = atoin((char*)gt->data, 10, 2);
-        tm.tm_sec = atoin((char*)gt->data, 12, 2);
-
-        success = (tm.tm_year > 100 && tm.tm_mon >= 0 && tm.tm_mday > 0 &&
-            tm.tm_hour >= 0 && tm.tm_min >= 0 && tm.tm_sec >= 0);
-    }
-
-    ASN1_GENERALIZEDTIME_free(gt);
-    if (!success)
-    {
-        return 0;
-    }
-
-    // calculates the time since epoch
-    return mktime(&tm);
-}
-
 BIO *bio_err = NULL;
 static STACK_OF(X509_CRL) *crls_http_cb(X509_STORE_CTX *ctx, X509_NAME *nm)
 {
     return crls_http_cb2(bio_err, ctx, nm);
 }
-
 
 static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
 {
