@@ -973,12 +973,7 @@ end:
     return (x);
 }
 
-
-
-#if defined(WIN32)
-BIO *bio_err = NULL;
-
-int save_crl(const char *infile, X509_CRL *crl, int format)
+int save_crl(BIO* bio_err, const char *infile, X509_CRL *crl, int format)
 {
     int ret = 1;
     BIO *in = NULL;
@@ -998,7 +993,11 @@ int save_crl(const char *infile, X509_CRL *crl, int format)
     }
 
     // file exists, don't overwrite
+#if defined(WIN32)
     if (_access(infile, 0) != -1)
+#else
+    if (access(infile, 0) != -1)
+#endif
     {
         ret = 0;
         goto end;
@@ -1037,6 +1036,151 @@ end:
     return ret;
 }
 
+static time_t crl_invalid_after(X509_CRL *crl);
+static const char *get_dp_url(DIST_POINT *dp);
+static X509_CRL *load_crl_crldp(BIO* bio_err, X509 *cert, const char* suffix, STACK_OF(DIST_POINT) *crldp)
+{
+    char* prefix = getenv("TMP"); // "/data/local/tmp";
+    int i;
+    X509_CRL *crl = NULL;
+    char buf[256];
+    time_t now = time(NULL);
+
+    if (!prefix)
+    {
+        prefix = getenv("TMPDIR"); // "/data/local/tmp";
+    }
+    if (!prefix)
+    {
+        prefix = ".";
+    }
+
+    // we need the issuer hash to find the file on disk
+    X509_NAME *issuer_cert = X509_get_issuer_name(cert);
+    unsigned long hash = X509_NAME_hash(issuer_cert);
+
+    // try to read from file
+    for (i = 0; i < 10; i++)
+    {
+        sprintf(buf, "%s/%08lx.%s.%d", prefix, hash, suffix, i);
+
+        // try to read from disk, exit loop, if
+        // none found
+        crl = load_crl(buf, bio_err, FORMAT_PEM);
+        if (!crl)
+        {
+            continue;
+        }
+
+        // names don't match up. probably a hash collision
+        // so lets test if there is another crl on disk.
+        X509_NAME *issuer_crl = X509_CRL_get_issuer(crl);
+        if (0 != X509_NAME_cmp(issuer_crl, issuer_cert))
+        {
+            X509_CRL_free(crl);
+            continue;
+        }
+
+        // Important: At this point, we will DELETE
+        //      a file holding a Crl from disk in case
+        //      the invalid-after date is less than the
+        //      current time.
+        //      This will trigger the re-loading of the
+        //      Crl from the download store, if available.
+        time_t crlend = crl_invalid_after(crl);
+        if (crlend <= now)
+        {
+            // fprintf(stderr, "crl %ld, %ld DELETE %s\n", crlend, now, buf);
+#ifdef WIN32
+            _unlink(buf);
+#else
+            unlink(buf);
+#endif
+
+            X509_CRL_free(crl);
+            continue;
+        }
+
+        // at this point, we got a valid crl
+        return crl;
+    }
+
+    // file was not found on disk cache,
+    // so, now loading from web.
+    for (i = 0; i < sk_DIST_POINT_num(crldp); i++)
+    {
+        DIST_POINT *dp = sk_DIST_POINT_value(crldp, i);
+
+        const char *urlptr = get_dp_url(dp);
+        if (urlptr)
+        {
+            // try to load from web, exit loop if
+            // successfully downloaded
+            crl = load_crl(urlptr, bio_err, FORMAT_HTTP);
+            if (crl) break;
+        }
+    }
+
+    // try to update file in cache
+    for (i = 0; crl && i < 10; i++)
+    {
+        sprintf(buf, "%s/%08lx.%s.%d", prefix, hash, suffix, i);
+
+        // try to write to disk, exit loop, if
+        // written (note: no file will be overwritten).
+        if (save_crl(bio_err, buf, crl, FORMAT_PEM))
+        {
+            // written to disk.
+            break;
+        }
+    }
+
+    return crl;
+}
+
+static STACK_OF(X509_CRL) *crls_http_cb2(BIO* bio_err, X509_STORE_CTX *ctx, X509_NAME *nm)
+{
+    X509_CRL *crl;
+    STACK_OF(DIST_POINT) *crldp;
+
+    (void)nm;
+
+    STACK_OF(X509_CRL) *crls = sk_X509_CRL_new_null();
+    if (!crls)
+    {
+        return NULL;
+    }
+
+    X509 *x = X509_STORE_CTX_get_current_cert(ctx);
+
+    // try to download Crl
+    crldp = X509_get_ext_d2i(x, NID_crl_distribution_points, NULL, NULL);
+    crl = load_crl_crldp(bio_err, x, "crl", crldp);
+
+    sk_DIST_POINT_pop_free(crldp, DIST_POINT_free);
+    if (!crl)
+    {
+        sk_X509_CRL_free(crls);
+        return NULL;
+    }
+
+    sk_X509_CRL_push(crls, crl);
+
+    // try to download delta Crl
+    crldp = X509_get_ext_d2i(x, NID_freshest_crl, NULL, NULL);
+    crl = load_crl_crldp(bio_err, x, "crld", crldp);
+
+    sk_DIST_POINT_pop_free(crldp, DIST_POINT_free);
+    if (crl)
+    {
+        sk_X509_CRL_push(crls, crl);
+    }
+
+    return crls;
+}
+
+
+#if defined(WIN32)
 static const char *get_dp_url(DIST_POINT *dp)
 {
     GENERAL_NAMES *gens;
@@ -1124,141 +1268,10 @@ static time_t crl_invalid_after(X509_CRL *crl)
     return mktime(&tm);
 }
 
-static X509_CRL *load_crl_crldp(X509 *cert, const char* suffix, STACK_OF(DIST_POINT) *crldp)
-{
-    char* prefix = getenv("TMP"); // "/data/local/tmp";
-    int i;
-    X509_CRL *crl = NULL;
-    char buf[256];
-    time_t now = time(NULL);
-
-    if (!prefix)
-    {
-        prefix = getenv("TMPDIR"); // "/data/local/tmp";
-    }
-    if (!prefix)
-    {
-        prefix = ".";
-    }
-
-    // we need the issuer hash to find the file on disk
-    X509_NAME *issuer_cert = X509_get_issuer_name(cert);
-    unsigned long hash = X509_NAME_hash(issuer_cert);
-
-    // try to read from file
-    for (i = 0; i < 10; i++)
-    {
-        sprintf(buf, "%s/%08lx.%s.%d", prefix, hash, suffix, i);
-
-        // try to read from disk, exit loop, if
-        // none found
-        crl = load_crl(buf, bio_err, FORMAT_PEM);
-        if (!crl)
-        {
-            continue;
-        }
-
-        // names don't match up. probably a hash collision
-        // so lets test if there is another crl on disk.
-        X509_NAME *issuer_crl = X509_CRL_get_issuer(crl);
-        if (0 != X509_NAME_cmp(issuer_crl, issuer_cert))
-        {
-            X509_CRL_free(crl);
-            continue;
-        }
-
-        // Important: At this point, we will DELETE
-        //      a file holding a Crl from disk in case
-        //      the invalid-after date is less than the
-        //      current time.
-        //      This will trigger the re-loading of the
-        //      Crl from the download store, if available.
-        time_t crlend = crl_invalid_after(crl);
-        if (crlend <= now)
-        {
-            // fprintf(stderr, "crl %ld, %ld DELETE %s\n", crlend, now, buf);
-            _unlink(buf);
-
-            X509_CRL_free(crl);
-            continue;
-        }
-
-        // at this point, we got a valid crl
-        return crl;
-    }
-
-    // file was not found on disk cache,
-    // so, now loading from web.
-    for (i = 0; i < sk_DIST_POINT_num(crldp); i++)
-    {
-        DIST_POINT *dp = sk_DIST_POINT_value(crldp, i);
-
-        const char *urlptr = get_dp_url(dp);
-        if (urlptr)
-        {
-            // try to load from web, exit loop if
-            // successfully downloaded
-            crl = load_crl(urlptr, bio_err, FORMAT_HTTP);
-            if (crl) break;
-        }
-    }
-
-    // try to update file in cache
-    for (i = 0; crl && i < 10; i++)
-    {
-        sprintf(buf, "%s/%08lx.%s.%d", prefix, hash, suffix, i);
-
-        // try to write to disk, exit loop, if
-        // written (note: no file will be overwritten).
-        if (save_crl(buf, crl, FORMAT_PEM))
-        {
-            // written to disk.
-            break;
-        }
-    }
-
-    return crl;
-}
-
+BIO *bio_err = NULL;
 static STACK_OF(X509_CRL) *crls_http_cb(X509_STORE_CTX *ctx, X509_NAME *nm)
 {
-    X509_CRL *crl;
-    STACK_OF(DIST_POINT) *crldp;
-
-    (void)nm;
-
-    STACK_OF(X509_CRL) *crls = sk_X509_CRL_new_null();
-    if (!crls)
-    {
-        return NULL;
-    }
-
-    X509 *x = X509_STORE_CTX_get_current_cert(ctx);
-
-    // try to download Crl
-    crldp = X509_get_ext_d2i(x, NID_crl_distribution_points, NULL, NULL);
-    crl = load_crl_crldp(x, "crl", crldp);
-
-    sk_DIST_POINT_pop_free(crldp, DIST_POINT_free);
-    if (!crl)
-    {
-        sk_X509_CRL_free(crls);
-        return NULL;
-    }
-
-    sk_X509_CRL_push(crls, crl);
-
-    // try to download delta Crl
-    crldp = X509_get_ext_d2i(x, NID_freshest_crl, NULL, NULL);
-    crl = load_crl_crldp(x, "crld", crldp);
-
-    sk_DIST_POINT_pop_free(crldp, DIST_POINT_free);
-    if (crl)
-    {
-        sk_X509_CRL_push(crls, crl);
-    }
-
-    return crls;
+    return crls_http_cb2(bio_err, ctx, nm);
 }
 
 static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
@@ -1365,70 +1378,6 @@ static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
 }
 
 #elif defined(ANDROID) || defined(__ANDROID__) || 1
-BIO *bio_err = NULL;
-#define FORMAT_HTTP     1
-#define FORMAT_ASN1     2
-#define FORMAT_PEM      3
-
-int save_crl(const char *infile, X509_CRL *crl, int format)
-{
-    int ret = 1;
-    BIO *in = NULL;
-
-    in = BIO_new(BIO_s_file());
-    if (in == NULL)
-    {
-        ERR_print_errors(bio_err);
-        goto end;
-    }
-
-    // null pointer?!
-    if (!infile || !*infile)
-    {
-        ret = 0;
-        goto end;
-    }
-
-    // file exists, don't overwrite
-    if (access(infile, F_OK) != -1)
-    {
-        ret = 0;
-        goto end;
-    }
-
-    // if cannot open, end
-    if (BIO_write_filename(in, (char*)infile) <= 0)
-    {
-        perror(infile);
-        goto end;
-    }
-
-    if (format == FORMAT_ASN1)
-    {
-        ret = i2d_X509_CRL_bio(in, crl);
-    }
-    else if (format == FORMAT_PEM)
-    {
-        ret = PEM_write_bio_X509_CRL(in, crl);
-    }
-    else
-    {
-        BIO_printf(bio_err, "bad format specified for crl\n");
-        goto end;
-    }
-
-    if (0 == ret)
-    {
-        BIO_printf(bio_err, "unable to save CRL\n");
-        ERR_print_errors(bio_err);
-        goto end;
-    }
-
-end:
-    BIO_free(in);
-    return ret;
-}
-
 static const char *get_dp_url(DIST_POINT *dp)
 {
     GENERAL_NAMES *gens;
@@ -1487,135 +1436,10 @@ static time_t crl_invalid_after(X509_CRL *crl)
     return mktime(&tm);
 }
 
-static X509_CRL *load_crl_crldp(X509 *cert, const char* suffix, STACK_OF(DIST_POINT) *crldp)
-{
-    char* prefix = getenv("TMPDIR"); // "/data/local/tmp";
-    int i;
-    X509_CRL *crl = NULL;
-    char buf[256];
-    time_t now = time(NULL);
-
-    if (!prefix)
-    {
-        prefix = ".";
-    }
-
-    // we need the issuer hash to find the file on disk
-    X509_NAME *issuer_cert = X509_get_issuer_name(cert);
-    unsigned long hash = X509_NAME_hash(issuer_cert);
-
-    // try to read from file
-    for (i = 0; i < 10; i++)
-    {
-        sprintf(buf, "%s/%08lx.%s.%d", prefix, hash, suffix, i);
-
-        // try to read from disk, exit loop, if
-        // none found
-        crl = load_crl(buf, bio_err, FORMAT_PEM);
-        if (!crl)
-        {
-            continue;
-        }
-
-        // names don't match up. probably a hash collision
-        // so lets test if there is another crl on disk.
-        X509_NAME *issuer_crl = X509_CRL_get_issuer(crl);
-        if (0 != X509_NAME_cmp(issuer_crl, issuer_cert))
-        {
-            X509_CRL_free(crl);
-            continue;
-        }
-
-        // Important: At this point, we will DELETE
-        //      a file holding a Crl from disk in case
-        //      the invalid-after date is less than the
-        //      current time.
-        //      This will trigger the re-loading of the
-        //      Crl from the download store, if available.
-        time_t crlend = crl_invalid_after(crl);
-        if (crlend <= now)
-        {
-            // fprintf(stderr, "crl %ld, %ld DELETE %s\n", crlend, now, buf);
-            unlink(buf);
-
-            X509_CRL_free(crl);
-            continue;
-        }
-
-        // at this point, we got a valid crl
-        return crl;
-    }
-
-    // file was not found on disk cache,
-    // so, now loading from web.
-    for (i = 0; i < sk_DIST_POINT_num(crldp); i++)
-    {
-        DIST_POINT *dp = sk_DIST_POINT_value(crldp, i);
-
-        const char *urlptr = get_dp_url(dp);
-        if (urlptr)
-        {
-            // try to load from web, exit loop if
-            // successfully downloaded
-            crl = load_crl(urlptr, bio_err, FORMAT_HTTP);
-            if (crl) break;
-        }
-    }
-
-    // try to update file in cache
-    for (i = 0; crl && i < 10; i++)
-    {
-        sprintf(buf, "%s/%08lx.%s.%d", prefix, hash, suffix, i);
-
-        // try to write to disk, exit loop, if
-        // written (note: no file will be overwritten).
-        if (save_crl(buf, crl, FORMAT_PEM))
-        {
-            // written to disk.
-            break;
-        }
-    }
-
-    return crl;
-}
-
+BIO *bio_err = NULL;
 static STACK_OF(X509_CRL) *crls_http_cb(X509_STORE_CTX *ctx, X509_NAME *nm)
 {
-    X509_CRL *crl;
-    STACK_OF(DIST_POINT) *crldp;
-
-    STACK_OF(X509_CRL) *crls = sk_X509_CRL_new_null();
-    if (!crls)
-    {
-        return NULL;
-    }
-
-    X509 *x = X509_STORE_CTX_get_current_cert(ctx);
-
-    // try to download Crl
-    crldp = X509_get_ext_d2i(x, NID_crl_distribution_points, NULL, NULL);
-    crl = load_crl_crldp(x, "crl", crldp);
-
-    sk_DIST_POINT_pop_free(crldp, DIST_POINT_free);
-    if (!crl)
-    {
-        sk_X509_CRL_free(crls);
-        return NULL;
-    }
-
-    sk_X509_CRL_push(crls, crl);
-
-    // try to download delta Crl
-    crldp = X509_get_ext_d2i(x, NID_freshest_crl, NULL, NULL);
-    crl = load_crl_crldp(x, "crld", crldp);
-
-    sk_DIST_POINT_pop_free(crldp, DIST_POINT_free);
-    if (crl)
-    {
-        sk_X509_CRL_push(crls, crl);
-    }
-
-    return crls;
+    return crls_http_cb2(bio_err, ctx, nm);
 }
 
 static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
