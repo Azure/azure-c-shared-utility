@@ -833,8 +833,6 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
 
 static int load_cert_crl_http(
     const char *url,
-    BIO *err,
-    X509 **pcert,
     X509_CRL **pcrl)
 {
     char *host = NULL, *port = NULL, *path = NULL;
@@ -848,10 +846,7 @@ static int load_cert_crl_http(
 
     if (use_ssl)
     {
-        if (err)
-        {
-            BIO_puts(err, "https not supported\n");
-        }
+        LogError("https not supported\n");
         goto error;
     }
 
@@ -879,20 +874,10 @@ static int load_cert_crl_http(
         goto error;
     }
 
-    if (pcert)
+    do
     {
-        do
-        {
-            rv = X509_http_nbio(rctx, pcert);
-        } while (rv == -1);
-    }
-    else
-    {
-        do
-        {
-            rv = X509_CRL_http_nbio(rctx, pcrl);
-        } while (rv == -1);
-    }
+        rv = X509_CRL_http_nbio(rctx, pcrl);
+    } while (rv == -1);
 
 error:
     if (host) OPENSSL_free(host);
@@ -903,11 +888,10 @@ error:
 
     if (rv != 1)
     {
-        if (bio && err)
+        if (bio)
         {
-            BIO_printf(err, "Error loading %s from %s\n", pcert ? "Cert" : "CRL", url);
+            LogError("Error loading CRL from %s\n", url);
         }
-        ERR_print_errors(err);
     }
 
     return rv;
@@ -916,21 +900,21 @@ error:
 #define FORMAT_HTTP     1
 #define FORMAT_ASN1     2
 #define FORMAT_PEM      3
-static X509_CRL *load_crl(const char *infile, BIO *bio_err, int format)
+static X509_CRL *load_crl(const char *infile, int format)
 {
     X509_CRL *x = NULL;
     BIO *in = NULL;
 
     if (format == FORMAT_HTTP)
     {
-        load_cert_crl_http(infile, bio_err, NULL, &x);
+        load_cert_crl_http(infile, &x);
         return x;
     }
 
     in = BIO_new(BIO_s_file());
     if (in == NULL)
     {
-        ERR_print_errors(bio_err);
+        LogError("could not open file %s", infile);
         goto end;
     }
 
@@ -957,14 +941,13 @@ static X509_CRL *load_crl(const char *infile, BIO *bio_err, int format)
     }
     else
     {
-        BIO_printf(bio_err, "bad input format specified for input crl\n");
+        LogError("bad input format specified for input crl\n");
         goto end;
     }
 
     if (x == NULL)
     {
-        BIO_printf(bio_err, "unable to load CRL\n");
-        ERR_print_errors(bio_err);
+        LogError("unable to load CRL %s", infile);
         goto end;
     }
 
@@ -973,7 +956,7 @@ end:
     return (x);
 }
 
-int save_crl(BIO* bio_err, const char *infile, X509_CRL *crl, int format)
+int save_crl(const char *infile, X509_CRL *crl, int format)
 {
     int ret = 1;
     BIO *in = NULL;
@@ -981,7 +964,7 @@ int save_crl(BIO* bio_err, const char *infile, X509_CRL *crl, int format)
     in = BIO_new(BIO_s_file());
     if (in == NULL)
     {
-        ERR_print_errors(bio_err);
+        LogError("could not open file %s", infile);
         goto end;
     }
 
@@ -1020,14 +1003,13 @@ int save_crl(BIO* bio_err, const char *infile, X509_CRL *crl, int format)
     }
     else
     {
-        BIO_printf(bio_err, "bad format specified for crl\n");
+        LogError("bad format specified for crl\n");
         goto end;
     }
 
     if (0 == ret)
     {
-        BIO_printf(bio_err, "unable to save CRL\n");
-        ERR_print_errors(bio_err);
+        LogError("unable to save CRL\n");
         goto end;
     }
 
@@ -1062,10 +1044,10 @@ static time_t crl_invalid_after(X509_CRL *crl)
     ASN1_GENERALIZEDTIME *gt = ASN1_TIME_to_generalizedtime(at, NULL);
     if (!gt)
     {
-        // fprintf(stderr, "crl could not find field\n");
+        LogError("crl could not find field\n");
         return 0;
     }
-    // fprintf(stderr, "crl data %s\n", (char*)gt->data);
+    // LogInfo("crl data %s\n", (char*)gt->data);
 
     // "20181011181119Z"
     int success = gt->length >= 14 ? 1 : 0;
@@ -1130,21 +1112,19 @@ static const char *get_dp_url(DIST_POINT *dp)
     return NULL;
 }
 
-static X509_CRL *load_crl_crldp(BIO* bio_err, X509 *cert, const char* suffix, STACK_OF(DIST_POINT) *crldp)
+static X509_CRL *load_crl_crldp(X509 *cert, const char* suffix, STACK_OF(DIST_POINT) *crldp)
 {
     int i;
     X509_CRL *crl = NULL;
     char buf[256];
     time_t now = time(NULL);
 
-    char* prefix = getenv("TMP");
-    if (!prefix)
+    char* prefix = NULL;
+    if( NULL == (prefix = getenv("TMP")) &&
+        NULL == (prefix = getenv("TEMP")) &&
+        NULL == (prefix = getenv("TMPDIR")))
     {
-        prefix = getenv("TMPDIR");
-        if (!prefix)
-        {
-            prefix = ".";
-        }
+        prefix = ".";
     }
 
     // we need the issuer hash to find the file on disk
@@ -1158,7 +1138,7 @@ static X509_CRL *load_crl_crldp(BIO* bio_err, X509 *cert, const char* suffix, ST
 
         // try to read from disk, exit loop, if
         // none found
-        crl = load_crl(buf, bio_err, FORMAT_PEM);
+        crl = load_crl(buf, FORMAT_PEM);
         if (!crl)
         {
             continue;
@@ -1182,7 +1162,7 @@ static X509_CRL *load_crl_crldp(BIO* bio_err, X509 *cert, const char* suffix, ST
         time_t crlend = crl_invalid_after(crl);
         if (crlend <= now)
         {
-            // fprintf(stderr, "crl %ld, %ld DELETE %s\n", crlend, now, buf);
+            LogInfo("crl %ld, %ld DELETE %s\n", crlend, now, buf);
 #ifdef WIN32
             _unlink(buf);
 #else
@@ -1208,7 +1188,7 @@ static X509_CRL *load_crl_crldp(BIO* bio_err, X509 *cert, const char* suffix, ST
         {
             // try to load from web, exit loop if
             // successfully downloaded
-            crl = load_crl(urlptr, bio_err, FORMAT_HTTP);
+            crl = load_crl(urlptr, FORMAT_HTTP);
             if (crl) break;
         }
     }
@@ -1220,7 +1200,7 @@ static X509_CRL *load_crl_crldp(BIO* bio_err, X509 *cert, const char* suffix, ST
 
         // try to write to disk, exit loop, if
         // written (note: no file will be overwritten).
-        if (save_crl(bio_err, buf, crl, FORMAT_PEM))
+        if (save_crl(buf, crl, FORMAT_PEM))
         {
             // written to disk.
             break;
@@ -1230,7 +1210,7 @@ static X509_CRL *load_crl_crldp(BIO* bio_err, X509 *cert, const char* suffix, ST
     return crl;
 }
 
-static STACK_OF(X509_CRL) *crls_http_cb2(BIO* bio_err, X509_STORE_CTX *ctx, X509_NAME *nm)
+static STACK_OF(X509_CRL) *crls_http_cb(X509_STORE_CTX *ctx, X509_NAME *nm)
 {
     X509_CRL *crl;
     STACK_OF(DIST_POINT) *crldp;
@@ -1247,7 +1227,7 @@ static STACK_OF(X509_CRL) *crls_http_cb2(BIO* bio_err, X509_STORE_CTX *ctx, X509
 
     // try to download Crl
     crldp = X509_get_ext_d2i(x, NID_crl_distribution_points, NULL, NULL);
-    crl = load_crl_crldp(bio_err, x, "crl", crldp);
+    crl = load_crl_crldp(x, "crl", crldp);
 
     sk_DIST_POINT_pop_free(crldp, DIST_POINT_free);
     if (!crl)
@@ -1260,7 +1240,7 @@ static STACK_OF(X509_CRL) *crls_http_cb2(BIO* bio_err, X509_STORE_CTX *ctx, X509
 
     // try to download delta Crl
     crldp = X509_get_ext_d2i(x, NID_freshest_crl, NULL, NULL);
-    crl = load_crl_crldp(bio_err, x, "crld", crldp);
+    crl = load_crl_crldp(x, "crld", crldp);
 
     sk_DIST_POINT_pop_free(crldp, DIST_POINT_free);
     if (crl)
@@ -1272,12 +1252,6 @@ static STACK_OF(X509_CRL) *crls_http_cb2(BIO* bio_err, X509_STORE_CTX *ctx, X509
 }
 
 #if defined(WIN32)
-BIO *bio_err = NULL;
-static STACK_OF(X509_CRL) *crls_http_cb(X509_STORE_CTX *ctx, X509_NAME *nm)
-{
-    return crls_http_cb2(bio_err, ctx, nm);
-}
-
 static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
 {
     X509_STORE * store = NULL;
@@ -1372,7 +1346,6 @@ static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
     int flags = X509_VERIFY_PARAM_get_flags(store->param);
     if (!(flags & X509_V_FLAG_CRL_CHECK))
     {
-        bio_err = tls_io_instance->out_bio;
         X509_STORE_set_flags(store, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
         X509_STORE_set_lookup_crls_cb(store, crls_http_cb);
     }
@@ -1386,12 +1359,6 @@ static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
 }
 
 #elif defined(ANDROID) || defined(__ANDROID__)
-BIO *bio_err = NULL;
-static STACK_OF(X509_CRL) *crls_http_cb(X509_STORE_CTX *ctx, X509_NAME *nm)
-{
-    return crls_http_cb2(bio_err, ctx, nm);
-}
-
 static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
 {
     X509_STORE * store = NULL;
@@ -1456,7 +1423,6 @@ static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
     }
 
     // setup CRL checking
-    bio_err = tls_io_instance->out_bio;
     X509_STORE_set_flags(store, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
     X509_STORE_set_lookup_crls_cb(store, crls_http_cb);
 
@@ -1464,11 +1430,6 @@ static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
 }
 
 #else // not windows, not android
-BIO *bio_err = NULL;
-static STACK_OF(X509_CRL) *crls_http_cb(X509_STORE_CTX *ctx, X509_NAME *nm)
-{
-    return crls_http_cb2(bio_err, ctx, nm);
-}
 
 static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
 {
@@ -1479,7 +1440,6 @@ static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
     int flags = X509_VERIFY_PARAM_get_flags(store->param);
     if (!(flags & X509_V_FLAG_CRL_CHECK))
     {
-        bio_err = tls_io_instance->out_bio;
         X509_STORE_set_flags(store, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
         X509_STORE_set_lookup_crls_cb(store, crls_http_cb);
     }
