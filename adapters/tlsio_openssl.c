@@ -7,11 +7,11 @@
 #include "openssl/crypto.h"
 #include "openssl/opensslv.h"
 #include <stdio.h>
-#if defined(ANDROID) || defined(__ANDROID__)
+#if defined(WIN32)
+#include <io.h>
+#else
 #include <dirent.h>
 #include <unistd.h>
-#elif defined(WIN32)
-#include <io.h>
 #endif
 #undef OCSP_REQUEST
 #undef OCSP_RESPONSE
