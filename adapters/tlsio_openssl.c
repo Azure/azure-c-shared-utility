@@ -1265,6 +1265,7 @@ static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
         LogError("Can't access the ssl_context.");
         return -1;
     }
+
     // open the system store of the current user
     HCERTSTORE hSysStore = CertOpenStore(
         CERT_STORE_PROV_SYSTEM,          // The store provider type
@@ -1433,7 +1434,18 @@ static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
 
 static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
 {
-    (void)(tls_io_instance);
+    X509_STORE * store = NULL;
+
+    if (tls_io_instance && tls_io_instance->ssl_context)
+    {
+        store = SSL_CTX_get_cert_store(tls_io_instance->ssl_context);
+    }
+    else
+    {
+        LogError("Can't access the ssl_context.");
+        return -1;
+    }
+
     LogInfo("load_system_store is not implemented on non-windows platforms");
 
     // setup CRL checking
