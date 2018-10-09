@@ -900,33 +900,33 @@ error:
 #define FORMAT_HTTP     1
 #define FORMAT_ASN1     2
 #define FORMAT_PEM      3
-static X509_CRL *load_crl(const char *infile, int format)
+static X509_CRL *load_crl(const char *source, int format)
 {
     X509_CRL *x = NULL;
     BIO *in = NULL;
 
     if (format == FORMAT_HTTP)
     {
-        load_cert_crl_http(infile, &x);
+        load_cert_crl_http(source, &x);
         return x;
     }
 
     in = BIO_new(BIO_s_file());
     if (in == NULL)
     {
-        LogError("could not find file %s", infile);
+        LogError("could not bio_new for file %s", source);
         goto end;
     }
 
-    if (infile == NULL)
+    if (source == NULL)
     {
         BIO_set_fp(in, stdin, BIO_NOCLOSE);
     }
     else
     {
-        if (BIO_read_filename(in, infile) <= 0)
+        if (BIO_read_filename(in, source) <= 0)
         {
-            LogError("could not read file %s", infile);
+            LogError("could not read file %s", source);
             goto end;
         }
     }
@@ -947,7 +947,7 @@ static X509_CRL *load_crl(const char *infile, int format)
 
     if (x == NULL)
     {
-        LogError("unable to load CRL %s", infile);
+        LogError("unable to load CRL %s", source);
         goto end;
     }
 
@@ -956,7 +956,7 @@ end:
     return (x);
 }
 
-int save_crl(const char *infile, X509_CRL *crl, int format)
+static int save_crl(const char *source, X509_CRL *crl, int format)
 {
     int ret = 1;
     BIO *in = NULL;
@@ -964,12 +964,12 @@ int save_crl(const char *infile, X509_CRL *crl, int format)
     in = BIO_new(BIO_s_file());
     if (in == NULL)
     {
-        LogError("could not open file %s", infile);
+        LogError("could not bio_new for file %s", source);
         goto end;
     }
 
     // null pointer?!
-    if (!infile || !*infile)
+    if (!source || !*source)
     {
         ret = 0;
         goto end;
@@ -977,9 +977,9 @@ int save_crl(const char *infile, X509_CRL *crl, int format)
 
     // file exists, don't overwrite
 #if defined(WIN32)
-    if (_access(infile, 0) != -1)
+    if (_access(source, 0) != -1)
 #else
-    if (access(infile, 0) != -1)
+    if (access(source, 0) != -1)
 #endif
     {
         ret = 0;
@@ -987,9 +987,9 @@ int save_crl(const char *infile, X509_CRL *crl, int format)
     }
 
     // if cannot open, end
-    if (BIO_write_filename(in, (char*)infile) <= 0)
+    if (BIO_write_filename(in, (char*)source) <= 0)
     {
-        LogError("could not write file %s", infile);
+        LogError("could not write file %s", source);
         goto end;
     }
 
@@ -1062,8 +1062,12 @@ static time_t crl_invalid_after(X509_CRL *crl)
         tm.tm_min = atoin((char*)gt->data, 10, 2);
         tm.tm_sec = atoin((char*)gt->data, 12, 2);
 
-        success = (tm.tm_year > 100 && tm.tm_mon >= 0 && tm.tm_mday > 0 &&
-            tm.tm_hour >= 0 && tm.tm_min >= 0 && tm.tm_sec >= 0);
+        success = (tm.tm_year > 100) &&
+                  (tm.tm_mon >= 0  && tm.tm_mon  < 12)  &&
+                  (tm.tm_mday > 0  && tm.tm_mday < 32)  &&
+                  (tm.tm_hour >= 0 && tm.tm_hour < 24)  &&
+                  (tm.tm_min >= 0  && tm.tm_min  < 60)  &&
+                  (tm.tm_sec >= 0  && tm.tm_sec  < 60);
     }
 
     ASN1_GENERALIZEDTIME_free(gt);
@@ -1227,6 +1231,12 @@ static STACK_OF(X509_CRL) *crls_http_cb(X509_STORE_CTX *ctx, X509_NAME *nm)
 
     // try to download Crl
     crldp = X509_get_ext_d2i(x, NID_crl_distribution_points, NULL, NULL);
+    if (!crldp)
+    {
+        sk_X509_CRL_free(crls);
+        return NULL;
+    }
+
     crl = load_crl_crldp(x, "crl", crldp);
 
     sk_DIST_POINT_pop_free(crldp, DIST_POINT_free);
