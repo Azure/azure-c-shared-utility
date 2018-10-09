@@ -7,9 +7,18 @@
 #include "openssl/crypto.h"
 #include "openssl/opensslv.h"
 #include <stdio.h>
-#if defined(ANDROID) || defined(__ANDROID__)
+#if defined(WIN32)
+#include <io.h>
+#else
 #include <dirent.h>
+#include <unistd.h>
 #endif
+#undef OCSP_REQUEST
+#undef OCSP_RESPONSE
+#include "openssl/ocsp.h"
+#include "openssl/x509v3.h"
+#include <openssl/asn1.h>
+#include <openssl/err.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include "azure_c_shared_utility/lock.h"
@@ -822,10 +831,433 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
     }
 }
 
+static int load_cert_crl_http(
+    const char *url,
+    X509_CRL **pcrl)
+{
+    char *host = NULL, *port = NULL, *path = NULL;
+    BIO *bio = NULL;
+    OCSP_REQ_CTX *rctx = NULL;
+    int use_ssl, rv = 0;
+    if (!OCSP_parse_url(url, &host, &port, &path, &use_ssl))
+    {
+        goto error;
+    }
+
+    if (use_ssl)
+    {
+        LogError("https not supported\n");
+        goto error;
+    }
+
+    bio = BIO_new_connect(host);
+    if (!bio || !BIO_set_conn_port(bio, port))
+    {
+        goto error;
+    }
+
+    rctx = OCSP_REQ_CTX_new(bio, 1024 * 1024);
+    if (!rctx)
+    {
+        goto error;
+    }
+
+    OCSP_set_max_response_length(rctx, 1024 * 1024);
+
+    if (!OCSP_REQ_CTX_http(rctx, "GET", path))
+    {
+        goto error;
+    }
+
+    if (!OCSP_REQ_CTX_add1_header(rctx, "Host", host))
+    {
+        goto error;
+    }
+
+    do
+    {
+        rv = X509_CRL_http_nbio(rctx, pcrl);
+    } while (rv == -1);
+
+error:
+    if (host) OPENSSL_free(host);
+    if (path) OPENSSL_free(path);
+    if (port) OPENSSL_free(port);
+    if (bio)  BIO_free_all(bio);
+    if (rctx) OCSP_REQ_CTX_free(rctx);
+
+    if (rv != 1)
+    {
+        if (bio)
+        {
+            LogError("Error loading CRL from %s\n", url);
+        }
+    }
+
+    return rv;
+}
+
+#define FORMAT_HTTP     1
+#define FORMAT_ASN1     2
+#define FORMAT_PEM      3
+static X509_CRL *load_crl(const char *source, int format)
+{
+    X509_CRL *x = NULL;
+    BIO *in = NULL;
+
+    if (format == FORMAT_HTTP)
+    {
+        load_cert_crl_http(source, &x);
+        return x;
+    }
+
+    in = BIO_new(BIO_s_file());
+    if (in == NULL)
+    {
+        LogError("could not bio_new for file %s", source);
+        goto end;
+    }
+
+    if (source == NULL)
+    {
+        BIO_set_fp(in, stdin, BIO_NOCLOSE);
+    }
+    else
+    {
+        if (BIO_read_filename(in, source) <= 0)
+        {
+            LogError("could not read file %s", source);
+            goto end;
+        }
+    }
+
+    if (format == FORMAT_ASN1)
+    {
+        x = d2i_X509_CRL_bio(in, NULL);
+    }
+    else if (format == FORMAT_PEM)
+    {
+        x = PEM_read_bio_X509_CRL(in, NULL, NULL, NULL);
+    }
+    else
+    {
+        LogError("bad input format specified for input crl\n");
+        goto end;
+    }
+
+    if (x == NULL)
+    {
+        LogError("unable to load CRL %s", source);
+        goto end;
+    }
+
+end:
+    BIO_free(in);
+    return (x);
+}
+
+static int save_crl(const char *source, X509_CRL *crl, int format)
+{
+    int ret = 1;
+    BIO *in = NULL;
+
+    in = BIO_new(BIO_s_file());
+    if (in == NULL)
+    {
+        LogError("could not bio_new for file %s", source);
+        goto end;
+    }
+
+    // null pointer?!
+    if (!source || !*source)
+    {
+        ret = 0;
+        goto end;
+    }
+
+    // file exists, don't overwrite
+#if defined(WIN32)
+    if (_access(source, 0) != -1)
+#else
+    if (access(source, 0) != -1)
+#endif
+    {
+        ret = 0;
+        goto end;
+    }
+
+    // if cannot open, end
+    if (BIO_write_filename(in, (char*)source) <= 0)
+    {
+        LogError("could not write file %s", source);
+        goto end;
+    }
+
+    if (format == FORMAT_ASN1)
+    {
+        ret = i2d_X509_CRL_bio(in, crl);
+    }
+    else if (format == FORMAT_PEM)
+    {
+        ret = PEM_write_bio_X509_CRL(in, crl);
+    }
+    else
+    {
+        LogError("bad format specified for crl\n");
+        goto end;
+    }
+
+    if (0 == ret)
+    {
+        LogError("unable to save CRL\n");
+        goto end;
+    }
+
+end:
+    BIO_free(in);
+    return ret;
+}
+
+static int atoin(const char *str, int start, int len)
+{
+    int result = 0;
+
+    for (; len > 0; len--, start++)
+    {
+        if (str[start] < '0' || str[start] > '9')
+            return -1;
+
+        result = (result * 10) + (str[start] - '0');
+    }
+
+    return result;
+}
+
+static time_t crl_invalid_after(X509_CRL *crl)
+{
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && (OPENSSL_VERSION_NUMBER < 0x20000000L)
+    const ASN1_TIME *at = X509_CRL_get0_nextUpdate(crl);
+#else
+    ASN1_TIME *at = crl->crl->nextUpdate;
+#endif
+
+    ASN1_GENERALIZEDTIME *gt = ASN1_TIME_to_generalizedtime(at, NULL);
+    if (!gt)
+    {
+        LogError("crl could not find field\n");
+        return 0;
+    }
+    // LogInfo("crl data %s\n", (char*)gt->data);
+
+    // "20181011181119Z"
+    int success = gt->length >= 14 ? 1 : 0;
+    struct tm tm = { 0, };
+
+    if (success)
+    {
+        tm.tm_year = atoin((char*)gt->data, 0, 4) - 1900;
+        tm.tm_mon = atoin((char*)gt->data, 4, 2) - 1;
+        tm.tm_mday = atoin((char*)gt->data, 6, 2);
+        tm.tm_hour = atoin((char*)gt->data, 8, 2);
+        tm.tm_min = atoin((char*)gt->data, 10, 2);
+        tm.tm_sec = atoin((char*)gt->data, 12, 2);
+
+        success = (tm.tm_year > 100) &&
+                  (tm.tm_mon >= 0  && tm.tm_mon  < 12)  &&
+                  (tm.tm_mday > 0  && tm.tm_mday < 32)  &&
+                  (tm.tm_hour >= 0 && tm.tm_hour < 24)  &&
+                  (tm.tm_min >= 0  && tm.tm_min  < 60)  &&
+                  (tm.tm_sec >= 0  && tm.tm_sec  < 60);
+    }
+
+    ASN1_GENERALIZEDTIME_free(gt);
+    if (!success)
+    {
+        return 0;
+    }
+
+    // calculates the time since epoch
+    return mktime(&tm);
+}
+
+static const char *get_dp_url(DIST_POINT *dp)
+{
+    GENERAL_NAMES *gens;
+    GENERAL_NAME *gen;
+    int i, gtype;
+    ASN1_STRING *uri;
+
+    if (!dp->distpoint || dp->distpoint->type != 0)
+    {
+        return NULL;
+    }
+
+    gens = dp->distpoint->name.fullname;
+
+    for (i = 0; i < sk_GENERAL_NAME_num(gens); i++)
+    {
+        gen = sk_GENERAL_NAME_value(gens, i);
+        uri = GENERAL_NAME_get0_value(gen, &gtype);
+
+        if (gtype == GEN_URI && ASN1_STRING_length(uri) > 6)
+        {
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && (OPENSSL_VERSION_NUMBER < 0x20000000L)
+            char *uptr = (char *)ASN1_STRING_get0_data(uri);
+#else
+            char *uptr = (char *)ASN1_STRING_data(uri);
+#endif
+            if (!strncmp(uptr, "http://", 7))
+            {
+                return uptr;
+            }
+        }
+    }
+
+    return NULL;
+}
+
+static X509_CRL *load_crl_crldp(X509 *cert, const char* suffix, STACK_OF(DIST_POINT) *crldp)
+{
+    int i;
+    X509_CRL *crl = NULL;
+    char buf[256];
+    time_t now = time(NULL);
+
+    char* prefix = NULL;
+    if( NULL == (prefix = getenv("TMP")) &&
+        NULL == (prefix = getenv("TEMP")) &&
+        NULL == (prefix = getenv("TMPDIR")))
+    {
+        prefix = ".";
+    }
+
+    // we need the issuer hash to find the file on disk
+    X509_NAME *issuer_cert = X509_get_issuer_name(cert);
+    unsigned long hash = X509_NAME_hash(issuer_cert);
+
+    // try to read from file
+    for (i = 0; i < 10; i++)
+    {
+        sprintf(buf, "%s/%08lx.%s.%d", prefix, hash, suffix, i);
+
+        // try to read from disk, exit loop, if
+        // none found
+        crl = load_crl(buf, FORMAT_PEM);
+        if (!crl)
+        {
+            continue;
+        }
+
+        // names don't match up. probably a hash collision
+        // so lets test if there is another crl on disk.
+        X509_NAME *issuer_crl = X509_CRL_get_issuer(crl);
+        if (0 != X509_NAME_cmp(issuer_crl, issuer_cert))
+        {
+            X509_CRL_free(crl);
+            continue;
+        }
+
+        // Important: At this point, we will DELETE
+        //      a file holding a Crl from disk in case
+        //      the invalid-after date is less than the
+        //      current time.
+        //      This will trigger the re-loading of the
+        //      Crl from the download store, if available.
+        time_t crlend = crl_invalid_after(crl);
+        if (crlend <= now)
+        {
+            LogInfo("crl %ld, %ld DELETE %s\n", crlend, now, buf);
 #ifdef WIN32
+            _unlink(buf);
+#else
+            unlink(buf);
+#endif
+
+            X509_CRL_free(crl);
+            continue;
+        }
+
+        // at this point, we got a valid crl
+        return crl;
+    }
+
+    // file was not found on disk cache,
+    // so, now loading from web.
+    for (i = 0; i < sk_DIST_POINT_num(crldp); i++)
+    {
+        DIST_POINT *dp = sk_DIST_POINT_value(crldp, i);
+
+        const char *urlptr = get_dp_url(dp);
+        if (urlptr)
+        {
+            // try to load from web, exit loop if
+            // successfully downloaded
+            crl = load_crl(urlptr, FORMAT_HTTP);
+            if (crl) break;
+        }
+    }
+
+    // try to update file in cache
+    for (i = 0; crl && i < 10; i++)
+    {
+        sprintf(buf, "%s/%08lx.%s.%d", prefix, hash, suffix, i);
+
+        // try to write to disk, exit loop, if
+        // written (note: no file will be overwritten).
+        if (save_crl(buf, crl, FORMAT_PEM))
+        {
+            // written to disk.
+            break;
+        }
+    }
+
+    return crl;
+}
+
+static STACK_OF(X509_CRL) *crls_http_cb(X509_STORE_CTX *ctx, X509_NAME *nm)
+{
+    X509_CRL *crl;
+    STACK_OF(DIST_POINT) *crldp;
+
+    (void)nm;
+
+    STACK_OF(X509_CRL) *crls = sk_X509_CRL_new_null();
+    if (!crls)
+    {
+        return NULL;
+    }
+
+    X509 *x = X509_STORE_CTX_get_current_cert(ctx);
+
+    // try to download Crl
+    crldp = X509_get_ext_d2i(x, NID_crl_distribution_points, NULL, NULL);
+    crl = load_crl_crldp(x, "crl", crldp);
+
+    sk_DIST_POINT_pop_free(crldp, DIST_POINT_free);
+    if (!crl)
+    {
+        sk_X509_CRL_free(crls);
+        return NULL;
+    }
+
+    sk_X509_CRL_push(crls, crl);
+
+    // try to download delta Crl
+    crldp = X509_get_ext_d2i(x, NID_freshest_crl, NULL, NULL);
+    crl = load_crl_crldp(x, "crld", crldp);
+
+    sk_DIST_POINT_pop_free(crldp, DIST_POINT_free);
+    if (crl)
+    {
+        sk_X509_CRL_push(crls, crl);
+    }
+
+    return crls;
+}
+
+#if defined(WIN32)
 static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
 {
-    PCCERT_CONTEXT pContext = NULL;
     X509_STORE * store = NULL;
 
     if (tls_io_instance && tls_io_instance->ssl_context)
@@ -837,6 +1269,7 @@ static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
         LogError("Can't access the ssl_context.");
         return -1;
     }
+
     // open the system store of the current user
     HCERTSTORE hSysStore = CertOpenStore(
         CERT_STORE_PROV_SYSTEM,          // The store provider type
@@ -844,6 +1277,7 @@ static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
         (ULONG_PTR)NULL,                 // Use the default HCRYPTPROV
         CERT_SYSTEM_STORE_CURRENT_USER,
         L"ROOT");
+
     if(hSysStore)
     {
         LogInfo("The system store was opened successfully.");
@@ -853,12 +1287,15 @@ static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
         LogInfo("An error occurred during opening of the system store!");
         return -1;
     }
+
     // load all the certificates into the openSSL cert store
+    PCCERT_CONTEXT pContext = NULL;
     while (1)
     {
-        /*
-        To free a context obtained by a find or enumerate function, either pass it in as the previous context parameter to a subsequent invocation of the function,
-        or call the appropriate free function. --from MSDN
+        /* To free a context obtained by a find or enumerate function,
+         * either pass it in as the previous context parameter to a
+         * subsequent invocation of the function, or call the appropriate
+         * free function. --from MSDN
         */
         pContext = CertEnumCertificatesInStore(hSysStore, pContext);
         if (!pContext)
@@ -880,6 +1317,44 @@ static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
             X509_free(x509);
         }
     }    
+
+    // load all the revocation lists into the openSSL crl store
+    PCCRL_CONTEXT pCRLContext = NULL;
+    while (1)
+    {
+        /* To free a context obtained by a find or enumerate function,
+         * either pass it in as the previous context parameter to a
+         * subsequent invocation of the function, or call the appropriate
+         * free function. --from MSDN
+        */
+        pCRLContext = CertEnumCRLsInStore(hSysStore, pCRLContext);
+        if (!pCRLContext)
+        {
+            break;
+        }
+
+        const unsigned char *encoded_crl = pCRLContext->pbCrlEncoded;
+
+        X509_CRL *x509_crl = d2i_X509_CRL(NULL, &encoded_crl, pCRLContext->cbCrlEncoded);
+        if (x509_crl)
+        {
+            int i = X509_STORE_add_crl(store, x509_crl);
+            if (i != 1)
+            {
+                LogError("revocation list adding failed.");
+            }
+            X509_CRL_free(x509_crl);
+        }
+    }
+
+    // setup CRL checking
+    int flags = X509_VERIFY_PARAM_get_flags(store->param);
+    if (!(flags & X509_V_FLAG_CRL_CHECK))
+    {
+        X509_STORE_set_flags(store, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
+        X509_STORE_set_lookup_crls_cb(store, crls_http_cb);
+    }
+
     if(hSysStore)
     {
         CertCloseStore(hSysStore, 0);
@@ -887,6 +1362,7 @@ static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
 
     return 0;
 }
+
 #elif defined(ANDROID) || defined(__ANDROID__)
 static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
 {
@@ -915,6 +1391,7 @@ static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
 
             if (direntry->d_type == DT_REG)
             {
+                // try to load CERT
                 FILE *fp = fopen(fname, "r");
 
                 if (fp)
@@ -950,13 +1427,39 @@ static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
         LogInfo("An error occurred during opening global certificate storage under '%s'!", certs_path);
     }
 
+    // setup CRL checking
+    X509_STORE_set_flags(store, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
+    X509_STORE_set_lookup_crls_cb(store, crls_http_cb);
+
     return 0;
 }
-#else
+
+#else // not windows, not android
+
 static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
 {
-    (void)(tls_io_instance);
+    X509_STORE * store = NULL;
+
+    if (tls_io_instance && tls_io_instance->ssl_context)
+    {
+        store = SSL_CTX_get_cert_store(tls_io_instance->ssl_context);
+    }
+    else
+    {
+        LogError("Can't access the ssl_context.");
+        return -1;
+    }
+
     LogInfo("load_system_store is not implemented on non-windows platforms");
+
+    // setup CRL checking
+    int flags = X509_VERIFY_PARAM_get_flags(store->param);
+    if (!(flags & X509_V_FLAG_CRL_CHECK))
+    {
+        X509_STORE_set_flags(store, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
+        X509_STORE_set_lookup_crls_cb(store, crls_http_cb);
+    }
+
     return 0;
 }
 #endif
