@@ -93,7 +93,22 @@ typedef void(*LOGGER_LOG_GETLASTERROR)(const char* file, const char* func, int l
 // specifications, we call printf with the format and __VA_ARGS__ but the call is behind an if (0) so that it does
 // not actually get executed at runtime
 #if defined _MSC_VER
-#define LOG(log_category, log_options, format, ...) { if (0) { (void)printf(format, __VA_ARGS__); } { LOGGER_LOG l = xlogging_get_log_function(); if (l != NULL) l(log_category, __FILE__, FUNC_NAME, __LINE__, log_options, format, __VA_ARGS__); } }
+// ignore warning C4127 
+#define LOG(log_category, log_options, format, ...) \
+{ \
+    __pragma(warning(suppress: 4127)) \
+    if (0) \
+    { \
+        (void)printf(format, __VA_ARGS__); \
+    } \
+    { \
+        LOGGER_LOG l = xlogging_get_log_function(); \
+        if (l != NULL) \
+        { \
+            l(log_category, __FILE__, FUNC_NAME, __LINE__, log_options, format, __VA_ARGS__); \
+        } \
+    } \
+}
 #else
 #define LOG(log_category, log_options, format, ...) { if (0) { (void)printf(format, ##__VA_ARGS__); } { LOGGER_LOG l = xlogging_get_log_function(); if (l != NULL) l(log_category, __FILE__, FUNC_NAME, __LINE__, log_options, format, ##__VA_ARGS__); } }
 #endif

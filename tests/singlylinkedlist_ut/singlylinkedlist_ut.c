@@ -1267,6 +1267,8 @@ TEST_FUNCTION(singlylinkedlist_add_head_succeeds)
 TEST_FUNCTION(singlylinkedlist_add_head_succeeds_two_times)
 {
     // arrange
+    LIST_ITEM_HANDLE result1;
+    LIST_ITEM_HANDLE result2;
     SINGLYLINKEDLIST_HANDLE list = singlylinkedlist_create();
     int x1 = 42;
     int x2 = 43;
@@ -1277,8 +1279,8 @@ TEST_FUNCTION(singlylinkedlist_add_head_succeeds_two_times)
     STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
 
     // act
-    LIST_ITEM_HANDLE result1 = singlylinkedlist_add_head(list, &x1);
-    LIST_ITEM_HANDLE result2 = singlylinkedlist_add_head(list, &x2);
+    result1 = singlylinkedlist_add_head(list, &x1);
+    result2 = singlylinkedlist_add_head(list, &x2);
 
     // assert
     ASSERT_ARE_NOT_EQUAL(void_ptr, result1, result2);
@@ -1297,12 +1299,13 @@ TEST_FUNCTION(singlylinkedlist_add_head_succeeds_two_times)
 TEST_FUNCTION(singlylinkedlist_add_2_heads_and_remove_front_produces_first_item_succeds)
 {
     // arrange
+    LIST_ITEM_HANDLE result2;
     SINGLYLINKEDLIST_HANDLE list = singlylinkedlist_create();
     int x1 = 42;
     int x2 = 43;
     LIST_ITEM_HANDLE head;
     (void)singlylinkedlist_add_head(list, &x1);
-    LIST_ITEM_HANDLE result2 = singlylinkedlist_add_head(list, &x2);
+    result2 = singlylinkedlist_add_head(list, &x2);
     (void)singlylinkedlist_remove(list, result2);
     umock_c_reset_all_calls();
 
