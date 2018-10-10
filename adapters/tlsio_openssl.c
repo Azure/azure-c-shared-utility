@@ -19,6 +19,7 @@
 #include "openssl/x509v3.h"
 #include <openssl/asn1.h>
 #include <openssl/err.h>
+#include <openssl/x509.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include "azure_c_shared_utility/lock.h"
@@ -897,6 +898,201 @@ error:
     return rv;
 }
 
+static int atoin(const char *str, int start, int len)
+{
+    int result = 0;
+
+    for (; len > 0; len--, start++)
+    {
+        if (str[start] < '0' || str[start] > '9')
+            return -1;
+
+        result = (result * 10) + (str[start] - '0');
+    }
+
+    return result;
+}
+
+static time_t crl_invalid_after(X509_CRL *crl)
+{
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && (OPENSSL_VERSION_NUMBER < 0x20000000L)
+    const ASN1_TIME *at = X509_CRL_get0_nextUpdate(crl);
+#else
+    ASN1_TIME *at = crl->crl->nextUpdate;
+#endif
+
+    ASN1_GENERALIZEDTIME *gt = ASN1_TIME_to_generalizedtime(at, NULL);
+    if (!gt)
+    {
+        LogError("crl could not find field\n");
+        return 0;
+    }
+    // LogInfo("crl data %s\n", (char*)gt->data);
+
+    // "20181011181119Z"
+    int success = gt->length >= 14 ? 1 : 0;
+    struct tm tm = { 0, };
+
+    if (success)
+    {
+        tm.tm_year = atoin((char*)gt->data, 0, 4) - 1900;
+        tm.tm_mon = atoin((char*)gt->data, 4, 2) - 1;
+        tm.tm_mday = atoin((char*)gt->data, 6, 2);
+        tm.tm_hour = atoin((char*)gt->data, 8, 2);
+        tm.tm_min = atoin((char*)gt->data, 10, 2);
+        tm.tm_sec = atoin((char*)gt->data, 12, 2);
+
+        success = (tm.tm_year > 100) &&
+            (tm.tm_mon >= 0 && tm.tm_mon  < 12) &&
+            (tm.tm_mday > 0 && tm.tm_mday < 32) &&
+            (tm.tm_hour >= 0 && tm.tm_hour < 24) &&
+            (tm.tm_min >= 0 && tm.tm_min  < 60) &&
+            (tm.tm_sec >= 0 && tm.tm_sec  < 60);
+    }
+
+    ASN1_GENERALIZEDTIME_free(gt);
+    if (!success)
+    {
+        return 0;
+    }
+
+    // calculates the time since epoch
+    return mktime(&tm);
+}
+
+
+static int crl_cache_size = 0;
+static X509_CRL** crl_cache;
+static int load_cert_crl_memory(X509 *cert, X509_CRL **pCrl)
+{
+    time_t now = time(NULL);
+    X509_NAME *issuer_cert = X509_get_issuer_name(cert);
+
+
+    for (int n = 0; n < crl_cache_size; n++)
+    {
+        X509_CRL *crl = crl_cache[n];
+        if (!crl)
+        {
+            continue;
+        }
+
+        // names don't match up. probably a hash collision
+        // so lets test if there is another crl on disk.
+        X509_NAME *issuer_crl = X509_CRL_get_issuer(crl);
+        if (0 != X509_NAME_cmp(issuer_crl, issuer_cert))
+        {
+            continue;
+        }
+
+        time_t crlend = crl_invalid_after(crl);
+        if (crlend <= now)
+        {
+            LogInfo("crl %ld, %ld outdated\n", crlend, now);
+            crl_cache[n] = NULL;
+            X509_CRL_free(crl);
+            continue;
+        }
+
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && (OPENSSL_VERSION_NUMBER < 0x20000000L)
+        X509_up_ref(crl);
+#else
+        crl->references++;
+#endif
+
+        *pCrl = crl;
+        return 1;
+    }
+
+    *pCrl = NULL;
+    return 0;
+}
+
+static int save_cert_crl_memory(X509 *cert, X509_CRL *crlp)
+{
+    if (!crlp)
+    {
+        return 0;
+    }
+
+    X509_NAME *issuer_cert = X509_get_issuer_name(cert);
+
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && (OPENSSL_VERSION_NUMBER < 0x20000000L)
+            X509_up_ref(crlp);
+#else
+            crlp->references++;
+#endif
+
+    // update existing
+    for (int n = 0; n < crl_cache_size; n++)
+    {
+        X509_CRL *crl = crl_cache[n];
+        if (!crl)
+        {
+            continue;
+        }
+
+        X509_NAME *issuer_crl = X509_CRL_get_issuer(crl);
+        if (0 == X509_NAME_cmp(issuer_crl, issuer_cert))
+        {
+            X509_CRL_free(crl);
+
+            crl_cache[n] = crlp;
+            return 1;
+        }
+    }
+
+    // not found, so try to find slot by purging outdated
+    time_t now = time(NULL);
+    for (int n = 0; n < crl_cache_size; n++)
+    {
+        X509_CRL *crl = crl_cache[n];
+        if (!crl)
+        {
+            // set new
+            crl_cache[n] = crlp;
+            return 1;
+        }
+
+        time_t crlend = crl_invalid_after(crl);
+        if (crlend <= now)
+        {
+            // remove stale
+            crl_cache[n] = NULL;
+            X509_CRL_free(crl);
+
+            // set new
+            crl_cache[n] = crlp;
+            return 1;
+        }
+    }
+
+    // allocate bigger array
+    X509_CRL** new_crl_cache;
+    new_crl_cache = (X509_CRL**)malloc((crl_cache_size + 10) * sizeof(X509_CRL*));
+    if (!new_crl_cache)
+    {
+        return 0;
+    }
+
+    // copy over old elements and set new
+    memcpy(new_crl_cache, crl_cache, crl_cache_size * sizeof(X509_CRL*));
+    memset(new_crl_cache + crl_cache_size, 0, 10 * sizeof(X509_CRL*));
+    new_crl_cache[crl_cache_size] = crlp;
+
+    // finally update the cache
+    X509_CRL** old_crl_cache = crl_cache;
+    crl_cache = new_crl_cache;
+    crl_cache_size += 10;
+
+    if (old_crl_cache) {
+        free(old_crl_cache);
+    }
+
+    return 1;
+}
+
+
 #define FORMAT_HTTP     1
 #define FORMAT_ASN1     2
 #define FORMAT_PEM      3
@@ -1018,68 +1214,6 @@ end:
     return ret;
 }
 
-static int atoin(const char *str, int start, int len)
-{
-    int result = 0;
-
-    for (; len > 0; len--, start++)
-    {
-        if (str[start] < '0' || str[start] > '9')
-            return -1;
-
-        result = (result * 10) + (str[start] - '0');
-    }
-
-    return result;
-}
-
-static time_t crl_invalid_after(X509_CRL *crl)
-{
-#if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && (OPENSSL_VERSION_NUMBER < 0x20000000L)
-    const ASN1_TIME *at = X509_CRL_get0_nextUpdate(crl);
-#else
-    ASN1_TIME *at = crl->crl->nextUpdate;
-#endif
-
-    ASN1_GENERALIZEDTIME *gt = ASN1_TIME_to_generalizedtime(at, NULL);
-    if (!gt)
-    {
-        LogError("crl could not find field\n");
-        return 0;
-    }
-    // LogInfo("crl data %s\n", (char*)gt->data);
-
-    // "20181011181119Z"
-    int success = gt->length >= 14 ? 1 : 0;
-    struct tm tm = { 0, };
-
-    if (success)
-    {
-        tm.tm_year = atoin((char*)gt->data, 0, 4) - 1900;
-        tm.tm_mon = atoin((char*)gt->data, 4, 2) - 1;
-        tm.tm_mday = atoin((char*)gt->data, 6, 2);
-        tm.tm_hour = atoin((char*)gt->data, 8, 2);
-        tm.tm_min = atoin((char*)gt->data, 10, 2);
-        tm.tm_sec = atoin((char*)gt->data, 12, 2);
-
-        success = (tm.tm_year > 100) &&
-                  (tm.tm_mon >= 0  && tm.tm_mon  < 12)  &&
-                  (tm.tm_mday > 0  && tm.tm_mday < 32)  &&
-                  (tm.tm_hour >= 0 && tm.tm_hour < 24)  &&
-                  (tm.tm_min >= 0  && tm.tm_min  < 60)  &&
-                  (tm.tm_sec >= 0  && tm.tm_sec  < 60);
-    }
-
-    ASN1_GENERALIZEDTIME_free(gt);
-    if (!success)
-    {
-        return 0;
-    }
-
-    // calculates the time since epoch
-    return mktime(&tm);
-}
-
 static const char *get_dp_url(DIST_POINT *dp)
 {
     GENERAL_NAMES *gens;
@@ -1116,12 +1250,46 @@ static const char *get_dp_url(DIST_POINT *dp)
     return NULL;
 }
 
+static int is_valid_crl(X509 *cert, X509_CRL *crl)
+{
+    time_t now = time(NULL);
+    X509_NAME *issuer_cert = X509_get_issuer_name(cert);
+
+    // names don't match up. probably a hash collision
+    // so lets test if there is another crl on disk.
+    X509_NAME *issuer_crl = X509_CRL_get_issuer(crl);
+    if (0 != X509_NAME_cmp(issuer_crl, issuer_cert))
+    {
+        return 0;
+    }
+
+    // Important: At this point, we will DELETE
+    //      a file holding a Crl from disk in case
+    //      the invalid-after date is less than the
+    //      current time.
+    //      This will trigger the re-loading of the
+    //      Crl from the download store, if available.
+    time_t crlend = crl_invalid_after(crl);
+    if (crlend <= now)
+    {
+        LogInfo("crl %ld, %ld outdated\n", crlend, now);
+        return 0;
+    }
+
+    return 1;
+}
+
 static X509_CRL *load_crl_crldp(X509 *cert, const char* suffix, STACK_OF(DIST_POINT) *crldp)
 {
     int i;
-    X509_CRL *crl = NULL;
     char buf[256];
-    time_t now = time(NULL);
+
+    X509_CRL *crl = NULL;
+    (void)load_cert_crl_memory(cert, &crl);
+    if (crl != NULL)
+    {
+        return crl;
+    }
 
     char* prefix = NULL;
     if( NULL == (prefix = getenv("TMP")) &&
@@ -1134,52 +1302,38 @@ static X509_CRL *load_crl_crldp(X509 *cert, const char* suffix, STACK_OF(DIST_PO
     // we need the issuer hash to find the file on disk
     X509_NAME *issuer_cert = X509_get_issuer_name(cert);
     unsigned long hash = X509_NAME_hash(issuer_cert);
-
-    // try to read from file
-    for (i = 0; i < 10; i++)
-    {
-        sprintf(buf, "%s/%08lx.%s.%d", prefix, hash, suffix, i);
-
-        // try to read from disk, exit loop, if
-        // none found
-        crl = load_crl(buf, FORMAT_PEM);
-        if (!crl)
-        {
-            continue;
-        }
-
-        // names don't match up. probably a hash collision
-        // so lets test if there is another crl on disk.
-        X509_NAME *issuer_crl = X509_CRL_get_issuer(crl);
-        if (0 != X509_NAME_cmp(issuer_crl, issuer_cert))
-        {
-            X509_CRL_free(crl);
-            continue;
-        }
-
-        // Important: At this point, we will DELETE
-        //      a file holding a Crl from disk in case
-        //      the invalid-after date is less than the
-        //      current time.
-        //      This will trigger the re-loading of the
-        //      Crl from the download store, if available.
-        time_t crlend = crl_invalid_after(crl);
-        if (crlend <= now)
-        {
-            LogInfo("crl %ld, %ld DELETE %s\n", crlend, now, buf);
-#ifdef WIN32
-            _unlink(buf);
-#else
-            unlink(buf);
-#endif
-
-            X509_CRL_free(crl);
-            continue;
-        }
-
-        // at this point, we got a valid crl
-        return crl;
-    }
+//
+//    // try to read from file
+//    for (i = 0; i < 10; i++)
+//    {
+//        sprintf(buf, "%s/%08lx.%s.%d", prefix, hash, suffix, i);
+//
+//        // try to read from disk, exit loop, if
+//        // none found
+//        crl = load_crl(buf, FORMAT_PEM);
+//        if (!crl)
+//        {
+//            continue;
+//        }
+//
+//        if (!is_valid_crl(cert, crl))
+//        {
+//            LogInfo("DELETE %s\n", buf);
+//
+//#ifdef WIN32
+//            _unlink(buf);
+//#else
+//            unlink(buf);
+//#endif
+//
+//            X509_CRL_free(crl);
+//            continue;
+//        }
+//
+//        // at this point, we got a valid crl
+//        save_cert_crl_memory(cert, crl);
+//        return crl;
+//    }
 
     // file was not found on disk cache,
     // so, now loading from web.
@@ -1197,6 +1351,8 @@ static X509_CRL *load_crl_crldp(X509 *cert, const char* suffix, STACK_OF(DIST_PO
         }
     }
 
+    save_cert_crl_memory(cert, crl);
+
     // try to update file in cache
     for (i = 0; crl && i < 10; i++)
     {
@@ -1204,10 +1360,10 @@ static X509_CRL *load_crl_crldp(X509 *cert, const char* suffix, STACK_OF(DIST_PO
 
         // try to write to disk, exit loop, if
         // written (note: no file will be overwritten).
-        if (save_crl(buf, crl, FORMAT_PEM))
+        //if (save_crl(buf, crl, FORMAT_PEM))
         {
             // written to disk.
-            break;
+           // break;
         }
     }
 
