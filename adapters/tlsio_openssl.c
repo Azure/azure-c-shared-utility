@@ -961,6 +961,7 @@ static time_t crl_invalid_after(X509_CRL *crl)
 }
 
 
+static LOCK_HANDLE crl_cache_lock;
 static int crl_cache_size = 0;
 static X509_CRL** crl_cache;
 static int load_cert_crl_memory(X509 *cert, X509_CRL **pCrl)
@@ -968,6 +969,16 @@ static int load_cert_crl_memory(X509 *cert, X509_CRL **pCrl)
     time_t now = time(NULL);
     X509_NAME *issuer_cert = X509_get_issuer_name(cert);
 
+    // init return values
+    int ret = 0;
+    *pCrl = NULL;
+
+    LOCK_RESULT lockResult = Lock(crl_cache_lock);
+    if (LOCK_OK != lockResult)
+    {
+        // could not lock
+        return 0;
+    }
 
     for (int n = 0; n < crl_cache_size; n++)
     {
@@ -1001,29 +1012,34 @@ static int load_cert_crl_memory(X509 *cert, X509_CRL **pCrl)
 #endif
 
         *pCrl = crl;
-        return 1;
+        ret = 1;
+        break;
     }
 
-    *pCrl = NULL;
-    return 0;
+    lockResult = Unlock(crl_cache_lock);
+    return ret;
 }
 
 static int save_cert_crl_memory(X509 *cert, X509_CRL *crlp)
 {
-    if (!crlp)
+    if (crlp)
     {
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && (OPENSSL_VERSION_NUMBER < 0x20000000L)
+        X509_up_ref(crlp);
+#else
+        crlp->references++;
+#endif
+    }
+
+    LOCK_RESULT lockResult = Lock(crl_cache_lock);
+    if (LOCK_OK != lockResult)
+    {
+        // could not lock
         return 0;
     }
 
-    X509_NAME *issuer_cert = X509_get_issuer_name(cert);
-
-#if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && (OPENSSL_VERSION_NUMBER < 0x20000000L)
-            X509_up_ref(crlp);
-#else
-            crlp->references++;
-#endif
-
     // update existing
+    X509_NAME *issuer_cert = X509_get_issuer_name(cert);
     for (int n = 0; n < crl_cache_size; n++)
     {
         X509_CRL *crl = crl_cache[n];
@@ -1038,6 +1054,8 @@ static int save_cert_crl_memory(X509 *cert, X509_CRL *crlp)
             X509_CRL_free(crl);
 
             crl_cache[n] = crlp;
+
+            lockResult = Unlock(crl_cache_lock);
             return 1;
         }
     }
@@ -1051,6 +1069,8 @@ static int save_cert_crl_memory(X509 *cert, X509_CRL *crlp)
         {
             // set new
             crl_cache[n] = crlp;
+
+            lockResult = Unlock(crl_cache_lock);
             return 1;
         }
 
@@ -1063,6 +1083,8 @@ static int save_cert_crl_memory(X509 *cert, X509_CRL *crlp)
 
             // set new
             crl_cache[n] = crlp;
+
+            lockResult = Unlock(crl_cache_lock);
             return 1;
         }
     }
@@ -1072,6 +1094,7 @@ static int save_cert_crl_memory(X509 *cert, X509_CRL *crlp)
     new_crl_cache = (X509_CRL**)malloc((crl_cache_size + 10) * sizeof(X509_CRL*));
     if (!new_crl_cache)
     {
+        lockResult = Unlock(crl_cache_lock);
         return 0;
     }
 
@@ -1089,6 +1112,7 @@ static int save_cert_crl_memory(X509 *cert, X509_CRL *crlp)
         free(old_crl_cache);
     }
 
+    lockResult = Unlock(crl_cache_lock);
     return 1;
 }
 
@@ -1302,38 +1326,40 @@ static X509_CRL *load_crl_crldp(X509 *cert, const char* suffix, STACK_OF(DIST_PO
     // we need the issuer hash to find the file on disk
     X509_NAME *issuer_cert = X509_get_issuer_name(cert);
     unsigned long hash = X509_NAME_hash(issuer_cert);
-//
-//    // try to read from file
-//    for (i = 0; i < 10; i++)
-//    {
-//        sprintf(buf, "%s/%08lx.%s.%d", prefix, hash, suffix, i);
-//
-//        // try to read from disk, exit loop, if
-//        // none found
-//        crl = load_crl(buf, FORMAT_PEM);
-//        if (!crl)
-//        {
-//            continue;
-//        }
-//
-//        if (!is_valid_crl(cert, crl))
-//        {
-//            LogInfo("DELETE %s\n", buf);
-//
-//#ifdef WIN32
-//            _unlink(buf);
-//#else
-//            unlink(buf);
-//#endif
-//
-//            X509_CRL_free(crl);
-//            continue;
-//        }
-//
-//        // at this point, we got a valid crl
-//        save_cert_crl_memory(cert, crl);
-//        return crl;
-//    }
+
+    // try to read from file
+    for (i = 0; i < 10; i++)
+    {
+        sprintf(buf, "%s/%08lx.%s.%d", prefix, hash, suffix, i);
+
+        // try to read from disk, exit loop, if
+        // none found
+        crl = load_crl(buf, FORMAT_PEM);
+        if (!crl)
+        {
+            continue;
+        }
+
+        if (!is_valid_crl(cert, crl))
+        {
+            LogInfo("DELETE %s\n", buf);
+
+#ifdef WIN32
+            _unlink(buf);
+#else
+            unlink(buf);
+#endif
+
+            X509_CRL_free(crl);
+            continue;
+        }
+
+        // at this point, we got a valid crl from disk that
+        // is not yet in memory cache. So,
+        // save it to the memory cache before returning it.
+        save_cert_crl_memory(cert, crl);
+        return crl;
+    }
 
     // file was not found on disk cache,
     // so, now loading from web.
@@ -1351,7 +1377,8 @@ static X509_CRL *load_crl_crldp(X509 *cert, const char* suffix, STACK_OF(DIST_PO
         }
     }
 
-    save_cert_crl_memory(cert, crl);
+    // save it to memory
+    if (crl) save_cert_crl_memory(cert, crl);
 
     // try to update file in cache
     for (i = 0; crl && i < 10; i++)
@@ -1360,10 +1387,10 @@ static X509_CRL *load_crl_crldp(X509 *cert, const char* suffix, STACK_OF(DIST_PO
 
         // try to write to disk, exit loop, if
         // written (note: no file will be overwritten).
-        //if (save_crl(buf, crl, FORMAT_PEM))
+        if (save_crl(buf, crl, FORMAT_PEM))
         {
-            // written to disk.
-           // break;
+             // written to disk.
+            break;
         }
     }
 
@@ -1829,6 +1856,8 @@ static int create_openssl_instance(TLS_IO_INSTANCE* tlsInstance)
 
 int tlsio_openssl_init(void)
 {
+    crl_cache_lock = Lock_Init();
+
     (void)SSL_library_init();
 
     SSL_load_error_strings();
