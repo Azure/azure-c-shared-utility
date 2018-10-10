@@ -19,7 +19,6 @@
 #include "openssl/x509v3.h"
 #include <openssl/asn1.h>
 #include <openssl/err.h>
-#include <openssl/x509.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include "azure_c_shared_utility/lock.h"
@@ -963,7 +962,7 @@ static time_t crl_invalid_after(X509_CRL *crl)
 
 static LOCK_HANDLE crl_cache_lock;
 static int crl_cache_size = 0;
-static X509_CRL** crl_cache;
+static X509_CRL** crl_cache = NULL;
 static int load_cert_crl_memory(X509 *cert, X509_CRL **pCrl)
 {
     time_t now = time(NULL);
@@ -1022,6 +1021,14 @@ static int load_cert_crl_memory(X509 *cert, X509_CRL **pCrl)
 
 static int save_cert_crl_memory(X509 *cert, X509_CRL *crlp)
 {
+    LOCK_RESULT lockResult = Lock(crl_cache_lock);
+
+    if (LOCK_OK != lockResult)
+    {
+        // could not lock
+        return 0;
+    }
+
     if (crlp)
     {
 #if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && (OPENSSL_VERSION_NUMBER < 0x20000000L)
@@ -1029,13 +1036,6 @@ static int save_cert_crl_memory(X509 *cert, X509_CRL *crlp)
 #else
         crlp->references++;
 #endif
-    }
-
-    LOCK_RESULT lockResult = Lock(crl_cache_lock);
-    if (LOCK_OK != lockResult)
-    {
-        // could not lock
-        return 0;
     }
 
     // update existing
@@ -1303,24 +1303,19 @@ static int is_valid_crl(X509 *cert, X509_CRL *crl)
     return 1;
 }
 
-static X509_CRL *load_crl_crldp(X509 *cert, const char* suffix, STACK_OF(DIST_POINT) *crldp)
+static int load_cert_crl_file(X509 *cert, const char* suffix, X509_CRL **pCrl)
 {
-    int i;
     char buf[256];
 
-    X509_CRL *crl = NULL;
-    (void)load_cert_crl_memory(cert, &crl);
-    if (crl != NULL)
-    {
-        return crl;
-    }
+    int ret = 0;
+    *pCrl = NULL;
 
     char* prefix = NULL;
-    if( NULL == (prefix = getenv("TMP")) &&
+    if (NULL == (prefix = getenv("TMP")) &&
         NULL == (prefix = getenv("TEMP")) &&
         NULL == (prefix = getenv("TMPDIR")))
     {
-        prefix = ".";
+        return 0;
     }
 
     // we need the issuer hash to find the file on disk
@@ -1328,13 +1323,13 @@ static X509_CRL *load_crl_crldp(X509 *cert, const char* suffix, STACK_OF(DIST_PO
     unsigned long hash = X509_NAME_hash(issuer_cert);
 
     // try to read from file
-    for (i = 0; i < 10; i++)
+    for (int i = 0; i < 10; i++)
     {
         sprintf(buf, "%s/%08lx.%s.%d", prefix, hash, suffix, i);
 
         // try to read from disk, exit loop, if
         // none found
-        crl = load_crl(buf, FORMAT_PEM);
+        X509_CRL* crl = load_crl(buf, FORMAT_PEM);
         if (!crl)
         {
             continue;
@@ -1354,10 +1349,64 @@ static X509_CRL *load_crl_crldp(X509 *cert, const char* suffix, STACK_OF(DIST_PO
             continue;
         }
 
+        *pCrl = crl;
+        ret = 1;
+    }
+
+    return ret;
+}
+
+static int save_cert_crl_file(X509 *cert, const char* suffix, X509_CRL *crl)
+{
+    char buf[256];
+    int ret = 0;
+
+    char* prefix = NULL;
+    if (NULL == (prefix = getenv("TMP")) &&
+        NULL == (prefix = getenv("TEMP")) &&
+        NULL == (prefix = getenv("TMPDIR")))
+    {
+        return 0;
+    }
+
+    // we need the issuer hash to find the file on disk
+    X509_NAME *issuer_cert = X509_get_issuer_name(cert);
+    unsigned long hash = X509_NAME_hash(issuer_cert);
+
+    for (int i = 0; crl && i < 10; i++)
+    {
+        sprintf(buf, "%s/%08lx.%s.%d", prefix, hash, suffix, i);
+
+        // try to write to disk, exit loop, if
+        // written (note: no file will be overwritten).
+        if (save_crl(buf, crl, FORMAT_PEM))
+        {
+            // written to disk.
+            ret = 1;
+            break;
+        }
+    }
+
+    return ret;
+}
+
+static X509_CRL *load_crl_crldp(X509 *cert, const char* suffix, STACK_OF(DIST_POINT) *crldp)
+{
+    int i;
+
+    X509_CRL *crl = NULL;
+    if (load_cert_crl_memory(cert, &crl) && crl)
+    {
+        return crl;
+    }
+
+    if (load_cert_crl_file(cert, suffix, &crl) && crl)
+    {
         // at this point, we got a valid crl from disk that
         // is not yet in memory cache. So,
         // save it to the memory cache before returning it.
         save_cert_crl_memory(cert, crl);
+
         return crl;
     }
 
@@ -1378,21 +1427,10 @@ static X509_CRL *load_crl_crldp(X509 *cert, const char* suffix, STACK_OF(DIST_PO
     }
 
     // save it to memory
-    if (crl) save_cert_crl_memory(cert, crl);
+    save_cert_crl_memory(cert, crl);
 
     // try to update file in cache
-    for (i = 0; crl && i < 10; i++)
-    {
-        sprintf(buf, "%s/%08lx.%s.%d", prefix, hash, suffix, i);
-
-        // try to write to disk, exit loop, if
-        // written (note: no file will be overwritten).
-        if (save_crl(buf, crl, FORMAT_PEM))
-        {
-             // written to disk.
-            break;
-        }
-    }
+    save_cert_crl_file(cert, suffix, crl);
 
     return crl;
 }
