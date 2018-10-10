@@ -232,7 +232,7 @@ TEST_FUNCTION(when_a_failure_occurs_for_tlsio_cyclonessl_socket_create_then_crea
         int result = tlsio_cyclonessl_socket_create("testhostname", 4242, &socket);
 
         ///assert
-        ASSERT_ARE_NOT_EQUAL_WITH_MSG(int, 0, result, temp_str);
+        ASSERT_ARE_NOT_EQUAL(int, 0, result, temp_str);
     }
 
     ///cleanup

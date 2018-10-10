@@ -486,7 +486,7 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
             result = x509_openssl_add_credentials(TEST_SSL_CTX_STRUCTURE, TEST_PUBLIC_CERTIFICATE, TEST_PRIVATE_CERTIFICATE);
 
             //assert
-            ASSERT_ARE_NOT_EQUAL_WITH_MSG(int, 0, result, tmp_msg);
+            ASSERT_ARE_NOT_EQUAL(int, 0, result, tmp_msg);
         }
 
         //cleanup
@@ -619,7 +619,7 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
             result = x509_openssl_add_certificates(TEST_SSL_CTX, TEST_CERTIFICATE_1);
 
             //assert
-            ASSERT_ARE_NOT_EQUAL_WITH_MSG(int, 0, result, tmp_msg);
+            ASSERT_ARE_NOT_EQUAL(int, 0, result, tmp_msg);
         }
 
         //clean

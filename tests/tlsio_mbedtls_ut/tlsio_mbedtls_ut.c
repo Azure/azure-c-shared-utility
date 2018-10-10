@@ -473,7 +473,7 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
             CONCRETE_IO_HANDLE handle = tlsio_mbedtls_create(&tls_io_config);
 
             //assert
-            ASSERT_IS_NULL_WITH_MSG(handle, tmp_msg);
+            ASSERT_IS_NULL(handle, tmp_msg);
         }
 
         //cleanup

@@ -334,7 +334,7 @@ TEST_FUNCTION(when_a_failure_occurs_for_tlsio_cyclonessl_create_then_create_fail
         CONCRETE_IO_HANDLE tlsio_handle = tlsio_cyclonessl_get_interface_description()->concrete_io_create(&tlsio_config);
 
         ///assert
-        ASSERT_IS_NULL_WITH_MSG(tlsio_handle, temp_str);
+        ASSERT_IS_NULL(tlsio_handle, temp_str);
     }
 
     ///cleanup
@@ -636,7 +636,7 @@ TEST_FUNCTION(when_a_failure_occurs_for_tlsio_cyclonessl_open_then_create_fails)
         int result = tlsio_cyclonessl_get_interface_description()->concrete_io_open(tlsio_handle, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, NULL, (void*)0x4244);
 
         ///assert
-        ASSERT_ARE_NOT_EQUAL_WITH_MSG(int, 0, result, temp_str);
+        ASSERT_ARE_NOT_EQUAL(int, 0, result, temp_str);
     }
 
     ///cleanup
