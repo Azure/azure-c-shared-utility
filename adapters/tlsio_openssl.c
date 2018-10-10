@@ -1005,7 +1005,7 @@ static int load_cert_crl_memory(X509 *cert, X509_CRL **pCrl)
         }
 
 #if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && (OPENSSL_VERSION_NUMBER < 0x20000000L)
-        X509_up_ref(crl);
+        X509_CRL_up_ref(crl);
 #else
         crl->references++;
 #endif
@@ -1032,7 +1032,7 @@ static int save_cert_crl_memory(X509 *cert, X509_CRL *crlp)
     if (crlp)
     {
 #if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && (OPENSSL_VERSION_NUMBER < 0x20000000L)
-        X509_up_ref(crlp);
+        X509_CRL_up_ref(crlp);
 #else
         crlp->references++;
 #endif
