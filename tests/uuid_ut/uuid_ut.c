@@ -186,7 +186,7 @@ TEST_FUNCTION(UUID_generate_failure_checks)
         result = UUID_generate(&uuid);
 
         // assert
-        ASSERT_ARE_NOT_EQUAL_WITH_MSG(int, 0, result, temp_str);
+        ASSERT_ARE_NOT_EQUAL(int, 0, result, temp_str);
     }
 
     umock_c_negative_tests_reset();
@@ -256,7 +256,7 @@ TEST_FUNCTION(UUID_to_string_failure_checks)
         result = UUID_to_string(&TEST_UUID);
 
         // assert
-        ASSERT_IS_NULL_WITH_MSG(result, temp_str);
+        ASSERT_IS_NULL(result, temp_str);
     }
 
     umock_c_negative_tests_reset();

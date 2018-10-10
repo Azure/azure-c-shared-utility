@@ -361,7 +361,7 @@ BEGIN_TEST_SUITE(template_ut)
             result = target_create(SIZEOF_FOO_MEMORY);
 
             ///assert
-            ASSERT_ARE_NOT_EQUAL_WITH_MSG(int, TARGET_RESULT_OK, result, temp_str);
+            ASSERT_ARE_NOT_EQUAL(int, TARGET_RESULT_OK, result, temp_str);
         }
 
         ///cleanup
@@ -411,7 +411,7 @@ BEGIN_TEST_SUITE(template_ut)
                 result = target_create(SIZEOF_FOO_MEMORY);
 
                 ///assert
-                ASSERT_ARE_NOT_EQUAL_WITH_MSG(int, TARGET_RESULT_OK, result, temp_str);
+                ASSERT_ARE_NOT_EQUAL(int, TARGET_RESULT_OK, result, temp_str);
             }
         }
 
@@ -460,7 +460,7 @@ BEGIN_TEST_SUITE(template_ut)
             result = target_foo();
 
             ///assert
-            ASSERT_ARE_EQUAL_WITH_MSG(int, TARGET_RESULT_FAIL, result, temp_str);
+            ASSERT_ARE_EQUAL(int, TARGET_RESULT_FAIL, result, temp_str);
         }
 
         ///cleanup

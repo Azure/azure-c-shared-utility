@@ -589,7 +589,7 @@ TEST_FUNCTION(when_a_call_made_by_http_proxy_io_create_fails_then_http_proxy_io_
         http_io = http_proxy_io_get_interface_description()->concrete_io_create((void*)&default_http_proxy_io_config);
 
         // assert
-        ASSERT_IS_NULL_WITH_MSG(http_io, temp_str);
+        ASSERT_IS_NULL(http_io, temp_str);
     }
 }
 

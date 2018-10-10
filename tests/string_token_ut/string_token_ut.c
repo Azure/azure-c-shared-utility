@@ -285,7 +285,7 @@ BEGIN_TEST_SUITE(string_token_ut)
             handle = StringToken_GetFirst(string, length, delimiters, 1);
 
             sprintf(error_msg, "On failed call %zu", i);
-            ASSERT_IS_NULL_WITH_MSG(handle, error_msg);
+            ASSERT_IS_NULL(handle, error_msg);
         }
 
         // cleanup
@@ -1125,7 +1125,7 @@ BEGIN_TEST_SUITE(string_token_ut)
             }
 
             sprintf(error_msg, "On failed call %zu", i);
-            ASSERT_ARE_NOT_EQUAL_WITH_MSG(int, 0, result, error_msg);
+            ASSERT_ARE_NOT_EQUAL(int, 0, result, error_msg);
         }
 
         // cleanup

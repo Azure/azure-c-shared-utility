@@ -550,7 +550,7 @@ TEST_FUNCTION(x509_schannel_negative_test_cases)
             h = x509_schannel_create("certificate", "private key");
 
             ///assert
-            ASSERT_IS_NULL_WITH_MSG(h, temp_str);
+            ASSERT_IS_NULL(h, temp_str);
         }
     }
 

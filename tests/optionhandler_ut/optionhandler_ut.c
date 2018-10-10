@@ -262,7 +262,7 @@ BEGIN_TEST_SUITE(optionhandler_unittests)
             h = OptionHandler_Create(aCloneOption, aDestroyOption, aSetOption);
 
             ///assert
-            ASSERT_IS_NULL_WITH_MSG(h, temp_str);
+            ASSERT_IS_NULL(h, temp_str);
         }
 
         ///cleanup
@@ -896,7 +896,7 @@ BEGIN_TEST_SUITE(optionhandler_unittests)
             result = OptionHandler_AddOption(handle, "name", value);
 
             ///assert
-            ASSERT_ARE_EQUAL_WITH_MSG(OPTIONHANDLER_RESULT, OPTIONHANDLER_ERROR, result, temp_str);
+            ASSERT_ARE_EQUAL(OPTIONHANDLER_RESULT, OPTIONHANDLER_ERROR, result, temp_str);
         }
 
         ///cleanup
@@ -1046,7 +1046,7 @@ BEGIN_TEST_SUITE(optionhandler_unittests)
             result = OptionHandler_FeedOptions(handle, (void*)42);
 
             ///assert
-            ASSERT_ARE_EQUAL_WITH_MSG(OPTIONHANDLER_RESULT, OPTIONHANDLER_ERROR, result, temp_str);
+            ASSERT_ARE_EQUAL(OPTIONHANDLER_RESULT, OPTIONHANDLER_ERROR, result, temp_str);
 
         }
 
@@ -1149,7 +1149,7 @@ BEGIN_TEST_SUITE(optionhandler_unittests)
             result = OptionHandler_FeedOptions(handle, (void*)42);
 
             ///assert
-            ASSERT_ARE_EQUAL_WITH_MSG(OPTIONHANDLER_RESULT, OPTIONHANDLER_ERROR, result, temp_str);
+            ASSERT_ARE_EQUAL(OPTIONHANDLER_RESULT, OPTIONHANDLER_ERROR, result, temp_str);
         }
 
         ///cleanup

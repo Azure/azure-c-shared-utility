@@ -256,7 +256,7 @@ BEGIN_TEST_SUITE(base32_ut)
             result = Base32_Encode_Bytes(test_val_len[index].input_data, test_val_len[index].input_len);
 
             //assert
-            ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, test_val_len[index].base32_data, result, tmp_msg);
+            ASSERT_ARE_EQUAL(char_ptr, test_val_len[index].base32_data, result, tmp_msg);
 
             //cleanup
             free(result);
@@ -324,7 +324,7 @@ BEGIN_TEST_SUITE(base32_ut)
             result = Base32_Encode(input_buff);
 
             //assert
-            ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, test_val_len[index].base32_data, (const char*)result, tmp_msg);
+            ASSERT_ARE_EQUAL(char_ptr, test_val_len[index].base32_data, (const char*)result, tmp_msg);
 
             //cleanup
             my_STRING_delete(result);
@@ -414,7 +414,7 @@ BEGIN_TEST_SUITE(base32_ut)
 
             //assert
             ASSERT_IS_NOT_NULL(result);
-            ASSERT_ARE_EQUAL_WITH_MSG(int, 0, memcmp(test_val_len[index].input_data, result, test_val_len[index].input_len), tmp_msg);
+            ASSERT_ARE_EQUAL(int, 0, memcmp(test_val_len[index].input_data, result, test_val_len[index].input_len), tmp_msg);
 
             //cleanup
             BUFFER_delete(result);

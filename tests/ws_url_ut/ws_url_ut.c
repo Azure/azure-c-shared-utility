@@ -329,7 +329,7 @@ BEGIN_TEST_SUITE(ws_url_ut)
 
             // assert
             sprintf(error_msg, "On failed call %zu", i);
-            ASSERT_IS_NULL_WITH_MSG(ws_url, error_msg);
+            ASSERT_IS_NULL(ws_url, error_msg);
         }
 
         // cleanup

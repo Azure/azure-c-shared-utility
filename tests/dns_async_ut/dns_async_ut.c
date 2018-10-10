@@ -187,8 +187,8 @@ BEGIN_TEST_SUITE(dns_async_ut)
         // We're calling this twice
         bool result = dns_async_is_lookup_complete(dns);
         uint32_t ipv4 = dns_async_get_ipv4(dns);
-        ASSERT_ARE_EQUAL_WITH_MSG(uint32_t, FAKE_GOOD_IP_ADDR, ipv4, "Unexpected IP");
-        ASSERT_IS_TRUE_WITH_MSG(result, "Unexpected non-completion");
+        ASSERT_ARE_EQUAL(uint32_t, FAKE_GOOD_IP_ADDR, ipv4, "Unexpected IP");
+        ASSERT_IS_TRUE(result, "Unexpected non-completion");
         umock_c_reset_all_calls();
 
         ///act
@@ -196,8 +196,8 @@ BEGIN_TEST_SUITE(dns_async_ut)
         ipv4 = dns_async_get_ipv4(dns);
 
         ///assert
-        ASSERT_IS_TRUE_WITH_MSG(result, "Unexpected non-completion");
-        ASSERT_ARE_EQUAL_WITH_MSG(uint32_t, FAKE_GOOD_IP_ADDR, ipv4, "Unexpected IP");
+        ASSERT_IS_TRUE(result, "Unexpected non-completion");
+        ASSERT_ARE_EQUAL(uint32_t, FAKE_GOOD_IP_ADDR, ipv4, "Unexpected IP");
         // Verify it didn't do anything
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
@@ -224,7 +224,7 @@ BEGIN_TEST_SUITE(dns_async_ut)
         result = dns_async_is_lookup_complete(dns);
 
         ///assert
-        ASSERT_IS_TRUE_WITH_MSG(result, "Unexpected non-completion");
+        ASSERT_IS_TRUE(result, "Unexpected non-completion");
 
         ///cleanup
         dns_async_destroy(dns);
@@ -240,13 +240,13 @@ BEGIN_TEST_SUITE(dns_async_ut)
         umock_c_reset_all_calls();
         STRICT_EXPECTED_CALL(getaddrinfo(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
         result = dns_async_is_lookup_complete(dns);
-        ASSERT_IS_TRUE_WITH_MSG(result, "Unexpected non-completion");
+        ASSERT_IS_TRUE(result, "Unexpected non-completion");
 
         ///act
         ipv4 = dns_async_get_ipv4(dns);
 
         ///assert
-        ASSERT_ARE_EQUAL_WITH_MSG(uint32_t, FAKE_GOOD_IP_ADDR, ipv4, "Unexpected IP");
+        ASSERT_ARE_EQUAL(uint32_t, FAKE_GOOD_IP_ADDR, ipv4, "Unexpected IP");
 
         ///cleanup
         dns_async_destroy(dns);
@@ -265,7 +265,7 @@ BEGIN_TEST_SUITE(dns_async_ut)
         result = dns_async_is_lookup_complete(dns);
 
         ///assert
-        ASSERT_IS_TRUE_WITH_MSG(result, "Unexpected non-completion");
+        ASSERT_IS_TRUE(result, "Unexpected non-completion");
 
         ///cleanup
         dns_async_destroy(dns);
@@ -281,13 +281,13 @@ BEGIN_TEST_SUITE(dns_async_ut)
         umock_c_reset_all_calls();
         STRICT_EXPECTED_CALL(getaddrinfo(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG)).SetReturn(GETADDRINFO_FAIL);
         result = dns_async_is_lookup_complete(dns);
-        ASSERT_IS_TRUE_WITH_MSG(result, "Unexpected non-completion");
+        ASSERT_IS_TRUE(result, "Unexpected non-completion");
 
         ///act
         ipv4 = dns_async_get_ipv4(dns);
 
         ///assert
-        ASSERT_ARE_EQUAL_WITH_MSG(uint32_t, 0, ipv4, "Unexpected non-zero IP");
+        ASSERT_ARE_EQUAL(uint32_t, 0, ipv4, "Unexpected non-zero IP");
 
         ///cleanup
         dns_async_destroy(dns);
@@ -302,7 +302,7 @@ BEGIN_TEST_SUITE(dns_async_ut)
         bool result = dns_async_is_lookup_complete(NULL);
 
         ///assert
-        ASSERT_IS_FALSE_WITH_MSG(result, "Unexpected non-zero IPv4");
+        ASSERT_IS_FALSE(result, "Unexpected non-zero IPv4");
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     }
 
@@ -316,7 +316,7 @@ BEGIN_TEST_SUITE(dns_async_ut)
         uint32_t result = dns_async_get_ipv4(dns);
 
         ///assert
-        ASSERT_ARE_EQUAL_WITH_MSG(uint32_t, 0, result, "Unexpected non-zero IPv4");
+        ASSERT_ARE_EQUAL(uint32_t, 0, result, "Unexpected non-zero IPv4");
 
         ///cleanup
         dns_async_destroy(dns);
@@ -331,7 +331,7 @@ BEGIN_TEST_SUITE(dns_async_ut)
         uint32_t result = dns_async_get_ipv4(NULL);
 
         ///assert
-        ASSERT_ARE_EQUAL_WITH_MSG(uint32_t, 0, result, "Unexpected non-zero IPv4");
+        ASSERT_ARE_EQUAL(uint32_t, 0, result, "Unexpected non-zero IPv4");
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     }
 
@@ -422,7 +422,7 @@ BEGIN_TEST_SUITE(dns_async_ut)
         DNS_ASYNC_HANDLE result = dns_async_create(NULL, NULL);
 
         ///assert
-        ASSERT_IS_NULL_WITH_MSG(result, "Unexpected success with NULL hostname");
+        ASSERT_IS_NULL(result, "Unexpected success with NULL hostname");
     }
 
 

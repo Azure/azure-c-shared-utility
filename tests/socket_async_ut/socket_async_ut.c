@@ -269,8 +269,8 @@ TEST_SUITE_INITIALIZE(a)
             int receive_result = socket_async_receive(test_socket, parameters[i].buffer, parameters[i].size, parameters[i].returned_count);
 
             ///assert
-            ASSERT_ARE_EQUAL_WITH_MSG(size_t, received_count_receptor, BAD_BUFFER_COUNT, "Unexpected received_count_receptor");
-            ASSERT_ARE_NOT_EQUAL_WITH_MSG(int, receive_result, 0, parameters[i].fail_msg);
+            ASSERT_ARE_EQUAL(size_t, received_count_receptor, BAD_BUFFER_COUNT, "Unexpected received_count_receptor");
+            ASSERT_ARE_NOT_EQUAL(int, receive_result, 0, parameters[i].fail_msg);
         }
 
 
@@ -299,8 +299,8 @@ TEST_SUITE_INITIALIZE(a)
         receive_result = socket_async_receive(test_socket, buffer, size, received_count);
 
         ///assert
-        ASSERT_ARE_EQUAL_WITH_MSG(size_t, received_count_receptor, BAD_BUFFER_COUNT, "Unexpected received_count_receptor");
-        ASSERT_ARE_NOT_EQUAL_WITH_MSG(int, receive_result, 0, "Unexpected receive_result success");
+        ASSERT_ARE_EQUAL(size_t, received_count_receptor, BAD_BUFFER_COUNT, "Unexpected received_count_receptor");
+        ASSERT_ARE_NOT_EQUAL(int, receive_result, 0, "Unexpected receive_result success");
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
@@ -328,8 +328,8 @@ TEST_SUITE_INITIALIZE(a)
         receive_result = socket_async_receive(test_socket, buffer, size, received_count);
 
         ///assert
-        ASSERT_ARE_EQUAL_WITH_MSG(size_t, received_count_receptor, 0, "Unexpected received_count_receptor");
-        ASSERT_ARE_EQUAL_WITH_MSG(int, receive_result, 0, "Unexpected receive_result failure");
+        ASSERT_ARE_EQUAL(size_t, received_count_receptor, 0, "Unexpected received_count_receptor");
+        ASSERT_ARE_EQUAL(int, receive_result, 0, "Unexpected receive_result failure");
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
@@ -352,8 +352,8 @@ TEST_SUITE_INITIALIZE(a)
         receive_result = socket_async_receive(test_socket, buffer, size, received_count);
 
         ///assert
-        ASSERT_ARE_EQUAL_WITH_MSG(size_t, received_count_receptor, sizeof(test_msg), "Unexpected received_count_receptor");
-        ASSERT_ARE_EQUAL_WITH_MSG(int, receive_result, 0, "Unexpected receive_result failure");
+        ASSERT_ARE_EQUAL(size_t, received_count_receptor, sizeof(test_msg), "Unexpected received_count_receptor");
+        ASSERT_ARE_EQUAL(int, receive_result, 0, "Unexpected receive_result failure");
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
@@ -380,7 +380,7 @@ TEST_SUITE_INITIALIZE(a)
             int send_result = socket_async_send(test_socket, parameters[i].buffer, parameters[i].size, parameters[i].returned_count);
 
             ///assert
-            ASSERT_ARE_NOT_EQUAL_WITH_MSG(int, send_result, 0, parameters[i].fail_msg);
+            ASSERT_ARE_NOT_EQUAL(int, send_result, 0, parameters[i].fail_msg);
         }
 
         ///cleanup
@@ -408,7 +408,7 @@ TEST_SUITE_INITIALIZE(a)
         send_result = socket_async_send(test_socket, buffer, size, sent_count);
 
         ///assert
-        ASSERT_ARE_NOT_EQUAL_WITH_MSG(int, send_result, 0, "Unexpected send_result success");
+        ASSERT_ARE_NOT_EQUAL(int, send_result, 0, "Unexpected send_result success");
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
@@ -436,8 +436,8 @@ TEST_SUITE_INITIALIZE(a)
         send_result = socket_async_send(test_socket, buffer, size, sent_count);
 
         ///assert
-        ASSERT_ARE_EQUAL_WITH_MSG(size_t, sent_count_receptor, 0, "Unexpected sent_count_receptor");
-        ASSERT_ARE_EQUAL_WITH_MSG(int, send_result, 0, "Unexpected send_result failure");
+        ASSERT_ARE_EQUAL(size_t, sent_count_receptor, 0, "Unexpected sent_count_receptor");
+        ASSERT_ARE_EQUAL(int, send_result, 0, "Unexpected send_result failure");
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
@@ -458,8 +458,8 @@ TEST_SUITE_INITIALIZE(a)
         int send_result = socket_async_send(test_socket, buffer, size, sent_count);
 
         ///assert
-        ASSERT_ARE_EQUAL_WITH_MSG(size_t, sent_count_receptor, 0, "Unexpected sent_count_receptor");
-        ASSERT_ARE_EQUAL_WITH_MSG(int, send_result, 0, "Unexpected send_result failure");
+        ASSERT_ARE_EQUAL(size_t, sent_count_receptor, 0, "Unexpected sent_count_receptor");
+        ASSERT_ARE_EQUAL(int, send_result, 0, "Unexpected send_result failure");
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
@@ -482,8 +482,8 @@ TEST_SUITE_INITIALIZE(a)
         send_result = socket_async_send(test_socket, buffer, size, sent_count);
 
         ///assert
-        ASSERT_ARE_EQUAL_WITH_MSG(size_t, sent_count_receptor, sizeof(test_msg), "Unexpected sent_count_receptor");
-        ASSERT_ARE_EQUAL_WITH_MSG(int, send_result, 0, "Unexpected send_result failure");
+        ASSERT_ARE_EQUAL(size_t, sent_count_receptor, sizeof(test_msg), "Unexpected sent_count_receptor");
+        ASSERT_ARE_EQUAL(int, send_result, 0, "Unexpected send_result failure");
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
@@ -502,7 +502,7 @@ TEST_SUITE_INITIALIZE(a)
         int create_complete_result = socket_async_is_create_complete(test_socket, is_complete_param);
 
         ///assert
-        ASSERT_ARE_NOT_EQUAL_WITH_MSG(int, create_complete_result, 0, "Unexpected send_result success");
+        ASSERT_ARE_NOT_EQUAL(int, create_complete_result, 0, "Unexpected send_result success");
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     }
 
@@ -525,7 +525,7 @@ TEST_SUITE_INITIALIZE(a)
         create_complete_result = socket_async_is_create_complete(test_socket, is_complete_param);
 
         ///assert
-        ASSERT_ARE_NOT_EQUAL_WITH_MSG(int, create_complete_result, 0, "Unexpected create_complete_result success");
+        ASSERT_ARE_NOT_EQUAL(int, create_complete_result, 0, "Unexpected create_complete_result success");
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     }
 
@@ -552,7 +552,7 @@ TEST_SUITE_INITIALIZE(a)
         create_complete_result = socket_async_is_create_complete(test_socket, is_complete_param);
 
         ///assert
-        ASSERT_ARE_NOT_EQUAL_WITH_MSG(int, create_complete_result, 0, "Unexpected create_complete_result success");
+        ASSERT_ARE_NOT_EQUAL(int, create_complete_result, 0, "Unexpected create_complete_result success");
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     }
 
@@ -572,8 +572,8 @@ TEST_SUITE_INITIALIZE(a)
         create_complete_result = socket_async_is_create_complete(test_socket, is_complete_param);
 
         ///assert
-        ASSERT_IS_FALSE_WITH_MSG(is_complete, "Unexpected is_complete failure");
-        ASSERT_ARE_EQUAL_WITH_MSG(int, create_complete_result, 0, "Unexpected create_complete_result failure");
+        ASSERT_IS_FALSE(is_complete, "Unexpected is_complete failure");
+        ASSERT_ARE_EQUAL(int, create_complete_result, 0, "Unexpected create_complete_result failure");
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     }
 
@@ -593,8 +593,8 @@ TEST_SUITE_INITIALIZE(a)
         create_complete_result = socket_async_is_create_complete(test_socket, is_complete_param);
 
         ///assert
-        ASSERT_IS_TRUE_WITH_MSG(is_complete, "Unexpected is_complete failure");
-        ASSERT_ARE_EQUAL_WITH_MSG(int, create_complete_result, 0, "Unexpected create_complete_result failure");
+        ASSERT_IS_TRUE(is_complete, "Unexpected is_complete failure");
+        ASSERT_ARE_EQUAL(int, create_complete_result, 0, "Unexpected create_complete_result failure");
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     }
 
@@ -612,7 +612,7 @@ TEST_SUITE_INITIALIZE(a)
         create_result = socket_async_create(test_ipv4, test_port, is_udp, options);
 
         ///assert
-        ASSERT_ARE_EQUAL_WITH_MSG(int, create_result, SOCKET_ASYNC_INVALID_SOCKET, "Unexpected create_result success");
+        ASSERT_ARE_EQUAL(int, create_result, SOCKET_ASYNC_INVALID_SOCKET, "Unexpected create_result success");
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     }
 
@@ -632,7 +632,7 @@ TEST_SUITE_INITIALIZE(a)
         create_result = socket_async_create(test_ipv4, test_port, is_udp, options);
 
         ///assert
-        ASSERT_ARE_EQUAL_WITH_MSG(int, create_result, SOCKET_ASYNC_INVALID_SOCKET, "Unexpected create_result success");
+        ASSERT_ARE_EQUAL(int, create_result, SOCKET_ASYNC_INVALID_SOCKET, "Unexpected create_result success");
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     }
 
@@ -666,7 +666,7 @@ TEST_SUITE_INITIALIZE(a)
             create_result = socket_async_create(test_ipv4, test_port, is_udp, options);
 
             ///assert
-            ASSERT_ARE_EQUAL_WITH_MSG(int, create_result, SOCKET_ASYNC_INVALID_SOCKET, "Unexpected create_result success");
+            ASSERT_ARE_EQUAL(int, create_result, SOCKET_ASYNC_INVALID_SOCKET, "Unexpected create_result success");
         }
 
         ///cleanup
@@ -697,7 +697,7 @@ TEST_SUITE_INITIALIZE(a)
         create_result = socket_async_create(test_ipv4, test_port, is_udp, options);
 
         ///assert
-        ASSERT_ARE_EQUAL_WITH_MSG(int, create_result, SOCKET_ASYNC_INVALID_SOCKET, "Unexpected create_result success");
+        ASSERT_ARE_EQUAL(int, create_result, SOCKET_ASYNC_INVALID_SOCKET, "Unexpected create_result success");
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     }
 
@@ -727,7 +727,7 @@ TEST_SUITE_INITIALIZE(a)
         create_result = socket_async_create(test_ipv4, test_port, is_udp, options);
 
         ///assert
-        ASSERT_ARE_EQUAL_WITH_MSG(int, create_result, SOCKET_ASYNC_INVALID_SOCKET, "Unexpected create_result success");
+        ASSERT_ARE_EQUAL(int, create_result, SOCKET_ASYNC_INVALID_SOCKET, "Unexpected create_result success");
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     }
 
@@ -760,7 +760,7 @@ TEST_SUITE_INITIALIZE(a)
 
         ///assert
         ASSERT_KEEP_ALIVE_SET();
-        ASSERT_ARE_EQUAL_WITH_MSG(int, create_result, test_socket, "Unexpected create_result failure");
+        ASSERT_ARE_EQUAL(int, create_result, test_socket, "Unexpected create_result failure");
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     }
 
@@ -789,7 +789,7 @@ TEST_SUITE_INITIALIZE(a)
 
         ///assert
         ASSERT_KEEP_ALIVE_SET();
-        ASSERT_ARE_EQUAL_WITH_MSG(int, create_result, test_socket, "Unexpected create_result failure");
+        ASSERT_ARE_EQUAL(int, create_result, test_socket, "Unexpected create_result failure");
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     }
 
@@ -814,7 +814,7 @@ TEST_SUITE_INITIALIZE(a)
 
         ///assert
         ASSERT_KEEP_ALIVE_UNTOUCHED();
-        ASSERT_ARE_EQUAL_WITH_MSG(int, create_result, test_socket, "Unexpected create_result failure");
+        ASSERT_ARE_EQUAL(int, create_result, test_socket, "Unexpected create_result failure");
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     }
 
@@ -839,7 +839,7 @@ TEST_SUITE_INITIALIZE(a)
 
         ///assert
         ASSERT_KEEP_ALIVE_FALSE();
-        ASSERT_ARE_EQUAL_WITH_MSG(int, create_result, test_socket, "Unexpected create_result failure");
+        ASSERT_ARE_EQUAL(int, create_result, test_socket, "Unexpected create_result failure");
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     }
 
@@ -864,7 +864,7 @@ TEST_SUITE_INITIALIZE(a)
 
         ///assert
         ASSERT_KEEP_ALIVE_UNTOUCHED();
-        ASSERT_ARE_EQUAL_WITH_MSG(int, create_result, test_socket, "Unexpected create_result failure");
+        ASSERT_ARE_EQUAL(int, create_result, test_socket, "Unexpected create_result failure");
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     }
 

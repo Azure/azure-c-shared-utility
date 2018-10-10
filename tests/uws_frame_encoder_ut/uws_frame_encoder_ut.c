@@ -1127,7 +1127,7 @@ TEST_FUNCTION(uws_frame_encoder_encode_encodes_a_65535_byte_long_binary_frame)
     // assert
     ASSERT_IS_NOT_NULL(result);
     ASSERT_ARE_EQUAL(size_t, 65535 + 4, real_BUFFER_length(result));
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, memcmp(expected_bytes, real_BUFFER_u_char(result), real_BUFFER_length(result)), "Memory compare failed");
+    ASSERT_ARE_EQUAL(int, 0, memcmp(expected_bytes, real_BUFFER_u_char(result), real_BUFFER_length(result)), "Memory compare failed");
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
@@ -1178,7 +1178,7 @@ TEST_FUNCTION(uws_frame_encoder_encode_encodes_a_65536_byte_long_binary_frame)
     // assert
     ASSERT_IS_NOT_NULL(result);
     ASSERT_ARE_EQUAL(size_t, 65536 + 10, real_BUFFER_length(result));
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, memcmp(expected_bytes, real_BUFFER_u_char(result), real_BUFFER_length(result)), "Memory compare failed");
+    ASSERT_ARE_EQUAL(int, 0, memcmp(expected_bytes, real_BUFFER_u_char(result), real_BUFFER_length(result)), "Memory compare failed");
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup

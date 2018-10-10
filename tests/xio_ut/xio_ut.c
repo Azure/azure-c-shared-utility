@@ -982,7 +982,7 @@ TEST_FUNCTION(xio_retrieveoptions_unhappypaths)
         h = xio_retrieveoptions(x);
 
         ///assert
-        ASSERT_IS_NULL_WITH_MSG(h, temp_str);
+        ASSERT_IS_NULL(h, temp_str);
     }
 
     ///cleanup

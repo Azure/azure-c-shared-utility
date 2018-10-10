@@ -1335,7 +1335,7 @@ TEST_FUNCTION(when_any_call_fails_uws_client_create_with_io_fails)
         uws_client = uws_client_create_with_io(TEST_SOCKET_IO_INTERFACE_DESCRIPTION, &socketio_config, "test_host", 80, "111", two_protocols, sizeof(two_protocols) / sizeof(two_protocols[0]));
 
         // assert
-        ASSERT_IS_NULL_WITH_MSG(uws_client, temp_str);
+        ASSERT_IS_NULL(uws_client, temp_str);
     }
 }
 
@@ -3812,7 +3812,7 @@ void when_only_n_bytes_are_received_from_the_response_no_open_complete_is_indica
 
     // assert
     (void)sprintf(temp_str, "Bytes = %u", (unsigned int)n);
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), temp_str);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), temp_str);
 
     // cleanup
     uws_client_destroy(uws_client);
@@ -7679,7 +7679,7 @@ TEST_FUNCTION(uws_client_set_request_header_negative_tests)
         result = uws_client_set_request_header(uws_client, req_header1_key, req_header1_value);
 
         sprintf(error_msg, "On failed call %zu", i);
-        ASSERT_ARE_NOT_EQUAL_WITH_MSG(int, 0, result, error_msg);
+        ASSERT_ARE_NOT_EQUAL(int, 0, result, error_msg);
     }
 
     // cleanup

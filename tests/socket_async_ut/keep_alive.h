@@ -41,7 +41,7 @@ static int my_setsockopt(int sockfd, int level, int optname, const void *optval,
     else if (level == SOL_SOCKET && optname == SO_KEEPALIVE)
     {
         keep_alive = value;
-        ASSERT_IS_TRUE_WITH_MSG(value == 0 || value == 1, "Unexpected keep-alive value");
+        ASSERT_IS_TRUE(value == 0 || value == 1, "Unexpected keep-alive value");
     }
     else
     {
@@ -60,27 +60,27 @@ static void init_keep_alive_values()
 
 static void ASSERT_KEEP_ALIVE_UNTOUCHED()
 {
-    ASSERT_ARE_EQUAL_WITH_MSG(int, keep_alive, KEEP_ALIVE_UNDEFINED, "keep_alive in ASSERT_KEEP_ALIVE_UNTOUCHED");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, keep_idle, KEEP_ALIVE_UNDEFINED, "keep_idle in ASSERT_KEEP_ALIVE_UNTOUCHED");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, keep_interval, KEEP_ALIVE_UNDEFINED, "keep_interval in ASSERT_KEEP_ALIVE_UNTOUCHED");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, keep_count, KEEP_ALIVE_UNDEFINED, "keep_count in ASSERT_KEEP_ALIVE_UNTOUCHED");
+    ASSERT_ARE_EQUAL(int, keep_alive, KEEP_ALIVE_UNDEFINED, "keep_alive in ASSERT_KEEP_ALIVE_UNTOUCHED");
+    ASSERT_ARE_EQUAL(int, keep_idle, KEEP_ALIVE_UNDEFINED, "keep_idle in ASSERT_KEEP_ALIVE_UNTOUCHED");
+    ASSERT_ARE_EQUAL(int, keep_interval, KEEP_ALIVE_UNDEFINED, "keep_interval in ASSERT_KEEP_ALIVE_UNTOUCHED");
+    ASSERT_ARE_EQUAL(int, keep_count, KEEP_ALIVE_UNDEFINED, "keep_count in ASSERT_KEEP_ALIVE_UNTOUCHED");
 }
 
 static void ASSERT_KEEP_ALIVE_FALSE()
 {
-    ASSERT_ARE_EQUAL_WITH_MSG(int, keep_alive, KEEP_ALIVE_FALSE, "keep_alive in ASSERT_KEEP_ALIVE_FALSE");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, keep_idle, KEEP_ALIVE_UNDEFINED, "keep_idle in ASSERT_KEEP_ALIVE_FALSE");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, keep_interval, KEEP_ALIVE_UNDEFINED, "keep_interval in ASSERT_KEEP_ALIVE_FALSE");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, keep_count, KEEP_ALIVE_UNDEFINED, "keep_count in ASSERT_KEEP_ALIVE_FALSE");
+    ASSERT_ARE_EQUAL(int, keep_alive, KEEP_ALIVE_FALSE, "keep_alive in ASSERT_KEEP_ALIVE_FALSE");
+    ASSERT_ARE_EQUAL(int, keep_idle, KEEP_ALIVE_UNDEFINED, "keep_idle in ASSERT_KEEP_ALIVE_FALSE");
+    ASSERT_ARE_EQUAL(int, keep_interval, KEEP_ALIVE_UNDEFINED, "keep_interval in ASSERT_KEEP_ALIVE_FALSE");
+    ASSERT_ARE_EQUAL(int, keep_count, KEEP_ALIVE_UNDEFINED, "keep_count in ASSERT_KEEP_ALIVE_FALSE");
 }
 
 /* Tests_SRS_SOCKET_ASYNC_30_014: [ If the optional options parameter is non-NULL and is_UDP is false, socket_async_create shall set the socket options to the provided values. ]*/
 static void ASSERT_KEEP_ALIVE_SET()
 {
-    ASSERT_ARE_EQUAL_WITH_MSG(int, keep_alive, test_keep_alive, "keep_count in ASSERT_KEEP_ALIVE_SET");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, keep_idle, test_keep_idle, "keep_idle in ASSERT_KEEP_ALIVE_SET");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, keep_interval, test_keep_interval, "keep_interval in ASSERT_KEEP_ALIVE_SET");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, keep_count, test_keep_count, "keep_count in ASSERT_KEEP_ALIVE_SET");
+    ASSERT_ARE_EQUAL(int, keep_alive, test_keep_alive, "keep_count in ASSERT_KEEP_ALIVE_SET");
+    ASSERT_ARE_EQUAL(int, keep_idle, test_keep_idle, "keep_idle in ASSERT_KEEP_ALIVE_SET");
+    ASSERT_ARE_EQUAL(int, keep_interval, test_keep_interval, "keep_interval in ASSERT_KEEP_ALIVE_SET");
+    ASSERT_ARE_EQUAL(int, keep_count, test_keep_count, "keep_count in ASSERT_KEEP_ALIVE_SET");
 }
 
 

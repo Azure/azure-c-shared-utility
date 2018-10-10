@@ -122,7 +122,7 @@ public:
         if(t.copyArray!=NULL)
         {
             copyArray = new T[t.arraySize];
-            ASSERT_IS_TRUE_WITH_MSG(NULL != copyArray, _T("memory error"));
+            ASSERT_IS_TRUE(NULL != copyArray, _T("memory error"));
             for(size_t i=0;i<t.arraySize;i++)
             {
                 copyArray[i]=t.copyArray[i];
@@ -187,7 +187,7 @@ public:
             }
 
             copyArray = new T[size];
-            ASSERT_IS_TRUE_WITH_MSG(copyArray != NULL, _T("catastrophic memory allocation error (out of memory?)"));
+            ASSERT_IS_TRUE(copyArray != NULL, _T("catastrophic memory allocation error (out of memory?)"));
             for(size_t i=0;i<size;i++)
             {
                 copyArray[i]=originalPointer[i];
@@ -238,7 +238,7 @@ public:
         if(t.copyArray!=NULL)
         {
             copyArray = new T[t.arraySize];
-            ASSERT_IS_TRUE_WITH_MSG(NULL != copyArray, _T("memory error"));
+            ASSERT_IS_TRUE(NULL != copyArray, _T("memory error"));
             for(size_t i=0;i<t.arraySize;i++)
             {
                 copyArray[i]=t.copyArray[i];
@@ -303,7 +303,7 @@ public:
             }
 
             copyArray=new T[size];
-            ASSERT_IS_TRUE_WITH_MSG(copyArray != NULL, _T("catastrophic memory allocation error (out of memory?)"));
+            ASSERT_IS_TRUE(copyArray != NULL, _T("catastrophic memory allocation error (out of memory?)"));
             for(size_t i=0;i<size;i++)
             {
                 copyArray[i]=originalPointer[i];
