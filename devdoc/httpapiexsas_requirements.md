@@ -22,9 +22,9 @@ For instance, if there is no "Authorization" header, this module will make no at
 ```c
 typedef void* HTTPAPIEX_SAS_HANDLE;
 
-extern HTTPAPIEX_SAS_HANDLE HTTPAPIEX_SAS_Create(STRING_HANDLE key, STRING_HANDLE uriResource, STRING_HANDLE keyName);
+extern HTTPAPIEX_SAS_HANDLE HTTPAPIEX_SAS_Create(STRING_HANDLE key, STRING_HANDLE signature, STRING_HANDLE uriResource, STRING_HANDLE keyName);
 
-extern HTTPAPIEX_SAS_HANDLE HTTPAPIEX_SAS_Create_From_String(const char* key, const char* uriResource, const char* keyName);
+extern HTTPAPIEX_SAS_HANDLE HTTPAPIEX_SAS_Create_From_String(const char* key, const char* signature, const char* uriResource, const char* keyName);
 
 extern void HTTPAPIEX_SAS_Destroy(HTTPAPIEX_SAS_HANDLE handle);
 
@@ -39,7 +39,7 @@ extern HTTPAPIEX_SAS_HANDLE HTTPAPIEX_SAS_Create(STRING_HANDLE key, STRING_HANDL
 
 **SRS_HTTPAPIEXSAS_01_001: [** HTTPAPIEX_SAS_Create shall create a new instance of HTTPAPIEX_SAS and return a non-NULL handle to it. **]**
 
-**SRS_HTTPAPIEXSAS_06_001: [** If the parameter key is NULL then HTTPAPIEX_SAS_Create shall return NULL. **]**
+**SRS_HTTPAPIEXSAS_06_001: [** If the parameter key and signuature are NULL then HTTPAPIEX_SAS_Create shall return NULL. **]**
 
 **SRS_HTTPAPIEXSAS_06_002: [** If the parameter uriResource is NULL then HTTPAPIEX_SAS_Create shall return NULL. **]**
 
@@ -47,13 +47,15 @@ extern HTTPAPIEX_SAS_HANDLE HTTPAPIEX_SAS_Create(STRING_HANDLE key, STRING_HANDL
 
 **SRS_HTTPAPIEXSAS_06_004: [** If there are any other errors in the instantiation of this handle then HTTPAPIEX_SAS_Create shall return NULL. **]**
 
+**SRS_HTTPAPIEXSAS_06_020[** If the parameter key and signuature are non NULL then HTTPAPIEX_SAS_Create shall return NULL. **]**
+
 ### HTTPAPIEX_SAS_Create_From_String
 
 ```c
-extern HTTPAPIEX_SAS_HANDLE HTTPAPIEX_SAS_Create_From_String(const char* key, const char* uriResource, const char* keyName);
+extern HTTPAPIEX_SAS_HANDLE HTTPAPIEX_SAS_Create_From_String(const char* key, const char* signature, const char* uriResource, const char* keyName);
 ```
 
-**SRS_HTTPAPIEXSAS_07_001: [** If the parameter `key` or `uriResource` is NULL then `HTTPAPIEX_SAS_Create_From_String` shall return NULL. **]**
+**SRS_HTTPAPIEXSAS_07_001: [** If the parameter `key` and 'signature' or `uriResource` is NULL then `HTTPAPIEX_SAS_Create_From_String` shall return NULL. **]**
 
 **SRS_HTTPAPIEXSAS_07_002: [** If there are any other errors in the instantiation of this handle then `HTTPAPIEX_SAS_Create_From_String` shall return NULL. **]**
 

@@ -18,11 +18,12 @@
 typedef struct HTTPAPIEX_SAS_STATE_TAG
 {
     char* key;
+    char* signature;
     char* uriResource;
     char* keyName;
 } HTTPAPIEX_SAS_STATE;
 
-static HTTPAPIEX_SAS_STATE* construct_httpex_sas(const char* key, const char* uriResource, const char* keyName)
+static HTTPAPIEX_SAS_STATE* construct_httpex_sas(const char* key, const char* signature, const char* uriResource, const char* keyName)
 {
     HTTPAPIEX_SAS_STATE* result;
 
@@ -34,10 +35,17 @@ static HTTPAPIEX_SAS_STATE* construct_httpex_sas(const char* key, const char* ur
     else
     {
         (void)memset(result, 0, sizeof(HTTPAPIEX_SAS_STATE));
-        if (mallocAndStrcpy_s(&result->key, key) != 0)
+        if ((key != NULL) && (mallocAndStrcpy_s(&result->key, key) != 0))
         {
             /*Codes_SRS_HTTPAPIEXSAS_06_004: [If there are any other errors in the instantiation of this handle then HTTPAPIEX_SAS_Create shall return NULL.]*/
             LogError("Failure allocating sas key.");
+            HTTPAPIEX_SAS_Destroy(result);
+            result = NULL;
+        }
+        else if ((signature != NULL) && (mallocAndStrcpy_s(&result->signature, signature) != 0))
+        {
+            /*Codes_SRS_HTTPAPIEXSAS_06_004: [If there are any other errors in the instantiation of this handle then HTTPAPIEX_SAS_Create shall return NULL.]*/
+            LogError("Failure allocating sas signature.");
             HTTPAPIEX_SAS_Destroy(result);
             result = NULL;
         }
@@ -59,31 +67,36 @@ static HTTPAPIEX_SAS_STATE* construct_httpex_sas(const char* key, const char* ur
     return result;
 }
 
-HTTPAPIEX_SAS_HANDLE HTTPAPIEX_SAS_Create_From_String(const char* key, const char* uriResource, const char* keyName)
+HTTPAPIEX_SAS_HANDLE HTTPAPIEX_SAS_Create_From_String(const char* key, const char* signature, const char* uriResource, const char* keyName)
 {
     HTTPAPIEX_SAS_HANDLE result = NULL;
-    if (key == NULL || uriResource == NULL)
+    if ((key == NULL && signature == NULL) || (uriResource == NULL))
     {
-        /* Codes_SRS_HTTPAPIEXSAS_07_001: [ If the parameter key or uriResource is NULL then HTTPAPIEX_SAS_Create_From_String shall return NULL. ] */
+        /* Codes_SRS_HTTPAPIEXSAS_07_001: [ If the parameter key and signature or uriResource is NULL then HTTPAPIEX_SAS_Create_From_String shall return NULL. ] */
         LogError("Invalid parameter key: %p, uriResource: %p", key, uriResource);
         result = NULL;
     }
     else
     {
         /* Codes_SRS_HTTPAPIEXSAS_07_002: [ If there are any other errors in the instantiation of this handle then HTTPAPIEX_SAS_Create_From_String shall return NULL. ] */
-        result = construct_httpex_sas(key, uriResource, keyName);
+        result = construct_httpex_sas(key, signature, uriResource, keyName);
     }
     /* Codes_SRS_HTTPAPIEXSAS_07_003: [ HTTPAPIEX_SAS_Create_From_String shall create a new instance of HTTPAPIEX_SAS and return a non-NULL handle to it ] */
     return result;
 }
 
-HTTPAPIEX_SAS_HANDLE HTTPAPIEX_SAS_Create(STRING_HANDLE key, STRING_HANDLE uriResource, STRING_HANDLE keyName)
+HTTPAPIEX_SAS_HANDLE HTTPAPIEX_SAS_Create(STRING_HANDLE key, STRING_HANDLE signature, STRING_HANDLE uriResource, STRING_HANDLE keyName)
 {
     HTTPAPIEX_SAS_HANDLE result = NULL;
-    if (key == NULL)
+    if (key == NULL && signature == NULL)
     {
-        /*Codes_SRS_HTTPAPIEXSAS_06_001: [If the parameter key is NULL then HTTPAPIEX_SAS_Create shall return NULL.]*/
-        LogError("No key passed to HTTPAPIEX_SAS_Create.");
+        /*Codes_SRS_HTTPAPIEXSAS_06_001: [If the parameter key and signuature are NULL then HTTPAPIEX_SAS_Create shall return NULL.]*/
+        LogError("No key or signature passed to HTTPAPIEX_SAS_Create.");
+    }
+    else if (key != NULL && signature != NULL)
+    {
+        /*Codes_SRS_HTTPAPIEXSAS_06_020: [If the parameter key and signuature are non NULL then HTTPAPIEX_SAS_Create shall return NULL.]*/
+        LogError("Both key and signature were set, they are mutually exclusive.");
     }
     else if (uriResource == NULL)
     {
@@ -94,7 +107,7 @@ HTTPAPIEX_SAS_HANDLE HTTPAPIEX_SAS_Create(STRING_HANDLE key, STRING_HANDLE uriRe
     {
         /*Codes_SRS_HTTPAPIEXSAS_06_003: [The parameter keyName for HTTPAPIEX_SAS_Create is optional and can be NULL.]*/
         /*Codes_SRS_HTTPAPIEXSAS_01_001: [ HTTPAPIEX_SAS_Create shall create a new instance of HTTPAPIEX_SAS and return a non-NULL handle to it. ]*/
-        result = construct_httpex_sas(STRING_c_str(key), STRING_c_str(uriResource), STRING_c_str(keyName) );
+        result = construct_httpex_sas(STRING_c_str(key), STRING_c_str(signature), STRING_c_str(uriResource), STRING_c_str(keyName) );
     }
     return result;
 }
@@ -144,10 +157,18 @@ HTTPAPIEX_RESULT HTTPAPIEX_SAS_ExecuteRequest(HTTPAPIEX_SAS_HANDLE sasHandle, HT
                 }
                 else
                 {
-                    /*Codes_SRS_HTTPAPIEXSAS_06_011: [SASToken_Create shall be invoked.]*/
-                    /*Codes_SRS_HTTPAPIEXSAS_06_012: [If the return result of SASToken_Create is NULL then fallthrough.]*/
-                    size_t expiry = (size_t)(difftime(currentTime, 0) + 3600);
-                    STRING_HANDLE newSASToken = SASToken_CreateString(state->key, state->uriResource, state->keyName, expiry);
+                    STRING_HANDLE newSASToken = NULL;
+                    if (state->signature != NULL)
+                    {
+                        newSASToken = STRING_construct(state->signature);
+                    }
+                    else
+                    {
+                        /*Codes_SRS_HTTPAPIEXSAS_06_011: [SASToken_Create shall be invoked.]*/
+                        /*Codes_SRS_HTTPAPIEXSAS_06_012: [If the return result of SASToken_Create is NULL then fallthrough.]*/
+                        size_t expiry = (size_t)(difftime(currentTime, 0) + 3600);
+                        newSASToken = SASToken_CreateString(state->key, state->uriResource, state->keyName, expiry);
+                    }
                     if (newSASToken != NULL)
                     {
                         /*Codes_SRS_HTTPAPIEXSAS_06_013: [HTTPHeaders_ReplaceHeaderNameValuePair shall be invoked with "Authorization" as its second argument and STRING_c_str (newSASToken) as its third argument.]*/

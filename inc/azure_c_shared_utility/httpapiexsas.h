@@ -17,9 +17,9 @@ extern "C" {
 
 typedef struct HTTPAPIEX_SAS_STATE_TAG* HTTPAPIEX_SAS_HANDLE;
 
-MOCKABLE_FUNCTION(, HTTPAPIEX_SAS_HANDLE, HTTPAPIEX_SAS_Create, STRING_HANDLE, key, STRING_HANDLE, uriResource, STRING_HANDLE, keyName);
+MOCKABLE_FUNCTION(, HTTPAPIEX_SAS_HANDLE, HTTPAPIEX_SAS_Create, STRING_HANDLE, key, STRING_HANDLE, signature, STRING_HANDLE, uriResource, STRING_HANDLE, keyName);
 
-MOCKABLE_FUNCTION(, HTTPAPIEX_SAS_HANDLE, HTTPAPIEX_SAS_Create_From_String, const char*, key, const char*, uriResource, const char*, keyName);
+MOCKABLE_FUNCTION(, HTTPAPIEX_SAS_HANDLE, HTTPAPIEX_SAS_Create_From_String, const char*, key, const char*, signature, const char*, uriResource, const char*, keyName);
 
 MOCKABLE_FUNCTION(, void, HTTPAPIEX_SAS_Destroy, HTTPAPIEX_SAS_HANDLE, handle);
 
