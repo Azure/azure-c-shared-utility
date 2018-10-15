@@ -233,7 +233,7 @@ function(build_test_artifacts whatIsBuilding use_gballoc)
         if(
             (("${whatIsBuilding}" MATCHES ".*ut.*") AND ${run_unittests}) OR
             (("${whatIsBuilding}" MATCHES ".*e2e.*") AND ${run_e2e_tests}) OR
-            (("${whatIsBuilding}" MATCHES ".*int.*") AND ${run_e2e_tests})
+            (("${whatIsBuilding}" MATCHES ".*int.*") AND ${run_int_tests})
         )
                 windows_unittests_add_exe(${whatIsBuilding} ${ARGN})
                 if (${use_cppunittest})
@@ -252,7 +252,7 @@ function(build_test_artifacts whatIsBuilding use_gballoc)
         if(
             (("${whatIsBuilding}" MATCHES ".*ut.*") AND ${run_unittests}) OR
             (("${whatIsBuilding}" MATCHES ".*e2e.*") AND ${run_e2e_tests}) OR
-            (("${whatIsBuilding}" MATCHES ".*int.*") AND ${run_e2e_tests})
+            (("${whatIsBuilding}" MATCHES ".*int.*") AND ${run_int_tests})
         )
             linux_unittests_add_exe(${whatIsBuilding} ${ARGN})
         endif()
@@ -511,7 +511,7 @@ function(build_c_test_artifacts whatIsBuilding use_gballoc folder)
         if(
             (("${whatIsBuilding}" MATCHES ".*ut.*") AND ${run_unittests}) OR
             (("${whatIsBuilding}" MATCHES ".*e2e.*") AND ${run_e2e_tests}) OR
-            (("${whatIsBuilding}" MATCHES ".*int.*") AND ${run_e2e_tests})
+            (("${whatIsBuilding}" MATCHES ".*int.*") AND ${run_int_tests})
         )
             if (${use_cppunittest})
                 c_windows_unittests_add_dll(${whatIsBuilding} ${folder} ${ARGN})
@@ -530,7 +530,7 @@ function(build_c_test_artifacts whatIsBuilding use_gballoc folder)
         if(
             (("${whatIsBuilding}" MATCHES ".*ut.*") AND ${run_unittests}) OR
             (("${whatIsBuilding}" MATCHES ".*e2e.*") AND ${run_e2e_tests}) OR
-            (("${whatIsBuilding}" MATCHES ".*int.*") AND ${run_e2e_tests})
+            (("${whatIsBuilding}" MATCHES ".*int.*") AND ${run_int_tests})
         )
             c_linux_unittests_add_exe(${whatIsBuilding} ${folder} ${ARGN})
         endif()
