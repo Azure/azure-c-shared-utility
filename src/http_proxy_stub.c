@@ -3,16 +3,9 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <stdbool.h>
-#include <stdint.h>
-#include <limits.h>
 #include <stddef.h>
-#include "azure_c_shared_utility/gballoc.h"
-#include "azure_c_shared_utility/xio.h"
 #include "azure_c_shared_utility/socketio.h"
-#include "azure_c_shared_utility/crt_abstractions.h"
 #include "azure_c_shared_utility/http_proxy_io.h"
-#include "azure_c_shared_utility/base64.h"
 
 static CONCRETE_IO_HANDLE http_proxy_stub_create(void* io_create_parameters)
 {
@@ -44,7 +37,7 @@ static int http_proxy_stub_open(CONCRETE_IO_HANDLE http_proxy_io, ON_IO_OPEN_COM
     (void)on_io_error_context;
 
     LogError("Function %s is a stub and should never be called", __FUNCTION__);
-    result = __LINE__;
+    result = __FAILURE__;
 
     return result;
 }
@@ -58,7 +51,7 @@ static int http_proxy_stub_close(CONCRETE_IO_HANDLE http_proxy_io, ON_IO_CLOSE_C
     (void)on_io_close_complete_context;
 
     LogError("Function %s is a stub and should never be called", __FUNCTION__);
-    result = __LINE__;
+    result = __FAILURE__;
 
     return result;
 }
@@ -74,7 +67,7 @@ static int http_proxy_stub_send(CONCRETE_IO_HANDLE http_proxy_io, const void* bu
     (void)on_send_complete_context;
 
     LogError("Function %s is a stub and should never be called", __FUNCTION__);
-    result = __LINE__;
+    result = __FAILURE__;
 
     return result;
 }
@@ -95,7 +88,7 @@ static int http_proxy_stub_set_option(CONCRETE_IO_HANDLE http_proxy_io, const ch
     (void)value;
 
     LogError("Function %s is a stub and should never be called", __FUNCTION__);
-    result = __LINE__;
+    result = __FAILURE__;
 
     return result;
 }
