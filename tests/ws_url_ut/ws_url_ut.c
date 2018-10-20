@@ -64,7 +64,6 @@ extern "C" {
 #endif
 
 
-static TEST_MUTEX_HANDLE g_dllByDll;
 static TEST_MUTEX_HANDLE g_testByTest;
 
 DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
@@ -148,7 +147,6 @@ BEGIN_TEST_SUITE(ws_url_ut)
     {
         int result;
 
-        TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
         g_testByTest = TEST_MUTEX_CREATE();
         ASSERT_IS_NOT_NULL(g_testByTest);
 
@@ -167,7 +165,6 @@ BEGIN_TEST_SUITE(ws_url_ut)
         umock_c_deinit();
 
         TEST_MUTEX_DESTROY(g_testByTest);
-        TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
     }
 
     TEST_FUNCTION_INITIALIZE(ws_url_ut_test_function_init)
