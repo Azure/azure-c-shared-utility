@@ -183,7 +183,6 @@ ${LOGGING_C_FILE}
 ./src/gb_rand.c
 ./src/hmac.c
 ./src/hmacsha256.c
-./src/http_proxy_io.c
 ./src/xio.c
 ./src/singlylinkedlist.c
 ./src/map.c
@@ -230,6 +229,17 @@ if(${use_schannel})
     set(source_c_files ${source_c_files}
         ./adapters/tlsio_schannel.c
         ./adapters/x509_schannel.c
+    )
+endif()
+# If SocketIO isn't used, then we need to substitute stubs for HTTP Proxy
+# since it depends on SocketIO
+if(${use_socketio})
+    set(source_c_files ${source_c_files}
+        ./src/http_proxy_io.c
+    )
+else()
+    set(source_c_files ${source_c_files}
+        ./src/http_proxy_stub.c
     )
 endif()
 if(${use_wolfssl})
