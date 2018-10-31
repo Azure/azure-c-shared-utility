@@ -61,7 +61,7 @@ void ConstMap_Destroy(CONSTMAP_HANDLE handle)
         {
             /*Codes_SRS_CONSTMAP_17_004: [If the reference count is zero, ConstMap_Destroy shall release all resources associated with the immutable map.]*/
             Map_Destroy(((CONSTMAP_HANDLE_DATA *)handle)->map);
-            free(handle);
+            REFCOUNT_TYPE_DESTROY(CONSTMAP_HANDLE_DATA, handle);
         }
 
     }

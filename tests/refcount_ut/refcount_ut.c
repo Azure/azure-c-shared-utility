@@ -3,33 +3,15 @@
 
 #ifdef __cplusplus
 #include <cstdlib>
+#include <cstddef>
 #else
 #include <stdlib.h>
+#include <stddef.h>
 #endif
-
-static size_t currentmalloc_call = 0;
-static size_t whenShallmalloc_fail = 0;
 
 void* my_gballoc_malloc(size_t size)
 {
-    void* result;
-    currentmalloc_call++;
-    if (whenShallmalloc_fail > 0)
-    {
-        if (currentmalloc_call == whenShallmalloc_fail)
-        {
-            result = NULL;
-        }
-        else
-        {
-            result = malloc(size);
-        }
-    }
-    else
-    {
-        result = malloc(size);
-    }
-    return result;
+    return malloc(size);
 }
 
 void my_gballoc_free(void* ptr)
@@ -86,9 +68,6 @@ BEGIN_TEST_SUITE(refcount_unittests)
         }
 
         umock_c_reset_all_calls();
-
-        currentmalloc_call = 0;
-        whenShallmalloc_fail = 0;
     }
 
     TEST_FUNCTION_CLEANUP(TestMethodCleanup)
@@ -96,12 +75,15 @@ BEGIN_TEST_SUITE(refcount_unittests)
         TEST_MUTEX_RELEASE(g_testByTest);
     }
 
+    /* REFCOUNT_TYPE_CREATE */
+
+    /* Tests_SRS_REFCOUNT_01_002: [ `REFCOUNT_TYPE_CREATE` shall allocate memory for the type that is ref counted. ]*/
+    /* Tests_SRS_REFCOUNT_01_003: [ On success it shall return a non-NULL handle to the allocated ref counted type `type`. ]*/
     TEST_FUNCTION(refcount_create_returns_non_NULL)
     {
         ///arrange
         POS_HANDLE p;
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
 
         ///act
         p = Pos_Create(4);
@@ -114,24 +96,90 @@ BEGIN_TEST_SUITE(refcount_unittests)
         Pos_Destroy(p);
     }
 
-    TEST_FUNCTION(refcount_DEC_REF_after_create_says_we_should_free)
+    /* Tests_SRS_REFCOUNT_01_004: [ If any error occurrs, `REFCOUNT_TYPE_CREATE` shall return NULL. ]*/
+    TEST_FUNCTION(when_malloc_fails_refcount_create_fails)
     {
         ///arrange
         POS_HANDLE p;
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
-            .IgnoreArgument(1);
+            .SetReturn(NULL);
+
+        ///act
+        p = Pos_Create(4);
+
+        ///assert
+        ASSERT_IS_NULL(p);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    }
+
+    /* REFCOUNT_TYPE_CREATE_WITH_EXTRA_SIZE */
+
+    /* Tests_SRS_REFCOUNT_01_005: [ `REFCOUNT_TYPE_CREATE_WITH_EXTRA_SIZE` shall allocate memory for the type that is ref counted (`type`) plus extra memory enough to hold `size` bytes. ]*/
+    /* Tests_SRS_REFCOUNT_01_006: [ On success it shall return a non-NULL handle to the allocated ref counted type `type`. ]*/
+    TEST_FUNCTION(refcount_create_with_extra_size_returns_non_NULL)
+    {
+        ///arrange
+        POS_HANDLE p;
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+
+        ///act
+        p = Pos_Create_With_Extra_Size(4, 42);
+
+        ///assert
+        ASSERT_IS_NOT_NULL(p);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        //cleanup
+        Pos_Destroy(p);
+    }
+
+    /* Tests_SRS_REFCOUNT_01_007: [ If any error occurrs, `REFCOUNT_TYPE_CREATE_WITH_EXTRA_SIZE` shall return NULL. ]*/
+    TEST_FUNCTION(when_malloc_fails_refcount_create_with_extra_size_also_fails)
+    {
+        ///arrange
+        POS_HANDLE p;
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
+            .SetReturn(NULL);
+
+        ///act
+        p = Pos_Create_With_Extra_Size(4, 42);
+
+        ///assert
+        ASSERT_IS_NULL(p);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    }
+
+    /* REFCOUNT_TYPE_DESTROY */
+
+    /* Tests_SRS_REFCOUNT_01_008: [ `REFCOUNT_TYPE_DESTROY` shall free the memory allocated by `REFCOUNT_TYPE_CREATE` or `REFCOUNT_TYPE_CREATE_WITH_EXTRA_MEMORY`. ]*/
+    TEST_FUNCTION(refcount_DEC_REF_after_create_says_we_should_free)
+    {
+        ///arrange
+        POS_HANDLE p;
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
         p = Pos_Create(4);
         umock_c_reset_all_calls();
 
         ///act
-        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
         Pos_Destroy(p);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         //cleanup
+    }
+
+    /* Tests_SRS_REFCOUNT_01_009: [ If `counted_type` is NULL, `REFCOUNT_TYPE_DESTROY` shall return. ]*/
+    TEST_FUNCTION(refcount_DESTROY_with_NULL_returns)
+    {
+        ///arrange
+
+        ///act
+        Pos_Destroy(NULL);
+
+        ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     }
 
     TEST_FUNCTION(refcount_INC_REF_and_DEC_REF_after_create_says_we_should_not_free)
@@ -162,15 +210,11 @@ BEGIN_TEST_SUITE(refcount_unittests)
         umock_c_reset_all_calls();
 
         ///act
-        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
         Pos_Destroy(clone_of_p);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-        //cleanup
     }
 
 END_TEST_SUITE(refcount_unittests)
-
