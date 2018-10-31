@@ -48,26 +48,6 @@ C2(REFCOUNT_, type)
 /*the newly allocated memory shall be free'd by free()*/
 /*and the ref counting is handled internally by the type in the _Create/ _Create_With_Extra_Size /_Clone /_Destroy functions */
 
-/* Codes_SRS_REFCOUNT_01_002: [ `REFCOUNT_TYPE_CREATE` shall allocate memory for the type that is ref counted. ]*/
-/* Codes_SRS_REFCOUNT_01_003: [ On success it shall return a non-NULL handle to the allocated ref counted type `type`. ]*/
-/* Codes_SRS_REFCOUNT_01_004: [ If any error occurrs, `REFCOUNT_TYPE_CREATE` shall return NULL. ]*/
-#define DEFINE_CREATE(type) \
-static type* REFCOUNT_TYPE_DECLARE_CREATE(type) (void) \
-{ \
-    REFCOUNT_TYPE(type)* ref_counted = (REFCOUNT_TYPE(type)*)malloc(sizeof(REFCOUNT_TYPE(type))); \
-    type* result; \
-    if (ref_counted == NULL) \
-    { \
-        result = NULL; \
-    } \
-    else \
-    { \
-        result = &ref_counted->counted; \
-        INIT_REF(type, result); \
-    } \
-    return result; \
-} \
-
 /* Codes_SRS_REFCOUNT_01_005: [ `REFCOUNT_TYPE_CREATE_WITH_EXTRA_SIZE` shall allocate memory for the type that is ref counted (`type`) plus extra memory enough to hold `size` bytes. ]*/
 /* Codes_SRS_REFCOUNT_01_006: [ On success it shall return a non-NULL handle to the allocated ref counted type `type`. ]*/
 /* Codes_SRS_REFCOUNT_01_007: [ If any error occurrs, `REFCOUNT_TYPE_CREATE_WITH_EXTRA_SIZE` shall return NULL. ]*/
@@ -88,6 +68,15 @@ static type* REFCOUNT_TYPE_DECLARE_CREATE_WITH_EXTRA_SIZE(type)(size_t size) \
     return result; \
 } \
 
+/* Codes_SRS_REFCOUNT_01_002: [ `REFCOUNT_TYPE_CREATE` shall allocate memory for the type that is ref counted. ]*/
+/* Codes_SRS_REFCOUNT_01_003: [ On success it shall return a non-NULL handle to the allocated ref counted type `type`. ]*/
+/* Codes_SRS_REFCOUNT_01_004: [ If any error occurrs, `REFCOUNT_TYPE_CREATE` shall return NULL. ]*/
+#define DEFINE_CREATE(type) \
+static type* REFCOUNT_TYPE_DECLARE_CREATE(type) (void) \
+{ \
+    return REFCOUNT_TYPE_DECLARE_CREATE_WITH_EXTRA_SIZE(type)(0); \
+} \
+
 /* Codes_SRS_REFCOUNT_01_008: [ `REFCOUNT_TYPE_DESTROY` shall free the memory allocated by `REFCOUNT_TYPE_CREATE` or `REFCOUNT_TYPE_CREATE_WITH_EXTRA_MEMORY`. ]*/
 /* Codes_SRS_REFCOUNT_01_009: [ If `counted_type` is NULL, `REFCOUNT_TYPE_DESTROY` shall return. ]*/
 #define DEFINE_DESTROY(type) \
@@ -103,8 +92,8 @@ REFCOUNT_TYPE(type) \
     COUNT_TYPE count; \
     type counted; \
 }; \
-DEFINE_CREATE(type) \
 DEFINE_CREATE_WITH_EXTRA_SIZE(type) \
+DEFINE_CREATE(type) \
 DEFINE_DESTROY(type) \
 
 #ifndef DEC_RETURN_ZERO
