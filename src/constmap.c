@@ -36,12 +36,11 @@ CONSTMAP_HANDLE ConstMap_Create(MAP_HANDLE sourceMap)
         result->map = Map_Clone(sourceMap);
         if (result->map == NULL)
         {
-            free(result);
+            LOG_CONSTMAP_ERROR(CONSTMAP_ERROR);
+            REFCOUNT_TYPE_DESTROY(CONSTMAP_HANDLE_DATA, result);
             /*Codes_SRS_CONSTMAP_17_002: [If during creation there are any errors, then ConstMap_Create shall return NULL.]*/
             result = NULL;
-            LOG_CONSTMAP_ERROR(CONSTMAP_ERROR);
         }
-
     }
     /*Codes_SRS_CONSTMAP_17_003: [Otherwise, it shall return a non-NULL handle that can be used in subsequent calls.]*/
     return (CONSTMAP_HANDLE)result;
