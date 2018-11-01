@@ -12,7 +12,7 @@ typedef struct pos_TAG
     /*warning C4200: nonstandard extension used: zero-sized array in struct/union */
 #pragma warning(disable:4200)
 #endif
-    int flexible_array[0];
+    int flexible_array[];
 } pos;
 
 DEFINE_REFCOUNT_TYPE(pos);
