@@ -18,8 +18,6 @@
 #include <unistd.h>
 #include <sys/utsname.h>
 
-#include <string>
-
 int platform_init(void)
 {
     int result;
@@ -34,7 +32,7 @@ int platform_init(void)
             host += 7;
         }
 
-        char *h = _strdup(host);
+        char *h = strdup(host);
 
         // user:pass@host:port
         char *user = strstr(h, "@");
