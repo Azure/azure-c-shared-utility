@@ -32,6 +32,8 @@
 #include "azure_c_shared_utility/shared_util_options.h"
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/const_defines.h"
+#include "azure_c_shared_utility/platform.h" // for http proxy settings
+
 
 typedef enum TLSIO_STATE_TAG
 {
@@ -831,9 +833,6 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
     }
 }
 
-static char proxyHostPort[256] = {0, };
-static char proxyUserPassword[256] = {0, };
-
 static int load_cert_crl_http(
     const char *url,
     X509_CRL **pcrl)
@@ -853,8 +852,12 @@ static int load_cert_crl_http(
         goto error;
     }
 
-    bio = BIO_new_connect(proxyHostPort[0] ? proxyHostPort : host);
-    if (!bio || (!proxyHostPort[0] &&!BIO_set_conn_port(bio, port)))
+    const char* proxyHostnamePort;
+    const char* usernamePassword;
+    platform_get_http_proxy(&proxyHostnamePort, &usernamePassword);
+
+    bio = BIO_new_connect((proxyHostnamePort && *proxyHostnamePort) ? proxyHostnamePort : host);
+    if (!bio || ((!proxyHostnamePort || !(*proxyHostnamePort)) &&!BIO_set_conn_port(bio, port)))
     {
         goto error;
     }
@@ -878,7 +881,7 @@ static int load_cert_crl_http(
     }
 
     // add the auth header for proxy, if necessary
-    if (proxyUserPassword[0])
+    if (usernamePassword && *usernamePassword)
     {
         char authData[1256];
 
@@ -888,7 +891,7 @@ static int load_cert_crl_http(
         BIO* bioBase64 = BIO_new(BIO_s_mem());
         BIO_push(bioPlain, bioBase64);
 
-        int result = BIO_write(bioPlain, proxyUserPassword, (int)strlen(proxyUserPassword));
+        int result = BIO_write(bioPlain, usernamePassword, (int)strlen(usernamePassword));
         if (result <= 0)
         {
             goto error;
@@ -1926,14 +1929,6 @@ static int create_openssl_instance(TLS_IO_INSTANCE* tlsInstance)
             }
         }
     }
-
-    // In case, we are successfull, set the global proxy information.
-    //if (!result)
-    //{
-    //    // Note: FIXME: @Zhou add proxy information here
-    //    sprintf_s(proxyHostPort, sizeof(proxyHostPort), "%s:%s", "localhost", "8888");
-    //    sprintf_s(proxyUserPassword, sizeof(proxyUserPassword), "%s:%s", "proxyuser", "proxypassword");
-    //}
 
     return result;
 }

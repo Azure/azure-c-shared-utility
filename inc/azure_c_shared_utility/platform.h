@@ -17,6 +17,9 @@ extern "C" {
     MOCKABLE_FUNCTION(, const IO_INTERFACE_DESCRIPTION*, platform_get_default_tlsio);
     MOCKABLE_FUNCTION(, STRING_HANDLE, platform_get_platform_info);
 
+    void platform_set_http_proxy(const char* proxyHostnamePort, const char* proxyUsernamePassword);
+    void platform_get_http_proxy(const char** proxyHostnamePort, const char** proxyUsernamePassword);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

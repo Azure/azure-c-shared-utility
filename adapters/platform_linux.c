@@ -18,14 +18,50 @@
 #include <unistd.h>
 #include <sys/utsname.h>
 
+#include <string>
+
 int platform_init(void)
 {
     int result;
 #ifdef USE_OPENSSL
     result = tlsio_openssl_init();
+
+    char *host = getenv("HTTP_PROXY");
+    if (host)
+    {
+        if (0 == strncmp(host, "http://", 7))
+        {
+            host += 7;
+        }
+
+        char *h = _strdup(host);
+
+        // user:pass@host:port
+        char *user = strstr(h, "@");
+        if (user)
+        {
+            *user = '\0';
+            host = user + 1;
+            user = h;
+        }
+        else
+        {
+            user = NULL;
+            host = h;
+        }
+
+        platform_set_http_proxy(host, user);
+        free(h);
+    }
+    else
+    {
+        platform_set_http_proxy(NULL, NULL);
+    }
+
 #else
     result = 0;
 #endif
+
     return result;
 }
 
