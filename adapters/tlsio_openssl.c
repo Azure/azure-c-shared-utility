@@ -831,6 +831,9 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
     }
 }
 
+static char proxyHostPort[256] = {0, };
+static char proxyUserPassword[256] = {0, };
+
 static int load_cert_crl_http(
     const char *url,
     X509_CRL **pcrl)
@@ -850,8 +853,8 @@ static int load_cert_crl_http(
         goto error;
     }
 
-    bio = BIO_new_connect(host);
-    if (!bio || !BIO_set_conn_port(bio, port))
+    bio = BIO_new_connect(proxyHostPort[0] ? proxyHostPort : host);
+    if (!bio || (!proxyHostPort[0] &&!BIO_set_conn_port(bio, port)))
     {
         goto error;
     }
@@ -864,7 +867,7 @@ static int load_cert_crl_http(
 
     OCSP_set_max_response_length(rctx, 1024 * 1024);
 
-    if (!OCSP_REQ_CTX_http(rctx, "GET", path))
+    if (!OCSP_REQ_CTX_http(rctx, "GET", url)) // path
     {
         goto error;
     }
@@ -872,6 +875,40 @@ static int load_cert_crl_http(
     if (!OCSP_REQ_CTX_add1_header(rctx, "Host", host))
     {
         goto error;
+    }
+
+    // add the auth header for proxy, if necessary
+    if (proxyUserPassword[0])
+    {
+        char authData[1256];
+
+        BIO *bioPlain = BIO_new(BIO_f_base64());
+        BIO_set_flags(bioPlain, BIO_FLAGS_BASE64_NO_NL);
+
+        BIO* bioBase64 = BIO_new(BIO_s_mem());
+        BIO_push(bioPlain, bioBase64);
+
+        int result = BIO_write(bioPlain, proxyUserPassword, (int)strlen(proxyUserPassword));
+        if (result <= 0)
+        {
+            goto error;
+        }
+
+        BIO_flush(bioPlain);
+
+        char* realmBase64;
+        int length = BIO_get_mem_data(bioBase64, &realmBase64);
+
+        sprintf_s(authData, sizeof(authData), "Basic %.*s", length, realmBase64);
+
+        BIO_pop(bioPlain);
+        BIO_free_all(bioBase64);
+        BIO_free_all(bioPlain);
+
+        if (!OCSP_REQ_CTX_add1_header(rctx, "Proxy-Authorization", authData))
+        {
+            goto error;
+        }
     }
 
     do
@@ -1889,6 +1926,15 @@ static int create_openssl_instance(TLS_IO_INSTANCE* tlsInstance)
             }
         }
     }
+
+    // In case, we are successfull, set the global proxy information.
+    //if (!result)
+    //{
+    //    // Note: FIXME: @Zhou add proxy information here
+    //    sprintf_s(proxyHostPort, sizeof(proxyHostPort), "%s:%s", "localhost", "8888");
+    //    sprintf_s(proxyUserPassword, sizeof(proxyUserPassword), "%s:%s", "proxyuser", "proxypassword");
+    //}
+
     return result;
 }
 
