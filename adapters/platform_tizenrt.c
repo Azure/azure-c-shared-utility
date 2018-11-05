@@ -42,12 +42,12 @@ void platform_get_http_proxy(const char** proxyHostnamePort, const char** userna
 void platform_set_http_proxy(const char* proxyHostPort, const char* proxyUsernamePassword)
 {
     if (proxyHostPort)
-        sprintf_s(proxyHostPort2, sizeof(proxyHostPort2), "%s", proxyHostPort);
+        strcpy(proxyHostPort2, proxyHostPort);
     else
         proxyHostPort2[0] = '\0';
 
     if (proxyUsernamePassword)
-        sprintf_s(proxyUserPassword2, sizeof(proxyUserPassword2), "%s", proxyUsernamePassword);
+        strcpy(proxyUserPassword2, proxyUsernamePassword);
     else
         proxyUserPassword2[0] = '\0';
 }
