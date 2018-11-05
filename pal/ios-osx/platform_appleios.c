@@ -9,6 +9,7 @@
 #include <sys/utsname.h>
 
 #include "tlsio_appleios.h"
+#include <string.h>
 
 int platform_init(void)
 {
@@ -50,4 +51,29 @@ STRING_HANDLE platform_get_platform_info(void)
 
 void platform_deinit(void)
 {
+}
+
+static char proxyHostPort2[256] = { 0, };
+static char proxyUserPassword2[256] = { 0, };
+
+void platform_get_http_proxy(const char** proxyHostnamePort, const char** usernamePassword)
+{
+    if (proxyHostnamePort)
+        *proxyHostnamePort = &proxyHostPort2[0];
+
+    if (usernamePassword)
+        *usernamePassword = &proxyUserPassword2[0];
+}
+
+void platform_set_http_proxy(const char* proxyHostPort, const char* proxyUsernamePassword)
+{
+    if (proxyHostPort)
+        strcpy(proxyHostPort2, proxyHostPort);
+    else
+        proxyHostPort2[0] = '\0';
+
+    if (proxyUsernamePassword)
+        strcpy(proxyUserPassword2, proxyUsernamePassword);
+    else
+        proxyUserPassword2[0] = '\0';
 }
