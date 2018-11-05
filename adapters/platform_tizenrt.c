@@ -26,3 +26,28 @@ void platform_deinit(void)
 {
 	return;
 }
+
+static char proxyHostPort2[256] = { 0, };
+static char proxyUserPassword2[256] = { 0, };
+
+void platform_get_http_proxy(const char** proxyHostnamePort, const char** usernamePassword)
+{
+    if (proxyHostnamePort)
+        *proxyHostnamePort = &proxyHostPort2[0];
+
+    if (usernamePassword)
+        *usernamePassword = &proxyUserPassword2[0];
+}
+
+void platform_set_http_proxy(const char* proxyHostPort, const char* proxyUsernamePassword)
+{
+    if (proxyHostPort)
+        sprintf_s(proxyHostPort2, sizeof(proxyHostPort2), "%s", proxyHostPort);
+    else
+        proxyHostPort2[0] = '\0';
+
+    if (proxyUsernamePassword)
+        sprintf_s(proxyUserPassword2, sizeof(proxyUserPassword2), "%s", proxyUsernamePassword);
+    else
+        proxyUserPassword2[0] = '\0';
+}
