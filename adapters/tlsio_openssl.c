@@ -871,7 +871,7 @@ static int load_cert_crl_http(
 
     OCSP_set_max_response_length(rctx, 1024 * 1024);
 
-    if (!OCSP_REQ_CTX_http(rctx, "GET", url)) // path
+    if (!OCSP_REQ_CTX_http(rctx, "GET", isHostnameSet ? url : path)) // path
     {
         goto error;
     }
