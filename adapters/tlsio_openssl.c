@@ -895,6 +895,9 @@ static int load_cert_crl_http(
         int result = BIO_write(bioPlain, usernamePassword, (int)strlen(usernamePassword));
         if (result <= 0)
         {
+            BIO_pop(bioPlain);
+            BIO_free_all(bioBase64);
+            BIO_free_all(bioPlain);
             goto error;
         }
 
