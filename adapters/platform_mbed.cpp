@@ -73,15 +73,3 @@ void platform_deinit(void)
 {
     EthernetInterface::disconnect();
 }
-
-void platform_get_http_proxy(const char** proxyHostnamePort, const char** usernamePassword)
-{
-    if (proxyHostnamePort) *proxyHostnamePort = '\0';
-    if (usernamePassword)  *usernamePassword = '\0';
-}
-
-void platform_set_http_proxy(const char* proxyHostPort, const char* proxyUsernamePassword)
-{
-    (void)proxyHostPort;
-    (void)proxyUsernamePassword;
-}

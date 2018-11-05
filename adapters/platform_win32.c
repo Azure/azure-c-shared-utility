@@ -35,40 +35,6 @@ int platform_init(void)
     {
 #ifdef USE_OPENSSL
         tlsio_openssl_init();
-
-        char *host = getenv("HTTP_PROXY");
-
-        if (host)
-        {
-            if (0 == strncmp(host, "http://", 7))
-            {
-                host += 7;
-            }
-
-            char *h = _strdup(host);
-
-            // user:pass@host:port
-            char *user = strstr(h, "@");
-            if (user)
-            {
-                *user = '\0';
-                host = user + 1;
-                user = h;
-            }
-            else
-            {
-                user = NULL;
-                host = h;
-            }
-
-            platform_set_http_proxy(host, user);
-            free(h);
-        }
-        else
-        {
-            platform_set_http_proxy(NULL, NULL);
-        }
-
 #endif
         result = 0;
     }
@@ -168,29 +134,4 @@ void platform_deinit(void)
 #ifdef USE_OPENSSL
     tlsio_openssl_deinit();
 #endif
-}
-
-static char proxyHostPort2[256] = { 0, };
-static char proxyUserPassword2[256] = { 0, };
-
-void platform_get_http_proxy(const char** proxyHostnamePort, const char** usernamePassword)
-{
-    if (proxyHostnamePort)
-        *proxyHostnamePort = &proxyHostPort2[0];
-
-    if (usernamePassword)
-        *usernamePassword = &proxyUserPassword2[0];
-}
-
-void platform_set_http_proxy(const char* proxyHostPort, const char* proxyUsernamePassword)
-{
-    if (proxyHostPort)
-        sprintf_s(proxyHostPort2, sizeof(proxyHostPort2), "%s", proxyHostPort);
-    else
-        proxyHostPort2[0] = '\0';
-
-    if (proxyUsernamePassword)
-        sprintf_s(proxyUserPassword2, sizeof(proxyUserPassword2), "%s", proxyUsernamePassword);
-    else
-        proxyUserPassword2[0] = '\0';
 }
