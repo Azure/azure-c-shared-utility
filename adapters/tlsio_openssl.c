@@ -855,9 +855,10 @@ static int load_cert_crl_http(
     const char* proxyHostnamePort;
     const char* usernamePassword;
     platform_get_http_proxy(&proxyHostnamePort, &usernamePassword);
+    bool isHostnameSet = (proxyHostnamePort && *proxyHostnamePort);
 
-    bio = BIO_new_connect((proxyHostnamePort && *proxyHostnamePort) ? proxyHostnamePort : host);
-    if (!bio || ((!proxyHostnamePort || !(*proxyHostnamePort)) &&!BIO_set_conn_port(bio, port)))
+    bio = BIO_new_connect(isHostnameSet ? proxyHostnamePort : host);
+    if (!bio || (!isHostnameSet && !BIO_set_conn_port(bio, port)))
     {
         goto error;
     }
