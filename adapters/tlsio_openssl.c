@@ -32,6 +32,8 @@
 #include "azure_c_shared_utility/shared_util_options.h"
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/const_defines.h"
+#include "azure_c_shared_utility/platform.h" // for http proxy settings
+
 
 typedef enum TLSIO_STATE_TAG
 {
@@ -850,8 +852,13 @@ static int load_cert_crl_http(
         goto error;
     }
 
-    bio = BIO_new_connect(host);
-    if (!bio || !BIO_set_conn_port(bio, port))
+    const char* proxyHostnamePort;
+    const char* usernamePassword;
+    platform_get_http_proxy(&proxyHostnamePort, &usernamePassword);
+    bool isHostnameSet = (proxyHostnamePort && *proxyHostnamePort);
+
+    bio = BIO_new_connect(isHostnameSet ? proxyHostnamePort : host);
+    if (!bio || (!isHostnameSet && !BIO_set_conn_port(bio, port)))
     {
         goto error;
     }
@@ -864,7 +871,7 @@ static int load_cert_crl_http(
 
     OCSP_set_max_response_length(rctx, 1024 * 1024);
 
-    if (!OCSP_REQ_CTX_http(rctx, "GET", path))
+    if (!OCSP_REQ_CTX_http(rctx, "GET", url)) // path
     {
         goto error;
     }
@@ -872,6 +879,40 @@ static int load_cert_crl_http(
     if (!OCSP_REQ_CTX_add1_header(rctx, "Host", host))
     {
         goto error;
+    }
+
+    // add the auth header for proxy, if necessary
+    if (usernamePassword && *usernamePassword)
+    {
+        char authData[1256];
+
+        BIO *bioPlain = BIO_new(BIO_f_base64());
+        BIO_set_flags(bioPlain, BIO_FLAGS_BASE64_NO_NL);
+
+        BIO* bioBase64 = BIO_new(BIO_s_mem());
+        BIO_push(bioPlain, bioBase64);
+
+        int result = BIO_write(bioPlain, usernamePassword, (int)strlen(usernamePassword));
+        if (result <= 0)
+        {
+            goto error;
+        }
+
+        BIO_flush(bioPlain);
+
+        char* realmBase64;
+        int length = BIO_get_mem_data(bioBase64, &realmBase64);
+
+        sprintf_s(authData, sizeof(authData), "Basic %.*s", length, realmBase64);
+
+        BIO_pop(bioPlain);
+        BIO_free_all(bioBase64);
+        BIO_free_all(bioPlain);
+
+        if (!OCSP_REQ_CTX_add1_header(rctx, "Proxy-Authorization", authData))
+        {
+            goto error;
+        }
     }
 
     do
@@ -1889,6 +1930,7 @@ static int create_openssl_instance(TLS_IO_INSTANCE* tlsInstance)
             }
         }
     }
+
     return result;
 }
 

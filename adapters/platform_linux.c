@@ -17,6 +17,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/utsname.h>
+#include <string.h>
 
 int platform_init(void)
 {
@@ -26,6 +27,7 @@ int platform_init(void)
 #else
     result = 0;
 #endif
+
     return result;
 }
 

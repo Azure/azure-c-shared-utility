@@ -9,6 +9,7 @@
 #include <sys/utsname.h>
 
 #include "tlsio_appleios.h"
+#include <string.h>
 
 int platform_init(void)
 {
