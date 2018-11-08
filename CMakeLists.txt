@@ -628,3 +628,4 @@ else()
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
 endif()
 
+compileTargetAsC99(aziotsharedutil)

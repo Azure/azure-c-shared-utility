@@ -537,6 +537,60 @@ function(build_c_test_artifacts whatIsBuilding use_gballoc folder)
     endif()
 endfunction()
 
+function(compile_c_test_artifacts_as whatIsBuilding compileAsWhat)
+
+    if(WIN32)
+        if(
+            (("${whatIsBuilding}" MATCHES ".*ut.*") AND ${run_unittests}) OR
+            (("${whatIsBuilding}" MATCHES ".*e2e.*") AND ${run_e2e_tests}) OR
+            (("${whatIsBuilding}" MATCHES ".*int.*") AND ${run_int_tests})
+        )
+            if (${use_cppunittest})
+                if(${compileAsWhat} STREQUAL "C99")
+                    compileTargetAsC99(${whatIsBuilding}_dll)
+                    compileTargetAsC99(${whatIsBuilding}_testsonly_lib)
+                endif()
+                if(${compileAsWhat} STREQUAL "C11")
+                    compileTargetAsC11(${whatIsBuilding}_dll)
+                    compileTargetAsC11(${whatIsBuilding}_testsonly_lib)
+                endif()
+            endif()
+            if(${compileAsWhat} STREQUAL "C99")
+                compileTargetAsC99(${whatIsBuilding}_exe)
+            endif()
+            if(${compileAsWhat} STREQUAL "C11")
+                compileTargetAsC11(${whatIsBuilding}_exe)
+            endif()
+        else()
+            if(
+                (("${whatIsBuilding}" MATCHES ".*e2e.*") AND ${nuget_e2e_tests})
+            )
+                if(${compileAsWhat} STREQUAL "C99")
+                    compileTargetAsC99(${whatIsBuilding}_exe)
+                endif()
+                if(${compileAsWhat} STREQUAL "C11")
+                    compileTargetAsC11(${whatIsBuilding}_exe)
+                endif()
+            else()
+                #do nothing
+            endif()
+        endif()
+    else()
+        if(
+            (("${whatIsBuilding}" MATCHES ".*ut.*") AND ${run_unittests}) OR
+            (("${whatIsBuilding}" MATCHES ".*e2e.*") AND ${run_e2e_tests}) OR
+            (("${whatIsBuilding}" MATCHES ".*int.*") AND ${run_int_tests})
+        )
+            if(${compileAsWhat} STREQUAL "C99")
+                compileTargetAsC99(${whatIsBuilding}_exe)
+            endif()
+            if(${compileAsWhat} STREQUAL "C11")
+                compileTargetAsC11(${whatIsBuilding}_exe)
+            endif()
+        endif()
+    endif()
+endfunction()
+
 function(build_c_test_longhaul_test test_name test_c_files test_h_files)
     set(test_c_files
         ${CMAKE_CURRENT_LIST_DIR}/../common_longhaul/iothub_client_statistics.c

@@ -1,8 +1,6 @@
 #Copyright (c) Microsoft. All rights reserved.
 #Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-compileAsC99()
-
 set(iot_c_utility_c_files
     iot_c_utility.c
 )
@@ -22,3 +20,5 @@ add_executable(iot_c_utility ${iot_c_utility_c_files})
 target_link_libraries(iot_c_utility
     aziotsharedutil
 )
+
+compileTargetAsC99(iot_c_utility)

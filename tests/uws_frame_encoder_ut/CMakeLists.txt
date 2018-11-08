@@ -3,7 +3,6 @@
 
 cmake_minimum_required(VERSION 2.8.11)
 
-compileAsC99()
 set(theseTestsName uws_frame_encoder_ut)
 
 include_directories(${SHARED_UTIL_REAL_TEST_FOLDER})
@@ -21,3 +20,5 @@ set(${theseTestsName}_h_files
 )
 
 build_c_test_artifacts(${theseTestsName} ON "tests/azure_c_shared_utility_tests")
+
+compile_c_test_artifacts_as(${theseTestsName} C99)
