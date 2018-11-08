@@ -31,4 +31,4 @@ else()
     target_link_libraries(${theseTestsName}_exe pthread)
 endif()
 
-compile_c_test_artifacts_as(${theseTestsName} C11)
+compile_c_test_artifacts_as(${theseTestsName} C99)
