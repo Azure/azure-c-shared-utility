@@ -77,7 +77,7 @@ static type* REFCOUNT_TYPE_DECLARE_CREATE(type) (void) \
     return REFCOUNT_TYPE_DECLARE_CREATE_WITH_EXTRA_SIZE(type)(0); \
 } \
 
-/* Codes_SRS_REFCOUNT_01_008: [ `REFCOUNT_TYPE_DESTROY` shall free the memory allocated by `REFCOUNT_TYPE_CREATE` or `REFCOUNT_TYPE_CREATE_WITH_EXTRA_MEMORY`. ]*/
+/* Codes_SRS_REFCOUNT_01_008: [ `REFCOUNT_TYPE_DESTROY` shall free the memory allocated by `REFCOUNT_TYPE_CREATE` or `REFCOUNT_TYPE_CREATE_WITH_EXTRA_SIZE`. ]*/
 /* Codes_SRS_REFCOUNT_01_009: [ If `counted_type` is NULL, `REFCOUNT_TYPE_DESTROY` shall return. ]*/
 #define DEFINE_DESTROY(type) \
 static void REFCOUNT_TYPE_DECLARE_DESTROY(type)(type* counted_type) \

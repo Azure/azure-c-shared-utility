@@ -170,6 +170,7 @@ set(source_c_files
 ./src/base32.c
 ./src/base64.c
 ./src/buffer.c
+./src/constbuffer_array.c
 ./src/connection_string_parser.c
 ./src/constbuffer.c
 ${LOGGING_C_FILE}
@@ -267,6 +268,7 @@ set(source_h_files
 ./inc/azure_c_shared_utility/base32.h
 ./inc/azure_c_shared_utility/base64.h
 ./inc/azure_c_shared_utility/buffer_.h
+./inc/azure_c_shared_utility/constbuffer_array.h
 ./inc/azure_c_shared_utility/connection_string_parser.h
 ./inc/azure_c_shared_utility/crt_abstractions.h
 ./inc/azure_c_shared_utility/constmap.h
@@ -378,8 +380,11 @@ if(${use_applessl})
     include_directories(./pal/ios-osx/)
 endif()
 
+FILE(GLOB aziotsharedutil_md_files "devdoc/*.md")
+SOURCE_GROUP(devdoc FILES ${aziotsharedutil_md_files})
+
 #this is the product (a library)
-add_library(aziotsharedutil ${source_c_files} ${source_h_files})
+add_library(aziotsharedutil ${source_c_files} ${source_h_files} ${aziotsharedutil_md_files})
 setTargetBuildProperties(aziotsharedutil)
 
 target_include_directories(aziotsharedutil PUBLIC $<BUILD_INTERFACE:${SHARED_UTIL_INC_FOLDER}>)

@@ -57,7 +57,7 @@ REFCOUNT_TYPE_DESTROY(type, counted_type)
 
 `REFCOUNT_TYPE_DESTROY` frees the memory for a ref counted type.
 
-**SRS_REFCOUNT_01_008: [** `REFCOUNT_TYPE_DESTROY` shall free the memory allocated by `REFCOUNT_TYPE_CREATE` or `REFCOUNT_TYPE_CREATE_WITH_EXTRA_MEMORY`. **]**
+**SRS_REFCOUNT_01_008: [** `REFCOUNT_TYPE_DESTROY` shall free the memory allocated by `REFCOUNT_TYPE_CREATE` or `REFCOUNT_TYPE_CREATE_WITH_EXTRA_SIZE`. **]**
 
 **SRS_REFCOUNT_01_009: [** If `counted_type` is NULL, `REFCOUNT_TYPE_DESTROY` shall return. **]**
 
