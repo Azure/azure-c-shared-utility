@@ -151,7 +151,7 @@ BEGIN_TEST_SUITE(refcount_unittests)
 
     /* REFCOUNT_TYPE_DESTROY */
 
-    /* Tests_SRS_REFCOUNT_01_008: [ `REFCOUNT_TYPE_DESTROY` shall free the memory allocated by `REFCOUNT_TYPE_CREATE` or `REFCOUNT_TYPE_CREATE_WITH_EXTRA_MEMORY`. ]*/
+    /* Tests_SRS_REFCOUNT_01_008: [ `REFCOUNT_TYPE_DESTROY` shall free the memory allocated by `REFCOUNT_TYPE_CREATE` or `REFCOUNT_TYPE_CREATE_WITH_EXTRA_SIZE`. ]*/
     TEST_FUNCTION(refcount_DEC_REF_after_create_says_we_should_free)
     {
         ///arrange
