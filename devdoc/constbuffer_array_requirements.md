@@ -29,7 +29,7 @@ MOCKABLE_FUNCTION(, int, constbuffer_array_get_buffer_count, CONSTBUFFER_ARRAY_H
 MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, constbuffer_array_get_buffer, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle, uint32_t, buffer_index);
 ```
 
-### constbuffer_array_create_empty
+### constbuffer_array_create
 
 ```c
 MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create, const CONSTBUFFER_HANDLE*, buffers, uint32_t, buffer_count);
@@ -43,9 +43,7 @@ MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create, const CO
 
 **SRS_CONSTBUFFER_ARRAY_01_011: [** On success `constbuffer_array_create` shall return a non-NULL handle. **]**
 
-**SRS_CONSTBUFFER_ARRAY_01_012: [** If `buffers` is NULL, `constbuffer_array_create` shall fail and return NULL. **]**
-
-**SRS_CONSTBUFFER_ARRAY_01_013: [** If `buffer_count` is 0, `constbuffer_array_create` shall fail and return NULL. **]**
+**SRS_CONSTBUFFER_ARRAY_01_012: [** If `buffers` is NULL and `buffer_count` is not 0, `constbuffer_array_create` shall fail and return NULL. **]**
 
 **SRS_CONSTBUFFER_ARRAY_01_014: [** If any error occurs, `constbuffer_array_create` shall fail and return NULL. **]**
 
@@ -58,8 +56,6 @@ MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create_empty);
 `constbuffer_array_create_empty` creates a new, empty CONSTBUFFER_ARRAY_HANDLE.
 
 **SRS_CONSTBUFFER_ARRAY_02_004: [** `constbuffer_array_create_empty` shall allocate memory for a new `CONSTBUFFER_ARRAY_HANDLE`. **]**
-
-**SRS_CONSTBUFFER_ARRAY_02_005: [** `constbuffer_array_create_empty` shall maintain an internal array of `CONSTBUFFER_HANDLE`s **]**
 
 **SRS_CONSTBUFFER_ARRAY_02_041: [** `constbuffer_array_create_empty` shall succeed and return a non-`NULL` value. **]**
 

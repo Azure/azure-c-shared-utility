@@ -159,7 +159,7 @@ TEST_FUNCTION(constbuffer_array_create_succeeds)
     constbuffer_array_dec_ref(constbuffer_array);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_01_012: [ If `buffers` is NULL, `constbuffer_array_create` shall fail and return NULL. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_012: [ If `buffers` is NULL and `buffer_count` is not 0, `constbuffer_array_create` shall fail and return NULL. ]*/
 TEST_FUNCTION(constbuffer_array_create_with_NULL_buffers_fails)
 {
     ///arrange
@@ -177,22 +177,28 @@ TEST_FUNCTION(constbuffer_array_create_with_NULL_buffers_fails)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_01_013: [ If `buffer_count` is 0, `constbuffer_array_create` shall fail and return NULL. ]*/
-TEST_FUNCTION(constbuffer_array_create_with_0_buffer_count_fails)
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_009: [ `constbuffer_array_create` shall allocate memory for a new `CONSTBUFFER_ARRAY_HANDLE` that can hold `buffer_count` buffers. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_010: [ `constbuffer_array_create` shall clone the buffers in `buffers` and store them. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_011: [ On success `constbuffer_array_create` shall return a non-NULL handle. ]*/
+TEST_FUNCTION(constbuffer_array_create_with_0_buffer_count_succeeds)
 {
     ///arrange
-    CONSTBUFFER_HANDLE test_buffers[2];
+    CONSTBUFFER_HANDLE test_buffers[1];
     CONSTBUFFER_ARRAY_HANDLE constbuffer_array;
 
     test_buffers[0] = TEST_CONSTBUFFER_HANDLE_1;
-    test_buffers[1] = TEST_CONSTBUFFER_HANDLE_2;
+    
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
 
     ///act
     constbuffer_array = constbuffer_array_create(test_buffers, 0);
 
     ///assert
-    ASSERT_IS_NULL(constbuffer_array);
+    ASSERT_IS_NOT_NULL(constbuffer_array);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    constbuffer_array_dec_ref(constbuffer_array);
 }
 
 /* Tests_SRS_CONSTBUFFER_ARRAY_01_014: [ If any error occurs, `constbuffer_array_create` shall fail and return NULL. ]*/
@@ -228,7 +234,6 @@ TEST_FUNCTION(when_underlying_calls_fail_constbuffer_array_create_fails)
 /* constbuffer_array_create_empty */
 
 /*Tests_SRS_CONSTBUFFER_ARRAY_02_004: [ constbuffer_array_create_empty shall allocate memory for a new CONSTBUFFER_ARRAY_HANDLE. ]*/
-/*Tests_SRS_CONSTBUFFER_ARRAY_02_005: [ constbuffer_array_create_empty shall maintain an internal array of CONSTBUFFER_HANDLEs ]*/
 /*Tests_SRS_CONSTBUFFER_ARRAY_02_041: [ constbuffer_array_create_empty shall succeed and return a non-NULL value. ]*/
 TEST_FUNCTION(constbuffer_array_create_empty_succeeds)
 {

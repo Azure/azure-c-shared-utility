@@ -29,10 +29,8 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_create(const CONSTBUFFER_HANDLE* buff
     CONSTBUFFER_ARRAY_HANDLE result;
 
     if (
-        /* Codes_SRS_CONSTBUFFER_ARRAY_01_012: [ If `buffers` is NULL, `constbuffer_array_create` shall fail and return NULL. ]*/
-        (buffers == NULL) ||
-        /* Codes_SRS_CONSTBUFFER_ARRAY_01_013: [ If `buffer_count` is 0, `constbuffer_array_create` shall fail and return NULL. ]*/
-        (buffer_count == 0)
+        /* Codes_SRS_CONSTBUFFER_ARRAY_01_012: [ If `buffers` is NULL and `buffer_count` is not 0, `constbuffer_array_create` shall fail and return NULL. ]*/
+        (buffers == NULL) && (buffer_count != 0)
         )
     {
         LogError("Invalid arguments: const CONSTBUFFER_HANDLE* buffers=%p, uint32_t buffer_count=%" PRIu32,
@@ -95,7 +93,6 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_create_empty(void)
     CONSTBUFFER_ARRAY_HANDLE result;
 
     /*Codes_SRS_CONSTBUFFER_ARRAY_02_004: [ constbuffer_array_create_empty shall allocate memory for a new CONSTBUFFER_ARRAY_HANDLE. ]*/
-    /*Codes_SRS_CONSTBUFFER_ARRAY_02_005: [ constbuffer_array_create_empty shall maintain an internal array of CONSTBUFFER_HANDLEs ]*/
     result = REFCOUNT_TYPE_CREATE(CONSTBUFFER_ARRAY_HANDLE_DATA); /*explicit 0*/
     if (result == NULL)
     {
