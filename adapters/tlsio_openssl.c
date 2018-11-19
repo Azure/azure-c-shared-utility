@@ -1456,6 +1456,7 @@ int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
             {
                 // Free the memory if it has been previously allocated
                 free(tls_io_instance->certificate);
+                tls_io_instance->certificate = NULL;
             }
 
             // Store the certificate
