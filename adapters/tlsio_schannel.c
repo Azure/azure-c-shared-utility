@@ -74,6 +74,8 @@ typedef struct TLS_IO_INSTANCE_TAG
     char* x509privatekey;
     X509_SCHANNEL_HANDLE x509_schannel_handle;
     SINGLYLINKEDLIST_HANDLE pending_io_list;
+    // Certificate to check server certificate chains to, overriding built-in Windows certificate store certificates.
+    char* trustedCertificate;
 } TLS_IO_INSTANCE;
 
 /*this function will clone an option given by name and value*/
@@ -106,6 +108,18 @@ static void* tlsio_schannel_CloneOption(const char* name, const void* value)
             if (mallocAndStrcpy_s((char**)&result, (const char *) value) != 0)
             {
                 LogError("unable to mallocAndStrcpy_s x509privatekey value");
+                result = NULL;
+            }
+            else
+            {
+                /*return as is*/
+            }
+        }
+        else if (strcmp(name, OPTION_TRUSTED_CERT) == 0)
+        {
+            if (mallocAndStrcpy_s((char**)&result, (const char *) value) != 0)
+            {
+                LogError("unable to mallocAndStrcpy_s TrustedCerts value");
                 result = NULL;
             }
             else
@@ -176,6 +190,15 @@ static OPTIONHANDLER_HANDLE tlsio_schannel_retrieveoptions(CONCRETE_IO_HANDLE ha
                 )
             {
                 LogError("unable to save x509certificate option");
+                OptionHandler_Destroy(result);
+                result = NULL;
+            }
+            else if (
+                (tls_io_instance->trustedCertificate != NULL) &&
+                (OptionHandler_AddOption(result, OPTION_TRUSTED_CERT, tls_io_instance->trustedCertificate) != OPTIONHANDLER_OK)
+                )
+            {
+                LogError("unable to save TrustedCerts option");
                 OptionHandler_Destroy(result);
                 result = NULL;
             }
@@ -312,6 +335,14 @@ static void send_client_hello(TLS_IO_INSTANCE* tls_io_instance)
     }
     auth_data.dwCredFormat = 0;
 
+    if (tls_io_instance->trustedCertificate != NULL)
+    {
+        // SCH_CRED_MANUAL_CRED_VALIDATION flag signals to schannel to NOT use
+        // the Windows certificate store, but instead have application verify
+        // certificate.
+        auth_data.dwFlags |= SCH_CRED_MANUAL_CRED_VALIDATION;
+    }
+
     status = AcquireCredentialsHandle(NULL, UNISP_NAME, SECPKG_CRED_OUTBOUND, NULL,
         &auth_data, NULL, NULL, &tls_io_instance->credential_handle, NULL);
     if (status != SEC_E_OK)
@@ -389,6 +420,44 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT io_open
             send_client_hello(tls_io_instance);
         }
     }
+}
+
+static int verify_custom_certificate_if_needed(TLS_IO_INSTANCE* tls_io_instance)
+{
+    int result;
+
+    if (tls_io_instance->trustedCertificate == NULL)
+    {
+        // If there is no trusted certificate set by API caller, then we'll rely on implicit Windows certificate store to verify the certificate.
+        result = 0;
+    }
+    else
+    {
+        PCERT_CONTEXT serverCertificateToVerify = NULL;
+
+        SECURITY_STATUS status = QueryContextAttributes(&tls_io_instance->security_context, SECPKG_ATTR_REMOTE_CERT_CONTEXT, &serverCertificateToVerify);
+        if (status != SEC_E_OK)
+        {
+            LogError("QueryContextAttributes failed: %x", status);
+            result = __FAILURE__;
+        }
+        else if (x509_verify_certificate_in_chain(tls_io_instance->trustedCertificate, serverCertificateToVerify) != 0)
+        {
+            LogError("Failed to verify trusted certificate in chain");
+            result = __FAILURE__;
+        }
+        else
+        {
+            result = 0;
+        }
+        
+        if (serverCertificateToVerify)
+        {
+            CertFreeCertificateContext(serverCertificateToVerify);
+        }
+    }
+
+    return result;    
 }
 
 static int set_receive_buffer(TLS_IO_INSTANCE* tls_io_instance, size_t buffer_size)
@@ -631,7 +700,15 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                     /* if nothing more to consume, set the needed bytes to 1, to get on the next byte how many we actually need */
                     tls_io_instance->needed_bytes = tls_io_instance->received_byte_count == 0 ? 1 : 0;
 
-                    if (set_receive_buffer(tls_io_instance, tls_io_instance->needed_bytes + tls_io_instance->received_byte_count) != 0)
+                    if (verify_custom_certificate_if_needed(tls_io_instance))
+                    {
+                        LogError("Unable to verify server certificate against custom server trusted certificate");
+                        if (tls_io_instance->on_io_open_complete != NULL)
+                        {
+                            tls_io_instance->on_io_open_complete(tls_io_instance->on_io_open_complete_context, IO_OPEN_ERROR);
+                        }
+                    }
+                    else if (set_receive_buffer(tls_io_instance, tls_io_instance->needed_bytes + tls_io_instance->received_byte_count) != 0)
                     {
                         tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
                         if (tls_io_instance->on_io_open_complete != NULL)
@@ -1082,6 +1159,11 @@ void tlsio_schannel_destroy(CONCRETE_IO_HANDLE tls_io)
             free(tls_io_instance->received_bytes);
         }
 
+        if (tls_io_instance->trustedCertificate != NULL)
+        {
+            free(tls_io_instance->trustedCertificate);
+        }
+
         if (tls_io_instance->x509_schannel_handle != NULL)
         {
             x509_schannel_destroy(tls_io_instance->x509_schannel_handle);
@@ -1371,7 +1453,29 @@ int tlsio_schannel_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, 
         }
         else if (strcmp(OPTION_TRUSTED_CERT, optionName) == 0)
         {
-            result = 0;
+            if (value == NULL)
+            {
+                LogError("Invalid paramater: OPTION_TRUSTED_CERT value=NULL"); 
+                result = __FAILURE__;
+            }
+            else
+            {
+                if (tls_io_instance->trustedCertificate != NULL)
+                {   
+                    free(tls_io_instance->trustedCertificate);
+                    tls_io_instance->trustedCertificate = NULL;
+                }
+
+                if (mallocAndStrcpy_s((char**)&tls_io_instance->trustedCertificate, value) != 0)
+                {
+                    LogError("unable to mallocAndStrcpy_s %s", optionName);
+                    result = __FAILURE__;
+                }
+                else
+                {
+                    result = 0;
+                }
+            }
         }
         else if (strcmp("ignore_server_name_check", optionName) == 0)
         {

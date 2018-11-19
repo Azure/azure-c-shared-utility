@@ -469,3 +469,113 @@ PCCERT_CONTEXT x509_schannel_get_certificate_context(X509_SCHANNEL_HANDLE x509_s
     }
     return result;
 }
+
+int x509_verify_certificate_in_chain(const char* trustedCertificate, PCCERT_CONTEXT pCertContextToVerify)
+{
+    int result;
+    HCERTSTORE hCertStore = NULL;
+    HCERTCHAINENGINE hChainEngine = NULL;
+    unsigned char* trustedCertificateEncoded = NULL;
+    PCCERT_CHAIN_CONTEXT pChainContextToVerify = NULL;
+    PCCERT_CONTEXT pCertTrusted = NULL;
+    DWORD trustedCertificateEncodedLen;
+    DWORD lastError;
+
+    if ((trustedCertificate == NULL) || (pCertContextToVerify == NULL))
+    {
+        result = __FAILURE__;
+    }
+    else if (NULL == (hCertStore = CertOpenStore(CERT_STORE_PROV_MEMORY, X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, 0, CERT_STORE_CREATE_NEW_FLAG, (const void*) "")))
+    {
+        lastError = GetLastError();
+        LogError("CertOpenStore failed with error 0x%08x", lastError);
+        result = __FAILURE__;
+    }
+    else if (NULL == (trustedCertificateEncoded = convert_cert_to_binary(trustedCertificate, &trustedCertificateEncodedLen)))
+    {
+        LogError("Cannot encode trusted certificate");
+        result = __FAILURE__;
+    }
+    else if (CertAddEncodedCertificateToStore(hCertStore, X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, trustedCertificateEncoded, trustedCertificateEncodedLen, CERT_STORE_ADD_NEW, &pCertTrusted) != TRUE)
+    {
+        lastError = GetLastError();
+        LogError("CertAddEncodedCertificateToStore failed with error 0x%08x", lastError);
+        result = __FAILURE__;
+    }
+    else
+    {
+        CERT_CHAIN_ENGINE_CONFIG EngineConfig;
+        memset(&EngineConfig, 0, sizeof(EngineConfig));
+        EngineConfig.cbSize = sizeof(EngineConfig);
+        EngineConfig.dwFlags = CERT_CHAIN_ENABLE_CACHE_AUTO_UPDATE | CERT_CHAIN_ENABLE_SHARE_STORE;
+        EngineConfig.hExclusiveRoot = hCertStore;
+
+        CERT_CHAIN_PARA ChainPara;
+        memset(&ChainPara, 0, sizeof(ChainPara));
+        ChainPara.cbSize = sizeof(ChainPara);
+
+        CERT_CHAIN_POLICY_PARA PolicyPara;
+        memset(&PolicyPara, 0, sizeof(PolicyPara));
+        PolicyPara.cbSize = sizeof(PolicyPara);
+
+        CERT_CHAIN_POLICY_STATUS PolicyStatus;
+        memset(&PolicyStatus, 0, sizeof(PolicyStatus));
+        PolicyStatus.cbSize = sizeof(PolicyStatus);
+
+        if (CertCreateCertificateChainEngine(&EngineConfig, &hChainEngine) != TRUE)
+        {
+            lastError = GetLastError();
+            LogError("CertCreateCertificateChainEngine failed with error 0x%08x", lastError);
+            result = __FAILURE__;
+        }
+        else if (CertGetCertificateChain(hChainEngine, pCertContextToVerify, NULL, hCertStore, &ChainPara, 0, NULL, &pChainContextToVerify) != TRUE)
+        {
+            lastError = GetLastError();
+            LogError("CertGetCertificateChain failed with error 0x%08x", lastError);
+            result = __FAILURE__;
+        }
+        else if (CertVerifyCertificateChainPolicy(CERT_CHAIN_POLICY_SSL, pChainContextToVerify, &PolicyPara, &PolicyStatus) != TRUE)
+        {
+            lastError = GetLastError();
+            LogError("CertVerifyCertificateChainPolicy failed with error 0x%08x", lastError);
+            result = __FAILURE__;
+        }
+        else if (PolicyStatus.dwError != 0)
+        {
+            LogError("CertVerifyCertificateChainPolicy sets certificateStatus = 0x%08x", PolicyStatus.dwError);
+            result = __FAILURE__;
+        }
+        else
+        {
+            result = 0;
+        }
+    }
+
+    if (pCertTrusted != NULL)
+    {    
+        CertFreeCertificateContext(pCertTrusted);
+    }
+
+    if (pChainContextToVerify != NULL)
+    {
+        CertFreeCertificateChain(pChainContextToVerify);
+    }
+
+    if (hChainEngine != NULL)
+    {
+        CertFreeCertificateChainEngine(hChainEngine);
+    }
+
+    if (trustedCertificateEncoded != NULL)
+    {   
+        free(trustedCertificateEncoded);
+    }
+
+    if (hCertStore != NULL)
+    {
+        CertCloseStore(hCertStore, 0);
+    }
+
+    return result;
+}
+
