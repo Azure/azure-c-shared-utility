@@ -470,6 +470,8 @@ PCCERT_CONTEXT x509_schannel_get_certificate_context(X509_SCHANNEL_HANDLE x509_s
     return result;
 }
 
+// x509_verify_certificate_in_chain determines whether the certificate in pCertContextToVerify
+// chains up to the PEM represented by trustedCertificate or not.
 int x509_verify_certificate_in_chain(const char* trustedCertificate, PCCERT_CONTEXT pCertContextToVerify)
 {
     int result;
