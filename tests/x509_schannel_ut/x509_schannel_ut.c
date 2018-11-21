@@ -418,6 +418,16 @@ TEST_SUITE_INITIALIZE(a)
     REGISTER_UMOCK_ALIAS_TYPE(BOOL, unsigned int);
     REGISTER_UMOCK_ALIAS_TYPE(LPCWSTR, void*);
     REGISTER_UMOCK_ALIAS_TYPE(NCRYPT_KEY_HANDLE, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(HCERTSTORE, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(PCERT_CHAIN_ENGINE_CONFIG, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(HCERTCHAINENGINE, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(LPFILETIME, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(PCERT_CHAIN_PARA, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(LPVOID, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(PCCERT_CHAIN_CONTEXT, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(PCERT_CHAIN_POLICY_PARA, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(PCERT_CHAIN_POLICY_STATUS, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(HCRYPTPROV_LEGACY, void*);
 
     REGISTER_GLOBAL_MOCK_HOOK(CryptStringToBinaryA, my_CryptStringToBinaryA);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(CryptStringToBinaryA, FALSE);
@@ -742,15 +752,19 @@ TEST_FUNCTION(x509_schannel_get_certificate_context_succeeds)
 static const PCCERT_CONTEXT pTestCertContextToVerify = (PCCERT_CONTEXT)0x1000;
 static const char* testTrustedCertificate = "Unit-Test-Only-TrustedCertificate";
 
-static void setup_x509_verify_certificate_in_chain_mocks()
+static void setup_x509_verify_certificate_in_chain_mocks(DWORD dwExpectedError)
 {
-CertOpenStore(CERT_STORE_PROV_MEMORY, X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, 0, CERT_STORE_CREATE_NEW_FLAG, (const void*) "");
-    
+    CERT_CHAIN_POLICY_STATUS PolicyStatus;
+    memset(&PolicyStatus, 0, sizeof(PolicyStatus));
+    PolicyStatus.cbSize = sizeof(PolicyStatus);
+    PolicyStatus.dwError = dwExpectedError;
+
     STRICT_EXPECTED_CALL(CryptStringToBinaryA(IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(CryptStringToBinaryA(IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(CertAddEncodedCertificateToStore(IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(CertCreateCertificateChainEngine(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(CertGetCertificateChain(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(CertGetCertificateChain(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+        .CopyOutArgumentBuffer(4, &PolicyStatus, sizeof(PolicyStatus));
     STRICT_EXPECTED_CALL(CertVerifyCertificateChainPolicy(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(CertFreeCertificateContext(IGNORED_PTR_ARG)).CallCannotFail();
     STRICT_EXPECTED_CALL(CertFreeCertificateChain(IGNORED_PTR_ARG));
@@ -771,11 +785,37 @@ TEST_FUNCTION(x509_verify_certificate_in_chain_NULL_trustedCertificate_fails)
 TEST_FUNCTION(x509_verify_certificate_in_chain_NULL_certToVerify_fails)
 {
     ///act
-    int result = x509_verify_certificate_in_chain(NULL, NULL);
+    int result = x509_verify_certificate_in_chain(testTrustedCertificate, NULL);
 
     ///assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
 }
+
+TEST_FUNCTION(x509_verify_certificate_in_chain_succeeds)
+{
+    ///arrange
+    setup_x509_verify_certificate_in_chain_mocks(0);
+
+    ///act
+    int result = x509_verify_certificate_in_chain(testTrustedCertificate, pTestCertContextToVerify);
+
+    ///assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+}
+
+TEST_FUNCTION(x509_verify_certificate_in_chain_with_verify_error_fails)
+{
+    ///arrange
+    setup_x509_verify_certificate_in_chain_mocks((DWORD)CERT_E_UNTRUSTEDROOT);
+
+    ///act
+    int result = x509_verify_certificate_in_chain(testTrustedCertificate, pTestCertContextToVerify);
+
+    ///assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+}
+
+
 
 END_TEST_SUITE(x509_schannel_unittests)
 
