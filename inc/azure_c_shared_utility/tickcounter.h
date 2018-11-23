@@ -5,24 +5,29 @@
 #define TICKCOUNTER_H
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif /* __cplusplus */
 
 #include <stdint.h>
 
 #include "azure_c_shared_utility/umock_c_prod.h"
 
-#if _WIN32
+#ifdef __MBED__
     typedef uint_fast64_t tickcounter_ms_t; // Use 64-bit because of QueryPerformanceCounter call
 #else
-    typedef uint_fast32_t tickcounter_ms_t;
+    #if _WIN32
+        typedef uint_fast64_t tickcounter_ms_t; // Use 64-bit because of QueryPerformanceCounter call
+    #else
+        typedef uint_fast32_t tickcounter_ms_t;
+    #endif
 #endif
 
-    typedef struct TICK_COUNTER_INSTANCE_TAG* TICK_COUNTER_HANDLE;
+    typedef struct TICK_COUNTER_INSTANCE_TAG *TICK_COUNTER_HANDLE;
 
     MOCKABLE_FUNCTION(, TICK_COUNTER_HANDLE, tickcounter_create);
     MOCKABLE_FUNCTION(, void, tickcounter_destroy, TICK_COUNTER_HANDLE, tick_counter);
-    MOCKABLE_FUNCTION(, int, tickcounter_get_current_ms, TICK_COUNTER_HANDLE, tick_counter, tickcounter_ms_t*, current_ms);
+    MOCKABLE_FUNCTION(, int, tickcounter_get_current_ms, TICK_COUNTER_HANDLE, tick_counter, tickcounter_ms_t *, current_ms);
 
 #ifdef __cplusplus
 }
