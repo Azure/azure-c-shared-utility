@@ -804,7 +804,7 @@ TEST_FUNCTION(x509_schannel_get_certificate_context_succeeds)
     x509_schannel_destroy(h);
 }
 
-static void setup_x509_verify_certificate_in_chain_mocks(DWORD dwExpectedError, int numExpectedCerts)
+static void setup_x509_verify_certificate_in_chain_mocks(DWORD dwExpectedError, const char** expectedCert, int numExpectedCerts)
 {
     CERT_CHAIN_POLICY_STATUS PolicyStatus;
     memset(&PolicyStatus, 0, sizeof(PolicyStatus));
@@ -812,8 +812,6 @@ static void setup_x509_verify_certificate_in_chain_mocks(DWORD dwExpectedError, 
     PolicyStatus.dwError = dwExpectedError;
 
     STRICT_EXPECTED_CALL(CertOpenStore(IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_NUM_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG));
-
-    const char* expectedCert[3] = { testTrustedCertificateOneCertWithCrlf, testTrustedCertificateTwoCerts, testTrustedCertificateThreeCerts };
 
     for (int i = 0; i < numExpectedCerts; i++)
     {
@@ -845,7 +843,7 @@ TEST_FUNCTION(x509_verify_certificate_in_chain_NULL_trustedCertificate_fails)
 TEST_FUNCTION(x509_verify_certificate_in_chain_NULL_certToVerify_fails)
 {
     ///act
-    int result = x509_verify_certificate_in_chain(testTrustedCertificateOneCertWithCrlf, NULL);
+    int result = x509_verify_certificate_in_chain(testTrustedCertificateThreeCerts, NULL);
 
     ///assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
@@ -854,7 +852,8 @@ TEST_FUNCTION(x509_verify_certificate_in_chain_NULL_certToVerify_fails)
 TEST_FUNCTION(x509_verify_certificate_in_chain_succeeds)
 {
     ///arrange
-    setup_x509_verify_certificate_in_chain_mocks(ERROR_SUCCESS, 1);
+    const char *expectedCerts[1] = { testTrustedCertificateOneCertWithCrlf };
+    setup_x509_verify_certificate_in_chain_mocks(ERROR_SUCCESS, (const char**)expectedCerts, 1);
 
     ///act
     int result = x509_verify_certificate_in_chain(testTrustedCertificateOneCertWithCrlf, pTestCertContextToVerify);
@@ -867,7 +866,8 @@ TEST_FUNCTION(x509_verify_certificate_in_chain_succeeds)
 TEST_FUNCTION(x509_verify_certificate_in_chain_no_closing_crlf_succeeds)
 {
     ///arrange
-    setup_x509_verify_certificate_in_chain_mocks(ERROR_SUCCESS, 1);
+    const char *expectedCerts[1] = { testTrustedCertificateOneCertWithNoCrlf };
+    setup_x509_verify_certificate_in_chain_mocks(ERROR_SUCCESS, (const char**)expectedCerts, 1);
 
     ///act
     int result = x509_verify_certificate_in_chain(testTrustedCertificateOneCertWithNoCrlf, pTestCertContextToVerify);
@@ -881,7 +881,8 @@ TEST_FUNCTION(x509_verify_certificate_in_chain_no_closing_crlf_succeeds)
 TEST_FUNCTION(x509_verify_certificate_in_chain_with_verify_error_fails)
 {
     ///arrange
-    setup_x509_verify_certificate_in_chain_mocks((DWORD)CERT_E_UNTRUSTEDROOT, 1);
+    const char *expectedCerts[1] = { testTrustedCertificateOneCertWithCrlf };
+    setup_x509_verify_certificate_in_chain_mocks((DWORD)CERT_E_UNTRUSTEDROOT, (const char**)expectedCerts, 1);
 
     ///act
     int result = x509_verify_certificate_in_chain(testTrustedCertificateOneCertWithCrlf, pTestCertContextToVerify);
@@ -894,7 +895,12 @@ TEST_FUNCTION(x509_verify_certificate_in_chain_with_verify_error_fails)
 TEST_FUNCTION(x509_verify_two_certificates_in_chain_succeeds)
 {
     ///arrange
-    setup_x509_verify_certificate_in_chain_mocks(ERROR_SUCCESS, 2);
+    const char* expectedCert[2] = { 
+        testTrustedCertificateTwoCerts, 
+        TEST_FULL_CERT(TEST_CERT_DATA_2)
+    };
+
+    setup_x509_verify_certificate_in_chain_mocks(ERROR_SUCCESS, expectedCert, 2);
 
     ///act
     int result = x509_verify_certificate_in_chain(testTrustedCertificateTwoCerts, pTestCertContextToVerify);
@@ -907,7 +913,13 @@ TEST_FUNCTION(x509_verify_two_certificates_in_chain_succeeds)
 TEST_FUNCTION(x509_verify_three_certificates_in_chain_succeeds)
 {
     ///arrange
-    setup_x509_verify_certificate_in_chain_mocks(ERROR_SUCCESS, 3);
+    const char* expectedCert[3] = { 
+        testTrustedCertificateThreeCerts, 
+        TEST_FULL_CERT(TEST_CERT_DATA_2) TEST_FULL_CERT(TEST_CERT_DATA_3),
+        TEST_FULL_CERT(TEST_CERT_DATA_3)
+    };
+    
+    setup_x509_verify_certificate_in_chain_mocks(ERROR_SUCCESS, (const char**)expectedCert, 3);
 
     ///act
     int result = x509_verify_certificate_in_chain(testTrustedCertificateThreeCerts, pTestCertContextToVerify);
@@ -924,7 +936,13 @@ TEST_FUNCTION(x509_verify_certificate_in_chain_fails)
     int negativeTestsInitResult = umock_c_negative_tests_init();
     ASSERT_ARE_EQUAL(int, 0, negativeTestsInitResult);
 
-    setup_x509_verify_certificate_in_chain_mocks(ERROR_SUCCESS, 1);
+    const char* expectedCert[3] = { 
+        testTrustedCertificateThreeCerts, 
+        TEST_FULL_CERT(TEST_CERT_DATA_2) TEST_FULL_CERT(TEST_CERT_DATA_3),
+        TEST_FULL_CERT(TEST_CERT_DATA_3)
+    };
+
+    setup_x509_verify_certificate_in_chain_mocks(ERROR_SUCCESS, (const char**)expectedCert, 3);
 
     umock_c_negative_tests_snapshot();
 
@@ -937,10 +955,10 @@ TEST_FUNCTION(x509_verify_certificate_in_chain_fails)
             umock_c_negative_tests_fail_call(i);
 
             ///act
-            int result = x509_verify_certificate_in_chain(testTrustedCertificateOneCertWithCrlf, pTestCertContextToVerify);
+            int result = x509_verify_certificate_in_chain(testTrustedCertificateThreeCerts, pTestCertContextToVerify);
 
             ///assert
-            ASSERT_ARE_NOT_EQUAL(int, 0, result);
+            ASSERT_ARE_NOT_EQUAL(int, 0, result, "Test %lu fails", (unsigned long)i);
         }
     }
 
