@@ -32,11 +32,11 @@ typedef struct X509_SCHANNEL_HANDLE_DATA_TAG
     x509_CERT_TYPE cert_type;
 } X509_SCHANNEL_HANDLE_DATA;
 
-static unsigned char* convert_cert_to_binary(const char* crypt_value, DWORD* crypt_length)
+static unsigned char* convert_cert_to_binary(const char* crypt_value, DWORD crypt_value_in_len, DWORD* crypt_length)
 {
     unsigned char* result;
     DWORD result_length;
-    if (!CryptStringToBinaryA(crypt_value, 0, CRYPT_STRING_ANY, NULL, &result_length, NULL, NULL))
+    if (!CryptStringToBinaryA(crypt_value, crypt_value_in_len, CRYPT_STRING_ANY, NULL, &result_length, NULL, NULL))
     {
         /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
         LogErrorWinHTTPWithGetLastErrorAsString("Failed determine crypt value size");
@@ -348,7 +348,7 @@ X509_SCHANNEL_HANDLE x509_schannel_create(const char* x509certificate, const cha
         {
             memset(result, 0, sizeof(X509_SCHANNEL_HANDLE_DATA));
             /*Codes_SRS_X509_SCHANNEL_02_002: [ x509_schannel_create shall convert the certificate to binary form by calling CryptStringToBinaryA. ]*/
-            if ((binaryx509Certificate = convert_cert_to_binary(x509certificate, &binaryx509certificateSize)) == NULL)
+            if ((binaryx509Certificate = convert_cert_to_binary(x509certificate, 0, &binaryx509certificateSize)) == NULL)
             {
                 LogError("Failure converting x509 certificate");
                 free(result);
@@ -356,7 +356,7 @@ X509_SCHANNEL_HANDLE x509_schannel_create(const char* x509certificate, const cha
             }
             /*Codes_SRS_X509_SCHANNEL_02_003: [ x509_schannel_create shall convert the private key to binary form by calling CryptStringToBinaryA. ]*/
             /*at this moment x509 certificate is ready to be used in CertCreateCertificateContext*/
-            else if ((binaryx509privatekey = convert_cert_to_binary(x509privatekey, &binaryx509privatekeySize)) == NULL)
+            else if ((binaryx509privatekey = convert_cert_to_binary(x509privatekey, 0, &binaryx509privatekeySize)) == NULL)
             {
                 LogError("Failure converting x509 certificate");
                 free(binaryx509Certificate);
@@ -470,6 +470,66 @@ PCCERT_CONTEXT x509_schannel_get_certificate_context(X509_SCHANNEL_HANDLE x509_s
     return result;
 }
 
+static const char end_certificate_in_pem[] = "-----END CERTIFICATE-----";
+static const size_t end_certificate_in_pem_length = sizeof(end_certificate_in_pem) - 1;
+static const char pem_crlf_value[] = "\r\n";
+static const size_t pem_crlf_value_length = sizeof(pem_crlf_value) - 1;
+
+
+// For each certificate specified in trustedCertificate (delimited by standard PEM "-----END CERTIFICATE-----"), add to hCertStore
+static int add_certificates_to_store(const char* trustedCertificate, HCERTSTORE hCertStore)
+{
+    int result = 0;
+    int numCertificatesAdded = 0;
+    const char* trustedCertCurrentRead = trustedCertificate;
+    unsigned char* trustedCertificateEncoded = NULL;
+
+    while (result == 0)
+    {
+        const char* endCertificateCurrentRead;
+        DWORD trustedCertificateEncodedLen;
+        DWORD lastError;
+
+        if ((endCertificateCurrentRead = strstr(trustedCertCurrentRead, end_certificate_in_pem)) == NULL)
+        {
+            if (numCertificatesAdded == 0)
+            {
+                LogError("Certificate missing closing %s.  No certificates can be added to stare", end_certificate_in_pem);
+                result = __FAILURE__;
+            }
+            break;
+        }
+        
+        endCertificateCurrentRead += end_certificate_in_pem_length;
+        if (strncmp(endCertificateCurrentRead, pem_crlf_value, pem_crlf_value_length) == 0)
+        {
+            endCertificateCurrentRead += pem_crlf_value_length;
+        }
+        
+        if ((trustedCertificateEncoded = convert_cert_to_binary(trustedCertCurrentRead, endCertificateCurrentRead - trustedCertCurrentRead, &trustedCertificateEncodedLen)) == NULL)
+        {
+            LogError("Cannot encode trusted certificate");
+            result = __FAILURE__;
+        }
+        else if (CertAddEncodedCertificateToStore(hCertStore, X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, trustedCertificateEncoded, trustedCertificateEncodedLen, CERT_STORE_ADD_NEW, NULL) != TRUE)
+        {
+            lastError = GetLastError();
+            LogError("CertAddEncodedCertificateToStore failed with error 0x%08x", lastError);
+            result = __FAILURE__;
+        }
+
+        if (trustedCertificateEncoded != NULL)
+        {   
+            free(trustedCertificateEncoded);
+        }
+
+        trustedCertCurrentRead = endCertificateCurrentRead;
+        numCertificatesAdded++;
+    }
+
+    return result;
+}
+
 // x509_verify_certificate_in_chain determines whether the certificate in pCertContextToVerify
 // chains up to the PEM represented by trustedCertificate or not.
 int x509_verify_certificate_in_chain(const char* trustedCertificate, PCCERT_CONTEXT pCertContextToVerify)
@@ -477,31 +537,23 @@ int x509_verify_certificate_in_chain(const char* trustedCertificate, PCCERT_CONT
     int result;
     HCERTSTORE hCertStore = NULL;
     HCERTCHAINENGINE hChainEngine = NULL;
-    unsigned char* trustedCertificateEncoded = NULL;
     PCCERT_CHAIN_CONTEXT pChainContextToVerify = NULL;
-    PCCERT_CONTEXT pCertTrusted = NULL;
-    DWORD trustedCertificateEncodedLen;
     DWORD lastError;
 
     if ((trustedCertificate == NULL) || (pCertContextToVerify == NULL))
     {
         result = __FAILURE__;
     }
+    // Creates an in-memory certificate store that is destroyed at end of this function.
     else if (NULL == (hCertStore = CertOpenStore(CERT_STORE_PROV_MEMORY, X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, 0, CERT_STORE_CREATE_NEW_FLAG, (const void*) "")))
     {
         lastError = GetLastError();
         LogError("CertOpenStore failed with error 0x%08x", lastError);
         result = __FAILURE__;
     }
-    else if (NULL == (trustedCertificateEncoded = convert_cert_to_binary(trustedCertificate, &trustedCertificateEncodedLen)))
+    else if (add_certificates_to_store(trustedCertificate, hCertStore) != 0)
     {
-        LogError("Cannot encode trusted certificate");
-        result = __FAILURE__;
-    }
-    else if (CertAddEncodedCertificateToStore(hCertStore, X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, trustedCertificateEncoded, trustedCertificateEncodedLen, CERT_STORE_ADD_NEW, &pCertTrusted) != TRUE)
-    {
-        lastError = GetLastError();
-        LogError("CertAddEncodedCertificateToStore failed with error 0x%08x", lastError);
+        LogError("Cannot add certificates to store");
         result = __FAILURE__;
     }
     else
@@ -553,11 +605,6 @@ int x509_verify_certificate_in_chain(const char* trustedCertificate, PCCERT_CONT
         }
     }
 
-    if (pCertTrusted != NULL)
-    {    
-        CertFreeCertificateContext(pCertTrusted);
-    }
-
     if (pChainContextToVerify != NULL)
     {
         CertFreeCertificateChain(pChainContextToVerify);
@@ -566,11 +613,6 @@ int x509_verify_certificate_in_chain(const char* trustedCertificate, PCCERT_CONT
     if (hChainEngine != NULL)
     {
         CertFreeCertificateChainEngine(hChainEngine);
-    }
-
-    if (trustedCertificateEncoded != NULL)
-    {   
-        free(trustedCertificateEncoded);
     }
 
     if (hCertStore != NULL)
