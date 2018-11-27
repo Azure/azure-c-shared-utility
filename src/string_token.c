@@ -322,10 +322,10 @@ int StringToken_Split(const char* source, size_t length, const char** delimiters
                 // Codes_SRS_STRING_TOKENIZER_09_024: [ All NULL tokens shall be ommited if `include_empty` is not TRUE ]
                 else if (tokenValue != NULL || include_empty)
                 {
+                    char** temp_token;
                     // Codes_SRS_STRING_TOKENIZER_09_025: [ The tokens shall be stored in `tokens`, and their count stored in `token_count` ]
                     *token_count = (*token_count) + 1;
 
-                    char** temp_token;
                     if ((temp_token = (char**)realloc(*tokens, sizeof(char*) * (*token_count))) == NULL)
                     {
                         // Codes_SRS_STRING_TOKENIZER_09_026: [ If any failures splitting or storing the tokens occur the function shall return a non-zero value ]
