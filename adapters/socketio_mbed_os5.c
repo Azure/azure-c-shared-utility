@@ -453,11 +453,6 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
             {
                 result = __FAILURE__;
             }
-            
-            if (send_queued_data(socket_io_instance) < 0)
-            {
-                result = __FAILURE__;
-            }
         }
     }
 
