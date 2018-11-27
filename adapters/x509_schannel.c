@@ -506,7 +506,7 @@ static int add_certificates_to_store(const char* trustedCertificate, HCERTSTORE 
             endCertificateCurrentRead += pem_crlf_value_length;
         }
         
-        if ((trustedCertificateEncoded = convert_cert_to_binary(trustedCertCurrentRead, endCertificateCurrentRead - trustedCertCurrentRead, &trustedCertificateEncodedLen)) == NULL)
+        if ((trustedCertificateEncoded = convert_cert_to_binary(trustedCertCurrentRead, (DWORD)(endCertificateCurrentRead - trustedCertCurrentRead), &trustedCertificateEncodedLen)) == NULL)
         {
             LogError("Cannot encode trusted certificate");
             result = __FAILURE__;
