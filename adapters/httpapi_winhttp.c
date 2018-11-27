@@ -36,6 +36,8 @@ typedef struct HTTP_HANDLE_DATA_TAG
     const char* proxy_host;
     const char* proxy_username;
     const char* proxy_password;
+    // Certificate to check server certificate chains to, overriding built-in Windows certificate store certificates.
+    char* trustedCertificate;
 } HTTP_HANDLE_DATA;
 
 static HTTPAPI_STATE g_HTTPAPIState = HTTPAPI_NOT_INITIALIZED;
@@ -288,6 +290,43 @@ void HTTPAPI_CloseConnection(HTTP_HANDLE handle)
     }
 }
 
+static const char* GetHttpRequestString(HTTPAPI_REQUEST_TYPE requestType)
+{
+    wchar_t* requestTypeString = NULL;
+    
+    switch (requestType)
+    {
+    default:
+        break;
+    
+    case HTTPAPI_REQUEST_GET:
+        requestTypeString = L"GET";
+        break;
+    
+    case HTTPAPI_REQUEST_HEAD:
+        requestTypeString = L"HEAD";
+        break;
+    
+    case HTTPAPI_REQUEST_POST:
+        requestTypeString = L"POST";
+        break;
+    
+    case HTTPAPI_REQUEST_PUT:
+        requestTypeString = L"PUT";
+        break;
+    
+    case HTTPAPI_REQUEST_DELETE:
+        requestTypeString = L"DELETE";
+        break;
+    
+    case HTTPAPI_REQUEST_PATCH:
+        requestTypeString = L"PATCH";
+        break;
+    }
+
+    return requestTypeString;
+}
+
 HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE requestType, const char* relativePath,
     HTTP_HEADERS_HANDLE httpHeadersHandle, const unsigned char* content,
     size_t contentLength, unsigned int* statusCode,
@@ -312,37 +351,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
         }
         else
         {
-            wchar_t* requestTypeString = NULL;
-
-            switch (requestType)
-            {
-            default:
-                break;
-
-            case HTTPAPI_REQUEST_GET:
-                requestTypeString = L"GET";
-                break;
-
-            case HTTPAPI_REQUEST_HEAD:
-                requestTypeString = L"HEAD";
-                break;
-
-            case HTTPAPI_REQUEST_POST:
-                requestTypeString = L"POST";
-                break;
-
-            case HTTPAPI_REQUEST_PUT:
-                requestTypeString = L"PUT";
-                break;
-
-            case HTTPAPI_REQUEST_DELETE:
-                requestTypeString = L"DELETE";
-                break;
-
-            case HTTPAPI_REQUEST_PATCH:
-                requestTypeString = L"PATCH";
-                break;
-            }
+            wchar_t* requestTypeString = GetHttpRequestString(requestType);
 
             if (requestTypeString == NULL)
             {
@@ -829,10 +838,31 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
                 result = HTTPAPI_OK;
             }
         }
-        else if (strcmp("TrustedCerts", optionName) == 0)
+        else if (strcmp(OPTION_TRUSTED_CERT, optionName) == 0)
         {
-            /*winhttp accepts all certificates, because it actually relies on the system ones*/
-            result = HTTPAPI_OK;
+            if (value == NULL)
+            {
+                LogError("Invalid paramater: OPTION_TRUSTED_CERT value=NULL"); 
+                result = __FAILURE__;
+            }
+            else
+            {
+                if (httpHandleData->trustedCertificate != NULL)
+                {   
+                    free(httpHandleData->trustedCertificate);
+                    httpHandleData->trustedCertificate = NULL;
+                }
+
+                if (mallocAndStrcpy_s((char**)&httpHandleData->trustedCertificate, value) != 0)
+                {
+                    LogError("unable to mallocAndStrcpy_s %s", optionName);
+                    result = __FAILURE__;
+                }
+                else
+                {
+                    result = 0;
+                }
+            }
         }
         else if (strcmp(OPTION_HTTP_PROXY, optionName) == 0)
         {
@@ -840,8 +870,8 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
             HTTP_PROXY_OPTIONS* proxy_data = (HTTP_PROXY_OPTIONS*)value;
             if (proxy_data->host_address == NULL || proxy_data->port <= 0)
             {
-              LogError("invalid proxy_data values ( host_address = %p, port = %d)", proxy_data->host_address, proxy_data->port);
-              result = HTTPAPI_ERROR;
+                LogError("invalid proxy_data values ( host_address = %p, port = %d)", proxy_data->host_address, proxy_data->port);
+                result = HTTPAPI_ERROR;
             }
             else
             {
@@ -854,8 +884,8 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
                 {
                     if(httpHandleData->proxy_host != NULL)
                     {
-                      free((void*)httpHandleData->proxy_host);
-                      httpHandleData->proxy_host = NULL;
+                        free((void*)httpHandleData->proxy_host);
+                        httpHandleData->proxy_host = NULL;
                     }
                     if(mallocAndStrcpy_s((char**)&(httpHandleData->proxy_host), (const char*)proxyAddressAndPort) != 0)
                     {
@@ -868,8 +898,8 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
                         {
                             if(httpHandleData->proxy_username != NULL)
                             {
-                              free((void*)httpHandleData->proxy_username);
-                              httpHandleData->proxy_username = NULL;
+                                free((void*)httpHandleData->proxy_username);
+                                httpHandleData->proxy_username = NULL;
                             }
                             if(mallocAndStrcpy_s((char**)&(httpHandleData->proxy_username), (const char*)proxy_data->username) != 0)
                             {
@@ -975,16 +1005,17 @@ HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, co
                 result = HTTPAPI_OK;
             }
         }
-        else if (strcmp("TrustedCerts", optionName) == 0)
+        else if (strcmp(OPTION_TRUSTED_CERT, optionName) == 0)
         {
-            *savedValue = malloc(1); /*_CloneOption needs to return in *savedValue something that can be free()'d*/
-            if (*savedValue == NULL)
+            /*this is getting the trusted certificate */
+            if (mallocAndStrcpy_s((char**)savedValue, (const char*)value) != 0)
             {
-                LogError("failure in malloc");
+                LogError("unable to clone the x509 certificate content");
                 result = HTTPAPI_ERROR;
             }
             else
             {
+                /*return OK when the certificate has been clones successfully*/
                 result = HTTPAPI_OK;
             }
         }
