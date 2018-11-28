@@ -322,33 +322,38 @@ int StringToken_Split(const char* source, size_t length, const char** delimiters
                 // Codes_SRS_STRING_TOKENIZER_09_024: [ All NULL tokens shall be ommited if `include_empty` is not TRUE ]
                 else if (tokenValue != NULL || include_empty)
                 {
+                    char** temp_token;
                     // Codes_SRS_STRING_TOKENIZER_09_025: [ The tokens shall be stored in `tokens`, and their count stored in `token_count` ]
                     *token_count = (*token_count) + 1;
 
-                    if ((*tokens = (char**)realloc(*tokens, sizeof(char*) * (*token_count))) == NULL)
+                    if ((temp_token = (char**)realloc(*tokens, sizeof(char*) * (*token_count))) == NULL)
                     {
                         // Codes_SRS_STRING_TOKENIZER_09_026: [ If any failures splitting or storing the tokens occur the function shall return a non-zero value ]
                         LogError("Failed re-allocating the token array");
-                        *token_count = 0;
-                        result = __FAILURE__;
-                        break;
-                    }
-                    else if (tokenLength == 0)
-                    {
-                        (*tokens)[(*token_count) - 1] = NULL;
-                    }
-                    else if (((*tokens)[(*token_count) - 1] = (char*)malloc(sizeof(char) * (tokenLength + 1))) == NULL)
-                    {
-                        // Codes_SRS_STRING_TOKENIZER_09_026: [ If any failures splitting or storing the tokens occur the function shall return a non-zero value ]
-                        LogError("Failed copying token into array");
-                        *token_count = (*token_count) - 1;
+                        (*token_count)--;
                         result = __FAILURE__;
                         break;
                     }
                     else
                     {
-                        (void)memcpy((*tokens)[(*token_count) - 1], tokenValue, tokenLength);
-                        (*tokens)[(*token_count) - 1][tokenLength] = '\0';
+                        *tokens = temp_token;
+                        if (tokenLength == 0)
+                        {
+                            (*tokens)[(*token_count) - 1] = NULL;
+                        }
+                        else if (((*tokens)[(*token_count) - 1] = (char*)malloc(sizeof(char) * (tokenLength + 1))) == NULL)
+                        {
+                            // Codes_SRS_STRING_TOKENIZER_09_026: [ If any failures splitting or storing the tokens occur the function shall return a non-zero value ]
+                            LogError("Failed copying token into array");
+                            *token_count = (*token_count) - 1;
+                            result = __FAILURE__;
+                            break;
+                        }
+                        else
+                        {
+                            (void)memcpy((*tokens)[(*token_count) - 1], tokenValue, tokenLength);
+                            (*tokens)[(*token_count) - 1][tokenLength] = '\0';
+                        }
                     }
                 }
             } while (StringToken_GetNext(tokenizer, delimiters, n_delims));
@@ -357,7 +362,7 @@ int StringToken_Split(const char* source, size_t length, const char** delimiters
 
             if (result != 0)
             {
-                while ((*token_count) > 0)
+                while ((*token_count) > 0 && *tokens != NULL)
                 {
                     *token_count = (*token_count) - 1;
                     free((*tokens)[*token_count]);
