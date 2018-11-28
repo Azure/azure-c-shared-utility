@@ -12,6 +12,8 @@ static Ticker *cycle_ticker = NULL;
 static volatile uint32_t last_ticker_us = 0;
 static volatile uint64_t long_ticker_ms = 0;
 
+#define TICKER_INTERVAL 60.0
+
 static uint64_t system_tick_counter_read(void)
 {
     uint64_t result;
@@ -21,6 +23,7 @@ static uint64_t system_tick_counter_read(void)
     t = us_ticker_read();
     if (t < last_ticker_us)
     {
+        // overflowed
         long_ticker_ms += 0xFFFFFFFF / 1000;
     }
     last_ticker_us = t;
@@ -38,10 +41,10 @@ static void cycle_accumulator(void)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // The tickcounter
-struct TICK_COUNTER_INSTANCE_TAG
+typedef struct TICK_COUNTER_INSTANCE_TAG
 {
     uint64_t current_ms;
-};
+} TICK_COUNTER_INSTANCE;
 
 TICK_COUNTER_HANDLE tickcounter_create(void)
 {
@@ -49,12 +52,12 @@ TICK_COUNTER_HANDLE tickcounter_create(void)
     if (cycle_ticker == NULL)
     {
         cycle_ticker = new Ticker();
-        cycle_ticker->attach(cycle_accumulator, 60.0);
+        cycle_ticker->attach(cycle_accumulator, TICKER_INTERVAL);
     }
     core_util_critical_section_exit();
 
-    TICK_COUNTER_INSTANCE_TAG *result;
-    result = new TICK_COUNTER_INSTANCE_TAG;
+    TICK_COUNTER_INSTANCE *result;
+    result = new TICK_COUNTER_INSTANCE;
     result->current_ms = system_tick_counter_read();
     return result;
 }
@@ -77,7 +80,7 @@ int tickcounter_get_current_ms(TICK_COUNTER_HANDLE tick_counter, tickcounter_ms_
     else
     {
         tick_counter->current_ms = system_tick_counter_read();
-        *current_ms = (tickcounter_ms_t)tick_counter->current_ms;
+        *current_ms = tick_counter->current_ms;
 
         result = 0;
     }

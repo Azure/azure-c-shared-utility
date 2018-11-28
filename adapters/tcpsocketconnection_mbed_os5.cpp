@@ -10,7 +10,7 @@
 // The NetworkInterface instance of network device
 extern NetworkInterface *_defaultSystemNetwork;
 
-bool tcpsocketconnection_isConnected = false;
+static volatile bool tcpsocketconnection_isConnected = false;
 
 TCPSOCKETCONNECTION_HANDLE tcpsocketconnection_create(void)
 {
@@ -21,21 +21,33 @@ TCPSOCKETCONNECTION_HANDLE tcpsocketconnection_create(void)
 
 void tcpsocketconnection_set_blocking(TCPSOCKETCONNECTION_HANDLE tcpSocketConnectionHandle, bool blocking, unsigned int timeout)
 {
-	TCPSocket* tsc = (TCPSocket*)tcpSocketConnectionHandle;
-	tsc->set_blocking(blocking);
-	tsc->set_timeout(timeout);
+	if (tcpSocketConnectionHandle != NULL)
+	{
+		TCPSocket* tsc = (TCPSocket*)tcpSocketConnectionHandle;
+		tsc->set_blocking(blocking);
+		tsc->set_timeout(timeout);
+	}
 }
 
 void tcpsocketconnection_destroy(TCPSOCKETCONNECTION_HANDLE tcpSocketConnectionHandle)
 {
-	delete (TCPSocket*)tcpSocketConnectionHandle;
+	if (tcpSocketConnectionHandle != NULL)
+	{
+		delete (TCPSocket*)tcpSocketConnectionHandle;
+	}
 }
 
 int tcpsocketconnection_connect(TCPSOCKETCONNECTION_HANDLE tcpSocketConnectionHandle, const char* host, const int port)
 {
-	TCPSocket* tsc = (TCPSocket*)tcpSocketConnectionHandle;
-	int ret = tsc->connect(host, port);
-	tcpsocketconnection_isConnected = true;
+	int ret = 0;
+	if (tcpSocketConnectionHandle != NULL && !tcpsocketconnection_isConnected)
+	{
+		TCPSocket* tsc = (TCPSocket*)tcpSocketConnectionHandle;
+		if ( (ret = tsc->connect(host, port)) == 0)
+		{
+			tcpsocketconnection_isConnected = true;
+		}
+	}
 	return ret;
 }
 
@@ -47,32 +59,51 @@ bool tcpsocketconnection_is_connected(TCPSOCKETCONNECTION_HANDLE tcpSocketConnec
 
 void tcpsocketconnection_close(TCPSOCKETCONNECTION_HANDLE tcpSocketConnectionHandle)
 {
-	TCPSocket* tsc = (TCPSocket*)tcpSocketConnectionHandle;
-	tcpsocketconnection_isConnected = false;
-	tsc->close();
+	if (tcpSocketConnectionHandle != NULL && tcpsocketconnection_isConnected)
+	{
+		TCPSocket* tsc = (TCPSocket*)tcpSocketConnectionHandle;
+		tsc->close();
+		tcpsocketconnection_isConnected = false;
+	}
 }
 
 int tcpsocketconnection_send(TCPSOCKETCONNECTION_HANDLE tcpSocketConnectionHandle, const char* data, int length)
 {
-	TCPSocket* tsc = (TCPSocket*)tcpSocketConnectionHandle;
-	int ret = tsc->send((char*)data, length);
-	return ret;
+	if (tcpSocketConnectionHandle != NULL)
+	{
+		TCPSocket* tsc = (TCPSocket*)tcpSocketConnectionHandle;
+		return tsc->send((char*)data, length);
+	}
+	
+	return -1;
 }
 
 int tcpsocketconnection_send_all(TCPSOCKETCONNECTION_HANDLE tcpSocketConnectionHandle, const char* data, int length)
 {
-	TCPSocket* tsc = (TCPSocket*)tcpSocketConnectionHandle;
-	return tsc->send((char*)data, length);
+	if (tcpSocketConnectionHandle != NULL)
+	{
+		TCPSocket* tsc = (TCPSocket*)tcpSocketConnectionHandle;
+		return tsc->send((char*)data, length);
+	}
+	return -1;
 }
 
 int tcpsocketconnection_receive(TCPSOCKETCONNECTION_HANDLE tcpSocketConnectionHandle, char* data, int length)
 {
-	TCPSocket* tsc = (TCPSocket*)tcpSocketConnectionHandle;
-	return tsc->recv(data, length);
+	if (tcpSocketConnectionHandle != NULL)
+	{
+		TCPSocket* tsc = (TCPSocket*)tcpSocketConnectionHandle;
+		return tsc->recv(data, length);
+	}
+	return -1;
 }
 
 int tcpsocketconnection_receive_all(TCPSOCKETCONNECTION_HANDLE tcpSocketConnectionHandle, char* data, int length)
 {
-	TCPSocket* tsc = (TCPSocket*)tcpSocketConnectionHandle;
-	return tsc->recv(data, length);
+	if (tcpSocketConnectionHandle != NULL)
+	{
+		TCPSocket* tsc = (TCPSocket*)tcpSocketConnectionHandle;
+		return tsc->recv(data, length);
+	}
+	return -1;
 }

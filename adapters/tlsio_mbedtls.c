@@ -70,6 +70,13 @@ typedef struct TLS_IO_INSTANCE_TAG
     int tls_status;
 } TLS_IO_INSTANCE;
 
+typedef enum TLS_STATE_TAG
+{
+    TLS_STATE_NOT_INITIALIZED,
+    TLS_STATE_INITIALIZED,
+    TLS_STATE_CLOSING,
+} TLS_STATE;
+
 // DEPRECATED: debug functions do not belong in the tree.
 #if defined(MBED_TLS_DEBUG_ENABLE)
 void mbedtls_debug(void *ctx, int level, const char *file, int line, const char *str)
@@ -364,7 +371,7 @@ static int tlsio_entropy_poll(void *v, unsigned char *output, size_t len, size_t
 // Un-initialize mbedTLS
 static void mbedtls_uninit(TLS_IO_INSTANCE *tls_io_instance)
 {
-    if (tls_io_instance->tls_status > 0)
+    if (tls_io_instance->tls_status != TLS_STATE_NOT_INITIALIZED)
     {
         // mbedTLS cleanup...
         mbedtls_ssl_free(&tls_io_instance->ssl);
@@ -373,19 +380,19 @@ static void mbedtls_uninit(TLS_IO_INSTANCE *tls_io_instance)
         mbedtls_ctr_drbg_free(&tls_io_instance->ctr_drbg);
         mbedtls_entropy_free(&tls_io_instance->entropy);
 
-        tls_io_instance->tls_status = 0;
+        tls_io_instance->tls_status = TLS_STATE_NOT_INITIALIZED;
     }
 }
 
 // Initialize mbedTLS
 static void mbedtls_init(TLS_IO_INSTANCE *tls_io_instance)
 {
-    if (tls_io_instance->tls_status == 1)
+    if (tls_io_instance->tls_status == TLS_STATE_INITIALIZED)
     {
         // Already initialized
         return;
     }
-    else if (tls_io_instance->tls_status == 2)
+    else if (tls_io_instance->tls_status == TLS_STATE_CLOSING)
     {
         // The underlying connection has been closed, so here un-initialize first
         mbedtls_uninit(tls_io_instance);
@@ -397,7 +404,8 @@ static void mbedtls_init(TLS_IO_INSTANCE *tls_io_instance)
     mbedtls_x509_crt_init(&tls_io_instance->trusted_certificates_parsed);
 
     mbedtls_entropy_init(&tls_io_instance->entropy);
-    mbedtls_entropy_add_source(&tls_io_instance->entropy, tlsio_entropy_poll, NULL, 128, 0);
+    // Add a weak entropy source here,avoid some platform doesn't have strong / hardware entropy
+    mbedtls_entropy_add_source(&tls_io_instance->entropy, tlsio_entropy_poll, NULL, MBEDTLS_ENTROPY_MAX_GATHER, MBEDTLS_ENTROPY_SOURCE_WEAK);
 
     mbedtls_ctr_drbg_init(&tls_io_instance->ctr_drbg);
     mbedtls_ctr_drbg_seed(&tls_io_instance->ctr_drbg, mbedtls_entropy_func, &tls_io_instance->entropy, (const unsigned char *)pers, strlen(pers));
@@ -421,7 +429,7 @@ static void mbedtls_init(TLS_IO_INSTANCE *tls_io_instance)
     mbedtls_ssl_set_session(&tls_io_instance->ssl, &tls_io_instance->ssn);
     mbedtls_ssl_setup(&tls_io_instance->ssl, &tls_io_instance->config);
 
-    tls_io_instance->tls_status = 1;
+    tls_io_instance->tls_status = TLS_STATE_INITIALIZED;
 }
 
 CONCRETE_IO_HANDLE tlsio_mbedtls_create(void *io_create_parameters)
@@ -485,7 +493,7 @@ CONCRETE_IO_HANDLE tlsio_mbedtls_create(void *io_create_parameters)
                     }
                     else
                     {
-                        result->tls_status = 0;
+                        result->tls_status = TLS_STATE_NOT_INITIALIZED;
                         mbedtls_init(result);
 
                         result->tlsio_state = TLSIO_STATE_NOT_OPEN;
@@ -509,14 +517,17 @@ void tlsio_mbedtls_destroy(CONCRETE_IO_HANDLE tls_io)
         if (tls_io_instance->socket_io_read_bytes != NULL)
         {
             free(tls_io_instance->socket_io_read_bytes);
+            tls_io_instance->socket_io_read_bytes = NULL;
         }
         if (tls_io_instance->hostname != NULL)
         {
             free(tls_io_instance->hostname);
+            tls_io_instance->hostname = NULL;
         }
         if (tls_io_instance->trusted_certificates != NULL)
         {
             free(tls_io_instance->trusted_certificates);
+            tls_io_instance->trusted_certificates = NULL;
         }
 
         xio_destroy(tls_io_instance->socket_io);
@@ -600,10 +611,10 @@ int tlsio_mbedtls_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_cl
             }
             else
             {
-                if (tls_io_instance->tls_status == 1)
+                if (tls_io_instance->tls_status == TLS_STATE_INITIALIZED)
                 {
                     mbedtls_ssl_close_notify(&tls_io_instance->ssl);
-                    tls_io_instance->tls_status = 2;
+                    tls_io_instance->tls_status = TLS_STATE_CLOSING;
                 }
             }
         }
@@ -766,7 +777,10 @@ int tlsio_mbedtls_setoption(CONCRETE_IO_HANDLE tls_io, const char *optionName, c
             }
             else if (tls_io_instance->pKey.pk_info != NULL)
             {
-                mbedtls_ssl_conf_own_cert(&tls_io_instance->config, &tls_io_instance->owncert, &tls_io_instance->pKey);
+                if (mbedtls_ssl_conf_own_cert(&tls_io_instance->config, &tls_io_instance->owncert, &tls_io_instance->pKey) != 0)
+                {
+                    result = __FAILURE__;
+                }
             }
         }
         else if (strcmp(SU_OPTION_X509_PRIVATE_KEY, optionName) == 0 || strcmp(OPTION_X509_ECC_KEY, optionName) == 0)
@@ -777,7 +791,10 @@ int tlsio_mbedtls_setoption(CONCRETE_IO_HANDLE tls_io, const char *optionName, c
             }
             else if (tls_io_instance->owncert.version > 0)
             {
-                mbedtls_ssl_conf_own_cert(&tls_io_instance->config, &tls_io_instance->owncert, &tls_io_instance->pKey);
+                if (mbedtls_ssl_conf_own_cert(&tls_io_instance->config, &tls_io_instance->owncert, &tls_io_instance->pKey))
+                {
+                    result = __FAILURE__;
+                }
             }
         }
         else
