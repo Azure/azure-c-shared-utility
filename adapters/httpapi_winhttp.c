@@ -9,6 +9,7 @@
 
 #include "windows.h"
 #include "winhttp.h"
+#include "wincrypt.h"
 #include "azure_c_shared_utility/httpapi.h"
 #include "azure_c_shared_utility/httpheaders.h"
 #include "azure_c_shared_utility/xlogging.h"
@@ -38,6 +39,8 @@ typedef struct HTTP_HANDLE_DATA_TAG
     const char* proxy_password;
     // Certificate to check server certificate chains to, overriding built-in Windows certificate store certificates.
     char* trustedCertificate;
+    // Set when a callback fails.
+    bool handleClosedOnCallbackError;
 } HTTP_HANDLE_DATA;
 
 static HTTPAPI_STATE g_HTTPAPIState = HTTPAPI_NOT_INITIALIZED;
@@ -164,6 +167,66 @@ static HTTPAPI_RESULT ConstructHeadersString(HTTP_HEADERS_HANDLE httpHeadersHand
     return result;
 }
 
+static void httpapi_WinhttpStatusCallback(
+  IN HINTERNET hInternet,
+  IN DWORD_PTR dwContext,
+  IN DWORD dwInternetStatus,
+  IN LPVOID lpvStatusInformation,
+  IN DWORD dwStatusInformationLength
+)
+{
+    HTTP_HANDLE_DATA* handleData = (HTTP_HANDLE_DATA*)dwContext;
+
+    (void)dwStatusInformationLength;
+    (void)lpvStatusInformation;
+
+    if (dwContext == 0)
+    {
+        LogError("WinhttpStatusCallback called without context set");
+    }
+    else if (dwInternetStatus != WINHTTP_CALLBACK_STATUS_SENDING_REQUEST)
+    {
+        // Silently ignore if there's any statuses we get that we can't handle
+        ;
+    }
+    else if (handleData->trustedCertificate != NULL)
+    {
+        PCERT_CONTEXT pCertContext = NULL;
+        DWORD bufferLength = sizeof(pCertContext);
+        bool certificateTrusted;
+
+        if (! WinHttpQueryOption(hInternet, WINHTTP_OPTION_SERVER_CERT_CONTEXT, (void*)&pCertContext, &bufferLength))
+        {
+            LogErrorWinHTTPWithGetLastErrorAsString("WinHttpQueryOption(WINHTTP_OPTION_SERVER_CERT_CONTEXT) failed");
+            certificateTrusted = false;
+        }
+        else if (x509_verify_certificate_in_chain(handleData->trustedCertificate, pCertContext) != 0)
+        {
+            LogError("Certificate does not chain up correctly");
+            certificateTrusted = false;
+        }
+        else
+        {
+            certificateTrusted = true;
+        }
+
+        if (certificateTrusted == false)
+        {
+            LogError("Server certificate is not trusted.  Aborting HTTP request");
+            // To signal to caller that the request is to be terminated, the callback closes the handle.
+            WinHttpCloseHandle(hInternet);
+            // To avoid a double free of this handle (in HTTPAPI_ExecuteRequset cleanup) record we've processed close already.
+            handleData->handleClosedOnCallbackError = true;
+        }
+
+        if (pCertContext != NULL)
+        {
+            CertFreeCertificateContext(pCertContext);
+        }
+    }
+}
+
+
 HTTPAPI_RESULT HTTPAPI_Init(void)
 {
     HTTPAPI_RESULT result;
@@ -178,6 +241,13 @@ HTTPAPI_RESULT HTTPAPI_Init(void)
             0)) == NULL)
         {
             LogErrorWinHTTPWithGetLastErrorAsString("WinHttpOpen failed.");
+            result = HTTPAPI_INIT_FAILED;
+        }
+        else if (WinHttpSetStatusCallback(g_SessionHandle, httpapi_WinhttpStatusCallback, WINHTTP_CALLBACK_FLAG_SEND_REQUEST, 0) == WINHTTP_INVALID_STATUS_CALLBACK)
+        {
+            LogErrorWinHTTPWithGetLastErrorAsString("WinHttpSetStatusCallback failed.");
+            (void)WinHttpCloseHandle(g_SessionHandle);
+            g_SessionHandle = NULL;
             result = HTTPAPI_INIT_FAILED;
         }
         else
@@ -232,6 +302,7 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
         }
         else
         {
+            memset(result, 0, sizeof(*result));
             wchar_t* hostNameTemp;
             size_t hostNameTemp_size = MultiByteToWideChar(CP_ACP, 0, hostName, -1, NULL, 0);
             if (hostNameTemp_size == 0)
@@ -274,12 +345,6 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
                         else
                         {
                             result->timeout = 60000;
-                            result->x509certificate = NULL;
-                            result->x509privatekey = NULL;
-                            result->x509SchannelHandle = NULL;
-                            result->proxy_host = NULL;
-                            result->proxy_username = NULL;
-                            result->proxy_password = NULL;
                         }
                     }
                     free(hostNameTemp);
@@ -459,7 +524,7 @@ static HTTPAPI_RESULT SendHttpRequest(HTTP_HANDLE_DATA* handleData, HINTERNET re
                 (void*)content,
                 (DWORD)contentLength,
                 (DWORD)contentLength,
-                0))
+                (DWORD_PTR)handleData))
         {
             result = HTTPAPI_SEND_REQUEST_FAILED;
             LogErrorWinHTTPWithGetLastErrorAsString("WinHttpSendRequest: (result = %s).", ENUM_TO_STRING(HTTPAPI_RESULT, result));
@@ -786,7 +851,6 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
     else
     {
         HTTP_HANDLE_DATA* handleData = (HTTP_HANDLE_DATA*)handle;
-
         wchar_t* httpHeaders = NULL;
         HINTERNET requestHandle = NULL;
 
@@ -823,10 +887,11 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
             result = HTTPAPI_OK;
         }
 
-        if (requestHandle != NULL)
+        if ((requestHandle != NULL) && (handleData->handleClosedOnCallbackError == false))
         {
             (void)WinHttpCloseHandle(requestHandle);
         }
+        handleData->handleClosedOnCallbackError = false;
 
         free(httpHeaders);
     }
