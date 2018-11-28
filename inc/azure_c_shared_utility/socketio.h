@@ -22,6 +22,12 @@ typedef struct SOCKETIO_CONFIG_TAG
     void* accepted_socket;
 } SOCKETIO_CONFIG;
 
+typedef enum SOCKETIO_ADDRESS_TYPE_TAG
+{
+    ADDRESS_TYPE_IP,
+    ADDRESS_TYPE_DOMAIN_SOCKET
+} SOCKETIO_ADDRESS_TYPE;
+
 #define RECEIVE_BYTES_VALUE     64
 
 MOCKABLE_FUNCTION(, CONCRETE_IO_HANDLE, socketio_create, void*, io_create_parameters);
