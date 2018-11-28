@@ -1060,4 +1060,198 @@ TEST_FUNCTION(constbuffer_array_dec_ref_frees)
     constbuffer_array_dec_ref(TEST_CONSTBUFFER_ARRAY_HANDLE);
 }
 
+/* constbuffer_array_get_all_buffers_size */
+
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_019: [ If `constbuffer_array_handle` is NULL, `constbuffer_array_get_all_buffers_size` shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(constbuffer_array_get_all_buffers_size_with_NULL_constbuffer_array_handle_fails)
+{
+    ///arrange
+    uint32_t all_buffers_size;
+    int result;
+
+    ///act
+    result = constbuffer_array_get_all_buffers_size(NULL, &all_buffers_size);
+
+    ///assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+}
+
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_020: [ If `all_buffers_size` is NULL, `constbuffer_array_get_all_buffers_size` shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(constbuffer_array_get_all_buffers_size_with_NULL_all_buffers_size_fails)
+{
+    ///arrange
+    CONSTBUFFER_ARRAY_HANDLE TEST_CONSTBUFFER_ARRAY_HANDLE = TEST_constbuffer_array_create_empty();
+    int result;
+
+    ///act
+    result = constbuffer_array_get_all_buffers_size(TEST_CONSTBUFFER_ARRAY_HANDLE, NULL);
+
+    ///assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+
+    // cleanup
+    constbuffer_array_dec_ref(TEST_CONSTBUFFER_ARRAY_HANDLE);
+}
+
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_021: [ If summing up the sizes results in an `uint32_t` overflow, shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(constbuffer_array_get_all_buffers_size_when_overflow_happens_fails)
+{
+    ///arrange
+    CONSTBUFFER_ARRAY_HANDLE TEST_CONSTBUFFER_ARRAY_HANDLE = TEST_constbuffer_array_create_empty();
+    CONSTBUFFER_ARRAY_HANDLE afterAdd1 = TEST_constbuffer_array_add_front(TEST_CONSTBUFFER_ARRAY_HANDLE, 0, TEST_CONSTBUFFER_HANDLE_1);
+    CONSTBUFFER_ARRAY_HANDLE afterAdd2 = TEST_constbuffer_array_add_front(afterAdd1, 1, TEST_CONSTBUFFER_HANDLE_2);
+    uint32_t all_buffers_size;
+    int result;
+    const CONSTBUFFER fake_const_buffer_1 = { (const unsigned char*)0x4242, UINT32_MAX };
+    const CONSTBUFFER fake_const_buffer_2 = { (const unsigned char*)0x4242, 1 };
+
+    STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(TEST_CONSTBUFFER_HANDLE_2))
+        .SetReturn(&fake_const_buffer_2);
+    STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(TEST_CONSTBUFFER_HANDLE_1))
+        .SetReturn(&fake_const_buffer_1);
+
+    ///act
+    result = constbuffer_array_get_all_buffers_size(afterAdd2, &all_buffers_size);
+
+    ///assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+
+    // cleanup
+    constbuffer_array_dec_ref(TEST_CONSTBUFFER_ARRAY_HANDLE);
+    constbuffer_array_dec_ref(afterAdd1);
+    constbuffer_array_dec_ref(afterAdd2);
+}
+
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_021: [ If summing up the sizes results in an `uint32_t` overflow, shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(constbuffer_array_get_all_buffers_size_max_all_size_succeeds)
+{
+    ///arrange
+    CONSTBUFFER_ARRAY_HANDLE TEST_CONSTBUFFER_ARRAY_HANDLE = TEST_constbuffer_array_create_empty();
+    CONSTBUFFER_ARRAY_HANDLE afterAdd1 = TEST_constbuffer_array_add_front(TEST_CONSTBUFFER_ARRAY_HANDLE, 0, TEST_CONSTBUFFER_HANDLE_1);
+    CONSTBUFFER_ARRAY_HANDLE afterAdd2 = TEST_constbuffer_array_add_front(afterAdd1, 1, TEST_CONSTBUFFER_HANDLE_2);
+    uint32_t all_buffers_size;
+    int result;
+    const CONSTBUFFER fake_const_buffer_1 = { (const unsigned char*)0x4242, UINT32_MAX - 1 };
+    const CONSTBUFFER fake_const_buffer_2 = { (const unsigned char*)0x4242, 1 };
+
+    STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(TEST_CONSTBUFFER_HANDLE_2))
+        .SetReturn(&fake_const_buffer_2);
+    STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(TEST_CONSTBUFFER_HANDLE_1))
+        .SetReturn(&fake_const_buffer_1);
+
+    ///act
+    result = constbuffer_array_get_all_buffers_size(afterAdd2, &all_buffers_size);
+
+    ///assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(int, UINT32_MAX, all_buffers_size);
+
+    // cleanup
+    constbuffer_array_dec_ref(TEST_CONSTBUFFER_ARRAY_HANDLE);
+    constbuffer_array_dec_ref(afterAdd1);
+    constbuffer_array_dec_ref(afterAdd2);
+}
+
+#if SIZE_MAX > UINT32_MAX
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_021: [ If summing up the sizes results in an `uint32_t` overflow, shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(constbuffer_array_get_all_buffers_size_when_buffer_size_bigger_than_UINT32_MAX_fails)
+{
+    ///arrange
+    CONSTBUFFER_ARRAY_HANDLE TEST_CONSTBUFFER_ARRAY_HANDLE = TEST_constbuffer_array_create_empty();
+    CONSTBUFFER_ARRAY_HANDLE afterAdd1 = TEST_constbuffer_array_add_front(TEST_CONSTBUFFER_ARRAY_HANDLE, 0, TEST_CONSTBUFFER_HANDLE_1);
+    uint32_t all_buffers_size;
+    int result;
+    const CONSTBUFFER fake_const_buffer_1 = { (const unsigned char*)0x4242, (size_t)UINT32_MAX + 1 };
+
+    STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(TEST_CONSTBUFFER_HANDLE_1))
+        .SetReturn(&fake_const_buffer_1);
+
+    ///act
+    result = constbuffer_array_get_all_buffers_size(afterAdd1, &all_buffers_size);
+
+    ///assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+
+    // cleanup
+    constbuffer_array_dec_ref(TEST_CONSTBUFFER_ARRAY_HANDLE);
+    constbuffer_array_dec_ref(afterAdd1);
+}
+#endif
+
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_022: [ Otherwise `constbuffer_array_get_all_buffers_size` shall write in `all_buffers_size` the total size of all buffers in the array and return 0. ]*/
+TEST_FUNCTION(constbuffer_array_get_all_buffers_on_empty_const_buffer_array_succeeds)
+{
+    ///arrange
+    CONSTBUFFER_ARRAY_HANDLE TEST_CONSTBUFFER_ARRAY_HANDLE = TEST_constbuffer_array_create_empty();
+    uint32_t all_buffers_size;
+    int result;
+
+    ///act
+    result = constbuffer_array_get_all_buffers_size(TEST_CONSTBUFFER_ARRAY_HANDLE, &all_buffers_size);
+
+    ///assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(uint32_t, 0, all_buffers_size);
+
+    // cleanup
+    constbuffer_array_dec_ref(TEST_CONSTBUFFER_ARRAY_HANDLE);
+}
+
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_022: [ Otherwise `constbuffer_array_get_all_buffers_size` shall write in `all_buffers_size` the total size of all buffers in the array and return 0. ]*/
+TEST_FUNCTION(constbuffer_array_get_all_buffers_size_with_1_buffer_succeeds)
+{
+    ///arrange
+    CONSTBUFFER_ARRAY_HANDLE TEST_CONSTBUFFER_ARRAY_HANDLE = TEST_constbuffer_array_create_empty();
+    CONSTBUFFER_ARRAY_HANDLE afterAdd1 = TEST_constbuffer_array_add_front(TEST_CONSTBUFFER_ARRAY_HANDLE, 0, TEST_CONSTBUFFER_HANDLE_1);
+    uint32_t all_buffers_size;
+    int result;
+
+    STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(TEST_CONSTBUFFER_HANDLE_1));
+
+    ///act
+    result = constbuffer_array_get_all_buffers_size(afterAdd1, &all_buffers_size);
+
+    ///assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(uint32_t, 1, all_buffers_size);
+
+    // cleanup
+    constbuffer_array_dec_ref(TEST_CONSTBUFFER_ARRAY_HANDLE);
+    constbuffer_array_dec_ref(afterAdd1);
+}
+
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_022: [ Otherwise `constbuffer_array_get_all_buffers_size` shall write in `all_buffers_size` the total size of all buffers in the array and return 0. ]*/
+TEST_FUNCTION(constbuffer_array_get_all_buffers_size_with_2_buffers_succeeds)
+{
+    ///arrange
+    CONSTBUFFER_ARRAY_HANDLE TEST_CONSTBUFFER_ARRAY_HANDLE = TEST_constbuffer_array_create_empty();
+    CONSTBUFFER_ARRAY_HANDLE afterAdd1 = TEST_constbuffer_array_add_front(TEST_CONSTBUFFER_ARRAY_HANDLE, 0, TEST_CONSTBUFFER_HANDLE_1);
+    CONSTBUFFER_ARRAY_HANDLE afterAdd2 = TEST_constbuffer_array_add_front(afterAdd1, 1, TEST_CONSTBUFFER_HANDLE_2);
+    uint32_t all_buffers_size;
+    int result;
+
+    STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(TEST_CONSTBUFFER_HANDLE_2));
+    STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(TEST_CONSTBUFFER_HANDLE_1));
+
+    ///act
+    result = constbuffer_array_get_all_buffers_size(afterAdd2, &all_buffers_size);
+
+    ///assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(uint32_t, 3, all_buffers_size);
+
+    // cleanup
+    constbuffer_array_dec_ref(TEST_CONSTBUFFER_ARRAY_HANDLE);
+    constbuffer_array_dec_ref(afterAdd1);
+    constbuffer_array_dec_ref(afterAdd2);
+}
+
 END_TEST_SUITE(constbuffer_array_unittests)

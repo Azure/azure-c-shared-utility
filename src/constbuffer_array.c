@@ -365,3 +365,57 @@ void constbuffer_array_dec_ref(CONSTBUFFER_ARRAY_HANDLE constbuffer_array_handle
         }
     }
 }
+
+int constbuffer_array_get_all_buffers_size(CONSTBUFFER_ARRAY_HANDLE constbuffer_array_handle, uint32_t* all_buffers_size)
+{
+    int result;
+
+    if (
+        /* Codes_SRS_CONSTBUFFER_ARRAY_01_019: [ If `constbuffer_array_handle` is NULL, `constbuffer_array_get_all_buffers_size` shall fail and return a non-zero value. ]*/
+        (constbuffer_array_handle == NULL) ||
+        /* Codes_SRS_CONSTBUFFER_ARRAY_01_020: [ If `all_buffers_size` is NULL, `constbuffer_array_get_all_buffers_size` shall fail and return a non-zero value. ]*/
+        (all_buffers_size == NULL)
+        )
+    {
+        LogError("CONSTBUFFER_ARRAY_HANDLE constbuffer_array_handle=%p, uint32_t* all_buffers_size=%p",
+            constbuffer_array_handle, all_buffers_size);
+        result = __FAILURE__;
+    }
+    else
+    {
+        uint32_t i;
+        uint32_t total_size = 0;
+
+        for (i = 0; i < constbuffer_array_handle->nBuffers; i++)
+        {
+            const CONSTBUFFER* content = CONSTBUFFER_GetContent(constbuffer_array_handle->buffers[i]);
+#if SIZE_MAX > UINT32_MAX
+            if (content->size > UINT32_MAX)
+            {
+                break;
+            }
+#endif
+            if (total_size + (uint32_t)content->size < total_size)
+            {
+                break;
+            }
+
+            total_size += (uint32_t)content->size;
+        }
+
+        if (i < constbuffer_array_handle->nBuffers)
+        {
+            /* Codes_SRS_CONSTBUFFER_ARRAY_01_021: [ If summing up the sizes results in an `uint32_t` overflow, shall fail and return a non-zero value. ]*/
+            LogError("Overflow in computing all buffers size");
+            result = __FAILURE__;
+        }
+        else
+        {
+            /* Codes_SRS_CONSTBUFFER_ARRAY_01_022: [ Otherwise `constbuffer_array_get_all_buffers_size` shall write in `all_buffers_size` the total size of all buffers in the array and return 0. ]*/
+            *all_buffers_size = total_size;
+            result = 0;
+        }
+    }
+
+    return result;
+}
