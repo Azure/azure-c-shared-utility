@@ -85,6 +85,8 @@ The memory is assumed to be freeable by a call to `free`.
 
 **SRS_CONSTBUFFER_01_003: [** The non-NULL handle returned by `CONSTBUFFER_CreateWithMoveMemory` shall have its ref count set to "1". **]**
 
+**SRS_CONSTBUFFER_01_005: [** If any error occurs, `CONSTBUFFER_CreateWithMoveMemory` shall fail and return NULL. **]**
+
 ### CONSTBUFFER_Clone
 ```c
 MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_Clone, CONSTBUFFER_HANDLE, constbufferHandle);
