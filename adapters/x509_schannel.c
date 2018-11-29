@@ -476,7 +476,10 @@ PCCERT_CONTEXT x509_schannel_get_certificate_context(X509_SCHANNEL_HANDLE x509_s
     return result;
 }
 
-// For each certificate specified in trustedCertificate (delimited by standard PEM "-----END CERTIFICATE-----"), add to hCertStore
+// For each certificate specified in trustedCertificate, add to hCertStore.  Windows API's (namely
+// CryptStringToBinaryA & CertAddEncodedCertificateToStore) do not handle multiple certificates
+// at a time in a single call, so add_certificates_to_store() parses the PEM (delimited by "-----END CERTIFICATE-----")
+// to call Windows API a cert at a time.
 static int add_certificates_to_store(const char* trustedCertificate, HCERTSTORE hCertStore)
 {
     int result = 0;
