@@ -167,7 +167,7 @@ static HTTPAPI_RESULT ConstructHeadersString(HTTP_HEADERS_HANDLE httpHeadersHand
     return result;
 }
 
-static void httpapi_WinhttpStatusCallback(
+void CALLBACK httpapi_WinhttpStatusCallback(
   IN HINTERNET hInternet,
   IN DWORD_PTR dwContext,
   IN DWORD dwInternetStatus,
