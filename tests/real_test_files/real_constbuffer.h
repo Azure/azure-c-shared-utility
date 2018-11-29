@@ -11,6 +11,7 @@
     FOR_EACH_1(R2, \
         CONSTBUFFER_Create, \
         CONSTBUFFER_CreateFromBuffer, \
+        CONSTBUFFER_CreateWithMoveMemory, \
         CONSTBUFFER_Clone, \
         CONSTBUFFER_GetContent, \
         CONSTBUFFER_Destroy \
@@ -27,6 +28,8 @@ extern "C"
 CONSTBUFFER_HANDLE real_CONSTBUFFER_Create(const unsigned char* source, size_t size);
 
 CONSTBUFFER_HANDLE real_CONSTBUFFER_CreateFromBuffer(BUFFER_HANDLE buffer);
+
+CONSTBUFFER_HANDLE real_CONSTBUFFER_CreateWithMoveMemory(unsigned char* source, size_t size);
 
 CONSTBUFFER_HANDLE real_CONSTBUFFER_Clone(CONSTBUFFER_HANDLE constbufferHandle);
 

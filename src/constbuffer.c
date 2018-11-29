@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 #include <stddef.h>
+#include <stdbool.h>
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/constbuffer.h"
 #include "azure_c_shared_utility/xlogging.h"
@@ -12,6 +13,7 @@ typedef struct CONSTBUFFER_HANDLE_DATA_TAG
 {
     CONSTBUFFER alias;
     COUNT_TYPE count;
+    bool memory_moved;
 } CONSTBUFFER_HANDLE_DATA;
 
 static CONSTBUFFER_HANDLE CONSTBUFFER_Create_Internal(const unsigned char* source, size_t size)
@@ -46,6 +48,8 @@ static CONSTBUFFER_HANDLE CONSTBUFFER_Create_Internal(const unsigned char* sourc
             (void)memcpy(temp, source, size);
             result->alias.buffer = temp;
         }
+
+        result->memory_moved = false;
     }
     return result;
 }
@@ -85,6 +89,40 @@ CONSTBUFFER_HANDLE CONSTBUFFER_CreateFromBuffer(BUFFER_HANDLE buffer)
         unsigned char* rawBuffer = BUFFER_u_char(buffer);
         result = CONSTBUFFER_Create_Internal(rawBuffer, length);
     }
+    return result;
+}
+
+CONSTBUFFER_HANDLE CONSTBUFFER_CreateWithMoveMemory(unsigned char* source, size_t size)
+{
+    CONSTBUFFER_HANDLE result;
+
+    /* Codes_SRS_CONSTBUFFER_01_001: [ If source is NULL and size is different than 0 then CONSTBUFFER_Create shall fail and return NULL. ]*/
+    if ((source == NULL) && (size > 0))
+    {
+        LogError("Invalid arguments: unsigned char* source=%p, size_t size=%u", source, (unsigned int)size);
+        result = NULL;
+    }
+    else
+    {
+        result = (CONSTBUFFER_HANDLE)malloc(sizeof(CONSTBUFFER_HANDLE_DATA));
+        if (result == NULL)
+        {
+            /* Codes_SRS_CONSTBUFFER_01_005: [ If any error occurs, `CONSTBUFFER_CreateWithMoveMemory` shall fail and return NULL. ]*/
+            LogError("malloc failed");
+        }
+        else
+        {
+            /* Codes_SRS_CONSTBUFFER_01_004: [ If `source` is non-NULL and `size` is 0, the `source` pointer shall be owned (and freed) by the newly created instance of const buffer. ]*/
+            /* Codes_SRS_CONSTBUFFER_01_002: [ Otherwise, CONSTBUFFER_Create shall store the source and size and return a non-NULL handle to the newly created const buffer. ]*/
+            result->alias.buffer = source;
+            result->alias.size = size;
+            result->memory_moved = true;
+
+            /* Codes_SRS_CONSTBUFFER_01_003: [ The non-NULL handle returned by CONSTBUFFER_CreateWithMoveMemory shall have its ref count set to "1". ]*/
+            INIT_REF_VAR(result->count);
+        }
+    }
+
     return result;
 }
 
@@ -128,6 +166,11 @@ void CONSTBUFFER_Destroy(CONSTBUFFER_HANDLE constbufferHandle)
         /*Codes_SRS_CONSTBUFFER_02_016: [Otherwise, CONSTBUFFER_Destroy shall decrement the refcount on the constbufferHandle handle.]*/
         if (DEC_REF_VAR(constbufferHandle->count) == DEC_RETURN_ZERO)
         {
+            if (constbufferHandle->memory_moved)
+            {
+                free((void*)constbufferHandle->alias.buffer);
+            }
+
             /*Codes_SRS_CONSTBUFFER_02_017: [If the refcount reaches zero, then CONSTBUFFER_Destroy shall deallocate all resources used by the CONSTBUFFER_HANDLE.]*/
             free(constbufferHandle);
         }

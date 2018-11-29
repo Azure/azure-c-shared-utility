@@ -15,7 +15,7 @@ zero copy.
 [buffer](buffer_requirements.md)
 
 ## Exposed API
-```C
+```c
 /*this is the handle*/
 typedef struct CONSTBUFFER_HANDLE_DATA_TAG* CONSTBUFFER_HANDLE;
 
@@ -27,21 +27,23 @@ typedef struct CONSTBUFFER_TAG
 } CONSTBUFFER;
 
 /*this creates a new constbuffer from a memory area*/
-extern CONSTBUFFER_HANDLE CONSTBUFFER_Create(const unsigned char* source, size_t size);
+MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_Create, const unsigned char*, source, size_t, size);
 
 /*this creates a new constbuffer from an existing BUFFER_HANDLE*/
-extern CONSTBUFFER_HANDLE CONSTBUFFER_CreateFromBuffer(BUFFER_HANDLE buffer);
+MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromBuffer, BUFFER_HANDLE, buffer);
 
-extern CONSTBUFFER_HANDLE CONSTBUFFER_Clone(CONSTBUFFER_HANDLE constbufferHandle);
+MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithMoveMemory, unsigned char*, source, size_t, size);
 
-extern const CONSTBUFFER* CONSTBUFFER_GetContent(CONSTBUFFER_HANDLE constbufferHandle); 
+MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_Clone, CONSTBUFFER_HANDLE, constbufferHandle);
 
-extern void CONSTBUFFER_HANDLE_Destroy(CONSTBUFFER constbufferHandle);
+MOCKABLE_FUNCTION(, const CONSTBUFFER*, CONSTBUFFER_GetContent, CONSTBUFFER_HANDLE, constbufferHandle);
+
+MOCKABLE_FUNCTION(, void, CONSTBUFFER_Destroy, CONSTBUFFER_HANDLE, constbufferHandle);
 ```
 
-###  ConstBuffer_Create
-```C
-extern CONSTBUFFER_HANDLE CONSTBUFFER_Create(const unsigned char* source, size_t size);
+###  CONSTBUFFER_Create
+```c
+MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_Create, const unsigned char*, source, size_t, size);
 ```
 **SRS_CONSTBUFFER_02_001: [** If `source` is NULL and `size` is different than 0 then CONSTBUFFER_Create shall fail and return NULL. **]**
 
@@ -54,8 +56,8 @@ extern CONSTBUFFER_HANDLE CONSTBUFFER_Create(const unsigned char* source, size_t
 **SRS_CONSTBUFFER_02_005: [** The non-NULL handle returned by `CONSTBUFFER_Create` shall have its ref count set to "1". **]** 
 
 ### CONSTBUFFER_CreateFromBuffer
-```C
-extern CONSTBUFFER_HANDLE CONSTBUFFER_CreateFromBuffer(BUFFER_HANDLE buffer);
+```c
+MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromBuffer, BUFFER_HANDLE, buffer);
 ```
 **SRS_CONSTBUFFER_02_006: [** If `buffer` is NULL then `CONSTBUFFER_CreateFromBuffer` shall fail and return NULL. **]**
 
@@ -67,25 +69,41 @@ extern CONSTBUFFER_HANDLE CONSTBUFFER_CreateFromBuffer(BUFFER_HANDLE buffer);
 
 **SRS_CONSTBUFFER_02_010: [** The non-NULL handle returned by `CONSTBUFFER_CreateFromBuffer` shall have its ref count set to "1". **]** 
 
-### CONSTBUFFER_GetContent
-```C
-extern const CONSTBUFFER* CONSTBUFFER_GetContent(CONSTBUFFER_HANDLE constbufferHandle);
+### CONSTBUFFER_CreateWithMoveMemory
+```c
+MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithMoveMemory, unsigned char*, source, size_t, size);
 ```
-**SRS_CONSTBUFFER_02_011: [** If `constbufferHandle` is NULL then CONSTBUFFER_GetContent shall return NULL. **]**
 
-**SRS_CONSTBUFFER_02_012: [** Otherwise, `CONSTBUFFER_GetContent` shall return a `const CONSTBUFFER*` that matches byte by byte the original bytes used to created the const buffer and has the same length. **]**
+`CONSTBUFFER_CreateWithMoveMemory` creates a CONST buffer with move semantics for the memory given as argument (if succesfull, the const buffer owns the memory from that point on).
+The memory is assumed to be freeable by a call to `free`.
+
+**SRS_CONSTBUFFER_01_001: [** If `source` is NULL and `size` is different than 0 then `CONSTBUFFER_CreateWithMoveMemory` shall fail and return NULL. **]**
+
+**SRS_CONSTBUFFER_01_004: [** If `source` is non-NULL and `size` is 0, the `source` pointer shall be owned (and freed) by the newly created instance of const buffer. **]**
+
+**SRS_CONSTBUFFER_01_002: [** Otherwise, `CONSTBUFFER_CreateWithMoveMemory` shall store the `source` and `size` and return a non-NULL handle to the newly created const buffer. **]**
+
+**SRS_CONSTBUFFER_01_003: [** The non-NULL handle returned by `CONSTBUFFER_CreateWithMoveMemory` shall have its ref count set to "1". **]**
 
 ### CONSTBUFFER_Clone
-```C
-extern CONSTBUFFER_HANDLE CONSTBUFFER_Clone(CONSTBUFFER_HANDLE constbufferHandle);
+```c
+MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_Clone, CONSTBUFFER_HANDLE, constbufferHandle);
 ```
 **SRS_CONSTBUFFER_02_013: [** If `constbufferHandle` is NULL then CONSTBUFFER_Clone shall fail and return NULL. **]**
 
 **SRS_CONSTBUFFER_02_014: [** Otherwise, `CONSTBUFFER_Clone` shall increment the reference count and return `constbufferHandle`. **]**
 
+### CONSTBUFFER_GetContent
+```c
+MOCKABLE_FUNCTION(, const CONSTBUFFER*, CONSTBUFFER_GetContent, CONSTBUFFER_HANDLE, constbufferHandle);
+```
+**SRS_CONSTBUFFER_02_011: [** If `constbufferHandle` is NULL then CONSTBUFFER_GetContent shall return NULL. **]**
+
+**SRS_CONSTBUFFER_02_012: [** Otherwise, `CONSTBUFFER_GetContent` shall return a `const CONSTBUFFER*` that matches byte by byte the original bytes used to created the const buffer and has the same length. **]**
+
 ### CONSTBUFFER_Destroy
-```C
-extern void CONSTBUFFER_Destroy(CONSTBUFFER_HANDLE constbufferHandle);
+```c
+MOCKABLE_FUNCTION(, void, CONSTBUFFER_Destroy, CONSTBUFFER_HANDLE, constbufferHandle);
 ```
 **SRS_CONSTBUFFER_02_015: [** If `constbufferHandle` is NULL then `CONSTBUFFER_Destroy` shall do nothing. **]**
 
