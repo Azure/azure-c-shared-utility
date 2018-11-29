@@ -51,7 +51,7 @@ static size_t nUsersOfHTTPAPI = 0; /*used for reference counting (a weak one)*/
 
 static char* ConcatHttpHeaders(HTTP_HEADERS_HANDLE httpHeadersHandle, size_t toAlloc, size_t headersCount)
 {
-    char *result = (char*)malloc(toAlloc*sizeof(char) + 1);
+    char *result = (char*)malloc(toAlloc * sizeof(char) + 1);
     size_t i;
     
     if (result == NULL)
@@ -313,7 +313,7 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
             }
             else
             {
-                hostNameTemp = (wchar_t*)malloc(sizeof(wchar_t)*hostNameTemp_size);
+                hostNameTemp = (wchar_t*)malloc(sizeof(wchar_t) * hostNameTemp_size);
                 if (hostNameTemp == NULL)
                 {
                     LogError("malloc failed");
@@ -446,7 +446,7 @@ static HTTPAPI_RESULT InitiateWinhttpRequest(HTTP_HANDLE_DATA* handleData, HTTPA
         result = HTTPAPI_STRING_PROCESSING_ERROR;
         LogError("MultiByteToWideChar failed, GetLastError=0x%08x", GetLastError());
     }
-    else if ((relativePathTemp = (wchar_t*)malloc((requiredCharactersForRelativePath+1) * sizeof(wchar_t))) == NULL)
+    else if ((relativePathTemp = (wchar_t*)malloc((requiredCharactersForRelativePath + 1) * sizeof(wchar_t))) == NULL)
     {
         result = HTTPAPI_ALLOC_FAILED;
         LogError("malloc failed (result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
@@ -785,7 +785,7 @@ static HTTPAPI_RESULT ReceiveResponseHeaders(HINTERNET requestHandle, HTTP_HEADE
                 LogError("WideCharToMultiByte failed");
                 break;
             }
-            else if ((tokenTemp = (char*)malloc(sizeof(char)*tokenTemp_size)) == NULL)
+            else if ((tokenTemp = (char*)malloc(sizeof(char) * tokenTemp_size)) == NULL)
             {
                 result = HTTPAPI_ALLOC_FAILED;
                 LogError("malloc failed");
@@ -854,17 +854,17 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
         wchar_t* httpHeaders = NULL;
         HINTERNET requestHandle = NULL;
 
-        if ((result = ConstructHeadersString(httpHeadersHandle, &httpHeaders)) != HTTPAPI_OK)
-        {
-            LogError("Cannot construct http headers");
-        }
-        else if ((result = InitiateWinhttpRequest(handleData, requestType, relativePath, &requestHandle)) != HTTPAPI_OK)
+        if ((result = InitiateWinhttpRequest(handleData, requestType, relativePath, &requestHandle)) != HTTPAPI_OK)
         {
             LogError("Cannot create Winhttp request handle");
         }
         else if ((result = SetProxyIfNecessary(handleData, requestHandle)) != HTTPAPI_OK)
         {
             LogError("unable to set proxy");
+        }
+        else if ((result = ConstructHeadersString(httpHeadersHandle, &httpHeaders)) != HTTPAPI_OK)
+        {
+            LogError("Cannot construct http headers");
         }
         else if ((result = SendHttpRequest(handleData, requestHandle, content, contentLength, httpHeaders)) != HTTPAPI_OK)
         {
@@ -979,9 +979,9 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
                     httpHandleData->trustedCertificate = NULL;
                 }
 
-                if (mallocAndStrcpy_s((char**)&httpHandleData->trustedCertificate, value) != 0)
+                if (mallocAndStrcpy_s((char**)&httpHandleData->trustedCertificate, (const char*)value) != 0)
                 {
-                    LogError("unable to mallocAndStrcpy_s %s", optionName);
+                    LogError("unable to mallocAndStrcpy_s option trusted certificate");
                     result = __FAILURE__;
                 }
                 else
@@ -1113,7 +1113,7 @@ HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, co
             }
             else
             {
-                /*return OK when the certificate has been clones successfully*/
+                /*return OK when the certificate has been cloned successfully*/
                 result = HTTPAPI_OK;
             }
         }
@@ -1127,7 +1127,7 @@ HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, co
             }
             else
             {
-                /*return OK when the private key has been clones successfully*/
+                /*return OK when the private key has been cloned successfully*/
                 result = HTTPAPI_OK;
             }
         }
@@ -1136,12 +1136,12 @@ HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, co
             /*this is getting the trusted certificate */
             if (mallocAndStrcpy_s((char**)savedValue, (const char*)value) != 0)
             {
-                LogError("unable to clone the x509 certificate content");
+                LogError("unable to clone the trusted certificate content");
                 result = HTTPAPI_ERROR;
             }
             else
             {
-                /*return OK when the certificate has been clones successfully*/
+                /*return OK when the certificate has been cloned successfully*/
                 result = HTTPAPI_OK;
             }
         }

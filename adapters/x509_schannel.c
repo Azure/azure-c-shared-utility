@@ -32,6 +32,12 @@ typedef struct X509_SCHANNEL_HANDLE_DATA_TAG
     x509_CERT_TYPE cert_type;
 } X509_SCHANNEL_HANDLE_DATA;
 
+static const char end_certificate_in_pem[] = "-----END CERTIFICATE-----";
+static const size_t end_certificate_in_pem_length = sizeof(end_certificate_in_pem) - 1;
+static const char pem_crlf_value[] = "\r\n";
+static const size_t pem_crlf_value_length = sizeof(pem_crlf_value) - 1;
+
+
 static unsigned char* convert_cert_to_binary(const char* crypt_value, DWORD crypt_value_in_len, DWORD* crypt_length)
 {
     unsigned char* result;
@@ -470,12 +476,6 @@ PCCERT_CONTEXT x509_schannel_get_certificate_context(X509_SCHANNEL_HANDLE x509_s
     return result;
 }
 
-static const char end_certificate_in_pem[] = "-----END CERTIFICATE-----";
-static const size_t end_certificate_in_pem_length = sizeof(end_certificate_in_pem) - 1;
-static const char pem_crlf_value[] = "\r\n";
-static const size_t pem_crlf_value_length = sizeof(pem_crlf_value) - 1;
-
-
 // For each certificate specified in trustedCertificate (delimited by standard PEM "-----END CERTIFICATE-----"), add to hCertStore
 static int add_certificates_to_store(const char* trustedCertificate, HCERTSTORE hCertStore)
 {
@@ -545,7 +545,7 @@ int x509_verify_certificate_in_chain(const char* trustedCertificate, PCCERT_CONT
         result = __FAILURE__;
     }
     // Creates an in-memory certificate store that is destroyed at end of this function.
-    else if (NULL == (hCertStore = CertOpenStore(CERT_STORE_PROV_MEMORY, X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, 0, CERT_STORE_CREATE_NEW_FLAG, (const void*) "")))
+    else if (NULL == (hCertStore = CertOpenStore(CERT_STORE_PROV_MEMORY, X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, 0, CERT_STORE_CREATE_NEW_FLAG, NULL)))
     {
         lastError = GetLastError();
         LogError("CertOpenStore failed with error 0x%08x", lastError);

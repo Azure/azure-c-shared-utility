@@ -186,7 +186,7 @@ static OPTIONHANDLER_HANDLE tlsio_schannel_retrieveoptions(CONCRETE_IO_HANDLE ha
             TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)handle;
             if (
                 (tls_io_instance->x509certificate != NULL) &&
-                (OptionHandler_AddOption(result, "x509certificate", tls_io_instance->x509certificate) != 0)
+                (OptionHandler_AddOption(result, "x509certificate", tls_io_instance->x509certificate) != OPTIONHANDLER_OK)
                 )
             {
                 LogError("unable to save x509certificate option");
@@ -204,7 +204,7 @@ static OPTIONHANDLER_HANDLE tlsio_schannel_retrieveoptions(CONCRETE_IO_HANDLE ha
             }
             else if (
                 (tls_io_instance->x509privatekey != NULL) &&
-                (OptionHandler_AddOption(result, "x509privatekey", tls_io_instance->x509privatekey) != 0)
+                (OptionHandler_AddOption(result, "x509privatekey", tls_io_instance->x509privatekey) != OPTIONHANDLER_OK)
                 )
             {
                 LogError("unable to save x509privatekey option");
@@ -700,7 +700,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                     /* if nothing more to consume, set the needed bytes to 1, to get on the next byte how many we actually need */
                     tls_io_instance->needed_bytes = tls_io_instance->received_byte_count == 0 ? 1 : 0;
 
-                    if (verify_custom_certificate_if_needed(tls_io_instance))
+                    if (verify_custom_certificate_if_needed(tls_io_instance) != 0)
                     {
                         LogError("Unable to verify server certificate against custom server trusted certificate");
                         if (tls_io_instance->on_io_open_complete != NULL)
