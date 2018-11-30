@@ -289,8 +289,12 @@ static int lookup_address_and_initiate_socket_connection(SOCKET_IO_INSTANCE* soc
         addrHint.ai_socktype = SOCK_STREAM;
         addrHint.ai_protocol = 0;
 
-        sprintf(portString, "%u", socket_io_instance->port);
-        if (getaddrinfo(socket_io_instance->hostname, portString, &addrHint, &addr_info) != 0)
+        if (sprintf(portString, "%u", socket_io_instance->port) < 0)
+        {
+            LogError("Failure: sprintf failed to encode the port.");
+            result = __FAILURE__;
+        }
+        else if (getaddrinfo(socket_io_instance->hostname, portString, &addrHint, &addr_info) != 0)
         {
             LogError("Failure: getaddrinfo failure %d.", WSAGetLastError());
             result = __FAILURE__;
@@ -326,7 +330,7 @@ static int lookup_address_and_initiate_socket_connection(SOCKET_IO_INSTANCE* soc
         }
         else
         {
-            memset(&addr_un, 0, sizeof(addr_un));
+            (void)memset(&addr_un, 0, sizeof(addr_un));
             addr_un.sun_family = AF_UNIX;
             // No need to add NULL terminator due to the above memset
             (void)memcpy(addr_un.sun_path, path, path_len);
