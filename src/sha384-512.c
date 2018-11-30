@@ -480,7 +480,7 @@ int SHA512Input(SHA512Context *context,
     if (context->Corrupted)
         return context->Corrupted;
 
-    while (length-- && !context->Corrupted) {
+    while (length-- && !context->Corrupted && (SHA512_Message_Block_Size > Message_Block_Index)) {
         context->Message_Block[context->Message_Block_Index++] =
             (*message_array & 0xFF);
 

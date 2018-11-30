@@ -242,7 +242,7 @@ static STRING_HANDLE Base64_Encode_Internal(const unsigned char* source, size_t 
     neededSize += (size == 0) ? (0) : ((((size - 1) / 3) + 1) * 4);
     neededSize += 1; /*+1 because \0 at the end of the string*/
     /*Codes_SRS_BASE64_06_006: [If when allocating memory to produce the encoding a failure occurs then Base64_Encoder shall return NULL.]*/
-    encoded = (char*)malloc(neededSize);
+    encoded = (char*)malloc(neededSize + 1);
     if (encoded == NULL)
     {
         result = NULL;

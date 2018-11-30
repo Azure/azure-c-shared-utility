@@ -51,7 +51,7 @@ int UUID_from_string(const char* uuid_string, UUID_T* uuid)
                 }
                 else
                 {
-                    char double_hex_digit[3] = { 0, 0, 0 };
+                    unsigned char double_hex_digit[3] = { 0, 0, 0 };
 
                     (void)memcpy(double_hex_digit, uuid_string + i, 2);
 

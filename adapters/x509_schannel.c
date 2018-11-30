@@ -42,7 +42,7 @@ static unsigned char* convert_cert_to_binary(const char* crypt_value, DWORD* cry
         LogErrorWinHTTPWithGetLastErrorAsString("Failed determine crypt value size");
         result = NULL;
     }
-    else
+    else if (0 != result_length)
     {
         if ((result = (unsigned char*)malloc(result_length)) == NULL)
         {
