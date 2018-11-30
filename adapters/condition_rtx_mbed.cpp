@@ -25,7 +25,7 @@ COND_RESULT Condition_Post(COND_HANDLE handle)
     return result;
 }
 
-COND_RESULT Condition_Wait(COND_HANDLE  handle, LOCK_HANDLE lock, int timeout_milliseconds)
+COND_RESULT Condition_Wait(COND_HANDLE handle, LOCK_HANDLE lock, int timeout_milliseconds)
 {
     COND_RESULT result;
     if (handle == NULL)
