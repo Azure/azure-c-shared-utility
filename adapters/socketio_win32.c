@@ -305,8 +305,19 @@ static int lookup_address_and_initiate_socket_connection(SOCKET_IO_INSTANCE* soc
     else // ADDRESS_TYPE_DOMAIN_SOCKET
     {
         SOCKADDR_UN addr_un;
-        char* path = socket_io_instance->hostname;
-        size_t path_len = strlen(socket_io_instance->hostname);
+        const char* path = socket_io_instance->hostname;
+        size_t path_len = strlen(path);
+
+        // If the value of hostname was parsed out of a 'unix://' URL, it might have a
+        // leading forward slash ('/'). That's because the domain socket path is found
+        // in the path portion of the URL, not the hostname portion. The hostname is
+        // empty and the forward slash delimits the start of the path. For Unix domain
+        // socket paths on Windows, discard the leading forward slash.
+        if (path[0] == '/')
+        {
+            ++path;
+            --path_len;
+        }
 
         if (path_len + 1 > sizeof(addr_un.sun_path))
         {
