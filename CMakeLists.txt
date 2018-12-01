@@ -262,6 +262,12 @@ if(${use_applessl})
     include_directories(./pal/ios-osx/)
 endif()
 
+if (WIN32 AND (${CMAKE_SYSTEM_VERSION} VERSION_EQUAL "10.0.17763.0" OR ${CMAKE_SYSTEM_VERSION} VERSION_GREATER "10.0.17763.0"))
+    # Windows added support for UNIX domain sockets to the OS and SDK
+    # in the Oct 2018 update (10.0.17763.0, aka RS5)
+    add_definitions(-DAF_UNIX_ON_WINDOWS)
+endif()
+
 #these are the C headers
 set(source_h_files
 ./inc/azure_c_shared_utility/agenttime.h

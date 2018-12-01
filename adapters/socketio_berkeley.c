@@ -67,12 +67,6 @@ typedef enum IO_STATE_TAG
     IO_STATE_ERROR
 } IO_STATE;
 
-typedef enum ADDRESS_TYPE_TAG
-{
-    ADDRESS_TYPE_IP,
-    ADDRESS_TYPE_DOMAIN_SOCKET
-} ADDRESS_TYPE;
-
 typedef struct PENDING_SOCKET_IO_TAG
 {
     unsigned char* bytes;
@@ -85,7 +79,7 @@ typedef struct PENDING_SOCKET_IO_TAG
 typedef struct SOCKET_IO_INSTANCE_TAG
 {
     int socket;
-    ADDRESS_TYPE address_type;
+    SOCKETIO_ADDRESS_TYPE address_type;
     ON_BYTES_RECEIVED on_bytes_received;
     ON_IO_ERROR on_io_error;
     void* on_bytes_received_context;
