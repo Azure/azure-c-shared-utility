@@ -37,9 +37,9 @@ int UUID_from_string(const char* uuid_string, UUID_T* uuid)
         {
             // Codes_SRS_UUID_09_008: [ Each pair of digits in `uuid_string`, excluding dashes, shall be read as a single HEX value and saved on the respective position in `uuid` ]
             size_t i, j;
-            unsigned char* uuid_bytes;
+            char* uuid_bytes;
 
-            uuid_bytes = (unsigned char*)uuid;
+            uuid_bytes = (char *)uuid;
             // Codes_SRS_UUID_09_010: [ If no failures occur, UUID_from_string shall return zero ]
             result = __SUCCESS__;
 
@@ -51,7 +51,7 @@ int UUID_from_string(const char* uuid_string, UUID_T* uuid)
                 }
                 else
                 {
-                    unsigned char double_hex_digit[3] = { 0, 0, 0 };
+                    char double_hex_digit[3] = { 0, 0, 0 };
 
                     (void)memcpy(double_hex_digit, uuid_string + i, 2);
 
