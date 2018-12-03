@@ -27,6 +27,7 @@ MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_remove_front, CO
 /* getters */
 MOCKABLE_FUNCTION(, int, constbuffer_array_get_buffer_count, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle, uint32_t*, buffer_count);
 MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, constbuffer_array_get_buffer, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle, uint32_t, buffer_index);
+MOCKABLE_FUNCTION(, int, constbuffer_array_get_all_buffers_size, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle, uint32_t*, all_buffers_size);
 ```
 
 ### constbuffer_array_create
@@ -60,6 +61,32 @@ MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create_empty);
 **SRS_CONSTBUFFER_ARRAY_02_041: [** `constbuffer_array_create_empty` shall succeed and return a non-`NULL` value. **]**
 
 **SRS_CONSTBUFFER_ARRAY_02_001: [** If are any failure is encountered, `constbuffer_array_create_empty` shall fail and return `NULL`. **]**
+
+### constbuffer_array_inc_ref
+
+```c
+MOCKABLE_FUNCTION(, void, constbuffer_array_inc_ref, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle);
+```
+
+`constbuffer_array_inc_ref` increments the reference count for `constbuffer_array_handle`.
+
+**SRS_CONSTBUFFER_ARRAY_01_017: [** If `constbuffer_array_handle` is `NULL` then `constbuffer_array_inc_ref` shall return. **]**
+
+**SRS_CONSTBUFFER_ARRAY_01_018: [** Otherwise `constbuffer_array_inc_ref` shall increment the reference count for `constbuffer_array_handle`. **]**
+
+### constbuffer_array_dec_ref
+
+```c
+MOCKABLE_FUNCTION(, void, constbuffer_array_dec_ref, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle);
+```
+
+`constbuffer_array_dec_ref` decrements the reference count and frees all used resources if needed.
+
+**SRS_CONSTBUFFER_ARRAY_02_039: [** If `constbuffer_array_handle` is `NULL` then `constbuffer_array_dec_ref` shall return. **]**
+
+**SRS_CONSTBUFFER_ARRAY_01_016: [** Otherwise `constbuffer_array_dec_ref` shall decrement the reference count for `constbuffer_array_handle`. **]**
+
+**SRS_CONSTBUFFER_ARRAY_02_038: [** If the reference count reaches 0, `constbuffer_array_dec_ref` shall free all used resources. **]**
 
 ### constbuffer_array_add_front
 
@@ -143,28 +170,18 @@ MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, constbuffer_array_get_buffer, CONSTBUFFE
 
 **SRS_CONSTBUFFER_ARRAY_01_015: [** If any error occurs, `constbuffer_array_get_buffer` shall fail and return NULL. **]**
 
-### constbuffer_array_inc_ref
+### constbuffer_array_get_all_buffers_size
 
 ```c
-MOCKABLE_FUNCTION(, void, constbuffer_array_inc_ref, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle);
+MOCKABLE_FUNCTION(, int, constbuffer_array_get_all_buffers_size, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle, uint32_t*, all_buffers_size);
 ```
 
-`constbuffer_array_inc_ref` increments the reference count for `constbuffer_array_handle`.
+`constbuffer_array_get_all_buffers_size` gets the size for all buffers (how much memory is held by all buffers in the array).
 
-**SRS_CONSTBUFFER_ARRAY_01_017: [** If `constbuffer_array_handle` is `NULL` then `constbuffer_array_inc_ref` shall return. **]**
+**SRS_CONSTBUFFER_ARRAY_01_019: [** If `constbuffer_array_handle` is NULL, `constbuffer_array_get_all_buffers_size` shall fail and return a non-zero value. **]**
 
-**SRS_CONSTBUFFER_ARRAY_01_018: [** Otherwise `constbuffer_array_inc_ref` shall increment the reference count for `constbuffer_array_handle`. **]**
+**SRS_CONSTBUFFER_ARRAY_01_020: [** If `all_buffers_size` is NULL, `constbuffer_array_get_all_buffers_size` shall fail and return a non-zero value. **]**
 
-### constbuffer_array_dec_ref
+**SRS_CONSTBUFFER_ARRAY_01_021: [** If summing up the sizes results in an `uint32_t` overflow, shall fail and return a non-zero value. **]**
 
-```c
-MOCKABLE_FUNCTION(, void, constbuffer_array_dec_ref, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle);
-```
-
-`constbuffer_array_dec_ref` decrements the reference count and frees all used resources if needed.
-
-**SRS_CONSTBUFFER_ARRAY_02_039: [** If `constbuffer_array_handle` is `NULL` then `constbuffer_array_dec_ref` shall return. **]**
-
-**SRS_CONSTBUFFER_ARRAY_01_016: [** Otherwise `constbuffer_array_dec_ref` shall decrement the reference count for `constbuffer_array_handle`. **]**
-
-**SRS_CONSTBUFFER_ARRAY_02_038: [** If the reference count reaches 0, `constbuffer_array_dec_ref` shall free all used resources. **]**
+**SRS_CONSTBUFFER_ARRAY_01_022: [** Otherwise `constbuffer_array_get_all_buffers_size` shall write in `all_buffers_size` the total size of all buffers in the array and return 0. **]**
