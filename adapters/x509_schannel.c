@@ -34,7 +34,7 @@ typedef struct X509_SCHANNEL_HANDLE_DATA_TAG
 
 static unsigned char* convert_cert_to_binary(const char* crypt_value, DWORD* crypt_length)
 {
-    unsigned char* result;
+    unsigned char* result = NULL;
     DWORD result_length;
     if (!CryptStringToBinaryA(crypt_value, 0, CRYPT_STRING_ANY, NULL, &result_length, NULL, NULL))
     {
@@ -42,7 +42,7 @@ static unsigned char* convert_cert_to_binary(const char* crypt_value, DWORD* cry
         LogErrorWinHTTPWithGetLastErrorAsString("Failed determine crypt value size");
         result = NULL;
     }
-    else
+    else if (result_length != 0)
     {
         if ((result = (unsigned char*)malloc(result_length)) == NULL)
         {
