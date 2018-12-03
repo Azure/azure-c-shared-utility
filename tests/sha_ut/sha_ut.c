@@ -46,11 +46,6 @@ static TEST_MUTEX_HANDLE g_testByTest;
 
 BEGIN_TEST_SUITE(sha_ut)
 
-    /**
-     * This is the place where we initialize the test system. Replace the test name to associate the test
-     *   suite with your test cases.
-     * It is called once, before start the tests.
-     */
     TEST_SUITE_INITIALIZE(TestClassInitialize)
     {
         g_testByTest = TEST_MUTEX_CREATE();
@@ -58,11 +53,6 @@ BEGIN_TEST_SUITE(sha_ut)
 
         (void)umock_c_init(on_umock_c_error);
     }
-
-    /**
-     * The test suite will call this function to cleanup your machine.
-     * It is called only once, after all tests is done.
-     */
     TEST_SUITE_CLEANUP(TestClassCleanup)
     {
         umock_c_deinit();
@@ -70,10 +60,6 @@ BEGIN_TEST_SUITE(sha_ut)
         TEST_MUTEX_DESTROY(g_testByTest);
     }
 
-    /**
-     * The test suite will call this function to prepare the machine for the new test.
-     * It is called before execute each test.
-     */
     TEST_FUNCTION_INITIALIZE(initialize)
     {
         if (TEST_MUTEX_ACQUIRE(g_testByTest))
