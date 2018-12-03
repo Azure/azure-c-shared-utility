@@ -35,8 +35,10 @@ const IO_INTERFACE_DESCRIPTION* platform_get_default_tlsio(void)
     return tlsio_cyclonessl_get_interface_description();
 #elif USE_WOLFSSL
     return tlsio_wolfssl_get_interface_description();
-#else
+#elif USE_OPENSSL
     return tlsio_openssl_get_interface_description();
+#else
+    return NULL;
 #endif
 }
 
