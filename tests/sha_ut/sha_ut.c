@@ -75,7 +75,7 @@ BEGIN_TEST_SUITE(sha_ut)
         TEST_MUTEX_RELEASE(g_testByTest);
     }
 
-    TEST_FUNCTION(SHA224Reset_succeed)
+    TEST_FUNCTION(SHA224Reset_succeeds)
     {
         //arrange
         int result;
@@ -90,7 +90,7 @@ BEGIN_TEST_SUITE(sha_ut)
 
         //cleanup
     }
-    TEST_FUNCTION(SHA256Reset_succeed)
+    TEST_FUNCTION(SHA256Reset_succeeds)
     {
         //arrange
         int result;
@@ -143,7 +143,7 @@ BEGIN_TEST_SUITE(sha_ut)
         //cleanup
     }
 
-    TEST_FUNCTION(SHA224Input_succeed)
+    TEST_FUNCTION(SHA224Input_succeeds)
     {
         //arrange
         int result;
@@ -162,7 +162,7 @@ BEGIN_TEST_SUITE(sha_ut)
         //cleanup
     }
 
-    TEST_FUNCTION(SHA256Input_succeed)
+    TEST_FUNCTION(SHA256Input_succeeds)
     {
         //arrange
         int result;
@@ -181,7 +181,7 @@ BEGIN_TEST_SUITE(sha_ut)
         //cleanup
     }
 
-    TEST_FUNCTION(SHA256Input_large_bytes_succeed)
+    TEST_FUNCTION(SHA256Input_large_bytes_succeeds)
     {
         //arrange
         int result;
@@ -235,7 +235,7 @@ BEGIN_TEST_SUITE(sha_ut)
         //cleanup
     }
 
-    TEST_FUNCTION(SHA256Input_bytes_NULL_succeed)
+    TEST_FUNCTION(SHA256Input_bytes_NULL_succeeds)
     {
         //arrange
         int result;
@@ -253,7 +253,7 @@ BEGIN_TEST_SUITE(sha_ut)
         //cleanup
     }
 
-    TEST_FUNCTION(SHA256FinalBits_succeed)
+    TEST_FUNCTION(SHA256FinalBits_succeeds)
     {
         //arrange
         int result;
@@ -274,7 +274,7 @@ BEGIN_TEST_SUITE(sha_ut)
         //cleanup
     }
 
-    TEST_FUNCTION(SHA224FinalBits_succeed)
+    TEST_FUNCTION(SHA224FinalBits_succeeds)
     {
         //arrange
         int result;
@@ -354,7 +354,7 @@ BEGIN_TEST_SUITE(sha_ut)
         //cleanup
     }
 
-    TEST_FUNCTION(SHA256Result_succeed)
+    TEST_FUNCTION(SHA256Result_succeeds)
     {
         //arrange
         int result;
@@ -377,7 +377,7 @@ BEGIN_TEST_SUITE(sha_ut)
         //cleanup
     }
 
-    TEST_FUNCTION(SHA224Result_succeed)
+    TEST_FUNCTION(SHA224Result_succeeds)
     {
         //arrange
         int result;
@@ -416,7 +416,7 @@ BEGIN_TEST_SUITE(sha_ut)
         //cleanup
     }
 
-    TEST_FUNCTION(SHA256Result_msg_digest_NULL_succeed)
+    TEST_FUNCTION(SHA256Result_msg_digest_NULL_succeeds)
     {
         //arrange
         int result;
