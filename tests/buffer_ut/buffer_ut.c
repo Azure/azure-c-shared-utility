@@ -1558,7 +1558,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         BUFFER_delete(res);
     }
 
-    TEST_FUNCTION(BUFFER_create_size_succeeds)
+    TEST_FUNCTION(BUFFER_create_with_size_succeeds)
     {
         //arrange
         BUFFER_HANDLE res;
@@ -1568,7 +1568,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         STRICT_EXPECTED_CALL(gballoc_malloc(alloc_size));
 
         //act
-        res = BUFFER_create_size(alloc_size);
+        res = BUFFER_create_with_size(alloc_size);
 
         //assert
         ASSERT_IS_NOT_NULL(res);
@@ -1579,14 +1579,14 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         BUFFER_delete(res);
     }
 
-    TEST_FUNCTION(BUFFER_create_size_size_zero_fails)
+    TEST_FUNCTION(BUFFER_create_with_size_size_zero_fails)
     {
         //arrange
         BUFFER_HANDLE res;
         size_t alloc_size = 0;
 
         //act
-        res = BUFFER_create_size(alloc_size);
+        res = BUFFER_create_with_size(alloc_size);
 
         //assert
         ASSERT_IS_NULL(res);
@@ -1595,7 +1595,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         //cleanup
     }
 
-    TEST_FUNCTION(BUFFER_create_size_malloc_fails)
+    TEST_FUNCTION(BUFFER_create_with_size_malloc_fails)
     {
         //arrange
         BUFFER_HANDLE res;
@@ -1604,7 +1604,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).SetReturn(NULL);
 
         //act
-        res = BUFFER_create_size(alloc_size);
+        res = BUFFER_create_with_size(alloc_size);
 
         //assert
         ASSERT_IS_NULL(res);
@@ -1613,7 +1613,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         //cleanup
     }
 
-    TEST_FUNCTION(BUFFER_create_size_2nd_malloc_fails)
+    TEST_FUNCTION(BUFFER_create_with_size_2nd_malloc_fails)
     {
         //arrange
         BUFFER_HANDLE res;
@@ -1621,9 +1621,10 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
 
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
         STRICT_EXPECTED_CALL(gballoc_malloc(alloc_size)).SetReturn(NULL);
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
         //act
-        res = BUFFER_create_size(alloc_size);
+        res = BUFFER_create_with_size(alloc_size);
 
         //assert
         ASSERT_IS_NULL(res);
