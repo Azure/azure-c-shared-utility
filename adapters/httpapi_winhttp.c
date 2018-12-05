@@ -506,7 +506,19 @@ static HTTPAPI_RESULT SendHttpRequest(HTTP_HANDLE_DATA* handleData, HINTERNET re
     }
     else
     {
-        DWORD dwSecurityFlags = 0;
+        DWORD dwSecurityFlags;
+
+        if (handleData->trustedCertificate != NULL)
+        {
+            // If caller has specified trusted certificates, then we'll instruct Winhttp to ignore certain classes
+            // of invalid certificate errors (since the trusted cert won't chain into the Windows cert store).
+            // We will validate certificate manually during Winhttp callbacks.
+            dwSecurityFlags = SECURITY_FLAG_IGNORE_UNKNOWN_CA | SECURITY_FLAG_IGNORE_CERT_CN_INVALID;
+        }
+        else
+        {
+            dwSecurityFlags = 0;
+        }
 
         if (!WinHttpSetOption(
             requestHandle,
