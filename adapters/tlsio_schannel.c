@@ -152,7 +152,8 @@ static void tlsio_schannel_DestroyOption(const char* name, const void* value)
             (strcmp(name, SU_OPTION_X509_CERT) == 0) ||
             (strcmp(name, SU_OPTION_X509_PRIVATE_KEY) == 0) ||
             (strcmp(name, OPTION_X509_ECC_CERT) == 0) ||
-            (strcmp(name, OPTION_X509_ECC_KEY) == 0)
+            (strcmp(name, OPTION_X509_ECC_KEY) == 0) ||
+            (strcmp(name, OPTION_TRUSTED_CERT) == 0)
            )
         {
             free((void*)value);
