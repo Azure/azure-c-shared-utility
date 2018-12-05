@@ -1493,8 +1493,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         const unsigned char* data;
         char c = '3';
 
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
 
         STRICT_EXPECTED_CALL(gballoc_malloc(1));
 
@@ -1520,11 +1519,9 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         char c = '3';
         BUFFER_HANDLE res;
 
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
         STRICT_EXPECTED_CALL(gballoc_malloc(1));
-        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
         whenShallmalloc_fail = 2;
 
@@ -1559,6 +1556,80 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
 
         ///cleanup
         BUFFER_delete(res);
+    }
+
+    TEST_FUNCTION(BUFFER_create_size_succeeds)
+    {
+        //arrange
+        BUFFER_HANDLE res;
+        size_t alloc_size = 32;
+
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(gballoc_malloc(alloc_size));
+
+        //act
+        res = BUFFER_create_size(alloc_size);
+
+        //assert
+        ASSERT_IS_NOT_NULL(res);
+        ASSERT_ARE_EQUAL(size_t, alloc_size, BUFFER_length(res));
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        //cleanup
+        BUFFER_delete(res);
+    }
+
+    TEST_FUNCTION(BUFFER_create_size_size_zero_fails)
+    {
+        //arrange
+        BUFFER_HANDLE res;
+        size_t alloc_size = 0;
+
+        //act
+        res = BUFFER_create_size(alloc_size);
+
+        //assert
+        ASSERT_IS_NULL(res);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        //cleanup
+    }
+
+    TEST_FUNCTION(BUFFER_create_size_malloc_fails)
+    {
+        //arrange
+        BUFFER_HANDLE res;
+        size_t alloc_size = 32;
+
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).SetReturn(NULL);
+
+        //act
+        res = BUFFER_create_size(alloc_size);
+
+        //assert
+        ASSERT_IS_NULL(res);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        //cleanup
+    }
+
+    TEST_FUNCTION(BUFFER_create_size_2nd_malloc_fails)
+    {
+        //arrange
+        BUFFER_HANDLE res;
+        size_t alloc_size = 32;
+
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(gballoc_malloc(alloc_size)).SetReturn(NULL);
+
+        //act
+        res = BUFFER_create_size(alloc_size);
+
+        //assert
+        ASSERT_IS_NULL(res);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        //cleanup
     }
 
     /* BUFFER_fill */

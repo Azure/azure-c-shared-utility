@@ -91,6 +91,36 @@ BUFFER_HANDLE BUFFER_create(const unsigned char* source, size_t size)
     return (BUFFER_HANDLE)result;
 }
 
+BUFFER_HANDLE BUFFER_create_size(size_t size)
+{
+    BUFFER* result;
+    if (size == 0)
+    {
+        LogError("Cannot allocate 0 size");
+        result = NULL;
+    }
+    else
+    {
+        result = (BUFFER*)malloc(sizeof(BUFFER));
+        /* Codes_SRS_BUFFER_07_002: [BUFFER_new shall return NULL on any error that occurs.] */
+        if (result != NULL)
+        {
+            result->size = size;
+            if ((result->buffer = (unsigned char*)malloc(result->size)) == NULL)
+            {
+                LogError("unable to BUFFER_safemalloc ");
+                free(result);
+                result = NULL;
+            }
+        }
+        else
+        {
+            LogError("unable to allocate BUFFER");
+        }
+    }
+    return (BUFFER_HANDLE)result;
+}
+
 /* Codes_SRS_BUFFER_07_003: [BUFFER_delete shall delete the data associated with the BUFFER_HANDLE along with the Buffer.] */
 void BUFFER_delete(BUFFER_HANDLE handle)
 {
