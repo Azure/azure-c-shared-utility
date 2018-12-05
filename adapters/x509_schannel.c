@@ -585,7 +585,7 @@ int x509_verify_certificate_in_chain(const char* trustedCertificate, PCCERT_CONT
             LogError("CertCreateCertificateChainEngine failed with error 0x%08x", lastError);
             result = __FAILURE__;
         }
-        else if (CertGetCertificateChain(hChainEngine, pCertContextToVerify, NULL, hCertStore, &ChainPara, 0, NULL, &pChainContextToVerify) != TRUE)
+        else if (CertGetCertificateChain(hChainEngine, pCertContextToVerify, NULL, pCertContextToVerify->hCertStore, &ChainPara, 0, NULL, &pChainContextToVerify) != TRUE)
         {
             lastError = GetLastError();
             LogError("CertGetCertificateChain failed with error 0x%08x", lastError);
