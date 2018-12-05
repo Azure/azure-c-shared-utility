@@ -166,32 +166,6 @@ const char* x509_test_server_certificate =
 "NqMEOiICezJDDG3q/THL/lQANjVo4QFMMdmDZA==""\n"
 "-----END CERTIFICATE-----";
 
-// NOTE: This certificate is for test purposes only and must not be used in any production environment.
-// Simulated server certificate that is chained up to X509_TEST_CERTIFICATE_CHAIN1, but with 
-// intermediate signer between it and root
-const char* x509_test_server_certificate_via_intermediate = 
-"-----BEGIN CERTIFICATE-----""\n"
-"MIIDfTCCAmWgAwIBAgIQVppvEi2unaRDQyFkFg3lAzANBgkqhkiG9w0BAQsFADA/""\n"
-"MT0wOwYDVQQDDDRBenVyZSBDLVV0aWxpdHkgeDUwOSBzY2hhbm5lbCBpbnRlZ3Jh""\n"
-"dGlvbiB0ZXN0cyAxIENBMCAXDTE4MTEyODIzMDYwOFoYDzIwNjgxMTE1MjMxNjA4""\n"
-"WjAWMRQwEgYDVQQDDAt0ZXN0LXg1MDktMjCCASIwDQYJKoZIhvcNAQEBBQADggEP""\n"
-"ADCCAQoCggEBAOGDmicDQuZyQQoxcYNjaa82JXc4ICxsWCI1zNA3KDoIVQ3+7wXU""\n"
-"mTrNwmWahggfvmzHR00K4+Is6GkmZEurJAh+aQM1V9rpAXTwHqVoMX5tujjxASIJ""\n"
-"xHmptN9SfYfzT8/+Atw03Rc29vWmte1c06daQkTdI9DHmovWBa6vMeZI8CVRm7EO""\n"
-"ucQd5xbL89zgZeHjVkPHk7eVLoQJ7nBPSqMjxgxIwLhsFt3/GwDGiHeRmxUwLi++""\n"
-"vnbR+SWI5zKibgaeFBzBm7ZZVq5kvftZd2nbLY55qDHbxsbvXUu9TYvWADMGnIVW""\n"
-"5MUdKkJAu/4sjE+2zJ36lXSkl9rfkuEXv7ECAwEAAaOBmzCBmDAOBgNVHQ8BAf8E""\n"
-"BAMCBaAwFgYDVR0RBA8wDYILdGVzdC14NTA5LTIwHQYDVR0lBBYwFAYIKwYBBQUH""\n"
-"AwIGCCsGAQUFBwMBMA8GA1UdEwEB/wQFMAMCAQAwHwYDVR0jBBgwFoAUHkm7WeXa""\n"
-"iXqjhhK0XAmTcvC2XCYwHQYDVR0OBBYEFCgJfxl53ti8NiV7Hl0xTu1N9g4eMA0G""\n"
-"CSqGSIb3DQEBCwUAA4IBAQCX+sLWOkT1R+MN1aT6SxdP1PbN8FJiCrnwd8FBTEKz""\n"
-"PhOZSzSfK8JhpOUQZFzI3f7oNPyLtXW8ZAxd8MoDWXNmlOUAwrqKKJBHmkKmAKl4""\n"
-"AAnog0uBCTeu0z9ghPQzEK3HlxR5G/ym8sieF1Q2/esbn/UNyvcgt2qrgFWsnLU5""\n"
-"zF1qC5oR2ajnMreVgSFMDqWs9WeK7Uh/FeNEl6cC7XPVIR+xqRhVzL8i1AWPTg2i""\n"
-"WiogVsixsY0sJ8Fw0/rxgKu4UkJlHQYd5Z4Oixa1PwfQTfpWKG6wVMLtxCf0z+ia""\n"
-"0uN5QvqSpSUFP3q5AsUQpDPy/d1bMyuKvRPfxF/4gh5n""\n"
-"-----END CERTIFICATE-----";
-
 // Tests whether serverCertificate chains up to trustedCertificate or not
 static void test_VerifyCertificateChain(const char* trustedCertificate, const char* serverCertificate, bool expectSuccess)
 {
@@ -280,13 +254,6 @@ TEST_FUNCTION(x509_verify_certificate_no_chains_three_certs)
 {
     test_VerifyCertificateChain(X509_TEST_CERTIFICATE_CHAIN2 X509_TEST_CERTIFICATE_CHAIN3 X509_TEST_CERTIFICATE_CHAIN4, x509_test_server_certificate, false);
 }
-
-// Tests when server certificate doesn't chain directly to root, but goes through an intermediate, that we succeeed.
-TEST_FUNCTION(x509_verify_certificate_chains_three_certs_root_first_via_intermediate)
-{
-    test_VerifyCertificateChain(X509_TEST_CERTIFICATE_CHAIN1 X509_TEST_CERTIFICATE_CHAIN2 X509_TEST_CERTIFICATE_CHAIN3, x509_test_server_certificate_via_intermediate, true);
-}
-
 
 END_TEST_SUITE(x509_schannel_int)
 
