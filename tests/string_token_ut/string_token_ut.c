@@ -57,9 +57,7 @@ static void* saved_malloc_returns[20];
 
 static void* TEST_malloc(size_t size)
 {
-    saved_malloc_returns[saved_malloc_returns_count] = real_malloc(size);
-
-    return saved_malloc_returns[saved_malloc_returns_count++];
+    return real_malloc(size);
 }
 
 static int saved_realloc_returns_count = 0;
@@ -67,23 +65,11 @@ static void* saved_realloc_returns[20];
 
 static void* TEST_realloc(void* block, size_t size)
 {
-    saved_realloc_returns[saved_realloc_returns_count] = real_realloc(block, size);
-
-    return saved_realloc_returns[saved_realloc_returns_count++];
+    return real_realloc(block, size);
 }
 
 static void TEST_free(void* ptr)
 {
-    int i, j;
-    for (i = 0, j = 0; j < saved_malloc_returns_count; i++, j++)
-    {
-        if (saved_malloc_returns[i] == ptr) j++;
-
-        saved_malloc_returns[i] = saved_malloc_returns[j];
-    }
-
-    if (i != j) saved_malloc_returns_count--;
-
     real_free(ptr);
 }
 
@@ -146,7 +132,7 @@ BEGIN_TEST_SUITE(string_token_ut)
 
         umock_c_reset_all_calls();
 
-        saved_realloc_returns_count = 0;
+        //saved_realloc_returns_count = 0;
     }
 
     TEST_FUNCTION_CLEANUP(string_token_ut_test_function_cleanup)
@@ -1111,18 +1097,6 @@ BEGIN_TEST_SUITE(string_token_ut)
 
             // act
             result = StringToken_Split(string, length, delimiters, 2, false, &tokens, &token_count);
-
-            if (i == 7 || i == 11 || i == 15)
-            {
-                int j = sizeof(saved_realloc_returns[saved_realloc_returns_count - 1]) / sizeof(char*);
-                
-                while (j > 0)
-                {
-                    free(((char**)saved_realloc_returns[saved_realloc_returns_count - 1])[--j]);
-                }
-                
-                free(saved_realloc_returns[saved_realloc_returns_count - 1]);
-            }
 
             sprintf(error_msg, "On failed call %zu", i);
             ASSERT_ARE_NOT_EQUAL(int, 0, result, error_msg);

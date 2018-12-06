@@ -91,6 +91,41 @@ BUFFER_HANDLE BUFFER_create(const unsigned char* source, size_t size)
     return (BUFFER_HANDLE)result;
 }
 
+// Codes_SRS_BUFFER_07_029: [ BUFFER_create_with_size shall create a BUFFER_HANDLE with a pre allocated underlying buffer size.]
+BUFFER_HANDLE BUFFER_create_with_size(size_t buff_size)
+{
+    BUFFER* result;
+    result = (BUFFER*)malloc(sizeof(BUFFER));
+    if (result != NULL)
+    {
+        if (buff_size == 0)
+        {
+            // Codes_SRS_BUFFER_07_030: [ If buff_size is 0 BUFFER_create_with_size shall create a valid non-NULL handle of zero size. ]
+            result->size = 0;
+            result->buffer = NULL;
+        }
+        else
+        {
+            // Codes_SRS_BUFFER_07_031: [ BUFFER_create_with_size shall allocate a buffer of buff_size. ]
+            result->size = buff_size;
+            if ((result->buffer = (unsigned char*)malloc(result->size)) == NULL)
+            {
+                // Codes_SRS_BUFFER_07_032: [ If allocating memory fails, then BUFFER_create_with_size shall return NULL. ]
+                LogError("unable to allocate buffer");
+                free(result);
+                result = NULL;
+            }
+        }
+    }
+    else
+    {
+        // Codes_SRS_BUFFER_07_032: [ If allocating memory fails, then BUFFER_create_with_size shall return NULL. ]
+        LogError("unable to allocate BUFFER");
+    }
+    // Codes_SRS_BUFFER_07_033: [ Otherwise, BUFFER_create_with_size shall return a non-NULL handle. ]
+    return (BUFFER_HANDLE)result;
+}
+
 /* Codes_SRS_BUFFER_07_003: [BUFFER_delete shall delete the data associated with the BUFFER_HANDLE along with the Buffer.] */
 void BUFFER_delete(BUFFER_HANDLE handle)
 {

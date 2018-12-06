@@ -40,7 +40,7 @@ static const size_t pem_crlf_value_length = sizeof(pem_crlf_value) - 1;
 
 static unsigned char* convert_cert_to_binary(const char* crypt_value, DWORD crypt_value_in_len, DWORD* crypt_length)
 {
-    unsigned char* result;
+    unsigned char* result = NULL;
     DWORD result_length;
     if (!CryptStringToBinaryA(crypt_value, crypt_value_in_len, CRYPT_STRING_ANY, NULL, &result_length, NULL, NULL))
     {
@@ -48,7 +48,7 @@ static unsigned char* convert_cert_to_binary(const char* crypt_value, DWORD cryp
         LogErrorWinHTTPWithGetLastErrorAsString("Failed determine crypt value size");
         result = NULL;
     }
-    else
+    else if (result_length != 0)
     {
         if ((result = (unsigned char*)malloc(result_length)) == NULL)
         {

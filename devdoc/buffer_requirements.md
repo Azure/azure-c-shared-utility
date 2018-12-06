@@ -13,6 +13,7 @@ extern BUFFER_HANDLE BUFFER_new(void);
 
 extern void BUFFER_delete(BUFFER_HANDLE handle);
 extern BUFFER_HANDLE BUFFER_create(const unsigned char* source, size_t size);
+extern BUFFER_HANDLE BUFFER_create_with_size(size_t buff_size)
 extern int BUFFER_pre_build(BUFFER_HANDLE handle, size_t size);
 extern int BUFFER_build(BUFFER_HANDLE handle, const unsigned char* source, size_t size);
 extern int BUFFER_unbuild(BUFFER_HANDLE handle);
@@ -25,6 +26,7 @@ extern unsigned char* BUFFER_u_char(BUFFER_HANDLE handle);
 extern size_t BUFFER_length(BUFFER_HANDLE handle);
 extern BUFFER_HANDLE BUFFER_clone(BUFFER_HANDLE handle);
 extern int BUFFER_fill(BUFFER_HANDLE handle, unsigned char fill_char);
+
 ```
 
 ### BUFFER_new
@@ -35,6 +37,7 @@ BUFFER_HANDLE BUFFER_new(void)
 **SRS_BUFFER_07_001: [** BUFFER_new shall allocate a BUFFER_HANDLE that will contain a NULL unsigned char*. **]**
 
 ### BUFFER_create
+
 ```c
 extern BUFFER_HANDLE BUFFER_create(const unsigned char* source, size_t size);
 ```
@@ -49,7 +52,26 @@ BUFFER_create creates a new buffer from the memory at source, having size "size"
 
 **SRS_BUFFER_02_004: [** Otherwise, BUFFER_create shall return a non-NULL handle. **]**
 
+### BUFFER_create_with_size
+
+
+
+```c
+extern BUFFER_HANDLE BUFFER_create_with_size(size_t buff_size)
+```
+
+**SRS_BUFFER_07_029: [** BUFFER_create_with_size shall create a BUFFER_HANDLE with a pre allocated underlying buffer size. **]**
+
+**SRS_BUFFER_07_030: [** If buff_size is 0 BUFFER_create_with_size shall create a valid non-NULL handle of zero size. **]**
+
+**SRS_BUFFER_07_031: [** BUFFER_create_with_size shall allocate a buffer of buff_size. **]**
+
+**SRS_BUFFER_07_032: [** If allocating memory fails, then BUFFER_create_with_size shall return NULL. **]**
+
+**SRS_BUFFER_07_033: [** Otherwise, BUFFER_create_with_size shall return a non-NULL handle. **]**
+
 ### BUFFER_delete
+
 ```c
 void BUFFER_delete(BUFFER_HANDLE handle)
 ```

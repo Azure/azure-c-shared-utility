@@ -62,7 +62,7 @@ unsigned char* my_BUFFER_u_char(BUFFER_HANDLE handle)
     return result;
 }
 
-size_t my_BUFFER_length(BUFFER_HANDLE handle)
+static size_t my_BUFFER_length(BUFFER_HANDLE handle)
 {
     size_t result;
     if (handle == BUFFER1_HANDLE)
@@ -81,9 +81,7 @@ DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    char temp_str[256];
-    (void)snprintf(temp_str, sizeof(temp_str), "umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
-    ASSERT_FAIL(temp_str);
+    ASSERT_FAIL("umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
 }
 
 BEGIN_TEST_SUITE(constbuffer_unittests)
@@ -125,6 +123,8 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         TEST_MUTEX_RELEASE(g_testByTest);
     }
 
+    /* CONSTBUFFER_Create */
+
     /*Tests_SRS_CONSTBUFFER_02_001: [If source is NULL and size is different than 0 then CONSTBUFFER_Create shall fail and return NULL.]*/
     TEST_FUNCTION(CONSTBUFFER_Create_with_invalid_args_fails)
     {
@@ -165,6 +165,8 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         ///cleanup
         CONSTBUFFER_Destroy(handle);
     }
+
+    /* CONSTBUFFER_CreateFromBuffer */
 
     /*Tests_SRS_CONSTBUFFER_02_009: [Otherwise, CONSTBUFFER_CreateFromBuffer shall return a non-NULL handle.]*/
     /*Tests_SRS_CONSTBUFFER_02_007: [Otherwise, CONSTBUFFER_CreateFromBuffer shall copy the content of buffer.]*/
@@ -233,26 +235,6 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
 
         ///cleanup
         CONSTBUFFER_Destroy(handle);
-    }
-
-    /*Tests_SRS_CONSTBUFFER_02_010: [The non-NULL handle returned by CONSTBUFFER_CreateFromBuffer shall have its ref count set to "1".]*/
-    /*Tests_SRS_CONSTBUFFER_02_005: [The non-NULL handle returned by CONSTBUFFER_Create shall have its ref count set to "1".]*/
-    /*Tests_SRS_CONSTBUFFER_02_017: [If the refcount reaches zero, then CONSTBUFFER_Destroy shall deallocate all resources used by the CONSTBUFFER_HANDLE.]*/
-    TEST_FUNCTION(CONSTBUFFER_CreateFromBuffer_is_ref_counted_1)
-    {
-        ///arrange
-        CONSTBUFFER_HANDLE handle = CONSTBUFFER_CreateFromBuffer(BUFFER1_HANDLE);
-        umock_c_reset_all_calls();
-        ///act
-
-        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-
-        CONSTBUFFER_Destroy(handle);
-
-        ///assert
-        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-        ///cleanup
     }
 
     /*Tests_SRS_CONSTBUFFER_02_003: [If creating the copy fails then CONSTBUFFER_Create shall return NULL.]*/
@@ -342,6 +324,125 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         CONSTBUFFER_Destroy(handle);
     }
 
+    /* CONSTBUFFER_CreateWithMoveMemory */
+
+    /* Tests_SRS_CONSTBUFFER_01_001: [ If source is NULL and size is different than 0 then CONSTBUFFER_CreateWithMoveMemory shall fail and return NULL. ]*/
+    TEST_FUNCTION(CONSTBUFFER_CreateWithMoveMemory_with_invalid_args_fails)
+    {
+        ///arrange
+
+        ///act
+        CONSTBUFFER_HANDLE handle = CONSTBUFFER_CreateWithMoveMemory(NULL, 1);
+
+        ///assert
+        ASSERT_IS_NULL(handle);
+
+        ///cleanup
+    }
+
+    /* Tests_SRS_CONSTBUFFER_01_002: [ Otherwise, CONSTBUFFER_CreateWithMoveMemory shall store the source and size and return a non-NULL handle to the newly created const buffer. ]*/
+    TEST_FUNCTION(CONSTBUFFER_CreateWithMoveMemory_succeeds)
+    {
+        ///arrange
+        CONSTBUFFER_HANDLE handle;
+        const CONSTBUFFER* content;
+        unsigned char* test_buffer = (unsigned char* )my_gballoc_malloc(2);
+        test_buffer[0] = 42;
+        test_buffer[1] = 43;
+
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+
+        ///act
+        handle = CONSTBUFFER_CreateWithMoveMemory(test_buffer, 2);
+
+        ///assert
+        ASSERT_IS_NOT_NULL(handle);
+        /*testing the "storage"*/
+        content = CONSTBUFFER_GetContent(handle);
+        ASSERT_ARE_EQUAL(size_t, 2, content->size);
+        /*testing that it is a copy and not a pointer assignment*/
+        ASSERT_ARE_EQUAL(void_ptr, test_buffer, content->buffer, "same buffer should be returned");
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        ///cleanup
+        CONSTBUFFER_Destroy(handle);
+    }
+
+    /* Tests_SRS_CONSTBUFFER_01_002: [ Otherwise, CONSTBUFFER_CreateWithMoveMemory shall store the source and size and return a non-NULL handle to the newly created const buffer. ]*/
+    /* Tests_SRS_CONSTBUFFER_01_004: [ If `source` is non-NULL and `size` is 0, the `source` pointer shall be owned (and freed) by the newly created instance of const buffer. ]*/
+    TEST_FUNCTION(CONSTBUFFER_CreateWithMoveMemory_with_0_size_succeeds)
+    {
+        ///arrange
+        CONSTBUFFER_HANDLE handle;
+        const CONSTBUFFER* content;
+        unsigned char* test_buffer = (unsigned char* )my_gballoc_malloc(2);
+        test_buffer[0] = 42;
+        test_buffer[1] = 43;
+
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+
+        ///act
+        handle = CONSTBUFFER_CreateWithMoveMemory(test_buffer, 0);
+
+        ///assert
+        ASSERT_IS_NOT_NULL(handle);
+        /*testing the "storage"*/
+        content = CONSTBUFFER_GetContent(handle);
+        ASSERT_ARE_EQUAL(size_t, 0, content->size);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        ///cleanup
+        CONSTBUFFER_Destroy(handle);
+    }
+
+    /* Tests_SRS_CONSTBUFFER_01_002: [ Otherwise, CONSTBUFFER_CreateWithMoveMemory shall store the source and size and return a non-NULL handle to the newly created const buffer. ]*/
+    TEST_FUNCTION(CONSTBUFFER_CreateWithMoveMemory_with_NULL_source_and_0_size_succeeds)
+    {
+        ///arrange
+        CONSTBUFFER_HANDLE handle;
+        const CONSTBUFFER* content;
+
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+
+        ///act
+        handle = CONSTBUFFER_CreateWithMoveMemory(NULL, 0);
+
+        ///assert
+        ASSERT_IS_NOT_NULL(handle);
+        /*testing the "storage"*/
+        content = CONSTBUFFER_GetContent(handle);
+        ASSERT_ARE_EQUAL(size_t, 0, content->size);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        ///cleanup
+        CONSTBUFFER_Destroy(handle);
+    }
+
+    /* Tests_SRS_CONSTBUFFER_01_005: [ If any error occurs, `CONSTBUFFER_CreateWithMoveMemory` shall fail and return NULL. ]*/
+    TEST_FUNCTION(when_malloc_fails_CONSTBUFFER_CreateWithMoveMemory_fails)
+    {
+        ///arrange
+        CONSTBUFFER_HANDLE handle;
+        unsigned char* test_buffer = (unsigned char* )my_gballoc_malloc(2);
+        test_buffer[0] = 42;
+        test_buffer[1] = 43;
+
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
+            .SetReturn(NULL);
+
+        ///act
+        handle = CONSTBUFFER_CreateWithMoveMemory(test_buffer, 2);
+
+        ///assert
+        ASSERT_IS_NULL(handle);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        ///cleanup
+        free(test_buffer);
+    }
+
+    /* CONSTBUFFER_GetContent */
+
     /*Tests_SRS_CONSTBUFFER_02_011: [If constbufferHandle is NULL then CONSTBUFFER_GetContent shall return NULL.]*/
     TEST_FUNCTION(CONSTBUFFER_GetContent_with_NULL_returns_NULL)
     {
@@ -404,6 +505,8 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         ///cleanup
         CONSTBUFFER_Destroy(handle);
     }
+
+    /* CONSTBUFFER_Clone */
 
     /*Tests_SRS_CONSTBUFFER_02_013: [If constbufferHandle is NULL then CONSTBUFFER_Clone shall fail and return NULL.]*/
     TEST_FUNCTION(CONSTBUFFER_Clone_with_NULL_returns_NULL)
@@ -480,6 +583,8 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         ///cleanup
     }
 
+    /* CONSTBUFFER_Destroy */
+
     /*Tests_SRS_CONSTBUFFER_02_015: [If constbufferHandle is NULL then CONSTBUFFER_Destroy shall do nothing.]*/
     TEST_FUNCTION(CONSTBUFFER_Destroy_with_NULL_argument_does_nothing)
     {
@@ -492,6 +597,48 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
+    }
+
+    /*Tests_SRS_CONSTBUFFER_02_010: [The non-NULL handle returned by CONSTBUFFER_CreateFromBuffer shall have its ref count set to "1".]*/
+    /*Tests_SRS_CONSTBUFFER_02_005: [The non-NULL handle returned by CONSTBUFFER_Create shall have its ref count set to "1".]*/
+    /*Tests_SRS_CONSTBUFFER_02_017: [If the refcount reaches zero, then CONSTBUFFER_Destroy shall deallocate all resources used by the CONSTBUFFER_HANDLE.]*/
+    TEST_FUNCTION(CONSTBUFFER_CreateFromBuffer_is_ref_counted_1)
+    {
+        ///arrange
+        CONSTBUFFER_HANDLE handle = CONSTBUFFER_CreateFromBuffer(BUFFER1_HANDLE);
+        umock_c_reset_all_calls();
+        ///act
+
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+
+        CONSTBUFFER_Destroy(handle);
+
+        ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        ///cleanup
+    }
+
+    /* Tests_SRS_CONSTBUFFER_01_003: [ The non-NULL handle returned by CONSTBUFFER_CreateWithMoveMemory shall have its ref count set to "1". ]*/
+    /*Tests_SRS_CONSTBUFFER_02_017: [If the refcount reaches zero, then CONSTBUFFER_Destroy shall deallocate all resources used by the CONSTBUFFER_HANDLE.]*/
+    TEST_FUNCTION(CONSTBUFFER_CreateWithMoveMemory_is_ref_counted_1)
+    {
+        ///arrange
+        CONSTBUFFER_HANDLE handle;
+        unsigned char* test_buffer = (unsigned char* )my_gballoc_malloc(2);
+        test_buffer[0] = 42;
+        test_buffer[1] = 43;
+        handle = CONSTBUFFER_CreateWithMoveMemory(test_buffer, 2);
+        umock_c_reset_all_calls();
+
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+
+        ///act
+        CONSTBUFFER_Destroy(handle);
+
+        ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     }
 
 END_TEST_SUITE(constbuffer_unittests)
