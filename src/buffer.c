@@ -95,16 +95,15 @@ BUFFER_HANDLE BUFFER_create(const unsigned char* source, size_t size)
 BUFFER_HANDLE BUFFER_create_with_size(size_t buff_size)
 {
     BUFFER* result;
-    if (buff_size == 0)
+    result = (BUFFER*)malloc(sizeof(BUFFER));
+    if (result != NULL)
     {
-        // Codes_SRS_BUFFER_07_030: [ If buff_size is 0 BUFFER_create_with_size shall return NULL. ]
-        LogError("Cannot allocate 0 size");
-        result = NULL;
-    }
-    else
-    {
-        result = (BUFFER*)malloc(sizeof(BUFFER));
-        if (result != NULL)
+        if (buff_size == 0)
+        {
+            result->size = 0;
+            result->buffer = NULL;
+        }
+        else
         {
             // Codes_SRS_BUFFER_07_031: [ BUFFER_create_with_size shall allocate a buffer of buff_size. ]
             result->size = buff_size;
@@ -116,11 +115,11 @@ BUFFER_HANDLE BUFFER_create_with_size(size_t buff_size)
                 result = NULL;
             }
         }
-        else
-        {
-            // Codes_SRS_BUFFER_07_032: [ If allocating memory fails, then BUFFER_create_with_size shall return NULL. ]
-            LogError("unable to allocate BUFFER");
-        }
+    }
+    else
+    {
+        // Codes_SRS_BUFFER_07_032: [ If allocating memory fails, then BUFFER_create_with_size shall return NULL. ]
+        LogError("unable to allocate BUFFER");
     }
     // Codes_SRS_BUFFER_07_033: [ Otherwise, BUFFER_create_with_size shall return a non-NULL handle. ]
     return (BUFFER_HANDLE)result;

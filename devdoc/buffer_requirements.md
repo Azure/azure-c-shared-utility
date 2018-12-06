@@ -62,8 +62,6 @@ extern BUFFER_HANDLE BUFFER_create_with_size(size_t buff_size)
 
 **SRS_BUFFER_07_029: [** BUFFER_create_with_size shall create a BUFFER_HANDLE with a pre allocated underlying buffer size. **]**
 
-**SRS_BUFFER_07_030: [** If buff_size is 0 BUFFER_create_with_size shall return NULL. **]**
-
 **SRS_BUFFER_07_031: [** BUFFER_create_with_size shall allocate a buffer of buff_size. **]**
 
 **SRS_BUFFER_07_032: [** If allocating memory fails, then BUFFER_create_with_size shall return NULL. **]**

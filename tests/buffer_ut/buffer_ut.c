@@ -1582,21 +1582,27 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         BUFFER_delete(res);
     }
 
-    // Codes_SRS_BUFFER_07_030: [ If buff_size is 0 BUFFER_create_with_size shall return NULL. ]
-    TEST_FUNCTION(BUFFER_create_with_size_size_zero_fails)
+    // Codes_SRS_BUFFER_07_029: [ BUFFER_create_with_size shall create a BUFFER_HANDLE with a pre allocated underlying buffer size.]
+    // Codes_SRS_BUFFER_07_031: [ BUFFER_create_with_size shall allocate a buffer of buff_size. ]
+    // Codes_SRS_BUFFER_07_033: [ Otherwise, BUFFER_create_with_size shall return a non-NULL handle. ]
+    TEST_FUNCTION(BUFFER_create_with_size_size_zero_succeeds)
     {
         //arrange
         BUFFER_HANDLE res;
         size_t alloc_size = 0;
 
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+
         //act
         res = BUFFER_create_with_size(alloc_size);
 
         //assert
-        ASSERT_IS_NULL(res);
+        ASSERT_IS_NOT_NULL(res);
+        ASSERT_ARE_EQUAL(size_t, alloc_size, BUFFER_length(res));
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         //cleanup
+        BUFFER_delete(res);
     }
 
     // Codes_SRS_BUFFER_07_032: [ If allocating memory fails, then BUFFER_create_with_size shall return NULL. ]
