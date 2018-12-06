@@ -33,7 +33,7 @@ REFCOUNT_TYPE_CREATE(type)
 
 **SRS_REFCOUNT_01_003: [** On success it shall return a non-NULL handle to the allocated ref counted type `type`. **]**
 
-**SRS_REFCOUNT_01_004: [** If any error occurrs, `REFCOUNT_TYPE_CREATE` shall return NULL. **]**
+**SRS_REFCOUNT_01_004: [** If any error occurs, `REFCOUNT_TYPE_CREATE` shall return NULL. **]**
 
 ### REFCOUNT_TYPE_CREATE_WITH_EXTRA_SIZE
 
@@ -47,7 +47,7 @@ REFCOUNT_TYPE_CREATE_WITH_EXTRA_SIZE(type, size)
 
 **SRS_REFCOUNT_01_006: [** On success it shall return a non-NULL handle to the allocated ref counted type `type`. **]**
 
-**SRS_REFCOUNT_01_007: [** If any error occurrs, `REFCOUNT_TYPE_CREATE_WITH_EXTRA_SIZE` shall return NULL. **]**
+**SRS_REFCOUNT_01_007: [** If any error occurs, `REFCOUNT_TYPE_CREATE_WITH_EXTRA_SIZE` shall return NULL. **]**
 
 ### REFCOUNT_TYPE_DESTROY
 
