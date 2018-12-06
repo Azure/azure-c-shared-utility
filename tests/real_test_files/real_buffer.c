@@ -3,6 +3,7 @@
 
 #define BUFFER_new real_BUFFER_new
 #define BUFFER_create real_BUFFER_create
+#define BUFFER_create_with_size real_BUFFER_create_with_size
 #define BUFFER_pre_build real_BUFFER_pre_build
 #define BUFFER_build real_BUFFER_build
 #define BUFFER_unbuild real_BUFFER_unbuild
