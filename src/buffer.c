@@ -100,6 +100,7 @@ BUFFER_HANDLE BUFFER_create_with_size(size_t buff_size)
     {
         if (buff_size == 0)
         {
+            // Codes_SRS_BUFFER_07_030: [ If buff_size is 0 BUFFER_create_with_size shall create a valid non-NULL handle of zero size. ]
             result->size = 0;
             result->buffer = NULL;
         }

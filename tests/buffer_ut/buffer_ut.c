@@ -1558,9 +1558,9 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         BUFFER_delete(res);
     }
 
-    // Codes_SRS_BUFFER_07_029: [ BUFFER_create_with_size shall create a BUFFER_HANDLE with a pre allocated underlying buffer size.]
-    // Codes_SRS_BUFFER_07_031: [ BUFFER_create_with_size shall allocate a buffer of buff_size. ]
-    // Codes_SRS_BUFFER_07_033: [ Otherwise, BUFFER_create_with_size shall return a non-NULL handle. ]
+    // Tests_SRS_BUFFER_07_029: [ BUFFER_create_with_size shall create a BUFFER_HANDLE with a pre allocated underlying buffer size.]
+    // Tests_SRS_BUFFER_07_031: [ BUFFER_create_with_size shall allocate a buffer of buff_size. ]
+    // Tests_SRS_BUFFER_07_033: [ Otherwise, BUFFER_create_with_size shall return a non-NULL handle. ]
     TEST_FUNCTION(BUFFER_create_with_size_succeeds)
     {
         //arrange
@@ -1582,9 +1582,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         BUFFER_delete(res);
     }
 
-    // Codes_SRS_BUFFER_07_029: [ BUFFER_create_with_size shall create a BUFFER_HANDLE with a pre allocated underlying buffer size.]
-    // Codes_SRS_BUFFER_07_031: [ BUFFER_create_with_size shall allocate a buffer of buff_size. ]
-    // Codes_SRS_BUFFER_07_033: [ Otherwise, BUFFER_create_with_size shall return a non-NULL handle. ]
+    // Tests_SRS_BUFFER_07_030: [ If buff_size is 0 BUFFER_create_with_size shall create a valid non-NULL handle of zero size. ]
     TEST_FUNCTION(BUFFER_create_with_size_size_zero_succeeds)
     {
         //arrange
@@ -1605,7 +1603,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         BUFFER_delete(res);
     }
 
-    // Codes_SRS_BUFFER_07_032: [ If allocating memory fails, then BUFFER_create_with_size shall return NULL. ]
+    // Tests_SRS_BUFFER_07_032: [ If allocating memory fails, then BUFFER_create_with_size shall return NULL. ]
     TEST_FUNCTION(BUFFER_create_with_size_malloc_fails)
     {
         //arrange
@@ -1624,7 +1622,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         //cleanup
     }
 
-    // Codes_SRS_BUFFER_07_031: [ BUFFER_create_with_size shall allocate a buffer of buff_size. ]
+    // Tests_SRS_BUFFER_07_031: [ BUFFER_create_with_size shall allocate a buffer of buff_size. ]
     TEST_FUNCTION(BUFFER_create_with_size_2nd_malloc_fails)
     {
         //arrange
