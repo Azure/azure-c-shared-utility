@@ -299,6 +299,7 @@ CONSTBUFFER_HANDLE constbuffer_array_get_buffer(CONSTBUFFER_ARRAY_HANDLE constbu
     if (
         /* Codes_SRS_CONSTBUFFER_ARRAY_01_007: [ If `constbuffer_array_handle` is NULL, `constbuffer_array_get_buffer` shall fail and return NULL. ]*/
         (constbuffer_array_handle == NULL) ||
+        /* Codes_SRS_CONSTBUFFER_ARRAY_01_008: [ If `buffer_index` is greater or equal to the number of buffers in the array, `constbuffer_array_get_buffer` shall fail and return NULL. ]*/
         (buffer_index >= constbuffer_array_handle->nBuffers)
         )
     {
@@ -324,6 +325,29 @@ CONSTBUFFER_HANDLE constbuffer_array_get_buffer(CONSTBUFFER_ARRAY_HANDLE constbu
     result = NULL;
 
 all_ok:
+    return result;
+}
+
+const CONSTBUFFER* constbuffer_array_get_buffer_content(CONSTBUFFER_ARRAY_HANDLE constbuffer_array_handle, uint32_t buffer_index)
+{
+    const CONSTBUFFER* result;
+    if (
+        /* Codes_SRS_CONSTBUFFER_ARRAY_01_023: [ If `constbuffer_array_handle` is NULL, `constbuffer_array_get_buffer_content` shall fail and return NULL. ]*/
+        (constbuffer_array_handle == NULL) ||
+        /* Codes_SRS_CONSTBUFFER_ARRAY_01_024: [ If `buffer_index` is greater or equal to the number of buffers in the array, `constbuffer_array_get_buffer_content` shall fail and return NULL. ]*/
+        (buffer_index >= constbuffer_array_handle->nBuffers)
+        )
+    {
+        LogError("Invalid arguments: CONSTBUFFER_ARRAY_HANDLE constbuffer_array_handle=%p, uint32_t buffer_index=%" PRIu32,
+            constbuffer_array_handle, buffer_index);
+        result = NULL;
+    }
+    else
+    {
+        /* Codes_SRS_CONSTBUFFER_ARRAY_01_025: [ Otherwise `constbuffer_array_get_buffer_content` shall call `CONSTBUFFER_GetContent` for the `buffer_index`-th buffer and return its result. ]*/
+        result = CONSTBUFFER_GetContent(constbuffer_array_handle->buffers[buffer_index]);
+    }
+
     return result;
 }
 
