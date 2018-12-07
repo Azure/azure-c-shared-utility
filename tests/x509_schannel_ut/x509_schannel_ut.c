@@ -127,10 +127,11 @@ static const unsigned char TEST_DATA_INFO[] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x
 
 //PCERT_INFO* g_cert_info;
 
+DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
+
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    (void)error_code;
-    ASSERT_FAIL("umock_c reported error");
+    ASSERT_FAIL("umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
 }
 
 static BOOL my_CryptStringToBinaryA(
