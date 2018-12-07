@@ -50,7 +50,7 @@ C2(REFCOUNT_, type)
 
 /* Codes_SRS_REFCOUNT_01_005: [ `REFCOUNT_TYPE_CREATE_WITH_EXTRA_SIZE` shall allocate memory for the type that is ref counted (`type`) plus extra memory enough to hold `size` bytes. ]*/
 /* Codes_SRS_REFCOUNT_01_006: [ On success it shall return a non-NULL handle to the allocated ref counted type `type`. ]*/
-/* Codes_SRS_REFCOUNT_01_007: [ If any error occurrs, `REFCOUNT_TYPE_CREATE_WITH_EXTRA_SIZE` shall return NULL. ]*/
+/* Codes_SRS_REFCOUNT_01_007: [ If any error occurs, `REFCOUNT_TYPE_CREATE_WITH_EXTRA_SIZE` shall return NULL. ]*/
 #define DEFINE_CREATE_WITH_EXTRA_SIZE(type) \
 static type* REFCOUNT_TYPE_DECLARE_CREATE_WITH_EXTRA_SIZE(type)(size_t size) \
 { \
@@ -70,7 +70,7 @@ static type* REFCOUNT_TYPE_DECLARE_CREATE_WITH_EXTRA_SIZE(type)(size_t size) \
 
 /* Codes_SRS_REFCOUNT_01_002: [ `REFCOUNT_TYPE_CREATE` shall allocate memory for the type that is ref counted. ]*/
 /* Codes_SRS_REFCOUNT_01_003: [ On success it shall return a non-NULL handle to the allocated ref counted type `type`. ]*/
-/* Codes_SRS_REFCOUNT_01_004: [ If any error occurrs, `REFCOUNT_TYPE_CREATE` shall return NULL. ]*/
+/* Codes_SRS_REFCOUNT_01_004: [ If any error occurs, `REFCOUNT_TYPE_CREATE` shall return NULL. ]*/
 #define DEFINE_CREATE(type) \
 static type* REFCOUNT_TYPE_DECLARE_CREATE(type) (void) \
 { \
