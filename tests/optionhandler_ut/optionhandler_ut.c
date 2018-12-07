@@ -73,10 +73,11 @@ MOCKABLE_FUNCTION(, int, aSetOption, void*, handle, const char*, name, const voi
 
 static TEST_MUTEX_HANDLE g_testByTest;
 
+DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
+
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    (void)error_code;
-    ASSERT_FAIL("umock_c reported error");
+    ASSERT_FAIL("umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
 }
 
 TEST_DEFINE_ENUM_TYPE(OPTIONHANDLER_RESULT, OPTIONHANDLER_RESULT_VALUES);
