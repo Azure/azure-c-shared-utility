@@ -172,7 +172,7 @@ static void test_VerifyCertificateChain(const char* trustedCertificate, const ch
     char serverCertificateEncoded[TEST_MAX_SERVER_CERTIFICATE_ENCODE_SIZE];
     DWORD serverCertificateEncodedLen = sizeof(serverCertificateEncoded);
 
-    ASSERT_IS_TRUE(CryptStringToBinaryA(serverCertificate, 0, CRYPT_STRING_ANY, (BYTE*)serverCertificateEncoded, &serverCertificateEncodedLen, NULL, NULL), "CryptStringToBinaryA fails, GetLastError=0x%08x", GetLastError());
+    ASSERT_IS_TRUE(CryptStringToBinaryA(serverCertificate, 0, CRYPT_STRING_ANY, (BYTE*)serverCertificateEncoded, &serverCertificateEncodedLen, NULL, NULL)==TRUE, "CryptStringToBinaryA fails, GetLastError=0x%08x", GetLastError());
 
     PCCERT_CONTEXT pCertContext = CertCreateCertificateContext(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, (const BYTE*)serverCertificateEncoded, serverCertificateEncodedLen);
     ASSERT_IS_NOT_NULL(pCertContext, "CertCreateCertificateContext fails, GetLastError=0x%08x", GetLastError());

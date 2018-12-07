@@ -180,7 +180,7 @@ static const unsigned char TEST_DATA_INFO[] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x
 #define TEST_KEY_SIZE       10
 
 
-static const PCCERT_CONTEXT pTestCertContextToVerify = (PCCERT_CONTEXT)0x1000;
+static CERT_CONTEXT testCertContextToVerify;
 
 #define TEST_PEM_BEGIN_CERT "-----BEGIN CERTIFICATE-----"
 #define TEST_PEM_END_CERT "-----END CERTIFICATE-----"
@@ -542,6 +542,7 @@ TEST_SUITE_CLEANUP(TestClassCleanup)
 TEST_FUNCTION_INITIALIZE(initialize)
 {
     umock_c_reset_all_calls();
+    memset(&testCertContextToVerify, 0, sizeof(testCertContextToVerify));
 }
 
 TEST_FUNCTION_CLEANUP(cleans)
@@ -834,7 +835,7 @@ static void setup_x509_verify_certificate_in_chain_mocks(DWORD dwExpectedError, 
 TEST_FUNCTION(x509_verify_certificate_in_chain_NULL_trustedCertificate_fails)
 {
     ///act
-    int result = x509_verify_certificate_in_chain(NULL, pTestCertContextToVerify);
+    int result = x509_verify_certificate_in_chain(NULL, &testCertContextToVerify);
 
     ///assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
@@ -856,7 +857,7 @@ TEST_FUNCTION(x509_verify_certificate_in_chain_succeeds)
     setup_x509_verify_certificate_in_chain_mocks(ERROR_SUCCESS, (const char**)expectedCerts, 1);
 
     ///act
-    int result = x509_verify_certificate_in_chain(testTrustedCertificateOneCertWithCrlf, pTestCertContextToVerify);
+    int result = x509_verify_certificate_in_chain(testTrustedCertificateOneCertWithCrlf, &testCertContextToVerify);
 
     ///assert
     ASSERT_ARE_EQUAL(int, 0, result);
@@ -870,7 +871,7 @@ TEST_FUNCTION(x509_verify_certificate_in_chain_no_closing_crlf_succeeds)
     setup_x509_verify_certificate_in_chain_mocks(ERROR_SUCCESS, (const char**)expectedCerts, 1);
 
     ///act
-    int result = x509_verify_certificate_in_chain(testTrustedCertificateOneCertWithNoCrlf, pTestCertContextToVerify);
+    int result = x509_verify_certificate_in_chain(testTrustedCertificateOneCertWithNoCrlf, &testCertContextToVerify);
 
     ///assert
     ASSERT_ARE_EQUAL(int, 0, result);
@@ -885,7 +886,7 @@ TEST_FUNCTION(x509_verify_certificate_in_chain_with_verify_error_fails)
     setup_x509_verify_certificate_in_chain_mocks((DWORD)CERT_E_UNTRUSTEDROOT, (const char**)expectedCerts, 1);
 
     ///act
-    int result = x509_verify_certificate_in_chain(testTrustedCertificateOneCertWithCrlf, pTestCertContextToVerify);
+    int result = x509_verify_certificate_in_chain(testTrustedCertificateOneCertWithCrlf, &testCertContextToVerify);
 
     ///assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
@@ -903,7 +904,7 @@ TEST_FUNCTION(x509_verify_two_certificates_in_chain_succeeds)
     setup_x509_verify_certificate_in_chain_mocks(ERROR_SUCCESS, expectedCert, 2);
 
     ///act
-    int result = x509_verify_certificate_in_chain(testTrustedCertificateTwoCerts, pTestCertContextToVerify);
+    int result = x509_verify_certificate_in_chain(testTrustedCertificateTwoCerts, &testCertContextToVerify);
 
     ///assert
     ASSERT_ARE_EQUAL(int, 0, result);
@@ -922,7 +923,7 @@ TEST_FUNCTION(x509_verify_three_certificates_in_chain_succeeds)
     setup_x509_verify_certificate_in_chain_mocks(ERROR_SUCCESS, (const char**)expectedCert, 3);
 
     ///act
-    int result = x509_verify_certificate_in_chain(testTrustedCertificateThreeCerts, pTestCertContextToVerify);
+    int result = x509_verify_certificate_in_chain(testTrustedCertificateThreeCerts, &testCertContextToVerify);
 
     ///assert
     ASSERT_ARE_EQUAL(int, 0, result);
@@ -955,7 +956,7 @@ TEST_FUNCTION(x509_verify_certificate_in_chain_fails)
             umock_c_negative_tests_fail_call(i);
 
             ///act
-            int result = x509_verify_certificate_in_chain(testTrustedCertificateThreeCerts, pTestCertContextToVerify);
+            int result = x509_verify_certificate_in_chain(testTrustedCertificateThreeCerts, &testCertContextToVerify);
 
             ///assert
             ASSERT_ARE_NOT_EQUAL(int, 0, result, "Test %lu fails", (unsigned long)i);
