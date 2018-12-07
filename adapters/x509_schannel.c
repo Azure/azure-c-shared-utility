@@ -533,6 +533,7 @@ static int add_certificates_to_store(const char* trustedCertificate, HCERTSTORE 
     return result;
 }
 
+#ifndef WINCE
 // x509_verify_certificate_in_chain determines whether the certificate in pCertContextToVerify
 // chains up to the PEM represented by trustedCertificate or not.
 int x509_verify_certificate_in_chain(const char* trustedCertificate, PCCERT_CONTEXT pCertContextToVerify)
@@ -625,4 +626,12 @@ int x509_verify_certificate_in_chain(const char* trustedCertificate, PCCERT_CONT
 
     return result;
 }
-
+#else
+// Windows CE does not have the requisite Crypt32 functionality to enable this
+int x509_verify_certificate_in_chain(const char* trustedCertificate, PCCERT_CONTEXT pCertContextToVerify)
+{
+    (void)trustedCertificate;
+    (void)pCertContextToVerify;
+    return __FAILURE__;
+}
+#endif
