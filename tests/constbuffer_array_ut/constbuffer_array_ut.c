@@ -47,6 +47,9 @@ static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
     ASSERT_FAIL(temp_str);
 }
 
+static const unsigned char one = '1';
+static const unsigned char two[] = { '2', '2' };
+static const unsigned char three[] = { '3', '3', '3' };
 
 static CONSTBUFFER_HANDLE TEST_CONSTBUFFER_HANDLE_1;
 static CONSTBUFFER_HANDLE TEST_CONSTBUFFER_HANDLE_2;
@@ -95,10 +98,6 @@ TEST_SUITE_CLEANUP(suite_cleanup)
 
 TEST_FUNCTION_INITIALIZE(method_init)
 {
-    unsigned char one = '1';
-    unsigned char two[] = { '2', '2' };
-    unsigned char three[] = { '3', '3', '3' };
-
     if (TEST_MUTEX_ACQUIRE(test_serialize_mutex))
     {
         ASSERT_FAIL("Could not acquire test serialization mutex.");
@@ -935,6 +934,103 @@ TEST_FUNCTION(when_CONSTBUFFER_Clone_fails_constbuffer_array_get_buffer_also_fai
 
     // act
     result = constbuffer_array_get_buffer(constbuffer_array, 0);
+
+    // assert
+    ASSERT_IS_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    constbuffer_array_dec_ref(constbuffer_array);
+}
+
+/* constbuffer_array_get_buffer_content */
+
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_023: [ If `constbuffer_array_handle` is NULL, `constbuffer_array_get_buffer_content` shall fail and return NULL. ]*/
+TEST_FUNCTION(constbuffer_array_get_buffer_content_with_NULL_constbuffer_array_handle_fails)
+{
+    // arrange
+    const CONSTBUFFER* result;
+
+    // act
+    result = constbuffer_array_get_buffer_content(NULL, 0);
+
+    // assert
+    ASSERT_IS_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_025: [ Otherwise `constbuffer_array_get_buffer_content` shall call `CONSTBUFFER_GetContent` for the `buffer_index`-th buffer and return its result. ]*/
+TEST_FUNCTION(constbuffer_array_get_buffer_content_succeeds)
+{
+    // arrange
+    CONSTBUFFER_HANDLE test_buffers[2];
+    CONSTBUFFER_ARRAY_HANDLE constbuffer_array;
+    const CONSTBUFFER* result;
+
+    test_buffers[0] = TEST_CONSTBUFFER_HANDLE_1;
+    test_buffers[1] = TEST_CONSTBUFFER_HANDLE_2;
+
+    constbuffer_array = constbuffer_array_create(test_buffers, sizeof(test_buffers) / sizeof(test_buffers[0]));
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(TEST_CONSTBUFFER_HANDLE_1));
+
+    // act
+    result = constbuffer_array_get_buffer_content(constbuffer_array, 0);
+
+    // assert
+    ASSERT_ARE_EQUAL(size_t, 1, result->size);
+    ASSERT_ARE_EQUAL(int, 0, memcmp(&one, result->buffer, result->size));
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    constbuffer_array_dec_ref(constbuffer_array);
+}
+
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_025: [ Otherwise `constbuffer_array_get_buffer_content` shall call `CONSTBUFFER_GetContent` for the `buffer_index`-th buffer and return its result. ]*/
+TEST_FUNCTION(constbuffer_array_get_buffer_content_for_the_2nd_buffer_succeeds)
+{
+    // arrange
+    CONSTBUFFER_HANDLE test_buffers[2];
+    CONSTBUFFER_ARRAY_HANDLE constbuffer_array;
+    const CONSTBUFFER* result;
+
+    test_buffers[0] = TEST_CONSTBUFFER_HANDLE_1;
+    test_buffers[1] = TEST_CONSTBUFFER_HANDLE_2;
+
+    constbuffer_array = constbuffer_array_create(test_buffers, sizeof(test_buffers) / sizeof(test_buffers[0]));
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(TEST_CONSTBUFFER_HANDLE_2));
+
+    // act
+    result = constbuffer_array_get_buffer_content(constbuffer_array, 1);
+
+    // assert
+    ASSERT_ARE_EQUAL(size_t, 2, result->size);
+    ASSERT_ARE_EQUAL(int, 0, memcmp(two, result->buffer, result->size));
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    constbuffer_array_dec_ref(constbuffer_array);
+}
+
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_024: [ If `buffer_index` is greater or equal to the number of buffers in the array, `constbuffer_array_get_buffer_content` shall fail and return NULL. ]*/
+TEST_FUNCTION(constbuffer_array_get_buffer_content_with_index_out_of_range_fails)
+{
+    // arrange
+    CONSTBUFFER_HANDLE test_buffers[2];
+    CONSTBUFFER_ARRAY_HANDLE constbuffer_array;
+    const CONSTBUFFER* result;
+
+    test_buffers[0] = TEST_CONSTBUFFER_HANDLE_1;
+    test_buffers[1] = TEST_CONSTBUFFER_HANDLE_2;
+
+    constbuffer_array = constbuffer_array_create(test_buffers, sizeof(test_buffers) / sizeof(test_buffers[0]));
+    umock_c_reset_all_calls();
+
+    // act
+    result = constbuffer_array_get_buffer_content(constbuffer_array, 2);
 
     // assert
     ASSERT_IS_NULL(result);

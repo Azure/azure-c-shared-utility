@@ -27,6 +27,7 @@ MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_remove_front, CO
 /* getters */
 MOCKABLE_FUNCTION(, int, constbuffer_array_get_buffer_count, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle, uint32_t*, buffer_count);
 MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, constbuffer_array_get_buffer, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle, uint32_t, buffer_index);
+MOCKABLE_FUNCTION(, const CONSTBUFFER*, constbuffer_array_get_buffer_content, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle, uint32_t, buffer_index);
 MOCKABLE_FUNCTION(, int, constbuffer_array_get_all_buffers_size, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle, uint32_t*, all_buffers_size);
 ```
 
@@ -169,6 +170,20 @@ MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, constbuffer_array_get_buffer, CONSTBUFFE
 **SRS_CONSTBUFFER_ARRAY_01_008: [** If `buffer_index` is greater or equal to the number of buffers in the array, `constbuffer_array_get_buffer` shall fail and return NULL. **]**
 
 **SRS_CONSTBUFFER_ARRAY_01_015: [** If any error occurs, `constbuffer_array_get_buffer` shall fail and return NULL. **]**
+
+### constbuffer_array_get_buffer_content
+
+```c
+MOCKABLE_FUNCTION(, const CONSTBUFFER*, constbuffer_array_get_buffer_content, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle, uint32_t, buffer_index);
+```
+
+`constbuffer_array_get_buffer_content` gets the buffer content for the buffer at the `buffer_index`-th given index in the array.
+
+**SRS_CONSTBUFFER_ARRAY_01_023: [** If `constbuffer_array_handle` is NULL, `constbuffer_array_get_buffer_content` shall fail and return NULL. **]**
+
+**SRS_CONSTBUFFER_ARRAY_01_024: [** If `buffer_index` is greater or equal to the number of buffers in the array, `constbuffer_array_get_buffer_content` shall fail and return NULL. **]**
+
+**SRS_CONSTBUFFER_ARRAY_01_025: [** Otherwise `constbuffer_array_get_buffer_content` shall call `CONSTBUFFER_GetContent` for the `buffer_index`-th buffer and return its result. **]**
 
 ### constbuffer_array_get_all_buffers_size
 
