@@ -32,11 +32,17 @@ typedef struct X509_SCHANNEL_HANDLE_DATA_TAG
     x509_CERT_TYPE cert_type;
 } X509_SCHANNEL_HANDLE_DATA;
 
-static unsigned char* convert_cert_to_binary(const char* crypt_value, DWORD* crypt_length)
+static const char end_certificate_in_pem[] = "-----END CERTIFICATE-----";
+static const size_t end_certificate_in_pem_length = sizeof(end_certificate_in_pem) - 1;
+static const char pem_crlf_value[] = "\r\n";
+static const size_t pem_crlf_value_length = sizeof(pem_crlf_value) - 1;
+
+
+static unsigned char* convert_cert_to_binary(const char* crypt_value, DWORD crypt_value_in_len, DWORD* crypt_length)
 {
     unsigned char* result = NULL;
     DWORD result_length;
-    if (!CryptStringToBinaryA(crypt_value, 0, CRYPT_STRING_ANY, NULL, &result_length, NULL, NULL))
+    if (!CryptStringToBinaryA(crypt_value, crypt_value_in_len, CRYPT_STRING_ANY, NULL, &result_length, NULL, NULL))
     {
         /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
         LogErrorWinHTTPWithGetLastErrorAsString("Failed determine crypt value size");
@@ -348,7 +354,7 @@ X509_SCHANNEL_HANDLE x509_schannel_create(const char* x509certificate, const cha
         {
             memset(result, 0, sizeof(X509_SCHANNEL_HANDLE_DATA));
             /*Codes_SRS_X509_SCHANNEL_02_002: [ x509_schannel_create shall convert the certificate to binary form by calling CryptStringToBinaryA. ]*/
-            if ((binaryx509Certificate = convert_cert_to_binary(x509certificate, &binaryx509certificateSize)) == NULL)
+            if ((binaryx509Certificate = convert_cert_to_binary(x509certificate, 0, &binaryx509certificateSize)) == NULL)
             {
                 LogError("Failure converting x509 certificate");
                 free(result);
@@ -356,7 +362,7 @@ X509_SCHANNEL_HANDLE x509_schannel_create(const char* x509certificate, const cha
             }
             /*Codes_SRS_X509_SCHANNEL_02_003: [ x509_schannel_create shall convert the private key to binary form by calling CryptStringToBinaryA. ]*/
             /*at this moment x509 certificate is ready to be used in CertCreateCertificateContext*/
-            else if ((binaryx509privatekey = convert_cert_to_binary(x509privatekey, &binaryx509privatekeySize)) == NULL)
+            else if ((binaryx509privatekey = convert_cert_to_binary(x509privatekey, 0, &binaryx509privatekeySize)) == NULL)
             {
                 LogError("Failure converting x509 certificate");
                 free(binaryx509Certificate);
@@ -469,3 +475,163 @@ PCCERT_CONTEXT x509_schannel_get_certificate_context(X509_SCHANNEL_HANDLE x509_s
     }
     return result;
 }
+
+// For each certificate specified in trustedCertificate, add to hCertStore.  Windows API's (namely
+// CryptStringToBinaryA & CertAddEncodedCertificateToStore) do not handle multiple certificates
+// at a time in a single call, so add_certificates_to_store() parses the PEM (delimited by "-----END CERTIFICATE-----")
+// to call Windows API a cert at a time.
+static int add_certificates_to_store(const char* trustedCertificate, HCERTSTORE hCertStore)
+{
+    int result = 0;
+    int numCertificatesAdded = 0;
+    const char* trustedCertCurrentRead = trustedCertificate;
+    unsigned char* trustedCertificateEncoded = NULL;
+
+    while (result == 0)
+    {
+        const char* endCertificateCurrentRead;
+        DWORD trustedCertificateEncodedLen;
+        DWORD lastError;
+
+        if ((endCertificateCurrentRead = strstr(trustedCertCurrentRead, end_certificate_in_pem)) == NULL)
+        {
+            if (numCertificatesAdded == 0)
+            {
+                LogError("Certificate missing closing %s.  No certificates can be added to stare", end_certificate_in_pem);
+                result = __FAILURE__;
+            }
+            break;
+        }
+        
+        endCertificateCurrentRead += end_certificate_in_pem_length;
+        if (strncmp(endCertificateCurrentRead, pem_crlf_value, pem_crlf_value_length) == 0)
+        {
+            endCertificateCurrentRead += pem_crlf_value_length;
+        }
+        
+        if ((trustedCertificateEncoded = convert_cert_to_binary(trustedCertCurrentRead, (DWORD)(endCertificateCurrentRead - trustedCertCurrentRead), &trustedCertificateEncodedLen)) == NULL)
+        {
+            LogError("Cannot encode trusted certificate");
+            result = __FAILURE__;
+        }
+        else if (CertAddEncodedCertificateToStore(hCertStore, X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, trustedCertificateEncoded, trustedCertificateEncodedLen, CERT_STORE_ADD_NEW, NULL) != TRUE)
+        {
+            lastError = GetLastError();
+            LogError("CertAddEncodedCertificateToStore failed with error 0x%08x", lastError);
+            result = __FAILURE__;
+        }
+
+        if (trustedCertificateEncoded != NULL)
+        {   
+            free(trustedCertificateEncoded);
+        }
+
+        trustedCertCurrentRead = endCertificateCurrentRead;
+        numCertificatesAdded++;
+    }
+
+    return result;
+}
+
+#ifndef WINCE
+// x509_verify_certificate_in_chain determines whether the certificate in pCertContextToVerify
+// chains up to the PEM represented by trustedCertificate or not.
+int x509_verify_certificate_in_chain(const char* trustedCertificate, PCCERT_CONTEXT pCertContextToVerify)
+{
+    int result;
+    HCERTSTORE hCertStore = NULL;
+    HCERTCHAINENGINE hChainEngine = NULL;
+    PCCERT_CHAIN_CONTEXT pChainContextToVerify = NULL;
+    DWORD lastError;
+
+    if ((trustedCertificate == NULL) || (pCertContextToVerify == NULL))
+    {
+        result = __FAILURE__;
+    }
+    // Creates an in-memory certificate store that is destroyed at end of this function.
+    else if (NULL == (hCertStore = CertOpenStore(CERT_STORE_PROV_MEMORY, X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, 0, CERT_STORE_CREATE_NEW_FLAG, NULL)))
+    {
+        lastError = GetLastError();
+        LogError("CertOpenStore failed with error 0x%08x", lastError);
+        result = __FAILURE__;
+    }
+    else if (add_certificates_to_store(trustedCertificate, hCertStore) != 0)
+    {
+        LogError("Cannot add certificates to store");
+        result = __FAILURE__;
+    }
+    else
+    {
+        CERT_CHAIN_ENGINE_CONFIG EngineConfig;
+        memset(&EngineConfig, 0, sizeof(EngineConfig));
+        EngineConfig.cbSize = sizeof(EngineConfig);
+        EngineConfig.dwFlags = CERT_CHAIN_ENABLE_CACHE_AUTO_UPDATE | CERT_CHAIN_ENABLE_SHARE_STORE;
+        EngineConfig.hExclusiveRoot = hCertStore;
+
+        CERT_CHAIN_PARA ChainPara;
+        memset(&ChainPara, 0, sizeof(ChainPara));
+        ChainPara.cbSize = sizeof(ChainPara);
+
+        CERT_CHAIN_POLICY_PARA PolicyPara;
+        memset(&PolicyPara, 0, sizeof(PolicyPara));
+        PolicyPara.cbSize = sizeof(PolicyPara);
+
+        CERT_CHAIN_POLICY_STATUS PolicyStatus;
+        memset(&PolicyStatus, 0, sizeof(PolicyStatus));
+        PolicyStatus.cbSize = sizeof(PolicyStatus);
+
+        if (CertCreateCertificateChainEngine(&EngineConfig, &hChainEngine) != TRUE)
+        {
+            lastError = GetLastError();
+            LogError("CertCreateCertificateChainEngine failed with error 0x%08x", lastError);
+            result = __FAILURE__;
+        }
+        else if (CertGetCertificateChain(hChainEngine, pCertContextToVerify, NULL, pCertContextToVerify->hCertStore, &ChainPara, 0, NULL, &pChainContextToVerify) != TRUE)
+        {
+            lastError = GetLastError();
+            LogError("CertGetCertificateChain failed with error 0x%08x", lastError);
+            result = __FAILURE__;
+        }
+        else if (CertVerifyCertificateChainPolicy(CERT_CHAIN_POLICY_SSL, pChainContextToVerify, &PolicyPara, &PolicyStatus) != TRUE)
+        {
+            lastError = GetLastError();
+            LogError("CertVerifyCertificateChainPolicy failed with error 0x%08x", lastError);
+            result = __FAILURE__;
+        }
+        else if (PolicyStatus.dwError != 0)
+        {
+            LogError("CertVerifyCertificateChainPolicy sets certificateStatus = 0x%08x", PolicyStatus.dwError);
+            result = __FAILURE__;
+        }
+        else
+        {
+            result = 0;
+        }
+    }
+
+    if (pChainContextToVerify != NULL)
+    {
+        CertFreeCertificateChain(pChainContextToVerify);
+    }
+
+    if (hChainEngine != NULL)
+    {
+        CertFreeCertificateChainEngine(hChainEngine);
+    }
+
+    if (hCertStore != NULL)
+    {
+        CertCloseStore(hCertStore, 0);
+    }
+
+    return result;
+}
+#else
+// Windows CE does not have the requisite Crypt32 functionality to enable this
+int x509_verify_certificate_in_chain(const char* trustedCertificate, PCCERT_CONTEXT pCertContextToVerify)
+{
+    (void)trustedCertificate;
+    (void)pCertContextToVerify;
+    return __FAILURE__;
+}
+#endif

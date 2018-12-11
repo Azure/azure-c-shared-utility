@@ -39,6 +39,7 @@ static void my_gballoc_free(void* s)
 #include "umock_c.h"
 #include "umocktypes_charptr.h"
 
+#include <wincrypt.h>
 
 #include "azure_c_shared_utility/x509_schannel.h"
 #include "umocktypes_charptr.h"
@@ -112,6 +113,59 @@ MOCKABLE_FUNCTION(WINAPI, BOOL, CryptImportKey,
     HCRYPTKEY   *, phKey
 );
 
+MOCKABLE_FUNCTION(WINAPI, HCERTSTORE, CertOpenStore,
+  LPCSTR, lpszStoreProvider,
+  DWORD, dwEncodingType,
+  HCRYPTPROV_LEGACY, hCryptProv,
+  DWORD, dwFlags,
+  const void*, pvPara
+);
+
+MOCKABLE_FUNCTION(WINAPI, BOOL, CertCloseStore,
+  HCERTSTORE, hCertStore,
+  DWORD,      dwFlags
+);
+
+MOCKABLE_FUNCTION(WINAPI, BOOL, CertAddEncodedCertificateToStore,
+  HCERTSTORE,     hCertStore,
+  DWORD,          dwCertEncodingType,
+  const BYTE*,    pbCertEncoded,
+  DWORD,          cbCertEncoded,
+  DWORD,          dwAddDisposition,
+  PCCERT_CONTEXT*, ppCertContext
+);
+
+MOCKABLE_FUNCTION(WINAPI, BOOL, CertCreateCertificateChainEngine,
+  PCERT_CHAIN_ENGINE_CONFIG, pConfig,
+  HCERTCHAINENGINE*, phChainEngine
+);
+
+MOCKABLE_FUNCTION(WINAPI, void, CertFreeCertificateChainEngine,
+  HCERTCHAINENGINE, hChainEngine
+);
+
+MOCKABLE_FUNCTION(WINAPI, BOOL, CertGetCertificateChain,
+  HCERTCHAINENGINE,     hChainEngine,
+  PCCERT_CONTEXT,       pCertContext,
+  LPFILETIME,           pTime,
+  HCERTSTORE,           hAdditionalStore,
+  PCERT_CHAIN_PARA,     pChainPara,
+  DWORD,                dwFlags,
+  LPVOID,               pvReserved,
+  PCCERT_CHAIN_CONTEXT*, ppChainContext
+);
+
+MOCKABLE_FUNCTION(WINAPI, void, CertFreeCertificateChain,
+  PCCERT_CHAIN_CONTEXT, pChainContext
+);
+
+MOCKABLE_FUNCTION(WINAPI, BOOL, CertVerifyCertificateChainPolicy,
+  LPCSTR,                    pszPolicyOID,
+  PCCERT_CHAIN_CONTEXT,      pChainContext,
+  PCERT_CHAIN_POLICY_PARA,   pPolicyPara,
+  PCERT_CHAIN_POLICY_STATUS, pPolicyStatus
+);
+
 #if _MSC_VER > 1500
 MOCKABLE_FUNCTION(WINAPI, SECURITY_STATUS, NCryptFreeObject, NCRYPT_HANDLE, hObject);
 MOCKABLE_FUNCTION(WINAPI, SECURITY_STATUS, NCryptOpenStorageProvider, NCRYPT_PROV_HANDLE*, phProvider, LPCWSTR, pszProviderName, DWORD, dwFlags);
@@ -124,6 +178,27 @@ static TEST_MUTEX_HANDLE g_testByTest;
 
 static const unsigned char TEST_DATA_INFO[] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x10 };
 #define TEST_KEY_SIZE       10
+
+
+static CERT_CONTEXT testCertContextToVerify;
+
+#define TEST_PEM_BEGIN_CERT "-----BEGIN CERTIFICATE-----"
+#define TEST_PEM_END_CERT "-----END CERTIFICATE-----"
+#define TEST_CERT_DATA_1       "TestCert1"
+#define TEST_CERT_DATA_2       "TestCert2"
+#define TEST_CERT_DATA_3       "TestCert3"
+#define TEST_CERT_CRLF         "\r\n"
+
+#define TEST_FULL_CERT(CERT_DATA) TEST_PEM_BEGIN_CERT TEST_CERT_CRLF CERT_DATA TEST_PEM_END_CERT TEST_CERT_CRLF
+
+#define testTrustedCertificateOneCertWithCrlf TEST_FULL_CERT(TEST_CERT_DATA_1)
+#define testTrustedCertificateOneCertWithNoCrlf TEST_PEM_BEGIN_CERT TEST_CERT_CRLF TEST_CERT_DATA_1 TEST_PEM_END_CERT
+#define testTrustedCertificateTwoCerts TEST_FULL_CERT(TEST_CERT_DATA_1) TEST_FULL_CERT(TEST_CERT_DATA_2)
+#define testTrustedCertificateThreeCerts TEST_FULL_CERT(TEST_CERT_DATA_1) TEST_FULL_CERT(TEST_CERT_DATA_2) TEST_FULL_CERT(TEST_CERT_DATA_3)
+
+
+static const HCERTCHAINENGINE testCertChainEngine = (HCERTCHAINENGINE)0x1001;
+static const PCCERT_CHAIN_CONTEXT testCertChainContext = (PCCERT_CHAIN_CONTEXT)0x1002;
 
 //PCERT_INFO* g_cert_info;
 
@@ -271,6 +346,59 @@ static BOOL my_CryptReleaseContext(
     return TRUE;
 }
 
+static BOOL my_CertCreateCertificateChainEngine(
+  PCERT_CHAIN_ENGINE_CONFIG pConfig,
+  HCERTCHAINENGINE* phChainEngine
+)
+{
+    (void)pConfig;
+    *phChainEngine = testCertChainEngine;
+    return TRUE;
+}
+
+
+static BOOL my_CertAddEncodedCertificateToStore(
+  HCERTSTORE hCertStore,
+  DWORD dwCertEncodingType,
+  const BYTE* pbCertEncoded,
+  DWORD cbCertEncoded,
+  DWORD dwAddDisposition,
+  PCCERT_CONTEXT* ppCertContext
+)
+{
+    (void)hCertStore;
+    (void)dwCertEncodingType;
+    (void)pbCertEncoded;
+    (void)cbCertEncoded;
+    (void)dwAddDisposition;
+    (void)ppCertContext;
+    return TRUE;
+}
+
+static BOOL my_CertGetCertificateChain(
+  HCERTCHAINENGINE     hChainEngine,
+  PCCERT_CONTEXT       pCertContext,
+  LPFILETIME           pTime,
+  HCERTSTORE           hAdditionalStore,
+  PCERT_CHAIN_PARA     pChainPara,
+  DWORD                dwFlags,
+  LPVOID               pvReserved,
+  PCCERT_CHAIN_CONTEXT* ppChainContext
+)
+{
+    (void)hChainEngine;
+    (void)pCertContext;
+    (void)pTime;
+    (void)hAdditionalStore;
+    (void)pChainPara;
+    (void)dwFlags;
+    (void)pvReserved;
+    *ppChainContext = testCertChainContext;
+    return TRUE;
+}
+
+
+
 #if _MSC_VER > 1500
 static SECURITY_STATUS my_NCryptFreeObject(_In_ NCRYPT_HANDLE hObject)
 {
@@ -310,6 +438,10 @@ static BOOL my_CertSetCertificateContextProperty(
     return TRUE;
 }
 
+
+static const HCERTSTORE testCertStore = (HCERTSTORE)0x1234;
+
+
 BEGIN_TEST_SUITE(x509_schannel_unittests)
 
 TEST_SUITE_INITIALIZE(a)
@@ -342,6 +474,16 @@ TEST_SUITE_INITIALIZE(a)
     REGISTER_UMOCK_ALIAS_TYPE(BOOL, unsigned int);
     REGISTER_UMOCK_ALIAS_TYPE(LPCWSTR, void*);
     REGISTER_UMOCK_ALIAS_TYPE(NCRYPT_KEY_HANDLE, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(HCERTSTORE, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(PCERT_CHAIN_ENGINE_CONFIG, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(HCERTCHAINENGINE, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(LPFILETIME, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(PCERT_CHAIN_PARA, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(LPVOID, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(PCCERT_CHAIN_CONTEXT, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(PCERT_CHAIN_POLICY_PARA, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(PCERT_CHAIN_POLICY_STATUS, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(HCRYPTPROV_LEGACY, unsigned int);
 
     REGISTER_GLOBAL_MOCK_HOOK(CryptStringToBinaryA, my_CryptStringToBinaryA);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(CryptStringToBinaryA, FALSE);
@@ -368,6 +510,17 @@ TEST_SUITE_INITIALIZE(a)
 
     REGISTER_GLOBAL_MOCK_HOOK(CertFreeCertificateContext, my_CertFreeCertificateContext);
 
+    REGISTER_GLOBAL_MOCK_RETURN(CertOpenStore, testCertStore);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(CertOpenStore, NULL);
+    REGISTER_GLOBAL_MOCK_HOOK(CertAddEncodedCertificateToStore, my_CertAddEncodedCertificateToStore);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(CertAddEncodedCertificateToStore, FALSE);
+    REGISTER_GLOBAL_MOCK_HOOK(CertCreateCertificateChainEngine, my_CertCreateCertificateChainEngine);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(CertCreateCertificateChainEngine, FALSE);
+    REGISTER_GLOBAL_MOCK_HOOK(CertGetCertificateChain, my_CertGetCertificateChain);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(CertGetCertificateChain, FALSE);
+    REGISTER_GLOBAL_MOCK_RETURN(CertVerifyCertificateChainPolicy, TRUE);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(CertVerifyCertificateChainPolicy, FALSE);    
+
 #if _MSC_VER > 1500
     REGISTER_GLOBAL_MOCK_RETURN(NCryptOpenStorageProvider, ERROR_SUCCESS);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(NCryptOpenStorageProvider, ERROR_INVALID_FUNCTION);
@@ -390,6 +543,7 @@ TEST_SUITE_CLEANUP(TestClassCleanup)
 TEST_FUNCTION_INITIALIZE(initialize)
 {
     umock_c_reset_all_calls();
+    memset(&testCertContextToVerify, 0, sizeof(testCertContextToVerify));
 }
 
 TEST_FUNCTION_CLEANUP(cleans)
@@ -651,6 +805,171 @@ TEST_FUNCTION(x509_schannel_get_certificate_context_succeeds)
     ///cleanup
     x509_schannel_destroy(h);
 }
+
+static void setup_x509_verify_certificate_in_chain_mocks(DWORD dwExpectedError, const char** expectedCert, int numExpectedCerts)
+{
+    CERT_CHAIN_POLICY_STATUS PolicyStatus;
+    memset(&PolicyStatus, 0, sizeof(PolicyStatus));
+    PolicyStatus.cbSize = sizeof(PolicyStatus);
+    PolicyStatus.dwError = dwExpectedError;
+
+    STRICT_EXPECTED_CALL(CertOpenStore(IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_NUM_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG));
+
+    for (int i = 0; i < numExpectedCerts; i++)
+    {
+        STRICT_EXPECTED_CALL(CryptStringToBinaryA(expectedCert[i], IGNORED_NUM_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(CryptStringToBinaryA(expectedCert[i], IGNORED_NUM_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(CertAddEncodedCertificateToStore(IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+    }
+    
+    STRICT_EXPECTED_CALL(CertCreateCertificateChainEngine(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(CertGetCertificateChain(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(CertVerifyCertificateChainPolicy(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+        .CopyOutArgumentBuffer(4, &PolicyStatus, sizeof(PolicyStatus));
+    STRICT_EXPECTED_CALL(CertFreeCertificateChain(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(CertFreeCertificateChainEngine(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(CertCloseStore(IGNORED_PTR_ARG, IGNORED_NUM_ARG)).CallCannotFail();
+}
+
+TEST_FUNCTION(x509_verify_certificate_in_chain_NULL_trustedCertificate_fails)
+{
+    ///act
+    int result = x509_verify_certificate_in_chain(NULL, &testCertContextToVerify);
+
+    ///assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+}
+
+TEST_FUNCTION(x509_verify_certificate_in_chain_NULL_certToVerify_fails)
+{
+    ///act
+    int result = x509_verify_certificate_in_chain(testTrustedCertificateThreeCerts, NULL);
+
+    ///assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+}
+
+TEST_FUNCTION(x509_verify_certificate_in_chain_succeeds)
+{
+    ///arrange
+    const char *expectedCerts[1] = { testTrustedCertificateOneCertWithCrlf };
+    setup_x509_verify_certificate_in_chain_mocks(ERROR_SUCCESS, (const char**)expectedCerts, 1);
+
+    ///act
+    int result = x509_verify_certificate_in_chain(testTrustedCertificateOneCertWithCrlf, &testCertContextToVerify);
+
+    ///assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+TEST_FUNCTION(x509_verify_certificate_in_chain_no_closing_crlf_succeeds)
+{
+    ///arrange
+    const char *expectedCerts[1] = { testTrustedCertificateOneCertWithNoCrlf };
+    setup_x509_verify_certificate_in_chain_mocks(ERROR_SUCCESS, (const char**)expectedCerts, 1);
+
+    ///act
+    int result = x509_verify_certificate_in_chain(testTrustedCertificateOneCertWithNoCrlf, &testCertContextToVerify);
+
+    ///assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+
+TEST_FUNCTION(x509_verify_certificate_in_chain_with_verify_error_fails)
+{
+    ///arrange
+    const char *expectedCerts[1] = { testTrustedCertificateOneCertWithCrlf };
+    setup_x509_verify_certificate_in_chain_mocks((DWORD)CERT_E_UNTRUSTEDROOT, (const char**)expectedCerts, 1);
+
+    ///act
+    int result = x509_verify_certificate_in_chain(testTrustedCertificateOneCertWithCrlf, &testCertContextToVerify);
+
+    ///assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());    
+}
+
+TEST_FUNCTION(x509_verify_two_certificates_in_chain_succeeds)
+{
+    ///arrange
+    const char* expectedCert[2] = { 
+        testTrustedCertificateTwoCerts, 
+        TEST_FULL_CERT(TEST_CERT_DATA_2)
+    };
+
+    setup_x509_verify_certificate_in_chain_mocks(ERROR_SUCCESS, expectedCert, 2);
+
+    ///act
+    int result = x509_verify_certificate_in_chain(testTrustedCertificateTwoCerts, &testCertContextToVerify);
+
+    ///assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+TEST_FUNCTION(x509_verify_three_certificates_in_chain_succeeds)
+{
+    ///arrange
+    const char* expectedCert[3] = { 
+        testTrustedCertificateThreeCerts, 
+        TEST_FULL_CERT(TEST_CERT_DATA_2) TEST_FULL_CERT(TEST_CERT_DATA_3),
+        TEST_FULL_CERT(TEST_CERT_DATA_3)
+    };
+    
+    setup_x509_verify_certificate_in_chain_mocks(ERROR_SUCCESS, (const char**)expectedCert, 3);
+
+    ///act
+    int result = x509_verify_certificate_in_chain(testTrustedCertificateThreeCerts, &testCertContextToVerify);
+
+    ///assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+
+TEST_FUNCTION(x509_verify_certificate_in_chain_fails)
+{
+    ///arrange
+    int negativeTestsInitResult = umock_c_negative_tests_init();
+    ASSERT_ARE_EQUAL(int, 0, negativeTestsInitResult);
+
+    const char* expectedCert[3] = { 
+        testTrustedCertificateThreeCerts, 
+        TEST_FULL_CERT(TEST_CERT_DATA_2) TEST_FULL_CERT(TEST_CERT_DATA_3),
+        TEST_FULL_CERT(TEST_CERT_DATA_3)
+    };
+
+    setup_x509_verify_certificate_in_chain_mocks(ERROR_SUCCESS, (const char**)expectedCert, 3);
+
+    umock_c_negative_tests_snapshot();
+
+    size_t count = umock_c_negative_tests_call_count();
+    for (size_t i = 0; i < count; i++)
+    {
+        if (umock_c_negative_tests_can_call_fail(i))
+        {
+            umock_c_negative_tests_reset();
+            umock_c_negative_tests_fail_call(i);
+
+            ///act
+            int result = x509_verify_certificate_in_chain(testTrustedCertificateThreeCerts, &testCertContextToVerify);
+
+            ///assert
+            ASSERT_ARE_NOT_EQUAL(int, 0, result, "Test %lu fails", (unsigned long)i);
+        }
+    }
+
+    //cleanup
+    umock_c_negative_tests_deinit();
+}
+
+
+
 
 END_TEST_SUITE(x509_schannel_unittests)
 

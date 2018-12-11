@@ -24,10 +24,12 @@ option(nuget_e2e_tests "set nuget_e2e_tests to ON to generate e2e tests to run w
 option(use_installed_dependencies "set use_installed_dependencies to ON to use installed packages instead of building dependencies from submodules" OFF)
 option(use_default_uuid "set use_default_uuid to ON to use the out of the box UUID that comes with the SDK rather than platform specific implementations" OFF)
 option(run_e2e_tests "set run_e2e_tests to ON to run e2e tests (default is OFF). Chsare dutility does not have any e2e tests, but the option needs to exist to evaluate in IF statements" OFF)
+option(run_int_tests "set run_int_tests to ON to integration tests (default is OFF)." OFF)
 option(use_builtin_httpapi "set use_builtin_httpapi to ON to use the built-in httpapi_compact that comes with C shared utility (default is OFF)" OFF)
 option(use_cppunittest "set use_cppunittest to ON to build CppUnitTest tests on Windows (default is ON)" ON)
 option(suppress_header_searches "do not try to find headers - used when compiler check will fail" OFF)
 option(use_custom_heap "use externally defined heap functions instead of the malloc family" OFF)
+
 
 if(${use_custom_heap})
     add_definitions(-DGB_USE_CUSTOM_HEAP)
@@ -528,9 +530,11 @@ endif()
 # do not add or build any tests of the dependencies
 set(original_run_e2e_tests ${run_e2e_tests})
 set(original_run_unittests ${run_unittests})
+set(original_run_int_tests ${run_int_tests})
 
 set(run_e2e_tests OFF)
 set(run_unittests OFF)
+set(run_int_tests OFF)
 
 if (${original_run_unittests})
     include("dependencies-test.cmake")
@@ -545,8 +549,9 @@ endif()
 
 set(run_e2e_tests ${original_run_e2e_tests})
 set(run_unittests ${original_run_unittests})
+set(run_int_tests ${original_run_int_tests})
 
-if (${run_unittests})
+if (${run_unittests} OR ${run_int_tests})
     add_subdirectory(tests)
 endif()
 
