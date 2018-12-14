@@ -463,8 +463,7 @@ CONCRETE_IO_HANDLE tlsio_mbedtls_create(void *io_create_parameters)
             else
             {
 
-                result->hostname = strdup(tls_io_config->hostname);
-                if (result->hostname == NULL)
+                if (mallocAndStrcpy_s((char **)&result->hostname, tls_io_config->hostname))
                 {
                     free(result);
                     result = NULL;
