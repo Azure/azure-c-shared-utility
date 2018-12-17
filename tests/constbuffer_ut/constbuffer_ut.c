@@ -369,7 +369,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
     }
 
     /* Tests_SRS_CONSTBUFFER_01_002: [ Otherwise, CONSTBUFFER_CreateWithMoveMemory shall store the source and size and return a non-NULL handle to the newly created const buffer. ]*/
-    /* Tests_SRS_CONSTBUFFER_01_004: [ If `source` is non-NULL and `size` is 0, the `source` pointer shall be owned (and freed) by the newly created instance of const buffer. ]*/
+    /* Tests_SRS_CONSTBUFFER_01_004: [ If source is non-NULL and size is 0, the source pointer shall be owned (and freed) by the newly created instance of const buffer. ]*/
     TEST_FUNCTION(CONSTBUFFER_CreateWithMoveMemory_with_0_size_succeeds)
     {
         ///arrange
@@ -418,7 +418,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         CONSTBUFFER_Destroy(handle);
     }
 
-    /* Tests_SRS_CONSTBUFFER_01_005: [ If any error occurs, `CONSTBUFFER_CreateWithMoveMemory` shall fail and return NULL. ]*/
+    /* Tests_SRS_CONSTBUFFER_01_005: [ If any error occurs, CONSTBUFFER_CreateWithMoveMemory shall fail and return NULL. ]*/
     TEST_FUNCTION(when_malloc_fails_CONSTBUFFER_CreateWithMoveMemory_fails)
     {
         ///arrange

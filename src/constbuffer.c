@@ -107,12 +107,12 @@ CONSTBUFFER_HANDLE CONSTBUFFER_CreateWithMoveMemory(unsigned char* source, size_
         result = (CONSTBUFFER_HANDLE)malloc(sizeof(CONSTBUFFER_HANDLE_DATA));
         if (result == NULL)
         {
-            /* Codes_SRS_CONSTBUFFER_01_005: [ If any error occurs, `CONSTBUFFER_CreateWithMoveMemory` shall fail and return NULL. ]*/
+            /* Codes_SRS_CONSTBUFFER_01_005: [ If any error occurs, CONSTBUFFER_CreateWithMoveMemory shall fail and return NULL. ]*/
             LogError("malloc failed");
         }
         else
         {
-            /* Codes_SRS_CONSTBUFFER_01_004: [ If `source` is non-NULL and `size` is 0, the `source` pointer shall be owned (and freed) by the newly created instance of const buffer. ]*/
+            /* Codes_SRS_CONSTBUFFER_01_004: [ If source is non-NULL and size is 0, the source pointer shall be owned (and freed) by the newly created instance of const buffer. ]*/
             /* Codes_SRS_CONSTBUFFER_01_002: [ Otherwise, CONSTBUFFER_Create shall store the source and size and return a non-NULL handle to the newly created const buffer. ]*/
             result->alias.buffer = source;
             result->alias.size = size;

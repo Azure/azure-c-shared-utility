@@ -119,6 +119,6 @@ static const IO_INTERFACE_DESCRIPTION http_proxy_stub_interface_description =
 
 const IO_INTERFACE_DESCRIPTION* http_proxy_io_get_interface_description(void)
 {
-    /* Codes_SRS_HTTP_PROXY_IO_01_049: [ `http_proxy_io_get_interface_description` shall return a pointer to an `IO_INTERFACE_DESCRIPTION` structure that contains pointers to the functions: `http_proxy_io_retrieve_options`, `http_proxy_io_retrieve_create`, `http_proxy_io_destroy`, `http_proxy_io_open`, `http_proxy_io_close`, `http_proxy_io_send` and `http_proxy_io_dowork`. ]*/
+    /* Codes_SRS_HTTP_PROXY_IO_01_049: [ http_proxy_io_get_interface_description shall return a pointer to an IO_INTERFACE_DESCRIPTION structure that contains pointers to the functions: http_proxy_io_retrieve_options, http_proxy_io_retrieve_create, http_proxy_io_destroy, http_proxy_io_open, http_proxy_io_close, http_proxy_io_send and http_proxy_io_dowork. ]*/
     return &http_proxy_stub_interface_description;
 }

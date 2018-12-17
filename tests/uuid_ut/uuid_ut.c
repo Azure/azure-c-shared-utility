@@ -102,7 +102,7 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
     TEST_MUTEX_RELEASE(g_testByTest);
 }
 
-// Tests_SRS_UUID_09_001: [ If `uuid` is NULL, UUID_generate shall return a non-zero value ]
+// Tests_SRS_UUID_09_001: [ If uuid is NULL, UUID_generate shall return a non-zero value ]
 TEST_FUNCTION(UUID_generate_NULL_uuid)
 {
     //Arrange
@@ -119,7 +119,7 @@ TEST_FUNCTION(UUID_generate_NULL_uuid)
 }
 
 // Tests_SRS_UUID_09_002: [ UUID_generate shall obtain an UUID string from UniqueId_Generate ]
-// Tests_SRS_UUID_09_004: [ The UUID string shall be parsed into an UUID_T type (16 unsigned char array) and filled in `uuid` ]
+// Tests_SRS_UUID_09_004: [ The UUID string shall be parsed into an UUID_T type (16 unsigned char array) and filled in uuid ]
 // Tests_SRS_UUID_09_006: [ If no failures occur, UUID_generate shall return zero ]
 TEST_FUNCTION(UUID_generate_succeed)
 {
@@ -151,7 +151,7 @@ TEST_FUNCTION(UUID_generate_succeed)
 }
 
 // Tests_SRS_UUID_09_003: [ If the UUID string fails to be obtained, UUID_generate shall fail and return a non-zero value ]
-// Tests_SRS_UUID_09_005: [ If `uuid` fails to be set, UUID_generate shall fail and return a non-zero value ]
+// Tests_SRS_UUID_09_005: [ If uuid fails to be set, UUID_generate shall fail and return a non-zero value ]
 TEST_FUNCTION(UUID_generate_failure_checks)
 {
     //Arrange
@@ -191,7 +191,7 @@ TEST_FUNCTION(UUID_generate_failure_checks)
     umock_c_negative_tests_deinit();
 }
 
-// Tests_SRS_UUID_09_011: [ If `uuid` is NULL, UUID_to_string shall return a non-zero value ]
+// Tests_SRS_UUID_09_011: [ If uuid is NULL, UUID_to_string shall return a non-zero value ]
 TEST_FUNCTION(UUID_to_string_NULL_uuid)
 {
     //Arrange
@@ -203,9 +203,9 @@ TEST_FUNCTION(UUID_to_string_NULL_uuid)
     ASSERT_IS_NULL(result);
 }
 
-// Tests_SRS_UUID_09_012: [ UUID_to_string shall allocate a valid UUID string (`uuid_string`) as per RFC 4122 ]
-// Tests_SRS_UUID_09_014: [ Each character in `uuid` shall be written in the respective positions of `uuid_string` as a 2-digit HEX value ]
-// Tests_SRS_UUID_09_016: [ If no failures occur, UUID_to_string shall return `uuid_string` ]
+// Tests_SRS_UUID_09_012: [ UUID_to_string shall allocate a valid UUID string (uuid_string) as per RFC 4122 ]
+// Tests_SRS_UUID_09_014: [ Each character in uuid shall be written in the respective positions of uuid_string as a 2-digit HEX value ]
+// Tests_SRS_UUID_09_016: [ If no failures occur, UUID_to_string shall return uuid_string ]
 TEST_FUNCTION(UUID_to_string_succeed)
 {
     //Arrange
@@ -224,8 +224,8 @@ TEST_FUNCTION(UUID_to_string_succeed)
     ASSERT_ARE_EQUAL(char_ptr, TEST_UUID_STRING, result);
 }
 
-// Tests_SRS_UUID_09_013: [ If `uuid_string` fails to be allocated, UUID_to_string shall return NULL ]
-// Tests_SRS_UUID_09_015: [ If `uuid_string` fails to be set, UUID_to_string shall return NULL ]
+// Tests_SRS_UUID_09_013: [ If uuid_string fails to be allocated, UUID_to_string shall return NULL ]
+// Tests_SRS_UUID_09_015: [ If uuid_string fails to be set, UUID_to_string shall return NULL ]
 TEST_FUNCTION(UUID_to_string_failure_checks)
 {
     //Arrange
@@ -261,7 +261,7 @@ TEST_FUNCTION(UUID_to_string_failure_checks)
     umock_c_negative_tests_deinit();
 }
 
-// Tests_SRS_UUID_09_007: [ If `uuid_string` or `uuid` are NULL, UUID_from_string shall return a non-zero value ]
+// Tests_SRS_UUID_09_007: [ If uuid_string or uuid are NULL, UUID_from_string shall return a non-zero value ]
 TEST_FUNCTION(UUID_from_string_NULL_uuid_string)
 {
     //Arrange
@@ -278,7 +278,7 @@ TEST_FUNCTION(UUID_from_string_NULL_uuid_string)
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
 }
 
-// Tests_SRS_UUID_09_007: [ If `uuid_string` or `uuid` are NULL, UUID_from_string shall return a non-zero value ]
+// Tests_SRS_UUID_09_007: [ If uuid_string or uuid are NULL, UUID_from_string shall return a non-zero value ]
 TEST_FUNCTION(UUID_from_string_NULL_uuid)
 {
     //Arrange
@@ -294,7 +294,7 @@ TEST_FUNCTION(UUID_from_string_NULL_uuid)
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
 }
 
-// Tests_SRS_UUID_09_008: [ Each pair of digits in `uuid_string`, excluding dashes, shall be read as a single HEX value and saved on the respective position in `uuid` ]
+// Tests_SRS_UUID_09_008: [ Each pair of digits in uuid_string, excluding dashes, shall be read as a single HEX value and saved on the respective position in uuid ]
 // Tests_SRS_UUID_09_010: [ If no failures occur, UUID_from_string shall return zero ]
 TEST_FUNCTION(UUID_from_string_succeed)
 {
@@ -320,7 +320,7 @@ TEST_FUNCTION(UUID_from_string_succeed)
     }
 }
 
-// Tests_SRS_UUID_09_009: [ If `uuid` fails to be generated, UUID_from_string shall return a non-zero value ]
+// Tests_SRS_UUID_09_009: [ If uuid fails to be generated, UUID_from_string shall return a non-zero value ]
 // To be implemented once sscanf mock is implemented.
 
 END_TEST_SUITE(uuid_unittests)
