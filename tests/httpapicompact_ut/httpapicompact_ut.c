@@ -783,7 +783,7 @@ TEST_FUNCTION_CLEANUP(cleans)
 
 /* HTTPAPI_Init */
 
-/*Tests_SRS_HTTPAPI_COMPACT_21_001: [ The httpapi_compact shall implement the methods defined by the `httpapi.h`. ]*/
+/*Tests_SRS_HTTPAPI_COMPACT_21_001: [ The httpapi_compact shall implement the methods defined by the httpapi.h. ]*/
 /*Tests_SRS_HTTPAPI_COMPACT_21_002: [ The httpapi_compact shall support the http requests. ]*/
 /*Tests_SRS_HTTPAPI_COMPACT_21_003: [ The httpapi_compact shall return error codes defined by HTTPAPI_RESULT. ]*/
 /*Tests_SRS_HTTPAPI_COMPACT_21_004: [ The HTTPAPI_Init shall allocate all memory to control the http protocol. ]*/
@@ -3264,7 +3264,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__Execute_request_retry_send_succeed)
     HTTPAPI_Deinit();
 }
 
-/*Tests_SRS_HTTPAPI_COMPACT_21_035: [ The HTTPAPI_ExecuteRequest shall execute resquest for types `GET`, `POST`, `PUT`, `DELETE`, `PATCH`, `HEAD`. ]*/
+/*Tests_SRS_HTTPAPI_COMPACT_21_035: [ The HTTPAPI_ExecuteRequest shall execute resquest for types GET, POST, PUT, DELETE, PATCH, HEAD. ]*/
 /*Tests_SRS_HTTPAPI_COMPACT_21_036: [ The request type shall be provided in the parameter requestType. ]*/
 TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_get_succeed)
 {
@@ -3317,7 +3317,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_get_succeed)
     HTTPAPI_Deinit();
 }
 
-/*Tests_SRS_HTTPAPI_COMPACT_21_035: [ The HTTPAPI_ExecuteRequest shall execute resquest for types `GET`, `POST`, `PUT`, `DELETE`, `PATCH`, `HEAD`. ]*/
+/*Tests_SRS_HTTPAPI_COMPACT_21_035: [ The HTTPAPI_ExecuteRequest shall execute resquest for types GET, POST, PUT, DELETE, PATCH, HEAD. ]*/
 TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_post_succeed)
 {
     /// arrange
@@ -3369,7 +3369,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_post_succeed)
     HTTPAPI_Deinit();
 }
 
-/*Tests_SRS_HTTPAPI_COMPACT_21_035: [ The HTTPAPI_ExecuteRequest shall execute resquest for types `GET`, `POST`, `PUT`, `DELETE`, `PATCH`, `HEAD`. ]*/
+/*Tests_SRS_HTTPAPI_COMPACT_21_035: [ The HTTPAPI_ExecuteRequest shall execute resquest for types GET, POST, PUT, DELETE, PATCH, HEAD. ]*/
 TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_put_succeed)
 {
     /// arrange
@@ -3421,7 +3421,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_put_succeed)
     HTTPAPI_Deinit();
 }
 
-/*Tests_SRS_HTTPAPI_COMPACT_21_035: [ The HTTPAPI_ExecuteRequest shall execute resquest for types `GET`, `POST`, `PUT`, `DELETE`, `PATCH`, `HEAD`. ]*/
+/*Tests_SRS_HTTPAPI_COMPACT_21_035: [ The HTTPAPI_ExecuteRequest shall execute resquest for types GET, POST, PUT, DELETE, PATCH, HEAD. ]*/
 TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_delete_succeed)
 {
     /// arrange
@@ -3473,7 +3473,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_delete_succeed)
     HTTPAPI_Deinit();
 }
 
-/*Tests_SRS_HTTPAPI_COMPACT_21_035: [ The HTTPAPI_ExecuteRequest shall execute resquest for types `GET`, `POST`, `PUT`, `DELETE`, `PATCH`, `HEAD`. ]*/
+/*Tests_SRS_HTTPAPI_COMPACT_21_035: [ The HTTPAPI_ExecuteRequest shall execute resquest for types GET, POST, PUT, DELETE, PATCH, HEAD. ]*/
 TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_patch_succeed)
 {
     /// arrange
@@ -3525,7 +3525,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_patch_succeed)
     HTTPAPI_Deinit();
 }
 
-/*Tests_SRS_HTTPAPI_COMPACT_21_035: [ The HTTPAPI_ExecuteRequest shall execute resquest for types `GET`, `POST`, `PUT`, `DELETE`, `PATCH`, `HEAD`. ]*/
+/*Tests_SRS_HTTPAPI_COMPACT_21_035: [ The HTTPAPI_ExecuteRequest shall execute resquest for types GET, POST, PUT, DELETE, PATCH, HEAD. ]*/
 TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_head_succeed)
 {
     /// arrange

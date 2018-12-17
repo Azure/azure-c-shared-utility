@@ -29,7 +29,7 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_create(const CONSTBUFFER_HANDLE* buff
     CONSTBUFFER_ARRAY_HANDLE result;
 
     if (
-        /* Codes_SRS_CONSTBUFFER_ARRAY_01_012: [ If `buffers` is NULL and `buffer_count` is not 0, `constbuffer_array_create` shall fail and return NULL. ]*/
+        /* Codes_SRS_CONSTBUFFER_ARRAY_01_012: [ If buffers is NULL and buffer_count is not 0, constbuffer_array_create shall fail and return NULL. ]*/
         (buffers == NULL) && (buffer_count != 0)
         )
     {
@@ -38,11 +38,11 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_create(const CONSTBUFFER_HANDLE* buff
     }
     else
     {
-        /* Codes_SRS_CONSTBUFFER_ARRAY_01_009: [ `constbuffer_array_create` shall allocate memory for a new `CONSTBUFFER_ARRAY_HANDLE` that can hold `buffer_count` buffers. ]*/
+        /* Codes_SRS_CONSTBUFFER_ARRAY_01_009: [ constbuffer_array_create shall allocate memory for a new CONSTBUFFER_ARRAY_HANDLE that can hold buffer_count buffers. ]*/
         result = REFCOUNT_TYPE_CREATE_WITH_EXTRA_SIZE(CONSTBUFFER_ARRAY_HANDLE_DATA, buffer_count * sizeof(CONSTBUFFER_HANDLE));
         if (result == NULL)
         {
-            /* Codes_SRS_CONSTBUFFER_ARRAY_01_014: [ If any error occurs, `constbuffer_array_create` shall fail and return NULL. ]*/
+            /* Codes_SRS_CONSTBUFFER_ARRAY_01_014: [ If any error occurs, constbuffer_array_create shall fail and return NULL. ]*/
             LogError("failure in allocating const buffer array");
         }
         else
@@ -50,11 +50,11 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_create(const CONSTBUFFER_HANDLE* buff
             uint32_t i;
             for (i = 0; i < buffer_count; i++)
             {
-                /* Codes_SRS_CONSTBUFFER_ARRAY_01_010: [ `constbuffer_array_create` shall clone the buffers in `buffers` and store them. ]*/
+                /* Codes_SRS_CONSTBUFFER_ARRAY_01_010: [ constbuffer_array_create shall clone the buffers in buffers and store them. ]*/
                 result->buffers[i] = CONSTBUFFER_Clone(buffers[i]);
                 if (result->buffers[i] == NULL)
                 {
-                    /* Codes_SRS_CONSTBUFFER_ARRAY_01_014: [ If any error occurs, `constbuffer_array_create` shall fail and return NULL. ]*/
+                    /* Codes_SRS_CONSTBUFFER_ARRAY_01_014: [ If any error occurs, constbuffer_array_create shall fail and return NULL. ]*/
                     LogError("Failed cloning buffer at index %" PRIu32, i);
                     break;
                 }
@@ -74,7 +74,7 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_create(const CONSTBUFFER_HANDLE* buff
             {
                 result->nBuffers = buffer_count;
 
-                /* Codes_SRS_CONSTBUFFER_ARRAY_01_011: [ On success `constbuffer_array_create` shall return a non-NULL handle. ]*/
+                /* Codes_SRS_CONSTBUFFER_ARRAY_01_011: [ On success constbuffer_array_create shall return a non-NULL handle. ]*/
                 goto all_ok;
             }
 
@@ -96,7 +96,7 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_create_empty(void)
     result = REFCOUNT_TYPE_CREATE(CONSTBUFFER_ARRAY_HANDLE_DATA); /*explicit 0*/
     if (result == NULL)
     {
-        /*Codes_SRS_CONSTBUFFER_ARRAY_02_001: [ If are any failure is encountered, `constbuffer_array_create_empty` shall fail and return `NULL`. ]*/
+        /*Codes_SRS_CONSTBUFFER_ARRAY_02_001: [ If are any failure is encountered, constbuffer_array_create_empty shall fail and return NULL. ]*/
         LogError("failure allocating const buffer array");
         /*return as is*/
     }
@@ -213,7 +213,7 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_remove_front(CONSTBUFFER_ARRAY_HANDLE
             }
             else
             {
-                /* Codes_SRS_CONSTBUFFER_ARRAY_01_001: [ `constbuffer_array_remove_front` shall inc_ref the removed buffer. ]*/
+                /* Codes_SRS_CONSTBUFFER_ARRAY_01_001: [ constbuffer_array_remove_front shall inc_ref the removed buffer. ]*/
                 CONSTBUFFER_HANDLE clonedFrontBuffer = CONSTBUFFER_Clone(constbuffer_array_handle->buffers[0]);
                 if (clonedFrontBuffer == NULL)
                 {
@@ -271,9 +271,9 @@ int constbuffer_array_get_buffer_count(CONSTBUFFER_ARRAY_HANDLE constbuffer_arra
     int result;
 
     if (
-        /* Codes_SRS_CONSTBUFFER_ARRAY_01_003: [ If `constbuffer_array_handle` is NULL, `constbuffer_array_get_buffer_count` shall fail and return a non-zero value. ]*/
+        /* Codes_SRS_CONSTBUFFER_ARRAY_01_003: [ If constbuffer_array_handle is NULL, constbuffer_array_get_buffer_count shall fail and return a non-zero value. ]*/
         (constbuffer_array_handle == NULL) ||
-        /* Codes_SRS_CONSTBUFFER_ARRAY_01_004: [ If `buffer_count` is NULL, `constbuffer_array_get_buffer_count` shall fail and return a non-zero value. ]*/
+        /* Codes_SRS_CONSTBUFFER_ARRAY_01_004: [ If buffer_count is NULL, constbuffer_array_get_buffer_count shall fail and return a non-zero value. ]*/
         (buffer_count == NULL)
         )
     {
@@ -283,7 +283,7 @@ int constbuffer_array_get_buffer_count(CONSTBUFFER_ARRAY_HANDLE constbuffer_arra
     }
     else
     {
-        /* Codes_SRS_CONSTBUFFER_ARRAY_01_002: [ On success, `constbuffer_array_get_buffer_count` shall return 0 and write the buffer count in `buffer_count`. ]*/
+        /* Codes_SRS_CONSTBUFFER_ARRAY_01_002: [ On success, constbuffer_array_get_buffer_count shall return 0 and write the buffer count in buffer_count. ]*/
         *buffer_count = constbuffer_array_handle->nBuffers;
 
         result = 0;
@@ -297,9 +297,9 @@ CONSTBUFFER_HANDLE constbuffer_array_get_buffer(CONSTBUFFER_ARRAY_HANDLE constbu
     CONSTBUFFER_HANDLE result;
 
     if (
-        /* Codes_SRS_CONSTBUFFER_ARRAY_01_007: [ If `constbuffer_array_handle` is NULL, `constbuffer_array_get_buffer` shall fail and return NULL. ]*/
+        /* Codes_SRS_CONSTBUFFER_ARRAY_01_007: [ If constbuffer_array_handle is NULL, constbuffer_array_get_buffer shall fail and return NULL. ]*/
         (constbuffer_array_handle == NULL) ||
-        /* Codes_SRS_CONSTBUFFER_ARRAY_01_008: [ If `buffer_index` is greater or equal to the number of buffers in the array, `constbuffer_array_get_buffer` shall fail and return NULL. ]*/
+        /* Codes_SRS_CONSTBUFFER_ARRAY_01_008: [ If buffer_index is greater or equal to the number of buffers in the array, constbuffer_array_get_buffer shall fail and return NULL. ]*/
         (buffer_index >= constbuffer_array_handle->nBuffers)
         )
     {
@@ -312,12 +312,12 @@ CONSTBUFFER_HANDLE constbuffer_array_get_buffer(CONSTBUFFER_ARRAY_HANDLE constbu
         result = CONSTBUFFER_Clone(constbuffer_array_handle->buffers[buffer_index]);
         if (result == NULL)
         {
-            /* Codes_SRS_CONSTBUFFER_ARRAY_01_015: [ If any error occurs, `constbuffer_array_get_buffer` shall fail and return NULL. ]*/
+            /* Codes_SRS_CONSTBUFFER_ARRAY_01_015: [ If any error occurs, constbuffer_array_get_buffer shall fail and return NULL. ]*/
             LogError("Cloning CONST buffer failed");
         }
         else
         {
-            /* Codes_SRS_CONSTBUFFER_ARRAY_01_005: [ On success, `constbuffer_array_get_buffer` shall return a non-NULL handle to the `buffer_index`-th const buffer in the array. ]*/
+            /* Codes_SRS_CONSTBUFFER_ARRAY_01_005: [ On success, constbuffer_array_get_buffer shall return a non-NULL handle to the buffer_index-th const buffer in the array. ]*/
             goto all_ok;
         }
     }
@@ -332,9 +332,9 @@ const CONSTBUFFER* constbuffer_array_get_buffer_content(CONSTBUFFER_ARRAY_HANDLE
 {
     const CONSTBUFFER* result;
     if (
-        /* Codes_SRS_CONSTBUFFER_ARRAY_01_023: [ If `constbuffer_array_handle` is NULL, `constbuffer_array_get_buffer_content` shall fail and return NULL. ]*/
+        /* Codes_SRS_CONSTBUFFER_ARRAY_01_023: [ If constbuffer_array_handle is NULL, constbuffer_array_get_buffer_content shall fail and return NULL. ]*/
         (constbuffer_array_handle == NULL) ||
-        /* Codes_SRS_CONSTBUFFER_ARRAY_01_024: [ If `buffer_index` is greater or equal to the number of buffers in the array, `constbuffer_array_get_buffer_content` shall fail and return NULL. ]*/
+        /* Codes_SRS_CONSTBUFFER_ARRAY_01_024: [ If buffer_index is greater or equal to the number of buffers in the array, constbuffer_array_get_buffer_content shall fail and return NULL. ]*/
         (buffer_index >= constbuffer_array_handle->nBuffers)
         )
     {
@@ -344,7 +344,7 @@ const CONSTBUFFER* constbuffer_array_get_buffer_content(CONSTBUFFER_ARRAY_HANDLE
     }
     else
     {
-        /* Codes_SRS_CONSTBUFFER_ARRAY_01_025: [ Otherwise `constbuffer_array_get_buffer_content` shall call `CONSTBUFFER_GetContent` for the `buffer_index`-th buffer and return its result. ]*/
+        /* Codes_SRS_CONSTBUFFER_ARRAY_01_025: [ Otherwise constbuffer_array_get_buffer_content shall call CONSTBUFFER_GetContent for the buffer_index-th buffer and return its result. ]*/
         result = CONSTBUFFER_GetContent(constbuffer_array_handle->buffers[buffer_index]);
     }
 
@@ -355,12 +355,12 @@ void constbuffer_array_inc_ref(CONSTBUFFER_ARRAY_HANDLE constbuffer_array_handle
 {
     if (constbuffer_array_handle == NULL)
     {
-        /* Codes_SRS_CONSTBUFFER_ARRAY_01_017: [ If `constbuffer_array_handle` is `NULL` then `constbuffer_array_inc_ref` shall return. ]*/
+        /* Codes_SRS_CONSTBUFFER_ARRAY_01_017: [ If constbuffer_array_handle is NULL then constbuffer_array_inc_ref shall return. ]*/
         LogError("invalid argument CONSTBUFFER_ARRAY_HANDLE constbuffer_array_handle=%p", constbuffer_array_handle);
     }
     else
     {
-        /* Codes_SRS_CONSTBUFFER_ARRAY_01_018: [ Otherwise `constbuffer_array_inc_ref` shall increment the reference count for `constbuffer_array_handle`. ]*/
+        /* Codes_SRS_CONSTBUFFER_ARRAY_01_018: [ Otherwise constbuffer_array_inc_ref shall increment the reference count for constbuffer_array_handle. ]*/
         INC_REF(CONSTBUFFER_ARRAY_HANDLE_DATA, constbuffer_array_handle);
     }
 }
@@ -374,12 +374,12 @@ void constbuffer_array_dec_ref(CONSTBUFFER_ARRAY_HANDLE constbuffer_array_handle
     }
     else
     {
-        /* Codes_SRS_CONSTBUFFER_ARRAY_01_016: [ Otherwise `constbuffer_array_dec_ref` shall decrement the reference count for `constbuffer_array_handle`. ]*/
+        /* Codes_SRS_CONSTBUFFER_ARRAY_01_016: [ Otherwise constbuffer_array_dec_ref shall decrement the reference count for constbuffer_array_handle. ]*/
         if (DEC_REF(CONSTBUFFER_ARRAY_HANDLE_DATA, constbuffer_array_handle) == DEC_RETURN_ZERO)
         {
             uint32_t i;
 
-            /*Codes_SRS_CONSTBUFFER_ARRAY_02_038: [ If the reference count reaches 0, `constbuffer_array_dec_ref` shall free all used resources. ]*/
+            /*Codes_SRS_CONSTBUFFER_ARRAY_02_038: [ If the reference count reaches 0, constbuffer_array_dec_ref shall free all used resources. ]*/
             for (i = 0; i < constbuffer_array_handle->nBuffers; i++)
             {
                 CONSTBUFFER_Destroy(constbuffer_array_handle->buffers[i]);
@@ -395,9 +395,9 @@ int constbuffer_array_get_all_buffers_size(CONSTBUFFER_ARRAY_HANDLE constbuffer_
     int result;
 
     if (
-        /* Codes_SRS_CONSTBUFFER_ARRAY_01_019: [ If `constbuffer_array_handle` is NULL, `constbuffer_array_get_all_buffers_size` shall fail and return a non-zero value. ]*/
+        /* Codes_SRS_CONSTBUFFER_ARRAY_01_019: [ If constbuffer_array_handle is NULL, constbuffer_array_get_all_buffers_size shall fail and return a non-zero value. ]*/
         (constbuffer_array_handle == NULL) ||
-        /* Codes_SRS_CONSTBUFFER_ARRAY_01_020: [ If `all_buffers_size` is NULL, `constbuffer_array_get_all_buffers_size` shall fail and return a non-zero value. ]*/
+        /* Codes_SRS_CONSTBUFFER_ARRAY_01_020: [ If all_buffers_size is NULL, constbuffer_array_get_all_buffers_size shall fail and return a non-zero value. ]*/
         (all_buffers_size == NULL)
         )
     {
@@ -429,13 +429,13 @@ int constbuffer_array_get_all_buffers_size(CONSTBUFFER_ARRAY_HANDLE constbuffer_
 
         if (i < constbuffer_array_handle->nBuffers)
         {
-            /* Codes_SRS_CONSTBUFFER_ARRAY_01_021: [ If summing up the sizes results in an `uint32_t` overflow, shall fail and return a non-zero value. ]*/
+            /* Codes_SRS_CONSTBUFFER_ARRAY_01_021: [ If summing up the sizes results in an uint32_t overflow, shall fail and return a non-zero value. ]*/
             LogError("Overflow in computing all buffers size");
             result = __FAILURE__;
         }
         else
         {
-            /* Codes_SRS_CONSTBUFFER_ARRAY_01_022: [ Otherwise `constbuffer_array_get_all_buffers_size` shall write in `all_buffers_size` the total size of all buffers in the array and return 0. ]*/
+            /* Codes_SRS_CONSTBUFFER_ARRAY_01_022: [ Otherwise constbuffer_array_get_all_buffers_size shall write in all_buffers_size the total size of all buffers in the array and return 0. ]*/
             *all_buffers_size = total_size;
             result = 0;
         }

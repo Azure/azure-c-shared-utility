@@ -75,8 +75,8 @@ BEGIN_TEST_SUITE(refcount_unittests)
 
     /* REFCOUNT_TYPE_CREATE */
 
-    /* Tests_SRS_REFCOUNT_01_002: [ `REFCOUNT_TYPE_CREATE` shall allocate memory for the type that is ref counted. ]*/
-    /* Tests_SRS_REFCOUNT_01_003: [ On success it shall return a non-NULL handle to the allocated ref counted type `type`. ]*/
+    /* Tests_SRS_REFCOUNT_01_002: [ REFCOUNT_TYPE_CREATE shall allocate memory for the type that is ref counted. ]*/
+    /* Tests_SRS_REFCOUNT_01_003: [ On success it shall return a non-NULL handle to the allocated ref counted type type. ]*/
     TEST_FUNCTION(refcount_create_returns_non_NULL)
     {
         ///arrange
@@ -94,7 +94,7 @@ BEGIN_TEST_SUITE(refcount_unittests)
         Pos_Destroy(p);
     }
 
-    /* Tests_SRS_REFCOUNT_01_004: [ If any error occurrs, `REFCOUNT_TYPE_CREATE` shall return NULL. ]*/
+    /* Tests_SRS_REFCOUNT_01_004: [ If any error occurrs, REFCOUNT_TYPE_CREATE shall return NULL. ]*/
     TEST_FUNCTION(when_malloc_fails_refcount_create_fails)
     {
         ///arrange
@@ -112,8 +112,8 @@ BEGIN_TEST_SUITE(refcount_unittests)
 
     /* REFCOUNT_TYPE_CREATE_WITH_EXTRA_SIZE */
 
-    /* Tests_SRS_REFCOUNT_01_005: [ `REFCOUNT_TYPE_CREATE_WITH_EXTRA_SIZE` shall allocate memory for the type that is ref counted (`type`) plus extra memory enough to hold `size` bytes. ]*/
-    /* Tests_SRS_REFCOUNT_01_006: [ On success it shall return a non-NULL handle to the allocated ref counted type `type`. ]*/
+    /* Tests_SRS_REFCOUNT_01_005: [ REFCOUNT_TYPE_CREATE_WITH_EXTRA_SIZE shall allocate memory for the type that is ref counted (type) plus extra memory enough to hold size bytes. ]*/
+    /* Tests_SRS_REFCOUNT_01_006: [ On success it shall return a non-NULL handle to the allocated ref counted type type. ]*/
     TEST_FUNCTION(refcount_create_with_extra_size_returns_non_NULL)
     {
         ///arrange
@@ -131,7 +131,7 @@ BEGIN_TEST_SUITE(refcount_unittests)
         Pos_Destroy(p);
     }
 
-    /* Tests_SRS_REFCOUNT_01_007: [ If any error occurrs, `REFCOUNT_TYPE_CREATE_WITH_EXTRA_SIZE` shall return NULL. ]*/
+    /* Tests_SRS_REFCOUNT_01_007: [ If any error occurrs, REFCOUNT_TYPE_CREATE_WITH_EXTRA_SIZE shall return NULL. ]*/
     TEST_FUNCTION(when_malloc_fails_refcount_create_with_extra_size_also_fails)
     {
         ///arrange
@@ -149,7 +149,7 @@ BEGIN_TEST_SUITE(refcount_unittests)
 
     /* REFCOUNT_TYPE_DESTROY */
 
-    /* Tests_SRS_REFCOUNT_01_008: [ `REFCOUNT_TYPE_DESTROY` shall free the memory allocated by `REFCOUNT_TYPE_CREATE` or `REFCOUNT_TYPE_CREATE_WITH_EXTRA_SIZE`. ]*/
+    /* Tests_SRS_REFCOUNT_01_008: [ REFCOUNT_TYPE_DESTROY shall free the memory allocated by REFCOUNT_TYPE_CREATE or REFCOUNT_TYPE_CREATE_WITH_EXTRA_SIZE. ]*/
     TEST_FUNCTION(refcount_DEC_REF_after_create_says_we_should_free)
     {
         ///arrange
@@ -168,7 +168,7 @@ BEGIN_TEST_SUITE(refcount_unittests)
         //cleanup
     }
 
-    /* Tests_SRS_REFCOUNT_01_009: [ If `counted_type` is NULL, `REFCOUNT_TYPE_DESTROY` shall return. ]*/
+    /* Tests_SRS_REFCOUNT_01_009: [ If counted_type is NULL, REFCOUNT_TYPE_DESTROY shall return. ]*/
     TEST_FUNCTION(refcount_DESTROY_with_NULL_returns)
     {
         ///arrange

@@ -35,7 +35,7 @@ static size_t* get_delimiters_lengths(const char** delimiters, size_t n_delims)
         {
             if (delimiters[i] == NULL)
             {
-                // Codes_SRS_STRING_TOKENIZER_09_002: [ If any of the strings in `delimiters` are NULL, the function shall return NULL ]
+                // Codes_SRS_STRING_TOKENIZER_09_002: [ If any of the strings in delimiters are NULL, the function shall return NULL ]
                 LogError("Invalid argument (delimiter %lu is NULL)", (unsigned long)i);
                 free(result);
                 result = NULL;
@@ -78,12 +78,12 @@ static int get_next_token(STRING_TOKEN* token, const char** delimiters, size_t n
 
             if (token->delimiter_start == NULL)
             {
-                // Codes_SRS_STRING_TOKENIZER_09_005: [ The source string shall be split in a token starting from the beginning of `source` up to occurrence of any one of the `demiliters`, whichever occurs first in the order provided ]
+                // Codes_SRS_STRING_TOKENIZER_09_005: [ The source string shall be split in a token starting from the beginning of source up to occurrence of any one of the demiliters, whichever occurs first in the order provided ]
                 new_token_start = (char*)token->source;
             }
             else
             {
-                // Codes_SRS_STRING_TOKENIZER_09_010: [ The next token shall be selected starting from the position in `source` right after the previous delimiter up to occurrence of any one of `demiliters`, whichever occurs first in the order provided ]
+                // Codes_SRS_STRING_TOKENIZER_09_010: [ The next token shall be selected starting from the position in source right after the previous delimiter up to occurrence of any one of demiliters, whichever occurs first in the order provided ]
                 new_token_start = token->delimiter_start + strlen(token->delimiter);
             }
 
@@ -127,13 +127,13 @@ static int get_next_token(STRING_TOKEN* token, const char** delimiters, size_t n
                 current_pos++;
             }
 
-            // Codes_SRS_STRING_TOKENIZER_09_006: [ If the source string does not have any of the `demiliters`, the resulting token shall be the entire `source` string ]
-            // Codes_SRS_STRING_TOKENIZER_09_011: [ If the source string, starting right after the position of the last delimiter found, does not have any of the `demiliters`, the resulting token shall be the entire remaining of the `source` string ]
+            // Codes_SRS_STRING_TOKENIZER_09_006: [ If the source string does not have any of the demiliters, the resulting token shall be the entire source string ]
+            // Codes_SRS_STRING_TOKENIZER_09_011: [ If the source string, starting right after the position of the last delimiter found, does not have any of the demiliters, the resulting token shall be the entire remaining of the source string ]
             if (current_pos == stop_pos)
             {
                 token->token_start = new_token_start;
                 token->delimiter_start = NULL;
-                // Codes_SRS_STRING_TOKENIZER_09_019: [ If the current token extends to the end of `source`, the function shall return NULL ]
+                // Codes_SRS_STRING_TOKENIZER_09_019: [ If the current token extends to the end of source, the function shall return NULL ]
                 token->delimiter = NULL;
             }
 
@@ -149,7 +149,7 @@ STRING_TOKEN_HANDLE StringToken_GetFirst(const char* source, size_t length, cons
 {
     STRING_TOKEN* result;
 
-    // Codes_SRS_STRING_TOKENIZER_09_001: [ If `source` or `delimiters` are NULL, or `n_delims` is zero, the function shall return NULL ]
+    // Codes_SRS_STRING_TOKENIZER_09_001: [ If source or delimiters are NULL, or n_delims is zero, the function shall return NULL ]
     if (source == NULL || delimiters == NULL || n_delims == 0)
     {
         LogError("Invalid argument (source=%p, delimiters=%p, n_delims=%lu)", source, delimiters, (unsigned long)n_delims);
@@ -186,7 +186,7 @@ bool StringToken_GetNext(STRING_TOKEN_HANDLE token, const char** delimiters, siz
 {
     bool result;
 
-    // Codes_SRS_STRING_TOKENIZER_09_008: [ If `token` or `delimiters` are NULL, or `n_delims` is zero, the function shall return false ]
+    // Codes_SRS_STRING_TOKENIZER_09_008: [ If token or delimiters are NULL, or n_delims is zero, the function shall return false ]
     if (token == NULL || delimiters == NULL || n_delims == 0)
     {
         LogError("Invalid argument (token=%p, delimiters=%p, n_delims=%lu)", token, delimiters, (unsigned long)n_delims);
@@ -194,7 +194,7 @@ bool StringToken_GetNext(STRING_TOKEN_HANDLE token, const char** delimiters, siz
     }
     else if (get_next_token(token, delimiters, n_delims) != 0)
     {
-        // Codes_SRS_STRING_TOKENIZER_09_009: [ If the previous token already extended to the end of `source`, the function shall return false ]
+        // Codes_SRS_STRING_TOKENIZER_09_009: [ If the previous token already extended to the end of source, the function shall return false ]
         result = false;
     }
     else
@@ -210,7 +210,7 @@ const char* StringToken_GetValue(STRING_TOKEN_HANDLE token)
 {
     const char* result;
 
-    // Codes_SRS_STRING_TOKENIZER_09_013: [ If `token` is NULL the function shall return NULL ]
+    // Codes_SRS_STRING_TOKENIZER_09_013: [ If token is NULL the function shall return NULL ]
     if (token == NULL)
     {
         LogError("Invalig argument (token is NULL)");
@@ -228,7 +228,7 @@ const char* StringToken_GetValue(STRING_TOKEN_HANDLE token)
     }
     else
     {
-        // Codes_SRS_STRING_TOKENIZER_09_014: [ The function shall return the pointer to the position in `source` where the current token starts. ]
+        // Codes_SRS_STRING_TOKENIZER_09_014: [ The function shall return the pointer to the position in source where the current token starts. ]
         result = token->token_start;
     }
 
@@ -239,7 +239,7 @@ size_t StringToken_GetLength(STRING_TOKEN_HANDLE token)
 {
     size_t result;
 
-    // Codes_SRS_STRING_TOKENIZER_09_015: [ If `token` is NULL the function shall return zero ]
+    // Codes_SRS_STRING_TOKENIZER_09_015: [ If token is NULL the function shall return zero ]
     if (token == NULL)
     {
         LogError("Invalig argument (token is NULL)");
@@ -268,13 +268,13 @@ const char* StringToken_GetDelimiter(STRING_TOKEN_HANDLE token)
 
     if (token == NULL)
     {
-        // Codes_SRS_STRING_TOKENIZER_09_017: [ If `token` is NULL the function shall return NULL ]
+        // Codes_SRS_STRING_TOKENIZER_09_017: [ If token is NULL the function shall return NULL ]
         LogError("Invalig argument (token is NULL)");
         result = NULL;
     }
     else
     {
-        // Codes_SRS_STRING_TOKENIZER_09_018: [ The function shall return a pointer to the delimiter that defined the current token, as passed to the previous call to `StringToken_GetNext()` or `StringToken_GetFirst()` ]
+        // Codes_SRS_STRING_TOKENIZER_09_018: [ The function shall return a pointer to the delimiter that defined the current token, as passed to the previous call to StringToken_GetNext() or StringToken_GetFirst() ]
         result = token->delimiter;
     }
 
@@ -285,7 +285,7 @@ int StringToken_Split(const char* source, size_t length, const char** delimiters
 {
     int result;
 
-    // Codes_SRS_STRING_TOKENIZER_09_022: [ If `source`, `delimiters`, `token` or `token_count` are NULL, or `n_delims` is zero the function shall return a non-zero value ]
+    // Codes_SRS_STRING_TOKENIZER_09_022: [ If source, delimiters, token or token_count are NULL, or n_delims is zero the function shall return a non-zero value ]
     if (source == NULL || delimiters == NULL || n_delims == 0 || tokens == NULL || token_count == NULL)
     {
         LogError("Invalid argument (source=%p, delimiters=%p, n_delims=%lu, tokens=%p, token_count=%p)", source, delimiters, (unsigned long)n_delims, tokens, token_count);
@@ -295,7 +295,7 @@ int StringToken_Split(const char* source, size_t length, const char** delimiters
     {
         STRING_TOKEN_HANDLE tokenizer;
 
-        // Codes_SRS_STRING_TOKENIZER_09_023: [ `source` (up to `length`) shall be split into individual tokens separated by any of `delimiters` ]
+        // Codes_SRS_STRING_TOKENIZER_09_023: [ source (up to length) shall be split into individual tokens separated by any of delimiters ]
         tokenizer = StringToken_GetFirst(source, length, delimiters, n_delims);
 
         *token_count = 0;
@@ -319,11 +319,11 @@ int StringToken_Split(const char* source, size_t length, const char** delimiters
                     result = __FAILURE__;
                     break;
                 }
-                // Codes_SRS_STRING_TOKENIZER_09_024: [ All NULL tokens shall be ommited if `include_empty` is not TRUE ]
+                // Codes_SRS_STRING_TOKENIZER_09_024: [ All NULL tokens shall be ommited if include_empty is not TRUE ]
                 else if (tokenValue != NULL || include_empty)
                 {
                     char** temp_token;
-                    // Codes_SRS_STRING_TOKENIZER_09_025: [ The tokens shall be stored in `tokens`, and their count stored in `token_count` ]
+                    // Codes_SRS_STRING_TOKENIZER_09_025: [ The tokens shall be stored in tokens, and their count stored in token_count ]
                     *token_count = (*token_count) + 1;
 
                     if ((temp_token = (char**)realloc(*tokens, sizeof(char*) * (*token_count))) == NULL)
@@ -379,7 +379,7 @@ void StringToken_Destroy(STRING_TOKEN_HANDLE token)
 {
     if (token == NULL)
     {
-        // Codes_SRS_STRING_TOKENIZER_09_020: [ If `token` is NULL the function shall return ]
+        // Codes_SRS_STRING_TOKENIZER_09_020: [ If token is NULL the function shall return ]
         LogError("Invalig argument (token is NULL)");
     }
     else

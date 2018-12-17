@@ -714,8 +714,8 @@ TEST_FUNCTION(connectionstringparser_parse_from_char_with_NULL_connection_string
 }
 
 /* Tests_SRS_CONNECTIONSTRINGPARSER_21_022: [connectionstringparser_splitHostName_from_char shall split the provided hostName in name and suffix.]*/
-/* Tests_SRS_CONNECTIONSTRINGPARSER_21_023: [connectionstringparser_splitHostName_from_char shall copy all characters, from the beginning of the hostName to the first `.` to the nameString.]*/
-/* Tests_SRS_CONNECTIONSTRINGPARSER_21_024: [connectionstringparser_splitHostName_from_char shall copy all characters, from the first `.` to the end of the hostName, to the suffixString.]*/
+/* Tests_SRS_CONNECTIONSTRINGPARSER_21_023: [connectionstringparser_splitHostName_from_char shall copy all characters, from the beginning of the hostName to the first . to the nameString.]*/
+/* Tests_SRS_CONNECTIONSTRINGPARSER_21_024: [connectionstringparser_splitHostName_from_char shall copy all characters, from the first . to the end of the hostName, to the suffixString.]*/
 /* Tests_SRS_CONNECTIONSTRINGPARSER_21_025: [If connectionstringparser_splitHostName_from_char get success splitting the hostName, it shall return 0.]*/
 TEST_FUNCTION(connectionstringparser_splitHostName_from_char_with_success)
 {

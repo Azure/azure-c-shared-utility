@@ -22,11 +22,11 @@ typedef struct TICK_COUNTER_INSTANCE_TAG
 
 TICK_COUNTER_HANDLE tickcounter_create(void)
 {
-    /* Codes_SRS_TICKCOUNTER_FREERTOS_30_003: [ `tickcounter_create` shall allocate and initialize an internally-defined TICK_COUNTER_INSTANCE structure and return its pointer on success.] */
+    /* Codes_SRS_TICKCOUNTER_FREERTOS_30_003: [ tickcounter_create shall allocate and initialize an internally-defined TICK_COUNTER_INSTANCE structure and return its pointer on success.] */
     TICK_COUNTER_INSTANCE* result = (TICK_COUNTER_INSTANCE*)malloc(sizeof(TICK_COUNTER_INSTANCE));
     if (result == NULL)
     {
-        /* Codes_SRS_TICKCOUNTER_FREERTOS_30_004: [ If allocation of the internally-defined TICK_COUNTER_INSTANCE structure fails,  `tickcounter_create` shall return NULL.] */
+        /* Codes_SRS_TICKCOUNTER_FREERTOS_30_004: [ If allocation of the internally-defined TICK_COUNTER_INSTANCE structure fails,  tickcounter_create shall return NULL.] */
         LogError("Failed creating tick counter");
     }
     else

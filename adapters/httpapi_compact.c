@@ -20,7 +20,7 @@
 #define snprintf _snprintf
 #endif
 
-/*Codes_SRS_HTTPAPI_COMPACT_21_001: [ The httpapi_compact shall implement the methods defined by the `httpapi.h`. ]*/
+/*Codes_SRS_HTTPAPI_COMPACT_21_001: [ The httpapi_compact shall implement the methods defined by the httpapi.h. ]*/
 /*Codes_SRS_HTTPAPI_COMPACT_21_002: [ The httpapi_compact shall support the http requests. ]*/
 /*Codes_SRS_HTTPAPI_COMPACT_21_003: [ The httpapi_compact shall return error codes defined by HTTPAPI_RESULT. ]*/
 #include "azure_c_shared_utility/httpapi.h"
@@ -816,7 +816,7 @@ static HTTPAPI_RESULT conn_send_all(HTTP_HANDLE_DATA* http_instance, const unsig
     return result;
 }
 
-/*Codes_SRS_HTTPAPI_COMPACT_21_035: [ The HTTPAPI_ExecuteRequest shall execute resquest for types `GET`, `POST`, `PUT`, `DELETE`, `PATCH`, `HEAD`. ]*/
+/*Codes_SRS_HTTPAPI_COMPACT_21_035: [ The HTTPAPI_ExecuteRequest shall execute resquest for types GET, POST, PUT, DELETE, PATCH, HEAD. ]*/
 const char httpapiRequestString[6][7] = { "GET", "POST", "PUT", "DELETE", "PATCH", "HEAD" };
 const char* get_request_type(HTTPAPI_REQUEST_TYPE requestType)
 {

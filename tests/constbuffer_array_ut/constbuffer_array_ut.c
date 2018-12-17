@@ -129,9 +129,9 @@ static void constbuffer_array_create_empty_inert_path(void)
 
 /* constbuffer_array_create */
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_01_009: [ `constbuffer_array_create` shall allocate memory for a new `CONSTBUFFER_ARRAY_HANDLE` that can hold `buffer_count` buffers. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_01_010: [ `constbuffer_array_create` shall clone the buffers in `buffers` and store them. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_01_011: [ On success `constbuffer_array_create` shall return a non-NULL handle. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_009: [ constbuffer_array_create shall allocate memory for a new CONSTBUFFER_ARRAY_HANDLE that can hold buffer_count buffers. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_010: [ constbuffer_array_create shall clone the buffers in buffers and store them. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_011: [ On success constbuffer_array_create shall return a non-NULL handle. ]*/
 TEST_FUNCTION(constbuffer_array_create_succeeds)
 {
     ///arrange
@@ -156,7 +156,7 @@ TEST_FUNCTION(constbuffer_array_create_succeeds)
     constbuffer_array_dec_ref(constbuffer_array);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_01_012: [ If `buffers` is NULL and `buffer_count` is not 0, `constbuffer_array_create` shall fail and return NULL. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_012: [ If buffers is NULL and buffer_count is not 0, constbuffer_array_create shall fail and return NULL. ]*/
 TEST_FUNCTION(constbuffer_array_create_with_NULL_buffers_fails)
 {
     ///arrange
@@ -174,9 +174,9 @@ TEST_FUNCTION(constbuffer_array_create_with_NULL_buffers_fails)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_01_009: [ `constbuffer_array_create` shall allocate memory for a new `CONSTBUFFER_ARRAY_HANDLE` that can hold `buffer_count` buffers. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_01_010: [ `constbuffer_array_create` shall clone the buffers in `buffers` and store them. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_01_011: [ On success `constbuffer_array_create` shall return a non-NULL handle. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_009: [ constbuffer_array_create shall allocate memory for a new CONSTBUFFER_ARRAY_HANDLE that can hold buffer_count buffers. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_010: [ constbuffer_array_create shall clone the buffers in buffers and store them. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_011: [ On success constbuffer_array_create shall return a non-NULL handle. ]*/
 TEST_FUNCTION(constbuffer_array_create_with_0_buffer_count_succeeds)
 {
     ///arrange
@@ -198,7 +198,7 @@ TEST_FUNCTION(constbuffer_array_create_with_0_buffer_count_succeeds)
     constbuffer_array_dec_ref(constbuffer_array);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_01_014: [ If any error occurs, `constbuffer_array_create` shall fail and return NULL. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_014: [ If any error occurs, constbuffer_array_create shall fail and return NULL. ]*/
 TEST_FUNCTION(when_underlying_calls_fail_constbuffer_array_create_fails)
 {
     ///arrange
@@ -249,7 +249,7 @@ TEST_FUNCTION(constbuffer_array_create_empty_succeeds)
     constbuffer_array_dec_ref(constbuffer_array);
 }
 
-/*Tests_SRS_CONSTBUFFER_ARRAY_02_001: [ If are any failure is encountered, `constbuffer_array_create_empty` shall fail and return `NULL`. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_02_001: [ If are any failure is encountered, constbuffer_array_create_empty shall fail and return NULL. ]*/
 TEST_FUNCTION(constbuffer_array_create_empty_unhappy_paths)
 {
     ///arrange
@@ -646,7 +646,7 @@ TEST_FUNCTION(constbuffer_array_remove_front_unhappy_paths)
 
 /* constbuffer_array_get_buffer_count */
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_01_002: [ On success, `constbuffer_array_get_buffer_count` shall return 0 and write the buffer count in `buffer_count`. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_002: [ On success, constbuffer_array_get_buffer_count shall return 0 and write the buffer count in buffer_count. ]*/
 TEST_FUNCTION(constbuffer_array_get_buffer_count_returns_0_for_an_empty_array)
 {
     // arrange
@@ -665,7 +665,7 @@ TEST_FUNCTION(constbuffer_array_get_buffer_count_returns_0_for_an_empty_array)
     constbuffer_array_dec_ref(constbuffer_array);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_01_002: [ On success, `constbuffer_array_get_buffer_count` shall return 0 and write the buffer count in `buffer_count`. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_002: [ On success, constbuffer_array_get_buffer_count shall return 0 and write the buffer count in buffer_count. ]*/
 TEST_FUNCTION(constbuffer_array_get_buffer_count_after_add_on_empty_array_yields_1)
 {
     // arrange
@@ -686,7 +686,7 @@ TEST_FUNCTION(constbuffer_array_get_buffer_count_after_add_on_empty_array_yields
     constbuffer_array_dec_ref(constbuffer_array);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_01_002: [ On success, `constbuffer_array_get_buffer_count` shall return 0 and write the buffer count in `buffer_count`. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_002: [ On success, constbuffer_array_get_buffer_count shall return 0 and write the buffer count in buffer_count. ]*/
 TEST_FUNCTION(constbuffer_array_get_buffer_count_on_a_1_buffer_array_yields_1)
 {
     // arrange
@@ -712,7 +712,7 @@ TEST_FUNCTION(constbuffer_array_get_buffer_count_on_a_1_buffer_array_yields_1)
     constbuffer_array_dec_ref(constbuffer_array);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_01_002: [ On success, `constbuffer_array_get_buffer_count` shall return 0 and write the buffer count in `buffer_count`. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_002: [ On success, constbuffer_array_get_buffer_count shall return 0 and write the buffer count in buffer_count. ]*/
 TEST_FUNCTION(constbuffer_array_get_buffer_count_on_a_2_buffer_array_yields_2)
 {
     // arrange
@@ -739,7 +739,7 @@ TEST_FUNCTION(constbuffer_array_get_buffer_count_on_a_2_buffer_array_yields_2)
     constbuffer_array_dec_ref(constbuffer_array);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_01_003: [ If `constbuffer_array_handle` is NULL, `constbuffer_array_get_buffer_count` shall fail and return a non-zero value. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_003: [ If constbuffer_array_handle is NULL, constbuffer_array_get_buffer_count shall fail and return a non-zero value. ]*/
 TEST_FUNCTION(constbuffer_array_get_buffer_count_with_NULL_constbuffer_array_handle_fails)
 {
     // arrange
@@ -753,7 +753,7 @@ TEST_FUNCTION(constbuffer_array_get_buffer_count_with_NULL_constbuffer_array_han
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_01_004: [ If `buffer_count` is NULL, `constbuffer_array_get_buffer_count` shall fail and return a non-zero value. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_004: [ If buffer_count is NULL, constbuffer_array_get_buffer_count shall fail and return a non-zero value. ]*/
 TEST_FUNCTION(constbuffer_array_get_buffer_count_with_NULL_buffer_count_fails)
 {
     // arrange
@@ -772,7 +772,7 @@ TEST_FUNCTION(constbuffer_array_get_buffer_count_with_NULL_buffer_count_fails)
 
 /* constbuffer_array_get_buffer */
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_01_005: [ On success, `constbuffer_array_get_buffer` shall return a non-NULL handle to the `buffer_index`-th const buffer in the array. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_005: [ On success, constbuffer_array_get_buffer shall return a non-NULL handle to the buffer_index-th const buffer in the array. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_01_006: [ The returned handle shall have its reference count incremented. ]*/
 TEST_FUNCTION(constbuffer_array_get_buffer_succeeds)
 {
@@ -801,7 +801,7 @@ TEST_FUNCTION(constbuffer_array_get_buffer_succeeds)
     CONSTBUFFER_Destroy(result);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_01_005: [ On success, `constbuffer_array_get_buffer` shall return a non-NULL handle to the `buffer_index`-th const buffer in the array. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_005: [ On success, constbuffer_array_get_buffer shall return a non-NULL handle to the buffer_index-th const buffer in the array. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_01_006: [ The returned handle shall have its reference count incremented. ]*/
 TEST_FUNCTION(constbuffer_array_get_buffer_for_2nd_buffer_succeeds)
 {
@@ -830,7 +830,7 @@ TEST_FUNCTION(constbuffer_array_get_buffer_for_2nd_buffer_succeeds)
     CONSTBUFFER_Destroy(result);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_01_007: [ If `constbuffer_array_handle` is NULL, `constbuffer_array_get_buffer` shall fail and return NULL. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_007: [ If constbuffer_array_handle is NULL, constbuffer_array_get_buffer shall fail and return NULL. ]*/
 TEST_FUNCTION(constbuffer_array_get_buffer_with_NULL_constbuffer_array_handle_fails)
 {
     // arrange
@@ -844,7 +844,7 @@ TEST_FUNCTION(constbuffer_array_get_buffer_with_NULL_constbuffer_array_handle_fa
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_01_008: [ If `buffer_index` is greater or equal to the number of buffers in the array, `constbuffer_array_get_buffer` shall fail and return NULL. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_008: [ If buffer_index is greater or equal to the number of buffers in the array, constbuffer_array_get_buffer shall fail and return NULL. ]*/
 TEST_FUNCTION(constbuffer_array_get_buffer_with_index_equal_to_number_of_buffers_fails)
 {
     // arrange
@@ -869,7 +869,7 @@ TEST_FUNCTION(constbuffer_array_get_buffer_with_index_equal_to_number_of_buffers
     constbuffer_array_dec_ref(constbuffer_array);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_01_008: [ If `buffer_index` is greater or equal to the number of buffers in the array, `constbuffer_array_get_buffer` shall fail and return NULL. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_008: [ If buffer_index is greater or equal to the number of buffers in the array, constbuffer_array_get_buffer shall fail and return NULL. ]*/
 TEST_FUNCTION(constbuffer_array_get_buffer_with_index_grater_than_number_of_buffers_fails)
 {
     // arrange
@@ -894,7 +894,7 @@ TEST_FUNCTION(constbuffer_array_get_buffer_with_index_grater_than_number_of_buff
     constbuffer_array_dec_ref(constbuffer_array);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_01_008: [ If `buffer_index` is greater or equal to the number of buffers in the array, `constbuffer_array_get_buffer` shall fail and return NULL. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_008: [ If buffer_index is greater or equal to the number of buffers in the array, constbuffer_array_get_buffer shall fail and return NULL. ]*/
 TEST_FUNCTION(constbuffer_array_get_buffer_with_index_0_on_empty_array_fails)
 {
     // arrange
@@ -914,7 +914,7 @@ TEST_FUNCTION(constbuffer_array_get_buffer_with_index_0_on_empty_array_fails)
     constbuffer_array_dec_ref(constbuffer_array);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_01_015: [ If any error occurs, `constbuffer_array_get_buffer` shall fail and return NULL. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_015: [ If any error occurs, constbuffer_array_get_buffer shall fail and return NULL. ]*/
 TEST_FUNCTION(when_CONSTBUFFER_Clone_fails_constbuffer_array_get_buffer_also_fails)
 {
     // arrange
@@ -943,7 +943,7 @@ TEST_FUNCTION(when_CONSTBUFFER_Clone_fails_constbuffer_array_get_buffer_also_fai
 
 /* constbuffer_array_get_buffer_content */
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_01_023: [ If `constbuffer_array_handle` is NULL, `constbuffer_array_get_buffer_content` shall fail and return NULL. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_023: [ If constbuffer_array_handle is NULL, constbuffer_array_get_buffer_content shall fail and return NULL. ]*/
 TEST_FUNCTION(constbuffer_array_get_buffer_content_with_NULL_constbuffer_array_handle_fails)
 {
     // arrange
@@ -957,7 +957,7 @@ TEST_FUNCTION(constbuffer_array_get_buffer_content_with_NULL_constbuffer_array_h
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_01_025: [ Otherwise `constbuffer_array_get_buffer_content` shall call `CONSTBUFFER_GetContent` for the `buffer_index`-th buffer and return its result. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_025: [ Otherwise constbuffer_array_get_buffer_content shall call CONSTBUFFER_GetContent for the buffer_index-th buffer and return its result. ]*/
 TEST_FUNCTION(constbuffer_array_get_buffer_content_succeeds)
 {
     // arrange
@@ -985,7 +985,7 @@ TEST_FUNCTION(constbuffer_array_get_buffer_content_succeeds)
     constbuffer_array_dec_ref(constbuffer_array);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_01_025: [ Otherwise `constbuffer_array_get_buffer_content` shall call `CONSTBUFFER_GetContent` for the `buffer_index`-th buffer and return its result. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_025: [ Otherwise constbuffer_array_get_buffer_content shall call CONSTBUFFER_GetContent for the buffer_index-th buffer and return its result. ]*/
 TEST_FUNCTION(constbuffer_array_get_buffer_content_for_the_2nd_buffer_succeeds)
 {
     // arrange
@@ -1013,7 +1013,7 @@ TEST_FUNCTION(constbuffer_array_get_buffer_content_for_the_2nd_buffer_succeeds)
     constbuffer_array_dec_ref(constbuffer_array);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_01_024: [ If `buffer_index` is greater or equal to the number of buffers in the array, `constbuffer_array_get_buffer_content` shall fail and return NULL. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_024: [ If buffer_index is greater or equal to the number of buffers in the array, constbuffer_array_get_buffer_content shall fail and return NULL. ]*/
 TEST_FUNCTION(constbuffer_array_get_buffer_content_with_index_out_of_range_fails)
 {
     // arrange
@@ -1040,7 +1040,7 @@ TEST_FUNCTION(constbuffer_array_get_buffer_content_with_index_out_of_range_fails
 
 /* constbuffer_array_inc_ref */
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_01_018: [ Otherwise `constbuffer_array_inc_ref` shall increment the reference count for `constbuffer_array_handle`. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_018: [ Otherwise constbuffer_array_inc_ref shall increment the reference count for constbuffer_array_handle. ]*/
 TEST_FUNCTION(constbuffer_array_inc_ref_increments_the_ref_count_for_empty_buffer_array)
 {
     ///arrange
@@ -1057,7 +1057,7 @@ TEST_FUNCTION(constbuffer_array_inc_ref_increments_the_ref_count_for_empty_buffe
     constbuffer_array_dec_ref(TEST_CONSTBUFFER_ARRAY_HANDLE);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_01_018: [ Otherwise `constbuffer_array_inc_ref` shall increment the reference count for `constbuffer_array_handle`. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_018: [ Otherwise constbuffer_array_inc_ref shall increment the reference count for constbuffer_array_handle. ]*/
 TEST_FUNCTION(constbuffer_array_inc_ref_increments_the_ref_count)
 {
     ///arrange
@@ -1081,7 +1081,7 @@ TEST_FUNCTION(constbuffer_array_inc_ref_increments_the_ref_count)
     constbuffer_array_dec_ref(constbuffer_array);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_01_017: [ If `constbuffer_array_handle` is `NULL` then `constbuffer_array_inc_ref` shall return. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_017: [ If constbuffer_array_handle is NULL then constbuffer_array_inc_ref shall return. ]*/
 TEST_FUNCTION(constbuffer_array_inc_ref_with_NULL_constbuffer_array_handle_returns)
 {
     ///arrange
@@ -1107,7 +1107,7 @@ TEST_FUNCTION(constbuffer_array_dec_ref_with_constbuffer_array_handle_NULL_retur
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_01_016: [ Otherwise `constbuffer_array_dec_ref` shall decrement the reference count for `constbuffer_array_handle`. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_016: [ Otherwise constbuffer_array_dec_ref shall decrement the reference count for constbuffer_array_handle. ]*/
 TEST_FUNCTION(constbuffer_array_dec_ref_does_not_free_when_references_are_still_held)
 {
     ///arrange
@@ -1129,8 +1129,8 @@ TEST_FUNCTION(constbuffer_array_dec_ref_does_not_free_when_references_are_still_
     constbuffer_array_dec_ref(TEST_CONSTBUFFER_ARRAY_HANDLE);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_01_016: [ Otherwise `constbuffer_array_dec_ref` shall decrement the reference count for `constbuffer_array_handle`. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_02_038: [ If the reference count reaches 0, `constbuffer_array_dec_ref` shall free all used resources. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_016: [ Otherwise constbuffer_array_dec_ref shall decrement the reference count for constbuffer_array_handle. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_02_038: [ If the reference count reaches 0, constbuffer_array_dec_ref shall free all used resources. ]*/
 TEST_FUNCTION(constbuffer_array_dec_ref_frees)
 {
     ///arrange
@@ -1156,7 +1156,7 @@ TEST_FUNCTION(constbuffer_array_dec_ref_frees)
 
 /* constbuffer_array_get_all_buffers_size */
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_01_019: [ If `constbuffer_array_handle` is NULL, `constbuffer_array_get_all_buffers_size` shall fail and return a non-zero value. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_019: [ If constbuffer_array_handle is NULL, constbuffer_array_get_all_buffers_size shall fail and return a non-zero value. ]*/
 TEST_FUNCTION(constbuffer_array_get_all_buffers_size_with_NULL_constbuffer_array_handle_fails)
 {
     ///arrange
@@ -1171,7 +1171,7 @@ TEST_FUNCTION(constbuffer_array_get_all_buffers_size_with_NULL_constbuffer_array
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_01_020: [ If `all_buffers_size` is NULL, `constbuffer_array_get_all_buffers_size` shall fail and return a non-zero value. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_020: [ If all_buffers_size is NULL, constbuffer_array_get_all_buffers_size shall fail and return a non-zero value. ]*/
 TEST_FUNCTION(constbuffer_array_get_all_buffers_size_with_NULL_all_buffers_size_fails)
 {
     ///arrange
@@ -1189,7 +1189,7 @@ TEST_FUNCTION(constbuffer_array_get_all_buffers_size_with_NULL_all_buffers_size_
     constbuffer_array_dec_ref(TEST_CONSTBUFFER_ARRAY_HANDLE);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_01_021: [ If summing up the sizes results in an `uint32_t` overflow, shall fail and return a non-zero value. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_021: [ If summing up the sizes results in an uint32_t overflow, shall fail and return a non-zero value. ]*/
 TEST_FUNCTION(constbuffer_array_get_all_buffers_size_when_overflow_happens_fails)
 {
     ///arrange
@@ -1219,7 +1219,7 @@ TEST_FUNCTION(constbuffer_array_get_all_buffers_size_when_overflow_happens_fails
     constbuffer_array_dec_ref(afterAdd2);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_01_021: [ If summing up the sizes results in an `uint32_t` overflow, shall fail and return a non-zero value. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_021: [ If summing up the sizes results in an uint32_t overflow, shall fail and return a non-zero value. ]*/
 TEST_FUNCTION(constbuffer_array_get_all_buffers_size_max_all_size_succeeds)
 {
     ///arrange
@@ -1251,7 +1251,7 @@ TEST_FUNCTION(constbuffer_array_get_all_buffers_size_max_all_size_succeeds)
 }
 
 #if SIZE_MAX > UINT32_MAX
-/* Tests_SRS_CONSTBUFFER_ARRAY_01_021: [ If summing up the sizes results in an `uint32_t` overflow, shall fail and return a non-zero value. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_021: [ If summing up the sizes results in an uint32_t overflow, shall fail and return a non-zero value. ]*/
 TEST_FUNCTION(constbuffer_array_get_all_buffers_size_when_buffer_size_bigger_than_UINT32_MAX_fails)
 {
     ///arrange
@@ -1277,7 +1277,7 @@ TEST_FUNCTION(constbuffer_array_get_all_buffers_size_when_buffer_size_bigger_tha
 }
 #endif
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_01_022: [ Otherwise `constbuffer_array_get_all_buffers_size` shall write in `all_buffers_size` the total size of all buffers in the array and return 0. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_022: [ Otherwise constbuffer_array_get_all_buffers_size shall write in all_buffers_size the total size of all buffers in the array and return 0. ]*/
 TEST_FUNCTION(constbuffer_array_get_all_buffers_on_empty_const_buffer_array_succeeds)
 {
     ///arrange
@@ -1297,7 +1297,7 @@ TEST_FUNCTION(constbuffer_array_get_all_buffers_on_empty_const_buffer_array_succ
     constbuffer_array_dec_ref(TEST_CONSTBUFFER_ARRAY_HANDLE);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_01_022: [ Otherwise `constbuffer_array_get_all_buffers_size` shall write in `all_buffers_size` the total size of all buffers in the array and return 0. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_022: [ Otherwise constbuffer_array_get_all_buffers_size shall write in all_buffers_size the total size of all buffers in the array and return 0. ]*/
 TEST_FUNCTION(constbuffer_array_get_all_buffers_size_with_1_buffer_succeeds)
 {
     ///arrange
@@ -1321,7 +1321,7 @@ TEST_FUNCTION(constbuffer_array_get_all_buffers_size_with_1_buffer_succeeds)
     constbuffer_array_dec_ref(afterAdd1);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_01_022: [ Otherwise `constbuffer_array_get_all_buffers_size` shall write in `all_buffers_size` the total size of all buffers in the array and return 0. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_022: [ Otherwise constbuffer_array_get_all_buffers_size shall write in all_buffers_size the total size of all buffers in the array and return 0. ]*/
 TEST_FUNCTION(constbuffer_array_get_all_buffers_size_with_2_buffers_succeeds)
 {
     ///arrange

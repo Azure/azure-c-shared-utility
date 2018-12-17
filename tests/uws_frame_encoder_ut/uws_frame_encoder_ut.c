@@ -123,7 +123,7 @@ TEST_FUNCTION_CLEANUP(method_cleanup)
 
 /* uws_frame_encoder_encode */
 
-/* Tests_SRS_UWS_FRAME_ENCODER_01_054: [ If `length` is greater than 0 and payload is NULL, then `uws_frame_encoder_encode` shall fail and return NULL. ]*/
+/* Tests_SRS_UWS_FRAME_ENCODER_01_054: [ If length is greater than 0 and payload is NULL, then uws_frame_encoder_encode shall fail and return NULL. ]*/
 TEST_FUNCTION(uws_frame_encoder_encode_with_1_length_and_NULL_payload_fails)
 {
     // arrange
@@ -137,11 +137,11 @@ TEST_FUNCTION(uws_frame_encoder_encode_with_1_length_and_NULL_payload_fails)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_UWS_FRAME_ENCODER_01_001: [ `uws_frame_encoder_encode` shall encode the information given in `opcode`, `payload`, `length`, `is_masked`, `is_final` and `reserved` according to the RFC6455 into a new buffer.]*/
-/* Tests_SRS_UWS_FRAME_ENCODER_01_044: [ On success `uws_frame_encoder_encode` shall return a non-NULL handle to the result buffer. ]*/
-/* Tests_SRS_UWS_FRAME_ENCODER_01_048: [ The newly created buffer shall be created by calling `BUFFER_new`. ]*/
-/* Tests_SRS_UWS_FRAME_ENCODER_01_046: [ The result buffer shall be resized accordingly using `BUFFER_enlarge`. ]*/
-/* Tests_SRS_UWS_FRAME_ENCODER_01_050: [ The allocated memory shall be accessed by calling `BUFFER_u_char`. ]*/
+/* Tests_SRS_UWS_FRAME_ENCODER_01_001: [ uws_frame_encoder_encode shall encode the information given in opcode, payload, length, is_masked, is_final and reserved according to the RFC6455 into a new buffer.]*/
+/* Tests_SRS_UWS_FRAME_ENCODER_01_044: [ On success uws_frame_encoder_encode shall return a non-NULL handle to the result buffer. ]*/
+/* Tests_SRS_UWS_FRAME_ENCODER_01_048: [ The newly created buffer shall be created by calling BUFFER_new. ]*/
+/* Tests_SRS_UWS_FRAME_ENCODER_01_046: [ The result buffer shall be resized accordingly using BUFFER_enlarge. ]*/
+/* Tests_SRS_UWS_FRAME_ENCODER_01_050: [ The allocated memory shall be accessed by calling BUFFER_u_char. ]*/
 /* Tests_SRS_UWS_FRAME_ENCODER_01_002: [ Indicates that this is the final fragment in a message. ]*/
 /* Tests_SRS_UWS_FRAME_ENCODER_01_003: [ The first fragment MAY also be the final fragment. ]*/
 /* Tests_SRS_UWS_FRAME_ENCODER_01_015: [ Defines whether the "Payload data" is masked. ]*/
@@ -175,7 +175,7 @@ TEST_FUNCTION(uws_frame_encoder_encode_encodes_a_zero_length_binary_frame)
     real_BUFFER_delete(result);
 }
 
-/* Tests_SRS_UWS_FRAME_ENCODER_01_049: [ If `BUFFER_new` fails then `uws_frame_encoder_encode` shall fail and return NULL. ]*/
+/* Tests_SRS_UWS_FRAME_ENCODER_01_049: [ If BUFFER_new fails then uws_frame_encoder_encode shall fail and return NULL. ]*/
 TEST_FUNCTION(when_BUFFER_new_fails_then_uws_frame_encoder_encode_fails)
 {
     // arrange
@@ -192,7 +192,7 @@ TEST_FUNCTION(when_BUFFER_new_fails_then_uws_frame_encoder_encode_fails)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_UWS_FRAME_ENCODER_01_047: [ If `BUFFER_enlarge` fails then `uws_frame_encoder_encode` shall fail and return NULL. ]*/
+/* Tests_SRS_UWS_FRAME_ENCODER_01_047: [ If BUFFER_enlarge fails then uws_frame_encoder_encode shall fail and return NULL. ]*/
 TEST_FUNCTION(when_BUFFER_enlarge_fails_then_uws_frame_encoder_encode_fails)
 {
     // arrange
@@ -215,7 +215,7 @@ TEST_FUNCTION(when_BUFFER_enlarge_fails_then_uws_frame_encoder_encode_fails)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_UWS_FRAME_ENCODER_01_051: [ If `BUFFER_u_char` fails then `uws_frame_encoder_encode` shall fail and return a NULL. ]*/
+/* Tests_SRS_UWS_FRAME_ENCODER_01_051: [ If BUFFER_u_char fails then uws_frame_encoder_encode shall fail and return a NULL. ]*/
 TEST_FUNCTION(when_BUFFER_u_char_fails_then_uws_frame_encoder_encode_fails)
 {
     // arrange
@@ -299,7 +299,7 @@ TEST_FUNCTION(uws_frame_encoder_encode_encodes_a_zero_length_binary_frame_with_r
     real_BUFFER_delete(result);
 }
 
-/* Tests_SRS_UWS_FRAME_ENCODER_01_052: [ If `reserved` has any bits set except the lowest 3 then `uws_frame_encoder_encode` shall fail and return NULL. ]*/
+/* Tests_SRS_UWS_FRAME_ENCODER_01_052: [ If reserved has any bits set except the lowest 3 then uws_frame_encoder_encode shall fail and return NULL. ]*/
 TEST_FUNCTION(uws_frame_encoder_encode_encodes_a_zero_length_binary_frame_with_reserved_bits_having_all_bits_set_fails)
 {
     // arrange
@@ -879,7 +879,7 @@ TEST_FUNCTION(uws_frame_encoder_encodes_a_reserved_control_frame_F)
 }
 
 /* Tests_SRS_UWS_FRAME_ENCODER_01_015: [ Defines whether the "Payload data" is masked. ]*/
-/* Tests_SRS_UWS_FRAME_ENCODER_01_053: [ In order to obtain a 32 bit value for masking, `gb_rand` shall be used 4 times (for each byte). ]*/
+/* Tests_SRS_UWS_FRAME_ENCODER_01_053: [ In order to obtain a 32 bit value for masking, gb_rand shall be used 4 times (for each byte). ]*/
 /* Tests_SRS_UWS_FRAME_ENCODER_01_016: [ If set to 1, a masking key is present in masking-key, and this is used to unmask the "Payload data" as per Section 5.3. ]*/
 /* Tests_SRS_UWS_FRAME_ENCODER_01_026: [ This field is present if the mask bit is set to 1 and is absent if the mask bit is set to 0. ]*/
 /* Tests_SRS_UWS_FRAME_ENCODER_01_042: [ The payload length, indicated in the framing as frame-payload-length, does NOT include the length of the masking key. ]*/
@@ -920,7 +920,7 @@ TEST_FUNCTION(uws_frame_encoder_encode_encodes_a_masked_zero_length_binary_frame
 }
 
 /* Tests_SRS_UWS_FRAME_ENCODER_01_015: [ Defines whether the "Payload data" is masked. ]*/
-/* Tests_SRS_UWS_FRAME_ENCODER_01_053: [ In order to obtain a 32 bit value for masking, `gb_rand` shall be used 4 times (for each byte). ]*/
+/* Tests_SRS_UWS_FRAME_ENCODER_01_053: [ In order to obtain a 32 bit value for masking, gb_rand shall be used 4 times (for each byte). ]*/
 /* Tests_SRS_UWS_FRAME_ENCODER_01_016: [ If set to 1, a masking key is present in masking-key, and this is used to unmask the "Payload data" as per Section 5.3. ]*/
 /* Tests_SRS_UWS_FRAME_ENCODER_01_026: [ This field is present if the mask bit is set to 1 and is absent if the mask bit is set to 0. ]*/
 /* Tests_SRS_UWS_FRAME_ENCODER_01_042: [ The payload length, indicated in the framing as frame-payload-length, does NOT include the length of the masking key. ]*/

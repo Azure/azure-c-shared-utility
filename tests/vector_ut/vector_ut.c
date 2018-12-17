@@ -249,7 +249,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     }
 
-    /* Tests_SRS_VECTOR_10_011: [VECTOR_push_back shall fail and return non - zero if `handle` is NULL.] */
+    /* Tests_SRS_VECTOR_10_011: [VECTOR_push_back shall fail and return non - zero if handle is NULL.] */
     TEST_FUNCTION(VECTOR_push_back_fails_if_handle_is_NULL)
     {
         ///arrange
@@ -263,7 +263,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     }
 
-    /* Tests_SRS_VECTOR_10_034: [VECTOR_push_back shall fail and return non - zero if `elements` is NULL.] */
+    /* Tests_SRS_VECTOR_10_034: [VECTOR_push_back shall fail and return non - zero if elements is NULL.] */
     TEST_FUNCTION(VECTOR_push_back_fails_if_elements_is_NULL)
     {
         ///arrange
@@ -282,7 +282,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         VECTOR_destroy(handle);
     }
 
-    /* Tests_SRS_VECTOR_10_035: [VECTOR_push_back shall fail and return non - zero if `numElements` is 0.] */
+    /* Tests_SRS_VECTOR_10_035: [VECTOR_push_back shall fail and return non - zero if numElements is 0.] */
     TEST_FUNCTION(VECTOR_push_back_fails_if_numElements_is_zero)
     {
         ///arrange
@@ -398,7 +398,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         VECTOR_destroy(handle);
     }
 
-    /* Tests_SRS_VECTOR_10_030: [VECTOR_find_if shall fail and return NULL if `handle` is NULL.] */
+    /* Tests_SRS_VECTOR_10_030: [VECTOR_find_if shall fail and return NULL if handle is NULL.] */
     TEST_FUNCTION(VECTOR_find_fails_if_handle_is_NULL)
     {
         ///arrange
@@ -412,7 +412,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     }
 
-    /* Tests_SRS_VECTOR_10_036: [VECTOR_find_if shall fail and return NULL if `pred` is NULL.] */
+    /* Tests_SRS_VECTOR_10_036: [VECTOR_find_if shall fail and return NULL if pred is NULL.] */
     TEST_FUNCTION(VECTOR_find_fails_if_pred_is_NULL)
     {
         ///arrange
@@ -433,7 +433,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         VECTOR_destroy(handle);
     }
 
-    /* Tests_SRS_VECTOR_10_031: [VECTOR_find_if shall return the first element in the vector that matches `pred`.] */
+    /* Tests_SRS_VECTOR_10_031: [VECTOR_find_if shall return the first element in the vector that matches pred.] */
     TEST_FUNCTION(VECTOR_find_if_succeeds)
     {
         ///arrange
@@ -456,7 +456,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         VECTOR_destroy(handle);
     }
 
-    /* Tests_SRS_VECTOR_10_032: [VECTOR_find_if shall return NULL if no element is found that matches `pred`.] */
+    /* Tests_SRS_VECTOR_10_032: [VECTOR_find_if shall return NULL if no element is found that matches pred.] */
     TEST_FUNCTION(VECTOR_find_if_return_null_if_no_match)
     {
         ///arrange
@@ -710,7 +710,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         VECTOR_destroy(handle);
     }
 
-    /* Tests_SRS_VECTOR_10_015: [VECTOR_erase shall return if `handle`.] */
+    /* Tests_SRS_VECTOR_10_015: [VECTOR_erase shall return if handle.] */
     TEST_FUNCTION(VECTOR_erase_if_handle_is_NULL)
     {
         ///arrange
@@ -724,7 +724,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     }
 
-    /* Tests_SRS_VECTOR_10_038: [VECTOR_erase shall return if `elements` is NULL.] */
+    /* Tests_SRS_VECTOR_10_038: [VECTOR_erase shall return if elements is NULL.] */
     TEST_FUNCTION(VECTOR_erase_if_elements_is_NULL)
     {
         ///arrange
@@ -742,7 +742,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         VECTOR_destroy(handle);
     }
 
-    /* Tests_SRS_VECTOR_10_039: [VECTOR_erase shall return if `numElements` is 0.] */
+    /* Tests_SRS_VECTOR_10_039: [VECTOR_erase shall return if numElements is 0.] */
     TEST_FUNCTION(VECTOR_erase_if_numElements_is_zero)
     {
         ///arrange
@@ -769,7 +769,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         VECTOR_destroy(handle);
     }
 
-    /* Tests_SRS_VECTOR_10_014: [VECTOR_erase shall remove the `numElements` starting at `elements` and reduce its internal storage.] */
+    /* Tests_SRS_VECTOR_10_014: [VECTOR_erase shall remove the numElements starting at elements and reduce its internal storage.] */
     TEST_FUNCTION(VECTOR_erase_succeeds_case_1)
     {
         ///arrange
@@ -799,7 +799,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         VECTOR_destroy(handle);
     }
 
-    /* Tests_SRS_VECTOR_10_014: [VECTOR_erase shall remove the `numElements` starting at `elements` and reduce its internal storage.] */
+    /* Tests_SRS_VECTOR_10_014: [VECTOR_erase shall remove the numElements starting at elements and reduce its internal storage.] */
     TEST_FUNCTION(VECTOR_erase_succeeds_case_2)
     {
         ///arrange
@@ -829,7 +829,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         VECTOR_destroy(handle);
     }
 
-    /* Tests_SRS_VECTOR_10_014: [VECTOR_erase shall remove the `numElements` starting at `elements` and reduce its internal storage.] */
+    /* Tests_SRS_VECTOR_10_014: [VECTOR_erase shall remove the numElements starting at elements and reduce its internal storage.] */
     TEST_FUNCTION(VECTOR_erase_succeeds_case_3)
     {
         ///arrange
@@ -863,7 +863,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         VECTOR_destroy(handle);
     }
 
-    /* Tests_SRS_VECTOR_10_027: [VECTOR_erase shall return if `numElements` is out of bound.] */
+    /* Tests_SRS_VECTOR_10_027: [VECTOR_erase shall return if numElements is out of bound.] */
     TEST_FUNCTION(VECTOR_erase_numElements_out_of_bound)
     {
         ///arrange
@@ -893,7 +893,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         VECTOR_destroy(handle);
     }
 
-    /* Tests_SRS_VECTOR_10_040: [VECTOR_erase shall return if `elements` is out of bound.] */
+    /* Tests_SRS_VECTOR_10_040: [VECTOR_erase shall return if elements is out of bound.] */
     TEST_FUNCTION(VECTOR_erase_elements_out_of_bound_case_1)
     {
         ///arrange
@@ -924,7 +924,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         VECTOR_destroy(handle);
     }
 
-    /* Tests_SRS_VECTOR_10_040: [VECTOR_erase shall return if `elements` is out of bound.] */
+    /* Tests_SRS_VECTOR_10_040: [VECTOR_erase shall return if elements is out of bound.] */
     TEST_FUNCTION(VECTOR_erase_elements_out_of_bound_case_2)
     {
         ///arrange
@@ -955,7 +955,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
         VECTOR_destroy(handle);
     }
 
-    /* Tests_SRS_VECTOR_10_041: [VECTOR_erase shall return if `elements` is misaligned.] */
+    /* Tests_SRS_VECTOR_10_041: [VECTOR_erase shall return if elements is misaligned.] */
     TEST_FUNCTION(VECTOR_erase_elements_misaligned)
     {
         ///arrange
