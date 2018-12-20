@@ -1010,7 +1010,7 @@ static X509_CRL** crl_cache = NULL;
 static int load_cert_crl_memory(X509 *cert, X509_CRL **pCrl)
 {
     time_t now = time(NULL);
-    X509_NAME *issuer_cert = X509_get_issuer_name(cert);
+    X509_NAME *issuer_cert = cert ? X509_get_issuer_name(cert) : NULL;
 
     // init return values
     int ret = 0;
@@ -1034,6 +1034,11 @@ static int load_cert_crl_memory(X509 *cert, X509_CRL **pCrl)
         // names don't match up. probably a hash collision
         // so lets test if there is another crl on disk.
         X509_NAME *issuer_crl = X509_CRL_get_issuer(crl);
+        if (!issuer_crl || !issuer_cert)
+        {
+            continue;
+        }
+
         if (0 != X509_NAME_cmp(issuer_crl, issuer_cert))
         {
             continue;
@@ -1083,7 +1088,7 @@ static int save_cert_crl_memory(X509 *cert, X509_CRL *crlp)
     }
 
     // update existing
-    X509_NAME *issuer_cert = X509_get_issuer_name(cert);
+    X509_NAME *issuer_cert = cert ? X509_get_issuer_name(cert) : NULL;
     for (int n = 0; n < crl_cache_size; n++)
     {
         X509_CRL *crl = crl_cache[n];
@@ -1093,6 +1098,11 @@ static int save_cert_crl_memory(X509 *cert, X509_CRL *crlp)
         }
 
         X509_NAME *issuer_crl = X509_CRL_get_issuer(crl);
+        if (!issuer_crl || !issuer_cert)
+        {
+            continue;
+        }
+
         if (0 == X509_NAME_cmp(issuer_crl, issuer_cert))
         {
             X509_CRL_free(crl);
@@ -1321,7 +1331,13 @@ static const char *get_dp_url(DIST_POINT *dp)
 static int is_valid_crl(X509 *cert, X509_CRL *crl)
 {
     time_t now = time(NULL);
-    X509_NAME *issuer_cert = X509_get_issuer_name(cert);
+    X509_NAME *issuer_cert = cert ? X509_get_issuer_name(cert) : NULL;
+
+    // names don't match up.
+    if (!crl || !issuer_cert)
+    {
+        return 0;
+    }
 
     // names don't match up. probably a hash collision
     // so lets test if there is another crl on disk.
@@ -1363,8 +1379,8 @@ static int load_cert_crl_file(X509 *cert, const char* suffix, X509_CRL **pCrl)
     }
 
     // we need the issuer hash to find the file on disk
-    X509_NAME *issuer_cert = X509_get_issuer_name(cert);
-    unsigned long hash = X509_NAME_hash(issuer_cert);
+    X509_NAME *issuer_cert = cert ? X509_get_issuer_name(cert) : NULL;
+    unsigned long hash = issuer_cert ? X509_NAME_hash(issuer_cert) : 0;
 
     // try to read from file
     for (int i = 0; i < 10; i++)
@@ -1414,8 +1430,8 @@ static int save_cert_crl_file(X509 *cert, const char* suffix, X509_CRL *crl)
     }
 
     // we need the issuer hash to find the file on disk
-    X509_NAME *issuer_cert = X509_get_issuer_name(cert);
-    unsigned long hash = X509_NAME_hash(issuer_cert);
+    X509_NAME *issuer_cert = cert ? X509_get_issuer_name(cert) : NULL;
+    unsigned long hash = issuer_cert ? X509_NAME_hash(issuer_cert) : 0;
 
     for (int i = 0; crl && i < 10; i++)
     {
