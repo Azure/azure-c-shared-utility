@@ -172,17 +172,11 @@ static void* tlsio_openssl_CloneOption(const char* name, const void* value)
         {
             int int_value;
 
-            if (*(TLSIO_VERSION*)value == OPTION_TLS_VERSION_1_0)
+            if (*(TLSIO_VERSION*)value == OPTION_TLS_VERSION_1_0 ||
+                *(TLSIO_VERSION*)value == OPTION_TLS_VERSION_1_1 ||
+                *(TLSIO_VERSION*)value == OPTION_TLS_VERSION_1_2)
             {
-                int_value = 10;
-            }
-            else if (*(TLSIO_VERSION*)value == OPTION_TLS_VERSION_1_1)
-            {
-                int_value = 11;
-            }
-            else if (*(TLSIO_VERSION*)value == OPTION_TLS_VERSION_1_2)
-            {
-                int_value = 12;
+                int_value = *(TLSIO_VERSION*)value;
             }
             else
             {
@@ -200,7 +194,7 @@ static void* tlsio_openssl_CloneOption(const char* name, const void* value)
 
                 if ((value_clone = (int*)malloc(sizeof(int))) == NULL)
                 {
-                    LogError("Failed clonning tls_version option");
+                    LogError("Failed cloning tls_version option");
                 }
                 else
                 {
@@ -1597,7 +1591,7 @@ static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
             }
             X509_free(x509);
         }
-    }    
+    }
 
     // load all the revocation lists into the openSSL crl store
     PCCRL_CONTEXT pCRLContext = NULL;
@@ -2451,17 +2445,11 @@ int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
             else
             {
                 const int version_option = *(const int*)value;
-                if (version_option == 0 || version_option == 10)
+                if (version_option == OPTION_TLS_VERSION_1_0 ||
+                    version_option == OPTION_TLS_VERSION_1_1 ||
+                    version_option == OPTION_TLS_VERSION_1_2)
                 {
-                    tls_io_instance->tls_version = OPTION_TLS_VERSION_1_0;
-                }
-                else if (version_option == 11)
-                {
-                    tls_io_instance->tls_version = OPTION_TLS_VERSION_1_1;
-                }
-                else if (version_option == 12)
-                {
-                    tls_io_instance->tls_version = OPTION_TLS_VERSION_1_2;
+                    tls_io_instance->tls_version = version_option;
                 }
                 else
                 {

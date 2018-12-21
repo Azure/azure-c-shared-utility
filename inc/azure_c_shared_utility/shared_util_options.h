@@ -42,7 +42,7 @@ extern "C"
 
     typedef enum TLSIO_VERSION_TAG
     {
-        OPTION_TLS_VERSION_1_0 = 1,
+        OPTION_TLS_VERSION_1_0 = 10,
         OPTION_TLS_VERSION_1_1,
         OPTION_TLS_VERSION_1_2,
     } TLSIO_VERSION;
