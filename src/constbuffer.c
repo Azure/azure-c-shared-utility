@@ -3,17 +3,26 @@
 
 #include <stdlib.h>
 #include <stddef.h>
-#include <stdbool.h>
+#include "azure_c_shared_utility/macro_utils.h"
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/constbuffer.h"
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/refcount.h"
 
+#define CONSTBUFFER_TYPE_VALUES \
+    CONSTBUFFER_TYPE_COPIED, \
+    CONSTBUFFER_TYPE_MEMORY_MOVED, \
+    CONSTBUFFER_TYPE_WITH_CUSTOM_FREE
+
+DEFINE_ENUM(CONSTBUFFER_TYPE, CONSTBUFFER_TYPE_VALUES)
+
 typedef struct CONSTBUFFER_HANDLE_DATA_TAG
 {
     CONSTBUFFER alias;
     COUNT_TYPE count;
-    bool memory_moved;
+    CONSTBUFFER_TYPE buffer_type;
+    CONSTBUFFER_CUSTOM_FREE_FUNC custom_free_func;
+    void* custom_free_func_context;
 } CONSTBUFFER_HANDLE_DATA;
 
 static CONSTBUFFER_HANDLE CONSTBUFFER_Create_Internal(const unsigned char* source, size_t size)
@@ -49,7 +58,7 @@ static CONSTBUFFER_HANDLE CONSTBUFFER_Create_Internal(const unsigned char* sourc
             result->alias.buffer = temp;
         }
 
-        result->memory_moved = false;
+        result->buffer_type = CONSTBUFFER_TYPE_COPIED;
     }
     return result;
 }
@@ -113,12 +122,57 @@ CONSTBUFFER_HANDLE CONSTBUFFER_CreateWithMoveMemory(unsigned char* source, size_
         else
         {
             /* Codes_SRS_CONSTBUFFER_01_004: [ If source is non-NULL and size is 0, the source pointer shall be owned (and freed) by the newly created instance of const buffer. ]*/
-            /* Codes_SRS_CONSTBUFFER_01_002: [ Otherwise, CONSTBUFFER_Create shall store the source and size and return a non-NULL handle to the newly created const buffer. ]*/
+            /* Codes_SRS_CONSTBUFFER_01_002: [ CONSTBUFFER_CreateWithMoveMemory shall store the source and size and return a non-NULL handle to the newly created const buffer. ]*/
             result->alias.buffer = source;
             result->alias.size = size;
-            result->memory_moved = true;
+            result->buffer_type = CONSTBUFFER_TYPE_MEMORY_MOVED;
 
             /* Codes_SRS_CONSTBUFFER_01_003: [ The non-NULL handle returned by CONSTBUFFER_CreateWithMoveMemory shall have its ref count set to "1". ]*/
+            INIT_REF_VAR(result->count);
+        }
+    }
+
+    return result;
+}
+
+CONSTBUFFER_HANDLE CONSTBUFFER_CreateWithCustomFree(const unsigned char* source, size_t size, CONSTBUFFER_CUSTOM_FREE_FUNC customFreeFunc, void* customFreeFuncContext)
+{
+    CONSTBUFFER_HANDLE result;
+
+    /* Codes_SRS_CONSTBUFFER_01_014: [ customFreeFuncContext shall be allowed to be NULL. ]*/
+
+    if (
+        /* Codes_SRS_CONSTBUFFER_01_006: [ If source is NULL and size is different than 0 then CONSTBUFFER_CreateWithCustomFree shall fail and return NULL. ]*/
+        ((source == NULL) && (size > 0)) ||
+        /* Codes_SRS_CONSTBUFFER_01_013: [ If customFreeFunc is NULL, CONSTBUFFER_CreateWithCustomFree shall fail and return NULL. ]*/
+        (customFreeFunc == NULL)
+        )
+    {
+        LogError("Invalid arguments: unsigned char* source=%p, size_t size=%u, customFreeFunc=%p, customFreeFuncContext=%p",
+            source, (unsigned int)size, customFreeFunc, customFreeFuncContext);
+        result = NULL;
+    }
+    else
+    {
+        result = (CONSTBUFFER_HANDLE)malloc(sizeof(CONSTBUFFER_HANDLE_DATA));
+        if (result == NULL)
+        {
+            /* Codes_SRS_CONSTBUFFER_01_011: [ If any error occurs, CONSTBUFFER_CreateWithMoveMemory shall fail and return NULL. ]*/
+            LogError("malloc failed");
+        }
+        else
+        {
+            /* Codes_SRS_CONSTBUFFER_01_007: [ If source is non-NULL and size is 0, the source pointer shall be owned (and freed) by the newly created instance of const buffer. ]*/
+            /* Codes_SRS_CONSTBUFFER_01_008: [ CONSTBUFFER_CreateWithCustomFree shall store the source and size and return a non-NULL handle to the newly created const buffer. ]*/
+            result->alias.buffer = source;
+            result->alias.size = size;
+            result->buffer_type = CONSTBUFFER_TYPE_WITH_CUSTOM_FREE;
+
+            /* Codes_SRS_CONSTBUFFER_01_009: [ CONSTBUFFER_CreateWithCustomFree shall store customFreeFunc and customFreeFuncContext in order to use them to free the memory when the CONST buffer resources are freed. ]*/
+            result->custom_free_func = customFreeFunc;
+            result->custom_free_func_context = customFreeFuncContext;
+
+            /* Codes_SRS_CONSTBUFFER_01_010: [ The non-NULL handle returned by CONSTBUFFER_CreateWithCustomFree shall have its ref count set to 1. ]*/
             INIT_REF_VAR(result->count);
         }
     }
@@ -166,9 +220,14 @@ void CONSTBUFFER_Destroy(CONSTBUFFER_HANDLE constbufferHandle)
         /*Codes_SRS_CONSTBUFFER_02_016: [Otherwise, CONSTBUFFER_Destroy shall decrement the refcount on the constbufferHandle handle.]*/
         if (DEC_REF_VAR(constbufferHandle->count) == DEC_RETURN_ZERO)
         {
-            if (constbufferHandle->memory_moved)
+            if (constbufferHandle->buffer_type == CONSTBUFFER_TYPE_MEMORY_MOVED)
             {
                 free((void*)constbufferHandle->alias.buffer);
+            }
+            else if (constbufferHandle->buffer_type == CONSTBUFFER_TYPE_WITH_CUSTOM_FREE)
+            {
+                /* Codes_SRS_CONSTBUFFER_01_012: [ If the buffer was created by calling CONSTBUFFER_CreateWithCustomFree, the customFreeFunc function shall be called to free the memory, while passed customFreeFuncContext as argument. ]*/
+                constbufferHandle->custom_free_func(constbufferHandle->custom_free_func_context);
             }
 
             /*Codes_SRS_CONSTBUFFER_02_017: [If the refcount reaches zero, then CONSTBUFFER_Destroy shall deallocate all resources used by the CONSTBUFFER_HANDLE.]*/

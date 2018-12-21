@@ -77,6 +77,9 @@ static size_t my_BUFFER_length(BUFFER_HANDLE handle)
     return result;
 }
 
+MOCK_FUNCTION_WITH_CODE(, void, test_free_func, void*, context)
+MOCK_FUNCTION_END()
+
 DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
@@ -340,7 +343,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         ///cleanup
     }
 
-    /* Tests_SRS_CONSTBUFFER_01_002: [ Otherwise, CONSTBUFFER_CreateWithMoveMemory shall store the source and size and return a non-NULL handle to the newly created const buffer. ]*/
+    /* Tests_SRS_CONSTBUFFER_01_002: [ CONSTBUFFER_CreateWithMoveMemory shall store the source and size and return a non-NULL handle to the newly created const buffer. ]*/
     TEST_FUNCTION(CONSTBUFFER_CreateWithMoveMemory_succeeds)
     {
         ///arrange
@@ -360,7 +363,6 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         /*testing the "storage"*/
         content = CONSTBUFFER_GetContent(handle);
         ASSERT_ARE_EQUAL(size_t, 2, content->size);
-        /*testing that it is a copy and not a pointer assignment*/
         ASSERT_ARE_EQUAL(void_ptr, test_buffer, content->buffer, "same buffer should be returned");
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
@@ -368,7 +370,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         CONSTBUFFER_Destroy(handle);
     }
 
-    /* Tests_SRS_CONSTBUFFER_01_002: [ Otherwise, CONSTBUFFER_CreateWithMoveMemory shall store the source and size and return a non-NULL handle to the newly created const buffer. ]*/
+    /* Tests_SRS_CONSTBUFFER_01_002: [ CONSTBUFFER_CreateWithMoveMemory shall store the source and size and return a non-NULL handle to the newly created const buffer. ]*/
     /* Tests_SRS_CONSTBUFFER_01_004: [ If source is non-NULL and size is 0, the source pointer shall be owned (and freed) by the newly created instance of const buffer. ]*/
     TEST_FUNCTION(CONSTBUFFER_CreateWithMoveMemory_with_0_size_succeeds)
     {
@@ -395,7 +397,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         CONSTBUFFER_Destroy(handle);
     }
 
-    /* Tests_SRS_CONSTBUFFER_01_002: [ Otherwise, CONSTBUFFER_CreateWithMoveMemory shall store the source and size and return a non-NULL handle to the newly created const buffer. ]*/
+    /* Tests_SRS_CONSTBUFFER_01_002: [ CONSTBUFFER_CreateWithMoveMemory shall store the source and size and return a non-NULL handle to the newly created const buffer. ]*/
     TEST_FUNCTION(CONSTBUFFER_CreateWithMoveMemory_with_NULL_source_and_0_size_succeeds)
     {
         ///arrange
@@ -432,6 +434,167 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
 
         ///act
         handle = CONSTBUFFER_CreateWithMoveMemory(test_buffer, 2);
+
+        ///assert
+        ASSERT_IS_NULL(handle);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        ///cleanup
+        free(test_buffer);
+    }
+
+    /* CONSTBUFFER_CreateWithCustomFree */
+
+    /* Tests_SRS_CONSTBUFFER_01_006: [ If source is NULL and size is different than 0 then CONSTBUFFER_CreateWithCustomFree shall fail and return NULL. ]*/
+    TEST_FUNCTION(CONSTBUFFER_CreateWithCustomFree_with_invalid_args_fails)
+    {
+        ///arrange
+
+        ///act
+        CONSTBUFFER_HANDLE handle = CONSTBUFFER_CreateWithCustomFree(NULL, 1, test_free_func, (void*)0x4242);
+
+        ///assert
+        ASSERT_IS_NULL(handle);
+    }
+
+    /* Tests_SRS_CONSTBUFFER_01_013: [ If customFreeFunc is NULL, CONSTBUFFER_CreateWithCustomFree shall fail and return NULL. ]*/
+    TEST_FUNCTION(CONSTBUFFER_CreateWithCustomFree_with_NULL_customFreeFunc_fails)
+    {
+        ///arrange
+        CONSTBUFFER_HANDLE handle;
+        unsigned char* test_buffer = (unsigned char*)my_gballoc_malloc(2);
+        test_buffer[0] = 42;
+        test_buffer[1] = 43;
+
+        ///act
+        handle = CONSTBUFFER_CreateWithCustomFree(test_buffer, 2, NULL, test_buffer);
+
+        ///assert
+        ASSERT_IS_NULL(handle);
+
+        /// cleanup
+        my_gballoc_free(test_buffer);
+    }
+
+    /* Tests_SRS_CONSTBUFFER_01_008: [ CONSTBUFFER_CreateWithCustomFree shall store the source and size and return a non-NULL handle to the newly created const buffer. ]*/
+    TEST_FUNCTION(CONSTBUFFER_CreateWithCustomFree_succeeds)
+    {
+        ///arrange
+        CONSTBUFFER_HANDLE handle;
+        const CONSTBUFFER* content;
+        unsigned char* test_buffer = (unsigned char*)my_gballoc_malloc(2);
+        test_buffer[0] = 42;
+        test_buffer[1] = 43;
+
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+
+        ///act
+        handle = CONSTBUFFER_CreateWithCustomFree(test_buffer, 2, free, test_buffer);
+
+        ///assert
+        ASSERT_IS_NOT_NULL(handle);
+        /*testing the "storage"*/
+        content = CONSTBUFFER_GetContent(handle);
+        ASSERT_ARE_EQUAL(size_t, 2, content->size);
+        ASSERT_ARE_EQUAL(void_ptr, test_buffer, content->buffer, "same buffer should be returned");
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        ///cleanup
+        CONSTBUFFER_Destroy(handle);
+    }
+
+    /* Tests_SRS_CONSTBUFFER_01_014: [ customFreeFuncContext shall be allowed to be NULL. ]*/
+    TEST_FUNCTION(CONSTBUFFER_CreateWithCustomFree_succeedswith_NULL_free_function_context)
+    {
+        ///arrange
+        CONSTBUFFER_HANDLE handle;
+        const CONSTBUFFER* content;
+        unsigned char* test_buffer = (unsigned char*)my_gballoc_malloc(2);
+        test_buffer[0] = 42;
+        test_buffer[1] = 43;
+
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+
+        ///act
+        handle = CONSTBUFFER_CreateWithCustomFree(test_buffer, 2, test_free_func, NULL);
+
+        ///assert
+        ASSERT_IS_NOT_NULL(handle);
+        /*testing the "storage"*/
+        content = CONSTBUFFER_GetContent(handle);
+        ASSERT_ARE_EQUAL(size_t, 2, content->size);
+        ASSERT_ARE_EQUAL(void_ptr, test_buffer, content->buffer, "same buffer should be returned");
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        ///cleanup
+        CONSTBUFFER_Destroy(handle);
+        my_gballoc_free(test_buffer);
+    }
+
+    /* Tests_SRS_CONSTBUFFER_01_008: [ CONSTBUFFER_CreateWithCustomFree shall store the source and size and return a non-NULL handle to the newly created const buffer. ]*/
+    /* Tests_SRS_CONSTBUFFER_01_007: [ If source is non-NULL and size is 0, the source pointer shall be owned (and freed) by the newly created instance of const buffer. ]*/
+    TEST_FUNCTION(CONSTBUFFER_CreateWithCustomFree_with_0_size_succeeds)
+    {
+        ///arrange
+        CONSTBUFFER_HANDLE handle;
+        const CONSTBUFFER* content;
+        unsigned char* test_buffer = (unsigned char*)my_gballoc_malloc(2);
+        test_buffer[0] = 42;
+        test_buffer[1] = 43;
+
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+
+        ///act
+        handle = CONSTBUFFER_CreateWithCustomFree(test_buffer, 0, free, test_buffer);
+
+        ///assert
+        ASSERT_IS_NOT_NULL(handle);
+        /*testing the "storage"*/
+        content = CONSTBUFFER_GetContent(handle);
+        ASSERT_ARE_EQUAL(size_t, 0, content->size);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        ///cleanup
+        CONSTBUFFER_Destroy(handle);
+    }
+
+    /* Tests_SRS_CONSTBUFFER_01_008: [ CONSTBUFFER_CreateWithCustomFree shall store the source and size and return a non-NULL handle to the newly created const buffer. ]*/
+    TEST_FUNCTION(CONSTBUFFER_CreateWithCustomFree_with_NULL_source_and_0_size_succeeds)
+    {
+        ///arrange
+        CONSTBUFFER_HANDLE handle;
+        const CONSTBUFFER* content;
+
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+
+        ///act
+        handle = CONSTBUFFER_CreateWithCustomFree(NULL, 0, free, NULL);
+
+        ///assert
+        ASSERT_IS_NOT_NULL(handle);
+        /*testing the "storage"*/
+        content = CONSTBUFFER_GetContent(handle);
+        ASSERT_ARE_EQUAL(size_t, 0, content->size);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        ///cleanup
+        CONSTBUFFER_Destroy(handle);
+    }
+
+    /* Tests_SRS_CONSTBUFFER_01_011: [ If any error occurs, CONSTBUFFER_CreateWithMoveMemory shall fail and return NULL. ]*/
+    TEST_FUNCTION(when_malloc_fails_CONSTBUFFER_CreateWithCustomFree_fails)
+    {
+        ///arrange
+        CONSTBUFFER_HANDLE handle;
+        unsigned char* test_buffer = (unsigned char*)my_gballoc_malloc(2);
+        test_buffer[0] = 42;
+        test_buffer[1] = 43;
+
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
+            .SetReturn(NULL);
+
+        ///act
+        handle = CONSTBUFFER_CreateWithCustomFree(test_buffer, 2, free, test_buffer);
 
         ///assert
         ASSERT_IS_NULL(handle);
@@ -617,6 +780,50 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
+    }
+
+    /* Tests_SRS_CONSTBUFFER_01_010: [ The non-NULL handle returned by CONSTBUFFER_CreateWithCustomFree shall have its ref count set to 1. ]*/
+    TEST_FUNCTION(CONSTBUFFER_CreateWithCustomFree_is_ref_counted_1)
+    {
+        ///arrange
+        unsigned char* test_buffer = (unsigned char*)my_gballoc_malloc(2);
+        test_buffer[0] = 42;
+        test_buffer[1] = 43;
+        CONSTBUFFER_HANDLE handle = CONSTBUFFER_CreateWithCustomFree(test_buffer, 2, free, test_buffer);
+        umock_c_reset_all_calls();
+        ///act
+
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+
+        CONSTBUFFER_Destroy(handle);
+
+        ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    }
+
+    /* Tests_SRS_CONSTBUFFER_01_009: [ CONSTBUFFER_CreateWithCustomFree shall store customFreeFunc and customFreeFuncContext in order to use them to free the memory when the CONST buffer resources are freed. ]*/
+    /* Tests_SRS_CONSTBUFFER_01_012: [ If the buffer was created by calling CONSTBUFFER_CreateWithCustomFree, the customFreeFunc function shall be called to free the memory, while passed customFreeFuncContext as argument. ]*/
+    TEST_FUNCTION(CONSTBUFFER_CreateWithCustomFree_with_custom_free_function_calls_the_custom_free_func)
+    {
+        ///arrange
+        unsigned char* test_buffer = (unsigned char*)my_gballoc_malloc(2);
+        test_buffer[0] = 42;
+        test_buffer[1] = 43;
+        CONSTBUFFER_HANDLE handle = CONSTBUFFER_CreateWithCustomFree(test_buffer, 2, test_free_func, (void*)0x4242);
+        umock_c_reset_all_calls();
+        ///act
+
+        STRICT_EXPECTED_CALL(test_free_func((void*)0x4242));
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+
+        CONSTBUFFER_Destroy(handle);
+
+        ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        // cleanup
+        my_gballoc_free(test_buffer);
     }
 
     /* Tests_SRS_CONSTBUFFER_01_003: [ The non-NULL handle returned by CONSTBUFFER_CreateWithMoveMemory shall have its ref count set to "1". ]*/
