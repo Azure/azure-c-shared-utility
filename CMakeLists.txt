@@ -207,6 +207,7 @@ ${CONDITION_C_FILE}
 ${LOCK_C_FILE}
 ${PLATFORM_C_FILE}
 ${SOCKETIO_C_FILE}
+${SOCKET_LISTENER_C_FILE}
 ${TICKCOUTER_C_FILE}
 ${THREAD_C_FILE}
 ${UNIQUEID_C_FILE}
@@ -304,6 +305,7 @@ ${LOGGING_H_FILE}
 ./inc/azure_c_shared_utility/sha-private.h
 ./inc/azure_c_shared_utility/shared_util_options.h
 ./inc/azure_c_shared_utility/sha.h
+./inc/azure_c_shared_utility/socket_listener.h
 ./inc/azure_c_shared_utility/socketio.h
 ./inc/azure_c_shared_utility/stdint_ce6.h
 ./inc/azure_c_shared_utility/strings.h
