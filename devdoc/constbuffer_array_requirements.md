@@ -3,7 +3,7 @@
 
 ## Overview
 
-`constbuffer_array` is a module that stiches several `CONSTBUFFER_HANDLE`s together. `constbuffer_array` can add/remove a `CONSTBUFFER_HANDLE` at the beginning (front) of the already constructed stitch. 
+`constbuffer_array` is a module that stiches several `CONSTBUFFER_HANDLE`s together. `constbuffer_array` can add/remove a `CONSTBUFFER_HANDLE` at the beginning (front) of the already constructed stitch. `constbuffer_array` can merge with another `constbuffer_array` by appending the contents of one array to the other.
 
 `CONSTBUFFER_ARRAY_HANDLE`s are immutable, that is, adding/removing a `CONSTBUFFER_HANDLE` to/from an existing `CONSTBUFFER_ARRAY_HANDLE` will result in a new `CONSTBUFFER_ARRAY_HANDLE`.
 
@@ -23,6 +23,9 @@ MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_add_front, CONST
 
 /*remove front*/
 MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_remove_front, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle, CONSTBUFFER_HANDLE *const_buffer_handle);
+
+/*append array (merge)*/
+MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_append, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle, CONSTBUFFER_ARRAY_HANDLE, appended_constbuffer_array_handle);
 
 /* getters */
 MOCKABLE_FUNCTION(, int, constbuffer_array_get_buffer_count, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle, uint32_t*, buffer_count);
@@ -138,6 +141,30 @@ MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_remove_front, CO
 **SRS_CONSTBUFFER_ARRAY_02_049: [** `constbuffer_array_remove_front` shall succeed and return a non-`NULL` value. **]**
 
 **SRS_CONSTBUFFER_ARRAY_02_036: [** If there are any failures then `constbuffer_array_remove_front` shall fail and return `NULL`. **]**
+
+### constbuffer_array_append
+
+```c
+MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_append, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle, CONSTBUFFER_ARRAY_HANDLE, appended_constbuffer_array_handle);
+```
+
+`constbuffer_array_append` creates a new const buffer array with all of the const buffers from the first parameter, followed by all of the const buffers from the second parameter.
+
+**SRS_CONSTBUFFER_ARRAY_42_001: [** If `constbuffer_array_handle` is `NULL` then `constbuffer_array_append` shall fail and return `NULL`. **]**
+
+**SRS_CONSTBUFFER_ARRAY_42_002: [** If `appended_constbuffer_array_handle` is `NULL` then `constbuffer_array_append` shall fail and return `NULL`. **]**
+
+**SRS_CONSTBUFFER_ARRAY_42_003: [** `appended_constbuffer_array_handle` shall allocate memory to hold all of the `CONSTBUFFER_HANDLES` from `constbuffer_array_handle` and from `appended_constbuffer_array_handle`. **]**
+
+**SRS_CONSTBUFFER_ARRAY_42_004: [** `appended_constbuffer_array_handle` shall copy all of the `CONSTBUFFER_HANDLES` from `constbuffer_array_handle` to the newly constructed array. **]**
+
+**SRS_CONSTBUFFER_ARRAY_42_005: [** `appended_constbuffer_array_handle` shall copy all of the `CONSTBUFFER_HANDLES` from `appended_constbuffer_array_handle` to the newly constructed array. **]**
+
+**SRS_CONSTBUFFER_ARRAY_42_006: [** `appended_constbuffer_array_handle` shall increment the ref count of all the copied `CONSTBUFFER_HANDLES`. **]**
+
+**SRS_CONSTBUFFER_ARRAY_42_007: [** `appended_constbuffer_array_handle` shall succeed and return a non-`NULL` value. **]**
+
+**SRS_CONSTBUFFER_ARRAY_42_008: [** If there are any failures then `appended_constbuffer_array_handle` shall fail and return `NULL`. **]**
 
 ### constbuffer_array_get_buffer_count
 
