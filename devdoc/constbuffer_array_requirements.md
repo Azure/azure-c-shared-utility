@@ -156,9 +156,9 @@ MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_append, CONSTBUF
 
 **SRS_CONSTBUFFER_ARRAY_42_003: [** `appended_constbuffer_array_handle` shall allocate memory to hold all of the `CONSTBUFFER_HANDLES` from `constbuffer_array_handle` and from `appended_constbuffer_array_handle`. **]**
 
-**SRS_CONSTBUFFER_ARRAY_42_004: [** `appended_constbuffer_array_handle` shall copy all of the `CONSTBUFFER_HANDLES` from `constbuffer_array_handle` to the newly constructed array. **]**
+**SRS_CONSTBUFFER_ARRAY_42_004: [** `appended_constbuffer_array_handle` shall copy all of the `CONSTBUFFER_HANDLES` from `constbuffer_array_handle` to the newly constructed array, incrementing their ref counts. **]**
 
-**SRS_CONSTBUFFER_ARRAY_42_005: [** `appended_constbuffer_array_handle` shall copy all of the `CONSTBUFFER_HANDLES` from `appended_constbuffer_array_handle` to the newly constructed array. **]**
+**SRS_CONSTBUFFER_ARRAY_42_005: [** `appended_constbuffer_array_handle` shall copy all of the `CONSTBUFFER_HANDLES` from `appended_constbuffer_array_handle` to the newly constructed array, incrementing their ref counts. **]**
 
 **SRS_CONSTBUFFER_ARRAY_42_006: [** `appended_constbuffer_array_handle` shall increment the ref count of all the copied `CONSTBUFFER_HANDLES`. **]**
 
