@@ -49,11 +49,15 @@ static const unsigned char one = '1';
 static const unsigned char two[] = { '2', '2' };
 static const unsigned char three[] = { '3', '3', '3' };
 static const unsigned char four[] = { '4', '4', '4', '4' };
+static const unsigned char five[] = { '5', '5', '5', '5', '5' };
+static const unsigned char six[] = { '6', '6', '6', '6', '6', '6' };
 
 static CONSTBUFFER_HANDLE TEST_CONSTBUFFER_HANDLE_1;
 static CONSTBUFFER_HANDLE TEST_CONSTBUFFER_HANDLE_2;
 static CONSTBUFFER_HANDLE TEST_CONSTBUFFER_HANDLE_3;
 static CONSTBUFFER_HANDLE TEST_CONSTBUFFER_HANDLE_4;
+static CONSTBUFFER_HANDLE TEST_CONSTBUFFER_HANDLE_5;
+static CONSTBUFFER_HANDLE TEST_CONSTBUFFER_HANDLE_6;
 
 BEGIN_TEST_SUITE(constbuffer_array_unittests)
 
@@ -115,12 +119,20 @@ TEST_FUNCTION_INITIALIZE(method_init)
     TEST_CONSTBUFFER_HANDLE_4 = CONSTBUFFER_Create(four, sizeof(four));
     ASSERT_IS_NOT_NULL(TEST_CONSTBUFFER_HANDLE_4);
 
+    TEST_CONSTBUFFER_HANDLE_5 = CONSTBUFFER_Create(five, sizeof(five));
+    ASSERT_IS_NOT_NULL(TEST_CONSTBUFFER_HANDLE_5);
+
+    TEST_CONSTBUFFER_HANDLE_6 = CONSTBUFFER_Create(six, sizeof(six));
+    ASSERT_IS_NOT_NULL(TEST_CONSTBUFFER_HANDLE_6);
+
     umock_c_reset_all_calls();
     umock_c_negative_tests_init();
 }
 
 TEST_FUNCTION_CLEANUP(method_cleanup)
 {
+    CONSTBUFFER_Destroy(TEST_CONSTBUFFER_HANDLE_6);
+    CONSTBUFFER_Destroy(TEST_CONSTBUFFER_HANDLE_5);
     CONSTBUFFER_Destroy(TEST_CONSTBUFFER_HANDLE_4);
     CONSTBUFFER_Destroy(TEST_CONSTBUFFER_HANDLE_3);
     CONSTBUFFER_Destroy(TEST_CONSTBUFFER_HANDLE_2);
@@ -289,6 +301,23 @@ static CONSTBUFFER_ARRAY_HANDLE TEST_constbuffer_array_create_empty(void)
     return result;
 }
 
+static CONSTBUFFER_ARRAY_HANDLE TEST_constbuffer_array_create(uint32_t size, uint32_t start_buffer)
+{
+    static CONSTBUFFER_HANDLE all_buffers[6];
+    all_buffers[0] = TEST_CONSTBUFFER_HANDLE_1;
+    all_buffers[1] = TEST_CONSTBUFFER_HANDLE_2;
+    all_buffers[2] = TEST_CONSTBUFFER_HANDLE_3;
+    all_buffers[3] = TEST_CONSTBUFFER_HANDLE_4;
+    all_buffers[4] = TEST_CONSTBUFFER_HANDLE_5;
+    all_buffers[5] = TEST_CONSTBUFFER_HANDLE_6;
+
+    CONSTBUFFER_ARRAY_HANDLE result = constbuffer_array_create(&all_buffers[start_buffer], size);
+    ASSERT_IS_NOT_NULL(result);
+
+    umock_c_reset_all_calls();
+    return result;
+}
+
 static CONSTBUFFER_ARRAY_HANDLE TEST_constbuffer_array_add_front(CONSTBUFFER_ARRAY_HANDLE constbuffer_array, uint32_t nExistingBuffers, CONSTBUFFER_HANDLE constbuffer_handle)
 {
     uint32_t i;
@@ -336,6 +365,760 @@ static void TEST_constbuffer_array_dec_ref(CONSTBUFFER_ARRAY_HANDLE constbuffer_
     constbuffer_array_dec_ref(constbuffer_array);
     umock_c_reset_all_calls();
 }
+
+/* constbuffer_array_create_from_array_array */
+
+static void constbuffer_array_create_from_array_array_inert_path(uint32_t existing_item_count)
+{
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    for (uint32_t i = 0; i < existing_item_count; i++)
+    {
+        STRICT_EXPECTED_CALL(CONSTBUFFER_Clone(IGNORED_PTR_ARG));
+    }
+}
+
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_009: [ If buffer_arrays is NULL and buffer_array_count is not 0 then constbuffer_array_create_from_array_array shall fail and return NULL. ]*/
+TEST_FUNCTION(constbuffer_array_create_from_array_array_returns_null_when_buffer_arrays_is_null_and_count_non_zero)
+{
+    ///act
+    CONSTBUFFER_ARRAY_HANDLE result = constbuffer_array_create_from_array_array(NULL, 1);
+
+    ///assert
+    ASSERT_IS_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_001: [ If buffer_arrays is NULL or buffer_array_count is 0 then constbuffer_array_create_from_array_array shall create a new, empty CONSTBUFFER_ARRAY_HANDLE. ]*/
+TEST_FUNCTION(constbuffer_array_create_from_array_array_returns_empty_array_when_buffer_arrays_is_null_and_count_zero)
+{
+    ///arrange
+    constbuffer_array_create_empty_inert_path();
+
+    ///act
+    CONSTBUFFER_ARRAY_HANDLE result = constbuffer_array_create_from_array_array(NULL, 0);
+
+    ///assert
+    ASSERT_IS_NOT_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    uint32_t count;
+    int count_result = constbuffer_array_get_buffer_count(result, &count);
+    ASSERT_ARE_EQUAL(int, 0, count_result);
+    ASSERT_ARE_EQUAL(int, 0, count);
+
+    ///clean
+    constbuffer_array_dec_ref(result);
+}
+
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_001: [ If buffer_arrays is NULL or buffer_array_count is 0 then constbuffer_array_create_from_array_array shall create a new, empty CONSTBUFFER_ARRAY_HANDLE. ]*/
+TEST_FUNCTION(constbuffer_array_create_from_array_array_returns_empty_array_when_count_zero)
+{
+    ///arrange
+    CONSTBUFFER_ARRAY_HANDLE empty_array = TEST_constbuffer_array_create_empty();
+
+    constbuffer_array_create_empty_inert_path();
+
+    ///act
+    CONSTBUFFER_ARRAY_HANDLE result = constbuffer_array_create_from_array_array(&empty_array, 0);
+
+    ///assert
+    ASSERT_IS_NOT_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    uint32_t count;
+    int count_result = constbuffer_array_get_buffer_count(result, &count);
+    ASSERT_ARE_EQUAL(int, 0, count_result);
+    ASSERT_ARE_EQUAL(int, 0, count);
+
+    ///clean
+    constbuffer_array_dec_ref(result);
+    constbuffer_array_dec_ref(empty_array);
+}
+
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_002: [ If any const buffer array in buffer_arrays is NULL then constbuffer_array_create_from_array_array shall fail and return NULL. ]*/
+TEST_FUNCTION(constbuffer_array_create_from_array_array_returns_null_when_buffer_array_contains_only_null)
+{
+    ///arrange
+    CONSTBUFFER_ARRAY_HANDLE buffer_array_null[1] = { NULL };
+
+    ///act
+    CONSTBUFFER_ARRAY_HANDLE result = constbuffer_array_create_from_array_array(buffer_array_null, 1);
+
+    ///assert
+    ASSERT_IS_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_002: [ If any const buffer array in buffer_arrays is NULL then constbuffer_array_create_from_array_array shall fail and return NULL. ]*/
+TEST_FUNCTION(constbuffer_array_create_from_array_array_returns_null_when_buffer_array_contains_valid_and_null_arrays)
+{
+    ///arrange
+    CONSTBUFFER_ARRAY_HANDLE empty_array = TEST_constbuffer_array_create_empty();
+    CONSTBUFFER_ARRAY_HANDLE buffer_array[] = { NULL, NULL };
+    buffer_array[0] = empty_array;
+
+    ///act
+    CONSTBUFFER_ARRAY_HANDLE result = constbuffer_array_create_from_array_array(buffer_array, 2);
+
+    ///assert
+    ASSERT_IS_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    constbuffer_array_dec_ref(empty_array);
+}
+
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_007: [ constbuffer_array_create_from_array_array shall succeed and return a non-NULL value. ]*/
+TEST_FUNCTION(constbuffer_array_create_from_array_array_with_two_empty_arrays_succeeds)
+{
+    ///arrange
+    const uint32_t array_count = 2;
+    CONSTBUFFER_ARRAY_HANDLE buffer_array[2];
+    buffer_array[0] = TEST_constbuffer_array_create_empty();
+    buffer_array[1] = TEST_constbuffer_array_create_empty();
+
+    constbuffer_array_create_from_array_array_inert_path(0);
+
+    ///act
+    CONSTBUFFER_ARRAY_HANDLE result = constbuffer_array_create_from_array_array(buffer_array, array_count);
+
+    ///assert
+    ASSERT_IS_NOT_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    uint32_t count;
+    int count_result = constbuffer_array_get_buffer_count(result, &count);
+    ASSERT_ARE_EQUAL(int, 0, count_result);
+    ASSERT_ARE_EQUAL(uint32_t, 0, count);
+
+    ///clean
+    constbuffer_array_dec_ref(result);
+    for (uint32_t i = 0; i < array_count; ++i)
+    {
+        constbuffer_array_dec_ref(buffer_array[i]);
+    }
+}
+
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_007: [ constbuffer_array_create_from_array_array shall succeed and return a non-NULL value. ]*/
+TEST_FUNCTION(constbuffer_array_create_from_array_array_with_three_empty_arrays_succeeds)
+{
+    ///arrange
+    const uint32_t array_count = 3;
+    CONSTBUFFER_ARRAY_HANDLE buffer_array[3];
+    buffer_array[0] = TEST_constbuffer_array_create_empty();
+    buffer_array[1] = TEST_constbuffer_array_create_empty();
+    buffer_array[2] = TEST_constbuffer_array_create_empty();
+
+    constbuffer_array_create_from_array_array_inert_path(0);
+
+    ///act
+    CONSTBUFFER_ARRAY_HANDLE result = constbuffer_array_create_from_array_array(buffer_array, array_count);
+
+    ///assert
+    ASSERT_IS_NOT_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    uint32_t count;
+    int count_result = constbuffer_array_get_buffer_count(result, &count);
+    ASSERT_ARE_EQUAL(int, 0, count_result);
+    ASSERT_ARE_EQUAL(uint32_t, 0, count);
+
+    ///clean
+    constbuffer_array_dec_ref(result);
+    for (uint32_t i = 0; i < array_count; ++i)
+    {
+        constbuffer_array_dec_ref(buffer_array[i]);
+    }
+}
+
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_003: [ constbuffer_array_create_from_array_array shall allocate memory to hold all of the CONSTBUFFER_HANDLES from buffer_arrays. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_004: [ constbuffer_array_create_from_array_array shall copy all of the CONSTBUFFER_HANDLES from each const buffer array in buffer_arrays to the newly constructed array by calling CONSTBUFFER_Clone. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_007: [ constbuffer_array_create_from_array_array shall succeed and return a non-NULL value. ]*/
+TEST_FUNCTION(constbuffer_array_create_from_array_array_with_empty_array_and_1_element_array_succeeds)
+{
+    ///arrange
+    const uint32_t array_count = 2;
+    CONSTBUFFER_ARRAY_HANDLE buffer_array[2];
+    buffer_array[0] = TEST_constbuffer_array_create_empty();
+    buffer_array[1] = TEST_constbuffer_array_create(1, 0);
+
+    constbuffer_array_create_from_array_array_inert_path(1);
+
+    ///act
+    CONSTBUFFER_ARRAY_HANDLE result = constbuffer_array_create_from_array_array(buffer_array, array_count);
+
+    ///assert
+    ASSERT_IS_NOT_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    uint32_t count;
+    int count_result = constbuffer_array_get_buffer_count(result, &count);
+    ASSERT_ARE_EQUAL(int, 0, count_result);
+    ASSERT_ARE_EQUAL(uint32_t, 1, count);
+
+    ASSERT_ARE_EQUAL(void_ptr, TEST_CONSTBUFFER_HANDLE_1, constbuffer_array_get_buffer(result, 0), "Validate result[0]");
+
+    ///clean
+    constbuffer_array_dec_ref(result);
+    for (uint32_t i = 0; i < array_count; ++i)
+    {
+        constbuffer_array_dec_ref(buffer_array[i]);
+    }
+}
+
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_003: [ constbuffer_array_create_from_array_array shall allocate memory to hold all of the CONSTBUFFER_HANDLES from buffer_arrays. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_004: [ constbuffer_array_create_from_array_array shall copy all of the CONSTBUFFER_HANDLES from each const buffer array in buffer_arrays to the newly constructed array by calling CONSTBUFFER_Clone. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_007: [ constbuffer_array_create_from_array_array shall succeed and return a non-NULL value. ]*/
+TEST_FUNCTION(constbuffer_array_create_from_array_array_with_1_element_array_and_empty_array_succeeds)
+{
+    ///arrange
+    const uint32_t array_count = 2;
+    CONSTBUFFER_ARRAY_HANDLE buffer_array[2];
+    buffer_array[0] = TEST_constbuffer_array_create(1, 0);
+    buffer_array[1] = TEST_constbuffer_array_create_empty();
+
+    constbuffer_array_create_from_array_array_inert_path(1);
+
+    ///act
+    CONSTBUFFER_ARRAY_HANDLE result = constbuffer_array_create_from_array_array(buffer_array, array_count);
+
+    ///assert
+    ASSERT_IS_NOT_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    uint32_t count;
+    int count_result = constbuffer_array_get_buffer_count(result, &count);
+    ASSERT_ARE_EQUAL(int, 0, count_result);
+    ASSERT_ARE_EQUAL(uint32_t, 1, count);
+
+    ASSERT_ARE_EQUAL(void_ptr, TEST_CONSTBUFFER_HANDLE_1, constbuffer_array_get_buffer(result, 0), "Validate result[0]");
+
+    ///clean
+    constbuffer_array_dec_ref(result);
+    for (uint32_t i = 0; i < array_count; ++i)
+    {
+        constbuffer_array_dec_ref(buffer_array[i]);
+    }
+}
+
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_003: [ constbuffer_array_create_from_array_array shall allocate memory to hold all of the CONSTBUFFER_HANDLES from buffer_arrays. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_004: [ constbuffer_array_create_from_array_array shall copy all of the CONSTBUFFER_HANDLES from each const buffer array in buffer_arrays to the newly constructed array by calling CONSTBUFFER_Clone. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_007: [ constbuffer_array_create_from_array_array shall succeed and return a non-NULL value. ]*/
+TEST_FUNCTION(constbuffer_array_create_from_array_array_with_2_1_element_arrays_succeeds)
+{
+    ///arrange
+    const uint32_t array_count = 2;
+    CONSTBUFFER_ARRAY_HANDLE buffer_array[2];
+    buffer_array[0] = TEST_constbuffer_array_create(1, 0);
+    buffer_array[1] = TEST_constbuffer_array_create(1, 1);
+
+    constbuffer_array_create_from_array_array_inert_path(2);
+
+    ///act
+    CONSTBUFFER_ARRAY_HANDLE result = constbuffer_array_create_from_array_array(buffer_array, array_count);
+
+    ///assert
+    ASSERT_IS_NOT_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    uint32_t count;
+    int count_result = constbuffer_array_get_buffer_count(result, &count);
+    ASSERT_ARE_EQUAL(int, 0, count_result);
+    ASSERT_ARE_EQUAL(uint32_t, 2, count);
+
+    ASSERT_ARE_EQUAL(void_ptr, TEST_CONSTBUFFER_HANDLE_1, constbuffer_array_get_buffer(result, 0), "Validate result[0]");
+    ASSERT_ARE_EQUAL(void_ptr, TEST_CONSTBUFFER_HANDLE_2, constbuffer_array_get_buffer(result, 1), "Validate result[1]");
+
+    ///clean
+    constbuffer_array_dec_ref(result);
+    for (uint32_t i = 0; i < array_count; ++i)
+    {
+        constbuffer_array_dec_ref(buffer_array[i]);
+    }
+}
+
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_003: [ constbuffer_array_create_from_array_array shall allocate memory to hold all of the CONSTBUFFER_HANDLES from buffer_arrays. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_004: [ constbuffer_array_create_from_array_array shall copy all of the CONSTBUFFER_HANDLES from each const buffer array in buffer_arrays to the newly constructed array by calling CONSTBUFFER_Clone. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_007: [ constbuffer_array_create_from_array_array shall succeed and return a non-NULL value. ]*/
+TEST_FUNCTION(constbuffer_array_create_from_array_array_with_3_1_element_arrays_succeeds)
+{
+    ///arrange
+    const uint32_t array_count = 3;
+    CONSTBUFFER_ARRAY_HANDLE buffer_array[3];
+    buffer_array[0] = TEST_constbuffer_array_create(1, 0);
+    buffer_array[1] = TEST_constbuffer_array_create(1, 1);
+    buffer_array[2] = TEST_constbuffer_array_create(1, 2);
+
+    constbuffer_array_create_from_array_array_inert_path(3);
+
+    ///act
+    CONSTBUFFER_ARRAY_HANDLE result = constbuffer_array_create_from_array_array(buffer_array, array_count);
+
+    ///assert
+    ASSERT_IS_NOT_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    uint32_t count;
+    int count_result = constbuffer_array_get_buffer_count(result, &count);
+    ASSERT_ARE_EQUAL(int, 0, count_result);
+    ASSERT_ARE_EQUAL(uint32_t, 3, count);
+
+    ASSERT_ARE_EQUAL(void_ptr, TEST_CONSTBUFFER_HANDLE_1, constbuffer_array_get_buffer(result, 0), "Validate result[0]");
+    ASSERT_ARE_EQUAL(void_ptr, TEST_CONSTBUFFER_HANDLE_2, constbuffer_array_get_buffer(result, 1), "Validate result[1]");
+    ASSERT_ARE_EQUAL(void_ptr, TEST_CONSTBUFFER_HANDLE_3, constbuffer_array_get_buffer(result, 2), "Validate result[2]");
+
+    ///clean
+    constbuffer_array_dec_ref(result);
+    for (uint32_t i = 0; i < array_count; ++i)
+    {
+        constbuffer_array_dec_ref(buffer_array[i]);
+    }
+}
+
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_003: [ constbuffer_array_create_from_array_array shall allocate memory to hold all of the CONSTBUFFER_HANDLES from buffer_arrays. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_004: [ constbuffer_array_create_from_array_array shall copy all of the CONSTBUFFER_HANDLES from each const buffer array in buffer_arrays to the newly constructed array by calling CONSTBUFFER_Clone. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_007: [ constbuffer_array_create_from_array_array shall succeed and return a non-NULL value. ]*/
+TEST_FUNCTION(constbuffer_array_create_from_array_array_with_2_2_element_arrays_succeeds)
+{
+    ///arrange
+    const uint32_t array_count = 2;
+    CONSTBUFFER_ARRAY_HANDLE buffer_array[2];
+    buffer_array[0] = TEST_constbuffer_array_create(2, 0);
+    buffer_array[1] = TEST_constbuffer_array_create(2, 2);
+
+    constbuffer_array_create_from_array_array_inert_path(4);
+
+    ///act
+    CONSTBUFFER_ARRAY_HANDLE result = constbuffer_array_create_from_array_array(buffer_array, array_count);
+
+    ///assert
+    ASSERT_IS_NOT_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    uint32_t count;
+    int count_result = constbuffer_array_get_buffer_count(result, &count);
+    ASSERT_ARE_EQUAL(int, 0, count_result);
+    ASSERT_ARE_EQUAL(uint32_t, 4, count);
+
+    ASSERT_ARE_EQUAL(void_ptr, TEST_CONSTBUFFER_HANDLE_1, constbuffer_array_get_buffer(result, 0), "Validate result[0]");
+    ASSERT_ARE_EQUAL(void_ptr, TEST_CONSTBUFFER_HANDLE_2, constbuffer_array_get_buffer(result, 1), "Validate result[1]");
+    ASSERT_ARE_EQUAL(void_ptr, TEST_CONSTBUFFER_HANDLE_3, constbuffer_array_get_buffer(result, 2), "Validate result[2]");
+    ASSERT_ARE_EQUAL(void_ptr, TEST_CONSTBUFFER_HANDLE_4, constbuffer_array_get_buffer(result, 3), "Validate result[3]");
+
+    ///clean
+    constbuffer_array_dec_ref(result);
+    for (uint32_t i = 0; i < array_count; ++i)
+    {
+        constbuffer_array_dec_ref(buffer_array[i]);
+    }
+}
+
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_003: [ constbuffer_array_create_from_array_array shall allocate memory to hold all of the CONSTBUFFER_HANDLES from buffer_arrays. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_004: [ constbuffer_array_create_from_array_array shall copy all of the CONSTBUFFER_HANDLES from each const buffer array in buffer_arrays to the newly constructed array by calling CONSTBUFFER_Clone. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_007: [ constbuffer_array_create_from_array_array shall succeed and return a non-NULL value. ]*/
+TEST_FUNCTION(constbuffer_array_create_from_array_array_with_3_2_element_arrays_succeeds)
+{
+    ///arrange
+    const uint32_t array_count = 3;
+    CONSTBUFFER_ARRAY_HANDLE buffer_array[3];
+    buffer_array[0] = TEST_constbuffer_array_create(2, 0);
+    buffer_array[1] = TEST_constbuffer_array_create(2, 2);
+    buffer_array[2] = TEST_constbuffer_array_create(2, 4);
+
+    constbuffer_array_create_from_array_array_inert_path(6);
+
+    ///act
+    CONSTBUFFER_ARRAY_HANDLE result = constbuffer_array_create_from_array_array(buffer_array, array_count);
+
+    ///assert
+    ASSERT_IS_NOT_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    uint32_t count;
+    int count_result = constbuffer_array_get_buffer_count(result, &count);
+    ASSERT_ARE_EQUAL(int, 0, count_result);
+    ASSERT_ARE_EQUAL(uint32_t, 6, count);
+
+    ASSERT_ARE_EQUAL(void_ptr, TEST_CONSTBUFFER_HANDLE_1, constbuffer_array_get_buffer(result, 0), "Validate result[0]");
+    ASSERT_ARE_EQUAL(void_ptr, TEST_CONSTBUFFER_HANDLE_2, constbuffer_array_get_buffer(result, 1), "Validate result[1]");
+    ASSERT_ARE_EQUAL(void_ptr, TEST_CONSTBUFFER_HANDLE_3, constbuffer_array_get_buffer(result, 2), "Validate result[2]");
+    ASSERT_ARE_EQUAL(void_ptr, TEST_CONSTBUFFER_HANDLE_4, constbuffer_array_get_buffer(result, 3), "Validate result[3]");
+    ASSERT_ARE_EQUAL(void_ptr, TEST_CONSTBUFFER_HANDLE_5, constbuffer_array_get_buffer(result, 4), "Validate result[4]");
+    ASSERT_ARE_EQUAL(void_ptr, TEST_CONSTBUFFER_HANDLE_6, constbuffer_array_get_buffer(result, 5), "Validate result[5]");
+
+    ///clean
+    constbuffer_array_dec_ref(result);
+    for (uint32_t i = 0; i < array_count; ++i)
+    {
+        constbuffer_array_dec_ref(buffer_array[i]);
+    }
+}
+
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_003: [ constbuffer_array_create_from_array_array shall allocate memory to hold all of the CONSTBUFFER_HANDLES from buffer_arrays. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_004: [ constbuffer_array_create_from_array_array shall copy all of the CONSTBUFFER_HANDLES from each const buffer array in buffer_arrays to the newly constructed array by calling CONSTBUFFER_Clone. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_007: [ constbuffer_array_create_from_array_array shall succeed and return a non-NULL value. ]*/
+TEST_FUNCTION(constbuffer_array_create_from_array_array_with_3_arrays_of_size_1_2_3_succeeds)
+{
+    ///arrange
+    const uint32_t array_count = 3;
+    CONSTBUFFER_ARRAY_HANDLE buffer_array[3];
+    buffer_array[0] = TEST_constbuffer_array_create(1, 0);
+    buffer_array[1] = TEST_constbuffer_array_create(2, 1);
+    buffer_array[2] = TEST_constbuffer_array_create(3, 3);
+
+    constbuffer_array_create_from_array_array_inert_path(6);
+
+    ///act
+    CONSTBUFFER_ARRAY_HANDLE result = constbuffer_array_create_from_array_array(buffer_array, array_count);
+
+    ///assert
+    ASSERT_IS_NOT_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    uint32_t count;
+    int count_result = constbuffer_array_get_buffer_count(result, &count);
+    ASSERT_ARE_EQUAL(int, 0, count_result);
+    ASSERT_ARE_EQUAL(uint32_t, 6, count);
+
+    ASSERT_ARE_EQUAL(void_ptr, TEST_CONSTBUFFER_HANDLE_1, constbuffer_array_get_buffer(result, 0), "Validate result[0]");
+    ASSERT_ARE_EQUAL(void_ptr, TEST_CONSTBUFFER_HANDLE_2, constbuffer_array_get_buffer(result, 1), "Validate result[1]");
+    ASSERT_ARE_EQUAL(void_ptr, TEST_CONSTBUFFER_HANDLE_3, constbuffer_array_get_buffer(result, 2), "Validate result[2]");
+    ASSERT_ARE_EQUAL(void_ptr, TEST_CONSTBUFFER_HANDLE_4, constbuffer_array_get_buffer(result, 3), "Validate result[3]");
+    ASSERT_ARE_EQUAL(void_ptr, TEST_CONSTBUFFER_HANDLE_5, constbuffer_array_get_buffer(result, 4), "Validate result[4]");
+    ASSERT_ARE_EQUAL(void_ptr, TEST_CONSTBUFFER_HANDLE_6, constbuffer_array_get_buffer(result, 5), "Validate result[5]");
+
+    ///clean
+    constbuffer_array_dec_ref(result);
+    for (uint32_t i = 0; i < array_count; ++i)
+    {
+        constbuffer_array_dec_ref(buffer_array[i]);
+    }
+}
+
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_003: [ constbuffer_array_create_from_array_array shall allocate memory to hold all of the CONSTBUFFER_HANDLES from buffer_arrays. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_004: [ constbuffer_array_create_from_array_array shall copy all of the CONSTBUFFER_HANDLES from each const buffer array in buffer_arrays to the newly constructed array by calling CONSTBUFFER_Clone. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_007: [ constbuffer_array_create_from_array_array shall succeed and return a non-NULL value. ]*/
+TEST_FUNCTION(constbuffer_array_create_from_array_array_with_2_2_element_arrays_same_pointer_succeeds)
+{
+    ///arrange
+    const uint32_t array_count = 2;
+    CONSTBUFFER_ARRAY_HANDLE test_array = TEST_constbuffer_array_create(2, 0);
+    CONSTBUFFER_ARRAY_HANDLE buffer_array[2];
+    buffer_array[0] = test_array;
+    buffer_array[1] = test_array;
+
+    constbuffer_array_create_from_array_array_inert_path(4);
+
+    ///act
+    CONSTBUFFER_ARRAY_HANDLE result = constbuffer_array_create_from_array_array(buffer_array, array_count);
+
+    ///assert
+    ASSERT_IS_NOT_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    uint32_t count;
+    int count_result = constbuffer_array_get_buffer_count(result, &count);
+    ASSERT_ARE_EQUAL(int, 0, count_result);
+    ASSERT_ARE_EQUAL(uint32_t, 4, count);
+
+    ASSERT_ARE_EQUAL(void_ptr, TEST_CONSTBUFFER_HANDLE_1, constbuffer_array_get_buffer(result, 0), "Validate result[0]");
+    ASSERT_ARE_EQUAL(void_ptr, TEST_CONSTBUFFER_HANDLE_2, constbuffer_array_get_buffer(result, 1), "Validate result[1]");
+    ASSERT_ARE_EQUAL(void_ptr, TEST_CONSTBUFFER_HANDLE_1, constbuffer_array_get_buffer(result, 2), "Validate result[2]");
+    ASSERT_ARE_EQUAL(void_ptr, TEST_CONSTBUFFER_HANDLE_2, constbuffer_array_get_buffer(result, 3), "Validate result[3]");
+
+    ///clean
+    constbuffer_array_dec_ref(result);
+    constbuffer_array_dec_ref(test_array);
+}
+
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_008: [ If there are any failures then constbuffer_array_create_from_array_array shall fail and return NULL. ]*/
+TEST_FUNCTION(constbuffer_array_create_from_array_array_fails_if_malloc_fails)
+{
+    ///arrange
+    const uint32_t array_count = 2;
+    CONSTBUFFER_ARRAY_HANDLE buffer_array[2];
+    buffer_array[0] = TEST_constbuffer_array_create(2, 0);
+    buffer_array[1] = TEST_constbuffer_array_create(2, 2);
+
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
+        .SetReturn(NULL);
+
+    ///act
+    CONSTBUFFER_ARRAY_HANDLE result = constbuffer_array_create_from_array_array(buffer_array, array_count);
+
+    ///assert
+    ASSERT_IS_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    for (uint32_t i = 0; i < array_count; ++i)
+    {
+        constbuffer_array_dec_ref(buffer_array[i]);
+    }
+}
+
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_008: [ If there are any failures then appended_constbuffer_array_handle shall fail and return NULL. ]*/
+TEST_FUNCTION(constbuffer_array_create_from_array_array_with_3_2_element_arrays_fails_if_first_clone_fails)
+{
+    ///arrange
+    const uint32_t array_count = 3;
+    CONSTBUFFER_ARRAY_HANDLE buffer_array[3];
+    buffer_array[0] = TEST_constbuffer_array_create(2, 0);
+    buffer_array[1] = TEST_constbuffer_array_create(2, 2);
+    buffer_array[2] = TEST_constbuffer_array_create(2, 4);
+
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(CONSTBUFFER_Clone(IGNORED_PTR_ARG))
+        .SetReturn(NULL);
+
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+
+    ///act
+    CONSTBUFFER_ARRAY_HANDLE result = constbuffer_array_create_from_array_array(buffer_array, array_count);
+
+    ///assert
+    ASSERT_IS_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    constbuffer_array_dec_ref(result);
+    for (uint32_t i = 0; i < array_count; ++i)
+    {
+        constbuffer_array_dec_ref(buffer_array[i]);
+    }
+}
+
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_008: [ If there are any failures then appended_constbuffer_array_handle shall fail and return NULL. ]*/
+TEST_FUNCTION(constbuffer_array_create_from_array_array_with_3_2_element_arrays_fails_if_second_clone_fails)
+{
+    ///arrange
+    const uint32_t array_count = 3;
+    CONSTBUFFER_ARRAY_HANDLE buffer_array[3];
+    buffer_array[0] = TEST_constbuffer_array_create(2, 0);
+    buffer_array[1] = TEST_constbuffer_array_create(2, 2);
+    buffer_array[2] = TEST_constbuffer_array_create(2, 4);
+
+    CONSTBUFFER_HANDLE clone;
+
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(CONSTBUFFER_Clone(IGNORED_PTR_ARG))
+        .CaptureReturn(&clone);
+    STRICT_EXPECTED_CALL(CONSTBUFFER_Clone(IGNORED_PTR_ARG))
+        .SetReturn(NULL);
+
+    // All cloned buffers are destroyed
+    STRICT_EXPECTED_CALL(CONSTBUFFER_Destroy(IGNORED_PTR_ARG))
+        .ValidateArgumentValue_constbufferHandle(&clone);
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+
+    ///act
+    CONSTBUFFER_ARRAY_HANDLE result = constbuffer_array_create_from_array_array(buffer_array, array_count);
+
+    ///assert
+    ASSERT_IS_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    constbuffer_array_dec_ref(result);
+    for (uint32_t i = 0; i < array_count; ++i)
+    {
+        constbuffer_array_dec_ref(buffer_array[i]);
+    }
+}
+
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_008: [ If there are any failures then appended_constbuffer_array_handle shall fail and return NULL. ]*/
+TEST_FUNCTION(constbuffer_array_create_from_array_array_with_3_2_element_arrays_fails_if_third_clone_fails)
+{
+    ///arrange
+    const uint32_t array_count = 3;
+    CONSTBUFFER_ARRAY_HANDLE buffer_array[3];
+    buffer_array[0] = TEST_constbuffer_array_create(2, 0);
+    buffer_array[1] = TEST_constbuffer_array_create(2, 2);
+    buffer_array[2] = TEST_constbuffer_array_create(2, 4);
+
+    CONSTBUFFER_HANDLE clones[2];
+
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(CONSTBUFFER_Clone(IGNORED_PTR_ARG))
+        .CaptureReturn(&clones[0]);
+    STRICT_EXPECTED_CALL(CONSTBUFFER_Clone(IGNORED_PTR_ARG))
+        .CaptureReturn(&clones[1]);
+    STRICT_EXPECTED_CALL(CONSTBUFFER_Clone(IGNORED_PTR_ARG))
+        .SetReturn(NULL);
+
+    // All cloned buffers are destroyed
+    STRICT_EXPECTED_CALL(CONSTBUFFER_Destroy(IGNORED_PTR_ARG))
+        .ValidateArgumentValue_constbufferHandle(&clones[0]);
+    STRICT_EXPECTED_CALL(CONSTBUFFER_Destroy(IGNORED_PTR_ARG))
+        .ValidateArgumentValue_constbufferHandle(&clones[1]);
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+
+    ///act
+    CONSTBUFFER_ARRAY_HANDLE result = constbuffer_array_create_from_array_array(buffer_array, array_count);
+
+    ///assert
+    ASSERT_IS_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    constbuffer_array_dec_ref(result);
+    for (uint32_t i = 0; i < array_count; ++i)
+    {
+        constbuffer_array_dec_ref(buffer_array[i]);
+    }
+}
+
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_008: [ If there are any failures then appended_constbuffer_array_handle shall fail and return NULL. ]*/
+TEST_FUNCTION(constbuffer_array_create_from_array_array_with_3_2_element_arrays_fails_if_fourth_clone_fails)
+{
+    ///arrange
+    const uint32_t array_count = 3;
+    CONSTBUFFER_ARRAY_HANDLE buffer_array[3];
+    buffer_array[0] = TEST_constbuffer_array_create(2, 0);
+    buffer_array[1] = TEST_constbuffer_array_create(2, 2);
+    buffer_array[2] = TEST_constbuffer_array_create(2, 4);
+
+    CONSTBUFFER_HANDLE clones[3];
+
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(CONSTBUFFER_Clone(IGNORED_PTR_ARG))
+        .CaptureReturn(&clones[0]);
+    STRICT_EXPECTED_CALL(CONSTBUFFER_Clone(IGNORED_PTR_ARG))
+        .CaptureReturn(&clones[1]);
+    STRICT_EXPECTED_CALL(CONSTBUFFER_Clone(IGNORED_PTR_ARG))
+        .CaptureReturn(&clones[2]);
+    STRICT_EXPECTED_CALL(CONSTBUFFER_Clone(IGNORED_PTR_ARG))
+        .SetReturn(NULL);
+
+    // All cloned buffers are destroyed
+    STRICT_EXPECTED_CALL(CONSTBUFFER_Destroy(IGNORED_PTR_ARG))
+        .ValidateArgumentValue_constbufferHandle(&clones[0]);
+    STRICT_EXPECTED_CALL(CONSTBUFFER_Destroy(IGNORED_PTR_ARG))
+        .ValidateArgumentValue_constbufferHandle(&clones[1]);
+    STRICT_EXPECTED_CALL(CONSTBUFFER_Destroy(IGNORED_PTR_ARG))
+        .ValidateArgumentValue_constbufferHandle(&clones[2]);
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+
+    ///act
+    CONSTBUFFER_ARRAY_HANDLE result = constbuffer_array_create_from_array_array(buffer_array, array_count);
+
+    ///assert
+    ASSERT_IS_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    constbuffer_array_dec_ref(result);
+    for (uint32_t i = 0; i < array_count; ++i)
+    {
+        constbuffer_array_dec_ref(buffer_array[i]);
+    }
+}
+
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_008: [ If there are any failures then appended_constbuffer_array_handle shall fail and return NULL. ]*/
+TEST_FUNCTION(constbuffer_array_create_from_array_array_with_3_2_element_arrays_fails_if_fifth_clone_fails)
+{
+    ///arrange
+    const uint32_t array_count = 3;
+    CONSTBUFFER_ARRAY_HANDLE buffer_array[3];
+    buffer_array[0] = TEST_constbuffer_array_create(2, 0);
+    buffer_array[1] = TEST_constbuffer_array_create(2, 2);
+    buffer_array[2] = TEST_constbuffer_array_create(2, 4);
+
+    CONSTBUFFER_HANDLE clones[4];
+
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(CONSTBUFFER_Clone(IGNORED_PTR_ARG))
+        .CaptureReturn(&clones[0]);
+    STRICT_EXPECTED_CALL(CONSTBUFFER_Clone(IGNORED_PTR_ARG))
+        .CaptureReturn(&clones[1]);
+    STRICT_EXPECTED_CALL(CONSTBUFFER_Clone(IGNORED_PTR_ARG))
+        .CaptureReturn(&clones[2]);
+    STRICT_EXPECTED_CALL(CONSTBUFFER_Clone(IGNORED_PTR_ARG))
+        .CaptureReturn(&clones[3]);
+    STRICT_EXPECTED_CALL(CONSTBUFFER_Clone(IGNORED_PTR_ARG))
+        .SetReturn(NULL);
+
+    // All cloned buffers are destroyed
+    STRICT_EXPECTED_CALL(CONSTBUFFER_Destroy(IGNORED_PTR_ARG))
+        .ValidateArgumentValue_constbufferHandle(&clones[0]);
+    STRICT_EXPECTED_CALL(CONSTBUFFER_Destroy(IGNORED_PTR_ARG))
+        .ValidateArgumentValue_constbufferHandle(&clones[1]);
+    STRICT_EXPECTED_CALL(CONSTBUFFER_Destroy(IGNORED_PTR_ARG))
+        .ValidateArgumentValue_constbufferHandle(&clones[2]);
+    STRICT_EXPECTED_CALL(CONSTBUFFER_Destroy(IGNORED_PTR_ARG))
+        .ValidateArgumentValue_constbufferHandle(&clones[3]);
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+
+    ///act
+    CONSTBUFFER_ARRAY_HANDLE result = constbuffer_array_create_from_array_array(buffer_array, array_count);
+
+    ///assert
+    ASSERT_IS_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    constbuffer_array_dec_ref(result);
+    for (uint32_t i = 0; i < array_count; ++i)
+    {
+        constbuffer_array_dec_ref(buffer_array[i]);
+    }
+}
+
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_008: [ If there are any failures then appended_constbuffer_array_handle shall fail and return NULL. ]*/
+TEST_FUNCTION(constbuffer_array_create_from_array_array_with_3_2_element_arrays_fails_if_sixth_clone_fails)
+{
+    ///arrange
+    const uint32_t array_count = 3;
+    CONSTBUFFER_ARRAY_HANDLE buffer_array[3];
+    buffer_array[0] = TEST_constbuffer_array_create(2, 0);
+    buffer_array[1] = TEST_constbuffer_array_create(2, 2);
+    buffer_array[2] = TEST_constbuffer_array_create(2, 4);
+
+    CONSTBUFFER_HANDLE clones[5];
+
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(CONSTBUFFER_Clone(IGNORED_PTR_ARG))
+        .CaptureReturn(&clones[0]);
+    STRICT_EXPECTED_CALL(CONSTBUFFER_Clone(IGNORED_PTR_ARG))
+        .CaptureReturn(&clones[1]);
+    STRICT_EXPECTED_CALL(CONSTBUFFER_Clone(IGNORED_PTR_ARG))
+        .CaptureReturn(&clones[2]);
+    STRICT_EXPECTED_CALL(CONSTBUFFER_Clone(IGNORED_PTR_ARG))
+        .CaptureReturn(&clones[3]);
+    STRICT_EXPECTED_CALL(CONSTBUFFER_Clone(IGNORED_PTR_ARG))
+        .CaptureReturn(&clones[4]);
+    STRICT_EXPECTED_CALL(CONSTBUFFER_Clone(IGNORED_PTR_ARG))
+        .SetReturn(NULL);
+
+    // All cloned buffers are destroyed
+    STRICT_EXPECTED_CALL(CONSTBUFFER_Destroy(IGNORED_PTR_ARG))
+        .ValidateArgumentValue_constbufferHandle(&clones[0]);
+    STRICT_EXPECTED_CALL(CONSTBUFFER_Destroy(IGNORED_PTR_ARG))
+        .ValidateArgumentValue_constbufferHandle(&clones[1]);
+    STRICT_EXPECTED_CALL(CONSTBUFFER_Destroy(IGNORED_PTR_ARG))
+        .ValidateArgumentValue_constbufferHandle(&clones[2]);
+    STRICT_EXPECTED_CALL(CONSTBUFFER_Destroy(IGNORED_PTR_ARG))
+        .ValidateArgumentValue_constbufferHandle(&clones[3]);
+    STRICT_EXPECTED_CALL(CONSTBUFFER_Destroy(IGNORED_PTR_ARG))
+        .ValidateArgumentValue_constbufferHandle(&clones[4]);
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+
+    ///act
+    CONSTBUFFER_ARRAY_HANDLE result = constbuffer_array_create_from_array_array(buffer_array, array_count);
+
+    ///assert
+    ASSERT_IS_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    constbuffer_array_dec_ref(result);
+    for (uint32_t i = 0; i < array_count; ++i)
+    {
+        constbuffer_array_dec_ref(buffer_array[i]);
+    }
+}
+
+/*constbuffer_array_add_front*/
 
 /*Tests_SRS_CONSTBUFFER_ARRAY_02_006: [ If constbuffer_array_handle is NULL then constbuffer_array_add_front shall fail and return NULL ]*/
 TEST_FUNCTION(constbuffer_array_add_front_with_constbuffer_array_handle_NULL_fails)
@@ -649,438 +1432,6 @@ TEST_FUNCTION(constbuffer_array_remove_front_unhappy_paths)
     ///clean
     constbuffer_array_dec_ref(TEST_CONSTBUFFER_ARRAY_HANDLE);
     constbuffer_array_dec_ref(afterAdd);
-}
-
-/* constbuffer_array_append */
-
-static void constbuffer_array_append_inert_path(uint32_t existing_item_count)
-{
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    for (uint32_t i = 0; i < existing_item_count; i++)
-    {
-        STRICT_EXPECTED_CALL(CONSTBUFFER_Clone(IGNORED_PTR_ARG));
-    }
-}
-
-/*Tests_SRS_CONSTBUFFER_ARRAY_42_001: [ If constbuffer_array_handle is NULL then constbuffer_array_append shall fail and return NULL. ]*/
-TEST_FUNCTION(constbuffer_array_append_returns_null_when_constbuffer_array_handle_is_null)
-{
-    ///arrange
-    CONSTBUFFER_ARRAY_HANDLE empty_array = TEST_constbuffer_array_create_empty();
-
-    ///act
-    CONSTBUFFER_ARRAY_HANDLE result = constbuffer_array_append(NULL, empty_array);
-
-    ///assert
-    ASSERT_IS_NULL(result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    ///clean
-    constbuffer_array_dec_ref(empty_array);
-}
-
-/*Tests_SRS_CONSTBUFFER_ARRAY_42_002: [ If appended_constbuffer_array_handle is NULL then constbuffer_array_append shall fail and return NULL. ]*/
-TEST_FUNCTION(constbuffer_array_append_returns_null_when_appended_constbuffer_array_handle_is_null)
-{
-    ///arrange
-    CONSTBUFFER_ARRAY_HANDLE empty_array = TEST_constbuffer_array_create_empty();
-
-    ///act
-    CONSTBUFFER_ARRAY_HANDLE result = constbuffer_array_append(empty_array, NULL);
-
-    ///assert
-    ASSERT_IS_NULL(result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    ///clean
-    constbuffer_array_dec_ref(empty_array);
-}
-
-/*Tests_SRS_CONSTBUFFER_ARRAY_42_007: [ appended_constbuffer_array_handle shall succeed and return a non-NULL value. ]*/
-TEST_FUNCTION(constbuffer_array_append_two_empty_arrays_succeeds)
-{
-    ///arrange
-    CONSTBUFFER_ARRAY_HANDLE empty_array = TEST_constbuffer_array_create_empty();
-    CONSTBUFFER_ARRAY_HANDLE empty_array2 = TEST_constbuffer_array_create_empty();
-
-    constbuffer_array_append_inert_path(0);
-
-    ///act
-    CONSTBUFFER_ARRAY_HANDLE result = constbuffer_array_append(empty_array, empty_array2);
-
-    ///assert
-    ASSERT_IS_NOT_NULL(result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    uint32_t count;
-    int count_result = constbuffer_array_get_buffer_count(result, &count);
-    ASSERT_ARE_EQUAL(int, 0, count_result);
-    ASSERT_ARE_EQUAL(uint32_t, 0, count);
-
-    ///clean
-    constbuffer_array_dec_ref(empty_array);
-    constbuffer_array_dec_ref(empty_array2);
-    constbuffer_array_dec_ref(result);
-}
-
-/*Tests_SRS_CONSTBUFFER_ARRAY_42_003: [ appended_constbuffer_array_handle shall allocate memory to hold all of the CONSTBUFFER_HANDLES from constbuffer_array_handle and from appended_constbuffer_array_handle. ]*/
-/*Tests_SRS_CONSTBUFFER_ARRAY_42_005: [ appended_constbuffer_array_handle shall copy all of the CONSTBUFFER_HANDLES from appended_constbuffer_array_handle to the newly constructed array, incrementing their ref counts. ]*/
-/*Tests_SRS_CONSTBUFFER_ARRAY_42_006: [ appended_constbuffer_array_handle shall increment the ref count of all the copied CONSTBUFFER_HANDLES. ]*/
-/*Tests_SRS_CONSTBUFFER_ARRAY_42_007: [ appended_constbuffer_array_handle shall succeed and return a non-NULL value. ]*/
-TEST_FUNCTION(constbuffer_array_append_1_element_array_to_empty_array_succeeds)
-{
-    ///arrange
-    CONSTBUFFER_ARRAY_HANDLE empty_array = TEST_constbuffer_array_create_empty();
-    CONSTBUFFER_ARRAY_HANDLE after_add_1 = TEST_constbuffer_array_add_front(empty_array, 0, TEST_CONSTBUFFER_HANDLE_1);
-
-    constbuffer_array_append_inert_path(1);
-
-    ///act
-    CONSTBUFFER_ARRAY_HANDLE result = constbuffer_array_append(empty_array, after_add_1);
-
-    ///assert
-    ASSERT_IS_NOT_NULL(result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    uint32_t count;
-    int count_result = constbuffer_array_get_buffer_count(result, &count);
-    ASSERT_ARE_EQUAL(int, 0, count_result);
-    ASSERT_ARE_EQUAL(uint32_t, 1, count);
-
-    ASSERT_ARE_EQUAL(void_ptr, TEST_CONSTBUFFER_HANDLE_1, constbuffer_array_get_buffer(result, 0), "Validate result[0]");
-
-    ///clean
-    constbuffer_array_dec_ref(empty_array);
-    constbuffer_array_dec_ref(after_add_1);
-    constbuffer_array_dec_ref(result);
-}
-
-/*Tests_SRS_CONSTBUFFER_ARRAY_42_003: [ appended_constbuffer_array_handle shall allocate memory to hold all of the CONSTBUFFER_HANDLES from constbuffer_array_handle and from appended_constbuffer_array_handle. ]*/
-/*Tests_SRS_CONSTBUFFER_ARRAY_42_004: [ appended_constbuffer_array_handle shall copy all of the CONSTBUFFER_HANDLES from constbuffer_array_handle to the newly constructed array, incrementing their ref counts. ]*/
-/*Tests_SRS_CONSTBUFFER_ARRAY_42_006: [ appended_constbuffer_array_handle shall increment the ref count of all the copied CONSTBUFFER_HANDLES. ]*/
-/*Tests_SRS_CONSTBUFFER_ARRAY_42_007: [ appended_constbuffer_array_handle shall succeed and return a non-NULL value. ]*/
-TEST_FUNCTION(constbuffer_array_append_empty_array_to_1_element_array_succeeds)
-{
-    ///arrange
-    CONSTBUFFER_ARRAY_HANDLE empty_array = TEST_constbuffer_array_create_empty();
-    CONSTBUFFER_ARRAY_HANDLE after_add_1 = TEST_constbuffer_array_add_front(empty_array, 0, TEST_CONSTBUFFER_HANDLE_1);
-
-    constbuffer_array_append_inert_path(1);
-
-    ///act
-    CONSTBUFFER_ARRAY_HANDLE result = constbuffer_array_append(after_add_1, empty_array);
-
-    ///assert
-    ASSERT_IS_NOT_NULL(result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    uint32_t count;
-    int count_result = constbuffer_array_get_buffer_count(result, &count);
-    ASSERT_ARE_EQUAL(int, 0, count_result);
-    ASSERT_ARE_EQUAL(uint32_t, 1, count);
-
-    ASSERT_ARE_EQUAL(void_ptr, TEST_CONSTBUFFER_HANDLE_1, constbuffer_array_get_buffer(result, 0), "Validate result[0]");
-
-    ///clean
-    constbuffer_array_dec_ref(empty_array);
-    constbuffer_array_dec_ref(after_add_1);
-    constbuffer_array_dec_ref(result);
-}
-
-/*Tests_SRS_CONSTBUFFER_ARRAY_42_003: [ appended_constbuffer_array_handle shall allocate memory to hold all of the CONSTBUFFER_HANDLES from constbuffer_array_handle and from appended_constbuffer_array_handle. ]*/
-/*Tests_SRS_CONSTBUFFER_ARRAY_42_004: [ appended_constbuffer_array_handle shall copy all of the CONSTBUFFER_HANDLES from constbuffer_array_handle to the newly constructed array, incrementing their ref counts. ]*/
-/*Tests_SRS_CONSTBUFFER_ARRAY_42_005: [ appended_constbuffer_array_handle shall copy all of the CONSTBUFFER_HANDLES from appended_constbuffer_array_handle to the newly constructed array, incrementing their ref counts. ]*/
-/*Tests_SRS_CONSTBUFFER_ARRAY_42_006: [ appended_constbuffer_array_handle shall increment the ref count of all the copied CONSTBUFFER_HANDLES. ]*/
-/*Tests_SRS_CONSTBUFFER_ARRAY_42_007: [ appended_constbuffer_array_handle shall succeed and return a non-NULL value. ]*/
-TEST_FUNCTION(constbuffer_array_append_2_1_element_arrays_succeeds)
-{
-    ///arrange
-    CONSTBUFFER_ARRAY_HANDLE empty_array = TEST_constbuffer_array_create_empty();
-    CONSTBUFFER_ARRAY_HANDLE after_add_1_first = TEST_constbuffer_array_add_front(empty_array, 0, TEST_CONSTBUFFER_HANDLE_1);
-    CONSTBUFFER_ARRAY_HANDLE after_add_1_second = TEST_constbuffer_array_add_front(empty_array, 0, TEST_CONSTBUFFER_HANDLE_2);
-
-    constbuffer_array_append_inert_path(2);
-
-    ///act
-    CONSTBUFFER_ARRAY_HANDLE result = constbuffer_array_append(after_add_1_first, after_add_1_second);
-
-    ///assert
-    ASSERT_IS_NOT_NULL(result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    uint32_t count;
-    int count_result = constbuffer_array_get_buffer_count(result, &count);
-    ASSERT_ARE_EQUAL(int, 0, count_result);
-    ASSERT_ARE_EQUAL(uint32_t, 2, count);
-
-    ASSERT_ARE_EQUAL(void_ptr, TEST_CONSTBUFFER_HANDLE_1, constbuffer_array_get_buffer(result, 0), "Validate result[0]");
-    ASSERT_ARE_EQUAL(void_ptr, TEST_CONSTBUFFER_HANDLE_2, constbuffer_array_get_buffer(result, 1), "Validate result[1]");
-
-    ///clean
-    constbuffer_array_dec_ref(empty_array);
-    constbuffer_array_dec_ref(after_add_1_first);
-    constbuffer_array_dec_ref(after_add_1_second);
-    constbuffer_array_dec_ref(result);
-}
-
-/*Tests_SRS_CONSTBUFFER_ARRAY_42_007: [ appended_constbuffer_array_handle shall succeed and return a non-NULL value. ]*/
-TEST_FUNCTION(constbuffer_array_append_2_2_element_arrays_succeeds)
-{
-    ///arrange
-    CONSTBUFFER_ARRAY_HANDLE empty_array = TEST_constbuffer_array_create_empty();
-    CONSTBUFFER_ARRAY_HANDLE after_add_1_first = TEST_constbuffer_array_add_front(empty_array, 0, TEST_CONSTBUFFER_HANDLE_2);
-    CONSTBUFFER_ARRAY_HANDLE after_add_2_first = TEST_constbuffer_array_add_front(after_add_1_first, 1, TEST_CONSTBUFFER_HANDLE_1);
-    CONSTBUFFER_ARRAY_HANDLE after_add_1_second = TEST_constbuffer_array_add_front(empty_array, 0, TEST_CONSTBUFFER_HANDLE_4);
-    CONSTBUFFER_ARRAY_HANDLE after_add_2_second = TEST_constbuffer_array_add_front(after_add_1_second, 1, TEST_CONSTBUFFER_HANDLE_3);
-
-    constbuffer_array_append_inert_path(4);
-
-    ///act
-    CONSTBUFFER_ARRAY_HANDLE result = constbuffer_array_append(after_add_2_first, after_add_2_second);
-
-    ///assert
-    ASSERT_IS_NOT_NULL(result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    uint32_t count;
-    int count_result = constbuffer_array_get_buffer_count(result, &count);
-    ASSERT_ARE_EQUAL(int, 0, count_result);
-    ASSERT_ARE_EQUAL(uint32_t, 4, count);
-
-    ASSERT_ARE_EQUAL(void_ptr, TEST_CONSTBUFFER_HANDLE_1, constbuffer_array_get_buffer(result, 0), "Validate result[0]");
-    ASSERT_ARE_EQUAL(void_ptr, TEST_CONSTBUFFER_HANDLE_2, constbuffer_array_get_buffer(result, 1), "Validate result[1]");
-    ASSERT_ARE_EQUAL(void_ptr, TEST_CONSTBUFFER_HANDLE_3, constbuffer_array_get_buffer(result, 2), "Validate result[2]");
-    ASSERT_ARE_EQUAL(void_ptr, TEST_CONSTBUFFER_HANDLE_4, constbuffer_array_get_buffer(result, 3), "Validate result[3]");
-
-    ///clean
-    constbuffer_array_dec_ref(empty_array);
-    constbuffer_array_dec_ref(after_add_1_first);
-    constbuffer_array_dec_ref(after_add_2_first);
-    constbuffer_array_dec_ref(after_add_1_second);
-    constbuffer_array_dec_ref(after_add_2_second);
-    constbuffer_array_dec_ref(result);
-}
-
-/*Tests_SRS_CONSTBUFFER_ARRAY_42_007: [ appended_constbuffer_array_handle shall succeed and return a non-NULL value. ]*/
-TEST_FUNCTION(constbuffer_array_append_2_same_pointer_2_element_arrays_succeeds)
-{
-    ///arrange
-    CONSTBUFFER_ARRAY_HANDLE empty_array = TEST_constbuffer_array_create_empty();
-    CONSTBUFFER_ARRAY_HANDLE after_add_1 = TEST_constbuffer_array_add_front(empty_array, 0, TEST_CONSTBUFFER_HANDLE_2);
-    CONSTBUFFER_ARRAY_HANDLE after_add_2 = TEST_constbuffer_array_add_front(after_add_1, 1, TEST_CONSTBUFFER_HANDLE_1);
-
-    constbuffer_array_append_inert_path(4);
-
-    ///act
-    CONSTBUFFER_ARRAY_HANDLE result = constbuffer_array_append(after_add_2, after_add_2);
-
-    ///assert
-    ASSERT_IS_NOT_NULL(result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    uint32_t count;
-    int count_result = constbuffer_array_get_buffer_count(result, &count);
-    ASSERT_ARE_EQUAL(int, 0, count_result);
-    ASSERT_ARE_EQUAL(uint32_t, 4, count);
-
-    ASSERT_ARE_EQUAL(void_ptr, TEST_CONSTBUFFER_HANDLE_1, constbuffer_array_get_buffer(result, 0), "Validate result[0]");
-    ASSERT_ARE_EQUAL(void_ptr, TEST_CONSTBUFFER_HANDLE_2, constbuffer_array_get_buffer(result, 1), "Validate result[1]");
-    ASSERT_ARE_EQUAL(void_ptr, TEST_CONSTBUFFER_HANDLE_1, constbuffer_array_get_buffer(result, 2), "Validate result[2]");
-    ASSERT_ARE_EQUAL(void_ptr, TEST_CONSTBUFFER_HANDLE_2, constbuffer_array_get_buffer(result, 3), "Validate result[3]");
-
-    ///clean
-    constbuffer_array_dec_ref(empty_array);
-    constbuffer_array_dec_ref(after_add_1);
-    constbuffer_array_dec_ref(after_add_2);
-    constbuffer_array_dec_ref(result);
-}
-
-/*Tests_SRS_CONSTBUFFER_ARRAY_42_008: [ If there are any failures then appended_constbuffer_array_handle shall fail and return NULL. ]*/
-TEST_FUNCTION(constbuffer_array_append_fails_if_malloc_fails)
-{
-    ///arrange
-    CONSTBUFFER_ARRAY_HANDLE empty_array = TEST_constbuffer_array_create_empty();
-    CONSTBUFFER_ARRAY_HANDLE after_add_1_first = TEST_constbuffer_array_add_front(empty_array, 0, TEST_CONSTBUFFER_HANDLE_2);
-    CONSTBUFFER_ARRAY_HANDLE after_add_2_first = TEST_constbuffer_array_add_front(after_add_1_first, 1, TEST_CONSTBUFFER_HANDLE_1);
-    CONSTBUFFER_ARRAY_HANDLE after_add_1_second = TEST_constbuffer_array_add_front(empty_array, 0, TEST_CONSTBUFFER_HANDLE_4);
-    CONSTBUFFER_ARRAY_HANDLE after_add_2_second = TEST_constbuffer_array_add_front(after_add_1_second, 1, TEST_CONSTBUFFER_HANDLE_3);
-
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
-        .SetReturn(NULL);
-
-    ///act
-    CONSTBUFFER_ARRAY_HANDLE result = constbuffer_array_append(after_add_2_first, after_add_2_second);
-
-    ///assert
-    ASSERT_IS_NULL(result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    ///clean
-    constbuffer_array_dec_ref(empty_array);
-    constbuffer_array_dec_ref(after_add_1_first);
-    constbuffer_array_dec_ref(after_add_2_first);
-    constbuffer_array_dec_ref(after_add_1_second);
-    constbuffer_array_dec_ref(after_add_2_second);
-}
-
-/*Tests_SRS_CONSTBUFFER_ARRAY_42_008: [ If there are any failures then appended_constbuffer_array_handle shall fail and return NULL. ]*/
-TEST_FUNCTION(constbuffer_array_append_fails_if_first_clone_fails)
-{
-    ///arrange
-    CONSTBUFFER_ARRAY_HANDLE empty_array = TEST_constbuffer_array_create_empty();
-    CONSTBUFFER_ARRAY_HANDLE after_add_1_first = TEST_constbuffer_array_add_front(empty_array, 0, TEST_CONSTBUFFER_HANDLE_2);
-    CONSTBUFFER_ARRAY_HANDLE after_add_2_first = TEST_constbuffer_array_add_front(after_add_1_first, 1, TEST_CONSTBUFFER_HANDLE_1);
-    CONSTBUFFER_ARRAY_HANDLE after_add_1_second = TEST_constbuffer_array_add_front(empty_array, 0, TEST_CONSTBUFFER_HANDLE_4);
-    CONSTBUFFER_ARRAY_HANDLE after_add_2_second = TEST_constbuffer_array_add_front(after_add_1_second, 1, TEST_CONSTBUFFER_HANDLE_3);
-
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(CONSTBUFFER_Clone(IGNORED_PTR_ARG))
-        .SetReturn(NULL);
-
-    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-
-    ///act
-    CONSTBUFFER_ARRAY_HANDLE result = constbuffer_array_append(after_add_2_first, after_add_2_second);
-
-    ///assert
-    ASSERT_IS_NULL(result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    ///clean
-    constbuffer_array_dec_ref(empty_array);
-    constbuffer_array_dec_ref(after_add_1_first);
-    constbuffer_array_dec_ref(after_add_2_first);
-    constbuffer_array_dec_ref(after_add_1_second);
-    constbuffer_array_dec_ref(after_add_2_second);
-}
-
-/*Tests_SRS_CONSTBUFFER_ARRAY_42_008: [ If there are any failures then appended_constbuffer_array_handle shall fail and return NULL. ]*/
-TEST_FUNCTION(constbuffer_array_append_fails_if_second_clone_fails)
-{
-    ///arrange
-    CONSTBUFFER_ARRAY_HANDLE empty_array = TEST_constbuffer_array_create_empty();
-    CONSTBUFFER_ARRAY_HANDLE after_add_1_first = TEST_constbuffer_array_add_front(empty_array, 0, TEST_CONSTBUFFER_HANDLE_2);
-    CONSTBUFFER_ARRAY_HANDLE after_add_2_first = TEST_constbuffer_array_add_front(after_add_1_first, 1, TEST_CONSTBUFFER_HANDLE_1);
-    CONSTBUFFER_ARRAY_HANDLE after_add_1_second = TEST_constbuffer_array_add_front(empty_array, 0, TEST_CONSTBUFFER_HANDLE_4);
-    CONSTBUFFER_ARRAY_HANDLE after_add_2_second = TEST_constbuffer_array_add_front(after_add_1_second, 1, TEST_CONSTBUFFER_HANDLE_3);
-
-    CONSTBUFFER_HANDLE first_cloned;
-
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(CONSTBUFFER_Clone(IGNORED_PTR_ARG))
-        .CaptureReturn(&first_cloned);
-    STRICT_EXPECTED_CALL(CONSTBUFFER_Clone(IGNORED_PTR_ARG))
-        .SetReturn(NULL);
-
-    // All cloned buffers are destroyed
-    STRICT_EXPECTED_CALL(CONSTBUFFER_Destroy(IGNORED_PTR_ARG))
-        .ValidateArgumentValue_constbufferHandle(&first_cloned);
-    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-
-    ///act
-    CONSTBUFFER_ARRAY_HANDLE result = constbuffer_array_append(after_add_2_first, after_add_2_second);
-
-    ///assert
-    ASSERT_IS_NULL(result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    ///clean
-    constbuffer_array_dec_ref(empty_array);
-    constbuffer_array_dec_ref(after_add_1_first);
-    constbuffer_array_dec_ref(after_add_2_first);
-    constbuffer_array_dec_ref(after_add_1_second);
-    constbuffer_array_dec_ref(after_add_2_second);
-}
-
-/*Tests_SRS_CONSTBUFFER_ARRAY_42_008: [ If there are any failures then appended_constbuffer_array_handle shall fail and return NULL. ]*/
-TEST_FUNCTION(constbuffer_array_append_fails_if_third_clone_fails)
-{
-    ///arrange
-    CONSTBUFFER_ARRAY_HANDLE empty_array = TEST_constbuffer_array_create_empty();
-    CONSTBUFFER_ARRAY_HANDLE after_add_1_first = TEST_constbuffer_array_add_front(empty_array, 0, TEST_CONSTBUFFER_HANDLE_2);
-    CONSTBUFFER_ARRAY_HANDLE after_add_2_first = TEST_constbuffer_array_add_front(after_add_1_first, 1, TEST_CONSTBUFFER_HANDLE_1);
-    CONSTBUFFER_ARRAY_HANDLE after_add_1_second = TEST_constbuffer_array_add_front(empty_array, 0, TEST_CONSTBUFFER_HANDLE_4);
-    CONSTBUFFER_ARRAY_HANDLE after_add_2_second = TEST_constbuffer_array_add_front(after_add_1_second, 1, TEST_CONSTBUFFER_HANDLE_3);
-
-    CONSTBUFFER_HANDLE first_cloned;
-    CONSTBUFFER_HANDLE second_cloned;
-
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(CONSTBUFFER_Clone(IGNORED_PTR_ARG))
-        .CaptureReturn(&first_cloned);
-    STRICT_EXPECTED_CALL(CONSTBUFFER_Clone(IGNORED_PTR_ARG))
-        .CaptureReturn(&second_cloned);
-    STRICT_EXPECTED_CALL(CONSTBUFFER_Clone(IGNORED_PTR_ARG))
-        .SetReturn(NULL);
-
-    // All cloned buffers are destroyed
-    STRICT_EXPECTED_CALL(CONSTBUFFER_Destroy(IGNORED_PTR_ARG))
-        .ValidateArgumentValue_constbufferHandle(&first_cloned);
-    STRICT_EXPECTED_CALL(CONSTBUFFER_Destroy(IGNORED_PTR_ARG))
-        .ValidateArgumentValue_constbufferHandle(&second_cloned);
-    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-
-    ///act
-    CONSTBUFFER_ARRAY_HANDLE result = constbuffer_array_append(after_add_2_first, after_add_2_second);
-
-    ///assert
-    ASSERT_IS_NULL(result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    ///clean
-    constbuffer_array_dec_ref(empty_array);
-    constbuffer_array_dec_ref(after_add_1_first);
-    constbuffer_array_dec_ref(after_add_2_first);
-    constbuffer_array_dec_ref(after_add_1_second);
-    constbuffer_array_dec_ref(after_add_2_second);
-}
-
-/*Tests_SRS_CONSTBUFFER_ARRAY_42_008: [ If there are any failures then appended_constbuffer_array_handle shall fail and return NULL. ]*/
-TEST_FUNCTION(constbuffer_array_append_fails_if_fourth_clone_fails)
-{
-    ///arrange
-    CONSTBUFFER_ARRAY_HANDLE empty_array = TEST_constbuffer_array_create_empty();
-    CONSTBUFFER_ARRAY_HANDLE after_add_1_first = TEST_constbuffer_array_add_front(empty_array, 0, TEST_CONSTBUFFER_HANDLE_2);
-    CONSTBUFFER_ARRAY_HANDLE after_add_2_first = TEST_constbuffer_array_add_front(after_add_1_first, 1, TEST_CONSTBUFFER_HANDLE_1);
-    CONSTBUFFER_ARRAY_HANDLE after_add_1_second = TEST_constbuffer_array_add_front(empty_array, 0, TEST_CONSTBUFFER_HANDLE_4);
-    CONSTBUFFER_ARRAY_HANDLE after_add_2_second = TEST_constbuffer_array_add_front(after_add_1_second, 1, TEST_CONSTBUFFER_HANDLE_3);
-
-    CONSTBUFFER_HANDLE first_cloned;
-    CONSTBUFFER_HANDLE second_cloned;
-    CONSTBUFFER_HANDLE third_cloned;
-
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(CONSTBUFFER_Clone(IGNORED_PTR_ARG))
-        .CaptureReturn(&first_cloned);
-    STRICT_EXPECTED_CALL(CONSTBUFFER_Clone(IGNORED_PTR_ARG))
-        .CaptureReturn(&second_cloned);
-    STRICT_EXPECTED_CALL(CONSTBUFFER_Clone(IGNORED_PTR_ARG))
-        .CaptureReturn(&third_cloned);
-    STRICT_EXPECTED_CALL(CONSTBUFFER_Clone(IGNORED_PTR_ARG))
-        .SetReturn(NULL);
-
-    // All cloned buffers are destroyed
-    STRICT_EXPECTED_CALL(CONSTBUFFER_Destroy(IGNORED_PTR_ARG))
-        .ValidateArgumentValue_constbufferHandle(&first_cloned);
-    STRICT_EXPECTED_CALL(CONSTBUFFER_Destroy(IGNORED_PTR_ARG))
-        .ValidateArgumentValue_constbufferHandle(&second_cloned);
-    STRICT_EXPECTED_CALL(CONSTBUFFER_Destroy(IGNORED_PTR_ARG))
-        .ValidateArgumentValue_constbufferHandle(&third_cloned);
-    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-
-    ///act
-    CONSTBUFFER_ARRAY_HANDLE result = constbuffer_array_append(after_add_2_first, after_add_2_second);
-
-    ///assert
-    ASSERT_IS_NULL(result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    ///clean
-    constbuffer_array_dec_ref(empty_array);
-    constbuffer_array_dec_ref(after_add_1_first);
-    constbuffer_array_dec_ref(after_add_2_first);
-    constbuffer_array_dec_ref(after_add_1_second);
-    constbuffer_array_dec_ref(after_add_2_second);
 }
 
 /* constbuffer_array_get_buffer_count */
