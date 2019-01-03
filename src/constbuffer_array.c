@@ -118,7 +118,6 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_create_from_array_array(const CONSTBU
         )
     {
         LogError("invalid arguments: const CONSTBUFFER_ARRAY_HANDLE* buffer_arrays=%p, uint32_t buffer_array_count=%" PRIu32, buffer_arrays, buffer_array_count);
-        result = NULL;
     }
     else
     {
@@ -126,6 +125,15 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_create_from_array_array(const CONSTBU
         if (buffer_arrays == NULL || buffer_array_count == 0)
         {
             result = constbuffer_array_create_empty();
+
+            if (result == NULL)
+            {
+                LogError("constbuffer_array_create_empty failed");
+            }
+            else
+            {
+                goto allOk;
+            }
         }
         else
         {
@@ -151,9 +159,9 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_create_from_array_array(const CONSTBU
                 }
             }
 
-            if (i != buffer_array_count)
+            if (i < buffer_array_count)
             {
-                result = NULL;
+                // Failed in loop, fall through to cleanup
             }
             else
             {
@@ -163,7 +171,6 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_create_from_array_array(const CONSTBU
                 {
                     /*Codes_SRS_CONSTBUFFER_ARRAY_42_008: [ If there are any failures then constbuffer_array_create_from_array_array shall fail and return NULL. ]*/
                     LogError("failure in malloc");
-                    /*return as is*/
                 }
                 else
                 {
@@ -186,13 +193,13 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_create_from_array_array(const CONSTBU
                             }
                         }
 
-                        if (source_idx != buffer_arrays[array_idx]->nBuffers)
+                        if (source_idx < buffer_arrays[array_idx]->nBuffers)
                         {
                             break;
                         }
                     }
 
-                    if (array_idx != buffer_array_count)
+                    if (array_idx < buffer_array_count)
                     {
                         // Cleanup on partial copy
                         for (i = 0; i < dest_idx; i++)
@@ -207,11 +214,11 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_create_from_array_array(const CONSTBU
                     }
 
                     REFCOUNT_TYPE_DESTROY(CONSTBUFFER_ARRAY_HANDLE_DATA, result);
-                    result = NULL;
                 }
             }
         }
     }
+    result = NULL;
 allOk:;
     return result;
 }
