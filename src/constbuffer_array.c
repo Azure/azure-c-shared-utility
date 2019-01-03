@@ -108,6 +108,114 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_create_empty(void)
     return result;
 }
 
+CONSTBUFFER_ARRAY_HANDLE constbuffer_array_create_from_array_array(const CONSTBUFFER_ARRAY_HANDLE* buffer_arrays, uint32_t buffer_array_count)
+{
+    CONSTBUFFER_ARRAY_HANDLE result;
+
+    if (
+        /*Codes_SRS_CONSTBUFFER_ARRAY_42_009: [ If buffer_arrays is NULL and buffer_array_count is not 0 then constbuffer_array_create_from_array_array shall fail and return NULL. ]*/
+        (buffer_arrays == NULL && buffer_array_count != 0)
+        )
+    {
+        LogError("invalid arguments: const CONSTBUFFER_ARRAY_HANDLE* buffer_arrays=%p, uint32_t buffer_array_count=%" PRIu32, buffer_arrays, buffer_array_count);
+        result = NULL;
+    }
+    else
+    {
+        /*Codes_SRS_CONSTBUFFER_ARRAY_42_001: [ If buffer_arrays is NULL or buffer_array_count is 0 then constbuffer_array_create_from_array_array shall create a new, empty CONSTBUFFER_ARRAY_HANDLE. ]*/
+        if (buffer_arrays == NULL || buffer_array_count == 0)
+        {
+            result = constbuffer_array_create_empty();
+        }
+        else
+        {
+            uint32_t total_buffer_count = 0;
+            uint32_t i;
+            for (i = 0; i < buffer_array_count; ++i)
+            {
+                if (buffer_arrays[i] == NULL)
+                {
+                    /*Codes_SRS_CONSTBUFFER_ARRAY_42_002: [ If any const buffer array in buffer_arrays is NULL then constbuffer_array_create_from_array_array shall fail and return NULL. ]*/
+                    LogError("Invalid arguments: NULL buffer array %" PRIu32, i);
+                    break;
+                }
+                else
+                {
+                    // Overflow check
+                    total_buffer_count += buffer_arrays[i]->nBuffers;
+                    if (total_buffer_count < buffer_arrays[i]->nBuffers)
+                    {
+                        LogError("Array size overflow while checking index %" PRIu32, i);
+                        break;
+                    }
+                }
+            }
+
+            if (i != buffer_array_count)
+            {
+                result = NULL;
+            }
+            else
+            {
+                /*Codes_SRS_CONSTBUFFER_ARRAY_42_003: [ constbuffer_array_create_from_array_array shall allocate memory to hold all of the CONSTBUFFER_HANDLES from buffer_arrays. ]*/
+                result = REFCOUNT_TYPE_CREATE_WITH_EXTRA_SIZE(CONSTBUFFER_ARRAY_HANDLE_DATA, (total_buffer_count) * sizeof(CONSTBUFFER_HANDLE));
+                if (result == NULL)
+                {
+                    /*Codes_SRS_CONSTBUFFER_ARRAY_42_008: [ If there are any failures then constbuffer_array_create_from_array_array shall fail and return NULL. ]*/
+                    LogError("failure in malloc");
+                    /*return as is*/
+                }
+                else
+                {
+                    result->nBuffers = total_buffer_count;
+
+                    uint32_t dest_idx;
+                    uint32_t array_idx;
+                    uint32_t source_idx;
+                    for (dest_idx = 0, array_idx = 0; array_idx < buffer_array_count; ++array_idx)
+                    {
+                        for (source_idx = 0; source_idx < buffer_arrays[array_idx]->nBuffers; ++source_idx, ++dest_idx)
+                        {
+                            /*Codes_SRS_CONSTBUFFER_ARRAY_42_004: [ constbuffer_array_create_from_array_array shall copy all of the CONSTBUFFER_HANDLES from each const buffer array in buffer_arrays to the newly constructed array by calling CONSTBUFFER_Clone. ]*/
+                            result->buffers[dest_idx] = CONSTBUFFER_Clone(buffer_arrays[array_idx]->buffers[source_idx]);
+                            if (result->buffers[dest_idx] == NULL)
+                            {
+                                /*Codes_SRS_CONSTBUFFER_ARRAY_42_008: [ If there are any failures then constbuffer_array_create_from_array_array shall fail and return NULL. ]*/
+                                LogError("failure in CONSTBUFFER_Clone for buffer array %" PRIu32 ", buffer %" PRIu32, array_idx, source_idx);
+                                break;
+                            }
+                        }
+
+                        if (source_idx != buffer_arrays[array_idx]->nBuffers)
+                        {
+                            break;
+                        }
+                    }
+
+                    if (array_idx != buffer_array_count)
+                    {
+                        // Cleanup on partial copy
+                        for (i = 0; i < dest_idx; i++)
+                        {
+                            CONSTBUFFER_Destroy(result->buffers[i]);
+                        }
+                    }
+                    else
+                    {
+                        /*Codes_SRS_CONSTBUFFER_ARRAY_42_007: [ constbuffer_array_create_from_array_array shall succeed and return a non-NULL value. ]*/
+                        goto allOk;
+                    }
+
+                    REFCOUNT_TYPE_DESTROY(CONSTBUFFER_ARRAY_HANDLE_DATA, result);
+                    result = NULL;
+                }
+            }
+        }
+    }
+allOk:;
+    return result;
+}
+
 CONSTBUFFER_ARRAY_HANDLE constbuffer_array_add_front(CONSTBUFFER_ARRAY_HANDLE constbuffer_array_handle, CONSTBUFFER_HANDLE constbuffer_handle)
 {
     CONSTBUFFER_ARRAY_HANDLE result;
@@ -262,104 +370,6 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_remove_front(CONSTBUFFER_ARRAY_HANDLE
     }
     /*Codes_SRS_CONSTBUFFER_ARRAY_02_036: [ If there are any failures then constbuffer_array_remove_front shall fail and return NULL. ]*/
     result = NULL;
-allOk:;
-    return result;
-}
-
-CONSTBUFFER_ARRAY_HANDLE constbuffer_array_append(CONSTBUFFER_ARRAY_HANDLE constbuffer_array_handle, CONSTBUFFER_ARRAY_HANDLE appended_constbuffer_array_handle)
-{
-    CONSTBUFFER_ARRAY_HANDLE result;
-    if (
-        /*Codes_SRS_CONSTBUFFER_ARRAY_42_001: [ If constbuffer_array_handle is NULL then constbuffer_array_append shall fail and return NULL. ]*/
-        (constbuffer_array_handle == NULL) ||
-        /*Codes_SRS_CONSTBUFFER_ARRAY_42_002: [ If appended_constbuffer_array_handle is NULL then constbuffer_array_append shall fail and return NULL. ]*/
-        (appended_constbuffer_array_handle == NULL)
-        )
-    {
-        LogError("invalid arguments CONSTBUFFER_ARRAY_HANDLE constbuffer_array_handle=%p, CONSTBUFFER_ARRAY_HANDLE appended_constbuffer_array_handle=%p", constbuffer_array_handle, appended_constbuffer_array_handle);
-        result = NULL;
-    }
-    else
-    {
-        // Overflow check
-        uint32_t new_buffer_count = constbuffer_array_handle->nBuffers + appended_constbuffer_array_handle->nBuffers;
-        if (new_buffer_count < constbuffer_array_handle->nBuffers)
-        {
-            LogError("Array size overflow (constbuffer_array_handle->nBuffers = %" PRIu32 ", appended_constbuffer_array_handle->nBuffers = %" PRIu32 ")",
-                constbuffer_array_handle->nBuffers, appended_constbuffer_array_handle->nBuffers);
-            result = NULL;
-        }
-        else
-        {
-            /*Codes_SRS_CONSTBUFFER_ARRAY_42_003: [ appended_constbuffer_array_handle shall allocate memory to hold all of the CONSTBUFFER_HANDLES from constbuffer_array_handle and from appended_constbuffer_array_handle. ]*/
-            result = REFCOUNT_TYPE_CREATE_WITH_EXTRA_SIZE(CONSTBUFFER_ARRAY_HANDLE_DATA, (constbuffer_array_handle->nBuffers + appended_constbuffer_array_handle->nBuffers) * sizeof(CONSTBUFFER_HANDLE));
-            if (result == NULL)
-            {
-                /*Codes_SRS_CONSTBUFFER_ARRAY_42_008: [ If there are any failures then appended_constbuffer_array_handle shall fail and return NULL. ]*/
-                LogError("failure in malloc");
-                /*return as is*/
-            }
-            else
-            {
-                result->nBuffers = constbuffer_array_handle->nBuffers + appended_constbuffer_array_handle->nBuffers;
-
-                uint32_t result_idx;
-                uint32_t original_idx;
-                for (result_idx = 0, original_idx = 0; original_idx < constbuffer_array_handle->nBuffers; original_idx++, result_idx++)
-                {
-                    /*Codes_SRS_CONSTBUFFER_ARRAY_42_004: [ appended_constbuffer_array_handle shall copy all of the CONSTBUFFER_HANDLES from constbuffer_array_handle to the newly constructed array, incrementing their ref counts. ]*/
-                    result->buffers[result_idx] = CONSTBUFFER_Clone(constbuffer_array_handle->buffers[original_idx]);
-                    if (result->buffers[result_idx] == NULL)
-                    {
-                        /*Codes_SRS_CONSTBUFFER_ARRAY_42_008: [ If there are any failures then appended_constbuffer_array_handle shall fail and return NULL. ]*/
-                        LogError("failure in CONSTBUFFER_Clone");
-                        break;
-                    }
-                }
-
-                if (original_idx != constbuffer_array_handle->nBuffers)
-                {
-                    // Cleanup on partial copy
-                    for (uint32_t i = 0; i < result_idx; i++)
-                    {
-                        CONSTBUFFER_Destroy(result->buffers[i]);
-                    }
-                }
-                else
-                {
-                    uint32_t appended_idx;
-                    for (appended_idx = 0; appended_idx < appended_constbuffer_array_handle->nBuffers; appended_idx++, result_idx++)
-                    {
-                        /*Codes_SRS_CONSTBUFFER_ARRAY_42_005: [ appended_constbuffer_array_handle shall copy all of the CONSTBUFFER_HANDLES from appended_constbuffer_array_handle to the newly constructed array, incrementing their ref counts. ]*/
-                        result->buffers[result_idx] = CONSTBUFFER_Clone(appended_constbuffer_array_handle->buffers[appended_idx]);
-                        if (result->buffers[result_idx] == NULL)
-                        {
-                            /*Codes_SRS_CONSTBUFFER_ARRAY_42_008: [ If there are any failures then appended_constbuffer_array_handle shall fail and return NULL. ]*/
-                            LogError("failure in CONSTBUFFER_Clone");
-                            break;
-                        }
-                    }
-
-                    if (appended_idx != appended_constbuffer_array_handle->nBuffers)
-                    {
-                        // Cleanup on partial copy
-                        for (uint32_t i = 0; i < result_idx; i++)
-                        {
-                            CONSTBUFFER_Destroy(result->buffers[i]);
-                        }
-                    }
-                    else
-                    {
-                        /*Codes_SRS_CONSTBUFFER_ARRAY_42_008: [ If there are any failures then appended_constbuffer_array_handle shall fail and return NULL. ]*/
-                        goto allOk;
-                    }
-                }
-
-                REFCOUNT_TYPE_DESTROY(CONSTBUFFER_ARRAY_HANDLE_DATA, result);
-                result = NULL;
-            }
-        }
-    }
 allOk:;
     return result;
 }
