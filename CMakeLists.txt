@@ -172,6 +172,7 @@ set(source_c_files
 ./src/base32.c
 ./src/base64.c
 ./src/buffer.c
+./src/circular_buffer.c
 ./src/constbuffer_array.c
 ./src/connection_string_parser.c
 ./src/constbuffer.c
@@ -277,6 +278,7 @@ set(source_h_files
 ./inc/azure_c_shared_utility/base32.h
 ./inc/azure_c_shared_utility/base64.h
 ./inc/azure_c_shared_utility/buffer_.h
+./inc/azure_c_shared_utility/circular_buffer.h
 ./inc/azure_c_shared_utility/constbuffer_array.h
 ./inc/azure_c_shared_utility/connection_string_parser.h
 ./inc/azure_c_shared_utility/crt_abstractions.h
