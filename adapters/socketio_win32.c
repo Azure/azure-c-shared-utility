@@ -619,7 +619,7 @@ static int set_keepalive(SOCKET_IO_INSTANCE* socket_io, struct tcp_keepalive* ke
         sizeof(struct tcp_keepalive), NULL, 0, &bytesReturned, NULL, NULL);
     if (err != 0)
     {
-        LogError("Failure: setting keep-alive on the socket: %d.\r\n", err == SOCKET_ERROR ? WSAGetLastError() : err);
+        LogError("Failure: setting keep-alive on the socket: %d.", err == SOCKET_ERROR ? WSAGetLastError() : err);
         result = __FAILURE__;
     }
     else
