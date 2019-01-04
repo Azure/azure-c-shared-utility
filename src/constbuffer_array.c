@@ -174,11 +174,12 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_create_from_array_array(const CONSTBU
                 }
                 else
                 {
-                    result->nBuffers = total_buffer_count;
-
                     uint32_t dest_idx;
                     uint32_t array_idx;
                     uint32_t source_idx;
+
+                    result->nBuffers = total_buffer_count;
+
                     for (dest_idx = 0, array_idx = 0; array_idx < buffer_array_count; ++array_idx)
                     {
                         for (source_idx = 0; source_idx < buffer_arrays[array_idx]->nBuffers; ++source_idx, ++dest_idx)
