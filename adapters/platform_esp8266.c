@@ -29,6 +29,15 @@ const IO_INTERFACE_DESCRIPTION* platform_get_default_tlsio(void)
     return tlsio_openssl_get_interface_description();
 }
 
+STRING_HANDLE platform_get_platform_info(uint32_t options)
+{
+    (void)options;
+
+    // Expected format: "(<runtime name>; <operating system name>; <platform>)"
+
+    return STRING_construct("(native; esp8266; undefined)");
+}
+
 void platform_deinit(void)
 {
      sntp_stop();

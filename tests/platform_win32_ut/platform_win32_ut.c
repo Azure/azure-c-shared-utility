@@ -72,6 +72,15 @@ extern "C"
         (void)memcpy(temp, psz, strlen(psz) + 1);
         return (STRING_HANDLE)temp;
     }
+
+    int STRING_sprintf(STRING_HANDLE handle, const char* format, ...);
+
+    int STRING_sprintf(STRING_HANDLE handle, const char* format, ...)
+    {
+        (void)handle;
+        (void)format;
+        return 0;
+    }
 #ifdef __cplusplus
 }
 #endif
@@ -233,7 +242,7 @@ TEST_FUNCTION(platform_get_platform_info_success)
     //arrange
 
     //act
-    STRING_HANDLE platform = platform_get_platform_info();
+    STRING_HANDLE platform = platform_get_platform_info(PLATFORM_OPTION_RETRIEVE_SQM);
 
     //assert
     ASSERT_IS_NOT_NULL(platform);
