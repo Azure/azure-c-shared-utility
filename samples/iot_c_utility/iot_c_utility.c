@@ -59,6 +59,15 @@ static void show_platform_info()
         (void)printf("%s\r\n", STRING_c_str(platform_info));
         STRING_delete(platform_info);
     }
+
+#ifdef WIN32
+    STRING_HANDLE platform_info_id = platform_get_platform_info_with_id();
+    if (platform_info_id != NULL)
+    {
+        (void)printf("%s\r\n", STRING_c_str(platform_info_id));
+        STRING_delete(platform_info_id);
+    }
+#endif
 }
 
 int main(int argc, char** argv)

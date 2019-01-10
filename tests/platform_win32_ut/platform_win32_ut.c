@@ -243,6 +243,21 @@ TEST_FUNCTION(platform_get_platform_info_success)
     STRING_delete(platform);
 }
 
+TEST_FUNCTION(platform_get_platform_info_with_id_success)
+{
+    //arrange
+
+    //act
+    STRING_HANDLE platform = platform_get_platform_info_with_id();
+
+    //assert
+    ASSERT_IS_NOT_NULL(platform);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    STRING_delete(platform);
+}
+
 TEST_FUNCTION(platform_deinit_success)
 {
     //arrange

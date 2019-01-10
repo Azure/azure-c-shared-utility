@@ -59,7 +59,80 @@ const IO_INTERFACE_DESCRIPTION* platform_get_default_tlsio(void)
 #endif
 }
 
-STRING_HANDLE platform_get_platform_info(void)
+BOOL platform_get_device_id(char* deviceId)
+{
+    LONG openKey;
+    DWORD options = 0;
+    HKEY openResult;
+    HKEY hKey = HKEY_LOCAL_MACHINE;
+    LPCSTR subKey = "Software\\Microsoft\\SQMClient";
+    LPCSTR lpValue = "MachineId";
+    DWORD dwFlags = RRF_RT_ANY;
+
+    LONG getRegValue = ERROR_INVALID_HANDLE;
+    DWORD dataType;
+    char value[255];
+    DWORD size = sizeof(value);
+    PVOID pvData = value;
+
+    openKey = RegOpenKeyExA(
+        hKey,
+        subKey,
+        options,
+        KEY_READ,
+        &openResult
+    );
+
+    // Get the Device ID of the Windows device from Reg Key
+    if (openKey == ERROR_SUCCESS)
+    {
+        getRegValue = RegGetValueA(
+            openResult,
+            NULL,
+            lpValue,
+            dwFlags,
+            &dataType,
+            pvData,
+            &size
+        );
+    }
+
+    // Failed to read value, so try opening the 64-bit reg key
+    // in case this is an x86 binary being run on Windows x64
+    if (getRegValue != ERROR_SUCCESS)
+    {
+        openKey = RegOpenKeyExA(
+            hKey,
+            subKey,
+            options,
+            KEY_READ | KEY_WOW64_64KEY,
+            &openResult
+        );
+
+        if (openKey == ERROR_SUCCESS)
+        {
+            getRegValue = RegGetValueA(
+                openResult,
+                NULL,
+                lpValue,
+                dwFlags,
+                &dataType,
+                pvData,
+                &size
+            );
+        }
+    }
+
+    if (getRegValue == ERROR_SUCCESS)
+    {
+        strcpy(deviceId, value);
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+STRING_HANDLE platform_get_platform_info_internal(char* deviceId)
 {
     // Expected format: "(<runtime name>; <operating system name>; <platform>)"
 
@@ -68,6 +141,7 @@ STRING_HANDLE platform_get_platform_info(void)
     SYSTEM_INFO sys_info;
     OSVERSIONINFO osvi;
     char *arch;
+
     GetSystemInfo(&sys_info);
 
     switch (sys_info.wProcessorArchitecture)
@@ -102,14 +176,29 @@ STRING_HANDLE platform_get_platform_info(void)
         DWORD product_type;
         if (GetProductInfo(osvi.dwMajorVersion, osvi.dwMinorVersion, 0, 0, &product_type))
         {
-            result = STRING_construct_sprintf("(native; WindowsProduct:0x%08x %d.%d; %s)", product_type, osvi.dwMajorVersion, osvi.dwMinorVersion, arch);
+            if (deviceId != NULL)
+            {
+                result = STRING_construct_sprintf("(native; WindowsProduct:0x%08x %d.%d; %s; %s)", product_type, osvi.dwMajorVersion, osvi.dwMinorVersion, arch, deviceId);
+            }
+            else
+            {
+                result = STRING_construct_sprintf("(native; WindowsProduct:0x%08x %d.%d; %s)", product_type, osvi.dwMajorVersion, osvi.dwMinorVersion, arch);
+            }
         }
     }
 
     if (result == NULL)
     {
         DWORD dwVersion = GetVersion();
-        result = STRING_construct_sprintf("(native; WindowsProduct:Windows NT %d.%d; %s)", LOBYTE(LOWORD(dwVersion)), HIBYTE(LOWORD(dwVersion)), arch);
+
+        if (deviceId != NULL)
+        {
+            result = STRING_construct_sprintf("(native; WindowsProduct:Windows NT %d.%d; %s; %s)", LOBYTE(LOWORD(dwVersion)), HIBYTE(LOWORD(dwVersion)), arch, deviceId);
+        }
+        else
+        {
+            result = STRING_construct_sprintf("(native; WindowsProduct:Windows NT %d.%d; %s)", LOBYTE(LOWORD(dwVersion)), HIBYTE(LOWORD(dwVersion)), arch);
+        }
     }
 #pragma warning(default:4996)
 
@@ -123,6 +212,24 @@ STRING_HANDLE platform_get_platform_info(void)
     return result;
 }
 
+STRING_HANDLE platform_get_platform_info(void)
+{
+    return platform_get_platform_info_internal(NULL);
+}
+
+STRING_HANDLE platform_get_platform_info_with_id(void)
+{
+    char deviceId[255];
+    if (platform_get_device_id(deviceId))
+    {
+        return platform_get_platform_info_internal(deviceId);
+    }
+    else
+    {
+        return platform_get_platform_info_internal(NULL);
+    }
+}
+
 void platform_deinit(void)
 {
     (void)WSACleanup();
@@ -131,3 +238,4 @@ void platform_deinit(void)
     tlsio_openssl_deinit();
 #endif
 }
+

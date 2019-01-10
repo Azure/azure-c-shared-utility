@@ -16,6 +16,9 @@ extern "C" {
     MOCKABLE_FUNCTION(, void, platform_deinit);
     MOCKABLE_FUNCTION(, const IO_INTERFACE_DESCRIPTION*, platform_get_default_tlsio);
     MOCKABLE_FUNCTION(, STRING_HANDLE, platform_get_platform_info);
+#ifdef WIN32
+    MOCKABLE_FUNCTION(, STRING_HANDLE, platform_get_platform_info_with_id);
+#endif
 
 #ifdef __cplusplus
 }
