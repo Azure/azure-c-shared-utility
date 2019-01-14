@@ -37,7 +37,6 @@ MOCKABLE_FUNCTION(, PDLIST_ENTRY, DList_RemoveHeadList, PDLIST_ENTRY, listHead);
 
 #ifdef __cplusplus
 }
-#else
 #endif
 
 #endif /* DOUBLYLINKEDLIST_H */
