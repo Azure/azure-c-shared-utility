@@ -55,7 +55,6 @@ static const char* MODIFIED_STRING_VALUE2 = "*nitial_";
 #define NUMBER_OF_CHAR_TOCOPY           8
 #define TEST_INTEGER_VALUE              1234
 
-static TEST_MUTEX_HANDLE g_dllByDll;
 static TEST_MUTEX_HANDLE g_testByTest;
 
 static const struct JSONEncoding {
@@ -80,16 +79,13 @@ DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    char temp_str[256];
-    (void)snprintf(temp_str, sizeof(temp_str), "umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
-    ASSERT_FAIL(temp_str);
+    ASSERT_FAIL("umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
 }
 
 BEGIN_TEST_SUITE(strings_unittests)
 
     TEST_SUITE_INITIALIZE(setsBufferTempSize)
     {
-        TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
         g_testByTest = TEST_MUTEX_CREATE();
         ASSERT_IS_NOT_NULL(g_testByTest);
 
@@ -112,7 +108,6 @@ BEGIN_TEST_SUITE(strings_unittests)
         umock_c_deinit();
 
         TEST_MUTEX_DESTROY(g_testByTest);
-        TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
     }
 
     TEST_FUNCTION_INITIALIZE(a)
@@ -181,7 +176,7 @@ BEGIN_TEST_SUITE(strings_unittests)
             sprintf(tmp_msg, "STRING_new failure in test %zu/%zu", index+1, count);
 
             //assert
-            ASSERT_IS_NULL_WITH_MSG(str_handle, tmp_msg);
+            ASSERT_IS_NULL(str_handle, tmp_msg);
         }
 
         //cleanup
@@ -277,7 +272,7 @@ BEGIN_TEST_SUITE(strings_unittests)
             sprintf(tmp_msg, "STRING_construct failure in test %zu/%zu", index+1, count);
 
             //assert
-            ASSERT_IS_NULL_WITH_MSG(str_handle, tmp_msg);
+            ASSERT_IS_NULL(str_handle, tmp_msg);
         }
 
         //cleanup
@@ -421,7 +416,7 @@ BEGIN_TEST_SUITE(strings_unittests)
             sprintf(tmp_msg, "STRING_construct_sprintf failure in test %zu/%zu", index+1, count);
 
             //assert
-            ASSERT_IS_NULL_WITH_MSG(str_handle, tmp_msg);
+            ASSERT_IS_NULL(str_handle, tmp_msg);
         }
 
         //cleanup
@@ -789,7 +784,7 @@ BEGIN_TEST_SUITE(strings_unittests)
             sprintf(tmp_msg, "STRING_quote failure in test %zu/%zu", index+1, count);
 
             //assert
-            ASSERT_ARE_NOT_EQUAL_WITH_MSG(int, 0, nResult, tmp_msg);
+            ASSERT_ARE_NOT_EQUAL(int, 0, nResult, tmp_msg);
         }
 
         ///cleanup
@@ -1019,7 +1014,7 @@ BEGIN_TEST_SUITE(strings_unittests)
             sprintf(tmp_msg, "STRING_clone failure in test %zu/%zu", index+1, count);
 
             //assert
-            ASSERT_IS_NULL_WITH_MSG(str_result, tmp_msg);
+            ASSERT_IS_NULL(str_result, tmp_msg);
         }
 
         //cleanup
@@ -1128,7 +1123,7 @@ BEGIN_TEST_SUITE(strings_unittests)
             sprintf(tmp_msg, "STRING_construct_n failure in test %zu/%zu", index+1, count);
 
             //assert
-            ASSERT_IS_NULL_WITH_MSG(result, tmp_msg);
+            ASSERT_IS_NULL(result, tmp_msg);
         }
 
         //cleanup
@@ -1329,7 +1324,7 @@ BEGIN_TEST_SUITE(strings_unittests)
             sprintf(tmp_msg, "STRING_new_JSON failure in test %zu/%zu", index+1, count);
 
             //assert
-            ASSERT_IS_NULL_WITH_MSG(result, tmp_msg);
+            ASSERT_IS_NULL(result, tmp_msg);
         }
 
         //cleanup

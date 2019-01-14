@@ -14,7 +14,6 @@
 #include "umock_c_negative_tests.h"
 
 static TEST_MUTEX_HANDLE g_testByTest;
-static TEST_MUTEX_HANDLE g_dllByDll;
 
 #if defined _MSC_VER
 #pragma warning(disable: 4054) /* MSC incorrectly fires this */
@@ -286,9 +285,7 @@ DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    char temp_str[256];
-    (void)snprintf(temp_str, sizeof(temp_str), "umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
-    ASSERT_FAIL(temp_str);
+    ASSERT_FAIL("umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
 }
 
 BEGIN_TEST_SUITE(http_proxy_io_unittests)
@@ -297,7 +294,6 @@ TEST_SUITE_INITIALIZE(suite_init)
 {
     int result;
 
-    TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
     g_testByTest = TEST_MUTEX_CREATE();
     ASSERT_IS_NOT_NULL(g_testByTest);
 
@@ -342,7 +338,6 @@ TEST_SUITE_CLEANUP(suite_cleanup)
     umock_c_deinit();
 
     TEST_MUTEX_DESTROY(g_testByTest);
-    TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
 }
 
 TEST_FUNCTION_INITIALIZE(TestMethodInitialize)
@@ -364,13 +359,13 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
 
 /* http_proxy_io_create */
 
-/* Tests_SRS_HTTP_PROXY_IO_01_001: [ `http_proxy_io_create` shall create a new instance of the HTTP proxy IO. ]*/
-/* Tests_SRS_HTTP_PROXY_IO_01_003: [ `io_create_parameters` shall be used as an `HTTP_PROXY_IO_CONFIG*`. ]*/
-/* Tests_SRS_HTTP_PROXY_IO_01_005: [ `http_proxy_io_create` shall copy the `hostname`, `port`, `username` and `password` values for later use when the actual CONNECT is performed. ]*/
-/* Tests_SRS_HTTP_PROXY_IO_01_006: [ `hostname` and `proxy_hostname`, `username` and `password` shall be copied by calling `mallocAndStrcpy_s`. ]*/
-/* Tests_SRS_HTTP_PROXY_IO_01_009: [ `http_proxy_io_create` shall create a new socket IO by calling `xio_create` with the arguments: ]*/
-/* Tests_SRS_HTTP_PROXY_IO_01_010: [ - `io_interface_description` shall be set to the result of `socketio_get_interface_description`. ]*/
-/* Tests_SRS_HTTP_PROXY_IO_01_011: [ - `xio_create_parameters` shall be set to a `SOCKETIO_CONFIG*` where `hostname` is set to the `proxy_hostname` member of `io_create_parameters` and `port` is set to the `proxy_port` member of `io_create_parameters`. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_001: [ http_proxy_io_create shall create a new instance of the HTTP proxy IO. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_003: [ io_create_parameters shall be used as an HTTP_PROXY_IO_CONFIG*. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_005: [ http_proxy_io_create shall copy the hostname, port, username and password values for later use when the actual CONNECT is performed. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_006: [ hostname and proxy_hostname, username and password shall be copied by calling mallocAndStrcpy_s. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_009: [ http_proxy_io_create shall create a new socket IO by calling xio_create with the arguments: ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_010: [ - io_interface_description shall be set to the result of socketio_get_interface_description. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_011: [ - xio_create_parameters shall be set to a SOCKETIO_CONFIG* where hostname is set to the proxy_hostname member of io_create_parameters and port is set to the proxy_port member of io_create_parameters. ]*/
 TEST_FUNCTION(http_proxy_io_create_succeeds)
 {
     // arrange
@@ -408,7 +403,7 @@ TEST_FUNCTION(http_proxy_io_create_succeeds)
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_094: [ `username` and `password` shall be optional. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_094: [ username and password shall be optional. ]*/
 TEST_FUNCTION(http_proxy_io_create_with_NULL_username_and_password_succeeds)
 {
     // arrange
@@ -442,7 +437,7 @@ TEST_FUNCTION(http_proxy_io_create_with_NULL_username_and_password_succeeds)
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_095: [ If one of the fields `username` and `password` is non-NULL, then the other has to be also non-NULL, otherwise `http_proxy_io_create` shall fail and return NULL. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_095: [ If one of the fields username and password is non-NULL, then the other has to be also non-NULL, otherwise http_proxy_io_create shall fail and return NULL. ]*/
 TEST_FUNCTION(http_proxy_io_create_with_NULL_username_and_non_NULL_password_fails)
 {
     // arrange
@@ -464,7 +459,7 @@ TEST_FUNCTION(http_proxy_io_create_with_NULL_username_and_non_NULL_password_fail
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_095: [ If one of the fields `username` and `password` is non-NULL, then the other has to be also non-NULL, otherwise `http_proxy_io_create` shall fail and return NULL. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_095: [ If one of the fields username and password is non-NULL, then the other has to be also non-NULL, otherwise http_proxy_io_create shall fail and return NULL. ]*/
 TEST_FUNCTION(http_proxy_io_create_with_non_NULL_username_and_NULL_password_fails)
 {
     // arrange
@@ -486,7 +481,7 @@ TEST_FUNCTION(http_proxy_io_create_with_non_NULL_username_and_NULL_password_fail
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_002: [ If `io_create_parameters` is NULL, `http_proxy_io_create` shall fail and return NULL. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_002: [ If io_create_parameters is NULL, http_proxy_io_create shall fail and return NULL. ]*/
 TEST_FUNCTION(http_proxy_io_create_with_NULL_fails)
 {
     // arrange
@@ -500,7 +495,7 @@ TEST_FUNCTION(http_proxy_io_create_with_NULL_fails)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_004: [ If the `hostname` or `proxy_hostname` member is NULL, then `http_proxy_io_create` shall fail and return NULL. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_004: [ If the hostname or proxy_hostname member is NULL, then http_proxy_io_create shall fail and return NULL. ]*/
 TEST_FUNCTION(http_proxy_io_create_with_NULL_hostname_fails)
 {
     // arrange
@@ -522,7 +517,7 @@ TEST_FUNCTION(http_proxy_io_create_with_NULL_hostname_fails)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_004: [ If the `hostname` or `proxy_hostname` member is NULL, then `http_proxy_io_create` shall fail and return NULL. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_004: [ If the hostname or proxy_hostname member is NULL, then http_proxy_io_create shall fail and return NULL. ]*/
 TEST_FUNCTION(http_proxy_io_create_with_NULL_proxy_hostname_fails)
 {
     // arrange
@@ -544,11 +539,11 @@ TEST_FUNCTION(http_proxy_io_create_with_NULL_proxy_hostname_fails)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_051: [ If allocating memory for the new instance fails, `http_proxy_io_create` shall fail and return NULL. ]*/
-/* Tests_SRS_HTTP_PROXY_IO_01_007: [ If `mallocAndStrcpy_s` fails then `http_proxy_io_create` shall fail and return NULL. ]*/
-/* Tests_SRS_HTTP_PROXY_IO_01_050: [ If `socketio_get_interface_description` fails, `http_proxy_io_create` shall fail and return NULL. ]*/
-/* Tests_SRS_HTTP_PROXY_IO_01_012: [ If `xio_create` fails, `http_proxy_io_create` shall fail and return NULL. ]*/
-/* Tests_SRS_HTTP_PROXY_IO_01_008: [ When `http_proxy_io_create` fails, all allocated resources up to that point shall be freed. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_051: [ If allocating memory for the new instance fails, http_proxy_io_create shall fail and return NULL. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_007: [ If mallocAndStrcpy_s fails then http_proxy_io_create shall fail and return NULL. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_050: [ If socketio_get_interface_description fails, http_proxy_io_create shall fail and return NULL. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_012: [ If xio_create fails, http_proxy_io_create shall fail and return NULL. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_008: [ When http_proxy_io_create fails, all allocated resources up to that point shall be freed. ]*/
 TEST_FUNCTION(when_a_call_made_by_http_proxy_io_create_fails_then_http_proxy_io_create_fails)
 {
     // arrange
@@ -592,14 +587,14 @@ TEST_FUNCTION(when_a_call_made_by_http_proxy_io_create_fails_then_http_proxy_io_
         http_io = http_proxy_io_get_interface_description()->concrete_io_create((void*)&default_http_proxy_io_config);
 
         // assert
-        ASSERT_IS_NULL_WITH_MSG(http_io, temp_str);
+        ASSERT_IS_NULL(http_io, temp_str);
     }
 }
 
 /* http_proxy_io_destroy */
 
-/* Tests_SRS_HTTP_PROXY_IO_01_013: [ `http_proxy_io_destroy` shall free the HTTP proxy IO instance indicated by `http_proxy_io`. ]*/
-/* Tests_SRS_HTTP_PROXY_IO_01_016: [ `http_proxy_io_destroy` shall destroy the underlying IO created in `http_proxy_io_create` by calling `xio_destroy`. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_013: [ http_proxy_io_destroy shall free the HTTP proxy IO instance indicated by http_proxy_io. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_016: [ http_proxy_io_destroy shall destroy the underlying IO created in http_proxy_io_create by calling xio_destroy. ]*/
 TEST_FUNCTION(http_proxy_io_destroy_frees_the_resources)
 {
     // arrange
@@ -622,7 +617,7 @@ TEST_FUNCTION(http_proxy_io_destroy_frees_the_resources)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_014: [ If `http_proxy_io` is NULL, `http_proxy_io_destroy` shall do nothing. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_014: [ If http_proxy_io is NULL, http_proxy_io_destroy shall do nothing. ]*/
 TEST_FUNCTION(http_proxy_io_destroy_with_NULL_does_nothing)
 {
     // arrange
@@ -636,8 +631,8 @@ TEST_FUNCTION(http_proxy_io_destroy_with_NULL_does_nothing)
 
 /* http_proxy_io_open */
 
-/* Tests_SRS_HTTP_PROXY_IO_01_017: [ `http_proxy_io_open` shall open the HTTP proxy IO and on success it shall return 0. ]*/
-/* Tests_SRS_HTTP_PROXY_IO_01_019: [ `http_proxy_io_open` shall open the underlying IO by calling `xio_open` on the underlying IO handle created in `http_proxy_io_create`, while passing to it the callbacks `on_underlying_io_open_complete`, `on_underlying_io_bytes_received` and `on_underlying_io_error`. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_017: [ http_proxy_io_open shall open the HTTP proxy IO and on success it shall return 0. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_019: [ http_proxy_io_open shall open the underlying IO by calling xio_open on the underlying IO handle created in http_proxy_io_create, while passing to it the callbacks on_underlying_io_open_complete, on_underlying_io_bytes_received and on_underlying_io_error. ]*/
 TEST_FUNCTION(http_proxy_io_open_opens_the_underlying_IO)
 {
     // arrange
@@ -666,7 +661,7 @@ TEST_FUNCTION(http_proxy_io_open_opens_the_underlying_IO)
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_020: [ If `xio_open` fails, then `http_proxy_io_open` shall return a non-zero value. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_020: [ If xio_open fails, then http_proxy_io_open shall return a non-zero value. ]*/
 TEST_FUNCTION(when_the_underlying_xio_open_fails_http_proxy_io_open_fails)
 {
     // arrange
@@ -696,7 +691,7 @@ TEST_FUNCTION(when_the_underlying_xio_open_fails_http_proxy_io_open_fails)
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_018: [ If any of the arguments `http_proxy_io`, `on_io_open_complete`, `on_bytes_received` or `on_io_error` are NULL then `http_proxy_io_open` shall return a non-zero value. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_018: [ If any of the arguments http_proxy_io, on_io_open_complete, on_bytes_received or on_io_error are NULL then http_proxy_io_open shall return a non-zero value. ]*/
 TEST_FUNCTION(http_proxy_io_open_with_NULL_open_complete_callback_fails)
 {
     // arrange
@@ -717,7 +712,7 @@ TEST_FUNCTION(http_proxy_io_open_with_NULL_open_complete_callback_fails)
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_018: [ If any of the arguments `http_proxy_io`, `on_io_open_complete`, `on_bytes_received` or `on_io_error` are NULL then `http_proxy_io_open` shall return a non-zero value. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_018: [ If any of the arguments http_proxy_io, on_io_open_complete, on_bytes_received or on_io_error are NULL then http_proxy_io_open shall return a non-zero value. ]*/
 TEST_FUNCTION(http_proxy_io_open_with_NULL_bytes_received_callback_fails)
 {
     // arrange
@@ -738,7 +733,7 @@ TEST_FUNCTION(http_proxy_io_open_with_NULL_bytes_received_callback_fails)
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_018: [ If any of the arguments `http_proxy_io`, `on_io_open_complete`, `on_bytes_received` or `on_io_error` are NULL then `http_proxy_io_open` shall return a non-zero value. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_018: [ If any of the arguments http_proxy_io, on_io_open_complete, on_bytes_received or on_io_error are NULL then http_proxy_io_open shall return a non-zero value. ]*/
 TEST_FUNCTION(http_proxy_io_open_with_NULL_on_io_error_callback_fails)
 {
     // arrange
@@ -759,7 +754,7 @@ TEST_FUNCTION(http_proxy_io_open_with_NULL_on_io_error_callback_fails)
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_018: [ If any of the arguments `http_proxy_io`, `on_io_open_complete`, `on_bytes_received` or `on_io_error` are NULL then `http_proxy_io_open` shall return a non-zero value. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_018: [ If any of the arguments http_proxy_io, on_io_open_complete, on_bytes_received or on_io_error are NULL then http_proxy_io_open shall return a non-zero value. ]*/
 TEST_FUNCTION(http_proxy_io_open_with_NULL_handle_fails)
 {
     // arrange
@@ -773,7 +768,7 @@ TEST_FUNCTION(http_proxy_io_open_with_NULL_handle_fails)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_021: [ If `http_proxy_io_open` is called while the IO was already open, `http_proxy_io_open` shall fail and return a non-zero value. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_021: [ If http_proxy_io_open is called while the IO was already open, http_proxy_io_open shall fail and return a non-zero value. ]*/
 TEST_FUNCTION(http_proxy_io_open_after_open_fails)
 {
     // arrange
@@ -795,7 +790,7 @@ TEST_FUNCTION(http_proxy_io_open_after_open_fails)
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_051: [ The arguments `on_io_open_complete_context`, `on_bytes_received_context` and `on_io_error_context` shall be allowed to be NULL. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_051: [ The arguments on_io_open_complete_context, on_bytes_received_context and on_io_error_context shall be allowed to be NULL. ]*/
 TEST_FUNCTION(http_proxy_io_open_with_NULL_contexts_is_allowed)
 {
     // arrange
@@ -826,9 +821,9 @@ TEST_FUNCTION(http_proxy_io_open_with_NULL_contexts_is_allowed)
 
 /* http_proxy_io_close */
 
-/* Tests_SRS_HTTP_PROXY_IO_01_022: [ `http_proxy_io_close` shall close the HTTP proxy IO and on success it shall return 0. ]*/
-/* Tests_SRS_HTTP_PROXY_IO_01_024: [ `http_proxy_io_close` shall close the underlying IO by calling `xio_close` on the IO handle create in `http_proxy_io_create`, while passing to it the `on_underlying_io_close_complete` callback. ]*/
-/* Tests_SRS_HTTP_PROXY_IO_01_026: [ The `on_io_close_complete` and `on_io_close_complete_context` arguments shall be saved for later use. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_022: [ http_proxy_io_close shall close the HTTP proxy IO and on success it shall return 0. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_024: [ http_proxy_io_close shall close the underlying IO by calling xio_close on the IO handle create in http_proxy_io_create, while passing to it the on_underlying_io_close_complete callback. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_026: [ The on_io_close_complete and on_io_close_complete_context arguments shall be saved for later use. ]*/
 TEST_FUNCTION(http_proxy_io_close_closes_the_IO)
 {
     // arrange
@@ -856,7 +851,7 @@ TEST_FUNCTION(http_proxy_io_close_closes_the_IO)
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_023: [ If the argument `http_proxy_io` is NULL, `http_proxy_io_close` shall fail and return a non-zero value. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_023: [ If the argument http_proxy_io is NULL, http_proxy_io_close shall fail and return a non-zero value. ]*/
 TEST_FUNCTION(http_proxy_io_close_with_NULL_handle_fails)
 {
     // arrange
@@ -870,7 +865,7 @@ TEST_FUNCTION(http_proxy_io_close_with_NULL_handle_fails)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_025: [ If `xio_close` fails, `http_proxy_io_close` shall fail and return a non-zero value. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_025: [ If xio_close fails, http_proxy_io_close shall fail and return a non-zero value. ]*/
 TEST_FUNCTION(when_xio_close_fails_http_proxy_io_close_also_fails)
 {
     // arrange
@@ -899,7 +894,7 @@ TEST_FUNCTION(when_xio_close_fails_http_proxy_io_close_also_fails)
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_027: [ If `http_proxy_io_close` is called when not open, `http_proxy_io_close` shall fail and return a non-zero value. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_027: [ If http_proxy_io_close is called when not open, http_proxy_io_close shall fail and return a non-zero value. ]*/
 TEST_FUNCTION(http_proxy_io_close_when_not_open_fails)
 {
     // arrange
@@ -920,7 +915,7 @@ TEST_FUNCTION(http_proxy_io_close_when_not_open_fails)
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_027: [ If `http_proxy_io_close` is called when not open, `http_proxy_io_close` shall fail and return a non-zero value. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_027: [ If http_proxy_io_close is called when not open, http_proxy_io_close shall fail and return a non-zero value. ]*/
 TEST_FUNCTION(http_proxy_io_close_when_already_closed_fails)
 {
     // arrange
@@ -946,7 +941,7 @@ TEST_FUNCTION(http_proxy_io_close_when_already_closed_fails)
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_028: [ `on_io_close_complete` shall be allowed to be NULL. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_028: [ on_io_close_complete shall be allowed to be NULL. ]*/
 TEST_FUNCTION(http_proxy_io_close_with_NULL_close_complete_callback_is_allowed)
 {
     // arrange
@@ -974,7 +969,7 @@ TEST_FUNCTION(http_proxy_io_close_with_NULL_close_complete_callback_is_allowed)
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_052: [ `on_io_close_complete_context` shall be allowed to be NULL. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_052: [ on_io_close_complete_context shall be allowed to be NULL. ]*/
 TEST_FUNCTION(http_proxy_io_close_with_NULL_close_complete_callback_context_is_allowed)
 {
     // arrange
@@ -1002,7 +997,7 @@ TEST_FUNCTION(http_proxy_io_close_with_NULL_close_complete_callback_context_is_a
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_053: [ `http_proxy_io_close` while OPENING shall trigger the `on_io_open_complete` callback with `IO_OPEN_CANCELLED`. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_053: [ http_proxy_io_close while OPENING shall trigger the on_io_open_complete callback with IO_OPEN_CANCELLED. ]*/
 TEST_FUNCTION(http_proxy_io_close_while_opening_indicates_open_as_cancelled)
 {
     // arrange
@@ -1027,7 +1022,7 @@ TEST_FUNCTION(http_proxy_io_close_while_opening_indicates_open_as_cancelled)
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_053: [ `http_proxy_io_close` while OPENING shall trigger the `on_io_open_complete` callback with `IO_OPEN_CANCELLED`. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_053: [ http_proxy_io_close while OPENING shall trigger the on_io_open_complete callback with IO_OPEN_CANCELLED. ]*/
 TEST_FUNCTION(http_proxy_io_close_while_opening_waiting_for_reply_indicates_open_as_cancelled)
 {
     // arrange
@@ -1053,7 +1048,7 @@ TEST_FUNCTION(http_proxy_io_close_while_opening_waiting_for_reply_indicates_open
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_054: [ `http_proxy_io_close` while OPENING shall fail and return a non-zero value. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_054: [ http_proxy_io_close while OPENING shall fail and return a non-zero value. ]*/
 TEST_FUNCTION(http_proxy_io_close_while_closing_indicates_open_as_cancelled)
 {
     // arrange
@@ -1079,8 +1074,8 @@ TEST_FUNCTION(http_proxy_io_close_while_closing_indicates_open_as_cancelled)
 
 /* http_proxy_io_send */
 
-/* Tests_SRS_HTTP_PROXY_IO_01_029: [ `http_proxy_io_send` shall send the `size` bytes pointed to by `buffer` and on success it shall return 0. ]*/
-/* Tests_SRS_HTTP_PROXY_IO_01_033: [ `http_proxy_io_send` shall send the bytes by calling `xio_send` on the underlying IO created in `http_proxy_io_create` and passing `buffer` and `size` as arguments. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_029: [ http_proxy_io_send shall send the size bytes pointed to by buffer and on success it shall return 0. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_033: [ http_proxy_io_send shall send the bytes by calling xio_send on the underlying IO created in http_proxy_io_create and passing buffer and size as arguments. ]*/
 TEST_FUNCTION(http_proxy_io_send_calls_send_on_the_underlying_IO)
 {
     // arrange
@@ -1108,7 +1103,7 @@ TEST_FUNCTION(http_proxy_io_send_calls_send_on_the_underlying_IO)
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_030: [ If any of the arguments `http_proxy_io` or `buffer` is NULL, `http_proxy_io_send` shall fail and return a non-zero value. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_030: [ If any of the arguments http_proxy_io or buffer is NULL, http_proxy_io_send shall fail and return a non-zero value. ]*/
 TEST_FUNCTION(http_proxy_io_send_with_NULL_handle_fails)
 {
     // arrange
@@ -1123,7 +1118,7 @@ TEST_FUNCTION(http_proxy_io_send_with_NULL_handle_fails)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_030: [ If any of the arguments `http_proxy_io` or `buffer` is NULL, `http_proxy_io_send` shall fail and return a non-zero value. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_030: [ If any of the arguments http_proxy_io or buffer is NULL, http_proxy_io_send shall fail and return a non-zero value. ]*/
 TEST_FUNCTION(http_proxy_io_send_with_NULL_buffer_fails)
 {
     // arrange
@@ -1147,7 +1142,7 @@ TEST_FUNCTION(http_proxy_io_send_with_NULL_buffer_fails)
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_031: [ If `size` is 0, `http_proxy_io_send` shall fail and return a non-zero value. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_031: [ If size is 0, http_proxy_io_send shall fail and return a non-zero value. ]*/
 TEST_FUNCTION(http_proxy_io_send_with_zero_size_fails)
 {
     // arrange
@@ -1172,7 +1167,7 @@ TEST_FUNCTION(http_proxy_io_send_with_zero_size_fails)
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_032: [ `on_send_complete` shall be allowed to be NULL. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_032: [ on_send_complete shall be allowed to be NULL. ]*/
 TEST_FUNCTION(http_proxy_io_send_with_NULL_send_complete_callback_succeeds)
 {
     // arrange
@@ -1200,7 +1195,7 @@ TEST_FUNCTION(http_proxy_io_send_with_NULL_send_complete_callback_succeeds)
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_034: [ If `http_proxy_io_send` is called when the IO is not open, `http_proxy_io_send` shall fail and return a non-zero value. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_034: [ If http_proxy_io_send is called when the IO is not open, http_proxy_io_send shall fail and return a non-zero value. ]*/
 TEST_FUNCTION(http_proxy_io_send_when_waiting_for_connect_reply_fails)
 {
     // arrange
@@ -1224,7 +1219,7 @@ TEST_FUNCTION(http_proxy_io_send_when_waiting_for_connect_reply_fails)
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_034: [ If `http_proxy_io_send` is called when the IO is not open, `http_proxy_io_send` shall fail and return a non-zero value. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_034: [ If http_proxy_io_send is called when the IO is not open, http_proxy_io_send shall fail and return a non-zero value. ]*/
 TEST_FUNCTION(http_proxy_io_send_when_opening_underlying_IO_fails)
 {
     // arrange
@@ -1247,7 +1242,7 @@ TEST_FUNCTION(http_proxy_io_send_when_opening_underlying_IO_fails)
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_034: [ If `http_proxy_io_send` is called when the IO is not open, `http_proxy_io_send` shall fail and return a non-zero value. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_034: [ If http_proxy_io_send is called when the IO is not open, http_proxy_io_send shall fail and return a non-zero value. ]*/
 TEST_FUNCTION(http_proxy_io_send_when_open_not_called_fails)
 {
     // arrange
@@ -1269,7 +1264,7 @@ TEST_FUNCTION(http_proxy_io_send_when_open_not_called_fails)
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_034: [ If `http_proxy_io_send` is called when the IO is not open, `http_proxy_io_send` shall fail and return a non-zero value. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_034: [ If http_proxy_io_send is called when the IO is not open, http_proxy_io_send shall fail and return a non-zero value. ]*/
 TEST_FUNCTION(http_proxy_io_send_when_closing_fails)
 {
     // arrange
@@ -1295,7 +1290,7 @@ TEST_FUNCTION(http_proxy_io_send_when_closing_fails)
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_035: [ If the IO is in an error state (an error was reported through the `on_io_error` callback), `http_proxy_io_send` shall fail and return a non-zero value. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_035: [ If the IO is in an error state (an error was reported through the on_io_error callback), http_proxy_io_send shall fail and return a non-zero value. ]*/
 TEST_FUNCTION(http_proxy_io_send_when_IO_is_in_error_fails)
 {
     // arrange
@@ -1321,7 +1316,7 @@ TEST_FUNCTION(http_proxy_io_send_when_IO_is_in_error_fails)
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_055: [ If `xio_send` fails, `http_proxy_io_send` shall fail and return a non-zero value. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_055: [ If xio_send fails, http_proxy_io_send shall fail and return a non-zero value. ]*/
 TEST_FUNCTION(when_xio_send_fails_http_proxy_io_send_also_fails)
 {
     // arrange
@@ -1352,7 +1347,7 @@ TEST_FUNCTION(when_xio_send_fails_http_proxy_io_send_also_fails)
 
 /* http_proxy_io_dowork */
 
-/* Tests_SRS_HTTP_PROXY_IO_01_037: [ `http_proxy_io_dowork` shall call `xio_dowork` on the underlying IO created in `http_proxy_io_create`. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_037: [ http_proxy_io_dowork shall call xio_dowork on the underlying IO created in http_proxy_io_create. ]*/
 TEST_FUNCTION(http_proxy_io_dowork_calls_the_underlying_IO_dowork)
 {
     // arrange
@@ -1376,7 +1371,7 @@ TEST_FUNCTION(http_proxy_io_dowork_calls_the_underlying_IO_dowork)
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_038: [ If the `http_proxy_io` argument is NULL, `http_proxy_io_dowork` shall do nothing. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_038: [ If the http_proxy_io argument is NULL, http_proxy_io_dowork shall do nothing. ]*/
 TEST_FUNCTION(http_proxy_io_dowork_with_NULL_handle_does_nothing)
 {
     // arrange
@@ -1388,7 +1383,7 @@ TEST_FUNCTION(http_proxy_io_dowork_with_NULL_handle_does_nothing)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_039: [ If the IO is not open (no open has been called or the IO has been closed) then `http_proxy_io_dowork` shall do nothing. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_039: [ If the IO is not open (no open has been called or the IO has been closed) then http_proxy_io_dowork shall do nothing. ]*/
 TEST_FUNCTION(http_proxy_io_dowork_when_not_open_does_nothing)
 {
     // arrange
@@ -1407,7 +1402,7 @@ TEST_FUNCTION(http_proxy_io_dowork_when_not_open_does_nothing)
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_039: [ If the IO is not open (no open has been called or the IO has been closed) then `http_proxy_io_dowork` shall do nothing. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_039: [ If the IO is not open (no open has been called or the IO has been closed) then http_proxy_io_dowork shall do nothing. ]*/
 TEST_FUNCTION(http_proxy_io_dowork_when_closed_does_nothing)
 {
     // arrange
@@ -1433,7 +1428,7 @@ TEST_FUNCTION(http_proxy_io_dowork_when_closed_does_nothing)
 
 /* http_proxy_io_set_option */
 
-/* Tests_SRS_HTTP_PROXY_IO_01_040: [ If any of the arguments `http_proxy_io` or `option_name` is NULL, `http_proxy_io_set_option` shall return a non-zero value. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_040: [ If any of the arguments http_proxy_io or option_name is NULL, http_proxy_io_set_option shall return a non-zero value. ]*/
 TEST_FUNCTION(http_proxy_io_set_option_with_NULL_option_name_fails)
 {
     // arrange
@@ -1454,7 +1449,7 @@ TEST_FUNCTION(http_proxy_io_set_option_with_NULL_option_name_fails)
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_040: [ If any of the arguments `http_proxy_io` or `option_name` is NULL, `http_proxy_io_set_option` shall return a non-zero value. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_040: [ If any of the arguments http_proxy_io or option_name is NULL, http_proxy_io_set_option shall return a non-zero value. ]*/
 TEST_FUNCTION(http_proxy_io_set_option_with_NULL_handle_fails)
 {
     // arrange
@@ -1468,8 +1463,8 @@ TEST_FUNCTION(http_proxy_io_set_option_with_NULL_handle_fails)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_042: [ If the option was handled by `http_proxy_io_set_option` or the underlying IO, then `http_proxy_io_set_option` shall return 0. ]*/
-/* Tests_SRS_HTTP_PROXY_IO_01_043: [ If the `option_name` argument indicates an option that is not handled by `http_proxy_io_set_option`, then `xio_setoption` shall be called on the underlying IO created in `http_proxy_io_create`, passing the option name and value to it. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_042: [ If the option was handled by http_proxy_io_set_option or the underlying IO, then http_proxy_io_set_option shall return 0. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_043: [ If the option_name argument indicates an option that is not handled by http_proxy_io_set_option, then xio_setoption shall be called on the underlying IO created in http_proxy_io_create, passing the option name and value to it. ]*/
 TEST_FUNCTION(when_the_underlying_IO_handles_the_option_http_proxy_io_set_option_succeeds)
 {
     // arrange
@@ -1493,7 +1488,7 @@ TEST_FUNCTION(when_the_underlying_IO_handles_the_option_http_proxy_io_set_option
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_044: [ if `xio_setoption` fails, `http_proxy_io_set_option` shall return a non-zero value. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_044: [ if xio_setoption fails, http_proxy_io_set_option shall return a non-zero value. ]*/
 TEST_FUNCTION(when_the_underlying_xio_setoption_fails_http_proxy_io_set_option_also_fails)
 {
     // arrange
@@ -1518,7 +1513,7 @@ TEST_FUNCTION(when_the_underlying_xio_setoption_fails_http_proxy_io_set_option_a
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_056: [ The `value` argument shall be allowed to be NULL. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_056: [ The value argument shall be allowed to be NULL. ]*/
 TEST_FUNCTION(http_proxy_io_set_option_with_NULL_value_is_allowed)
 {
     // arrange
@@ -1544,7 +1539,7 @@ TEST_FUNCTION(http_proxy_io_set_option_with_NULL_value_is_allowed)
 
 /* http_proxy_io_retrieve_options */
 
-/* Tests_SRS_HTTP_PROXY_IO_01_046: [ `http_proxy_io_retrieve_options` shall return an `OPTIONHANDLER_HANDLE` obtained by calling `xio_retrieveoptions` on the underlying IO created in `http_proxy_io_create`. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_046: [ http_proxy_io_retrieve_options shall return an OPTIONHANDLER_HANDLE obtained by calling xio_retrieveoptions on the underlying IO created in http_proxy_io_create. ]*/
 TEST_FUNCTION(http_proxy_io_retrieve_options_calls_the_underlying_retrieve_options)
 {
     // arrange
@@ -1567,7 +1562,7 @@ TEST_FUNCTION(http_proxy_io_retrieve_options_calls_the_underlying_retrieve_optio
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_047: [ If the parameter `http_proxy_io` is NULL then `http_proxy_io_retrieve_options` shall fail and return NULL. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_047: [ If the parameter http_proxy_io is NULL then http_proxy_io_retrieve_options shall fail and return NULL. ]*/
 TEST_FUNCTION(http_proxy_io_retrieve_options_with_NULL_handle_fails)
 {
     // arrange
@@ -1581,7 +1576,7 @@ TEST_FUNCTION(http_proxy_io_retrieve_options_with_NULL_handle_fails)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_048: [ If `xio_retrieveoptions` fails, `http_proxy_io_retrieve_options` shall return NULL. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_048: [ If xio_retrieveoptions fails, http_proxy_io_retrieve_options shall return NULL. ]*/
 TEST_FUNCTION(when_xio_retrieveoptions_fails_then_http_proxy_io_retrieve_options_fails)
 {
     // arrange
@@ -1607,7 +1602,7 @@ TEST_FUNCTION(when_xio_retrieveoptions_fails_then_http_proxy_io_retrieve_options
 
 /* http_proxy_io_get_interface_description */
 
-/* Tests_SRS_HTTP_PROXY_IO_01_049: [ `http_proxy_io_get_interface_description` shall return a pointer to an `IO_INTERFACE_DESCRIPTION` structure that contains pointers to the functions: `http_proxy_io_retrieve_options`, `http_proxy_io_retrieve_create`, `http_proxy_io_destroy`, `http_proxy_io_open`, `http_proxy_io_close`, `http_proxy_io_send` and `http_proxy_io_dowork`. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_049: [ http_proxy_io_get_interface_description shall return a pointer to an IO_INTERFACE_DESCRIPTION structure that contains pointers to the functions: http_proxy_io_retrieve_options, http_proxy_io_retrieve_create, http_proxy_io_destroy, http_proxy_io_open, http_proxy_io_close, http_proxy_io_send and http_proxy_io_dowork. ]*/
 TEST_FUNCTION(http_proxy_io_get_interface_description_returns_a_structure_with_non_NULL_members)
 {
     // arrange
@@ -1629,7 +1624,7 @@ TEST_FUNCTION(http_proxy_io_get_interface_description_returns_a_structure_with_n
 
 /* on_underlying_io_open_complete */
 
-/* Tests_SRS_HTTP_PROXY_IO_01_081: [ `on_underlying_io_open_complete` called with NULL context shall do nothing. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_081: [ on_underlying_io_open_complete called with NULL context shall do nothing. ]*/
 TEST_FUNCTION(underlying_io_open_complete_with_NULL_does_nothing)
 {
     // arrange
@@ -1649,9 +1644,9 @@ TEST_FUNCTION(underlying_io_open_complete_with_NULL_does_nothing)
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_057: [ When `on_underlying_io_open_complete` is called, the `http_proxy_io` shall send the CONNECT request constructed per RFC 2817: ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_057: [ When on_underlying_io_open_complete is called, the http_proxy_io shall send the CONNECT request constructed per RFC 2817: ]*/
 /* Tests_SRS_HTTP_PROXY_IO_01_075: [ The Request-URI portion of the Request-Line is always an 'authority' as defined by URI Generic Syntax [2], which is to say the host name and port number destination of the requested connection separated by a colon: ]*/
-/* Tests_SRS_HTTP_PROXY_IO_01_063: [ The request shall be sent by calling `xio_send` and passing NULL as `on_send_complete` callback. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_063: [ The request shall be sent by calling xio_send and passing NULL as on_send_complete callback. ]*/
 TEST_FUNCTION(when_the_underlying_io_open_complete_is_called_the_CONNECT_request_is_sent)
 {
     // arrange
@@ -1677,7 +1672,7 @@ TEST_FUNCTION(when_the_underlying_io_open_complete_is_called_the_CONNECT_request
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_064: [ If `xio_send` fails, the `on_open_complete` callback shall be triggered with `IO_OPEN_ERROR`, passing also the `on_open_complete_context` argument as `context`. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_064: [ If xio_send fails, the on_open_complete callback shall be triggered with IO_OPEN_ERROR, passing also the on_open_complete_context argument as context. ]*/
 TEST_FUNCTION(when_xio_send_fails_on_open_complete_is_triggered_with_IO_OPEN_ERROR)
 {
     // arrange
@@ -1706,7 +1701,7 @@ TEST_FUNCTION(when_xio_send_fails_on_open_complete_is_triggered_with_IO_OPEN_ERR
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_017: [ `http_proxy_io_open` shall open the HTTP proxy IO and on success it shall return 0. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_017: [ http_proxy_io_open shall open the HTTP proxy IO and on success it shall return 0. ]*/
 TEST_FUNCTION(http_proxy_io_open_after_CONNECT_request_send_error_succeeds)
 {
     // arrange
@@ -1748,7 +1743,7 @@ TEST_FUNCTION(http_proxy_io_open_after_CONNECT_request_send_error_succeeds)
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_062: [ If any failure is encountered while constructing the request, the `on_open_complete` callback shall be triggered with `IO_OPEN_ERROR`, passing also the `on_open_complete_context` argument as `context`. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_062: [ If any failure is encountered while constructing the request, the on_open_complete callback shall be triggered with IO_OPEN_ERROR, passing also the on_open_complete_context argument as context. ]*/
 TEST_FUNCTION(when_allocating_memory_for_the_connect_request_fails_on_open_complete_is_triggered_with_IO_OPEN_ERROR)
 {
     // arrange
@@ -1773,7 +1768,7 @@ TEST_FUNCTION(when_allocating_memory_for_the_connect_request_fails_on_open_compl
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_017: [ `http_proxy_io_open` shall open the HTTP proxy IO and on success it shall return 0. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_017: [ http_proxy_io_open shall open the HTTP proxy IO and on success it shall return 0. ]*/
 TEST_FUNCTION(http_proxy_io_open_after_CONNECT_request_allocation_error_error_succeeds)
 {
     // arrange
@@ -1809,9 +1804,9 @@ TEST_FUNCTION(http_proxy_io_open_after_CONNECT_request_allocation_error_error_su
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_059: [ - If `username` and `password` have been specified in the arguments passed to `http_proxy_io_create`, then the header `Proxy-Authorization` shall be added to the request. ]*/
-/* Tests_SRS_HTTP_PROXY_IO_01_061: [ Encoding to Base64 shall be done by calling `Base64_Encode_Bytes`. ]*/
-/* Tests_SRS_HTTP_PROXY_IO_01_060: [ - The value of `Proxy-Authorization` shall be the constructed according to RFC 2617. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_059: [ - If username and password have been specified in the arguments passed to http_proxy_io_create, then the header Proxy-Authorization shall be added to the request. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_061: [ Encoding to Base64 shall be done by calling Base64_Encode_Bytes. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_060: [ - The value of Proxy-Authorization shall be the constructed according to RFC 2617. ]*/
 /* Tests_SRS_HTTP_PROXY_IO_01_091: [ To receive authorization, the client sends the userid and password, separated by a single colon (":") character, within a base64 [7] encoded string in the credentials. ]*/
 /* Tests_SRS_HTTP_PROXY_IO_01_092: [ A client MAY preemptively send the corresponding Authorization header with requests for resources in that space without receipt of another challenge from the server. ]*/
 /* Tests_SRS_HTTP_PROXY_IO_01_093: [ Userids might be case sensitive. ]*/
@@ -1849,9 +1844,9 @@ TEST_FUNCTION(when_the_underlying_io_open_complete_is_called_the_CONNECT_request
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_059: [ - If `username` and `password` have been specified in the arguments passed to `http_proxy_io_create`, then the header `Proxy-Authorization` shall be added to the request. ]*/
-/* Tests_SRS_HTTP_PROXY_IO_01_061: [ Encoding to Base64 shall be done by calling `Base64_Encode_Bytes`. ]*/
-/* Tests_SRS_HTTP_PROXY_IO_01_060: [ - The value of `Proxy-Authorization` shall be the constructed according to RFC 2617. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_059: [ - If username and password have been specified in the arguments passed to http_proxy_io_create, then the header Proxy-Authorization shall be added to the request. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_061: [ Encoding to Base64 shall be done by calling Base64_Encode_Bytes. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_060: [ - The value of Proxy-Authorization shall be the constructed according to RFC 2617. ]*/
 /* Tests_SRS_HTTP_PROXY_IO_01_091: [ To receive authorization, the client sends the userid and password, separated by a single colon (":") character, within a base64 [7] encoded string in the credentials. ]*/
 /* Tests_SRS_HTTP_PROXY_IO_01_092: [ A client MAY preemptively send the corresponding Authorization header with requests for resources in that space without receipt of another challenge from the server. ]*/
 /* Tests_SRS_HTTP_PROXY_IO_01_093: [ Userids might be case sensitive. ]*/
@@ -1889,7 +1884,7 @@ TEST_FUNCTION(when_the_underlying_io_open_complete_is_called_the_CONNECT_request
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_062: [ If any failure is encountered while constructing the request, the `on_open_complete` callback shall be triggered with `IO_OPEN_ERROR`, passing also the `on_open_complete_context` argument as `context`. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_062: [ If any failure is encountered while constructing the request, the on_open_complete callback shall be triggered with IO_OPEN_ERROR, passing also the on_open_complete_context argument as context. ]*/
 TEST_FUNCTION(when_Base64_Encode_Bytes_fails_on_open_complete_is_triggered_with_IO_OPEN_ERROR)
 {
     // arrange
@@ -1918,7 +1913,7 @@ TEST_FUNCTION(when_Base64_Encode_Bytes_fails_on_open_complete_is_triggered_with_
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_062: [ If any failure is encountered while constructing the request, the `on_open_complete` callback shall be triggered with `IO_OPEN_ERROR`, passing also the `on_open_complete_context` argument as `context`. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_062: [ If any failure is encountered while constructing the request, the on_open_complete callback shall be triggered with IO_OPEN_ERROR, passing also the on_open_complete_context argument as context. ]*/
 TEST_FUNCTION(after_Base64_Encode_Bytes_fails_http_proxy_io_open_succeeds)
 {
     // arrange
@@ -1957,7 +1952,7 @@ TEST_FUNCTION(after_Base64_Encode_Bytes_fails_http_proxy_io_open_succeeds)
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_062: [ If any failure is encountered while constructing the request, the `on_open_complete` callback shall be triggered with `IO_OPEN_ERROR`, passing also the `on_open_complete_context` argument as `context`. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_062: [ If any failure is encountered while constructing the request, the on_open_complete callback shall be triggered with IO_OPEN_ERROR, passing also the on_open_complete_context argument as context. ]*/
 TEST_FUNCTION(when_allocating_memory_for_the_plain_auth_string_fails_on_open_complete_is_triggered_with_IO_OPEN_ERROR)
 {
     // arrange
@@ -1982,7 +1977,7 @@ TEST_FUNCTION(when_allocating_memory_for_the_plain_auth_string_fails_on_open_com
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_062: [ If any failure is encountered while constructing the request, the `on_open_complete` callback shall be triggered with `IO_OPEN_ERROR`, passing also the `on_open_complete_context` argument as `context`. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_062: [ If any failure is encountered while constructing the request, the on_open_complete callback shall be triggered with IO_OPEN_ERROR, passing also the on_open_complete_context argument as context. ]*/
 TEST_FUNCTION(after_allocating_memory_for_the_plain_auth_string_fails_http_proxy_io_open_succeeds)
 {
     // arrange
@@ -2018,7 +2013,7 @@ TEST_FUNCTION(after_allocating_memory_for_the_plain_auth_string_fails_http_proxy
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_078: [ When `on_underlying_io_open_complete` is called with `IO_OPEN_ERROR`, the `on_open_complete` callback shall be triggered with `IO_OPEN_ERROR`, passing also the `on_open_complete_context` argument as `context`. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_078: [ When on_underlying_io_open_complete is called with IO_OPEN_ERROR, the on_open_complete callback shall be triggered with IO_OPEN_ERROR, passing also the on_open_complete_context argument as context. ]*/
 TEST_FUNCTION(on_underlying_io_open_complete_with_error_yields_an_error)
 {
     // arrange
@@ -2041,7 +2036,7 @@ TEST_FUNCTION(on_underlying_io_open_complete_with_error_yields_an_error)
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_078: [ When `on_underlying_io_open_complete` is called with `IO_OPEN_ERROR`, the `on_open_complete` callback shall be triggered with `IO_OPEN_ERROR`, passing also the `on_open_complete_context` argument as `context`. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_078: [ When on_underlying_io_open_complete is called with IO_OPEN_ERROR, the on_open_complete callback shall be triggered with IO_OPEN_ERROR, passing also the on_open_complete_context argument as context. ]*/
 TEST_FUNCTION(after_on_underlying_io_open_complete_with_error_http_proxy_io_open_succeeds)
 {
     // arrange
@@ -2072,7 +2067,7 @@ TEST_FUNCTION(after_on_underlying_io_open_complete_with_error_http_proxy_io_open
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_079: [ When `on_underlying_io_open_complete` is called with `IO_OPEN_CANCELLED`, the `on_open_complete` callback shall be triggered with `IO_OPEN_CANCELLED`, passing also the `on_open_complete_context` argument as `context`. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_079: [ When on_underlying_io_open_complete is called with IO_OPEN_CANCELLED, the on_open_complete callback shall be triggered with IO_OPEN_CANCELLED, passing also the on_open_complete_context argument as context. ]*/
 TEST_FUNCTION(on_underlying_io_open_complete_with_cancelled_yields_an_error)
 {
     // arrange
@@ -2095,7 +2090,7 @@ TEST_FUNCTION(on_underlying_io_open_complete_with_cancelled_yields_an_error)
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_079: [ When `on_underlying_io_open_complete` is called with `IO_OPEN_CANCELLED`, the `on_open_complete` callback shall be triggered with `IO_OPEN_CANCELLED`, passing also the `on_open_complete_context` argument as `context`. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_079: [ When on_underlying_io_open_complete is called with IO_OPEN_CANCELLED, the on_open_complete callback shall be triggered with IO_OPEN_CANCELLED, passing also the on_open_complete_context argument as context. ]*/
 TEST_FUNCTION(after_on_underlying_io_open_complete_with_cancelled_http_proxy_io_open_succeeds)
 {
     // arrange
@@ -2126,7 +2121,7 @@ TEST_FUNCTION(after_on_underlying_io_open_complete_with_cancelled_http_proxy_io_
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_076: [ When `on_underlying_io_open_complete` is called while waiting for the CONNECT reply, the `on_open_complete` callback shall be triggered with `IO_OPEN_ERROR`, passing also the `on_open_complete_context` argument as `context`. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_076: [ When on_underlying_io_open_complete is called while waiting for the CONNECT reply, the on_open_complete callback shall be triggered with IO_OPEN_ERROR, passing also the on_open_complete_context argument as context. ]*/
 TEST_FUNCTION(when_on_underlying_io_open_complete_is_called_when_waiting_for_connect_reply_an_error_is_indicated)
 {
     // arrange
@@ -2150,7 +2145,7 @@ TEST_FUNCTION(when_on_underlying_io_open_complete_is_called_when_waiting_for_con
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_076: [ When `on_underlying_io_open_complete` is called while waiting for the CONNECT reply, the `on_open_complete` callback shall be triggered with `IO_OPEN_ERROR`, passing also the `on_open_complete_context` argument as `context`. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_076: [ When on_underlying_io_open_complete is called while waiting for the CONNECT reply, the on_open_complete callback shall be triggered with IO_OPEN_ERROR, passing also the on_open_complete_context argument as context. ]*/
 TEST_FUNCTION(after_on_underlying_io_open_complete_is_called_when_waiting_for_connect_reply_http_proxy_io_open_succeeds)
 {
     // arrange
@@ -2182,7 +2177,7 @@ TEST_FUNCTION(after_on_underlying_io_open_complete_is_called_when_waiting_for_co
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_077: [ When `on_underlying_io_open_complete` is called in after OPEN has completed, the `on_io_error` callback shall be triggered passing the `on_io_error_context` argument as `context`. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_077: [ When on_underlying_io_open_complete is called in after OPEN has completed, the on_io_error callback shall be triggered passing the on_io_error_context argument as context. ]*/
 TEST_FUNCTION(on_underlying_io_open_complete_in_OPEN_indicates_an_error)
 {
     // arrange
@@ -2206,7 +2201,7 @@ TEST_FUNCTION(on_underlying_io_open_complete_in_OPEN_indicates_an_error)
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_077: [ When `on_underlying_io_open_complete` is called in after OPEN has completed, the `on_io_error` callback shall be triggered passing the `on_io_error_context` argument as `context`. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_077: [ When on_underlying_io_open_complete is called in after OPEN has completed, the on_io_error callback shall be triggered passing the on_io_error_context argument as context. ]*/
 TEST_FUNCTION(on_underlying_io_open_complete_in_CLOSING_indicates_an_error)
 {
     // arrange
@@ -2282,7 +2277,7 @@ TEST_FUNCTION(on_underlying_io_bytes_received_with_2_times_1_byte_buffers_the_re
 
 /* Tests_SRS_HTTP_PROXY_IO_01_066: [ When a double new-line is detected the response shall be parsed in order to extract the status code. ]*/
 /* Tests_SRS_HTTP_PROXY_IO_01_069: [ Any successful (2xx) response to a CONNECT request indicates that the proxy has established a connection to the requested host and port, and has switched to tunneling the current connection to that server connection. ]*/
-/* Tests_SRS_HTTP_PROXY_IO_01_070: [ When a success status code is parsed, the `on_open_complete` callback shall be triggered with `IO_OPEN_OK`, passing also the `on_open_complete_context` argument as `context`. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_070: [ When a success status code is parsed, the on_open_complete callback shall be triggered with IO_OPEN_OK, passing also the on_open_complete_context argument as context. ]*/
 /* Tests_SRS_HTTP_PROXY_IO_01_073: [ Once a success status code was parsed, the IO shall be OPEN. ]*/
 TEST_FUNCTION(on_underlying_io_bytes_received_with_a_good_reply_indicates_OPEN_OK)
 {
@@ -2332,7 +2327,7 @@ TEST_FUNCTION(on_underlying_io_bytes_received_with_a_good_reply_in_2_chunks_indi
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_067: [ If allocating memory for the buffered bytes fails, the `on_open_complete` callback shall be triggered with `IO_OPEN_ERROR`, passing also the `on_open_complete_context` argument as `context`. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_067: [ If allocating memory for the buffered bytes fails, the on_open_complete callback shall be triggered with IO_OPEN_ERROR, passing also the on_open_complete_context argument as context. ]*/
 TEST_FUNCTION(when_allocating_memory_for_cached_data_in_on_underlying_io_bytes_an_error_is_triggered)
 {
     // arrange
@@ -2360,7 +2355,7 @@ TEST_FUNCTION(when_allocating_memory_for_cached_data_in_on_underlying_io_bytes_a
 
 /* Tests_SRS_HTTP_PROXY_IO_01_066: [ When a double new-line is detected the response shall be parsed in order to extract the status code. ]*/
 /* Tests_SRS_HTTP_PROXY_IO_01_069: [ Any successful (2xx) response to a CONNECT request indicates that the proxy has established a connection to the requested host and port, and has switched to tunneling the current connection to that server connection. ]*/
-/* Tests_SRS_HTTP_PROXY_IO_01_070: [ When a success status code is parsed, the `on_open_complete` callback shall be triggered with `IO_OPEN_OK`, passing also the `on_open_complete_context` argument as `context`. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_070: [ When a success status code is parsed, the on_open_complete callback shall be triggered with IO_OPEN_OK, passing also the on_open_complete_context argument as context. ]*/
 /* Tests_SRS_HTTP_PROXY_IO_01_073: [ Once a success status code was parsed, the IO shall be OPEN. ]*/
 TEST_FUNCTION(on_underlying_io_bytes_received_with_a_good_reply_status_code_201_indicates_OPEN_OK)
 {
@@ -2388,7 +2383,7 @@ TEST_FUNCTION(on_underlying_io_bytes_received_with_a_good_reply_status_code_201_
 
 /* Tests_SRS_HTTP_PROXY_IO_01_066: [ When a double new-line is detected the response shall be parsed in order to extract the status code. ]*/
 /* Tests_SRS_HTTP_PROXY_IO_01_069: [ Any successful (2xx) response to a CONNECT request indicates that the proxy has established a connection to the requested host and port, and has switched to tunneling the current connection to that server connection. ]*/
-/* Tests_SRS_HTTP_PROXY_IO_01_070: [ When a success status code is parsed, the `on_open_complete` callback shall be triggered with `IO_OPEN_OK`, passing also the `on_open_complete_context` argument as `context`. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_070: [ When a success status code is parsed, the on_open_complete callback shall be triggered with IO_OPEN_OK, passing also the on_open_complete_context argument as context. ]*/
 /* Tests_SRS_HTTP_PROXY_IO_01_073: [ Once a success status code was parsed, the IO shall be OPEN. ]*/
 TEST_FUNCTION(on_underlying_io_bytes_received_with_a_good_reply_status_code_299_indicates_OPEN_OK)
 {
@@ -2416,7 +2411,7 @@ TEST_FUNCTION(on_underlying_io_bytes_received_with_a_good_reply_status_code_299_
 
 /* Tests_SRS_HTTP_PROXY_IO_01_066: [ When a double new-line is detected the response shall be parsed in order to extract the status code. ]*/
 /* Tests_SRS_HTTP_PROXY_IO_01_069: [ Any successful (2xx) response to a CONNECT request indicates that the proxy has established a connection to the requested host and port, and has switched to tunneling the current connection to that server connection. ]*/
-/* Tests_SRS_HTTP_PROXY_IO_01_070: [ When a success status code is parsed, the `on_open_complete` callback shall be triggered with `IO_OPEN_OK`, passing also the `on_open_complete_context` argument as `context`. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_070: [ When a success status code is parsed, the on_open_complete callback shall be triggered with IO_OPEN_OK, passing also the on_open_complete_context argument as context. ]*/
 /* Tests_SRS_HTTP_PROXY_IO_01_073: [ Once a success status code was parsed, the IO shall be OPEN. ]*/
 /* Tests_SRS_HTTP_PROXY_IO_01_090: [ Any successful (2xx) response to a CONNECT request indicates that the proxy has established a connection to the requested host and port, and has switched to tunneling the current connection to that server connection. ]*/
 TEST_FUNCTION(on_underlying_io_bytes_received_with_a_good_reply_status_code_200_and_some_text_indicates_OPEN_OK)
@@ -2443,7 +2438,7 @@ TEST_FUNCTION(on_underlying_io_bytes_received_with_a_good_reply_status_code_200_
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_071: [ If the status code is not successful, the `on_open_complete` callback shall be triggered with `IO_OPEN_ERROR`, passing also the `on_open_complete_context` argument as `context`. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_071: [ If the status code is not successful, the on_open_complete callback shall be triggered with IO_OPEN_ERROR, passing also the on_open_complete_context argument as context. ]*/
 TEST_FUNCTION(on_underlying_io_bytes_received_with_a_199_code_indicates_an_error)
 {
     // arrange
@@ -2469,7 +2464,7 @@ TEST_FUNCTION(on_underlying_io_bytes_received_with_a_199_code_indicates_an_error
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_071: [ If the status code is not successful, the `on_open_complete` callback shall be triggered with `IO_OPEN_ERROR`, passing also the `on_open_complete_context` argument as `context`. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_071: [ If the status code is not successful, the on_open_complete callback shall be triggered with IO_OPEN_ERROR, passing also the on_open_complete_context argument as context. ]*/
 TEST_FUNCTION(on_underlying_io_bytes_received_with_a_300_code_indicates_an_error)
 {
     // arrange
@@ -2495,7 +2490,7 @@ TEST_FUNCTION(on_underlying_io_bytes_received_with_a_300_code_indicates_an_error
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_071: [ If the status code is not successful, the `on_open_complete` callback shall be triggered with `IO_OPEN_ERROR`, passing also the `on_open_complete_context` argument as `context`. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_071: [ If the status code is not successful, the on_open_complete callback shall be triggered with IO_OPEN_ERROR, passing also the on_open_complete_context argument as context. ]*/
 TEST_FUNCTION(after_a_bad_status_code_http_proxy_io_open_succeeds)
 {
     // arrange
@@ -2528,7 +2523,7 @@ TEST_FUNCTION(after_a_bad_status_code_http_proxy_io_open_succeeds)
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_072: [ Any bytes that are extra (not consumed by the CONNECT response), shall be indicated as received by calling the `on_bytes_received` callback and passing the `on_bytes_received_context` as context argument. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_072: [ Any bytes that are extra (not consumed by the CONNECT response), shall be indicated as received by calling the on_bytes_received callback and passing the on_bytes_received_context as context argument. ]*/
 TEST_FUNCTION(one_extra_byte_gets_indicated_as_received)
 {
     // arrange
@@ -2556,7 +2551,7 @@ TEST_FUNCTION(one_extra_byte_gets_indicated_as_received)
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_072: [ Any bytes that are extra (not consumed by the CONNECT response), shall be indicated as received by calling the `on_bytes_received` callback and passing the `on_bytes_received_context` as context argument. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_072: [ Any bytes that are extra (not consumed by the CONNECT response), shall be indicated as received by calling the on_bytes_received callback and passing the on_bytes_received_context as context argument. ]*/
 TEST_FUNCTION(three_extra_byte_get_indicated_as_received)
 {
     // arrange
@@ -2584,7 +2579,7 @@ TEST_FUNCTION(three_extra_byte_get_indicated_as_received)
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_074: [ If `on_underlying_io_bytes_received` is called while OPEN, all bytes shall be indicated as received by calling the `on_bytes_received` callback and passing the `on_bytes_received_context` as context argument. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_074: [ If on_underlying_io_bytes_received is called while OPEN, all bytes shall be indicated as received by calling the on_bytes_received callback and passing the on_bytes_received_context as context argument. ]*/
 TEST_FUNCTION(bytes_indicated_as_received_in_OPEN_get_bubbled_up)
 {
     // arrange
@@ -2610,7 +2605,7 @@ TEST_FUNCTION(bytes_indicated_as_received_in_OPEN_get_bubbled_up)
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_080: [ If `on_underlying_io_bytes_received` is called while the underlying IO is being opened, the `on_open_complete` callback shall be triggered with `IO_OPEN_ERROR`, passing also the `on_open_complete_context` argument as `context`. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_080: [ If on_underlying_io_bytes_received is called while the underlying IO is being opened, the on_open_complete callback shall be triggered with IO_OPEN_ERROR, passing also the on_open_complete_context argument as context. ]*/
 TEST_FUNCTION(if_bytes_are_indicated_as_received_while_opening_the_underlying_IO_an_error_is_indicated_in_the_open_complete_callback)
 {
     // arrange
@@ -2633,7 +2628,7 @@ TEST_FUNCTION(if_bytes_are_indicated_as_received_while_opening_the_underlying_IO
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_068: [ If parsing the CONNECT response fails, the `on_open_complete` callback shall be triggered with `IO_OPEN_ERROR`, passing also the `on_open_complete_context` argument as `context`. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_068: [ If parsing the CONNECT response fails, the on_open_complete callback shall be triggered with IO_OPEN_ERROR, passing also the on_open_complete_context argument as context. ]*/
 TEST_FUNCTION(a_bad_reply_triggers_an_error_in_open_complete_callback)
 {
     // arrange
@@ -2659,7 +2654,7 @@ TEST_FUNCTION(a_bad_reply_triggers_an_error_in_open_complete_callback)
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_068: [ If parsing the CONNECT response fails, the `on_open_complete` callback shall be triggered with `IO_OPEN_ERROR`, passing also the `on_open_complete_context` argument as `context`. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_068: [ If parsing the CONNECT response fails, the on_open_complete callback shall be triggered with IO_OPEN_ERROR, passing also the on_open_complete_context argument as context. ]*/
 TEST_FUNCTION(a_bad_reply_malformed_char_triggers_an_error_in_open_complete_callback)
 {
     // arrange
@@ -2685,7 +2680,7 @@ TEST_FUNCTION(a_bad_reply_malformed_char_triggers_an_error_in_open_complete_call
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_068: [ If parsing the CONNECT response fails, the `on_open_complete` callback shall be triggered with `IO_OPEN_ERROR`, passing also the `on_open_complete_context` argument as `context`. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_068: [ If parsing the CONNECT response fails, the on_open_complete callback shall be triggered with IO_OPEN_ERROR, passing also the on_open_complete_context argument as context. ]*/
 TEST_FUNCTION(a_bad_reply_only_one_char_triggers_an_error_in_open_complete_callback)
 {
     // arrange
@@ -2711,7 +2706,7 @@ TEST_FUNCTION(a_bad_reply_only_one_char_triggers_an_error_in_open_complete_callb
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_082: [ `on_underlying_io_bytes_received` called with NULL context shall do nothing. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_082: [ on_underlying_io_bytes_received called with NULL context shall do nothing. ]*/
 TEST_FUNCTION(on_underlying_io_bytes_received_with_NULL_does_nothing)
 {
     // arrange
@@ -2734,7 +2729,7 @@ TEST_FUNCTION(on_underlying_io_bytes_received_with_NULL_does_nothing)
 
 /* on_underlying_io_close_complete */
 
-/* Tests_SRS_HTTP_PROXY_IO_01_083: [ `on_underlying_io_close_complete` while CLOSING shall call the `on_io_close_complete` callback, passing to it the `on_io_close_complete_context` as `context` argument. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_083: [ on_underlying_io_close_complete while CLOSING shall call the on_io_close_complete callback, passing to it the on_io_close_complete_context as context argument. ]*/
 TEST_FUNCTION(on_underlying_io_close_complete_in_CLOSING_triggers_the_close_complete_callback)
 {
     // arrange
@@ -2759,7 +2754,7 @@ TEST_FUNCTION(on_underlying_io_close_complete_in_CLOSING_triggers_the_close_comp
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_084: [ `on_underlying_io_close_complete` called with NULL context shall do nothing. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_084: [ on_underlying_io_close_complete called with NULL context shall do nothing. ]*/
 TEST_FUNCTION(on_underlying_io_close_complete_in_OPEN_does_nothing)
 {
     // arrange
@@ -2782,7 +2777,7 @@ TEST_FUNCTION(on_underlying_io_close_complete_in_OPEN_does_nothing)
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_086: [ If the `on_io_close_complete` callback passed to `http_proxy_io_close` was NULL, no callback shall be triggered. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_086: [ If the on_io_close_complete callback passed to http_proxy_io_close was NULL, no callback shall be triggered. ]*/
 TEST_FUNCTION(on_underlying_io_close_complete_in_CLOSING_with_NULL_callback_does_not_trigger_any_callback)
 {
     // arrange
@@ -2807,7 +2802,7 @@ TEST_FUNCTION(on_underlying_io_close_complete_in_CLOSING_with_NULL_callback_does
 
 /* on_underlying_io_error */
 
-/* Tests_SRS_HTTP_PROXY_IO_01_088: [ `on_underlying_io_error` called with NULL context shall do nothing. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_088: [ on_underlying_io_error called with NULL context shall do nothing. ]*/
 TEST_FUNCTION(on_underlying_io_error_with_NULL_handle_does_nothing)
 {
     // arrange
@@ -2829,7 +2824,7 @@ TEST_FUNCTION(on_underlying_io_error_with_NULL_handle_does_nothing)
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_089: [ If the `on_underlying_io_error` callback is called while the IO is OPEN, the `on_io_error` callback shall be called with the `on_io_error_context` argument as `context`. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_089: [ If the on_underlying_io_error callback is called while the IO is OPEN, the on_io_error callback shall be called with the on_io_error_context argument as context. ]*/
 TEST_FUNCTION(when_on_underlying_io_error_is_called_in_OPEN_the_error_is_indicated_up)
 {
     // arrange
@@ -2853,7 +2848,7 @@ TEST_FUNCTION(when_on_underlying_io_error_is_called_in_OPEN_the_error_is_indicat
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_087: [ If the `on_underlying_io_error` callback is called while OPENING, the `on_open_complete` callback shall be triggered with `IO_OPEN_ERROR`, passing also the `on_open_complete_context` argument as `context`. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_087: [ If the on_underlying_io_error callback is called while OPENING, the on_open_complete callback shall be triggered with IO_OPEN_ERROR, passing also the on_open_complete_context argument as context. ]*/
 TEST_FUNCTION(when_on_underlying_io_error_is_called_while_waiting_for_CONNECT_response_the_error_is_indicated_via_open_complete)
 {
     // arrange
@@ -2877,7 +2872,7 @@ TEST_FUNCTION(when_on_underlying_io_error_is_called_while_waiting_for_CONNECT_re
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
 
-/* Tests_SRS_HTTP_PROXY_IO_01_087: [ If the `on_underlying_io_error` callback is called while OPENING, the `on_open_complete` callback shall be triggered with `IO_OPEN_ERROR`, passing also the `on_open_complete_context` argument as `context`. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_087: [ If the on_underlying_io_error callback is called while OPENING, the on_open_complete callback shall be triggered with IO_OPEN_ERROR, passing also the on_open_complete_context argument as context. ]*/
 TEST_FUNCTION(when_on_underlying_io_error_is_called_while_waiting_for_underlying_IO_to_open_the_error_is_indicated_via_open_complete)
 {
     // arrange

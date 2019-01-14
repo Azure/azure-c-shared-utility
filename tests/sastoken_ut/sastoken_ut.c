@@ -109,7 +109,6 @@ static unsigned char TEST_UNSIGNED_CHAR_ARRAY[] = { 0x01, 0x02, 0x03, 0x04, 0x05
 static char TEST_TOKEN_EXPIRATION_TIME[32] = "7200";
 
 static TEST_MUTEX_HANDLE g_testByTest;
-static TEST_MUTEX_HANDLE g_dllByDll;
 
 #ifdef __cplusplus
 extern "C"
@@ -120,9 +119,7 @@ extern "C"
 
     static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
     {
-        char temp_str[256];
-        (void)snprintf(temp_str, sizeof(temp_str), "umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
-        ASSERT_FAIL(temp_str);
+        ASSERT_FAIL("umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
     }
 
 #ifdef __cplusplus
@@ -134,7 +131,6 @@ BEGIN_TEST_SUITE(sastoken_unittests)
 TEST_SUITE_INITIALIZE(TestClassInitialize)
 {
     int result;
-    TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
     g_testByTest = TEST_MUTEX_CREATE();
     ASSERT_IS_NOT_NULL(g_testByTest);
 
@@ -181,7 +177,6 @@ TEST_SUITE_CLEANUP(TestClassCleanup)
     umock_c_deinit();
 
     TEST_MUTEX_DESTROY(g_testByTest);
-    TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
 }
 
 TEST_FUNCTION_INITIALIZE(TestMethodInitialize)

@@ -14,7 +14,12 @@
 #ifndef MACRO_UTILS_H
 #define MACRO_UTILS_H
 
-#include <string.h>
+#ifdef __cplusplus
+    #include <cstring>
+#else // __cplusplus
+    #include <string.h>
+#endif // __cplusplus
+
 
 #if (defined OPTIMIZE_RETURN_CODES)
     #define __FAILURE__ 1

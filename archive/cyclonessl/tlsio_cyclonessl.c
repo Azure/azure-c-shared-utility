@@ -75,7 +75,7 @@ static void* tlsio_cyclonessl_clone_option(const char* name, const void* value)
     {
         if (strcmp(name, "TrustedCerts") == 0)
         {
-            /* Codes_SRS_TLSIO_CYCLONESSL_01_071: [ tlsio_cyclonessl_clone_option shall clone the option named `TrustedCerts` by calling mallocAndStrcpy_s. ]*/
+            /* Codes_SRS_TLSIO_CYCLONESSL_01_071: [ tlsio_cyclonessl_clone_option shall clone the option named TrustedCerts by calling mallocAndStrcpy_s. ]*/
             if(mallocAndStrcpy_s((char**)&result, value) != 0)
             {
                 LogError("unable to mallocAndStrcpy_s TrustedCerts value");
@@ -472,7 +472,7 @@ static int tlsio_cyclonessl_send(CONCRETE_IO_HANDLE tls_io, const void* buffer, 
                     on_send_complete(on_send_complete_context, IO_SEND_OK);
                 }
 
-                /* Codes_SRS_TLSIO_CYCLONESSL_01_042: [ tlsio_cyclonessl_send shall send the `size` bytes pointed to by `buffer` and on success it shall return 0. ]*/
+                /* Codes_SRS_TLSIO_CYCLONESSL_01_042: [ tlsio_cyclonessl_send shall send the size bytes pointed to by buffer and on success it shall return 0. ]*/
                 result = 0;
             }
         }
@@ -587,7 +587,7 @@ static OPTIONHANDLER_HANDLE tlsio_cyclonessl_retrieve_options(CONCRETE_IO_HANDLE
 {
     OPTIONHANDLER_HANDLE result;
 
-    /* Codes_SRS_TLSIO_CYCLONESSL_01_064: [ If parameter handle is `NULL` then `tlsio_cyclonessl_retrieve_options` shall fail and return NULL. ]*/
+    /* Codes_SRS_TLSIO_CYCLONESSL_01_064: [ If parameter handle is NULL then tlsio_cyclonessl_retrieve_options shall fail and return NULL. ]*/
     if (handle == NULL)
     {
         LogError("invalid parameter detected: CONCRETE_IO_HANDLE handle=%p", handle);
@@ -595,7 +595,7 @@ static OPTIONHANDLER_HANDLE tlsio_cyclonessl_retrieve_options(CONCRETE_IO_HANDLE
     }
     else
     {
-        /* Codes_SRS_TLSIO_CYCLONESSL_01_065: [ `tlsio_cyclonessl_retrieve_options` shall produce an OPTIONHANDLER_HANDLE. ]*/
+        /* Codes_SRS_TLSIO_CYCLONESSL_01_065: [ tlsio_cyclonessl_retrieve_options shall produce an OPTIONHANDLER_HANDLE. ]*/
         result = OptionHandler_Create(tlsio_cyclonessl_clone_option, tlsio_cyclonessl_destroy_option, tlsio_cyclonessl_setoption);
         if (result == NULL)
         {
@@ -607,7 +607,7 @@ static OPTIONHANDLER_HANDLE tlsio_cyclonessl_retrieve_options(CONCRETE_IO_HANDLE
         {
             TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)handle;
 
-            /* Codes_SRS_TLSIO_CYCLONESSL_01_066: [ `tlsio_cyclonessl_retrieve_options` shall add to it the options: ]*/
+            /* Codes_SRS_TLSIO_CYCLONESSL_01_066: [ tlsio_cyclonessl_retrieve_options shall add to it the options: ]*/
             if (
                 (tls_io_instance->certificate != NULL) &&
                 /* Codes_SRS_TLSIO_CYCLONESSL_01_067: [  - TrustedCerts ]*/

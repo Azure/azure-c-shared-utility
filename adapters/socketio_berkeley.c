@@ -67,12 +67,6 @@ typedef enum IO_STATE_TAG
     IO_STATE_ERROR
 } IO_STATE;
 
-typedef enum ADDRESS_TYPE_TAG
-{
-    ADDRESS_TYPE_IP,
-    ADDRESS_TYPE_DOMAIN_SOCKET
-} ADDRESS_TYPE;
-
 typedef struct PENDING_SOCKET_IO_TAG
 {
     unsigned char* bytes;
@@ -85,7 +79,7 @@ typedef struct PENDING_SOCKET_IO_TAG
 typedef struct SOCKET_IO_INSTANCE_TAG
 {
     int socket;
-    ADDRESS_TYPE address_type;
+    SOCKETIO_ADDRESS_TYPE address_type;
     ON_BYTES_RECEIVED on_bytes_received;
     ON_IO_ERROR on_io_error;
     void* on_bytes_received_context;
@@ -203,6 +197,7 @@ static const IO_INTERFACE_DESCRIPTION socket_io_interface_description =
 
 static void indicate_error(SOCKET_IO_INSTANCE* socket_io_instance)
 {
+    socket_io_instance->io_state = IO_STATE_ERROR;
     if (socket_io_instance->on_io_error != NULL)
     {
         socket_io_instance->on_io_error(socket_io_instance->on_io_error_context);
@@ -294,7 +289,7 @@ static int lookup_address_and_initiate_socket_connection(SOCKET_IO_INSTANCE* soc
         size_t hostname_len = strlen(socket_io_instance->hostname);
         if (hostname_len + 1 > sizeof(addrInfoUn.sun_path))
         {
-            LogError("Hostname %s is too long for a unix socket (max len = %d)", socket_io_instance->hostname, sizeof(addrInfoUn.sun_path));
+            LogError("Hostname %s is too long for a unix socket (max len = %zu)", socket_io_instance->hostname, sizeof(addrInfoUn.sun_path));
             result = __FAILURE__;
         }
         else
@@ -507,7 +502,7 @@ static int get_network_interface_descriptions(int socket, NETWORK_INTERFACE_DESC
 
     if (ioctl(socket, SIOCGIFCONF, &ifc) == -1)
     {
-        LogError("ioctl failed querying socket (SIOCGIFCONF, errno=%s)", errno);
+        LogError("ioctl failed querying socket (SIOCGIFCONF, errno=%d)", errno);
         result = __FAILURE__;
     }
     else
@@ -925,7 +920,6 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
             PENDING_SOCKET_IO* pending_socket_io = (PENDING_SOCKET_IO*)singlylinkedlist_item_get_value(first_pending_io);
             if (pending_socket_io == NULL)
             {
-                socket_io_instance->io_state = IO_STATE_ERROR;
                 indicate_error(socket_io_instance);
                 LogError("Failure: retrieving socket from list");
                 break;
@@ -950,7 +944,6 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                         (void)singlylinkedlist_remove(socket_io_instance->pending_io_list, first_pending_io);
 
                         LogError("Failure: sending Socket information. errno=%d (%s).", errno, strerror(errno));
-                        socket_io_instance->io_state = IO_STATE_ERROR;
                         indicate_error(socket_io_instance);
                     }
                 }
@@ -973,7 +966,6 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                 free(pending_socket_io);
                 if (singlylinkedlist_remove(socket_io_instance->pending_io_list, first_pending_io) != 0)
                 {
-                    socket_io_instance->io_state = IO_STATE_ERROR;
                     indicate_error(socket_io_instance);
                     LogError("Failure: unable to remove socket from list");
                 }

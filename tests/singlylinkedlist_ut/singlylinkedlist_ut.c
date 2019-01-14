@@ -58,7 +58,6 @@ MOCK_FUNCTION_END(true);
 #undef ENABLE_MOCKS
 
 static TEST_MUTEX_HANDLE test_serialize_mutex;
-static TEST_MUTEX_HANDLE g_dllByDll;
 
 #define TEST_CONTEXT ((const void*)0x4242)
 
@@ -66,9 +65,7 @@ DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    char temp_str[256];
-    (void)snprintf(temp_str, sizeof(temp_str), "umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
-    ASSERT_FAIL(temp_str);
+    ASSERT_FAIL("umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
 }
 
 BEGIN_TEST_SUITE(singlylinkedlist_unittests)
@@ -76,8 +73,6 @@ BEGIN_TEST_SUITE(singlylinkedlist_unittests)
 TEST_SUITE_INITIALIZE(suite_init)
 {
     int result;
-
-    TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
 
     test_serialize_mutex = TEST_MUTEX_CREATE();
     ASSERT_IS_NOT_NULL(test_serialize_mutex);
@@ -98,7 +93,6 @@ TEST_SUITE_CLEANUP(suite_cleanup)
     umock_c_deinit();
 
     TEST_MUTEX_DESTROY(test_serialize_mutex);
-    TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
 }
 
 TEST_FUNCTION_INITIALIZE(method_init)
@@ -1223,6 +1217,129 @@ TEST_FUNCTION(singlylinkedlist_remove_if_removes_the_only_item_in_the_list)
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    singlylinkedlist_destroy(list);
+}
+
+/*Tests_SRS_LIST_02_001: [ If list is NULL then singlylinkedlist_add_head shall fail and return NULL. ]*/
+TEST_FUNCTION(singlylinkedlist_add_head_with_list_NULL_fails)
+{
+    ///arrange
+
+    ///act
+    LIST_ITEM_HANDLE listItemHandle = singlylinkedlist_add_head(NULL, (void*)0x42);
+
+    ///assert
+    ASSERT_IS_NULL(listItemHandle);
+}
+
+/*Tests_SRS_LIST_02_002: [ singlylinkedlist_add_head shall insert item at head, succeed and return a non-NULL value. ]*/
+/*Tests_SRS_LIST_02_003: [ If there are any failures then singlylinkedlist_add_head shall fail and return NULL. ]*/
+TEST_FUNCTION(singlylinkedlist_add_head_succeeds)
+{
+    // arrange
+    SINGLYLINKEDLIST_HANDLE list = singlylinkedlist_create();
+    int x = 42;
+    LIST_ITEM_HANDLE result;
+    LIST_ITEM_HANDLE head;
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+
+    // act
+    result = singlylinkedlist_add_head(list, &x);
+
+    // assert
+    ASSERT_IS_NOT_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    head = singlylinkedlist_get_head_item(list);
+    ASSERT_IS_NOT_NULL(head);
+    ASSERT_ARE_EQUAL(int, x, *(const int*)singlylinkedlist_item_get_value(head));
+
+    // cleanup
+    singlylinkedlist_destroy(list);
+}
+
+/*Tests_SRS_LIST_02_002: [ singlylinkedlist_add_head shall insert item at head, succeed and return a non-NULL value. ]*/
+TEST_FUNCTION(singlylinkedlist_add_head_succeeds_two_times)
+{
+    // arrange
+    LIST_ITEM_HANDLE result1;
+    LIST_ITEM_HANDLE result2;
+    SINGLYLINKEDLIST_HANDLE list = singlylinkedlist_create();
+    int x1 = 42;
+    int x2 = 43;
+    LIST_ITEM_HANDLE head;
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+
+    // act
+    result1 = singlylinkedlist_add_head(list, &x1);
+    result2 = singlylinkedlist_add_head(list, &x2);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(void_ptr, result1, result2);
+
+    ASSERT_IS_NOT_NULL(result1);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    head = singlylinkedlist_get_head_item(list);
+    ASSERT_IS_NOT_NULL(head);
+    ASSERT_ARE_EQUAL(int, x2, *(const int*)singlylinkedlist_item_get_value(head));
+
+    // cleanup
+    singlylinkedlist_destroy(list);
+}
+
+/*Tests_SRS_LIST_02_002: [ singlylinkedlist_add_head shall insert item at head, succeed and return a non-NULL value. ]*/
+TEST_FUNCTION(singlylinkedlist_add_2_heads_and_remove_front_produces_first_item_succeds)
+{
+    // arrange
+    LIST_ITEM_HANDLE result2;
+    SINGLYLINKEDLIST_HANDLE list = singlylinkedlist_create();
+    int x1 = 42;
+    int x2 = 43;
+    LIST_ITEM_HANDLE head;
+    (void)singlylinkedlist_add_head(list, &x1);
+    result2 = singlylinkedlist_add_head(list, &x2);
+    (void)singlylinkedlist_remove(list, result2);
+    umock_c_reset_all_calls();
+
+    // act
+    head = singlylinkedlist_get_head_item(list);
+
+    ///assert
+    ASSERT_IS_NOT_NULL(head);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_ARE_EQUAL(int, x1, *(const int*)singlylinkedlist_item_get_value(head));
+
+    // cleanup
+    singlylinkedlist_destroy(list);
+}
+
+/*Tests_SRS_LIST_02_003: [ If there are any failures then singlylinkedlist_add_head shall fail and return NULL. ]*/
+TEST_FUNCTION(singlylinkedlist_add_head_fails_when_malloc_fails)
+{
+    // arrange
+    SINGLYLINKEDLIST_HANDLE list = singlylinkedlist_create();
+    int x = 42;
+    LIST_ITEM_HANDLE result;
+    LIST_ITEM_HANDLE head;
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
+        .SetReturn(NULL);
+
+    // act
+    result = singlylinkedlist_add_head(list, &x);
+
+    // assert
+    ASSERT_IS_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    head = singlylinkedlist_get_head_item(list);
+    ASSERT_IS_NULL(head);
 
     // cleanup
     singlylinkedlist_destroy(list);

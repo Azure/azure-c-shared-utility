@@ -626,6 +626,27 @@ static void setupAllCallBeforeSendHTTPsequenceWithSuccess(HTTP_HEADERS_HANDLE re
         .IgnoreAllArguments();
 }
 
+#define TEST_HEAD_RECEIVED_ANSWER (const unsigned char*)"HTTP/111.222 433 555\r\ncontent-length:10\r\ntransfer-encoding:\r\n\r\n"
+static void setupAllCallBeforeReceiveHTTPHeadsequenceWithSuccess()
+{
+    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG));
+
+    STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_NUM_ARG, DoworkJobsReceivedBuffer_size[0]));
+
+    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(HTTPHeaders_AddHeaderNameValuePair(IGNORED_PTR_ARG, "content-length", "10"));
+
+    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(HTTPHeaders_AddHeaderNameValuePair(IGNORED_PTR_ARG, "transfer-encoding", ""));
+
+    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG));
+
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+}
+
 static const IO_OPEN_RESULT* DoworkJobsOpenResult_ReceiveHead = (const IO_OPEN_RESULT*)openresult_ok;
 static const IO_SEND_RESULT* DoworkJobsSendResult_ReceiveHead = (const IO_SEND_RESULT*) sendresult_7ok;
 
@@ -663,15 +684,12 @@ static void PrepareReceiveHead(HTTP_HEADERS_HANDLE requestHttpHeaders, size_t bu
 IMPLEMENT_UMOCK_C_ENUM_TYPE(HTTP_HEADERS_RESULT, HTTP_HEADERS_RESULT_VALUES);
 
 static TEST_MUTEX_HANDLE g_testByTest;
-static TEST_MUTEX_HANDLE g_dllByDll;
 
 DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    char temp_str[256];
-    (void)snprintf(temp_str, sizeof(temp_str), "umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
-    ASSERT_FAIL(temp_str);
+    ASSERT_FAIL("umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
 }
 
 BEGIN_TEST_SUITE(httpapicompact_ut)
@@ -680,7 +698,6 @@ TEST_SUITE_INITIALIZE(setsBufferTempSize)
 {
     int result;
 
-    TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
     g_testByTest = TEST_MUTEX_CREATE();
     ASSERT_IS_NOT_NULL(g_testByTest);
 
@@ -732,7 +749,6 @@ TEST_SUITE_CLEANUP(TestClassCleanup)
     umock_c_deinit();
 
     TEST_MUTEX_DESTROY(g_testByTest);
-    TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
 }
 
 TEST_FUNCTION_INITIALIZE(f)
@@ -767,7 +783,7 @@ TEST_FUNCTION_CLEANUP(cleans)
 
 /* HTTPAPI_Init */
 
-/*Tests_SRS_HTTPAPI_COMPACT_21_001: [ The httpapi_compact shall implement the methods defined by the `httpapi.h`. ]*/
+/*Tests_SRS_HTTPAPI_COMPACT_21_001: [ The httpapi_compact shall implement the methods defined by the httpapi.h. ]*/
 /*Tests_SRS_HTTPAPI_COMPACT_21_002: [ The httpapi_compact shall support the http requests. ]*/
 /*Tests_SRS_HTTPAPI_COMPACT_21_003: [ The httpapi_compact shall return error codes defined by HTTPAPI_RESULT. ]*/
 /*Tests_SRS_HTTPAPI_COMPACT_21_004: [ The HTTPAPI_Init shall allocate all memory to control the http protocol. ]*/
@@ -3248,7 +3264,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__Execute_request_retry_send_succeed)
     HTTPAPI_Deinit();
 }
 
-/*Tests_SRS_HTTPAPI_COMPACT_21_035: [ The HTTPAPI_ExecuteRequest shall execute resquest for types `GET`, `POST`, `PUT`, `DELETE`, `PATCH`. ]*/
+/*Tests_SRS_HTTPAPI_COMPACT_21_035: [ The HTTPAPI_ExecuteRequest shall execute resquest for types GET, POST, PUT, DELETE, PATCH, HEAD. ]*/
 /*Tests_SRS_HTTPAPI_COMPACT_21_036: [ The request type shall be provided in the parameter requestType. ]*/
 TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_get_succeed)
 {
@@ -3301,7 +3317,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_get_succeed)
     HTTPAPI_Deinit();
 }
 
-/*Tests_SRS_HTTPAPI_COMPACT_21_035: [ The HTTPAPI_ExecuteRequest shall execute resquest for types `GET`, `POST`, `PUT`, `DELETE`, `PATCH`. ]*/
+/*Tests_SRS_HTTPAPI_COMPACT_21_035: [ The HTTPAPI_ExecuteRequest shall execute resquest for types GET, POST, PUT, DELETE, PATCH, HEAD. ]*/
 TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_post_succeed)
 {
     /// arrange
@@ -3353,7 +3369,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_post_succeed)
     HTTPAPI_Deinit();
 }
 
-/*Tests_SRS_HTTPAPI_COMPACT_21_035: [ The HTTPAPI_ExecuteRequest shall execute resquest for types `GET`, `POST`, `PUT`, `DELETE`, `PATCH`. ]*/
+/*Tests_SRS_HTTPAPI_COMPACT_21_035: [ The HTTPAPI_ExecuteRequest shall execute resquest for types GET, POST, PUT, DELETE, PATCH, HEAD. ]*/
 TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_put_succeed)
 {
     /// arrange
@@ -3405,7 +3421,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_put_succeed)
     HTTPAPI_Deinit();
 }
 
-/*Tests_SRS_HTTPAPI_COMPACT_21_035: [ The HTTPAPI_ExecuteRequest shall execute resquest for types `GET`, `POST`, `PUT`, `DELETE`, `PATCH`. ]*/
+/*Tests_SRS_HTTPAPI_COMPACT_21_035: [ The HTTPAPI_ExecuteRequest shall execute resquest for types GET, POST, PUT, DELETE, PATCH, HEAD. ]*/
 TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_delete_succeed)
 {
     /// arrange
@@ -3457,7 +3473,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_delete_succeed)
     HTTPAPI_Deinit();
 }
 
-/*Tests_SRS_HTTPAPI_COMPACT_21_035: [ The HTTPAPI_ExecuteRequest shall execute resquest for types `GET`, `POST`, `PUT`, `DELETE`, `PATCH`. ]*/
+/*Tests_SRS_HTTPAPI_COMPACT_21_035: [ The HTTPAPI_ExecuteRequest shall execute resquest for types GET, POST, PUT, DELETE, PATCH, HEAD. ]*/
 TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_patch_succeed)
 {
     /// arrange
@@ -3500,6 +3516,58 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_patch_succeed)
     ASSERT_ARE_EQUAL(int, 433, statusCode);
     xio_send_transmited_buffer[5] = '\0';
     ASSERT_ARE_EQUAL(char_ptr, "PATCH", xio_send_transmited_buffer);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_ARE_EQUAL(int, 5, currentmalloc_call);
+
+    /// cleanup
+    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 3 */
+    HTTPAPI_Deinit();
+}
+
+/*Tests_SRS_HTTPAPI_COMPACT_21_035: [ The HTTPAPI_ExecuteRequest shall execute resquest for types GET, POST, PUT, DELETE, PATCH, HEAD. ]*/
+TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_head_succeed)
+{
+    /// arrange
+    unsigned int statusCode;
+    HTTPAPI_RESULT result;
+    HTTP_HEADERS_HANDLE requestHttpHeaders;
+    HTTP_HEADERS_HANDLE responseHttpHeaders;
+    HTTP_HANDLE httpHandle = createHttpConnection();
+    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
+
+    setHttpCertificate(httpHandle);
+    DoworkJobsReceivedBuffer = TEST_RECEIVED_ANSWER;
+    DoworkJobsReceivedBuffer_size[0] = strlen((const char*)DoworkJobsReceivedBuffer);
+    DoworkJobsReceivedBuffer_counter = 0;
+    DoworkJobs = (const xio_dowork_job*)doworkjob_o_rce;
+    DoworkJobsOpenResult = DoworkJobsOpenResult_ReceiveHead;
+    DoworkJobsSendResult = DoworkJobsSendResult_ReceiveHead;
+
+    setupAllCallBeforeOpenHTTPsequence(requestHttpHeaders, 1, false);
+    setupAllCallBeforeSendHTTPsequenceWithSuccess(requestHttpHeaders);
+    setupAllCallBeforeReceiveHTTPHeadsequenceWithSuccess();
+
+    HTTPHeaders_GetHeader_shallReturn = HTTP_HEADERS_OK;
+    xio_send_transmited_buffer_target = 1;
+
+    /// act
+    result = HTTPAPI_ExecuteRequest(
+        httpHandle,
+        HTTPAPI_REQUEST_HEAD,
+        TEST_EXECUTE_REQUEST_RELATIVE_PATH,
+        requestHttpHeaders,
+        TEST_EXECUTE_REQUEST_CONTENT,
+        TEST_EXECUTE_REQUEST_CONTENT_LENGTH,
+        &statusCode,
+        responseHttpHeaders,
+        TestBufferHandle);
+
+    /// assert
+    ASSERT_ARE_EQUAL(int, HTTPAPI_OK, result);
+    ASSERT_ARE_EQUAL(int, 433, statusCode);
+    xio_send_transmited_buffer[4] = '\0';
+    ASSERT_ARE_EQUAL(char_ptr, "HEAD", xio_send_transmited_buffer);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(int, 5, currentmalloc_call);
 
@@ -4146,6 +4214,57 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__Execute_request_with_truncated_header_fail
 
     /// assert
     ASSERT_ARE_EQUAL(int, HTTPAPI_READ_DATA_FAILED, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_ARE_EQUAL(int, 5, currentmalloc_call);
+
+    /// cleanup
+    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders); /* currentmalloc_call -= 2 */
+    HTTPAPI_CloseConnection(httpHandle);    /* currentmalloc_call -= 3 */
+    HTTPAPI_Deinit();
+}
+
+/*Tests_SRS_HTTPAPI_COMPACT_42_088: [ The message received by the HTTPAPI_ExecuteRequest should not contain http body. ]*/
+TEST_FUNCTION(HTTPAPI_ExecuteRequest__request_with_no_content_succeed)
+{
+    /// arrange
+    unsigned int statusCode;
+    HTTPAPI_RESULT result;
+    HTTP_HEADERS_HANDLE requestHttpHeaders;
+    HTTP_HEADERS_HANDLE responseHttpHeaders;
+    HTTP_HANDLE httpHandle = createHttpConnection();
+    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
+
+    setHttpCertificate(httpHandle);
+    DoworkJobsReceivedBuffer = TEST_HEAD_RECEIVED_ANSWER;
+    DoworkJobsReceivedBuffer_size[0] = strlen((const char*)DoworkJobsReceivedBuffer);
+    DoworkJobsReceivedBuffer_counter = 0;
+    DoworkJobs = (const xio_dowork_job*)doworkjob_o_rce;
+    DoworkJobsOpenResult = DoworkJobsOpenResult_ReceiveHead;
+    DoworkJobsSendResult = DoworkJobsSendResult_ReceiveHead;
+
+    setupAllCallBeforeOpenHTTPsequence(requestHttpHeaders, 1, false);
+    setupAllCallBeforeSendHTTPsequenceWithSuccess(requestHttpHeaders);
+    setupAllCallBeforeReceiveHTTPHeadsequenceWithSuccess();
+
+    HTTPHeaders_GetHeader_shallReturn = HTTP_HEADERS_OK;
+    xio_send_transmited_buffer_target = 7;
+
+    /// act
+    result = HTTPAPI_ExecuteRequest(
+        httpHandle,
+        HTTPAPI_REQUEST_HEAD,
+        TEST_EXECUTE_REQUEST_RELATIVE_PATH,
+        requestHttpHeaders,
+        TEST_EXECUTE_REQUEST_CONTENT,
+        TEST_EXECUTE_REQUEST_CONTENT_LENGTH,
+        &statusCode,
+        responseHttpHeaders,
+        TestBufferHandle);
+
+    /// assert
+    ASSERT_ARE_EQUAL(int, HTTPAPI_OK, result);
+    ASSERT_ARE_EQUAL(int, 433, statusCode);
+    ASSERT_ARE_EQUAL(char_ptr, (const char*)TEST_EXECUTE_REQUEST_CONTENT, xio_send_transmited_buffer);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(int, 5, currentmalloc_call);
 

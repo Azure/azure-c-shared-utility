@@ -156,9 +156,7 @@ DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    char temp_str[256];
-    (void)snprintf(temp_str, sizeof(temp_str), "umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
-    ASSERT_FAIL(temp_str);
+    ASSERT_FAIL("umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
 }
 
 BEGIN_TEST_SUITE(tlsio_cyclonessl_unittests)
@@ -334,7 +332,7 @@ TEST_FUNCTION(when_a_failure_occurs_for_tlsio_cyclonessl_create_then_create_fail
         CONCRETE_IO_HANDLE tlsio_handle = tlsio_cyclonessl_get_interface_description()->concrete_io_create(&tlsio_config);
 
         ///assert
-        ASSERT_IS_NULL_WITH_MSG(tlsio_handle, temp_str);
+        ASSERT_IS_NULL(tlsio_handle, temp_str);
     }
 
     ///cleanup
@@ -636,7 +634,7 @@ TEST_FUNCTION(when_a_failure_occurs_for_tlsio_cyclonessl_open_then_create_fails)
         int result = tlsio_cyclonessl_get_interface_description()->concrete_io_open(tlsio_handle, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, NULL, (void*)0x4244);
 
         ///assert
-        ASSERT_ARE_NOT_EQUAL_WITH_MSG(int, 0, result, temp_str);
+        ASSERT_ARE_NOT_EQUAL(int, 0, result, temp_str);
     }
 
     ///cleanup
@@ -832,7 +830,7 @@ TEST_FUNCTION(tlsio_cyclonessl_close_after_close_fails)
 
 /* tlsio_cyclonessl_send */
 
-/* Tests_SRS_TLSIO_CYCLONESSL_01_042: [ tlsio_cyclonessl_send shall send the `size` bytes pointed to by `buffer` and on success it shall return 0. ]*/
+/* Tests_SRS_TLSIO_CYCLONESSL_01_042: [ tlsio_cyclonessl_send shall send the size bytes pointed to by buffer and on success it shall return 0. ]*/
 /* Tests_SRS_TLSIO_CYCLONESSL_01_046: [ On success, if a non-NULL value was passed for on_send_complete, then on_send_complete shall be called while passing to it the on_send_complete_context value. ]*/
 /* Tests_SRS_TLSIO_CYCLONESSL_01_047: [ tlsio_cyclonessl_send shall send the bytes by calling tlsWrite and passing buffer and size as arguments. 0 shall be passed for the flags argument. ]*/
 TEST_FUNCTION(tlsio_cyclonessl_send_succeeds)
@@ -1374,7 +1372,7 @@ TEST_FUNCTION(tlsio_cyclonessl_setoption_with_NULL_TrustedCerts_frees_the_previo
 
 /* tlsio_cyclonessl_retrieve_options */
 
-/* Tests_SRS_TLSIO_CYCLONESSL_01_064: [ If parameter handle is `NULL` then `tlsio_cyclonessl_retrieve_options` shall fail and return NULL. ]*/
+/* Tests_SRS_TLSIO_CYCLONESSL_01_064: [ If parameter handle is NULL then tlsio_cyclonessl_retrieve_options shall fail and return NULL. ]*/
 TEST_FUNCTION(tlsio_cyclonessl_retrieveoptions_with_NULL_handle_fails)
 {
     ///arrange
@@ -1387,7 +1385,7 @@ TEST_FUNCTION(tlsio_cyclonessl_retrieveoptions_with_NULL_handle_fails)
     ASSERT_IS_NULL(result);
 }
 
-/* Tests_SRS_TLSIO_CYCLONESSL_01_065: [ `tlsio_cyclonessl_retrieve_options` shall produce an OPTIONHANDLER_HANDLE. ]*/
+/* Tests_SRS_TLSIO_CYCLONESSL_01_065: [ tlsio_cyclonessl_retrieve_options shall produce an OPTIONHANDLER_HANDLE. ]*/
 TEST_FUNCTION(tlsio_cyclonessl_retrieveoptions_when_no_option_was_set_gives_back_an_emptyoption_handles)
 {
     ///arrange
@@ -1411,7 +1409,7 @@ TEST_FUNCTION(tlsio_cyclonessl_retrieveoptions_when_no_option_was_set_gives_back
     tlsio_cyclonessl_get_interface_description()->concrete_io_destroy(tlsio_handle);
 }
 
-/* Tests_SRS_TLSIO_CYCLONESSL_01_066: [ `tlsio_cyclonessl_retrieve_options` shall add to it the options: ]*/
+/* Tests_SRS_TLSIO_CYCLONESSL_01_066: [ tlsio_cyclonessl_retrieve_options shall add to it the options: ]*/
 /* Tests_SRS_TLSIO_CYCLONESSL_01_067: [  - TrustedCerts ]*/
 TEST_FUNCTION(tlsio_cyclonessl_retrieveoptions_when_TrustedCerts_is_set_populates_the_trustedcerts_in_the_option_handler)
 {
@@ -1439,7 +1437,7 @@ TEST_FUNCTION(tlsio_cyclonessl_retrieveoptions_when_TrustedCerts_is_set_populate
     tlsio_cyclonessl_get_interface_description()->concrete_io_destroy(tlsio_handle);
 }
 
-/* Tests_SRS_TLSIO_CYCLONESSL_01_065: [ `tlsio_cyclonessl_retrieve_options` shall produce an OPTIONHANDLER_HANDLE. ]*/
+/* Tests_SRS_TLSIO_CYCLONESSL_01_065: [ tlsio_cyclonessl_retrieve_options shall produce an OPTIONHANDLER_HANDLE. ]*/
 TEST_FUNCTION(tlsio_cyclonessl_retrieveoptions_when_TrustedCerts_was_set_and_cleared_does_not_add_the_option)
 {
     ///arrange
@@ -1561,7 +1559,7 @@ TEST_FUNCTION(tlsio_cyclonessl_clone_option_with_NULL_value_fails)
     tlsio_cyclonessl_get_interface_description()->concrete_io_destroy(tlsio_handle);
 }
 
-/* Tests_SRS_TLSIO_CYCLONESSL_01_071: [ tlsio_cyclonessl_clone_option shall clone the option named `TrustedCerts` by calling mallocAndStrcpy_s. ]*/
+/* Tests_SRS_TLSIO_CYCLONESSL_01_071: [ tlsio_cyclonessl_clone_option shall clone the option named TrustedCerts by calling mallocAndStrcpy_s. ]*/
 /* Tests_SRS_TLSIO_CYCLONESSL_01_072: [ On success it shall return a non-NULL pointer to the cloned option. ]*/
 TEST_FUNCTION(tlsio_cyclonessl_clone_option_clones_TrustedCerts)
 {
@@ -1589,7 +1587,7 @@ TEST_FUNCTION(tlsio_cyclonessl_clone_option_clones_TrustedCerts)
     tlsio_cyclonessl_get_interface_description()->concrete_io_destroy(tlsio_handle);
 }
 
-/* Tests_SRS_TLSIO_CYCLONESSL_01_073: [ If mallocAndStrcpy_s for `TrustedCerts` fails, tlsio_cyclonessl_clone_option shall return NULL. ]*/
+/* Tests_SRS_TLSIO_CYCLONESSL_01_073: [ If mallocAndStrcpy_s for TrustedCerts fails, tlsio_cyclonessl_clone_option shall return NULL. ]*/
 TEST_FUNCTION(when_copying_the_TrustedCerts_option_fails_tlsio_cyclonessl_clone_option_fails)
 {
     ///arrange
@@ -1660,7 +1658,7 @@ TEST_FUNCTION(tlsio_cyclonessl_destroy_option_with_NULL_value_does_nothing)
     tlsio_cyclonessl_get_interface_description()->concrete_io_destroy(tlsio_handle);
 }
 
-/* Tests_SRS_TLSIO_CYCLONESSL_01_075: [ If the option name is `TrustedCerts`, tlsio_cyclonessl_destroy_option shall free the char\* option indicated by value. ]*/
+/* Tests_SRS_TLSIO_CYCLONESSL_01_075: [ If the option name is TrustedCerts, tlsio_cyclonessl_destroy_option shall free the char\* option indicated by value. ]*/
 TEST_FUNCTION(tlsio_cyclonessl_destroy_option_frees_the_TrustedCerts_option)
 {
     ///arrange

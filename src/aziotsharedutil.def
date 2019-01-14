@@ -203,6 +203,7 @@ EXPORTS
     platform_get_platform_info
     platform_init
     singlylinkedlist_add
+    singlylinkedlist_add_head
     singlylinkedlist_create
     singlylinkedlist_destroy
     singlylinkedlist_find

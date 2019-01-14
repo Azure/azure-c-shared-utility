@@ -24,10 +24,12 @@ option(nuget_e2e_tests "set nuget_e2e_tests to ON to generate e2e tests to run w
 option(use_installed_dependencies "set use_installed_dependencies to ON to use installed packages instead of building dependencies from submodules" OFF)
 option(use_default_uuid "set use_default_uuid to ON to use the out of the box UUID that comes with the SDK rather than platform specific implementations" OFF)
 option(run_e2e_tests "set run_e2e_tests to ON to run e2e tests (default is OFF). Chsare dutility does not have any e2e tests, but the option needs to exist to evaluate in IF statements" OFF)
+option(run_int_tests "set run_int_tests to ON to integration tests (default is OFF)." OFF)
 option(use_builtin_httpapi "set use_builtin_httpapi to ON to use the built-in httpapi_compact that comes with C shared utility (default is OFF)" OFF)
 option(use_cppunittest "set use_cppunittest to ON to build CppUnitTest tests on Windows (default is ON)" ON)
 option(suppress_header_searches "do not try to find headers - used when compiler check will fail" OFF)
 option(use_custom_heap "use externally defined heap functions instead of the malloc family" OFF)
+
 
 if(${use_custom_heap})
     add_definitions(-DGB_USE_CUSTOM_HEAP)
@@ -170,6 +172,7 @@ set(source_c_files
 ./src/base32.c
 ./src/base64.c
 ./src/buffer.c
+./src/constbuffer_array.c
 ./src/connection_string_parser.c
 ./src/constbuffer.c
 ${LOGGING_C_FILE}
@@ -183,7 +186,6 @@ ${LOGGING_C_FILE}
 ./src/gb_rand.c
 ./src/hmac.c
 ./src/hmacsha256.c
-./src/http_proxy_io.c
 ./src/xio.c
 ./src/singlylinkedlist.c
 ./src/map.c
@@ -192,6 +194,7 @@ ${LOGGING_C_FILE}
 ./src/sha224.c
 ./src/sha384-512.c
 ./src/strings.c
+./src/string_token.c
 ./src/string_tokenizer.c
 ./src/uuid.c
 ./src/urlencode.c
@@ -231,6 +234,17 @@ if(${use_schannel})
         ./adapters/x509_schannel.c
     )
 endif()
+# If SocketIO isn't used, then we need to substitute stubs for HTTP Proxy
+# since it depends on SocketIO
+if(${use_socketio})
+    set(source_c_files ${source_c_files}
+        ./src/http_proxy_io.c
+    )
+else()
+    set(source_c_files ${source_c_files}
+        ./src/http_proxy_stub.c
+    )
+endif()
 if(${use_wolfssl})
     set(source_c_files ${source_c_files}
         ./adapters/tlsio_wolfssl.c
@@ -250,12 +264,19 @@ if(${use_applessl})
     include_directories(./pal/ios-osx/)
 endif()
 
+if (WIN32 AND (${CMAKE_SYSTEM_VERSION} VERSION_EQUAL "10.0.17763.0" OR ${CMAKE_SYSTEM_VERSION} VERSION_GREATER "10.0.17763.0"))
+    # Windows added support for UNIX domain sockets to the OS and SDK
+    # in the Oct 2018 update (10.0.17763.0, aka RS5)
+    add_definitions(-DAF_UNIX_ON_WINDOWS)
+endif()
+
 #these are the C headers
 set(source_h_files
 ./inc/azure_c_shared_utility/agenttime.h
 ./inc/azure_c_shared_utility/base32.h
 ./inc/azure_c_shared_utility/base64.h
 ./inc/azure_c_shared_utility/buffer_.h
+./inc/azure_c_shared_utility/constbuffer_array.h
 ./inc/azure_c_shared_utility/connection_string_parser.h
 ./inc/azure_c_shared_utility/crt_abstractions.h
 ./inc/azure_c_shared_utility/constmap.h
@@ -287,6 +308,7 @@ ${LOGGING_H_FILE}
 ./inc/azure_c_shared_utility/stdint_ce6.h
 ./inc/azure_c_shared_utility/strings.h
 ./inc/azure_c_shared_utility/strings_types.h
+./inc/azure_c_shared_utility/string_token.h
 ./inc/azure_c_shared_utility/string_tokenizer.h
 ./inc/azure_c_shared_utility/string_tokenizer_types.h
 ./inc/azure_c_shared_utility/tlsio_options.h
@@ -318,12 +340,14 @@ if(${use_wsio})
         ./inc/azure_c_shared_utility/uws_client.h
         ./inc/azure_c_shared_utility/uws_frame_encoder.h
         ./inc/azure_c_shared_utility/utf8_checker.h
+        ./inc/azure_c_shared_utility/ws_url.h
     )
     set(source_c_files ${source_c_files}
         ./src/wsio.c
         ./src/uws_client.c
         ./src/uws_frame_encoder.c
         ./src/utf8_checker.c
+        ./src/ws_url.c
     )
 endif()
 
@@ -364,8 +388,11 @@ if(${use_applessl})
     include_directories(./pal/ios-osx/)
 endif()
 
+FILE(GLOB aziotsharedutil_md_files "devdoc/*.md")
+SOURCE_GROUP(devdoc FILES ${aziotsharedutil_md_files})
+
 #this is the product (a library)
-add_library(aziotsharedutil ${source_c_files} ${source_h_files})
+add_library(aziotsharedutil ${source_c_files} ${source_h_files} ${aziotsharedutil_md_files})
 setTargetBuildProperties(aziotsharedutil)
 
 target_include_directories(aziotsharedutil PUBLIC $<BUILD_INTERFACE:${SHARED_UTIL_INC_FOLDER}>)
@@ -503,9 +530,11 @@ endif()
 # do not add or build any tests of the dependencies
 set(original_run_e2e_tests ${run_e2e_tests})
 set(original_run_unittests ${run_unittests})
+set(original_run_int_tests ${run_int_tests})
 
 set(run_e2e_tests OFF)
 set(run_unittests OFF)
+set(run_int_tests OFF)
 
 if (${original_run_unittests})
     include("dependencies-test.cmake")
@@ -520,8 +549,9 @@ endif()
 
 set(run_e2e_tests ${original_run_e2e_tests})
 set(run_unittests ${original_run_unittests})
+set(run_int_tests ${original_run_int_tests})
 
-if (${run_unittests})
+if (${run_unittests} OR ${run_int_tests})
     add_subdirectory(tests)
 endif()
 
@@ -614,3 +644,4 @@ else()
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
 endif()
 
+compileTargetAsC99(aziotsharedutil)

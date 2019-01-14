@@ -670,7 +670,7 @@ static void send_handshake_bytes(TLS_IO_INSTANCE* tls_io_instance)
         {
             if (ssl_err == SSL_ERROR_SSL)
             {
-                LogError(ERR_error_string(ERR_get_error(), NULL));
+                LogError("%s", ERR_error_string(ERR_get_error(), NULL));
             }
             else
             {
@@ -1164,7 +1164,7 @@ CONCRETE_IO_HANDLE tlsio_openssl_create(void* io_create_parameters)
                 result->x509_certificate = NULL;
                 result->x509_private_key = NULL;
 
-                result->tls_version = VERSION_1_0;
+                result->tls_version = VERSION_1_2;
 
                 result->underlying_io = xio_create(underlying_io_interface, io_interface_parameters);
                 if (result->underlying_io == NULL)
@@ -1456,6 +1456,7 @@ int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
             {
                 // Free the memory if it has been previously allocated
                 free(tls_io_instance->certificate);
+                tls_io_instance->certificate = NULL;
             }
 
             // Store the certificate

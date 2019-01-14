@@ -491,7 +491,7 @@ static void dowork_send(TLS_IO_INSTANCE* tls_io_instance)
                     /* Codes_SRS_TLSIO_30_005: [ When the adapter enters TLSIO_STATE_EXT_ERROR it shall call the  on_io_error function and pass the on_io_error_context that were supplied in  tlsio_open . ]*/
                     /* Codes_SRS_TLSIO_30_095: [ If the send process fails before sending all of the bytes in an enqueued message, tlsio_dowork shall destroy the failed message and enter TLSIO_STATE_EX_ERROR. ]*/
                     // This is an unexpected error, and we need to bail out. Probably lost internet connection.
-                    LogInfo("Hard error from CFWriteStreamWrite: %d", CFErrorGetCode(write_error));
+                    LogInfo("Hard error from CFWriteStreamWrite: %ld", CFErrorGetCode(write_error));
                     process_and_destroy_head_message(tls_io_instance, IO_SEND_ERROR);
                     CFRelease(write_error);
                 }
@@ -557,12 +557,12 @@ static void dowork_poll_open_ssl(TLS_IO_INSTANCE* tls_io_instance)
             CFErrorRef writeError = CFWriteStreamCopyError(tls_io_instance->sockWrite);
             if (writeError != NULL)
             {
-                LogInfo("Error opening streams - read error=%d;write error=%d", CFErrorGetCode(readError), CFErrorGetCode(writeError));
+                LogInfo("Error opening streams - read error=%ld;write error=%ld", CFErrorGetCode(readError), CFErrorGetCode(writeError));
                 CFRelease(writeError);
             }
             else
             {
-                LogInfo("Error opening streams - read error=%d", CFErrorGetCode(readError));
+                LogInfo("Error opening streams - read error=%ld", CFErrorGetCode(readError));
             }
             CFRelease(readError);
         }

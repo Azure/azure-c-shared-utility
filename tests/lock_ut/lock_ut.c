@@ -14,17 +14,14 @@
 
 TEST_DEFINE_ENUM_TYPE(LOCK_RESULT, LOCK_RESULT_VALUES);
 
-static TEST_MUTEX_HANDLE g_dllByDll;
-
 BEGIN_TEST_SUITE(LOCK_UnitTests)
 
 TEST_SUITE_INITIALIZE(a)
 {
-    TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
 }
+
 TEST_SUITE_CLEANUP(b)
 {
-    TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
 }
 
 /* Tests_SRS_LOCK_10_002: [Lock_Init on success shall return a valid lock handle which should be a non NULL value] */

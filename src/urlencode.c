@@ -218,6 +218,47 @@ static size_t URL_PrintableCharSize(unsigned char charVal)
     return size;
 }
 
+static STRING_HANDLE encode_url_data(const char* text)
+{
+    STRING_HANDLE result;
+    size_t lengthOfResult = 0;
+    char* encodedURL;
+    unsigned char currentUnsignedChar;
+    const char* iterator = text;
+
+    /*Codes_SRS_URL_ENCODE_06_003: [If input is a zero length string then URL_Encode will return a zero length string.]*/
+    do
+    {
+        currentUnsignedChar = (unsigned char)(*iterator++);
+        lengthOfResult += URL_PrintableCharSize(currentUnsignedChar);
+    } while (currentUnsignedChar != 0);
+
+    if ((encodedURL = (char*)malloc(lengthOfResult)) == NULL)
+    {
+        /*Codes_SRS_URL_ENCODE_06_002: [If an error occurs during the encoding of input then URL_Encode will return NULL.]*/
+        result = NULL;
+        LogError("URL_Encode:: MALLOC failure on encode.");
+    }
+    else
+    {
+        size_t currentEncodePosition = 0;
+        iterator = text;;
+        do
+        {
+            currentUnsignedChar = (unsigned char)(*iterator++);
+            currentEncodePosition += URL_PrintableChar(currentUnsignedChar, &encodedURL[currentEncodePosition]);
+        } while (currentUnsignedChar != 0);
+
+        result = STRING_new_with_memory(encodedURL);
+        if (result == NULL)
+        {
+            LogError("URL_Encode:: MALLOC failure on encode.");
+            free(encodedURL);
+        }
+    }
+    return result;
+}
+
 STRING_HANDLE URL_EncodeString(const char* textEncode)
 {
     STRING_HANDLE result;
@@ -227,16 +268,7 @@ STRING_HANDLE URL_EncodeString(const char* textEncode)
     }
     else
     {
-        STRING_HANDLE tempString = STRING_construct(textEncode);
-        if (tempString == NULL)
-        {
-            result = NULL;
-        }
-        else
-        {
-            result = URL_Encode(tempString);
-            STRING_delete(tempString);
-        }
+        result = encode_url_data(textEncode);
     }
     return result;
 }
@@ -252,40 +284,7 @@ STRING_HANDLE URL_Encode(STRING_HANDLE input)
     }
     else
     {
-        size_t lengthOfResult = 0;
-        char* encodedURL;
-        const char* currentInput;
-        unsigned char currentUnsignedChar;
-        currentInput = STRING_c_str(input);
-        /*Codes_SRS_URL_ENCODE_06_003: [If input is a zero length string then URL_Encode will return a zero length string.]*/
-        do
-        {
-            currentUnsignedChar = (unsigned char)(*currentInput++);
-            lengthOfResult += URL_PrintableCharSize(currentUnsignedChar);
-        } while (currentUnsignedChar != 0);
-        if ((encodedURL = (char*)malloc(lengthOfResult)) == NULL)
-        {
-            /*Codes_SRS_URL_ENCODE_06_002: [If an error occurs during the encoding of input then URL_Encode will return NULL.]*/
-            result = NULL;
-            LogError("URL_Encode:: MALLOC failure on encode.");
-        }
-        else
-        {
-            size_t currentEncodePosition = 0;
-            currentInput = STRING_c_str(input);
-            do
-            {
-                currentUnsignedChar = (unsigned char)(*currentInput++);
-                currentEncodePosition += URL_PrintableChar(currentUnsignedChar, &encodedURL[currentEncodePosition]);
-            } while (currentUnsignedChar != 0);
-
-            result = STRING_new_with_memory(encodedURL);
-            if (result == NULL)
-            {
-                LogError("URL_Encode:: MALLOC failure on encode.");
-                free(encodedURL);
-            }
-        }
+        result = encode_url_data(STRING_c_str(input));
     }
     return result;
 }

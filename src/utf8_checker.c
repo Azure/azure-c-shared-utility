@@ -20,20 +20,20 @@ bool utf8_checker_is_valid_utf8(const unsigned char* utf8_str, size_t length)
 
     if (utf8_str == NULL)
     {
-        /* Codes_SRS_UTF8_CHECKER_01_002: [ If `utf8_checker_is_valid_utf8` is called with NULL `utf8_str` it shall return false. ]*/
+        /* Codes_SRS_UTF8_CHECKER_01_002: [ If utf8_checker_is_valid_utf8 is called with NULL utf8_str it shall return false. ]*/
         result = false;
     }
     else
     {
         size_t pos = 0;
 
-        /* Codes_SRS_UTF8_CHECKER_01_003: [ If `length` is 0, `utf8_checker_is_valid_utf8` shall consider `utf8_str` to be valid UTF-8 and return true. ]*/
+        /* Codes_SRS_UTF8_CHECKER_01_003: [ If length is 0, utf8_checker_is_valid_utf8 shall consider utf8_str to be valid UTF-8 and return true. ]*/
         result = true;
 
         while ((result == true) &&
                (pos < length))
         {
-            /* Codes_SRS_UTF8_CHECKER_01_001: [ `utf8_checker_is_valid_utf8` shall verify that the sequence of chars pointed to by `utf8_str` represent UTF-8 encoded codepoints. ]*/
+            /* Codes_SRS_UTF8_CHECKER_01_001: [ utf8_checker_is_valid_utf8 shall verify that the sequence of chars pointed to by utf8_str represent UTF-8 encoded codepoints. ]*/
             if ((utf8_str[pos] >> 3) == 0x1E)
             {
                 /* 4 bytes */

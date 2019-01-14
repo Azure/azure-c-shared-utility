@@ -18,7 +18,7 @@ BUFFER_HANDLE uws_frame_encoder_encode(WS_FRAME_TYPE opcode, const unsigned char
 
     if (reserved > 7)
     {
-        /* Codes_SRS_UWS_FRAME_ENCODER_01_052: [ If `reserved` has any bits set except the lowest 3 then `uws_frame_encoder_encode` shall fail and return NULL. ]*/
+        /* Codes_SRS_UWS_FRAME_ENCODER_01_052: [ If reserved has any bits set except the lowest 3 then uws_frame_encoder_encode shall fail and return NULL. ]*/
         LogError("Bad reserved value: 0x%02x", reserved);
         result = NULL;
     }
@@ -31,7 +31,7 @@ BUFFER_HANDLE uws_frame_encoder_encode(WS_FRAME_TYPE opcode, const unsigned char
     else if ((length > 0) &&
         (payload == NULL))
     {
-        /* Codes_SRS_UWS_FRAME_ENCODER_01_054: [ If `length` is greater than 0 and payload is NULL, then `uws_frame_encoder_encode` shall fail and return NULL. ]*/
+        /* Codes_SRS_UWS_FRAME_ENCODER_01_054: [ If length is greater than 0 and payload is NULL, then uws_frame_encoder_encode shall fail and return NULL. ]*/
         LogError("Invalid arguments: NULL payload and length=%u", (unsigned int)length);
         result = NULL;
     }
@@ -40,17 +40,17 @@ BUFFER_HANDLE uws_frame_encoder_encode(WS_FRAME_TYPE opcode, const unsigned char
         size_t needed_bytes = 2;
         size_t header_bytes;
 
-        /* Codes_SRS_UWS_FRAME_ENCODER_01_044: [ On success `uws_frame_encoder_encode` shall return a non-NULL handle to the result buffer. ]*/
-        /* Codes_SRS_UWS_FRAME_ENCODER_01_048: [ The newly created buffer shall be created by calling `BUFFER_new`. ]*/
+        /* Codes_SRS_UWS_FRAME_ENCODER_01_044: [ On success uws_frame_encoder_encode shall return a non-NULL handle to the result buffer. ]*/
+        /* Codes_SRS_UWS_FRAME_ENCODER_01_048: [ The newly created buffer shall be created by calling BUFFER_new. ]*/
         result = BUFFER_new();
         if (result == NULL)
         {
-            /* Codes_SRS_UWS_FRAME_ENCODER_01_049: [ If `BUFFER_new` fails then `uws_frame_encoder_encode` shall fail and return NULL. ]*/
+            /* Codes_SRS_UWS_FRAME_ENCODER_01_049: [ If BUFFER_new fails then uws_frame_encoder_encode shall fail and return NULL. ]*/
             LogError("Cannot create new buffer");
         }
         else
         {
-            /* Codes_SRS_UWS_FRAME_ENCODER_01_001: [ `uws_frame_encoder_encode` shall encode the information given in `opcode`, `payload`, `length`, `is_masked`, `is_final` and `reserved` according to the RFC6455 into a new buffer.]*/
+            /* Codes_SRS_UWS_FRAME_ENCODER_01_001: [ uws_frame_encoder_encode shall encode the information given in opcode, payload, length, is_masked, is_final and reserved according to the RFC6455 into a new buffer.]*/
             if (length > 65535)
             {
                 needed_bytes += 8;
@@ -68,21 +68,21 @@ BUFFER_HANDLE uws_frame_encoder_encode(WS_FRAME_TYPE opcode, const unsigned char
             header_bytes = needed_bytes;
             needed_bytes += length;
 
-            /* Codes_SRS_UWS_FRAME_ENCODER_01_046: [ The result buffer shall be resized accordingly using `BUFFER_enlarge`. ]*/
+            /* Codes_SRS_UWS_FRAME_ENCODER_01_046: [ The result buffer shall be resized accordingly using BUFFER_enlarge. ]*/
             if (BUFFER_enlarge(result, needed_bytes) != 0)
             {
-                /* Codes_SRS_UWS_FRAME_ENCODER_01_047: [ If `BUFFER_enlarge` fails then `uws_frame_encoder_encode` shall fail and return NULL. ]*/
+                /* Codes_SRS_UWS_FRAME_ENCODER_01_047: [ If BUFFER_enlarge fails then uws_frame_encoder_encode shall fail and return NULL. ]*/
                 LogError("Cannot allocate memory for encoded frame");
                 BUFFER_delete(result);
                 result = NULL;
             }
             else
             {
-                /* Codes_SRS_UWS_FRAME_ENCODER_01_050: [ The allocated memory shall be accessed by calling `BUFFER_u_char`. ]*/
+                /* Codes_SRS_UWS_FRAME_ENCODER_01_050: [ The allocated memory shall be accessed by calling BUFFER_u_char. ]*/
                 unsigned char* buffer = BUFFER_u_char(result);
                 if (buffer == NULL)
                 {
-                    /* Codes_SRS_UWS_FRAME_ENCODER_01_051: [ If `BUFFER_u_char` fails then `uws_frame_encoder_encode` shall fail and return a NULL. ]*/
+                    /* Codes_SRS_UWS_FRAME_ENCODER_01_051: [ If BUFFER_u_char fails then uws_frame_encoder_encode shall fail and return a NULL. ]*/
                     LogError("Cannot get encoded buffer pointer");
                     BUFFER_delete(result);
                     result = NULL;
@@ -149,7 +149,7 @@ BUFFER_HANDLE uws_frame_encoder_encode(WS_FRAME_TYPE opcode, const unsigned char
                         /* Codes_SRS_UWS_FRAME_ENCODER_01_033: [ A masked frame MUST have the field frame-masked set to 1, as defined in Section 5.2. ]*/
                         buffer[1] |= 0x80;
 
-                        /* Codes_SRS_UWS_FRAME_ENCODER_01_053: [ In order to obtain a 32 bit value for masking, `gb_rand` shall be used 4 times (for each byte). ]*/
+                        /* Codes_SRS_UWS_FRAME_ENCODER_01_053: [ In order to obtain a 32 bit value for masking, gb_rand shall be used 4 times (for each byte). ]*/
                         /* Codes_SRS_UWS_FRAME_ENCODER_01_016: [ If set to 1, a masking key is present in masking-key, and this is used to unmask the "Payload data" as per Section 5.3. ]*/
                         /* Codes_SRS_UWS_FRAME_ENCODER_01_026: [ This field is present if the mask bit is set to 1 and is absent if the mask bit is set to 0. ]*/
                         /* Codes_SRS_UWS_FRAME_ENCODER_01_034: [ The masking key is contained completely within the frame, as defined in Section 5.2 as frame-masking-key. ]*/

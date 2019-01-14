@@ -809,7 +809,7 @@ int tlsio_wolfssl_send(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t siz
 
     if (tls_io == NULL || buffer == NULL || size == 0)
     {
-        LogError("Invalid parameter specified tls_io: %p, buffer: %p, size: %d", tls_io, buffer, size);
+        LogError("Invalid parameter specified tls_io: %p, buffer: %p, size: %ul", tls_io, buffer, (unsigned int)size);
         result = __FAILURE__;
     }
     else

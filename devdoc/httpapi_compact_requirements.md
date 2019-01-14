@@ -353,6 +353,8 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
 
 **SRS_HTTPAPI_COMPACT_21_083: [** The HTTPAPI_ExecuteRequest shall wait, at least, 100 milliseconds between retries. **]**  
 
+**SRS_HTTPAPI_COMPACT_42_088: [** The message received by the HTTPAPI_ExecuteRequest should not contain http body. **]**  
+
 
 ###   HTTPAPI_SetOption
 ```c

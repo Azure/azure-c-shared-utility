@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+// MBED seems to not implement size_t properly within their cstddef.h header, and builds will fail if stddef.h is not included by the projects.
+#include <stddef.h> 
 #include "azure_c_shared_utility/platform.h"
 #include "EthernetInterface.h"
 #include "NTPClient.h"

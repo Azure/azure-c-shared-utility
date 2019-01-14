@@ -16,7 +16,12 @@
 #endif
 
 #ifdef __cplusplus
+/* Some compilers do not want to play by the standard, specifically ARM CC */
+#ifdef MBED_BUILD_TIMESTAMP
+#include <stdio.h>
+#else
 #include <cstdio>
+#endif
 extern "C" {
 #else
 #include <stdio.h>
@@ -84,10 +89,28 @@ typedef void(*LOGGER_LOG_GETLASTERROR)(const char* file, const char* func, int l
 
 #else /* NOT ESP8266_RTOS */
 
+// In order to make sure that the compiler evaluates the arguments and issues an error if they do not conform to printf
+// specifications, we call printf with the format and __VA_ARGS__ but the call is behind an if (0) so that it does
+// not actually get executed at runtime
 #if defined _MSC_VER
-#define LOG(log_category, log_options, format, ...) { LOGGER_LOG l = xlogging_get_log_function(); if (l != NULL) l(log_category, __FILE__, FUNC_NAME, __LINE__, log_options, format, __VA_ARGS__); }
+// ignore warning C4127 
+#define LOG(log_category, log_options, format, ...) \
+{ \
+    __pragma(warning(suppress: 4127)) \
+    if (0) \
+    { \
+        (void)printf(format, __VA_ARGS__); \
+    } \
+    { \
+        LOGGER_LOG l = xlogging_get_log_function(); \
+        if (l != NULL) \
+        { \
+            l(log_category, __FILE__, FUNC_NAME, __LINE__, log_options, format, __VA_ARGS__); \
+        } \
+    } \
+}
 #else
-#define LOG(log_category, log_options, format, ...) { LOGGER_LOG l = xlogging_get_log_function(); if (l != NULL) l(log_category, __FILE__, FUNC_NAME, __LINE__, log_options, format, ##__VA_ARGS__); }
+#define LOG(log_category, log_options, format, ...) { if (0) { (void)printf(format, ##__VA_ARGS__); } { LOGGER_LOG l = xlogging_get_log_function(); if (l != NULL) l(log_category, __FILE__, FUNC_NAME, __LINE__, log_options, format, ##__VA_ARGS__); } }
 #endif
 
 #if defined _MSC_VER

@@ -232,15 +232,12 @@ static int my_uws_send_frame_async(UWS_CLIENT_HANDLE uws, unsigned char frame_ty
 static WSIO_CONFIG default_wsio_config;
 
 static TEST_MUTEX_HANDLE g_testByTest;
-static TEST_MUTEX_HANDLE g_dllByDll;
 
 DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    char temp_str[256];
-    (void)snprintf(temp_str, sizeof(temp_str), "umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
-    ASSERT_FAIL(temp_str);
+    ASSERT_FAIL("umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
 }
 
 BEGIN_TEST_SUITE(wsio_ut)
@@ -248,7 +245,6 @@ BEGIN_TEST_SUITE(wsio_ut)
 TEST_SUITE_INITIALIZE(suite_init)
 {
     int result;
-    TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
     g_testByTest = TEST_MUTEX_CREATE();
     ASSERT_IS_NOT_NULL(g_testByTest);
 
@@ -311,7 +307,6 @@ TEST_SUITE_CLEANUP(suite_cleanup)
     umock_c_deinit();
 
     TEST_MUTEX_DESTROY(g_testByTest);
-    TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
 }
 
 TEST_FUNCTION_INITIALIZE(method_init)
@@ -335,17 +330,17 @@ TEST_FUNCTION_CLEANUP(method_cleanup)
 
 /* wsio_create */
 
-/* Tests_SRS_WSIO_01_001: [`wsio_create` shall create an instance of wsio and return a non-NULL handle to it.]*/
-/* Tests_SRS_WSIO_01_066: [ `io_create_parameters` shall be used as a `WSIO_CONFIG*` . ]*/
-/* Tests_SRS_WSIO_01_070: [ The underlying uws instance shall be created by calling `uws_client_create_with_io`. ]*/
-/* Tests_SRS_WSIO_01_071: [ The arguments for `uws_client_create_with_io` shall be: ]*/
-/* Tests_SRS_WSIO_01_185: [ - `underlying_io_interface` shall be set to the `underlying_io_interface` field in the `io_create_parameters` passed to `wsio_create`. ]*/
-/* Tests_SRS_WSIO_01_186: [ - `underlying_io_parameters` shall be set to the `underlying_io_parameters` field in the `io_create_parameters` passed to `wsio_create`. ]*/
-/* Tests_SRS_WSIO_01_072: [ - `hostname` set to the `hostname` field in the `io_create_parameters` passed to `wsio_create`. ]*/
-/* Tests_SRS_WSIO_01_130: [ - `port` set to the `port` field in the `io_create_parameters` passed to `wsio_create`. ]*/
-/* Tests_SRS_WSIO_01_128: [ - `resource_name` set to the `resource_name` field in the `io_create_parameters` passed to `wsio_create`. ]*/
-/* Tests_SRS_WSIO_01_129: [ - `protocols` shall be filled with only one structure, that shall have the `protocol` set to the value of the `protocol` field in the `io_create_parameters` passed to `wsio_create`. ]*/
-/* Tests_SRS_WSIO_01_076: [ `wsio_create` shall create a pending send IO list that is to be used to queue send packets by calling `singlylinkedlist_create`. ]*/
+/* Tests_SRS_WSIO_01_001: [wsio_create shall create an instance of wsio and return a non-NULL handle to it.]*/
+/* Tests_SRS_WSIO_01_066: [ io_create_parameters shall be used as a WSIO_CONFIG* . ]*/
+/* Tests_SRS_WSIO_01_070: [ The underlying uws instance shall be created by calling uws_client_create_with_io. ]*/
+/* Tests_SRS_WSIO_01_071: [ The arguments for uws_client_create_with_io shall be: ]*/
+/* Tests_SRS_WSIO_01_185: [ - underlying_io_interface shall be set to the underlying_io_interface field in the io_create_parameters passed to wsio_create. ]*/
+/* Tests_SRS_WSIO_01_186: [ - underlying_io_parameters shall be set to the underlying_io_parameters field in the io_create_parameters passed to wsio_create. ]*/
+/* Tests_SRS_WSIO_01_072: [ - hostname set to the hostname field in the io_create_parameters passed to wsio_create. ]*/
+/* Tests_SRS_WSIO_01_130: [ - port set to the port field in the io_create_parameters passed to wsio_create. ]*/
+/* Tests_SRS_WSIO_01_128: [ - resource_name set to the resource_name field in the io_create_parameters passed to wsio_create. ]*/
+/* Tests_SRS_WSIO_01_129: [ - protocols shall be filled with only one structure, that shall have the protocol set to the value of the protocol field in the io_create_parameters passed to wsio_create. ]*/
+/* Tests_SRS_WSIO_01_076: [ wsio_create shall create a pending send IO list that is to be used to queue send packets by calling singlylinkedlist_create. ]*/
 TEST_FUNCTION(wsio_create_for_secure_connection_with_valid_args_succeeds)
 {
     // arrange
@@ -366,7 +361,7 @@ TEST_FUNCTION(wsio_create_for_secure_connection_with_valid_args_succeeds)
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_065: [ If the argument `io_create_parameters` is NULL then `wsio_create` shall return NULL. ]*/
+/* Tests_SRS_WSIO_01_065: [ If the argument io_create_parameters is NULL then wsio_create shall return NULL. ]*/
 TEST_FUNCTION(wsio_create_with_NULL_create_arguments_fails)
 {
     // arrange
@@ -379,7 +374,7 @@ TEST_FUNCTION(wsio_create_with_NULL_create_arguments_fails)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_WSIO_01_067: [ If any of the members `hostname`, `resource_name` or `protocol` is NULL in `WSIO_CONFIG` then `wsio_create` shall return NULL. ]*/
+/* Tests_SRS_WSIO_01_067: [ If any of the members hostname, resource_name or protocol is NULL in WSIO_CONFIG then wsio_create shall return NULL. ]*/
 TEST_FUNCTION(wsio_create_with_NULL_hostname_field_fails)
 {
     // arrange
@@ -401,7 +396,7 @@ TEST_FUNCTION(wsio_create_with_NULL_hostname_field_fails)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_WSIO_01_067: [ If any of the members `hostname`, `resource_name` or `protocol` is NULL in `WSIO_CONFIG` then `wsio_create` shall return NULL. ]*/
+/* Tests_SRS_WSIO_01_067: [ If any of the members hostname, resource_name or protocol is NULL in WSIO_CONFIG then wsio_create shall return NULL. ]*/
 TEST_FUNCTION(wsio_create_with_NULL_resource_name_field_fails)
 {
     // arrange
@@ -422,7 +417,7 @@ TEST_FUNCTION(wsio_create_with_NULL_resource_name_field_fails)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_WSIO_01_067: [ If any of the members `hostname`, `resource_name` or `protocol` is NULL in `WSIO_CONFIG` then `wsio_create` shall return NULL. ]*/
+/* Tests_SRS_WSIO_01_067: [ If any of the members hostname, resource_name or protocol is NULL in WSIO_CONFIG then wsio_create shall return NULL. ]*/
 TEST_FUNCTION(wsio_create_with_NULL_protocol_field_fails)
 {
     // arrange
@@ -444,7 +439,7 @@ TEST_FUNCTION(wsio_create_with_NULL_protocol_field_fails)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_WSIO_01_068: [ If allocating memory for the new wsio instance fails then `wsio_create` shall return NULL. ]*/
+/* Tests_SRS_WSIO_01_068: [ If allocating memory for the new wsio instance fails then wsio_create shall return NULL. ]*/
 TEST_FUNCTION(when_allocating_memory_fails_wsio_create_fails)
 {
     // arrange
@@ -460,7 +455,7 @@ TEST_FUNCTION(when_allocating_memory_fails_wsio_create_fails)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_WSIO_01_075: [ If `uws_client_create_with_io` fails, then `wsio_create` shall fail and return NULL. ]*/
+/* Tests_SRS_WSIO_01_075: [ If uws_client_create_with_io fails, then wsio_create shall fail and return NULL. ]*/
 TEST_FUNCTION(when_uws_create_fails_then_wsio_create_fails)
 {
     // arrange
@@ -479,7 +474,7 @@ TEST_FUNCTION(when_uws_create_fails_then_wsio_create_fails)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_WSIO_01_077: [ If `singlylinkedlist_create` fails then `wsio_create` shall fail and return NULL. ]*/
+/* Tests_SRS_WSIO_01_077: [ If singlylinkedlist_create fails then wsio_create shall fail and return NULL. ]*/
 TEST_FUNCTION(when_singlylinkedlist_create_fails_then_wsio_create_fails)
 {
     // arrange
@@ -500,13 +495,13 @@ TEST_FUNCTION(when_singlylinkedlist_create_fails_then_wsio_create_fails)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_WSIO_01_071: [ The arguments for `uws_client_create_with_io` shall be: ]*/
-/* Tests_SRS_WSIO_01_185: [ - `underlying_io_interface` shall be set to the `underlying_io_interface` field in the `io_create_parameters` passed to `wsio_create`. ]*/
-/* Tests_SRS_WSIO_01_186: [ - `underlying_io_parameters` shall be set to the `underlying_io_parameters` field in the `io_create_parameters` passed to `wsio_create`. ]*/
-/* Tests_SRS_WSIO_01_072: [ - `hostname` set to the `hostname` field in the `io_create_parameters` passed to `wsio_create`. ]*/
-/* Tests_SRS_WSIO_01_130: [ - `port` set to the `port` field in the `io_create_parameters` passed to `wsio_create`. ]*/
-/* Tests_SRS_WSIO_01_128: [ - `resource_name` set to the `resource_name` field in the `io_create_parameters` passed to `wsio_create`. ]*/
-/* Tests_SRS_WSIO_01_129: [ - `protocols` shall be filled with only one structure, that shall have the `protocol` set to the value of the `protocol` field in the `io_create_parameters` passed to `wsio_create`. ]*/
+/* Tests_SRS_WSIO_01_071: [ The arguments for uws_client_create_with_io shall be: ]*/
+/* Tests_SRS_WSIO_01_185: [ - underlying_io_interface shall be set to the underlying_io_interface field in the io_create_parameters passed to wsio_create. ]*/
+/* Tests_SRS_WSIO_01_186: [ - underlying_io_parameters shall be set to the underlying_io_parameters field in the io_create_parameters passed to wsio_create. ]*/
+/* Tests_SRS_WSIO_01_072: [ - hostname set to the hostname field in the io_create_parameters passed to wsio_create. ]*/
+/* Tests_SRS_WSIO_01_130: [ - port set to the port field in the io_create_parameters passed to wsio_create. ]*/
+/* Tests_SRS_WSIO_01_128: [ - resource_name set to the resource_name field in the io_create_parameters passed to wsio_create. ]*/
+/* Tests_SRS_WSIO_01_129: [ - protocols shall be filled with only one structure, that shall have the protocol set to the value of the protocol field in the io_create_parameters passed to wsio_create. ]*/
 TEST_FUNCTION(wsio_create_for_secure_connection_with_valid_args_succeeds_2)
 {
     // arrange
@@ -537,9 +532,9 @@ TEST_FUNCTION(wsio_create_for_secure_connection_with_valid_args_succeeds_2)
 
 /* wsio_destroy */
 
-/* Tests_SRS_WSIO_01_078: [ `wsio_destroy` shall free all resources associated with the wsio instance. ]*/
-/* Tests_SRS_WSIO_01_080: [ `wsio_destroy` shall destroy the uws instance created in `wsio_create` by calling `uws_client_destroy`. ]*/
-/* Tests_SRS_WSIO_01_081: [ `wsio_destroy` shall free the list used to track the pending send IOs by calling `singlylinkedlist_destroy`. ]*/
+/* Tests_SRS_WSIO_01_078: [ wsio_destroy shall free all resources associated with the wsio instance. ]*/
+/* Tests_SRS_WSIO_01_080: [ wsio_destroy shall destroy the uws instance created in wsio_create by calling uws_client_destroy. ]*/
+/* Tests_SRS_WSIO_01_081: [ wsio_destroy shall free the list used to track the pending send IOs by calling singlylinkedlist_destroy. ]*/
 TEST_FUNCTION(wsio_destroy_frees_all_resources)
 {
     // arrange
@@ -558,7 +553,7 @@ TEST_FUNCTION(wsio_destroy_frees_all_resources)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_WSIO_01_079: [ If `ws_io` is NULL, `wsio_destroy` shall do nothing.  ]*/
+/* Tests_SRS_WSIO_01_079: [ If ws_io is NULL, wsio_destroy shall do nothing.  ]*/
 TEST_FUNCTION(wsio_destroy_with_NULL_does_nothing)
 {
     // arrange
@@ -572,8 +567,8 @@ TEST_FUNCTION(wsio_destroy_with_NULL_does_nothing)
 
 /* wsio_open */
 
-/* Tests_SRS_WSIO_01_082: [ `wsio_open` shall open the underlying uws instance by calling `uws_client_open_async` and providing the uws handle created in `wsio_create` as argument. ]*/
-/* Tests_SRS_WSIO_01_083: [ On success, `wsio_open` shall return 0. ]*/
+/* Tests_SRS_WSIO_01_082: [ wsio_open shall open the underlying uws instance by calling uws_client_open_async and providing the uws handle created in wsio_create as argument. ]*/
+/* Tests_SRS_WSIO_01_083: [ On success, wsio_open shall return 0. ]*/
 TEST_FUNCTION(wsio_open_opens_the_underlying_uws_instance)
 {
     // arrange
@@ -595,7 +590,7 @@ TEST_FUNCTION(wsio_open_opens_the_underlying_uws_instance)
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_084: [ If opening the underlying uws instance fails then `wsio_open` shall fail and return a non-zero value. ]*/
+/* Tests_SRS_WSIO_01_084: [ If opening the underlying uws instance fails then wsio_open shall fail and return a non-zero value. ]*/
 TEST_FUNCTION(when_opening_the_uws_instance_fails_wsio_open_fails)
 {
     // arrange
@@ -618,7 +613,7 @@ TEST_FUNCTION(when_opening_the_uws_instance_fails_wsio_open_fails)
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_131: [ `wsio_open` when already OPEN or OPENING shall fail and return a non-zero value. ]*/
+/* Tests_SRS_WSIO_01_131: [ wsio_open when already OPEN or OPENING shall fail and return a non-zero value. ]*/
 TEST_FUNCTION(wsio_open_when_already_opening_fails)
 {
     // arrange
@@ -639,7 +634,7 @@ TEST_FUNCTION(wsio_open_when_already_opening_fails)
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_131: [ `wsio_open` when already OPEN or OPENING shall fail and return a non-zero value. ]*/
+/* Tests_SRS_WSIO_01_131: [ wsio_open when already OPEN or OPENING shall fail and return a non-zero value. ]*/
 TEST_FUNCTION(wsio_open_when_already_open_fails)
 {
     // arrange
@@ -661,7 +656,7 @@ TEST_FUNCTION(wsio_open_when_already_open_fails)
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_132: [ If any of the arguments `ws_io`, `on_io_open_complete`, `on_bytes_received`, `on_io_error` is NULL, `wsio_open` shall fail and return a non-zero value. ]*/
+/* Tests_SRS_WSIO_01_132: [ If any of the arguments ws_io, on_io_open_complete, on_bytes_received, on_io_error is NULL, wsio_open shall fail and return a non-zero value. ]*/
 TEST_FUNCTION(wsio_open_with_NULL_handle_fails)
 {
     // arrange
@@ -675,7 +670,7 @@ TEST_FUNCTION(wsio_open_with_NULL_handle_fails)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_WSIO_01_132: [ If any of the arguments `ws_io`, `on_io_open_complete`, `on_bytes_received`, `on_io_error` is NULL, `wsio_open` shall fail and return a non-zero value. ]*/
+/* Tests_SRS_WSIO_01_132: [ If any of the arguments ws_io, on_io_open_complete, on_bytes_received, on_io_error is NULL, wsio_open shall fail and return a non-zero value. ]*/
 TEST_FUNCTION(wsio_open_with_NULL_on_open_complete_callback_fails)
 {
     // arrange
@@ -695,7 +690,7 @@ TEST_FUNCTION(wsio_open_with_NULL_on_open_complete_callback_fails)
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_132: [ If any of the arguments `ws_io`, `on_io_open_complete`, `on_bytes_received`, `on_io_error` is NULL, `wsio_open` shall fail and return a non-zero value. ]*/
+/* Tests_SRS_WSIO_01_132: [ If any of the arguments ws_io, on_io_open_complete, on_bytes_received, on_io_error is NULL, wsio_open shall fail and return a non-zero value. ]*/
 TEST_FUNCTION(wsio_open_with_NULL_on_bytes_received_callback_fails)
 {
     // arrange
@@ -715,7 +710,7 @@ TEST_FUNCTION(wsio_open_with_NULL_on_bytes_received_callback_fails)
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_132: [ If any of the arguments `ws_io`, `on_io_open_complete`, `on_bytes_received`, `on_io_error` is NULL, `wsio_open` shall fail and return a non-zero value. ]*/
+/* Tests_SRS_WSIO_01_132: [ If any of the arguments ws_io, on_io_open_complete, on_bytes_received, on_io_error is NULL, wsio_open shall fail and return a non-zero value. ]*/
 TEST_FUNCTION(wsio_open_with_NULL_on_io_error_callback_fails)
 {
     // arrange
@@ -735,8 +730,8 @@ TEST_FUNCTION(wsio_open_with_NULL_on_io_error_callback_fails)
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_082: [ `wsio_open` shall open the underlying uws instance by calling `uws_client_open_async` and providing the uws handle created in `wsio_create` as argument. ]*/
-/* Tests_SRS_WSIO_01_083: [ On success, `wsio_open` shall return 0. ]*/
+/* Tests_SRS_WSIO_01_082: [ wsio_open shall open the underlying uws instance by calling uws_client_open_async and providing the uws handle created in wsio_create as argument. ]*/
+/* Tests_SRS_WSIO_01_083: [ On success, wsio_open shall return 0. ]*/
 TEST_FUNCTION(wsio_open_after_close_succeeds)
 {
     // arrange
@@ -764,12 +759,12 @@ TEST_FUNCTION(wsio_open_after_close_succeeds)
 
 /* wsio_close */
 
-/* Tests_SRS_WSIO_01_085: [ `wsio_close` shall close the websockets IO if an open action is either pending or has completed successfully (if the IO is open).  ]*/
-/* Tests_SRS_WSIO_01_133: [ On success `wsio_close` shall return 0. ]*/
-/* Tests_SRS_WSIO_01_091: [ `wsio_close` shall obtain all the pending IO items by repetitively querying for the head of the pending IO list and freeing that head item. ]*/
-/* Tests_SRS_WSIO_01_087: [ `wsio_close` shall call `uws_client_close_async` while passing as argument the IO handle created in `wsio_create`.  ]*/
-/* Tests_SRS_WSIO_01_092: [ Obtaining the head of the pending IO list shall be done by calling `singlylinkedlist_get_head_item`. ]*/
-/* Tests_SRS_WSIO_01_094: [ The callback context passed to the `on_send_complete` callback shall be the context given to `wsio_send`.  ]*/
+/* Tests_SRS_WSIO_01_085: [ wsio_close shall close the websockets IO if an open action is either pending or has completed successfully (if the IO is open).  ]*/
+/* Tests_SRS_WSIO_01_133: [ On success wsio_close shall return 0. ]*/
+/* Tests_SRS_WSIO_01_091: [ wsio_close shall obtain all the pending IO items by repetitively querying for the head of the pending IO list and freeing that head item. ]*/
+/* Tests_SRS_WSIO_01_087: [ wsio_close shall call uws_client_close_async while passing as argument the IO handle created in wsio_create.  ]*/
+/* Tests_SRS_WSIO_01_092: [ Obtaining the head of the pending IO list shall be done by calling singlylinkedlist_get_head_item. ]*/
+/* Tests_SRS_WSIO_01_094: [ The callback context passed to the on_send_complete callback shall be the context given to wsio_send.  ]*/
 TEST_FUNCTION(wsio_close_when_IO_is_open_closes_the_uws)
 {
     // arrange
@@ -794,7 +789,7 @@ TEST_FUNCTION(wsio_close_when_IO_is_open_closes_the_uws)
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_086: [ if `ws_io` is NULL, `wsio_close` shall return a non-zero value.  ]*/
+/* Tests_SRS_WSIO_01_086: [ if ws_io is NULL, wsio_close shall return a non-zero value.  ]*/
 TEST_FUNCTION(wsio_close_with_NULL_handle_fails)
 {
     // arrange
@@ -808,7 +803,7 @@ TEST_FUNCTION(wsio_close_with_NULL_handle_fails)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_WSIO_01_088: [ `wsio_close` when no open action has been issued shall fail and return a non-zero value. ]*/
+/* Tests_SRS_WSIO_01_088: [ wsio_close when no open action has been issued shall fail and return a non-zero value. ]*/
 TEST_FUNCTION(when_IO_is_not_open_wsio_close_fails)
 {
     // arrange
@@ -828,7 +823,7 @@ TEST_FUNCTION(when_IO_is_not_open_wsio_close_fails)
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_089: [ `wsio_close` after a `wsio_close` shall fail and return a non-zero value.  ]*/
+/* Tests_SRS_WSIO_01_089: [ wsio_close after a wsio_close shall fail and return a non-zero value.  ]*/
 TEST_FUNCTION(wsio_close_after_wsio_close_completed_fails)
 {
     // arrange
@@ -852,7 +847,7 @@ TEST_FUNCTION(wsio_close_after_wsio_close_completed_fails)
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_089: [ `wsio_close` after a `wsio_close` shall fail and return a non-zero value.  ]*/
+/* Tests_SRS_WSIO_01_089: [ wsio_close after a wsio_close shall fail and return a non-zero value.  ]*/
 TEST_FUNCTION(wsio_close_after_wsio_close_and_in_closing_fails)
 {
     // arrange
@@ -875,7 +870,7 @@ TEST_FUNCTION(wsio_close_after_wsio_close_and_in_closing_fails)
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_164: [ When `uws_client_close` fails, `wsio_close` shall fail and return a non-zero value. ]*/
+/* Tests_SRS_WSIO_01_164: [ When uws_client_close fails, wsio_close shall fail and return a non-zero value. ]*/
 TEST_FUNCTION(when_uws_close_fails_then_wsio_close_fails)
 {
     // arrange
@@ -900,7 +895,7 @@ TEST_FUNCTION(when_uws_close_fails_then_wsio_close_fails)
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_090: [ The argument `on_io_close_complete` shall be optional, if NULL is passed by the caller then no close complete callback shall be triggered.  ]*/
+/* Tests_SRS_WSIO_01_090: [ The argument on_io_close_complete shall be optional, if NULL is passed by the caller then no close complete callback shall be triggered.  ]*/
 TEST_FUNCTION(wsio_close_with_NULL_close_complete_callback_succeeds)
 {
     // arrange
@@ -925,7 +920,7 @@ TEST_FUNCTION(wsio_close_with_NULL_close_complete_callback_succeeds)
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_093: [ For each pending item the send complete callback shall be called with `IO_SEND_CANCELLED`.]*/
+/* Tests_SRS_WSIO_01_093: [ For each pending item the send complete callback shall be called with IO_SEND_CANCELLED.]*/
 TEST_FUNCTION(wsio_close_indicates_a_pending_send_as_CANCELLED)
 {
     // arrange
@@ -958,7 +953,7 @@ TEST_FUNCTION(wsio_close_indicates_a_pending_send_as_CANCELLED)
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_093: [ For each pending item the send complete callback shall be called with `IO_SEND_CANCELLED`.]*/
+/* Tests_SRS_WSIO_01_093: [ For each pending item the send complete callback shall be called with IO_SEND_CANCELLED.]*/
 TEST_FUNCTION(wsio_close_indicates_2_pending_sends_as_CANCELLED)
 {
     // arrange
@@ -999,12 +994,12 @@ TEST_FUNCTION(wsio_close_indicates_2_pending_sends_as_CANCELLED)
 
 /* wsio_send */
 
-/* Tests_SRS_WSIO_01_095: [ `wsio_send` shall call `uws_client_send_frame_async`, passing the `buffer` and `size` arguments as they are: ]*/
-/* Tests_SRS_WSIO_01_097: [ The `is_final` argument shall be set to true. ]*/
-/* Tests_SRS_WSIO_01_098: [ On success, `wsio_send` shall return 0. ]*/
-/* Tests_SRS_WSIO_01_102: [ An entry shall be queued in the singly linked list by calling `singlylinkedlist_add`. ]*/
-/* Tests_SRS_WSIO_01_103: [ The entry shall contain the `on_send_complete` callback and its context. ]*/
-/* Tests_SRS_WSIO_01_096: [ The frame type used shall be `WS_FRAME_TYPE_BINARY`. ]*/
+/* Tests_SRS_WSIO_01_095: [ wsio_send shall call uws_client_send_frame_async, passing the buffer and size arguments as they are: ]*/
+/* Tests_SRS_WSIO_01_097: [ The is_final argument shall be set to true. ]*/
+/* Tests_SRS_WSIO_01_098: [ On success, wsio_send shall return 0. ]*/
+/* Tests_SRS_WSIO_01_102: [ An entry shall be queued in the singly linked list by calling singlylinkedlist_add. ]*/
+/* Tests_SRS_WSIO_01_103: [ The entry shall contain the on_send_complete callback and its context. ]*/
+/* Tests_SRS_WSIO_01_096: [ The frame type used shall be WS_FRAME_TYPE_BINARY. ]*/
 TEST_FUNCTION(wsio_send_with_1_byte_calls_uws_send_frame)
 {
     // arrange
@@ -1033,7 +1028,7 @@ TEST_FUNCTION(wsio_send_with_1_byte_calls_uws_send_frame)
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_099: [ If the wsio is not OPEN (open has not been called or is still in progress) then `wsio_send` shall fail and return a non-zero value. ]*/
+/* Tests_SRS_WSIO_01_099: [ If the wsio is not OPEN (open has not been called or is still in progress) then wsio_send shall fail and return a non-zero value. ]*/
 TEST_FUNCTION(wsio_send_when_not_open_fails)
 {
     // arrange
@@ -1055,7 +1050,7 @@ TEST_FUNCTION(wsio_send_when_not_open_fails)
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_099: [ If the wsio is not OPEN (open has not been called or is still in progress) then `wsio_send` shall fail and return a non-zero value. ]*/
+/* Tests_SRS_WSIO_01_099: [ If the wsio is not OPEN (open has not been called or is still in progress) then wsio_send shall fail and return a non-zero value. ]*/
 TEST_FUNCTION(wsio_send_when_opening_fails)
 {
     // arrange
@@ -1078,7 +1073,7 @@ TEST_FUNCTION(wsio_send_when_opening_fails)
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_099: [ If the wsio is not OPEN (open has not been called or is still in progress) then `wsio_send` shall fail and return a non-zero value. ]*/
+/* Tests_SRS_WSIO_01_099: [ If the wsio is not OPEN (open has not been called or is still in progress) then wsio_send shall fail and return a non-zero value. ]*/
 TEST_FUNCTION(wsio_send_after_io_is_closed_fails)
 {
     // arrange
@@ -1103,7 +1098,7 @@ TEST_FUNCTION(wsio_send_after_io_is_closed_fails)
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_100: [ If any of the arguments `ws_io` or `buffer` are NULL, `wsio_send` shall fail and return a non-zero value. ]*/
+/* Tests_SRS_WSIO_01_100: [ If any of the arguments ws_io or buffer are NULL, wsio_send shall fail and return a non-zero value. ]*/
 TEST_FUNCTION(wsio_send_with_NULL_wsio_fails)
 {
     // arrange
@@ -1118,7 +1113,7 @@ TEST_FUNCTION(wsio_send_with_NULL_wsio_fails)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_WSIO_01_100: [ If any of the arguments `ws_io` or `buffer` are NULL, `wsio_send` shall fail and return a non-zero value. ]*/
+/* Tests_SRS_WSIO_01_100: [ If any of the arguments ws_io or buffer are NULL, wsio_send shall fail and return a non-zero value. ]*/
 TEST_FUNCTION(wsio_send_with_NULL_buffer_fails)
 {
     // arrange
@@ -1142,7 +1137,7 @@ TEST_FUNCTION(wsio_send_with_NULL_buffer_fails)
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_101: [ If `size` is zero then `wsio_send` shall fail and return a non-zero value. ]*/
+/* Tests_SRS_WSIO_01_101: [ If size is zero then wsio_send shall fail and return a non-zero value. ]*/
 TEST_FUNCTION(wsio_send_with_zero_size_fails)
 {
     // arrange
@@ -1167,7 +1162,7 @@ TEST_FUNCTION(wsio_send_with_zero_size_fails)
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_134: [ If allocating memory for the pending IO data fails, `wsio_send` shall fail and return a non-zero value. ]*/
+/* Tests_SRS_WSIO_01_134: [ If allocating memory for the pending IO data fails, wsio_send shall fail and return a non-zero value. ]*/
 TEST_FUNCTION(when_allocating_memory_for_the_pending_send_fails_wsio_send_fails)
 {
     // arrange
@@ -1194,7 +1189,7 @@ TEST_FUNCTION(when_allocating_memory_for_the_pending_send_fails_wsio_send_fails)
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_104: [ If `singlylinkedlist_add` fails, `wsio_send` shall fail and return a non-zero value. ]*/
+/* Tests_SRS_WSIO_01_104: [ If singlylinkedlist_add fails, wsio_send shall fail and return a non-zero value. ]*/
 TEST_FUNCTION(when_adding_the_pending_item_to_the_list_fails_wsio_send_fails)
 {
     // arrange
@@ -1223,7 +1218,7 @@ TEST_FUNCTION(when_adding_the_pending_item_to_the_list_fails_wsio_send_fails)
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_105: [ The argument `on_send_complete` shall be optional, if NULL is passed by the caller then no send complete callback shall be triggered. ]*/
+/* Tests_SRS_WSIO_01_105: [ The argument on_send_complete shall be optional, if NULL is passed by the caller then no send complete callback shall be triggered. ]*/
 TEST_FUNCTION(wsio_send_with_NULL_send_complete_callback_succeeds)
 {
     // arrange
@@ -1254,7 +1249,7 @@ TEST_FUNCTION(wsio_send_with_NULL_send_complete_callback_succeeds)
 
 /* wsio_dowork */
 
-/* Tests_SRS_WSIO_01_106: [ `wsio_dowork` shall call `uws_client_dowork` with the uws handle created in `wsio_create`. ]*/
+/* Tests_SRS_WSIO_01_106: [ wsio_dowork shall call uws_client_dowork with the uws handle created in wsio_create. ]*/
 TEST_FUNCTION(wsio_dowork_calls_the_underlying_uws_dowork)
 {
     // arrange
@@ -1277,7 +1272,7 @@ TEST_FUNCTION(wsio_dowork_calls_the_underlying_uws_dowork)
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_107: [ If the `ws_io` argument is NULL, `wsio_dowork` shall do nothing. ]*/
+/* Tests_SRS_WSIO_01_107: [ If the ws_io argument is NULL, wsio_dowork shall do nothing. ]*/
 TEST_FUNCTION(wsio_dowork_with_NULL_handle_does_nothing)
 {
     // arrange
@@ -1289,7 +1284,7 @@ TEST_FUNCTION(wsio_dowork_with_NULL_handle_does_nothing)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_WSIO_01_108: [ If the IO is not yet open, `wsio_dowork` shall do nothing. ]*/
+/* Tests_SRS_WSIO_01_108: [ If the IO is not yet open, wsio_dowork shall do nothing. ]*/
 TEST_FUNCTION(wsio_dowork_when_not_open_dows_nothing)
 {
     // arrange
@@ -1308,7 +1303,7 @@ TEST_FUNCTION(wsio_dowork_when_not_open_dows_nothing)
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_108: [ If the IO is not yet open, `wsio_dowork` shall do nothing. ]*/
+/* Tests_SRS_WSIO_01_108: [ If the IO is not yet open, wsio_dowork shall do nothing. ]*/
 TEST_FUNCTION(wsio_dowork_when_opening_calls_uws_dowork)
 {
     // arrange
@@ -1330,7 +1325,7 @@ TEST_FUNCTION(wsio_dowork_when_opening_calls_uws_dowork)
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_108: [ If the IO is not yet open, `wsio_dowork` shall do nothing. ]*/
+/* Tests_SRS_WSIO_01_108: [ If the IO is not yet open, wsio_dowork shall do nothing. ]*/
 TEST_FUNCTION(wsio_dowork_after_close_does_nothing)
 {
     // arrange
@@ -1353,7 +1348,7 @@ TEST_FUNCTION(wsio_dowork_after_close_does_nothing)
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_108: [ If the IO is not yet open, `wsio_dowork` shall do nothing. ]*/
+/* Tests_SRS_WSIO_01_108: [ If the IO is not yet open, wsio_dowork shall do nothing. ]*/
 TEST_FUNCTION(wsio_dowork_in_closing_calls_uws_do_work)
 {
     // arrange
@@ -1377,8 +1372,8 @@ TEST_FUNCTION(wsio_dowork_in_closing_calls_uws_do_work)
 
 /* on_ws_error */
 
-/* Tests_SRS_WSIO_01_121: [ When `on_underlying_ws_error` is called while the IO is OPEN the wsio instance shall be set to ERROR and an error shall be indicated via the `on_io_error` callback passed to `wsio_open`. ]*/
-/* Tests_SRS_WSIO_01_123: [ When calling `on_io_error`, the `on_io_error_context` argument given in `wsio_open` shall be passed to the callback `on_io_error`. ]*/
+/* Tests_SRS_WSIO_01_121: [ When on_underlying_ws_error is called while the IO is OPEN the wsio instance shall be set to ERROR and an error shall be indicated via the on_io_error callback passed to wsio_open. ]*/
+/* Tests_SRS_WSIO_01_123: [ When calling on_io_error, the on_io_error_context argument given in wsio_open shall be passed to the callback on_io_error. ]*/
 TEST_FUNCTION(when_on_underlying_ws_error_is_called_in_open_the_error_is_reported_up)
 {
     // arrange
@@ -1401,7 +1396,7 @@ TEST_FUNCTION(when_on_underlying_ws_error_is_called_in_open_the_error_is_reporte
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_135: [ When `on_underlying_ws_error` is called with a NULL context, it shall do nothing. ]*/
+/* Tests_SRS_WSIO_01_135: [ When on_underlying_ws_error is called with a NULL context, it shall do nothing. ]*/
 TEST_FUNCTION(when_on_underlying_ws_error_with_NULL_context_does_nothing)
 {
     // arrange
@@ -1422,7 +1417,7 @@ TEST_FUNCTION(when_on_underlying_ws_error_with_NULL_context_does_nothing)
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_122: [ When `on_underlying_ws_error` is called while the IO is OPENING, the `on_io_open_complete` callback passed to `wsio_open` shall be called with `IO_OPEN_ERROR`. ]*/
+/* Tests_SRS_WSIO_01_122: [ When on_underlying_ws_error is called while the IO is OPENING, the on_io_open_complete callback passed to wsio_open shall be called with IO_OPEN_ERROR. ]*/
 TEST_FUNCTION(when_on_underlying_ws_error_is_called_while_OPENING_calls_open_complete_with_ERROR)
 {
     // arrange
@@ -1446,7 +1441,7 @@ TEST_FUNCTION(when_on_underlying_ws_error_is_called_while_OPENING_calls_open_com
 
 /* on_underlying_ws_open_complete */
 
-/* Tests_SRS_WSIO_01_136: [ When `on_underlying_ws_open_complete` is called with `WS_OPEN_OK` while the IO is opening, the callback `on_io_open_complete` shall be called with `IO_OPEN_OK`. ]*/
+/* Tests_SRS_WSIO_01_136: [ When on_underlying_ws_open_complete is called with WS_OPEN_OK while the IO is opening, the callback on_io_open_complete shall be called with IO_OPEN_OK. ]*/
 TEST_FUNCTION(when_on_underlying_ws_open_complete_is_called_with_OK_while_OPENING_the_io_open_complete_callback_is_called_with_OPEN_OK)
 {
     // arrange
@@ -1468,7 +1463,7 @@ TEST_FUNCTION(when_on_underlying_ws_open_complete_is_called_with_OK_while_OPENIN
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_149: [ When `on_underlying_ws_open_complete` is called with `WS_OPEN_CANCELLED` while the IO is opening, the callback `on_io_open_complete` shall be called with `IO_OPEN_CANCELLED`. ]*/
+/* Tests_SRS_WSIO_01_149: [ When on_underlying_ws_open_complete is called with WS_OPEN_CANCELLED while the IO is opening, the callback on_io_open_complete shall be called with IO_OPEN_CANCELLED. ]*/
 TEST_FUNCTION(when_on_underlying_ws_open_complete_is_called_with_CANCELLED_while_OPENING_the_io_open_complete_callback_is_called_with_OPEN_CANCELLED)
 {
     // arrange
@@ -1490,7 +1485,7 @@ TEST_FUNCTION(when_on_underlying_ws_open_complete_is_called_with_CANCELLED_while
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_137: [ When `on_underlying_ws_open_complete` is called with any other error code while the IO is opening, the callback `on_io_open_complete` shall be called with `IO_OPEN_ERROR`. ]*/
+/* Tests_SRS_WSIO_01_137: [ When on_underlying_ws_open_complete is called with any other error code while the IO is opening, the callback on_io_open_complete shall be called with IO_OPEN_ERROR. ]*/
 TEST_FUNCTION(when_on_underlying_ws_open_complete_is_called_with_an_error_while_OPENING_the_io_open_complete_callback_is_called_with_OPEN_ERROR)
 {
     // arrange
@@ -1512,7 +1507,7 @@ TEST_FUNCTION(when_on_underlying_ws_open_complete_is_called_with_an_error_while_
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_138: [ When `on_underlying_ws_open_complete` is called with a NULL context, it shall do nothing. ]*/
+/* Tests_SRS_WSIO_01_138: [ When on_underlying_ws_open_complete is called with a NULL context, it shall do nothing. ]*/
 TEST_FUNCTION(on_underlying_ws_open_complete_with_NULL_context_does_nothing)
 {
     // arrange
@@ -1532,8 +1527,8 @@ TEST_FUNCTION(on_underlying_ws_open_complete_with_NULL_context_does_nothing)
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_139: [ When `on_underlying_ws_open_complete` is called while in OPEN state it shall indicate an error by calling the `on_io_error` callback passed to `wsio_open` and switch to the ERROR state. ]*/
-/* Tests_SRS_WSIO_01_140: [ When calling `on_io_error`, the `on_io_error_context` argument given in `wsio_open` shall be passed to the callback `on_io_error`. ]*/
+/* Tests_SRS_WSIO_01_139: [ When on_underlying_ws_open_complete is called while in OPEN state it shall indicate an error by calling the on_io_error callback passed to wsio_open and switch to the ERROR state. ]*/
+/* Tests_SRS_WSIO_01_140: [ When calling on_io_error, the on_io_error_context argument given in wsio_open shall be passed to the callback on_io_error. ]*/
 TEST_FUNCTION(when_on_underlying_ws_open_complete_is_called_when_already_OPEN_an_error_is_indicated)
 {
     // arrange
@@ -1556,8 +1551,8 @@ TEST_FUNCTION(when_on_underlying_ws_open_complete_is_called_when_already_OPEN_an
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_141: [ When `on_underlying_ws_open_complete` is called while in the ERROR state it shall indicate an error by calling the `on_io_error` callback passed to `wsio_open`. ]*/
-/* Tests_SRS_WSIO_01_140: [ When calling `on_io_error`, the `on_io_error_context` argument given in `wsio_open` shall be passed to the callback `on_io_error`. ]*/
+/* Tests_SRS_WSIO_01_141: [ When on_underlying_ws_open_complete is called while in the ERROR state it shall indicate an error by calling the on_io_error callback passed to wsio_open. ]*/
+/* Tests_SRS_WSIO_01_140: [ When calling on_io_error, the on_io_error_context argument given in wsio_open shall be passed to the callback on_io_error. ]*/
 TEST_FUNCTION(when_on_underlying_ws_open_complete_is_called_when_in_ERROR_an_error_is_indicated)
 {
     // arrange
@@ -1581,7 +1576,7 @@ TEST_FUNCTION(when_on_underlying_ws_open_complete_is_called_when_in_ERROR_an_err
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_142: [ When `on_underlying_ws_open_complete` is called while in the CLOSING state an error shall be indicated by calling the `on_io_error` callback passed to `wsio_open`. ]*/
+/* Tests_SRS_WSIO_01_142: [ When on_underlying_ws_open_complete is called while in the CLOSING state an error shall be indicated by calling the on_io_error callback passed to wsio_open. ]*/
 TEST_FUNCTION(when_on_underlying_ws_open_complete_is_called_when_CLOSING_it_does_nothing)
 {
     // arrange
@@ -1607,8 +1602,8 @@ TEST_FUNCTION(when_on_underlying_ws_open_complete_is_called_when_CLOSING_it_does
 
 /* on_ws_frame_received */
 
-/* Tests_SRS_WSIO_01_124: [ When `on_underlying_ws_frame_received` is called the bytes in the frame shall be indicated by calling the `on_bytes_received` callback passed to `wsio_open`. ]*/
-/* Tests_SRS_WSIO_01_125: [ When calling `on_bytes_received`, the `on_bytes_received_context` argument given in `wsio_open` shall be passed to the callback `on_bytes_received`. ]*/
+/* Tests_SRS_WSIO_01_124: [ When on_underlying_ws_frame_received is called the bytes in the frame shall be indicated by calling the on_bytes_received callback passed to wsio_open. ]*/
+/* Tests_SRS_WSIO_01_125: [ When calling on_bytes_received, the on_bytes_received_context argument given in wsio_open shall be passed to the callback on_bytes_received. ]*/
 TEST_FUNCTION(when_on_underlying_ws_frame_received_is_called_the_frame_content_is_indicated_up)
 {
     // arrange
@@ -1633,7 +1628,7 @@ TEST_FUNCTION(when_on_underlying_ws_frame_received_is_called_the_frame_content_i
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_125: [ When calling `on_bytes_received`, the `on_bytes_received_context` argument given in `wsio_open` shall be passed to the callback `on_bytes_received`. ]*/
+/* Tests_SRS_WSIO_01_125: [ When calling on_bytes_received, the on_bytes_received_context argument given in wsio_open shall be passed to the callback on_bytes_received. ]*/
 TEST_FUNCTION(when_on_underlying_ws_frame_received_is_called_the_frame_content_is_indicated_up_with_the_proper_context)
 {
     // arrange
@@ -1658,7 +1653,7 @@ TEST_FUNCTION(when_on_underlying_ws_frame_received_is_called_the_frame_content_i
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_126: [ If `on_underlying_ws_frame_received` is called while the IO is in any state other than OPEN, it shall do nothing. ]*/
+/* Tests_SRS_WSIO_01_126: [ If on_underlying_ws_frame_received is called while the IO is in any state other than OPEN, it shall do nothing. ]*/
 TEST_FUNCTION(when_on_underlying_ws_frame_received_is_called_while_opening_it_shall_do_nothing)
 {
     // arrange
@@ -1679,7 +1674,7 @@ TEST_FUNCTION(when_on_underlying_ws_frame_received_is_called_while_opening_it_sh
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_126: [ If `on_underlying_ws_frame_received` is called while the IO is in any state other than OPEN, it shall do nothing. ]*/
+/* Tests_SRS_WSIO_01_126: [ If on_underlying_ws_frame_received is called while the IO is in any state other than OPEN, it shall do nothing. ]*/
 TEST_FUNCTION(when_on_underlying_ws_frame_received_is_called_while_closing_it_shall_do_nothing)
 {
     // arrange
@@ -1702,7 +1697,7 @@ TEST_FUNCTION(when_on_underlying_ws_frame_received_is_called_while_closing_it_sh
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_150: [ If `on_underlying_ws_frame_received` is called with NULL context it shall do nothing. ]*/
+/* Tests_SRS_WSIO_01_150: [ If on_underlying_ws_frame_received is called with NULL context it shall do nothing. ]*/
 TEST_FUNCTION(when_on_underlying_ws_frame_received_with_NULL_context_does_nothing)
 {
     // arrange
@@ -1724,8 +1719,8 @@ TEST_FUNCTION(when_on_underlying_ws_frame_received_with_NULL_context_does_nothin
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_151: [ If the WebSocket frame type is not binary then an error shall be indicated by calling the `on_io_error` callback passed to `wsio_open`. ]*/
-/* Tests_SRS_WSIO_01_152: [ When calling `on_io_error`, the `on_io_error_context` argument given in `wsio_open` shall be passed to the callback `on_io_error`. ]*/
+/* Tests_SRS_WSIO_01_151: [ If the WebSocket frame type is not binary then an error shall be indicated by calling the on_io_error callback passed to wsio_open. ]*/
+/* Tests_SRS_WSIO_01_152: [ When calling on_io_error, the on_io_error_context argument given in wsio_open shall be passed to the callback on_io_error. ]*/
 TEST_FUNCTION(when_on_underlying_ws_frame_received_is_called_with_a_text_frame_an_error_is_indicated)
 {
     // arrange
@@ -1749,7 +1744,7 @@ TEST_FUNCTION(when_on_underlying_ws_frame_received_is_called_with_a_text_frame_a
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_153: [ When `on_underlying_ws_frame_received` is called with zero `size`, no bytes shall be indicated up as received. ]*/
+/* Tests_SRS_WSIO_01_153: [ When on_underlying_ws_frame_received is called with zero size, no bytes shall be indicated up as received. ]*/
 TEST_FUNCTION(when_on_underlying_ws_frame_received_is_called_with_zero_bytes_no_bytes_are_reported_as_received)
 {
     // arrange
@@ -1771,7 +1766,7 @@ TEST_FUNCTION(when_on_underlying_ws_frame_received_is_called_with_zero_bytes_no_
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_154: [ When `on_underlying_ws_frame_received` is called with a positive `size` and a NULL `buffer`, an error shall be indicated by calling the `on_io_error` callback passed to `wsio_open`. ]*/
+/* Tests_SRS_WSIO_01_154: [ When on_underlying_ws_frame_received is called with a positive size and a NULL buffer, an error shall be indicated by calling the on_io_error callback passed to wsio_open. ]*/
 TEST_FUNCTION(when_on_underlying_ws_frame_received_is_called_with_positive_size_and_NULL_buffer_an_error_is_indicated)
 {
     // arrange
@@ -1796,10 +1791,10 @@ TEST_FUNCTION(when_on_underlying_ws_frame_received_is_called_with_positive_size_
 
 /* on_underlying_ws_send_frame_complete */
 
-/* Tests_SRS_WSIO_01_143: [ When `on_underlying_ws_send_frame_complete` is called after sending a WebSocket frame, the pending IO shall be removed from the list. ]*/
-/* Tests_SRS_WSIO_01_145: [ Removing it from the list shall be done by calling `singlylinkedlist_remove`. ]*/
+/* Tests_SRS_WSIO_01_143: [ When on_underlying_ws_send_frame_complete is called after sending a WebSocket frame, the pending IO shall be removed from the list. ]*/
+/* Tests_SRS_WSIO_01_145: [ Removing it from the list shall be done by calling singlylinkedlist_remove. ]*/
 /* Tests_SRS_WSIO_01_144: [ Also the pending IO data shall be freed. ]*/
-/* Tests_SRS_WSIO_01_146: [ When `on_underlying_ws_send_frame_complete` is called with `WS_SEND_OK`, the callback `on_send_complete` shall be called with `IO_SEND_OK`. ]*/
+/* Tests_SRS_WSIO_01_146: [ When on_underlying_ws_send_frame_complete is called with WS_SEND_OK, the callback on_send_complete shall be called with IO_SEND_OK. ]*/
 TEST_FUNCTION(wsio_send_with_1_byte_completed_indicates_the_completion_up)
 {
     // arrange
@@ -1827,7 +1822,7 @@ TEST_FUNCTION(wsio_send_with_1_byte_completed_indicates_the_completion_up)
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_147: [ When `on_underlying_ws_send_frame_complete` is called with `WS_SEND_CANCELLED`, the callback `on_send_complete` shall be called with `IO_SEND_CANCELLED`. ]*/
+/* Tests_SRS_WSIO_01_147: [ When on_underlying_ws_send_frame_complete is called with WS_SEND_CANCELLED, the callback on_send_complete shall be called with IO_SEND_CANCELLED. ]*/
 TEST_FUNCTION(wsio_send_with_1_byte_completed_with_CANCELLED_indicates_the_completion_up_as_CANCELLED)
 {
     // arrange
@@ -1855,7 +1850,7 @@ TEST_FUNCTION(wsio_send_with_1_byte_completed_with_CANCELLED_indicates_the_compl
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_148: [ When `on_underlying_ws_send_frame_complete` is called with any other error code, the callback `on_send_complete` shall be called with `IO_SEND_ERROR`. ]*/
+/* Tests_SRS_WSIO_01_148: [ When on_underlying_ws_send_frame_complete is called with any other error code, the callback on_send_complete shall be called with IO_SEND_ERROR. ]*/
 TEST_FUNCTION(wsio_send_with_1_byte_completed_with_ERROR_indicates_the_completion_up_as_ERROR)
 {
     // arrange
@@ -1883,7 +1878,7 @@ TEST_FUNCTION(wsio_send_with_1_byte_completed_with_ERROR_indicates_the_completio
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_155: [ When `on_underlying_ws_send_frame_complete` is called with a NULL context it shall do nothing. ]*/
+/* Tests_SRS_WSIO_01_155: [ When on_underlying_ws_send_frame_complete is called with a NULL context it shall do nothing. ]*/
 TEST_FUNCTION(on_underlying_ws_send_frame_complete_with_NULL_context_does_nothing)
 {
     // arrange
@@ -1908,7 +1903,7 @@ TEST_FUNCTION(on_underlying_ws_send_frame_complete_with_NULL_context_does_nothin
 
 /* wsio_setoption */
 
-/* Tests_SRS_WSIO_01_109: [ If any of the arguments `ws_io` or `option_name` is NULL `wsio_setoption` shall return a non-zero value. ]*/
+/* Tests_SRS_WSIO_01_109: [ If any of the arguments ws_io or option_name is NULL wsio_setoption shall return a non-zero value. ]*/
 TEST_FUNCTION(wsio_setoption_with_NULL_handle_fails)
 {
     // arrange
@@ -1922,7 +1917,7 @@ TEST_FUNCTION(wsio_setoption_with_NULL_handle_fails)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_WSIO_01_109: [ If any of the arguments `ws_io` or `option_name` is NULL `wsio_setoption` shall return a non-zero value. ]*/
+/* Tests_SRS_WSIO_01_109: [ If any of the arguments ws_io or option_name is NULL wsio_setoption shall return a non-zero value. ]*/
 TEST_FUNCTION(wsio_setoption_with_NULL_option_fails)
 {
     // arrange
@@ -1943,8 +1938,8 @@ TEST_FUNCTION(wsio_setoption_with_NULL_option_fails)
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_183: [ If the option name is `WSIOOptions` then `wsio_setoption` shall call `OptionHandler_FeedOptions` and pass to it the underlying IO handle and the `value` argument. ]*/
-/* Tests_SRS_WSIO_01_158: [ On success, `wsio_setoption` shall return 0. ]*/
+/* Tests_SRS_WSIO_01_183: [ If the option name is WSIOOptions then wsio_setoption shall call OptionHandler_FeedOptions and pass to it the underlying IO handle and the value argument. ]*/
+/* Tests_SRS_WSIO_01_158: [ On success, wsio_setoption shall return 0. ]*/
 TEST_FUNCTION(wsio_setoption_with_WSIOOptions_feeds_the_options_to_the_underlying_layer)
 {
     // arrange
@@ -1967,7 +1962,7 @@ TEST_FUNCTION(wsio_setoption_with_WSIOOptions_feeds_the_options_to_the_underlyin
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_184: [ If `OptionHandler_FeedOptions` fails, `wsio_setoption` shall fail and return a non-zero value. ]*/
+/* Tests_SRS_WSIO_01_184: [ If OptionHandler_FeedOptions fails, wsio_setoption shall fail and return a non-zero value. ]*/
 TEST_FUNCTION(when_OptionHandler_FeedOptions_fails_then_wsio_setoption_fails)
 {
     // arrange
@@ -1991,8 +1986,8 @@ TEST_FUNCTION(when_OptionHandler_FeedOptions_fails_then_wsio_setoption_fails)
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_156: [ Otherwise all options shall be passed as they are to uws by calling `uws_client_set_option`. ]*/
-/* Tests_SRS_WSIO_01_158: [ On success, `wsio_setoption` shall return 0. ]*/
+/* Tests_SRS_WSIO_01_156: [ Otherwise all options shall be passed as they are to uws by calling uws_client_set_option. ]*/
+/* Tests_SRS_WSIO_01_158: [ On success, wsio_setoption shall return 0. ]*/
 TEST_FUNCTION(wsio_setoption_passes_the_option_dows_to_uws)
 {
     // arrange
@@ -2015,7 +2010,7 @@ TEST_FUNCTION(wsio_setoption_passes_the_option_dows_to_uws)
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_157: [ If `uws_client_set_option` fails, `wsio_setoption` shall fail and return a non-zero value. ]*/
+/* Tests_SRS_WSIO_01_157: [ If uws_client_set_option fails, wsio_setoption shall fail and return a non-zero value. ]*/
 TEST_FUNCTION(when_uws_set_option_fails_wsio_setoption_fails)
 {
     // arrange
@@ -2041,7 +2036,7 @@ TEST_FUNCTION(when_uws_set_option_fails_wsio_setoption_fails)
 
 /* wsio_retrieveoptions */
 
-/* Tests_SRS_WSIO_01_118: [ If parameter `handle` is `NULL` then `wsio_retrieveoptions` shall fail and return NULL. ]*/
+/* Tests_SRS_WSIO_01_118: [ If parameter handle is NULL then wsio_retrieveoptions shall fail and return NULL. ]*/
 TEST_FUNCTION(wsio_retrieveoptions_with_NULL_handle_fails)
 {
     // arrange
@@ -2055,10 +2050,10 @@ TEST_FUNCTION(wsio_retrieveoptions_with_NULL_handle_fails)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_WSIO_01_119: [ `wsio_retrieveoptions` shall call `OptionHandler_Create` to produce an `OPTIONHANDLER_HANDLE` and on success return the new `OPTIONHANDLER_HANDLE` handle. ]*/
-/* Tests_SRS_WSIO_01_179: [ When calling `uws_client_retrieve_options` the uws client handle shall be passed to it. ]*/
-/* Tests_SRS_WSIO_01_178: [ `uws_client_retrieve_options` shall add to the option handler one option, whose name shall be `uWSCLientOptions` and the value shall be queried by calling `uws_client_retrieve_options`. ]*/
-/* Tests_SRS_WSIO_01_181: [ Adding the option shall be done by calling `OptionHandler_AddOption`. ]*/
+/* Tests_SRS_WSIO_01_119: [ wsio_retrieveoptions shall call OptionHandler_Create to produce an OPTIONHANDLER_HANDLE and on success return the new OPTIONHANDLER_HANDLE handle. ]*/
+/* Tests_SRS_WSIO_01_179: [ When calling uws_client_retrieve_options the uws client handle shall be passed to it. ]*/
+/* Tests_SRS_WSIO_01_178: [ uws_client_retrieve_options shall add to the option handler one option, whose name shall be uWSCLientOptions and the value shall be queried by calling uws_client_retrieve_options. ]*/
+/* Tests_SRS_WSIO_01_181: [ Adding the option shall be done by calling OptionHandler_AddOption. ]*/
 TEST_FUNCTION(wsio_retrieveoptions_creates_an_option_handler_with_the_value_obtained_from_the_underlying_retrieve_options)
 {
     // arrange
@@ -2083,7 +2078,7 @@ TEST_FUNCTION(wsio_retrieveoptions_creates_an_option_handler_with_the_value_obta
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_120: [ If `OptionHandler_Create` fails then `wsio_retrieveoptions` shall fail and return NULL.  ]*/
+/* Tests_SRS_WSIO_01_120: [ If OptionHandler_Create fails then wsio_retrieveoptions shall fail and return NULL.  ]*/
 TEST_FUNCTION(when_OptionHandler_Create_fails_then_wsio_retrieveoptions_fails)
 {
     // arrange
@@ -2107,7 +2102,7 @@ TEST_FUNCTION(when_OptionHandler_Create_fails_then_wsio_retrieveoptions_fails)
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_180: [ If `uws_client_retrieve_options` fails, `uws_client_retrieve_options` shall fail and return NULL. ]*/
+/* Tests_SRS_WSIO_01_180: [ If uws_client_retrieve_options fails, uws_client_retrieve_options shall fail and return NULL. ]*/
 TEST_FUNCTION(when_uws_client_retrieve_options_fails_then_wsio_retrieveoptions_fails)
 {
     // arrange
@@ -2133,7 +2128,7 @@ TEST_FUNCTION(when_uws_client_retrieve_options_fails_then_wsio_retrieveoptions_f
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_182: [ If `OptionHandler_AddOption` fails, `uws_client_retrieve_options` shall fail and return NULL. ]*/
+/* Tests_SRS_WSIO_01_182: [ If OptionHandler_AddOption fails, uws_client_retrieve_options shall fail and return NULL. ]*/
 TEST_FUNCTION(when_OptionHandler_AddOption_fails_then_wsio_retrieveoptions_fails)
 {
     // arrange
@@ -2163,7 +2158,7 @@ TEST_FUNCTION(when_OptionHandler_AddOption_fails_then_wsio_retrieveoptions_fails
 
 /* wsio_clone_option */
 
-/* Tests_SRS_WSIO_01_174: [ If `wsio_clone_option` is called with NULL `name` or `value` it shall return NULL. ]*/
+/* Tests_SRS_WSIO_01_174: [ If wsio_clone_option is called with NULL name or value it shall return NULL. ]*/
 TEST_FUNCTION(wsio_clone_option_with_NULL_name_fails)
 {
     // arrange
@@ -2185,7 +2180,7 @@ TEST_FUNCTION(wsio_clone_option_with_NULL_name_fails)
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_174: [ If `wsio_clone_option` is called with NULL `name` or `value` it shall return NULL. ]*/
+/* Tests_SRS_WSIO_01_174: [ If wsio_clone_option is called with NULL name or value it shall return NULL. ]*/
 TEST_FUNCTION(wsio_clone_option_with_NULL_value_fails)
 {
     // arrange
@@ -2207,7 +2202,7 @@ TEST_FUNCTION(wsio_clone_option_with_NULL_value_fails)
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_171: [** `wsio_clone_option` called with `name` being `WSIOOptions` shall return the same value. ]*/
+/* Tests_SRS_WSIO_01_171: [** wsio_clone_option called with name being WSIOOptions shall return the same value. ]*/
 TEST_FUNCTION(wsio_clone_option_with_WSIOOptions_clones_the_option_handler)
 {
     // arrange
@@ -2229,7 +2224,7 @@ TEST_FUNCTION(wsio_clone_option_with_WSIOOptions_clones_the_option_handler)
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_173: [ `wsio_clone_option` called with any other option name than `WSIOOptions` shall return NULL. ]*/
+/* Tests_SRS_WSIO_01_173: [ wsio_clone_option called with any other option name than WSIOOptions shall return NULL. ]*/
 TEST_FUNCTION(wsio_clone_option_with_an_unknown_option_name_fails)
 {
     // arrange
@@ -2253,7 +2248,7 @@ TEST_FUNCTION(wsio_clone_option_with_an_unknown_option_name_fails)
 
 /* wsio_destroy_option */
 
-/* Tests_SRS_WSIO_01_175: [ `wsio_destroy_option` called with the option `name` being `WSIOOptions` shall destroy the value by calling `OptionHandler_Destroy`. ]*/
+/* Tests_SRS_WSIO_01_175: [ wsio_destroy_option called with the option name being WSIOOptions shall destroy the value by calling OptionHandler_Destroy. ]*/
 TEST_FUNCTION(wsio_destroy_option_with_WSIOOptions_destroys_the_handler)
 {
     // arrange
@@ -2275,7 +2270,7 @@ TEST_FUNCTION(wsio_destroy_option_with_WSIOOptions_destroys_the_handler)
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_176: [ If `wsio_destroy_option` is called with any other `name` it shall do nothing. ]*/
+/* Tests_SRS_WSIO_01_176: [ If wsio_destroy_option is called with any other name it shall do nothing. ]*/
 TEST_FUNCTION(wsio_destroy_option_with_an_unknown_option_does_no_destroy)
 {
     // arrange
@@ -2295,7 +2290,7 @@ TEST_FUNCTION(wsio_destroy_option_with_an_unknown_option_does_no_destroy)
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_177: [ If `wsio_destroy_option` is called with NULL `name` or `value` it shall do nothing. ]*/
+/* Tests_SRS_WSIO_01_177: [ If wsio_destroy_option is called with NULL name or value it shall do nothing. ]*/
 TEST_FUNCTION(wsio_destroy_option_with_NULL_name_does_no_destroy)
 {
     // arrange
@@ -2315,7 +2310,7 @@ TEST_FUNCTION(wsio_destroy_option_with_NULL_name_does_no_destroy)
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_177: [ If `wsio_destroy_option` is called with NULL `name` or `value` it shall do nothing. ]*/
+/* Tests_SRS_WSIO_01_177: [ If wsio_destroy_option is called with NULL name or value it shall do nothing. ]*/
 TEST_FUNCTION(wsio_destroy_option_with_NULL_value_does_no_destroy)
 {
     // arrange
@@ -2337,8 +2332,8 @@ TEST_FUNCTION(wsio_destroy_option_with_NULL_value_does_no_destroy)
 
 /* on_underlying_ws_close_complete */
 
-/* Tests_SRS_WSIO_01_159: [ When `on_underlying_ws_close_complete` while the IO is closing (after `wsio_close`), the close shall be indicated up by calling the `on_io_close_complete` callback passed to `wsio_close`. ]*/
-/* Tests_SRS_WSIO_01_163: [ When `on_io_close_complete` is called, the context passed to `wsio_close` shall be passed as argument to `on_io_close_complete`. ]*/
+/* Tests_SRS_WSIO_01_159: [ When on_underlying_ws_close_complete while the IO is closing (after wsio_close), the close shall be indicated up by calling the on_io_close_complete callback passed to wsio_close. ]*/
+/* Tests_SRS_WSIO_01_163: [ When on_io_close_complete is called, the context passed to wsio_close shall be passed as argument to on_io_close_complete. ]*/
 TEST_FUNCTION(on_underlying_ws_close_complete_while_closing_triggers_the_send_complete_callback)
 {
     // arrange
@@ -2362,7 +2357,7 @@ TEST_FUNCTION(on_underlying_ws_close_complete_while_closing_triggers_the_send_co
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_160: [ If NULL was passed to `wsio_close` no callback shall be called. ]*/
+/* Tests_SRS_WSIO_01_160: [ If NULL was passed to wsio_close no callback shall be called. ]*/
 TEST_FUNCTION(when_on_close_complete_was_NULL_on_underlying_ws_close_complete_does_not_trigger_any_callback)
 {
     // arrange
@@ -2384,7 +2379,7 @@ TEST_FUNCTION(when_on_close_complete_was_NULL_on_underlying_ws_close_complete_do
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_161: [ If the context passed to `on_underlying_ws_close_complete` is NULL, `on_underlying_ws_close_complete` shall do nothing. ]*/
+/* Tests_SRS_WSIO_01_161: [ If the context passed to on_underlying_ws_close_complete is NULL, on_underlying_ws_close_complete shall do nothing. ]*/
 TEST_FUNCTION(on_underlying_ws_close_complete_with_NULL_context_does_nothing)
 {
     // arrange
@@ -2408,8 +2403,8 @@ TEST_FUNCTION(on_underlying_ws_close_complete_with_NULL_context_does_nothing)
 
 /* on_underlying_ws_peer_closed */
 
-/* Tests_SRS_WSIO_01_170: [ When `on_underlying_ws_peer_closed` and the state of the IO is OPENING an error shall be indicated by calling the `on_io_open_complete` callback passed to `wsio_open` with the error code `WS_OPEN_ERROR`. ]*/
-/* Tests_SRS_WSIO_01_168: [ The `close_code`, `extra_data` and `extra_data_length` arguments shall be ignored. ]*/
+/* Tests_SRS_WSIO_01_170: [ When on_underlying_ws_peer_closed and the state of the IO is OPENING an error shall be indicated by calling the on_io_open_complete callback passed to wsio_open with the error code WS_OPEN_ERROR. ]*/
+/* Tests_SRS_WSIO_01_168: [ The close_code, extra_data and extra_data_length arguments shall be ignored. ]*/
 TEST_FUNCTION(on_underlying_ws_peer_closed_when_OPENING_indicates_an_error)
 {
     // arrange
@@ -2431,8 +2426,8 @@ TEST_FUNCTION(on_underlying_ws_peer_closed_when_OPENING_indicates_an_error)
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_166: [ When `on_underlying_ws_peer_closed` and the state of the IO is OPEN an error shall be indicated by calling the `on_io_error` callback passed to `wsio_open`. ]*/
-/* Tests_SRS_WSIO_01_168: [ The `close_code`, `extra_data` and `extra_data_length` arguments shall be ignored. ]*/
+/* Tests_SRS_WSIO_01_166: [ When on_underlying_ws_peer_closed and the state of the IO is OPEN an error shall be indicated by calling the on_io_error callback passed to wsio_open. ]*/
+/* Tests_SRS_WSIO_01_168: [ The close_code, extra_data and extra_data_length arguments shall be ignored. ]*/
 TEST_FUNCTION(on_underlying_ws_peer_closed_when_OPEN_indicates_an_error)
 {
     // arrange
@@ -2455,8 +2450,8 @@ TEST_FUNCTION(on_underlying_ws_peer_closed_when_OPEN_indicates_an_error)
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_166: [ When `on_underlying_ws_peer_closed` and the state of the IO is OPEN an error shall be indicated by calling the `on_io_error` callback passed to `wsio_open`. ]*/
-/* Tests_SRS_WSIO_01_168: [ The `close_code`, `extra_data` and `extra_data_length` arguments shall be ignored. ]*/
+/* Tests_SRS_WSIO_01_166: [ When on_underlying_ws_peer_closed and the state of the IO is OPEN an error shall be indicated by calling the on_io_error callback passed to wsio_open. ]*/
+/* Tests_SRS_WSIO_01_168: [ The close_code, extra_data and extra_data_length arguments shall be ignored. ]*/
 TEST_FUNCTION(on_underlying_ws_peer_closed_when_CLOSING_indicates_an_error)
 {
     // arrange
@@ -2480,7 +2475,7 @@ TEST_FUNCTION(on_underlying_ws_peer_closed_when_CLOSING_indicates_an_error)
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-// Tests_SRS_WSIO_07_001: [When `on_underlying_ws_peer_closed` and the state of the IO is NOT_OPEN an error will be raised and the io_state will remain as NOT_OPEN]
+// Tests_SRS_WSIO_07_001: [When on_underlying_ws_peer_closed and the state of the IO is NOT_OPEN an error will be raised and the io_state will remain as NOT_OPEN]
 TEST_FUNCTION(on_underlying_ws_peer_closed_when_NOT_OPEN_indicates_an_error)
 {
     // arrange
@@ -2504,7 +2499,7 @@ TEST_FUNCTION(on_underlying_ws_peer_closed_when_NOT_OPEN_indicates_an_error)
     wsio_get_interface_description()->concrete_io_destroy(wsio);
 }
 
-/* Tests_SRS_WSIO_01_167: [ If `on_underlying_ws_peer_closed` is called with a NULL context it shall do nothing. ]*/
+/* Tests_SRS_WSIO_01_167: [ If on_underlying_ws_peer_closed is called with a NULL context it shall do nothing. ]*/
 TEST_FUNCTION(on_underlying_ws_peer_closed_with_NULL_context_does_nothing)
 {
     // arrange

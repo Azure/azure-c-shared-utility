@@ -16,7 +16,7 @@ namespace compilembed
         public string severity { get; set; }
         public string type { get; set; }
         public double percent { get; set; }
-        public string file { get; set; }
+        public object file { get; set; }
         public string line { get; set; }
         public string text { get; set; }
         public string message { get; set; }
@@ -55,6 +55,30 @@ namespace compilembed
         {
             authInfo = userName + ":" + password;
             authInfo = Convert.ToBase64String(Encoding.Default.GetBytes(authInfo));
+        }
+
+        static string StringOrArrayToString(object item)
+        {
+            string result;
+
+            if (item is string)
+            {
+                result = (string)item;
+            }
+            else if (item is object[])
+            {
+                result = "[" + String.Join(", ", (object[])item) + "]";
+            }
+            else if (item != null)
+            {
+                result = item.GetType().ToString();
+            }
+            else
+            {
+                result = null;
+            }
+
+            return result;
         }
 
         public void StartCompile(string platform, string program = null, string repo = null, bool clean = false)
@@ -127,12 +151,12 @@ namespace compilembed
                     {
                         if (msg.type == "cc")
                         {
-                            messages.Add(string.Format("{0}: {1}: {2}: {3}", msg.severity, msg.file, msg.line, msg.message));
+                            messages.Add(string.Format("{0}: {1}: {2}: {3}", msg.severity, StringOrArrayToString(msg.file), msg.line, msg.message));
                             messages.Add(string.Format("{0}", msg.text));
                         }
                         else if (msg.type == "progress")
                         {
-                            messages.Add(string.Format("{0}: {1} ({2:F} %)", msg.action, msg.file, msg.percent));
+                            messages.Add(string.Format("{0}: {1} ({2:F} %)", msg.action, StringOrArrayToString(msg.file), msg.percent));
                         }
                         else if (msg.type == "tool_error")
                         {
