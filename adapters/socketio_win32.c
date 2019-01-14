@@ -325,7 +325,7 @@ static int lookup_address_and_initiate_socket_connection(SOCKET_IO_INSTANCE* soc
 
         if (path_len + 1 > sizeof(addr_un.sun_path))
         {
-            LogError("Path '%s' is too long for a unix socket (max len = %zu)", path, sizeof(addr_un.sun_path));
+            LogError("Path '%s' is too long for a unix socket (max len = %lu)", path, (unsigned long)sizeof(addr_un.sun_path));
             result = __FAILURE__;
         }
         else
