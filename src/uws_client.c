@@ -114,7 +114,7 @@ UWS_CLIENT_HANDLE uws_client_create(const char* hostname, unsigned int port, con
         /* Codes_SRS_UWS_CLIENT_01_411: [ If protocol_count is non zero and protocols is NULL then uws_client_create shall fail and return NULL. ]*/
         ((protocols == NULL) && (protocol_count > 0)))
     {
-        LogError("Invalid arguments: hostname = %p, resource_name = %p, protocols = %p, protocol_count = %zu", hostname, resource_name, protocols, protocol_count);
+        LogError("Invalid arguments: hostname = %p, resource_name = %p, protocols = %p, protocol_count = %lu", hostname, resource_name, protocols, (unsigned long)protocol_count);
         result = NULL;
     }
     else
@@ -131,7 +131,7 @@ UWS_CLIENT_HANDLE uws_client_create(const char* hostname, unsigned int port, con
 
         if (i < protocol_count)
         {
-            LogError("Protocol index %zu has NULL name", i);
+            LogError("Protocol index %lu has NULL name", (unsigned long)i);
             result = NULL;
         }
         else
@@ -355,7 +355,7 @@ UWS_CLIENT_HANDLE uws_client_create_with_io(const IO_INTERFACE_DESCRIPTION* io_i
         /* Codes_SRS_UWS_CLIENT_01_525: [ If protocol_count is non zero and protocols is NULL then uws_client_create_with_io shall fail and return NULL. ]*/
         ((protocols == NULL) && (protocol_count > 0)))
     {
-        LogError("Invalid arguments: io_interface = %p, resource_name = %p, protocols = %p, protocol_count = %zu", io_interface, resource_name, protocols, protocol_count);
+        LogError("Invalid arguments: io_interface = %p, resource_name = %p, protocols = %p, protocol_count = %lu", io_interface, resource_name, protocols, (unsigned long)protocol_count);
         result = NULL;
     }
     else
@@ -372,7 +372,7 @@ UWS_CLIENT_HANDLE uws_client_create_with_io(const IO_INTERFACE_DESCRIPTION* io_i
         if (i < protocol_count)
         {
             /* Codes_SRS_UWS_CLIENT_01_526: [ If the protocol member of any of the items in the protocols argument is NULL, then uws_client_create_with_io shall fail and return NULL. ]*/
-            LogError("Protocol index %zu has NULL name", i);
+            LogError("Protocol index %lu has NULL name", (unsigned long)i);
             result = NULL;
         }
         else
