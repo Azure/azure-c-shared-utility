@@ -648,7 +648,7 @@ static int tlsio_appleios_send_async(CONCRETE_IO_HANDLE tls_io, const void* buff
     {
         /* Codes_SRS_TLSIO_30_062: [ If the on_send_complete is NULL, tlsio_appleios_compact_send shall log the error and return FAILURE. ]*/
         result = __FAILURE__;
-        LogError("Invalid parameter specified: tls_io: %p, buffer: %p, size: %zu, on_send_complete: %p", tls_io, buffer, size, on_send_complete);
+        LogError("Invalid parameter specified: tls_io: %p, buffer: %p, size: %lu, on_send_complete: %p", tls_io, buffer, (unsigned long)size, on_send_complete);
     }
     else
     {

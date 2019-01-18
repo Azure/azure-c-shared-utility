@@ -323,7 +323,7 @@ BEGIN_TEST_SUITE(ws_url_ut)
             ws_url = ws_url_create(url);
 
             // assert
-            sprintf(error_msg, "On failed call %zu", i);
+            sprintf(error_msg, "On failed call %lu", (unsigned long)i);
             ASSERT_IS_NULL(ws_url, error_msg);
         }
 

@@ -40,7 +40,7 @@ static void on_io_open_complete(void* context, IO_OPEN_RESULT open_result)
 static void on_io_bytes_received(void* context, const unsigned char* buffer, size_t size)
 {
     (void)context, (void)buffer;
-    (void)printf("Received %zu bytes\r\n", size);
+    (void)printf("Received %lu bytes\r\n", (unsigned long)size);
 }
 
 static void on_io_error(void* context)
