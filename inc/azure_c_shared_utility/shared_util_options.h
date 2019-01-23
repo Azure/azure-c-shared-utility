@@ -47,6 +47,8 @@ extern "C"
     static STATIC_VAR_UNUSED const char* const OPTION_ADDRESS_TYPE = "ADDRESS_TYPE";
     static STATIC_VAR_UNUSED const char* const OPTION_ADDRESS_TYPE_DOMAIN_SOCKET = "DOMAIN_SOCKET";
     static STATIC_VAR_UNUSED const char* const OPTION_ADDRESS_TYPE_IP_SOCKET = "IP_SOCKET";
+    
+    static STATIC_VAR_UNUSED const char* const OPTION_DO_WORK_FREQUENCY_IN_MS = "do_work_freq_ms";
 
 #ifdef __cplusplus
 }
