@@ -28,11 +28,11 @@ EXPORTS
     COND_RESULTStringStorage
     COND_RESULTStrings
     COND_RESULT_FromString
-    CONSTBUFFER_Clone
     CONSTBUFFER_Create
     CONSTBUFFER_CreateFromBuffer
-    CONSTBUFFER_Destroy
+    CONSTBUFFER_DecRef
     CONSTBUFFER_GetContent
+    CONSTBUFFER_IncRef
     CONSTMAP_RESULTStringStorage
     CONSTMAP_RESULTStrings
     CONSTMAP_RESULT_FromString

@@ -80,7 +80,7 @@ MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create_from_arra
 
 **SRS_CONSTBUFFER_ARRAY_42_003: [** `constbuffer_array_create_from_array_array` shall allocate memory to hold all of the `CONSTBUFFER_HANDLES` from `buffer_arrays`. **]**
 
-**SRS_CONSTBUFFER_ARRAY_42_004: [** `constbuffer_array_create_from_array_array` shall copy all of the `CONSTBUFFER_HANDLES` from each const buffer array in `buffer_arrays` to the newly constructed array by calling `CONSTBUFFER_Clone`. **]**
+**SRS_CONSTBUFFER_ARRAY_42_004: [** `constbuffer_array_create_from_array_array` shall copy all of the `CONSTBUFFER_HANDLES` from each const buffer array in `buffer_arrays` to the newly constructed array by calling `CONSTBUFFER_IncRef`. **]**
 
 **SRS_CONSTBUFFER_ARRAY_42_007: [** `constbuffer_array_create_from_array_array` shall succeed and return a non-`NULL` value. **]**
 
@@ -191,8 +191,6 @@ MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, constbuffer_array_get_buffer, CONSTBUFFE
 **SRS_CONSTBUFFER_ARRAY_01_007: [** If `constbuffer_array_handle` is NULL, `constbuffer_array_get_buffer` shall fail and return NULL. **]**
 
 **SRS_CONSTBUFFER_ARRAY_01_008: [** If `buffer_index` is greater or equal to the number of buffers in the array, `constbuffer_array_get_buffer` shall fail and return NULL. **]**
-
-**SRS_CONSTBUFFER_ARRAY_01_015: [** If any error occurs, `constbuffer_array_get_buffer` shall fail and return NULL. **]**
 
 ### constbuffer_array_get_buffer_content
 
