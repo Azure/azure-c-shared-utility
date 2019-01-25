@@ -13,9 +13,9 @@
         CONSTBUFFER_CreateFromBuffer, \
         CONSTBUFFER_CreateWithMoveMemory, \
         CONSTBUFFER_CreateWithCustomFree, \
-        CONSTBUFFER_Clone, \
+        CONSTBUFFER_IncRef, \
         CONSTBUFFER_GetContent, \
-        CONSTBUFFER_Destroy \
+        CONSTBUFFER_DecRef \
 )
 
 #ifdef __cplusplus
@@ -34,12 +34,11 @@ CONSTBUFFER_HANDLE real_CONSTBUFFER_CreateWithMoveMemory(unsigned char* source, 
 
 CONSTBUFFER_HANDLE real_CONSTBUFFER_CreateWithCustomFree(const unsigned char* source, size_t size, CONSTBUFFER_CUSTOM_FREE_FUNC custom_free_func, void* custom_free_func_context);
 
-CONSTBUFFER_HANDLE real_CONSTBUFFER_Clone(CONSTBUFFER_HANDLE constbufferHandle);
+void real_CONSTBUFFER_IncRef(CONSTBUFFER_HANDLE constbufferHandle);
+
+void real_CONSTBUFFER_DecRef(CONSTBUFFER_HANDLE constbufferHandle);
 
 const CONSTBUFFER* real_CONSTBUFFER_GetContent(CONSTBUFFER_HANDLE constbufferHandle);
-
-void real_CONSTBUFFER_Destroy(CONSTBUFFER_HANDLE constbufferHandle);
-
 
 #ifdef __cplusplus
 }

@@ -180,19 +180,18 @@ CONSTBUFFER_HANDLE CONSTBUFFER_CreateWithCustomFree(const unsigned char* source,
     return result;
 }
 
-CONSTBUFFER_HANDLE CONSTBUFFER_Clone(CONSTBUFFER_HANDLE constbufferHandle)
+void CONSTBUFFER_IncRef(CONSTBUFFER_HANDLE constbufferHandle)
 {
     if (constbufferHandle == NULL)
     {
-        /*Codes_SRS_CONSTBUFFER_02_013: [If constbufferHandle is NULL then CONSTBUFFER_Clone shall fail and return NULL.]*/
-        LogError("invalid arg");
+        /*Codes_SRS_CONSTBUFFER_02_013: [If constbufferHandle is NULL then CONSTBUFFER_IncRef shall return.]*/
+        LogError("Invalid arguments: CONSTBUFFER_HANDLE constbufferHandle=%p", constbufferHandle);
     }
     else
     {
-        /*Codes_SRS_CONSTBUFFER_02_014: [Otherwise, CONSTBUFFER_Clone shall increment the reference count and return constbufferHandle.]*/
+        /*Codes_SRS_CONSTBUFFER_02_014: [Otherwise, CONSTBUFFER_IncRef shall increment the reference count.]*/
         INC_REF_VAR(constbufferHandle->count);
     }
-    return constbufferHandle;
 }
 
 const CONSTBUFFER* CONSTBUFFER_GetContent(CONSTBUFFER_HANDLE constbufferHandle)
@@ -212,12 +211,16 @@ const CONSTBUFFER* CONSTBUFFER_GetContent(CONSTBUFFER_HANDLE constbufferHandle)
     return result;
 }
 
-void CONSTBUFFER_Destroy(CONSTBUFFER_HANDLE constbufferHandle)
+void CONSTBUFFER_DecRef(CONSTBUFFER_HANDLE constbufferHandle)
 {
-    /*Codes_SRS_CONSTBUFFER_02_015: [If constbufferHandle is NULL then CONSTBUFFER_Destroy shall do nothing.]*/
-    if (constbufferHandle != NULL)
+    if (constbufferHandle == NULL)
     {
-        /*Codes_SRS_CONSTBUFFER_02_016: [Otherwise, CONSTBUFFER_Destroy shall decrement the refcount on the constbufferHandle handle.]*/
+        /*Codes_SRS_CONSTBUFFER_02_015: [If constbufferHandle is NULL then CONSTBUFFER_DecRef shall do nothing.]*/
+        LogError("Invalid arguments: CONSTBUFFER_HANDLE constbufferHandle=%p", constbufferHandle);
+    }
+    else
+    {
+        /*Codes_SRS_CONSTBUFFER_02_016: [Otherwise, CONSTBUFFER_DecRef shall decrement the refcount on the constbufferHandle handle.]*/
         if (DEC_REF_VAR(constbufferHandle->count) == DEC_RETURN_ZERO)
         {
             if (constbufferHandle->buffer_type == CONSTBUFFER_TYPE_MEMORY_MOVED)
@@ -230,7 +233,7 @@ void CONSTBUFFER_Destroy(CONSTBUFFER_HANDLE constbufferHandle)
                 constbufferHandle->custom_free_func(constbufferHandle->custom_free_func_context);
             }
 
-            /*Codes_SRS_CONSTBUFFER_02_017: [If the refcount reaches zero, then CONSTBUFFER_Destroy shall deallocate all resources used by the CONSTBUFFER_HANDLE.]*/
+            /*Codes_SRS_CONSTBUFFER_02_017: [If the refcount reaches zero, then CONSTBUFFER_DecRef shall deallocate all resources used by the CONSTBUFFER_HANDLE.]*/
             free(constbufferHandle);
         }
     }
