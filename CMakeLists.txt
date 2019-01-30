@@ -202,6 +202,7 @@ ${LOGGING_C_FILE}
 ./src/vector.c
 ${XLOGGING_C_FILE}
 ./src/optionhandler.c
+./src/memory_data.c
 ./adapters/agenttime.c
 ${CONDITION_C_FILE}
 ${LOCK_C_FILE}
@@ -326,6 +327,7 @@ ${LOGGING_H_FILE}
 ./inc/azure_c_shared_utility/constbuffer.h
 ./inc/azure_c_shared_utility/tlsio.h
 ./inc/azure_c_shared_utility/optionhandler.h
+./inc/azure_c_shared_utility/memory_data.h
 )
 
 if(UNIX) #LINUX OR APPLE
