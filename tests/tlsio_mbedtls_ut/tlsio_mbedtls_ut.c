@@ -465,7 +465,7 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
             umock_c_negative_tests_fail_call(index);
 
             char tmp_msg[64];
-            sprintf(tmp_msg, "tlsio_mbedtls_create failure in test %zu/%zu", index, count);
+            sprintf(tmp_msg, "tlsio_mbedtls_create failure in test %lu/%lu", (unsigned long)index, (unsigned long)count);
 
             //act
             CONCRETE_IO_HANDLE handle = tlsio_mbedtls_create(&tls_io_config);
