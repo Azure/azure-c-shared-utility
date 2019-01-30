@@ -224,7 +224,7 @@ TEST_FUNCTION(when_a_failure_occurs_for_tlsio_cyclonessl_socket_create_then_crea
         umock_c_negative_tests_fail_call(i);
 
         char temp_str[128];
-        (void)sprintf(temp_str, "On failed call %zu", i);
+        (void)sprintf(temp_str, "On failed call %lu", (unsigned long)i);
 
         ///act
         int result = tlsio_cyclonessl_socket_create("testhostname", 4242, &socket);

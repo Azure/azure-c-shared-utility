@@ -206,7 +206,7 @@ static size_t ContentWriteFunction(void *ptr, size_t size, size_t nmemb, void *u
         }
         else
         {
-            LogError("Could not allocate buffer of size %zu", (size_t)(responseContentBuffer->bufferSize + (size * nmemb)));
+            LogError("Could not allocate buffer of size %lu", (unsigned long)(responseContentBuffer->bufferSize + (size * nmemb)));
             responseContentBuffer->error = 1;
             if (responseContentBuffer->buffer != NULL)
             {

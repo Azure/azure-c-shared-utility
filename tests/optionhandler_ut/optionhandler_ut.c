@@ -257,7 +257,7 @@ BEGIN_TEST_SUITE(optionhandler_unittests)
             umock_c_negative_tests_fail_call(i);
 
             ///act
-            (void)sprintf(temp_str, "On failed call %zu", i);
+            (void)sprintf(temp_str, "On failed call %lu", (unsigned long)i);
 
             ///act
             h = OptionHandler_Create(aCloneOption, aDestroyOption, aSetOption);
@@ -891,7 +891,7 @@ BEGIN_TEST_SUITE(optionhandler_unittests)
             umock_c_negative_tests_fail_call(i);
 
             ///act
-            (void)sprintf(temp_str, "On failed call %zu", i);
+            (void)sprintf(temp_str, "On failed call %lu", (unsigned long)i);
 
             ///act
             result = OptionHandler_AddOption(handle, "name", value);
@@ -1041,7 +1041,7 @@ BEGIN_TEST_SUITE(optionhandler_unittests)
             umock_c_negative_tests_fail_call(i);
 
             ///act
-            (void)sprintf(temp_str, "On failed call %zu", i);
+            (void)sprintf(temp_str, "On failed call %lu", (unsigned long)i);
 
             ///act
             result = OptionHandler_FeedOptions(handle, (void*)42);
@@ -1144,7 +1144,7 @@ BEGIN_TEST_SUITE(optionhandler_unittests)
             umock_c_negative_tests_fail_call(i);
 
             ///act
-            (void)sprintf(temp_str, "On failed call %zu", i);
+            (void)sprintf(temp_str, "On failed call %lu", (unsigned long)i);
 
             ///act
             result = OptionHandler_FeedOptions(handle, (void*)42);

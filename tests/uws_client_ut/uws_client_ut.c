@@ -1327,7 +1327,7 @@ TEST_FUNCTION(when_any_call_fails_uws_client_create_with_io_fails)
         umock_c_negative_tests_reset();
         umock_c_negative_tests_fail_call(i);
 
-        (void)sprintf(temp_str, "On failed call %zu", i);
+        (void)sprintf(temp_str, "On failed call %lu", (unsigned long)i);
 
         // act
         uws_client = uws_client_create_with_io(TEST_SOCKET_IO_INTERFACE_DESCRIPTION, &socketio_config, "test_host", 80, "111", two_protocols, sizeof(two_protocols) / sizeof(two_protocols[0]));
@@ -7676,7 +7676,7 @@ TEST_FUNCTION(uws_client_set_request_header_negative_tests)
         // act
         result = uws_client_set_request_header(uws_client, req_header1_key, req_header1_value);
 
-        sprintf(error_msg, "On failed call %zu", i);
+        sprintf(error_msg, "On failed call %lu", (unsigned long)i);
         ASSERT_ARE_NOT_EQUAL(int, 0, result, error_msg);
     }
 
