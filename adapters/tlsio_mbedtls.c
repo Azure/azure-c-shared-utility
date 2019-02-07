@@ -919,14 +919,14 @@ OPTIONHANDLER_HANDLE tlsio_mbedtls_retrieveoptions(CONCRETE_IO_HANDLE handle)
                 OptionHandler_Destroy(result);
                 result = NULL;
             }
-            else if (tls_io_instance->trusted_certificates != NULL &&
+            else if (tls_io_instance->trusted_certificates != NULL && tls_io_instance->trusted_certificates != NULL &&
                      OptionHandler_AddOption(result, OPTION_TRUSTED_CERT, tls_io_instance->trusted_certificates) != OPTIONHANDLER_OK)
             {
                 LogError("unable to save TrustedCerts option");
                 OptionHandler_Destroy(result);
                 result = NULL;
             }
-            else if (&tls_io_instance->owncert != NULL &&
+            else if (&tls_io_instance->owncert != NULL && tls_io_instance->x509_certificate != NULL && 
                     OptionHandler_AddOption(result, SU_OPTION_X509_CERT, tls_io_instance->x509_certificate) != OPTIONHANDLER_OK)
             {
                 LogError("unable to save x509certificate option");
@@ -934,7 +934,7 @@ OPTIONHANDLER_HANDLE tlsio_mbedtls_retrieveoptions(CONCRETE_IO_HANDLE handle)
                 result = NULL;
             }
             else if (
-                (&tls_io_instance->pKey != NULL) &&
+                (&tls_io_instance->pKey != NULL) && tls_io_instance->x509_private_key != NULL &&
                 (OptionHandler_AddOption(result, SU_OPTION_X509_PRIVATE_KEY, tls_io_instance->x509_private_key) != OPTIONHANDLER_OK)
                 )
             {
