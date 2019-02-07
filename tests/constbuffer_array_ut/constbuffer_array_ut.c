@@ -1817,4 +1817,86 @@ TEST_FUNCTION(constbuffer_array_get_all_buffers_size_with_2_buffers_succeeds)
     constbuffer_array_dec_ref(afterAdd2);
 }
 
+/* constbuffer_array_get_const_buffer_handle_array */
+
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_026: [ If `constbuffer_array_handle` is NULL, `constbuffer_array_get_const_buffer_handle_array` shall fail and return NULL. ]*/
+TEST_FUNCTION(constbuffer_array_get_const_buffer_handle_array_with_NULL_constbuffer_array_handle_fails)
+{
+    ///arrange
+    const CONSTBUFFER_HANDLE* result;
+
+    ///act
+    result = constbuffer_array_get_const_buffer_handle_array(NULL);
+
+    ///assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_IS_NULL(result);
+}
+
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_027: [ Otherwise `constbuffer_array_get_const_buffer_handle_array` shall return the array of const buffer handles backing the const buffer array. ]*/
+TEST_FUNCTION(constbuffer_array_get_const_buffer_handle_array_with_empty_array_succeeds)
+{
+    ///arrange
+    const CONSTBUFFER_HANDLE* result;
+    CONSTBUFFER_ARRAY_HANDLE constbuffer_array = constbuffer_array_create_empty();
+    umock_c_reset_all_calls();
+
+    ///act
+    result = constbuffer_array_get_const_buffer_handle_array(constbuffer_array);
+
+    ///assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_IS_NOT_NULL(result);
+
+    /// cleanup
+    constbuffer_array_dec_ref(constbuffer_array);
+}
+
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_027: [ Otherwise `constbuffer_array_get_const_buffer_handle_array` shall return the array of const buffer handles backing the const buffer array. ]*/
+TEST_FUNCTION(constbuffer_array_get_const_buffer_handle_array_with_array_with_1_buffer_succeeds)
+{
+    ///arrange
+    const CONSTBUFFER_HANDLE* result;
+    CONSTBUFFER_ARRAY_HANDLE constbuffer_array = constbuffer_array_create_empty();
+    CONSTBUFFER_ARRAY_HANDLE afterAdd1 = TEST_constbuffer_array_add_front(constbuffer_array, 0, TEST_CONSTBUFFER_HANDLE_1);
+    umock_c_reset_all_calls();
+
+    ///act
+    result = constbuffer_array_get_const_buffer_handle_array(afterAdd1);
+
+    ///assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_IS_NOT_NULL(result);
+    ASSERT_ARE_EQUAL(void_ptr, TEST_CONSTBUFFER_HANDLE_1, result[0]);
+
+    /// cleanup
+    constbuffer_array_dec_ref(constbuffer_array);
+    constbuffer_array_dec_ref(afterAdd1);
+}
+
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_027: [ Otherwise `constbuffer_array_get_const_buffer_handle_array` shall return the array of const buffer handles backing the const buffer array. ]*/
+TEST_FUNCTION(constbuffer_array_get_const_buffer_handle_array_with_array_with_2_buffers_succeeds)
+{
+    ///arrange
+    const CONSTBUFFER_HANDLE* result;
+    CONSTBUFFER_ARRAY_HANDLE constbuffer_array = constbuffer_array_create_empty();
+    CONSTBUFFER_ARRAY_HANDLE afterAdd1 = TEST_constbuffer_array_add_front(constbuffer_array, 0, TEST_CONSTBUFFER_HANDLE_1);
+    CONSTBUFFER_ARRAY_HANDLE afterAdd2 = TEST_constbuffer_array_add_front(afterAdd1, 0, TEST_CONSTBUFFER_HANDLE_2);
+    umock_c_reset_all_calls();
+
+    ///act
+    result = constbuffer_array_get_const_buffer_handle_array(afterAdd2);
+
+    ///assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_IS_NOT_NULL(result);
+    ASSERT_ARE_EQUAL(void_ptr, TEST_CONSTBUFFER_HANDLE_2, result[0]);
+    ASSERT_ARE_EQUAL(void_ptr, TEST_CONSTBUFFER_HANDLE_1, result[1]);
+
+    /// cleanup
+    constbuffer_array_dec_ref(constbuffer_array);
+    constbuffer_array_dec_ref(afterAdd1);
+    constbuffer_array_dec_ref(afterAdd2);
+}
+
 END_TEST_SUITE(constbuffer_array_unittests)
