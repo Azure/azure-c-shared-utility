@@ -6,7 +6,6 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include "mbed_wait_api.h"
 #include "mbedtls/config.h"
 #include "mbedtls/debug.h"
 #include "mbedtls/ssl.h"
@@ -352,13 +351,13 @@ static int tlsio_entropy_poll(void *v, unsigned char *output, size_t len, size_t
 {
     (void)v;
     int result = 0;
-    srand(time(NULL));
+    srand((unsigned int)time(NULL));
     for (uint16_t i = 0; i < len; i++)
     {
         output[i] = rand() % 256;
     }
     *olen = len;
-    return 0;
+    return result;
 }
 
 // Un-initialize mbedTLS
@@ -377,9 +376,8 @@ static void mbedtls_uninit(TLS_IO_INSTANCE *tls_io_instance)
     }
 }
 
-static void mbedtls_init(void *instance)
+static void mbedtls_init(TLS_IO_INSTANCE *tls_io_instance)
 {
-    TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE *)instance;
     if (tls_io_instance->tls_status == TLS_STATE_INITIALIZED)
     {
         // Already initialized
