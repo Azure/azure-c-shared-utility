@@ -501,6 +501,8 @@ void tlsio_mbedtls_destroy(CONCRETE_IO_HANDLE tls_io)
     {
         TLS_IO_INSTANCE *tls_io_instance = (TLS_IO_INSTANCE *)tls_io;
 
+        mbedtls_uninit(tls_io_instance);
+
         // mbedTLS cleanup...
         mbedtls_ssl_close_notify(&tls_io_instance->ssl);
         mbedtls_ssl_free(&tls_io_instance->ssl);
@@ -514,24 +516,30 @@ void tlsio_mbedtls_destroy(CONCRETE_IO_HANDLE tls_io)
         if (tls_io_instance->socket_io_read_bytes != NULL)
         {
             free(tls_io_instance->socket_io_read_bytes);
+            tls_io_instance->socket_io_read_bytes = NULL;
         }
         xio_destroy(tls_io_instance->socket_io);
         if (tls_io_instance->hostname != NULL)
         {
             free(tls_io_instance->hostname);
+            tls_io_instance->hostname = NULL;
         }
         if (tls_io_instance->trusted_certificates != NULL)
         {
             free(tls_io_instance->trusted_certificates);
+            tls_io_instance->trusted_certificates = NULL;
         }
         if (tls_io_instance->x509_certificate != NULL)
         {
             free(tls_io_instance->x509_certificate);
+            tls_io_instance->x509_certificate = NULL;
         }
         if (tls_io_instance->x509_private_key != NULL)
         {
             free(tls_io_instance->x509_private_key);
+            tls_io_instance->x509_private_key = NULL;
         }
+        xio_destroy(tls_io_instance->socket_io);
         free(tls_io);
     }
 }
@@ -919,7 +927,7 @@ OPTIONHANDLER_HANDLE tlsio_mbedtls_retrieveoptions(CONCRETE_IO_HANDLE handle)
                 OptionHandler_Destroy(result);
                 result = NULL;
             }
-            else if (tls_io_instance->trusted_certificates != NULL && tls_io_instance->trusted_certificates != NULL &&
+            else if (tls_io_instance->trusted_certificates != NULL &&
                      OptionHandler_AddOption(result, OPTION_TRUSTED_CERT, tls_io_instance->trusted_certificates) != OPTIONHANDLER_OK)
             {
                 LogError("unable to save TrustedCerts option");
