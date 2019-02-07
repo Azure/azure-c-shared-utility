@@ -366,6 +366,7 @@ static void mbedtls_uninit(TLS_IO_INSTANCE *tls_io_instance)
     if (tls_io_instance->tls_status != TLS_STATE_NOT_INITIALIZED)
     {
         // mbedTLS cleanup...
+        mbedtls_ssl_close_notify(&tls_io_instance->ssl);
         mbedtls_ssl_free(&tls_io_instance->ssl);
         mbedtls_ssl_config_free(&tls_io_instance->config);
         mbedtls_x509_crt_free(&tls_io_instance->trusted_certificates_parsed);
@@ -501,14 +502,6 @@ void tlsio_mbedtls_destroy(CONCRETE_IO_HANDLE tls_io)
 
         mbedtls_uninit(tls_io_instance);
 
-        // mbedTLS cleanup...
-        mbedtls_ssl_close_notify(&tls_io_instance->ssl);
-        mbedtls_ssl_free(&tls_io_instance->ssl);
-        mbedtls_ssl_config_free(&tls_io_instance->config);
-        mbedtls_x509_crt_free(&tls_io_instance->trusted_certificates_parsed);
-        mbedtls_ctr_drbg_free(&tls_io_instance->ctr_drbg);
-        mbedtls_entropy_free(&tls_io_instance->entropy);
-
         xio_close(tls_io_instance->socket_io, NULL, NULL);
 
         if (tls_io_instance->socket_io_read_bytes != NULL)
@@ -537,7 +530,6 @@ void tlsio_mbedtls_destroy(CONCRETE_IO_HANDLE tls_io)
             free(tls_io_instance->x509_private_key);
             tls_io_instance->x509_private_key = NULL;
         }
-        xio_destroy(tls_io_instance->socket_io);
         free(tls_io);
     }
 }
