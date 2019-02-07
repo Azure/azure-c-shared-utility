@@ -459,3 +459,22 @@ int constbuffer_array_get_all_buffers_size(CONSTBUFFER_ARRAY_HANDLE constbuffer_
 
     return result;
 }
+
+const CONSTBUFFER_HANDLE* constbuffer_array_get_const_buffer_handle_array(CONSTBUFFER_ARRAY_HANDLE constbuffer_array_handle)
+{
+    const CONSTBUFFER_HANDLE* result;
+
+    /* Codes_SRS_CONSTBUFFER_ARRAY_01_026: [ If `constbuffer_array_handle` is NULL, `constbuffer_array_get_const_buffer_handle_array` shall fail and return NULL. ]*/
+    if (constbuffer_array_handle == NULL)
+    {
+        LogError("CONSTBUFFER_ARRAY_HANDLE constbuffer_array_handle=%p", constbuffer_array_handle);
+        result = NULL;
+    }
+    else
+    {
+        /* Codes_SRS_CONSTBUFFER_ARRAY_01_027: [ Otherwise `constbuffer_array_get_const_buffer_handle_array` shall return the array of const buffer handles backing the const buffer array. ]*/
+        result = constbuffer_array_handle->buffers;
+    }
+
+    return result;
+}
