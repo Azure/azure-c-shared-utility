@@ -544,9 +544,9 @@ if (${original_run_unittests} OR ${original_run_int_tests})
         execute_process(COMMAND git clone https://github.com/Azure/azure-ctest.git -q --no-tags ${CMAKE_CURRENT_SOURCE_DIR}/deps/ctest)
     endif()
 
-    #include("dependencies-test.cmake")
-    include_directories(${UMOCK_C_INC_FOLDER})
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/deps/umock-c)
+    include_directories(${UMOCK_C_INC_FOLDER})
+
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/deps/testrunnerswitcher)
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/deps/ctest)
 endif()
