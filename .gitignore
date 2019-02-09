@@ -102,3 +102,6 @@ $tf/
 # Microsoft Azure Build Output
 csx/
 *.build.csdef
+
+#dependencies
+deps/

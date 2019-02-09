@@ -10,9 +10,9 @@ set(ignore_me ${use_wsio})
 include("${CMAKE_CURRENT_LIST_DIR}/azure_iot_build_rules.cmake")
 include("${SHARED_UTIL_FOLDER}/dependencies-test.cmake")
 
-add_subdirectory(${SHARED_UTIL_FOLDER}/testtools/ctest)
-add_subdirectory(${SHARED_UTIL_FOLDER}/testtools/testrunner)
-add_subdirectory(${SHARED_UTIL_FOLDER}/testtools/umock-c)
+add_subdirectory(${SHARED_UTIL_FOLDER}/deps/ctest)
+add_subdirectory(${SHARED_UTIL_FOLDER}/deps/testrunner)
+add_subdirectory(${SHARED_UTIL_FOLDER}/deps/umock-c)
 
 #Setup the platform files in order to include the logging file definitions
 include("${SHARED_UTIL_FOLDER}/configs/azure_c_shared_utilityFunctions.cmake")
