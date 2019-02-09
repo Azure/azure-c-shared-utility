@@ -164,9 +164,6 @@ elseif(APPLE)
     endif()
 endif()
 
-
-include_directories(${UMOCK_C_INC_FOLDER})
-
 #these are the C source files
 set(source_c_files
 ./src/base32.c
@@ -539,14 +536,17 @@ set(run_unittests OFF)
 set(run_int_tests OFF)
 
 if (${original_run_unittests} OR ${original_run_int_tests})
-    include("dependencies-test.cmake")
-    #add_subdirectory(testtools)
+    #Clone the test submodules if needed
     if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/deps/testrunnerswitcher/CMakeLists.txt")
         execute_process(COMMAND git clone https://github.com/Azure/azure-c-testrunnerswitcher.git -q --no-tags ${CMAKE_CURRENT_SOURCE_DIR}/deps/testrunnerswitcher)
     endif()
     if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/deps/ctest/CMakeLists.txt")
         execute_process(COMMAND git clone https://github.com/Azure/azure-ctest.git -q --no-tags ${CMAKE_CURRENT_SOURCE_DIR}/deps/ctest)
     endif()
+
+    #include("dependencies-test.cmake")
+    include_directories(${UMOCK_C_INC_FOLDER})
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/deps/umock-c)
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/deps/testrunnerswitcher)
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/deps/ctest)
 endif()
