@@ -3,21 +3,28 @@
 
 #include "azure_c_shared_utility/platform.h"
 #include "azure_c_shared_utility/xio.h"
+#ifdef USE_CYCLONESSL
 #include "azure_c_shared_utility/tlsio_cyclonessl.h"
+#else
+#include "azure_c_shared_utility/tlsio_mbedtls.h"
+#endif
 #include "azure_c_shared_utility/threadapi.h"
 
 #include "debug.h"
 
 int platform_init(void)
 {
-    //TODO Add proper network events synchronization
     ThreadAPI_Sleep(10000);
     return 0;
 }
 
 const IO_INTERFACE_DESCRIPTION* platform_get_default_tlsio(void)
 {
+#ifdef USE_CYCLONESSL
     return tlsio_cyclonessl_get_interface_description();
+#else
+    return tlsio_mbedtls_get_interface_description();
+#endif
 }
 
 STRING_HANDLE platform_get_platform_info(void)

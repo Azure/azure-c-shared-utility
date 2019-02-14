@@ -25,8 +25,11 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/select.h>
+
 #ifdef TIZENRT
 #include <net/lwip/tcp.h>
+#elif FREERTOS
+#include "lwip/tcp.h"
 #else
 #include <netinet/tcp.h>
 #endif
@@ -42,10 +45,12 @@
 #include "azure_c_shared_utility/shared_util_options.h"
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/const_defines.h"
+#ifndef FREERTOS
 #include <sys/ioctl.h>
 #include <netinet/in.h>
-#include <arpa/inet.h>
 #include <sys/un.h>
+#endif
+#include <arpa/inet.h>
 
 #define SOCKET_SUCCESS                 0
 #define INVALID_SOCKET                 -1

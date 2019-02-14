@@ -636,7 +636,27 @@ endfunction()
 # This function focuses on setting files which are unique to a given hardware platform.
 # The choice of tlsio is not unique per-platform, and is set in the main CMakeLists.txt
 function(set_platform_files c_shared_dir)
-    if(WIN32)
+    if(FREERTOS)
+        set(XLOGGING_C_FILE ${c_shared_dir}/src/xlogging.c PARENT_SCOPE)
+        set(LOGGING_C_FILE ${c_shared_dir}/src/consolelogger.c PARENT_SCOPE)
+        set(LOGGING_H_FILE ${c_shared_dir}/inc/azure_c_shared_utility/consolelogger.h PARENT_SCOPE)
+	
+        if(${use_condition})
+            set(CONDITION_C_FILE ${c_shared_dir}/adapters/condition_freertos.c PARENT_SCOPE)
+        endif()
+	
+        set(HTTP_C_FILE ${c_shared_dir}/adapters/httpapi_compact.c PARENT_SCOPE)
+        set(LOCK_C_FILE ${c_shared_dir}/pal/freertos/lock.c PARENT_SCOPE)
+        set(PLATFORM_C_FILE ${c_shared_dir}/adapters/platform_freertos.c PARENT_SCOPE)
+	
+        if (${use_socketio})
+            set(SOCKETIO_C_FILE ${c_shared_dir}/adapters/socketio_berkeley.c PARENT_SCOPE)
+        endif()
+	
+        set(THREAD_C_FILE ${c_shared_dir}/pal/freertos/threadapi.c PARENT_SCOPE)
+        set(TICKCOUTER_C_FILE ${c_shared_dir}/pal/freertos/tickcounter.c PARENT_SCOPE)
+        set(UNIQUEID_C_FILE ${c_shared_dir}/adapters/uniqueid_stub.c PARENT_SCOPE)
+    elseif(WIN32)
         if(${use_condition})
             set(CONDITION_C_FILE ${c_shared_dir}/adapters/condition_win32.c PARENT_SCOPE)
         endif()

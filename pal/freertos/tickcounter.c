@@ -13,6 +13,7 @@
 #include "azure_c_shared_utility/xlogging.h"
 
 #include "freertos/FreeRTOS.h"
+#include "freertos/FreeRTOSConfig.h"
 #include "freertos/task.h"
 
 typedef struct TICK_COUNTER_INSTANCE_TAG
@@ -72,7 +73,7 @@ int tickcounter_get_current_ms(TICK_COUNTER_HANDLE tick_counter, tickcounter_ms_
             // Now that overflow behavior is ensured it is safe to scale. CONFIG_FREERTOS_HZ is typically
             // equal to 1000 or less, so overflow won't happen until the 49.7 day limit
             // of this call's effective uint32_t return value.
-            * 1000.0 / CONFIG_FREERTOS_HZ
+            * 1000.0 / configTICK_RATE_HZ
             );
         result = 0;
     }

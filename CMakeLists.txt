@@ -30,7 +30,10 @@ option(use_cppunittest "set use_cppunittest to ON to build CppUnitTest tests on 
 option(suppress_header_searches "do not try to find headers - used when compiler check will fail" OFF)
 option(use_custom_heap "use externally defined heap functions instead of the malloc family" OFF)
 
-if(${use_custom_heap})
+if(${FREERTOS})
+    add_definitions(-DFREERTOS)
+    add_definitions(-DGB_USE_CUSTOM_HEAP)
+elif(${use_custom_heap})
     add_definitions(-DGB_USE_CUSTOM_HEAP)
 endif()
 
@@ -193,6 +196,7 @@ set(source_c_files
     ./src/constmap.c
     ./src/doublylinkedlist.c
     ./src/gballoc.c
+    ./pal/generic/memory.c 
     ./src/gbnetwork.c
     ./src/gb_stdio.c
     ./src/gb_time.c
@@ -556,7 +560,7 @@ if(LINUX)
     endif()
 endif()
 
-target_link_libraries(aziotsharedutil ${aziotsharedutil_target_libs})
+target_link_libraries(aziotsharedutil ${aziotsharedutil_target_libs} FreeRtos)
 if(${build_as_dynamic})
     target_link_libraries(aziotsharedutil_dll ${aziotsharedutil_target_libs})
 endif()
