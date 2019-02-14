@@ -8,6 +8,10 @@
 
 #define _DEFAULT_SOURCE
 #include <net/if.h>
+
+#include <sys/socket.h>
+
+
 #undef _DEFAULT_SOURCE
 
 #ifdef SOCKETIO_BERKELEY_UNDEF_BSD_SOURCE
@@ -271,6 +275,7 @@ static int lookup_address_and_initiate_socket_connection(SOCKET_IO_INSTANCE* soc
         addrInfoHintIp.ai_socktype = SOCK_STREAM;
 
         sprintf(portString, "%u", socket_io_instance->port);
+        LogInfo("Querying DNS: hostName=<%s>, portString=<%s>", socket_io_instance->hostname, portString);
         err = getaddrinfo(socket_io_instance->hostname, portString, &addrInfoHintIp, &addrInfoIp);
         if (err != 0)
         {
@@ -279,6 +284,8 @@ static int lookup_address_and_initiate_socket_connection(SOCKET_IO_INSTANCE* soc
         }
         else
         {
+            struct sockaddr_in* sockAddrIn = (struct sockaddr_in*)addrInfoIp->ai_addr;
+            LogInfo("DNS Success: IpAddressed returned =  %s", inet_ntoa(sockAddrIn->sin_addr));
             connect_addr = addrInfoIp->ai_addr;
             connect_addr_len = sizeof(*addrInfoIp->ai_addr);
             result = 0;
