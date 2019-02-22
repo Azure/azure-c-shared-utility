@@ -68,14 +68,8 @@ endif()
 
 # System-specific compiler flags
 if(MSVC)
-    if (WINCE) # Be lax with WEC 2013 compiler
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W3")
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W3")
-        add_definitions(-DWIN32) #WEC 2013
-    ELSE()
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4")
-    endif()
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
+      set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4")
 elseif(UNIX) #LINUX OR APPLE
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
@@ -197,13 +191,8 @@ endfunction()
 IF((WIN32) AND (NOT(MINGW)))
     #windows needs this define
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
-    IF(WINCE)
-        # Don't treat warning as errors for WEC 2013. WEC 2013 uses older compiler version
-        add_definitions(/WX-)
-    ELSE()
     # Make warning as error
     add_definitions(/WX)
-    ENDIF()
 ELSE()
     # Make warning as error
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
