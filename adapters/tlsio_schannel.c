@@ -2,13 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #define SECURITY_WIN32
-#ifdef WINCE
-#define UNICODE // Only Unicode version of secur32.lib functions supported on Windows CE
-#define SCH_USE_STRONG_CRYPTO  0x00400000 // not defined in header file
-#define SEC_TCHAR   SEC_WCHAR
-#else
 #define SEC_TCHAR   SEC_CHAR
-#endif
 
 #include <stdlib.h>
 #include <stddef.h>
@@ -1074,11 +1068,7 @@ CONCRETE_IO_HANDLE tlsio_schannel_create(void* io_create_parameters)
                 const IO_INTERFACE_DESCRIPTION* underlying_io_interface;
                 void* io_interface_parameters;
 
-                #ifdef WINCE
-                (void) mbstowcs(result->host_name, tls_io_config->hostname, strlen(tls_io_config->hostname));
-                #else
                 (void)strcpy(result->host_name, tls_io_config->hostname);
-                #endif
 
                 if (tls_io_config->underlying_io_interface != NULL)
                 {
