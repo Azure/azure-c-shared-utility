@@ -701,7 +701,7 @@ TEST_FUNCTION(x509_schannel_negative_test_cases)
             umock_c_negative_tests_fail_call(i);
 
             ///act
-            (void)sprintf(temp_str, "On failed call %zu", i);
+            (void)sprintf(temp_str, "On failed call %lu", (unsigned long)i);
             h = x509_schannel_create("certificate", "private key");
 
             ///assert

@@ -59,6 +59,7 @@ if(${run_unittests})
     add_subdirectory(vector_ut)
     add_subdirectory(xio_ut)
     add_subdirectory(optionhandler_ut)
+    add_subdirectory(memory_data_ut)
 
     if(use_wolfssl)
         add_subdirectory(tlsio_wolfssl_ut)

@@ -479,7 +479,7 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
             umock_c_negative_tests_fail_call(index);
 
             char tmp_msg[128];
-            sprintf(tmp_msg, "x509_openssl_add_credentials failure in test %zu/%zu", index, count);
+            sprintf(tmp_msg, "x509_openssl_add_credentials failure in test %lu/%lu", (unsigned long)index, (unsigned long)count);
 
             g_replace_ctx.extra_certs = NULL;
 
@@ -613,7 +613,7 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
             umock_c_negative_tests_fail_call(index);
 
             char tmp_msg[128];
-            sprintf(tmp_msg, "x509_openssl_add_credentials failure in test %zu/%zu", index, count);
+            sprintf(tmp_msg, "x509_openssl_add_credentials failure in test %lu/%lu", (unsigned long)index, (unsigned long)count);
 
             //act
             result = x509_openssl_add_certificates(TEST_SSL_CTX, TEST_CERTIFICATE_1);

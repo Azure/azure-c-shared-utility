@@ -166,7 +166,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
-        CONSTBUFFER_Destroy(handle);
+        CONSTBUFFER_DecRef(handle);
     }
 
     /* CONSTBUFFER_CreateFromBuffer */
@@ -197,7 +197,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
-        CONSTBUFFER_Destroy(handle);
+        CONSTBUFFER_DecRef(handle);
     }
 
     /*Tests_SRS_CONSTBUFFER_02_008: [If copying the content fails, then CONSTBUFFER_CreateFromBuffer shall fail and return NULL.]*/
@@ -221,7 +221,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
-        CONSTBUFFER_Destroy(handle);
+        CONSTBUFFER_DecRef(handle);
     }
 
     /*Tests_SRS_CONSTBUFFER_02_006: [If buffer is NULL then CONSTBUFFER_CreateFromBuffer shall fail and return NULL.]*/
@@ -237,7 +237,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
-        CONSTBUFFER_Destroy(handle);
+        CONSTBUFFER_DecRef(handle);
     }
 
     /*Tests_SRS_CONSTBUFFER_02_003: [If creating the copy fails then CONSTBUFFER_Create shall return NULL.]*/
@@ -260,7 +260,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
     }
 
     /*Tests_SRS_CONSTBUFFER_02_005: [The non-NULL handle returned by CONSTBUFFER_Create shall have its ref count set to "1".]*/
-    /*Tests_SRS_CONSTBUFFER_02_017: [If the refcount reaches zero, then CONSTBUFFER_Destroy shall deallocate all resources used by the CONSTBUFFER_HANDLE.]*/
+    /*Tests_SRS_CONSTBUFFER_02_017: [If the refcount reaches zero, then CONSTBUFFER_DecRef shall deallocate all resources used by the CONSTBUFFER_HANDLE.]*/
     TEST_FUNCTION(CONSTBUFFER_Create_is_ref_counted_1)
     {
         ///arrange
@@ -270,7 +270,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
 
         STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
-        CONSTBUFFER_Destroy(handle);
+        CONSTBUFFER_DecRef(handle);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -299,7 +299,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
-        CONSTBUFFER_Destroy(handle);
+        CONSTBUFFER_DecRef(handle);
     }
 
     /*Tests_SRS_CONSTBUFFER_02_002: [Otherwise, CONSTBUFFER_Create shall create a copy of the memory area pointed to by source having size bytes.]*/
@@ -324,7 +324,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
-        CONSTBUFFER_Destroy(handle);
+        CONSTBUFFER_DecRef(handle);
     }
 
     /* CONSTBUFFER_CreateWithMoveMemory */
@@ -367,7 +367,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
-        CONSTBUFFER_Destroy(handle);
+        CONSTBUFFER_DecRef(handle);
     }
 
     /* Tests_SRS_CONSTBUFFER_01_002: [ CONSTBUFFER_CreateWithMoveMemory shall store the source and size and return a non-NULL handle to the newly created const buffer. ]*/
@@ -394,7 +394,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
-        CONSTBUFFER_Destroy(handle);
+        CONSTBUFFER_DecRef(handle);
     }
 
     /* Tests_SRS_CONSTBUFFER_01_002: [ CONSTBUFFER_CreateWithMoveMemory shall store the source and size and return a non-NULL handle to the newly created const buffer. ]*/
@@ -417,7 +417,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
-        CONSTBUFFER_Destroy(handle);
+        CONSTBUFFER_DecRef(handle);
     }
 
     /* Tests_SRS_CONSTBUFFER_01_005: [ If any error occurs, CONSTBUFFER_CreateWithMoveMemory shall fail and return NULL. ]*/
@@ -500,7 +500,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
-        CONSTBUFFER_Destroy(handle);
+        CONSTBUFFER_DecRef(handle);
     }
 
     /* Tests_SRS_CONSTBUFFER_01_014: [ customFreeFuncContext shall be allowed to be NULL. ]*/
@@ -527,7 +527,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
-        CONSTBUFFER_Destroy(handle);
+        CONSTBUFFER_DecRef(handle);
         my_gballoc_free(test_buffer);
     }
 
@@ -555,7 +555,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
-        CONSTBUFFER_Destroy(handle);
+        CONSTBUFFER_DecRef(handle);
     }
 
     /* Tests_SRS_CONSTBUFFER_01_008: [ CONSTBUFFER_CreateWithCustomFree shall store the source and size and return a non-NULL handle to the newly created const buffer. ]*/
@@ -578,7 +578,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
-        CONSTBUFFER_Destroy(handle);
+        CONSTBUFFER_DecRef(handle);
     }
 
     /* Tests_SRS_CONSTBUFFER_01_011: [ If any error occurs, CONSTBUFFER_CreateWithMoveMemory shall fail and return NULL. ]*/
@@ -644,7 +644,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
-        CONSTBUFFER_Destroy(handle);
+        CONSTBUFFER_DecRef(handle);
     }
 
     /*Tests_SRS_CONSTBUFFER_02_012: [Otherwise, CONSTBUFFER_GetContent shall return a const CONSTBUFFER* that matches byte by byte the original bytes used to created the const buffer and has the same length.]*/
@@ -666,79 +666,74 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
-        CONSTBUFFER_Destroy(handle);
+        CONSTBUFFER_DecRef(handle);
     }
 
-    /* CONSTBUFFER_Clone */
+    /* CONSTBUFFER_IncRef */
 
-    /*Tests_SRS_CONSTBUFFER_02_013: [If constbufferHandle is NULL then CONSTBUFFER_Clone shall fail and return NULL.]*/
-    TEST_FUNCTION(CONSTBUFFER_Clone_with_NULL_returns_NULL)
+    /*Tests_SRS_CONSTBUFFER_02_013: [If constbufferHandle is NULL then CONSTBUFFER_IncRef shall return.]*/
+    TEST_FUNCTION(CONSTBUFFER_IncRef_with_NULL_returns_NULL)
     {
         ///arrange
 
         ///act
-        CONSTBUFFER_HANDLE handle = CONSTBUFFER_Clone(NULL);
+        CONSTBUFFER_IncRef(NULL);
 
         ///assert
-        ASSERT_IS_NULL(handle);
-
-        ///cleanup
     }
 
-    /*Tests_SRS_CONSTBUFFER_02_014: [Otherwise, CONSTBUFFER_Clone shall increment the reference count and return constbufferHandle.]*/
-    TEST_FUNCTION(CONSTBUFFER_Clone_increments_ref_count_1)
+    /*Tests_SRS_CONSTBUFFER_02_014: [Otherwise, CONSTBUFFER_IncRef shall increment the reference count.]*/
+    TEST_FUNCTION(CONSTBUFFER_IncRef_increments_ref_count_1)
     {
         ///arrange
-        CONSTBUFFER_HANDLE clone;
         CONSTBUFFER_HANDLE handle = CONSTBUFFER_Create(BUFFER1_u_char, BUFFER1_length);
         umock_c_reset_all_calls();
 
         ///act
-        clone = CONSTBUFFER_Clone(handle);
-
-        ///assert
-        ASSERT_ARE_EQUAL(void_ptr, handle, clone);
-        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-        ///cleanup
-        CONSTBUFFER_Destroy(handle);
-        CONSTBUFFER_Destroy(clone);
-    }
-
-    /*Tests_SRS_CONSTBUFFER_02_014: [Otherwise, CONSTBUFFER_Clone shall increment the reference count and return constbufferHandle.]*/
-    /*Tests_SRS_CONSTBUFFER_02_016: [Otherwise, CONSTBUFFER_Destroy shall decrement the refcount on the constbufferHandle handle.]*/
-    /*Tests_SRS_CONSTBUFFER_02_017: [If the refcount reaches zero, then CONSTBUFFER_Destroy shall deallocate all resources used by the CONSTBUFFER_HANDLE.]*/
-    TEST_FUNCTION(CONSTBUFFER_Clone_increments_ref_count_2)
-    {
-        ///arrange
-        CONSTBUFFER_HANDLE handle = CONSTBUFFER_Create(BUFFER1_u_char, BUFFER1_length);
-        CONSTBUFFER_HANDLE clone = CONSTBUFFER_Clone(handle);
-        umock_c_reset_all_calls();
-
-        ///act
-        CONSTBUFFER_Destroy(clone); /*only a dec_Ref is expected here, so no effects*/
+        CONSTBUFFER_IncRef(handle);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
-        CONSTBUFFER_Destroy(handle);
+        CONSTBUFFER_DecRef(handle);
+        CONSTBUFFER_DecRef(handle);
     }
 
-    /*Tests_SRS_CONSTBUFFER_02_014: [Otherwise, CONSTBUFFER_Clone shall increment the reference count and return constbufferHandle.]*/
-    /*Tests_SRS_CONSTBUFFER_02_016: [Otherwise, CONSTBUFFER_Destroy shall decrement the refcount on the constbufferHandle handle.]*/
-    /*Tests_SRS_CONSTBUFFER_02_017: [If the refcount reaches zero, then CONSTBUFFER_Destroy shall deallocate all resources used by the CONSTBUFFER_HANDLE.]*/
-    TEST_FUNCTION(CONSTBUFFER_Clone_increments_ref_count_3)
+    /*Tests_SRS_CONSTBUFFER_02_014: [Otherwise, CONSTBUFFER_IncRef shall increment the reference count and return constbufferHandle.]*/
+    /*Tests_SRS_CONSTBUFFER_02_016: [Otherwise, CONSTBUFFER_DecRef shall decrement the refcount on the constbufferHandle handle.]*/
+    /*Tests_SRS_CONSTBUFFER_02_017: [If the refcount reaches zero, then CONSTBUFFER_DecRef shall deallocate all resources used by the CONSTBUFFER_HANDLE.]*/
+    TEST_FUNCTION(CONSTBUFFER_IncRef_increments_ref_count_2)
     {
         ///arrange
         CONSTBUFFER_HANDLE handle = CONSTBUFFER_Create(BUFFER1_u_char, BUFFER1_length);
-        CONSTBUFFER_HANDLE clone = CONSTBUFFER_Clone(handle);
-        CONSTBUFFER_Destroy(handle); /*only a dec_Ref is expected here, so no effects*/
+        CONSTBUFFER_IncRef(handle);
+        umock_c_reset_all_calls();
+
+        ///act
+        CONSTBUFFER_DecRef(handle); /*only a dec_Ref is expected here, so no effects*/
+
+        ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        ///cleanup
+        CONSTBUFFER_DecRef(handle);
+    }
+
+    /*Tests_SRS_CONSTBUFFER_02_014: [Otherwise, CONSTBUFFER_IncRef shall increment the reference count and return constbufferHandle.]*/
+    /*Tests_SRS_CONSTBUFFER_02_016: [Otherwise, CONSTBUFFER_DecRef shall decrement the refcount on the constbufferHandle handle.]*/
+    /*Tests_SRS_CONSTBUFFER_02_017: [If the refcount reaches zero, then CONSTBUFFER_DecRef shall deallocate all resources used by the CONSTBUFFER_HANDLE.]*/
+    TEST_FUNCTION(CONSTBUFFER_IncRef_increments_ref_count_3)
+    {
+        ///arrange
+        CONSTBUFFER_HANDLE handle = CONSTBUFFER_Create(BUFFER1_u_char, BUFFER1_length);
+        CONSTBUFFER_IncRef(handle);
+        CONSTBUFFER_DecRef(handle); /*only a dec_Ref is expected here, so no effects*/
         umock_c_reset_all_calls();
 
         ///act
         STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-        CONSTBUFFER_Destroy(clone);
+        CONSTBUFFER_DecRef(handle);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -746,15 +741,15 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         ///cleanup
     }
 
-    /* CONSTBUFFER_Destroy */
+    /* CONSTBUFFER_DecRef */
 
-    /*Tests_SRS_CONSTBUFFER_02_015: [If constbufferHandle is NULL then CONSTBUFFER_Destroy shall do nothing.]*/
-    TEST_FUNCTION(CONSTBUFFER_Destroy_with_NULL_argument_does_nothing)
+    /*Tests_SRS_CONSTBUFFER_02_015: [If constbufferHandle is NULL then CONSTBUFFER_DecRef shall do nothing.]*/
+    TEST_FUNCTION(CONSTBUFFER_DecRef_with_NULL_argument_does_nothing)
     {
         ///arrange
 
         ///act
-        CONSTBUFFER_Destroy(NULL);
+        CONSTBUFFER_DecRef(NULL);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -764,7 +759,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
 
     /*Tests_SRS_CONSTBUFFER_02_010: [The non-NULL handle returned by CONSTBUFFER_CreateFromBuffer shall have its ref count set to "1".]*/
     /*Tests_SRS_CONSTBUFFER_02_005: [The non-NULL handle returned by CONSTBUFFER_Create shall have its ref count set to "1".]*/
-    /*Tests_SRS_CONSTBUFFER_02_017: [If the refcount reaches zero, then CONSTBUFFER_Destroy shall deallocate all resources used by the CONSTBUFFER_HANDLE.]*/
+    /*Tests_SRS_CONSTBUFFER_02_017: [If the refcount reaches zero, then CONSTBUFFER_DecRef shall deallocate all resources used by the CONSTBUFFER_HANDLE.]*/
     TEST_FUNCTION(CONSTBUFFER_CreateFromBuffer_is_ref_counted_1)
     {
         ///arrange
@@ -774,7 +769,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
 
         STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
-        CONSTBUFFER_Destroy(handle);
+        CONSTBUFFER_DecRef(handle);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -796,7 +791,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
-        CONSTBUFFER_Destroy(handle);
+        CONSTBUFFER_DecRef(handle);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -817,7 +812,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         STRICT_EXPECTED_CALL(test_free_func((void*)0x4242));
         STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
-        CONSTBUFFER_Destroy(handle);
+        CONSTBUFFER_DecRef(handle);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -827,7 +822,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
     }
 
     /* Tests_SRS_CONSTBUFFER_01_003: [ The non-NULL handle returned by CONSTBUFFER_CreateWithMoveMemory shall have its ref count set to "1". ]*/
-    /*Tests_SRS_CONSTBUFFER_02_017: [If the refcount reaches zero, then CONSTBUFFER_Destroy shall deallocate all resources used by the CONSTBUFFER_HANDLE.]*/
+    /*Tests_SRS_CONSTBUFFER_02_017: [If the refcount reaches zero, then CONSTBUFFER_DecRef shall deallocate all resources used by the CONSTBUFFER_HANDLE.]*/
     TEST_FUNCTION(CONSTBUFFER_CreateWithMoveMemory_is_ref_counted_1)
     {
         ///arrange
@@ -842,7 +837,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
         ///act
-        CONSTBUFFER_Destroy(handle);
+        CONSTBUFFER_DecRef(handle);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());

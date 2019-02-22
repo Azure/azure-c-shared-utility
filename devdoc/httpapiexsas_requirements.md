@@ -92,6 +92,8 @@ The caller of HTTPAPIEX_SAS_ExecuteRequest may know that there is no "Authorizat
 
 The size_t value ((size_t) (difftime(currentTime,0) + 3600)) is obtained an shall be known as expiry.
 
+**SRS_HTTPAPIEXSAS_06_017: [** If state->key is prefixed with "sas=", SharedAccessSignature will be used rather than created.  STRING_construct will be invoked. **]**  
+
 **SRS_HTTPAPIEXSAS_06_011: [** SASToken_Create shall be invoked. **]**  
 
  **SRS_HTTPAPIEXSAS_06_012: [** If the return result of SASToken_Create is NULL then fallthrough. **]**
