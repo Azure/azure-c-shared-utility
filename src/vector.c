@@ -95,7 +95,7 @@ int VECTOR_push_back(VECTOR_HANDLE handle, const void* elements, size_t numEleme
        /* Codes_SRS_VECTOR_10_034: [VECTOR_push_back shall fail and return non-zero if elements is NULL.] */
        /* Codes_SRS_VECTOR_10_035: [VECTOR_push_back shall fail and return non-zero if numElements is 0.] */
         LogError("invalid argument - handle(%p), elements(%p), numElements(%zd).", handle, elements, numElements);
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -107,7 +107,7 @@ int VECTOR_push_back(VECTOR_HANDLE handle, const void* elements, size_t numEleme
         {
            /* Codes_SRS_VECTOR_10_012: [VECTOR_push_back shall fail and return non-zero if memory allocation fails.] */
             LogError("realloc failed.");
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {

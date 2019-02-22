@@ -37,7 +37,7 @@ static int parse_ws_url(const char* url, WS_URL* ws_url)
     if (url_length < MIN_URL_PARSABLE_LENGTH)
     {
         LogError("Invalid url (unexpected length)");
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     // Codes_SRS_WS_URL_09_004: [ If url starts with "ws://" (protocol), ws_url->is_secure shall be set to false ]
     if (strncmp(url, WS_PROTOCOL, 5) == 0)
@@ -53,7 +53,7 @@ static int parse_ws_url(const char* url, WS_URL* ws_url)
     {
         // Codes_SRS_WS_URL_09_024: [ If protocol cannot be identified in url, the function shall fail and return NULL ]
         LogError("Url protocol prefix not recognized");
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
 
     if (result == 0)
@@ -91,7 +91,7 @@ static int parse_ws_url(const char* url, WS_URL* ws_url)
         if (token == NULL)
         {
             LogError("Failed getting first url token");
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -111,7 +111,7 @@ static int parse_ws_url(const char* url, WS_URL* ws_url)
                     if (ws_url->host == NULL || ws_url->host_length == 0)
                     {
                         LogError("Failed parsing websocket url host");
-                        result = __FAILURE__;
+                        result = MU_FAILURE;
                         break;
                     }
                     else
@@ -129,7 +129,7 @@ static int parse_ws_url(const char* url, WS_URL* ws_url)
                     if (port == NULL || port_length == 0)
                     {
                         LogError("Failed parsing websocket url port");
-                        result = __FAILURE__;
+                        result = MU_FAILURE;
                         break;
                     }
                     else
@@ -155,7 +155,7 @@ static int parse_ws_url(const char* url, WS_URL* ws_url)
                     if (ws_url->path == NULL || ws_url->path_length == 0)
                     {
                         LogError("Failed parsing websocket url path");
-                        result = __FAILURE__;
+                        result = MU_FAILURE;
                         break;
                     }
                     else
@@ -175,7 +175,7 @@ static int parse_ws_url(const char* url, WS_URL* ws_url)
                     if (ws_url->query == NULL || ws_url->query_length == 0)
                     {
                         LogError("Failed parsing websocket url query");
-                        result = __FAILURE__;
+                        result = MU_FAILURE;
                         break;
                     }
                     else
@@ -186,7 +186,7 @@ static int parse_ws_url(const char* url, WS_URL* ws_url)
                 else
                 {
                     LogError("Failed parsing websocket url (format not recognized)");
-                    result = __FAILURE__;
+                    result = MU_FAILURE;
                     break;
                 }
 
@@ -267,7 +267,7 @@ int ws_url_is_secure(WS_URL_HANDLE url, bool* is_secure)
     if (url == NULL || is_secure == NULL)
     {
         LogError("Invalid argument (url=%p, is_secure=%p)", url, is_secure);
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -289,7 +289,7 @@ int ws_url_get_host(WS_URL_HANDLE url, const char** host, size_t* length)
     if (url == NULL || host == NULL || length == NULL)
     {
         LogError("Invalid argument (url=%p, host=%p, length=%p)", url, host, length);
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -312,7 +312,7 @@ int ws_url_get_port(WS_URL_HANDLE url, size_t* port)
     if (url == NULL || port == NULL)
     {
         LogError("Invalid argument (url=%p, port=%p)", url, port);
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -334,7 +334,7 @@ int ws_url_get_path(WS_URL_HANDLE url, const char** path, size_t* length)
     if (url == NULL || path == NULL || length == NULL)
     {
         LogError("Invalid argument (url=%p, path=%p, length=%p)", url, path, length);
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -357,7 +357,7 @@ int ws_url_get_query(WS_URL_HANDLE url, const char** query, size_t* length)
     if (url == NULL || query == NULL || length == NULL)
     {
         LogError("Invalid argument (url=%p, query=%p, length=%p)", url, query, length);
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {

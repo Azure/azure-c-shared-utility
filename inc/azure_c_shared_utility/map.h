@@ -33,7 +33,7 @@ extern "C"
 /** @brief Enumeration specifying the status of calls to various APIs in this
  *  module.
  */
-DEFINE_ENUM(MAP_RESULT, MAP_RESULT_VALUES);
+MU_DEFINE_ENUM(MAP_RESULT, MAP_RESULT_VALUES);
 
 typedef struct MAP_HANDLE_DATA_TAG* MAP_HANDLE;
 

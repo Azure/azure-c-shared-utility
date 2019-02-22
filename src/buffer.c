@@ -42,7 +42,7 @@ static int BUFFER_safemalloc(BUFFER* handleptr, size_t size)
     {
         /*Codes_SRS_BUFFER_02_003: [If allocating memory fails, then BUFFER_create shall return NULL.]*/
         LogError("Failure allocating data");
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -151,7 +151,7 @@ int BUFFER_build(BUFFER_HANDLE handle, const unsigned char* source, size_t size)
     if (handle == NULL)
     {
         /* Codes_SRS_BUFFER_07_009: [BUFFER_build shall return nonzero if handle is NULL ] */
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     /* Codes_SRS_BUFFER_01_002: [The size argument can be zero, in which case the underlying buffer held by the buffer instance shall be freed.] */
     else if (size == 0)
@@ -169,7 +169,7 @@ int BUFFER_build(BUFFER_HANDLE handle, const unsigned char* source, size_t size)
         if (source == NULL)
         {
             /* Codes_SRS_BUFFER_01_001: [If size is positive and source is NULL, BUFFER_build shall return nonzero] */
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -180,7 +180,7 @@ int BUFFER_build(BUFFER_HANDLE handle, const unsigned char* source, size_t size)
             {
                 /* Codes_SRS_BUFFER_07_010: [BUFFER_build shall return nonzero if any error is encountered.] */
                 LogError("Failure reallocating buffer");
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else
             {
@@ -204,7 +204,7 @@ int BUFFER_append_build(BUFFER_HANDLE handle, const unsigned char* source, size_
     {
         /* Codes_SRS_BUFFER_07_029: [ BUFFER_append_build shall return nonzero if handle or source are NULL or if size is 0. ] */
         LogError("BUFFER_append_build failed invalid parameter handle: %p, source: %p, size: %lu", handle, source, (unsigned long)size);
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -215,7 +215,7 @@ int BUFFER_append_build(BUFFER_HANDLE handle, const unsigned char* source, size_
             {
                 /* Codes_SRS_BUFFER_07_035: [ If any error is encountered BUFFER_append_build shall return a non-null value. ] */
                 LogError("Failure with BUFFER_safemalloc");
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else
             {
@@ -233,7 +233,7 @@ int BUFFER_append_build(BUFFER_HANDLE handle, const unsigned char* source, size_
             {
                 /* Codes_SRS_BUFFER_07_035: [ If any error is encountered BUFFER_append_build shall return a non-null value. ] */
                 LogError("Failure reallocating temporary buffer");
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else
             {
@@ -259,12 +259,12 @@ int BUFFER_pre_build(BUFFER_HANDLE handle, size_t size)
     if (handle == NULL)
     {
         /* Codes_SRS_BUFFER_07_006: [If handle is NULL or size is 0 then BUFFER_pre_build shall return a nonzero value.] */
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else if (size == 0)
     {
         /* Codes_SRS_BUFFER_07_006: [If handle is NULL or size is 0 then BUFFER_pre_build shall return a nonzero value.] */
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -273,7 +273,7 @@ int BUFFER_pre_build(BUFFER_HANDLE handle, size_t size)
         {
             /* Codes_SRS_BUFFER_07_007: [BUFFER_pre_build shall return nonzero if the buffer has been previously allocated and is not NULL.] */
             LogError("Failure buffer data is NULL");
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -281,7 +281,7 @@ int BUFFER_pre_build(BUFFER_HANDLE handle, size_t size)
             {
                 /* Codes_SRS_BUFFER_07_013: [BUFFER_pre_build shall return nonzero if any error is encountered.] */
                 LogError("Failure allocating buffer");
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else
             {
@@ -300,7 +300,7 @@ int BUFFER_content(BUFFER_HANDLE handle, const unsigned char** content)
     if ((handle == NULL) || (content == NULL))
     {
         /* Codes_SRS_BUFFER_07_020: [If the handle and/or content*is NULL BUFFER_content shall return nonzero.] */
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -319,7 +319,7 @@ extern int BUFFER_unbuild(BUFFER_HANDLE handle)
     if (handle == NULL)
     {
         /* Codes_SRS_BUFFER_07_014: [BUFFER_unbuild shall return a nonzero value if BUFFER_HANDLE is NULL.] */
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -335,7 +335,7 @@ extern int BUFFER_unbuild(BUFFER_HANDLE handle)
         else
         {
             /* Codes_SRS_BUFFER_07_015: [BUFFER_unbuild shall return a nonzero value if the unsigned char* referenced by BUFFER_HANDLE is NULL.] */
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
     }
     return result;
@@ -349,13 +349,13 @@ int BUFFER_enlarge(BUFFER_HANDLE handle, size_t enlargeSize)
     {
         /* Codes_SRS_BUFFER_07_017: [BUFFER_enlarge shall return a nonzero result if any parameters are NULL or zero.] */
         LogError("Failure: handle is invalid.");
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else if (enlargeSize == 0)
     {
         /* Codes_SRS_BUFFER_07_017: [BUFFER_enlarge shall return a nonzero result if any parameters are NULL or zero.] */
         LogError("Failure: enlargeSize size is 0.");
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -365,7 +365,7 @@ int BUFFER_enlarge(BUFFER_HANDLE handle, size_t enlargeSize)
         {
             /* Codes_SRS_BUFFER_07_018: [BUFFER_enlarge shall return a nonzero result if any error is encountered.] */
             LogError("Failure: allocating temp buffer.");
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -384,19 +384,19 @@ int BUFFER_shrink(BUFFER_HANDLE handle, size_t decreaseSize, bool fromEnd)
     {
         /* Codes_SRS_BUFFER_07_036: [ if handle is NULL, BUFFER_shrink shall return a non-null value ]*/
         LogError("Failure: handle is invalid.");
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else if (decreaseSize == 0)
     {
         /* Codes_SRS_BUFFER_07_037: [ If decreaseSize is equal zero, BUFFER_shrink shall return a non-null value ] */
         LogError("Failure: decrease size is 0.");
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else if (decreaseSize > handle->size)
     {
         /* Codes_SRS_BUFFER_07_038: [ If decreaseSize is less than the size of the buffer, BUFFER_shrink shall return a non-null value ] */
         LogError("Failure: decrease size is less than buffer size.");
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -417,7 +417,7 @@ int BUFFER_shrink(BUFFER_HANDLE handle, size_t decreaseSize, bool fromEnd)
             {
                 /* Codes_SRS_BUFFER_07_042: [ If a failure is encountered, BUFFER_shrink shall return a non-null value ] */
                 LogError("Failure: allocating temp buffer.");
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else
             {
@@ -452,7 +452,7 @@ int BUFFER_size(BUFFER_HANDLE handle, size_t* size)
     if ((handle == NULL) || (size == NULL))
     {
         /* Codes_SRS_BUFFER_07_022: [BUFFER_size shall return a nonzero value for any error that is encountered.] */
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -470,7 +470,7 @@ int BUFFER_append(BUFFER_HANDLE handle1, BUFFER_HANDLE handle2)
     if ( (handle1 == NULL) || (handle2 == NULL) || (handle1 == handle2) )
     {
         /* Codes_SRS_BUFFER_07_023: [BUFFER_append shall return a nonzero upon any error that is encountered.] */
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -479,12 +479,12 @@ int BUFFER_append(BUFFER_HANDLE handle1, BUFFER_HANDLE handle2)
         if (b1->buffer == NULL)
         {
             /* Codes_SRS_BUFFER_07_023: [BUFFER_append shall return a nonzero upon any error that is encountered.] */
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else if (b2->buffer == NULL)
         {
             /* Codes_SRS_BUFFER_07_023: [BUFFER_append shall return a nonzero upon any error that is encountered.] */
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -501,7 +501,7 @@ int BUFFER_append(BUFFER_HANDLE handle1, BUFFER_HANDLE handle2)
                 {
                     /* Codes_SRS_BUFFER_07_023: [BUFFER_append shall return a nonzero upon any error that is encountered.] */
                     LogError("Failure: allocating temp buffer.");
-                    result = __FAILURE__;
+                    result = MU_FAILURE;
                 }
                 else
                 {
@@ -524,7 +524,7 @@ int BUFFER_prepend(BUFFER_HANDLE handle1, BUFFER_HANDLE handle2)
     if ((handle1 == NULL) || (handle2 == NULL) || (handle1 == handle2))
     {
         /* Codes_SRS_BUFFER_01_005: [ BUFFER_prepend shall return a non-zero upon value any error that is encountered. ]*/
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -533,12 +533,12 @@ int BUFFER_prepend(BUFFER_HANDLE handle1, BUFFER_HANDLE handle2)
         if (b1->buffer == NULL)
         {
             /* Codes_SRS_BUFFER_01_005: [ BUFFER_prepend shall return a non-zero upon value any error that is encountered. ]*/
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else if (b2->buffer == NULL)
         {
             /* Codes_SRS_BUFFER_01_005: [ BUFFER_prepend shall return a non-zero upon value any error that is encountered. ]*/
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -556,7 +556,7 @@ int BUFFER_prepend(BUFFER_HANDLE handle1, BUFFER_HANDLE handle2)
                 {
                     /* Codes_SRS_BUFFER_01_005: [ BUFFER_prepend shall return a non-zero upon value any error that is encountered. ]*/
                     LogError("Failure: allocating temp buffer.");
-                    result = __FAILURE__;
+                    result = MU_FAILURE;
                 }
                 else
                 {
@@ -583,7 +583,7 @@ int BUFFER_fill(BUFFER_HANDLE handle, unsigned char fill_char)
     {
         /* Codes_SRS_BUFFER_07_002: [ If handle is NULL BUFFER_fill shall return a non-zero value. ] */
         LogError("Invalid parameter specified, handle == NULL.");
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {

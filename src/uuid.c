@@ -22,7 +22,7 @@ int UUID_from_string(const char* uuid_string, UUID_T* uuid)
     if (uuid_string == NULL || uuid == NULL)
     {
         LogError("Invalid argument (uuid_string=%p, uuid=%p)", uuid_string, uuid);
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -31,7 +31,7 @@ int UUID_from_string(const char* uuid_string, UUID_T* uuid)
         if (uuid_string_length != UUID_STRING_LENGTH)
         {
             LogError("Unexpected size for an UUID string (%lu)", (unsigned long)uuid_string_length);
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -59,7 +59,7 @@ int UUID_from_string(const char* uuid_string, UUID_T* uuid)
                     {
                         // Codes_SRS_UUID_09_009: [ If uuid fails to be generated, UUID_from_string shall return a non-zero value ]
                         LogError("Failed decoding UUID string (%lu)", (unsigned long)i);
-                        result = __FAILURE__;
+                        result = MU_FAILURE;
                         break;
                     }
                     else
@@ -123,7 +123,7 @@ int UUID_generate(UUID_T* uuid)
     if (uuid == NULL)
     {
         LogError("Invalid argument (uuid is NULL)");
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -133,7 +133,7 @@ int UUID_generate(UUID_T* uuid)
         {
             // Codes_SRS_UUID_09_003: [ If the UUID string fails to be obtained, UUID_generate shall fail and return a non-zero value ]
             LogError("Failed allocating UUID string");
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -144,14 +144,14 @@ int UUID_generate(UUID_T* uuid)
             {
                 // Codes_SRS_UUID_09_003: [ If the UUID string fails to be obtained, UUID_generate shall fail and return a non-zero value ]
                 LogError("Failed generating UUID");
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             // Codes_SRS_UUID_09_004: [ The UUID string shall be parsed into an UUID_T type (16 unsigned char array) and filled in uuid ]
             else if (UUID_from_string(uuid_string, uuid) != 0)
             {
                 // Codes_SRS_UUID_09_005: [ If uuid fails to be set, UUID_generate shall fail and return a non-zero value ]
                 LogError("Failed parsing UUID string");
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else
             {

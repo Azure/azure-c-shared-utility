@@ -39,11 +39,11 @@ int gbnetwork_init(void)
 
     if (gbnetworkState != GBNETWORK_STATE_NOT_INIT)
     {
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else if ((gbnetworkThreadSafeLock = Lock_Init()) == NULL)
     {
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {

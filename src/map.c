@@ -8,7 +8,7 @@
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/strings.h"
 
-DEFINE_ENUM_STRINGS(MAP_RESULT, MAP_RESULT_VALUES);
+MU_DEFINE_ENUM_STRINGS(MAP_RESULT, MAP_RESULT_VALUES);
 
 typedef struct MAP_HANDLE_DATA_TAG
 {
@@ -18,7 +18,7 @@ typedef struct MAP_HANDLE_DATA_TAG
     MAP_FILTER_CALLBACK mapFilterCallback;
 }MAP_HANDLE_DATA;
 
-#define LOG_MAP_ERROR LogError("result = %s", ENUM_TO_STRING(MAP_RESULT, result));
+#define LOG_MAP_ERROR LogError("result = %s", MU_ENUM_TO_STRING(MAP_RESULT, result));
 
 MAP_HANDLE Map_Create(MAP_FILTER_CALLBACK mapFilterFunc)
 {
@@ -165,7 +165,7 @@ static int Map_IncreaseStorageKeysValues(MAP_HANDLE_DATA* handleData)
     if (newKeys == NULL)
     {
         LogError("realloc error");
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -193,7 +193,7 @@ static int Map_IncreaseStorageKeysValues(MAP_HANDLE_DATA* handleData)
                     handleData->keys = undoneKeys;
                 }
             }
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -296,7 +296,7 @@ static int insertNewKeyValue(MAP_HANDLE_DATA* handleData, const char* key, const
     int result;
     if (Map_IncreaseStorageKeysValues(handleData) != 0) /*this increases handleData->count*/
     {
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -304,7 +304,7 @@ static int insertNewKeyValue(MAP_HANDLE_DATA* handleData, const char* key, const
         {
             Map_DecreaseStorageKeysValues(handleData);
             LogError("unable to mallocAndStrcpy_s");
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -313,7 +313,7 @@ static int insertNewKeyValue(MAP_HANDLE_DATA* handleData, const char* key, const
                 free(handleData->keys[handleData->count - 1]);
                 Map_DecreaseStorageKeysValues(handleData);
                 LogError("unable to mallocAndStrcpy_s");
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else
             {
