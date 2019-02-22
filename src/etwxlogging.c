@@ -8,10 +8,6 @@
 
 #ifndef NO_LOGGING
 
-#ifdef WINCE
-#error not supported for WinCE.
-#endif
-
 #ifndef _MSC_VER
 #error only supported on Windows
 #endif
