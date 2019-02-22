@@ -148,7 +148,7 @@ static int internal_close(WSIO_INSTANCE* wsio_instance, ON_IO_CLOSE_COMPLETE on_
     if (wsio_instance->io_state == IO_STATE_NOT_OPEN)
     {
         LogError("wsio_close when not open.");
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -161,7 +161,7 @@ static int internal_close(WSIO_INSTANCE* wsio_instance, ON_IO_CLOSE_COMPLETE on_
         else if (wsio_instance->io_state == IO_STATE_CLOSING)
         {
             LogError("Already closing");
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -485,7 +485,7 @@ int wsio_open(CONCRETE_IO_HANDLE ws_io, ON_IO_OPEN_COMPLETE on_io_open_complete,
         /* Codes_SRS_WSIO_01_132: [ If any of the arguments ws_io, on_io_open_complete, on_bytes_received, on_io_error is NULL, wsio_open shall fail and return a non-zero value. ]*/
         LogError("Bad arguments: ws_io=%p, on_io_open_complete=%p, on_bytes_received=%p, on_io_error=%p",
             ws_io, on_io_open_complete, on_bytes_received, on_io_error);
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -496,7 +496,7 @@ int wsio_open(CONCRETE_IO_HANDLE ws_io, ON_IO_OPEN_COMPLETE on_io_open_complete,
             /* Codes_SRS_WSIO_01_165: [ wsio_open when CLOSING shall fail and return a non-zero value. ]*/
             /* Codes_SRS_WSIO_01_131: [ wsio_open when already OPEN or OPENING shall fail and return a non-zero value. ]*/
             LogError("wsio has already been opened current state: %d", wsio_instance->io_state);
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -515,7 +515,7 @@ int wsio_open(CONCRETE_IO_HANDLE ws_io, ON_IO_OPEN_COMPLETE on_io_open_complete,
                 /* Codes_SRS_WSIO_01_084: [ If opening the underlying uws instance fails then wsio_open shall fail and return a non-zero value. ]*/
                 LogError("Opening the uws instance failed.");
                 wsio_instance->io_state = IO_STATE_NOT_OPEN;
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else
             {
@@ -536,7 +536,7 @@ int wsio_close(CONCRETE_IO_HANDLE ws_io, ON_IO_CLOSE_COMPLETE on_io_close_comple
     {
         /* Codes_SRS_WSIO_01_086: [ if ws_io is NULL, wsio_close shall return a non-zero value.  ]*/
         LogError("NULL handle");
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -544,7 +544,7 @@ int wsio_close(CONCRETE_IO_HANDLE ws_io, ON_IO_CLOSE_COMPLETE on_io_close_comple
 
         if (internal_close(wsio_instance, on_io_close_complete, on_io_close_complete_context) != 0)
         {
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -567,7 +567,7 @@ int wsio_send(CONCRETE_IO_HANDLE ws_io, const void* buffer, size_t size, ON_SEND
     {
         LogError("Bad arguments: ws_io=%p, buffer=%p, size=%u",
             ws_io, buffer, (unsigned int)size);
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -577,7 +577,7 @@ int wsio_send(CONCRETE_IO_HANDLE ws_io, const void* buffer, size_t size, ON_SEND
         {
             /* Codes_SRS_WSIO_01_099: [ If the wsio is not OPEN (open has not been called or is still in progress) then wsio_send shall fail and return a non-zero value. ]*/
             LogError("Attempting to send when not open");
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -586,7 +586,7 @@ int wsio_send(CONCRETE_IO_HANDLE ws_io, const void* buffer, size_t size, ON_SEND
             if (pending_socket_io == NULL)
             {
                 /* Codes_SRS_WSIO_01_134: [ If allocating memory for the pending IO data fails, wsio_send shall fail and return a non-zero value. ]*/
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else
             {
@@ -600,7 +600,7 @@ int wsio_send(CONCRETE_IO_HANDLE ws_io, const void* buffer, size_t size, ON_SEND
                 {
                     /* Codes_SRS_WSIO_01_104: [ If singlylinkedlist_add fails, wsio_send shall fail and return a non-zero value. ]*/
                     free(pending_socket_io);
-                    result = __FAILURE__;
+                    result = MU_FAILURE;
                 }
                 else
                 {
@@ -615,7 +615,7 @@ int wsio_send(CONCRETE_IO_HANDLE ws_io, const void* buffer, size_t size, ON_SEND
                         }
 
                         free(pending_socket_io);
-                        result = __FAILURE__;
+                        result = MU_FAILURE;
                     }
                     else
                     {
@@ -661,7 +661,7 @@ int wsio_setoption(CONCRETE_IO_HANDLE ws_io, const char* optionName, const void*
     {
         LogError("Bad parameters: ws_io=%p, optionName=%p",
             ws_io, optionName);
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -674,7 +674,7 @@ int wsio_setoption(CONCRETE_IO_HANDLE ws_io, const char* optionName, const void*
             {
                 /* Codes_SRS_WSIO_01_184: [ If OptionHandler_FeedOptions fails, wsio_setoption shall fail and return a non-zero value. ]*/
                 LogError("unable to OptionHandler_FeedOptions");
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else
             {
@@ -689,7 +689,7 @@ int wsio_setoption(CONCRETE_IO_HANDLE ws_io, const char* optionName, const void*
             {
                 /* Codes_SRS_WSIO_01_157: [ If uws_client_set_option fails, wsio_setoption shall fail and return a non-zero value. ]*/
                 LogError("Setting the option %s failed", optionName);
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else
             {

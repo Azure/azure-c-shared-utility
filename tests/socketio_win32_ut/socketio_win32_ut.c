@@ -118,7 +118,7 @@ if (!g_addrinfo_call_fail)
 else
 {
     *ppResult = NULL;
-    callFail = __FAILURE__;
+    callFail = MU_FAILURE;
 }
 MOCK_FUNCTION_END(callFail)
 MOCK_FUNCTION_WITH_CODE(WSAAPI, void, freeaddrinfo, PADDRINFOA, pResult)
@@ -260,7 +260,7 @@ int umocktypes_copy_const_ADDRINFOA_ptr(ADDRINFOA** destination, const ADDRINFOA
     *destination = (ADDRINFOA*)malloc(sizeof(ADDRINFOA));
     if (*destination == NULL)
     {
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -319,7 +319,7 @@ int umocktypes_copy_const_struct_sockaddr_ptr(struct sockaddr** destination, con
     *destination = (struct sockaddr*)malloc(sizeof(struct sockaddr));
     if (*destination == NULL)
     {
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -342,11 +342,11 @@ void umocktypes_free_const_struct_sockaddr_ptr(struct sockaddr** value)
 
 static TEST_MUTEX_HANDLE g_testByTest;
 
-DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
+MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    ASSERT_FAIL("umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
+    ASSERT_FAIL("umock_c reported error :%s", MU_ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
 }
 
 BEGIN_TEST_SUITE(socketio_win32_unittests)

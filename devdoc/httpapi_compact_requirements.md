@@ -149,7 +149,7 @@ MOCKABLE_FUNCTION(, HTTPAPI_RESULT, HTTPAPI_CloneOption, const char*, optionName
 /** @brief Enumeration specifying the HTTP request verbs accepted by
  *	the HTTPAPI module.
  */
-DEFINE_ENUM(HTTPAPI_REQUEST_TYPE, HTTPAPI_REQUEST_TYPE_VALUES);
+MU_DEFINE_ENUM(HTTPAPI_REQUEST_TYPE, HTTPAPI_REQUEST_TYPE_VALUES);
 ```
  **]**
 
@@ -179,7 +179,7 @@ HTTPAPI_SET_TIMEOUTS_FAILED                  \
 /** @brief Enumeration specifying the possible return values for the APIs in
  *		   this module.
  */
-DEFINE_ENUM(HTTPAPI_RESULT, HTTPAPI_RESULT_VALUES);
+MU_DEFINE_ENUM(HTTPAPI_RESULT, HTTPAPI_RESULT_VALUES);
 ```
  **]**
 

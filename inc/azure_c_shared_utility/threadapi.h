@@ -27,7 +27,7 @@ typedef int(*THREAD_START_FUNC)(void *);
 /** @brief Enumeration specifying the possible return values for the APIs in
  *           this module.
  */
-DEFINE_ENUM(THREADAPI_RESULT, THREADAPI_RESULT_VALUES);
+MU_DEFINE_ENUM(THREADAPI_RESULT, THREADAPI_RESULT_VALUES);
 
 typedef void* THREAD_HANDLE;
 

@@ -24,7 +24,7 @@ Add any reference that can support this implementation here. For example, it the
     TARGET_RESULT_OK,                \
     TARGET_RESULT_FAIL,              \
     TARGET_RESULT_OUT_OF_MEMORY
-DEFINE_ENUM(TARGET_RESULT, TARGET_RESULT_VALUES);
+MU_DEFINE_ENUM(TARGET_RESULT, TARGET_RESULT_VALUES);
 ```
  **]**  
 

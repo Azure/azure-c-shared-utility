@@ -325,7 +325,7 @@ static void setupAllCallBeforeHTTPsequence(void)
         .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", TOSTRING(TEST_BUFFER_SIZE)))
+    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", MU_TOSTRING(TEST_BUFFER_SIZE)))
         .IgnoreArgument(1);
 }
 
@@ -378,7 +378,7 @@ static void prepareHTTPAPIEX_ExecuteRequest(unsigned int *asGivenByHttpApi, HTTP
         .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", TOSTRING(TEST_BUFFER_SIZE)))
+    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", MU_TOSTRING(TEST_BUFFER_SIZE)))
         .IgnoreArgument(1);
 
     STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
@@ -404,11 +404,11 @@ static void prepareHTTPAPIEX_ExecuteRequest(unsigned int *asGivenByHttpApi, HTTP
         .SetReturn(resultToBeUsed);
 }
 
-DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
+MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    ASSERT_FAIL("umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
+    ASSERT_FAIL("umock_c reported error :%s", MU_ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
 }
 
 BEGIN_TEST_SUITE(httpapiex_unittests)
@@ -758,7 +758,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_fails_with_invalid_request_type)
     umock_c_reset_all_calls();
 
     /// act
-    result = HTTPAPIEX_ExecuteRequest(httpapiexhandle, (HTTPAPI_REQUEST_TYPE)(COUNT_ARG(HTTPAPI_REQUEST_TYPE_VALUES)), TEST_RELATIVE_PATH, TEST_REQUEST_HTTP_HEADERS, TEST_REQUEST_BODY, &httpStatusCode, TEST_RESPONSE_HTTP_HEADERS, TEST_RESPONSE_BODY);
+    result = HTTPAPIEX_ExecuteRequest(httpapiexhandle, (HTTPAPI_REQUEST_TYPE)(MU_COUNT_ARG(HTTPAPI_REQUEST_TYPE_VALUES)), TEST_RELATIVE_PATH, TEST_REQUEST_HTTP_HEADERS, TEST_REQUEST_BODY, &httpStatusCode, TEST_RESPONSE_HTTP_HEADERS, TEST_RESPONSE_BODY);
 
     ///assert
     ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_INVALID_ARG, result);
@@ -1247,7 +1247,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_request_headers_and_non_NUL
         .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", TOSTRING(TEST_BUFFER_SIZE)))
+    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", MU_TOSTRING(TEST_BUFFER_SIZE)))
         .IgnoreArgument(1);
 
     /*this is getting the buffer content and buffer length to pass to httpapi_executerequest*/
@@ -1316,7 +1316,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_request_headers_and_non_NUL
         .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", TOSTRING(TEST_BUFFER_SIZE)))
+    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", MU_TOSTRING(TEST_BUFFER_SIZE)))
         .IgnoreArgument(1)
         .SetReturn(HTTP_HEADERS_ERROR);
 
@@ -1393,7 +1393,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_statusCode_succeeds)
         .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", TOSTRING(TEST_BUFFER_SIZE)))
+    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", MU_TOSTRING(TEST_BUFFER_SIZE)))
         .IgnoreArgument(1);
 
     /*this is getting the buffer content and buffer length to pass to httpapi_executerequest*/
@@ -1463,7 +1463,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_statusCode_returns_that_cod
         .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", TOSTRING(TEST_BUFFER_SIZE)))
+    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", MU_TOSTRING(TEST_BUFFER_SIZE)))
         .IgnoreArgument(1);
 
     /*this is getting the buffer content and buffer length to pass to httpapi_executerequest*/
@@ -1638,7 +1638,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_response_headers_suceeds)
         .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", TOSTRING(TEST_BUFFER_SIZE)))
+    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", MU_TOSTRING(TEST_BUFFER_SIZE)))
         .IgnoreArgument(1);
 
     /*Because it is creating fake response headers*/
@@ -1716,7 +1716,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_response_headers_fails_when_HTT
         .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", TOSTRING(TEST_BUFFER_SIZE)))
+    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", MU_TOSTRING(TEST_BUFFER_SIZE)))
         .IgnoreArgument(1);
 
     /*Because it is creating fake response headers*/
@@ -1760,7 +1760,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_response_headers_suceeds)
         .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", TOSTRING(TEST_BUFFER_SIZE)))
+    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", MU_TOSTRING(TEST_BUFFER_SIZE)))
         .IgnoreArgument(1);
 
     /*this is getting the buffer content and buffer length to pass to httpapi_executerequest*/
@@ -1830,7 +1830,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_response_body_suceeds)
         .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", TOSTRING(TEST_BUFFER_SIZE)))
+    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", MU_TOSTRING(TEST_BUFFER_SIZE)))
         .IgnoreArgument(1);
 
     STRICT_EXPECTED_CALL(BUFFER_new()); /*because it makes a fake response buffer*/
@@ -1906,7 +1906,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_NULL_fails_when_BUFFER_new_fails)
         .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", TOSTRING(TEST_BUFFER_SIZE)))
+    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", MU_TOSTRING(TEST_BUFFER_SIZE)))
         .IgnoreArgument(1);
 
     STRICT_EXPECTED_CALL(BUFFER_new())
@@ -1949,7 +1949,7 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_response_body_suceeds)
         .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
         .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", TOSTRING(TEST_BUFFER_SIZE)))
+    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", MU_TOSTRING(TEST_BUFFER_SIZE)))
         .IgnoreArgument(1);
 
     /*this is getting the buffer content and buffer length to pass to httpapi_executerequest*/

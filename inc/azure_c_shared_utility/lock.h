@@ -29,7 +29,7 @@ typedef void* LOCK_HANDLE;
 
 /** @brief Enumeration specifying the lock status.
 */
-DEFINE_ENUM(LOCK_RESULT, LOCK_RESULT_VALUES);
+MU_DEFINE_ENUM(LOCK_RESULT, LOCK_RESULT_VALUES);
 
 /**
  * @brief    This API creates and returns a valid lock handle.

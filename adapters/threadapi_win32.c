@@ -5,7 +5,7 @@
 #include "azure_c_shared_utility/threadapi.h"
 #include "azure_c_shared_utility/xlogging.h"
 
-DEFINE_ENUM_STRINGS(THREADAPI_RESULT, THREADAPI_RESULT_VALUES);
+MU_DEFINE_ENUM_STRINGS(THREADAPI_RESULT, THREADAPI_RESULT_VALUES);
 
 THREADAPI_RESULT ThreadAPI_Create(THREAD_HANDLE* threadHandle, THREAD_START_FUNC func, void* arg)
 {
@@ -14,7 +14,7 @@ THREADAPI_RESULT ThreadAPI_Create(THREAD_HANDLE* threadHandle, THREAD_START_FUNC
         (func == NULL))
     {
         result = THREADAPI_INVALID_ARG;
-        LogError("(result = %s)", ENUM_TO_STRING(THREADAPI_RESULT, result));
+        LogError("(result = %s)", MU_ENUM_TO_STRING(THREADAPI_RESULT, result));
     }
     else
     {
@@ -23,7 +23,7 @@ THREADAPI_RESULT ThreadAPI_Create(THREAD_HANDLE* threadHandle, THREAD_START_FUNC
         {
             result = (GetLastError() == ERROR_OUTOFMEMORY) ? THREADAPI_NO_MEMORY : THREADAPI_ERROR;
 
-            LogError("(result = %s)", ENUM_TO_STRING(THREADAPI_RESULT, result));
+            LogError("(result = %s)", MU_ENUM_TO_STRING(THREADAPI_RESULT, result));
         }
         else
         {
@@ -41,7 +41,7 @@ THREADAPI_RESULT ThreadAPI_Join(THREAD_HANDLE threadHandle, int *res)
     if (threadHandle == NULL)
     {
         result = THREADAPI_INVALID_ARG;
-        LogError("(result = %s)", ENUM_TO_STRING(THREADAPI_RESULT, result));
+        LogError("(result = %s)", MU_ENUM_TO_STRING(THREADAPI_RESULT, result));
     }
     else
     {

@@ -37,7 +37,7 @@ static int http_proxy_stub_open(CONCRETE_IO_HANDLE http_proxy_io, ON_IO_OPEN_COM
     (void)on_io_error_context;
 
     LogError("Function %s is a stub and should never be called", __FUNCTION__);
-    result = __FAILURE__;
+    result = MU_FAILURE;
 
     return result;
 }
@@ -51,7 +51,7 @@ static int http_proxy_stub_close(CONCRETE_IO_HANDLE http_proxy_io, ON_IO_CLOSE_C
     (void)on_io_close_complete_context;
 
     LogError("Function %s is a stub and should never be called", __FUNCTION__);
-    result = __FAILURE__;
+    result = MU_FAILURE;
 
     return result;
 }
@@ -67,7 +67,7 @@ static int http_proxy_stub_send(CONCRETE_IO_HANDLE http_proxy_io, const void* bu
     (void)on_send_complete_context;
 
     LogError("Function %s is a stub and should never be called", __FUNCTION__);
-    result = __FAILURE__;
+    result = MU_FAILURE;
 
     return result;
 }
@@ -88,7 +88,7 @@ static int http_proxy_stub_set_option(CONCRETE_IO_HANDLE http_proxy_io, const ch
     (void)value;
 
     LogError("Function %s is a stub and should never be called", __FUNCTION__);
-    result = __FAILURE__;
+    result = MU_FAILURE;
 
     return result;
 }

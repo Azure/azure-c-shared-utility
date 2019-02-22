@@ -8,7 +8,7 @@
 #define R2(X) REGISTER_GLOBAL_MOCK_HOOK(X, real_##X);
 
 #define REGISTER_CONSTBUFFER_GLOBAL_MOCK_HOOK() \
-    FOR_EACH_1(R2, \
+    MU_FOR_EACH_1(R2, \
         CONSTBUFFER_Create, \
         CONSTBUFFER_CreateFromBuffer, \
         CONSTBUFFER_CreateWithMoveMemory, \

@@ -108,7 +108,7 @@ static int add_pending_io(SOCKET_IO_INSTANCE* socket_io_instance, const unsigned
     PENDING_SOCKET_IO* pending_socket_io = (PENDING_SOCKET_IO*)malloc(sizeof(PENDING_SOCKET_IO));
     if (pending_socket_io == NULL)
     {
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -116,7 +116,7 @@ static int add_pending_io(SOCKET_IO_INSTANCE* socket_io_instance, const unsigned
         if (pending_socket_io->bytes == NULL)
         {
             free(pending_socket_io);
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -129,7 +129,7 @@ static int add_pending_io(SOCKET_IO_INSTANCE* socket_io_instance, const unsigned
             {
                 free(pending_socket_io->bytes);
                 free(pending_socket_io);
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else
             {
@@ -354,14 +354,14 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
     if (socket_io_instance == NULL ||
         socket_io_instance->io_state != IO_STATE_CLOSED)
     {
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
         socket_io_instance->tcp_socket_connection = tcpsocketconnection_create();
         if (socket_io_instance->tcp_socket_connection == NULL)
         {
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -369,7 +369,7 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
             {
                 tcpsocketconnection_destroy(socket_io_instance->tcp_socket_connection);
                 socket_io_instance->tcp_socket_connection = NULL;
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else
             {
@@ -402,7 +402,7 @@ int socketio_close(CONCRETE_IO_HANDLE socket_io, ON_IO_CLOSE_COMPLETE on_io_clos
 
     if (socket_io == NULL)
     {
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -410,7 +410,7 @@ int socketio_close(CONCRETE_IO_HANDLE socket_io, ON_IO_CLOSE_COMPLETE on_io_clos
         if (socket_io_instance->io_state == IO_STATE_CLOSED || 
             socket_io_instance->io_state == IO_STATE_ERROR)
         {
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -435,7 +435,7 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
         (size == 0))
     {
         /* Invalid arguments */
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -444,14 +444,14 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
         SOCKET_IO_INSTANCE* socket_io_instance = (SOCKET_IO_INSTANCE*)socket_io;
         if (socket_io_instance->io_state != IO_STATE_OPEN)
         {
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
             // Queue the data, and the socketio_dowork sends the package later
             if (add_pending_io(socket_io_instance, buffer, size, on_send_complete, callback_context) != 0)
             {
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
         }
     }

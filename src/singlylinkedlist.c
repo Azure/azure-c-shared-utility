@@ -106,7 +106,7 @@ int singlylinkedlist_remove(SINGLYLINKEDLIST_HANDLE list, LIST_ITEM_HANDLE item)
         (item == NULL))
     {
         LogError("Invalid argument (list=%p, item=%p)", list, item);
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -144,7 +144,7 @@ int singlylinkedlist_remove(SINGLYLINKEDLIST_HANDLE list, LIST_ITEM_HANDLE item)
         if (current_item == NULL)
         {
             /* Codes_SRS_LIST_01_025: [If the item item_handle is not found in the list, then singlylinkedlist_remove shall fail and return a non-zero value.] */
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -269,7 +269,7 @@ int singlylinkedlist_remove_if(SINGLYLINKEDLIST_HANDLE list, LIST_CONDITION_FUNC
         (condition_function == NULL))
     {
         LogError("Invalid argument (list=%p, condition_function=%p)", list, condition_function);
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -336,7 +336,7 @@ int singlylinkedlist_foreach(SINGLYLINKEDLIST_HANDLE list, LIST_ACTION_FUNCTION 
         (action_function == NULL))
     {
         LogError("Invalid argument (list=%p, action_function=%p)", list, action_function);
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {

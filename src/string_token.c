@@ -58,7 +58,7 @@ static int get_next_token(STRING_TOKEN* token, const char** delimiters, size_t n
     if (token->token_start != NULL && token->delimiter_start == NULL)
     {
         // The parser reached the end of the input string.
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -67,7 +67,7 @@ static int get_next_token(STRING_TOKEN* token, const char** delimiters, size_t n
         if ((delimiters_lengths = get_delimiters_lengths(delimiters, n_delims)) == NULL)
         {
             LogError("Failed to get delimiters lengths");
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -289,7 +289,7 @@ int StringToken_Split(const char* source, size_t length, const char** delimiters
     if (source == NULL || delimiters == NULL || n_delims == 0 || tokens == NULL || token_count == NULL)
     {
         LogError("Invalid argument (source=%p, delimiters=%p, n_delims=%lu, tokens=%p, token_count=%p)", source, delimiters, (unsigned long)n_delims, tokens, token_count);
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -316,7 +316,7 @@ int StringToken_Split(const char* source, size_t length, const char** delimiters
                 if ((tokenValue != NULL && tokenLength == 0) || (tokenValue == NULL && tokenLength > 0))
                 {
                     LogError("Unexpected token value (%p) or length (%lu)", tokenValue, (unsigned long)tokenLength);
-                    result = __FAILURE__;
+                    result = MU_FAILURE;
                     break;
                 }
                 // Codes_SRS_STRING_TOKENIZER_09_024: [ All NULL tokens shall be ommited if include_empty is not TRUE ]
@@ -331,7 +331,7 @@ int StringToken_Split(const char* source, size_t length, const char** delimiters
                         // Codes_SRS_STRING_TOKENIZER_09_026: [ If any failures splitting or storing the tokens occur the function shall return a non-zero value ]
                         LogError("Failed re-allocating the token array");
                         (*token_count)--;
-                        result = __FAILURE__;
+                        result = MU_FAILURE;
                         break;
                     }
                     else
@@ -346,7 +346,7 @@ int StringToken_Split(const char* source, size_t length, const char** delimiters
                             // Codes_SRS_STRING_TOKENIZER_09_026: [ If any failures splitting or storing the tokens occur the function shall return a non-zero value ]
                             LogError("Failed copying token into array");
                             *token_count = (*token_count) - 1;
-                            result = __FAILURE__;
+                            result = MU_FAILURE;
                             break;
                         }
                         else
