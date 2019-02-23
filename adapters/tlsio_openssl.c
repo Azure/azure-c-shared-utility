@@ -2109,7 +2109,7 @@ void tlsio_openssl_destroy(CONCRETE_IO_HANDLE tls_io)
         }
         if (tls_io_instance->serverName != NULL)
         {
-            free(tls_io_instance->serverName);
+            free((void *)tls_io_instance->serverName);
         }
         free(tls_io);
     }
