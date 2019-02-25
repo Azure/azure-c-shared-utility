@@ -184,7 +184,7 @@ static void Base64decode(unsigned char *decodedString, const char *base64String)
     }
 }
 
-BUFFER_HANDLE Base64_Decoder(const char* source)
+BUFFER_HANDLE Base64_Decode(const char* source)
 {
     BUFFER_HANDLE result;
     /*Codes_SRS_BASE64_06_008: [If source is NULL then Base64_Decode shall return NULL.]*/
@@ -241,12 +241,12 @@ static STRING_HANDLE Base64_Encode_Internal(const unsigned char* source, size_t 
     size_t currentPosition = 0;
     neededSize += (size == 0) ? (0) : ((((size - 1) / 3) + 1) * 4);
     neededSize += 1; /*+1 because \0 at the end of the string*/
-    /*Codes_SRS_BASE64_06_006: [If when allocating memory to produce the encoding a failure occurs then Base64_Encoder shall return NULL.]*/
+    /*Codes_SRS_BASE64_06_006: [If when allocating memory to produce the encoding a failure occurs then Base64_Encode shall return NULL.]*/
     encoded = (char*)malloc(neededSize);
     if (encoded == NULL)
     {
         result = NULL;
-        LogError("Base64_Encoder:: Allocation failed.");
+        LogError("Base64_Encode:: Allocation failed.");
     }
     else
     {
@@ -302,12 +302,12 @@ static STRING_HANDLE Base64_Encode_Internal(const unsigned char* source, size_t 
 
         /*null terminating the string*/
         encoded[destinationPosition] = '\0';
-        /*Codes_SRS_BASE64_06_007: [Otherwise Base64_Encoder shall return a pointer to STRING, that string contains the base 64 encoding of input.]*/
+        /*Codes_SRS_BASE64_06_007: [Otherwise Base64_Encode shall return a pointer to STRING, that string contains the base 64 encoding of input.]*/
         result = STRING_new_with_memory(encoded);
         if (result == NULL)
         {
             free(encoded);
-            LogError("Base64_Encoder:: Allocation failed for return value.");
+            LogError("Base64_Encode:: Allocation failed for return value.");
         }
     }
     return result;
@@ -333,7 +333,7 @@ STRING_HANDLE Base64_Encode_Bytes(const unsigned char* source, size_t size)
     return result;
 }
 
-STRING_HANDLE Base64_Encoder(BUFFER_HANDLE input)
+STRING_HANDLE Base64_Encode(BUFFER_HANDLE input)
 {
     STRING_HANDLE result;
     /*the following will happen*/
@@ -343,11 +343,11 @@ STRING_HANDLE Base64_Encoder(BUFFER_HANDLE input)
     /*the encoding will use the optional [=] or [==] at the end of the encoded string, so that other less standard aware libraries can do their work*/
     /*these are the bits of the 3 normal bytes to be encoded*/
 
-    /*Codes_SRS_BASE64_06_001: [If input is NULL then Base64_Encoder shall return NULL.]*/
+    /*Codes_SRS_BASE64_06_001: [If input is NULL then Base64_Encode shall return NULL.]*/
     if (input == NULL)
     {
         result = NULL;
-        LogError("Base64_Encoder:: NULL input");
+        LogError("Base64_Encode:: NULL input");
     }
     else
     {
@@ -357,7 +357,7 @@ STRING_HANDLE Base64_Encoder(BUFFER_HANDLE input)
             (BUFFER_size(input, &inputSize) != 0))
         {
             result = NULL;
-            LogError("Base64_Encoder:: BUFFER_routines failure.");
+            LogError("Base64_Encode:: BUFFER_routines failure.");
         }
         else
         {
