@@ -16,7 +16,7 @@
 #include "azure_c_shared_utility/crt_abstractions.h"
 
 // VS 2008 does not have INFINITY and all the nice goodies...
-#if defined (TIZENRT) || defined (WINCE)
+#if defined (TIZENRT)
 #define DEFINE_INFINITY 1
 #else
 

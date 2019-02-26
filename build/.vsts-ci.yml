@@ -122,18 +122,6 @@ phases:
   - script: sudo rm -rf $(Agent.BuildDirectory)/*
     displayName: 'cleanup'
     condition: always()    
-- phase: windowscex86
-  queue:
-    name: 'win'
-  steps:
-  - script: |
-     if exist jenkins\windowsce_c.cmd (
-      call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\Tools\VsDevCmd.bat"
-      call jenkins\windowsce_c.cmd)
-    displayName: 'build'
-  - script: cd .. && rd /Q /S $(Agent.BuildDirectory)\s
-    displayName: 'cleanup'
-    condition: always()    
 - phase: windowsdynamic
   queue:
     name: 'aziotbld-win03'
