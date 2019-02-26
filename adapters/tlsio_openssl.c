@@ -390,7 +390,7 @@ static const IO_INTERFACE_DESCRIPTION tlsio_openssl_interface_description =
 };
 
 static LOCK_HANDLE * openssl_locks = NULL;
-static int locks_init_count = 0;
+static int locks_install_count = 0;
 static int openssl_init_count = 0;
 
 static void openssl_lock_unlock_helper(LOCK_HANDLE lock, int lock_mode, const char* file, int line)
@@ -516,25 +516,29 @@ static void openssl_static_locks_uninstall(void)
 {
     if (openssl_locks != NULL)
     {
-        if (locks_init_count <= 0)
+        if (locks_install_count > 0)
         {
-            int i;
-            CRYPTO_set_locking_callback(NULL);
-
-            for (i = 0; i < CRYPTO_num_locks(); i++)
+            if (locks_install_count == 1)
             {
-                if (openssl_locks[i] != NULL)
-                {
-                    Lock_Deinit(openssl_locks[i]);
-                }
-            }
+                int i;
+                CRYPTO_set_locking_callback(NULL);
 
-            free(openssl_locks);
-            openssl_locks = NULL;
+                for (i = 0; i < CRYPTO_num_locks(); i++)
+                {
+                    if (openssl_locks[i] != NULL)
+                    {
+                        Lock_Deinit(openssl_locks[i]);
+                    }
+                }
+
+                free(openssl_locks);
+                openssl_locks = NULL;
+            }
+            locks_install_count--;
         }
         else
         {
-            locks_init_count--;
+            LogError("Locks install count is invalid");
         }
     }
     else
@@ -550,7 +554,7 @@ static int openssl_static_locks_install(void)
     if (openssl_locks != NULL)
     {
         LogInfo("Locks already initialized");
-        locks_init_count++;
+        locks_install_count++;
         result = 0;
     }
     else
@@ -581,12 +585,14 @@ static int openssl_static_locks_install(void)
                 {
                     Lock_Deinit(openssl_locks[j]);
                 }
+                free(openssl_locks);
+                openssl_locks = NULL;
                 result = __FAILURE__;
             }
             else
             {
                 CRYPTO_set_locking_callback(openssl_static_locks_lock_unlock_cb);
-
+                locks_install_count++;
                 result = 0;
             }
         }
@@ -1069,51 +1075,66 @@ static int create_openssl_instance(TLS_IO_INSTANCE* tlsInstance)
 
 int tlsio_openssl_init(void)
 {
-    if (openssl_init_count <= 0)
+    if (openssl_init_count >= 0)
     {
-        (void)SSL_library_init();
-
-        SSL_load_error_strings();
-        ERR_load_BIO_strings();
-        OpenSSL_add_all_algorithms();
-
-        if (openssl_static_locks_install() != 0)
+        if (openssl_init_count == 0)
         {
-            LogError("Failed to install static locks in OpenSSL!");
-            return __FAILURE__;
-        }
+            (void)SSL_library_init();
 
-        openssl_dynamic_locks_install();
+            SSL_load_error_strings();
+            ERR_load_BIO_strings();
+            OpenSSL_add_all_algorithms();
+
+            if (openssl_static_locks_install() != 0)
+            {
+                LogError("Failed to install static locks in OpenSSL!");
+                return __FAILURE__;
+            }
+
+            openssl_dynamic_locks_install();
+        }
+        openssl_init_count++;
     }
-    openssl_init_count++;
+    else
+    {
+        LogError("OpenSSL init count is invalid");
+    }
+
     return 0;
 }
 
 void tlsio_openssl_deinit(void)
 {
-    if (openssl_init_count <= 1)
+    if (openssl_init_count >= 1)
     {
-        openssl_dynamic_locks_uninstall();
-        openssl_static_locks_uninstall();
+        if (openssl_init_count == 1)
+        {
+            openssl_dynamic_locks_uninstall();
+            openssl_static_locks_uninstall();
 #if  (OPENSSL_VERSION_NUMBER >= 0x00907000L) &&  (OPENSSL_VERSION_NUMBER < 0x20000000L) && (FIPS_mode_set)
-        FIPS_mode_set(0);
+            FIPS_mode_set(0);
 #endif
-        CRYPTO_set_locking_callback(NULL);
-        CRYPTO_set_id_callback(NULL);
-        ERR_free_strings();
-        EVP_cleanup();
+            CRYPTO_set_locking_callback(NULL);
+            CRYPTO_set_id_callback(NULL);
+            ERR_free_strings();
+            EVP_cleanup();
 
 #if   (OPENSSL_VERSION_NUMBER < 0x10000000L)
-        ERR_remove_state(0);
+            ERR_remove_state(0);
 #elif (OPENSSL_VERSION_NUMBER < 0x10100000L) || (OPENSSL_VERSION_NUMBER >= 0x20000000L)
-        ERR_remove_thread_state(NULL);
+            ERR_remove_thread_state(NULL);
 #endif
 #if  (OPENSSL_VERSION_NUMBER >= 0x10002000L) &&  (OPENSSL_VERSION_NUMBER < 0x10010000L) && (SSL_COMP_free_compression_methods)
-        SSL_COMP_free_compression_methods();
+            SSL_COMP_free_compression_methods();
 #endif
-        CRYPTO_cleanup_all_ex_data();
+            CRYPTO_cleanup_all_ex_data();
+        }
+        openssl_init_count--;
     }
-    openssl_init_count--;
+    else
+    {
+        LogError("OpenSSL is not initialized");
+    }
 }
 
 CONCRETE_IO_HANDLE tlsio_openssl_create(void* io_create_parameters)
