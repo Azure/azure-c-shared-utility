@@ -85,11 +85,6 @@ if(${memory_trace})
     add_definitions(-DGB_MEASURE_NETWORK_FOR_THIS -DGB_DEBUG_NETWORK)
 endif()
 
-if (NOT TARGET umock_c)
-    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/deps/umock-c)
-endif()
-include_directories(${UMOCK_C_INC_FOLDER})
-
 if(${use_openssl})
     if("${OPENSSL_ROOT_DIR}" STREQUAL "" AND NOT ("$ENV{OpenSSLDir}" STREQUAL ""))
         set(OPENSSL_ROOT_DIR $ENV{OpenSSLDir} CACHE PATH "")
@@ -552,6 +547,11 @@ set(original_run_int_tests ${run_int_tests})
 set(run_e2e_tests OFF)
 set(run_unittests OFF)
 set(run_int_tests OFF)
+
+if (NOT TARGET umock_c)
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/deps/umock-c)
+endif()
+include_directories(${UMOCK_C_INC_FOLDER})
 
 if (${original_run_unittests} OR ${original_run_int_tests})
     #Clone the test submodules if needed
