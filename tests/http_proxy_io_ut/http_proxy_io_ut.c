@@ -581,7 +581,7 @@ TEST_FUNCTION(when_a_call_made_by_http_proxy_io_create_fails_then_http_proxy_io_
         umock_c_negative_tests_reset();
         umock_c_negative_tests_fail_call(i);
 
-        (void)sprintf(temp_str, "On failed call %zu", i);
+        (void)sprintf(temp_str, "On failed call %lu", (unsigned long)i);
 
         // act
         http_io = http_proxy_io_get_interface_description()->concrete_io_create((void*)&default_http_proxy_io_config);

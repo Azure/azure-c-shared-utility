@@ -50,12 +50,7 @@ const IO_INTERFACE_DESCRIPTION* platform_get_default_tlsio(void)
 #elif USE_WOLFSSL
     return tlsio_wolfssl_get_interface_description();
 #else
-#ifndef WINCE
     return tlsio_schannel_get_interface_description();
-#else
-    LogError("TLS IO interface currently not supported on WEC 2013");
-    return (IO_INTERFACE_DESCRIPTION*)NULL;
-#endif
 #endif
 }
 
@@ -64,7 +59,6 @@ STRING_HANDLE platform_get_platform_info(void)
     // Expected format: "(<runtime name>; <operating system name>; <platform>)"
 
     STRING_HANDLE result;
-#ifndef WINCE
     SYSTEM_INFO sys_info;
     OSVERSIONINFO osvi;
     char *arch;
@@ -113,9 +107,6 @@ STRING_HANDLE platform_get_platform_info(void)
     }
 #pragma warning(default:4996)
 
-#else
-    result = STRING_construct("(native; Windows CE; undefined)");
-#endif
     if (result == NULL)
     {
         LogError("STRING_construct_sprintf failed");

@@ -326,7 +326,7 @@ TEST_FUNCTION(when_a_failure_occurs_for_tlsio_cyclonessl_create_then_create_fail
         umock_c_negative_tests_fail_call(i);
 
         char temp_str[128];
-        (void)sprintf(temp_str, "On failed call %zu", i);
+        (void)sprintf(temp_str, "On failed call %lu", (unsigned long)i);
 
         ///act
         CONCRETE_IO_HANDLE tlsio_handle = tlsio_cyclonessl_get_interface_description()->concrete_io_create(&tlsio_config);
@@ -628,7 +628,7 @@ TEST_FUNCTION(when_a_failure_occurs_for_tlsio_cyclonessl_open_then_create_fails)
         umock_c_negative_tests_fail_call(i);
 
         char temp_str[128];
-        (void)sprintf(temp_str, "On failed call %zu", i);
+        (void)sprintf(temp_str, "On failed call %lu", (unsigned long)i);
 
         ///act
         int result = tlsio_cyclonessl_get_interface_description()->concrete_io_open(tlsio_handle, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, NULL, (void*)0x4244);

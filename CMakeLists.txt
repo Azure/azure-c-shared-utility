@@ -30,7 +30,6 @@ option(use_cppunittest "set use_cppunittest to ON to build CppUnitTest tests on 
 option(suppress_header_searches "do not try to find headers - used when compiler check will fail" OFF)
 option(use_custom_heap "use externally defined heap functions instead of the malloc family" OFF)
 
-
 if(${use_custom_heap})
     add_definitions(-DGB_USE_CUSTOM_HEAP)
 endif()
@@ -38,6 +37,7 @@ endif()
 if(WIN32)
     option(use_schannel "set use_schannel to ON if schannel is to be used, set to OFF to not use schannel" ON)
     option(use_openssl "set use_openssl to ON if openssl is to be used, set to OFF to not use openssl" OFF)
+    option(use_mbedtls "set use_mbedtls to ON if mbedtls is to be used, set to OFF to not use mbedtls" OFF)
     option(use_wolfssl "set use_wolfssl to ON if wolfssl is to be used, set to OFF to not use wolfssl" OFF)
     option(use_etw "set use_etw to ON if ETW logging is to be used. Default is OFF" OFF)
     option(use_socketio "set use_socketio to ON if socketio is to be included in the library, set to OFF if a different implementation will be provided" ON)
@@ -50,6 +50,7 @@ else()
         option(use_openssl "set use_openssl to ON if openssl is to be used, set to OFF to not use openssl" ON)
         option(use_socketio "set use_socketio to ON if socketio is to be included in the library, set to OFF if a different implementation will be provided" ON)
     endif()
+    option(use_mbedtls "set use_mbedtls to ON if mbedtls is to be used, set to OFF to not use mbedtls" OFF)
     option(use_wolfssl "set use_wolfssl to ON if wolfssl is to be used, set to OFF to not use wolfssl" OFF)
 endif()
 
@@ -114,28 +115,21 @@ include("${CMAKE_CURRENT_LIST_DIR}/configs/azure_c_shared_utilityFunctions.cmake
 set_platform_files(${CMAKE_CURRENT_LIST_DIR})
 
 if(MSVC)
-    if (WINCE)
-        # WEC 2013 uses older VS compiler. Build some files as C++ files to resolve C99 related compile issues
-        SET_SOURCE_FILES_PROPERTIES(${LOGGING_C_FILE} ${XLOGGING_C_FILE} src/map.c adapters/uniqueid_win32.c src/tlsio_schannel.c src/x509_schannel.c PROPERTIES LANGUAGE CXX)
-        if (${use_httpapi_compact})
-            SET_SOURCE_FILES_PROPERTIES(adapters/httpapi_compact.c PROPERTIES LANGUAGE CXX)
-        else()
-            SET_SOURCE_FILES_PROPERTIES(adapters/httpapi_wince.c PROPERTIES LANGUAGE CXX)
-        endif()
-    ELSE()
-        if(${use_openssl})
-            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_OPENSSL")
-            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_OPENSSL")
-        endif()
-        if(${use_wolfssl})
-            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_WOLFSSL")
-            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_WOLFSSL")
+    if(${use_openssl})
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_OPENSSL")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_OPENSSL")
+    endif()
+    if(${use_mbedtls})
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_MBEDTLS")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_MBEDTLS")
+    endif()
+    if(${use_wolfssl})
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_WOLFSSL")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_WOLFSSL")
 
-            # Disables error if a bit-field is used on non-integer variable
-            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4 /wd4214")
-            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4 /wd4214")
-        endif()
-
+        # Disables error if a bit-field is used on non-integer variable
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4 /wd4214")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4 /wd4214")
     endif()
 elseif(LINUX) #LINUX OR APPLE
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wformat=2 -Wformat-security")
@@ -143,6 +137,10 @@ elseif(LINUX) #LINUX OR APPLE
     if(${use_openssl})
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_OPENSSL")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_OPENSSL")
+    endif()
+    if(${use_mbedtls})
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_MBEDTLS")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_MBEDTLS")
     endif()
     if(${use_wolfssl})
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_WOLFSSL")
@@ -158,6 +156,10 @@ elseif(APPLE)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_OPENSSL")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_OPENSSL")
     endif()
+    if(${use_mbedtls})
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_MBEDTLS")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_MBEDTLS")
+    endif()
     if(${use_wolfssl})
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_WOLFSSL")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_WOLFSSL")
@@ -169,49 +171,49 @@ include_directories(${UMOCK_C_INC_FOLDER})
 
 #these are the C source files
 set(source_c_files
-./src/base32.c
-./src/base64.c
-./src/buffer.c
-./src/constbuffer_array.c
-./src/connection_string_parser.c
-./src/constbuffer.c
-${LOGGING_C_FILE}
-./src/crt_abstractions.c
-./src/constmap.c
-./src/doublylinkedlist.c
-./src/gballoc.c
-./src/gbnetwork.c
-./src/gb_stdio.c
-./src/gb_time.c
-./src/gb_rand.c
-./src/hmac.c
-./src/hmacsha256.c
-./src/xio.c
-./src/singlylinkedlist.c
-./src/map.c
-./src/sastoken.c
-./src/sha1.c
-./src/sha224.c
-./src/sha384-512.c
-./src/strings.c
-./src/string_token.c
-./src/string_tokenizer.c
-./src/uuid.c
-./src/urlencode.c
-./src/usha.c
-./src/vector.c
-${XLOGGING_C_FILE}
-./src/optionhandler.c
-./src/memory_data.c
-./adapters/agenttime.c
-${CONDITION_C_FILE}
-${LOCK_C_FILE}
-${PLATFORM_C_FILE}
-${SOCKETIO_C_FILE}
-${TICKCOUTER_C_FILE}
-${THREAD_C_FILE}
-${UNIQUEID_C_FILE}
-${ENVIRONMENT_VARIABLE_C_FILE}
+    ./src/base32.c
+    ./src/base64.c
+    ./src/buffer.c
+    ./src/constbuffer_array.c
+    ./src/connection_string_parser.c
+    ./src/constbuffer.c
+    ${LOGGING_C_FILE}
+    ./src/crt_abstractions.c
+    ./src/constmap.c
+    ./src/doublylinkedlist.c
+    ./src/gballoc.c
+    ./src/gbnetwork.c
+    ./src/gb_stdio.c
+    ./src/gb_time.c
+    ./src/gb_rand.c
+    ./src/hmac.c
+    ./src/hmacsha256.c
+    ./src/xio.c
+    ./src/singlylinkedlist.c
+    ./src/map.c
+    ./src/sastoken.c
+    ./src/sha1.c
+    ./src/sha224.c
+    ./src/sha384-512.c
+    ./src/strings.c
+    ./src/string_token.c
+    ./src/string_tokenizer.c
+    ./src/uuid.c
+    ./src/urlencode.c
+    ./src/usha.c
+    ./src/vector.c
+    ${XLOGGING_C_FILE}
+    ./src/optionhandler.c
+    ./src/memory_data.c
+    ./adapters/agenttime.c
+    ${CONDITION_C_FILE}
+    ${LOCK_C_FILE}
+    ${PLATFORM_C_FILE}
+    ${SOCKETIO_C_FILE}
+    ${TICKCOUTER_C_FILE}
+    ${THREAD_C_FILE}
+    ${UNIQUEID_C_FILE}
+    ${ENVIRONMENT_VARIABLE_C_FILE}
 )
 
 if(UNIX) #LINUX OR APPLE
@@ -251,6 +253,11 @@ if(${use_wolfssl})
         ./adapters/tlsio_wolfssl.c
     )
 endif()
+if(${use_mbedtls})
+    set(source_c_files ${source_c_files}
+        ./adapters/tlsio_mbedtls.c
+    )
+endif()
 if(${use_openssl})
     set(source_c_files ${source_c_files}
         ./adapters/tlsio_openssl.c
@@ -265,7 +272,7 @@ if(${use_applessl})
     include_directories(./pal/ios-osx/)
 endif()
 
-if (WIN32 AND (${CMAKE_SYSTEM_VERSION} VERSION_EQUAL "10.0.17763.0" OR ${CMAKE_SYSTEM_VERSION} VERSION_GREATER "10.0.17763.0"))
+if (WIN32 AND ("${CMAKE_SYSTEM_VERSION}" VERSION_EQUAL "10.0.17763.0" OR "${CMAKE_SYSTEM_VERSION}" VERSION_GREATER "10.0.17763.0"))
     # Windows added support for UNIX domain sockets to the OS and SDK
     # in the Oct 2018 update (10.0.17763.0, aka RS5)
     add_definitions(-DAF_UNIX_ON_WINDOWS)
@@ -273,61 +280,61 @@ endif()
 
 #these are the C headers
 set(source_h_files
-./inc/azure_c_shared_utility/agenttime.h
-./inc/azure_c_shared_utility/base32.h
-./inc/azure_c_shared_utility/base64.h
-./inc/azure_c_shared_utility/buffer_.h
-./inc/azure_c_shared_utility/constbuffer_array.h
-./inc/azure_c_shared_utility/connection_string_parser.h
-./inc/azure_c_shared_utility/crt_abstractions.h
-./inc/azure_c_shared_utility/constmap.h
-./inc/azure_c_shared_utility/condition.h
-./inc/azure_c_shared_utility/const_defines.h
-${LOGGING_H_FILE}
-./inc/azure_c_shared_utility/doublylinkedlist.h
-./inc/azure_c_shared_utility/envvariable.h
-./inc/azure_c_shared_utility/gballoc.h
-./inc/azure_c_shared_utility/gbnetwork.h
-./inc/azure_c_shared_utility/gb_stdio.h
-./inc/azure_c_shared_utility/gb_time.h
-./inc/azure_c_shared_utility/gb_rand.h
-./inc/azure_c_shared_utility/hmac.h
-./inc/azure_c_shared_utility/hmacsha256.h
-./inc/azure_c_shared_utility/http_proxy_io.h
-./inc/azure_c_shared_utility/singlylinkedlist.h
-./inc/azure_c_shared_utility/lock.h
-./inc/azure_c_shared_utility/macro_utils.h
-./inc/azure_c_shared_utility/map.h
-./inc/azure_c_shared_utility/optimize_size.h
-./inc/azure_c_shared_utility/platform.h
-./inc/azure_c_shared_utility/refcount.h
-./inc/azure_c_shared_utility/sastoken.h
-./inc/azure_c_shared_utility/sha-private.h
-./inc/azure_c_shared_utility/shared_util_options.h
-./inc/azure_c_shared_utility/sha.h
-./inc/azure_c_shared_utility/socketio.h
-./inc/azure_c_shared_utility/stdint_ce6.h
-./inc/azure_c_shared_utility/strings.h
-./inc/azure_c_shared_utility/strings_types.h
-./inc/azure_c_shared_utility/string_token.h
-./inc/azure_c_shared_utility/string_tokenizer.h
-./inc/azure_c_shared_utility/string_tokenizer_types.h
-./inc/azure_c_shared_utility/tlsio_options.h
-./inc/azure_c_shared_utility/tickcounter.h
-./inc/azure_c_shared_utility/threadapi.h
-./inc/azure_c_shared_utility/xio.h
-./inc/azure_c_shared_utility/umock_c_prod.h
-./inc/azure_c_shared_utility/uniqueid.h
-./inc/azure_c_shared_utility/uuid.h
-./inc/azure_c_shared_utility/urlencode.h
-./inc/azure_c_shared_utility/vector.h
-./inc/azure_c_shared_utility/vector_types.h
-./inc/azure_c_shared_utility/vector_types_internal.h
-./inc/azure_c_shared_utility/xlogging.h
-./inc/azure_c_shared_utility/constbuffer.h
-./inc/azure_c_shared_utility/tlsio.h
-./inc/azure_c_shared_utility/optionhandler.h
-./inc/azure_c_shared_utility/memory_data.h
+    ./inc/azure_c_shared_utility/agenttime.h
+    ./inc/azure_c_shared_utility/base32.h
+    ./inc/azure_c_shared_utility/base64.h
+    ./inc/azure_c_shared_utility/buffer_.h
+    ./inc/azure_c_shared_utility/constbuffer_array.h
+    ./inc/azure_c_shared_utility/connection_string_parser.h
+    ./inc/azure_c_shared_utility/crt_abstractions.h
+    ./inc/azure_c_shared_utility/constmap.h
+    ./inc/azure_c_shared_utility/condition.h
+    ./inc/azure_c_shared_utility/const_defines.h
+    ${LOGGING_H_FILE}
+    ./inc/azure_c_shared_utility/doublylinkedlist.h
+    ./inc/azure_c_shared_utility/envvariable.h
+    ./inc/azure_c_shared_utility/gballoc.h
+    ./inc/azure_c_shared_utility/gbnetwork.h
+    ./inc/azure_c_shared_utility/gb_stdio.h
+    ./inc/azure_c_shared_utility/gb_time.h
+    ./inc/azure_c_shared_utility/gb_rand.h
+    ./inc/azure_c_shared_utility/hmac.h
+    ./inc/azure_c_shared_utility/hmacsha256.h
+    ./inc/azure_c_shared_utility/http_proxy_io.h
+    ./inc/azure_c_shared_utility/singlylinkedlist.h
+    ./inc/azure_c_shared_utility/lock.h
+    ./inc/azure_c_shared_utility/macro_utils.h
+    ./inc/azure_c_shared_utility/map.h
+    ./inc/azure_c_shared_utility/optimize_size.h
+    ./inc/azure_c_shared_utility/platform.h
+    ./inc/azure_c_shared_utility/refcount.h
+    ./inc/azure_c_shared_utility/sastoken.h
+    ./inc/azure_c_shared_utility/sha-private.h
+    ./inc/azure_c_shared_utility/shared_util_options.h
+    ./inc/azure_c_shared_utility/sha.h
+    ./inc/azure_c_shared_utility/socketio.h
+    ./inc/azure_c_shared_utility/stdint_ce6.h
+    ./inc/azure_c_shared_utility/strings.h
+    ./inc/azure_c_shared_utility/strings_types.h
+    ./inc/azure_c_shared_utility/string_token.h
+    ./inc/azure_c_shared_utility/string_tokenizer.h
+    ./inc/azure_c_shared_utility/string_tokenizer_types.h
+    ./inc/azure_c_shared_utility/tlsio_options.h
+    ./inc/azure_c_shared_utility/tickcounter.h
+    ./inc/azure_c_shared_utility/threadapi.h
+    ./inc/azure_c_shared_utility/xio.h
+    ./inc/azure_c_shared_utility/umock_c_prod.h
+    ./inc/azure_c_shared_utility/uniqueid.h
+    ./inc/azure_c_shared_utility/uuid.h
+    ./inc/azure_c_shared_utility/urlencode.h
+    ./inc/azure_c_shared_utility/vector.h
+    ./inc/azure_c_shared_utility/vector_types.h
+    ./inc/azure_c_shared_utility/vector_types_internal.h
+    ./inc/azure_c_shared_utility/xlogging.h
+    ./inc/azure_c_shared_utility/constbuffer.h
+    ./inc/azure_c_shared_utility/tlsio.h
+    ./inc/azure_c_shared_utility/optionhandler.h
+    ./inc/azure_c_shared_utility/memory_data.h
 )
 
 if(UNIX) #LINUX OR APPLE
@@ -377,6 +384,11 @@ if(${use_wolfssl})
         include_directories($ENV{WolfSSLDir})
     endif()
 endif()
+if(${use_mbedtls})
+    set(source_h_files ${source_h_files}
+        ./inc/azure_c_shared_utility/tlsio_mbedtls.h
+        )
+endif()
 if(${use_openssl})
     set(source_h_files ${source_h_files}
         ./inc/azure_c_shared_utility/tlsio_openssl.h
@@ -413,7 +425,6 @@ endif()
 
 
 if(${build_as_dynamic})
-
     # need to create a def file from existing def files due to cmake
     # not letting us build more than one file
     file(READ ./src/aziotsharedutil.def DEF_FILE_CONTENT)
@@ -438,11 +449,7 @@ set(aziotsharedutil_target_libs)
 
 if(${use_http})
     if(WIN32)
-        if (WINCE)
-            set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} crypt32 ws2)
-        else()
-            set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} crypt32 winhttp)
-        endif()
+        set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} crypt32 winhttp)
     else()
         if (NOT use_builtin_httpapi)
             if (CMAKE_CROSSCOMPILING)
@@ -473,11 +480,16 @@ endif(${use_http})
 
 if(${use_schannel})
     if(WIN32)
-        if (WINCE)
-            set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} secur32)
-        else()
-            set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} crypt32 ws2_32 secur32 advapi32 ncrypt)
-        endif()
+         set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} crypt32 ws2_32 secur32 advapi32 ncrypt)
+    endif()
+endif()
+
+if(${use_mbedtls})
+    if (WIN32)
+        set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} $ENV{mbedtlsLibDir}/mbedtls $ENV{mbedtlsLibDir}/mbedx509 $ENV{mbedtlsLibDir}/mbedcrypto)
+        include_directories("$ENV{mbedtlsDir}/include")
+    else()
+        set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} mbedtls mbedx509 mbedcrypto)
     endif()
 endif()
 
@@ -499,6 +511,7 @@ if(${use_wolfssl})
         set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} wolfssl)
     endif()
 endif()
+
 
 if(${use_applessl})
     set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} ${cf_foundation} ${cf_network})

@@ -289,7 +289,7 @@ static int lookup_address_and_initiate_socket_connection(SOCKET_IO_INSTANCE* soc
         size_t hostname_len = strlen(socket_io_instance->hostname);
         if (hostname_len + 1 > sizeof(addrInfoUn.sun_path))
         {
-            LogError("Hostname %s is too long for a unix socket (max len = %zu)", socket_io_instance->hostname, sizeof(addrInfoUn.sun_path));
+            LogError("Hostname %s is too long for a unix socket (max len = %lu)", socket_io_instance->hostname, (unsigned long)sizeof(addrInfoUn.sun_path));
             result = __FAILURE__;
         }
         else
