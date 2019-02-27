@@ -85,6 +85,11 @@ if(${memory_trace})
     add_definitions(-DGB_MEASURE_NETWORK_FOR_THIS -DGB_DEBUG_NETWORK)
 endif()
 
+if (NOT TARGET umock_c)
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/deps/umock-c)
+endif()
+include_directories(${UMOCK_C_INC_FOLDER})
+
 if(${use_openssl})
     if("${OPENSSL_ROOT_DIR}" STREQUAL "" AND NOT ("$ENV{OpenSSLDir}" STREQUAL ""))
         set(OPENSSL_ROOT_DIR $ENV{OpenSSLDir} CACHE PATH "")
@@ -551,14 +556,11 @@ set(run_int_tests OFF)
 if (${original_run_unittests} OR ${original_run_int_tests})
     #Clone the test submodules if needed
     if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/deps/testrunnerswitcher/CMakeLists.txt")
-        execute_process(COMMAND git clone https://github.com/Azure/azure-c-testrunnerswitcher.git -q --no-tags ${CMAKE_CURRENT_SOURCE_DIR}/deps/testrunnerswitcher)
+        execute_process(COMMAND git clone https://github.com/Azure/azure-c-testrunnerswitcher.git -q ${CMAKE_CURRENT_SOURCE_DIR}/deps/testrunnerswitcher)
     endif()
     if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/deps/ctest/CMakeLists.txt")
-        execute_process(COMMAND git clone https://github.com/Azure/azure-ctest.git -q --no-tags ${CMAKE_CURRENT_SOURCE_DIR}/deps/ctest)
+        execute_process(COMMAND git clone https://github.com/Azure/azure-ctest.git -q ${CMAKE_CURRENT_SOURCE_DIR}/deps/ctest)
     endif()
-
-    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/deps/umock-c)
-    include_directories(${UMOCK_C_INC_FOLDER})
 
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/deps/testrunnerswitcher)
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/deps/ctest)

@@ -3,6 +3,8 @@
 
 setlocal
 
+git submodule update --init
+
 set build-root=%~dp0..
 rem // resolve to fully qualified path
 for %%i in ("%build-root%") do set build-root=%%~fi

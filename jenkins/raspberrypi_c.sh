@@ -1,16 +1,18 @@
 #!/bin/bash
-# Copyright (c) Microsoft. All rights reserved. Licensed under the MIT 
-# license. See LICENSE file in the project root for full license 
+# Copyright (c) Microsoft. All rights reserved. Licensed under the MIT
+# license. See LICENSE file in the project root for full license
 # information.
 
 # Tested on RPi2 debian verion 7.8
 
-install_root="/home/jenkins" 
-build_root=$(cd "$(dirname "$0")/.." && pwd) 
+git submodule update --init
+
+install_root="/home/jenkins"
+build_root=$(cd "$(dirname "$0")/.." && pwd)
 cd $build_root
 
-# ----------------------------------------------------------------------------- 
-# -- helper subroutines 
+# -----------------------------------------------------------------------------
+# -- helper subroutines
 # -----------------------------------------------------------------------------
 checkExists() {
     if hash $1 2>/dev/null;
@@ -22,19 +24,19 @@ checkExists() {
     fi
 }
 
-# ----------------------------------------------------------------------------- 
-# -- Check for environment pre-requisites. This script requires -- that 
-# the following programs work: -- curl build-essential(g++,gcc,make) 
-# cmake git 
 # -----------------------------------------------------------------------------
-checkExists curl 
-checkExists g++ 
-checkExists gcc 
-checkExists make 
-checkExists cmake 
+# -- Check for environment pre-requisites. This script requires -- that
+# the following programs work: -- curl build-essential(g++,gcc,make)
+# cmake git
+# -----------------------------------------------------------------------------
+checkExists curl
+checkExists g++
+checkExists gcc
+checkExists make
+checkExists cmake
 checkExists git
 
-# ----------------------------------------------------------------------------- 
+# -----------------------------------------------------------------------------
 # -- Check for RPiTools directory.
 # -----------------------------------------------------------------------------
 if [ ! -d "$install_root/RPiTools" ];
@@ -43,22 +45,22 @@ then
     exit 1
 fi
 
-# ----------------------------------------------------------------------------- 
+# -----------------------------------------------------------------------------
 # -- Set environment variable
 # -----------------------------------------------------------------------------
-cd $install_root/RPiTools/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/arm-linux-gnueabihf 
+cd $install_root/RPiTools/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/arm-linux-gnueabihf
 export RPI_ROOT=$(pwd)
 
-# ----------------------------------------------------------------------------- 
-# -- Create toolchain-rpi.cmake 
 # -----------------------------------------------------------------------------
-echo ---------- Creating toolchain cmake file ---------- 
+# -- Create toolchain-rpi.cmake
+# -----------------------------------------------------------------------------
+echo ---------- Creating toolchain cmake file ----------
 FILE="$build_root/build_all/linux/toolchain-rpi.cmake"
 
 /bin/cat <<EOM >$FILE
-INCLUDE(CMakeForceCompiler) 
+INCLUDE(CMakeForceCompiler)
 
-SET(CMAKE_SYSTEM_NAME Linux) # this one is important 
+SET(CMAKE_SYSTEM_NAME Linux) # this one is important
 SET(CMAKE_SYSTEM_VERSION 1) # this one not so much
 
 # this is the location of the amd64 toolchain targeting the Raspberry Pi
@@ -71,8 +73,8 @@ SET(CMAKE_FIND_ROOT_PATH ${RPI_ROOT})
 SET(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 
 # for libraries and headers in the target directories
-SET(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY) 
-SET(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY) 
+SET(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+SET(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 EOM
 
 build_folder=$build_root"/cmake/shared-util_linux"

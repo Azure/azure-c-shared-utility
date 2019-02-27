@@ -4,6 +4,8 @@
 @setlocal
 @echo off
 
+git submodule update --init
+
 set cmake_dir=dynamic_build
 set build-root=%~dp0..
 @REM // resolve to fully qualified path

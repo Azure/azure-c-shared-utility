@@ -5,6 +5,8 @@
 
 set -e
 
+git submodule update --init
+
 script_dir=$(cd "$(dirname "$0")" && pwd)
 build_root=$(cd "${script_dir}/.." && pwd)
 build_folder=$build_root"/cmake"

@@ -4,6 +4,8 @@
 
 set -e
 
+git submodule update --init
+
 build_root=$(cd "$(dirname "$0")/.." && pwd)
 cd $build_root
 

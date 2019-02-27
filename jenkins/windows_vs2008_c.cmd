@@ -3,6 +3,8 @@
 
 @setlocal EnableExtensions EnableDelayedExpansion
 
+git submodule update --init
+
 set build-root=%~dp0..
 rem // resolve to fully qualified path
 for %%i in ("%build-root%") do set build-root=%%~fi
@@ -34,13 +36,13 @@ mkdir %build-root%\cmake\%CMAKE_DIR%
 rem no error checking
 pushd %build-root%\cmake\%CMAKE_DIR%
 
-echo ***Running CMAKE for Win32***   
+echo ***Running CMAKE for Win32***
 cmake %build-root% -Drun_unittests:BOOL=ON -Duse_cppunittest:bool=OFF
 if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 
 call :_run-msbuild "Build" azure_c_shared_utility.sln
 if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
-    
+
 ctest -C "debug" -V
 if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 
