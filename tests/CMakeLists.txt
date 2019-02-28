@@ -88,7 +88,7 @@ if(${run_unittests})
     if(NOT DEFINED MACOSX)
         add_subdirectory(tlsio_esp8266_ut)
         add_subdirectory(socket_async_ut)
-        add_subdirectory(dns_async_ut)
+        #add_subdirectory(dns_resolver_ut)
     endif()
 
     #Add template as reference for new tests

@@ -205,6 +205,7 @@ set(source_c_files
     ${XLOGGING_C_FILE}
     ./src/optionhandler.c
     ./src/memory_data.c
+    ./src/dns_resolver_ares.c #unhardcode this later
     ./adapters/agenttime.c
     ${CONDITION_C_FILE}
     ${LOCK_C_FILE}

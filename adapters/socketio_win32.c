@@ -18,6 +18,7 @@
 #include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/shared_util_options.h"
 #include "azure_c_shared_utility/xlogging.h"
+#include "azure_c_shared_utility/dns_resolver.h"
 
 typedef enum IO_STATE_TAG
 {
@@ -42,14 +43,18 @@ typedef struct SOCKET_IO_INSTANCE_TAG
     SOCKETIO_ADDRESS_TYPE address_type;
     ON_BYTES_RECEIVED on_bytes_received;
     ON_IO_ERROR on_io_error;
+    ON_IO_OPEN_COMPLETE on_io_open_complete;
     void* on_bytes_received_context;
     void* on_io_error_context;
+    void* on_io_open_complete_context;
     char* hostname;
     int port;
     IO_STATE io_state;
     SINGLYLINKEDLIST_HANDLE pending_io_list;
     struct tcp_keepalive keep_alive;
     unsigned char recv_bytes[RECEIVE_BYTES_VALUE];
+    DNSRESOLVER_HANDLE dns_resolver;
+    ADDRINFO* addrInfo;
 } SOCKET_IO_INSTANCE;
 
 /*this function will clone an option given by name and value*/
@@ -146,6 +151,29 @@ static int add_pending_io(SOCKET_IO_INSTANCE* socket_io_instance, const unsigned
     return result;
 }
 
+static int connect_socket(SOCKET socket, struct sockaddr* addr, size_t len)
+{
+    int result;
+    u_long iMode = 1;
+
+    if (connect(socket, addr, (int)len) != 0)
+    {
+        LogError("Failure: connect failure %d.", WSAGetLastError());
+        result = __FAILURE__;
+    }
+    else if (ioctlsocket(socket, FIONBIO, &iMode) != 0)
+    {
+        LogError("Failure: ioctlsocket failure %d.", WSAGetLastError());
+        result = __FAILURE__;
+    }
+    else
+    {
+        result = 0;
+    }
+
+    return result;
+}
+
 CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters)
 {
     SOCKETIO_CONFIG* socket_io_config = (SOCKETIO_CONFIG*)io_create_parameters;
@@ -197,7 +225,12 @@ CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters)
                 }
                 else
                 {
+                    result->addrInfo = calloc(1, sizeof(ADDRINFO));
+                    result->addrInfo->ai_addr = calloc(1, sizeof(struct sockaddr_in));
+
                     result->port = socket_io_config->port;
+                    result->on_io_open_complete = NULL;
+                    result->dns_resolver = dns_resolver_create(result->hostname, result->port, NULL);
                     result->on_bytes_received = NULL;
                     result->on_io_error = NULL;
                     result->on_bytes_received_context = NULL;
@@ -247,34 +280,34 @@ void socketio_destroy(CONCRETE_IO_HANDLE socket_io)
             free(socket_io_instance->hostname);
         }
 
+        free(socket_io_instance->addrInfo->ai_addr);
+        freeaddrinfo(socket_io_instance->addrInfo);
+        dns_resolver_destroy(socket_io_instance->dns_resolver);
+
         free(socket_io);
     }
 }
 
-static int connect_socket(SOCKET socket, struct sockaddr* addr, size_t len)
+static int lookup_address(SOCKET_IO_INSTANCE* socket_io_instance)
 {
     int result;
-    u_long iMode = 1;
-
-    if (connect(socket, addr, (int)len) != 0)
+    
+    if (!dns_resolver_is_lookup_complete(socket_io_instance->dns_resolver))
     {
-        LogError("Failure: connect failure %d.", WSAGetLastError());
-        result = __FAILURE__;
-    }
-    else if (ioctlsocket(socket, FIONBIO, &iMode) != 0)
-    {
-        LogError("Failure: ioctlsocket failure %d.", WSAGetLastError());
-        result = __FAILURE__;
+        socket_io_instance->io_state = IO_STATE_OPENING;
     }
     else
     {
-        result = 0;
+
+        socket_io_instance->io_state = IO_STATE_OPEN;
     }
+
+    result = 0;
 
     return result;
 }
 
-static int lookup_address_and_initiate_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
+static int initiate_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
 {
     int result;
 
@@ -282,28 +315,22 @@ static int lookup_address_and_initiate_socket_connection(SOCKET_IO_INSTANCE* soc
     if (socket_io_instance->address_type == ADDRESS_TYPE_IP)
     {
 #endif
-        char portString[16];
-        ADDRINFO* addr_info = NULL;
-        ADDRINFO addrHint = { 0 };
-        addrHint.ai_family = AF_INET;
-        addrHint.ai_socktype = SOCK_STREAM;
-        addrHint.ai_protocol = 0;
+        struct addrinfo* addr = dns_resolver_get_addrInfo(socket_io_instance->dns_resolver);
+        memcpy(&(socket_io_instance->addrInfo), &addr, sizeof(*(socket_io_instance->addrInfo)));
 
-        if (sprintf(portString, "%u", socket_io_instance->port) < 0)
+        result = connect_socket(socket_io_instance->socket, (socket_io_instance->addrInfo)->ai_addr, sizeof(*((socket_io_instance->addrInfo)->ai_addr)));
+        if(result != 0)
         {
-            LogError("Failure: sprintf failed to encode the port.");
-            result = __FAILURE__;
+            LogError("connect_socket failed");
         }
-        else if (getaddrinfo(socket_io_instance->hostname, portString, &addrHint, &addr_info) != 0)
+        else 
         {
-            LogError("Failure: getaddrinfo failure %d.", WSAGetLastError());
-            result = __FAILURE__;
+            if (socket_io_instance->on_io_open_complete != NULL)
+            {
+                socket_io_instance->on_io_open_complete(socket_io_instance->on_io_open_complete_context, IO_OPEN_OK /*: IO_OPEN_ERROR*/);
+            }
         }
-        else
-        {
-            result = connect_socket(socket_io_instance->socket, addr_info->ai_addr, sizeof(*addr_info->ai_addr));
-            freeaddrinfo(addr_info);
-        }
+            
 #ifdef AF_UNIX_ON_WINDOWS
     }
     else // ADDRESS_TYPE_DOMAIN_SOCKET
@@ -336,6 +363,19 @@ static int lookup_address_and_initiate_socket_connection(SOCKET_IO_INSTANCE* soc
             (void)memcpy(addr_un.sun_path, path, path_len);
 
             result = connect_socket(socket_io_instance->socket, (struct sockaddr*)&addr_un, sizeof(addr_un));
+            if (result != 0)
+            {
+                LogError("connect_socket failed");
+                result = __FAILURE__;
+            }
+            else
+            {
+                socket_io_instance->io_state = IO_STATE_OPEN;
+                if (socket_io_instance->on_io_open_complete != NULL)
+                {
+                    socket_io_instance->on_io_open_complete(socket_io_instance->on_io_open_complete_context, IO_OPEN_OK /*: IO_OPEN_ERROR*/);
+                }
+            }
         }
     }
 #endif
@@ -367,6 +407,8 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
             socket_io_instance->on_bytes_received = on_bytes_received;
             socket_io_instance->on_io_error = on_io_error;
             socket_io_instance->on_io_error_context = on_io_error_context;
+            socket_io_instance->on_io_open_complete = on_io_open_complete;
+            socket_io_instance->on_io_open_complete_context = on_io_open_complete_context;
 
             socket_io_instance->io_state = IO_STATE_OPEN;
 
@@ -385,9 +427,15 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
                 LogError("Failure: socket create failure %d.", WSAGetLastError());
                 result = __FAILURE__;
             }
-            else if (lookup_address_and_initiate_socket_connection(socket_io_instance) != 0)
+            else if (lookup_address(socket_io_instance) != 0)
             {
-                LogError("lookup_address_and_connect_socket failed");
+                //TODO: Log c-ares error?
+                //LogError("Failure: socket create failure %d.", WSAGetLastError());
+                result = __FAILURE__;
+            }
+            else if (socket_io_instance->io_state == IO_STATE_OPEN && initiate_socket_connection(socket_io_instance) != 0)
+            {
+                LogError("initiate_socket_connection failed");
                 (void)closesocket(socket_io_instance->socket);
                 socket_io_instance->socket = INVALID_SOCKET;
                 result = __FAILURE__;
@@ -398,17 +446,20 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
                 socket_io_instance->on_bytes_received = on_bytes_received;
                 socket_io_instance->on_io_error = on_io_error;
                 socket_io_instance->on_io_error_context = on_io_error_context;
-
-                socket_io_instance->io_state = IO_STATE_OPEN;
-
+                socket_io_instance->on_io_open_complete = on_io_open_complete;
+                socket_io_instance->on_io_open_complete_context = on_io_open_complete_context;
+                
                 result = 0;
             }
         }
     }
 
-    if (on_io_open_complete != NULL)
+    if (socket_io_instance->io_state != IO_STATE_OPENING)
     {
-        on_io_open_complete(on_io_open_complete_context, result == 0 ? IO_OPEN_OK : IO_OPEN_ERROR);
+        if (on_io_open_complete != NULL)
+        {
+            on_io_open_complete(on_io_open_complete_context, result == 0 ? IO_OPEN_OK : IO_OPEN_ERROR);
+        }
     }
 
     return result;
@@ -433,6 +484,8 @@ int socketio_close(CONCRETE_IO_HANDLE socket_io, ON_IO_CLOSE_COMPLETE on_io_clos
             (void)closesocket(socket_io_instance->socket);
             socket_io_instance->socket = INVALID_SOCKET;
             socket_io_instance->io_state = IO_STATE_CLOSED;
+
+            socket_io_instance->dns_resolver = NULL;
         }
         if (on_io_close_complete != NULL)
         {
@@ -605,6 +658,38 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                         }
                     }
                 } while (received > 0 && socket_io_instance->io_state == IO_STATE_OPEN);
+            }
+        }
+        else
+        {
+            //Handle async socket_open operation within socket_dowork
+            if (socket_io_instance->io_state == IO_STATE_OPENING)
+            {
+                if (lookup_address(socket_io_instance) != 0)
+                {
+                    LogError("lookup_address_and_connect_socket failed");
+                    (void)closesocket(socket_io_instance->socket);
+                    socket_io_instance->socket = INVALID_SOCKET;
+                    socket_io_instance->io_state = IO_STATE_CLOSED;
+                }
+                else if (socket_io_instance->io_state == IO_STATE_OPEN && initiate_socket_connection(socket_io_instance) != 0)
+                {
+                    LogError("lookup_address_and_connect_socket failed");
+                    (void)closesocket(socket_io_instance->socket);
+                    socket_io_instance->socket = INVALID_SOCKET;
+                    socket_io_instance->io_state = IO_STATE_CLOSED;
+                }
+                else
+                {
+                    if (socket_io_instance->io_state != IO_STATE_OPENING)
+                    {
+                        if (socket_io_instance->on_io_open_complete != NULL)
+                        {
+                            socket_io_instance->on_io_open_complete(socket_io_instance->on_io_open_complete_context, socket_io_instance->io_state == IO_STATE_OPEN ? IO_OPEN_OK : IO_OPEN_ERROR);
+                        }
+                    }
+                
+                }
             }
         }
     }

@@ -21,7 +21,7 @@
 #include <time.h>
 #endif
 
-#include "dns_async.h"
+#include "dns_resolver.h"
 
 /**
  * The gballoc.h will replace the malloc, free, and realloc by the my_gballoc functions, in this case,
@@ -111,7 +111,7 @@ static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
  */
 static TEST_MUTEX_HANDLE g_testByTest;
 
-BEGIN_TEST_SUITE(dns_async_ut)
+BEGIN_TEST_SUITE(dns_resolver_ut)
 
     /**
      * This is the place where we initialize the test system. Replace the test name to associate the test
@@ -175,23 +175,23 @@ BEGIN_TEST_SUITE(dns_async_ut)
         TEST_MUTEX_RELEASE(g_testByTest);
     }
 
-    /* Tests_SRS_DNS_ASYNC_30_022: [ If the DNS lookup process has completed, dns_async_is_create_complete shall return true. ]*/
-    /* Tests_SRS_DNS_ASYNC_30_032: [ If dns_async_is_create_complete has returned true and the lookup process has succeeded, dns_async_get_ipv4 shall return the discovered IPv4 address. ]*/
-    /* Tests_SRS_DNS_ASYNC_30_024: [ If dns_async_is_create_complete has previously returned true, dns_async_is_create_complete shall do nothing and return true. ]*/
-    TEST_FUNCTION(dns_async__is_complete_repeated_call__succeeds)
+    /* Tests_SRS_dns_resolver_30_022: [ If the DNS lookup process has completed, dns_resolver_is_create_complete shall return true. ]*/
+    /* Tests_SRS_dns_resolver_30_032: [ If dns_resolver_is_create_complete has returned true and the lookup process has succeeded, dns_resolver_get_ipv4 shall return the discovered IPv4 address. ]*/
+    /* Tests_SRS_dns_resolver_30_024: [ If dns_resolver_is_create_complete has previously returned true, dns_resolver_is_create_complete shall do nothing and return true. ]*/
+    TEST_FUNCTION(dns_resolver__is_complete_repeated_call__succeeds)
     {
         ///arrange
-        DNS_ASYNC_HANDLE dns = dns_async_create("fake.com", NULL);
+        DNSRESOLVER_HANDLE dns = dns_resolver_create("fake.com", NULL);
         // We're calling this twice
-        bool result = dns_async_is_lookup_complete(dns);
-        uint32_t ipv4 = dns_async_get_ipv4(dns);
+        bool result = dns_resolver_is_lookup_complete(dns);
+        uint32_t ipv4 = dns_resolver_get_ipv4(dns);
         ASSERT_ARE_EQUAL(uint32_t, FAKE_GOOD_IP_ADDR, ipv4, "Unexpected IP");
         ASSERT_IS_TRUE(result, "Unexpected non-completion");
         umock_c_reset_all_calls();
 
         ///act
-        result = dns_async_is_lookup_complete(dns);
-        ipv4 = dns_async_get_ipv4(dns);
+        result = dns_resolver_is_lookup_complete(dns);
+        ipv4 = dns_resolver_get_ipv4(dns);
 
         ///assert
         ASSERT_IS_TRUE(result, "Unexpected non-completion");
@@ -200,189 +200,189 @@ BEGIN_TEST_SUITE(dns_async_ut)
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
-        dns_async_destroy(dns);
+        dns_resolver_destroy(dns);
     }
 
-    /* Tests_SRS_DNS_ASYNC_30_023: [ If the DNS lookup process is not yet complete, dns_async_is_create_complete shall return false. ]*/
-    TEST_FUNCTION(dns_async__is_complete_waiting__succeeds)
+    /* Tests_SRS_dns_resolver_30_023: [ If the DNS lookup process is not yet complete, dns_resolver_is_create_complete shall return false. ]*/
+    TEST_FUNCTION(dns_resolver__is_complete_waiting__succeeds)
     {
-        // This condition cannot be tested with the blocking immplementation of dns_async because the module never waits.
+        // This condition cannot be tested with the blocking immplementation of dns_resolver because the module never waits.
     }
 
-    /* Tests_SRS_DNS_ASYNC_30_022: [ If the DNS lookup process has completed, dns_async_is_create_complete shall return true. ]*/
-    TEST_FUNCTION(dns_async__is_complete_yes__succeeds)
+    /* Tests_SRS_dns_resolver_30_022: [ If the DNS lookup process has completed, dns_resolver_is_create_complete shall return true. ]*/
+    TEST_FUNCTION(dns_resolver__is_complete_yes__succeeds)
     {
         ///arrange
         bool result;
-        DNS_ASYNC_HANDLE dns = dns_async_create("fake.com", NULL);
+        DNSRESOLVER_HANDLE dns = dns_resolver_create("fake.com", NULL);
         umock_c_reset_all_calls();
         STRICT_EXPECTED_CALL(getaddrinfo(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
 
         ///act
-        result = dns_async_is_lookup_complete(dns);
+        result = dns_resolver_is_lookup_complete(dns);
 
         ///assert
         ASSERT_IS_TRUE(result, "Unexpected non-completion");
 
         ///cleanup
-        dns_async_destroy(dns);
+        dns_resolver_destroy(dns);
     }
 
-    /* Tests_SRS_DNS_ASYNC_30_032: [ If dns_async_is_create_complete has returned true and the lookup process has succeeded, dns_async_get_ipv4 shall return the discovered IPv4 address. ]*/
-    TEST_FUNCTION(dns_async__dns_async_get_ipv4__succeeds)
+    /* Tests_SRS_dns_resolver_30_032: [ If dns_resolver_is_create_complete has returned true and the lookup process has succeeded, dns_resolver_get_ipv4 shall return the discovered IPv4 address. ]*/
+    TEST_FUNCTION(dns_resolver__dns_resolver_get_ipv4__succeeds)
     {
         ///arrange
         bool result;
         uint32_t ipv4;
-        DNS_ASYNC_HANDLE dns = dns_async_create("fake.com", NULL);
+        DNSRESOLVER_HANDLE dns = dns_resolver_create("fake.com", NULL);
         umock_c_reset_all_calls();
         STRICT_EXPECTED_CALL(getaddrinfo(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
-        result = dns_async_is_lookup_complete(dns);
+        result = dns_resolver_is_lookup_complete(dns);
         ASSERT_IS_TRUE(result, "Unexpected non-completion");
 
         ///act
-        ipv4 = dns_async_get_ipv4(dns);
+        ipv4 = dns_resolver_get_ipv4(dns);
 
         ///assert
         ASSERT_ARE_EQUAL(uint32_t, FAKE_GOOD_IP_ADDR, ipv4, "Unexpected IP");
 
         ///cleanup
-        dns_async_destroy(dns);
+        dns_resolver_destroy(dns);
     }
 
-    /* Tests_SRS_DNS_ASYNC_30_022: [ If the DNS lookup process has completed, dns_async_is_create_complete shall return true. ]*/
-    TEST_FUNCTION(dns_async__is_complete_yes_after_failure__fails)
+    /* Tests_SRS_dns_resolver_30_022: [ If the DNS lookup process has completed, dns_resolver_is_create_complete shall return true. ]*/
+    TEST_FUNCTION(dns_resolver__is_complete_yes_after_failure__fails)
     {
         ///arrange
         bool result;
-        DNS_ASYNC_HANDLE dns = dns_async_create("fake.com", NULL);
+        DNSRESOLVER_HANDLE dns = dns_resolver_create("fake.com", NULL);
         umock_c_reset_all_calls();
         STRICT_EXPECTED_CALL(getaddrinfo(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG)).SetReturn(GETADDRINFO_FAIL);
 
         ///act
-        result = dns_async_is_lookup_complete(dns);
+        result = dns_resolver_is_lookup_complete(dns);
 
         ///assert
         ASSERT_IS_TRUE(result, "Unexpected non-completion");
 
         ///cleanup
-        dns_async_destroy(dns);
+        dns_resolver_destroy(dns);
     }
 
-    /* Tests_SRS_DNS_ASYNC_30_033: [ If dns_async_is_create_complete has returned true and the lookup process has failed, dns_async_get_ipv4 shall return 0. ]*/
-    TEST_FUNCTION(dns_async__async_get_ipv4__fails)
+    /* Tests_SRS_dns_resolver_30_033: [ If dns_resolver_is_create_complete has returned true and the lookup process has failed, dns_resolver_get_ipv4 shall return 0. ]*/
+    TEST_FUNCTION(dns_resolver__async_get_ipv4__fails)
     {
         ///arrange
         bool result;
         uint32_t ipv4;
-        DNS_ASYNC_HANDLE dns = dns_async_create("fake.com", NULL);
+        DNSRESOLVER_HANDLE dns = dns_resolver_create("fake.com", NULL);
         umock_c_reset_all_calls();
         STRICT_EXPECTED_CALL(getaddrinfo(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG)).SetReturn(GETADDRINFO_FAIL);
-        result = dns_async_is_lookup_complete(dns);
+        result = dns_resolver_is_lookup_complete(dns);
         ASSERT_IS_TRUE(result, "Unexpected non-completion");
 
         ///act
-        ipv4 = dns_async_get_ipv4(dns);
+        ipv4 = dns_resolver_get_ipv4(dns);
 
         ///assert
         ASSERT_ARE_EQUAL(uint32_t, 0, ipv4, "Unexpected non-zero IP");
 
         ///cleanup
-        dns_async_destroy(dns);
+        dns_resolver_destroy(dns);
     }
 
-    /* Tests_SRS_DNS_ASYNC_30_020: [ If the dns parameter is NULL, dns_async_is_create_complete shall log an error and return false. ]*/
-    TEST_FUNCTION(dns_async__is_complete_parameter_validation__fails)
+    /* Tests_SRS_dns_resolver_30_020: [ If the dns parameter is NULL, dns_resolver_is_create_complete shall log an error and return false. ]*/
+    TEST_FUNCTION(dns_resolver__is_complete_parameter_validation__fails)
     {
         ///arrange
 
         ///act
-        bool result = dns_async_is_lookup_complete(NULL);
+        bool result = dns_resolver_is_lookup_complete(NULL);
 
         ///assert
         ASSERT_IS_FALSE(result, "Unexpected non-zero IPv4");
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     }
 
-    /* Tests_SRS_DNS_ASYNC_30_031: [ If dns_async_is_create_complete has not yet returned true, dns_async_get_ipv4 shall log an error and return 0. ]*/
-    TEST_FUNCTION(dns_async__get_ipv4_too_early__fails)
+    /* Tests_SRS_dns_resolver_30_031: [ If dns_resolver_is_create_complete has not yet returned true, dns_resolver_get_ipv4 shall log an error and return 0. ]*/
+    TEST_FUNCTION(dns_resolver__get_ipv4_too_early__fails)
     {
         ///arrange
-        DNS_ASYNC_HANDLE dns = dns_async_create("fake.com", NULL);
+        DNSRESOLVER_HANDLE dns = dns_resolver_create("fake.com", NULL);
 
         ///act
-        uint32_t result = dns_async_get_ipv4(dns);
+        uint32_t result = dns_resolver_get_ipv4(dns);
 
         ///assert
         ASSERT_ARE_EQUAL(uint32_t, 0, result, "Unexpected non-zero IPv4");
 
         ///cleanup
-        dns_async_destroy(dns);
+        dns_resolver_destroy(dns);
     }
 
-    /* Tests_SRS_DNS_ASYNC_30_030: [ If the dns parameter is NULL, dns_async_get_ipv4 shall log an error and return 0. ]*/
-    TEST_FUNCTION(dns_async__get_ipv4_parameter_validation__fails)
+    /* Tests_SRS_dns_resolver_30_030: [ If the dns parameter is NULL, dns_resolver_get_ipv4 shall log an error and return 0. ]*/
+    TEST_FUNCTION(dns_resolver__get_ipv4_parameter_validation__fails)
     {
         ///arrange
 
         ///act
-        uint32_t result = dns_async_get_ipv4(NULL);
+        uint32_t result = dns_resolver_get_ipv4(NULL);
 
         ///assert
         ASSERT_ARE_EQUAL(uint32_t, 0, result, "Unexpected non-zero IPv4");
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     }
 
-    /* Tests_SRS_DNS_ASYNC_30_050: [ If the dns parameter is NULL, dns_async_destroy shall log an error and do nothing. ]*/
-    TEST_FUNCTION(dns_async__destroy_parameter_validation__fails)
+    /* Tests_SRS_dns_resolver_30_050: [ If the dns parameter is NULL, dns_resolver_destroy shall log an error and do nothing. ]*/
+    TEST_FUNCTION(dns_resolver__destroy_parameter_validation__fails)
     {
         ///arrange
 
         ///act
-        dns_async_destroy(NULL);
+        dns_resolver_destroy(NULL);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     }
 
-    /* Tests_SRS_DNS_ASYNC_30_051: [ dns_async_destroy shall delete all acquired resources and delete the DNS_ASYNC_HANDLE. ]*/
-    TEST_FUNCTION(dns_async__destroy__success)
+    /* Tests_SRS_dns_resolver_30_051: [ dns_resolver_destroy shall delete all acquired resources and delete the DNSRESOLVER_HANDLE. ]*/
+    TEST_FUNCTION(dns_resolver__destroy__success)
     {
         ///arrange
-        DNS_ASYNC_HANDLE result = dns_async_create("fake.com", NULL);
+        DNSRESOLVER_HANDLE result = dns_resolver_create("fake.com", NULL);
         umock_c_reset_all_calls();
 
         STRICT_EXPECTED_CALL(gballoc_free(IGNORED_NUM_ARG));  // copy hostname
         STRICT_EXPECTED_CALL(gballoc_free(IGNORED_NUM_ARG));  // instance
 
         ///act
-        dns_async_destroy(result);
+        dns_resolver_destroy(result);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     }
 
-    /* Tests_SRS_DNS_ASYNC_30_014: [ On any failure, dns_async_create shall log an error and return NULL. ]*/
-    TEST_FUNCTION(dns_async__create__success)
+    /* Tests_SRS_dns_resolver_30_014: [ On any failure, dns_resolver_create shall log an error and return NULL. ]*/
+    TEST_FUNCTION(dns_resolver__create__success)
     {
         ///arrange
-        DNS_ASYNC_HANDLE result;
+        DNSRESOLVER_HANDLE result;
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));  // copy hostname
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));  // instance
 
         ///act
-        result = dns_async_create("fake.com", NULL);
+        result = dns_resolver_create("fake.com", NULL);
 
         ///assert
         ASSERT_IS_NOT_NULL(result);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup
-        dns_async_destroy(result);
+        dns_resolver_destroy(result);
     }
 
-    /* Tests_SRS_DNS_ASYNC_30_014: [ On any failure, dns_async_create shall log an error and return NULL. ]*/
-    TEST_FUNCTION(dns_async__create_unhappy_paths__fails)
+    /* Tests_SRS_dns_resolver_30_014: [ On any failure, dns_resolver_create shall log an error and return NULL. ]*/
+    TEST_FUNCTION(dns_resolver__create_unhappy_paths__fails)
     {
         ///arrange
         unsigned int i;
@@ -395,13 +395,13 @@ BEGIN_TEST_SUITE(dns_async_ut)
 
         for (i = 0; i < umock_c_negative_tests_call_count(); i++)
         {
-            DNS_ASYNC_HANDLE result;
+            DNSRESOLVER_HANDLE result;
 
             umock_c_negative_tests_reset();
             umock_c_negative_tests_fail_call(i);
 
             ///act
-            result = dns_async_create("fake.com", NULL);
+            result = dns_resolver_create("fake.com", NULL);
 
             ///assert
             ASSERT_IS_NULL(result);
@@ -411,17 +411,17 @@ BEGIN_TEST_SUITE(dns_async_ut)
         umock_c_negative_tests_deinit();
     }
 
-    /* Tests_SRS_DNS_ASYNC_30_011: [ If the hostname parameter is NULL, dns_async_create shall log an error and return NULL. ]*/
-    TEST_FUNCTION(dns_async__create_parameter_validation__fails)
+    /* Tests_SRS_dns_resolver_30_011: [ If the hostname parameter is NULL, dns_resolver_create shall log an error and return NULL. ]*/
+    TEST_FUNCTION(dns_resolver__create_parameter_validation__fails)
     {
         ///arrange
 
         ///act
-        DNS_ASYNC_HANDLE result = dns_async_create(NULL, NULL);
+        DNSRESOLVER_HANDLE result = dns_resolver_create(NULL, NULL);
 
         ///assert
         ASSERT_IS_NULL(result, "Unexpected success with NULL hostname");
     }
 
 
-END_TEST_SUITE(dns_async_ut)
+END_TEST_SUITE(dns_resolver_ut)

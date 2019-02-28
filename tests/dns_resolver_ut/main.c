@@ -9,7 +9,7 @@ int main(void)
     /**
      * Identify the test suite to run here.
      */
-    RUN_TEST_SUITE(dns_async_ut, failedTestCount);
+    RUN_TEST_SUITE(dns_resolver_ut, failedTestCount);
 
     return failedTestCount;
 }
