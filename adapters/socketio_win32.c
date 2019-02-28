@@ -316,7 +316,7 @@ static int initiate_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
     {
 #endif
         struct addrinfo* addr = dns_resolver_get_addrInfo(socket_io_instance->dns_resolver);
-        memcpy(&(socket_io_instance->addrInfo), &addr, sizeof(*(socket_io_instance->addrInfo)));
+        (void)memcpy(&(socket_io_instance->addrInfo), &addr, sizeof(*(socket_io_instance->addrInfo)));
 
         result = connect_socket(socket_io_instance->socket, (socket_io_instance->addrInfo)->ai_addr, sizeof(*((socket_io_instance->addrInfo)->ai_addr)));
         if(result != 0)
