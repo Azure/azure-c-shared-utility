@@ -373,7 +373,7 @@ static int initiate_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
                 socket_io_instance->io_state = IO_STATE_OPEN;
                 if (socket_io_instance->on_io_open_complete != NULL)
                 {
-                    socket_io_instance->on_io_open_complete(socket_io_instance->on_io_open_complete_context, IO_OPEN_OK /*: IO_OPEN_ERROR*/);
+                    socket_io_instance->on_io_open_complete(socket_io_instance->on_io_open_complete_context, IO_OPEN_OK);
                 }
             }
         }
@@ -678,17 +678,6 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                     (void)closesocket(socket_io_instance->socket);
                     socket_io_instance->socket = INVALID_SOCKET;
                     socket_io_instance->io_state = IO_STATE_CLOSED;
-                }
-                else
-                {
-                    if (socket_io_instance->io_state != IO_STATE_OPENING)
-                    {
-                        if (socket_io_instance->on_io_open_complete != NULL)
-                        {
-                            socket_io_instance->on_io_open_complete(socket_io_instance->on_io_open_complete_context, socket_io_instance->io_state == IO_STATE_OPEN ? IO_OPEN_OK : IO_OPEN_ERROR);
-                        }
-                    }
-                
                 }
             }
         }
