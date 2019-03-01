@@ -80,6 +80,7 @@ typedef struct TLS_IO_INSTANCE_TAG
     TLSIO_VERSION tls_version;
     TLS_CERTIFICATE_VALIDATION_CALLBACK tls_validation_callback;
     void* tls_validation_callback_data;
+    const char* serverName;
 } TLS_IO_INSTANCE;
 
 struct CRYPTO_dynlock_value
@@ -1936,6 +1937,7 @@ static int create_openssl_instance(TLS_IO_INSTANCE* tlsInstance)
                     else
                     {
                         SSL_set_bio(tlsInstance->ssl, tlsInstance->in_bio, tlsInstance->out_bio);
+                        SSL_set_tlsext_host_name(tlsInstance->ssl, tlsInstance->serverName);
                         SSL_set_connect_state(tlsInstance->ssl);
                         result = 0;
                     }
@@ -2009,67 +2011,76 @@ CONCRETE_IO_HANDLE tlsio_openssl_create(void* io_create_parameters)
         }
         else
         {
-            SOCKETIO_CONFIG socketio_config;
-            const IO_INTERFACE_DESCRIPTION* underlying_io_interface;
-            void* io_interface_parameters;
-
-            if (tls_io_config->underlying_io_interface != NULL)
-            {
-                underlying_io_interface = tls_io_config->underlying_io_interface;
-                io_interface_parameters = tls_io_config->underlying_io_parameters;
-            }
-            else
-            {
-                socketio_config.hostname = tls_io_config->hostname;
-                socketio_config.port = tls_io_config->port;
-                socketio_config.accepted_socket = NULL;
-
-                underlying_io_interface = socketio_get_interface_description();
-                io_interface_parameters = &socketio_config;
-            }
-
-            if (underlying_io_interface == NULL)
+            if (mallocAndStrcpy_s((char **)&result->serverName, tls_io_config->hostname) != 0)
             {
                 free(result);
                 result = NULL;
-                LogError("Failed getting socket IO interface description.");
+                LogError("Failed to copy server name.");
             }
             else
             {
-                result->certificate = NULL;
-                result->in_bio = NULL;
-                result->out_bio = NULL;
-                result->on_bytes_received = NULL;
-                result->on_bytes_received_context = NULL;
-                result->on_io_open_complete = NULL;
-                result->on_io_open_complete_context = NULL;
-                result->on_io_close_complete = NULL;
-                result->on_io_close_complete_context = NULL;
-                result->on_io_error = NULL;
-                result->on_io_error_context = NULL;
-                result->ssl = NULL;
-                result->ssl_context = NULL;
-                result->tls_validation_callback = NULL;
-                result->tls_validation_callback_data = NULL;
-                result->x509_certificate = NULL;
-                result->x509_private_key = NULL;
+                SOCKETIO_CONFIG socketio_config;
+                const IO_INTERFACE_DESCRIPTION* underlying_io_interface;
+                void* io_interface_parameters;
 
-                result->tls_version = OPTION_TLS_VERSION_1_0;
-
-                result->underlying_io = xio_create(underlying_io_interface, io_interface_parameters);
-                if (result->underlying_io == NULL)
+                if (tls_io_config->underlying_io_interface != NULL)
                 {
-                    free(result);
-                    result = NULL;
-                    LogError("Failed xio_create.");
+                    underlying_io_interface = tls_io_config->underlying_io_interface;
+                    io_interface_parameters = tls_io_config->underlying_io_parameters;
                 }
                 else
                 {
-                    result->tlsio_state = TLSIO_STATE_NOT_OPEN;
+                    socketio_config.hostname = tls_io_config->hostname;
+                    socketio_config.port = tls_io_config->port;
+                    socketio_config.accepted_socket = NULL;
+
+                    underlying_io_interface = socketio_get_interface_description();
+                    io_interface_parameters = &socketio_config;
+                }
+
+                if (underlying_io_interface == NULL)
+                {
+                    free(result);
+                    result = NULL;
+                    LogError("Failed getting socket IO interface description.");
+                }
+                else
+                {
+                    result->certificate = NULL;
+                    result->in_bio = NULL;
+                    result->out_bio = NULL;
+                    result->on_bytes_received = NULL;
+                    result->on_bytes_received_context = NULL;
+                    result->on_io_open_complete = NULL;
+                    result->on_io_open_complete_context = NULL;
+                    result->on_io_close_complete = NULL;
+                    result->on_io_close_complete_context = NULL;
+                    result->on_io_error = NULL;
+                    result->on_io_error_context = NULL;
+                    result->ssl = NULL;
+                    result->ssl_context = NULL;
+                    result->tls_validation_callback = NULL;
+                    result->tls_validation_callback_data = NULL;
+                    result->x509_certificate = NULL;
+                    result->x509_private_key = NULL;
+
+                    result->tls_version = OPTION_TLS_VERSION_1_0;
+
+                    result->underlying_io = xio_create(underlying_io_interface, io_interface_parameters);
+                    if (result->underlying_io == NULL)
+                    {
+                        free(result);
+                        result = NULL;
+                        LogError("Failed xio_create.");
+                    }
+                    else
+                    {
+                        result->tlsio_state = TLSIO_STATE_NOT_OPEN;
+                    }
                 }
             }
         }
-}
+    }
 
     return result;
 }
@@ -2095,6 +2106,10 @@ void tlsio_openssl_destroy(CONCRETE_IO_HANDLE tls_io)
         {
             xio_destroy(tls_io_instance->underlying_io);
             tls_io_instance->underlying_io = NULL;
+        }
+        if (tls_io_instance->serverName != NULL)
+        {
+            free((void *)tls_io_instance->serverName);
         }
         free(tls_io);
     }
