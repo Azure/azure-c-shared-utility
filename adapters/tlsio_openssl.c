@@ -2020,8 +2020,8 @@ CONCRETE_IO_HANDLE tlsio_openssl_create(void* io_create_parameters)
             else
             {
                 SOCKETIO_CONFIG socketio_config;
-                const IO_INTERFACE_DESCRIPTION *underlying_io_interface;
-                void *io_interface_parameters;
+                const IO_INTERFACE_DESCRIPTION* underlying_io_interface;
+                void* io_interface_parameters;
 
                 if (tls_io_config->underlying_io_interface != NULL)
                 {
