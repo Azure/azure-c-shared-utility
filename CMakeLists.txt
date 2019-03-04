@@ -172,7 +172,7 @@ include_directories(${UMOCK_C_INC_FOLDER})
 #these are the C source files
 set(source_c_files
     ./src/base32.c
-    ./src/base64.c
+    ./src/azure_base64.c
     ./src/buffer.c
     ./src/constbuffer_array.c
     ./src/connection_string_parser.c
@@ -282,7 +282,7 @@ endif()
 set(source_h_files
     ./inc/azure_c_shared_utility/agenttime.h
     ./inc/azure_c_shared_utility/base32.h
-    ./inc/azure_c_shared_utility/base64.h
+    ./inc/azure_c_shared_utility/azure_base64.h
     ./inc/azure_c_shared_utility/buffer_.h
     ./inc/azure_c_shared_utility/constbuffer_array.h
     ./inc/azure_c_shared_utility/connection_string_parser.h
