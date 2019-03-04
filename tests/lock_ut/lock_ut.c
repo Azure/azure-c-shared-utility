@@ -121,40 +121,4 @@ TEST_FUNCTION(LOCK_DeInit_NULL_fails)
     ASSERT_ARE_EQUAL(LOCK_RESULT, LOCK_ERROR, result);
 }
 
-/* Extra negative tests - only supported on Win32 since the behavior on other platforms is undefined. */
-#ifdef WIN32
-TEST_FUNCTION(LOCK_Init_Unlock_fails)
-{
-    //arrange
-    LOCK_HANDLE handle = Lock_Init();
-
-    //act
-    LOCK_RESULT result = Unlock(handle);
-
-    //assert
-    ASSERT_ARE_EQUAL(LOCK_RESULT, LOCK_ERROR, result);
-
-    //cleanup
-    (void)Lock_Deinit(handle);
-}
-
-TEST_FUNCTION(LOCK_Init_Lock_Unlock_Unlock_fails)
-{
-    //arrange
-    LOCK_RESULT result;
-    LOCK_HANDLE handle = Lock_Init();
-    (void)Lock(handle);
-    (void)Unlock(handle);
-
-    //act
-    result = Unlock(handle);
-
-    //assert
-    ASSERT_ARE_EQUAL(LOCK_RESULT, LOCK_ERROR, result);
-
-    //cleanup
-    (void)Lock_Deinit(handle);
-}
-#endif // WIN32
-
 END_TEST_SUITE(LOCK_UnitTests);
