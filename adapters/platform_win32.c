@@ -70,7 +70,7 @@ static char* get_win_sqm_info(void)
     DWORD size = GUID_LENGTH;
     PVOID pvData;
 
-    // SQM values are guids int he system, we will allocate enough space to hold that
+    // SQM values are guids in the system, we will allocate enough space to hold that
     if ((result = (char*)malloc(GUID_LENGTH)) == NULL)
     {
         LogError("Failure allocating sqm info");
@@ -170,8 +170,7 @@ STRING_HANDLE platform_get_platform_info(PLATFORM_INFO_OPTION options)
     {
         LogError("STRING_construct_sprintf failed");
     }
-
-    if (options & PLATFORM_INFO_OPTION_RETRIEVE_SQM)
+    else if (options & PLATFORM_INFO_OPTION_RETRIEVE_SQM)
     {
         // Failure here should continue
         char* sqm_info = get_win_sqm_info();
@@ -182,6 +181,13 @@ STRING_HANDLE platform_get_platform_info(PLATFORM_INFO_OPTION options)
                 LogError("failure concat file");
             }
             free(sqm_info);
+        }
+        else
+        {
+            if (STRING_concat(result, ")") != 0)
+            {
+                LogError("failure concat file");
+            }
         }
     }
     else
