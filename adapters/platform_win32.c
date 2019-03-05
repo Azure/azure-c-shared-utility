@@ -114,7 +114,7 @@ static char* get_win_sqm_info(void)
     return result;
 }
 
-STRING_HANDLE platform_get_platform_info(uint32_t options)
+STRING_HANDLE platform_get_platform_info(PLATFORM_INFO_OPTION options)
 {
     // Expected format: "(<runtime name>; <operating system name>; <platform>)"
     STRING_HANDLE result;
@@ -171,7 +171,7 @@ STRING_HANDLE platform_get_platform_info(uint32_t options)
         LogError("STRING_construct_sprintf failed");
     }
 
-    if (options & PLATFORM_OPTION_RETRIEVE_SQM)
+    if (options & PLATFORM_INFO_OPTION_RETRIEVE_SQM)
     {
         // Failure here should continue
         char* sqm_info = get_win_sqm_info();

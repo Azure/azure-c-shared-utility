@@ -47,7 +47,7 @@ const IO_INTERFACE_DESCRIPTION* platform_get_default_tlsio(void)
 #endif
 }
 
-STRING_HANDLE platform_get_platform_info(uint32_t options)
+STRING_HANDLE platform_get_platform_info(PLATFORM_INFO_OPTION options)
 {
     (void)options;
 

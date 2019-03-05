@@ -242,7 +242,7 @@ TEST_FUNCTION(platform_get_platform_info_success)
     //arrange
 
     //act
-    STRING_HANDLE platform = platform_get_platform_info(PLATFORM_OPTION_RETRIEVE_SQM);
+    STRING_HANDLE platform = platform_get_platform_info(PLATFORM_INFO_OPTION_RETRIEVE_SQM);
 
     //assert
     ASSERT_IS_NOT_NULL(platform);
