@@ -4,6 +4,7 @@
 #include "azure_c_shared_utility/lock.h"
 #include <windows.h>
 #include <stdlib.h>
+#include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/xlogging.h"
 
 #include "azure_c_shared_utility/macro_utils.h"
@@ -17,7 +18,10 @@ LOCK_HANDLE Lock_Init(void)
     {
         LogError("Allocate SRWLOCK failed.");
     }
-    InitializeSRWLock(result);
+    else
+    {
+        InitializeSRWLock(result);
+    }
 
     return (LOCK_HANDLE)result;
 }
