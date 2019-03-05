@@ -20,10 +20,10 @@ EXPORTS
     Azure_Base64_Decode
     Azure_Base64_Encode
     Azure_Base64_Encode_Bytes
-    Azure_Base32_Decode
-    Azure_Base32_Decode_String
-    Azure_Base32_Encode
-    Azure_Base32_Encode_Bytes
+    Base32_Decode
+    Base32_Decode_String
+    Base32_Encode
+    Base32_Encode_Bytes
 
     COND_RESULTStringStorage
     COND_RESULTStrings
