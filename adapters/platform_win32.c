@@ -7,6 +7,8 @@
 #include "azure_c_shared_utility/strings.h"
 #include "azure_c_shared_utility/xlogging.h"
 #include "winsock2.h"
+#include "minwindef.h"
+#include "winnt.h"
 
 #ifdef USE_OPENSSL
 #include "azure_c_shared_utility/tlsio_openssl.h"

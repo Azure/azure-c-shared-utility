@@ -18,9 +18,6 @@ DEFINE_ENUM(PLATFORM_INFO_OPTION, PLATFORM_INFO_OPTION_VALUES);
 
 #ifdef __cplusplus
 extern "C" {
-#include <cstdint>
-#else
-#include <stdint.h>
 #endif /* __cplusplus */
 
     MOCKABLE_FUNCTION(, int, platform_init);
