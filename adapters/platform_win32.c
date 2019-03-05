@@ -76,7 +76,6 @@ static char* get_win_sqm_info(void)
     if ((result = (char*)malloc(GUID_LENGTH)) == NULL)
     {
         LogError("Failure allocating sqm info");
-        result = NULL;
     }
     else if ((openKey = RegOpenKeyExA(hKey, subKey, options, KEY_READ, &openResult)) != ERROR_SUCCESS)
     {
