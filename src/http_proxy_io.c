@@ -12,7 +12,7 @@
 #include "azure_c_shared_utility/socketio.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
 #include "azure_c_shared_utility/http_proxy_io.h"
-#include "azure_c_shared_utility/base64.h"
+#include "azure_c_shared_utility/azure_base64.h"
 
 typedef enum HTTP_PROXY_IO_STATE_TAG
 {
@@ -335,7 +335,7 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
                             else
                             {
                                 /* Codes_SRS_HTTP_PROXY_IO_01_061: [ Encoding to Base64 shall be done by calling Base64_Encode_Bytes. ]*/
-                                encoded_auth_string = Base64_Encode_Bytes((const unsigned char*)plain_auth_string_bytes, plain_auth_string_length);
+                                encoded_auth_string = Azure_Base64_Encode_Bytes((const unsigned char*)plain_auth_string_bytes, plain_auth_string_length);
                                 if (encoded_auth_string == NULL)
                                 {
                                     /* Codes_SRS_HTTP_PROXY_IO_01_062: [ If any failure is encountered while constructing the request, the on_open_complete callback shall be triggered with IO_OPEN_ERROR, passing also the on_open_complete_context argument as context. ]*/

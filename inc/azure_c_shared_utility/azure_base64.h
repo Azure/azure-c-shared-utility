@@ -37,7 +37,7 @@ extern "C" {
  *
  * @return    A @c STRING_HANDLE containing the base64 encoding of @p input.
  */
-MOCKABLE_FUNCTION(, STRING_HANDLE, Base64_Encode, BUFFER_HANDLE, input);
+MOCKABLE_FUNCTION(, STRING_HANDLE, Azure_Base64_Encode, BUFFER_HANDLE, input);
 
 /**
  * @brief    Base64 encodes the buffer pointed to by @p source and returns the resulting string.
@@ -57,7 +57,7 @@ MOCKABLE_FUNCTION(, STRING_HANDLE, Base64_Encode, BUFFER_HANDLE, input);
  *             of @p input.
  *
  */
-MOCKABLE_FUNCTION(, STRING_HANDLE, Base64_Encode_Bytes, const unsigned char*, source, size_t, size);
+MOCKABLE_FUNCTION(, STRING_HANDLE, Azure_Base64_Encode_Bytes, const unsigned char*, source, size_t, size);
 
 /**
  * @brief    Base64 decodes the buffer pointed to by @p source and returns the resulting buffer.
@@ -66,15 +66,15 @@ MOCKABLE_FUNCTION(, STRING_HANDLE, Base64_Encode_Bytes, const unsigned char*, so
  *
  *           This function decodes the string pointed at by @p source using base64 decoding and
  *             returns the resulting buffer. If @p source is @c NULL then
- *             @c Base64_Decode returns NULL. If the string pointed to by @p source is zero
+ *             @c Azure_Base64_Decode returns NULL. If the string pointed to by @p source is zero
  *             length then the handle returned refers to a zero length buffer. If there is any
  *             memory allocation failure during the decode or if the source string has an invalid
- *             length for a base 64 encoded string then @c Base64_Decode returns @c NULL.
+ *             length for a base 64 encoded string then @c Azure_Base64_Decode returns @c NULL.
  *
  * @return    A @c BUFFER_HANDLE pointing to a buffer containing the result of base64 decoding @p
  *             source.
  */
-MOCKABLE_FUNCTION(, BUFFER_HANDLE, Base64_Decode, const char*, source);
+MOCKABLE_FUNCTION(, BUFFER_HANDLE, Azure_Base64_Decode, const char*, source);
 
 #ifdef __cplusplus
 }
