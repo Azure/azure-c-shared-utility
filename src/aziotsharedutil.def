@@ -17,9 +17,9 @@ EXPORTS
     BUFFER_u_char
     BUFFER_unbuild
 
-    Base64_Decoder
-    Base64_Encoder
-    Base64_Encode_Bytes
+    Azure_Base64_Decode
+    Azure_Base64_Encode
+    Azure_Base64_Encode_Bytes
     Base32_Decode
     Base32_Decode_String
     Base32_Encode

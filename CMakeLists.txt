@@ -115,32 +115,21 @@ include("${CMAKE_CURRENT_LIST_DIR}/configs/azure_c_shared_utilityFunctions.cmake
 set_platform_files(${CMAKE_CURRENT_LIST_DIR})
 
 if(MSVC)
-    if (WINCE)
-        # WEC 2013 uses older VS compiler. Build some files as C++ files to resolve C99 related compile issues
-        SET_SOURCE_FILES_PROPERTIES(${LOGGING_C_FILE} ${XLOGGING_C_FILE} src/map.c adapters/uniqueid_win32.c src/tlsio_schannel.c src/x509_schannel.c PROPERTIES LANGUAGE CXX)
-        if (${use_httpapi_compact})
-            SET_SOURCE_FILES_PROPERTIES(adapters/httpapi_compact.c PROPERTIES LANGUAGE CXX)
-        else()
-            SET_SOURCE_FILES_PROPERTIES(adapters/httpapi_wince.c PROPERTIES LANGUAGE CXX)
-        endif()
-    ELSE()
-        if(${use_openssl})
-            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_OPENSSL")
-            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_OPENSSL")
-        endif()
-        if(${use_mbedtls})
-            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_MBEDTLS")
-            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_MBEDTLS")
-        endif()
-        if(${use_wolfssl})
-            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_WOLFSSL")
-            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_WOLFSSL")
+    if(${use_openssl})
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_OPENSSL")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_OPENSSL")
+    endif()
+    if(${use_mbedtls})
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_MBEDTLS")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_MBEDTLS")
+    endif()
+    if(${use_wolfssl})
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_WOLFSSL")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_WOLFSSL")
 
-            # Disables error if a bit-field is used on non-integer variable
-            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4 /wd4214")
-            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4 /wd4214")
-        endif()
-
+        # Disables error if a bit-field is used on non-integer variable
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4 /wd4214")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4 /wd4214")
     endif()
 elseif(LINUX) #LINUX OR APPLE
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wformat=2 -Wformat-security")
@@ -183,7 +172,7 @@ include_directories(${UMOCK_C_INC_FOLDER})
 #these are the C source files
 set(source_c_files
     ./src/base32.c
-    ./src/base64.c
+    ./src/azure_base64.c
     ./src/buffer.c
     ./src/constbuffer_array.c
     ./src/connection_string_parser.c
@@ -283,7 +272,7 @@ if(${use_applessl})
     include_directories(./pal/ios-osx/)
 endif()
 
-if (WIN32 AND (${CMAKE_SYSTEM_VERSION} VERSION_EQUAL "10.0.17763.0" OR ${CMAKE_SYSTEM_VERSION} VERSION_GREATER "10.0.17763.0"))
+if (WIN32 AND ("${CMAKE_SYSTEM_VERSION}" VERSION_EQUAL "10.0.17763.0" OR "${CMAKE_SYSTEM_VERSION}" VERSION_GREATER "10.0.17763.0"))
     # Windows added support for UNIX domain sockets to the OS and SDK
     # in the Oct 2018 update (10.0.17763.0, aka RS5)
     add_definitions(-DAF_UNIX_ON_WINDOWS)
@@ -293,7 +282,7 @@ endif()
 set(source_h_files
     ./inc/azure_c_shared_utility/agenttime.h
     ./inc/azure_c_shared_utility/base32.h
-    ./inc/azure_c_shared_utility/base64.h
+    ./inc/azure_c_shared_utility/azure_base64.h
     ./inc/azure_c_shared_utility/buffer_.h
     ./inc/azure_c_shared_utility/constbuffer_array.h
     ./inc/azure_c_shared_utility/connection_string_parser.h
@@ -460,11 +449,7 @@ set(aziotsharedutil_target_libs)
 
 if(${use_http})
     if(WIN32)
-        if (WINCE)
-            set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} crypt32 ws2)
-        else()
-            set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} crypt32 winhttp)
-        endif()
+        set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} crypt32 winhttp)
     else()
         if (NOT use_builtin_httpapi)
             if (CMAKE_CROSSCOMPILING)
@@ -495,11 +480,7 @@ endif(${use_http})
 
 if(${use_schannel})
     if(WIN32)
-        if (WINCE)
-            set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} secur32)
-        else()
-            set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} crypt32 ws2_32 secur32 advapi32 ncrypt)
-        endif()
+         set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} crypt32 ws2_32 secur32 advapi32 ncrypt)
     endif()
 endif()
 
