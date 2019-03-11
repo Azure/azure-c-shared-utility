@@ -542,7 +542,7 @@ int tlsio_mbedtls_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_open
     if (tls_io == NULL)
     {
         LogError("Invalid parameter specified tls_io: NULL");
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -551,7 +551,7 @@ int tlsio_mbedtls_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_open
         if (tls_io_instance->tlsio_state != TLSIO_STATE_NOT_OPEN)
         {
             LogError("IO should not be open: %d", tls_io_instance->tlsio_state);
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -574,7 +574,7 @@ int tlsio_mbedtls_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_open
 
                 LogError("Underlying IO open failed");
                 tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
         }
     }
@@ -588,7 +588,7 @@ int tlsio_mbedtls_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_cl
     if (tls_io == NULL)
     {
         LogError("Invalid parameter specified tls_io: NULL");
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -598,7 +598,7 @@ int tlsio_mbedtls_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_cl
             (tls_io_instance->tlsio_state == TLSIO_STATE_CLOSING))
         {
             LogError("IO should not be closed: %d", tls_io_instance->tlsio_state);
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -608,7 +608,7 @@ int tlsio_mbedtls_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_cl
             if (xio_close(tls_io_instance->socket_io, on_underlying_io_close_complete_during_close, tls_io_instance) != 0)
             {
                 LogError("xio_close failed");
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else
             {
@@ -634,7 +634,7 @@ int tlsio_mbedtls_send(CONCRETE_IO_HANDLE tls_io, const void *buffer, size_t siz
     if (tls_io == NULL || (buffer == NULL) || (size == 0))
     {
         LogError("Invalid parameter specified tls_io: %p, buffer: %p, size: %ul", tls_io, buffer, (unsigned int)size);
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -642,7 +642,7 @@ int tlsio_mbedtls_send(CONCRETE_IO_HANDLE tls_io, const void *buffer, size_t siz
         if (tls_io_instance->tlsio_state != TLSIO_STATE_OPEN)
         {
             LogError("Invalid state specified %d", tls_io_instance->tlsio_state);
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -652,7 +652,7 @@ int tlsio_mbedtls_send(CONCRETE_IO_HANDLE tls_io, const void *buffer, size_t siz
             if (res != (int)size)
             {
                 LogError("Unexpected data size returned from  mbedtls_ssl_write %d/%d", res, (int)size);
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else
             {
@@ -797,7 +797,7 @@ int tlsio_mbedtls_setoption(CONCRETE_IO_HANDLE tls_io, const char *optionName, c
 
     if (tls_io == NULL || optionName == NULL)
     {
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -814,7 +814,7 @@ int tlsio_mbedtls_setoption(CONCRETE_IO_HANDLE tls_io, const char *optionName, c
             if (mallocAndStrcpy_s(&tls_io_instance->trusted_certificates, (const char *)value) != 0)
             {
                 LogError("unable to mallocAndStrcpy_s");
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else
             {
@@ -822,7 +822,7 @@ int tlsio_mbedtls_setoption(CONCRETE_IO_HANDLE tls_io, const char *optionName, c
                 if (parse_result != 0)
                 {
                     LogInfo("Malformed pem certificate");
-                    result = __FAILURE__;
+                    result = MU_FAILURE;
                 }
                 else
                 {
@@ -841,15 +841,15 @@ int tlsio_mbedtls_setoption(CONCRETE_IO_HANDLE tls_io, const char *optionName, c
             if (mallocAndStrcpy_s(&tls_io_instance->x509_certificate, (const char *)value) != 0)
             {
                 LogError("unable to mallocAndStrcpy_s on certificate");
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else if (mbedtls_x509_crt_parse(&tls_io_instance->owncert, (const unsigned char *)value, (int)(strlen(value) + 1)) != 0)
             {
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else if (tls_io_instance->pKey.pk_info != NULL && mbedtls_ssl_conf_own_cert(&tls_io_instance->config, &tls_io_instance->owncert, &tls_io_instance->pKey) != 0)
             {
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else
             {
@@ -867,15 +867,15 @@ int tlsio_mbedtls_setoption(CONCRETE_IO_HANDLE tls_io, const char *optionName, c
             if (mallocAndStrcpy_s(&tls_io_instance->x509_private_key, (const char *)value) != 0)
             {
                 LogError("unable to mallocAndStrcpy_s on private key");
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else if (mbedtls_pk_parse_key(&tls_io_instance->pKey, (const unsigned char *)value, (int)(strlen(value) + 1), NULL, 0) != 0)
             {
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else if (tls_io_instance->owncert.version > 0 && mbedtls_ssl_conf_own_cert(&tls_io_instance->config, &tls_io_instance->owncert, &tls_io_instance->pKey))
             {
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else
             {

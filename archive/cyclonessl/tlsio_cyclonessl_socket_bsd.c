@@ -30,7 +30,7 @@ int tlsio_cyclonessl_socket_create(const char* hostname, unsigned int port, TlsS
         (new_socket == NULL))
     {
         LogError("Invalid arguments: hostname = %p, new_socket = %p", hostname, new_socket);
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -40,7 +40,7 @@ int tlsio_cyclonessl_socket_create(const char* hostname, unsigned int port, TlsS
         {
             /* Codes_SRS_TLSIO_CYCLONESSL_SOCKET_BSD_01_007: [ If any of the socket calls fails, then tlsio_cyclonessl_socket_create shall fail and return a non-zero value. ]*/
             LogError("Error: Cannot create socket (%d)\r\n", WSAGetLastError());
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -59,7 +59,7 @@ int tlsio_cyclonessl_socket_create(const char* hostname, unsigned int port, TlsS
                 /* Codes_SRS_TLSIO_CYCLONESSL_SOCKET_BSD_01_007: [ If any of the socket calls fails, then tlsio_cyclonessl_socket_create shall fail and return a non-zero value. ]*/
                 LogError("Failure: getaddrinfo failure %d.", WSAGetLastError());
                 (void)closesocket(sock);
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else
             {
@@ -69,7 +69,7 @@ int tlsio_cyclonessl_socket_create(const char* hostname, unsigned int port, TlsS
                     /* Codes_SRS_TLSIO_CYCLONESSL_SOCKET_BSD_01_007: [ If any of the socket calls fails, then tlsio_cyclonessl_socket_create shall fail and return a non-zero value. ]*/
                     LogError("Error: Failed to connect (%d)\r\n", WSAGetLastError());
                     closesocket(sock);
-                    result = __FAILURE__;
+                    result = MU_FAILURE;
                 }
                 else
                 {

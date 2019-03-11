@@ -83,7 +83,7 @@ MOCK_FUNCTION_WITH_CODE(WSAAPI, int, getaddrinfo, PCSTR, pNodeName, PCSTR, pServ
     else
     {
         *ppResult = NULL;
-        callFail = __FAILURE__;
+        callFail = MU_FAILURE;
     }
 MOCK_FUNCTION_END(callFail)
 

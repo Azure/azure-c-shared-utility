@@ -22,7 +22,7 @@ int tlsio_cyclonessl_socket_create(const char* hostname, unsigned int port, TlsS
         (new_socket == NULL))
     {
         LogError("Invalid arguments: hostname = %p, new_socket = %p", hostname, new_socket);
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -32,7 +32,7 @@ int tlsio_cyclonessl_socket_create(const char* hostname, unsigned int port, TlsS
         {
             /* Codes_SRS_TLSIO_CYCLONESSL_SOCKET_01_007: [ If any of the socket calls fails, then tlsio_cyclonessl_socket_create shall fail and return a non-zero value. ]*/
             LogError("socketOpen failed, cannot create socket");
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -44,7 +44,7 @@ int tlsio_cyclonessl_socket_create(const char* hostname, unsigned int port, TlsS
                 /* Codes_SRS_TLSIO_CYCLONESSL_SOCKET_01_007: [ If any of the socket calls fails, then tlsio_cyclonessl_socket_create shall fail and return a non-zero value. ]*/
                 socketClose(socket);
                 LogError("Cannot resolve host");
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             /* Codes_SRS_TLSIO_CYCLONESSL_SOCKET_01_006: [ tlsio_cyclonessl_socket_create shall call socketConnect and pass the obtained address in order to connect the socket. ]*/
             else if (socketConnect(socket, &ipAddr, port) != 0)
@@ -52,7 +52,7 @@ int tlsio_cyclonessl_socket_create(const char* hostname, unsigned int port, TlsS
                 /* Codes_SRS_TLSIO_CYCLONESSL_SOCKET_01_007: [ If any of the socket calls fails, then tlsio_cyclonessl_socket_create shall fail and return a non-zero value. ]*/
                 socketClose(socket);
                 LogError("Failed to connect");
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else
             {
