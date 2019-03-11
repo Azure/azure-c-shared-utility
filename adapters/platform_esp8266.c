@@ -31,6 +31,7 @@ const IO_INTERFACE_DESCRIPTION* platform_get_default_tlsio(void)
 
 STRING_HANDLE platform_get_platform_info(PLATFORM_INFO_OPTION options)
 {
+    // No applicable options, so ignoring parameter
     (void)options;
 
     // Expected format: "(<runtime name>; <operating system name>; <platform>)"
