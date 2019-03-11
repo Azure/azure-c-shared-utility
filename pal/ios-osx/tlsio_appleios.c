@@ -422,8 +422,19 @@ static void dowork_read(TLS_IO_INSTANCE* tls_io_instance)
     if (tls_io_instance->tlsio_state == TLSIO_STATE_OPEN)
     {
         CFStreamStatus read_status = CFReadStreamGetStatus(tls_io_instance->sockRead);
-        if (read_status == kCFStreamStatusAtEnd)
+        if (kCFStreamStatusAtEnd == read_status)
         {
+            LogError("Read stream can't be read (AtEnd state).");
+            enter_tlsio_error_state(tls_io_instance);
+        }
+        else if (kCFStreamStatusError == read_status)
+        {
+            LogError("Read stream is in error state.");
+            enter_tlsio_error_state(tls_io_instance);
+        }
+        else if (kCFStreamStatusClosed == read_status)
+        {
+            LogError("Read stream is closed.");
             enter_tlsio_error_state(tls_io_instance);
         }
         else
@@ -457,6 +468,23 @@ static void dowork_send(TLS_IO_INSTANCE* tls_io_instance)
     {
         PENDING_TRANSMISSION* pending_message = (PENDING_TRANSMISSION*)singlylinkedlist_item_get_value(first_pending_io);
         uint8_t* buffer = ((uint8_t*)pending_message->bytes) + pending_message->size - pending_message->unsent_size;
+
+        CFStreamStatus send_status = CFWriteStreamGetStatus(tls_io_instance->sockWrite);
+        if (kCFStreamStatusAtEnd == send_status)
+        {
+            LogError("Send stream can't be written to (AtEnd state).");
+            enter_tlsio_error_state(tls_io_instance);
+        }
+        else if (kCFStreamStatusError == send_status)
+        {
+            LogError("Send stream is in error state.");
+            enter_tlsio_error_state(tls_io_instance);
+        }
+        else if (kCFStreamStatusClosed == send_status)
+        {
+            LogError("Send stream is closed.");
+            enter_tlsio_error_state(tls_io_instance);
+        }
 
         // Check to see if the socket will not block
         if (CFWriteStreamCanAcceptBytes(tls_io_instance->sockWrite))
