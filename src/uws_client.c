@@ -21,7 +21,7 @@
 #include "azure_c_shared_utility/crt_abstractions.h"
 #include "azure_c_shared_utility/utf8_checker.h"
 #include "azure_c_shared_utility/gb_rand.h"
-#include "azure_c_shared_utility/base64.h"
+#include "azure_c_shared_utility/azure_base64.h"
 #include "azure_c_shared_utility/optionhandler.h"
 #include "azure_c_shared_utility/map.h"
 
@@ -768,7 +768,7 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
                 }
 
                 /* Codes_SRS_UWS_CLIENT_01_497: [ The nonce needed for the upgrade request shall be Base64 encoded with Base64_Encode_Bytes. ]*/
-                base64_nonce = Base64_Encode_Bytes(nonce, sizeof(nonce));
+                base64_nonce = Azure_Base64_Encode_Bytes(nonce, sizeof(nonce));
                 if (base64_nonce == NULL)
                 {
                     /* Codes_SRS_UWS_CLIENT_01_498: [ If Base64 encoding the nonce for the upgrade request fails, then the uws client shall report that the open failed by calling the on_ws_open_complete callback passed to uws_client_open_async with WS_OPEN_ERROR_BASE64_ENCODE_FAILED. ]*/
