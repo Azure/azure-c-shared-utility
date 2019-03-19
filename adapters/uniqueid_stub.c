@@ -7,7 +7,7 @@
 #include "azure_c_shared_utility/xlogging.h"
 #include <time.h>
 
-DEFINE_ENUM_STRINGS(UNIQUEID_RESULT, UNIQUEID_RESULT_VALUES);
+MU_DEFINE_ENUM_STRINGS(UNIQUEID_RESULT, UNIQUEID_RESULT_VALUES);
 
 static const char tochar[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
 static void generate128BitUUID(unsigned char* arrayOfByte)

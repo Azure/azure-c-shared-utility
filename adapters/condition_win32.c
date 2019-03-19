@@ -8,7 +8,7 @@
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/gballoc.h"
 
-DEFINE_ENUM_STRINGS(COND_RESULT, COND_RESULT_VALUES);
+MU_DEFINE_ENUM_STRINGS(COND_RESULT, COND_RESULT_VALUES);
 
 typedef struct CONDITION_TAG
 {

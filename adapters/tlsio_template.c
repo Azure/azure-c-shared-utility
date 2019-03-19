@@ -19,8 +19,8 @@
     TLSIO_STATE_CLOSING,                          \
     TLSIO_STATE_ERROR
 
-DEFINE_ENUM(TLSIO_STATE, TLSIO_STATE_VALUES);
-DEFINE_ENUM_STRINGS(TLSIO_STATE, TLSIO_STATE_VALUES);
+MU_DEFINE_ENUM(TLSIO_STATE, TLSIO_STATE_VALUES);
+MU_DEFINE_ENUM_STRINGS(TLSIO_STATE, TLSIO_STATE_VALUES);
 
 typedef struct TLS_IO_INSTANCE_TAG
 {
@@ -148,7 +148,7 @@ int tlsio_template_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_ope
     if (tls_io == NULL)
     {
         LogError("invalid argument detected: CONCRETE_IO_HANDLE tls_io = %p", tls_io);
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -168,7 +168,7 @@ int tlsio_template_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_c
     if (tls_io == NULL)
     {
         LogError("invalid argument detected: tls_io = %p", tls_io);
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -210,7 +210,7 @@ int tlsio_template_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, 
     if (tls_io == NULL || optionName == NULL)
     {
         LogError("invalid argument detected: CONCRETE_IO_HANDLE tls_io = %p, const char* optionName = %p", tls_io, optionName);
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {

@@ -10,7 +10,7 @@
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/refcount.h"
 
-DEFINE_ENUM_STRINGS(CONSTMAP_RESULT, CONSTMAP_RESULT_VALUES);
+MU_DEFINE_ENUM_STRINGS(CONSTMAP_RESULT, CONSTMAP_RESULT_VALUES);
 
 typedef struct CONSTMAP_HANDLE_DATA_TAG
 {
@@ -19,7 +19,7 @@ typedef struct CONSTMAP_HANDLE_DATA_TAG
 
 DEFINE_REFCOUNT_TYPE(CONSTMAP_HANDLE_DATA);
 
-#define LOG_CONSTMAP_ERROR(result) LogError("result = %s", ENUM_TO_STRING(CONSTMAP_RESULT, (result)));
+#define LOG_CONSTMAP_ERROR(result) LogError("result = %s", MU_ENUM_TO_STRING(CONSTMAP_RESULT, (result)));
 
 CONSTMAP_HANDLE ConstMap_Create(MAP_HANDLE sourceMap)
 {

@@ -164,7 +164,7 @@ int socket_async_is_create_complete(SOCKET_ASYNC_HANDLE sock, bool* is_complete)
     {
         /* Codes_SRS_SOCKET_ASYNC_30_026: [ If the is_complete parameter is NULL, socket_async_is_create_complete shall log an error and return FAILURE. ]*/
         LogError("is_complete is NULL");
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -186,7 +186,7 @@ int socket_async_is_create_complete(SOCKET_ASYNC_HANDLE sock, bool* is_complete)
         {
             /* Codes_SRS_SOCKET_ASYNC_30_028: [ On failure, the is_complete value shall be set to false and socket_async_create shall return FAILURE. ]*/
             LogError("Socket select failed: %d", get_socket_errno(sock));
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -194,7 +194,7 @@ int socket_async_is_create_complete(SOCKET_ASYNC_HANDLE sock, bool* is_complete)
             {
                 /* Codes_SRS_SOCKET_ASYNC_30_028: [ On failure, the is_complete value shall be set to false and socket_async_create shall return FAILURE. ]*/
                 LogError("Socket select errset non-empty: %d", get_socket_errno(sock));
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else if (FD_ISSET(sock, &writeset))
             {
@@ -222,7 +222,7 @@ int socket_async_send(SOCKET_ASYNC_HANDLE sock, const void* buffer, size_t size,
     {
         /* Codes_SRS_SOCKET_ASYNC_30_033: [ If the buffer parameter is NULL, socket_async_send shall log the error return FAILURE. ]*/
         LogError("buffer is NULL");
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -230,7 +230,7 @@ int socket_async_send(SOCKET_ASYNC_HANDLE sock, const void* buffer, size_t size,
         {
             /* Codes_SRS_SOCKET_ASYNC_30_034: [ If the sent_count parameter is NULL, socket_async_send shall log the error return FAILURE. ]*/
             LogError("sent_count is NULL");
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
             if (size == 0)
@@ -258,7 +258,7 @@ int socket_async_send(SOCKET_ASYNC_HANDLE sock, const void* buffer, size_t size,
                         /* Codes_SRS_SOCKET_ASYNC_30_037: [ If socket_async_send fails unexpectedly, socket_async_send shall log the error return FAILURE. ]*/
                         // Something bad happened
                         LogError("Unexpected send error: %d", sock_err);
-                        result = __FAILURE__;
+                        result = MU_FAILURE;
                     }
                 }
                 else
@@ -280,7 +280,7 @@ int socket_async_receive(SOCKET_ASYNC_HANDLE sock, void* buffer, size_t size, si
     {
         /* Codes_SRS_SOCKET_ASYNC_30_052: [ If the buffer parameter is NULL, socket_async_receive shall log the error and return FAILURE. ]*/
         LogError("buffer is NULL");
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -288,14 +288,14 @@ int socket_async_receive(SOCKET_ASYNC_HANDLE sock, void* buffer, size_t size, si
         {
             /* Codes_SRS_SOCKET_ASYNC_30_053: [ If the received_count parameter is NULL, socket_async_receive shall log the error and return FAILURE. ]*/
             LogError("received_count is NULL");
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
             if (size == 0)
             {
                 /* Codes_SRS_SOCKET_ASYNC_30_072: [ If the size parameter is 0, socket_async_receive shall log an error and return FAILURE. ]*/
                 LogError("size is 0");
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else
             {
@@ -315,7 +315,7 @@ int socket_async_receive(SOCKET_ASYNC_HANDLE sock, void* buffer, size_t size, si
                         /* Codes_SRS_SOCKET_ASYNC_30_056: [ If the underlying socket fails unexpectedly, socket_async_receive shall log the error and return FAILURE. ]*/
                         // Something bad happened
                         LogError("Unexpected recv error: %d", sock_err);
-                        result = __FAILURE__;
+                        result = MU_FAILURE;
                     }
                 }
                 else
