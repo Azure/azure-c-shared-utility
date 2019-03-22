@@ -301,7 +301,7 @@ int constbuffer_array_get_buffer_count(CONSTBUFFER_ARRAY_HANDLE constbuffer_arra
     {
         LogError("Invalid arguments: CONSTBUFFER_ARRAY_HANDLE constbuffer_array_handle=%p, uint32_t* buffer_count=%p",
             constbuffer_array_handle, buffer_count);
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -419,7 +419,7 @@ int constbuffer_array_get_all_buffers_size(CONSTBUFFER_ARRAY_HANDLE constbuffer_
     {
         LogError("CONSTBUFFER_ARRAY_HANDLE constbuffer_array_handle=%p, uint32_t* all_buffers_size=%p",
             constbuffer_array_handle, all_buffers_size);
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -447,7 +447,7 @@ int constbuffer_array_get_all_buffers_size(CONSTBUFFER_ARRAY_HANDLE constbuffer_
         {
             /* Codes_SRS_CONSTBUFFER_ARRAY_01_021: [ If summing up the sizes results in an uint32_t overflow, shall fail and return a non-zero value. ]*/
             LogError("Overflow in computing all buffers size");
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -464,7 +464,7 @@ const CONSTBUFFER_HANDLE* constbuffer_array_get_const_buffer_handle_array(CONSTB
 {
     const CONSTBUFFER_HANDLE* result;
 
-    /* Codes_SRS_CONSTBUFFER_ARRAY_01_026: [ If `constbuffer_array_handle` is NULL, `constbuffer_array_get_const_buffer_handle_array` shall fail and return NULL. ]*/
+    /* Codes_SRS_CONSTBUFFER_ARRAY_01_026: [ If constbuffer_array_handle is NULL, constbuffer_array_get_const_buffer_handle_array shall fail and return NULL. ]*/
     if (constbuffer_array_handle == NULL)
     {
         LogError("CONSTBUFFER_ARRAY_HANDLE constbuffer_array_handle=%p", constbuffer_array_handle);
@@ -472,7 +472,7 @@ const CONSTBUFFER_HANDLE* constbuffer_array_get_const_buffer_handle_array(CONSTB
     }
     else
     {
-        /* Codes_SRS_CONSTBUFFER_ARRAY_01_027: [ Otherwise `constbuffer_array_get_const_buffer_handle_array` shall return the array of const buffer handles backing the const buffer array. ]*/
+        /* Codes_SRS_CONSTBUFFER_ARRAY_01_027: [ Otherwise constbuffer_array_get_const_buffer_handle_array shall return the array of const buffer handles backing the const buffer array. ]*/
         result = constbuffer_array_handle->buffers;
     }
 

@@ -33,7 +33,7 @@ static void my_gballoc_free(void* ptr)
 #include "azure_c_shared_utility/gballoc.h"
 #undef ENABLE_MOCKS
 
-#include "azure_c_shared_utility/base64.h"
+#include "azure_c_shared_utility/azure_base64.h"
 #include "azure_c_shared_utility/strings.h"
 #include "azure_c_shared_utility/buffer_.h"
 
@@ -1471,11 +1471,11 @@ static const struct
 
     static TEST_MUTEX_HANDLE g_testByTest;
 
-DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
+MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    ASSERT_FAIL("umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
+    ASSERT_FAIL("umock_c reported error :%s", MU_ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
 }
 
 BEGIN_TEST_SUITE(base64_unittests)
@@ -1513,20 +1513,20 @@ TEST_FUNCTION_CLEANUP(cleans)
     TEST_MUTEX_RELEASE(g_testByTest);
 }
 
-/*Tests_SRS_BASE64_06_001: [If input is NULL then Base64_Encode shall return NULL.]*/
+/*Tests_SRS_BASE64_06_001: [If input is NULL then Azure_Base64_Encode shall return NULL.]*/
 TEST_FUNCTION(Base64_Encode_bad_input)
 {
     //arrange
     STRING_HANDLE result;
 
     //act
-    result = Base64_Encode(NULL);
+    result = Azure_Base64_Encode(NULL);
     //assert
     ASSERT_IS_NULL( result);
 
 }
 
-/*Tests_SRS_BASE64_06_007: [Otherwise Base64_Encode shall return a pointer to STRING, that string contains the base 64 encoding of inpuit.]*/
+/*Tests_SRS_BASE64_06_007: [Otherwise Azure_Base64_Encode shall return a pointer to STRING, that string contains the base 64 encoding of inpuit.]*/
 TEST_FUNCTION(Base64_Encode_simple_good)
 {
     //arrange
@@ -1534,7 +1534,7 @@ TEST_FUNCTION(Base64_Encode_simple_good)
     STRING_HANDLE result;
 
     //act
-    result = Base64_Encode(input);
+    result = Azure_Base64_Encode(input);
 
     //assert
     ASSERT_ARE_NOT_EQUAL(void_ptr, NULL, result);
@@ -1554,7 +1554,7 @@ TEST_FUNCTION(Base64_Encode_one_char_encode)
 
     BUFFER_build(input, (unsigned char*)oneCharacter,strlen(oneCharacter));
     //act
-    result = Base64_Encode(input);
+    result = Azure_Base64_Encode(input);
 
     //assert
     ASSERT_ARE_NOT_EQUAL(void_ptr, NULL, result);
@@ -1575,7 +1575,7 @@ TEST_FUNCTION(Base64_Encode_leviathan_succeeds)
 
     BUFFER_build(input, (unsigned char*)leviathan, strlen(leviathan));
     //act
-    result = Base64_Encode(input);
+    result = Azure_Base64_Encode(input);
 
     //assert
     ASSERT_ARE_NOT_EQUAL(void_ptr, NULL, result);
@@ -1601,7 +1601,7 @@ TEST_FUNCTION(Base64_Encode_exhaustive_succeeds)
         ASSERT_ARE_EQUAL(int, 0, BUFFER_build(input, testVector_BINARY_with_equal_signs[i].inputData, testVector_BINARY_with_equal_signs[i].inputLength));
 
         ///act
-        result = Base64_Encode(input);
+        result = Azure_Base64_Encode(input);
 
         ///assert
         ASSERT_ARE_NOT_EQUAL(void_ptr, NULL, result);
@@ -1614,13 +1614,13 @@ TEST_FUNCTION(Base64_Encode_exhaustive_succeeds)
     }
 }
 
-/*Tests_SRS_BASE64_02_001: [If source is NULL then Base64_Encode_Bytes shall return NULL.] */
+/*Tests_SRS_BASE64_02_001: [If source is NULL then Azure_Base64_Encode_Bytes shall return NULL.] */
 TEST_FUNCTION(Base64_Encode_Bytes_with_NULL_source_returns_NULL)
 {
     ///arrange
 
     ///act
-    STRING_HANDLE result = Base64_Encode_Bytes(NULL, 3);
+    STRING_HANDLE result = Azure_Base64_Encode_Bytes(NULL, 3);
 
     ///assert
     ASSERT_IS_NULL(result);
@@ -1628,13 +1628,13 @@ TEST_FUNCTION(Base64_Encode_Bytes_with_NULL_source_returns_NULL)
     ///cleanup
 }
 
-/*Tests_SRS_BASE64_02_002: [If source is not NULL and size is zero, then Base64_Encode_Bytes shall produce an empty STRING_HANDLE.]*/
+/*Tests_SRS_BASE64_02_002: [If source is not NULL and size is zero, then Azure_Base64_Encode_Bytes shall produce an empty STRING_HANDLE.]*/
 TEST_FUNCTION(Base64_Encode_Bytes_with_zero_size_returns_empty_string)
 {
     ///arrange
 
     ///act
-    STRING_HANDLE result = Base64_Encode_Bytes((const unsigned char*)"a", 0);
+    STRING_HANDLE result = Azure_Base64_Encode_Bytes((const unsigned char*)"a", 0);
 
     ///assert
     ASSERT_IS_NOT_NULL(result);
@@ -1645,7 +1645,7 @@ TEST_FUNCTION(Base64_Encode_Bytes_with_zero_size_returns_empty_string)
 }
 
 
-/*Tests_SRS_BASE64_02_003: [Otherwise, Base64_Encode_Bytes shall produce a STRING_HANDLE containing the Base64 representation of the buffer.] */
+/*Tests_SRS_BASE64_02_003: [Otherwise, Azure_Base64_Encode_Bytes shall produce a STRING_HANDLE containing the Base64 representation of the buffer.] */
 TEST_FUNCTION(Base64_Encode_Bytes_exhaustive_succeeds)
 {
     ///arrange
@@ -1657,7 +1657,7 @@ TEST_FUNCTION(Base64_Encode_Bytes_exhaustive_succeeds)
         STRING_HANDLE result;
 
         ///act
-        result = Base64_Encode_Bytes(testVector_BINARY_with_equal_signs[i].inputData, testVector_BINARY_with_equal_signs[i].inputLength);
+        result = Azure_Base64_Encode_Bytes(testVector_BINARY_with_equal_signs[i].inputData, testVector_BINARY_with_equal_signs[i].inputLength);
 
         ///assert
         ASSERT_ARE_NOT_EQUAL(void_ptr, NULL, result);
@@ -1668,7 +1668,7 @@ TEST_FUNCTION(Base64_Encode_Bytes_exhaustive_succeeds)
     }
 }
 
-TEST_FUNCTION(Base64_Decode_exhaustive_succeeds)
+TEST_FUNCTION(Azure_Base64_Decode_exhaustive_succeeds)
 {
     size_t i;
     for (i = 0; i < sizeof(testVector_BINARY_with_equal_signs) / sizeof(testVector_BINARY_with_equal_signs[0]); i++)
@@ -1677,7 +1677,7 @@ TEST_FUNCTION(Base64_Decode_exhaustive_succeeds)
         BUFFER_HANDLE result;
 
         ///act
-        result = Base64_Decode(testVector_BINARY_with_equal_signs[i].expectedOutput);
+        result = Azure_Base64_Decode(testVector_BINARY_with_equal_signs[i].expectedOutput);
 
         ///assert
         ASSERT_ARE_EQUAL(size_t, testVector_BINARY_with_equal_signs[i].inputLength, BUFFER_length(result));
@@ -1688,27 +1688,27 @@ TEST_FUNCTION(Base64_Decode_exhaustive_succeeds)
     }
 }
 
-/*Tests_SRS_BASE64_06_008: [If source is NULL then Base64_Decode shall return NULL.]*/
-TEST_FUNCTION(Base64_Decode_null_return_null)
+/*Tests_SRS_BASE64_06_008: [If source is NULL then Azure_Base64_Decode shall return NULL.]*/
+TEST_FUNCTION(Azure_Base64_Decode_null_return_null)
 {
     ///Arrange
     BUFFER_HANDLE result;
 
     ///act
-    result = Base64_Decode(NULL);
+    result = Azure_Base64_Decode(NULL);
 
     ///assert
     ASSERT_IS_NULL(result);
 }
 
 /*Tests_SRS_BASE64_06_009: [If the string pointed to by source is zero length then the handle returned shall refer to a zero length buffer.]*/
-TEST_FUNCTION(Base64_Decode_zero_length_returns_zero_length)
+TEST_FUNCTION(Azure_Base64_Decode_zero_length_returns_zero_length)
 {
     ///Arrange
     BUFFER_HANDLE result;
 
     ///act
-    result = Base64_Decode("");
+    result = Azure_Base64_Decode("");
 
     ///assert
     ASSERT_IS_NOT_NULL(result);
@@ -1718,82 +1718,82 @@ TEST_FUNCTION(Base64_Decode_zero_length_returns_zero_length)
     BUFFER_delete(result);
 }
 
-/*Tests_SRS_BASE64_06_011: [If the source string has an invalid length for a base 64 encoded string then Base64_Decode shall return NULL.]*/
-TEST_FUNCTION(Base64_Decode_invalid_length_fails_1)
+/*Tests_SRS_BASE64_06_011: [If the source string has an invalid length for a base 64 encoded string then Azure_Base64_Decode shall return NULL.]*/
+TEST_FUNCTION(Azure_Base64_Decode_invalid_length_fails_1)
 {
     ///Arrange
     BUFFER_HANDLE result;
 
     ///act
-    result = Base64_Decode("1");
+    result = Azure_Base64_Decode("1");
 
     ///assert
     ASSERT_IS_NULL(result);
 
 }
 
-/*Tests_SRS_BASE64_06_011: [If the source string has an invalid length for a base 64 encoded string then Base64_Decode shall return NULL.]*/
-TEST_FUNCTION(Base64_Decode_invalid_length_fails_2)
+/*Tests_SRS_BASE64_06_011: [If the source string has an invalid length for a base 64 encoded string then Azure_Base64_Decode shall return NULL.]*/
+TEST_FUNCTION(Azure_Base64_Decode_invalid_length_fails_2)
 {
     ///Arrange
     BUFFER_HANDLE result;
 
     ///act
-    result = Base64_Decode("12");
+    result = Azure_Base64_Decode("12");
 
     ///assert
     ASSERT_IS_NULL(result);
 
 }
 
-/*Tests_SRS_BASE64_06_011: [If the source string has an invalid length for a base 64 encoded string then Base64_Decode shall return NULL.]*/
-TEST_FUNCTION(Base64_Decode_invalid_length_fails_3)
+/*Tests_SRS_BASE64_06_011: [If the source string has an invalid length for a base 64 encoded string then Azure_Base64_Decode shall return NULL.]*/
+TEST_FUNCTION(Azure_Base64_Decode_invalid_length_fails_3)
 {
     ///Arrange
     BUFFER_HANDLE result;
 
     ///act
-    result = Base64_Decode("123");
+    result = Azure_Base64_Decode("123");
 
     ///assert
     ASSERT_IS_NULL(result);
 
 }
 
-/*Tests_SRS_BASE64_06_011: [If the source string has an invalid length for a base 64 encoded string then Base64_Decode shall return NULL.]*/
-TEST_FUNCTION(Base64_Decode_invalid_length_fails_4)
+/*Tests_SRS_BASE64_06_011: [If the source string has an invalid length for a base 64 encoded string then Azure_Base64_Decode shall return NULL.]*/
+TEST_FUNCTION(Azure_Base64_Decode_invalid_length_fails_4)
 {
     ///Arrange
     BUFFER_HANDLE result;
 
     ///act
-    result = Base64_Decode("12345");
+    result = Azure_Base64_Decode("12345");
 
     ///assert
     ASSERT_IS_NULL(result);
 
 }
 
-/*Tests_SRS_BASE64_06_011: [If the source string has an invalid length for a base 64 encoded string then Base64_Decode shall return NULL.]*/
-TEST_FUNCTION(Base64_Decode_invalid_length_fails_5)
+/*Tests_SRS_BASE64_06_011: [If the source string has an invalid length for a base 64 encoded string then Azure_Base64_Decode shall return NULL.]*/
+TEST_FUNCTION(Azure_Base64_Decode_invalid_length_fails_5)
 {
     ///Arrange
     BUFFER_HANDLE result;
 
     ///act
-    result = Base64_Decode("123456");
+    result = Azure_Base64_Decode("123456");
     ASSERT_IS_NULL(result);
 
 }
 
-/*Tests_SRS_BASE64_06_011: [If the source string has an invalid length for a base 64 encoded string then Base64_Decode shall return NULL.]*/
-TEST_FUNCTION(Base64_Decode_invalid_length_fails_6)
+/*Tests_SRS_BASE64_06_011: [If the source string has an invalid length for a base 64 encoded string then Azure_Base64_Decode shall return NULL.]*/
+TEST_FUNCTION(Azure_Base64_Decode_invalid_length_fails_6)
 {
     ///Arrange
     BUFFER_HANDLE result;
 
     ///act
-    result = Base64_Decode("1234567");
+    result = Azure_Base64_Decode("1234567");
 
     ///assert
     ASSERT_IS_NULL(result);

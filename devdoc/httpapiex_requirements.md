@@ -20,7 +20,7 @@ HTTAPIEX is a utility module that provides HTTP requests with build-in retry cap
     HTTPAPIEX_RECOVERYFAILED
 /*to be continued*/
 
-DEFINE_ENUM(HTTPAPIEX_RESULT, HTTPAPIEX_RESULT_VALUES);
+MU_DEFINE_ENUM(HTTPAPIEX_RESULT, HTTPAPIEX_RESULT_VALUES);
 
 extern HTTPAPIEX_HANDLE HTTPAPIEX_Create(const char* hostName);
 

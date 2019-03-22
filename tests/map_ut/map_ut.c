@@ -109,7 +109,7 @@ static int DontAllowCapitalsFilters(const char* mapProperty, const char* mapValu
     {
         if (*iterator >= 'A' && *iterator <= 'Z')
         {
-            result = __FAILURE__;
+            result = MU_FAILURE;
             break;
         }
         iterator++;
@@ -122,7 +122,7 @@ static int DontAllowCapitalsFilters(const char* mapProperty, const char* mapValu
         {
             if (*iterator >= 'A' && *iterator <= 'Z')
             {
-                result = __FAILURE__;
+                result = MU_FAILURE;
                 break;
             }
             iterator++;
@@ -146,11 +146,11 @@ static const char* TEST_BLUEVALUE = "cyan";
 static const char* TEST_GREENKEY = "testgreenkey";
 static const char* TEST_GREENVALUE = "green";
 
-DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
+MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    ASSERT_FAIL("umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
+    ASSERT_FAIL("umock_c reported error :%s", MU_ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
 }
 
 BEGIN_TEST_SUITE(map_unittests)

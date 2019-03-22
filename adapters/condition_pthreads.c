@@ -11,7 +11,7 @@
 #include "time.h"
 #include "linux_time.h"
 
-DEFINE_ENUM_STRINGS(COND_RESULT, COND_RESULT_VALUES);
+MU_DEFINE_ENUM_STRINGS(COND_RESULT, COND_RESULT_VALUES);
 
 pthread_cond_t* create_cond(void)
 {

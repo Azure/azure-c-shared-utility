@@ -53,14 +53,14 @@ int tickcounter_get_current_ms(TICK_COUNTER_HANDLE tick_counter, tickcounter_ms_
     if (tick_counter == NULL || current_ms == NULL)
     {
         LogError("tickcounter failed: Invalid Arguments.");
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
         time_t time_value = get_time_s();
         if (time_value == INVALID_TIME_VALUE)
         {
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {

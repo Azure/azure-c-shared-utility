@@ -3,16 +3,16 @@
 
 cmake_minimum_required(VERSION 2.8.11)
 
-set(theseTestsName base64_ut)
+set(theseTestsName azure_base64_ut)
 
 set(${theseTestsName}_test_files
-${theseTestsName}.c
+    ${theseTestsName}.c
 )
 
 set(${theseTestsName}_c_files
-../../src/base64.c
-../../src/strings.c
-../../src/buffer.c
+    ../../src/azure_base64.c
+    ../../src/strings.c
+    ../../src/buffer.c
 )
 
 set(${theseTestsName}_h_files

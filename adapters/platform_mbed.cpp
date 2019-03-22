@@ -16,14 +16,14 @@ int setupRealTime(void)
 
     if (EthernetInterface::connect())
     {
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
         NTPClient ntp;
         if (ntp.setTime("0.pool.ntp.org") != 0)
         {
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -41,15 +41,15 @@ int platform_init(void)
 
     if (EthernetInterface::init())
     {
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else if (setupRealTime() != 0)
     {
-        result = __FAILURE__;
+        result = MU_FAILURE;
     } 
     else if (EthernetInterface::connect())
     {
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {

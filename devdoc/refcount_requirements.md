@@ -9,9 +9,9 @@ It wraps the structure that needs to be ref counted into another structure that 
 ## Exposed API
 
 ```c
-#define REFCOUNT_TYPE_CREATE(type) C2(REFCOUNT_SHORT_TYPE(type), _Create)()
-#define REFCOUNT_TYPE_CREATE_WITH_EXTRA_SIZE(type, size) C2(REFCOUNT_SHORT_TYPE(type), _Create_With_Extra_Size)(size)
-#define REFCOUNT_TYPE_DESTROY(type, var) C2(REFCOUNT_SHORT_TYPE(type), _Destroy)(var)
+#define REFCOUNT_TYPE_CREATE(type) MU_C2(REFCOUNT_SHORT_TYPE(type), _Create)()
+#define REFCOUNT_TYPE_CREATE_WITH_EXTRA_SIZE(type, size) MU_C2(REFCOUNT_SHORT_TYPE(type), _Create_With_Extra_Size)(size)
+#define REFCOUNT_TYPE_DESTROY(type, var) MU_C2(REFCOUNT_SHORT_TYPE(type), _Destroy)(var)
 
 #define DEFINE_REFCOUNT_TYPE(type) \
 ...

@@ -23,7 +23,7 @@ typedef void* COND_HANDLE;
 /**
 * @brief Enumeration specifying the lock status.
 */
-DEFINE_ENUM(COND_RESULT, COND_RESULT_VALUES);
+MU_DEFINE_ENUM(COND_RESULT, COND_RESULT_VALUES);
 
 /**
 * @brief    This API creates and returns a valid condition handle.

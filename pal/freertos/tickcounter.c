@@ -59,7 +59,7 @@ int tickcounter_get_current_ms(TICK_COUNTER_HANDLE tick_counter, tickcounter_ms_
         /* Codes_SRS_TICKCOUNTER_FREERTOS_30_007: [ If the tick_counter parameter is NULL, tickcounter_get_current_ms shall return a non-zero value to indicate error. ] */
         /* Codes_SRS_TICKCOUNTER_FREERTOS_30_008: [ If the current_ms parameter is NULL, tickcounter_get_current_ms shall return a non-zero value to indicate error. ] */
         LogError("Invalid Arguments.");
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {

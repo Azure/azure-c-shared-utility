@@ -52,7 +52,7 @@ extern "C"
 #include "azure_c_shared_utility/xio.h"
 #include "azure_c_shared_utility/socketio.h"
 #include "azure_c_shared_utility/strings.h"
-#include "azure_c_shared_utility/base64.h"
+#include "azure_c_shared_utility/azure_base64.h"
 
 IMPLEMENT_UMOCK_C_ENUM_TYPE(IO_OPEN_RESULT, IO_OPEN_RESULT_VALUES);
 IMPLEMENT_UMOCK_C_ENUM_TYPE(IO_SEND_RESULT, IO_SEND_RESULT_VALUES);
@@ -281,11 +281,11 @@ static const SOCKETIO_CONFIG socketio_config =
 }
 #endif
 
-DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
+MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    ASSERT_FAIL("umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
+    ASSERT_FAIL("umock_c reported error :%s", MU_ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
 }
 
 BEGIN_TEST_SUITE(http_proxy_io_unittests)
@@ -313,7 +313,7 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_GLOBAL_MOCK_RETURN(socketio_get_interface_description, TEST_SOCKETIO_INTERFACE_DESCRIPTION);
     REGISTER_GLOBAL_MOCK_RETURN(xio_create, TEST_IO_HANDLE);
     REGISTER_GLOBAL_MOCK_RETURN(xio_retrieveoptions, TEST_OPTION_HANDLER);
-    REGISTER_GLOBAL_MOCK_RETURN(Base64_Encode_Bytes, TEST_STRING_HANDLE);
+    REGISTER_GLOBAL_MOCK_RETURN(Azure_Base64_Encode_Bytes, TEST_STRING_HANDLE);
     REGISTER_GLOBAL_MOCK_RETURN(STRING_c_str, "test_str");
     REGISTER_TYPE(IO_OPEN_RESULT, IO_OPEN_RESULT);
     REGISTER_TYPE(IO_SEND_RESULT, IO_SEND_RESULT);
@@ -1823,7 +1823,7 @@ TEST_FUNCTION(when_the_underlying_io_open_complete_is_called_the_CONNECT_request
     umock_c_reset_all_calls();
 
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)); // auth
-    STRICT_EXPECTED_CALL(Base64_Encode_Bytes(IGNORED_NUM_ARG, sizeof(plain_auth_string) - 1))
+    STRICT_EXPECTED_CALL(Azure_Base64_Encode_Bytes(IGNORED_NUM_ARG, sizeof(plain_auth_string) - 1))
         .ValidateArgumentBuffer(1, plain_auth_string, sizeof(plain_auth_string) - 1);
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // auth
     STRICT_EXPECTED_CALL(STRING_c_str(TEST_STRING_HANDLE))
@@ -1863,7 +1863,7 @@ TEST_FUNCTION(when_the_underlying_io_open_complete_is_called_the_CONNECT_request
     umock_c_reset_all_calls();
 
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)); // auth
-    STRICT_EXPECTED_CALL(Base64_Encode_Bytes(IGNORED_NUM_ARG, sizeof(plain_auth_string) - 1))
+    STRICT_EXPECTED_CALL(Azure_Base64_Encode_Bytes(IGNORED_NUM_ARG, sizeof(plain_auth_string) - 1))
         .ValidateArgumentBuffer(1, plain_auth_string, sizeof(plain_auth_string) - 1);
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // auth
     STRICT_EXPECTED_CALL(STRING_c_str(TEST_STRING_HANDLE))
@@ -1896,7 +1896,7 @@ TEST_FUNCTION(when_Base64_Encode_Bytes_fails_on_open_complete_is_triggered_with_
     umock_c_reset_all_calls();
 
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)); // auth
-    STRICT_EXPECTED_CALL(Base64_Encode_Bytes(IGNORED_NUM_ARG, sizeof(plain_auth_string) - 1))
+    STRICT_EXPECTED_CALL(Azure_Base64_Encode_Bytes(IGNORED_NUM_ARG, sizeof(plain_auth_string) - 1))
         .ValidateArgumentBuffer(1, plain_auth_string, sizeof(plain_auth_string) - 1)
         .SetReturn(NULL);
     STRICT_EXPECTED_CALL(xio_close(TEST_IO_HANDLE, NULL, NULL));
@@ -1926,7 +1926,7 @@ TEST_FUNCTION(after_Base64_Encode_Bytes_fails_http_proxy_io_open_succeeds)
     umock_c_reset_all_calls();
 
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)); // auth
-    STRICT_EXPECTED_CALL(Base64_Encode_Bytes(IGNORED_NUM_ARG, sizeof(plain_auth_string) - 1))
+    STRICT_EXPECTED_CALL(Azure_Base64_Encode_Bytes(IGNORED_NUM_ARG, sizeof(plain_auth_string) - 1))
         .ValidateArgumentBuffer(1, plain_auth_string, sizeof(plain_auth_string) - 1)
         .SetReturn(NULL);
 

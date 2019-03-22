@@ -31,7 +31,7 @@ int platform_init(void)
     if (error_code != 0)
     {
         LogError("WSAStartup failed: 0x%x", error_code);
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {

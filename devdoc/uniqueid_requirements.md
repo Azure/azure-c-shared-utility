@@ -11,7 +11,7 @@ The UniqueIDs module provides pseudo unique identifiers to the rest of the modul
     UNIQUEID_INVALID_ARG,         \
     UNIQUEID_ERROR
 
-    DEFINE_ENUM(UNIQUEID_RESULT, UNIQUEID_RESULT_VALUES)
+    MU_DEFINE_ENUM(UNIQUEID_RESULT, UNIQUEID_RESULT_VALUES)
 
     extern UNIQUEID_RESULT UniqueId_Generate(char* uid, size_t bufferSize);
 ```

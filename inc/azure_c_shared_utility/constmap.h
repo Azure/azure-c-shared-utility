@@ -32,7 +32,7 @@ extern "C"
 /** @brief Enumeration specifying the status of calls to various APIs in this
  *  module.
  */
-DEFINE_ENUM(CONSTMAP_RESULT, CONSTMAP_RESULT_VALUES);
+MU_DEFINE_ENUM(CONSTMAP_RESULT, CONSTMAP_RESULT_VALUES);
 
 typedef struct CONSTMAP_HANDLE_DATA_TAG* CONSTMAP_HANDLE;
 

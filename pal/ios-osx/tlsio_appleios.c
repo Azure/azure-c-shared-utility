@@ -299,14 +299,14 @@ static int tlsio_appleios_open_async(CONCRETE_IO_HANDLE tls_io,
     {
         /* Codes_SRS_TLSIO_30_031: [ If the on_io_open_complete parameter is NULL, tlsio_open shall log an error and return FAILURE. ]*/
         LogError("Required parameter on_io_open_complete is NULL");
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
         if (tls_io == NULL)
         {
             /* Codes_SRS_TLSIO_30_030: [ If the tlsio_handle parameter is NULL, tlsio_open shall log an error and return FAILURE. ]*/
-            result = __FAILURE__;
+            result = MU_FAILURE;
             LogError("NULL tlsio");
         }
         else
@@ -315,7 +315,7 @@ static int tlsio_appleios_open_async(CONCRETE_IO_HANDLE tls_io,
             {
                 /* Codes_SRS_TLSIO_30_032: [ If the on_bytes_received parameter is NULL, tlsio_open shall log an error and return FAILURE. ]*/
                 LogError("Required parameter on_bytes_received is NULL");
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else
             {
@@ -323,7 +323,7 @@ static int tlsio_appleios_open_async(CONCRETE_IO_HANDLE tls_io,
                 {
                     /* Codes_SRS_TLSIO_30_033: [ If the on_io_error parameter is NULL, tlsio_open shall log an error and return FAILURE. ]*/
                     LogError("Required parameter on_io_error is NULL");
-                    result = __FAILURE__;
+                    result = MU_FAILURE;
                 }
                 else
                 {
@@ -333,7 +333,7 @@ static int tlsio_appleios_open_async(CONCRETE_IO_HANDLE tls_io,
                     {
                         /* Codes_SRS_TLSIO_30_037: [ If the adapter is in any state other than TLSIO_STATE_EXT_CLOSED when tlsio_open  is called, it shall log an error, and return FAILURE. ]*/
                         LogError("Invalid tlsio_state. Expected state is TLSIO_STATE_CLOSED.");
-                        result = __FAILURE__;
+                        result = MU_FAILURE;
                     }
                     else
                     {
@@ -371,7 +371,7 @@ static int tlsio_appleios_close_async(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COM
     {
         /* Codes_SRS_TLSIO_30_050: [ If the tlsio_handle parameter is NULL, tlsio_appleios_close_async shall log an error and return FAILURE. ]*/
         LogError("NULL tlsio");
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -379,7 +379,7 @@ static int tlsio_appleios_close_async(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COM
         {
             /* Codes_SRS_TLSIO_30_055: [ If the on_io_close_complete parameter is NULL, tlsio_appleios_close_async shall log an error and return FAILURE. ]*/
             LogError("NULL on_io_close_complete");
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -620,7 +620,7 @@ static int tlsio_appleios_setoption(CONCRETE_IO_HANDLE tls_io, const char* optio
     if (tls_io_instance == NULL)
     {
         LogError("NULL tlsio");
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -631,7 +631,7 @@ static int tlsio_appleios_setoption(CONCRETE_IO_HANDLE tls_io, const char* optio
         if (options_result != TLSIO_OPTIONS_RESULT_SUCCESS)
         {
             LogError("Failed tlsio_options_set");
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -647,7 +647,7 @@ static int tlsio_appleios_send_async(CONCRETE_IO_HANDLE tls_io, const void* buff
     if (on_send_complete == NULL || tls_io == NULL || buffer == NULL || size == 0 || on_send_complete == NULL)
     {
         /* Codes_SRS_TLSIO_30_062: [ If the on_send_complete is NULL, tlsio_appleios_compact_send shall log the error and return FAILURE. ]*/
-        result = __FAILURE__;
+        result = MU_FAILURE;
         LogError("Invalid parameter specified: tls_io: %p, buffer: %p, size: %lu, on_send_complete: %p", tls_io, buffer, (unsigned long)size, on_send_complete);
     }
     else
@@ -657,7 +657,7 @@ static int tlsio_appleios_send_async(CONCRETE_IO_HANDLE tls_io, const void* buff
         {
             /* Codes_SRS_TLSIO_30_060: [ If the tlsio_handle parameter is NULL, tlsio_appleios_compact_send shall log an error and return FAILURE. ]*/
             /* Codes_SRS_TLSIO_30_065: [ If tlsio_appleios_compact_open has not been called or the opening process has not been completed, tlsio_appleios_compact_send shall log an error and return FAILURE. ]*/
-            result = __FAILURE__;
+            result = MU_FAILURE;
             LogError("tlsio_appleios_send_async without a prior successful open");
         }
         else
@@ -666,7 +666,7 @@ static int tlsio_appleios_send_async(CONCRETE_IO_HANDLE tls_io, const void* buff
             if (pending_transmission == NULL)
             {
                 /* Codes_SRS_TLSIO_30_064: [ If the supplied message cannot be enqueued for transmission, tlsio_appleios_compact_send shall log an error and return FAILURE. ]*/
-                result = __FAILURE__;
+                result = MU_FAILURE;
                 LogError("malloc failed");
             }
             else
@@ -691,7 +691,7 @@ static int tlsio_appleios_send_async(CONCRETE_IO_HANDLE tls_io, const void* buff
                     /* Codes_SRS_TLSIO_30_064: [ If the supplied message cannot be enqueued for transmission, tlsio_appleios_compact_send shall log an error and return FAILURE. ]*/
                     LogError("malloc failed");
                     free(pending_transmission);
-                    result = __FAILURE__;
+                    result = MU_FAILURE;
                 }
                 else
                 {
@@ -717,7 +717,7 @@ static int tlsio_appleios_send_async(CONCRETE_IO_HANDLE tls_io, const void* buff
                         LogError("Unable to add socket to pending list.");
                         free(pending_transmission->bytes);
                         free(pending_transmission);
-                        result = __FAILURE__;
+                        result = MU_FAILURE;
                     }
                     else
                     {

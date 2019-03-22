@@ -40,11 +40,11 @@ static void my_gballoc_free(void* s)
 
 static TEST_MUTEX_HANDLE test_serialize_mutex;
 
-DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
+MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    ASSERT_FAIL("umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
+    ASSERT_FAIL("umock_c reported error :%s", MU_ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
 }
 
 static const unsigned char one = '1';
@@ -1819,7 +1819,7 @@ TEST_FUNCTION(constbuffer_array_get_all_buffers_size_with_2_buffers_succeeds)
 
 /* constbuffer_array_get_const_buffer_handle_array */
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_01_026: [ If `constbuffer_array_handle` is NULL, `constbuffer_array_get_const_buffer_handle_array` shall fail and return NULL. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_026: [ If constbuffer_array_handle is NULL, constbuffer_array_get_const_buffer_handle_array shall fail and return NULL. ]*/
 TEST_FUNCTION(constbuffer_array_get_const_buffer_handle_array_with_NULL_constbuffer_array_handle_fails)
 {
     ///arrange
@@ -1833,7 +1833,7 @@ TEST_FUNCTION(constbuffer_array_get_const_buffer_handle_array_with_NULL_constbuf
     ASSERT_IS_NULL(result);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_01_027: [ Otherwise `constbuffer_array_get_const_buffer_handle_array` shall return the array of const buffer handles backing the const buffer array. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_027: [ Otherwise constbuffer_array_get_const_buffer_handle_array shall return the array of const buffer handles backing the const buffer array. ]*/
 TEST_FUNCTION(constbuffer_array_get_const_buffer_handle_array_with_empty_array_succeeds)
 {
     ///arrange
@@ -1852,7 +1852,7 @@ TEST_FUNCTION(constbuffer_array_get_const_buffer_handle_array_with_empty_array_s
     constbuffer_array_dec_ref(constbuffer_array);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_01_027: [ Otherwise `constbuffer_array_get_const_buffer_handle_array` shall return the array of const buffer handles backing the const buffer array. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_027: [ Otherwise constbuffer_array_get_const_buffer_handle_array shall return the array of const buffer handles backing the const buffer array. ]*/
 TEST_FUNCTION(constbuffer_array_get_const_buffer_handle_array_with_array_with_1_buffer_succeeds)
 {
     ///arrange
@@ -1874,7 +1874,7 @@ TEST_FUNCTION(constbuffer_array_get_const_buffer_handle_array_with_array_with_1_
     constbuffer_array_dec_ref(afterAdd1);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_01_027: [ Otherwise `constbuffer_array_get_const_buffer_handle_array` shall return the array of const buffer handles backing the const buffer array. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_027: [ Otherwise constbuffer_array_get_const_buffer_handle_array shall return the array of const buffer handles backing the const buffer array. ]*/
 TEST_FUNCTION(constbuffer_array_get_const_buffer_handle_array_with_array_with_2_buffers_succeeds)
 {
     ///arrange
