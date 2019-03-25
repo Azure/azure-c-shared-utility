@@ -20,8 +20,11 @@ const IO_INTERFACE_DESCRIPTION* platform_get_default_tlsio(void)
     return tlsio_cyclonessl_get_interface_description();
 }
 
-STRING_HANDLE platform_get_platform_info(void)
+STRING_HANDLE platform_get_platform_info(PLATFORM_INFO_OPTION options)
 {
+    // No applicable options, so ignoring parameter
+    (void)options;
+
     // Expected format: "(<runtime name>; <operating system name>; <platform>)"
 
     return STRING_construct("(native; freertos; undefined)");
