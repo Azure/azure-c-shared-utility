@@ -290,11 +290,15 @@ phases:
 - phase: linux_mbed
   variables:
     _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/linux-c-mbed"
-  queue: c-df
+  queue: aziotbld-lin01
   displayName: 'linux_mbed'
   steps:
   - script: |
-      sudo ./jenkins/linux_mbed.sh
+      if [ -f "jenkins/debian_c.sh" ]
+      then
+        sudo chmod 755 jenkins/linux_mbed.sh
+        sudo -E ./jenkins/linux_mbed.sh
+      fi
     displayName: 'build'
     env:
       IOTHUB_CONNECTION_STRING: $(IOTHUB-CONNECTION-STRING)
