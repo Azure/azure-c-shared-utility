@@ -378,7 +378,7 @@ static void mbedtls_uninit(TLS_IO_INSTANCE *tls_io_instance)
     }
     else
     {
-        printf("Not initialized");
+        LogError("Uninitialzing when not previously initialized");
     }
 }
 
@@ -845,10 +845,14 @@ int tlsio_mbedtls_setoption(CONCRETE_IO_HANDLE tls_io, const char *optionName, c
             }
             else if (mbedtls_x509_crt_parse(&tls_io_instance->owncert, (const unsigned char *)value, (int)(strlen(value) + 1)) != 0)
             {
+                LogError("failure parsing certificate");
+                free(tls_io_instance->x509_certificate);
                 result = MU_FAILURE;
             }
             else if (tls_io_instance->pKey.pk_info != NULL && mbedtls_ssl_conf_own_cert(&tls_io_instance->config, &tls_io_instance->owncert, &tls_io_instance->pKey) != 0)
             {
+                LogError("failure calling mbedtls_ssl_conf_own_cert");
+                free(tls_io_instance->x509_certificate);
                 result = MU_FAILURE;
             }
             else
@@ -871,10 +875,26 @@ int tlsio_mbedtls_setoption(CONCRETE_IO_HANDLE tls_io, const char *optionName, c
             }
             else if (mbedtls_pk_parse_key(&tls_io_instance->pKey, (const unsigned char *)value, (int)(strlen(value) + 1), NULL, 0) != 0)
             {
+                LogError("failure parsing Private Key");
+                free(tls_io_instance->x509_private_key);
                 result = MU_FAILURE;
             }
             else if (tls_io_instance->owncert.version > 0 && mbedtls_ssl_conf_own_cert(&tls_io_instance->config, &tls_io_instance->owncert, &tls_io_instance->pKey))
             {
+                LogError("failure calling mbedtls_ssl_conf_own_cert on cert");
+                free(tls_io_instance->x509_private_key);
+                result = MU_FAILURE;
+            }
+            else
+            {
+                result = 0;
+            }
+        }
+        else if (strcmp(optionName, OPTION_UNDERLYING_IO_OPTIONS) == 0)
+        {
+            if (OptionHandler_FeedOptions((OPTIONHANDLER_HANDLE)value, (void*)tls_io_instance->socket_io) != OPTIONHANDLER_OK)
+            {
+                LogError("failed feeding options to underlying I/O instance");
                 result = MU_FAILURE;
             }
             else
