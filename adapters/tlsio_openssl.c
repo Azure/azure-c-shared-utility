@@ -852,6 +852,14 @@ static int load_cert_crl_http(
     platform_get_http_proxy(&proxyHostnamePort, &usernamePassword);
     bool isHostnameSet = (proxyHostnamePort && *proxyHostnamePort);
 
+    if (isHostnameSet)
+    {
+        LogInfo("Performing CRL download via proxy%s.\n",
+            usernamePassword && *usernamePassword
+                ? " (with authentication)"
+                : "");
+    }
+
     bio = BIO_new_connect(isHostnameSet ? proxyHostnamePort : host);
     if (!bio || (!isHostnameSet && !BIO_set_conn_port(bio, port)))
     {
@@ -866,7 +874,7 @@ static int load_cert_crl_http(
 
     OCSP_set_max_response_length(rctx, 1024 * 1024);
 
-    if (!OCSP_REQ_CTX_http(rctx, "GET", isHostnameSet ? url : path)) // path
+    if (!OCSP_REQ_CTX_http(rctx, "GET", isHostnameSet ? url : path))
     {
         goto error;
     }
@@ -882,9 +890,22 @@ static int load_cert_crl_http(
         char authData[1256];
 
         BIO *bioPlain = BIO_new(BIO_f_base64());
+
+        if (!bioPlain)
+        {
+            goto error;
+        }
+
         BIO_set_flags(bioPlain, BIO_FLAGS_BASE64_NO_NL);
 
         BIO* bioBase64 = BIO_new(BIO_s_mem());
+
+        if (!bioBase64)
+        {
+            BIO_free_all(bioBase64);
+            goto error;
+        }
+
         BIO_push(bioPlain, bioBase64);
 
         int result = BIO_write(bioPlain, usernamePassword, (int)strlen(usernamePassword));
@@ -1221,8 +1242,8 @@ static X509_CRL *load_crl(const char *source, int format)
     }
 
 end:
-    BIO_free(in);
-    return (x);
+    if (in) BIO_free(in);
+    return x;
 }
 
 static int save_crl(const char *source, X509_CRL *crl, int format)
@@ -1294,8 +1315,15 @@ static const char *get_dp_url(DIST_POINT *dp)
     int i, gtype;
     ASN1_STRING *uri;
 
-    if (!dp->distpoint || dp->distpoint->type != 0)
+    if (!dp->distpoint)
     {
+        LogInfo("returning, dp->distpoint is null\n");
+        return NULL;
+    }
+
+    if (dp->distpoint->type != 0)
+    {
+        LogInfo("returning, dp->distpoint->type != 0\n");
         return NULL;
     }
 
@@ -1360,6 +1388,7 @@ static int is_valid_crl(X509 *cert, X509_CRL *crl)
 
 static int load_cert_crl_file(X509 *cert, const char* suffix, X509_CRL **pCrl)
 {
+    static bool logCacheUsage = 0;
     char buf[256];
 
     int ret = 0;
@@ -1370,6 +1399,11 @@ static int load_cert_crl_file(X509 *cert, const char* suffix, X509_CRL **pCrl)
         NULL == (prefix = getenv("TEMP")) &&
         NULL == (prefix = getenv("TMPDIR")))
     {
+        if (!logCacheUsage)
+        {
+            LogInfo("Not using CRL cache directory.\n");
+        }
+        logCacheUsage = true;
         return 0;
     }
 
@@ -1467,11 +1501,12 @@ static X509_CRL *load_crl_crldp(X509 *cert, const char* suffix, STACK_OF(DIST_PO
 
     // file was not found on disk cache,
     // so, now loading from web.
+    const char *urlptr = NULL;
     for (i = 0; i < sk_DIST_POINT_num(crldp); i++)
     {
         DIST_POINT *dp = sk_DIST_POINT_value(crldp, i);
 
-        const char *urlptr = get_dp_url(dp);
+        urlptr = get_dp_url(dp);
         if (urlptr)
         {
             // try to load from web, exit loop if
@@ -1481,11 +1516,19 @@ static X509_CRL *load_crl_crldp(X509 *cert, const char* suffix, STACK_OF(DIST_PO
         }
     }
 
-    // save it to memory
-    save_cert_crl_memory(cert, crl);
+    if (!urlptr)
+    {
+        LogError("No CRL dist point qualified for downloading.");
+    }
 
-    // try to update file in cache
-    save_cert_crl_file(cert, suffix, crl);
+    if (crl)
+    {
+        // save it to memory
+        save_cert_crl_memory(cert, crl);
+
+        // try to update file in cache
+        save_cert_crl_file(cert, suffix, crl);
+    }
 
     return crl;
 }
@@ -1500,6 +1543,7 @@ static STACK_OF(X509_CRL) *crls_http_cb(X509_STORE_CTX *ctx, X509_NAME *nm)
     STACK_OF(X509_CRL) *crls = sk_X509_CRL_new_null();
     if (!crls)
     {
+        LogError("Failed to allocate STACK_OF(X509_CRL)\n");
         return NULL;
     }
 
@@ -1507,11 +1551,17 @@ static STACK_OF(X509_CRL) *crls_http_cb(X509_STORE_CTX *ctx, X509_NAME *nm)
 
     // try to download Crl
     crldp = X509_get_ext_d2i(x, NID_crl_distribution_points, NULL, NULL);
+    if (!crldp && X509_NAME_cmp(X509_get_issuer_name(x), X509_get_subject_name(x)) != 0)
+    {
+        LogInfo("No CRL distribution points defined on non self-issued cert, CRL check may fail.\n");
+    }
+
     crl = load_crl_crldp(x, "crl", crldp);
 
     sk_DIST_POINT_pop_free(crldp, DIST_POINT_free);
     if (!crl)
     {
+        LogError("Unable to retrieve CRL, CRL check will fail.\n");
         sk_X509_CRL_free(crls);
         return NULL;
     }
@@ -1520,12 +1570,14 @@ static STACK_OF(X509_CRL) *crls_http_cb(X509_STORE_CTX *ctx, X509_NAME *nm)
 
     // try to download delta Crl
     crldp = X509_get_ext_d2i(x, NID_freshest_crl, NULL, NULL);
-    crl = load_crl_crldp(x, "crld", crldp);
+    if (crldp != NULL) {
+        crl = load_crl_crldp(x, "crld", crldp);
 
-    sk_DIST_POINT_pop_free(crldp, DIST_POINT_free);
-    if (crl)
-    {
-        sk_X509_CRL_push(crls, crl);
+        sk_DIST_POINT_pop_free(crldp, DIST_POINT_free);
+        if (crl)
+        {
+            sk_X509_CRL_push(crls, crl);
+        }
     }
 
     return crls;
@@ -1554,7 +1606,7 @@ static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
         CERT_SYSTEM_STORE_CURRENT_USER,
         L"ROOT");
 
-    if(hSysStore)
+    if (hSysStore)
     {
         LogInfo("The system store was opened successfully.");
     }
@@ -1631,7 +1683,7 @@ static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
         X509_STORE_set_lookup_crls_cb(store, crls_http_cb);
     }
 
-    if(hSysStore)
+    if (hSysStore)
     {
         CertCloseStore(hSysStore, 0);
     }
@@ -1703,10 +1755,6 @@ static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
         LogInfo("An error occurred during opening global certificate storage under '%s'!", certs_path);
     }
 
-    // setup CRL checking
-    X509_STORE_set_flags(store, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
-    X509_STORE_set_lookup_crls_cb(store, crls_http_cb);
-
     return 0;
 }
 
@@ -1716,20 +1764,29 @@ static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
 {
     X509_STORE * store = NULL;
 
-    if (tls_io_instance && tls_io_instance->ssl_context)
-    {
-        store = SSL_CTX_get_cert_store(tls_io_instance->ssl_context);
-    }
-    else
+    LogInfo("load_system_store not implemented on this platform");
+
+    return 0;
+}
+#endif
+
+static int setup_crl_check(TLS_IO_INSTANCE* tls_io_instance)
+{
+    X509_STORE * store = NULL;
+
+    if (!tls_io_instance || !tls_io_instance->ssl_context)
     {
         LogError("Can't access the ssl_context.");
         return -1;
     }
 
-    LogInfo("load_system_store is not implemented on non-windows platforms");
+    store = SSL_CTX_get_cert_store(tls_io_instance->ssl_context);
 
-    // setup CRL checking
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && (OPENSSL_VERSION_NUMBER < 0x20000000L)
+    int flags = X509_VERIFY_PARAM_get_flags(X509_STORE_get0_param(store));
+#else
     int flags = X509_VERIFY_PARAM_get_flags(store->param);
+#endif
     if (!(flags & X509_V_FLAG_CRL_CHECK))
     {
         X509_STORE_set_flags(store, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
@@ -1738,10 +1795,10 @@ static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
 
     return 0;
 }
-#endif
 
 static int add_certificate_to_store(TLS_IO_INSTANCE* tls_io_instance, const char* certValue)
 {
+    LogInfo("Trying to add certificate\n");
     int result = 0;
 
     if (certValue != NULL)
@@ -1786,7 +1843,7 @@ static int add_certificate_to_store(TLS_IO_INSTANCE* tls_io_instance, const char
                     {
                         if ((size_t)puts_result != strlen(certValue))
                         {
-                            log_ERR_get_error("mismatching legths");
+                            log_ERR_get_error("mismatching lengths");
                             result = __FAILURE__;
                         }
                         else
@@ -1855,6 +1912,11 @@ static int create_openssl_instance(TLS_IO_INSTANCE* tlsInstance)
     else if (load_system_store(tlsInstance) != 0)
     {
         log_ERR_get_error("unable to load_system_store.");
+        result = __FAILURE__;
+    }
+    else if (setup_crl_check(tlsInstance) != 0)
+    {
+        log_ERR_get_error("unable to set up CRL check.");
         result = __FAILURE__;
     }
     else if (
@@ -1966,6 +2028,10 @@ int tlsio_openssl_init(void)
     }
 
     openssl_dynamic_locks_install();
+
+    unsigned long ssl_version;
+    ssl_version = SSLeay();
+    LogInfo("Using %s: %lx\n", SSLeay_version(SSLEAY_VERSION), ssl_version);
     return 0;
 }
 
