@@ -94,7 +94,7 @@ int my_getaddrinfo(const char *node, const char *service, const struct addrinfo 
 #include "umocktypes_bool.h"
 #include "umocktypes_stdint.h"
 #include "umock_c_negative_tests.h"
-#include "azure_c_shared_utility/macro_utils.h"
+#include "azure_macro_utils/macro_utils.h"
 
 
 
