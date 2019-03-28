@@ -110,6 +110,9 @@ void MockLock_##name()                                  \
     result = result;                                                                        \
 }
 
+// Added to only for cpp unittests.  Shall be removed once cpp unittest are deprecated
+#define DEFINE_MICROMOCK_ENUM_TO_STRING(type, ...) MICROMOCK_ENUM_TO_STRING(type, MU_FOR_EACH_1(MU_DEFINE_ENUMERATION_CONSTANT_AS_WIDESTRING, __VA_ARGS__));
+
 #include "micromockcallmacros.h"
 
 #endif // MICROMOCK_H
