@@ -4,7 +4,7 @@
 #ifndef OPTIONHANDLER_H
 #define OPTIONHANDLER_H
 
-#include "azure_c_shared_utility/macro_utils.h"
+#include "azure_macro_utils/macro_utils.h"
 
 #define OPTIONHANDLER_RESULT_VALUES \
 OPTIONHANDLER_OK, \

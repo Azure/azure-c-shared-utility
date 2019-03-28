@@ -62,7 +62,7 @@ void my_gballoc_free(void* ptr)
 #include "testrunnerswitcher.h"
 #include "umock_c.h"
 #include "umocktypes_charptr.h"
-#include "azure_c_shared_utility/macro_utils.h"
+#include "azure_macro_utils/macro_utils.h"
 
 #define MAX_RECEIVE_BUFFER_SIZES    3
 #define HUGE_RELATIVE_PATH_SIZE        10000

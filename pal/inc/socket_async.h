@@ -14,7 +14,7 @@ extern "C" {
 
 #include <stdbool.h>
 #include <stdint.h>
-#include "azure_c_shared_utility/macro_utils.h"
+#include "azure_macro_utils/macro_utils.h"
 #include "azure_c_shared_utility/umock_c_prod.h"
 
 // socket_async exposes asynchronous socket operations while hiding OS-specifics. Committing to

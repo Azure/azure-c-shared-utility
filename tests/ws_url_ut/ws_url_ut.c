@@ -20,7 +20,7 @@
 #include "umocktypes_bool.h"
 #include "umocktypes.h"
 #include "umocktypes_c.h"
-#include "azure_c_shared_utility/macro_utils.h"
+#include "azure_macro_utils/macro_utils.h"
 
 #ifdef __cplusplus
 extern "C"

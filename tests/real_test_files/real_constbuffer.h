@@ -3,7 +3,7 @@
 #ifndef REAL_CONSTBUFFER_H
 #define REAL_CONSTBUFFER_H
 
-#include "macro_utils.h"
+#include "azure_macro_utils/macro_utils.h"
 
 #define R2(X) REGISTER_GLOBAL_MOCK_HOOK(X, real_##X);
 
