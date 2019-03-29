@@ -552,8 +552,7 @@ set(run_int_tests OFF)
 
 if(NOT ${use_installed_dependencies})
     if ((NOT TARGET azure_macro_utils_c) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-macro-utils-c/CMakeLists.txt))
-        add_subdirectory(deps/azure-macro-utils-c)
-        include_directories(deps/azure-macro-utils-c/inc)
+        add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/deps/azure-macro-utils-c)
     endif()
 endif()
 
@@ -571,6 +570,8 @@ endif()
 set(run_e2e_tests ${original_run_e2e_tests})
 set(run_unittests ${original_run_unittests})
 set(run_int_tests ${original_run_int_tests})
+
+include_directories(${MACRO_UTILS_INC_FOLDER})
 
 if (${run_unittests} OR ${run_int_tests})
     add_subdirectory(tests)
