@@ -556,6 +556,8 @@ if(NOT ${use_installed_dependencies})
     endif()
 endif()
 
+include_directories(${MACRO_UTILS_INC_FOLDER})
+
 if (${original_run_unittests})
     include("dependencies-test.cmake")
     add_subdirectory(testtools)
@@ -570,8 +572,6 @@ endif()
 set(run_e2e_tests ${original_run_e2e_tests})
 set(run_unittests ${original_run_unittests})
 set(run_int_tests ${original_run_int_tests})
-
-include_directories(${MACRO_UTILS_INC_FOLDER})
 
 if (${run_unittests} OR ${run_int_tests})
     add_subdirectory(tests)
