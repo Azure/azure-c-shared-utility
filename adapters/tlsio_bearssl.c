@@ -100,7 +100,7 @@ static int add_pending_operation(SINGLYLINKEDLIST_HANDLE list, const unsigned ch
     
     if (pending_tls_io == NULL)
     {
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -110,7 +110,7 @@ static int add_pending_operation(SINGLYLINKEDLIST_HANDLE list, const unsigned ch
         {
             LogError("Allocation Failure: Unable to allocate pending list.");
             free(pending_tls_io);
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -124,7 +124,7 @@ static int add_pending_operation(SINGLYLINKEDLIST_HANDLE list, const unsigned ch
                 LogError("Failure: Unable to add tls io to pending list.");
                 free(pending_tls_io->bytes);
                 free(pending_tls_io);
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else
             {
@@ -459,7 +459,7 @@ static int certificate_to_trust_anchor(br_x509_certificate *xc, br_x509_trust_an
     if (NULL == vdn)
     {
         LogError("Failed to allocate memory to decode x509 certificate");
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -497,7 +497,7 @@ static int certificate_to_trust_anchor(br_x509_certificate *xc, br_x509_trust_an
                 {
                     LogError("Unable to allocate memory");
                     free_ta_contents(ta);
-                    result = __FAILURE__;
+                    result = MU_FAILURE;
                 }
                 else
                 {
@@ -515,7 +515,7 @@ static int certificate_to_trust_anchor(br_x509_certificate *xc, br_x509_trust_an
                 {
                     LogError("Unable to allocate memory");
                     free_ta_contents(ta);
-                    result = __FAILURE__;
+                    result = MU_FAILURE;
                 }
                 else
                 {
@@ -526,7 +526,7 @@ static int certificate_to_trust_anchor(br_x509_certificate *xc, br_x509_trust_an
             default:
                 fprintf(stderr, "ERROR: unsupported public key type in CA\n");
                 free_ta_contents(ta);
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
         }
     }
@@ -764,7 +764,7 @@ int tlsio_bearssl_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_open
     if (tls_io == NULL)
     {
         LogError("NULL tls_io");
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -773,7 +773,7 @@ int tlsio_bearssl_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_open
         if (tls_io_instance->tlsio_state != TLSIO_STATE_NOT_OPEN)
         {
             LogError("IO should not be open: %d\n", tls_io_instance->tlsio_state);
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -792,7 +792,7 @@ int tlsio_bearssl_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_open
             if (tls_io_instance->ta_count == 0)
             {
                 LogError("Trusted certificates are required but missing");
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else
             {
@@ -805,7 +805,7 @@ int tlsio_bearssl_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_open
 
                     LogError("Underlying IO open failed");
                     tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
-                    result = __FAILURE__;
+                    result = MU_FAILURE;
                 }
             }
         }
@@ -820,7 +820,7 @@ int tlsio_bearssl_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_cl
 
     if (tls_io == NULL)
     {
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -829,7 +829,7 @@ int tlsio_bearssl_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_cl
         if ((tls_io_instance->tlsio_state == TLSIO_STATE_NOT_OPEN) ||
             (tls_io_instance->tlsio_state == TLSIO_STATE_CLOSING))
         {
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -853,7 +853,7 @@ int tlsio_bearssl_send(CONCRETE_IO_HANDLE tls_io, const void *buffer, size_t siz
     {
         /* Invalid arguments */
         LogError("Invalid argument: send given invalid parameter");
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -861,14 +861,14 @@ int tlsio_bearssl_send(CONCRETE_IO_HANDLE tls_io, const void *buffer, size_t siz
         if (tls_io_instance->tlsio_state != TLSIO_STATE_OPEN)
         {
             LogError("TLS is not open");
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
             if (add_pending_operation(tls_io_instance->pending_toencrypt_list, buffer, size, on_send_complete, callback_context) != 0)
             {
                 LogError("Failure: add_pending_io failed.");
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else
             {
@@ -1162,7 +1162,7 @@ int tlsio_bearssl_setoption(CONCRETE_IO_HANDLE tls_io, const char *optionName, c
 
     if (tls_io == NULL || optionName == NULL)
     {
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -1192,7 +1192,7 @@ int tlsio_bearssl_setoption(CONCRETE_IO_HANDLE tls_io, const char *optionName, c
                 if (tls_io_instance->trusted_certificates == NULL)
                 {
                     LogError("Failed to allocate memory for certificate string");
-                    result = __FAILURE__;
+                    result = MU_FAILURE;
                 }
                 else
                 {
@@ -1201,7 +1201,7 @@ int tlsio_bearssl_setoption(CONCRETE_IO_HANDLE tls_io, const char *optionName, c
                     if (tls_io_instance->ta_count == 0)
                     {
                         LogError("Failed to extract certificate from option value");
-                        result = __FAILURE__;
+                        result = MU_FAILURE;
                     }
                     else
                     {
@@ -1215,7 +1215,7 @@ int tlsio_bearssl_setoption(CONCRETE_IO_HANDLE tls_io, const char *optionName, c
             if (OptionHandler_FeedOptions((OPTIONHANDLER_HANDLE)value, (void*)tls_io_instance->socket_io) != OPTIONHANDLER_OK)
             {
                 LogError("failed feeding options to underlying I/O instance");
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else
             {
@@ -1235,15 +1235,15 @@ int tlsio_bearssl_setoption(CONCRETE_IO_HANDLE tls_io, const char *optionName, c
             if (mallocAndStrcpy_s(&tls_io_instance->x509_certificate, (const char *)value) != 0)
             {
                 LogError("unable to mallocAndStrcpy_s on certificate");
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else if (mbedtls_x509_crt_parse(&tls_io_instance->owncert, (const unsigned char *)value, (int)(strlen(value) + 1)) != 0)
             {
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else if (tls_io_instance->pKey.pk_info != NULL && mbedtls_ssl_conf_own_cert(&tls_io_instance->config, &tls_io_instance->owncert, &tls_io_instance->pKey) != 0)
             {
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else
             {
@@ -1261,15 +1261,15 @@ int tlsio_bearssl_setoption(CONCRETE_IO_HANDLE tls_io, const char *optionName, c
             if (mallocAndStrcpy_s(&tls_io_instance->x509_private_key, (const char *)value) != 0)
             {
                 LogError("unable to mallocAndStrcpy_s on private key");
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else if (mbedtls_pk_parse_key(&tls_io_instance->pKey, (const unsigned char *)value, (int)(strlen(value) + 1), NULL, 0) != 0)
             {
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else if (tls_io_instance->owncert.version > 0 && mbedtls_ssl_conf_own_cert(&tls_io_instance->config, &tls_io_instance->owncert, &tls_io_instance->pKey))
             {
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else
             {
