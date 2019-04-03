@@ -236,7 +236,7 @@ VECTOR_HANDLE decode_pem(const void *src, size_t len)
     VECTOR_HANDLE pem_list;
 	br_pem_decoder_context pc;
 	pem_object po;
-    pem_object *pos;
+    //pem_object *pos;
 	const unsigned char *buf;
     BUFFER_HANDLE bv;
 	int inobj;
@@ -371,6 +371,9 @@ static VECTOR_HANDLE read_certificates_string(const char *buf, size_t len)
                     xc.data = ((pem_object *)VECTOR_element(pem_list, u))->data;
                     xc.data_len = ((pem_object *)VECTOR_element(pem_list, u))->data_len;
                     ((pem_object *)VECTOR_element(pem_list, u))->data = NULL;
+                    ((pem_object *)VECTOR_element(pem_list, u))->data_len = 0;
+                    free(((pem_object *)VECTOR_element(pem_list, u))->name);
+                    ((pem_object *)VECTOR_element(pem_list, u))->name = NULL;
 
                     result = VECTOR_push_back(cert_list, &xc, 1);
 
@@ -384,26 +387,32 @@ static VECTOR_HANDLE read_certificates_string(const char *buf, size_t len)
                 {
                     LogError("Unable to determine the certificate type");
                 }
+            }
 
+            // If we enter this loop something failed
+            for (; u < VECTOR_size(pem_list); u++)
+            {
                 free(((pem_object *)VECTOR_element(pem_list, u))->name);
-                ((pem_object *)VECTOR_element(pem_list, u))->data_len = 0;
+                free(((pem_object *)VECTOR_element(pem_list, u))->data);
             }
 
             VECTOR_destroy(pem_list);
 
+            if (0 == VECTOR_size(cert_list))
+            {
+                fprintf(stderr, "No certificate in string");
+                result = MU_FAILURE;
+            }
+
             if (result != 0)
             {
+                for (u = 0; u < VECTOR_size(cert_list); u++)
+                {
+                    free(((br_x509_certificate*)VECTOR_element(cert_list, u))->data);
+                }
+
                 VECTOR_destroy(cert_list);
                 cert_list = NULL;
-            }
-            else
-            {
-                if (0 == VECTOR_size(cert_list))
-                {
-                    fprintf(stderr, "No certificate in string");
-                    VECTOR_destroy(cert_list);
-                    cert_list = NULL;
-                }
             }
         }
     }
@@ -442,8 +451,6 @@ void free_certificates(br_x509_certificate *certs, size_t num)
 	for (u = 0; u < num; u ++) {
 		free(certs[u].data);
 	}
-	
-    free(certs);
 }
 
 static int certificate_to_trust_anchor(br_x509_certificate *xc, br_x509_trust_anchor *ta)
@@ -548,7 +555,7 @@ static size_t get_trusted_anchors(const char *certificates, size_t len, br_x509_
     xcs = read_certificates_string(certificates, len);
     num = VECTOR_size(xcs);
 
-    if (num == 0)
+    if (VECTOR_size(xcs) == 0)
     {
         LogError("No certificates found in string");
     }
@@ -587,7 +594,7 @@ static size_t get_trusted_anchors(const char *certificates, size_t len, br_x509_
     }
 
     free_certificates((br_x509_certificate *)VECTOR_front(xcs), VECTOR_size(xcs));
-    //VECTOR_destroy(xcs);
+    VECTOR_destroy(xcs);
     
 	return num;
 }
