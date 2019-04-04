@@ -115,7 +115,9 @@ static void indicate_error(TLS_IO_INSTANCE *tls_io_instance)
     {
         return;
     }
+
     tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
+    
     if (tls_io_instance->on_io_error != NULL)
     {
         tls_io_instance->on_io_error(tls_io_instance->on_io_error_context);
@@ -169,6 +171,7 @@ static int add_pending_operation(SINGLYLINKEDLIST_HANDLE list, const unsigned ch
             }
         }
     }
+
     return result;
 }
 
@@ -853,7 +856,7 @@ CONCRETE_IO_HANDLE tlsio_bearssl_create(void *io_create_parameters)
     }
     else
     {
-        /* Codes_SRS_TLSIO_MBED_OS5_TLS_99_006: [ The tlsio_bearssl_create shall return NULL if allocating memory for TLS_IO_INSTANCE failed. ]*/
+        /* Codes_SRS_TLSIO_BEAR_OS5_TLS_99_006: [ The tlsio_bearssl_create shall return NULL if allocating memory for TLS_IO_INSTANCE failed. ]*/
         result = calloc(1, sizeof(TLS_IO_INSTANCE));
         if (result != NULL)
         {
@@ -906,6 +909,9 @@ CONCRETE_IO_HANDLE tlsio_bearssl_create(void *io_create_parameters)
                         result->trusted_certificates = NULL;
                         result->x509_certificate = NULL;
                         result->x509_private_key = NULL;
+                        result->tas = NULL;
+                        result->x509_cert = NULL;
+                        result->x509_pk = NULL;
                         result->tlsio_state = TLSIO_STATE_NOT_OPEN;
                     }
                 }
@@ -925,16 +931,16 @@ void tlsio_bearssl_destroy(CONCRETE_IO_HANDLE tls_io)
     {
         TLS_IO_INSTANCE *tls_io_instance = (TLS_IO_INSTANCE *)tls_io;
 
-        //xio_close(tls_io_instance->socket_io, NULL, NULL);
-
         if (tls_io_instance->socket_io_read_bytes != NULL)
         {
             free(tls_io_instance->socket_io_read_bytes);
             tls_io_instance->socket_io_read_bytes = NULL;
         }
+
         xio_destroy(tls_io_instance->socket_io);
 
         first_pending_io = singlylinkedlist_get_head_item(tls_io_instance->pending_toencrypt_list);
+
         while (first_pending_io != NULL)
         {
             PENDING_TLS_IO *pending_tls_io = (PENDING_TLS_IO *)singlylinkedlist_item_get_value(first_pending_io);
@@ -952,6 +958,7 @@ void tlsio_bearssl_destroy(CONCRETE_IO_HANDLE tls_io)
         tls_io_instance->pending_toencrypt_list = NULL;
 
         first_pending_io = singlylinkedlist_get_head_item(tls_io_instance->pending_todecrypt_list);
+
         while (first_pending_io != NULL)
         {
             PENDING_TLS_IO *pending_tls_io = (PENDING_TLS_IO *)singlylinkedlist_item_get_value(first_pending_io);
@@ -996,6 +1003,13 @@ void tlsio_bearssl_destroy(CONCRETE_IO_HANDLE tls_io)
         {
             free(tls_io_instance->x509_certificate);
             tls_io_instance->x509_certificate = NULL;
+
+            if (tls_io_instance->x509_cert != NULL)
+            {
+                free_certificates(tls_io_instance->x509_cert, tls_io_instance->x509_cert_len);
+                free(tls_io_instance->x509_cert);
+                tls_io_instance->x509_cert = NULL;
+            }
         }
         if (tls_io_instance->x509_private_key != NULL)
         {
@@ -1148,6 +1162,7 @@ int tlsio_bearssl_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_cl
             result = 0;
         }
     }
+
     return result;
 }
 
@@ -1159,7 +1174,7 @@ int tlsio_bearssl_send(CONCRETE_IO_HANDLE tls_io, const void *buffer, size_t siz
         (buffer == NULL) ||
         (size == 0))
     {
-        /* Invalid arguments */
+        // Invalid arguments
         LogError("Invalid argument: send given invalid parameter");
         result = MU_FAILURE;
     }
@@ -1346,7 +1361,7 @@ void tlsio_bearssl_dowork(CONCRETE_IO_HANDLE tls_io)
     }
 }
 
-/*this function will clone an option given by name and value*/
+// This function will clone an option given by name and value
 static void *tlsio_bearssl_CloneOption(const char *name, const void *value)
 {
     void *result = NULL;
@@ -1427,13 +1442,14 @@ static void *tlsio_bearssl_CloneOption(const char *name, const void *value)
             result = NULL;
         }
     }
+
     return result;
 }
 
 // This function destroys an option previously created
 static void tlsio_bearssl_DestroyOption(const char *name, const void *value)
 {
-    /*since all options for this layer are actually string copies., disposing of one is just calling free*/
+    // Since all options for this layer are actually string copies., disposing of one is just a matter calling free
     if (name == NULL || value == NULL)
     {
         LogError("invalid parameter detected: const char* name=%p, const void* value=%p", name, value);
@@ -1612,7 +1628,7 @@ OPTIONHANDLER_HANDLE tlsio_bearssl_retrieveoptions(CONCRETE_IO_HANDLE handle)
         }
         else
         {
-            /*this layer cares about the certificates*/
+            // This layer cares about the certificates
             TLS_IO_INSTANCE *tls_io_instance = (TLS_IO_INSTANCE *)handle;
             OPTIONHANDLER_HANDLE underlying_io_options;
 
@@ -1638,10 +1654,8 @@ OPTIONHANDLER_HANDLE tlsio_bearssl_retrieveoptions(CONCRETE_IO_HANDLE handle)
                 OptionHandler_Destroy(result);
                 result = NULL;
             }
-            else if (
-                (tls_io_instance->x509_private_key != NULL) &&
-                (OptionHandler_AddOption(result, SU_OPTION_X509_PRIVATE_KEY, tls_io_instance->x509_private_key) != OPTIONHANDLER_OK)
-                )
+            else if (tls_io_instance->x509_private_key != NULL &&
+                    OptionHandler_AddOption(result, SU_OPTION_X509_PRIVATE_KEY, tls_io_instance->x509_private_key) != OPTIONHANDLER_OK)
             {
                 LogError("unable to save x509privatekey option");
                 OptionHandler_Destroy(result);
