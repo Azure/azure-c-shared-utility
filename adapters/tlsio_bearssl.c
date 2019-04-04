@@ -35,6 +35,14 @@ typedef struct PENDING_TLS_IO_TAG
     SINGLYLINKEDLIST_HANDLE pending_io_list;
 } PENDING_TLS_IO;
 
+typedef struct {
+	int key_type;  /* BR_KEYTYPE_RSA or BR_KEYTYPE_EC */
+	union {
+		br_rsa_private_key rsa;
+		br_ec_private_key ec;
+	} key;
+} private_key;
+
 typedef struct TLS_IO_INSTANCE_TAG
 {
     XIO_HANDLE socket_io;
@@ -58,6 +66,9 @@ typedef struct TLS_IO_INSTANCE_TAG
     br_x509_minimal_context xc;
     br_sslio_context ioc;
     br_x509_trust_anchor *tas;
+    br_x509_certificate *x509_cert;
+    int x509_cert_len;
+    private_key *x509_pk;
     size_t ta_count;
     char *trusted_certificates;
 	char *x509_certificate;
@@ -326,6 +337,189 @@ VECTOR_HANDLE decode_pem(const void *src, size_t len)
 	}
     
 	return pem_list;
+}
+
+static void free_private_key(private_key *privkey)
+{
+    switch (privkey->key_type)
+    {
+    case BR_KEYTYPE_RSA:
+        free(privkey->key.rsa.iq);
+        free(privkey->key.rsa.dq);
+        free(privkey->key.rsa.dp);
+        free(privkey->key.rsa.q);
+        free(privkey->key.rsa.p);
+        break;
+    case BR_KEYTYPE_EC:
+        free(privkey->key.ec.x);
+        break;
+    default:
+        LogError("Unknown private key type %d", privkey->key_type);
+    }
+}
+
+static private_key *decode_key(const unsigned char *buf, size_t len)
+{
+	br_skey_decoder_context dc;
+	int result;
+	private_key *sk;
+    int curve;
+    uint32_t supp;
+
+	br_skey_decoder_init(&dc);
+	br_skey_decoder_push(&dc, buf, len);
+	result = br_skey_decoder_last_error(&dc);
+
+	if (result != 0) 
+    {
+		LogError("Error decoding private key: %d", result);
+        sk = NULL;
+	}
+    else
+    {
+        switch (br_skey_decoder_key_type(&dc)) 
+        {
+            const br_rsa_private_key *rk;
+            const br_ec_private_key *ek;
+
+        case BR_KEYTYPE_RSA:
+            rk = br_skey_decoder_get_rsa(&dc);
+            if (NULL == (sk = (private_key *)malloc(sizeof *sk)))
+            {
+                LogError("Failed to allocate memory for RSA key structure");
+            }
+            else  
+            {
+                memset(sk, 0, sizeof(private_key));
+
+                if (
+                    NULL == (sk->key.rsa.p = (unsigned char *)malloc(rk->plen)) ||
+                    NULL == (sk->key.rsa.q = (unsigned char *)malloc(rk->plen)) ||
+                    NULL == (sk->key.rsa.dp = (unsigned char *)malloc(rk->plen)) ||
+                    NULL == (sk->key.rsa.dq = (unsigned char *)malloc(rk->plen)) ||
+                    NULL == (sk->key.rsa.iq = (unsigned char *)malloc(rk->plen))
+                    )
+                {
+                    LogError("Failed to allocate memory for RSA key structure");
+                    free_private_key(sk);
+                    sk = NULL;
+                }
+                else
+                {
+                    sk->key_type = BR_KEYTYPE_RSA;
+                    sk->key.rsa.n_bitlen = rk->n_bitlen;
+                    sk->key.rsa.plen = rk->plen;
+                    sk->key.rsa.qlen = rk->qlen;
+                    sk->key.rsa.dplen = rk->dplen;
+                    sk->key.rsa.dqlen = rk->dqlen;
+                    sk->key.rsa.iqlen = rk->iqlen;
+                    memcpy(sk->key.rsa.p, rk->p, rk->plen);
+                    memcpy(sk->key.rsa.q, rk->q, rk->qlen);
+                    memcpy(sk->key.rsa.dp, rk->dp, rk->dplen);
+                    memcpy(sk->key.rsa.dq, rk->dq, rk->dqlen);
+                    memcpy(sk->key.rsa.iq, rk->iq, rk->iqlen);
+                }
+            }
+            break;
+
+        case BR_KEYTYPE_EC:
+            ek = br_skey_decoder_get_ec(&dc);
+            if (NULL == (sk = (private_key *)malloc(sizeof *sk)))
+            {
+                LogError("Failed to allocate memory for EC key structure");
+            }
+            else  
+            {
+                memset(sk, 0, sizeof(private_key));
+
+                if (NULL == (sk->key.ec.x = (unsigned char *)malloc(ek->xlen)))
+                {
+                    LogError("Failed to allocate memory for EC key structure");
+                    free(sk);
+                    sk = NULL;
+                }
+                else
+                {
+                    sk->key_type = BR_KEYTYPE_EC;
+                    sk->key.ec.curve = ek->curve;
+                    memcpy(sk->key.ec.x, ek->x, ek->xlen);
+                    sk->key.ec.xlen = ek->xlen;
+                    curve = sk->key.ec.curve;
+                    supp = br_ec_get_default()->supported_curves;
+
+                    if (curve > 31 || !((supp >> curve) & 1)) 
+                    {
+                        LogError("Private key curve (%d) is not supported\n", curve);
+                        free_private_key(sk);
+                        free(sk);
+                        sk = NULL;
+                    }
+                }
+            }
+            break;
+
+        default:
+            LogError("Unknown key type: %d", br_skey_decoder_key_type(&dc));
+            sk = NULL;
+            break;
+        }
+    }
+
+	return sk;
+}
+
+static private_key *read_private_key(const unsigned char *buf, size_t len)
+{
+    static const char RSA_PRIVATE_KEY[] = "RSA PRIVATE KEY";
+    static const char EC_PRIVATE_KEY[] = "EC PRIVATE KEY";
+    static const char PRIVATE_KEY[] = "PRIVATE KEY";
+    static const int RSA_PRIVATE_KEY_LENGTH = sizeof(RSA_PRIVATE_KEY) - 1;
+    static const int EC_PRIVATE_KEY_LENGTH = sizeof(EC_PRIVATE_KEY) - 1;
+    static const int PRIVATE_KEY_LENGTH = sizeof(PRIVATE_KEY) - 1;
+
+	private_key *sk;
+    VECTOR_HANDLE pos;  // vector of pem_object
+	pem_object *work;
+    size_t u;
+
+	pos = decode_pem(buf, len);
+		
+    if (pos != NULL) 
+    {
+
+        for (u = 0; u < VECTOR_size(pos); u++) 
+        {
+            work = (pem_object *)VECTOR_element(pos, u);
+
+            if (0 == memcmp(work->name, RSA_PRIVATE_KEY, RSA_PRIVATE_KEY_LENGTH) ||
+                0 == memcmp(work->name, EC_PRIVATE_KEY, EC_PRIVATE_KEY_LENGTH) ||
+                0 == memcmp(work->name, RSA_PRIVATE_KEY, RSA_PRIVATE_KEY_LENGTH))
+            {
+                sk = decode_key(work->data, work->data_len);
+                break;
+            }
+        }
+
+        if (u >= VECTOR_size(pos))
+        {
+            LogError("No private key found in X.509 private key option");
+            sk = NULL;
+        }
+
+        for (u = 0; u < VECTOR_size(pos); u++)
+        {
+            free(((pem_object *)VECTOR_element(pos, u))->name);
+            free(((pem_object *)VECTOR_element(pos, u))->data);
+        }
+
+        VECTOR_destroy(pos);
+    }
+    else
+    {
+        sk = NULL;
+    }
+
+	return sk;
 }
 
 static VECTOR_HANDLE read_certificates_string(const char *buf, size_t len)
@@ -599,6 +793,28 @@ static size_t get_trusted_anchors(const char *certificates, size_t len, br_x509_
 	return num;
 }
 
+static int get_cert_signer_algo(br_x509_certificate *xc)
+{
+	br_x509_decoder_context dc;
+	int result;
+
+	br_x509_decoder_init(&dc, 0, 0);
+	br_x509_decoder_push(&dc, xc->data, xc->data_len);
+	result = br_x509_decoder_last_error(&dc);
+
+	if (result != 0) 
+    {
+		LogError("Failed to get signer algorithm %d\n", result);
+        result = 0;
+	}
+    else
+    {
+    	result = br_x509_decoder_get_signer_key_type(&dc);
+    }
+
+    return result;
+}
+
 CONCRETE_IO_HANDLE tlsio_bearssl_create(void *io_create_parameters)
 {
     TLSIO_CONFIG *tls_io_config = (TLSIO_CONFIG *)io_create_parameters;
@@ -759,7 +975,15 @@ void tlsio_bearssl_destroy(CONCRETE_IO_HANDLE tls_io)
         {
             free(tls_io_instance->x509_private_key);
             tls_io_instance->x509_private_key = NULL;
+
+            if (tls_io_instance->x509_pk != NULL)
+            {
+                free_private_key(tls_io_instance->x509_pk);
+                free(tls_io_instance->x509_pk);
+                tls_io_instance->x509_pk = NULL;
+            }
         }
+
         free(tls_io);
     }
 }
@@ -767,6 +991,8 @@ void tlsio_bearssl_destroy(CONCRETE_IO_HANDLE tls_io)
 int tlsio_bearssl_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_open_complete, void *on_io_open_complete_context, ON_BYTES_RECEIVED on_bytes_received, void *on_bytes_received_context, ON_IO_ERROR on_io_error, void *on_io_error_context)
 {
     int result = 0;
+    unsigned int usages;
+    unsigned int cert_signer_algo;                        
 
     if (tls_io == NULL)
     {
@@ -803,16 +1029,65 @@ int tlsio_bearssl_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_open
             }
             else
             {
-                br_ssl_client_init_full(&tls_io_instance->sc, &tls_io_instance->xc, tls_io_instance->tas, tls_io_instance->ta_count);
-                br_ssl_engine_set_buffer(&tls_io_instance->sc.eng, tls_io_instance->iobuf, sizeof(tls_io_instance->iobuf), 1);
-            	br_ssl_client_reset(&tls_io_instance->sc, tls_io_instance->hostname, 0);
-
-                if (xio_open(tls_io_instance->socket_io, on_underlying_io_open_complete, tls_io_instance, on_underlying_io_bytes_received, tls_io_instance, on_underlying_io_error, tls_io_instance) != 0)
+                if ((tls_io_instance->x509_pk == NULL && tls_io_instance->x509_cert != NULL) ||
+                    (tls_io_instance->x509_pk != NULL && tls_io_instance->x509_cert == NULL))
                 {
-
-                    LogError("Underlying IO open failed");
-                    tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
+                    LogError("X.509 certificate and private key need to be both present or both absent");
                     result = MU_FAILURE;
+                }
+                else
+                {
+                    br_ssl_client_init_full(&tls_io_instance->sc, &tls_io_instance->xc, tls_io_instance->tas, tls_io_instance->ta_count);
+                    br_ssl_engine_set_buffer(&tls_io_instance->sc.eng, tls_io_instance->iobuf, sizeof(tls_io_instance->iobuf), 1);
+                    br_ssl_client_reset(&tls_io_instance->sc, tls_io_instance->hostname, 0);
+
+                    if (tls_io_instance->x509_cert != NULL)
+                    {
+                        switch (tls_io_instance->x509_pk->key_type)
+                        {
+                        case BR_KEYTYPE_RSA:
+                			br_ssl_client_set_single_rsa(&tls_io_instance->sc, 
+                                                         tls_io_instance->x509_cert,
+                                                         tls_io_instance->x509_cert_len,
+                                                         &tls_io_instance->x509_pk->key.rsa,
+                                                         br_rsa_pkcs1_sign_get_default());
+                            break;
+                        case BR_KEYTYPE_EC:
+                            cert_signer_algo = get_cert_signer_algo(tls_io_instance->x509_cert);
+
+                            if (cert_signer_algo == 0)
+                            {
+                                result = MU_FAILURE;
+                            }
+                            else
+                            {
+                                br_ssl_client_set_single_ec(&tls_io_instance->sc,
+                                                            tls_io_instance->x509_cert,
+                                                            tls_io_instance->x509_cert_len,
+                                                            &tls_io_instance->x509_pk->key.ec,
+                                                            BR_KEYTYPE_KEYX | BR_KEYTYPE_SIGN, 
+                                                            cert_signer_algo,
+                                                            br_ec_get_default(),
+                                                            br_ecdsa_sign_asn1_get_default());
+                            }
+                            break;
+                        default:
+                            LogError("Unrecognized private key type");
+                            tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
+                            result = MU_FAILURE;
+                        }
+                    }
+
+                    if (result == 0)
+                    {
+                        if (xio_open(tls_io_instance->socket_io, on_underlying_io_open_complete, tls_io_instance, on_underlying_io_bytes_received, tls_io_instance, on_underlying_io_error, tls_io_instance) != 0)
+                        {
+
+                            LogError("Underlying IO open failed");
+                            tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
+                            result = MU_FAILURE;
+                        }
+                    }
                 }
             }
         }
@@ -1072,7 +1347,6 @@ static void *tlsio_bearssl_CloneOption(const char *name, const void *value)
                 // return as is
             }
         }
-/*        
         else if (strcmp(name, SU_OPTION_X509_CERT) == 0)
         {
             if (mallocAndStrcpy_s((char**)&result, value) != 0)
@@ -1121,7 +1395,6 @@ static void *tlsio_bearssl_CloneOption(const char *name, const void *value)
                 // return as is
             }
         }
-*/        
         else
         {
             LogError("not handled option : %s", name);
@@ -1166,6 +1439,7 @@ int tlsio_bearssl_setoption(CONCRETE_IO_HANDLE tls_io, const char *optionName, c
 {
     int result = 0;
     size_t i;
+    VECTOR_HANDLE certs;
 
     if (tls_io == NULL || optionName == NULL)
     {
@@ -1229,8 +1503,6 @@ int tlsio_bearssl_setoption(CONCRETE_IO_HANDLE tls_io, const char *optionName, c
                 result = 0;
             }
         }
-
-/*        
         else if (strcmp(SU_OPTION_X509_CERT, optionName) == 0 || strcmp(OPTION_X509_ECC_CERT, optionName) == 0)
         {
             if (tls_io_instance->x509_certificate != NULL)
@@ -1244,16 +1516,19 @@ int tlsio_bearssl_setoption(CONCRETE_IO_HANDLE tls_io, const char *optionName, c
                 LogError("unable to mallocAndStrcpy_s on certificate");
                 result = MU_FAILURE;
             }
-            else if (mbedtls_x509_crt_parse(&tls_io_instance->owncert, (const unsigned char *)value, (int)(strlen(value) + 1)) != 0)
-            {
-                result = MU_FAILURE;
-            }
-            else if (tls_io_instance->pKey.pk_info != NULL && mbedtls_ssl_conf_own_cert(&tls_io_instance->config, &tls_io_instance->owncert, &tls_io_instance->pKey) != 0)
-            {
-                result = MU_FAILURE;
-            }
             else
             {
+                if (tls_io_instance->x509_cert != NULL)
+                {
+                    free_certificates(tls_io_instance->x509_cert, tls_io_instance->x509_cert_len);
+                    free(tls_io_instance->x509_cert);
+                    tls_io_instance->x509_cert = NULL;
+                }
+
+                certs = read_certificates_string(value, strlen(value));
+                tls_io_instance->x509_cert_len = VECTOR_size(certs);
+                tls_io_instance->x509_cert = VECTOR_front(certs);
+                free(certs);
                 result = 0;
             }
         }
@@ -1270,20 +1545,19 @@ int tlsio_bearssl_setoption(CONCRETE_IO_HANDLE tls_io, const char *optionName, c
                 LogError("unable to mallocAndStrcpy_s on private key");
                 result = MU_FAILURE;
             }
-            else if (mbedtls_pk_parse_key(&tls_io_instance->pKey, (const unsigned char *)value, (int)(strlen(value) + 1), NULL, 0) != 0)
-            {
-                result = MU_FAILURE;
-            }
-            else if (tls_io_instance->owncert.version > 0 && mbedtls_ssl_conf_own_cert(&tls_io_instance->config, &tls_io_instance->owncert, &tls_io_instance->pKey))
-            {
-                result = MU_FAILURE;
-            }
             else
             {
+                if (tls_io_instance->x509_pk != NULL)
+                {
+                    free_private_key(tls_io_instance->x509_pk);
+                    free(tls_io_instance->x509_pk);
+                    tls_io_instance->x509_pk = NULL;
+                }
+
+                tls_io_instance->x509_pk = read_private_key(value, strlen(value));
                 result = 0;
             }
         }
-*/        
         else
         {
             // tls_io_instance->socket_io is never NULL
@@ -1331,8 +1605,7 @@ OPTIONHANDLER_HANDLE tlsio_bearssl_retrieveoptions(CONCRETE_IO_HANDLE handle)
                 OptionHandler_Destroy(result);
                 result = NULL;
             }
-/*
-            else if (&tls_io_instance->owncert != NULL && tls_io_instance->x509_certificate != NULL && 
+            else if (tls_io_instance->x509_certificate != NULL && 
                     OptionHandler_AddOption(result, SU_OPTION_X509_CERT, tls_io_instance->x509_certificate) != OPTIONHANDLER_OK)
             {
                 LogError("unable to save x509certificate option");
@@ -1340,7 +1613,7 @@ OPTIONHANDLER_HANDLE tlsio_bearssl_retrieveoptions(CONCRETE_IO_HANDLE handle)
                 result = NULL;
             }
             else if (
-                (&tls_io_instance->pKey != NULL) && tls_io_instance->x509_private_key != NULL &&
+                (tls_io_instance->x509_private_key != NULL) &&
                 (OptionHandler_AddOption(result, SU_OPTION_X509_PRIVATE_KEY, tls_io_instance->x509_private_key) != OPTIONHANDLER_OK)
                 )
             {
@@ -1348,7 +1621,6 @@ OPTIONHANDLER_HANDLE tlsio_bearssl_retrieveoptions(CONCRETE_IO_HANDLE handle)
                 OptionHandler_Destroy(result);
                 result = NULL;
             }
-*/
             else
             {
                 /*all is fine, all interesting options have been saved*/
