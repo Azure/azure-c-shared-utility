@@ -21,7 +21,9 @@ extern "C"
 #ifdef WIN32
     #include <winsock2.h>
 #else
+    #include <sys/types.h>
     #include <sys/socket.h>
+    #include <netdb.h>
 #endif
 
 /* all translation units that need network measurement need to have GB_MEASURE_NETWORK_FOR_THIS defined */
@@ -30,6 +32,13 @@ extern "C"
 
 MOCKABLE_FUNCTION(, int, gbnetwork_init);
 MOCKABLE_FUNCTION(, void, gbnetwork_deinit);
+
+MOCKABLE_FUNCTION(, int, gbnetwork_socket, int, socket_family, int, socket_type, int, protocol);
+MOCKABLE_FUNCTION(, int, gbnetwork_getaddrinfo, const char*, node, const char*, service, const struct addrinfo*, hints, struct addrinfo**, res);
+MOCKABLE_FUNCTION(, void, gbnetwork_freeaddrinfo, struct addrinfo*, res);
+MOCKABLE_FUNCTION(, int, gbnetwork_connect, int, sockfd, const struct sockaddr*, addr, socklen_t, addrlen);
+MOCKABLE_FUNCTION(, int, gbnetwork_shutdown, int, socket, int, how)
+MOCKABLE_FUNCTION(, int, gbnetwork_close, int, socket)
 
 #ifdef WIN32
 MOCKABLE_FUNCTION(, int, gbnetwork_send, SOCKET, sock, const char*, buf, int, len, int, flags);
@@ -51,6 +60,10 @@ MOCKABLE_FUNCTION(, void, gbnetwork_resetMetrics);
 
 /* if GB_MEASURE_NETWORK_FOR_THIS is defined then we want to redirect network send functions to gbnetwork_xxx functions */
 #ifdef GB_MEASURE_NETWORK_FOR_THIS
+#define connect gbnetwork_connect
+#define getaddrinfo gbnetwork_getaddrinfo
+#define freeaddrinfo gbnetwork_freeaddrinfo
+#define socket gbnetwork_socket
 #define send gbnetwork_send
 #define recv gbnetwork_recv
 #endif

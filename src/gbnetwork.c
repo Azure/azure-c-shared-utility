@@ -89,6 +89,36 @@ void gbnetwork_resetMetrics()
     }
 }
 
+int gbnetwork_socket(int socket_family, int socket_type, int protocol)
+{
+    return socket(socket_family, socket_type, protocol);
+}
+
+int gbnetwork_getaddrinfo(const char* node, const char* service, const struct addrinfo* hints, struct addrinfo** res)
+{
+    return getaddrinfo(node, service, hints, res);
+}
+
+void gbnetwork_freeaddrinfo(struct addrinfo *res)
+{
+    freeaddrinfo(res);
+}
+
+int gbnetwork_connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
+{
+    return connect(sockfd, addr, addrlen);
+}
+
+int gbnetwork_shutdown(int socket, int how)
+{
+    return shutdown(socket, how);
+}
+
+int gbnetwork_close(int socket)
+{
+    return close(socket);
+}
+
 #ifdef WIN32
 int gbnetwork_send(SOCKET sock, const char* buf, int len, int flags)
 #else

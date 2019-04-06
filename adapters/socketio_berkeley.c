@@ -389,8 +389,6 @@ static int wait_for_connection(SOCKET_IO_INSTANCE* socket_io_instance)
     return result;
 }
 
-
-
 #ifndef __APPLE__
 static void destroy_network_interface_descriptions(NETWORK_INTERFACE_DESCRIPTION* nid)
 {
@@ -640,6 +638,10 @@ CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters)
                     {
                         (void)strcpy(result->hostname, socket_io_config->hostname);
                     }
+                    else
+                    {
+                        LogError("Failure allocating hostname");
+                    }
 
                     result->socket = INVALID_SOCKET;
                 }
@@ -673,7 +675,6 @@ CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters)
             LogError("Allocation Failure: SOCKET_IO_INSTANCE");
         }
     }
-
     return result;
 }
 
@@ -741,7 +742,7 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
         }
         else
         {
-            socket_io_instance->socket = socket (socket_io_instance->address_type == ADDRESS_TYPE_IP ? AF_INET : AF_UNIX, SOCK_STREAM, 0);
+            socket_io_instance->socket = socket(socket_io_instance->address_type == ADDRESS_TYPE_IP ? AF_INET : AF_UNIX, SOCK_STREAM, 0);
             if (socket_io_instance->socket < SOCKET_SUCCESS)
             {
                 LogError("Failure: socket create failure %d.", socket_io_instance->socket);
