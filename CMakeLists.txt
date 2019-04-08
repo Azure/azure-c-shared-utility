@@ -556,7 +556,7 @@ if(NOT ${use_installed_dependencies})
     endif()
 endif()
 
-find_package(azure_macro_utils_c REQUIRED CONFIG)
+find_package(azure-macro-utils-c REQUIRED CONFIG)
 include_directories(${MACRO_UTILS_INC_FOLDER})
 
 if (${original_run_unittests})
