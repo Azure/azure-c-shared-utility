@@ -12,6 +12,7 @@
 #include <winsock2.h>
 #else
 #include <sys/socket.h>
+#include <sys/select.h>
 #endif
 
 #ifndef SIZE_MAX
@@ -117,6 +118,23 @@ int gbnetwork_shutdown(int socket, int how)
 int gbnetwork_close(int socket)
 {
     return close(socket);
+}
+
+int gbnetwork_fcntl(int fildes, int cmd, ...)
+{
+    (void)fildes;
+    (void)cmd;
+    return 0;
+}
+
+int gbnetwork_getsockopt(int fd, int level, int optname, void* restrict optval, socklen_t *restrict optlen)
+{
+    return getsockopt(fd, level, optname, optval, optlen);
+}
+
+int gbnetwork_select(int nfds, fd_set* __restrict readfds, fd_set* __restrict writefds, fd_set*__restrict exceptfds, struct timeval*__restrict timeout)
+{
+    return select(nfds, readfds, writefds,  exceptfds, timeout);
 }
 
 #ifdef WIN32

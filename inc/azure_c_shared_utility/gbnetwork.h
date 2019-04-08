@@ -23,6 +23,7 @@ extern "C"
 #else
     #include <sys/types.h>
     #include <sys/socket.h>
+    #include <sys/select.h>
     #include <netdb.h>
 #endif
 
@@ -39,6 +40,10 @@ MOCKABLE_FUNCTION(, void, gbnetwork_freeaddrinfo, struct addrinfo*, res);
 MOCKABLE_FUNCTION(, int, gbnetwork_connect, int, sockfd, const struct sockaddr*, addr, socklen_t, addrlen);
 MOCKABLE_FUNCTION(, int, gbnetwork_shutdown, int, socket, int, how)
 MOCKABLE_FUNCTION(, int, gbnetwork_close, int, socket)
+MOCKABLE_FUNCTION(, int, gbnetwork_getsockopt, int, fd, int, level, int, optname, void* __restrict, optval, socklen_t*__restrict, optlen);
+MOCKABLE_FUNCTION(, int, gbnetwork_select, int, nfds, fd_set*__restrict, readfds, fd_set*__restrict, writefds, fd_set*__restrict, exceptfds, struct timeval*__restrict, timeout);
+
+int gbnetwork_fcntl(int fildes, int cmd, ...);
 
 #ifdef WIN32
 MOCKABLE_FUNCTION(, int, gbnetwork_send, SOCKET, sock, const char*, buf, int, len, int, flags);
@@ -64,6 +69,9 @@ MOCKABLE_FUNCTION(, void, gbnetwork_resetMetrics);
 #define getaddrinfo gbnetwork_getaddrinfo
 #define freeaddrinfo gbnetwork_freeaddrinfo
 #define socket gbnetwork_socket
+#define fcntl gbnetwork_fcntl
+#define getsockopt gbnetwork_getsockopt
+#define select gbnetwork_select
 #define send gbnetwork_send
 #define recv gbnetwork_recv
 #endif

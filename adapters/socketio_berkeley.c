@@ -385,7 +385,6 @@ static int wait_for_connection(SOCKET_IO_INSTANCE* socket_io_instance)
             result = 0;
         }
     }
-
     return result;
 }
 
