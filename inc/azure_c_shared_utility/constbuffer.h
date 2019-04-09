@@ -12,6 +12,7 @@ extern "C"
 {
 #else
 #include <stddef.h>
+#include <stdbool.h>
 #endif
 
 #include "azure_c_shared_utility/umock_c_prod.h"
@@ -43,6 +44,8 @@ MOCKABLE_FUNCTION(, void, CONSTBUFFER_IncRef, CONSTBUFFER_HANDLE, constbufferHan
 MOCKABLE_FUNCTION(, void, CONSTBUFFER_DecRef, CONSTBUFFER_HANDLE, constbufferHandle);
 
 MOCKABLE_FUNCTION(, const CONSTBUFFER*, CONSTBUFFER_GetContent, CONSTBUFFER_HANDLE, constbufferHandle);
+
+MOCKABLE_FUNCTION(, bool, CONSTBUFFER_HANDLE_contain_same, CONSTBUFFER_HANDLE, left, CONSTBUFFER_HANDLE, right);
 
 #ifdef __cplusplus
 }

@@ -31,6 +31,9 @@ MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, constbuffer_array_get_buffer, CONSTBUFFE
 MOCKABLE_FUNCTION(, const CONSTBUFFER*, constbuffer_array_get_buffer_content, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle, uint32_t, buffer_index);
 MOCKABLE_FUNCTION(, int, constbuffer_array_get_all_buffers_size, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle, uint32_t*, all_buffers_size);
 MOCKABLE_FUNCTION(, const CONSTBUFFER_HANDLE*, constbuffer_array_get_const_buffer_handle_array, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle);
+
+/*compare*/
+MOCKABLE_FUNCTION(, bool, CONSTBUFFER_ARRAY_HANDLE_contain_same, CONSTBUFFER_ARRAY_HANDLE, left, CONSTBUFFER_ARRAY_HANDLE, right);
 ```
 
 ### constbuffer_array_create
@@ -234,3 +237,23 @@ MOCKABLE_FUNCTION(, const CONSTBUFFER_HANDLE*, constbuffer_array_get_const_buffe
 **SRS_CONSTBUFFER_ARRAY_01_026: [** If `constbuffer_array_handle` is NULL, `constbuffer_array_get_const_buffer_handle_array` shall fail and return NULL. **]**
 
 **SRS_CONSTBUFFER_ARRAY_01_027: [** Otherwise `constbuffer_array_get_const_buffer_handle_array` shall return the array of const buffer handles backing the const buffer array. **]**
+
+### CONSTBUFFER_ARRAY_HANDLE_contain_same
+```c
+MOCKABLE_FUNCTION(, bool, CONSTBUFFER_ARRAY_HANDLE_contain_same, CONSTBUFFER_ARRAY_HANDLE, left, CONSTBUFFER_ARRAY_HANDLE, right);
+```
+
+`CONSTBUFFER_ARRAY_HANDLE_contain_same` returns `true` if `left` and `right` have the some content.
+
+**SRS_CONSTBUFFER_ARRAY_02_050: [** If `left` is `NULL` and `right` is `NULL` then `CONSTBUFFER_ARRAY_HANDLE_contain_same` shall return `true`. **]**
+
+**SRS_CONSTBUFFER_ARRAY_02_051: [** If `left` is `NULL` and `right` is not `NULL` then `CONSTBUFFER_ARRAY_HANDLE_contain_same` shall return `false`. **]**
+
+**SRS_CONSTBUFFER_ARRAY_02_052: [** If `left` is not `NULL` and `right` is `NULL` then `CONSTBUFFER_ARRAY_HANDLE_contain_same` shall return `false`. **]**
+
+**SRS_CONSTBUFFER_ARRAY_02_053: [** If the number of `CONSTBUFFER_HANDLE`s in `left` is different then the number of `CONSTBUFFER_HANDLE`s in `right` then  `CONSTBUFFER_ARRAY_HANDLE_contain_same` shall return `false`. **]**
+
+**SRS_CONSTBUFFER_ARRAY_02_054: [** If `left` and `right` `CONSTBUFFER_HANDLE`s at same index are different (as indicated by `CONSTBUFFER_HANDLE_contain_same` call) then `CONSTBUFFER_ARRAY_HANDLE_contain_same` shall return `false`. **]**
+
+**SRS_CONSTBUFFER_ARRAY_02_055: [** `CONSTBUFFER_ARRAY_HANDLE_contain_same` shall return `true`. **]**
+
