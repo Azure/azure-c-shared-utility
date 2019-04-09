@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 #include <stddef.h>
+#include <stdbool.h>
 #include "azure_macro_utils/macro_utils.h"
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/constbuffer.h"
@@ -237,4 +238,53 @@ void CONSTBUFFER_DecRef(CONSTBUFFER_HANDLE constbufferHandle)
             free(constbufferHandle);
         }
     }
+}
+
+
+bool CONSTBUFFER_HANDLE_contain_same(CONSTBUFFER_HANDLE left, CONSTBUFFER_HANDLE right)
+{
+    bool result;
+    if (left == NULL)
+    {
+        if (right == NULL)
+        {
+            /*Codes_SRS_CONSTBUFFER_02_018: [ If left is NULL and right is NULL then CONSTBUFFER_HANDLE_contain_same shall return true. ]*/
+            result = true;
+        }
+        else
+        {
+            /*Codes_SRS_CONSTBUFFER_02_019: [ If left is NULL and right is not NULL then CONSTBUFFER_HANDLE_contain_same shall return false. ]*/
+            result = false;
+        }
+    }
+    else
+    {
+        if (right == NULL)
+        {
+            /*Codes_SRS_CONSTBUFFER_02_020: [ If left is not NULL and right is NULL then CONSTBUFFER_HANDLE_contain_same shall return false. ]*/
+            result = false;
+        }
+        else
+        {
+            if (left->alias.size != right->alias.size)
+            {
+                /*Codes_SRS_CONSTBUFFER_02_021: [ If left's size is different than right's size then CONSTBUFFER_HANDLE_contain_same shall return false. ]*/
+                result = false;
+            }
+            else
+            {
+                if (memcmp(left->alias.buffer, right->alias.buffer, left->alias.size) != 0)
+                {
+                    /*Codes_SRS_CONSTBUFFER_02_022: [ If left's buffer is contains different bytes than rights's buffer then CONSTBUFFER_HANDLE_contain_same shall return false. ]*/
+                    result = false;
+                }
+                else
+                {
+                    /*Codes_SRS_CONSTBUFFER_02_023: [ CONSTBUFFER_HANDLE_contain_same shall return true. ]*/
+                    result = true;
+                }
+            }
+        }
+    }
+    return result;
 }

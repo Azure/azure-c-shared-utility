@@ -15,7 +15,8 @@
         CONSTBUFFER_CreateWithCustomFree, \
         CONSTBUFFER_IncRef, \
         CONSTBUFFER_GetContent, \
-        CONSTBUFFER_DecRef \
+        CONSTBUFFER_DecRef, \
+        CONSTBUFFER_HANDLE_contain_same \
 )
 
 #ifdef __cplusplus
@@ -24,6 +25,7 @@ extern "C"
 {
 #else
 #include <stddef.h>
+#include <stdbool.h>
 #endif
 
 CONSTBUFFER_HANDLE real_CONSTBUFFER_Create(const unsigned char* source, size_t size);
@@ -39,6 +41,8 @@ void real_CONSTBUFFER_IncRef(CONSTBUFFER_HANDLE constbufferHandle);
 void real_CONSTBUFFER_DecRef(CONSTBUFFER_HANDLE constbufferHandle);
 
 const CONSTBUFFER* real_CONSTBUFFER_GetContent(CONSTBUFFER_HANDLE constbufferHandle);
+
+bool real_CONSTBUFFER_HANDLE_contain_same(CONSTBUFFER_HANDLE left, CONSTBUFFER_HANDLE right);
 
 #ifdef __cplusplus
 }

@@ -41,6 +41,8 @@ MOCKABLE_FUNCTION(, void, CONSTBUFFER_IncRef, CONSTBUFFER_HANDLE, constbufferHan
 MOCKABLE_FUNCTION(, void, CONSTBUFFER_DecRef, CONSTBUFFER_HANDLE, constbufferHandle);
 
 MOCKABLE_FUNCTION(, const CONSTBUFFER*, CONSTBUFFER_GetContent, CONSTBUFFER_HANDLE, constbufferHandle);
+
+MOCKABLE_FUNCTION(, bool, CONSTBUFFER_HANDLE_contain_same, CONSTBUFFER_HANDLE, left, CONSTBUFFER_HANDLE, right);
 ```
 
 ###  CONSTBUFFER_Create
@@ -141,3 +143,22 @@ MOCKABLE_FUNCTION(, const CONSTBUFFER*, CONSTBUFFER_GetContent, CONSTBUFFER_HAND
 **SRS_CONSTBUFFER_02_011: [** If `constbufferHandle` is NULL then CONSTBUFFER_GetContent shall return NULL. **]**
 
 **SRS_CONSTBUFFER_02_012: [** Otherwise, `CONSTBUFFER_GetContent` shall return a `const CONSTBUFFER*` that matches byte by byte the original bytes used to created the const buffer and has the same length. **]**
+
+### CONSTBUFFER_HANDLE_contain_same
+```c
+MOCKABLE_FUNCTION(, bool, CONSTBUFFER_HANDLE_contain_same, CONSTBUFFER_HANDLE, left, CONSTBUFFER_HANDLE, right);
+```
+
+`CONSTBUFFER_HANDLE_contain_same` returns `true` if `left` and `right` have the same content.
+
+**SRS_CONSTBUFFER_02_018: [** If `left` is `NULL` and `right` is `NULL` then `CONSTBUFFER_HANDLE_contain_same` shall return `true`. **]**
+
+**SRS_CONSTBUFFER_02_019: [** If `left` is `NULL` and `right` is not `NULL` then `CONSTBUFFER_HANDLE_contain_same` shall return `false`. **]**
+
+**SRS_CONSTBUFFER_02_020: [** If `left` is not `NULL` and `right` is `NULL` then `CONSTBUFFER_HANDLE_contain_same` shall return `false`. **]**
+
+**SRS_CONSTBUFFER_02_021: [** If `left`'s size is different than `right`'s size then `CONSTBUFFER_HANDLE_contain_same` shall return `false`. **]**
+
+**SRS_CONSTBUFFER_02_022: [** If `left`'s buffer is contains different bytes than `rights`'s buffer then `CONSTBUFFER_HANDLE_contain_same` shall return `false`. **]**
+
+**SRS_CONSTBUFFER_02_023: [** `CONSTBUFFER_HANDLE_contain_same` shall return `true`. **]**
