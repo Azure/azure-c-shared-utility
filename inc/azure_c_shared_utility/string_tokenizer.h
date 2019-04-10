@@ -5,7 +5,7 @@
 #define STRING_TOKENIZER_H
 
 #include "azure_c_shared_utility/strings.h"
-#include "azure_c_shared_utility/umock_c_prod.h"
+#include "umock_c/umock_c_prod.h"
 #include "azure_c_shared_utility/string_tokenizer_types.h"
 
 #ifdef __cplusplus

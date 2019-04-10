@@ -32,7 +32,7 @@ static void my_gballoc_free(void* s)
 #include "azure_c_shared_utility/vector.h"
 
 #include "testrunnerswitcher.h"
-#include "umock_c.h"
+#include "umock_c/umock_c.h"
 
 MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
