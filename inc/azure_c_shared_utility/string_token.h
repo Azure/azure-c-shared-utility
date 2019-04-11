@@ -13,12 +13,12 @@ extern "C"
 #include <stdbool.h>
 #endif
 
-#include "azure_c_shared_utility/umock_c_prod.h"
+#include "umock_c/umock_c_prod.h"
 
 typedef struct STRING_TOKEN_TAG* STRING_TOKEN_HANDLE;
 
 /*
-*    @brief     Tries to identify the first token defined in source up to its length using the delimiters provided. 
+*    @brief     Tries to identify the first token defined in source up to its length using the delimiters provided.
 *    @Remark    If no delimiter is found, the entire source string becomes the resulting token. Empty tokens (when delimiters occur side-by-side) can also detected.
 *    @param     source        The initial string to be tokenized.
 *    @param     length        The length of the source string, not including the null-terminator.
@@ -31,7 +31,7 @@ MOCKABLE_FUNCTION(, STRING_TOKEN_HANDLE, StringToken_GetFirst, const char*, sour
 /*
 *    @brief     Tries to identify the next token defined in source up to its length using the delimiters provided.
 *    @Remark    After StringToken_GetFirst is initially called, StringToken_GetNext shall be called for obtaining the next tokens.
-*               If no delimiter is found, the entire source string becomes the resulting token. 
+*               If no delimiter is found, the entire source string becomes the resulting token.
 *               Empty tokens (when delimiters occur side-by-side) can also detected.
 *    @param     token         The handle returned by StringToken_GetFirst.
 *    @param     delimiters    Array with null-terminated strings to be used as token delimiters.

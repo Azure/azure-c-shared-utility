@@ -11,7 +11,7 @@ extern "C"
 
 #include <stdint.h>
 
-#include "azure_c_shared_utility/umock_c_prod.h"
+#include "umock_c/umock_c_prod.h"
 
 #if defined(_WIN32) || defined(__MBED__)
     typedef uint_fast64_t tickcounter_ms_t; // Use 64-bit because of 32-bit is going to roll over back to zero after roughly 49.7 days that is not good for IoT devices which need keep running for months

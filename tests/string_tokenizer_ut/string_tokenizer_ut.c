@@ -50,8 +50,8 @@ void my_gballoc_free(void* ptr)
 #include "azure_c_shared_utility/string_tokenizer.h"
 
 #define ENABLE_MOCKS
-#include "umock_c.h"
-#include "umocktypes_charptr.h"
+#include "umock_c/umock_c.h"
+#include "umock_c/umocktypes_charptr.h"
 #include "azure_c_shared_utility/gballoc.h"
 
 static TEST_MUTEX_HANDLE g_testByTest;

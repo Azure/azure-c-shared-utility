@@ -17,7 +17,7 @@
 
 #define ENABLE_MOCKS
 
-#include "umock_c_prod.h"
+#include "umock_c/umock_c_prod.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,7 +28,7 @@ extern "C" {
 }
 #endif
 
-#include "umock_c.h"
+#include "umock_c/umock_c.h"
 
 #define GBALLOC_H
 

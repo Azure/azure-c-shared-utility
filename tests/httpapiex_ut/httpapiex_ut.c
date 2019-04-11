@@ -65,8 +65,8 @@ void my_gballoc_free(void* ptr)
 
 #include "testrunnerswitcher.h"
 #include "azure_macro_utils/macro_utils.h"
-#include "umock_c.h"
-#include "umocktypes_charptr.h"
+#include "umock_c/umock_c.h"
+#include "umock_c/umocktypes_charptr.h"
 
 #define ENABLE_MOCKS
 

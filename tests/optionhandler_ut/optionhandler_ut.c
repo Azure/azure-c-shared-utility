@@ -23,9 +23,9 @@ static void my_gballoc_free(void* s)
 #include <stddef.h>
 #endif
 #include "testrunnerswitcher.h"
-#include "umock_c.h"
-#include "umocktypes_charptr.h"
-#include "umock_c_negative_tests.h"
+#include "umock_c/umock_c.h"
+#include "umock_c/umocktypes_charptr.h"
+#include "umock_c/umock_c_negative_tests.h"
 #include "azure_c_shared_utility/optionhandler.h"
 #include "azure_c_shared_utility/optimize_size.h"
 
@@ -61,7 +61,7 @@ static void my_gballoc_free(void* s)
 
 #define ENABLE_MOCKS
 #include "azure_c_shared_utility/gballoc.h"
-#include "azure_c_shared_utility/umock_c_prod.h"
+#include "umock_c/umock_c_prod.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
 #include "azure_c_shared_utility/vector.h"
 
