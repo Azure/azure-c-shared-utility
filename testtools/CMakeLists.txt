@@ -10,8 +10,6 @@ usePermissiveRulesForSamplesAndTests()
 if(NOT ${use_installed_dependencies})
     add_subdirectory(ctest)
     add_subdirectory(testrunner)
-    add_subdirectory(umock-c)
-    include_directories(${MACRO_UTILS_INC_FOLDER})
 endif()
 
 add_subdirectory(sal)
