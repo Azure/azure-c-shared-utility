@@ -262,7 +262,7 @@ static int lookup_address_and_initiate_socket_connection(SOCKET_IO_INSTANCE* soc
     socklen_t connect_addr_len;
     struct addrinfo* addrInfoIp = NULL;
 
-    if (socket_io_instance->address_type == ADDRESS_TYPE_IP)
+    if (socket_io_instance->address_type == ADDRESS_TYPE_IP || socket_io_instance->address_type == ADDRESS_TYPE_UDP)
     {
         char portString[16];
 
@@ -741,7 +741,19 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
         }
         else
         {
-            socket_io_instance->socket = socket (socket_io_instance->address_type == ADDRESS_TYPE_IP ? AF_INET : AF_UNIX, SOCK_STREAM, 0);
+            if (socket_io_instance->address_type == ADDRESS_TYPE_UDP)
+            {
+                socket_io_instance->socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+            }
+            else if (socket_io_instance->address_type == ADDRESS_TYPE_DOMAIN_SOCKET)
+            {
+                socket_io_instance->socket = socket(AF_UNIX, SOCK_STREAM, 0);
+            }
+            else
+            {
+                socket_io_instance->socket = socket(AF_INET, SOCK_STREAM, 0);
+            }
+
             if (socket_io_instance->socket < SOCKET_SUCCESS)
             {
                 LogError("Failure: socket create failure %d.", socket_io_instance->socket);
@@ -1043,6 +1055,11 @@ static int socketio_setaddresstype_option(SOCKET_IO_INSTANCE* socket_io_instance
     else if (strcmp(addressType, OPTION_ADDRESS_TYPE_IP_SOCKET) == 0)
     {
         socket_io_instance->address_type = ADDRESS_TYPE_IP;
+        result = 0;
+    }
+    else if (strcmp(addressType, OPTION_ADDRESS_TYPE_UDP_SOCKET) == 0)
+    {
+        socket_io_instance->address_type = ADDRESS_TYPE_UDP;
         result = 0;
     }
     else

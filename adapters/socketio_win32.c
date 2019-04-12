@@ -374,12 +374,30 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
         }
         else
         {
+            int addr_family;
+            int socket_type;
+            int socket_protocol;
+            if (socket_io_instance->address_type == ADDRESS_TYPE_UDP)
+            {
+                addr_family = AF_INET;
+                socket_type = SOCK_DGRAM;
+                socket_protocol = IPPROTO_UDP;
+            }
 #ifdef AF_UNIX_ON_WINDOWS
-            int addr_family = socket_io_instance->address_type == ADDRESS_TYPE_IP ? AF_INET : AF_UNIX;
-#else
-            int addr_family = AF_INET;
+            else if (socket_io_instance->address_type == ADDRESS_TYPE_DOMAIN_SOCKET)
+            {
+                addr_family = AF_UNIX;
+                socket_type = SOCK_STREAM;
+                socket_protocol = 0;
+            }
 #endif
-            socket_io_instance->socket = socket(addr_family, SOCK_STREAM, 0);
+            else
+            {
+                addr_family = AF_INET;
+                socket_type = SOCK_STREAM;
+                socket_protocol = 0;
+            }
+            socket_io_instance->socket = socket(addr_family, socket_type, socket_protocol);
             if (socket_io_instance->socket == INVALID_SOCKET)
             {
                 LogError("Failure: socket create failure %d.", WSAGetLastError());
@@ -650,6 +668,11 @@ static int socketio_setaddresstype_option(SOCKET_IO_INSTANCE* socket_io_instance
     else if (strcmp(addressType, OPTION_ADDRESS_TYPE_IP_SOCKET) == 0)
     {
         socket_io_instance->address_type = ADDRESS_TYPE_IP;
+        result = 0;
+    }
+    else if (strcmp(addressType, OPTION_ADDRESS_TYPE_UDP_SOCKET) == 0)
+    {
+        socket_io_instance->address_type = ADDRESS_TYPE_UDP;
         result = 0;
     }
     else
