@@ -478,3 +478,62 @@ const CONSTBUFFER_HANDLE* constbuffer_array_get_const_buffer_handle_array(CONSTB
 
     return result;
 }
+
+
+bool CONSTBUFFER_ARRAY_HANDLE_contain_same(CONSTBUFFER_ARRAY_HANDLE left, CONSTBUFFER_ARRAY_HANDLE right)
+{
+    bool result;
+    if (left == NULL)
+    {
+        if (right == NULL)
+        {
+            /*Codes_SRS_CONSTBUFFER_ARRAY_02_050: [ If left is NULL and right is NULL then CONSTBUFFER_ARRAY_HANDLE_contain_same shall return true. ]*/
+            result = true;
+        }
+        else
+        {
+            /*Codes_SRS_CONSTBUFFER_ARRAY_02_051: [ If left is NULL and right is not NULL then CONSTBUFFER_ARRAY_HANDLE_contain_same shall return false. ]*/
+            result = false;
+        }
+    }
+    else
+    {
+        if (right == NULL)
+        {
+            /*Codes_SRS_CONSTBUFFER_ARRAY_02_052: [ If left is not NULL and right is NULL then CONSTBUFFER_ARRAY_HANDLE_contain_same shall return false. ]*/
+            result = false;
+        }
+        else
+        {
+            if (left->nBuffers != right->nBuffers)
+            {
+                /*Codes_SRS_CONSTBUFFER_ARRAY_02_053: [ If the number of CONSTBUFFER_HANDLEs in left is different then the number of CONSTBUFFER_HANDLEs in right then CONSTBUFFER_ARRAY_HANDLE_contain_same shall return false. ]*/
+                result = false;
+            }
+            else
+            {
+                uint32_t i;
+                for (i = 0; i < left->nBuffers; i++)
+                {
+                    /*Codes_SRS_CONSTBUFFER_ARRAY_02_054: [ If left and right CONSTBUFFER_HANDLEs at same index are different (as indicated by CONSTBUFFER_HANDLE_contain_same call) then CONSTBUFFER_ARRAY_HANDLE_contain_same shall return false. ]*/
+                    if (!CONSTBUFFER_HANDLE_contain_same(left->buffers[i], right->buffers[i]))
+                    {
+                        break;
+                    }
+                }
+
+                if (i == left->nBuffers)
+                {
+                    /*Codes_SRS_CONSTBUFFER_ARRAY_02_055: [ CONSTBUFFER_ARRAY_HANDLE_contain_same shall return true. ]*/
+                    result = true;
+                }
+                else
+                {
+                    /*Codes_SRS_CONSTBUFFER_ARRAY_02_054: [ If left and right CONSTBUFFER_HANDLEs at same index are different (as indicated by CONSTBUFFER_HANDLE_contain_same call) then CONSTBUFFER_ARRAY_HANDLE_contain_same shall return false. ]*/
+                    result = false;
+                }
+            }
+        }
+    }
+    return result;
+}

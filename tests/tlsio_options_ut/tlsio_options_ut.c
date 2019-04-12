@@ -24,7 +24,7 @@
 #include "azure_c_shared_utility/shared_util_options.h"
 
 #include "testrunnerswitcher.h"
-#include "umock_c_negative_tests.h"
+#include "umock_c/umock_c_negative_tests.h"
 
 
 static TEST_MUTEX_HANDLE g_testByTest;

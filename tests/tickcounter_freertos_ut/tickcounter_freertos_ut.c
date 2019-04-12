@@ -13,7 +13,7 @@
 
 #include "testrunnerswitcher.h"
 #include "azure_c_shared_utility/threadapi.h"
-#include "umocktypes_stdint.h"
+#include "umock_c/umocktypes_stdint.h"
 
 static TEST_MUTEX_HANDLE g_testByTest;
 

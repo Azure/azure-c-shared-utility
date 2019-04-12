@@ -22,7 +22,7 @@ void my_gballoc_free(void* ptr)
 }
 
 #define ENABLE_MOCKS
-#include "umock_c.h"
+#include "umock_c/umock_c.h"
 #include "azure_c_shared_utility/buffer_.h"
 #include "azure_c_shared_utility/gballoc.h"
 
@@ -843,4 +843,126 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     }
 
+    /*Tests_SRS_CONSTBUFFER_02_018: [ If left is NULL and right is NULL then CONSTBUFFER_HANDLE_contain_same shall return true. ]*/
+    TEST_FUNCTION(CONSTBUFFER_HANDLE_contain_same_with_left_NULL_and_right_NULL_returns_true)
+    {
+        ///arrange
+        bool result;
+
+        ///act
+        result = CONSTBUFFER_HANDLE_contain_same(NULL, NULL);
+
+        ///assert
+        ASSERT_IS_TRUE(result);
+    }
+
+    /*Tests_SRS_CONSTBUFFER_02_019: [ If left is NULL and right is not NULL then CONSTBUFFER_HANDLE_contain_same shall return false. ]*/
+    TEST_FUNCTION(CONSTBUFFER_HANDLE_contain_same_with_left_NULL_and_right_not_NULL_returns_false)
+    {
+        ///arrange
+        bool result;
+        unsigned char rightSource = 'r';
+        CONSTBUFFER_HANDLE right = CONSTBUFFER_Create(&rightSource, sizeof(rightSource));
+        ASSERT_IS_NOT_NULL(right);
+
+        ///act
+        result = CONSTBUFFER_HANDLE_contain_same(NULL, right);
+
+        ///assert
+        ASSERT_IS_FALSE(result);
+
+        ///clean
+        CONSTBUFFER_DecRef(right);
+    }
+
+    /*Tests_SRS_CONSTBUFFER_02_020: [ If left is not NULL and right is NULL then CONSTBUFFER_HANDLE_contain_same shall return false. ]*/
+    TEST_FUNCTION(CONSTBUFFER_HANDLE_contain_same_with_left_not_NULL_and_right_NULL_returns_false)
+    {
+        ///arrange
+        bool result;
+        unsigned char leftSource = 'l';
+        CONSTBUFFER_HANDLE left = CONSTBUFFER_Create(&leftSource, sizeof(leftSource));
+        ASSERT_IS_NOT_NULL(left);
+
+        ///act
+        result = CONSTBUFFER_HANDLE_contain_same(left, NULL);
+
+        ///assert
+        ASSERT_IS_FALSE(result);
+
+        ///clean
+        CONSTBUFFER_DecRef(left);
+    }
+
+    /*Tests_SRS_CONSTBUFFER_02_021: [ If left's size is different than right's size then CONSTBUFFER_HANDLE_contain_same shall return false. ]*/
+    TEST_FUNCTION(CONSTBUFFER_HANDLE_contain_same_with_left_and_right_sizes_not_equal_returns_false)
+    {
+        ///arrange
+        bool result;
+        unsigned char leftSource = 'l';
+        CONSTBUFFER_HANDLE left = CONSTBUFFER_Create(&leftSource, sizeof(leftSource));
+        ASSERT_IS_NOT_NULL(left);
+
+        unsigned char rightSource[2] = { 'r', 'r' };
+        CONSTBUFFER_HANDLE right = CONSTBUFFER_Create(rightSource, sizeof(rightSource));
+        ASSERT_IS_NOT_NULL(right);
+
+        ///act
+        result = CONSTBUFFER_HANDLE_contain_same(left, right);
+
+        ///assert
+        ASSERT_IS_FALSE(result);
+
+        ///clean
+        CONSTBUFFER_DecRef(left);
+        CONSTBUFFER_DecRef(right);
+    }
+
+    /*Tests_SRS_CONSTBUFFER_02_022: [ If left's buffer is contains different bytes than rights's buffer then CONSTBUFFER_HANDLE_contain_same shall return false. ]*/
+    TEST_FUNCTION(CONSTBUFFER_HANDLE_contain_same_with_left_and_right_content_not_equal_returns_false)
+    {
+        ///arrange
+        bool result;
+        unsigned char leftSource[2] = { 'l', 'l' };
+        CONSTBUFFER_HANDLE left = CONSTBUFFER_Create(leftSource, sizeof(leftSource));
+        ASSERT_IS_NOT_NULL(left);
+
+        unsigned char rightSource[2] = { 'r', 'r' };
+        CONSTBUFFER_HANDLE right = CONSTBUFFER_Create(rightSource, sizeof(rightSource));
+        ASSERT_IS_NOT_NULL(right);
+
+        ///act
+        result = CONSTBUFFER_HANDLE_contain_same(left, right);
+
+        ///assert
+        ASSERT_IS_FALSE(result);
+
+        ///clean
+        CONSTBUFFER_DecRef(left);
+        CONSTBUFFER_DecRef(right);
+    }
+
+    /*Tests_SRS_CONSTBUFFER_02_023: [ CONSTBUFFER_HANDLE_contain_same shall return true. ]*/
+    TEST_FUNCTION(CONSTBUFFER_HANDLE_contain_same_with_left_and_right_same_returns_true)
+    {
+        ///arrange
+        bool result;
+        unsigned char leftSource[2] = { '1', '2' };
+        CONSTBUFFER_HANDLE left = CONSTBUFFER_Create(leftSource, sizeof(leftSource));
+        ASSERT_IS_NOT_NULL(left);
+
+        unsigned char rightSource[2] = { '1', '2' };
+        CONSTBUFFER_HANDLE right = CONSTBUFFER_Create(rightSource, sizeof(rightSource));
+        ASSERT_IS_NOT_NULL(right);
+
+        ///act
+        result = CONSTBUFFER_HANDLE_contain_same(left, right);
+
+        ///assert
+        ASSERT_IS_TRUE(result);
+
+        ///clean
+        CONSTBUFFER_DecRef(left);
+        CONSTBUFFER_DecRef(right);
+    }
 END_TEST_SUITE(constbuffer_unittests)

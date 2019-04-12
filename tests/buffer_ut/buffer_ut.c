@@ -9,7 +9,7 @@
 #include <stddef.h>
 #endif
 
-#include "umock_c.h"
+#include "umock_c/umock_c.h"
 #include "azure_c_shared_utility/buffer_.h"
 #include "testrunnerswitcher.h"
 

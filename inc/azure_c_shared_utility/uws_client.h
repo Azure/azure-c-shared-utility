@@ -5,7 +5,7 @@
 #define UWS_CLIENT_H
 
 #include "xio.h"
-#include "azure_c_shared_utility/umock_c_prod.h"
+#include "umock_c/umock_c_prod.h"
 #include "azure_c_shared_utility/optionhandler.h"
 
 #ifdef __cplusplus

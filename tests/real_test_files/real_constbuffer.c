@@ -8,6 +8,7 @@
 #define CONSTBUFFER_IncRef real_CONSTBUFFER_IncRef
 #define CONSTBUFFER_DecRef real_CONSTBUFFER_DecRef
 #define CONSTBUFFER_GetContent real_CONSTBUFFER_GetContent
+#define CONSTBUFFER_HANDLE_contain_same real_CONSTBUFFER_HANDLE_contain_same
 
 #define GBALLOC_H
 

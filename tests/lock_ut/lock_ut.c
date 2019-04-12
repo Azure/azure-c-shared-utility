@@ -11,7 +11,7 @@
 #include "testrunnerswitcher.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
 #include "azure_c_shared_utility/lock.h"
-#include "umock_c.h"
+#include "umock_c/umock_c.h"
 
 static void* my_gballoc_malloc(size_t size)
 {

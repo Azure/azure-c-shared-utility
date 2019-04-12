@@ -21,7 +21,7 @@ void my_gballoc_free(void* ptr)
 
 #include "testrunnerswitcher.h"
 #include "some_refcount_impl.h"
-#include "umock_c.h"
+#include "umock_c/umock_c.h"
 
 static TEST_MUTEX_HANDLE g_testByTest;
 

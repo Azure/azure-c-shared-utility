@@ -322,7 +322,6 @@ set(source_h_files
     ./inc/azure_c_shared_utility/tickcounter.h
     ./inc/azure_c_shared_utility/threadapi.h
     ./inc/azure_c_shared_utility/xio.h
-    ./inc/azure_c_shared_utility/umock_c_prod.h
     ./inc/azure_c_shared_utility/uniqueid.h
     ./inc/azure_c_shared_utility/uuid.h
     ./inc/azure_c_shared_utility/urlencode.h
@@ -554,9 +553,13 @@ if(NOT ${use_installed_dependencies})
     if ((NOT TARGET azure_macro_utils_c) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-macro-utils-c/CMakeLists.txt))
         add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/deps/azure-macro-utils-c)
     endif()
+    if ((NOT TARGET umock-c) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/umock-c/CMakeLists.txt))
+        add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/deps/umock-c)
+    endif()
 endif()
 
 include_directories(${MACRO_UTILS_INC_FOLDER})
+include_directories(${UMOCK_C_INC_FOLDER})
 
 if (${original_run_unittests})
     include("dependencies-test.cmake")

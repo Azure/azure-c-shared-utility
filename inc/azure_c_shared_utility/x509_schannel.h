@@ -10,7 +10,7 @@
 extern "C" {
 #endif
 
-#include "azure_c_shared_utility/umock_c_prod.h"
+#include "umock_c/umock_c_prod.h"
 
 typedef struct X509_SCHANNEL_HANDLE_DATA_TAG* X509_SCHANNEL_HANDLE;
 

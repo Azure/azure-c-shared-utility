@@ -19,10 +19,10 @@
 #endif
 
 #include "testrunnerswitcher.h"
-#include "umock_c.h"
-#include "umocktypes_charptr.h"
-#include "umocktypes_stdint.h"
-#include "umock_c_negative_tests.h"
+#include "umock_c/umock_c.h"
+#include "umock_c/umocktypes_charptr.h"
+#include "umock_c/umocktypes_stdint.h"
+#include "umock_c/umock_c_negative_tests.h"
 
 /* tls and yarrow need extern "C" in case of C++ compilation */
 #ifdef __cplusplus
