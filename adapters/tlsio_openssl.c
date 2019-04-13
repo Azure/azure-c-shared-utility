@@ -78,6 +78,8 @@ typedef struct TLS_IO_INSTANCE_TAG
     const char* x509_certificate;
     const char* x509_private_key;
     TLSIO_VERSION tls_version;
+    bool disable_crl_check;
+    bool disable_default_verify_paths;
     TLS_CERTIFICATE_VALIDATION_CALLBACK tls_validation_callback;
     void* tls_validation_callback_data;
     const char* serverName;
@@ -205,6 +207,23 @@ static void* tlsio_openssl_CloneOption(const char* name, const void* value)
                 result = value_clone;
             }
         }
+        else if (strcmp(name, OPTION_DISABLE_CRL_CHECK) == 0 ||
+            strcmp(name, OPTION_DISABLE_DEFAULT_VERIFY_PATHS) == 0)
+        {
+            bool bool_value = *(bool*)value;
+            bool* value_clone = (bool*)malloc(sizeof(bool));
+
+            if (value_clone)
+            {
+                *value_clone = bool_value;
+            }
+            else
+            {
+                LogError("Failed cloning %s option", name);
+            }
+
+            result = value_clone;
+        }
         else if (
             (strcmp(name, "tls_validation_callback") == 0) ||
             (strcmp(name, "tls_validation_callback_data") == 0)
@@ -318,6 +337,26 @@ static OPTIONHANDLER_HANDLE tlsio_openssl_retrieveoptions(CONCRETE_IO_HANDLE han
                 if (OptionHandler_AddOption(result, OPTION_TLS_VERSION, &tls_io_instance->tls_version) != OPTIONHANDLER_OK)
                 {
                     LogError("unable to save tls_version option");
+                    OptionHandler_Destroy(result);
+                    result = NULL;
+                }
+            }
+            else if (tls_io_instance->disable_crl_check)
+            {
+                // Only add this option if not the default (false)
+                if (OptionHandler_AddOption(result, OPTION_DISABLE_CRL_CHECK, &tls_io_instance->disable_crl_check) != OPTIONHANDLER_OK)
+                {
+                    LogError("unable to save %s option", OPTION_DISABLE_CRL_CHECK);
+                    OptionHandler_Destroy(result);
+                    result = NULL;
+                }
+            }
+            else if (tls_io_instance->disable_default_verify_paths)
+            {
+                // Only add this option if not the default (false)
+                if (OptionHandler_AddOption(result, OPTION_DISABLE_DEFAULT_VERIFY_PATHS, &tls_io_instance->disable_default_verify_paths) != OPTIONHANDLER_OK)
+                {
+                    LogError("unable to save %s option", OPTION_DISABLE_DEFAULT_VERIFY_PATHS);
                     OptionHandler_Destroy(result);
                     result = NULL;
                 }
@@ -1323,7 +1362,7 @@ static const char *get_dp_url(DIST_POINT *dp)
 
     if (dp->distpoint->type != 0)
     {
-        LogInfo("returning, dp->distpoint->type != 0\n");
+        LogInfo("returning, dp->distpoint->type is %d\n", dp->distpoint->type);
         return NULL;
     }
 
@@ -1787,7 +1826,15 @@ static int setup_crl_check(TLS_IO_INSTANCE* tls_io_instance)
 #else
     int flags = X509_VERIFY_PARAM_get_flags(store->param);
 #endif
-    if (!(flags & X509_V_FLAG_CRL_CHECK))
+    if (flags & X509_V_FLAG_CRL_CHECK)
+    {
+        LogInfo("CRL check enabled by default X509 verify parameters, won't change.\n");
+    }
+    else if (tls_io_instance->disable_crl_check)
+    {
+        LogInfo("CRL check off, as requested.\n");
+    }
+    else
     {
         X509_STORE_set_flags(store, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
         X509_STORE_set_lookup_crls_cb(store, crls_http_cb);
@@ -1979,11 +2026,18 @@ static int create_openssl_instance(TLS_IO_INSTANCE* tlsInstance)
                 {
                     SSL_CTX_set_verify(tlsInstance->ssl_context, SSL_VERIFY_PEER, NULL);
 
-                    // Specifies that the default locations for which CA certificates are loaded should be used.
-                    if (SSL_CTX_set_default_verify_paths(tlsInstance->ssl_context) != 1)
+                    if (!tlsInstance->disable_default_verify_paths)
                     {
-                        // This is only a warning to the user. They can still specify the certificate via SetOption.
-                        LogInfo("WARNING: Unable to specify the default location for CA certificates on this platform.");
+                        // Specifies that the default locations for which CA certificates are loaded should be used.
+                        if (SSL_CTX_set_default_verify_paths(tlsInstance->ssl_context) != 1)
+                        {
+                            // This is only a warning to the user. They can still specify the certificate via SetOption.
+                            LogInfo("WARNING: Unable to specify the default location for CA certificates on this platform.");
+                        }
+                    }
+                    else
+                    {
+                        LogInfo("Not using default verify paths, as requested.\n");
                     }
 
                     tlsInstance->ssl = SSL_new(tlsInstance->ssl_context);
@@ -2131,6 +2185,8 @@ CONCRETE_IO_HANDLE tlsio_openssl_create(void* io_create_parameters)
                     result->x509_private_key = NULL;
 
                     result->tls_version = OPTION_TLS_VERSION_1_0;
+                    result->disable_crl_check = false;
+                    result->disable_default_verify_paths = false;
 
                     result->underlying_io = xio_create(underlying_io_interface, io_interface_parameters);
                     if (result->underlying_io == NULL)
@@ -2537,6 +2593,32 @@ int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
                     LogInfo("Value of TLS version option %d is not found shall default to version 1.2", version_option);
                     tls_io_instance->tls_version = OPTION_TLS_VERSION_1_2;
                 }
+                result = 0;
+            }
+        }
+        else if (strcmp(OPTION_DISABLE_CRL_CHECK, optionName) == 0)
+        {
+            if (tls_io_instance->ssl_context != NULL)
+            {
+                LogError("Unable to set the %s option after the TLS connection is established", optionName);
+                result = __FAILURE__;
+            }
+            else
+            {
+                tls_io_instance->disable_crl_check = *(const bool*)value;
+                result = 0;
+            }
+        }
+        else if (strcmp(OPTION_DISABLE_DEFAULT_VERIFY_PATHS, optionName) == 0)
+        {
+            if (tls_io_instance->ssl_context != NULL)
+            {
+                LogError("Unable to set the %s option after the TLS connection is established", optionName);
+                result = __FAILURE__;
+            }
+            else
+            {
+                tls_io_instance->disable_default_verify_paths = *(const bool*)value;
                 result = 0;
             }
         }
