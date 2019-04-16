@@ -26,9 +26,9 @@ static void my_gballoc_free(void* ptr)
     free(ptr);
 }
 
-#include "umock_c.h"
-#include "umocktypes_charptr.h"
-#include "umock_c_negative_tests.h"
+#include "umock_c/umock_c.h"
+#include "umock_c/umocktypes_charptr.h"
+#include "umock_c/umock_c_negative_tests.h"
 
 #define ENABLE_MOCKS
 #include "azure_c_shared_utility/gballoc.h"
@@ -54,7 +54,7 @@ MOCK_FUNCTION_END()
 MOCK_FUNCTION_WITH_CODE(, int, test_xio_setoption, CONCRETE_IO_HANDLE, handle, const char*, optionName, const void*, value)
 MOCK_FUNCTION_END(0)
 
-#include "azure_c_shared_utility/umock_c_prod.h"
+#include "umock_c/umock_c_prod.h"
 /*this function will clone an option given by name and value*/
 MOCKABLE_FUNCTION(,void*, test_xio_CloneOption, const char*, name, const void*, value);
 
@@ -115,11 +115,11 @@ const IO_INTERFACE_DESCRIPTION test_io_description =
 
 static TEST_MUTEX_HANDLE g_testByTest;
 
-DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
+MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    ASSERT_FAIL("umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
+    ASSERT_FAIL("umock_c reported error :%s", MU_ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
 }
 
 static OPTIONHANDLER_HANDLE my_OptionHandler_Create(pfCloneOption cloneOption, pfDestroyOption destroyOption, pfSetOption setOption)
@@ -974,7 +974,7 @@ TEST_FUNCTION(xio_retrieveoptions_unhappypaths)
         umock_c_negative_tests_fail_call(i);
 
         ///act
-        (void)sprintf(temp_str, "On failed call %zu", i);
+        (void)sprintf(temp_str, "On failed call %lu", (unsigned long)i);
 
         ///act
         h = xio_retrieveoptions(x);

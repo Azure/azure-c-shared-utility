@@ -23,9 +23,9 @@ static void my_gballoc_free(void* s)
 #include <stddef.h>
 #endif
 #include "testrunnerswitcher.h"
-#include "umock_c.h"
-#include "umocktypes_charptr.h"
-#include "umock_c_negative_tests.h"
+#include "umock_c/umock_c.h"
+#include "umock_c/umocktypes_charptr.h"
+#include "umock_c/umock_c_negative_tests.h"
 #include "azure_c_shared_utility/optionhandler.h"
 #include "azure_c_shared_utility/optimize_size.h"
 
@@ -61,7 +61,7 @@ static void my_gballoc_free(void* s)
 
 #define ENABLE_MOCKS
 #include "azure_c_shared_utility/gballoc.h"
-#include "azure_c_shared_utility/umock_c_prod.h"
+#include "umock_c/umock_c_prod.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
 #include "azure_c_shared_utility/vector.h"
 
@@ -73,11 +73,11 @@ MOCKABLE_FUNCTION(, int, aSetOption, void*, handle, const char*, name, const voi
 
 static TEST_MUTEX_HANDLE g_testByTest;
 
-DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
+MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    ASSERT_FAIL("umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
+    ASSERT_FAIL("umock_c reported error :%s", MU_ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
 }
 
 TEST_DEFINE_ENUM_TYPE(OPTIONHANDLER_RESULT, OPTIONHANDLER_RESULT_VALUES);
@@ -129,19 +129,19 @@ BEGIN_TEST_SUITE(optionhandler_unittests)
 
         REGISTER_GLOBAL_MOCK_HOOK(VECTOR_size, real_VECTOR_size);
         REGISTER_GLOBAL_MOCK_HOOK(VECTOR_push_back, real_VECTOR_push_back);
-        REGISTER_GLOBAL_MOCK_FAIL_RETURN(VECTOR_push_back, __FAILURE__);
+        REGISTER_GLOBAL_MOCK_FAIL_RETURN(VECTOR_push_back, MU_FAILURE);
 
         REGISTER_GLOBAL_MOCK_HOOK(VECTOR_element, real_VECTOR_element);
 
         REGISTER_GLOBAL_MOCK_HOOK(VECTOR_destroy, real_VECTOR_destroy);
 
         REGISTER_GLOBAL_MOCK_HOOK(mallocAndStrcpy_s, my_mallocAndStrcpy_s);
-        REGISTER_GLOBAL_MOCK_FAIL_RETURN(mallocAndStrcpy_s, __FAILURE__);
+        REGISTER_GLOBAL_MOCK_FAIL_RETURN(mallocAndStrcpy_s, MU_FAILURE);
 
         REGISTER_GLOBAL_MOCK_HOOK(aCloneOption, my_aCloneOption);
         REGISTER_GLOBAL_MOCK_FAIL_RETURN(aCloneOption, NULL);
 
-        REGISTER_GLOBAL_MOCK_FAIL_RETURN(aSetOption, __FAILURE__);
+        REGISTER_GLOBAL_MOCK_FAIL_RETURN(aSetOption, MU_FAILURE);
 
         REGISTER_GLOBAL_MOCK_HOOK(aDestroyOption, my_aDestroyOption);
     }
@@ -257,7 +257,7 @@ BEGIN_TEST_SUITE(optionhandler_unittests)
             umock_c_negative_tests_fail_call(i);
 
             ///act
-            (void)sprintf(temp_str, "On failed call %zu", i);
+            (void)sprintf(temp_str, "On failed call %lu", (unsigned long)i);
 
             ///act
             h = OptionHandler_Create(aCloneOption, aDestroyOption, aSetOption);
@@ -891,7 +891,7 @@ BEGIN_TEST_SUITE(optionhandler_unittests)
             umock_c_negative_tests_fail_call(i);
 
             ///act
-            (void)sprintf(temp_str, "On failed call %zu", i);
+            (void)sprintf(temp_str, "On failed call %lu", (unsigned long)i);
 
             ///act
             result = OptionHandler_AddOption(handle, "name", value);
@@ -1041,7 +1041,7 @@ BEGIN_TEST_SUITE(optionhandler_unittests)
             umock_c_negative_tests_fail_call(i);
 
             ///act
-            (void)sprintf(temp_str, "On failed call %zu", i);
+            (void)sprintf(temp_str, "On failed call %lu", (unsigned long)i);
 
             ///act
             result = OptionHandler_FeedOptions(handle, (void*)42);
@@ -1144,7 +1144,7 @@ BEGIN_TEST_SUITE(optionhandler_unittests)
             umock_c_negative_tests_fail_call(i);
 
             ///act
-            (void)sprintf(temp_str, "On failed call %zu", i);
+            (void)sprintf(temp_str, "On failed call %lu", (unsigned long)i);
 
             ///act
             result = OptionHandler_FeedOptions(handle, (void*)42);

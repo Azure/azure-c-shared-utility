@@ -21,7 +21,7 @@
 #include "azure_c_shared_utility/crt_abstractions.h"
 #include "azure_c_shared_utility/utf8_checker.h"
 #include "azure_c_shared_utility/gb_rand.h"
-#include "azure_c_shared_utility/base64.h"
+#include "azure_c_shared_utility/azure_base64.h"
 #include "azure_c_shared_utility/optionhandler.h"
 #include "azure_c_shared_utility/map.h"
 
@@ -114,7 +114,7 @@ UWS_CLIENT_HANDLE uws_client_create(const char* hostname, unsigned int port, con
         /* Codes_SRS_UWS_CLIENT_01_411: [ If protocol_count is non zero and protocols is NULL then uws_client_create shall fail and return NULL. ]*/
         ((protocols == NULL) && (protocol_count > 0)))
     {
-        LogError("Invalid arguments: hostname = %p, resource_name = %p, protocols = %p, protocol_count = %zu", hostname, resource_name, protocols, protocol_count);
+        LogError("Invalid arguments: hostname = %p, resource_name = %p, protocols = %p, protocol_count = %lu", hostname, resource_name, protocols, (unsigned long)protocol_count);
         result = NULL;
     }
     else
@@ -131,7 +131,7 @@ UWS_CLIENT_HANDLE uws_client_create(const char* hostname, unsigned int port, con
 
         if (i < protocol_count)
         {
-            LogError("Protocol index %zu has NULL name", i);
+            LogError("Protocol index %lu has NULL name", (unsigned long)i);
             result = NULL;
         }
         else
@@ -355,7 +355,7 @@ UWS_CLIENT_HANDLE uws_client_create_with_io(const IO_INTERFACE_DESCRIPTION* io_i
         /* Codes_SRS_UWS_CLIENT_01_525: [ If protocol_count is non zero and protocols is NULL then uws_client_create_with_io shall fail and return NULL. ]*/
         ((protocols == NULL) && (protocol_count > 0)))
     {
-        LogError("Invalid arguments: io_interface = %p, resource_name = %p, protocols = %p, protocol_count = %zu", io_interface, resource_name, protocols, protocol_count);
+        LogError("Invalid arguments: io_interface = %p, resource_name = %p, protocols = %p, protocol_count = %lu", io_interface, resource_name, protocols, (unsigned long)protocol_count);
         result = NULL;
     }
     else
@@ -372,7 +372,7 @@ UWS_CLIENT_HANDLE uws_client_create_with_io(const IO_INTERFACE_DESCRIPTION* io_i
         if (i < protocol_count)
         {
             /* Codes_SRS_UWS_CLIENT_01_526: [ If the protocol member of any of the items in the protocols argument is NULL, then uws_client_create_with_io shall fail and return NULL. ]*/
-            LogError("Protocol index %zu has NULL name", i);
+            LogError("Protocol index %lu has NULL name", (unsigned long)i);
             result = NULL;
         }
         else
@@ -632,7 +632,7 @@ static int send_close_frame(UWS_CLIENT_INSTANCE* uws_client, unsigned int close_
     if (close_frame_buffer == NULL)
     {
         LogError("Encoding of CLOSE failed.");
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -643,7 +643,7 @@ static int send_close_frame(UWS_CLIENT_INSTANCE* uws_client, unsigned int close_
         if (xio_send(uws_client->underlying_io, close_frame, close_frame_length, unchecked_on_send_complete, NULL) != 0)
         {
             LogError("Sending CLOSE frame failed.");
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -768,7 +768,7 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
                 }
 
                 /* Codes_SRS_UWS_CLIENT_01_497: [ The nonce needed for the upgrade request shall be Base64 encoded with Base64_Encode_Bytes. ]*/
-                base64_nonce = Base64_Encode_Bytes(nonce, sizeof(nonce));
+                base64_nonce = Azure_Base64_Encode_Bytes(nonce, sizeof(nonce));
                 if (base64_nonce == NULL)
                 {
                     /* Codes_SRS_UWS_CLIENT_01_498: [ If Base64 encoding the nonce for the upgrade request fails, then the uws client shall report that the open failed by calling the on_ws_open_complete callback passed to uws_client_open_async with WS_OPEN_ERROR_BASE64_ENCODE_FAILED. ]*/
@@ -937,7 +937,7 @@ static int ParseStringToDecimal(const char *src, int* dst)
     (*dst) = (int)strtol(src, &next, 0);
     if ((src == next) || ((((*dst) == INT_MAX) || ((*dst) == INT_MIN)) && (errno != 0)))
     {
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -958,7 +958,7 @@ static int ParseHttpResponse(const char* src, int* dst)
 
     if ((src == NULL) || (dst == NULL))
     {
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -1004,13 +1004,13 @@ static int ParseHttpResponse(const char* src, int* dst)
 
         if (fail)
         {
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
             if (ParseStringToDecimal(src, dst) != 0)
             {
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else
             {
@@ -1031,7 +1031,7 @@ static int process_frame_fragment(UWS_CLIENT_INSTANCE *uws_client, size_t length
         /* Codes_SRS_UWS_CLIENT_01_379: [ If allocating memory for accumulating the bytes fails, uws shall report that the open failed by calling the on_ws_open_complete callback passed to uws_client_open_async with WS_OPEN_ERROR_NOT_ENOUGH_MEMORY. ]*/
         LogError("Cannot allocate memory for received data");
         indicate_ws_error(uws_client, WS_ERROR_NOT_ENOUGH_MEMORY);
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -1646,7 +1646,7 @@ int uws_client_open_async(UWS_CLIENT_HANDLE uws_client, ON_WS_OPEN_COMPLETE on_w
         /* Codes_SRS_UWS_CLIENT_01_027: [ If uws_client, on_ws_open_complete, on_ws_frame_received, on_ws_peer_closed or on_ws_error is NULL, uws_client_open_async shall fail and return a non-zero value. ]*/
         LogError("Invalid arguments: uws=%p, on_ws_open_complete=%p, on_ws_frame_received=%p, on_ws_error=%p",
             uws_client, on_ws_open_complete, on_ws_frame_received, on_ws_error);
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -1655,7 +1655,7 @@ int uws_client_open_async(UWS_CLIENT_HANDLE uws_client, ON_WS_OPEN_COMPLETE on_w
             /* Codes_SRS_UWS_CLIENT_01_400: [ uws_client_open_async while CLOSING shall fail and return a non-zero value. ]*/
             /* Codes_SRS_UWS_CLIENT_01_394: [ uws_client_open_async while the uws instance is already OPEN or OPENING shall fail and return a non-zero value. ]*/
             LogError("Invalid uWS state while trying to open: %d", (int)uws_client->uws_state);
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -1683,7 +1683,7 @@ int uws_client_open_async(UWS_CLIENT_HANDLE uws_client, ON_WS_OPEN_COMPLETE on_w
                 /* Codes_SRS_UWS_CLIENT_01_075: [ If the connection could not be opened, either because a direct connection failed or because any proxy used returned an error, then the client MUST _Fail the WebSocket Connection_ and abort the connection attempt. ]*/
                 LogError("Opening the underlying IO failed");
                 uws_client->uws_state = UWS_STATE_CLOSED;
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else
             {
@@ -1705,7 +1705,7 @@ static int complete_send_frame(WS_PENDING_SEND* ws_pending_send, LIST_ITEM_HANDL
     if (singlylinkedlist_remove(uws_client->pending_sends, pending_send_frame_item) != 0)
     {
         LogError("Failed removing item from list");
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -1736,7 +1736,7 @@ int uws_client_close_async(UWS_CLIENT_HANDLE uws_client, ON_WS_CLOSE_COMPLETE on
     {
         /* Codes_SRS_UWS_CLIENT_01_030: [ if uws_client is NULL, uws_client_close_async shall return a non-zero value. ]*/
         LogError("NULL uWS handle.");
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -1747,7 +1747,7 @@ int uws_client_close_async(UWS_CLIENT_HANDLE uws_client, ON_WS_CLOSE_COMPLETE on
         {
             /* Codes_SRS_UWS_CLIENT_01_032: [ uws_client_close_async when no open action has been issued shall fail and return a non-zero value. ]*/
             LogError("close has been called when already CLOSED");
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -1763,7 +1763,7 @@ int uws_client_close_async(UWS_CLIENT_HANDLE uws_client, ON_WS_CLOSE_COMPLETE on
             {
                 /* Codes_SRS_UWS_CLIENT_01_395: [ If xio_close fails, uws_client_close_async shall fail and return a non-zero value. ]*/
                 LogError("Closing the underlying IO failed.");
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else
             {
@@ -1797,7 +1797,7 @@ int uws_client_close_handshake_async(UWS_CLIENT_HANDLE uws_client, uint16_t clos
     {
         /* Codes_SRS_UWS_CLIENT_01_467: [ if uws_client is NULL, uws_client_close_handshake_async shall return a non-zero value. ]*/
         LogError("NULL uws_client");
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -1809,7 +1809,7 @@ int uws_client_close_handshake_async(UWS_CLIENT_HANDLE uws_client, uint16_t clos
         {
             /* Codes_SRS_UWS_CLIENT_01_473: [ uws_client_close_handshake_async when no open action has been issued shall fail and return a non-zero value. ]*/
             LogError("uws_client_close_handshake_async has been called when already CLOSED");
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -1828,7 +1828,7 @@ int uws_client_close_handshake_async(UWS_CLIENT_HANDLE uws_client, uint16_t clos
             {
                 /* Codes_SRS_UWS_CLIENT_01_472: [ If xio_send fails, uws_client_close_handshake_async shall fail and return a non-zero value. ]*/
                 LogError("Sending CLOSE frame failed");
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else
             {
@@ -1912,14 +1912,14 @@ int uws_client_send_frame_async(UWS_CLIENT_HANDLE uws_client, unsigned char fram
     {
         /* Codes_SRS_UWS_CLIENT_01_044: [ If any the arguments uws_client is NULL, uws_client_send_frame_async shall fail and return a non-zero value. ]*/
         LogError("NULL uws handle.");
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else if ((buffer == NULL) &&
         (size > 0))
     {
         /* Codes_SRS_UWS_CLIENT_01_045: [ If size is non-zero and buffer is NULL then uws_client_send_frame_async shall fail and return a non-zero value. ]*/
         LogError("NULL buffer with %u size.", (unsigned int)size);
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     /* Codes_SRS_UWS_CLIENT_01_146: [ A data frame MAY be transmitted by either the client or the server at any time after opening handshake completion and before that endpoint has sent a Close frame (Section 5.5.1). ]*/
     /* Codes_SRS_UWS_CLIENT_01_268: [ The endpoint MUST ensure the WebSocket connection is in the OPEN state ]*/
@@ -1927,7 +1927,7 @@ int uws_client_send_frame_async(UWS_CLIENT_HANDLE uws_client, unsigned char fram
     {
         /* Codes_SRS_UWS_CLIENT_01_043: [ If the uws instance is not OPEN (open has not been called or is still in progress) then uws_client_send_frame_async shall fail and return a non-zero value. ]*/
         LogError("uws not in OPEN state.");
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -1936,7 +1936,7 @@ int uws_client_send_frame_async(UWS_CLIENT_HANDLE uws_client, unsigned char fram
         {
             /* Codes_SRS_UWS_CLIENT_01_047: [ If allocating memory for the newly queued item fails, uws_client_send_frame_async shall fail and return a non-zero value. ]*/
             LogError("Cannot allocate memory for frame to be sent.");
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -1952,7 +1952,7 @@ int uws_client_send_frame_async(UWS_CLIENT_HANDLE uws_client, unsigned char fram
                 /* Codes_SRS_UWS_CLIENT_01_426: [ If uws_frame_encoder_encode fails, uws_client_send_frame_async shall fail and return a non-zero value. ]*/
                 LogError("Failed encoding WebSocket frame");
                 free(ws_pending_send);
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else
             {
@@ -1980,7 +1980,7 @@ int uws_client_send_frame_async(UWS_CLIENT_HANDLE uws_client, unsigned char fram
                     /* Codes_SRS_UWS_CLIENT_01_049: [ If singlylinkedlist_add fails, uws_client_send_frame_async shall fail and return a non-zero value. ]*/
                     LogError("Could not allocate memory for pending frames");
                     free(ws_pending_send);
-                    result = __FAILURE__;
+                    result = MU_FAILURE;
                 }
                 else
                 {
@@ -2004,7 +2004,7 @@ int uws_client_send_frame_async(UWS_CLIENT_HANDLE uws_client, unsigned char fram
                             free(ws_pending_send);
                         }
 
-                        result = __FAILURE__;
+                        result = MU_FAILURE;
                     }
                     else
                     {
@@ -2050,7 +2050,7 @@ int uws_client_set_option(UWS_CLIENT_HANDLE uws_client, const char* option_name,
     {
         /* Codes_SRS_UWS_CLIENT_01_440: [ If any of the arguments uws_client or option_name is NULL uws_client_set_option shall return a non-zero value. ]*/
         LogError("invalid parameter (NULL) passed to uws_client_set_option");
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -2061,7 +2061,7 @@ int uws_client_set_option(UWS_CLIENT_HANDLE uws_client, const char* option_name,
             {
                 /* Codes_SRS_UWS_CLIENT_01_511: [ If OptionHandler_FeedOptions fails, uws_client_set_option shall fail and return a non-zero value. ]*/
                 LogError("OptionHandler_FeedOptions failed");
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else
             {
@@ -2076,7 +2076,7 @@ int uws_client_set_option(UWS_CLIENT_HANDLE uws_client, const char* option_name,
             {
                 /* Codes_SRS_UWS_CLIENT_01_443: [ If xio_setoption fails, uws_client_set_option shall fail and return a non-zero value. ]*/
                 LogError("xio_setoption failed.");
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else
             {
@@ -2203,14 +2203,14 @@ int uws_client_set_request_header(UWS_CLIENT_HANDLE uws_client, const char* name
     {
         // Codes_SRS_UWS_CLIENT_09_002: [ If any of the arguments uws_client or name or value is NULL uws_client_set_request_header shall fail and return a non-zero value. ]  
         LogError("invalid parameter (uws_client=%p, name=%p, value=%p)", uws_client, name, value);
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     // Codes_SRS_UWS_CLIENT_09_003: [ A copy of name and value shall be stored for later sending in the request message. ]  
     else if (Map_AddOrUpdate(uws_client->request_headers, name, value) != MAP_OK)
     {
         // Codes_SRS_UWS_CLIENT_09_004: [ If name or value fail to be stored the function shall fail and return a non-zero value. ]  
         LogError("Failed adding request header %s", name);
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {

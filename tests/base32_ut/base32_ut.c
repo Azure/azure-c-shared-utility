@@ -20,26 +20,26 @@ static void my_gballoc_free(void* ptr)
 }
 
 #include "testrunnerswitcher.h"
-#include "umock_c.h"
-#include "umocktypes_charptr.h"
-#include "umocktypes_stdint.h"
-#include "umock_c_negative_tests.h"
-#include "azure_c_shared_utility/macro_utils.h"
+#include "umock_c/umock_c.h"
+#include "umock_c/umocktypes_charptr.h"
+#include "umock_c/umocktypes_stdint.h"
+#include "umock_c/umock_c_negative_tests.h"
+#include "azure_macro_utils/macro_utils.h"
 
 #define ENABLE_MOCKS
 #include "azure_c_shared_utility/gballoc.h"
-#include "azure_c_shared_utility/umock_c_prod.h"
+#include "umock_c/umock_c_prod.h"
 #include "azure_c_shared_utility/strings.h"
 #include "azure_c_shared_utility/buffer_.h"
 #undef ENABLE_MOCKS
 
 #include "azure_c_shared_utility/base32.h"
 
-DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
+MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    ASSERT_FAIL("umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
+    ASSERT_FAIL("umock_c reported error :%s", MU_ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
 }
 
 static STRING_HANDLE TEST_STRING_HANDLE = (STRING_HANDLE)0x11;
@@ -249,7 +249,7 @@ BEGIN_TEST_SUITE(base32_ut)
         for (index = 0; index < num_elements; index++)
         {
             char tmp_msg[64];
-            sprintf(tmp_msg, "Base32_Encode_Bytes failure in test %zu", index);
+            sprintf(tmp_msg, "Base32_Encode_Bytes failure in test %lu", (unsigned long)index);
 
             result = Base32_Encode_Bytes(test_val_len[index].input_data, test_val_len[index].input_len);
 
@@ -316,7 +316,7 @@ BEGIN_TEST_SUITE(base32_ut)
         {
             BUFFER_HANDLE input_buff;
             char tmp_msg[64];
-            sprintf(tmp_msg, "Base32_Encode failure in test %zu", index);
+            sprintf(tmp_msg, "Base32_Encode failure in test %lu", (unsigned long)index);
 
             input_buff = (BUFFER_HANDLE)&test_val_len[index];
             result = Base32_Encode(input_buff);
@@ -408,7 +408,7 @@ BEGIN_TEST_SUITE(base32_ut)
 
             result = Base32_Decode_String(test_val_len[index].base32_data);
 
-            sprintf(tmp_msg, "Base32_Decode failure in test %zu", index);
+            sprintf(tmp_msg, "Base32_Decode failure in test %lu", (unsigned long)index);
 
             //assert
             ASSERT_IS_NOT_NULL(result);

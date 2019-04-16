@@ -36,19 +36,19 @@ static void my_gballoc_free(void* s)
 #include <stddef.h>
 #endif
 #include "testrunnerswitcher.h"
-#include "umock_c.h"
-#include "umocktypes_charptr.h"
+#include "umock_c/umock_c.h"
+#include "umock_c/umocktypes_charptr.h"
 
 #include <wincrypt.h>
 
 #include "azure_c_shared_utility/x509_schannel.h"
-#include "umocktypes_charptr.h"
-#include "umock_c_negative_tests.h"
+#include "umock_c/umocktypes_charptr.h"
+#include "umock_c/umock_c_negative_tests.h"
 
 #define ENABLE_MOCKS
 #include "azure_c_shared_utility/gballoc.h"
 
-#include "azure_c_shared_utility/umock_c_prod.h"
+#include "umock_c/umock_c_prod.h"
 MOCKABLE_FUNCTION(WINAPI, BOOL, CryptDecodeObjectEx,
     DWORD, dwCertEncodingType,
     LPCSTR, lpszStructType,
@@ -202,11 +202,11 @@ static const PCCERT_CHAIN_CONTEXT testCertChainContext = (PCCERT_CHAIN_CONTEXT)0
 
 //PCERT_INFO* g_cert_info;
 
-DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
+MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    ASSERT_FAIL("umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
+    ASSERT_FAIL("umock_c reported error :%s", MU_ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
 }
 
 static BOOL my_CryptStringToBinaryA(
@@ -519,7 +519,7 @@ TEST_SUITE_INITIALIZE(a)
     REGISTER_GLOBAL_MOCK_HOOK(CertGetCertificateChain, my_CertGetCertificateChain);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(CertGetCertificateChain, FALSE);
     REGISTER_GLOBAL_MOCK_RETURN(CertVerifyCertificateChainPolicy, TRUE);
-    REGISTER_GLOBAL_MOCK_FAIL_RETURN(CertVerifyCertificateChainPolicy, FALSE);    
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(CertVerifyCertificateChainPolicy, FALSE);
 
 #if _MSC_VER > 1500
     REGISTER_GLOBAL_MOCK_RETURN(NCryptOpenStorageProvider, ERROR_SUCCESS);
@@ -701,7 +701,7 @@ TEST_FUNCTION(x509_schannel_negative_test_cases)
             umock_c_negative_tests_fail_call(i);
 
             ///act
-            (void)sprintf(temp_str, "On failed call %zu", i);
+            (void)sprintf(temp_str, "On failed call %lu", (unsigned long)i);
             h = x509_schannel_create("certificate", "private key");
 
             ///assert
@@ -823,7 +823,7 @@ static void setup_x509_verify_certificate_in_chain_mocks(DWORD dwExpectedError, 
         STRICT_EXPECTED_CALL(CertAddEncodedCertificateToStore(IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     }
-    
+
     STRICT_EXPECTED_CALL(CertCreateCertificateChainEngine(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(CertGetCertificateChain(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(CertVerifyCertificateChainPolicy(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
@@ -891,14 +891,14 @@ TEST_FUNCTION(x509_verify_certificate_in_chain_with_verify_error_fails)
 
     ///assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());    
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
 TEST_FUNCTION(x509_verify_two_certificates_in_chain_succeeds)
 {
     ///arrange
-    const char* expectedCert[2] = { 
-        testTrustedCertificateTwoCerts, 
+    const char* expectedCert[2] = {
+        testTrustedCertificateTwoCerts,
         TEST_FULL_CERT(TEST_CERT_DATA_2)
     };
 
@@ -915,12 +915,12 @@ TEST_FUNCTION(x509_verify_two_certificates_in_chain_succeeds)
 TEST_FUNCTION(x509_verify_three_certificates_in_chain_succeeds)
 {
     ///arrange
-    const char* expectedCert[3] = { 
-        testTrustedCertificateThreeCerts, 
+    const char* expectedCert[3] = {
+        testTrustedCertificateThreeCerts,
         TEST_FULL_CERT(TEST_CERT_DATA_2) TEST_FULL_CERT(TEST_CERT_DATA_3),
         TEST_FULL_CERT(TEST_CERT_DATA_3)
     };
-    
+
     setup_x509_verify_certificate_in_chain_mocks(ERROR_SUCCESS, (const char**)expectedCert, 3);
 
     ///act
@@ -938,8 +938,8 @@ TEST_FUNCTION(x509_verify_certificate_in_chain_fails)
     int negativeTestsInitResult = umock_c_negative_tests_init();
     ASSERT_ARE_EQUAL(int, 0, negativeTestsInitResult);
 
-    const char* expectedCert[3] = { 
-        testTrustedCertificateThreeCerts, 
+    const char* expectedCert[3] = {
+        testTrustedCertificateThreeCerts,
         TEST_FULL_CERT(TEST_CERT_DATA_2) TEST_FULL_CERT(TEST_CERT_DATA_3),
         TEST_FULL_CERT(TEST_CERT_DATA_3)
     };

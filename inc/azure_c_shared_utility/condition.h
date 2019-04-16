@@ -4,9 +4,9 @@
 #ifndef CONDITION_H
 #define CONDITION_H
 
-#include "azure_c_shared_utility/macro_utils.h"
+#include "azure_macro_utils/macro_utils.h"
 #include "azure_c_shared_utility/lock.h"
-#include "azure_c_shared_utility/umock_c_prod.h"
+#include "umock_c/umock_c_prod.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -23,7 +23,7 @@ typedef void* COND_HANDLE;
 /**
 * @brief Enumeration specifying the lock status.
 */
-DEFINE_ENUM(COND_RESULT, COND_RESULT_VALUES);
+MU_DEFINE_ENUM(COND_RESULT, COND_RESULT_VALUES);
 
 /**
 * @brief    This API creates and returns a valid condition handle.

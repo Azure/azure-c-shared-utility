@@ -15,9 +15,9 @@
 #endif
 
 #if (defined OPTIMIZE_RETURN_CODES)
-    #define __FAILURE__ 1
+    #define MU_FAILURE 1
 #else
-    #define __FAILURE__ __LINE__
+    #define MU_FAILURE __LINE__
 #endif
 
 #endif // OPTIMIZE_SIZE_H

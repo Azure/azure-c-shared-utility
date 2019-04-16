@@ -17,9 +17,9 @@ EXPORTS
     BUFFER_u_char
     BUFFER_unbuild
 
-    Base64_Decoder
-    Base64_Encoder
-    Base64_Encode_Bytes
+    Azure_Base64_Decode
+    Azure_Base64_Encode
+    Azure_Base64_Encode_Bytes
     Base32_Decode
     Base32_Decode_String
     Base32_Encode
@@ -28,11 +28,11 @@ EXPORTS
     COND_RESULTStringStorage
     COND_RESULTStrings
     COND_RESULT_FromString
-    CONSTBUFFER_Clone
     CONSTBUFFER_Create
     CONSTBUFFER_CreateFromBuffer
-    CONSTBUFFER_Destroy
+    CONSTBUFFER_DecRef
     CONSTBUFFER_GetContent
+    CONSTBUFFER_IncRef
     CONSTMAP_RESULTStringStorage
     CONSTMAP_RESULTStrings
     CONSTMAP_RESULT_FromString

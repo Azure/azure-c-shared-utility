@@ -25,16 +25,16 @@ void my_gballoc_free(void* ptr)
     free(ptr);
 }
 
-#include "umock_c.h"
-#include "umocktypes_charptr.h"
-#include "umocktypes_stdint.h"
-#include "umock_c_negative_tests.h"
-#include "azure_c_shared_utility/macro_utils.h"
+#include "umock_c/umock_c.h"
+#include "umock_c/umocktypes_charptr.h"
+#include "umock_c/umocktypes_stdint.h"
+#include "umock_c/umock_c_negative_tests.h"
+#include "azure_macro_utils/macro_utils.h"
 
 #define ENABLE_MOCKS
 
 #include "azure_c_shared_utility/gballoc.h"
-#include "azure_c_shared_utility/umock_c_prod.h"
+#include "umock_c/umock_c_prod.h"
 #include "azure_c_shared_utility/strings.h"
 #include "azure_c_shared_utility/tlsio_schannel.h"
 #ifdef USE_OPENSSL
@@ -72,17 +72,26 @@ extern "C"
         (void)memcpy(temp, psz, strlen(psz) + 1);
         return (STRING_HANDLE)temp;
     }
+
+    int STRING_sprintf(STRING_HANDLE handle, const char* format, ...);
+
+    int STRING_sprintf(STRING_HANDLE handle, const char* format, ...)
+    {
+        (void)handle;
+        (void)format;
+        return 0;
+    }
 #ifdef __cplusplus
 }
 #endif
 
 static TEST_MUTEX_HANDLE g_testByTest;
 
-DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
+MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    ASSERT_FAIL("umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
+    ASSERT_FAIL("umock_c reported error :%s", MU_ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
 }
 
 static STRING_HANDLE my_STRING_construct(const char* psz)
@@ -233,7 +242,7 @@ TEST_FUNCTION(platform_get_platform_info_success)
     //arrange
 
     //act
-    STRING_HANDLE platform = platform_get_platform_info();
+    STRING_HANDLE platform = platform_get_platform_info(PLATFORM_INFO_OPTION_RETRIEVE_SQM);
 
     //assert
     ASSERT_IS_NOT_NULL(platform);

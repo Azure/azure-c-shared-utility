@@ -54,7 +54,7 @@ static bool operator==<T*>(_In_ const CMockValue<T*>& lhs,          \
 
 // A strict expected call implies that all arguments are checked
 #define STRICT_EXPECTED_CALL(ClassName,  ...)        \
-    C2(ClassName.Expected_, __VA_ARGS__)
+    MU_C2(ClassName.Expected_, __VA_ARGS__)
 
 // By using the below macro, none of the arguments are checked by default
 // To specify checking the argument values, use the ValidateArgument
@@ -109,6 +109,9 @@ void MockLock_##name()                                  \
 #define MOCK_VOID_METHOD_END()                                                              \
     result = result;                                                                        \
 }
+
+// Added to only for cpp unittests.  Shall be removed once cpp unittest are deprecated
+#define DEFINE_MICROMOCK_ENUM_TO_STRING(type, ...) MICROMOCK_ENUM_TO_STRING(type, MU_FOR_EACH_1(MU_DEFINE_ENUMERATION_CONSTANT_AS_WIDESTRING, __VA_ARGS__));
 
 #include "micromockcallmacros.h"
 

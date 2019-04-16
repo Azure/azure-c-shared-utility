@@ -4,7 +4,7 @@
 #ifndef ENV_VARIABLE_H
 #define ENV_VARIABLE_H
 
-#include "azure_c_shared_utility/macro_utils.h"
+#include "azure_macro_utils/macro_utils.h"
 
 #ifdef __cplusplus
 #include <cstddef>
@@ -13,7 +13,7 @@ extern "C" {
 #include <stddef.h>
 #endif
 
-#include "azure_c_shared_utility/umock_c_prod.h"
+#include "umock_c/umock_c_prod.h"
 
 
 MOCKABLE_FUNCTION(, const char*, environment_get_variable, const char*, variable_name);

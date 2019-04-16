@@ -13,7 +13,7 @@ extern "C" {
 
 #include "azure_c_shared_utility/xio.h"
 #include "azure_c_shared_utility/tlsio.h"
-#include "azure_c_shared_utility/umock_c_prod.h"
+#include "umock_c/umock_c_prod.h"
 
 /** @brief    Return the tlsio table of functions.
 *

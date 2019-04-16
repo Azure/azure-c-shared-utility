@@ -13,10 +13,10 @@
 #endif
 
 #include "testrunnerswitcher.h"
-#include "umock_c.h"
-#include "umocktypes_charptr.h"
-#include "umocktypes_bool.h"
-#include "umock_c_negative_tests.h"
+#include "umock_c/umock_c.h"
+#include "umock_c/umocktypes_charptr.h"
+#include "umock_c/umocktypes_bool.h"
+#include "umock_c/umock_c_negative_tests.h"
 
 /* Requirements not needed as they are optional:
 Tests_SRS_UWS_CLIENT_01_254: [ If an endpoint receives a Ping frame and has not yet sent Pong frame(s) in response to previous Ping frame(s), the endpoint MAY elect to send a Pong frame for only the most recently processed Ping frame. ]
@@ -59,7 +59,7 @@ Tests_SRS_UWS_CLIENT_01_211: [ One implication of this is that in absence of ext
 #include "azure_c_shared_utility/tlsio.h"
 #include "azure_c_shared_utility/uws_frame_encoder.h"
 #include "azure_c_shared_utility/gb_rand.h"
-#include "azure_c_shared_utility/base64.h"
+#include "azure_c_shared_utility/azure_base64.h"
 #include "azure_c_shared_utility/map.h"
 
 IMPLEMENT_UMOCK_C_ENUM_TYPE(IO_OPEN_RESULT, IO_OPEN_RESULT_VALUES);
@@ -307,7 +307,7 @@ static int umocktypes_copy_const_SOCKETIO_CONFIG_ptr(SOCKETIO_CONFIG** destinati
     *destination = (SOCKETIO_CONFIG*)malloc(sizeof(SOCKETIO_CONFIG));
     if (*destination == NULL)
     {
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -432,11 +432,11 @@ extern "C" {
 }
 #endif
 
-DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
+MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    ASSERT_FAIL("umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
+    ASSERT_FAIL("umock_c reported error :%s", MU_ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
 }
 
 BEGIN_TEST_SUITE(uws_client_ut)
@@ -473,7 +473,7 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_GLOBAL_MOCK_RETURN(xio_create, TEST_IO_HANDLE);
     REGISTER_GLOBAL_MOCK_RETURN(xio_retrieveoptions, TEST_IO_OPTIONHANDLER_HANDLE);
     REGISTER_GLOBAL_MOCK_RETURN(utf8_checker_is_valid_utf8, true);
-    REGISTER_GLOBAL_MOCK_RETURN(Base64_Encode_Bytes, BASE64_ENCODED_STRING);
+    REGISTER_GLOBAL_MOCK_RETURN(Azure_Base64_Encode_Bytes, BASE64_ENCODED_STRING);
     REGISTER_GLOBAL_MOCK_RETURN(OptionHandler_FeedOptions, OPTIONHANDLER_OK);
     REGISTER_GLOBAL_MOCK_RETURN(OptionHandler_AddOption, OPTIONHANDLER_OK);
     REGISTER_GLOBAL_MOCK_RETURN(OptionHandler_Clone, TEST_OPTIONHANDLER_HANDLE);
@@ -1327,7 +1327,7 @@ TEST_FUNCTION(when_any_call_fails_uws_client_create_with_io_fails)
         umock_c_negative_tests_reset();
         umock_c_negative_tests_fail_call(i);
 
-        (void)sprintf(temp_str, "On failed call %zu", i);
+        (void)sprintf(temp_str, "On failed call %lu", (unsigned long)i);
 
         // act
         uws_client = uws_client_create_with_io(TEST_SOCKET_IO_INTERFACE_DESCRIPTION, &socketio_config, "test_host", 80, "111", two_protocols, sizeof(two_protocols) / sizeof(two_protocols[0]));
@@ -2864,7 +2864,7 @@ TEST_FUNCTION(on_underlying_io_open_complete_with_OK_prepares_and_sends_the_WebS
     umock_c_reset_all_calls();
     STRICT_EXPECTED_CALL(Map_AddOrUpdate(TEST_REQUEST_HEADERS_MAP, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
     (void)uws_client_set_request_header(uws_client, req_header1_key, req_header1_value);
-    
+
     umock_c_reset_all_calls();
 
     /* get the random 16 bytes */
@@ -2874,21 +2874,17 @@ TEST_FUNCTION(on_underlying_io_open_complete_with_OK_prepares_and_sends_the_WebS
         expected_nonce[i] = (unsigned char)i;
     }
 
-    STRICT_EXPECTED_CALL(Base64_Encode_Bytes(IGNORED_PTR_ARG, 16))
+    STRICT_EXPECTED_CALL(Azure_Base64_Encode_Bytes(IGNORED_PTR_ARG, 16))
         .ValidateArgumentBuffer(1, expected_nonce, 16);
     // get_request_headers()
     STRICT_EXPECTED_CALL(Map_GetInternals(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(malloc(strlen(req_header1_key)+strlen(req_header1_value)+2+2+1));
 
-    STRICT_EXPECTED_CALL(STRING_c_str(BASE64_ENCODED_STRING)).SetReturn("ZWRuYW1vZGU6bm9jYXBlcyE=");
+    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG)).SetReturn("ZWRuYW1vZGU6bm9jYXBlcyE=");
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(xio_send(TEST_IO_HANDLE, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
-        .IgnoreArgument_on_send_complete()
-        .IgnoreArgument_callback_context()
-        .IgnoreArgument_buffer()
-        .IgnoreArgument_size();
+    STRICT_EXPECTED_CALL(xio_send(TEST_IO_HANDLE, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(STRING_delete(BASE64_ENCODED_STRING));
+    STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG));
     EXPECTED_CALL(free(IGNORED_PTR_ARG)); // request headers
 
     // act
@@ -2924,7 +2920,7 @@ TEST_FUNCTION(when_base64_encode_fails_on_underlying_io_open_complete_triggers_t
         expected_nonce[i] = (unsigned char)i;
     }
 
-    STRICT_EXPECTED_CALL(Base64_Encode_Bytes(IGNORED_PTR_ARG, 16))
+    STRICT_EXPECTED_CALL(Azure_Base64_Encode_Bytes(IGNORED_PTR_ARG, 16))
         .ValidateArgumentBuffer(1, expected_nonce, 16)
         .SetReturn(NULL);
     STRICT_EXPECTED_CALL(test_on_ws_open_complete((void*)0x4242, WS_OPEN_ERROR_BASE64_ENCODE_FAILED));
@@ -2962,7 +2958,7 @@ TEST_FUNCTION(when_allocating_memory_for_the_websocket_upgrade_request_fails_the
         expected_nonce[i] = (unsigned char)i;
     }
 
-    STRICT_EXPECTED_CALL(Base64_Encode_Bytes(IGNORED_PTR_ARG, 16))
+    STRICT_EXPECTED_CALL(Azure_Base64_Encode_Bytes(IGNORED_PTR_ARG, 16))
         .ValidateArgumentBuffer(1, expected_nonce, 16);
     // get_request_headers()
     STRICT_EXPECTED_CALL(Map_GetInternals(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
@@ -3010,7 +3006,7 @@ TEST_FUNCTION(uws_client_open_async_after_WS_OPEN_ERROR_NOT_ENOUGH_MEMORY_succee
         expected_nonce[i] = (unsigned char)i;
     }
 
-    STRICT_EXPECTED_CALL(Base64_Encode_Bytes(IGNORED_PTR_ARG, 16))
+    STRICT_EXPECTED_CALL(Azure_Base64_Encode_Bytes(IGNORED_PTR_ARG, 16))
         .ValidateArgumentBuffer(1, expected_nonce, 16);
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
         .SetReturn(NULL);
@@ -3061,7 +3057,7 @@ TEST_FUNCTION(when_sending_the_upgrade_request_fails_the_error_WS_OPEN_ERROR_CAN
         expected_nonce[i] = (unsigned char)i;
     }
 
-    STRICT_EXPECTED_CALL(Base64_Encode_Bytes(IGNORED_PTR_ARG, 16))
+    STRICT_EXPECTED_CALL(Azure_Base64_Encode_Bytes(IGNORED_PTR_ARG, 16))
         .ValidateArgumentBuffer(1, expected_nonce, 16);
     STRICT_EXPECTED_CALL(Map_GetInternals(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(malloc(IGNORED_NUM_ARG)); // get_request_headers(), no headers
@@ -3113,12 +3109,12 @@ TEST_FUNCTION(uws_client_open_async_after_WS_OPEN_ERROR_CANNOT_SEND_UPGRADE_REQU
         expected_nonce[i] = (unsigned char)i;
     }
 
-    STRICT_EXPECTED_CALL(Base64_Encode_Bytes(IGNORED_PTR_ARG, 16))
+    STRICT_EXPECTED_CALL(Azure_Base64_Encode_Bytes(IGNORED_PTR_ARG, 16))
         .ValidateArgumentBuffer(1, expected_nonce, 16);
     // get_request_headers()
     STRICT_EXPECTED_CALL(Map_GetInternals(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(malloc(IGNORED_NUM_ARG));
-        
+
     STRICT_EXPECTED_CALL(STRING_c_str(BASE64_ENCODED_STRING)).SetReturn("ZWRuYW1vZGU6bm9jYXBlcyE=");
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
     STRICT_EXPECTED_CALL(xio_send(TEST_IO_HANDLE, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
@@ -7579,7 +7575,7 @@ TEST_FUNCTION(when_close_complete_is_called_and_the_user_callback_is_NULL_no_cal
     uws_client_destroy(uws_client);
 }
 
-// Tests_SRS_UWS_CLIENT_09_002: [ If any of the arguments uws_client or name or value is NULL uws_client_set_request_header shall fail and return a non-zero value. ]  
+// Tests_SRS_UWS_CLIENT_09_002: [ If any of the arguments uws_client or name or value is NULL uws_client_set_request_header shall fail and return a non-zero value. ]
 TEST_FUNCTION(uws_client_set_request_header_NULL_handle)
 {
     // arrange
@@ -7599,7 +7595,7 @@ TEST_FUNCTION(uws_client_set_request_header_NULL_handle)
     // cleanup
 }
 
-// Tests_SRS_UWS_CLIENT_09_002: [ If any of the arguments uws_client or name or value is NULL uws_client_set_request_header shall fail and return a non-zero value. ]  
+// Tests_SRS_UWS_CLIENT_09_002: [ If any of the arguments uws_client or name or value is NULL uws_client_set_request_header shall fail and return a non-zero value. ]
 TEST_FUNCTION(uws_client_set_request_header_NULL_name)
 {
     // arrange
@@ -7623,7 +7619,7 @@ TEST_FUNCTION(uws_client_set_request_header_NULL_name)
     uws_client_destroy(uws_client);
 }
 
-// Tests_SRS_UWS_CLIENT_09_002: [ If any of the arguments uws_client or name or value is NULL uws_client_set_request_header shall fail and return a non-zero value. ]  
+// Tests_SRS_UWS_CLIENT_09_002: [ If any of the arguments uws_client or name or value is NULL uws_client_set_request_header shall fail and return a non-zero value. ]
 TEST_FUNCTION(uws_client_set_request_header_NULL_value)
 {
     // arrange
@@ -7647,7 +7643,7 @@ TEST_FUNCTION(uws_client_set_request_header_NULL_value)
     uws_client_destroy(uws_client);
 }
 
-// Tests_SRS_UWS_CLIENT_09_004: [ If name or value fail to be stored the function shall fail and return a non-zero value. ]  
+// Tests_SRS_UWS_CLIENT_09_004: [ If name or value fail to be stored the function shall fail and return a non-zero value. ]
 TEST_FUNCTION(uws_client_set_request_header_negative_tests)
 {
     // arrange
@@ -7676,7 +7672,7 @@ TEST_FUNCTION(uws_client_set_request_header_negative_tests)
         // act
         result = uws_client_set_request_header(uws_client, req_header1_key, req_header1_value);
 
-        sprintf(error_msg, "On failed call %zu", i);
+        sprintf(error_msg, "On failed call %lu", (unsigned long)i);
         ASSERT_ARE_NOT_EQUAL(int, 0, result, error_msg);
     }
 
@@ -7685,8 +7681,8 @@ TEST_FUNCTION(uws_client_set_request_header_negative_tests)
     umock_c_negative_tests_deinit();
 }
 
-// Tests_SRS_UWS_CLIENT_09_003: [ A copy of name and value shall be stored for later sending in the request message. ]  
-// Tests_SRS_UWS_CLIENT_09_005: [ If no failures occur the function shall return zero. ]  
+// Tests_SRS_UWS_CLIENT_09_003: [ A copy of name and value shall be stored for later sending in the request message. ]
+// Tests_SRS_UWS_CLIENT_09_005: [ If no failures occur the function shall return zero. ]
 TEST_FUNCTION(uws_client_set_request_header_success)
 {
     // arrange

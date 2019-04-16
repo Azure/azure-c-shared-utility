@@ -19,7 +19,7 @@ extern "C" {
 #include <stddef.h>
 #endif
 
-#include "azure_c_shared_utility/umock_c_prod.h"
+#include "umock_c/umock_c_prod.h"
 
 
 /**
@@ -27,17 +27,17 @@ extern "C" {
  *
  * @param    input    The buffer that needs to be base64 encoded.
  *
- *             Base64_Encoder takes as a parameter a pointer to a BUFFER. If @p input is @c NULL then
- *             @c Base64_Encoder returns @c NULL. The size of the BUFFER pointed to by @p input may
+ *             Base64_Encode takes as a parameter a pointer to a BUFFER. If @p input is @c NULL then
+ *             @c Base64_Encode returns @c NULL. The size of the BUFFER pointed to by @p input may
  *             be zero. If when allocating memory to produce the encoding a failure occurs, then @c
- *             Base64_Encoder returns @c NULL. Otherwise
- *             @c Base64_Encoder returns a pointer to a STRING. That string contains the
+ *             Base64_Encode returns @c NULL. Otherwise
+ *             @c Base64_Encode returns a pointer to a STRING. That string contains the
  *             base 64 encoding of the @p input. This encoding of @p input will not contain embedded
  *             line feeds.
  *
  * @return    A @c STRING_HANDLE containing the base64 encoding of @p input.
  */
-MOCKABLE_FUNCTION(, STRING_HANDLE, Base64_Encoder, BUFFER_HANDLE, input);
+MOCKABLE_FUNCTION(, STRING_HANDLE, Azure_Base64_Encode, BUFFER_HANDLE, input);
 
 /**
  * @brief    Base64 encodes the buffer pointed to by @p source and returns the resulting string.
@@ -57,7 +57,7 @@ MOCKABLE_FUNCTION(, STRING_HANDLE, Base64_Encoder, BUFFER_HANDLE, input);
  *             of @p input.
  *
  */
-MOCKABLE_FUNCTION(, STRING_HANDLE, Base64_Encode_Bytes, const unsigned char*, source, size_t, size);
+MOCKABLE_FUNCTION(, STRING_HANDLE, Azure_Base64_Encode_Bytes, const unsigned char*, source, size_t, size);
 
 /**
  * @brief    Base64 decodes the buffer pointed to by @p source and returns the resulting buffer.
@@ -66,15 +66,15 @@ MOCKABLE_FUNCTION(, STRING_HANDLE, Base64_Encode_Bytes, const unsigned char*, so
  *
  *           This function decodes the string pointed at by @p source using base64 decoding and
  *             returns the resulting buffer. If @p source is @c NULL then
- *             @c Base64_Decoder returns NULL. If the string pointed to by @p source is zero
+ *             @c Azure_Base64_Decode returns NULL. If the string pointed to by @p source is zero
  *             length then the handle returned refers to a zero length buffer. If there is any
  *             memory allocation failure during the decode or if the source string has an invalid
- *             length for a base 64 encoded string then @c Base64_Decoder returns @c NULL.
+ *             length for a base 64 encoded string then @c Azure_Base64_Decode returns @c NULL.
  *
  * @return    A @c BUFFER_HANDLE pointing to a buffer containing the result of base64 decoding @p
  *             source.
  */
-MOCKABLE_FUNCTION(, BUFFER_HANDLE, Base64_Decoder, const char*, source);
+MOCKABLE_FUNCTION(, BUFFER_HANDLE, Azure_Base64_Decode, const char*, source);
 
 #ifdef __cplusplus
 }

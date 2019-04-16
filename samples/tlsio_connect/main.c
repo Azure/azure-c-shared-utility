@@ -40,7 +40,7 @@ static void on_io_open_complete(void* context, IO_OPEN_RESULT open_result)
 static void on_io_bytes_received(void* context, const unsigned char* buffer, size_t size)
 {
     (void)context, (void)buffer;
-    (void)printf("Received %zu bytes\r\n", size);
+    (void)printf("Received %lu bytes\r\n", (unsigned long)size);
 }
 
 static void on_io_error(void* context)
@@ -58,7 +58,7 @@ int main(int argc, char** argv)
     if (platform_init() != 0)
     {
         (void)printf("Cannot initialize platform.");
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -66,7 +66,7 @@ int main(int argc, char** argv)
         if (tlsio_interface == NULL)
         {
             (void)printf("Error getting tlsio interface description.");
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -77,14 +77,14 @@ int main(int argc, char** argv)
             if (tlsio == NULL)
             {
                 (void)printf("Error creating TLS IO.");
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else
             {
                 if (xio_open(tlsio, on_io_open_complete, tlsio, on_io_bytes_received, tlsio, on_io_error, tlsio) != 0)
                 {
                     (void)printf("Error opening TLS IO.");
-                    result = __FAILURE__;
+                    result = MU_FAILURE;
                 }
                 else
                 {

@@ -4,9 +4,9 @@
 #ifndef HMACSHA256_H
 #define HMACSHA256_H
 
-#include "azure_c_shared_utility/macro_utils.h"
+#include "azure_macro_utils/macro_utils.h"
 #include "azure_c_shared_utility/buffer_.h"
-#include "azure_c_shared_utility/umock_c_prod.h"
+#include "umock_c/umock_c_prod.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -17,7 +17,7 @@ extern "C" {
     HMACSHA256_INVALID_ARG,                   \
     HMACSHA256_ERROR
 
-DEFINE_ENUM(HMACSHA256_RESULT, HMACSHA256_RESULT_VALUES)
+MU_DEFINE_ENUM(HMACSHA256_RESULT, HMACSHA256_RESULT_VALUES)
 
 MOCKABLE_FUNCTION(, HMACSHA256_RESULT, HMACSHA256_ComputeHash, const unsigned char*, key, size_t, keyLen, const unsigned char*, payload, size_t, payloadLen, BUFFER_HANDLE, hash);
 

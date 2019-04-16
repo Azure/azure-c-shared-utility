@@ -4,20 +4,20 @@
 #ifndef OPTIONHANDLER_H
 #define OPTIONHANDLER_H
 
-#include "azure_c_shared_utility/macro_utils.h"
+#include "azure_macro_utils/macro_utils.h"
 
 #define OPTIONHANDLER_RESULT_VALUES \
 OPTIONHANDLER_OK, \
 OPTIONHANDLER_ERROR, \
 OPTIONHANDLER_INVALIDARG
 
-DEFINE_ENUM(OPTIONHANDLER_RESULT, OPTIONHANDLER_RESULT_VALUES)
+MU_DEFINE_ENUM(OPTIONHANDLER_RESULT, OPTIONHANDLER_RESULT_VALUES)
 
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
 
-#include "azure_c_shared_utility/umock_c_prod.h"
+#include "umock_c/umock_c_prod.h"
 
 typedef struct OPTIONHANDLER_HANDLE_DATA_TAG* OPTIONHANDLER_HANDLE;
 

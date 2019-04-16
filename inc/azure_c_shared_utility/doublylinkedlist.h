@@ -13,7 +13,7 @@ extern "C"
 #endif
 
 #include <stdint.h>
-#include "azure_c_shared_utility/umock_c_prod.h"
+#include "umock_c/umock_c_prod.h"
 
 typedef struct DLIST_ENTRY_TAG
 {
@@ -37,7 +37,6 @@ MOCKABLE_FUNCTION(, PDLIST_ENTRY, DList_RemoveHeadList, PDLIST_ENTRY, listHead);
 
 #ifdef __cplusplus
 }
-#else
 #endif
 
 #endif /* DOUBLYLINKEDLIST_H */

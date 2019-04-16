@@ -235,7 +235,7 @@ OPTIONHANDLER_RESULT OptionHandler_FeedOptions(OPTIONHANDLER_HANDLE handle, void
             /*Codes_SRS_OPTIONHANDLER_02_012: [ OptionHandler_FeedOptions shall call for every pair of name,value setOption passing destinationHandle, name and value. ]*/
             if (handle->setOption(destinationHandle, option->name, option->storage) != 0)
             {
-                LogError("failure while trying to _SetOption");
+                LogError("failure while trying to SetOption with option %s", option->name);
                 break;
             }
         }

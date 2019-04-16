@@ -42,10 +42,10 @@ void my_gballoc_free(void* ptr)
  * Include the test tools.
  */
 #include "testrunnerswitcher.h"
-#include "umock_c.h"
-#include "umocktypes_charptr.h"
-#include "umock_c_negative_tests.h"
-#include "azure_c_shared_utility/macro_utils.h"
+#include "umock_c/umock_c.h"
+#include "umock_c/umocktypes_charptr.h"
+#include "umock_c/umock_c_negative_tests.h"
+#include "azure_macro_utils/macro_utils.h"
 
 /**
  * Include the mockable headers here.
@@ -90,11 +90,11 @@ static void* g_GenericPointer;
   * Umock error will helps you to identify errors in the test suite or in the way that you are
   *    using it, just keep it as is.
   */
-DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
+MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    ASSERT_FAIL("umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
+    ASSERT_FAIL("umock_c reported error :%s", MU_ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
 }
 
 
@@ -353,7 +353,7 @@ BEGIN_TEST_SUITE(template_ut)
             umock_c_negative_tests_reset();
             umock_c_negative_tests_fail_call(i);
 
-            (void)sprintf(temp_str, "On failed call %zu", i);
+            (void)sprintf(temp_str, "On failed call %lu", (unsigned long)i);
 
             ///act
             result = target_create(SIZEOF_FOO_MEMORY);
@@ -403,7 +403,7 @@ BEGIN_TEST_SUITE(template_ut)
                 umock_c_negative_tests_reset();
                 umock_c_negative_tests_fail_call(i);
 
-                (void)sprintf(temp_str, "On failed call %zu", i);
+                (void)sprintf(temp_str, "On failed call %lu", (unsigned long)i);
 
                 ///act
                 result = target_create(SIZEOF_FOO_MEMORY);
@@ -452,7 +452,7 @@ BEGIN_TEST_SUITE(template_ut)
             umock_c_negative_tests_reset();
             umock_c_negative_tests_fail_call(i);
 
-            (void)sprintf(temp_str, "On failed call %zu", i);
+            (void)sprintf(temp_str, "On failed call %lu", (unsigned long)i);
 
             ///act
             result = target_foo();

@@ -5,8 +5,8 @@
 #define UWS_FRAME_ENCODER_H
 
 #include "azure_c_shared_utility/buffer_.h"
-#include "azure_c_shared_utility/umock_c_prod.h"
-#include "azure_c_shared_utility/macro_utils.h"
+#include "umock_c/umock_c_prod.h"
+#include "azure_macro_utils/macro_utils.h"
 
 #ifdef __cplusplus
 #include <cstddef>
@@ -38,7 +38,7 @@ extern "C" {
     WS_RESERVED_CONTROL_FRAME_E, \
     WS_RESERVED_CONTROL_FRAME_F
 
-DEFINE_ENUM(WS_FRAME_TYPE, WS_FRAME_TYPE_VALUES);
+MU_DEFINE_ENUM(WS_FRAME_TYPE, WS_FRAME_TYPE_VALUES);
 
 MOCKABLE_FUNCTION(, BUFFER_HANDLE, uws_frame_encoder_encode, WS_FRAME_TYPE, opcode, const unsigned char*, payload, size_t, length, bool, is_masked, bool, is_final, unsigned char, reserved);
 

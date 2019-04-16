@@ -3,7 +3,7 @@
 
 ## Overview
 
-`constbuffer_array` is a module that stiches several `CONSTBUFFER_HANDLE`s together. `constbuffer_array` can add/remove a `CONSTBUFFER_HANDLE` at the beginning (front) of the already constructed stitch. 
+`constbuffer_array` is a module that stiches several `CONSTBUFFER_HANDLE`s together. `constbuffer_array` can add/remove a `CONSTBUFFER_HANDLE` at the beginning (front) of the already constructed stitch. `constbuffer_array` can merge with another `constbuffer_array` by appending the contents of one array to the other.
 
 `CONSTBUFFER_ARRAY_HANDLE`s are immutable, that is, adding/removing a `CONSTBUFFER_HANDLE` to/from an existing `CONSTBUFFER_ARRAY_HANDLE` will result in a new `CONSTBUFFER_ARRAY_HANDLE`.
 
@@ -14,6 +14,7 @@ typedef struct CONSTBUFFER_ARRAY_HANDLE_DATA_TAG* CONSTBUFFER_ARRAY_HANDLE;
 
 MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create, const CONSTBUFFER_HANDLE*, buffers, uint32_t, buffer_count);
 MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create_empty);
+MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create_from_array_array, const CONSTBUFFER_ARRAY_HANDLE*, buffer_arrays, uint32_t, buffer_array_count);
 
 MOCKABLE_FUNCTION(, void, constbuffer_array_inc_ref, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle);
 MOCKABLE_FUNCTION(, void, constbuffer_array_dec_ref, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle);
@@ -29,6 +30,10 @@ MOCKABLE_FUNCTION(, int, constbuffer_array_get_buffer_count, CONSTBUFFER_ARRAY_H
 MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, constbuffer_array_get_buffer, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle, uint32_t, buffer_index);
 MOCKABLE_FUNCTION(, const CONSTBUFFER*, constbuffer_array_get_buffer_content, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle, uint32_t, buffer_index);
 MOCKABLE_FUNCTION(, int, constbuffer_array_get_all_buffers_size, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle, uint32_t*, all_buffers_size);
+MOCKABLE_FUNCTION(, const CONSTBUFFER_HANDLE*, constbuffer_array_get_const_buffer_handle_array, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle);
+
+/*compare*/
+MOCKABLE_FUNCTION(, bool, CONSTBUFFER_ARRAY_HANDLE_contain_same, CONSTBUFFER_ARRAY_HANDLE, left, CONSTBUFFER_ARRAY_HANDLE, right);
 ```
 
 ### constbuffer_array_create
@@ -62,6 +67,28 @@ MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create_empty);
 **SRS_CONSTBUFFER_ARRAY_02_041: [** `constbuffer_array_create_empty` shall succeed and return a non-`NULL` value. **]**
 
 **SRS_CONSTBUFFER_ARRAY_02_001: [** If are any failure is encountered, `constbuffer_array_create_empty` shall fail and return `NULL`. **]**
+
+### constbuffer_array_create_from_array_array
+
+```c
+MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create_from_array_array, const CONSTBUFFER_ARRAY_HANDLE*, buffer_arrays, uint32_t, buffer_array_count);
+```
+
+`constbuffer_array_create_from_array_array` creates a new const buffer array made of all the const buffers in `buffer_arrays`.
+
+**SRS_CONSTBUFFER_ARRAY_42_009: [** If `buffer_arrays` is `NULL` and `buffer_array_count` is not 0 then `constbuffer_array_create_from_array_array` shall fail and return `NULL`. **]**
+
+**SRS_CONSTBUFFER_ARRAY_42_001: [** If `buffer_arrays` is `NULL` or `buffer_array_count` is 0 then `constbuffer_array_create_from_array_array` shall create a new, empty `CONSTBUFFER_ARRAY_HANDLE`. **]**
+
+**SRS_CONSTBUFFER_ARRAY_42_002: [** If any const buffer array in `buffer_arrays` is `NULL` then `constbuffer_array_create_from_array_array` shall fail and return `NULL`. **]**
+
+**SRS_CONSTBUFFER_ARRAY_42_003: [** `constbuffer_array_create_from_array_array` shall allocate memory to hold all of the `CONSTBUFFER_HANDLES` from `buffer_arrays`. **]**
+
+**SRS_CONSTBUFFER_ARRAY_42_004: [** `constbuffer_array_create_from_array_array` shall copy all of the `CONSTBUFFER_HANDLES` from each const buffer array in `buffer_arrays` to the newly constructed array by calling `CONSTBUFFER_IncRef`. **]**
+
+**SRS_CONSTBUFFER_ARRAY_42_007: [** `constbuffer_array_create_from_array_array` shall succeed and return a non-`NULL` value. **]**
+
+**SRS_CONSTBUFFER_ARRAY_42_008: [** If there are any failures then `constbuffer_array_create_from_array_array` shall fail and return `NULL`. **]**
 
 ### constbuffer_array_inc_ref
 
@@ -169,8 +196,6 @@ MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, constbuffer_array_get_buffer, CONSTBUFFE
 
 **SRS_CONSTBUFFER_ARRAY_01_008: [** If `buffer_index` is greater or equal to the number of buffers in the array, `constbuffer_array_get_buffer` shall fail and return NULL. **]**
 
-**SRS_CONSTBUFFER_ARRAY_01_015: [** If any error occurs, `constbuffer_array_get_buffer` shall fail and return NULL. **]**
-
 ### constbuffer_array_get_buffer_content
 
 ```c
@@ -200,3 +225,35 @@ MOCKABLE_FUNCTION(, int, constbuffer_array_get_all_buffers_size, CONSTBUFFER_ARR
 **SRS_CONSTBUFFER_ARRAY_01_021: [** If summing up the sizes results in an `uint32_t` overflow, shall fail and return a non-zero value. **]**
 
 **SRS_CONSTBUFFER_ARRAY_01_022: [** Otherwise `constbuffer_array_get_all_buffers_size` shall write in `all_buffers_size` the total size of all buffers in the array and return 0. **]**
+
+### constbuffer_array_get_const_buffer_handle_array
+
+```c
+MOCKABLE_FUNCTION(, const CONSTBUFFER_HANDLE*, constbuffer_array_get_const_buffer_handle_array, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle);
+```
+
+`constbuffer_array_get_const_buffer_handle_array` gets a const array with the handles for all the const buffers in the array.
+
+**SRS_CONSTBUFFER_ARRAY_01_026: [** If `constbuffer_array_handle` is NULL, `constbuffer_array_get_const_buffer_handle_array` shall fail and return NULL. **]**
+
+**SRS_CONSTBUFFER_ARRAY_01_027: [** Otherwise `constbuffer_array_get_const_buffer_handle_array` shall return the array of const buffer handles backing the const buffer array. **]**
+
+### CONSTBUFFER_ARRAY_HANDLE_contain_same
+```c
+MOCKABLE_FUNCTION(, bool, CONSTBUFFER_ARRAY_HANDLE_contain_same, CONSTBUFFER_ARRAY_HANDLE, left, CONSTBUFFER_ARRAY_HANDLE, right);
+```
+
+`CONSTBUFFER_ARRAY_HANDLE_contain_same` returns `true` if `left` and `right` have the some content.
+
+**SRS_CONSTBUFFER_ARRAY_02_050: [** If `left` is `NULL` and `right` is `NULL` then `CONSTBUFFER_ARRAY_HANDLE_contain_same` shall return `true`. **]**
+
+**SRS_CONSTBUFFER_ARRAY_02_051: [** If `left` is `NULL` and `right` is not `NULL` then `CONSTBUFFER_ARRAY_HANDLE_contain_same` shall return `false`. **]**
+
+**SRS_CONSTBUFFER_ARRAY_02_052: [** If `left` is not `NULL` and `right` is `NULL` then `CONSTBUFFER_ARRAY_HANDLE_contain_same` shall return `false`. **]**
+
+**SRS_CONSTBUFFER_ARRAY_02_053: [** If the number of `CONSTBUFFER_HANDLE`s in `left` is different then the number of `CONSTBUFFER_HANDLE`s in `right` then  `CONSTBUFFER_ARRAY_HANDLE_contain_same` shall return `false`. **]**
+
+**SRS_CONSTBUFFER_ARRAY_02_054: [** If `left` and `right` `CONSTBUFFER_HANDLE`s at same index are different (as indicated by `CONSTBUFFER_HANDLE_contain_same` call) then `CONSTBUFFER_ARRAY_HANDLE_contain_same` shall return `false`. **]**
+
+**SRS_CONSTBUFFER_ARRAY_02_055: [** `CONSTBUFFER_ARRAY_HANDLE_contain_same` shall return `true`. **]**
+

@@ -13,7 +13,7 @@
 #endif
 
 #include "testrunnerswitcher.h"
-#include "umock_c.h"
+#include "umock_c/umock_c.h"
 
 void* real_malloc(size_t size)
 {
@@ -56,11 +56,11 @@ static TEST_MUTEX_HANDLE g_testByTest;
 static char expected_encoded_str[256];
 static char actual_encoded_str[256];
 
-DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
+MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    ASSERT_FAIL("umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
+    ASSERT_FAIL("umock_c reported error :%s", MU_ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
 }
 
 static void stringify_bytes(const unsigned char* bytes, size_t byte_count, char* output_string, size_t string_buffer_size)

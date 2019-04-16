@@ -20,8 +20,8 @@
 #ifndef HTTPHEADERS_H
 #define HTTPHEADERS_H
 
-#include "azure_c_shared_utility/macro_utils.h"
-#include "azure_c_shared_utility/umock_c_prod.h"
+#include "azure_macro_utils/macro_utils.h"
+#include "umock_c/umock_c_prod.h"
 
 #ifdef __cplusplus
 #include <cstddef>
@@ -41,7 +41,7 @@ HTTP_HEADERS_ERROR                \
 
 /** @brief Enumeration specifying the status of calls to various APIs in this module.
 */
-DEFINE_ENUM(HTTP_HEADERS_RESULT, HTTP_HEADERS_RESULT_VALUES);
+MU_DEFINE_ENUM(HTTP_HEADERS_RESULT, HTTP_HEADERS_RESULT_VALUES);
 typedef struct HTTP_HEADERS_HANDLE_DATA_TAG* HTTP_HEADERS_HANDLE;
 
 /**

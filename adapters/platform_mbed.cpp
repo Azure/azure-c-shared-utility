@@ -16,14 +16,14 @@ int setupRealTime(void)
 
     if (EthernetInterface::connect())
     {
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
         NTPClient ntp;
         if (ntp.setTime("0.pool.ntp.org") != 0)
         {
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -41,15 +41,15 @@ int platform_init(void)
 
     if (EthernetInterface::init())
     {
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else if (setupRealTime() != 0)
     {
-        result = __FAILURE__;
+        result = MU_FAILURE;
     } 
     else if (EthernetInterface::connect())
     {
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -64,8 +64,11 @@ const IO_INTERFACE_DESCRIPTION* platform_get_default_tlsio(void)
     return tlsio_wolfssl_get_interface_description();
 }
 
-STRING_HANDLE platform_get_platform_info(void)
+STRING_HANDLE platform_get_platform_info(PLATFORM_INFO_OPTION options)
 {
+    // No applicable options, so ignoring parameter
+    (void)options;
+
     // Expected format: "(<runtime name>; <operating system name>; <platform>)"
 
     return STRING_construct("(native; mbed; undefined)");

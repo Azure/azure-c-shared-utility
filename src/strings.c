@@ -379,7 +379,7 @@ int STRING_concat(STRING_HANDLE handle, const char* s2)
     if ((handle == NULL) || (s2 == NULL))
     {
         /* Codes_SRS_STRING_07_013: [STRING_concat shall return a nonzero number if an error is encountered.] */
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -391,7 +391,7 @@ int STRING_concat(STRING_HANDLE handle, const char* s2)
         {
             /* Codes_SRS_STRING_07_013: [STRING_concat shall return a nonzero number if an error is encountered.] */
             LogError("Failure reallocating value.");
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -414,7 +414,7 @@ int STRING_concat_with_STRING(STRING_HANDLE s1, STRING_HANDLE s2)
     {
         /* Codes_SRS_STRING_07_035: [String_Concat_with_STRING shall return a nonzero number if an error is encountered.] */
         LogError("Invalid argument specified");
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -428,7 +428,7 @@ int STRING_concat_with_STRING(STRING_HANDLE s1, STRING_HANDLE s2)
         {
             /* Codes_SRS_STRING_07_035: [String_Concat_with_STRING shall return a nonzero number if an error is encountered.] */
             LogError("Failure reallocating value");
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -451,7 +451,7 @@ int STRING_copy(STRING_HANDLE handle, const char* s2)
     if ((handle == NULL) || (s2 == NULL))
     {
         /* Codes_SRS_STRING_07_017: [STRING_copy shall return a nonzero value if any of the supplied parameters are NULL.] */
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -465,7 +465,7 @@ int STRING_copy(STRING_HANDLE handle, const char* s2)
             {
                 LogError("Failure reallocating value.");
                 /* Codes_SRS_STRING_07_027: [STRING_copy shall return a nonzero value if any error is encountered.] */
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else
             {
@@ -493,7 +493,7 @@ int STRING_copy_n(STRING_HANDLE handle, const char* s2, size_t n)
     if ((handle == NULL) || (s2 == NULL))
     {
         /* Codes_SRS_STRING_07_019: [STRING_copy_n shall return a nonzero value if STRING_HANDLE or const char* is NULL.] */
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -510,7 +510,7 @@ int STRING_copy_n(STRING_HANDLE handle, const char* s2, size_t n)
         {
             LogError("Failure reallocating value.");
             /* Codes_SRS_STRING_07_028: [STRING_copy_n shall return a nonzero value if any error is encountered.] */
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -543,7 +543,7 @@ int STRING_sprintf(STRING_HANDLE handle, const char* format, ...)
     {
         /* Codes_SRS_STRING_07_042: [if the parameters s1 or format are NULL then STRING_sprintf shall return non zero value.] */
         LogError("Invalid arg (NULL)");
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -557,7 +557,7 @@ int STRING_sprintf(STRING_HANDLE handle, const char* format, ...)
         {
             /* Codes_SRS_STRING_07_043: [If any error is encountered STRING_sprintf shall return a non zero value.] */
             LogError("Failure vsnprintf return < 0");
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else if (s2Length == 0)
         {
@@ -579,7 +579,7 @@ int STRING_sprintf(STRING_HANDLE handle, const char* format, ...)
                     /* Codes_SRS_STRING_07_043: [If any error is encountered STRING_sprintf shall return a non zero value.] */
                     LogError("Failure vsnprintf formatting error");
                     s1->s[s1Length] = '\0';
-                    result = __FAILURE__;
+                    result = MU_FAILURE;
                 }
                 else
                 {
@@ -592,7 +592,7 @@ int STRING_sprintf(STRING_HANDLE handle, const char* format, ...)
             {
                 /* Codes_SRS_STRING_07_043: [If any error is encountered STRING_sprintf shall return a non zero value.] */
                 LogError("Failure unable to reallocate memory");
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
         }
     }
@@ -609,7 +609,7 @@ int STRING_quote(STRING_HANDLE handle)
     if (handle == NULL)
     {
         /* Codes_SRS_STRING_07_015: [STRING_quote shall return a nonzero value if any of the supplied parameters are NULL.] */
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -620,7 +620,7 @@ int STRING_quote(STRING_HANDLE handle)
         {
             LogError("Failure reallocating value.");
             /* Codes_SRS_STRING_07_029: [STRING_quote shall return a nonzero value if any error is encountered.] */
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -643,7 +643,7 @@ int STRING_empty(STRING_HANDLE handle)
     if (handle == NULL)
     {
         /* Codes_SRS_STRING_07_023: [STRING_empty shall return a nonzero value if the STRING_HANDLE is NULL.] */
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -653,7 +653,7 @@ int STRING_empty(STRING_HANDLE handle)
         {
             LogError("Failure reallocating value.");
             /* Codes_SRS_STRING_07_030: [STRING_empty shall return a nonzero value if the STRING_HANDLE is NULL.] */
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -831,7 +831,7 @@ int STRING_replace(STRING_HANDLE handle, char target, char replace)
     if (handle == NULL)
     {
         /* Codes_SRS_STRING_07_046: [ If handle is NULL STRING_replace shall return a non-zero value. ] */
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else if (target == replace)
     {

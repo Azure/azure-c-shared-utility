@@ -14,8 +14,8 @@
 #ifndef LOCK_H
 #define LOCK_H
 
-#include "azure_c_shared_utility/macro_utils.h"
-#include "azure_c_shared_utility/umock_c_prod.h"
+#include "azure_macro_utils/macro_utils.h"
+#include "umock_c/umock_c_prod.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,7 +29,7 @@ typedef void* LOCK_HANDLE;
 
 /** @brief Enumeration specifying the lock status.
 */
-DEFINE_ENUM(LOCK_RESULT, LOCK_RESULT_VALUES);
+MU_DEFINE_ENUM(LOCK_RESULT, LOCK_RESULT_VALUES);
 
 /**
  * @brief    This API creates and returns a valid lock handle.

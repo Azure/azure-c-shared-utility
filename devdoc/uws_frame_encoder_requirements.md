@@ -33,7 +33,7 @@ RFC6455 - The WebSocket Protocol.
     WS_RESERVED_CONTROL_FRAME_E = 0x0E, \
     WS_RESERVED_CONTROL_FRAME_F = 0x0F
 
-DEFINE_ENUM(WS_FRAME_TYPE, WS_FRAME_TYPE_VALUES);
+MU_DEFINE_ENUM(WS_FRAME_TYPE, WS_FRAME_TYPE_VALUES);
 
 extern int uws_frame_encoder_encode(BUFFER_HANDLE encode_buffer, WS_FRAME_TYPE opcode, const unsigned char* payload, size_t length, bool is_masked, bool is_final, unsigned char reserved);
 ```

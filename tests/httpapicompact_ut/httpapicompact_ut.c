@@ -60,9 +60,9 @@ void my_gballoc_free(void* ptr)
 #endif
 
 #include "testrunnerswitcher.h"
-#include "umock_c.h"
-#include "umocktypes_charptr.h"
-#include "azure_c_shared_utility/macro_utils.h"
+#include "umock_c/umock_c.h"
+#include "umock_c/umocktypes_charptr.h"
+#include "azure_macro_utils/macro_utils.h"
 
 #define MAX_RECEIVE_BUFFER_SIZES    3
 #define HUGE_RELATIVE_PATH_SIZE        10000
@@ -120,7 +120,7 @@ int my_xio_setoption(XIO_HANDLE xio, const char* optionName, const void* value)
     int result;
     if ((xio == NULL) || (optionName == NULL) || (value == NULL))
     {
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -234,7 +234,7 @@ int my_xio_open(XIO_HANDLE xio,
         (on_bytes_received == NULL) || (on_bytes_received_context == NULL) ||
         (on_io_error == NULL) || (on_io_error_context == NULL))
     {
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -261,7 +261,7 @@ int my_xio_close(XIO_HANDLE xio, ON_IO_CLOSE_COMPLETE on_io_close_complete, void
     if ((xio == NULL) ||
         (on_io_close_complete == NULL) || (on_io_close_complete_context == NULL))
     {
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -282,7 +282,7 @@ int my_xio_send(XIO_HANDLE xio, const void* buffer, size_t size, ON_SEND_COMPLET
     if ((xio == NULL) ||
         (buffer == NULL) || (size == 0))
     {
-        result = __FAILURE__;
+        result = MU_FAILURE;
 
         if (call_on_send_complete_in_xio_send)
         {
@@ -685,11 +685,11 @@ IMPLEMENT_UMOCK_C_ENUM_TYPE(HTTP_HEADERS_RESULT, HTTP_HEADERS_RESULT_VALUES);
 
 static TEST_MUTEX_HANDLE g_testByTest;
 
-DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
+MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    ASSERT_FAIL("umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
+    ASSERT_FAIL("umock_c reported error :%s", MU_ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
 }
 
 BEGIN_TEST_SUITE(httpapicompact_ut)
@@ -1051,7 +1051,7 @@ TEST_FUNCTION(HTTPAPI_CloseConnection__return_LINE_failed)
     /// arrange
     HTTP_HANDLE httpHandle = createHttpConnection();
 
-    xio_close_shallReturn = __FAILURE__;
+    xio_close_shallReturn = MU_FAILURE;
     DoworkJobsCloseSuccess = true;
     SkipDoworkJobsCloseResult = 0;
     call_on_io_close_complete_in_xio_close = true;
@@ -1414,7 +1414,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__invalid_request_type_failed)
     /// act
     result = HTTPAPI_ExecuteRequest(
         httpHandle,
-        (HTTPAPI_REQUEST_TYPE)COUNT_ARG(HTTPAPI_REQUEST_TYPE_VALUES),
+        (HTTPAPI_REQUEST_TYPE)MU_COUNT_ARG(HTTPAPI_REQUEST_TYPE_VALUES),
         TEST_EXECUTE_REQUEST_RELATIVE_PATH,
         requestHttpHeaders,
         TEST_EXECUTE_REQUEST_CONTENT,
@@ -1590,7 +1590,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__certificate_failed)
 
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     setHttpCertificate(httpHandle);
-    xio_setoption_shallReturn = __FAILURE__;
+    xio_setoption_shallReturn = MU_FAILURE;
 
     STRICT_EXPECTED_CALL(HTTPHeaders_GetHeaderCount(requestHttpHeaders, IGNORED_PTR_ARG))
         .IgnoreArgument(2);
@@ -1636,7 +1636,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__x509client_certificate_failed)
         .IgnoreArgument(1);
     HTTPAPI_SetOption(httpHandle, SU_OPTION_X509_CERT, TEST_SETOPTIONS_X509CLIENTCERT);                /* currentmalloc_call += 1 */
 
-    xio_setoption_shallReturn = __FAILURE__;
+    xio_setoption_shallReturn = MU_FAILURE;
 
     STRICT_EXPECTED_CALL(HTTPHeaders_GetHeaderCount(requestHttpHeaders, IGNORED_PTR_ARG))
         .IgnoreArgument(2);
@@ -1682,7 +1682,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__x509client_privatekey_failed)
         .IgnoreArgument(1);
     HTTPAPI_SetOption(httpHandle, SU_OPTION_X509_PRIVATE_KEY, TEST_SETOPTIONS_X509PRIVATEKEY);                /* currentmalloc_call += 1 */
 
-    xio_setoption_shallReturn = __FAILURE__;
+    xio_setoption_shallReturn = MU_FAILURE;
 
     STRICT_EXPECTED_CALL(HTTPHeaders_GetHeaderCount(requestHttpHeaders, IGNORED_PTR_ARG))
         .IgnoreArgument(2);
@@ -1973,7 +1973,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__xoi_open_returns_LINE_failed)
     HTTP_HANDLE httpHandle = createHttpConnection();
     createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     setHttpCertificate(httpHandle);
-    xio_open_shallReturn = __FAILURE__;
+    xio_open_shallReturn = MU_FAILURE;
     setupAllCallBeforeOpenHTTPsequence(requestHttpHeaders, 0, false);
 
     /// act

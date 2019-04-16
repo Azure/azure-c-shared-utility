@@ -40,7 +40,7 @@ static void on_io_open_complete(void* context, IO_OPEN_RESULT open_result)
 static void on_io_bytes_received(void* context, const unsigned char* buffer, size_t size)
 {
     (void)context, (void)buffer;
-    (void)printf("Received %zu bytes\r\n", size);
+    (void)printf("Received %lu bytes\r\n", (unsigned long)size);
 }
 
 static void on_io_error(void* context)
@@ -58,7 +58,7 @@ int main(int argc, char** argv)
     if (platform_init() != 0)
     {
         (void)printf("Cannot initialize platform.");
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -66,7 +66,7 @@ int main(int argc, char** argv)
         if (socketio_interface == NULL)
         {
             (void)printf("Error getting socketio interface description.");
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -79,14 +79,14 @@ int main(int argc, char** argv)
             if (socketio == NULL)
             {
                 (void)printf("Error creating socket IO.");
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else
             {
                 if (xio_open(socketio, on_io_open_complete, socketio, on_io_bytes_received, socketio, on_io_error, socketio) != 0)
                 {
                     (void)printf("Error opening socket IO.");
-                    result = __FAILURE__;
+                    result = MU_FAILURE;
                 }
                 else
                 {

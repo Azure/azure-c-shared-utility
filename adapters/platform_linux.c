@@ -13,6 +13,9 @@
 #if USE_WOLFSSL
 #include "azure_c_shared_utility/tlsio_wolfssl.h"
 #endif
+#if USE_MBEDTLS
+#include "azure_c_shared_utility/tlsio_mbedtls.h"
+#endif
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -37,13 +40,18 @@ const IO_INTERFACE_DESCRIPTION* platform_get_default_tlsio(void)
     return tlsio_wolfssl_get_interface_description();
 #elif USE_OPENSSL
     return tlsio_openssl_get_interface_description();
+#elif USE_MBEDTLS
+    return tlsio_mbedtls_get_interface_description();
 #else
     return NULL;
 #endif
 }
 
-STRING_HANDLE platform_get_platform_info(void)
+STRING_HANDLE platform_get_platform_info(PLATFORM_INFO_OPTION options)
 {
+    // No applicable options, so ignoring parameter
+    (void)options;
+
     // Expected format: "(<runtime name>; <operating system name>; <platform>)"
 
     STRING_HANDLE result;

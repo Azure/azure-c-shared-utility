@@ -4,7 +4,7 @@
 #ifndef TARGET_H
 #define TARGET_H
 
-#include "azure_c_shared_utility/umock_c_prod.h"
+#include "umock_c/umock_c_prod.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -17,7 +17,7 @@ extern "C" {
     TARGET_RESULT_OK,                \
     TARGET_RESULT_FAIL,              \
     TARGET_RESULT_OUT_OF_MEMORY
-DEFINE_ENUM(TARGET_RESULT, TARGET_RESULT_VALUES);
+MU_DEFINE_ENUM(TARGET_RESULT, TARGET_RESULT_VALUES);
 
 
 /**

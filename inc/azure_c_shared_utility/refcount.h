@@ -15,7 +15,7 @@ will interact with deallocated memory / resources resulting in an undefined beha
 #define REFCOUNT_H
 
 #include "azure_c_shared_utility/gballoc.h"
-#include "azure_c_shared_utility/macro_utils.h"
+#include "azure_macro_utils/macro_utils.h"
 
 #ifdef __cplusplus
 #include <cstdlib>
@@ -31,17 +31,17 @@ extern "C"
 #include "refcount_os.h"
 
 #define REFCOUNT_TYPE(type) \
-struct C2(C2(REFCOUNT_, type), _TAG)
+struct MU_C2(MU_C2(REFCOUNT_, type), _TAG)
 
 #define REFCOUNT_SHORT_TYPE(type) \
-C2(REFCOUNT_, type)
+MU_C2(REFCOUNT_, type)
 
-#define REFCOUNT_TYPE_DECLARE_CREATE(type) C2(REFCOUNT_SHORT_TYPE(type), _Create)
-#define REFCOUNT_TYPE_DECLARE_CREATE_WITH_EXTRA_SIZE(type) C2(REFCOUNT_SHORT_TYPE(type), _Create_With_Extra_Size)
-#define REFCOUNT_TYPE_CREATE(type) C2(REFCOUNT_SHORT_TYPE(type), _Create)()
-#define REFCOUNT_TYPE_CREATE_WITH_EXTRA_SIZE(type, size) C2(REFCOUNT_SHORT_TYPE(type), _Create_With_Extra_Size)(size)
-#define REFCOUNT_TYPE_DECLARE_DESTROY(type) C2(REFCOUNT_SHORT_TYPE(type), _Destroy)
-#define REFCOUNT_TYPE_DESTROY(type, var) C2(REFCOUNT_SHORT_TYPE(type), _Destroy)(var)
+#define REFCOUNT_TYPE_DECLARE_CREATE(type) MU_C2(REFCOUNT_SHORT_TYPE(type), _Create)
+#define REFCOUNT_TYPE_DECLARE_CREATE_WITH_EXTRA_SIZE(type) MU_C2(REFCOUNT_SHORT_TYPE(type), _Create_With_Extra_Size)
+#define REFCOUNT_TYPE_CREATE(type) MU_C2(REFCOUNT_SHORT_TYPE(type), _Create)()
+#define REFCOUNT_TYPE_CREATE_WITH_EXTRA_SIZE(type, size) MU_C2(REFCOUNT_SHORT_TYPE(type), _Create_With_Extra_Size)(size)
+#define REFCOUNT_TYPE_DECLARE_DESTROY(type) MU_C2(REFCOUNT_SHORT_TYPE(type), _Destroy)
+#define REFCOUNT_TYPE_DESTROY(type, var) MU_C2(REFCOUNT_SHORT_TYPE(type), _Destroy)(var)
 
 /*this introduces a new refcount'd type based on another type */
 /*and an initializer for that new type that also sets the ref count to 1. The type must not have a flexible array*/

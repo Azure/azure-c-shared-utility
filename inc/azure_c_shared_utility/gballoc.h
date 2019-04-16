@@ -4,7 +4,7 @@
 #ifndef GBALLOC_H
 #define GBALLOC_H
 
-#include "azure_c_shared_utility/umock_c_prod.h"
+#include "umock_c/umock_c_prod.h"
 
 #ifdef __cplusplus
 #include <cstddef>
@@ -20,10 +20,10 @@ extern "C"
 // requires that an external library implement the gballoc_malloc family
 // declared here.
 #if defined(GB_USE_CUSTOM_HEAP)
-void* gballoc_malloc(size_t size);
-void* gballoc_calloc(size_t nmemb, size_t size);
-void* gballoc_realloc(void* ptr, size_t size);
-void gballoc_free(void* ptr);
+MOCKABLE_FUNCTION(, void*, gballoc_malloc, size_t, size);
+MOCKABLE_FUNCTION(, void*, gballoc_calloc, size_t, nmemb, size_t, size);
+MOCKABLE_FUNCTION(, void*, gballoc_realloc, void*, ptr, size_t, size);
+MOCKABLE_FUNCTION(, void, gballoc_free, void*, ptr);
 
 #define malloc gballoc_malloc
 #define calloc gballoc_calloc

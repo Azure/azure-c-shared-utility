@@ -14,8 +14,8 @@ extern "C" {
 
 #include <stdbool.h>
 #include <stdint.h>
-#include "azure_c_shared_utility/macro_utils.h"
-#include "azure_c_shared_utility/umock_c_prod.h"
+#include "azure_macro_utils/macro_utils.h"
+#include "umock_c/umock_c_prod.h"
 
 // socket_async exposes asynchronous socket operations while hiding OS-specifics. Committing to
 // asynchronous operation also simplifies the interface compared to generic sockets.
@@ -69,7 +69,7 @@ MOCKABLE_FUNCTION(, SOCKET_ASYNC_HANDLE, socket_async_create, uint32_t, host_ipv
 * @param   is_created    Receives the completion state if successful, set to false on failure.
 *
 * @return   @c 0 if the API call is successful.
-*           __FAILURE__ means an unexpected error has occurred and the socket must be destroyed.
+*           MU_FAILURE means an unexpected error has occurred and the socket must be destroyed.
 */
 MOCKABLE_FUNCTION(, int, socket_async_is_create_complete, SOCKET_ASYNC_HANDLE, sock, bool*, is_complete);
 
@@ -86,7 +86,7 @@ MOCKABLE_FUNCTION(, int, socket_async_is_create_complete, SOCKET_ASYNC_HANDLE, s
 *           case means normal operation but the socket's outgoing buffer was full.
 *
 * @return   @c 0 if successful.
-*           __FAILURE__ means an unexpected error has occurred and the socket must be destroyed.
+*           MU_FAILURE means an unexpected error has occurred and the socket must be destroyed.
 */
 MOCKABLE_FUNCTION(, int, socket_async_send, SOCKET_ASYNC_HANDLE, sock, const void*, buffer, size_t, size, size_t*, sent_count);
 
@@ -102,7 +102,7 @@ MOCKABLE_FUNCTION(, int, socket_async_send, SOCKET_ASYNC_HANDLE, sock, const voi
 * @param    received_count Receives the number of bytes received into the buffer.
 *
 * @return   @c 0 if successful.
-*           __FAILURE__ means an unexpected error has occurred and the socket must be destroyed.
+*           MU_FAILURE means an unexpected error has occurred and the socket must be destroyed.
 */
 MOCKABLE_FUNCTION(, int, socket_async_receive, SOCKET_ASYNC_HANDLE, sock, void*, buffer, size_t, size, size_t*, received_count);
 

@@ -3,7 +3,7 @@
 
 #define Base64_Encoder real_Base64_Encoder
 #define Base64_Encode_Bytes real_Base64_Encode_Bytes
-#define Base64_Decoder real_Base64_Decoder
+#define Azure_Base64_Decoder real_Azure_Base64_Decoder
 
 #define GBALLOC_H
 

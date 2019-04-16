@@ -8,7 +8,7 @@
 #include "azure_c_shared_utility/uniqueid.h"
 #include "azure_c_shared_utility/xlogging.h"
 
-DEFINE_ENUM_STRINGS(UNIQUEID_RESULT, UNIQUEID_RESULT_VALUES);
+MU_DEFINE_ENUM_STRINGS(UNIQUEID_RESULT, UNIQUEID_RESULT_VALUES);
 
 UNIQUEID_RESULT UniqueId_Generate(char* uid, size_t len)
 {
@@ -19,7 +19,7 @@ UNIQUEID_RESULT UniqueId_Generate(char* uid, size_t len)
     if (uid == NULL || len < 37)
     {
         result = UNIQUEID_INVALID_ARG;
-        LogError("Buffer Size is Null. (result = %s)", ENUM_TO_STRING(UNIQUEID_RESULT, result));
+        LogError("Buffer Size is Null. (result = %s)", MU_ENUM_TO_STRING(UNIQUEID_RESULT, result));
     }
     else
     {

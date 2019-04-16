@@ -4,7 +4,7 @@
 #ifndef CRT_ABSTRACTIONS_H
 #define CRT_ABSTRACTIONS_H
 
-#include "azure_c_shared_utility/umock_c_prod.h"
+#include "umock_c/umock_c_prod.h"
 
 #ifdef __cplusplus
 #include <cstdio>
@@ -29,7 +29,6 @@ typedef bool _Bool;
 #endif
 #endif // QUARKGALILEO
 
-#ifndef _WIN32_WCE
 #define HAS_STDBOOL
 #ifdef __cplusplus
 /*because C++ doesn't do anything about _Bool... */
@@ -37,23 +36,6 @@ typedef bool _Bool;
 #else // __cplusplus
 #include <stdbool.h>
 #endif // __cplusplus
-#else // _WIN32_WCE
-/* WINCE does not support bool as C datatype */
-#define __bool_true_false_are_defined    1
-
-#define HAS_STDBOOL
-
-#define _Bool bool
-
-#ifdef __cplusplus
-#define _CSTDBOOL_
-#else // __cplusplus
-typedef unsigned char bool;
-
-#define false   0
-#define true    1
-#endif // __cplusplus
-#endif // _WIN32_WCE
 
 #else //  _MSC_VER
 

@@ -50,8 +50,8 @@ void my_gballoc_free(void* ptr)
 #include "azure_c_shared_utility/string_tokenizer.h"
 
 #define ENABLE_MOCKS
-#include "umock_c.h"
-#include "umocktypes_charptr.h"
+#include "umock_c/umock_c.h"
+#include "umock_c/umocktypes_charptr.h"
 #include "azure_c_shared_utility/gballoc.h"
 
 static TEST_MUTEX_HANDLE g_testByTest;
@@ -59,11 +59,11 @@ static TEST_MUTEX_HANDLE g_testByTest;
 #define TEST_STRING_HANDLE (STRING_HANDLE)0x42
 #define FAKE_LOCK_HANDLE (LOCK_HANDLE)0x4f
 
-DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
+MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    ASSERT_FAIL("umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
+    ASSERT_FAIL("umock_c reported error :%s", MU_ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
 }
 
 BEGIN_TEST_SUITE(string_tokenizer_unittests)

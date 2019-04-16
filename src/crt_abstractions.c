@@ -16,7 +16,7 @@
 #include "azure_c_shared_utility/crt_abstractions.h"
 
 // VS 2008 does not have INFINITY and all the nice goodies...
-#if defined (TIZENRT) || defined (WINCE)
+#if defined (TIZENRT)
 #define DEFINE_INFINITY 1
 #else
 
@@ -471,7 +471,7 @@ static bool isNaN(const char** endptr)
             FST_OVERFLOW,           \
             FST_ERROR
 
-DEFINE_ENUM(FLOAT_STRING_TYPE, FLOAT_STRING_TYPE_VALUES);
+MU_DEFINE_ENUM(FLOAT_STRING_TYPE, FLOAT_STRING_TYPE_VALUES);
 
 static FLOAT_STRING_TYPE splitFloatString(const char* nptr, char** endptr, int *signal, double *fraction, int *exponential)
 {
@@ -751,7 +751,7 @@ int unsignedIntToString(char* destination, size_t destinationSize, unsigned int 
         (destinationSize < 2) /*because the smallest number is '0\0' which requires 2 characters*/
         )
     {
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -780,7 +780,7 @@ int unsignedIntToString(char* destination, size_t destinationSize, unsigned int 
         else
         {
             /*Codes_SRS_CRT_ABSTRACTIONS_02_002: [If the conversion fails for any reason (for example, insufficient buffer space), a non-zero return value shall be supplied and unsignedIntToString shall fail.] */
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
     }
     return result;
@@ -802,7 +802,7 @@ int size_tToString(char* destination, size_t destinationSize, size_t value)
         (destinationSize < 2) /*because the smallest number is '0\0' which requires 2 characters*/
         )
     {
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -831,7 +831,7 @@ int size_tToString(char* destination, size_t destinationSize, size_t value)
         else
         {
             /*Codes_SRS_CRT_ABSTRACTIONS_02_002: [If the conversion fails for any reason (for example, insufficient buffer space), a non-zero return value shall be supplied and unsignedIntToString shall fail.] */
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
     }
     return result;

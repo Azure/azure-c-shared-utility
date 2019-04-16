@@ -43,13 +43,13 @@ int gballoc_init(void)
     if (gballocState != GBALLOC_STATE_NOT_INIT)
     {
         /* Codes_SRS_GBALLOC_01_025: [Init after Init shall fail and return a non-zero value.] */
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     /* Codes_SRS_GBALLOC_01_026: [gballoc_Init shall create a lock handle that will be used to make the other gballoc APIs thread-safe.] */
     else if ((gballocThreadSafeLock = Lock_Init()) == NULL)
     {
         /* Codes_SRS_GBALLOC_01_027: [If the Lock creation fails, gballoc_init shall return a non-zero value.]*/
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {

@@ -3,13 +3,10 @@
 
 #include "windows.h"
 
-#ifdef WINCE
-#include <wincrypt.h>
-#endif
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/x509_schannel.h"
 #include "azure_c_shared_utility/xlogging.h"
-#if _MSC_VER > 1500 && !defined(WINCE)
+#if _MSC_VER > 1500
 #include <ncrypt.h>
 #endif
 
@@ -96,7 +93,7 @@ static unsigned char* decode_crypt_object(unsigned char* private_key, DWORD key_
     /*Codes_SRS_X509_SCHANNEL_02_004: [ x509_schannel_create shall decode the private key by calling CryptDecodeObjectEx. ]*/
     if (!CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, key_type, private_key, key_length, 0, NULL, NULL, &private_key_blob_size))
     {
-#if _MSC_VER > 1500 && !defined(WINCE)
+#if _MSC_VER > 1500
         key_type = X509_ECC_PRIVATE_KEY;
         if (!CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, key_type, private_key, key_length, 0, NULL, NULL, &private_key_blob_size))
         {
@@ -155,7 +152,7 @@ static unsigned char* decode_crypt_object(unsigned char* private_key, DWORD key_
 static int set_ecc_certificate_info(X509_SCHANNEL_HANDLE_DATA* x509_handle, unsigned char* x509privatekeyBlob)
 {
     int result;
-#if _MSC_VER > 1500 && !defined(WINCE)
+#if _MSC_VER > 1500
     SECURITY_STATUS status;
     CRYPT_BIT_BLOB* pPubKeyBlob = &x509_handle->x509certificate_context->pCertInfo->SubjectPublicKeyInfo.PublicKey;
     CRYPT_ECC_PRIVATE_KEY_INFO* pPrivKeyInfo = (CRYPT_ECC_PRIVATE_KEY_INFO*)x509privatekeyBlob;
@@ -169,7 +166,7 @@ static int set_ecc_certificate_info(X509_SCHANNEL_HANDLE_DATA* x509_handle, unsi
     {
         /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
         LogError("Failed to malloc NCrypt private key blob");
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -188,7 +185,7 @@ static int set_ecc_certificate_info(X509_SCHANNEL_HANDLE_DATA* x509_handle, unsi
         {
             /* Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
             LogError("NCryptOpenStorageProvider failed with error 0x%08X", status);
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -231,13 +228,13 @@ static int set_ecc_certificate_info(X509_SCHANNEL_HANDLE_DATA* x509_handle, unsi
             {
                 /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
                 LogError("NCryptImportKey failed with error 0x%08X", status);
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else if (!CertSetCertificateContextProperty(x509_handle->x509certificate_context, CERT_KEY_PROV_INFO_PROP_ID, 0, &keyProvInfo))
             {
                 /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
                 LogErrorWinHTTPWithGetLastErrorAsString("CertSetCertificateContextProperty failed to set NCrypt key handle property");
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else
             {
@@ -250,7 +247,7 @@ static int set_ecc_certificate_info(X509_SCHANNEL_HANDLE_DATA* x509_handle, unsi
     (void)x509_handle;
     (void)x509privatekeyBlob;
     LogError("SChannel ECC is not supported in this compliation");
-    result = __FAILURE__;
+    result = MU_FAILURE;
 #endif
     return result;
 }
@@ -264,7 +261,7 @@ static int set_rsa_certificate_info(X509_SCHANNEL_HANDLE_DATA* x509_handle, unsi
     {
         /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
         LogErrorWinHTTPWithGetLastErrorAsString("CryptAcquireContext failed");
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -277,7 +274,7 @@ static int set_rsa_certificate_info(X509_SCHANNEL_HANDLE_DATA* x509_handle, unsi
             {
                 LogErrorWinHTTPWithGetLastErrorAsString("unable to CryptReleaseContext");
             }
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -295,7 +292,7 @@ static int set_rsa_certificate_info(X509_SCHANNEL_HANDLE_DATA* x509_handle, unsi
                 {
                     LogErrorWinHTTPWithGetLastErrorAsString("unable to CryptReleaseContext");
                 }
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else
             {
@@ -440,7 +437,7 @@ void x509_schannel_destroy(X509_SCHANNEL_HANDLE x509_schannel_handle)
         }
         else
         {
-#if _MSC_VER > 1500 && !defined(WINCE)
+#if _MSC_VER > 1500
             if (x509crypto->x509hcryptkey != 0)
             {
                 (void)NCryptFreeObject(x509crypto->x509hcryptkey);
@@ -498,7 +495,7 @@ static int add_certificates_to_store(const char* trustedCertificate, HCERTSTORE 
             if (numCertificatesAdded == 0)
             {
                 LogError("Certificate missing closing %s.  No certificates can be added to stare", end_certificate_in_pem);
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             break;
         }
@@ -512,13 +509,13 @@ static int add_certificates_to_store(const char* trustedCertificate, HCERTSTORE 
         if ((trustedCertificateEncoded = convert_cert_to_binary(trustedCertCurrentRead, (DWORD)(endCertificateCurrentRead - trustedCertCurrentRead), &trustedCertificateEncodedLen)) == NULL)
         {
             LogError("Cannot encode trusted certificate");
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else if (CertAddEncodedCertificateToStore(hCertStore, X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, trustedCertificateEncoded, trustedCertificateEncodedLen, CERT_STORE_ADD_NEW, NULL) != TRUE)
         {
             lastError = GetLastError();
             LogError("CertAddEncodedCertificateToStore failed with error 0x%08x", lastError);
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
 
         if (trustedCertificateEncoded != NULL)
@@ -533,7 +530,6 @@ static int add_certificates_to_store(const char* trustedCertificate, HCERTSTORE 
     return result;
 }
 
-#ifndef WINCE
 // x509_verify_certificate_in_chain determines whether the certificate in pCertContextToVerify
 // chains up to the PEM represented by trustedCertificate or not.
 int x509_verify_certificate_in_chain(const char* trustedCertificate, PCCERT_CONTEXT pCertContextToVerify)
@@ -546,19 +542,19 @@ int x509_verify_certificate_in_chain(const char* trustedCertificate, PCCERT_CONT
 
     if ((trustedCertificate == NULL) || (pCertContextToVerify == NULL))
     {
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     // Creates an in-memory certificate store that is destroyed at end of this function.
     else if (NULL == (hCertStore = CertOpenStore(CERT_STORE_PROV_MEMORY, X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, 0, CERT_STORE_CREATE_NEW_FLAG, NULL)))
     {
         lastError = GetLastError();
         LogError("CertOpenStore failed with error 0x%08x", lastError);
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else if (add_certificates_to_store(trustedCertificate, hCertStore) != 0)
     {
         LogError("Cannot add certificates to store");
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -584,24 +580,24 @@ int x509_verify_certificate_in_chain(const char* trustedCertificate, PCCERT_CONT
         {
             lastError = GetLastError();
             LogError("CertCreateCertificateChainEngine failed with error 0x%08x", lastError);
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else if (CertGetCertificateChain(hChainEngine, pCertContextToVerify, NULL, pCertContextToVerify->hCertStore, &ChainPara, 0, NULL, &pChainContextToVerify) != TRUE)
         {
             lastError = GetLastError();
             LogError("CertGetCertificateChain failed with error 0x%08x", lastError);
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else if (CertVerifyCertificateChainPolicy(CERT_CHAIN_POLICY_SSL, pChainContextToVerify, &PolicyPara, &PolicyStatus) != TRUE)
         {
             lastError = GetLastError();
             LogError("CertVerifyCertificateChainPolicy failed with error 0x%08x", lastError);
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else if (PolicyStatus.dwError != 0)
         {
             LogError("CertVerifyCertificateChainPolicy sets certificateStatus = 0x%08x", PolicyStatus.dwError);
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -626,12 +622,3 @@ int x509_verify_certificate_in_chain(const char* trustedCertificate, PCCERT_CONT
 
     return result;
 }
-#else
-// Windows CE does not have the requisite Crypt32 functionality to enable this
-int x509_verify_certificate_in_chain(const char* trustedCertificate, PCCERT_CONTEXT pCertContextToVerify)
-{
-    (void)trustedCertificate;
-    (void)pCertContextToVerify;
-    return __FAILURE__;
-}
-#endif

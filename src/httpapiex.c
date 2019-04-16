@@ -24,9 +24,9 @@ typedef struct HTTPAPIEX_HANDLE_DATA_TAG
     VECTOR_HANDLE savedOptions;
 }HTTPAPIEX_HANDLE_DATA;
 
-DEFINE_ENUM_STRINGS(HTTPAPIEX_RESULT, HTTPAPIEX_RESULT_VALUES);
+MU_DEFINE_ENUM_STRINGS(HTTPAPIEX_RESULT, HTTPAPIEX_RESULT_VALUES);
 
-#define LOG_HTTAPIEX_ERROR() LogError("error code = %s", ENUM_TO_STRING(HTTPAPIEX_RESULT, result))
+#define LOG_HTTAPIEX_ERROR() LogError("error code = %s", MU_ENUM_TO_STRING(HTTPAPIEX_RESULT, result))
 
 HTTPAPIEX_HANDLE HTTPAPIEX_Create(const char* hostName)
 {
@@ -104,7 +104,7 @@ static int buildRequestHttpHeadersHandle(HTTPAPIEX_HANDLE_DATA *handleData, BUFF
 
     if (*toBeUsedRequestHttpHeadersHandle == NULL)
     {
-        result = __FAILURE__;
+        result = MU_FAILURE;
         LogError("unable to HTTPHeaders_Alloc");
     }
     else
@@ -129,7 +129,7 @@ static int buildRequestHttpHeadersHandle(HTTPAPIEX_HANDLE_DATA *handleData, BUFF
                 HTTPHeaders_Free(*toBeUsedRequestHttpHeadersHandle);
             }
             *toBeUsedRequestHttpHeadersHandle = NULL;
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -146,7 +146,7 @@ static int buildResponseHttpHeadersHandle(HTTP_HEADERS_HANDLE originalResponsetH
     {
         if ((*toBeUsedResponsetHttpHeadersHandle = HTTPHeaders_Alloc()) == NULL)
         {
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -172,7 +172,7 @@ static int buildBufferIfNotExist(BUFFER_HANDLE originalRequestContent, bool* isO
         *toBeUsedRequestContent = BUFFER_new();
         if (*toBeUsedRequestContent == NULL)
         {
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -209,7 +209,7 @@ static int buildAllRequests(HTTPAPIEX_HANDLE_DATA* handle, HTTPAPI_REQUEST_TYPE 
     if (buildBufferIfNotExist(requestContent, isOriginalRequestContent, toBeUsedRequestContent) != 0)
     {
         LogError("unable to build the request content");
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -221,7 +221,7 @@ static int buildAllRequests(HTTPAPIEX_HANDLE_DATA* handle, HTTPAPI_REQUEST_TYPE 
                 BUFFER_delete(*toBeUsedRequestContent);
             }
             LogError("unable to build the request http headers handle");
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -260,7 +260,7 @@ static int buildAllRequests(HTTPAPIEX_HANDLE_DATA* handle, HTTPAPI_REQUEST_TYPE 
                     HTTPHeaders_Free(*toBeUsedRequestHttpHeadersHandle);
                 }
                 LogError("unable to build response content");
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else
             {
@@ -282,7 +282,7 @@ static int buildAllRequests(HTTPAPIEX_HANDLE_DATA* handle, HTTPAPI_REQUEST_TYPE 
                         HTTPHeaders_Free(*toBeUsedResponseHttpHeadersHandle);
                     }
                     LogError("unable to build response content");
-                    result = __FAILURE__;
+                    result = MU_FAILURE;
                 }
                 else
                 {
@@ -308,7 +308,7 @@ HTTPAPIEX_RESULT HTTPAPIEX_ExecuteRequest(HTTPAPIEX_HANDLE handle, HTTPAPI_REQUE
     else
     {
         /*Codes_SRS_HTTPAPIEX_02_007: [If parameter requestType does not indicate a valid request, HTTPAPIEX_ExecuteRequest shall fail and return HTTPAPIEX_INVALID_ARG.] */
-        if (requestType >= COUNT_ARG(HTTPAPI_REQUEST_TYPE_VALUES))
+        if (requestType >= MU_COUNT_ARG(HTTPAPI_REQUEST_TYPE_VALUES))
         {
             result = HTTPAPIEX_INVALID_ARG;
             LOG_HTTAPIEX_ERROR();
@@ -557,7 +557,7 @@ static int createOrUpdateOption(HTTPAPIEX_HANDLE_DATA* handleData, const char* o
         if (mallocAndStrcpy_s((char**)&(newOption.optionName), optionName) != 0)
         {
             free((void*)value);
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -567,7 +567,7 @@ static int createOrUpdateOption(HTTPAPIEX_HANDLE_DATA* handleData, const char* o
                 LogError("unable to VECTOR_push_back");
                 free((void*)newOption.optionName);
                 free((void*)value);
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else
             {

@@ -15,7 +15,7 @@
 
 #define CHAR_COUNT(A)   (sizeof(A) - 1)
 
-DEFINE_ENUM_STRINGS(HTTPAPI_RESULT, HTTPAPI_RESULT_VALUES)
+MU_DEFINE_ENUM_STRINGS(HTTPAPI_RESULT, HTTPAPI_RESULT_VALUES)
 
 // data structure that contains all the information required to manage a connection
 class HTTP_HANDLE_DATA
@@ -262,7 +262,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
         HTTPHeaders_GetHeaderCount(httpHeadersHandle, &headersCount) != HTTP_HEADERS_OK)
     {
         result = HTTPAPI_INVALID_ARG;
-        LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+        LogError("(result = %s)", MU_ENUM_TO_STRING(HTTPAPI_RESULT, result));
         goto exit;
     }
 
@@ -333,14 +333,14 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
         || ret >= sizeof(buf))
     {
         result = HTTPAPI_STRING_PROCESSING_ERROR;
-        LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+        LogError("(result = %s)", MU_ENUM_TO_STRING(HTTPAPI_RESULT, result));
         goto exit;
     }
     LogInfo("HTTPAPI_ExecuteRequest::Sending=%*.*s", strlen(buf), strlen(buf), buf);
     if (send(httpHandle->_sock_fd, buf, strlen(buf), 0) < 0)
     {
         result = HTTPAPI_SEND_REQUEST_FAILED;
-        LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+        LogError("(result = %s)", MU_ENUM_TO_STRING(HTTPAPI_RESULT, result));
         goto exit;
     }
 
@@ -351,21 +351,21 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
         if (HTTPHeaders_GetHeader(httpHeadersHandle, i, &header) != HTTP_HEADERS_OK)
         {
             result = HTTPAPI_HTTP_HEADERS_FAILED;
-            LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+            LogError("(result = %s)", MU_ENUM_TO_STRING(HTTPAPI_RESULT, result));
             goto exit;
         }
         LogInfo("HTTPAPI_ExecuteRequest::Sending=%*.*s", strlen(header), strlen(header), header);
         if (send(httpHandle->_sock_fd, header, strlen(header), 0) < 0)
         {
             result = HTTPAPI_SEND_REQUEST_FAILED;
-            LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+            LogError("(result = %s)", MU_ENUM_TO_STRING(HTTPAPI_RESULT, result));
             free(header);
             goto exit;
         }
         if (send(httpHandle->_sock_fd, "\r\n", 2, 0) < 0)
         {
             result = HTTPAPI_SEND_REQUEST_FAILED;
-            LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+            LogError("(result = %s)", MU_ENUM_TO_STRING(HTTPAPI_RESULT, result));
             free(header);
             goto exit;
         }
@@ -376,7 +376,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
     if (send(httpHandle->_sock_fd, "\r\n", 2, 0) < 0)
     {
         result = HTTPAPI_SEND_REQUEST_FAILED;
-        LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+        LogError("(result = %s)", MU_ENUM_TO_STRING(HTTPAPI_RESULT, result));
         goto exit;
     }
 
@@ -387,7 +387,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
         if (send(httpHandle->_sock_fd, (char*)content, contentLength, 0) < 0)
         {
             result = HTTPAPI_SEND_REQUEST_FAILED;
-            LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+            LogError("(result = %s)", MU_ENUM_TO_STRING(HTTPAPI_RESULT, result));
             goto exit;
         }
     }
@@ -396,7 +396,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
     if (readLine(httpHandle->_sock_fd, buf, sizeof(buf)) < 0)
     {
         result = HTTPAPI_READ_DATA_FAILED;
-        LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+        LogError("(result = %s)", MU_ENUM_TO_STRING(HTTPAPI_RESULT, result));
         goto exit;
     }
 
@@ -406,7 +406,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
         //Cannot match string, error
         LogInfo("HTTPAPI_ExecuteRequest::Not a correct HTTP answer=%s", buf);
         result = HTTPAPI_READ_DATA_FAILED;
-        LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+        LogError("(result = %s)", MU_ENUM_TO_STRING(HTTPAPI_RESULT, result));
         goto exit;
     }
     if (statusCode)
@@ -417,7 +417,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
     if (readLine(httpHandle->_sock_fd, buf, sizeof(buf)) < 0)
     {
         result = HTTPAPI_READ_DATA_FAILED;
-        LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+        LogError("(result = %s)", MU_ENUM_TO_STRING(HTTPAPI_RESULT, result));
         goto exit;
     }
 
@@ -433,7 +433,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
             if (sscanf(buf + CHAR_COUNT(ContentLength), " %d", &bodyLength) != 1)
             {
                 result = HTTPAPI_READ_DATA_FAILED;
-                LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                LogError("(result = %s)", MU_ENUM_TO_STRING(HTTPAPI_RESULT, result));
                 goto exit;
             }
         }
@@ -455,7 +455,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
         if (readLine(httpHandle->_sock_fd, buf, sizeof(buf)) < 0)
         {
             result = HTTPAPI_READ_DATA_FAILED;
-            LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+            LogError("(result = %s)", MU_ENUM_TO_STRING(HTTPAPI_RESULT, result));
             goto exit;
         }
     }
@@ -471,20 +471,20 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
                 if (BUFFER_pre_build(responseContent, bodyLength) != 0)
                 {
                     result = HTTPAPI_ALLOC_FAILED;
-                    LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                    LogError("(result = %s)", MU_ENUM_TO_STRING(HTTPAPI_RESULT, result));
                 }
                 else if (BUFFER_content(responseContent, &receivedContent) != 0)
                 {
                     (void)BUFFER_unbuild(responseContent);
 
                     result = HTTPAPI_ALLOC_FAILED;
-                    LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                    LogError("(result = %s)", MU_ENUM_TO_STRING(HTTPAPI_RESULT, result));
                 }
 
                 if (readChunk(httpHandle->_sock_fd, (char*)receivedContent, bodyLength) < 0)
                 {
                     result = HTTPAPI_READ_DATA_FAILED;
-                    LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                    LogError("(result = %s)", MU_ENUM_TO_STRING(HTTPAPI_RESULT, result));
                     goto exit;
                 }
                 else
@@ -514,14 +514,14 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
             if (readLine(httpHandle->_sock_fd, buf, sizeof(buf)) < 0)    // read [length in hex]/r/n
             {
                 result = HTTPAPI_READ_DATA_FAILED;
-                LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                LogError("(result = %s)", MU_ENUM_TO_STRING(HTTPAPI_RESULT, result));
                 goto exit;
             }
             if (sscanf(buf, "%x", &chunkSize) != 1)     // chunkSize is length of next line (/r/n is not counted)
             {
                 //Cannot match string, error
                 result = HTTPAPI_RECEIVE_RESPONSE_FAILED;
-                LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                LogError("(result = %s)", MU_ENUM_TO_STRING(HTTPAPI_RESULT, result));
                 goto exit;
             }
 
@@ -534,7 +534,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
                     (void)BUFFER_unbuild(responseContent);
 
                     result = HTTPAPI_READ_DATA_FAILED;
-                    LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                    LogError("(result = %s)", MU_ENUM_TO_STRING(HTTPAPI_RESULT, result));
                     goto exit;
                 }
                 break;
@@ -548,20 +548,20 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
                         (void)BUFFER_unbuild(responseContent);
 
                         result = HTTPAPI_ALLOC_FAILED;
-                        LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                        LogError("(result = %s)", MU_ENUM_TO_STRING(HTTPAPI_RESULT, result));
                     }
                     else if (BUFFER_content(responseContent, &receivedContent) != 0)
                     {
                         (void)BUFFER_unbuild(responseContent);
 
                         result = HTTPAPI_ALLOC_FAILED;
-                        LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                        LogError("(result = %s)", MU_ENUM_TO_STRING(HTTPAPI_RESULT, result));
                     }
 
                     if (readChunk(httpHandle->_sock_fd, (char*)receivedContent + size, chunkSize) < 0)
                     {
                         result = HTTPAPI_READ_DATA_FAILED;
-                        LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                        LogError("(result = %s)", MU_ENUM_TO_STRING(HTTPAPI_RESULT, result));
                         goto exit;
                     }
                 }
@@ -570,7 +570,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
                     if (skipN(httpHandle->_sock_fd, chunkSize, buf, sizeof(buf)) < 0)
                     {
                         result = HTTPAPI_READ_DATA_FAILED;
-                        LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                        LogError("(result = %s)", MU_ENUM_TO_STRING(HTTPAPI_RESULT, result));
                         goto exit;
                     }
                 }
@@ -579,7 +579,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
                     || buf[0] != '\r' || buf[1] != '\n') // skip /r/n
                 {
                     result = HTTPAPI_READ_DATA_FAILED;
-                    LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                    LogError("(result = %s)", MU_ENUM_TO_STRING(HTTPAPI_RESULT, result));
                     goto exit;
                 }
                 size += chunkSize;
