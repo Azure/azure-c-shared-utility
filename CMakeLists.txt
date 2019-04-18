@@ -80,8 +80,13 @@ if(${use_etw})
 endif()
 
 if(${logerror_captures_stack_traces})
-    #set a preprocessor option (LOGERROR_CAPTURES_STACK_TRACES) and let the code handle the stack captures
+    #set a preprocessor option (LOGERROR_CAPTURES_STACK_TRACES) and add the files that provide the functionality
     add_definitions(-DLOGERROR_CAPTURES_STACK_TRACES)
+    set(LOGGING_STACKTRACE_C_FILE ./src/logging_stacktrace.c)
+    set(LOGGING_STACKTRACE_H_FILE ./inc/azure_c_shared_utility/logging_stacktrace.h)
+else()
+    set(LOGGING_STACKTRACE_C_FILE)
+    set(LOGGING_STACKTRACE_H_FILE)
 endif()
 
 option(build_as_dynamic "build the C Shared libaries as shared"  OFF)
@@ -220,6 +225,7 @@ set(source_c_files
     ${THREAD_C_FILE}
     ${UNIQUEID_C_FILE}
     ${ENVIRONMENT_VARIABLE_C_FILE}
+    ${LOGGING_STACKTRACE_C_FILE}
 )
 
 if(UNIX) #LINUX OR APPLE
@@ -339,6 +345,7 @@ set(source_h_files
     ./inc/azure_c_shared_utility/tlsio.h
     ./inc/azure_c_shared_utility/optionhandler.h
     ./inc/azure_c_shared_utility/memory_data.h
+    ${LOGGING_STACKTRACE_H_FILE}
 )
 
 if(UNIX) #LINUX OR APPLE
