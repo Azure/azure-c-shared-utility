@@ -117,9 +117,7 @@ typedef void(*LOGGER_LOG_GETLASTERROR)(const char* file, const char* func, int l
     } \
 }
 #else /*LOGERROR_CAPTURES_STACK_TRACES is defined*/ 
-extern char* getStackAsString(void);
-extern void* logging_malloc(size_t size); /*same as malloc from stdlib, always.*/
-extern void logging_free(void* ptr); /*same as free from stdlib, always.*/
+#include "azure_c_shared_utility/logging_stacktrace.h"
 #define STACK_PRINT_FORMAT "\nStack:\n%s"
 #define LOG(log_category, log_options, format, ...)                                                                                                                      \
 {                                                                                                                                                                        \
