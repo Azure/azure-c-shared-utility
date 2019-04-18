@@ -378,7 +378,7 @@ static void mbedtls_uninit(TLS_IO_INSTANCE *tls_io_instance)
     }
     else
     {
-        LogError("Uninitialzing when not previously initialized");
+        printf("Not initialized");
     }
 }
 
@@ -419,6 +419,7 @@ static void mbedtls_init(TLS_IO_INSTANCE *tls_io_instance)
         mbedtls_ssl_setup(&tls_io_instance->ssl, &tls_io_instance->config);
 
         tls_io_instance->tls_status = TLS_STATE_INITIALIZED;
+
     }
 }
 
@@ -646,6 +647,7 @@ int tlsio_mbedtls_send(CONCRETE_IO_HANDLE tls_io, const void *buffer, size_t siz
         }
         else
         {
+LogInfo("Send is being called");
             tls_io_instance->on_send_complete = on_send_complete;
             tls_io_instance->on_send_complete_callback_context = callback_context;
             int res = mbedtls_ssl_write(&tls_io_instance->ssl, buffer, size);
@@ -656,6 +658,7 @@ int tlsio_mbedtls_send(CONCRETE_IO_HANDLE tls_io, const void *buffer, size_t siz
             }
             else
             {
+LogInfo("Send is being called");
                 result = 0;
             }
         }
@@ -845,14 +848,10 @@ int tlsio_mbedtls_setoption(CONCRETE_IO_HANDLE tls_io, const char *optionName, c
             }
             else if (mbedtls_x509_crt_parse(&tls_io_instance->owncert, (const unsigned char *)value, (int)(strlen(value) + 1)) != 0)
             {
-                LogError("failure parsing certificate");
-                free(tls_io_instance->x509_certificate);
                 result = MU_FAILURE;
             }
             else if (tls_io_instance->pKey.pk_info != NULL && mbedtls_ssl_conf_own_cert(&tls_io_instance->config, &tls_io_instance->owncert, &tls_io_instance->pKey) != 0)
             {
-                LogError("failure calling mbedtls_ssl_conf_own_cert");
-                free(tls_io_instance->x509_certificate);
                 result = MU_FAILURE;
             }
             else
@@ -875,14 +874,10 @@ int tlsio_mbedtls_setoption(CONCRETE_IO_HANDLE tls_io, const char *optionName, c
             }
             else if (mbedtls_pk_parse_key(&tls_io_instance->pKey, (const unsigned char *)value, (int)(strlen(value) + 1), NULL, 0) != 0)
             {
-                LogError("failure parsing Private Key");
-                free(tls_io_instance->x509_private_key);
                 result = MU_FAILURE;
             }
             else if (tls_io_instance->owncert.version > 0 && mbedtls_ssl_conf_own_cert(&tls_io_instance->config, &tls_io_instance->owncert, &tls_io_instance->pKey))
             {
-                LogError("failure calling mbedtls_ssl_conf_own_cert on cert");
-                free(tls_io_instance->x509_private_key);
                 result = MU_FAILURE;
             }
             else
@@ -904,6 +899,7 @@ int tlsio_mbedtls_setoption(CONCRETE_IO_HANDLE tls_io, const char *optionName, c
         }
         else
         {
+LogError("Failed to set opention");
             // tls_io_instance->socket_io is never NULL
             result = xio_setoption(tls_io_instance->socket_io, optionName, value);
         }
