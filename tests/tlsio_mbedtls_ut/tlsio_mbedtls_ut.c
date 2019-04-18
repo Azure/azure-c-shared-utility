@@ -133,6 +133,9 @@ MOCKABLE_FUNCTION(, void, on_send_complete, void*, context, IO_SEND_RESULT, send
 
 #include "azure_c_shared_utility/tlsio_mbedtls.h"
 
+static const char* const TEST_X509_CERTIFICATE = "test certificate";
+static const char* const TEST_X509_KEY = "test certificate key";
+
 static const char* const TEST_HOSTNAME = "test.azure-devices.net";
 static int TEST_CONNECTION_PORT = 443;
 static const IO_INTERFACE_DESCRIPTION* TEST_INTERFACE_DESC = (IO_INTERFACE_DESCRIPTION*)0x6543;
@@ -977,6 +980,63 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
 
         //act
         mbed_f_recv(NULL, (unsigned char*)read_buff, buff_len);
+
+        //assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        //cleanup
+        (void)tlsio_mbedtls_close(handle, on_io_close_complete, NULL);
+        tlsio_mbedtls_destroy(handle);
+    }
+
+    TEST_FUNCTION(tlsio_mbedtls_setoption_certificate_success)
+    {
+        //arrange
+        TLSIO_CONFIG tls_io_config;
+        tls_io_config.hostname = TEST_HOSTNAME;
+        tls_io_config.port = TEST_CONNECTION_PORT;
+        tls_io_config.underlying_io_interface = TEST_INTERFACE_DESC;
+        tls_io_config.underlying_io_parameters = NULL;
+        CONCRETE_IO_HANDLE handle = tlsio_mbedtls_create(&tls_io_config);
+        (void)tlsio_mbedtls_open(handle, on_io_open_complete, NULL, on_bytes_received, NULL, on_io_error, NULL);
+        g_open_complete(g_open_complete_ctx, IO_OPEN_OK);
+        umock_c_reset_all_calls();
+
+        STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_X509_CERTIFICATE));
+        STRICT_EXPECTED_CALL(mbedtls_x509_crt_parse(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG));
+
+        //act
+        tlsio_mbedtls_setoption(handle, SU_OPTION_X509_CERT, TEST_X509_CERTIFICATE);
+
+        //assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        //cleanup
+        (void)tlsio_mbedtls_close(handle, on_io_close_complete, NULL);
+        tlsio_mbedtls_destroy(handle);
+    }
+
+    TEST_FUNCTION(tlsio_mbedtls_setoption_certificate_key_success)
+    {
+        //arrange
+        mbedtls_pk_info_t* pk_info = (mbedtls_pk_info_t*)0x12345;
+
+        TLSIO_CONFIG tls_io_config;
+        tls_io_config.hostname = TEST_HOSTNAME;
+        tls_io_config.port = TEST_CONNECTION_PORT;
+        tls_io_config.underlying_io_interface = TEST_INTERFACE_DESC;
+        tls_io_config.underlying_io_parameters = NULL;
+        CONCRETE_IO_HANDLE handle = tlsio_mbedtls_create(&tls_io_config);
+        (void)tlsio_mbedtls_open(handle, on_io_open_complete, NULL, on_bytes_received, NULL, on_io_error, NULL);
+        g_open_complete(g_open_complete_ctx, IO_OPEN_OK);
+        umock_c_reset_all_calls();
+
+        STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_X509_KEY));
+        STRICT_EXPECTED_CALL(mbedtls_pk_parse_key(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, NULL, 0))
+            .CopyOutArgumentBuffer_ctx(&pk_info, sizeof(pk_info));
+
+        //act
+        tlsio_mbedtls_setoption(handle, SU_OPTION_X509_PRIVATE_KEY, TEST_X509_KEY);
 
         //assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
