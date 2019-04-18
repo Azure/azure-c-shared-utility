@@ -40,6 +40,7 @@ if(WIN32)
     option(use_mbedtls "set use_mbedtls to ON if mbedtls is to be used, set to OFF to not use mbedtls" OFF)
     option(use_wolfssl "set use_wolfssl to ON if wolfssl is to be used, set to OFF to not use wolfssl" OFF)
     option(use_etw "set use_etw to ON if ETW logging is to be used. Default is OFF" OFF)
+    option(logerror_captures_stack_traces "LogError will make a reasonable attempt to capture the stack trace at the time of calling LogError. Only available on Windows" OFF)
     option(use_socketio "set use_socketio to ON if socketio is to be included in the library, set to OFF if a different implementation will be provided" ON)
 else()
     option(use_schannel "set use_schannel to ON if schannel is to be used, set to OFF to not use schannel" OFF)
@@ -76,6 +77,11 @@ if(${use_etw})
     execute_process(COMMAND  ${CMAKE_CURRENT_LIST_DIR}/src/etw_provider_generate.cmd
         WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/src
     )
+endif()
+
+if(${logerror_captures_stack_traces})
+    #set a preprocessor option (LOGERROR_CAPTURES_STACK_TRACES) and let the code handle the stack captures
+    add_definitions(-DLOGERROR_CAPTURES_STACK_TRACES)
 endif()
 
 option(build_as_dynamic "build the C Shared libaries as shared"  OFF)
@@ -444,6 +450,10 @@ if(${build_as_dynamic})
 endif()
 
 set(aziotsharedutil_target_libs)
+
+if(${logerror_captures_stack_traces}))
+    set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} Dbghelp.lib)
+endif()
 
 if(${use_http})
     if(WIN32)
