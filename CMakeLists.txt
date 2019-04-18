@@ -451,7 +451,7 @@ endif()
 
 set(aziotsharedutil_target_libs)
 
-if(${logerror_captures_stack_traces}))
+if(${logerror_captures_stack_traces})
     set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} Dbghelp.lib)
 endif()
 
