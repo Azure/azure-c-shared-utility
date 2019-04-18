@@ -118,6 +118,8 @@ typedef void(*LOGGER_LOG_GETLASTERROR)(const char* file, const char* func, int l
 }
 #else /*LOGERROR_CAPTURES_STACK_TRACES is defined*/ 
 extern char* getStackAsString(void);
+extern void* logging_malloc(size_t size); /*same as malloc from stdlib, always.*/
+extern void logging_free(void* ptr); /*same as free from stdlib, always.*/
 #define STACK_PRINT_FORMAT "\nStack:\n%s"
 #define LOG(log_category, log_options, format, ...)                                                                                                                      \
 {                                                                                                                                                                        \
@@ -140,7 +142,7 @@ extern char* getStackAsString(void);
                 else                                                                                                                                                     \
                 {                                                                                                                                                        \
                     size_t formatSize = strlen(format);                                                                                                                  \
-                    char* formatWithStack = (char*)malloc(formatSize + sizeof("STACK_PRINT_FORMAT"));                                                                    \
+                    char* formatWithStack = (char*)logging_malloc(formatSize + sizeof("STACK_PRINT_FORMAT"));                                                            \
                     if (formatWithStack == NULL)                                                                                                                         \
                     {                                                                                                                                                    \
                         l(log_category, __FILE__, FUNC_NAME, __LINE__, log_options, format, __VA_ARGS__);                                                                \
@@ -150,9 +152,9 @@ extern char* getStackAsString(void);
                         (void)memcpy(formatWithStack, format, formatSize);                                                                                               \
                         (void)memcpy(formatWithStack + formatSize, STACK_PRINT_FORMAT, sizeof(STACK_PRINT_FORMAT));                                                      \
                         l(log_category, __FILE__, FUNC_NAME, __LINE__, log_options, formatWithStack, __VA_ARGS__, stackAsString);                                        \
-                        free(formatWithStack);                                                                                                                           \
+                        logging_free(formatWithStack);                                                                                                                   \
                     }                                                                                                                                                    \
-                    free(stackAsString);                                                                                                                                 \
+                    logging_free(stackAsString);                                                                                                                         \
                 }                                                                                                                                                        \
             }                                                                                                                                                            \
             else                                                                                                                                                         \
