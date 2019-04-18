@@ -13,6 +13,10 @@
 #include "azure_c_shared_utility/agenttime.h"
 #include "azure_c_shared_utility/optimize_size.h"
 
+#ifdef LOGERROR_CAPTURES_STACK_TRACES
+#include "azure_c_shared_utility/logging_stacktrace.h"
+#endif
+
 #if defined(ESP8266_RTOS)
 #include "c_types.h"
 #endif
@@ -117,7 +121,6 @@ typedef void(*LOGGER_LOG_GETLASTERROR)(const char* file, const char* func, int l
     } \
 }
 #else /*LOGERROR_CAPTURES_STACK_TRACES is defined*/ 
-#include "azure_c_shared_utility/logging_stacktrace.h"
 #define STACK_PRINT_FORMAT "\nStack:\n%s"
 #define LOG(log_category, log_options, format, ...)                                                                                                                      \
 {                                                                                                                                                                        \

@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <inttypes.h>
+#include <stddef.h>
 
 #include "windows.h"
 #include "dbghelp.h"
@@ -34,8 +35,18 @@ typedef union SYMBOL_INFO_EXTENDED_TAG
     unsigned char extendsUnion[sizeof(SYMBOL_INFO) + TRACE_MAX_SYMBOL_SIZE - 1]; /*this field only exists to extend the size of the union to encompass "CHAR    Name[1];" of the SYMBOL_INFO to be as big as TRACE_MAX_SYMBOL_SIZE - 1 */ /*and the reason why it is not malloc'd is to exactly avoid a malloc that cannot be LogError'd (how does one log errors in a log function?!)*/
 }SYMBOL_INFO_EXTENDED;
 
-
 static SRWLOCK lockOverSymCalls = SRWLOCK_INIT;
+
+/*returns number of characters copied into destination*/
+static size_t memcat(char* destination, size_t destinationSize, const char* source, size_t sourceSize)
+{
+    size_t sizeToCpy = destinationSize<sourceSize?destinationSize:sourceSize;
+    (void)memcpy(destination, source, sizeToCpy);
+    return sizeToCpy;
+}
+
+static const char SymFromAddrFailed[] = "SymFromAddr failed\n";
+static const char snprintfFailed[] = "snprintf failed\n";
 
 char* getStackAsString(void)
 {
@@ -58,13 +69,9 @@ char* getStackAsString(void)
     else
     {
         char* destination = result;
-        uint32_t destinationSize = TRACE_MAX_STACK_AS_STRING_SIZE;
+        size_t destinationSize = TRACE_MAX_STACK_AS_STRING_SIZE -1 ; /*-1 to save the last character for '\0'*/
+        size_t copied;
 
-        size_t destinationPos = 0;
-        destination[0] = '\0';
-
-        /*try fill destination up to destinationSize*/
-        char resultLine[TRACE_MAX_STACK_LINE_AS_STRING_SIZE];
         void* stack[TRACE_MAX_STACK_FRAMES];
 
         /*all following function calls are protected by the same SRW*/
@@ -76,56 +83,69 @@ char* getStackAsString(void)
         SYMBOL_INFO_EXTENDED symbolExtended;
         SYMBOL_INFO* symbol = &symbolExtended.symbol;
 
-        IMAGEHLP_LINE64 line;
-
+       
         symbol->MaxNameLen = TRACE_MAX_SYMBOL_SIZE;
         symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
 
-        for (uint32_t j = 0; j < numberOfFrames; j++)
+        for (uint16_t j = 0; j < numberOfFrames; j++)
         {
             DWORD64 address = (DWORD64)(stack[j]);
             DWORD displacement = 0;
 
             if (!SymFromAddr(process, address, NULL, symbol))
             {
-                (void)strncat(destination, "SymFromAddr failed\n", destinationSize - destinationPos);
+                copied = memcat(destination, destinationSize, SymFromAddrFailed, sizeof(SymFromAddrFailed)-1);
+                destination += copied;
+                destinationSize -= copied;
             }
             else
             {
+                IMAGEHLP_LINE64 line;
                 line.SizeOfStruct = sizeof(IMAGEHLP_LINE64);
+
+                char resultLine[TRACE_MAX_STACK_LINE_AS_STRING_SIZE];
+
                 if (SymGetLineFromAddr64(process, address, &displacement, &line))
                 {
-                    int snprintfResult = snprintf(resultLine, sizeof(resultLine), "!%s %s:%" PRIu32 "\n", symbol->Name, line.FileName, line.LineNumber);
+                    int snprintfResult = snprintf(resultLine, sizeof(resultLine), "!%s %s:%" PRIu32 "%s", symbol->Name, line.FileName, line.LineNumber, (j<numberOfFrames-1)?"\n":"");
                     if (!(
                         (snprintfResult >= 0) && /*the returned value is nonnegative [...]*/
                         (snprintfResult < sizeof(resultLine)) /*[...] and less than n.*/
                         ))
                     {
-                        (void)strncat(destination, "snprintf failed\n", destinationSize - destinationPos);
+                        copied = memcat(destination, destinationSize, snprintfFailed, sizeof(snprintfFailed) - 1);
+                        destination += copied;
+                        destinationSize -= copied;
                     }
                     else
                     {
-                        (void)strncat(destination, resultLine, destinationSize - destinationPos);
+                        copied = memcat(destination, destinationSize, resultLine, snprintfResult);
+                        destination += copied;
+                        destinationSize -= copied;
                     }
                 }
                 else
                 {
-                    int snprintfResult = snprintf(resultLine, sizeof(resultLine), "!%s Address 0x%" PRIX64 "\n", symbol->Name, line.Address);
+                    int snprintfResult = snprintf(resultLine, sizeof(resultLine), "!%s Address 0x%" PRIX64 "%s", symbol->Name, line.Address, (j < numberOfFrames - 1) ? "\n" : "");
                     if (!(
                         (snprintfResult >= 0) && /*the returned value is nonnegative [...]*/
                         (snprintfResult < sizeof(resultLine)) /*[...] and less than n.*/
                         ))
                     {
-                        (void)strncat(destination, "snprintf failed\n", destinationSize - destinationPos);
+                        copied = memcat(destination, destinationSize, snprintfFailed, sizeof(snprintfFailed) - 1);
+                        destination += copied;
+                        destinationSize -= copied;
                     }
                     else
                     {
-                        (void)strncat(destination, resultLine, destinationSize - destinationPos);
+                        copied = memcat(destination, destinationSize, resultLine, snprintfResult);
+                        destination += copied;
+                        destinationSize -= copied;
                     }
                 }
             }
-            destinationPos = strlen(destination);
         }
+        destination[0] = '\0';
 
         ReleaseSRWLockExclusive(&lockOverSymCalls);
 
