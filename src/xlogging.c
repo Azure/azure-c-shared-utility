@@ -16,6 +16,16 @@
 #ifdef LOGERROR_CAPTURES_STACK_TRACES
 #include "dbghelp.h"
 static volatile LONG doSymInit = 0; /*0 = not initialized, 1 = initializing, 2= initialized*/
+
+void* logging_malloc(size_t size)
+{
+    return malloc(size);
+}
+void logging_free(void* ptr)
+{
+    free(ptr);
+}
+
 #endif
 
 #endif // WIN32
