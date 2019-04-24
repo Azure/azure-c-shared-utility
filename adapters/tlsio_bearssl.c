@@ -1158,7 +1158,8 @@ int tlsio_bearssl_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_cl
 			tls_io_instance->on_io_close_complete = on_io_close_complete;
 			tls_io_instance->on_io_close_complete_context = callback_context;
 			tls_io_instance->tlsio_state = TLSIO_STATE_CLOSING;
-			br_ssl_engine_close(&tls_io_instance->sc.eng);
+
+            xio_close(tls_io_instance->socket_io, on_underlying_io_close_complete_during_close, tls_io_instance);
             result = 0;
         }
     }
@@ -1181,6 +1182,7 @@ int tlsio_bearssl_send(CONCRETE_IO_HANDLE tls_io, const void *buffer, size_t siz
     else
     {
         TLS_IO_INSTANCE *tls_io_instance = (TLS_IO_INSTANCE *)tls_io;
+
         if (tls_io_instance->tlsio_state != TLSIO_STATE_OPEN)
         {
             LogError("TLS is not open");
@@ -1219,7 +1221,7 @@ void tlsio_bearssl_dowork(CONCRETE_IO_HANDLE tls_io)
         }
         else 
         {
-            if (tls_io_instance->tlsio_state != TLSIO_STATE_OPENING_UNDERLYING_IO)
+            if (tls_io_instance->tlsio_state != TLSIO_STATE_OPENING_UNDERLYING_IO && tls_io_instance->tlsio_state != TLSIO_STATE_CLOSING)
             {
                 bearResult = br_ssl_engine_current_state(&tls_io_instance->sc.eng);
 
@@ -1341,19 +1343,6 @@ void tlsio_bearssl_dowork(CONCRETE_IO_HANDLE tls_io)
                 }
 
                 bearResult = br_ssl_engine_current_state(&tls_io_instance->sc.eng);
-
-                if (bearResult & BR_SSL_CLOSED)
-                {
-                    if (tls_io_instance->tlsio_state == TLSIO_STATE_CLOSING)
-                    {
-                        xio_close(tls_io_instance->socket_io, on_underlying_io_close_complete_during_close, tls_io_instance);
-                    }
-                    else
-                    {
-                        indicate_error(tls_io_instance);
-                    }
-                    
-                }
             }
 
             xio_dowork(tls_io_instance->socket_io);
