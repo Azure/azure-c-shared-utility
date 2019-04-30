@@ -1805,7 +1805,7 @@ TEST_FUNCTION(http_proxy_io_open_after_CONNECT_request_allocation_error_error_su
 }
 
 /* Tests_SRS_HTTP_PROXY_IO_01_059: [ - If username and password have been specified in the arguments passed to http_proxy_io_create, then the header Proxy-Authorization shall be added to the request. ]*/
-/* Tests_SRS_HTTP_PROXY_IO_01_061: [ Encoding to Base64 shall be done by calling Base64_Encode_Bytes. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_061: [ Encoding to Base64 shall be done by calling Azure_Base64_Encode_Bytes. ]*/
 /* Tests_SRS_HTTP_PROXY_IO_01_060: [ - The value of Proxy-Authorization shall be the constructed according to RFC 2617. ]*/
 /* Tests_SRS_HTTP_PROXY_IO_01_091: [ To receive authorization, the client sends the userid and password, separated by a single colon (":") character, within a base64 [7] encoded string in the credentials. ]*/
 /* Tests_SRS_HTTP_PROXY_IO_01_092: [ A client MAY preemptively send the corresponding Authorization header with requests for resources in that space without receipt of another challenge from the server. ]*/
@@ -1845,7 +1845,7 @@ TEST_FUNCTION(when_the_underlying_io_open_complete_is_called_the_CONNECT_request
 }
 
 /* Tests_SRS_HTTP_PROXY_IO_01_059: [ - If username and password have been specified in the arguments passed to http_proxy_io_create, then the header Proxy-Authorization shall be added to the request. ]*/
-/* Tests_SRS_HTTP_PROXY_IO_01_061: [ Encoding to Base64 shall be done by calling Base64_Encode_Bytes. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_061: [ Encoding to Base64 shall be done by calling Azure_Base64_Encode_Bytes. ]*/
 /* Tests_SRS_HTTP_PROXY_IO_01_060: [ - The value of Proxy-Authorization shall be the constructed according to RFC 2617. ]*/
 /* Tests_SRS_HTTP_PROXY_IO_01_091: [ To receive authorization, the client sends the userid and password, separated by a single colon (":") character, within a base64 [7] encoded string in the credentials. ]*/
 /* Tests_SRS_HTTP_PROXY_IO_01_092: [ A client MAY preemptively send the corresponding Authorization header with requests for resources in that space without receipt of another challenge from the server. ]*/

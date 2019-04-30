@@ -767,7 +767,7 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
                     nonce[i] = (unsigned char)gb_rand();
                 }
 
-                /* Codes_SRS_UWS_CLIENT_01_497: [ The nonce needed for the upgrade request shall be Base64 encoded with Base64_Encode_Bytes. ]*/
+                /* Codes_SRS_UWS_CLIENT_01_497: [ The nonce needed for the upgrade request shall be Base64 encoded with Azure_Base64_Encode_Bytes. ]*/
                 base64_nonce = Azure_Base64_Encode_Bytes(nonce, sizeof(nonce));
                 if (base64_nonce == NULL)
                 {
