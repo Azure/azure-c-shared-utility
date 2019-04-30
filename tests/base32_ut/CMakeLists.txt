@@ -10,7 +10,7 @@ set(${theseTestsName}_test_files
 )
 
 set(${theseTestsName}_c_files
-    ../../src/base32.c
+    ../../src/azure_base32.c
 )
 
 set(${theseTestsName}_h_files

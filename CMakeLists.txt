@@ -182,7 +182,7 @@ include_directories(${UMOCK_C_INC_FOLDER})
 
 #these are the C source files
 set(source_c_files
-    ./src/base32.c
+    ./src/azure_base32.c
     ./src/azure_base64.c
     ./src/buffer.c
     ./src/constbuffer_array.c
