@@ -334,7 +334,7 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
                             }
                             else
                             {
-                                /* Codes_SRS_HTTP_PROXY_IO_01_061: [ Encoding to Base64 shall be done by calling Base64_Encode_Bytes. ]*/
+                                /* Codes_SRS_HTTP_PROXY_IO_01_061: [ Encoding to Base64 shall be done by calling Azure_Base64_Encode_Bytes. ]*/
                                 encoded_auth_string = Azure_Base64_Encode_Bytes((const unsigned char*)plain_auth_string_bytes, plain_auth_string_length);
                                 if (encoded_auth_string == NULL)
                                 {

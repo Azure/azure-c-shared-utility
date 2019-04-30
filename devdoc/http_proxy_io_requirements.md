@@ -214,7 +214,7 @@ extern const IO_INTERFACE_DESCRIPTION* http_proxy_io_get_interface_description(v
 
 **SRS_HTTP_PROXY_IO_01_060: [** - The value of `Proxy-Authorization` shall be the constructed according to RFC 2617. **]**
 
-**SRS_HTTP_PROXY_IO_01_061: [** Encoding to Base64 shall be done by calling `Base64_Encode_Bytes`. **]**
+**SRS_HTTP_PROXY_IO_01_061: [** Encoding to Base64 shall be done by calling `Azure_Base64_Encode_Bytes`. **]**
 
 **SRS_HTTP_PROXY_IO_01_062: [** If any failure is encountered while constructing the request, the `on_open_complete` callback shall be triggered with `IO_OPEN_ERROR`, passing also the `on_open_complete_context` argument as `context`. **]**
 

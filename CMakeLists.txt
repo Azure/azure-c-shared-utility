@@ -293,7 +293,7 @@ endif()
 #these are the C headers
 set(source_h_files
     ./inc/azure_c_shared_utility/agenttime.h
-    ./inc/azure_c_shared_utility/base32.h
+    ./inc/azure_c_shared_utility/azure_base32.h
     ./inc/azure_c_shared_utility/azure_base64.h
     ./inc/azure_c_shared_utility/buffer_.h
     ./inc/azure_c_shared_utility/constbuffer_array.h

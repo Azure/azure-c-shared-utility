@@ -13,45 +13,45 @@ This module is used to encode an array of unsigned chars using the standard base
 ## Exposed API
 
 ```c
-extern STRING_HANDLE Base32_Encode(BUFFER_HANDLE input);
-extern char* Base32_Encode_Bytes(const unsigned char* source, size_t size);
-BUFFER_HANDLE Base32_Decode(STRING_HANDLE handle);
-BUFFER_HANDLE Base32_Decode_String(const char* source);
+extern STRING_HANDLE Azure_Base32_Encode(BUFFER_HANDLE input);
+extern char* Azure_Base32_Encode_Bytes(const unsigned char* source, size_t size);
+BUFFER_HANDLE Azure_Base32_Decode(STRING_HANDLE handle);
+BUFFER_HANDLE Azure_Base32_Decode_String(const char* source);
 ```
 
-### Base32_Encode
+### Azure_Base32_Encode
 
 ```c
-extern STRING_HANDLE Base32_Encode(BUFFER_HANDLE source);
+extern STRING_HANDLE Azure_Base32_Encode(BUFFER_HANDLE source);
 ```
 
-**SRS_BASE32_07_001: [** If `source` is NULL `Base32_Encode` shall return NULL. **]**
+**SRS_BASE32_07_001: [** If `source` is NULL `Azure_Base32_Encode` shall return NULL. **]**
 
-**SRS_BASE32_07_002: [** If successful `Base32_Encode` shall return the base32 value of source. **]**
+**SRS_BASE32_07_002: [** If successful `Azure_Base32_Encode` shall return the base32 value of source. **]**
 
-**SRS_BASE32_07_015: [** If `source` length is 0 `Base32_Encode` shall return an empty string. **]**
+**SRS_BASE32_07_015: [** If `source` length is 0 `Azure_Base32_Encode` shall return an empty string. **]**
 
-**SRS_BASE32_07_003: [** `Base32_Encode` shall call into `Base32_Encode_impl` to encode the source data. **]**
+**SRS_BASE32_07_003: [** `Azure_Base32_Encode` shall call into `Base32_Encode_impl` to encode the source data. **]**
 
-**SRS_BASE32_07_013: [** `Base32_Encode` shall wrap the `Base32_Encode_impl` result into a `STRING_HANDLE`. **]**
+**SRS_BASE32_07_013: [** `Azure_Base32_Encode` shall wrap the `Base32_Encode_impl` result into a `STRING_HANDLE`. **]**
 
-**SRS_BASE32_07_014: [** Upon failure `Base32_Encode` shall return NULL. **]**
+**SRS_BASE32_07_014: [** Upon failure `Azure_Base32_Encode` shall return NULL. **]**
 
-### Base32_Encode_Bytes
+### Azure_Base32_Encode_Bytes
 
 ```c
-extern char* Base32_Encode_Bytes(const unsigned char* source, size_t size);
+extern char* Azure_Base32_Encode_Bytes(const unsigned char* source, size_t size);
 ```
 
-**SRS_BASE32_07_004: [** If `source` is NULL `Base32_Encode_Bytes` shall return NULL. **]**
+**SRS_BASE32_07_004: [** If `source` is NULL `Azure_Base32_Encode_Bytes` shall return NULL. **]**
 
-**SRS_BASE32_07_005: [** If `size` is 0 `Base32_Encode_Bytes` shall return an empty string. **]**
+**SRS_BASE32_07_005: [** If `size` is 0 `Azure_Base32_Encode_Bytes` shall return an empty string. **]**
 
-**SRS_BASE32_07_006: [** If successful `Base32_Encode_Bytes` shall return the base32 value of input. **]**
+**SRS_BASE32_07_006: [** If successful `Azure_Base32_Encode_Bytes` shall return the base32 value of input. **]**
 
-**SRS_BASE32_07_007: [** `Base32_Encode_Bytes` shall call into `Base32_Encode_impl` to encode the source data. **]**
+**SRS_BASE32_07_007: [** `Azure_Base32_Encode_Bytes` shall call into `Base32_Encode_impl` to encode the source data. **]**
 
-**SRS_BASE32_07_014: [** Upon failure `Base32_Encode_Bytes` shall return NULL. **]**
+**SRS_BASE32_07_014: [** Upon failure `Azure_Base32_Encode_Bytes` shall return NULL. **]**
 
 ### base32_encode_impl
 
@@ -67,31 +67,31 @@ static char* base32_encode_impl(const unsigned char* source, size_t src_size)
 
 **SRS_BASE32_07_012: [** If the `src_size` is not divisible by 8 and less than the 40-bits, `base32_encode_impl` shall pad the remaining places with `=`. **]**
 
-### Base32_Decode_String
+### Azure_Base32_Decode_String
 
 ```c
-extern BUFFER_HANDLE Base32_Decode_String(const char* source);
+extern BUFFER_HANDLE Azure_Base32_Decode_String(const char* source);
 ```
 
-**SRS_BASE32_07_008: [** If source is NULL `Base32_Decode_String` shall return NULL. **]**
+**SRS_BASE32_07_008: [** If source is NULL `Azure_Base32_Decode_String` shall return NULL. **]**
 
-**SRS_BASE32_07_019: [** On success `Base32_Decode_String` shall return a BUFFER_HANDLE that contains the decoded bytes for source. **]**
+**SRS_BASE32_07_019: [** On success `Azure_Base32_Decode_String` shall return a BUFFER_HANDLE that contains the decoded bytes for source. **]**
 
-**SRS_BASE32_07_020: [** `Base32_Decode_String` shall call `base32_decode_impl` to decode the base64 value. **]**
+**SRS_BASE32_07_020: [** `Azure_Base32_Decode_String` shall call `base32_decode_impl` to decode the base64 value. **]**
 
-### Base32_Decode
+### Azure_Base32_Decode
 
 ```c
-extern BUFFER_HANDLE Base32_Decode(STRING_HANDLE source);
+extern BUFFER_HANDLE Azure_Base32_Decode(STRING_HANDLE source);
 ```
 
-**SRS_BASE32_07_016: [** If source is NULL `Base32_Decode` shall return NULL. **]**
+**SRS_BASE32_07_016: [** If source is NULL `Azure_Base32_Decode` shall return NULL. **]**
 
-**SRS_BASE32_07_017: [** On success `Base32_Decode` shall return a `BUFFER_HANDLE` that contains the decoded bytes for source. **]**
+**SRS_BASE32_07_017: [** On success `Azure_Base32_Decode` shall return a `BUFFER_HANDLE` that contains the decoded bytes for source. **]**
 
-**SRS_BASE32_07_018: [** `Base32_Decode` shall call `base32_decode_impl` to decode the base64 value **]**
+**SRS_BASE32_07_018: [** `Azure_Base32_Decode` shall call `base32_decode_impl` to decode the base64 value **]**
 
-**SRS_BASE32_07_027: [** If the string in source value is NULL, `Base32_Decode` shall return NULL. **]**
+**SRS_BASE32_07_027: [** If the string in source value is NULL, `Azure_Base32_Decode` shall return NULL. **]**
 
 ### base32_decode_impl
 

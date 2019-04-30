@@ -326,7 +326,7 @@ XX**SRS_UWS_CLIENT_01_402: [** When `on_underlying_io_open_complete` is called w
 XX**SRS_UWS_CLIENT_01_401: [** If `on_underlying_io_open_complete` is called with a NULL context, `on_underlying_io_open_complete` shall do nothing. **]**  
 XX**SRS_UWS_CLIENT_01_371: [** When `on_underlying_io_open_complete` is called with `IO_OPEN_OK` while uws is OPENING (`uws_client_open_async` was called), uws shall prepare the WebSockets upgrade request. **]**  
 X**SRS_UWS_CLIENT_01_408: [** If constructing of the WebSocket upgrade request fails, uws shall report that the open failed by calling the `on_ws_open_complete` callback passed to `uws_client_open_async` with `WS_OPEN_ERROR_CONSTRUCTING_UPGRADE_REQUEST`. **]**  
-XX**SRS_UWS_CLIENT_01_497: [** The nonce needed for the upgrade request shall be Base64 encoded with `Base64_Encode_Bytes`. **]**  
+XX**SRS_UWS_CLIENT_01_497: [** The nonce needed for the upgrade request shall be Base64 encoded with `Azure_Base64_Encode_Bytes`. **]**  
 XX**SRS_UWS_CLIENT_01_498: [** If Base64 encoding the nonce for the upgrade request fails, then the uws client shall report that the open failed by calling the `on_ws_open_complete` callback passed to `uws_client_open_async` with `WS_OPEN_ERROR_BASE64_ENCODE_FAILED`. **]**  
 
 XX**SRS_UWS_CLIENT_01_406: [** If not enough memory can be allocated to construct the WebSocket upgrade request, uws shall report that the open failed by calling the `on_ws_open_complete` callback passed to `uws_client_open_async` with `WS_OPEN_ERROR_NOT_ENOUGH_MEMORY`. **]**  
