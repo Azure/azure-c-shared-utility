@@ -10,15 +10,15 @@
 
 #define GUID_LENGTH 64
 
-typedef enum PLATFORM_INFO_OPTION_VALUES
-{
-    PLATFORM_INFO_OPTION_DEFAULT,
-    PLATFORM_INFO_OPTION_RETRIEVE_SQM
-} PLATFORM_INFO_OPTION;
-
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
+
+    #define PLATFORM_INFO_OPTION_VALUES       \
+        PLATFORM_INFO_OPTION_DEFAULT,         \
+        PLATFORM_INFO_OPTION_RETRIEVE_SQM
+
+    MU_DEFINE_ENUM(PLATFORM_INFO_OPTION, PLATFORM_INFO_OPTION_VALUES);
 
     MOCKABLE_FUNCTION(, int, platform_init);
     MOCKABLE_FUNCTION(, void, platform_deinit);
