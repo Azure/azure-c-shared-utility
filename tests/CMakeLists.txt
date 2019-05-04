@@ -8,7 +8,7 @@ set(SHARED_UTIL_REAL_TEST_FOLDER ${CMAKE_CURRENT_LIST_DIR}/real_test_files CACHE
 
 if(${run_unittests})
     add_subdirectory(agenttime_ut)
-    add_subdirectory(base32_ut)
+    add_subdirectory(azure_base32_ut)
     add_subdirectory(azure_base64_ut)
     add_subdirectory(buffer_ut)
     add_subdirectory(constbuffer_array_ut)

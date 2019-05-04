@@ -142,7 +142,7 @@ static void my_STRING_delete(STRING_HANDLE h)
     my_gballoc_free((void*)h);
 }
 
-BEGIN_TEST_SUITE(base32_ut)
+BEGIN_TEST_SUITE(azure_base32_ut)
 
     TEST_SUITE_INITIALIZE(suite_init)
     {
@@ -507,4 +507,4 @@ BEGIN_TEST_SUITE(base32_ut)
         STRING_delete(input);
     }
 
-END_TEST_SUITE(base32_ut)
+END_TEST_SUITE(azure_base32_ut)
