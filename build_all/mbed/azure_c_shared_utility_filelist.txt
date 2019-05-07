@@ -1,6 +1,6 @@
 set(mbed_exported_project_files
         ${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/agenttime.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/base64.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/azure_base64.h
         ${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/buffer_.h
         ${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/connection_string_parser.h
         ${CMAKE_CURRENT_SOURCE_DIR}/../../inc/azure_c_shared_utility/condition.h
@@ -54,7 +54,7 @@ set(mbed_exported_project_files
    )
 
 set(mbed_project_files
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/base64.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/azure_base64.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/buffer.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/constbuffer.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/connection_string_parser.c

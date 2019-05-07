@@ -1,5 +1,5 @@
 inc\agenttime.h
-inc\base64.h
+inc\azure_base64.h
 inc\buffer_.h
 inc\condition.h
 inc\constbuffer.h
@@ -40,7 +40,7 @@ inc\xio.h
 inc\xlogging.h
 inc\vector_types.h
 inc\vector_types_internal.h
-src\base64.c
+src\azure_base64.c
 src\buffer.c
 src\constbuffer.c
 src\consolelogger.c
