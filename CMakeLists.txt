@@ -575,6 +575,8 @@ if(NOT ${use_installed_dependencies})
     endif()
 endif()
 
+include(dependencies.cmake)
+
 include_directories(${MACRO_UTILS_INC_FOLDER})
 include_directories(${UMOCK_C_INC_FOLDER})
 
@@ -671,6 +673,7 @@ if(${use_installed_dependencies})
         FILES
             "configs/${PROJECT_NAME}Config.cmake"
             "configs/${PROJECT_NAME}Functions.cmake"
+           "configs/azure_iot_build_rules.cmake"
             "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}/${PROJECT_NAME}ConfigVersion.cmake"
         DESTINATION
             ${package_location}
