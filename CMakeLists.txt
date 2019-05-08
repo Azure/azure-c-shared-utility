@@ -219,6 +219,9 @@ set(source_c_files
     ./adapters/agenttime.c
     ${CONDITION_C_FILE}
     ${LOCK_C_FILE}
+    ${SRW_LOCK_C_FILE}
+    ${TIMER_C_FILE}
+    ${STRING_UTILS_C_FILE}
     ${PLATFORM_C_FILE}
     ${SOCKETIO_C_FILE}
     ${TICKCOUTER_C_FILE}
@@ -324,12 +327,14 @@ set(source_h_files
     ./inc/azure_c_shared_utility/shared_util_options.h
     ./inc/azure_c_shared_utility/sha.h
     ./inc/azure_c_shared_utility/socketio.h
+    ./inc/azure_c_shared_utility/srw_lock.h
     ./inc/azure_c_shared_utility/stdint_ce6.h
     ./inc/azure_c_shared_utility/strings.h
     ./inc/azure_c_shared_utility/strings_types.h
     ./inc/azure_c_shared_utility/string_token.h
     ./inc/azure_c_shared_utility/string_tokenizer.h
     ./inc/azure_c_shared_utility/string_tokenizer_types.h
+    ./inc/azure_c_shared_utility/string_utils.h
     ./inc/azure_c_shared_utility/tlsio_options.h
     ./inc/azure_c_shared_utility/tickcounter.h
     ./inc/azure_c_shared_utility/threadapi.h
