@@ -562,41 +562,10 @@ if(${build_as_dynamic})
     target_link_libraries(aziotsharedutil_dll ${aziotsharedutil_target_libs})
 endif()
 
-# do not add or build any tests of the dependencies
-set(original_run_e2e_tests ${run_e2e_tests})
-set(original_run_unittests ${run_unittests})
-set(original_run_int_tests ${run_int_tests})
-
-set(run_e2e_tests OFF)
-set(run_unittests OFF)
-set(run_int_tests OFF)
-
-if(NOT ${use_installed_dependencies})
-    if ((NOT TARGET azure_macro_utils_c) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-macro-utils-c/CMakeLists.txt))
-        add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/deps/azure-macro-utils-c)
-    endif()
-    if ((NOT TARGET umock-c) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/umock-c/CMakeLists.txt))
-        add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/deps/umock-c)
-    endif()
-endif()
+include(dependencies.cmake)
 
 include_directories(${MACRO_UTILS_INC_FOLDER})
 include_directories(${UMOCK_C_INC_FOLDER})
-
-if (${original_run_unittests})
-    include("dependencies-test.cmake")
-    add_subdirectory(testtools)
-endif()
-
-if (${run_unittests} OR ${run_e2e_tests})
-    setTargetBuildProperties(ctest)
-    setTargetBuildProperties(testrunnerswitcher)
-    setTargetBuildProperties(umock_c)
-endif()
-
-set(run_e2e_tests ${original_run_e2e_tests})
-set(run_unittests ${original_run_unittests})
-set(run_int_tests ${original_run_int_tests})
 
 if (${run_unittests} OR ${run_int_tests})
     add_subdirectory(tests)
@@ -676,6 +645,7 @@ if(${use_installed_dependencies})
         FILES
             "configs/${PROJECT_NAME}Config.cmake"
             "configs/${PROJECT_NAME}Functions.cmake"
+            "configs/azure_iot_build_rules.cmake"
             "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}/${PROJECT_NAME}ConfigVersion.cmake"
         DESTINATION
             ${package_location}
