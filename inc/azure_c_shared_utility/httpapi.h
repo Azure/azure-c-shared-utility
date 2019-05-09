@@ -103,6 +103,32 @@ MOCKABLE_FUNCTION(, void, HTTPAPI_Deinit);
 MOCKABLE_FUNCTION(, HTTP_HANDLE, HTTPAPI_CreateConnection, const char*, hostName);
 
 /**
+ * @brief	Creates an HTTPS connection to the host specified by the @p
+ * 			hostName parameter, with proxy
+ *
+ * @param	hostName	Name of the host.
+ *
+ * @param	proxyHost	Host name of the proxy.
+ *
+ * @param	proxyPort	Port of the proxy.
+ *
+ * @param	proxyUsername	Username for the proxy authentication, can be
+ *			NULL if the proxy doesn't require authentication.
+ *
+ * @param	proxyPassword	Password for the proxy authentication, can be
+ *			NULL if the proxy doesn't require authentication.
+ *
+ *			This function returns a handle to the newly created connection.
+ *			You can use the handle in subsequent calls to execute specific
+ *			HTTP calls using ::HTTPAPI_ExecuteRequest.
+ *
+ * @return	A @c HTTP_HANDLE to the newly created connection or @c NULL in
+ * 			case an error occurs.
+ */
+MOCKABLE_FUNCTION(, HTTP_HANDLE, HTTPAPI_CreateConnection_With_Proxy, const char*, hostName, const char*, proxyHost,
+                                          int, proxyPort, const char*, proxyUsername, const char*, proxyPassword);
+
+/**
  * @brief	Closes a connection created with ::HTTPAPI_CreateConnection.
  *
  * @param	handle	The handle to the HTTP connection created via ::HTTPAPI_CreateConnection.
