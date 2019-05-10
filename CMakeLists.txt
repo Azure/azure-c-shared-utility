@@ -171,6 +171,7 @@ ${LOGGING_C_FILE}
 ./src/sha224.c
 ./src/sha384-512.c
 ./src/strings.c
+./src/string_token.c
 ./src/string_tokenizer.c
 ./src/uuid.c
 ./src/urlencode.c
@@ -270,6 +271,7 @@ ${LOGGING_H_FILE}
 ./inc/azure_c_shared_utility/stdint_ce6.h
 ./inc/azure_c_shared_utility/strings.h
 ./inc/azure_c_shared_utility/strings_types.h
+./inc/azure_c_shared_utility/string_token.h
 ./inc/azure_c_shared_utility/string_tokenizer.h
 ./inc/azure_c_shared_utility/string_tokenizer_types.h
 ./inc/azure_c_shared_utility/tickcounter.h
