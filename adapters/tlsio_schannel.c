@@ -267,7 +267,7 @@ static void on_underlying_io_close_complete(void* context)
     }
 }
 
-// This callback usage needs to be either verified and commented or integrated into 
+// This callback usage needs to be either verified and commented or integrated into
 // the state machine.
 static void unchecked_on_send_complete(void* context, IO_SEND_RESULT send_result)
 {
@@ -339,7 +339,7 @@ static void send_client_hello(TLS_IO_INSTANCE* tls_io_instance)
             NULL, tls_io_instance->host_name, ISC_REQ_EXTENDED_ERROR | ISC_REQ_STREAM | ISC_REQ_ALLOCATE_MEMORY | ISC_REQ_USE_SUPPLIED_CREDS, 0, 0, NULL, 0,
             &tls_io_instance->security_context, &security_buffers_desc,
             &context_attributes, NULL);
-        
+
         if ((status == SEC_I_COMPLETE_NEEDED) || (status == SEC_I_CONTINUE_NEEDED) || (status == SEC_I_COMPLETE_AND_CONTINUE))
         {
             if (xio_send(tls_io_instance->socket_io, init_security_buffers[0].pvBuffer, init_security_buffers[0].cbBuffer, unchecked_on_send_complete, NULL) != 0)
@@ -596,13 +596,13 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                     &tls_io_instance->security_context, tls_io_instance->host_name, flags, 0, 0, &input_buffers_desc, 0,
                     &tls_io_instance->security_context, &output_buffers_desc,
                     &context_attributes, NULL);
-                
+
                 switch (status)
                 {
                 case SEC_E_INCOMPLETE_MESSAGE:
                     if (input_buffers[1].BufferType != SECBUFFER_MISSING)
                     {
-                        //If SECBUFFER_MISSING not sent, try to read byte by byte. 
+                        //If SECBUFFER_MISSING not sent, try to read byte by byte.
                         tls_io_instance->needed_bytes = 1;
                     }
                     else
@@ -746,7 +746,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                     {
                         LPVOID srcText = NULL;
                         if (FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
-                            status, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)srcText, 0, NULL) > 0)
+                            status, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&srcText, 0, NULL) > 0)
                         {
                             LogError("[%#x] %s", status, (LPTSTR)srcText);
                             LocalFree(srcText);
@@ -870,7 +870,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                     output_buffers_desc.cBuffers = 2;
                     output_buffers_desc.pBuffers = output_buffers;
                     output_buffers_desc.ulVersion = SECBUFFER_VERSION;
-                    
+
                     flags = ISC_REQ_EXTENDED_ERROR | ISC_REQ_STREAM | ISC_REQ_ALLOCATE_MEMORY | ISC_REQ_USE_SUPPLIED_CREDS;
                     status = InitializeSecurityContext(&tls_io_instance->credential_handle,
                         &tls_io_instance->security_context, tls_io_instance->host_name, flags, 0, 0, &input_buffers_desc, 0,
@@ -908,7 +908,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                     {
                         LPVOID srcText = NULL;
                         if (FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
-                            status, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)srcText, 0, NULL) > 0)
+                            status, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&srcText, 0, NULL) > 0)
                         {
                             LogError("[%#x] %s", status, (LPTSTR)srcText);
                             LocalFree(srcText);
@@ -930,7 +930,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                 break;
             }
         }
-    
+
     }
 }
 

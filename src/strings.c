@@ -129,7 +129,7 @@ __attribute__ ((format (printf, 1, 2)))
 STRING_HANDLE STRING_construct_sprintf(const char* format, ...)
 {
     STRING* result;
-    
+
 #ifdef STRINGS_C_SPRINTF_BUFFER_SIZE
     size_t maxBufSize = STRINGS_C_SPRINTF_BUFFER_SIZE;
     char buf[STRINGS_C_SPRINTF_BUFFER_SIZE];
@@ -305,12 +305,13 @@ STRING_HANDLE STRING_new_JSON(const char* source)
         }
         else
         {
+            size_t nAllocation = vlen + 5 * nControlCharacters + nEscapeCharacters + 3;
             if ((result = (STRING*)malloc(sizeof(STRING))) == NULL)
             {
                 /*Codes_SRS_STRING_02_021: [If the complete JSON representation cannot be produced, then STRING_new_JSON shall fail and return NULL.] */
                 LogError("malloc json failure");
             }
-            else if ((result->s = (char*)malloc(vlen + 5 * nControlCharacters + nEscapeCharacters + 3)) == NULL)
+            else if ((result->s = (char*)malloc(nAllocation)) == NULL)
             {
                 /*Codes_SRS_STRING_02_021: [If the complete JSON representation cannot be produced, then STRING_new_JSON shall fail and return NULL.] */
                 free(result);
@@ -327,6 +328,9 @@ STRING_HANDLE STRING_new_JSON(const char* source)
                     if (source[i] <= 0x1F)
                     {
                         /*Codes_SRS_STRING_02_019: [If the character code is less than 0x20 then it shall be represented as \u00xx, where xx is the hex representation of the character code.]*/
+#ifdef _MSC_VER
+                        _Analysis_assume_(pos < nAllocation - 6);
+#endif
                         result->s[pos++] = '\\';
                         result->s[pos++] = 'u';
                         result->s[pos++] = '0';
@@ -337,27 +341,43 @@ STRING_HANDLE STRING_new_JSON(const char* source)
                     else if (source[i] == '"')
                     {
                         /*Codes_SRS_STRING_02_016: [If the character is " (quote) then it shall be repsented as \".] */
+#ifdef _MSC_VER
+                        _Analysis_assume_(pos < nAllocation - 2);
+#endif
                         result->s[pos++] = '\\';
                         result->s[pos++] = '"';
                     }
                     else if (source[i] == '\\')
                     {
                         /*Codes_SRS_STRING_02_017: [If the character is \ (backslash) then it shall represented as \\.] */
+#ifdef _MSC_VER
+                        _Analysis_assume_(pos < nAllocation - 2);
+#endif
                         result->s[pos++] = '\\';
                         result->s[pos++] = '\\';
                     }
                     else if (source[i] == '/')
                     {
                         /*Codes_SRS_STRING_02_018: [If the character is / (slash) then it shall be represented as \/.] */
+#ifdef _MSC_VER
+                        _Analysis_assume_(pos < nAllocation - 2);
+#endif
                         result->s[pos++] = '\\';
                         result->s[pos++] = '/';
                     }
                     else
                     {
                         /*Codes_SRS_STRING_02_013: [The string shall copy the characters of source "as they are" (until the '\0' character) with the following exceptions:] */
+#ifdef _MSC_VER
+                        _Analysis_assume_(pos < nAllocation - 1);
+#endif
                         result->s[pos++] = source[i];
                     }
                 }
+
+#ifdef _MSC_VER
+                _Analysis_assume_(pos < nAllocation - 2);
+#endif
                 /*Codes_SRS_STRING_02_020: [The string shall end with " (quote).] */
                 result->s[pos++] = '"';
                 /*zero terminating it*/
@@ -530,7 +550,7 @@ __attribute__ ((format (printf, 2, 3)))
 int STRING_sprintf(STRING_HANDLE handle, const char* format, ...)
 {
     int result;
-    
+
 #ifdef STRINGS_C_SPRINTF_BUFFER_SIZE
     size_t maxBufSize = STRINGS_C_SPRINTF_BUFFER_SIZE;
     char buf[STRINGS_C_SPRINTF_BUFFER_SIZE];
@@ -538,7 +558,7 @@ int STRING_sprintf(STRING_HANDLE handle, const char* format, ...)
     size_t maxBufSize = 0;
     char* buf = NULL;
 #endif
-    
+
     if (handle == NULL || format == NULL)
     {
         /* Codes_SRS_STRING_07_042: [if the parameters s1 or format are NULL then STRING_sprintf shall return non zero value.] */

@@ -130,7 +130,7 @@ void* gballoc_malloc(size_t size)
 
         (void)Unlock(gballocThreadSafeLock);
     }
-    
+
     return result;
 }
 
@@ -328,6 +328,10 @@ void gballoc_free(void* ptr)
             curr = (ALLOCATION*)curr->next;
         }
 
+#ifdef _MSC_VER
+// Disable: Using uninitialized memory 'curr'
+#pragma warning(disable:6001)
+#endif
         if ((curr == NULL) && (ptr != NULL))
         {
             /* Codes_SRS_GBALLOC_01_019: [When the ptr pointer cannot be found in the pointers tracked by gballoc, gballoc_free shall not free any memory.] */
@@ -335,6 +339,9 @@ void gballoc_free(void* ptr)
             /* could not find the allocation */
             LogError("Could not free allocation for address %p (not found)", ptr);
         }
+#ifdef _MSC_VER
+#pragma warning(default:6001)
+#endif
         (void)Unlock(gballocThreadSafeLock);
     }
 }

@@ -481,6 +481,11 @@ int SHA512Input(SHA512Context *context,
         return context->Corrupted;
 
     while (length-- && !context->Corrupted) {
+
+#ifdef _MSC_VER
+        _Analysis_assume_(context->Message_Block_Index < SHA512_Message_Block_Size);
+#endif
+
         context->Message_Block[context->Message_Block_Index++] =
             (*message_array & 0xFF);
 

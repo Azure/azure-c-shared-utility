@@ -441,7 +441,7 @@ int BUFFER_append(BUFFER_HANDLE handle1, BUFFER_HANDLE handle2)
     {
         BUFFER* b1 = (BUFFER*)handle1;
         BUFFER* b2 = (BUFFER*)handle2;
-        if (b1->buffer == NULL) 
+        if (b1->buffer == NULL)
         {
             /* Codes_SRS_BUFFER_07_023: [BUFFER_append shall return a nonzero upon any error that is encountered.] */
             result = __FAILURE__;
@@ -516,7 +516,7 @@ int BUFFER_prepend(BUFFER_HANDLE handle1, BUFFER_HANDLE handle2)
             else
             {
                 // b2->size != 0
-                unsigned char* temp = (unsigned char*)malloc(b1->size + b2->size);
+                unsigned char* temp = (unsigned char*)malloc(b1->size + b2->size + 1);
                 if (temp == NULL)
                 {
                     /* Codes_SRS_BUFFER_01_005: [ BUFFER_prepend shall return a non-zero upon value any error that is encountered. ]*/
@@ -527,7 +527,14 @@ int BUFFER_prepend(BUFFER_HANDLE handle1, BUFFER_HANDLE handle2)
                 {
                     /* Codes_SRS_BUFFER_01_004: [ BUFFER_prepend concatenates handle1 onto handle2 without modifying handle1 and shall return zero on success. ]*/
                     // Append the BUFFER
+#ifdef _MSC_VER
+// Disable: Buffer overrun while writing to 'temp':  the writable size is 'b1->size+b2->size+1' bytes, but '2' bytes might be written.
+#pragma warning(disable:6386)
+#endif
                     (void)memcpy(temp, b2->buffer, b2->size);
+#ifdef _MSC_VER
+#pragma warning(default:6386)
+#endif
                     // start from b1->size to append b1
                     (void)memcpy(&temp[b2->size], b1->buffer, b1->size);
                     free(b1->buffer);

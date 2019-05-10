@@ -35,7 +35,7 @@ typedef struct X509_SCHANNEL_HANDLE_DATA_TAG
 static unsigned char* convert_cert_to_binary(const char* crypt_value, DWORD* crypt_length)
 {
     unsigned char* result;
-    DWORD result_length;
+    DWORD result_length = 0;
     if (!CryptStringToBinaryA(crypt_value, 0, CRYPT_STRING_ANY, NULL, &result_length, NULL, NULL))
     {
         /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
@@ -131,7 +131,7 @@ static unsigned char* decode_crypt_object(unsigned char* private_key, DWORD key_
     {
         result = NULL;
     }
-            
+
     return result;
 }
 
