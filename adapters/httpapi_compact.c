@@ -240,7 +240,13 @@ HTTP_HANDLE HTTPAPI_CreateConnection_With_Proxy(const char* hostName, const char
             if (proxyHost != NULL && strlen(proxyHost) > 0)
             {
                 tlsio_config.underlying_io_interface = http_proxy_io_get_interface_description();
-                if (tlsio_config.underlying_io_interface != NULL)
+                if (tlsio_config.underlying_io_interface == NULL)
+                {
+                    LogError("Failed to get http proxy interface description.");
+                    free(http_instance);
+                    http_instance = NULL;
+                }
+                else
                 {
                     proxy_config.hostname = hostName;
                     proxy_config.port = 443;
@@ -253,36 +259,42 @@ HTTP_HANDLE HTTPAPI_CreateConnection_With_Proxy(const char* hostName, const char
                 }
             }
 
-            http_instance->xio_handle = xio_create(platform_get_default_tlsio(), (void*)&tlsio_config);
+            if (http_instance != NULL)
+            {
+                http_instance->xio_handle = xio_create(platform_get_default_tlsio(), (void*)&tlsio_config);
 
-            /*Codes_SRS_HTTPAPI_COMPACT_21_016: [ If the HTTPAPI_CreateConnection failed to create the connection, it shall return NULL as the handle. ]*/
-            if (http_instance->xio_handle == NULL)
-            {
-                LogError("Create connection failed");
-                free(http_instance);
-                http_instance = NULL;
-            }
-            else
-            {
-                http_instance->is_connected = 0;
-                http_instance->is_io_error = 0;
-                http_instance->received_bytes_count = 0;
-                http_instance->received_bytes = NULL;
-                http_instance->certificate = NULL;
-                http_instance->x509ClientCertificate = NULL;
-                http_instance->x509ClientPrivateKey = NULL;
-                http_instance->tlsIoVersion = NULL;
+                /*Codes_SRS_HTTPAPI_COMPACT_21_016: [ If the HTTPAPI_CreateConnection failed to create the connection, it shall return NULL as the handle. ]*/
+                if (http_instance->xio_handle == NULL)
+                {
+                    LogError("Create connection failed");
+                    free(http_instance);
+                    http_instance = NULL;
+                }
+                else
+                {
+                    http_instance->is_connected = 0;
+                    http_instance->is_io_error = 0;
+                    http_instance->received_bytes_count = 0;
+                    http_instance->received_bytes = NULL;
+                    http_instance->certificate = NULL;
+                    http_instance->x509ClientCertificate = NULL;
+                    http_instance->x509ClientPrivateKey = NULL;
+                    http_instance->tlsIoVersion = NULL;
+                }
             }
         }
     }
 
-    HTTPAPI_RESULT result;
-    /*Codes_SRS_HTTPAPI_COMPACT_21_024: [ The HTTPAPI_CreateConnection shall open the transport connection with the host to send the request. ]*/
-    if ((result = OpenXIOConnection(http_instance)) != HTTPAPI_OK)
+    if (http_instance != NULL)
     {
-        LogError("Open HTTP connection failed (result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
-        free(http_instance);
-        http_instance = NULL;
+        HTTPAPI_RESULT result;
+        /*Codes_SRS_HTTPAPI_COMPACT_21_024: [ The HTTPAPI_CreateConnection shall open the transport connection with the host to send the request. ]*/
+        if ((result = OpenXIOConnection(http_instance)) != HTTPAPI_OK)
+        {
+            LogError("Open HTTP connection failed (result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+            free(http_instance);
+            http_instance = NULL;
+        }
     }
 
     /*Codes_SRS_HTTPAPI_COMPACT_21_012: [ The HTTPAPI_CreateConnection shall return a non-NULL handle on success. ]*/
