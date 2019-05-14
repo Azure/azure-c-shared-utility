@@ -239,15 +239,18 @@ HTTP_HANDLE HTTPAPI_CreateConnection_With_Proxy(const char* hostName, const char
             HTTP_PROXY_IO_CONFIG proxy_config;
             if (proxyHost != NULL && strlen(proxyHost) > 0)
             {
-                proxy_config.hostname = hostName;
-                proxy_config.port = 443;
-                proxy_config.proxy_hostname = proxyHost;
-                proxy_config.proxy_port = proxyPort;
-                proxy_config.username = proxyUsername;
-                proxy_config.password = proxyPassword;
-
                 tlsio_config.underlying_io_interface = http_proxy_io_get_interface_description();
-                tlsio_config.underlying_io_parameters = &proxy_config;
+                if (tlsio_config.underlying_io_interface != NULL)
+                {
+                    proxy_config.hostname = hostName;
+                    proxy_config.port = 443;
+                    proxy_config.proxy_hostname = proxyHost;
+                    proxy_config.proxy_port = proxyPort;
+                    proxy_config.username = proxyUsername;
+                    proxy_config.password = proxyPassword;
+
+                    tlsio_config.underlying_io_parameters = &proxy_config;
+                }
             }
 
             http_instance->xio_handle = xio_create(platform_get_default_tlsio(), (void*)&tlsio_config);
