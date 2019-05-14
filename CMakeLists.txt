@@ -598,67 +598,58 @@ endif()
 # Set CMAKE_INSTALL_* if not defined
 include(GNUInstallDirs)
 
-if(${use_installed_dependencies})
 
-    if(NOT DEFINED CMAKE_INSTALL_LIBDIR)
-        set(CMAKE_INSTALL_LIBDIR "lib")
-    endif()
-
-    # Install Azure C Shared Utility
-    set(package_location "cmake")
-
-    if(${build_as_dynamic})
-        set(targets aziotsharedutil aziotsharedutil_dll)
-    else(${build_as_dynamic})
-        set(targets aziotsharedutil)
-    endif(${build_as_dynamic})
-
-    install (TARGETS ${targets} EXPORT aziotsharedutilTargets
-        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR}/../bin
-        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azureiot
-    )
-    install (FILES ${source_h_files} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azureiot/azure_c_shared_utility)
-    install (FILES ${micromock_h_files_full_path} ${INSTALL_H_FILES} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azureiot)
-
-    include(CMakePackageConfigHelpers)
-
-    write_basic_package_version_file(
-        "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}/${PROJECT_NAME}ConfigVersion.cmake"
-        VERSION ${C_SHARED_VERSION}
-        COMPATIBILITY SameMajorVersion
-    )
-
-    configure_file("configs/${PROJECT_NAME}Config.cmake"
-        "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}/${PROJECT_NAME}Config.cmake"
-        COPYONLY
-    )
-
-    install(EXPORT aziotsharedutilTargets
-        FILE
-            "${PROJECT_NAME}Targets.cmake"
-        DESTINATION
-            ${package_location}
-    )
-    install(
-        FILES
-            "configs/${PROJECT_NAME}Config.cmake"
-            "configs/${PROJECT_NAME}Functions.cmake"
-            "configs/azure_iot_build_rules.cmake"
-            "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}/${PROJECT_NAME}ConfigVersion.cmake"
-        DESTINATION
-            ${package_location}
-    )
-else()
-    set(install_staticlibs
-        aziotsharedutil
-    )
-    install(FILES ${source_h_files}
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azure_c_shared_utility)
-    install(TARGETS ${install_staticlibs}
-        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
+# Install Azure C Shared Utility
+if(NOT DEFINED CMAKE_INSTALL_LIBDIR)
+    set(CMAKE_INSTALL_LIBDIR "lib")
 endif()
 
+set(package_location "cmake")
+
+if(${build_as_dynamic})
+    set(targets aziotsharedutil aziotsharedutil_dll)
+else(${build_as_dynamic})
+    set(targets aziotsharedutil)
+endif(${build_as_dynamic})
+
+install (TARGETS ${targets} EXPORT aziotsharedutilTargets
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR}/../bin
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azureiot
+)
+install (FILES ${source_h_files} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azureiot/azure_c_shared_utility)
+install (FILES ${micromock_h_files_full_path} ${INSTALL_H_FILES} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azureiot)
+
+include(CMakePackageConfigHelpers)
+
+write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}/${PROJECT_NAME}ConfigVersion.cmake"
+    VERSION ${C_SHARED_VERSION}
+    COMPATIBILITY SameMajorVersion
+)
+
+configure_file("configs/${PROJECT_NAME}Config.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}/${PROJECT_NAME}Config.cmake"
+    COPYONLY
+)
+
+install(EXPORT aziotsharedutilTargets
+    FILE
+        "${PROJECT_NAME}Targets.cmake"
+    DESTINATION
+        ${package_location}
+)
+
+install(
+FILES
+    "configs/${PROJECT_NAME}Config.cmake"
+    "configs/${PROJECT_NAME}Functions.cmake"
+    "configs/azure_iot_build_rules.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}/${PROJECT_NAME}ConfigVersion.cmake"
+DESTINATION
+    ${package_location}
+)
+
 compileTargetAsC99(aziotsharedutil)
+
