@@ -43,7 +43,7 @@ static size_t* get_delimiters_lengths(const char** delimiters, size_t n_delims)
             }
             else
             {
-                result[i] = strlen(delimiters[i]);
+                *(result + i) = strlen(delimiters[i]);
             }
         }
     }
