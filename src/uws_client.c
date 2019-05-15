@@ -821,6 +821,7 @@ static void on_underlying_io_close_complete(void* context)
     else
     {
         UWS_CLIENT_HANDLE uws_client = (UWS_CLIENT_HANDLE)context;
+        LogInfo("%s: uws_state:%d.", __FUNCTION__, uws_client->uws_state);
         if (uws_client->uws_state == UWS_STATE_CLOSING_UNDERLYING_IO)
         {
             /* Codes_SRS_UWS_CLIENT_01_475: [ When `on_underlying_io_close_complete` is called while closing the underlying IO a subsequent `uws_client_open_async` shall succeed. ]*/
@@ -841,6 +842,7 @@ static void on_underlying_io_close_sent(void* context, IO_SEND_RESULT io_send_re
     {
         UWS_CLIENT_INSTANCE* uws_client = (UWS_CLIENT_HANDLE)context;
 
+        LogInfo("%s: uws_client=%p, io_send_result:%d", __FUNCTION__, uws_client, io_send_result);
         switch (io_send_result)
         {
         case IO_SEND_OK:
@@ -849,6 +851,7 @@ static void on_underlying_io_close_sent(void* context, IO_SEND_RESULT io_send_re
             {
                 uws_client->uws_state = UWS_STATE_CLOSING_UNDERLYING_IO;
 
+                LogInfo("%s: closing underlying io.", __FUNCTION__);
                 /* Codes_SRS_UWS_CLIENT_01_490: [ When `on_underlying_io_close_sent` is called while the uws client is CLOSING, `on_underlying_io_close_sent` shall close the underlying IO by calling `xio_close`. ]*/
                 if (xio_close(uws_client->underlying_io, on_underlying_io_close_complete, uws_client) != 0)
                 {
@@ -1434,9 +1437,15 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                                 {
                                     BUFFER_HANDLE close_frame_buffer;
 
+                                    // If the client starts close handshake, there is no need to send close response frame. Instead
+                                    // the client can now close the underlying io.
+                                    // If the client receives the close frame but has not started a close handshake, it means that the service
+                                    // side closes the websocket. In this case, the client sends the close response frame, then closes the
+                                    // underlying io, and also indicates the upper layer with peer closed callback.
                                     if (uws_client->uws_state == UWS_STATE_CLOSING_WAITING_FOR_CLOSE)
                                     {
                                         uws_client->uws_state = UWS_STATE_CLOSING_UNDERLYING_IO;
+                                        LogInfo("%s: closing underlying io.", __FUNCTION__);
                                         if (xio_close(uws_client->underlying_io, on_underlying_io_close_complete, uws_client) != 0)
                                         {
                                             indicate_ws_close_complete(uws_client);
@@ -1445,6 +1454,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                                     }
                                     else
                                     {
+                                        LogInfo("%s: recevied close frame, sending close a close response frame.", __FUNCTION__);
                                         /* Codes_SRS_UWS_CLIENT_01_296: [ Upon either sending or receiving a Close control frame, it is said that _The WebSocket Closing Handshake is Started_ and that the WebSocket connection is in the CLOSING state. ]*/
                                         /* Codes_SRS_UWS_CLIENT_01_240: [ The application MUST NOT send any more data frames after sending a Close frame. ]*/
                                         uws_client->uws_state = UWS_STATE_CLOSING_SENDING_CLOSE;
