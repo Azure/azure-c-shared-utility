@@ -8,6 +8,7 @@
 #include <limits.h>
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/httpheaders.h"
+#include "azure_c_shared_utility/http_proxy_io.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/xio.h"
@@ -55,6 +56,8 @@ typedef struct HTTP_HANDLE_DATA_TAG
     unsigned int    is_connected : 1;
     unsigned int    send_completed : 1;
 } HTTP_HANDLE_DATA;
+
+static HTTPAPI_RESULT OpenXIOConnection(HTTP_HANDLE_DATA* http_instance);
 
 /*the following function does the same as sscanf(pos2, "%d", &sec)*/
 /*this function only exists because some of platforms do not have sscanf. */
@@ -194,8 +197,14 @@ void HTTPAPI_Deinit(void)
     */
 }
 
-/*Codes_SRS_HTTPAPI_COMPACT_21_011: [ The HTTPAPI_CreateConnection shall create an http connection to the host specified by the hostName parameter. ]*/
+/*Codes_SRS_HTTPAPI_COMPACT_21_010: [ The HTTPAPI_CreateConnection shall create an http connection to the host specified by the hostName parameter. ]*/
 HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
+{
+    return HTTPAPI_CreateConnection_With_Proxy(hostName, NULL, 0, NULL, NULL);
+}
+
+/*Codes_SRS_HTTPAPI_COMPACT_21_011: [ The HTTPAPI_CreateConnection_With_Proxy shall create an http connection to the host specified by the hostName parameter with proxy supported. ]*/
+HTTP_HANDLE HTTPAPI_CreateConnection_With_Proxy(const char* hostName, const char* proxyHost, int proxyPort, const char* proxyUsername, const char*proxyPassword)
 {
     HTTP_HANDLE_DATA* http_instance;
     TLSIO_CONFIG tlsio_config;
@@ -227,26 +236,64 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
             tlsio_config.underlying_io_interface = NULL;
             tlsio_config.underlying_io_parameters = NULL;
 
-            http_instance->xio_handle = xio_create(platform_get_default_tlsio(), (void*)&tlsio_config);
+            HTTP_PROXY_IO_CONFIG proxy_config;
+            if (proxyHost != NULL && strlen(proxyHost) > 0)
+            {
+                tlsio_config.underlying_io_interface = http_proxy_io_get_interface_description();
+                if (tlsio_config.underlying_io_interface == NULL)
+                {
+                    LogError("Failed to get http proxy interface description.");
+                    free(http_instance);
+                    http_instance = NULL;
+                }
+                else
+                {
+                    proxy_config.hostname = hostName;
+                    proxy_config.port = 443;
+                    proxy_config.proxy_hostname = proxyHost;
+                    proxy_config.proxy_port = proxyPort;
+                    proxy_config.username = proxyUsername;
+                    proxy_config.password = proxyPassword;
 
-            /*Codes_SRS_HTTPAPI_COMPACT_21_016: [ If the HTTPAPI_CreateConnection failed to create the connection, it shall return NULL as the handle. ]*/
-            if (http_instance->xio_handle == NULL)
-            {
-                LogError("Create connection failed");
-                free(http_instance);
-                http_instance = NULL;
+                    tlsio_config.underlying_io_parameters = &proxy_config;
+                }
             }
-            else
+
+            if (http_instance != NULL)
             {
-                http_instance->is_connected = 0;
-                http_instance->is_io_error = 0;
-                http_instance->received_bytes_count = 0;
-                http_instance->received_bytes = NULL;
-                http_instance->certificate = NULL;
-                http_instance->x509ClientCertificate = NULL;
-                http_instance->x509ClientPrivateKey = NULL;
-                http_instance->tlsIoVersion = NULL;
+                http_instance->xio_handle = xio_create(platform_get_default_tlsio(), (void*)&tlsio_config);
+
+                /*Codes_SRS_HTTPAPI_COMPACT_21_016: [ If the HTTPAPI_CreateConnection failed to create the connection, it shall return NULL as the handle. ]*/
+                if (http_instance->xio_handle == NULL)
+                {
+                    LogError("Create connection failed");
+                    free(http_instance);
+                    http_instance = NULL;
+                }
+                else
+                {
+                    http_instance->is_connected = 0;
+                    http_instance->is_io_error = 0;
+                    http_instance->received_bytes_count = 0;
+                    http_instance->received_bytes = NULL;
+                    http_instance->certificate = NULL;
+                    http_instance->x509ClientCertificate = NULL;
+                    http_instance->x509ClientPrivateKey = NULL;
+                    http_instance->tlsIoVersion = NULL;
+                }
             }
+        }
+    }
+
+    if (http_instance != NULL)
+    {
+        HTTPAPI_RESULT result;
+        /*Codes_SRS_HTTPAPI_COMPACT_21_024: [ The HTTPAPI_CreateConnection shall open the transport connection with the host to send the request. ]*/
+        if ((result = OpenXIOConnection(http_instance)) != HTTPAPI_OK)
+        {
+            LogError("Open HTTP connection failed (result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+            free(http_instance);
+            http_instance = NULL;
         }
     }
 
@@ -1031,7 +1078,8 @@ static HTTPAPI_RESULT ReceiveContentInfoFromXIO(HTTP_HANDLE_DATA* http_instance,
     return result;
 }
 
-static HTTPAPI_RESULT ReadHTTPResponseBodyFromXIO(HTTP_HANDLE_DATA* http_instance, size_t bodyLength, bool chunked, BUFFER_HANDLE responseContent)
+static HTTPAPI_RESULT ReadHTTPResponseBodyFromXIO(HTTP_HANDLE_DATA* http_instance, size_t bodyLength,
+    bool chunked, BUFFER_HANDLE responseContent, ON_CHUNK_RECEIVED on_chunk_received, void* on_chunk_received_context)
 {
     HTTPAPI_RESULT result;
     char    buf[TEMP_BUFFER_SIZE];
@@ -1067,6 +1115,11 @@ static HTTPAPI_RESULT ReadHTTPResponseBodyFromXIO(HTTP_HANDLE_DATA* http_instanc
                 {
                     /*Codes_SRS_HTTPAPI_COMPACT_21_033: [ If the whole process succeed, the HTTPAPI_ExecuteRequest shall retur HTTPAPI_OK. ]*/
                     result = HTTPAPI_OK;
+
+                    if (on_chunk_received != NULL)
+                    {
+                        on_chunk_received(on_chunk_received_context, receivedContent, bodyLength);
+                    }
                 }
             }
             else
@@ -1143,6 +1196,10 @@ static HTTPAPI_RESULT ReadHTTPResponseBodyFromXIO(HTTP_HANDLE_DATA* http_instanc
                     {
                         result = HTTPAPI_READ_DATA_FAILED;
                     }
+                    else if (on_chunk_received != NULL)
+                    {
+                        on_chunk_received(on_chunk_received_context, receivedContent + size, chunkSize);
+                    }
                 }
                 else
                 {
@@ -1192,20 +1249,28 @@ static bool validRequestType(HTTPAPI_REQUEST_TYPE requestType)
     return result;
 }
 
-/*Codes_SRS_HTTPAPI_COMPACT_21_021: [ The HTTPAPI_ExecuteRequest shall execute the http communtication with the provided host, sending a request and reciving the response. ]*/
-/*Codes_SRS_HTTPAPI_COMPACT_21_050: [ If there is a content in the response, the HTTPAPI_ExecuteRequest shall copy it in the responseContent buffer. ]*/
-//Note: This function assumes that "Host:" and "Content-Length:" headers are setup
-//      by the caller of HTTPAPI_ExecuteRequest() (which is true for httptransport.c).
-HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE requestType, const char* relativePath,
+HTTPAPI_RESULT HTTPAPI_ExecuteRequest_Internal(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE requestType, const char* relativePath,
     HTTP_HEADERS_HANDLE httpHeadersHandle, const unsigned char* content,
-    size_t contentLength, unsigned int* statusCode,
-    HTTP_HEADERS_HANDLE responseHeadersHandle, BUFFER_HANDLE responseContent)
+    size_t contentLength, unsigned int* statusCode, HTTP_HEADERS_HANDLE responseHeadersHandle,
+    BUFFER_HANDLE responseContent, ON_CHUNK_RECEIVED onChunkReceived, void* onChunkReceivedContext)
 {
     HTTPAPI_RESULT result = HTTPAPI_ERROR;
     size_t  headersCount;
     size_t  bodyLength = 0;
     bool    chunked = false;
     HTTP_HANDLE_DATA* http_instance = (HTTP_HANDLE_DATA*)handle;
+
+    BUFFER_HANDLE internalBuffer = NULL;
+    if (responseContent == NULL)
+    {
+        internalBuffer = BUFFER_new();
+        if (internalBuffer == NULL)
+        {
+            LogError("Allocate internal buffer for response content failed");
+        }
+
+        responseContent = internalBuffer;
+    }
 
     /*Codes_SRS_HTTPAPI_COMPACT_21_034: [ If there is no previous connection, the HTTPAPI_ExecuteRequest shall return HTTPAPI_INVALID_ARG. ]*/
     /*Codes_SRS_HTTPAPI_COMPACT_21_037: [ If the request type is unknown, the HTTPAPI_ExecuteRequest shall return HTTPAPI_INVALID_ARG. ]*/
@@ -1222,11 +1287,6 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
     {
         result = HTTPAPI_INVALID_ARG;
         LogError("(result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
-    }
-    /*Codes_SRS_HTTPAPI_COMPACT_21_024: [ The HTTPAPI_ExecuteRequest shall open the transport connection with the host to send the request. ]*/
-    else if ((result = OpenXIOConnection(http_instance)) != HTTPAPI_OK)
-    {
-        LogError("Open HTTP connection failed (result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
     }
     /*Codes_SRS_HTTPAPI_COMPACT_21_026: [ If the open process succeed, the HTTPAPI_ExecuteRequest shall send the request message to the host. ]*/
     else if ((result = SendHeadsToXIO(http_instance, requestType, relativePath, httpHeadersHandle, headersCount)) != HTTPAPI_OK)
@@ -1250,15 +1310,41 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
         LogError("Receive content information from HTTP failed (result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
     }
     /*Codes_SRS_HTTPAPI_COMPACT_21_075: [ The message received by the HTTPAPI_ExecuteRequest can contain a body with the message content. ]*/
-    else if ((result = ReadHTTPResponseBodyFromXIO(http_instance, bodyLength, chunked, responseContent)) != HTTPAPI_OK)
+    else if ((result = ReadHTTPResponseBodyFromXIO(http_instance, bodyLength, chunked, responseContent, onChunkReceived, onChunkReceivedContext)) != HTTPAPI_OK)
     {
         LogError("Read HTTP response body from HTTP failed (result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
     }
 
     conn_receive_discard_buffer(http_instance);
 
+    BUFFER_delete(internalBuffer);
 
     return result;
+}
+
+/*Codes_SRS_HTTPAPI_COMPACT_21_021: [ The HTTPAPI_ExecuteRequest shall execute the http communtication with the provided host, sending a request and reciving the response. ]*/
+/*Codes_SRS_HTTPAPI_COMPACT_21_050: [ If there is a content in the response, the HTTPAPI_ExecuteRequest shall copy it in the responseContent buffer. ]*/
+//Note: This function assumes that "Host:" and "Content-Length:" headers are setup
+//      by the caller of HTTPAPI_ExecuteRequest() (which is true for httptransport.c).
+HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE requestType, const char* relativePath,
+    HTTP_HEADERS_HANDLE httpHeadersHandle, const unsigned char* content,
+    size_t contentLength, unsigned int* statusCode,
+    HTTP_HEADERS_HANDLE responseHeadersHandle, BUFFER_HANDLE responseContent)
+{
+    return HTTPAPI_ExecuteRequest_Internal(handle, requestType, relativePath,
+        httpHeadersHandle, content, contentLength, statusCode, responseHeadersHandle, responseContent, NULL, NULL);
+}
+
+/*Codes_SRS_HTTPAPI_COMPACT_21_021: [ The HTTPAPI_ExecuteRequest shall execute the http communtication with the provided host, sending a request and reciving the response. ]*/
+//Note: This function assumes that "Host:" and "Content-Length:" headers are setup
+//      by the caller of HTTPAPI_ExecuteRequest() (which is true for httptransport.c).
+HTTPAPI_RESULT HTTPAPI_ExecuteRequest_With_Streaming(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE requestType, const char* relativePath,
+    HTTP_HEADERS_HANDLE httpHeadersHandle, const unsigned char* content,
+    size_t contentLength, unsigned int* statusCode,
+    HTTP_HEADERS_HANDLE responseHeadersHandle, ON_CHUNK_RECEIVED onChunkReceived, void* onChunkReceivedContext)
+{
+    return HTTPAPI_ExecuteRequest_Internal(handle, requestType, relativePath,
+        httpHeadersHandle, content, contentLength, statusCode, responseHeadersHandle, NULL, onChunkReceived, onChunkReceivedContext);
 }
 
 /*Codes_SRS_HTTPAPI_COMPACT_21_056: [ The HTTPAPI_SetOption shall change the HTTP options. ]*/
@@ -1300,7 +1386,7 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
         else
         {
             /*Codes_SRS_HTTPAPI_COMPACT_21_064: [ If the HTTPAPI_SetOption get success setting the option, it shall return HTTPAPI_OK. ]*/
-            (void)strcpy(http_instance->certificate, (const char*)value);
+            (void)strcpy_s(http_instance->certificate, len + 1, (const char*)value);
             result = HTTPAPI_OK;
         }
     }
@@ -1320,7 +1406,7 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
         }
         else
         {
-            (void)strcpy(http_instance->tlsIoVersion, (const char*)value);
+            (void)strcpy_s(http_instance->tlsIoVersion, len + 1, (const char*)value);
             result = HTTPAPI_OK;
         }
     }
@@ -1343,7 +1429,7 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
         else
         {
             /*Codes_SRS_HTTPAPI_COMPACT_21_064: [ If the HTTPAPI_SetOption get success setting the option, it shall return HTTPAPI_OK. ]*/
-            (void)strcpy(http_instance->x509ClientCertificate, (const char*)value);
+            (void)strcpy_s(http_instance->x509ClientCertificate, len + 1, (const char*)value);
             result = HTTPAPI_OK;
         }
     }
@@ -1366,7 +1452,7 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
         else
         {
             /*Codes_SRS_HTTPAPI_COMPACT_21_064: [ If the HTTPAPI_SetOption get success setting the option, it shall return HTTPAPI_OK. ]*/
-            (void)strcpy(http_instance->x509ClientPrivateKey, (const char*)value);
+            (void)strcpy_s(http_instance->x509ClientPrivateKey, len + 1, (const char*)value);
             result = HTTPAPI_OK;
         }
     }
@@ -1410,7 +1496,7 @@ HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, co
         else
         {
             /*Codes_SRS_HTTPAPI_COMPACT_21_072: [ If the HTTPAPI_CloneOption get success setting the option, it shall return HTTPAPI_OK. ]*/
-            (void)strcpy(tempCert, (const char*)value);
+            (void)strcpy_s(tempCert, certLen + 1, (const char*)value);
             *savedValue = tempCert;
             result = HTTPAPI_OK;
         }
@@ -1427,7 +1513,7 @@ HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, co
         else
         {
             /*Codes_SRS_HTTPAPI_COMPACT_21_072: [ If the HTTPAPI_CloneOption get success setting the option, it shall return HTTPAPI_OK. ]*/
-            (void)strcpy(tempCert, (const char*)value);
+            (void)strcpy_s(tempCert, certLen + 1, (const char*)value);
             *savedValue = tempCert;
             result = HTTPAPI_OK;
         }
@@ -1444,7 +1530,7 @@ HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, co
         else
         {
             /*Codes_SRS_HTTPAPI_COMPACT_21_072: [ If the HTTPAPI_CloneOption get success setting the option, it shall return HTTPAPI_OK. ]*/
-            (void)strcpy(tempCert, (const char*)value);
+            (void)strcpy_s(tempCert, certLen + 1, (const char*)value);
             *savedValue = tempCert;
             result = HTTPAPI_OK;
         }

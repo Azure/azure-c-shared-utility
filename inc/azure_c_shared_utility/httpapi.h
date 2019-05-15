@@ -71,6 +71,8 @@ DEFINE_ENUM(HTTPAPI_REQUEST_TYPE, HTTPAPI_REQUEST_TYPE_VALUES);
 #define MAX_USERNAME_LEN        65
 #define MAX_PASSWORD_LEN        65
 
+typedef void(*ON_CHUNK_RECEIVED)(void* context, const unsigned char* buffer, size_t size);
+
 /**
  * @brief	Global initialization for the HTTP API component.
  *
@@ -99,6 +101,32 @@ MOCKABLE_FUNCTION(, void, HTTPAPI_Deinit);
  * 			case an error occurs.
  */
 MOCKABLE_FUNCTION(, HTTP_HANDLE, HTTPAPI_CreateConnection, const char*, hostName);
+
+/**
+ * @brief	Creates an HTTPS connection to the host specified by the @p
+ * 			hostName parameter, with proxy
+ *
+ * @param	hostName	Name of the host.
+ *
+ * @param	proxyHost	Host name of the proxy.
+ *
+ * @param	proxyPort	Port of the proxy.
+ *
+ * @param	proxyUsername	Username for the proxy authentication, can be
+ *			NULL if the proxy doesn't require authentication.
+ *
+ * @param	proxyPassword	Password for the proxy authentication, can be
+ *			NULL if the proxy doesn't require authentication.
+ *
+ *			This function returns a handle to the newly created connection.
+ *			You can use the handle in subsequent calls to execute specific
+ *			HTTP calls using ::HTTPAPI_ExecuteRequest.
+ *
+ * @return	A @c HTTP_HANDLE to the newly created connection or @c NULL in
+ * 			case an error occurs.
+ */
+MOCKABLE_FUNCTION(, HTTP_HANDLE, HTTPAPI_CreateConnection_With_Proxy, const char*, hostName, const char*, proxyHost,
+                                          int, proxyPort, const char*, proxyUsername, const char*, proxyPassword);
 
 /**
  * @brief	Closes a connection created with ::HTTPAPI_CreateConnection.
@@ -162,6 +190,56 @@ MOCKABLE_FUNCTION(, HTTPAPI_RESULT, HTTPAPI_ExecuteRequest, HTTP_HANDLE, handle,
                                              HTTP_HEADERS_HANDLE, httpHeadersHandle, const unsigned char*, content,
                                              size_t, contentLength, unsigned int*, statusCode,
                                              HTTP_HEADERS_HANDLE, responseHeadersHandle, BUFFER_HANDLE, responseContent);
+
+/**
+ * @brief	Sends the HTTP request to the host and handles the response for
+ * 			the HTTP call, with streaming supported when the response body
+ * 			is chunked. The response data is returned through callback.
+ *
+ * @param	handle				 	The handle to the HTTP connection created
+ * 									via ::HTTPAPI_CreateConnection.
+ * @param	requestType			 	Specifies which HTTP method is used (GET,
+ * 									POST, DELETE, PUT, PATCH).
+ * @param	relativePath		 	Specifies the relative path of the URL
+ * 									excluding the host name.
+ * @param	httpHeadersHandle	 	Specifies a set of HTTP headers (name-value
+ * 									pairs) to be added to the
+ * 									HTTP request. The @p httpHeadersHandle
+ * 									handle can be created and setup with
+ * 									the proper name-value pairs by using the
+ * 									HTTPHeaders APIs available in @c
+ * 									HTTPHeaders.h.
+ * @param	content				 	Specifies a pointer to the request body.
+ * 									This value is optional and can be @c NULL.
+ * @param	contentLength		 	Specifies the request body size (this is
+ * 									typically added into the HTTP headers as
+ * 									the Content-Length header). This value is
+ * 									optional and can be 0.
+ * @param   statusCode   	        This is an out parameter, where
+ * 									::HTTPAPI_ExecuteRequest returns the status
+ * 									code from the HTTP response (200, 201, 400,
+ * 									401, etc.)
+ * @param	responseHeadersHandle	This is an HTTP headers handle to which
+ * 									::HTTPAPI_ExecuteRequest must add all the
+ * 									HTTP response headers so that the caller of
+ * 									::HTTPAPI_ExecuteRequest can inspect them.
+ * 									You can manipulate @p responseHeadersHandle
+ * 									by using the HTTPHeaders APIs available in
+ * 									@c HTTPHeaders.h
+ * @param	onChunkReceived			This is a callback function which is invoked
+ * 									when a chunk of HTTP response data is
+ * 									received. This invokation only happens when
+ * 									the HTTP response body is chunked.
+ * @param	onChunkReceivedContext	This is the context to be passed to callback
+ * 									onChunkReceived when it's invoked.
+ *
+ * @return	@c HTTPAPI_OK if the API call is successful or an error
+ * 			code in case it fails.
+ */
+MOCKABLE_FUNCTION(, HTTPAPI_RESULT, HTTPAPI_ExecuteRequest_With_Streaming, HTTP_HANDLE, handle, HTTPAPI_REQUEST_TYPE, requestType, const char*, relativePath,
+                                             HTTP_HEADERS_HANDLE, httpHeadersHandle, const unsigned char*, content,
+                                             size_t, contentLength, unsigned int*, statusCode,
+                                             HTTP_HEADERS_HANDLE, responseHeadersHandle, ON_CHUNK_RECEIVED, onChunkReceived, void*, onChunkReceivedContext);
 
 /**
  * @brief	Sets the option named @p optionName bearing the value
