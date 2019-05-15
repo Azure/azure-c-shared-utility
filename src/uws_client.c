@@ -1448,33 +1448,15 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                                         /* Codes_SRS_UWS_CLIENT_01_296: [ Upon either sending or receiving a Close control frame, it is said that _The WebSocket Closing Handshake is Started_ and that the WebSocket connection is in the CLOSING state. ]*/
                                         /* Codes_SRS_UWS_CLIENT_01_240: [ The application MUST NOT send any more data frames after sending a Close frame. ]*/
                                         uws_client->uws_state = UWS_STATE_CLOSING_SENDING_CLOSE;
-                                    }
 
-                                    /* Codes_SRS_UWS_CLIENT_01_241: [ If an endpoint receives a Close frame and did not previously send a Close frame, the endpoint MUST send a Close frame in response. ]*/
-                                    /* Codes_SRS_UWS_CLIENT_01_242: [ It SHOULD do so as soon as practical. ]*/
-                                    /* Codes_SRS_UWS_CLIENT_01_239: [ Close frames sent from client to server must be masked as per Section 5.3. ]*/
-                                    /* Codes_SRS_UWS_CLIENT_01_140: [ To avoid confusing network intermediaries (such as intercepting proxies) and for security reasons that are further discussed in Section 10.3, a client MUST mask all frames that it sends to the server (see Section 5.3 for further details). ]*/
-                                    close_frame_buffer = uws_frame_encoder_encode(WS_CLOSE_FRAME, NULL, 0, true, true, 0);
-                                    if (close_frame_buffer == NULL)
-                                    {
-                                        LogError("Cannot encode the response CLOSE frame");
-
-                                        /* Codes_SRS_UWS_CLIENT_01_288: [ To _Close the WebSocket Connection_, an endpoint closes the underlying TCP connection. ]*/
-                                        /* Codes_SRS_UWS_CLIENT_01_290: [ An endpoint MAY close the connection via any means available when necessary, such as when under attack. ]*/
-                                        uws_client->uws_state = UWS_STATE_CLOSING_UNDERLYING_IO;
-                                        if (xio_close(uws_client->underlying_io, on_underlying_io_close_complete, uws_client) != 0)
+                                        /* Codes_SRS_UWS_CLIENT_01_241: [ If an endpoint receives a Close frame and did not previously send a Close frame, the endpoint MUST send a Close frame in response. ]*/
+                                        /* Codes_SRS_UWS_CLIENT_01_242: [ It SHOULD do so as soon as practical. ]*/
+                                        /* Codes_SRS_UWS_CLIENT_01_239: [ Close frames sent from client to server must be masked as per Section 5.3. ]*/
+                                        /* Codes_SRS_UWS_CLIENT_01_140: [ To avoid confusing network intermediaries (such as intercepting proxies) and for security reasons that are further discussed in Section 10.3, a client MUST mask all frames that it sends to the server (see Section 5.3 for further details). ]*/
+                                        close_frame_buffer = uws_frame_encoder_encode(WS_CLOSE_FRAME, NULL, 0, true, true, 0);
+                                        if (close_frame_buffer == NULL)
                                         {
-                                            indicate_ws_error(uws_client, WS_ERROR_CANNOT_CLOSE_UNDERLYING_IO);
-                                            uws_client->uws_state = UWS_STATE_CLOSED;
-                                        }
-                                    }
-                                    else
-                                    {
-                                        close_frame_bytes = BUFFER_u_char(close_frame_buffer);
-                                        close_frame_length = BUFFER_length(close_frame_buffer);
-                                        if (xio_send(uws_client->underlying_io, close_frame_bytes, close_frame_length, on_underlying_io_close_sent, uws_client) != 0)
-                                        {
-                                            LogError("Cannot send the response CLOSE frame");
+                                            LogError("Cannot encode the response CLOSE frame");
 
                                             /* Codes_SRS_UWS_CLIENT_01_288: [ To _Close the WebSocket Connection_, an endpoint closes the underlying TCP connection. ]*/
                                             /* Codes_SRS_UWS_CLIENT_01_290: [ An endpoint MAY close the connection via any means available when necessary, such as when under attack. ]*/
@@ -1485,13 +1467,31 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                                                 uws_client->uws_state = UWS_STATE_CLOSED;
                                             }
                                         }
+                                        else
+                                        {
+                                            close_frame_bytes = BUFFER_u_char(close_frame_buffer);
+                                            close_frame_length = BUFFER_length(close_frame_buffer);
+                                            if (xio_send(uws_client->underlying_io, close_frame_bytes, close_frame_length, on_underlying_io_close_sent, uws_client) != 0)
+                                            {
+                                                LogError("Cannot send the response CLOSE frame");
 
-                                        BUFFER_delete(close_frame_buffer);
+                                                /* Codes_SRS_UWS_CLIENT_01_288: [ To _Close the WebSocket Connection_, an endpoint closes the underlying TCP connection. ]*/
+                                                /* Codes_SRS_UWS_CLIENT_01_290: [ An endpoint MAY close the connection via any means available when necessary, such as when under attack. ]*/
+                                                uws_client->uws_state = UWS_STATE_CLOSING_UNDERLYING_IO;
+                                                if (xio_close(uws_client->underlying_io, on_underlying_io_close_complete, uws_client) != 0)
+                                                {
+                                                    indicate_ws_error(uws_client, WS_ERROR_CANNOT_CLOSE_UNDERLYING_IO);
+                                                    uws_client->uws_state = UWS_STATE_CLOSED;
+                                                }
+                                            }
+
+                                            BUFFER_delete(close_frame_buffer);
+                                        }
+
+                                        /* Codes_SRS_UWS_CLIENT_01_460: [ When a CLOSE frame is received the callback `on_ws_peer_closed` passed to `uws_client_open_async` shall be called, while passing to it the argument `on_ws_peer_closed_context`. ]*/
+                                        uws_client->on_ws_peer_closed(uws_client->on_ws_peer_closed_context, close_code_ptr, extra_data_ptr, extra_data_length);
                                     }
                                 }
-
-                                /* Codes_SRS_UWS_CLIENT_01_460: [ When a CLOSE frame is received the callback `on_ws_peer_closed` passed to `uws_client_open_async` shall be called, while passing to it the argument `on_ws_peer_closed_context`. ]*/
-                                uws_client->on_ws_peer_closed(uws_client->on_ws_peer_closed_context, close_code_ptr, extra_data_ptr, extra_data_length);
 
                                 break;
                             }
