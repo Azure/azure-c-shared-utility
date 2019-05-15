@@ -146,7 +146,7 @@ CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters)
     SOCKETIO_CONFIG* socket_io_config = (SOCKETIO_CONFIG*)io_create_parameters;
     SOCKET_IO_INSTANCE* result;
     struct tcp_keepalive tcp_keepalive = { 0, 0, 0 };
-    
+
     if (socket_io_config == NULL)
     {
         LogError("Invalid argument: socket_io_config is NULL");
@@ -198,7 +198,7 @@ CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters)
                     result->on_io_error_context = NULL;
                     result->io_state = IO_STATE_CLOSED;
                     result->keep_alive = tcp_keepalive;
-                    
+
                 }
             }
         }
@@ -222,7 +222,7 @@ void socketio_destroy(CONCRETE_IO_HANDLE socket_io)
         (void)closesocket(socket_io_instance->socket);
 
         /* clear allpending IOs */
-        
+
         while ((first_pending_io = singlylinkedlist_get_head_item(socket_io_instance->pending_io_list)) != NULL)
         {
             PENDING_SOCKET_IO* pending_socket_io = (PENDING_SOCKET_IO*)singlylinkedlist_item_get_value(first_pending_io);
@@ -294,7 +294,7 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
                 addrHint.ai_family = AF_INET;
                 addrHint.ai_socktype = SOCK_STREAM;
                 addrHint.ai_protocol = 0;
-                sprintf(portString, "%u", socket_io_instance->port);
+                sprintf(portString, "%d", socket_io_instance->port);
                 if (getaddrinfo(socket_io_instance->hostname, portString, &addrHint, &addrInfo) != 0)
                 {
                     open_result_detailed.code = WSAGetLastError();
@@ -421,7 +421,7 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
             }
             else
             {
-                /* TODO: we need to do more than a cast here to be 100% clean 
+                /* TODO: we need to do more than a cast here to be 100% clean
                 The following bug was filed: [WarnL4] socketio_win32 does not account for already sent bytes and there is a truncation of size from size_t to int */
                 int send_result = send(socket_io_instance->socket, (const char*)buffer, (int)size, 0);
                 if (send_result != (int)size)

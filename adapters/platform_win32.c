@@ -97,6 +97,9 @@ STRING_HANDLE platform_get_platform_info(void)
     memset(&osvi, 0, sizeof(osvi));
     osvi.dwOSVersionInfoSize = sizeof(osvi);
 #pragma warning(disable:4996)
+
+// Ignore: Consider using 'IsWindows*' instead of 'GetVersionExA'. Reason: Deprecated. Use VerifyVersionInfo* or IsWindows* macros from VersionHelpers.
+#pragma warning(disable:28159)
     if (GetVersionEx(&osvi))
     {
         DWORD product_type;
@@ -112,6 +115,7 @@ STRING_HANDLE platform_get_platform_info(void)
         result = STRING_construct_sprintf("(native; WindowsProduct:Windows NT %d.%d; %s)", LOBYTE(LOWORD(dwVersion)), HIBYTE(LOWORD(dwVersion)), arch);
     }
 #pragma warning(default:4996)
+#pragma warning(default:28159)
 #else
    //todo: find a C++ system info for UWP
     result = STRING_construct("(native; UWP; undefined)");

@@ -139,6 +139,11 @@ static char* base32_encode_impl(const unsigned char* source, size_t src_size)
             }
 
             /* Codes_SRS_BASE32_07_011: [ base32_encode_impl shall then map the 5 bit chunks into one of the BASE32 values (a-z,2,3,4,5,6,7) values. ] */
+
+#ifdef _MSC_VER
+// Buffer overrun while writing to 'result':  the writable size is 'output_len+1' bytes, but '2' bytes might be written.
+#pragma warning(disable:6386)
+#endif
             result[result_len++] = BASE32_VALUES[pos1];
             result[result_len++] = BASE32_VALUES[pos2];
             result[result_len++] = BASE32_VALUES[pos3];
@@ -147,6 +152,9 @@ static char* base32_encode_impl(const unsigned char* source, size_t src_size)
             result[result_len++] = BASE32_VALUES[pos6];
             result[result_len++] = BASE32_VALUES[pos7];
             result[result_len++] = BASE32_VALUES[pos8];
+#ifdef _MSC_VER
+#pragma warning(default:6386)
+#endif
         }
     }
     return result;
@@ -215,7 +223,7 @@ static BUFFER_HANDLE base32_decode_impl(const char* source)
                 }
                 else
                 {
-                    // Codes_SRS_BASE32_07_025: [ base32_decode_impl shall group 5 bytes at a time into the temp buffer. ] 
+                    // Codes_SRS_BASE32_07_025: [ base32_decode_impl shall group 5 bytes at a time into the temp buffer. ]
                     *dest_buff++ = ((input[0] & 0x1f) << 3) | ((input[1] & 0x1c) >> 2);
                     *dest_buff++ = ((input[1] & 0x03) << 6) | ((input[2] & 0x1f) << 1) | ((input[3] & 0x10) >> 4);
                     *dest_buff++ = ((input[3] & 0x0f) << 4) | ((input[4] & 0x1e) >> 1);
@@ -322,7 +330,15 @@ char* Base32_Encode_Bytes(const unsigned char* source, size_t size)
     {
         /* Codes_SRS_BASE32_07_005: [ If size is 0 Base32_Encode shall return an empty string. ] */
         result = malloc(1);
-        strcpy(result, "");
+        if (result == NULL)
+        {
+            /* Codes_SRS_BASE32_07_014: [ Upon failure Base32_Encode_Bytes shall return NULL. ] */
+            LogError("encoding for zero-size input failed.");
+        }
+        else
+        {
+            strcpy(result, "");
+        }
     }
     else
     {

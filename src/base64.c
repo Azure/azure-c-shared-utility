@@ -105,7 +105,7 @@ static size_t Base64decode_len(const char *encodedString)
 {
     size_t result;
     size_t sourceLength = strlen(encodedString);
-    
+
     if (sourceLength == 0)
     {
         result = 0;
@@ -242,7 +242,7 @@ static STRING_HANDLE Base64_Encode_Internal(const unsigned char* source, size_t 
     neededSize += (size == 0) ? (0) : ((((size - 1) / 3) + 1) * 4);
     neededSize += 1; /*+1 because \0 at the end of the string*/
     /*Codes_SRS_BASE64_06_006: [If when allocating memory to produce the encoding a failure occurs then Base64_Encoder shall return NULL.]*/
-    encoded = (char*)malloc(neededSize);
+    encoded = (char*)malloc(neededSize + 1);
     if (encoded == NULL)
     {
         result = NULL;
@@ -270,6 +270,7 @@ static STRING_HANDLE Base64_Encode_Internal(const unsigned char* source, size_t 
             char c4 = base64char(
                 source[currentPosition + 2] & 0x3F
             );
+
             currentPosition += 3;
             encoded[destinationPosition++] = c1;
             encoded[destinationPosition++] = c2;
@@ -296,7 +297,14 @@ static STRING_HANDLE Base64_Encode_Internal(const unsigned char* source, size_t 
             char c2 = base64b8(source[currentPosition] & 0x03);
             encoded[destinationPosition++] = c1;
             encoded[destinationPosition++] = c2;
+#ifdef _MSC_VER
+            // Disable: Buffer overrun while writing to 'encoded':  the writable size is 'neededSize+1' bytes, but '7' bytes might be written.
+#pragma warning(disable:6386)
+#endif
             encoded[destinationPosition++] = '=';
+#ifdef _MSC_VER
+#pragma warning(default:6386)
+#endif
             encoded[destinationPosition++] = '=';
         }
 

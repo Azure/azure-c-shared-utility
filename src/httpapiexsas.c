@@ -105,6 +105,10 @@ void HTTPAPIEX_SAS_Destroy(HTTPAPIEX_SAS_HANDLE handle)
     if (handle)
     {
         HTTPAPIEX_SAS_STATE* state = (HTTPAPIEX_SAS_STATE*)handle;
+#ifdef _MSC_VER
+// Ignore: Using uninitialized memory '*state'.
+#pragma warning(disable:6001)
+#endif
         /*Codes_SRS_HTTPAPIEXSAS_06_006: [HTTAPIEX_SAS_Destroy shall deallocate any structures denoted by the parameter handle.]*/
         if (state->key)
         {
@@ -118,6 +122,9 @@ void HTTPAPIEX_SAS_Destroy(HTTPAPIEX_SAS_HANDLE handle)
         {
             free(state->keyName);
         }
+#ifdef _MSC_VER
+#pragma warning(default:6001)
+#endif
         free(state);
     }
 }

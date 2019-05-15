@@ -140,7 +140,10 @@ int singlylinkedlist_remove(SINGLYLINKEDLIST_HANDLE list, LIST_ITEM_HANDLE item)
             previous_item = current_item;
             current_item = (LIST_ITEM_INSTANCE*)current_item->next;
         }
-
+#ifdef _MSC_VER
+        // Disable: Using uninitialized memory 'current_item'
+#pragma warning(disable:6001)
+#endif
         if (current_item == NULL)
         {
             /* Codes_SRS_LIST_01_025: [If the item item_handle is not found in the list, then singlylinkedlist_remove shall fail and return a non-zero value.] */
@@ -151,6 +154,10 @@ int singlylinkedlist_remove(SINGLYLINKEDLIST_HANDLE list, LIST_ITEM_HANDLE item)
             /* Codes_SRS_LIST_01_023: [singlylinkedlist_remove shall remove a list item from the list and on success it shall return 0.] */
             result = 0;
         }
+#ifdef _MSC_VER
+        // Disable: Using uninitialized memory 'current_item'
+#pragma warning(disable:6001)
+#endif
     }
 
     return result;

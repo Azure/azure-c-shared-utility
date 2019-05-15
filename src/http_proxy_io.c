@@ -235,7 +235,7 @@ static void indicate_open_complete_error_and_close(HTTP_PROXY_IO_INSTANCE* http_
     http_proxy_io_instance->on_io_open_complete(http_proxy_io_instance->on_io_open_complete_context, open_result_detailed);
 }
 
-// This callback usage needs to be either verified and commented or integrated into 
+// This callback usage needs to be either verified and commented or integrated into
 // the state machine.
 static void unchecked_on_send_complete(void* context, IO_SEND_RESULT send_result)
 {
@@ -388,7 +388,7 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT_DETAILE
                     {
                         connect_request_length += (int)strlen(proxy_basic);
                     }
-                    
+
                     if (connect_request_length < 0)
                     {
                         /* Codes_SRS_HTTP_PROXY_IO_01_062: [ If any failure is encountered while constructing the request, the `on_open_complete` callback shall be triggered with `IO_OPEN_ERROR`, passing also the `on_open_complete_context` argument as `context`. ]*/
@@ -666,9 +666,14 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
             if (http_proxy_io_instance->receive_buffer_size >= 4)
             {
                 const char* request_end_ptr;
-
+#ifdef _MSC_VER
+// Disable: Buffer overrun while writing to 'http_proxy_io_instance->receive_buffer':  the writable size is 'http_proxy_io_instance->receive_buffer_size+size+1' bytes, but 'http_proxy_io_instance->receive_buffer_size' bytes might be written.
+#pragma warning(disable:6386)
+#endif
                 http_proxy_io_instance->receive_buffer[http_proxy_io_instance->receive_buffer_size] = 0;
-
+#ifdef _MSC_VER
+#pragma warning(default:6386)
+#endif
                 /* Codes_SRS_HTTP_PROXY_IO_01_066: [ When a double new-line is detected the response shall be parsed in order to extract the status code. ]*/
                 if ((http_proxy_io_instance->receive_buffer_size >= 4) &&
                     ((request_end_ptr = strstr((const char*)http_proxy_io_instance->receive_buffer, "\r\n\r\n")) != NULL))
