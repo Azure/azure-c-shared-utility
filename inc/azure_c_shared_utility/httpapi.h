@@ -194,7 +194,7 @@ MOCKABLE_FUNCTION(, HTTPAPI_RESULT, HTTPAPI_ExecuteRequest, HTTP_HANDLE, handle,
 /**
  * @brief	Sends the HTTP request to the host and handles the response for
  * 			the HTTP call, with streaming supported when the response body
- * 			is chunked.
+ * 			is chunked. The response data is returned through callback.
  *
  * @param	handle				 	The handle to the HTTP connection created
  * 									via ::HTTPAPI_CreateConnection.
@@ -226,16 +226,6 @@ MOCKABLE_FUNCTION(, HTTPAPI_RESULT, HTTPAPI_ExecuteRequest, HTTP_HANDLE, handle,
  * 									You can manipulate @p responseHeadersHandle
  * 									by using the HTTPHeaders APIs available in
  * 									@c HTTPHeaders.h
- * @param	responseContent		 	This is a buffer that must be filled by
- * 									::HTTPAPI_ExecuteRequest with the contents
- * 									of the HTTP response body. The buffer size
- * 									must be increased by the
- * 									::HTTPAPI_ExecuteRequest implementation in
- * 									order to fit the response body.
- * 									::HTTPAPI_ExecuteRequest must also handle
- * 									chunked transfer encoding for HTTP responses.
- * 									To manipulate the @p responseContent buffer,
- * 									use the APIs available in @c Strings.h.
  * @param	onChunkReceived			This is a callback function which is invoked
  * 									when a chunk of HTTP response data is
  * 									received. This invokation only happens when
@@ -249,8 +239,7 @@ MOCKABLE_FUNCTION(, HTTPAPI_RESULT, HTTPAPI_ExecuteRequest, HTTP_HANDLE, handle,
 MOCKABLE_FUNCTION(, HTTPAPI_RESULT, HTTPAPI_ExecuteRequest_With_Streaming, HTTP_HANDLE, handle, HTTPAPI_REQUEST_TYPE, requestType, const char*, relativePath,
                                              HTTP_HEADERS_HANDLE, httpHeadersHandle, const unsigned char*, content,
                                              size_t, contentLength, unsigned int*, statusCode,
-                                             HTTP_HEADERS_HANDLE, responseHeadersHandle, BUFFER_HANDLE, responseContent,
-                                             ON_CHUNK_RECEIVED, onChunkReceived, void*, onChunkReceivedContext);
+                                             HTTP_HEADERS_HANDLE, responseHeadersHandle, ON_CHUNK_RECEIVED, onChunkReceived, void*, onChunkReceivedContext);
 
 /**
  * @brief	Sets the option named @p optionName bearing the value

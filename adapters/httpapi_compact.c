@@ -1242,34 +1242,28 @@ static bool validRequestType(HTTPAPI_REQUEST_TYPE requestType)
     return result;
 }
 
-/*Codes_SRS_HTTPAPI_COMPACT_21_021: [ The HTTPAPI_ExecuteRequest shall execute the http communtication with the provided host, sending a request and reciving the response. ]*/
-/*Codes_SRS_HTTPAPI_COMPACT_21_050: [ If there is a content in the response, the HTTPAPI_ExecuteRequest shall copy it in the responseContent buffer. ]*/
-//Note: This function assumes that "Host:" and "Content-Length:" headers are setup
-//      by the caller of HTTPAPI_ExecuteRequest() (which is true for httptransport.c).
-HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE requestType, const char* relativePath,
+HTTPAPI_RESULT HTTPAPI_ExecuteRequest_Internal(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE requestType, const char* relativePath,
     HTTP_HEADERS_HANDLE httpHeadersHandle, const unsigned char* content,
-    size_t contentLength, unsigned int* statusCode,
-    HTTP_HEADERS_HANDLE responseHeadersHandle, BUFFER_HANDLE responseContent)
-{
-    return HTTPAPI_ExecuteRequest_With_Streaming(handle, requestType, relativePath,
-        httpHeadersHandle, content, contentLength, statusCode, responseHeadersHandle, responseContent, NULL, NULL);
-}
-
-/*Codes_SRS_HTTPAPI_COMPACT_21_021: [ The HTTPAPI_ExecuteRequest shall execute the http communtication with the provided host, sending a request and reciving the response. ]*/
-/*Codes_SRS_HTTPAPI_COMPACT_21_050: [ If there is a content in the response, the HTTPAPI_ExecuteRequest shall copy it in the responseContent buffer. ]*/
-//Note: This function assumes that "Host:" and "Content-Length:" headers are setup
-//      by the caller of HTTPAPI_ExecuteRequest() (which is true for httptransport.c).
-HTTPAPI_RESULT HTTPAPI_ExecuteRequest_With_Streaming(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE requestType, const char* relativePath,
-    HTTP_HEADERS_HANDLE httpHeadersHandle, const unsigned char* content,
-    size_t contentLength, unsigned int* statusCode,
-    HTTP_HEADERS_HANDLE responseHeadersHandle, BUFFER_HANDLE responseContent,
-    ON_CHUNK_RECEIVED onChunkReceived, void* onChunkReceivedContext)
+    size_t contentLength, unsigned int* statusCode, HTTP_HEADERS_HANDLE responseHeadersHandle,
+    BUFFER_HANDLE responseContent, ON_CHUNK_RECEIVED onChunkReceived, void* onChunkReceivedContext)
 {
     HTTPAPI_RESULT result = HTTPAPI_ERROR;
     size_t  headersCount;
     size_t  bodyLength = 0;
     bool    chunked = false;
     HTTP_HANDLE_DATA* http_instance = (HTTP_HANDLE_DATA*)handle;
+
+    BUFFER_HANDLE internalBuffer = NULL;
+    if (responseContent == NULL)
+    {
+        internalBuffer = BUFFER_new();
+        if (internalBuffer == NULL)
+        {
+            LogError("Allocate internal buffer for response content failed");
+        }
+
+        responseContent = internalBuffer;
+    }
 
     /*Codes_SRS_HTTPAPI_COMPACT_21_034: [ If there is no previous connection, the HTTPAPI_ExecuteRequest shall return HTTPAPI_INVALID_ARG. ]*/
     /*Codes_SRS_HTTPAPI_COMPACT_21_037: [ If the request type is unknown, the HTTPAPI_ExecuteRequest shall return HTTPAPI_INVALID_ARG. ]*/
@@ -1316,8 +1310,34 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest_With_Streaming(HTTP_HANDLE handle, HTTPAPI
 
     conn_receive_discard_buffer(http_instance);
 
+    BUFFER_delete(internalBuffer);
 
     return result;
+}
+
+/*Codes_SRS_HTTPAPI_COMPACT_21_021: [ The HTTPAPI_ExecuteRequest shall execute the http communtication with the provided host, sending a request and reciving the response. ]*/
+/*Codes_SRS_HTTPAPI_COMPACT_21_050: [ If there is a content in the response, the HTTPAPI_ExecuteRequest shall copy it in the responseContent buffer. ]*/
+//Note: This function assumes that "Host:" and "Content-Length:" headers are setup
+//      by the caller of HTTPAPI_ExecuteRequest() (which is true for httptransport.c).
+HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE requestType, const char* relativePath,
+    HTTP_HEADERS_HANDLE httpHeadersHandle, const unsigned char* content,
+    size_t contentLength, unsigned int* statusCode,
+    HTTP_HEADERS_HANDLE responseHeadersHandle, BUFFER_HANDLE responseContent)
+{
+    return HTTPAPI_ExecuteRequest_Internal(handle, requestType, relativePath,
+        httpHeadersHandle, content, contentLength, statusCode, responseHeadersHandle, responseContent, NULL, NULL);
+}
+
+/*Codes_SRS_HTTPAPI_COMPACT_21_021: [ The HTTPAPI_ExecuteRequest shall execute the http communtication with the provided host, sending a request and reciving the response. ]*/
+//Note: This function assumes that "Host:" and "Content-Length:" headers are setup
+//      by the caller of HTTPAPI_ExecuteRequest() (which is true for httptransport.c).
+HTTPAPI_RESULT HTTPAPI_ExecuteRequest_With_Streaming(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE requestType, const char* relativePath,
+    HTTP_HEADERS_HANDLE httpHeadersHandle, const unsigned char* content,
+    size_t contentLength, unsigned int* statusCode,
+    HTTP_HEADERS_HANDLE responseHeadersHandle, ON_CHUNK_RECEIVED onChunkReceived, void* onChunkReceivedContext)
+{
+    return HTTPAPI_ExecuteRequest_Internal(handle, requestType, relativePath,
+        httpHeadersHandle, content, contentLength, statusCode, responseHeadersHandle, NULL, onChunkReceived, onChunkReceivedContext);
 }
 
 /*Codes_SRS_HTTPAPI_COMPACT_21_056: [ The HTTPAPI_SetOption shall change the HTTP options. ]*/
