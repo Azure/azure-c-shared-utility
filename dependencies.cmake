@@ -29,10 +29,10 @@ else()
     find_package(umock_c REQUIRED CONFIG)
 endif()
 
+include_directories(${MACRO_UTILS_INC_FOLDER})
+include_directories(${UMOCK_C_INC_FOLDER})
+
 if (${original_run_unittests} OR ${original_run_e2e_tests})
-    include_directories(${MACRO_UTILS_INC_FOLDER})
-    include_directories(${UMOCK_C_INC_FOLDER})
-    
     include("dependencies-test.cmake")
     add_subdirectory(testtools)
 
