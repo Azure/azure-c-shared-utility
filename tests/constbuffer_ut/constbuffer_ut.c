@@ -681,7 +681,8 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         ASSERT_IS_NULL(result);
     }
 
-    /*Tests_SRS_CONSTBUFFER_02_026: [ If offset is greater than or equal to handles's size then CONSTBUFFER_CreateFromOffsetAndSize shall fail and return NULL. ]*/
+    /*Tests_SRS_CONSTBUFFER_02_033: [ If offset is greater than handles's size then CONSTBUFFER_CreateFromOffsetAndSize shall fail and return NULL. ]*/
+    /*Tests_SRS_CONSTBUFFER_02_027: [ If offset + size exceed handles's size then CONSTBUFFER_CreateFromOffsetAndSize shall fail and return NULL. ]*/
     TEST_FUNCTION(CONSTBUFFER_CreateFromOffsetAndSize_with_offset_greater_than_handle_s_size_fails)
     {
         ///arrange
@@ -694,31 +695,14 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         umock_c_reset_all_calls();
 
         ///act
-        CONSTBUFFER_HANDLE result = CONSTBUFFER_CreateFromOffsetAndSize(origin, sizeof(source)+1, 0);
-
-        ///assert
+        CONSTBUFFER_HANDLE result;
+        result = CONSTBUFFER_CreateFromOffsetAndSize(origin, sizeof(source) + 1, 0);
         ASSERT_IS_NULL(result);
-
-        ///cleanup
-        CONSTBUFFER_DecRef(origin);
-    }
-
-    /*Tests_SRS_CONSTBUFFER_02_026: [ If offset is greater than or equal to handles's size then CONSTBUFFER_CreateFromOffsetAndSize shall fail and return NULL. ]*/
-    TEST_FUNCTION(CONSTBUFFER_CreateFromOffsetAndSize_with_offset_equal_to__handle_s_size_fails)
-    {
-        ///arrange
-        CONSTBUFFER_HANDLE origin;
-        const char source[] = "source";
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-        origin = CONSTBUFFER_Create((const unsigned char*)source, sizeof(source));
-        ASSERT_IS_NOT_NULL(origin);
-        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-        umock_c_reset_all_calls();
-
-        ///act
-        CONSTBUFFER_HANDLE result = CONSTBUFFER_CreateFromOffsetAndSize(origin, sizeof(source), 0);
-
-        ///assert
+        result = CONSTBUFFER_CreateFromOffsetAndSize(origin, 0, sizeof(source) + 1);
+        ASSERT_IS_NULL(result);
+        result = CONSTBUFFER_CreateFromOffsetAndSize(origin, sizeof(source), 1);
+        ASSERT_IS_NULL(result);
+        result = CONSTBUFFER_CreateFromOffsetAndSize(origin, 1, sizeof(source));
         ASSERT_IS_NULL(result);
 
         ///cleanup
@@ -738,29 +722,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         umock_c_reset_all_calls();
 
         ///act
-        CONSTBUFFER_HANDLE result = CONSTBUFFER_CreateFromOffsetAndSize(origin, sizeof(source)- 1, SIZE_MAX- sizeof(source) + 2);
-
-        ///assert
-        ASSERT_IS_NULL(result);
-
-        ///cleanup
-        CONSTBUFFER_DecRef(origin);
-    }
-
-    /*Tests_SRS_CONSTBUFFER_02_027: [ If offset + size exceed handles's size then CONSTBUFFER_CreateFromOffsetAndSize shall fail and return NULL. ]*/
-    TEST_FUNCTION(CONSTBUFFER_CreateFromOffsetAndSize_with_offset_plus_size_exceed_handle_size_fails_1)
-    {
-        ///arrange
-        CONSTBUFFER_HANDLE origin;
-        const char source[] = "source";
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-        origin = CONSTBUFFER_Create((const unsigned char*)source, sizeof(source));
-        ASSERT_IS_NOT_NULL(origin);
-        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-        umock_c_reset_all_calls();
-
-        ///act
-        CONSTBUFFER_HANDLE result = CONSTBUFFER_CreateFromOffsetAndSize(origin, 0, sizeof(source) + 1);
+        CONSTBUFFER_HANDLE result = CONSTBUFFER_CreateFromOffsetAndSize(origin, sizeof(source) - 1, SIZE_MAX- sizeof(source) + 2);
 
         ///assert
         ASSERT_IS_NULL(result);
@@ -872,13 +834,13 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
 
         ///act
-        CONSTBUFFER_HANDLE result = CONSTBUFFER_CreateFromOffsetAndSize(origin, sizeof(source)-1, 0);
+        CONSTBUFFER_HANDLE result = CONSTBUFFER_CreateFromOffsetAndSize(origin, sizeof(source) - 1, 1);
 
         ///assert
         ASSERT_IS_NOT_NULL(result);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         const CONSTBUFFER* content = CONSTBUFFER_GetContent(result);
-        ASSERT_ARE_EQUAL(size_t, 0, content->size);
+        ASSERT_ARE_EQUAL(size_t, 1, content->size);
 
         ///cleanup
         CONSTBUFFER_DecRef(origin);
@@ -911,6 +873,37 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         const CONSTBUFFER* content = CONSTBUFFER_GetContent(result);
         ASSERT_ARE_EQUAL(size_t, sizeof(source)-1, content->size);
         ASSERT_IS_TRUE(memcmp(content->buffer, source+1, sizeof(source)-1) == 0);
+
+        ///cleanup
+        CONSTBUFFER_DecRef(origin);
+        CONSTBUFFER_DecRef(result);
+    }
+
+    /*Tests_SRS_CONSTBUFFER_02_028: [ CONSTBUFFER_CreateFromOffsetAndSize shall allocate memory for a new CONSTBUFFER_HANDLE's content. ]*/
+    /*Tests_SRS_CONSTBUFFER_02_029: [ CONSTBUFFER_CreateFromOffsetAndSize shall set the ref count of the newly created CONSTBUFFER_HANDLE to the initial value. ]*/
+    /*Tests_SRS_CONSTBUFFER_02_030: [ CONSTBUFFER_CreateFromOffsetAndSize shall increment the reference count of handle. ]*/
+    /*Tests_SRS_CONSTBUFFER_02_031: [ CONSTBUFFER_CreateFromOffsetAndSize shall succeed and return a non-NULL value. ]*/
+    TEST_FUNCTION(CONSTBUFFER_CreateFromOffsetAndSize_succeeds_5)
+    {
+        ///arrange
+        CONSTBUFFER_HANDLE origin;
+        const char source[] = "source";
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+        origin = CONSTBUFFER_Create((const unsigned char*)source, sizeof(source));
+        ASSERT_IS_NOT_NULL(origin);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+        umock_c_reset_all_calls();
+
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+
+        ///act
+        CONSTBUFFER_HANDLE result = CONSTBUFFER_CreateFromOffsetAndSize(origin, sizeof(source), 0);
+
+        ///assert
+        ASSERT_IS_NOT_NULL(result);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+        const CONSTBUFFER* content = CONSTBUFFER_GetContent(result);
+        ASSERT_ARE_EQUAL(size_t, 0, content->size);
 
         ///cleanup
         CONSTBUFFER_DecRef(origin);
