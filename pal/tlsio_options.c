@@ -32,7 +32,7 @@ static int set_and_validate_x509_type(TLSIO_OPTIONS* options, TLSIO_OPTIONS_x509
     {
         // This case also rejects the nonsensical TLSIO_OPTIONS_x509_TYPE_UNSPECIFIED
         LogError("Unsupported x509 type: %d", x509_type);
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else if (options->x509_type == TLSIO_OPTIONS_x509_TYPE_UNSPECIFIED)
     {
@@ -43,7 +43,7 @@ static int set_and_validate_x509_type(TLSIO_OPTIONS* options, TLSIO_OPTIONS_x509
     else if (options->x509_type != x509_type)
     {
         LogError("Supplied x509 type conflicts with previously set x509");
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {

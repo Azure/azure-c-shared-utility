@@ -13,7 +13,7 @@ Pkg.generatedFiles.$add("lib/");
 
 var SRCS = [
     "agenttime.c", 
-    "base64.c",
+    "azure_base64.c",
     "buffer.c",
     "consolelogger.c",
 	"constbuffer.c",

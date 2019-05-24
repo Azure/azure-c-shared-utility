@@ -15,6 +15,8 @@
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
 
+#define SHARED_ACCESS_SIGNATURE_PREFIX "sas="
+
 typedef struct HTTPAPIEX_SAS_STATE_TAG
 {
     char* key;
@@ -94,7 +96,10 @@ HTTPAPIEX_SAS_HANDLE HTTPAPIEX_SAS_Create(STRING_HANDLE key, STRING_HANDLE uriRe
     {
         /*Codes_SRS_HTTPAPIEXSAS_06_003: [The parameter keyName for HTTPAPIEX_SAS_Create is optional and can be NULL.]*/
         /*Codes_SRS_HTTPAPIEXSAS_01_001: [ HTTPAPIEX_SAS_Create shall create a new instance of HTTPAPIEX_SAS and return a non-NULL handle to it. ]*/
-        result = construct_httpex_sas(STRING_c_str(key), STRING_c_str(uriResource), STRING_c_str(keyName) );
+        const char* keyStr = STRING_c_str(key);
+        const char* uriStr = STRING_c_str(uriResource);
+        const char* keyNameStr = STRING_c_str(keyName);
+        result = construct_httpex_sas(keyStr, uriStr, keyNameStr);
     }
     return result;
 }
@@ -144,10 +149,20 @@ HTTPAPIEX_RESULT HTTPAPIEX_SAS_ExecuteRequest(HTTPAPIEX_SAS_HANDLE sasHandle, HT
                 }
                 else
                 {
-                    /*Codes_SRS_HTTPAPIEXSAS_06_011: [SASToken_Create shall be invoked.]*/
-                    /*Codes_SRS_HTTPAPIEXSAS_06_012: [If the return result of SASToken_Create is NULL then fallthrough.]*/
-                    size_t expiry = (size_t)(difftime(currentTime, 0) + 3600);
-                    STRING_HANDLE newSASToken = SASToken_CreateString(state->key, state->uriResource, state->keyName, expiry);
+                    STRING_HANDLE newSASToken = NULL;
+                    if (strncmp(state->key, SHARED_ACCESS_SIGNATURE_PREFIX, 4) == 0)
+                    {
+                        /*Codes_SRS_HTTPAPIEXSAS_06_017: [If state->key is prefixed with "sas=", SharedAccessSignature will be used rather than created.  STRING_construct will be invoked.]*/
+                        newSASToken = STRING_construct(&state->key[4]);
+                    }
+                    else
+                    {
+                        /*Codes_SRS_HTTPAPIEXSAS_06_011: [SASToken_Create shall be invoked.]*/
+                        /*Codes_SRS_HTTPAPIEXSAS_06_012: [If the return result of SASToken_Create is NULL then fallthrough.]*/
+                        size_t expiry = (size_t)(difftime(currentTime, 0) + 3600);
+                        newSASToken = SASToken_CreateString(state->key, state->uriResource, state->keyName, expiry);
+                    }
+
                     if (newSASToken != NULL)
                     {
                         /*Codes_SRS_HTTPAPIEXSAS_06_013: [HTTPHeaders_ReplaceHeaderNameValuePair shall be invoked with "Authorization" as its second argument and STRING_c_str (newSASToken) as its third argument.]*/

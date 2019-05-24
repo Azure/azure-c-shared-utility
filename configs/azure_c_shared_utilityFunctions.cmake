@@ -233,7 +233,7 @@ function(build_test_artifacts whatIsBuilding use_gballoc)
         if(
             (("${whatIsBuilding}" MATCHES ".*ut.*") AND ${run_unittests}) OR
             (("${whatIsBuilding}" MATCHES ".*e2e.*") AND ${run_e2e_tests}) OR
-            (("${whatIsBuilding}" MATCHES ".*int.*") AND ${run_e2e_tests})
+            (("${whatIsBuilding}" MATCHES ".*int.*") AND ${run_int_tests})
         )
                 windows_unittests_add_exe(${whatIsBuilding} ${ARGN})
                 if (${use_cppunittest})
@@ -252,7 +252,7 @@ function(build_test_artifacts whatIsBuilding use_gballoc)
         if(
             (("${whatIsBuilding}" MATCHES ".*ut.*") AND ${run_unittests}) OR
             (("${whatIsBuilding}" MATCHES ".*e2e.*") AND ${run_e2e_tests}) OR
-            (("${whatIsBuilding}" MATCHES ".*int.*") AND ${run_e2e_tests})
+            (("${whatIsBuilding}" MATCHES ".*int.*") AND ${run_int_tests})
         )
             linux_unittests_add_exe(${whatIsBuilding} ${ARGN})
         endif()
@@ -511,7 +511,7 @@ function(build_c_test_artifacts whatIsBuilding use_gballoc folder)
         if(
             (("${whatIsBuilding}" MATCHES ".*ut.*") AND ${run_unittests}) OR
             (("${whatIsBuilding}" MATCHES ".*e2e.*") AND ${run_e2e_tests}) OR
-            (("${whatIsBuilding}" MATCHES ".*int.*") AND ${run_e2e_tests})
+            (("${whatIsBuilding}" MATCHES ".*int.*") AND ${run_int_tests})
         )
             if (${use_cppunittest})
                 c_windows_unittests_add_dll(${whatIsBuilding} ${folder} ${ARGN})
@@ -530,9 +530,63 @@ function(build_c_test_artifacts whatIsBuilding use_gballoc folder)
         if(
             (("${whatIsBuilding}" MATCHES ".*ut.*") AND ${run_unittests}) OR
             (("${whatIsBuilding}" MATCHES ".*e2e.*") AND ${run_e2e_tests}) OR
-            (("${whatIsBuilding}" MATCHES ".*int.*") AND ${run_e2e_tests})
+            (("${whatIsBuilding}" MATCHES ".*int.*") AND ${run_int_tests})
         )
             c_linux_unittests_add_exe(${whatIsBuilding} ${folder} ${ARGN})
+        endif()
+    endif()
+endfunction()
+
+function(compile_c_test_artifacts_as whatIsBuilding compileAsWhat)
+
+    if(WIN32)
+        if(
+            (("${whatIsBuilding}" MATCHES ".*ut.*") AND ${run_unittests}) OR
+            (("${whatIsBuilding}" MATCHES ".*e2e.*") AND ${run_e2e_tests}) OR
+            (("${whatIsBuilding}" MATCHES ".*int.*") AND ${run_int_tests})
+        )
+            if (${use_cppunittest})
+                if(${compileAsWhat} STREQUAL "C99")
+                    compileTargetAsC99(${whatIsBuilding}_dll)
+                    compileTargetAsC99(${whatIsBuilding}_testsonly_lib)
+                endif()
+                if(${compileAsWhat} STREQUAL "C11")
+                    compileTargetAsC11(${whatIsBuilding}_dll)
+                    compileTargetAsC11(${whatIsBuilding}_testsonly_lib)
+                endif()
+            endif()
+            if(${compileAsWhat} STREQUAL "C99")
+                compileTargetAsC99(${whatIsBuilding}_exe)
+            endif()
+            if(${compileAsWhat} STREQUAL "C11")
+                compileTargetAsC11(${whatIsBuilding}_exe)
+            endif()
+        else()
+            if(
+                (("${whatIsBuilding}" MATCHES ".*e2e.*") AND ${nuget_e2e_tests})
+            )
+                if(${compileAsWhat} STREQUAL "C99")
+                    compileTargetAsC99(${whatIsBuilding}_exe)
+                endif()
+                if(${compileAsWhat} STREQUAL "C11")
+                    compileTargetAsC11(${whatIsBuilding}_exe)
+                endif()
+            else()
+                #do nothing
+            endif()
+        endif()
+    else()
+        if(
+            (("${whatIsBuilding}" MATCHES ".*ut.*") AND ${run_unittests}) OR
+            (("${whatIsBuilding}" MATCHES ".*e2e.*") AND ${run_e2e_tests}) OR
+            (("${whatIsBuilding}" MATCHES ".*int.*") AND ${run_int_tests})
+        )
+            if(${compileAsWhat} STREQUAL "C99")
+                compileTargetAsC99(${whatIsBuilding}_exe)
+            endif()
+            if(${compileAsWhat} STREQUAL "C11")
+                compileTargetAsC11(${whatIsBuilding}_exe)
+            endif()
         endif()
     endif()
 endfunction()
@@ -598,14 +652,14 @@ function(set_platform_files c_shared_dir)
         endif()
         set(THREAD_C_FILE ${c_shared_dir}/adapters/threadapi_win32.c PARENT_SCOPE)
         set(LOCK_C_FILE ${c_shared_dir}/adapters/lock_win32.c PARENT_SCOPE)
+        set(SRW_LOCK_C_FILE ${c_shared_dir}/adapters/srw_lock.c PARENT_SCOPE)
+        set(TIMER_C_FILE ${c_shared_dir}/adapters/timer.c PARENT_SCOPE)
+        set(STRING_UTILS_C_FILE ${c_shared_dir}/adapters/string_utils.c PARENT_SCOPE)
+        
         if (${use_builtin_httpapi})
             set(HTTP_C_FILE ${c_shared_dir}/adapters/httpapi_compact.c PARENT_SCOPE)
         else()
-            if (WINCE)
-                 set(HTTP_C_FILE ${c_shared_dir}/adapters/httpapi_wince.c PARENT_SCOPE)
-            else()
-                set(HTTP_C_FILE ${c_shared_dir}/adapters/httpapi_winhttp.c PARENT_SCOPE)
-            endif()
+            set(HTTP_C_FILE ${c_shared_dir}/adapters/httpapi_winhttp.c PARENT_SCOPE)
         endif()
         set(PLATFORM_C_FILE ${c_shared_dir}/adapters/platform_win32.c PARENT_SCOPE)
         if (${use_socketio})

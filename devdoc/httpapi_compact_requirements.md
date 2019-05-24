@@ -149,7 +149,7 @@ MOCKABLE_FUNCTION(, HTTPAPI_RESULT, HTTPAPI_CloneOption, const char*, optionName
 /** @brief Enumeration specifying the HTTP request verbs accepted by
  *	the HTTPAPI module.
  */
-DEFINE_ENUM(HTTPAPI_REQUEST_TYPE, HTTPAPI_REQUEST_TYPE_VALUES);
+MU_DEFINE_ENUM(HTTPAPI_REQUEST_TYPE, HTTPAPI_REQUEST_TYPE_VALUES);
 ```
  **]**
 
@@ -179,7 +179,7 @@ HTTPAPI_SET_TIMEOUTS_FAILED                  \
 /** @brief Enumeration specifying the possible return values for the APIs in
  *		   this module.
  */
-DEFINE_ENUM(HTTPAPI_RESULT, HTTPAPI_RESULT_VALUES);
+MU_DEFINE_ENUM(HTTPAPI_RESULT, HTTPAPI_RESULT_VALUES);
 ```
  **]**
 
@@ -352,6 +352,8 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
 **SRS_HTTPAPI_COMPACT_21_082: [** If the HTTPAPI_ExecuteRequest retries 20 seconds to receive the message without success, it shall fail and return HTTPAPI_READ_DATA_FAILED. **]**
 
 **SRS_HTTPAPI_COMPACT_21_083: [** The HTTPAPI_ExecuteRequest shall wait, at least, 100 milliseconds between retries. **]**  
+
+**SRS_HTTPAPI_COMPACT_42_088: [** The message received by the HTTPAPI_ExecuteRequest should not contain http body. **]**  
 
 
 ###   HTTPAPI_SetOption

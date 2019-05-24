@@ -53,7 +53,7 @@ static void show_sastoken_example()
 
 static void show_platform_info()
 {
-    STRING_HANDLE platform_info = platform_get_platform_info();
+    STRING_HANDLE platform_info = platform_get_platform_info(PLATFORM_INFO_OPTION_RETRIEVE_SQM);
     if (platform_info != NULL)
     {
         (void)printf("%s\r\n", STRING_c_str(platform_info));

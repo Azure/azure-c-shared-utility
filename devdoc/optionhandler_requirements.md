@@ -1,8 +1,8 @@
 # OptionHandler
 
-# Overview 
+# Overview
 
-Option Handler is a module that builds a container of options relevant to a module. The options can be later retrieved. 
+Option Handler is a module that builds a container of options relevant to a module. The options can be later retrieved.
 It does so by asking the module to clone its options or to destroy them. `OptionHandler` is agnostic to the module it serves.
 
 
@@ -14,13 +14,13 @@ OPTIONHANDLER_OK,
 OPTIONHANDLER_ERROR,
 OPTIONHANDLER_INVALIDARG
 
-DEFINE_ENUM(OPTIONHANDLER_RESULT, OPTIONHANDLER_RESULT_VALUES)
+MU_DEFINE_ENUM(OPTIONHANDLER_RESULT, OPTIONHANDLER_RESULT_VALUES)
 
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
 
-#include "azure_c_shared_utility/umock_c_prod.h"
+#include "umock_c/umock_c_prod.h"
 
 typedef struct OPTIONHANDLER_HANDLE_DATA_TAG* OPTIONHANDLER_HANDLE;
 

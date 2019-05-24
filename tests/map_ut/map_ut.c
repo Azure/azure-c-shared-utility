@@ -66,11 +66,10 @@ void my_gballoc_free(void* ptr)
 }
 
 #include "testrunnerswitcher.h"
-#include "umock_c.h"
-#include "umocktypes_charptr.h"
+#include "umock_c/umock_c.h"
+#include "umock_c/umocktypes_charptr.h"
 
 static TEST_MUTEX_HANDLE g_testByTest;
-static TEST_MUTEX_HANDLE g_dllByDll;
 
 #define ENABLE_MOCKS
 
@@ -110,7 +109,7 @@ static int DontAllowCapitalsFilters(const char* mapProperty, const char* mapValu
     {
         if (*iterator >= 'A' && *iterator <= 'Z')
         {
-            result = __FAILURE__;
+            result = MU_FAILURE;
             break;
         }
         iterator++;
@@ -123,7 +122,7 @@ static int DontAllowCapitalsFilters(const char* mapProperty, const char* mapValu
         {
             if (*iterator >= 'A' && *iterator <= 'Z')
             {
-                result = __FAILURE__;
+                result = MU_FAILURE;
                 break;
             }
             iterator++;
@@ -147,13 +146,11 @@ static const char* TEST_BLUEVALUE = "cyan";
 static const char* TEST_GREENKEY = "testgreenkey";
 static const char* TEST_GREENVALUE = "green";
 
-DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
+MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    char temp_str[256];
-    (void)snprintf(temp_str, sizeof(temp_str), "umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
-    ASSERT_FAIL(temp_str);
+    ASSERT_FAIL("umock_c reported error :%s", MU_ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
 }
 
 BEGIN_TEST_SUITE(map_unittests)
@@ -162,7 +159,6 @@ BEGIN_TEST_SUITE(map_unittests)
     {
         int result;
 
-        TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
         g_testByTest = TEST_MUTEX_CREATE();
         ASSERT_IS_NOT_NULL(g_testByTest);
 
@@ -187,7 +183,6 @@ BEGIN_TEST_SUITE(map_unittests)
         umock_c_deinit();
 
         TEST_MUTEX_DESTROY(g_testByTest);
-        TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
     }
 
     TEST_FUNCTION_INITIALIZE(TestMethodInitialize)

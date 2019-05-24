@@ -8,10 +8,10 @@
 #endif
 
 #include "testrunnerswitcher.h"
-#include "umock_c.h"
-#include "umocktypes_charptr.h"
-#include "umocktypes_bool.h"
-#include "umock_c_negative_tests.h"
+#include "umock_c/umock_c.h"
+#include "umock_c/umocktypes_charptr.h"
+#include "umock_c/umocktypes_bool.h"
+#include "umock_c/umock_c_negative_tests.h"
 
 #define ENABLE_MOCKS
 #include "azure_c_shared_utility/gballoc.h"
@@ -21,15 +21,12 @@
 #include "azure_c_shared_utility/uuid.h"
 
 static TEST_MUTEX_HANDLE g_testByTest;
-static TEST_MUTEX_HANDLE g_dllByDll;
 
-DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
+MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    char temp_str[256];
-    (void)snprintf(temp_str, sizeof(temp_str), "umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
-    ASSERT_FAIL(temp_str);
+    ASSERT_FAIL("umock_c reported error :%s", MU_ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
 }
 
 
@@ -37,7 +34,7 @@ static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 #define UUID_STRING_LENGTH  36
 #define UUID_STRING_SIZE    (UUID_STRING_LENGTH + 1)
 
-static UUID_T TEST_UUID = { 222, 193, 74, 152, 197, 252, 67, 14, 180, 227, 51, 193, 196, 52, 220, 175 };
+static const UUID_T TEST_UUID = { 222, 193, 74, 152, 197, 252, 67, 14, 180, 227, 51, 193, 196, 52, 220, 175 };
 static char* TEST_UUID_STRING = "dec14a98-c5fc-430e-b4e3-33c1c434dcaf";
 
 static UNIQUEID_RESULT mock_UniqueId_Generate_result;
@@ -74,7 +71,6 @@ BEGIN_TEST_SUITE(uuid_unittests)
 TEST_SUITE_INITIALIZE(suite_init)
 {
     int result;
-    TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
 
     result = umock_c_init(on_umock_c_error);
     ASSERT_ARE_EQUAL(int, 0, result);
@@ -91,7 +87,6 @@ TEST_SUITE_INITIALIZE(suite_init)
 TEST_SUITE_CLEANUP(suite_cleanup)
 {
     TEST_MUTEX_DESTROY(g_testByTest);
-    TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
 }
 
 TEST_FUNCTION_INITIALIZE(TestMethodInitialize)
@@ -107,7 +102,7 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
     TEST_MUTEX_RELEASE(g_testByTest);
 }
 
-// Tests_SRS_UUID_09_001: [ If `uuid` is NULL, UUID_generate shall return a non-zero value ]
+// Tests_SRS_UUID_09_001: [ If uuid is NULL, UUID_generate shall return a non-zero value ]
 TEST_FUNCTION(UUID_generate_NULL_uuid)
 {
     //Arrange
@@ -124,7 +119,7 @@ TEST_FUNCTION(UUID_generate_NULL_uuid)
 }
 
 // Tests_SRS_UUID_09_002: [ UUID_generate shall obtain an UUID string from UniqueId_Generate ]
-// Tests_SRS_UUID_09_004: [ The UUID string shall be parsed into an UUID_T type (16 unsigned char array) and filled in `uuid` ]
+// Tests_SRS_UUID_09_004: [ The UUID string shall be parsed into an UUID_T type (16 unsigned char array) and filled in uuid ]
 // Tests_SRS_UUID_09_006: [ If no failures occur, UUID_generate shall return zero ]
 TEST_FUNCTION(UUID_generate_succeed)
 {
@@ -156,7 +151,7 @@ TEST_FUNCTION(UUID_generate_succeed)
 }
 
 // Tests_SRS_UUID_09_003: [ If the UUID string fails to be obtained, UUID_generate shall fail and return a non-zero value ]
-// Tests_SRS_UUID_09_005: [ If `uuid` fails to be set, UUID_generate shall fail and return a non-zero value ]
+// Tests_SRS_UUID_09_005: [ If uuid fails to be set, UUID_generate shall fail and return a non-zero value ]
 TEST_FUNCTION(UUID_generate_failure_checks)
 {
     //Arrange
@@ -183,20 +178,20 @@ TEST_FUNCTION(UUID_generate_failure_checks)
         umock_c_negative_tests_reset();
         umock_c_negative_tests_fail_call(i);
 
-        (void)sprintf(temp_str, "On failed call %zu", i);
+        (void)sprintf(temp_str, "On failed call %lu", (unsigned long)i);
 
         // act
         result = UUID_generate(&uuid);
 
         // assert
-        ASSERT_ARE_NOT_EQUAL_WITH_MSG(int, 0, result, temp_str);
+        ASSERT_ARE_NOT_EQUAL(int, 0, result, temp_str);
     }
 
     umock_c_negative_tests_reset();
     umock_c_negative_tests_deinit();
 }
 
-// Tests_SRS_UUID_09_011: [ If `uuid` is NULL, UUID_to_string shall return a non-zero value ]
+// Tests_SRS_UUID_09_011: [ If uuid is NULL, UUID_to_string shall return a non-zero value ]
 TEST_FUNCTION(UUID_to_string_NULL_uuid)
 {
     //Arrange
@@ -208,9 +203,9 @@ TEST_FUNCTION(UUID_to_string_NULL_uuid)
     ASSERT_IS_NULL(result);
 }
 
-// Tests_SRS_UUID_09_012: [ UUID_to_string shall allocate a valid UUID string (`uuid_string`) as per RFC 4122 ]
-// Tests_SRS_UUID_09_014: [ Each character in `uuid` shall be written in the respective positions of `uuid_string` as a 2-digit HEX value ]
-// Tests_SRS_UUID_09_016: [ If no failures occur, UUID_to_string shall return `uuid_string` ]
+// Tests_SRS_UUID_09_012: [ UUID_to_string shall allocate a valid UUID string (uuid_string) as per RFC 4122 ]
+// Tests_SRS_UUID_09_014: [ Each character in uuid shall be written in the respective positions of uuid_string as a 2-digit HEX value ]
+// Tests_SRS_UUID_09_016: [ If no failures occur, UUID_to_string shall return uuid_string ]
 TEST_FUNCTION(UUID_to_string_succeed)
 {
     //Arrange
@@ -229,8 +224,8 @@ TEST_FUNCTION(UUID_to_string_succeed)
     ASSERT_ARE_EQUAL(char_ptr, TEST_UUID_STRING, result);
 }
 
-// Tests_SRS_UUID_09_013: [ If `uuid_string` fails to be allocated, UUID_to_string shall return NULL ]
-// Tests_SRS_UUID_09_015: [ If `uuid_string` fails to be set, UUID_to_string shall return NULL ]
+// Tests_SRS_UUID_09_013: [ If uuid_string fails to be allocated, UUID_to_string shall return NULL ]
+// Tests_SRS_UUID_09_015: [ If uuid_string fails to be set, UUID_to_string shall return NULL ]
 TEST_FUNCTION(UUID_to_string_failure_checks)
 {
     //Arrange
@@ -253,20 +248,20 @@ TEST_FUNCTION(UUID_to_string_failure_checks)
         umock_c_negative_tests_reset();
         umock_c_negative_tests_fail_call(i);
 
-        (void)sprintf(temp_str, "On failed call %zu", i);
+        (void)sprintf(temp_str, "On failed call %lu", (unsigned long)i);
 
         // act
         result = UUID_to_string(&TEST_UUID);
 
         // assert
-        ASSERT_IS_NULL_WITH_MSG(result, temp_str);
+        ASSERT_IS_NULL(result, temp_str);
     }
 
     umock_c_negative_tests_reset();
     umock_c_negative_tests_deinit();
 }
 
-// Tests_SRS_UUID_09_007: [ If `uuid_string` or `uuid` are NULL, UUID_from_string shall return a non-zero value ]
+// Tests_SRS_UUID_09_007: [ If uuid_string or uuid are NULL, UUID_from_string shall return a non-zero value ]
 TEST_FUNCTION(UUID_from_string_NULL_uuid_string)
 {
     //Arrange
@@ -283,7 +278,7 @@ TEST_FUNCTION(UUID_from_string_NULL_uuid_string)
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
 }
 
-// Tests_SRS_UUID_09_007: [ If `uuid_string` or `uuid` are NULL, UUID_from_string shall return a non-zero value ]
+// Tests_SRS_UUID_09_007: [ If uuid_string or uuid are NULL, UUID_from_string shall return a non-zero value ]
 TEST_FUNCTION(UUID_from_string_NULL_uuid)
 {
     //Arrange
@@ -299,7 +294,7 @@ TEST_FUNCTION(UUID_from_string_NULL_uuid)
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
 }
 
-// Tests_SRS_UUID_09_008: [ Each pair of digits in `uuid_string`, excluding dashes, shall be read as a single HEX value and saved on the respective position in `uuid` ]
+// Tests_SRS_UUID_09_008: [ Each pair of digits in uuid_string, excluding dashes, shall be read as a single HEX value and saved on the respective position in uuid ]
 // Tests_SRS_UUID_09_010: [ If no failures occur, UUID_from_string shall return zero ]
 TEST_FUNCTION(UUID_from_string_succeed)
 {
@@ -325,7 +320,7 @@ TEST_FUNCTION(UUID_from_string_succeed)
     }
 }
 
-// Tests_SRS_UUID_09_009: [ If `uuid` fails to be generated, UUID_from_string shall return a non-zero value ]
+// Tests_SRS_UUID_09_009: [ If uuid fails to be generated, UUID_from_string shall return a non-zero value ]
 // To be implemented once sscanf mock is implemented.
 
 END_TEST_SUITE(uuid_unittests)

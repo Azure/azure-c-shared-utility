@@ -9,8 +9,8 @@
 #ifndef THREADAPI_H
 #define THREADAPI_H
 
-#include "azure_c_shared_utility/macro_utils.h"
-#include "azure_c_shared_utility/umock_c_prod.h"
+#include "azure_macro_utils/macro_utils.h"
+#include "umock_c/umock_c_prod.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,7 +27,7 @@ typedef int(*THREAD_START_FUNC)(void *);
 /** @brief Enumeration specifying the possible return values for the APIs in
  *           this module.
  */
-DEFINE_ENUM(THREADAPI_RESULT, THREADAPI_RESULT_VALUES);
+MU_DEFINE_ENUM(THREADAPI_RESULT, THREADAPI_RESULT_VALUES);
 
 typedef void* THREAD_HANDLE;
 

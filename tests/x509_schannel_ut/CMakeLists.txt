@@ -1,10 +1,8 @@
 #Copyright (c) Microsoft. All rights reserved.
 #Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#this is CMakeLists.txt for vector_ut
 cmake_minimum_required(VERSION 2.8.11)
 
-compileAsC11()
 set(theseTestsName x509_schannel_ut)
 
 set(${theseTestsName}_test_files
@@ -30,3 +28,5 @@ string(REPLACE "advapi32.lib" "" CMAKE_C_STANDARD_LIBRARIES ${CMAKE_C_STANDARD_L
 string(REPLACE "advapi32.lib" "" CMAKE_CXX_STANDARD_LIBRARIES ${CMAKE_CXX_STANDARD_LIBRARIES})
 
 build_c_test_artifacts(${theseTestsName} ON "tests/azure_c_shared_utility_tests")
+
+compile_c_test_artifacts_as(${theseTestsName} C99)

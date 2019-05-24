@@ -1,8 +1,6 @@
 #Copyright (c) Microsoft. All rights reserved.
 #Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-compileAsC99()
-
 set(socketio_connect_c_files
     main.c
 )
@@ -27,3 +25,5 @@ endif()
 set_target_properties(socketio_connect
 			   PROPERTIES
 			   FOLDER "azure_c_shared_utility_samples")
+
+compileTargetAsC99(socketio_connect)

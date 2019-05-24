@@ -7,7 +7,7 @@
 #pragma once
 
 #include "stdafx.h"
-#include "azure_c_shared_utility/macro_utils.h"
+#include "azure_macro_utils/macro_utils.h"
 
 #define MICROMOCK_EXCEPTION_VALUES                        \
 MICROMOCK_EXCEPTION_INVALID_VALIDATE_BUFFERS,             \
@@ -20,7 +20,7 @@ MICROMOCK_EXCEPTION_SET_ARRAY_SIZE_BEFORE_CALL,           \
 MICROMOCK_EXCEPTION_INTERNAL_ERROR                        \
 
 
-DEFINE_ENUM(MICROMOCK_EXCEPTION, MICROMOCK_EXCEPTION_VALUES)
+MU_DEFINE_ENUM(MICROMOCK_EXCEPTION, MICROMOCK_EXCEPTION_VALUES)
 
 extern const TCHAR* MicroMockExceptionToString(_In_ MICROMOCK_EXCEPTION exceptionCode);
 

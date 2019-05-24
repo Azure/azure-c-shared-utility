@@ -4,7 +4,7 @@
 #ifndef CALLEE_H
 #define CALLEE_H
 
-#include "azure_c_shared_utility/umock_c_prod.h"
+#include "umock_c/umock_c_prod.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,7 +19,7 @@ typedef void* CALLEE_HANDLE;
     CALLEE_RESULT_OK,                \
     CALLEE_RESULT_FAIL,              \
     CALLEE_RESULT_OUT_OF_MEMORY
-DEFINE_ENUM(CALLEE_RESULT, CALLEE_RESULT_VALUES);
+MU_DEFINE_ENUM(CALLEE_RESULT, CALLEE_RESULT_VALUES);
 
 
 /**

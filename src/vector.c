@@ -91,11 +91,11 @@ int VECTOR_push_back(VECTOR_HANDLE handle, const void* elements, size_t numEleme
     int result;
     if (handle == NULL || elements == NULL || numElements == 0)
     {
-       /* Codes_SRS_VECTOR_10_011: [VECTOR_push_back shall fail and return non-zero if `handle` is NULL.] */
-       /* Codes_SRS_VECTOR_10_034: [VECTOR_push_back shall fail and return non-zero if `elements` is NULL.] */
-       /* Codes_SRS_VECTOR_10_035: [VECTOR_push_back shall fail and return non-zero if `numElements` is 0.] */
+       /* Codes_SRS_VECTOR_10_011: [VECTOR_push_back shall fail and return non-zero if handle is NULL.] */
+       /* Codes_SRS_VECTOR_10_034: [VECTOR_push_back shall fail and return non-zero if elements is NULL.] */
+       /* Codes_SRS_VECTOR_10_035: [VECTOR_push_back shall fail and return non-zero if numElements is 0.] */
         LogError("invalid argument - handle(%p), elements(%p), numElements(%zd).", handle, elements, numElements);
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -107,7 +107,7 @@ int VECTOR_push_back(VECTOR_HANDLE handle, const void* elements, size_t numEleme
         {
            /* Codes_SRS_VECTOR_10_012: [VECTOR_push_back shall fail and return non-zero if memory allocation fails.] */
             LogError("realloc failed.");
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -127,16 +127,16 @@ void VECTOR_erase(VECTOR_HANDLE handle, void* elements, size_t numElements)
 {
     if (handle == NULL || elements == NULL || numElements == 0)
     {
-        /* Codes_SRS_VECTOR_10_015: [VECTOR_erase shall return if `handle` is NULL.] */
-        /* Codes_SRS_VECTOR_10_038: [VECTOR_erase shall return if `elements` is NULL.] */
-        /* Codes_SRS_VECTOR_10_039: [VECTOR_erase shall return if `numElements` is 0.] */
+        /* Codes_SRS_VECTOR_10_015: [VECTOR_erase shall return if handle is NULL.] */
+        /* Codes_SRS_VECTOR_10_038: [VECTOR_erase shall return if elements is NULL.] */
+        /* Codes_SRS_VECTOR_10_039: [VECTOR_erase shall return if numElements is 0.] */
         LogError("invalid argument - handle(%p), elements(%p), numElements(%zd).", handle, elements, numElements);
     }
     else
     {
         if (elements < handle->storage)
         {
-            /* Codes_SRS_VECTOR_10_040: [VECTOR_erase shall return if `elements` is out of bound.] */
+            /* Codes_SRS_VECTOR_10_040: [VECTOR_erase shall return if elements is out of bound.] */
             LogError("invalid argument elements(%p) is not a member of this object.", elements);
         }
         else
@@ -154,7 +154,7 @@ void VECTOR_erase(VECTOR_HANDLE handle, void* elements, size_t numElements)
                 unsigned char* srcEnd = (unsigned char*)handle->storage + (handle->elementSize * handle->count);
                 if (src > srcEnd)
                 {
-                    /* Codes_SRS_VECTOR_10_040: [VECTOR_erase shall return if `elements` is out of bound.] */
+                    /* Codes_SRS_VECTOR_10_040: [VECTOR_erase shall return if elements is out of bound.] */
                     LogError("invalid argument - numElements(%zd) is out of bound.", numElements);
                 }
                 else
@@ -287,8 +287,8 @@ void* VECTOR_find_if(VECTOR_HANDLE handle, PREDICATE_FUNCTION pred, const void* 
     void* result;
     if (handle == NULL || pred == NULL)
     {
-        /* Codes_SRS_VECTOR_10_030: [VECTOR_find_if shall fail and return NULL if `handle` is NULL.] */
-        /* Codes_SRS_VECTOR_10_036: [VECTOR_find_if shall fail and return NULL if `pred` is NULL.] */
+        /* Codes_SRS_VECTOR_10_030: [VECTOR_find_if shall fail and return NULL if handle is NULL.] */
+        /* Codes_SRS_VECTOR_10_036: [VECTOR_find_if shall fail and return NULL if pred is NULL.] */
         LogError("invalid argument - handle(%p), pred(%p)", handle, pred);
         result = NULL;
     }
@@ -299,7 +299,7 @@ void* VECTOR_find_if(VECTOR_HANDLE handle, PREDICATE_FUNCTION pred, const void* 
         {
             if (true == pred((unsigned char*)handle->storage + (handle->elementSize * i), value))
             {
-                /* Codes_SRS_VECTOR_10_031: [VECTOR_find_if shall return the first element in the vector that matches `pred`.] */
+                /* Codes_SRS_VECTOR_10_031: [VECTOR_find_if shall return the first element in the vector that matches pred.] */
                 break;
             }
         }
@@ -311,7 +311,7 @@ void* VECTOR_find_if(VECTOR_HANDLE handle, PREDICATE_FUNCTION pred, const void* 
         }
         else
         {
-            /* Codes_SRS_VECTOR_10_031: [VECTOR_find_if shall return the first element in the vector that matches `pred`.]*/
+            /* Codes_SRS_VECTOR_10_031: [VECTOR_find_if shall return the first element in the vector that matches pred.]*/
             result = (unsigned char*)handle->storage + (handle->elementSize * i);
         }
     }

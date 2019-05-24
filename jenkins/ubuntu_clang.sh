@@ -12,9 +12,9 @@ build_folder=$build_root"/cmake"
 rm -r -f $build_folder
 mkdir -p $build_folder
 pushd $build_folder
-cmake .. -Drun_valgrind:BOOL=ON -Drun_unittests:bool=ON -Duse_wsio:BOOL=ON
+cmake .. -Drun_valgrind:BOOL=ON -Drun_unittests:bool=ON
 cmake --build . -- --jobs=$(nproc)
-ctest -C "debug" -V
+ctest -C "debug" -V -j $(nproc) --output-on-failure
 
 popd
 :

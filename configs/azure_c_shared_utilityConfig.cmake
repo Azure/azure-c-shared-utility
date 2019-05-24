@@ -8,3 +8,5 @@ get_target_property(AZURE_C_SHARED_UTILITY_INCLUDES aziotsharedutil INTERFACE_IN
 set(AZURE_C_SHARED_UTILITY_INCLUDES ${AZURE_C_SHARED_UTILITY_INCLUDES} CACHE INTERNAL "")
 
 include("${CMAKE_CURRENT_LIST_DIR}/azure_c_shared_utilityFunctions.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/azure_iot_build_rules.cmake")
+

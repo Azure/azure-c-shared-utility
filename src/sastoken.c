@@ -8,7 +8,7 @@
 #include "azure_c_shared_utility/sastoken.h"
 #include "azure_c_shared_utility/urlencode.h"
 #include "azure_c_shared_utility/hmacsha256.h"
-#include "azure_c_shared_utility/base64.h"
+#include "azure_c_shared_utility/azure_base64.h"
 #include "azure_c_shared_utility/agenttime.h"
 #include "azure_c_shared_utility/strings.h"
 #include "azure_c_shared_utility/buffer_.h"
@@ -23,7 +23,7 @@ static double getExpiryValue(const char* expiryASCII)
     {
         if (expiryASCII[i] >= '0' && expiryASCII[i] <= '9')
         {
-            value = value * 10 + (expiryASCII[i] - '0');
+            value = value * 10 + (double)(expiryASCII[i] - '0');
         }
         else
         {
@@ -211,7 +211,7 @@ static STRING_HANDLE construct_sas_token(const char* key, const char* scope, con
     BUFFER_HANDLE decodedKey;
 
     /*Codes_SRS_SASTOKEN_06_029: [The key parameter is decoded from base64.]*/
-    if ((decodedKey = Base64_Decoder(key)) == NULL)
+    if ((decodedKey = Azure_Base64_Decode(key)) == NULL)
     {
         /*Codes_SRS_SASTOKEN_06_030: [If there is an error in the decoding then SASToken_Create shall return NULL.]*/
         LogError("Unable to decode the key for generating the SAS.");
@@ -271,7 +271,7 @@ static STRING_HANDLE construct_sas_token(const char* key, const char* scope, con
                     /*Codes_SRS_SASTOKEN_06_022: [If keyName is non-NULL, the string "&skn=" is appended to result.]*/
                     /*Codes_SRS_SASTOKEN_06_023: [If keyName is non-NULL, the argument keyName is appended to result.]*/
                     if ((HMACSHA256_ComputeHash(outBuf, outLen, inBuf, inLen, hash) != HMACSHA256_OK) ||
-                        ((base64Signature = Base64_Encoder(hash)) == NULL) ||
+                        ((base64Signature = Azure_Base64_Encode(hash)) == NULL) ||
                         ((urlEncodedSignature = URL_Encode(base64Signature)) == NULL) ||
                         (STRING_copy(result, "SharedAccessSignature sr=") != 0) ||
                         (STRING_concat(result, scope) != 0) ||

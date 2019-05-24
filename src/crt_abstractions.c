@@ -16,7 +16,7 @@
 #include "azure_c_shared_utility/crt_abstractions.h"
 
 // VS 2008 does not have INFINITY and all the nice goodies...
-#if defined (TIZENRT) || defined (WINCE)
+#if defined (TIZENRT)
 #define DEFINE_INFINITY 1
 #else
 
@@ -471,7 +471,7 @@ static bool isNaN(const char** endptr)
             FST_OVERFLOW,           \
             FST_ERROR
 
-DEFINE_ENUM(FLOAT_STRING_TYPE, FLOAT_STRING_TYPE_VALUES);
+MU_DEFINE_ENUM(FLOAT_STRING_TYPE, FLOAT_STRING_TYPE_VALUES);
 
 static FLOAT_STRING_TYPE splitFloatString(const char* nptr, char** endptr, int *signal, double *fraction, int *exponential)
 {
@@ -559,7 +559,7 @@ static FLOAT_STRING_TYPE splitFloatString(const char* nptr, char** endptr, int *
         {
             /* Add ullInteger to ullFraction. */
             ullFraction += (ullInteger * (unsigned long long)(pow(10, (double)fractionSize)));
-            (*fraction) = ((double)ullFraction / (pow(10.0f, (double)(fractionSize + integerSize - 1))));
+            (*fraction) = ((double)ullFraction / (pow(10.0f, ((double)fractionSize + (double)integerSize - 1.00))));
 
             /* Unify rest of integerSize and fractionSize in the exponential. */
             (*exponential) += integerSize - 1;
@@ -598,7 +598,7 @@ float strtof_s(const char* nptr, char** endptr)
             break;
         case FST_NUMBER:
             val = fraction * pow(10.0, (double)exponential) * (double)signal;
-            if ((val >= (FLT_MAX * (-1))) && (val <= FLT_MAX))
+            if ((val >= (FLT_MAX * (-1.0f))) && (val <= FLT_MAX))
             {
                 /*Codes_SRS_CRT_ABSTRACTIONS_21_016: [The strtof_s must return the float that represents the value in the initial part of the string. If any.]*/
                 result = (float)val;
@@ -650,12 +650,12 @@ long double strtold_s(const char* nptr, char** endptr)
         {
         case FST_INFINITY:
             /*Codes_SRS_CRT_ABSTRACTIONS_21_033: [If the string is 'INF' of 'INFINITY' (ignoring case), the strtold_s must return the INFINITY value for long double.]*/
-            result = INFINITY * (signal);
+            result = (long double)INFINITY * (long double)(signal);
             errno = 0;
             break;
         case FST_NAN:
             /*Codes_SRS_CRT_ABSTRACTIONS_21_034: [If the string is 'NAN' or 'NAN(...)' (ignoring case), the strtold_s must return 0.0 and points endptr to the first character after the 'NAN' sequence.]*/
-            result = NAN;
+            result = (long double)NAN;
             break;
         case FST_NUMBER:
             if ((exponential != DBL_MAX_10_EXP || (fraction <= 1.7976931348623158)) &&
@@ -667,13 +667,13 @@ long double strtold_s(const char* nptr, char** endptr)
             else
             {
                 /*Codes_SRS_CRT_ABSTRACTIONS_21_032: [If the correct value is outside the range, the strtold_s returns the value plus or minus HUGE_VALL, and errno will receive the value ERANGE.]*/
-                result = HUGE_VALF * (signal);
+                result = (long double)HUGE_VALF * (long double)(signal);
                 errno = ERANGE;
             }
             break;
         case FST_OVERFLOW:
             /*Codes_SRS_CRT_ABSTRACTIONS_21_032: [If the correct value is outside the range, the strtold_s returns the value plus or minus HUGE_VALL, and errno will receive the value ERANGE.]*/
-            result = HUGE_VALF * (signal);
+            result = (long double)HUGE_VALF * (long double)(signal);
             errno = ERANGE;
             break;
         default:
@@ -751,7 +751,7 @@ int unsignedIntToString(char* destination, size_t destinationSize, unsigned int 
         (destinationSize < 2) /*because the smallest number is '0\0' which requires 2 characters*/
         )
     {
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -780,7 +780,7 @@ int unsignedIntToString(char* destination, size_t destinationSize, unsigned int 
         else
         {
             /*Codes_SRS_CRT_ABSTRACTIONS_02_002: [If the conversion fails for any reason (for example, insufficient buffer space), a non-zero return value shall be supplied and unsignedIntToString shall fail.] */
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
     }
     return result;
@@ -802,7 +802,7 @@ int size_tToString(char* destination, size_t destinationSize, size_t value)
         (destinationSize < 2) /*because the smallest number is '0\0' which requires 2 characters*/
         )
     {
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -831,7 +831,7 @@ int size_tToString(char* destination, size_t destinationSize, size_t value)
         else
         {
             /*Codes_SRS_CRT_ABSTRACTIONS_02_002: [If the conversion fails for any reason (for example, insufficient buffer space), a non-zero return value shall be supplied and unsignedIntToString shall fail.] */
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
     }
     return result;

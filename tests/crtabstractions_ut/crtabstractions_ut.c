@@ -16,7 +16,7 @@
 #include "testrunnerswitcher.h"
 
 // VS 2008 does not have INFINITY and all the nice goodies...
-#if defined (TIZENRT) || defined (WINCE)
+#if defined (TIZENRT)
 #define DEFINE_INFINITY 1
 #else
 
@@ -162,23 +162,17 @@ static const size_t interestingSize_tNumbersToBeConverted[] =
     0x42
 };
 
-static TEST_MUTEX_HANDLE g_dllByDll;
-
-DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
+MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    char temp_str[256];
-    (void)snprintf(temp_str, sizeof(temp_str), "umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
-    ASSERT_FAIL(temp_str);
+    ASSERT_FAIL("umock_c reported error :%s", MU_ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
 }
 
 BEGIN_TEST_SUITE(CRTAbstractions_UnitTests)
 
 TEST_SUITE_INITIALIZE(a)
 {
-    TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
-
     umock_c_init(on_umock_c_error);
 
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, real_malloc);
@@ -189,7 +183,6 @@ TEST_SUITE_INITIALIZE(a)
 TEST_SUITE_CLEANUP(b)
 {
     umock_c_deinit();
-    TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
 }
 
 /* strcat_s */

@@ -10,7 +10,7 @@
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/refcount.h"
 
-DEFINE_ENUM_STRINGS(CONSTMAP_RESULT, CONSTMAP_RESULT_VALUES);
+MU_DEFINE_ENUM_STRINGS(CONSTMAP_RESULT, CONSTMAP_RESULT_VALUES);
 
 typedef struct CONSTMAP_HANDLE_DATA_TAG
 {
@@ -19,7 +19,7 @@ typedef struct CONSTMAP_HANDLE_DATA_TAG
 
 DEFINE_REFCOUNT_TYPE(CONSTMAP_HANDLE_DATA);
 
-#define LOG_CONSTMAP_ERROR(result) LogError("result = %s", ENUM_TO_STRING(CONSTMAP_RESULT, (result)));
+#define LOG_CONSTMAP_ERROR(result) LogError("result = %s", MU_ENUM_TO_STRING(CONSTMAP_RESULT, (result)));
 
 CONSTMAP_HANDLE ConstMap_Create(MAP_HANDLE sourceMap)
 {
@@ -36,12 +36,11 @@ CONSTMAP_HANDLE ConstMap_Create(MAP_HANDLE sourceMap)
         result->map = Map_Clone(sourceMap);
         if (result->map == NULL)
         {
-            free(result);
+            LOG_CONSTMAP_ERROR(CONSTMAP_ERROR);
+            REFCOUNT_TYPE_DESTROY(CONSTMAP_HANDLE_DATA, result);
             /*Codes_SRS_CONSTMAP_17_002: [If during creation there are any errors, then ConstMap_Create shall return NULL.]*/
             result = NULL;
-            LOG_CONSTMAP_ERROR(CONSTMAP_ERROR);
         }
-
     }
     /*Codes_SRS_CONSTMAP_17_003: [Otherwise, it shall return a non-NULL handle that can be used in subsequent calls.]*/
     return (CONSTMAP_HANDLE)result;
@@ -61,7 +60,7 @@ void ConstMap_Destroy(CONSTMAP_HANDLE handle)
         {
             /*Codes_SRS_CONSTMAP_17_004: [If the reference count is zero, ConstMap_Destroy shall release all resources associated with the immutable map.]*/
             Map_Destroy(((CONSTMAP_HANDLE_DATA *)handle)->map);
-            free(handle);
+            REFCOUNT_TYPE_DESTROY(CONSTMAP_HANDLE_DATA, handle);
         }
 
     }

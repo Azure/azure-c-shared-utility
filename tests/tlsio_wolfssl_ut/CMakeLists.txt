@@ -3,7 +3,6 @@
 
 cmake_minimum_required(VERSION 2.8.11)
 
-compileAsC11()
 set(theseTestsName tlsio_wolfssl_ut)
 
 set(${theseTestsName}_test_files
@@ -18,3 +17,5 @@ set(${theseTestsName}_h_files
 )
 
 build_c_test_artifacts(${theseTestsName} ON "tests/azure_c_shared_utility_tests")
+
+compile_c_test_artifacts_as(${theseTestsName} C99)

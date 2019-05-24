@@ -24,7 +24,7 @@ static void my_gballoc_free(void* s)
 #endif
 
 #include "testrunnerswitcher.h"
-#include "umock_c.h"
+#include "umock_c/umock_c.h"
 
 #include "openssl/ssl.h"
 #include "openssl/x509.h"
@@ -36,13 +36,13 @@ static void my_gballoc_free(void* s)
 #include "openssl/evp.h"
 
 #include "azure_c_shared_utility/x509_openssl.h"
-#include "umocktypes_charptr.h"
-#include "umock_c_negative_tests.h"
+#include "umock_c/umocktypes_charptr.h"
+#include "umock_c/umock_c_negative_tests.h"
 
 #define ENABLE_MOCKS
 #include "azure_c_shared_utility/gballoc.h"
 
-#include "azure_c_shared_utility/umock_c_prod.h"
+#include "umock_c/umock_c_prod.h"
 
 #ifndef VALIDATED_PTR_ARG
 #define VALIDATED_PTR_ARG NULL
@@ -479,14 +479,14 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
             umock_c_negative_tests_fail_call(index);
 
             char tmp_msg[128];
-            sprintf(tmp_msg, "x509_openssl_add_credentials failure in test %zu/%zu", index, count);
+            sprintf(tmp_msg, "x509_openssl_add_credentials failure in test %lu/%lu", (unsigned long)index, (unsigned long)count);
 
             g_replace_ctx.extra_certs = NULL;
 
             result = x509_openssl_add_credentials(TEST_SSL_CTX_STRUCTURE, TEST_PUBLIC_CERTIFICATE, TEST_PRIVATE_CERTIFICATE);
 
             //assert
-            ASSERT_ARE_NOT_EQUAL_WITH_MSG(int, 0, result, tmp_msg);
+            ASSERT_ARE_NOT_EQUAL(int, 0, result, tmp_msg);
         }
 
         //cleanup
@@ -613,13 +613,13 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
             umock_c_negative_tests_fail_call(index);
 
             char tmp_msg[128];
-            sprintf(tmp_msg, "x509_openssl_add_credentials failure in test %zu/%zu", index, count);
+            sprintf(tmp_msg, "x509_openssl_add_credentials failure in test %lu/%lu", (unsigned long)index, (unsigned long)count);
 
             //act
             result = x509_openssl_add_certificates(TEST_SSL_CTX, TEST_CERTIFICATE_1);
 
             //assert
-            ASSERT_ARE_NOT_EQUAL_WITH_MSG(int, 0, result, tmp_msg);
+            ASSERT_ARE_NOT_EQUAL(int, 0, result, tmp_msg);
         }
 
         //clean

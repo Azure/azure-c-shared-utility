@@ -24,11 +24,10 @@
 #include "azure_c_shared_utility/shared_util_options.h"
 
 #include "testrunnerswitcher.h"
-#include "umock_c_negative_tests.h"
+#include "umock_c/umock_c_negative_tests.h"
 
 
 static TEST_MUTEX_HANDLE g_testByTest;
-static TEST_MUTEX_HANDLE g_dllByDll;
 
 #include "gballoc_ut_impl_2.h"
 
@@ -43,19 +42,17 @@ const char* fake_x509_key = "Fake x509 key";
 
 void ASSERT_COPIED_STRING(const char* target, const char* source)
 {
-    ASSERT_IS_NOT_NULL_WITH_MSG(target, "Target string is NULL");
-    ASSERT_IS_NOT_NULL_WITH_MSG(target, "Source string is NULL");
-    ASSERT_ARE_NOT_EQUAL_WITH_MSG(void_ptr, (void*)target, (void*)source, "Strings are duplicates instead of copies");
-    ASSERT_ARE_EQUAL_WITH_MSG(char_ptr, target, source, "Strings do not match");
+    ASSERT_IS_NOT_NULL(target, "Target string is NULL");
+    ASSERT_IS_NOT_NULL(target, "Source string is NULL");
+    ASSERT_ARE_NOT_EQUAL(void_ptr, (void*)target, (void*)source, "Strings are duplicates instead of copies");
+    ASSERT_ARE_EQUAL(char_ptr, target, source, "Strings do not match");
 }
 
-DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
+MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    char temp_str[256];
-    (void)snprintf(temp_str, sizeof(temp_str), "umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
-    ASSERT_FAIL(temp_str);
+    ASSERT_FAIL("umock_c reported error :%s", MU_ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
 }
 
 static void use_negative_mocks()
@@ -81,14 +78,13 @@ int pfSetOption_impl(void* handle, const char* name, const void* value)
 {
     TLSIO_OPTIONS* options = (TLSIO_OPTIONS*)handle;
     TLSIO_OPTIONS_RESULT sr = tlsio_options_set(options, name, value);
-    return sr == TLSIO_OPTIONS_RESULT_SUCCESS ? 0 : __FAILURE__;
+    return sr == TLSIO_OPTIONS_RESULT_SUCCESS ? 0 : MU_FAILURE;
 }
 
 BEGIN_TEST_SUITE(tlsio_options_unittests)
 
 TEST_SUITE_INITIALIZE(suite_init)
 {
-    TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
     g_testByTest = TEST_MUTEX_CREATE();
     ASSERT_IS_NOT_NULL(g_testByTest);
 
@@ -111,7 +107,6 @@ TEST_SUITE_CLEANUP(suite_cleanup)
     umock_c_deinit();
 
     TEST_MUTEX_DESTROY(g_testByTest);
-    TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
 }
 
 TEST_FUNCTION_INITIALIZE(TestMethodInitialize)
@@ -320,7 +315,7 @@ TEST_FUNCTION(tlsio_options__set_parameter_validation__fails)
         ASSERT_IS_NULL(options.x509_key);
         ASSERT_ARE_EQUAL(int, options.supported_options, (int)(TLSIO_OPTION_BIT_x509_ECC_CERT));
         ASSERT_ARE_EQUAL(int, (int)options.x509_type, (int)TLSIO_OPTIONS_x509_TYPE_UNSPECIFIED);
-        ASSERT_ARE_EQUAL_WITH_MSG(int, (int)result, (int)TLSIO_OPTIONS_RESULT_ERROR, fm[i]);
+        ASSERT_ARE_EQUAL(int, (int)result, (int)TLSIO_OPTIONS_RESULT_ERROR, fm[i]);
 
         ///clean
         tlsio_options_release_resources(&options);
@@ -361,7 +356,7 @@ TEST_FUNCTION(tlsio_options__set_x509_bad_combos__fails)
         result = tlsio_options_set(&options, p1[i], fake_x509_key);
 
         ///assert
-        ASSERT_ARE_EQUAL_WITH_MSG(int, (int)result, (int)TLSIO_OPTIONS_RESULT_ERROR, "Unexpected success with inconsistent x509 settings");
+        ASSERT_ARE_EQUAL(int, (int)result, (int)TLSIO_OPTIONS_RESULT_ERROR, "Unexpected success with inconsistent x509 settings");
 
         ///clean
         tlsio_options_release_resources(&options);
@@ -395,7 +390,7 @@ TEST_FUNCTION(tlsio_options__set_not_supported__fails)
         result = tlsio_options_set(&options, p0[i], fake_x509_key);
 
         ///assert
-        ASSERT_ARE_EQUAL_WITH_MSG(int, (int)result, (int)TLSIO_OPTIONS_RESULT_ERROR, "Unexpected success with unsupported option");
+        ASSERT_ARE_EQUAL(int, (int)result, (int)TLSIO_OPTIONS_RESULT_ERROR, "Unexpected success with unsupported option");
 
         ///clean
         tlsio_options_release_resources(&options);
@@ -435,7 +430,7 @@ TEST_FUNCTION(tlsio_options__set_malloc_fail__fails)
         result = tlsio_options_set(&options, p0[i], fake_x509_key);
 
         ///assert
-        ASSERT_ARE_EQUAL_WITH_MSG(int, (int)result, (int)TLSIO_OPTIONS_RESULT_ERROR, "Unexpected success with malloc failure");
+        ASSERT_ARE_EQUAL(int, (int)result, (int)TLSIO_OPTIONS_RESULT_ERROR, "Unexpected success with malloc failure");
 
         ///clean
         tlsio_options_release_resources(&options);
@@ -579,7 +574,7 @@ TEST_FUNCTION(tlsio_options__clone_option_malloc_fail__fails)
 
         ///assert
         ASSERT_IS_NULL(out_result);
-        ASSERT_ARE_EQUAL_WITH_MSG(int, (int)result, (int)TLSIO_OPTIONS_RESULT_ERROR, "Unexpected success with malloc failure");
+        ASSERT_ARE_EQUAL(int, (int)result, (int)TLSIO_OPTIONS_RESULT_ERROR, "Unexpected success with malloc failure");
 
         ///clean
     }
@@ -612,7 +607,7 @@ TEST_FUNCTION(tlsio_options__clone_parameter_validation__fails)
 
         ///assert
         ASSERT_IS_NULL(out_result);
-        ASSERT_ARE_EQUAL_WITH_MSG(int, (int)result, (int)TLSIO_OPTIONS_RESULT_ERROR, "Unexpected success with bad clone parameter");
+        ASSERT_ARE_EQUAL(int, (int)result, (int)TLSIO_OPTIONS_RESULT_ERROR, "Unexpected success with bad clone parameter");
 
         ///clean
     }
@@ -649,7 +644,7 @@ TEST_FUNCTION(tlsio_options__clone_malloc_fail__fails)
 
         ///assert
         ASSERT_IS_NULL(out_result);
-        ASSERT_ARE_EQUAL_WITH_MSG(int, (int)result, (int)TLSIO_OPTIONS_RESULT_ERROR, "Unexpected success with malloc failure");
+        ASSERT_ARE_EQUAL(int, (int)result, (int)TLSIO_OPTIONS_RESULT_ERROR, "Unexpected success with malloc failure");
 
         ///clean
     }
@@ -840,7 +835,7 @@ TEST_FUNCTION(tlsio_options__retrieve_ex_parameter_validation__fails)
         result = tlsio_options_retrieve_options_ex(p0[i], p1[i], p2[i], p3[i]);
 
         ///assert
-        ASSERT_IS_NULL_WITH_MSG(result, "Unexpected success with bad retrieve parameter");
+        ASSERT_IS_NULL(result, "Unexpected success with bad retrieve parameter");
 
         ///clean
         tlsio_options_release_resources(&options);
@@ -882,7 +877,7 @@ TEST_FUNCTION(tlsio_options__retrieve_ex_OptionHandler_Create_fail__fails)
         result = tlsio_options_retrieve_options_ex(&options, pfCloneOption_impl, pfDestroyOption_impl, pfSetOption_impl);
 
         ///assert
-        ASSERT_IS_NULL_WITH_MSG(result, "Unexpected success with OptionHandler_Create failure");
+        ASSERT_IS_NULL(result, "Unexpected success with OptionHandler_Create failure");
 
         ///clean
         tlsio_options_release_resources(&options);
@@ -928,7 +923,7 @@ TEST_FUNCTION(tlsio_options__retrieve_ex_OptionHandler_AddOption_fail__fails)
         result = tlsio_options_retrieve_options_ex(&options, pfCloneOption_impl, pfDestroyOption_impl, pfSetOption_impl);
 
         ///assert
-        ASSERT_IS_NULL_WITH_MSG(result, "Unexpected success with OptionHandler_Create failure");
+        ASSERT_IS_NULL(result, "Unexpected success with OptionHandler_Create failure");
 
         ///clean
         tlsio_options_release_resources(&options);

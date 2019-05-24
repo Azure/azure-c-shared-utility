@@ -145,24 +145,24 @@ OPTIONHANDLER_HANDLE OptionHandler_Clone(OPTIONHANDLER_HANDLE handler)
 
     if (handler == NULL)
     {
-        /* Codes_SRS_OPTIONHANDLER_01_010: [ If `handler` is NULL, OptionHandler_Clone shall fail and return NULL. ]*/
+        /* Codes_SRS_OPTIONHANDLER_01_010: [ If handler is NULL, OptionHandler_Clone shall fail and return NULL. ]*/
         LogError("NULL argument: handler");
         result = NULL;
     }
     else
     {
-        /* Codes_SRS_OPTIONHANDLER_01_001: [ `OptionHandler_Clone` shall clone an existing option handler instance. ]*/
+        /* Codes_SRS_OPTIONHANDLER_01_001: [ OptionHandler_Clone shall clone an existing option handler instance. ]*/
         /* Codes_SRS_OPTIONHANDLER_01_002: [ On success it shall return a non-NULL handle. ]*/
-        /* Codes_SRS_OPTIONHANDLER_01_003: [ `OptionHandler_Clone` shall allocate memory for the new option handler instance. ]*/
+        /* Codes_SRS_OPTIONHANDLER_01_003: [ OptionHandler_Clone shall allocate memory for the new option handler instance. ]*/
         result = CreateInternal(handler->cloneOption, handler->destroyOption, handler->setOption);
         if (result == NULL)
         {
-            /* Codes_SRS_OPTIONHANDLER_01_004: [ If allocating memory fails, `OptionHandler_Clone` shall return NULL. ]*/
+            /* Codes_SRS_OPTIONHANDLER_01_004: [ If allocating memory fails, OptionHandler_Clone shall return NULL. ]*/
             LogError("unable to create option handler");
         }
         else
         {
-            /* Codes_SRS_OPTIONHANDLER_01_005: [ `OptionHandler_Clone` shall iterate through all the options stored by the option handler to be cloned by using VECTOR's iteration mechanism. ]*/
+            /* Codes_SRS_OPTIONHANDLER_01_005: [ OptionHandler_Clone shall iterate through all the options stored by the option handler to be cloned by using VECTOR's iteration mechanism. ]*/
             size_t option_count = VECTOR_size(handler->storage);
             size_t i;
 
@@ -170,12 +170,12 @@ OPTIONHANDLER_HANDLE OptionHandler_Clone(OPTIONHANDLER_HANDLE handler)
             {
                 OPTION* option = (OPTION*)VECTOR_element(handler->storage, i);
 
-                /* Codes_SRS_OPTIONHANDLER_01_006: [ For each option the option name shall be cloned by calling `mallocAndStrcpy_s`. ]*/
-                /* Codes_SRS_OPTIONHANDLER_01_007: [ For each option the value shall be cloned by using the cloning function associated with the source option handler `handler`. ]*/
+                /* Codes_SRS_OPTIONHANDLER_01_006: [ For each option the option name shall be cloned by calling mallocAndStrcpy_s. ]*/
+                /* Codes_SRS_OPTIONHANDLER_01_007: [ For each option the value shall be cloned by using the cloning function associated with the source option handler handler. ]*/
                 if (AddOptionInternal(result, option->name, option->storage) != OPTIONHANDLER_OK)
                 {
-                    /* Codes_SRS_OPTIONHANDLER_01_008: [ If cloning one of the option names fails, `OptionHandler_Clone` shall return NULL. ]*/
-                    /* Codes_SRS_OPTIONHANDLER_01_009: [ If cloning one of the option values fails, `OptionHandler_Clone` shall return NULL. ]*/
+                    /* Codes_SRS_OPTIONHANDLER_01_008: [ If cloning one of the option names fails, OptionHandler_Clone shall return NULL. ]*/
+                    /* Codes_SRS_OPTIONHANDLER_01_009: [ If cloning one of the option values fails, OptionHandler_Clone shall return NULL. ]*/
                     LogError("Error cloning option %s", option->name);
                     break;
                 }
@@ -235,7 +235,7 @@ OPTIONHANDLER_RESULT OptionHandler_FeedOptions(OPTIONHANDLER_HANDLE handle, void
             /*Codes_SRS_OPTIONHANDLER_02_012: [ OptionHandler_FeedOptions shall call for every pair of name,value setOption passing destinationHandle, name and value. ]*/
             if (handle->setOption(destinationHandle, option->name, option->storage) != 0)
             {
-                LogError("failure while trying to _SetOption");
+                LogError("failure while trying to SetOption with option %s", option->name);
                 break;
             }
         }

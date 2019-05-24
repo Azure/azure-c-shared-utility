@@ -18,7 +18,7 @@ typedef struct UWS_CLIENT_INSTANCE_TAG* UWS_CLIENT_HANDLE;
     WS_SEND_FRAME_ERROR, \
     WS_SEND_FRAME_CANCELLED
 
-DEFINE_ENUM(WS_SEND_FRAME_RESULT, WS_SEND_FRAME_RESULT_VALUES);
+MU_DEFINE_ENUM(WS_SEND_FRAME_RESULT, WS_SEND_FRAME_RESULT_VALUES);
 
 #define WS_OPEN_RESULT_VALUES \
     WS_OPEN_OK, \
@@ -36,7 +36,7 @@ DEFINE_ENUM(WS_SEND_FRAME_RESULT, WS_SEND_FRAME_RESULT_VALUES);
     WS_OPEN_ERROR_BAD_UPGRADE_RESPONSE, \
     WS_OPEN_ERROR_BAD_RESPONSE_STATUS
 
-DEFINE_ENUM(WS_OPEN_RESULT, WS_OPEN_RESULT_VALUES);
+MU_DEFINE_ENUM(WS_OPEN_RESULT, WS_OPEN_RESULT_VALUES);
 
 #define WS_ERROR_VALUES \
     WS_ERROR_NOT_ENOUGH_MEMORY, \
@@ -45,7 +45,7 @@ DEFINE_ENUM(WS_OPEN_RESULT, WS_OPEN_RESULT_VALUES);
     WS_ERROR_UNDERLYING_IO_ERROR, \
     WS_ERROR_CANNOT_CLOSE_UNDERLYING_IO
 
-DEFINE_ENUM(WS_ERROR, WS_ERROR_VALUES);
+MU_DEFINE_ENUM(WS_ERROR, WS_ERROR_VALUES);
 
 #define WS_FRAME_TYPE_TEXT      0x01
 #define WS_FRAME_TYPE_BINARY    0x02
@@ -84,7 +84,7 @@ MOCKABLE_FUNCTION(, int, uws_client_close_async, UWS_CLIENT_HANDLE, uws_client, 
 MOCKABLE_FUNCTION(, int, uws_client_close_handshake_async, UWS_CLIENT_HANDLE, uws_client, uint16_t, close_code, const char*, close_reason, ON_WS_CLOSE_COMPLETE, on_ws_close_complete, void*, on_ws_close_complete_context);
 MOCKABLE_FUNCTION(, int, uws_client_send_frame_async, UWS_CLIENT_HANDLE, uws_client, unsigned char, frame_type, const unsigned char*, buffer, size_t, size, bool, is_final, ON_WS_SEND_FRAME_COMPLETE, on_ws_send_frame_complete, void*, callback_context);
 MOCKABLE_FUNCTION(, void, uws_client_dowork, UWS_CLIENT_HANDLE, uws_client);
-
+MOCKABLE_FUNCTION(, int, uws_client_set_request_header, UWS_CLIENT_HANDLE, uws_client, const char*, name, const char*, value);
 MOCKABLE_FUNCTION(, int, uws_client_set_option, UWS_CLIENT_HANDLE, uws_client, const char*, option_name, const void*, value);
 MOCKABLE_FUNCTION(, OPTIONHANDLER_HANDLE, uws_client_retrieve_options, UWS_CLIENT_HANDLE, uws_client);
 ```
@@ -253,6 +253,19 @@ XX**SRS_UWS_CLIENT_01_059: [** If the `uws_client` argument is NULL, `uws_client
 XX**SRS_UWS_CLIENT_01_060: [** If the IO is not yet open, `uws_client_dowork` shall do nothing. **]**  
 XX**SRS_UWS_CLIENT_01_430: [** `uws_client_dowork` shall call `xio_dowork` with the IO handle argument set to the underlying IO created in `uws_client_create`. **]**  
 
+
+### uws_client_set_request_header
+
+```c
+int uws_client_set_request_header(UWS_CLIENT_HANDLE uws_client, const char* name, const char* value);
+```
+
+XX**SRS_UWS_CLIENT_09_002: [** If any of the arguments `uws_client` or `name` or `value` is NULL `uws_client_set_request_header` shall fail and return a non-zero value. **]**  
+XX**SRS_UWS_CLIENT_09_003: [** A copy of `name` and `value` shall be stored for later sending in the request message. **]**  
+XX**SRS_UWS_CLIENT_09_004: [** If `name` or `value` fail to be stored the function shall fail and return a non-zero value. **]**  
+XX**SRS_UWS_CLIENT_09_005: [** If no failures occur the function shall return zero. **]**  
+
+
 ### uws_setoption
 
 ```c
@@ -313,8 +326,9 @@ XX**SRS_UWS_CLIENT_01_402: [** When `on_underlying_io_open_complete` is called w
 XX**SRS_UWS_CLIENT_01_401: [** If `on_underlying_io_open_complete` is called with a NULL context, `on_underlying_io_open_complete` shall do nothing. **]**  
 XX**SRS_UWS_CLIENT_01_371: [** When `on_underlying_io_open_complete` is called with `IO_OPEN_OK` while uws is OPENING (`uws_client_open_async` was called), uws shall prepare the WebSockets upgrade request. **]**  
 X**SRS_UWS_CLIENT_01_408: [** If constructing of the WebSocket upgrade request fails, uws shall report that the open failed by calling the `on_ws_open_complete` callback passed to `uws_client_open_async` with `WS_OPEN_ERROR_CONSTRUCTING_UPGRADE_REQUEST`. **]**  
-XX**SRS_UWS_CLIENT_01_497: [** The nonce needed for the upgrade request shall be Base64 encoded with `Base64_Encode_Bytes`. **]**  
+XX**SRS_UWS_CLIENT_01_497: [** The nonce needed for the upgrade request shall be Base64 encoded with `Azure_Base64_Encode_Bytes`. **]**  
 XX**SRS_UWS_CLIENT_01_498: [** If Base64 encoding the nonce for the upgrade request fails, then the uws client shall report that the open failed by calling the `on_ws_open_complete` callback passed to `uws_client_open_async` with `WS_OPEN_ERROR_BASE64_ENCODE_FAILED`. **]**  
+
 XX**SRS_UWS_CLIENT_01_406: [** If not enough memory can be allocated to construct the WebSocket upgrade request, uws shall report that the open failed by calling the `on_ws_open_complete` callback passed to `uws_client_open_async` with `WS_OPEN_ERROR_NOT_ENOUGH_MEMORY`. **]**  
 XX**SRS_UWS_CLIENT_01_372: [** Once prepared the WebSocket upgrade request shall be sent by calling `xio_send`. **]**  
 XX**SRS_UWS_CLIENT_01_373: [** If `xio_send` fails then uws shall report that the open failed by calling the `on_ws_open_complete` callback passed to `uws_client_open_async` with `WS_OPEN_ERROR_CANNOT_SEND_UPGRADE_REQUEST`. **]**  

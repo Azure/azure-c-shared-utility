@@ -13,12 +13,13 @@ extern "C"
 #include <stdbool.h>
 #endif
 
-#include "azure_c_shared_utility/umock_c_prod.h"
+#include "umock_c/umock_c_prod.h"
 
 typedef struct BUFFER_TAG* BUFFER_HANDLE;
 
 MOCKABLE_FUNCTION(, BUFFER_HANDLE, BUFFER_new);
 MOCKABLE_FUNCTION(, BUFFER_HANDLE, BUFFER_create, const unsigned char*, source, size_t, size);
+MOCKABLE_FUNCTION(, BUFFER_HANDLE, BUFFER_create_with_size, size_t, buff_size);
 MOCKABLE_FUNCTION(, void, BUFFER_delete, BUFFER_HANDLE, handle);
 MOCKABLE_FUNCTION(, int, BUFFER_pre_build, BUFFER_HANDLE, handle, size_t, size);
 MOCKABLE_FUNCTION(, int, BUFFER_build, BUFFER_HANDLE, handle, const unsigned char*, source, size_t, size);

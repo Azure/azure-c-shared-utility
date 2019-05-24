@@ -8,7 +8,7 @@
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/gballoc.h"
 
-DEFINE_ENUM_STRINGS(COND_RESULT, COND_RESULT_VALUES);
+MU_DEFINE_ENUM_STRINGS(COND_RESULT, COND_RESULT_VALUES);
 
 typedef struct CONDITION_TAG
 {
@@ -28,7 +28,7 @@ COND_HANDLE Condition_Init(void)
     {
         cond->event_handle = CreateEvent(NULL, FALSE, FALSE, NULL);
 
-        if (cond->event_handle == INVALID_HANDLE_VALUE)
+        if (cond->event_handle == NULL)
         {
             LogError("CreateEvent failed with error %d", GetLastError());
             free(cond);
@@ -89,51 +89,56 @@ COND_RESULT Condition_Wait(COND_HANDLE handle, LOCK_HANDLE lock, int timeout_mil
     {
         result = COND_INVALID_ARG;
     }
-    else if (Unlock(lock) == 0)
+    else
     {
         CONDITION* cond = (CONDITION*)handle;
-        DWORD wait_result;
 
         /* Increment the waiting thread count, unlock the lock and wait */
-        (void)InterlockedIncrement(&cond->waiting_thread_count);
+        cond->waiting_thread_count++;
 
-        // Codes_SRS_CONDITION_18_013: [ Condition_Wait shall accept relative timeouts ]
-        wait_result = WaitForSingleObject(cond->event_handle, timeout_milliseconds == 0 ? INFINITE : timeout_milliseconds);
-
-        /* If we unlocked ok, it means the lock handle is valid, lock must succeed since it wraps EnterCriticalSection */
-        (void)Lock(lock);
-
-        if (wait_result != WAIT_OBJECT_0 && wait_result != WAIT_TIMEOUT)
+        if (Unlock(lock) == 0)
         {
-            LogError("Failed wait, wait returned with %x", wait_result);
+            DWORD wait_result;
 
-            /* cond might be freed at this point, just return error and do not touch condition */
-            result = COND_ERROR;
-        }
-        else
-        {
-            /* To handle the chance of a race condition reset the event again when there are no more waiting threads */
-            if (InterlockedDecrement(&cond->waiting_thread_count) == 0)
-            {
-                (void)ResetEvent(cond->event_handle);
-            }
+            // Codes_SRS_CONDITION_18_013: [ Condition_Wait shall accept relative timeouts ]
+            wait_result = WaitForSingleObject(cond->event_handle, timeout_milliseconds == 0 ? INFINITE : timeout_milliseconds);
 
-            if (wait_result == WAIT_TIMEOUT)
+            /* If we unlocked ok, it means the lock handle is valid, lock must succeed since it wraps EnterCriticalSection */
+            (void)Lock(lock);
+
+            if (wait_result != WAIT_OBJECT_0 && wait_result != WAIT_TIMEOUT)
             {
-                // Codes_SRS_CONDITION_18_011: [ Condition_Wait shall return COND_TIMEOUT if the condition is NOT triggered and timeout_milliseconds is not 0 ]
-                result = COND_TIMEOUT;
+                LogError("Failed wait, wait returned with %x", wait_result);
+
+                /* cond might be freed at this point, just return error and do not touch condition */
+                result = COND_ERROR;
             }
             else
             {
-                // Codes_SRS_CONDITION_18_012: [ Condition_Wait shall return COND_OK if the condition is triggered and timeout_milliseconds is not 0 ]
-                result = COND_OK;
+                /* To handle the chance of a race condition reset the event again when there are no more waiting threads */
+                if (--cond->waiting_thread_count == 0)
+                {
+                    (void)ResetEvent(cond->event_handle);
+                }
+
+                if (wait_result == WAIT_TIMEOUT)
+                {
+                    // Codes_SRS_CONDITION_18_011: [ Condition_Wait shall return COND_TIMEOUT if the condition is NOT triggered and timeout_milliseconds is not 0 ]
+                    result = COND_TIMEOUT;
+                }
+                else
+                {
+                    // Codes_SRS_CONDITION_18_012: [ Condition_Wait shall return COND_OK if the condition is triggered and timeout_milliseconds is not 0 ]
+                    result = COND_OK;
+                }
             }
         }
-    }
-    else
-    {
-        LogError("Invalid lock passed which failed to unlock");
-        result = COND_ERROR;
+        else
+        {
+            cond->waiting_thread_count--;
+            LogError("Invalid lock passed which failed to unlock");
+            result = COND_ERROR;
+        }
     }
     return result;
 }

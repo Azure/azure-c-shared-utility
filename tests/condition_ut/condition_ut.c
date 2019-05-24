@@ -17,7 +17,7 @@
 
 #define ENABLE_MOCKS
 
-#include "umock_c_prod.h"
+#include "umock_c/umock_c_prod.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,7 +28,7 @@ extern "C" {
 }
 #endif
 
-#include "umock_c.h"
+#include "umock_c/umock_c.h"
 
 #define GBALLOC_H
 
@@ -43,7 +43,6 @@ void real_gballoc_free(void* ptr);
 #define CONDITION_WAIT_MS   2000
 
 static TEST_MUTEX_HANDLE g_testByTest;
-static TEST_MUTEX_HANDLE g_dllByDll;
 
 static bool malloc_will_fail = false;
 
@@ -73,13 +72,11 @@ void my_gballoc_free(void* ptr)
 }
 #endif
 
-DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
+MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    char temp_str[256];
-    (void)snprintf(temp_str, sizeof(temp_str), "umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
-    ASSERT_FAIL(temp_str);
+    ASSERT_FAIL("umock_c reported error :%s", MU_ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
 }
 
 COND_RESULT Condition_Handle_ToString(COND_HANDLE handle)
@@ -96,7 +93,6 @@ BEGIN_TEST_SUITE(Condition_UnitTests)
 
 TEST_SUITE_INITIALIZE(a)
 {
-    TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
     g_testByTest = TEST_MUTEX_CREATE();
     ASSERT_IS_NOT_NULL(g_testByTest);
 
@@ -111,7 +107,6 @@ TEST_SUITE_CLEANUP(b)
     umock_c_deinit();
 
     TEST_MUTEX_DESTROY(g_testByTest);
-    TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
 }
 
 TEST_FUNCTION_INITIALIZE(f)

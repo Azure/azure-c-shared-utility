@@ -13,8 +13,9 @@
 #define COUNT_TYPE uint32_t
 
 #define DEC_RETURN_ZERO (0)
-#define INC_REF(type, var) ++((((REFCOUNT_TYPE(type)*)var)->count))
-#define DEC_REF(type, var) --((((REFCOUNT_TYPE(type)*)var)->count))
-#define INIT_REF(type, var) do { ((REFCOUNT_TYPE(type)*)var)->count = 1; } while((void)0,0)
+
+#define INC_REF_VAR(count) ++(count)
+#define DEC_REF_VAR(count) --(count)
+#define INIT_REF_VAR(count) do { count = 1; } while((void)0,0)
 
 #endif // REFCOUNT_OS_H__GENERIC

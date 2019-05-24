@@ -8,7 +8,6 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /IGNORE:4217")
 set(CMAKE_SHARED_LINKER_FLAGS "$(CMAKE_SHARED_LINKER_FLAGS) /IGNORE:4217")
 endif()
 
-compileAsC99()
 set(theseTestsName socketio_win32_ut)
 set(${theseTestsName}_test_files
 ${theseTestsName}.c
@@ -22,3 +21,5 @@ set(${theseTestsName}_h_files
 )
 
 build_c_test_artifacts(${theseTestsName} ON "tests/azure_c_shared_utility_tests")
+
+compile_c_test_artifacts_as(${theseTestsName} C99)

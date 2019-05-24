@@ -9,10 +9,10 @@
 #ifndef MAP_H
 #define MAP_H
 
-#include "azure_c_shared_utility/macro_utils.h"
+#include "azure_macro_utils/macro_utils.h"
 #include "azure_c_shared_utility/strings.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
-#include "azure_c_shared_utility/umock_c_prod.h"
+#include "umock_c/umock_c_prod.h"
 
 #ifdef __cplusplus
 #include <cstddef>
@@ -33,7 +33,7 @@ extern "C"
 /** @brief Enumeration specifying the status of calls to various APIs in this
  *  module.
  */
-DEFINE_ENUM(MAP_RESULT, MAP_RESULT_VALUES);
+MU_DEFINE_ENUM(MAP_RESULT, MAP_RESULT_VALUES);
 
 typedef struct MAP_HANDLE_DATA_TAG* MAP_HANDLE;
 

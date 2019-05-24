@@ -4,8 +4,18 @@
 #ifndef XLOGGING_H
 #define XLOGGING_H
 
+#ifdef __cplusplus
+#include <cstdlib>
+#else
+#include <stdlib.h>
+#endif
+
 #include "azure_c_shared_utility/agenttime.h"
 #include "azure_c_shared_utility/optimize_size.h"
+
+#ifdef LOGERROR_CAPTURES_STACK_TRACES
+#include "azure_c_shared_utility/logging_stacktrace.h"
+#endif
 
 #if defined(ESP8266_RTOS)
 #include "c_types.h"
@@ -16,7 +26,12 @@
 #endif
 
 #ifdef __cplusplus
+/* Some compilers do not want to play by the standard, specifically ARM CC */
+#ifdef MBED_BUILD_TIMESTAMP
+#include <stdio.h>
+#else
 #include <cstdio>
+#endif
 extern "C" {
 #else
 #include <stdio.h>
@@ -84,10 +99,75 @@ typedef void(*LOGGER_LOG_GETLASTERROR)(const char* file, const char* func, int l
 
 #else /* NOT ESP8266_RTOS */
 
+// In order to make sure that the compiler evaluates the arguments and issues an error if they do not conform to printf
+// specifications, we call printf with the format and __VA_ARGS__ but the call is behind an if (0) so that it does
+// not actually get executed at runtime
 #if defined _MSC_VER
-#define LOG(log_category, log_options, format, ...) { LOGGER_LOG l = xlogging_get_log_function(); if (l != NULL) l(log_category, __FILE__, FUNC_NAME, __LINE__, log_options, format, __VA_ARGS__); }
+#ifndef LOGERROR_CAPTURES_STACK_TRACES
+// ignore warning C4127 
+#define LOG(log_category, log_options, format, ...) \
+{ \
+    __pragma(warning(suppress: 4127)) \
+    if (0) \
+    { \
+        (void)printf(format, __VA_ARGS__); \
+    } \
+    { \
+        LOGGER_LOG l = xlogging_get_log_function(); \
+        if (l != NULL) \
+        { \
+            l(log_category, __FILE__, FUNC_NAME, __LINE__, log_options, format, __VA_ARGS__); \
+        } \
+    } \
+}
+#else /*LOGERROR_CAPTURES_STACK_TRACES is defined*/ 
+#define STACK_PRINT_FORMAT "\nStack:\n%s"
+#define LOG(log_category, log_options, format, ...)                                                                                                                      \
+{                                                                                                                                                                        \
+    __pragma(warning(suppress: 4127))                                                                                                                                    \
+    if (0)                                                                                                                                                               \
+    {                                                                                                                                                                    \
+        (void)printf(format, __VA_ARGS__);                                                                                                                               \
+    }                                                                                                                                                                    \
+    {                                                                                                                                                                    \
+        LOGGER_LOG l = xlogging_get_log_function();                                                                                                                      \
+        if (l != NULL)                                                                                                                                                   \
+        {                                                                                                                                                                \
+            if(log_category == AZ_LOG_ERROR)                                                                                                                             \
+            {                                                                                                                                                            \
+                char* stackAsString = getStackAsString();                                                                                                                \
+                if (stackAsString == NULL)                                                                                                                               \
+                {                                                                                                                                                        \
+                    l(log_category, __FILE__, FUNC_NAME, __LINE__, log_options, format, __VA_ARGS__);                                                                    \
+                }                                                                                                                                                        \
+                else                                                                                                                                                     \
+                {                                                                                                                                                        \
+                    size_t formatSize = strlen(format);                                                                                                                  \
+                    char* formatWithStack = (char*)logging_malloc(formatSize + sizeof("STACK_PRINT_FORMAT"));                                                            \
+                    if (formatWithStack == NULL)                                                                                                                         \
+                    {                                                                                                                                                    \
+                        l(log_category, __FILE__, FUNC_NAME, __LINE__, log_options, format, __VA_ARGS__);                                                                \
+                    }                                                                                                                                                    \
+                    else                                                                                                                                                 \
+                    {                                                                                                                                                    \
+                        (void)memcpy(formatWithStack, format, formatSize);                                                                                               \
+                        (void)memcpy(formatWithStack + formatSize, STACK_PRINT_FORMAT, sizeof(STACK_PRINT_FORMAT));                                                      \
+                        l(log_category, __FILE__, FUNC_NAME, __LINE__, log_options, formatWithStack, __VA_ARGS__, stackAsString);                                        \
+                        logging_free(formatWithStack);                                                                                                                   \
+                    }                                                                                                                                                    \
+                    logging_free(stackAsString);                                                                                                                         \
+                }                                                                                                                                                        \
+            }                                                                                                                                                            \
+            else                                                                                                                                                         \
+            {                                                                                                                                                            \
+                l(log_category, __FILE__, FUNC_NAME, __LINE__, log_options, format, __VA_ARGS__);                                                                        \
+            }                                                                                                                                                            \
+        }                                                                                                                                                                \
+    }                                                                                                                                                                    \
+}
+#endif /*LOGERROR_CAPTURES_STACK_TRACES*/
 #else
-#define LOG(log_category, log_options, format, ...) { LOGGER_LOG l = xlogging_get_log_function(); if (l != NULL) l(log_category, __FILE__, FUNC_NAME, __LINE__, log_options, format, ##__VA_ARGS__); }
+#define LOG(log_category, log_options, format, ...) { if (0) { (void)printf(format, ##__VA_ARGS__); } { LOGGER_LOG l = xlogging_get_log_function(); if (l != NULL) l(log_category, __FILE__, FUNC_NAME, __LINE__, log_options, format, ##__VA_ARGS__); } }
 #endif
 
 #if defined _MSC_VER
@@ -102,11 +182,9 @@ extern void xlogging_LogErrorWinHTTPWithGetLastErrorAsStringFormatter(int errorM
 
 #if defined _MSC_VER
 
-#if !defined(WINCE)
 extern void xlogging_set_log_function_GetLastError(LOGGER_LOG_GETLASTERROR log_function);
 extern LOGGER_LOG_GETLASTERROR xlogging_get_log_function_GetLastError(void);
 #define LogLastError(FORMAT, ...) do{ LOGGER_LOG_GETLASTERROR l = xlogging_get_log_function_GetLastError(); if(l!=NULL) l(__FILE__, FUNC_NAME, __LINE__, FORMAT, __VA_ARGS__); }while((void)0,0)
-#endif
 
 #define LogError(FORMAT, ...) do{ LOG(AZ_LOG_ERROR, LOG_LINE, FORMAT, __VA_ARGS__); }while((void)0,0)
 #define LogErrorWinHTTPWithGetLastErrorAsString(FORMAT, ...) do { \

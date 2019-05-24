@@ -75,7 +75,7 @@ static void* tlsio_cyclonessl_clone_option(const char* name, const void* value)
     {
         if (strcmp(name, "TrustedCerts") == 0)
         {
-            /* Codes_SRS_TLSIO_CYCLONESSL_01_071: [ tlsio_cyclonessl_clone_option shall clone the option named `TrustedCerts` by calling mallocAndStrcpy_s. ]*/
+            /* Codes_SRS_TLSIO_CYCLONESSL_01_071: [ tlsio_cyclonessl_clone_option shall clone the option named TrustedCerts by calling mallocAndStrcpy_s. ]*/
             if(mallocAndStrcpy_s((char**)&result, value) != 0)
             {
                 LogError("unable to mallocAndStrcpy_s TrustedCerts value");
@@ -290,7 +290,7 @@ static int tlsio_cyclonessl_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE 
         (on_bytes_received == NULL) ||
         (on_io_error == NULL))
     {
-        result = __FAILURE__;
+        result = MU_FAILURE;
         LogError("NULL tls_io.");
     }
     else
@@ -300,7 +300,7 @@ static int tlsio_cyclonessl_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE 
         /* Codes_SRS_TLSIO_CYCLONESSL_01_034: [ If tlsio_cyclonessl_open is called while the IO is open, tlsio_cyclonessl_open shall fail and return a non-zero value without performing any work to open the IO. ]*/
         if (tls_io_instance->tlsio_state != TLSIO_STATE_NOT_OPEN)
         {
-            result = __FAILURE__;
+            result = MU_FAILURE;
             LogError("Invalid tlsio_state. Expected state is TLSIO_STATE_NOT_OPEN.");
         }
         else
@@ -316,7 +316,7 @@ static int tlsio_cyclonessl_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE 
             {
                 /* Codes_SRS_TLSIO_CYCLONESSL_01_026: [ If tlsio_cyclonessl_socket_create fails, then tlsio_cyclonessl_open shall return a non-zero value. ]*/
                 LogError("Error: Cannot open socket");
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else
             {
@@ -327,7 +327,7 @@ static int tlsio_cyclonessl_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE 
                     tlsio_cyclonessl_socket_destroy(tls_io_instance->socket);
                     tls_io_instance->socket = (TlsSocket)NULL;
                     LogError("Error: tlsSetSocket");
-                    result = __FAILURE__;
+                    result = MU_FAILURE;
                 }
                 else
                 {
@@ -348,7 +348,7 @@ static int tlsio_cyclonessl_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE 
                         tlsio_cyclonessl_socket_destroy(tls_io_instance->socket);
                         tls_io_instance->socket = (TlsSocket)NULL;
                         LogError("tlsSetTrustedCaList failed");
-                        result = __FAILURE__;
+                        result = MU_FAILURE;
                     }
                     else
                     {
@@ -359,7 +359,7 @@ static int tlsio_cyclonessl_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE 
                             tlsio_cyclonessl_socket_destroy(tls_io_instance->socket);
                             tls_io_instance->socket = (TlsSocket)NULL;
                             LogError("tlsConnect failed");
-                            result = __FAILURE__;
+                            result = MU_FAILURE;
                         }
                         else
                         {
@@ -387,7 +387,7 @@ static int tlsio_cyclonessl_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLET
     if (tls_io == NULL)
     {
         LogError("NULL tls_io.");
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -396,7 +396,7 @@ static int tlsio_cyclonessl_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLET
         /* Codes_SRS_TLSIO_CYCLONESSL_01_041: [ If tlsio_cyclonessl_close is called when not open, tlsio_cyclonessl_close shall fail and return a non-zero value. ]*/
         if (tls_io_instance->tlsio_state == TLSIO_STATE_NOT_OPEN)
         {
-            result = __FAILURE__;
+            result = MU_FAILURE;
             LogError("Invalid tlsio_state. Expected state is TLSIO_STATE_NOT_OPEN or TLSIO_STATE_CLOSING.");
         }
         else
@@ -406,7 +406,7 @@ static int tlsio_cyclonessl_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLET
             {
                 /* Codes_SRS_TLSIO_CYCLONESSL_01_038: [ If tlsShutdown fails, tlsio_cyclonessl_close shall fail and return a non-zero value. ]*/
                 LogError("tlsShutdown failed\r\n");
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else
             {
@@ -441,7 +441,7 @@ static int tlsio_cyclonessl_send(CONCRETE_IO_HANDLE tls_io, const void* buffer, 
         (size == 0))
     {
         LogError("NULL tls_io.");
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -453,7 +453,7 @@ static int tlsio_cyclonessl_send(CONCRETE_IO_HANDLE tls_io, const void* buffer, 
         if (tls_io_instance->tlsio_state != TLSIO_STATE_OPEN)
         {
             LogError("Invalid tlsio_state. Expected state is TLSIO_STATE_OPEN.");
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -461,7 +461,7 @@ static int tlsio_cyclonessl_send(CONCRETE_IO_HANDLE tls_io, const void* buffer, 
             if (tlsWrite(tls_io_instance->tlsContext, buffer, size, 0) != 0)
             {
                 LogError("SSL_write error.");
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else
             {
@@ -472,7 +472,7 @@ static int tlsio_cyclonessl_send(CONCRETE_IO_HANDLE tls_io, const void* buffer, 
                     on_send_complete(on_send_complete_context, IO_SEND_OK);
                 }
 
-                /* Codes_SRS_TLSIO_CYCLONESSL_01_042: [ tlsio_cyclonessl_send shall send the `size` bytes pointed to by `buffer` and on success it shall return 0. ]*/
+                /* Codes_SRS_TLSIO_CYCLONESSL_01_042: [ tlsio_cyclonessl_send shall send the size bytes pointed to by buffer and on success it shall return 0. ]*/
                 result = 0;
             }
         }
@@ -532,7 +532,7 @@ static int tlsio_cyclonessl_setoption(CONCRETE_IO_HANDLE tls_io, const char* opt
     if ((tls_io == NULL) || (optionName == NULL))
     {
         LogError("NULL tls_io");
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -563,7 +563,7 @@ static int tlsio_cyclonessl_setoption(CONCRETE_IO_HANDLE tls_io, const char* opt
                 {
                     /* Codes_SRS_TLSIO_CYCLONESSL_01_061: [ If copying the char\* passed in value fails then tlsio_cyclonessl_setoption shall return a non-zero value. ]*/
                     LogError("Error allocating memory for certificates");
-                    result = __FAILURE__;
+                    result = MU_FAILURE;
                 }
                 else
                 {
@@ -576,7 +576,7 @@ static int tlsio_cyclonessl_setoption(CONCRETE_IO_HANDLE tls_io, const char* opt
         {
             /* Codes_SRS_TLSIO_CYCLONESSL_01_058: [ If the option_name argument indicates an option that is not handled by tlsio_cyclonessl, then tlsio_cyclonessl_setoption shall return a non-zero value. ]*/
             LogError("Unrecognized option");
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
     }
 
@@ -587,7 +587,7 @@ static OPTIONHANDLER_HANDLE tlsio_cyclonessl_retrieve_options(CONCRETE_IO_HANDLE
 {
     OPTIONHANDLER_HANDLE result;
 
-    /* Codes_SRS_TLSIO_CYCLONESSL_01_064: [ If parameter handle is `NULL` then `tlsio_cyclonessl_retrieve_options` shall fail and return NULL. ]*/
+    /* Codes_SRS_TLSIO_CYCLONESSL_01_064: [ If parameter handle is NULL then tlsio_cyclonessl_retrieve_options shall fail and return NULL. ]*/
     if (handle == NULL)
     {
         LogError("invalid parameter detected: CONCRETE_IO_HANDLE handle=%p", handle);
@@ -595,7 +595,7 @@ static OPTIONHANDLER_HANDLE tlsio_cyclonessl_retrieve_options(CONCRETE_IO_HANDLE
     }
     else
     {
-        /* Codes_SRS_TLSIO_CYCLONESSL_01_065: [ `tlsio_cyclonessl_retrieve_options` shall produce an OPTIONHANDLER_HANDLE. ]*/
+        /* Codes_SRS_TLSIO_CYCLONESSL_01_065: [ tlsio_cyclonessl_retrieve_options shall produce an OPTIONHANDLER_HANDLE. ]*/
         result = OptionHandler_Create(tlsio_cyclonessl_clone_option, tlsio_cyclonessl_destroy_option, tlsio_cyclonessl_setoption);
         if (result == NULL)
         {
@@ -607,7 +607,7 @@ static OPTIONHANDLER_HANDLE tlsio_cyclonessl_retrieve_options(CONCRETE_IO_HANDLE
         {
             TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)handle;
 
-            /* Codes_SRS_TLSIO_CYCLONESSL_01_066: [ `tlsio_cyclonessl_retrieve_options` shall add to it the options: ]*/
+            /* Codes_SRS_TLSIO_CYCLONESSL_01_066: [ tlsio_cyclonessl_retrieve_options shall add to it the options: ]*/
             if (
                 (tls_io_instance->certificate != NULL) &&
                 /* Codes_SRS_TLSIO_CYCLONESSL_01_067: [  - TrustedCerts ]*/

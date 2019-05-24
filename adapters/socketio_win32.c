@@ -8,11 +8,15 @@
 #include <ws2tcpip.h>
 #include <windows.h>
 #include <mstcpip.h>
+#ifdef AF_UNIX_ON_WINDOWS
+#include <afunix.h>
+#endif
 #include "azure_c_shared_utility/socketio.h"
 #include "azure_c_shared_utility/singlylinkedlist.h"
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/gbnetwork.h"
 #include "azure_c_shared_utility/optimize_size.h"
+#include "azure_c_shared_utility/shared_util_options.h"
 #include "azure_c_shared_utility/xlogging.h"
 
 typedef enum IO_STATE_TAG
@@ -35,6 +39,7 @@ typedef struct PENDING_SOCKET_IO_TAG
 typedef struct SOCKET_IO_INSTANCE_TAG
 {
     SOCKET socket;
+    SOCKETIO_ADDRESS_TYPE address_type;
     ON_BYTES_RECEIVED on_bytes_received;
     ON_IO_ERROR on_io_error;
     void* on_bytes_received_context;
@@ -105,7 +110,7 @@ static int add_pending_io(SOCKET_IO_INSTANCE* socket_io_instance, const unsigned
     PENDING_SOCKET_IO* pending_socket_io = (PENDING_SOCKET_IO*)malloc(sizeof(PENDING_SOCKET_IO));
     if (pending_socket_io == NULL)
     {
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -114,7 +119,7 @@ static int add_pending_io(SOCKET_IO_INSTANCE* socket_io_instance, const unsigned
         {
             LogError("Allocation Failure: Unable to allocate pending list.");
             free(pending_socket_io);
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -129,7 +134,7 @@ static int add_pending_io(SOCKET_IO_INSTANCE* socket_io_instance, const unsigned
                 LogError("Failure: Unable to add socket to pending list.");
                 free(pending_socket_io->bytes);
                 free(pending_socket_io);
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else
             {
@@ -157,6 +162,7 @@ CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters)
         result = (SOCKET_IO_INSTANCE*)malloc(sizeof(SOCKET_IO_INSTANCE));
         if (result != NULL)
         {
+            result->address_type = ADDRESS_TYPE_IP;
             result->pending_io_list = singlylinkedlist_create();
             if (result->pending_io_list == NULL)
             {
@@ -245,6 +251,98 @@ void socketio_destroy(CONCRETE_IO_HANDLE socket_io)
     }
 }
 
+static int connect_socket(SOCKET socket, struct sockaddr* addr, size_t len)
+{
+    int result;
+    u_long iMode = 1;
+
+    if (connect(socket, addr, (int)len) != 0)
+    {
+        LogError("Failure: connect failure %d.", WSAGetLastError());
+        result = MU_FAILURE;
+    }
+    else if (ioctlsocket(socket, FIONBIO, &iMode) != 0)
+    {
+        LogError("Failure: ioctlsocket failure %d.", WSAGetLastError());
+        result = MU_FAILURE;
+    }
+    else
+    {
+        result = 0;
+    }
+
+    return result;
+}
+
+static int lookup_address_and_initiate_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
+{
+    int result;
+
+#ifdef AF_UNIX_ON_WINDOWS
+    if (socket_io_instance->address_type == ADDRESS_TYPE_IP)
+    {
+#endif
+        char portString[16];
+        ADDRINFO* addr_info = NULL;
+        ADDRINFO addrHint = { 0 };
+        addrHint.ai_family = AF_INET;
+        addrHint.ai_socktype = SOCK_STREAM;
+        addrHint.ai_protocol = 0;
+
+        if (sprintf(portString, "%u", socket_io_instance->port) < 0)
+        {
+            LogError("Failure: sprintf failed to encode the port.");
+            result = MU_FAILURE;
+        }
+        else if (getaddrinfo(socket_io_instance->hostname, portString, &addrHint, &addr_info) != 0)
+        {
+            LogError("Failure: getaddrinfo failure %d.", WSAGetLastError());
+            result = MU_FAILURE;
+        }
+        else
+        {
+            result = connect_socket(socket_io_instance->socket, addr_info->ai_addr, sizeof(*addr_info->ai_addr));
+            freeaddrinfo(addr_info);
+        }
+#ifdef AF_UNIX_ON_WINDOWS
+    }
+    else // ADDRESS_TYPE_DOMAIN_SOCKET
+    {
+        SOCKADDR_UN addr_un;
+        const char* path = socket_io_instance->hostname;
+        size_t path_len = strlen(path);
+
+        // If the value of hostname was parsed out of a 'unix://' URL, it might have a
+        // leading forward slash ('/'). That's because the domain socket path is found
+        // in the path portion of the URL, not the hostname portion. The hostname is
+        // empty and the forward slash delimits the start of the path. For Unix domain
+        // socket paths on Windows, discard the leading forward slash.
+        if (path[0] == '/')
+        {
+            ++path;
+            --path_len;
+        }
+
+        if (path_len + 1 > sizeof(addr_un.sun_path))
+        {
+            LogError("Path '%s' is too long for a unix socket (max len = %lu)", path, (unsigned long)sizeof(addr_un.sun_path));
+            result = MU_FAILURE;
+        }
+        else
+        {
+            (void)memset(&addr_un, 0, sizeof(addr_un));
+            addr_un.sun_family = AF_UNIX;
+            // No need to add NULL terminator due to the above memset
+            (void)memcpy(addr_un.sun_path, path, path_len);
+
+            result = connect_socket(socket_io_instance->socket, (struct sockaddr*)&addr_un, sizeof(addr_un));
+        }
+    }
+#endif
+
+    return result;
+}
+
 int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_complete, void* on_io_open_complete_context, ON_BYTES_RECEIVED on_bytes_received, void* on_bytes_received_context, ON_IO_ERROR on_io_error, void* on_io_error_context)
 {
     int result;
@@ -253,14 +351,14 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
     if (socket_io == NULL)
     {
         LogError("Invalid argument: SOCKET_IO_INSTANCE is NULL");
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
         if (socket_io_instance->io_state != IO_STATE_CLOSED)
         {
             LogError("Failure: socket state is not closed.");
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else if (socket_io_instance->socket != INVALID_SOCKET)
         {
@@ -276,62 +374,34 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
         }
         else
         {
-            socket_io_instance->socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+#ifdef AF_UNIX_ON_WINDOWS
+            int addr_family = socket_io_instance->address_type == ADDRESS_TYPE_IP ? AF_INET : AF_UNIX;
+#else
+            int addr_family = AF_INET;
+#endif
+            socket_io_instance->socket = socket(addr_family, SOCK_STREAM, 0);
             if (socket_io_instance->socket == INVALID_SOCKET)
             {
                 LogError("Failure: socket create failure %d.", WSAGetLastError());
-                result = __FAILURE__;
+                result = MU_FAILURE;
+            }
+            else if (lookup_address_and_initiate_socket_connection(socket_io_instance) != 0)
+            {
+                LogError("lookup_address_and_connect_socket failed");
+                (void)closesocket(socket_io_instance->socket);
+                socket_io_instance->socket = INVALID_SOCKET;
+                result = MU_FAILURE;
             }
             else
             {
-                char portString[16];
-                ADDRINFO addrHint = { 0 };
-                ADDRINFO* addrInfo = NULL;
+                socket_io_instance->on_bytes_received_context = on_bytes_received_context;
+                socket_io_instance->on_bytes_received = on_bytes_received;
+                socket_io_instance->on_io_error = on_io_error;
+                socket_io_instance->on_io_error_context = on_io_error_context;
 
-                addrHint.ai_family = AF_INET;
-                addrHint.ai_socktype = SOCK_STREAM;
-                addrHint.ai_protocol = 0;
-                sprintf(portString, "%u", socket_io_instance->port);
-                if (getaddrinfo(socket_io_instance->hostname, portString, &addrHint, &addrInfo) != 0)
-                {
-                    LogError("Failure: getaddrinfo failure %d.", WSAGetLastError());
-                    (void)closesocket(socket_io_instance->socket);
-                    socket_io_instance->socket = INVALID_SOCKET;
-                    result = __FAILURE__;
-                }
-                else
-                {
-                    u_long iMode = 1;
+                socket_io_instance->io_state = IO_STATE_OPEN;
 
-                    if (connect(socket_io_instance->socket, addrInfo->ai_addr, (int)addrInfo->ai_addrlen) != 0)
-                    {
-                        LogError("Failure: connect failure %d.", WSAGetLastError());
-                        (void)closesocket(socket_io_instance->socket);
-                        socket_io_instance->socket = INVALID_SOCKET;
-                        result = __FAILURE__;
-                    }
-                    else if (ioctlsocket(socket_io_instance->socket, FIONBIO, &iMode) != 0)
-                    {
-                        LogError("Failure: ioctlsocket failure %d.", WSAGetLastError());
-                        (void)closesocket(socket_io_instance->socket);
-                        socket_io_instance->socket = INVALID_SOCKET;
-                        result = __FAILURE__;
-                    }
-                    else
-                    {
-                        socket_io_instance->on_bytes_received = on_bytes_received;
-                        socket_io_instance->on_bytes_received_context = on_bytes_received_context;
-
-                        socket_io_instance->on_io_error = on_io_error;
-                        socket_io_instance->on_io_error_context = on_io_error_context;
-
-                        socket_io_instance->io_state = IO_STATE_OPEN;
-
-                        result = 0;
-                    }
-
-                    freeaddrinfo(addrInfo);
-                }
+                result = 0;
             }
         }
     }
@@ -351,7 +421,7 @@ int socketio_close(CONCRETE_IO_HANDLE socket_io, ON_IO_CLOSE_COMPLETE on_io_clos
     if (socket_io == NULL)
     {
         LogError("Invalid argument: socket_io is NULL");
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -384,7 +454,7 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
     {
         /* Invalid arguments */
         LogError("Invalid argument: send given invalid parameter");
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -392,7 +462,7 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
         if (socket_io_instance->io_state != IO_STATE_OPEN)
         {
             LogError("Failure: socket state is not opened.");
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -402,7 +472,7 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
                 if (add_pending_io(socket_io_instance, (const unsigned char*)buffer, size, on_send_complete, callback_context) != 0)
                 {
                     LogError("Failure: add_pending_io failed.");
-                    result = __FAILURE__;
+                    result = MU_FAILURE;
                 }
                 else
                 {
@@ -420,7 +490,7 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
                     if (last_error != WSAEWOULDBLOCK)
                     {
                         LogError("Failure: sending socket failed %d.", last_error);
-                        result = __FAILURE__;
+                        result = MU_FAILURE;
                     }
                     else
                     {
@@ -428,7 +498,7 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
                         if (add_pending_io(socket_io_instance, (const unsigned char*)buffer, size, on_send_complete, callback_context) != 0)
                         {
                             LogError("Failure: add_pending_io failed.");
-                            result = __FAILURE__;
+                            result = MU_FAILURE;
                         }
                         else
                         {
@@ -549,13 +619,43 @@ static int set_keepalive(SOCKET_IO_INSTANCE* socket_io, struct tcp_keepalive* ke
         sizeof(struct tcp_keepalive), NULL, 0, &bytesReturned, NULL, NULL);
     if (err != 0)
     {
-        LogError("Failure: setting keep-alive on the socket: %d.\r\n", err == SOCKET_ERROR ? WSAGetLastError() : err);
-        result = __FAILURE__;
+        LogError("Failure: setting keep-alive on the socket: %d.", err == SOCKET_ERROR ? WSAGetLastError() : err);
+        result = MU_FAILURE;
     }
     else
     {
         socket_io->keep_alive = *keepAlive;
         result = 0;
+    }
+
+    return result;
+}
+
+static int socketio_setaddresstype_option(SOCKET_IO_INSTANCE* socket_io_instance, const char* addressType)
+{
+    int result;
+
+    if (socket_io_instance->io_state != IO_STATE_CLOSED)
+    {
+        LogError("Socket's type can only be changed when in state 'IO_STATE_CLOSED'. Current state=%d", socket_io_instance->io_state);
+        result = MU_FAILURE;
+    }
+#ifdef AF_UNIX_ON_WINDOWS
+    else if (strcmp(addressType, OPTION_ADDRESS_TYPE_DOMAIN_SOCKET) == 0)
+    {
+        socket_io_instance->address_type = ADDRESS_TYPE_DOMAIN_SOCKET;
+        result = 0;
+    }
+#endif
+    else if (strcmp(addressType, OPTION_ADDRESS_TYPE_IP_SOCKET) == 0)
+    {
+        socket_io_instance->address_type = ADDRESS_TYPE_IP;
+        result = 0;
+    }
+    else
+    {
+        LogError("Address type %s is not supported", addressType);
+        result = MU_FAILURE;
     }
 
     return result;
@@ -569,7 +669,7 @@ int socketio_setoption(CONCRETE_IO_HANDLE socket_io, const char* optionName, con
         optionName == NULL ||
         value == NULL)
     {
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -598,9 +698,13 @@ int socketio_setoption(CONCRETE_IO_HANDLE socket_io, const char* optionName, con
 
             result = set_keepalive(socket_io_instance, &keepAlive);
         }
+        else if (strcmp(optionName, OPTION_ADDRESS_TYPE) == 0)
+        {
+            result = socketio_setaddresstype_option(socket_io_instance, (const char*)value);
+        }
         else
         {
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
     }
 

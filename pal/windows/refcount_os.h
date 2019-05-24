@@ -14,8 +14,8 @@
 
 /*if macro DEC_REF returns DEC_RETURN_ZERO that means the ref count has reached zero.*/
 #define DEC_RETURN_ZERO (0)
-#define INC_REF(type, var) InterlockedIncrement(&(((REFCOUNT_TYPE(type)*)var)->count))
-#define DEC_REF(type, var) InterlockedDecrement(&(((REFCOUNT_TYPE(type)*)var)->count))
-#define INIT_REF(type, var) InterlockedExchange(&(((REFCOUNT_TYPE(type)*)var)->count), 1)
+#define INC_REF_VAR(count) InterlockedIncrement(&(count))
+#define DEC_REF_VAR(count) InterlockedDecrement(&(count))
+#define INIT_REF_VAR(count) InterlockedExchange(&(count), 1)
 
 #endif // REFCOUNT_OS_H__WINDOWS

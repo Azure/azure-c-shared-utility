@@ -8,10 +8,6 @@
 
 #ifndef NO_LOGGING
 
-#ifdef WINCE
-#error not supported for WinCE.
-#endif
-
 #ifndef _MSC_VER
 #error only supported on Windows
 #endif
@@ -38,5 +34,10 @@ void xlogging_set_log_function_GetLastError(LOGGER_LOG_GETLASTERROR log_function
 LOGGER_LOG_GETLASTERROR xlogging_get_log_function_GetLastError(void)
 {
     return global_log_function_GetLastError;
+}
+
+void xlogging_LogErrorWinHTTPWithGetLastErrorAsStringFormatter(int errorMessageID)
+{
+    (void)errorMessageID;
 }
 #endif

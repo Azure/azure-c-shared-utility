@@ -4,7 +4,7 @@
 #ifndef UNIQUEID_H
 #define UNIQUEID_H
 
-#include "azure_c_shared_utility/macro_utils.h"
+#include "azure_macro_utils/macro_utils.h"
 
 #ifdef __cplusplus
 #include <cstddef>
@@ -13,14 +13,14 @@ extern "C" {
 #include <stddef.h>
 #endif
 
-#include "azure_c_shared_utility/umock_c_prod.h"
+#include "umock_c/umock_c_prod.h"
 
 #define UNIQUEID_RESULT_VALUES    \
     UNIQUEID_OK,                  \
     UNIQUEID_INVALID_ARG,         \
     UNIQUEID_ERROR
 
-    DEFINE_ENUM(UNIQUEID_RESULT, UNIQUEID_RESULT_VALUES)
+    MU_DEFINE_ENUM(UNIQUEID_RESULT, UNIQUEID_RESULT_VALUES)
 
         MOCKABLE_FUNCTION(, UNIQUEID_RESULT, UniqueId_Generate, char*, uid, size_t, bufferSize);
 

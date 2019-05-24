@@ -25,11 +25,11 @@ void* my_gballoc_realloc(void* ptr, size_t size)
 #include "azure_c_shared_utility/crt_abstractions.h"
 
 #include "testrunnerswitcher.h"
-#include "umock_c.h"
-#include "umocktypes_charptr.h"
-#include "umocktypes_bool.h"
-#include "umocktypes_stdint.h"
-#include "umock_c_negative_tests.h"
+#include "umock_c/umock_c.h"
+#include "umock_c/umocktypes_charptr.h"
+#include "umock_c/umocktypes_bool.h"
+#include "umock_c/umocktypes_stdint.h"
+#include "umock_c/umock_c_negative_tests.h"
 
 #define ENABLE_MOCKS
 #include "azure_c_shared_utility/gballoc.h"
@@ -49,7 +49,6 @@ void* my_gballoc_realloc(void* ptr, size_t size)
 IMPLEMENT_UMOCK_C_ENUM_TYPE(MAP_RESULT, MAP_RESULT_VALUES);
 
 static TEST_MUTEX_HANDLE g_testByTest;
-static TEST_MUTEX_HANDLE g_dllByDll;
 
 static const char* TEST_STRING_PAIR = "key1=value1";
 STRING_HANDLE TEST_STRING_HANDLE_PAIR;
@@ -60,13 +59,11 @@ STRING_HANDLE TEST_STRING_HANDLE_2_PAIR;
 static const char* TEST_STRING_2_PAIR_SEMICOLON = "key1=value1;key2=value2;";
 STRING_HANDLE TEST_STRING_HANDLE_2_PAIR_SEMICOLON;
 
-DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
+MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    char temp_str[256];
-    (void)snprintf(temp_str, sizeof(temp_str), "umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
-    ASSERT_FAIL(temp_str);
+    ASSERT_FAIL("umock_c reported error :%s", MU_ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
 }
 
 BEGIN_TEST_SUITE(connectionstringparser_ut)
@@ -75,7 +72,6 @@ TEST_SUITE_INITIALIZE(suite_init)
 {
     int result;
 
-    TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
     g_testByTest = TEST_MUTEX_CREATE();
     ASSERT_IS_NOT_NULL(g_testByTest);
 
@@ -119,7 +115,6 @@ TEST_SUITE_CLEANUP(TestClassCleanup)
     umock_c_deinit();
 
     TEST_MUTEX_DESTROY(g_testByTest);
-    TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
 }
 
 TEST_FUNCTION_INITIALIZE(TestMethodInitialize)
@@ -719,8 +714,8 @@ TEST_FUNCTION(connectionstringparser_parse_from_char_with_NULL_connection_string
 }
 
 /* Tests_SRS_CONNECTIONSTRINGPARSER_21_022: [connectionstringparser_splitHostName_from_char shall split the provided hostName in name and suffix.]*/
-/* Tests_SRS_CONNECTIONSTRINGPARSER_21_023: [connectionstringparser_splitHostName_from_char shall copy all characters, from the beginning of the hostName to the first `.` to the nameString.]*/
-/* Tests_SRS_CONNECTIONSTRINGPARSER_21_024: [connectionstringparser_splitHostName_from_char shall copy all characters, from the first `.` to the end of the hostName, to the suffixString.]*/
+/* Tests_SRS_CONNECTIONSTRINGPARSER_21_023: [connectionstringparser_splitHostName_from_char shall copy all characters, from the beginning of the hostName to the first . to the nameString.]*/
+/* Tests_SRS_CONNECTIONSTRINGPARSER_21_024: [connectionstringparser_splitHostName_from_char shall copy all characters, from the first . to the end of the hostName, to the suffixString.]*/
 /* Tests_SRS_CONNECTIONSTRINGPARSER_21_025: [If connectionstringparser_splitHostName_from_char get success splitting the hostName, it shall return 0.]*/
 TEST_FUNCTION(connectionstringparser_splitHostName_from_char_with_success)
 {
@@ -751,7 +746,7 @@ TEST_FUNCTION(connectionstringparser_splitHostName_from_char_with_success)
     STRING_delete(suffixString);
 }
 
-/* Tests_SRS_CONNECTIONSTRINGPARSER_21_026: [If the hostName is NULL, connectionstringparser_splitHostName_from_char shall return __FAILURE__.]*/
+/* Tests_SRS_CONNECTIONSTRINGPARSER_21_026: [If the hostName is NULL, connectionstringparser_splitHostName_from_char shall return MU_FAILURE.]*/
 TEST_FUNCTION(connectionstringparser_splitHostName_from_char_with_NULL_hostName_failed)
 {
     // arrange
@@ -777,7 +772,7 @@ TEST_FUNCTION(connectionstringparser_splitHostName_from_char_with_NULL_hostName_
     STRING_delete(suffixString);
 }
 
-/* Tests_SRS_CONNECTIONSTRINGPARSER_21_027: [If the hostName is an empty string, connectionstringparser_splitHostName_from_char shall return __FAILURE__.]*/
+/* Tests_SRS_CONNECTIONSTRINGPARSER_21_027: [If the hostName is an empty string, connectionstringparser_splitHostName_from_char shall return MU_FAILURE.]*/
 TEST_FUNCTION(connectionstringparser_splitHostName_from_char_with_empty_hostName_failed)
 {
     // arrange
@@ -804,7 +799,7 @@ TEST_FUNCTION(connectionstringparser_splitHostName_from_char_with_empty_hostName
     STRING_delete(suffixString);
 }
 
-/* Tests_SRS_CONNECTIONSTRINGPARSER_21_028: [If the nameString is NULL, connectionstringparser_splitHostName_from_char shall return __FAILURE__.]*/
+/* Tests_SRS_CONNECTIONSTRINGPARSER_21_028: [If the nameString is NULL, connectionstringparser_splitHostName_from_char shall return MU_FAILURE.]*/
 TEST_FUNCTION(connectionstringparser_splitHostName_from_char_with_NULL_nameString_failed)
 {
     // arrange
@@ -827,7 +822,7 @@ TEST_FUNCTION(connectionstringparser_splitHostName_from_char_with_NULL_nameStrin
     STRING_delete(suffixString);
 }
 
-/* Tests_SRS_CONNECTIONSTRINGPARSER_21_029: [If the suffixString is NULL, connectionstringparser_splitHostName_from_char shall return __FAILURE__.]*/
+/* Tests_SRS_CONNECTIONSTRINGPARSER_21_029: [If the suffixString is NULL, connectionstringparser_splitHostName_from_char shall return MU_FAILURE.]*/
 TEST_FUNCTION(connectionstringparser_splitHostName_from_char_with_NULL_suffixString_failed)
 {
     // arrange
@@ -850,7 +845,7 @@ TEST_FUNCTION(connectionstringparser_splitHostName_from_char_with_NULL_suffixStr
     STRING_delete(nameString);
 }
 
-/* Tests_SRS_CONNECTIONSTRINGPARSER_21_030: [If the hostName is not a valid host name, connectionstringparser_splitHostName_from_char shall return __FAILURE__.]*/
+/* Tests_SRS_CONNECTIONSTRINGPARSER_21_030: [If the hostName is not a valid host name, connectionstringparser_splitHostName_from_char shall return MU_FAILURE.]*/
 TEST_FUNCTION(connectionstringparser_splitHostName_from_char_with_empty_name_failed)
 {
     // arrange
@@ -877,7 +872,7 @@ TEST_FUNCTION(connectionstringparser_splitHostName_from_char_with_empty_name_fai
     STRING_delete(suffixString);
 }
 
-/* Tests_SRS_CONNECTIONSTRINGPARSER_21_030: [If the hostName is not a valid host name, connectionstringparser_splitHostName_from_char shall return __FAILURE__.]*/
+/* Tests_SRS_CONNECTIONSTRINGPARSER_21_030: [If the hostName is not a valid host name, connectionstringparser_splitHostName_from_char shall return MU_FAILURE.]*/
 TEST_FUNCTION(connectionstringparser_splitHostName_from_char_with_empty_suffix_failed)
 {
     // arrange
@@ -904,7 +899,7 @@ TEST_FUNCTION(connectionstringparser_splitHostName_from_char_with_empty_suffix_f
     STRING_delete(suffixString);
 }
 
-/* Tests_SRS_CONNECTIONSTRINGPARSER_21_031: [If connectionstringparser_splitHostName_from_char get error copying the name to the nameString, it shall return __FAILURE__.]*/
+/* Tests_SRS_CONNECTIONSTRINGPARSER_21_031: [If connectionstringparser_splitHostName_from_char get error copying the name to the nameString, it shall return MU_FAILURE.]*/
 TEST_FUNCTION(connectionstringparser_splitHostName_from_char_error_on_nameString_copy_failed)
 {
     // arrange
@@ -932,7 +927,7 @@ TEST_FUNCTION(connectionstringparser_splitHostName_from_char_error_on_nameString
     STRING_delete(suffixString);
 }
 
-/* Tests_SRS_CONNECTIONSTRINGPARSER_21_032: [If connectionstringparser_splitHostName_from_char get error copying the suffix to the suffixString, it shall return __FAILURE__.]*/
+/* Tests_SRS_CONNECTIONSTRINGPARSER_21_032: [If connectionstringparser_splitHostName_from_char get error copying the suffix to the suffixString, it shall return MU_FAILURE.]*/
 TEST_FUNCTION(connectionstringparser_splitHostName_from_char_error_on_suffixString_copy_failed)
 {
     // arrange
@@ -998,7 +993,7 @@ TEST_FUNCTION(connectionstringparser_splitHostName_with_success)
     STRING_delete(hostNameString);
 }
 
-/* Tests_SRS_CONNECTIONSTRINGPARSER_21_034: [If the hostNameString is NULL, connectionstringparser_splitHostName shall return __FAILURE__.]*/
+/* Tests_SRS_CONNECTIONSTRINGPARSER_21_034: [If the hostNameString is NULL, connectionstringparser_splitHostName shall return MU_FAILURE.]*/
 TEST_FUNCTION(connectionstringparser_splitHostName_with_NULL_hostName_failed)
 {
     // arrange

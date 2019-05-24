@@ -11,39 +11,6 @@
 #endif // WIN32
 
 
-#ifdef WINCE
-#include <stdarg.h>
-
-void consolelogger_log(LOG_CATEGORY log_category, const char* file, const char* func, int line, unsigned int options, const char* format, ...)
-{
-    va_list args;
-    va_start(args, format);
-
-    time_t t = time(NULL);
-
-    switch (log_category)
-    {
-    case AZ_LOG_INFO:
-        (void)printf("Info: ");
-        break;
-    case AZ_LOG_ERROR:
-        (void)printf("Error: Time:%.24s File:%s Func:%s Line:%d ", ctime(&t), file, func, line);
-        break;
-    default:
-        break;
-    }
-
-    (void)vprintf(format, args);
-    va_end(args);
-
-    (void)log_category;
-    if (options & LOG_LINE)
-    {
-        (void)printf("\r\n");
-    }
-}
-#endif // WINCE
-
 LOGGER_LOG global_log_function = consolelogger_log;
 
 void xlogging_set_log_function(LOGGER_LOG log_function)
@@ -56,7 +23,7 @@ LOGGER_LOG xlogging_get_log_function(void)
     return global_log_function;
 }
 
-#if (defined(_MSC_VER)) && (!(defined WINCE))
+#if (defined(_MSC_VER))
 
 LOGGER_LOG_GETLASTERROR global_log_function_GetLastError = consolelogger_log_with_GetLastError;
 
@@ -89,7 +56,7 @@ void LogBinary(const char* comment, const void* data, size_t size)
     const unsigned char* bufAsChar = (const unsigned char*)data;
     const unsigned char* startPos = bufAsChar;
 
-    LOG(AZ_LOG_TRACE, LOG_LINE, "%s     %zu bytes", comment, size);
+    LOG(AZ_LOG_TRACE, LOG_LINE, "%s     %lu bytes", comment, (unsigned long)size);
 
     /* Print the whole buffer. */
     for (i = 0; i < size; i++)
@@ -140,12 +107,6 @@ void LogBinary(const char* comment, const void* data, size_t size)
 
 #ifdef WIN32
 
-#ifdef WINCE
-void xlogging_LogErrorWinHTTPWithGetLastErrorAsStringFormatter(int errorMessageID)
-{
-    (void)errorMessageID;
-}
-#else // WINCE
 void xlogging_LogErrorWinHTTPWithGetLastErrorAsStringFormatter(int errorMessageID)
 {
     char messageBuffer[MESSAGE_BUFFER_SIZE];
@@ -175,8 +136,6 @@ void xlogging_LogErrorWinHTTPWithGetLastErrorAsStringFormatter(int errorMessageI
         }
     }
 }
-#endif // WINCE
-
 #endif // WIN32
 
 

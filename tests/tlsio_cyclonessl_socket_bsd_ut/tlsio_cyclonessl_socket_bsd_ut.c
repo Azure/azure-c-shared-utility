@@ -38,9 +38,9 @@
 
 
 #include "testrunnerswitcher.h"
-#include "umock_c.h"
-#include "umocktypes_charptr.h"
-#include "umock_c_negative_tests.h"
+#include "umock_c/umock_c.h"
+#include "umock_c/umocktypes_charptr.h"
+#include "umock_c/umock_c_negative_tests.h"
 
 static TEST_MUTEX_HANDLE g_testByTest;
 static TEST_MUTEX_HANDLE g_dllByDll;
@@ -83,7 +83,7 @@ MOCK_FUNCTION_WITH_CODE(WSAAPI, int, getaddrinfo, PCSTR, pNodeName, PCSTR, pServ
     else
     {
         *ppResult = NULL;
-        callFail = __FAILURE__;
+        callFail = MU_FAILURE;
     }
 MOCK_FUNCTION_END(callFail)
 
@@ -91,13 +91,11 @@ MOCK_FUNCTION_END(callFail)
 
 #undef ENABLE_MOCKS
 
-DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
+MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    char temp_str[256];
-    (void)snprintf(temp_str, sizeof(temp_str), "umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
-    ASSERT_FAIL(temp_str);
+    ASSERT_FAIL("umock_c reported error :%s", MU_ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
 }
 
 BEGIN_TEST_SUITE(tlsio_cyclonessl_socket_bsd_unittests)
@@ -226,13 +224,13 @@ TEST_FUNCTION(when_a_failure_occurs_for_tlsio_cyclonessl_socket_create_then_crea
         umock_c_negative_tests_fail_call(i);
 
         char temp_str[128];
-        (void)sprintf(temp_str, "On failed call %zu", i);
+        (void)sprintf(temp_str, "On failed call %lu", (unsigned long)i);
 
         ///act
         int result = tlsio_cyclonessl_socket_create("testhostname", 4242, &socket);
 
         ///assert
-        ASSERT_ARE_NOT_EQUAL_WITH_MSG(int, 0, result, temp_str);
+        ASSERT_ARE_NOT_EQUAL(int, 0, result, temp_str);
     }
 
     ///cleanup
