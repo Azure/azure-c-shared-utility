@@ -36,6 +36,8 @@ MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithMoveMemory, unsign
 
 MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithCustomFree, const unsigned char*, source, size_t, size, CONSTBUFFER_CUSTOM_FREE_FUNC, customFreeFunc, void*, customFreeFuncContext);
 
+MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromOffsetAndSize, CONSTBUFFER_HANDLE, handle, size_t, offset, size_t, size)
+
 MOCKABLE_FUNCTION(, void, CONSTBUFFER_IncRef, CONSTBUFFER_HANDLE, constbufferHandle);
 
 MOCKABLE_FUNCTION(, void, CONSTBUFFER_DecRef, CONSTBUFFER_HANDLE, constbufferHandle);
@@ -116,6 +118,30 @@ The memory has to be free by calling the custom free function passed as argument
 
 **SRS_CONSTBUFFER_01_011: [** If any error occurs, `CONSTBUFFER_CreateWithMoveMemory` shall fail and return NULL. **]**
 
+### CONSTBUFFER_CreateFromOffsetAndSize
+```c 
+MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromOffsetAndSize, CONSTBUFFER_HANDLE, handle, size_t, offset, size_t, size)
+```
+
+Given an existing `handle` `CONSTBUFFER_CreateFromOffsetAndSize` creates another `CONSTBUFFER_HANDLE` from `size` bytes  `handle` starting at `offset`.
+
+**SRS_CONSTBUFFER_02_025: [** If `handle` is `NULL` then `CONSTBUFFER_CreateFromOffsetAndSize` shall fail and return `NULL`. **]**
+
+**SRS_CONSTBUFFER_02_033: [** If `offset` is greater than `handles`'s size then `CONSTBUFFER_CreateFromOffsetAndSize` shall fail and return `NULL`. **]**
+
+**SRS_CONSTBUFFER_02_027: [** If `offset` + `size` exceed `handles`'s size then `CONSTBUFFER_CreateFromOffsetAndSize` shall fail and return `NULL`. **]**
+
+**SRS_CONSTBUFFER_02_028: [** `CONSTBUFFER_CreateFromOffsetAndSize` shall allocate memory for a new `CONSTBUFFER_HANDLE`'s content. **]**
+
+**SRS_CONSTBUFFER_02_029: [** `CONSTBUFFER_CreateFromOffsetAndSize` shall set the ref count of the newly created `CONSTBUFFER_HANDLE` to the initial value. **]**
+
+**SRS_CONSTBUFFER_02_030: [** `CONSTBUFFER_CreateFromOffsetAndSize` shall increment the reference count of `handle`. **]**
+
+**SRS_CONSTBUFFER_02_031: [** `CONSTBUFFER_CreateFromOffsetAndSize` shall succeed and return a non-`NULL` value. **]**
+
+**SRS_CONSTBUFFER_02_032: [** If there are any failures then `CONSTBUFFER_CreateFromOffsetAndSize` shall fail and return `NULL`. **]**
+
+
 ### CONSTBUFFER_IncRef
 ```c
 MOCKABLE_FUNCTION(, void, CONSTBUFFER_IncRef, CONSTBUFFER_HANDLE, constbufferHandle);
@@ -135,6 +161,8 @@ MOCKABLE_FUNCTION(, void, CONSTBUFFER_DecRef, CONSTBUFFER_HANDLE, constbufferHan
 **SRS_CONSTBUFFER_02_017: [** If the refcount reaches zero, then `CONSTBUFFER_DecRef` shall deallocate all resources used by the CONSTBUFFER_HANDLE. **]**
 
 **SRS_CONSTBUFFER_01_012: [** If the buffer was created by calling `CONSTBUFFER_CreateWithCustomFree`, the `customFreeFunc` function shall be called to free the memory, while passed `customFreeFuncContext` as argument. **]**
+
+**SRS_CONSTBUFFER_02_024: [** If the `constbufferHandle` was created by calling `CONSTBUFFER_CreateFromOffsetAndSize` then `CONSTBUFFER_DecRef` shall decrement the ref count of the original `handle` passed to `CONSTBUFFER_CreateFromOffsetAndSize`. **]**
 
 ### CONSTBUFFER_GetContent
 ```c
