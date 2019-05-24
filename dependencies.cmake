@@ -23,12 +23,3 @@ endif()
 
 include_directories(${MACRO_UTILS_INC_FOLDER})
 include_directories(${UMOCK_C_INC_FOLDER})
-
-if (${original_run_unittests} OR ${original_run_e2e_tests})
-    include("${CMAKE_CURRENT_LIST_DIR}/dependencies-test.cmake")
-    add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/testtools)
-
-    setTargetBuildProperties(ctest)
-    setTargetBuildProperties(testrunnerswitcher)
-    setTargetBuildProperties(umock_c)
-endif()
