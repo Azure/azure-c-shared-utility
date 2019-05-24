@@ -572,6 +572,15 @@ set(run_int_tests OFF)
 
 include(dependencies.cmake)
 
+if (${original_run_unittests} OR ${original_run_e2e_tests})
+    include("${CMAKE_CURRENT_LIST_DIR}/dependencies-test.cmake")
+    add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/testtools)
+
+    setTargetBuildProperties(ctest)
+    setTargetBuildProperties(testrunnerswitcher)
+    setTargetBuildProperties(umock_c)
+endif()
+
 set(run_e2e_tests ${original_run_e2e_tests})
 set(run_unittests ${original_run_unittests})
 set(run_int_tests ${original_run_int_tests})
