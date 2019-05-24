@@ -409,6 +409,42 @@ static int tlsio_appleios_close_async(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COM
     return result;
 }
 
+char* CFStringCopyUTF8String(CFStringRef aString) {
+    if (aString == NULL)
+    {
+        return NULL;
+    }
+
+    CFIndex length = CFStringGetLength(aString);
+    CFIndex maxSize = CFStringGetMaximumSizeForEncoding(length, kCFStringEncodingUTF8) + 1;
+    char *buffer = (char *)malloc(maxSize);
+    if (buffer == NULL)
+    {
+        LogError("%s: Can not format error message", __FUNCTION__);
+        return NULL;
+    }
+
+    if (CFStringGetCString(aString, buffer, maxSize, kCFStringEncodingUTF8))
+    {
+        return buffer;
+    }
+    free(buffer); // If we failed
+    return NULL;
+}
+
+void LogAndReleaseCFError(CFErrorRef streamError)
+{
+    if (streamError != NULL)
+    {
+        CFStringRef errCFStr = CFCopyDescription(streamError);
+        char* errStr = CFStringCopyUTF8String(errCFStr);
+        LogError("%s: Network Error %s", __FUNCTION__, errStr);
+        free(errStr);
+        CFRelease(errCFStr);
+        CFRelease(streamError);
+    }
+}
+
 static void dowork_read(TLS_IO_INSTANCE* tls_io_instance)
 {
     // TRANSFER_BUFFER_SIZE is not very important because if the message is bigger
@@ -425,16 +461,22 @@ static void dowork_read(TLS_IO_INSTANCE* tls_io_instance)
         if (kCFStreamStatusAtEnd == read_status)
         {
             LogError("Read stream can't be read (AtEnd state).");
+            CFErrorRef streamError = CFReadStreamCopyError(tls_io_instance->sockRead);
+            LogAndReleaseCFError(streamError);
             enter_tlsio_error_state(tls_io_instance);
         }
         else if (kCFStreamStatusError == read_status)
         {
             LogError("Read stream is in error state.");
+            CFErrorRef streamError = CFReadStreamCopyError(tls_io_instance->sockRead);
+            LogAndReleaseCFError(streamError);
             enter_tlsio_error_state(tls_io_instance);
         }
         else if (kCFStreamStatusClosed == read_status)
         {
             LogError("Read stream is closed.");
+            CFErrorRef streamError = CFReadStreamCopyError(tls_io_instance->sockRead);
+            LogAndReleaseCFError(streamError);
             enter_tlsio_error_state(tls_io_instance);
         }
         else
@@ -442,7 +484,7 @@ static void dowork_read(TLS_IO_INSTANCE* tls_io_instance)
             while (tls_io_instance->tlsio_state == TLSIO_STATE_OPEN && CFReadStreamHasBytesAvailable(tls_io_instance->sockRead))
             {
                 rcv_bytes = CFReadStreamRead(tls_io_instance->sockRead, buffer, (CFIndex)(sizeof(buffer)));
-                
+
                 if (rcv_bytes > 0)
                 {
                     // tls_io_instance->on_bytes_received was already checked for NULL
@@ -473,16 +515,22 @@ static void dowork_send(TLS_IO_INSTANCE* tls_io_instance)
         if (kCFStreamStatusAtEnd == send_status)
         {
             LogError("Send stream can't be written to (AtEnd state).");
+            CFErrorRef streamError = CFWriteStreamCopyError(tls_io_instance->sockWrite);
+            LogAndReleaseCFError(streamError);
             enter_tlsio_error_state(tls_io_instance);
         }
         else if (kCFStreamStatusError == send_status)
         {
             LogError("Send stream is in error state.");
+            CFErrorRef streamError = CFWriteStreamCopyError(tls_io_instance->sockWrite);
+            LogAndReleaseCFError(streamError);
             enter_tlsio_error_state(tls_io_instance);
         }
         else if (kCFStreamStatusClosed == send_status)
         {
             LogError("Send stream is closed.");
+            CFErrorRef streamError = CFWriteStreamCopyError(tls_io_instance->sockWrite);
+            LogAndReleaseCFError(streamError);
             enter_tlsio_error_state(tls_io_instance);
         }
 
