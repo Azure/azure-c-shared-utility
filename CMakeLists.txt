@@ -562,7 +562,19 @@ if(${build_as_dynamic})
     target_link_libraries(aziotsharedutil_dll ${aziotsharedutil_target_libs})
 endif()
 
+set(original_run_e2e_tests ${run_e2e_tests})
+set(original_run_unittests ${run_unittests})
+set(original_run_int_tests ${run_int_tests})
+
+set(run_e2e_tests OFF)
+set(run_unittests OFF)
+set(run_int_tests OFF)
+
 include(dependencies.cmake)
+
+set(run_e2e_tests ${original_run_e2e_tests})
+set(run_unittests ${original_run_unittests})
+set(run_int_tests ${original_run_int_tests})
 
 include_directories(${MACRO_UTILS_INC_FOLDER})
 include_directories(${UMOCK_C_INC_FOLDER})
