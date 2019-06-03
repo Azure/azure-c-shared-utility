@@ -360,6 +360,7 @@ set(source_h_files
     ./inc/azure_c_shared_utility/string_tokenizer_types.h
     ./inc/azure_c_shared_utility/string_utils.h
     ./inc/azure_c_shared_utility/tlsio_options.h
+    ./inc/azure_c_shared_utility/tlsio_cryptodev.h
     ./inc/azure_c_shared_utility/tickcounter.h
     ./inc/azure_c_shared_utility/threadapi.h
     ./inc/azure_c_shared_utility/xio.h

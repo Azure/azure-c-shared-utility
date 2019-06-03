@@ -12,6 +12,7 @@
 #include "azure_c_shared_utility/lock.h"
 #include "azure_c_shared_utility/tlsio.h"
 #include "azure_c_shared_utility/tlsio_openssl.h"
+#include "azure_c_shared_utility/tlsio_cryptodev.h"
 #include "azure_c_shared_utility/socketio.h"
 #include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/xlogging.h"
@@ -71,6 +72,7 @@ typedef struct TLS_IO_INSTANCE_TAG
     char* cipher_list;
     const char* x509_certificate;
     const char* x509_private_key;
+    TLSIO_CRYPTODEV_PKEY* x509_cryptodev_private_key;
     TLSIO_VERSION tls_version;
     TLS_CERTIFICATE_VALIDATION_CALLBACK tls_validation_callback;
     void* tls_validation_callback_data;
@@ -148,6 +150,16 @@ static void* tlsio_openssl_CloneOption(const char* name, const void* value)
             else
             {
                 /*return as is*/
+            }
+        }
+        else if (strcmp(name, SU_OPTION_X509_CRYPTODEV_PRIVATE_KEY) == 0)
+        {
+            result = malloc(sizeof(TLSIO_CRYPTODEV_PKEY));
+
+            if (result != NULL) {
+                memcpy(result, value, sizeof(TLSIO_CRYPTODEV_PKEY));
+            } else {
+                LogError("unable to allocate memory for TLSIO_CRYPTODEV_PKEY object");
             }
         }
         else if (strcmp(name, OPTION_X509_ECC_CERT) == 0)
@@ -249,6 +261,7 @@ static void tlsio_openssl_DestroyOption(const char* name, const void* value)
             (strcmp(name, OPTION_OPENSSL_CIPHER_SUITE) == 0) ||
             (strcmp(name, SU_OPTION_X509_CERT) == 0) ||
             (strcmp(name, SU_OPTION_X509_PRIVATE_KEY) == 0) ||
+            (strcmp(name, SU_OPTION_X509_CRYPTODEV_PRIVATE_KEY) == 0) ||
             (strcmp(name, OPTION_X509_ECC_CERT) == 0) ||
             (strcmp(name, OPTION_X509_ECC_KEY) == 0) ||
             (strcmp(name, OPTION_TLS_VERSION) == 0)
@@ -334,6 +347,13 @@ static OPTIONHANDLER_HANDLE tlsio_openssl_retrieveoptions(CONCRETE_IO_HANDLE han
                 OptionHandler_Destroy(result);
                 result = NULL;
             }
+            else if (tls_io_instance->x509_cryptodev_private_key != NULL && (OptionHandler_AddOption(result, SU_OPTION_X509_CRYPTODEV_PRIVATE_KEY, tls_io_instance->x509_cryptodev_private_key) != OPTIONHANDLER_OK) )
+            {
+                LogError("unable to save x509 cryptodev privatekey option");
+                OptionHandler_Destroy(result);
+                result = NULL;
+            }
+
             else if (tls_io_instance->tls_version != 0)
             {
                 if (OptionHandler_AddOption(result, OPTION_TLS_VERSION, &tls_io_instance->tls_version) != OPTIONHANDLER_OK)
@@ -931,6 +951,19 @@ static int add_certificate_to_store(TLS_IO_INSTANCE* tls_io_instance, const char
     return result;
 }
 
+static int set_x509_credentials(SSL_CTX* ctx, const char* certificate, const char* private_key_plain, TLSIO_CRYPTODEV_PKEY* private_key_cryptodev) {
+    int result = 0;
+    if (private_key_cryptodev != NULL)
+    {
+        return x509_openssl_add_credentials_cryptodev(ctx, certificate, private_key_cryptodev);
+    }
+    if (private_key_plain != NULL) {
+        return x509_openssl_add_credentials(ctx, certificate, private_key_plain);
+    }
+
+    return MU_FAILURE;
+}
+
 static int create_openssl_instance(TLS_IO_INSTANCE* tlsInstance)
 {
     int result;
@@ -980,9 +1013,8 @@ static int create_openssl_instance(TLS_IO_INSTANCE* tlsInstance)
     /*x509 authentication can only be build before underlying connection is realized*/
     else if (
         (tlsInstance->x509_certificate != NULL) &&
-        (tlsInstance->x509_private_key != NULL) &&
-        (x509_openssl_add_credentials(tlsInstance->ssl_context, tlsInstance->x509_certificate, tlsInstance->x509_private_key) != 0)
-        )
+        ((tlsInstance->x509_cryptodev_private_key != NULL) || (tlsInstance->x509_private_key != NULL)) &&
+        set_x509_credentials(tlsInstance->ssl_context, tlsInstance->x509_certificate, tlsInstance->x509_private_key, tlsInstance->x509_cryptodev_private_key) != 0)
     {
         SSL_CTX_free(tlsInstance->ssl_context);
         tlsInstance->ssl_context = NULL;
@@ -1163,6 +1195,7 @@ CONCRETE_IO_HANDLE tlsio_openssl_create(void* io_create_parameters)
                 result->tls_validation_callback_data = NULL;
                 result->x509_certificate = NULL;
                 result->x509_private_key = NULL;
+                result->x509_cryptodev_private_key = NULL;
 
                 result->tls_version = VERSION_1_2;
 
@@ -1205,6 +1238,7 @@ void tlsio_openssl_destroy(CONCRETE_IO_HANDLE tls_io)
         }
         free((void*)tls_io_instance->x509_certificate);
         free((void*)tls_io_instance->x509_private_key);
+        free((void*)tls_io_instance->x509_cryptodev_private_key);
         close_openssl_instance(tls_io_instance);
         if (tls_io_instance->underlying_io != NULL)
         {
@@ -1536,6 +1570,26 @@ int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
                 }
                 else
                 {
+                    result = 0;
+                }
+            }
+        }
+        else if (strcmp(SU_OPTION_X509_CRYPTODEV_PRIVATE_KEY, optionName) ==0)
+        {
+            if (tls_io_instance->x509_cryptodev_private_key != NULL)
+            {
+                LogError("unable to set more than once x509 options");
+                result = MU_FAILURE;
+            }
+            else
+            {
+                /*let's make a copy of this option*/
+                tls_io_instance->x509_cryptodev_private_key = (TLSIO_CRYPTODEV_PKEY*) malloc(sizeof(TLSIO_CRYPTODEV_PKEY));
+                if (tls_io_instance->x509_cryptodev_private_key == NULL) {
+                    LogError("unable to allocate memory for %s", optionName);
+                    result = MU_FAILURE;
+                } else {
+                    memcpy(tls_io_instance->x509_cryptodev_private_key, value, sizeof(TLSIO_CRYPTODEV_PKEY));
                     result = 0;
                 }
             }
