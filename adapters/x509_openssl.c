@@ -5,6 +5,7 @@
 #include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/const_defines.h"
+#include "azure_c_shared_utility/tlsio_cryptodev.h"
 #include "openssl/bio.h"
 #include "openssl/rsa.h"
 #include "openssl/x509.h"
@@ -16,6 +17,8 @@
         #define EVP_PKEY_id(evp_key) evp_key->type
     #endif // EVP_PKEY_id
 #endif // __APPLE__
+
+static int x509_rsa_ex_data_idx = -1;
 
 static void log_ERR_get_error(const char* message)
 {
@@ -162,79 +165,256 @@ static int load_key_RSA(SSL_CTX* ssl_ctx, EVP_PKEY* evp_key)
     return result;
 }
 
+static int x509_openssl_rsa_sign(int type, const unsigned char* m, unsigned int m_length, unsigned char* sigret, unsigned int* siglen, const RSA* rsa) {
+    (void) type;
+
+    TLSIO_CRYPTODEV_PKEY *pkey = (TLSIO_CRYPTODEV_PKEY*) RSA_get_ex_data(rsa, x509_rsa_ex_data_idx);
+
+    if (pkey == NULL) {
+        return 0;
+    }
+
+    int siglen_signed;
+
+    int res = pkey->sign(m, m_length, sigret, &siglen_signed, pkey->private_data);
+    if (res && siglen_signed < 0) {
+      res = 0;
+    } else {
+      *siglen = (unsigned int) siglen_signed;
+    }
+
+    return res;
+}
+
+static int x509_openssl_rsa_decrypt(int flen, const unsigned char* from, unsigned char* to, RSA* rsa, int padding) {
+    (void) padding;
+
+    TLSIO_CRYPTODEV_PKEY *pkey = (TLSIO_CRYPTODEV_PKEY*) RSA_get_ex_data(rsa, x509_rsa_ex_data_idx);
+
+    if (pkey == NULL) {
+        return 0;
+    }
+
+    int to_len;
+    return pkey->decrypt(from, flen, to, &to_len, pkey->private_data);
+}
+
+static int x509_openssl_rsa_finish(RSA* rsa) {
+    TLSIO_CRYPTODEV_PKEY *pkey = (TLSIO_CRYPTODEV_PKEY*) RSA_get_ex_data(rsa, x509_rsa_ex_data_idx);
+
+    if (pkey == NULL) {
+        return 0;
+    }
+
+    if (!pkey->destroy(pkey->private_data)) {
+        return 0;
+    }
+    RSA_set_ex_data(rsa, x509_rsa_ex_data_idx, NULL);
+
+    return 1;
+}
+
+static int copy_cert_params_rsa(RSA* privkey, const char* x509certificate) {
+    BIO* bio_cert;
+    X509* x509_value;
+    EVP_PKEY* pubkey_evp;
+    RSA* pubkey;
+
+    if ((bio_cert = BIO_new_mem_buf((char*)x509certificate, -1)) == NULL)
+    {
+        log_ERR_get_error("cannot create BIO");
+        return MU_FAILURE;
+    }
+    x509_value = PEM_read_bio_X509_AUX(bio_cert, NULL, NULL, NULL);
+    BIO_free(bio_cert);
+    if (x509_value == NULL)
+    {
+        log_ERR_get_error("Failure PEM_read_bio_X509_AUX");
+        return MU_FAILURE;
+    }
+
+    pubkey_evp = X509_get_pubkey(x509_value);
+    X509_free(x509_value);
+
+    if (pubkey_evp == NULL)
+    {
+        log_ERR_get_error("Failure X509_get_pubkey");
+        return MU_FAILURE;
+    }
+
+#if OPENSSL_VERSION_NUMBER >= 0x10100003L
+    pubkey = EVP_PKEY_get0_RSA(pubkey_evp);
+#else
+    pubkey = pubkey_evp->pkey.rsa;
+#endif
+
+    if (pubkey == NULL)
+    {
+        log_ERR_get_error("Can't get RSA key");
+        return MU_FAILURE;
+    }
+
+#if OPENSSL_VERSION_NUMBER >= 0x10100003L
+    const BIGNUM* pub_n;
+    const BIGNUM* pub_e;
+    RSA_get0_key(pubkey, &pub_n, &pub_e, NULL);
+    RSA_set0_key(privkey, BN_dup(pub_n), BN_dup(pub_e), NULL);
+#else
+    privkey->n = BN_dup(pubkey->n);
+    privkey->e = BN_dup(pubkey->e);
+#endif
+    return 0;
+}
+
+static int x509_openssl_add_credentials_common(SSL_CTX* ssl_ctx, const char* x509certificate, EVP_PKEY* evp_key) {
+    int result = MU_FAILURE;
+
+    // Check the type for the EVP key
+    int evp_type = EVP_PKEY_id(evp_key);
+    if (evp_type == EVP_PKEY_RSA || evp_type == EVP_PKEY_RSA2)
+    {
+        if (load_key_RSA(ssl_ctx, evp_key) != 0)
+        {
+            LogError("failure loading RSA private key cert");
+            result = MU_FAILURE;
+        }
+        else
+        {
+            result = 0;
+        }
+    }
+    else
+    {
+        if (load_ecc_key(ssl_ctx, evp_key) != 0)
+        {
+            LogError("failure loading ECC private key cert");
+            result = MU_FAILURE;
+        }
+        else
+        {
+            result = 0;
+        }
+    }
+    EVP_PKEY_free(evp_key);
+
+
+    if (result == 0)
+    {
+        // Load the certificate chain
+        if (load_certificate_chain(ssl_ctx, x509certificate) != 0)
+        {
+            LogError("failure loading private key cert");
+            result = MU_FAILURE;
+        }
+        else
+        {
+            result = 0;
+        }
+    }
+
+    return result;
+}
+
+int x509_openssl_add_credentials_cryptodev(SSL_CTX* ssl_ctx, const char* x509certificate, TLSIO_CRYPTODEV_PKEY* x509cryptodevprivatekey) {
+    int result = MU_FAILURE;
+    EVP_PKEY* evp_key = NULL;
+
+    if (ssl_ctx == NULL || x509certificate == NULL || x509cryptodevprivatekey == NULL)
+    {
+        /*Codes_SRS_X509_OPENSSL_02_009: [ Otherwise x509_openssl_add_credentials shall fail and return a non-zero number. ]*/
+        LogError("invalid parameter detected: ssl_ctx=%p, x509certificate=%p, x509privatekey=%p", ssl_ctx, x509certificate, x509cryptodevprivatekey);
+        result = MU_FAILURE;
+    }
+    else {
+        // TODO: ECC keys
+        static RSA_METHOD* x509_rsa_meth = NULL;
+        if (x509_rsa_meth == NULL) {
+#if OPENSSL_VERSION_NUMBER >= 0x10100005L
+            x509_rsa_meth = RSA_meth_dup(RSA_get_default_method());
+            if (x509_rsa_meth == NULL) {
+              return MU_FAILURE;
+            }
+            RSA_meth_set1_name(x509_rsa_meth, "Azure Tlsio RSA method");
+            RSA_meth_set_flags(x509_rsa_meth, 0);
+            RSA_meth_set_sign(x509_rsa_meth, x509_openssl_rsa_sign);
+            RSA_meth_set_priv_dec(x509_rsa_meth, x509_openssl_rsa_decrypt);
+            RSA_meth_set_finish(x509_rsa_meth, x509_openssl_rsa_finish);
+#else
+            x509_rsa_meth = (RSA_METHOD*) OPENSSL_malloc(sizeof(RSA_METHOD));
+            if (x509_rsa_meth == NULL) {
+              return MU_FAILURE;
+            }
+            memcpy(x509_rsa_meth, RSA_get_default_method(), sizeof(RSA_METHOD));
+
+            x509_rsa_meth->name = OPENSSL_strdup("Azure Tlsio RSA method");
+            x509_rsa_meth->flags = RSA_FLAG_SIGN_VER;
+            x509_rsa_meth->rsa_sign = x509_openssl_rsa_sign;
+            x509_rsa_meth->rsa_priv_dec = x509_openssl_rsa_decrypt;
+            x509_rsa_meth->finish = x509_openssl_rsa_finish;
+#endif
+        }
+        RSA* rsa_key = RSA_new();
+
+        RSA_set_method(rsa_key, x509_rsa_meth);
+        if (x509_rsa_ex_data_idx < 0) {
+          x509_rsa_ex_data_idx = RSA_get_ex_new_index(0, NULL, NULL, NULL, NULL);
+        }
+        RSA_set_ex_data(rsa_key, x509_rsa_ex_data_idx, x509cryptodevprivatekey);
+
+        if(x509cryptodevprivatekey != NULL) {
+            // cryptodev keys need params to be set, otherwise checks in openssl will fail
+            if(copy_cert_params_rsa(rsa_key, x509certificate) != 0) {
+                RSA_free(rsa_key);
+                return MU_FAILURE;
+            }
+        }
+        evp_key = EVP_PKEY_new();
+        EVP_PKEY_set1_RSA(evp_key, rsa_key);
+        result = 0;
+    }
+
+    if (result == 0) {
+        return x509_openssl_add_credentials_common(ssl_ctx, x509certificate, evp_key);
+    }
+
+    return result;
+}
+
 int x509_openssl_add_credentials(SSL_CTX* ssl_ctx, const char* x509certificate, const char* x509privatekey)
 {
-    int result;
+    int result = MU_FAILURE;
+    EVP_PKEY* evp_key = NULL;
+
     if (ssl_ctx == NULL || x509certificate == NULL || x509privatekey == NULL)
     {
         /*Codes_SRS_X509_OPENSSL_02_009: [ Otherwise x509_openssl_add_credentials shall fail and return a non-zero number. ]*/
         LogError("invalid parameter detected: ssl_ctx=%p, x509certificate=%p, x509privatekey=%p", ssl_ctx, x509certificate, x509privatekey);
         result = MU_FAILURE;
     }
+
+    BIO* bio_key = BIO_new_mem_buf((char*)x509privatekey, -1); /*taking off the const from the pointer is needed on older versions of OPENSSL*/
+    if (bio_key == NULL)
+    {
+        log_ERR_get_error("cannot create private key BIO");
+        result = MU_FAILURE;
+    }
     else
     {
-        BIO* bio_key = BIO_new_mem_buf((char*)x509privatekey, -1); /*taking off the const from the pointer is needed on older versions of OPENSSL*/
-        if (bio_key == NULL)
+        // Get the Private Key type
+        evp_key = PEM_read_bio_PrivateKey(bio_key, NULL, NULL, NULL);
+        if (evp_key == NULL)
         {
-            log_ERR_get_error("cannot create private key BIO");
+            log_ERR_get_error("Failure creating private key evp_key");
             result = MU_FAILURE;
         }
-        else
-        {
-            // Get the Private Key type
-            EVP_PKEY* evp_key = PEM_read_bio_PrivateKey(bio_key, NULL, NULL, NULL);
-            if (evp_key == NULL)
-            {
-                log_ERR_get_error("Failure creating private key evp_key");
-                result = MU_FAILURE;
-            }
-            else
-            {
-                // Check the type for the EVP key
-                int evp_type = EVP_PKEY_id(evp_key);
-                if (evp_type == EVP_PKEY_RSA || evp_type == EVP_PKEY_RSA2)
-                {
-                    if (load_key_RSA(ssl_ctx, evp_key) != 0)
-                    {
-                        LogError("failure loading RSA private key cert");
-                        result = MU_FAILURE;
-                    }
-                    else
-                    {
-                        result = 0;
-                    }
-                }
-                else
-                {
-                    if (load_ecc_key(ssl_ctx, evp_key) != 0)
-                    {
-                        LogError("failure loading ECC private key cert");
-                        result = MU_FAILURE;
-                    }
-                    else
-                    {
-                        result = 0;
-                    }
-                }
-
-                if (result == 0)
-                {
-                    // Load the certificate chain
-                    if (load_certificate_chain(ssl_ctx, x509certificate) != 0)
-                    {
-                        LogError("failure loading private key cert");
-                        result = MU_FAILURE;
-                    }
-                    else
-                    {
-                        result = 0;
-                    }
-                }
-                EVP_PKEY_free(evp_key);
-            }
-            BIO_free(bio_key);
-        }
+        BIO_free(bio_key);
     }
+    result = 0;
+
+    if (result == 0) {
+        return x509_openssl_add_credentials_common(ssl_ctx, x509certificate, evp_key);
+    }
+
     return result;
 }
 
