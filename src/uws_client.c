@@ -95,6 +95,8 @@ typedef struct UWS_CLIENT_INSTANCE_TAG
     unsigned char fragmented_frame_type;
 } UWS_CLIENT_INSTANCE;
 
+void clear_pending_sends(UWS_CLIENT_INSTANCE* uws_client);
+
 /* Codes_SRS_UWS_CLIENT_01_360: [ Connection confidentiality and integrity is provided by running the WebSocket Protocol over TLS (wss URIs). ]*/
 /* Codes_SRS_UWS_CLIENT_01_361: [ WebSocket implementations MUST support TLS and SHOULD employ it when communicating with their peers. ]*/
 /* Codes_SRS_UWS_CLIENT_01_063: [ A client will need to supply a /host/, /port/, /resource name/, and a /secure/ flag, which are the components of a WebSocket URI as discussed in Section 3, along with a list of /protocols/ and /extensions/ to be used. ]*/
@@ -558,6 +560,8 @@ void uws_client_destroy(UWS_CLIENT_HANDLE uws_client)
             uws_client->underlying_io = NULL;
         }
 
+        // indicate cancellation on all unacknowledged frames
+        clear_pending_sends(uws_client);
         /* Codes_SRS_UWS_CLIENT_01_024: [ `uws_client_destroy` shall free the list used to track the pending sends by calling `singlylinkedlist_destroy`. ]*/
         singlylinkedlist_destroy(uws_client->pending_sends);
         free(uws_client->resource_name);
@@ -588,6 +592,7 @@ static void indicate_ws_error(UWS_CLIENT_INSTANCE* uws_client, WS_ERROR error_co
 static void indicate_ws_close_complete(UWS_CLIENT_INSTANCE* uws_client)
 {
     uws_client->uws_state = UWS_STATE_CLOSED;
+    clear_pending_sends(uws_client);
 
     /* Codes_SRS_UWS_CLIENT_01_496: [ If the close was initiated by the peer no `on_ws_close_complete` shall be called. ]*/
     if (uws_client->on_ws_close_complete != NULL)
@@ -821,7 +826,7 @@ static void on_underlying_io_close_complete(void* context)
     else
     {
         UWS_CLIENT_HANDLE uws_client = (UWS_CLIENT_HANDLE)context;
-        LogInfo("%s: uws_state:%d.", __FUNCTION__, uws_client->uws_state);
+        LogInfo("%s: uws_state: %d.", __FUNCTION__, uws_client->uws_state);
         if (uws_client->uws_state == UWS_STATE_CLOSING_UNDERLYING_IO)
         {
             /* Codes_SRS_UWS_CLIENT_01_475: [ When `on_underlying_io_close_complete` is called while closing the underlying IO a subsequent `uws_client_open_async` shall succeed. ]*/
@@ -862,6 +867,8 @@ static void on_underlying_io_close_sent(void* context, IO_SEND_RESULT io_send_re
 
         case IO_SEND_ERROR:
             break;
+        default:
+            LogInfo("%s: unhandled state %d", __FUNCTION__, io_send_result);
         }
     }
 }
@@ -1369,6 +1376,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                                 /* Codes_SRS_UWS_CLIENT_01_214: [ Control frames (see Section 5.5) MAY be injected in the middle of a fragmented message. ]*/
                             case (unsigned char)WS_CLOSE_FRAME:
                             {
+                                LogInfo("%s: Close frame received", __FUNCTION__);
                                 uint16_t close_code;
                                 uint16_t* close_code_ptr;
                                 const unsigned char* data_ptr = uws_client->stream_buffer + needed_bytes - length;
@@ -1425,6 +1433,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
 
                                 if (utf8_error)
                                 {
+                                    LogError("%s: utf8 error", __FUNCTION__);
                                     uws_client->uws_state = UWS_STATE_CLOSING_UNDERLYING_IO;
                                     if (xio_close(uws_client->underlying_io, on_underlying_io_close_complete, uws_client) != 0)
                                     {
@@ -1454,7 +1463,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                                     }
                                     else
                                     {
-                                        LogInfo("%s: recevied close frame, sending close a close response frame.", __FUNCTION__);
+                                        LogInfo("%s: received close frame, sending a close response frame.", __FUNCTION__);
                                         /* Codes_SRS_UWS_CLIENT_01_296: [ Upon either sending or receiving a Close control frame, it is said that _The WebSocket Closing Handshake is Started_ and that the WebSocket connection is in the CLOSING state. ]*/
                                         /* Codes_SRS_UWS_CLIENT_01_240: [ The application MUST NOT send any more data frames after sending a Close frame. ]*/
                                         uws_client->uws_state = UWS_STATE_CLOSING_SENDING_CLOSE;
@@ -1706,18 +1715,15 @@ int uws_client_close_async(UWS_CLIENT_HANDLE uws_client, ON_WS_CLOSE_COMPLETE on
     if (uws_client == NULL)
     {
         /* Codes_SRS_UWS_CLIENT_01_030: [ if `uws_client` is NULL, `uws_client_close_async` shall return a non-zero value. ]*/
-        LogError("NULL uWS handle.");
+        LogError("%s: NULL uWS handle.", __FUNCTION__);
         result = __FAILURE__;
     }
     else
     {
-        if ((uws_client->uws_state == UWS_STATE_CLOSED) ||
-            (uws_client->uws_state == UWS_STATE_CLOSING_SENDING_CLOSE) ||
-            (uws_client->uws_state == UWS_STATE_CLOSING_WAITING_FOR_CLOSE) ||
-            (uws_client->uws_state == UWS_STATE_CLOSING_UNDERLYING_IO))
+        if (uws_client->uws_state == UWS_STATE_CLOSED)
         {
             /* Codes_SRS_UWS_CLIENT_01_032: [ `uws_client_close_async` when no open action has been issued shall fail and return a non-zero value. ]*/
-            LogError("close has been called when already CLOSED");
+            LogError("%s: close has been called when already CLOSED (uws_state: %d", __FUNCTION__, uws_client->uws_state);
             result = __FAILURE__;
         }
         else
@@ -1730,27 +1736,17 @@ int uws_client_close_async(UWS_CLIENT_HANDLE uws_client, ON_WS_CLOSE_COMPLETE on
 
             /* Codes_SRS_UWS_CLIENT_01_031: [ `uws_client_close_async` shall close the connection by calling `xio_close` while passing as argument the IO handle created in `uws_client_create`. ]*/
             /* Codes_SRS_UWS_CLIENT_01_368: [ The callback `on_underlying_io_close` shall be passed as argument to `xio_close`. ]*/
-            if (xio_close(uws_client->underlying_io, (on_ws_close_complete == NULL) ? NULL :  on_underlying_io_close_complete, (on_ws_close_complete == NULL) ? NULL : uws_client) != 0)
+            if (xio_close(uws_client->underlying_io, on_underlying_io_close_complete, uws_client) != 0)
             {
                 /* Codes_SRS_UWS_CLIENT_01_395: [ If `xio_close` fails, `uws_client_close_async` shall fail and return a non-zero value. ]*/
                 LogError("Closing the underlying IO failed.");
+                indicate_ws_error(uws_client, WS_ERROR_CANNOT_CLOSE_UNDERLYING_IO);
                 result = __FAILURE__;
             }
             else
             {
-                /* Codes_SRS_UWS_CLIENT_01_034: [ `uws_client_close_async` shall obtain all the pending send frames by repetitively querying for the head of the pending IO list and freeing that head item. ]*/
-                LIST_ITEM_HANDLE first_pending_send;
-
-                /* Codes_SRS_UWS_CLIENT_01_035: [ Obtaining the head of the pending send frames list shall be done by calling `singlylinkedlist_get_head_item`. ]*/
-                while ((first_pending_send = singlylinkedlist_get_head_item(uws_client->pending_sends)) != NULL)
-                {
-                    WS_PENDING_SEND* ws_pending_send = (WS_PENDING_SEND*)singlylinkedlist_item_get_value(first_pending_send);
-
-                    /* Codes_SRS_UWS_CLIENT_01_036: [ For each pending send frame the send complete callback shall be called with `UWS_SEND_FRAME_CANCELLED`. ]*/
-                    complete_send_frame(ws_pending_send, first_pending_send, WS_SEND_FRAME_CANCELLED);
-                }
-
                 /* Codes_SRS_UWS_CLIENT_01_396: [ On success `uws_client_close_async` shall return 0. ]*/
+                LogInfo("%s: closed underlying io.", __FUNCTION__);
                 result = 0;
             }
         }
@@ -1779,7 +1775,7 @@ int uws_client_close_handshake_async(UWS_CLIENT_HANDLE uws_client, uint16_t clos
             (uws_client->uws_state == UWS_STATE_CLOSING_UNDERLYING_IO))
         {
             /* Codes_SRS_UWS_CLIENT_01_473: [ `uws_client_close_handshake_async` when no open action has been issued shall fail and return a non-zero value. ]*/
-            LogError("uws_client_close_handshake_async has been called when already CLOSED");
+            LogError("uws_client_close_handshake_async has been called when already CLOSED or CLOSING");
             result = __FAILURE__;
         }
         else
@@ -1803,15 +1799,6 @@ int uws_client_close_handshake_async(UWS_CLIENT_HANDLE uws_client, uint16_t clos
             }
             else
             {
-                LIST_ITEM_HANDLE first_pending_send;
-
-                while ((first_pending_send = singlylinkedlist_get_head_item(uws_client->pending_sends)) != NULL)
-                {
-                    WS_PENDING_SEND* ws_pending_send = (WS_PENDING_SEND*)singlylinkedlist_item_get_value(first_pending_send);
-
-                    complete_send_frame(ws_pending_send, first_pending_send, WS_SEND_FRAME_CANCELLED);
-                }
-
                 /* Codes_SRS_UWS_CLIENT_01_466: [ On success `uws_client_close_handshake_async` shall return 0. ]*/
                 result = 0;
             }
@@ -1832,6 +1819,16 @@ static void on_underlying_io_send_complete(void* context, IO_SEND_RESULT send_re
     {
         LIST_ITEM_HANDLE ws_pending_send_list_item = (LIST_ITEM_HANDLE)context;
         WS_PENDING_SEND* ws_pending_send = (WS_PENDING_SEND*)singlylinkedlist_item_get_value(ws_pending_send_list_item);
+        if (ws_pending_send == NULL)
+        {
+            LogInfo("%s: the frame has alredy been completed: %p.", ws_pending_send_list_item);
+            return;
+        }
+        if (ws_pending_send->uws_client == NULL)
+        {
+            LogInfo("%s: no client.");
+            return;
+        }
         UWS_CLIENT_HANDLE uws_client = ws_pending_send->uws_client;
         WS_SEND_FRAME_RESULT ws_send_frame_result;
 
@@ -1963,7 +1960,8 @@ int uws_client_send_frame_async(UWS_CLIENT_HANDLE uws_client, unsigned char fram
                         /* Codes_SRS_UWS_CLIENT_09_001: [ If `xio_send` fails and the message is still queued, it shall be de-queued and destroyed. ] */
                         if (singlylinkedlist_find(uws_client->pending_sends, find_list_node, new_pending_send_list_item) != NULL)
                         {
-                            // Guards against double free in case the underlying I/O invoked 'on_underlying_io_send_complete' within xio_send.
+                            // Guards against double free in case the underlying I/O invoked 'on_underlying_io_send_complete' within xio_send,
+                            // in which the message is already removed from the list and freed.
                             (void)singlylinkedlist_remove(uws_client->pending_sends, new_pending_send_list_item);
                             free(ws_pending_send);
                         }
@@ -2158,3 +2156,17 @@ OPTIONHANDLER_HANDLE uws_client_retrieve_options(UWS_CLIENT_HANDLE uws_client)
 
     return result;
 }
+
+void clear_pending_sends(UWS_CLIENT_INSTANCE* uws_client)
+{
+    LIST_ITEM_HANDLE first_pending_send;
+
+    while ((first_pending_send = singlylinkedlist_get_head_item(uws_client->pending_sends)) != NULL)
+    {
+        WS_PENDING_SEND* ws_pending_send = (WS_PENDING_SEND*)singlylinkedlist_item_get_value(first_pending_send);
+
+        complete_send_frame(ws_pending_send, first_pending_send, WS_SEND_FRAME_CANCELLED);
+        LogInfo("%s: cancelled frame %p", __FUNCTION__, first_pending_send);
+    }
+}
+
