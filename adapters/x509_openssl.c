@@ -19,6 +19,7 @@
 #endif // __APPLE__
 
 static int x509_rsa_ex_data_idx = -1;
+static RSA_METHOD* x509_rsa_meth = NULL;
 
 static void log_ERR_get_error(const char* message)
 {
@@ -142,15 +143,18 @@ static int load_key_RSA(SSL_CTX* ssl_ctx, EVP_PKEY* evp_key)
     if (privatekey == NULL)
     {
         /*Codes_SRS_X509_OPENSSL_02_009: [ Otherwise x509_openssl_add_credentials shall fail and return a non-zero number. ]*/
+        /*Codes_SRS_X509_OPENSSL_02_028: [ Otherwise x509_openssl_add_credentials_cryptodev shall fail and return a non-zero number. ]*/
         log_ERR_get_error("Failure reading RSA private key");
         result = MU_FAILURE;
     }
     else
     {
         /*Codes_SRS_X509_OPENSSL_02_007: [ x509_openssl_add_credentials shall use SSL_CTX_use_RSAPrivateKey to load the private key into the SSL context. ]*/
+        /*Codes_SRS_X509_OPENSSL_02_026: [ x509_openssl_add_credentials_cryptodev shall use SSL_CTX_use_RSAPrivateKey to load the private key into the SSL context. ]*/
         if (SSL_CTX_use_RSAPrivateKey(ssl_ctx, privatekey) != 1)
         {
             /*Codes_SRS_X509_OPENSSL_02_009: [ Otherwise x509_openssl_add_credentials shall fail and return a non-zero number. ]*/
+            /*Codes_SRS_X509_OPENSSL_02_028: [ Otherwise x509_openssl_add_credentials_cryptodev shall fail and return a non-zero number. ]*/
             log_ERR_get_error("Failure calling SSL_CTX_use_RSAPrivateKey");
             result = MU_FAILURE;
         }
@@ -158,6 +162,7 @@ static int load_key_RSA(SSL_CTX* ssl_ctx, EVP_PKEY* evp_key)
         {
             /*all is fine*/
             /*Codes_SRS_X509_OPENSSL_02_008: [ If no error occurs, then x509_openssl_add_credentials shall succeed and return 0. ]*/
+            /*Codes_SRS_X509_OPENSSL_02_027: [ If no error occurs, then x509_openssl_add_credentials_cryptodev shall succeed and return 0. ]*/
             result = 0;
         }
         RSA_free(privatekey);
@@ -321,13 +326,13 @@ int x509_openssl_add_credentials_cryptodev(SSL_CTX* ssl_ctx, const char* x509cer
 
     if (ssl_ctx == NULL || x509certificate == NULL || x509cryptodevprivatekey == NULL)
     {
-        /*Codes_SRS_X509_OPENSSL_02_009: [ Otherwise x509_openssl_add_credentials shall fail and return a non-zero number. ]*/
-        LogError("invalid parameter detected: ssl_ctx=%p, x509certificate=%p, x509privatekey=%p", ssl_ctx, x509certificate, x509cryptodevprivatekey);
+        /*Codes_SRS_X509_OPENSSL_02_028: [ Otherwise x509_openssl_add_credentials shall fail and return a non-zero number. ]*/
+        LogError("invalid parameter detected: ssl_ctx=%p, x509certificate=%p, x509cryptodevprivatekey=%p", ssl_ctx, x509certificate, x509cryptodevprivatekey);
         result = MU_FAILURE;
     }
-    else {
+    else
+    {
         // TODO: ECC keys
-        static RSA_METHOD* x509_rsa_meth = NULL;
         if (x509_rsa_meth == NULL) {
 #if OPENSSL_VERSION_NUMBER >= 0x10100005L
             x509_rsa_meth = RSA_meth_dup(RSA_get_default_method());
@@ -354,11 +359,18 @@ int x509_openssl_add_credentials_cryptodev(SSL_CTX* ssl_ctx, const char* x509cer
 #endif
         }
         RSA* rsa_key = RSA_new();
+        if (rsa_key == NULL) {
+            return MU_FAILURE;
+        }
 
         RSA_set_method(rsa_key, x509_rsa_meth);
         if (x509_rsa_ex_data_idx < 0) {
-          x509_rsa_ex_data_idx = RSA_get_ex_new_index(0, NULL, NULL, NULL, NULL);
+            x509_rsa_ex_data_idx = RSA_get_ex_new_index(0, NULL, NULL, NULL, NULL);
+            if (x509_rsa_ex_data_idx < 0) {
+                return MU_FAILURE;
+            }
         }
+
         RSA_set_ex_data(rsa_key, x509_rsa_ex_data_idx, x509cryptodevprivatekey);
 
         if(x509cryptodevprivatekey != NULL) {
@@ -369,6 +381,11 @@ int x509_openssl_add_credentials_cryptodev(SSL_CTX* ssl_ctx, const char* x509cer
             }
         }
         evp_key = EVP_PKEY_new();
+        if (evp_key == NULL) {
+            RSA_free(rsa_key);
+            return MU_FAILURE;
+        }
+
         EVP_PKEY_set1_RSA(evp_key, rsa_key);
         result = 0;
     }
@@ -391,28 +408,33 @@ int x509_openssl_add_credentials(SSL_CTX* ssl_ctx, const char* x509certificate, 
         LogError("invalid parameter detected: ssl_ctx=%p, x509certificate=%p, x509privatekey=%p", ssl_ctx, x509certificate, x509privatekey);
         result = MU_FAILURE;
     }
-
-    BIO* bio_key = BIO_new_mem_buf((char*)x509privatekey, -1); /*taking off the const from the pointer is needed on older versions of OPENSSL*/
-    if (bio_key == NULL)
-    {
-        log_ERR_get_error("cannot create private key BIO");
-        result = MU_FAILURE;
-    }
     else
     {
-        // Get the Private Key type
-        evp_key = PEM_read_bio_PrivateKey(bio_key, NULL, NULL, NULL);
-        if (evp_key == NULL)
+        BIO* bio_key = BIO_new_mem_buf((char*)x509privatekey, -1); /*taking off the const from the pointer is needed on older versions of OPENSSL*/
+        if (bio_key == NULL)
         {
-            log_ERR_get_error("Failure creating private key evp_key");
+            log_ERR_get_error("cannot create private key BIO");
             result = MU_FAILURE;
         }
-        BIO_free(bio_key);
-    }
-    result = 0;
+        else
+        {
+            // Get the Private Key type
+            evp_key = PEM_read_bio_PrivateKey(bio_key, NULL, NULL, NULL);
+            if (evp_key == NULL)
+            {
+                log_ERR_get_error("Failure creating private key evp_key");
+                result = MU_FAILURE;
+            }
+            else
+            {
+              result = 0;
+            }
+            BIO_free(bio_key);
+        }
 
-    if (result == 0) {
-        return x509_openssl_add_credentials_common(ssl_ctx, x509certificate, evp_key);
+        if (result == 0) {
+            return x509_openssl_add_credentials_common(ssl_ctx, x509certificate, evp_key);
+        }
     }
 
     return result;
@@ -526,3 +548,8 @@ int x509_openssl_add_certificates(SSL_CTX* ssl_ctx, const char* certificates)
 
 }
 
+/* only to be used in unit tests, not a part of API */
+void x509_openssl_test_reset(void) {
+   x509_rsa_ex_data_idx = -1;
+   x509_rsa_meth = NULL;
+}
