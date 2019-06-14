@@ -5,7 +5,6 @@
 #define URLENCODE_H
 
 #include "azure_c_shared_utility/strings.h"
-
 #include "umock_c/umock_c_prod.h"
 
 #ifdef __cplusplus

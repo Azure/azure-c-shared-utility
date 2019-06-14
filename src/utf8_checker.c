@@ -3,12 +3,10 @@
 
 #ifdef __cplusplus
 #include <cstdlib>
-#include <cstddef>
 #include <cstdint>
 #else
 #include <stdlib.h>
 #include <stdbool.h>
-#include <stddef.h>
 #include <stdint.h>
 #endif
 

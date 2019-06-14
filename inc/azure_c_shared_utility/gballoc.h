@@ -4,16 +4,17 @@
 #ifndef GBALLOC_H
 #define GBALLOC_H
 
+#ifdef __cplusplus
+#include <cstdlib>
+#else
+#include <stdlib.h>
+#endif
+
 #include "umock_c/umock_c_prod.h"
 
 #ifdef __cplusplus
-#include <cstddef>
-#include <cstdlib>
 extern "C"
 {
-#else
-#include <stddef.h>
-#include <stdlib.h>
 #endif
 
 // GB_USE_CUSTOM_HEAP disables the implementations in gballoc.c and

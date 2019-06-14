@@ -4,18 +4,21 @@
 #ifndef CONSTBUFFER_H
 #define CONSTBUFFER_H
 
-#include "azure_c_shared_utility/buffer_.h"
-
 #ifdef __cplusplus
 #include <cstddef>
-extern "C"
-{
 #else
 #include <stddef.h>
 #include <stdbool.h>
 #endif
 
+#include "azure_c_shared_utility/buffer_.h"
+
 #include "umock_c/umock_c_prod.h"
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 /*this is the handle*/
 typedef struct CONSTBUFFER_HANDLE_DATA_TAG* CONSTBUFFER_HANDLE;

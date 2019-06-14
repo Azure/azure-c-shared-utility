@@ -2,9 +2,8 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include <stdlib.h>
-#include "azure_c_shared_utility/gballoc.h"
-#include <stddef.h>
 #include <stdint.h>
+#include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/azure_base64.h"
 #include "azure_c_shared_utility/xlogging.h"
 

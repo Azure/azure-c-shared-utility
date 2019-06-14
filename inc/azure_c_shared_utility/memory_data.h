@@ -4,13 +4,17 @@
 #ifndef MEMORY_DATA_H
 #define MEMORY_DATA_H
 
+#ifdef __cplusplus
+#include <cstdint>
+#else
+#include <stdint.h>
+#endif
+
 #include "azure_c_shared_utility/uuid.h"
 #include "umock_c/umock_c_prod.h"
 
 #ifdef __cplusplus
-#include <cstdint>
 extern "C" {
-#include <stdint.h>
 #endif
 
     MOCKABLE_FUNCTION(, void, read_uint8_t,  const unsigned char*, source, uint8_t*, destination);

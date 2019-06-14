@@ -1,11 +1,11 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+#include <stdbool.h>
 #include "azure_c_shared_utility/connection_string_parser.h"
 #include "azure_c_shared_utility/map.h"
 #include "azure_c_shared_utility/strings.h"
 #include "azure_c_shared_utility/string_tokenizer.h"
-#include <stdbool.h>
 #include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/xlogging.h"
 
