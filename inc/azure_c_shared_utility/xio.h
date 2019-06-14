@@ -4,16 +4,19 @@
 #ifndef XIO_H
 #define XIO_H
 
+#ifdef __cplusplus
+#include <cstddef>
+#else
+#include <stddef.h>
+#endif /* __cplusplus */
+
 #include "azure_c_shared_utility/optionhandler.h"
 
 #include "umock_c/umock_c_prod.h"
 #include "azure_macro_utils/macro_utils.h"
 
 #ifdef __cplusplus
-#include <cstddef>
 extern "C" {
-#else
-#include <stddef.h>
 #endif /* __cplusplus */
 
 typedef struct XIO_INSTANCE_TAG* XIO_HANDLE;

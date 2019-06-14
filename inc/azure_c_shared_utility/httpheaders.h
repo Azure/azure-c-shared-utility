@@ -20,14 +20,17 @@
 #ifndef HTTPHEADERS_H
 #define HTTPHEADERS_H
 
+#ifdef __cplusplus
+#include <cstddef>
+#else
+#include <stddef.h>
+#endif
+
 #include "azure_macro_utils/macro_utils.h"
 #include "umock_c/umock_c_prod.h"
 
 #ifdef __cplusplus
-#include <cstddef>
 extern "C" {
-#else
-#include <stddef.h>
 #endif
 
 /*Codes_SRS_HTTP_HEADERS_99_001:[ HttpHeaders shall have the following interface]*/

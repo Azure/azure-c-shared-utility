@@ -3,16 +3,19 @@
 #ifndef CONSTBUFFER_ARRAY_H
 #define CONSTBUFFER_ARRAY_H
 
+#ifdef __cplusplus
+#include <cstdint>
+#else
+#include <stdint.h>
+#include <stdbool.h>
+#endif
+
 #include "azure_c_shared_utility/constbuffer.h"
 
 #include "umock_c/umock_c_prod.h"
 
 #ifdef __cplusplus
-#include <cstdint>
 extern "C" {
-#else
-#include <stdint.h>
-#include <stdbool.h>
 #endif
 
 typedef struct CONSTBUFFER_ARRAY_HANDLE_DATA_TAG* CONSTBUFFER_ARRAY_HANDLE;

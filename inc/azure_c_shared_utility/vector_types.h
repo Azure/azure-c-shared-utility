@@ -5,10 +5,13 @@
 #define VECTOR_TYPES_H
 
 #ifdef __cplusplus
-extern "C"
-{
 #else
 #include <stdbool.h>
+#endif
+
+#ifdef __cplusplus
+extern "C"
+{
 #endif
 
 typedef struct VECTOR_TAG* VECTOR_HANDLE;

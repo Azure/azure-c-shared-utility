@@ -5,7 +5,6 @@
 #define SEC_TCHAR   SEC_CHAR
 
 #include <stdlib.h>
-#include <stddef.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include "azure_c_shared_utility/tlsio.h"

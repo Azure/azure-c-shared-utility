@@ -3,7 +3,6 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
-#include <stddef.h>
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/map.h"
 #include "azure_c_shared_utility/constmap.h"

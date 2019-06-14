@@ -5,13 +5,17 @@
 #define TICKCOUNTER_H
 
 #ifdef __cplusplus
+#include <cstdint>
+#else
+#include <stdint.h>
+#endif
+
+#include "umock_c/umock_c_prod.h"
+
+#ifdef __cplusplus
 extern "C"
 {
 #endif /* __cplusplus */
-
-#include <stdint.h>
-
-#include "umock_c/umock_c_prod.h"
 
 #if defined(_WIN32) || defined(__MBED__)
     typedef uint_fast64_t tickcounter_ms_t; // Use 64-bit because of 32-bit is going to roll over back to zero after roughly 49.7 days that is not good for IoT devices which need keep running for months

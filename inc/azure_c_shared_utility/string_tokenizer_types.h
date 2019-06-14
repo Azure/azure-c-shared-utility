@@ -4,6 +4,15 @@
 #ifndef STRING_TOKENIZER_TYPES_H
 #define STRING_TOKENIZER_TYPES_H
 
-typedef struct STRING_TOKEN_TAG* STRING_TOKENIZER_HANDLE;
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+    typedef struct STRING_TOKEN_TAG* STRING_TOKENIZER_HANDLE;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  /*STRING_TOKENIZER_TYPES_H*/

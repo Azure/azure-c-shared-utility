@@ -2,10 +2,10 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include <stdlib.h>
+#include <string.h>
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/map.h"
 #include "azure_c_shared_utility/httpheaders.h"
-#include <string.h>
 #include "azure_c_shared_utility/crt_abstractions.h"
 #include "azure_c_shared_utility/xlogging.h"
 

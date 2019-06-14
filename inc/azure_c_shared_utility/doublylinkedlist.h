@@ -6,14 +6,17 @@
 
 #ifdef __cplusplus
 #include <cstddef>
-extern "C"
-{
 #else
 #include <stddef.h>
 #endif
 
 #include <stdint.h>
 #include "umock_c/umock_c_prod.h"
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 typedef struct DLIST_ENTRY_TAG
 {

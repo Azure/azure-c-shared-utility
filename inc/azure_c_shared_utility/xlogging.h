@@ -32,9 +32,12 @@
 #else
 #include <cstdio>
 #endif
-extern "C" {
 #else
 #include <stdio.h>
+#endif /* __cplusplus */
+
+#ifdef __cplusplus
+extern "C" {
 #endif /* __cplusplus */
 
 #ifdef TIZENRT

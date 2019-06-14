@@ -6,11 +6,6 @@
 #ifndef _SHA_H_
 #define _SHA_H_
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
 /*
  *  Description:
  *      This file implements the Secure Hash Signature Standard
@@ -43,6 +38,11 @@ extern "C"
  *  int_least16_t    integer of >= 16 bits
  *
  */
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 #ifndef _SHA_enum_
 #define _SHA_enum_

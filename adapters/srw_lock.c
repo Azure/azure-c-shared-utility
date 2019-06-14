@@ -1,6 +1,5 @@
 // Copyright (C) Microsoft Corporation. All rights reserved.
 
-#include <stdint.h>
 #include <inttypes.h>
 #include <stdbool.h>
 
