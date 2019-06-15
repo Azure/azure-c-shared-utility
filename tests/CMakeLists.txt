@@ -83,6 +83,10 @@ if(${run_unittests})
         add_subdirectory(tlsio_mbedtls_ut)
     endif()
 
+    if(use_bearssl)
+        add_subdirectory(tlsio_bearssl_ut)
+    endif()
+
     add_subdirectory(utf8_checker_ut)
     add_subdirectory(http_proxy_io_ut)
     if(NOT DEFINED MACOSX)

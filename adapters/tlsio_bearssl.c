@@ -31,14 +31,16 @@
 
 #include "bearssl.h"
 
+#include "azure_c_shared_utility/gballoc.h"
+#include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/tlsio.h"
-#include "azure_c_shared_utility/tlsio_bearssl.h"
 #include "azure_c_shared_utility/socketio.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
 #include "azure_c_shared_utility/shared_util_options.h"
 #include "azure_c_shared_utility/singlylinkedlist.h"
 #include "azure_c_shared_utility/vector.h"
 #include "azure_c_shared_utility/buffer_.h"
+#include "azure_c_shared_utility/tlsio_bearssl.h"
 
 static const char *const OPTION_UNDERLYING_IO_OPTIONS = "underlying_io_options";
 
@@ -93,7 +95,7 @@ typedef struct TLS_IO_INSTANCE_TAG
     br_sslio_context ioc;
     br_x509_trust_anchor *tas;
     br_x509_certificate *x509_cert;
-    int x509_cert_len;
+    size_t x509_cert_len;
     private_key *x509_pk;
     size_t ta_count;
     char *trusted_certificates;
@@ -184,7 +186,6 @@ static void on_underlying_io_open_complete(void *context, IO_OPEN_RESULT open_re
     else
     {
         TLS_IO_INSTANCE *tls_io_instance = (TLS_IO_INSTANCE *)context;
-        int result = 0;
 
         if (open_result != IO_OPEN_OK)
         {
@@ -278,93 +279,110 @@ VECTOR_HANDLE decode_pem(const void *src, size_t len)
 	pem_object po;
     //pem_object *pos;
 	const unsigned char *buf;
-    BUFFER_HANDLE bv;
+    BUFFER_HANDLE bv = NULL;
 	int inobj;
 	int extra_nl;
     size_t i;
 
     pem_list = VECTOR_create(sizeof(pem_object));
 
-	br_pem_decoder_init(&pc);
-	buf = src;
-	inobj = 0;
-	po.name = NULL;
-	po.data = NULL;
-	po.data_len = 0;
-	extra_nl = 1;
+	if (pem_list == NULL)
+	{
+		LogError("Unable to allocate vectore to decode PEM");
+	}
+	else
+	{
+		br_pem_decoder_init(&pc);
+		buf = src;
+		inobj = 0;
+		po.name = NULL;
+		po.data = NULL;
+		po.data_len = 0;
+		extra_nl = 1;
 
-	while (len > 0) {
-		size_t tlen;
+		while (len > 0) {
+			size_t tlen;
 
-		tlen = br_pem_decoder_push(&pc, buf, len);
-		buf += tlen;
-		len -= tlen;
-		switch (br_pem_decoder_event(&pc)) {
+			tlen = br_pem_decoder_push(&pc, buf, len);
+			buf += tlen;
+			len -= tlen;
+			switch (br_pem_decoder_event(&pc)) {
 
-		case BR_PEM_BEGIN_OBJ:
-			inobj = 1;
+			case BR_PEM_BEGIN_OBJ:
+				inobj = 1;
 
-			if (0 != mallocAndStrcpy_s(&po.name, br_pem_decoder_name(&pc)))
-            {
-                LogError("Unable to allocate memory for certificate name");
-                break;
-            }
+				if (0 != mallocAndStrcpy_s(&po.name, br_pem_decoder_name(&pc)))
+				{
+					LogError("Unable to allocate memory for certificate name");
+					break;
+				}
 
-            bv = BUFFER_new();
-			br_pem_decoder_setdest(&pc, vblob_append, bv);
-			break;
+				bv = BUFFER_new();
 
-		case BR_PEM_END_OBJ:
-			if (inobj) 
-            {
-                po.data = BUFFER_u_char(bv);
-				po.data_len = BUFFER_length(bv);
-                free(bv);
-                VECTOR_push_back(pem_list, &po, 1);
-				po.name = NULL;
-				po.data = NULL;
-				po.data_len = 0;
-				inobj = 0;
+				if (bv == NULL)
+				{
+					LogError("Unable to allocate buffer to decode pem");
+					len = 0;
+					extra_nl = 0;
+				}
+				else
+				{
+					br_pem_decoder_setdest(&pc, vblob_append, bv);
+				}
+				break;
+
+			case BR_PEM_END_OBJ:
+				if (inobj)
+				{
+					po.data = BUFFER_u_char(bv);
+					po.data_len = BUFFER_length(bv);
+					free(bv);
+					VECTOR_push_back(pem_list, &po, 1);
+					po.name = NULL;
+					po.data = NULL;
+					po.data_len = 0;
+					inobj = 0;
+				}
+				break;
+
+			case BR_PEM_ERROR:
+				LogError("ERROR: invalid PEM encoding");
+				inobj = 1;
+				break;
 			}
-			break;
 
-		case BR_PEM_ERROR:
-			LogError("ERROR: invalid PEM encoding");
-            inobj = 1;
-            break;
+			/*
+			 * We add an extra newline at the end, in order to
+			 * support PEM files that lack the newline on their last
+			 * line (this is somewhat invalid, but PEM format is not
+			 * standardised and such files do exist in the wild, so
+			 * we'd better accept them).
+			 */
+			if (len == 0 && extra_nl) {
+				extra_nl = 0;
+				buf = (const unsigned char *)"\n";
+				len = 1;
+			}
 		}
 
-		/*
-		 * We add an extra newline at the end, in order to
-		 * support PEM files that lack the newline on their last
-		 * line (this is somewhat invalid, but PEM format is not
-		 * standardised and such files do exist in the wild, so
-		 * we'd better accept them).
-		 */
-		if (len == 0 && extra_nl) {
-			extra_nl = 0;
-			buf = (const unsigned char *)"\n";
-			len = 1;
+		if (inobj)
+		{
+			LogError("Unable to decode pem");
+
+
+			for (i = 0; i < VECTOR_size(pem_list); i++)
+			{
+				free(((pem_object *)VECTOR_element(pem_list, i))->name);
+				free(((pem_object *)VECTOR_element(pem_list, i))->data);
+			}
+
+			VECTOR_clear(pem_list);
+			free(po.name);
+			BUFFER_delete(bv);
+			pem_list = NULL;
 		}
 	}
 
-	if (inobj) 
-    {
-		fprintf(stderr, "ERROR: unfinished PEM object\n");
-
-
-        for (i = 0; i < VECTOR_size(pem_list); i++)
-        {
-            free(((pem_object *)VECTOR_element(pem_list, i))->name);
-            free(((pem_object *)VECTOR_element(pem_list, i))->data);
-        }
-
-        VECTOR_clear(pem_list);
-		free(po.name);
-        BUFFER_delete(bv);
-        pem_list = NULL;
-	}
-    
 	return pem_list;
 }
 
@@ -506,7 +524,7 @@ static private_key *read_private_key(const unsigned char *buf, size_t len)
     static const int EC_PRIVATE_KEY_LENGTH = sizeof(EC_PRIVATE_KEY) - 1;
     static const int PRIVATE_KEY_LENGTH = sizeof(PRIVATE_KEY) - 1;
 
-	private_key *sk;
+	private_key *sk = NULL;
     VECTOR_HANDLE pos;  // vector of pem_object
 	pem_object *work;
     size_t u;
@@ -556,9 +574,7 @@ static VECTOR_HANDLE read_certificates_string(const char *buf, size_t len)
 	VECTOR_HANDLE cert_list; //(br_x509_certificate) cert_list = VEC_INIT;
     VECTOR_HANDLE pem_list;
 	size_t u;
-    size_t num_pos;
-	br_x509_certificate dummy;
-    int result;
+    int result = 0;
     static const char CERTIFICATE[] = "CERTIFICATE";
     static const char X509_CERTIFICATE[] = "X509 CERTIFICATE";
     static const int CERTIFICATE_LEN = sizeof(CERTIFICATE) - 1;
@@ -682,7 +698,7 @@ static int certificate_to_trust_anchor(br_x509_certificate *xc, br_x509_trust_an
 	br_x509_pkey *pk;
     BUFFER_HANDLE vdn;
     //br_x509_trust_anchor *ta;
-    int result;
+    int result = 0;
 
     vdn = BUFFER_new();
 
@@ -927,7 +943,11 @@ void tlsio_bearssl_destroy(CONCRETE_IO_HANDLE tls_io)
     size_t i;
 	LIST_ITEM_HANDLE first_pending_io;
 
-    if (tls_io != NULL)
+	if (tls_io == NULL)
+	{
+		LogError("NULL handle");
+	}
+	else
     {
         TLS_IO_INSTANCE *tls_io_instance = (TLS_IO_INSTANCE *)tls_io;
 
@@ -1031,7 +1051,6 @@ void tlsio_bearssl_destroy(CONCRETE_IO_HANDLE tls_io)
 int tlsio_bearssl_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_open_complete, void *on_io_open_complete_context, ON_BYTES_RECEIVED on_bytes_received, void *on_bytes_received_context, ON_IO_ERROR on_io_error, void *on_io_error_context)
 {
     int result = 0;
-    unsigned int usages;
     unsigned int cert_signer_algo;                        
 
     if (tls_io == NULL)
@@ -1045,7 +1064,7 @@ int tlsio_bearssl_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_open
 
         if (tls_io_instance->tlsio_state != TLSIO_STATE_NOT_OPEN)
         {
-            LogError("IO should not be open: %d\n", tls_io_instance->tlsio_state);
+            LogError("TLS already open");
             result = MU_FAILURE;
         }
         else
@@ -1142,7 +1161,8 @@ int tlsio_bearssl_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_cl
 
     if (tls_io == NULL)
     {
-        result = MU_FAILURE;
+		LogError("NULL tls_io");
+		result = MU_FAILURE;
     }
     else
     {
@@ -1151,7 +1171,8 @@ int tlsio_bearssl_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_cl
         if ((tls_io_instance->tlsio_state == TLSIO_STATE_NOT_OPEN) ||
             (tls_io_instance->tlsio_state == TLSIO_STATE_CLOSING))
         {
-            result = MU_FAILURE;
+			LogError("Invalid state");
+			result = MU_FAILURE;
         }
         else
         {
@@ -1176,14 +1197,16 @@ int tlsio_bearssl_send(CONCRETE_IO_HANDLE tls_io, const void *buffer, size_t siz
         (size == 0))
     {
         // Invalid arguments
-        LogError("Invalid argument: send given invalid parameter");
+        LogError("Invalid argument: tls_io is NULL");
         result = MU_FAILURE;
     }
     else
     {
         TLS_IO_INSTANCE *tls_io_instance = (TLS_IO_INSTANCE *)tls_io;
 
-        if (tls_io_instance->tlsio_state != TLSIO_STATE_OPEN)
+        if (tls_io_instance->tlsio_state != TLSIO_STATE_OPEN && 
+			tls_io_instance->tlsio_state != TLSIO_STATE_IN_HANDSHAKE && 
+			tls_io_instance->tlsio_state != TLSIO_STATE_OPENING_UNDERLYING_IO)
         {
             LogError("TLS is not open");
             result = MU_FAILURE;
@@ -1341,8 +1364,6 @@ void tlsio_bearssl_dowork(CONCRETE_IO_HANDLE tls_io)
                     tls_io_instance->on_bytes_received(tls_io_instance->on_bytes_received_context, buffer, bufferLen);
                     br_ssl_engine_recvapp_ack(&tls_io_instance->sc.eng, bufferLen);
                 }
-
-                bearResult = br_ssl_engine_current_state(&tls_io_instance->sc.eng);
             }
 
             xio_dowork(tls_io_instance->socket_io);
