@@ -877,7 +877,7 @@ BEGIN_TEST_SUITE(tlsio_bearssl_ut)
 		tlsio->callback_context = NULL;
 		tlsio->pending_io_list = NULL;
 		tlsio->on_send_complete = my_on_send_complete;
-		unsigned char *buffer = (unsigned char *)"TESTDATA";
+		unsigned char *buffer = (unsigned char *)malloc(20);
 		size_t buffer_len = 8;
 		
 		umock_c_reset_all_calls();
@@ -908,6 +908,7 @@ BEGIN_TEST_SUITE(tlsio_bearssl_ut)
         //cleanup
         (void)tlsio_bearssl_close(handle, on_io_close_complete, NULL);
         tlsio_bearssl_destroy(handle);
+        free(buffer);
     }
 
 	TEST_FUNCTION(tlsio_on_bytes_to_send_to_underlying_io)
@@ -966,7 +967,8 @@ BEGIN_TEST_SUITE(tlsio_bearssl_ut)
 		tlsio->callback_context = NULL;
 		tlsio->pending_io_list = NULL;
 		tlsio->on_send_complete = my_on_send_complete;
-		unsigned char *buffer = (unsigned char *)"TESTDATA";
+		//unsigned char *buffer = (unsigned char *)"TESTDATA";
+        unsigned char *buffer = (unsigned char *)malloc(20);
 		size_t buffer_len = 8;
 
 		umock_c_reset_all_calls();
@@ -995,6 +997,7 @@ BEGIN_TEST_SUITE(tlsio_bearssl_ut)
 		//cleanup
 		(void)tlsio_bearssl_close(handle, on_io_close_complete, NULL);
 		tlsio_bearssl_destroy(handle);
+        free(buffer);
 	}
 
 END_TEST_SUITE(tlsio_bearssl_ut)
