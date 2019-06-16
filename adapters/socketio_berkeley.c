@@ -24,7 +24,7 @@
 #include "azure_c_shared_utility/socketio.h"
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <sys/select.h>
+#include <poll.h>
 #ifdef TIZENRT
 #include <net/lwip/tcp.h>
 #else
@@ -54,8 +54,7 @@
 #define IFREQ_BUFFER_SIZE              1024
 #endif
 
-// connect timeout in seconds
-#define CONNECT_TIMEOUT         10
+#define CONNECT_TIMEOUT_SECONDS 10
 
 typedef enum IO_STATE_TAG
 {
@@ -570,7 +569,7 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
 {
     int result;
     int retval = -1;
-    int select_errno = 0;
+    int poll_errno = 0;
 
     IO_OPEN_RESULT_DETAILED open_result_detailed = { IO_OPEN_OK, 0 };
 
@@ -665,32 +664,28 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
                         {
                             if (err != 0)
                             {
-                                fd_set fdset;
-                                struct timeval tv;
-
-                                FD_ZERO(&fdset);
-                                FD_SET(socket_io_instance->socket, &fdset);
-                                tv.tv_sec = CONNECT_TIMEOUT;
-                                tv.tv_usec = 0;
+                                struct pollfd fd = { 0 };
+                                fd.fd = socket_io_instance->socket;
+                                // Wait until writing is possible.
+                                fd.events = POLLOUT;
 
                                 do
                                 {
-                                    retval = select(socket_io_instance->socket + 1, NULL, &fdset, NULL, &tv);
-
+                                    retval = poll(&fd, 1, CONNECT_TIMEOUT_SECONDS * 1000);
                                     if (retval < 0)
                                     {
-                                        select_errno = errno;
+                                        poll_errno = errno;
                                     }
-                                } while (retval < 0 && select_errno == EINTR);
-                                
+                                } while (retval < 0 && poll_errno == EINTR);
+
                                 if (retval != 1)
                                 {
-                                    LogError("Failure: select failure, retval %d, errno %d.", retval, select_errno);
+                                    LogError("Failure: poll failure, retval %d, errno %d.", retval, poll_errno);
                                     if (retval == 0) {
                                         // timeout
                                         open_result_detailed.code = 9999;
                                     } else {
-                                        open_result_detailed.code = select_errno;
+                                        open_result_detailed.code = poll_errno;
                                     }
                                     close(socket_io_instance->socket);
                                     socket_io_instance->socket = INVALID_SOCKET;
