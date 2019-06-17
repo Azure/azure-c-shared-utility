@@ -203,32 +203,6 @@ static void my_on_io_error(void* context)
     (void)context;
 }
 
-static void my_br_pem_decoder_init(br_pem_decoder_context *pc)
-{
-	memset(pc, 0, sizeof(br_pem_decoder_context));
-	g_decoder_state = 0;
-}
-
-static size_t my_br_pem_decoder_push(br_pem_decoder_context *ctx, const void *data, size_t len)
-{
-	ASSERT_IS_NOT_NULL(ctx);
-	ASSERT_IS_NOT_NULL(data);
-	ASSERT_IS_TRUE(len > 0);
-
-	return g_decoder_state == 0 ? 1 : len;
-}
-
-static int my_br_pem_decoder_event(br_pem_decoder_context *ctx)
-{
-	ASSERT_IS_NOT_NULL(ctx);
-
-	int retval = g_decoder_state == 0 ? BR_PEM_BEGIN_OBJ : BR_PEM_END_OBJ;
-
-	g_decoder_state = 1;
-
-	return retval;
-}
-
 IMPLEMENT_UMOCK_C_ENUM_TYPE(IO_OPEN_RESULT, IO_OPEN_RESULT_VALUES);
 IMPLEMENT_UMOCK_C_ENUM_TYPE(IO_SEND_RESULT, IO_SEND_RESULT_VALUES);
 
@@ -385,11 +359,6 @@ BEGIN_TEST_SUITE(tlsio_bearssl_ut)
         REGISTER_GLOBAL_MOCK_HOOK(xio_open, my_xio_open);
         REGISTER_GLOBAL_MOCK_FAIL_RETURN(xio_open, __LINE__);
         REGISTER_GLOBAL_MOCK_HOOK(xio_destroy, my_xio_destroy);
-
-		REGISTER_GLOBAL_MOCK_HOOK(br_pem_decoder_init, my_br_pem_decoder_init);
-		REGISTER_GLOBAL_MOCK_HOOK(br_pem_decoder_push, my_br_pem_decoder_push);
-		REGISTER_GLOBAL_MOCK_HOOK(br_pem_decoder_event, my_br_pem_decoder_event);
-		REGISTER_GLOBAL_MOCK_FAIL_RETURN(br_pem_decoder_event, BR_PEM_ERROR);
 
         REGISTER_GLOBAL_MOCK_RETURN(socketio_get_interface_description, TEST_INTERFACE_DESC);
         REGISTER_GLOBAL_MOCK_FAIL_RETURN(socketio_get_interface_description, NULL);
