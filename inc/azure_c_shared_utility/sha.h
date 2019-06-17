@@ -27,7 +27,12 @@
  *              SHA-512         64 byte / 512 bit
  */
 
+#ifdef __cplusplus
+#include <cstdint>
+#else
 #include <stdint.h>
+#endif
+
 /*
  * If you do not have the ISO standard stdint.h header file, then you
  * must typedef the following:
@@ -185,50 +190,50 @@ typedef struct HMACContext {
  */
 
 /* SHA-1 */
-extern int SHA1Reset(SHA1Context *);
-extern int SHA1Input(SHA1Context *, const uint8_t *bytes, unsigned int bytecount);
-extern int SHA1FinalBits(SHA1Context *, const uint8_t bits, unsigned int bitcount);
-extern int SHA1Result(SHA1Context *, uint8_t Message_Digest[SHA1HashSize]);
+int SHA1Reset(SHA1Context *);
+int SHA1Input(SHA1Context *, const uint8_t *bytes, unsigned int bytecount);
+int SHA1FinalBits(SHA1Context *, const uint8_t bits, unsigned int bitcount);
+int SHA1Result(SHA1Context *, uint8_t Message_Digest[SHA1HashSize]);
 
 /* SHA-224 */
-extern int SHA224Reset(SHA224Context *);
-extern int SHA224Input(SHA224Context *, const uint8_t *bytes, unsigned int bytecount);
-extern int SHA224FinalBits(SHA224Context *, const uint8_t bits, unsigned int bitcount);
-extern int SHA224Result(SHA224Context *, uint8_t Message_Digest[SHA224HashSize]);
+int SHA224Reset(SHA224Context *);
+int SHA224Input(SHA224Context *, const uint8_t *bytes, unsigned int bytecount);
+int SHA224FinalBits(SHA224Context *, const uint8_t bits, unsigned int bitcount);
+int SHA224Result(SHA224Context *, uint8_t Message_Digest[SHA224HashSize]);
 
 /* SHA-256 */
-extern int SHA256Reset(SHA256Context *);
-extern int SHA256Input(SHA256Context *, const uint8_t *bytes, unsigned int bytecount);
-extern int SHA256FinalBits(SHA256Context *, const uint8_t bits, unsigned int bitcount);
-extern int SHA256Result(SHA256Context *, uint8_t Message_Digest[SHA256HashSize]);
+int SHA256Reset(SHA256Context *);
+int SHA256Input(SHA256Context *, const uint8_t *bytes, unsigned int bytecount);
+int SHA256FinalBits(SHA256Context *, const uint8_t bits, unsigned int bitcount);
+int SHA256Result(SHA256Context *, uint8_t Message_Digest[SHA256HashSize]);
 
 /* SHA-384 */
-extern int SHA384Reset(SHA384Context *);
-extern int SHA384Input(SHA384Context *, const uint8_t *bytes, unsigned int bytecount);
-extern int SHA384FinalBits(SHA384Context *, const uint8_t bits, unsigned int bitcount);
-extern int SHA384Result(SHA384Context *, uint8_t Message_Digest[SHA384HashSize]);
+int SHA384Reset(SHA384Context *);
+int SHA384Input(SHA384Context *, const uint8_t *bytes, unsigned int bytecount);
+int SHA384FinalBits(SHA384Context *, const uint8_t bits, unsigned int bitcount);
+int SHA384Result(SHA384Context *, uint8_t Message_Digest[SHA384HashSize]);
 
 /* SHA-512 */
-extern int SHA512Reset(SHA512Context *);
-extern int SHA512Input(SHA512Context *, const uint8_t *bytes, unsigned int bytecount);
-extern int SHA512FinalBits(SHA512Context *, const uint8_t bits, unsigned int bitcount);
-extern int SHA512Result(SHA512Context *, uint8_t Message_Digest[SHA512HashSize]);
+int SHA512Reset(SHA512Context *);
+int SHA512Input(SHA512Context *, const uint8_t *bytes, unsigned int bytecount);
+int SHA512FinalBits(SHA512Context *, const uint8_t bits, unsigned int bitcount);
+int SHA512Result(SHA512Context *, uint8_t Message_Digest[SHA512HashSize]);
 
 /* Unified SHA functions, chosen by whichSha */
-extern int USHAReset(USHAContext *, SHAversion whichSha);
-extern int USHAInput(USHAContext *, const uint8_t *bytes, unsigned int bytecount);
-extern int USHAFinalBits(USHAContext *, const uint8_t bits, unsigned int bitcount);
-extern int USHAResult(USHAContext *, uint8_t Message_Digest[USHAMaxHashSize]);
-extern int USHABlockSize(enum SHAversion whichSha);
-extern int USHAHashSize(enum SHAversion whichSha);
-extern int USHAHashSizeBits(enum SHAversion whichSha);
+int USHAReset(USHAContext *, SHAversion whichSha);
+int USHAInput(USHAContext *, const uint8_t *bytes, unsigned int bytecount);
+int USHAFinalBits(USHAContext *, const uint8_t bits, unsigned int bitcount);
+int USHAResult(USHAContext *, uint8_t Message_Digest[USHAMaxHashSize]);
+int USHABlockSize(enum SHAversion whichSha);
+int USHAHashSize(enum SHAversion whichSha);
+int USHAHashSizeBits(enum SHAversion whichSha);
 
 /*
  * HMAC Keyed-Hashing for Message Authentication, RFC2104,
  * for all SHAs.
  * This interface allows a fixed-length text input to be used.
  */
-extern int hmac(SHAversion whichSha, /* which SHA algorithm to use */
+int hmac(SHAversion whichSha, /* which SHA algorithm to use */
     const unsigned char *text,     /* pointer to data stream */
     int text_len,                  /* length of data stream */
     const unsigned char *key,      /* pointer to authentication key */
@@ -240,11 +245,11 @@ extern int hmac(SHAversion whichSha, /* which SHA algorithm to use */
  * for all SHAs.
  * This interface allows any length of text input to be used.
  */
-extern int hmacReset(HMACContext *ctx, enum SHAversion whichSha, const unsigned char *key, int key_len);
-extern int hmacInput(HMACContext *ctx, const unsigned char *text, int text_len);
+int hmacReset(HMACContext *ctx, enum SHAversion whichSha, const unsigned char *key, int key_len);
+int hmacInput(HMACContext *ctx, const unsigned char *text, int text_len);
 
-extern int hmacFinalBits(HMACContext *ctx, const uint8_t bits, unsigned int bitcount);
-extern int hmacResult(HMACContext *ctx, uint8_t digest[USHAMaxHashSize]);
+int hmacFinalBits(HMACContext *ctx, const uint8_t bits, unsigned int bitcount);
+int hmacResult(HMACContext *ctx, uint8_t digest[USHAMaxHashSize]);
 
 
 #ifdef __cplusplus
