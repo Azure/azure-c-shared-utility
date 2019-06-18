@@ -10,13 +10,9 @@ set(${theseTestsName}_test_files
 
 set(${theseTestsName}_c_files
     ../../src/constbuffer_array.c
-    ../real_test_files/real_constbuffer.c
 )
 
-include_directories(../real_test_files)
-
 set(${theseTestsName}_h_files
-    ../real_test_files/real_constbuffer.h
 )
 
 build_c_test_artifacts(${theseTestsName} ON "tests/azure_c_shared_utility_tests")
