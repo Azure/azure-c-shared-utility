@@ -14,6 +14,7 @@
 #include "azure_c_shared_utility/xio.h"
 #include "azure_c_shared_utility/platform.h"
 #include "azure_c_shared_utility/tlsio.h"
+#include "azure_c_shared_utility/socketio.h"
 #include "azure_c_shared_utility/threadapi.h"
 #include "azure_c_shared_utility/shared_util_options.h"
 
@@ -200,14 +201,13 @@ void HTTPAPI_Deinit(void)
 /*Codes_SRS_HTTPAPI_COMPACT_21_010: [ The HTTPAPI_CreateConnection shall create an http connection to the host specified by the hostName parameter. ]*/
 HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
 {
-    return HTTPAPI_CreateConnection_With_Proxy(hostName, NULL, 0, NULL, NULL);
+    return HTTPAPI_CreateConnection_Advanced(hostName, 443, true, NULL, 0, NULL, NULL);
 }
 
-/*Codes_SRS_HTTPAPI_COMPACT_21_011: [ The HTTPAPI_CreateConnection_With_Proxy shall create an http connection to the host specified by the hostName parameter with proxy supported. ]*/
-HTTP_HANDLE HTTPAPI_CreateConnection_With_Proxy(const char* hostName, const char* proxyHost, int proxyPort, const char* proxyUsername, const char*proxyPassword)
+/*Codes_SRS_HTTPAPI_COMPACT_21_011: [ The HTTPAPI_CreateConnection_Advanced shall create an http connection to the host specified by the hostName/port/secure parameter with proxy supported. ]*/
+HTTP_HANDLE HTTPAPI_CreateConnection_Advanced(const char* hostName, int port, bool secure, const char* proxyHost, int proxyPort, const char* proxyUsername, const char*proxyPassword)
 {
     HTTP_HANDLE_DATA* http_instance;
-    TLSIO_CONFIG tlsio_config;
 
     if (hostName == NULL)
     {
@@ -231,38 +231,54 @@ HTTP_HANDLE HTTPAPI_CreateConnection_With_Proxy(const char* hostName, const char
         }
         else
         {
-            tlsio_config.hostname = hostName;
-            tlsio_config.port = 443;
-            tlsio_config.underlying_io_interface = NULL;
-            tlsio_config.underlying_io_parameters = NULL;
-
-            HTTP_PROXY_IO_CONFIG proxy_config;
-            if (proxyHost != NULL && strlen(proxyHost) > 0)
+            if (secure)
             {
-                tlsio_config.underlying_io_interface = http_proxy_io_get_interface_description();
-                if (tlsio_config.underlying_io_interface == NULL)
-                {
-                    LogError("Failed to get http proxy interface description.");
-                    free(http_instance);
-                    http_instance = NULL;
-                }
-                else
-                {
-                    proxy_config.hostname = hostName;
-                    proxy_config.port = 443;
-                    proxy_config.proxy_hostname = proxyHost;
-                    proxy_config.proxy_port = proxyPort;
-                    proxy_config.username = proxyUsername;
-                    proxy_config.password = proxyPassword;
+                TLSIO_CONFIG tlsio_config;
+                tlsio_config.hostname = hostName;
+                tlsio_config.port = port;
+                tlsio_config.underlying_io_interface = NULL;
+                tlsio_config.underlying_io_parameters = NULL;
 
-                    tlsio_config.underlying_io_parameters = &proxy_config;
+                HTTP_PROXY_IO_CONFIG proxy_config;
+                if (proxyHost != NULL && strlen(proxyHost) > 0)
+                {
+                    tlsio_config.underlying_io_interface = http_proxy_io_get_interface_description();
+                    if (tlsio_config.underlying_io_interface == NULL)
+                    {
+                        LogError("Failed to get http proxy interface description.");
+                        free(http_instance);
+                        http_instance = NULL;
+                    }
+                    else
+                    {
+                        proxy_config.hostname = hostName;
+                        proxy_config.port = port;
+                        proxy_config.proxy_hostname = proxyHost;
+                        proxy_config.proxy_port = proxyPort;
+                        proxy_config.username = proxyUsername;
+                        proxy_config.password = proxyPassword;
+
+                        tlsio_config.underlying_io_parameters = &proxy_config;
+                    }
                 }
+
+                if (http_instance != NULL)
+                {
+                    http_instance->xio_handle = xio_create(platform_get_default_tlsio(), (void*)&tlsio_config);
+                }
+            }
+            else
+            {
+                SOCKETIO_CONFIG socketio_config;
+                socketio_config.hostname = hostName;
+                socketio_config.port = port;
+                socketio_config.accepted_socket = NULL;
+
+                http_instance->xio_handle = xio_create(socketio_get_interface_description(), (void*)&socketio_config);
             }
 
             if (http_instance != NULL)
             {
-                http_instance->xio_handle = xio_create(platform_get_default_tlsio(), (void*)&tlsio_config);
-
                 /*Codes_SRS_HTTPAPI_COMPACT_21_016: [ If the HTTPAPI_CreateConnection failed to create the connection, it shall return NULL as the handle. ]*/
                 if (http_instance->xio_handle == NULL)
                 {
