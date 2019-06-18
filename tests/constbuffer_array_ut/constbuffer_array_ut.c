@@ -3,11 +3,9 @@
 #ifdef __cplusplus
 #include <cinttypes>
 #include <cstdlib>
-#include <cstdint>
 #else
 #include <inttypes.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <stdbool.h>
 #endif
 
@@ -32,9 +30,8 @@ static void my_gballoc_free(void* s)
 #define ENABLE_MOCKS
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/constbuffer.h"
+#include "../src/constbuffer.c"
 #undef ENABLE_MOCKS
-
-#include "real_constbuffer.h"
 
 #include "azure_c_shared_utility/constbuffer_array.h"
 
@@ -82,7 +79,7 @@ TEST_SUITE_INITIALIZE(suite_init)
     result = umocktypes_bool_register_types();
     ASSERT_ARE_EQUAL(int, 0, result, "umocktypes_bool_register_types");
 
-    REGISTER_CONSTBUFFER_GLOBAL_MOCK_HOOK();
+    REGISTER_GLOBAL_INTERFACE_HOOKS(constbuffer);
 
     REGISTER_UMOCK_ALIAS_TYPE(CONSTBUFFER_HANDLE, void*);
 
@@ -108,22 +105,22 @@ TEST_FUNCTION_INITIALIZE(method_init)
         ASSERT_FAIL("Could not acquire test serialization mutex.");
     }
 
-    TEST_CONSTBUFFER_HANDLE_1 = CONSTBUFFER_Create(&one, sizeof(char));
+    TEST_CONSTBUFFER_HANDLE_1 = UMOCK_REAL(CONSTBUFFER_Create)(&one, sizeof(char));
     ASSERT_IS_NOT_NULL(TEST_CONSTBUFFER_HANDLE_1);
 
-    TEST_CONSTBUFFER_HANDLE_2 = CONSTBUFFER_Create(two, sizeof(two));
+    TEST_CONSTBUFFER_HANDLE_2 = UMOCK_REAL(CONSTBUFFER_Create)(two, sizeof(two));
     ASSERT_IS_NOT_NULL(TEST_CONSTBUFFER_HANDLE_2);
 
-    TEST_CONSTBUFFER_HANDLE_3 = CONSTBUFFER_Create(three, sizeof(three));
+    TEST_CONSTBUFFER_HANDLE_3 = UMOCK_REAL(CONSTBUFFER_Create)(three, sizeof(three));
     ASSERT_IS_NOT_NULL(TEST_CONSTBUFFER_HANDLE_3);
 
-    TEST_CONSTBUFFER_HANDLE_4 = CONSTBUFFER_Create(four, sizeof(four));
+    TEST_CONSTBUFFER_HANDLE_4 = UMOCK_REAL(CONSTBUFFER_Create)(four, sizeof(four));
     ASSERT_IS_NOT_NULL(TEST_CONSTBUFFER_HANDLE_4);
 
-    TEST_CONSTBUFFER_HANDLE_5 = CONSTBUFFER_Create(five, sizeof(five));
+    TEST_CONSTBUFFER_HANDLE_5 = UMOCK_REAL(CONSTBUFFER_Create)(five, sizeof(five));
     ASSERT_IS_NOT_NULL(TEST_CONSTBUFFER_HANDLE_5);
 
-    TEST_CONSTBUFFER_HANDLE_6 = CONSTBUFFER_Create(six, sizeof(six));
+    TEST_CONSTBUFFER_HANDLE_6 = UMOCK_REAL(CONSTBUFFER_Create)(six, sizeof(six));
     ASSERT_IS_NOT_NULL(TEST_CONSTBUFFER_HANDLE_6);
 
     umock_c_reset_all_calls();
@@ -132,12 +129,12 @@ TEST_FUNCTION_INITIALIZE(method_init)
 
 TEST_FUNCTION_CLEANUP(method_cleanup)
 {
-    CONSTBUFFER_DecRef(TEST_CONSTBUFFER_HANDLE_6);
-    CONSTBUFFER_DecRef(TEST_CONSTBUFFER_HANDLE_5);
-    CONSTBUFFER_DecRef(TEST_CONSTBUFFER_HANDLE_4);
-    CONSTBUFFER_DecRef(TEST_CONSTBUFFER_HANDLE_3);
-    CONSTBUFFER_DecRef(TEST_CONSTBUFFER_HANDLE_2);
-    CONSTBUFFER_DecRef(TEST_CONSTBUFFER_HANDLE_1);
+    UMOCK_REAL(CONSTBUFFER_DecRef)(TEST_CONSTBUFFER_HANDLE_6);
+    UMOCK_REAL(CONSTBUFFER_DecRef)(TEST_CONSTBUFFER_HANDLE_5);
+    UMOCK_REAL(CONSTBUFFER_DecRef)(TEST_CONSTBUFFER_HANDLE_4);
+    UMOCK_REAL(CONSTBUFFER_DecRef)(TEST_CONSTBUFFER_HANDLE_3);
+    UMOCK_REAL(CONSTBUFFER_DecRef)(TEST_CONSTBUFFER_HANDLE_2);
+    UMOCK_REAL(CONSTBUFFER_DecRef)(TEST_CONSTBUFFER_HANDLE_1);
     umock_c_negative_tests_deinit();
     TEST_MUTEX_RELEASE(test_serialize_mutex);
 }
