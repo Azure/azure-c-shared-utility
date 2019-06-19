@@ -27,7 +27,7 @@ void real_free(void* ptr)
 }
 
 #include "testrunnerswitcher.h"
-#include "umock_c.h"
+#include "umock_c/umock_c.h"
 
 #define ENABLE_MOCKS
 #include "azure_c_shared_utility/gballoc.h"

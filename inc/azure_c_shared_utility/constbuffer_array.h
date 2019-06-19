@@ -3,15 +3,19 @@
 #ifndef CONSTBUFFER_ARRAY_H
 #define CONSTBUFFER_ARRAY_H
 
-#include "azure_c_shared_utility/constbuffer.h"
-
-#include "umock_c_prod.h"
-
 #ifdef __cplusplus
 #include <cstdint>
-extern "C" {
 #else
 #include <stdint.h>
+#include <stdbool.h>
+#endif
+
+#include "azure_c_shared_utility/constbuffer.h"
+
+#include "umock_c/umock_c_prod.h"
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 typedef struct CONSTBUFFER_ARRAY_HANDLE_DATA_TAG* CONSTBUFFER_ARRAY_HANDLE;
@@ -36,6 +40,9 @@ MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, constbuffer_array_get_buffer, CONSTBUFFE
 MOCKABLE_FUNCTION(, const CONSTBUFFER*, constbuffer_array_get_buffer_content, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle, uint32_t, buffer_index);
 MOCKABLE_FUNCTION(, int, constbuffer_array_get_all_buffers_size, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle, uint32_t*, all_buffers_size);
 MOCKABLE_FUNCTION(, const CONSTBUFFER_HANDLE*, constbuffer_array_get_const_buffer_handle_array, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle);
+
+/*compare*/
+MOCKABLE_FUNCTION(, bool, CONSTBUFFER_ARRAY_HANDLE_contain_same, CONSTBUFFER_ARRAY_HANDLE, left, CONSTBUFFER_ARRAY_HANDLE, right);
 
 #ifdef __cplusplus
 }

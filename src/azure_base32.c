@@ -2,7 +2,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include <stdlib.h>
-#include <stddef.h>
 #include <stdint.h>
 #include <ctype.h>
 #include "azure_c_shared_utility/buffer_.h"
@@ -10,7 +9,7 @@
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/strings.h"
 
-#include "azure_c_shared_utility/base32.h"
+#include "azure_c_shared_utility/azure_base32.h"
 
 static const unsigned char BASE32_EQUAL_SIGN = 32;
 
@@ -267,12 +266,12 @@ static BUFFER_HANDLE base32_decode_impl(const char* source)
     return result;
 }
 
-BUFFER_HANDLE Base32_Decode(STRING_HANDLE handle)
+BUFFER_HANDLE Azure_Base32_Decode(STRING_HANDLE handle)
 {
     BUFFER_HANDLE result;
     if (handle == NULL)
     {
-        /* Codes_SRS_BASE32_07_016: [ If source is NULL Base32_Decoder shall return NULL. ] */
+        /* Codes_SRS_BASE32_07_016: [ If source is NULL Azure_Base32_Decode shall return NULL. ] */
         LogError("invalid parameter handle");
         result = NULL;
     }
@@ -281,50 +280,50 @@ BUFFER_HANDLE Base32_Decode(STRING_HANDLE handle)
         const char* str_source = STRING_c_str(handle);
         if (str_source == NULL)
         {
-            /* Codes_SRS_BASE32_07_027: [ If the string in source value is NULL, Base32_Decoder shall return NULL. ] */
+            /* Codes_SRS_BASE32_07_027: [ If the string in source value is NULL, Azure_Base32_Decode shall return NULL. ] */
             LogError("NULL value specified in string");
             result = NULL;
         }
         else
         {
-            /* Codes_SRS_BASE32_07_018: [ Base32_Decoder shall call base32_decode_impl to decode the base64 value. ] */
+            /* Codes_SRS_BASE32_07_018: [ Azure_Base32_Decode shall call base32_decode_impl to decode the base64 value. ] */
             result = base32_decode_impl(str_source);
         }
     }
-    /* Codes_SRS_BASE32_07_017: [ On success Base32_Decoder shall return a BUFFER_HANDLE that contains the decoded bytes for source. ] */
+    /* Codes_SRS_BASE32_07_017: [ On success Azure_Base32_Decode shall return a BUFFER_HANDLE that contains the decoded bytes for source. ] */
     return result;
 }
 
-BUFFER_HANDLE Base32_Decode_String(const char* source)
+BUFFER_HANDLE Azure_Base32_Decode_String(const char* source)
 {
     BUFFER_HANDLE result;
     if (source == NULL)
     {
-        /* Codes_SRS_BASE32_07_008: [ If source is NULL Base32_Decoder_String shall return NULL. ] */
+        /* Codes_SRS_BASE32_07_008: [ If source is NULL Azure_Base32_Decode_String shall return NULL. ] */
         LogError("invalid parameter source=NULL");
         result = NULL;
     }
     else
     {
-        /* Codes_SRS_BASE32_07_020: [ Base32_Decoder_String shall call base32_decode_impl to decode the base64 value. ] */
+        /* Codes_SRS_BASE32_07_020: [ Azure_Base32_Decode_String shall call base32_decode_impl to decode the base64 value. ] */
         result = base32_decode_impl(source);
     }
-    /* Codes_SRS_BASE32_07_019: [ On success Base32_Decoder_String shall return a BUFFER_HANDLE that contains the decoded bytes for source. ] */
+    /* Codes_SRS_BASE32_07_019: [ On success Azure_Base32_Decode_String shall return a BUFFER_HANDLE that contains the decoded bytes for source. ] */
     return result;
 }
 
-char* Base32_Encode_Bytes(const unsigned char* source, size_t size)
+char* Azure_Base32_Encode_Bytes(const unsigned char* source, size_t size)
 {
     char* result;
     if (source == NULL)
     {
-        /* Codes_SRS_BASE32_07_004: [ If source is NULL Base32_Encode shall return NULL. ] */
+        /* Codes_SRS_BASE32_07_004: [ If source is NULL Azure_Base32_Encode_Bytes shall return NULL. ] */
         result = NULL;
         LogError("Failure: Invalid input parameter source");
     }
     else if (size == 0)
     {
-        /* Codes_SRS_BASE32_07_005: [ If size is 0 Base32_Encode shall return an empty string. ] */
+        /* Codes_SRS_BASE32_07_005: [ If size is 0 Azure_Base32_Encode_Bytes shall return an empty string. ] */
 		if ((result = malloc(1)) != NULL)
 		{
 			strcpy(result, "");
@@ -336,24 +335,24 @@ char* Base32_Encode_Bytes(const unsigned char* source, size_t size)
     }
     else
     {
-        /* Codes_SRS_BASE32_07_007: [ Base32_Encode_Bytes shall call into base32_Encode_impl to encode the source data. ] */
+        /* Codes_SRS_BASE32_07_007: [ Azure_Base32_Encode_Bytes shall call into base32_Encode_impl to encode the source data. ] */
         result = base32_encode_impl(source, size);
         if (result == NULL)
         {
-            /* Codes_SRS_BASE32_07_014: [ Upon failure Base32_Encode_Bytes shall return NULL. ] */
+            /* Codes_SRS_BASE32_07_014: [ Upon failure Azure_Base32_Encode_Bytes shall return NULL. ] */
             LogError("encoding of unsigned char failed.");
         }
     }
-    /* Codes_SRS_BASE32_07_006: [ If successful Base32_Encode shall return the base32 value of input. ] */
+    /* Codes_SRS_BASE32_07_006: [ If successful Azure_Base32_Encode_Bytes shall return the base32 value of input. ] */
     return result;
 }
 
-STRING_HANDLE Base32_Encode(BUFFER_HANDLE source)
+STRING_HANDLE Azure_Base32_Encode(BUFFER_HANDLE source)
 {
     STRING_HANDLE result;
     if (source == NULL)
     {
-        /* Codes_SRS_BASE32_07_001: [ If source is NULL Base32_Encode shall return NULL. ] */
+        /* Codes_SRS_BASE32_07_001: [ If source is NULL Azure_Base32_Encode shall return NULL. ] */
         result = NULL;
         LogError("Failure: Invalid input parameter");
     }
@@ -363,7 +362,7 @@ STRING_HANDLE Base32_Encode(BUFFER_HANDLE source)
         const unsigned char* input_value = BUFFER_u_char(source);
         if (input_value == NULL || input_len == 0)
         {
-            /* Codes_SRS_BASE32_07_015: [ If size is 0 Base32_Encode shall return an empty string. ] */
+            /* Codes_SRS_BASE32_07_015: [ If size is 0 Azure_Base32_Encode shall return an empty string. ] */
             result = STRING_new();
             if (result == NULL)
             {
@@ -372,27 +371,27 @@ STRING_HANDLE Base32_Encode(BUFFER_HANDLE source)
         }
         else
         {
-            /* Codes_SRS_BASE32_07_003: [ Base32_Encode shall call into base32_Encode_impl to encode the source data. ] */
+            /* Codes_SRS_BASE32_07_003: [ Azure_Base32_Encode shall call into base32_Encode_impl to encode the source data. ] */
             char* encoded = base32_encode_impl(input_value, input_len);
             if (encoded == NULL)
             {
-                /* Codes_SRS_BASE32_07_014: [ Upon failure base32_Encode shall return NULL. ] */
+                /* Codes_SRS_BASE32_07_014: [ Upon failure Azure_Base32_Encode shall return NULL. ] */
                 LogError("base32 encode implementation failed.");
                 result = NULL;
             }
             else
             {
-                /* Codes_SRS_BASE32_07_012: [ base32_Encode shall wrap the base32_Encode_impl result into a STRING_HANDLE. ] */
+                /* Codes_SRS_BASE32_07_012: [ Azure_Base32_Encode shall wrap the base32_Encode_impl result into a STRING_HANDLE. ] */
                 result = STRING_construct(encoded);
                 if (result == NULL)
                 {
-                    /* Codes_SRS_BASE32_07_014: [ Upon failure base32_Encode shall return NULL. ] */
+                    /* Codes_SRS_BASE32_07_014: [ Upon failure Azure_Base32_Encode shall return NULL. ] */
                     LogError("string construction failed.");
                 }
                 free(encoded);
             }
         }
     }
-    /* Codes_SRS_BASE32_07_002: [ If successful Base32_Encode shall return the base32 value of source. ] */
+    /* Codes_SRS_BASE32_07_002: [ If successful Azure_Base32_Encode shall return the base32 value of source. ] */
     return result;
 }

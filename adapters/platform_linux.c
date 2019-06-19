@@ -41,14 +41,13 @@ const IO_INTERFACE_DESCRIPTION* platform_get_default_tlsio(void)
     return tlsio_cyclonessl_get_interface_description();
 #elif USE_WOLFSSL
     return tlsio_wolfssl_get_interface_description();
-#elif USE_OPENSSL
-    return tlsio_openssl_get_interface_description();
 #elif USE_MBEDTLS
     return tlsio_mbedtls_get_interface_description();
 #elif USE_BEARSSL
     return tlsio_bearssl_get_interface_description();
 #else
-    return NULL;
+    // Default to openssl
+    return tlsio_openssl_get_interface_description();
 #endif
 }
 
@@ -71,7 +70,6 @@ STRING_HANDLE platform_get_platform_info(PLATFORM_INFO_OPTION options)
         LogInfo("WARNING: failed to find machine info.");
         result = STRING_construct("(native; Linux; undefined)");
     }
-
     return result;
 }
 

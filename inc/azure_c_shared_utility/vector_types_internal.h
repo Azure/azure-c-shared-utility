@@ -10,11 +10,20 @@
 #include <stddef.h>
 #endif
 
-typedef struct VECTOR_TAG
+#ifdef __cplusplus
+extern "C"
 {
-    void* storage;
-    size_t count;
-    size_t elementSize;
-} VECTOR;
+#endif
+
+    typedef struct VECTOR_TAG
+    {
+        void* storage;
+        size_t count;
+        size_t elementSize;
+    } VECTOR;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* VECTOR_TYPES_INTERNAL_H */

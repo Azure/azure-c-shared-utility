@@ -11,14 +11,14 @@
 #include <stdint.h>
 #endif
 
-#include "macro_utils.h"
+#include "azure_macro_utils/macro_utils.h"
 #include "testrunnerswitcher.h"
 #include "azure_c_shared_utility/uuid.h"
 
 static TEST_MUTEX_HANDLE g_testByTest;
 
-#include "umock_c.h"
-#include "umocktypes_stdint.h"
+#include "umock_c/umock_c.h"
+#include "umock_c/umocktypes_stdint.h"
 
 #include "azure_c_shared_utility/memory_data.h"
 
@@ -197,7 +197,7 @@ TEST_FUNCTION(write_uint8_t_succeeds)
     {
         ASSERT_ARE_EQUAL(uint8_t, j+1, destination[j]);
     }
-    
+
 }
 
 /* write_uint16_t */
@@ -308,7 +308,7 @@ TEST_FUNCTION(write_int8_t_succeeds_2)
 {
     ///arrange
     int8_t value = INT8_MIN;
-    
+
     unsigned char destination[8] = { 0 };
 
     ///act
@@ -316,7 +316,7 @@ TEST_FUNCTION(write_int8_t_succeeds_2)
 
     ///assert
     ASSERT_ARE_EQUAL(uint8_t, 0x80, destination[0]);
-    
+
 }
 
 /* write_int16_t */

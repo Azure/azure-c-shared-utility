@@ -24,7 +24,7 @@ static void my_gballoc_free(void* s)
 #endif
 
 #include "testrunnerswitcher.h"
-#include "umock_c.h"
+#include "umock_c/umock_c.h"
 
 #include "openssl/ssl.h"
 #include "openssl/x509.h"
@@ -36,13 +36,13 @@ static void my_gballoc_free(void* s)
 #include "openssl/evp.h"
 
 #include "azure_c_shared_utility/x509_openssl.h"
-#include "umocktypes_charptr.h"
-#include "umock_c_negative_tests.h"
+#include "umock_c/umocktypes_charptr.h"
+#include "umock_c/umock_c_negative_tests.h"
 
 #define ENABLE_MOCKS
 #include "azure_c_shared_utility/gballoc.h"
 
-#include "azure_c_shared_utility/umock_c_prod.h"
+#include "umock_c/umock_c_prod.h"
 
 #ifndef VALIDATED_PTR_ARG
 #define VALIDATED_PTR_ARG NULL

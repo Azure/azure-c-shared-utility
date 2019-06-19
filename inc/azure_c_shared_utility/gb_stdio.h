@@ -17,7 +17,11 @@
 */
 
 #ifndef GB_STDIO_INTERCEPT
+#ifdef __cplusplus
+#include <cstdio>
+#else
 #include <stdio.h>
+#endif
 #else
 
 /*source level intercepting of function calls*/
@@ -27,15 +31,18 @@
 #define ftell           ftell_never_called_never_implemented_always_forgotten
 #define fprintf         fprintf_never_called_never_implemented_always_forgotten
 
-#include "azure_c_shared_utility/umock_c_prod.h"
+#ifdef __cplusplus
+#include <cstdio>
+#else
+#include <stdio.h>
+#endif
+
+#include "umock_c/umock_c_prod.h"
 
 
 #ifdef __cplusplus
-#include <cstdio.h>
 extern "C"
 {
-#else
-#include <stdio.h>
 #endif
 
 #undef fopen

@@ -6,13 +6,16 @@
 
 #ifdef __cplusplus
 #include <cstddef>
-extern "C" {
 #else
 #include <stdbool.h>
 #include <stddef.h>
 #endif
 
-#include "azure_c_shared_utility/umock_c_prod.h"
+#include "umock_c/umock_c_prod.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 MOCKABLE_FUNCTION(, bool, utf8_checker_is_valid_utf8, const unsigned char*, utf8_str, size_t, length);
 

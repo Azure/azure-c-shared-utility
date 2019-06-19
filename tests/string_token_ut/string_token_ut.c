@@ -25,14 +25,14 @@ void real_free(void* ptr)
 }
 
 #include "testrunnerswitcher.h"
-#include "umock_c.h"
-#include "umock_c_negative_tests.h"
-#include "umocktypes_charptr.h"
-#include "umocktypes_stdint.h"
-#include "umocktypes_bool.h"
-#include "umocktypes.h"
-#include "umocktypes_c.h"
-#include "azure_c_shared_utility/macro_utils.h"
+#include "umock_c/umock_c.h"
+#include "umock_c/umock_c_negative_tests.h"
+#include "umock_c/umocktypes_charptr.h"
+#include "umock_c/umocktypes_stdint.h"
+#include "umock_c/umocktypes_bool.h"
+#include "umock_c/umocktypes.h"
+#include "umock_c/umocktypes_c.h"
+#include "azure_macro_utils/macro_utils.h"
 
 #define ENABLE_MOCKS
 #include "azure_c_shared_utility/gballoc.h"
@@ -190,7 +190,7 @@ BEGIN_TEST_SUITE(string_token_ut)
         size_t length;
         const char* delimiters[1];
         STRING_TOKEN_HANDLE handle;
-        
+
         length = strlen(string);
         delimiters[0] = "?";
 
@@ -285,7 +285,7 @@ BEGIN_TEST_SUITE(string_token_ut)
         const char* delimiters[1];
         char* string = "https://some.site.com/path/morepath/?prop1=site.com&prop2=/prop2/abc";
         size_t length = strlen(string);
-        
+
         delimiters[0] = "?";
 
         umock_c_reset_all_calls();
@@ -465,7 +465,7 @@ BEGIN_TEST_SUITE(string_token_ut)
         set_expected_calls_for_StringToken_GetFirst();
 
         handle = StringToken_GetFirst(string, length, delimiters, 2);
-        
+
         umock_c_reset_all_calls();
         set_expected_calls_for_get_delimiters_lengths();
         STRICT_EXPECTED_CALL(free(IGNORED_PTR_ARG)); // delimiters lengths
@@ -491,7 +491,7 @@ BEGIN_TEST_SUITE(string_token_ut)
         const char* delimiters[2];
         char* string = "https://some.site.com/path/morepath/?prop1=site.com&prop2=/prop2/abc";
         size_t length = strlen(string);
-        
+
         ASSERT_ARE_EQUAL(int, 0, umock_c_negative_tests_init());
 
         delimiters[0] = "https://";
@@ -665,7 +665,7 @@ BEGIN_TEST_SUITE(string_token_ut)
         char* string = "https://some.site.com/path/morepath/?prop1=site.com&prop2=/prop2/abc";
         size_t length = strlen(string);
 
-        
+
         delimiters[0] = "?";
 
         umock_c_reset_all_calls();
@@ -910,15 +910,15 @@ BEGIN_TEST_SUITE(string_token_ut)
         set_expected_calls_for_StringToken_GetNext();
         STRICT_EXPECTED_CALL(realloc(IGNORED_PTR_ARG, IGNORED_NUM_ARG));
         STRICT_EXPECTED_CALL(malloc(IGNORED_NUM_ARG));
-        
+
         set_expected_calls_for_StringToken_GetNext();
         STRICT_EXPECTED_CALL(realloc(IGNORED_PTR_ARG, IGNORED_NUM_ARG));
         STRICT_EXPECTED_CALL(malloc(IGNORED_NUM_ARG));
-        
+
         set_expected_calls_for_StringToken_GetNext();
         STRICT_EXPECTED_CALL(realloc(IGNORED_PTR_ARG, IGNORED_NUM_ARG));
         STRICT_EXPECTED_CALL(malloc(IGNORED_NUM_ARG));
-        
+
         STRICT_EXPECTED_CALL(free(IGNORED_PTR_ARG));
 
         // act

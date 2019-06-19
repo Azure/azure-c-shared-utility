@@ -4,19 +4,18 @@
 #ifndef CRT_ABSTRACTIONS_H
 #define CRT_ABSTRACTIONS_H
 
-#include "azure_c_shared_utility/umock_c_prod.h"
-
 #ifdef __cplusplus
 #include <cstdio>
 #include <cstring>
 #include <cerrno>
 #include <cmath>
-extern "C" {
 #else // __cplusplus
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
 #endif // __cplusplus
+
+#include "umock_c/umock_c_prod.h"
 
 #ifdef _MSC_VER
 
@@ -48,6 +47,10 @@ typedef bool _Bool;
 #endif // __STDC_VERSION__
 #endif //  _MSC_VER
 
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
+
 #ifndef HAS_STDBOOL
 #ifdef __cplusplus
 #define _Bool bool
@@ -75,15 +78,15 @@ typedef unsigned char bool;
 #define STRUNCATE       80
 #endif  /* !defined (STRUNCATE) */
 
-extern int strcpy_s(char* dst, size_t dstSizeInBytes, const char* src);
-extern int strcat_s(char* dst, size_t dstSizeInBytes, const char* src);
-extern int strncpy_s(char* dst, size_t dstSizeInBytes, const char* src, size_t maxCount);
-extern int sprintf_s(char* dst, size_t dstSizeInBytes, const char* format, ...);
+int strcpy_s(char* dst, size_t dstSizeInBytes, const char* src);
+int strcat_s(char* dst, size_t dstSizeInBytes, const char* src);
+int strncpy_s(char* dst, size_t dstSizeInBytes, const char* src, size_t maxCount);
+int sprintf_s(char* dst, size_t dstSizeInBytes, const char* format, ...);
 #endif // _MSC_VER || MINGW_HAS_SECURE_API
 
-extern unsigned long long strtoull_s(const char* nptr, char** endPtr, int base);
-extern float strtof_s(const char* nptr, char** endPtr);
-extern long double strtold_s(const char* nptr, char** endPtr);
+unsigned long long strtoull_s(const char* nptr, char** endPtr, int base);
+float strtof_s(const char* nptr, char** endPtr);
+long double strtold_s(const char* nptr, char** endPtr);
 
 #ifdef _MSC_VER
 #define stricmp _stricmp

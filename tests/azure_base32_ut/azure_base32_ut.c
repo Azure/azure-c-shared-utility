@@ -20,20 +20,20 @@ static void my_gballoc_free(void* ptr)
 }
 
 #include "testrunnerswitcher.h"
-#include "umock_c.h"
-#include "umocktypes_charptr.h"
-#include "umocktypes_stdint.h"
-#include "umock_c_negative_tests.h"
-#include "azure_c_shared_utility/macro_utils.h"
+#include "umock_c/umock_c.h"
+#include "umock_c/umocktypes_charptr.h"
+#include "umock_c/umocktypes_stdint.h"
+#include "umock_c/umock_c_negative_tests.h"
+#include "azure_macro_utils/macro_utils.h"
 
 #define ENABLE_MOCKS
 #include "azure_c_shared_utility/gballoc.h"
-#include "azure_c_shared_utility/umock_c_prod.h"
+#include "umock_c/umock_c_prod.h"
 #include "azure_c_shared_utility/strings.h"
 #include "azure_c_shared_utility/buffer_.h"
 #undef ENABLE_MOCKS
 
-#include "azure_c_shared_utility/base32.h"
+#include "azure_c_shared_utility/azure_base32.h"
 
 MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
@@ -142,7 +142,7 @@ static void my_STRING_delete(STRING_HANDLE h)
     my_gballoc_free((void*)h);
 }
 
-BEGIN_TEST_SUITE(base32_ut)
+BEGIN_TEST_SUITE(azure_base32_ut)
 
     TEST_SUITE_INITIALIZE(suite_init)
     {
@@ -198,7 +198,7 @@ BEGIN_TEST_SUITE(base32_ut)
         TEST_MUTEX_RELEASE(g_testByTest);
     }
 
-    /* Tests_SRS_BASE32_07_004: [ If source is NULL Base32_Encode shall return NULL. ] */
+    /* Tests_SRS_BASE32_07_004: [ If source is NULL Azure_Base32_Encode shall return NULL. ] */
     TEST_FUNCTION(Base32_Encode_Bytes_source_NULL)
     {
         char* result;
@@ -206,7 +206,7 @@ BEGIN_TEST_SUITE(base32_ut)
         //arrange
 
         //act
-        result = Base32_Encode_Bytes(NULL, 10);
+        result = Azure_Base32_Encode_Bytes(NULL, 10);
 
         //assert
         ASSERT_IS_NULL(result);
@@ -214,7 +214,7 @@ BEGIN_TEST_SUITE(base32_ut)
         //cleanup
     }
 
-    /* Tests_SRS_BASE32_07_005: [ If size is 0 Base32_Encode shall return an empty string. ] */
+    /* Tests_SRS_BASE32_07_005: [ If size is 0 Azure_Base32_Encode shall return an empty string. ] */
     TEST_FUNCTION(Base32_Encode_Bytes_len_is_0_success)
     {
         char* result;
@@ -222,7 +222,7 @@ BEGIN_TEST_SUITE(base32_ut)
         //arrange
 
         //act
-        result = Base32_Encode_Bytes((const unsigned char*)"", 0);
+        result = Azure_Base32_Encode_Bytes((const unsigned char*)"", 0);
 
         //assert
         ASSERT_ARE_EQUAL(char_ptr, "", result);
@@ -231,8 +231,8 @@ BEGIN_TEST_SUITE(base32_ut)
         free(result);
     }
 
-    /* Tests_SRS_BASE32_07_006: [ If successful Base32_Encode shall return the base32 value of input. ] */
-    /* Tests_SRS_BASE32_07_007: [ Base32_Encode_Bytes shall call into Base32_Encode_impl to encode the source data. ] */
+    /* Tests_SRS_BASE32_07_006: [ If successful Azure_Base32_Encode shall return the base32 value of input. ] */
+    /* Tests_SRS_BASE32_07_007: [ Azure_Base32_Encode_Bytes shall call into Base32_Encode_impl to encode the source data. ] */
     /* Tests_SRS_BASE32_07_009: [ base32_encode_impl shall allocate the buffer to the size of the encoding value. ] */
     /* Tests_SRS_BASE32_07_010: [ base32_encode_impl shall look through source and separate each block into 5 bit chunks ] */
     /* Tests_SRS_BASE32_07_011: [ base32_encode_impl shall then map the 5 bit chunks into one of the BASE32 values (a-z,2,3,4,5,6,7) values. ] */
@@ -249,9 +249,9 @@ BEGIN_TEST_SUITE(base32_ut)
         for (index = 0; index < num_elements; index++)
         {
             char tmp_msg[64];
-            sprintf(tmp_msg, "Base32_Encode_Bytes failure in test %lu", (unsigned long)index);
+            sprintf(tmp_msg, "Azure_Base32_Encode_Bytes failure in test %lu", (unsigned long)index);
 
-            result = Base32_Encode_Bytes(test_val_len[index].input_data, test_val_len[index].input_len);
+            result = Azure_Base32_Encode_Bytes(test_val_len[index].input_data, test_val_len[index].input_len);
 
             //assert
             ASSERT_ARE_EQUAL(char_ptr, test_val_len[index].base32_data, result, tmp_msg);
@@ -261,7 +261,7 @@ BEGIN_TEST_SUITE(base32_ut)
         }
     }
 
-    /* Tests_SRS_BASE32_07_001: [ If source is NULL Base32_Encode shall return NULL. ] */
+    /* Tests_SRS_BASE32_07_001: [ If source is NULL Azure_Base32_Encode shall return NULL. ] */
     TEST_FUNCTION(Base32_Encode_source_failed)
     {
         STRING_HANDLE result;
@@ -269,13 +269,13 @@ BEGIN_TEST_SUITE(base32_ut)
         //arrange
 
         //act
-        result = Base32_Encode(NULL);
+        result = Azure_Base32_Encode(NULL);
 
         //assert
         ASSERT_IS_NULL(result);
     }
 
-    /* Tests_SRS_BASE32_07_015: [ If size is 0 Base32_Encode shall return an empty string. ] */
+    /* Tests_SRS_BASE32_07_015: [ If size is 0 Azure_Base32_Encode shall return an empty string. ] */
     TEST_FUNCTION(Base32_Encode_source_len_0_failed)
     {
         STRING_HANDLE result;
@@ -290,15 +290,15 @@ BEGIN_TEST_SUITE(base32_ut)
         input_buff = (BUFFER_HANDLE)&zero_length;
 
         //act
-        result = Base32_Encode(input_buff);
+        result = Azure_Base32_Encode(input_buff);
 
         //assert
         ASSERT_IS_TRUE(TEST_STRING_HANDLE == result);
     }
 
-    /* Tests_SRS_BASE32_07_002: [ If successful Base32_Encode shall return the base32 value of source. ] */
-    /* Tests_SRS_BASE32_07_003: [ Base32_Encode shall call into Base32_Encode_impl to encode the source data. ] */
-    /* Tests_SRS_BASE32_07_012: [ Base32_Encode shall wrap the Base32_Encode_impl result into a STRING_HANDLE. ] */
+    /* Tests_SRS_BASE32_07_002: [ If successful Azure_Base32_Encode shall return the base32 value of source. ] */
+    /* Tests_SRS_BASE32_07_003: [ Azure_Base32_Encode shall call into Base32_Encode_impl to encode the source data. ] */
+    /* Tests_SRS_BASE32_07_012: [ Azure_Base32_Encode shall wrap the Base32_Encode_impl result into a STRING_HANDLE. ] */
     /* Tests_SRS_BASE32_07_009: [ base32_encode_impl shall allocate the buffer to the size of the encoding value. ] */
     /* Tests_SRS_BASE32_07_010: [ base32_encode_impl shall look through source and separate each block into 5 bit chunks ] */
     /* Tests_SRS_BASE32_07_011: [ base32_encode_impl shall then map the 5 bit chunks into one of the BASE32 values (a-z,2,3,4,5,6,7) values. ] */
@@ -316,10 +316,10 @@ BEGIN_TEST_SUITE(base32_ut)
         {
             BUFFER_HANDLE input_buff;
             char tmp_msg[64];
-            sprintf(tmp_msg, "Base32_Encode failure in test %lu", (unsigned long)index);
+            sprintf(tmp_msg, "Azure_Base32_Encode failure in test %lu", (unsigned long)index);
 
             input_buff = (BUFFER_HANDLE)&test_val_len[index];
-            result = Base32_Encode(input_buff);
+            result = Azure_Base32_Encode(input_buff);
 
             //assert
             ASSERT_ARE_EQUAL(char_ptr, test_val_len[index].base32_data, (const char*)result, tmp_msg);
@@ -329,9 +329,9 @@ BEGIN_TEST_SUITE(base32_ut)
         }
     }
 
-    /* Tests_SRS_BASE32_07_002: [ If successful Base32_Encode shall return the base32 value of source. ] */
-    /* Tests_SRS_BASE32_07_003: [ Base32_Encode shall call into Base32_Encode_impl to encode the source data. ] */
-    /* Tests_SRS_BASE32_07_012: [ Base32_Encode shall wrap the Base32_Encode_impl result into a STRING_HANDLE. ] */
+    /* Tests_SRS_BASE32_07_002: [ If successful Azure_Base32_Encode shall return the base32 value of source. ] */
+    /* Tests_SRS_BASE32_07_003: [ Azure_Base32_Encode shall call into Base32_Encode_impl to encode the source data. ] */
+    /* Tests_SRS_BASE32_07_012: [ Azure_Base32_Encode shall wrap the Base32_Encode_impl result into a STRING_HANDLE. ] */
     /* Tests_SRS_BASE32_07_009: [ base32_encode_impl shall allocate the buffer to the size of the encoding value. ] */
     /* Tests_SRS_BASE32_07_010: [ base32_encode_impl shall look through source and separate each block into 5 bit chunks ] */
     /* Tests_SRS_BASE32_07_011: [ base32_encode_impl shall then map the 5 bit chunks into one of the BASE32 values (a-z,2,3,4,5,6,7) values. ] */
@@ -351,7 +351,7 @@ BEGIN_TEST_SUITE(base32_ut)
         STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
         //act
-        result = Base32_Encode(input_buff);
+        result = Azure_Base32_Encode(input_buff);
 
         //assert
         ASSERT_ARE_EQUAL(char_ptr, test_val_len[0].base32_data, (const char*)result);
@@ -361,14 +361,14 @@ BEGIN_TEST_SUITE(base32_ut)
         my_STRING_delete(result);
     }
 
-    /* Codes_SRS_BASE32_07_008: [ If source is NULL Base32_Decode_String shall return NULL. ] */
+    /* Codes_SRS_BASE32_07_008: [ If source is NULL Azure_Base32_Decode_String shall return NULL. ] */
     TEST_FUNCTION(Base32_Decode_String_source_NULL_fail)
     {
         //arrange
         BUFFER_HANDLE result;
 
         //act
-        result = Base32_Decode_String(NULL);
+        result = Azure_Base32_Decode_String(NULL);
 
         //assert
         ASSERT_IS_NULL(result);
@@ -384,7 +384,7 @@ BEGIN_TEST_SUITE(base32_ut)
         BUFFER_HANDLE result;
 
         //act
-        result = Base32_Decode_String("invalid_string");
+        result = Azure_Base32_Decode_String("invalid_string");
 
         //assert
         ASSERT_IS_NULL(result);
@@ -406,9 +406,9 @@ BEGIN_TEST_SUITE(base32_ut)
         {
             char tmp_msg[64];
 
-            result = Base32_Decode_String(test_val_len[index].base32_data);
+            result = Azure_Base32_Decode_String(test_val_len[index].base32_data);
 
-            sprintf(tmp_msg, "Base32_Decode failure in test %lu", (unsigned long)index);
+            sprintf(tmp_msg, "Azure_Base32_Decode failure in test %lu", (unsigned long)index);
 
             //assert
             ASSERT_IS_NOT_NULL(result);
@@ -419,8 +419,8 @@ BEGIN_TEST_SUITE(base32_ut)
         }
     }
 
-    /* Codes_SRS_BASE32_07_020: [ Base32_Decode_String shall call base32_decode_impl to decode the base64 value. ] */
-    /* Codes_SRS_BASE32_07_019: [ On success Base32_Decode_String shall return a BUFFER_HANDLE that contains the decoded bytes for source. ] */
+    /* Codes_SRS_BASE32_07_020: [ Azure_Base32_Decode_String shall call base32_decode_impl to decode the base64 value. ] */
+    /* Codes_SRS_BASE32_07_019: [ On success Azure_Base32_Decode_String shall return a BUFFER_HANDLE that contains the decoded bytes for source. ] */
     TEST_FUNCTION(Base32_Decode_String_with_mocks_success)
     {
         //arrange
@@ -431,7 +431,7 @@ BEGIN_TEST_SUITE(base32_ut)
         STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
         //act
-        result = Base32_Decode_String(test_val_len[0].base32_data);
+        result = Azure_Base32_Decode_String(test_val_len[0].base32_data);
 
         //assert
         ASSERT_IS_NOT_NULL(result);
@@ -441,14 +441,14 @@ BEGIN_TEST_SUITE(base32_ut)
         BUFFER_delete(result);
     }
 
-    /* Codes_SRS_BASE32_07_016: [ If source is NULL Base32_Decode shall return NULL. ] */
+    /* Codes_SRS_BASE32_07_016: [ If source is NULL Azure_Base32_Decode shall return NULL. ] */
     TEST_FUNCTION(Base32_Decode_source_NULL_fail)
     {
         //arrange
         BUFFER_HANDLE result;
 
         //act
-        result = Base32_Decode(NULL);
+        result = Azure_Base32_Decode(NULL);
 
         //assert
         ASSERT_IS_NULL(result);
@@ -457,8 +457,8 @@ BEGIN_TEST_SUITE(base32_ut)
         //cleanup
     }
 
-    /* Codes_SRS_BASE32_07_017: [ On success Base32_Decode shall return a BUFFER_HANDLE that contains the decoded bytes for source. ] */
-    /* Codes_SRS_BASE32_07_018: [ Base32_Decode shall call base32_decode_impl to decode the base64 value. ] */
+    /* Codes_SRS_BASE32_07_017: [ On success Azure_Base32_Decode shall return a BUFFER_HANDLE that contains the decoded bytes for source. ] */
+    /* Codes_SRS_BASE32_07_018: [ Azure_Base32_Decode shall call base32_decode_impl to decode the base64 value. ] */
     TEST_FUNCTION(Base32_Decode_succees)
     {
         //arrange
@@ -473,7 +473,7 @@ BEGIN_TEST_SUITE(base32_ut)
         STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
         //act
-        result = Base32_Decode(input);
+        result = Azure_Base32_Decode(input);
 
         //assert
         ASSERT_IS_NOT_NULL(result);
@@ -485,7 +485,7 @@ BEGIN_TEST_SUITE(base32_ut)
         STRING_delete(input);
     }
 
-    /* Codes_SRS_BASE32_07_027: [ If the string in source value is NULL, Base32_Decode shall return NULL. ] */
+    /* Codes_SRS_BASE32_07_027: [ If the string in source value is NULL, Azure_Base32_Decode shall return NULL. ] */
     TEST_FUNCTION(Base32_Decode_STRING_c_str_NULL_fail)
     {
         //arrange
@@ -497,7 +497,7 @@ BEGIN_TEST_SUITE(base32_ut)
         STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG)).SetReturn(NULL);
 
         //act
-        result = Base32_Decode(input);
+        result = Azure_Base32_Decode(input);
 
         //assert
         ASSERT_IS_NULL(result);
@@ -507,4 +507,4 @@ BEGIN_TEST_SUITE(base32_ut)
         STRING_delete(input);
     }
 
-END_TEST_SUITE(base32_ut)
+END_TEST_SUITE(azure_base32_ut)

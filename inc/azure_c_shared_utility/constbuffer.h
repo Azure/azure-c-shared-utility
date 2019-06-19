@@ -4,17 +4,21 @@
 #ifndef CONSTBUFFER_H
 #define CONSTBUFFER_H
 
-#include "azure_c_shared_utility/buffer_.h"
-
 #ifdef __cplusplus
 #include <cstddef>
-extern "C"
-{
 #else
 #include <stddef.h>
+#include <stdbool.h>
 #endif
 
-#include "azure_c_shared_utility/umock_c_prod.h"
+#include "azure_c_shared_utility/buffer_.h"
+
+#include "umock_c/umock_c_prod.h"
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 /*this is the handle*/
 typedef struct CONSTBUFFER_HANDLE_DATA_TAG* CONSTBUFFER_HANDLE;
@@ -38,11 +42,15 @@ MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithMoveMemory, unsign
 
 MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithCustomFree, const unsigned char*, source, size_t, size, CONSTBUFFER_CUSTOM_FREE_FUNC, customFreeFunc, void*, customFreeFuncContext);
 
+MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromOffsetAndSize, CONSTBUFFER_HANDLE, handle, size_t, offset, size_t, size)
+
 MOCKABLE_FUNCTION(, void, CONSTBUFFER_IncRef, CONSTBUFFER_HANDLE, constbufferHandle);
 
 MOCKABLE_FUNCTION(, void, CONSTBUFFER_DecRef, CONSTBUFFER_HANDLE, constbufferHandle);
 
 MOCKABLE_FUNCTION(, const CONSTBUFFER*, CONSTBUFFER_GetContent, CONSTBUFFER_HANDLE, constbufferHandle);
+
+MOCKABLE_FUNCTION(, bool, CONSTBUFFER_HANDLE_contain_same, CONSTBUFFER_HANDLE, left, CONSTBUFFER_HANDLE, right);
 
 #ifdef __cplusplus
 }

@@ -21,13 +21,13 @@ static void my_gballoc_free(void* s)
     free(s);
 }
 
-#include "macro_utils.h"
+#include "azure_macro_utils/macro_utils.h"
 #include "testrunnerswitcher.h"
-#include "umock_c.h"
-#include "umocktypes_stdint.h"
-#include "umocktypes_charptr.h"
-#include "umocktypes_bool.h"
-#include "umock_c_negative_tests.h"
+#include "umock_c/umock_c.h"
+#include "umock_c/umocktypes_stdint.h"
+#include "umock_c/umocktypes_charptr.h"
+#include "umock_c/umocktypes_bool.h"
+#include "umock_c/umock_c_negative_tests.h"
 
 #define ENABLE_MOCKS
 #include "azure_c_shared_utility/gballoc.h"
@@ -1898,5 +1898,152 @@ TEST_FUNCTION(constbuffer_array_get_const_buffer_handle_array_with_array_with_2_
     constbuffer_array_dec_ref(afterAdd1);
     constbuffer_array_dec_ref(afterAdd2);
 }
+
+/*Tests_SRS_CONSTBUFFER_ARRAY_02_050: [ If left is NULL and right is NULL then CONSTBUFFER_ARRAY_HANDLE_contain_same shall return true. ]*/
+TEST_FUNCTION(CONSTBUFFER_ARRAY_HANDLE_contain_same_with_left_NULL_and_right_NULL_returns_true)
+{
+    ///arrange
+    bool result;
+
+    ///act
+    result = CONSTBUFFER_ARRAY_HANDLE_contain_same(NULL, NULL);
+
+    ///assert
+    ASSERT_IS_TRUE(result);
+}
+
+/*Tests_SRS_CONSTBUFFER_ARRAY_02_051: [ If left is NULL and right is not NULL then CONSTBUFFER_ARRAY_HANDLE_contain_same shall return false. ]*/
+TEST_FUNCTION(CONSTBUFFER_ARRAY_HANDLE_contain_same_with_left_NULL_and_right_non_NULL_returns_false)
+{
+    ///arrange
+    bool result;
+    CONSTBUFFER_ARRAY_HANDLE right = constbuffer_array_create(&TEST_CONSTBUFFER_HANDLE_1, 1);
+    ASSERT_IS_NOT_NULL(right);
+    umock_c_reset_all_calls();
+
+    ///act
+    result = CONSTBUFFER_ARRAY_HANDLE_contain_same(NULL, right);
+
+    ///assert
+    ASSERT_IS_FALSE(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    constbuffer_array_dec_ref(right);
+}
+
+/*Tests_SRS_CONSTBUFFER_ARRAY_02_052: [ If left is not NULL and right is NULL then CONSTBUFFER_ARRAY_HANDLE_contain_same shall return false. ]*/
+TEST_FUNCTION(CONSTBUFFER_ARRAY_HANDLE_contain_same_with_left_non_NULL_and_right_NULL_returns_false)
+{
+    ///arrange
+    bool result;
+    CONSTBUFFER_ARRAY_HANDLE left = constbuffer_array_create(&TEST_CONSTBUFFER_HANDLE_1, 1);
+    ASSERT_IS_NOT_NULL(left);
+    umock_c_reset_all_calls();
+
+    ///act
+    result = CONSTBUFFER_ARRAY_HANDLE_contain_same(left, NULL);
+
+    ///assert
+    ASSERT_IS_FALSE(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    constbuffer_array_dec_ref(left);
+}
+
+/*Tests_SRS_CONSTBUFFER_ARRAY_02_053: [ If the number of CONSTBUFFER_HANDLEs in left is different then the number of CONSTBUFFER_HANDLEs in right then CONSTBUFFER_ARRAY_HANDLE_contain_same shall return false. ]*/
+TEST_FUNCTION(CONSTBUFFER_ARRAY_HANDLE_contain_same_with_different_number_of_buffers_return_false)
+{
+    ///arrange
+    bool result;
+    CONSTBUFFER_ARRAY_HANDLE left = constbuffer_array_create(&TEST_CONSTBUFFER_HANDLE_1, 1);
+    ASSERT_IS_NOT_NULL(left);
+
+    CONSTBUFFER_HANDLE twoAndThree[2];
+    twoAndThree[0] = TEST_CONSTBUFFER_HANDLE_2;
+    twoAndThree[1] = TEST_CONSTBUFFER_HANDLE_3;
+    CONSTBUFFER_ARRAY_HANDLE right = constbuffer_array_create(twoAndThree, 2);
+    ASSERT_IS_NOT_NULL(right);
+    umock_c_reset_all_calls();
+
+    ///act
+    result = CONSTBUFFER_ARRAY_HANDLE_contain_same(left, right);
+
+    ///assert
+    ASSERT_IS_FALSE(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    constbuffer_array_dec_ref(left);
+    constbuffer_array_dec_ref(right);
+}
+
+/*Tests_SRS_CONSTBUFFER_ARRAY_02_054: [ If left and right CONSTBUFFER_HANDLEs at same index are different (as indicated by CONSTBUFFER_HANDLE_contain_same call) then CONSTBUFFER_ARRAY_HANDLE_contain_same shall return false. ]*/
+TEST_FUNCTION(CONSTBUFFER_ARRAY_HANDLE_contain_same_with_content_of_buffers_different_return_false)
+{
+    ///arrange
+    bool result;
+    CONSTBUFFER_HANDLE twoAndOne[2];
+    twoAndOne[0] = TEST_CONSTBUFFER_HANDLE_2;
+    twoAndOne[1] = TEST_CONSTBUFFER_HANDLE_1;
+    CONSTBUFFER_ARRAY_HANDLE left = constbuffer_array_create(twoAndOne, 2);
+    ASSERT_IS_NOT_NULL(left);
+
+    CONSTBUFFER_HANDLE twoAndThree[2];
+    twoAndThree[0] = TEST_CONSTBUFFER_HANDLE_2;
+    twoAndThree[1] = TEST_CONSTBUFFER_HANDLE_3;
+    CONSTBUFFER_ARRAY_HANDLE right = constbuffer_array_create(twoAndThree, 2);
+    ASSERT_IS_NOT_NULL(right);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(CONSTBUFFER_HANDLE_contain_same(TEST_CONSTBUFFER_HANDLE_2, TEST_CONSTBUFFER_HANDLE_2));
+    STRICT_EXPECTED_CALL(CONSTBUFFER_HANDLE_contain_same(TEST_CONSTBUFFER_HANDLE_1, TEST_CONSTBUFFER_HANDLE_3));
+
+    ///act
+    result = CONSTBUFFER_ARRAY_HANDLE_contain_same(left, right);
+
+    ///assert
+    ASSERT_IS_FALSE(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    constbuffer_array_dec_ref(left);
+    constbuffer_array_dec_ref(right);
+}
+
+/*Tests_SRS_CONSTBUFFER_ARRAY_02_055: [ CONSTBUFFER_ARRAY_HANDLE_contain_same shall return true. ]*/
+TEST_FUNCTION(CONSTBUFFER_ARRAY_HANDLE_contain_same_with_content_of_buffers_same_return_true)
+{
+    ///arrange
+    bool result;
+    CONSTBUFFER_HANDLE twoAndOne[2];
+    twoAndOne[0] = TEST_CONSTBUFFER_HANDLE_2;
+    twoAndOne[1] = TEST_CONSTBUFFER_HANDLE_1;
+    CONSTBUFFER_ARRAY_HANDLE left = constbuffer_array_create(twoAndOne, 2);
+    ASSERT_IS_NOT_NULL(left);
+
+    CONSTBUFFER_HANDLE alsoTwoAndOne[2];
+    alsoTwoAndOne[0] = TEST_CONSTBUFFER_HANDLE_2;
+    alsoTwoAndOne[1] = TEST_CONSTBUFFER_HANDLE_1;
+    CONSTBUFFER_ARRAY_HANDLE right = constbuffer_array_create(alsoTwoAndOne, 2);
+    ASSERT_IS_NOT_NULL(right);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(CONSTBUFFER_HANDLE_contain_same(TEST_CONSTBUFFER_HANDLE_2, TEST_CONSTBUFFER_HANDLE_2));
+    STRICT_EXPECTED_CALL(CONSTBUFFER_HANDLE_contain_same(TEST_CONSTBUFFER_HANDLE_1, TEST_CONSTBUFFER_HANDLE_1));
+
+    ///act
+    result = CONSTBUFFER_ARRAY_HANDLE_contain_same(left, right);
+
+    ///assert
+    ASSERT_IS_TRUE(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    constbuffer_array_dec_ref(left);
+    constbuffer_array_dec_ref(right);
+}
+
 
 END_TEST_SUITE(constbuffer_array_unittests)

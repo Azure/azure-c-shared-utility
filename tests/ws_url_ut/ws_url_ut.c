@@ -13,14 +13,14 @@
 #endif
 
 #include "testrunnerswitcher.h"
-#include "umock_c.h"
-#include "umock_c_negative_tests.h"
-#include "umocktypes_charptr.h"
-#include "umocktypes_stdint.h"
-#include "umocktypes_bool.h"
-#include "umocktypes.h"
-#include "umocktypes_c.h"
-#include "azure_c_shared_utility/macro_utils.h"
+#include "umock_c/umock_c.h"
+#include "umock_c/umock_c_negative_tests.h"
+#include "umock_c/umocktypes_charptr.h"
+#include "umock_c/umocktypes_stdint.h"
+#include "umock_c/umocktypes_bool.h"
+#include "umock_c/umocktypes.h"
+#include "umock_c/umocktypes_c.h"
+#include "azure_macro_utils/macro_utils.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -217,7 +217,7 @@ BEGIN_TEST_SUITE(ws_url_ut)
         umock_c_reset_all_calls();
         STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, url));
         STRICT_EXPECTED_CALL(StringToken_GetFirst(url + 6, strlen(url) - 6, IGNORED_PTR_ARG, 3));
-        
+
         // host
         STRICT_EXPECTED_CALL(StringToken_GetDelimiter(IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(StringToken_GetValue(IGNORED_PTR_ARG));
@@ -546,7 +546,7 @@ BEGIN_TEST_SUITE(ws_url_ut)
         STRICT_EXPECTED_CALL(StringToken_GetValue(IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(StringToken_GetLength(IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(StringToken_GetNext(IGNORED_PTR_ARG, IGNORED_PTR_ARG, 1));
-        
+
         ws_url = ws_url_create(url);
 
         umock_c_reset_all_calls();
@@ -612,7 +612,7 @@ BEGIN_TEST_SUITE(ws_url_ut)
         STRICT_EXPECTED_CALL(StringToken_GetValue(IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(StringToken_GetLength(IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(StringToken_GetNext(IGNORED_PTR_ARG, IGNORED_PTR_ARG, 3));
-        
+
         STRICT_EXPECTED_CALL(StringToken_GetDelimiter(IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(StringToken_Destroy(IGNORED_PTR_ARG));
 

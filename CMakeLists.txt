@@ -41,6 +41,7 @@ if(WIN32)
     option(use_wolfssl "set use_wolfssl to ON if wolfssl is to be used, set to OFF to not use wolfssl" OFF)
     option(use_bearssl "set use_bearssl to ON if BearSSL is to be used, set to OFF to not use BearSSL" OFF)
     option(use_etw "set use_etw to ON if ETW logging is to be used. Default is OFF" OFF)
+    option(logerror_captures_stack_traces "LogError will make a reasonable attempt to capture the stack trace at the time of calling LogError. Only available on Windows" OFF)
     option(use_socketio "set use_socketio to ON if socketio is to be included in the library, set to OFF if a different implementation will be provided" ON)
 else()
     option(use_schannel "set use_schannel to ON if schannel is to be used, set to OFF to not use schannel" OFF)
@@ -78,6 +79,16 @@ if(${use_etw})
     execute_process(COMMAND  ${CMAKE_CURRENT_LIST_DIR}/src/etw_provider_generate.cmd
         WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/src
     )
+endif()
+
+if(${logerror_captures_stack_traces})
+    #set a preprocessor option (LOGERROR_CAPTURES_STACK_TRACES) and add the files that provide the functionality
+    add_definitions(-DLOGERROR_CAPTURES_STACK_TRACES)
+    set(LOGGING_STACKTRACE_C_FILE ./src/logging_stacktrace.c)
+    set(LOGGING_STACKTRACE_H_FILE ./inc/azure_c_shared_utility/logging_stacktrace.h)
+else()
+    set(LOGGING_STACKTRACE_C_FILE)
+    set(LOGGING_STACKTRACE_H_FILE)
 endif()
 
 option(build_as_dynamic "build the C Shared libaries as shared"  OFF)
@@ -181,7 +192,7 @@ include_directories(${UMOCK_C_INC_FOLDER})
 
 #these are the C source files
 set(source_c_files
-    ./src/base32.c
+    ./src/azure_base32.c
     ./src/azure_base64.c
     ./src/buffer.c
     ./src/constbuffer_array.c
@@ -218,12 +229,16 @@ set(source_c_files
     ./adapters/agenttime.c
     ${CONDITION_C_FILE}
     ${LOCK_C_FILE}
+    ${SRW_LOCK_C_FILE}
+    ${TIMER_C_FILE}
+    ${STRING_UTILS_C_FILE}
     ${PLATFORM_C_FILE}
     ${SOCKETIO_C_FILE}
     ${TICKCOUTER_C_FILE}
     ${THREAD_C_FILE}
     ${UNIQUEID_C_FILE}
     ${ENVIRONMENT_VARIABLE_C_FILE}
+    ${LOGGING_STACKTRACE_C_FILE}
 )
 
 if(UNIX) #LINUX OR APPLE
@@ -296,7 +311,7 @@ endif()
 #these are the C headers
 set(source_h_files
     ./inc/azure_c_shared_utility/agenttime.h
-    ./inc/azure_c_shared_utility/base32.h
+    ./inc/azure_c_shared_utility/azure_base32.h
     ./inc/azure_c_shared_utility/azure_base64.h
     ./inc/azure_c_shared_utility/buffer_.h
     ./inc/azure_c_shared_utility/constbuffer_array.h
@@ -318,7 +333,6 @@ set(source_h_files
     ./inc/azure_c_shared_utility/http_proxy_io.h
     ./inc/azure_c_shared_utility/singlylinkedlist.h
     ./inc/azure_c_shared_utility/lock.h
-    ./inc/azure_c_shared_utility/macro_utils.h
     ./inc/azure_c_shared_utility/map.h
     ./inc/azure_c_shared_utility/optimize_size.h
     ./inc/azure_c_shared_utility/platform.h
@@ -328,17 +342,18 @@ set(source_h_files
     ./inc/azure_c_shared_utility/shared_util_options.h
     ./inc/azure_c_shared_utility/sha.h
     ./inc/azure_c_shared_utility/socketio.h
+    ./inc/azure_c_shared_utility/srw_lock.h
     ./inc/azure_c_shared_utility/stdint_ce6.h
     ./inc/azure_c_shared_utility/strings.h
     ./inc/azure_c_shared_utility/strings_types.h
     ./inc/azure_c_shared_utility/string_token.h
     ./inc/azure_c_shared_utility/string_tokenizer.h
     ./inc/azure_c_shared_utility/string_tokenizer_types.h
+    ./inc/azure_c_shared_utility/string_utils.h
     ./inc/azure_c_shared_utility/tlsio_options.h
     ./inc/azure_c_shared_utility/tickcounter.h
     ./inc/azure_c_shared_utility/threadapi.h
     ./inc/azure_c_shared_utility/xio.h
-    ./inc/azure_c_shared_utility/umock_c_prod.h
     ./inc/azure_c_shared_utility/uniqueid.h
     ./inc/azure_c_shared_utility/uuid.h
     ./inc/azure_c_shared_utility/urlencode.h
@@ -350,6 +365,7 @@ set(source_h_files
     ./inc/azure_c_shared_utility/tlsio.h
     ./inc/azure_c_shared_utility/optionhandler.h
     ./inc/azure_c_shared_utility/memory_data.h
+    ${LOGGING_STACKTRACE_H_FILE}
 )
 
 if(UNIX) #LINUX OR APPLE
@@ -466,6 +482,10 @@ endif()
 
 set(aziotsharedutil_target_libs)
 
+if(${logerror_captures_stack_traces})
+    set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} Dbghelp.lib)
+endif()
+
 if(${use_http})
     if(WIN32)
         set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} crypt32 winhttp)
@@ -578,7 +598,6 @@ if(${build_as_dynamic})
     target_link_libraries(aziotsharedutil_dll ${aziotsharedutil_target_libs})
 endif()
 
-# do not add or build any tests of the dependencies
 set(original_run_e2e_tests ${run_e2e_tests})
 set(original_run_unittests ${run_unittests})
 set(original_run_int_tests ${run_int_tests})
@@ -587,12 +606,12 @@ set(run_e2e_tests OFF)
 set(run_unittests OFF)
 set(run_int_tests OFF)
 
-if (${original_run_unittests})
-    include("dependencies-test.cmake")
-    add_subdirectory(testtools)
-endif()
+include(dependencies.cmake)
 
-if (${run_unittests} OR ${run_e2e_tests})
+if (${original_run_unittests} OR ${original_run_e2e_tests})
+    include("${CMAKE_CURRENT_LIST_DIR}/dependencies-test.cmake")
+    add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/testtools)
+
     setTargetBuildProperties(ctest)
     setTargetBuildProperties(testrunnerswitcher)
     setTargetBuildProperties(umock_c)
@@ -601,6 +620,9 @@ endif()
 set(run_e2e_tests ${original_run_e2e_tests})
 set(run_unittests ${original_run_unittests})
 set(run_int_tests ${original_run_int_tests})
+
+include_directories(${MACRO_UTILS_INC_FOLDER})
+include_directories(${UMOCK_C_INC_FOLDER})
 
 if (${run_unittests} OR ${run_int_tests})
     add_subdirectory(tests)
@@ -633,66 +655,58 @@ endif()
 # Set CMAKE_INSTALL_* if not defined
 include(GNUInstallDirs)
 
-if(${use_installed_dependencies})
 
-    if(NOT DEFINED CMAKE_INSTALL_LIBDIR)
-        set(CMAKE_INSTALL_LIBDIR "lib")
-    endif()
-
-    # Install Azure C Shared Utility
-    set(package_location "cmake")
-
-    if(${build_as_dynamic})
-        set(targets aziotsharedutil aziotsharedutil_dll)
-    else(${build_as_dynamic})
-        set(targets aziotsharedutil)
-    endif(${build_as_dynamic})
-
-    install (TARGETS ${targets} EXPORT aziotsharedutilTargets
-        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR}/../bin
-        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azureiot
-    )
-    install (FILES ${source_h_files} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azureiot/azure_c_shared_utility)
-    install (FILES ${micromock_h_files_full_path} ${INSTALL_H_FILES} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azureiot)
-
-    include(CMakePackageConfigHelpers)
-
-    write_basic_package_version_file(
-        "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}/${PROJECT_NAME}ConfigVersion.cmake"
-        VERSION ${C_SHARED_VERSION}
-        COMPATIBILITY SameMajorVersion
-    )
-
-    configure_file("configs/${PROJECT_NAME}Config.cmake"
-        "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}/${PROJECT_NAME}Config.cmake"
-        COPYONLY
-    )
-
-    install(EXPORT aziotsharedutilTargets
-        FILE
-            "${PROJECT_NAME}Targets.cmake"
-        DESTINATION
-            ${package_location}
-    )
-    install(
-        FILES
-            "configs/${PROJECT_NAME}Config.cmake"
-            "configs/${PROJECT_NAME}Functions.cmake"
-            "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}/${PROJECT_NAME}ConfigVersion.cmake"
-        DESTINATION
-            ${package_location}
-    )
-else()
-    set(install_staticlibs
-        aziotsharedutil
-    )
-    install(FILES ${source_h_files}
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azure_c_shared_utility)
-    install(TARGETS ${install_staticlibs}
-        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
+# Install Azure C Shared Utility
+if(NOT DEFINED CMAKE_INSTALL_LIBDIR)
+    set(CMAKE_INSTALL_LIBDIR "lib")
 endif()
 
+set(package_location "cmake")
+
+if(${build_as_dynamic})
+    set(targets aziotsharedutil aziotsharedutil_dll)
+else(${build_as_dynamic})
+    set(targets aziotsharedutil)
+endif(${build_as_dynamic})
+
+install (TARGETS ${targets} EXPORT aziotsharedutilTargets
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR}/../bin
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azureiot
+)
+install (FILES ${source_h_files} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azureiot/azure_c_shared_utility)
+install (FILES ${micromock_h_files_full_path} ${INSTALL_H_FILES} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azureiot)
+
+include(CMakePackageConfigHelpers)
+
+write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}/${PROJECT_NAME}ConfigVersion.cmake"
+    VERSION ${C_SHARED_VERSION}
+    COMPATIBILITY SameMajorVersion
+)
+
+configure_file("configs/${PROJECT_NAME}Config.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}/${PROJECT_NAME}Config.cmake"
+    COPYONLY
+)
+
+install(EXPORT aziotsharedutilTargets
+    FILE
+        "${PROJECT_NAME}Targets.cmake"
+    DESTINATION
+        ${package_location}
+)
+
+install(
+FILES
+    "configs/${PROJECT_NAME}Config.cmake"
+    "configs/${PROJECT_NAME}Functions.cmake"
+    "configs/azure_iot_build_rules.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}/${PROJECT_NAME}ConfigVersion.cmake"
+DESTINATION
+    ${package_location}
+)
+
 compileTargetAsC99(aziotsharedutil)
+

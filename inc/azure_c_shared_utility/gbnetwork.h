@@ -4,24 +4,25 @@
 #ifndef GBNETWORK_H
 #define GBNETWORK_H
 
-#include "azure_c_shared_utility/umock_c_prod.h"
-
 #ifdef __cplusplus
-#include <cstddef>
 #include <cstdlib>
 #include <cstdint>
-extern "C"
-{
 #else
-#include <stddef.h>
 #include <stdlib.h>
 #include <stdint.h>
 #endif
+
+#include "umock_c/umock_c_prod.h"
 
 #ifdef WIN32
     #include <winsock2.h>
 #else
     #include <sys/socket.h>
+#endif
+
+#ifdef __cplusplus
+extern "C"
+{
 #endif
 
 /* all translation units that need network measurement need to have GB_MEASURE_NETWORK_FOR_THIS defined */

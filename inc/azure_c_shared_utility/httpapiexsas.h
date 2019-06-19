@@ -8,13 +8,12 @@
 #include "azure_c_shared_utility/buffer_.h"
 #include "azure_c_shared_utility/httpheaders.h"
 #include "azure_c_shared_utility/httpapiex.h"
-#include "azure_c_shared_utility/umock_c_prod.h"
+#include "umock_c/umock_c_prod.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-
+    
 typedef struct HTTPAPIEX_SAS_STATE_TAG* HTTPAPIEX_SAS_HANDLE;
 
 MOCKABLE_FUNCTION(, HTTPAPIEX_SAS_HANDLE, HTTPAPIEX_SAS_Create, STRING_HANDLE, key, STRING_HANDLE, uriResource, STRING_HANDLE, keyName);

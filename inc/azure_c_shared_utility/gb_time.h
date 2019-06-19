@@ -17,7 +17,11 @@
 */
 
 #ifndef GB_TIME_INTERCEPT
+#ifdef __cplusplus
+#include <ctime>
+#else
 #include <time.h>
+#endif
 #else
 
 /*source level intercepting of function calls*/
@@ -26,14 +30,17 @@
 #define strftime                strftime_never_called_never_implemented_always_forgotten
 
 #ifdef __cplusplus
-#include <ctime.h>
-extern "C"
-{
+#include <ctime>
 #else
 #include <time.h>
 #endif
 
-#include "azure_c_shared_utility/umock_c_prod.h"
+#include "umock_c/umock_c_prod.h"
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 #undef time
 #define time gb_time

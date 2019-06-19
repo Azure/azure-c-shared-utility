@@ -27,8 +27,8 @@ static const LOCK_HANDLE TEST_LOCK_HANDLE = (LOCK_HANDLE)0x4244;
 
 #define ENABLE_MOCKS
 
-#include "umock_c.h"
-#include "umock_c_prod.h"
+#include "umock_c/umock_c.h"
+#include "umock_c/umock_c_prod.h"
 
 //TEST_DEFINE_ENUM_TYPE(LOCK_RESULT, LOCK_RESULT_VALUES);
 IMPLEMENT_UMOCK_C_ENUM_TYPE(LOCK_RESULT, LOCK_RESULT_VALUES);

@@ -13,7 +13,7 @@ extern "C" {
 #endif /* __cplusplus */
 
 #define CONFIG_FREERTOS_HZ 100
-#include "azure_c_shared_utility/umock_c_prod.h"
+#include "umock_c/umock_c_prod.h"
 
 MOCKABLE_FUNCTION(, uint32_t, xTaskGetTickCount);
 

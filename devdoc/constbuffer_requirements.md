@@ -36,11 +36,15 @@ MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithMoveMemory, unsign
 
 MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithCustomFree, const unsigned char*, source, size_t, size, CONSTBUFFER_CUSTOM_FREE_FUNC, customFreeFunc, void*, customFreeFuncContext);
 
+MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromOffsetAndSize, CONSTBUFFER_HANDLE, handle, size_t, offset, size_t, size)
+
 MOCKABLE_FUNCTION(, void, CONSTBUFFER_IncRef, CONSTBUFFER_HANDLE, constbufferHandle);
 
 MOCKABLE_FUNCTION(, void, CONSTBUFFER_DecRef, CONSTBUFFER_HANDLE, constbufferHandle);
 
 MOCKABLE_FUNCTION(, const CONSTBUFFER*, CONSTBUFFER_GetContent, CONSTBUFFER_HANDLE, constbufferHandle);
+
+MOCKABLE_FUNCTION(, bool, CONSTBUFFER_HANDLE_contain_same, CONSTBUFFER_HANDLE, left, CONSTBUFFER_HANDLE, right);
 ```
 
 ###  CONSTBUFFER_Create
@@ -114,6 +118,30 @@ The memory has to be free by calling the custom free function passed as argument
 
 **SRS_CONSTBUFFER_01_011: [** If any error occurs, `CONSTBUFFER_CreateWithMoveMemory` shall fail and return NULL. **]**
 
+### CONSTBUFFER_CreateFromOffsetAndSize
+```c 
+MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromOffsetAndSize, CONSTBUFFER_HANDLE, handle, size_t, offset, size_t, size)
+```
+
+Given an existing `handle` `CONSTBUFFER_CreateFromOffsetAndSize` creates another `CONSTBUFFER_HANDLE` from `size` bytes  `handle` starting at `offset`.
+
+**SRS_CONSTBUFFER_02_025: [** If `handle` is `NULL` then `CONSTBUFFER_CreateFromOffsetAndSize` shall fail and return `NULL`. **]**
+
+**SRS_CONSTBUFFER_02_033: [** If `offset` is greater than `handles`'s size then `CONSTBUFFER_CreateFromOffsetAndSize` shall fail and return `NULL`. **]**
+
+**SRS_CONSTBUFFER_02_027: [** If `offset` + `size` exceed `handles`'s size then `CONSTBUFFER_CreateFromOffsetAndSize` shall fail and return `NULL`. **]**
+
+**SRS_CONSTBUFFER_02_028: [** `CONSTBUFFER_CreateFromOffsetAndSize` shall allocate memory for a new `CONSTBUFFER_HANDLE`'s content. **]**
+
+**SRS_CONSTBUFFER_02_029: [** `CONSTBUFFER_CreateFromOffsetAndSize` shall set the ref count of the newly created `CONSTBUFFER_HANDLE` to the initial value. **]**
+
+**SRS_CONSTBUFFER_02_030: [** `CONSTBUFFER_CreateFromOffsetAndSize` shall increment the reference count of `handle`. **]**
+
+**SRS_CONSTBUFFER_02_031: [** `CONSTBUFFER_CreateFromOffsetAndSize` shall succeed and return a non-`NULL` value. **]**
+
+**SRS_CONSTBUFFER_02_032: [** If there are any failures then `CONSTBUFFER_CreateFromOffsetAndSize` shall fail and return `NULL`. **]**
+
+
 ### CONSTBUFFER_IncRef
 ```c
 MOCKABLE_FUNCTION(, void, CONSTBUFFER_IncRef, CONSTBUFFER_HANDLE, constbufferHandle);
@@ -134,6 +162,8 @@ MOCKABLE_FUNCTION(, void, CONSTBUFFER_DecRef, CONSTBUFFER_HANDLE, constbufferHan
 
 **SRS_CONSTBUFFER_01_012: [** If the buffer was created by calling `CONSTBUFFER_CreateWithCustomFree`, the `customFreeFunc` function shall be called to free the memory, while passed `customFreeFuncContext` as argument. **]**
 
+**SRS_CONSTBUFFER_02_024: [** If the `constbufferHandle` was created by calling `CONSTBUFFER_CreateFromOffsetAndSize` then `CONSTBUFFER_DecRef` shall decrement the ref count of the original `handle` passed to `CONSTBUFFER_CreateFromOffsetAndSize`. **]**
+
 ### CONSTBUFFER_GetContent
 ```c
 MOCKABLE_FUNCTION(, const CONSTBUFFER*, CONSTBUFFER_GetContent, CONSTBUFFER_HANDLE, constbufferHandle);
@@ -141,3 +171,22 @@ MOCKABLE_FUNCTION(, const CONSTBUFFER*, CONSTBUFFER_GetContent, CONSTBUFFER_HAND
 **SRS_CONSTBUFFER_02_011: [** If `constbufferHandle` is NULL then CONSTBUFFER_GetContent shall return NULL. **]**
 
 **SRS_CONSTBUFFER_02_012: [** Otherwise, `CONSTBUFFER_GetContent` shall return a `const CONSTBUFFER*` that matches byte by byte the original bytes used to created the const buffer and has the same length. **]**
+
+### CONSTBUFFER_HANDLE_contain_same
+```c
+MOCKABLE_FUNCTION(, bool, CONSTBUFFER_HANDLE_contain_same, CONSTBUFFER_HANDLE, left, CONSTBUFFER_HANDLE, right);
+```
+
+`CONSTBUFFER_HANDLE_contain_same` returns `true` if `left` and `right` have the same content.
+
+**SRS_CONSTBUFFER_02_018: [** If `left` is `NULL` and `right` is `NULL` then `CONSTBUFFER_HANDLE_contain_same` shall return `true`. **]**
+
+**SRS_CONSTBUFFER_02_019: [** If `left` is `NULL` and `right` is not `NULL` then `CONSTBUFFER_HANDLE_contain_same` shall return `false`. **]**
+
+**SRS_CONSTBUFFER_02_020: [** If `left` is not `NULL` and `right` is `NULL` then `CONSTBUFFER_HANDLE_contain_same` shall return `false`. **]**
+
+**SRS_CONSTBUFFER_02_021: [** If `left`'s size is different than `right`'s size then `CONSTBUFFER_HANDLE_contain_same` shall return `false`. **]**
+
+**SRS_CONSTBUFFER_02_022: [** If `left`'s buffer is contains different bytes than `rights`'s buffer then `CONSTBUFFER_HANDLE_contain_same` shall return `false`. **]**
+
+**SRS_CONSTBUFFER_02_023: [** `CONSTBUFFER_HANDLE_contain_same` shall return `true`. **]**

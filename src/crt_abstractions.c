@@ -4,7 +4,6 @@
 #define __STDC_WANT_LIB_EXT1__ 1
 
 #include <stdlib.h>
-#include <stddef.h>
 #include <stdarg.h>
 #include <string.h>
 #include <limits.h>

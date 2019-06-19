@@ -4,6 +4,15 @@
 #ifndef STRINGS_TYPES_H
 #define STRINGS_TYPES_H
 
-typedef struct STRING_TAG* STRING_HANDLE;
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+    typedef struct STRING_TAG* STRING_HANDLE;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  /*STRINGS_TYPES_H*/

@@ -1,37 +1,39 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-/** @file base64.h
+/** @file azure_base64.h
 *    @brief Prototypes for functions related to encoding/decoding
 *    a @c buffer using standard base64 encoding.
 */
 
-#ifndef BASE64_H
-#define BASE64_H
-
-#include "azure_c_shared_utility/strings.h"
-#include "azure_c_shared_utility/buffer_.h"
+#ifndef AZURE_BASE64_H
+#define AZURE_BASE64_H
 
 #ifdef __cplusplus
 #include <cstddef>
-extern "C" {
 #else
 #include <stddef.h>
 #endif
 
-#include "azure_c_shared_utility/umock_c_prod.h"
+#include "azure_c_shared_utility/strings.h"
+#include "azure_c_shared_utility/buffer_.h"
 
+#include "umock_c/umock_c_prod.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @brief    Base64 encodes a buffer and returns the resulting string.
  *
  * @param    input    The buffer that needs to be base64 encoded.
  *
- *             Base64_Encode takes as a parameter a pointer to a BUFFER. If @p input is @c NULL then
- *             @c Base64_Encode returns @c NULL. The size of the BUFFER pointed to by @p input may
+ *             Azure_Base64_Encode takes as a parameter a pointer to a BUFFER. If @p input is @c NULL then
+ *             @c Azure_Base64_Encode returns @c NULL. The size of the BUFFER pointed to by @p input may
  *             be zero. If when allocating memory to produce the encoding a failure occurs, then @c
- *             Base64_Encode returns @c NULL. Otherwise
- *             @c Base64_Encode returns a pointer to a STRING. That string contains the
+ *             Azure_Base64_Encode returns @c NULL. Otherwise
+ *             @c Azure_Base64_Encode returns a pointer to a STRING. That string contains the
  *             base 64 encoding of the @p input. This encoding of @p input will not contain embedded
  *             line feeds.
  *
@@ -47,11 +49,11 @@ MOCKABLE_FUNCTION(, STRING_HANDLE, Azure_Base64_Encode, BUFFER_HANDLE, input);
  *
  *             This function produces a @c STRING_HANDLE containing the base64 encoding of the
  *             buffer pointed to by @p source, having the size as given by
- *             @p size. If @p source is @c NULL then @c Base64_Encode_Bytes returns @c NULL
- *             If @p source is not @c NULL and @p size is zero, then @c Base64_Encode_Bytes produces
- *             an empty @c STRING_HANDLE. Otherwise, @c Base64_Encode_Bytes produces a
+ *             @p size. If @p source is @c NULL then @c Azure_Base64_Encode_Bytes returns @c NULL
+ *             If @p source is not @c NULL and @p size is zero, then @c Azure_Base64_Encode_Bytes produces
+ *             an empty @c STRING_HANDLE. Otherwise, @c Azure_Base64_Encode_Bytes produces a
  *             @c STRING_HANDLE containing the Base64 representation of the buffer. In case of
- *             any errors, @c Base64_Encode_Bytes returns @c NULL.].
+ *             any errors, @c Azure_Base64_Encode_Bytes returns @c NULL.].
  *
  * @return    @c NULL in case an error occurs or a @c STRING_HANDLE containing the base64 encoding
  *             of @p input.
@@ -80,4 +82,4 @@ MOCKABLE_FUNCTION(, BUFFER_HANDLE, Azure_Base64_Decode, const char*, source);
 }
 #endif
 
-#endif /* BASE64_H */
+#endif /* AZURE_BASE64_H */

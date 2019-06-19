@@ -3,14 +3,14 @@
 
 cmake_minimum_required(VERSION 2.8.11)
 
-set(theseTestsName base32_ut)
+set(theseTestsName azure_base32_ut)
 
 set(${theseTestsName}_test_files
     ${theseTestsName}.c
 )
 
 set(${theseTestsName}_c_files
-    ../../src/base32.c
+    ../../src/azure_base32.c
 )
 
 set(${theseTestsName}_h_files

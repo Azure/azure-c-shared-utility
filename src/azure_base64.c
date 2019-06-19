@@ -2,9 +2,8 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include <stdlib.h>
-#include "azure_c_shared_utility/gballoc.h"
-#include <stddef.h>
 #include <stdint.h>
+#include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/azure_base64.h"
 #include "azure_c_shared_utility/xlogging.h"
 
@@ -241,12 +240,12 @@ static STRING_HANDLE Base64_Encode_Internal(const unsigned char* source, size_t 
     size_t currentPosition = 0;
     neededSize += (size == 0) ? (0) : ((((size - 1) / 3) + 1) * 4);
     neededSize += 1; /*+1 because \0 at the end of the string*/
-    /*Codes_SRS_BASE64_06_006: [If when allocating memory to produce the encoding a failure occurs then Base64_Encode shall return NULL.]*/
+    /*Codes_SRS_BASE64_06_006: [If when allocating memory to produce the encoding a failure occurs then Azure_Base64_Encode shall return NULL.]*/
     encoded = (char*)malloc(neededSize);
     if (encoded == NULL)
     {
         result = NULL;
-        LogError("Base64_Encode:: Allocation failed.");
+        LogError("Azure_Base64_Encode:: Allocation failed.");
     }
     else
     {
@@ -302,12 +301,12 @@ static STRING_HANDLE Base64_Encode_Internal(const unsigned char* source, size_t 
 
         /*null terminating the string*/
         encoded[destinationPosition] = '\0';
-        /*Codes_SRS_BASE64_06_007: [Otherwise Base64_Encode shall return a pointer to STRING, that string contains the base 64 encoding of input.]*/
+        /*Codes_SRS_BASE64_06_007: [Otherwise Azure_Base64_Encode shall return a pointer to STRING, that string contains the base 64 encoding of input.]*/
         result = STRING_new_with_memory(encoded);
         if (result == NULL)
         {
             free(encoded);
-            LogError("Base64_Encode:: Allocation failed for return value.");
+            LogError("Azure_Base64_Encode:: Allocation failed for return value.");
         }
     }
     return result;
@@ -316,12 +315,12 @@ static STRING_HANDLE Base64_Encode_Internal(const unsigned char* source, size_t 
 STRING_HANDLE Azure_Base64_Encode_Bytes(const unsigned char* source, size_t size)
 {
     STRING_HANDLE result;
-    /*Codes_SRS_BASE64_02_001: [If source is NULL then Base64_Encode_Bytes shall return NULL.] */
+    /*Codes_SRS_BASE64_02_001: [If source is NULL then Azure_Base64_Encode_Bytes shall return NULL.] */
     if (source == NULL)
     {
         result = NULL;
     }
-    /*Codes_SRS_BASE64_02_002: [If source is not NULL and size is zero, then Base64_Encode_Bytes shall produce an empty STRING_HANDLE.] */
+    /*Codes_SRS_BASE64_02_002: [If source is not NULL and size is zero, then Azure_Base64_Encode_Bytes shall produce an empty STRING_HANDLE.] */
     else if (size == 0)
     {
         result = STRING_new(); /*empty string*/
@@ -343,11 +342,11 @@ STRING_HANDLE Azure_Base64_Encode(BUFFER_HANDLE input)
     /*the encoding will use the optional [=] or [==] at the end of the encoded string, so that other less standard aware libraries can do their work*/
     /*these are the bits of the 3 normal bytes to be encoded*/
 
-    /*Codes_SRS_BASE64_06_001: [If input is NULL then Base64_Encode shall return NULL.]*/
+    /*Codes_SRS_BASE64_06_001: [If input is NULL then Azure_Base64_Encode shall return NULL.]*/
     if (input == NULL)
     {
         result = NULL;
-        LogError("Base64_Encode:: NULL input");
+        LogError("Azure_Base64_Encode:: NULL input");
     }
     else
     {
@@ -357,7 +356,7 @@ STRING_HANDLE Azure_Base64_Encode(BUFFER_HANDLE input)
             (BUFFER_size(input, &inputSize) != 0))
         {
             result = NULL;
-            LogError("Base64_Encode:: BUFFER_routines failure.");
+            LogError("Azure_Base64_Encode:: BUFFER_routines failure.");
         }
         else
         {

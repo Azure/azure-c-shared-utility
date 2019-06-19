@@ -4,14 +4,17 @@
 #ifndef WS_URL_H
 #define WS_URL_H
 
-#include "azure_c_shared_utility/umock_c_prod.h"
-
 #ifdef __cplusplus
 #include <cstddef>
-extern "C" {
 #else
 #include <stddef.h>
 #include <stdbool.h>
+#endif
+
+#include "umock_c/umock_c_prod.h"
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 typedef struct WS_URL_TAG* WS_URL_HANDLE;
