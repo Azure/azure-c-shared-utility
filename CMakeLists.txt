@@ -34,6 +34,10 @@ if(${use_custom_heap})
     add_definitions(-DGB_USE_CUSTOM_HEAP)
 endif()
 
+if(${use_openssl})
+    add_definitions(-DUSE_OPENSSL)
+endif()
+
 if(WIN32)
     option(use_schannel "set use_schannel to ON if schannel is to be used, set to OFF to not use schannel" ON)
     option(use_openssl "set use_openssl to ON if openssl is to be used, set to OFF to not use openssl" OFF)
@@ -673,4 +677,3 @@ DESTINATION
 )
 
 compileTargetAsC99(aziotsharedutil)
-
