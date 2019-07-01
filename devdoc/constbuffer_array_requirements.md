@@ -13,6 +13,7 @@
 typedef struct CONSTBUFFER_ARRAY_HANDLE_DATA_TAG* CONSTBUFFER_ARRAY_HANDLE;
 
 MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create, const CONSTBUFFER_HANDLE*, buffers, uint32_t, buffer_count);
+MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create_with_move_buffers, CONSTBUFFER_HANDLE*, buffers, uint32_t, buffer_count);
 MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create_empty);
 MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create_from_array_array, const CONSTBUFFER_ARRAY_HANDLE*, buffer_arrays, uint32_t, buffer_array_count);
 
@@ -53,6 +54,24 @@ MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create, const CO
 **SRS_CONSTBUFFER_ARRAY_01_012: [** If `buffers` is NULL and `buffer_count` is not 0, `constbuffer_array_create` shall fail and return NULL. **]**
 
 **SRS_CONSTBUFFER_ARRAY_01_014: [** If any error occurs, `constbuffer_array_create` shall fail and return NULL. **]**
+
+### constbuffer_array_create_with_move_buffers
+
+```c
+MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create_with_move_buffers, CONSTBUFFER_HANDLE*, buffers, uint32_t, buffer_count);
+```
+
+`constbuffer_array_create_with_move_buffers` creates a new const buffer array made of the const buffers in `buffers` with move memory semantics for `buffers`.
+
+Note: `constbuffer_array_create_with_move_buffers` does not increment the reference count of the buffer handles in `buffers`.
+
+**SRS_CONSTBUFFER_ARRAY_01_028: [** If `buffers` is NULL and `buffer_count` is not 0, `constbuffer_array_create_with_move_buffers` shall fail and return `NULL`. **]**
+
+**SRS_CONSTBUFFER_ARRAY_01_029: [** Otherwise, `constbuffer_array_create_with_move_buffers` shall allocate memory for a new `CONSTBUFFER_ARRAY_HANDLE` that holds the const buffers in `buffers`. **]**
+
+**SRS_CONSTBUFFER_ARRAY_01_031: [** On success `constbuffer_array_create_with_move_buffers` shall return a non-NULL handle. **]**
+
+**SRS_CONSTBUFFER_ARRAY_01_030: [** If any error occurs, `constbuffer_array_create_with_move_buffers` shall fail and return `NULL`. **]**
 
 ### constbuffer_array_create_empty
 
