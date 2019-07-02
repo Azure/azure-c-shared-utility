@@ -248,6 +248,89 @@ TEST_FUNCTION(when_underlying_calls_fail_constbuffer_array_create_fails)
     }
 }
 
+/* constbuffer_array_create_with_move_buffers */
+
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_028: [ If buffers is NULL and buffer_count is not 0, constbuffer_array_create_with_move_buffers shall fail and return NULL. ]*/
+TEST_FUNCTION(constbuffer_array_create_with_move_buffers_with_NULL_buffers_fails)
+{
+    ///arrange
+    CONSTBUFFER_ARRAY_HANDLE constbuffer_array;
+
+    ///act
+    constbuffer_array = constbuffer_array_create_with_move_buffers(NULL, 1);
+
+    ///assert
+    ASSERT_IS_NULL(constbuffer_array);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_029: [ Otherwise, constbuffer_array_create_with_move_buffers shall allocate memory for a new CONSTBUFFER_ARRAY_HANDLE that holds the const buffers in buffers. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_031: [ On success constbuffer_array_create_with_move_buffers shall return a non-NULL handle. ]*/
+TEST_FUNCTION(constbuffer_array_create_with_move_buffers_succeeds)
+{
+    ///arrange
+    CONSTBUFFER_ARRAY_HANDLE constbuffer_array;
+    CONSTBUFFER_HANDLE* test_buffers = (CONSTBUFFER_HANDLE*)my_gballoc_malloc(sizeof(CONSTBUFFER_HANDLE) * 2);
+
+    CONSTBUFFER_IncRef(TEST_CONSTBUFFER_HANDLE_1);
+    CONSTBUFFER_IncRef(TEST_CONSTBUFFER_HANDLE_2);
+
+    test_buffers[0] = TEST_CONSTBUFFER_HANDLE_1;
+    test_buffers[1] = TEST_CONSTBUFFER_HANDLE_2;
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(malloc(IGNORED_NUM_ARG));
+
+    ///act
+    constbuffer_array = constbuffer_array_create_with_move_buffers(test_buffers, 2);
+
+    ///assert
+    ASSERT_IS_NOT_NULL(constbuffer_array);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    constbuffer_array_dec_ref(constbuffer_array);
+}
+
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_030: [ If any error occurs, constbuffer_array_create_with_move_buffers shall fail and return NULL. ]*/
+TEST_FUNCTION(when_underlying_calls_fail_constbuffer_array_create_with_move_buffers_also_fails)
+{
+    ///arrange
+    CONSTBUFFER_HANDLE* test_buffers = (CONSTBUFFER_HANDLE*)my_gballoc_malloc(sizeof(CONSTBUFFER_HANDLE) * 2);
+    size_t i;
+
+    CONSTBUFFER_IncRef(TEST_CONSTBUFFER_HANDLE_1);
+    CONSTBUFFER_IncRef(TEST_CONSTBUFFER_HANDLE_2);
+
+    test_buffers[0] = TEST_CONSTBUFFER_HANDLE_1;
+    test_buffers[1] = TEST_CONSTBUFFER_HANDLE_2;
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(malloc(IGNORED_NUM_ARG));
+
+    umock_c_negative_tests_snapshot();
+    for (i = 0; i < umock_c_negative_tests_call_count(); i++)
+    {
+        if (umock_c_negative_tests_can_call_fail(i))
+        {
+            CONSTBUFFER_ARRAY_HANDLE constbuffer_array;
+
+            umock_c_negative_tests_reset();
+            umock_c_negative_tests_fail_call(i);
+
+            ///act
+            constbuffer_array = constbuffer_array_create_with_move_buffers(test_buffers, 2);
+
+            ///assert
+            ASSERT_IS_NULL(constbuffer_array, "On failed call %lu", (unsigned long)i);
+        }
+    }
+
+    CONSTBUFFER_DecRef(TEST_CONSTBUFFER_HANDLE_1);
+    CONSTBUFFER_DecRef(TEST_CONSTBUFFER_HANDLE_2);
+    free(test_buffers);
+}
+
 /* constbuffer_array_create_empty */
 
 /*Tests_SRS_CONSTBUFFER_ARRAY_02_004: [ constbuffer_array_create_empty shall allocate memory for a new CONSTBUFFER_ARRAY_HANDLE. ]*/

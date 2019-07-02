@@ -13,6 +13,7 @@ set(${theseTestsName}_c_files
 )
 
 set(${theseTestsName}_h_files
+    ../../inc/azure_c_shared_utility/constbuffer_array.h
 )
 
 build_c_test_artifacts(${theseTestsName} ON "tests/azure_c_shared_utility_tests")
