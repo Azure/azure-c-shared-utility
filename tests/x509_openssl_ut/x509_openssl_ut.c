@@ -232,7 +232,6 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
     {
         g_evp_pkey = (EVP_PKEY*)&g_replace_evp_key;
 
-        TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
         g_testByTest = TEST_MUTEX_CREATE();
         ASSERT_IS_NOT_NULL(g_testByTest);
 
@@ -284,7 +283,6 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
         umock_c_deinit();
 
         TEST_MUTEX_DESTROY(g_testByTest);
-        TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
     }
 
     TEST_FUNCTION_INITIALIZE(initialize)
