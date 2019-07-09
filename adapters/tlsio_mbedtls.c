@@ -85,14 +85,13 @@ typedef enum TLS_STATE_TAG
 
 static void indicate_error(TLS_IO_INSTANCE *tls_io_instance)
 {
-    if ((tls_io_instance->tlsio_state == TLSIO_STATE_NOT_OPEN) || (tls_io_instance->tlsio_state == TLSIO_STATE_ERROR))
+    if ((tls_io_instance->tlsio_state != TLSIO_STATE_NOT_OPEN) && (tls_io_instance->tlsio_state != TLSIO_STATE_ERROR))
     {
-        return;
-    }
-    tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
-    if (tls_io_instance->on_io_error != NULL)
-    {
-        tls_io_instance->on_io_error(tls_io_instance->on_io_error_context);
+        tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
+        if (tls_io_instance->on_io_error != NULL)
+        {
+            tls_io_instance->on_io_error(tls_io_instance->on_io_error_context);
+        }
     }
 }
 
@@ -324,6 +323,24 @@ static int on_io_recv(void *context, unsigned char *buf, size_t sz)
     return result;
 }
 
+static void on_send_complete(void* context, IO_SEND_RESULT send_result)
+{
+    TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE *)context;
+    if (tls_io_instance != NULL)
+    {
+        // If the state is not open then this is probably an internal call
+        // So don't notify the upper level
+        if (tls_io_instance->tlsio_state == TLSIO_STATE_OPEN)
+        {
+            tls_io_instance->on_send_complete(tls_io_instance->on_send_complete_callback_context, send_result);
+        }
+    }
+    else
+    {
+        LogError("Invalid context NULL value passed");
+    }
+}
+
 static int on_io_send(void *context, const unsigned char *buf, size_t sz)
 {
     int result;
@@ -335,8 +352,7 @@ static int on_io_send(void *context, const unsigned char *buf, size_t sz)
     else
     {
         TLS_IO_INSTANCE *tls_io_instance = (TLS_IO_INSTANCE *)context;
-
-        if (xio_send(tls_io_instance->socket_io, buf, sz, tls_io_instance->on_send_complete, tls_io_instance->on_send_complete_callback_context) != 0)
+        if (xio_send(tls_io_instance->socket_io, buf, sz, on_send_complete, tls_io_instance) != 0)
         {
             indicate_error(tls_io_instance);
             result = 0;
@@ -368,7 +384,6 @@ static void mbedtls_uninit(TLS_IO_INSTANCE *tls_io_instance)
     if (tls_io_instance->tls_status != TLS_STATE_NOT_INITIALIZED)
     {
         // mbedTLS cleanup...
-        mbedtls_ssl_close_notify(&tls_io_instance->ssl);
         mbedtls_ssl_free(&tls_io_instance->ssl);
         mbedtls_ssl_config_free(&tls_io_instance->config);
         mbedtls_x509_crt_free(&tls_io_instance->trusted_certificates_parsed);
@@ -435,7 +450,7 @@ CONCRETE_IO_HANDLE tlsio_mbedtls_create(void *io_create_parameters)
     }
     else
     {
-        /* Codes_SRS_TLSIO_MBED_OS5_TLS_99_006: [ The tlsio_mbedtls_create shall return NULL if allocating memory for TLS_IO_INSTANCE failed. ]*/
+        // Codes_SRS_TLSIO_MBED_OS5_TLS_99_006: [ The tlsio_mbedtls_create shall return NULL if allocating memory for TLS_IO_INSTANCE failed. ]
         result = calloc(1, sizeof(TLS_IO_INSTANCE));
         if (result != NULL)
         {
@@ -603,6 +618,13 @@ int tlsio_mbedtls_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_cl
         else
         {
             tls_io_instance->tlsio_state = TLSIO_STATE_CLOSING;
+            if (tls_io_instance->tls_status == TLS_STATE_INITIALIZED)
+            {
+                // Tell the peer that you're going to close
+                mbedtls_ssl_close_notify(&tls_io_instance->ssl);
+                tls_io_instance->tls_status = TLS_STATE_CLOSING;
+            }
+
             tls_io_instance->on_io_close_complete = on_io_close_complete;
             tls_io_instance->on_io_close_complete_context = callback_context;
             if (xio_close(tls_io_instance->socket_io, on_underlying_io_close_complete_during_close, tls_io_instance) != 0)
@@ -612,15 +634,7 @@ int tlsio_mbedtls_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_cl
             }
             else
             {
-                if (tls_io_instance->tls_status == TLS_STATE_INITIALIZED)
-                {
-                    mbedtls_ssl_close_notify(&tls_io_instance->ssl);
-                    tls_io_instance->tls_status = TLS_STATE_CLOSING;
-                }
-                else
-                {
-                    result = 0;
-                }
+                result = 0;
             }
         }
     }
@@ -676,7 +690,7 @@ void tlsio_mbedtls_dowork(CONCRETE_IO_HANDLE tls_io)
     }
 }
 
-/*this function will clone an option given by name and value*/
+// this function will clone an option given by name and value
 static void *tlsio_mbedtls_CloneOption(const char *name, const void *value)
 {
     void *result = NULL;
@@ -760,10 +774,10 @@ static void *tlsio_mbedtls_CloneOption(const char *name, const void *value)
     return result;
 }
 
-/*this function destroys an option previously created*/
+// this function destroys an option previously created
 static void tlsio_mbedtls_DestroyOption(const char *name, const void *value)
 {
-    /*since all options for this layer are actually string copies., disposing of one is just calling free*/
+    // since all options for this layer are actually string copies., disposing of one is just calling free
     if (name == NULL || value == NULL)
     {
         LogError("invalid parameter detected: const char* name=%p, const void* value=%p", name, value);
@@ -913,7 +927,6 @@ int tlsio_mbedtls_setoption(CONCRETE_IO_HANDLE tls_io, const char *optionName, c
             result = xio_setoption(tls_io_instance->socket_io, optionName, value);
         }
     }
-
     return result;
 }
 
@@ -931,11 +944,11 @@ OPTIONHANDLER_HANDLE tlsio_mbedtls_retrieveoptions(CONCRETE_IO_HANDLE handle)
         if (result == NULL)
         {
             LogError("unable to OptionHandler_Create");
-            /*return as is*/
+            // return as is
         }
         else
         {
-            /*this layer cares about the certificates*/
+            // this layer cares about the certificates
             TLS_IO_INSTANCE *tls_io_instance = (TLS_IO_INSTANCE *)handle;
             OPTIONHANDLER_HANDLE underlying_io_options;
 
@@ -972,8 +985,8 @@ OPTIONHANDLER_HANDLE tlsio_mbedtls_retrieveoptions(CONCRETE_IO_HANDLE handle)
             }
             else
             {
-                /*all is fine, all interesting options have been saved*/
-                /*return as is*/
+                // all is fine, all interesting options have been saved
+                // return as is
             }
         }
     }
@@ -981,15 +994,16 @@ OPTIONHANDLER_HANDLE tlsio_mbedtls_retrieveoptions(CONCRETE_IO_HANDLE handle)
 }
 
 static const IO_INTERFACE_DESCRIPTION tlsio_mbedtls_interface_description =
-    {
-        tlsio_mbedtls_retrieveoptions,
-        tlsio_mbedtls_create,
-        tlsio_mbedtls_destroy,
-        tlsio_mbedtls_open,
-        tlsio_mbedtls_close,
-        tlsio_mbedtls_send,
-        tlsio_mbedtls_dowork,
-        tlsio_mbedtls_setoption};
+{
+    tlsio_mbedtls_retrieveoptions,
+    tlsio_mbedtls_create,
+    tlsio_mbedtls_destroy,
+    tlsio_mbedtls_open,
+    tlsio_mbedtls_close,
+    tlsio_mbedtls_send,
+    tlsio_mbedtls_dowork,
+    tlsio_mbedtls_setoption
+};
 
 const IO_INTERFACE_DESCRIPTION *tlsio_mbedtls_get_interface_description(void)
 {
