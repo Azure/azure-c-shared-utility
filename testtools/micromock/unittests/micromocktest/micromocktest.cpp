@@ -238,7 +238,6 @@ static MICROMOCK_GLOBAL_SEMAPHORE_HANDLE g_dllByDll;
 
     TEST_SUITE_INITIALIZE(TestClassInitialize)
     {
-        TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
         g_testByTest = MicroMockCreateMutex();
         ASSERT_IS_NOT_NULL(g_testByTest);
     }
@@ -246,12 +245,10 @@ static MICROMOCK_GLOBAL_SEMAPHORE_HANDLE g_dllByDll;
     TEST_SUITE_CLEANUP(TestClassCleanup)
     {
         MicroMockDestroyMutex(g_testByTest);
-        TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
     }
 
     TEST_FUNCTION_INITIALIZE(TestMethodInitialize)
     {
-        TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
         if (!MicroMockAcquireMutex(g_testByTest))
         {
             ASSERT_FAIL("our mutex is ABANDONED. Failure in test framework");
@@ -261,7 +258,6 @@ static MICROMOCK_GLOBAL_SEMAPHORE_HANDLE g_dllByDll;
 
     TEST_FUNCTION_CLEANUP(TestMethodCleanup)
     {
-        TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
         if (!MicroMockReleaseMutex(g_testByTest))
         {
             ASSERT_FAIL("failure in test framework at ReleaseMutex");
