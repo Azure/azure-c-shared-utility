@@ -330,7 +330,7 @@ static void on_send_complete(void* context, IO_SEND_RESULT send_result)
     {
         // If the state is not open then this is probably an internal call
         // So don't notify the upper level
-        if (tls_io_instance->tlsio_state == TLSIO_STATE_OPEN)
+        if (tls_io_instance->on_send_complete != NULL && tls_io_instance->tlsio_state != TLSIO_STATE_CLOSING)
         {
             tls_io_instance->on_send_complete(tls_io_instance->on_send_complete_callback_context, send_result);
         }
