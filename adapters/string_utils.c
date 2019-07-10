@@ -195,3 +195,50 @@ allOk:;
     }
     return result;
 }
+
+char* wcs_to_mbs(const wchar_t* source)
+{
+    char *result;
+    if (source == NULL)
+    {
+        LogError("invalid argument const wchar_t* source=%ls", MU_WP_OR_NULL(source));
+        result = NULL;
+    }
+    else
+    {
+        const wchar_t* sameAsSource = source;
+        mbstate_t state = { 0 };/*initial state!*/
+        size_t nc = wcsrtombs(NULL, &sameAsSource, 0, &state);
+        if (nc == (size_t)(-1))
+        {
+            LogError("failure to get the length of the string %s in characters", strerror(errno));
+            result = NULL;
+        }
+        else
+        {
+            result = malloc(sizeof(char)*(nc + 1));
+            if (result == NULL)
+            {
+                LogError("failure in malloc");
+                /*return as is*/
+            }
+            else
+            {
+                size_t nc2 = wcsrtombs(result, &sameAsSource, nc + 1, &state);
+                if (nc2 != nc)
+                {
+                    LogError("unexpected inconsistency in wcsrtombs");
+                }
+                else
+                {
+                    /*all is fine*/
+                    goto allOk;
+                }
+                free(result);
+                result = NULL;
+            }
+        allOk:;
+        }
+    }
+    return result;
+}
