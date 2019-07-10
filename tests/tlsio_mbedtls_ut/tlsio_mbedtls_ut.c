@@ -456,7 +456,7 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         tlsio_mbedtls_destroy(handle);
     }
 
-    /*TEST_FUNCTION(tlsio_mbedtls_create_fail)
+    TEST_FUNCTION(tlsio_mbedtls_create_fail)
     {
         //arrange
         TLSIO_CONFIG tls_io_config;
@@ -479,19 +479,16 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
             umock_c_negative_tests_reset();
             umock_c_negative_tests_fail_call(index);
 
-            char tmp_msg[64];
-            sprintf(tmp_msg, "tlsio_mbedtls_create failure in test %lu/%lu", (unsigned long)index, (unsigned long)count);
-
             //act
             CONCRETE_IO_HANDLE handle = tlsio_mbedtls_create(&tls_io_config);
 
             //assert
-            ASSERT_IS_NULL(handle, tmp_msg);
+            ASSERT_IS_NULL(handle, "tlsio_mbedtls_create failure in test %lu/%lu", (unsigned long)index, (unsigned long)count);
         }
 
         //cleanup
         umock_c_negative_tests_deinit();
-    }*/
+    }
 
     TEST_FUNCTION(tlsio_mbedtls_destroy_succeed)
     {
@@ -504,7 +501,6 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         CONCRETE_IO_HANDLE handle = tlsio_mbedtls_create(&tls_io_config);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mbedtls_ssl_close_notify(IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(mbedtls_ssl_free(IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(mbedtls_ssl_config_free(IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(mbedtls_x509_crt_free(IGNORED_PTR_ARG));
@@ -678,8 +674,8 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         int result = tlsio_mbedtls_open(handle, on_io_open_complete, NULL, on_bytes_received, NULL, on_io_error, NULL);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(xio_close(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(mbedtls_ssl_close_notify(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(xio_close(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
 
         //act
         result = tlsio_mbedtls_close(handle, on_io_close_complete, NULL);
@@ -915,7 +911,7 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         CONCRETE_IO_HANDLE handle = tlsio_mbedtls_create(&tls_io_config);
         (void)tlsio_mbedtls_open(handle, on_io_open_complete, NULL, on_bytes_received, NULL, on_io_error, NULL);
         g_open_complete(g_open_complete_ctx, IO_OPEN_OK);
-        //g_on_bytes_received(g_on_bytes_received_ctx, TEST_DATA_VALUE, TEST_DATA_SIZE);
+
         umock_c_reset_all_calls();
 
         STRICT_EXPECTED_CALL(xio_dowork(IGNORED_PTR_ARG));
