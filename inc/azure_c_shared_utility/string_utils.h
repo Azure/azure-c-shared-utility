@@ -53,11 +53,13 @@ PartitionId=316132b8-96a0-4bc7-aecc-a16e7c5a6bf6
 /*takes a FILETIME, returns a nice string representation of it*/
 char* FILETIME_toAsciiArray(const FILETIME* fileTime);
 
-/*produces the wchar_t* string representation of source (which is assumed to be multibyte). Returns NULL on any failure.*/
-MOCKABLE_FUNCTION(, wchar_t*, mbs_to_wcs, const char*, source);
+MOCKABLE_INTERFACE(string_utils_convert,
+    /*produces the wchar_t* string representation of source (which is assumed to be multibyte). Returns NULL on any failure.*/
+    FUNCTION(, wchar_t*, mbs_to_wcs, const char*, source),
 
-/*produces the multibyte char* string representation of source. Returns NULL on any failure.*/
-MOCKABLE_FUNCTION(, char*, wcs_to_mbs, const wchar_t*, source);
+    /*produces the multibyte char* string representation of source. Returns NULL on any failure.*/
+    FUNCTION(, char*, wcs_to_mbs, const wchar_t*, source)
+)
 
 #ifdef __cplusplus
 }
