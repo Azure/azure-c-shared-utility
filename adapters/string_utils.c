@@ -24,7 +24,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, char*, vsprintf_char, const char*, format, va_list
     }
     else
     {
-        result = malloc((neededSize + 1) * sizeof(char));
+        result = (char*)malloc((neededSize + 1) * sizeof(char));
         if (result == NULL)
         {
             LogError("failure in malloc");
@@ -54,7 +54,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, wchar_t*, vsprintf_wchar, const wchar_t*, format, 
     }
     else
     {
-        result = malloc((neededSize + 1)*sizeof(wchar_t));
+        result = (wchar_t*)malloc((neededSize + 1)*sizeof(wchar_t));
         if (result == NULL)
         {
             LogError("failure in malloc");
@@ -169,7 +169,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, wchar_t*, mbs_to_wcs, const char*, source)
         }
         else
         {
-            result = malloc(sizeof(wchar_t)*(nwc+1));
+            result = (wchar_t*)malloc(sizeof(wchar_t)*(nwc+1));
             if (result == NULL)
             {
                 LogError("failure in malloc");
@@ -216,7 +216,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, char*, wcs_to_mbs, const wchar_t*, source)
         }
         else
         {
-            result = malloc(sizeof(char)*(nc + 1));
+            result = (char*)malloc(sizeof(char)*(nc + 1));
             if (result == NULL)
             {
                 LogError("failure in malloc");
