@@ -13,7 +13,7 @@
 
 #include "azure_c_shared_utility/string_utils.h"
 
-char* vsprintf_char(const char *format, va_list va)
+IMPLEMENT_MOCKABLE_FUNCTION(, char*, vsprintf_char, const char*, format, va_list, va)
 {
     char* result;
     int neededSize = vsnprintf(NULL, 0, format, va);
@@ -43,7 +43,7 @@ char* vsprintf_char(const char *format, va_list va)
     return result;
 }
 
-wchar_t* vsprintf_wchar(const wchar_t *format, va_list va)
+IMPLEMENT_MOCKABLE_FUNCTION(, wchar_t*, vsprintf_wchar, const wchar_t*, format, va_list, va)
 {
     wchar_t* result;
     int neededSize = vswprintf(NULL, 0, format, va);
@@ -148,7 +148,7 @@ char* FILETIME_toAsciiArray(const FILETIME* fileTime)
     return result;
 }
 
-wchar_t* mbs_to_wcs(const char* source)
+IMPLEMENT_MOCKABLE_FUNCTION(, wchar_t*, mbs_to_wcs, const char*, source)
 {
     wchar_t *result;
     if (source == NULL)
@@ -196,7 +196,7 @@ allOk:;
     return result;
 }
 
-char* wcs_to_mbs(const wchar_t* source)
+IMPLEMENT_MOCKABLE_FUNCTION(, char*, wcs_to_mbs, const wchar_t*, source)
 {
     char *result;
     if (source == NULL)
