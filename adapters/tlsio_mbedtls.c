@@ -21,6 +21,7 @@
 #include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/tlsio.h"
 #include "azure_c_shared_utility/tlsio_mbedtls.h"
+#include "azure_c_shared_utility/tlsio_cryptodev.h"
 #include "azure_c_shared_utility/socketio.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
 #include "azure_c_shared_utility/shared_util_options.h"
@@ -78,6 +79,7 @@ typedef struct TLS_IO_INSTANCE_TAG
 
     char* x509_certificate;
     char* x509_private_key;
+    TLSIO_CRYPTODEV_PKEY* x509_cryptodev_private_key;
 
     int tls_status;
 } TLS_IO_INSTANCE;
@@ -560,6 +562,12 @@ void tlsio_mbedtls_destroy(CONCRETE_IO_HANDLE tls_io)
             free(tls_io_instance->x509_private_key);
             tls_io_instance->x509_private_key = NULL;
         }
+        if (tls_io_instance->x509_cryptodev_private_key != NULL)
+        {
+            free(tls_io_instance->x509_cryptodev_private_key);
+            tls_io_instance->x509_cryptodev_private_key = NULL;
+        }
+
         free(tls_io);
     }
 }
@@ -758,6 +766,16 @@ static void *tlsio_mbedtls_CloneOption(const char *name, const void *value)
                 /*return as is*/
             }
         }
+        else if (strcmp(name, SU_OPTION_X509_CRYPTODEV_PRIVATE_KEY) == 0)
+        {
+            result = malloc(sizeof(TLSIO_CRYPTODEV_PKEY));
+
+            if (result != NULL) {
+                memcpy(result, value, sizeof(TLSIO_CRYPTODEV_PKEY));
+            } else {
+                LogError("unable to allocate memory for TLSIO_CRYPTODEV_PKEY object");
+            }
+        }
         else if (strcmp(name, OPTION_X509_ECC_CERT) == 0)
         {
             if (mallocAndStrcpy_s((char**)&result, value) != 0)
@@ -805,6 +823,7 @@ static void tlsio_mbedtls_DestroyOption(const char *name, const void *value)
             (strcmp(name, OPTION_TRUSTED_CERT) == 0) ||
             (strcmp(name, SU_OPTION_X509_CERT) == 0) ||
             (strcmp(name, SU_OPTION_X509_PRIVATE_KEY) == 0) ||
+            (strcmp(name, SU_OPTION_X509_CRYPTODEV_PRIVATE_KEY) == 0) ||
             (strcmp(name, OPTION_X509_ECC_CERT) == 0) ||
             (strcmp(name, OPTION_X509_ECC_KEY) == 0)
             )
@@ -820,6 +839,61 @@ static void tlsio_mbedtls_DestroyOption(const char *name, const void *value)
             LogError("not handled option : %s", name);
         }
     }
+}
+
+static int mbedtls_tlsio_rsa_decrypt(void* ctx, int mode, size_t* olen, const unsigned char* input, unsigned char* output, size_t output_max_len) {
+    (void) mode;
+    (void) output_max_len;
+
+    if (ctx == NULL)
+    {
+        return MBEDTLS_ERR_PK_FILE_IO_ERROR;
+    }
+
+    TLS_IO_INSTANCE* instance = (TLS_IO_INSTANCE*) ctx;
+
+    int olen_int = -1;
+    if (instance->x509_cryptodev_private_key->decrypt(input, mbedtls_pk_get_len(&instance->owncert.pk), output, &olen_int, instance->x509_cryptodev_private_key->private_data) == 0)
+    {
+        return MBEDTLS_ERR_PK_FILE_IO_ERROR;
+    }
+
+    if (olen_int < 0)
+    {
+        return MBEDTLS_ERR_PK_FILE_IO_ERROR;
+    }
+
+    *olen = (size_t) olen_int;
+
+    return 0;
+}
+
+static int mbedtls_tlsio_rsa_sign(void* ctx, int (*f_rng)(void*, unsigned char*, size_t), void* p_rng, int mode, mbedtls_md_type_t md_alg, unsigned int hashlen, const unsigned char* hash, unsigned char* sig) {
+    (void)f_rng;
+    (void)p_rng;
+    (void)mode;
+    (void)md_alg;
+
+    if (ctx == NULL) {
+        return MBEDTLS_ERR_PK_FILE_IO_ERROR;
+    }
+
+    TLS_IO_INSTANCE* instance = (TLS_IO_INSTANCE*) ctx;
+
+    int siglen_dummy;
+    if (instance->x509_cryptodev_private_key->sign(hash, hashlen, sig, &siglen_dummy, instance->x509_cryptodev_private_key->private_data) == 0) {
+        return MBEDTLS_ERR_PK_FILE_IO_ERROR;
+    }
+    return 0;
+}
+
+static size_t mbedtls_tlsio_rsa_key_len(void* ctx) {
+    if (ctx == NULL) {
+      return 0;
+    }
+
+    TLS_IO_INSTANCE* instance = (TLS_IO_INSTANCE*) ctx;
+    return mbedtls_pk_get_len(&instance->owncert.pk);
 }
 
 int tlsio_mbedtls_setoption(CONCRETE_IO_HANDLE tls_io, const char *optionName, const void *value)
@@ -926,6 +1000,42 @@ int tlsio_mbedtls_setoption(CONCRETE_IO_HANDLE tls_io, const char *optionName, c
                 result = 0;
             }
         }
+        else if (strcmp(SU_OPTION_X509_CRYPTODEV_PRIVATE_KEY, optionName) == 0)
+        {
+            TLSIO_CRYPTODEV_PKEY* temp_key = malloc(sizeof(TLSIO_CRYPTODEV_PKEY));
+
+            if (temp_key == 0)
+            {
+                LogError("unable to allocate memory for TLSIO_CRYPTODEV_PKEY object");
+                result = MU_FAILURE;
+            }
+	    else
+	    {
+                memcpy(temp_key, value, sizeof(TLSIO_CRYPTODEV_PKEY));
+		if (temp_key->type != TLSIO_CRYPTODEV_PKEY_TYPE_RSA || ( mbedtls_pk_setup_rsa_alt(&tls_io_instance->pKey, tls_io_instance, mbedtls_tlsio_rsa_decrypt, mbedtls_tlsio_rsa_sign, mbedtls_tlsio_rsa_key_len) != 0))
+                {
+                    LogError("failure calling mbedtls_setup_rsa_alt");
+                    free(temp_key);
+                    result = MU_FAILURE;
+                }
+                else if (tls_io_instance->owncert.version > 0 && mbedtls_ssl_conf_own_cert(&tls_io_instance->config, &tls_io_instance->owncert, &tls_io_instance->pKey))
+                {
+                    LogError("failure calling mbedtls_ssl_conf_own_cert");
+                    free(temp_key);
+                    result = MU_FAILURE;
+                }
+                else
+                {
+                    if (tls_io_instance->x509_cryptodev_private_key != NULL)
+                    {
+                        // Free the memory if it has been previously allocated
+                        free(tls_io_instance->x509_cryptodev_private_key);
+                    }
+                    tls_io_instance->x509_cryptodev_private_key = temp_key;
+                    result = 0;
+                }
+	    }
+        }
         else if (strcmp(optionName, OPTION_UNDERLYING_IO_OPTIONS) == 0)
         {
             if (OptionHandler_FeedOptions((OPTIONHANDLER_HANDLE)value, (void*)tls_io_instance->socket_io) != OPTIONHANDLER_OK)
@@ -1011,6 +1121,15 @@ OPTIONHANDLER_HANDLE tlsio_mbedtls_retrieveoptions(CONCRETE_IO_HANDLE handle)
                 )
             {
                 LogError("unable to save x509privatekey option");
+                OptionHandler_Destroy(result);
+                result = NULL;
+            }
+            else if (
+                (&tls_io_instance->pKey != NULL) && tls_io_instance->x509_cryptodev_private_key != NULL &&
+                (OptionHandler_AddOption(result, SU_OPTION_X509_CRYPTODEV_PRIVATE_KEY, tls_io_instance->x509_cryptodev_private_key) != OPTIONHANDLER_OK)
+                )
+            {
+                LogError("unable to save x509cryptodevprivatekey option");
                 OptionHandler_Destroy(result);
                 result = NULL;
             }
