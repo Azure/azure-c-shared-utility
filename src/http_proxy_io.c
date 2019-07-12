@@ -184,6 +184,7 @@ static CONCRETE_IO_HANDLE http_proxy_io_create(void* io_create_parameters)
                                     {
                                         result->port = http_proxy_io_config->port;
                                         result->proxy_port = http_proxy_io_config->proxy_port;
+                                        LogInfo("%s: Setting up proxy with host:port %s:%d", __FUNCTION__, http_proxy_io_config->proxy_hostname, http_proxy_io_config->proxy_port);
                                         result->receive_buffer = NULL;
                                         result->receive_buffer_size = 0;
                                         result->http_proxy_io_state = HTTP_PROXY_IO_STATE_CLOSED;

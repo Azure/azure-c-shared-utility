@@ -92,6 +92,7 @@ if(${use_openssl})
 
     find_package(OpenSSL REQUIRED)
     include_directories(${OPENSSL_INCLUDE_DIR})
+    message(STATUS "openssl headers found at ${OPENSSL_INCLUDE_DIR}, libs at ${OPENSSL_LIBRARIES}")
 endif()
 
 if(${use_applessl})

@@ -763,10 +763,17 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT_DETAILE
         else
         {
             tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
+            LogError("Could not open underlying IO: %d", open_result);
             open_result_detailed.result = IO_OPEN_ERROR;
-            LogError("Invalid tlsio_state. Expected state is TLSIO_STATE_OPENING_UNDERLYING_IO.");
             indicate_open_complete(tls_io_instance, open_result_detailed);
         }
+    }
+    else
+    {
+        LogError("Invalid tlsio_state %d. Expected state is TLSIO_STATE_OPENING_UNDERLYING_IO.", tls_io_instance->tlsio_state);
+        tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
+        open_result_detailed.result = IO_OPEN_ERROR;
+        indicate_open_complete(tls_io_instance, open_result_detailed);
     }
 }
 
@@ -799,11 +806,11 @@ static int decode_ssl_received_bytes(TLS_IO_INSTANCE* tls_io_instance)
 
     int rcv_bytes = 1;
 
-    while (rcv_bytes > 0)
+    while (rcv_bytes > 0 && tls_io_instance->tlsio_state == TLSIO_STATE_OPEN)
     {
         if (tls_io_instance->ssl == NULL)
         {
-            LogError("SSL channel closed in decode_ssl_received_bytes.");
+            LogError("SSL channel closed in decode_ssl_received_bytes while tlsio state is %d.", tls_io_instance->tlsio_state);
             result = __FAILURE__;
             return result;
         }
@@ -951,7 +958,7 @@ static int load_cert_crl_http(
         BIO_flush(bioPlain);
 
         char* realmBase64;
-        int length = BIO_get_mem_data(bioBase64, &realmBase64);
+        long length = BIO_get_mem_data(bioBase64, &realmBase64);
 
         sprintf_s(authData, sizeof(authData), "Basic %.*s", length, realmBase64);
 
@@ -1816,7 +1823,7 @@ static int setup_crl_check(TLS_IO_INSTANCE* tls_io_instance)
 #if USE_OPENSSL_1_1_0_OR_UP
     int flags = X509_VERIFY_PARAM_get_flags(X509_STORE_get0_param(store));
 #else
-    int flags = X509_VERIFY_PARAM_get_flags(store->param);
+    long flags = X509_VERIFY_PARAM_get_flags(store->param);
 #endif
     if (flags & X509_V_FLAG_CRL_CHECK)
     {
@@ -2107,7 +2114,9 @@ void tlsio_openssl_deinit(void)
 
     openssl_dynamic_locks_uninstall();
     openssl_static_locks_uninstall();
+#ifndef __APPLE__
     FIPS_mode_set(0);
+#endif
     CRYPTO_set_locking_callback(NULL);
     CRYPTO_set_id_callback(NULL); // TODO already deprecated in 1.0.0 ?
     ERR_free_strings();
@@ -2350,6 +2359,7 @@ int tlsio_openssl_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_cl
             /* Codes_SRS_TLSIO_30_056: [ On success the adapter shall enter TLSIO_STATE_EX_CLOSING. ]*/
             /* Codes_SRS_TLSIO_30_051: [ On success, if the underlying TLS does not support asynchronous closing or if the adapter is not in TLSIO_STATE_EXT_OPEN, then the adapter shall enter TLSIO_STATE_EXT_CLOSED immediately after entering TLSIO_STATE_EXT_CLOSING. ]*/
             // Current implementations of xio_close will fail if not in the open state, but we don't care
+            LogError("FORCE-Closing tlsio instance.");
             (void)xio_close(tls_io_instance->underlying_io, NULL, NULL);
             close_openssl_instance(tls_io_instance);
             tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
