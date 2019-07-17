@@ -13,7 +13,7 @@
 
 #include "azure_c_shared_utility/string_utils.h"
 
-char* vsprintf_char(const char *format, va_list va)
+IMPLEMENT_MOCKABLE_FUNCTION(, char*, vsprintf_char, const char*, format, va_list, va)
 {
     char* result;
     int neededSize = vsnprintf(NULL, 0, format, va);
@@ -24,7 +24,7 @@ char* vsprintf_char(const char *format, va_list va)
     }
     else
     {
-        result = malloc((neededSize + 1) * sizeof(char));
+        result = (char*)malloc((neededSize + 1) * sizeof(char));
         if (result == NULL)
         {
             LogError("failure in malloc");
@@ -43,7 +43,7 @@ char* vsprintf_char(const char *format, va_list va)
     return result;
 }
 
-wchar_t* vsprintf_wchar(const wchar_t *format, va_list va)
+IMPLEMENT_MOCKABLE_FUNCTION(, wchar_t*, vsprintf_wchar, const wchar_t*, format, va_list, va)
 {
     wchar_t* result;
     int neededSize = vswprintf(NULL, 0, format, va);
@@ -54,7 +54,7 @@ wchar_t* vsprintf_wchar(const wchar_t *format, va_list va)
     }
     else
     {
-        result = malloc((neededSize + 1)*sizeof(wchar_t));
+        result = (wchar_t*)malloc((neededSize + 1)*sizeof(wchar_t));
         if (result == NULL)
         {
             LogError("failure in malloc");
@@ -148,7 +148,7 @@ char* FILETIME_toAsciiArray(const FILETIME* fileTime)
     return result;
 }
 
-wchar_t* mbs_to_wcs(const char* source)
+IMPLEMENT_MOCKABLE_FUNCTION(, wchar_t*, mbs_to_wcs, const char*, source)
 {
     wchar_t *result;
     if (source == NULL)
@@ -169,7 +169,7 @@ wchar_t* mbs_to_wcs(const char* source)
         }
         else
         {
-            result = malloc(sizeof(wchar_t)*(nwc+1));
+            result = (wchar_t*)malloc(sizeof(wchar_t)*(nwc+1));
             if (result == NULL)
             {
                 LogError("failure in malloc");
@@ -191,6 +191,53 @@ wchar_t* mbs_to_wcs(const char* source)
                 result = NULL;
             }
 allOk:;
+        }
+    }
+    return result;
+}
+
+IMPLEMENT_MOCKABLE_FUNCTION(, char*, wcs_to_mbs, const wchar_t*, source)
+{
+    char *result;
+    if (source == NULL)
+    {
+        LogError("invalid argument const wchar_t* source=%ls", MU_WP_OR_NULL(source));
+        result = NULL;
+    }
+    else
+    {
+        const wchar_t* sameAsSource = source;
+        mbstate_t state = { 0 };/*initial state!*/
+        size_t nc = wcsrtombs(NULL, &sameAsSource, 0, &state);
+        if (nc == (size_t)(-1))
+        {
+            LogError("failure to get the length of the string %s in characters", strerror(errno));
+            result = NULL;
+        }
+        else
+        {
+            result = (char*)malloc(sizeof(char)*(nc + 1));
+            if (result == NULL)
+            {
+                LogError("failure in malloc");
+                /*return as is*/
+            }
+            else
+            {
+                size_t nc2 = wcsrtombs(result, &sameAsSource, nc + 1, &state);
+                if (nc2 != nc)
+                {
+                    LogError("unexpected inconsistency in wcsrtombs");
+                }
+                else
+                {
+                    /*all is fine*/
+                    goto allOk;
+                }
+                free(result);
+                result = NULL;
+            }
+        allOk:;
         }
     }
     return result;

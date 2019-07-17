@@ -22,44 +22,18 @@ static void my_gballoc_free(void* s)
 #else
 #include <stddef.h>
 #endif
+
+#include "azure_macro_utils/macro_utils.h"
 #include "testrunnerswitcher.h"
 #include "umock_c/umock_c.h"
 #include "umock_c/umocktypes_charptr.h"
 #include "umock_c/umock_c_negative_tests.h"
-#include "azure_c_shared_utility/optionhandler.h"
-#include "azure_c_shared_utility/optimize_size.h"
-
-/*not very nice source level preprocessor mocking... */
-/*but real implementation of VECTOR is paramount here, because -> operator cannot be mocked*/
-#define GBALLOC_H
-#define VECTOR_create real_VECTOR_create
-#define VECTOR_move real_VECTOR_move
-#define VECTOR_destroy real_VECTOR_destroy
-#define VECTOR_push_back real_VECTOR_push_back
-#define VECTOR_erase real_VECTOR_erase
-#define VECTOR_clear real_VECTOR_clear
-#define VECTOR_element real_VECTOR_element
-#define VECTOR_front real_VECTOR_front
-#define VECTOR_back real_VECTOR_back
-#define VECTOR_find_if real_VECTOR_find_if
-#define VECTOR_size real_VECTOR_size
-#include "../src/vector.c"
-#undef VECTOR_create
-#undef VECTOR_move
-#undef VECTOR_destroy
-#undef VECTOR_push_back
-#undef VECTOR_erase
-#undef VECTOR_clear
-#undef VECTOR_element
-#undef VECTOR_front
-#undef VECTOR_back
-#undef VECTOR_find_if
-#undef VECTOR_size
-#undef VECTOR_H
-#undef GBALLOC_H
-#undef CRT_ABSTRACTIONS_H
 
 #define ENABLE_MOCKS
+#define GBALLOC_H
+#include "azure_c_shared_utility/vector.h"
+#include "../src/vector.c"
+#undef GBALLOC_H
 #include "azure_c_shared_utility/gballoc.h"
 #include "umock_c/umock_c_prod.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
@@ -70,6 +44,8 @@ MOCKABLE_FUNCTION(, void, aDestroyOption, const char*, name, const void*, value)
 MOCKABLE_FUNCTION(, int, aSetOption, void*, handle, const char*, name, const void*, value);
 
 #undef ENABLE_MOCKS
+
+#include "azure_c_shared_utility/optionhandler.h"
 
 static TEST_MUTEX_HANDLE g_testByTest;
 
@@ -124,16 +100,9 @@ BEGIN_TEST_SUITE(optionhandler_unittests)
         REGISTER_GLOBAL_MOCK_FAIL_RETURN(gballoc_malloc, NULL);
         REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, my_gballoc_free);
 
-        REGISTER_GLOBAL_MOCK_HOOK(VECTOR_create, real_VECTOR_create);
+        REGISTER_GLOBAL_INTERFACE_HOOKS(vector);
         REGISTER_GLOBAL_MOCK_FAIL_RETURN(VECTOR_create, NULL);
-
-        REGISTER_GLOBAL_MOCK_HOOK(VECTOR_size, real_VECTOR_size);
-        REGISTER_GLOBAL_MOCK_HOOK(VECTOR_push_back, real_VECTOR_push_back);
         REGISTER_GLOBAL_MOCK_FAIL_RETURN(VECTOR_push_back, MU_FAILURE);
-
-        REGISTER_GLOBAL_MOCK_HOOK(VECTOR_element, real_VECTOR_element);
-
-        REGISTER_GLOBAL_MOCK_HOOK(VECTOR_destroy, real_VECTOR_destroy);
 
         REGISTER_GLOBAL_MOCK_HOOK(mallocAndStrcpy_s, my_mallocAndStrcpy_s);
         REGISTER_GLOBAL_MOCK_FAIL_RETURN(mallocAndStrcpy_s, MU_FAILURE);

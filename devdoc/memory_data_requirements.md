@@ -9,34 +9,36 @@
 ## Exposed API
 
 ```c
-    MOCKABLE_FUNCTION(, void, read_uint8_t,  const unsigned char*, source, uint8_t*, destination);
-    MOCKABLE_FUNCTION(, void, read_uint16_t, const unsigned char*, source, uint16_t*, destination);
-    MOCKABLE_FUNCTION(, void, read_uint32_t, const unsigned char*, source, uint32_t*, destination);
-    MOCKABLE_FUNCTION(, void, read_uint64_t, const unsigned char*, source, uint64_t*, destination);
+MOCKABLE_INTERFACE(memory_data,
+    FUNCTION(, void, read_uint8_t,  const unsigned char*, source, uint8_t*, destination),
+    FUNCTION(, void, read_uint16_t, const unsigned char*, source, uint16_t*, destination),
+    FUNCTION(, void, read_uint32_t, const unsigned char*, source, uint32_t*, destination),
+    FUNCTION(, void, read_uint64_t, const unsigned char*, source, uint64_t*, destination),
 
-    MOCKABLE_FUNCTION(, void, read_int8_t,  const unsigned char*, source,  int8_t*,  destination);
-    MOCKABLE_FUNCTION(, void, read_int16_t, const unsigned char*, source, int16_t*, destination);
-    MOCKABLE_FUNCTION(, void, read_int32_t, const unsigned char*, source, int32_t*, destination);
-    MOCKABLE_FUNCTION(, void, read_int64_t, const unsigned char*, source, int64_t*, destination);
+    FUNCTION(, void, read_int8_t,  const unsigned char*, source,  int8_t*,  destination),
+    FUNCTION(, void, read_int16_t, const unsigned char*, source, int16_t*, destination),
+    FUNCTION(, void, read_int32_t, const unsigned char*, source, int32_t*, destination),
+    FUNCTION(, void, read_int64_t, const unsigned char*, source, int64_t*, destination),
 
-    MOCKABLE_FUNCTION(, void, read_uuid_t, const unsigned char*, source, UUID_T*, destination);
+    FUNCTION(, void, read_uuid_t, const unsigned char*, source, UUID_T*, destination),
 
-    MOCKABLE_FUNCTION(, void, write_uint8_t,  unsigned char*, destination, uint8_t,  value);
-    MOCKABLE_FUNCTION(, void, write_uint16_t, unsigned char*, destination, uint16_t, value);
-    MOCKABLE_FUNCTION(, void, write_uint32_t, unsigned char*, destination, uint32_t, value);
-    MOCKABLE_FUNCTION(, void, write_uint64_t, unsigned char*, destination, uint64_t, value);
+    FUNCTION(, void, write_uint8_t,  unsigned char*, destination, uint8_t,  value),
+    FUNCTION(, void, write_uint16_t, unsigned char*, destination, uint16_t, value),
+    FUNCTION(, void, write_uint32_t, unsigned char*, destination, uint32_t, value),
+    FUNCTION(, void, write_uint64_t, unsigned char*, destination, uint64_t, value),
 
-    MOCKABLE_FUNCTION(, void, write_int8_t,  unsigned char*, destination, int8_t,  value);
-    MOCKABLE_FUNCTION(, void, write_int16_t, unsigned char*, destination, int16_t, value);
-    MOCKABLE_FUNCTION(, void, write_int32_t, unsigned char*, destination, int32_t, value);
-    MOCKABLE_FUNCTION(, void, write_int64_t, unsigned char*, destination, int64_t, value);
+    FUNCTION(, void, write_int8_t,  unsigned char*, destination, int8_t,  value),
+    FUNCTION(, void, write_int16_t, unsigned char*, destination, int16_t, value),
+    FUNCTION(, void, write_int32_t, unsigned char*, destination, int32_t, value),
+    FUNCTION(, void, write_int64_t, unsigned char*, destination, int64_t, value),
 
-    MOCKABLE_FUNCTION(, void, write_uuid_t, unsigned char*, destination, const UUID_T, value);
+    FUNCTION(, void, write_uuid_t, unsigned char*, destination, const UUID_T, value)
+)
 ```
 
 ### read_uint8_t
 ```cs
-MOCKABLE_FUNCTION(, void, read_uint8_t,  const unsigned char*, source, uint8_t*  destination);
+FUNCTION(, void, read_uint8_t,  const unsigned char*, source, uint8_t*  destination);
 ```
 
 `read_uint8_t` reads a uint8_t from `source` and writes it into `destination`.
@@ -45,7 +47,7 @@ MOCKABLE_FUNCTION(, void, read_uint8_t,  const unsigned char*, source, uint8_t* 
 
 ### read_uint16_t
 ```c
-MOCKABLE_FUNCTION(, void, read_uint16_t,  const unsigned char*, source, uint16_t*  destination);
+FUNCTION(, void, read_uint16_t,  const unsigned char*, source, uint16_t*  destination);
 ```
 
 `read_uint16_t` reads a uint16_t from `source` and writes it into `destination`.
@@ -54,7 +56,7 @@ MOCKABLE_FUNCTION(, void, read_uint16_t,  const unsigned char*, source, uint16_t
 
 ### read_uint32_t
 ```c
-MOCKABLE_FUNCTION(, void, read_uint32_t,  const unsigned char*, source, uint32_t*  destination);
+FUNCTION(, void, read_uint32_t,  const unsigned char*, source, uint32_t*  destination);
 ```
 
 `read_uint32_t` reads a uint32_t from `source` and writes it into `destination`. 
@@ -63,7 +65,7 @@ MOCKABLE_FUNCTION(, void, read_uint32_t,  const unsigned char*, source, uint32_t
 
 ### read_uint64_t
 ```c
-MOCKABLE_FUNCTION(, void, read_uint64_t,  const unsigned char*, source, uint64_t*  destination);
+FUNCTION(, void, read_uint64_t,  const unsigned char*, source, uint64_t*  destination);
 ```
 
 `read_uint64_t` reads a uint64_t from `source` and writes it into `destination`.
@@ -72,7 +74,7 @@ MOCKABLE_FUNCTION(, void, read_uint64_t,  const unsigned char*, source, uint64_t
 
 ### read_int8_t
 ```c
-MOCKABLE_FUNCTION(, void, read_int8_t,  const unsigned char*, source, int8_t*  destination);
+FUNCTION(, void, read_int8_t,  const unsigned char*, source, int8_t*  destination);
 ```
 
 `read_int8_t` reads a int8_t from `source` and writes it into `destination`.
@@ -81,7 +83,7 @@ MOCKABLE_FUNCTION(, void, read_int8_t,  const unsigned char*, source, int8_t*  d
 
 ### read_int16_t
 ```c
-MOCKABLE_FUNCTION(, void, read_int16_t,  const unsigned char*, source, int16_t*  destination);
+FUNCTION(, void, read_int16_t,  const unsigned char*, source, int16_t*  destination);
 ```
 
 `read_int16_t` reads a int16_t from `source` and writes it into `destination`. 
@@ -90,7 +92,7 @@ MOCKABLE_FUNCTION(, void, read_int16_t,  const unsigned char*, source, int16_t* 
 
 ### read_int32_t
 ```c
-MOCKABLE_FUNCTION(, void, read_int32_t,  const unsigned char*, source, int32_t*  destination);
+FUNCTION(, void, read_int32_t,  const unsigned char*, source, int32_t*  destination);
 ```
 
 `read_int32_t` reads a int32_t from `source` and writes it into `destination`.
@@ -99,7 +101,7 @@ MOCKABLE_FUNCTION(, void, read_int32_t,  const unsigned char*, source, int32_t* 
 
 ### read_int64_t
 ```c
-MOCKABLE_FUNCTION(, void, read_int64_t,  const unsigned char*, source, int64_t*  destination);
+FUNCTION(, void, read_int64_t,  const unsigned char*, source, int64_t*  destination);
 ```
 
 `read_int64_t` reads a int64_t from `source` and writes it into `destination`.
@@ -109,7 +111,7 @@ MOCKABLE_FUNCTION(, void, read_int64_t,  const unsigned char*, source, int64_t* 
 ### read_uuid_t
 
 ```c
-MOCKABLE_FUNCTION(, void, read_uuid_t, unsigned char*, source, UUID_T*, destination);
+FUNCTION(, void, read_uuid_t, unsigned char*, source, UUID_T*, destination);
 ```
 
 `read_uuid_t` reads a UUID_T from `source` and writes it into `destination`.
@@ -118,7 +120,7 @@ MOCKABLE_FUNCTION(, void, read_uuid_t, unsigned char*, source, UUID_T*, destinat
 
 ### write_uint8_t
 ```c
-MOCKABLE_FUNCTION(, void,  write_uint8_t,  unsigned char*, destination, uint8_t  value);
+FUNCTION(, void,  write_uint8_t,  unsigned char*, destination, uint8_t  value);
 ```
 
 `write_uint8_t` writes at `destination` the byte of `value`.
@@ -127,7 +129,7 @@ MOCKABLE_FUNCTION(, void,  write_uint8_t,  unsigned char*, destination, uint8_t 
 
 ### write_uint16_t
 ```c
-MOCKABLE_FUNCTION(, void,  write_uint16_t,  unsigned char*, destination, uint16_t  value);
+FUNCTION(, void,  write_uint16_t,  unsigned char*, destination, uint16_t  value);
 ```
 
 `write_uint16_t` writes at `destination` the bytes of `value` MSB first.
@@ -136,7 +138,7 @@ MOCKABLE_FUNCTION(, void,  write_uint16_t,  unsigned char*, destination, uint16_
 
 ### write_uint32_t
 ```c
-MOCKABLE_FUNCTION(, void,  write_uint32_t,  unsigned char*, destination, uint32_t  value);
+FUNCTION(, void,  write_uint32_t,  unsigned char*, destination, uint32_t  value);
 ```
 
 `write_uint32_t` writes at `destination` the bytes of `value` MSB first.
@@ -145,7 +147,7 @@ MOCKABLE_FUNCTION(, void,  write_uint32_t,  unsigned char*, destination, uint32_
 
 ### write_uint64_t
 ```c
-MOCKABLE_FUNCTION(, void,  write_uint64_t,  unsigned char*, destination, uint64_t  value);
+FUNCTION(, void,  write_uint64_t,  unsigned char*, destination, uint64_t  value);
 ```
 
 `write_uint64_t` writes at `destination` the bytes of `value` MSB first.
@@ -154,7 +156,7 @@ MOCKABLE_FUNCTION(, void,  write_uint64_t,  unsigned char*, destination, uint64_
 
 ### write_int8_t
 ```c
-MOCKABLE_FUNCTION(, void,  write_int8_t,  unsigned char*, destination, int8_t  value);
+FUNCTION(, void,  write_int8_t,  unsigned char*, destination, int8_t  value);
 ```
 
 `write_int8_t` writes a int8_t at `destination`.
@@ -163,7 +165,7 @@ MOCKABLE_FUNCTION(, void,  write_int8_t,  unsigned char*, destination, int8_t  v
     
 ### write_int16_t
 ```c
-MOCKABLE_FUNCTION(, void,  write_int16_t,  unsigned char*, destination, int16_t  value);
+FUNCTION(, void,  write_int16_t,  unsigned char*, destination, int16_t  value);
 ```
 
 `write_int16_t` writes a int16_t at `destination`.
@@ -172,7 +174,7 @@ MOCKABLE_FUNCTION(, void,  write_int16_t,  unsigned char*, destination, int16_t 
 
 ### write_int32_t
 ```c
-MOCKABLE_FUNCTION(, void,  write_int32_t,  unsigned char*, destination, int32_t  value);
+FUNCTION(, void,  write_int32_t,  unsigned char*, destination, int32_t  value);
 ```
 
 `write_int32_t` writes a int32_t at `destination`.
@@ -181,7 +183,7 @@ MOCKABLE_FUNCTION(, void,  write_int32_t,  unsigned char*, destination, int32_t 
     
 ### write_int64_t
 ```c
-MOCKABLE_FUNCTION(, void,  write_int64_t,  unsigned char*, destination, int64_t  value);
+FUNCTION(, void,  write_int64_t,  unsigned char*, destination, int64_t  value);
 ```
 
 `write_int64_t` writes a int64_t at `destination`.
@@ -191,7 +193,7 @@ MOCKABLE_FUNCTION(, void,  write_int64_t,  unsigned char*, destination, int64_t 
 ### write_uuid_t
 
 ```c
-MOCKABLE_FUNCTION(, void,  write_uuid_t, unsigned char*, destination, const UUID_T, value);
+FUNCTION(, void,  write_uuid_t, unsigned char*, destination, const UUID_T, value);
 ```
 
 `write_uuid_t` writes a UUID_T at `destination`.
