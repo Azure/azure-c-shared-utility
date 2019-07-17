@@ -31,7 +31,7 @@
 #define TEMP_BUFFER_SIZE 1024
 
 /*Codes_SRS_HTTPAPI_COMPACT_21_077: [ The HTTPAPI_ExecuteRequest shall wait, at least, 10 seconds for the SSL open process. ]*/
-#define MAX_OPEN_RETRY   100
+#define MAX_OPEN_RETRY   1000
 /*Codes_SRS_HTTPAPI_COMPACT_21_084: [ The HTTPAPI_CloseConnection shall wait, at least, 10 seconds for the SSL close process. ]*/
 #define MAX_CLOSE_RETRY   100
 /*Codes_SRS_HTTPAPI_COMPACT_21_079: [ The HTTPAPI_ExecuteRequest shall wait, at least, 20 seconds to send a buffer using the SSL connection. ]*/
@@ -39,7 +39,7 @@
 /*Codes_SRS_HTTPAPI_COMPACT_21_081: [ The HTTPAPI_ExecuteRequest shall try to read the message with the response up to 20 seconds. ]*/
 #define MAX_RECEIVE_RETRY   2000
 /*Codes_SRS_HTTPAPI_COMPACT_21_083: [ The HTTPAPI_ExecuteRequest shall wait, at least, 100 milliseconds between retries for the SSL open process. ]*/
-#define OPEN_RETRY_INTERVAL_IN_MILLISECONDS  100
+#define OPEN_RETRY_INTERVAL_IN_MILLISECONDS  10
 /*Codes_SRS_HTTPAPI_COMPACT_21_083: [ The HTTPAPI_CloseConnection shall wait, at least, 100 milliseconds between retries for the SSL close process. ]*/
 #define CLOSE_RETRY_INTERVAL_IN_MILLISECONDS  100
 /*Codes_SRS_HTTPAPI_COMPACT_21_083: [ The HTTPAPI_ExecuteRequest shall wait, at least, 100 milliseconds between retries to send a buffer using the SSL connection. ]*/
