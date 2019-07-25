@@ -5,8 +5,8 @@ cmake_minimum_required(VERSION 2.8.11)
 
 set(theseTestsName tlsio_bearssl_ut)
 
-#set(MBED_ROOT_DIR $ENV{MBED_ROOT_DIR} CACHE PATH "")
-set(BEARSSL_ROOT_DIR "C:/Users/markrad/S/BearSSL")
+set(BEARSSL_ROOT_DIR $ENV{BEARSSL_ROOT_DIR} CACHE PATH "")
+#set(BEARSSL_ROOT_DIR "C:/Users/markrad/S/BearSSL")
 include_directories("${BEARSSL_ROOT_DIR}/include")
 
 set(${theseTestsName}_test_files
