@@ -1,54 +1,33 @@
 // Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #ifndef REAL_CONSTBUFFER_H
 #define REAL_CONSTBUFFER_H
 
-#include "azure_macro_utils/macro_utils.h"
+#define CONSTBUFFER                    real_CONSTBUFFER
+#define CONSTBUFFER_TAG                real_CONSTBUFFER_TAG
+#define CONSTBUFFER_Create             real_CONSTBUFFER_Create
+#define CONSTBUFFER_Clone              real_CONSTBUFFER_Clone
+#define CONSTBUFFER_CreateFromBuffer   real_CONSTBUFFER_CreateFromBuffer
+#define CONSTBUFFER_GetContent         real_CONSTBUFFER_GetContent
+#define CONSTBUFFER_Destroy            real_CONSTBUFFER_Destroy
 
-#define R2(X) REGISTER_GLOBAL_MOCK_HOOK(X, real_##X);
+#include "azure_c_shared_utility/constbuffer.h"
 
-#define REGISTER_CONSTBUFFER_GLOBAL_MOCK_HOOK() \
-    MU_FOR_EACH_1(R2, \
-        CONSTBUFFER_Create, \
-        CONSTBUFFER_CreateFromBuffer, \
-        CONSTBUFFER_CreateWithMoveMemory, \
-        CONSTBUFFER_CreateWithCustomFree, \
-        CONSTBUFFER_CreateFromOffsetAndSize, \
-        CONSTBUFFER_IncRef, \
-        CONSTBUFFER_GetContent, \
-        CONSTBUFFER_DecRef, \
-        CONSTBUFFER_HANDLE_contain_same \
-)
+#ifndef COMPILING_REAL_CONSTBUFFER_C
+#undef CONSTBUFFER_Create
+#undef CONSTBUFFER_Clone
+#undef CONSTBUFFER_CreateFromBuffer
+#undef CONSTBUFFER_GetContent
+#undef CONSTBUFFER_Destroy
+#undef CONSTBUFFER_TAG
+#undef CONSTBUFFER
 
-#ifdef __cplusplus
-#include <cstddef>
-extern "C"
-{
+#undef CONSTBUFFER_H
+
 #else
-#include <stddef.h>
-#include <stdbool.h>
 #endif
 
-CONSTBUFFER_HANDLE real_CONSTBUFFER_Create(const unsigned char* source, size_t size);
 
-CONSTBUFFER_HANDLE real_CONSTBUFFER_CreateFromBuffer(BUFFER_HANDLE buffer);
 
-CONSTBUFFER_HANDLE real_CONSTBUFFER_CreateWithMoveMemory(unsigned char* source, size_t size);
-
-CONSTBUFFER_HANDLE real_CONSTBUFFER_CreateWithCustomFree(const unsigned char* source, size_t size, CONSTBUFFER_CUSTOM_FREE_FUNC custom_free_func, void* custom_free_func_context);
-
-CONSTBUFFER_HANDLE real_CONSTBUFFER_CreateFromOffsetAndSize(CONSTBUFFER_HANDLE handle, size_t offset, size_t size);
-
-void real_CONSTBUFFER_IncRef(CONSTBUFFER_HANDLE constbufferHandle);
-
-void real_CONSTBUFFER_DecRef(CONSTBUFFER_HANDLE constbufferHandle);
-
-const CONSTBUFFER* real_CONSTBUFFER_GetContent(CONSTBUFFER_HANDLE constbufferHandle);
-
-bool real_CONSTBUFFER_HANDLE_contain_same(CONSTBUFFER_HANDLE left, CONSTBUFFER_HANDLE right);
-
-#ifdef __cplusplus
-}
 #endif
-
-#endif //REAL_CONSTBUFFER_H
