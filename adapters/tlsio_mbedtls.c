@@ -74,6 +74,7 @@ typedef struct TLS_IO_INSTANCE_TAG
     char* x509_private_key;
 
     int tls_status;
+    int external_send;
 } TLS_IO_INSTANCE;
 
 typedef enum TLS_STATE_TAG
@@ -330,9 +331,13 @@ static void on_send_complete(void* context, IO_SEND_RESULT send_result)
     {
         // If the state is not open then this is probably an internal call
         // So don't notify the upper level
-        if (tls_io_instance->on_send_complete != NULL && tls_io_instance->tlsio_state != TLSIO_STATE_CLOSING)
+        if (tls_io_instance->external_send == 1)
         {
-            tls_io_instance->on_send_complete(tls_io_instance->on_send_complete_callback_context, send_result);
+            if (tls_io_instance->on_send_complete != NULL && tls_io_instance->tlsio_state != TLSIO_STATE_CLOSING)
+            {
+                tls_io_instance->on_send_complete(tls_io_instance->on_send_complete_callback_context, send_result);
+                tls_io_instance->external_send = 0;
+            }
         }
     }
     else
@@ -615,6 +620,10 @@ int tlsio_mbedtls_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_cl
             LogError("IO should not be closed: %d", tls_io_instance->tlsio_state);
             result = MU_FAILURE;
         }
+        else if (tls_io_instance->tlsio_state == TLSIO_STATE_ERROR)
+        {
+            // No need to log here
+        }
         else
         {
             tls_io_instance->tlsio_state = TLSIO_STATE_CLOSING;
@@ -660,6 +669,7 @@ int tlsio_mbedtls_send(CONCRETE_IO_HANDLE tls_io, const void *buffer, size_t siz
         }
         else
         {
+            tls_io_instance->external_send = 1;
             tls_io_instance->on_send_complete = on_send_complete;
             tls_io_instance->on_send_complete_callback_context = callback_context;
             int res = mbedtls_ssl_write(&tls_io_instance->ssl, buffer, size);

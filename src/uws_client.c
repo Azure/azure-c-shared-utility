@@ -614,6 +614,7 @@ static void unchecked_on_send_complete(void* context, IO_SEND_RESULT send_result
 {
     (void)context;
     (void)send_result;
+    printf("unchecked_on_send_complete\r\n");
 }
 
 static int send_close_frame(UWS_CLIENT_INSTANCE* uws_client, unsigned int close_error_code)
@@ -1852,6 +1853,7 @@ int uws_client_close_handshake_async(UWS_CLIENT_HANDLE uws_client, uint16_t clos
 
 static void on_underlying_io_send_complete(void* context, IO_SEND_RESULT send_result)
 {
+    printf("on_underlying_io_send_complete called\r\n");
     if (context == NULL)
     {
         /* Codes_SRS_UWS_CLIENT_01_435: [ When on_underlying_io_send_complete is called with a NULL context, it shall do nothing. ]*/
@@ -1907,7 +1909,7 @@ static bool find_list_node(LIST_ITEM_HANDLE list_item, const void* match_context
 int uws_client_send_frame_async(UWS_CLIENT_HANDLE uws_client, unsigned char frame_type, const unsigned char* buffer, size_t size, bool is_final, ON_WS_SEND_FRAME_COMPLETE on_ws_send_frame_complete, void* on_ws_send_frame_complete_context)
 {
     int result;
-
+    printf("uws_client_send_frame_async called\r\n");
     if (uws_client == NULL)
     {
         /* Codes_SRS_UWS_CLIENT_01_044: [ If any the arguments uws_client is NULL, uws_client_send_frame_async shall fail and return a non-zero value. ]*/
@@ -2201,14 +2203,14 @@ int uws_client_set_request_header(UWS_CLIENT_HANDLE uws_client, const char* name
 
     if (uws_client == NULL || name == NULL || value == NULL)
     {
-        // Codes_SRS_UWS_CLIENT_09_002: [ If any of the arguments uws_client or name or value is NULL uws_client_set_request_header shall fail and return a non-zero value. ]  
+        // Codes_SRS_UWS_CLIENT_09_002: [ If any of the arguments uws_client or name or value is NULL uws_client_set_request_header shall fail and return a non-zero value. ]
         LogError("invalid parameter (uws_client=%p, name=%p, value=%p)", uws_client, name, value);
         result = MU_FAILURE;
     }
-    // Codes_SRS_UWS_CLIENT_09_003: [ A copy of name and value shall be stored for later sending in the request message. ]  
+    // Codes_SRS_UWS_CLIENT_09_003: [ A copy of name and value shall be stored for later sending in the request message. ]
     else if (Map_AddOrUpdate(uws_client->request_headers, name, value) != MAP_OK)
     {
-        // Codes_SRS_UWS_CLIENT_09_004: [ If name or value fail to be stored the function shall fail and return a non-zero value. ]  
+        // Codes_SRS_UWS_CLIENT_09_004: [ If name or value fail to be stored the function shall fail and return a non-zero value. ]
         LogError("Failed adding request header %s", name);
         result = MU_FAILURE;
     }
