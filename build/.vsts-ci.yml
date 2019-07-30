@@ -327,6 +327,9 @@ jobs:
   displayName: 'wolfssl'
   steps:
   - script: |
+     cmake --version
+     cc --version
+     gcc --version
      if [ -f "jenkins/linux_wolfssl.sh" ]
      then
       LD_LIBRARY_PATH=/usr/local/lib
