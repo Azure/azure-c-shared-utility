@@ -297,6 +297,11 @@ if(UNIX) #LINUX OR APPLE
     )
 endif()
 
+if(${use_openssl})
+    set(source_h_files ${source_h_files}
+        ./adapters/shim_openssl.h
+    )
+endif()
 if(${use_wsio})
     set(source_h_files ${source_h_files}
         ./inc/azure_c_shared_utility/wsio.h

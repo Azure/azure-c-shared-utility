@@ -674,7 +674,7 @@ static void send_handshake_bytes(TLS_IO_INSTANCE* tls_io_instance)
         {
             if (ssl_err == SSL_ERROR_SSL)
             {
-                LogError(ERR_error_string(ERR_get_error(), NULL));
+                LogError("%s", ERR_error_string(ERR_get_error(), NULL));
             }
             else
             {
@@ -815,6 +815,7 @@ static int decode_ssl_received_bytes(TLS_IO_INSTANCE* tls_io_instance)
             return result;
         }
 
+        ERR_clear_error();
         rcv_bytes = SSL_read(tls_io_instance->ssl, buffer, sizeof(buffer));
         if (rcv_bytes > 0)
         {
@@ -825,6 +826,15 @@ static int decode_ssl_received_bytes(TLS_IO_INSTANCE* tls_io_instance)
             else
             {
                 tls_io_instance->on_bytes_received(tls_io_instance->on_bytes_received_context, buffer, rcv_bytes);
+            }
+        }
+        else
+        {
+            int ssl_err = SSL_get_error(tls_io_instance->ssl, rcv_bytes);
+            if (ssl_err != SSL_ERROR_WANT_READ && ssl_err != SSL_ERROR_WANT_WRITE)
+            {
+                LogError("%s: Error in SSL_read: %d.", __FUNCTION__, ssl_err);
+                LogError("%s", ERR_error_string(ERR_get_error(), NULL));
             }
         }
     }
@@ -1821,7 +1831,7 @@ static int setup_crl_check(TLS_IO_INSTANCE* tls_io_instance)
     store = SSL_CTX_get_cert_store(tls_io_instance->ssl_context);
 
 #if USE_OPENSSL_1_1_0_OR_UP
-    int flags = X509_VERIFY_PARAM_get_flags(X509_STORE_get0_param(store));
+    long flags = X509_VERIFY_PARAM_get_flags(X509_STORE_get0_param(store));
 #else
     long flags = X509_VERIFY_PARAM_get_flags(store->param);
 #endif
