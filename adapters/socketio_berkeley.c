@@ -866,22 +866,20 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
                 ssize_t send_result = send(socket_io_instance->socket, buffer, size, 0);
                 if ((send_result < 0) || ((size_t)send_result != size))
                 {
-                    if (send_result == INVALID_SOCKET)
+                    if (send_result == INVALID_SOCKET && errno != EAGAIN)
                     {
-                        if (errno == EAGAIN) /*send says "come back later" with EAGAIN - likely the socket buffer cannot accept more data*/
-                        {
-                            /*do nothing*/
-                            result = 0;
-                        }
-                        else
-                        {
-                            LogError("Failure: sending socket failed. errno=%d (%s).", errno, strerror(errno));
-                            result = MU_FAILURE;
-                        }
+                        LogError("Failure: sending socket failed. errno=%d (%s).", errno, strerror(errno));
+                        result = __FAILURE__;
                     }
                     else
                     {
-                        /* queue data */
+                        if (send_result == INVALID_SOCKET && errno == EAGAIN) /*send says "come back later" with EAGAIN - likely the socket buffer cannot accept more data*/
+                        {
+                            // put the full message in the queue
+                            send_result = 0;
+                        }
+
+                        /* queue remaining data */
                         if (add_pending_io(socket_io_instance, buffer + send_result, size - send_result, on_send_complete, callback_context) != 0)
                         {
                             LogError("Failure: add_pending_io failed.");
