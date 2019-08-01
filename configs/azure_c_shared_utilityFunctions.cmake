@@ -161,7 +161,7 @@ function(linux_unittests_add_exe whatIsBuilding)
             SET(PARSING_ADDITIONAL_LIBS OFF)
             SET(PARSING_VALGRIND_SUPPRESSIONS_FILE ON)
             set(skip_to_next TRUE)
-        else()
+        endif()
 
         if(NOT skip_to_next)
             if(PARSING_ADDITIONAL_LIBS)
