@@ -362,12 +362,9 @@ jobs:
   displayName: 'bearssl'
   steps:
   - script: |
-     if [ -f "jenkins/linux_bear ssl.sh" ]
-     then
-      LD_LIBRARY_PATH=/usr/local/lib
-      LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/my_library/
+      # LD_LIBRARY_PATH=/usr/local/lib
+      # LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/my_library/
       sudo jenkins/linux_bearssl.sh
-     fi
     displayName: 'build'
     env:
       IOTHUB_CONNECTION_STRING: $(IOTHUB-CONNECTION-STRING)

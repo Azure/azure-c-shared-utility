@@ -543,9 +543,10 @@ if(${use_bearssl})
         )
         include_directories("$ENV{bearsslDir}/inc")
     else()
-        set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} 
-            bearssl
-        )
+        include_directories($ENV{bearsslDir}/inc)
+        link_directories($ENV{bearsslDir}/build)
+        find_library(bearssl bearssl $ENV{bearsslDir}/build/)
+        set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} ${bearssl})
     endif()
 endif()
 
