@@ -9,10 +9,6 @@ cat /etc/*release | grep VERSION*
 gcc --version
 curl --version
 
-bearsslDir=/beary
-echo $bearsslDir
-sudo cp $bearsslDir/build/libbearssl.a /usr/local/bin
-cp $bearsslDir/inc/*.h inc/
 # Set the default cores
 CORES=$(grep -c ^processor /proc/cpuinfo 2>/dev/null || sysctl -n hw.ncpu)
 cmake . -Bcmake -Duse_bearssl:BOOL=ON -Drun_unittests:BOOL=ON
