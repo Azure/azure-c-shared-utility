@@ -13,7 +13,7 @@ echo $bearsslDir
 
 # Set the default cores
 CORES=$(grep -c ^processor /proc/cpuinfo 2>/dev/null || sysctl -n hw.ncpu)
-
+bearsslDir=/beary/
 cmake -Bcmake -Duse_bearssl:BOOL=ON -Drun_unittests:BOOL=ON
 cd cmake
 
