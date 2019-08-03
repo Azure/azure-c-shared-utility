@@ -369,6 +369,7 @@ jobs:
       LD_LIBRARY_PATH=/usr/local/lib
       LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/my_library/
       cd $(Build.SourcesDirectory)
+      bearsslDir=/beary/
       sudo bash jenkins/linux_bearssl.sh
     displayName: 'build'
     env:
