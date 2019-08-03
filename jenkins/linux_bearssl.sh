@@ -9,6 +9,7 @@ cat /etc/*release | grep VERSION*
 gcc --version
 curl --version
 
+bearsslDir=/beary
 echo $bearsslDir
 sudo cp $bearsslDir/build/libbearssl.a /usr/local/bin
 cp $bearsslDir/inc/*.h inc/
