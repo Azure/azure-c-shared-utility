@@ -9,7 +9,6 @@ cat /etc/*release | grep VERSION*
 gcc --version
 curl --version
 
-bearsslDir=/beary/
 echo $bearsslDir
 
 build_root=$(cd "$(dirname "$0")/.." && pwd)
