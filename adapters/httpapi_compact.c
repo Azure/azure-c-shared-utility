@@ -14,6 +14,7 @@
 #include "azure_c_shared_utility/xio.h"
 #include "azure_c_shared_utility/platform.h"
 #include "azure_c_shared_utility/tlsio.h"
+#include "azure_c_shared_utility/socketio.h"
 #include "azure_c_shared_utility/threadapi.h"
 #include "azure_c_shared_utility/shared_util_options.h"
 
@@ -30,15 +31,21 @@
 #define TEMP_BUFFER_SIZE 1024
 
 /*Codes_SRS_HTTPAPI_COMPACT_21_077: [ The HTTPAPI_ExecuteRequest shall wait, at least, 10 seconds for the SSL open process. ]*/
-#define MAX_OPEN_RETRY   100
+#define MAX_OPEN_RETRY   1000
 /*Codes_SRS_HTTPAPI_COMPACT_21_084: [ The HTTPAPI_CloseConnection shall wait, at least, 10 seconds for the SSL close process. ]*/
 #define MAX_CLOSE_RETRY   100
 /*Codes_SRS_HTTPAPI_COMPACT_21_079: [ The HTTPAPI_ExecuteRequest shall wait, at least, 20 seconds to send a buffer using the SSL connection. ]*/
 #define MAX_SEND_RETRY   200
 /*Codes_SRS_HTTPAPI_COMPACT_21_081: [ The HTTPAPI_ExecuteRequest shall try to read the message with the response up to 20 seconds. ]*/
-#define MAX_RECEIVE_RETRY   200
-/*Codes_SRS_HTTPAPI_COMPACT_21_083: [ The HTTPAPI_ExecuteRequest shall wait, at least, 100 milliseconds between retries. ]*/
-#define RETRY_INTERVAL_IN_MICROSECONDS  100
+#define MAX_RECEIVE_RETRY   2000
+/*Codes_SRS_HTTPAPI_COMPACT_21_083: [ The HTTPAPI_ExecuteRequest shall wait, at least, 100 milliseconds between retries for the SSL open process. ]*/
+#define OPEN_RETRY_INTERVAL_IN_MILLISECONDS  10
+/*Codes_SRS_HTTPAPI_COMPACT_21_083: [ The HTTPAPI_CloseConnection shall wait, at least, 100 milliseconds between retries for the SSL close process. ]*/
+#define CLOSE_RETRY_INTERVAL_IN_MILLISECONDS  100
+/*Codes_SRS_HTTPAPI_COMPACT_21_083: [ The HTTPAPI_ExecuteRequest shall wait, at least, 100 milliseconds between retries to send a buffer using the SSL connection. ]*/
+#define SEND_RETRY_INTERVAL_IN_MILLISECONDS  100
+/*Codes_SRS_HTTPAPI_COMPACT_21_083: [ The HTTPAPI_ExecuteRequest shall wait, at least, 10 milliseconds between retries to read the message with the response. ]*/
+#define RECEIVE_RETRY_INTERVAL_IN_MILLISECONDS  10
 
 DEFINE_ENUM_STRINGS(HTTPAPI_RESULT, HTTPAPI_RESULT_VALUES)
 
@@ -200,14 +207,13 @@ void HTTPAPI_Deinit(void)
 /*Codes_SRS_HTTPAPI_COMPACT_21_010: [ The HTTPAPI_CreateConnection shall create an http connection to the host specified by the hostName parameter. ]*/
 HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
 {
-    return HTTPAPI_CreateConnection_With_Proxy(hostName, NULL, 0, NULL, NULL);
+    return HTTPAPI_CreateConnection_Advanced(hostName, 443, true, NULL, 0, NULL, NULL);
 }
 
-/*Codes_SRS_HTTPAPI_COMPACT_21_011: [ The HTTPAPI_CreateConnection_With_Proxy shall create an http connection to the host specified by the hostName parameter with proxy supported. ]*/
-HTTP_HANDLE HTTPAPI_CreateConnection_With_Proxy(const char* hostName, const char* proxyHost, int proxyPort, const char* proxyUsername, const char*proxyPassword)
+/*Codes_SRS_HTTPAPI_COMPACT_21_011: [ The HTTPAPI_CreateConnection_Advanced shall create an http connection to the host specified by the hostName/port/secure parameter with proxy supported. ]*/
+HTTP_HANDLE HTTPAPI_CreateConnection_Advanced(const char* hostName, int port, bool secure, const char* proxyHost, int proxyPort, const char* proxyUsername, const char*proxyPassword)
 {
     HTTP_HANDLE_DATA* http_instance;
-    TLSIO_CONFIG tlsio_config;
 
     if (hostName == NULL)
     {
@@ -231,38 +237,54 @@ HTTP_HANDLE HTTPAPI_CreateConnection_With_Proxy(const char* hostName, const char
         }
         else
         {
-            tlsio_config.hostname = hostName;
-            tlsio_config.port = 443;
-            tlsio_config.underlying_io_interface = NULL;
-            tlsio_config.underlying_io_parameters = NULL;
-
-            HTTP_PROXY_IO_CONFIG proxy_config;
-            if (proxyHost != NULL && strlen(proxyHost) > 0)
+            if (secure)
             {
-                tlsio_config.underlying_io_interface = http_proxy_io_get_interface_description();
-                if (tlsio_config.underlying_io_interface == NULL)
-                {
-                    LogError("Failed to get http proxy interface description.");
-                    free(http_instance);
-                    http_instance = NULL;
-                }
-                else
-                {
-                    proxy_config.hostname = hostName;
-                    proxy_config.port = 443;
-                    proxy_config.proxy_hostname = proxyHost;
-                    proxy_config.proxy_port = proxyPort;
-                    proxy_config.username = proxyUsername;
-                    proxy_config.password = proxyPassword;
+                TLSIO_CONFIG tlsio_config;
+                tlsio_config.hostname = hostName;
+                tlsio_config.port = port;
+                tlsio_config.underlying_io_interface = NULL;
+                tlsio_config.underlying_io_parameters = NULL;
 
-                    tlsio_config.underlying_io_parameters = &proxy_config;
+                HTTP_PROXY_IO_CONFIG proxy_config;
+                if (proxyHost != NULL && strlen(proxyHost) > 0)
+                {
+                    tlsio_config.underlying_io_interface = http_proxy_io_get_interface_description();
+                    if (tlsio_config.underlying_io_interface == NULL)
+                    {
+                        LogError("Failed to get http proxy interface description.");
+                        free(http_instance);
+                        http_instance = NULL;
+                    }
+                    else
+                    {
+                        proxy_config.hostname = hostName;
+                        proxy_config.port = port;
+                        proxy_config.proxy_hostname = proxyHost;
+                        proxy_config.proxy_port = proxyPort;
+                        proxy_config.username = proxyUsername;
+                        proxy_config.password = proxyPassword;
+
+                        tlsio_config.underlying_io_parameters = &proxy_config;
+                    }
                 }
+
+                if (http_instance != NULL)
+                {
+                    http_instance->xio_handle = xio_create(platform_get_default_tlsio(), (void*)&tlsio_config);
+                }
+            }
+            else
+            {
+                SOCKETIO_CONFIG socketio_config;
+                socketio_config.hostname = hostName;
+                socketio_config.port = port;
+                socketio_config.accepted_socket = NULL;
+
+                http_instance->xio_handle = xio_create(socketio_get_interface_description(), (void*)&socketio_config);
             }
 
             if (http_instance != NULL)
             {
-                http_instance->xio_handle = xio_create(platform_get_default_tlsio(), (void*)&tlsio_config);
-
                 /*Codes_SRS_HTTPAPI_COMPACT_21_016: [ If the HTTPAPI_CreateConnection failed to create the connection, it shall return NULL as the handle. ]*/
                 if (http_instance->xio_handle == NULL)
                 {
@@ -351,7 +373,7 @@ void HTTPAPI_CloseConnection(HTTP_HANDLE handle)
                     {
                         LogInfo("Waiting for TLS close connection");
                         /*Codes_SRS_HTTPAPI_COMPACT_21_086: [ The HTTPAPI_CloseConnection shall wait, at least, 100 milliseconds between retries. ]*/
-                        ThreadAPI_Sleep(RETRY_INTERVAL_IN_MICROSECONDS);
+                        ThreadAPI_Sleep(CLOSE_RETRY_INTERVAL_IN_MILLISECONDS);
                     }
                 }
             }
@@ -541,7 +563,7 @@ static int conn_receive(HTTP_HANDLE_DATA* http_instance, char* buffer, int count
             }
 
             /*Codes_SRS_HTTPAPI_COMPACT_21_083: [ The HTTPAPI_ExecuteRequest shall wait, at least, 100 milliseconds between retries. ]*/
-            ThreadAPI_Sleep(RETRY_INTERVAL_IN_MICROSECONDS);
+            ThreadAPI_Sleep(RECEIVE_RETRY_INTERVAL_IN_MILLISECONDS);
         }
     }
 
@@ -636,7 +658,7 @@ static int readLine(HTTP_HANDLE_DATA* http_instance, char* buf, const size_t max
                 if ((countRetry--) > 0)
                 {
                     /*Codes_SRS_HTTPAPI_COMPACT_21_083: [ The HTTPAPI_ExecuteRequest shall wait, at least, 100 milliseconds between retries. ]*/
-                    ThreadAPI_Sleep(RETRY_INTERVAL_IN_MICROSECONDS);
+                    ThreadAPI_Sleep(RECEIVE_RETRY_INTERVAL_IN_MILLISECONDS);
                 }
                 else
                 {
@@ -724,7 +746,7 @@ static int skipN(HTTP_HANDLE_DATA* http_instance, size_t n)
                     if ((countRetry--) > 0)
                     {
                         /*Codes_SRS_HTTPAPI_COMPACT_21_083: [ The HTTPAPI_ExecuteRequest shall wait, at least, 100 milliseconds between retries. ]*/
-                        ThreadAPI_Sleep(RETRY_INTERVAL_IN_MICROSECONDS);
+                        ThreadAPI_Sleep(RECEIVE_RETRY_INTERVAL_IN_MILLISECONDS);
                     }
                     else
                     {
@@ -817,7 +839,7 @@ static HTTPAPI_RESULT OpenXIOConnection(HTTP_HANDLE_DATA* http_instance)
                     else
                     {
                         /*Codes_SRS_HTTPAPI_COMPACT_21_083: [ The HTTPAPI_ExecuteRequest shall wait, at least, 100 milliseconds between retries. ]*/
-                        ThreadAPI_Sleep(RETRY_INTERVAL_IN_MICROSECONDS);
+                        ThreadAPI_Sleep(OPEN_RETRY_INTERVAL_IN_MILLISECONDS);
                     }
                 }
             }
@@ -868,7 +890,7 @@ static HTTPAPI_RESULT conn_send_all(HTTP_HANDLE_DATA* http_instance, const unsig
             else
             {
                 /*Codes_SRS_HTTPAPI_COMPACT_21_083: [ The HTTPAPI_ExecuteRequest shall wait, at least, 100 milliseconds between retries. ]*/
-                ThreadAPI_Sleep(RETRY_INTERVAL_IN_MICROSECONDS);
+                ThreadAPI_Sleep(SEND_RETRY_INTERVAL_IN_MILLISECONDS);
             }
         }
     }
