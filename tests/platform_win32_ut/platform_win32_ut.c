@@ -7,8 +7,6 @@
 #include <stdint.h>
 #endif
 
-#include "testrunnerswitcher.h"
-
 #undef DECLSPEC_IMPORT
 
 #pragma warning(disable: 4273)
@@ -25,6 +23,7 @@ void my_gballoc_free(void* ptr)
     free(ptr);
 }
 
+#include "testrunnerswitcher.h"
 #include "umock_c/umock_c.h"
 #include "umock_c/umocktypes_charptr.h"
 #include "umock_c/umocktypes_stdint.h"

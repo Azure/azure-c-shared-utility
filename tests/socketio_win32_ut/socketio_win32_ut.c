@@ -2,24 +2,28 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #ifdef __cplusplus
-#include <cstdint>
+#include <cstdlib>
+#include <cstddef>
 #else
-#include <stdint.h>
+#include <stdlib.h>
+#include <stddef.h>
 #endif
-
-#include "testrunnerswitcher.h"
 
 #undef DECLSPEC_IMPORT
 
 #pragma warning(disable: 4273)
 
-#include <winsock2.h>
-#include <mstcpip.h>
+#define WIN32_LEAN_AND_MEAN
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#include <windows.h>
+
+#include <mstcpip.h>
 #ifdef AF_UNIX_ON_WINDOWS
 #include <afunix.h>
 #endif
+
+#include "testrunnerswitcher.h"
 
 static size_t currentmalloc_call;
 static size_t whenShallmalloc_fail;
@@ -89,7 +93,7 @@ static const char* TEST_BUFFER_VALUE = "test_buffer_value";
 
 static struct tcp_keepalive persisted_tcp_keepalive;
 
-MOCK_FUNCTION_WITH_CODE(WSAAPI, SOCKET, socket, int, af, int, type, int, protocol)
+MOCK_FUNCTION_WITH_CODE(WSAAPI, SOCKET, socket, int, af, int, sock_type, int, protocol)
 MOCK_FUNCTION_END(test_socket)
 MOCK_FUNCTION_WITH_CODE(WSAAPI, int, closesocket, SOCKET, s)
 MOCK_FUNCTION_END(0)
