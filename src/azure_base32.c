@@ -324,14 +324,14 @@ char* Azure_Base32_Encode_Bytes(const unsigned char* source, size_t size)
     else if (size == 0)
     {
         /* Codes_SRS_BASE32_07_005: [ If size is 0 Azure_Base32_Encode_Bytes shall return an empty string. ] */
-		if ((result = malloc(1)) != NULL)
-		{
-			strcpy(result, "");
-		}
-		else
-		{
-			LogError("unable to allocate memory for result");
-		}
+        if ((result = malloc(1)) != NULL)
+        {
+            strcpy(result, "");
+        }
+        else
+        {
+            LogError("unable to allocate memory for result");
+        }
     }
     else
     {
