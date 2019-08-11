@@ -66,9 +66,10 @@ typedef struct HTTP_HANDLE_DATA_TAG
 
 static HTTPAPI_RESULT OpenXIOConnection(HTTP_HANDLE_DATA* http_instance);
 
+/*Read a decimal from a char[], returns a decimal and the remaining part which cannot be converted to a number.*/
 /*the following function does the same as sscanf(pos2, "%d %s", &sec, remaining)*/
 /*this function only exists because some of platforms do not have sscanf. */
-static int ParseStringToDecimal(const char *src, int* dst, char* remaining)
+static int ParseStringToDecimalAndRemaining(const char *src, int* dst, char* remaining)
 {
     int result;
     char* next;
@@ -182,7 +183,7 @@ static int  ParseHttpResponse(const char* src, int* code, char* reasonPhrase)
         }
         else
         {
-            result = ParseStringToDecimal(src, code, reasonPhrase);
+            result = ParseStringToDecimalAndRemaining(src, code, reasonPhrase);
         }
     }
 
@@ -1060,7 +1061,7 @@ static HTTPAPI_RESULT ReceiveContentInfoFromXIO(HTTP_HANDLE_DATA* http_instance,
             if (InternStrnicmp(buf, ContentLength, ContentLengthSize) == 0)
             {
                 substr = buf + ContentLengthSize;
-                if (ParseStringToDecimal(substr, &lengthInMsg, NULL) != 1)
+                if (ParseStringToDecimalAndRemaining(substr, &lengthInMsg, NULL) != 1)
                 {
                     /*Codes_SRS_HTTPAPI_COMPACT_21_032: [ If the HTTPAPI_ExecuteRequest cannot read the message with the request result, it shall return HTTPAPI_READ_DATA_FAILED. ]*/
                     result = HTTPAPI_READ_DATA_FAILED;
