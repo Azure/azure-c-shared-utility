@@ -226,6 +226,7 @@ MOCKABLE_FUNCTION(, HTTPAPI_RESULT, HTTPAPI_ExecuteRequest, HTTP_HANDLE, handle,
  * 									401, etc.)
  * @param   reasonPhrase            This is an out parameter, returns the reason
  *                                  phrase after status code
+ * @param   maxReasonPhraseSize     Specifies the buffer size of reasonPhrase
  * @param	responseHeadersHandle	This is an HTTP headers handle to which
  * 									::HTTPAPI_ExecuteRequest must add all the
  * 									HTTP response headers so that the caller of
@@ -249,7 +250,7 @@ MOCKABLE_FUNCTION(, HTTPAPI_RESULT, HTTPAPI_ExecuteRequest, HTTP_HANDLE, handle,
  */
 MOCKABLE_FUNCTION(, HTTPAPI_RESULT, HTTPAPI_ExecuteRequest_With_Reason_Phrase, HTTP_HANDLE, handle, HTTPAPI_REQUEST_TYPE, requestType, const char*, relativePath,
                                              HTTP_HEADERS_HANDLE, httpHeadersHandle, const unsigned char*, content,
-                                             size_t, contentLength, unsigned int*, statusCode, char*, reasonPhrase,
+                                             size_t, contentLength, unsigned int*, statusCode, char*, reasonPhrase, const size_t, maxReasonPhraseSize,
                                              HTTP_HEADERS_HANDLE, responseHeadersHandle, BUFFER_HANDLE, responseContent);
 
 /**
@@ -282,6 +283,7 @@ MOCKABLE_FUNCTION(, HTTPAPI_RESULT, HTTPAPI_ExecuteRequest_With_Reason_Phrase, H
  * 									401, etc.)
  * @param   reasonPhrase            This is an out parameter, returns the reason
  *                                  phrase after status code
+ * @param   maxReasonPhraseSize     Specifies the buffer size of reasonPhrase
  * @param	responseHeadersHandle	This is an HTTP headers handle to which
  * 									::HTTPAPI_ExecuteRequest must add all the
  * 									HTTP response headers so that the caller of
@@ -301,7 +303,7 @@ MOCKABLE_FUNCTION(, HTTPAPI_RESULT, HTTPAPI_ExecuteRequest_With_Reason_Phrase, H
  */
 MOCKABLE_FUNCTION(, HTTPAPI_RESULT, HTTPAPI_ExecuteRequest_With_Streaming, HTTP_HANDLE, handle, HTTPAPI_REQUEST_TYPE, requestType, const char*, relativePath,
                                              HTTP_HEADERS_HANDLE, httpHeadersHandle, const unsigned char*, content,
-                                             size_t, contentLength, unsigned int*, statusCode, char*, reasonPhrase,
+                                             size_t, contentLength, unsigned int*, statusCode, char*, reasonPhrase, const size_t, maxReasonPhraseSize,
                                              HTTP_HEADERS_HANDLE, responseHeadersHandle, ON_CHUNK_RECEIVED, onChunkReceived, void*, onChunkReceivedContext);
 
 /**
