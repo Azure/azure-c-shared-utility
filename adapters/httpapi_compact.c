@@ -93,7 +93,7 @@ static int ParseStringToDecimalAndRemaining(const char *src, int* dst, char* rem
             cLen = maxRemainingSize - 1;
         }
         (void)strcpy_s(remaining, cLen + 1, next);
-        remaining[maxRemainingSize] = 0;
+        remaining[maxRemainingSize - 1] = 0;
     }    
     return result;
 }
@@ -1029,7 +1029,7 @@ static HTTPAPI_RESULT ReceiveHeaderFromXIO(HTTP_HANDLE_DATA* http_instance, unsi
                 cLen = maxReasonPhraseSize - 1;
             }
             (void)strcpy_s(reasonPhrase, cLen + 1, reason);
-            reasonPhrase[maxReasonPhraseSize] = 0;
+            reasonPhrase[maxReasonPhraseSize - 1] = 0;
         }
         /*Codes_SRS_HTTPAPI_COMPACT_21_033: [ If the whole process succeed, the HTTPAPI_ExecuteRequest shall retur HTTPAPI_OK. ]*/
         result = HTTPAPI_OK;
