@@ -10,6 +10,8 @@ endif()
 project(azure_c_shared_utility)
 
 FILE(READ ${CMAKE_CURRENT_LIST_DIR}/version.txt C_SHARED_VERSION)
+string(REPLACE "." ";" VERSION_LIST ${C_SHARED_VERSION})
+list(GET VERSION_LIST 0 C_SHARED_VERSION_MAJOR)
 
 # Include the common build rules for the C SDK
 include(configs/azure_iot_build_rules.cmake)
@@ -477,7 +479,10 @@ if(${build_as_dynamic})
         ${source_h_files}
         ${def_files}
     )
-    set_target_properties(aziotsharedutil_dll PROPERTIES OUTPUT_NAME "aziotsharedutil_dll")
+  set_target_properties(aziotsharedutil_dll PROPERTIES
+    OUTPUT_NAME "aziotsharedutil"
+    VERSION ${C_SHARED_VERSION}
+    SOVERSION ${C_SHARED_VERSION_MAJOR})
 endif()
 
 set(aziotsharedutil_target_libs)
