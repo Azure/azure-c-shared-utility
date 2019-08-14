@@ -71,8 +71,6 @@ if(MSVC)
       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
       set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4")
 elseif(UNIX) #LINUX OR APPLE
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
     if(NOT (IN_OPENWRT OR APPLE))
         set (CMAKE_C_FLAGS "-D_POSIX_C_SOURCE=200112L ${CMAKE_C_FLAGS}")
     endif()
@@ -193,10 +191,6 @@ IF((WIN32) AND (NOT(MINGW)))
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
     # Make warning as error
     add_definitions(/WX)
-ELSE()
-    # Make warning as error
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
 ENDIF()
 
 
