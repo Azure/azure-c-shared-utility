@@ -66,9 +66,10 @@ typedef struct HTTP_HANDLE_DATA_TAG
 
 static HTTPAPI_RESULT OpenXIOConnection(HTTP_HANDLE_DATA* http_instance);
 
-/*the following function does the same as sscanf(pos2, "%d", &sec)*/
+/*Read a decimal from a char[], returns a decimal and the remaining part which cannot be converted to a number.*/
+/*the following function does the same as sscanf_s(pos2, "%d %s", &sec, remaining)*/
 /*this function only exists because some of platforms do not have sscanf. */
-static int ParseStringToDecimal(const char *src, int* dst)
+static int ParseStringToDecimalAndRemaining(const char *src, int* dst, char* remaining, const size_t maxRemainingSize)
 {
     int result;
     char* next;
@@ -84,6 +85,16 @@ static int ParseStringToDecimal(const char *src, int* dst)
     if (num < INT_MIN) num = INT_MIN;
     if (num > INT_MAX) num = INT_MAX;
     *dst = (int)num;
+    if (remaining && maxRemainingSize > 0)
+    {
+        size_t cLen = strlen(next);
+        if (cLen > maxRemainingSize - 1)
+        {
+            cLen = maxRemainingSize - 1;
+        }
+        (void)strcpy_s(remaining, cLen + 1, next);
+        remaining[maxRemainingSize - 1] = 0;
+    }    
     return result;
 }
 
@@ -116,16 +127,16 @@ static int ParseStringToHexadecimal(const char *src, size_t* dst)
     return result;
 }
 
-/*the following function does the same as sscanf(buf, "HTTP/%*d.%*d %d %*[^\r\n]", &ret) */
+/*the following function does the same as sscanf_s(buf, "HTTP/%*d.%*d %d %s[^\r\n]", &code, reasonPhrase) */
 /*this function only exists because some of platforms do not have sscanf. This is not a full implementation; it only works with well-defined HTTP response. */
-static int  ParseHttpResponse(const char* src, int* dst)
+static int  ParseHttpResponse(const char* src, int* code, char* reasonPhrase, const size_t maxReasonPhraseSize)
 {
     int result;
     static const char HTTPPrefix[] = "HTTP/";
     bool fail;
     const char* runPrefix;
 
-    if ((src == NULL) || (dst == NULL))
+    if ((src == NULL) || (code == NULL))
     {
         result = EOF;
     }
@@ -177,7 +188,7 @@ static int  ParseHttpResponse(const char* src, int* dst)
         }
         else
         {
-            result = ParseStringToDecimal(src, dst);
+            result = ParseStringToDecimalAndRemaining(src, code, reasonPhrase, maxReasonPhraseSize);
         }
     }
 
@@ -976,7 +987,7 @@ static HTTPAPI_RESULT SendContentToXIO(HTTP_HANDLE_DATA* http_instance, const un
 }
 
 /*Codes_SRS_HTTPAPI_COMPACT_21_030: [ At the end of the transmission, the HTTPAPI_ExecuteRequest shall receive the response from the host. ]*/
-static HTTPAPI_RESULT ReceiveHeaderFromXIO(HTTP_HANDLE_DATA* http_instance, unsigned int* statusCode)
+static HTTPAPI_RESULT ReceiveHeaderFromXIO(HTTP_HANDLE_DATA* http_instance, unsigned int* statusCode, char* reasonPhrase, const size_t maxReasonPhraseSize)
 {
     HTTPAPI_RESULT result;
     char    buf[TEMP_BUFFER_SIZE];
@@ -992,7 +1003,7 @@ static HTTPAPI_RESULT ReceiveHeaderFromXIO(HTTP_HANDLE_DATA* http_instance, unsi
         result = HTTPAPI_READ_DATA_FAILED;
     }
     //Parse HTTP response
-    else if (ParseHttpResponse(buf, &ret) != 1)
+    else if (ParseHttpResponse(buf, &ret, reasonPhrase, maxReasonPhraseSize) != 1)
     {
         //Cannot match string, error
         /*Codes_SRS_HTTPAPI_COMPACT_21_055: [ If the HTTPAPI_ExecuteRequest cannot parser the received message, it shall return HTTPAPI_RECEIVE_RESPONSE_FAILED. ]*/
@@ -1048,7 +1059,7 @@ static HTTPAPI_RESULT ReceiveContentInfoFromXIO(HTTP_HANDLE_DATA* http_instance,
             if (InternStrnicmp(buf, ContentLength, ContentLengthSize) == 0)
             {
                 substr = buf + ContentLengthSize;
-                if (ParseStringToDecimal(substr, &lengthInMsg) != 1)
+                if (ParseStringToDecimalAndRemaining(substr, &lengthInMsg, NULL, 0) != 1)
                 {
                     /*Codes_SRS_HTTPAPI_COMPACT_21_032: [ If the HTTPAPI_ExecuteRequest cannot read the message with the request result, it shall return HTTPAPI_READ_DATA_FAILED. ]*/
                     result = HTTPAPI_READ_DATA_FAILED;
@@ -1272,8 +1283,8 @@ static bool validRequestType(HTTPAPI_REQUEST_TYPE requestType)
 }
 
 HTTPAPI_RESULT HTTPAPI_ExecuteRequest_Internal(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE requestType, const char* relativePath,
-    HTTP_HEADERS_HANDLE httpHeadersHandle, const unsigned char* content,
-    size_t contentLength, unsigned int* statusCode, HTTP_HEADERS_HANDLE responseHeadersHandle,
+    HTTP_HEADERS_HANDLE httpHeadersHandle, const unsigned char* content, size_t contentLength, 
+    unsigned int* statusCode, char* reasonPhrase, const size_t maxReasonPhraseSize, HTTP_HEADERS_HANDLE responseHeadersHandle,
     BUFFER_HANDLE responseContent, ON_CHUNK_RECEIVED onChunkReceived, void* onChunkReceivedContext)
 {
     HTTPAPI_RESULT result = HTTPAPI_ERROR;
@@ -1322,7 +1333,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest_Internal(HTTP_HANDLE handle, HTTPAPI_REQUE
     }
     /*Codes_SRS_HTTPAPI_COMPACT_21_030: [ At the end of the transmission, the HTTPAPI_ExecuteRequest shall receive the response from the host. ]*/
     /*Codes_SRS_HTTPAPI_COMPACT_21_073: [ The message received by the HTTPAPI_ExecuteRequest shall starts with a valid header. ]*/
-    else if ((result = ReceiveHeaderFromXIO(http_instance, statusCode)) != HTTPAPI_OK)
+    else if ((result = ReceiveHeaderFromXIO(http_instance, statusCode, reasonPhrase, maxReasonPhraseSize)) != HTTPAPI_OK)
     {
         LogError("Receive header from HTTP failed (result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
     }
@@ -1344,7 +1355,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest_Internal(HTTP_HANDLE handle, HTTPAPI_REQUE
     return result;
 }
 
-/*Codes_SRS_HTTPAPI_COMPACT_21_021: [ The HTTPAPI_ExecuteRequest shall execute the http communtication with the provided host, sending a request and reciving the response. ]*/
+/*Codes_SRS_HTTPAPI_COMPACT_21_021: [ The HTTPAPI_ExecuteRequest shall execute the http communication with the provided host, sending a request and receiving the response. ]*/
 /*Codes_SRS_HTTPAPI_COMPACT_21_050: [ If there is a content in the response, the HTTPAPI_ExecuteRequest shall copy it in the responseContent buffer. ]*/
 //Note: This function assumes that "Host:" and "Content-Length:" headers are setup
 //      by the caller of HTTPAPI_ExecuteRequest() (which is true for httptransport.c).
@@ -1354,19 +1365,32 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
     HTTP_HEADERS_HANDLE responseHeadersHandle, BUFFER_HANDLE responseContent)
 {
     return HTTPAPI_ExecuteRequest_Internal(handle, requestType, relativePath,
-        httpHeadersHandle, content, contentLength, statusCode, responseHeadersHandle, responseContent, NULL, NULL);
+        httpHeadersHandle, content, contentLength, statusCode, NULL, 0, responseHeadersHandle, responseContent, NULL, NULL);
 }
 
-/*Codes_SRS_HTTPAPI_COMPACT_21_021: [ The HTTPAPI_ExecuteRequest shall execute the http communtication with the provided host, sending a request and reciving the response. ]*/
+/*Codes_SRS_HTTPAPI_COMPACT_21_021: [ The HTTPAPI_ExecuteRequest shall execute the http communication with the provided host, sending a request and receiving the response. ]*/
+/*Codes_SRS_HTTPAPI_COMPACT_21_050: [ If there is a content in the response, the HTTPAPI_ExecuteRequest shall copy it in the responseContent buffer. ]*/
+//Note: This function assumes that "Host:" and "Content-Length:" headers are setup
+//      by the caller of HTTPAPI_ExecuteRequest() (which is true for httptransport.c).
+HTTPAPI_RESULT HTTPAPI_ExecuteRequest_With_Reason_Phrase(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE requestType, const char* relativePath,
+    HTTP_HEADERS_HANDLE httpHeadersHandle, const unsigned char* content,
+    size_t contentLength, unsigned int* statusCode, char* reasonPhrase, const size_t maxReasonPhraseSize,
+    HTTP_HEADERS_HANDLE responseHeadersHandle, BUFFER_HANDLE responseContent)
+{
+    return HTTPAPI_ExecuteRequest_Internal(handle, requestType, relativePath, httpHeadersHandle, 
+        content, contentLength, statusCode, reasonPhrase, maxReasonPhraseSize, responseHeadersHandle, responseContent, NULL, NULL);
+}
+
+/*Codes_SRS_HTTPAPI_COMPACT_21_021: [ The HTTPAPI_ExecuteRequest shall execute the http communication with the provided host, sending a request and receiving the response. ]*/
 //Note: This function assumes that "Host:" and "Content-Length:" headers are setup
 //      by the caller of HTTPAPI_ExecuteRequest() (which is true for httptransport.c).
 HTTPAPI_RESULT HTTPAPI_ExecuteRequest_With_Streaming(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE requestType, const char* relativePath,
     HTTP_HEADERS_HANDLE httpHeadersHandle, const unsigned char* content,
-    size_t contentLength, unsigned int* statusCode,
+    size_t contentLength, unsigned int* statusCode, char* reasonPhrase, const size_t maxReasonPhraseSize,
     HTTP_HEADERS_HANDLE responseHeadersHandle, ON_CHUNK_RECEIVED onChunkReceived, void* onChunkReceivedContext)
 {
-    return HTTPAPI_ExecuteRequest_Internal(handle, requestType, relativePath,
-        httpHeadersHandle, content, contentLength, statusCode, responseHeadersHandle, NULL, onChunkReceived, onChunkReceivedContext);
+    return HTTPAPI_ExecuteRequest_Internal(handle, requestType, relativePath, httpHeadersHandle, 
+        content, contentLength, statusCode, reasonPhrase, maxReasonPhraseSize, responseHeadersHandle, NULL, onChunkReceived, onChunkReceivedContext);
 }
 
 /*Codes_SRS_HTTPAPI_COMPACT_21_056: [ The HTTPAPI_SetOption shall change the HTTP options. ]*/

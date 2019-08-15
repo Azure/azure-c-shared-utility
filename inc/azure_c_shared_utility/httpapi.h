@@ -199,6 +199,62 @@ MOCKABLE_FUNCTION(, HTTPAPI_RESULT, HTTPAPI_ExecuteRequest, HTTP_HANDLE, handle,
 
 /**
  * @brief	Sends the HTTP request to the host and handles the response for
+ * 			the HTTP call.
+ *
+ * @param	handle				 	The handle to the HTTP connection created
+ * 									via ::HTTPAPI_CreateConnection.
+ * @param	requestType			 	Specifies which HTTP method is used (GET,
+ * 									POST, DELETE, PUT, PATCH).
+ * @param	relativePath		 	Specifies the relative path of the URL
+ * 									excluding the host name.
+ * @param	httpHeadersHandle	 	Specifies a set of HTTP headers (name-value
+ * 									pairs) to be added to the
+ * 									HTTP request. The @p httpHeadersHandle
+ * 									handle can be created and setup with
+ * 									the proper name-value pairs by using the
+ * 									HTTPHeaders APIs available in @c
+ * 									HTTPHeaders.h.
+ * @param	content				 	Specifies a pointer to the request body.
+ * 									This value is optional and can be @c NULL.
+ * @param	contentLength		 	Specifies the request body size (this is
+ * 									typically added into the HTTP headers as
+ * 									the Content-Length header). This value is
+ * 									optional and can be 0.
+ * @param   statusCode   	        This is an out parameter, where
+ * 									::HTTPAPI_ExecuteRequest returns the status
+ * 									code from the HTTP response (200, 201, 400,
+ * 									401, etc.)
+ * @param   reasonPhrase            This is an out parameter, returns the reason
+ *                                  phrase after status code
+ * @param   maxReasonPhraseSize     Specifies the buffer size of reasonPhrase
+ * @param	responseHeadersHandle	This is an HTTP headers handle to which
+ * 									::HTTPAPI_ExecuteRequest must add all the
+ * 									HTTP response headers so that the caller of
+ * 									::HTTPAPI_ExecuteRequest can inspect them.
+ * 									You can manipulate @p responseHeadersHandle
+ * 									by using the HTTPHeaders APIs available in
+ * 									@c HTTPHeaders.h
+ * @param	responseContent		 	This is a buffer that must be filled by
+ * 									::HTTPAPI_ExecuteRequest with the contents
+ * 									of the HTTP response body. The buffer size
+ * 									must be increased by the
+ * 									::HTTPAPI_ExecuteRequest implementation in
+ * 									order to fit the response body.
+ * 									::HTTPAPI_ExecuteRequest must also handle
+ * 									chunked transfer encoding for HTTP responses.
+ * 									To manipulate the @p responseContent buffer,
+ * 									use the APIs available in @c Strings.h.
+ *
+ * @return	@c HTTPAPI_OK if the API call is successful or an error
+ * 			code in case it fails.
+ */
+MOCKABLE_FUNCTION(, HTTPAPI_RESULT, HTTPAPI_ExecuteRequest_With_Reason_Phrase, HTTP_HANDLE, handle, HTTPAPI_REQUEST_TYPE, requestType, const char*, relativePath,
+                                             HTTP_HEADERS_HANDLE, httpHeadersHandle, const unsigned char*, content,
+                                             size_t, contentLength, unsigned int*, statusCode, char*, reasonPhrase, const size_t, maxReasonPhraseSize,
+                                             HTTP_HEADERS_HANDLE, responseHeadersHandle, BUFFER_HANDLE, responseContent);
+
+/**
+ * @brief	Sends the HTTP request to the host and handles the response for
  * 			the HTTP call, with streaming supported when the response body
  * 			is chunked. The response data is returned through callback.
  *
@@ -225,6 +281,9 @@ MOCKABLE_FUNCTION(, HTTPAPI_RESULT, HTTPAPI_ExecuteRequest, HTTP_HANDLE, handle,
  * 									::HTTPAPI_ExecuteRequest returns the status
  * 									code from the HTTP response (200, 201, 400,
  * 									401, etc.)
+ * @param   reasonPhrase            This is an out parameter, returns the reason
+ *                                  phrase after status code
+ * @param   maxReasonPhraseSize     Specifies the buffer size of reasonPhrase
  * @param	responseHeadersHandle	This is an HTTP headers handle to which
  * 									::HTTPAPI_ExecuteRequest must add all the
  * 									HTTP response headers so that the caller of
@@ -234,7 +293,7 @@ MOCKABLE_FUNCTION(, HTTPAPI_RESULT, HTTPAPI_ExecuteRequest, HTTP_HANDLE, handle,
  * 									@c HTTPHeaders.h
  * @param	onChunkReceived			This is a callback function which is invoked
  * 									when a chunk of HTTP response data is
- * 									received. This invokation only happens when
+ * 									received. This invocation only happens when
  * 									the HTTP response body is chunked.
  * @param	onChunkReceivedContext	This is the context to be passed to callback
  * 									onChunkReceived when it's invoked.
@@ -244,7 +303,7 @@ MOCKABLE_FUNCTION(, HTTPAPI_RESULT, HTTPAPI_ExecuteRequest, HTTP_HANDLE, handle,
  */
 MOCKABLE_FUNCTION(, HTTPAPI_RESULT, HTTPAPI_ExecuteRequest_With_Streaming, HTTP_HANDLE, handle, HTTPAPI_REQUEST_TYPE, requestType, const char*, relativePath,
                                              HTTP_HEADERS_HANDLE, httpHeadersHandle, const unsigned char*, content,
-                                             size_t, contentLength, unsigned int*, statusCode,
+                                             size_t, contentLength, unsigned int*, statusCode, char*, reasonPhrase, const size_t, maxReasonPhraseSize,
                                              HTTP_HEADERS_HANDLE, responseHeadersHandle, ON_CHUNK_RECEIVED, onChunkReceived, void*, onChunkReceivedContext);
 
 /**
