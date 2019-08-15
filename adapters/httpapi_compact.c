@@ -67,7 +67,7 @@ typedef struct HTTP_HANDLE_DATA_TAG
 static HTTPAPI_RESULT OpenXIOConnection(HTTP_HANDLE_DATA* http_instance);
 
 /*Read a decimal from a char[], returns a decimal and the remaining part which cannot be converted to a number.*/
-/*the following function does the same as sscanf(pos2, "%d %s", &sec, remaining)*/
+/*the following function does the same as sscanf_s(pos2, "%d %s", &sec, remaining)*/
 /*this function only exists because some of platforms do not have sscanf. */
 static int ParseStringToDecimalAndRemaining(const char *src, int* dst, char* remaining, const size_t maxRemainingSize)
 {
@@ -127,7 +127,7 @@ static int ParseStringToHexadecimal(const char *src, size_t* dst)
     return result;
 }
 
-/*the following function does the same as sscanf(buf, "HTTP/%*d.%*d %d %s[^\r\n]", &code, reasonPhrase) */
+/*the following function does the same as sscanf_s(buf, "HTTP/%*d.%*d %d %s[^\r\n]", &code, reasonPhrase) */
 /*this function only exists because some of platforms do not have sscanf. This is not a full implementation; it only works with well-defined HTTP response. */
 static int  ParseHttpResponse(const char* src, int* code, char* reasonPhrase, const size_t maxReasonPhraseSize)
 {
