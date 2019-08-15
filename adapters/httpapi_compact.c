@@ -136,7 +136,7 @@ static int  ParseHttpResponse(const char* src, int* code, char* reasonPhrase, co
     bool fail;
     const char* runPrefix;
 
-    if ((src == NULL) || (code == NULL) || (reasonPhrase == NULL))
+    if ((src == NULL) || (code == NULL))
     {
         result = EOF;
     }
@@ -992,7 +992,6 @@ static HTTPAPI_RESULT ReceiveHeaderFromXIO(HTTP_HANDLE_DATA* http_instance, unsi
     HTTPAPI_RESULT result;
     char    buf[TEMP_BUFFER_SIZE];
     int     ret;
-    char    reason[TEMP_BUFFER_SIZE];
 
     http_instance->is_io_error = 0;
 
@@ -1004,7 +1003,7 @@ static HTTPAPI_RESULT ReceiveHeaderFromXIO(HTTP_HANDLE_DATA* http_instance, unsi
         result = HTTPAPI_READ_DATA_FAILED;
     }
     //Parse HTTP response
-    else if (ParseHttpResponse(buf, &ret, reason, TEMP_BUFFER_SIZE) != 1)
+    else if (ParseHttpResponse(buf, &ret, reasonPhrase, maxReasonPhraseSize) != 1)
     {
         //Cannot match string, error
         /*Codes_SRS_HTTPAPI_COMPACT_21_055: [ If the HTTPAPI_ExecuteRequest cannot parser the received message, it shall return HTTPAPI_RECEIVE_RESPONSE_FAILED. ]*/
@@ -1019,17 +1018,6 @@ static HTTPAPI_RESULT ReceiveHeaderFromXIO(HTTP_HANDLE_DATA* http_instance, unsi
         {
             /*Codes_SRS_HTTPAPI_COMPACT_21_047: [ The HTTPAPI_ExecuteRequest shall report the status in the statusCode parameter. ]*/
             *statusCode = ret;
-        }
-        /*Codes_SRS_HTTPAPI_COMPACT_21_088: [ If the reasonPhrase is NULL, the HTTPAPI_ExecuteRequest shall report not report any reason phase. ]*/
-        if (reasonPhrase && maxReasonPhraseSize > 0)
-        {
-            size_t cLen = strlen(reason);
-            if (cLen > maxReasonPhraseSize - 1)
-            {
-                cLen = maxReasonPhraseSize - 1;
-            }
-            (void)strcpy_s(reasonPhrase, cLen + 1, reason);
-            reasonPhrase[maxReasonPhraseSize - 1] = 0;
         }
         /*Codes_SRS_HTTPAPI_COMPACT_21_033: [ If the whole process succeed, the HTTPAPI_ExecuteRequest shall retur HTTPAPI_OK. ]*/
         result = HTTPAPI_OK;
