@@ -7,9 +7,9 @@
 
 #include "windows.h"
 
-
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/etwlogger.h"
+#include "azure_c_shared_utility/consolelogger.h"
 
 /*returns a string as if printed by vprintf*/
 static char* vprintf_alloc(const char* format, va_list va)
@@ -234,6 +234,10 @@ void etwlogger_log(LOG_CATEGORY log_category, const char* file, const char* func
     }
     else
     {
+#if USE_ETW_AND_CONSOLE
+        consolelogger_log(log_category, file, func, line, options, text);
+#endif
+
         switch (log_category)
         {
         case AZ_LOG_INFO:

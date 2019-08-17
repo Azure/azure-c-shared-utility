@@ -40,9 +40,12 @@ if(WIN32)
     option(use_mbedtls "set use_mbedtls to ON if mbedtls is to be used, set to OFF to not use mbedtls" OFF)
     option(use_wolfssl "set use_wolfssl to ON if wolfssl is to be used, set to OFF to not use wolfssl" OFF)
     option(use_bearssl "set use_bearssl to ON if BearSSL is to be used, set to OFF to not use BearSSL" OFF)
-    option(use_etw "set use_etw to ON if ETW logging is to be used. Default is OFF" OFF)
     option(logerror_captures_stack_traces "LogError will make a reasonable attempt to capture the stack trace at the time of calling LogError. Only available on Windows" OFF)
     option(use_socketio "set use_socketio to ON if socketio is to be included in the library, set to OFF if a different implementation will be provided" ON)
+
+    set(use_etw OFF CACHE STRING "set use_etw to ON if ETW logging is to be used (OFF = No ETW logging, ON = Use ETW logging, ON_WITH_CONSOLE = Use ETW and call console logger. Default is OFF")
+    set_property(CACHE use_etw PROPERTY STRINGS ON_WITH_CONSOLE ON OFF)
+
 else()
     option(use_schannel "set use_schannel to ON if schannel is to be used, set to OFF to not use schannel" OFF)
     if(MACOSX)
@@ -71,7 +74,12 @@ if (MACOSX)
     endif()
 endif()
 
-if(${use_etw})
+if(WIN32)
+if (${use_etw} STREQUAL "ON_WITH_CONSOLE")
+    add_definitions(-DUSE_ETW_AND_CONSOLE)
+endif()
+
+if(${use_etw} OR (${use_etw} STREQUAL "ON_WITH_CONSOLE"))
     #create res folder
     file(MAKE_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/res)
 
@@ -79,6 +87,7 @@ if(${use_etw})
     execute_process(COMMAND  ${CMAKE_CURRENT_LIST_DIR}/src/etw_provider_generate.cmd
         WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/src
     )
+endif()
 endif()
 
 if(${logerror_captures_stack_traces})
