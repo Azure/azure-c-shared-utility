@@ -1233,6 +1233,7 @@ void tlsio_bearssl_dowork(CONCRETE_IO_HANDLE tls_io)
     unsigned char *buffer;
     size_t bufferLen;
     unsigned long bearResult;
+    int lasterr;
 
     if (tls_io != NULL)
     {
@@ -1364,6 +1365,12 @@ void tlsio_bearssl_dowork(CONCRETE_IO_HANDLE tls_io)
                     tls_io_instance->on_bytes_received(tls_io_instance->on_bytes_received_context, buffer, bufferLen);
                     br_ssl_engine_recvapp_ack(&tls_io_instance->sc.eng, bufferLen);
                 }
+            }
+
+            if ((lasterr = br_ssl_engine_last_error(&tls_io_instance->sc.eng)) != 0)
+            {
+                LogError("BearSSL reported an error: %d", lasterr);
+                indicate_error(tls_io_instance);
             }
 
             xio_dowork(tls_io_instance->socket_io);
