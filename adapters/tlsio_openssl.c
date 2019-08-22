@@ -1611,6 +1611,11 @@ int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
                 result = 0;
             }
         }
+        else if (strcmp(optionName, OPTION_SET_TLS_RENEGOTIATION) == 0)
+        {
+            // No need to do anything for Openssl
+            result = 0;
+        }
         else if (strcmp("ignore_server_name_check", optionName) == 0)
         {
             result = 0;

@@ -907,6 +907,11 @@ int tlsio_wolfssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
         {
             result = process_option(&tls_io_instance->x509privatekey, optionName, value);
         }
+        else if (strcmp(optionName, OPTION_SET_TLS_RENEGOTIATION) == 0)
+        {
+            // No need to do anything for WolfSSL
+            result = 0;
+        }
 #ifdef INVALID_DEVID
         else if (strcmp(OPTION_WOLFSSL_SET_DEVICE_ID, optionName) == 0)
         {

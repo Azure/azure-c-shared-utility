@@ -42,7 +42,9 @@ extern "C"
 
     static STATIC_VAR_UNUSED const char* const OPTION_NET_INT_MAC_ADDRESS = "net_interface_mac_address";
 
-    // DEPRECATED: The underlying security library for your platform will use a secure TLS version 
+    static STATIC_VAR_UNUSED const char* const OPTION_SET_TLS_RENEGOTIATION = "tls_renegotiation";
+
+    // DEPRECATED: The underlying security library for your platform will use a secure TLS version
     // that in general  should not be overridden with OPTION_TLS_VERSION.
     static STATIC_VAR_UNUSED const char* const OPTION_TLS_VERSION = "tls_version";
 

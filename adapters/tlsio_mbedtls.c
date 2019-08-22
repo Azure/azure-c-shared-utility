@@ -351,6 +351,7 @@ static int on_io_send(void *context, const unsigned char *buf, size_t sz)
     }
     else
     {
+printf("mbedtls: Sending the Packet %ld\r\n", sz);
         TLS_IO_INSTANCE *tls_io_instance = (TLS_IO_INSTANCE *)context;
         if (xio_send(tls_io_instance->socket_io, buf, sz, on_send_complete, tls_io_instance) != 0)
         {
@@ -408,7 +409,6 @@ static void mbedtls_init(TLS_IO_INSTANCE *tls_io_instance)
             // The underlying connection has been closed, so here un-initialize first
             mbedtls_uninit(tls_io_instance);
         }
-
         // mbedTLS initialize...
         mbedtls_x509_crt_init(&tls_io_instance->trusted_certificates_parsed);
 
@@ -645,6 +645,7 @@ int tlsio_mbedtls_send(CONCRETE_IO_HANDLE tls_io, const void *buffer, size_t siz
 {
     int result = 0;
 
+printf("mbedtls:tlsio_mbedtls_send %ld\r\n", size);
     if (tls_io == NULL || (buffer == NULL) || (size == 0))
     {
         LogError("Invalid parameter specified tls_io: %p, buffer: %p, size: %ul", tls_io, buffer, (unsigned int)size);
@@ -920,6 +921,12 @@ int tlsio_mbedtls_setoption(CONCRETE_IO_HANDLE tls_io, const char *optionName, c
             {
                 result = 0;
             }
+        }
+        else if (strcmp(optionName, OPTION_SET_TLS_RENEGOTIATION) == 0)
+        {
+            bool set_renegotiation = *((bool*)(value));
+            mbedtls_ssl_conf_renegotiation(&tls_io_instance->config, set_renegotiation ? 1 : 0);
+            result = 0;
         }
         else
         {

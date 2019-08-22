@@ -24,6 +24,7 @@
 #include "azure_c_shared_utility/azure_base64.h"
 #include "azure_c_shared_utility/optionhandler.h"
 #include "azure_c_shared_utility/map.h"
+#include "azure_c_shared_utility/shared_util_options.h"
 
 static const char* UWS_CLIENT_OPTIONS = "uWSClientOptions";
 
@@ -107,6 +108,8 @@ typedef struct UWS_CLIENT_INSTANCE_TAG
 UWS_CLIENT_HANDLE uws_client_create(const char* hostname, unsigned int port, const char* resource_name, bool use_ssl, const WS_PROTOCOL* protocols, size_t protocol_count)
 {
     UWS_CLIENT_HANDLE result;
+
+LogInfo("uws_client_create being called\r\n");
 
     /* Codes_SRS_UWS_CLIENT_01_002: [ If any of the arguments hostname and resource_name is NULL then uws_client_create shall return NULL. ]*/
     if ((hostname == NULL) ||
@@ -223,6 +226,11 @@ UWS_CLIENT_HANDLE uws_client_create(const char* hostname, unsigned int port, con
                                     if (result->underlying_io == NULL)
                                     {
                                         LogError("Cannot create underlying TLS IO.");
+                                    }
+                                    else
+                                    {
+                                        bool set_renegotion = true;
+                                        xio_setoption(result->underlying_io, OPTION_SET_TLS_RENEGOTIATION, &set_renegotion);
                                     }
                                 }
                             }
@@ -446,6 +454,9 @@ UWS_CLIENT_HANDLE uws_client_create_with_io(const IO_INTERFACE_DESCRIPTION* io_i
                             }
                             else
                             {
+                                bool set_renegotion = true;
+                                (void)xio_setoption(result->underlying_io, OPTION_SET_TLS_RENEGOTIATION, &set_renegotion);
+
                                 result->uws_state = UWS_STATE_CLOSED;
 
                                 /* Codes_SRS_UWS_CLIENT_01_520: [ The argument port shall be copied for later use. ]*/
@@ -1702,6 +1713,8 @@ static int complete_send_frame(WS_PENDING_SEND* ws_pending_send, LIST_ITEM_HANDL
     UWS_CLIENT_INSTANCE* uws_client = ws_pending_send->uws_client;
 
     /* Codes_SRS_UWS_CLIENT_01_432: [ The indicated sent frame shall be removed from the list by calling singlylinkedlist_remove. ]*/
+printf("complete_send_frame tls_io %p\r\n", pending_send_frame_item);
+
     if (singlylinkedlist_remove(uws_client->pending_sends, pending_send_frame_item) != 0)
     {
         LogError("Failed removing item from list");
@@ -1860,6 +1873,8 @@ static void on_underlying_io_send_complete(void* context, IO_SEND_RESULT send_re
     else
     {
         LIST_ITEM_HANDLE ws_pending_send_list_item = (LIST_ITEM_HANDLE)context;
+printf("on_underlying_io_send_complete tls_io %p\r\n", ws_pending_send_list_item);
+
         WS_PENDING_SEND* ws_pending_send = (WS_PENDING_SEND*)singlylinkedlist_item_get_value(ws_pending_send_list_item);
         if (ws_pending_send != NULL)
         {
@@ -1991,6 +2006,8 @@ int uws_client_send_frame_async(UWS_CLIENT_HANDLE uws_client, unsigned char fram
                     /* Codes_SRS_UWS_CLIENT_01_056: [ - the send_complete callback shall be the on_underlying_io_send_complete function. ]*/
                     /* Codes_SRS_UWS_CLIENT_01_057: [ - the send_complete_context argument shall identify the pending send. ]*/
                     /* Codes_SRS_UWS_CLIENT_01_276: [ The frame(s) that have been formed MUST be transmitted over the underlying network connection. ]*/
+printf("xio_send tls_io %p\r\n", new_pending_send_list_item);
+
                     if (xio_send(uws_client->underlying_io, encoded_frame, encoded_frame_length, on_underlying_io_send_complete, new_pending_send_list_item) != 0)
                     {
                         /* Codes_SRS_UWS_CLIENT_01_058: [ If xio_send fails, uws_client_send_frame_async shall fail and return a non-zero value. ]*/
@@ -2201,14 +2218,14 @@ int uws_client_set_request_header(UWS_CLIENT_HANDLE uws_client, const char* name
 
     if (uws_client == NULL || name == NULL || value == NULL)
     {
-        // Codes_SRS_UWS_CLIENT_09_002: [ If any of the arguments uws_client or name or value is NULL uws_client_set_request_header shall fail and return a non-zero value. ]  
+        // Codes_SRS_UWS_CLIENT_09_002: [ If any of the arguments uws_client or name or value is NULL uws_client_set_request_header shall fail and return a non-zero value. ]
         LogError("invalid parameter (uws_client=%p, name=%p, value=%p)", uws_client, name, value);
         result = MU_FAILURE;
     }
-    // Codes_SRS_UWS_CLIENT_09_003: [ A copy of name and value shall be stored for later sending in the request message. ]  
+    // Codes_SRS_UWS_CLIENT_09_003: [ A copy of name and value shall be stored for later sending in the request message. ]
     else if (Map_AddOrUpdate(uws_client->request_headers, name, value) != MAP_OK)
     {
-        // Codes_SRS_UWS_CLIENT_09_004: [ If name or value fail to be stored the function shall fail and return a non-zero value. ]  
+        // Codes_SRS_UWS_CLIENT_09_004: [ If name or value fail to be stored the function shall fail and return a non-zero value. ]
         LogError("Failed adding request header %s", name);
         result = MU_FAILURE;
     }
