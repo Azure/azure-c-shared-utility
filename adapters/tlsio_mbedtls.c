@@ -157,6 +157,14 @@ static void on_underlying_io_open_complete(void *context, IO_OPEN_RESULT open_re
             }
             else
             {
+                if (result == MBEDTLS_ERR_SSL_CA_CHAIN_REQUIRED)
+                {
+                    LogError("Failure in ssl handshake the must add the server certificate");
+                }
+                else
+                {
+                    LogError("Failure ssl handshake %d", result);
+                }
                 xio_close(tls_io_instance->socket_io, NULL, NULL);
                 tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
                 indicate_open_complete(tls_io_instance, IO_OPEN_ERROR);
@@ -351,7 +359,6 @@ static int on_io_send(void *context, const unsigned char *buf, size_t sz)
     }
     else
     {
-printf("mbedtls: Sending the Packet %ld\r\n", sz);
         TLS_IO_INSTANCE *tls_io_instance = (TLS_IO_INSTANCE *)context;
         if (xio_send(tls_io_instance->socket_io, buf, sz, on_send_complete, tls_io_instance) != 0)
         {
@@ -645,7 +652,6 @@ int tlsio_mbedtls_send(CONCRETE_IO_HANDLE tls_io, const void *buffer, size_t siz
 {
     int result = 0;
 
-printf("mbedtls:tlsio_mbedtls_send %ld\r\n", size);
     if (tls_io == NULL || (buffer == NULL) || (size == 0))
     {
         LogError("Invalid parameter specified tls_io: %p, buffer: %p, size: %ul", tls_io, buffer, (unsigned int)size);

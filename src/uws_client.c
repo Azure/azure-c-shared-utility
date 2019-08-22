@@ -1713,8 +1713,6 @@ static int complete_send_frame(WS_PENDING_SEND* ws_pending_send, LIST_ITEM_HANDL
     UWS_CLIENT_INSTANCE* uws_client = ws_pending_send->uws_client;
 
     /* Codes_SRS_UWS_CLIENT_01_432: [ The indicated sent frame shall be removed from the list by calling singlylinkedlist_remove. ]*/
-printf("complete_send_frame tls_io %p\r\n", pending_send_frame_item);
-
     if (singlylinkedlist_remove(uws_client->pending_sends, pending_send_frame_item) != 0)
     {
         LogError("Failed removing item from list");
@@ -1873,8 +1871,6 @@ static void on_underlying_io_send_complete(void* context, IO_SEND_RESULT send_re
     else
     {
         LIST_ITEM_HANDLE ws_pending_send_list_item = (LIST_ITEM_HANDLE)context;
-printf("on_underlying_io_send_complete tls_io %p\r\n", ws_pending_send_list_item);
-
         WS_PENDING_SEND* ws_pending_send = (WS_PENDING_SEND*)singlylinkedlist_item_get_value(ws_pending_send_list_item);
         if (ws_pending_send != NULL)
         {
@@ -2006,8 +2002,6 @@ int uws_client_send_frame_async(UWS_CLIENT_HANDLE uws_client, unsigned char fram
                     /* Codes_SRS_UWS_CLIENT_01_056: [ - the send_complete callback shall be the on_underlying_io_send_complete function. ]*/
                     /* Codes_SRS_UWS_CLIENT_01_057: [ - the send_complete_context argument shall identify the pending send. ]*/
                     /* Codes_SRS_UWS_CLIENT_01_276: [ The frame(s) that have been formed MUST be transmitted over the underlying network connection. ]*/
-printf("xio_send tls_io %p\r\n", new_pending_send_list_item);
-
                     if (xio_send(uws_client->underlying_io, encoded_frame, encoded_frame_length, on_underlying_io_send_complete, new_pending_send_list_item) != 0)
                     {
                         /* Codes_SRS_UWS_CLIENT_01_058: [ If xio_send fails, uws_client_send_frame_async shall fail and return a non-zero value. ]*/
