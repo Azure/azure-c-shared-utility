@@ -60,6 +60,23 @@ double timer_get_elapsed(TIMER_HANDLE timer)
     return result;
 }
 
+double timer_get_elapsed_ms(TIMER_HANDLE timer)
+{
+    double result;
+    if (timer == NULL)
+    {
+        LogError("invalid arg TIMER_HANDLE timer=%p", timer);
+        result = -1.0;
+    }
+    else
+    {
+        LARGE_INTEGER stopTime;
+        (void)QueryPerformanceCounter(&stopTime);
+        result = ((double)(stopTime.QuadPart - timer->startTime.QuadPart) / (double)timer->freq.QuadPart) * 1000;
+    }
+    return result;
+}
+
 void timer_destroy(TIMER_HANDLE timer)
 {
     if (timer == NULL)
