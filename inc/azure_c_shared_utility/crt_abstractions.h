@@ -39,11 +39,11 @@ typedef bool _Bool;
 #else //  _MSC_VER
 
 #if defined __STDC_VERSION__
-#if ((__STDC_VERSION__  == 199901L) || (__STDC_VERSION__ == 201000L) || (__STDC_VERSION__ == 201112L))
-/*C99 compiler or C11*/
+#if ((__STDC_VERSION__  == 199901L) || (__STDC_VERSION__ == 201000L) || (__STDC_VERSION__ == 201112L) || (__STDC_VERSION__ == 201710L))
+/*C99, C11 (including GNU 4.6) or C18 compiler */
 #define HAS_STDBOOL
 #include <stdbool.h>
-#endif //  ((__STDC_VERSION__  == 199901L) || (__STDC_VERSION__ == 201000L) || (__STDC_VERSION__ == 201112L))
+#endif //  ((__STDC_VERSION__  == 199901L) || (__STDC_VERSION__ == 201000L) || (__STDC_VERSION__ == 201112L) || (__STDC_VERSION__ == 201710L))
 #endif // __STDC_VERSION__
 #endif //  _MSC_VER
 
@@ -109,12 +109,12 @@ MOCKABLE_FUNCTION(, int, size_tToString, char*, destination, size_t, destination
 #define ISNAN _isnan
 #else // _MSC_VER
 #if defined __STDC_VERSION__
-#if ((__STDC_VERSION__  == 199901L) || (__STDC_VERSION__ == 201000L) || (__STDC_VERSION__ == 201112L))
-/*C99 compiler or C11*/
+#if ((__STDC_VERSION__  == 199901L) || (__STDC_VERSION__ == 201000L) || (__STDC_VERSION__ == 201112L) || (__STDC_VERSION__ == 201710L))
+/*C99, C11 (including GNU 4.6) or C18 compiler */
 #define ISNAN isnan
-#else //  ((__STDC_VERSION__  == 199901L) || (__STDC_VERSION__ == 201000L) || (__STDC_VERSION__ == 201112L))
+#else //  ((__STDC_VERSION__  == 199901L) || (__STDC_VERSION__ == 201000L) || (__STDC_VERSION__ == 201112L) || (__STDC_VERSION__ == 201710L))
 #error update this file to contain the latest C standard.
-#endif // ((__STDC_VERSION__  == 199901L) || (__STDC_VERSION__ == 201000L) || (__STDC_VERSION__ == 201112L))
+#endif // ((__STDC_VERSION__  == 199901L) || (__STDC_VERSION__ == 201000L) || (__STDC_VERSION__ == 201112L) || (__STDC_VERSION__ == 201710L))
 #else // __STDC_VERSION__
 #ifdef __cplusplus
 /*C++ defines isnan... in C11*/
