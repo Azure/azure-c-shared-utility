@@ -134,6 +134,39 @@ TEST_FUNCTION(timer_create_succeeds)
     timer_destroy(timer);
 }
 
+/* timer_start*/
+TEST_FUNCTION(timer_start_returns_if_timer_is_null)
+{
+    //arrange
+    //act
+     timer_start(NULL);
+
+    //assert
+     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+TEST_FUNCTION(timer_start_succeeds)
+{
+    //arrange
+    LARGE_INTEGER stop_time;
+    stop_time.QuadPart = 100;
+    test_timer_create_success_expectations();
+    TIMER_HANDLE timer = timer_create();
+    umock_c_reset_all_calls();
+    STRICT_EXPECTED_CALL(mocked_QueryPerformanceCounter(IGNORED_PTR_ARG))
+        .CopyOutArgumentBuffer_lpPerformanceCount(&stop_time, sizeof(stop_time));
+
+    //act
+    timer_start(timer);
+
+    //assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    //cleanup
+    timer_destroy(timer);
+}
+
+/*timer_get_elapsed*/
 TEST_FUNCTION(timer_get_elapsed_fails_if_timer_is_null)
 {
     //arrange
@@ -165,6 +198,7 @@ TEST_FUNCTION(timer_get_elapsed_success)
     timer_destroy(timer);
 }
 
+/*timer_get_elapsed_ms*/
 TEST_FUNCTION(timer_get_elapsed_ms_fails_if_timer_is_null)
 {
     //arrange
@@ -196,6 +230,7 @@ TEST_FUNCTION(timer_get_elapsed_ms_success)
     timer_destroy(timer);
 }
 
+/*timer_destroy*/
 TEST_FUNCTION(timer_destroy_returns_if_timer_is_NULL)
 {
     //arrange
