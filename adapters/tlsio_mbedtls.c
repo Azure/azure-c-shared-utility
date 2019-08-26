@@ -41,6 +41,13 @@ typedef enum TLSIO_STATE_ENUM_TAG
     TLSIO_STATE_ERROR
 } TLSIO_STATE_ENUM;
 
+typedef struct SEND_COMPLETE_INFO_TAG
+{
+    int send_complete_count;
+    ON_SEND_COMPLETE on_send_complete;
+    void *on_send_complete_callback_context;
+} SEND_COMPLETE_INFO;
+
 typedef struct TLS_IO_INSTANCE_TAG
 {
     XIO_HANDLE socket_io;
@@ -55,8 +62,10 @@ typedef struct TLS_IO_INSTANCE_TAG
     TLSIO_STATE_ENUM tlsio_state;
     unsigned char *socket_io_read_bytes;
     size_t socket_io_read_byte_count;
-    ON_SEND_COMPLETE on_send_complete;
-    void *on_send_complete_callback_context;
+
+    //ON_SEND_COMPLETE on_send_complete;
+    //void *on_send_complete_callback_context;
+    SEND_COMPLETE_INFO send_complete_info;
 
     mbedtls_entropy_context entropy;
     mbedtls_ctr_drbg_context ctr_drbg;
@@ -338,9 +347,10 @@ static void on_send_complete(void* context, IO_SEND_RESULT send_result)
     {
         // If the state is not open then this is probably an internal call
         // So don't notify the upper level
-        if (tls_io_instance->on_send_complete != NULL && tls_io_instance->tlsio_state != TLSIO_STATE_CLOSING)
+        if (tls_io_instance->send_complete_info.on_send_complete != NULL && tls_io_instance->send_complete_info.send_complete_count == 0 && tls_io_instance->tlsio_state != TLSIO_STATE_CLOSING)
         {
-            tls_io_instance->on_send_complete(tls_io_instance->on_send_complete_callback_context, send_result);
+            tls_io_instance->send_complete_info.on_send_complete(tls_io_instance->send_complete_info.on_send_complete_callback_context, send_result);
+            tls_io_instance->send_complete_info.send_complete_count++;
         }
     }
     else
@@ -667,8 +677,9 @@ int tlsio_mbedtls_send(CONCRETE_IO_HANDLE tls_io, const void *buffer, size_t siz
         }
         else
         {
-            tls_io_instance->on_send_complete = on_send_complete;
-            tls_io_instance->on_send_complete_callback_context = callback_context;
+            tls_io_instance->send_complete_info.on_send_complete = on_send_complete;
+            tls_io_instance->send_complete_info.on_send_complete_callback_context = callback_context;
+            tls_io_instance->send_complete_info.send_complete_count = 0;
             int res = mbedtls_ssl_write(&tls_io_instance->ssl, buffer, size);
             if (res != (int)size)
             {
