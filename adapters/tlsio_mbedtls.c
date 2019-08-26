@@ -62,9 +62,6 @@ typedef struct TLS_IO_INSTANCE_TAG
     TLSIO_STATE_ENUM tlsio_state;
     unsigned char *socket_io_read_bytes;
     size_t socket_io_read_byte_count;
-
-    //ON_SEND_COMPLETE on_send_complete;
-    //void *on_send_complete_callback_context;
     SEND_COMPLETE_INFO send_complete_info;
 
     mbedtls_entropy_context entropy;
@@ -941,9 +938,17 @@ int tlsio_mbedtls_setoption(CONCRETE_IO_HANDLE tls_io, const char *optionName, c
         }
         else if (strcmp(optionName, OPTION_SET_TLS_RENEGOTIATION) == 0)
         {
-            bool set_renegotiation = *((bool*)(value));
-            mbedtls_ssl_conf_renegotiation(&tls_io_instance->config, set_renegotiation ? 1 : 0);
-            result = 0;
+            if (value == NULL)
+            {
+                LogError("Invalid value set for tls renegotiation");
+                result = MU_FAILURE;
+            }
+            else
+            {
+                bool set_renegotiation = *((bool*)(value));
+                mbedtls_ssl_conf_renegotiation(&tls_io_instance->config, set_renegotiation ? 1 : 0);
+                result = 0;
+            }
         }
         else
         {

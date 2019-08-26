@@ -109,8 +109,6 @@ UWS_CLIENT_HANDLE uws_client_create(const char* hostname, unsigned int port, con
 {
     UWS_CLIENT_HANDLE result;
 
-LogInfo("uws_client_create being called\r\n");
-
     /* Codes_SRS_UWS_CLIENT_01_002: [ If any of the arguments hostname and resource_name is NULL then uws_client_create shall return NULL. ]*/
     if ((hostname == NULL) ||
         (resource_name == NULL) ||
@@ -229,8 +227,9 @@ LogInfo("uws_client_create being called\r\n");
                                     }
                                     else
                                     {
-                                        bool set_renegotion = true;
-                                        xio_setoption(result->underlying_io, OPTION_SET_TLS_RENEGOTIATION, &set_renegotion);
+                                        // Set the underlying socket to turn on renegotiation
+                                        bool set_renegotiation = true;
+                                        xio_setoption(result->underlying_io, OPTION_SET_TLS_RENEGOTIATION, &set_renegotiation);
                                     }
                                 }
                             }
@@ -454,8 +453,9 @@ UWS_CLIENT_HANDLE uws_client_create_with_io(const IO_INTERFACE_DESCRIPTION* io_i
                             }
                             else
                             {
-                                bool set_renegotion = true;
-                                (void)xio_setoption(result->underlying_io, OPTION_SET_TLS_RENEGOTIATION, &set_renegotion);
+                                // Set the underlying socket to turn on renegotiation
+                                bool set_renegotiation = true;
+                                (void)xio_setoption(result->underlying_io, OPTION_SET_TLS_RENEGOTIATION, &set_renegotiation);
 
                                 result->uws_state = UWS_STATE_CLOSED;
 
