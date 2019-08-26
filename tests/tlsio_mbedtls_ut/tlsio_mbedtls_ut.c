@@ -115,6 +115,7 @@ MOCKABLE_FUNCTION(, void, mbedtls_ssl_config_init, mbedtls_ssl_config*, conf);
 MOCKABLE_FUNCTION(, void, mbedtls_ssl_session_init, mbedtls_ssl_session*, session);
 MOCKABLE_FUNCTION(, int, mbedtls_ssl_session_reset, mbedtls_ssl_context*, ssl);
 MOCKABLE_FUNCTION(, int, mbedtls_ssl_conf_own_cert, mbedtls_ssl_config*, conf, mbedtls_x509_crt*, own_cert, mbedtls_pk_context*, pk_key);
+MOCKABLE_FUNCTION(, void, mbedtls_ssl_conf_renegotiation, mbedtls_ssl_config*, conf, int, renegotiation);
 
 MOCKABLE_FUNCTION(, void, mbedtls_debug_set_threshold, int, threshold);
 
@@ -1054,13 +1055,14 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         g_open_complete(g_open_complete_ctx, IO_OPEN_OK);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mbedtls_ssl_conf_renegotiation(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mbedtls_ssl_conf_renegotiation(IGNORED_PTR_ARG, 1));
 
         //act
         bool set_renegotiation = true;
-        tlsio_mbedtls_setoption(handle, OPTION_SET_TLS_RENEGOTIATION, TEST_X509_KEY);
+        int result = tlsio_mbedtls_setoption(handle, OPTION_SET_TLS_RENEGOTIATION, &set_renegotiation);
 
         //assert
+        ASSERT_ARE_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         //cleanup
@@ -1082,14 +1084,12 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         g_open_complete(g_open_complete_ctx, IO_OPEN_OK);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mbedtls_ssl_conf_renegotiation(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
-
         //act
         bool set_renegotiation = true;
-        int result = tlsio_mbedtls_setoption(handle, OPTION_SET_TLS_RENEGOTIATION, TEST_X509_KEY);
+        int result = tlsio_mbedtls_setoption(handle, OPTION_SET_TLS_RENEGOTIATION, NULL);
 
         //assert
-        ASSERT_ARE_EQUAL(int, 0, result);
+        ASSERT_ARE_NOT_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         //cleanup
