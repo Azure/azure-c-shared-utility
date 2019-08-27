@@ -165,7 +165,7 @@ static void on_underlying_io_open_complete(void *context, IO_OPEN_RESULT open_re
             {
                 if (result == MBEDTLS_ERR_SSL_CA_CHAIN_REQUIRED)
                 {
-                    LogError("Failure in ssl handshake the must add the server certificate");
+                    LogError("Failure in ssl handshake has the server certificate been added?");
                 }
                 else
                 {
