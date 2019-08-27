@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#ifndef AZURE_BASE64_H
-#define AZURE_BASE64_H
+#ifndef AZURE_BASE32_H
+#define AZURE_BASE32_H
 
 #ifdef __cplusplus
 #include <cstddef>
@@ -60,4 +60,4 @@ MOCKABLE_FUNCTION(, BUFFER_HANDLE, Azure_Base32_Decode_String, const char*, sour
 }
 #endif
 
-#endif /* AZURE_BASE64_H */
+#endif /* AZURE_BASE32_H */

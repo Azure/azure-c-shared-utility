@@ -19,6 +19,9 @@
 #if USE_WOLFSSL
 #include "azure_c_shared_utility/tlsio_wolfssl.h"
 #endif
+#if USE_BEARSSL
+#include "azure_c_shared_utility/tlsio_bearssl.h"
+#endif
 
 #include "azure_c_shared_utility/tlsio_schannel.h"
 
@@ -51,6 +54,8 @@ const IO_INTERFACE_DESCRIPTION* platform_get_default_tlsio(void)
     return tlsio_cyclonessl_get_interface_description();
 #elif USE_WOLFSSL
     return tlsio_wolfssl_get_interface_description();
+#elif USE_BEARSSL
+    return tlsio_bearssl_get_interface_description();
 #else
     return tlsio_schannel_get_interface_description();
 #endif

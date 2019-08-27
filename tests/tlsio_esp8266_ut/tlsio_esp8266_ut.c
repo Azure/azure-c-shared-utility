@@ -1,13 +1,15 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+#ifdef WIN32
+#define WIN32_LEAN_AND_MEAN
+#endif
 
 #include <stdlib.h>
 #include <stdio.h>
 #ifdef _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
 #endif
-
 
 /**
  * Include the C standards here.

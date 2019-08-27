@@ -1,6 +1,10 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+#ifdef WIN32
+#define WIN32_LEAN_AND_MEAN
+#endif
+
 #include <stdint.h>
 
 #ifdef __cplusplus

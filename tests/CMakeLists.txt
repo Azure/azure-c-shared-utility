@@ -39,6 +39,7 @@ if(${run_unittests})
         add_subdirectory(socketio_win32_ut)
         add_subdirectory(x509_schannel_ut)
         add_subdirectory(platform_win32_ut)
+        add_subdirectory(timer_win32_ut)
     else()
         add_subdirectory(socketio_berkeley_ut)
     endif()
@@ -81,6 +82,10 @@ if(${run_unittests})
 
     if(use_mbedtls)
         add_subdirectory(tlsio_mbedtls_ut)
+    endif()
+
+    if(use_bearssl)
+        add_subdirectory(tlsio_bearssl_ut)
     endif()
 
     add_subdirectory(utf8_checker_ut)

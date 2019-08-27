@@ -60,6 +60,12 @@ double timer_get_elapsed(TIMER_HANDLE timer)
     return result;
 }
 
+double timer_get_elapsed_ms(TIMER_HANDLE timer)
+{
+    double result = timer_get_elapsed(timer);
+    return result < 0 ? result : result * 1000;
+}
+
 void timer_destroy(TIMER_HANDLE timer)
 {
     if (timer == NULL)
