@@ -44,6 +44,25 @@ typedef struct HTTPAPIEX_HANDLE_DATA_TAG* HTTPAPIEX_HANDLE;
 MU_DEFINE_ENUM(HTTPAPIEX_RESULT, HTTPAPIEX_RESULT_VALUES);
 
 /**
+ * @brief    Initialize the HTTPAPIEX.
+ *
+ *  This API shall be called only once before call any other HTTPAPIEX API. 
+ *  **This API is NOT thread safe**.
+ *
+ * @return    An @c HTTPAPIEX_RESULT indicating the status of the call.
+ */
+MOCKABLE_FUNCTION(, HTTPAPIEX_RESULT, HTTPAPIEX_Init);
+
+/**
+ * @brief    Deinitialize the HTTPAPIEX.
+ *
+ *  This API shall be called only once to release all HTTP resources. No other HTTPAPIEX 
+ *      API shall be called after call this API.
+ *  **This API is NOT thread safe**.
+ */
+MOCKABLE_FUNCTION(, void, HTTPAPIEX_Deinit);
+
+/**
  * @brief    Creates an @c HTTPAPIEX_HANDLE that can be used in further calls.
  *
  * @param    hostName    Pointer to a null-terminated string that contains the host name

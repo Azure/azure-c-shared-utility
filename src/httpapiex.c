@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+#include <stdbool.h>
 #include <stdlib.h>
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/httpapiex.h"
@@ -27,6 +28,42 @@ typedef struct HTTPAPIEX_HANDLE_DATA_TAG
 MU_DEFINE_ENUM_STRINGS(HTTPAPIEX_RESULT, HTTPAPIEX_RESULT_VALUES);
 
 #define LOG_HTTAPIEX_ERROR() LogError("error code = %s", MU_ENUM_TO_STRING(HTTPAPIEX_RESULT, result))
+
+static int useGlobalInitialization = 0;
+
+HTTPAPIEX_RESULT HTTPAPIEX_Init(void)
+{
+    HTTPAPIEX_RESULT result;
+
+    if (useGlobalInitialization == 0)
+    {
+        if (HTTPAPI_Init() == HTTPAPI_OK)
+        {
+            useGlobalInitialization++;
+            result = HTTPAPIEX_OK;
+        }
+        else
+        {
+            result = HTTPAPIEX_ERROR;
+        }
+    }
+    else
+    {
+        useGlobalInitialization++;
+        result = HTTPAPIEX_OK;
+    }
+
+    return result;
+}
+
+void HTTPAPIEX_Deinit(void)
+{
+    useGlobalInitialization--;
+    if (useGlobalInitialization == 0)
+    {
+        HTTPAPI_Deinit();
+    }
+}
 
 HTTPAPIEX_HANDLE HTTPAPIEX_Create(const char* hostName)
 {
@@ -370,7 +407,11 @@ HTTPAPIEX_RESULT HTTPAPIEX_ExecuteRequest(HTTPAPIEX_HANDLE handle, HTTPAPI_REQUE
                         {
                         case 0:
                         {
-                            if (HTTPAPI_Init() != HTTPAPI_OK)
+                            if (useGlobalInitialization > 0)
+                            {
+                                goOn = true;
+                            }
+                            else if (HTTPAPI_Init() != HTTPAPI_OK)
                             {
                                 goOn = false;
                             }
@@ -450,7 +491,10 @@ HTTPAPIEX_RESULT HTTPAPIEX_ExecuteRequest(HTTPAPIEX_HANDLE handle, HTTPAPI_REQUE
                         {
                         case 0:
                         {
-                            HTTPAPI_Deinit();
+                            if (useGlobalInitialization == 0)
+                            {
+                                HTTPAPI_Deinit();
+                            }
                             break;
                         }
                         case 1:
@@ -510,7 +554,10 @@ void HTTPAPIEX_Destroy(HTTPAPIEX_HANDLE handle)
         if (handleData->k == 2)
         {
             HTTPAPI_CloseConnection(handleData->httpHandle);
-            HTTPAPI_Deinit();
+            if (useGlobalInitialization == 0)
+            {
+                HTTPAPI_Deinit();
+            }
         }
         STRING_delete(handleData->hostName);
 
