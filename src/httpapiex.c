@@ -35,8 +35,10 @@ HTTPAPIEX_RESULT HTTPAPIEX_Init(void)
 {
     HTTPAPIEX_RESULT result;
 
+    /*Codes_SRS_HTTPAPIEX_21_045: [If HTTPAPIEX_Init is calling more than once, it shall initialize the HTTP by calling HTTAPI_Init only once, and return success for all calls.] */
     if (useGlobalInitialization == 0)
     {
+        /*Codes_SRS_HTTPAPIEX_21_044: [HTTPAPIEX_Init shall initialize the HTTP by calling HTTAPI_Init.] */
         if (HTTPAPI_Init() == HTTPAPI_OK)
         {
             useGlobalInitialization++;
@@ -44,6 +46,7 @@ HTTPAPIEX_RESULT HTTPAPIEX_Init(void)
         }
         else
         {
+            /*Codes_SRS_HTTPAPIEX_21_046: [If HTTAPI_Init, HTTPAPIEX_Init shall return HTTPAPIEX_ERROR.] */
             result = HTTPAPIEX_ERROR;
         }
     }
@@ -58,6 +61,7 @@ HTTPAPIEX_RESULT HTTPAPIEX_Init(void)
 
 void HTTPAPIEX_Deinit(void)
 {
+    /*Codes_SRS_HTTPAPIEX_21_047: [HTTPAPIEX_Deinit shall de-initialize the HTTP by calling HTTAPI_Deinit.] */
     useGlobalInitialization--;
     if (useGlobalInitialization == 0)
     {
@@ -409,6 +413,7 @@ HTTPAPIEX_RESULT HTTPAPIEX_ExecuteRequest(HTTPAPIEX_HANDLE handle, HTTPAPI_REQUE
                         {
                             if (useGlobalInitialization > 0)
                             {
+                                /*Codes_SRS_HTTPAPIEX_21_048: [If HTTPAPIEX_Init was called, HTTPAPI_ExecuteRequest shall not call HTTPAPI_Init.] */
                                 goOn = true;
                             }
                             else if (HTTPAPI_Init() != HTTPAPI_OK)
@@ -491,6 +496,7 @@ HTTPAPIEX_RESULT HTTPAPIEX_ExecuteRequest(HTTPAPIEX_HANDLE handle, HTTPAPI_REQUE
                         {
                         case 0:
                         {
+                            /*Codes_SRS_HTTPAPIEX_21_049: [If HTTPAPIEX_Init was called, HTTPAPI_ExecuteRequest shall not call HTTPAPI_Deinit.] */
                             if (useGlobalInitialization == 0)
                             {
                                 HTTPAPI_Deinit();
@@ -554,6 +560,7 @@ void HTTPAPIEX_Destroy(HTTPAPIEX_HANDLE handle)
         if (handleData->k == 2)
         {
             HTTPAPI_CloseConnection(handleData->httpHandle);
+            /*Codes_SRS_HTTPAPIEX_21_050: [If HTTPAPIEX_Init was called, HTTPAPI_Destroy shall not call HTTPAPI_Deinit.] */
             if (useGlobalInitialization == 0)
             {
                 HTTPAPI_Deinit();
