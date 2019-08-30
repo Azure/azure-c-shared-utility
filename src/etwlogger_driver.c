@@ -130,7 +130,7 @@ static void lazyRegisterEventProvider(void)
         {
             /*should check if the provider is registered with the system... maybe at a later time*/
             isETWLoggerInit = 1; /*and stays 1 until the process exits*/ /*sorry, no graceful exit with EventUnregisterMicrosoft_ServiceBus*/
-            LogInfo("EventRegisterMicrosoft_ServiceBus success"); /*selflogging that the log service has started*/
+            LogInfo("EventRegisterMicrosoft_ServiceBus success"); /*self logging that the log service has started*/
         }
     }
 }
@@ -199,6 +199,12 @@ void etwlogger_log_with_GetLastError(const char* file, const char* func, int lin
     va_end(args);
 }
 
+/*the below interlocked variable initially set to 0*/
+/* At the first error returned by EventWriteLogInfoEvent or by EventWriteLogErrorEvent a printf will be performed and the variable will be switched to 1. */
+/* while the variable is set to "1" no fallback printf will be performed */
+/* at the first non-erroneous EventWriteLogInfoEvent or EventWriteLogErrorEvent the printf fallback will be re-enabled */
+static volatile LONG stopPrintfing = 0;
+
 void etwlogger_log(LOG_CATEGORY log_category, const char* file, const char* func, int line, unsigned int options, const char* format, ...)
 {
     (void)options;
@@ -218,7 +224,14 @@ void etwlogger_log(LOG_CATEGORY log_category, const char* file, const char* func
                 if (event_write_result != ERROR_SUCCESS)
                 {
                     /*fallback on printf...*/
-                    (void)printf("failed in EventWriteLogInfoEvent: %lu\r\n", event_write_result);
+                    if (InterlockedCompareExchange(&stopPrintfing, 1, 0) == 0)
+                    {
+                        (void)printf("failed in EventWriteLogInfoEvent: %lu. Further failing calls to EventWriteLogInfoEvent will not result in printf\r\n", event_write_result);
+                    }
+                }
+                else
+                {
+                    (void)InterlockedExchange(&stopPrintfing, 0);
                 }
                 break;
             }
@@ -230,7 +243,14 @@ void etwlogger_log(LOG_CATEGORY log_category, const char* file, const char* func
                 if (event_write_result != ERROR_SUCCESS)
                 {
                     /*fallback on printf...*/
-                    (void)printf("failed in EventWriteLogErrorEvent: %lu\r\n", event_write_result);
+                    if (InterlockedCompareExchange(&stopPrintfing, 1, 0) == 0)
+                    {
+                        (void)printf("failed in EventWriteLogErrorEvent: %lu. Further failing calls to EventWriteLogErrorEvent will not result in printf\r\n", event_write_result);
+                    }
+                }
+                else
+                {
+                    (void)InterlockedExchange(&stopPrintfing, 0);
                 }
                 break;
             }
@@ -252,7 +272,14 @@ void etwlogger_log(LOG_CATEGORY log_category, const char* file, const char* func
             if (event_write_result != ERROR_SUCCESS)
             {
                 /*fallback on printf...*/
-                (void)printf("failed in EventWriteLogInfoEvent: %lu\r\n", event_write_result);
+                if (InterlockedCompareExchange(&stopPrintfing, 1, 0) == 0)
+                {
+                    (void)printf("failed in EventWriteLogInfoEvent: %lu. Further failing calls to EventWriteLogInfoEvent will not result in printf\r\n", event_write_result);
+                }
+            }
+            else
+            {
+                (void)InterlockedExchange(&stopPrintfing, 0);
             }
             break;
         }
@@ -264,7 +291,14 @@ void etwlogger_log(LOG_CATEGORY log_category, const char* file, const char* func
             if (event_write_result != ERROR_SUCCESS)
             {
                 /*fallback on printf...*/
-                (void)printf("failed in EventWriteLogErrorEvent: %lu\r\n", event_write_result);
+                if (InterlockedCompareExchange(&stopPrintfing, 1, 0) == 0)
+                {
+                    (void)printf("failed in EventWriteLogErrorEvent: %lu. Further failing calls to EventWriteLogErrorEvent will not result in printf\r\n", event_write_result);
+                }
+            }
+            else
+            {
+                (void)InterlockedExchange(&stopPrintfing, 0);
             }
             break;
         }
