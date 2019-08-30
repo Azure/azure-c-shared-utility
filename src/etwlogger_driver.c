@@ -140,25 +140,25 @@ static void lazyRegisterEventProvider(void)
     }
 }
 
-/*the below interlocked variable initially set to 0*/
-/* At the first error returned by EventWriteLogInfoEvent or by EventWriteLogErrorEvent a printf will be performed and the variable will be switched to 1. */
-/* while the variable is set to "1" no fallback printf will be performed */
-/* at the first non-erroneous EventWriteLogInfoEvent or EventWriteLogErrorEvent the printf fallback will be re-enabled */
-static volatile LONG stopPrintfing = 0;
+/*the below interlocked variable initially set to 1*/
+/* At the first error returned by EventWriteLogInfoEvent or by EventWriteLogErrorEvent a printf will be performed and the variable will be switched to 0. */
+/* while the variable is set to "0" no fallback printf will be performed */
+/* at the first non-erroneous EventWriteLogInfoEvent or EventWriteLogErrorEvent the printf fallback will be re-enabled (variable set to 1)*/
+static volatile LONG doPrintf = 1;
 
 void perform_EventWriteLogErrorEvent(const char* content, const char* file, const SYSTEMTIME* t, const char* func, int line)
 {
     ULONG event_write_result = EventWriteLogErrorEvent(content, file, t, func, line);
     if (event_write_result != ERROR_SUCCESS)
     {
-        if (InterlockedCompareExchange(&stopPrintfing, 1, 0) == 0)
+        if (InterlockedCompareExchange(&doPrintf, 0, 1) == 1)
         {
             (void)printf("failed in EventWriteLogErrorEvent: %lu. Further failing calls to EventWriteLog... will not result in printf\r\n", event_write_result);
         }
     }
     else
     {
-        InterlockedExchange(&stopPrintfing, 0);
+        (void)InterlockedExchange(&doPrintf, 1);
     }
 #if USE_ETW_AND_CONSOLE
     consolelogger_log(AZ_LOG_ERROR, file, func, line, LOG_LINE, "%s", content);
@@ -170,14 +170,14 @@ void perform_EventWriteLogLastError(const char* userMessage, const char* file, c
     ULONG event_write_result = EventWriteLogLastError(userMessage, file, t, func, line, lastErrorAsString);
     if (event_write_result != ERROR_SUCCESS)
     {
-        if (InterlockedCompareExchange(&stopPrintfing, 1, 0) == 0)
+        if (InterlockedCompareExchange(&doPrintf, 0, 1) == 1)
         {
             (void)printf("failed in EventWriteLogLastError: %lu. Further failing calls to EventWriteLog... will not result in printf\r\n", event_write_result);
         }
     }
     else
     {
-        InterlockedExchange(&stopPrintfing, 0);
+        (void)InterlockedExchange(&doPrintf, 1);
     }
 
 #if USE_ETW_AND_CONSOLE
@@ -191,14 +191,14 @@ void perform_EventWriteLogInfoEvent(const char* message)
     if (event_write_result != ERROR_SUCCESS)
     {
         /*fallback on printf...*/
-        if (InterlockedCompareExchange(&stopPrintfing, 1, 0) == 0)
+        if (InterlockedCompareExchange(&doPrintf, 0, 1) == 1)
         {
             (void)printf("failed in EventWriteLogInfoEvent: %lu. Further failing calls to EventWriteLog... will not result in printf\r\n", event_write_result);
         }
     }
     else
     {
-        (void)InterlockedExchange(&stopPrintfing, 0);
+        (void)InterlockedExchange(&doPrintf, 1);
     }
 
 #if USE_ETW_AND_CONSOLE
