@@ -20,6 +20,9 @@
 #include "wolfssl/options.h"
 #include "wolfssl/ssl.h"
 #include "wolfssl/error-ssl.h"
+#elif USE_MBEDTLS
+#include "mbedtls/x509_crt.h"
+#include "mbedtls/ssl.h"
 #endif
 #include "azure_c_shared_utility/shared_util_options.h"
 
@@ -40,6 +43,11 @@ typedef struct HTTP_HANDLE_DATA_TAG
     const char* x509privatekey;
     const char* x509certificate;
     const char* certificates; /*a list of CA certificates*/
+#if USE_MBEDTLS
+    mbedtls_x509_crt cert;
+    mbedtls_pk_context key;
+    mbedtls_x509_crt trusted_certificates;
+#endif
 } HTTP_HANDLE_DATA;
 
 typedef struct HTTP_RESPONSE_CONTENT_BUFFER_TAG
@@ -135,6 +143,11 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
                         httpHandleData->x509certificate = NULL;
                         httpHandleData->x509privatekey = NULL;
                         httpHandleData->certificates = NULL;
+#if USE_MBEDTLS
+                        mbedtls_x509_crt_init(&httpHandleData->cert);
+                        mbedtls_pk_init(&httpHandleData->key);
+                        mbedtls_x509_crt_init(&httpHandleData->trusted_certificates);
+#endif
                     }
                 }
                 else
@@ -157,6 +170,11 @@ void HTTPAPI_CloseConnection(HTTP_HANDLE handle)
     {
         free(httpHandleData->hostURL);
         curl_easy_cleanup(httpHandleData->curl);
+#if USE_MBEDTLS
+        mbedtls_x509_crt_free(&httpHandleData->cert);
+        mbedtls_pk_free(&httpHandleData->key);
+        mbedtls_x509_crt_free(&httpHandleData->trusted_certificates);
+#endif
         free(httpHandleData);
     }
 }
@@ -273,6 +291,34 @@ static CURLcode ssl_ctx_callback(CURL *curl, void *ssl_ctx, void *userptr)
         {
             LogError("failure in adding trusted certificate to client");
             result = CURLE_SSL_CERTPROBLEM;
+        }
+#elif USE_MBEDTLS
+        // set device cert and key
+        if (
+            (httpHandleData->x509certificate != NULL) && (httpHandleData->x509privatekey != NULL) &&
+            !(
+                (mbedtls_x509_crt_parse(&httpHandleData->cert, (const unsigned char *)httpHandleData->x509certificate, (int)(strlen(httpHandleData->x509certificate) + 1)) == 0) &&
+                (mbedtls_pk_parse_key(&httpHandleData->key, (const unsigned char *)httpHandleData->x509privatekey, (int)(strlen(httpHandleData->x509privatekey) + 1), NULL, 0) == 0) &&
+                (mbedtls_ssl_conf_own_cert(ssl_ctx, &httpHandleData->cert, &httpHandleData->key) == 0)
+                )
+            )
+        {
+            LogError("unable to set x509 credentials");
+            result = CURLE_SSL_CERTPROBLEM;
+        }
+        // set CA
+        else if (httpHandleData->certificates != NULL)
+        {
+            if (mbedtls_x509_crt_parse(&httpHandleData->trusted_certificates, (const unsigned char *)httpHandleData->certificates, (int)(strlen(httpHandleData->certificates) + 1)) != 0)
+            {
+                LogError("unable to set trusted certificate");
+                result = CURLE_SSL_CERTPROBLEM;
+            }
+            else
+            {
+                mbedtls_ssl_conf_ca_chain(ssl_ctx, &httpHandleData->trusted_certificates, NULL);
+                result = CURLE_OK;
+            }
         }
 #else
         if (httpHandleData->x509certificate != NULL || httpHandleData->x509privatekey != NULL)
