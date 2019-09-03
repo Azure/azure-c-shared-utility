@@ -444,14 +444,14 @@ static int verify_custom_certificate_if_needed(TLS_IO_INSTANCE* tls_io_instance)
         {
             result = 0;
         }
-        
+
         if (serverCertificateToVerify)
         {
             CertFreeCertificateContext(serverCertificateToVerify);
         }
     }
 
-    return result;    
+    return result;
 }
 
 static int set_receive_buffer(TLS_IO_INSTANCE* tls_io_instance, size_t buffer_size)
@@ -1445,13 +1445,13 @@ int tlsio_schannel_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, 
         {
             if (value == NULL)
             {
-                LogError("Invalid paramater: OPTION_TRUSTED_CERT value=NULL"); 
+                LogError("Invalid paramater: OPTION_TRUSTED_CERT value=NULL");
                 result = MU_FAILURE;
             }
             else
             {
                 if (tls_io_instance->trustedCertificate != NULL)
-                {   
+                {
                     free(tls_io_instance->trustedCertificate);
                     tls_io_instance->trustedCertificate = NULL;
                 }
@@ -1477,6 +1477,11 @@ int tlsio_schannel_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, 
         {
             LogError("tls_io_instance->socket_io is not set");
             result = MU_FAILURE;
+        }
+        else if (strcmp(optionName, OPTION_SET_TLS_RENEGOTIATION) == 0)
+        {
+            // No need to do anything for Schannel
+            result = 0;
         }
         else
         {

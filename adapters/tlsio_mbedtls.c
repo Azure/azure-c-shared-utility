@@ -41,6 +41,13 @@ typedef enum TLSIO_STATE_ENUM_TAG
     TLSIO_STATE_ERROR
 } TLSIO_STATE_ENUM;
 
+typedef struct SEND_COMPLETE_INFO_TAG
+{
+    int send_complete_count;
+    ON_SEND_COMPLETE on_send_complete;
+    void *on_send_complete_callback_context;
+} SEND_COMPLETE_INFO;
+
 typedef struct TLS_IO_INSTANCE_TAG
 {
     XIO_HANDLE socket_io;
@@ -55,8 +62,7 @@ typedef struct TLS_IO_INSTANCE_TAG
     TLSIO_STATE_ENUM tlsio_state;
     unsigned char *socket_io_read_bytes;
     size_t socket_io_read_byte_count;
-    ON_SEND_COMPLETE on_send_complete;
-    void *on_send_complete_callback_context;
+    SEND_COMPLETE_INFO send_complete_info;
 
     mbedtls_entropy_context entropy;
     mbedtls_ctr_drbg_context ctr_drbg;
@@ -157,6 +163,14 @@ static void on_underlying_io_open_complete(void *context, IO_OPEN_RESULT open_re
             }
             else
             {
+                if (result == MBEDTLS_ERR_SSL_CA_CHAIN_REQUIRED)
+                {
+                    LogError("Failure in ssl handshake has the server certificate been added?");
+                }
+                else
+                {
+                    LogError("Failure ssl handshake %d", result);
+                }
                 xio_close(tls_io_instance->socket_io, NULL, NULL);
                 tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
                 indicate_open_complete(tls_io_instance, IO_OPEN_ERROR);
@@ -330,9 +344,10 @@ static void on_send_complete(void* context, IO_SEND_RESULT send_result)
     {
         // If the state is not open then this is probably an internal call
         // So don't notify the upper level
-        if (tls_io_instance->on_send_complete != NULL && tls_io_instance->tlsio_state != TLSIO_STATE_CLOSING)
+        if (tls_io_instance->send_complete_info.on_send_complete != NULL && tls_io_instance->send_complete_info.send_complete_count == 0 && tls_io_instance->tlsio_state != TLSIO_STATE_CLOSING)
         {
-            tls_io_instance->on_send_complete(tls_io_instance->on_send_complete_callback_context, send_result);
+            tls_io_instance->send_complete_info.on_send_complete(tls_io_instance->send_complete_info.on_send_complete_callback_context, send_result);
+            tls_io_instance->send_complete_info.send_complete_count++;
         }
     }
     else
@@ -408,7 +423,6 @@ static void mbedtls_init(TLS_IO_INSTANCE *tls_io_instance)
             // The underlying connection has been closed, so here un-initialize first
             mbedtls_uninit(tls_io_instance);
         }
-
         // mbedTLS initialize...
         mbedtls_x509_crt_init(&tls_io_instance->trusted_certificates_parsed);
 
@@ -660,8 +674,9 @@ int tlsio_mbedtls_send(CONCRETE_IO_HANDLE tls_io, const void *buffer, size_t siz
         }
         else
         {
-            tls_io_instance->on_send_complete = on_send_complete;
-            tls_io_instance->on_send_complete_callback_context = callback_context;
+            tls_io_instance->send_complete_info.on_send_complete = on_send_complete;
+            tls_io_instance->send_complete_info.on_send_complete_callback_context = callback_context;
+            tls_io_instance->send_complete_info.send_complete_count = 0;
             int res = mbedtls_ssl_write(&tls_io_instance->ssl, buffer, size);
             if (res != (int)size)
             {
@@ -918,6 +933,20 @@ int tlsio_mbedtls_setoption(CONCRETE_IO_HANDLE tls_io, const char *optionName, c
             }
             else
             {
+                result = 0;
+            }
+        }
+        else if (strcmp(optionName, OPTION_SET_TLS_RENEGOTIATION) == 0)
+        {
+            if (value == NULL)
+            {
+                LogError("Invalid value set for tls renegotiation");
+                result = MU_FAILURE;
+            }
+            else
+            {
+                bool set_renegotiation = *((bool*)(value));
+                mbedtls_ssl_conf_renegotiation(&tls_io_instance->config, set_renegotiation ? 1 : 0);
                 result = 0;
             }
         }
