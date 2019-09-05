@@ -96,7 +96,7 @@ COND_RESULT Condition_Wait(COND_HANDLE handle, LOCK_HANDLE lock, int timeout_mil
         /* Increment the waiting thread count, unlock the lock and wait */
         cond->waiting_thread_count++;
 
-        if (Unlock(lock) == 0)
+        if (Unlock(lock) == LOCK_OK)
         {
             DWORD wait_result;
 
