@@ -820,7 +820,7 @@ static HTTPAPI_RESULT conn_send_all(HTTP_HANDLE_DATA* http_instance, const unsig
 const char httpapiRequestString[6][7] = { "GET", "POST", "PUT", "DELETE", "PATCH", "HEAD" };
 const char* get_request_type(HTTPAPI_REQUEST_TYPE requestType)
 {
-    return (const char*)httpapiRequestString[requestType];
+    return (const char*)httpapiRequestString[requestType - HTTPAPI_REQUEST_GET];
 }
 
 /*Codes_SRS_HTTPAPI_COMPACT_21_026: [ If the open process succeed, the HTTPAPI_ExecuteRequest shall send the request message to the host. ]*/

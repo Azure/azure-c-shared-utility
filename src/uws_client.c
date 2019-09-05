@@ -918,6 +918,10 @@ static void on_underlying_io_close_sent(void* context, IO_SEND_RESULT io_send_re
 
         switch (io_send_result)
         {
+        default:
+            LogError("Unknown enum value: %d", io_send_result);
+            break;
+
         case IO_SEND_OK:
         case IO_SEND_CANCELLED:
             if (uws_client->uws_state == UWS_STATE_CLOSING_SENDING_CLOSE)

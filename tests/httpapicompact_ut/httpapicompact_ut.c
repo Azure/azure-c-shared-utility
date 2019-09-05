@@ -1414,7 +1414,7 @@ TEST_FUNCTION(HTTPAPI_ExecuteRequest__invalid_request_type_failed)
     /// act
     result = HTTPAPI_ExecuteRequest(
         httpHandle,
-        (HTTPAPI_REQUEST_TYPE)MU_COUNT_ARG(HTTPAPI_REQUEST_TYPE_VALUES),
+        (HTTPAPI_REQUEST_TYPE)MU_ENUM_VALUE_COUNT(HTTPAPI_REQUEST_TYPE_VALUES),
         TEST_EXECUTE_REQUEST_RELATIVE_PATH,
         requestHttpHeaders,
         TEST_EXECUTE_REQUEST_CONTENT,

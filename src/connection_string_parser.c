@@ -121,7 +121,7 @@ MAP_HANDLE connectionstringparser_parse(STRING_HANDLE connection_string)
                                     else
                                     {
                                         /* Codes_SRS_CONNECTIONSTRINGPARSER_01_010: [The key and value shall be added to the result map by using Map_Add.] */
-                                        if (Map_Add(result, token, value) != 0)
+                                        if (Map_Add(result, token, value) != MAP_OK)
                                         {
                                             /* Codes_SRS_CONNECTIONSTRINGPARSER_01_012: [If Map_Add fails connectionstringparser_parse shall fail and return NULL (freeing the allocated result map).] */
                                             is_error = true;

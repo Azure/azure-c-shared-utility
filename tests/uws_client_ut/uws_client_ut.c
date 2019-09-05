@@ -207,7 +207,6 @@ static LIST_ITEM_HANDLE my_singlylinkedlist_find(SINGLYLINKEDLIST_HANDLE handle,
     return (LIST_ITEM_HANDLE)found_item;
 }
 
-static MAP_RESULT my_Map_GetInternals_return;
 static char* my_Map_GetInternals_keys[10];
 static char* my_Map_GetInternals_values[10];
 static size_t my_Map_GetInternals_count;
@@ -217,7 +216,7 @@ static MAP_RESULT my_Map_GetInternals(MAP_HANDLE handle, const char*const** keys
     *keys = (const char*const*)my_Map_GetInternals_keys;
     *values = (const char*const*)my_Map_GetInternals_values;
     *count = my_Map_GetInternals_count;
-    return my_Map_GetInternals_return;
+    return MAP_OK;
 }
 
 
