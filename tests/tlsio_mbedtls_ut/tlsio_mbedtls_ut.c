@@ -830,6 +830,7 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         umock_c_reset_all_calls();
 
         STRICT_EXPECTED_CALL(mbedtls_ssl_read(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(xio_dowork(IGNORED_PTR_ARG));
 
         //act
         tlsio_mbedtls_dowork(handle);
@@ -860,6 +861,7 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
             .SetReturn(TEST_DATA_SIZE);
         STRICT_EXPECTED_CALL(on_bytes_received(IGNORED_PTR_ARG, IGNORED_PTR_ARG, TEST_DATA_SIZE));
         STRICT_EXPECTED_CALL(mbedtls_ssl_read(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(xio_dowork(IGNORED_PTR_ARG));
 
         //act
         tlsio_mbedtls_dowork(handle);
