@@ -697,11 +697,13 @@ void tlsio_mbedtls_dowork(CONCRETE_IO_HANDLE tls_io)
     if (tls_io != NULL)
     {
         TLS_IO_INSTANCE *tls_io_instance = (TLS_IO_INSTANCE *)tls_io;
-        if (tls_io_instance->tlsio_state == TLSIO_STATE_OPENING_UNDERLYING_IO || tls_io_instance->tlsio_state == TLSIO_STATE_IN_HANDSHAKE || tls_io_instance->tlsio_state == TLSIO_STATE_OPEN)
+        if (tls_io_instance->tlsio_state == TLSIO_STATE_IN_HANDSHAKE || tls_io_instance->tlsio_state == TLSIO_STATE_OPEN)
         {
             decode_ssl_received_bytes(tls_io_instance);
             // Note: no need to call xio_dowork here because it's called in on_io_recv which is the callback function of decode_ssl_received_bytes
         }
+
+        xio_dowork(tls_io_instance->socket_io);
     }
 }
 
