@@ -1943,19 +1943,23 @@ static int create_openssl_instance(TLS_IO_INSTANCE* tlsInstance)
 #if !USE_OPENSSL_1_1_0_OR_UP
     if (tlsInstance->tls_version == OPTION_TLS_VERSION_1_2)
     {
+        LogInfo("create_openssl_instance by TLSv1_2_method.");
         method = TLSv1_2_method();
     }
     else if (tlsInstance->tls_version == OPTION_TLS_VERSION_1_1)
     {
+        LogInfo("create_openssl_instance by TLSv1_1_method.");
         method = TLSv1_1_method();
     }
     else
     {
-        method = TLSv1_method();
+        LogInfo("create_openssl_instance by TLSv1_2_method by default.");
+        method = TLSv1_2_method();
     }
 #else
     {
         // Note: TLS_method() uses highest negotiable.
+        LogInfo("create_openssl_instance by TLS_method.");
         method = TLS_method();
     }
 #endif
