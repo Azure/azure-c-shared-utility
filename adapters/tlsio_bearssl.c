@@ -29,7 +29,7 @@
 
 #include <stdlib.h>
 
-#include "bearssl.h"
+#include "bearssl/bearssl.h"
 
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/optimize_size.h"
@@ -710,7 +710,7 @@ static int certificate_to_trust_anchor(br_x509_certificate *xc, br_x509_trust_an
     else
     {
         memset(ta, 0, sizeof(br_x509_trust_anchor));
-        br_x509_decoder_init(&dc, dn_append, vdn);
+        br_x509_decoder_init(&dc, dn_append, vdn, NULL, NULL);
         br_x509_decoder_push(&dc, xc->data, xc->data_len);
         pk = br_x509_decoder_get_pkey(&dc);
 
@@ -843,7 +843,7 @@ static int get_cert_signer_algo(br_x509_certificate *xc)
 	br_x509_decoder_context dc;
 	int result;
 
-	br_x509_decoder_init(&dc, 0, 0);
+	br_x509_decoder_init(&dc, 0, 0, 0, 0);
 	br_x509_decoder_push(&dc, xc->data, xc->data_len);
 	result = br_x509_decoder_last_error(&dc);
 
