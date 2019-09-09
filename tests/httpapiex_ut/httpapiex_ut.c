@@ -520,6 +520,79 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
     TEST_MUTEX_RELEASE(g_testByTest);
 }
 
+/*Tests_SRS_HTTPAPIEX_21_044: [HTTPAPIEX_Init shall initialize the HTTP by calling HTTAPI_Init.] */
+TEST_FUNCTION(HTTPAPIEX_Init_initialize_HTTP_succeeds)
+{
+    /// arrange
+    STRICT_EXPECTED_CALL(HTTPAPI_Init()).SetReturn(HTTPAPI_OK);
+
+    /// act
+    HTTPAPIEX_RESULT result = HTTPAPIEX_Init();
+
+    /// assert
+    ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_OK, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///destroy
+    HTTPAPIEX_Deinit();
+}
+
+/*Tests_SRS_HTTPAPIEX_21_045: [If HTTPAPIEX_Init is calling more than once, it shall initialize the HTTP by calling HTTAPI_Init only once, and return success for all calls.] */
+TEST_FUNCTION(HTTPAPIEX_Init_multiple_calls_initialize_HTTP_only_once_succeeds)
+{
+    /// arrange
+    STRICT_EXPECTED_CALL(HTTPAPI_Init()).SetReturn(HTTPAPI_OK);
+
+    /// act
+    HTTPAPIEX_RESULT result = HTTPAPIEX_Init();
+    ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_OK, result);
+    result = HTTPAPIEX_Init();
+    ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_OK, result);
+    result = HTTPAPIEX_Init();
+
+    /// assert
+    ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_OK, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///destroy
+    HTTPAPIEX_Deinit();
+    HTTPAPIEX_Deinit();
+    HTTPAPIEX_Deinit();
+}
+
+/*Tests_SRS_HTTPAPIEX_21_046: [If HTTAPI_Init, HTTPAPIEX_Init shall return HTTPAPIEX_ERROR.] */
+TEST_FUNCTION(HTTPAPIEX_Init_initialize_HTTP_fails)
+{
+    /// arrange
+    STRICT_EXPECTED_CALL(HTTPAPI_Init()).SetReturn(HTTPAPI_ERROR);
+
+    /// act
+    HTTPAPIEX_RESULT result = HTTPAPIEX_Init();
+
+    /// assert
+    ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_ERROR, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/*Tests_SRS_HTTPAPIEX_21_047: [HTTPAPIEX_Deinit shall de-initialize the HTTP by calling HTTAPI_Deinit.] */
+TEST_FUNCTION(HTTPAPIEX_Deinit_deinitialize_HTTP_succeeds)
+{
+    /// arrange
+    STRICT_EXPECTED_CALL(HTTPAPI_Init()).SetReturn(HTTPAPI_OK);
+    ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_OK, HTTPAPIEX_Init());
+
+    umock_c_reset_all_calls();
+    STRICT_EXPECTED_CALL(HTTPAPI_Deinit());
+
+    /// act
+    HTTPAPIEX_Deinit();
+
+    /// assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///destroy
+}
+
 /*Tests_SRS_HTTPAPIEX_02_001: [If parameter hostName is NULL then HTTPAPIEX_Create shall return NULL.] */
 TEST_FUNCTION(HTTPAPIEX_Create_with_NULL_name_fails)
 {
@@ -659,6 +732,50 @@ TEST_FUNCTION(HTTPAPIEX_Destroy_frees_resources_3) /*this is destroy after havin
     ///destroy
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
 
+}
+
+/*Tests_SRS_HTTPAPIEX_21_050: [If HTTPAPIEX_Init was called, HTTPAPI_Destroy shall not call HTTPAPI_Deinit.] */
+TEST_FUNCTION(HTTPAPIEX_Destroy_not_call_HTTPAPI_Deinit_after_HTTPAPIEX_Init_succeeds)
+{
+    /// arrange
+    ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_OK, HTTPAPIEX_Init());
+    HTTPAPIEX_HANDLE httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
+
+    unsigned int httpStatusCode;
+    HTTP_HEADERS_HANDLE requestHttpHeaders;
+    BUFFER_HANDLE requestHttpBody = TEST_BUFFER_REQ_BODY;
+    HTTP_HEADERS_HANDLE responseHttpHeaders;
+    BUFFER_HANDLE responseHttpBody = TEST_BUFFER_RESP_BODY;
+    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
+    setupAllCallBeforeHTTPsequence();
+    setupAllCallForHTTPsequence(TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, responseHttpHeaders, responseHttpBody);
+    (void)HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, responseHttpHeaders, responseHttpBody);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(HTTPAPI_CloseConnection(IGNORED_PTR_ARG)) /*closing the conenction*/
+        .IgnoreArgument(1);
+
+    STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG)) /*this is hostname*/
+        .IgnoreArgument(1);
+
+    STRICT_EXPECTED_CALL(VECTOR_size(IGNORED_PTR_ARG))
+        .IgnoreArgument(1);
+
+    STRICT_EXPECTED_CALL(VECTOR_destroy(IGNORED_PTR_ARG)) /*these are the options vector*/
+        .IgnoreArgument(1);
+
+    STRICT_EXPECTED_CALL(gballoc_free(httpapiexhandle)); /*this is the handle*/
+
+    /// act
+    HTTPAPIEX_Destroy(httpapiexhandle);
+
+    ///assert
+
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///destroy
+    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
+    HTTPAPIEX_Deinit();
 }
 
 /*Tests_SRS_HTTPAPIEX_02_005: [If creating the handle fails for any reason, then HTTAPIEX_Create shall return NULL.] */
@@ -1290,6 +1407,152 @@ TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_with_non_NULL_request_headers_and_non_NUL
     ///destroy
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     HTTPAPIEX_Destroy(httpapiexhandle);
+}
+
+/*Tests_SRS_HTTPAPIEX_21_048: [If HTTPAPIEX_Init was called, HTTPAPI_ExecuteRequest shall not call HTTPAPI_Init.] */
+TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_not_call_HTTPAPI_Init_after_HTTPAPIEX_Init_succeeds)
+{
+    /// arrange
+    ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_OK, HTTPAPIEX_Init());
+    HTTPAPIEX_HANDLE httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
+    HTTPAPIEX_RESULT result;
+
+    unsigned int httpStatusCode;
+    HTTP_HEADERS_HANDLE requestHttpHeaders;
+    BUFFER_HANDLE requestHttpBody = TEST_BUFFER_REQ_BODY;
+    HTTP_HEADERS_HANDLE responseHttpHeaders;
+    BUFFER_HANDLE responseHttpBody = TEST_BUFFER_RESP_BODY;
+    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
+    umock_c_reset_all_calls();
+
+    /*this is building the host and content-length for the http request headers*/
+    STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(size_tToString(IGNORED_PTR_ARG, IGNORED_NUM_ARG, TEST_BUFFER_SIZE))
+        .IgnoreArgument(1).IgnoreArgument(2);
+    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Host", TEST_HOSTNAME))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(HTTPHeaders_ReplaceHeaderNameValuePair(IGNORED_PTR_ARG, "Content-Length", MU_TOSTRING(TEST_BUFFER_SIZE)))
+        .IgnoreArgument(1);
+
+    /*this is getting the buffer content and buffer length to pass to httpapi_executerequest*/
+    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(HTTPAPI_CreateConnection(TEST_HOSTNAME));
+    STRICT_EXPECTED_CALL(VECTOR_size(IGNORED_PTR_ARG)) /*this is passing the options*/ /*there are none saved in the regular sequences*/
+        .IgnoreArgument(1);
+
+    STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(BUFFER_u_char(IGNORED_PTR_ARG))
+        .IgnoreArgument(1);
+
+    STRICT_EXPECTED_CALL(HTTPAPI_ExecuteRequest(
+        IGNORED_PTR_ARG,
+        HTTPAPI_REQUEST_PATCH,
+        TEST_RELATIVE_PATH,
+        requestHttpHeaders,
+        IGNORED_PTR_ARG,
+        TEST_BUFFER_SIZE,
+        IGNORED_PTR_ARG,
+        responseHttpHeaders,
+        responseHttpBody))
+        .IgnoreArgument(1)
+        .IgnoreArgument(4)
+        .IgnoreArgument(5)
+        .IgnoreArgument(7)
+        .ValidateArgumentBuffer(5, TEST_BUFFER, TEST_BUFFER_SIZE)
+        ;
+
+    /// act
+    result = HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, responseHttpHeaders, responseHttpBody);
+
+    ///assert
+    ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_OK, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///destroy
+    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
+    HTTPAPIEX_Destroy(httpapiexhandle);
+    HTTPAPIEX_Deinit();
+}
+
+/*Tests_SRS_HTTPAPIEX_21_049: [If HTTPAPIEX_Init was called, HTTPAPI_ExecuteRequest shall not call HTTPAPI_Deinit.] */
+TEST_FUNCTION(HTTPAPIEX_ExecuteRequest_not_call_HTTPAPI_Deinit_after_HTTPAPIEX_Init_succeeds) /*refer to httpapiex_retry_mechanism.vsdx*/
+{
+    /// arrange
+    ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_OK, HTTPAPIEX_Init());
+    HTTPAPIEX_HANDLE httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
+    HTTPAPIEX_RESULT result;
+
+    unsigned int httpStatusCode;
+    unsigned int asGivenByHttpApi = 23;
+    HTTP_HEADERS_HANDLE requestHttpHeaders;
+    BUFFER_HANDLE requestHttpBody = TEST_BUFFER_REQ_BODY;
+    HTTP_HEADERS_HANDLE responseHttpHeaders;
+    BUFFER_HANDLE responseHttpBody = TEST_BUFFER_RESP_BODY;
+    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
+    (void)HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, responseHttpHeaders, responseHttpBody);
+    umock_c_reset_all_calls();
+
+    prepareHTTPAPIEX_ExecuteRequest(&asGivenByHttpApi, requestHttpHeaders, responseHttpHeaders, responseHttpBody, HTTPAPI_ERROR);
+
+    {
+        STRICT_EXPECTED_CALL(HTTPAPI_CloseConnection(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
+
+        STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
+        whenShallHTTPAPI_CreateConnection_fail[0] = currentHTTPAPI_CreateConnection_call + 1;
+        STRICT_EXPECTED_CALL(HTTPAPI_CreateConnection(TEST_HOSTNAME));
+    }
+
+    {
+        STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(HTTPAPI_CreateConnection(TEST_HOSTNAME));
+        STRICT_EXPECTED_CALL(VECTOR_size(IGNORED_PTR_ARG)) /*this is passing the options*/ /*there are none saved in the regular sequences*/
+            .IgnoreArgument(1);
+    }
+
+    {
+        STRICT_EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(BUFFER_u_char(IGNORED_PTR_ARG))
+            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(HTTPAPI_ExecuteRequest(
+            IGNORED_PTR_ARG,
+            HTTPAPI_REQUEST_PATCH,
+            TEST_RELATIVE_PATH,
+            requestHttpHeaders,
+            IGNORED_PTR_ARG,
+            TEST_BUFFER_SIZE,
+            IGNORED_PTR_ARG,
+            responseHttpHeaders,
+            responseHttpBody))
+            .IgnoreArgument(1)
+            .IgnoreArgument(4)
+            .IgnoreArgument(5)
+            .IgnoreArgument(7)
+            .ValidateArgumentBuffer(5, TEST_BUFFER, TEST_BUFFER_SIZE)
+            .CopyOutArgumentBuffer(7, &asGivenByHttpApi, sizeof(asGivenByHttpApi))
+            ;
+    }
+
+    /// act
+    result = HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_PATCH, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, responseHttpHeaders, responseHttpBody);
+
+    ///assert
+    ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_OK, result);
+    ASSERT_ARE_EQUAL(int, 23, (int)httpStatusCode);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///destroy
+    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
+    HTTPAPIEX_Destroy(httpapiexhandle);
+    HTTPAPIEX_Deinit();
 }
 
 /*Tests_SRS_HTTPAPIEX_02_014: [If requestContent is not NULL then its content and its size shall be used for parameters content and contentLength of HTTPAPI_ExecuteRequest.] */
