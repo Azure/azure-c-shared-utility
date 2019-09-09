@@ -189,7 +189,7 @@ TEST_FUNCTION(platform_init_success)
     STRICT_EXPECTED_CALL(WSAStartup(IGNORED_NUM_ARG, IGNORED_PTR_ARG));
 #ifndef DONT_USE_UPLOADTOBLOB
     STRICT_EXPECTED_CALL(HTTPAPIEX_Init());
-#endif /*DONT_USE_UPLOADTOBLOB*/
+#endif /* DONT_USE_UPLOADTOBLOB */
 #ifdef USE_OPENSSL
     STRICT_EXPECTED_CALL(tlsio_openssl_init());
 #endif
@@ -239,7 +239,7 @@ TEST_FUNCTION(platform_init_HTTPAPIEX_fail)
 
     // cleanup
 }
-#endif /*DONT_USE_UPLOADTOBLOB*/
+#endif /* DONT_USE_UPLOADTOBLOB */
 
 TEST_FUNCTION(platform_get_default_tlsio_success)
 {
@@ -283,7 +283,7 @@ TEST_FUNCTION(platform_deinit_success)
     STRICT_EXPECTED_CALL(WSACleanup());
 #ifndef DONT_USE_UPLOADTOBLOB
     STRICT_EXPECTED_CALL(HTTPAPIEX_Deinit());
-#endif /*DONT_USE_UPLOADTOBLOB*/
+#endif /* DONT_USE_UPLOADTOBLOB */
 #ifdef USE_OPENSSL
     STRICT_EXPECTED_CALL(tlsio_openssl_deinit());
 #endif

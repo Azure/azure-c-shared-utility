@@ -34,7 +34,7 @@ int platform_init(void)
         LogError("HTTP for upload to blob failed on initialization.");
         result = MU_FAILURE;
     }
-#endif /*DONT_USE_UPLOADTOBLOB*/
+#endif /* DONT_USE_UPLOADTOBLOB */
 #ifdef USE_OPENSSL
     if (result == 0)
     {
@@ -86,7 +86,7 @@ void platform_deinit(void)
 {
 #ifndef DONT_USE_UPLOADTOBLOB
     HTTPAPIEX_Deinit();
-#endif /*DONT_USE_UPLOADTOBLOB*/
+#endif /* DONT_USE_UPLOADTOBLOB */
 #ifdef USE_OPENSSL
     tlsio_openssl_deinit();
 #endif
