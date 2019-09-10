@@ -402,14 +402,14 @@ static void openssl_lock_unlock_helper(LOCK_HANDLE lock, int lock_mode, const ch
 
     if (lock_mode & CRYPTO_LOCK)
     {
-        if (Lock(lock) != 0)
+        if (Lock(lock) != LOCK_OK)
         {
             LogError("Failed to lock openssl lock (%s:%d)", file, line);
         }
     }
     else
     {
-        if (Unlock(lock) != 0)
+        if (Unlock(lock) != LOCK_OK)
         {
             LogError("Failed to unlock openssl lock (%s:%d)", file, line);
         }
