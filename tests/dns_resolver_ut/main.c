@@ -7,6 +7,10 @@
 int main(void)
 {
     size_t failedTestCount = 0;
-    RUN_TEST_SUITE(dns_async_ut, failedTestCount);
+    /**
+     * Identify the test suite to run here.
+     */
+    RUN_TEST_SUITE(dns_resolver_ut, failedTestCount);
+
     return failedTestCount;
 }
