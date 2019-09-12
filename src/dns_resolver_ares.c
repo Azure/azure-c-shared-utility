@@ -72,6 +72,7 @@ DNSRESOLVER_HANDLE dns_resolver_create(const char* hostname, int port, DNSRESOLV
             if (ms_result != 0)
             {
                 /* Codes_SRS_dns_resolver_30_014: [ On any failure, dns_resolver_create shall log an error and return NULL. ]*/
+                LogError("dns_resolver_create: hostname allocation failed");
                 free(result);
                 result = NULL;
             }
@@ -91,6 +92,8 @@ DNSRESOLVER_HANDLE dns_resolver_create(const char* hostname, int port, DNSRESOLV
                     result = NULL;
                 }
             }
+
+            result->addrInfo = NULL;
         }
     }
     return result;
@@ -105,27 +108,34 @@ static void query_completed_cb(void *arg, int status, int timeouts, struct hoste
     DNSRESOLVER_INSTANCE *dns = (DNSRESOLVER_INSTANCE *)arg;
     (void)status;
     (void)timeouts;
-    
-    dns->addrInfo = calloc(1, sizeof(struct addrinfo));
-    ptr = dns->addrInfo;
-    
-    ptr->ai_addr = calloc(1, sizeof(struct sockaddr_in));
-    addr = (void *)ptr->ai_addr;
 
-    if (he->h_addrtype == AF_INET)
+    if(status != ARES_SUCCESS)
     {
-        memcpy(&addr->sin_addr, he->h_addr_list[0], sizeof(struct in_addr));
-        addr->sin_family = he->h_addrtype;
-        addr->sin_port = htons((unsigned short)dns->port);
-
-        dns->ip_v4 = EXTRACT_IPV4(ptr);
-        dns->is_failed = (dns->ip_v4 == 0);
+        LogError("ARES error: %d", status);
     }
+    else
+    {
+        dns->addrInfo = calloc(1, sizeof(struct addrinfo));
+        ptr = dns->addrInfo;
+        
+        ptr->ai_addr = calloc(1, sizeof(struct sockaddr_in));
+        addr = (void *)ptr->ai_addr;
 
-    /* Codes_SRS_dns_resolver_30_033: [ If dns_resolver_is_create_complete has returned true and the lookup process has failed, dns_resolver_get_ipv4 shall return 0. ]*/
-    
-    dns->is_complete = true;
-    dns->in_progress = false;
+        if (he->h_addrtype == AF_INET)
+        {
+            memcpy(&addr->sin_addr, he->h_addr_list[0], sizeof(struct in_addr));
+            addr->sin_family = he->h_addrtype;
+            addr->sin_port = htons((unsigned short)dns->port);
+
+            dns->ip_v4 = EXTRACT_IPV4(ptr);
+            dns->is_failed = (dns->ip_v4 == 0);
+        }
+
+        /* Codes_SRS_dns_resolver_30_033: [ If dns_resolver_is_create_complete has returned true and the lookup process has failed, dns_resolver_get_ipv4 shall return 0. ]*/
+        
+        dns->is_complete = true;
+        dns->in_progress = false;
+    }
 }
 
 /* Codes_SRS_dns_resolver_30_021: [ dns_resolver_is_create_complete shall perform the asynchronous work of DNS lookup and log any errors. ]*/
@@ -187,8 +197,15 @@ void dns_resolver_destroy(DNSRESOLVER_HANDLE dns_in)
         /* Codes_SRS_dns_resolver_30_051: [ dns_resolver_destroy shall delete all acquired resources and delete the DNSRESOLVER_HANDLE. ]*/
         ares_destroy(dns->ares_resolver);
         ares_library_cleanup();
-        free(dns->addrInfo->ai_addr);
-        free(dns->addrInfo);
+
+        if(dns->addrInfo != NULL)
+        {
+            if(dns->addrInfo->ai_addr != NULL)
+            {
+                free(dns->addrInfo->ai_addr);
+            }
+            free(dns->addrInfo);
+        }
         free(dns->hostname);
         free(dns);
         dns = NULL;
