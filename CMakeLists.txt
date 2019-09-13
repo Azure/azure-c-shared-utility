@@ -205,6 +205,7 @@ set(source_c_files
     ./src/azure_base64.c
     ./src/buffer.c
     ./src/constbuffer_array.c
+    ./src/constbuffer_array_batcher.c
     ./src/connection_string_parser.c
     ./src/constbuffer.c
     ${LOGGING_C_FILE}
@@ -324,6 +325,7 @@ set(source_h_files
     ./inc/azure_c_shared_utility/azure_base64.h
     ./inc/azure_c_shared_utility/buffer_.h
     ./inc/azure_c_shared_utility/constbuffer_array.h
+    ./inc/azure_c_shared_utility/constbuffer_array_batcher.h
     ./inc/azure_c_shared_utility/connection_string_parser.h
     ./inc/azure_c_shared_utility/crt_abstractions.h
     ./inc/azure_c_shared_utility/constmap.h
