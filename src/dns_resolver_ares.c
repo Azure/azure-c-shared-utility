@@ -38,7 +38,7 @@ typedef struct
     ares_channel ares_resolver;
 } DNSRESOLVER_INSTANCE;
 
-DNSRESOLVER_HANDLE dns_resolver_create(const char* hostname, int port, DNSRESOLVER_OPTIONS* options)
+DNSRESOLVER_HANDLE dns_resolver_create(const char* hostname, int port, const DNSRESOLVER_OPTIONS* options)
 {
     /* Codes_SRS_dns_resolver_30_012: [ The optional options parameter shall be ignored. ]*/
     DNSRESOLVER_INSTANCE* result;

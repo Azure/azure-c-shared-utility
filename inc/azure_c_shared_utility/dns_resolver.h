@@ -27,7 +27,7 @@ extern "C" {
     *
     * @return    @c The newly created DNSRESOLVER_HANDLE.
     */
-    MOCKABLE_FUNCTION(, DNSRESOLVER_HANDLE, dns_resolver_create, const char*, hostname, int, port, DNSRESOLVER_OPTIONS*, options);
+    MOCKABLE_FUNCTION(, DNSRESOLVER_HANDLE, dns_resolver_create, const char*, hostname, int, port, const DNSRESOLVER_OPTIONS*, options);
 
     /**
     * @brief    Continue the lookup process and report its completion state. Must be polled repeatedly for completion.

@@ -26,7 +26,7 @@ typedef void DNSRESOLVER_OPTIONS;
 
 **SRS_dns_resolver_30_002: [** The dns_resolver shall implement the methods defined in `dns_resolver.h`.
 ```c
-DNSRESOLVER_HANDLE dns_resolver_create(const char* hostname, DNSRESOLVER_OPTIONS* options);
+DNSRESOLVER_HANDLE dns_resolver_create(const char* hostname, int port, const DNSRESOLVER_OPTIONS* options);
 int dns_resolver_is_lookup_complete(DNSRESOLVER_HANDLE dns, bool* is_complete);
 uint32_t dns_resolver_get_ipv4(DNSRESOLVER_HANDLE dns);
 void dns_resolver_destroy(DNSRESOLVER_HANDLE dns);
@@ -37,7 +37,7 @@ void dns_resolver_destroy(DNSRESOLVER_HANDLE dns);
 ###   dns_resolver_create
 `dns_resolver_create` begins a single attempt at asynchronous DNS lookup.
 ```c
-DNSRESOLVER_HANDLE dns_resolver_create(const char* hostname, DNSRESOLVER_OPTIONS* options);
+DNSRESOLVER_HANDLE dns_resolver_create(const char* hostname, int port, const DNSRESOLVER_OPTIONS* options);
 ```
 
 **SRS_dns_resolver_30_010: [** `dns_resolver_create` shall make a copy of the `hostname` parameter to allow immediate deletion by the caller. **]**

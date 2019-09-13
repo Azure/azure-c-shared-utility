@@ -94,8 +94,6 @@ typedef struct SOCKET_IO_INSTANCE_TAG
     SINGLYLINKEDLIST_HANDLE pending_io_list;
     unsigned char recv_bytes[RECEIVE_BYTES_VALUE];
     DNSRESOLVER_HANDLE dns_resolver;
-    // struct sockaddr* connect_addr;
-    // socklen_t connect_addr_len;
     struct addrinfo* addrInfoIp;
 } SOCKET_IO_INSTANCE;
 
@@ -260,7 +258,7 @@ static STATIC_VAR_UNUSED void signal_callback(int signum)
 
 static int lookup_address(SOCKET_IO_INSTANCE* socket_io_instance)
 {
-    int result;
+    int result = 0;
     struct sockaddr_un addrInfoUn;
 
     if (socket_io_instance->address_type == ADDRESS_TYPE_IP)
@@ -288,15 +286,10 @@ static int lookup_address(SOCKET_IO_INSTANCE* socket_io_instance)
             addrInfoUn.sun_family = AF_UNIX;
             // No need to add NULL terminator due to the above memset
             (void)memcpy(addrInfoUn.sun_path, socket_io_instance->hostname, hostname_len);
-
-            // socket_io_instance->connect_addr = (struct sockaddr*)&addrInfoUn;
-            // socket_io_instance->connect_addr_len = sizeof(addrInfoUn);
             
             socket_io_instance->io_state = IO_STATE_OPEN;
         }
     }
-
-    result = 0;
 
     return result;
 }
@@ -900,9 +893,6 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
                     {
                         if (errno == EAGAIN) /*send says "come back later" with EAGAIN - likely the socket buffer cannot accept more data*/
                         {
-                            // /*do nothing*/
-                            // result = 0;
-
                             /* queue data */
                             if (add_pending_io(socket_io_instance, buffer, size, on_send_complete, callback_context) != 0)
                             {
@@ -911,6 +901,7 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
                             }
                             else
                             {
+                                /*do nothing*/
                                 result = 0;
                             }
                         }

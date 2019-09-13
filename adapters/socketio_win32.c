@@ -160,7 +160,8 @@ static int lookup_address(SOCKET_IO_INSTANCE* socket_io_instance)
     }
     else
     {
-
+        //The hostname IP has been returned. 
+        //So, the socket is ready to open because currently socket_io_instance->socket is INVALID_SOCKET.
         socket_io_instance->io_state = IO_STATE_OPEN;
     }
 
