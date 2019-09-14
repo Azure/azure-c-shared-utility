@@ -285,6 +285,7 @@ static int initiate_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
     int flags;
     struct addrinfo* addr = NULL;
     struct sockaddr* connect_addr = NULL;
+    struct sockaddr_un addrInfoUn;
     socklen_t connect_addr_len;
 
     if(socket_io_instance->address_type == ADDRESS_TYPE_IP)
@@ -299,7 +300,7 @@ static int initiate_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
             addr = dns_resolver_get_addrInfo(socket_io_instance->dns_resolver);
             connect_addr = addr->ai_addr;
             connect_addr_len = sizeof(*addr->ai_addr);
-            result = 0
+            result = 0;
         }
     }
     else
