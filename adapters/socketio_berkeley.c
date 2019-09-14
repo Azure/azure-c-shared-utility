@@ -94,7 +94,6 @@ typedef struct SOCKET_IO_INSTANCE_TAG
     SINGLYLINKEDLIST_HANDLE pending_io_list;
     unsigned char recv_bytes[RECEIVE_BYTES_VALUE];
     DNSRESOLVER_HANDLE dns_resolver;
-    struct addrinfo* addrInfoIp;
 } SOCKET_IO_INSTANCE;
 
 typedef struct NETWORK_INTERFACE_DESCRIPTION_TAG
@@ -259,7 +258,7 @@ static STATIC_VAR_UNUSED void signal_callback(int signum)
 static int lookup_address(SOCKET_IO_INSTANCE* socket_io_instance)
 {
     int result = 0;
-    struct sockaddr_un addrInfoUn;
+    struct sockaddr_un *addrInfoUn = NULL;
 
     if (socket_io_instance->address_type == ADDRESS_TYPE_IP)
     {
@@ -270,6 +269,37 @@ static int lookup_address(SOCKET_IO_INSTANCE* socket_io_instance)
         else
         {
             socket_io_instance->io_state = IO_STATE_OPEN;
+        }
+    }
+    else //ADDRESS_TYPE_DOMAIN_SOCKET
+    {
+        socket_io_instance->io_state = IO_STATE_OPEN;
+    }
+
+    return result;
+}
+
+static int initiate_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
+{
+    int result;
+    int flags;
+    struct addrinfo* addr = NULL;
+    struct sockaddr* connect_addr = NULL;
+    socklen_t connect_addr_len;
+
+    if(socket_io_instance->address_type == ADDRESS_TYPE_IP)
+    {
+        if(!dns_resolver_is_lookup_complete(socket_io_instance->dns_resolver))
+        {
+            LogError("DNS did not resolve IP address");
+            result = MU_FAILURE;
+        }
+        else
+        {
+            addr = dns_resolver_get_addrInfo(socket_io_instance->dns_resolver);
+            connect_addr = addr->ai_addr;
+            connect_addr_len = sizeof(*addr->ai_addr);
+            result = 0
         }
     }
     else
@@ -286,22 +316,15 @@ static int lookup_address(SOCKET_IO_INSTANCE* socket_io_instance)
             addrInfoUn.sun_family = AF_UNIX;
             // No need to add NULL terminator due to the above memset
             (void)memcpy(addrInfoUn.sun_path, socket_io_instance->hostname, hostname_len);
-            
-            socket_io_instance->io_state = IO_STATE_OPEN;
+
+            connect_addr = (struct sockaddr*)&addrInfoUn;
+            connect_addr_len = sizeof(addrInfoUn);
+            result = 0;
         }
     }
 
-    return result;
-}
-
-static int initiate_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
-{
-    int result;
-    int flags;
-
-    struct addrinfo* addr = dns_resolver_get_addrInfo(socket_io_instance->dns_resolver);
-    (void)memcpy((socket_io_instance->addrInfoIp), &addr, sizeof(*(socket_io_instance->addrInfoIp)));
-
+    if(result == 0)
+    {
         if ((-1 == (flags = fcntl(socket_io_instance->socket, F_GETFL, 0))) ||
             (fcntl(socket_io_instance->socket, F_SETFL, flags | O_NONBLOCK) == -1))
         {
@@ -310,7 +333,7 @@ static int initiate_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
         }
         else
         {
-            result = connect(socket_io_instance->socket, addr->ai_addr, sizeof(*((addr)->ai_addr)));
+            result = connect(socket_io_instance->socket, connect_addr, connect_addr_len);
             if ((result != 0) && (errno != EINPROGRESS))
             {
                 LogError("Failure: connect failure %d.", errno);
@@ -324,6 +347,7 @@ static int initiate_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
                 }
             }
         }
+    }
 
     return result;
 }
@@ -669,8 +693,6 @@ CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters)
                 }
                 else
                 {
-                    result->addrInfoIp = calloc(1, sizeof(struct addrinfo));
-                    
                     result->port = socket_io_config->port;
                     result->on_io_open_complete = NULL;
                     result->dns_resolver = dns_resolver_create(result->hostname, result->port, NULL);
@@ -721,7 +743,6 @@ void socketio_destroy(CONCRETE_IO_HANDLE socket_io)
         singlylinkedlist_destroy(socket_io_instance->pending_io_list);
         free(socket_io_instance->hostname);
         free(socket_io_instance->target_mac_address);
-        free(socket_io_instance->addrInfoIp);
 
         dns_resolver_destroy(socket_io_instance->dns_resolver);
 
