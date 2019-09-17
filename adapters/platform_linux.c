@@ -4,6 +4,7 @@
 #include "azure_c_shared_utility/platform.h"
 #include "azure_c_shared_utility/xio.h"
 #include "azure_c_shared_utility/xlogging.h"
+#include "azure_c_shared_utility/httpapiex.h"
 #ifdef USE_OPENSSL
 #include "azure_c_shared_utility/tlsio_openssl.h"
 #endif
@@ -26,11 +27,19 @@
 
 int platform_init(void)
 {
-    int result;
+    int result = 0;
+#ifndef DONT_USE_UPLOADTOBLOB
+    if (HTTPAPIEX_Init() == HTTPAPIEX_ERROR)
+    {
+        LogError("HTTP for upload to blob failed on initialization.");
+        result = MU_FAILURE;
+    }
+#endif /* DONT_USE_UPLOADTOBLOB */
 #ifdef USE_OPENSSL
-    result = tlsio_openssl_init();
-#else
-    result = 0;
+    if (result == 0)
+    {
+        result = tlsio_openssl_init();
+    }
 #endif
     return result;
 }
@@ -75,6 +84,9 @@ STRING_HANDLE platform_get_platform_info(PLATFORM_INFO_OPTION options)
 
 void platform_deinit(void)
 {
+#ifndef DONT_USE_UPLOADTOBLOB
+    HTTPAPIEX_Deinit();
+#endif /* DONT_USE_UPLOADTOBLOB */
 #ifdef USE_OPENSSL
     tlsio_openssl_deinit();
 #endif

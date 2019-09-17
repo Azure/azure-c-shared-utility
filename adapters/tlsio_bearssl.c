@@ -1617,6 +1617,11 @@ int tlsio_bearssl_setoption(CONCRETE_IO_HANDLE tls_io, const char *optionName, c
                 result = 0;
             }
         }
+        else if (strcmp(optionName, OPTION_SET_TLS_RENEGOTIATION) == 0)
+        {
+            // No need to do anything for BearSSL
+            result = 0;
+        }
         else
         {
             // tls_io_instance->socket_io is never NULL

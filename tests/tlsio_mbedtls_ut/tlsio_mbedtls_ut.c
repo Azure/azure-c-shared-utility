@@ -115,6 +115,7 @@ MOCKABLE_FUNCTION(, void, mbedtls_ssl_config_init, mbedtls_ssl_config*, conf);
 MOCKABLE_FUNCTION(, void, mbedtls_ssl_session_init, mbedtls_ssl_session*, session);
 MOCKABLE_FUNCTION(, int, mbedtls_ssl_session_reset, mbedtls_ssl_context*, ssl);
 MOCKABLE_FUNCTION(, int, mbedtls_ssl_conf_own_cert, mbedtls_ssl_config*, conf, mbedtls_x509_crt*, own_cert, mbedtls_pk_context*, pk_key);
+MOCKABLE_FUNCTION(, void, mbedtls_ssl_conf_renegotiation, mbedtls_ssl_config*, conf, int, renegotiation);
 
 MOCKABLE_FUNCTION(, void, mbedtls_debug_set_threshold, int, threshold);
 
@@ -829,6 +830,7 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         umock_c_reset_all_calls();
 
         STRICT_EXPECTED_CALL(mbedtls_ssl_read(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(xio_dowork(IGNORED_PTR_ARG));
 
         //act
         tlsio_mbedtls_dowork(handle);
@@ -859,6 +861,7 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
             .SetReturn(TEST_DATA_SIZE);
         STRICT_EXPECTED_CALL(on_bytes_received(IGNORED_PTR_ARG, IGNORED_PTR_ARG, TEST_DATA_SIZE));
         STRICT_EXPECTED_CALL(mbedtls_ssl_read(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(xio_dowork(IGNORED_PTR_ARG));
 
         //act
         tlsio_mbedtls_dowork(handle);
@@ -1033,6 +1036,62 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         tlsio_mbedtls_setoption(handle, SU_OPTION_X509_PRIVATE_KEY, TEST_X509_KEY);
 
         //assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        //cleanup
+        (void)tlsio_mbedtls_close(handle, on_io_close_complete, NULL);
+        tlsio_mbedtls_destroy(handle);
+    }
+
+    TEST_FUNCTION(tlsio_mbedtls_setoption_renegotiation_success)
+    {
+        //arrange
+        mbedtls_pk_info_t* pk_info = (mbedtls_pk_info_t*)0x12345;
+        TLSIO_CONFIG tls_io_config;
+        tls_io_config.hostname = TEST_HOSTNAME;
+        tls_io_config.port = TEST_CONNECTION_PORT;
+        tls_io_config.underlying_io_interface = TEST_INTERFACE_DESC;
+        tls_io_config.underlying_io_parameters = NULL;
+        CONCRETE_IO_HANDLE handle = tlsio_mbedtls_create(&tls_io_config);
+        (void)tlsio_mbedtls_open(handle, on_io_open_complete, NULL, on_bytes_received, NULL, on_io_error, NULL);
+        g_open_complete(g_open_complete_ctx, IO_OPEN_OK);
+        umock_c_reset_all_calls();
+
+        STRICT_EXPECTED_CALL(mbedtls_ssl_conf_renegotiation(IGNORED_PTR_ARG, 1));
+
+        //act
+        bool set_renegotiation = true;
+        int result = tlsio_mbedtls_setoption(handle, OPTION_SET_TLS_RENEGOTIATION, &set_renegotiation);
+
+        //assert
+        ASSERT_ARE_EQUAL(int, 0, result);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        //cleanup
+        (void)tlsio_mbedtls_close(handle, on_io_close_complete, NULL);
+        tlsio_mbedtls_destroy(handle);
+    }
+
+    TEST_FUNCTION(tlsio_mbedtls_setoption_renegotiation_value_NULL_fail)
+    {
+        //arrange
+        mbedtls_pk_info_t* pk_info = (mbedtls_pk_info_t*)0x12345;
+        TLSIO_CONFIG tls_io_config;
+        tls_io_config.hostname = TEST_HOSTNAME;
+        tls_io_config.port = TEST_CONNECTION_PORT;
+        tls_io_config.underlying_io_interface = TEST_INTERFACE_DESC;
+        tls_io_config.underlying_io_parameters = NULL;
+        CONCRETE_IO_HANDLE handle = tlsio_mbedtls_create(&tls_io_config);
+        (void)tlsio_mbedtls_open(handle, on_io_open_complete, NULL, on_bytes_received, NULL, on_io_error, NULL);
+        g_open_complete(g_open_complete_ctx, IO_OPEN_OK);
+        umock_c_reset_all_calls();
+
+        //act
+        bool set_renegotiation = true;
+        int result = tlsio_mbedtls_setoption(handle, OPTION_SET_TLS_RENEGOTIATION, NULL);
+
+        //assert
+        ASSERT_ARE_NOT_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         //cleanup

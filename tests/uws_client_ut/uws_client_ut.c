@@ -207,7 +207,6 @@ static LIST_ITEM_HANDLE my_singlylinkedlist_find(SINGLYLINKEDLIST_HANDLE handle,
     return (LIST_ITEM_HANDLE)found_item;
 }
 
-static MAP_RESULT my_Map_GetInternals_return;
 static char* my_Map_GetInternals_keys[10];
 static char* my_Map_GetInternals_values[10];
 static size_t my_Map_GetInternals_count;
@@ -217,7 +216,7 @@ static MAP_RESULT my_Map_GetInternals(MAP_HANDLE handle, const char*const** keys
     *keys = (const char*const*)my_Map_GetInternals_keys;
     *values = (const char*const*)my_Map_GetInternals_values;
     *count = my_Map_GetInternals_count;
-    return my_Map_GetInternals_return;
+    return MAP_OK;
 }
 
 
@@ -1080,6 +1079,7 @@ TEST_FUNCTION(uws_client_create_with_valid_args_ssl_succeeds)
     STRICT_EXPECTED_CALL(socketio_get_interface_description());
     STRICT_EXPECTED_CALL(xio_create(TEST_TLS_IO_INTERFACE_DESCRIPTION, &tlsio_config))
         .IgnoreArgument_io_create_parameters();
+    STRICT_EXPECTED_CALL(xio_setoption(IGNORED_PTR_ARG, OPTION_SET_TLS_RENEGOTIATION, IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
     STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, "test_protocol"))
         .IgnoreArgument_destination();
@@ -1126,6 +1126,7 @@ TEST_FUNCTION(uws_client_create_with_valid_args_ssl_port_different_than_443_succ
     STRICT_EXPECTED_CALL(socketio_get_interface_description());
     STRICT_EXPECTED_CALL(xio_create(TEST_TLS_IO_INTERFACE_DESCRIPTION, &tlsio_config))
         .IgnoreArgument_io_create_parameters();
+    STRICT_EXPECTED_CALL(xio_setoption(IGNORED_PTR_ARG, OPTION_SET_TLS_RENEGOTIATION, IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
     STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, "test_protocol"))
         .IgnoreArgument_destination();
@@ -1202,6 +1203,7 @@ TEST_FUNCTION(uws_client_create_with_io_valid_args_succeeds)
     STRICT_EXPECTED_CALL(singlylinkedlist_create());
     STRICT_EXPECTED_CALL(xio_create(TEST_SOCKET_IO_INTERFACE_DESCRIPTION, &socketio_config))
         .IgnoreArgument_io_create_parameters();
+    STRICT_EXPECTED_CALL(xio_setoption(IGNORED_PTR_ARG, OPTION_SET_TLS_RENEGOTIATION, IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
     STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, "test_protocol"))
         .IgnoreArgument_destination();
@@ -1309,6 +1311,7 @@ TEST_FUNCTION(when_any_call_fails_uws_client_create_with_io_fails)
     STRICT_EXPECTED_CALL(xio_create(TEST_SOCKET_IO_INTERFACE_DESCRIPTION, &socketio_config))
         .IgnoreArgument_io_create_parameters()
         .SetFailReturn(NULL);
+    STRICT_EXPECTED_CALL(xio_setoption(IGNORED_PTR_ARG, OPTION_SET_TLS_RENEGOTIATION, IGNORED_PTR_ARG)).CallCannotFail();
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
         .SetFailReturn(NULL);
     STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, "test_protocol1"))
@@ -1322,18 +1325,17 @@ TEST_FUNCTION(when_any_call_fails_uws_client_create_with_io_fails)
 
     for (i = 0; i < umock_c_negative_tests_call_count(); i++)
     {
-        char temp_str[128];
+        if (umock_c_negative_tests_can_call_fail(i))
+        {
+            umock_c_negative_tests_reset();
+            umock_c_negative_tests_fail_call(i);
 
-        umock_c_negative_tests_reset();
-        umock_c_negative_tests_fail_call(i);
+            // act
+            uws_client = uws_client_create_with_io(TEST_SOCKET_IO_INTERFACE_DESCRIPTION, &socketio_config, "test_host", 80, "111", two_protocols, sizeof(two_protocols) / sizeof(two_protocols[0]));
 
-        (void)sprintf(temp_str, "On failed call %lu", (unsigned long)i);
-
-        // act
-        uws_client = uws_client_create_with_io(TEST_SOCKET_IO_INTERFACE_DESCRIPTION, &socketio_config, "test_host", 80, "111", two_protocols, sizeof(two_protocols) / sizeof(two_protocols[0]));
-
-        // assert
-        ASSERT_IS_NULL(uws_client, temp_str);
+            // assert
+            ASSERT_IS_NULL(uws_client, "On failed call %lu", (unsigned long)i);
+        }
     }
 }
 
@@ -1357,6 +1359,7 @@ TEST_FUNCTION(uws_client_create_with_io_with_NULL_protocols_succeeds)
     STRICT_EXPECTED_CALL(singlylinkedlist_create());
     STRICT_EXPECTED_CALL(xio_create(TEST_SOCKET_IO_INTERFACE_DESCRIPTION, &socketio_config))
         .IgnoreArgument_io_create_parameters();
+    STRICT_EXPECTED_CALL(xio_setoption(IGNORED_PTR_ARG, OPTION_SET_TLS_RENEGOTIATION, IGNORED_PTR_ARG));
 
     // act
     uws_client = uws_client_create_with_io(TEST_SOCKET_IO_INTERFACE_DESCRIPTION, &socketio_config, "test_host", 80, "111", NULL, 0);

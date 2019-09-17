@@ -24,6 +24,7 @@
 #include "azure_c_shared_utility/azure_base64.h"
 #include "azure_c_shared_utility/optionhandler.h"
 #include "azure_c_shared_utility/map.h"
+#include "azure_c_shared_utility/shared_util_options.h"
 
 static const char* UWS_CLIENT_OPTIONS = "uWSClientOptions";
 
@@ -223,6 +224,12 @@ UWS_CLIENT_HANDLE uws_client_create(const char* hostname, unsigned int port, con
                                     if (result->underlying_io == NULL)
                                     {
                                         LogError("Cannot create underlying TLS IO.");
+                                    }
+                                    else
+                                    {
+                                        // Set the underlying socket to turn on renegotiation
+                                        bool set_renegotiation = true;
+                                        xio_setoption(result->underlying_io, OPTION_SET_TLS_RENEGOTIATION, &set_renegotiation);
                                     }
                                 }
                             }
@@ -446,6 +453,10 @@ UWS_CLIENT_HANDLE uws_client_create_with_io(const IO_INTERFACE_DESCRIPTION* io_i
                             }
                             else
                             {
+                                // Set the underlying socket to turn on renegotiation
+                                bool set_renegotiation = true;
+                                (void)xio_setoption(result->underlying_io, OPTION_SET_TLS_RENEGOTIATION, &set_renegotiation);
+
                                 result->uws_state = UWS_STATE_CLOSED;
 
                                 /* Codes_SRS_UWS_CLIENT_01_520: [ The argument port shall be copied for later use. ]*/
@@ -907,6 +918,10 @@ static void on_underlying_io_close_sent(void* context, IO_SEND_RESULT io_send_re
 
         switch (io_send_result)
         {
+        default:
+            LogError("Unknown enum value: %d", io_send_result);
+            break;
+
         case IO_SEND_OK:
         case IO_SEND_CANCELLED:
             if (uws_client->uws_state == UWS_STATE_CLOSING_SENDING_CLOSE)
@@ -2201,14 +2216,14 @@ int uws_client_set_request_header(UWS_CLIENT_HANDLE uws_client, const char* name
 
     if (uws_client == NULL || name == NULL || value == NULL)
     {
-        // Codes_SRS_UWS_CLIENT_09_002: [ If any of the arguments uws_client or name or value is NULL uws_client_set_request_header shall fail and return a non-zero value. ]  
+        // Codes_SRS_UWS_CLIENT_09_002: [ If any of the arguments uws_client or name or value is NULL uws_client_set_request_header shall fail and return a non-zero value. ]
         LogError("invalid parameter (uws_client=%p, name=%p, value=%p)", uws_client, name, value);
         result = MU_FAILURE;
     }
-    // Codes_SRS_UWS_CLIENT_09_003: [ A copy of name and value shall be stored for later sending in the request message. ]  
+    // Codes_SRS_UWS_CLIENT_09_003: [ A copy of name and value shall be stored for later sending in the request message. ]
     else if (Map_AddOrUpdate(uws_client->request_headers, name, value) != MAP_OK)
     {
-        // Codes_SRS_UWS_CLIENT_09_004: [ If name or value fail to be stored the function shall fail and return a non-zero value. ]  
+        // Codes_SRS_UWS_CLIENT_09_004: [ If name or value fail to be stored the function shall fail and return a non-zero value. ]
         LogError("Failed adding request header %s", name);
         result = MU_FAILURE;
     }

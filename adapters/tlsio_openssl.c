@@ -402,14 +402,14 @@ static void openssl_lock_unlock_helper(LOCK_HANDLE lock, int lock_mode, const ch
 
     if (lock_mode & CRYPTO_LOCK)
     {
-        if (Lock(lock) != 0)
+        if (Lock(lock) != LOCK_OK)
         {
             LogError("Failed to lock openssl lock (%s:%d)", file, line);
         }
     }
     else
     {
-        if (Unlock(lock) != 0)
+        if (Unlock(lock) != LOCK_OK)
         {
             LogError("Failed to unlock openssl lock (%s:%d)", file, line);
         }
@@ -1610,6 +1610,11 @@ int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
             {
                 result = 0;
             }
+        }
+        else if (strcmp(optionName, OPTION_SET_TLS_RENEGOTIATION) == 0)
+        {
+            // No need to do anything for Openssl
+            result = 0;
         }
         else if (strcmp("ignore_server_name_check", optionName) == 0)
         {
