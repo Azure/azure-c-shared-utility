@@ -173,7 +173,7 @@ void dns_resolver_destroy(DNSRESOLVER_HANDLE dns_in)
     else
     {
         /* Codes_SRS_dns_resolver_30_051: [ dns_resolver_destroy shall delete all acquired resources and delete the DNSRESOLVER_HANDLE. ]*/
-        if(dns->is_complete && dns->addrInfo != NULL)
+        if(dns->is_complete && !dns->is_failed && dns->addrInfo != NULL)
         {
             freeaddrinfo(dns->addrInfo);
         }

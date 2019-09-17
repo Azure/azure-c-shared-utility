@@ -152,20 +152,30 @@ static int add_pending_io(SOCKET_IO_INSTANCE* socket_io_instance, const unsigned
 
 static int lookup_address(SOCKET_IO_INSTANCE* socket_io_instance)
 {
-    int result;
+    int result = 0;
     
-    if (!dns_resolver_is_lookup_complete(socket_io_instance->dns_resolver))
+    if (socket_io_instance->address_type == ADDRESS_TYPE_IP)
     {
-        socket_io_instance->io_state = IO_STATE_OPENING;
+        if (!dns_resolver_is_lookup_complete(socket_io_instance->dns_resolver))
+        {
+            socket_io_instance->io_state = IO_STATE_OPENING;
+        }
+        else if (dns_resolver_get_ipv4(socket_io_instance->dns_resolver) == 0)
+        {
+            LogError("DNS resolution failure %d.", WSAGetLastError());
+            result = MU_FAILURE;
+        }
+        else
+        {
+            //The hostname IP has been returned. 
+            //So, the socket is ready to open because currently socket_io_instance->socket is INVALID_SOCKET.
+            socket_io_instance->io_state = IO_STATE_OPEN;
+        }
     }
-    else
+    else //ADDRESS_TYPE_DOMAIN_SOCKET
     {
-        //The hostname IP has been returned. 
-        //So, the socket is ready to open because currently socket_io_instance->socket is INVALID_SOCKET.
         socket_io_instance->io_state = IO_STATE_OPEN;
     }
-
-    result = 0;
 
     return result;
 }
@@ -437,8 +447,9 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
             }
             else if (lookup_address(socket_io_instance) != 0)
             {
-                //TODO: Log c-ares error?
-                //LogError("Failure: socket create failure %d.", WSAGetLastError());
+                LogError("lookup_address failed");
+                (void)closesocket(socket_io_instance->socket);
+                socket_io_instance->socket = INVALID_SOCKET;
                 result = MU_FAILURE;
             }
             else if (socket_io_instance->io_state == IO_STATE_OPEN && initiate_socket_connection(socket_io_instance) != 0)
@@ -674,14 +685,14 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
             {
                 if (lookup_address(socket_io_instance) != 0)
                 {
-                    LogError("lookup_address_and_connect_socket failed");
+                    LogError("lookup_address failed");
                     (void)closesocket(socket_io_instance->socket);
                     socket_io_instance->socket = INVALID_SOCKET;
                     socket_io_instance->io_state = IO_STATE_CLOSED;
                 }
                 else if (socket_io_instance->io_state == IO_STATE_OPEN && initiate_socket_connection(socket_io_instance) != 0)
                 {
-                    LogError("lookup_address_and_connect_socket failed");
+                    LogError("initialize_socket_connection failed");
                     (void)closesocket(socket_io_instance->socket);
                     socket_io_instance->socket = INVALID_SOCKET;
                     socket_io_instance->io_state = IO_STATE_CLOSED;
