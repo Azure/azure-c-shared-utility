@@ -102,11 +102,6 @@ bool dns_resolver_is_lookup_complete(DNSRESOLVER_HANDLE dns_in)
             struct addrinfo hints;
             int getAddrResult;
 
-            /* Codes_SRS_dns_resolver_30_021: [ dns_resolver_is_create_complete shall perform the asynchronous work of DNS lookup and log any errors. ]*/
-            // Only make one attempt at lookup for this
-            // synchronous implementation
-            dns->is_complete = true;
-
             //--------------------------------
             // Setup the hints address info structure
             // which is passed to the getaddrinfo() function
@@ -139,8 +134,6 @@ bool dns_resolver_is_lookup_complete(DNSRESOLVER_HANDLE dns_in)
                     case AF_INET:
                         /* Codes_SRS_dns_resolver_30_032: [ If dns_resolver_is_create_complete has returned true and the lookup process has succeeded, dns_resolver_get_ipv4 shall return the discovered IPv4 address. ]*/
                         dns->ip_v4 = EXTRACT_IPV4(ptr);
-                        memcpy((dns->addrInfo)->ai_addr, addrInfo->ai_addr, sizeof(*(addrInfo->ai_addr)));
-                        //memcpy(&(dns->addrInfo), &addrInfo, sizeof(*(dns->addrInfo)));
                         break;
                     }
                 }
@@ -153,6 +146,12 @@ bool dns_resolver_is_lookup_complete(DNSRESOLVER_HANDLE dns_in)
                 LogInfo("Failed DNS lookup for %s: %d", dns->hostname, getAddrResult);
                 dns->is_failed = true;
             }
+
+            /* Codes_SRS_dns_resolver_30_021: [ dns_resolver_is_create_complete shall perform the asynchronous work of DNS lookup and log any errors. ]*/
+            // Only make one attempt at lookup for this
+            // synchronous implementation
+            dns->is_complete = true;
+
             // This synchronous implementation is incapable of being incomplete, so SRS_dns_resolver_30_023 does not ever happen
             /* Codes_SRS_dns_resolver_30_023: [ If the DNS lookup process is not yet complete, dns_resolver_is_create_complete shall return false. ]*/
             /* Codes_SRS_dns_resolver_30_022: [ If the DNS lookup process has completed, dns_resolver_is_create_complete shall return true. ]*/
@@ -174,7 +173,7 @@ void dns_resolver_destroy(DNSRESOLVER_HANDLE dns_in)
     else
     {
         /* Codes_SRS_dns_resolver_30_051: [ dns_resolver_destroy shall delete all acquired resources and delete the DNSRESOLVER_HANDLE. ]*/
-        if(dns->addrInfo != NULL)
+        if(dns->is_complete && dns->addrInfo != NULL)
         {
             freeaddrinfo(dns->addrInfo);
         }
