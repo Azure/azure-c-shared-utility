@@ -258,7 +258,6 @@ static STATIC_VAR_UNUSED void signal_callback(int signum)
 static int lookup_address(SOCKET_IO_INSTANCE* socket_io_instance)
 {
     int result = 0;
-    struct sockaddr_un *addrInfoUn = NULL;
 
     if (socket_io_instance->address_type == ADDRESS_TYPE_IP)
     {

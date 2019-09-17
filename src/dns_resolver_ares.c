@@ -76,26 +76,35 @@ DNSRESOLVER_HANDLE dns_resolver_create(const char* hostname, int port, const DNS
                 free(result);
                 result = NULL;
             }
-
-            status = ares_library_init(ARES_LIB_INIT_WIN32);
-            if (status != ARES_SUCCESS)
+            else
             {
-                LogError("ares_library_init failed: %s\n", ares_strerror(status));
-                result = NULL;
-            }
-            else 
-            {
-                status = ares_init(&(result->ares_resolver));
-                if(status != ARES_SUCCESS)
+                status = ares_library_init(ARES_LIB_INIT_WIN32);
+                if (status != ARES_SUCCESS)
                 {
-                    LogError("ares_init failed: %s\n", ares_strerror(status));
+                    LogError("ares_library_init failed: %s\n", ares_strerror(status));
+                    free(result);
                     result = NULL;
                 }
+                else 
+                {
+                    status = ares_init(&(result->ares_resolver));
+                    if(status != ARES_SUCCESS)
+                    {
+                        LogError("ares_init failed: %s\n", ares_strerror(status));
+                        ares_library_cleanup();
+                        free(result);
+                        result = NULL;
+                    }
+                }
             }
-
-            result->addrInfo = NULL;
         }
     }
+    
+    if(result != NULL)
+    {
+        result->addrInfo = NULL;
+    }
+
     return result;
 }
 
@@ -106,7 +115,6 @@ static void query_completed_cb(void *arg, int status, int timeouts, struct hoste
     struct sockaddr_in *addr;
     
     DNSRESOLVER_INSTANCE *dns = (DNSRESOLVER_INSTANCE *)arg;
-    (void)status;
     (void)timeouts;
 
     if(status != ARES_SUCCESS)
@@ -116,25 +124,45 @@ static void query_completed_cb(void *arg, int status, int timeouts, struct hoste
     else
     {
         dns->addrInfo = calloc(1, sizeof(struct addrinfo));
-        ptr = dns->addrInfo;
-        
-        ptr->ai_addr = calloc(1, sizeof(struct sockaddr_in));
-        addr = (void *)ptr->ai_addr;
-
-        if (he->h_addrtype == AF_INET)
+        if(dns->addrInfo == NULL)
         {
-            memcpy(&addr->sin_addr, he->h_addr_list[0], sizeof(struct in_addr));
-            addr->sin_family = he->h_addrtype;
-            addr->sin_port = htons((unsigned short)dns->port);
-
-            dns->ip_v4 = EXTRACT_IPV4(ptr);
-            dns->is_failed = (dns->ip_v4 == 0);
+            LogError("dns addrInfo: allocation failed");
+            dns->is_failed = true;
+            dns->is_complete = true;
+            dns->in_progress = false;
         }
+        else
+        {
+            ptr = dns->addrInfo;
+            
+            ptr->ai_addr = calloc(1, sizeof(struct sockaddr_in));
+            if(ptr->ai_addr == NULL)
+            {
+                LogError("dns addrinfo ai_addr: allocation failed");
+                free(dns->addrInfo);
+                dns->is_failed = true;
+                dns->is_complete = true;
+                dns->in_progress = false;
+            }
+            else
+            {
+                addr = (void *)ptr->ai_addr;
 
-        /* Codes_SRS_dns_resolver_30_033: [ If dns_resolver_is_create_complete has returned true and the lookup process has failed, dns_resolver_get_ipv4 shall return 0. ]*/
-        
-        dns->is_complete = true;
-        dns->in_progress = false;
+                if (he->h_addrtype == AF_INET)
+                {
+                    memcpy(&addr->sin_addr, he->h_addr_list[0], sizeof(struct in_addr));
+                    addr->sin_family = he->h_addrtype;
+                    addr->sin_port = htons((unsigned short)dns->port);
+
+                    /* Codes_SRS_dns_resolver_30_033: [ If dns_resolver_is_create_complete has returned true and the lookup process has failed, dns_resolver_get_ipv4 shall return 0. ]*/
+                    dns->ip_v4 = EXTRACT_IPV4(ptr);
+                    dns->is_failed = (dns->ip_v4 == 0);
+                    dns->is_complete = true;
+                    dns->in_progress = false;
+                }
+
+            }
+        }
     }
 }
 
