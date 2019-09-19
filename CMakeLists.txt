@@ -58,6 +58,7 @@ else()
     option(use_mbedtls "set use_mbedtls to ON if mbedtls is to be used, set to OFF to not use mbedtls" OFF)
     option(use_wolfssl "set use_wolfssl to ON if wolfssl is to be used, set to OFF to not use wolfssl" OFF)
     option(use_bearssl "set use_bearssl to ON if BearSSL is to be used, set to OFF to not use BearSSL" OFF)
+    option(use_c_ares "set use_c_ares to ON if c-ares is to be used, set to OFF to not use c-ares" OFF)
 endif()
 
 option(no_logging "disable logging (default is OFF)" OFF)
@@ -249,6 +250,7 @@ set(source_c_files
     ${UNIQUEID_C_FILE}
     ${ENVIRONMENT_VARIABLE_C_FILE}
     ${LOGGING_STACKTRACE_C_FILE}
+    ${DNS_C_FILE}
 )
 
 if(UNIX) #LINUX OR APPLE
@@ -602,6 +604,9 @@ if(LINUX)
         else()
             set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} uuid)
         endif()
+    endif()
+    if(${use_c_ares})
+        set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} cares)
     endif()
 endif()
 

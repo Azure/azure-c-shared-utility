@@ -17,6 +17,7 @@
 #include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/shared_util_options.h"
 #include "azure_c_shared_utility/xlogging.h"
+#include "azure_c_shared_utility/dns_resolver.h"
 
 typedef enum IO_STATE_TAG
 {
@@ -41,14 +42,18 @@ typedef struct SOCKET_IO_INSTANCE_TAG
     SOCKETIO_ADDRESS_TYPE address_type;
     ON_BYTES_RECEIVED on_bytes_received;
     ON_IO_ERROR on_io_error;
+    ON_IO_OPEN_COMPLETE on_io_open_complete;
     void* on_bytes_received_context;
     void* on_io_error_context;
+    void* on_io_open_complete_context;
     char* hostname;
     int port;
     IO_STATE io_state;
     SINGLYLINKEDLIST_HANDLE pending_io_list;
     struct tcp_keepalive keep_alive;
     unsigned char recv_bytes[RECEIVE_BYTES_VALUE];
+    DNSRESOLVER_HANDLE dns_resolver;
+    struct addrinfo* addrInfo;
 } SOCKET_IO_INSTANCE;
 
 /*this function will clone an option given by name and value*/
@@ -141,6 +146,135 @@ static int add_pending_io(SOCKET_IO_INSTANCE* socket_io_instance, const unsigned
             }
         }
     }
+    return result;
+}
+
+
+static int lookup_address(SOCKET_IO_INSTANCE* socket_io_instance)
+{
+    int result = 0;
+    
+    if (socket_io_instance->address_type == ADDRESS_TYPE_IP)
+    {
+        if (!dns_resolver_is_lookup_complete(socket_io_instance->dns_resolver))
+        {
+            socket_io_instance->io_state = IO_STATE_OPENING;
+        }
+        else if (dns_resolver_get_ipv4(socket_io_instance->dns_resolver) == 0)
+        {
+            LogError("DNS resolution failure %d.", WSAGetLastError());
+            result = MU_FAILURE;
+        }
+        else
+        {
+            //The hostname IP has been returned. 
+            //So, the socket is ready to open because currently socket_io_instance->socket is INVALID_SOCKET.
+            socket_io_instance->io_state = IO_STATE_OPEN;
+        }
+    }
+    else //ADDRESS_TYPE_DOMAIN_SOCKET
+    {
+        socket_io_instance->io_state = IO_STATE_OPEN;
+    }
+
+    return result;
+}
+
+static int connect_socket(SOCKET socket, struct sockaddr* addr, size_t len)
+{
+    int result;
+    u_long iMode = 1;
+
+    if (connect(socket, addr, (int)len) != 0)
+    {
+        LogError("Failure: connect failure %d.", WSAGetLastError());
+        result = MU_FAILURE;
+    }
+    else if (ioctlsocket(socket, FIONBIO, &iMode) != 0)
+    {
+        LogError("Failure: ioctlsocket failure %d.", WSAGetLastError());
+        result = MU_FAILURE;
+    }
+    else
+    {
+        result = 0;
+    }
+
+    return result;
+}
+
+static int initiate_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
+{
+    int result;
+
+#ifdef AF_UNIX_ON_WINDOWS
+    if (socket_io_instance->address_type == ADDRESS_TYPE_IP)
+    {
+#endif
+        struct addrinfo* addr = dns_resolver_get_addrInfo(socket_io_instance->dns_resolver);
+        (void)memcpy((socket_io_instance->addrInfo), addr, sizeof(*(socket_io_instance->addrInfo)));
+
+        result = connect_socket(socket_io_instance->socket, (socket_io_instance->addrInfo)->ai_addr, sizeof(*((socket_io_instance->addrInfo)->ai_addr)));
+        if(result != 0)
+        {
+            LogError("connect_socket failed");
+        }
+        else 
+        {
+            if (socket_io_instance->on_io_open_complete != NULL)
+            {
+                socket_io_instance->on_io_open_complete(socket_io_instance->on_io_open_complete_context, IO_OPEN_OK /*: IO_OPEN_ERROR*/);
+            }
+        }
+            
+#ifdef AF_UNIX_ON_WINDOWS
+    }
+    else // ADDRESS_TYPE_DOMAIN_SOCKET
+    {
+        SOCKADDR_UN addr_un;
+        const char* path = socket_io_instance->hostname;
+        size_t path_len = strlen(path);
+
+        // If the value of hostname was parsed out of a 'unix://' URL, it might have a
+        // leading forward slash ('/'). That's because the domain socket path is found
+        // in the path portion of the URL, not the hostname portion. The hostname is
+        // empty and the forward slash delimits the start of the path. For Unix domain
+        // socket paths on Windows, discard the leading forward slash.
+        if (path[0] == '/')
+        {
+            ++path;
+            --path_len;
+        }
+
+        if (path_len + 1 > sizeof(addr_un.sun_path))
+        {
+            LogError("Path '%s' is too long for a unix socket (max len = %lu)", path, (unsigned long)sizeof(addr_un.sun_path));
+            result = MU_FAILURE;
+        }
+        else
+        {
+            (void)memset(&addr_un, 0, sizeof(addr_un));
+            addr_un.sun_family = AF_UNIX;
+            // No need to add NULL terminator due to the above memset
+            (void)memcpy(addr_un.sun_path, path, path_len);
+
+            result = connect_socket(socket_io_instance->socket, (struct sockaddr*)&addr_un, sizeof(addr_un));
+            if (result != 0)
+            {
+                LogError("connect_socket failed");
+                result = MU_FAILURE;
+            }
+            else
+            {
+                socket_io_instance->io_state = IO_STATE_OPEN;
+                if (socket_io_instance->on_io_open_complete != NULL)
+                {
+                    socket_io_instance->on_io_open_complete(socket_io_instance->on_io_open_complete_context, IO_OPEN_OK);
+                }
+            }
+        }
+    }
+#endif
 
     return result;
 }
@@ -196,13 +330,28 @@ CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters)
                 }
                 else
                 {
-                    result->port = socket_io_config->port;
-                    result->on_bytes_received = NULL;
-                    result->on_io_error = NULL;
-                    result->on_bytes_received_context = NULL;
-                    result->on_io_error_context = NULL;
-                    result->io_state = IO_STATE_CLOSED;
-                    result->keep_alive = tcp_keepalive;
+                    result->addrInfo = calloc(1, sizeof(struct addrinfo));
+                    if (result->addrInfo == NULL)
+                    {
+                        LogError("Failure: addrInfo == NULL.");
+                        singlylinkedlist_destroy(result->pending_io_list);
+                        free(result);
+                        result = NULL;
+                    }
+                    else
+                    {
+                        result->addrInfo->ai_addr = calloc(1, sizeof(struct sockaddr_in));
+
+                        result->port = socket_io_config->port;
+                        result->on_io_open_complete = NULL;
+                        result->dns_resolver = dns_resolver_create(result->hostname, result->port, NULL);
+                        result->on_bytes_received = NULL;
+                        result->on_io_error = NULL;
+                        result->on_bytes_received_context = NULL;
+                        result->on_io_error_context = NULL;
+                        result->io_state = IO_STATE_CLOSED;
+                        result->keep_alive = tcp_keepalive;
+                    }
 
                 }
             }
@@ -246,100 +395,10 @@ void socketio_destroy(CONCRETE_IO_HANDLE socket_io)
             free(socket_io_instance->hostname);
         }
 
+        dns_resolver_destroy(socket_io_instance->dns_resolver);
+
         free(socket_io);
     }
-}
-
-static int connect_socket(SOCKET socket, struct sockaddr* addr, size_t len)
-{
-    int result;
-    u_long iMode = 1;
-
-    if (connect(socket, addr, (int)len) != 0)
-    {
-        LogError("Failure: connect failure %d.", WSAGetLastError());
-        result = MU_FAILURE;
-    }
-    else if (ioctlsocket(socket, FIONBIO, &iMode) != 0)
-    {
-        LogError("Failure: ioctlsocket failure %d.", WSAGetLastError());
-        result = MU_FAILURE;
-    }
-    else
-    {
-        result = 0;
-    }
-
-    return result;
-}
-
-static int lookup_address_and_initiate_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
-{
-    int result;
-
-#ifdef AF_UNIX_ON_WINDOWS
-    if (socket_io_instance->address_type == ADDRESS_TYPE_IP)
-    {
-#endif
-        char portString[16];
-        ADDRINFO* addr_info = NULL;
-        ADDRINFO addrHint = { 0 };
-        addrHint.ai_family = AF_INET;
-        addrHint.ai_socktype = SOCK_STREAM;
-        addrHint.ai_protocol = 0;
-
-        if (sprintf(portString, "%u", socket_io_instance->port) < 0)
-        {
-            LogError("Failure: sprintf failed to encode the port.");
-            result = MU_FAILURE;
-        }
-        else if (getaddrinfo(socket_io_instance->hostname, portString, &addrHint, &addr_info) != 0)
-        {
-            LogError("Failure: getaddrinfo failure %d.", WSAGetLastError());
-            result = MU_FAILURE;
-        }
-        else
-        {
-            result = connect_socket(socket_io_instance->socket, addr_info->ai_addr, sizeof(*addr_info->ai_addr));
-            freeaddrinfo(addr_info);
-        }
-#ifdef AF_UNIX_ON_WINDOWS
-    }
-    else // ADDRESS_TYPE_DOMAIN_SOCKET
-    {
-        SOCKADDR_UN addr_un;
-        const char* path = socket_io_instance->hostname;
-        size_t path_len = strlen(path);
-
-        // If the value of hostname was parsed out of a 'unix://' URL, it might have a
-        // leading forward slash ('/'). That's because the domain socket path is found
-        // in the path portion of the URL, not the hostname portion. The hostname is
-        // empty and the forward slash delimits the start of the path. For Unix domain
-        // socket paths on Windows, discard the leading forward slash.
-        if (path[0] == '/')
-        {
-            ++path;
-            --path_len;
-        }
-
-        if (path_len + 1 > sizeof(addr_un.sun_path))
-        {
-            LogError("Path '%s' is too long for a unix socket (max len = %lu)", path, (unsigned long)sizeof(addr_un.sun_path));
-            result = MU_FAILURE;
-        }
-        else
-        {
-            (void)memset(&addr_un, 0, sizeof(addr_un));
-            addr_un.sun_family = AF_UNIX;
-            // No need to add NULL terminator due to the above memset
-            (void)memcpy(addr_un.sun_path, path, path_len);
-
-            result = connect_socket(socket_io_instance->socket, (struct sockaddr*)&addr_un, sizeof(addr_un));
-        }
-    }
-#endif
-
-    return result;
 }
 
 int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_complete, void* on_io_open_complete_context, ON_BYTES_RECEIVED on_bytes_received, void* on_bytes_received_context, ON_IO_ERROR on_io_error, void* on_io_error_context)
@@ -347,7 +406,7 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
     int result;
 
     SOCKET_IO_INSTANCE* socket_io_instance = (SOCKET_IO_INSTANCE*)socket_io;
-    if (socket_io == NULL)
+    if (socket_io_instance == NULL)
     {
         LogError("Invalid argument: SOCKET_IO_INSTANCE is NULL");
         result = MU_FAILURE;
@@ -366,6 +425,8 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
             socket_io_instance->on_bytes_received = on_bytes_received;
             socket_io_instance->on_io_error = on_io_error;
             socket_io_instance->on_io_error_context = on_io_error_context;
+            socket_io_instance->on_io_open_complete = on_io_open_complete;
+            socket_io_instance->on_io_open_complete_context = on_io_open_complete_context;
 
             socket_io_instance->io_state = IO_STATE_OPEN;
 
@@ -384,9 +445,16 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
                 LogError("Failure: socket create failure %d.", WSAGetLastError());
                 result = MU_FAILURE;
             }
-            else if (lookup_address_and_initiate_socket_connection(socket_io_instance) != 0)
+            else if (lookup_address(socket_io_instance) != 0)
             {
-                LogError("lookup_address_and_connect_socket failed");
+                LogError("lookup_address failed");
+                (void)closesocket(socket_io_instance->socket);
+                socket_io_instance->socket = INVALID_SOCKET;
+                result = MU_FAILURE;
+            }
+            else if (socket_io_instance->io_state == IO_STATE_OPEN && initiate_socket_connection(socket_io_instance) != 0)
+            {
+                LogError("initiate_socket_connection failed");
                 (void)closesocket(socket_io_instance->socket);
                 socket_io_instance->socket = INVALID_SOCKET;
                 result = MU_FAILURE;
@@ -397,17 +465,20 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
                 socket_io_instance->on_bytes_received = on_bytes_received;
                 socket_io_instance->on_io_error = on_io_error;
                 socket_io_instance->on_io_error_context = on_io_error_context;
-
-                socket_io_instance->io_state = IO_STATE_OPEN;
-
+                socket_io_instance->on_io_open_complete = on_io_open_complete;
+                socket_io_instance->on_io_open_complete_context = on_io_open_complete_context;
+                
                 result = 0;
             }
         }
     }
 
-    if (on_io_open_complete != NULL)
+    if (socket_io_instance != NULL && socket_io_instance->io_state != IO_STATE_OPENING)
     {
-        on_io_open_complete(on_io_open_complete_context, result == 0 ? IO_OPEN_OK : IO_OPEN_ERROR);
+        if (on_io_open_complete != NULL)
+        {
+            on_io_open_complete(on_io_open_complete_context, result == 0 ? IO_OPEN_OK : IO_OPEN_ERROR);
+        }
     }
 
     return result;
@@ -433,6 +504,7 @@ int socketio_close(CONCRETE_IO_HANDLE socket_io, ON_IO_CLOSE_COMPLETE on_io_clos
             socket_io_instance->socket = INVALID_SOCKET;
             socket_io_instance->io_state = IO_STATE_CLOSED;
         }
+
         if (on_io_close_complete != NULL)
         {
             on_io_close_complete(callback_context);
@@ -604,6 +676,27 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                         }
                     }
                 } while (received > 0 && socket_io_instance->io_state == IO_STATE_OPEN);
+            }
+        }
+        else
+        {
+            //Handle async socket_open operation within socket_dowork
+            if (socket_io_instance->io_state == IO_STATE_OPENING)
+            {
+                if (lookup_address(socket_io_instance) != 0)
+                {
+                    LogError("lookup_address failed");
+                    (void)closesocket(socket_io_instance->socket);
+                    socket_io_instance->socket = INVALID_SOCKET;
+                    socket_io_instance->io_state = IO_STATE_CLOSED;
+                }
+                else if (socket_io_instance->io_state == IO_STATE_OPEN && initiate_socket_connection(socket_io_instance) != 0)
+                {
+                    LogError("initialize_socket_connection failed");
+                    (void)closesocket(socket_io_instance->socket);
+                    socket_io_instance->socket = INVALID_SOCKET;
+                    socket_io_instance->io_state = IO_STATE_CLOSED;
+                }
             }
         }
     }
