@@ -109,7 +109,7 @@ typedef void(*LOGGER_LOG_GETLASTERROR)(const char* file, const char* func, int l
 // ignore warning C4127 
 #define LOG(log_category, log_options, format, ...) \
 { \
-    (0 && printf(format, __VA_ARGS__)); \
+    (void)(0 && printf(format, __VA_ARGS__)); \
     { \
         LOGGER_LOG l = xlogging_get_log_function(); \
         if (l != NULL) \
@@ -122,7 +122,7 @@ typedef void(*LOGGER_LOG_GETLASTERROR)(const char* file, const char* func, int l
 #define STACK_PRINT_FORMAT "\nStack:\n%s"
 #define LOG(log_category, log_options, format, ...)                                                                                                                      \
 {                                                                                                                                                                        \
-    (0 && printf(format, __VA_ARGS__)); \                                                                                                                                \
+    (void)(0 && printf(format, __VA_ARGS__)); \                                                                                                                          \
     {                                                                                                                                                                    \
         LOGGER_LOG l = xlogging_get_log_function();                                                                                                                      \
         if (l != NULL)                                                                                                                                                   \
@@ -161,7 +161,7 @@ typedef void(*LOGGER_LOG_GETLASTERROR)(const char* file, const char* func, int l
 }
 #endif /*LOGERROR_CAPTURES_STACK_TRACES*/
 #else
-#define LOG(log_category, log_options, format, ...) { (0 && printf(format, ##__VA_ARGS__)); { LOGGER_LOG l = xlogging_get_log_function(); if (l != NULL) l(log_category, __FILE__, FUNC_NAME, __LINE__, log_options, format, ##__VA_ARGS__); } }
+#define LOG(log_category, log_options, format, ...) { (void)(0 && printf(format, ##__VA_ARGS__)); { LOGGER_LOG l = xlogging_get_log_function(); if (l != NULL) l(log_category, __FILE__, FUNC_NAME, __LINE__, log_options, format, ##__VA_ARGS__); } }
 #endif
 
 #if defined _MSC_VER
