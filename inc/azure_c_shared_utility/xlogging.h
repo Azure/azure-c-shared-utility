@@ -103,18 +103,13 @@ typedef void(*LOGGER_LOG_GETLASTERROR)(const char* file, const char* func, int l
 #else /* NOT ESP8266_RTOS */
 
 // In order to make sure that the compiler evaluates the arguments and issues an error if they do not conform to printf
-// specifications, we call printf with the format and __VA_ARGS__ but the call is behind an if (0) so that it does
-// not actually get executed at runtime
+// specifications, we call printf with the format and __VA_ARGS__. Since C && operator is shortcircuiting no actual runtime call to printf is performed.
 #if defined _MSC_VER
 #ifndef LOGERROR_CAPTURES_STACK_TRACES
 // ignore warning C4127 
 #define LOG(log_category, log_options, format, ...) \
 { \
-    __pragma(warning(suppress: 4127)) \
-    if (0) \
-    { \
-        (void)printf(format, __VA_ARGS__); \
-    } \
+    (void)(0 && printf(format, __VA_ARGS__)); \
     { \
         LOGGER_LOG l = xlogging_get_log_function(); \
         if (l != NULL) \
@@ -127,11 +122,7 @@ typedef void(*LOGGER_LOG_GETLASTERROR)(const char* file, const char* func, int l
 #define STACK_PRINT_FORMAT "\nStack:\n%s"
 #define LOG(log_category, log_options, format, ...)                                                                                                                      \
 {                                                                                                                                                                        \
-    __pragma(warning(suppress: 4127))                                                                                                                                    \
-    if (0)                                                                                                                                                               \
-    {                                                                                                                                                                    \
-        (void)printf(format, __VA_ARGS__);                                                                                                                               \
-    }                                                                                                                                                                    \
+    (void)(0 && printf(format, __VA_ARGS__)); \                                                                                                                          \
     {                                                                                                                                                                    \
         LOGGER_LOG l = xlogging_get_log_function();                                                                                                                      \
         if (l != NULL)                                                                                                                                                   \
@@ -170,7 +161,7 @@ typedef void(*LOGGER_LOG_GETLASTERROR)(const char* file, const char* func, int l
 }
 #endif /*LOGERROR_CAPTURES_STACK_TRACES*/
 #else
-#define LOG(log_category, log_options, format, ...) { if (0) { (void)printf(format, ##__VA_ARGS__); } { LOGGER_LOG l = xlogging_get_log_function(); if (l != NULL) l(log_category, __FILE__, FUNC_NAME, __LINE__, log_options, format, ##__VA_ARGS__); } }
+#define LOG(log_category, log_options, format, ...) { (void)(0 && printf(format, ##__VA_ARGS__)); { LOGGER_LOG l = xlogging_get_log_function(); if (l != NULL) l(log_category, __FILE__, FUNC_NAME, __LINE__, log_options, format, ##__VA_ARGS__); } }
 #endif
 
 #if defined _MSC_VER
