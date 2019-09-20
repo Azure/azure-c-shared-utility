@@ -55,6 +55,11 @@ void my_gballoc_free(void* ptr)
     free(ptr);
 }
 
+void* my_gballoc_calloc(size_t nmemb, size_t size)
+{
+    return calloc(nmemb, size);
+}
+
 #define ENABLE_MOCKS
 #include "azure_c_shared_utility/optionhandler.h"
 #undef ENABLE_MOCKS
@@ -80,8 +85,10 @@ static SOCKET test_socket = (SOCKET)0x4243;
 static size_t list_head_count = 0;
 static bool singlylinkedlist_add_called = false;
 static size_t callbackContext = 11;
-static const struct sockaddr test_sock_addr = { 0 };
-static ADDRINFO TEST_ADDR_INFO = { AI_PASSIVE, AF_INET, SOCK_STREAM, IPPROTO_TCP, 128, NULL, (struct sockaddr*)&test_sock_addr, NULL };
+
+#define FAKE_GOOD_IP_ADDR 444
+static struct sockaddr test_sock_addr = { 0 };
+static ADDRINFO TEST_ADDR_INFO = { 0 };// = { AI_PASSIVE, AF_INET, SOCK_STREAM, IPPROTO_TCP, 128, NULL, (struct sockaddr*)&test_sock_addr, NULL };
 
 static const char* TEST_BUFFER_VALUE = "test_buffer_value";
 
@@ -382,12 +389,19 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_GLOBAL_MOCK_RETURN(singlylinkedlist_remove, 0);
     REGISTER_GLOBAL_MOCK_RETURN(singlylinkedlist_create, TEST_SINGLYLINKEDLIST_HANDLE);
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, my_gballoc_malloc);
+    REGISTER_GLOBAL_MOCK_HOOK(gballoc_calloc, my_gballoc_calloc);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(gballoc_calloc, NULL);
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, my_gballoc_free);
     REGISTER_GLOBAL_MOCK_HOOK(singlylinkedlist_get_head_item, my_singlylinkedlist_get_head_item);
     REGISTER_GLOBAL_MOCK_HOOK(singlylinkedlist_add, my_singlylinkedlist_add);
     REGISTER_GLOBAL_MOCK_HOOK(singlylinkedlist_item_get_value, my_singlylinkedlist_item_get_value);
     REGISTER_GLOBAL_MOCK_HOOK(singlylinkedlist_find, my_singlylinkedlist_find);
     REGISTER_GLOBAL_MOCK_HOOK(singlylinkedlist_destroy, my_singlylinkedlist_destroy);
+
+    TEST_ADDR_INFO.ai_next = NULL;
+    TEST_ADDR_INFO.ai_family = AF_INET;
+    TEST_ADDR_INFO.ai_addr = (struct sockaddr*)(&test_sock_addr);
+    ((struct sockaddr_in*) TEST_ADDR_INFO.ai_addr)->sin_addr.s_addr = FAKE_GOOD_IP_ADDR;
 }
 
 TEST_SUITE_CLEANUP(suite_cleanup)
@@ -466,6 +480,10 @@ TEST_FUNCTION(socketio_create_succeeds)
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
     EXPECTED_CALL(singlylinkedlist_create());
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG));
+    EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG));
+    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
 
     // act
     ioHandle = socketio_create(&socketConfig);
@@ -514,6 +532,9 @@ TEST_FUNCTION(socketio_destroy_socket_succeeds)
     EXPECTED_CALL(singlylinkedlist_remove(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
     EXPECTED_CALL(singlylinkedlist_get_head_item(IGNORED_PTR_ARG));
     EXPECTED_CALL(singlylinkedlist_destroy(IGNORED_PTR_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+    EXPECTED_CALL(freeaddrinfo(&TEST_ADDR_INFO));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
@@ -604,14 +625,13 @@ TEST_FUNCTION(socketio_open_connect_fails)
 
     EXPECTED_CALL(socket(IGNORED_NUM_ARG, IGNORED_NUM_ARG, IGNORED_NUM_ARG));
     EXPECTED_CALL(getaddrinfo(IGNORED_PTR_ARG, IGNORED_PTR_ARG, &TEST_ADDR_INFO, IGNORED_PTR_ARG));
-    EXPECTED_CALL(connect(IGNORED_NUM_ARG, &test_sock_addr, IGNORED_NUM_ARG))
+    EXPECTED_CALL(connect(IGNORED_NUM_ARG, (const struct sockaddr*)&test_sock_addr, IGNORED_NUM_ARG))
         .SetReturn(WSAECONNREFUSED);
 
 #ifndef NO_LOGGING
     EXPECTED_CALL(WSAGetLastError());
 #endif
 
-    EXPECTED_CALL(freeaddrinfo(&TEST_ADDR_INFO));
     EXPECTED_CALL(closesocket(IGNORED_NUM_ARG));
 
     // act
@@ -637,7 +657,7 @@ TEST_FUNCTION(socketio_open_ioctlsocket_fails)
 
     EXPECTED_CALL(socket(IGNORED_NUM_ARG, IGNORED_NUM_ARG, IGNORED_NUM_ARG));
     EXPECTED_CALL(getaddrinfo(IGNORED_PTR_ARG, IGNORED_PTR_ARG, &TEST_ADDR_INFO, IGNORED_PTR_ARG));
-    EXPECTED_CALL(connect(IGNORED_NUM_ARG, &test_sock_addr, IGNORED_NUM_ARG));
+    EXPECTED_CALL(connect(IGNORED_NUM_ARG, (const struct sockaddr*) &test_sock_addr, IGNORED_NUM_ARG));
     EXPECTED_CALL(ioctlsocket(IGNORED_NUM_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG))
         .SetReturn(WSAENETDOWN);
 
@@ -645,7 +665,6 @@ TEST_FUNCTION(socketio_open_ioctlsocket_fails)
     EXPECTED_CALL(WSAGetLastError());
 #endif
 
-    EXPECTED_CALL(freeaddrinfo(&TEST_ADDR_INFO));
     EXPECTED_CALL(closesocket(IGNORED_NUM_ARG));
 
     // act
@@ -670,9 +689,8 @@ TEST_FUNCTION(socketio_open_succeeds)
 
     EXPECTED_CALL(socket(IGNORED_NUM_ARG, IGNORED_NUM_ARG, IGNORED_NUM_ARG));
     EXPECTED_CALL(getaddrinfo(IGNORED_PTR_ARG, IGNORED_PTR_ARG, &TEST_ADDR_INFO, IGNORED_PTR_ARG));
-    EXPECTED_CALL(connect(IGNORED_NUM_ARG, &test_sock_addr, IGNORED_NUM_ARG));
+    EXPECTED_CALL(connect(IGNORED_NUM_ARG, (const struct sockaddr*) &test_sock_addr, IGNORED_NUM_ARG));
     EXPECTED_CALL(ioctlsocket(IGNORED_NUM_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG));
-    EXPECTED_CALL(freeaddrinfo(&TEST_ADDR_INFO));
 
     // act
     result = socketio_open(ioHandle, test_on_io_open_complete, &callbackContext, test_on_bytes_received, &callbackContext, test_on_io_error, &callbackContext);
@@ -698,9 +716,8 @@ TEST_FUNCTION(socketio_open_with_ip_address_type_succeeds)
 
     EXPECTED_CALL(socket(AF_INET, IGNORED_NUM_ARG, IGNORED_NUM_ARG));
     EXPECTED_CALL(getaddrinfo(IGNORED_PTR_ARG, IGNORED_PTR_ARG, &TEST_ADDR_INFO, IGNORED_PTR_ARG));
-    EXPECTED_CALL(connect(IGNORED_NUM_ARG, &test_sock_addr, IGNORED_NUM_ARG));
+    EXPECTED_CALL(connect(IGNORED_NUM_ARG, (const struct sockaddr*) &test_sock_addr, IGNORED_NUM_ARG));
     EXPECTED_CALL(ioctlsocket(IGNORED_NUM_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG));
-    EXPECTED_CALL(freeaddrinfo(&TEST_ADDR_INFO));
 
     // act
     result = socketio_open(ioHandle, test_on_io_open_complete, &callbackContext, test_on_bytes_received, &callbackContext, test_on_io_error, &callbackContext);
@@ -726,7 +743,7 @@ TEST_FUNCTION(socketio_open_with_domain_socket_address_type_succeeds)
     umock_c_reset_all_calls();
 
     EXPECTED_CALL(socket(AF_UNIX, IGNORED_NUM_ARG, 0));
-    EXPECTED_CALL(connect(IGNORED_NUM_ARG, &test_sock_addr, IGNORED_NUM_ARG));
+    EXPECTED_CALL(connect(IGNORED_NUM_ARG, (const struct sockaddr*) &test_sock_addr, IGNORED_NUM_ARG));
     EXPECTED_CALL(ioctlsocket(IGNORED_NUM_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG));
 
     // act

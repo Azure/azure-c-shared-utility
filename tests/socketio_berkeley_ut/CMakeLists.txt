@@ -15,6 +15,8 @@ ${theseTestsName}.c
 
 set(${theseTestsName}_c_files
 ../../adapters/socketio_berkeley.c
+../../src/dns_resolver_sync.c
+../../src/crt_abstractions.c
 )
 
 set(${theseTestsName}_h_files
