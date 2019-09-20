@@ -919,7 +919,7 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
                     {
                         /*send says "come back later" with EAGAIN - likely the socket buffer cannot accept more data*/
                         /* queue data */
-                        size_t bytes_sent = (send_result < 0 ? 0: send_result);
+                        size_t bytes_sent = (send_result < 0 ? 0 : send_result);
 
                         if (add_pending_io(socket_io_instance, buffer + bytes_sent, size - bytes_sent, on_send_complete, callback_context) != 0)
                         {
