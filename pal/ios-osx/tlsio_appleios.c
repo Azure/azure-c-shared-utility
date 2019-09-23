@@ -842,8 +842,3 @@ const IO_INTERFACE_DESCRIPTION* tlsio_appleios_get_interface_description(void)
     return &tlsio_appleios_interface_description;
 }
 
-const IO_INTERFACE_DESCRIPTION* socketio_get_interface_description(void)
-{
-    return NULL;
-}
-

@@ -64,7 +64,7 @@ if (MACOSX)
     else()
         # MACOSX only has native tls and open ssl, so this must be the native apple tls
         set(use_applessl ON)
-        set(use_socketio OFF)
+        set(use_socketio ON)
     endif()
 endif()
 
