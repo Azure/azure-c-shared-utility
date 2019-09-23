@@ -49,7 +49,8 @@ extern "C" {
 typedef enum LOG_CATEGORY_TAG
 {
     AZ_LOG_ERROR,
-    AZ_LOG_INFO
+    AZ_LOG_INFO,
+    AZ_LOG_TRACE
 } LOG_CATEGORY;
 
 #if defined _MSC_VER
@@ -156,6 +157,8 @@ typedef void(*LOGGER_LOG_GETLASTERROR)(const char* file, const char* func, int l
         }                                                                                                                                                               \
     }                                                                                                                                                                   \
 }
+
+#define LOG_AZ_LOG_TRACE LOG_AZ_LOG_INFO
 
 #define LOG_AZ_LOG_INFO(log_category, log_options, format, ...)                                                                                                         \
 {                                                                                                                                                                       \
