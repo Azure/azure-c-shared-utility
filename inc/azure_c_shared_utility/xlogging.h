@@ -74,6 +74,7 @@ typedef void(*LOGGER_LOG_GETLASTERROR)(const char* file, const char* func, int l
 #define LogInfo(...)
 #define LogBinary(...)
 #define LogError(...)
+#define LogLastError(...)
 #define xlogging_get_log_function() NULL
 #define xlogging_set_log_function(...)
 #define LogErrorWinHTTPWithGetLastErrorAsString(...)
