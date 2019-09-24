@@ -3,6 +3,14 @@
 
 set(exeName "minimal_no_logging_${no_logging_value}_stack_${logerror_captures_stack_traces_value}_etw_${use_etw_value}")
 
+#create res folder - do this in all cases even when not used
+file(MAKE_DIRECTORY ../../../res)
+
+#populate res folder with the ETW resources
+execute_process(COMMAND  ../../../src/etw_provider_generate.cmd
+    WORKING_DIRECTORY ../../../src
+    )
+
 if(${no_logging_value})
     add_definitions(-DNO_LOGGING)
 endif()
@@ -19,16 +27,6 @@ endif()
 
 if (${use_etw} STREQUAL "ON_WITH_CONSOLE")
     add_definitions(-DUSE_ETW_AND_CONSOLE)
-endif()
-
-if(${use_etw} OR (${use_etw} STREQUAL "ON_WITH_CONSOLE"))
-    #create res folder
-    file(MAKE_DIRECTORY ../../../res)
-
-    #populate res folder with the ETW resources
-    execute_process(COMMAND  ../../../src/etw_provider_generate.cmd
-        WORKING_DIRECTORY ../../../src
-    )
 endif()
 
 if(${use_etw_value} OR (${use_etw_value} STREQUAL "ON_WITH_CONSOLE"))
