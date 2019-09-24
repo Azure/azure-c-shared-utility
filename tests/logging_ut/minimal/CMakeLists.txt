@@ -35,12 +35,12 @@ if(${use_etw_value} OR (${use_etw_value} STREQUAL "ON_WITH_CONSOLE"))
     if (${use_etw_value} STREQUAL "ON_WITH_CONSOLE")
         set(XLOGGING_C_FILE ../../../src/etwxlogging.c)
         set(LOGGING_C_FILE ../../../src/etwlogger_driver.c ../../../src/consolelogger.c)
-        set(LOGGING_RC_FILE ../../../res/etwlogger.rc CACHE INTERNAL "")
+        set(LOGGING_RC_FILE ../../../res/etwlogger.rc)
         set(LOGGING_H_FILE ../../../inc/azure_c_shared_utility/etwlogger_driver.h ../../../inc/azure_c_shared_utility/consolelogger.h)
     else()
         set(XLOGGING_C_FILE ../../../src/etwxlogging.c)
         set(LOGGING_C_FILE ../../../src/etwlogger_driver.c)
-        set(LOGGING_RC_FILE ../../../res/etwlogger.rc CACHE INTERNAL "")
+        set(LOGGING_RC_FILE ../../../res/etwlogger.rc)
         set(LOGGING_H_FILE ../../../inc/azure_c_shared_utility/etwlogger_driver.h)
     endif()
 else()
@@ -53,8 +53,7 @@ endif()
 add_executable(${exeName} 
     ${LOGGING_STACKTRACE_C_FILE} 
     ${LOGGING_STACKTRACE_H_FILE} 
-    ${XLOGGING_C_FILE} 
-    ${XLOGGING_H_FILE} 
+    ${XLOGGING_C_FILE}
     ${LOGGING_C_FILE}
     ${LOGGING_H_FILE}
     ${LOGGING_RC_FILE}
