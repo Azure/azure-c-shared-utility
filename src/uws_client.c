@@ -672,6 +672,8 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT_DETAILE
     }
     else
     {
+        bool hasProtocol = uws_client->protocols != NULL && uws_client->protocol_count > 0;
+
         switch (uws_client->uws_state)
         {
         default:
@@ -738,17 +740,28 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT_DETAILE
                     /* Codes_SRS_UWS_CLIENT_01_095: [ The value of this header field MUST be 13. ]*/
                     /* Codes_SRS_UWS_CLIENT_01_096: [ The request MAY include a header field with the name |Sec-WebSocket-Protocol|. ]*/
                     /* Codes_SRS_UWS_CLIENT_01_100: [ The request MAY include a header field with the name |Sec-WebSocket-Extensions|. ]*/
+
                     const char upgrade_request_format[] = "GET %s HTTP/1.1\r\n"
                         "Host: %s:%d\r\n"
                         "Upgrade: websocket\r\n"
                         "Connection: Upgrade\r\n"
                         "Sec-WebSocket-Key: %s\r\n"
-                        "Sec-WebSocket-Protocol: %s\r\n"
-                        "Sec-WebSocket-Version: 13\r\n"
-                        "\r\n";
+                        "Sec-WebSocket-Version: 13\r\n";
+                    const char web_socket_protocol_format[] = "Sec-WebSocket-Protocol: %s";
+
                     const char* base64_nonce_chars = STRING_c_str(base64_nonce);
 
-                    upgrade_request_length = (int)(strlen(upgrade_request_format) + strlen(uws_client->resource_name)+strlen(uws_client->hostname) + strlen(base64_nonce_chars) + strlen(uws_client->protocols[0].protocol)+5);
+                    upgrade_request_length = (int)(strlen(upgrade_request_format) + strlen(uws_client->resource_name) + strlen(uws_client->hostname) + strlen(base64_nonce_chars) + 7);
+                    if (hasProtocol)
+                    {
+                        // 2 * since each protocol entry is separated from the previous one by ", "    +2 for trailing \r\n
+                        upgrade_request_length += (int)(strlen(web_socket_protocol_format) + (2 * uws_client->protocol_count) + 2);
+                        for (int j = 0; j < uws_client->protocol_count; j++)
+                        {
+                            upgrade_request_length += (int)strlen(uws_client->protocols[j].protocol);
+                        }
+                    }
+                    
                     if (upgrade_request_length < 0)
                     {
                         /* Codes_SRS_UWS_CLIENT_01_408: [ If constructing of the WebSocket upgrade request fails, uws shall report that the open failed by calling the `on_ws_open_complete` callback passed to `uws_client_open_async` with `WS_OPEN_ERROR_CONSTRUCTING_UPGRADE_REQUEST`. ]*/
@@ -768,13 +781,28 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT_DETAILE
                         }
                         else
                         {
-
                             upgrade_request_length = sprintf(upgrade_request, upgrade_request_format,
                                 uws_client->resource_name,
                                 uws_client->hostname,
                                 uws_client->port,
-                                base64_nonce_chars,
-                                uws_client->protocols[0].protocol);
+                                base64_nonce_chars);
+
+                            if (hasProtocol)
+                            {
+                                bool first = true;
+
+                                for (int j = 0; j < uws_client->protocol_count; j++, first = false)
+                                {
+                                    upgrade_request_length += sprintf(
+                                        upgrade_request + upgrade_request_length,
+                                        first ? web_socket_protocol_format : ", %s",
+                                        uws_client->protocols[j].protocol);
+                                }
+
+                                upgrade_request_length += sprintf(upgrade_request + upgrade_request_length, "\r\n");
+                            }
+
+                            upgrade_request_length += sprintf(upgrade_request + upgrade_request_length, "\r\n");
 
                             /* No need to have any send complete here, as we are monitoring the received bytes */
                             /* Codes_SRS_UWS_CLIENT_01_372: [ Once prepared the WebSocket upgrade request shall be sent by calling `xio_send`. ]*/
