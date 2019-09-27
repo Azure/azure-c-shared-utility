@@ -50,6 +50,7 @@
 
 #define SOCKET_SUCCESS                 0
 #define INVALID_SOCKET                 -1
+#define SOCKET_SEND_FAILURE            -1
 #define MAC_ADDRESS_STRING_LENGTH      18
 
 #ifndef IFREQ_BUFFER_SIZE
@@ -908,9 +909,9 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
                 signal(SIGPIPE, SIG_IGN);
 
                 ssize_t send_result = send(socket_io_instance->socket, buffer, size, 0);
-                if ((send_result < 0) || ((size_t)send_result != size))
+                if ((size_t)send_result != size)
                 {
-                    if (errno != EAGAIN)
+                    if (send_result == SOCKET_SEND_FAILURE && errno != EAGAIN)
                     {
                         LogError("Failure: sending socket failed. errno=%d (%s).", errno, strerror(errno));
                         result = MU_FAILURE;
