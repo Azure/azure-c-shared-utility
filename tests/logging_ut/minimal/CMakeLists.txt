@@ -21,7 +21,7 @@ if (${use_etw} STREQUAL "ON_WITH_CONSOLE")
     add_definitions(-DUSE_ETW_AND_CONSOLE)
 endif()
 
-if(${use_etw_value} OR (${use_etw_value} STREQUAL "ON_WITH_CONSOLE"))
+if(${use_etw} AND (${use_etw_value} OR (${use_etw_value} STREQUAL "ON_WITH_CONSOLE")))
     if (${use_etw_value} STREQUAL "ON_WITH_CONSOLE")
         set(XLOGGING_C_FILE ../../../src/etwxlogging.c)
         set(LOGGING_C_FILE ../../../src/etwlogger_driver.c ../../../src/consolelogger.c)
