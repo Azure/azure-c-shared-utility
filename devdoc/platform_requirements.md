@@ -13,7 +13,7 @@ may find it makes more sense to perform these operations outside of the scope of
 In that case, the `platform_init` and `platform_deinit` calls may be left empty.
 
 ### References 
-[Azure IoT porting guide](https://github.com/Azure/azure-c-shared-utility/blob/master/doc/porting_guide.md)<br/>
+[Azure IoT porting guide]https://github.com/Azure/azure-c-shared-utility/blob/master/devdoc/porting_guide.md)<br/>
 [platform.h](https://github.com/Azure/azure-c-shared-utility/blob/master/inc/azure_c_shared_utility/platform.h)<br/>
 [xio.h](https://github.com/Azure/azure-c-shared-utility/blob/master/inc/azure_c_shared_utility/xio.h)
 
