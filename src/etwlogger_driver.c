@@ -141,17 +141,17 @@ static void lazyRegisterEventProvider(void)
     }
 }
 
-/*the number of lost messages (messages for which EventWriteXXX (all of them) apis did not succeeds. 
+/*the number of lost messages (messages for which EventWriteXXX (all of them) apis did not succeeds.
 Gets incremented at every failure. When one call succeeds, a printf is produced containing the number of missed events and the variable is reset to 0.*/
 static volatile LONG nLostMessages = 0;
-void perform_EventWriteLogErrorEvent(const char* content, const char* file, const SYSTEMTIME* t, const char* func, int line)
+
+static void updateLostMessages(const char* origin, ULONG event_write_result)
 {
-    ULONG event_write_result = EventWriteLogErrorEvent(content, file, t, func, line);
     if (event_write_result != ERROR_SUCCESS)
     {
         if (InterlockedCompareExchange(&nLostMessages, 1, 0) == 0)
         {
-            (void)printf("failed in EventWriteLogErrorEvent: %lu. Further failing calls to EventWriteLog... will not result in printf\r\n", event_write_result);
+            (void)printf("failed in %s: %lu. Further failing calls to EventWriteLog... will not result in printf\r\n", origin, event_write_result);
         }
         else
         {
@@ -166,6 +166,14 @@ void perform_EventWriteLogErrorEvent(const char* content, const char* file, cons
             (void)printf("There were %" PRId32 " lost messages\r\n", nLostMessagesLast);
         }
     }
+}
+
+
+void perform_EventWriteLogErrorEvent(const char* content, const char* file, const SYSTEMTIME* t, const char* func, int line)
+{
+    ULONG event_write_result = EventWriteLogErrorEvent(content, file, t, func, line);
+    updateLostMessages("EventWriteLogErrorEvent", event_write_result);
+
 #if USE_ETW_AND_CONSOLE
     consolelogger_log(AZ_LOG_ERROR, file, func, line, LOG_LINE, "%s", content);
 #endif
@@ -174,25 +182,7 @@ void perform_EventWriteLogErrorEvent(const char* content, const char* file, cons
 void perform_EventWriteLogLastError(const char* userMessage, const char* file, const SYSTEMTIME* t, const char* func, int line, const char* lastErrorAsString)
 {
     ULONG event_write_result = EventWriteLogLastError(userMessage, file, t, func, line, lastErrorAsString);
-    if (event_write_result != ERROR_SUCCESS)
-    {
-        if (InterlockedCompareExchange(&nLostMessages, 1, 0) == 0)
-        {
-            (void)printf("failed in EventWriteLogLastError: %lu. Further failing calls to EventWriteLog... will not result in printf\r\n", event_write_result);
-        }
-        else
-        {
-            (void)InterlockedIncrement(&nLostMessages);
-        }
-    }
-    else
-    {
-        LONG nLostMessagesLast = InterlockedExchange(&nLostMessages, 0);
-        if (nLostMessagesLast != 0)
-        {
-            (void)printf("There were %" PRId32 " lost messages\r\n", nLostMessagesLast);
-        }
-    }
+    updateLostMessages("EventWriteLogLastError", event_write_result);
 
 #if USE_ETW_AND_CONSOLE
     consolelogger_log(AZ_LOG_ERROR, file, func, line, LOG_LINE, "%s %s", userMessage, lastErrorAsString);
@@ -202,25 +192,7 @@ void perform_EventWriteLogLastError(const char* userMessage, const char* file, c
 void perform_EventWriteLogInfoEvent(const char* message)
 {
     ULONG event_write_result = EventWriteLogInfoEvent(message);
-    if (event_write_result != ERROR_SUCCESS)
-    {
-        if (InterlockedCompareExchange(&nLostMessages, 1, 0) == 0)
-        {
-            (void)printf("failed in EventWriteLogInfoEvent: %lu. Further failing calls to EventWriteLog... will not result in printf\r\n", event_write_result);
-        }
-        else
-        {
-            (void)InterlockedIncrement(&nLostMessages);
-        }
-    }
-    else
-    {
-        LONG nLostMessagesLast = InterlockedExchange(&nLostMessages, 0);
-        if (nLostMessagesLast != 0)
-        {
-            (void)printf("There were %" PRId32 " lost messages\r\n", nLostMessagesLast);
-        }
-    }
+    updateLostMessages("EventWriteLogInfoEvent", event_write_result);
 
 #if USE_ETW_AND_CONSOLE
     consolelogger_log(AZ_LOG_INFO, NULL, NULL, 0, LOG_LINE, "%s", message);
