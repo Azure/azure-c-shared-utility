@@ -756,7 +756,7 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT_DETAILE
                     {
                         // 2 * since each protocol entry is separated from the previous one by ", "    +2 for trailing \r\n
                         upgrade_request_length += (int)(strlen(web_socket_protocol_format) + (2 * uws_client->protocol_count) + 2);
-                        for (int j = 0; j < uws_client->protocol_count; j++)
+                        for (size_t j = 0; j < uws_client->protocol_count; j++)
                         {
                             upgrade_request_length += (int)strlen(uws_client->protocols[j].protocol);
                         }
@@ -791,7 +791,7 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT_DETAILE
                             {
                                 bool first = true;
 
-                                for (int j = 0; j < uws_client->protocol_count; j++, first = false)
+                                for (size_t j = 0; j < uws_client->protocol_count; j++, first = false)
                                 {
                                     upgrade_request_length += sprintf(
                                         upgrade_request + upgrade_request_length,
