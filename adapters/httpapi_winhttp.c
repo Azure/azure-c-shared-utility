@@ -482,7 +482,7 @@ static HTTPAPI_RESULT InitiateWinhttpRequest(HTTP_HANDLE_DATA* handleData, HTTPA
         (void)WinHttpCloseHandle(*requestHandle);
         *requestHandle = NULL;
     }
-    else if ((handleData->x509SchannelHandle!=NULL) &&
+    else if ((handleData->x509SchannelHandle != NULL) &&
             !WinHttpSetOption(
                 *requestHandle,
                 WINHTTP_OPTION_CLIENT_CERT_CONTEXT,
