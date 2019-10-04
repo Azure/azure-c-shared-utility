@@ -470,6 +470,18 @@ static HTTPAPI_RESULT InitiateWinhttpRequest(HTTP_HANDLE_DATA* handleData, HTTPA
         result = HTTPAPI_OPEN_REQUEST_FAILED;
         LogErrorWinHTTPWithGetLastErrorAsString("WinHttpOpenRequest failed (result = %s).", MU_ENUM_TO_STRING(HTTPAPI_RESULT, result));
     }
+    else if (!WinHttpSetOption(
+        *requestHandle,
+        WINHTTP_OPTION_SECURE_PROTOCOLS,
+        &supported_protocols,
+        sizeof(supported_protocols)
+    ))
+    {
+        result = HTTPAPI_SET_SECURE_PROTOCOLS_FAILURE;
+        LogErrorWinHTTPWithGetLastErrorAsString("unable to WinHttpSetOption (WINHTTP_OPTION_SECURE_PROTOCOLS)");
+        (void)WinHttpCloseHandle(*requestHandle);
+        *requestHandle = NULL;
+    }
     else if ((handleData->x509SchannelHandle!=NULL) &&
             !WinHttpSetOption(
                 *requestHandle,
@@ -480,19 +492,6 @@ static HTTPAPI_RESULT InitiateWinhttpRequest(HTTP_HANDLE_DATA* handleData, HTTPA
     {
         result = HTTPAPI_SET_X509_FAILURE;
         LogErrorWinHTTPWithGetLastErrorAsString("unable to WinHttpSetOption (WINHTTP_OPTION_CLIENT_CERT_CONTEXT)");
-        (void)WinHttpCloseHandle(*requestHandle);
-        *requestHandle = NULL;
-    }
-    else if ((handleData->x509SchannelHandle != NULL) &&
-        !WinHttpSetOption(
-            *requestHandle,
-            WINHTTP_OPTION_SECURE_PROTOCOLS,
-            &supported_protocols,
-            sizeof(supported_protocols)
-        ))
-    {
-        result = HTTPAPI_SET_X509_FAILURE;
-        LogErrorWinHTTPWithGetLastErrorAsString("unable to WinHttpSetOption (WINHTTP_OPTION_SECURE_PROTOCOLS)");
         (void)WinHttpCloseHandle(*requestHandle);
         *requestHandle = NULL;
     }
