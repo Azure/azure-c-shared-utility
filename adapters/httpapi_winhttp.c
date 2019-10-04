@@ -434,7 +434,7 @@ static HTTPAPI_RESULT InitiateWinhttpRequest(HTTP_HANDLE_DATA* handleData, HTTPA
     const wchar_t* requestTypeString;
     size_t requiredCharactersForRelativePath;
     wchar_t* relativePathTemp = NULL;
-    DWORD supported_protocols = WINHTTP_FLAG_SECURE_PROTOCOL_TLS1 | // TLS 1.0 is support for back-compat reasons (https://docs.microsoft.com/en-us/azure/iot-fundamentals/iot-security-deployment)
+    DWORD supportedProtocols = WINHTTP_FLAG_SECURE_PROTOCOL_TLS1 | // TLS 1.0 is support for back-compat reasons (https://docs.microsoft.com/en-us/azure/iot-fundamentals/iot-security-deployment)
                                 WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_1 | 
                                 WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2; 
     
@@ -473,11 +473,11 @@ static HTTPAPI_RESULT InitiateWinhttpRequest(HTTP_HANDLE_DATA* handleData, HTTPA
     else if (!WinHttpSetOption(
         *requestHandle,
         WINHTTP_OPTION_SECURE_PROTOCOLS,
-        &supported_protocols,
-        sizeof(supported_protocols)
+        &supportedProtocols,
+        sizeof(supportedProtocols)
     ))
     {
-        result = HTTPAPI_SET_SECURE_PROTOCOLS_FAILURE;
+        result = HTTPAPI_ERROR;
         LogErrorWinHTTPWithGetLastErrorAsString("unable to WinHttpSetOption (WINHTTP_OPTION_SECURE_PROTOCOLS)");
         (void)WinHttpCloseHandle(*requestHandle);
         *requestHandle = NULL;

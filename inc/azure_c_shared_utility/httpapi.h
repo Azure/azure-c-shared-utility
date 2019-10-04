@@ -51,9 +51,7 @@ HTTPAPI_ALLOC_FAILED,                        \
 HTTPAPI_INIT_FAILED,                         \
 HTTPAPI_INSUFFICIENT_RESPONSE_BUFFER,        \
 HTTPAPI_SET_X509_FAILURE,                    \
-HTTPAPI_SET_TIMEOUTS_FAILED,                 \
-HTTPAPI_SET_SECURE_PROTOCOLS_FAILURE         \
-
+HTTPAPI_SET_TIMEOUTS_FAILED                  \
 
 /** @brief Enumeration specifying the possible return values for the APIs in
  *           this module.
