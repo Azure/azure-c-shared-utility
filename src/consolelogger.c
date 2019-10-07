@@ -203,6 +203,9 @@ void consolelogger_log(LOG_CATEGORY log_category, const char* file, const char* 
     time_t t;
     va_list args;
     va_start(args, format);
+#if (defined(_MSC_VER) && defined(_DEBUG))
+    char* debugPrint;
+#endif
 
     t = time(NULL);
 
@@ -210,9 +213,19 @@ void consolelogger_log(LOG_CATEGORY log_category, const char* file, const char* 
     {
     case AZ_LOG_INFO:
         (void)printf("Info: ");
+#if (defined(_MSC_VER) && defined(_DEBUG))
+        OutputDebugStringA("Info: ");
+#endif
         break;
     case AZ_LOG_ERROR:
         (void)printf("Error: Time:%.24s File:%s Func:%s Line:%d ", ctime(&t), file, func, line);
+#if (defined(_MSC_VER) && defined(_DEBUG))
+        if ((debugPrint = printf_alloc("Error: Time:%.24s File:%s Func:%s Line:%d ", ctime(&t), file, func, line)) != NULL)
+        {
+            OutputDebugStringA(debugPrint);
+            free(debugPrint);
+        }
+#endif
         break;
     default:
         break;
@@ -221,10 +234,23 @@ void consolelogger_log(LOG_CATEGORY log_category, const char* file, const char* 
     (void)vprintf(format, args);
     va_end(args);
 
+#if (defined(_MSC_VER) && defined(_DEBUG))
+    va_start(args, format);
+    if ((debugPrint = vprintf_alloc(format, args)) != NULL)
+    {
+        OutputDebugStringA(debugPrint);
+        free(debugPrint);
+    }
+    va_end(args);
+#endif
+
     (void)log_category;
     if (options & LOG_LINE)
     {
         (void)printf("\r\n");
+#if (defined(_MSC_VER) && defined(_DEBUG))
+        OutputDebugStringA("\r\n");
+#endif
     }
 }
 
