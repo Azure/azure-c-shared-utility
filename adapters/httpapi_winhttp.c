@@ -242,18 +242,37 @@ HTTPAPI_RESULT HTTPAPI_Init(void)
             LogErrorWinHTTPWithGetLastErrorAsString("WinHttpOpen failed.");
             result = HTTPAPI_INIT_FAILED;
         }
-        else if (WinHttpSetStatusCallback(g_SessionHandle, httpapi_WinhttpStatusCallback, WINHTTP_CALLBACK_FLAG_SEND_REQUEST, 0) == WINHTTP_INVALID_STATUS_CALLBACK)
-        {
-            LogErrorWinHTTPWithGetLastErrorAsString("WinHttpSetStatusCallback failed.");
-            (void)WinHttpCloseHandle(g_SessionHandle);
-            g_SessionHandle = NULL;
-            result = HTTPAPI_INIT_FAILED;
-        }
         else
         {
-            nUsersOfHTTPAPI++;
-            g_HTTPAPIState = HTTPAPI_INITIALIZED;
-            result = HTTPAPI_OK;
+            DWORD supportedProtocols = WINHTTP_FLAG_SECURE_PROTOCOL_TLS1 | // TLS 1.0 is support for back-compat reasons (https://docs.microsoft.com/en-us/azure/iot-fundamentals/iot-security-deployment)
+                WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_1 |
+                WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2;
+
+            if (!WinHttpSetOption(
+                g_SessionHandle,
+                WINHTTP_OPTION_SECURE_PROTOCOLS,
+                &supportedProtocols,
+                sizeof(supportedProtocols)
+            ))
+            {
+                LogErrorWinHTTPWithGetLastErrorAsString("unable to WinHttpSetOption (WINHTTP_OPTION_SECURE_PROTOCOLS)");
+                (void)WinHttpCloseHandle(g_SessionHandle);
+                g_SessionHandle = NULL;
+                result = HTTPAPI_INIT_FAILED;
+            }
+            else if (WinHttpSetStatusCallback(g_SessionHandle, httpapi_WinhttpStatusCallback, WINHTTP_CALLBACK_FLAG_SEND_REQUEST, 0) == WINHTTP_INVALID_STATUS_CALLBACK)
+            {
+                LogErrorWinHTTPWithGetLastErrorAsString("WinHttpSetStatusCallback failed.");
+                (void)WinHttpCloseHandle(g_SessionHandle);
+                g_SessionHandle = NULL;
+                result = HTTPAPI_INIT_FAILED;
+            }
+            else
+            {
+                nUsersOfHTTPAPI++;
+                g_HTTPAPIState = HTTPAPI_INITIALIZED;
+                result = HTTPAPI_OK;
+            }
         }
     }
     else
@@ -434,9 +453,6 @@ static HTTPAPI_RESULT InitiateWinhttpRequest(HTTP_HANDLE_DATA* handleData, HTTPA
     const wchar_t* requestTypeString;
     size_t requiredCharactersForRelativePath;
     wchar_t* relativePathTemp = NULL;
-    DWORD supportedProtocols = WINHTTP_FLAG_SECURE_PROTOCOL_TLS1 | // TLS 1.0 is support for back-compat reasons (https://docs.microsoft.com/en-us/azure/iot-fundamentals/iot-security-deployment)
-                                WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_1 | 
-                                WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2; 
     
     if ((requestTypeString = GetHttpRequestString(requestType)) == NULL)
     {
@@ -469,18 +485,6 @@ static HTTPAPI_RESULT InitiateWinhttpRequest(HTTP_HANDLE_DATA* handleData, HTTPA
     {
         result = HTTPAPI_OPEN_REQUEST_FAILED;
         LogErrorWinHTTPWithGetLastErrorAsString("WinHttpOpenRequest failed (result = %s).", MU_ENUM_TO_STRING(HTTPAPI_RESULT, result));
-    }
-    else if (!WinHttpSetOption(
-        *requestHandle,
-        WINHTTP_OPTION_SECURE_PROTOCOLS,
-        &supportedProtocols,
-        sizeof(supportedProtocols)
-    ))
-    {
-        result = HTTPAPI_ERROR;
-        LogErrorWinHTTPWithGetLastErrorAsString("unable to WinHttpSetOption (WINHTTP_OPTION_SECURE_PROTOCOLS)");
-        (void)WinHttpCloseHandle(*requestHandle);
-        *requestHandle = NULL;
     }
     else if ((handleData->x509SchannelHandle != NULL) &&
             !WinHttpSetOption(
