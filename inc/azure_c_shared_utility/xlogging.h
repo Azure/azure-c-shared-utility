@@ -70,6 +70,7 @@ typedef void(*LOGGER_LOG_GETLASTERROR)(const char* file, const char* func, int l
 
 /*no logging is useful when time and fprintf are mocked*/
 #ifdef NO_LOGGING
+#define UNUSED(x) (void)(x)
 #define LOG(...)
 #define LogInfo(...)
 #define LogBinary(...)
@@ -78,16 +79,16 @@ typedef void(*LOGGER_LOG_GETLASTERROR)(const char* file, const char* func, int l
 #define xlogging_get_log_function() NULL
 #define xlogging_set_log_function(...)
 #define LogErrorWinHTTPWithGetLastErrorAsString(...)
-#define UNUSED(x) (void)(x)
 #elif (defined MINIMAL_LOGERROR)
+#define UNUSED(x) (void)(x)
 #define LOG(...)
 #define LogInfo(...)
 #define LogBinary(...)
 #define LogError(...) printf("error %s: line %d\n",__FILE__,__LINE__);
+#define LogLastError(...)
 #define xlogging_get_log_function() NULL
 #define xlogging_set_log_function(...)
 #define LogErrorWinHTTPWithGetLastErrorAsString(...)
-#define UNUSED(x) (void)(x)
 
 #elif defined(ESP8266_RTOS)
 #define LogInfo(FORMAT, ...) do {    \

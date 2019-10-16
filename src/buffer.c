@@ -325,7 +325,6 @@ extern int BUFFER_unbuild(BUFFER_HANDLE handle)
         BUFFER* b = (BUFFER*)handle;
         if (b->buffer != NULL)
         {
-            LogError("Failure buffer data is NULL");
             free(b->buffer);
             b->buffer = NULL;
             b->size = 0;
