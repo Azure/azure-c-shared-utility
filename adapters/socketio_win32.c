@@ -481,21 +481,22 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
             }
             else
             {
-                /* TODO: we need to do more than a cast here to be 100% clean
-                The following bug was filed: [WarnL4] socketio_win32 does not account for already sent bytes and there is a truncation of size from size_t to int */
                 int send_result = send(socket_io_instance->socket, (const char*)buffer, (int)size, 0);
                 if (send_result != (int)size)
                 {
                     int last_error = WSAGetLastError();
-                    if (last_error != WSAEWOULDBLOCK)
+
+                    if (send_result == SOCKET_ERROR && last_error != WSAEWOULDBLOCK)
                     {
                         LogError("Failure: sending socket failed %d.", last_error);
                         result = MU_FAILURE;
                     }
                     else
                     {
+                        size_t bytes_sent = (send_result == SOCKET_ERROR ? 0 : send_result);
+
                         /* queue data */
-                        if (add_pending_io(socket_io_instance, (const unsigned char*)buffer, size, on_send_complete, callback_context) != 0)
+                        if (add_pending_io(socket_io_instance, ((const unsigned char*)buffer) + bytes_sent, size - bytes_sent, on_send_complete, callback_context) != 0)
                         {
                             LogError("Failure: add_pending_io failed.");
                             result = MU_FAILURE;
