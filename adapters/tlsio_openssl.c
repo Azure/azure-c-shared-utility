@@ -1051,7 +1051,6 @@ static int crl_cache_size = 0;
 static X509_CRL** crl_cache = NULL;
 static int load_cert_crl_memory(X509 *cert, X509_CRL **pCrl)
 {
-    time_t now = time(NULL);
     X509_NAME *issuer_cert = cert ? X509_get_issuer_name(cert) : NULL;
 
     // init return values
@@ -1157,7 +1156,6 @@ static int save_cert_crl_memory(X509 *cert, X509_CRL *crlp)
     }
 
     // not found, so try to find slot by purging outdated
-    time_t now = time(NULL);
     for (int n = 0; n < crl_cache_size; n++)
     {
         X509_CRL *crl = crl_cache[n];
@@ -1379,7 +1377,6 @@ static const char *get_dp_url(DIST_POINT *dp)
 
 static int is_valid_crl(X509 *cert, X509_CRL *crl)
 {
-    time_t now = time(NULL);
     X509_NAME *issuer_cert = cert ? X509_get_issuer_name(cert) : NULL;
 
     // names don't match up.
