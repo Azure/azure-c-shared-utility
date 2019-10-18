@@ -47,6 +47,7 @@
     REQUIRED_FUNCTION_1_1_0(ASN1_STRING_get0_data) \
     REQUIRED_FUNCTION(ASN1_STRING_length) \
     REQUIRED_FUNCTION(ASN1_TIME_to_generalizedtime) \
+    REQUIRED_FUNCTION(ASN1_TIME_diff) \
     REQUIRED_FUNCTION(BIO_ctrl) \
     REQUIRED_FUNCTION(BIO_ctrl_pending) \
     REQUIRED_FUNCTION(BIO_f_base64) \
@@ -179,6 +180,7 @@ FOR_ALL_OPENSSL_FUNCTIONS
 #define ASN1_GENERALIZEDTIME_free ASN1_GENERALIZEDTIME_free_ptr
 #define ASN1_STRING_length ASN1_STRING_length_ptr
 #define ASN1_TIME_to_generalizedtime ASN1_TIME_to_generalizedtime_ptr
+#define ASN1_TIME_diff ASN1_TIME_diff_ptr
 #define BIO_ctrl BIO_ctrl_ptr
 #define BIO_ctrl_pending BIO_ctrl_pending_ptr
 #define BIO_f_base64 BIO_f_base64_ptr
