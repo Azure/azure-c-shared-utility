@@ -49,6 +49,7 @@
 
 #define SOCKET_SUCCESS                 0
 #define INVALID_SOCKET                 -1
+#define SOCKET_SEND_FAILURE            -1
 #define MAC_ADDRESS_STRING_LENGTH      18
 
 #ifndef IFREQ_BUFFER_SIZE
@@ -864,25 +865,20 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
                 signal(SIGPIPE, SIG_IGN);
 
                 ssize_t send_result = send(socket_io_instance->socket, buffer, size, 0);
-                if ((send_result < 0) || ((size_t)send_result != size))
+                if ((size_t)send_result != size)
                 {
-                    if (send_result == INVALID_SOCKET)
+                    if (send_result == SOCKET_SEND_FAILURE && errno != EAGAIN)
                     {
-                        if (errno == EAGAIN) /*send says "come back later" with EAGAIN - likely the socket buffer cannot accept more data*/
-                        {
-                            /*do nothing*/
-                            result = 0;
-                        }
-                        else
-                        {
-                            LogError("Failure: sending socket failed. errno=%d (%s).", errno, strerror(errno));
-                            result = MU_FAILURE;
-                        }
+                        LogError("Failure: sending socket failed. errno=%d (%s).", errno, strerror(errno));
+                        result = MU_FAILURE;
                     }
                     else
                     {
+                        /*send says "come back later" with EAGAIN - likely the socket buffer cannot accept more data*/
                         /* queue data */
-                        if (add_pending_io(socket_io_instance, buffer + send_result, size - send_result, on_send_complete, callback_context) != 0)
+                        size_t bytes_sent = (send_result < 0 ? 0 : send_result);
+						
+                        if (add_pending_io(socket_io_instance, buffer + bytes_sent, size - bytes_sent, on_send_complete, callback_context) != 0)
                         {
                             LogError("Failure: add_pending_io failed.");
                             result = MU_FAILURE;
