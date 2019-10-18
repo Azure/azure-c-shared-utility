@@ -298,9 +298,17 @@ static int initiate_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
         else
         {
             addr = dns_resolver_get_addrInfo(socket_io_instance->dns_resolver);
-            connect_addr = addr->ai_addr;
-            connect_addr_len = sizeof(*addr->ai_addr);
-            result = 0;
+            if (NULL == addr)
+            {
+                LogError("DNS resolve failed");
+                result = MU_FAILURE;
+            }
+            else
+            {
+                connect_addr = addr->ai_addr;
+                connect_addr_len = sizeof(*addr->ai_addr);
+                result = 0;
+            }
         }
     }
     else
