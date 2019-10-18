@@ -1020,7 +1020,7 @@ static int atoin(const char *str, int start, int len)
     return result;
 }
 
-static time_t crl_invalid_after(X509_CRL *crl)
+static bool crl_valid(X509_CRL *crl)
 {
 #if USE_OPENSSL_1_1_0_OR_UP
     const ASN1_TIME *at = X509_CRL_get0_nextUpdate(crl);
@@ -1028,43 +1028,21 @@ static time_t crl_invalid_after(X509_CRL *crl)
     ASN1_TIME *at = crl->crl->nextUpdate;
 #endif
 
-    ASN1_GENERALIZEDTIME *gt = ASN1_TIME_to_generalizedtime(at, NULL);
-    if (!gt)
+    int day = -1;
+    int sec = -1;
+    if (!ASN1_TIME_diff(&day, &sec, NULL, at))
     {
-        LogError("crl could not find field\n");
-        return 0;
-    }
-    // LogInfo("crl data %s\n", (char*)gt->data);
-
-    // "20181011181119Z"
-    int success = gt->length >= 14 ? 1 : 0;
-    struct tm tm = { 0, };
-
-    if (success)
-    {
-        tm.tm_year = atoin((char*)gt->data, 0, 4) - 1900;
-        tm.tm_mon = atoin((char*)gt->data, 4, 2) - 1;
-        tm.tm_mday = atoin((char*)gt->data, 6, 2);
-        tm.tm_hour = atoin((char*)gt->data, 8, 2);
-        tm.tm_min = atoin((char*)gt->data, 10, 2);
-        tm.tm_sec = atoin((char*)gt->data, 12, 2);
-
-        success = (tm.tm_year > 100) &&
-            (tm.tm_mon >= 0 && tm.tm_mon  < 12) &&
-            (tm.tm_mday > 0 && tm.tm_mday < 32) &&
-            (tm.tm_hour >= 0 && tm.tm_hour < 24) &&
-            (tm.tm_min >= 0 && tm.tm_min  < 60) &&
-            (tm.tm_sec >= 0 && tm.tm_sec  < 60);
+        LogError("Could not check expiration");
+        return 0; /* Safe default, invalid */
     }
 
-    ASN1_GENERALIZEDTIME_free(gt);
-    if (!success)
-    {
-        return 0;
-    }
 
-    // calculates the time since epoch
-    return mktime(&tm);
+
+    if (day > 0 || sec > 0)
+    {
+        return 1; /* Later, valid */
+    }
+    return 0; /* Before or same, invalid */
 }
 
 
@@ -1108,10 +1086,10 @@ static int load_cert_crl_memory(X509 *cert, X509_CRL **pCrl)
             continue;
         }
 
-        time_t crlend = crl_invalid_after(crl);
-        if (crlend <= now)
+        bool valid = crl_valid(crl);
+        if (!valid)
         {
-            LogInfo("crl %ld, %ld outdated\n", crlend, now);
+            LogInfo("crl outdated\n");
             crl_cache[n] = NULL;
             X509_CRL_free(crl);
             continue;
@@ -1192,8 +1170,8 @@ static int save_cert_crl_memory(X509 *cert, X509_CRL *crlp)
             return 1;
         }
 
-        time_t crlend = crl_invalid_after(crl);
-        if (crlend <= now)
+        bool valid = crl_valid(crl);
+        if (!valid)
         {
             // remove stale
             crl_cache[n] = NULL;
@@ -1424,10 +1402,10 @@ static int is_valid_crl(X509 *cert, X509_CRL *crl)
     //      current time.
     //      This will trigger the re-loading of the
     //      Crl from the download store, if available.
-    time_t crlend = crl_invalid_after(crl);
-    if (crlend <= now)
+    bool valid = crl_valid(crl);
+    if (!valid)
     {
-        LogInfo("crl %ld, %ld outdated\n", crlend, now);
+        LogInfo("crl outdated\n");
         return 0;
     }
 
