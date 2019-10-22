@@ -93,12 +93,10 @@ endif()
 if(${use_etw} STREQUAL "TRACELOGGING_WITH_CONSOLE")
     add_definitions(-DUSE_TRACELOGGING)
     add_definitions(-DCALL_CONSOLE_LOGGER)
-    MESSAGE("will use TRACELOGGING_WITH_CONSOLE")
-endif() #(${use_etw} STREQUAL "TRACELOGGING")
+endif() #(${use_etw} STREQUAL "TRACELOGGING_WITH_CONSOLE")
 
 if(${use_etw} STREQUAL "TRACELOGGING")
     add_definitions(-DUSE_TRACELOGGING)
-    MESSAGE("will use TRACELOGGING")
 endif() #(${use_etw} STREQUAL "TRACELOGGING")
 
 endif()
