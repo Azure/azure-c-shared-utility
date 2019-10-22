@@ -13,4 +13,4 @@ directory and its subfolders.
 ### Porting to new devices
 
 Instructions for porting the Azure IoT C SDK to new devices are located
-[here](https://github.com/Azure/azure-c-shared-utility/blob/pal-porting/devdoc/porting_guide.md).
+[here](https://github.com/Azure/azure-c-shared-utility/blob/master/devdoc/porting_guide.md).

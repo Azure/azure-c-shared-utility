@@ -11,7 +11,7 @@ FreeRTOS can be configured to use 16-bit ticks by setting the configUSE_16_BIT_T
 
 
 ## References
-[Azure IoT C Shared Utility tickcounter adapter](https://github.com/Azure/azure-c-shared-utility/blob/master/doc/porting_guide.md#tickcounter-adapter)  
+[Azure IoT C Shared Utility tickcounter adapter](https://github.com/Azure/azure-c-shared-utility/blob/master/devdoc/porting_guide.md#tickcounter-adapter)  
 [tickcounter.h](https://github.com/Azure/azure-c-shared-utility/blob/master/inc/azure_c_shared_utility/tickcounter.h)
 
 
