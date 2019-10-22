@@ -17,7 +17,7 @@ execute_process(
 
 foreach(no_logging_value ON OFF)
     foreach(logerror_captures_stack_traces_value ON OFF)
-        foreach(use_etw_value ON OFF ON_WITH_CONSOLE)
+        foreach(use_etw_value ON OFF ON_WITH_CONSOLE TRACELOGGING TRACELOGGING_WITH_CONSOLE)
 
             add_subdirectory(minimal "min${no_logging_value}${logerror_captures_stack_traces_value}${use_etw_value}")
 
