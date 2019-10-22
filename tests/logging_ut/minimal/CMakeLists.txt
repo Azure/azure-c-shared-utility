@@ -1,7 +1,7 @@
 #Copyright (c) Microsoft. All rights reserved.
 #Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-set(exeName "minimal_no_logging_${no_logging_value}_stack_${logerror_captures_stack_traces_value}_etw_${use_etw_value}")
+set(exeName "min_nolog_${no_logging_value}_stk_${logerror_captures_stack_traces_value}_etw_${use_etw_value}")
 
 if(${no_logging_value})
     add_definitions(-DNO_LOGGING)
@@ -21,8 +21,17 @@ if (${use_etw} STREQUAL "ON_WITH_CONSOLE")
     add_definitions(-DUSE_ETW_AND_CONSOLE)
 endif()
 
-if(${use_etw} AND (${use_etw_value} OR (${use_etw_value} STREQUAL "ON_WITH_CONSOLE")))
-    if (${use_etw_value} STREQUAL "ON_WITH_CONSOLE")
+if (${use_etw} STREQUAL "TRACELOGGING")
+    add_definitions(-DUSE_TRACELOGGING)
+endif()
+
+if (${use_etw} STREQUAL "TRACELOGGING_WITH_CONSOLE")
+    add_definitions(-DUSE_TRACELOGGING)
+    add_definitions(-DCALL_CONSOLE_LOGGER)
+endif()
+
+if(${use_etw} OR (${use_etw} STREQUAL "ON_WITH_CONSOLE") OR (${use_etw} STREQUAL "TRACELOGGING") OR (${use_etw} STREQUAL "TRACELOGGING_WITH_CONSOLE"))
+    if((${use_etw} STREQUAL "ON_WITH_CONSOLE") OR (${use_etw} STREQUAL "TRACELOGGING_WITH_CONSOLE"))
         set(XLOGGING_C_FILE ../../../src/etwxlogging.c)
         set(LOGGING_C_FILE ../../../src/etwlogger_driver.c ../../../src/consolelogger.c)
         set(LOGGING_RC_FILE ../../../res/etwlogger.rc)
