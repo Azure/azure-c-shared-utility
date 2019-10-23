@@ -43,8 +43,8 @@ if(WIN32)
     option(logerror_captures_stack_traces "LogError will make a reasonable attempt to capture the stack trace at the time of calling LogError. Only available on Windows" OFF)
     option(use_socketio "set use_socketio to ON if socketio is to be included in the library, set to OFF if a different implementation will be provided" ON)
 
-    set(use_etw OFF CACHE STRING "set use_etw to ON if ETW logging is to be used (OFF = No ETW logging, ON = Use ETW logging, TRACELOGGING = Use ETW from tracelogging.h, ON_WITH_CONSOLE = Use ETW and call console logger. TRACELOGGING_WITH_CONSOLE = Use ETW from tracelogging.h and call console logger. Default is OFF")
-    set_property(CACHE use_etw PROPERTY STRINGS TRACELOGGING_WITH_CONSOLE TRACELOGGING ON_WITH_CONSOLE ON OFF)
+    set(use_etw OFF CACHE STRING "set use_etw to OFF = No ETW logging, TRACELOGGING = Use ETW from tracelogging.h, TRACELOGGING_WITH_CONSOLE = Use ETW from tracelogging.h and call console logger. Default is OFF")
+    set_property(CACHE use_etw PROPERTY STRINGS TRACELOGGING_WITH_CONSOLE TRACELOGGING OFF)
 
 else()
     option(use_schannel "set use_schannel to ON if schannel is to be used, set to OFF to not use schannel" OFF)
@@ -76,19 +76,6 @@ if (MACOSX)
 endif()
 
 if(WIN32)
-if (${use_etw} STREQUAL "ON_WITH_CONSOLE")
-    add_definitions(-DUSE_ETW_AND_CONSOLE)
-endif()
-
-if(${use_etw} OR (${use_etw} STREQUAL "ON_WITH_CONSOLE"))
-    #create res folder
-    file(MAKE_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/res)
-
-    #populate res folder with the ETW resources
-    execute_process(COMMAND  ${CMAKE_CURRENT_LIST_DIR}/src/etw_provider_generate.cmd
-        WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/src
-    )
-endif()
 
 if(${use_etw} STREQUAL "TRACELOGGING_WITH_CONSOLE")
     add_definitions(-DUSE_TRACELOGGING)
