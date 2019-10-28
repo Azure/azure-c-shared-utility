@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include <stdlib.h>
+#include "azure_macro_utils/macro_utils.h"
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/httpapiex.h"
 #include "azure_c_shared_utility/optimize_size.h"
@@ -27,7 +28,7 @@ typedef struct HTTPAPIEX_HANDLE_DATA_TAG
 
 MU_DEFINE_ENUM_STRINGS(HTTPAPIEX_RESULT, HTTPAPIEX_RESULT_VALUES);
 
-#define LOG_HTTAPIEX_ERROR() LogError("error code = %s", MU_ENUM_TO_STRING(HTTPAPIEX_RESULT, result))
+#define LOG_HTTAPIEX_ERROR() LogError("error code = %" PRI_MU_ENUM "", MU_ENUM_VALUE(HTTPAPIEX_RESULT, result))
 
 static int useGlobalInitialization = 0;
 

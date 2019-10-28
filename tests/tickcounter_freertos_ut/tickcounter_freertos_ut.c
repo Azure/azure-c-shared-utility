@@ -11,6 +11,7 @@
 #include <stdint.h>
 #endif
 
+#include "azure_macro_utils/macro_utils.h"
 #include "testrunnerswitcher.h"
 #include "azure_c_shared_utility/threadapi.h"
 #include "umock_c/umocktypes_stdint.h"
@@ -57,7 +58,7 @@ static void tickcounter_ms_t_ToString(char* string, size_t bufferSize, tickcount
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    ASSERT_FAIL("umock_c reported error :%s", MU_ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
+    ASSERT_FAIL("umock_c reported error :%" PRI_MU_ENUM "", MU_ENUM_VALUE(UMOCK_C_ERROR_CODE, error_code));
 }
 
 BEGIN_TEST_SUITE(tickcounter_freertos_unittests)

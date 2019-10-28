@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include "azure_macro_utils/macro_utils.h"
 #include "azure_c_shared_utility/tlsio.h"
 #include "azure_c_shared_utility/tlsio_schannel.h"
 #include "azure_c_shared_utility/socketio.h"
@@ -490,7 +491,7 @@ static int send_chunk(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t size
         TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tls_io;
         if (tls_io_instance->tlsio_state != TLSIO_STATE_OPEN)
         {
-            LogError("invalid tls_io_instance->tlsio_state: %s", MU_ENUM_TO_STRING(TLSIO_STATE, tls_io_instance->tlsio_state));
+            LogError("invalid tls_io_instance->tlsio_state: %" PRI_MU_ENUM "", MU_ENUM_VALUE(TLSIO_STATE, tls_io_instance->tlsio_state));
             result = MU_FAILURE;
         }
         else
@@ -1216,7 +1217,7 @@ int tlsio_schannel_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_ope
 
         if (tls_io_instance->tlsio_state != TLSIO_STATE_NOT_OPEN)
         {
-            LogError("invalid tls_io_instance->tlsio_state = %s", MU_ENUM_TO_STRING(TLSIO_STATE, tls_io_instance->tlsio_state));
+            LogError("invalid tls_io_instance->tlsio_state = %" PRI_MU_ENUM "", MU_ENUM_VALUE(TLSIO_STATE, tls_io_instance->tlsio_state));
             result = MU_FAILURE;
         }
         else
@@ -1264,7 +1265,7 @@ int tlsio_schannel_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_c
         if ((tls_io_instance->tlsio_state == TLSIO_STATE_NOT_OPEN) ||
             (tls_io_instance->tlsio_state == TLSIO_STATE_CLOSING))
         {
-            LogError("invalid tls_io_instance->tlsio_state = %s", MU_ENUM_TO_STRING(TLSIO_STATE, tls_io_instance->tlsio_state));
+            LogError("invalid tls_io_instance->tlsio_state = %" PRI_MU_ENUM "", MU_ENUM_VALUE(TLSIO_STATE, tls_io_instance->tlsio_state));
             result = MU_FAILURE;
         }
         else
