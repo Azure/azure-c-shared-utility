@@ -2,10 +2,19 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #ifdef __cplusplus
+#include <cstddef>
+#include <ctime>
 #include <cstdlib>
 #else
 #include <stdlib.h>
+#include <stddef.h>
+#include <time.h>
 #endif
+
+#include "azure_macro_utils/macro_utils.h"
+#include "testrunnerswitcher.h"
+#include "umock_c/umock_c.h"
+#include "umock_c/umocktypes_charptr.h"
 
 static int currentmalloc_call = 0;
 static int whenShallmalloc_fail = 0;
@@ -50,19 +59,6 @@ void my_gballoc_free(void* ptr)
     currentmalloc_call--;
     free(ptr);
 }
-
-#ifdef __cplusplus
-#include <cstddef>
-#include <ctime>
-#else
-#include <stddef.h>
-#include <time.h>
-#endif
-
-#include "testrunnerswitcher.h"
-#include "umock_c/umock_c.h"
-#include "umock_c/umocktypes_charptr.h"
-#include "azure_macro_utils/macro_utils.h"
 
 #define MAX_RECEIVE_BUFFER_SIZES    3
 #define HUGE_RELATIVE_PATH_SIZE        10000
@@ -689,7 +685,7 @@ MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    ASSERT_FAIL("umock_c reported error :%s", MU_ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
+    ASSERT_FAIL("umock_c reported error :%" PRI_MU_ENUM "", MU_ENUM_VALUE(UMOCK_C_ERROR_CODE, error_code));
 }
 
 BEGIN_TEST_SUITE(httpapicompact_ut)

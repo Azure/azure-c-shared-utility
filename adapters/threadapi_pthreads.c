@@ -3,6 +3,7 @@
 
 #define _DEFAULT_SOURCE
 
+#include "azure_macro_utils/macro_utils.h"
 #include "azure_c_shared_utility/threadapi.h"
 
 #include <stdint.h>
@@ -43,7 +44,7 @@ THREADAPI_RESULT ThreadAPI_Create(THREAD_HANDLE* threadHandle, THREAD_START_FUNC
         (func == NULL))
     {
         result = THREADAPI_INVALID_ARG;
-        LogError("(result = %s)", MU_ENUM_TO_STRING(THREADAPI_RESULT, result));
+        LogError("(result = %" PRI_MU_ENUM ")", MU_ENUM_VALUE(THREADAPI_RESULT, result));
     }
     else
     {
@@ -51,7 +52,7 @@ THREADAPI_RESULT ThreadAPI_Create(THREAD_HANDLE* threadHandle, THREAD_START_FUNC
         if (threadInstance == NULL)
         {
             result = THREADAPI_NO_MEMORY;
-            LogError("(result = %s)", MU_ENUM_TO_STRING(THREADAPI_RESULT, result));
+            LogError("(result = %" PRI_MU_ENUM ")", MU_ENUM_VALUE(THREADAPI_RESULT, result));
         }
         else
         {
@@ -64,7 +65,7 @@ THREADAPI_RESULT ThreadAPI_Create(THREAD_HANDLE* threadHandle, THREAD_START_FUNC
                 free(threadInstance);
 
                 result = THREADAPI_ERROR;
-                LogError("(result = %s)", MU_ENUM_TO_STRING(THREADAPI_RESULT, result));
+                LogError("(result = %" PRI_MU_ENUM ")", MU_ENUM_VALUE(THREADAPI_RESULT, result));
                 break;
 
             case 0:
@@ -76,7 +77,7 @@ THREADAPI_RESULT ThreadAPI_Create(THREAD_HANDLE* threadHandle, THREAD_START_FUNC
                 free(threadInstance);
 
                 result = THREADAPI_NO_MEMORY;
-                LogError("(result = %s)", MU_ENUM_TO_STRING(THREADAPI_RESULT, result));
+                LogError("(result = %" PRI_MU_ENUM ")", MU_ENUM_VALUE(THREADAPI_RESULT, result));
                 break;
             }
         }
@@ -93,7 +94,7 @@ THREADAPI_RESULT ThreadAPI_Join(THREAD_HANDLE threadHandle, int* res)
     if (threadInstance == NULL)
     {
         result = THREADAPI_INVALID_ARG;
-        LogError("(result = %s)", MU_ENUM_TO_STRING(THREADAPI_RESULT, result));
+        LogError("(result = %" PRI_MU_ENUM ")", MU_ENUM_VALUE(THREADAPI_RESULT, result));
     }
     else
     {
@@ -101,7 +102,7 @@ THREADAPI_RESULT ThreadAPI_Join(THREAD_HANDLE threadHandle, int* res)
         if (pthread_join(threadInstance->Pthread_handle, &threadResult) != 0)
         {
             result = THREADAPI_ERROR;
-            LogError("(result = %s)", MU_ENUM_TO_STRING(THREADAPI_RESULT, result));
+            LogError("(result = %" PRI_MU_ENUM ")", MU_ENUM_VALUE(THREADAPI_RESULT, result));
         }
         else
         {
