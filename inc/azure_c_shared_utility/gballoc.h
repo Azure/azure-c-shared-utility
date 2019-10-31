@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #endif
 
-#include "umock_c/umock_c_prod.h"
+#include "umock_c_prod.h"
 
 #ifdef __cplusplus
 extern "C"
