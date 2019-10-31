@@ -11,7 +11,6 @@
 #include <stdbool.h>
 #endif
 
-#include "jojo/golden_wind.h"
 #include "umock_c/umock_c_prod.h"
 
 #ifdef __cplusplus
