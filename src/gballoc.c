@@ -34,7 +34,7 @@ static GBALLOC_STATE gballocState = GBALLOC_STATE_NOT_INIT;
 
 static LOCK_HANDLE gballocThreadSafeLock = NULL;
 
-int gballoc_init(void)
+int gballoc_init()//void)
 {
     int result;
 
@@ -65,7 +65,7 @@ int gballoc_init(void)
     return result;
 }
 
-void gballoc_deinit(void)
+void gballoc_deinit()//void)
 {
     if (gballocState == GBALLOC_STATE_INIT)
     {
@@ -337,7 +337,7 @@ void gballoc_free(void* ptr)
     }
 }
 
-size_t gballoc_getMaximumMemoryUsed(void)
+size_t gballoc_getMaximumMemoryUsed()//void)
 {
     size_t result;
 
@@ -391,7 +391,7 @@ size_t gballoc_getCurrentMemoryUsed(void)
     return result;
 }
 
-size_t gballoc_getAllocationCount(void)
+size_t gballoc_getAllocationCount()//void)
 {
     size_t result;
 
