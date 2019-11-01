@@ -1098,6 +1098,8 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                     (void)memcpy(uws_client->stream_buffer + uws_client->stream_buffer_count, buffer, size);
                     uws_client->stream_buffer_count += size;
 
+                    // One extra element was allocated. Initialize it.
+                    uws_client->stream_buffer[uws_client->stream_buffer_count] = 0;
                     decode_stream = 1;
                 }
 
