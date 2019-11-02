@@ -11,7 +11,7 @@
 #endif /* __cplusplus */
 
 #include "azure_c_shared_utility/xio.h"
-//#include "azure_c_shared_utility/xlogging.h"
+#include "azure_c_shared_utility/xlogging.h"
 #include "umock_c/umock_c_prod.h"
 
 #ifdef __cplusplus
