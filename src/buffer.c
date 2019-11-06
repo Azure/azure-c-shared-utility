@@ -318,6 +318,7 @@ extern int BUFFER_unbuild(BUFFER_HANDLE handle)
     if (handle == NULL)
     {
         /* Codes_SRS_BUFFER_07_014: [BUFFER_unbuild shall return a nonzero value if BUFFER_HANDLE is NULL.] */
+        LogError("Failure: handle is invalid.");
         result = MU_FAILURE;
     }
     else
@@ -328,13 +329,11 @@ extern int BUFFER_unbuild(BUFFER_HANDLE handle)
             free(b->buffer);
             b->buffer = NULL;
             b->size = 0;
-            result = 0;
+        
         }
-        else
-        {
-            /* Codes_SRS_BUFFER_07_015: [BUFFER_unbuild shall return a nonzero value if the unsigned char* referenced by BUFFER_HANDLE is NULL.] */
-            result = MU_FAILURE;
-        }
+
+        /* Codes_SRS_BUFFER_07_015: [BUFFER_unbuild shall always return success if the unsigned char* referenced by BUFFER_HANDLE is NULL.] */
+        result = 0;
     }
     return result;
 }
