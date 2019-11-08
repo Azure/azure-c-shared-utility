@@ -8,7 +8,7 @@ The document does not cover the specifics of any particular platform.
 ## References
 
 ###### Specifications
-- [tickcounter adapter specification](https://github.com/Azure/azure-c-shared-utility/blob/master/devdoc/tickcounter.md)<br/>
+- [tickcounter adapter specification](https://github.com/Azure/azure-c-shared-utility/blob/master/devdoc/tickcounter_freertos_requirement.md)<br/>
 - [agenttime adapter specification](https://github.com/Azure/azure-c-shared-utility/blob/master/devdoc/agenttime_requirements.md)<br/>
 - [threadapi and sleep adapter specification](https://github.com/Azure/azure-c-shared-utility/blob/master/devdoc/threadapi_and_sleep_requirements.md)<br/>
 - [platform adapter specification](https://github.com/Azure/azure-c-shared-utility/blob/master/devdoc/platform_requirements.md)<br/>
@@ -79,14 +79,14 @@ If any of these adapters work for your device, simply include that file in your 
 ### tickcounter adapter
 
 Tickcounter behavior is specified in the
-[tickcounter specification](https://github.com/Azure/azure-c-shared-utility/blob/master/devdoc/tickcounter.md).
+[tickcounter specification](https://github.com/Azure/azure-c-shared-utility/blob/master/devdoc/tickcounter_freertos_requirement.md).
 
 To get started, copy
 [this version of tickcounter.c](https://github.com/Azure/azure-c-shared-utility/blob/master/pal/freertos/tickcounter.c) 
 file and modify it to suit your device.
 
 If memory size is an issue, the 
- [tickcounter specification](https://github.com/Azure/azure-c-shared-utility/blob/master/devdoc/tickcounter.md)
+ [tickcounter specification](https://github.com/Azure/azure-c-shared-utility/blob/master/devdoc/tickcounter_freertos_requirement.md)
  contains an optimization suggestion that may work for you.
 
 
