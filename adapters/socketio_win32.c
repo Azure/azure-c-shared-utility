@@ -51,7 +51,7 @@ typedef struct SOCKET_IO_INSTANCE_TAG
     IO_STATE io_state;
     SINGLYLINKEDLIST_HANDLE pending_io_list;
     struct tcp_keepalive keep_alive;
-    unsigned char recv_bytes[RECEIVE_BYTES_VALUE];
+    unsigned char recv_bytes[XIO_RECEIVE_BUFFER_SIZE];
     DNSRESOLVER_HANDLE dns_resolver;
     struct addrinfo* addrInfo;
 } SOCKET_IO_INSTANCE;
@@ -654,7 +654,7 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                 int received = 0;
                 do
                 {
-                    received = recv(socket_io_instance->socket, (char*)socket_io_instance->recv_bytes, RECEIVE_BYTES_VALUE, 0);
+                    received = recv(socket_io_instance->socket, (char*)socket_io_instance->recv_bytes, XIO_RECEIVE_BUFFER_SIZE, 0);
                     if ((received > 0))
                     {
                         if (socket_io_instance->on_bytes_received != NULL)
