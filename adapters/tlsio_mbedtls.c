@@ -369,8 +369,8 @@ static int on_io_send(void *context, const unsigned char *buf, size_t sz)
         TLS_IO_INSTANCE *tls_io_instance = (TLS_IO_INSTANCE *)context;
         if (xio_send(tls_io_instance->socket_io, buf, sz, on_send_complete, tls_io_instance) != 0)
         {
-            indicate_error(tls_io_instance);
-            result = 0;
+            LogError("Failed to send data using socket_io");
+            result = -MU_FAILURE;
         }
         else
         {
