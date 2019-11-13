@@ -157,7 +157,7 @@ static OPTIONHANDLER_HANDLE tlsio_wolfssl_retrieveoptions(CONCRETE_IO_HANDLE tls
             TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tls_io;
             if (
                 (tls_io_instance->x509certificate != NULL) &&
-                (OptionHandler_AddOption(result, SU_OPTION_X509_CERT, tls_io_instance->x509certificate) != 0)
+                (OptionHandler_AddOption(result, SU_OPTION_X509_CERT, tls_io_instance->x509certificate) != OPTIONHANDLER_OK)
                 )
             {
                 LogError("unable to save x509certificate option");
@@ -166,7 +166,7 @@ static OPTIONHANDLER_HANDLE tlsio_wolfssl_retrieveoptions(CONCRETE_IO_HANDLE tls
             }
             else if (
                 (tls_io_instance->x509privatekey != NULL) &&
-                (OptionHandler_AddOption(result, SU_OPTION_X509_PRIVATE_KEY, tls_io_instance->x509privatekey) != 0)
+                (OptionHandler_AddOption(result, SU_OPTION_X509_PRIVATE_KEY, tls_io_instance->x509privatekey) != OPTIONHANDLER_OK)
                 )
             {
                 LogError("unable to save x509privatekey option");
@@ -175,7 +175,7 @@ static OPTIONHANDLER_HANDLE tlsio_wolfssl_retrieveoptions(CONCRETE_IO_HANDLE tls
             }
             else if (
                 (tls_io_instance->certificate != NULL) &&
-                (OptionHandler_AddOption(result, OPTION_TRUSTED_CERT, tls_io_instance->certificate) != 0)
+                (OptionHandler_AddOption(result, OPTION_TRUSTED_CERT, tls_io_instance->certificate) != OPTIONHANDLER_OK)
                 )
             {
                 LogError("unable to save TrustedCerts option");
