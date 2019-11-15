@@ -12,7 +12,7 @@
 #include "azure_c_shared_utility/xlogging.h"
 #include "netsocket/nsapi_types.h"
 
-#define MBED_RECEIVE_BYTES_VALUE    128
+#define MBED_XIO_RECEIVE_BUFFER_SIZE    128
 
 typedef enum IO_STATE_TAG
 {
@@ -146,7 +146,7 @@ static int retrieve_data(SOCKET_IO_INSTANCE* socket_io_instance)
     int received = 1;
     int total_received = 0;
 
-    unsigned char* recv_bytes = malloc(MBED_RECEIVE_BYTES_VALUE);
+    unsigned char* recv_bytes = malloc(MBED_XIO_RECEIVE_BUFFER_SIZE);
     if (recv_bytes == NULL)
     {
         LogError("Socketio_Failure: NULL allocating input buffer.");
@@ -157,7 +157,7 @@ static int retrieve_data(SOCKET_IO_INSTANCE* socket_io_instance)
     while (received > 0)
     {
         /* Codes_SRS_SOCKETIO_MBED_OS5_99_005: [ retrieve_data shall succeed if tcp receive bytes succeed ]*/
-        received = tcpsocketconnection_receive(socket_io_instance->tcp_socket_connection, (char*)recv_bytes, MBED_RECEIVE_BYTES_VALUE);
+        received = tcpsocketconnection_receive(socket_io_instance->tcp_socket_connection, (char*)recv_bytes, MBED_XIO_RECEIVE_BUFFER_SIZE);
         if (received > 0)
         {
             total_received += received;

@@ -611,7 +611,7 @@ static OPTIONHANDLER_HANDLE tlsio_cyclonessl_retrieve_options(CONCRETE_IO_HANDLE
             if (
                 (tls_io_instance->certificate != NULL) &&
                 /* Codes_SRS_TLSIO_CYCLONESSL_01_067: [  - TrustedCerts ]*/
-                (OptionHandler_AddOption(result, "TrustedCerts", tls_io_instance->certificate) != 0)
+                (OptionHandler_AddOption(result, "TrustedCerts", tls_io_instance->certificate) != OPTIONHANDLER_OK)
                 )
             {
                 LogError("unable to save TrustedCerts option");

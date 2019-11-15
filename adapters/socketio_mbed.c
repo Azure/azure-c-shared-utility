@@ -12,7 +12,7 @@
 #include "azure_c_shared_utility/xlogging.h"
 
 #define UNABLE_TO_COMPLETE -2
-#define MBED_RECEIVE_BYTES_VALUE    128
+#define MBED_XIO_RECEIVE_BUFFER_SIZE    128
 
 typedef enum IO_STATE_TAG
 {
@@ -424,7 +424,7 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
 
             while (received > 0)
             {
-                unsigned char* recv_bytes = malloc(MBED_RECEIVE_BYTES_VALUE);
+                unsigned char* recv_bytes = malloc(MBED_XIO_RECEIVE_BUFFER_SIZE);
                 if (recv_bytes == NULL)
                 {
                     LogError("Socketio_Failure: NULL allocating input buffer.");
@@ -432,7 +432,7 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                 }
                 else
                 {
-                    received = tcpsocketconnection_receive(socket_io_instance->tcp_socket_connection, (char*)recv_bytes, MBED_RECEIVE_BYTES_VALUE);
+                    received = tcpsocketconnection_receive(socket_io_instance->tcp_socket_connection, (char*)recv_bytes, MBED_XIO_RECEIVE_BUFFER_SIZE);
                     if (received > 0)
                     {
                         if (socket_io_instance->on_bytes_received != NULL)

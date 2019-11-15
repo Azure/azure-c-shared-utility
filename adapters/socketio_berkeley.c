@@ -93,7 +93,7 @@ typedef struct SOCKET_IO_INSTANCE_TAG
     char* target_mac_address;
     IO_STATE io_state;
     SINGLYLINKEDLIST_HANDLE pending_io_list;
-    unsigned char recv_bytes[RECEIVE_BYTES_VALUE];
+    unsigned char recv_bytes[XIO_RECEIVE_BUFFER_SIZE];
     DNSRESOLVER_HANDLE dns_resolver;
 } SOCKET_IO_INSTANCE;
 
@@ -954,6 +954,7 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
     if (socket_io != NULL)
     {
         SOCKET_IO_INSTANCE* socket_io_instance = (SOCKET_IO_INSTANCE*)socket_io;
+        signal(SIGPIPE, SIG_IGN);
 
         if (socket_io_instance->io_state == IO_STATE_OPEN)
         {
@@ -967,8 +968,6 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                     LogError("Failure: retrieving socket from list");
                     break;
                 }
-
-                signal(SIGPIPE, SIG_IGN);
 
                 ssize_t send_result = send(socket_io_instance->socket, pending_socket_io->bytes, pending_socket_io->size, 0);
                 if ((send_result < 0) || ((size_t)send_result != pending_socket_io->size))
@@ -1022,7 +1021,7 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                 ssize_t received = 0;
                 do
                 {
-                    received = recv(socket_io_instance->socket, socket_io_instance->recv_bytes, RECEIVE_BYTES_VALUE, 0);
+                    received = recv(socket_io_instance->socket, socket_io_instance->recv_bytes, XIO_RECEIVE_BUFFER_SIZE, 0);
                     if (received > 0)
                     {
                         if (socket_io_instance->on_bytes_received != NULL)
