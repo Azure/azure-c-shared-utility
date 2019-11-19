@@ -682,7 +682,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         ASSERT_ARE_NOT_EQUAL(int, nResult, 0);
     }
 
-    /* Tests_SRS_BUFFER_07_015: [BUFFER_unbuild shall return a nonzero value if the unsigned char* referenced by BUFFER_HANDLE is NULL.] */
+    /* Codes_SRS_BUFFER_07_015: [BUFFER_unbuild shall always return success if the unsigned char* referenced by BUFFER_HANDLE is NULL.] */
     TEST_FUNCTION(BUFFER_unbuild_Multiple_Alloc_Fail)
     {
         ///arrange
@@ -697,7 +697,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         nResult = BUFFER_unbuild(g_hBuffer);
 
         ///assert
-        ASSERT_ARE_NOT_EQUAL(int, nResult, 0);
+        ASSERT_ARE_EQUAL(int, nResult, 0);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         ///cleanup

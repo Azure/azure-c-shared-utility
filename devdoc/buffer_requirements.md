@@ -143,7 +143,7 @@ int BUFFER_unbuild(BUFFER_HANDLE b)
 
 **SRS_BUFFER_07_014: [** BUFFER_unbuild shall return a nonzero value if BUFFER_HANDLE is NULL. **]**
 
-**SRS_BUFFER_07_015: [** BUFFER_unbuild shall return a nonzero value if the unsigned char* referenced by BUFFER_HANDLE is NULL. **]**
+**SRS_BUFFER_07_015: [** BUFFER_unbuild shall always return success if the unsigned char* referenced by BUFFER_HANDLE is NULL. **]**
 
 ### BUFFER_enlarge
 
