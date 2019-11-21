@@ -298,9 +298,18 @@ static int initiate_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
         else
         {
             addr = dns_resolver_get_addrInfo(socket_io_instance->dns_resolver);
-            connect_addr = addr->ai_addr;
-            connect_addr_len = sizeof(*addr->ai_addr);
-            result = 0;
+
+            if (addr == NULL)
+            {
+                LogError("DNS resolution failed");
+                result = MU_FAILURE;
+            }
+            else
+            {
+                connect_addr = addr->ai_addr;
+                connect_addr_len = sizeof(*addr->ai_addr);
+                result = 0;
+            }
         }
     }
     else
@@ -694,15 +703,26 @@ CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters)
                 }
                 else
                 {
-                    result->port = socket_io_config->port;
-                    result->on_io_open_complete = NULL;
                     result->dns_resolver = dns_resolver_create(result->hostname, result->port, NULL);
-                    result->target_mac_address = NULL;
-                    result->on_bytes_received = NULL;
-                    result->on_io_error = NULL;
-                    result->on_bytes_received_context = NULL;
-                    result->on_io_error_context = NULL;
-                    result->io_state = IO_STATE_CLOSED;
+
+                    if (result->dns_resolver == NULL)
+                    {
+                        LogError("Failure creating dns_resolver");
+                        singlylinkedlist_destroy(result->pending_io_list);
+                        free(result);
+                        result = NULL;
+                    }
+                    else
+                    {
+                        result->port = socket_io_config->port;
+                        result->on_io_open_complete = NULL;
+                        result->target_mac_address = NULL;
+                        result->on_bytes_received = NULL;
+                        result->on_io_error = NULL;
+                        result->on_bytes_received_context = NULL;
+                        result->on_io_error_context = NULL;
+                        result->io_state = IO_STATE_CLOSED;
+                    }
                 }
             }
         }

@@ -212,21 +212,29 @@ static int initiate_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
     {
 #endif
         struct addrinfo* addr = dns_resolver_get_addrInfo(socket_io_instance->dns_resolver);
-        (void)memcpy((socket_io_instance->addrInfo), addr, sizeof(*(socket_io_instance->addrInfo)));
 
-        result = connect_socket(socket_io_instance->socket, (socket_io_instance->addrInfo)->ai_addr, sizeof(*((socket_io_instance->addrInfo)->ai_addr)));
-        if(result != 0)
+        if (addr == NULL)
         {
-            LogError("connect_socket failed");
+            LogError("DNS resolution failed");
+            result = MU_FAILURE;
         }
-        else 
+        else
         {
-            if (socket_io_instance->on_io_open_complete != NULL)
+            (void)memcpy((socket_io_instance->addrInfo), addr, sizeof(*(socket_io_instance->addrInfo)));
+
+            result = connect_socket(socket_io_instance->socket, (socket_io_instance->addrInfo)->ai_addr, sizeof(*((socket_io_instance->addrInfo)->ai_addr)));
+            if (result != 0)
             {
-                socket_io_instance->on_io_open_complete(socket_io_instance->on_io_open_complete_context, IO_OPEN_OK /*: IO_OPEN_ERROR*/);
+                LogError("connect_socket failed");
+            }
+            else
+            {
+                if (socket_io_instance->on_io_open_complete != NULL)
+                {
+                    socket_io_instance->on_io_open_complete(socket_io_instance->on_io_open_complete_context, IO_OPEN_OK /*: IO_OPEN_ERROR*/);
+                }
             }
         }
-            
 #ifdef AF_UNIX_ON_WINDOWS
     }
     else // ADDRESS_TYPE_DOMAIN_SOCKET
@@ -331,6 +339,7 @@ CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters)
                 else
                 {
                     result->addrInfo = calloc(1, sizeof(struct addrinfo));
+
                     if (result->addrInfo == NULL)
                     {
                         LogError("Failure: addrInfo == NULL.");
@@ -342,17 +351,40 @@ CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters)
                     {
                         result->addrInfo->ai_addr = calloc(1, sizeof(struct sockaddr_in));
 
-                        result->port = socket_io_config->port;
-                        result->on_io_open_complete = NULL;
-                        result->dns_resolver = dns_resolver_create(result->hostname, result->port, NULL);
-                        result->on_bytes_received = NULL;
-                        result->on_io_error = NULL;
-                        result->on_bytes_received_context = NULL;
-                        result->on_io_error_context = NULL;
-                        result->io_state = IO_STATE_CLOSED;
-                        result->keep_alive = tcp_keepalive;
-                    }
+                        if (result->addrInfo->ai_addr == NULL)
+                        {
+                            LogError("Failure allocating ai_addr");
+                            free(result->addrInfo);
+                            singlylinkedlist_destroy(result->pending_io_list);
+                            free(result);
+                            result = NULL;
+                        }
+                        else
+                        {
+                            result->dns_resolver = dns_resolver_create(result->hostname, result->port, NULL);
 
+                            if (result->dns_resolver == NULL)
+                            {
+                                LogError("Failure creating dns_resolver");
+                                free(result->addrInfo->ai_addr);
+                                free(result->addrInfo);
+                                singlylinkedlist_destroy(result->pending_io_list);
+                                free(result);
+                                result = NULL;
+                            }
+                            else
+                            {
+                                result->port = socket_io_config->port;
+                                result->on_io_open_complete = NULL;
+                                result->on_bytes_received = NULL;
+                                result->on_io_error = NULL;
+                                result->on_bytes_received_context = NULL;
+                                result->on_io_error_context = NULL;
+                                result->io_state = IO_STATE_CLOSED;
+                                result->keep_alive = tcp_keepalive;
+                            }
+                        }
+                    }
                 }
             }
         }
