@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
-
+#ifdef USE_MBEDTLS
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -1040,3 +1040,4 @@ const IO_INTERFACE_DESCRIPTION *tlsio_mbedtls_get_interface_description(void)
 {
     return &tlsio_mbedtls_interface_description;
 }
+#endif
