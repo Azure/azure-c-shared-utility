@@ -343,6 +343,10 @@ CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters)
                     if (result->addrInfo == NULL)
                     {
                         LogError("Failure: addrInfo == NULL.");
+                        if (result->hostname != NULL)
+                        {
+                            free(result->hostname);
+                        }
                         singlylinkedlist_destroy(result->pending_io_list);
                         free(result);
                         result = NULL;
@@ -355,6 +359,10 @@ CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters)
                         {
                             LogError("Failure allocating ai_addr");
                             free(result->addrInfo);
+                            if (result->hostname != NULL)
+                            {
+                                free(result->hostname);
+                            }
                             singlylinkedlist_destroy(result->pending_io_list);
                             free(result);
                             result = NULL;
@@ -368,6 +376,10 @@ CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters)
                                 LogError("Failure creating dns_resolver");
                                 free(result->addrInfo->ai_addr);
                                 free(result->addrInfo);
+                                if (result->hostname != NULL)
+                                {
+                                    free(result->hostname);
+                                }
                                 singlylinkedlist_destroy(result->pending_io_list);
                                 free(result);
                                 result = NULL;

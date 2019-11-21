@@ -708,6 +708,10 @@ CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters)
                     if (result->dns_resolver == NULL)
                     {
                         LogError("Failure creating dns_resolver");
+                        if (result->hostname != NULL)
+                        {
+                            free(result->hostname);
+                        }
                         singlylinkedlist_destroy(result->pending_io_list);
                         free(result);
                         result = NULL;
