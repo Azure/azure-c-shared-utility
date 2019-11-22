@@ -660,15 +660,8 @@ static void destroy_socket_io_instance(SOCKET_IO_INSTANCE* instance)
         dns_resolver_destroy(instance->dns_resolver);
     }
 
-    if (instance->hostname != NULL)
-    {
-        free(instance->hostname);
-    }
-
-    if (instance->target_mac_address != NULL)
-    {
-        free(instance->target_mac_address);
-    }
+    free(instance->hostname);
+    free(instance->target_mac_address);
 
     if (instance->pending_io_list != NULL)
     {
@@ -727,7 +720,7 @@ CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters)
                     destroy_socket_io_instance(result);
                     result = NULL;
                 }
-                else if ((result->dns_resolver = dns_resolver_create(result->hostname, result->port, NULL)) == NULL)
+                else if ((result->dns_resolver = dns_resolver_create(result->hostname, socket_io_config->port, NULL)) == NULL)
                 {
                     LogError("Failure creating dns_resolver");
                     destroy_socket_io_instance(result);
