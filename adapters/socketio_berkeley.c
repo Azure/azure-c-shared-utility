@@ -298,9 +298,18 @@ static int initiate_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
         else
         {
             addr = dns_resolver_get_addrInfo(socket_io_instance->dns_resolver);
-            connect_addr = addr->ai_addr;
-            connect_addr_len = sizeof(*addr->ai_addr);
-            result = 0;
+
+            if (addr == NULL)
+            {
+                LogError("DNS resolution failed");
+                result = MU_FAILURE;
+            }
+            else
+            {
+                connect_addr = addr->ai_addr;
+                connect_addr_len = sizeof(*addr->ai_addr);
+                result = 0;
+            }
         }
     }
     else
@@ -644,6 +653,24 @@ static int set_target_network_interface(int socket, char* mac_address)
 }
 #endif //__APPLE__
 
+static void destroy_socket_io_instance(SOCKET_IO_INSTANCE* instance)
+{
+    if (instance->dns_resolver != NULL)
+    {
+        dns_resolver_destroy(instance->dns_resolver);
+    }
+
+    free(instance->hostname);
+    free(instance->target_mac_address);
+
+    if (instance->pending_io_list != NULL)
+    {
+        singlylinkedlist_destroy(instance->pending_io_list);
+    }
+
+    free(instance);
+}
+
 CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters)
 {
     SOCKETIO_CONFIG* socket_io_config = io_create_parameters;
@@ -659,12 +686,14 @@ CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters)
         result = malloc(sizeof(SOCKET_IO_INSTANCE));
         if (result != NULL)
         {
+            (void)memset(result, 0, sizeof(SOCKET_IO_INSTANCE));
+
             result->address_type = ADDRESS_TYPE_IP;
             result->pending_io_list = singlylinkedlist_create();
             if (result->pending_io_list == NULL)
             {
                 LogError("Failure: singlylinkedlist_create unable to create pending list.");
-                free(result);
+                destroy_socket_io_instance(result);
                 result = NULL;
             }
             else
@@ -688,15 +717,19 @@ CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters)
                 if ((result->hostname == NULL) && (result->socket == INVALID_SOCKET))
                 {
                     LogError("Failure: hostname == NULL and socket is invalid.");
-                    singlylinkedlist_destroy(result->pending_io_list);
-                    free(result);
+                    destroy_socket_io_instance(result);
+                    result = NULL;
+                }
+                else if ((result->dns_resolver = dns_resolver_create(result->hostname, socket_io_config->port, NULL)) == NULL)
+                {
+                    LogError("Failure creating dns_resolver");
+                    destroy_socket_io_instance(result);
                     result = NULL;
                 }
                 else
                 {
                     result->port = socket_io_config->port;
                     result->on_io_open_complete = NULL;
-                    result->dns_resolver = dns_resolver_create(result->hostname, result->port, NULL);
                     result->target_mac_address = NULL;
                     result->on_bytes_received = NULL;
                     result->on_io_error = NULL;
@@ -741,13 +774,7 @@ void socketio_destroy(CONCRETE_IO_HANDLE socket_io)
             first_pending_io = singlylinkedlist_get_head_item(socket_io_instance->pending_io_list);
         }
 
-        singlylinkedlist_destroy(socket_io_instance->pending_io_list);
-        free(socket_io_instance->hostname);
-        free(socket_io_instance->target_mac_address);
-
-        dns_resolver_destroy(socket_io_instance->dns_resolver);
-
-        free(socket_io);
+        destroy_socket_io_instance(socket_io_instance);
     }
 }
 

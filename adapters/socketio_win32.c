@@ -212,21 +212,29 @@ static int initiate_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
     {
 #endif
         struct addrinfo* addr = dns_resolver_get_addrInfo(socket_io_instance->dns_resolver);
-        (void)memcpy((socket_io_instance->addrInfo), addr, sizeof(*(socket_io_instance->addrInfo)));
 
-        result = connect_socket(socket_io_instance->socket, (socket_io_instance->addrInfo)->ai_addr, sizeof(*((socket_io_instance->addrInfo)->ai_addr)));
-        if(result != 0)
+        if (addr == NULL)
         {
-            LogError("connect_socket failed");
+            LogError("DNS resolution failed");
+            result = MU_FAILURE;
         }
-        else 
+        else
         {
-            if (socket_io_instance->on_io_open_complete != NULL)
+            (void)memcpy((socket_io_instance->addrInfo), addr, sizeof(*(socket_io_instance->addrInfo)));
+
+            result = connect_socket(socket_io_instance->socket, (socket_io_instance->addrInfo)->ai_addr, sizeof(*((socket_io_instance->addrInfo)->ai_addr)));
+            if (result != 0)
             {
-                socket_io_instance->on_io_open_complete(socket_io_instance->on_io_open_complete_context, IO_OPEN_OK /*: IO_OPEN_ERROR*/);
+                LogError("connect_socket failed");
+            }
+            else
+            {
+                if (socket_io_instance->on_io_open_complete != NULL)
+                {
+                    socket_io_instance->on_io_open_complete(socket_io_instance->on_io_open_complete_context, IO_OPEN_OK /*: IO_OPEN_ERROR*/);
+                }
             }
         }
-            
 #ifdef AF_UNIX_ON_WINDOWS
     }
     else // ADDRESS_TYPE_DOMAIN_SOCKET
@@ -279,6 +287,24 @@ static int initiate_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
     return result;
 }
 
+static void destroy_socket_io_instance(SOCKET_IO_INSTANCE* instance)
+{
+    if (instance->dns_resolver != NULL)
+    {
+        dns_resolver_destroy(instance->dns_resolver);
+    }
+
+    free(instance->hostname);
+    free(instance->addrInfo);
+
+    if (instance->pending_io_list != NULL)
+    {
+        singlylinkedlist_destroy(instance->pending_io_list);
+    }
+
+    free(instance);
+}
+
 CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters)
 {
     SOCKETIO_CONFIG* socket_io_config = (SOCKETIO_CONFIG*)io_create_parameters;
@@ -293,14 +319,17 @@ CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters)
     else
     {
         result = (SOCKET_IO_INSTANCE*)malloc(sizeof(SOCKET_IO_INSTANCE));
+
         if (result != NULL)
         {
+            (void)memset(result, 0, sizeof(SOCKET_IO_INSTANCE));
+
             result->address_type = ADDRESS_TYPE_IP;
             result->pending_io_list = singlylinkedlist_create();
             if (result->pending_io_list == NULL)
             {
                 LogError("Failure: singlylinkedlist_create unable to create pending list.");
-                free(result);
+                destroy_socket_io_instance(result);
                 result = NULL;
             }
             else
@@ -324,35 +353,37 @@ CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters)
                 if ((result->hostname == NULL) && (result->socket == INVALID_SOCKET))
                 {
                     LogError("Failure: hostname == NULL and socket is invalid.");
-                    singlylinkedlist_destroy(result->pending_io_list);
-                    free(result);
+                    destroy_socket_io_instance(result);
+                    result = NULL;
+                }
+                else if ((result->addrInfo = calloc(1, sizeof(struct addrinfo))) == NULL)
+                {
+                    LogError("Failure: addrInfo == NULL.");
+                    destroy_socket_io_instance(result);
+                    result = NULL;
+                }
+                else if ((result->addrInfo->ai_addr = calloc(1, sizeof(struct sockaddr_in))) == NULL)
+                {
+                    LogError("Failure allocating ai_addr");
+                    destroy_socket_io_instance(result);
+                    result = NULL;
+                }
+                else if ((result->dns_resolver = dns_resolver_create(result->hostname, socket_io_config->port, NULL)) == NULL)
+                {
+                    LogError("Failure creating dns_resolver");
+                    destroy_socket_io_instance(result);
                     result = NULL;
                 }
                 else
                 {
-                    result->addrInfo = calloc(1, sizeof(struct addrinfo));
-                    if (result->addrInfo == NULL)
-                    {
-                        LogError("Failure: addrInfo == NULL.");
-                        singlylinkedlist_destroy(result->pending_io_list);
-                        free(result);
-                        result = NULL;
-                    }
-                    else
-                    {
-                        result->addrInfo->ai_addr = calloc(1, sizeof(struct sockaddr_in));
-
-                        result->port = socket_io_config->port;
-                        result->on_io_open_complete = NULL;
-                        result->dns_resolver = dns_resolver_create(result->hostname, result->port, NULL);
-                        result->on_bytes_received = NULL;
-                        result->on_io_error = NULL;
-                        result->on_bytes_received_context = NULL;
-                        result->on_io_error_context = NULL;
-                        result->io_state = IO_STATE_CLOSED;
-                        result->keep_alive = tcp_keepalive;
-                    }
-
+                    result->port = socket_io_config->port;
+                    result->on_io_open_complete = NULL;
+                    result->on_bytes_received = NULL;
+                    result->on_io_error = NULL;
+                    result->on_bytes_received_context = NULL;
+                    result->on_io_error_context = NULL;
+                    result->io_state = IO_STATE_CLOSED;
+                    result->keep_alive = tcp_keepalive;
                 }
             }
         }
@@ -389,15 +420,7 @@ void socketio_destroy(CONCRETE_IO_HANDLE socket_io)
             singlylinkedlist_remove(socket_io_instance->pending_io_list, first_pending_io);
         }
 
-        singlylinkedlist_destroy(socket_io_instance->pending_io_list);
-        if (socket_io_instance->hostname != NULL)
-        {
-            free(socket_io_instance->hostname);
-        }
-
-        dns_resolver_destroy(socket_io_instance->dns_resolver);
-
-        free(socket_io);
+        destroy_socket_io_instance(socket_io);
     }
 }
 
