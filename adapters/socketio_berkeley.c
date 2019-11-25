@@ -720,16 +720,11 @@ CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters)
                     destroy_socket_io_instance(result);
                     result = NULL;
                 }
-                else if ((result->dns_resolver = dns_resolver_create(result->hostname, socket_io_config->port, NULL)) == NULL)
-                {
-                    LogError("Failure creating dns_resolver");
-                    destroy_socket_io_instance(result);
-                    result = NULL;
-                }
                 else
                 {
                     result->port = socket_io_config->port;
                     result->on_io_open_complete = NULL;
+                    result->dns_resolver = dns_resolver_create(result->hostname, socket_io_config->port, NULL);
                     result->target_mac_address = NULL;
                     result->on_bytes_received = NULL;
                     result->on_io_error = NULL;
