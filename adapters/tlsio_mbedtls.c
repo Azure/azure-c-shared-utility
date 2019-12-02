@@ -631,11 +631,22 @@ int tlsio_mbedtls_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_cl
         }
         else
         {
+            int is_error = tls_io_instance->tlsio_state == TLSIO_STATE_ERROR;
             tls_io_instance->tlsio_state = TLSIO_STATE_CLOSING;
+
             if (tls_io_instance->tls_status == TLS_STATE_INITIALIZED)
             {
-                // Tell the peer that you're going to close
-                mbedtls_ssl_close_notify(&tls_io_instance->ssl);
+                if (is_error)
+                {
+                    // forced shutdown if tls is in ERROR state
+                    mbedtls_ssl_session_reset(&tls_io_instance->ssl);
+                }
+                else
+                {
+                    // Tell the peer that you're going to close
+                    mbedtls_ssl_close_notify(&tls_io_instance->ssl);
+                }
+
                 tls_io_instance->tls_status = TLS_STATE_CLOSING;
             }
 
