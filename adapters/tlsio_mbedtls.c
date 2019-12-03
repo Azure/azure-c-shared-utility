@@ -63,6 +63,8 @@ typedef struct TLS_IO_INSTANCE_TAG
     unsigned char *socket_io_read_bytes;
     size_t socket_io_read_byte_count;
     SEND_COMPLETE_INFO send_complete_info;
+    size_t socket_io_write_byte_count;
+    size_t socket_io_total_byte_to_write;
 
     mbedtls_entropy_context entropy;
     mbedtls_ctr_drbg_context ctr_drbg;
@@ -349,6 +351,34 @@ static void on_send_complete(void* context, IO_SEND_RESULT send_result)
             tls_io_instance->send_complete_info.on_send_complete(tls_io_instance->send_complete_info.on_send_complete_callback_context, send_result);
             tls_io_instance->send_complete_info.send_complete_count++;
         }
+        // reset chunk send counters
+        tls_io_instance->socket_io_total_byte_to_write = 0;
+        tls_io_instance->socket_io_write_byte_count = 0;
+    }
+    else
+    {
+        LogError("Invalid context NULL value passed");
+    }
+}
+
+static void on_partial_send_complete(void* context, IO_SEND_RESULT send_result)
+{
+    TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE *)context;
+    if (tls_io_instance != NULL)
+    {
+        // if send not initiated from tlsio_mbedtls_send or error, call on_send_complete
+        if (tls_io_instance->socket_io_total_byte_to_write == 0 || send_result != IO_SEND_OK)
+        {
+            on_send_complete(context, send_result);
+        }
+        else
+        {
+            // call on_send_complete only when all data is sent
+            if(tls_io_instance->socket_io_write_byte_count == tls_io_instance->socket_io_total_byte_to_write)
+            {
+                on_send_complete(context, IO_SEND_OK);
+            }
+        }
     }
     else
     {
@@ -367,7 +397,7 @@ static int on_io_send(void *context, const unsigned char *buf, size_t sz)
     else
     {
         TLS_IO_INSTANCE *tls_io_instance = (TLS_IO_INSTANCE *)context;
-        if (xio_send(tls_io_instance->socket_io, buf, sz, on_send_complete, tls_io_instance) != 0)
+        if (xio_send(tls_io_instance->socket_io, buf, sz, on_partial_send_complete, tls_io_instance) != 0)
         {
             indicate_error(tls_io_instance);
             result = 0;
@@ -677,10 +707,22 @@ int tlsio_mbedtls_send(CONCRETE_IO_HANDLE tls_io, const void *buffer, size_t siz
             tls_io_instance->send_complete_info.on_send_complete = on_send_complete;
             tls_io_instance->send_complete_info.on_send_complete_callback_context = callback_context;
             tls_io_instance->send_complete_info.send_complete_count = 0;
-            int res = mbedtls_ssl_write(&tls_io_instance->ssl, buffer, size);
-            if (res != (int)size)
+
+            tls_io_instance->socket_io_write_byte_count = 0;
+            tls_io_instance->socket_io_total_byte_to_write = size;
+
+            int res = 0;
+
+            do{
+                res = mbedtls_ssl_write(&tls_io_instance->ssl, buffer+tls_io_instance->socket_io_write_byte_count,
+                                        size-tls_io_instance->socket_io_write_byte_count);
+                tls_io_instance->socket_io_write_byte_count += res;
+            }
+            while(res > 0);
+
+            if (res < 0)
             {
-                LogError("Unexpected data size returned from  mbedtls_ssl_write %d/%d", res, (int)size);
+                LogError("Unexpected error from mbedtls_ssl_write");
                 result = MU_FAILURE;
             }
             else
