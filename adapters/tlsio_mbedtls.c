@@ -7,7 +7,6 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include "mbedtls/config.h"
 #include "mbedtls/debug.h"
 #include "mbedtls/ssl.h"
 #include "mbedtls/entropy.h"
@@ -43,7 +42,8 @@ typedef enum TLSIO_STATE_ENUM_TAG
 
 typedef struct SEND_COMPLETE_INFO_TAG
 {
-    int send_complete_count;
+    bool is_fragmented_req;
+    IO_SEND_RESULT last_fragmented_req_status;
     ON_SEND_COMPLETE on_send_complete;
     void *on_send_complete_callback_context;
 } SEND_COMPLETE_INFO;
@@ -125,6 +125,28 @@ static int decode_ssl_received_bytes(TLS_IO_INSTANCE *tls_io_instance)
                 tls_io_instance->on_bytes_received(tls_io_instance->on_bytes_received_context, buffer, rcv_bytes);
             }
         }
+    }
+
+    return result;
+}
+
+static bool is_fragmented_send_request(TLS_IO_INSTANCE *tls_io_instance, size_t send_size)
+{
+#if defined(MBEDTLS_SSL_MAX_FRAGMENT_LENGTH)
+    size_t max_len = mbedtls_ssl_get_max_frag_len(&tls_io_instance->ssl);
+#else
+    size_t max_len = MBEDTLS_SSL_MAX_CONTENT_LEN;
+    (void)tls_io_instance;
+#endif /* MBEDTLS_SSL_MAX_FRAGMENT_LENGTH */
+    bool result;
+
+    if (send_size > max_len)
+    {
+        result = true;
+    }
+    else
+    {
+        result = false;
     }
 
     return result;
@@ -342,12 +364,21 @@ static void on_send_complete(void* context, IO_SEND_RESULT send_result)
     TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE *)context;
     if (tls_io_instance != NULL)
     {
-        // If the state is not open then this is probably an internal call
-        // So don't notify the upper level
-        if (tls_io_instance->send_complete_info.on_send_complete != NULL && tls_io_instance->send_complete_info.send_complete_count == 0 && tls_io_instance->tlsio_state != TLSIO_STATE_CLOSING)
+        // update fragment status
+        if (tls_io_instance->send_complete_info.is_fragmented_req)
         {
-            tls_io_instance->send_complete_info.on_send_complete(tls_io_instance->send_complete_info.on_send_complete_callback_context, send_result);
-            tls_io_instance->send_complete_info.send_complete_count++;
+            tls_io_instance->send_complete_info.last_fragmented_req_status = send_result;
+        }
+
+        if (tls_io_instance->send_complete_info.on_send_complete != NULL &&
+            tls_io_instance->tlsio_state != TLSIO_STATE_CLOSING)
+        {
+            // trigger callback always on failure, otherwise call it on last fragment completion
+            if (send_result != IO_SEND_OK || !tls_io_instance->send_complete_info.is_fragmented_req)
+            {
+                void *ctx = tls_io_instance->send_complete_info.on_send_complete_callback_context;
+                tls_io_instance->send_complete_info.on_send_complete(ctx, send_result);
+            }
         }
     }
     else
@@ -367,7 +398,17 @@ static int on_io_send(void *context, const unsigned char *buf, size_t sz)
     else
     {
         TLS_IO_INSTANCE *tls_io_instance = (TLS_IO_INSTANCE *)context;
-        if (xio_send(tls_io_instance->socket_io, buf, sz, on_send_complete, tls_io_instance) != 0)
+        ON_SEND_COMPLETE on_complete_callback = NULL;
+        void *context = NULL;
+
+        // Only allow Application data type message to send on_send_complete callback.
+        if (tls_io_instance->ssl.out_msgtype == MBEDTLS_SSL_MSG_APPLICATION_DATA)
+        {
+            on_complete_callback = on_send_complete;
+            context = tls_io_instance;
+        }
+
+        if (xio_send(tls_io_instance->socket_io, buf, sz, on_complete_callback, context) != 0)
         {
             indicate_error(tls_io_instance);
             result = 0;
@@ -511,7 +552,6 @@ CONCRETE_IO_HANDLE tlsio_mbedtls_create(void *io_create_parameters)
                 {
                     result->tls_status = TLS_STATE_NOT_INITIALIZED;
                     mbedtls_init((void*)result);
-
                     result->tlsio_state = TLSIO_STATE_NOT_OPEN;
                 }
             }
@@ -687,19 +727,38 @@ int tlsio_mbedtls_send(CONCRETE_IO_HANDLE tls_io, const void *buffer, size_t siz
         {
             tls_io_instance->send_complete_info.on_send_complete = on_send_complete;
             tls_io_instance->send_complete_info.on_send_complete_callback_context = callback_context;
-            tls_io_instance->send_complete_info.send_complete_count = 0;
-            int res = mbedtls_ssl_write(&tls_io_instance->ssl, buffer, size);
-            if (res != (int)size)
+            tls_io_instance->send_complete_info.last_fragmented_req_status = IO_SEND_OK;
+            int out_left = size;
+            result = 0;
+
+            do
             {
-                LogError("Unexpected data size returned from  mbedtls_ssl_write %d/%d", res, (int)size);
-                result = MU_FAILURE;
-            }
-            else
-            {
-                result = 0;
-            }
+                tls_io_instance->send_complete_info.is_fragmented_req = is_fragmented_send_request(tls_io_instance, out_left);
+                unsigned char *buf = (unsigned char *)buffer + size - out_left;
+                int ret = mbedtls_ssl_write(&tls_io_instance->ssl, buf, out_left);
+
+                if (ret < 0)
+                {
+                    LogError("Unexpected data size returned from  mbedtls_ssl_write %d/%d", ret, (int)size);
+                    result = MU_FAILURE;
+                    break;
+                }
+                else if (tls_io_instance->send_complete_info.last_fragmented_req_status != IO_SEND_OK)
+                {
+                    LogError("Failed to send last fragment with error:0x%0x, aborting whole send",
+                             tls_io_instance->send_complete_info.last_fragmented_req_status);
+                    result = MU_FAILURE;
+                    break;
+                }
+
+                out_left -= ret;
+            } while (out_left > 0);
+
+            // remove on send complete info
+            memset((void*)&tls_io_instance->send_complete_info, 0, sizeof(tls_io_instance->send_complete_info));
         }
     }
+
     return result;
 }
 
